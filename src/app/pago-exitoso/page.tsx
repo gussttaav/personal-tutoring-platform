@@ -1,77 +1,107 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense } from "react";
 
 function SuccessContent() {
   const params = useSearchParams();
   const router = useRouter();
   const email = params.get("email") || "";
-  const name = params.get("name") || "";
-  const pack = params.get("pack") || "";
+  const name  = params.get("name")  || "";
+  const pack  = params.get("pack")  || "";
   const [credits, setCredits] = useState<number | null>(null);
+  const [dots, setDots]       = useState(".");
 
+  // Animated dots while waiting for webhook
+  useEffect(() => {
+    const t = setInterval(() => setDots(d => d.length >= 3 ? "." : d + "."), 500);
+    return () => clearInterval(t);
+  }, []);
+
+  // Poll until Stripe webhook has written credits to Sheets
   useEffect(() => {
     if (!email) return;
-    // Poll for credits (webhook might take a second)
     let attempts = 0;
     const interval = setInterval(async () => {
       attempts++;
-      const res = await fetch(`/api/credits?email=${encodeURIComponent(email)}`);
-      const data = await res.json();
-      if (data.credits > 0) {
-        setCredits(data.credits);
-        clearInterval(interval);
-      }
-      if (attempts > 10) clearInterval(interval); // stop after ~10s
+      try {
+        const res  = await fetch(`/api/credits?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.credits > 0) { setCredits(data.credits); clearInterval(interval); }
+      } catch { /* retry */ }
+      if (attempts > 15) clearInterval(interval); // ~15s max
     }, 1000);
     return () => clearInterval(interval);
   }, [email]);
 
+  // Once credits confirmed → redirect to home in booking mode
   function goToBooking() {
     router.push(
-      `/reservar?email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&credits=${credits}`
+      `/?booking=1&email=${encodeURIComponent(email)}&name=${encodeURIComponent(name)}&credits=${credits}`
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-10 max-w-md w-full text-center space-y-6">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto text-3xl">
+    <main className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "#0f1117" }}>
+      <div
+        className="rounded-2xl shadow-2xl p-10 max-w-md w-full text-center space-y-6"
+        style={{ backgroundColor: "#161b27", border: "1px solid #1e2535" }}
+      >
+        {/* Icon */}
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl font-bold"
+          style={{ backgroundColor: "#18d26e22", color: "#18d26e" }}
+        >
           ✓
         </div>
+
+        {/* Title */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">¡Pago completado!</h1>
-          <p className="text-gray-500 mt-2">
-            Gracias, <strong>{name}</strong>. Tu Pack {pack} ha sido activado.
+          <h1 className="text-2xl font-bold text-white">¡Pago completado!</h1>
+          <p className="mt-2 text-sm" style={{ color: "#8b95a8" }}>
+            Gracias, <strong className="text-white">{name}</strong>.
+            Tu Pack {pack} ha sido activado.
           </p>
         </div>
 
+        {/* Credits status */}
         {credits === null ? (
-          <div className="text-sm text-gray-400 animate-pulse">
-            Activando tus créditos...
+          <div
+            className="rounded-xl p-4 text-sm"
+            style={{ backgroundColor: "#0f1117", border: "1px solid #1e2535" }}
+          >
+            <p style={{ color: "#8b95a8" }}>Activando tus créditos{dots}</p>
           </div>
         ) : (
-          <div className="bg-indigo-50 rounded-xl p-4">
-            <p className="text-indigo-700 font-semibold text-lg">
-              🎉 Tienes {credits} clase{credits !== 1 ? "s" : ""} disponible{credits !== 1 ? "s" : ""}
+          <div
+            className="rounded-xl p-4"
+            style={{ backgroundColor: "#0d1f14", border: "1px solid #18d26e44" }}
+          >
+            <p className="font-semibold text-lg" style={{ color: "#18d26e" }}>
+              🎉 {credits} clase{credits !== 1 ? "s" : ""} disponible{credits !== 1 ? "s" : ""}
             </p>
-            <p className="text-indigo-500 text-sm mt-1">
-              Reserva tus horas cuando quieras
+            <p className="text-sm mt-1" style={{ color: "#8b95a8" }}>
+              Válidas 6 meses · Reserva cuando quieras
             </p>
           </div>
         )}
 
+        {/* CTA */}
         <button
           onClick={goToBooking}
           disabled={credits === null}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-3 rounded-xl transition-colors"
+          className="w-full font-semibold py-3 rounded-xl text-sm transition-all"
+          style={{
+            backgroundColor: credits !== null ? "#18d26e" : "#1e2535",
+            color: credits !== null ? "#fff" : "#4b5563",
+          }}
+          onMouseEnter={e => { if (credits !== null) e.currentTarget.style.backgroundColor = "#15b85e"; }}
+          onMouseLeave={e => { if (credits !== null) e.currentTarget.style.backgroundColor = "#18d26e"; }}
         >
-          Reservar mis clases →
+          {credits !== null ? "Reservar mis clases →" : "Esperando confirmación..."}
         </button>
 
-        <a href="/" className="block text-sm text-gray-400 hover:text-gray-600">
+        <a href="/" className="block text-xs" style={{ color: "#4b5563" }}>
           Volver al inicio
         </a>
       </div>
@@ -80,9 +110,5 @@ function SuccessContent() {
 }
 
 export default function PagoExitosoPage() {
-  return (
-    <Suspense>
-      <SuccessContent />
-    </Suspense>
-  );
+  return <Suspense><SuccessContent /></Suspense>;
 }
