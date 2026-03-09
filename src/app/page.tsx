@@ -43,6 +43,12 @@ function HomeContent() {
   const CAL_LINK = (process.env.NEXT_PUBLIC_CAL_URL || "https://cal.com/gustavo-torres")
     .replace("https://cal.com/", "");
 
+  // Direct event link: bypasses event picker and opens calendar immediately
+  const CAL_EVENT_LINK = (
+    process.env.NEXT_PUBLIC_CAL_EVENT_SLUG ||
+    `${process.env.NEXT_PUBLIC_CAL_URL || "https://cal.com/gustavo-torres"}/pack-1-hora`
+  ).replace("https://cal.com/", "");
+
   // Enter booking mode automatically when returning from Stripe
   useEffect(() => {
     if (params.get("booking") === "1") {
@@ -85,24 +91,6 @@ function HomeContent() {
   }
 
   const isBookingMode = student !== null;
-
-  // Shared button style
-  const btnStyle = (isOpen: boolean): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    borderRadius: "9999px",
-    padding: "8px 14px",
-    fontSize: "13px",
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    backgroundColor: isOpen ? "#18d26e" : "#0f1117",
-    border: `1.5px solid ${isOpen ? "#18d26e" : "#18d26e66"}`,
-    color: isOpen ? "#fff" : "#18d26e",
-    boxShadow: isOpen ? "0 0 18px #18d26e55" : "0 2px 10px #00000088",
-    whiteSpace: "nowrap" as const,
-  });
 
   // Buttons container: absolute inside block normally, fixed when scrolled past
   const containerStyle: React.CSSProperties = isFixed
@@ -271,7 +259,7 @@ function HomeContent() {
           {isBookingMode && student && (
             <BookingModeView
               student={student}
-              calLink={CAL_LINK}
+              calLink={CAL_EVENT_LINK}
               onCreditsUpdated={(remaining) =>
                 setStudent(remaining > 0 ? { ...student, credits: remaining } : null)
               }
@@ -301,12 +289,18 @@ function BookingModeView({ student, calLink, onCreditsUpdated, onExit }: {
   onCreditsUpdated: (remaining: number) => void;
   onExit: () => void;
 }) {
-  const [confirming, setConfirming] = useState(false);
-  const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  // "idle" → calendar shown
+  // "confirming" → API call in progress (brief)
+  // "success" → booking confirmed, show result screen
+  // "error" → something went wrong
+  type Phase = "idle" | "confirming" | "success" | "error";
+  const [phase, setPhase]       = useState<Phase>("idle");
+  const [remaining, setRemaining] = useState(student.credits);
+  const [errMsg, setErrMsg]     = useState("");
 
-  async function confirmBooking() {
-    setConfirming(true);
-    setMessage(null);
+  // Called automatically by cal.com bookingSuccessful event
+  async function handleBookingSuccess() {
+    setPhase("confirming");
     try {
       const res  = await fetch("/api/book", {
         method: "POST",
@@ -315,26 +309,36 @@ function BookingModeView({ student, calLink, onCreditsUpdated, onExit }: {
       });
       const data = await res.json();
       if (data.ok) {
-        setMessage({ type: "ok", text: `✓ ¡Clase reservada! Te quedan ${data.remaining} clases.` });
+        setRemaining(data.remaining);
+        setPhase("success");
         onCreditsUpdated(data.remaining);
       } else {
-        setMessage({ type: "err", text: data.error || "Error al confirmar." });
+        setErrMsg(data.error || "Error al registrar la reserva.");
+        setPhase("error");
       }
     } catch {
-      setMessage({ type: "err", text: "Error de conexión." });
-    } finally {
-      setConfirming(false);
+      setErrMsg("Error de conexión al registrar la reserva.");
+      setPhase("error");
     }
+  }
+
+  // Book another class: reset to idle with a fresh namespace key
+  const [calKey, setCalKey] = useState(0);
+  function bookAnother() {
+    setPhase("idle");
+    setCalKey(k => k + 1); // forces CalComBooking to remount with fresh state
   }
 
   return (
     <div className="flex flex-col rounded-2xl overflow-hidden" style={{ minHeight: "580px" }}>
+
+      {/* ── Top bar ── */}
       <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: "#1e2535" }}>
         <span
           className="text-xs font-bold px-3 py-1 rounded-full"
           style={{ backgroundColor: "#18d26e18", color: "#18d26e", border: "1px solid #18d26e33" }}
         >
-          {student.credits} clase{student.credits !== 1 ? "s" : ""} disponible{student.credits !== 1 ? "s" : ""}
+          {remaining} clase{remaining !== 1 ? "s" : ""} disponible{remaining !== 1 ? "s" : ""}
         </span>
         <button
           onClick={onExit}
@@ -343,60 +347,136 @@ function BookingModeView({ student, calLink, onCreditsUpdated, onExit }: {
           onMouseEnter={e => (e.currentTarget.style.color = "#8b95a8")}
           onMouseLeave={e => (e.currentTarget.style.color = "#4b5563")}
         >
-          ← Volver
+          ← Volver al inicio
         </button>
       </div>
 
-      {message && (
-        <div
-          className="mx-5 mt-4 rounded-xl px-4 py-3 text-sm text-center"
-          style={{
-            backgroundColor: message.type === "ok" ? "#0d1f14" : "#1f0d0d",
-            border: `1px solid ${message.type === "ok" ? "#18d26e44" : "#f8717144"}`,
-            color: message.type === "ok" ? "#18d26e" : "#f87171",
-          }}
-        >
-          {message.text}
+      {/* ── PHASE: idle — show calendar ── */}
+      {phase === "idle" && (
+        <div className="flex-1">
+          <CalComBooking
+            key={calKey}
+            calLink={calLink}
+            userName={student.name}
+            userEmail={student.email}
+            theme="dark"
+            brandColor="#18d26e"
+            namespace={`booking-${calKey}`}
+            onBookingSuccess={handleBookingSuccess}
+          />
         </div>
       )}
 
-      <div className="flex-1">
-        <CalComBooking
-          calLink={calLink}
-          userName={student.name}
-          userEmail={student.email}
-          theme="dark"
-          brandColor="#18d26e"
-          onBookingSuccess={confirmBooking}
-        />
-      </div>
-
-      <div className="p-5 border-t" style={{ borderColor: "#1e2535" }}>
-        {student.credits > 0 ? (
-          <>
-            <button
-              onClick={confirmBooking}
-              disabled={confirming}
-              className="w-full font-semibold py-3 rounded-xl text-white text-sm transition-all"
-              style={{ backgroundColor: confirming ? "#0f7a40" : "#18d26e" }}
-              onMouseEnter={e => { if (!confirming) e.currentTarget.style.backgroundColor = "#15b85e"; }}
-              onMouseLeave={e => { if (!confirming) e.currentTarget.style.backgroundColor = "#18d26e"; }}
-            >
-              {confirming ? "Confirmando..." : "Confirmar reserva — descuenta 1 clase"}
-            </button>
-            <p className="text-xs text-center mt-2" style={{ color: "#4b5563" }}>
-              Elige primero el horario en el calendario, luego pulsa confirmar.
-            </p>
-          </>
-        ) : (
+      {/* ── PHASE: confirming — brief spinner while API call runs ── */}
+      {phase === "confirming" && (
+        <div className="flex-1 flex items-center justify-center" style={{ minHeight: "400px" }}>
           <div className="text-center space-y-3">
-            <p className="text-sm" style={{ color: "#8b95a8" }}>Has agotado tus clases disponibles.</p>
-            <button onClick={onExit} className="font-semibold py-2.5 px-6 rounded-xl text-white text-sm" style={{ backgroundColor: "#18d26e" }}>
-              Comprar otro pack
+            <div
+              className="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mx-auto"
+              style={{ borderColor: "#18d26e", borderTopColor: "transparent" }}
+            />
+            <p className="text-sm" style={{ color: "#8b95a8" }}>Registrando tu reserva...</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── PHASE: success ── */}
+      {phase === "success" && (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center space-y-6 max-w-sm w-full">
+            {/* Icon */}
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto text-2xl"
+              style={{ backgroundColor: "#18d26e22", color: "#18d26e" }}
+            >
+              ✓
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold text-white">¡Clase reservada!</h3>
+              <p className="mt-1 text-sm" style={{ color: "#8b95a8" }}>
+                Recibirás una confirmación por email.
+              </p>
+            </div>
+
+            {/* Credits left */}
+            <div
+              className="rounded-xl p-4"
+              style={{ backgroundColor: "#0d1f14", border: "1px solid #18d26e33" }}
+            >
+              {remaining > 0 ? (
+                <>
+                  <p className="font-semibold" style={{ color: "#18d26e" }}>
+                    Te quedan {remaining} clase{remaining !== 1 ? "s" : ""}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "#8b95a8" }}>
+                    Reserva cuando quieras antes de que caduque tu pack.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold" style={{ color: "#fbbf24" }}>
+                    Has usado todas tus clases del pack
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "#8b95a8" }}>
+                    Puedes comprar otro pack para seguir reservando.
+                  </p>
+                </>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3">
+              {remaining > 0 && (
+                <button
+                  onClick={bookAnother}
+                  className="w-full font-semibold py-3 rounded-xl text-white text-sm transition-all"
+                  style={{ backgroundColor: "#18d26e" }}
+                  onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#15b85e")}
+                  onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#18d26e")}
+                >
+                  Reservar otra clase
+                </button>
+              )}
+              <button
+                onClick={onExit}
+                className="w-full font-medium py-2.5 rounded-xl text-sm transition-all"
+                style={{ border: "1px solid #1e2535", color: "#8b95a8", backgroundColor: "transparent" }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#1e2535")}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                {remaining > 0 ? "Volver al inicio" : "Comprar otro pack"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── PHASE: error ── */}
+      {phase === "error" && (
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center space-y-4 max-w-sm w-full">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto text-xl"
+              style={{ backgroundColor: "#f8717122", color: "#f87171" }}
+            >
+              ✕
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-white">Algo salió mal</h3>
+              <p className="text-sm mt-1" style={{ color: "#8b95a8" }}>{errMsg}</p>
+            </div>
+            <button
+              onClick={() => setPhase("idle")}
+              className="w-full font-semibold py-3 rounded-xl text-white text-sm"
+              style={{ backgroundColor: "#18d26e" }}
+            >
+              Intentar de nuevo
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   );
 }

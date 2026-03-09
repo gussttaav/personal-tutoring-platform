@@ -9,6 +9,7 @@ interface CalComBookingProps {
   userEmail?: string;
   brandColor?: string;
   theme?: "light" | "dark";
+  namespace?: string;
   onBookingSuccess?: () => void;
 }
 
@@ -18,50 +19,54 @@ export default function CalComBooking({
   userEmail = "",
   brandColor = "#18d26e",
   theme = "dark",
+  namespace = "default",
   onBookingSuccess,
 }: CalComBookingProps) {
-  const [iframeHeight, setIframeHeight] = useState(600);
+  const [iframeHeight, setIframeHeight] = useState(580);
   const initialized = useRef(false);
+  const successFired = useRef(false); // prevent double-firing
+
+  useEffect(() => {
+    initialized.current = false;
+    successFired.current = false;
+  }, [namespace]);
 
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
 
     (async function () {
-      const cal = await getCalApi();
+      const cal = await getCalApi({ namespace });
 
       cal("ui", {
-        styles: {
-          branding: { brandColor },
-        },
+        styles: { branding: { brandColor } },
         hideEventTypeDetails: false,
         layout: "month_view",
         theme,
       });
 
-      // Dynamically resize container to match cal.com content
       cal("on", {
         action: "__dimensionChanged",
         callback: (e: any) => {
           const height = e?.detail?.data?.iframeHeight;
-          if (height && height > 300) {
-            setIframeHeight(height + 16); // small padding buffer
-          }
+          if (height && height > 300) setIframeHeight(height + 16);
         },
       });
 
-      // Optional: fire callback when booking is confirmed
       cal("on", {
         action: "bookingSuccessful",
         callback: () => {
+          if (successFired.current) return;
+          successFired.current = true;
           onBookingSuccess?.();
         },
       });
     })();
-  }, [brandColor, theme, onBookingSuccess]);
+  }, [namespace, brandColor, theme, onBookingSuccess]);
 
   return (
     <Cal
+      namespace={namespace}
       calLink={calLink}
       style={{
         width: "100%",
@@ -73,6 +78,7 @@ export default function CalComBooking({
         name: userName,
         email: userEmail,
         theme,
+        layout: "month_view",
       }}
     />
   );
