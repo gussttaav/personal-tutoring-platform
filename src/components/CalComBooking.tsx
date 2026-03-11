@@ -11,6 +11,7 @@ interface CalComBookingProps {
   theme?: "light" | "dark";
   namespace?: string;
   onBookingSuccess?: () => void;
+  onAtRoot?: (atRoot: boolean) => void;
 }
 
 export default function CalComBooking({
@@ -21,15 +22,17 @@ export default function CalComBooking({
   theme = "dark",
   namespace = "default",
   onBookingSuccess,
+  onAtRoot,
 }: CalComBookingProps) {
   const [iframeHeight, setIframeHeight] = useState(580);
   const initializedRef = useRef(false);
   const successFiredRef = useRef(false);
+  const bookerEnteredRef = useRef(false);
 
-  // Reset guards when namespace changes (new booking session)
   useEffect(() => {
     initializedRef.current = false;
     successFiredRef.current = false;
+    bookerEnteredRef.current = false;
   }, [namespace]);
 
   useEffect(() => {
@@ -52,10 +55,18 @@ export default function CalComBooking({
       cal("on", {
         action: "__dimensionChanged",
         callback: (e: { detail?: { data?: { iframeHeight?: number } } }) => {
+          if (!mounted) return;
           const height = e?.detail?.data?.iframeHeight;
-          if (mounted && height && height > 300) {
-            setIframeHeight(height + 16);
-          }
+          if (height && height > 100) setIframeHeight(height);
+        },
+      });
+
+      cal("on", {
+        action: "navigatedToBooker",
+        callback: () => {
+          if (!mounted || bookerEnteredRef.current) return;
+          bookerEnteredRef.current = true;
+          onAtRoot?.(false);
         },
       });
 
@@ -69,10 +80,8 @@ export default function CalComBooking({
       });
     })();
 
-    return () => {
-      mounted = false;
-    };
-  }, [namespace, brandColor, theme, onBookingSuccess]);
+    return () => { mounted = false; };
+  }, [namespace, brandColor, theme, onBookingSuccess, onAtRoot]);
 
   return (
     <Cal
