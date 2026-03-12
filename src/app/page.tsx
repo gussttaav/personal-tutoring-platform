@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import { useUserSession } from "@/hooks/useUserSession";
 import { usePackPanel } from "@/hooks/usePackPanel";
@@ -9,7 +10,7 @@ import SpeedDial from "@/components/SpeedDial";
 import PackModal from "@/components/PackModal";
 import PackPanel from "@/components/PackPanel";
 import BookingModeView from "@/components/BookingModeView";
-import { Spinner } from "@/components/ui";
+import { Spinner, CreditsPill } from "@/components/ui";
 import { COLORS, getCalLink, PACK_SIZES } from "@/constants";
 import type { PackSize, StudentInfo } from "@/types";
 
@@ -39,12 +40,9 @@ function HomeContent() {
     togglePanel, closePanel,
     btn5Ref, btn10Ref,
   } = usePackPanel();
-  const { cardRef, isSticky, fixedRight, fixedTop } = useStickyButtons(16);
+  const { cardRef, isSticky, fixedRight, fixedTop } = useStickyButtons(0);
   const [selectedPack, setSelectedPack] = useState<PackSize | null>(null);
-
-  // true = user is on the root event-listing view; false = inside the booker
   const [calAtRoot, setCalAtRoot] = useState(true);
-  // Incrementing this key remounts CalComBooking, resetting it to the root view
   const [calKey, setCalKey] = useState(0);
 
   const dialContainerRef = useRef<HTMLDivElement>(null);
@@ -55,7 +53,7 @@ function HomeContent() {
     10: btn10Ref as React.RefObject<HTMLButtonElement>,
   };
 
-  // Single outside-click handler — uses 'click' (fires after onClick)
+  // Outside-click handler for speed dial
   useEffect(() => {
     if (!dialOpen) return;
     function onOutside(e: MouseEvent) {
@@ -68,14 +66,13 @@ function HomeContent() {
     return () => window.removeEventListener("click", onOutside);
   }, [dialOpen, closeDial]);
 
-  // When the user enters the booker, close the dial cleanly
   useEffect(() => {
     if (!calAtRoot) closeDial();
   }, [calAtRoot, closeDial]);
 
   function handleBackToRoot() {
     setCalAtRoot(true);
-    setCalKey((k) => k + 1); // remount CalComBooking → returns to event listing
+    setCalKey((k) => k + 1);
   }
 
   function handleCreditsReady(student: StudentInfo) {
@@ -84,75 +81,144 @@ function HomeContent() {
     startSession(student);
   }
 
+  // Speed dial floats in the top-bar area.
+  // When sticky (page scrolled) it goes fixed at the same right-edge position.
   const dialContainerStyle: React.CSSProperties = isSticky
-    ? { position: "fixed", top: fixedTop, right: fixedRight, zIndex: 50 }
-    : { position: "absolute", top: "67px", right: "25px", zIndex: 20 };
+    ? { position: "fixed", top: fixedTop + 12, right: fixedRight, zIndex: 50 }
+    : { position: "absolute", top: "117px", right: "25px", zIndex: 20 };
 
   const calDimmed = dialOpen || !!activePanel;
-  const showDial = !session && calAtRoot;
+  const showDial  = !session && calAtRoot;
 
   return (
+    // Full-viewport background, no padding — card is flush
     <main className="min-h-screen" style={{ backgroundColor: COLORS.background }}>
 
-      {/* ── Header ── */}
-      <header
-        className="border-b py-4 sm:py-5 px-4"
-        style={{ backgroundColor: COLORS.surface, borderColor: COLORS.border }}
-      >
-        <div className="max-w-3xl mx-auto flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
-              Gustavo Torres Guerrero
-            </h1>
-            <p className="text-sm" style={{ color: COLORS.textSecondary }}>
-              Profesor y consultor independiente
-            </p>
-          </div>
-          {session && (
-            <div className="text-right flex-shrink-0">
-              <p className="text-xs truncate max-w-[120px] sm:max-w-none" style={{ color: COLORS.textSecondary }}>
-                Hola, {session.name}
-              </p>
-              <p className="text-lg font-bold" style={{ color: COLORS.brand }}>
-                {session.credits} clase{session.credits !== 1 ? "s" : ""}
-              </p>
-            </div>
-          )}
-        </div>
-      </header>
-
-      {/* ── Content ── */}
-      <div className="max-w-3xl mx-auto py-6 sm:py-8">
+      {/* ── Card — full width, flush on mobile, centred+rounded on ≥md ── */}
+      <div className="md:max-w-3xl md:mx-auto md:py-8 md:px-4">
         <div
           ref={cardRef}
-          className="rounded-none sm:rounded-2xl overflow-visible relative border-0 sm:border"
+          className="relative overflow-visible rounded-none md:rounded-2xl"
           style={{
             backgroundColor: COLORS.surface,
-            borderColor: COLORS.border,
-            minHeight: "580px",
+            border: `1px solid ${COLORS.border}`,
+            minHeight: "100dvh",
           }}
         >
+
+          {/* ── Unified top bar ── */}
+          <div
+            className="px-4 sm:px-5 border-b"
+            style={{ borderColor: COLORS.border }}
+          >
+            {session ? (
+              <>
+                {/*
+                  SESSION MODE
+                  ─────────────────────────────────────────────────────────────
+                  Mobile  (< sm): two rows
+                    Row 1 — logo left · ← Volver al inicio right
+                    Row 2 — user name left · CreditsPill right
+
+                  Desktop (≥ sm): single row
+                    logo · PlanetaG · separator · user name  ←→  pill · back
+                */}
+
+                {/* Mobile row 1 / Desktop single row — logo + back */}
+                <div className="flex items-center justify-between py-3">
+                  {/* Logo */}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Image
+                      src="/logo.svg"
+                      alt="PlanetaG logo"
+                      width={28}
+                      height={28}
+                      priority
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white leading-tight truncate">
+                        PlanetaG
+                      </p>
+                      {/* Subtitle visible on desktop only — row 2 handles mobile */}
+                      <p className="hidden sm:block text-xs leading-tight truncate" style={{ color: COLORS.textSecondary }}>
+                        {session.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right side */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {/* Pill visible on desktop inline; on mobile it's in row 2 */}
+                    <span className="hidden sm:block">
+                      <CreditsPill credits={session.credits} />
+                    </span>
+                    <button
+                      onClick={clearSession}
+                      className="text-xs transition-colors"
+                      style={{ color: COLORS.textMuted }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.textSecondary)}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textMuted)}
+                    >
+                      ← Volver al inicio
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile row 2 — user name left · pill right */}
+                <div
+                  className="flex items-center justify-between pb-2.5 sm:hidden"
+                >
+                  <p className="text-xs truncate" style={{ color: COLORS.textSecondary }}>
+                    {session.name}
+                  </p>
+                  <CreditsPill credits={session.credits} />
+                </div>
+              </>
+            ) : (
+              <>
+                {/*
+                  BROWSE / BOOKER MODE
+                  Single row in all cases — only one action at most on the right.
+                */}
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Image
+                      src="/logo.svg"
+                      alt="PlanetaG logo"
+                      width={28}
+                      height={28}
+                      priority
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white leading-tight truncate">
+                        PlanetaG
+                      </p>
+                      <p className="text-xs leading-tight truncate" style={{ color: COLORS.textSecondary }}>
+                        Gustavo Torres Guerrero
+                      </p>
+                    </div>
+                  </div>
+
+                  {!calAtRoot && (
+                    <button
+                      onClick={handleBackToRoot}
+                      className="text-xs transition-colors flex-shrink-0"
+                      style={{ color: COLORS.textMuted }}
+                      onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.textSecondary)}
+                      onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textMuted)}
+                    >
+                      ← Volver al inicio
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* ── Browse mode ── */}
           {!session && (
             <>
-              {/* Back bar — shown once user enters the booker */}
-              {!calAtRoot && (
-                <div
-                  className="flex items-center px-4 sm:px-5 py-3 border-b"
-                  style={{ borderColor: COLORS.border }}
-                >
-                  <button
-                    onClick={handleBackToRoot}
-                    className="text-xs transition-colors"
-                    style={{ color: COLORS.textMuted }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.textSecondary)}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textMuted)}
-                  >
-                    ← Volver al inicio
-                  </button>
-                </div>
-              )}
-
-              {/* Speed dial — only on root view */}
+              {/* Speed dial — overlays the top-right of the card */}
               {showDial && (
                 <SpeedDial
                   containerRef={dialContainerRef}
@@ -199,17 +265,22 @@ function HomeContent() {
             </>
           )}
 
+          {/* ── Booking mode ── */}
           {session && (
+            // BookingModeView has its own top bar (credits + exit) — we hide
+            // that inner bar since the unified top bar above now handles it.
             <BookingModeView
               student={session}
               calLink={CAL_EVENT_LINK}
               onCreditsUpdated={updateCredits}
               onExit={clearSession}
+              hideTopBar
             />
           )}
         </div>
       </div>
 
+      {/* Pack purchase modal */}
       {selectedPack && (
         <PackModal
           packSize={selectedPack}

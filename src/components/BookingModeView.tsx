@@ -26,6 +26,9 @@ interface BookingModeViewProps {
   calLink: string;
   onCreditsUpdated: (remaining: number) => void;
   onExit: () => void;
+  /** When true the inner credits+exit bar is suppressed — used when the
+   *  parent already renders a unified top bar. */
+  hideTopBar?: boolean;
 }
 
 export default function BookingModeView({
@@ -33,6 +36,7 @@ export default function BookingModeView({
   calLink,
   onCreditsUpdated,
   onExit,
+  hideTopBar = false,
 }: BookingModeViewProps) {
   const [phase, setPhase] = useState<BookingPhase>("idle");
   const [remaining, setRemaining] = useState(student.credits);
@@ -59,22 +63,24 @@ export default function BookingModeView({
 
   return (
     <div className="flex flex-col rounded-2xl overflow-hidden" style={{ minHeight: "580px" }}>
-      {/* Top bar */}
-      <div
-        className="flex items-center justify-between px-4 sm:px-5 py-3 border-b"
-        style={{ borderColor: COLORS.border }}
-      >
-        <CreditsPill credits={remaining} />
-        <button
-          onClick={onExit}
-          className="text-xs transition-colors"
-          style={{ color: COLORS.textMuted }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.textSecondary)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textMuted)}
+      {/* Top bar — hidden when parent renders a unified bar */}
+      {!hideTopBar && (
+        <div
+          className="flex items-center justify-between px-4 sm:px-5 py-3 border-b"
+          style={{ borderColor: COLORS.border }}
         >
-          ← Volver al inicio
-        </button>
-      </div>
+          <CreditsPill credits={remaining} />
+          <button
+            onClick={onExit}
+            className="text-xs transition-colors"
+            style={{ color: COLORS.textMuted }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = COLORS.textSecondary)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = COLORS.textMuted)}
+          >
+            ← Volver al inicio
+          </button>
+        </div>
+      )}
 
       {/* Phase: idle */}
       {phase === "idle" && (
