@@ -1,14 +1,39 @@
 /** @type {import('next').NextConfig} */
+
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig = {
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "media.licdn.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
   },
-  
-  // Security headers
+
   async headers() {
+    const csp = isDev
+      ? [
+          // Dev: relaxed — allows Next.js HMR, webpack eval, etc.
+          "default-src 'self'",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cal.com https://*.cal.com",
+          "frame-src https://cal.com https://*.cal.com https://calendar.google.com",
+          "img-src 'self' https://lh3.googleusercontent.com data: blob:",
+          "connect-src 'self' ws://localhost:* wss://localhost:* https://generativelanguage.googleapis.com https://*.cal.com  ",
+          "style-src 'self' 'unsafe-inline'",
+          "object-src 'none'",
+        ]
+      : [
+          // Production: strict
+          "default-src 'self'",
+          "script-src 'self' https://cal.com https://*.cal.com",
+          "frame-src https://cal.com https://*.cal.com https://calendar.google.com",
+          "img-src 'self' https://lh3.googleusercontent.com data: blob:",
+          "connect-src 'self' https://generativelanguage.googleapis.com https://*.cal.com",
+          "style-src 'self' 'unsafe-inline'",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self'",
+        ];
+
     return [
       {
         source: "/(.*)",
@@ -21,14 +46,16 @@ const nextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
+          {
+            key: "Content-Security-Policy",
+            value: csp.join("; "),
+          },
         ],
       },
     ];
   },
 
   // Only expose env vars that must be public (used in browser-side code).
-  // The cal.com event slugs are hardcoded in constants/index.ts;
-  // NEXT_PUBLIC_CAL_EVENT_SLUG overrides the pack-booking event if set.
   env: {
     NEXT_PUBLIC_CAL_EVENT_SLUG: process.env.NEXT_PUBLIC_CAL_EVENT_SLUG,
   },

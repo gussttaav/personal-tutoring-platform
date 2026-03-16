@@ -19,8 +19,8 @@ const SHEET_ID = process.env.GOOGLE_SHEET_ID!;
 let _sheetsClient: ReturnType<typeof google.sheets> | null = null;
 
 async function getSheets() {
-  if (_sheetsClient) return _sheetsClient;
-
+  // Do not cache — googleapis handles token refresh internally.
+  // A cached client silently breaks after the 1-hour OAuth token expiry.
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
@@ -29,8 +29,7 @@ async function getSheets() {
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
-  _sheetsClient = google.sheets({ version: "v4", auth });
-  return _sheetsClient;
+  return google.sheets({ version: "v4", auth });
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

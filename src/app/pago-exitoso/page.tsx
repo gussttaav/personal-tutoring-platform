@@ -45,7 +45,6 @@ function SuccessContent() {
 
   // Step 2: poll for credits once we have the email
   const { state: pollState, credits } = useCreditsPoller({
-    email: sessionData?.email ?? "",
     enabled: !!sessionData,
   });
 

@@ -43,10 +43,7 @@ export class ApiError extends Error {
 
 export const api = {
   credits: {
-    get: (email: string) =>
-      request<CreditsResponse>(
-        `/api/credits?email=${encodeURIComponent(email)}`
-      ),
+    get: () => request<CreditsResponse>('/api/credits'),
   },
 
   book: {

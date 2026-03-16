@@ -516,7 +516,7 @@ function HomeContent() {
             >
               <div style={{ flexShrink: 0 }}>
                 <Image
-                  src="https://media.licdn.com/dms/image/v2/D4D03AQF25eZ55kWu3A/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1724152255801?e=1775088000&v=beta&t=bN_0ltCp4a-NFtO76NOz-gLodBrBkNq1Urk9jLiMMqY"
+                  src="/avatar.jpg"
                   alt="Gustavo Torres Guerrero"
                   width={80}
                   height={80}

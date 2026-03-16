@@ -1,18 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { getCredits } from "@/lib/sheets";
-import { isValidEmail, sanitizeEmail } from "@/lib/validation";
+import { sanitizeEmail } from "@/lib/validation";
 
-export async function GET(req: NextRequest) {
-  const raw = req.nextUrl.searchParams.get("email");
+export async function GET() {
+  const session = await auth();
 
-  if (!isValidEmail(raw)) {
+  if (!session?.user?.email) {
     return NextResponse.json(
-      { error: "Email requerido y válido" },
-      { status: 400 }
+      { error: "Autenticación requerida" },
+      { status: 401 }
     );
   }
 
-  const email = sanitizeEmail(raw);
+  const email = sanitizeEmail(session.user.email);
 
   try {
     const result = await getCredits(email);

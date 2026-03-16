@@ -26,7 +26,7 @@ export function useUserSession() {
     setCreditsLoading(true);
 
     api.credits
-      .get(email)
+      .get()
       .then((data) => {
         if (data.credits > 0) {
           setPackSession({
