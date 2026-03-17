@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getCredits } from "@/lib/sheets";
+import { getCredits } from "@/lib/kv";
 import { sanitizeEmail } from "@/lib/validation";
 import { creditsRatelimit } from "@/lib/ratelimit";
 
@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const email = sanitizeEmail(session.user.email);
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // ── Fetch from KV ─────────────────────────────────────────────────────────
   try {
     const result = await getCredits(email);
     return NextResponse.json({
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       packSize: result?.packSize ?? null,
     });
   } catch (err) {
-    console.error("[credits] Error fetching credits:", err);
+    console.error("[credits] Error fetching from KV:", err);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

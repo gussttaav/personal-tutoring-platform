@@ -10,7 +10,7 @@ const config = {
   },
   coverageProvider: "v8",
   collectCoverageFrom: [
-    "src/lib/sheets.ts",
+    "src/lib/kv.ts",
     "src/lib/validation.ts",
   ],
 };

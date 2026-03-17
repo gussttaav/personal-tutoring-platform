@@ -1,16 +1,10 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button, Alert, Spinner } from "@/components/ui";
 import { COLORS } from "@/constants";
-import { useCreditsPoller } from "@/hooks/useCreditsPoller";
-
-interface SessionData {
-  email: string;
-  name: string;
-  packSize: number;
-}
+import { useSSECredits } from "@/hooks/useSSECredits";
 
 function SuccessContent() {
   const params = useSearchParams();
@@ -18,71 +12,26 @@ function SuccessContent() {
 
   const sessionId = params.get("session_id");
 
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
-  const [sessionError, setSessionError] = useState("");
-  const [sessionLoading, setSessionLoading] = useState(true);
+  // SSE connection — opens immediately if we have a session_id.
+  // The server resolves the email/name/packSize from Stripe directly,
+  // so we never need to call /api/stripe/session from the client.
+  const { state, credits, name, packSize } = useSSECredits({ sessionId });
 
-  // Step 1: fetch session metadata from server (email/name never in URL)
-  useEffect(() => {
-    if (!sessionId) {
-      setSessionError("Sesión de pago no encontrada.");
-      setSessionLoading(false);
-      return;
-    }
+  const isConnecting = state === "connecting";
+  const isConfirmed = state === "confirmed" && credits !== null;
+  const isTimeout = state === "timeout";
+  const isError = state === "error";
 
-    fetch(`/api/stripe/session?session_id=${encodeURIComponent(sessionId)}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.error) {
-          setSessionError(data.error);
-        } else {
-          setSessionData(data);
-        }
-      })
-      .catch(() => setSessionError("Error al verificar el pago."))
-      .finally(() => setSessionLoading(false));
-  }, [sessionId]);
-
-  // Step 2: poll for credits once we have the email
-  const { state: pollState, credits } = useCreditsPoller({
-    enabled: !!sessionData,
-  });
-
-  function goToBooking() {
-    if (!sessionData || !credits) return;
-    router.push(
-      `/?booking=1&email=${encodeURIComponent(sessionData.email)}&name=${encodeURIComponent(sessionData.name)}&credits=${credits}`
-    );
-  }
-
-  // ── Loading session ──
-  if (sessionLoading) {
+  if (!sessionId) {
     return (
       <PageShell>
-        <div className="flex flex-col items-center gap-3">
-          <Spinner />
-          <p className="text-sm" style={{ color: COLORS.textSecondary }}>
-            Verificando pago...
-          </p>
-        </div>
-      </PageShell>
-    );
-  }
-
-  // ── Session error ──
-  if (sessionError || !sessionData) {
-    return (
-      <PageShell>
-        <Alert variant="error">{sessionError || "Error al verificar el pago."}</Alert>
+        <Alert variant="error">Sesión de pago no encontrada.</Alert>
         <Button variant="secondary" fullWidth onClick={() => router.push("/")}>
           Volver al inicio
         </Button>
       </PageShell>
     );
   }
-
-  const isCreditsReady = pollState === "confirmed" && credits !== null;
-  const isTimeout = pollState === "timeout";
 
   return (
     <PageShell>
@@ -98,14 +47,16 @@ function SuccessContent() {
       {/* Title */}
       <div className="text-center">
         <h1 className="text-2xl font-bold text-white">¡Pago completado!</h1>
-        <p className="mt-2 text-sm" style={{ color: COLORS.textSecondary }}>
-          Gracias, <strong className="text-white">{sessionData.name}</strong>.{" "}
-          Tu Pack {sessionData.packSize} ha sido activado.
-        </p>
+        {name && (
+          <p className="mt-2 text-sm" style={{ color: COLORS.textSecondary }}>
+            Gracias, <strong className="text-white">{name}</strong>.{" "}
+            {packSize && `Tu Pack ${packSize} ha sido activado.`}
+          </p>
+        )}
       </div>
 
       {/* Credits status */}
-      {!isCreditsReady && !isTimeout && (
+      {isConnecting && (
         <div
           className="rounded-xl p-4 text-sm text-center"
           style={{ backgroundColor: "#0f1117", border: `1px solid ${COLORS.border}` }}
@@ -130,7 +81,13 @@ function SuccessContent() {
         </Alert>
       )}
 
-      {isCreditsReady && credits !== null && (
+      {(isError) && (
+        <Alert variant="error">
+          Error al conectar con el servidor. Por favor recarga la página.
+        </Alert>
+      )}
+
+      {isConfirmed && credits !== null && (
         <div
           className="rounded-xl p-4 text-center"
           style={{
@@ -151,17 +108,13 @@ function SuccessContent() {
       <Button
         variant="primary"
         fullWidth
-        onClick={goToBooking}
-        disabled={!isCreditsReady}
+        onClick={() => router.push("/")}
+        disabled={!isConfirmed}
       >
-        {isCreditsReady ? "Reservar mis clases →" : "Esperando confirmación..."}
+        {isConfirmed ? "Reservar mis clases →" : "Esperando confirmación..."}
       </Button>
 
-      <a
-        href="/"
-        className="block text-xs text-center"
-        style={{ color: COLORS.textMuted }}
-      >
+      <a href="/" className="block text-xs text-center" style={{ color: COLORS.textMuted }}>
         Volver al inicio
       </a>
     </PageShell>

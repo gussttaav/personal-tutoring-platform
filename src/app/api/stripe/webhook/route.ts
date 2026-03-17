@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { addOrUpdateStudent } from "@/lib/sheets";
+import { addOrUpdateStudent } from "@/lib/kv";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -43,15 +43,15 @@ export async function POST(req: NextRequest) {
     const email = session.metadata?.student_email ?? session.customer_email ?? "";
     const name = session.metadata?.student_name ?? "";
     const packSize = parseInt(session.metadata?.pack_size ?? "0", 10);
-    const stripeSessionId = session.id; // used for idempotency
+    const stripeSessionId = session.id;
 
     if (!email || !packSize) {
       console.error("[webhook] Missing metadata:", { email, name, packSize });
-      // Return 200 to prevent Stripe retries for bad data
       return NextResponse.json({ received: true, warning: "Missing metadata" });
     }
 
     try {
+      // addOrUpdateStudent is idempotent — safe for Stripe retries
       await addOrUpdateStudent(
         email,
         name,
@@ -59,11 +59,11 @@ export async function POST(req: NextRequest) {
         `Pack ${packSize} clases`,
         stripeSessionId
       );
-      console.info(`[webhook] Credits added: ${email} +${packSize} (${stripeSessionId})`);
+      console.info(`[webhook] Credits written to KV: ${email} +${packSize} (${stripeSessionId})`);
     } catch (err) {
-      console.error("[webhook] Error updating sheet:", err);
+      console.error("[webhook] Error writing to KV:", err);
       // Return 500 so Stripe will retry
-      return NextResponse.json({ error: "Sheet update failed" }, { status: 500 });
+      return NextResponse.json({ error: "KV write failed" }, { status: 500 });
     }
   }
 

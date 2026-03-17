@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { decrementCredit } from "@/lib/sheets";
+import { decrementCredit } from "@/lib/kv";
 
 export async function POST(req: NextRequest) {
   // ── Auth check ────────────────────────────────────────────────────────────
@@ -12,7 +12,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Email comes from the verified session — never from the request body
   const email = session.user.email;
 
   try {
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
     return NextResponse.json({ ok: true, remaining: result.remaining });
   } catch (err) {
-    console.error("[book] Error decrementing credit:", err);
+    console.error("[book] Error decrementing credit in KV:", err);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

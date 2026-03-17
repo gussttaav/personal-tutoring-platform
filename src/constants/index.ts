@@ -38,22 +38,12 @@ export const PACK_SIZES = [5, 10] as const satisfies readonly PackSize[];
 
 export const PACK_VALIDITY_MONTHS = 6;
 
-// ─── Polling ──────────────────────────────────────────────────────────────────
-
-export const CREDITS_POLL_INTERVAL_MS = 2500; // Stripe webhooks take 2-5s anyway
-export const CREDITS_POLL_MAX_ATTEMPTS = 8;
-
 // ─── Cal.com event slugs ──────────────────────────────────────────────────────
 
-/** Cal.com event links (full URL form → stripped to "username/slug" by getCalLink) */
 export const CAL_EVENTS = {
-  /** 15-min free intro */
   free15min: "gustavo-torres/15min",
-  /** 1-hour session */
   session1h: "gustavo-torres/reunion-de-1-hora",
-  /** 2-hour session */
   session2h: "gustavo-torres/reunion-de-2-horas",
-  /** Pack booking event (used when student has credits) */
   packBooking:
     (process.env.NEXT_PUBLIC_CAL_EVENT_SLUG as string | undefined) ??
     "gustavo-torres/reunion-de-1-hora",
@@ -85,7 +75,6 @@ export const COLORS = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Strips "https://cal.com/" prefix so the embed only receives "username/slug" */
 export function getCalLink(url?: string): string {
   return (url || "https://cal.com/gustavo-torres").replace(
     "https://cal.com/",
