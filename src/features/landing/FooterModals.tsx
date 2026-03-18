@@ -1,98 +1,31 @@
 "use client";
 
 /**
- * FooterModals — client island for the last 3 columns of the footer grid.
+ * FooterModals — client island for the last 2 columns of the footer grid.
  *
  * Renders:
- *   • Col 2 — Políticas: buttons that open policy modals
+ *   • Col 2 — Políticas: buttons that open policy modals (+ links to dedicated pages)
  *   • Col 3 — Ayuda: email link + AI assistant trigger
- *   • Col 4 — Cancelaciones: at-a-glance policy summary
- *   • The three modals themselves (portaled via fixed overlay)
+ *   • The three modals (full-screen overlay)
  *
- * Communicates with Chat.tsx via a custom DOM event ("open-chat")
- * so no prop drilling is needed across the RSC boundary.
+ * Policy content is imported from src/components/policy/PolicyContent.tsx —
+ * the single source of truth shared with the dedicated /privacidad and /terminos pages.
  */
 
 import { useState, useEffect, useCallback } from "react";
+import {
+  PrivacidadContent,
+  TerminosContent,
+  CancelacionContent,
+} from "@/components/policy/PolicyContent";
+
+const MODAL_META: Record<Exclude<ModalId, null>, { title: string; Content: () => React.JSX.Element; href?: string }> = {
+  cancelacion: { title: "Política de cancelación", Content: CancelacionContent },
+  terminos:    { title: "Términos de servicio",     Content: TerminosContent,    href: "/terminos" },
+  privacidad:  { title: "Política de privacidad",  Content: PrivacidadContent,  href: "/privacidad" },
+};
 
 type ModalId = "cancelacion" | "terminos" | "privacidad" | null;
-
-// ─── Modal content ────────────────────────────────────────────────────────────
-
-function CancelacionContent() {
-  return (
-    <>
-      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong> sin ningún coste.</p>
-      <h3>Clases de pack</h3>
-      <p>Si cancelas con suficiente antelación, el crédito se devuelve automáticamente a tu pack y queda disponible para reservar otra clase. Los créditos no caducan de forma anticipada por cancelar — simplemente vuelven a tu saldo.</p>
-      <h3>Sesiones individuales pagadas</h3>
-      <p>Si cancelas con al menos 2 horas de antelación, Gustavo tramitará el reembolso manualmente en un plazo de 1–3 días hábiles. Si la cancelación es con menos de 2 horas de antelación o no se presenta sin aviso previo, no se realizará reembolso.</p>
-      <h3>Validez de los packs</h3>
-      <p>Los packs tienen una validez de <strong>6 meses</strong> desde la fecha de compra. Los créditos no consumidos dentro de ese plazo caducan. Las cancelaciones dentro del período de validez siempre devuelven el crédito.</p>
-      <h3>Encuentro inicial gratuito</h3>
-      <p>El encuentro de 15 minutos es gratuito y se puede cancelar o reprogramar sin límite de tiempo previo.</p>
-      <h3>Cómo cancelar</h3>
-      <p>Usa el enlace de cancelación del email de confirmación de Cal.com, o escribe a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
-    </>
-  );
-}
-
-function TerminosContent() {
-  return (
-    <>
-      <p>Al reservar una sesión o adquirir un pack en este sitio, aceptas las condiciones que se describen a continuación.</p>
-      <h3>Servicio</h3>
-      <p>Gustavo Torres Guerrero ofrece clases particulares y consultoría en línea. Las sesiones se realizan por <strong>Google Meet</strong> u otra plataforma acordada.</p>
-      <h3>Pagos</h3>
-      <p>Los pagos se procesan de forma segura a través de <strong>Stripe</strong>. No se almacenan datos de tarjetas. Al pagar aceptas también los <a href="https://stripe.com/es/legal" target="_blank" rel="noopener noreferrer">términos de Stripe</a>.</p>
-      <h3>Packs de clases</h3>
-      <p>Los packs son de uso personal e intransferibles. Validez de 6 meses desde la compra. Los créditos no utilizados al vencimiento caducan sin derecho a reembolso.</p>
-      <h3>Cancelaciones y reembolsos</h3>
-      <p>Ver la <strong>Política de cancelación</strong> para los detalles completos.</p>
-      <h3>Responsabilidad</h3>
-      <p>Las clases están orientadas a la formación y apoyo académico. No se garantizan resultados académicos específicos.</p>
-      <h3>Contacto</h3>
-      <p>Dudas sobre estos términos: <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
-    </>
-  );
-}
-
-function PrivacidadContent() {
-  return (
-    <>
-      <p>Tu privacidad es importante. Esta política explica qué datos se recogen y cómo se usan.</p>
-      <h3>Datos que se recogen</h3>
-      <ul>
-        <li><strong>Nombre y email</strong> — al iniciar sesión con Google o al realizar una compra, para gestionar tu cuenta y tus reservas.</li>
-        <li><strong>Datos de pago</strong> — gestionados exclusivamente por Stripe. Nunca se almacenan datos de tarjeta.</li>
-        <li><strong>Créditos y reservas</strong> — el saldo de clases compradas se guarda en una base de datos segura asociada a tu email.</li>
-      </ul>
-      <h3>Cómo se usan</h3>
-      <ul>
-        <li>Para gestionar tu acceso, reservas y saldo de clases.</li>
-        <li>Para enviarte confirmaciones y recordatorios de clase (vía Cal.com).</li>
-        <li>No se venden datos a terceros ni se usan con fines publicitarios.</li>
-      </ul>
-      <h3>Servicios de terceros</h3>
-      <ul>
-        <li><strong>Google OAuth</strong> — inicio de sesión. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Política de Google</a>.</li>
-        <li><strong>Stripe</strong> — pagos. <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener noreferrer">Política de Stripe</a>.</li>
-        <li><strong>Cal.com</strong> — gestión de reservas y recordatorios.</li>
-        <li><strong>Upstash Redis</strong> — almacenamiento del saldo de créditos.</li>
-      </ul>
-      <h3>Tus derechos</h3>
-      <p>Puedes solicitar la eliminación de tus datos escribiendo a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
-      <h3>Cookies</h3>
-      <p>Solo se usan cookies estrictamente necesarias para la autenticación (NextAuth). Sin cookies de seguimiento ni publicidad.</p>
-    </>
-  );
-}
-
-const MODAL_META: Record<Exclude<ModalId, null>, { title: string; Content: () => React.JSX.Element }> = {
-  cancelacion: { title: "Política de cancelación", Content: CancelacionContent },
-  terminos:    { title: "Términos de servicio",     Content: TerminosContent },
-  privacidad:  { title: "Política de privacidad",   Content: PrivacidadContent },
-};
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
@@ -194,9 +127,40 @@ export default function FooterModals() {
       {/* ── Col 2: Políticas ── */}
       <div>
         <p className="footer-col-label">Políticas</p>
-        <button className="footer-link" onClick={() => setOpenModal("cancelacion")}>Política de cancelación</button>
-        <button className="footer-link" onClick={() => setOpenModal("terminos")}>Términos de servicio</button>
-        <button className="footer-link" onClick={() => setOpenModal("privacidad")}>Privacidad</button>
+        {(["cancelacion", "terminos", "privacidad"] as Exclude<ModalId, null>[]).map((id) => {
+          const { title, href } = MODAL_META[id];
+          return (
+            <div key={id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <button className="footer-link" onClick={() => setOpenModal(id)} style={{ width: "auto", flex: 1 }}>
+                {title}
+              </button>
+              {href && (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Abrir ${title} en página propia`}
+                  title="Abrir en página propia"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    color: "var(--text-dim)",
+                    flexShrink: 0,
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-muted)")}
+                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "var(--text-dim)")}
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                    <polyline points="15 3 21 3 21 9"/>
+                    <line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* ── Col 3: Ayuda ── */}
