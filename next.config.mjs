@@ -14,10 +14,9 @@ const nextConfig = {
       ? [
           // Dev: relaxed — allows Next.js HMR, webpack eval, etc.
           "default-src 'self'",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cal.com https://*.cal.com",
-          "frame-src https://cal.com https://*.cal.com https://calendar.google.com",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          "connect-src 'self' ws://localhost:* wss://localhost:* https://generativelanguage.googleapis.com https://*.cal.com https://*.upstash.io",
+          "connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io",
           "style-src 'self' 'unsafe-inline'",
           "object-src 'none'",
         ]
@@ -27,10 +26,9 @@ const nextConfig = {
           // Removing it breaks the app. A nonce-based alternative would
           // require a custom server — not viable on Vercel's edge runtime.
           "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' https://cal.com https://*.cal.com",
-          "frame-src https://cal.com https://*.cal.com https://calendar.google.com",
+          "script-src 'self' 'unsafe-inline'",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          "connect-src 'self' https://generativelanguage.googleapis.com https://*.cal.com https://*.upstash.io",
+          "connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io",
           "style-src 'self' 'unsafe-inline'",
           "object-src 'none'",
           "base-uri 'self'",
@@ -50,11 +48,6 @@ const nextConfig = {
         ],
       },
     ];
-  },
-
-  // Only expose env vars that must be public (used in browser-side code).
-  env: {
-    NEXT_PUBLIC_CAL_EVENT_SLUG: process.env.NEXT_PUBLIC_CAL_EVENT_SLUG,
   },
 };
 

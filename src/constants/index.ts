@@ -38,17 +38,6 @@ export const PACK_SIZES = [5, 10] as const satisfies readonly PackSize[];
 
 export const PACK_VALIDITY_MONTHS = 6;
 
-// ─── Cal.com event slugs ──────────────────────────────────────────────────────
-
-export const CAL_EVENTS = {
-  free15min: "gustavo-torres/15min",
-  session1h: "gustavo-torres/reunion-de-1-hora",
-  session2h: "gustavo-torres/reunion-de-2-horas",
-  packBooking:
-    (process.env.NEXT_PUBLIC_CAL_EVENT_SLUG as string | undefined) ??
-    "gustavo-torres/reunion-de-1-hora",
-} as const;
-
 // ─── Design tokens (kept in sync with globals.css) ───────────────────────────
 
 export const COLORS = {
@@ -73,11 +62,3 @@ export const COLORS = {
   successBorder: "rgba(61,220,132,0.27)",
 } as const;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-export function getCalLink(url?: string): string {
-  return (url || "https://cal.com/gustavo-torres").replace(
-    "https://cal.com/",
-    ""
-  );
-}

@@ -1,5 +1,21 @@
 "use client";
 
+/**
+ * InteractiveShell
+ *
+ * This is the **only** client boundary on the landing page.
+ * It owns all booking/auth state and renders:
+ *   - SignInGate modal
+ *   - PackModal
+ *   - SessionCard list (interactive buttons only)
+ *   - PackCard list (interactive buttons only)
+ *   - AuthCorner (fixed top-right)
+ *   - Chat widget (fixed bottom-right)
+ *
+ * Everything above (HeroSection, TrustBar) is rendered as RSC by page.tsx
+ * and never touches this bundle.
+ */
+
 import { useState, useEffect } from "react";
 import { useUserSession } from "@/hooks/useUserSession";
 import PackModal from "@/components/PackModal";
@@ -9,7 +25,7 @@ import SingleSessionBooking from "@/components/SingleSessionBooking";
 import AuthCorner from "@/components/AuthCorner";
 import Chat from "@/components/Chat";
 import { CreditsPill } from "@/components/ui";
-import { COLORS, PACK_SIZES, CAL_EVENTS } from "@/constants";
+import { COLORS, PACK_SIZES } from "@/constants";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
 import type { PackSize, StudentInfo } from "@/types";
@@ -149,7 +165,6 @@ export default function InteractiveShell() {
               name: packSession.name,
               credits: packSession.credits,
             }}
-            calLink={CAL_EVENTS.packBooking}
             onCreditsUpdated={(remaining: number) => {
               updateCredits(remaining);
               if (remaining <= 0) setShowPackBooking(false);

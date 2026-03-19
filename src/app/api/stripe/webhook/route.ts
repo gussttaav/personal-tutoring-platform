@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { addOrUpdateStudent } from "@/lib/kv";
+import { createCalendarEvent, createCancellationToken } from "@/lib/calendar";
+import {
+  sendConfirmationEmail,
+  sendNewBookingNotificationEmail,
+} from "@/lib/email";
 
 function getStripe() {
   const key = process.env.STRIPE_SECRET_KEY;
@@ -10,22 +15,15 @@ function getStripe() {
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
-  const sig = req.headers.get("stripe-signature");
+  const sig  = req.headers.get("stripe-signature");
 
   if (!sig) {
-    return NextResponse.json(
-      { error: "Missing stripe-signature header" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Missing stripe-signature header" }, { status: 400 });
   }
 
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
-    console.error("[webhook] STRIPE_WEBHOOK_SECRET is not set");
-    return NextResponse.json(
-      { error: "Server configuration error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
   }
 
   let event: Stripe.Event;
@@ -38,32 +36,95 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-
-    const email = session.metadata?.student_email ?? session.customer_email ?? "";
-    const name = session.metadata?.student_name ?? "";
-    const packSize = parseInt(session.metadata?.pack_size ?? "0", 10);
+    const session       = event.data.object as Stripe.Checkout.Session;
+    const email         = session.metadata?.student_email ?? session.customer_email ?? "";
+    const name          = session.metadata?.student_name ?? "";
+    const checkoutType  = session.metadata?.checkout_type ?? "pack";
     const stripeSessionId = session.id;
 
-    if (!email || !packSize) {
-      console.error("[webhook] Missing metadata:", { email, name, packSize });
-      return NextResponse.json({ received: true, warning: "Missing metadata" });
+    if (!email) {
+      console.error("[webhook] Missing email in metadata");
+      return NextResponse.json({ received: true, warning: "Missing email" });
     }
 
-    try {
-      // addOrUpdateStudent is idempotent — safe for Stripe retries
-      await addOrUpdateStudent(
-        email,
-        name,
-        packSize,
-        `Pack ${packSize} clases`,
-        stripeSessionId
-      );
-      console.info(`[webhook] Credits written to KV: ${email} +${packSize} (${stripeSessionId})`);
-    } catch (err) {
-      console.error("[webhook] Error writing to KV:", err);
-      // Return 500 so Stripe will retry
-      return NextResponse.json({ error: "KV write failed" }, { status: 500 });
+    // ── Pack payment ────────────────────────────────────────────────────────
+    if (checkoutType === "pack") {
+      const packSize = parseInt(session.metadata?.pack_size ?? "0", 10);
+      if (!packSize) {
+        return NextResponse.json({ received: true, warning: "Missing pack_size" });
+      }
+      try {
+        await addOrUpdateStudent(email, name, packSize, `Pack ${packSize} clases`, stripeSessionId);
+        console.info(`[webhook] Pack credits written: ${email} +${packSize}`);
+      } catch (err) {
+        console.error("[webhook] KV write failed:", err);
+        return NextResponse.json({ error: "KV write failed" }, { status: 500 });
+      }
+    }
+
+    // ── Single session payment ───────────────────────────────────────────────
+    if (checkoutType === "single") {
+      const startIso = session.metadata?.start_iso;
+      const endIso   = session.metadata?.end_iso;
+      const duration = session.metadata?.session_duration ?? "1h";
+
+      if (!startIso || !endIso) {
+        console.error("[webhook] Missing slot timing in metadata");
+        return NextResponse.json({ received: true, warning: "Missing slot timing" });
+      }
+
+      const SESSION_LABELS: Record<string, string> = {
+        "1h": "Sesión individual · 1 hora",
+        "2h": "Sesión individual · 2 horas",
+      };
+      const sessionLabel = SESSION_LABELS[duration] ?? "Sesión individual";
+
+      try {
+        const { eventId, meetLink } = await createCalendarEvent({
+          summary:       `${sessionLabel} — ${name}`,
+          description:   `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
+          startIso,
+          endIso,
+          attendeeEmail: email,
+          attendeeName:  name,
+        });
+
+        const cancelToken = await createCancellationToken({
+          eventId,
+          email,
+          name,
+          sessionType: duration === "1h" ? "session1h" : "session2h",
+          startsAt:    startIso,
+          endsAt:      endIso,
+        });
+
+        // Send emails non-blocking
+        Promise.all([
+          sendConfirmationEmail({
+            to:           email,
+            studentName:  name,
+            sessionLabel,
+            startIso,
+            endIso,
+            meetLink,
+            cancelToken,
+          }),
+          sendNewBookingNotificationEmail({
+            studentEmail: email,
+            studentName:  name,
+            sessionLabel,
+            startIso,
+            endIso,
+            meetLink,
+          }),
+        ]).catch(err => console.error("[webhook] Email send failed:", err));
+
+        console.info(`[webhook] Single session booked: ${email} ${startIso}`);
+      } catch (err) {
+        console.error("[webhook] Calendar event creation failed:", err);
+        // Return 500 so Stripe retries — idempotency handled by the calendar API
+        return NextResponse.json({ error: "Calendar event creation failed" }, { status: 500 });
+      }
     }
   }
 
