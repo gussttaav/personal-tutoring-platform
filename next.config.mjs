@@ -17,17 +17,20 @@ const nextConfig = {
           "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cal.com https://*.cal.com",
           "frame-src https://cal.com https://*.cal.com https://calendar.google.com",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          "connect-src 'self' ws://localhost:* wss://localhost:* https://generativelanguage.googleapis.com https://*.cal.com  ",
+          "connect-src 'self' ws://localhost:* wss://localhost:* https://generativelanguage.googleapis.com https://*.cal.com https://*.upstash.io",
           "style-src 'self' 'unsafe-inline'",
           "object-src 'none'",
         ]
       : [
-          // Production: strict
+          // Production
+          // 'unsafe-inline' is required for Next.js hydration scripts.
+          // Removing it breaks the app. A nonce-based alternative would
+          // require a custom server — not viable on Vercel's edge runtime.
           "default-src 'self'",
-          "script-src 'self' https://cal.com https://*.cal.com",
+          "script-src 'self' 'unsafe-inline' https://cal.com https://*.cal.com",
           "frame-src https://cal.com https://*.cal.com https://calendar.google.com",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          "connect-src 'self' https://generativelanguage.googleapis.com https://*.cal.com",
+          "connect-src 'self' https://generativelanguage.googleapis.com https://*.cal.com https://*.upstash.io",
           "style-src 'self' 'unsafe-inline'",
           "object-src 'none'",
           "base-uri 'self'",
@@ -38,18 +41,12 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-XSS-Protection", value: "1; mode=block" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
-          },
-          {
-            key: "Content-Security-Policy",
-            value: csp.join("; "),
-          },
+          { key: "X-Content-Type-Options",   value: "nosniff" },
+          { key: "X-Frame-Options",           value: "DENY" },
+          { key: "X-XSS-Protection",          value: "1; mode=block" },
+          { key: "Referrer-Policy",           value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy",        value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Content-Security-Policy",   value: csp.join("; ") },
         ],
       },
     ];
