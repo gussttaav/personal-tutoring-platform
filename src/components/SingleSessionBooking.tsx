@@ -43,9 +43,11 @@ export default function SingleSessionBooking({
   const router = useRouter();
   const cfg = SESSION_CONFIGS[sessionType];
 
-  const [phase,    setPhase]    = useState<Phase>("picking");
-  const [errorMsg, setErrorMsg] = useState("");
-  const [selected, setSelected] = useState<SelectedSlot | null>(null);
+  const [phase,       setPhase]       = useState<Phase>("picking");
+  const [errorMsg,    setErrorMsg]    = useState("");
+  const [selected,    setSelected]    = useState<SelectedSlot | null>(null);
+  const [meetLink,    setMeetLink]    = useState("");
+  const [emailFailed, setEmailFailed] = useState(false);
 
   const handleSlotSelected = useCallback(async (slot: SelectedSlot) => {
     setSelected(slot);
@@ -66,6 +68,8 @@ export default function SingleSessionBooking({
         });
         const data = await res.json();
         if (!res.ok) throw new ApiError(data.error ?? "Error al reservar", res.status);
+        setMeetLink(data.meetLink ?? "");
+        setEmailFailed(data.emailFailed === true);
         setPhase("success");
       } catch (err) {
         setErrorMsg(err instanceof ApiError ? err.message : "Error al reservar.");
@@ -112,9 +116,34 @@ export default function SingleSessionBooking({
             <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
               {selected?.dateLabel} · {selected?.label}
             </p>
-            <p style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 20 }}>
-              Recibirás el enlace de la reunión y la confirmación por email.
-            </p>
+
+            {emailFailed ? (
+              <div style={{
+                background: "rgba(61,220,132,0.08)", border: "1px solid rgba(61,220,132,0.25)",
+                borderRadius: 12, padding: "16px 20px", marginBottom: 20, textAlign: "left",
+              }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--green)", marginBottom: 8 }}>
+                  ⚠️ No pudimos enviarte el email de confirmación
+                </p>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
+                  Tu encuentro está reservado. Guarda el enlace de Google Meet ahora:
+                </p>
+                <a href={meetLink} target="_blank" rel="noopener noreferrer" style={{
+                  display: "block", wordBreak: "break-all",
+                  fontSize: 13, color: "var(--green)", textDecoration: "underline",
+                  marginBottom: 8,
+                }}>
+                  {meetLink}
+                </a>
+                <p style={{ fontSize: 11, color: "var(--text-dim)", margin: 0 }}>
+                  Si necesitas ayuda escribe a contacto@gustavoai.dev
+                </p>
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 20 }}>
+                Recibirás el enlace de Google Meet y la confirmación por email.
+              </p>
+            )}
 
             <button onClick={onBack} style={secondaryBtnStyle}>Volver al inicio</button>
           </div>

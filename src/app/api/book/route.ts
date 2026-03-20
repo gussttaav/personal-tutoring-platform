@@ -117,30 +117,64 @@ export async function POST(req: NextRequest) {
     endsAt:   endIso,
   });
 
-  // ── Send emails (non-blocking) ────────────────────────────────────────────
-  Promise.all([
-    sendConfirmationEmail({
-      to:           email,
-      studentName:  name,
-      sessionLabel,
-      startIso,
-      endIso,
-      meetLink,
-      cancelToken,
-      note:         note ?? null,
-      studentTz:    timezone ?? null,
-      sessionType,
-    }),
-    sendNewBookingNotificationEmail({
-      studentEmail: email,
-      studentName:  name,
-      sessionLabel,
-      startIso,
-      endIso,
-      meetLink,
-      note:         note ?? null,
-    }),
-  ]).catch((err) => console.error("[book] Email send failed (non-fatal):", err));
+  // ── Send emails — with retry ──────────────────────────────────────────────
+  // Awaited before returning so Vercel doesn't kill the connection mid-send.
+  // Retries up to 3 times with exponential backoff to handle transient TLS
+  // errors (ECONNRESET) that occur on Vercel serverless cold starts.
+  // If all retries fail, the booking is still confirmed but emailFailed=true
+  // is returned so the client can show the Meet link directly.
 
-  return NextResponse.json({ ok: true, eventId, meetLink, cancelToken });
+  async function sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await fn();
+        return true;
+      } catch (err) {
+        console.warn(`[book] ${label} attempt ${attempt}/3 failed:`, (err as Error).message);
+        if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 500));
+      }
+    }
+    console.error(`[book] ${label} failed after 3 attempts`);
+    return false;
+  }
+
+  const [confirmSent] = await Promise.all([
+    sendWithRetry(
+      () => sendConfirmationEmail({
+        to:           email,
+        studentName:  name,
+        sessionLabel,
+        startIso,
+        endIso,
+        meetLink,
+        cancelToken,
+        note:         note ?? null,
+        studentTz:    timezone ?? null,
+        sessionType,
+      }),
+      "confirmation email"
+    ),
+    sendWithRetry(
+      () => sendNewBookingNotificationEmail({
+        studentEmail: email,
+        studentName:  name,
+        sessionLabel,
+        startIso,
+        endIso,
+        meetLink,
+        note:         note ?? null,
+      }),
+      "notification email"
+    ),
+  ]);
+
+  return NextResponse.json({
+    ok:          true,
+    eventId,
+    meetLink,
+    cancelToken,
+    // If the confirmation email failed after retries, the client shows
+    // the Meet link directly so the student is never left without it.
+    emailFailed: !confirmSent,
+  });
 }

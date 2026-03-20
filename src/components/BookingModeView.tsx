@@ -35,6 +35,7 @@ export default function BookingModeView({
   const [errMsg,     setErrMsg]     = useState("");
   const [meetLink,   setMeetLink]   = useState("");
   const [selected,   setSelected]   = useState<SelectedSlot | null>(null);
+  const [emailFailed, setEmailFailed] = useState(false);
 
   const handleSlotSelected = useCallback(async (slot: SelectedSlot) => {
     setSelected(slot);
@@ -60,6 +61,8 @@ export default function BookingModeView({
       const newRemaining = credData.credits ?? (remaining - 1);
 
       setRemaining(newRemaining);
+      setMeetLink(data.meetLink ?? "");
+      setEmailFailed(data.emailFailed === true);
       setPhase("success");
       onCreditsUpdated(newRemaining);
     } catch (err) {
@@ -72,6 +75,7 @@ export default function BookingModeView({
     setPhase("idle");
     setSelected(null);
     setMeetLink("");
+    setEmailFailed(false);
   }
 
   const packSize    = student.credits; // approximate — shown in sidebar
@@ -90,12 +94,38 @@ export default function BookingModeView({
             }}>✓</div>
 
             <h2 style={{ fontSize: 22, fontWeight: 500, color: "var(--text)", marginBottom: 6 }}>¡Clase reservada!</h2>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
               {selected?.dateLabel} · {selected?.label}
             </p>
-            <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
-              Recibirás el enlace de Google Meet y la confirmación por email.
-            </p>
+
+            {emailFailed ? (
+              // Email delivery failed — show Meet link directly so student is never blocked
+              <div style={{
+                background: "rgba(61,220,132,0.08)", border: "1px solid rgba(61,220,132,0.25)",
+                borderRadius: 12, padding: "16px 20px", marginBottom: 20, textAlign: "left",
+              }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--green)", marginBottom: 8 }}>
+                  ⚠️ No pudimos enviarte el email de confirmación
+                </p>
+                <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>
+                  Tu clase está reservada. Guarda el enlace de Google Meet ahora:
+                </p>
+                <a href={meetLink} target="_blank" rel="noopener noreferrer" style={{
+                  display: "block", wordBreak: "break-all",
+                  fontSize: 13, color: "var(--green)", textDecoration: "underline",
+                  marginBottom: 8,
+                }}>
+                  {meetLink}
+                </a>
+                <p style={{ fontSize: 11, color: "var(--text-dim)", margin: 0 }}>
+                  Si necesitas el enlace de cancelación, escribe a contacto@gustavoai.dev
+                </p>
+              </div>
+            ) : (
+              <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>
+                Recibirás el enlace de Google Meet y la confirmación por email.
+              </p>
+            )}
 
             <div style={{
               background: "var(--surface)", border: "1px solid var(--border)",
@@ -106,9 +136,11 @@ export default function BookingModeView({
                   <p style={{ fontSize: 14, fontWeight: 500, color: "var(--green)", marginBottom: 4 }}>
                     Te quedan {remaining} clase{remaining !== 1 ? "s" : ""}
                   </p>
-                  <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                    Recibirás el enlace de cancelación por email.
-                  </p>
+                  {!emailFailed && (
+                    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      Recibirás el enlace de cancelación por email.
+                    </p>
+                  )}
                 </>
               ) : (
                 <p style={{ fontSize: 14, fontWeight: 500, color: COLORS.warning }}>
