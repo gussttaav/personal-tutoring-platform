@@ -80,12 +80,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const result = await createCalendarEvent({
-      summary:       `${sessionLabel} — ${name}`,
-      description:   `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
+      summary:     `${sessionLabel} — ${name}`,
+      description: `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
       startIso,
       endIso,
-      attendeeEmail: email,
-      attendeeName:  name,
     });
     eventId  = result.eventId;
     meetLink = result.meetLink;

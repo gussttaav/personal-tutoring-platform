@@ -14,7 +14,7 @@ const nextConfig = {
       ? [
           // Dev: relaxed — allows Next.js HMR, webpack eval, etc.
           "default-src 'self'",
-          "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
           "connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io",
           "style-src 'self' 'unsafe-inline'",
@@ -26,7 +26,7 @@ const nextConfig = {
           // Removing it breaks the app. A nonce-based alternative would
           // require a custom server — not viable on Vercel's edge runtime.
           "default-src 'self'",
-          "script-src 'self' 'unsafe-inline'",
+          "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
           "connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io",
           "style-src 'self' 'unsafe-inline'",

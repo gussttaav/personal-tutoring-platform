@@ -175,60 +175,52 @@ export async function getAvailableSlots(
       });
     }
 
-    // Advance by 1 hour
-    cursor = new Date(cursor.getTime() + 60 * 60_000);
+    // Advance by the session duration (not always 1h)
+    cursor = new Date(cursor.getTime() + durationMinutes * 60_000);
   }
 
   return slots;
 }
 
-/**
- * Creates a Google Calendar event with a Google Meet link.
- * Returns the created event ID and Meet link.
- */
+
 export async function createCalendarEvent(params: {
   summary: string;
   description: string;
   startIso: string;
   endIso: string;
-  attendeeEmail: string;
-  attendeeName: string;
 }): Promise<{ eventId: string; meetLink: string }> {
+  // Use the static permanent Meet room configured in GOOGLE_MEET_URL env var.
+  // Service accounts cannot generate Meet links on personal Gmail calendars
+  // regardless of the API used — a fixed room is the correct approach for a
+  // solo tutor (one stable link, always available, you control access).
+  const meetLink = process.env.GOOGLE_MEET_URL ?? "";
+
   const calendar = getCalendar();
 
   const event = await calendar.events.insert({
-    calendarId: CALENDAR_ID,
-    conferenceDataVersion: 1,  // required to auto-generate Meet link
-    sendUpdates: "none",       // we send our own email via Resend
+    calendarId:  CALENDAR_ID,
+    sendUpdates: "none",
     requestBody: {
-      summary: params.summary,
-      description: params.description,
+      summary:     params.summary,
+      description: meetLink
+        ? `${params.description}\n\nGoogle Meet: ${meetLink}`
+        : params.description,
+      location: meetLink || undefined,
       start: { dateTime: params.startIso, timeZone: SCHEDULE.timezone },
       end:   { dateTime: params.endIso,   timeZone: SCHEDULE.timezone },
-      attendees: [
-        { email: params.attendeeEmail, displayName: params.attendeeName },
-      ],
-      conferenceData: {
-        createRequest: {
-          requestId: crypto.randomUUID(),
-          conferenceSolutionKey: { type: "hangoutsMeet" },
-        },
-      },
       reminders: {
         useDefault: false,
         overrides: [
-          { method: "email",  minutes: 60 * 24 },  // 24h before
+          { method: "email",  minutes: 60 * 24 },
           { method: "popup",  minutes: 30 },
         ],
       },
     },
   });
 
-  const eventId  = event.data.id!;
-  const meetLink = event.data.conferenceData?.entryPoints?.[0]?.uri ?? "";
-
-  return { eventId, meetLink };
+  return { eventId: event.data.id!, meetLink };
 }
+
 
 /**
  * Deletes a Google Calendar event by ID.

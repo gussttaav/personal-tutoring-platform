@@ -81,12 +81,10 @@ export async function POST(req: NextRequest) {
 
       try {
         const { eventId, meetLink } = await createCalendarEvent({
-          summary:       `${sessionLabel} — ${name}`,
-          description:   `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
+          summary:     `${sessionLabel} — ${name}`,
+          description: `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
           startIso,
           endIso,
-          attendeeEmail: email,
-          attendeeName:  name,
         });
 
         const cancelToken = await createCancellationToken({
@@ -98,26 +96,31 @@ export async function POST(req: NextRequest) {
           endsAt:      endIso,
         });
 
-        // Send emails non-blocking
-        Promise.all([
-          sendConfirmationEmail({
-            to:           email,
-            studentName:  name,
-            sessionLabel,
-            startIso,
-            endIso,
-            meetLink,
-            cancelToken,
-          }),
-          sendNewBookingNotificationEmail({
-            studentEmail: email,
-            studentName:  name,
-            sessionLabel,
-            startIso,
-            endIso,
-            meetLink,
-          }),
-        ]).catch(err => console.error("[webhook] Email send failed:", err));
+        // Send emails — awaited so errors surface in Vercel logs
+        try {
+          await Promise.all([
+            sendConfirmationEmail({
+              to:           email,
+              studentName:  name,
+              sessionLabel,
+              startIso,
+              endIso,
+              meetLink,
+              cancelToken,
+            }),
+            sendNewBookingNotificationEmail({
+              studentEmail: email,
+              studentName:  name,
+              sessionLabel,
+              startIso,
+              endIso,
+              meetLink,
+            }),
+          ]);
+        } catch (emailErr) {
+          // Log but don't return 500 — booking is already created
+          console.error("[webhook] Email send failed:", emailErr);
+        }
 
         console.info(`[webhook] Single session booked: ${email} ${startIso}`);
       } catch (err) {

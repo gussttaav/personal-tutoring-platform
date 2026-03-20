@@ -9,8 +9,10 @@
  */
 
 const RESEND_API_URL = "https://api.resend.com/emails";
-const FROM           = "Gustavo Torres <contacto@gustavoai.dev>";
-const BASE_URL       = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
+// Use RESEND_FROM env var if set (requires verified domain in Resend dashboard).
+// Falls back to Resend's default sender which works without domain verification.
+const FROM    = process.env.RESEND_FROM ?? "Gustavo Torres <onboarding@resend.dev>";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
 
 async function send(payload: {
   to: string;
@@ -34,7 +36,13 @@ async function send(payload: {
 
   if (!res.ok) {
     const body = await res.text();
-    console.error("[email] Resend error:", res.status, body);
+    // Log clearly — Resend returns 403 if the FROM domain isn't verified
+    console.error(`[email] Resend error ${res.status}: ${body}`);
+    console.error(`[email] FROM address used: ${FROM}`);
+    console.error(`[email] If 403: verify domain in Resend dashboard or set RESEND_FROM=onboarding@resend.dev`);
+  } else {
+    const data = await res.json();
+    console.info(`[email] Sent to ${payload.to} — id: ${(data as { id?: string }).id}`);
   }
 }
 
@@ -49,6 +57,7 @@ const STYLES = `
   .label { font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: #4a4f54; margin-bottom: 4px; }
   .value { font-size: 15px; color: #e8e9ea; margin-bottom: 20px; }
   .meet-btn { display: inline-block; padding: 12px 24px; background: #3ddc84; color: #0d0f10; font-size: 14px; font-weight: 500; text-decoration: none; border-radius: 8px; }
+  .cal-btn  { display: inline-block; padding: 10px 20px; background: transparent; color: #7a7f84; font-size: 13px; text-decoration: none; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-top: 10px; }
   .divider { height: 1px; background: rgba(255,255,255,0.07); margin: 24px 0; }
   .footer { font-size: 12px; color: #4a4f54; text-align: center; margin-top: 24px; }
   .footer a { color: #3ddc84; text-decoration: none; }
@@ -58,20 +67,40 @@ const STYLES = `
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("es-ES", {
     timeZone: "Europe/Madrid",
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 }
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString("es-ES", {
-    timeZone: "Europe/Madrid",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
+    timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hour12: false,
   });
+}
+
+/**
+ * Generates a Google Calendar "Add to Calendar" URL.
+ * Opens a pre-filled event creation page in Google Calendar.
+ */
+function googleCalendarUrl(params: {
+  title: string;
+  startIso: string;
+  endIso: string;
+  description: string;
+  location: string;
+}): string {
+  // Google Calendar expects dates in YYYYMMDDTHHMMSSZ format
+  const fmt = (iso: string) =>
+    iso.replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+
+  const qs = new URLSearchParams({
+    action:   "TEMPLATE",
+    text:     params.title,
+    dates:    `${fmt(params.startIso)}/${fmt(params.endIso)}`,
+    details:  params.description,
+    location: params.location,
+  });
+
+  return `https://calendar.google.com/calendar/render?${qs.toString()}`;
 }
 
 // ─── Confirmation email ───────────────────────────────────────────────────────
@@ -85,10 +114,17 @@ export async function sendConfirmationEmail(params: {
   meetLink: string;
   cancelToken: string;
 }): Promise<void> {
-  const cancelUrl  = `${BASE_URL}/cancelar?token=${params.cancelToken}`;
-  const dateLabel  = formatDate(params.startIso);
-  const startLabel = formatTime(params.startIso);
-  const endLabel   = formatTime(params.endIso);
+  const cancelUrl     = `${BASE_URL}/cancelar?token=${params.cancelToken}`;
+  const dateLabel     = formatDate(params.startIso);
+  const startLabel    = formatTime(params.startIso);
+  const endLabel      = formatTime(params.endIso);
+  const addToCalUrl   = googleCalendarUrl({
+    title:       `${params.sessionLabel} con Gustavo Torres`,
+    startIso:    params.startIso,
+    endIso:      params.endIso,
+    description: `Enlace Google Meet: ${params.meetLink}\n\nClase con Gustavo Torres Guerrero — gustavoai.dev`,
+    location:    params.meetLink,
+  });
 
   await send({
     to: params.to,
@@ -112,6 +148,8 @@ export async function sendConfirmationEmail(params: {
           <div class="label">Enlace de Google Meet</div>
           <div style="margin-bottom: 24px;">
             <a class="meet-btn" href="${params.meetLink}">Unirse a Google Meet →</a>
+            <br>
+            <a class="cal-btn" href="${addToCalUrl}" target="_blank">📅 Añadir a Google Calendar</a>
           </div>
 
           <div class="divider"></div>

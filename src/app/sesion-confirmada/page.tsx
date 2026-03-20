@@ -13,14 +13,14 @@ const DURATION_LABELS: Record<string, string> = {
 };
 
 function SesionConfirmadaContent() {
-  const params = useSearchParams();
-  const router = useRouter();
+  const params    = useSearchParams();
+  const router    = useRouter();
   const sessionId = params.get("session_id");
 
   type PageState = "loading" | "success" | "error";
-  const [state, setState] = useState<PageState>("loading");
-  const [duration, setDuration] = useState<string>("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [state,     setState]    = useState<PageState>("loading");
+  const [duration,  setDuration] = useState<string>("");
+  const [errorMsg,  setErrorMsg] = useState("");
   const [countdown, setCountdown] = useState(REDIRECT_SECONDS);
 
   // Step 1 — verify the Stripe session server-side
@@ -49,22 +49,23 @@ function SesionConfirmadaContent() {
       });
   }, [sessionId]);
 
-  // Step 2 — countdown redirect once success is confirmed
+  // Step 2 — tick the countdown
   useEffect(() => {
     if (state !== "success") return;
 
     const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          router.push("/");
-        }
-        return prev - 1;
-      });
+      setCountdown((prev) => Math.max(0, prev - 1));
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [state, router]);
+  }, [state]);
+
+  // Step 3 — redirect when countdown reaches 0 (separate effect, never called during render)
+  useEffect(() => {
+    if (state === "success" && countdown === 0) {
+      router.push("/");
+    }
+  }, [state, countdown, router]);
 
   if (state === "loading") {
     return (
