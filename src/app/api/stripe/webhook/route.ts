@@ -107,6 +107,9 @@ export async function POST(req: NextRequest) {
               endIso,
               meetLink,
               cancelToken,
+              note:         null,               // No note from Stripe session
+              studentTz:    null,               // Timezone not captured at checkout
+              sessionType:  duration === "1h" ? "session1h" : "session2h",
             }),
             sendNewBookingNotificationEmail({
               studentEmail: email,
@@ -115,6 +118,7 @@ export async function POST(req: NextRequest) {
               startIso,
               endIso,
               meetLink,
+              note:         null,
             }),
           ]);
         } catch (emailErr) {
