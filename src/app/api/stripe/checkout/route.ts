@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { checkoutRatelimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/ip-utils"; // FIX (SEC-01)
 
 // ─── Zod schemas ──────────────────────────────────────────────────────────────
 
@@ -56,7 +57,10 @@ function getSingleSessionPriceId(duration: "1h" | "2h"): string {
 
 export async function POST(req: NextRequest) {
   // ── Rate limit ────────────────────────────────────────────────────────────
-  const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  // FIX (SEC-01): Use sanitized IP — x-forwarded-for can be a comma-separated
+  // list; taking the raw header value as the rate-limit key lets an attacker
+  // craft unique strings to bypass per-IP limits.
+  const ip = getClientIp(req);
   const { success } = await checkoutRatelimit.limit(ip);
   if (!success) {
     return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
@@ -101,10 +105,10 @@ export async function POST(req: NextRequest) {
         customer_email: email,
         line_items:     [{ price: getPackPriceId(body.packSize), quantity: 1 }],
         metadata: {
-          student_name:    name,
-          student_email:   email,
-          pack_size:       String(body.packSize),
-          checkout_type:   "pack",
+          student_name:  name,
+          student_email: email,
+          pack_size:     String(body.packSize),
+          checkout_type: "pack",
         },
         success_url: `${baseUrl}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url:  `${baseUrl}/?cancelled=true`,
@@ -119,13 +123,13 @@ export async function POST(req: NextRequest) {
       customer_email: email,
       line_items:     [{ price: getSingleSessionPriceId(body.duration), quantity: 1 }],
       metadata: {
-        student_name:      name,
-        student_email:     email,
-        checkout_type:     "single",
-        session_duration:  body.duration,
-        start_iso:         body.startIso,
-        end_iso:           body.endIso,
-        reschedule_token:  body.rescheduleToken ?? "",
+        student_name:     name,
+        student_email:    email,
+        checkout_type:    "single",
+        session_duration: body.duration,
+        start_iso:        body.startIso,
+        end_iso:          body.endIso,
+        reschedule_token: body.rescheduleToken ?? "",
       },
       success_url: `${baseUrl}/sesion-confirmada?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:  `${baseUrl}/?cancelled=true`,

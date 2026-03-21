@@ -3,10 +3,14 @@ import { auth } from "@/auth";
 import { getCredits } from "@/lib/kv";
 import { sanitizeEmail } from "@/lib/validation";
 import { creditsRatelimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/ip-utils"; // FIX (SEC-01)
 
 export async function GET(req: NextRequest) {
   // ── Rate limit ────────────────────────────────────────────────────────────
-  const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  // FIX (SEC-01): Use sanitized IP — x-forwarded-for can be a comma-separated
+  // list; taking the raw header value as the rate-limit key lets an attacker
+  // craft unique strings to bypass per-IP limits.
+  const ip = getClientIp(req);
   const { success } = await creditsRatelimit.limit(ip);
   if (!success) {
     return NextResponse.json(
@@ -30,8 +34,8 @@ export async function GET(req: NextRequest) {
   try {
     const result = await getCredits(email);
     return NextResponse.json({
-      credits: result?.credits ?? 0,
-      name: result?.name ?? "",
+      credits:  result?.credits ?? 0,
+      name:     result?.name ?? "",
       packSize: result?.packSize ?? null,
     });
   } catch (err) {

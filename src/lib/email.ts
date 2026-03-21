@@ -1,10 +1,33 @@
 /**
  * lib/email.ts — all transactional emails via Resend.
+ *
+ * SECURITY FIX (CRIT-04): All user-controlled values (studentName, note,
+ * studentEmail, sessionLabel) are now passed through escapeHtml() before
+ * being interpolated into HTML strings. Without this, a student whose name
+ * contained HTML tags could execute arbitrary JavaScript in the recipient's
+ * email client (stored XSS).
  */
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const FROM     = process.env.RESEND_FROM ?? "Gustavo Torres <onboarding@resend.dev>";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
+
+// ─── Security: HTML escaping ──────────────────────────────────────────────────
+
+/**
+ * Escapes the five characters that are dangerous in HTML contexts.
+ * Apply to every user-supplied string before interpolating into email HTML.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
+// ─── Internal send ────────────────────────────────────────────────────────────
 
 async function send(payload: { to: string; subject: string; html: string }): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -59,7 +82,7 @@ function formatTimeInTz(iso: string, tz: string): string {
   });
 }
 
-const ADMIN_TZ    = "Europe/Madrid";
+const ADMIN_TZ = "Europe/Madrid";
 
 function googleCalendarUrl(params: {
   title: string; startIso: string; endIso: string;
@@ -95,6 +118,12 @@ export async function sendConfirmationEmail(params: {
   studentTz: string | null;
   sessionType: string;
 }): Promise<void> {
+  // ── Escape all user-controlled values ────────────────────────────────────
+  const safeName         = escapeHtml(params.studentName);
+  const safeSessionLabel = escapeHtml(params.sessionLabel);
+  const safeNote         = params.note ? escapeHtml(params.note) : null;
+  // meetLink, cancelToken, and URLs are system-generated — not user input.
+
   const tz         = params.studentTz ?? ADMIN_TZ;
   const cancelUrl  = `${BASE_URL}/cancelar?token=${params.cancelToken}`;
   const reschedUrl = `${BASE_URL}${RESCHEDULE_PATHS[params.sessionType] ?? "/"}&token=${params.cancelToken}`;
@@ -118,10 +147,10 @@ export async function sendConfirmationEmail(params: {
       <html><head><style>${STYLES}</style></head><body>
       <div class="wrap"><div class="card">
         <h1>¡Clase confirmada! ✓</h1>
-        <p>Hola <strong>${params.studentName}</strong>, tu reserva ha quedado confirmada.</p>
+        <p>Hola <strong>${safeName}</strong>, tu reserva ha quedado confirmada.</p>
 
         <div class="label">Tipo de sesión</div>
-        <div class="value">${params.sessionLabel}</div>
+        <div class="value">${safeSessionLabel}</div>
 
         <div class="label">Fecha</div>
         <div class="value">${dateLabel}</div>
@@ -134,9 +163,9 @@ export async function sendConfirmationEmail(params: {
           <code style="color:#3ddc84;font-size:13px">${params.meetLink}</code>
         </div>
 
-        ${params.note ? `
+        ${safeNote ? `
         <div class="label">Motivo de la sesión</div>
-        <div class="note-box"><p>${params.note}</p></div>
+        <div class="note-box"><p>${safeNote}</p></div>
         ` : ""}
 
         <div class="divider"></div>
@@ -173,6 +202,10 @@ export async function sendCancellationConfirmationEmail(params: {
   startIso: string;
   creditsRestored: boolean;
 }): Promise<void> {
+  // ── Escape all user-controlled values ────────────────────────────────────
+  const safeName         = escapeHtml(params.studentName);
+  const safeSessionLabel = escapeHtml(params.sessionLabel);
+
   const dateLabel  = formatDateInTz(params.startIso, ADMIN_TZ);
   const startLabel = formatTimeInTz(params.startIso, ADMIN_TZ);
 
@@ -183,9 +216,9 @@ export async function sendCancellationConfirmationEmail(params: {
       <html><head><style>${STYLES}</style></head><body>
       <div class="wrap"><div class="card">
         <h1>Reserva cancelada</h1>
-        <p>Hola <strong>${params.studentName}</strong>, hemos cancelado tu reserva.</p>
+        <p>Hola <strong>${safeName}</strong>, hemos cancelado tu reserva.</p>
         <div class="label">Sesión cancelada</div>
-        <div class="value">${params.sessionLabel} · ${dateLabel} · ${startLabel}</div>
+        <div class="value">${safeSessionLabel} · ${dateLabel} · ${startLabel}</div>
         ${params.creditsRestored ? `
           <p style="color:#3ddc84">✓ Tu crédito ha sido devuelto automáticamente a tu pack.
             Puedes reservar otra clase desde <a href="${BASE_URL}" style="color:#3ddc84">gustavoai.dev</a>.
@@ -208,8 +241,15 @@ export async function sendCancellationNotificationEmail(params: {
 }): Promise<void> {
   const notifyEmail = process.env.NOTIFY_EMAIL;
   if (!notifyEmail) return;
+
+  // ── Escape all user-controlled values ────────────────────────────────────
+  const safeName         = escapeHtml(params.studentName);
+  const safeEmail        = escapeHtml(params.studentEmail);
+  const safeSessionLabel = escapeHtml(params.sessionLabel);
+
   const dateLabel  = formatDateInTz(params.startIso, ADMIN_TZ);
   const startLabel = formatTimeInTz(params.startIso, ADMIN_TZ);
+
   await send({
     to: notifyEmail,
     subject: `❌ Sesión cancelada — ${params.studentName}`,
@@ -217,8 +257,8 @@ export async function sendCancellationNotificationEmail(params: {
       <html><head><style>${STYLES}</style></head><body>
       <div class="wrap"><div class="card">
         <h1>Sesión individual cancelada</h1>
-        <p><strong>${params.studentName}</strong> (${params.studentEmail})
-          ha cancelado su sesión de <strong>${params.sessionLabel}</strong>
+        <p><strong>${safeName}</strong> (${safeEmail})
+          ha cancelado su sesión de <strong>${safeSessionLabel}</strong>
           del ${dateLabel} a las ${startLabel}.</p>
         <p>Gestiona el reembolso manualmente si procede.</p>
       </div></div></body></html>
@@ -235,9 +275,17 @@ export async function sendNewBookingNotificationEmail(params: {
 }): Promise<void> {
   const notifyEmail = process.env.NOTIFY_EMAIL;
   if (!notifyEmail) return;
+
+  // ── Escape all user-controlled values ────────────────────────────────────
+  const safeName         = escapeHtml(params.studentName);
+  const safeEmail        = escapeHtml(params.studentEmail);
+  const safeSessionLabel = escapeHtml(params.sessionLabel);
+  const safeNote         = params.note ? escapeHtml(params.note) : null;
+
   const dateLabel  = formatDateInTz(params.startIso, ADMIN_TZ);
   const startLabel = formatTimeInTz(params.startIso, ADMIN_TZ);
   const endLabel   = formatTimeInTz(params.endIso,   ADMIN_TZ);
+
   await send({
     to: notifyEmail,
     subject: `📅 Nueva reserva — ${params.studentName} · ${dateLabel}`,
@@ -246,14 +294,14 @@ export async function sendNewBookingNotificationEmail(params: {
       <div class="wrap"><div class="card">
         <h1>Nueva reserva</h1>
         <div class="label">Alumno</div>
-        <div class="value">${params.studentName} · ${params.studentEmail}</div>
+        <div class="value">${safeName} · ${safeEmail}</div>
         <div class="label">Sesión</div>
-        <div class="value">${params.sessionLabel}</div>
+        <div class="value">${safeSessionLabel}</div>
         <div class="label">Fecha y hora (Madrid)</div>
         <div class="value">${dateLabel} · ${startLabel}–${endLabel}</div>
-        ${params.note ? `
+        ${safeNote ? `
         <div class="label">Motivo indicado por el alumno</div>
-        <div class="note-box"><p>${params.note}</p></div>` : ""}
+        <div class="note-box"><p>${safeNote}</p></div>` : ""}
         <div style="margin-top:8px">
           <a class="meet-btn" href="${params.meetLink}">Abrir Google Meet →</a>
         </div>

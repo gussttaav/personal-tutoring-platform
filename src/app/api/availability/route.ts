@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAvailableSlots } from "@/lib/calendar";
 import { SCHEDULE, DAY_SCHEDULES } from "@/lib/booking-config";
 import { chatRatelimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/ip-utils"; // FIX (SEC-01)
 
 export async function GET(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  // FIX (SEC-01): Use sanitized IP — x-forwarded-for can be a comma-separated
+  // list; taking the raw header value as the rate-limit key lets an attacker
+  // craft unique strings to bypass per-IP limits.
+  const ip = getClientIp(req);
   const { success } = await chatRatelimit.limit(`avail:${ip}`);
   if (!success) return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
 

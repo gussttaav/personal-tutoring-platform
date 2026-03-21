@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { chat, type GeminiMessage } from "@/lib/gemini";
 import { CHAT_SYSTEM_PROMPT } from "@/constants/chat-prompt";
 import { chatRatelimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/ip-utils"; // FIX (SEC-01)
 
 // ─── Input validation ─────────────────────────────────────────────────────────
 
 const MAX_MESSAGE_LENGTH = 1000;
-const MAX_HISTORY_TURNS = 10;
+const MAX_HISTORY_TURNS  = 10;
 
 function isValidHistory(value: unknown): value is GeminiMessage[] {
   if (!Array.isArray(value)) return false;
@@ -25,7 +26,10 @@ function isValidHistory(value: unknown): value is GeminiMessage[] {
 
 export async function POST(req: NextRequest) {
   // ── Rate limit ────────────────────────────────────────────────────────────
-  const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  // FIX (SEC-01): Use sanitized IP — x-forwarded-for can be a comma-separated
+  // list; taking the raw header value as the rate-limit key lets an attacker
+  // craft unique strings to bypass per-IP limits.
+  const ip = getClientIp(req);
   const { success } = await chatRatelimit.limit(ip);
   if (!success) {
     return NextResponse.json(

@@ -5,6 +5,12 @@
  * Called from the /cancelar page after the student confirms.
  *
  * Body: { token: string }
+ *
+ * BONUS FIX (QUAL-04): Added await to the Promise.all() that sends emails.
+ * Previously the emails were fired without await, meaning Vercel would freeze
+ * the serverless function immediately after the response was sent — before the
+ * email promises had a chance to resolve. Emails would appear to have been sent
+ * (no error thrown) but would silently never arrive.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -60,7 +66,8 @@ export async function POST(req: NextRequest) {
     await restoreCredit(record.email);
   }
 
-  // ── Mark token as used ────────────────────────────────────────────────────
+  // ── Consume token (DELETE from KV) ────────────────────────────────────────
+  // consumeCancellationToken now does a hard DELETE (see calendar.ts fix).
   await consumeCancellationToken(token);
 
   // ── Send emails ───────────────────────────────────────────────────────────
@@ -73,7 +80,10 @@ export async function POST(req: NextRequest) {
 
   const sessionLabel = SESSION_LABELS[record.sessionType] ?? record.sessionType;
 
-  Promise.all([
+  // FIXED: await the Promise.all so the emails complete before the response
+  // is returned and Vercel freezes the function. The catch ensures an email
+  // failure doesn't turn a successful cancellation into a 500 error.
+  await Promise.all([
     sendCancellationConfirmationEmail({
       to:              record.email,
       studentName:     record.name,
