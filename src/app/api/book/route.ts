@@ -7,19 +7,23 @@
  *   - session2h   → same
  *   - pack        → create event, decrement credit, send confirmation email
  *
- * Body: { startIso: string, endIso: string, sessionType: string }
  * Auth: required (email + name from session)
+ *
+ * ARCH-03: BookSchema is now imported from lib/schemas.ts instead of being
+ * defined locally. This allows api-client.ts to share the same schema and
+ * inferred type without importing from the app/ layer.
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { auth } from "@/auth";
+import { BookSchema } from "@/lib/schemas";               // ARCH-03: shared schema
 import { createCalendarEvent, createCancellationToken } from "@/lib/calendar";
 import { decrementCredit } from "@/lib/kv";
 import {
   sendConfirmationEmail,
   sendNewBookingNotificationEmail,
 } from "@/lib/email";
+import type { z } from "zod";
 
 const SESSION_LABELS: Record<string, string> = {
   free15min: "Encuentro inicial gratuito · 15 min",
@@ -27,15 +31,6 @@ const SESSION_LABELS: Record<string, string> = {
   session2h: "Sesión individual · 2 horas",
   pack:      "Clase de pack",
 };
-
-const BookSchema = z.object({
-  startIso:        z.string().datetime(),
-  endIso:          z.string().datetime(),
-  sessionType:     z.enum(["free15min", "session1h", "session2h", "pack"]),
-  note:            z.string().max(1000).optional(),
-  timezone:        z.string().optional(),
-  rescheduleToken: z.string().optional(),
-});
 
 export async function POST(req: NextRequest) {
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -58,8 +53,6 @@ export async function POST(req: NextRequest) {
   const { startIso, endIso, sessionType, note, timezone, rescheduleToken } = body;
 
   // ── Reschedule: clean up old booking first ────────────────────────────────
-  // If a rescheduleToken is provided, verify it, delete the old calendar event,
-  // and restore the pack credit so the new booking doesn't cost an extra credit.
   if (rescheduleToken) {
     const {
       verifyCancellationToken,
@@ -69,16 +62,13 @@ export async function POST(req: NextRequest) {
 
     const oldBooking = await verifyCancellationToken(rescheduleToken);
     if (oldBooking) {
-      // Delete old calendar event (best-effort — don't fail if already gone)
       try { await deleteCalendarEvent(oldBooking.record.eventId); } catch {}
 
-      // Restore credit if the old booking was a pack session
       if (oldBooking.record.sessionType === "pack") {
         const { restoreCredit } = await import("@/lib/kv");
         await restoreCredit(email);
       }
 
-      // Consume the token so it can't be used again
       await consumeCancellationToken(rescheduleToken);
     }
   }
@@ -104,7 +94,7 @@ export async function POST(req: NextRequest) {
   // ── Create Google Calendar event ──────────────────────────────────────────
   const sessionLabel = SESSION_LABELS[sessionType];
 
-  let eventId: string;
+  let eventId:  string;
   let meetLink: string;
 
   try {
@@ -124,9 +114,7 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[book] Calendar event creation failed:", err);
 
-    // If credit was decremented but event creation failed, restore it
     if (sessionType === "pack") {
-      // We import restoreCredit lazily to avoid circular imports
       const { restoreCredit } = await import("@/lib/kv");
       await restoreCredit(email);
     }
@@ -145,12 +133,6 @@ export async function POST(req: NextRequest) {
   });
 
   // ── Send emails — with retry ──────────────────────────────────────────────
-  // Awaited before returning so Vercel doesn't kill the connection mid-send.
-  // Retries up to 3 times with exponential backoff to handle transient TLS
-  // errors (ECONNRESET) that occur on Vercel serverless cold starts.
-  // If all retries fail, the booking is still confirmed but emailFailed=true
-  // is returned so the client can show the Meet link directly.
-
   async function sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -200,8 +182,6 @@ export async function POST(req: NextRequest) {
     eventId,
     meetLink,
     cancelToken,
-    // If the confirmation email failed after retries, the client shows
-    // the Meet link directly so the student is never left without it.
     emailFailed: !confirmSent,
   });
 }

@@ -1,11 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
-  return new Stripe(key);
-}
+import { stripe } from "@/lib/stripe"; // ARCH-01: singleton
 
 /**
  * GET /api/stripe/session?session_id=cs_xxx
@@ -24,7 +18,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const stripe = getStripe();
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== "paid") {
@@ -36,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     const email =
       session.metadata?.student_email ?? session.customer_email ?? "";
-    const name = session.metadata?.student_name ?? "";
+    const name         = session.metadata?.student_name ?? "";
     const checkoutType = session.metadata?.checkout_type ?? "pack";
 
     if (!email) {

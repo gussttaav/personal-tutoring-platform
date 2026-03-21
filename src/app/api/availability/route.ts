@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAvailableSlots } from "@/lib/calendar";
 import { SCHEDULE, DAY_SCHEDULES } from "@/lib/booking-config";
-import { chatRatelimit } from "@/lib/ratelimit";
-import { getClientIp } from "@/lib/ip-utils"; // FIX (SEC-01)
+import { availabilityRatelimit } from "@/lib/ratelimit"; // PERF-03: dedicated limiter
+import { getClientIp } from "@/lib/ip-utils";
 
 export async function GET(req: NextRequest) {
-  // FIX (SEC-01): Use sanitized IP — x-forwarded-for can be a comma-separated
-  // list; taking the raw header value as the rate-limit key lets an attacker
-  // craft unique strings to bypass per-IP limits.
+  // PERF-03: Use the dedicated availabilityRatelimit instead of borrowing
+  // chatRatelimit with an avail: prefix. Previously both routes shared the
+  // same 20-req/min budget under different key prefixes.
   const ip = getClientIp(req);
-  const { success } = await chatRatelimit.limit(`avail:${ip}`);
+  const { success } = await availabilityRatelimit.limit(ip);
   if (!success) return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
 
   const date     = req.nextUrl.searchParams.get("date");

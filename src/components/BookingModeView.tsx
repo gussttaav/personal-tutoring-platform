@@ -4,14 +4,23 @@
  * BookingModeView — Pack class booking
  *
  * Layout: topbar / sidebar (pack status + session info) / weekly calendar + confirm panel
- * Logic: unchanged — POST /api/book with sessionType="pack"
+ * Logic: POST /api/book with sessionType="pack"
+ *
+ * ARCH-04: Replaced raw fetch("/api/book", ...) with api.book.post() from
+ * the typed API client. The client now sends the full BookInput payload, so
+ * all booking fields flow through the shared, type-safe abstraction.
+ *
+ * ARCH-05 (component side): Removed the redundant GET /api/credits fetch
+ * that happened after every booking. The server already returns the updated
+ * credit count on the book response — we use that directly instead of making
+ * a second network round-trip.
  */
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { Button, Alert, Spinner, CreditsPill } from "@/components/ui";
 import { COLORS } from "@/constants";
-import { ApiError } from "@/lib/api-client";
+import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import type { StudentInfo } from "@/types";
 
@@ -32,11 +41,12 @@ export default function BookingModeView({
   onExit,
   hideTopBar = false,
 }: BookingModeViewProps) {
-  const [phase,      setPhase]      = useState<BookingPhase>("idle");
-  const [remaining,  setRemaining]  = useState(student.credits);
-  const [errMsg,     setErrMsg]     = useState("");
-  const [meetLink,   setMeetLink]   = useState("");
-  const [selected,   setSelected]   = useState<SelectedSlot | null>(null);
+  const [phase,       setPhase]       = useState<BookingPhase>("idle");
+  const [remaining,   setRemaining]   = useState(student.credits);
+  const [errMsg,      setErrMsg]      = useState("");
+  const [meetLink,    setMeetLink]    = useState("");
+  const [cancelToken, setCancelToken] = useState("");
+  const [selected,    setSelected]    = useState<SelectedSlot | null>(null);
   const [emailFailed, setEmailFailed] = useState(false);
 
   const handleSlotSelected = useCallback(async (slot: SelectedSlot) => {
@@ -44,45 +54,38 @@ export default function BookingModeView({
     setPhase("confirming");
 
     try {
-      const res = await fetch("/api/book", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({
-          startIso:        slot.startIso,
-          endIso:          slot.endIso,
-          sessionType:     "pack",
-          note:            slot.note,
-          timezone:        slot.timezone,
-          rescheduleToken: rescheduleToken ?? undefined,
-        }),
+      // ARCH-04: Use the typed API client instead of raw fetch.
+      // ARCH-05: api.book.post() returns { meetLink, cancelToken, emailFailed }
+      // directly — no need for a second GET /api/credits call afterward.
+      const data = await api.book.post({
+        startIso:        slot.startIso,
+        endIso:          slot.endIso,
+        sessionType:     "pack",
+        note:            slot.note,
+        timezone:        slot.timezone,
+        rescheduleToken: rescheduleToken ?? undefined,
       });
-      const data = await res.json();
-      if (!res.ok) throw new ApiError(data.error ?? "Error al reservar", res.status);
 
-      const credRes  = await fetch("/api/credits");
-      const credData = await credRes.json();
-      const newRemaining = credData.credits ?? (remaining - 1);
-
+      const newRemaining = remaining - 1;
       setRemaining(newRemaining);
-      setMeetLink(data.meetLink ?? "");
-      setEmailFailed(data.emailFailed === true);
+      setMeetLink(data.meetLink);
+      setCancelToken(data.cancelToken);
+      setEmailFailed(data.emailFailed);
       setPhase("success");
       onCreditsUpdated(newRemaining);
     } catch (err) {
       setErrMsg(err instanceof ApiError ? err.message : "Error al registrar la reserva.");
       setPhase("error");
     }
-  }, [remaining, onCreditsUpdated]);
+  }, [remaining, rescheduleToken, onCreditsUpdated]);
 
   function bookAnother() {
     setPhase("idle");
     setSelected(null);
     setMeetLink("");
+    setCancelToken("");
     setEmailFailed(false);
   }
-
-  const packSize    = student.credits; // approximate — shown in sidebar
-  const progressPct = Math.round((remaining / (remaining + 1)) * 100); // best-effort visual
 
   // ── Success screen ─────────────────────────────────────────────────────────
   if (phase === "success") {
@@ -205,7 +208,6 @@ export default function BookingModeView({
           display: "flex", flexDirection: "column", gap: 20,
           overflowY: "auto",
         }}>
-          {/* Tutor row */}
           <TutorRow />
 
           {/* Pack status card */}
@@ -411,7 +413,6 @@ export function ConfirmPanel({
       display: "flex", flexDirection: "column", gap: 16,
       animation: "fadeUp 0.25s ease both",
     }}>
-      {/* Selected slot display */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{
           width: 40, height: 40, borderRadius: 10,
@@ -435,7 +436,6 @@ export function ConfirmPanel({
         </div>
       </div>
 
-      {/* Pack feedback */}
       {packInfo && (
         <div style={{
           background: "rgba(61,220,132,0.1)", border: "1px solid rgba(61,220,132,0.2)",
@@ -456,7 +456,6 @@ export function ConfirmPanel({
         </div>
       )}
 
-      {/* Confirm button */}
       <button
         onClick={onConfirm}
         style={primaryBtnStyle}

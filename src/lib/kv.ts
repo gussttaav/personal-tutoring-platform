@@ -1,5 +1,5 @@
 /**
- * Credits store backed by Vercel KV (Upstash Redis under the hood).
+ * lib/kv.ts — credits store backed by Upstash Redis
  *
  * Key schema
  * ──────────
@@ -8,13 +8,15 @@
  * Why no key TTL?  Redis TTL would silently delete the record, making it
  * impossible to distinguish "user never purchased" from "pack expired".
  * We keep the record forever and check expiresAt at read time.
+ *
+ * ARCH-02: Removed local Redis.fromEnv() call. The shared `kv` singleton
+ * from lib/redis.ts is used instead, so only one Redis client is created
+ * per process across kv.ts, calendar.ts, and ratelimit.ts.
  */
 
 import type { CreditResult, PackSize } from "@/types";
 import { PACK_SIZES, PACK_VALIDITY_MONTHS } from "@/constants";
-import { Redis } from "@upstash/redis";
-
-const kv = Redis.fromEnv();
+import { kv } from "@/lib/redis";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,8 +71,8 @@ export async function getCredits(email: string): Promise<CreditResult | null> {
 
   return {
     credits,
-    name: record.name,
-    packSize: record.packSize ?? parsePackSize(record.packLabel),
+    name:      record.name,
+    packSize:  record.packSize ?? parsePackSize(record.packLabel),
     expiresAt: record.expiresAt,
   };
 }
@@ -86,7 +88,7 @@ export async function addOrUpdateStudent(
   packLabel: string,
   stripeSessionId: string
 ): Promise<void> {
-  const k = key(email);
+  const k        = key(email);
   const existing = await kv.get<CreditRecord>(k);
 
   // ── Idempotency check ────────────────────────────────────────────────────
@@ -95,7 +97,7 @@ export async function addOrUpdateStudent(
     return;
   }
 
-  const now = new Date();
+  const now      = new Date();
   const expiresAt = addMonths(now, PACK_VALIDITY_MONTHS).toISOString();
 
   // If the existing pack is expired, reset credits to 0 before adding
@@ -124,12 +126,12 @@ export async function addOrUpdateStudent(
 export async function decrementCredit(
   email: string
 ): Promise<{ ok: boolean; remaining: number }> {
-  const k = key(email);
+  const k      = key(email);
   const record = await kv.get<CreditRecord>(k);
 
-  if (!record) return { ok: false, remaining: 0 };
-  if (isExpired(record.expiresAt)) return { ok: false, remaining: 0 };
-  if (record.credits <= 0) return { ok: false, remaining: 0 };
+  if (!record)                       return { ok: false, remaining: 0 };
+  if (isExpired(record.expiresAt))   return { ok: false, remaining: 0 };
+  if (record.credits <= 0)           return { ok: false, remaining: 0 };
 
   const updated: CreditRecord = {
     ...record,
@@ -149,10 +151,10 @@ export async function decrementCredit(
 export async function restoreCredit(
   email: string
 ): Promise<{ ok: boolean; credits: number }> {
-  const k = key(email);
+  const k      = key(email);
   const record = await kv.get<CreditRecord>(k);
 
-  if (!record) return { ok: false, credits: 0 };
+  if (!record)                     return { ok: false, credits: 0 };
   if (isExpired(record.expiresAt)) return { ok: false, credits: 0 };
 
   const packSize = record.packSize ?? parsePackSize(record.packLabel) ?? 0;
@@ -160,7 +162,7 @@ export async function restoreCredit(
 
   const updated: CreditRecord = {
     ...record,
-    credits: restored,
+    credits:     restored,
     lastUpdated: new Date().toISOString(),
   };
 

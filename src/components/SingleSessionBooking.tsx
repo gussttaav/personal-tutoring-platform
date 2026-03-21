@@ -4,11 +4,15 @@
  * SingleSessionBooking — free 15-min, paid 1h, paid 2h
  *
  * Layout: topbar / sidebar (session info) / weekly calendar + confirm panel
- * Logic: unchanged — free sessions → POST /api/book, paid → Stripe redirect
+ * Logic: free sessions → POST /api/book, paid → Stripe redirect
+ *
+ * ARCH-04: Replaced raw fetch("/api/book", ...) with api.book.post() from
+ * the typed API client. The client now sends the full BookInput payload so
+ * all booking fields flow through the shared, type-safe abstraction.
+ * Removed the unused `useRouter` import (dead code from a previous refactor).
  */
 
 import { useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { Spinner, Alert } from "@/components/ui";
 import { COLORS } from "@/constants";
 import { api, ApiError } from "@/lib/api-client";
@@ -42,7 +46,6 @@ export default function SingleSessionBooking({
   rescheduleToken,
   onBack,
 }: SingleSessionBookingProps) {
-  const router = useRouter();
   const cfg = SESSION_CONFIGS[sessionType];
 
   const [phase,       setPhase]       = useState<Phase>("picking");
@@ -59,22 +62,17 @@ export default function SingleSessionBooking({
       // Paid sessions with a rescheduleToken are already paid — skip Stripe.
       setPhase("booking");
       try {
-        const res  = await fetch("/api/book", {
-          method:  "POST",
-          headers: { "Content-Type": "application/json" },
-          body:    JSON.stringify({
-            startIso:        slot.startIso,
-            endIso:          slot.endIso,
-            sessionType:     sessionType === "free15min" ? "free15min" : sessionType,
-            note:            slot.note,
-            timezone:        slot.timezone,
-            rescheduleToken: rescheduleToken ?? undefined,
-          }),
+        // ARCH-04: Use the typed API client instead of raw fetch.
+        const data = await api.book.post({
+          startIso:        slot.startIso,
+          endIso:          slot.endIso,
+          sessionType:     sessionType === "free15min" ? "free15min" : sessionType,
+          note:            slot.note,
+          timezone:        slot.timezone,
+          rescheduleToken: rescheduleToken ?? undefined,
         });
-        const data = await res.json();
-        if (!res.ok) throw new ApiError(data.error ?? "Error al reservar", res.status);
-        setMeetLink(data.meetLink ?? "");
-        setEmailFailed(data.emailFailed === true);
+        setMeetLink(data.meetLink);
+        setEmailFailed(data.emailFailed);
         setPhase("success");
       } catch (err) {
         setErrorMsg(err instanceof ApiError ? err.message : "Error al reservar.");
@@ -98,13 +96,13 @@ export default function SingleSessionBooking({
       setErrorMsg(err instanceof ApiError ? err.message : "Error al iniciar el pago.");
       setPhase("error");
     }
-  }, [sessionType]);
+  }, [sessionType, rescheduleToken]);
 
   const badgeType  = sessionType === "free15min" ? "free" : "paid";
   const badgeLabel = cfg.label;
-  const title      = sessionType === "free15min" ? "Reservar sesión" : "Reservar sesión";
+  const title      = "Reservar sesión";
 
-  // ── Success (free session only) ────────────────────────────────────────────
+  // ── Success ────────────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
       <FullScreenShell onBack={onBack} badgeType={badgeType} badgeLabel={badgeLabel} title={title}>

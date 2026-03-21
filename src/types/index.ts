@@ -1,4 +1,4 @@
-// ─── Domain types ────────────────────────────────────────────────────────────
+// ─── Domain types ─────────────────────────────────────────────────────────────
 
 export type PackSize = 5 | 10;
 
@@ -22,9 +22,20 @@ export interface ApiError {
   error: string;
 }
 
+/**
+ * Response from POST /api/book
+ *
+ * QUAL-03 fix: the previous definition had { ok: true; remaining: number }
+ * which did not match what the route actually returns. The route returns
+ * eventId, meetLink, cancelToken, and emailFailed — remaining is not
+ * included (the component does a separate /api/credits fetch for that).
+ */
 export interface BookResponse {
   ok: true;
-  remaining: number;
+  eventId: string;
+  meetLink: string;
+  cancelToken: string;
+  emailFailed: boolean;
 }
 
 export interface CreditsResponse {

@@ -1,37 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
-import { z } from "zod";
 import { auth } from "@/auth";
+import { stripe } from "@/lib/stripe";                      // ARCH-01: singleton
+import { CheckoutSchema } from "@/lib/schemas";             // ARCH-03: shared schema
 import { checkoutRatelimit } from "@/lib/ratelimit";
-import { getClientIp } from "@/lib/ip-utils"; // FIX (SEC-01)
+import { getClientIp } from "@/lib/ip-utils";
 
-// ─── Zod schemas ──────────────────────────────────────────────────────────────
-
-const PackCheckoutSchema = z.object({
-  type:     z.literal("pack"),
-  packSize: z.union([z.literal(5), z.literal(10)]),
-});
-
-const SingleCheckoutSchema = z.object({
-  type:            z.literal("single"),
-  duration:        z.enum(["1h", "2h"]),
-  startIso:        z.string().datetime(),
-  endIso:          z.string().datetime(),
-  rescheduleToken: z.string().optional(),
-});
-
-const CheckoutBodySchema = z.discriminatedUnion("type", [
-  PackCheckoutSchema,
-  SingleCheckoutSchema,
-]);
-
-// ─── Stripe helpers ───────────────────────────────────────────────────────────
-
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not set");
-  return new Stripe(key);
-}
+// ─── Stripe price helpers ─────────────────────────────────────────────────────
 
 function getPackPriceId(packSize: number): string {
   const ids: Record<number, string | undefined> = {
@@ -57,9 +31,6 @@ function getSingleSessionPriceId(duration: "1h" | "2h"): string {
 
 export async function POST(req: NextRequest) {
   // ── Rate limit ────────────────────────────────────────────────────────────
-  // FIX (SEC-01): Use sanitized IP — x-forwarded-for can be a comma-separated
-  // list; taking the raw header value as the rate-limit key lets an attacker
-  // craft unique strings to bypass per-IP limits.
   const ip = getClientIp(req);
   const { success } = await checkoutRatelimit.limit(ip);
   if (!success) {
@@ -84,7 +55,7 @@ export async function POST(req: NextRequest) {
   try { rawBody = await req.json(); }
   catch { return NextResponse.json({ error: "Cuerpo de petición inválido" }, { status: 400 }); }
 
-  const parsed = CheckoutBodySchema.safeParse(rawBody);
+  const parsed = CheckoutSchema.safeParse(rawBody);
   if (!parsed.success) {
     return NextResponse.json(
       { error: parsed.error.issues[0]?.message ?? "Petición inválida" },
@@ -96,8 +67,6 @@ export async function POST(req: NextRequest) {
 
   // ── Create Stripe session ─────────────────────────────────────────────────
   try {
-    const stripe = getStripe();
-
     if (body.type === "pack") {
       const stripeSession = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
