@@ -32,14 +32,30 @@ export async function GET(req: NextRequest) {
 
   try {
     const slots = await getAvailableSlots(date, duration);
-    const withLocalTime = slots.map(slot => ({
-      ...slot,
-      localLabel: tz !== SCHEDULE.timezone
-        ? new Date(slot.start).toLocaleTimeString("es-ES", {
-            timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
-          })
-        : slot.label,
-    }));
+
+    const withLocalTime = slots.map(slot => {
+      // If the user is in the same timezone as the server, localLabel === label.
+      if (tz === SCHEDULE.timezone) {
+        return { ...slot, localLabel: slot.label };
+      }
+
+      // Convert start time to the user's local timezone.
+      const startLocal = new Date(slot.start).toLocaleTimeString("es-ES", {
+        timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
+      });
+
+      // 15-min slots show only the start time; 1h/2h slots show a start–end range.
+      // This mirrors the label format produced by formatSlotLabel() in calendar.ts.
+      if (duration === 15) {
+        return { ...slot, localLabel: startLocal };
+      }
+
+      const endLocal = new Date(slot.end).toLocaleTimeString("es-ES", {
+        timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
+      });
+      return { ...slot, localLabel: `${startLocal}–${endLocal}` };
+    });
+
     return NextResponse.json({ slots: withLocalTime, timezone: SCHEDULE.timezone });
   } catch (err) {
     log("error", "Error fetching slots", { service: "availability", date, error: String(err) });

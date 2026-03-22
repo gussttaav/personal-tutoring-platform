@@ -8,6 +8,7 @@
  *   Week 2 — ARCH-02: shared kv singleton
  *   Week 3 — PERF-01: DST-correct slot generation via date-fns-tz
  *   Backlog — SLOT LOCK: acquireSlotLock / releaseSlotLock
+ *   Rolling — SLOT STEP: 30-min rolling window for 1h and 2h bookings
  *
  * SLOT LOCKING DESIGN:
  *
@@ -41,6 +42,17 @@
  * Note: for this application (single tutor, ~1 booking per hour on average),
  * the slot lock is a safety net rather than a critical path requirement.
  * Enable it if you see duplicate bookings in the Upstash logs.
+ *
+ * ROLLING SLOT STEP DESIGN:
+ *
+ * 15-min bookings keep a fixed step equal to their duration (unchanged).
+ * 1h and 2h bookings use a 30-min step, producing overlapping rolling slots:
+ *
+ *   09:00–12:00 window, 1h duration → 09:00–10:00, 09:30–10:30, 10:00–11:00,
+ *                                      10:30–11:30, 11:00–12:00
+ *
+ * The freebusy query is unchanged — still one API call per day. The rolling
+ * step only affects in-memory cursor arithmetic and label formatting.
  */
 
 import { google } from "googleapis";
@@ -97,6 +109,28 @@ function madridToUtc(dateStr: string, hours: number, minutes: number): Date {
   return fromZonedTime(`${dateStr}T${hh}:${mm}:00`, TZ);
 }
 
+/**
+ * Returns a display label for a slot.
+ *
+ * - 15-min slots: "09:30"         (start time only — existing behaviour)
+ * - 1h / 2h slots: "09:30–10:30" (start–end range — new behaviour)
+ *
+ * Using a range for longer slots is necessary because rolling slots share
+ * the same start-minute pattern, so "09:30" alone would be ambiguous
+ * if we ever showed slots from multiple durations on the same screen.
+ * More importantly it gives users an immediate sense of the commitment.
+ */
+function formatSlotLabel(
+  slotStart: Date,
+  slotEnd: Date,
+  durationMinutes: number,
+): string {
+  if (durationMinutes === 15) {
+    return formatTime(slotStart);
+  }
+  return `${formatTime(slotStart)}–${formatTime(slotEnd)}`;
+}
+
 // ─── Slot locking ─────────────────────────────────────────────────────────────
 
 function slotLockKey(startIso: string): string {
@@ -107,7 +141,7 @@ function slotLockKey(startIso: string): string {
 /**
  * Attempts to acquire an exclusive lock for a time slot.
  *
- * @param startIso       ISO 8601 start time of the slot
+ * @param startIso        ISO 8601 start time of the slot
  * @param durationMinutes Duration of the slot (used to set the TTL)
  * @returns true if the lock was acquired, false if the slot is already locked
  */
@@ -145,7 +179,10 @@ export async function getAvailableSlots(
     { startMin: startHour * 60, endMin: MORNING_END_MINUTES },
   ];
   if (daySched.afternoonStart !== null && daySched.afternoonEnd !== null) {
-    windows.push({ startMin: daySched.afternoonStart * 60, endMin: daySched.afternoonEnd * 60 });
+    windows.push({
+      startMin: daySched.afternoonStart * 60,
+      endMin:   daySched.afternoonEnd * 60,
+    });
   }
 
   const timeMin = madridToUtc(dateStr, 0, 0).toISOString();
@@ -156,15 +193,24 @@ export async function getAvailableSlots(
     requestBody: { timeMin, timeMax, timeZone: TZ, items: [{ id: CALENDAR_ID }] },
   });
 
-  const busyBlocks    = freebusyRes.data.calendars?.[CALENDAR_ID]?.busy ?? [];
+  const busyBlocks     = freebusyRes.data.calendars?.[CALENDAR_ID]?.busy ?? [];
   const slots: TimeSlot[] = [];
-  const minBookingTime    = new Date(Date.now() + SCHEDULE.minNoticeHours * 3_600_000);
+  const minBookingTime = new Date(Date.now() + SCHEDULE.minNoticeHours * 3_600_000);
+
+  // 15-min bookings keep a fixed step equal to their duration (original behaviour).
+  // 1h and 2h bookings advance in 30-min increments, producing rolling slots.
+  const stepMinutes = durationMinutes === 15 ? 15 : 30;
 
   for (const window of windows) {
     let cursorMin = window.startMin;
+
     while (cursorMin + durationMinutes <= window.endMin) {
-      const slotStart = madridToUtc(dateStr, Math.floor(cursorMin / 60), cursorMin % 60);
-      const slotEnd   = new Date(slotStart.getTime() + durationMinutes * 60_000);
+      const slotStart = madridToUtc(
+        dateStr,
+        Math.floor(cursorMin / 60),
+        cursorMin % 60,
+      );
+      const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000);
 
       const overlapsBusy = busyBlocks.some((block) => {
         const bStart = new Date(block.start!);
@@ -173,9 +219,14 @@ export async function getAvailableSlots(
       });
 
       if (!overlapsBusy && slotStart >= minBookingTime) {
-        slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString(), label: formatTime(slotStart) });
+        slots.push({
+          start: slotStart.toISOString(),
+          end:   slotEnd.toISOString(),
+          label: formatSlotLabel(slotStart, slotEnd, durationMinutes),
+        });
       }
-      cursorMin += durationMinutes;
+
+      cursorMin += stepMinutes;
     }
   }
 
