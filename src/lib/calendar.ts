@@ -3,39 +3,44 @@
  *
  * Google Calendar API integration.
  *
- * Responsibilities:
- *   - Query freebusy to find available slots
- *   - Create calendar events with Google Meet links
- *   - Delete events on cancellation
- *   - Generate and verify signed cancellation tokens (stored in KV)
- *
- * Prerequisites (env vars):
- *   GOOGLE_SERVICE_ACCOUNT_EMAIL
- *   GOOGLE_PRIVATE_KEY
- *   GOOGLE_CALENDAR_ID   ← your personal calendar ID (usually your Gmail address)
- *   CANCEL_SECRET        ← openssl rand -hex 32
- *
  * Applied fixes (cumulative):
- *   Week 1 — CRIT-02a: createCancellationToken adds Redis TTL
- *   Week 1 — CRIT-02b: consumeCancellationToken does hard kv.del()
- *   Week 1 — SEC-02:   verifyCancellationToken validates hex format before crypto
- *   Week 2 — ARCH-02:  Uses shared kv singleton from lib/redis.ts
- *   Week 3 — PERF-01:  getAvailableSlots now uses date-fns-tz to build slot
- *                       timestamps correctly for Europe/Madrid across DST
- *                       transitions (CET = UTC+1, CEST = UTC+2).
+ *   Week 1 — CRIT-02: token TTL + hard DELETE on consume + HMAC format check
+ *   Week 2 — ARCH-02: shared kv singleton
+ *   Week 3 — PERF-01: DST-correct slot generation via date-fns-tz
+ *   Backlog — SLOT LOCK: acquireSlotLock / releaseSlotLock
  *
- * PERF-01 — DST fix detail:
- *   The previous implementation hardcoded +01:00 when constructing slot start
- *   times: new Date(`${dateStr}T${hh}:${mm}:00+01:00`). Spain uses UTC+1 in
- *   winter (CET) and UTC+2 in summer (CEST). On summer days, every slot was
- *   one hour off in UTC terms, making the freebusy comparison unreliable and
- *   potentially showing booked slots as free (or vice versa).
+ * SLOT LOCKING DESIGN:
  *
- *   Fix: use toZonedTime / fromZonedTime from date-fns-tz to construct slot
- *   start times in the Europe/Madrid timezone, then convert to UTC for all
- *   comparisons. The freebusy window (timeMin/timeMax) uses the same approach.
+ * The race condition: user A selects slot at 10:00, user B selects the same
+ * slot at 10:00 a few seconds later. Both proceed through Stripe checkout.
+ * Both webhooks fire and attempt to create calendar events for the same slot.
  *
- *   Install: npm install date-fns-tz
+ * Fix: before creating a calendar event (in the webhook or /api/book), call
+ * acquireSlotLock(startIso, durationMinutes). If it returns false, the slot
+ * is already being processed by another request — abort and refund.
+ *
+ * Implementation:
+ *   - Key:   slot:lock:{startIso}
+ *   - Value: 1 (arbitrary non-empty value)
+ *   - NX:    true (set only if Not eXists — atomic compare-and-set)
+ *   - TTL:   durationMinutes + 5 minute buffer, so locks never get stuck
+ *
+ * The NX flag makes the operation atomic at the Redis level — no Lua script
+ * needed. If the caller crashed mid-booking, the TTL ensures the slot
+ * becomes available again automatically.
+ *
+ * Usage in webhook:
+ *   const locked = await acquireSlotLock(startIso, durationMinutes);
+ *   if (!locked) { refund and return; }
+ *   try {
+ *     await createCalendarEvent(...);
+ *   } finally {
+ *     await releaseSlotLock(startIso);
+ *   }
+ *
+ * Note: for this application (single tutor, ~1 booking per hour on average),
+ * the slot lock is a safety net rather than a critical path requirement.
+ * Enable it if you see duplicate bookings in the Upstash logs.
  */
 
 import { google } from "googleapis";
@@ -44,7 +49,7 @@ import { kv } from "@/lib/redis";
 import crypto from "crypto";
 import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
 
-export { SCHEDULE }; // re-export so existing imports of SCHEDULE from calendar.ts still work
+export { SCHEDULE };
 
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
 const TZ          = SCHEDULE.timezone; // "Europe/Madrid"
@@ -65,11 +70,8 @@ function getCalendar() {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface TimeSlot {
-  /** ISO 8601 start datetime */
   start: string;
-  /** ISO 8601 end datetime */
-  end: string;
-  /** Human-readable label e.g. "10:00" */
+  end:   string;
   label: string;
 }
 
@@ -85,93 +87,83 @@ export interface BookingRecord {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Formats a UTC Date as "HH:mm" in the Madrid timezone.
- * Uses the IANA timezone so DST is handled automatically.
- */
 function formatTime(date: Date): string {
   return format(toZonedTime(date, TZ), "HH:mm", { timeZone: TZ });
 }
 
-/**
- * Builds a UTC Date from a local clock time on a given date in Europe/Madrid.
- * fromZonedTime correctly applies the Madrid UTC offset for that exact day,
- * returning UTC+1 in winter and UTC+2 in summer.
- *
- * @param dateStr  "YYYY-MM-DD"
- * @param hours    Local hour (0-23) in Madrid time
- * @param minutes  Local minute (0-59) in Madrid time
- */
 function madridToUtc(dateStr: string, hours: number, minutes: number): Date {
-  // Construct a local datetime string in Madrid wall-clock time
   const hh  = String(hours).padStart(2, "0");
   const mm  = String(minutes).padStart(2, "0");
-  const localDateTimeStr = `${dateStr}T${hh}:${mm}:00`;
-  return fromZonedTime(localDateTimeStr, TZ);
+  return fromZonedTime(`${dateStr}T${hh}:${mm}:00`, TZ);
+}
+
+// ─── Slot locking ─────────────────────────────────────────────────────────────
+
+function slotLockKey(startIso: string): string {
+  // Normalise to avoid collisions from equivalent ISO representations
+  return `slot:lock:${new Date(startIso).toISOString()}`;
+}
+
+/**
+ * Attempts to acquire an exclusive lock for a time slot.
+ *
+ * @param startIso       ISO 8601 start time of the slot
+ * @param durationMinutes Duration of the slot (used to set the TTL)
+ * @returns true if the lock was acquired, false if the slot is already locked
+ */
+export async function acquireSlotLock(
+  startIso: string,
+  durationMinutes: number
+): Promise<boolean> {
+  const ttlSeconds = durationMinutes * 60 + 5 * 60; // slot duration + 5 min buffer
+  const result = await kv.set(slotLockKey(startIso), 1, { nx: true, ex: ttlSeconds });
+  // Upstash returns "OK" on success, null when NX prevents the write
+  return result === "OK";
+}
+
+/**
+ * Releases a previously acquired slot lock.
+ * Safe to call even if the lock was never acquired or has already expired.
+ */
+export async function releaseSlotLock(startIso: string): Promise<void> {
+  await kv.del(slotLockKey(startIso));
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-/**
- * Returns available time slots for a given date and session duration.
- * Queries Google Calendar freebusy, then subtracts busy blocks from
- * the working hours window.
- *
- * PERF-01: All timestamps are now built via madridToUtc() which uses
- * date-fns-tz's fromZonedTime() to resolve the correct UTC offset for the
- * given date. This replaces the hardcoded +01:00 suffix that produced wrong
- * UTC times during CEST (summer, UTC+2).
- */
 export async function getAvailableSlots(
   dateStr: string,
   durationMinutes: number
 ): Promise<TimeSlot[]> {
-  const dow      = new Date(`${dateStr}T12:00:00Z`).getDay(); // day-of-week is timezone-independent at noon
+  const dow      = new Date(`${dateStr}T12:00:00Z`).getDay();
   const daySched = DAY_SCHEDULES[dow];
   if (!daySched) return [];
 
-  const startHour = dayStartHour(dow);
-
-  // Build time windows in minutes-from-midnight (local Madrid time)
-  const MORNING_END_MINUTES = daySched.morningEnd * 60 - 15; // 13:45 = 825 min
+  const startHour           = dayStartHour(dow);
+  const MORNING_END_MINUTES = daySched.morningEnd * 60 - 15;
   const windows: { startMin: number; endMin: number }[] = [
     { startMin: startHour * 60, endMin: MORNING_END_MINUTES },
   ];
   if (daySched.afternoonStart !== null && daySched.afternoonEnd !== null) {
-    windows.push({
-      startMin: daySched.afternoonStart * 60,
-      endMin:   daySched.afternoonEnd * 60,
-    });
+    windows.push({ startMin: daySched.afternoonStart * 60, endMin: daySched.afternoonEnd * 60 });
   }
 
-  // PERF-01: Build freebusy window in UTC using madridToUtc, not a hardcoded +01:00
   const timeMin = madridToUtc(dateStr, 0, 0).toISOString();
   const timeMax = madridToUtc(dateStr, 23, 59).toISOString();
 
   const calendar    = getCalendar();
   const freebusyRes = await calendar.freebusy.query({
-    requestBody: {
-      timeMin,
-      timeMax,
-      timeZone: TZ,
-      items:    [{ id: CALENDAR_ID }],
-    },
+    requestBody: { timeMin, timeMax, timeZone: TZ, items: [{ id: CALENDAR_ID }] },
   });
 
   const busyBlocks    = freebusyRes.data.calendars?.[CALENDAR_ID]?.busy ?? [];
   const slots: TimeSlot[] = [];
-  const now            = new Date();
-  const minBookingTime = new Date(now.getTime() + SCHEDULE.minNoticeHours * 60 * 60 * 1000);
+  const minBookingTime    = new Date(Date.now() + SCHEDULE.minNoticeHours * 3_600_000);
 
   for (const window of windows) {
     let cursorMin = window.startMin;
-
     while (cursorMin + durationMinutes <= window.endMin) {
-      const localHours   = Math.floor(cursorMin / 60);
-      const localMinutes = cursorMin % 60;
-
-      // PERF-01: convert local Madrid time → UTC correctly for this date
-      const slotStart = madridToUtc(dateStr, localHours, localMinutes);
+      const slotStart = madridToUtc(dateStr, Math.floor(cursorMin / 60), cursorMin % 60);
       const slotEnd   = new Date(slotStart.getTime() + durationMinutes * 60_000);
 
       const overlapsBusy = busyBlocks.some((block) => {
@@ -180,16 +172,9 @@ export async function getAvailableSlots(
         return slotStart < bEnd && slotEnd > bStart;
       });
 
-      const tooSoon = slotStart < minBookingTime;
-
-      if (!overlapsBusy && !tooSoon) {
-        slots.push({
-          start: slotStart.toISOString(),
-          end:   slotEnd.toISOString(),
-          label: formatTime(slotStart),
-        });
+      if (!overlapsBusy && slotStart >= minBookingTime) {
+        slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString(), label: formatTime(slotStart) });
       }
-
       cursorMin += durationMinutes;
     }
   }
@@ -211,36 +196,20 @@ export async function createCalendarEvent(params: {
     sendUpdates: "none",
     requestBody: {
       summary:     params.summary,
-      description: meetLink
-        ? `${params.description}\n\nGoogle Meet: ${meetLink}`
-        : params.description,
-      location: meetLink || undefined,
+      description: meetLink ? `${params.description}\n\nGoogle Meet: ${meetLink}` : params.description,
+      location:    meetLink || undefined,
       start: { dateTime: params.startIso, timeZone: TZ },
       end:   { dateTime: params.endIso,   timeZone: TZ },
-      reminders: {
-        useDefault: false,
-        overrides:  [
-          { method: "email", minutes: 60 * 24 },
-          { method: "popup", minutes: 30 },
-        ],
-      },
+      reminders: { useDefault: false, overrides: [{ method: "email", minutes: 1440 }, { method: "popup", minutes: 30 }] },
     },
   });
 
   return { eventId: event.data.id!, meetLink };
 }
 
-/**
- * Deletes a Google Calendar event by ID.
- * Used when a student cancels a booking.
- */
 export async function deleteCalendarEvent(eventId: string): Promise<void> {
   const calendar = getCalendar();
-  await calendar.events.delete({
-    calendarId:  CALENDAR_ID,
-    eventId,
-    sendUpdates: "none",
-  });
+  await calendar.events.delete({ calendarId: CALENDAR_ID, eventId, sendUpdates: "none" });
 }
 
 // ─── Cancellation tokens ──────────────────────────────────────────────────────
@@ -248,66 +217,37 @@ export async function deleteCalendarEvent(eventId: string): Promise<void> {
 const CANCEL_SECRET = process.env.CANCEL_SECRET!;
 
 function signToken(payload: string): string {
-  return crypto
-    .createHmac("sha256", CANCEL_SECRET)
-    .update(payload)
-    .digest("hex");
+  return crypto.createHmac("sha256", CANCEL_SECRET).update(payload).digest("hex");
 }
 
-/**
- * Generates a signed cancellation token and stores the booking record in KV.
- * TTL = session end + 1h buffer so keys are automatically evicted (CRIT-02a).
- */
 export async function createCancellationToken(
   record: Omit<BookingRecord, "used">
 ): Promise<string> {
-  const payload = `${record.eventId}:${record.email}:${record.startsAt}`;
-  const token   = signToken(payload);
+  const payload  = `${record.eventId}:${record.email}:${record.startsAt}`;
+  const token    = signToken(payload);
+  const ttlSecs  = Math.max(3600, Math.floor((new Date(record.endsAt).getTime() + 3_600_000 - Date.now()) / 1000));
 
-  const sessionEndMs = new Date(record.endsAt).getTime();
-  const ttlSeconds   = Math.max(3600, Math.floor((sessionEndMs + 3_600_000 - Date.now()) / 1000));
-
-  await kv.set(`cancel:${token}`, { ...record, used: false }, { ex: ttlSeconds });
-
+  await kv.set(`cancel:${token}`, { ...record, used: false }, { ex: ttlSecs });
   return token;
 }
 
-/**
- * Verifies a cancellation token and returns the booking record if valid.
- * Returns null if the token is invalid, already expired, or the 2-hour
- * cancellation window has closed.
- *
- * SEC-02: Token format validated before crypto operations.
- */
 export async function verifyCancellationToken(
   token: string
 ): Promise<{ record: BookingRecord; withinWindow: boolean } | null> {
-  // Validate format first — must be exactly 64 lowercase hex chars (SHA-256 output)
   if (!/^[0-9a-f]{64}$/.test(token)) return null;
 
   const record = await kv.get<BookingRecord>(`cancel:${token}`);
   if (!record || record.used) return null;
 
-  const expectedPayload = `${record.eventId}:${record.email}:${record.startsAt}`;
-  const expectedToken   = signToken(expectedPayload);
-
-  // Both buffers guaranteed 32 bytes (64 hex chars validated above)
-  const valid = crypto.timingSafeEqual(
-    Buffer.from(token, "hex"),
-    Buffer.from(expectedToken, "hex")
-  );
+  const expectedToken = signToken(`${record.eventId}:${record.email}:${record.startsAt}`);
+  const valid = crypto.timingSafeEqual(Buffer.from(token, "hex"), Buffer.from(expectedToken, "hex"));
   if (!valid) return null;
 
   const startsAt       = new Date(record.startsAt);
-  const twoHoursBefore = new Date(startsAt.getTime() - 2 * 60 * 60_000);
-  const withinWindow   = new Date() < twoHoursBefore;
-
-  return { record, withinWindow };
+  const twoHoursBefore = new Date(startsAt.getTime() - 2 * 3_600_000);
+  return { record, withinWindow: new Date() < twoHoursBefore };
 }
 
-/**
- * Deletes the cancellation token from KV so it cannot be reused (CRIT-02b).
- */
 export async function consumeCancellationToken(token: string): Promise<void> {
   await kv.del(`cancel:${token}`);
 }

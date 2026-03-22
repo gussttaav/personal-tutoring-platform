@@ -3,23 +3,28 @@
 /**
  * InteractiveShell
  *
- * The only client boundary on the landing page. Owns all booking/auth state.
+ * The only client boundary on the landing page.
  *
- * UX-01: Added an auth loading skeleton. Previously when the page loaded,
- * NextAuth took 200–500ms to resolve the session. During that time
- * `isSignedIn` was false, so users who were already authenticated briefly
- * saw the unauthenticated UI (sign-in prompts in pack cards, no credits pill)
- * before their session resolved — a jarring flash of wrong content.
+ * ARCH-06: Refactored from a ~280-line god component into a thin orchestrator
+ * that delegates to two purpose-built hooks:
  *
- * Fix: while `isAuthLoading` is true, render lightweight skeleton placeholders
- * for the session cards and pack cards instead of the interactive versions.
- * The skeletons have the same dimensions as the real cards so layout doesn't
- * shift when the real content appears.
+ *   useBookingRouter   — which view is active, sign-in gate state, all click
+ *                        handlers (was: 7 useState + 2 useEffect + all handler fns)
+ *   useRescheduleIntent — URL param parsing, reschedule state machine
+ *                        (was: 3 useState + 3 useEffect blocks)
+ *
+ * This component now only wires auth state + the two hooks together and
+ * renders the appropriate overlay. Adding a new booking flow type no longer
+ * requires touching this file — it goes into useBookingRouter.
+ *
+ * UX-01 skeleton (Week 5) is preserved: auth loading skeletons are rendered
+ * while isAuthLoading is true.
  */
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { useUserSession } from "@/hooks/useUserSession";
+import { useBookingRouter } from "@/hooks/useBookingRouter";
+import { useRescheduleIntent } from "@/hooks/useRescheduleIntent";
 import PackModal from "@/components/PackModal";
 import BookingModeViewComponent from "@/components/BookingModeView";
 import SignInGate from "@/components/SignInGate";
@@ -30,40 +35,23 @@ import { CreditsPill } from "@/components/ui";
 import { COLORS, PACK_SIZES } from "@/constants";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
-import type { PackSize, StudentInfo } from "@/types";
-import type { SingleSessionType } from "@/components/SingleSessionBooking";
+import type { PackSize } from "@/types";
 
-// ─── Skeleton atoms ───────────────────────────────────────────────────────────
+// ─── Skeleton atoms (UX-01) ───────────────────────────────────────────────────
 
-/** Animated shimmer placeholder matching the height of a SessionCard. */
 function SessionCardSkeleton() {
   return (
     <div
-      style={{
-        height: 72,
-        borderRadius: 12,
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        marginBottom: 10,
-        animation: "skeletonPulse 1.4s ease-in-out infinite",
-      }}
+      style={{ height: 72, borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)", marginBottom: 10, animation: "skeletonPulse 1.4s ease-in-out infinite" }}
       aria-hidden="true"
     />
   );
 }
 
-/** Animated shimmer placeholder matching the height of a PackCard. */
 function PackCardSkeleton() {
   return (
     <div
-      style={{
-        flex: "1 1 200px",
-        height: 160,
-        borderRadius: 14,
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        animation: "skeletonPulse 1.4s ease-in-out infinite",
-      }}
+      style={{ flex: "1 1 200px", height: 160, borderRadius: 14, background: "var(--surface)", border: "1px solid var(--border)", animation: "skeletonPulse 1.4s ease-in-out infinite" }}
       aria-hidden="true"
     />
   );
@@ -72,126 +60,26 @@ function PackCardSkeleton() {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function InteractiveShell() {
-  const {
-    googleUser,
-    isSignedIn,
-    isAuthLoading,
-    packSession,
-    creditsLoading,
-    updateCredits,
-  } = useUserSession();
+  const { googleUser, isSignedIn, isAuthLoading, packSession, creditsLoading, updateCredits } =
+    useUserSession();
 
-  const searchParams = useSearchParams();
+  const router    = useBookingRouter(isSignedIn);
+  const reschedule = useRescheduleIntent(isSignedIn);
 
-  const packCreditsForSize = (size: PackSize): number | null => {
-    if (packSession && packSession.credits > 0 && packSession.packSize === size) {
-      return packSession.credits;
-    }
-    return null;
-  };
-
-  const [pendingSession,    setPendingSession]    = useState<SingleSessionType | null>(null);
-  const [activeSession,     setActiveSession]     = useState<SingleSessionType | null>(null);
-  const [showPackBooking,   setShowPackBooking]   = useState(false);
-  const [selectedPack,      setSelectedPack]      = useState<PackSize | null>(null);
-  const [signInGateLabel,   setSignInGateLabel]   = useState("");
-  const [forcePackBooking,  setForcePackBooking]  = useState(false);
-  const [rescheduleToken,   setRescheduleToken]   = useState<string | null>(null);
-  const [pendingReschedule, setPendingReschedule] = useState<{ type: string; token: string | null; callbackUrl: string } | null>(null);
-
-  function handleCreditsReady(_student: StudentInfo) {
-    setSelectedPack(null);
-  }
-
-  function handleSessionClick(type: SingleSessionType) {
-    if (!isSignedIn) {
-      const labels: Record<SingleSessionType, string> = {
-        free15min: "reservar el encuentro inicial gratuito",
-        session1h: "reservar una sesión de 1 hora",
-        session2h: "reservar una sesión de 2 horas",
-      };
-      setPendingSession(type);
-      setSignInGateLabel(labels[type]);
-      return;
-    }
-    setActiveSession(type);
-  }
-
-  function handlePackBuy(size: PackSize) {
-    if (!isSignedIn) {
-      setPendingSession(null);
-      setSignInGateLabel("comprar un pack de clases");
-      setSelectedPack(size);
-      return;
-    }
-    setSelectedPack(size);
-  }
-
-  function handlePackSchedule() {
-    if (!isSignedIn) {
-      setSignInGateLabel("reservar una clase de tu pack");
-      return;
-    }
-    setShowPackBooking(true);
-  }
-
-  function handleSignInGateClose() {
-    setPendingSession(null);
-    setPendingReschedule(null);
-    setSignInGateLabel("");
-    setSelectedPack(null);
-  }
-
+  // Wire reschedule intent into the router once it resolves
   useEffect(() => {
-    if (isSignedIn && pendingSession && !activeSession) {
-      setActiveSession(pendingSession);
-      setPendingSession(null);
-      setSignInGateLabel("");
-    }
-  }, [isSignedIn, pendingSession, activeSession]);
+    if (!reschedule.activeReschedule) return;
+    const { type, token } = reschedule.activeReschedule;
+    router.applyReschedule(type, token);
+    reschedule.clearPendingReschedule();
+  }, [reschedule.activeReschedule]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Merge the reschedule sign-in label into the router's gate state
   useEffect(() => {
-    if (!isSignedIn || !pendingReschedule) return;
-    const { type, token } = pendingReschedule;
-    if (token) setRescheduleToken(token);
-    if (type === "pack") {
-      setForcePackBooking(true);
-      setShowPackBooking(true);
-    } else if (["free15min", "session1h", "session2h"].includes(type)) {
-      setActiveSession(type as SingleSessionType);
+    if (reschedule.signInLabel) {
+      router.setRescheduleSignInLabel(reschedule.signInLabel);
     }
-    setPendingReschedule(null);
-    setSignInGateLabel("");
-  }, [isSignedIn, pendingReschedule]);
-
-  useEffect(() => {
-    const reschedule = searchParams.get("reschedule");
-    const token      = searchParams.get("token");
-    if (!reschedule) return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete("reschedule");
-    url.searchParams.delete("token");
-    window.history.replaceState({}, "", url.toString());
-
-    if (!isSignedIn) {
-      const callbackUrl = token
-        ? `/?reschedule=${encodeURIComponent(reschedule)}&token=${encodeURIComponent(token)}`
-        : `/?reschedule=${encodeURIComponent(reschedule)}`;
-      setPendingReschedule({ type: reschedule, token: token ?? null, callbackUrl });
-      setSignInGateLabel("reprogramar tu clase");
-      return;
-    }
-
-    if (token) setRescheduleToken(token);
-    if (reschedule === "pack") {
-      setForcePackBooking(true);
-      setShowPackBooking(true);
-    } else if (["free15min", "session1h", "session2h"].includes(reschedule)) {
-      setActiveSession(reschedule as SingleSessionType);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [reschedule.signInLabel]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Pack booking overlay ──────────────────────────────────────────────────
   const packStudentInfo = packSession
@@ -200,13 +88,13 @@ export default function InteractiveShell() {
       ? { email: googleUser.email, name: googleUser.name ?? "", credits: 0 }
       : null;
 
-  if (showPackBooking && packStudentInfo && googleUser?.email) {
+  if (router.showPackBooking && packStudentInfo && googleUser?.email) {
     return (
       <div style={{ position: "fixed", inset: 0, background: "var(--bg)", zIndex: 40, overflowY: "auto", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, background: "var(--bg)", zIndex: 1 }}>
           <CreditsPill credits={packStudentInfo.credits} />
           <button
-            onClick={() => setShowPackBooking(false)}
+            onClick={router.closePackBooking}
             style={{ fontSize: 13, color: COLORS.textMuted, background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "color 0.2s" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = COLORS.textSecondary)}
             onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = COLORS.textMuted)}
@@ -218,9 +106,9 @@ export default function InteractiveShell() {
         <div style={{ flex: 1, padding: "8px 0" }}>
           <BookingModeViewComponent
             student={packStudentInfo}
-            rescheduleToken={rescheduleToken}
-            onCreditsUpdated={(remaining: number) => { updateCredits(remaining); }}
-            onExit={() => { setShowPackBooking(false); setForcePackBooking(false); setRescheduleToken(null); }}
+            rescheduleToken={router.rescheduleToken}
+            onCreditsUpdated={updateCredits}
+            onExit={router.closePackBooking}
             hideTopBar
           />
         </div>
@@ -229,44 +117,43 @@ export default function InteractiveShell() {
   }
 
   // ── Single session booking overlay ────────────────────────────────────────
-  if (activeSession && googleUser?.email) {
+  if (router.activeSession && googleUser?.email) {
     return (
       <SingleSessionBooking
-        sessionType={activeSession}
+        sessionType={router.activeSession}
         userName={googleUser.name ?? ""}
         userEmail={googleUser.email}
-        rescheduleToken={rescheduleToken}
-        onBack={() => { setActiveSession(null); setRescheduleToken(null); }}
+        rescheduleToken={router.rescheduleToken}
+        onBack={router.closeSession}
       />
     );
   }
 
-  // ── Normal landing interactive layer ─────────────────────────────────────
+  // ── Normal landing layer ──────────────────────────────────────────────────
+  const combinedSignInLabel = router.signInGateLabel || reschedule.signInLabel;
+  const combinedCallbackUrl = reschedule.pendingReschedule?.callbackUrl;
+
   return (
     <>
-      {/* Skeleton pulse animation — injected once, scoped to this island */}
       <style>{`
-        @keyframes skeletonPulse {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.45; }
-        }
+        @keyframes skeletonPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
       `}</style>
 
-      {signInGateLabel && !isSignedIn && (
+      {combinedSignInLabel && !isSignedIn && (
         <SignInGate
-          actionLabel={signInGateLabel}
-          callbackUrl={pendingReschedule?.callbackUrl}
-          onClose={handleSignInGateClose}
+          actionLabel={combinedSignInLabel}
+          callbackUrl={combinedCallbackUrl}
+          onClose={() => { router.handleSignInGateClose(); reschedule.clearPendingReschedule(); }}
         />
       )}
 
-      {selectedPack && isSignedIn && googleUser?.email && (
+      {router.selectedPack && isSignedIn && googleUser?.email && (
         <PackModal
-          packSize={selectedPack}
+          packSize={router.selectedPack}
           userEmail={googleUser.email}
           userName={googleUser.name ?? ""}
-          onClose={() => setSelectedPack(null)}
-          onCreditsReady={handleCreditsReady}
+          onClose={() => router.handleSignInGateClose()}
+          onCreditsReady={router.handleCreditsReady}
         />
       )}
 
@@ -279,23 +166,17 @@ export default function InteractiveShell() {
           Elige el formato que mejor se adapta a lo que necesitas.
         </p>
 
-        {/* UX-01: Show skeletons while auth is loading to avoid flash of wrong state */}
         {isAuthLoading ? (
-          <>
-            <SessionCardSkeleton />
-            <SessionCardSkeleton />
-            <SessionCardSkeleton />
-          </>
+          <><SessionCardSkeleton /><SessionCardSkeleton /><SessionCardSkeleton /></>
         ) : (
           <>
-            <SessionCard badge="Gratis" name="Encuentro inicial" duration="⏱ 15 minutos · Comentamos tu caso y definimos un plan" price="Sin coste" isFree onClick={() => handleSessionClick("free15min")} />
-            <SessionCard badge="Más reservada" name="Sesión de 1 hora" duration="⏱ 60 minutos · Resolución de dudas o proyecto" price="€16" featured onClick={() => handleSessionClick("session1h")} />
-            <SessionCard name="Sesión de 2 horas" duration="⏱ 120 minutos · Para temas que requieren profundidad" price="€30" onClick={() => handleSessionClick("session2h")} />
+            <SessionCard badge="Gratis" name="Encuentro inicial" duration="⏱ 15 minutos · Comentamos tu caso y definimos un plan" price="Sin coste" isFree onClick={() => router.handleSessionClick("free15min")} />
+            <SessionCard badge="Más reservada" name="Sesión de 1 hora" duration="⏱ 60 minutos · Resolución de dudas o proyecto" price="€16" featured onClick={() => router.handleSessionClick("session1h")} />
+            <SessionCard name="Sesión de 2 horas" duration="⏱ 120 minutos · Para temas que requieren profundidad" price="€30" onClick={() => router.handleSessionClick("session2h")} />
           </>
         )}
       </section>
 
-      {/* Divider */}
       <div style={{ height: 1, background: "linear-gradient(90deg, transparent, var(--border), transparent)", margin: "32px 0" }} />
 
       {/* Packs section */}
@@ -306,35 +187,25 @@ export default function InteractiveShell() {
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20 }}>
           Reserva por adelantado y ahorra. Válidos 6 meses desde la compra.
         </p>
-
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {/* UX-01: Show skeletons while auth is loading */}
           {isAuthLoading ? (
-            <>
-              <PackCardSkeleton />
-              <PackCardSkeleton />
-            </>
+            <><PackCardSkeleton /><PackCardSkeleton /></>
           ) : (
-            PACK_SIZES.map((size) => (
+            PACK_SIZES.map((size: PackSize) => (
               <PackCard
                 key={size}
                 size={size}
-                activeCredits={creditsLoading ? null : packCreditsForSize(size)}
+                activeCredits={creditsLoading ? null : (packSession?.credits ?? 0) > 0 && packSession?.packSize === size ? (packSession?.credits ?? null) : null}
                 creditsLoading={creditsLoading && isSignedIn}
-                onBuy={handlePackBuy}
-                onSchedule={handlePackSchedule}
+                onBuy={router.handlePackBuy}
+                onSchedule={router.handlePackSchedule}
               />
             ))
           )}
         </div>
       </section>
 
-      {/* Fixed overlays */}
-      <AuthCorner
-        user={googleUser}
-        packCredits={packSession?.credits ?? null}
-        packSize={packSession?.packSize ?? null}
-      />
+      <AuthCorner user={googleUser} packCredits={packSession?.credits ?? null} packSize={packSession?.packSize ?? null} />
       <Chat />
     </>
   );

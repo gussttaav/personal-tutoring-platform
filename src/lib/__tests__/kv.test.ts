@@ -1,25 +1,34 @@
 /**
  * Unit tests for lib/kv.ts
  *
- * Mocks @vercel/kv so no real Redis connection is needed.
- * Mirrors the structure of the old sheets.test.ts.
+ * Mocks @upstash/redis so no real Redis connection is needed.
  */
 
 // ─── Mock setup ───────────────────────────────────────────────────────────────
 
-const mockKvGet = jest.fn();
-const mockKvSet = jest.fn();
+const mockKvGet  = jest.fn();
+const mockKvSet  = jest.fn();
+const mockKvLpush = jest.fn();
+const mockKvLtrim = jest.fn();
+const mockKvDel  = jest.fn();
 
-jest.mock("@upstash/redis", () => ({
-  Redis: {
-    fromEnv: () => ({
-      get: (...args: unknown[]) => mockKvGet(...args),
-      set: (...args: unknown[]) => mockKvSet(...args),
-    }),
+jest.mock("@/lib/redis", () => ({
+  kv: {
+    get:   (...args: unknown[]) => mockKvGet(...args),
+    set:   (...args: unknown[]) => mockKvSet(...args),
+    del:   (...args: unknown[]) => mockKvDel(...args),
+    lpush: (...args: unknown[]) => mockKvLpush(...args),
+    ltrim: (...args: unknown[]) => mockKvLtrim(...args),
   },
 }));
 
-import { getCredits, addOrUpdateStudent, decrementCredit } from "@/lib/kv";
+import {
+  getCredits,
+  addOrUpdateStudent,
+  decrementCredit,
+  restoreCredit,
+  appendAuditLog,
+} from "@/lib/kv";
 import type { CreditRecord } from "@/lib/kv";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -38,13 +47,13 @@ function pastDate(): string {
 
 function makeRecord(overrides: Partial<CreditRecord> = {}): CreditRecord {
   return {
-    email: "student@example.com",
-    name: "Ana García",
-    credits: 5,
-    packLabel: "Pack 5 clases",
-    packSize: 5,
-    expiresAt: futureDate(),
-    lastUpdated: new Date().toISOString(),
+    email:           "student@example.com",
+    name:            "Ana García",
+    credits:         5,
+    packLabel:       "Pack 5 clases",
+    packSize:        5,
+    expiresAt:       futureDate(),
+    lastUpdated:     new Date().toISOString(),
     stripeSessionId: "cs_test_abc",
     ...overrides,
   };
@@ -74,13 +83,13 @@ describe("getCredits", () => {
     expect(result?.credits).toBe(0);
   });
 
-  it("reads the key with a lowercased email", async () => {
+  it("reads the key with a lowercased, trimmed email", async () => {
     mockKvGet.mockResolvedValueOnce(null);
-    await getCredits("UPPER@EXAMPLE.COM");
+    await getCredits("  UPPER@EXAMPLE.COM  ");
     expect(mockKvGet).toHaveBeenCalledWith("credits:upper@example.com");
   });
 
-  it("falls back to parsing packSize from packLabel when packSize is null", async () => {
+  it("falls back to parsing packSize from packLabel when packSize field is null", async () => {
     mockKvGet.mockResolvedValueOnce(makeRecord({ packSize: null, packLabel: "Pack 10 clases" }));
     const result = await getCredits("student@example.com");
     expect(result?.packSize).toBe(10);
@@ -117,7 +126,9 @@ describe("addOrUpdateStudent", () => {
   });
 
   it("resets credits to 0 before adding when the existing pack is expired", async () => {
-    mockKvGet.mockResolvedValueOnce(makeRecord({ credits: 3, expiresAt: pastDate(), stripeSessionId: "cs_old" }));
+    mockKvGet.mockResolvedValueOnce(
+      makeRecord({ credits: 3, expiresAt: pastDate(), stripeSessionId: "cs_old" })
+    );
     mockKvSet.mockResolvedValueOnce("OK");
 
     await addOrUpdateStudent("student@example.com", "Ana García", 5, "Pack 5 clases", "cs_new");
@@ -126,12 +137,22 @@ describe("addOrUpdateStudent", () => {
     expect(savedRecord.credits).toBe(5); // 0 (reset) + 5
   });
 
-  it("skips write when stripeSessionId was already processed (idempotency)", async () => {
+  it("is idempotent: skips write when stripeSessionId was already processed", async () => {
     mockKvGet.mockResolvedValueOnce(makeRecord({ stripeSessionId: "cs_already_done" }));
 
     await addOrUpdateStudent("student@example.com", "Ana García", 5, "Pack 5 clases", "cs_already_done");
 
     expect(mockKvSet).not.toHaveBeenCalled();
+  });
+
+  it("writes the email in lowercase", async () => {
+    mockKvGet.mockResolvedValueOnce(null);
+    mockKvSet.mockResolvedValueOnce("OK");
+
+    await addOrUpdateStudent("UPPER@EXAMPLE.COM", "Carlos", 5, "Pack 5 clases", "cs_x");
+
+    const [, savedRecord] = mockKvSet.mock.calls[0];
+    expect(savedRecord.email).toBe("upper@example.com");
   });
 });
 
@@ -175,5 +196,92 @@ describe("decrementCredit", () => {
 
     const result = await decrementCredit("student@example.com");
     expect(result).toEqual({ ok: true, remaining: 0 });
+  });
+});
+
+// ─── restoreCredit ────────────────────────────────────────────────────────────
+
+describe("restoreCredit", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("returns ok:false when the student is not found", async () => {
+    mockKvGet.mockResolvedValueOnce(null);
+    expect(await restoreCredit("ghost@example.com")).toEqual({ ok: false, credits: 0 });
+    expect(mockKvSet).not.toHaveBeenCalled();
+  });
+
+  it("returns ok:false when the pack is expired", async () => {
+    mockKvGet.mockResolvedValueOnce(makeRecord({ expiresAt: pastDate() }));
+    expect(await restoreCredit("student@example.com")).toEqual({ ok: false, credits: 0 });
+    expect(mockKvSet).not.toHaveBeenCalled();
+  });
+
+  it("restores 1 credit and writes the updated record", async () => {
+    mockKvGet.mockResolvedValueOnce(makeRecord({ credits: 3, packSize: 5 }));
+    mockKvSet.mockResolvedValueOnce("OK");
+
+    const result = await restoreCredit("student@example.com");
+    expect(result).toEqual({ ok: true, credits: 4 });
+
+    const [, savedRecord] = mockKvSet.mock.calls[0];
+    expect(savedRecord.credits).toBe(4);
+  });
+
+  it("caps restored credits at packSize — never exceeds purchased amount", async () => {
+    mockKvGet.mockResolvedValueOnce(makeRecord({ credits: 5, packSize: 5 }));
+    mockKvSet.mockResolvedValueOnce("OK");
+
+    const result = await restoreCredit("student@example.com");
+    expect(result).toEqual({ ok: true, credits: 5 }); // already at cap
+  });
+
+  it("uses packLabel to infer packSize when packSize field is null", async () => {
+    mockKvGet.mockResolvedValueOnce(
+      makeRecord({ credits: 4, packSize: null, packLabel: "Pack 5 clases" })
+    );
+    mockKvSet.mockResolvedValueOnce("OK");
+
+    const result = await restoreCredit("student@example.com");
+    expect(result).toEqual({ ok: true, credits: 5 }); // inferred packSize = 5, capped
+  });
+});
+
+// ─── appendAuditLog ───────────────────────────────────────────────────────────
+
+describe("appendAuditLog", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("calls lpush with the audit key and a serialized entry", async () => {
+    mockKvLpush.mockResolvedValueOnce(1);
+    mockKvLtrim.mockResolvedValueOnce("OK");
+
+    await appendAuditLog("student@example.com", "decrement", { credits: 3 });
+
+    expect(mockKvLpush).toHaveBeenCalledTimes(1);
+    const [auditKey, entry] = mockKvLpush.mock.calls[0];
+    expect(auditKey).toBe("audit:student@example.com");
+    const parsed = JSON.parse(entry);
+    expect(parsed.action).toBe("decrement");
+    expect(parsed.credits).toBe(3);
+    expect(parsed.ts).toBeDefined();
+  });
+
+  it("calls ltrim to cap the log at MAX_AUDIT_ENTRIES", async () => {
+    mockKvLpush.mockResolvedValueOnce(1);
+    mockKvLtrim.mockResolvedValueOnce("OK");
+
+    await appendAuditLog("student@example.com", "restore", {});
+
+    expect(mockKvLtrim).toHaveBeenCalledTimes(1);
+    const [, start, stop] = mockKvLtrim.mock.calls[0];
+    expect(start).toBe(0);
+    expect(stop).toBeGreaterThan(0); // MAX_AUDIT_ENTRIES - 1
+  });
+
+  it("does not throw when Redis is unavailable (best-effort)", async () => {
+    mockKvLpush.mockRejectedValueOnce(new Error("Redis connection failed"));
+
+    // Should resolve without throwing — audit log is non-critical
+    await expect(appendAuditLog("student@example.com", "decrement", {})).resolves.not.toThrow();
   });
 });

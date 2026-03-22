@@ -1,0 +1,507 @@
+/**
+ * booking.module.css
+ *
+ * CSS module for BookingModeView and SingleSessionBooking.
+ *
+ * Replaces the inline style={{}} objects that previously scattered layout,
+ * spacing, and color decisions across two 300+ line component files. Using
+ * a CSS module provides:
+ *   - A single source of truth for booking-shell dimensions and colours
+ *   - Media queries in one place (the .split responsive breakpoint)
+ *   - Hover/focus states without JS onMouseEnter/onMouseLeave handlers
+ *   - Better DevTools experience (class names are visible in the inspector)
+ *
+ * Design tokens (--bg, --green, --surface, --border, --text, etc.) are
+ * defined in globals.css and consumed here unchanged so the dark theme
+ * stays consistent.
+ */
+
+/* ─── Full-screen overlay shell ─────────────────────────────────────────── */
+
+.shell {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(13, 15, 16, 0.85);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+}
+
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.backBtn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.backBtn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--text);
+}
+
+.topbarTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.topbarSubtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Badge colours are set via CSS custom properties injected by the component */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--badge-bg);
+  border: 1px solid var(--badge-border);
+  color: var(--badge-color);
+}
+
+.shellContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* ─── Two-column split layout ────────────────────────────────────────────── */
+
+.split {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── Sidebar ────────────────────────────────────────────────────────────── */
+
+.sidebar {
+  border-right: 1px solid var(--border);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+@media (max-width: 720px) {
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* ─── Tutor row ──────────────────────────────────────────────────────────── */
+
+.tutorRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tutorAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--surface-2, #1c1f21);
+  border: 2px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tutorName {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.tutorRole {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* ─── Pack status card ───────────────────────────────────────────────────── */
+
+.packCard {
+  background: rgba(99, 179, 237, 0.07);
+  border: 1px solid rgba(99, 179, 237, 0.2);
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.packLabel {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #63b3ed;
+}
+
+.packCount {
+  font-family: var(--font-serif, serif);
+  font-size: 34px;
+  color: var(--text);
+  line-height: 1;
+}
+
+.packCountUnit {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.progressTrack {
+  height: 4px;
+  background: var(--surface-3, #222527);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, #63b3ed, #3ddc84);
+  transition: width 0.4s ease;
+}
+
+/* ─── Session info card ──────────────────────────────────────────────────── */
+
+.sessionCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sessionTitle {
+  font-family: var(--font-serif, serif);
+  font-size: 20px;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.sessionTitleLarge {
+  font-family: var(--font-serif, serif);
+  font-size: 28px;
+  color: var(--text);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.includedBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--green);
+  font-weight: 500;
+}
+
+.priceTag {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--green);
+}
+
+/* ─── Meta rows ──────────────────────────────────────────────────────────── */
+
+.metaRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+/* ─── Info row (clock / phone) ───────────────────────────────────────────── */
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ─── Calendar area ──────────────────────────────────────────────────────── */
+
+.calendarArea {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.spinnerWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 12px;
+}
+
+.spinnerLabel {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ─── Confirm panel ──────────────────────────────────────────────────────── */
+
+.confirmPanel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.25s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.confirmSlotRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.confirmSlotIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(61, 220, 132, 0.1);
+  border: 1px solid rgba(61, 220, 132, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.confirmSlotDate {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.confirmSlotMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.packFeedback {
+  background: rgba(61, 220, 132, 0.1);
+  border: 1px solid rgba(61, 220, 132, 0.2);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--green);
+}
+
+.confirmFooter {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────── */
+
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 20px;
+  background: var(--green);
+  border: none;
+  border-radius: 8px;
+  color: #0d0f10;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.primaryBtn:hover {
+  background: #5ae89a;
+  transform: translateY(-1px);
+}
+
+.secondaryBtn {
+  width: 100%;
+  padding: 11px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.secondaryBtn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ─── Success screen ─────────────────────────────────────────────────────── */
+
+.successWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 40px 24px;
+}
+
+.successInner {
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+}
+
+.successIcon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin: 0 auto 20px;
+  background: rgba(61, 220, 132, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  color: var(--green);
+}
+
+.successTitle {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.successSubtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.emailFailedBox {
+  background: rgba(61, 220, 132, 0.08);
+  border: 1px solid rgba(61, 220, 132, 0.25);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.creditsBox {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.successActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─── Error screen ───────────────────────────────────────────────────────── */
+
+.errorWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 40px;
+}
+
+.errorInner {
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+}
+
+.errorIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
