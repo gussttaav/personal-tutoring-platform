@@ -19,7 +19,7 @@
  *   direct /cancelar?token=... link on the success screen.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Spinner, Alert } from "@/components/ui";
 import { COLORS } from "@/constants";
 import { friendlyError } from "@/constants/errors";
@@ -66,6 +66,16 @@ export default function SingleSessionBooking({
   const [meetLink,    setMeetLink]    = useState("");
   const [cancelToken, setCancelToken] = useState(""); // UX-05
   const [emailFailed, setEmailFailed] = useState(false);
+  const [userTz,      setUserTz]      = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const offset = -new Date().getTimezoneOffset() / 60;
+      const gmt = `GMT${offset >= 0 ? '+' : ''}${offset}`;
+      setUserTz(`${tz} (${gmt})`);
+    } catch { /* ignore */ }
+  }, []);
 
   // UX-02: Step 1 — slot selected
   //   - For paid sessions without a rescheduleToken → redirect to Stripe immediately
@@ -220,6 +230,7 @@ export default function SingleSessionBooking({
             <div style={{ height: 1, background: "var(--border)" }} />
             <InfoRow icon="clock">{cfg.duration}</InfoRow>
             <InfoRow icon="phone">Google Meet</InfoRow>
+            {userTz && <InfoRow icon="globe">Tu zona horaria: {userTz}</InfoRow>}
             <div style={{ height: 1, background: "var(--border)" }} />
             {cfg.price === null
               ? <span style={{ fontSize: 15, fontWeight: 500, color: "var(--green)" }}>Sin coste</span>

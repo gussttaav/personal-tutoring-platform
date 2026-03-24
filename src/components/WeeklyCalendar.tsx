@@ -75,6 +75,7 @@ export default function WeeklyCalendar({ durationMinutes, onSlotSelected, select
   const [modalSlot,  setModalSlot]  = useState<{ slot: ApiSlot; date: Date } | null>(null);
   const [isMobile,   setIsMobile]   = useState(false);
   const [userTz,     setUserTz]     = useState<string>(SCHEDULE.timezone);
+  const [hasManuallyNavigated, setHasManuallyNavigated] = useState(false);
 
   const maxOffset = SCHEDULE.bookingWindowWeeks;
   const days      = getWeekDates(weekOffset);
@@ -91,6 +92,36 @@ export default function WeeklyCalendar({ durationMinutes, onSlotSelected, select
       if (tz) setUserTz(tz);
     } catch { /* keep default */ }
   }, []);
+
+  // Auto-advance to next week if current week is completely empty
+  useEffect(() => {
+    if (hasManuallyNavigated || weekOffset >= maxOffset) return;
+
+    let allLoaded = true;
+    let hasAnySlots = false;
+    let hasValidDays = false;
+
+    days.forEach((date) => {
+      const ymd = toYMD(date);
+      if (ymd < todayYMD || ymd > maxYMD) return;
+
+      hasValidDays = true;
+      const dayData = slotsMap[ymd];
+
+      if (dayData === undefined || dayData === "loading") {
+        allLoaded = false;
+      } else if (dayData === "error") {
+        hasAnySlots = true; // Prevent auto-advance on error so user can see it
+      } else if (Array.isArray(dayData) && dayData.length > 0) {
+        hasAnySlots = true;
+      }
+    });
+
+    if (hasValidDays && allLoaded && !hasAnySlots) {
+      setWeekOffset(o => o + 1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slotsMap, weekOffset, hasManuallyNavigated]);
 
   // Fetch availability for the current week
   useEffect(() => {
@@ -113,6 +144,8 @@ export default function WeeklyCalendar({ durationMinutes, onSlotSelected, select
   // Re-fetch when timezone changes
   useEffect(() => {
     setSlotsMap({});
+    setHasManuallyNavigated(false);
+    setWeekOffset(0);
   }, [userTz]);
 
   function slotKey(date: Date, slot: ApiSlot) { return `${toYMD(date)}-${slot.start}`; }
@@ -170,14 +203,9 @@ export default function WeeklyCalendar({ durationMinutes, onSlotSelected, select
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
           <span style={{ fontSize: 14, fontWeight: 500, color: "var(--text)" }}>{weekLabel(days)}</span>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {tzDiffers && (
-              <span style={{ fontSize: 11, color: "var(--text-dim)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 100, padding: "2px 8px" }}>
-                🌍 {userTz}
-              </span>
-            )}
             <div style={{ display: "flex", gap: 6 }}>
-              <NavBtn onClick={() => setWeekOffset(o => o - 1)} disabled={!canPrev} direction="left" />
-              <NavBtn onClick={() => setWeekOffset(o => o + 1)} disabled={!canNext} direction="right" />
+              <NavBtn onClick={() => { setWeekOffset(o => o - 1); setHasManuallyNavigated(true); }} disabled={!canPrev} direction="left" />
+              <NavBtn onClick={() => { setWeekOffset(o => o + 1); setHasManuallyNavigated(true); }} disabled={!canNext} direction="right" />
             </div>
           </div>
         </div>
@@ -187,6 +215,7 @@ export default function WeeklyCalendar({ durationMinutes, onSlotSelected, select
           {days.map((date) => {
             const ymd      = toYMD(date);
             const isPast   = ymd < todayYMD;
+            const isBeyond = ymd > maxYMD;
             const isToday  = ymd === todayYMD;
             const daySlots = slotsMap[ymd];
 
@@ -204,9 +233,9 @@ export default function WeeklyCalendar({ durationMinutes, onSlotSelected, select
 
                 {/* Slots */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 4, width: "100%" }}>
-                  {isPast ? <EmptyDash /> :
-                   daySlots === "loading" ? <LoadingDots /> :
-                   daySlots === "error" || !daySlots || daySlots.length === 0 ? <EmptyDash /> :
+                  {isPast || isBeyond ? <EmptyDash /> :
+                   daySlots === "loading" || daySlots === undefined ? <LoadingDots /> :
+                   daySlots === "error" || daySlots.length === 0 ? <EmptyDash /> :
                    daySlots.map((slot) => {
                      const key        = slotKey(date, slot);
                      const isFocused  = focusedKey === key;

@@ -284,7 +284,12 @@ export default function InteractiveShell() {
         </div>
       </section>
 
-      <AuthCorner user={googleUser} packCredits={packSession?.credits ?? null} packSize={packSession?.packSize ?? null} />
+      <AuthCorner 
+        user={googleUser} 
+        packCredits={packSession?.credits ?? null} 
+        packSize={packSession?.packSize ?? null} 
+        onSchedulePack={router.handlePackSchedule} 
+      />
       <Chat />
     </>
   );

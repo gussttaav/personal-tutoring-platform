@@ -9,13 +9,14 @@ interface AuthCornerProps {
   user: { name?: string | null; email?: string | null; image?: string | null } | null;
   packCredits: number | null;
   packSize: PackSize | null;
+  onSchedulePack?: () => void;
 }
 
 function getInitial(name?: string | null): string {
   return (name?.trim()?.[0] ?? "?").toUpperCase();
 }
 
-export default function AuthCorner({ user, packCredits, packSize }: AuthCornerProps) {
+export default function AuthCorner({ user, packCredits, packSize, onSchedulePack }: AuthCornerProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -91,12 +92,30 @@ export default function AuthCorner({ user, packCredits, packSize }: AuthCornerPr
           </div>
 
           {hasActivePack && (
-            <div className="auth-pack-status">
+            <button 
+              className="auth-pack-status"
+              style={{ 
+                display: "block", 
+                width: "100%",
+                textAlign: "left",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer", 
+                transition: "background 0.15s",
+                fontFamily: "inherit"
+              }}
+              onClick={() => {
+                setOpen(false);
+                onSchedulePack?.();
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.background = "var(--surface-2)")}
+              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+            >
               <div className="auth-pack-pill">Pack {packSize}h activo</div>
               <div className="auth-pack-remaining">
                 {packCredits} clase{packCredits !== 1 ? "s" : ""} disponible{packCredits !== 1 ? "s" : ""}
               </div>
-            </div>
+            </button>
           )}
 
           <button

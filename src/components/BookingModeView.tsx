@@ -30,7 +30,7 @@
  * doesn't stretch to fill the full calendar column on wide screens.
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { Alert, Spinner } from "@/components/ui";
 import { COLORS } from "@/constants";
@@ -65,6 +65,16 @@ export default function BookingModeView({
   const [cancelToken, setCancelToken] = useState("");
   const [selected,    setSelected]    = useState<SelectedSlot | null>(null);
   const [emailFailed, setEmailFailed] = useState(false);
+  const [userTz,      setUserTz]      = useState<string>("");
+
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const offset = -new Date().getTimezoneOffset() / 60;
+      const gmt = `GMT${offset >= 0 ? '+' : ''}${offset}`;
+      setUserTz(`${tz} (${gmt})`);
+    } catch { /* ignore */ }
+  }, []);
 
   const handleSlotSelected = useCallback((slot: SelectedSlot) => {
     setSelected(slot);
@@ -221,6 +231,7 @@ export default function BookingModeView({
             <div style={{ height: 1, background: "var(--border)" }} />
             <InfoRow icon="clock">60 minutos</InfoRow>
             <InfoRow icon="phone">Google Meet</InfoRow>
+            {userTz && <InfoRow icon="globe">Tu zona horaria: {userTz}</InfoRow>}
             <div style={{ height: 1, background: "var(--border)" }} />
             <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--green)", fontWeight: 500 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3ddc84" strokeWidth="1.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -423,11 +434,12 @@ export function TutorRow() {
   );
 }
 
-export function InfoRow({ icon, children }: { icon: "clock" | "phone"; children: React.ReactNode }) {
+export function InfoRow({ icon, children }: { icon: "clock" | "phone" | "globe"; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--text-muted)" }}>
       {icon === "clock" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
       {icon === "phone" && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 9.46a19.86 19.86 0 0 1-3.07-8.67A2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 15.92z"/></svg>}
+      {icon === "globe" && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>}
       {children}
     </div>
   );
