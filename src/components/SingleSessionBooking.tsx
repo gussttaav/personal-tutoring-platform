@@ -240,12 +240,16 @@ export default function SingleSessionBooking({
             </div>
           ) : phase === "selected" && selected ? (
             // UX-02: confirm panel for free / reschedule flows
-            <ConfirmPanel
-              slot={selected}
-              onConfirm={handleConfirm}
-              onCancel={() => setPhase("picking")}
-              sessionDuration={cfg.duration}
-            />
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={{ width: "100%", maxWidth: 480 }}>
+                <ConfirmPanel
+                  slot={selected}
+                  onConfirm={handleConfirm}
+                  onCancel={() => setPhase("picking")}
+                  sessionDuration={cfg.duration}
+                />
+              </div>
+            </div>
           ) : (
             <WeeklyCalendar
               durationMinutes={cfg.durationMinutes}

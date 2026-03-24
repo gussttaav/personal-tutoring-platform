@@ -40,8 +40,7 @@ import SignInGate from "@/components/SignInGate";
 import SingleSessionBooking from "@/components/SingleSessionBooking";
 import AuthCorner from "@/components/AuthCorner";
 import Chat from "@/components/Chat";
-import { CreditsPill } from "@/components/ui";
-import { COLORS, PACK_SIZES } from "@/constants";
+import { PACK_SIZES } from "@/constants";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
 import type { PackSize } from "@/types";
@@ -117,35 +116,67 @@ export default function InteractiveShell() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "14px 24px",
+            padding: "18px 24px",
             borderBottom: "1px solid var(--border)",
-            background: "rgba(13,15,16,0.92)",
+            background: "rgba(13,15,16,0.85)",
             backdropFilter: "blur(12px)",
+            position: "sticky",
+            top: 0,
+            zIndex: 100,
             flexShrink: 0,
-            zIndex: 50,
           }}
         >
-          <CreditsPill credits={packStudentInfo.credits} />
-          <button
-            onClick={router.closePackBooking}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <button
+              onClick={router.closePackBooking}
+              aria-label="Volver"
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: "50%",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                color: "var(--text-muted)",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "border-color 0.2s, color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.2)";
+                (e.currentTarget as HTMLElement).style.color = "var(--text)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
+                (e.currentTarget as HTMLElement).style.color = "var(--text-muted)";
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text)" }}>Reservar clase del pack</div>
+              <div style={{ fontSize: 12, color: "var(--text-muted)" }}>Elige un día y hora disponible</div>
+            </div>
+          </div>
+          <span
             style={{
-              fontSize: 13,
-              color: COLORS.textMuted,
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
-              gap: 6,
-              transition: "color 0.2s",
-              fontFamily: "inherit",
+              gap: 5,
+              padding: "4px 10px",
+              borderRadius: 100,
+              fontSize: 11.5,
+              fontWeight: 500,
+              background: "rgba(99,179,237,0.1)",
+              border: "1px solid rgba(99,179,237,0.25)",
+              color: "#63b3ed",
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = COLORS.textSecondary)}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = COLORS.textMuted)}
-            aria-label="Volver a la página principal"
           >
-            ← Volver al inicio
-          </button>
+            Pack activo
+          </span>
         </div>
 
         {/* BookingModeView fills the remaining space; its own top bar is hidden */}

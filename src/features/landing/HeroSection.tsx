@@ -122,14 +122,14 @@ export default function HeroSection() {
           y máster en{" "}
           <strong style={{ color: "var(--text)", fontWeight: 500 }}>Matemáticas y Computación</strong>{" "}
           por la Universidad de Cantabria. Tras varios años como desarrollador de software, me dediqué
-          durante cinco años a la docencia en el ámbito universitario, antes de pasar a trabajar de
+          durante cinco años a la investigación y la docencia en el ámbito universitario, antes de pasar a trabajar de
           forma independiente combinando enseñanza y consultoría.
         </p>
         <p style={{ fontSize: 14.5, color: "var(--text-muted)", marginBottom: 14, lineHeight: 1.7 }}>
-          Desde hace más de siete años ayudo a estudiantes, desarrolladores y profesionales a mejorar
-          en programación, matemáticas aplicadas e inteligencia artificial, tanto para superar
-          asignaturas universitarias, aprender desde cero, profundizar en un determinado tema,
-          prepararse para una entrevista como para desarrollar proyectos reales.
+          Desde hace más de siete años, acompaño a estudiantes y profesionales a potenciar sus 
+          habilidades en programación, matemáticas e inteligencia artificial. Mi apoyo abarca 
+          desde el refuerzo académico y el aprendizaje desde cero, hasta la preparación de 
+          entrevistas técnicas y el desarrollo de proyectos reales.
         </p>
       </div>
 

@@ -192,20 +192,3 @@ export function Card({ children, highlighted, className }: CardProps) {
     </div>
   );
 }
-
-// ─── Credits pill ─────────────────────────────────────────────────────────────
-
-export function CreditsPill({ credits }: { credits: number }) {
-  return (
-    <span
-      className="text-xs font-bold px-3 py-1 rounded-full"
-      style={{
-        backgroundColor: COLORS.brandMuted,
-        color: COLORS.brand,
-        border: `1px solid ${COLORS.brandBorder}`,
-      }}
-    >
-      {credits} clase{credits !== 1 ? "s" : ""} disponible{credits !== 1 ? "s" : ""}
-    </span>
-  );
-}
