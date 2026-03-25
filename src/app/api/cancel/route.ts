@@ -39,6 +39,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Atomically consume the token BEFORE taking action
+  const consumed = await consumeCancellationToken(token);
+  if (!consumed) {
+    return NextResponse.json(
+      { error: "El enlace de cancelación ya ha sido usado." },
+      { status: 400 }
+    );
+  }
+
   const { record } = result;
   const isPack   = record.sessionType === "pack";
   const isSingle = ["session1h", "session2h"].includes(record.sessionType);
@@ -52,8 +61,6 @@ export async function POST(req: NextRequest) {
   if (isPack) {
     await restoreCredit(record.email);
   }
-
-  await consumeCancellationToken(token);
 
   const SESSION_LABELS: Record<string, string> = {
     free15min: "Encuentro inicial gratuito",

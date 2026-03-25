@@ -166,8 +166,10 @@ export async function POST(req: NextRequest) {
         const { verifyCancellationToken, consumeCancellationToken, deleteCalendarEvent } = await import("@/lib/calendar");
         const oldBooking = await verifyCancellationToken(rescheduleToken);
         if (oldBooking) {
-          try { await deleteCalendarEvent(oldBooking.record.eventId); } catch {}
-          await consumeCancellationToken(rescheduleToken);
+          const consumed = await consumeCancellationToken(rescheduleToken);
+          if (consumed) {
+            try { await deleteCalendarEvent(oldBooking.record.eventId); } catch {}
+          }
         }
       }
 

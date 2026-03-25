@@ -299,6 +299,7 @@ export async function verifyCancellationToken(
   return { record, withinWindow: new Date() < twoHoursBefore };
 }
 
-export async function consumeCancellationToken(token: string): Promise<void> {
-  await kv.del(`cancel:${token}`);
+export async function consumeCancellationToken(token: string): Promise<boolean> {
+  const deleted = await kv.del(`cancel:${token}`);
+  return deleted > 0;
 }

@@ -42,6 +42,8 @@ export async function POST(req: NextRequest) {
 
   const { startIso, endIso, sessionType, note, timezone, rescheduleToken } = body;
 
+  let consumedToken = false;
+
   if (rescheduleToken) {
     const {
       verifyCancellationToken,
@@ -50,13 +52,36 @@ export async function POST(req: NextRequest) {
     } = await import("@/lib/calendar");
 
     const oldBooking = await verifyCancellationToken(rescheduleToken);
-    if (oldBooking) {
-      try { await deleteCalendarEvent(oldBooking.record.eventId); } catch {}
-      if (oldBooking.record.sessionType === "pack") {
-        const { restoreCredit } = await import("@/lib/kv");
-        await restoreCredit(email);
-      }
-      await consumeCancellationToken(rescheduleToken);
+    
+    // 1. Strict Validation
+    if (!oldBooking) {
+      return NextResponse.json({ error: "El enlace de reprogramación no es válido o ya ha sido usado." }, { status: 400 });
+    }
+    if (!oldBooking.withinWindow) {
+      return NextResponse.json({ error: "Ya no es posible reprogramar esta sesión (menos de 2 horas de antelación)." }, { status: 400 });
+    }
+    if (oldBooking.record.sessionType !== sessionType) {
+      return NextResponse.json({ error: "El tipo de sesión no coincide con la reserva original." }, { status: 400 });
+    }
+
+    // 2. Atomic Consumption
+    const consumed = await consumeCancellationToken(rescheduleToken);
+    if (!consumed) {
+      return NextResponse.json({ error: "El enlace de reprogramación ya ha sido usado." }, { status: 400 });
+    }
+    
+    consumedToken = true;
+
+    try { await deleteCalendarEvent(oldBooking.record.eventId); } catch {}
+    
+    if (oldBooking.record.sessionType === "pack") {
+      const { restoreCredit } = await import("@/lib/kv");
+      await restoreCredit(email);
+    }
+  } else {
+    // 3. Prevent free single sessions without a valid reschedule token
+    if (sessionType === "session1h" || sessionType === "session2h") {
+      return NextResponse.json({ error: "Las sesiones individuales requieren pago previo." }, { status: 400 });
     }
   }
 
@@ -96,9 +121,16 @@ export async function POST(req: NextRequest) {
     meetLink = result.meetLink;
   } catch (err) {
     log("error", "Calendar event creation failed", { service: "book", email, startIso, error: String(err) });
+    
     if (sessionType === "pack") {
       const { restoreCredit } = await import("@/lib/kv");
       await restoreCredit(email);
+    } else if (consumedToken) {
+      // 4. Dead-Letter Fallback for failed single session reschedules
+      const { kv } = await import("@/lib/redis");
+      await kv.set(`failed:reschedule:${email}:${Date.now()}`, {
+        email, startIso, endIso, sessionType, error: String(err)
+      }, { ex: 30 * 24 * 60 * 60 });
     }
     return NextResponse.json({ error: "Error al crear el evento" }, { status: 500 });
   }
