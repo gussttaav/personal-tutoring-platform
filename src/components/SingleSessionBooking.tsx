@@ -258,6 +258,7 @@ export default function SingleSessionBooking({
                   onConfirm={handleConfirm}
                   onCancel={() => setPhase("picking")}
                   sessionDuration={cfg.duration}
+                  isReschedule={!!rescheduleToken}
                 />
               </div>
             </div>

@@ -4,30 +4,6 @@
  * BookingModeView — Pack class booking
  *
  * Layout: topbar / sidebar (pack status + session info) / weekly calendar + confirm panel
- *
- * Applied UX improvements (Week 5):
- *
- * UX-02 — Two-phase slot confirmation
- * UX-03 — User-friendly error messages via friendlyError()
- * UX-05 — Cancel link on success screen
- *
- * LAYOUT FIX — embedded vs. standalone mode
- * ─────────────────────────────────────────
- * FullScreenShell uses position:fixed to cover the viewport. When
- * BookingModeView is rendered inside InteractiveShell's pack overlay
- * (hideTopBar=true), the outer InteractiveShell div is already
- * position:fixed and provides the back button. In that case FullScreenShell
- * must NOT use position:fixed — it should fill the space given to it by its
- * parent (position:relative, height:100%).
- *
- * The hideTopBar prop doubles as the "embedded" signal:
- *   hideTopBar=false (default) → standalone mode → position:fixed, own back button
- *   hideTopBar=true            → embedded mode   → position:relative, no back button
- *
- * CONFIRM PANEL WIDTH FIX
- * ───────────────────────
- * ConfirmPanel now renders inside a max-width:480px centred wrapper so it
- * doesn't stretch to fill the full calendar column on wide screens.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -67,6 +43,11 @@ export default function BookingModeView({
   const [emailFailed, setEmailFailed] = useState(false);
   const [userTz,      setUserTz]      = useState<string>("");
 
+  // 🟢 Sync local state when credits finish loading in the background
+  useEffect(() => {
+    setRemaining(student.credits);
+  }, [student.credits]);
+
   useEffect(() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -81,6 +62,8 @@ export default function BookingModeView({
     setPhase("selected");
   }, []);
 
+  const isReschedule = !!rescheduleToken;
+
   const handleConfirm = useCallback(async () => {
     if (!selected) return;
     setPhase("confirming");
@@ -93,7 +76,8 @@ export default function BookingModeView({
         timezone:        selected.timezone,
         rescheduleToken: rescheduleToken ?? undefined,
       });
-      const newRemaining = remaining - 1;
+      // FIX: No descontar si es reprogramación
+      const newRemaining = isReschedule ? remaining : remaining - 1;
       setRemaining(newRemaining);
       setMeetLink(data.meetLink);
       setCancelToken(data.cancelToken);
@@ -121,12 +105,12 @@ export default function BookingModeView({
   // ── Success screen ──────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
-      <FullScreenShell onBack={onExit} badgeType="pack" badgeLabel="Pack activo" title="Reservar clase del pack" hideTopBar={hideTopBar}>
+      <FullScreenShell onBack={onExit} badgeType="pack" badgeLabel={isReschedule ? "Reprogramación" : "Pack activo"} title={isReschedule ? "Reprogramar clase" : "Reservar clase del pack"} hideTopBar={hideTopBar}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "40px 24px", overflowY: "auto" }}>
           <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px", background: "rgba(61,220,132,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, color: "var(--green)" }}>✓</div>
 
-            <h2 style={{ fontSize: 22, fontWeight: 500, color: "var(--text)", marginBottom: 6 }}>¡Clase reservada!</h2>
+            <h2 style={{ fontSize: 22, fontWeight: 500, color: "var(--text)", marginBottom: 6 }}>{isReschedule ? "¡Clase reprogramada!" : "¡Clase reservada!"}</h2>
             <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
               {selected?.dateLabel} · {selected?.label}
             </p>
@@ -162,7 +146,18 @@ export default function BookingModeView({
             )}
 
             <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
-              {remaining > 0 ? (
+              {isReschedule ? (
+                <>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "var(--green)", marginBottom: 4 }}>
+                    Clase reprogramada con éxito
+                  </p>
+                  {!emailFailed && (
+                    <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                      Recibirás los nuevos detalles por email.
+                    </p>
+                  )}
+                </>
+              ) : remaining > 0 ? (
                 <>
                   <p style={{ fontSize: 14, fontWeight: 500, color: "var(--green)", marginBottom: 4 }}>
                     Te quedan {remaining} clase{remaining !== 1 ? "s" : ""}
@@ -179,9 +174,21 @@ export default function BookingModeView({
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {remaining > 0 && <button onClick={bookAnother} style={primaryBtnStyle}>Reservar otra clase</button>}
-              <button onClick={onExit} style={secondaryBtnStyle}>
-                {remaining > 0 ? "Volver al inicio" : "Comprar otro pack"}
+              {/* Only show 'Book another' if it's a normal booking and they have credits left */}
+              {!isReschedule && remaining > 0 && (
+                <button onClick={bookAnother} style={primaryBtnStyle}>
+                  Reservar otra clase
+                </button>
+              )}
+              
+              {/* Exit button adapts its style and text based on the context */}
+              <button 
+                onClick={onExit} 
+                style={isReschedule || remaining === 0 ? primaryBtnStyle : secondaryBtnStyle}
+              >
+                {isReschedule 
+                  ? "Volver al inicio" 
+                  : (remaining > 0 ? "Volver al inicio" : "Comprar otro pack")}
               </button>
             </div>
           </div>
@@ -208,7 +215,7 @@ export default function BookingModeView({
 
   // ── Main booking UI (idle + selected + confirming) ─────────────────────────
   return (
-    <FullScreenShell onBack={onExit} badgeType="pack" badgeLabel="Pack activo" title="Reservar clase del pack" hideTopBar={hideTopBar}>
+    <FullScreenShell onBack={onExit} badgeType="pack" badgeLabel={isReschedule ? "Reprogramando clase" : "Pack activo"} title={isReschedule ? "Reprogramar clase" : "Reservar clase del pack"} hideTopBar={hideTopBar}>
       <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", flex: 1, minHeight: 0, overflow: "hidden" }} className="booking-split">
 
         {/* ── Sidebar ── */}
@@ -216,14 +223,26 @@ export default function BookingModeView({
           <TutorRow />
 
           <div style={{ background: "rgba(99,179,237,0.07)", border: "1px solid rgba(99,179,237,0.2)", borderRadius: 14, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#63b3ed" }}>Pack activo</span>
+            <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#63b3ed" }}>
+              {isReschedule ? "Reprogramando clase" : "Pack activo"}
+            </span>
             <div>
-              <div style={{ fontFamily: "var(--font-serif), serif", fontSize: 34, color: "var(--text)", lineHeight: 1 }}>{remaining}</div>
-              <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>clase{remaining !== 1 ? "s" : ""} restante{remaining !== 1 ? "s" : ""}</div>
+              {isReschedule ? (
+                <div style={{ fontSize: 13, color: "var(--text)", lineHeight: 1.4 }}>
+                  Estás modificando una reserva existente.
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontFamily: "var(--font-serif), serif", fontSize: 34, color: "var(--text)", lineHeight: 1 }}>{remaining}</div>
+                  <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>clase{remaining !== 1 ? "s" : ""} restante{remaining !== 1 ? "s" : ""}</div>
+                </>
+              )}
             </div>
-            <div style={{ height: 4, background: "var(--surface-3, #222527)", borderRadius: 100, overflow: "hidden" }}>
-              <div style={{ height: "100%", borderRadius: 100, background: "linear-gradient(90deg, #63b3ed, #3ddc84)", width: `${Math.min(100, (remaining / Math.max(remaining, student.credits)) * 100)}%`, transition: "width 0.4s ease" }} />
-            </div>
+            {!isReschedule && (
+              <div style={{ height: 4, background: "var(--surface-3, #222527)", borderRadius: 100, overflow: "hidden" }}>
+                <div style={{ height: "100%", borderRadius: 100, background: "linear-gradient(90deg, #63b3ed, #3ddc84)", width: `${Math.min(100, (remaining / Math.max(remaining, student.credits)) * 100)}%`, transition: "width 0.4s ease" }} />
+              </div>
+            )}
           </div>
 
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -260,6 +279,7 @@ export default function BookingModeView({
                   onConfirm={handleConfirm}
                   onCancel={() => setPhase("idle")}
                   packInfo={{ remaining }}
+                  isReschedule={isReschedule}
                 />
               </div>
             </div>
@@ -357,13 +377,14 @@ export function FullScreenShell({
 // ─── ConfirmPanel ─────────────────────────────────────────────────────────────
 
 export function ConfirmPanel({
-  slot, onConfirm, onCancel, packInfo, sessionDuration,
+  slot, onConfirm, onCancel, packInfo, sessionDuration, isReschedule,
 }: {
   slot:             SelectedSlot;
   onConfirm:        () => void;
   onCancel?:        () => void;
   packInfo?:        { remaining: number };
   sessionDuration?: string;
+  isReschedule?:    boolean;
 }) {
   return (
     <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 20, display: "flex", flexDirection: "column", gap: 16, animation: "fadeUp 0.25s ease both" }}>
@@ -379,7 +400,8 @@ export function ConfirmPanel({
         </div>
       </div>
 
-      {packInfo && (
+      {/* Mensaje original de reserva nueva */}
+      {packInfo && !isReschedule && (
         <div style={{ background: "rgba(61,220,132,0.1)", border: "1px solid rgba(61,220,132,0.2)", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "var(--green)" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3ddc84" strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           <div>
@@ -392,12 +414,26 @@ export function ConfirmPanel({
         </div>
       )}
 
+      {/* Mensaje de reprogramación */}
+      {isReschedule && (
+        <div style={{ background: "rgba(99,179,237,0.1)", border: "1px solid rgba(99,179,237,0.25)", borderRadius: 10, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#63b3ed" }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <div>
+            <strong>Reprogramación gratuita.</strong>
+            <br />
+            <span style={{ color: "var(--text-muted)", fontSize: 12 }}>
+              Esta acción no consume nuevas clases de tu pack.
+            </span>
+          </div>
+        </div>
+      )}
+
       <button onClick={onConfirm} style={primaryBtnStyle}
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#5ae89a"; (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--green)"; (e.currentTarget as HTMLElement).style.transform = "translateY(0)"; }}
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-        Confirmar reserva
+        {isReschedule ? "Confirmar reprogramación" : "Confirmar reserva"}
       </button>
 
       {onCancel && (
