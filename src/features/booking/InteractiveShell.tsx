@@ -83,6 +83,13 @@ export default function InteractiveShell() {
     }
   }, [reschedule.signInLabel]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Allow the Navbar to trigger pack booking without prop drilling
+  useEffect(() => {
+    const handler = () => router.handlePackSchedule();
+    window.addEventListener("open-pack-booking", handler);
+    return () => window.removeEventListener("open-pack-booking", handler);
+  }, [router.handlePackSchedule]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const packStudentInfo = packSession
     ? { email: packSession.email, name: packSession.name, credits: packSession.credits }
     : googleUser?.email

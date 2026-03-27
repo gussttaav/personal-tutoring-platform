@@ -62,10 +62,13 @@ export default function RootLayout({
     <html lang="es" className={`dark ${manrope.variable} ${inter.variable}`}>
       <head>
         <link rel="manifest" href="/site.webmanifest" />
-        {/* Material Symbols for icon usage in new design */}
+        {/* Preconnect so the font request starts immediately */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* Material Symbols — display=block hides text until icons load (avoids "expand_more" as raw text) */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block"
         />
       </head>
       <body className={inter.className}>

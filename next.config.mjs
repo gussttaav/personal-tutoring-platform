@@ -21,7 +21,8 @@ const nextConfig = {
           "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
           "connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io",
-          "style-src 'self' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' https://fonts.gstatic.com",
           "object-src 'none'",
         ]
       : [
@@ -33,7 +34,8 @@ const nextConfig = {
           "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
           "connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io",
-          "style-src 'self' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+          "font-src 'self' https://fonts.gstatic.com",
           "object-src 'none'",
           "base-uri 'self'",
           "form-action 'self'",

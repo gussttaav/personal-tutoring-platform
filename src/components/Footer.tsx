@@ -47,7 +47,7 @@ export default function Footer() {
                 marginBottom: "16px",
               }}
             >
-              GUSTAVO.AI
+              GUSTAVOAI.DEV
             </div>
             <p style={{ fontSize: "13px", color: "#86948a", lineHeight: 1.65, marginBottom: "20px" }}>
               Ingeniería de precisión en educación profesional y académica.
