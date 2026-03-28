@@ -2,21 +2,14 @@
 
 /**
  * SingleSessionBooking — free 15-min, paid 1h, paid 2h
+ * Emerald Nocturne · booking.html layout
  *
- * Week 5 UX improvements (same set as BookingModeView):
- *
- * UX-02 — Two-phase slot confirmation:
- *   Slot selection no longer fires the API immediately. For free sessions and
- *   reschedules (which go directly to /api/book), selecting a slot shows a
- *   ConfirmPanel first. The student presses "Confirmar reserva" to proceed.
- *   Paid sessions (Stripe redirect) still redirect on slot selection because
- *   the confirmation happens on Stripe's own checkout page.
- *
- * UX-03 — User-friendly error messages via friendlyError().
- *
- * UX-05 — Cancel link on success screen.
- *   The cancelToken from the /api/book response is stored and shown as a
- *   direct /cancelar?token=... link on the success screen.
+ * ALL LOGIC IS IDENTICAL TO ORIGINAL (UX-02, UX-03, UX-05).
+ * Layout replaced to match booking.html:
+ *   - BookingLayout (full-page overlay with real Navbar + Footer)
+ *   - WizardProgress (3-step indicator)
+ *   - lg:grid-cols-12 with BookingSidebar (col-span-3) + calendar (col-span-9)
+ *   - Calendar container with actions bar at bottom
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -25,11 +18,10 @@ import { COLORS } from "@/constants";
 import { friendlyError } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
+import BookingLayout from "@/components/booking/BookingLayout";
+import WizardProgress from "@/components/booking/WizardProgress";
+import BookingSidebar from "@/components/booking/BookingSidebar";
 import {
-  FullScreenShell,
-  TutorRow,
-  InfoRow,
-  MetaRows,
   ConfirmPanel,
   SESSION_CONFIGS,
   primaryBtnStyle,
@@ -64,29 +56,24 @@ export default function SingleSessionBooking({
   const [errorMsg,    setErrorMsg]    = useState("");
   const [selected,    setSelected]    = useState<SelectedSlot | null>(null);
   const [meetLink,    setMeetLink]    = useState("");
-  const [cancelToken, setCancelToken] = useState(""); // UX-05
+  const [cancelToken, setCancelToken] = useState("");
   const [emailFailed, setEmailFailed] = useState(false);
   const [userTz,      setUserTz]      = useState<string>("");
 
   useEffect(() => {
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const tz     = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const offset = -new Date().getTimezoneOffset() / 60;
-      const gmt = `GMT${offset >= 0 ? '+' : ''}${offset}`;
+      const gmt    = `GMT${offset >= 0 ? "+" : ""}${offset}`;
       setUserTz(`${tz} (${gmt})`);
     } catch { /* ignore */ }
   }, []);
 
   // UX-02: Step 1 — slot selected
-  //   - For paid sessions without a rescheduleToken → redirect to Stripe immediately
-  //     (confirmation happens on Stripe's checkout page — no need for an extra step)
-  //   - For free sessions and reschedules → show confirm panel first
   const handleSlotSelected = useCallback((slot: SelectedSlot) => {
     setSelected(slot);
-
     const needsStripe = (sessionType === "session1h" || sessionType === "session2h") && !rescheduleToken;
     if (needsStripe) {
-      // Stripe redirect — go immediately, no confirm step needed
       void handleStripeRedirect(slot);
     } else {
       setPhase("selected");
@@ -107,11 +94,10 @@ export default function SingleSessionBooking({
         rescheduleToken: rescheduleToken ?? undefined,
       });
       setMeetLink(data.meetLink);
-      setCancelToken(data.cancelToken); // UX-05
+      setCancelToken(data.cancelToken);
       setEmailFailed(data.emailFailed);
       setPhase("success");
     } catch (err) {
-      // UX-03: status-specific friendly message
       const status = err instanceof ApiError ? err.status : 0;
       const raw    = err instanceof ApiError ? err.message : "Error al reservar.";
       setErrorMsg(friendlyError(status, raw));
@@ -141,50 +127,36 @@ export default function SingleSessionBooking({
   // UX-05: direct cancel link
   const cancelUrl = cancelToken ? `${BASE_URL}/cancelar?token=${cancelToken}` : null;
 
-  const badgeType  = sessionType === "free15min" ? "free" : "paid";
-  const badgeLabel = cfg.label;
-  const title      = "Reservar sesión";
-
   // ── Success ────────────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
-      <FullScreenShell onBack={onBack} badgeType={badgeType} badgeLabel={badgeLabel} title={title}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "40px 24px" }}>
+      <BookingLayout>
+        <WizardProgress currentStep={3} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
           <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
-            <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px", background: "rgba(61,220,132,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, color: "var(--green)" }}>✓</div>
-
-            <h2 style={{ fontSize: 22, fontWeight: 500, color: "var(--text)", marginBottom: 6 }}>¡Encuentro reservado!</h2>
-            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>{selected?.dateLabel} · {selected?.label}</p>
+            <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px", background: "rgba(78,222,163,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, color: "#4edea3" }}>✓</div>
+            <h2 style={{ fontSize: 22, fontWeight: 500, color: "#e5e1e4", marginBottom: 6, fontFamily: "var(--font-headline, Manrope), sans-serif" }}>¡Encuentro reservado!</h2>
+            <p style={{ fontSize: 14, color: "#bbcabf", marginBottom: 16 }}>{selected?.dateLabel} · {selected?.label}</p>
 
             {emailFailed ? (
-              <div style={{ background: "rgba(61,220,132,0.08)", border: "1px solid rgba(61,220,132,0.25)", borderRadius: 12, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
-                <p style={{ fontSize: 13, fontWeight: 500, color: "var(--green)", marginBottom: 8 }}>⚠️ No pudimos enviarte el email de confirmación</p>
-                <p style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>Tu encuentro está reservado. Guarda el enlace de Google Meet ahora:</p>
-                <a href={meetLink} target="_blank" rel="noopener noreferrer" style={{ display: "block", wordBreak: "break-all", fontSize: 13, color: "var(--green)", textDecoration: "underline", marginBottom: 8 }}>
-                  {meetLink}
-                </a>
-                {/* UX-05: cancel link even when email failed */}
+              <div style={{ background: "rgba(78,222,163,0.08)", border: "1px solid rgba(78,222,163,0.25)", borderRadius: 12, padding: "16px 20px", marginBottom: 20, textAlign: "left" }}>
+                <p style={{ fontSize: 13, fontWeight: 500, color: "#4edea3", marginBottom: 8 }}>⚠️ No pudimos enviarte el email de confirmación</p>
+                <p style={{ fontSize: 12, color: "#bbcabf", marginBottom: 12 }}>Tu encuentro está reservado. Guarda el enlace de Google Meet ahora:</p>
+                <a href={meetLink} target="_blank" rel="noopener noreferrer" style={{ display: "block", wordBreak: "break-all", fontSize: 13, color: "#4edea3", textDecoration: "underline", marginBottom: 8 }}>{meetLink}</a>
                 {cancelUrl && (
-                  <a href={cancelUrl} style={{ display: "block", fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
-                    Cancelar esta reserva
-                  </a>
+                  <a href={cancelUrl} style={{ display: "block", fontSize: 12, color: "#bbcabf", marginTop: 4 }}>Cancelar esta reserva</a>
                 )}
-                <p style={{ fontSize: 11, color: "var(--text-dim)", margin: "8px 0 0" }}>
+                <p style={{ fontSize: 11, color: "#86948a", margin: "8px 0 0" }}>
                   Si necesitas ayuda escribe a contacto@gustavoai.dev
                 </p>
               </div>
             ) : (
               <>
-                <p style={{ fontSize: 13, color: COLORS.textSecondary, marginBottom: 8 }}>
-                  Recibirás el enlace de Google Meet y la confirmación por email.
-                </p>
-                {/* UX-05: direct cancel link */}
+                <p style={{ fontSize: 13, color: "#bbcabf", marginBottom: 8 }}>Recibirás el enlace de Google Meet y la confirmación por email.</p>
                 {cancelUrl && (
-                  <p style={{ fontSize: 12, color: "var(--text-dim)", marginBottom: 20 }}>
+                  <p style={{ fontSize: 12, color: "#86948a", marginBottom: 20 }}>
                     También puedes{" "}
-                    <a href={cancelUrl} style={{ color: "var(--text-muted)", textDecoration: "underline" }}>
-                      cancelar esta reserva
-                    </a>
+                    <a href={cancelUrl} style={{ color: "#bbcabf", textDecoration: "underline" }}>cancelar esta reserva</a>
                     {" "}directamente.
                   </p>
                 )}
@@ -194,87 +166,155 @@ export default function SingleSessionBooking({
             <button onClick={onBack} style={secondaryBtnStyle}>Volver al inicio</button>
           </div>
         </div>
-      </FullScreenShell>
+      </BookingLayout>
     );
   }
 
   // ── Error ──────────────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <FullScreenShell onBack={onBack} badgeType={badgeType} badgeLabel={badgeLabel} title={title}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: 40 }}>
+      <BookingLayout>
+        <WizardProgress currentStep={2} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
           <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
             <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px", background: COLORS.errorBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: COLORS.error }}>✕</div>
             <Alert variant="error">{errorMsg}</Alert>
             <button onClick={() => setPhase("picking")} style={{ ...primaryBtnStyle, marginTop: 16 }}>Intentar de nuevo</button>
           </div>
         </div>
-      </FullScreenShell>
+      </BookingLayout>
     );
   }
 
   // ── Main booking UI ────────────────────────────────────────────────────────
-  return (
-    <FullScreenShell onBack={onBack} badgeType={badgeType} badgeLabel={badgeLabel} title={title}>
-      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", flex: 1, minHeight: 0 }} className="booking-split">
+  const wizardStep: 1 | 2 | 3 = phase === "selected" ? 3 : 2;
+  const isReschedule = !!rescheduleToken;
 
+  return (
+    <BookingLayout>
+      <WizardProgress currentStep={wizardStep} />
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* ── Sidebar ── */}
-        <div style={{ borderRight: "1px solid var(--border)", padding: "28px 24px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
-          <TutorRow />
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ fontFamily: "var(--font-serif), serif", fontSize: 20, color: "var(--text)", lineHeight: 1.2 }}>
-              {sessionType === "free15min" && <>Encuentro gratuito<br />de 15 min</>}
-              {sessionType === "session1h"  && <>Sesión de<br />1 hora</>}
-              {sessionType === "session2h"  && <>Sesión de<br />2 horas</>}
-            </div>
-            <div style={{ height: 1, background: "var(--border)" }} />
-            <InfoRow icon="clock">{cfg.duration}</InfoRow>
-            <InfoRow icon="phone">Google Meet</InfoRow>
-            {userTz && <InfoRow icon="globe">Tu zona horaria: {userTz}</InfoRow>}
-            <div style={{ height: 1, background: "var(--border)" }} />
-            {cfg.price === null
-              ? <span style={{ fontSize: 15, fontWeight: 500, color: "var(--green)" }}>Sin coste</span>
-              : <span style={{ fontFamily: "var(--font-serif), serif", fontSize: 28, color: "var(--text)" }}>{cfg.price}</span>
-            }
-          </div>
-          <MetaRows />
-        </div>
+        <BookingSidebar
+          mode="single"
+          sessionName={cfg.label}
+          duration={cfg.duration}
+          price={cfg.price}
+          isReschedule={isReschedule}
+          userTz={userTz}
+        />
 
         {/* ── Calendar / confirm / spinner area ── */}
-        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
-          {phase === "booking" || phase === "redirecting" ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 12 }}>
-              <Spinner />
-              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
-                {phase === "redirecting" ? "Redirigiendo al pago…" : `Reservando ${selected?.dateLabel} a las ${selected?.label}…`}
-              </p>
-            </div>
-          ) : phase === "selected" && selected ? (
-            // UX-02: confirm panel for free / reschedule flows
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <div style={{ width: "100%", maxWidth: 480 }}>
-                <ConfirmPanel
-                  slot={selected}
-                  onConfirm={handleConfirm}
-                  onCancel={() => setPhase("picking")}
-                  sessionDuration={cfg.duration}
-                  isReschedule={!!rescheduleToken}
-                />
+        <div
+          className="lg:col-span-9 rounded-xl overflow-hidden flex flex-col"
+          style={{
+            background: "#1c1b1d",
+            border: "1px solid rgba(255,255,255,0.05)",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)",
+          }}
+        >
+          {/* Calendar content */}
+          <div className="flex-1">
+            {phase === "booking" || phase === "redirecting" ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 12 }}>
+                <Spinner />
+                <p style={{ fontSize: 13, color: "#bbcabf" }}>
+                  {phase === "redirecting" ? "Redirigiendo al pago…" : `Reservando ${selected?.dateLabel} a las ${selected?.label}…`}
+                </p>
               </div>
-            </div>
-          ) : (
-            <WeeklyCalendar
-              durationMinutes={cfg.durationMinutes}
-              onSlotSelected={handleSlotSelected}
-              selectedSlot={selected}
-            />
-          )}
+            ) : phase === "selected" && selected ? (
+              // UX-02: confirm panel for free / reschedule flows
+              <div className="p-8">
+                <div style={{ maxWidth: 520, margin: "0 auto" }}>
+                  <ConfirmPanel
+                    slot={selected}
+                    onConfirm={handleConfirm}
+                    onCancel={() => setPhase("picking")}
+                    sessionDuration={cfg.duration}
+                    isReschedule={isReschedule}
+                  />
+                </div>
+              </div>
+            ) : (
+              <WeeklyCalendar
+                durationMinutes={cfg.durationMinutes}
+                onSlotSelected={handleSlotSelected}
+                selectedSlot={selected}
+              />
+            )}
+          </div>
+
+          {/* ── Actions bar ── */}
+          <div
+            className="p-8 flex flex-col md:flex-row items-center justify-between gap-6"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "#1c1b1d" }}
+          >
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 font-semibold transition-colors group"
+              style={{ color: "#bbcabf", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                className="group-hover:-translate-x-1 transition-transform"
+                aria-hidden="true"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              <span>Cambiar tipo de sesión</span>
+            </button>
+
+            {phase === "selected" && selected && (
+              <button
+                onClick={handleConfirm}
+                className="w-full md:w-auto font-headline font-bold text-lg rounded-xl flex items-center justify-center gap-3 transition-all"
+                style={{
+                  background: "linear-gradient(135deg, #4edea3, #10b981)",
+                  color: "#003824",
+                  padding: "16px 48px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = "0 0 30px rgba(78,222,163,0.4)";
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                }}
+              >
+                Confirmar reserva
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            )}
+
+            {phase === "picking" && (
+              <div
+                className="hidden md:flex items-center gap-2 text-xs"
+                style={{ color: "#86948a" }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Selecciona un horario para continuar
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 720px) { .booking-split { grid-template-columns: 1fr !important; } }
-      `}</style>
-    </FullScreenShell>
+    </BookingLayout>
   );
 }

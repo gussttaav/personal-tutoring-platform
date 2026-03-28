@@ -1,25 +1,19 @@
 "use client";
 
 /**
- * BookingModeView — Emerald Nocturne reskin
+ * BookingModeView — Emerald Nocturne · booking.html layout
  *
  * ALL LOGIC IS IDENTICAL TO ORIGINAL.
- * Exported types, functions, and sub-components (FullScreenShell, TutorRow,
- * InfoRow, MetaRows, ConfirmPanel, primaryBtnStyle, secondaryBtnStyle, SESSION_CONFIGS)
- * are all preserved with IDENTICAL signatures.
+ * Layout replaced to match booking.html:
+ *   - BookingLayout (full-page overlay with real Navbar + Footer)
+ *   - WizardProgress (3-step indicator)
+ *   - lg:grid-cols-12 with BookingSidebar (col-span-3) + calendar (col-span-9)
+ *   - Calendar container matches booking.html structure
+ *   - Actions bar at bottom of calendar container
  *
- * Only changes: inline style color values → Emerald Nocturne palette.
- *   --bg          → #131315
- *   --surface     → #201f22   (surface-container)
- *   --green       → #4edea3
- *   --border      → rgba(255,255,255,0.05)
- *   --text        → #e5e1e4
- *   --text-muted  → #bbcabf
- *   --text-dim    → #86948a
- *   on-primary    → #003824
- *
- * booking.module.css is still imported — it uses CSS variables which are now
- * defined in globals.css with the new token values.
+ * All exports preserved with identical signatures:
+ *   FullScreenShell, ConfirmPanel, TutorRow, InfoRow, MetaRows,
+ *   SESSION_CONFIGS, primaryBtnStyle, secondaryBtnStyle
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -29,6 +23,9 @@ import { COLORS } from "@/constants";
 import { friendlyError } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
+import BookingLayout from "@/components/booking/BookingLayout";
+import WizardProgress from "@/components/booking/WizardProgress";
+import BookingSidebar from "@/components/booking/BookingSidebar";
 import type { StudentInfo } from "@/types";
 
 type BookingPhase = "idle" | "selected" | "confirming" | "success" | "error";
@@ -48,7 +45,7 @@ export default function BookingModeView({
   rescheduleToken,
   onCreditsUpdated,
   onExit,
-  hideTopBar = false,
+  // hideTopBar is no longer used — BookingLayout always shows the full nav
 }: BookingModeViewProps) {
   const [phase,       setPhase]       = useState<BookingPhase>("idle");
   const [remaining,   setRemaining]   = useState(student.credits);
@@ -63,9 +60,9 @@ export default function BookingModeView({
 
   useEffect(() => {
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const tz     = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const offset = -new Date().getTimezoneOffset() / 60;
-      const gmt = `GMT${offset >= 0 ? '+' : ''}${offset}`;
+      const gmt    = `GMT${offset >= 0 ? "+" : ""}${offset}`;
       setUserTz(`${tz} (${gmt})`);
     } catch { /* ignore */ }
   }, []);
@@ -117,9 +114,10 @@ export default function BookingModeView({
   // ── Success screen ──────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
-      <FullScreenShell onBack={onExit} badgeType="pack" badgeLabel={isReschedule ? "Reprogramación" : "Pack activo"} title={isReschedule ? "Reprogramar clase" : "Reservar clase del pack"} hideTopBar={hideTopBar}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: "40px 24px", overflowY: "auto" }}>
-          <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
+      <BookingLayout>
+        <WizardProgress currentStep={3} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
+          <div style={{ textAlign: "center", maxWidth: 480, width: "100%" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px", background: "rgba(78,222,163,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, color: "#4edea3" }}>✓</div>
             <h2 style={{ fontSize: 22, fontWeight: 600, color: "#e5e1e4", marginBottom: 6, fontFamily: "var(--font-headline, Manrope), sans-serif" }}>
               {isReschedule ? "¡Clase reprogramada!" : "¡Clase reservada!"}
@@ -171,20 +169,21 @@ export default function BookingModeView({
                 <button onClick={bookAnother} style={primaryBtnStyle}>Reservar otra clase</button>
               )}
               <button onClick={onExit} style={isReschedule || remaining === 0 ? primaryBtnStyle : secondaryBtnStyle}>
-                {isReschedule ? "Volver al inicio" : (remaining > 0 ? "Volver al inicio" : "Comprar otro pack")}
+                {isReschedule ? "Volver al inicio" : remaining > 0 ? "Volver al inicio" : "Comprar otro pack"}
               </button>
             </div>
           </div>
         </div>
-      </FullScreenShell>
+      </BookingLayout>
     );
   }
 
   // ── Error screen ───────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <FullScreenShell onBack={onExit} badgeType="pack" badgeLabel="Pack activo" title="Reservar clase del pack" hideTopBar={hideTopBar}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, overflowY: "auto" }}>
+      <BookingLayout>
+        <WizardProgress currentStep={2} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
           <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
             <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px", background: COLORS.errorBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: COLORS.error }}>✕</div>
             <h3 style={{ fontSize: 18, color: "#e5e1e4", marginBottom: 8, fontFamily: "var(--font-headline, Manrope), sans-serif" }}>Algo salió mal</h3>
@@ -192,95 +191,152 @@ export default function BookingModeView({
             <button onClick={() => setPhase("idle")} style={{ ...primaryBtnStyle, marginTop: 16 }}>Intentar de nuevo</button>
           </div>
         </div>
-      </FullScreenShell>
+      </BookingLayout>
     );
   }
 
   // ── Main booking UI ────────────────────────────────────────────────────────
+  const wizardStep: 1 | 2 | 3 = phase === "selected" ? 3 : 2;
+
   return (
-    <FullScreenShell onBack={onExit} badgeType="pack" badgeLabel={isReschedule ? "Reprogramando clase" : "Pack activo"} title={isReschedule ? "Reprogramar clase" : "Reservar clase del pack"} hideTopBar={hideTopBar}>
-      <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", flex: 1, minHeight: 0, overflow: "hidden" }} className="booking-split">
+    <BookingLayout>
+      <WizardProgress currentStep={wizardStep} />
 
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* ── Sidebar ── */}
-        <div style={{ borderRight: "1px solid rgba(255,255,255,0.05)", padding: "28px 24px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
-          <TutorRow />
+        <BookingSidebar
+          mode="pack"
+          sessionName="Sesión Estratégica"
+          duration="60 minutos"
+          packRemaining={remaining}
+          packTotal={Math.max(remaining, student.credits)}
+          isReschedule={isReschedule}
+          userTz={userTz}
+        />
 
-          <div style={{ background: "rgba(99,179,237,0.07)", border: "1px solid rgba(99,179,237,0.2)", borderRadius: 12, padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10 }}>
-            <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#63b3ed", fontFamily: "var(--font-headline, Manrope), sans-serif" }}>
-              {isReschedule ? "Reprogramando clase" : "Pack activo"}
-            </span>
-            <div>
-              {isReschedule ? (
-                <div style={{ fontSize: 13, color: "#e5e1e4", lineHeight: 1.4 }}>Estás modificando una reserva existente.</div>
-              ) : (
-                <>
-                  <div style={{ fontFamily: "var(--font-headline, Manrope), sans-serif", fontSize: 34, color: "#e5e1e4", lineHeight: 1 }}>{remaining}</div>
-                  <div style={{ fontSize: 12, color: "#bbcabf", marginTop: 2 }}>clase{remaining !== 1 ? "s" : ""} restante{remaining !== 1 ? "s" : ""}</div>
-                </>
-              )}
-            </div>
-            {!isReschedule && (
-              <div style={{ height: 4, background: "#1c1b1d", borderRadius: 100, overflow: "hidden" }}>
-                <div style={{ height: "100%", borderRadius: 100, background: "linear-gradient(90deg, #63b3ed, #4edea3)", width: `${Math.min(100, (remaining / Math.max(remaining, student.credits)) * 100)}%`, transition: "width 0.4s ease" }} />
+        {/* ── Calendar / confirm area ── */}
+        <div
+          className="lg:col-span-9 rounded-xl overflow-hidden flex flex-col"
+          style={{
+            background: "#1c1b1d",
+            border: "1px solid rgba(255,255,255,0.05)",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)",
+          }}
+        >
+          {/* Calendar content */}
+          <div className="flex-1">
+            {phase === "confirming" ? (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "80px 24px",
+                  gap: 12,
+                }}
+              >
+                <Spinner />
+                <p style={{ fontSize: 13, color: "#bbcabf" }}>
+                  Reservando {selected?.dateLabel} a las {selected?.label}…
+                </p>
               </div>
+            ) : phase === "selected" && selected ? (
+              <div className="p-8">
+                <div style={{ maxWidth: 520, margin: "0 auto" }}>
+                  <ConfirmPanel
+                    slot={selected}
+                    onConfirm={handleConfirm}
+                    onCancel={() => setPhase("idle")}
+                    packInfo={{ remaining }}
+                    isReschedule={isReschedule}
+                  />
+                </div>
+              </div>
+            ) : (
+              <WeeklyCalendar
+                durationMinutes={60}
+                onSlotSelected={handleSlotSelected}
+                selectedSlot={selected}
+              />
             )}
           </div>
 
-          <div style={{ background: "#201f22", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, padding: 18, display: "flex", flexDirection: "column", gap: 12 }}>
-            <div style={{ fontFamily: "var(--font-headline, Manrope), sans-serif", fontSize: 18, color: "#e5e1e4", lineHeight: 1.2, fontWeight: 700 }}>Sesión de 1 hora</div>
-            <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
-            <InfoRow icon="clock">60 minutos</InfoRow>
-            <InfoRow icon="phone">Google Meet</InfoRow>
-            {userTz && <InfoRow icon="globe">Tu zona horaria: {userTz}</InfoRow>}
-            <div style={{ height: 1, background: "rgba(255,255,255,0.05)" }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "#4edea3", fontWeight: 500 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="1.8" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-              Incluida en tu pack
-            </div>
-          </div>
+          {/* ── Actions bar ── */}
+          <div
+            className="p-8 flex flex-col md:flex-row items-center justify-between gap-6"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "#1c1b1d" }}
+          >
+            <button
+              onClick={onExit}
+              className="flex items-center gap-2 font-semibold transition-colors group"
+              style={{ color: "#bbcabf", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                className="group-hover:-translate-x-1 transition-transform"
+                aria-hidden="true"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              <span>Cambiar tipo de sesión</span>
+            </button>
 
-          <MetaRows />
-        </div>
+            {phase === "selected" && selected && (
+              <button
+                onClick={handleConfirm}
+                className="w-full md:w-auto font-headline font-bold text-lg rounded-xl flex items-center justify-center gap-3 transition-all"
+                style={{
+                  background: "linear-gradient(135deg, #4edea3, #10b981)",
+                  color: "#003824",
+                  padding: "16px 48px",
+                  border: "none",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = "0 0 30px rgba(78,222,163,0.4)";
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                  (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+                }}
+              >
+                Confirmar reserva
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            )}
 
-        {/* ── Calendar / confirm area ── */}
-        <div style={{ padding: "24px 28px", display: "flex", flexDirection: "column", gap: 20, overflowY: "auto" }}>
-          {phase === "confirming" ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 12 }}>
-              <Spinner />
-              <p style={{ fontSize: 13, color: "#bbcabf" }}>Reservando {selected?.dateLabel} a las {selected?.label}…</p>
-            </div>
-          ) : phase === "selected" && selected ? (
-            <div style={{ display: "flex", justifyContent: "center" }}>
-              <div style={{ width: "100%", maxWidth: 480 }}>
-                <ConfirmPanel
-                  slot={selected}
-                  onConfirm={handleConfirm}
-                  onCancel={() => setPhase("idle")}
-                  packInfo={{ remaining }}
-                  isReschedule={isReschedule}
-                />
+            {phase === "idle" && (
+              <div
+                className="hidden md:flex items-center gap-2 text-xs"
+                style={{ color: "#86948a" }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Selecciona un horario para continuar
               </div>
-            </div>
-          ) : (
-            <WeeklyCalendar
-              durationMinutes={60}
-              onSlotSelected={handleSlotSelected}
-              selectedSlot={selected}
-            />
-          )}
+            )}
+          </div>
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 720px) {
-          .booking-split { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </FullScreenShell>
+    </BookingLayout>
   );
 }
 
-// ─── Exported shells & configs ─────────────────────────────────────────────────
+// ─── Exported shells & configs (unchanged signatures) ──────────────────────────
 
 export interface SessionConfig {
   type:            "free15min" | "session1h" | "session2h";
@@ -291,12 +347,23 @@ export interface SessionConfig {
 }
 
 export const SESSION_CONFIGS: Record<string, SessionConfig> = {
-  free15min: { type: "free15min", label: "Encuentro inicial",    duration: "15 minutos", price: null,  durationMinutes: 15  },
-  session1h: { type: "session1h", label: "Sesión de 1 hora",     duration: "60 minutos", price: "€16", durationMinutes: 60  },
-  session2h: { type: "session2h", label: "Sesión de 2 horas",    duration: "2 horas",    price: "€30", durationMinutes: 120 },
+  free15min: { type: "free15min", label: "Encuentro inicial",  duration: "15 minutos", price: null,  durationMinutes: 15  },
+  session1h: { type: "session1h", label: "Sesión de 1 hora",   duration: "60 minutos", price: "€16", durationMinutes: 60  },
+  session2h: { type: "session2h", label: "Sesión de 2 horas",  duration: "2 horas",    price: "€30", durationMinutes: 120 },
 };
 
-export function FullScreenShell({ onBack, badgeType, badgeLabel, title, hideTopBar, children }: {
+/**
+ * FullScreenShell — legacy export, now delegates to BookingLayout.
+ * Kept for backward compatibility with SingleSessionBooking and any other consumer.
+ */
+export function FullScreenShell({
+  onBack,
+  badgeType,
+  badgeLabel,
+  title,
+  hideTopBar,
+  children,
+}: {
   onBack:      () => void;
   badgeType:   "free" | "paid" | "pack";
   badgeLabel:  string;
@@ -304,42 +371,40 @@ export function FullScreenShell({ onBack, badgeType, badgeLabel, title, hideTopB
   hideTopBar?: boolean;
   children:    React.ReactNode;
 }) {
-  const badgeColors: Record<string, { bg: string; border: string; color: string }> = {
-    free: { bg: "rgba(78,222,163,0.1)",   border: "rgba(78,222,163,0.25)",  color: "#4edea3" },
-    paid: { bg: "rgba(251,191,36,0.1)",   border: "rgba(251,191,36,0.25)",  color: "#fbbf24" },
-    pack: { bg: "rgba(99,179,237,0.1)",   border: "rgba(99,179,237,0.25)",  color: "#63b3ed" },
-  };
-  const bc = badgeColors[badgeType] ?? badgeColors.free;
-
+  // badgeType, badgeLabel, title, hideTopBar no longer drive the layout —
+  // SingleSessionBooking has been updated to use BookingLayout directly.
+  // This shell is kept only for any remaining callers.
+  void badgeType; void badgeLabel; void title; void hideTopBar;
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#131315", zIndex: 40, display: "flex", flexDirection: "column", overflowY: "auto" }}>
-      {!hideTopBar && (
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(19,19,21,0.90)", backdropFilter: "blur(20px)", position: "sticky", top: 0, zIndex: 100, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button
-              onClick={onBack}
-              aria-label="Volver"
-              style={{ width: 32, height: 32, borderRadius: "50%", background: "#201f22", border: "1px solid rgba(255,255,255,0.07)", color: "#bbcabf", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "border-color 0.2s, color 0.2s" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(78,222,163,0.3)"; (e.currentTarget as HTMLElement).style.color = "#4edea3"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.07)"; (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e1e4", fontFamily: "var(--font-headline, Manrope), sans-serif" }}>{title}</div>
-            </div>
-          </div>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 100, fontSize: 11.5, fontWeight: 600, background: bc.bg, border: `1px solid ${bc.border}`, color: bc.color }}>
-            {badgeLabel}
-          </span>
-        </div>
-      )}
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, overflow: "hidden" }}>{children}</div>
-    </div>
+    <BookingLayout>
+      {/* Back button row */}
+      <div style={{ marginBottom: 24 }}>
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 font-semibold transition-colors"
+          style={{ color: "#bbcabf", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Volver
+        </button>
+      </div>
+      {children}
+    </BookingLayout>
   );
 }
 
-export function ConfirmPanel({ slot, onConfirm, onCancel, packInfo, sessionDuration, isReschedule }: {
+export function ConfirmPanel({
+  slot,
+  onConfirm,
+  onCancel,
+  packInfo,
+  sessionDuration,
+  isReschedule,
+}: {
   slot:             SelectedSlot;
   onConfirm:        () => void;
   onCancel?:        () => void;
