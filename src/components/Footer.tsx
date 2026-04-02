@@ -212,37 +212,6 @@ export default function Footer() {
                 </svg>
                 Pregunta al asistente IA
               </button>
-              <button
-                onClick={() => {
-                  window.dispatchEvent(new Event("open-chat"));
-                  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-                }}
-                style={{
-                  display: "inline-block",
-                  alignSelf: "flex-start",
-                  fontSize: "11px",
-                  color: "#4edea3",
-                  padding: "2px 10px",
-                  border: "1px solid rgba(78,222,163,0.25)",
-                  borderRadius: "100px",
-                  background: "none",
-                  cursor: "pointer",
-                  fontFamily: "inherit",
-                  transition: "background 0.15s, border-color 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.background = "rgba(78,222,163,0.08)";
-                  el.style.borderColor = "rgba(78,222,163,0.5)";
-                }}
-                onMouseLeave={(e) => {
-                  const el = e.currentTarget as HTMLElement;
-                  el.style.background = "none";
-                  el.style.borderColor = "rgba(78,222,163,0.25)";
-                }}
-              >
-                FAQs al instante
-              </button>
             </div>
           </div>
         </div>

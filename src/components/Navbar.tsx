@@ -291,6 +291,20 @@ export default function Navbar() {
 
               {/* Nav links */}
               <nav className="px-2">
+                <a
+                  href="#sessions"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
+                  style={{ color: "#bbcabf", fontFamily: "var(--font-headline, Manrope), sans-serif", textDecoration: "none" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>dashboard</span>
+                  Área Personal
+                </a>
+
+                <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
+
                 {NAV_LINKS.map(({ label, href, accent }) => (
                   <Link
                     key={label}
