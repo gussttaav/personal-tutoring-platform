@@ -17,7 +17,7 @@ export function PrivacidadContent() {
       <h3>Cómo se usan</h3>
       <ul>
         <li>Para gestionar tu acceso, reservas y saldo de clases.</li>
-        <li>Para enviarte confirmaciones y recordatorios de clase (vía Cal.com).</li>
+        <li>Para enviarte confirmaciones y recordatorios de clase por email.</li>
         <li>No se venden datos a terceros ni se usan con fines publicitarios.</li>
       </ul>
 
@@ -25,7 +25,7 @@ export function PrivacidadContent() {
       <ul>
         <li><strong>Google OAuth</strong> — inicio de sesión. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Política de Google</a>.</li>
         <li><strong>Stripe</strong> — procesamiento de pagos. <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener noreferrer">Política de Stripe</a>.</li>
-        <li><strong>Cal.com</strong> — gestión de reservas y recordatorios.</li>
+
         <li><strong>Upstash Redis</strong> — almacenamiento del saldo de créditos.</li>
       </ul>
 
@@ -91,7 +91,7 @@ export function CancelacionContent() {
       <p>El encuentro de 15 minutos es gratuito y se puede cancelar o reprogramar sin límite de tiempo previo.</p>
 
       <h3>Cómo cancelar o reprogramar</h3>
-      <p>Usa el enlace de cancelación o reprogramación incluido en el email de confirmación de Cal.com, o escribe directamente a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
+      <p>Usa el enlace de cancelación o reprogramación incluido en el email de confirmación de tu reserva, o escribe directamente a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
 
       <h3>Casos especiales</h3>
       <p>Si surge un imprevisto de última hora, escribe a contacto@gustavoai.dev. Gustavo lo resolverá de forma flexible siempre que sea posible.</p>

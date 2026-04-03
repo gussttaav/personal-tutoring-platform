@@ -11,7 +11,6 @@
  */
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   CancelacionContent,
   TerminosContent,
@@ -78,14 +77,14 @@ export default function FooterModals() {
           </button>
         </li>
         <li>
-          <Link
-            href="/privacidad"
+          <button
+            onClick={() => openModal("privacidad")}
             style={{ ...LINK_STYLE, marginBottom: 0 }}
             onMouseEnter={hoverGreen}
             onMouseLeave={unhover}
           >
             Política de privacidad
-          </Link>
+          </button>
         </li>
       </ul>
 
