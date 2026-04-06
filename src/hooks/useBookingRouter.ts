@@ -33,6 +33,7 @@
 import { useState, useEffect, useRef } from "react";
 import type { PackSize, StudentInfo } from "@/types";
 import type { SingleSessionType } from "@/components/SingleSessionBooking";
+import type { SelectedSlot } from "@/components/WeeklyCalendar";
 
 export interface BookingRouterState {
   // ── Active views ──────────────────────────────────────────────────────────
@@ -59,6 +60,13 @@ export interface BookingRouterState {
   // ── Reschedule wiring ─────────────────────────────────────────────────────
   applyReschedule:          (type: string, token: string | null) => void;
   setRescheduleSignInLabel: (label: string) => void;
+
+  // ── Availability modal sign-in gate ───────────────────────────────────────
+  /** Show the sign-in gate with a fully custom label + callbackUrl.
+   *  Used by the AvailabilityModal flow to encode slot params in the callbackUrl. */
+  showSignInGate: (label: string, callbackUrl: string) => void;
+  /** Slot restored from URL params after an OAuth round-trip from AvailabilityModal. */
+  restoredSlot: SelectedSlot | null;
 }
 
 const SESSION_SIGNIN_LABELS: Record<SingleSessionType, string> = {
@@ -82,6 +90,7 @@ export function useBookingRouter(
   const [signInCallbackUrl, setSignInCallbackUrl] = useState<string | undefined>(undefined);
   const [pendingSession,    setPendingSession]    = useState<SingleSessionType | null>(null);
   const [rescheduleToken,   setRescheduleToken]   = useState<string | null>(null);
+  const [restoredSlot,      setRestoredSlot]      = useState<SelectedSlot | null>(null);
 
   // Prevents double-consuming intent params if the effect fires more than once
   const intentConsumed = useRef(false);
@@ -94,19 +103,41 @@ export function useBookingRouter(
   useEffect(() => {
     if (!isSignedIn || intentConsumed.current) return;
 
-    const url     = new URL(window.location.href);
-    const intent  = url.searchParams.get("intent");
-    const action  = url.searchParams.get("action");
-    const sizeStr = url.searchParams.get("packSize");
+    const url          = new URL(window.location.href);
+    const intent       = url.searchParams.get("intent");
+    const action       = url.searchParams.get("action");
+    const sizeStr      = url.searchParams.get("packSize");
+    // Slot params encoded by the AvailabilityModal unauthenticated flow
+    const slotStart    = url.searchParams.get("slotStart");
+    const slotEnd      = url.searchParams.get("slotEnd");
+    const slotLabel    = url.searchParams.get("slotLabel");
+    const slotDateLabel = url.searchParams.get("slotDateLabel");
+    const slotTz       = url.searchParams.get("slotTz");
 
     if (!intent && !action) return; // no intent params — nothing to do
 
-    // Consume once and clean URL
+    // Consume once and clean URL (including any slot params)
     intentConsumed.current = true;
     url.searchParams.delete("intent");
     url.searchParams.delete("action");
     url.searchParams.delete("packSize");
+    url.searchParams.delete("slotStart");
+    url.searchParams.delete("slotEnd");
+    url.searchParams.delete("slotLabel");
+    url.searchParams.delete("slotDateLabel");
+    url.searchParams.delete("slotTz");
     window.history.replaceState({}, "", url.toString());
+
+    // Restore the pre-selected slot so InteractiveShell can wire it as pendingSlot
+    if (slotStart && slotEnd && slotLabel && slotDateLabel) {
+      setRestoredSlot({
+        startIso:  slotStart,
+        endIso:    slotEnd,
+        label:     slotLabel,
+        dateLabel: slotDateLabel,
+        timezone:  slotTz ?? undefined,
+      });
+    }
 
     // action=schedule-pack — from pago-exitoso after a pack purchase
     if (action === "schedule-pack") {
@@ -212,6 +243,11 @@ export function useBookingRouter(
     setSignInGateLabel(label);
   }
 
+  function showSignInGate(label: string, callbackUrl: string) {
+    setSignInGateLabel(label);
+    setSignInCallbackUrl(callbackUrl);
+  }
+
   return {
     activeSession,
     showPackBooking,
@@ -228,5 +264,7 @@ export function useBookingRouter(
     closeSession,
     applyReschedule,
     setRescheduleSignInLabel,
+    showSignInGate,
+    restoredSlot,
   };
 }

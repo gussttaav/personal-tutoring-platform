@@ -36,6 +36,9 @@ interface SingleSessionBookingProps {
   userEmail:        string;
   rescheduleToken?: string | null;
   onBack:           () => void;
+  /** Pre-selected slot from AvailabilityModal. Only applied for session1h
+   *  (exact duration match). 15min and 2h start in "picking" phase. */
+  initialSlot?:     SelectedSlot;
 }
 
 // "review" = slot chosen, waiting for user to confirm before payment/booking
@@ -49,12 +52,34 @@ export default function SingleSessionBooking({
   userEmail,
   rescheduleToken,
   onBack,
+  initialSlot,
 }: SingleSessionBookingProps) {
   const cfg = SESSION_CONFIGS[sessionType];
 
-  const [phase,        setPhase]        = useState<Phase>("picking");
+  // 1h: start in "review" phase with the slot pre-filled (exact match).
+  // 15min/2h: start in "picking" phase but pre-focus the slot in the calendar
+  //           so it appears as if the user already clicked it.
+  const supportsPreSelect = sessionType === "session1h" && !!initialSlot;
+
+  // Initial week offset — navigate the calendar to the week containing the
+  // pre-selected slot so the user sees it immediately.
+  const initialWeekOffset = (() => {
+    if (!initialSlot || supportsPreSelect) return 0;
+    const slotDate = new Date(initialSlot.startIso);
+    slotDate.setHours(0, 0, 0, 0);
+    const slotMonday = new Date(slotDate);
+    slotMonday.setDate(slotDate.getDate() - ((slotDate.getDay() + 6) % 7));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const thisMonday = new Date(today);
+    thisMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    return Math.max(0, Math.round(
+      (slotMonday.getTime() - thisMonday.getTime()) / (7 * 24 * 60 * 60 * 1000)
+    ));
+  })();
+
+  const [phase,        setPhase]        = useState<Phase>(supportsPreSelect ? "review" : "picking");
   const [errorMsg,     setErrorMsg]     = useState("");
-  const [selected,     setSelected]     = useState<SelectedSlot | null>(null);
+  const [selected,     setSelected]     = useState<SelectedSlot | null>(supportsPreSelect ? initialSlot! : null);
   const [focusedSlot,  setFocusedSlot]  = useState<SelectedSlot | null>(null);
   const [note,         setNote]         = useState("");
   const [meetLink,     setMeetLink]     = useState("");
@@ -531,6 +556,8 @@ export default function SingleSessionBooking({
                   onSlotSelected={handleSlotSelected}
                   onSlotFocused={setFocusedSlot}
                   selectedSlot={selected}
+                  initialFocusedSlotStart={!supportsPreSelect ? initialSlot?.startIso : undefined}
+                  initialWeekOffset={initialWeekOffset}
                 />
               )}
             </div>

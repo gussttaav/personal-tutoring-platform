@@ -41,6 +41,12 @@ interface WeeklyCalendarProps {
   onSlotSelected:  (slot: SelectedSlot) => void;
   onSlotFocused?:  (slot: SelectedSlot | null) => void;
   selectedSlot?:   SelectedSlot | null;
+  /** ISO start string from AvailabilityModal — auto-focuses the matching slot
+   *  once it loads, as if the user had clicked it. */
+  initialFocusedSlotStart?: string;
+  /** Week offset to start on (default 0 = current week). Used when coming
+   *  from AvailabilityModal with a slot in a future week. */
+  initialWeekOffset?: number;
 }
 
 type DaySlots = ApiSlot[] | "loading" | "error";
@@ -88,10 +94,13 @@ export default function WeeklyCalendar({
   onSlotSelected,
   onSlotFocused,
   selectedSlot,
+  initialFocusedSlotStart,
+  initialWeekOffset = 0,
 }: WeeklyCalendarProps) {
-  const [weekOffset, setWeekOffset] = useState(0);
+  const [weekOffset, setWeekOffset] = useState(initialWeekOffset);
   const [slotsMap,   setSlotsMap]   = useState<Record<string, DaySlots>>({});
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
+  const initialFocusedHandled = useRef(false);
   const [isMobile,   setIsMobile]   = useState(false);
   const [userTz,     setUserTz]     = useState<string>(SCHEDULE.timezone);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,6 +122,26 @@ export default function WeeklyCalendar({
       setUserTz(Intl.DateTimeFormat().resolvedOptions().timeZone);
     } catch { /* ignore */ }
   }, []);
+
+  // Auto-focus the slot matching initialFocusedSlotStart once its day's slots load.
+  // Compares by millisecond value to handle any ISO string format differences.
+  useEffect(() => {
+    if (!initialFocusedSlotStart || initialFocusedHandled.current) return;
+    const targetMs = new Date(initialFocusedSlotStart).getTime();
+    for (const date of days) {
+      const key      = formatDateKey(date);
+      const daySlots = slotsMap[key];
+      if (!Array.isArray(daySlots)) continue;
+      const match = daySlots.find((s) => new Date(s.start).getTime() === targetMs);
+      if (match) {
+        initialFocusedHandled.current = true;
+        const sk = slotKey(date, match);
+        setFocusedKey(sk);
+        onSlotFocused?.(buildSlot(date, match));
+        break;
+      }
+    }
+  }, [slotsMap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Build 7-day window
   const days: Date[] = Array.from({ length: 7 }, (_, i) => {

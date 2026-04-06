@@ -402,8 +402,9 @@ export default function HeroSection() {
             Reservar sesión ahora
           </a>
 
-          <a
-            href="#sessions"
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-availability-modal"))}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -414,10 +415,10 @@ export default function HeroSection() {
               borderRadius: "10px",
               fontWeight: 600,
               fontSize: "1rem",
-              textDecoration: "none",
               fontFamily: "var(--font-headline, Manrope), sans-serif",
               border: "1px solid rgba(60,74,66,0.5)",
               transition: "background 0.2s, border-color 0.2s",
+              cursor: "pointer",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.background = "#353437";
@@ -429,7 +430,7 @@ export default function HeroSection() {
             }}
           >
             Ver disponibilidad
-          </a>
+          </button>
         </div>
 
         {/* ── Stats bar ── */}

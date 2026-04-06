@@ -13,7 +13,7 @@
  *   - Skeleton pulse animation retains same timing
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUserSession } from "@/hooks/useUserSession";
 import { useBookingRouter } from "@/hooks/useBookingRouter";
 import { useRescheduleIntent } from "@/hooks/useRescheduleIntent";
@@ -21,11 +21,13 @@ import PackModal from "@/components/PackModal";
 import BookingModeViewComponent from "@/components/BookingModeView";
 import SignInGate from "@/components/SignInGate";
 import SingleSessionBooking from "@/components/SingleSessionBooking";
+import AvailabilityModal, { type SessionChoice } from "@/components/AvailabilityModal";
 import Chat from "@/components/Chat";
 import { PACK_SIZES, PACK_CONFIG } from "@/constants";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
 import type { PackSize } from "@/types";
+import type { SelectedSlot } from "@/components/WeeklyCalendar";
 
 // ─── Skeleton atoms ────────────────────────────────────────────────────────────
 
@@ -68,6 +70,9 @@ export default function InteractiveShell() {
   const router     = useBookingRouter(isSignedIn, packSession?.credits ?? 0);
   const reschedule = useRescheduleIntent(isSignedIn);
 
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [pendingSlot,           setPendingSlot]           = useState<SelectedSlot | null>(null);
+
   // Wire reschedule intent into the router once it resolves
   useEffect(() => {
     if (!reschedule.activeReschedule) return;
@@ -105,6 +110,80 @@ export default function InteractiveShell() {
     window.addEventListener("close-booking-overlay", handler);
     return () => window.removeEventListener("close-booking-overlay", handler);
   }, [router.closePackBooking, router.closeSession]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Open the unauthenticated availability modal (dispatched by HeroSection)
+  useEffect(() => {
+    const handler = () => setShowAvailabilityModal(true);
+    window.addEventListener("open-availability-modal", handler);
+    return () => window.removeEventListener("open-availability-modal", handler);
+  }, []);
+
+  // Sync restoredSlot (from URL params after OAuth) into pendingSlot.
+  // Fires once when isSignedIn becomes true and restoredSlot is available.
+  useEffect(() => {
+    if (router.restoredSlot) {
+      setPendingSlot(router.restoredSlot);
+    }
+  }, [router.restoredSlot]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle slot + session type selected in AvailabilityModal
+  function handleAvailabilitySessionSelected(choice: SessionChoice, slot: SelectedSlot) {
+    setShowAvailabilityModal(false);
+
+    if (choice.kind === "session") {
+      if (isSignedIn && googleUser?.email) {
+        // All session types: pass the slot so WeeklyCalendar can pre-focus it.
+        // For 1h the slot goes to review phase directly; for 15min/2h the
+        // calendar opens at the right week with the slot already focused.
+        setPendingSlot(slot);
+        router.handleSessionClick(choice.type);
+      } else {
+        // Unauthenticated → encode slot in callbackUrl so it survives OAuth
+        const params = new URLSearchParams({ intent: choice.type });
+        params.set("slotStart",    slot.startIso);
+        params.set("slotEnd",      slot.endIso);
+        params.set("slotLabel",    slot.label);
+        params.set("slotDateLabel", slot.dateLabel);
+        if (slot.timezone) params.set("slotTz", slot.timezone);
+        const signInLabels: Record<string, string> = {
+          free15min: "reservar el encuentro inicial gratuito",
+          session1h: "reservar una sesión de 1 hora",
+          session2h: "reservar una sesión de 2 horas",
+        };
+        router.showSignInGate(
+          signInLabels[choice.type] ?? "reservar una sesión",
+          `/?${params.toString()}`,
+        );
+      }
+    } else {
+      // Pack choice
+      if (isSignedIn && googleUser?.email) {
+        if ((packSession?.credits ?? 0) > 0) {
+          setPendingSlot(slot); // pre-select 1h slot in BookingModeView
+          router.handlePackSchedule();
+        } else {
+          router.handlePackBuy(choice.size); // opens PackModal
+        }
+      } else {
+        // Unauthenticated → encode slot in callbackUrl alongside buy-pack intent.
+        // After OAuth the user may have credits already (prior purchase), in which
+        // case useBookingRouter routes to schedule-pack and the slot is restored.
+        const params = new URLSearchParams({
+          intent:   "buy-pack",
+          packSize: String(choice.size),
+        });
+        params.set("slotStart",    slot.startIso);
+        params.set("slotEnd",      slot.endIso);
+        params.set("slotLabel",    slot.label);
+        params.set("slotDateLabel", slot.dateLabel);
+        if (slot.timezone) params.set("slotTz", slot.timezone);
+        router.showSignInGate(
+          "comprar un pack de clases",
+          `/?${params.toString()}`,
+        );
+      }
+    }
+  }
 
   const packStudentInfo = packSession
     ? { email: packSession.email, name: packSession.name, credits: packSession.credits }
@@ -192,9 +271,10 @@ export default function InteractiveShell() {
             student={packStudentInfo}
             rescheduleToken={router.rescheduleToken}
             onCreditsUpdated={updateCredits}
-            onExit={router.closePackBooking}
+            onExit={() => { router.closePackBooking(); setPendingSlot(null); }}
             hideTopBar
             packTotal={packSession?.packSize ?? undefined}
+            initialSlot={pendingSlot ?? undefined}
           />
         </div>
       </div>
@@ -209,7 +289,8 @@ export default function InteractiveShell() {
         userName={googleUser.name ?? ""}
         userEmail={googleUser.email}
         rescheduleToken={router.rescheduleToken}
-        onBack={router.closeSession}
+        onBack={() => { router.closeSession(); setPendingSlot(null); }}
+        initialSlot={pendingSlot ?? undefined}
       />
     );
   }
@@ -223,6 +304,17 @@ export default function InteractiveShell() {
       <style>{`
         @keyframes skeletonPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
       `}</style>
+
+      {showAvailabilityModal && (
+        <AvailabilityModal
+          onClose={() => setShowAvailabilityModal(false)}
+          onSessionSelected={handleAvailabilitySessionSelected}
+          isSignedIn={isSignedIn}
+          activePackSize={
+            packSession && (packSession.credits ?? 0) > 0 ? packSession.packSize : null
+          }
+        />
+      )}
 
       {combinedSignInLabel && !isSignedIn && (
         <SignInGate

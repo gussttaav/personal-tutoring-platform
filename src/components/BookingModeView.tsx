@@ -38,6 +38,8 @@ interface BookingModeViewProps {
   onExit:            () => void;
   hideTopBar?:       boolean;
   packTotal?:        number | null;
+  /** Pre-selected 1h slot from AvailabilityModal — opens ConfirmPanel immediately */
+  initialSlot?:      SelectedSlot;
 }
 
 interface SuccessBanner {
@@ -56,11 +58,12 @@ export default function BookingModeView({
   onExit,
   // hideTopBar is no longer used — BookingLayout always shows the full nav
   packTotal,
+  initialSlot,
 }: BookingModeViewProps) {
-  const [phase,         setPhase]         = useState<BookingPhase>("idle");
+  const [phase,         setPhase]         = useState<BookingPhase>(initialSlot ? "selected" : "idle");
   const [remaining,     setRemaining]     = useState(student.credits);
   const [errMsg,        setErrMsg]        = useState("");
-  const [selected,      setSelected]      = useState<SelectedSlot | null>(null);
+  const [selected,      setSelected]      = useState<SelectedSlot | null>(initialSlot ?? null);
   const [successBanner, setSuccessBanner] = useState<SuccessBanner | null>(null);
   const [userTz,        setUserTz]        = useState<string>("");
 

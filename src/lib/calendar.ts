@@ -8,7 +8,6 @@
  *   Week 2 — ARCH-02: shared kv singleton
  *   Week 3 — PERF-01: DST-correct slot generation via date-fns-tz
  *   Backlog — SLOT LOCK: acquireSlotLock / releaseSlotLock
- *   Rolling — SLOT STEP: 30-min rolling window for 1h and 2h bookings
  *
  * SLOT LOCKING DESIGN:
  *
@@ -43,16 +42,6 @@
  * the slot lock is a safety net rather than a critical path requirement.
  * Enable it if you see duplicate bookings in the Upstash logs.
  *
- * ROLLING SLOT STEP DESIGN:
- *
- * 15-min bookings keep a fixed step equal to their duration (unchanged).
- * 1h and 2h bookings use a 30-min step, producing overlapping rolling slots:
- *
- *   09:00–12:00 window, 1h duration → 09:00–10:00, 09:30–10:30, 10:00–11:00,
- *                                      10:30–11:30, 11:00–12:00
- *
- * The freebusy query is unchanged — still one API call per day. The rolling
- * step only affects in-memory cursor arithmetic and label formatting.
  */
 
 import { google } from "googleapis";
@@ -197,9 +186,8 @@ export async function getAvailableSlots(
   const slots: TimeSlot[] = [];
   const minBookingTime = new Date(Date.now() + SCHEDULE.minNoticeHours * 3_600_000);
 
-  // 15-min bookings keep a fixed step equal to their duration (original behaviour).
-  // 1h and 2h bookings advance in 30-min increments, producing rolling slots.
-  const stepMinutes = durationMinutes === 15 ? 15 : 30;
+  // Each slot advances by its own duration: 15→15 min, 60→60 min, 120→120 min.
+  const stepMinutes = durationMinutes;
 
   for (const window of windows) {
     let cursorMin = window.startMin;
