@@ -3,19 +3,14 @@
 /**
  * AvailabilityModal — unauthenticated availability preview
  *
- * Shows a compact 7-column weekly calendar of 1-hour slots fetched from
- * /api/availability (no auth required). On slot selection, presents a
- * session-type picker with a CTA button. Calls onSessionSelected only
- * when the user explicitly confirms with the button.
+ * Shows an 8-column time-grid calendar (time markers + 7 day columns) of
+ * 1-hour slots fetched from /api/availability (no auth required). On slot
+ * selection, presents a session-type picker with a sticky CTA footer.
+ * Calls onSessionSelected only when the user explicitly confirms.
  *
  * Layout:
  *   - Mobile  (< 640px): bottom sheet, all 7 days visible, no horizontal scroll
- *   - Desktop (≥ 640px): centered dialog, up to 920px wide
- *
- * Timezone:
- *   - Fetches with the correct user timezone from the start (re-fetches if it changes)
- *   - Displays slots using API-computed labels (same source as WeeklyCalendar)
- *   - Shows active timezone so the user knows what times they are seeing
+ *   - Desktop (≥ 640px): centered dialog, up to 860px wide
  */
 
 import { useState, useEffect, useCallback } from "react";
@@ -41,23 +36,57 @@ interface AvailabilityModalProps {
 
 type DaySlots = ApiSlot[] | "loading" | "error";
 
+// ─── Time grid rows ────────────────────────────────────────────────────────────
+
+const TIME_ROWS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
+
 // ─── Session / pack option data ────────────────────────────────────────────────
 
 const SESSION_OPTIONS = [
-  { kind: "session" as const, type: "free15min" as const, label: "Encuentro inicial", detail: "15 min · Gratis",    badge: null },
-  { kind: "session" as const, type: "session1h"  as const, label: "Sesión 1 hora",    detail: "60 min · €16",     badge: "Popular" },
-  { kind: "session" as const, type: "session2h"  as const, label: "Sesión 2 horas",   detail: "2 h · €30",        badge: null },
+  {
+    kind: "session" as const, type: "free15min" as const,
+    label: "Encuentro inicial", detail: "15 min · Gratis", badge: null,
+    icon: "chat_bubble",
+    description: "Comentamos tu caso y definimos un plan de trabajo.",
+  },
+  {
+    kind: "session" as const, type: "session1h" as const,
+    label: "Sesión 1 hora", detail: "60 min · €16", badge: "Popular",
+    icon: "timer",
+    description: "Resolución de dudas, proyecto o preparación de examen.",
+  },
+  {
+    kind: "session" as const, type: "session2h" as const,
+    label: "Sesión 2 horas", detail: "120 min · €30", badge: null,
+    icon: "history",
+    description: "Para temas que requieren mayor profundidad.",
+  },
 ] as const;
 
 const PACK_OPTIONS = [
-  { kind: "pack" as const, size: 5  as const, label: "Pack 5 horas",  detail: "5 × 1h · €75",   badge: null },
-  { kind: "pack" as const, size: 10 as const, label: "Pack 10 horas", detail: "10 × 1h · €140", badge: "Recomendado" },
+  {
+    kind: "pack" as const, size: 5 as const,
+    label: "Pack Esencial", detail: "5 × 1h · €75", badge: null,
+    savings: "Ahorra 5€",
+    description: "Ideal para comenzar con flexibilidad.",
+    hourlyRate: "€15/h",
+    totalPrice: "€75",
+  },
+  {
+    kind: "pack" as const, size: 10 as const,
+    label: "Pack Intensivo", detail: "10 × 1h · €140", badge: "Recomendado",
+    savings: "Ahorra 20€",
+    description: "El mejor valor para un acompañamiento continuo.",
+    hourlyRate: "€14/h",
+    totalPrice: "€140",
+  },
 ] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const COMPACT_DAY_NAMES = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sa"];
-const SHORT_DAY_NAMES   = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+// Sun=0 … Sat=6
+const DAY_ABBR  = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"];
+const DAY_FULL  = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 function getWeekStart(offset = 0): Date {
   const today = new Date();
@@ -99,6 +128,28 @@ function buildSelectedSlot(date: Date, slot: ApiSlot, userTz: string): SelectedS
 /** Extract just the start time from a label like "09:00–10:00" → "09:00" */
 function startTimeFromLabel(label: string): string {
   return label.split(/\s*[–\-]\s*/)[0] ?? label;
+}
+
+/** Extract the start hour integer from a label like "09:00–10:00" → 9 */
+function startHourFromLabel(label: string): number {
+  const timeStr = (label.split(/\s*[–\-]\s*/)[0] ?? "").trim();
+  return parseInt(timeStr.split(":")[0] ?? "0", 10);
+}
+
+/** Build a map of start-hour → ApiSlot for time-grid positioning */
+function buildHourMap(slots: ApiSlot[], tzDiffers: boolean): Map<number, ApiSlot> {
+  const map = new Map<number, ApiSlot>();
+  for (const slot of slots) {
+    const label = tzDiffers ? slot.localLabel : slot.label;
+    map.set(startHourFromLabel(label), slot);
+  }
+  return map;
+}
+
+function formatHourLabel(hour: number): string {
+  if (hour < 12)  return `${String(hour).padStart(2, "0")} AM`;
+  if (hour === 12) return "12 PM";
+  return `${String(hour - 12).padStart(2, "0")} PM`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -160,14 +211,12 @@ export default function AvailabilityModal({
     const today   = new Date(); today.setHours(0, 0, 0, 0);
     const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
 
-    // Start fresh — any in-flight request from the previous effect run will be
-    // aborted by the cleanup below.
     setSlotsMap({});
 
     const controllers: AbortController[] = [];
 
     days.forEach((date) => {
-      const key    = formatDateKey(date);
+      const key      = formatDateKey(date);
       const isPast   = date < today;
       const isBeyond = date > maxDate;
       const dow      = date.getDay();
@@ -206,7 +255,7 @@ export default function AvailabilityModal({
 
   const handleSlotClick = useCallback((date: Date, slot: ApiSlot) => {
     setSelectedSlot(buildSelectedSlot(date, slot, userTz));
-    setSelectedChoice(null); // reset choice when slot changes
+    setSelectedChoice(null);
     setView("picker");
   }, [userTz]);
 
@@ -225,22 +274,22 @@ export default function AvailabilityModal({
   const today   = new Date(); today.setHours(0, 0, 0, 0);
   const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
 
-  // ── CTA button label ──────────────────────────────────────────────────────
   function ctaLabel(choice: SessionChoice): string {
     if (choice.kind === "session") return "Reservar →";
-    // pack
     if (isSignedIn && activePackSize === choice.size) return "Reservar →";
     return "Comprar pack →";
   }
 
   // ── Modal shell ──────────────────────────────────────────────────────────
+  const NAVBAR_H = 64; // px — matches the site's h-16 fixed navbar
+
   const panelStyle: React.CSSProperties = isMobile
     ? {
         position:      "relative",
         width:         "100%",
-        maxHeight:     "92dvh",
+        maxHeight:     `calc(100dvh - ${NAVBAR_H}px)`,
         background:    "#1c1b1d",
-        borderRadius:  "20px 20px 0 0",
+        borderRadius:  "24px 24px 0 0",
         display:       "flex",
         flexDirection: "column",
         overflow:      "hidden",
@@ -248,10 +297,10 @@ export default function AvailabilityModal({
       }
     : {
         position:      "relative",
-        width:         "min(920px, 95vw)",
-        maxHeight:     "88vh",
+        width:         "min(860px, 95vw)",
+        maxHeight:     "90vh",
         background:    "#1c1b1d",
-        borderRadius:  "16px",
+        borderRadius:  "24px",
         display:       "flex",
         flexDirection: "column",
         overflow:      "hidden",
@@ -261,7 +310,7 @@ export default function AvailabilityModal({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — paddingTop on mobile clears the fixed navbar */}
       <div
         onClick={onClose}
         style={{
@@ -274,7 +323,7 @@ export default function AvailabilityModal({
           display:              "flex",
           alignItems:           isMobile ? "flex-end" : "center",
           justifyContent:       "center",
-          padding:              isMobile ? 0 : "20px",
+          padding:              isMobile ? `${NAVBAR_H}px 0 0` : "20px",
         }}
         role="dialog"
         aria-modal="true"
@@ -289,9 +338,10 @@ export default function AvailabilityModal({
               display:        "flex",
               alignItems:     "center",
               justifyContent: "space-between",
-              padding:        "18px 20px 14px",
+              padding:        "16px 20px 14px",
               borderBottom:   "1px solid rgba(255,255,255,0.05)",
               flexShrink:     0,
+              gap:            12,
             }}
           >
             {view === "picker" ? (
@@ -319,52 +369,121 @@ export default function AvailabilityModal({
                 Cambiar horario
               </button>
             ) : (
-              <div>
-                <p
-                  style={{
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 20, color: "#4edea3", flexShrink: 0, lineHeight: 1 }}
+                >
+                  event_note
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{
                     fontFamily:    "var(--font-headline, Manrope), sans-serif",
                     fontSize:      isMobile ? 15 : 17,
                     fontWeight:    700,
                     color:         "#e5e1e4",
                     letterSpacing: "-0.01em",
                     margin:        0,
-                  }}
-                >
-                  {formatWeekHeading(weekStart)}
-                </p>
-                <p style={{ fontSize: 11, color: "#86948a", margin: "2px 0 0" }}>
-                  {tzDiffers
-                    ? `Horarios en tu zona · ${userTz}`
-                    : `Horarios en ${SCHEDULE.timezone}`}
-                </p>
+                    lineHeight:    1.2,
+                  }}>
+                    {formatWeekHeading(weekStart)}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#86948a", margin: "2px 0 0" }}>
+                    {tzDiffers
+                      ? `Horarios en tu zona · ${userTz}`
+                      : `Horarios en ${SCHEDULE.timezone}`}
+                  </p>
+                </div>
               </div>
             )}
 
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              aria-label="Cerrar"
-              style={{
-                width:          32,
-                height:         32,
-                borderRadius:   "50%",
-                background:     "#201f22",
-                border:         "1px solid rgba(255,255,255,0.07)",
-                cursor:         "pointer",
-                display:        "flex",
-                alignItems:     "center",
-                justifyContent: "center",
-                color:          "#86948a",
-                flexShrink:     0,
-                marginLeft:     12,
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#86948a"; }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </button>
+            {/* Right side controls */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              {view === "calendar" && (
+                <div style={{
+                  display:      "flex",
+                  alignItems:   "center",
+                  background:   "#0e0e10",
+                  borderRadius: 9999,
+                  border:       "1px solid rgba(255,255,255,0.07)",
+                  overflow:     "hidden",
+                }}>
+                  <button
+                    onClick={() => setWeekOffset((w) => w - 1)}
+                    disabled={weekOffset === 0}
+                    aria-label="Semana anterior"
+                    style={{
+                      width:          36,
+                      height:         36,
+                      background:     "transparent",
+                      border:         "none",
+                      cursor:         weekOffset === 0 ? "not-allowed" : "pointer",
+                      color:          weekOffset === 0 ? "rgba(134,148,138,0.3)" : "#bbcabf",
+                      display:        "flex",
+                      alignItems:     "center",
+                      justifyContent: "center",
+                      opacity:        weekOffset === 0 ? 0.4 : 1,
+                      transition:     "color 0.12s",
+                    }}
+                    onMouseEnter={(e) => { if (weekOffset !== 0) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
+                    onMouseLeave={(e) => { if (weekOffset !== 0) (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <polyline points="15 18 9 12 15 6" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => setWeekOffset((w) => w + 1)}
+                    disabled={weekOffset >= maxWeekOffset}
+                    aria-label="Semana siguiente"
+                    style={{
+                      width:          36,
+                      height:         36,
+                      background:     "transparent",
+                      border:         "none",
+                      borderLeft:     "1px solid rgba(255,255,255,0.07)",
+                      cursor:         weekOffset >= maxWeekOffset ? "not-allowed" : "pointer",
+                      color:          weekOffset >= maxWeekOffset ? "rgba(134,148,138,0.3)" : "#bbcabf",
+                      display:        "flex",
+                      alignItems:     "center",
+                      justifyContent: "center",
+                      opacity:        weekOffset >= maxWeekOffset ? 0.4 : 1,
+                      transition:     "color 0.12s",
+                    }}
+                    onMouseEnter={(e) => { if (weekOffset < maxWeekOffset) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
+                    onMouseLeave={(e) => { if (weekOffset < maxWeekOffset) (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                      <polyline points="9 18 15 12 9 6" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={onClose}
+                aria-label="Cerrar"
+                style={{
+                  width:          32,
+                  height:         32,
+                  borderRadius:   "50%",
+                  background:     "#201f22",
+                  border:         "1px solid rgba(255,255,255,0.07)",
+                  cursor:         "pointer",
+                  display:        "flex",
+                  alignItems:     "center",
+                  justifyContent: "center",
+                  color:          "#86948a",
+                  flexShrink:     0,
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#86948a"; }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* ── Scrollable body ── */}
@@ -372,71 +491,21 @@ export default function AvailabilityModal({
 
             {view === "calendar" ? (
               <>
-                {/* Week navigation */}
-                <div
-                  style={{
-                    display:        "flex",
-                    alignItems:     "center",
-                    justifyContent: "space-between",
-                    padding:        "10px 20px 6px",
-                  }}
-                >
-                  <button
-                    onClick={() => setWeekOffset((w) => w - 1)}
-                    disabled={weekOffset === 0}
-                    aria-label="Semana anterior"
-                    style={{
-                      width:          28,
-                      height:         28,
-                      borderRadius:   "50%",
-                      background:     "#201f22",
-                      border:         "1px solid rgba(255,255,255,0.07)",
-                      cursor:         weekOffset === 0 ? "not-allowed" : "pointer",
-                      color:          weekOffset === 0 ? "rgba(134,148,138,0.3)" : "#bbcabf",
-                      display:        "flex",
-                      alignItems:     "center",
-                      justifyContent: "center",
-                      opacity:        weekOffset === 0 ? 0.4 : 1,
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                      <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={() => setWeekOffset((w) => w + 1)}
-                    disabled={weekOffset >= maxWeekOffset}
-                    aria-label="Semana siguiente"
-                    style={{
-                      width:          28,
-                      height:         28,
-                      borderRadius:   "50%",
-                      background:     "#201f22",
-                      border:         "1px solid rgba(255,255,255,0.07)",
-                      cursor:         weekOffset >= maxWeekOffset ? "not-allowed" : "pointer",
-                      color:          weekOffset >= maxWeekOffset ? "rgba(134,148,138,0.3)" : "#bbcabf",
-                      display:        "flex",
-                      alignItems:     "center",
-                      justifyContent: "center",
-                      opacity:        weekOffset >= maxWeekOffset ? 0.4 : 1,
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* 7-column grid — no min-width, fits all screen sizes */}
+                {/*
+                  8-column time grid.
+                  The wrapper's background + columnGap create 1px column separators.
+                */}
                 <div
                   style={{
                     display:             "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap:                 "2px",
-                    padding:             "0 8px 16px",
+                    gridTemplateColumns: "52px repeat(7, 1fr)",
+                    columnGap:           1,
+                    background:          "rgba(255,255,255,0.05)",
+                    margin:              "0 12px",
                   }}
                 >
+                  <TimeColumn isMobile={isMobile} />
+
                   {days.map((date) => {
                     const key      = formatDateKey(date);
                     const dow      = date.getDay();
@@ -448,89 +517,48 @@ export default function AvailabilityModal({
                     const isToday  = date.toDateString() === today.toDateString();
 
                     return (
-                      <div
+                      <DayColumn
                         key={key}
-                        style={{
-                          display:       "flex",
-                          flexDirection: "column",
-                          alignItems:    "center",
-                          gap:           3,
-                          opacity:       noSched ? 0.4 : 1,
-                        }}
-                      >
-                        {/* Day header */}
-                        <div style={{ textAlign: "center", padding: "6px 2px 4px", width: "100%" }}>
-                          <p
-                            style={{
-                              fontSize:      isMobile ? 9 : 10,
-                              fontWeight:    700,
-                              letterSpacing: "0.05em",
-                              textTransform: "uppercase",
-                              color:         isToday ? "#4edea3" : "#86948a",
-                              margin:        0,
-                            }}
-                          >
-                            {isMobile ? COMPACT_DAY_NAMES[dow] : SHORT_DAY_NAMES[dow]}
-                          </p>
-                          <p
-                            style={{
-                              fontSize:   isMobile ? 13 : 16,
-                              fontWeight: 700,
-                              fontFamily: "var(--font-headline, Manrope), sans-serif",
-                              color:      isToday ? "#4edea3" : "#e5e1e4",
-                              margin:     "2px 0 0",
-                              lineHeight: 1,
-                            }}
-                          >
-                            {date.getDate()}
-                          </p>
-                        </div>
-
-                        {/* Slot list */}
-                        <div
-                          style={{
-                            width:         "100%",
-                            display:       "flex",
-                            flexDirection: "column",
-                            gap:           3,
-                            padding:       "0 2px",
-                          }}
-                        >
-                          {isClosed ? (
-                            noSched ? (
-                              <p style={{ fontSize: 8, color: "rgba(134,148,138,0.3)", textAlign: "center", margin: "8px 0", fontStyle: "italic" }}>
-                                Cerrado
-                              </p>
-                            ) : null
-                          ) : daySlots === "loading" || daySlots === undefined ? (
-                            <LoadingDots />
-                          ) : daySlots === "error" || daySlots.length === 0 ? (
-                            <p style={{ fontSize: 8, color: "rgba(134,148,138,0.3)", textAlign: "center", margin: "8px 0", fontStyle: "italic" }}>
-                              Sin disp.
-                            </p>
-                          ) : (
-                            daySlots.map((slot) => {
-                              // Use the API-computed label (same source as WeeklyCalendar)
-                              // to ensure timezone consistency between the two calendars.
-                              const fullLabel = tzDiffers ? slot.localLabel : slot.label;
-                              const timeStr   = startTimeFromLabel(fullLabel);
-                              return (
-                                <SlotPill
-                                  key={slot.start}
-                                  label={timeStr}
-                                  onClick={() => handleSlotClick(date, slot)}
-                                />
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
+                        date={date}
+                        daySlots={daySlots}
+                        isMobile={isMobile}
+                        isClosed={isClosed}
+                        isToday={isToday}
+                        tzDiffers={tzDiffers}
+                        onSlotClick={(slot) => handleSlotClick(date, slot)}
+                      />
                     );
                   })}
                 </div>
+
+                {/* Legend */}
+                <div style={{
+                  display:    "flex",
+                  alignItems: "center",
+                  gap:        16,
+                  padding:    "10px 12px 14px 64px",
+                }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "#86948a" }}>
+                    <span style={{
+                      width: 18, height: 10, borderRadius: 3,
+                      background: "rgba(78,222,163,0.18)",
+                      border: "1px solid rgba(78,222,163,0.35)",
+                      display: "inline-block", flexShrink: 0,
+                    }} />
+                    Disponible
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "#86948a" }}>
+                    <span style={{
+                      width: 18, height: 10, borderRadius: 3,
+                      background: "transparent",
+                      border: "1px solid rgba(134,148,138,0.2)",
+                      display: "inline-block", flexShrink: 0,
+                    }} />
+                    No disponible
+                  </span>
+                </div>
               </>
             ) : (
-              /* ── Session picker ── */
               <SessionPicker
                 slot={selectedSlot!}
                 isMobile={isMobile}
@@ -555,14 +583,162 @@ export default function AvailabilityModal({
           from { transform: translateY(100%); }
           to   { transform: translateY(0); }
         }
+        /* Hide the chat FAB while this modal is mounted */
+        .chat-fab { display: none !important; }
       `}</style>
     </>
   );
 }
 
-// ─── Slot pill ─────────────────────────────────────────────────────────────────
+// ─── Time column ───────────────────────────────────────────────────────────────
 
-function SlotPill({ label, onClick }: { label: string; onClick: () => void }) {
+function TimeColumn({ isMobile }: { isMobile: boolean }) {
+  const ROW_H    = isMobile ? 40 : 48;
+  const HEADER_H = isMobile ? 52 : 64;
+  return (
+    <div style={{ background: "#111113" }}>
+      {/* Header spacer — aligns with day header cells */}
+      <div style={{
+        height:       HEADER_H,
+        borderBottom: "1px solid rgba(255,255,255,0.1)",
+      }} />
+      {/* Hour rows */}
+      {TIME_ROWS.map((hour, i) => (
+        <div
+          key={hour}
+          style={{
+            height:         ROW_H,
+            display:        "flex",
+            alignItems:     "center",
+            justifyContent: "flex-end",
+            paddingRight:   8,
+            borderTop:      i > 0 ? "1px solid rgba(255,255,255,0.05)" : undefined,
+          }}
+        >
+          <span style={{
+            fontSize:           isMobile ? 9 : 10,
+            fontWeight:         500,
+            color:              "#86948a",
+            fontVariantNumeric: "tabular-nums",
+            whiteSpace:         "nowrap",
+          }}>
+            {formatHourLabel(hour)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Day column ────────────────────────────────────────────────────────────────
+
+function DayColumn({
+  date, daySlots, isMobile, isClosed, isToday, tzDiffers, onSlotClick,
+}: {
+  date:        Date;
+  daySlots:    DaySlots | undefined;
+  isMobile:    boolean;
+  isClosed:    boolean;
+  isToday:     boolean;
+  tzDiffers:   boolean;
+  onSlotClick: (slot: ApiSlot) => void;
+}) {
+  const ROW_H    = isMobile ? 40 : 48;
+  const HEADER_H = isMobile ? 52 : 64;
+  const dow      = date.getDay();
+  const hourMap  = Array.isArray(daySlots) ? buildHourMap(daySlots, tzDiffers) : null;
+  const isLoading = daySlots === "loading" || daySlots === undefined;
+
+  return (
+    <div style={{
+      opacity:    isClosed ? 0.32 : 1,
+      background: isToday ? "rgba(78,222,163,0.025)" : "#1c1b1d",
+    }}>
+      {/* Day header */}
+      <div style={{
+        height:         HEADER_H,
+        display:        "flex",
+        flexDirection:  "column",
+        alignItems:     "center",
+        justifyContent: "center",
+        gap:            2,
+        background:     isToday ? "rgba(78,222,163,0.1)" : "#111113",
+        borderBottom:   "1px solid rgba(255,255,255,0.1)",
+        position:       "relative",
+      }}>
+        {/* Today accent bar */}
+        {isToday && (
+          <div style={{
+            position:   "absolute",
+            top:        0,
+            left:       "20%",
+            right:      "20%",
+            height:     2,
+            background: "#4edea3",
+            borderRadius: "0 0 2px 2px",
+          }} />
+        )}
+        <span style={{
+          fontSize:      isMobile ? 8 : 10,
+          fontWeight:    700,
+          textTransform: "uppercase",
+          letterSpacing: "0.07em",
+          color:         isToday ? "#4edea3" : "#86948a",
+          lineHeight:    1,
+        }}>
+          {isMobile ? DAY_ABBR[dow] : DAY_FULL[dow]}
+        </span>
+        <span style={{
+          fontSize:   isMobile ? 16 : 20,
+          fontWeight: 800,
+          fontFamily: "var(--font-headline, Manrope), sans-serif",
+          color:      isToday ? "#4edea3" : "#e5e1e4",
+          lineHeight: 1,
+        }}>
+          {date.getDate()}
+        </span>
+      </div>
+
+      {/* Time rows */}
+      {TIME_ROWS.map((hour, i) => {
+        const slot = hourMap?.get(hour) ?? null;
+        const timeLabel = slot
+          ? startTimeFromLabel(tzDiffers ? slot.localLabel : slot.label)
+          : null;
+
+        return (
+          <div
+            key={hour}
+            style={{
+              height:    ROW_H,
+              padding:   "3px 3px",
+              borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined,
+            }}
+          >
+            {isClosed ? null
+              : isLoading ? (
+                hour === 10 ? (
+                  <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <LoadingDots />
+                  </div>
+                ) : null
+              ) : slot ? (
+                <SlotCell
+                  timeLabel={isMobile ? null : timeLabel}
+                  onClick={() => onSlotClick(slot)}
+                />
+              ) : null
+            }
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Slot cell ─────────────────────────────────────────────────────────────────
+
+function SlotCell({ timeLabel, onClick }: { timeLabel: string | null; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
@@ -570,29 +746,36 @@ function SlotPill({ label, onClick }: { label: string; onClick: () => void }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        width:         "100%",
-        padding:       "5px 2px",
-        borderRadius:  6,
-        fontSize:      10,
-        fontWeight:    500,
-        textAlign:     "center",
-        cursor:        "pointer",
-        fontFamily:    "inherit",
-        border:        hovered
-          ? "1px solid rgba(78,222,163,0.5)"
-          : "1px solid rgba(78,222,163,0.2)",
-        background:    hovered
-          ? "rgba(78,222,163,0.18)"
-          : "rgba(78,222,163,0.08)",
-        color:         "#4edea3",
-        transition:    "background 0.12s, border-color 0.12s",
-        lineHeight:    1.3,
-        whiteSpace:    "nowrap",
-        overflow:      "hidden",
-        textOverflow:  "ellipsis",
+        width:          "100%",
+        height:         "100%",
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "center",
+        paddingLeft:    0,
+        cursor:         "pointer",
+        border:         `1px solid ${hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)"}`,
+        background:     hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)",
+        borderRadius:   4,
+        transition:     "background 0.12s, border-color 0.12s",
+        fontFamily:     "inherit",
+        overflow:       "hidden",
       }}
+      aria-label={timeLabel ? `Disponible a las ${timeLabel}` : "Hora disponible"}
     >
-      {label}
+      {timeLabel && (
+        <span style={{
+          fontSize:     10,
+          fontWeight:   600,
+          color:        "#4edea3",
+          whiteSpace:   "nowrap",
+          overflow:     "hidden",
+          textOverflow: "ellipsis",
+          lineHeight:   1,
+          pointerEvents: "none",
+        }}>
+          {timeLabel}
+        </span>
+      )}
     </button>
   );
 }
@@ -631,150 +814,312 @@ function SessionPicker({
   };
 
   return (
-    <div style={{ padding: "16px 20px 20px" }}>
-      {/* Selected slot summary */}
-      <div
-        style={{
-          background:   "rgba(78,222,163,0.08)",
-          border:       "1px solid rgba(78,222,163,0.2)",
-          borderRadius: 10,
-          padding:      "10px 14px",
-          marginBottom: 18,
-          display:      "flex",
-          alignItems:   "center",
-          gap:          10,
-        }}
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-          <rect x="3" y="4" width="18" height="18" rx="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <div>
-          <p style={{ fontSize: 11, color: "#86948a", margin: 0 }}>Horario seleccionado</p>
-          <p style={{ fontSize: 13, fontWeight: 600, color: "#4edea3", margin: "2px 0 0" }}>
-            {slot.dateLabel} · {startTimeFromLabel(slot.label)}
-          </p>
-        </div>
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100%" }}>
 
-      {/* Individual sessions */}
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e5e1e4", marginBottom: 10 }}>
-        Elige el tipo de sesión
-      </p>
-      <div
-        style={{
+      {/* Scrollable content */}
+      <div style={{ flex: 1, padding: "24px 20px 8px" }}>
+
+        {/* Date badge */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{
+            display:      "inline-flex",
+            alignItems:   "center",
+            gap:          8,
+            background:   "rgba(78,222,163,0.1)",
+            border:       "1px solid rgba(78,222,163,0.2)",
+            borderRadius: 9999,
+            padding:      "8px 16px",
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16, color: "#4edea3", lineHeight: 1 }}>
+              event_available
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#4edea3" }}>
+              {slot.dateLabel} · {startTimeFromLabel(slot.label)}
+            </span>
+          </div>
+        </div>
+
+        {/* Heading */}
+        <h2 style={{
+          fontFamily:    "var(--font-headline, Manrope), sans-serif",
+          fontSize:      isMobile ? 26 : 34,
+          fontWeight:    800,
+          color:         "#e5e1e4",
+          letterSpacing: "-0.03em",
+          textAlign:     "center",
+          margin:        "0 0 8px",
+          lineHeight:    1.15,
+        }}>
+          Selecciona tu sesión
+        </h2>
+        <p style={{ fontSize: 13, color: "#86948a", textAlign: "center", marginBottom: 28, lineHeight: 1.5 }}>
+          Elige el tipo de sesión que mejor se adapta a lo que buscas.
+        </p>
+
+        {/* Individual sessions */}
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#e5e1e4", marginBottom: 10 }}>
+          Sesiones individuales
+        </p>
+        <div style={{
           display:             "grid",
           gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
           gap:                 8,
           marginBottom:        10,
-        }}
-      >
-        {SESSION_OPTIONS.map((opt) => {
-          const choice: SessionChoice = { kind: opt.kind, type: opt.type };
-          return (
-            <OptionCard
-              key={opt.type}
-              label={opt.label}
-              detail={opt.detail}
-              badge={opt.badge}
-              selected={isChoiceSelected(choice)}
-              onClick={() => onSelect(choice)}
-            />
-          );
-        })}
-      </div>
+        }}>
+          {SESSION_OPTIONS.map((opt) => {
+            const choice: SessionChoice = { kind: opt.kind, type: opt.type };
+            return (
+              <OptionCard
+                key={opt.type}
+                label={opt.label}
+                detail={opt.detail}
+                badge={opt.badge}
+                icon={opt.icon}
+                description={opt.description}
+                selected={isChoiceSelected(choice)}
+                onClick={() => isChoiceSelected(choice) ? onConfirm() : onSelect(choice)}
+              />
+            );
+          })}
+        </div>
 
-      {/* Divider */}
-      <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "10px 0" }} />
+        {/* Divider */}
+        <div style={{ height: 1, background: "rgba(255,255,255,0.05)", margin: "12px 0" }} />
 
-      {/* Packs */}
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#bbcabf", marginBottom: 10 }}>
-        Packs de continuidad
-      </p>
-      <div
-        style={{
+        {/* Packs */}
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#bbcabf", marginBottom: 10 }}>
+          Packs de continuidad
+        </p>
+        <div style={{
           display:             "grid",
           gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
           gap:                 8,
-          marginBottom:        16,
-        }}
-      >
-        {PACK_OPTIONS.map((opt) => {
-          const choice: SessionChoice = { kind: opt.kind, size: opt.size };
-          const hasThisPack = isSignedIn && activePackSize === opt.size;
-          return (
-            <OptionCard
-              key={opt.size}
-              label={opt.label}
-              detail={opt.detail}
-              badge={hasThisPack ? "Pack activo" : opt.badge}
-              accent
-              selected={isChoiceSelected(choice)}
-              onClick={() => onSelect(choice)}
-            />
-          );
-        })}
+          marginBottom:        8,
+        }}>
+          {PACK_OPTIONS.map((opt) => {
+            const choice: SessionChoice = { kind: opt.kind, size: opt.size };
+            const hasPack = isSignedIn && activePackSize === opt.size;
+            return (
+              <PackCard
+                key={opt.size}
+                label={opt.label}
+                savings={opt.savings}
+                description={opt.description}
+                hourlyRate={opt.hourlyRate}
+                totalPrice={opt.totalPrice}
+                badge={hasPack ? "Pack activo" : opt.badge}
+                hasPack={hasPack}
+                selected={isChoiceSelected(choice)}
+                onClick={() => isChoiceSelected(choice) ? onConfirm() : onSelect(choice)}
+              />
+            );
+          })}
+        </div>
       </div>
 
-      {/* CTA button — shows after a choice is made */}
-      {selectedChoice && (
-        <button
-          onClick={onConfirm}
-          style={{
-            width:          "100%",
-            padding:        "13px 20px",
-            background:     "linear-gradient(135deg, #4edea3, #10b981)",
-            border:         "none",
-            borderRadius:   10,
-            color:          "#003824",
-            fontSize:       14,
-            fontWeight:     700,
-            cursor:         "pointer",
-            fontFamily:     "inherit",
-            transition:     "opacity 0.15s, transform 0.1s",
-            display:        "flex",
-            alignItems:     "center",
-            justifyContent: "center",
-            gap:            8,
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.opacity = "0.9";
-            (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.opacity = "1";
-            (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
-          }}
-        >
-          {ctaLabel(selectedChoice)}
-        </button>
-      )}
+      {/* Sticky footer */}
+      <div style={{
+        position:       "sticky",
+        bottom:         0,
+        background:     "#1c1b1d",
+        borderTop:      "1px solid rgba(255,255,255,0.06)",
+        padding:        "12px 20px",
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "space-between",
+        gap:            12,
+        flexWrap:       isMobile ? "wrap" : "nowrap",
+      }}>
+        {/* Security badge — uses the lock SVG from the footer */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="#86948a" aria-hidden="true">
+            <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
+          </svg>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "#bbcabf", margin: 0, lineHeight: 1.3 }}>Pago seguro</p>
+            <p style={{ fontSize: 10, color: "#86948a", margin: 0 }}>SSL · Stripe</p>
+          </div>
+        </div>
 
-      <p style={{ fontSize: 11, color: "#86948a", textAlign: "center", marginTop: 12 }}>
-        Cancelación gratuita con 24h de antelación
-      </p>
+        {/* CTA button */}
+        {selectedChoice && (
+          <button
+            onClick={onConfirm}
+            style={{
+              padding:      isMobile ? "13px 0" : "12px 28px",
+              width:        isMobile ? "100%" : "auto",
+              background:   "linear-gradient(135deg, #4edea3, #10b981)",
+              border:       "none",
+              borderRadius: 10,
+              color:        "#003824",
+              fontSize:     14,
+              fontWeight:   700,
+              cursor:       "pointer",
+              fontFamily:   "inherit",
+              transition:   "opacity 0.15s, transform 0.1s",
+              whiteSpace:   "nowrap",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "0.9";
+              (e.currentTarget as HTMLElement).style.transform = "translateY(-1px)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.opacity = "1";
+              (e.currentTarget as HTMLElement).style.transform = "translateY(0)";
+            }}
+          >
+            {ctaLabel(selectedChoice)}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
-// ─── Option card ───────────────────────────────────────────────────────────────
+// ─── Option card (individual sessions) ────────────────────────────────────────
 
 function OptionCard({
   label,
   detail,
   badge,
-  accent = false,
+  icon,
+  description,
   selected = false,
   onClick,
 }: {
-  label:     string;
-  detail:    string;
-  badge:     string | null;
-  accent?:   boolean;
-  selected?: boolean;
-  onClick:   () => void;
+  label:        string;
+  detail:       string;
+  badge:        string | null;
+  icon?:        string;
+  description?: string;
+  selected?:    boolean;
+  onClick:      () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const isActive = selected || hovered;
+
+  const parts    = detail.split("·");
+  const duration = parts[0]?.trim() ?? "";
+  const price    = parts[1]?.trim() ?? detail;
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        position:      "relative",
+        textAlign:     "left",
+        display:       "flex",
+        flexDirection: "column",
+        background:    isActive ? "#2a2a2c" : "#201f22",
+        border:        selected
+          ? "2px solid rgba(78,222,163,0.4)"
+          : isActive
+          ? "1px solid rgba(78,222,163,0.3)"
+          : "1px solid rgba(255,255,255,0.08)",
+        borderRadius:  12,
+        padding:       "14px 14px 12px",
+        cursor:        "pointer",
+        fontFamily:    "inherit",
+        transition:    "background 0.12s, border-color 0.12s",
+        width:         "100%",
+      }}
+    >
+      {badge && (
+        <span style={{
+          position:      "absolute",
+          top:           "-1px",
+          right:         8,
+          fontSize:      9,
+          fontWeight:    700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          padding:       "2px 7px",
+          borderRadius:  "0 0 6px 6px",
+          background:    selected ? "rgba(78,222,163,0.25)" : "rgba(78,222,163,0.15)",
+          color:         "#4edea3",
+          border:        "1px solid rgba(78,222,163,0.3)",
+          borderTop:     "none",
+        }}>
+          {badge}
+        </span>
+      )}
+
+      {/* Icon + duration row */}
+      <div style={{
+        display:        "flex",
+        alignItems:     "center",
+        justifyContent: "space-between",
+        marginBottom:   10,
+        marginTop:      badge ? 8 : 0,
+      }}>
+        {icon && (
+          <span className="material-symbols-outlined" style={{
+            fontSize:   20,
+            color:      selected ? "#4edea3" : "#86948a",
+            lineHeight: 1,
+            transition: "color 0.12s",
+          }}>
+            {icon}
+          </span>
+        )}
+        <span style={{
+          fontSize:      9,
+          fontWeight:    700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color:         selected ? "#e5e1e4" : "#86948a",
+        }}>
+          {duration}
+        </span>
+      </div>
+
+      <p style={{
+        fontSize:   13,
+        fontWeight: 600,
+        color:      selected ? "#4edea3" : "#e5e1e4",
+        margin:     "0 0 4px",
+        transition: "color 0.12s",
+      }}>
+        {label}
+      </p>
+
+      {description && (
+        <p style={{ fontSize: 11, color: "#86948a", margin: "0 0 10px", lineHeight: 1.5 }}>
+          {description}
+        </p>
+      )}
+
+      <p style={{ fontSize: 15, fontWeight: 700, color: "#e5e1e4", margin: "auto 0 0" }}>
+        {price}
+      </p>
+    </button>
+  );
+}
+
+// ─── Pack card ─────────────────────────────────────────────────────────────────
+
+function PackCard({
+  label,
+  savings,
+  description,
+  hourlyRate,
+  totalPrice,
+  badge,
+  hasPack,
+  selected,
+  onClick,
+}: {
+  label:       string;
+  savings:     string;
+  description: string;
+  hourlyRate:  string;
+  totalPrice:  string;
+  badge:       string | null;
+  hasPack:     boolean;
+  selected:    boolean;
+  onClick:     () => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const isActive = selected || hovered;
@@ -785,62 +1130,81 @@ function OptionCard({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        position:     "relative",
-        textAlign:    "left",
-        background:   selected
-          ? (accent ? "rgba(78,222,163,0.18)" : "#2a2a2c")
+        position:      "relative",
+        textAlign:     "left",
+        display:       "flex",
+        flexDirection: "column",
+        gap:           8,
+        background:    isActive ? "#2a2a2c" : "rgba(78,222,163,0.06)",
+        border:        selected
+          ? "2px solid rgba(78,222,163,0.4)"
           : isActive
-          ? (accent ? "rgba(78,222,163,0.14)" : "#2a2a2c")
-          : (accent ? "rgba(78,222,163,0.06)" : "#201f22"),
-        border:       selected
-          ? "1px solid #4edea3"
-          : isActive
-          ? `1px solid ${accent ? "rgba(78,222,163,0.45)" : "#4edea3"}`
-          : `1px solid ${accent ? "rgba(78,222,163,0.22)" : "rgba(255,255,255,0.08)"}`,
-        borderRadius: 10,
-        padding:      "12px 14px",
-        cursor:       "pointer",
-        fontFamily:   "inherit",
-        transition:   "background 0.12s, border-color 0.12s",
-        width:        "100%",
-        boxShadow:    selected ? "0 0 0 1px rgba(78,222,163,0.15)" : "none",
+          ? "1px solid rgba(78,222,163,0.3)"
+          : "1px solid rgba(78,222,163,0.22)",
+        borderRadius:  12,
+        padding:       "14px 14px 12px",
+        cursor:        "pointer",
+        fontFamily:    "inherit",
+        transition:    "background 0.12s, border-color 0.12s",
+        width:         "100%",
       }}
     >
-      {badge && (
-        <span
-          style={{
-            position:      "absolute",
-            top:           "-1px",
-            right:         8,
-            fontSize:      9,
-            fontWeight:    700,
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            padding:       "2px 6px",
-            borderRadius:  "0 0 6px 6px",
-            background:    selected ? "rgba(78,222,163,0.25)" : "rgba(78,222,163,0.15)",
-            color:         "#4edea3",
-            border:        "1px solid rgba(78,222,163,0.3)",
-            borderTop:     "none",
-          }}
-        >
-          {badge}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 700, color: selected ? "#4edea3" : "#e5e1e4", transition: "color 0.12s" }}>
+          {label}
         </span>
-      )}
-      <p
-        style={{
-          fontSize:   13,
-          fontWeight: 600,
-          color:      selected ? "#4edea3" : accent ? "#4edea3" : "#e5e1e4",
-          margin:     0,
-          marginTop:  badge ? 10 : 0,
-        }}
-      >
-        {label}
+        <span style={{
+          fontSize:      9,
+          fontWeight:    700,
+          letterSpacing: "0.06em",
+          textTransform: "uppercase",
+          background:    "rgba(78,222,163,0.12)",
+          border:        "1px solid rgba(78,222,163,0.2)",
+          borderRadius:  4,
+          color:         "#4edea3",
+          padding:       "2px 6px",
+          whiteSpace:    "nowrap",
+          flexShrink:    0,
+        }}>
+          {savings}
+        </span>
+      </div>
+
+      <p style={{ fontSize: 11, color: "#86948a", margin: 0, lineHeight: 1.5 }}>
+        {description}
       </p>
-      <p style={{ fontSize: 11.5, color: "#86948a", margin: "3px 0 0" }}>
-        {detail}
-      </p>
+
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 4 }}>
+        <div>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#bbcabf" }}>{hourlyRate}</span>
+          {badge && (
+            <span style={{
+              display:       "inline-block",
+              marginLeft:    8,
+              fontSize:      9,
+              fontWeight:    700,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              background:    hasPack ? "rgba(78,222,163,0.25)" : "rgba(78,222,163,0.15)",
+              color:         "#4edea3",
+              border:        "1px solid rgba(78,222,163,0.3)",
+              borderRadius:  4,
+              padding:       "1px 5px",
+            }}>
+              {badge}
+            </span>
+          )}
+        </div>
+        <span style={{
+          fontSize:   24,
+          fontWeight: 800,
+          color:      "#e5e1e4",
+          lineHeight: 1,
+          fontFamily: "var(--font-headline, Manrope), sans-serif",
+        }}>
+          {totalPrice}
+        </span>
+      </div>
     </button>
   );
 }
@@ -849,7 +1213,7 @@ function OptionCard({
 
 function LoadingDots() {
   return (
-    <div style={{ display: "flex", justifyContent: "center", gap: 3, padding: "10px 0" }}>
+    <div style={{ display: "flex", justifyContent: "center", gap: 3 }}>
       {[0, 1, 2].map((i) => (
         <div
           key={i}
