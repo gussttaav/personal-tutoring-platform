@@ -22,6 +22,7 @@ import BookingModeViewComponent from "@/components/BookingModeView";
 import SignInGate from "@/components/SignInGate";
 import SingleSessionBooking from "@/components/SingleSessionBooking";
 import AvailabilityModal, { type SessionChoice } from "@/components/AvailabilityModal";
+import SessionPickerModal from "@/components/SessionPickerModal";
 import Chat from "@/components/Chat";
 import { PACK_SIZES, PACK_CONFIG } from "@/constants";
 import SessionCard from "./SessionCard";
@@ -70,8 +71,9 @@ export default function InteractiveShell() {
   const router     = useBookingRouter(isSignedIn, packSession?.credits ?? 0);
   const reschedule = useRescheduleIntent(isSignedIn);
 
-  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
-  const [pendingSlot,           setPendingSlot]           = useState<SelectedSlot | null>(null);
+  const [showAvailabilityModal,  setShowAvailabilityModal]  = useState(false);
+  const [showSessionPickerModal, setShowSessionPickerModal] = useState(false);
+  const [pendingSlot,            setPendingSlot]            = useState<SelectedSlot | null>(null);
 
   // Wire reschedule intent into the router once it resolves
   useEffect(() => {
@@ -118,6 +120,13 @@ export default function InteractiveShell() {
     return () => window.removeEventListener("open-availability-modal", handler);
   }, []);
 
+  // Open the session picker modal ("Reservar sesión ahora" CTA)
+  useEffect(() => {
+    const handler = () => setShowSessionPickerModal(true);
+    window.addEventListener("open-session-picker-modal", handler);
+    return () => window.removeEventListener("open-session-picker-modal", handler);
+  }, []);
+
   // Sync restoredSlot (from URL params after OAuth) into pendingSlot.
   // Fires once when isSignedIn becomes true and restoredSlot is available.
   useEffect(() => {
@@ -138,6 +147,20 @@ export default function InteractiveShell() {
     router.handleSignInGateClose();
     router.handlePackSchedule();
   }, [creditsLoading, packSession?.credits, router.selectedPack, router.restoredSlot]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Handle session type selected in SessionPickerModal (no pre-selected slot)
+  function handleSessionPickerSelected(choice: SessionChoice) {
+    setShowSessionPickerModal(false);
+    if (choice.kind === "session") {
+      router.handleSessionClick(choice.type);
+    } else {
+      if (isSignedIn && (packSession?.credits ?? 0) > 0) {
+        router.handlePackSchedule();
+      } else {
+        router.handlePackBuy(choice.size);
+      }
+    }
+  }
 
   // Handle slot + session type selected in AvailabilityModal
   function handleAvailabilitySessionSelected(choice: SessionChoice, slot: SelectedSlot) {
@@ -317,6 +340,17 @@ export default function InteractiveShell() {
       <style>{`
         @keyframes skeletonPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
       `}</style>
+
+      {showSessionPickerModal && (
+        <SessionPickerModal
+          onClose={() => setShowSessionPickerModal(false)}
+          onSessionSelected={handleSessionPickerSelected}
+          isSignedIn={isSignedIn}
+          activePackSize={
+            packSession && (packSession.credits ?? 0) > 0 ? packSession.packSize : null
+          }
+        />
+      )}
 
       {showAvailabilityModal && (
         <AvailabilityModal

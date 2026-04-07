@@ -373,8 +373,9 @@ export default function HeroSection() {
             marginBottom: "56px",
           }}
         >
-          <a
-            href="#sessions"
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-session-picker-modal"))}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -385,10 +386,11 @@ export default function HeroSection() {
               borderRadius: "10px",
               fontWeight: 700,
               fontSize: "1rem",
-              textDecoration: "none",
               fontFamily: "var(--font-headline, Manrope), sans-serif",
               boxShadow: "0 8px 32px rgba(78,222,163,0.25)",
               transition: "transform 0.2s, box-shadow 0.2s",
+              border: "none",
+              cursor: "pointer",
             }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.transform = "scale(1.02)";
@@ -400,7 +402,7 @@ export default function HeroSection() {
             }}
           >
             Reservar sesión ahora
-          </a>
+          </button>
 
           <button
             type="button"
