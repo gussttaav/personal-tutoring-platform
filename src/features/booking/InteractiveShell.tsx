@@ -126,6 +126,19 @@ export default function InteractiveShell() {
     }
   }, [router.restoredSlot]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // When a buy-pack OAuth intent sets selectedPack (because packCredits was 0
+  // during intent consumption), but credits data loads and reveals an active pack,
+  // dismiss the PackModal and open pack booking instead.
+  // Guard: router.restoredSlot ensures this only fires for OAuth restores, not
+  // regular authenticated "buy pack" clicks.
+  useEffect(() => {
+    if (creditsLoading) return;
+    if (!router.selectedPack || !router.restoredSlot) return;
+    if ((packSession?.credits ?? 0) <= 0) return;
+    router.handleSignInGateClose();
+    router.handlePackSchedule();
+  }, [creditsLoading, packSession?.credits, router.selectedPack, router.restoredSlot]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handle slot + session type selected in AvailabilityModal
   function handleAvailabilitySessionSelected(choice: SessionChoice, slot: SelectedSlot) {
     setShowAvailabilityModal(false);
@@ -274,7 +287,7 @@ export default function InteractiveShell() {
             onExit={() => { router.closePackBooking(); setPendingSlot(null); }}
             hideTopBar
             packTotal={packSession?.packSize ?? undefined}
-            initialSlot={pendingSlot ?? undefined}
+            initialSlot={(pendingSlot ?? router.restoredSlot) ?? undefined}
           />
         </div>
       </div>
@@ -290,7 +303,7 @@ export default function InteractiveShell() {
         userEmail={googleUser.email}
         rescheduleToken={router.rescheduleToken}
         onBack={() => { router.closeSession(); setPendingSlot(null); }}
-        initialSlot={pendingSlot ?? undefined}
+        initialSlot={(pendingSlot ?? router.restoredSlot) ?? undefined}
       />
     );
   }

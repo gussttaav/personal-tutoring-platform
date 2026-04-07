@@ -59,12 +59,12 @@ export default function SingleSessionBooking({
   // 1h: start in "review" phase with the slot pre-filled (exact match).
   // 15min/2h: start in "picking" phase but pre-focus the slot in the calendar
   //           so it appears as if the user already clicked it.
-  const supportsPreSelect = sessionType === "session1h" && !!initialSlot;
+  const supportsPreSelect = !!initialSlot;
 
   // Initial week offset — navigate the calendar to the week containing the
   // pre-selected slot so the user sees it immediately.
   const initialWeekOffset = (() => {
-    if (!initialSlot || supportsPreSelect) return 0;
+    if (!initialSlot) return 0;
     const slotDate = new Date(initialSlot.startIso);
     slotDate.setHours(0, 0, 0, 0);
     const slotMonday = new Date(slotDate);
@@ -556,7 +556,7 @@ export default function SingleSessionBooking({
                   onSlotSelected={handleSlotSelected}
                   onSlotFocused={setFocusedSlot}
                   selectedSlot={selected}
-                  initialFocusedSlotStart={!supportsPreSelect ? initialSlot?.startIso : undefined}
+
                   initialWeekOffset={initialWeekOffset}
                 />
               )}
