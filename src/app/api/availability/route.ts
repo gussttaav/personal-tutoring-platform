@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
     return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
-  if (![15, 60, 120].includes(duration))
+  if (![15, 30, 60, 120].includes(duration))
     return NextResponse.json({ error: "Duración inválida" }, { status: 400 });
 
   const requested = new Date(date);
