@@ -347,6 +347,15 @@ export default function ZoomRoomInner({ eventId, userName, selectedMicId, select
     }
   }, [userName, eventId, selectedMicId, selectedCameraId]);
 
+  // ── Auto-join once the token is ready ─────────────────────────────────────
+  // PreJoinSetup is now the device/auth gate, so no manual confirmation step
+  // is needed here. Join as soon as the Zoom token arrives.
+  useEffect(() => {
+    if (state === "ready") {
+      void handleJoin();
+    }
+  }, [state, handleJoin]);
+
   // ── Leave (explicit user action ONLY — never in effect cleanup) ────────────
   const handleLeave = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -517,39 +526,7 @@ export default function ZoomRoomInner({ eventId, userName, selectedMicId, select
             </div>
           )}
 
-          {state === "ready" && (
-            <div className="flex flex-col items-center gap-4 text-center">
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
-                style={{
-                  background: "rgba(78,222,163,0.12)",
-                  color: "#4edea3",
-                }}
-              >
-                ▶
-              </div>
-              <h2
-                className="text-xl font-medium"
-                style={{ color: "#e5e1e4" }}
-              >
-                Listo para comenzar
-              </h2>
-              <p className="text-sm" style={{ color: "#86948a" }}>
-                Haz clic para entrar a la sala de vídeo.
-              </p>
-              <button
-                onClick={() => {
-                  void handleJoin();
-                }}
-                className="px-6 py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
-                style={{ background: "#4edea3", color: "#0d0f10" }}
-              >
-                Unirse a la sesión
-              </button>
-            </div>
-          )}
-
-          {state === "joining" && (
+          {(state === "ready" || state === "joining") && (
             <div className="flex flex-col items-center gap-3">
               <Spinner />
               <p className="text-sm" style={{ color: "#86948a" }}>

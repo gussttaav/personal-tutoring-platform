@@ -364,7 +364,7 @@ export default function PreJoinSetup({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 w-full items-center">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 w-full items-center mt-6 lg:mt-14">
         {/* ── Left: Video preview ── */}
         <div className="lg:col-span-7 w-full">
           <div className="relative aspect-video rounded-xl overflow-hidden bg-surface-container-lowest border border-outline-variant/20 shadow-2xl group">
