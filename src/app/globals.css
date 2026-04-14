@@ -601,6 +601,12 @@ body:has(.chat-panel--expanded) .chat-fab {
   display: none;
 }
 
+@media (max-width: 767px) {
+  body.pack-modal-open .chat-fab {
+    display: none;
+  }
+}
+
 @media (max-width: 640px) {
   .chat-panel {
     left: 12px;
