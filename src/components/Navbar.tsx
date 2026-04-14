@@ -182,17 +182,16 @@ export default function Navbar() {
                       </>
                     )}
 
-                    <a
+                    <Link
                       className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors"
-                      href="#sessions"
-                      onClick={(e) => handleNavLinkClick(e, "#sessions")}
+                      href="/area-personal"
                       style={{ color: "#bbcabf" }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#353437"; (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>dashboard</span>
                       Área personal
-                    </a>
+                    </Link>
                     <hr style={{ borderColor: "rgba(60,74,66,0.3)", margin: "6px 0" }} />
                     <button
                       onClick={() => signOut()}
@@ -308,9 +307,9 @@ export default function Navbar() {
 
               {/* Nav links */}
               <nav className="px-2">
-                <a
-                  href="#sessions"
-                  onClick={(e) => handleNavLinkClick(e, "#sessions")}
+                <Link
+                  href="/area-personal"
+                  onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                   style={{ color: "#bbcabf", fontFamily: "var(--font-headline, Manrope), sans-serif", textDecoration: "none" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
@@ -318,7 +317,7 @@ export default function Navbar() {
                 >
                   <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>dashboard</span>
                   Área Personal
-                </a>
+                </Link>
 
                 <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
 

@@ -127,6 +127,27 @@ export default function InteractiveShell() {
     return () => window.removeEventListener("open-session-picker-modal", handler);
   }, []);
 
+  // Handle ?book= deep-link intent from /area-personal navigation.
+  // Runs once on mount; removes the param from the URL to keep it clean.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const book   = params.get("book");
+    if (!book) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("book");
+    window.history.replaceState({}, "", url.toString());
+
+    switch (book) {
+      case "free15min":  router.handleSessionClick("free15min"); break;
+      case "session1h":  router.handleSessionClick("session1h"); break;
+      case "session2h":  router.handleSessionClick("session2h"); break;
+      case "pack":       router.handlePackSchedule(); break;
+      case "pack5":      router.handlePackBuy(5); break;
+      case "pack10":     router.handlePackBuy(10); break;
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync restoredSlot (from URL params after OAuth) into pendingSlot.
   // Fires once when isSignedIn becomes true and restoredSlot is available.
   useEffect(() => {

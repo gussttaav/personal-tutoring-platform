@@ -86,6 +86,7 @@ export interface BookingRecord {
   startsAt:    string;
   endsAt:      string;
   used:        boolean;
+  packSize?:   number;   // only for sessionType "pack"
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -293,6 +294,11 @@ export async function createCancellationToken(
   const ttlSecs  = Math.max(3600, Math.floor((new Date(record.endsAt).getTime() + 3_600_000 - Date.now()) / 1000));
 
   await kv.set(`cancel:${token}`, { ...record, used: false }, { ex: ttlSecs });
+  // Index token in the student's bookings sorted set (score = start timestamp ms)
+  await kv.zadd(`bookings:${record.email.toLowerCase().trim()}`, {
+    score:  new Date(record.startsAt).getTime(),
+    member: token,
+  });
   return token;
 }
 
@@ -313,7 +319,10 @@ export async function verifyCancellationToken(
   return { record, withinWindow: new Date() < twoHoursBefore };
 }
 
-export async function consumeCancellationToken(token: string): Promise<boolean> {
+export async function consumeCancellationToken(token: string, email?: string): Promise<boolean> {
   const deleted = await kv.del(`cancel:${token}`);
+  if (email) {
+    kv.zrem(`bookings:${email.toLowerCase().trim()}`, token).catch(() => {});
+  }
   return deleted > 0;
 }

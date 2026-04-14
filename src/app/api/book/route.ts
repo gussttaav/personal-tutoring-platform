@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { BookSchema } from "@/lib/schemas";
 import { createCalendarEvent, createCancellationToken } from "@/lib/calendar";
-import { decrementCredit } from "@/lib/kv";
+import { decrementCredit, getCredits } from "@/lib/kv";
 import { sendConfirmationEmail, sendNewBookingNotificationEmail } from "@/lib/email";
 import { log } from "@/lib/logger";
 import { SCHEDULE } from "@/lib/booking-config";
@@ -64,8 +64,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "El tipo de sesión no coincide con la reserva original." }, { status: 400 });
     }
 
-    // 2. Atomic Consumption
-    const consumed = await consumeCancellationToken(rescheduleToken);
+    // 2. Atomic Consumption (pass email to clean up the bookings sorted set)
+    const consumed = await consumeCancellationToken(rescheduleToken, oldBooking.record.email);
     if (!consumed) {
       return NextResponse.json({ error: "El enlace de reprogramación ya ha sido usado." }, { status: 400 });
     }
@@ -94,11 +94,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Este horario ya no está disponible" }, { status: 409 });
   }
 
+  let packSizeForToken: number | undefined;
   if (sessionType === "pack") {
     const credit = await decrementCredit(email);
     if (!credit.ok) {
       return NextResponse.json({ error: "Sin créditos disponibles" }, { status: 400 });
     }
+    // Fetch packSize to embed in the cancellation token so the personal area can label it correctly
+    const creditRecord = await getCredits(email);
+    packSizeForToken = creditRecord?.packSize ?? undefined;
   }
 
   const sessionLabel = SESSION_LABELS[sessionType];
@@ -140,6 +144,7 @@ export async function POST(req: NextRequest) {
 
   const cancelToken = await createCancellationToken({
     eventId, email, name, sessionType, startsAt: startIso, endsAt: endIso,
+    ...(packSizeForToken !== undefined ? { packSize: packSizeForToken } : {}),
   });
 
   const joinUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/sesion/${cancelToken}`;

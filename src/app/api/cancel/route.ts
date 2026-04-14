@@ -39,8 +39,8 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Atomically consume the token BEFORE taking action
-  const consumed = await consumeCancellationToken(token);
+  // Atomically consume the token BEFORE taking action (pass email to clean up bookings index)
+  const consumed = await consumeCancellationToken(token, result.record.email);
   if (!consumed) {
     return NextResponse.json(
       { error: "El enlace de cancelación ya ha sido usado." },
