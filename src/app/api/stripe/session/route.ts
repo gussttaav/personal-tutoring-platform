@@ -1,36 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe"; // ARCH-01: singleton
+import { log } from "@/lib/logger";
 
 /**
- * GET /api/stripe/session?session_id=cs_xxx
+ * GET /api/stripe/session?payment_intent_id=pi_xxx
  *
- * Returns metadata from a completed Stripe session.
- * Used by both /pago-exitoso (packs) and /sesion-confirmada (single sessions).
+ * Returns metadata from a succeeded PaymentIntent.
+ * Used by /sesion-confirmada (single sessions) to confirm payment status.
+ * Pack payments use the SSE route instead.
  */
 export async function GET(req: NextRequest) {
-  const sessionId = req.nextUrl.searchParams.get("session_id");
+  const paymentIntentId = req.nextUrl.searchParams.get("payment_intent_id");
 
-  if (!sessionId || !sessionId.startsWith("cs_")) {
+  if (!paymentIntentId || !paymentIntentId.startsWith("pi_")) {
     return NextResponse.json(
-      { error: "session_id inválido" },
+      { error: "payment_intent_id inválido" },
       { status: 400 }
     );
   }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    if (session.payment_status !== "paid") {
+    if (intent.status !== "succeeded") {
       return NextResponse.json(
         { error: "Pago no completado" },
         { status: 402 }
       );
     }
 
-    const email =
-      session.metadata?.student_email ?? session.customer_email ?? "";
-    const name         = session.metadata?.student_name ?? "";
-    const checkoutType = session.metadata?.checkout_type ?? "pack";
+    const email         = intent.metadata?.student_email ?? "";
+    const name          = intent.metadata?.student_name  ?? "";
+    const checkoutType  = intent.metadata?.checkout_type ?? "pack";
 
     if (!email) {
       return NextResponse.json(
@@ -41,15 +42,15 @@ export async function GET(req: NextRequest) {
 
     // Pack checkout — return credits info
     if (checkoutType === "pack") {
-      const packSize = parseInt(session.metadata?.pack_size ?? "0", 10);
+      const packSize = parseInt(intent.metadata?.pack_size ?? "0", 10);
       return NextResponse.json({ email, name, packSize, checkoutType });
     }
 
     // Single session checkout — return duration
-    const sessionDuration = session.metadata?.session_duration ?? "";
+    const sessionDuration = intent.metadata?.session_duration ?? "";
     return NextResponse.json({ email, name, sessionDuration, checkoutType });
   } catch (err) {
-    console.error("[session] Error retrieving session:", err);
+    log("error", "Error retrieving PaymentIntent", { service: "session", error: String(err) });
     return NextResponse.json(
       { error: "Error al recuperar la sesión" },
       { status: 500 }

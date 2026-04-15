@@ -10,19 +10,19 @@ function SuccessContent() {
   const params = useSearchParams();
   const router = useRouter();
 
-  const sessionId = params.get("session_id");
+  const paymentIntentId = params.get("payment_intent_id");
 
-  // SSE connection — opens immediately if we have a session_id.
+  // SSE connection — opens immediately if we have a payment_intent_id.
   // The server resolves the email/name/packSize from Stripe directly,
   // so we never need to call /api/stripe/session from the client.
-  const { state, credits, name, packSize } = useSSECredits({ sessionId });
+  const { state, credits, name, packSize } = useSSECredits({ paymentIntentId });
 
   const isConnecting = state === "connecting";
   const isConfirmed  = state === "confirmed" && credits !== null;
   const isTimeout    = state === "timeout";
   const isError      = state === "error";
 
-  if (!sessionId) {
+  if (!paymentIntentId) {
     return (
       <PageShell>
         <Alert variant="error">Sesión de pago no encontrada.</Alert>

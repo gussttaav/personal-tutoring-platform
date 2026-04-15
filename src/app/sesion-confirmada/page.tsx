@@ -8,9 +8,9 @@ import { COLORS } from "@/constants";
 const DURATION_LABELS: Record<string, string> = { "1h": "1 hora", "2h": "2 horas" };
 
 function SesionConfirmadaContent() {
-  const params    = useSearchParams();
-  const router    = useRouter();
-  const sessionId = params.get("session_id");
+  const params          = useSearchParams();
+  const router          = useRouter();
+  const paymentIntentId = params.get("payment_intent_id");
 
   type S = "loading" | "success" | "error";
   const [state,    setState]    = useState<S>("loading");
@@ -18,12 +18,12 @@ function SesionConfirmadaContent() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    if (!sessionId) { setErrorMsg("Sesión de pago no encontrada."); setState("error"); return; }
-    fetch(`/api/stripe/session?session_id=${encodeURIComponent(sessionId)}`)
+    if (!paymentIntentId) { setErrorMsg("Sesión de pago no encontrada."); setState("error"); return; }
+    fetch(`/api/stripe/session?payment_intent_id=${encodeURIComponent(paymentIntentId)}`)
       .then(r => r.json())
       .then(d => { if (d.error) { setErrorMsg(d.error); setState("error"); } else { setDuration(d.sessionDuration ?? ""); setState("success"); } })
       .catch(() => { setErrorMsg("Error al verificar el pago."); setState("error"); });
-  }, [sessionId]);
+  }, [paymentIntentId]);
 
   if (state === "loading") return <PageShell><Spinner /><p className="text-sm mt-3" style={{ color: COLORS.textSecondary }}>Verificando pago...</p></PageShell>;
 

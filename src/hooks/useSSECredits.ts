@@ -2,7 +2,7 @@
 
 /**
  *
- * Opens a single Server-Sent Events connection to /api/sse?session_id=...
+ * Opens a single Server-Sent Events connection to /api/sse?payment_intent_id=...
  * and waits for the server to push a "credits_ready" event.
  * No polling, no repeated /api/credits calls.
  */
@@ -12,8 +12,8 @@ import { useState, useEffect } from "react";
 type SSEState = "idle" | "connecting" | "confirmed" | "timeout" | "error";
 
 interface UseSSECreditsOptions {
-  /** The Stripe checkout session ID from the URL (cs_xxx). Pass null to stay idle. */
-  sessionId: string | null;
+  /** The Stripe PaymentIntent ID (pi_xxx). Pass null to stay idle. */
+  paymentIntentId: string | null;
 }
 
 interface SSECreditsResult {
@@ -23,18 +23,18 @@ interface SSECreditsResult {
   packSize: number | null;
 }
 
-export function useSSECredits({ sessionId }: UseSSECreditsOptions): SSECreditsResult {
-  const [state, setState] = useState<SSEState>(sessionId ? "connecting" : "idle");
+export function useSSECredits({ paymentIntentId }: UseSSECreditsOptions): SSECreditsResult {
+  const [state, setState] = useState<SSEState>(paymentIntentId ? "connecting" : "idle");
   const [credits, setCredits] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [packSize, setPackSize] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!paymentIntentId) return;
 
     setState("connecting");
 
-    const url = `/api/sse?session_id=${encodeURIComponent(sessionId)}`;
+    const url = `/api/sse?payment_intent_id=${encodeURIComponent(paymentIntentId)}`;
     const es = new EventSource(url);
 
     es.addEventListener("credits_ready", (e) => {
@@ -71,7 +71,7 @@ export function useSSECredits({ sessionId }: UseSSECreditsOptions): SSECreditsRe
     return () => {
       es.close();
     };
-  }, [sessionId]);
+  }, [paymentIntentId]);
 
   return { state, credits, name, packSize };
 }

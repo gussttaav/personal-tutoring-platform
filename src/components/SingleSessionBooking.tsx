@@ -13,6 +13,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Spinner, Alert } from "@/components/ui";
 import { COLORS } from "@/constants";
@@ -22,6 +23,7 @@ import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import WizardProgress from "@/components/booking/WizardProgress";
 import BookingSidebar from "@/components/booking/BookingSidebar";
+import PaymentForm from "@/components/PaymentForm";
 import {
   SESSION_CONFIGS,
   primaryBtnStyle,
@@ -42,7 +44,8 @@ interface SingleSessionBookingProps {
 }
 
 // "review" = slot chosen, waiting for user to confirm before payment/booking
-type Phase = "picking" | "review" | "booking" | "redirecting" | "success" | "error";
+// "paying" = embedded PaymentElement shown inside the booking layout
+type Phase = "picking" | "review" | "booking" | "paying" | "success" | "error";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "";
 
@@ -54,6 +57,7 @@ export default function SingleSessionBooking({
   onBack,
   initialSlot,
 }: SingleSessionBookingProps) {
+  const router = useRouter();
   const cfg = SESSION_CONFIGS[sessionType];
 
   // 1h: start in "review" phase with the slot pre-filled (exact match).
@@ -77,15 +81,16 @@ export default function SingleSessionBooking({
     ));
   })();
 
-  const [phase,        setPhase]        = useState<Phase>(supportsPreSelect ? "review" : "picking");
-  const [errorMsg,     setErrorMsg]     = useState("");
-  const [selected,     setSelected]     = useState<SelectedSlot | null>(supportsPreSelect ? initialSlot! : null);
-  const [focusedSlot,  setFocusedSlot]  = useState<SelectedSlot | null>(null);
-  const [note,         setNote]         = useState("");
-  const [sessionUrl,   setSessionUrl]   = useState("");
-  const [cancelToken,  setCancelToken]  = useState("");
-  const [emailFailed,  setEmailFailed]  = useState(false);
-  const [userTz,       setUserTz]       = useState<string>("");
+  const [phase,          setPhase]          = useState<Phase>(supportsPreSelect ? "review" : "picking");
+  const [errorMsg,       setErrorMsg]       = useState("");
+  const [selected,       setSelected]       = useState<SelectedSlot | null>(supportsPreSelect ? initialSlot! : null);
+  const [focusedSlot,    setFocusedSlot]    = useState<SelectedSlot | null>(null);
+  const [note,           setNote]           = useState("");
+  const [sessionUrl,     setSessionUrl]     = useState("");
+  const [cancelToken,    setCancelToken]    = useState("");
+  const [emailFailed,    setEmailFailed]    = useState(false);
+  const [userTz,         setUserTz]         = useState<string>("");
+  const [clientSecret,   setClientSecret]   = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -127,17 +132,20 @@ export default function SingleSessionBooking({
     }
   }, [selected, sessionType, rescheduleToken, note]);
 
-  async function handleStripeRedirect(slot: SelectedSlot) {
-    setPhase("redirecting");
+  async function handleStartPayment() {
+    if (!selected) return;
+    setPhase("booking"); // show spinner while fetching the PI
     try {
       const duration = sessionType === "session1h" ? "1h" : "2h";
-      const data = await api.stripe.checkoutSingleSession({
+      const { clientSecret } = await api.stripe.checkout({
+        type:            "single",
         duration,
-        startIso:        slot.startIso,
-        endIso:          slot.endIso,
+        startIso:        selected.startIso,
+        endIso:          selected.endIso,
         rescheduleToken: rescheduleToken ?? undefined,
       });
-      window.location.href = data.url;
+      setClientSecret(clientSecret);
+      setPhase("paying");
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
       const raw    = err instanceof ApiError ? err.message : "Error al iniciar el pago.";
@@ -149,11 +157,13 @@ export default function SingleSessionBooking({
   // UX-05: direct cancel link
   const cancelUrl = cancelToken ? `${BASE_URL}/cancelar?token=${cancelToken}` : null;
 
+  const needsPaymentStep = (sessionType === "session1h" || sessionType === "session2h") && !rescheduleToken;
+
   // ── Success ────────────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
       <BookingLayout>
-        <WizardProgress currentStep={3} />
+        <WizardProgress currentStep={3} showPaymentStep={needsPaymentStep} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
           <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 20px", background: "rgba(78,222,163,0.12)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26, color: "#4edea3" }}>✓</div>
@@ -196,7 +206,7 @@ export default function SingleSessionBooking({
   if (phase === "error") {
     return (
       <BookingLayout>
-        <WizardProgress currentStep={2} />
+        <WizardProgress currentStep={2} showPaymentStep={needsPaymentStep} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
           <div style={{ textAlign: "center", maxWidth: 380, width: "100%" }}>
             <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 16px", background: COLORS.errorBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: COLORS.error }}>✕</div>
@@ -208,13 +218,40 @@ export default function SingleSessionBooking({
     );
   }
 
+  // ── Paying (embedded PaymentElement) ──────────────────────────────────────
+  if (phase === "paying" && selected && clientSecret) {
+    return (
+      <BookingLayout>
+        <WizardProgress currentStep={4} showPaymentStep />
+        <div className="max-w-md mx-auto w-full" style={{ padding: "32px 16px" }}>
+          <p
+            className="font-bold uppercase"
+            style={{ fontSize: 10, color: "#4edea3", letterSpacing: "0.2em", marginBottom: 20 }}
+          >
+            Pago seguro
+          </p>
+          <p className="text-sm mb-6" style={{ color: "#bbcabf" }}>
+            {selected.dateLabel} · {selected.label.split(/\s*[–\-]\s*/)[0]}
+          </p>
+          <PaymentForm
+            clientSecret={clientSecret}
+            onSuccess={(paymentIntentId) =>
+              router.push(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`)
+            }
+            onCancel={() => { setClientSecret(null); setPhase("review"); }}
+          />
+        </div>
+      </BookingLayout>
+    );
+  }
+
   // ── Main booking UI ────────────────────────────────────────────────────────
   const wizardStep: 1 | 2 | 3 = phase === "review" ? 3 : 2;
   const isReschedule = !!rescheduleToken;
 
   return (
     <BookingLayout>
-      <WizardProgress currentStep={wizardStep} />
+      <WizardProgress currentStep={wizardStep} showPaymentStep={needsPaymentStep} />
 
       {phase === "review" && selected ? (
         /* ── Review layout: 7+5 columns ─────────────────────────────────────── */
@@ -391,7 +428,7 @@ export default function SingleSessionBooking({
                 <button
                   onClick={() => {
                     const needsStripe = (sessionType === "session1h" || sessionType === "session2h") && !rescheduleToken;
-                    if (needsStripe) void handleStripeRedirect(selected);
+                    if (needsStripe) handleStartPayment();
                     else void handleConfirm();
                   }}
                   className="group flex items-center justify-center gap-2"
@@ -543,11 +580,11 @@ export default function SingleSessionBooking({
             }}
           >
             <div className="flex-1">
-              {phase === "booking" || phase === "redirecting" ? (
+              {phase === "booking" ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 12 }}>
                   <Spinner />
                   <p style={{ fontSize: 13, color: "#bbcabf" }}>
-                    {phase === "redirecting" ? "Redirigiendo al pago…" : `Reservando ${selected?.dateLabel} a las ${selected?.label}…`}
+                    {`Reservando ${selected?.dateLabel} a las ${selected?.label}…`}
                   </p>
                 </div>
               ) : (

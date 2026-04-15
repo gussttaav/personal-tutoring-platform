@@ -51,6 +51,12 @@ export interface CheckoutResponse {
   url: string;
 }
 
+/** Response from POST /api/stripe/checkout in the embedded PaymentIntent flow */
+export interface PaymentIntentResponse {
+  clientSecret:    string;
+  paymentIntentId: string;
+}
+
 // ─── Session shape ────────────────────────────────────────────────────────────
 
 export interface UserSession {

@@ -16,8 +16,8 @@
  * definition had { ok: true; remaining: number } which was incorrect.
  */
 
-import type { BookResponse, CheckoutResponse, CreditsResponse, PackSize } from "@/types";
-import type { BookInput } from "@/lib/schemas";
+import type { BookResponse, CreditsResponse, PaymentIntentResponse } from "@/types";
+import type { BookInput, CheckoutInput } from "@/lib/schemas";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res  = await fetch(url, {
@@ -55,27 +55,15 @@ export const api = {
   },
 
   stripe: {
-    checkoutPack: (params: { packSize: PackSize }) =>
-      request<CheckoutResponse>("/api/stripe/checkout", {
+    /**
+     * POST /api/stripe/checkout
+     * Creates a PaymentIntent and returns clientSecret + paymentIntentId
+     * for the embedded PaymentElement flow.
+     */
+    checkout: (body: CheckoutInput) =>
+      request<PaymentIntentResponse>("/api/stripe/checkout", {
         method: "POST",
-        body:   JSON.stringify({ type: "pack", packSize: params.packSize }),
-      }),
-
-    checkoutSingleSession: (params: {
-      duration:         "1h" | "2h";
-      startIso:         string;
-      endIso:           string;
-      rescheduleToken?: string;
-    }) =>
-      request<CheckoutResponse>("/api/stripe/checkout", {
-        method: "POST",
-        body:   JSON.stringify({
-          type:            "single",
-          duration:        params.duration,
-          startIso:        params.startIso,
-          endIso:          params.endIso,
-          rescheduleToken: params.rescheduleToken,
-        }),
+        body:   JSON.stringify(body),
       }),
   },
 } as const;

@@ -13,7 +13,8 @@
  *   - Skeleton pulse animation retains same timing
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { api } from "@/lib/api-client";
 import { useUserSession } from "@/hooks/useUserSession";
 import { useBookingRouter } from "@/hooks/useBookingRouter";
 import { useRescheduleIntent } from "@/hooks/useRescheduleIntent";
@@ -74,6 +75,9 @@ export default function InteractiveShell() {
   const [showAvailabilityModal,  setShowAvailabilityModal]  = useState(false);
   const [showSessionPickerModal, setShowSessionPickerModal] = useState(false);
   const [pendingSlot,            setPendingSlot]            = useState<SelectedSlot | null>(null);
+  const [packClientSecret,       setPackClientSecret]       = useState<string | null>(null);
+  const [packCheckoutLoading,    setPackCheckoutLoading]    = useState<PackSize | null>(null);
+  const packCheckoutInFlight = useRef(false);
 
   // Wire reschedule intent into the router once it resolves
   useEffect(() => {
@@ -397,8 +401,8 @@ export default function InteractiveShell() {
           packSize={router.selectedPack}
           userEmail={googleUser.email}
           userName={googleUser.name ?? ""}
-          onClose={() => router.handleSignInGateClose()}
-          onCreditsReady={router.handleCreditsReady}
+          initialClientSecret={packClientSecret ?? undefined}
+          onClose={() => { router.handleSignInGateClose(); setPackClientSecret(null); packCheckoutInFlight.current = false; }}
         />
       )}
 
@@ -524,7 +528,33 @@ export default function InteractiveShell() {
                   recommended={"recommended" in cfg && cfg.recommended}
                   activeCredits={creditsLoading ? null : hasActiveCredits ? (packSession?.credits ?? null) : null}
                   creditsLoading={creditsLoading && isSignedIn}
-                  onClick={() => router.handlePackBuy(size as PackSize)}
+                  checkoutLoading={packCheckoutLoading === size}
+                  onClick={async () => {
+                    if (!isSignedIn) {
+                      // Not signed in — show sign-in gate; after OAuth the modal
+                      // will open normally (without pre-fetched clientSecret).
+                      router.handlePackBuy(size as PackSize);
+                      return;
+                    }
+                    if (packCheckoutInFlight.current) return;
+                    packCheckoutInFlight.current = true;
+                    setPackCheckoutLoading(size as PackSize);
+                    try {
+                      const { clientSecret } = await api.stripe.checkout({
+                        type: "pack",
+                        packSize: size as PackSize,
+                      });
+                      setPackClientSecret(clientSecret);
+                      router.handlePackBuy(size as PackSize); // open modal after secret is ready
+                    } catch {
+                      // Checkout pre-fetch failed — open modal normally so the
+                      // user can retry via the "Comprar" button inside it.
+                      packCheckoutInFlight.current = false;
+                      router.handlePackBuy(size as PackSize);
+                    } finally {
+                      setPackCheckoutLoading(null);
+                    }
+                  }}
                   onSchedule={router.handlePackSchedule}
                 />
               );

@@ -23,18 +23,27 @@ const nextConfig = {
     //   - source.zoom.us : fallback asset CDN
     const zoomOrigins = "https://zoom.us https://*.zoom.us wss://*.zoom.us https://dmogdx0jrul3u.cloudfront.net https://d1cdksi819e9z7.cloudfront.net https://source.zoom.us";
 
+    // Stripe requires:
+    //   script-src  : https://js.stripe.com  (loads Stripe.js)
+    //   connect-src : https://api.stripe.com  (payment confirmation XHR)
+    //                 https://js.stripe.com   (telemetry / fraud signals)
+    //   frame-src   : https://*.stripe.com    (3DS authentication iframes)
+    const stripeOrigins = "https://js.stripe.com https://api.stripe.com";
+    const stripeFrames  = "https://*.stripe.com";
+
     const csp = isDev
       ? [
           // Dev: relaxed — allows Next.js HMR, webpack eval, etc.
           "default-src 'self'",
-          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} blob:`,
+          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com ${zoomOrigins}`,
+          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com ${zoomOrigins} ${stripeOrigins}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us
           `worker-src blob: ${zoomOrigins}`,
           "media-src 'self' blob: mediastream:",
+          `frame-src ${stripeFrames}`,
           "object-src 'none'",
         ]
       : [
@@ -43,14 +52,15 @@ const nextConfig = {
           // Removing it breaks the app. A nonce-based alternative would
           // require a custom server — not viable on Vercel's edge runtime.
           "default-src 'self'",
-          `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} blob:`,
+          `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com ${zoomOrigins}`,
+          `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com ${zoomOrigins} ${stripeOrigins}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us
           `worker-src blob: ${zoomOrigins}`,
           "media-src 'self' blob: mediastream:",
+          `frame-src ${stripeFrames}`,
           "object-src 'none'",
           "base-uri 'self'",
           "form-action 'self'",

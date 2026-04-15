@@ -1,5 +1,9 @@
 /**
  * POST /api/stripe/checkout
+ *
+ * Creates a Stripe PaymentIntent for the embedded PaymentElement flow.
+ * Returns { clientSecret, paymentIntentId } — no redirect URL.
+ *
  * Week 4 — OBS-01: console.* replaced with structured log() calls.
  */
 
@@ -10,6 +14,12 @@ import { CheckoutSchema } from "@/lib/schemas";
 import { checkoutRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
+
+async function getPriceAmount(priceId: string): Promise<{ amount: number; currency: string }> {
+  const price = await stripe.prices.retrieve(priceId);
+  if (!price.unit_amount) throw new Error(`Price ${priceId} has no unit_amount`);
+  return { amount: price.unit_amount, currency: price.currency };
+}
 
 function getPackPriceId(packSize: number): string {
   const ids: Record<number, string | undefined> = {
@@ -43,12 +53,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Debes iniciar sesión para continuar" }, { status: 401 });
   }
 
-  const email   = session.user.email;
-  const name    = session.user.name ?? "";
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-  if (!baseUrl) {
-    return NextResponse.json({ error: "Error de configuración del servidor" }, { status: 500 });
-  }
+  const email = session.user.email;
+  const name  = session.user.name ?? "";
 
   let rawBody: unknown;
   try { rawBody = await req.json(); }
@@ -66,28 +72,32 @@ export async function POST(req: NextRequest) {
 
   try {
     if (body.type === "pack") {
-      const stripeSession = await stripe.checkout.sessions.create({
-        payment_method_types: ["card"],
-        mode:           "payment",
-        customer_email: email,
-        line_items:     [{ price: getPackPriceId(body.packSize), quantity: 1 }],
+      const priceId          = getPackPriceId(body.packSize);
+      const { amount, currency } = await getPriceAmount(priceId);
+
+      const intent = await stripe.paymentIntents.create({
+        amount,
+        currency,
         metadata: {
           student_name:  name,
           student_email: email,
           pack_size:     String(body.packSize),
           checkout_type: "pack",
         },
-        success_url: `${baseUrl}/pago-exitoso?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url:  `${baseUrl}/?cancelled=true`,
       });
-      return NextResponse.json({ url: stripeSession.url });
+
+      return NextResponse.json({
+        clientSecret:    intent.client_secret,
+        paymentIntentId: intent.id,
+      });
     }
 
-    const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      mode:           "payment",
-      customer_email: email,
-      line_items:     [{ price: getSingleSessionPriceId(body.duration), quantity: 1 }],
+    const priceId          = getSingleSessionPriceId(body.duration);
+    const { amount, currency } = await getPriceAmount(priceId);
+
+    const intent = await stripe.paymentIntents.create({
+      amount,
+      currency,
       metadata: {
         student_name:     name,
         student_email:    email,
@@ -97,13 +107,15 @@ export async function POST(req: NextRequest) {
         end_iso:          body.endIso,
         reschedule_token: body.rescheduleToken ?? "",
       },
-      success_url: `${baseUrl}/sesion-confirmada?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:  `${baseUrl}/?cancelled=true`,
     });
-    return NextResponse.json({ url: stripeSession.url });
+
+    return NextResponse.json({
+      clientSecret:    intent.client_secret,
+      paymentIntentId: intent.id,
+    });
 
   } catch (err) {
-    log("error", "Stripe checkout error", { service: "checkout", email, error: String(err) });
+    log("error", "Stripe PaymentIntent creation error", { service: "checkout", email, error: String(err) });
     return NextResponse.json({ error: "Error al crear la sesión de pago" }, { status: 500 });
   }
 }

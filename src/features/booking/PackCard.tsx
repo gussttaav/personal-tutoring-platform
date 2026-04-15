@@ -10,6 +10,8 @@ interface PackCardProps {
   recommended?: boolean;
   activeCredits: number | null;
   creditsLoading: boolean;
+  /** True while the parent is pre-fetching the PaymentIntent for this card */
+  checkoutLoading?: boolean;
   onClick: () => void;
   onSchedule: () => void;
 }
@@ -19,6 +21,7 @@ export default function PackCard({
   recommended = false,
   activeCredits,
   creditsLoading,
+  checkoutLoading = false,
   onClick,
   onSchedule,
 }: PackCardProps) {
@@ -237,6 +240,7 @@ export default function PackCard({
       {/* ── CTA button ── */}
       <button
         onClick={hasCredits ? onSchedule : onClick}
+        disabled={checkoutLoading}
         style={{
           display: "block",
           width: "100%",
@@ -252,11 +256,13 @@ export default function PackCard({
           fontFamily: "var(--font-headline, Manrope), sans-serif",
           fontSize: "14px",
           fontWeight: 700,
-          cursor: "pointer",
-          transition: "filter 0.15s, background 0.15s, border-color 0.15s, color 0.15s",
+          cursor: checkoutLoading ? "not-allowed" : "pointer",
+          opacity: checkoutLoading ? 0.7 : 1,
+          transition: "filter 0.15s, background 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s",
           letterSpacing: "0.01em",
         }}
         onMouseEnter={(e) => {
+          if (checkoutLoading) return;
           const btn = e.currentTarget as HTMLButtonElement;
           if (isPrimary) {
             btn.style.filter = "brightness(1.08)";
@@ -267,6 +273,7 @@ export default function PackCard({
           }
         }}
         onMouseLeave={(e) => {
+          if (checkoutLoading) return;
           const btn = e.currentTarget as HTMLButtonElement;
           if (isPrimary) {
             btn.style.filter = "brightness(1)";
@@ -277,7 +284,7 @@ export default function PackCard({
           }
         }}
       >
-        {hasCredits ? "Reservar clase" : `Comprar pack · ${cfg.price}`}
+        {checkoutLoading ? "Preparando pago..." : hasCredits ? "Reservar clase" : `Comprar pack · ${cfg.price}`}
       </button>
 
     </div>

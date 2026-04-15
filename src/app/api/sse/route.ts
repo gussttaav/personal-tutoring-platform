@@ -2,12 +2,12 @@
  * GET /api/sse
  *
  * Server-Sent Events endpoint.
- * The browser connects here after a successful Stripe payment and waits
+ * The browser connects here after a successful embedded payment and waits
  * for the webhook to write the credit record to KV.
  *
  * Flow:
- *   1. Browser opens  GET /api/sse?session_id=cs_xxx
- *   2. Server verifies the authenticated user owns this Stripe session
+ *   1. Browser opens  GET /api/sse?payment_intent_id=pi_xxx
+ *   2. Server verifies the authenticated user owns this PaymentIntent
  *   3. Server polls KV for up to MAX_WAIT_MS (24s) with fixed interval
  *   4. Webhook (POST /api/stripe/webhook) writes credits to KV
  *   5. Server detects the record and streams `event: credits_ready` to browser
@@ -15,9 +15,9 @@
  *
  * SECURITY FIX (CRIT-03):
  *   Added NextAuth session check + email ownership verification before
- *   serving the stream. Previously, any caller who knew a valid cs_xxx
- *   session ID (visible in the browser URL) could discover the student's
- *   email address and credit balance in real time.
+ *   serving the stream. Previously, any caller who knew a valid ID
+ *   (visible in the browser URL) could discover the student's email address
+ *   and credit balance in real time.
  */
 
 import { NextRequest } from "next/server";
@@ -42,52 +42,50 @@ function getStripe() {
 export const dynamic = "force-dynamic"; // never cache this route
 
 export async function GET(req: NextRequest) {
-  const sessionId = req.nextUrl.searchParams.get("session_id");
+  const paymentIntentId = req.nextUrl.searchParams.get("payment_intent_id");
 
-  if (!sessionId || !sessionId.startsWith("cs_")) {
-    return new Response("Missing or invalid session_id", { status: 400 });
+  if (!paymentIntentId || !paymentIntentId.startsWith("pi_")) {
+    return new Response("Missing or invalid payment_intent_id", { status: 400 });
   }
 
-  // ── Auth gate ─────────────────────────────────────────────────────────────
+  // ── Auth gate ─────────────────────────────────────────────────────────────────
   // Verify the caller is authenticated before touching Stripe or KV.
   const authSession = await auth();
   if (!authSession?.user?.email) {
     return new Response("Authentication required", { status: 401 });
   }
 
-  // ── Resolve Stripe session ────────────────────────────────────────────────
-  // We need the email, name, and packSize that were written into Stripe
-  // metadata at checkout time. We never trust URL parameters for identity.
+  // ── Resolve PaymentIntent ─────────────────────────────────────────────────────
+  // We read email, name, and packSize from PaymentIntent metadata so we never
+  // trust URL parameters for identity.
   let email: string;
   let name: string;
   let packSize: number;
 
   try {
     const stripe  = getStripe();
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const intent  = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    email    = session.metadata?.student_email ?? session.customer_email ?? "";
-    name     = session.metadata?.student_name ?? "";
-    packSize = parseInt(session.metadata?.pack_size ?? "0", 10);
+    email    = intent.metadata?.student_email ?? "";
+    name     = intent.metadata?.student_name  ?? "";
+    packSize = parseInt(intent.metadata?.pack_size ?? "0", 10);
 
     if (!email) {
-      return new Response("Session metadata incomplete", { status: 400 });
+      return new Response("PaymentIntent metadata incomplete", { status: 400 });
     }
   } catch {
-    return new Response("Could not retrieve Stripe session", { status: 500 });
+    return new Response("Could not retrieve PaymentIntent", { status: 500 });
   }
 
-  // ── Ownership check ───────────────────────────────────────────────────────
-  // The authenticated user's email must match the email on the Stripe session.
-  // This prevents user A from polling for user B's credits by guessing a
-  // session ID (which appears in the success page URL).
+  // ── Ownership check ───────────────────────────────────────────────────────────
+  // The authenticated user's email must match the email on the PaymentIntent.
   if (email.toLowerCase() !== authSession.user.email.toLowerCase()) {
     return new Response("Forbidden", { status: 403 });
   }
 
   const kvKey = `credits:${email.toLowerCase().trim()}`;
 
-  // ── Build the SSE stream ──────────────────────────────────────────────────
+  // ── Build the SSE stream ──────────────────────────────────────────────────────
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -109,9 +107,9 @@ export async function GET(req: NextRequest) {
           const record = await kv.get<CreditRecord>(kvKey);
 
           // Credits are ready when the webhook has written the record with the
-          // matching stripeSessionId (ensures we're not reading stale data from
+          // matching paymentIntentId (ensures we're not reading stale data from
           // a previous purchase).
-          if (record && record.stripeSessionId === sessionId && record.credits > 0) {
+          if (record && record.stripeSessionId === paymentIntentId && record.credits > 0) {
             send("credits_ready", {
               credits:  record.credits,
               name:     record.name ?? name,
