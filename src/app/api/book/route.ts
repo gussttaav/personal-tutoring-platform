@@ -122,6 +122,7 @@ export async function POST(req: NextRequest) {
       startIso,
       endIso,
       sessionType,
+      studentEmail: email,  // SEC-03
     });
     eventId         = result.eventId;
     zoomSessionName = result.zoomSessionName;

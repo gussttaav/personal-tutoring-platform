@@ -7,6 +7,9 @@
  * Role assignment:
  *   - TUTOR_EMAIL → role 1 (host)
  *   - everyone else → role 0 (participant)
+ *
+ * Applied fixes:
+ *   SEC-03: session-membership check — only the registered student or tutor may obtain a token
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -49,8 +52,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 });
   }
 
+  // ── Session-membership check (SEC-03) ─────────────────────────────────────
+  const isTutor   = session.user.email === process.env.TUTOR_EMAIL;
+  const isStudent = record.studentEmail
+    ? record.studentEmail.toLowerCase() === session.user.email.toLowerCase()
+    : false;
+
+  if (!record.studentEmail) {
+    // Legacy record (pre SEC-03) — allow tutor only
+    if (!isTutor) {
+      return NextResponse.json({ error: "Sesión heredada — contacta con soporte" }, { status: 403 });
+    }
+  } else if (!isTutor && !isStudent) {
+    log("warn", "Unauthorized Zoom token request", {
+      service:   "zoom",
+      requester: session.user.email,
+      eventId,
+    });
+    return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+  }
+
   // ── Determine role ─────────────────────────────────────────────────────────
-  const role: 0 | 1 = session.user.email === process.env.TUTOR_EMAIL ? 1 : 0;
+  const role: 0 | 1 = isTutor ? 1 : 0;
 
   // ── Sign JWT ───────────────────────────────────────────────────────────────
   const token = generateZoomJWT({

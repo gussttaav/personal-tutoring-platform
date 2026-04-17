@@ -8,6 +8,7 @@
  *   Week 2 — ARCH-02: shared kv singleton
  *   Week 3 — PERF-01: DST-correct slot generation via date-fns-tz
  *   Backlog — SLOT LOCK: acquireSlotLock / releaseSlotLock
+ *   SEC-03: studentEmail stored in ZoomSessionRecord for membership enforcement
  *
  * SLOT LOCKING DESIGN:
  *
@@ -225,11 +226,12 @@ export async function getAvailableSlots(
 }
 
 export async function createCalendarEvent(params: {
-  summary:      string;
-  description:  string;
-  startIso:     string;
-  endIso:       string;
-  sessionType?: string;
+  summary:       string;
+  description:   string;
+  startIso:      string;
+  endIso:        string;
+  sessionType?:  string;
+  studentEmail:  string;  // SEC-03
 }): Promise<{ eventId: string; zoomSessionName: string; zoomPasscode: string }> {
   const calendar = getCalendar();
 
@@ -265,6 +267,7 @@ export async function createCalendarEvent(params: {
     startIso:        params.startIso,
     durationMinutes,
     sessionType,
+    studentEmail:    params.studentEmail,  // SEC-03
   };
   await kv.set(`zoom:session:${eventId}`, zoomRecord, {
     ex: durationWithGrace * 60 + 86_400,

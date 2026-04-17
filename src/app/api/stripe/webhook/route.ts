@@ -183,11 +183,12 @@ async function handleSingleSessionPayment(
   try {
     const result = await withRetry(
       () => createCalendarEvent({
-        summary:     `${sessionLabel} — ${name}`,
-        description: `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
+        summary:      `${sessionLabel} — ${name}`,
+        description:  `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
         startIso,
         endIso,
         sessionType,
+        studentEmail: email,  // SEC-03
       }),
       3,
       "createCalendarEvent"
@@ -361,11 +362,12 @@ export async function POST(req: NextRequest) {
       try {
         const result = await withRetry(
           () => createCalendarEvent({
-            summary:     `${sessionLabel} — ${name}`,
-            description: `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
+            summary:      `${sessionLabel} — ${name}`,
+            description:  `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
             startIso,
             endIso,
             sessionType,
+            studentEmail: email,  // SEC-03
           }),
           3,
           "createCalendarEvent"

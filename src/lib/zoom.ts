@@ -5,6 +5,9 @@
  *   - createZoomSession: creates a per-booking Zoom Video SDK session via REST API
  *   - generateZoomJWT:   signs a short-lived JWT so a browser client can join
  *   - getSessionDurationWithGrace: returns session length + grace buffer in minutes
+ *
+ * Applied fixes:
+ *   SEC-03: added studentEmail to ZoomSessionRecord for session-membership enforcement
  */
 
 import jwt from "jsonwebtoken";
@@ -22,6 +25,7 @@ export interface ZoomSessionRecord {
   startIso:        string;
   durationMinutes: number;
   sessionType:     string;
+  studentEmail:    string;  // SEC-03
 }
 
 // ─── generateZoomSessionCredentials ──────────────────────────────────────────
