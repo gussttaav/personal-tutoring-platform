@@ -24,9 +24,7 @@ import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { auth } from "@/auth";
 import type { CreditRecord } from "@/lib/kv";
-import { Redis } from "@upstash/redis";
-
-const kv = Redis.fromEnv();
+import { kv } from "@/lib/redis";
 
 // Maximum time to hold the SSE connection open (Vercel max is 25s on hobby,
 // use 24s to stay safely under). Upgrade to a longer timeout on Pro.

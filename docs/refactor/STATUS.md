@@ -14,7 +14,7 @@
 | 1.3 | Zoom token session-membership check | ⬜ Not started | - | Touches `calendar.ts` + `zoom.ts` + route |
 | 1.4 | CSRF protection middleware | ⬜ Not started | - | Exempt the Stripe webhook route |
 | 1.5 | Split join token from cancel token | ⬜ Not started | - | Requires email template update |
-| 1.6 | Fix SSE duplicate Redis client | ⬜ Not started | - | Trivial one-line fix |
+| 1.6 | Fix SSE duplicate Redis client | ✅ Done | - | Trivial one-line fix |
 
 **Exit criteria:** All six tasks green, `npm run build` passes, no regressions in existing Jest suites.
 
