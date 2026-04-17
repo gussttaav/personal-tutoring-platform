@@ -10,11 +10,11 @@
 | ID | Task | Status | PR | Notes |
 |----|------|--------|----|----|
 | 1.1 | Atomic credit decrement | ⬜ Not started | - | Requires Upstash EVAL verification |
-| 1.2 | Auth gate on `/api/stripe/session` | ⬜ Not started | - | - |
+| 1.2 | Auth gate on `/api/stripe/session` | ✅ Done | SEC-02 | Auth + ownership check added |
 | 1.3 | Zoom token session-membership check | ⬜ Not started | - | Touches `calendar.ts` + `zoom.ts` + route |
 | 1.4 | CSRF protection middleware | ⬜ Not started | - | Exempt the Stripe webhook route |
 | 1.5 | Split join token from cancel token | ⬜ Not started | - | Requires email template update |
-| 1.6 | Fix SSE duplicate Redis client | ✅ Done | - | Trivial one-line fix |
+| 1.6 | Fix SSE duplicate Redis client | ✅ Done | SEC-06 | Trivial one-line fix |
 
 **Exit criteria:** All six tasks green, `npm run build` passes, no regressions in existing Jest suites.
 
