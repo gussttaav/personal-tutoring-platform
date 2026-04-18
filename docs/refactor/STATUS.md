@@ -28,7 +28,7 @@
 | 2.2 | Deduplicate webhook handlers | ✅ Done | REL-02 | SingleSessionInput + processSingleSession; issueRefund helper; ~100 duplicate lines removed |
 | 2.3 | Dead-letter recovery endpoint | ⬜ Not started | - | Protected admin route |
 | 2.4 | Chat route auth + tiered rate limiting | ⬜ Not started | - | Keep unauthenticated access |
-| 2.5 | Webhook async processing via `waitUntil` | ⬜ Not started | - | Interim before QStash |
+| 2.5 | Webhook async processing via `waitUntil` | ✅ Done | REL-05 | @vercel/functions waitUntil; emails deferred; KV + calendar still blocking |
 
 **Exit criteria:** No unreliable timers in production paths, dead-letter entries recoverable via API, Gemini spend capped per anonymous IP.
 

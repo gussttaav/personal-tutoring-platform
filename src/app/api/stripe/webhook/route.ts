@@ -16,9 +16,16 @@
  *                     handlers; both payment_intent.succeeded and
  *                     checkout.session.completed branches delegate to the
  *                     single shared function.
+ *   REL-05:            Wrapped confirmation + admin email sends in waitUntil()
+ *                     so the webhook responds immediately and emails are sent
+ *                     in the background. Calendar creation and KV writes still
+ *                     complete before the response. Vercel-only feature; on
+ *                     self-hosted Node, waitUntil is a no-op and emails run
+ *                     as a background microtask (no Vercel execution guarantee).
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { kv } from "@/lib/redis";
@@ -244,14 +251,15 @@ async function processSingleSession(input: SingleSessionInput): Promise<Response
     );
   })();
 
-  try {
-    await Promise.all([
+  // REL-05: defer emails so the webhook response is returned immediately.
+  waitUntil(
+    Promise.all([
       sendConfirmationEmail({ to: email, studentName: name, sessionLabel, startIso, endIso, joinToken, cancelToken, note: null, studentTz: null, sessionType }),
       sendNewBookingNotificationEmail({ studentEmail: email, studentName: name, sessionLabel, startIso, endIso, joinUrl, note: null }),
-    ]);
-  } catch (emailErr) {
-    log("error", "Email send failed after booking", { service: "webhook", email, idempotencyKey, error: String(emailErr) });
-  }
+    ]).catch((emailErr) => {
+      log("error", "Email send failed after booking", { service: "webhook", email, idempotencyKey, error: String(emailErr) });
+    })
+  );
 
   log("info", "Single session booked", { service: "webhook", email, startIso });
   return null;
