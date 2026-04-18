@@ -49,7 +49,11 @@ const REQUIRED_ENV_VARS = [
   "CANCEL_SECRET",
   "GEMINI_API_KEY",
   "TUTOR_EMAIL",
-  "INTERNAL_SECRET",
+
+  // Upstash QStash (delayed session termination — REL-01)
+  "QSTASH_TOKEN",
+  "QSTASH_CURRENT_SIGNING_KEY",
+  "QSTASH_NEXT_SIGNING_KEY",
 ] as const;
 
 export function validateEnv(): void {

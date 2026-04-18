@@ -19,6 +19,8 @@ import { decrementCredit, getCredits } from "@/lib/kv";
 import { sendConfirmationEmail, sendNewBookingNotificationEmail } from "@/lib/email";
 import { log } from "@/lib/logger";
 import { SCHEDULE } from "@/lib/booking-config";
+import { getSessionDurationWithGrace } from "@/lib/zoom";
+import { qstash } from "@/lib/qstash";
 import type { z } from "zod";
 
 const SESSION_LABELS: Record<string, string> = {
@@ -156,6 +158,22 @@ export async function POST(req: NextRequest) {
     eventId, email, name, sessionType, startsAt: startIso, endsAt: endIso,
     ...(packSizeForToken !== undefined ? { packSize: packSizeForToken } : {}),
   });
+
+  // REL-01: Schedule Zoom session cleanup via QStash (covers free/pack sessions
+  // that had no cleanup before this fix). Skipped in local dev because QStash
+  // cannot reach a loopback address. Failure is logged but does not fail the
+  // booking; the Zoom JWT TTL (1h) still prevents indefinite session use.
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+  if (!baseUrl.includes("localhost") && !baseUrl.includes("127.0.0.1")) {
+    const delaySeconds = getSessionDurationWithGrace(sessionType) * 60;
+    await qstash.publishJSON({
+      url:   `${baseUrl}/api/internal/zoom-terminate`,
+      body:  { eventId },
+      delay: delaySeconds,
+    }).catch((err: unknown) => {
+      log("error", "QStash schedule failed", { service: "book", eventId, error: String(err) });
+    });
+  }
 
   const joinUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/sesion/${joinToken}`;
 

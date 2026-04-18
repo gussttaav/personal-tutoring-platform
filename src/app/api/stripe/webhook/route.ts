@@ -34,6 +34,7 @@ import { getAvailableSlots, createCalendarEvent, createBookingTokens } from "@/l
 import { sendConfirmationEmail, sendNewBookingNotificationEmail } from "@/lib/email";
 import { log } from "@/lib/logger";
 import { getSessionDurationWithGrace } from "@/lib/zoom";
+import { qstash } from "@/lib/qstash";
 
 const SINGLE_SESSION_IDEMPOTENCY_TTL = 7 * 24 * 60 * 60;
 const FAILED_BOOKING_TTL             = 30 * 24 * 60 * 60;
@@ -201,10 +202,9 @@ async function processSingleSession(input: SingleSessionInput): Promise<Response
   const sessionType  = duration === "1h" ? "session1h" : "session2h";
 
   // Create calendar event with retry + dead-letter (PAY-03)
-  let eventId:         string;
-  let zoomSessionName: string;
-  let cancelToken:     string;
-  let joinToken:       string;
+  let eventId:     string;
+  let cancelToken: string;
+  let joinToken:   string;
 
   try {
     const result = await withRetry(
@@ -219,8 +219,7 @@ async function processSingleSession(input: SingleSessionInput): Promise<Response
       3,
       "createCalendarEvent"
     );
-    eventId         = result.eventId;
-    zoomSessionName = result.zoomSessionName;
+    eventId = result.eventId;
     ({ cancelToken, joinToken } = await createBookingTokens({ eventId, email, name, sessionType, startsAt: startIso, endsAt: endIso }));
   } catch (err) {
     log("error", "Calendar event creation failed after retries", { service: "webhook", email, startIso, idempotencyKey, error: String(err) });
@@ -232,24 +231,21 @@ async function processSingleSession(input: SingleSessionInput): Promise<Response
 
   const joinUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/sesion/${joinToken}`;
 
-  // Schedule auto-termination of the Zoom session after durationWithGrace.
-  // TODO: replace with Upstash QStash for production reliability —
-  // setTimeout inside a serverless function may not fire if the process
-  // is recycled before the timer elapses.
-  const delayMs = getSessionDurationWithGrace(sessionType) * 60 * 1_000;
-  void (async () => {
-    await new Promise(r => setTimeout(r, delayMs));
-    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/zoom/end`, {
-      method:  "POST",
-      headers: {
-        "X-Internal-Secret": process.env.INTERNAL_SECRET!,
-        "Content-Type":      "application/json",
-      },
-      body: JSON.stringify({ eventId }),
-    }).catch((e: unknown) =>
-      log("error", "Auto-terminate fetch failed", { service: "webhook", eventId, zoomSessionName, error: String(e) })
-    );
-  })();
+  // REL-01: QStash replaces setTimeout — fires reliably after the serverless
+  // function has returned. Skipped in local dev because QStash (an external
+  // service) cannot reach a loopback address. Failure is logged but does not
+  // fail the webhook; the Zoom JWT TTL (1h) prevents indefinite session use.
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+  if (!baseUrl.includes("localhost") && !baseUrl.includes("127.0.0.1")) {
+    const delaySeconds = getSessionDurationWithGrace(sessionType) * 60;
+    await qstash.publishJSON({
+      url:   `${baseUrl}/api/internal/zoom-terminate`,
+      body:  { eventId },
+      delay: delaySeconds,
+    }).catch((err: unknown) => {
+      log("error", "QStash schedule failed", { service: "webhook", eventId, error: String(err) });
+    });
+  }
 
   // REL-05: defer emails so the webhook response is returned immediately.
   waitUntil(

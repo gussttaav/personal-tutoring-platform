@@ -24,7 +24,7 @@
 
 | ID | Task | Status | PR | Notes |
 |----|------|--------|----|----|
-| 2.1 | Replace `setTimeout` with QStash | ⬜ Not started | - | Requires QSTASH_TOKEN env var |
+| 2.1 | Replace `setTimeout` with QStash | ✅ Done | REL-01 | qstash singleton + zoom-terminate endpoint; verifySignatureAppRouter; book + webhook both schedule; 77 tests pass |
 | 2.2 | Deduplicate webhook handlers | ✅ Done | REL-02 | SingleSessionInput + processSingleSession; issueRefund helper; ~100 duplicate lines removed |
 | 2.3 | Dead-letter recovery endpoint | ⬜ Not started | - | Protected admin route |
 | 2.4 | Chat route auth + tiered rate limiting | ⬜ Not started | - | Keep unauthenticated access |
