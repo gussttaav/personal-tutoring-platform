@@ -12,6 +12,10 @@
  *                     embedded PaymentElement flow. The legacy
  *                     checkout.session.completed branch is kept for
  *                     backward compatibility during transition.
+ *   REL-02:            Extracted processSingleSession() to deduplicate webhook
+ *                     handlers; both payment_intent.succeeded and
+ *                     checkout.session.completed branches delegate to the
+ *                     single shared function.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -26,6 +30,18 @@ import { getSessionDurationWithGrace } from "@/lib/zoom";
 
 const SINGLE_SESSION_IDEMPOTENCY_TTL = 7 * 24 * 60 * 60;
 const FAILED_BOOKING_TTL             = 30 * 24 * 60 * 60;
+
+interface SingleSessionInput {
+  email:           string;
+  name:            string;
+  startIso:        string;
+  endIso:          string;
+  duration:        string;
+  rescheduleToken: string | null;
+  idempotencyKey:  string;           // pi_xxx (new flow) or cs_xxx (legacy)
+  refundTarget:    { type: "payment_intent"; id: string }
+                 | { type: "charge";         id: string };
+}
 
 async function withRetry<T>(
   fn: () => Promise<T>,
@@ -82,6 +98,20 @@ async function writeDeadLetter(
   }
 }
 
+async function issueRefund(
+  target:         { type: "payment_intent" | "charge"; id: string },
+  idempotencyKey: string
+): Promise<void> {
+  try {
+    const params = target.type === "payment_intent"
+      ? { payment_intent: target.id, reason: "duplicate" as const }
+      : { charge:          target.id, reason: "duplicate" as const };
+    await stripe.refunds.create(params);
+  } catch (err) {
+    log("error", "Auto-refund failed", { service: "webhook", idempotencyKey, error: String(err) });
+  }
+}
+
 // ── Shared logic for pack payment ─────────────────────────────────────────────
 
 async function handlePackPayment(
@@ -112,31 +142,23 @@ async function handlePackPayment(
 
 // ── Shared logic for single session payment ───────────────────────────────────
 
-async function handleSingleSessionPayment(
-  metadata: Record<string, string>,
-  intentId: string
-): Promise<Response | null> {
-  const email           = metadata.student_email ?? "";
-  const name            = metadata.student_name  ?? "";
-  const startIso        = metadata.start_iso;
-  const endIso          = metadata.end_iso;
-  const duration        = metadata.session_duration ?? "1h";
-  const rescheduleToken = metadata.reschedule_token || null;
+async function processSingleSession(input: SingleSessionInput): Promise<Response | null> {
+  const { email, name, startIso, endIso, duration, rescheduleToken, idempotencyKey } = input;
 
   if (!email) {
-    log("error", "Missing email in single-session metadata", { service: "webhook", intentId });
+    log("error", "Missing email in single-session metadata", { service: "webhook", idempotencyKey });
     return NextResponse.json({ received: true, warning: "Missing email" });
   }
   if (!startIso || !endIso) {
-    log("error", "Missing slot timing in webhook metadata", { service: "webhook", intentId });
+    log("error", "Missing slot timing in webhook metadata", { service: "webhook", idempotencyKey });
     return NextResponse.json({ received: true, warning: "Missing slot timing" });
   }
 
   // Idempotency check
-  const idempotencyKey = `webhook:single:${intentId}`;
-  const alreadyDone    = await kv.get(idempotencyKey);
+  const idempotencyRedisKey = `webhook:single:${idempotencyKey}`;
+  const alreadyDone         = await kv.get(idempotencyRedisKey);
   if (alreadyDone) {
-    log("info", "Duplicate single-session webhook skipped", { service: "webhook", intentId });
+    log("info", "Duplicate single-session webhook skipped", { service: "webhook", idempotencyKey });
     return NextResponse.json({ received: true });
   }
 
@@ -147,12 +169,8 @@ async function handleSingleSessionPayment(
   const slotStillFree   = availableSlots?.some(s => s.start === startIso) ?? true;
 
   if (!slotStillFree) {
-    log("warn", "Slot no longer available — refunding", { service: "webhook", email, startIso, intentId });
-    try {
-      await stripe.refunds.create({ payment_intent: intentId, reason: "duplicate" });
-    } catch (refundErr) {
-      log("error", "Auto-refund failed", { service: "webhook", intentId, error: String(refundErr) });
-    }
+    log("warn", "Slot no longer available — refunding", { service: "webhook", email, startIso, idempotencyKey });
+    await issueRefund(input.refundTarget, idempotencyKey);
     return NextResponse.json({ received: true, warning: "Slot unavailable — refund issued" });
   }
 
@@ -198,12 +216,12 @@ async function handleSingleSessionPayment(
     zoomSessionName = result.zoomSessionName;
     ({ cancelToken, joinToken } = await createBookingTokens({ eventId, email, name, sessionType, startsAt: startIso, endsAt: endIso }));
   } catch (err) {
-    log("error", "Calendar event creation failed after retries", { service: "webhook", email, startIso, intentId, error: String(err) });
-    await writeDeadLetter(intentId, email, startIso, err);
+    log("error", "Calendar event creation failed after retries", { service: "webhook", email, startIso, idempotencyKey, error: String(err) });
+    await writeDeadLetter(idempotencyKey, email, startIso, err);
     return NextResponse.json({ received: true, warning: "Calendar creation failed — manual review required" });
   }
 
-  await kv.set(idempotencyKey, { processedAt: new Date().toISOString() }, { ex: SINGLE_SESSION_IDEMPOTENCY_TTL });
+  await kv.set(idempotencyRedisKey, { processedAt: new Date().toISOString() }, { ex: SINGLE_SESSION_IDEMPOTENCY_TTL });
 
   const joinUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/sesion/${joinToken}`;
 
@@ -232,7 +250,7 @@ async function handleSingleSessionPayment(
       sendNewBookingNotificationEmail({ studentEmail: email, studentName: name, sessionLabel, startIso, endIso, joinUrl, note: null }),
     ]);
   } catch (emailErr) {
-    log("error", "Email send failed after booking", { service: "webhook", email, intentId, error: String(emailErr) });
+    log("error", "Email send failed after booking", { service: "webhook", email, idempotencyKey, error: String(emailErr) });
   }
 
   log("info", "Single session booked", { service: "webhook", email, startIso });
@@ -262,10 +280,10 @@ export async function POST(req: NextRequest) {
 
   // ── payment_intent.succeeded (embedded PaymentElement flow) ──────────────────
   if (event.type === "payment_intent.succeeded") {
-    const intent      = event.data.object as Stripe.PaymentIntent;
-    const metadata    = intent.metadata as Record<string, string>;
+    const intent       = event.data.object as Stripe.PaymentIntent;
+    const metadata     = intent.metadata as Record<string, string>;
     const checkoutType = metadata.checkout_type ?? "pack";
-    const intentId    = intent.id;
+    const intentId     = intent.id;
 
     if (checkoutType === "pack") {
       const earlyReturn = await handlePackPayment(metadata, intentId);
@@ -273,7 +291,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (checkoutType === "single") {
-      const earlyReturn = await handleSingleSessionPayment(metadata, intentId);
+      const earlyReturn = await processSingleSession({
+        email:           metadata.student_email ?? "",
+        name:            metadata.student_name  ?? "",
+        startIso:        metadata.start_iso,
+        endIso:          metadata.end_iso,
+        duration:        metadata.session_duration ?? "1h",
+        rescheduleToken: metadata.reschedule_token || null,
+        idempotencyKey:  intentId,
+        refundTarget:    { type: "payment_intent", id: intentId },
+      });
       if (earlyReturn) return earlyReturn;
     }
   }
@@ -306,112 +333,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (checkoutType === "single") {
-      const startIso        = session.metadata?.start_iso;
-      const endIso          = session.metadata?.end_iso;
-      const duration        = session.metadata?.session_duration ?? "1h";
-      const rescheduleToken = session.metadata?.reschedule_token || null;
-
-      if (!startIso || !endIso) {
-        log("error", "Missing slot timing in webhook metadata", { service: "webhook", stripeSessionId });
-        return NextResponse.json({ received: true, warning: "Missing slot timing" });
-      }
-
-      const idempotencyKey = `webhook:single:${stripeSessionId}`;
-      const alreadyDone    = await kv.get(idempotencyKey);
-      if (alreadyDone) {
-        log("info", "Duplicate single-session webhook skipped", { service: "webhook", stripeSessionId });
-        return NextResponse.json({ received: true });
-      }
-
-      const slotDate        = startIso.slice(0, 10);
-      const durationMinutes = duration === "2h" ? 120 : 60;
-      const availableSlots  = await getAvailableSlots(slotDate, durationMinutes).catch(() => null);
-      const slotStillFree   = availableSlots?.some(s => s.start === startIso) ?? true;
-
-      if (!slotStillFree) {
-        log("warn", "Slot no longer available — refunding", { service: "webhook", email, startIso, stripeSessionId });
-        try {
-          await stripe.refunds.create({ payment_intent: session.payment_intent as string, reason: "duplicate" });
-        } catch (refundErr) {
-          log("error", "Auto-refund failed", { service: "webhook", stripeSessionId, error: String(refundErr) });
-        }
-        return NextResponse.json({ received: true, warning: "Slot unavailable — refund issued" });
-      }
-
-      if (rescheduleToken) {
-        const { verifyCancellationToken, consumeCancellationToken, deleteCalendarEvent } = await import("@/lib/calendar");
-        const oldBooking = await verifyCancellationToken(rescheduleToken);
-        if (oldBooking) {
-          const consumed = await consumeCancellationToken(rescheduleToken);
-          if (consumed) {
-            try { await deleteCalendarEvent(oldBooking.record.eventId); } catch {}
-          }
-        }
-      }
-
-      const SESSION_LABELS: Record<string, string> = {
-        "1h": "Sesión individual · 1 hora",
-        "2h": "Sesión individual · 2 horas",
-      };
-      const sessionLabel = SESSION_LABELS[duration] ?? "Sesión individual";
-      const sessionType  = duration === "1h" ? "session1h" : "session2h";
-
-      let eventId:         string;
-      let zoomSessionName: string;
-      let cancelToken:     string;
-      let joinToken:       string;
-
-      try {
-        const result = await withRetry(
-          () => createCalendarEvent({
-            summary:      `${sessionLabel} — ${name}`,
-            description:  `Alumno: ${name} (${email})\nTipo: ${sessionLabel}\ngustavoai.dev`,
-            startIso,
-            endIso,
-            sessionType,
-            studentEmail: email,  // SEC-03
-          }),
-          3,
-          "createCalendarEvent"
-        );
-        eventId         = result.eventId;
-        zoomSessionName = result.zoomSessionName;
-        ({ cancelToken, joinToken } = await createBookingTokens({ eventId, email, name, sessionType, startsAt: startIso, endsAt: endIso }));
-      } catch (err) {
-        log("error", "Calendar event creation failed after retries", { service: "webhook", email, startIso, stripeSessionId, error: String(err) });
-        await writeDeadLetter(stripeSessionId, email, startIso, err);
-        return NextResponse.json({ received: true, warning: "Calendar creation failed — manual review required" });
-      }
-
-      await kv.set(idempotencyKey, { processedAt: new Date().toISOString() }, { ex: SINGLE_SESSION_IDEMPOTENCY_TTL });
-
-      const joinUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/sesion/${joinToken}`;
-
-      const delayMs = getSessionDurationWithGrace(sessionType) * 60 * 1_000;
-      void (async () => {
-        await new Promise(r => setTimeout(r, delayMs));
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/zoom/end`, {
-          method:  "POST",
-          headers: {
-            "X-Internal-Secret": process.env.INTERNAL_SECRET!,
-            "Content-Type":      "application/json",
-          },
-          body: JSON.stringify({ eventId }),
-        }).catch((e: unknown) =>
-          log("error", "Auto-terminate fetch failed", { service: "webhook", eventId, zoomSessionName, error: String(e) })
-        );
-      })();
-
-      try {
-        await Promise.all([
-          sendConfirmationEmail({ to: email, studentName: name, sessionLabel, startIso, endIso, joinToken, cancelToken, note: null, studentTz: null, sessionType }),
-          sendNewBookingNotificationEmail({ studentEmail: email, studentName: name, sessionLabel, startIso, endIso, joinUrl, note: null }),
-        ]);
-      } catch (emailErr) {
-        log("error", "Email send failed after booking", { service: "webhook", email, stripeSessionId, error: String(emailErr) });
-      }
-
-      log("info", "Single session booked", { service: "webhook", email, startIso });
+      const earlyReturn = await processSingleSession({
+        email,
+        name,
+        startIso:        session.metadata?.start_iso        ?? "",
+        endIso:          session.metadata?.end_iso          ?? "",
+        duration:        session.metadata?.session_duration ?? "1h",
+        rescheduleToken: session.metadata?.reschedule_token || null,
+        idempotencyKey:  stripeSessionId,
+        refundTarget:    { type: "payment_intent", id: session.payment_intent as string },
+      });
+      if (earlyReturn) return earlyReturn;
     }
   }
 
