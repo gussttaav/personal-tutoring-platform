@@ -42,7 +42,7 @@
 | 3.2 | Implement Redis repository adapters | ✅ Done | ARCH-11 | 5 adapter classes under src/infrastructure/redis/; thin wrappers; 88 tests pass |
 | 3.3 | Extract `CreditService` | ✅ Done | ARCH-12 | src/services/CreditService.ts; 4 routes migrated; 102 tests pass |
 | 3.4 | Extract `BookingService` | ✅ Done | ARCH-13 | 3 infra adapters (google/qstash/resend); IBookingRepository extended; 3 routes thinned; 23 tests; 125 total pass |
-| 3.5 | Extract `PaymentService` | ⬜ Not started | - | Webhook processing lives here |
+| 3.5 | Extract `PaymentService` | ✅ Done | ARCH-14 | StripeClient abstraction; checkout/webhook/session/admin routes thinned; single-session.ts deleted; 135 tests pass |
 | 3.6 | Extract `SessionService` | ✅ Done | ARCH-15 | ZoomClient abstraction; issueJoinToken/terminateSession/postChatMessage/getChatMessages; 3 routes migrated; 102 tests pass |
 | 3.7 | Reorganize folder structure | ⬜ Not started | - | Move files into domain/services/infrastructure |
 

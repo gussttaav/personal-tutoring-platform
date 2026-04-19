@@ -118,12 +118,6 @@ export class BookingService {
       if (oldRecord.sessionType === "pack") {
         await this.credits.restoreCredit(input.email);
       }
-    } else if (input.sessionType === "session1h" || input.sessionType === "session2h") {
-      // 3. Single sessions require a prior Stripe payment (reschedule token)
-      throw new DomainError(
-        "Las sesiones individuales requieren pago previo.",
-        "REQUIRES_PAYMENT",
-      );
     }
 
     // 4. Credit decrement for pack sessions

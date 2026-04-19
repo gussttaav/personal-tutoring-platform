@@ -22,6 +22,11 @@ export async function POST(req: NextRequest) {
   const parsed = BookSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Datos de reserva inválidos" }, { status: 400 });
 
+  const { sessionType, rescheduleToken } = parsed.data;
+  if ((sessionType === "session1h" || sessionType === "session2h") && !rescheduleToken) {
+    return NextResponse.json({ error: "Las sesiones individuales requieren pago previo." }, { status: 400 });
+  }
+
   try {
     const result = await bookingService.createBooking({
       email: session.user.email,

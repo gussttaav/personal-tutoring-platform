@@ -105,19 +105,8 @@ describe("BookingService.createBooking", () => {
     ).rejects.toThrow(SlotUnavailableError);
   });
 
-  it("throws DomainError(REQUIRES_PAYMENT) for session1h without reschedule token", async () => {
-    const service = makeService();
-    await expect(
-      service.createBooking({ ...basePackInput(), sessionType: "session1h" })
-    ).rejects.toMatchObject({ code: "REQUIRES_PAYMENT" });
-  });
-
-  it("throws DomainError(REQUIRES_PAYMENT) for session2h without reschedule token", async () => {
-    const service = makeService();
-    await expect(
-      service.createBooking({ ...basePackInput(), sessionType: "session2h" })
-    ).rejects.toMatchObject({ code: "REQUIRES_PAYMENT" });
-  });
+  // ARCH-14: REQUIRES_PAYMENT guard moved to /api/book route handler so that
+  // PaymentService can call createBooking() directly after Stripe payment.
 
   it("does not decrement credits for free15min sessions", async () => {
     const creditsRepo = mockCreditsRepo();
