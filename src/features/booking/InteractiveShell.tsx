@@ -28,7 +28,7 @@ import Chat from "@/components/Chat";
 import { PACK_SIZES, PACK_CONFIG } from "@/constants";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
-import type { PackSize } from "@/types";
+import type { PackSize } from "@/domain/types";
 import type { SelectedSlot } from "@/components/WeeklyCalendar";
 
 // ─── Skeleton atoms ────────────────────────────────────────────────────────────

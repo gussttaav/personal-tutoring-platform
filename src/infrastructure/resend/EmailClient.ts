@@ -1,6 +1,6 @@
 // ARCH-13: Thin wrapper around lib/email.ts so BookingService can depend on an
 // interface rather than a concrete module — enables testing with mocks.
-import * as emailLib from "@/lib/email";
+import * as emailLib from "./email-functions";
 import type {
   IEmailClient,
   ConfirmationEmailParams,

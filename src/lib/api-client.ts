@@ -16,7 +16,7 @@
  * definition had { ok: true; remaining: number } which was incorrect.
  */
 
-import type { BookResponse, CreditsResponse, PaymentIntentResponse } from "@/types";
+import type { BookResponse, CreditsResponse, PaymentIntentResponse } from "@/domain/types";
 import type { BookInput, CheckoutInput } from "@/lib/schemas";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {

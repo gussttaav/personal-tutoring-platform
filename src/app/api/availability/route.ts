@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAvailableSlots } from "@/lib/calendar";
+import { getAvailableSlots } from "@/infrastructure/google";
 import { SCHEDULE, DAY_SCHEDULES } from "@/lib/booking-config";
 import { availabilityRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";

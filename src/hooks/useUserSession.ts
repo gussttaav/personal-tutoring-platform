@@ -18,7 +18,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/lib/api-client";
-import type { UserSession } from "@/types";
+import type { UserSession } from "@/domain/types";
 
 // Minimum milliseconds between visibility-triggered credit re-fetches.
 // 30 seconds is long enough to avoid hammering the API on rapid tab

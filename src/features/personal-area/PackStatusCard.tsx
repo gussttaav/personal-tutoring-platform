@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { UserSession } from "@/types";
+import type { UserSession } from "@/domain/types";
 
 interface PackStatusCardProps {
   packSession: UserSession;

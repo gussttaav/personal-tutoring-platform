@@ -1,2 +1,2 @@
-export { CalendarClient } from "./CalendarClient";
-export type { ICalendarClient, CreateEventParams, CreateEventResult } from "./ICalendarClient";
+export { CalendarClient, getAvailableSlots } from "./CalendarClient";
+export type { ICalendarClient, CreateEventParams, CreateEventResult, TimeSlot } from "./ICalendarClient";

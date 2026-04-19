@@ -15,7 +15,7 @@ import type Stripe from "stripe";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type { PackSize } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
-import { getAvailableSlots } from "@/lib/calendar";
+import { getAvailableSlots } from "@/infrastructure/google";
 import { log } from "@/lib/logger";
 import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";

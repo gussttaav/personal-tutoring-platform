@@ -13,7 +13,7 @@
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
-import { kv } from "@/lib/redis";
+import { kv } from "@/infrastructure/redis/client";
 
 // AI chat: 20 messages per minute per IP
 export const chatRatelimit = new Ratelimit({

@@ -5,13 +5,10 @@
  * The API key is read server-side only; it is never exposed to the browser.
  */
 
+import type { GeminiMessage } from "./IGeminiClient";
+
 const GEMINI_MODEL = "gemini-2.5-flash";
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-
-export interface GeminiMessage {
-  role: "user" | "model";
-  parts: [{ text: string }];
-}
 
 interface GeminiRequest {
   system_instruction: { parts: [{ text: string }] };

@@ -1,7 +1,7 @@
 // ARCH-11 — Redis-backed implementation of IPaymentRepository.
 // Manages idempotency keys and dead-letter entries for failed bookings.
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
-import { kv } from "@/lib/redis";
+import { kv } from "@/infrastructure/redis/client";
 
 const IDEMPOTENCY_TTL    = 7 * 24 * 60 * 60;
 const FAILED_BOOKING_TTL = 30 * 24 * 60 * 60;

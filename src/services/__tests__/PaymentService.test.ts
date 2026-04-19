@@ -5,7 +5,7 @@ import type Stripe from "stripe";
 
 // Mock getAvailableSlots before importing PaymentService (direct module import)
 const mockGetAvailableSlots = jest.fn();
-jest.mock("@/lib/calendar", () => ({
+jest.mock("@/infrastructure/google", () => ({
   getAvailableSlots: (...args: unknown[]) => mockGetAvailableSlots(...args),
 }));
 

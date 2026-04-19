@@ -30,7 +30,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
-import type { GeminiMessage } from "@/lib/gemini";
+import type { GeminiMessage } from "@/infrastructure/gemini";
 import ChatAvatarIcon from "@/components/icons/ChatAvatarIcon";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

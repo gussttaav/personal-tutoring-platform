@@ -1,14 +1,16 @@
-// ARCH-12/15/13/14: Singleton service instances — import from here in route handlers.
+// ARCH-12/15/13/14/16: Singleton service instances — import from here in route handlers.
 import { CreditService }   from "./CreditService";
 import { SessionService }  from "./SessionService";
 import { BookingService }  from "./BookingService";
 import { PaymentService }  from "./PaymentService";
+import { ChatService }     from "./ChatService";
 import { creditsRepository, auditRepository, sessionRepository, bookingRepository, paymentRepository } from "@/infrastructure/redis";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient }  from "@/infrastructure/google";
 import { SchedulerClient } from "@/infrastructure/qstash";
 import { EmailClient }     from "@/infrastructure/resend";
 import { StripeClient }    from "@/infrastructure/stripe/StripeClient";
+import { GeminiClient }    from "@/infrastructure/gemini";
 
 export const creditService = new CreditService(creditsRepository, auditRepository);
 
@@ -30,3 +32,5 @@ export const paymentService = new PaymentService(
   bookingService,
   paymentRepository,
 );
+
+export const chatService = new ChatService(new GeminiClient());

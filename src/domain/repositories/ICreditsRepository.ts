@@ -1,12 +1,8 @@
 // ARCH-10: Credits repository interface.
-import type { PackSize } from "../types";
+// ARCH-16: CreditResult moved to domain/types.ts — re-exported here for backward compat.
+import type { CreditResult } from "../types";
 
-export interface CreditResult {
-  credits:   number;
-  name:      string;
-  packSize:  PackSize | null;
-  expiresAt?: string;
-}
+export type { CreditResult };
 
 export interface ICreditsRepository {
   /**

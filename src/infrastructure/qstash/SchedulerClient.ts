@@ -1,7 +1,7 @@
 // ARCH-13: Thin wrapper around QStash so BookingService can depend on an
 // interface rather than a concrete module — enables testing with mocks.
 // Skips scheduling when running locally (QStash cannot reach loopback addresses).
-import { qstash } from "@/lib/qstash";
+import { qstash } from "./client";
 import { log } from "@/lib/logger";
 import type { IScheduler, ScheduleParams } from "./IScheduler";
 

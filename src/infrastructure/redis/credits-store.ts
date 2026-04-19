@@ -21,9 +21,9 @@
  *             server-side in Redis and is atomic.
  */
 
-import type { CreditResult, PackSize } from "@/types";
+import type { CreditResult, PackSize, CreditRecord, AuditEntry } from "@/domain/types";
 import { PACK_SIZES, PACK_VALIDITY_MONTHS } from "@/constants";
-import { kv } from "@/lib/redis";
+import { kv } from "./client";
 import { log } from "@/lib/logger";
 
 // Maximum number of audit entries kept per student (newest first)
@@ -52,25 +52,6 @@ const DECREMENT_SCRIPT = `
   redis.call('SET', key, cjson.encode(record))
   return cjson.encode({ok=true, remaining=record.credits})
 `;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export interface CreditRecord {
-  email:           string;
-  name:            string;
-  credits:         number;
-  packLabel:       string;
-  packSize:        PackSize | null;
-  expiresAt:       string;       // ISO string
-  lastUpdated:     string;       // ISO string
-  stripeSessionId: string;       // last processed session — idempotency key
-}
-
-export interface AuditEntry {
-  action:  string;
-  ts:      string;
-  [key: string]: unknown;
-}
 
 // ─── Key helpers ──────────────────────────────────────────────────────────────
 

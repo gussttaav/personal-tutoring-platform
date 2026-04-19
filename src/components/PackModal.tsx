@@ -6,7 +6,7 @@ import { Spinner, Alert } from "@/components/ui";
 import { PACK_CONFIG } from "@/constants";
 import { api, ApiError } from "@/lib/api-client";
 import PaymentForm from "@/components/PaymentForm";
-import type { PackSize } from "@/types";
+import type { PackSize } from "@/domain/types";
 
 interface PackModalProps {
   packSize: PackSize;

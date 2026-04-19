@@ -8,16 +8,16 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { chat, type GeminiMessage } from "@/lib/gemini";
+import type { GeminiMessage } from "@/infrastructure/gemini";
 import { CHAT_SYSTEM_PROMPT } from "@/constants/chat-prompt";
 import { chatRatelimit, chatRatelimitAnon, chatRatelimitAnonDaily } from "@/lib/ratelimit";
+import { chatService } from "@/services";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
 import { auth } from "@/auth";
 
 const MAX_MESSAGE_LENGTH = 1000;
-const MAX_HISTORY_TURNS  = 10;
 
 function isValidHistory(value: unknown): value is GeminiMessage[] {
   if (!Array.isArray(value)) return false;
@@ -94,10 +94,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Historial de conversación inválido" }, { status: 400 });
   }
 
-  const trimmedHistory = history.slice(-MAX_HISTORY_TURNS);
-
   try {
-    const reply = await chat(CHAT_SYSTEM_PROMPT, trimmedHistory, message.trim());
+    const { reply } = await chatService.ask({
+      message: message.trim(),
+      history,
+      systemPrompt: CHAT_SYSTEM_PROMPT,
+    });
     return NextResponse.json({ reply });
   } catch (err) {
     log("error", "Gemini API error", { service: "chat", error: String(err) });

@@ -2,8 +2,8 @@
 // Uses kv directly; session TTL derived from getSessionDurationWithGrace.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ZoomSession } from "@/domain/types";
-import { kv } from "@/lib/redis";
-import { getSessionDurationWithGrace } from "@/lib/zoom";
+import { kv } from "@/infrastructure/redis/client";
+import { getSessionDurationWithGrace } from "@/infrastructure/zoom/jwt";
 
 export class RedisSessionRepository implements ISessionRepository {
   async createSession(eventId: string, session: ZoomSession): Promise<void> {

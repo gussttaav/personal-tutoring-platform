@@ -2,7 +2,7 @@
 // Wraps src/lib/kv.ts. Once all callers migrate through CreditService (Task 3.3),
 // kv.ts can be deleted and its logic inlined here.
 import type { ICreditsRepository, CreditResult } from "@/domain/repositories/ICreditsRepository";
-import * as kvModule from "@/lib/kv";
+import * as kvModule from "./credits-store";
 
 export class RedisCreditsRepository implements ICreditsRepository {
   async getCredits(email: string): Promise<CreditResult | null> {

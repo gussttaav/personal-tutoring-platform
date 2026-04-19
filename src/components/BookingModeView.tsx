@@ -25,7 +25,7 @@ import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import BookingSidebar from "@/components/booking/BookingSidebar";
-import type { StudentInfo } from "@/types";
+import type { StudentInfo } from "@/domain/types";
 
 type BookingPhase = "idle" | "selected" | "confirming" | "error";
 

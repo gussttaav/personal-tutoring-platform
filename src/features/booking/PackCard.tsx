@@ -1,6 +1,6 @@
 "use client";
 
-import type { PackSize } from "@/types";
+import type { PackSize } from "@/domain/types";
 import { PACK_CONFIG } from "@/constants";
 
 interface PackCardProps {

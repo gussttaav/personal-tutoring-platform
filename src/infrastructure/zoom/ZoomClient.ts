@@ -1,6 +1,6 @@
 // ARCH-15: Thin wrapper around lib/zoom.ts so SessionService can depend on an
 // interface rather than a concrete module — enables testing with mocks.
-import * as zoomLib from "@/lib/zoom";
+import * as zoomLib from "./jwt";
 
 export interface IZoomClient {
   generateSessionCredentials(params: { sessionName: string }): {

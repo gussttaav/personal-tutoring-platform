@@ -3,8 +3,8 @@
 // list reads directly from kv since no equivalent helper exists in kv.ts.
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
 import type { AuditEntry } from "@/domain/types";
-import * as kvModule from "@/lib/kv";
-import { kv } from "@/lib/redis";
+import * as kvModule from "./credits-store";
+import { kv } from "@/infrastructure/redis/client";
 
 const MAX_AUDIT_ENTRIES = 100;
 

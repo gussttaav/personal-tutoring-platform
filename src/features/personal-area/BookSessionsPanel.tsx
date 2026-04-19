@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { UserSession } from "@/types";
+import type { UserSession } from "@/domain/types";
 
 interface BookSessionsPanelProps {
   hasActivePack: boolean;

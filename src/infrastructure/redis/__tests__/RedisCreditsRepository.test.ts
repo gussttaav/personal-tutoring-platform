@@ -6,7 +6,7 @@ const mockDecrementCredit = jest.fn();
 const mockRestoreCredit   = jest.fn();
 const mockAppendAuditLog  = jest.fn();
 
-jest.mock("@/lib/kv", () => ({
+jest.mock("@/infrastructure/redis/credits-store", () => ({
   getCredits:        (...args: unknown[]) => mockGetCredits(...args),
   addOrUpdateStudent:(...args: unknown[]) => mockAddOrUpdate(...args),
   decrementCredit:   (...args: unknown[]) => mockDecrementCredit(...args),
@@ -14,7 +14,7 @@ jest.mock("@/lib/kv", () => ({
   appendAuditLog:    (...args: unknown[]) => mockAppendAuditLog(...args),
 }));
 
-jest.mock("@/lib/redis", () => ({ kv: {} }));
+jest.mock("@/infrastructure/redis/client", () => ({ kv: {} }));
 
 import { RedisCreditsRepository } from "../RedisCreditsRepository";
 

@@ -15,7 +15,7 @@
 
 import { redirect } from "next/navigation";
 import { toZonedTime, format } from "date-fns-tz";
-import { resolveJoinToken } from "@/lib/calendar";
+import { resolveJoinToken } from "@/infrastructure/redis/booking-tokens";
 import { auth } from "@/auth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";

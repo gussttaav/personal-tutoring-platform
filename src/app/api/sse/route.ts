@@ -23,8 +23,8 @@
 import { NextRequest } from "next/server";
 import Stripe from "stripe";
 import { auth } from "@/auth";
-import type { CreditRecord } from "@/lib/kv";
-import { kv } from "@/lib/redis";
+import type { CreditRecord } from "@/domain/types";
+import { kv } from "@/infrastructure/redis/client";
 
 // Maximum time to hold the SSE connection open (Vercel max is 25s on hobby,
 // use 24s to stay safely under). Upgrade to a longer timeout on Pro.

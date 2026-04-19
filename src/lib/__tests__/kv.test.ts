@@ -13,7 +13,7 @@ const mockKvLtrim = jest.fn();
 const mockKvDel  = jest.fn();
 const mockKvEval = jest.fn();
 
-jest.mock("@/lib/redis", () => ({
+jest.mock("@/infrastructure/redis/client", () => ({
   kv: {
     get:   (...args: unknown[]) => mockKvGet(...args),
     set:   (...args: unknown[]) => mockKvSet(...args),
@@ -30,8 +30,8 @@ import {
   decrementCredit,
   restoreCredit,
   appendAuditLog,
-} from "@/lib/kv";
-import type { CreditRecord } from "@/lib/kv";
+} from "@/infrastructure/redis/credits-store";
+import type { CreditRecord } from "@/domain/types";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

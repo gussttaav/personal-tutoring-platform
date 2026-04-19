@@ -31,7 +31,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import type { PackSize, StudentInfo } from "@/types";
+import type { PackSize, StudentInfo } from "@/domain/types";
 import type { SingleSessionType } from "@/components/SingleSessionBooking";
 import type { SelectedSlot } from "@/components/WeeklyCalendar";
 

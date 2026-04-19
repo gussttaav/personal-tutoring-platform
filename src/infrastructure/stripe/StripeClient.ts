@@ -1,7 +1,7 @@
 // ARCH-14: Thin typed wrapper over the Stripe SDK for dependency injection.
 // Allows PaymentService to be unit-tested with a fake implementation.
 import type Stripe from "stripe";
-import { stripe } from "@/lib/stripe";
+import { stripe } from "@/infrastructure/stripe/client-singleton";
 
 export interface IStripeClient {
   verifyWebhookSignature(body: string, sig: string, secret: string): Stripe.Event;

@@ -44,7 +44,7 @@
 | 3.4 | Extract `BookingService` | ✅ Done | ARCH-13 | 3 infra adapters (google/qstash/resend); IBookingRepository extended; 3 routes thinned; 23 tests; 125 total pass |
 | 3.5 | Extract `PaymentService` | ✅ Done | ARCH-14 | StripeClient abstraction; checkout/webhook/session/admin routes thinned; single-session.ts deleted; 135 tests pass |
 | 3.6 | Extract `SessionService` | ✅ Done | ARCH-15 | ZoomClient abstraction; issueJoinToken/terminateSession/postChatMessage/getChatMessages; 3 routes migrated; 102 tests pass |
-| 3.7 | Reorganize folder structure | ⬜ Not started | - | Move files into domain/services/infrastructure |
+| 3.7 | Reorganize folder structure | ✅ Done | ARCH-16 | lib/ adapters → infrastructure/; types → domain/; ChatService + GeminiClient added; src/types/ deleted; 133 tests pass |
 
 **Exit criteria:** Route handlers contain no business logic, services are unit-testable without HTTP mocking, all existing behavior preserved.
 

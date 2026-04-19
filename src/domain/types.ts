@@ -1,7 +1,6 @@
-// ARCH-10: Domain types — shared across services and repository interfaces.
+// ARCH-10/16: Domain types — shared across services, repository interfaces, and API contracts.
 // These live here so the domain layer has no external dependencies.
-// Source of truth for shapes; src/lib/kv.ts mirrors CreditRecord/AuditEntry locally
-// until 3.7 consolidates everything here.
+// ARCH-16: API response types consolidated from src/types/index.ts.
 
 export type PackSize = 5 | 10;
 
@@ -43,4 +42,71 @@ export interface AuditEntry {
   action: string;
   ts:     string;
   [key: string]: unknown;
+}
+
+export interface TimeSlot {
+  start: string;
+  end:   string;
+  label: string;
+}
+
+// ─── API response types (consolidated from src/types/index.ts) ────────────────
+
+export interface StudentInfo {
+  email:   string;
+  name:    string;
+  credits: number;
+}
+
+export interface CreditResult {
+  credits:    number;
+  name:       string;
+  packSize:   PackSize | null;
+  expiresAt?: string;
+}
+
+export interface ApiError {
+  error: string;
+}
+
+/**
+ * Response from POST /api/book
+ *
+ * QUAL-03 fix: the previous definition had { ok: true; remaining: number }
+ * which did not match what the route actually returns. The route returns
+ * eventId, zoomSessionName, zoomPasscode, cancelToken, and emailFailed —
+ * remaining is not included (the component does a separate /api/credits
+ * fetch for that).
+ */
+export interface BookResponse {
+  ok:              true;
+  eventId:         string;
+  zoomSessionName: string;
+  zoomPasscode:    string;
+  cancelToken:     string;
+  joinToken:       string;
+  emailFailed:     boolean;
+}
+
+export interface CreditsResponse {
+  credits:  number;
+  name:     string;
+  packSize: PackSize | null;
+}
+
+export interface CheckoutResponse {
+  url: string;
+}
+
+export interface PaymentIntentResponse {
+  clientSecret:    string;
+  paymentIntentId: string;
+}
+
+export interface UserSession {
+  email:                string;
+  name:                 string;
+  credits:              number;
+  packSize:             PackSize | null;
+  creditsConfirmedAt?:  string;
 }

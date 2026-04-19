@@ -1,5 +1,5 @@
 import { PACK_SIZES } from "@/constants";
-import type { PackSize } from "@/types";
+import type { PackSize } from "@/domain/types";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
