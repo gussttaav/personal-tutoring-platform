@@ -1,6 +1,7 @@
+// ARCH-12: Use CreditService instead of calling getCredits directly.
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { getCredits } from "@/lib/kv";
+import { creditService } from "@/services";
 import { sanitizeEmail } from "@/lib/validation";
 import { creditsRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
@@ -21,14 +22,14 @@ export async function GET(req: NextRequest) {
   const email = sanitizeEmail(session.user.email);
 
   try {
-    const result = await getCredits(email);
+    const result = await creditService.getBalance(email);
     return NextResponse.json({
       credits:  result?.credits ?? 0,
       name:     result?.name ?? "",
       packSize: result?.packSize ?? null,
     });
   } catch (err) {
-    log("error", "Error fetching credits from KV", { service: "credits", email, error: String(err) });
+    log("error", "Error fetching credits", { service: "credits", email, error: String(err) });
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }

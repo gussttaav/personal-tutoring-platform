@@ -16,18 +16,19 @@
  *
  * Applied fixes:
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
+ *   ARCH-15: sessionService.postChatMessage / getChatMessages replace direct kv calls.
+ *            Sender membership check moved from route into SessionService.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { kv } from "@/lib/redis";
+import { sessionService } from "@/services";
 import { chatRatelimit } from "@/lib/ratelimit";
-import type { ZoomSessionRecord } from "@/lib/zoom";
 import { isValidOrigin } from "@/lib/csrf";
+import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
 
-const CHAT_TTL_SEC   = 86_400; // 24 hours
-const MAX_WAIT_MS    = 20_000; // stay under Vercel 25 s limit
-const POLL_INTERVAL  = 1_500;
+const MAX_WAIT_MS   = 20_000; // stay under Vercel 25 s limit
+const POLL_INTERVAL = 1_500;
 
 export interface ChatMessage {
   id:           string; // `{eventId}:{index}`
@@ -67,36 +68,28 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (typeof body.eventId !== "string" || !body.eventId) throw new Error("missing eventId");
     if (typeof body.text   !== "string" || !body.text.trim()) throw new Error("missing text");
     eventId = body.eventId;
-    text    = body.text.trim().slice(0, 1000); // cap message length
+    text    = body.text.trim().slice(0, 1000);
   } catch {
     return NextResponse.json({ error: "eventId y text son requeridos" }, { status: 400 });
   }
 
-  // Verify the eventId corresponds to an active Zoom session
-  const zoomRecord = await kv.get<ZoomSessionRecord>(`zoom:session:${eventId}`);
-  if (!zoomRecord) {
-    return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 });
+  try {
+    await sessionService.postChatMessage({
+      eventId,
+      senderEmail: session.user.email,
+      senderName:  session.user.name ?? session.user.email,
+      text,
+    });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (err instanceof BookingNotFoundError) {
+      return NextResponse.json({ error: "Sesión no encontrada" }, { status: 404 });
+    }
+    if (err instanceof UnauthorizedError) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 403 });
+    }
+    throw err;
   }
-
-  const listKey = `chat:session:${eventId}`;
-
-  // Build message
-  const currentLen = await kv.llen(listKey);
-  const message: ChatMessage = {
-    id:          `${eventId}:${currentLen}`,
-    senderEmail: session.user.email,
-    senderName:  session.user.name ?? session.user.email,
-    text,
-    sentAt:      new Date().toISOString(),
-  };
-
-  // Push to list; set TTL on first message
-  await kv.rpush(listKey, JSON.stringify(message));
-  if (currentLen === 0) {
-    await kv.expire(listKey, CHAT_TTL_SEC);
-  }
-
-  return NextResponse.json({ ok: true });
 }
 
 // ─── GET /api/chat-session (SSE) ──────────────────────────────────────────────
@@ -118,7 +111,9 @@ export async function GET(req: NextRequest): Promise<Response> {
   let cursor = lastEventId ? parseInt(lastEventId, 10) : 0;
   if (isNaN(cursor) || cursor < 0) cursor = 0;
 
-  const listKey = `chat:session:${eventId}`;
+  // Capture userEmail outside the closure so TypeScript can see it's non-null
+  const userEmail = session.user.email;
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -131,16 +126,16 @@ export async function GET(req: NextRequest): Promise<Response> {
       sendRaw("event: connected\ndata: {}\n\n");
 
       // Flush any messages already in the list that the client hasn't seen
-      const initialLen = await kv.llen(listKey);
-      if (initialLen > cursor) {
-        const rawMsgs = await kv.lrange<string>(listKey, cursor, initialLen - 1);
-        for (let i = 0; i < rawMsgs.length; i++) {
-          const idx  = cursor + i;
-          const data = typeof rawMsgs[i] === "string" ? rawMsgs[i] : JSON.stringify(rawMsgs[i]);
-          sendRaw(`id: ${idx}\nevent: message\ndata: ${data}\n\n`);
-        }
-        cursor = initialLen;
+      const { messages: initialMsgs, nextCursor: afterInitial } =
+        await sessionService.getChatMessages({
+          eventId, userEmail, fromIndex: cursor,
+        });
+      for (let i = 0; i < initialMsgs.length; i++) {
+        const idx  = cursor + i;
+        const data = typeof initialMsgs[i] === "string" ? initialMsgs[i] : JSON.stringify(initialMsgs[i]);
+        sendRaw(`id: ${idx}\nevent: message\ndata: ${data}\n\n`);
       }
+      cursor = afterInitial;
 
       // Poll for new messages until MAX_WAIT_MS
       const deadline = Date.now() + MAX_WAIT_MS;
@@ -149,16 +144,15 @@ export async function GET(req: NextRequest): Promise<Response> {
         await new Promise((r) => setTimeout(r, POLL_INTERVAL));
 
         try {
-          const len = await kv.llen(listKey);
-          if (len > cursor) {
-            const rawMsgs = await kv.lrange<string>(listKey, cursor, len - 1);
-            for (let i = 0; i < rawMsgs.length; i++) {
-              const idx  = cursor + i;
-              const data = typeof rawMsgs[i] === "string" ? rawMsgs[i] : JSON.stringify(rawMsgs[i]);
-              sendRaw(`id: ${idx}\nevent: message\ndata: ${data}\n\n`);
-            }
-            cursor = len;
+          const { messages, nextCursor } = await sessionService.getChatMessages({
+            eventId, userEmail, fromIndex: cursor,
+          });
+          for (let i = 0; i < messages.length; i++) {
+            const idx  = cursor + i;
+            const data = typeof messages[i] === "string" ? messages[i] : JSON.stringify(messages[i]);
+            sendRaw(`id: ${idx}\nevent: message\ndata: ${data}\n\n`);
           }
+          cursor = nextCursor;
         } catch {
           // Redis read failed — keep trying
         }

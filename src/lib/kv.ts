@@ -203,7 +203,11 @@ export async function decrementCredit(
     [k],
     [Date.now(), expiresMs, new Date().toISOString()]
   );
-  const parsed = JSON.parse(result) as { ok: boolean; remaining: number };
+  // Upstash may return the Lua cjson result already deserialized (object) or
+  // as a raw JSON string, depending on the client version. Handle both.
+  const parsed = (typeof result === "string"
+    ? JSON.parse(result)
+    : result) as { ok: boolean; remaining: number };
 
   if (parsed.ok) {
     log("info", "Credit decremented", { service: "kv", email, remaining: parsed.remaining });

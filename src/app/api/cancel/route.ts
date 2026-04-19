@@ -4,6 +4,7 @@
  * Applied fixes:
  *   OBS-01: console.* replaced with structured log() calls.
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
+ *   ARCH-12: creditService.restoreCredit instead of direct kv call.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -12,7 +13,7 @@ import {
   consumeCancellationToken,
   deleteCalendarEvent,
 } from "@/lib/calendar";
-import { restoreCredit } from "@/lib/kv";
+import { creditService } from "@/services";
 import {
   sendCancellationConfirmationEmail,
   sendCancellationNotificationEmail,
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (isPack) {
-    await restoreCredit(record.email);
+    await creditService.restoreCredit(record.email);
   }
 
   const SESSION_LABELS: Record<string, string> = {

@@ -8,6 +8,7 @@
  *
  * Applied fixes:
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
+ *   ARCH-12: creditService.useCredit / restoreCredit / getBalance instead of direct kv calls.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -15,7 +16,8 @@ import { auth } from "@/auth";
 import { isValidOrigin } from "@/lib/csrf";
 import { BookSchema } from "@/lib/schemas";
 import { createCalendarEvent, createBookingTokens } from "@/lib/calendar";
-import { decrementCredit, getCredits } from "@/lib/kv";
+import { creditService } from "@/services";
+import { InsufficientCreditsError } from "@/domain/errors";
 import { sendConfirmationEmail, sendNewBookingNotificationEmail } from "@/lib/email";
 import { log } from "@/lib/logger";
 import { SCHEDULE } from "@/lib/booking-config";
@@ -86,8 +88,7 @@ export async function POST(req: NextRequest) {
     try { await deleteCalendarEvent(oldBooking.record.eventId); } catch {}
 
     if (oldBooking.record.sessionType === "pack") {
-      const { restoreCredit } = await import("@/lib/kv");
-      await restoreCredit(email);
+      await creditService.restoreCredit(email);
     }
   } else {
     // 3. Prevent free single sessions without a valid reschedule token
@@ -107,12 +108,16 @@ export async function POST(req: NextRequest) {
 
   let packSizeForToken: number | undefined;
   if (sessionType === "pack") {
-    const credit = await decrementCredit(email);
-    if (!credit.ok) {
-      return NextResponse.json({ error: "Sin créditos disponibles" }, { status: 400 });
+    try {
+      await creditService.useCredit(email);
+    } catch (err) {
+      if (err instanceof InsufficientCreditsError) {
+        return NextResponse.json({ error: err.message }, { status: 400 });
+      }
+      throw err;
     }
     // Fetch packSize to embed in the cancellation token so the personal area can label it correctly
-    const creditRecord = await getCredits(email);
+    const creditRecord = await creditService.getBalance(email);
     packSizeForToken = creditRecord?.packSize ?? undefined;
   }
 
@@ -142,8 +147,7 @@ export async function POST(req: NextRequest) {
     log("error", "Calendar event creation failed", { service: "book", email, startIso, error: String(err) });
 
     if (sessionType === "pack") {
-      const { restoreCredit } = await import("@/lib/kv");
-      await restoreCredit(email);
+      await creditService.restoreCredit(email);
     } else if (consumedToken) {
       // 4. Dead-Letter Fallback for failed single session reschedules
       const { kv } = await import("@/lib/redis");

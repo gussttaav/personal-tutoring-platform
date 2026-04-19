@@ -10,12 +10,14 @@
  * Mirrors the logic of /api/zoom/end but is triggered by a scheduled QStash
  * message instead of a setTimeout. /api/zoom/end is kept for one deploy
  * cycle and can be deleted once QStash is confirmed live in production.
+ *
+ * Applied fixes:
+ *   ARCH-15: SessionService.terminateSession replaces direct kv.get + kv.del calls.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
-import { kv } from "@/lib/redis";
-import type { ZoomSessionRecord } from "@/lib/zoom";
+import { sessionService } from "@/services";
 import { log } from "@/lib/logger";
 
 async function handler(req: NextRequest) {
@@ -28,15 +30,8 @@ async function handler(req: NextRequest) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const record = await kv.get<ZoomSessionRecord>(`zoom:session:${eventId}`);
-  if (!record) {
-    return NextResponse.json({ ok: true, note: "already expired" });
-  }
-
-  await kv.del(`zoom:session:${eventId}`);
-  log("info", "Zoom session terminated via QStash", {
-    service: "zoom-terminate", eventId, sessionName: record.sessionName,
-  });
+  await sessionService.terminateSession(eventId);
+  log("info", "Zoom session terminated via QStash", { service: "zoom-terminate", eventId });
 
   return NextResponse.json({ ok: true });
 }

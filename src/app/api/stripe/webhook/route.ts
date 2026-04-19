@@ -28,11 +28,11 @@
  *                     export HTTP method handlers.
  */
 
+// ARCH-12: creditService.addCredits instead of direct addOrUpdateStudent calls.
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { kv } from "@/lib/redis";
-import { addOrUpdateStudent } from "@/lib/kv";
+import { creditService } from "@/services";
 import { log } from "@/lib/logger";
 import { processSingleSession } from "@/lib/single-session";
 
@@ -55,7 +55,10 @@ async function handlePackPayment(
   }
 
   try {
-    await addOrUpdateStudent(email, name, packSize, `Pack ${packSize} clases`, intentId);
+    await creditService.addCredits({
+      email, name, amount: packSize,
+      packLabel: `Pack ${packSize} clases`, stripeSessionId: intentId,
+    });
     log("info", "Pack credits written", { service: "webhook", email, packSize });
   } catch (err) {
     log("error", "KV write failed for pack payment", { service: "webhook", email, intentId, error: String(err) });
@@ -131,7 +134,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ received: true, warning: "Missing pack_size" });
       }
       try {
-        await addOrUpdateStudent(email, name, packSize, `Pack ${packSize} clases`, stripeSessionId);
+        await creditService.addCredits({
+          email, name, amount: packSize,
+          packLabel: `Pack ${packSize} clases`, stripeSessionId,
+        });
         log("info", "Pack credits written", { service: "webhook", email, packSize });
       } catch (err) {
         log("error", "KV write failed for pack payment", { service: "webhook", email, stripeSessionId, error: String(err) });
