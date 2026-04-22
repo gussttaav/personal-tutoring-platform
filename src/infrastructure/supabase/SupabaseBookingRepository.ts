@@ -125,7 +125,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
     // matching row, so concurrent calls can't both succeed.
     const { data, error } = await supabase
       .from("bookings")
-      .update({ status: "cancelled", cancel_token: null })
+      .update({ status: "cancelled", cancel_token: null, join_token: null })
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .select("id")

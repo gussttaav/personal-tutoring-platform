@@ -3,6 +3,7 @@
 // that route handlers become thin parsers + dispatchers with no business logic.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
+import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { SessionType } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
@@ -66,6 +67,7 @@ export class BookingService {
   constructor(
     private readonly bookings:   IBookingRepository,
     private readonly credits:    CreditService,
+    private readonly sessions:   ISessionRepository,
     private readonly calendar:   ICalendarClient,
     private readonly zoom:       IZoomClient,
     private readonly scheduler:  IScheduler,
@@ -114,6 +116,7 @@ export class BookingService {
       consumedReschedule = true;
 
       try { await this.calendar.deleteEvent(oldRecord.eventId); } catch {}
+      try { await this.sessions.deleteByEventId(oldRecord.eventId); } catch {}
 
       if (oldRecord.sessionType === "pack") {
         await this.credits.restoreCredit(input.email);
@@ -128,14 +131,16 @@ export class BookingService {
       packSizeForToken = creditRecord?.packSize ?? undefined;
     }
 
-    // 5. Calendar event + Zoom session
+    // 5. Calendar event
     const sessionLabel = SESSION_LABELS[input.sessionType];
     let eventId:         string;
     let zoomSessionName: string;
     let zoomPasscode:    string;
+    // calResult kept in scope so createSession() can use zoomSessionId + durationMinutes below
+    let calResult: Awaited<ReturnType<typeof this.calendar.createEvent>>;
 
     try {
-      const result = await this.calendar.createEvent({
+      calResult = await this.calendar.createEvent({
         summary:     `${sessionLabel} — ${input.name}`,
         description: [
           `Alumno: ${input.name} (${input.email})`,
@@ -148,9 +153,9 @@ export class BookingService {
         sessionType:  input.sessionType,
         studentEmail: input.email,
       });
-      eventId         = result.eventId;
-      zoomSessionName = result.zoomSessionName;
-      zoomPasscode    = result.zoomPasscode;
+      eventId         = calResult.eventId;
+      zoomSessionName = calResult.zoomSessionName;
+      zoomPasscode    = calResult.zoomPasscode;
     } catch (err) {
       log("error", "Calendar event creation failed", {
         service: "BookingService", email: input.email, startIso: input.startIso, error: String(err),
@@ -178,7 +183,7 @@ export class BookingService {
       delaySeconds: this.zoom.getDurationWithGrace(input.sessionType) * 60,
     });
 
-    // 7. Booking tokens
+    // 7. Booking record
     const { cancelToken, joinToken } = await this.bookings.createBooking({
       eventId,
       email:       input.email,
@@ -189,7 +194,18 @@ export class BookingService {
       ...(packSizeForToken !== undefined ? { packSize: packSizeForToken } : {}),
     });
 
-    // 8. Confirmation + notification emails (with per-attempt retry)
+    // 8. Persist Zoom session via repository (after booking so Supabase FK resolves)
+    await this.sessions.createSession(eventId, {
+      sessionId:       calResult!.zoomSessionId,
+      sessionName:     calResult!.zoomSessionName,
+      sessionPasscode: calResult!.zoomPasscode,
+      startIso:        input.startIso,
+      durationMinutes: calResult!.durationMinutes,
+      sessionType:     input.sessionType,
+      studentEmail:    input.email,
+    });
+
+    // 9. Confirmation + notification emails (with per-attempt retry)
     const joinUrl = `${baseUrl}/sesion/${joinToken}`;
     const [confirmSent] = await Promise.all([
       this.sendWithRetry(
@@ -254,11 +270,18 @@ export class BookingService {
     const isPack   = record.sessionType === "pack";
     const isSingle = record.sessionType === "session1h" || record.sessionType === "session2h";
 
-    // 4. Delete calendar event (best-effort)
+    // 4. Delete calendar event + Zoom session (best-effort)
     try {
       await this.calendar.deleteEvent(record.eventId);
     } catch (err) {
       log("warn", "Could not delete calendar event", {
+        service: "BookingService", eventId: record.eventId, error: String(err),
+      });
+    }
+    try {
+      await this.sessions.deleteByEventId(record.eventId);
+    } catch (err) {
+      log("warn", "Could not delete Zoom session record", {
         service: "BookingService", eventId: record.eventId, error: String(err),
       });
     }

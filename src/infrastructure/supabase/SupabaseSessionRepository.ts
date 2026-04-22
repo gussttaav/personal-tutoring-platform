@@ -29,11 +29,12 @@ export class SupabaseSessionRepository implements ISessionRepository {
   }
 
   async findByEventId(eventId: string): Promise<ZoomSession | null> {
-    // Step 1: find booking by calendar_event_id
+    // Step 1: find booking by calendar_event_id — only confirmed bookings are joinable
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
       .select("id, session_type, starts_at, user_id")
       .eq("calendar_event_id", eventId)
+      .eq("status", "confirmed")
       .maybeSingle();
 
     if (bookingErr || !booking) return null;

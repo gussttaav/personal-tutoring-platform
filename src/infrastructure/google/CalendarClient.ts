@@ -1,15 +1,11 @@
 // ARCH-13: Google Calendar client — implements ICalendarClient.
 // ARCH-16: Absorbed full logic from lib/calendar.ts (was a thin wrapper).
+// DB-05b: Removed direct kv.set() — Zoom session now stored via ISessionRepository in BookingService.
 import { google } from "googleapis";
 import { toZonedTime, fromZonedTime, format } from "date-fns-tz";
-import { kv } from "@/infrastructure/redis/client";
 import crypto from "crypto";
 import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
-import {
-  generateZoomSessionCredentials,
-  getSessionDurationWithGrace,
-} from "@/infrastructure/zoom/jwt";
-import type { ZoomSessionRecord } from "@/infrastructure/zoom/jwt";
+import { generateZoomSessionCredentials } from "@/infrastructure/zoom/jwt";
 import type {
   ICalendarClient,
   CreateEventParams,
@@ -173,21 +169,13 @@ export class CalendarClient implements ICalendarClient {
     const { sessionId, sessionName: zoomSessionName, sessionPasscode } =
       generateZoomSessionCredentials({ sessionName });
 
-    const durationWithGrace = getSessionDurationWithGrace(params.sessionType);
-    const zoomRecord: ZoomSessionRecord = {
-      sessionId,
-      sessionName:     zoomSessionName,
-      sessionPasscode,
-      startIso:        params.startIso,
+    return {
+      eventId,
+      zoomSessionName,
+      zoomPasscode:    sessionPasscode,
+      zoomSessionId:   sessionId,
       durationMinutes,
-      sessionType:     params.sessionType,
-      studentEmail:    params.studentEmail,
     };
-    await kv.set(`zoom:session:${eventId}`, zoomRecord, {
-      ex: durationWithGrace * 60 + 86_400,
-    });
-
-    return { eventId, zoomSessionName, zoomPasscode: sessionPasscode };
   }
 
   async deleteEvent(eventId: string): Promise<void> {

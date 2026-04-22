@@ -1,6 +1,7 @@
 // ARCH-13: Unit tests for BookingService.
 import { BookingService } from "../BookingService";
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
+import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IScheduler } from "@/infrastructure/qstash";
@@ -41,8 +42,20 @@ const makeCreditService = (credits?: Partial<jest.Mocked<ICreditsRepository>>) =
   return new CreditService(repo, mockAuditRepo());
 };
 
+const mockSessions = (): jest.Mocked<ISessionRepository> => ({
+  createSession:      jest.fn().mockResolvedValue(undefined),
+  findByEventId:      jest.fn().mockResolvedValue(null),
+  deleteByEventId:    jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:  jest.fn().mockResolvedValue(0),
+  listChatMessages:   jest.fn().mockResolvedValue([]),
+  countChatMessages:  jest.fn().mockResolvedValue(0),
+});
+
 const mockCalendar = (): jest.Mocked<ICalendarClient> => ({
-  createEvent: jest.fn().mockResolvedValue({ eventId: "evt1", zoomSessionName: "session-abc", zoomPasscode: "pass123" }),
+  createEvent: jest.fn().mockResolvedValue({
+    eventId: "evt1", zoomSessionName: "session-abc", zoomPasscode: "pass123",
+    zoomSessionId: "zsid1", durationMinutes: 60,
+  }),
   deleteEvent: jest.fn().mockResolvedValue(undefined),
 });
 
@@ -64,16 +77,18 @@ const mockEmail = (): jest.Mocked<IEmailClient> => ({
 });
 
 const makeService = (overrides: {
-  bookings?: jest.Mocked<IBookingRepository>;
-  credits?:  CreditService;
-  calendar?: jest.Mocked<ICalendarClient>;
-  zoom?:     jest.Mocked<IZoomClient>;
+  bookings?:  jest.Mocked<IBookingRepository>;
+  credits?:   CreditService;
+  sessions?:  jest.Mocked<ISessionRepository>;
+  calendar?:  jest.Mocked<ICalendarClient>;
+  zoom?:      jest.Mocked<IZoomClient>;
   scheduler?: jest.Mocked<IScheduler>;
-  email?:    jest.Mocked<IEmailClient>;
+  email?:     jest.Mocked<IEmailClient>;
 } = {}) =>
   new BookingService(
     overrides.bookings  ?? mockBookings(),
     overrides.credits   ?? makeCreditService(),
+    overrides.sessions  ?? mockSessions(),
     overrides.calendar  ?? mockCalendar(),
     overrides.zoom      ?? mockZoom(),
     overrides.scheduler ?? mockScheduler(),
@@ -227,6 +242,19 @@ describe("BookingService.createBooking (reschedule)", () => {
     ).rejects.toMatchObject({ code: "SESSION_TYPE_MISMATCH" });
   });
 
+  it("deletes the old Zoom session record on reschedule", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5) })
+    );
+    const sessions = mockSessions();
+    const service = makeService({ bookings, sessions });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("old-evt");
+  });
+
   it("records dead-letter when calendar fails during non-pack rescheduling", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
@@ -282,6 +310,19 @@ describe("BookingService.cancelByToken", () => {
     await expect(service.cancelByToken("tkn")).rejects.toMatchObject({
       code: "CANCEL_TOKEN_CONSUMED",
     });
+  });
+
+  it("deletes the Zoom session record on cancellation", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ eventId: "evt-cancel-test", startsAt: hoursFromNow(5) })
+    );
+    const sessions = mockSessions();
+    const service = makeService({ bookings, sessions });
+
+    await service.cancelByToken("tkn");
+
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-cancel-test");
   });
 
   it("restores credit when cancelling a pack session", async () => {

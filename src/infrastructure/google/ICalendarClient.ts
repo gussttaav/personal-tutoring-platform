@@ -21,6 +21,8 @@ export interface CreateEventResult {
   eventId:         string;
   zoomSessionName: string;
   zoomPasscode:    string;
+  zoomSessionId:   string;
+  durationMinutes: number;
 }
 
 export interface ICalendarClient {

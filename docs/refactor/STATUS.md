@@ -58,7 +58,7 @@
 | 4.2 | Supabase repository implementations | ✅ Done | DB-02 | 5 repos + client + types; migrations 0002+0003; 26 integration tests pass; 159 total |
 | 4.3 | Dual-write phase (Redis + Supabase) | ✅ Done | DB-03 | 5 dual-write wrappers; ENABLE_DUAL_WRITE flag; startup check; 26 new tests; 185 total pass |
 | 4.4 | Reconciliation script | ✅ Done | DB-04 | scripts/backfill.ts + scripts/reconcile.ts; tsx added; credits/bookings/audit covered |
-| 4.5 | Flip primary to Supabase | ⬜ Not started | - | After reconciliation is clean |
+| 4.5 | Flip primary to Supabase | ✅ Done | DB-05 | services/index.ts: 5 DualWrite args swapped; CalendarClient kv.set() → BookingService sessions.createSession(); build + 185 tests pass |
 | 4.6 | Integration test suite | ⬜ Not started | - | Booking flow + payment flow |
 | 4.7 | E2E test suite (Playwright) | ⬜ Not started | - | Critical user journeys |
 | 4.8 | Sentry integration | ⬜ Not started | - | Error tracking + source maps |
