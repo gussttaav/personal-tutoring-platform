@@ -333,7 +333,7 @@ export class BookingService {
     }));
   }
 
-  async getJoinInfo(token: string): Promise<{ eventId: string; email: string } | null> {
+  async getJoinInfo(token: string): Promise<{ eventId: string; email: string; name: string; sessionType: string; startsAt: string } | null> {
     return this.bookings.findByJoinToken(token);
   }
 

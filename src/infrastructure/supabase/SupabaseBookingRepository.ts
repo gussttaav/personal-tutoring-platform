@@ -92,12 +92,12 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
   async findByJoinToken(
     token: string,
-  ): Promise<{ eventId: string; email: string } | null> {
+  ): Promise<{ eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string } | null> {
     if (!HEX64.test(token)) return null;
 
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("calendar_event_id, user_id")
+      .select("calendar_event_id, user_id, session_type, starts_at")
       .eq("join_token", token)
       .eq("status", "confirmed")
       .maybeSingle();
@@ -106,15 +106,18 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data: user, error: userErr } = await supabase
       .from("users")
-      .select("email")
+      .select("email, name")
       .eq("id", booking.user_id)
       .single();
 
     if (userErr || !user) return null;
 
     return {
-      eventId: (booking.calendar_event_id ?? "") as string,
-      email:   user.email,
+      eventId:     (booking.calendar_event_id ?? "") as string,
+      email:       user.email,
+      name:        user.name,
+      sessionType: booking.session_type as SessionType,
+      startsAt:    new Date(booking.starts_at).toISOString(),
     };
   }
 

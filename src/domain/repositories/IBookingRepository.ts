@@ -19,11 +19,17 @@ export interface IBookingRepository {
   findByCancelToken(token: string): Promise<BookingRecord | null>;
 
   /**
-   * Looks up a booking by its join token. Returns the eventId and student email
-   * needed to gate Zoom session access. Returns null if the token is not found
-   * or has expired.
+   * Looks up a booking by its join token. Returns the fields needed to render
+   * the pre-join page and gate Zoom session access. Returns null if the token
+   * is not found or has expired.
    */
-  findByJoinToken(token: string): Promise<{ eventId: string; email: string } | null>;
+  findByJoinToken(token: string): Promise<{
+    eventId:     string;
+    email:       string;
+    name:        string;
+    sessionType: SessionType;
+    startsAt:    string;
+  } | null>;
 
   /**
    * Atomically marks a cancel token as consumed. Returns false if a concurrent

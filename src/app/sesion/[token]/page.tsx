@@ -15,7 +15,7 @@
 
 import { redirect } from "next/navigation";
 import { toZonedTime, format } from "date-fns-tz";
-import { resolveJoinToken } from "@/infrastructure/redis/booking-tokens";
+import { bookingService } from "@/services";
 import { auth } from "@/auth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -43,7 +43,7 @@ export default async function SesionPage({
 }) {
   const { token } = await params;
 
-  const record = await resolveJoinToken(token);
+  const record = await bookingService.getJoinInfo(token);
   if (!record) redirect("/");
 
   const sessionLabel = SESSION_LABELS[record.sessionType] ?? record.sessionType;

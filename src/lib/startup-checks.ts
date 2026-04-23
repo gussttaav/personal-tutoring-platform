@@ -57,6 +57,10 @@ const REQUIRED_ENV_VARS = [
 
   // Admin access (comma-separated emails — REL-03)
   "ADMIN_EMAILS",
+
+  // Supabase (primary data store)
+  "SUPABASE_URL",
+  "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
 export function validateEnv(): void {
@@ -92,17 +96,6 @@ export function validateEnv(): void {
       "[startup] CANCEL_SECRET is too short (minimum 32 characters). " +
       "Generate one with: openssl rand -hex 32"
     );
-  }
-
-  // DB-03: When dual-write is enabled, Supabase credentials are required.
-  if (process.env.ENABLE_DUAL_WRITE === "true") {
-    const dbVars = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
-    const missingDb = dbVars.filter((k) => !process.env[k]);
-    if (missingDb.length) {
-      throw new Error(
-        `[startup] ENABLE_DUAL_WRITE=true but missing: ${missingDb.join(", ")}`
-      );
-    }
   }
 
   // TEST-02: E2E_MODE must never be enabled in production — it exposes an

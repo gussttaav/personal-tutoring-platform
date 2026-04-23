@@ -6,7 +6,7 @@ import { randomUUID } from "crypto";
 export class InMemoryBookingRepository implements IBookingRepository {
   private bookings     = new Map<string, BookingRecord>();
   private cancelTokens = new Map<string, BookingRecord>();
-  private joinTokens   = new Map<string, { eventId: string; email: string }>();
+  private joinTokens   = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
   private locks        = new Set<string>();
 
   async createBooking(
@@ -18,7 +18,13 @@ export class InMemoryBookingRepository implements IBookingRepository {
 
     this.bookings.set(record.eventId, full);
     this.cancelTokens.set(cancelToken, full);
-    this.joinTokens.set(joinToken, { eventId: record.eventId, email: record.email });
+    this.joinTokens.set(joinToken, {
+      eventId:     record.eventId,
+      email:       record.email,
+      name:        record.name,
+      sessionType: record.sessionType,
+      startsAt:    record.startsAt,
+    });
 
     return { cancelToken, joinToken };
   }
@@ -27,7 +33,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
     return this.cancelTokens.get(token) ?? null;
   }
 
-  async findByJoinToken(token: string): Promise<{ eventId: string; email: string } | null> {
+  async findByJoinToken(token: string): Promise<{ eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string } | null> {
     return this.joinTokens.get(token) ?? null;
   }
 
