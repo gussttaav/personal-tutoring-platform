@@ -12,6 +12,7 @@ import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useUserSession } from "@/hooks/useUserSession";
+import { signInWithPopup } from "@/lib/auth-popup";
 
 function openPackBooking() {
   window.dispatchEvent(new CustomEvent("open-pack-booking"));
@@ -24,9 +25,15 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const { packSession } = useUserSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const handleSignIn = async () => {
+    const result = await signInWithPopup("/");
+    if (result.blocked) { signIn("google"); return; }
+    if (result.success) await update();
+  };
 
   const isLoaded   = status !== "loading";
   const isSignedIn = !!session?.user;
@@ -209,7 +216,7 @@ export default function Navbar() {
               </div>
             ) : (
               <button
-                onClick={() => signIn("google")}
+                onClick={handleSignIn}
                 className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
                 style={{ border: "1px solid rgba(60,74,66,0.5)", background: "transparent", color: "#e5e1e4" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#353437")}
@@ -377,7 +384,7 @@ export default function Navbar() {
               {/* Sign in */}
               <div className="px-4">
                 <button
-                  onClick={() => { setMobileOpen(false); signIn("google"); }}
+                  onClick={() => { setMobileOpen(false); handleSignIn(); }}
                   className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                   style={{ border: "1px solid rgba(60,74,66,0.5)", background: "transparent", color: "#e5e1e4", cursor: "pointer", fontFamily: "inherit" }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.background = "#353437")}

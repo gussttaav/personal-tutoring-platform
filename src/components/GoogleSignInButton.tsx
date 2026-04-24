@@ -1,6 +1,9 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { signInWithPopup } from "@/lib/auth-popup";
 
 interface GoogleSignInButtonProps {
   callbackUrl?: string;
@@ -13,11 +16,38 @@ export default function GoogleSignInButton({
   label = "Continuar con Google",
   fullWidth = true,
 }: GoogleSignInButtonProps) {
+  const { update } = useSession();
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+
+  const handleClick = async () => {
+    if (pending) return;
+    setPending(true);
+    try {
+      const result = await signInWithPopup(callbackUrl);
+      if (result.blocked) {
+        // Popup was blocked — fall back to same-tab redirect
+        signIn("google", { callbackUrl });
+        return;
+      }
+      if (result.success) {
+        await update();
+        if (callbackUrl !== "/") {
+          router.push(callbackUrl);
+        }
+      }
+      // result.success === false && !blocked → user closed popup, do nothing
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
     <button
-      onClick={() => signIn("google", { callbackUrl })}
+      onClick={handleClick}
+      disabled={pending}
       className="google-signin-btn"
-      style={{ width: fullWidth ? "100%" : undefined }}
+      style={{ width: fullWidth ? "100%" : undefined, opacity: pending ? 0.7 : 1 }}
     >
       {/* Google "G" logo */}
       <svg

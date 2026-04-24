@@ -21,17 +21,17 @@ export interface DaySchedule {
  *
  * Monday–Friday:    09:00–13:30
  * Mon & Wed:        +15:30–17:30
- * Tue, Thu, Fri:    +15:30–16:30
+ * Tue, Thu, Fri:    +15:30–18:30
  * Saturday:         11:00–15:00
  * Sunday:           11:00–15:00
  */
 export const DAY_SCHEDULES: Record<number, DaySchedule | null> = {
   0: { morningEnd: 15.25, afternoonStart: null, afternoonEnd: null  }, // Sun  11–15
   1: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 17.5 }, // Mon  09–13:30 + 15:30–17:30
-  2: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 16.5 }, // Tue  09–13:30 + 15:30–16:30
+  2: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 18.5 }, // Tue  09–13:30 + 15:30–18:30
   3: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 17.5 }, // Wed  09–13:30 + 15:30–17:30
-  4: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 16.5 }, // Thu  09–13:30 + 15:30–16:30
-  5: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 16.5 }, // Fri  09–13:30 + 15:30–16:30
+  4: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 18.5 }, // Thu  09–13:30 + 15:30–18:30
+  5: { morningEnd: 13.75, afternoonStart: 15.5, afternoonEnd: 18.5 }, // Fri  09–13:30 + 15:30–18:30
   6: { morningEnd: 15.25, afternoonStart: null, afternoonEnd: null  }, // Sat  11–15
 };
 
