@@ -193,6 +193,22 @@ describe("PaymentService.processWebhookEvent — single session", () => {
     expect(bookings.createBooking).toHaveBeenCalled();
   });
 
+  it("books a single session with a half-hour start time (:30)", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.markProcessed.mockResolvedValue(undefined);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:30:00.000Z" }]);
+
+    await service.processWebhookEvent(fakeSingleEvent("pi_single_456", "2099-12-01T10:30:00.000Z"));
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(expect.objectContaining({
+      email:    "student@test.com",
+      startIso: "2099-12-01T10:30:00.000Z",
+    }));
+    expect(mockGetAvailableSlots).toHaveBeenCalledWith("2099-12-01", 60, 30);
+  });
+
   it("writes dead-letter when booking fails", async () => {
     const { service, paymentRepo, bookings } = makeService();
     paymentRepo.isProcessed.mockResolvedValue(false);

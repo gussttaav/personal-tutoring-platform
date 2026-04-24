@@ -65,6 +65,7 @@ function formatSlotLabel(
 export async function getAvailableSlots(
   dateStr: string,
   durationMinutes: number,
+  stepMinutes = durationMinutes,
 ): Promise<TimeSlot[]> {
   const dow      = new Date(`${dateStr}T12:00:00Z`).getDay();
   const daySched = DAY_SCHEDULES[dow];
@@ -93,8 +94,6 @@ export async function getAvailableSlots(
   const busyBlocks  = freebusyRes.data.calendars?.[CALENDAR_ID]?.busy ?? [];
   const slots: TimeSlot[] = [];
   const minBookingTime = new Date(Date.now() + SCHEDULE.minNoticeHours * 3_600_000);
-
-  const stepMinutes = durationMinutes;
 
   for (const window of windows) {
     let cursorMin = window.startMin;
@@ -134,8 +133,9 @@ export class CalendarClient implements ICalendarClient {
   async getAvailableSlots(
     dateStr: string,
     durationMinutes: number,
+    stepMinutes?: number,
   ): Promise<TimeSlot[]> {
-    return getAvailableSlots(dateStr, durationMinutes);
+    return getAvailableSlots(dateStr, durationMinutes, stepMinutes);
   }
 
   async createEvent(params: CreateEventParams): Promise<CreateEventResult> {

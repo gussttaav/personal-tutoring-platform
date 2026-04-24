@@ -26,7 +26,7 @@ export interface CreateEventResult {
 }
 
 export interface ICalendarClient {
-  getAvailableSlots(dateStr: string, durationMinutes: number): Promise<TimeSlot[]>;
+  getAvailableSlots(dateStr: string, durationMinutes: number, stepMinutes?: number): Promise<TimeSlot[]>;
   createEvent(params: CreateEventParams): Promise<CreateEventResult>;
   deleteEvent(eventId: string): Promise<void>;
 }
