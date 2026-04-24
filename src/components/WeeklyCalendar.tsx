@@ -20,7 +20,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { SCHEDULE, DAY_SCHEDULES } from "@/lib/booking-config";
+import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -95,6 +95,15 @@ function formatWeekHeading(weekStart: Date): string {
   return `Semana del ${day} de ${month.charAt(0).toUpperCase() + month.slice(1)}`;
 }
 
+/** Returns the current wall-clock minutes (0–1439) in the schedule's timezone. */
+function getMadridMinutes(): number {
+  const str = new Date().toLocaleTimeString("es-ES", {
+    timeZone: SCHEDULE.timezone, hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  const [h = "0", m = "0"] = str.split(":");
+  return parseInt(h, 10) * 60 + parseInt(m, 10);
+}
+
 /** Build "HH:MM" time rows for the grid. */
 function buildTimeRows(atomicMins: 15 | 30): string[] {
   const rows: string[] = [];
@@ -105,6 +114,25 @@ function buildTimeRows(atomicMins: 15 | 30): string[] {
     }
   }
   return rows;
+}
+
+/** Returns true if a time row falls within this day's scheduled working windows. */
+function isWithinWorkingHours(dow: number, hhmm: string, atomicMins: 15 | 30): boolean {
+  const sched = DAY_SCHEDULES[dow];
+  if (!sched) return false;
+  const [hStr, mStr] = hhmm.split(":");
+  const totalMin     = parseInt(hStr!) * 60 + parseInt(mStr!);
+  const startMin     = dayStartHour(dow) * 60;
+  // Mirrors CalendarClient: MORNING_END_MINUTES = morningEnd * 60 - 15
+  // A valid atomic slot at totalMin requires: totalMin + atomicMins ≤ MORNING_END_MINUTES
+  const morningEndMin = sched.morningEnd * 60 - 15 - atomicMins;
+  if (totalMin >= startMin && totalMin <= morningEndMin) return true;
+  if (sched.afternoonStart !== null && sched.afternoonEnd !== null) {
+    const afStart = sched.afternoonStart * 60;
+    const afEnd   = sched.afternoonEnd * 60 - atomicMins;
+    if (totalMin >= afStart && totalMin <= afEnd) return true;
+  }
+  return false;
 }
 
 /** Map each slot's display-timezone start "HH:MM" → ApiSlot. */
@@ -203,6 +231,7 @@ export default function WeeklyCalendar({
   const [invalidKey,    setInvalidKey]    = useState<string | null>(null);
   const [isMobile,      setIsMobile]      = useState(false);
   const [userTz,        setUserTz]        = useState<string>(SCHEDULE.timezone);
+  const [nowMadridMin,  setNowMadridMin]  = useState<number>(() => getMadridMinutes());
   const initialFocusedHandled             = useRef(false);
 
   const maxWeekOffset = SCHEDULE.bookingWindowWeeks - 1;
@@ -228,6 +257,12 @@ export default function WeeklyCalendar({
   // Detect user timezone
   useEffect(() => {
     try { setUserTz(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch { /* ignore */ }
+  }, []);
+
+  // Update current Madrid time every minute for the "now" line and past-cell logic
+  useEffect(() => {
+    const id = setInterval(() => setNowMadridMin(getMadridMinutes()), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   // Clear focused block when navigating weeks
@@ -353,6 +388,12 @@ export default function WeeklyCalendar({
   const ROW_H    = isMobile ? 40 : 48;
   const HEADER_H = isMobile ? 52 : 64;
 
+  // Current-time indicator line — only shown on the current week and within grid range
+  const GRID_START_MIN = 9 * 60;   // 09:00
+  const GRID_END_MIN   = 19 * 60;  // last slot ends at 19:00
+  const showTimeLine   = weekOffset === 0 && nowMadridMin >= GRID_START_MIN && nowMadridMin < GRID_END_MIN;
+  const timeLineTop    = HEADER_H + ((nowMadridMin - GRID_START_MIN) / atomicMinutes) * ROW_H;
+
   return (
     <>
       <div>
@@ -434,8 +475,35 @@ export default function WeeklyCalendar({
               columnGap:           1,
               background:          "rgba(255,255,255,0.05)",
               minWidth:            480,
+              position:            "relative",
             }}
           >
+            {/* ── Current-time indicator ── */}
+            {showTimeLine && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position:      "absolute",
+                  left:          53,
+                  right:         0,
+                  top:           timeLineTop,
+                  height:        1,
+                  background:    "rgba(78,222,163,0.5)",
+                  zIndex:        3,
+                  pointerEvents: "none",
+                }}
+              >
+                <div style={{
+                  position:     "absolute",
+                  left:         -4,
+                  top:          -3,
+                  width:        7,
+                  height:       7,
+                  borderRadius: "50%",
+                  background:   "#4edea3",
+                }} />
+              </div>
+            )}
             {/* ── Sticky time column ── */}
             <div style={{
               background:  "#111113",
@@ -453,9 +521,10 @@ export default function WeeklyCalendar({
                   style={{
                     height:         ROW_H,
                     display:        "flex",
-                    alignItems:     "center",
+                    alignItems:     "flex-start",
                     justifyContent: "flex-end",
                     paddingRight:   8,
+                    paddingTop:     4,
                     borderTop:      i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined,
                   }}
                 >
@@ -579,6 +648,20 @@ export default function WeeklyCalendar({
                     const cellKey   = `${key}-${hhmm}`;
                     const isInvalid = invalidKey === cellKey;
 
+                    // For today: classify rows as past (empty) or within the notice window (unavailable)
+                    const [rowH, rowM] = hhmm.split(":").map(Number);
+                    const rowMin = (rowH ?? 0) * 60 + (rowM ?? 0);
+                    const isPastRow   = isToday && rowMin + atomicMinutes <= nowMadridMin;
+                    const isNoticeRow = isToday && !isPastRow && rowMin < nowMadridMin + SCHEDULE.minNoticeHours * 60;
+
+                    // Three-state classification (notice rows always show as unavailable)
+                    const inWorkingHours = isWithinWorkingHours(date.getDay(), hhmm, atomicMinutes);
+                    const cellState: "available" | "booked" | "unavailable" =
+                      isNoticeRow ? "unavailable"
+                      : slot      ? "available"
+                      : inWorkingHours ? "booked"
+                      : "unavailable";
+
                     // ── Confirmed selection state ──
                     const slotMs    = slot ? new Date(slot.start).getTime() : null;
                     const inSel     = !!(slotMs !== null && selFirstMs !== null && selEndMs !== null
@@ -600,26 +683,34 @@ export default function WeeklyCalendar({
                     const isFocusTop    = inFocus && hhmm === focusedFirstKey;
                     const isFocusBot    = inFocus && hhmm === focusedLastKey;
 
+                    if (isPastRow) {
+                      return (
+                        <div key={hhmm} style={{
+                          height:    ROW_H,
+                          borderTop: i > 0 ? "1px solid rgba(255,255,255,0.03)" : undefined,
+                        }} />
+                      );
+                    }
+
                     return (
                       <div key={hhmm} style={{
                         height:    ROW_H,
                         padding:   "3px 3px",
                         borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined,
                       }}>
-                        {slot ? (
-                          <SlotCell
-                            timeLabel={isMobile ? null : hhmm}
-                            inSel={inSel}
-                            isSelTop={isSelTop}
-                            isSelBot={isSelBot}
-                            inFocus={inFocus}
-                            isFocusAnchor={isFocusAnchor}
-                            isFocusTop={isFocusTop}
-                            isFocusBot={isFocusBot}
-                            isInvalid={isInvalid}
-                            onClick={() => handleCellClick(date, hhmm)}
-                          />
-                        ) : null}
+                        <SlotCell
+                          state={cellState}
+                          timeLabel={isMobile ? null : hhmm}
+                          inSel={inSel}
+                          isSelTop={isSelTop}
+                          isSelBot={isSelBot}
+                          inFocus={inFocus}
+                          isFocusAnchor={isFocusAnchor}
+                          isFocusTop={isFocusTop}
+                          isFocusBot={isFocusBot}
+                          isInvalid={isInvalid}
+                          onClick={cellState === "available" ? () => handleCellClick(date, hhmm) : undefined}
+                        />
                       </div>
                     );
                   })}
@@ -630,10 +721,12 @@ export default function WeeklyCalendar({
         </div>
 
         {/* Legend */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 12px 14px 64px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 14, rowGap: 8, padding: "10px 12px 14px 12px" }}>
           <LegendDot bg="rgba(78,222,163,0.18)" border="rgba(78,222,163,0.35)" label="Disponible" />
           <LegendDot bg="rgba(78,222,163,0.32)" border="rgba(78,222,163,0.6)"  label="Preseleccionado" />
           <LegendDot bg="rgba(78,222,163,0.55)" border="rgba(78,222,163,0.8)"  label="Confirmado" />
+          <LegendDot bg="rgba(255,180,171,0.07)" border="rgba(255,180,171,0.18)" label="Reservado" />
+          <LegendDot bg="repeating-linear-gradient(135deg,rgba(255,255,255,0.025) 0px,rgba(255,255,255,0.025) 1px,transparent 1px,transparent 6px)" border="rgba(255,255,255,0.04)" label="No disponible" />
         </div>
       </div>
 
@@ -648,12 +741,14 @@ export default function WeeklyCalendar({
 // ─── Slot cell ─────────────────────────────────────────────────────────────────
 
 function SlotCell({
+  state,
   timeLabel,
   inSel, isSelTop, isSelBot,
   inFocus, isFocusAnchor, isFocusTop, isFocusBot,
   isInvalid,
   onClick,
 }: {
+  state:        "available" | "booked" | "unavailable";
   timeLabel:    string | null;
   inSel:        boolean;
   isSelTop:     boolean;
@@ -663,9 +758,31 @@ function SlotCell({
   isFocusTop:   boolean;
   isFocusBot:   boolean;
   isInvalid:    boolean;
-  onClick:      () => void;
+  onClick?:     () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+
+  if (state === "unavailable") {
+    return (
+      <div style={{
+        width: "100%", height: "100%", borderRadius: 3,
+        border: "1px solid rgba(255,255,255,0.04)",
+        background: "repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 6px)",
+        cursor: "default",
+      }} title="No disponible" />
+    );
+  }
+
+  if (state === "booked") {
+    return (
+      <div style={{
+        width: "100%", height: "100%", borderRadius: 3,
+        border: "1px solid rgba(255,180,171,0.18)",
+        background: "rgba(255,180,171,0.07)",
+        cursor: "default",
+      }} title="Reservado" />
+    );
+  }
 
   // Compute border-radius based on block position
   function blockRadius(isTop: boolean, isBot: boolean): string {
@@ -707,8 +824,9 @@ function SlotCell({
         width:          "100%",
         height:         "100%",
         display:        "flex",
-        alignItems:     "center",
-        justifyContent: "center",
+        alignItems:     "flex-start",
+        justifyContent: "flex-start",
+        padding:        "3px 4px",
         cursor:         "pointer",
         border:         `1px solid ${borderColor}`,
         background:     bg,
@@ -721,8 +839,8 @@ function SlotCell({
     >
       {timeLabel && (
         <span style={{
-          fontSize:      9,
-          fontWeight:    600,
+          fontSize:      8,
+          fontWeight:    500,
           color:         labelColor,
           whiteSpace:    "nowrap",
           pointerEvents: "none",
