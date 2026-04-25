@@ -1,4 +1,10 @@
 // ARCH-13: Unit tests for BookingService.
+jest.mock("@/lib/availability-cache", () => ({
+  invalidate: jest.fn().mockResolvedValue(undefined),
+  getCached:  jest.fn().mockResolvedValue(null),
+  setCached:  jest.fn().mockResolvedValue(undefined),
+}));
+
 import { BookingService } from "../BookingService";
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";

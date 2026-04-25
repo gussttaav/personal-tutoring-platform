@@ -1,5 +1,10 @@
 // TEST-01: Integration tests for the cancellation flow.
 // Verifies real token lifecycle and credit restoration using in-memory state.
+jest.mock("@/lib/availability-cache", () => ({
+  invalidate: jest.fn().mockResolvedValue(undefined),
+  getCached:  jest.fn().mockResolvedValue(null),
+  setCached:  jest.fn().mockResolvedValue(undefined),
+}));
 
 import { InMemoryCreditsRepository } from "../fixtures/InMemoryCreditsRepository";
 import { InMemoryBookingRepository } from "../fixtures/InMemoryBookingRepository";

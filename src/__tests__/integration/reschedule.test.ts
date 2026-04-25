@@ -1,6 +1,11 @@
 // TEST-01: Integration tests for the reschedule flow.
 // Verifies that rescheduling atomically replaces a booking and correctly handles
 // credit state for pack vs non-pack sessions.
+jest.mock("@/lib/availability-cache", () => ({
+  invalidate: jest.fn().mockResolvedValue(undefined),
+  getCached:  jest.fn().mockResolvedValue(null),
+  setCached:  jest.fn().mockResolvedValue(undefined),
+}));
 
 import { InMemoryCreditsRepository } from "../fixtures/InMemoryCreditsRepository";
 import { InMemoryBookingRepository } from "../fixtures/InMemoryBookingRepository";

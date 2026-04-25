@@ -1,6 +1,11 @@
 // TEST-01: Integration tests for the booking flow.
 // Uses in-memory repositories and fake clients to exercise real service logic
 // without HTTP or external I/O. Tests state transitions that unit mocks cannot verify.
+jest.mock("@/lib/availability-cache", () => ({
+  invalidate: jest.fn().mockResolvedValue(undefined),
+  getCached:  jest.fn().mockResolvedValue(null),
+  setCached:  jest.fn().mockResolvedValue(undefined),
+}));
 
 import { InsufficientCreditsError } from "@/domain/errors";
 import { InMemoryCreditsRepository } from "../fixtures/InMemoryCreditsRepository";

@@ -19,11 +19,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Apply migrations to test database
+        run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_TEST }}"
+
       - name: Lint
         run: npm run lint
 
       - name: Unit tests
         run: npm run test:unit
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
 
       - name: Integration tests
         run: npm run test:integration
+        env:
+          SUPABASE_URL:              ${{ secrets.SUPABASE_URL_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}

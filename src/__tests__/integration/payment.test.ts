@@ -8,6 +8,11 @@
 jest.mock("@/infrastructure/google", () => ({
   getAvailableSlots: jest.fn().mockRejectedValue(new Error("no credentials in test")),
 }));
+jest.mock("@/lib/availability-cache", () => ({
+  invalidate: jest.fn().mockResolvedValue(undefined),
+  getCached:  jest.fn().mockResolvedValue(null),
+  setCached:  jest.fn().mockResolvedValue(undefined),
+}));
 
 // Prevent writeDeadLetter from firing real Resend API calls when NOTIFY_EMAIL
 // and RESEND_API_KEY are set in the local environment.
