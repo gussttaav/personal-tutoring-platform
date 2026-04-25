@@ -34,13 +34,28 @@ test.describe("Single 1-hour session purchase", () => {
     // Navigate to next week for guaranteed future slots
     await page.getByRole("button", { name: /semana siguiente/i }).click();
 
-    // Pick the first available slot
-    const firstSlot = page.getByRole("button", { name: /\d{2}:\d{2}/ }).first();
-    await expect(firstSlot).toBeVisible({ timeout: 15_000 });
+    // Pick the first slot that forms a valid 60-min block. Some "available"
+    // 30-min cells are isolated (e.g., 10:00 with 10:30 already booked) —
+    // clicking them just flashes invalid and never focuses, so "Continuar"
+    // never appears. Iterate until a valid block focuses.
+    const slots = page.getByRole("button", { name: /Disponible a las \d{2}:\d{2}/ });
+    await expect(slots.first()).toBeVisible({ timeout: 15_000 });
+    const continuar = page.getByRole("button", { name: /^continuar$/i });
 
-    // 1st click focuses the slot; "Continuar" confirms the selection
-    await firstSlot.click();
-    await page.getByRole("button", { name: /continuar/i }).click();
+    const slotCount = await slots.count();
+    let pickedSlot = false;
+    for (let i = 0; i < slotCount; i++) {
+      await slots.nth(i).click();
+      try {
+        await continuar.waitFor({ state: "visible", timeout: 500 });
+        pickedSlot = true;
+        break;
+      } catch {
+        // Isolated slot — try the next one
+      }
+    }
+    expect(pickedSlot, "no contiguous 60-min slot was available").toBe(true);
+    await continuar.click();
 
     // Review step: "Confirmar pago" transitions to the Stripe payment form
     await expect(

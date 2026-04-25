@@ -23,6 +23,9 @@ test.describe("Pack purchase + book + cancel", () => {
   });
 
   test("student purchases Pack Esencial, books a session, then cancels it", async ({ page }) => {
+    // Long flow: Stripe purchase + SSE wait + slot iteration + booking
+    // orchestration (Calendar/Zoom/email/QStash) + cancel — exceeds the global 60 s.
+    test.setTimeout(180_000);
     await page.goto("/");
 
     // Wait for pack cards to load.
@@ -41,9 +44,10 @@ test.describe("Pack purchase + book + cancel", () => {
 
     // Stripe PaymentElement renders inside an iframe whose name starts with
     // "__privateStripeFrame". Use frameLocator so Playwright retries automatically.
+    // Stripe Elements has variable cold-start latency — allow 30 s.
     const stripeFrame = page.frameLocator('iframe[name^="__privateStripeFrame"]').first();
     const cardNumber = stripeFrame.locator('input[name="number"], input[autocomplete="cc-number"]');
-    await expect(cardNumber).toBeVisible({ timeout: 15_000 });
+    await expect(cardNumber).toBeVisible({ timeout: 30_000 });
 
     await cardNumber.fill("4242424242424242");
     await stripeFrame.locator('input[name="expiry"], input[autocomplete="cc-exp"]').fill("12/30");
@@ -73,22 +77,39 @@ test.describe("Pack purchase + book + cancel", () => {
     // Navigate to next week for guaranteed future slots
     await page.getByRole("button", { name: /semana siguiente/i }).click();
 
-    // Availability fetch can take > 15 s on a cold dev server — allow 25 s.
-    const firstSlot = page.getByRole("button", { name: /\d{2}:\d{2}/ }).first();
-    await expect(firstSlot).toBeVisible({ timeout: 25_000 });
+    // Pack sessions are 60 min, so the calendar needs two contiguous 30-min
+    // cells to form a valid block. Some "available" 30-min cells are isolated
+    // (e.g., 10:00 with 10:30 already booked) — clicking them just flashes
+    // invalid and never focuses. Iterate until a valid block confirms.
+    // Availability fetch is per-day and can take > 25 s on a cold dev server.
+    const slots = page.getByRole("button", { name: /Disponible a las \d{2}:\d{2}/ });
+    await expect(slots.first()).toBeVisible({ timeout: 45_000 });
+    const confirmBtn = page.getByRole("button", { name: /confirmar/i });
 
     // BookingModeView uses 2-click selection (no "Continuar" button):
     // 1st click focuses the slot; 2nd click on the same slot confirms it → ConfirmPanel.
-    await firstSlot.click();
-    await firstSlot.click();
-
-    const confirmBtn = page.getByRole("button", { name: /confirmar/i });
-    await expect(confirmBtn).toBeVisible({ timeout: 10_000 });
+    const slotCount = await slots.count();
+    let pickedSlot = false;
+    for (let i = 0; i < slotCount; i++) {
+      const slot = slots.nth(i);
+      await slot.click();
+      await slot.click();
+      try {
+        await confirmBtn.waitFor({ state: "visible", timeout: 1500 });
+        pickedSlot = true;
+        break;
+      } catch {
+        // Isolated slot — try the next one
+      }
+    }
+    expect(pickedSlot, "no contiguous 60-min slot was available").toBe(true);
     await confirmBtn.click();
 
     // Pack session booking shows an inline success banner ("¡Clase reservada!") —
-    // the overlay stays open so the user can book another slot.
-    await expect(page.getByText(/clase reservada/i)).toBeVisible({ timeout: 30_000 });
+    // the overlay stays open so the user can book another slot. The confirmation
+    // orchestrates credit decrement + Google Calendar + Zoom + email + QStash,
+    // which can take > 30 s on a cold test environment.
+    await expect(page.getByText(/clase reservada/i)).toBeVisible({ timeout: 60_000 });
 
     // Navigate to personal area — NextSessionCard shows "Próxima clase"
     await page.goto("/area-personal");
