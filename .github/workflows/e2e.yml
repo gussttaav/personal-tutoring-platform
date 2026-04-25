@@ -68,6 +68,8 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -96,7 +98,7 @@ jobs:
       # dev server started by playwright.config.ts webServer.
 
       - name: Install Stripe CLI
-        if: ${{ !secrets.E2E_BASE_URL }}
+        if: ${{ !env.E2E_BASE_URL }}
         run: |
           curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public \
             | gpg --dearmor \
@@ -112,13 +114,13 @@ jobs:
       # Writing to GITHUB_ENV makes STRIPE_WEBHOOK_SECRET available to all
       # subsequent steps in this job, so the app can verify webhook payloads.
       - name: Capture Stripe webhook signing secret
-        if: ${{ !secrets.E2E_BASE_URL }}
+        if: ${{ !env.E2E_BASE_URL }}
         run: |
           SECRET=$(stripe listen --print-secret --api-key "${{ secrets.STRIPE_API_KEY_TEST }}")
           echo "STRIPE_WEBHOOK_SECRET=$SECRET" >> "$GITHUB_ENV"
 
       - name: Start Stripe webhook listener
-        if: ${{ !secrets.E2E_BASE_URL }}
+        if: ${{ !env.E2E_BASE_URL }}
         run: |
           stripe listen \
             --api-key "${{ secrets.STRIPE_API_KEY_TEST }}" \
