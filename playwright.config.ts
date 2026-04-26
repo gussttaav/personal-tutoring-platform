@@ -26,7 +26,7 @@
 import { defineConfig, devices }    from "@playwright/test";
 import { existsSync, readFileSync } from "fs";
 
-const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
+const baseURL = process.env.E2E_BASE_URL || "http://localhost:3000";
 
 // Load .env.e2e.local overrides so the dev server uses the test DB, not the live one.
 // Only applies locally — in CI the test DB credentials come from GitHub secrets directly.
