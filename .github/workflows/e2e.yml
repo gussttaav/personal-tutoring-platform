@@ -164,6 +164,7 @@ jobs:
           CANCEL_SECRET:                 ${{ secrets.CANCEL_SECRET }}
           GEMINI_API_KEY:                ${{ secrets.GEMINI_API_KEY }}
           TUTOR_EMAIL:                   ${{ secrets.TUTOR_EMAIL }}
+          QSTASH_URL:                    ${{ secrets.QSTASH_URL }}
           QSTASH_TOKEN:                  ${{ secrets.QSTASH_TOKEN }}
           QSTASH_CURRENT_SIGNING_KEY:    ${{ secrets.QSTASH_CURRENT_SIGNING_KEY }}
           QSTASH_NEXT_SIGNING_KEY:       ${{ secrets.QSTASH_NEXT_SIGNING_KEY }}

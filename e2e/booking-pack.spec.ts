@@ -64,7 +64,14 @@ test.describe("Pack purchase + book + cancel", () => {
     // assertions matched the "Activando tus créditos…" loading text and
     // raced ahead while credits weren't yet in the DB — leaving the homepage
     // pack cards stuck on "Comprar pack".
-    await expect(page).toHaveURL(/\/pago-exitoso/, { timeout: 30_000 });
+    try {
+      await expect(page).toHaveURL(/\/pago-exitoso/, { timeout: 30_000 });
+    } catch {
+      const alertText = await page.getByRole("alert").first().textContent().catch(() => null);
+      throw new Error(
+        `Payment did not redirect to /pago-exitoso.${alertText ? ` Stripe error: "${alertText}"` : ""}`,
+      );
+    }
     await expect(
       page.getByRole("button", { name: /reservar mis clases/i }),
     ).toBeEnabled({ timeout: 60_000 });
@@ -120,7 +127,7 @@ test.describe("Pack purchase + book + cancel", () => {
 
     // Navigate to personal area — NextSessionCard shows "Próxima clase"
     await page.goto("/area-personal");
-    await expect(page.getByText(/próxima clase/i)).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Próxima clase", { exact: true })).toBeVisible({ timeout: 15_000 });
 
     // Cancel the booking via the "Cancelar" action button inside NextSessionCard
     await page.getByRole("button", { name: /cancelar/i }).first().click();
@@ -131,7 +138,9 @@ test.describe("Pack purchase + book + cancel", () => {
     });
     await page.getByRole("button", { name: /sí, cancelar/i }).click();
 
-    // Cancellation is inline — NextSessionCard disappears once bookings refresh
-    await expect(page.getByText(/próxima clase/i)).not.toBeVisible({ timeout: 30_000 });
+    // Cancellation is inline — NextSessionCard disappears once bookings refresh.
+    // Use exact match: the empty-state CTA "Reservar mi próxima clase" also
+    // matches /próxima clase/i and would keep this assertion failing.
+    await expect(page.getByText("Próxima clase", { exact: true })).not.toBeVisible({ timeout: 30_000 });
   });
 });

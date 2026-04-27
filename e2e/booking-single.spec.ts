@@ -81,8 +81,17 @@ test.describe("Single 1-hour session purchase", () => {
     // Submit Stripe payment
     await page.getByRole("button", { name: /^pagar$/i }).click();
 
-    // Should reach the payment confirmation page
-    await expect(page).toHaveURL(/\/sesion-confirmada/, { timeout: 30_000 });
+    // Should reach the payment confirmation page.
+    // Wrap with diagnostic capture so CI failures show the exact Stripe error
+    // instead of just a URL timeout.
+    try {
+      await expect(page).toHaveURL(/\/sesion-confirmada/, { timeout: 30_000 });
+    } catch {
+      const alertText = await page.getByRole("alert").first().textContent().catch(() => null);
+      throw new Error(
+        `Payment did not redirect to /sesion-confirmada.${alertText ? ` Stripe error: "${alertText}"` : ""}`,
+      );
+    }
     await expect(
       page.getByRole("heading", { name: /pago confirmado/i }),
     ).toBeVisible({ timeout: 15_000 });
