@@ -54,6 +54,12 @@ test.describe("Pack purchase + book + cancel", () => {
     await cardNumber.fill("4242424242424242");
     await stripeFrame.locator('input[name="expiry"], input[autocomplete="cc-exp"]').fill("12/30");
     await stripeFrame.locator('input[name="cvc"], input[autocomplete="cc-csc"]').fill("123");
+    // Stripe Elements shows a ZIP field when geolocated to the US (e.g. GitHub Actions runners).
+    // Fill it only if present — it may not appear in all locales.
+    const zipInput = stripeFrame.locator('input[name="postalCode"], input[autocomplete="postal-code"]');
+    if (await zipInput.isVisible().catch(() => false)) {
+      await zipInput.fill("10001");
+    }
 
     // Submit the payment
     await page.getByRole("button", { name: /^pagar$/i }).click();
