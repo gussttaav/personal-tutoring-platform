@@ -50,6 +50,8 @@ interface WeeklyCalendarProps {
   initialFocusedSlotStart?: string;
   /** Week offset to start on (default 0 = current week). */
   initialWeekOffset?: number;
+  /** Increment to drop all cached slot data and re-fetch the current week. */
+  refreshToken?: number;
 }
 
 type DaySlots = ApiSlot[] | "loading" | "error";
@@ -221,6 +223,7 @@ export default function WeeklyCalendar({
   selectedSlot,
   initialFocusedSlotStart,
   initialWeekOffset = 0,
+  refreshToken,
 }: WeeklyCalendarProps) {
   const atomicMinutes: 15 | 30 = durationMinutes === 15 ? 15 : 30;
   const cellsPerSlot            = durationMinutes === 15 ? 1 : durationMinutes === 60 ? 2 : 4;
@@ -233,6 +236,7 @@ export default function WeeklyCalendar({
   const [userTz,        setUserTz]        = useState<string>(SCHEDULE.timezone);
   const [nowMadridMin,  setNowMadridMin]  = useState<number>(() => getMadridMinutes());
   const initialFocusedHandled             = useRef(false);
+  const prevRefreshToken                  = useRef(refreshToken);
 
   const maxWeekOffset = SCHEDULE.bookingWindowWeeks - 1;
   const weekStart     = getWeekStart(weekOffset);
@@ -279,19 +283,31 @@ export default function WeeklyCalendar({
     if (selectedSlot) setFocusedBlock(null);
   }, [selectedSlot?.startIso]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch atomic slots for each day in the window
+  // Fetch atomic slots for each day in the window.
+  // When refreshToken increments (a booking was just confirmed), the backend
+  // has already invalidated Redis — we clear our local cache and re-fetch so
+  // the booked slot disappears immediately without a page reload.
   useEffect(() => {
+    const isRefresh = refreshToken !== undefined && refreshToken !== prevRefreshToken.current;
+    prevRefreshToken.current = refreshToken;
+
+    if (isRefresh) {
+      setSlotsMap({});
+      setFocusedBlock(null);
+    }
+
     const today   = new Date(); today.setHours(0, 0, 0, 0);
     const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
 
     days.forEach((date) => {
       const key = formatDateKey(date);
-      if (slotsMap[key]) return;
+      // On a normal render skip already-loaded days; on a refresh re-fetch all.
+      if (!isRefresh && slotsMap[key]) return;
 
-      const isPast  = date < today;
+      const isPast   = date < today;
       const isBeyond = date > maxDate;
-      const dow     = date.getDay();
-      const noSched = DAY_SCHEDULES[dow] === null;
+      const dow      = date.getDay();
+      const noSched  = DAY_SCHEDULES[dow] === null;
 
       if (isPast || isBeyond || noSched) return;
 
@@ -310,7 +326,7 @@ export default function WeeklyCalendar({
           setSlotsMap((prev) => ({ ...prev, [key]: "error" }));
         });
     });
-  }, [weekOffset, atomicMinutes, userTz]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [weekOffset, atomicMinutes, userTz, refreshToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-focus initialFocusedSlotStart once its day's slots load.
   // Fires onSlotFocused (not onSlotSelected) — preserves original contract.

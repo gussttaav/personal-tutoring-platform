@@ -60,12 +60,13 @@ export default function BookingModeView({
   packTotal,
   initialSlot,
 }: BookingModeViewProps) {
-  const [phase,         setPhase]         = useState<BookingPhase>(initialSlot ? "selected" : "idle");
-  const [remaining,     setRemaining]     = useState(student.credits);
-  const [errMsg,        setErrMsg]        = useState("");
-  const [selected,      setSelected]      = useState<SelectedSlot | null>(initialSlot ?? null);
-  const [successBanner, setSuccessBanner] = useState<SuccessBanner | null>(null);
-  const [userTz,        setUserTz]        = useState<string>("");
+  const [phase,                setPhase]                = useState<BookingPhase>(initialSlot ? "selected" : "idle");
+  const [remaining,            setRemaining]            = useState(student.credits);
+  const [errMsg,               setErrMsg]               = useState("");
+  const [selected,             setSelected]             = useState<SelectedSlot | null>(initialSlot ?? null);
+  const [successBanner,        setSuccessBanner]        = useState<SuccessBanner | null>(null);
+  const [userTz,               setUserTz]               = useState<string>("");
+  const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
 
   useEffect(() => { setRemaining(student.credits); }, [student.credits]);
 
@@ -112,6 +113,7 @@ export default function BookingModeView({
         cancelUrl:   data.cancelToken ? `${BASE_URL}/cancelar?token=${data.cancelToken}` : null,
         emailFailed: data.emailFailed,
       });
+      setCalendarRefreshToken((t) => t + 1);
       setPhase("idle");
       setSelected(null);
     } catch (err) {
@@ -217,6 +219,7 @@ export default function BookingModeView({
               durationMinutes={60}
               onSlotSelected={handleSlotSelected}
               selectedSlot={selected}
+              refreshToken={calendarRefreshToken}
             />
           </div>
 
