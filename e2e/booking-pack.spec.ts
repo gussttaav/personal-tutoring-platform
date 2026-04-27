@@ -16,9 +16,11 @@
 
 import { test, expect } from "@playwright/test";
 import { loginAs, E2E_USER } from "./fixtures/auth";
+import { resetTestState }    from "./fixtures/cleanup";
 
 test.describe("Pack purchase + book + cancel", () => {
   test.beforeEach(async ({ page }) => {
+    await resetTestState();
     await loginAs(page, E2E_USER.email, E2E_USER.name);
   });
 
@@ -44,10 +46,10 @@ test.describe("Pack purchase + book + cancel", () => {
 
     // Stripe PaymentElement renders inside an iframe whose name starts with
     // "__privateStripeFrame". Use frameLocator so Playwright retries automatically.
-    // Stripe Elements has variable cold-start latency — allow 30 s.
+    // Stripe Elements has variable cold-start latency — allow 45 s.
     const stripeFrame = page.frameLocator('iframe[name^="__privateStripeFrame"]').first();
     const cardNumber = stripeFrame.locator('input[name="number"], input[autocomplete="cc-number"]');
-    await expect(cardNumber).toBeVisible({ timeout: 30_000 });
+    await expect(cardNumber).toBeVisible({ timeout: 45_000 });
 
     await cardNumber.fill("4242424242424242");
     await stripeFrame.locator('input[name="expiry"], input[autocomplete="cc-exp"]').fill("12/30");
@@ -56,11 +58,16 @@ test.describe("Pack purchase + book + cancel", () => {
     // Submit the payment
     await page.getByRole("button", { name: /^pagar$/i }).click();
 
-    // Wait for redirect to /pago-exitoso and SSE credit confirmation
+    // Wait for redirect to /pago-exitoso, then for SSE to confirm credits.
+    // The "Reservar mis clases →" CTA only renders once `isConfirmed` is true
+    // (Stripe webhook → CreditService.addCredits → SSE push). Earlier loose
+    // assertions matched the "Activando tus créditos…" loading text and
+    // raced ahead while credits weren't yet in the DB — leaving the homepage
+    // pack cards stuck on "Comprar pack".
     await expect(page).toHaveURL(/\/pago-exitoso/, { timeout: 30_000 });
     await expect(
-      page.getByText(/crédito|clase|pack/i),
-    ).toBeVisible({ timeout: 30_000 });
+      page.getByRole("button", { name: /reservar mis clases/i }),
+    ).toBeEnabled({ timeout: 60_000 });
 
     // Navigate back to book a session using the new credits
     await page.goto("/");

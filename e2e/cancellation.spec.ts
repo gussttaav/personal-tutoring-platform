@@ -14,9 +14,11 @@
 
 import { test, expect } from "@playwright/test";
 import { loginAs, E2E_USER } from "./fixtures/auth";
+import { resetTestState }    from "./fixtures/cleanup";
 
 test.describe("Cancellation via email link", () => {
   test.beforeEach(async ({ page }) => {
+    await resetTestState();
     await loginAs(page, E2E_USER.email, E2E_USER.name);
   });
 

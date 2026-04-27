@@ -13,13 +13,18 @@
 
 import { test, expect } from "@playwright/test";
 import { loginAs, E2E_USER } from "./fixtures/auth";
+import { resetTestState }    from "./fixtures/cleanup";
 
 test.describe("Free 15-min session booking", () => {
   test.beforeEach(async ({ page }) => {
+    await resetTestState();
     await loginAs(page, E2E_USER.email, E2E_USER.name);
   });
 
   test("student books a free encuentro inicial", async ({ page }) => {
+    // Cold-start dev server + availability fetch + booking orchestration
+    // (Calendar/Zoom/email/QStash) regularly exceeds the global 60 s.
+    test.setTimeout(120_000);
     await page.goto("/");
 
     // Wait for the auth state to settle (skeleton cards replaced by real cards)
@@ -35,9 +40,10 @@ test.describe("Free 15-min session booking", () => {
     await page.getByRole("button", { name: /semana siguiente/i }).click();
 
     // Wait for slot buttons to load for the new week.
-    // Availability fetch can take > 15 s on a cold dev server — allow 25 s.
-    const firstSlot = page.getByRole("button", { name: /\d{2}:\d{2}/ }).first();
-    await expect(firstSlot).toBeVisible({ timeout: 25_000 });
+    // Availability fetch + Next.js cold compile can take > 25 s on the first
+    // spec to hit the calendar — allow 45 s (matches booking-pack/single).
+    const firstSlot = page.getByRole("button", { name: /Disponible a las \d{2}:\d{2}/ }).first();
+    await expect(firstSlot).toBeVisible({ timeout: 45_000 });
 
     // 1st click → focuses the block in the calendar
     await firstSlot.click();

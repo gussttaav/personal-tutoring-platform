@@ -14,13 +14,18 @@
 
 import { test, expect } from "@playwright/test";
 import { loginAs, E2E_USER } from "./fixtures/auth";
+import { resetTestState }    from "./fixtures/cleanup";
 
 test.describe("Single 1-hour session purchase", () => {
   test.beforeEach(async ({ page }) => {
+    await resetTestState();
     await loginAs(page, E2E_USER.email, E2E_USER.name);
   });
 
   test("student purchases a 1-hour session and reaches confirmation", async ({ page }) => {
+    // Stripe Elements mount + payment confirm + redirect can exceed 60 s on a
+    // cold dev server (Next.js compile + Stripe round-trips).
+    test.setTimeout(180_000);
     await page.goto("/");
 
     // Wait for session cards to appear (auth skeleton replaces with real data)
@@ -63,10 +68,11 @@ test.describe("Single 1-hour session purchase", () => {
     ).toBeVisible({ timeout: 10_000 });
     await page.getByRole("button", { name: /confirmar pago/i }).click();
 
-    // Wait for the Stripe PaymentElement iframe to fully mount
+    // Wait for the Stripe PaymentElement iframe to fully mount.
+    // Stripe Elements has variable cold-start latency — allow 45 s.
     const stripeFrame = page.frameLocator('iframe[name^="__privateStripeFrame"]').first();
     const cardNumber = stripeFrame.locator('input[name="number"], input[autocomplete="cc-number"]');
-    await expect(cardNumber).toBeVisible({ timeout: 15_000 });
+    await expect(cardNumber).toBeVisible({ timeout: 45_000 });
 
     await cardNumber.fill("4242424242424242");
     await stripeFrame.locator('input[name="expiry"], input[autocomplete="cc-exp"]').fill("12/30");
