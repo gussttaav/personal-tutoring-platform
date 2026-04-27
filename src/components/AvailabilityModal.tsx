@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { SCHEDULE, DAY_SCHEDULES } from "@/lib/booking-config";
+import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
 import type { ApiSlot, SelectedSlot } from "@/components/WeeklyCalendar";
 import SessionPickerContent, { type SessionChoice, SESSION_OPTIONS, PACK_OPTIONS } from "@/components/SessionPickerContent";
 
@@ -81,6 +81,30 @@ function buildSelectedSlot(date: Date, slot: ApiSlot, userTz: string): SelectedS
   };
 }
 
+/** Returns the current wall-clock minutes (0–1439) in the schedule's timezone. */
+function getMadridMinutes(): number {
+  const str = new Date().toLocaleTimeString("es-ES", {
+    timeZone: SCHEDULE.timezone, hour: "2-digit", minute: "2-digit", hour12: false,
+  });
+  const [h = "0", m = "0"] = str.split(":");
+  return parseInt(h, 10) * 60 + parseInt(m, 10);
+}
+
+/**
+ * Returns true if a 60-minute slot starting at `hour` fits within the
+ * configured working-hour windows for the given day-of-week.
+ */
+function isHourInWorkingWindow(dow: number, hour: number): boolean {
+  const sched = DAY_SCHEDULES[dow];
+  if (!sched) return false;
+  const start = dayStartHour(dow);
+  if (hour >= start && hour + 1 <= sched.morningEnd) return true;
+  if (sched.afternoonStart !== null && sched.afternoonEnd !== null) {
+    if (hour >= sched.afternoonStart && hour + 1 <= sched.afternoonEnd) return true;
+  }
+  return false;
+}
+
 /** Extract just the start time from a label like "09:00–10:00" → "09:00" */
 function startTimeFromLabel(label: string): string {
   return label.split(/\s*[–\-]\s*/)[0] ?? label;
@@ -123,6 +147,7 @@ export default function AvailabilityModal({
   const [slotsMap,       setSlotsMap]       = useState<Record<string, DaySlots>>({});
   const [userTz,         setUserTz]         = useState<string>(SCHEDULE.timezone);
   const [isMobile,       setIsMobile]       = useState(false);
+  const [nowMadridMin,   setNowMadridMin]   = useState<number>(() => getMadridMinutes());
 
   const maxWeekOffset = SCHEDULE.bookingWindowWeeks - 1;
   const weekStart     = getWeekStart(weekOffset);
@@ -134,6 +159,12 @@ export default function AvailabilityModal({
     check();
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Update current Madrid time every minute for the "now" line and past-cell logic
+  useEffect(() => {
+    const id = setInterval(() => setNowMadridMin(getMadridMinutes()), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   // Detect user timezone
@@ -235,6 +266,14 @@ export default function AvailabilityModal({
     if (isSignedIn && activePackSize === choice.size) return "Reservar →";
     return "Comprar pack →";
   }
+
+  // ── Time indicator ───────────────────────────────────────────────────────
+  const ROW_H_VAL    = isMobile ? 40 : 48;
+  const HEADER_H_VAL = isMobile ? 52 : 64;
+  const GRID_START_MIN = 9 * 60;
+  const GRID_END_MIN   = 19 * 60;
+  const showTimeLine   = weekOffset === 0 && nowMadridMin >= GRID_START_MIN && nowMadridMin < GRID_END_MIN;
+  const timeLineTop    = HEADER_H_VAL + ((nowMadridMin - GRID_START_MIN) / 60) * ROW_H_VAL;
 
   // ── Modal shell ──────────────────────────────────────────────────────────
   const NAVBAR_H = 64; // px — matches the site's h-16 fixed navbar
@@ -458,8 +497,36 @@ export default function AvailabilityModal({
                     columnGap:           1,
                     background:          "rgba(255,255,255,0.05)",
                     margin:              "0 12px",
+                    position:            "relative",
                   }}
                 >
+                  {/* Current-time indicator */}
+                  {showTimeLine && (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position:      "absolute",
+                        left:          53,
+                        right:         0,
+                        top:           timeLineTop,
+                        height:        1,
+                        background:    "rgba(78,222,163,0.5)",
+                        zIndex:        3,
+                        pointerEvents: "none",
+                      }}
+                    >
+                      <div style={{
+                        position:     "absolute",
+                        left:         -4,
+                        top:          -3,
+                        width:        7,
+                        height:       7,
+                        borderRadius: "50%",
+                        background:   "#4edea3",
+                      }} />
+                    </div>
+                  )}
+
                   <TimeColumn isMobile={isMobile} />
 
                   {days.map((date) => {
@@ -481,6 +548,7 @@ export default function AvailabilityModal({
                         isClosed={isClosed}
                         isToday={isToday}
                         tzDiffers={tzDiffers}
+                        nowMadridMin={nowMadridMin}
                         onSlotClick={(slot) => handleSlotClick(date, slot)}
                       />
                     );
@@ -490,9 +558,11 @@ export default function AvailabilityModal({
                 {/* Legend */}
                 <div style={{
                   display:    "flex",
+                  flexWrap:   "wrap",
                   alignItems: "center",
-                  gap:        16,
-                  padding:    "10px 12px 14px 64px",
+                  columnGap:  14,
+                  rowGap:     8,
+                  padding:    "10px 12px 14px 12px",
                 }}>
                   <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "#86948a" }}>
                     <span style={{
@@ -506,8 +576,17 @@ export default function AvailabilityModal({
                   <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "#86948a" }}>
                     <span style={{
                       width: 18, height: 10, borderRadius: 3,
-                      background: "transparent",
-                      border: "1px solid rgba(134,148,138,0.2)",
+                      background: "rgba(255,180,171,0.07)",
+                      border: "1px solid rgba(255,180,171,0.18)",
+                      display: "inline-block", flexShrink: 0,
+                    }} />
+                    Reservado
+                  </span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "#86948a" }}>
+                    <span style={{
+                      width: 18, height: 10, borderRadius: 3,
+                      background: "repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 6px)",
+                      border: "1px solid rgba(255,255,255,0.04)",
                       display: "inline-block", flexShrink: 0,
                     }} />
                     No disponible
@@ -565,9 +644,10 @@ function TimeColumn({ isMobile }: { isMobile: boolean }) {
           style={{
             height:         ROW_H,
             display:        "flex",
-            alignItems:     "center",
+            alignItems:     "flex-start",
             justifyContent: "flex-end",
             paddingRight:   8,
+            paddingTop:     4,
             borderTop:      i > 0 ? "1px solid rgba(255,255,255,0.05)" : undefined,
           }}
         >
@@ -589,15 +669,16 @@ function TimeColumn({ isMobile }: { isMobile: boolean }) {
 // ─── Day column ────────────────────────────────────────────────────────────────
 
 function DayColumn({
-  date, daySlots, isMobile, isClosed, isToday, tzDiffers, onSlotClick,
+  date, daySlots, isMobile, isClosed, isToday, tzDiffers, nowMadridMin, onSlotClick,
 }: {
-  date:        Date;
-  daySlots:    DaySlots | undefined;
-  isMobile:    boolean;
-  isClosed:    boolean;
-  isToday:     boolean;
-  tzDiffers:   boolean;
-  onSlotClick: (slot: ApiSlot) => void;
+  date:         Date;
+  daySlots:     DaySlots | undefined;
+  isMobile:     boolean;
+  isClosed:     boolean;
+  isToday:      boolean;
+  tzDiffers:    boolean;
+  nowMadridMin: number;
+  onSlotClick:  (slot: ApiSlot) => void;
 }) {
   const ROW_H    = isMobile ? 40 : 48;
   const HEADER_H = isMobile ? 52 : 64;
@@ -657,10 +738,52 @@ function DayColumn({
 
       {/* Time rows */}
       {TIME_ROWS.map((hour, i) => {
-        const slot = hourMap?.get(hour) ?? null;
+        const slot      = hourMap?.get(hour) ?? null;
         const timeLabel = slot
           ? startTimeFromLabel(tzDiffers ? slot.localLabel : slot.label)
           : null;
+
+        if (isClosed) {
+          return (
+            <div key={hour} style={{
+              height:    ROW_H,
+              borderTop: i > 0 ? "1px solid rgba(255,255,255,0.03)" : undefined,
+            }} />
+          );
+        }
+
+        if (isLoading) {
+          return (
+            <div key={hour} style={{
+              height:         ROW_H,
+              borderTop:      i > 0 ? "1px solid rgba(255,255,255,0.03)" : undefined,
+              display:        hour === 10 ? "flex" : undefined,
+              alignItems:     "center",
+              justifyContent: "center",
+            }}>
+              {hour === 10 && <LoadingDots />}
+            </div>
+          );
+        }
+
+        const rowMin      = hour * 60;
+        const isPastRow   = isToday && rowMin + 60 <= nowMadridMin;
+        const isNoticeRow = isToday && !isPastRow && rowMin < nowMadridMin + SCHEDULE.minNoticeHours * 60;
+
+        if (isPastRow) {
+          return (
+            <div key={hour} style={{
+              height:    ROW_H,
+              borderTop: i > 0 ? "1px solid rgba(255,255,255,0.03)" : undefined,
+            }} />
+          );
+        }
+
+        const cellState: "available" | "booked" | "unavailable" =
+          isNoticeRow                            ? "unavailable"
+          : slot                                 ? "available"
+          : isHourInWorkingWindow(dow, hour)     ? "booked"
+          : "unavailable";
 
         return (
           <div
@@ -671,20 +794,11 @@ function DayColumn({
               borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined,
             }}
           >
-            {isClosed ? null
-              : isLoading ? (
-                hour === 10 ? (
-                  <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <LoadingDots />
-                  </div>
-                ) : null
-              ) : slot ? (
-                <SlotCell
-                  timeLabel={isMobile ? null : timeLabel}
-                  onClick={() => onSlotClick(slot)}
-                />
-              ) : null
-            }
+            <SlotCell
+              state={cellState}
+              timeLabel={cellState === "available" && !isMobile ? timeLabel : null}
+              onClick={cellState === "available" && slot ? () => onSlotClick(slot) : undefined}
+            />
           </div>
         );
       })}
@@ -694,8 +808,39 @@ function DayColumn({
 
 // ─── Slot cell ─────────────────────────────────────────────────────────────────
 
-function SlotCell({ timeLabel, onClick }: { timeLabel: string | null; onClick: () => void }) {
+function SlotCell({
+  state,
+  timeLabel,
+  onClick,
+}: {
+  state:     "available" | "booked" | "unavailable";
+  timeLabel: string | null;
+  onClick?:  () => void;
+}) {
   const [hovered, setHovered] = useState(false);
+
+  if (state === "unavailable") {
+    return (
+      <div style={{
+        width: "100%", height: "100%", borderRadius: 3,
+        border: "1px solid rgba(255,255,255,0.04)",
+        background: "repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 6px)",
+        cursor: "default",
+      }} />
+    );
+  }
+
+  if (state === "booked") {
+    return (
+      <div style={{
+        width: "100%", height: "100%", borderRadius: 3,
+        border: "1px solid rgba(255,180,171,0.18)",
+        background: "rgba(255,180,171,0.07)",
+        cursor: "default",
+      }} />
+    );
+  }
+
   return (
     <button
       onClick={onClick}
@@ -705,9 +850,9 @@ function SlotCell({ timeLabel, onClick }: { timeLabel: string | null; onClick: (
         width:          "100%",
         height:         "100%",
         display:        "flex",
-        alignItems:     "center",
-        justifyContent: "center",
-        paddingLeft:    0,
+        alignItems:     "flex-start",
+        justifyContent: "flex-start",
+        padding:        "3px 4px",
         cursor:         "pointer",
         border:         `1px solid ${hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)"}`,
         background:     hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)",
@@ -720,13 +865,13 @@ function SlotCell({ timeLabel, onClick }: { timeLabel: string | null; onClick: (
     >
       {timeLabel && (
         <span style={{
-          fontSize:     10,
-          fontWeight:   600,
-          color:        "#4edea3",
-          whiteSpace:   "nowrap",
-          overflow:     "hidden",
-          textOverflow: "ellipsis",
-          lineHeight:   1,
+          fontSize:      10,
+          fontWeight:    600,
+          color:         "#4edea3",
+          whiteSpace:    "nowrap",
+          overflow:      "hidden",
+          textOverflow:  "ellipsis",
+          lineHeight:    1,
           pointerEvents: "none",
         }}>
           {timeLabel}
