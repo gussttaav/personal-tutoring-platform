@@ -24,6 +24,8 @@ export default function PackModal({
   packSize,
   onClose,
   initialClientSecret,
+  userName,
+  userEmail,
 }: PackModalProps) {
   const router = useRouter();
   const [clientSecret, setClientSecret] = useState<string | null>(initialClientSecret ?? null);
@@ -130,6 +132,10 @@ export default function PackModal({
             ) : clientSecret ? (
               <PaymentForm
                 clientSecret={clientSecret}
+                studentName={userName}
+                studentEmail={userEmail}
+                priceLabel={pack.price}
+                variant="inline"
                 onSuccess={handlePaymentSuccess}
                 onCancel={onClose}
               />

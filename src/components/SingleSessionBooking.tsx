@@ -223,20 +223,13 @@ export default function SingleSessionBooking({
     return (
       <BookingLayout>
         <WizardProgress currentStep={4} showPaymentStep />
-        <div className="max-w-md mx-auto w-full" style={{ padding: "32px 16px" }}>
-          <p
-            className="font-bold uppercase"
-            style={{ fontSize: 10, color: "#4edea3", letterSpacing: "0.2em", marginBottom: 20 }}
-          >
-            Pago seguro
-          </p>
-          <p className="text-sm mb-6" style={{ color: "#bbcabf" }}>
-            {selected.dateLabel} · {selected.label.split(/\s*[–\-]\s*/)[0]}
-          </p>
+        <div className="max-w-lg mx-auto w-full" style={{ padding: "16px 0" }}>
           <PaymentForm
             clientSecret={clientSecret}
             studentName={userName}
             studentEmail={userEmail}
+            appointmentLabel={`${selected.dateLabel} · ${selected.label.split(/\s*[–\-]\s*/)[0]}`}
+            priceLabel={cfg.price ?? undefined}
             onSuccess={(paymentIntentId) =>
               router.push(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`)
             }
@@ -341,10 +334,10 @@ export default function SingleSessionBooking({
                     }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                      <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                     <p className="text-sm font-medium" style={{ color: "#4edea3" }}>
-                      Serás redirigido a Stripe para completar el pago
+                      El pago se completará de forma segura en el siguiente paso
                     </p>
                   </div>
                 )}
@@ -447,7 +440,7 @@ export default function SingleSessionBooking({
           </div>
 
           {/* ── Summary sidebar (right, 5 cols) ── */}
-          <div className="order-1 lg:order-2 lg:col-span-5 flex flex-col">
+          <div className="hidden lg:flex flex-col lg:order-2 lg:col-span-5">
             <div
               className="rounded-xl overflow-hidden flex flex-col flex-1"
               style={{
