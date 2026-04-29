@@ -84,8 +84,8 @@ test.describe("Single 1-hour session purchase", () => {
       await zipInput.fill("10001");
     }
 
-    // Submit Stripe payment
-    await page.getByRole("button", { name: /^pagar$/i }).click();
+    // Submit Stripe payment — button text is "Pagar €XX" (or "Pagar" if no price label)
+    await page.getByRole("button", { name: /^pagar(\s|$)/i }).click();
 
     // Should reach the payment confirmation page.
     // Wrap with diagnostic capture so CI failures show the exact Stripe error

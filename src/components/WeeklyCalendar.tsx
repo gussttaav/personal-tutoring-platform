@@ -752,6 +752,7 @@ export default function WeeklyCalendar({
                       }}>
                         <SlotCell
                           state={cellState}
+                          timeLabel={hhmm}
                           inSel={inSel}
                           isSelTop={isSelTop}
                           isSelBot={isSelBot}
@@ -793,12 +794,14 @@ export default function WeeklyCalendar({
 
 function SlotCell({
   state,
+  timeLabel,
   inSel, isSelTop, isSelBot,
   inFocus, isFocusAnchor, isFocusTop, isFocusBot,
   isInvalid,
   onClick,
 }: {
   state:         "available" | "booked" | "unavailable";
+  timeLabel?:    string;
   inSel:         boolean;
   isSelTop:      boolean;
   isSelBot:      boolean;
@@ -884,7 +887,7 @@ function SlotCell({
         fontFamily:     "inherit",
         overflow:       "hidden",
       }}
-      aria-label="Hora disponible"
+      aria-label={timeLabel ? `Disponible a las ${timeLabel}` : "Hora disponible"}
     />
 
   );

@@ -61,8 +61,8 @@ test.describe("Pack purchase + book + cancel", () => {
       await zipInput.fill("10001");
     }
 
-    // Submit the payment
-    await page.getByRole("button", { name: /^pagar$/i }).click();
+    // Submit the payment — button text is "Pagar €XX" (or "Pagar" if no price label)
+    await page.getByRole("button", { name: /^pagar(\s|$)/i }).click();
 
     // Wait for redirect to /pago-exitoso, then for SSE to confirm credits.
     // The "Reservar mis clases →" CTA only renders once `isConfirmed` is true
