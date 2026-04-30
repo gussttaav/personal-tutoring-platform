@@ -3,7 +3,7 @@ import { Spinner } from "@/components/ui";
 import HeroSection from "@/features/landing/HeroSection";
 import BiographySection from "@/features/landing/BiographySection";
 import SpecializationsSection from "@/features/landing/SpecializationsSection";
-import ConsultingSection from "@/features/landing/ConsultingSection";
+//import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -38,15 +38,17 @@ export default function HomePage() {
 
           <InteractiveShell />
 
-          <div
-            style={{
-              height: 1,
-              background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)",
-              margin: "64px 0",
-            }}
-          />
+          {/*
+            <div
+              style={{
+                height: 1,
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)",
+                margin: "64px 0",
+              }}
+            />
 
-          <ConsultingSection />
+            <ConsultingSection /> 
+          */}
         </div>
 
         <style>{`

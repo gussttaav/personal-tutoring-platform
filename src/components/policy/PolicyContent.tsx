@@ -25,8 +25,8 @@ export function PrivacidadContent() {
       <ul>
         <li><strong>Google OAuth</strong> — inicio de sesión. <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Política de Google</a>.</li>
         <li><strong>Stripe</strong> — procesamiento de pagos. <a href="https://stripe.com/es/privacy" target="_blank" rel="noopener noreferrer">Política de Stripe</a>.</li>
-
-        <li><strong>Upstash Redis</strong> — almacenamiento del saldo de créditos.</li>
+        <li><strong>Zoom</strong> — tecnología de aula virtual integrada en la plataforma para la realización de las sesiones. <a href="https://explore.zoom.us/es/privacy/" target="_blank" rel="noopener noreferrer">Política de Zoom</a>.</li>
+        <li><strong>Supabase</strong> — base de datos donde se almacenan de forma segura las reservas, el saldo de créditos y los datos de cuenta.</li>
       </ul>
 
       <h3>Tus derechos</h3>
@@ -47,16 +47,17 @@ export function TerminosContent() {
       <p>Al reservar una sesión o adquirir un pack en este sitio, aceptas las condiciones que se describen a continuación.</p>
 
       <h3>Servicio</h3>
-      <p>Gustavo Torres Guerrero ofrece clases particulares y consultoría en línea en las materias descritas en este sitio. Las sesiones se realizan por <strong>Google Meet</strong> u otra plataforma acordada entre las partes.</p>
+      <p>Gustavo Torres Guerrero ofrece clases particulares y consultoría en línea en las materias descritas en este sitio. Las sesiones se realizan por defecto en el <strong>aula virtual integrada en la plataforma</strong> (tecnología Zoom SDK), sin necesidad de instalar ningún programa. Si el alumno prefiere usar otra plataforma, puede acordarlo previamente con Gustavo.</p>
 
       <h3>Pagos</h3>
-      <p>Los pagos se procesan de forma segura a través de <strong>Stripe</strong>. No se almacenan datos de tarjeta. Se aceptan Visa, Mastercard y American Express. Al realizar un pago aceptas también los <a href="https://stripe.com/es/legal" target="_blank" rel="noopener noreferrer">términos de Stripe</a>.</p>
+      <p>Los pagos se procesan de forma segura a través de <strong>Stripe</strong>, integrado directamente en la plataforma. No se almacenan datos de tarjeta. Se aceptan Visa, Mastercard y American Express. Al realizar un pago aceptas también los <a href="https://stripe.com/es/legal" target="_blank" rel="noopener noreferrer">términos de Stripe</a>.</p>
 
       <h3>Packs de clases</h3>
       <p>Los packs son de uso personal e intransferibles. La validez es de <strong>6 meses</strong> desde la fecha de compra. Los créditos no utilizados al vencimiento caducan sin derecho a reembolso.</p>
 
       <h3>Cancelaciones y reembolsos</h3>
-      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong> sin coste. Para las clases de pack, el crédito se devuelve automáticamente. Para sesiones individuales pagadas, el reembolso se tramita manualmente en un plazo de 1–3 días hábiles. Las cancelaciones con menos de 2 horas de antelación o las no presentaciones sin aviso no dan derecho a reembolso.</p>
+      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong>. Para las clases de pack, el crédito se devuelve automáticamente. Para sesiones individuales pagadas, el reembolso está sujeto a la comisión de procesamiento que Stripe cobra por devolver un cargo (generalmente 0,25 € + entre el 1,5 % y el 1,9 % del importe; el resto se reembolsa en 1–3 días hábiles). Las cancelaciones con menos de 2 horas de antelación o las no presentaciones sin aviso no dan derecho a reembolso.</p>
+      <p>Para solicitar el reembolso de un pack, si no se ha consumido ninguna clase se aplicará únicamente la comisión de Stripe. Si ya se han consumido clases, cada una se descontará al precio unitario de una sesión individual antes de calcular el reembolso, y se aplicará también la comisión de Stripe sobre el importe restante.</p>
 
       <h3>Responsabilidad</h3>
       <p>Las clases están orientadas a la formación y apoyo académico. No se garantizan resultados académicos específicos ni se asume responsabilidad por el uso que el alumno haga de los contenidos aprendidos.</p>
@@ -76,13 +77,16 @@ export function TerminosContent() {
 export function CancelacionContent() {
   return (
     <>
-      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong> sin ningún coste.</p>
+      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong>.</p>
 
       <h3>Clases de pack</h3>
       <p>Si cancelas con suficiente antelación, el crédito se devuelve automáticamente a tu pack y queda disponible para reservar otra clase. Los créditos no caducan de forma anticipada por cancelar — simplemente vuelven a tu saldo.</p>
 
       <h3>Sesiones individuales pagadas</h3>
-      <p>Si cancelas con al menos 2 horas de antelación, Gustavo tramitará el reembolso manualmente en un plazo de 1–3 días hábiles. Si la cancelación se hace con menos de 2 horas de antelación o no se presenta sin aviso previo, no se realizará reembolso.</p>
+      <p>Si cancelas con al menos 2 horas de antelación, el reembolso se tramita en un plazo de 1–3 días hábiles. Ten en cuenta que <strong>Stripe cobra una comisión por devolver un cargo</strong> (generalmente 0,25 € + entre el 1,5 % y el 1,9 % del importe); el importe restante se devuelve íntegramente. Si la cancelación se hace con menos de 2 horas de antelación o no se avisa de la no presentación, no se realizará reembolso.</p>
+
+      <h3>Reembolso de packs</h3>
+      <p>Puedes solicitar el reembolso de un pack no vencido. Si no has consumido ninguna clase, se aplica únicamente la comisión de Stripe sobre el importe total. Si ya has consumido alguna clase, cada una se descuenta al precio de una sesión individual antes de calcular el reembolso, y se aplica la comisión de Stripe sobre el importe restante. Por ejemplo: pack de 5 clases (75 €) con 1 clase consumida → reembolso = 75 − 16 − comisión Stripe.</p>
 
       <h3>Validez de los packs</h3>
       <p>Los packs tienen una validez de <strong>6 meses</strong> desde la fecha de compra. Los créditos no consumidos dentro de ese plazo caducan. Las cancelaciones dentro del período de validez siempre devuelven el crédito.</p>
@@ -91,7 +95,7 @@ export function CancelacionContent() {
       <p>El encuentro de 15 minutos es gratuito y se puede cancelar o reprogramar sin límite de tiempo previo.</p>
 
       <h3>Cómo cancelar o reprogramar</h3>
-      <p>Usa el enlace de cancelación o reprogramación incluido en el email de confirmación de tu reserva, o escribe directamente a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
+      <p>Tienes dos formas de hacerlo: usa el enlace de cancelación o reprogramación incluido en el email de confirmación, o accede a tu <strong>área personal</strong> dentro de la plataforma, donde puedes ver todas tus sesiones y gestionarlas directamente. También puedes escribir a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
 
       <h3>Casos especiales</h3>
       <p>Si surge un imprevisto de última hora, escribe a contacto@gustavoai.dev. Gustavo lo resolverá de forma flexible siempre que sea posible.</p>

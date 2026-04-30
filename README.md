@@ -1,119 +1,142 @@
-Personal tutoring platform for booking programming, mathematics and AI classes. Built as a production Next.js application with Stripe payments, Upstash Redis, Server-Sent Events, and an AI assistant powered by Gemini.
+# GUSTAVOAI.DEV
+
+Personal tutoring platform for booking programming, mathematics and AI classes.
 
 > **Live site:** [gustavoai.dev](https://gustavoai.dev)
+
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=white)
+![Stripe](https://img.shields.io/badge/Stripe-payments-635BFF?logo=stripe&logoColor=white)
+![Zoom](https://img.shields.io/badge/Zoom-Video_SDK-2D8CFF?logo=zoom&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-deployed-black?logo=vercel&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-22c55e)
 
 ---
 
 ## Overview
 
-This is the full source code of my personal tutoring website. Students can book individual sessions or purchase class packs, manage their credits, and get instant answers from an AI assistant trained on my full profile and service details.
+Full-stack booking platform for online tutoring sessions. Students can schedule individual sessions or purchase class packs, pay securely inside the app, join live virtual classrooms embedded in the platform, and manage all their bookings from a personal dashboard. An AI assistant powered by Gemini answers questions about services, pricing, and scheduling around the clock.
 
 ---
 
-## Tech stack
+## Tech Stack
 
-| Layer | Technology |
+| Technology | Purpose |
 |---|---|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript (strict mode) |
-| Styling | Tailwind CSS + CSS variables |
-| Auth | NextAuth v5 (Google OAuth) |
-| Payments | Stripe Checkout + Webhooks |
-| Scheduling | Cal.com embed + Webhooks |
-| Credits store | Upstash Redis (`@upstash/redis`) |
-| Rate limiting | Upstash Redis (`@upstash/ratelimit`) |
-| AI assistant | Google Gemini API |
-| Bookings | Google Calendar API |
-| Email notifications | Resend |
-| Deployment | Vercel |
-| Testing | Jest |
+| **Next.js 14** (App Router) | Full-stack framework; RSC for static sections, client components only where interactivity is needed |
+| **TypeScript** (strict) | End-to-end type safety |
+| **NextAuth v5** | Google OAuth authentication |
+| **Supabase** (Postgres) | Source of truth for all persistent data: users, bookings, credit packs, payments, audit log |
+| **Stripe** | Integrated payment forms (single sessions and packs); webhook processing for payment confirmation |
+| **Google Calendar API** | Reads real-time availability; creates and deletes calendar events on booking/cancellation |
+| **Zoom Video SDK** | Embedded virtual classroom inside the platform; no external app or install required |
+| **Upstash Redis** | Ephemeral state only: rate limiting, slot locking, availability cache, in-session chat state |
+| **QStash** | Scheduled background jobs: automatically closes sessions after their duration + grace period |
+| **Gemini API** | AI assistant trained on full service details, pricing, and cancellation policy |
+| **Resend** | Transactional email: booking confirmations, cancellation notices, reschedule links |
+| **Sentry** | Error tracking and monitoring in production |
+| **Jest** | Unit and integration tests |
+| **Playwright** | End-to-end tests |
+| **GitHub Actions** | CI: runs the full test suite automatically on every push |
+| **Vercel** | Deployment and hosting |
 
 ---
 
 ## Features
 
-- **Individual sessions** — 15-min free intro, 1h and 2h paid sessions booked via Cal.com
-- **Class packs** — buy 5 or 10 classes at a discount; credits stored in Redis and decremented on each booking
-- **Stripe integration** — secure checkout with webhook signature verification and idempotency (no double-credits on retries)
-- **Real-time credit activation** — Server-Sent Events push credit confirmation to the browser after payment; no polling
-- **Google Calendar** — cancellations automatically restore credits to the student's pack; single-session cancellations notify by email
-- **AI assistant** — Gemini-powered chat widget trained on full service details, pricing, cancellation policy, and background; answerable to FAQs without user needing to email
-- **Google OAuth** — sign-in required before booking; session used server-side on all API routes (no URL-param trust)
-- **Rate limiting** — sliding window limits on chat, credits, and checkout endpoints
-- **RSC architecture** — static landing sections (hero, skills, footer) ship zero JavaScript; only interactive booking/auth state is a client component
+- **Free intro session** — 15-minute no-cost meeting to define a plan, no commitment required
+- **Individual sessions** — 1h and 2h paid sessions; payment handled inside the app via an integrated Stripe form
+- **Class packs** — buy 5 or 10 classes at a discount; credits are activated immediately after payment and last 6 months
+- **Real-time availability** — weekly calendar fetches free slots from Google Calendar on demand; slots are soft-locked during checkout to prevent double-booking
+- **Embedded virtual classroom** — sessions run in a Zoom-powered room inside the platform; no install, no redirect
+- **Personal dashboard** — students see all their upcoming and past sessions and can join, reschedule, or cancel from one place
+- **Email notifications** — every booking triggers a confirmation email with calendar link, join link, and one-click reschedule/cancel links
+- **AI assistant** — Gemini chat widget answers questions about services, pricing, cancellation policy, and Gustavo's background without the student needing to send an email
+- **Automatic session closing** — QStash schedules a job at booking time to close the virtual room after the session duration + grace period
+- **Google OAuth** — sign-in required before booking; session is verified server-side on all API routes
 
 ---
 
 ## Architecture
 
+The codebase follows a strict layered architecture. Route handlers are thin dispatchers; all business logic lives in the service layer.
+
 ```
 src/
-├── app/
-│   ├── page.tsx                 RSC root — HeroSection + TrustBar + InteractiveShell
-│   ├── pago-exitoso/page.tsx    SSE polling after pack purchase (credits activation)
-│   ├── sesion-confirmada/page.tsx Confirmation after single session payment
-│   ├── cancelar/page.tsx        Cancellation via signed email link
-│   ├── privacidad/page.tsx      Privacy Policy (Google OAuth verification)
-│   ├── terminos/page.tsx        Terms of Service
-│   └── api/
-│       ├── availability/route.ts GET ?date&duration&tz → available daily slots
-│       ├── book/route.ts         POST → creates Calendar event + deducts credit
-│       ├── cancel/route.ts       POST {token} → deletes event + restores credit
-│       ├── credits/route.ts      GET → authenticated student credits (Upstash)
-│       ├── sse/route.ts          SSE → waits for credit activation after payment
-│       └── stripe/
-│           ├── checkout/route.ts POST → creates Stripe session (pack or single)
-│           ├── session/route.ts  GET → verifies Stripe session post-payment
-│           └── webhook/route.ts  POST ← Stripe → writes credits / creates event
-├── features/
-│   └── booking/
-│       ├── InteractiveShell.tsx  Main client boundary on the landing page
-│       ├── SessionCard.tsx       Single session card (interactive button)
-│       └── PackCard.tsx          Pack card (interactive button)
-├── components/
-│   ├── WeeklyCalendar.tsx       Weekly calendar with real-time slots
-│   ├── BookingModeView.tsx      Booking view for pack lessons
-│   ├── SingleSessionBooking.tsx Booking view for single / free sessions
-│   ├── PackModal.tsx            Pack purchase modal
-│   ├── SignInGate.tsx           Auth modal (with dynamic callbackUrl)
-│   ├── Chat.tsx                 Gemini virtual assistant
-│   └── AuthCorner.tsx           Avatar + credits (top-right corner)
-├── lib/
-│   ├── booking-config.ts        Schedules per day (no Node deps — client-safe)
-│   ├── calendar.ts              Google Calendar API: freebusy, create/delete events
-│   ├── email.ts                 Resend: confirmation, cancellation, notifications
-│   ├── kv.ts                    Upstash Redis: student credits
-│   └── api-client.ts            Typed client for frontend fetch calls
-└── hooks/
-    └── useUserSession.ts        Google session + student credits
+├── app/            Route handlers — parse input, call service, format response
+├── domain/         Pure types, interfaces, domain errors (zero external deps)
+├── services/       Business logic — orchestrates repositories and infrastructure
+├── infrastructure/ External adapters — Supabase, Stripe, Google, Zoom, Resend, Redis
+├── lib/            Shared utilities — schemas, validation, logger, rate limiting
+├── components/     Reusable React components
+├── features/       Feature-scoped page components
+├── hooks/          React hooks
+└── constants/      Static configuration and design tokens
 ```
 
+**Data flow:**
+```
+Route handler → Service → Repository interface → Supabase implementation
+                                              └→ In-memory implementation (tests)
+```
+
+**Key design decisions:**
+
+- **Repository pattern** — all data access goes through interfaces in `src/domain/repositories/`. Services receive repositories via constructor injection, making them fully testable with in-memory fakes without mocking.
+- **Redis is ephemeral only** — Supabase is the single source of truth for all persistent data. Redis handles rate limiting keys, slot locks, and short-lived availability cache. Nothing in Redis matters after a page refresh.
+- **Credit atomicity** — pack credit decrements use a Postgres stored procedure (`decrement_credit`) to prevent race conditions under concurrent requests.
+- **Thin route handlers** — handlers parse and validate input with Zod, call one service method, and map domain errors to HTTP responses via a central error-mapping utility. No business logic in routes.
+- **Serverless-safe scheduling** — `setTimeout` is unreliable in serverless functions. All delayed operations (session auto-close) use QStash, which delivers a webhook after the specified delay with signature verification.
+
 ---
 
-## Key Architectural Decisions
+## Security
 
-| Decision | Reasoning |
-|---|---|
-| Upstash Redis instead of Google Sheets | <5ms latency, no API quota limits, atomic operations for credits |
-| SSE instead of polling for credits | Avoids multiple requests; a single connection waits for webhook activation |
-| `booking-config.ts` separated from `calendar.ts` | `calendar.ts` uses `googleapis` (Node-only); client components need the config |
-| Static Google Meet (`GOOGLE_MEET_URL`) | Google Meet and Calendar APIs don't allow service accounts to generate Meet links for personal Gmail accounts (requires Google Workspace + DWD) |
-| HMAC-SHA256 Cancellation tokens in Redis | Enables cancellation/rescheduling without auth; single-use tokens prevent replay attacks |
-| Dynamic `callbackUrl` in SignInGate | Preserves `?reschedule=&token=` parameters through the Google OAuth redirect, which otherwise destroys React state |
-| Reschedule without Stripe for paid sessions | The token verifies the original session was paid; simply deletes the old event and creates a new one |
-| Email send with retry (3 attempts) | Vercel freezes functions upon HTTP response; open TLS connections to Resend may receive ECONNRESET. Backoff retries resolve this on the 2nd/3rd call |
+Security is treated as a first-class concern throughout the codebase:
+
+- **Authentication** — Google OAuth via NextAuth v5. Session is verified server-side on every API route; no URL parameter trust.
+- **CSRF protection** — all state-mutating POST routes validate the `Origin` header via `isValidOrigin()`. Exceptions are Stripe webhooks and QStash callbacks, which use their own signature verification.
+- **Webhook signature verification** — Stripe and QStash webhooks are verified with their respective HMAC signatures before any processing occurs.
+- **Input validation** — all external input (request bodies, query params) is validated with Zod schemas defined in `src/lib/schemas.ts`. Inline validation in route handlers is not permitted.
+- **Tamper-proof action tokens** — cancellation and reschedule links in emails use HMAC-SHA256 signed tokens. Tokens are single-use and expire, preventing replay attacks.
+- **Rate limiting** — sliding-window rate limits (Upstash Redis) protect chat, availability, checkout, and credit endpoints against abuse.
+- **Admin routes** — protected by a server-side `isAdmin()` check independent of the student auth flow.
+- **No sensitive data in Redis** — all persistent student and payment data lives in Supabase (Postgres), not in the cache layer.
+- **Stripe payment security** — card data is handled entirely by Stripe's embedded Elements; no card numbers touch the application server.
+- **Error tracking** — Sentry captures and alerts on unhandled exceptions in production without exposing stack traces to the client.
 
 ---
 
-## Local setup
+## Testing & CI
+
+```bash
+npm test                # all Jest tests (unit + integration)
+npm run test:unit       # unit tests only
+npm run test:integration # integration tests only
+npm run test:e2e        # Playwright end-to-end tests (requires E2E_BASE_URL)
+```
+
+- **Unit tests** — service logic tested with in-memory repository fakes; no real network calls.
+- **Integration tests** — cover API route behaviour end-to-end within the Next.js request cycle.
+- **E2E tests** — Playwright tests cover the full booking and payment flows in a real browser.
+- **GitHub Actions** — the full Jest suite runs automatically on every push and pull request.
+
+---
+
+## Local Setup
 
 ### Prerequisites
 
 - Node.js 18+
-- An [Upstash](https://console.upstash.com) Redis database (free tier is sufficient)
-- A [Stripe](https://stripe.com) account
-- A Google Cloud project with OAuth credentials
-- A Google account service with Google Calendar API enabled
+- [Supabase](https://supabase.com) project (free tier is sufficient)
+- [Upstash](https://console.upstash.com) Redis database (free tier is sufficient)
+- [Stripe](https://stripe.com) account with products and prices created
+- Google Cloud project with **Google Calendar API** enabled and a service account
+- [Zoom](https://developers.zoom.us) app with Video SDK credentials
+- [QStash](https://upstash.com/qstash) account
+- [Resend](https://resend.com) account
+- [Sentry](https://sentry.io) project (optional for local dev)
 
 ### 1. Clone and install
 
@@ -133,6 +156,11 @@ AUTH_SECRET=                        # openssl rand -hex 32
 AUTH_GOOGLE_ID=                     # Google OAuth client ID
 AUTH_GOOGLE_SECRET=                 # Google OAuth client secret
 
+# ── Supabase ──────────────────────────────────────────────────────────
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+
 # ── Stripe ────────────────────────────────────────────────────────────
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -141,7 +169,7 @@ STRIPE_PRICE_ID_PACK10=price_...
 STRIPE_PRICE_ID_SESSION_1H=price_...
 STRIPE_PRICE_ID_SESSION_2H=price_...
 
-# ── Upstash Redis (rate limiting + credits) ───────────────────────────
+# ── Upstash Redis (rate limiting + availability cache) ────────────────
 UPSTASH_REDIS_REST_URL=https://...
 UPSTASH_REDIS_REST_TOKEN=...
 
@@ -150,19 +178,29 @@ GOOGLE_SERVICE_ACCOUNT_EMAIL=xxx@xxx.iam.gserviceaccount.com
 GOOGLE_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----\n"
 GOOGLE_CALENDAR_ID=your.email@gmail.com
 
-# ── Google Meet (permanent room link) ─────────────────────────────────
-GOOGLE_MEET_URL=https://meet.google.com/xxx-xxxx-xxx
+# ── Zoom Video SDK ─────────────────────────────────────────────────────
+ZOOM_SDK_KEY=
+ZOOM_SDK_SECRET=
+
+# ── QStash (background jobs) ──────────────────────────────────────────
+QSTASH_URL=https://qstash.upstash.io
+QSTASH_TOKEN=
+QSTASH_CURRENT_SIGNING_KEY=
+QSTASH_NEXT_SIGNING_KEY=
 
 # ── AI assistant ──────────────────────────────────────────────────────
 GEMINI_API_KEY=
 
 # ── Resend (transactional email) ──────────────────────────────────────
 RESEND_API_KEY=re_...
-RESEND_FROM=Your Name <contacto@gustavoai.dev>
+RESEND_FROM=Gustavo Torres <contacto@gustavoai.dev>
 NOTIFY_EMAIL=your.email@gmail.com
 
-# ── Cancellation / Rescheduling ───────────────────────────────────────
+# ── Cancellation / Rescheduling tokens ───────────────────────────────
 CANCEL_SECRET=               # openssl rand -hex 32
+
+# ── Sentry ────────────────────────────────────────────────────────────
+SENTRY_DSN=
 
 # ── App ───────────────────────────────────────────────────────────────
 NEXT_PUBLIC_BASE_URL=http://localhost:3000
@@ -178,9 +216,6 @@ npm run dev
 ### 4. Test Stripe webhooks locally
 
 ```bash
-# Install Stripe CLI (macOS)
-brew install stripe/stripe-cli/stripe
-
 stripe login
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 # Copy the whsec_... shown and set it as STRIPE_WEBHOOK_SECRET
@@ -188,34 +223,32 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 
 ---
 
-## Running tests
-
-```bash
-npx jest --coverage
-```
-
-Tests cover `lib/kv.ts` (credit CRUD, idempotency, expiry logic) and `lib/validation.ts` (email/pack size validation, sanitisation). The `googleapis` and `@upstash/redis` modules are mocked — no real network calls.
-
----
-
 ## Deployment
 
-The project is deployed on Vercel. Set all environment variables from `.env.local` in the Vercel project settings before deploying.
+The project is deployed on Vercel. Set all environment variables from `.env.local` in the Vercel project settings.
 
 **Stripe webhook (production)**
 
 1. Stripe Dashboard → Developers → Webhooks → Add endpoint
-2. URL: `https://yourdomain.com/api/stripe/webhook`
-3. Event: `checkout.session.completed`
-4. Copy the signing secret → update `STRIPE_WEBHOOK_SECRET` in Vercel
+2. URL: `https://gustavoai.dev/api/stripe/webhook`
+3. Events: `checkout.session.completed`, `charge.refunded`
+4. Copy the signing secret → set as `STRIPE_WEBHOOK_SECRET` in Vercel
 
-**Google Cloud Configuration**
+**Google Cloud**
 
-1. Create or open your project at [console.cloud.google.com](https://console.cloud.google.com)
-2. Enable **Google Calendar API**
-3. Create a **Service Account** → download JSON → copy `client_email` and `private_key`
-4. In Google Calendar → your calendar → Settings → Share with specific people → add the service account email with **"Make changes to events"** permissions
-5. `GOOGLE_CALENDAR_ID` = your Gmail address (e.g., `name@gmail.com`)
+1. Enable **Google Calendar API** in your project
+2. Create a **Service Account** → copy `client_email` and `private_key`
+3. In Google Calendar → your calendar → Settings → Share with specific people → add the service account email with **"Make changes to events"** permission
+4. Set `GOOGLE_CALENDAR_ID` to your Gmail address
+
+**Database**
+
+Run migrations after deploying schema changes:
+
+```bash
+supabase db push
+# or apply migration files in supabase/migrations/ via the Supabase dashboard
+```
 
 ---
 
@@ -227,5 +260,5 @@ MIT — see [LICENSE](LICENSE).
 
 ## Contact
 
-**Gustavo Torres Guerrero**
+**Gustavo Torres Guerrero**  
 [gustavoai.dev](https://gustavoai.dev) · [LinkedIn](https://www.linkedin.com/in/gustavo-torres-guerrero) · [GitHub](https://github.com/gussttaav) · contacto@gustavoai.dev

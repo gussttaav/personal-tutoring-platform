@@ -127,22 +127,29 @@ Pago seguro con Stripe (Visa, Mastercard, Amex). Se puede cancelar o reprogramar
 1. Iniciar sesión con Google (necesario para identificarse)
 2. Elegir día y hora en el calendario semanal
 3. Confirmar en el modal (se puede añadir una nota con el motivo de la sesión)
-4. Para sesiones de pago → Stripe Checkout → se recibe email de confirmación con enlace de Google Meet
+4. Para sesiones de pago → formulario de pago seguro con Stripe integrado en la plataforma → se recibe email de confirmación con enlace de acceso al aula virtual
 
-## Para reservar con un pack:
-1. Comprar el pack → pago con Stripe → los créditos se activan automáticamente
-2. Hacer clic en "Reservar clase" en la tarjeta del pack
-3. Elegir día y hora en el calendario semanal
-4. Confirmar → se descuenta 1 crédito → se recibe email de confirmación
+## Para comprar un pack:
+1. Hacer clic en el pack deseado → se muestra un formulario de pago con Stripe integrado en la plataforma
+2. Completar el pago → los créditos se activan automáticamente
+3. Hacer clic en "Reservar clase" en la tarjeta del pack
+4. Elegir día y hora en el calendario semanal
+5. Confirmar → se descuenta 1 crédito → se recibe email de confirmación
 
 ## Tras reservar:
-- El alumno recibe un email de confirmación con: fecha y hora, enlace de Google Meet, enlace para añadir el evento a Google Calendar, enlace para cancelar, enlace para reprogramar
-- Las clases se realizan por Google Meet.
+- El alumno recibe un email de confirmación con: fecha y hora, enlace para unirse al aula virtual dentro de la plataforma, enlace para añadir el evento a Google Calendar, enlace para cancelar, enlace para reprogramar.
+- Las clases se realizan por defecto en un **aula virtual integrada en la plataforma** (tecnología Zoom SDK), sin necesidad de instalar nada ni salir de la web. Si el alumno prefiere usar otra plataforma (por ejemplo Google Meet, Teams u otra), puede acordarlo previamente con Gustavo y se adaptará sin problema.
+
+## Área personal del alumno:
+- El alumno dispone de un **área personal** dentro de la plataforma donde puede ver todas sus sesiones reservadas.
+- Desde ahí puede unirse directamente al aula virtual, reprogramar o cancelar cada sesión, sin necesidad de usar los enlaces del email.
 
 ## Cancelaciones y reprogramaciones:
-- **Cancelar:** usar el enlace "Cancelar reserva" del email de confirmación. Se puede cancelar hasta 2 horas antes sin coste. Si era una clase de pack, el crédito se devuelve automáticamente.
-- **Reprogramar:** usar el enlace "Reprogramar" del email de confirmación. Abre el calendario para elegir un nuevo horario. El slot antiguo queda libre automáticamente. Si era una sesión individual ya pagada, no se vuelve a cobrar.
-- Si el alumno no está autenticado al hacer clic en los enlaces, se le pedirá que inicie sesión con Google y luego se abrirá automáticamente la acción correspondiente.
+- **Cancelar sesión individual de pago:** se puede cancelar hasta 2 horas antes, pero Stripe cobra una comisión por el reembolso. La comisión de Stripe suele ser de entre 0,25 € + 1,5 % y 0,25 € + 1,9 % del importe (puede variar). El resto se devuelve al alumno.
+- **Cancelar un pack:** si ninguna clase del pack ha sido consumida, se aplica la comisión de Stripe sobre el importe total. Si ya se han consumido clases, estas se descuentan del total usando el precio de una sesión individual (16 € por hora) y la comisión de Stripe se aplica sobre el importe restante a reembolsar. Por ejemplo: pack de 5 clases (75 €) con 1 clase consumida → reembolso = 75 − 16 − comisión Stripe.
+- **Cancelar encuentro gratuito o clase de pack no pagada directamente:** sin coste; si era de pack, el crédito se devuelve automáticamente.
+- **Reprogramar:** usar el enlace del email o el área personal. Abre el calendario para elegir un nuevo horario. El slot antiguo queda libre automáticamente. Si era una sesión individual ya pagada, no se vuelve a cobrar.
+- Si el alumno no está autenticado al hacer clic en los enlaces del email, se le pedirá que inicie sesión con Google y luego se abrirá automáticamente la acción correspondiente.
 
 ---
 
@@ -153,7 +160,7 @@ Gustavo también tiene perfil activo en Classgap y estará encantado de aceptar 
 ## Ventajas de reservar en esta web
 
 - **Precio más bajo:** al no haber intermediario, Gustavo puede ofrecer tarifas más competitivas. Classgap cobra una comisión alta a los profesores, lo que encarece las clases para el alumno.
-- **Google Meet:** las clases se realizan por Google Meet, más estable que Classgap, sencilla y sin necesidad de instalar nada. Se puede usar otra plataforma si se desea.
+- **Aula virtual integrada:** las clases se realizan en un aula virtual dentro de la propia plataforma (tecnología Zoom SDK), sin salir de la web ni instalar nada. La experiencia es más fluida que la de Classgap.
 - **Privacidad:** Classgap se reserva el derecho de grabar las clases por razones de calidad. En esta web, las sesiones son privadas entre Gustavo y el alumno, sin grabación por parte de terceros.
 - **Flexibilidad real:** Gustavo permite reprogramar o cancelar clases con antelación suficiente (mínimo 2 horas), de forma directa y sin burocracia de plataforma.
 
@@ -175,4 +182,4 @@ Ambas opciones son válidas. Si el visitante prefiere la seguridad de una plataf
 - Si el visitante pregunta si Gustavo puede ayudarle con algo concreto, confirma si está en la lista de materias
 - Si algo no está en tu información, dilo con naturalidad y sugiere contactar a Gustavo en contacto@gustavoai.dev
 - No inventes precios, fechas ni detalles que no estén en esta información
-- Responde en el mismo idioma en que te escriban (español o inglés)`;
+- **Idioma:** detecta el idioma en que escribe el visitante y responde siempre en ese mismo idioma. Si el visitante escribe en inglés, responde íntegramente en inglés. Si escribe en español, responde en español. No mezcles idiomas en la misma respuesta.`;
