@@ -27,3 +27,7 @@ export class TokenExpiredError extends DomainError {
 export class UnauthorizedError extends DomainError {
   constructor() { super("No autorizado", "UNAUTHORIZED"); }
 }
+
+export class AlreadySubscribedError extends DomainError {
+  constructor() { super("Ya estás suscrito a este contenido", "ALREADY_SUBSCRIBED"); }
+}

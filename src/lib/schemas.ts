@@ -64,3 +64,11 @@ export const AdjustCreditsSchema = z.object({
 });
 
 export type AdjustCreditsInput = z.infer<typeof AdjustCreditsSchema>;
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+export const SubscribeSchema = z.object({
+  type: z.enum(["courses", "blog"]),
+});
+
+export type SubscribeInput = z.infer<typeof SubscribeSchema>;

@@ -7,6 +7,7 @@ import { log } from "@/lib/logger";
 
 const HTTP_STATUS_MAP: Record<string, number> = {
   SLOT_UNAVAILABLE:           409,
+  ALREADY_SUBSCRIBED:         409,
   INVALID_RESCHEDULE_TOKEN:   400,
   OUTSIDE_RESCHEDULE_WINDOW:  400,
   SESSION_TYPE_MISMATCH:      400,

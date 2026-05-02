@@ -11,9 +11,13 @@
  * the FooterModals wrapper (unchanged from original).
  */
 
+import { useState } from "react";
 import FooterModals from "@/features/landing/FooterModals";
+import ComingSoonModal from "@/components/ComingSoonModal";
 
 export default function Footer() {
+  const [comingSoonModal, setComingSoonModal] = useState<"courses" | "blog" | null>(null);
+
   return (
     <footer
       style={{
@@ -111,26 +115,40 @@ export default function Footer() {
               Explorar
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {[
-                { label: "Cursos", href: "#" },
-                { label: "Mentoría", href: "#" },
-                { label: "Blog", href: "#" },
-              ].map(({ label, href }) => (
-                <a
+              {(["Cursos", "Blog"] as const).map((label) => (
+                <button
                   key={label}
-                  href={href}
+                  onClick={() => setComingSoonModal(label === "Cursos" ? "courses" : "blog")}
                   style={{
-                    fontSize: "13px",
-                    color: "#86948a",
-                    textDecoration: "none",
+                    fontSize:   "13px",
+                    color:      "#86948a",
+                    background: "none",
+                    border:     "none",
+                    padding:    0,
+                    cursor:     "pointer",
+                    fontFamily: "inherit",
+                    textAlign:  "left",
                     transition: "color 0.15s",
                   }}
                   onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
                   onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
                 >
                   {label}
-                </a>
+                </button>
               ))}
+              <a
+                href="#sessions"
+                style={{
+                  fontSize:       "13px",
+                  color:          "#86948a",
+                  textDecoration: "none",
+                  transition:     "color 0.15s",
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
+              >
+                Mentoría
+              </a>
             </div>
           </div>
 
@@ -318,6 +336,12 @@ export default function Footer() {
           </div>
         </div>
       </div>
+      {comingSoonModal && (
+        <ComingSoonModal
+          type={comingSoonModal}
+          onClose={() => setComingSoonModal(null)}
+        />
+      )}
     </footer>
   );
 }

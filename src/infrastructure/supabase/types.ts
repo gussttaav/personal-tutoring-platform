@@ -310,6 +310,27 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          id:         string
+          email:      string
+          type:       string
+          created_at: string
+        }
+        Insert: {
+          id?:         string
+          email:       string
+          type:        string
+          created_at?: string
+        }
+        Update: {
+          id?:         string
+          email?:      string
+          type?:       string
+          created_at?: string
+        }
+        Relationships: []
+      }
       zoom_sessions: {
         Row: {
           booking_id: string

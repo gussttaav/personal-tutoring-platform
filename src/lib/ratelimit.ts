@@ -62,3 +62,11 @@ export const chatRatelimitAnonDaily = new Ratelimit({
   limiter: Ratelimit.slidingWindow(30, "1 d"),
   prefix:  "rl:chat:anon:daily",
 });
+
+// Subscribe: 10 requests per minute per IP for writes, 30 for reads.
+// POST is a one-time action per user per type; low limit stops enumeration.
+export const subscribeRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  prefix:  "rl:subscribe",
+});

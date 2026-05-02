@@ -1,15 +1,17 @@
 // ARCH-12/15/13/14/16: Singleton service instances — import from here in route handlers.
-import { CreditService }   from "./CreditService";
-import { SessionService }  from "./SessionService";
-import { BookingService }  from "./BookingService";
-import { PaymentService }  from "./PaymentService";
-import { ChatService }     from "./ChatService";
+import { CreditService }        from "./CreditService";
+import { SessionService }       from "./SessionService";
+import { BookingService }       from "./BookingService";
+import { PaymentService }       from "./PaymentService";
+import { ChatService }          from "./ChatService";
+import { SubscriptionService }  from "./SubscriptionService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
   supabaseBookingRepository,
   supabaseSessionRepository,
   supabasePaymentRepository,
+  supabaseSubscriptionRepository,
 } from "@/infrastructure/supabase";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient }  from "@/infrastructure/google";
@@ -41,3 +43,5 @@ export const paymentService = new PaymentService(
 );
 
 export const chatService = new ChatService(new GeminiClient());
+
+export const subscriptionService = new SubscriptionService(supabaseSubscriptionRepository);

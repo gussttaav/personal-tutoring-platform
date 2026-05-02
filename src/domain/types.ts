@@ -100,3 +100,14 @@ export interface UserSession {
   packSize:             PackSize | null;
   creditsConfirmedAt?:  string;
 }
+
+// ─── Subscriptions ────────────────────────────────────────────────────────────
+
+export type SubscriptionType = "courses" | "blog";
+
+export interface SubscriptionRecord {
+  id:        string;
+  email:     string;
+  type:      SubscriptionType;
+  createdAt: string;
+}

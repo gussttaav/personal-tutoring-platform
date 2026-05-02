@@ -13,21 +13,23 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useUserSession } from "@/hooks/useUserSession";
 import { signInWithPopup } from "@/lib/auth-popup";
+import ComingSoonModal from "@/components/ComingSoonModal";
 
 function openPackBooking() {
   window.dispatchEvent(new CustomEvent("open-pack-booking"));
 }
 
 const NAV_LINKS = [
-  { label: "Cursos",   href: "#" },
+  { label: "Cursos",   href: "#", comingSoon: "courses" as const },
   { label: "Mentoría", href: "#sessions", accent: true },
-  { label: "Blog",     href: "#" },
+  { label: "Blog",     href: "#", comingSoon: "blog"    as const },
 ];
 
 export default function Navbar() {
   const { data: session, status, update } = useSession();
   const { packSession } = useUserSession();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileOpen,     setMobileOpen]     = useState(false);
+  const [comingSoonModal, setComingSoonModal] = useState<"courses" | "blog" | null>(null);
 
   const handleSignIn = async () => {
     const result = await signInWithPopup("/");
@@ -51,7 +53,17 @@ export default function Navbar() {
     window.dispatchEvent(new CustomEvent("close-booking-overlay"));
   };
 
-  const handleNavLinkClick = (e: React.MouseEvent, href: string) => {
+  const handleNavLinkClick = (
+    e: React.MouseEvent,
+    href: string,
+    comingSoon?: "courses" | "blog",
+  ) => {
+    if (comingSoon) {
+      e.preventDefault();
+      setMobileOpen(false);
+      setComingSoonModal(comingSoon);
+      return;
+    }
     if (href === "#sessions") {
       e.preventDefault();
       setMobileOpen(false);
@@ -91,13 +103,13 @@ export default function Navbar() {
             className="hidden lg:flex items-center gap-8"
             style={{ fontFamily: "var(--font-headline, Manrope), sans-serif", fontWeight: 600 }}
           >
-            {NAV_LINKS.map(({ label, href, accent }) => (
+            {NAV_LINKS.map(({ label, href, accent, comingSoon }) => (
               <Link
                 key={label}
                 href={href}
                 className="transition-colors"
                 style={{ color: accent ? "#4edea3" : "rgba(229,225,228,0.6)" }}
-                onClick={(e) => handleNavLinkClick(e, href)}
+                onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
                 onMouseEnter={(e) => { if (!accent) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
                 onMouseLeave={(e) => { if (!accent) (e.currentTarget as HTMLElement).style.color = "rgba(229,225,228,0.6)"; }}
               >
@@ -329,11 +341,11 @@ export default function Navbar() {
 
                 <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
 
-                {NAV_LINKS.map(({ label, href, accent }) => (
+                {NAV_LINKS.map(({ label, href, accent, comingSoon }) => (
                   <Link
                     key={label}
                     href={href}
-                    onClick={(e) => handleNavLinkClick(e, href)}
+                    onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
                     className="flex items-center px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                     style={{ color: accent ? "#4edea3" : "#bbcabf", fontFamily: "var(--font-headline, Manrope), sans-serif" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
@@ -364,11 +376,11 @@ export default function Navbar() {
             <>
               {/* Nav links */}
               <nav className="px-2 pt-2">
-                {NAV_LINKS.map(({ label, href, accent }) => (
+                {NAV_LINKS.map(({ label, href, accent, comingSoon }) => (
                   <Link
                     key={label}
                     href={href}
-                    onClick={(e) => handleNavLinkClick(e, href)}
+                    onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
                     className="flex items-center px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                     style={{ color: accent ? "#4edea3" : "#bbcabf", fontFamily: "var(--font-headline, Manrope), sans-serif" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
@@ -402,6 +414,13 @@ export default function Navbar() {
             </>
           )}
         </div>
+      )}
+
+      {comingSoonModal && (
+        <ComingSoonModal
+          type={comingSoonModal}
+          onClose={() => setComingSoonModal(null)}
+        />
       )}
     </nav>
   );
