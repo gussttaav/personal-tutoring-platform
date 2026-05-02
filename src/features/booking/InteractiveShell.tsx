@@ -131,6 +131,13 @@ export default function InteractiveShell() {
     return () => window.removeEventListener("open-session-picker-modal", handler);
   }, []);
 
+  // Direct shortcut to the free 15-min booking (e.g. from SpecializationsSection)
+  useEffect(() => {
+    const handler = () => router.handleSessionClick("free15min");
+    window.addEventListener("book-free-session", handler);
+    return () => window.removeEventListener("book-free-session", handler);
+  }, [router.handleSessionClick]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handle ?book= deep-link intent from /area-personal navigation.
   // Runs once on mount; removes the param from the URL to keep it clean.
   useEffect(() => {

@@ -214,6 +214,7 @@ export default function SpecializationsSection() {
               {/* CTA button for DAM/DAW card */}
               {isFull && (
                 <button
+                  onClick={() => window.dispatchEvent(new Event("book-free-session"))}
                   style={{
                     padding: "14px 28px",
                     border: "2px solid #4edea3",
