@@ -84,7 +84,7 @@ export default function Navbar() {
             style={{ fontFamily: "var(--font-headline, Manrope), sans-serif", color: "#e5e1e4" }}
             onClick={handleLogoClick}
           >
-            GUSTAVOAI.DEV
+            GUSTAVO<span style={{ color: "#4edea3" }}>AI.DEV</span>
           </Link>
 
           <div

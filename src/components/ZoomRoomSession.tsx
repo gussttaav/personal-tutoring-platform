@@ -645,7 +645,7 @@ export default function ZoomRoomInner({
               className="text-xl font-black tracking-tighter"
               style={{ fontFamily: "var(--font-headline, Manrope), sans-serif", color: "#e5e1e4" }}
             >
-              GUSTAVOAI.DEV
+              GUSTAVO<span style={{ color: "#4edea3" }}>AI.DEV</span>
             </span>
             <div className="h-4 w-[1px] bg-outline-variant/30 hidden md:block" />
             <div

@@ -79,13 +79,14 @@ export default function SpecializationsSection() {
         <div>
           <span
             style={{
+              paddingTop: "40px",
               display: "block",
               fontSize: "11px",
               fontWeight: 600,
               letterSpacing: "0.1em",
               textTransform: "uppercase",
               color: "#4edea3",
-              marginBottom: "8px",
+              marginBottom: "15px",
             }}
           >
             Capacidades
@@ -104,18 +105,6 @@ export default function SpecializationsSection() {
             Áreas de Especialización
           </h2>
         </div>
-        <p
-          style={{
-            fontSize: "0.9375rem",
-            color: "#86948a",
-            maxWidth: "400px",
-            lineHeight: 1.65,
-            margin: 0,
-          }}
-        >
-          Consultoría técnica integral que une la teoría académica con la práctica industrial
-          moderna.
-        </p>
       </div>
 
       {/* ── Grid ── */}

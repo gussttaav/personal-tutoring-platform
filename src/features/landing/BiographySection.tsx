@@ -6,8 +6,8 @@ export default function BiographySection() {
   return (
     <section
       style={{
-        paddingTop: "80px",
-        paddingBottom: "80px",
+        paddingTop: "40px",
+        paddingBottom: "60px",
         borderTop: "1px solid rgba(255,255,255,0.05)",
         borderBottom: "1px solid rgba(255,255,255,0.05)",
         animation: "fadeUp 0.7s ease both 0.15s",

@@ -40,7 +40,7 @@ export default function Footer() {
                 marginBottom: "16px",
               }}
             >
-              GUSTAVOAI.DEV
+              GUSTAVO<span style={{ color: "#4edea3" }}>AI.DEV</span>
             </div>
             <p style={{ fontSize: "13px", color: "#86948a", lineHeight: 1.65, marginBottom: "20px" }}>
               Clases particulares y consultoría en<br />programación, matemáticas e IA.

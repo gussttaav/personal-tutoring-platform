@@ -203,7 +203,7 @@ export default function HeroSection() {
         alignItems: "center",
         justifyContent: "center",
         paddingTop: "100px",
-        paddingBottom: "80px",
+        paddingBottom: "40px",
         animation: "fadeUp 0.7s ease both",
       }}
     >
@@ -309,6 +309,7 @@ export default function HeroSection() {
 
         {/* ── Headline ── */}
         <h1
+          className="mb-5 md:mb-6"
           style={{
             fontFamily: "var(--font-headline, Manrope), sans-serif",
             fontSize: "clamp(2.4rem, 6vw, 4.25rem)",
@@ -316,10 +317,10 @@ export default function HeroSection() {
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
             color: "#e5e1e4",
-            marginBottom: "24px",
           }}
         >
           <span
+            className="mb-0 md:mb-4"
             style={{
               display: "block",
               fontSize: "clamp(1.5rem, 3.5vw, 1.875rem)",
@@ -327,13 +328,15 @@ export default function HeroSection() {
               lineHeight: 1.4,
               color: "#bbcabf",
               letterSpacing: 0,
-              marginBottom: "16px",
             }}
           >
-            Profesor &amp; Consultor · Matemáticas, Programación &amp; IA
+            Profesor · Programación, Matemáticas &amp; IA
           </span>
-          Supera temas difíciles con{" "}
+          <span className="hidden md:block">
+            Entiende de verdad lo que{" "}
+          </span>
           <span
+            className="hidden md:block"
             style={{
               background: "linear-gradient(135deg, #4edea3, #10b981)",
               WebkitBackgroundClip: "text",
@@ -341,27 +344,60 @@ export default function HeroSection() {
               backgroundClip: "text",
             }}
           >
-            guía experta y directa
+            la IA solo resume.
           </span>
         </h1>
 
         {/* ── Subtitle ── */}
-        <div style={{ maxWidth: "640px", marginBottom: "40px" }}>
+        <div className="hidden md:block" style={{ maxWidth: "640px", marginBottom: "16px" }}>
           <p
             style={{
               fontSize: "1.1rem",
               lineHeight: 1.7,
               color: "#e5e1e4",
+              marginTop: "-8px",
               marginBottom: "8px",
               fontWeight: 500,
             }}
           >
-            Acompañamiento personalizado para desbloquear tu potencial de éxito.
+            Sin videos, sin prompts, sin perder el tiempo.
           </p>
-          <p style={{ fontSize: "0.95rem", lineHeight: 1.7, color: "#bbcabf" }}>
-            Clases adaptadas a ti: desde refuerzo académico y fundamentos de IA hasta preparación de entrevistas técnicas.
-            Avanza con claridad, sin rodeos, sin perderte.
-          </p>
+        </div>
+
+        {/* ── Skills ── */}
+        <div
+          className="mb-7 md:mb-[40px]"
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            gap: "10px",
+          }}
+        >
+          {["Java", "Python", "C", "Algorítmica", "Deep Learning", "Estadística"].map((skill) => (
+            <span
+              key={skill}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                whiteSpace: "nowrap",
+                fontFamily: "var(--font-headline, Manrope), sans-serif",
+                fontSize: "0.8rem",
+                fontWeight: 600,
+                color: "#d8f0e8",
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                background: "rgba(78, 222, 163, 0.04)",
+                border: "1px solid rgba(78, 222, 163, 0.25)",
+                borderRadius: "9999px",
+                padding: "6px 18px",
+                backdropFilter: "blur(8px)",
+                boxShadow: "0 4px 12px rgba(16, 185, 129, 0.08)",
+              }}
+            >
+              {skill}
+            </span>
+          ))}
         </div>
 
         {/* ── CTAs ── */}
@@ -370,7 +406,7 @@ export default function HeroSection() {
           style={{
             justifyContent: "center",
             gap: "16px",
-            marginBottom: "56px",
+            marginBottom: "44px",
           }}
         >
           <button
