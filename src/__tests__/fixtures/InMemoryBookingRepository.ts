@@ -61,6 +61,35 @@ export class InMemoryBookingRepository implements IBookingRepository {
     return false;
   }
 
+  async findIdByEventIdForUser(
+    eventId: string,
+    _userId: string,
+  ): Promise<{ id: string; sessionType: SessionType; status: string } | null> {
+    void _userId;
+    const record = this.bookings.get(eventId);
+    if (!record) return null;
+    return {
+      id:          eventId,
+      sessionType: record.sessionType,
+      status:      record.used ? "completed" : "confirmed",
+    };
+  }
+
+  async markCompleted(bookingId: string): Promise<void> {
+    const record = this.bookings.get(bookingId);
+    if (record && !record.used) record.used = true;
+  }
+
+  async countCompletedPaid(_userId: string): Promise<number> {
+    void _userId;
+    const paid: SessionType[] = ["session1h", "session2h", "pack"];
+    let n = 0;
+    for (const record of this.bookings.values()) {
+      if (record.used && paid.includes(record.sessionType)) n++;
+    }
+    return n;
+  }
+
   async recordRescheduleFailure(data: {
     email:       string;
     startIso:    string;

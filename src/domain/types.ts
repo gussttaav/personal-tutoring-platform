@@ -112,3 +112,20 @@ export interface SubscriptionRecord {
   type:      SubscriptionType;
   createdAt: string;
 }
+
+// ─── Reviews ──────────────────────────────────────────────────────────────────
+
+/** Decision returned after a rating is captured: whether the post-class flow
+ *  should show the Google-review CTA instead of the comment textarea. */
+export interface ReviewDecision {
+  showGoogleReview: boolean;
+}
+
+/** Per-user Google-review prompt gating state (one row per user). */
+export interface GoogleReviewPromptState {
+  shownCount:              number;
+  skippedCount:            number;
+  dismissed:               boolean;
+  lastShownCompletedCount: number | null;
+  acceptedAt:              string | null;
+}

@@ -38,11 +38,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    // Persist the Google account's email/name into the JWT
+    // Persist the Google account's email/name/picture into the JWT
     async jwt({ token, profile }) {
       if (profile) {
-        token.email = profile.email ?? token.email;
-        token.name = profile.name ?? token.name;
+        token.email   = profile.email   ?? token.email;
+        token.name    = profile.name    ?? token.name;
+        token.picture = profile.picture ?? token.picture;
       }
       return token;
     },
@@ -53,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       session.user.email = token.email as string;
       session.user.name  = token.name as string;
+      session.user.image = (token.picture as string | undefined) ?? null;
       session.user.isAdmin = (process.env.ADMIN_EMAILS ?? "")
         .split(",")
         .map(e => e.trim().toLowerCase())
