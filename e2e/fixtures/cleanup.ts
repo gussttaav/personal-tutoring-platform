@@ -62,17 +62,20 @@ export async function truncateTestDb(
   // since the Supabase client requires a WHERE clause on delete().
   // Order matters: child tables (FK referencing users) must be deleted before users.
   const tables: Array<[string, (q: ReturnType<typeof supabase.from>) => unknown]> = [
-    ["session_messages", (q) => q.delete().gt("id", 0)],
-    ["zoom_sessions",    (q) => q.delete().not("id", "is", null)],
-    ["bookings",         (q) => q.delete().not("id", "is", null)],
-    ["credit_packs",     (q) => q.delete().not("id", "is", null)],
-    ["payments",         (q) => q.delete().not("id", "is", null)],
-    ["audit_log",        (q) => q.delete().gt("id", 0)],
-    ["failed_bookings",  (q) => q.delete().neq("stripe_session_id", "")],
-    ["subscriptions",    (q) => q.delete().not("id", "is", null)],
-    ["users",            (q) => q.delete().not("id", "is", null)],
-    ["webhook_events",   (q) => q.delete().neq("idempotency_key", "")],
-    ["slot_locks",       (q) => q.delete().neq("start_iso", "")],
+    ["session_messages",       (q) => q.delete().gt("id", 0)],
+    ["zoom_sessions",          (q) => q.delete().not("id", "is", null)],
+    // reviews.user_id is ON DELETE RESTRICT — must be cleared before users.
+    ["reviews",                (q) => q.delete().not("id", "is", null)],
+    ["bookings",               (q) => q.delete().not("id", "is", null)],
+    ["credit_packs",           (q) => q.delete().not("id", "is", null)],
+    ["payments",               (q) => q.delete().not("id", "is", null)],
+    ["audit_log",              (q) => q.delete().gt("id", 0)],
+    ["failed_bookings",        (q) => q.delete().neq("stripe_session_id", "")],
+    ["subscriptions",          (q) => q.delete().not("id", "is", null)],
+    ["google_review_prompts",  (q) => q.delete().not("user_id", "is", null)],
+    ["users",                  (q) => q.delete().not("id", "is", null)],
+    ["webhook_events",         (q) => q.delete().neq("idempotency_key", "")],
+    ["slot_locks",             (q) => q.delete().neq("start_iso", "")],
   ];
 
   for (const [table, run] of tables) {

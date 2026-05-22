@@ -6,6 +6,7 @@ import { PaymentService }       from "./PaymentService";
 import { ChatService }          from "./ChatService";
 import { SubscriptionService }  from "./SubscriptionService";
 import { UserService }          from "./UserService";
+import { ReviewService }        from "./ReviewService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -14,6 +15,8 @@ import {
   supabasePaymentRepository,
   supabaseSubscriptionRepository,
   supabaseUserRepository,
+  supabaseReviewRepository,
+  supabaseGoogleReviewPromptRepository,
 } from "@/infrastructure/supabase";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient }  from "@/infrastructure/google";
@@ -50,3 +53,10 @@ export const paymentService = new PaymentService(
 export const chatService = new ChatService(new GeminiClient());
 
 export const subscriptionService = new SubscriptionService(supabaseSubscriptionRepository, userService);
+
+export const reviewService = new ReviewService(
+  supabaseReviewRepository,
+  supabaseGoogleReviewPromptRepository,
+  supabaseBookingRepository,
+  userService,
+);

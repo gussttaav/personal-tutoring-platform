@@ -330,7 +330,7 @@ export default function HeroSection() {
               letterSpacing: 0,
             }}
           >
-            Profesor · Programación, Matemáticas &amp; IA
+            Profesor de Programación, Matemáticas e IA
           </span>
           <span className="hidden md:block">
             Entiende de verdad lo que{" "}
@@ -360,7 +360,7 @@ export default function HeroSection() {
               fontWeight: 500,
             }}
           >
-            Sin videos, sin prompts, sin perder el tiempo.
+            Clases individuales. Sin videos, sin prompts, sin perder el tiempo.
           </p>
         </div>
 
@@ -402,6 +402,7 @@ export default function HeroSection() {
 
         {/* ── CTAs ── */}
         <div
+          id="hero-cta-row"
           className="hero-cta-row"
           style={{
             justifyContent: "center",

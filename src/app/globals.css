@@ -266,7 +266,7 @@ body::after {
   justify-content: center;
   box-shadow: 0 4px 24px rgba(78, 222, 163, 0.4), 0 2px 8px rgba(0, 0, 0, 0.4);
   z-index: 1000;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s ease, box-shadow 0.2s ease, opacity 0.25s ease;
 }
 
 .chat-fab:hover {
@@ -630,6 +630,15 @@ body:has(.chat-panel--expanded) .chat-fab {
   .chat-panel--expanded ~ .chat-fab,
   body:has(.chat-panel--expanded) .chat-fab {
     display: none !important;
+  }
+
+  /* Mobile only: hide the FAB while it would overlap the hero CTAs.
+     Toggled by the IntersectionObserver in Chat.tsx; revealed with a
+     fade/scale once the user scrolls past the hero. */
+  .chat-fab--hero-overlap {
+    opacity: 0;
+    transform: scale(0.6);
+    pointer-events: none;
   }
 }
 

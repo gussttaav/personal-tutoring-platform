@@ -17,6 +17,7 @@ const HTTP_STATUS_MAP: Record<string, number> = {
   INVALID_CANCEL_TOKEN:       400,
   OUTSIDE_CANCEL_WINDOW:      400,
   CANCEL_TOKEN_CONSUMED:      400,
+  REVIEW_BOOKING_NOT_FOUND:   404,
 };
 
 export function mapDomainErrorToResponse(

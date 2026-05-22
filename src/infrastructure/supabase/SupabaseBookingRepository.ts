@@ -205,6 +205,51 @@ export class SupabaseBookingRepository implements IBookingRepository {
     return (count ?? 0) > 0;
   }
 
+  async findIdByEventIdForUser(
+    eventId: string,
+    userId: string,
+  ): Promise<{ id: string; sessionType: SessionType; status: string } | null> {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("id, session_type, status")
+      .eq("calendar_event_id", eventId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return null;
+
+    return {
+      id:          data.id,
+      sessionType: data.session_type as SessionType,
+      status:      data.status,
+    };
+  }
+
+  async markCompleted(bookingId: string): Promise<void> {
+    // Conservative + idempotent: only 'confirmed' → 'completed'. Never
+    // overwrites 'cancelled' / 'no_show'; a second call is a no-op.
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "completed" })
+      .eq("id", bookingId)
+      .eq("status", "confirmed");
+
+    if (error) throw error;
+  }
+
+  async countCompletedPaid(userId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from("bookings")
+      .select("id", { head: true, count: "exact" })
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .in("session_type", ["session1h", "session2h", "pack"]);
+
+    if (error) throw error;
+    return count ?? 0;
+  }
+
   async recordRescheduleFailure(data: {
     email:       string;
     startIso:    string;

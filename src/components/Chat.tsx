@@ -144,6 +144,10 @@ export default function Chat() {
   const [isLoading,       setIsLoading]       = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [showDot,         setShowDot]         = useState(true);
+  // UX: on mobile the FAB sits exactly over the hero "Ver disponibilidad"
+  // button. Track whether the hero CTA row is on screen so we can hide the
+  // FAB while it would overlap and reveal it once the user scrolls past.
+  const [heroCtaOnScreen, setHeroCtaOnScreen] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef       = useRef<HTMLInputElement>(null);
@@ -164,6 +168,46 @@ export default function Chat() {
   useEffect(() => {
     if (isOpen) setTimeout(() => inputRef.current?.focus(), 220);
   }, [isOpen]);
+
+  // Hide the FAB while it would overlap the hero CTAs (mobile overlap fix).
+  // The CSS only acts on the resulting class below the mobile breakpoint,
+  // so desktop is unaffected regardless of this state.
+  //
+  // The FAB sits in the bottom ~96px of the viewport (32px offset + 64px
+  // height). We hide it while the hero CTA row's bottom edge is still within
+  // that band (+16px gap) and reveal it the moment the row scrolls clear —
+  // i.e. as soon as "Ver disponibilidad" rises above the FAB, not only once
+  // the hero has left the screen entirely. An IntersectionObserver can't
+  // express a px-from-bottom line, so we measure the row directly on scroll,
+  // rAF-throttled and only writing state on an actual change.
+  useEffect(() => {
+    const heroCta = document.getElementById("hero-cta-row");
+    if (!heroCta) return;
+
+    const FAB_ZONE = 112; // 32px offset + 64px height + 16px gap
+    let frame = 0;
+
+    const measure = () => {
+      frame = 0;
+      const overlapping =
+        heroCta.getBoundingClientRect().bottom > window.innerHeight - FAB_ZONE;
+      setHeroCtaOnScreen((prev) => (prev === overlapping ? prev : overlapping));
+    };
+
+    const onScroll = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(measure);
+    };
+
+    measure(); // sync initial state with current scroll position
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
 
   useEffect(() => {
     function handleOpenChat() { setIsOpen(true); setShowDot(false); }
@@ -275,7 +319,7 @@ export default function Chat() {
       </div>
 
       <button
-        className={`chat-fab${isOpen ? " chat-fab--open" : ""}`}
+        className={`chat-fab${isOpen ? " chat-fab--open" : ""}${heroCtaOnScreen && !isOpen ? " chat-fab--hero-overlap" : ""}`}
         onClick={togglePanel} aria-label={isOpen ? "Cerrar asistente" : "Abrir asistente"} aria-expanded={isOpen}
       >
         {showDot && !isOpen && <div className="chat-fab-dot" aria-hidden="true" />}

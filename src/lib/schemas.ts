@@ -72,3 +72,24 @@ export const SubscribeSchema = z.object({
 });
 
 export type SubscribeInput = z.infer<typeof SubscribeSchema>;
+
+// ─── Post-class reviews ───────────────────────────────────────────────────────
+
+export const ReviewSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind:    z.literal("rating"),
+    eventId: z.string().min(1),
+    rating:  z.number().int().min(1).max(5),
+  }),
+  z.object({
+    kind:    z.literal("comment"),
+    eventId: z.string().min(1),
+    comment: z.string().max(1000),
+  }),
+  z.object({
+    kind:   z.literal("google"),
+    action: z.enum(["accept", "decline"]),
+  }),
+]);
+
+export type ReviewInput = z.infer<typeof ReviewSchema>;

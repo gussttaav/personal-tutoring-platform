@@ -24,12 +24,20 @@
 //   NOT themselves fixed — so there is no pt/pb offset fighting.
 //
 // Loaded ONLY on the client via dynamic() in ZoomRoom.tsx (ssr: false).
+//
+// Applied fixes:
+//   REL-02: Client-side hard-stop enforcement. The server-side QStash
+//           zoom-terminate job only deletes the session record (blocking new
+//           JWTs) — the Zoom Video SDK has no server API to disconnect a live
+//           participant, so the client must leave itself when the session's
+//           grace window (startIso + durationWithGrace) elapses.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import SessionChat from "./SessionChat";
 import SessionSettings from "./SessionSettings";
+import PostClassReview from "./PostClassReview";
 import BrandLogo from "@/components/BrandLogo";
 import { useSessionChatStream } from "@/hooks/useSessionChatStream";
 import { useZoomConnectionQuality } from "@/hooks/useZoomConnectionQuality";
@@ -307,6 +315,9 @@ export default function ZoomRoomInner({
   // can re-attach SDK listeners when they change.
   const [client,     setClient]     = useState<unknown | null>(null);
   const [selfUserId, setSelfUserId] = useState<number>(0);
+  // True in the final minute before the session is force-ended. Drives the
+  // "la sesión terminará pronto" banner.
+  const [endingSoon, setEndingSoon] = useState(false);
 
   // Primary remote — prefer a user whose camera is on. Handles the rejoin
   // race where a stale userId (cam-off after the SDK detected a stalled
@@ -339,6 +350,11 @@ export default function ZoomRoomInner({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const streamRef      = useRef<any>(null);
   const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Hard-stop enforcement timers (REL-02): the server-side QStash cleanup only
+  // blocks new joins — it cannot disconnect a live Video SDK participant, so the
+  // client must leave on its own when the session's grace window elapses.
+  const hardStopRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warnRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connectedAtRef = useRef<number>(0);
   const selfUserIdRef  = useRef<number>(0);
 
@@ -935,6 +951,39 @@ export default function ZoomRoomInner({
     if (state === "error" && onError) onError(errorMsg || "Error al conectar con la sesión");
   }, [state, errorMsg, onError]);
 
+  // ── Hard-stop enforcement (REL-02) ─────────────────────────────────────────
+  // The QStash zoom-terminate job only deletes the session record (blocks new
+  // JWTs); it cannot kick a participant who is already connected, and the Zoom
+  // Video SDK has no server-side "end session" API. So enforce the cutoff here.
+  // The deadline is anchored to startIso + durationWithGrace — the SAME value
+  // the server schedules QStash with — so a late joiner still ends on schedule
+  // rather than getting a fresh full duration.
+  useEffect(() => {
+    if (state !== "connected") return;
+    const tok = tokenRef.current;
+    if (!tok) return;
+
+    setEndingSoon(false); // reset stale banner on rejoin/retry
+
+    const startMs    = new Date(tok.startIso).getTime();
+    const hardStopMs = startMs + tok.durationWithGrace * 60_000;
+    const msLeft     = hardStopMs - Date.now();
+
+    // Already past the grace window (e.g. joined very late) — end immediately.
+    if (msLeft <= 0) { void handleLeave(); return; }
+
+    const warnMs = msLeft - 60_000;
+    if (warnMs <= 0) setEndingSoon(true);
+    else warnRef.current = setTimeout(() => setEndingSoon(true), warnMs);
+
+    hardStopRef.current = setTimeout(() => { void handleLeave(); }, msLeft);
+
+    return () => {
+      if (warnRef.current)     clearTimeout(warnRef.current);
+      if (hardStopRef.current) clearTimeout(hardStopRef.current);
+    };
+  }, [state, handleLeave]);
+
   // ── Elapsed timer: HH:MM ──────────────────────────────────────────────────
   const hh           = String(Math.floor(elapsedSec / 3600)).padStart(2, "0");
   const mm           = String(Math.floor((elapsedSec % 3600) / 60)).padStart(2, "0");
@@ -1011,6 +1060,17 @@ export default function ZoomRoomInner({
             </button>
           </div>
         </header>
+
+        {/* ── Session-ending warning (final minute) ── */}
+        {endingSoon && isConnected && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="shrink-0 w-full bg-amber-500/15 border-b border-amber-400/30 text-amber-300 text-xs md:text-sm font-headline tracking-wide text-center px-4 py-2"
+          >
+            La sesión terminará en menos de un minuto.
+          </div>
+        )}
 
         {/* ── Main workspace — fills between header and bottom bar ── */}
         <main className="flex-1 min-h-0 md:px-8 flex gap-6 overflow-hidden">
@@ -1368,20 +1428,11 @@ export default function ZoomRoomInner({
             style={{ background: "rgba(13,15,16,0.95)" }}
           >
             {state === "ended" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
-                  style={{ background: "rgba(78,222,163,0.12)", color: "#4edea3" }}
-                >
-                  ✓
-                </div>
-                <h2 className="text-xl font-medium" style={{ color: "#e5e1e4" }}>
-                  Sesión finalizada
-                </h2>
-                <p className="text-sm" style={{ color: "#86948a" }}>
-                  Gracias por participar. Hasta la próxima.
-                </p>
-              </div>
+              <PostClassReview
+                eventId={eventId}
+                userName={userName}
+                userAvatarUrl={nextAuthSession?.user?.image ?? null}
+              />
             )}
 
             {state === "error" && (

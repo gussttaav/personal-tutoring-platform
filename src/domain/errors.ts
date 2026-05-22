@@ -31,3 +31,7 @@ export class UnauthorizedError extends DomainError {
 export class AlreadySubscribedError extends DomainError {
   constructor() { super("Ya estás suscrito a este contenido", "ALREADY_SUBSCRIBED"); }
 }
+
+export class ReviewBookingNotFoundError extends DomainError {
+  constructor() { super("No se encontró la clase a valorar", "REVIEW_BOOKING_NOT_FOUND"); }
+}

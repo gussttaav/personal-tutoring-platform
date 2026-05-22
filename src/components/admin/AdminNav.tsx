@@ -1,46 +1,50 @@
 /**
- * ADMIN-01: Admin navigation bar.
+ * ADMIN-01: Admin navigation bar (redesigned).
  */
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import BrandLogo from "@/components/BrandLogo";
 
 const NAV_LINKS = [
-  { href: "/admin",                label: "Panel" },
-  { href: "/admin/students",       label: "Alumnos" },
-  { href: "/admin/bookings",       label: "Reservas" },
-  { href: "/admin/failed-bookings", label: "Fallidas" },
-  { href: "/admin/payments",       label: "Pagos" },
+  { href: "/admin", label: "Panel", icon: "dashboard" },
+  { href: "/admin/students", label: "Alumnos", icon: "groups" },
+  { href: "/admin/bookings", label: "Reservas", icon: "calendar_month" },
+  { href: "/admin/failed-bookings", label: "Fallidas", icon: "error" },
+  { href: "/admin/payments", label: "Pagos", icon: "payments" },
 ];
 
-interface AdminNavProps {
-  email: string;
-}
-
-export function AdminNav({ email }: AdminNavProps) {
+export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex items-center gap-1 px-6 py-3 bg-[#1e1e20] border-b border-white/10">
-      <span className="text-primary font-bold mr-4 text-sm tracking-wide uppercase">Admin</span>
-      {NAV_LINKS.map(link => {
-        const active = pathname === link.href || (link.href !== "/admin" && pathname.startsWith(link.href));
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={`px-3 py-1.5 rounded text-sm transition-colors ${
-              active
-                ? "bg-primary/10 text-primary font-medium"
-                : "text-white/60 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            {link.label}
-          </Link>
-        );
-      })}
-      <span className="ml-auto text-xs text-white/40">{email}</span>
+    <nav className="admin-nav">
+      <div className="admin-nav-inner">
+        <Link href="/admin" className="admin-nav-brand">
+          <BrandLogo size={20} />
+          <span className="admin-nav-wordmark">
+            GUSTAVO<span className="admin-nav-wordmark-accent">AI.DEV</span>
+          </span>
+        </Link>
+        <div className="admin-nav-links">
+          {NAV_LINKS.map((link) => {
+            const active =
+              pathname === link.href ||
+              (link.href !== "/admin" && pathname.startsWith(link.href));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`admin-nav-link ${active ? "is-active" : ""}`}
+              >
+                <span className="material-symbols-outlined">{link.icon}</span>
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
     </nav>
   );
 }

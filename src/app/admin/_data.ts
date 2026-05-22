@@ -199,6 +199,7 @@ export async function fetchAuditLog(email: string): Promise<AuditEntry[]> {
 
 export interface AdminBookingRow {
   id:           string;
+  join_token:   string;
   session_type: string;
   starts_at:    string;
   ends_at:      string;
@@ -210,7 +211,7 @@ export interface AdminBookingRow {
 export async function fetchAllBookings(): Promise<AdminBookingRow[]> {
   const { data } = await supabase
     .from("bookings")
-    .select("id, session_type, starts_at, ends_at, status, users(email, name)")
+    .select("id, join_token, session_type, starts_at, ends_at, status, users(email, name)")
     .order("starts_at", { ascending: false })
     .limit(100);
 
@@ -218,6 +219,7 @@ export async function fetchAllBookings(): Promise<AdminBookingRow[]> {
     const user = Array.isArray(b.users) ? b.users[0] : b.users;
     return {
       id:           b.id,
+      join_token:   (b as { join_token?: string | null }).join_token ?? "",
       session_type: b.session_type,
       starts_at:    b.starts_at,
       ends_at:      b.ends_at,

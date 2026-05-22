@@ -5,57 +5,75 @@
 
 import { paymentService } from "@/services";
 import { RetryButton } from "@/components/admin/RetryButton";
-
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("es-ES", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
+import { PageHeader, Card, Empty } from "@/components/admin/ui";
+import { fmtDateTime, relativeTime } from "@/components/admin/format";
 
 export default async function FailedBookingsPage() {
   const entries = await paymentService.listFailedBookings();
 
   return (
-    <div>
-      <h1 className="mb-6 text-2xl font-bold">Reservas fallidas</h1>
+    <div className="page-stack">
+      <PageHeader
+        overline="Operaciones"
+        title="Reservas fallidas"
+        subtitle="Cola de cartas muertas — pagos confirmados sin reserva creada"
+      />
 
-      {entries.length === 0 ? (
-        <p className="text-white/40">Sin reservas fallidas.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-white/10">
-          <table className="w-full text-sm">
+      <div className="alert">
+        <span className="material-symbols-outlined">info</span>
+        <div>
+          <strong>¿Qué es esta lista?</strong>
+          <p>
+            Pagos que se cobraron correctamente pero la reserva no llegó a crearse en el
+            calendario. Reintentar invoca <code>/api/admin/failed-bookings</code>; si sigue
+            fallando hay que reembolsar manualmente desde Stripe.
+          </p>
+        </div>
+      </div>
+
+      <Card padding={false}>
+        {entries.length === 0 ? (
+          <div className="card-body">
+            <Empty icon="check_circle" label="Sin reservas fallidas. Todo en orden." />
+          </div>
+        ) : (
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-white/10 bg-[#1e1e20] text-left text-xs text-white/40">
-                <th className="px-4 py-3">Fecha fallo</th>
-                <th className="px-4 py-3">Alumno</th>
-                <th className="px-4 py-3">Slot</th>
-                <th className="px-4 py-3">Error</th>
-                <th className="px-4 py-3">Acción</th>
+              <tr>
+                <th>Fecha fallo</th>
+                <th>Alumno</th>
+                <th>Slot reservado</th>
+                <th>Error</th>
+                <th>Stripe</th>
+                <th />
               </tr>
             </thead>
             <tbody>
-              {entries.map(e => (
-                <tr key={e.stripeSessionId} className="border-b border-white/5">
-                  <td className="px-4 py-3 text-white/50 whitespace-nowrap">
-                    {formatDateTime(e.failedAt)}
+              {entries.map((e) => (
+                <tr key={e.stripeSessionId}>
+                  <td>
+                    <div className="cell-stack">
+                      <span>{fmtDateTime(e.failedAt)}</span>
+                      <span className="cell-meta">{relativeTime(e.failedAt)}</span>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-white/70">{e.email}</td>
-                  <td className="px-4 py-3 text-white/50 whitespace-nowrap">
-                    {formatDateTime(e.startIso)}
-                  </td>
-                  <td className="px-4 py-3 text-red-400 text-xs max-w-xs truncate" title={e.error}>
+                  <td>{e.email ?? "—"}</td>
+                  <td className="muted">{fmtDateTime(e.startIso)}</td>
+                  <td className="error-text" style={{ maxWidth: 320 }} title={e.error}>
                     {e.error}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="mono muted truncate" title={e.stripeSessionId}>
+                    {e.stripeSessionId}
+                  </td>
+                  <td className="cell-right">
                     <RetryButton stripeSessionId={e.stripeSessionId} />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+        )}
+      </Card>
     </div>
   );
 }

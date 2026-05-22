@@ -70,3 +70,12 @@ export const subscribeRatelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(10, "1 m"),
   prefix:  "rl:subscribe",
 });
+
+// Post-class reviews: 20 requests per minute per IP. A single review involves
+// up to ~3 writes (rating, comment, google decision); 20 leaves headroom while
+// stopping abuse.
+export const reviewRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(20, "1 m"),
+  prefix:  "rl:review",
+});
