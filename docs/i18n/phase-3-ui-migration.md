@@ -119,7 +119,7 @@ Update [playwright.config.ts](../../playwright.config.ts) or per-test fixtures i
 - [ ] `messages/es.json` and `messages/en.json` have identical key sets.
 - [ ] Domain errors carry codes; presentation layer translates them.
 - [ ] Playwright suite passes for both locales.
-- [ ] `npm run build`, `lint`, `test`, `test:e2e` clean.
+- [ ] `pnpm build`, `lint`, `test`, `test:e2e` clean.
 
 ## Verification
 

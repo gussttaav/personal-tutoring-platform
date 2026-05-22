@@ -55,5 +55,5 @@ git checkout -b feat/i18n-phase-<N>-<short-name>
 1. Clear cookies, set browser language to French → visit `/` → land on `/en`. Browse, log in via Google, book a session → confirmation email arrives in English with English-formatted date/time.
 2. Clear cookies, browser in Spanish → visit `/` → stays at `/` (no redirect). Book → email in Spanish, identical to today.
 3. Logged-in user toggles the switcher mid-session: page re-renders in the new language, NextAuth session intact, subsequent emails follow the new locale.
-4. `npm run build`, `npm run lint`, `npm test`, `npm run test:e2e` all clean.
+4. `pnpm build`, `pnpm lint`, `pnpm test`, `pnpm test:e2e` all clean.
 5. Watch Sentry for 24h after each phase for new locale-related errors (routing, hydration, missing-key warnings).

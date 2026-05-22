@@ -72,10 +72,10 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - Credit atomicity uses a Postgres stored procedure (`decrement_credit`), not application-side logic.
 
 ## Testing
-- `npm test` — Jest unit + integration tests
-- `npm run test:unit` — unit tests only
-- `npm run test:integration` — integration tests only
-- `npm run test:e2e` — Playwright end-to-end tests
+- `pnpm test` — Jest unit + integration tests
+- `pnpm test:unit` — unit tests only
+- `pnpm test:integration` — integration tests only
+- `pnpm test:e2e` — Playwright end-to-end tests
 - Tests for services live in `src/services/__tests__/`
 - Tests for infrastructure live alongside: `src/infrastructure/supabase/__tests__/`
 - Integration tests in `src/__tests__/integration/`
@@ -83,11 +83,11 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - New business logic requires a service-level test with mock repositories
 
 ## Commands
-- `npm run dev` — local dev server
-- `npm run build` — production build (must pass before PR)
-- `npm run lint` — must pass
-- `npm test` — all Jest tests
-- `npm run test:e2e` — Playwright tests (requires `E2E_BASE_URL`)
+- `pnpm dev` — local dev server
+- `pnpm build` — production build (must pass before PR)
+- `pnpm lint` — must pass
+- `pnpm test` — all Jest tests
+- `pnpm test:e2e` — Playwright tests (requires `E2E_BASE_URL`)
 
 ## Database
 - Schema defined in `supabase/migrations/`

@@ -20,7 +20,7 @@
  *
  * In development the output is still valid JSON, but you can pipe through
  * `| jq .` for readable formatting:
- *   npm run dev 2>&1 | jq .
+ *   pnpm dev 2>&1 | jq .
  */
 
 import * as Sentry from "@sentry/nextjs";

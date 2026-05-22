@@ -28,7 +28,7 @@ git checkout -b feat/i18n-phase-1-foundation
 ### 1. Install
 
 ```bash
-npm install next-intl
+pnpm add next-intl
 ```
 
 ### 2. Create i18n config files
@@ -181,10 +181,10 @@ Some moved files may use relative imports like `../../components/...`. These usu
 
 ## Exit criteria
 
-- [ ] `npm run build` clean.
-- [ ] `npm run lint` clean.
-- [ ] `npm test` clean.
-- [ ] `npm run test:e2e` clean (no test changes needed — Spanish text is unchanged).
+- [ ] `pnpm build` clean.
+- [ ] `pnpm lint` clean.
+- [ ] `pnpm test` clean.
+- [ ] `pnpm test:e2e` clean (no test changes needed — Spanish text is unchanged).
 - [ ] All existing URLs return their previous content: `/`, `/area-personal`, `/admin`, `/sesion/<token>`, `/cancelar`, `/pago-exitoso`, `/privacidad`, `/terminos`, `/sesion-confirmada`, `/auth/...`.
 - [ ] `/en`, `/en/area-personal`, `/en/admin` return 200 with (still) Spanish content. (`/en` just shows the same page until Phase 2 translates anything.)
 - [ ] `/api/auth/session` returns the normal NextAuth session payload.
@@ -195,7 +195,7 @@ Some moved files may use relative imports like `../../components/...`. These usu
 
 Manual:
 ```bash
-npm run dev
+pnpm dev
 # In a browser:
 #   http://localhost:3000/
 #   http://localhost:3000/area-personal
@@ -208,7 +208,7 @@ Each should match its pre-change behavior. Spanish content on both `/` and `/en/
 
 Automated:
 ```bash
-npm run lint && npm run build && npm test && npm run test:e2e
+pnpm lint && pnpm build && pnpm test && pnpm test:e2e
 ```
 
 ## PR description template
@@ -221,7 +221,7 @@ npm run lint && npm run build && npm test && npm run test:e2e
 - No string translation yet — Spanish content unchanged. /en/* renders the same Spanish content as / until Phase 2.
 
 ## Test plan
-- [ ] npm run build / lint / test / test:e2e pass
+- [ ] pnpm build / lint / test / test:e2e pass
 - [ ] / and /en/ both render correctly (Spanish)
 - [ ] /api/auth/session works
 - [ ] Stripe webhook + QStash callback URLs unchanged

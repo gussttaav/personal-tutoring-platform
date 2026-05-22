@@ -111,10 +111,10 @@ Security is treated as a first-class concern throughout the codebase:
 ## Testing & CI
 
 ```bash
-npm test                # all Jest tests (unit + integration)
-npm run test:unit       # unit tests only
-npm run test:integration # integration tests only
-npm run test:e2e        # Playwright end-to-end tests (requires E2E_BASE_URL)
+pnpm test                # all Jest tests (unit + integration)
+pnpm test:unit           # unit tests only
+pnpm test:integration    # integration tests only
+pnpm test:e2e            # Playwright end-to-end tests (requires E2E_BASE_URL)
 ```
 
 - **Unit tests** — service logic tested with in-memory repository fakes; no real network calls.
@@ -128,7 +128,8 @@ npm run test:e2e        # Playwright end-to-end tests (requires E2E_BASE_URL)
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
+- [pnpm](https://pnpm.io) 10+ (run `corepack enable` to get the version pinned in `package.json`)
 - [Supabase](https://supabase.com) project (free tier is sufficient)
 - [Upstash](https://console.upstash.com) Redis database (free tier is sufficient)
 - [Stripe](https://stripe.com) account with products and prices created
@@ -143,7 +144,7 @@ npm run test:e2e        # Playwright end-to-end tests (requires E2E_BASE_URL)
 ```bash
 git clone https://github.com/gussttaav/personal-web-booking-app.git
 cd personal-web-booking-app
-npm install
+pnpm install
 ```
 
 ### 2. Environment variables
@@ -209,7 +210,7 @@ NEXT_PUBLIC_BASE_URL=http://localhost:3000
 ### 3. Run in development
 
 ```bash
-npm run dev
+pnpm dev
 # http://localhost:3000
 ```
 
