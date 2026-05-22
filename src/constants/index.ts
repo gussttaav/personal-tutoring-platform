@@ -69,3 +69,6 @@ export const PACK_CONFIG = {
 
 /** Pack validity period in months */
 export const PACK_VALIDITY_MONTHS = 6;
+
+// Google Business review link, surfaced in the post-class review flow.
+export const GOOGLE_REVIEW_URL = "https://g.page/r/CeUEcIsZXTyiEBM/review";

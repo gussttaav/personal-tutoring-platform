@@ -54,6 +54,31 @@ export interface IBookingRepository {
   hasAnyBooking(email: string): Promise<boolean>;
 
   /**
+   * Looks up a booking by its calendar event id, scoped to the owning user
+   * (security: a user can only review their own classes). Returns null if no
+   * such booking exists for that user.
+   */
+  findIdByEventIdForUser(eventId: string, userId: string): Promise<{
+    id:          string;
+    sessionType: SessionType;
+    status:      string;
+  } | null>;
+
+  /**
+   * Marks a booking as completed. Idempotent and conservative: only transitions
+   * a booking whose status is still 'confirmed' — never overwrites 'cancelled'
+   * or 'no_show'.
+   */
+  markCompleted(bookingId: string): Promise<void>;
+
+  /**
+   * Counts the user's completed paid classes (status='completed' and
+   * session_type in session1h/session2h/pack). The free 15-min intro is
+   * excluded — it never counts toward the Google-review cadence.
+   */
+  countCompletedPaid(userId: string): Promise<number>;
+
+  /**
    * Persists a failed reschedule attempt to the dead-letter store so it can be
    * recovered or investigated manually. Best-effort — callers should not throw
    * on failure here.

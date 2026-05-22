@@ -37,6 +37,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import SessionChat from "./SessionChat";
 import SessionSettings from "./SessionSettings";
+import PostClassReview from "./PostClassReview";
 import BrandLogo from "@/components/BrandLogo";
 import { useSessionChatStream } from "@/hooks/useSessionChatStream";
 import { useZoomConnectionQuality } from "@/hooks/useZoomConnectionQuality";
@@ -1427,20 +1428,11 @@ export default function ZoomRoomInner({
             style={{ background: "rgba(13,15,16,0.95)" }}
           >
             {state === "ended" && (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <div
-                  className="w-14 h-14 rounded-full flex items-center justify-center text-2xl"
-                  style={{ background: "rgba(78,222,163,0.12)", color: "#4edea3" }}
-                >
-                  ✓
-                </div>
-                <h2 className="text-xl font-medium" style={{ color: "#e5e1e4" }}>
-                  Sesión finalizada
-                </h2>
-                <p className="text-sm" style={{ color: "#86948a" }}>
-                  Gracias por participar. Hasta la próxima.
-                </p>
-              </div>
+              <PostClassReview
+                eventId={eventId}
+                userName={userName}
+                userAvatarUrl={nextAuthSession?.user?.image ?? null}
+              />
             )}
 
             {state === "error" && (
