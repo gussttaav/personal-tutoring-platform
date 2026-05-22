@@ -72,6 +72,7 @@ export function BookingsTable({ bookings }: { bookings: AdminBookingRow[] }) {
                 <th>Inicio</th>
                 <th>Fin</th>
                 <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -96,6 +97,19 @@ export function BookingsTable({ bookings }: { bookings: AdminBookingRow[] }) {
                   <td className="muted">{fmtDateTime(b.ends_at)}</td>
                   <td>
                     <StatusBadge status={b.status} />
+                  </td>
+                  <td>
+                    {b.status === "confirmed" && b.join_token && (
+                      <a
+                        href={`/sesion/${b.join_token}`}
+                        className="btn-ghost-sm"
+                        style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>videocam</span>
+                        Unirse
+                      </a>
+                    )}
                   </td>
                 </tr>
               ))}

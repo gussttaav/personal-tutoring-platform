@@ -103,6 +103,7 @@ export default async function AdminDashboard() {
                   <th>Tipo</th>
                   <th>Inicio</th>
                   <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,6 +124,18 @@ export default async function AdminDashboard() {
                     </td>
                     <td>
                       <StatusBadge status={b.status} />
+                    </td>
+                    <td>
+                      {b.join_token && (
+                        <a
+                          href={`/sesion/${b.join_token}`}
+                          className="btn-ghost-sm"
+                          style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>videocam</span>
+                          Unirse
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}
