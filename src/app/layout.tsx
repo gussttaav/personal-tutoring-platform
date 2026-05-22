@@ -59,7 +59,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`dark ${manrope.variable} ${inter.variable}`}>
+    <html lang="es" data-scroll-behavior="smooth" className={`dark ${manrope.variable} ${inter.variable}`}>
       <head>
         <link rel="manifest" href="/site.webmanifest" />
         {/* Preconnect so the font request starts immediately */}
