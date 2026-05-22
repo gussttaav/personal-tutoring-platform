@@ -96,12 +96,12 @@ If a `robots.txt` exists, verify it doesn't block `/en/` paths.
 - [ ] Each customer-facing page has `hrefLang="es"`, `hrefLang="en"`, and `hrefLang="x-default"` link tags.
 - [ ] Sitemap (if present) emits both locale variants.
 - [ ] Lighthouse SEO clean for both locales.
-- [ ] `npm run build`, `lint`, `test`, `test:e2e` clean.
+- [ ] `pnpm build`, `lint`, `test`, `test:e2e` clean.
 
 ## Verification
 
 ```bash
-npm run build && npm start
+pnpm build && pnpm start
 # Open / and /en, view source:
 #   - <html lang="es"> on /
 #   - <html lang="en"> on /en
@@ -121,7 +121,7 @@ npm run build && npm start
 - [ ] Form validation errors show in chosen language
 - [ ] View source: <html lang> + hrefLang tags correct on / and /en
 - [ ] Lighthouse SEO clean on both locales
-- [ ] npm run build/lint/test/test:e2e pass
+- [ ] pnpm build/lint/test/test:e2e pass
 ```
 
 ---

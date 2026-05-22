@@ -71,13 +71,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
@@ -88,10 +90,10 @@ jobs:
         run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_TEST }}"
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: npx playwright test
+        run: pnpm exec playwright test
         env:
           E2E_BASE_URL:          ${{ secrets.E2E_BASE_URL }}
           SUPABASE_URL:          ${{ secrets.SUPABASE_URL_TEST }}

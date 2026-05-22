@@ -7,7 +7,7 @@
  *   1. Create .env.e2e.local with test DB credentials (see below)
  *   2. stripe listen --forward-to localhost:3000/api/stripe/webhook
  *      (required for booking-pack and booking-single — delivers Stripe webhooks locally)
- *   3. E2E_MODE=true E2E_EMAILS=e2e-test@example.com npm run test:e2e
+ *   3. E2E_MODE=true E2E_EMAILS=e2e-test@example.com pnpm test:e2e
  *
  * .env.e2e.local (gitignored) — overrides .env.local for the webServer process:
  *   SUPABASE_URL=https://<test-ref>.supabase.co
@@ -72,7 +72,7 @@ export default defineConfig({
   webServer: process.env.E2E_BASE_URL
     ? undefined
     : {
-        command: "npm run dev",
+        command: "pnpm dev",
         url: "http://localhost:3000",
         reuseExistingServer: !Object.keys(e2eOverrides).length,
         timeout: 120_000,
