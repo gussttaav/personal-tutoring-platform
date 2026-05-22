@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { AdminNav } from "@/components/admin/AdminNav";
+import "./admin.css";
 
 export const metadata = { title: "Admin — gustavoai.dev" };
 
@@ -18,9 +19,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen bg-[#131315] text-white">
-      <AdminNav email={session!.user!.email!} />
-      <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+    <div className="admin-shell">
+      <AdminNav />
+      <main className="admin-main">{children}</main>
     </div>
   );
 }

@@ -1,28 +1,16 @@
 /**
- * ADMIN-01: Payment history — last 100 payments with 30-day revenue total.
+ * ADMIN-01: Payment history — last 100 payments with 30-day revenue + sparkline.
  */
 
+import Link from "next/link";
 import { fetchPayments, sumRevenueLast30Days } from "../_data";
+import { PageHeader, Card, StatusBadge, Empty } from "@/components/admin/ui";
+import { fmtDateTime, relativeTime } from "@/components/admin/format";
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("es-ES", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
-
-function statusBadge(status: string) {
-  const classes: Record<string, string> = {
-    succeeded: "bg-primary/10 text-primary",
-    pending:   "bg-yellow-500/10 text-yellow-400",
-    refunded:  "bg-blue-500/10 text-blue-400",
-    failed:    "bg-red-500/10 text-red-400",
-  };
-  return (
-    <span className={`rounded px-2 py-0.5 text-xs ${classes[status] ?? "bg-white/10 text-white/40"}`}>
-      {status}
-    </span>
-  );
+function checkoutLabel(type: string): string {
+  if (type === "single") return "Sesión única";
+  const parts = type.split("_");
+  return parts.length > 1 ? `Pack ${parts[1]}` : "Pack";
 }
 
 export default async function PaymentsPage() {
@@ -32,54 +20,112 @@ export default async function PaymentsPage() {
   ]);
 
   const revenue = (revenueCents / 100).toFixed(2);
+  const succeeded = payments.filter((p) => p.status === "succeeded").length;
+  const refunded = payments.filter((p) => p.status === "refunded").length;
+
+  // Last-14-days revenue sparkline from succeeded payments.
+  const days = 14;
+  const buckets = new Array(days).fill(0) as number[];
+  for (const p of payments) {
+    if (p.status !== "succeeded") continue;
+    const d = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86_400_000);
+    if (d >= 0 && d < days) buckets[days - 1 - d] += p.amount_cents;
+  }
+  const sparkMax = Math.max(...buckets, 1);
+  const points = buckets
+    .map((v, i) => `${(i / (days - 1)) * 280},${48 - (v / sparkMax) * 40 - 4}`)
+    .join(" ");
 
   return (
-    <div>
-      <div className="mb-6 flex items-baseline gap-6">
-        <h1 className="text-2xl font-bold">Pagos</h1>
-        <span className="text-sm text-white/40">
-          Ingresos últimos 30 días:{" "}
-          <span className="font-semibold text-primary">€{revenue}</span>
-        </span>
-      </div>
-      <p className="mb-3 text-xs text-white/30">Mostrando hasta 100 pagos más recientes.</p>
+    <div className="page-stack">
+      <PageHeader overline="Finanzas" title="Pagos" subtitle="Hasta 100 pagos más recientes" />
 
-      {payments.length === 0 ? (
-        <p className="text-white/40">No hay pagos.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-white/10">
-          <table className="w-full text-sm">
+      <div className="stat-grid stat-grid-3">
+        <div className="stat-card stat-card-static">
+          <div className="stat-card-top">
+            <span className="stat-card-label">Ingresos · 30 días</span>
+            <span className="stat-card-icon material-symbols-outlined">payments</span>
+          </div>
+          <div className="stat-card-value">€{revenue}</div>
+          <svg className="sparkline" viewBox="0 0 280 48" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#4edea3" stopOpacity="0.35" />
+                <stop offset="100%" stopColor="#4edea3" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <polyline points={points} fill="none" stroke="#4edea3" strokeWidth="2" />
+            <polygon points={`0,48 ${points} 280,48`} fill="url(#sparkFill)" />
+          </svg>
+        </div>
+        <div className="stat-card stat-card-static">
+          <div className="stat-card-top">
+            <span className="stat-card-label">Cobros exitosos</span>
+            <span className="stat-card-icon material-symbols-outlined">check_circle</span>
+          </div>
+          <div className="stat-card-value">{succeeded}</div>
+        </div>
+        <div className="stat-card stat-card-static">
+          <div className="stat-card-top">
+            <span className="stat-card-label">Reembolsos</span>
+            <span className="stat-card-icon material-symbols-outlined">undo</span>
+          </div>
+          <div className="stat-card-value">{refunded}</div>
+        </div>
+      </div>
+
+      <Card padding={false}>
+        {payments.length === 0 ? (
+          <div className="card-body">
+            <Empty icon="receipt_long" label="No hay pagos." />
+          </div>
+        ) : (
+          <table className="data-table">
             <thead>
-              <tr className="border-b border-white/10 bg-[#1e1e20] text-left text-xs text-white/40">
-                <th className="px-4 py-3">Fecha</th>
-                <th className="px-4 py-3">Alumno</th>
-                <th className="px-4 py-3">Tipo</th>
-                <th className="px-4 py-3 text-right">Importe</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">Stripe ID</th>
+              <tr>
+                <th>Fecha</th>
+                <th>Alumno</th>
+                <th>Tipo</th>
+                <th className="cell-right">Importe</th>
+                <th>Estado</th>
+                <th>Stripe ID</th>
               </tr>
             </thead>
             <tbody>
-              {payments.map(p => (
-                <tr key={p.id} className="border-b border-white/5 hover:bg-white/3 transition-colors">
-                  <td className="px-4 py-3 text-white/50 whitespace-nowrap">
-                    {formatDateTime(p.created_at)}
+              {payments.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <div className="cell-stack">
+                      <span>{fmtDateTime(p.created_at)}</span>
+                      <span className="cell-meta">{relativeTime(p.created_at)}</span>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-white/70">{p.email}</td>
-                  <td className="px-4 py-3 text-white/50">{p.checkout_type}</td>
-                  <td className="px-4 py-3 text-right font-mono">
+                  <td>
+                    <Link href={`/admin/students/${encodeURIComponent(p.email)}`}>
+                      <div className="cell-stack">
+                        <span className="cell-strong">{p.name}</span>
+                        <span className="cell-meta">{p.email}</span>
+                      </div>
+                    </Link>
+                  </td>
+                  <td>
+                    <span className="type-pill">{checkoutLabel(p.checkout_type)}</span>
+                  </td>
+                  <td className="cell-right mono cell-strong">
                     €{(p.amount_cents / 100).toFixed(2)}
                   </td>
-                  <td className="px-4 py-3">{statusBadge(p.status)}</td>
-                  <td className="px-4 py-3 text-white/30 text-xs font-mono truncate max-w-[140px]" title={p.stripe_payment_id}>
+                  <td>
+                    <StatusBadge status={p.status} kind="payment" />
+                  </td>
+                  <td className="mono muted truncate" title={p.stripe_payment_id}>
                     {p.stripe_payment_id}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      )}
+        )}
+      </Card>
     </div>
   );
 }

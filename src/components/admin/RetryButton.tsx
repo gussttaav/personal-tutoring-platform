@@ -38,20 +38,22 @@ export function RetryButton({ stripeSessionId }: RetryButtonProps) {
   }
 
   if (status === "ok") {
-    return <span className="text-xs text-primary">✓ {message}</span>;
+    return <span className="success-text">✓ {message}</span>;
   }
 
   return (
-    <div className="flex flex-col items-start gap-1">
+    <div className="cell-stack" style={{ alignItems: "flex-end" }}>
       <button
         onClick={retry}
         disabled={status === "loading"}
-        className="rounded border border-white/10 px-3 py-1 text-xs text-white/70 transition-colors hover:border-white/30 hover:text-white disabled:opacity-40"
+        className={`btn-ghost-sm ${status === "loading" ? "is-loading" : ""}`}
       >
         {status === "loading" ? "Reintentando…" : "Reintentar"}
       </button>
       {status === "error" && message && (
-        <span className="text-xs text-red-400">{message}</span>
+        <span className="error-text" style={{ fontSize: 11 }}>
+          {message}
+        </span>
       )}
     </div>
   );
