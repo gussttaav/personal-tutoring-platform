@@ -4,7 +4,7 @@ Personal tutoring platform for booking programming, mathematics and AI classes.
 
 > **Live site:** [gustavoai.dev](https://gustavoai.dev)
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=white)
 ![Stripe](https://img.shields.io/badge/Stripe-payments-635BFF?logo=stripe&logoColor=white)
@@ -24,7 +24,7 @@ Full-stack booking platform for online tutoring sessions. Students can schedule 
 
 | Technology | Purpose |
 |---|---|
-| **Next.js 14** (App Router) | Full-stack framework; RSC for static sections, client components only where interactivity is needed |
+| **Next.js 15** (App Router) | Full-stack framework; RSC for static sections, client components only where interactivity is needed |
 | **TypeScript** (strict) | End-to-end type safety |
 | **NextAuth v5** | Google OAuth authentication |
 | **Supabase** (Postgres) | Source of truth for all persistent data: users, bookings, credit packs, payments, audit log |

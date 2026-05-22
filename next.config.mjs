@@ -12,10 +12,6 @@ const nextConfig = {
     ],
   },
 
-  experimental: {
-    instrumentationHook: true,
-  },
-
   async headers() {
     // Zoom Video SDK origins:
     //   - zoom.us        : license/session check endpoint (/wc/lsdk) — root domain, NOT covered by *.zoom.us
