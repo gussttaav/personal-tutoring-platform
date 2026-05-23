@@ -7,7 +7,7 @@ import type { Session } from "next-auth";
 
 function makeSession(email: string): Session {
   return {
-    user:    { email, name: "Test User" },
+    user:    { email, name: "Test User", isAdmin: false },
     expires: new Date(Date.now() + 3_600_000).toISOString(),
   };
 }

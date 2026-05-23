@@ -5,7 +5,7 @@ import { randomUUID } from "crypto";
 
 export class InMemoryBookingRepository implements IBookingRepository {
   private bookings     = new Map<string, BookingRecord>();
-  private cancelTokens = new Map<string, BookingRecord>();
+  private cancelTokens = new Map<string, { joinToken: string; record: BookingRecord }>();
   private joinTokens   = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
   private locks        = new Set<string>();
 
@@ -17,7 +17,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
     const full: BookingRecord = { ...record, used: false };
 
     this.bookings.set(record.eventId, full);
-    this.cancelTokens.set(cancelToken, full);
+    this.cancelTokens.set(cancelToken, { joinToken, record: full });
     this.joinTokens.set(joinToken, {
       eventId:     record.eventId,
       email:       record.email,
@@ -30,7 +30,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   async findByCancelToken(token: string): Promise<BookingRecord | null> {
-    return this.cancelTokens.get(token) ?? null;
+    return this.cancelTokens.get(token)?.record ?? null;
   }
 
   async findByJoinToken(token: string): Promise<{ eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string } | null> {
@@ -43,11 +43,11 @@ export class InMemoryBookingRepository implements IBookingRepository {
     return true;
   }
 
-  async listByUser(email: string): Promise<{ cancelToken: string; record: BookingRecord }[]> {
-    const result: { cancelToken: string; record: BookingRecord }[] = [];
-    for (const [token, record] of this.cancelTokens) {
+  async listByUser(email: string): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]> {
+    const result: { cancelToken: string; joinToken: string; record: BookingRecord }[] = [];
+    for (const [token, { joinToken, record }] of this.cancelTokens) {
       if (record.email.toLowerCase() === email.toLowerCase() && !record.used) {
-        result.push({ cancelToken: token, record });
+        result.push({ cancelToken: token, joinToken, record });
       }
     }
     return result;
@@ -118,7 +118,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
 
   /** Test helper: find the cancel token for a given eventId. */
   findCancelTokenForEvent(eventId: string): string | undefined {
-    for (const [token, record] of this.cancelTokens) {
+    for (const [token, { record }] of this.cancelTokens) {
       if (record.eventId === eventId) return token;
     }
     return undefined;

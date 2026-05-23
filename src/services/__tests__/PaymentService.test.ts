@@ -135,7 +135,7 @@ describe("PaymentService.processWebhookEvent — pack", () => {
   it("skips pack event with missing email", async () => {
     const { service, credits } = makeService();
     const event = fakePackEvent();
-    (event.data.object as Record<string, unknown>).metadata = {
+    (event.data.object as unknown as Record<string, unknown>).metadata = {
       checkout_type: "pack", pack_size: "5",
     };
 

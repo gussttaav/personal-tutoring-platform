@@ -45,7 +45,7 @@ jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeSession(email: string): Session {
-  return { user: { email, name: "Test" }, expires: new Date(Date.now() + 3_600_000).toISOString() };
+  return { user: { email, name: "Test", isAdmin: false }, expires: new Date(Date.now() + 3_600_000).toISOString() };
 }
 
 function makeRequest(body: unknown, email = "target@example.com"): NextRequest {

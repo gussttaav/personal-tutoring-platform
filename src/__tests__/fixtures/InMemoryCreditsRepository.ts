@@ -24,10 +24,7 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
       credits:         rec.credits,
       name:            rec.name,
       packSize:        rec.packSize as CreditResult["packSize"],
-      packLabel:       rec.packLabel,
       expiresAt:       rec.expiresAt,
-      lastUpdated:     rec.lastUpdated,
-      stripeSessionId: rec.stripeSessionId,
     };
   }
 

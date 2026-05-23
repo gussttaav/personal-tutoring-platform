@@ -30,6 +30,9 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   acquireSlotLock:         jest.fn().mockResolvedValue(true),
   releaseSlotLock:         jest.fn().mockResolvedValue(undefined),
   recordRescheduleFailure: jest.fn().mockResolvedValue(undefined),
+  findIdByEventIdForUser:  jest.fn().mockResolvedValue(null),
+  markCompleted:           jest.fn().mockResolvedValue(undefined),
+  countCompletedPaid:      jest.fn().mockResolvedValue(0),
 });
 
 const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
@@ -37,6 +40,7 @@ const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
   addCredits:      jest.fn().mockResolvedValue(undefined),
   decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4 }),
   restoreCredit:   jest.fn().mockResolvedValue({ ok: true, credits: 5 }),
+  hasProcessedPayment: jest.fn().mockResolvedValue(false),
 });
 
 const mockAuditRepo = (): jest.Mocked<IAuditRepository> => ({
@@ -59,6 +63,7 @@ const mockSessions = (): jest.Mocked<ISessionRepository> => ({
 });
 
 const mockCalendar = (): jest.Mocked<ICalendarClient> => ({
+  getAvailableSlots: jest.fn().mockResolvedValue([]),
   createEvent: jest.fn().mockResolvedValue({
     eventId: "evt1", zoomSessionName: "session-abc", zoomPasscode: "pass123",
     zoomSessionId: "zsid1", durationMinutes: 60,
