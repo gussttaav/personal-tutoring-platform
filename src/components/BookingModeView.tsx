@@ -16,7 +16,8 @@
  *   SESSION_CONFIGS, primaryBtnStyle, secondaryBtnStyle
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
+import { useClientValue } from "@/hooks/useClientValue";
 import Image from "next/image";
 import { Alert, Spinner } from "@/components/ui";
 import { COLORS } from "@/constants";
@@ -65,19 +66,25 @@ export default function BookingModeView({
   const [errMsg,               setErrMsg]               = useState("");
   const [selected,             setSelected]             = useState<SelectedSlot | null>(initialSlot ?? null);
   const [successBanner,        setSuccessBanner]        = useState<SuccessBanner | null>(null);
-  const [userTz,               setUserTz]               = useState<string>("");
   const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
 
-  useEffect(() => { setRemaining(student.credits); }, [student.credits]);
-
-  useEffect(() => {
+  // Client timezone label ("<tz> (GMT±n)") after hydration; empty during SSR.
+  const userTz = useClientValue(() => {
     try {
       const tz     = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const offset = -new Date().getTimezoneOffset() / 60;
       const gmt    = `GMT${offset >= 0 ? "+" : ""}${offset}`;
-      setUserTz(`${tz} (${gmt})`);
-    } catch { /* ignore */ }
-  }, []);
+      return `${tz} (${gmt})`;
+    } catch { return ""; }
+  }, "");
+
+  // Re-seed the editable credit count when the upstream credits change
+  // (render-phase "adjust state on input change" — not an effect).
+  const [prevCredits, setPrevCredits] = useState(student.credits);
+  if (student.credits !== prevCredits) {
+    setPrevCredits(student.credits);
+    setRemaining(student.credits);
+  }
 
   const handleSlotSelected = useCallback((slot: SelectedSlot) => {
     setSelected(slot);
@@ -122,7 +129,7 @@ export default function BookingModeView({
       setErrMsg(friendlyError(status, raw));
       setPhase("error");
     }
-  }, [selected, remaining, rescheduleToken, isReschedule, onCreditsUpdated]);
+  }, [selected, remaining, rescheduleToken, isReschedule, onCreditsUpdated, onExit]);
 
   const showModal = (phase === "selected" || phase === "confirming" || phase === "error") && selected;
 

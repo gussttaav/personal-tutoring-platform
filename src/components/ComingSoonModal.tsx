@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useHydrated } from "@/hooks/useClientValue";
 import { useSession, signIn } from "next-auth/react";
 import { signInWithPopup } from "@/lib/auth-popup";
 
@@ -31,15 +32,13 @@ const CONTENT = {
 
 export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps) {
   const { data: session, status, update } = useSession();
-  const [mounted,        setMounted]        = useState(false);
+  // Portal requires the DOM — true only after client hydration.
+  const mounted = useHydrated();
   const [subscribeState, setSubscribeState] = useState<SubscribeState>("idle");
 
   const isLoaded   = status !== "loading";
   const isSignedIn = !!session?.user?.email;
   const content    = CONTENT[type];
-
-  // Portal requires the DOM to be available
-  useEffect(() => { setMounted(true); }, []);
 
   // Scroll lock + Escape key
   useEffect(() => {
@@ -52,16 +51,26 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
     };
   }, [onClose]);
 
-  // Once signed in, check existing subscription status
-  useEffect(() => {
-    if (!isSignedIn || subscribeState !== "idle") return;
+  // Render-phase trigger: once the user is signed in, kick off a one-time
+  // subscription-status check by flipping to loading. The effect below performs
+  // the GET. Using a dedicated flag (rather than `subscribeState === "loading"`)
+  // keeps the subscribe POST's own loading state from re-triggering the GET.
+  const [statusCheckStarted, setStatusCheckStarted] = useState(false);
+  if (isSignedIn && !statusCheckStarted) {
+    setStatusCheckStarted(true);
     setSubscribeState("loading");
+  }
+
+  // Fetch existing subscription status once, after sign-in.
+  useEffect(() => {
+    if (!statusCheckStarted) return;
+    let cancelled = false;
     fetch(`/api/subscribe?type=${type}`)
       .then(r => r.json())
-      .then(data => setSubscribeState(data.subscribed ? "subscribed" : "idle"))
-      .catch(() => setSubscribeState("idle"));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn, type]);
+      .then(data => { if (!cancelled) setSubscribeState(data.subscribed ? "subscribed" : "idle"); })
+      .catch(() => { if (!cancelled) setSubscribeState("idle"); });
+    return () => { cancelled = true; };
+  }, [statusCheckStarted, type]);
 
   async function handleSubscribeClick() {
     if (!isSignedIn) {

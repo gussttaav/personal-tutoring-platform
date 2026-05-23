@@ -9,6 +9,7 @@ const mockCredits = (): jest.Mocked<ICreditsRepository> => ({
   addCredits:      jest.fn(),
   decrementCredit: jest.fn(),
   restoreCredit:   jest.fn(),
+  hasProcessedPayment: jest.fn(),
 });
 
 const mockAudit = (): jest.Mocked<IAuditRepository> => ({

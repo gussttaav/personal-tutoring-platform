@@ -29,10 +29,16 @@ export function useSSECredits({ paymentIntentId }: UseSSECreditsOptions): SSECre
   const [name, setName] = useState("");
   const [packSize, setPackSize] = useState<number | null>(null);
 
+  // Reset to "connecting" when a new payment intent arrives (render-phase
+  // "adjust state on input change" — not a synchronous set inside the effect).
+  const [prevPaymentIntentId, setPrevPaymentIntentId] = useState(paymentIntentId);
+  if (paymentIntentId !== prevPaymentIntentId) {
+    setPrevPaymentIntentId(paymentIntentId);
+    if (paymentIntentId) setState("connecting");
+  }
+
   useEffect(() => {
     if (!paymentIntentId) return;
-
-    setState("connecting");
 
     const url = `/api/sse?payment_intent_id=${encodeURIComponent(paymentIntentId)}`;
     const es = new EventSource(url);

@@ -252,7 +252,6 @@ function PoorConnectionBadge() {
 
 // ─── Video attachment helpers ──────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function attachRemoteVideo(stream: any, vpc: HTMLElement, userId: number, VQ: any) {
   const selector = `[data-user-id="${userId}"]`;
   if (vpc.querySelector(selector)) return;
@@ -269,7 +268,7 @@ async function attachRemoteVideo(stream: any, vpc: HTMLElement, userId: number, 
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 async function detachRemoteVideo(stream: any, vpc: HTMLElement, userId: number) {
   try {
     const els = await stream.detachVideo(userId);
@@ -311,10 +310,12 @@ export default function ZoomRoomInner({
   const [mobileShareFocus, setMobileShareFocus] = useState<"screen" | "faces">("screen");
   const [remoteCamOffIds, setRemoteCamOffIds]   = useState<number[]>([]);
   const [remoteMutedIds,  setRemoteMutedIds]    = useState<number[]>([]);
-  // Reactive copies of clientRef and selfUserIdRef so useZoomConnectionQuality
-  // can re-attach SDK listeners when they change.
+  // Reactive copies of clientRef / selfUserIdRef / streamRef so consumers that
+  // read them in render (useZoomConnectionQuality, SessionSettings) don't read
+  // mutable refs during render.
   const [client,     setClient]     = useState<unknown | null>(null);
   const [selfUserId, setSelfUserId] = useState<number>(0);
+  const [stream,     setStream]     = useState<unknown>(null);
   // True in the final minute before the session is force-ended. Drives the
   // "la sesión terminará pronto" banner.
   const [endingSoon, setEndingSoon] = useState(false);
@@ -345,9 +346,7 @@ export default function ZoomRoomInner({
   });
 
   const tokenRef       = useRef<TokenResponse | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef      = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const streamRef      = useRef<any>(null);
   const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
   // Hard-stop enforcement timers (REL-02): the server-side QStash cleanup only
@@ -437,6 +436,7 @@ export default function ZoomRoomInner({
 
       const stream      = client.getMediaStream();
       streamRef.current = stream;
+      setStream(stream);
       const selfId      = client.getCurrentUserInfo().userId;
       selfUserIdRef.current = selfId;
       setSelfUserId(selfId);
@@ -762,6 +762,11 @@ export default function ZoomRoomInner({
 
   // ── Auto-join once the token is ready ─────────────────────────────────────
   useEffect(() => {
+    // Kicks off the async join sequence (dynamic SDK import + init/join) when
+    // the token becomes ready. handleJoin synchronously flips to "joining" as
+    // its start-of-operation indicator; deferring that past the dynamic import
+    // would briefly flash the "ready" UI.
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional async side-effect on token readiness, not a derived-state cascade.
     if (state === "ready") void handleJoin();
   }, [state, handleJoin]);
 
@@ -779,6 +784,7 @@ export default function ZoomRoomInner({
     try { if (streamRef.current) await streamRef.current.stopAudio(); } catch { /* ignore */ }
     try { if (clientRef.current) await clientRef.current.leave();     } catch { /* ignore */ }
     setClient(null);
+    setStream(null);
     setState("ended");
   }, []);
 
@@ -844,13 +850,17 @@ export default function ZoomRoomInner({
 
   // ── Reset focus mode when sharing ends ────────────────────────────────────
   // Ensures re-entering share mode always starts with the video column visible
-  // and never leaves the non-share grid in a `hidden` state.
-  useEffect(() => {
-    if (!isSharingScreen && !isReceivingShare) {
+  // and never leaves the non-share grid in a `hidden` state. Render-phase
+  // "adjust state on input change" keyed on whether any share is active.
+  const isAnyShareActive = isSharingScreen || isReceivingShare;
+  const [prevAnyShareActive, setPrevAnyShareActive] = useState(isAnyShareActive);
+  if (isAnyShareActive !== prevAnyShareActive) {
+    setPrevAnyShareActive(isAnyShareActive);
+    if (!isAnyShareActive) {
       setIsVideosPanelHidden(false);
       setMobileShareFocus("screen");
     }
-  }, [isSharingScreen, isReceivingShare]);
+  }
 
   // ── Video cover-fill ──────────────────────────────────────────────────────
 
@@ -1262,7 +1272,7 @@ export default function ZoomRoomInner({
                     {isMuted ? (
                       <MutedMicIndicator />
                     ) : (
-                      <VoiceBars active={activeSpeakers.includes(selfUserIdRef.current)} />
+                      <VoiceBars active={activeSpeakers.includes(selfUserId)} />
                     )}
                   </div>
                   {qos.selfStatus === "poor" && isConnected && (
@@ -1319,7 +1329,7 @@ export default function ZoomRoomInner({
         {/* ── Settings drawer ── */}
         {isSettingsOpen && isConnected && (
           <SessionSettings
-            stream={streamRef.current}
+            stream={stream}
             qos={qos}
             onClose={() => setIsSettingsOpen(false)}
           />

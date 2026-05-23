@@ -85,15 +85,24 @@ export function useUserSession() {
   }, [status, googleSession?.user?.email]);
 
   // ── Reset on sign-out ─────────────────────────────────────────────────────
+  // Ref resets stay in an effect (ref writes are safe there); the session state
+  // is cleared via render-phase "adjust state on input change" keyed on status.
 
   useEffect(() => {
     if (status === "unauthenticated") {
       fetchedForEmail.current = null;
       lastVisibilityFetch.current = 0;
+    }
+  }, [status]);
+
+  const [prevStatus, setPrevStatus] = useState(status);
+  if (status !== prevStatus) {
+    setPrevStatus(status);
+    if (status === "unauthenticated") {
       setPackSession(null);
       setHasBookings(null);
     }
-  }, [status]);
+  }
 
   // ── Visibility-based refresh ───────────────────────────────────────────────
   // When the user returns to this tab after being away (e.g. they clicked

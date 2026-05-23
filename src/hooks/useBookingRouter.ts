@@ -228,14 +228,18 @@ export function useBookingRouter(
   }, [isSignedIn, hasBookings]); // packCredits intentionally omitted — only needed at the moment of consumption
 
   // ── Auto-open after in-page sign-in (SignInGate overlay, no page reload) ──
-  useEffect(() => {
+  // Render-phase "adjust state on input change": fires when isSignedIn flips to
+  // true (pendingSession is only ever set while signed out, then consumed here).
+  const [prevSignedIn, setPrevSignedIn] = useState(isSignedIn);
+  if (isSignedIn !== prevSignedIn) {
+    setPrevSignedIn(isSignedIn);
     if (isSignedIn && pendingSession && !activeSession) {
       setActiveSession(pendingSession);
       setPendingSession(null);
       setSignInGateLabel("");
       setSignInCallbackUrl(undefined);
     }
-  }, [isSignedIn, pendingSession, activeSession]);
+  }
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 

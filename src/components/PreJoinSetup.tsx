@@ -203,7 +203,12 @@ export default function PreJoinSetup({
   }, [selectedMicId, selectedSpeakerId]);
 
   // ── Initial setup on mount ─────────────────────────────────────────────────
+  // startPreview/startMicMeter only set state after `await getUserMedia(...)`
+  // (subscribing to the media-device external system); the synchronous prelude
+  // is ref teardown only. The set-in-effect rule can't see past the async
+  // boundary, so the disables below are for that false positive.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- state is set only in the async continuation after getUserMedia, not synchronously here.
     void startPreview();
     void startMicMeter();
 
@@ -219,6 +224,7 @@ export default function PreJoinSetup({
   // ── Restart preview when camera selection changes ──────────────────────────
   useEffect(() => {
     if (selectedCameraId && !isCamOff) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- state is set only in the async continuation after getUserMedia, not synchronously here.
       void startPreview(selectedCameraId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,6 +233,7 @@ export default function PreJoinSetup({
   // ── Restart mic meter when mic selection changes ───────────────────────────
   useEffect(() => {
     if (selectedMicId && !isMicOff) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- state is set only in the async continuation after getUserMedia, not synchronously here.
       void startMicMeter(selectedMicId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
