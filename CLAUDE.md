@@ -1,7 +1,7 @@
 # gustavoai.dev — Project Context
 
 ## Stack
-Next.js 15 (App Router) · React 19 · TypeScript strict · NextAuth v5 · Supabase (Postgres) ·
+Next.js 16 (App Router) · React 19 · TypeScript strict · NextAuth v5 · Supabase (Postgres) ·
 Stripe · Google Calendar · Zoom Video SDK · Upstash Redis (ephemeral only) ·
 Gemini · Resend · QStash · Sentry
 
