@@ -129,7 +129,7 @@ export default function BookingModeView({
       setErrMsg(friendlyError(status, raw));
       setPhase("error");
     }
-  }, [selected, remaining, rescheduleToken, isReschedule, onCreditsUpdated]);
+  }, [selected, remaining, rescheduleToken, isReschedule, onCreditsUpdated, onExit]);
 
   const showModal = (phase === "selected" || phase === "confirming" || phase === "error") && selected;
 

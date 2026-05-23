@@ -252,7 +252,6 @@ function PoorConnectionBadge() {
 
 // ─── Video attachment helpers ──────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function attachRemoteVideo(stream: any, vpc: HTMLElement, userId: number, VQ: any) {
   const selector = `[data-user-id="${userId}"]`;
   if (vpc.querySelector(selector)) return;
@@ -269,7 +268,7 @@ async function attachRemoteVideo(stream: any, vpc: HTMLElement, userId: number, 
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 async function detachRemoteVideo(stream: any, vpc: HTMLElement, userId: number) {
   try {
     const els = await stream.detachVideo(userId);
@@ -347,9 +346,7 @@ export default function ZoomRoomInner({
   });
 
   const tokenRef       = useRef<TokenResponse | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const clientRef      = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const streamRef      = useRef<any>(null);
   const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
   // Hard-stop enforcement timers (REL-02): the server-side QStash cleanup only

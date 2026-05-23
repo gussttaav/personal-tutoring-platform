@@ -269,7 +269,7 @@ export default function WeeklyCalendar({
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
     return d;
-  }), [weekStart]); // eslint-disable-line react-hooks/exhaustive-deps
+  }), [weekStart]);
 
   // Detect mobile
   useEffect(() => {

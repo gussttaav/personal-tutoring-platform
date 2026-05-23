@@ -118,7 +118,6 @@ interface UseZoomConnectionQualityOptions {
   remoteHasVideo?: boolean;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type EventClient = { on: (e: string, fn: (p: any) => void) => void; off: (e: string, fn: (p: any) => void) => void };
 
 export function useZoomConnectionQuality(

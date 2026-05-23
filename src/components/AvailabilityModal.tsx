@@ -225,7 +225,7 @@ export default function AvailabilityModal({
     });
 
     return () => controllers.forEach((c) => c.abort());
-  }, [weekOffset, userTz]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [weekOffset, userTz]);
 
   const days: Date[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);

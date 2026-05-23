@@ -25,7 +25,6 @@ interface MediaDevice {
 }
 
 export interface SessionSettingsProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   stream:  any; // streamRef.current — the Zoom MediaStream SDK object
   qos:     ZoomConnectionQuality;
   onClose: () => void;
