@@ -13,6 +13,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { useClientValue } from "@/hooks/useClientValue";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -209,17 +210,17 @@ export default function SingleSessionBooking({
   const [sessionUrl,     setSessionUrl]     = useState("");
   const [cancelToken,    setCancelToken]    = useState("");
   const [emailFailed,    setEmailFailed]    = useState(false);
-  const [userTz,         setUserTz]         = useState<string>("");
   const [clientSecret,   setClientSecret]   = useState<string | null>(null);
 
-  useEffect(() => {
+  // Client timezone label ("<tz> (GMT±n)") after hydration; empty during SSR.
+  const userTz = useClientValue(() => {
     try {
       const tz     = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const offset = -new Date().getTimezoneOffset() / 60;
       const gmt    = `GMT${offset >= 0 ? "+" : ""}${offset}`;
-      setUserTz(`${tz} (${gmt})`);
-    } catch { /* ignore */ }
-  }, []);
+      return `${tz} (${gmt})`;
+    } catch { return ""; }
+  }, "");
 
   // Slot selected → always show review step first
   const handleSlotSelected = useCallback((slot: SelectedSlot) => {

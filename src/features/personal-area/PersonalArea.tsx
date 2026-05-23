@@ -275,8 +275,9 @@ export default function PersonalArea() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const fetchBookings = useCallback(async () => {
-    setBookingsState("loading");
+  // Fetch + commit results. State is set only after the await, so this is safe
+  // to call from the mount effect without a synchronous set-in-effect.
+  const loadBookings = useCallback(async () => {
     try {
       const res = await fetch("/api/my-bookings");
       if (!res.ok) throw new Error("fetch failed");
@@ -287,9 +288,19 @@ export default function PersonalArea() {
     }
   }, []);
 
+  // For event handlers (retry / after cancel): show the loading state
+  // immediately, then refetch.
+  const fetchBookings = useCallback(() => {
+    setBookingsState("loading");
+    void loadBookings();
+  }, [loadBookings]);
+
+  // Initial load once auth resolves. bookingsState already starts as "loading",
+  // so there's no flash; loadBookings only sets state after the request returns.
   useEffect(() => {
-    if (!isAuthLoading) fetchBookings();
-  }, [isAuthLoading, fetchBookings]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- loadBookings only sets state in its async continuation (after the fetch), not synchronously here.
+    if (!isAuthLoading) void loadBookings();
+  }, [isAuthLoading, loadBookings]);
 
   const hasActivePack = !!packSession && packSession.credits > 0;
   const bookings      = Array.isArray(bookingsState) ? bookingsState : [];

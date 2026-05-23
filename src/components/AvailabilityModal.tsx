@@ -14,6 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useClientValue } from "@/hooks/useClientValue";
 import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
 import type { ApiSlot, SelectedSlot } from "@/components/WeeklyCalendar";
 
@@ -132,7 +133,11 @@ export default function AvailabilityModal({
 }: AvailabilityModalProps) {
   const [weekOffset,     setWeekOffset]     = useState(0);
   const [slotsMap,       setSlotsMap]       = useState<Record<string, DaySlots>>({});
-  const [userTz,         setUserTz]         = useState<string>(SCHEDULE.timezone);
+  // Client timezone after hydration; SCHEDULE.timezone during SSR (avoids a
+  // hydration mismatch without setting state in a mount effect).
+  const userTz = useClientValue(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return SCHEDULE.timezone; }
+  }, SCHEDULE.timezone);
   const [isMobile,       setIsMobile]       = useState(false);
   const [nowMadridMin,   setNowMadridMin]   = useState<number>(() => getMadridMinutes());
 
@@ -154,11 +159,6 @@ export default function AvailabilityModal({
     return () => clearInterval(id);
   }, []);
 
-  // Detect user timezone
-  useEffect(() => {
-    try { setUserTz(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch { /* ignore */ }
-  }, []);
-
   // Body scroll lock + Escape key
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -172,8 +172,16 @@ export default function AvailabilityModal({
   }, [onClose]);
 
   // Fetch 1-hour slots for the visible week.
-  // Clears the slot map on every weekOffset/timezone change and re-fetches fresh,
-  // so the displayed times are always consistent with WeeklyCalendar.
+  // Clear the slot map whenever the week or timezone changes (render-phase
+  // "adjust state on input change") so the fetch effect below repopulates fresh
+  // and the displayed times stay consistent with WeeklyCalendar.
+  const fetchKey = `${weekOffset}|${userTz}`;
+  const [prevFetchKey, setPrevFetchKey] = useState(fetchKey);
+  if (fetchKey !== prevFetchKey) {
+    setPrevFetchKey(fetchKey);
+    setSlotsMap({});
+  }
+
   useEffect(() => {
     const ws = getWeekStart(weekOffset);
     const days: Date[] = Array.from({ length: 7 }, (_, i) => {
@@ -184,8 +192,6 @@ export default function AvailabilityModal({
 
     const today   = new Date(); today.setHours(0, 0, 0, 0);
     const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
-
-    setSlotsMap({});
 
     const controllers: AbortController[] = [];
 

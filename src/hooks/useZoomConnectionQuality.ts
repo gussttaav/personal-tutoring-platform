@@ -20,11 +20,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { VideoQosData, AudioQosData } from "@zoom/videosdk";
+import {
+  deriveConnectionStatus,
+  isDecodeStale,
+  isSustainedPoor,
+  POOR_LEVEL_MAX,
+  type SelfStatus,
+  type RemoteStatus,
+} from "./connectionStatus";
 
 // ─── Public types ──────────────────────────────────────────────────────────────
 
-export type SelfStatus   = "good" | "poor" | "reconnecting";
-export type RemoteStatus = "unknown" | "good" | "poor" | "lost";
+export type { SelfStatus, RemoteStatus };
 
 export interface QosSnapshot {
   rtt:         number;
@@ -58,10 +65,8 @@ export interface ZoomConnectionQuality {
 
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
-// Thresholds — tuned in the plan.
-const POOR_LEVEL_MAX        = 1;     // levels 0,1 = bad
-const REMOTE_LOST_AFTER_MS  = 8000;  // sustained poor uplink → declare lost
-const DECODE_STALL_AFTER_MS = 5000;  // no inbound video frames → declare lost
+// Thresholds (POOR_LEVEL_MAX, REMOTE_LOST_AFTER_MS, DECODE_STALL_AFTER_MS) live
+// in ./connectionStatus alongside the pure derivation they parameterise.
 
 function toVideoSnapshot(data: VideoQosData & { encoding: boolean }): QosSnapshot {
   return {
@@ -135,9 +140,22 @@ export function useZoomConnectionQuality(
   const lastDecodeAtRef    = useRef<number | null>(null);
   const remotePoorSinceRef = useRef<number | null>(null);
 
-  // Forces re-derivation of statuses every second so the time-window thresholds
-  // advance even when no SDK event fires.
-  const [, setTick] = useState(0);
+  // Time-window facts derived from the refs above. Kept as state (not read from
+  // refs during render) so render stays pure. They are recomputed only inside
+  // the 1 s interval and the SDK event handlers, where reading the refs and
+  // Date.now() is legitimate.
+  const [decodeStale,   setDecodeStale]   = useState(false);
+  const [sustainedPoor, setSustainedPoor] = useState(false);
+
+  // Re-evaluate the time-window facts from the timestamp refs. Stable identity
+  // (lazy-initialised once) so it can be called from the listener effect
+  // without churning its dependency array. Reads the refs + Date.now() inside a
+  // callback — never during render.
+  const [recomputeWindows] = useState(() => () => {
+    const now = Date.now();
+    setDecodeStale(isDecodeStale(lastDecodeAtRef.current, now));
+    setSustainedPoor(isSustainedPoor(remotePoorSinceRef.current, now));
+  });
 
   // ── SDK listeners ───────────────────────────────────────────────────────────
   useEffect(() => {
@@ -156,8 +174,10 @@ export function useZoomConnectionQuality(
           if (p.level <= POOR_LEVEL_MAX) {
             if (remotePoorSinceRef.current === null) remotePoorSinceRef.current = Date.now();
           } else {
+            // Uplink recovered — clear the window and reflect it immediately.
             remotePoorSinceRef.current = null;
           }
+          recomputeWindows();
         } else {
           setRemoteDownlink(p.level);
         }
@@ -174,7 +194,11 @@ export function useZoomConnectionQuality(
         setVideoEncode(snap);
       } else {
         setVideoDecode(snap);
-        if (snap.fps > 0) lastDecodeAtRef.current = Date.now();
+        if (snap.fps > 0) {
+          // Fresh frame — stall watchdog re-arms; reflect it immediately.
+          lastDecodeAtRef.current = Date.now();
+          recomputeWindows();
+        }
       }
     };
 
@@ -189,7 +213,10 @@ export function useZoomConnectionQuality(
     c.on("video-statistic-data-change",    onVideoStats);
     c.on("audio-statistic-data-change",    onAudioStats);
 
-    const tickId = setInterval(() => setTick((n) => (n + 1) & 0xffff), 1000);
+    // Advance the time-window facts every second so the lost-detection
+    // thresholds trip even when no SDK event fires (same 1 s cadence as the
+    // previous render-forcing tick).
+    const tickId = setInterval(recomputeWindows, 1000);
 
     return () => {
       clearInterval(tickId);
@@ -201,56 +228,52 @@ export function useZoomConnectionQuality(
       lastDecodeAtRef.current    = null;
       remotePoorSinceRef.current = null;
     };
-  }, [client, selfUserId, remoteUserId]);
+  }, [client, selfUserId, remoteUserId, recomputeWindows]);
 
-  // ── Reset remote-side state when the tracked peer changes / leaves ──────────
+  // ── Reset detection refs when the tracked peer changes / leaves, or when the
+  //    remote stops sending video ─────────────────────────────────────────────
+  // Ref writes only (no setState) — safe in an effect. When the remote turns
+  // off its camera, fps stops arriving (expected, not a failure); clearing the
+  // timestamp lets the stall watchdog re-arm once frames flow again.
   useEffect(() => {
-    setRemoteUplink(null);
-    setRemoteDownlink(null);
     lastDecodeAtRef.current    = null;
     remotePoorSinceRef.current = null;
   }, [remoteUserId]);
 
-  // ── Reset stall watchdog when the remote stops sending video ────────────────
-  // When the remote turns off their camera, fps stops arriving — that's
-  // expected, not a failure. Clearing the timestamp prevents decodeStalled
-  // from tripping; it'll re-arm naturally once frames flow again.
   useEffect(() => {
     if (!remoteHasVideo) {
       lastDecodeAtRef.current = null;
     }
   }, [remoteHasVideo]);
 
-  // ── Derived statuses ────────────────────────────────────────────────────────
-  const now = Date.now();
-
-  let selfStatus: SelfStatus = "good";
-  if (connectionState === "Reconnecting") {
-    selfStatus = "reconnecting";
-  } else if (selfUplink !== null && selfUplink <= POOR_LEVEL_MAX) {
-    selfStatus = "poor";
-  }
-
-  let remoteStatus: RemoteStatus = "unknown";
-  if (remoteUserId === null) {
-    remoteStatus = "unknown";
-  } else {
-    const decodeStalled =
-      remoteHasVideo &&
-      lastDecodeAtRef.current !== null &&
-      now - lastDecodeAtRef.current >= DECODE_STALL_AFTER_MS;
-    const sustainedPoor =
-      remotePoorSinceRef.current !== null &&
-      now - remotePoorSinceRef.current >= REMOTE_LOST_AFTER_MS;
-
-    if (connectionState !== "Reconnecting" && (decodeStalled || sustainedPoor)) {
-      remoteStatus = "lost";
-    } else if (remoteUplink !== null && remoteUplink <= POOR_LEVEL_MAX) {
-      remoteStatus = "poor";
-    } else if (remoteUplink !== null) {
-      remoteStatus = "good";
+  // ── Reset exposed/derived state on peer or camera change (render-phase) ──────
+  // Render-phase "adjust state on input change": resets the metrics and the
+  // time-window facts the moment the tracked peer or its camera state changes,
+  // without the cascading-render that set-state-in-effect flags. Clearing
+  // decodeStale here prevents a stale timestamp from briefly registering as
+  // "lost" the instant the remote camera comes back on or the peer switches.
+  const [prevPeer, setPrevPeer] = useState({ remoteUserId, remoteHasVideo });
+  if (prevPeer.remoteUserId !== remoteUserId || prevPeer.remoteHasVideo !== remoteHasVideo) {
+    const peerChanged = prevPeer.remoteUserId !== remoteUserId;
+    setPrevPeer({ remoteUserId, remoteHasVideo });
+    if (peerChanged) {
+      setRemoteUplink(null);
+      setRemoteDownlink(null);
+      setSustainedPoor(false);
     }
+    setDecodeStale(false);
   }
+
+  // ── Derived statuses (pure: no ref reads, no Date.now() during render) ───────
+  const { selfStatus, remoteStatus } = deriveConnectionStatus({
+    connectionState,
+    selfUplink,
+    remoteUplink,
+    remoteUserId,
+    remoteHasVideo,
+    decodeStale,
+    sustainedPoor,
+  });
 
   return {
     selfStatus,

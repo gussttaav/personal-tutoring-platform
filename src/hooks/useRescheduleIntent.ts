@@ -66,6 +66,9 @@ export function useRescheduleIntent(isSignedIn: boolean): RescheduleState {
     url.searchParams.delete("token");
     window.history.replaceState({}, "", url.toString());
 
+    // This effect reads the URL params exactly once on mount and mutates the
+    // URL (replaceState) — it can't be a render-phase derivation, and the
+    // resulting state set is a one-shot response to that external read.
     if (!isSignedIn) {
       // Not signed in — store the intent and surface the sign-in gate.
       // callbackUrl encodes the reschedule params so they survive the
@@ -74,6 +77,7 @@ export function useRescheduleIntent(isSignedIn: boolean): RescheduleState {
         ? `/?reschedule=${encodeURIComponent(reschedule)}&token=${encodeURIComponent(token)}`
         : `/?reschedule=${encodeURIComponent(reschedule)}`;
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mount read of URL params (with history mutation above), not a derived-state cascade.
       setPendingReschedule({ type: reschedule, token: token ?? null, callbackUrl });
       setSignInLabel("reprogramar tu clase");
     } else {
@@ -84,12 +88,17 @@ export function useRescheduleIntent(isSignedIn: boolean): RescheduleState {
   }, []);
 
   // ── Activate pending reschedule once user signs in ─────────────────────────
-  useEffect(() => {
-    if (!isSignedIn || !pendingReschedule) return;
-    setActiveReschedule({ type: pendingReschedule.type, token: pendingReschedule.token });
-    setPendingReschedule(null);
-    setSignInLabel("");
-  }, [isSignedIn, pendingReschedule]);
+  // Render-phase "adjust state on input change": pendingReschedule is only set
+  // (above) while signed out, so keying on the isSignedIn flip resolves it.
+  const [prevSignedIn, setPrevSignedIn] = useState(isSignedIn);
+  if (isSignedIn !== prevSignedIn) {
+    setPrevSignedIn(isSignedIn);
+    if (isSignedIn && pendingReschedule) {
+      setActiveReschedule({ type: pendingReschedule.type, token: pendingReschedule.token });
+      setPendingReschedule(null);
+      setSignInLabel("");
+    }
+  }
 
   function clearPendingReschedule() {
     setPendingReschedule(null);

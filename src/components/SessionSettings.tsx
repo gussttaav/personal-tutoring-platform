@@ -75,9 +75,14 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
   const rafRef       = useRef<number | null>(null);
 
   // ── Populate device lists + current selection from the SDK ─────────────────
+  // Seeds state from the Zoom stream's imperative device-enumeration API the
+  // moment a stream becomes available — synchronising React state from an
+  // external system, which is the legitimate use of an effect even though the
+  // SDK calls are synchronous.
   useEffect(() => {
     if (!stream) return;
     try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- seeding state from the external SDK device list on stream change.
       setCameras((stream.getCameraList?.() ?? []) as MediaDevice[]);
       setMics((stream.getMicList?.() ?? []) as MediaDevice[]);
       setSpeakers((stream.getSpeakerList?.() ?? []) as MediaDevice[]);

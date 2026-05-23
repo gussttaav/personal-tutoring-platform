@@ -29,6 +29,7 @@ export default async function AdminDashboard() {
 
   const revenue = (revenueCents / 100).toFixed(2);
 
+  // eslint-disable-next-line react-hooks/purity -- Server Component: renders once per request, never re-renders on the client.
   const now = Date.now();
   const upcoming = bookings
     .filter((b) => b.status === "confirmed" && new Date(b.starts_at).getTime() > now)

@@ -27,6 +27,7 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
 
   if (!student) notFound();
 
+  // eslint-disable-next-line react-hooks/purity -- Server Component: renders once per request, never re-renders on the client.
   const now = Date.now();
   const activeCredits = packs
     .filter((p) => new Date(p.expires_at).getTime() > now)

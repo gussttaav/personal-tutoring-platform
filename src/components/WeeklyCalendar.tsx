@@ -20,6 +20,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useClientValue } from "@/hooks/useClientValue";
 import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -250,7 +251,10 @@ export default function WeeklyCalendar({
   const [focusedBlock,  setFocusedBlock]  = useState<FocusedBlock | null>(null);
   const [invalidKey,    setInvalidKey]    = useState<string | null>(null);
   const [isMobile,      setIsMobile]      = useState(false);
-  const [userTz,        setUserTz]        = useState<string>(SCHEDULE.timezone);
+  // Client timezone after hydration; SCHEDULE.timezone during SSR.
+  const userTz = useClientValue(() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return SCHEDULE.timezone; }
+  }, SCHEDULE.timezone);
   const [nowMadridMin,  setNowMadridMin]  = useState<number>(() => getMadridMinutes());
   const initialFocusedHandled             = useRef(false);
   const prevRefreshToken                  = useRef(refreshToken);
@@ -275,30 +279,28 @@ export default function WeeklyCalendar({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // Detect user timezone
-  useEffect(() => {
-    try { setUserTz(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch { /* ignore */ }
-  }, []);
-
   // Update current Madrid time every minute for the "now" line and past-cell logic
   useEffect(() => {
     const id = setInterval(() => setNowMadridMin(getMadridMinutes()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  // Clear focused block when navigating weeks
-  useEffect(() => {
-    setFocusedBlock((prev) => {
-      if (prev) onSlotFocused?.(null);
-      return null;
-    });
-  }, [weekOffset]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Navigate weeks and clear any focused block (with parent notification) in the
+  // same event handler — avoids resetting state from an effect.
+  const goToWeek = useCallback((delta: number) => {
+    setWeekOffset((w) => w + delta);
+    if (focusedBlock) onSlotFocused?.(null);
+    setFocusedBlock(null);
+  }, [focusedBlock, onSlotFocused]);
 
   // Clear focused block when the parent confirms the slot externally
-  // (e.g. "Continuar" button calls onSlotSelected via focusedSlot)
-  useEffect(() => {
+  // (e.g. "Continuar" button calls onSlotSelected via focusedSlot).
+  // Render-phase "adjust state on input change" keyed on the selected-slot prop.
+  const [prevSelectedSlotStart, setPrevSelectedSlotStart] = useState(selectedSlot?.startIso);
+  if (selectedSlot?.startIso !== prevSelectedSlotStart) {
+    setPrevSelectedSlotStart(selectedSlot?.startIso);
     if (selectedSlot) setFocusedBlock(null);
-  }, [selectedSlot?.startIso]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   // Fetch atomic slots for each day in the window.
   // When refreshToken increments (a booking was just confirmed), the backend
@@ -362,6 +364,7 @@ export default function WeeklyCalendar({
         const block = findContiguousBlock(timeRows, tmap, tkey, cellsPerSlot);
         if (block) {
           const slot = blockToSelectedSlot(date, block, userTz, tzDiffers, durationMinutes);
+          // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronises focus to availability data that arrives asynchronously into slotsMap; runs once (guarded by initialFocusedHandled).
           setFocusedBlock({ dateKey: key, block, anchorKey: tkey, slot });
           onSlotFocused?.(slot);
         }
@@ -453,7 +456,7 @@ export default function WeeklyCalendar({
           {/* Nav buttons */}
           <div className="flex gap-2 shrink-0">
             <button
-              onClick={() => setWeekOffset((w) => w - 1)}
+              onClick={() => goToWeek(-1)}
               disabled={weekOffset === 0}
               aria-label="Semana anterior"
               className="p-3 rounded-lg flex items-center gap-2 group transition-colors"
@@ -474,7 +477,7 @@ export default function WeeklyCalendar({
             </button>
 
             <button
-              onClick={() => setWeekOffset((w) => w + 1)}
+              onClick={() => goToWeek(1)}
               disabled={weekOffset >= maxWeekOffset}
               aria-label="Semana siguiente"
               className="p-3 rounded-lg flex items-center gap-2 group transition-colors"

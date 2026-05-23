@@ -42,10 +42,19 @@ export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessio
 
   // Progress bar: 0 → 75% over ~15 s, then stalls
   const progressRef = useRef(0);
+
+  // Reset the bar to 0 whenever we enter/leave the error state (render-phase
+  // "adjust state on input change" — not an effect). The interval below then
+  // re-fills it from 0 when not in the error state.
+  const [prevError, setPrevError] = useState(error);
+  if (error !== prevError) {
+    setPrevError(error);
+    setProgress(0);
+  }
+
   useEffect(() => {
     if (error) return;
     progressRef.current = 0;
-    setProgress(0);
     const id = setInterval(() => {
       progressRef.current = Math.min(75, progressRef.current + 0.5);
       setProgress(progressRef.current);
@@ -54,9 +63,9 @@ export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessio
     return () => clearInterval(id);
   }, [error]);
 
-  // Staggered system check badges
+  // Staggered system check badges (initial state is already all-false, so the
+  // timeouts only need to flip them true)
   useEffect(() => {
-    setChecks({ cam: false, mic: false, network: false, latency: false });
     const t1 = setTimeout(() => setChecks((c) => ({ ...c, cam: true })),     1000);
     const t2 = setTimeout(() => setChecks((c) => ({ ...c, mic: true })),     2000);
     const t3 = setTimeout(() => setChecks((c) => ({ ...c, network: true })), 3500);
