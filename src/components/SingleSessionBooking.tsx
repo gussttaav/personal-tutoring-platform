@@ -645,6 +645,7 @@ export default function SingleSessionBooking({
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCNL3zn2YTYaO_hmbb57yzENelgbezrtOYRkI0wzW9Z4G_EpOWuwa0LT9KVy9VtWo2BxDSDjbuxyxZEfsWLJJIlFKeSHVTNRymMJ2-SPExdi6Nt_yFfNoqKma8TUebR5hch_bTaDj4ezkdy1GIHCmkwIZJpmYWdDAUlzcY6BiHlX79U-YxDZDWoL5hwLk4UoIyTcTZe4W_zJdpb8pqshHykMhp1M3mgD9ROlLalXQhZ8WZLdfGRqxxzncfpXPx6gLjVOzh6yaeehQ"
                   alt=""
                   fill
+                  sizes="420px"
                   className="object-cover grayscale brightness-50"
                   aria-hidden="true"
                 />
