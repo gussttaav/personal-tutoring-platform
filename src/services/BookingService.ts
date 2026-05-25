@@ -5,6 +5,10 @@
 // REFACTOR-P1-01: Acquires a Postgres-backed slot lock before any side effects
 // to prevent concurrent bookings for the same time slot. Replaces the previous
 // approach which had no concurrency control between getAvailableSlots and insert.
+//
+// REFACTOR-P1-03: Wraps createBooking in a saga compensation list. Each
+// committed side effect pushes an undo function; on any throw they run
+// in reverse. See docs/refactor/phase-1-correctness/03-booking-saga-compensation.md
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -68,6 +72,8 @@ const SESSION_LABELS: Record<SessionType, string> = {
 
 const CANCEL_WINDOW_MS = 2 * 60 * 60_000; // 2 hours
 
+type Compensation = { description: string; run: () => Promise<void> };
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export class BookingService {
@@ -97,9 +103,25 @@ export class BookingService {
       throw new SlotUnavailableError();
     }
 
-    try {
-      let consumedReschedule = false;
+    // REFACTOR-P1-03: Saga compensation list. On any failure inside the try block,
+    // these run in reverse order to undo committed side effects. Best-effort —
+    // each compensation logs but does not throw, since the original error is more
+    // important and we don't want compensation failures to mask it.
+    const compensations: Compensation[] = [];
+    const compensate = async () => {
+      for (const c of [...compensations].reverse()) {
+        try {
+          await c.run();
+          log("info", "Compensation succeeded", { service: "BookingService", step: c.description });
+        } catch (err) {
+          log("error", "Compensation failed (manual intervention may be needed)", {
+            service: "BookingService", step: c.description, error: String(err),
+          });
+        }
+      }
+    };
 
+    try {
       // 3. Reschedule flow
       if (input.rescheduleToken) {
         const oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
@@ -131,7 +153,11 @@ export class BookingService {
           );
         }
 
-        consumedReschedule = true;
+        // Reschedule rollback is partial by design — see task doc §Notable design decisions.
+        compensations.push({
+          description: "restore old cancel token",
+          run: async () => { /* partial: reschedule rollback is best-effort only */ },
+        });
 
         try { await this.calendar.deleteEvent(oldRecord.eventId); } catch {}
         try { await this.sessions.deleteByEventId(oldRecord.eventId); } catch {}
@@ -146,71 +172,39 @@ export class BookingService {
       let packSizeForToken: number | undefined;
       if (input.sessionType === "pack") {
         await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
+        compensations.push({
+          description: "restore decremented credit",
+          run: async () => { await this.credits.restoreCredit(input.email); },
+        });
         const creditRecord = await this.credits.getBalance(input.email);
         packSizeForToken = creditRecord?.packSize ?? undefined;
       }
 
       // 5. Calendar event
       const sessionLabel = SESSION_LABELS[input.sessionType];
-      let eventId:         string;
-      let zoomSessionName: string;
-      let zoomPasscode:    string;
-      // calResult kept in scope so createSession() can use zoomSessionId + durationMinutes below
-      let calResult: Awaited<ReturnType<typeof this.calendar.createEvent>>;
-
-      try {
-        calResult = await this.calendar.createEvent({
-          summary:     `${sessionLabel} — ${input.name}`,
-          description: [
-            `Alumno: ${input.name} (${input.email})`,
-            `Tipo: ${sessionLabel}`,
-            input.note ? `Motivo: ${input.note}` : null,
-            `gustavoai.dev`,
-          ].filter((s): s is string => s !== null).join("\n"),
-          startIso:     input.startIso,
-          endIso:       input.endIso,
-          sessionType:  input.sessionType,
-          studentEmail: input.email,
-        });
-        eventId         = calResult.eventId;
-        zoomSessionName = calResult.zoomSessionName;
-        zoomPasscode    = calResult.zoomPasscode;
-        await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
-      } catch (err) {
-        log("error", "Calendar event creation failed", {
-          service: "BookingService", email: input.email, startIso: input.startIso, error: String(err),
-        });
-
-        if (input.sessionType === "pack") {
-          await this.credits.restoreCredit(input.email);
-        } else if (consumedReschedule) {
-          await this.bookings.recordRescheduleFailure({
-            email:       input.email,
-            startIso:    input.startIso,
-            endIso:      input.endIso,
-            sessionType: input.sessionType,
-            error:       String(err),
-          }).catch(() => {});
-        }
-        throw err;
-      }
-
-      // 6. Schedule Zoom cleanup via QStash — fire after the session ends (start + duration + grace),
-      //    not relative to "now". Otherwise sessions booked in advance get terminated before they start.
-      const baseUrl       = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-      const startMs       = new Date(input.startIso).getTime();
-      const totalMinutes  = this.zoom.getDurationWithGrace(input.sessionType);
-      const fireAtMs      = startMs + totalMinutes * 60_000;
-      const delaySeconds  = Math.max(60, Math.ceil((fireAtMs - Date.now()) / 1000));
-      await this.scheduler.scheduleAt({
-        url:          `${baseUrl}/api/internal/zoom-terminate`,
-        body:         { eventId },
-        delaySeconds,
+      const calResult = await this.calendar.createEvent({
+        summary:     `${sessionLabel} — ${input.name}`,
+        description: [
+          `Alumno: ${input.name} (${input.email})`,
+          `Tipo: ${sessionLabel}`,
+          input.note ? `Motivo: ${input.note}` : null,
+          `gustavoai.dev`,
+        ].filter((s): s is string => s !== null).join("\n"),
+        startIso:     input.startIso,
+        endIso:       input.endIso,
+        sessionType:  input.sessionType,
+        studentEmail: input.email,
       });
+      compensations.push({
+        description: `delete Calendar event ${calResult.eventId}`,
+        run: async () => { await this.calendar.deleteEvent(calResult.eventId); },
+      });
+      await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
 
-      // 7. Booking record
+      // 6. Booking record — moved BEFORE QStash so the booking row exists if QStash
+      //    scheduling fails; P1-04's fallback cron can then find and terminate it.
       const { cancelToken, joinToken } = await this.bookings.createBooking({
-        eventId,
+        eventId:     calResult.eventId,
         email:       input.email,
         name:        input.name,
         sessionType: input.sessionType,
@@ -219,19 +213,39 @@ export class BookingService {
         ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
         ...(input.stripePaymentId             ? { stripePaymentId: input.stripePaymentId } : {}),
       });
+      compensations.push({
+        description: `cancel booking ${cancelToken.slice(0, 8)}…`,
+        run: async () => { await this.bookings.consumeCancelToken(cancelToken); },
+      });
 
-      // 8. Persist Zoom session via repository (after booking so Supabase FK resolves)
-      await this.sessions.createSession(eventId, {
-        sessionId:       calResult!.zoomSessionId,
-        sessionName:     calResult!.zoomSessionName,
-        sessionPasscode: calResult!.zoomPasscode,
+      // 7. Schedule Zoom cleanup via QStash — fire after the session ends (start + duration + grace),
+      //    not relative to "now". Otherwise sessions booked in advance get terminated before they start.
+      //    No compensation: if this fails, the booking row exists and P1-04's fallback cron handles it.
+      const baseUrl       = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+      const startMs       = new Date(input.startIso).getTime();
+      const totalMinutes  = this.zoom.getDurationWithGrace(input.sessionType);
+      const fireAtMs      = startMs + totalMinutes * 60_000;
+      const delaySeconds  = Math.max(60, Math.ceil((fireAtMs - Date.now()) / 1000));
+      await this.scheduler.scheduleAt({
+        url:          `${baseUrl}/api/internal/zoom-terminate`,
+        body:         { eventId: calResult.eventId },
+        delaySeconds,
+      });
+
+      // 8. Persist Zoom session via repository (after booking so Supabase FK resolves).
+      //    No separate compensation — booking cancellation (step 6) cascades to zoom_session.
+      await this.sessions.createSession(calResult.eventId, {
+        sessionId:       calResult.zoomSessionId,
+        sessionName:     calResult.zoomSessionName,
+        sessionPasscode: calResult.zoomPasscode,
         startIso:        input.startIso,
-        durationMinutes: calResult!.durationMinutes,
+        durationMinutes: calResult.durationMinutes,
         sessionType:     input.sessionType,
         studentEmail:    input.email,
       });
 
-      // 9. Confirmation + notification emails (with per-attempt retry)
+      // 9. Confirmation + notification emails (with per-attempt retry).
+      //    Not compensated: a leaked "booking confirmed" email is better than deleting a booking.
       const joinUrl = `${baseUrl}/sesion/${joinToken}`;
       const [confirmSent] = await Promise.all([
         this.sendWithRetry(
@@ -263,7 +277,17 @@ export class BookingService {
         ),
       ]);
 
-      return { eventId, zoomSessionName, zoomPasscode, cancelToken, joinToken, emailFailed: !confirmSent };
+      return {
+        eventId:         calResult.eventId,
+        zoomSessionName: calResult.zoomSessionName,
+        zoomPasscode:    calResult.zoomPasscode,
+        cancelToken,
+        joinToken,
+        emailFailed:     !confirmSent,
+      };
+    } catch (err) {
+      await compensate();
+      throw err;
     } finally {
       await this.bookings.releaseSlotLock(input.startIso).catch(err =>
         log("warn", "Slot lock release failed (will expire on TTL)", {
