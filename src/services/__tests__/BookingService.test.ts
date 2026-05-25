@@ -267,7 +267,7 @@ describe("BookingService.createBooking (reschedule)", () => {
     expect(sessions.deleteByEventId).toHaveBeenCalledWith("old-evt");
   });
 
-  it("records dead-letter when calendar fails during non-pack rescheduling", async () => {
+  it("throws when calendar fails during non-pack rescheduling (no dead-letter — REFACTOR-P1-03)", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
       baseCancelRecord({ sessionType: "free15min", startsAt: hoursFromNow(5) })
@@ -280,11 +280,10 @@ describe("BookingService.createBooking (reschedule)", () => {
       service.createBooking({
         ...basePackInput(), sessionType: "free15min", rescheduleToken: "tkn",
       })
-    ).rejects.toThrow();
+    ).rejects.toThrow("Calendar down");
 
-    expect(bookings.recordRescheduleFailure).toHaveBeenCalledWith(
-      expect.objectContaining({ email: "student@test.com", sessionType: "free15min" })
-    );
+    // Compensation framework replaced the old recordRescheduleFailure dead-letter call.
+    expect(bookings.recordRescheduleFailure).not.toHaveBeenCalled();
   });
 });
 
@@ -476,6 +475,59 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
     // Second call with same slot must succeed now that lock is released
     calendar.shouldFail = false;
     await expect(service.createBooking(input)).resolves.toBeDefined();
+  });
+});
+
+// ─── REFACTOR-P1-03: booking saga compensation ───────────────────────────────
+
+describe("REFACTOR-P1-03: booking saga compensation", () => {
+  it("restores credit when Calendar create fails (pack)", async () => {
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+
+    const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("Calendar down");
+
+    expect(creditsRepo.decrementCredit).toHaveBeenCalled();
+    expect(creditsRepo.restoreCredit).toHaveBeenCalledWith("student@test.com");
+  });
+
+  it("deletes Calendar event when DB booking insert fails", async () => {
+    const calendar  = mockCalendar();
+    const bookings  = mockBookings();
+    bookings.createBooking.mockRejectedValue(new Error("DB down"));
+
+    const service = makeService({ calendar, bookings });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("DB down");
+
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+  });
+
+  it("releases slot lock even when compensation runs", async () => {
+    const bookings = mockBookings();
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const input = basePackInput();
+
+    const service = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(input)).rejects.toThrow();
+
+    expect(bookings.releaseSlotLock).toHaveBeenCalledWith(input.startIso);
+  });
+
+  it("surfaces original error when compensation itself fails", async () => {
+    const calendar = mockCalendar();
+    const bookings = mockBookings();
+    bookings.createBooking.mockRejectedValue(new Error("DB"));
+    calendar.deleteEvent.mockRejectedValue(new Error("Cal delete also failed"));
+
+    const service = makeService({ calendar, bookings });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("DB");
   });
 });
 

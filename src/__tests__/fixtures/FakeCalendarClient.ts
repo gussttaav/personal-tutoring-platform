@@ -2,13 +2,15 @@
 import type { ICalendarClient, CreateEventParams, CreateEventResult, TimeSlot } from "@/infrastructure/google/ICalendarClient";
 
 export class FakeCalendarClient implements ICalendarClient {
-  createdEvents:  CreateEventParams[] = [];
-  deletedEventIds: string[]           = [];
-  shouldFail      = false;
-  private counter = 0;
+  createdEvents:        CreateEventParams[] = [];
+  deletedEventIds:      string[]            = [];
+  shouldFail            = false;
+  createEventShouldFail = false;
+  deleteEventShouldFail = false;
+  private counter       = 0;
 
   async createEvent(params: CreateEventParams): Promise<CreateEventResult> {
-    if (this.shouldFail) throw new Error("FakeCalendarClient: simulated failure");
+    if (this.shouldFail || this.createEventShouldFail) throw new Error("FakeCalendarClient: simulated failure");
 
     const eventId = `evt-${this.counter++}`;
     this.createdEvents.push(params);
@@ -22,7 +24,7 @@ export class FakeCalendarClient implements ICalendarClient {
   }
 
   async deleteEvent(eventId: string): Promise<void> {
-    if (this.shouldFail) throw new Error("FakeCalendarClient: simulated failure");
+    if (this.shouldFail || this.deleteEventShouldFail) throw new Error("FakeCalendarClient: simulated failure");
     this.deletedEventIds.push(eventId);
   }
 
