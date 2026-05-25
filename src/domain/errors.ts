@@ -35,3 +35,13 @@ export class AlreadySubscribedError extends DomainError {
 export class ReviewBookingNotFoundError extends DomainError {
   constructor() { super("No se encontró la clase a valorar", "REVIEW_BOOKING_NOT_FOUND"); }
 }
+
+// REFACTOR-P1-02: Distinguish webhook failures that should be retried by Stripe
+// from those that are permanent (malformed data we can never process). Permanent
+// errors return 200 so Stripe stops retrying; retryable ones return 500 so Stripe
+// keeps trying for up to 3 days.
+export class PermanentWebhookError extends DomainError {
+  constructor(reason: string) {
+    super(`Permanent webhook failure: ${reason}`, "PERMANENT_WEBHOOK_ERROR");
+  }
+}

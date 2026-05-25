@@ -2,6 +2,7 @@
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
+import { PermanentWebhookError } from "@/domain/errors";
 
 // Mock getAvailableSlots before importing PaymentService (direct module import)
 const mockGetAvailableSlots = jest.fn();
@@ -132,16 +133,14 @@ describe("PaymentService.processWebhookEvent — pack", () => {
     }));
   });
 
-  it("skips pack event with missing email", async () => {
-    const { service, credits } = makeService();
+  it("throws PermanentWebhookError for pack event with missing email", async () => {
+    const { service } = makeService();
     const event = fakePackEvent();
     (event.data.object as unknown as Record<string, unknown>).metadata = {
       checkout_type: "pack", pack_size: "5",
     };
 
-    await service.processWebhookEvent(event);
-
-    expect(credits.addCredits).not.toHaveBeenCalled();
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
   });
 });
 
@@ -294,5 +293,74 @@ describe("PaymentService.reprocessFailedBooking", () => {
     const result = await service.reprocessFailedBooking("pi_single_123");
 
     expect(result).toEqual({ ok: false, error: "Failed to retrieve Stripe data" });
+  });
+});
+
+// ─── REFACTOR-P1-02: webhook error semantics ──────────────────────────────────
+
+describe("REFACTOR-P1-02: webhook error semantics", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+  });
+
+  it("throws PermanentWebhookError when student_email missing in pack metadata", async () => {
+    const { service } = makeService();
+    const event: Stripe.Event = {
+      id:   "evt_test",
+      type: "payment_intent.succeeded",
+      data: { object: { id: "pi_test", metadata: { checkout_type: "pack", pack_size: "5" } } },
+    } as unknown as Stripe.Event;
+
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+
+  it("throws PermanentWebhookError when student_email missing in single-session metadata", async () => {
+    const { service } = makeService();
+    const event: Stripe.Event = {
+      id:   "evt_test",
+      type: "payment_intent.succeeded",
+      data: {
+        object: {
+          id:       "pi_test",
+          metadata: {
+            checkout_type: "single",
+            start_iso:     "2099-12-01T10:00:00.000Z",
+            end_iso:       "2099-12-01T11:00:00.000Z",
+          },
+        },
+      },
+    } as unknown as Stripe.Event;
+
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+
+  it("throws PermanentWebhookError when start_iso or end_iso missing in single-session metadata", async () => {
+    const { service } = makeService();
+    const event: Stripe.Event = {
+      id:   "evt_test",
+      type: "payment_intent.succeeded",
+      data: {
+        object: {
+          id:       "pi_test",
+          metadata: {
+            checkout_type: "single",
+            student_email: "student@test.com",
+          },
+        },
+      },
+    } as unknown as Stripe.Event;
+
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+
+  it("rethrows when paymentRepo.recordFailedBooking fails inside writeDeadLetter", async () => {
+    const dbError = new Error("DB down");
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockRejectedValue(new Error("calendar API down"));
+    paymentRepo.recordFailedBooking.mockRejectedValue(dbError);
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).rejects.toThrow("DB down");
   });
 });

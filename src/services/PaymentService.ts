@@ -17,6 +17,7 @@ import type { PackSize } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
 import { log } from "@/lib/logger";
+import { PermanentWebhookError } from "@/domain/errors";
 import { sendDeadLetterNotificationEmail } from "@/infrastructure/resend/email-functions";
 import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";
@@ -217,12 +218,15 @@ export class PaymentService {
 
       if (!email) {
         log("error", "Missing email in webhook metadata", { service: "payment", stripeSessionId });
-        return;
+        throw new PermanentWebhookError(`Missing student_email in metadata for ${stripeSessionId}`);
       }
 
       if (checkoutType === "pack") {
         const packSize = parseInt(session.metadata?.pack_size ?? "0", 10);
-        if (!packSize) return;
+        if (!packSize) {
+          log("error", "Missing pack_size in webhook metadata", { service: "payment", stripeSessionId });
+          throw new PermanentWebhookError(`Missing pack_size in metadata for ${stripeSessionId}`);
+        }
         await this.handlePackPayment(
           { student_email: email, student_name: name, pack_size: String(packSize), checkout_type: "pack" },
           stripeSessionId,
@@ -315,11 +319,11 @@ export class PaymentService {
 
     if (!email) {
       log("error", "Missing email in pack payment metadata", { service: "payment", intentId });
-      return;
+      throw new PermanentWebhookError(`Missing student_email in pack metadata for ${intentId}`);
     }
     if (!packSize) {
       log("warn", "Missing pack_size in metadata", { service: "payment", intentId });
-      return;
+      throw new PermanentWebhookError(`Missing pack_size in metadata for ${intentId}`);
     }
 
     await this.credits.addCredits({
@@ -334,11 +338,11 @@ export class PaymentService {
 
     if (!email) {
       log("error", "Missing email in single-session metadata", { service: "payment", idempotencyKey });
-      return;
+      throw new PermanentWebhookError(`Missing student_email in single-session metadata for ${idempotencyKey}`);
     }
     if (!startIso || !endIso) {
       log("error", "Missing slot timing in webhook metadata", { service: "payment", idempotencyKey });
-      return;
+      throw new PermanentWebhookError(`Missing start_iso or end_iso in metadata for ${idempotencyKey}`);
     }
 
     // Idempotency check
@@ -399,6 +403,7 @@ export class PaymentService {
       log("error", "Dead-letter written for failed booking", { service: "payment", stripeSessionId, userId, startIso });
     } catch (kvErr) {
       log("error", "Failed to write dead-letter record", { service: "payment", stripeSessionId, error: String(kvErr) });
+      throw kvErr;
     }
 
     await sendDeadLetterNotificationEmail({
