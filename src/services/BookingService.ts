@@ -1,6 +1,10 @@
 // ARCH-13: BookingService — orchestrates session booking, cancellation, and listing.
 // Extracted from /api/book, /api/cancel, and /api/my-bookings route handlers so
 // that route handlers become thin parsers + dispatchers with no business logic.
+//
+// REFACTOR-P1-01: Acquires a Postgres-backed slot lock before any side effects
+// to prevent concurrent bookings for the same time slot. Replaces the previous
+// approach which had no concurrency control between getAvailableSlots and insert.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -83,172 +87,192 @@ export class BookingService {
     const minBookable = new Date(Date.now() + SCHEDULE.minNoticeHours * 60 * 60_000);
     if (startsAt < minBookable) throw new SlotUnavailableError();
 
-    let consumedReschedule = false;
-
-    // 2. Reschedule flow
-    if (input.rescheduleToken) {
-      const oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
-
-      if (!oldRecord) {
-        throw new DomainError(
-          "El enlace de reprogramación no es válido o ya ha sido usado.",
-          "INVALID_RESCHEDULE_TOKEN",
-        );
-      }
-      if (new Date(oldRecord.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
-        throw new DomainError(
-          "Ya no es posible reprogramar esta sesión (menos de 2 horas de antelación).",
-          "OUTSIDE_RESCHEDULE_WINDOW",
-        );
-      }
-      if (oldRecord.sessionType !== input.sessionType) {
-        throw new DomainError(
-          "El tipo de sesión no coincide con la reserva original.",
-          "SESSION_TYPE_MISMATCH",
-        );
-      }
-
-      const consumed = await this.bookings.consumeCancelToken(input.rescheduleToken);
-      if (!consumed) {
-        throw new DomainError(
-          "El enlace de reprogramación ya ha sido usado.",
-          "RESCHEDULE_TOKEN_CONSUMED",
-        );
-      }
-
-      consumedReschedule = true;
-
-      try { await this.calendar.deleteEvent(oldRecord.eventId); } catch {}
-      try { await this.sessions.deleteByEventId(oldRecord.eventId); } catch {}
-      await invalidateAvailability(oldRecord.startsAt.slice(0, 10)).catch(() => {});
-
-      if (oldRecord.sessionType === "pack") {
-        await this.credits.restoreCredit(input.email);
-      }
+    // 2. REFACTOR-P1-01: Acquire slot lock. Held until the booking row is committed
+    //    (or compensation completes — see REFACTOR-P1-03).
+    const durationMinutes = Math.round(
+      (new Date(input.endIso).getTime() - new Date(input.startIso).getTime()) / 60_000
+    );
+    const locked = await this.bookings.acquireSlotLock(input.startIso, durationMinutes);
+    if (!locked) {
+      throw new SlotUnavailableError();
     }
-
-    // 4. Credit decrement for pack sessions
-    let packSizeForToken: number | undefined;
-    if (input.sessionType === "pack") {
-      await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
-      const creditRecord = await this.credits.getBalance(input.email);
-      packSizeForToken = creditRecord?.packSize ?? undefined;
-    }
-
-    // 5. Calendar event
-    const sessionLabel = SESSION_LABELS[input.sessionType];
-    let eventId:         string;
-    let zoomSessionName: string;
-    let zoomPasscode:    string;
-    // calResult kept in scope so createSession() can use zoomSessionId + durationMinutes below
-    let calResult: Awaited<ReturnType<typeof this.calendar.createEvent>>;
 
     try {
-      calResult = await this.calendar.createEvent({
-        summary:     `${sessionLabel} — ${input.name}`,
-        description: [
-          `Alumno: ${input.name} (${input.email})`,
-          `Tipo: ${sessionLabel}`,
-          input.note ? `Motivo: ${input.note}` : null,
-          `gustavoai.dev`,
-        ].filter((s): s is string => s !== null).join("\n"),
-        startIso:     input.startIso,
-        endIso:       input.endIso,
-        sessionType:  input.sessionType,
-        studentEmail: input.email,
-      });
-      eventId         = calResult.eventId;
-      zoomSessionName = calResult.zoomSessionName;
-      zoomPasscode    = calResult.zoomPasscode;
-      await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
-    } catch (err) {
-      log("error", "Calendar event creation failed", {
-        service: "BookingService", email: input.email, startIso: input.startIso, error: String(err),
-      });
+      let consumedReschedule = false;
 
-      if (input.sessionType === "pack") {
-        await this.credits.restoreCredit(input.email);
-      } else if (consumedReschedule) {
-        await this.bookings.recordRescheduleFailure({
-          email:       input.email,
-          startIso:    input.startIso,
-          endIso:      input.endIso,
-          sessionType: input.sessionType,
-          error:       String(err),
-        }).catch(() => {});
+      // 3. Reschedule flow
+      if (input.rescheduleToken) {
+        const oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
+
+        if (!oldRecord) {
+          throw new DomainError(
+            "El enlace de reprogramación no es válido o ya ha sido usado.",
+            "INVALID_RESCHEDULE_TOKEN",
+          );
+        }
+        if (new Date(oldRecord.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
+          throw new DomainError(
+            "Ya no es posible reprogramar esta sesión (menos de 2 horas de antelación).",
+            "OUTSIDE_RESCHEDULE_WINDOW",
+          );
+        }
+        if (oldRecord.sessionType !== input.sessionType) {
+          throw new DomainError(
+            "El tipo de sesión no coincide con la reserva original.",
+            "SESSION_TYPE_MISMATCH",
+          );
+        }
+
+        const consumed = await this.bookings.consumeCancelToken(input.rescheduleToken);
+        if (!consumed) {
+          throw new DomainError(
+            "El enlace de reprogramación ya ha sido usado.",
+            "RESCHEDULE_TOKEN_CONSUMED",
+          );
+        }
+
+        consumedReschedule = true;
+
+        try { await this.calendar.deleteEvent(oldRecord.eventId); } catch {}
+        try { await this.sessions.deleteByEventId(oldRecord.eventId); } catch {}
+        await invalidateAvailability(oldRecord.startsAt.slice(0, 10)).catch(() => {});
+
+        if (oldRecord.sessionType === "pack") {
+          await this.credits.restoreCredit(input.email);
+        }
       }
-      throw err;
-    }
 
-    // 6. Schedule Zoom cleanup via QStash — fire after the session ends (start + duration + grace),
-    //    not relative to "now". Otherwise sessions booked in advance get terminated before they start.
-    const baseUrl       = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-    const startMs       = new Date(input.startIso).getTime();
-    const totalMinutes  = this.zoom.getDurationWithGrace(input.sessionType);
-    const fireAtMs      = startMs + totalMinutes * 60_000;
-    const delaySeconds  = Math.max(60, Math.ceil((fireAtMs - Date.now()) / 1000));
-    await this.scheduler.scheduleAt({
-      url:          `${baseUrl}/api/internal/zoom-terminate`,
-      body:         { eventId },
-      delaySeconds,
-    });
+      // 4. Credit decrement for pack sessions
+      let packSizeForToken: number | undefined;
+      if (input.sessionType === "pack") {
+        await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
+        const creditRecord = await this.credits.getBalance(input.email);
+        packSizeForToken = creditRecord?.packSize ?? undefined;
+      }
 
-    // 7. Booking record
-    const { cancelToken, joinToken } = await this.bookings.createBooking({
-      eventId,
-      email:       input.email,
-      name:        input.name,
-      sessionType: input.sessionType,
-      startsAt:    input.startIso,
-      endsAt:      input.endIso,
-      ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
-      ...(input.stripePaymentId             ? { stripePaymentId: input.stripePaymentId } : {}),
-    });
+      // 5. Calendar event
+      const sessionLabel = SESSION_LABELS[input.sessionType];
+      let eventId:         string;
+      let zoomSessionName: string;
+      let zoomPasscode:    string;
+      // calResult kept in scope so createSession() can use zoomSessionId + durationMinutes below
+      let calResult: Awaited<ReturnType<typeof this.calendar.createEvent>>;
 
-    // 8. Persist Zoom session via repository (after booking so Supabase FK resolves)
-    await this.sessions.createSession(eventId, {
-      sessionId:       calResult!.zoomSessionId,
-      sessionName:     calResult!.zoomSessionName,
-      sessionPasscode: calResult!.zoomPasscode,
-      startIso:        input.startIso,
-      durationMinutes: calResult!.durationMinutes,
-      sessionType:     input.sessionType,
-      studentEmail:    input.email,
-    });
-
-    // 9. Confirmation + notification emails (with per-attempt retry)
-    const joinUrl = `${baseUrl}/sesion/${joinToken}`;
-    const [confirmSent] = await Promise.all([
-      this.sendWithRetry(
-        () => this.email.sendConfirmation({
-          to:           input.email,
-          studentName:  input.name,
-          sessionLabel,
+      try {
+        calResult = await this.calendar.createEvent({
+          summary:     `${sessionLabel} — ${input.name}`,
+          description: [
+            `Alumno: ${input.name} (${input.email})`,
+            `Tipo: ${sessionLabel}`,
+            input.note ? `Motivo: ${input.note}` : null,
+            `gustavoai.dev`,
+          ].filter((s): s is string => s !== null).join("\n"),
           startIso:     input.startIso,
           endIso:       input.endIso,
-          joinToken,
-          cancelToken,
-          note:         input.note ?? null,
-          studentTz:    input.timezone ?? null,
           sessionType:  input.sessionType,
-        }),
-        "confirmation email",
-      ),
-      this.sendWithRetry(
-        () => this.email.sendNewBookingNotification({
           studentEmail: input.email,
-          studentName:  input.name,
-          sessionLabel,
-          startIso:     input.startIso,
-          endIso:       input.endIso,
-          joinUrl,
-          note:         input.note ?? null,
-        }),
-        "notification email",
-      ),
-    ]);
+        });
+        eventId         = calResult.eventId;
+        zoomSessionName = calResult.zoomSessionName;
+        zoomPasscode    = calResult.zoomPasscode;
+        await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
+      } catch (err) {
+        log("error", "Calendar event creation failed", {
+          service: "BookingService", email: input.email, startIso: input.startIso, error: String(err),
+        });
 
-    return { eventId, zoomSessionName, zoomPasscode, cancelToken, joinToken, emailFailed: !confirmSent };
+        if (input.sessionType === "pack") {
+          await this.credits.restoreCredit(input.email);
+        } else if (consumedReschedule) {
+          await this.bookings.recordRescheduleFailure({
+            email:       input.email,
+            startIso:    input.startIso,
+            endIso:      input.endIso,
+            sessionType: input.sessionType,
+            error:       String(err),
+          }).catch(() => {});
+        }
+        throw err;
+      }
+
+      // 6. Schedule Zoom cleanup via QStash — fire after the session ends (start + duration + grace),
+      //    not relative to "now". Otherwise sessions booked in advance get terminated before they start.
+      const baseUrl       = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+      const startMs       = new Date(input.startIso).getTime();
+      const totalMinutes  = this.zoom.getDurationWithGrace(input.sessionType);
+      const fireAtMs      = startMs + totalMinutes * 60_000;
+      const delaySeconds  = Math.max(60, Math.ceil((fireAtMs - Date.now()) / 1000));
+      await this.scheduler.scheduleAt({
+        url:          `${baseUrl}/api/internal/zoom-terminate`,
+        body:         { eventId },
+        delaySeconds,
+      });
+
+      // 7. Booking record
+      const { cancelToken, joinToken } = await this.bookings.createBooking({
+        eventId,
+        email:       input.email,
+        name:        input.name,
+        sessionType: input.sessionType,
+        startsAt:    input.startIso,
+        endsAt:      input.endIso,
+        ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
+        ...(input.stripePaymentId             ? { stripePaymentId: input.stripePaymentId } : {}),
+      });
+
+      // 8. Persist Zoom session via repository (after booking so Supabase FK resolves)
+      await this.sessions.createSession(eventId, {
+        sessionId:       calResult!.zoomSessionId,
+        sessionName:     calResult!.zoomSessionName,
+        sessionPasscode: calResult!.zoomPasscode,
+        startIso:        input.startIso,
+        durationMinutes: calResult!.durationMinutes,
+        sessionType:     input.sessionType,
+        studentEmail:    input.email,
+      });
+
+      // 9. Confirmation + notification emails (with per-attempt retry)
+      const joinUrl = `${baseUrl}/sesion/${joinToken}`;
+      const [confirmSent] = await Promise.all([
+        this.sendWithRetry(
+          () => this.email.sendConfirmation({
+            to:           input.email,
+            studentName:  input.name,
+            sessionLabel,
+            startIso:     input.startIso,
+            endIso:       input.endIso,
+            joinToken,
+            cancelToken,
+            note:         input.note ?? null,
+            studentTz:    input.timezone ?? null,
+            sessionType:  input.sessionType,
+          }),
+          "confirmation email",
+        ),
+        this.sendWithRetry(
+          () => this.email.sendNewBookingNotification({
+            studentEmail: input.email,
+            studentName:  input.name,
+            sessionLabel,
+            startIso:     input.startIso,
+            endIso:       input.endIso,
+            joinUrl,
+            note:         input.note ?? null,
+          }),
+          "notification email",
+        ),
+      ]);
+
+      return { eventId, zoomSessionName, zoomPasscode, cancelToken, joinToken, emailFailed: !confirmSent };
+    } finally {
+      await this.bookings.releaseSlotLock(input.startIso).catch(err =>
+        log("warn", "Slot lock release failed (will expire on TTL)", {
+          service: "BookingService",
+          startIso: input.startIso,
+          error: String(err),
+        })
+      );
+    }
   }
 
   async cancelByToken(token: string): Promise<CancelByTokenOutput> {
