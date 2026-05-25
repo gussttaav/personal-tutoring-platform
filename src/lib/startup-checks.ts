@@ -61,6 +61,9 @@ const REQUIRED_ENV_VARS = [
   // Supabase (primary data store)
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
+
+  // Vercel cron authentication (REFACTOR-P1-04 — zoom-terminate-fallback cron)
+  "CRON_SECRET",
 ] as const;
 
 export function validateEnv(): void {

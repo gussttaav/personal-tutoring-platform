@@ -1,8 +1,11 @@
 // ARCH-13: Thin wrapper around QStash so BookingService can depend on an
 // interface rather than a concrete module — enables testing with mocks.
+//
+// REFACTOR-P1-04: Errors are now propagated so the caller can record a fallback
+// row. Adds explicit retries inside QStash itself for transient flakiness.
+//
 // Skips scheduling when running locally (QStash cannot reach loopback addresses).
 import { qstash } from "./client";
-import { log } from "@/lib/logger";
 import type { IScheduler, ScheduleParams } from "./IScheduler";
 
 export class SchedulerClient implements IScheduler {
@@ -11,11 +14,11 @@ export class SchedulerClient implements IScheduler {
     if (baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1")) return;
 
     await qstash.publishJSON({
-      url:   params.url,
-      body:  params.body,
-      delay: params.delaySeconds,
-    }).catch((err: unknown) => {
-      log("error", "QStash schedule failed", { url: params.url, error: String(err) });
+      url:     params.url,
+      body:    params.body,
+      delay:   params.delaySeconds,
+      retries: 3,
     });
+    // No .catch — let it throw. BookingService handles the fallback path.
   }
 }

@@ -63,6 +63,7 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - Upstash Redis REST API does NOT support MULTI/EXEC — use Lua via `kv.eval()`.
 - Vercel serverless functions cap at 25s (Hobby) / 60s (Pro). SSE uses 24s.
 - `setTimeout` does NOT work reliably in serverless — use QStash for delays > 10s.
+- Vercel plan is **Hobby** — no native Vercel crons. Scheduled tasks use cron-job.org instead (see `/api/internal/zoom-terminate-fallback`).
 - Zoom Video SDK != Zoom Meetings API. JWT signing only; no REST for session mgmt.
 - `GOOGLE_PRIVATE_KEY` needs `\\n` → `\n` replacement (handled in CalendarClient.ts).
 - Supabase TIMESTAMPTZ format differs from JS `toISOString()`:

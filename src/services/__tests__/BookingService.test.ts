@@ -21,18 +21,19 @@ import type { BookingRecord } from "@/domain/types";
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
 const mockBookings = (): jest.Mocked<IBookingRepository> => ({
-  createBooking:           jest.fn().mockResolvedValue({ cancelToken: "ctkn", joinToken: "jtkn" }),
-  findByCancelToken:       jest.fn().mockResolvedValue(null),
-  findByJoinToken:         jest.fn().mockResolvedValue(null),
-  consumeCancelToken:      jest.fn().mockResolvedValue(true),
-  listByUser:              jest.fn().mockResolvedValue([]),
-  hasAnyBooking:           jest.fn().mockResolvedValue(false),
-  acquireSlotLock:         jest.fn().mockResolvedValue(true),
-  releaseSlotLock:         jest.fn().mockResolvedValue(undefined),
-  recordRescheduleFailure: jest.fn().mockResolvedValue(undefined),
-  findIdByEventIdForUser:  jest.fn().mockResolvedValue(null),
-  markCompleted:           jest.fn().mockResolvedValue(undefined),
-  countCompletedPaid:      jest.fn().mockResolvedValue(0),
+  createBooking:              jest.fn().mockResolvedValue({ cancelToken: "ctkn", joinToken: "jtkn" }),
+  findByCancelToken:          jest.fn().mockResolvedValue(null),
+  findByJoinToken:            jest.fn().mockResolvedValue(null),
+  consumeCancelToken:         jest.fn().mockResolvedValue(true),
+  listByUser:                 jest.fn().mockResolvedValue([]),
+  hasAnyBooking:              jest.fn().mockResolvedValue(false),
+  acquireSlotLock:            jest.fn().mockResolvedValue(true),
+  releaseSlotLock:            jest.fn().mockResolvedValue(undefined),
+  recordRescheduleFailure:    jest.fn().mockResolvedValue(undefined),
+  findIdByEventIdForUser:     jest.fn().mockResolvedValue(null),
+  markCompleted:              jest.fn().mockResolvedValue(undefined),
+  countCompletedPaid:         jest.fn().mockResolvedValue(0),
+  recordPendingTermination:   jest.fn().mockResolvedValue(undefined),
 });
 
 const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
@@ -528,6 +529,70 @@ describe("REFACTOR-P1-03: booking saga compensation", () => {
     const service = makeService({ calendar, bookings });
 
     await expect(service.createBooking(basePackInput())).rejects.toThrow("DB");
+  });
+});
+
+// ─── REFACTOR-P1-04: QStash fallback ─────────────────────────────────────────
+
+describe("REFACTOR-P1-04: QStash fallback", () => {
+  it("succeeds the booking even when QStash scheduling throws", async () => {
+    const bookings  = mockBookings();
+    bookings.recordPendingTermination = jest.fn().mockResolvedValue(undefined);
+    const scheduler = mockScheduler();
+    scheduler.scheduleAt.mockRejectedValueOnce(new Error("QStash 500"));
+
+    const service = makeService({ bookings, scheduler });
+    const result = await service.createBooking(basePackInput());
+
+    expect(result.eventId).toBeDefined();
+    expect(bookings.recordPendingTermination).toHaveBeenCalledWith("evt1", expect.any(Number));
+  });
+
+  it("succeeds the booking even when BOTH QStash AND fallback write fail", async () => {
+    const bookings  = mockBookings();
+    bookings.recordPendingTermination = jest.fn().mockRejectedValueOnce(new Error("DB down"));
+    const scheduler = mockScheduler();
+    scheduler.scheduleAt.mockRejectedValueOnce(new Error("QStash 500"));
+
+    const service = makeService({ bookings, scheduler });
+    const result = await service.createBooking(basePackInput());
+
+    expect(result.eventId).toBeDefined();
+  });
+
+  it("does NOT write a pending termination row when QStash succeeds", async () => {
+    const bookings = mockBookings();
+    bookings.recordPendingTermination = jest.fn().mockResolvedValue(undefined);
+
+    const service = makeService({ bookings });
+    await service.createBooking(basePackInput());
+
+    expect(bookings.recordPendingTermination).not.toHaveBeenCalled();
+  });
+
+  it("records the correct fireAtMs in the pending termination row", async () => {
+    const { buildTestBookingService } = await import("@/__tests__/fixtures/services");
+    const { InMemoryBookingRepository } = await import("@/__tests__/fixtures/InMemoryBookingRepository");
+    const { FakeScheduler }             = await import("@/__tests__/fixtures/FakeScheduler");
+
+    const bookingRepo = new InMemoryBookingRepository();
+    const scheduler   = new FakeScheduler();
+    scheduler.shouldFail = true;
+
+    const service = buildTestBookingService({ bookings: bookingRepo, scheduler });
+    const input = {
+      email: "a@example.com", name: "A",
+      startIso: hoursFromNow(10), endIso: hoursFromNow(11),
+      sessionType: "session1h" as const,
+    };
+
+    const result = await service.createBooking(input);
+
+    const pending = bookingRepo.getPendingTerminations();
+    expect(pending.has(result.eventId)).toBe(true);
+    // fireAtMs must be after the session starts (start + grace period)
+    const startMs = new Date(input.startIso).getTime();
+    expect(pending.get(result.eventId)!).toBeGreaterThan(startMs);
   });
 });
 

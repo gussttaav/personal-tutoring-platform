@@ -292,6 +292,14 @@ export class SupabaseBookingRepository implements IBookingRepository {
     if (error) throw error;
   }
 
+  async recordPendingTermination(eventId: string, fireAtMs: number): Promise<void> {
+    const { error } = await supabase.from("pending_terminations").upsert({
+      event_id: eventId,
+      fire_at:  new Date(fireAtMs).toISOString(),
+    }, { onConflict: "event_id" });
+    if (error) throw error;
+  }
+
   private async upsertUser(email: string, name: string): Promise<string> {
     const normalized = email.toLowerCase().trim();
     const { data, error } = await supabase

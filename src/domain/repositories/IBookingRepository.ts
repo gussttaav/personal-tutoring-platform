@@ -103,4 +103,10 @@ export interface IBookingRepository {
    * if the lock has already expired or was never acquired.
    */
   releaseSlotLock(startIso: string): Promise<void>;
+
+  /**
+   * REFACTOR-P1-04: Records an eventId whose QStash termination scheduling
+   * failed, so a fallback cron can call /api/internal/zoom-terminate manually.
+   */
+  recordPendingTermination(eventId: string, fireAtMs: number): Promise<void>;
 }
