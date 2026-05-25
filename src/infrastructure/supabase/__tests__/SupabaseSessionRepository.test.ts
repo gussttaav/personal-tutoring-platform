@@ -3,8 +3,11 @@
 import { SupabaseSessionRepository } from "../SupabaseSessionRepository";
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
+import { uniqueFutureSlot, purgeTestUsers } from "./slot-helpers";
 
 const describeDb = process.env.SUPABASE_URL ? describe : describe.skip;
+
+const TEST_EMAIL_PATTERN = "test-session-%@example.com";
 
 describeDb("SupabaseSessionRepository", () => {
   const sessionRepo = new SupabaseSessionRepository();
@@ -13,13 +16,14 @@ describeDb("SupabaseSessionRepository", () => {
   const testEmail = `test-session-${Date.now()}@example.com`;
   const eventId   = `evt-sess-${Date.now()}`;
 
+  const { startIso, endIso } = uniqueFutureSlot();
   const bookingRecord = {
     eventId,
     email:       testEmail,
     name:        "Session Student",
     sessionType: "session1h" as const,
-    startsAt:    new Date(Date.now() + 86_400_000).toISOString(),
-    endsAt:      new Date(Date.now() + 86_400_000 + 3_600_000).toISOString(),
+    startsAt:    startIso,
+    endsAt:      endIso,
   };
 
   const zoomSession = {
@@ -33,6 +37,9 @@ describeDb("SupabaseSessionRepository", () => {
   };
 
   beforeAll(async () => {
+    // Clear any rows left by a prior failed run before seeding, so the
+    // bookings_no_overlap exclusion constraint can't be tripped by stale data.
+    await purgeTestUsers(TEST_EMAIL_PATTERN);
     await bookingRepo.createBooking(bookingRecord);
   });
 

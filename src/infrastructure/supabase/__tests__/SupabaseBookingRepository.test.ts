@@ -2,20 +2,33 @@
 // Gated on SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
+import { uniqueFutureSlot, purgeTestUsers } from "./slot-helpers";
 
 const describeDb = process.env.SUPABASE_URL ? describe : describe.skip;
 
-const baseRecord = () => ({
-  eventId:     `evt-${Date.now()}`,
-  email:       `test-booking-${Date.now()}@example.com`,
-  name:        "Test Student",
-  sessionType: "session1h" as const,
-  startsAt:    new Date(Date.now() + 86_400_000).toISOString(),
-  endsAt:      new Date(Date.now() + 86_400_000 + 3_600_000).toISOString(),
-});
+const TEST_EMAIL_PATTERN = "test-booking-%@example.com";
+
+let recordSeq = 0;
+const baseRecord = () => {
+  const { startIso, endIso } = uniqueFutureSlot();
+  const uid = `${Date.now()}-${recordSeq++}`;
+  return {
+    eventId:     `evt-${uid}`,
+    email:       `test-booking-${uid}@example.com`,
+    name:        "Test Student",
+    sessionType: "session1h" as const,
+    startsAt:    startIso,
+    endsAt:      endIso,
+  };
+};
 
 describeDb("SupabaseBookingRepository", () => {
   const repo = new SupabaseBookingRepository();
+
+  // Clear any rows left by a prior failed run so the exclusion constraint
+  // (bookings_no_overlap) can't be tripped by stale confirmed bookings.
+  beforeAll(() => purgeTestUsers(TEST_EMAIL_PATTERN));
+  afterAll(() => purgeTestUsers(TEST_EMAIL_PATTERN));
 
   async function cleanup(email: string) {
     const { data: user } = await supabase
