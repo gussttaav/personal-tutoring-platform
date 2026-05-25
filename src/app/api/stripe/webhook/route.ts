@@ -4,19 +4,21 @@
  * ARCH-14: Thin adapter — signature verification + dispatch. All business
  * logic lives in PaymentService (src/services/PaymentService.ts).
  *
+ * REFACTOR-P1-02: Processes synchronously instead of via waitUntil(). Returns
+ * 500 for retryable failures so Stripe retries automatically (up to 3 days with
+ * exponential backoff). Returns 200 only on success OR PermanentWebhookError
+ * (malformed metadata that retrying cannot fix).
+ *
  * Previous handlers: payment_intent.succeeded (embedded flow) and
  * checkout.session.completed (legacy redirect flow) are both handled
  * by paymentService.processWebhookEvent().
- *
- * REL-05: waitUntil() defers processing so the webhook response is returned
- * immediately. Vercel-only; on self-hosted Node it runs as a background microtask.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { waitUntil } from "@vercel/functions";
 import { paymentService } from "@/services";
 import { log } from "@/lib/logger";
+import { PermanentWebhookError } from "@/domain/errors";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -35,15 +37,32 @@ export async function POST(req: NextRequest) {
   try {
     event = paymentService.verifyWebhookSignature(body, sig, webhookSecret);
   } catch (err) {
-    log("error", "Stripe webhook signature verification failed", { service: "webhook", error: String(err) });
+    log("error", "Stripe webhook signature verification failed", {
+      service: "webhook",
+      error: String(err),
+    });
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  waitUntil(
-    paymentService.processWebhookEvent(event).catch((err) =>
-      log("error", "Webhook processing failed", { service: "webhook", eventId: event.id, error: String(err) })
-    )
-  );
+  try {
+    await paymentService.processWebhookEvent(event);
+    return NextResponse.json({ received: true });
+  } catch (err) {
+    if (err instanceof PermanentWebhookError) {
+      log("error", "Permanent webhook failure — not retrying", {
+        service: "webhook",
+        eventId: event.id,
+        error: String(err),
+      });
+      // Return 200 so Stripe stops retrying. The error is in Sentry via log().
+      return NextResponse.json({ received: true, permanentFailure: true });
+    }
 
-  return NextResponse.json({ received: true });
+    log("error", "Webhook processing failed — Stripe will retry", {
+      service: "webhook",
+      eventId: event.id,
+      error: String(err),
+    });
+    return NextResponse.json({ error: "Processing failed" }, { status: 500 });
+  }
 }

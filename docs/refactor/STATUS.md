@@ -3,7 +3,7 @@
 > Living document. Update this when starting, completing, or blocking a task.
 > See `PLAN.md` for context on the whole effort.
 
-**Last updated:** 2026-05-25
+**Last updated:** 2026-05-25 (P1-02 complete)
 **Current focus:** Phase 1 — Correctness
 **Blocking:** _(none)_
 
@@ -26,7 +26,7 @@
 | Status | # | Task | Owner | PR | Notes |
 |--------|---|------|-------|----|----|
 | ✅ | 01 | [Wire `acquireSlotLock` into `BookingService.createBooking`](phase-1-correctness/01-wire-slot-locks.md) | gussttaav | local | All 45 tests pass; migration 0005 created |
-| ⬜ | 02 | [Stripe webhook returns 500 on retryable processing failures](phase-1-correctness/02-webhook-error-handling.md) | _tbd_ | _tbd_ | |
+| ✅ | 02 | [Stripe webhook returns 500 on retryable processing failures](phase-1-correctness/02-webhook-error-handling.md) | gussttaav | local | Removed waitUntil; added PermanentWebhookError; all silent returns replaced with throws; writeDeadLetter rethrows; 25 new/updated tests pass |
 | ✅ | 03 | [Booking saga: explicit compensation list](phase-1-correctness/03-booking-saga-compensation.md) | gussttaav | local | Removed `recordRescheduleFailure` dead-letter (compensation framework replaces it); booking insert now before QStash |
 | ⬜ | 04 | [QStash: propagate errors, add fallback row](phase-1-correctness/04-qstash-error-propagation.md) | _tbd_ | _tbd_ | |
 | ⬜ | 05 | [Stripe PaymentIntent idempotency key](phase-1-correctness/05-stripe-idempotency-key.md) | _tbd_ | _tbd_ | |
