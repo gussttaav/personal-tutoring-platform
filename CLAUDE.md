@@ -127,3 +127,21 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - Put business logic in route handlers — it belongs in `src/services/`
 - Edit applied migration files — create new ones
 - Skip tests — every service change needs a test
+
+## Refactor workflow
+
+Refactors live in `docs/refactor/` while active, then move to
+`docs/archive/refactor-YYYY-MM-DD/` when complete.
+
+Structure of an active refactor:
+- `PLAN.md` — master audit
+- `STATUS.md` — living progress tracker
+- `phase-N-name/README.md` — phase overview
+- `phase-N-name/NN-task.md` — individual tasks
+
+Conventions:
+- Each task tagged `REFACTOR-PN-NN` in code comments
+- Each task = one PR
+- Each task md has: TL;DR, context with line refs, files affected,
+  the change, acceptance criteria, test plan, gotchas, out of scope
+- Update STATUS.md when starting, completing, or blocking a task
