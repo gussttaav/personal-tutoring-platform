@@ -16,7 +16,6 @@ import type { ISubscriptionRepository } from "@/domain/repositories/ISubscriptio
 import type { IUserRepository }         from "@/domain/repositories/IUserRepository";
 import type { ICalendarClient } from "@/infrastructure/google/ICalendarClient";
 import type { IZoomClient }     from "@/infrastructure/zoom/ZoomClient";
-import type { IScheduler }      from "@/infrastructure/qstash/IScheduler";
 import type { IEmailClient }    from "@/infrastructure/resend/IEmailClient";
 import type { IStripeClient }   from "@/infrastructure/stripe/StripeClient";
 
@@ -29,7 +28,6 @@ import { InMemoryUserRepository }         from "./InMemoryUserRepository";
 import { FakeCalendarClient } from "./FakeCalendarClient";
 import { FakeZoomClient }     from "./FakeZoomClient";
 import { FakeEmailClient }    from "./FakeEmailClient";
-import { FakeScheduler }      from "./FakeScheduler";
 import { FakeStripeClient }   from "./FakeStripeClient";
 
 // ─── CreditService builder ────────────────────────────────────────────────────
@@ -56,7 +54,6 @@ export interface BookingServiceDeps {
   sessions:  ISessionRepository;
   calendar:  ICalendarClient;
   zoom:      IZoomClient;
-  scheduler: IScheduler;
   email:     IEmailClient;
 }
 
@@ -69,7 +66,6 @@ export function buildTestBookingService(
     overrides.sessions  ?? new InMemorySessionRepository(),
     overrides.calendar  ?? new FakeCalendarClient(),
     overrides.zoom      ?? new FakeZoomClient(),
-    overrides.scheduler ?? new FakeScheduler(),
     overrides.email     ?? new FakeEmailClient(),
   );
 }

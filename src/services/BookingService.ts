@@ -9,13 +9,15 @@
 // REFACTOR-P1-03: Wraps createBooking in a saga compensation list. Each
 // committed side effect pushes an undo function; on any throw they run
 // in reverse. See docs/refactor/phase-1-correctness/03-booking-saga-compensation.md
+//
+// REFACTOR-P1-04: pending_terminations is written on every booking; the daily cron at
+// /api/internal/session-cleanup handles actual Zoom session termination.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { SessionType } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
-import type { IScheduler } from "@/infrastructure/qstash";
 import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "./CreditService";
 import { DomainError, SlotUnavailableError } from "@/domain/errors";
@@ -83,7 +85,6 @@ export class BookingService {
     private readonly sessions:   ISessionRepository,
     private readonly calendar:   ICalendarClient,
     private readonly zoom:       IZoomClient,
-    private readonly scheduler:  IScheduler,
     private readonly email:      IEmailClient,
   ) {}
 
@@ -218,19 +219,22 @@ export class BookingService {
         run: async () => { await this.bookings.consumeCancelToken(cancelToken); },
       });
 
-      // 7. Schedule Zoom cleanup via QStash — fire after the session ends (start + duration + grace),
-      //    not relative to "now". Otherwise sessions booked in advance get terminated before they start.
-      //    No compensation: if this fails, the booking row exists and P1-04's fallback cron handles it.
-      const baseUrl       = process.env.NEXT_PUBLIC_BASE_URL ?? "";
-      const startMs       = new Date(input.startIso).getTime();
-      const totalMinutes  = this.zoom.getDurationWithGrace(input.sessionType);
-      const fireAtMs      = startMs + totalMinutes * 60_000;
-      const delaySeconds  = Math.max(60, Math.ceil((fireAtMs - Date.now()) / 1000));
-      await this.scheduler.scheduleAt({
-        url:          `${baseUrl}/api/internal/zoom-terminate`,
-        body:         { eventId: calResult.eventId },
-        delaySeconds,
-      });
+      // 7. Record pending_terminations — the daily cron at /api/internal/session-cleanup
+      //    terminates Zoom sessions after their grace window elapses. Non-fatal.
+      const baseUrl      = process.env.NEXT_PUBLIC_BASE_URL ?? "";
+      const startMs      = new Date(input.startIso).getTime();
+      const totalMinutes = this.zoom.getDurationWithGrace(input.sessionType);
+      const fireAtMs     = startMs + totalMinutes * 60_000;
+      try {
+        await this.bookings.recordPendingTermination(calResult.eventId, fireAtMs);
+      } catch (err) {
+        log("error", "pending_terminations write failed — session cleanup may be delayed", {
+          service: "BookingService",
+          eventId: calResult.eventId,
+          error:   String(err),
+        });
+        // Non-fatal — do not fail the booking
+      }
 
       // 8. Persist Zoom session via repository (after booking so Supabase FK resolves).
       //    No separate compensation — booking cancellation (step 6) cascades to zoom_session.

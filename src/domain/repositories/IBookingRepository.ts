@@ -103,4 +103,11 @@ export interface IBookingRepository {
    * if the lock has already expired or was never acquired.
    */
   releaseSlotLock(startIso: string): Promise<void>;
+
+  /**
+   * Records an eventId for scheduled Zoom session cleanup. The daily cron
+   * at /api/internal/session-cleanup terminates sessions whose fire_at has passed.
+   * Called on every booking — not only on scheduling failure.
+   */
+  recordPendingTermination(eventId: string, fireAtMs: number): Promise<void>;
 }

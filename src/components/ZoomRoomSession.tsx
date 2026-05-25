@@ -26,11 +26,11 @@
 // Loaded ONLY on the client via dynamic() in ZoomRoom.tsx (ssr: false).
 //
 // Applied fixes:
-//   REL-02: Client-side hard-stop enforcement. The server-side QStash
-//           zoom-terminate job only deletes the session record (blocking new
-//           JWTs) — the Zoom Video SDK has no server API to disconnect a live
-//           participant, so the client must leave itself when the session's
-//           grace window (startIso + durationWithGrace) elapses.
+//   REL-02: Client-side hard-stop enforcement. The server-side session-cleanup
+//           cron only deletes the session record (blocking new JWTs) — the
+//           Zoom Video SDK has no server API to disconnect a live participant,
+//           so the client must leave itself when the session's grace window
+//           (startIso + durationWithGrace) elapses.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState, useCallback } from "react";
@@ -349,9 +349,9 @@ export default function ZoomRoomInner({
   const clientRef      = useRef<any>(null);
   const streamRef      = useRef<any>(null);
   const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Hard-stop enforcement timers (REL-02): the server-side QStash cleanup only
-  // blocks new joins — it cannot disconnect a live Video SDK participant, so the
-  // client must leave on its own when the session's grace window elapses.
+  // Hard-stop enforcement timers (REL-02): the server-side session-cleanup cron
+  // only blocks new joins — it cannot disconnect a live Video SDK participant,
+  // so the client must leave on its own when the session's grace window elapses.
   const hardStopRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warnRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const connectedAtRef = useRef<number>(0);
@@ -962,11 +962,11 @@ export default function ZoomRoomInner({
   }, [state, errorMsg, onError]);
 
   // ── Hard-stop enforcement (REL-02) ─────────────────────────────────────────
-  // The QStash zoom-terminate job only deletes the session record (blocks new
-  // JWTs); it cannot kick a participant who is already connected, and the Zoom
-  // Video SDK has no server-side "end session" API. So enforce the cutoff here.
+  // The session-cleanup cron only deletes the session record (blocks new JWTs);
+  // it cannot kick a participant who is already connected, and the Zoom Video
+  // SDK has no server-side "end session" API. So enforce the cutoff here.
   // The deadline is anchored to startIso + durationWithGrace — the SAME value
-  // the server schedules QStash with — so a late joiner still ends on schedule
+  // written to pending_terminations — so a late joiner still ends on schedule
   // rather than getting a fresh full duration.
   useEffect(() => {
     if (state !== "connected") return;

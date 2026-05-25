@@ -4,10 +4,11 @@ import type { BookingRecord, SessionType } from "@/domain/types";
 import { randomUUID } from "crypto";
 
 export class InMemoryBookingRepository implements IBookingRepository {
-  private bookings     = new Map<string, BookingRecord>();
-  private cancelTokens = new Map<string, { joinToken: string; record: BookingRecord }>();
-  private joinTokens   = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
-  private locks        = new Set<string>();
+  private bookings             = new Map<string, BookingRecord>();
+  private cancelTokens         = new Map<string, { joinToken: string; record: BookingRecord }>();
+  private joinTokens           = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
+  private locks                = new Set<string>();
+  private pendingTerminations  = new Map<string, number>();
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
@@ -111,6 +112,10 @@ export class InMemoryBookingRepository implements IBookingRepository {
     this.locks.delete(startIso);
   }
 
+  async recordPendingTermination(eventId: string, fireAtMs: number): Promise<void> {
+    this.pendingTerminations.set(eventId, fireAtMs);
+  }
+
   /** Test helper: returns all active cancel tokens. */
   get activeCancelTokenCount(): number {
     return this.cancelTokens.size;
@@ -122,5 +127,10 @@ export class InMemoryBookingRepository implements IBookingRepository {
       if (record.eventId === eventId) return token;
     }
     return undefined;
+  }
+
+  /** Test helper: returns the pending terminations map (eventId → fireAtMs). */
+  getPendingTerminations(): Map<string, number> {
+    return this.pendingTerminations;
   }
 }
