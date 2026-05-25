@@ -429,6 +429,56 @@ describe("BookingService.listForUser", () => {
   });
 });
 
+// ─── REFACTOR-P1-01: concurrent booking ──────────────────────────────────────
+
+describe("REFACTOR-P1-01: concurrent booking", () => {
+  it("rejects the second concurrent booking for the same slot", async () => {
+    const { buildTestBookingService } = await import("@/__tests__/fixtures/services");
+    const service = buildTestBookingService();
+    const input = {
+      email: "a@example.com", name: "A",
+      startIso: "2026-06-01T10:00:00.000Z",
+      endIso:   "2026-06-01T11:00:00.000Z",
+      sessionType: "session1h" as const,
+    };
+
+    const [first, second] = await Promise.allSettled([
+      service.createBooking(input),
+      service.createBooking({ ...input, email: "b@example.com", name: "B" }),
+    ]);
+
+    const fulfilled = [first, second].filter(r => r.status === "fulfilled");
+    const rejected  = [first, second].filter(r => r.status === "rejected");
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect((rejected[0] as PromiseRejectedResult).reason)
+      .toBeInstanceOf(SlotUnavailableError);
+  });
+
+  it("releases the slot lock when createBooking throws inside the try block", async () => {
+    const { buildTestBookingService } = await import("@/__tests__/fixtures/services");
+    const { FakeCalendarClient } = await import("@/__tests__/fixtures/FakeCalendarClient");
+    const calendar = new FakeCalendarClient();
+    const service = buildTestBookingService({ calendar });
+
+    const input = {
+      email: "a@example.com", name: "A",
+      startIso: "2026-06-02T10:00:00.000Z",
+      endIso:   "2026-06-02T11:00:00.000Z",
+      sessionType: "session1h" as const,
+    };
+
+    // First call fails due to calendar error — lock must be released
+    calendar.shouldFail = true;
+    await expect(service.createBooking(input)).rejects.toThrow();
+
+    // Second call with same slot must succeed now that lock is released
+    calendar.shouldFail = false;
+    await expect(service.createBooking(input)).resolves.toBeDefined();
+  });
+});
+
 // ─── hasAnyBooking ────────────────────────────────────────────────────────────
 
 describe("BookingService.hasAnyBooking", () => {

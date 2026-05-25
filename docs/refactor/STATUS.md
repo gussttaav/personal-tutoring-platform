@@ -3,7 +3,7 @@
 > Living document. Update this when starting, completing, or blocking a task.
 > See `PLAN.md` for context on the whole effort.
 
-**Last updated:** _(update on every change)_
+**Last updated:** 2026-05-25
 **Current focus:** Phase 1 — Correctness
 **Blocking:** _(none)_
 
@@ -25,7 +25,7 @@
 
 | Status | # | Task | Owner | PR | Notes |
 |--------|---|------|-------|----|----|
-| ⬜ | 01 | [Wire `acquireSlotLock` into `BookingService.createBooking`](phase-1-correctness/01-wire-slot-locks.md) | _tbd_ | _tbd_ | |
+| ✅ | 01 | [Wire `acquireSlotLock` into `BookingService.createBooking`](phase-1-correctness/01-wire-slot-locks.md) | gussttaav | local | All 45 tests pass; migration 0005 created |
 | ⬜ | 02 | [Stripe webhook returns 500 on retryable processing failures](phase-1-correctness/02-webhook-error-handling.md) | _tbd_ | _tbd_ | |
 | ⬜ | 03 | [Booking saga: explicit compensation list](phase-1-correctness/03-booking-saga-compensation.md) | _tbd_ | _tbd_ | Depends on 01 |
 | ⬜ | 04 | [QStash: propagate errors, add fallback row](phase-1-correctness/04-qstash-error-propagation.md) | _tbd_ | _tbd_ | |
