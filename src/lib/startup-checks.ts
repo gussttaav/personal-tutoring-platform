@@ -50,11 +50,6 @@ const REQUIRED_ENV_VARS = [
   "GEMINI_API_KEY",
   "TUTOR_EMAIL",
 
-  // Upstash QStash (delayed session termination — REL-01)
-  "QSTASH_TOKEN",
-  "QSTASH_CURRENT_SIGNING_KEY",
-  "QSTASH_NEXT_SIGNING_KEY",
-
   // Admin access (comma-separated emails — REL-03)
   "ADMIN_EMAILS",
 
@@ -62,7 +57,7 @@ const REQUIRED_ENV_VARS = [
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
 
-  // Vercel cron authentication (REFACTOR-P1-04 — zoom-terminate-fallback cron)
+  // Vercel cron authentication (session-cleanup cron)
   "CRON_SECRET",
 ] as const;
 

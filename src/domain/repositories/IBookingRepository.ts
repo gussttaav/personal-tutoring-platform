@@ -105,8 +105,9 @@ export interface IBookingRepository {
   releaseSlotLock(startIso: string): Promise<void>;
 
   /**
-   * REFACTOR-P1-04: Records an eventId whose QStash termination scheduling
-   * failed, so a fallback cron can call /api/internal/zoom-terminate manually.
+   * Records an eventId for scheduled Zoom session cleanup. The daily cron
+   * at /api/internal/session-cleanup terminates sessions whose fire_at has passed.
+   * Called on every booking — not only on scheduling failure.
    */
   recordPendingTermination(eventId: string, fireAtMs: number): Promise<void>;
 }

@@ -10,7 +10,6 @@ import type { IBookingRepository } from "@/domain/repositories/IBookingRepositor
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
-import type { IScheduler } from "@/infrastructure/qstash";
 import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "../CreditService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
@@ -78,10 +77,6 @@ const mockZoom = (): jest.Mocked<IZoomClient> => ({
   getDurationWithGrace:       jest.fn().mockReturnValue(75),
 });
 
-const mockScheduler = (): jest.Mocked<IScheduler> => ({
-  scheduleAt: jest.fn().mockResolvedValue(undefined),
-});
-
 const mockEmail = (): jest.Mocked<IEmailClient> => ({
   sendConfirmation:             jest.fn().mockResolvedValue(undefined),
   sendNewBookingNotification:   jest.fn().mockResolvedValue(undefined),
@@ -95,7 +90,6 @@ const makeService = (overrides: {
   sessions?:  jest.Mocked<ISessionRepository>;
   calendar?:  jest.Mocked<ICalendarClient>;
   zoom?:      jest.Mocked<IZoomClient>;
-  scheduler?: jest.Mocked<IScheduler>;
   email?:     jest.Mocked<IEmailClient>;
 } = {}) =>
   new BookingService(
@@ -104,7 +98,6 @@ const makeService = (overrides: {
     overrides.sessions  ?? mockSessions(),
     overrides.calendar  ?? mockCalendar(),
     overrides.zoom      ?? mockZoom(),
-    overrides.scheduler ?? mockScheduler(),
     overrides.email     ?? mockEmail(),
   );
 
@@ -206,15 +199,13 @@ describe("BookingService.createBooking", () => {
     });
   });
 
-  it("schedules Zoom cleanup via the scheduler", async () => {
-    const scheduler = mockScheduler();
-    const service = makeService({ scheduler });
+  it("writes a pending_termination row on successful booking", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
 
     await service.createBooking(basePackInput());
 
-    expect(scheduler.scheduleAt).toHaveBeenCalledWith(expect.objectContaining({
-      body: { eventId: "evt1" },
-    }));
+    expect(bookings.recordPendingTermination).toHaveBeenCalledWith("evt1", expect.any(Number));
   });
 });
 
@@ -532,54 +523,25 @@ describe("REFACTOR-P1-03: booking saga compensation", () => {
   });
 });
 
-// ─── REFACTOR-P1-04: QStash fallback ─────────────────────────────────────────
+// ─── REFACTOR-P1-04: pending_terminations write ───────────────────────────────
 
-describe("REFACTOR-P1-04: QStash fallback", () => {
-  it("succeeds the booking even when QStash scheduling throws", async () => {
-    const bookings  = mockBookings();
-    bookings.recordPendingTermination = jest.fn().mockResolvedValue(undefined);
-    const scheduler = mockScheduler();
-    scheduler.scheduleAt.mockRejectedValueOnce(new Error("QStash 500"));
-
-    const service = makeService({ bookings, scheduler });
-    const result = await service.createBooking(basePackInput());
-
-    expect(result.eventId).toBeDefined();
-    expect(bookings.recordPendingTermination).toHaveBeenCalledWith("evt1", expect.any(Number));
-  });
-
-  it("succeeds the booking even when BOTH QStash AND fallback write fail", async () => {
-    const bookings  = mockBookings();
-    bookings.recordPendingTermination = jest.fn().mockRejectedValueOnce(new Error("DB down"));
-    const scheduler = mockScheduler();
-    scheduler.scheduleAt.mockRejectedValueOnce(new Error("QStash 500"));
-
-    const service = makeService({ bookings, scheduler });
-    const result = await service.createBooking(basePackInput());
-
-    expect(result.eventId).toBeDefined();
-  });
-
-  it("does NOT write a pending termination row when QStash succeeds", async () => {
+describe("REFACTOR-P1-04: pending_terminations write", () => {
+  it("succeeds the booking even when pending_termination write fails", async () => {
     const bookings = mockBookings();
-    bookings.recordPendingTermination = jest.fn().mockResolvedValue(undefined);
+    bookings.recordPendingTermination = jest.fn().mockRejectedValueOnce(new Error("DB down"));
 
     const service = makeService({ bookings });
-    await service.createBooking(basePackInput());
+    const result  = await service.createBooking(basePackInput());
 
-    expect(bookings.recordPendingTermination).not.toHaveBeenCalled();
+    expect(result.eventId).toBeDefined();
   });
 
   it("records the correct fireAtMs in the pending termination row", async () => {
     const { buildTestBookingService } = await import("@/__tests__/fixtures/services");
     const { InMemoryBookingRepository } = await import("@/__tests__/fixtures/InMemoryBookingRepository");
-    const { FakeScheduler }             = await import("@/__tests__/fixtures/FakeScheduler");
 
     const bookingRepo = new InMemoryBookingRepository();
-    const scheduler   = new FakeScheduler();
-    scheduler.shouldFail = true;
-
-    const service = buildTestBookingService({ bookings: bookingRepo, scheduler });
+    const service     = buildTestBookingService({ bookings: bookingRepo });
     const input = {
       email: "a@example.com", name: "A",
       startIso: hoursFromNow(10), endIso: hoursFromNow(11),

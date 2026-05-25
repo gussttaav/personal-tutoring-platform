@@ -3,7 +3,7 @@
 ## Stack
 Next.js 16 (App Router) · React 19 · TypeScript strict · NextAuth v5 · Supabase (Postgres) ·
 Stripe · Google Calendar · Zoom Video SDK · Upstash Redis (ephemeral only) ·
-Gemini · Resend · QStash · Sentry
+Gemini · Resend · Sentry
 
 ## Architecture
 
@@ -43,7 +43,7 @@ Route handler → Service → Repository interface → Supabase implementation
 ### Service Layer
 Business logic lives in `src/services/`:
 - `CreditService` — credit operations, atomic decrement via Postgres stored procedure
-- `BookingService` — orchestrates credits + calendar + Zoom + email + QStash
+- `BookingService` — orchestrates credits + calendar + Zoom + email
 - `PaymentService` — Stripe checkout, webhook processing, dead-letter recovery
 - `SessionService` — Zoom session lifecycle, JWT issuance, in-session chat
 - `ChatService` — Gemini AI chat
@@ -55,15 +55,15 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - Zod schemas in `src/lib/schemas.ts` — never inline in route handlers.
 - Structured logging via `log()` from `src/lib/logger.ts` — no `console.*`.
 - User-facing text is Spanish. Error messages go through `friendlyError()`.
-- CSRF protection via `isValidOrigin()` on all POST routes (except Stripe webhook + QStash).
+- CSRF protection via `isValidOrigin()` on all POST routes (except Stripe webhook).
 - Admin routes gated by `isAdmin()` from `src/lib/admin.ts`.
 
 ## Gotchas
 - NextAuth v5 is in beta. Session shape: `session.user.email`, `session.user.name`.
 - Upstash Redis REST API does NOT support MULTI/EXEC — use Lua via `kv.eval()`.
 - Vercel serverless functions cap at 25s (Hobby) / 60s (Pro). SSE uses 24s.
-- `setTimeout` does NOT work reliably in serverless — use QStash for delays > 10s.
-- Vercel plan is **Hobby** — no native Vercel crons. Scheduled tasks use cron-job.org instead (see `/api/internal/zoom-terminate-fallback`).
+- All Zoom session cleanup is recorded to `pending_terminations` at booking time; the daily cron at `/api/internal/session-cleanup` handles the actual termination.
+- Vercel plan is **Hobby** — no native Vercel crons. Scheduled tasks use cron-job.org instead (see `/api/internal/session-cleanup`).
 - Zoom Video SDK != Zoom Meetings API. JWT signing only; no REST for session mgmt.
 - `GOOGLE_PRIVATE_KEY` needs `\\n` → `\n` replacement (handled in CalendarClient.ts).
 - Supabase TIMESTAMPTZ format differs from JS `toISOString()`:

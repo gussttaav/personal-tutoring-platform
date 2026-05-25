@@ -1,8 +1,8 @@
 /**
- * GET /api/internal/zoom-terminate-fallback
+ * GET /api/internal/session-cleanup
  *
- * REFACTOR-P1-04: Daily cron that sweeps pending_terminations whose
- * fire_at has passed and calls the terminate logic directly (no QStash).
+ * Daily cron that sweeps pending_terminations whose fire_at has passed
+ * and terminates the corresponding Zoom sessions.
  * Triggered by cron-job.org on a daily schedule (not Vercel crons — Hobby plan).
  *
  * Authentication: requires CRON_SECRET in the Authorization header.
