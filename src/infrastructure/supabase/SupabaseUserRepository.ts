@@ -30,4 +30,23 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw error;
     return data ?? null;
   }
+
+  async getRole(email: string): Promise<"student" | "teacher" | "admin" | null> {
+    const { data, error } = await supabase
+      .from("users")
+      .select("role")
+      .eq("email", email.toLowerCase().trim())
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    return data.role as "student" | "teacher" | "admin";
+  }
+
+  async setRole(email: string, role: "student" | "teacher" | "admin"): Promise<void> {
+    const { error } = await supabase
+      .from("users")
+      .update({ role })
+      .eq("email", email.toLowerCase().trim());
+    if (error) throw error;
+  }
 }
