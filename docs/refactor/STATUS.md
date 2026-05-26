@@ -3,8 +3,8 @@
 > Living document. Update this when starting, completing, or blocking a task.
 > See `PLAN.md` for context on the whole effort.
 
-**Last updated:** 2026-05-26 (P1-05 complete)
-**Current focus:** Phase 1 — Correctness
+**Last updated:** 2026-05-26 (P2-01 complete)
+**Current focus:** Phase 2 — Hardening
 **Blocking:** _(none)_
 
 ---
@@ -46,7 +46,7 @@
 
 | Status | # | Task | Owner | PR | Notes |
 |--------|---|------|-------|----|----|
-| ⬜ | 01 | [Define explicit RLS policies (deny-anon)](phase-2-hardening/01-rls-policies.md) | _tbd_ | _tbd_ | |
+| ✅ | 01 | [Define explicit RLS policies (deny-anon)](phase-2-hardening/01-rls-policies.md) | gussttaav | local | Migration 0007 created; supabase/README.md updated with RLS strategy; 223 tests pass. Manual anon-key verification required after `supabase db push`. |
 | ⬜ | 02 | [Move admin check to `users.role` column](phase-2-hardening/02-admin-role-from-db.md) | _tbd_ | _tbd_ | |
 | ⬜ | 03 | [Gemini history server-side + token-budget + spend cap](phase-2-hardening/03-gemini-history-trust-boundary.md) | _tbd_ | _tbd_ | |
 | ⬜ | 04 | [CSRF defense in depth (`Sec-Fetch-Site`)](phase-2-hardening/04-csrf-defense-in-depth.md) | _tbd_ | _tbd_ | |
