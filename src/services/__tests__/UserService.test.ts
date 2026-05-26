@@ -1,9 +1,12 @@
 import { UserService } from "../UserService";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
+import { InMemoryUserRepository } from "@/__tests__/fixtures/InMemoryUserRepository";
 
 const mockRepo = (): jest.Mocked<IUserRepository> => ({
   upsert:       jest.fn(),
   findByEmail:  jest.fn(),
+  getRole:      jest.fn(),
+  setRole:      jest.fn(),
 });
 
 describe("UserService.ensureUser", () => {
@@ -46,5 +49,72 @@ describe("UserService.findByEmail", () => {
     const result = await new UserService(repo).findByEmail("ghost@example.com");
 
     expect(result).toBeNull();
+  });
+});
+
+// ─── getRoleAndBootstrap / bootstrapAdminsFromEnv ─────────────────────────────
+
+function buildTestServices() {
+  const userRepo = new InMemoryUserRepository();
+  const userService = new UserService(userRepo);
+  return { userRepo, userService };
+}
+
+describe("REFACTOR-P2-02: getRoleAndBootstrap", () => {
+  it("returns 'student' for a new user", async () => {
+    const { userService } = buildTestServices();
+    const role = await userService.getRoleAndBootstrap("alice@example.com");
+    expect(role).toBe("student");
+  });
+
+  it("returns the existing DB role for a known user", async () => {
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("boss@example.com");
+    await userRepo.setRole("boss@example.com", "admin");
+    const role = await userService.getRoleAndBootstrap("boss@example.com");
+    expect(role).toBe("admin");
+  });
+});
+
+describe("REFACTOR-P2-02: bootstrapAdminsFromEnv", () => {
+  afterEach(() => { delete process.env.ADMIN_EMAILS; });
+
+  it("promotes an existing student if their email is in ADMIN_EMAILS", async () => {
+    process.env.ADMIN_EMAILS = "boss@example.com";
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("boss@example.com");
+    await userService.bootstrapAdminsFromEnv();
+    expect(await userRepo.getRole("boss@example.com")).toBe("admin");
+  });
+
+  it("creates and promotes a user who doesn't exist in the DB yet", async () => {
+    process.env.ADMIN_EMAILS = "boss@example.com";
+    const { userRepo, userService } = buildTestServices();
+    await userService.bootstrapAdminsFromEnv();
+    expect(await userRepo.getRole("boss@example.com")).toBe("admin");
+  });
+
+  it("does not change the role of an existing admin", async () => {
+    process.env.ADMIN_EMAILS = "boss@example.com";
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("boss@example.com");
+    await userRepo.setRole("boss@example.com", "admin");
+    await userService.bootstrapAdminsFromEnv();
+    expect(await userRepo.getRole("boss@example.com")).toBe("admin");
+  });
+
+  it("does not promote a teacher even if in ADMIN_EMAILS", async () => {
+    process.env.ADMIN_EMAILS = "teacher@example.com";
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("teacher@example.com");
+    await userRepo.setRole("teacher@example.com", "teacher");
+    await userService.bootstrapAdminsFromEnv();
+    expect(await userRepo.getRole("teacher@example.com")).toBe("teacher");
+  });
+
+  it("does nothing when ADMIN_EMAILS is empty", async () => {
+    process.env.ADMIN_EMAILS = "";
+    const { userService } = buildTestServices();
+    await expect(userService.bootstrapAdminsFromEnv()).resolves.toBeUndefined();
   });
 });

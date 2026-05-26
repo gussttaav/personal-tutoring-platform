@@ -2,8 +2,16 @@
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import { randomUUID } from "crypto";
 
+type UserRecord = {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl?: string;
+  role: "student" | "teacher" | "admin";
+};
+
 export class InMemoryUserRepository implements IUserRepository {
-  private users = new Map<string, { id: string; email: string; name: string; avatarUrl?: string }>();
+  private users = new Map<string, UserRecord>();
 
   async upsert(email: string, name?: string, avatarUrl?: string): Promise<string> {
     const normalized = email.toLowerCase().trim();
@@ -14,7 +22,7 @@ export class InMemoryUserRepository implements IUserRepository {
       return existing.id;
     }
     const id = randomUUID();
-    this.users.set(normalized, { id, email: normalized, name: name ?? "", avatarUrl });
+    this.users.set(normalized, { id, email: normalized, name: name ?? "", avatarUrl, role: "student" });
     return id;
   }
 
@@ -22,5 +30,17 @@ export class InMemoryUserRepository implements IUserRepository {
     const normalized = email.toLowerCase().trim();
     const user = this.users.get(normalized);
     return user ? { id: user.id } : null;
+  }
+
+  async getRole(email: string): Promise<"student" | "teacher" | "admin" | null> {
+    const user = this.users.get(email.toLowerCase().trim());
+    return user ? user.role : null;
+  }
+
+  async setRole(email: string, role: "student" | "teacher" | "admin"): Promise<void> {
+    const normalized = email.toLowerCase().trim();
+    const user = this.users.get(normalized);
+    if (!user) throw new Error(`User not found: ${email}`);
+    user.role = role;
   }
 }

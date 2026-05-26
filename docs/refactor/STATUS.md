@@ -3,7 +3,7 @@
 > Living document. Update this when starting, completing, or blocking a task.
 > See `PLAN.md` for context on the whole effort.
 
-**Last updated:** 2026-05-26 (P2-01 complete)
+**Last updated:** 2026-05-26 (P2-02 complete)
 **Current focus:** Phase 2 — Hardening
 **Blocking:** _(none)_
 
@@ -47,7 +47,7 @@
 | Status | # | Task | Owner | PR | Notes |
 |--------|---|------|-------|----|----|
 | ✅ | 01 | [Define explicit RLS policies (deny-anon)](phase-2-hardening/01-rls-policies.md) | gussttaav | local | Migration 0007 created; supabase/README.md updated with RLS strategy; 223 tests pass. Manual anon-key verification required after `supabase db push`. |
-| ⬜ | 02 | [Move admin check to `users.role` column](phase-2-hardening/02-admin-role-from-db.md) | _tbd_ | _tbd_ | |
+| ✅ | 02 | [Move admin check to `users.role` column](phase-2-hardening/02-admin-role-from-db.md) | gussttaav | local | `users.role` is source of truth; ADMIN_EMAILS bootstrap only; JWT refreshes role hourly; 225 tests pass. |
 | ⬜ | 03 | [Gemini history server-side + token-budget + spend cap](phase-2-hardening/03-gemini-history-trust-boundary.md) | _tbd_ | _tbd_ | |
 | ⬜ | 04 | [CSRF defense in depth (`Sec-Fetch-Site`)](phase-2-hardening/04-csrf-defense-in-depth.md) | _tbd_ | _tbd_ | |
 | ⬜ | 05 | [Zoom JWT lifetime matches session duration](phase-2-hardening/05-zoom-jwt-lifetime.md) | _tbd_ | _tbd_ | |
