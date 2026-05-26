@@ -1,12 +1,23 @@
 // ARCH-14: Thin typed wrapper over the Stripe SDK for dependency injection.
 // Allows PaymentService to be unit-tested with a fake implementation.
+//
+// REFACTOR-P1-05: createPaymentIntent accepts an optional idempotencyKey so
+// client retries / double-clicks produce the same PaymentIntent instead of
+// minting duplicates.
 import type Stripe from "stripe";
 import { stripe } from "@/infrastructure/stripe/client-singleton";
+
+export interface CreatePaymentIntentOptions {
+  idempotencyKey?: string;
+}
 
 export interface IStripeClient {
   verifyWebhookSignature(body: string, sig: string, secret: string): Stripe.Event;
   getPriceAmount(priceId: string): Promise<{ amount: number; currency: string }>;
-  createPaymentIntent(params: Stripe.PaymentIntentCreateParams): Promise<Stripe.PaymentIntent>;
+  createPaymentIntent(
+    params: Stripe.PaymentIntentCreateParams,
+    options?: CreatePaymentIntentOptions,
+  ): Promise<Stripe.PaymentIntent>;
   retrievePaymentIntent(id: string): Promise<Stripe.PaymentIntent>;
   retrieveCheckoutSession(id: string): Promise<Stripe.Checkout.Session>;
   createRefund(params: { payment_intent?: string; charge?: string; reason: "duplicate" }): Promise<void>;
@@ -23,8 +34,14 @@ export class StripeClient implements IStripeClient {
     return { amount: price.unit_amount, currency: price.currency };
   }
 
-  async createPaymentIntent(params: Stripe.PaymentIntentCreateParams): Promise<Stripe.PaymentIntent> {
-    return stripe.paymentIntents.create(params);
+  async createPaymentIntent(
+    params: Stripe.PaymentIntentCreateParams,
+    options?: CreatePaymentIntentOptions,
+  ): Promise<Stripe.PaymentIntent> {
+    return stripe.paymentIntents.create(
+      params,
+      options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : undefined,
+    );
   }
 
   async retrievePaymentIntent(id: string): Promise<Stripe.PaymentIntent> {

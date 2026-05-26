@@ -100,16 +100,22 @@ export class PaymentService {
     const { email, name, packSize } = params;
     const priceId = getPackPriceId(packSize);
     const { amount, currency } = await this.stripeClient.getPriceAmount(priceId);
-    const intent = await this.stripeClient.createPaymentIntent({
-      amount,
-      currency,
-      metadata: {
-        student_name:  name,
-        student_email: email,
-        pack_size:     String(packSize),
-        checkout_type: "pack",
+    // REFACTOR-P1-05: 5-min window deduplicates double-clicks; deliberate retry
+    // after window gets a fresh PI.
+    const idempotencyKey = `pack:${email}:${packSize}:${Math.floor(Date.now() / 300_000)}`;
+    const intent = await this.stripeClient.createPaymentIntent(
+      {
+        amount,
+        currency,
+        metadata: {
+          student_name:  name,
+          student_email: email,
+          pack_size:     String(packSize),
+          checkout_type: "pack",
+        },
       },
-    });
+      { idempotencyKey },
+    );
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   }
 
@@ -124,19 +130,26 @@ export class PaymentService {
     const { email, name, duration, startIso, endIso, rescheduleToken } = params;
     const priceId = getSingleSessionPriceId(duration);
     const { amount, currency } = await this.stripeClient.getPriceAmount(priceId);
-    const intent = await this.stripeClient.createPaymentIntent({
-      amount,
-      currency,
-      metadata: {
-        student_name:     name,
-        student_email:    email,
-        checkout_type:    "single",
-        session_duration: duration,
-        start_iso:        startIso,
-        end_iso:          endIso,
-        reschedule_token: rescheduleToken ?? "",
+    // REFACTOR-P1-05: startIso in key prevents collision between genuinely
+    // different slots for the same user/duration within the same 5-min window.
+    const idempotencyKey =
+      `single:${email}:${duration}:${startIso}:${Math.floor(Date.now() / 300_000)}`;
+    const intent = await this.stripeClient.createPaymentIntent(
+      {
+        amount,
+        currency,
+        metadata: {
+          student_name:     name,
+          student_email:    email,
+          checkout_type:    "single",
+          session_duration: duration,
+          start_iso:        startIso,
+          end_iso:          endIso,
+          reschedule_token: rescheduleToken ?? "",
+        },
       },
-    });
+      { idempotencyKey },
+    );
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   }
 

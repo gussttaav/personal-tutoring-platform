@@ -3,6 +3,7 @@ import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
 import { PermanentWebhookError } from "@/domain/errors";
+import { FakeStripeClient } from "@/__tests__/fixtures/FakeStripeClient";
 
 // Mock getAvailableSlots before importing PaymentService (direct module import)
 const mockGetAvailableSlots = jest.fn();
@@ -362,5 +363,75 @@ describe("REFACTOR-P1-02: webhook error semantics", () => {
     paymentRepo.recordFailedBooking.mockRejectedValue(dbError);
 
     await expect(service.processWebhookEvent(fakeSingleEvent())).rejects.toThrow("DB down");
+  });
+});
+
+// ─── REFACTOR-P1-05: idempotency keys ────────────────────────────────────────
+
+describe("REFACTOR-P1-05: idempotency keys", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.STRIPE_PRICE_ID_PACK5      = "price_pack5_test";
+    process.env.STRIPE_PRICE_ID_PACK10     = "price_pack10_test";
+    process.env.STRIPE_PRICE_ID_SESSION_1H = "price_1h_test";
+    process.env.STRIPE_PRICE_ID_SESSION_2H = "price_2h_test";
+  });
+
+  afterEach(() => {
+    delete process.env.STRIPE_PRICE_ID_PACK5;
+    delete process.env.STRIPE_PRICE_ID_PACK10;
+    delete process.env.STRIPE_PRICE_ID_SESSION_1H;
+    delete process.env.STRIPE_PRICE_ID_SESSION_2H;
+    jest.useRealTimers();
+  });
+
+  function makeServiceWithFakeStripe() {
+    const fakeStripe  = new FakeStripeClient();
+    const paymentRepo = mockPaymentRepo();
+    const credits     = mockCredits();
+    const bookings    = mockBookings();
+    const userSvc     = mockUserService();
+    const service = new PaymentService(
+      fakeStripe,
+      credits  as unknown as CreditService,
+      bookings as unknown as BookingService,
+      paymentRepo,
+      userSvc  as unknown as UserService,
+    );
+    return { service, fakeStripe };
+  }
+
+  it("returns the same PaymentIntent for two identical pack checkouts", async () => {
+    const { service } = makeServiceWithFakeStripe();
+    const a = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 5 });
+    const b = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 5 });
+    expect(a.paymentIntentId).toBe(b.paymentIntentId);
+  });
+
+  it("returns different PaymentIntents for different pack sizes", async () => {
+    const { service } = makeServiceWithFakeStripe();
+    const a = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 5 });
+    const b = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 10 });
+    expect(a.paymentIntentId).not.toBe(b.paymentIntentId);
+  });
+
+  it("returns different PaymentIntents for the same single-session checkout in different time windows", async () => {
+    const { service } = makeServiceWithFakeStripe();
+    const params = {
+      email:    "u@example.com",
+      name:     "U",
+      duration: "1h" as const,
+      startIso: "2026-06-01T10:00:00.000Z",
+      endIso:   "2026-06-01T11:00:00.000Z",
+    };
+
+    const a = await service.createSingleSessionCheckout(params);
+
+    jest.useFakeTimers();
+    jest.advanceTimersByTime(6 * 60_000);
+
+    const b = await service.createSingleSessionCheckout(params);
+
+    expect(a.paymentIntentId).not.toBe(b.paymentIntentId);
   });
 });
