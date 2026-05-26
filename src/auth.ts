@@ -17,7 +17,6 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     role?: "student" | "teacher" | "admin";
-    roleFetchedAt?: number;
   }
 }
 
@@ -45,8 +44,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    // Persist the Google account's email/name/picture into the JWT, and
-    // refresh the user's role from DB at sign-in and once per hour.
+    // Persist the Google account's email/name/picture into the JWT.
+    // REFACTOR-P2-02: Role is fetched from DB once at sign-in and cached in
+    // the JWT for the session lifetime. Roles are stable — the only way they
+    // change is via bootstrapAdminsFromEnv() on cold start.
     async jwt({ token, profile, trigger }) {
       if (profile) {
         token.email   = profile.email   ?? token.email;
@@ -54,17 +55,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.picture = profile.picture ?? token.picture;
       }
 
-      // REFACTOR-P2-02: Refresh role from DB at sign-in and once per hour.
-      // Changes to a user's role in DB propagate within an hour without
-      // forcing re-login.
-      const ONE_HOUR_MS = 3_600_000;
-      const stale = !token.roleFetchedAt
-        || Date.now() - (token.roleFetchedAt as number) > ONE_HOUR_MS;
-
-      if (token.email && (trigger === "signIn" || stale)) {
+      if (token.email && trigger === "signIn") {
         try {
           token.role = await userService.getRoleAndBootstrap(token.email as string);
-          token.roleFetchedAt = Date.now();
         } catch (err) {
           // Don't fail auth if DB is down — fall back to existing role on the
           // token, or 'student' on first run.
