@@ -3,7 +3,7 @@
 > Living document. Update this when starting, completing, or blocking a task.
 > See `PLAN.md` for context on the whole effort.
 
-**Last updated:** 2026-05-25 (P1-04 complete)
+**Last updated:** 2026-05-26 (P1-05 complete)
 **Current focus:** Phase 1 — Correctness
 **Blocking:** _(none)_
 
@@ -29,7 +29,7 @@
 | ✅ | 02 | [Stripe webhook returns 500 on retryable processing failures](phase-1-correctness/02-webhook-error-handling.md) | gussttaav | local | Removed waitUntil; added PermanentWebhookError; all silent returns replaced with throws; writeDeadLetter rethrows; 25 new/updated tests pass |
 | ✅ | 03 | [Booking saga: explicit compensation list](phase-1-correctness/03-booking-saga-compensation.md) | gussttaav | local | Removed `recordRescheduleFailure` dead-letter (compensation framework replaces it); booking insert now before QStash |
 | ✅ | 04 | [QStash: propagate errors, add fallback row](phase-1-correctness/04-qstash-error-propagation.md) | gussttaav | local | SchedulerClient propagates errors; BookingService catches and writes pending_terminations; fallback cron at /api/internal/zoom-terminate-fallback; vercel.json cron registered; 4 new tests; 222 total pass. **Deviation:** QStash removed entirely post-merge — scheduler abstraction deleted, `pending_terminations` written on every booking (not only on failure), zoom-terminate endpoint deleted, fallback renamed to `/api/internal/session-cleanup`; update cron-job.org URL manually. 220 tests pass. |
-| ⬜ | 05 | [Stripe PaymentIntent idempotency key](phase-1-correctness/05-stripe-idempotency-key.md) | _tbd_ | _tbd_ | |
+| ✅ | 05 | [Stripe PaymentIntent idempotency key](phase-1-correctness/05-stripe-idempotency-key.md) | gussttaav | local | `CreatePaymentIntentOptions` added to interface; 5-min window keys in both checkout methods; FakeStripeClient deduplicates; 3 new tests; 223 total pass |
 
 **Phase 1 exit criteria:**
 - [ ] All 5 tasks merged

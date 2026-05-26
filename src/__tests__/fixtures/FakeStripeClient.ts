@@ -1,6 +1,6 @@
 // TEST-01: Fake IStripeClient for integration tests.
 import type Stripe from "stripe";
-import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
+import type { IStripeClient, CreatePaymentIntentOptions } from "@/infrastructure/stripe/StripeClient";
 
 type FakePaymentIntent = {
   id:            string;
@@ -21,6 +21,7 @@ export class FakeStripeClient implements IStripeClient {
   private sessions = new Map<string, FakeCheckoutSession>();
   refunds:          Array<{ payment_intent?: string; charge?: string; reason: string }> = [];
   private idCounter = 0;
+  private idempotencyToIntentId = new Map<string, string>();
 
   verifyWebhookSignature(_body: string, _sig: string, _secret: string): Stripe.Event {
     throw new Error("FakeStripeClient: call constructFakeEvent() to build test events");
@@ -30,7 +31,14 @@ export class FakeStripeClient implements IStripeClient {
     return { amount: 5000, currency: "eur" };
   }
 
-  async createPaymentIntent(params: Stripe.PaymentIntentCreateParams): Promise<Stripe.PaymentIntent> {
+  async createPaymentIntent(
+    params: Stripe.PaymentIntentCreateParams,
+    options?: CreatePaymentIntentOptions,
+  ): Promise<Stripe.PaymentIntent> {
+    if (options?.idempotencyKey) {
+      const existing = this.idempotencyToIntentId.get(options.idempotencyKey);
+      if (existing) return this.intents.get(existing)! as unknown as Stripe.PaymentIntent;
+    }
     const id     = `pi_test_${this.idCounter++}`;
     const intent: FakePaymentIntent = {
       id,
@@ -39,7 +47,14 @@ export class FakeStripeClient implements IStripeClient {
       metadata:      (params.metadata ?? {}) as Record<string, string>,
     };
     this.intents.set(id, intent);
+    if (options?.idempotencyKey) {
+      this.idempotencyToIntentId.set(options.idempotencyKey, id);
+    }
     return intent as unknown as Stripe.PaymentIntent;
+  }
+
+  getIdempotencyKeys(): string[] {
+    return Array.from(this.idempotencyToIntentId.keys());
   }
 
   async retrievePaymentIntent(id: string): Promise<Stripe.PaymentIntent> {
