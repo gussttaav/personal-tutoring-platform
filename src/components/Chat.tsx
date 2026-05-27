@@ -30,7 +30,6 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
-import type { GeminiMessage } from "@/infrastructure/gemini";
 import ChatAvatarIcon from "@/components/icons/ChatAvatarIcon";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,18 +57,10 @@ const SUGGESTIONS = [
 ];
 
 const SESSION_STORAGE_KEY = "chat:messages";
+const LOCAL_STORAGE_KEY   = "chat:sessionId";
 const MAX_PERSISTED       = 20; // cap to avoid bloating sessionStorage
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function toGeminiHistory(messages: Message[]): GeminiMessage[] {
-  return messages
-    .filter((_, i) => i >= INITIAL_MESSAGES.length)
-    .map((m) => ({
-      role:  m.role === "user" ? "user" : "model",
-      parts: [{ text: m.text }],
-    }));
-}
 
 function loadFromSession(): Message[] | null {
   try {
@@ -138,6 +129,11 @@ export default function Chat() {
     const saved = loadFromSession();
     return saved ?? INITIAL_MESSAGES;
   });
+  // REFACTOR-P2-03: Server-side session ID for Gemini history continuity.
+  // localStorage keeps the session alive across page reloads.
+  const [sessionId,       setSessionId]       = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem(LOCAL_STORAGE_KEY) : null
+  );
   const [isOpen,          setIsOpen]          = useState(false);
   const [isExpanded,      setIsExpanded]      = useState(false);
   const [input,           setInput]           = useState("");
@@ -233,16 +229,19 @@ export default function Chat() {
     setIsLoading(true);
 
     try {
-      const history            = toGeminiHistory([...messages, { role: "user", text: trimmed }]);
-      const historyWithoutLast = history.slice(0, -1);
-
       const res  = await fetch("/api/chat", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ message: trimmed, history: historyWithoutLast }),
+        body:    JSON.stringify({ message: trimmed, sessionId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error desconocido");
+
+      // REFACTOR-P2-03: Persist the server-assigned sessionId for future turns.
+      if (typeof data.sessionId === "string" && data.sessionId.length === 36) {
+        setSessionId(data.sessionId);
+        localStorage.setItem(LOCAL_STORAGE_KEY, data.sessionId);
+      }
 
       setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
     } catch (err) {
@@ -253,7 +252,7 @@ export default function Chat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, sessionId]);
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
