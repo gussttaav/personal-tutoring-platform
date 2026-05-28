@@ -50,7 +50,7 @@
 | ✅ | 02 | [Move admin check to `users.role` column](phase-2-hardening/02-admin-role-from-db.md) | gussttaav | local | `users.role` is source of truth; ADMIN_EMAILS bootstrap only; JWT refreshes role hourly; 225 tests pass. |
 | ✅ | 03 | [Gemini history server-side + token-budget + spend cap](phase-2-hardening/03-gemini-history-trust-boundary.md) | gussttaav | local | History moved to Redis (chat:hist:{sessionId}); daily spend cap (20k req/day); client updated to localStorage sessionId; Gemini context caching implemented in api.ts (300 s TTL, fallback to inline). 235 tests pass. |
 | ✅ | 04 | [CSRF defense in depth (`Sec-Fetch-Site`)](phase-2-hardening/04-csrf-defense-in-depth.md) | gussttaav | local | `Sec-Fetch-Site: cross-site` denied before Origin check; 6 new tests; 11 total pass in csrf.test.ts. |
-| ⬜ | 05 | [Zoom JWT lifetime matches session duration](phase-2-hardening/05-zoom-jwt-lifetime.md) | _tbd_ | _tbd_ | |
+| ✅ | 05 | [Zoom JWT lifetime matches session duration](phase-2-hardening/05-zoom-jwt-lifetime.md) | gussttaav | local | `durationSeconds` computed from session end + 30-min buffer, capped 4 h / floored 10 min; `expiresAt` aligned with JWT exp; 3 new tests, 12 total pass in SessionService.test.ts. |
 
 **Phase 2 exit criteria:**
 - [ ] All 5 tasks merged
