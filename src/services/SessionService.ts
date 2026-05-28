@@ -75,6 +75,22 @@ export class SessionService {
       lifetimeSec: durationSeconds,
     });
 
+    // Persist first student-join timestamp so the session-cleanup cron can
+    // distinguish completed sessions from no-shows. Best-effort: failing here
+    // must not block the student from joining. First-join-only is enforced in
+    // SQL via an IS NULL guard, so retries are safe.
+    if (!isTutor) {
+      try {
+        await this.sessions.markStudentJoined(params.eventId);
+      } catch (err) {
+        log("warn", "Could not record student_joined_at", {
+          service: "SessionService",
+          eventId: params.eventId,
+          error:   String(err),
+        });
+      }
+    }
+
     return {
       token,
       sessionName:       record.sessionName,

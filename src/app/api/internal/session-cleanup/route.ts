@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/infrastructure/supabase/client";
-import { sessionService } from "@/services";
+import { bookingService } from "@/services";
 import { log } from "@/lib/logger";
 
 const MAX_BATCH    = 50;
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   let cleared = 0, failed = 0;
   for (const row of rows ?? []) {
     try {
-      await sessionService.terminateSession(row.event_id);
+      await bookingService.finalizePastSession(row.event_id);
       await supabase.from("pending_terminations").delete().eq("event_id", row.event_id);
       cleared++;
     } catch (err) {

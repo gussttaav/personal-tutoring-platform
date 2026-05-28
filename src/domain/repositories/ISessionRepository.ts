@@ -21,6 +21,13 @@ export interface ISessionRepository {
   deleteByEventId(eventId: string): Promise<void>;
 
   /**
+   * Records that the student joined the session. Only writes when
+   * student_joined_at is still NULL — subsequent joins are no-ops so we keep
+   * the first-join timestamp. Idempotent.
+   */
+  markStudentJoined(eventId: string): Promise<void>;
+
+  /**
    * Appends a chat message to the session's message list. Returns the new total
    * message count. Used by the in-session chat feature.
    */

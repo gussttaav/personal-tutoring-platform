@@ -6,12 +6,13 @@ import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
 import type { ZoomSession } from "@/domain/types";
 
 const mockSessions = (): jest.Mocked<ISessionRepository> => ({
-  createSession:     jest.fn(),
-  findByEventId:     jest.fn(),
-  deleteByEventId:   jest.fn(),
-  appendChatMessage: jest.fn(),
-  listChatMessages:  jest.fn(),
-  countChatMessages: jest.fn(),
+  createSession:      jest.fn(),
+  findByEventId:      jest.fn(),
+  deleteByEventId:    jest.fn(),
+  markStudentJoined:  jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:  jest.fn(),
+  listChatMessages:   jest.fn(),
+  countChatMessages:  jest.fn(),
 });
 
 const mockZoom = (): jest.Mocked<IZoomClient> => ({
@@ -91,6 +92,43 @@ describe("SessionService.issueJoinToken", () => {
     await expect(service.issueJoinToken({
       eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
     })).rejects.toThrow(UnauthorizedError);
+  });
+
+  it("records student_joined_at when the student joins", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
+    });
+
+    expect(sessions.markStudentJoined).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("does NOT record student_joined_at when the tutor joins", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "tutor@example.com", userName: "Tutor",
+    });
+
+    expect(sessions.markStudentJoined).not.toHaveBeenCalled();
+  });
+
+  it("still issues the token when markStudentJoined fails", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+    sessions.markStudentJoined.mockRejectedValueOnce(new Error("DB down"));
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    const result  = await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
+    });
+
+    expect(result.token).toBe("signed-jwt");
   });
 
   it("throws BookingNotFoundError when session does not exist", async () => {

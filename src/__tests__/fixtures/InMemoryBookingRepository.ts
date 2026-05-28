@@ -9,6 +9,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
   private joinTokens           = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
   private locks                = new Set<string>();
   private pendingTerminations  = new Map<string, number>();
+  private statuses             = new Map<string, string>(); // eventId → status
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
@@ -18,6 +19,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
     const full: BookingRecord = { ...record, used: false };
 
     this.bookings.set(record.eventId, full);
+    this.statuses.set(record.eventId, "confirmed");
     this.cancelTokens.set(cancelToken, { joinToken, record: full });
     this.joinTokens.set(joinToken, {
       eventId:     record.eventId,
@@ -39,8 +41,10 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   async consumeCancelToken(token: string): Promise<boolean> {
-    if (!this.cancelTokens.has(token)) return false;
+    const entry = this.cancelTokens.get(token);
+    if (!entry) return false;
     this.cancelTokens.delete(token);
+    this.statuses.set(entry.record.eventId, "cancelled");
     return true;
   }
 
@@ -76,9 +80,26 @@ export class InMemoryBookingRepository implements IBookingRepository {
     };
   }
 
+  async findByEventId(eventId: string): Promise<{ id: string; status: string } | null> {
+    if (!this.bookings.has(eventId)) return null;
+    return {
+      id:     eventId,
+      status: this.statuses.get(eventId) ?? "confirmed",
+    };
+  }
+
   async markCompleted(bookingId: string): Promise<void> {
     const record = this.bookings.get(bookingId);
-    if (record && !record.used) record.used = true;
+    if (!record) return;
+    if ((this.statuses.get(bookingId) ?? "confirmed") !== "confirmed") return;
+    record.used = true;
+    this.statuses.set(bookingId, "completed");
+  }
+
+  async markNoShow(bookingId: string): Promise<void> {
+    if (!this.bookings.has(bookingId)) return;
+    if ((this.statuses.get(bookingId) ?? "confirmed") !== "confirmed") return;
+    this.statuses.set(bookingId, "no_show");
   }
 
   async countCompletedPaid(_userId: string): Promise<number> {
@@ -114,6 +135,10 @@ export class InMemoryBookingRepository implements IBookingRepository {
 
   async recordPendingTermination(eventId: string, fireAtMs: number): Promise<void> {
     this.pendingTerminations.set(eventId, fireAtMs);
+  }
+
+  async deletePendingTermination(eventId: string): Promise<void> {
+    this.pendingTerminations.delete(eventId);
   }
 
   /** Test helper: returns all active cancel tokens. */

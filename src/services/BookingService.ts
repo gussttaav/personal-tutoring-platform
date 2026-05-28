@@ -162,6 +162,13 @@ export class BookingService {
 
         try { await this.calendar.deleteEvent(oldRecord.eventId); } catch {}
         try { await this.sessions.deleteByEventId(oldRecord.eventId); } catch {}
+        // Drop the old eventId's pending_terminations row so the cleanup cron
+        // doesn't later see an orphan and mark the (now-cancelled) booking no_show.
+        try { await this.bookings.deletePendingTermination(oldRecord.eventId); } catch (err) {
+          log("warn", "Could not delete pending_terminations row on reschedule", {
+            service: "BookingService", eventId: oldRecord.eventId, error: String(err),
+          });
+        }
         await invalidateAvailability(oldRecord.startsAt.slice(0, 10)).catch(() => {});
 
         if (oldRecord.sessionType === "pack") {
@@ -350,6 +357,15 @@ export class BookingService {
         service: "BookingService", eventId: record.eventId, error: String(err),
       });
     }
+    // Drop the pending_terminations row so the cleanup cron doesn't later
+    // see an orphan and try to mark the (already-cancelled) booking no_show.
+    try {
+      await this.bookings.deletePendingTermination(record.eventId);
+    } catch (err) {
+      log("warn", "Could not delete pending_terminations row on cancel", {
+        service: "BookingService", eventId: record.eventId, error: String(err),
+      });
+    }
 
     // 5. Restore credit for pack sessions
     if (isPack) {
@@ -380,6 +396,25 @@ export class BookingService {
     );
 
     return { sessionLabel, startIso: record.startsAt, creditsRestored: isPack };
+  }
+
+  // Finalizes a past session for the cleanup cron. Reads student_joined_at
+  // BEFORE the zoom_sessions row is deleted to decide between completed and
+  // no_show. Bookings whose status is no longer 'confirmed' (cancelled or
+  // rescheduled before fire_at) are left alone — only the session record
+  // is cleaned up. Throws if any repository call fails so the cron can
+  // retry via the pending_terminations.attempts counter.
+  async finalizePastSession(eventId: string): Promise<void> {
+    const booking = await this.bookings.findByEventId(eventId);
+    if (booking && booking.status === "confirmed") {
+      const session = await this.sessions.findByEventId(eventId);
+      if (session?.studentJoinedAt) {
+        await this.bookings.markCompleted(booking.id);
+      } else {
+        await this.bookings.markNoShow(booking.id);
+      }
+    }
+    await this.sessions.deleteByEventId(eventId);
   }
 
   async listForUser(email: string): Promise<UserBooking[]> {

@@ -42,7 +42,7 @@ export class SupabaseSessionRepository implements ISessionRepository {
     // Step 2: find zoom session linked to that booking
     const { data: zs, error: zsErr } = await supabase
       .from("zoom_sessions")
-      .select("session_id, session_name, session_passcode, duration_minutes")
+      .select("session_id, session_name, session_passcode, duration_minutes, student_joined_at")
       .eq("booking_id", booking.id)
       .maybeSingle();
 
@@ -58,13 +58,14 @@ export class SupabaseSessionRepository implements ISessionRepository {
     if (userErr || !user) return null;
 
     return {
-      sessionId:       zs.session_id,
-      sessionName:     zs.session_name,
-      sessionPasscode: zs.session_passcode,
-      studentEmail:    user.email,
-      startIso:        booking.starts_at,
-      durationMinutes: zs.duration_minutes,
-      sessionType:     booking.session_type as SessionType,
+      sessionId:        zs.session_id,
+      sessionName:      zs.session_name,
+      sessionPasscode:  zs.session_passcode,
+      studentEmail:     user.email,
+      startIso:         booking.starts_at,
+      durationMinutes:  zs.duration_minutes,
+      sessionType:      booking.session_type as SessionType,
+      studentJoinedAt:  zs.student_joined_at ?? null,
     };
   }
 
@@ -76,6 +77,21 @@ export class SupabaseSessionRepository implements ISessionRepository {
       .from("zoom_sessions")
       .delete()
       .eq("id", zoomSessionId);
+
+    if (error) throw error;
+  }
+
+  async markStudentJoined(eventId: string): Promise<void> {
+    const zoomSessionId = await this.findZoomSessionId(eventId);
+    if (!zoomSessionId) return;
+
+    // First-join-only: the IS NULL guard makes this a no-op on subsequent
+    // joins so we preserve the original timestamp.
+    const { error } = await supabase
+      .from("zoom_sessions")
+      .update({ student_joined_at: new Date().toISOString() })
+      .eq("id", zoomSessionId)
+      .is("student_joined_at", null);
 
     if (error) throw error;
   }

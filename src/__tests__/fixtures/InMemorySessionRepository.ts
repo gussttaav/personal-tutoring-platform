@@ -19,6 +19,13 @@ export class InMemorySessionRepository implements ISessionRepository {
     this.chats.delete(eventId);
   }
 
+  async markStudentJoined(eventId: string): Promise<void> {
+    const session = this.sessions.get(eventId);
+    if (!session) return;
+    if (session.studentJoinedAt) return; // first-join-only
+    session.studentJoinedAt = new Date().toISOString();
+  }
+
   async appendChatMessage(eventId: string, message: string): Promise<number> {
     const msgs = this.chats.get(eventId) ?? [];
     msgs.push(message);

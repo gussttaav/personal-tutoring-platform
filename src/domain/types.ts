@@ -19,13 +19,14 @@ export interface BookingRecord {
 }
 
 export interface ZoomSession {
-  sessionId:       string;
-  sessionName:     string;
-  sessionPasscode: string;
-  studentEmail:    string;
-  startIso:        string;
-  durationMinutes: number;
-  sessionType:     SessionType;
+  sessionId:        string;
+  sessionName:      string;
+  sessionPasscode:  string;
+  studentEmail:     string;
+  startIso:         string;
+  durationMinutes:  number;
+  sessionType:      SessionType;
+  studentJoinedAt?: string | null;
 }
 
 export interface AuditEntry {
