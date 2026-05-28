@@ -8,7 +8,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
   private cancelTokens         = new Map<string, { joinToken: string; record: BookingRecord }>();
   private joinTokens           = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
   private locks                = new Set<string>();
-  private pendingTerminations  = new Map<string, number>();
+  private pendingTerminations  = new Map<string, { fireAtMs: number; attempts: number; lastError?: string }>();
   private statuses             = new Map<string, string>(); // eventId → status
 
   async createBooking(
@@ -134,11 +134,33 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   async recordPendingTermination(eventId: string, fireAtMs: number): Promise<void> {
-    this.pendingTerminations.set(eventId, fireAtMs);
+    this.pendingTerminations.set(eventId, { fireAtMs, attempts: 0 });
   }
 
   async deletePendingTermination(eventId: string): Promise<void> {
     this.pendingTerminations.delete(eventId);
+  }
+
+  async listDuePendingTerminations(
+    limit: number,
+    maxAttempts: number,
+  ): Promise<{ eventId: string; attempts: number }[]> {
+    const now = Date.now();
+    return [...this.pendingTerminations.entries()]
+      .filter(([, row]) => row.fireAtMs < now && row.attempts < maxAttempts)
+      .sort(([, a], [, b]) => a.fireAtMs - b.fireAtMs)
+      .slice(0, limit)
+      .map(([eventId, row]) => ({ eventId, attempts: row.attempts }));
+  }
+
+  async recordPendingTerminationFailure(
+    eventId: string,
+    attempts: number,
+    error: string,
+  ): Promise<void> {
+    const row = this.pendingTerminations.get(eventId);
+    if (!row) return;
+    this.pendingTerminations.set(eventId, { ...row, attempts, lastError: error });
   }
 
   /** Test helper: returns all active cancel tokens. */
@@ -156,6 +178,8 @@ export class InMemoryBookingRepository implements IBookingRepository {
 
   /** Test helper: returns the pending terminations map (eventId → fireAtMs). */
   getPendingTerminations(): Map<string, number> {
-    return this.pendingTerminations;
+    return new Map(
+      [...this.pendingTerminations.entries()].map(([eventId, row]) => [eventId, row.fireAtMs]),
+    );
   }
 }

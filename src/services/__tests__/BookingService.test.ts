@@ -36,6 +36,8 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   countCompletedPaid:         jest.fn().mockResolvedValue(0),
   recordPendingTermination:   jest.fn().mockResolvedValue(undefined),
   deletePendingTermination:   jest.fn().mockResolvedValue(undefined),
+  listDuePendingTerminations: jest.fn().mockResolvedValue([]),
+  recordPendingTerminationFailure: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({

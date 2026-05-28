@@ -130,4 +130,25 @@ export interface IBookingRepository {
    * orphaned (which would later collide with no-show detection). Idempotent.
    */
   deletePendingTermination(eventId: string): Promise<void>;
+
+  /**
+   * Returns pending_terminations rows whose fire_at has already passed and
+   * whose attempts counter is still below maxAttempts, ordered by fire_at
+   * ascending. Used by the daily cleanup cron to batch eligible events.
+   */
+  listDuePendingTerminations(
+    limit: number,
+    maxAttempts: number,
+  ): Promise<{ eventId: string; attempts: number }[]>;
+
+  /**
+   * Records a failed termination attempt by incrementing the attempts counter
+   * and storing the last error. Called by the cleanup cron when finalization
+   * throws so the row stays in the queue for retry until maxAttempts is hit.
+   */
+  recordPendingTerminationFailure(
+    eventId: string,
+    attempts: number,
+    error: string,
+  ): Promise<void>;
 }
