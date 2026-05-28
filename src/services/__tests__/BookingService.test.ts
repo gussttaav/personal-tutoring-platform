@@ -30,9 +30,14 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   releaseSlotLock:            jest.fn().mockResolvedValue(undefined),
   recordRescheduleFailure:    jest.fn().mockResolvedValue(undefined),
   findIdByEventIdForUser:     jest.fn().mockResolvedValue(null),
+  findByEventId:              jest.fn().mockResolvedValue(null),
   markCompleted:              jest.fn().mockResolvedValue(undefined),
+  markNoShow:                 jest.fn().mockResolvedValue(undefined),
   countCompletedPaid:         jest.fn().mockResolvedValue(0),
   recordPendingTermination:   jest.fn().mockResolvedValue(undefined),
+  deletePendingTermination:   jest.fn().mockResolvedValue(undefined),
+  listDuePendingTerminations: jest.fn().mockResolvedValue([]),
+  recordPendingTerminationFailure: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
@@ -57,6 +62,7 @@ const mockSessions = (): jest.Mocked<ISessionRepository> => ({
   createSession:      jest.fn().mockResolvedValue(undefined),
   findByEventId:      jest.fn().mockResolvedValue(null),
   deleteByEventId:    jest.fn().mockResolvedValue(undefined),
+  markStudentJoined:  jest.fn().mockResolvedValue(undefined),
   appendChatMessage:  jest.fn().mockResolvedValue(0),
   listChatMessages:   jest.fn().mockResolvedValue([]),
   countChatMessages:  jest.fn().mockResolvedValue(0),
@@ -259,6 +265,18 @@ describe("BookingService.createBooking (reschedule)", () => {
     expect(sessions.deleteByEventId).toHaveBeenCalledWith("old-evt");
   });
 
+  it("deletes the old pending_terminations row on reschedule", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    expect(bookings.deletePendingTermination).toHaveBeenCalledWith("old-evt");
+  });
+
   it("throws when calendar fails during non-pack rescheduling (no dead-letter — REFACTOR-P1-03)", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
@@ -326,6 +344,18 @@ describe("BookingService.cancelByToken", () => {
     await service.cancelByToken("tkn");
 
     expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-cancel-test");
+  });
+
+  it("deletes the pending_terminations row on cancellation", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ eventId: "evt-cancel-test", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+
+    await service.cancelByToken("tkn");
+
+    expect(bookings.deletePendingTermination).toHaveBeenCalledWith("evt-cancel-test");
   });
 
   it("restores credit when cancelling a pack session", async () => {
@@ -576,5 +606,91 @@ describe("BookingService.hasAnyBooking", () => {
     const service = makeService();
     const result = await service.hasAnyBooking("nobody@test.com");
     expect(result).toBe(false);
+  });
+});
+
+// ─── finalizePastSession ──────────────────────────────────────────────────────
+
+describe("BookingService.finalizePastSession", () => {
+  const baseZoomSession = {
+    sessionId:       "zs-1",
+    sessionName:     "sess",
+    sessionPasscode: "pw",
+    studentEmail:    "s@t.com",
+    startIso:        hoursFromNow(-1),
+    durationMinutes: 60,
+    sessionType:     "session1h" as const,
+  };
+
+  it("marks booking completed when student joined", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "confirmed" });
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue({
+      ...baseZoomSession,
+      studentJoinedAt: new Date().toISOString(),
+    });
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markCompleted).toHaveBeenCalledWith("bk-1");
+    expect(bookings.markNoShow).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("marks booking no_show when student never joined", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "confirmed" });
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue({
+      ...baseZoomSession,
+      studentJoinedAt: null,
+    });
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markNoShow).toHaveBeenCalledWith("bk-1");
+    expect(bookings.markCompleted).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("also marks no_show when zoom_sessions row is missing", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "confirmed" });
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(null);
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markNoShow).toHaveBeenCalledWith("bk-1");
+  });
+
+  it("skips status updates when booking is already cancelled", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "cancelled" });
+    const sessions = mockSessions();
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markCompleted).not.toHaveBeenCalled();
+    expect(bookings.markNoShow).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("skips status updates when booking is not found (orphan eventId)", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue(null);
+    const sessions = mockSessions();
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markCompleted).not.toHaveBeenCalled();
+    expect(bookings.markNoShow).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
   });
 });

@@ -1,6 +1,8 @@
 // ARCH-15: Application service for Zoom session lifecycle and in-session chat.
 // Routes that deal with Zoom tokens, session termination, and chat should call
 // methods here instead of touching Redis or lib/zoom.ts directly.
+// REFACTOR-P2-05: JWT lifetime now derived from session end time + 30-min buffer,
+// capped at 4 h by generateZoomJWT. expiresAt aligns with JWT exp.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
@@ -49,20 +51,45 @@ export class SessionService {
       throw new UnauthorizedError();
     }
 
+    // REFACTOR-P2-05: compute lifetime from session end + 30-min buffer so the
+    // JWT covers the full class. generateZoomJWT caps at 4 h and floors at 10 min.
+    const sessionEndMs = new Date(record.startIso).getTime()
+      + this.zoom.getDurationWithGrace(record.sessionType) * 60_000;
+    const secondsUntilEnd = Math.ceil((sessionEndMs - Date.now()) / 1000);
+    const durationSeconds = Math.max(600, secondsUntilEnd + 1800);  // +30 min buffer
+
     const role: 0 | 1 = isTutor ? 1 : 0;
     const token = this.zoom.generateJWT({
       sessionName:     record.sessionName,
       role,
       userName:        params.userName,
       sessionPasscode: record.sessionPasscode,
+      durationSeconds,
     });
 
     log("info", "Zoom token issued", {
-      service: "SessionService",
-      email:   params.userEmail,
-      eventId: params.eventId,
+      service:     "SessionService",
+      email:       params.userEmail,
+      eventId:     params.eventId,
       role,
+      lifetimeSec: durationSeconds,
     });
+
+    // Persist first student-join timestamp so the session-cleanup cron can
+    // distinguish completed sessions from no-shows. Best-effort: failing here
+    // must not block the student from joining. First-join-only is enforced in
+    // SQL via an IS NULL guard, so retries are safe.
+    if (!isTutor) {
+      try {
+        await this.sessions.markStudentJoined(params.eventId);
+      } catch (err) {
+        log("warn", "Could not record student_joined_at", {
+          service: "SessionService",
+          eventId: params.eventId,
+          error:   String(err),
+        });
+      }
+    }
 
     return {
       token,
@@ -70,7 +97,7 @@ export class SessionService {
       passcode:          record.sessionPasscode,
       startIso:          record.startIso,
       durationWithGrace: this.zoom.getDurationWithGrace(record.sessionType),
-      expiresAt:         Math.floor(Date.now() / 1000) + 3600,
+      expiresAt:         Math.floor(Date.now() / 1000) + durationSeconds,
     };
   }
 

@@ -468,6 +468,7 @@ export type Database = {
           session_name: string
           session_passcode: string
           started_at: string | null
+          student_joined_at: string | null
         }
         Insert: {
           booking_id: string
@@ -479,6 +480,7 @@ export type Database = {
           session_name: string
           session_passcode: string
           started_at?: string | null
+          student_joined_at?: string | null
         }
         Update: {
           booking_id?: string
@@ -490,6 +492,7 @@ export type Database = {
           session_name?: string
           session_passcode?: string
           started_at?: string | null
+          student_joined_at?: string | null
         }
         Relationships: [
           {

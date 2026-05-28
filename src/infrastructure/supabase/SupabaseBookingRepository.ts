@@ -226,12 +226,36 @@ export class SupabaseBookingRepository implements IBookingRepository {
     };
   }
 
+  async findByEventId(eventId: string): Promise<{ id: string; status: string } | null> {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("id, status")
+      .eq("calendar_event_id", eventId)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!data) return null;
+
+    return { id: data.id, status: data.status as string };
+  }
+
   async markCompleted(bookingId: string): Promise<void> {
     // Conservative + idempotent: only 'confirmed' → 'completed'. Never
     // overwrites 'cancelled' / 'no_show'; a second call is a no-op.
     const { error } = await supabase
       .from("bookings")
       .update({ status: "completed" })
+      .eq("id", bookingId)
+      .eq("status", "confirmed");
+
+    if (error) throw error;
+  }
+
+  async markNoShow(bookingId: string): Promise<void> {
+    // Conservative + idempotent: only 'confirmed' → 'no_show'. Mirrors markCompleted.
+    const { error } = await supabase
+      .from("bookings")
+      .update({ status: "no_show" })
       .eq("id", bookingId)
       .eq("status", "confirmed");
 
@@ -298,6 +322,44 @@ export class SupabaseBookingRepository implements IBookingRepository {
       fire_at:  new Date(fireAtMs).toISOString(),
     }, { onConflict: "event_id" });
     if (error) throw error;
+  }
+
+  async deletePendingTermination(eventId: string): Promise<void> {
+    const { error } = await supabase
+      .from("pending_terminations")
+      .delete()
+      .eq("event_id", eventId);
+    if (error) throw error;
+  }
+
+  async listDuePendingTerminations(
+    limit: number,
+    maxAttempts: number,
+  ): Promise<{ eventId: string; attempts: number }[]> {
+    const { data, error } = await supabase
+      .from("pending_terminations")
+      .select("event_id, attempts")
+      .lt("fire_at", new Date().toISOString())
+      .lt("attempts", maxAttempts)
+      .order("fire_at", { ascending: true })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []).map(row => ({
+      eventId:  row.event_id as string,
+      attempts: row.attempts as number,
+    }));
+  }
+
+  async recordPendingTerminationFailure(
+    eventId: string,
+    attempts: number,
+    error: string,
+  ): Promise<void> {
+    const { error: dbError } = await supabase
+      .from("pending_terminations")
+      .update({ attempts, last_error: error })
+      .eq("event_id", eventId);
+    if (dbError) throw dbError;
   }
 
   private async upsertUser(email: string, name: string): Promise<string> {

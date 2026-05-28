@@ -65,11 +65,24 @@ export interface IBookingRepository {
   } | null>;
 
   /**
+   * Looks up a booking by its calendar event id (unscoped — for internal/cron
+   * use only; see findIdByEventIdForUser for the user-scoped variant used by
+   * the review flow). Returns null if no booking exists for that eventId.
+   */
+  findByEventId(eventId: string): Promise<{ id: string; status: string } | null>;
+
+  /**
    * Marks a booking as completed. Idempotent and conservative: only transitions
    * a booking whose status is still 'confirmed' — never overwrites 'cancelled'
    * or 'no_show'.
    */
   markCompleted(bookingId: string): Promise<void>;
+
+  /**
+   * Marks a booking as no_show. Idempotent and conservative: only transitions
+   * 'confirmed' → 'no_show'. Never overwrites 'cancelled' or 'completed'.
+   */
+  markNoShow(bookingId: string): Promise<void>;
 
   /**
    * Counts the user's completed paid classes (status='completed' and
@@ -110,4 +123,32 @@ export interface IBookingRepository {
    * Called on every booking — not only on scheduling failure.
    */
   recordPendingTermination(eventId: string, fireAtMs: number): Promise<void>;
+
+  /**
+   * Removes a pending_terminations row by event_id. Called when a booking is
+   * cancelled or rescheduled so the old eventId's cleanup row isn't left
+   * orphaned (which would later collide with no-show detection). Idempotent.
+   */
+  deletePendingTermination(eventId: string): Promise<void>;
+
+  /**
+   * Returns pending_terminations rows whose fire_at has already passed and
+   * whose attempts counter is still below maxAttempts, ordered by fire_at
+   * ascending. Used by the daily cleanup cron to batch eligible events.
+   */
+  listDuePendingTerminations(
+    limit: number,
+    maxAttempts: number,
+  ): Promise<{ eventId: string; attempts: number }[]>;
+
+  /**
+   * Records a failed termination attempt by incrementing the attempts counter
+   * and storing the last error. Called by the cleanup cron when finalization
+   * throws so the row stays in the queue for retry until maxAttempts is hit.
+   */
+  recordPendingTerminationFailure(
+    eventId: string,
+    attempts: number,
+    error: string,
+  ): Promise<void>;
 }

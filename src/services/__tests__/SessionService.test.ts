@@ -6,12 +6,13 @@ import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
 import type { ZoomSession } from "@/domain/types";
 
 const mockSessions = (): jest.Mocked<ISessionRepository> => ({
-  createSession:     jest.fn(),
-  findByEventId:     jest.fn(),
-  deleteByEventId:   jest.fn(),
-  appendChatMessage: jest.fn(),
-  listChatMessages:  jest.fn(),
-  countChatMessages: jest.fn(),
+  createSession:      jest.fn(),
+  findByEventId:      jest.fn(),
+  deleteByEventId:    jest.fn(),
+  markStudentJoined:  jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:  jest.fn(),
+  listChatMessages:   jest.fn(),
+  countChatMessages:  jest.fn(),
 });
 
 const mockZoom = (): jest.Mocked<IZoomClient> => ({
@@ -93,6 +94,43 @@ describe("SessionService.issueJoinToken", () => {
     })).rejects.toThrow(UnauthorizedError);
   });
 
+  it("records student_joined_at when the student joins", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
+    });
+
+    expect(sessions.markStudentJoined).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("does NOT record student_joined_at when the tutor joins", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "tutor@example.com", userName: "Tutor",
+    });
+
+    expect(sessions.markStudentJoined).not.toHaveBeenCalled();
+  });
+
+  it("still issues the token when markStudentJoined fails", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+    sessions.markStudentJoined.mockRejectedValueOnce(new Error("DB down"));
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    const result  = await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
+    });
+
+    expect(result.token).toBe("signed-jwt");
+  });
+
   it("throws BookingNotFoundError when session does not exist", async () => {
     const sessions = mockSessions();
     sessions.findByEventId.mockResolvedValue(null);
@@ -113,6 +151,67 @@ describe("SessionService.terminateSession", () => {
     await service.terminateSession("evt-1");
 
     expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+});
+
+describe("REFACTOR-P2-05: JWT lifetime", () => {
+  it("passes durationSeconds >= session duration for a 2h session starting now", async () => {
+    const sessions = mockSessions();
+    const zoom     = mockZoom();
+    sessions.findByEventId.mockResolvedValue({
+      ...baseSession,
+      sessionType: "session2h",
+      startIso:    new Date().toISOString(),
+    });
+    zoom.getDurationWithGrace.mockReturnValue(130);
+
+    const service = new SessionService(sessions, zoom, "tutor@example.com");
+    await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
+    });
+
+    const { durationSeconds } = zoom.generateJWT.mock.calls[0][0] as { durationSeconds: number };
+    expect(durationSeconds).toBeGreaterThanOrEqual(130 * 60);
+    expect(durationSeconds).toBeLessThanOrEqual(4 * 3600);
+  });
+
+  it("aligns expiresAt with durationSeconds within 1 second", async () => {
+    const sessions = mockSessions();
+    const zoom     = mockZoom();
+    sessions.findByEventId.mockResolvedValue({
+      ...baseSession,
+      sessionType: "session2h",
+      startIso:    new Date().toISOString(),
+    });
+    zoom.getDurationWithGrace.mockReturnValue(130);
+
+    const service   = new SessionService(sessions, zoom, "tutor@example.com");
+    const beforeSec = Math.floor(Date.now() / 1000);
+    const result    = await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
+    });
+
+    const { durationSeconds } = zoom.generateJWT.mock.calls[0][0] as { durationSeconds: number };
+    expect(Math.abs(result.expiresAt - (beforeSec + durationSeconds))).toBeLessThanOrEqual(1);
+  });
+
+  it("clamps durationSeconds to 10 min floor when session ended long ago", async () => {
+    const sessions = mockSessions();
+    const zoom     = mockZoom();
+    sessions.findByEventId.mockResolvedValue({
+      ...baseSession,
+      sessionType: "session1h",
+      startIso:    new Date(Date.now() - 2 * 3600_000).toISOString(), // started 2 h ago
+    });
+    zoom.getDurationWithGrace.mockReturnValue(70); // 70 min total
+
+    const service = new SessionService(sessions, zoom, "tutor@example.com");
+    await service.issueJoinToken({
+      eventId: "evt-1", userEmail: "alice@example.com", userName: "Alice",
+    });
+
+    const { durationSeconds } = zoom.generateJWT.mock.calls[0][0] as { durationSeconds: number };
+    expect(durationSeconds).toBe(600);
   });
 });
 
