@@ -10,7 +10,7 @@
  *   3. E2E_MODE=true E2E_EMAILS=e2e-test@example.com pnpm test:e2e
  *
  * .env.e2e.local (gitignored) — overrides .env.local for the webServer process:
- *   SUPABASE_URL=https://<test-ref>.supabase.co
+ *   NEXT_PUBLIC_SUPABASE_URL=https://<test-ref>.supabase.co
  *   SUPABASE_SERVICE_ROLE_KEY=<test-service-role-key>
  *   SUPABASE_DB_URL=postgresql://postgres.[ref]:[pw]@aws-0-[region].pooler.supabase.com:5432/postgres
  *   (session-mode pooler — IPv4, supports DDL; direct URL may fail on IPv4-only ISPs)
