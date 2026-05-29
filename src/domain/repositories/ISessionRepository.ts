@@ -46,6 +46,16 @@ export interface ISessionRepository {
    */
   countChatMessages(eventId: string): Promise<number>;
 
+  // REFACTOR-P3-02: Direct-by-id variants. SessionService resolves the
+  // zoomSessionId once per request and threads it through, eliminating the
+  // findZoomSessionId N+1 (eventId → booking_id → zoom_session_id resolved
+  // on every chat read/write). The eventId-based methods above remain as thin
+  // wrappers for convenience callers.
+  resolveZoomSessionId(eventId: string): Promise<string | null>;
+  appendChatMessageById(zoomSessionId: string, message: string): Promise<number>;
+  listChatMessagesById(zoomSessionId: string, from: number, to: number): Promise<string[]>;
+  countChatMessagesById(zoomSessionId: string): Promise<number>;
+
   /**
    * REFACTOR-P3-01: Fires a best-effort broadcast on the per-eventId Realtime
    * channel so subscribed browsers receive the message in sub-second time

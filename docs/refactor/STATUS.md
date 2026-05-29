@@ -3,7 +3,7 @@
 > Living document. Update this when starting, completing, or blocking a task.
 > See `PLAN.md` for context on the whole effort.
 
-**Last updated:** 2026-05-28 (P3-01 complete)
+**Last updated:** 2026-05-29 (P3-02 complete)
 **Current focus:** Phase 3 — Performance
 **Blocking:** _(none)_
 
@@ -68,7 +68,7 @@
 | Status | # | Task | Owner | PR | Notes |
 |--------|---|------|-------|----|----|
 | ✅ | 01 | [Replace `/api/chat-session` SSE polling with Supabase Realtime](phase-3-performance/01-replace-sse-with-realtime.md) | gussttaav | local | SSE GET handler removed; new `/api/chat-session/channel` returns `{ channelName, initialMessages }`; `SessionService.postChatMessage` broadcasts after persistence (best-effort); `useSessionChatStream` rewritten to subscribe via `supabase-browser` while preserving the existing public API (so `ZoomRoomSession.tsx` is untouched); `REALTIME_CHANNEL_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` added to startup-checks and `.env.example`; CSP `connect-src` extended with `wss://*.supabase.co`. 257 tests pass. **Deviations:** (1) task doc's `pnpm test:e2e e2e/chat.spec.ts` line is misleading — that file tests the AI chat widget, not session chat; e2e coverage for session chat is manual. (2) `pnpm build` blocked locally by Node 18 (Next 16 requires ≥20); typecheck (`tsc --noEmit`) is clean. |
-| ⬜ | 02 | [Fix `SupabaseSessionRepository` N+1 on `zoom_session_id` resolution](phase-3-performance/02-session-repository-n1.md) | _tbd_ | _tbd_ | |
+| ✅ | 02 | [Fix `SupabaseSessionRepository` N+1 on `zoom_session_id` resolution](phase-3-performance/02-session-repository-n1.md) | gussttaav | local | Added `resolveZoomSessionId` (single PostgREST embedded join) + `appendChatMessageById`/`listChatMessagesById`/`countChatMessagesById`; eventId-based chat methods kept as thin wrappers (resolve once → delegate). `SessionService.postChatMessage`/`getChatMessages` resolve once and thread the id. `findZoomSessionId` left in place (still used by `deleteByEventId`/`markStudentJoined`, out of scope). Query-count tests: post ≤4, get ≤3, old re-resolving methods asserted not-called. 259 tests pass; `tsc --noEmit` + lint clean (`pnpm build` blocked by Node 18 per P3-01). |
 | ⬜ | 03 | [Availability cache: request coalescing + `decrement_credit` returns `pack_size`](phase-3-performance/03-availability-cache-coalescing.md) | _tbd_ | _tbd_ | |
 | ⬜ | 04 | [Chat membership check in `SessionService.getChatMessages`](phase-3-performance/04-chat-membership-check.md) | _tbd_ | _tbd_ | |
 

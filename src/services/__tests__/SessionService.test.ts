@@ -6,14 +6,18 @@ import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
 import type { ZoomSession } from "@/domain/types";
 
 const mockSessions = (): jest.Mocked<ISessionRepository> => ({
-  createSession:        jest.fn(),
-  findByEventId:        jest.fn(),
-  deleteByEventId:      jest.fn(),
-  markStudentJoined:    jest.fn().mockResolvedValue(undefined),
-  appendChatMessage:    jest.fn(),
-  listChatMessages:     jest.fn(),
-  countChatMessages:    jest.fn(),
-  broadcastChatMessage: jest.fn().mockResolvedValue(undefined),
+  createSession:         jest.fn(),
+  findByEventId:         jest.fn(),
+  deleteByEventId:       jest.fn(),
+  markStudentJoined:     jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:     jest.fn(),
+  listChatMessages:      jest.fn(),
+  countChatMessages:     jest.fn(),
+  resolveZoomSessionId:  jest.fn(),
+  appendChatMessageById: jest.fn(),
+  listChatMessagesById:  jest.fn(),
+  countChatMessagesById: jest.fn(),
+  broadcastChatMessage:  jest.fn().mockResolvedValue(undefined),
 });
 
 const mockZoom = (): jest.Mocked<IZoomClient> => ({
@@ -230,8 +234,9 @@ describe("SessionService.postChatMessage", () => {
   it("appends a message for an authorized sender", async () => {
     const sessions = mockSessions();
     sessions.findByEventId.mockResolvedValue(baseSession);
-    sessions.countChatMessages.mockResolvedValue(0);
-    sessions.appendChatMessage.mockResolvedValue(1);
+    sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
+    sessions.countChatMessagesById.mockResolvedValue(0);
+    sessions.appendChatMessageById.mockResolvedValue(1);
 
     const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
     const result  = await service.postChatMessage({
@@ -239,7 +244,7 @@ describe("SessionService.postChatMessage", () => {
     });
 
     expect(result.messageId).toBe("evt-1:0");
-    expect(sessions.appendChatMessage).toHaveBeenCalledWith("evt-1", expect.stringContaining("hello"));
+    expect(sessions.appendChatMessageById).toHaveBeenCalledWith("zs-1", expect.stringContaining("hello"));
   });
 });
 
@@ -247,8 +252,9 @@ describe("REFACTOR-P3-01: broadcast on post", () => {
   it("broadcasts the chat message after persistence", async () => {
     const sessions = mockSessions();
     sessions.findByEventId.mockResolvedValue(baseSession);
-    sessions.countChatMessages.mockResolvedValue(0);
-    sessions.appendChatMessage.mockResolvedValue(1);
+    sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
+    sessions.countChatMessagesById.mockResolvedValue(0);
+    sessions.appendChatMessageById.mockResolvedValue(1);
 
     const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
     await service.postChatMessage({
@@ -264,8 +270,9 @@ describe("REFACTOR-P3-01: broadcast on post", () => {
   it("does not fail postChatMessage if broadcast throws", async () => {
     const sessions = mockSessions();
     sessions.findByEventId.mockResolvedValue(baseSession);
-    sessions.countChatMessages.mockResolvedValue(0);
-    sessions.appendChatMessage.mockResolvedValue(1);
+    sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
+    sessions.countChatMessagesById.mockResolvedValue(0);
+    sessions.appendChatMessageById.mockResolvedValue(1);
     sessions.broadcastChatMessage.mockRejectedValueOnce(new Error("network"));
 
     const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
@@ -274,5 +281,64 @@ describe("REFACTOR-P3-01: broadcast on post", () => {
         eventId: "evt-1", senderEmail: "alice@example.com", senderName: "Alice", text: "hello",
       }),
     ).resolves.toEqual({ messageId: "evt-1:0" });
+  });
+});
+
+describe("REFACTOR-P3-02: query counts", () => {
+  // Counts DB-touching repository calls. broadcastChatMessage is excluded — it's
+  // a Realtime publish, not a query. The old eventId-based chat methods would
+  // each re-resolve eventId → zoom_session_id, so they must not be called.
+  it("postChatMessage uses 4 DB queries and no eventId re-resolution", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+    sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
+    sessions.countChatMessagesById.mockResolvedValue(0);
+    sessions.appendChatMessageById.mockResolvedValue(1);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await service.postChatMessage({
+      eventId: "evt-1", senderEmail: "alice@example.com", senderName: "Alice", text: "hi",
+    });
+
+    expect(sessions.findByEventId).toHaveBeenCalledTimes(1);
+    expect(sessions.resolveZoomSessionId).toHaveBeenCalledTimes(1);
+    expect(sessions.countChatMessagesById).toHaveBeenCalledTimes(1);
+    expect(sessions.appendChatMessageById).toHaveBeenCalledTimes(1);
+
+    const dbCalls =
+      sessions.findByEventId.mock.calls.length +
+      sessions.resolveZoomSessionId.mock.calls.length +
+      sessions.countChatMessagesById.mock.calls.length +
+      sessions.appendChatMessageById.mock.calls.length;
+    expect(dbCalls).toBeLessThanOrEqual(4);
+
+    expect(sessions.countChatMessages).not.toHaveBeenCalled();
+    expect(sessions.appendChatMessage).not.toHaveBeenCalled();
+    expect(sessions.listChatMessages).not.toHaveBeenCalled();
+  });
+
+  it("getChatMessages uses 3 DB queries and no eventId re-resolution", async () => {
+    const sessions = mockSessions();
+    sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
+    sessions.countChatMessagesById.mockResolvedValue(2);
+    sessions.listChatMessagesById.mockResolvedValue(["a", "b"]);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await service.getChatMessages({
+      eventId: "evt-1", userEmail: "alice@example.com", fromIndex: 0,
+    });
+
+    expect(sessions.resolveZoomSessionId).toHaveBeenCalledTimes(1);
+    expect(sessions.countChatMessagesById).toHaveBeenCalledTimes(1);
+    expect(sessions.listChatMessagesById).toHaveBeenCalledTimes(1);
+
+    const dbCalls =
+      sessions.resolveZoomSessionId.mock.calls.length +
+      sessions.countChatMessagesById.mock.calls.length +
+      sessions.listChatMessagesById.mock.calls.length;
+    expect(dbCalls).toBeLessThanOrEqual(3);
+
+    expect(sessions.countChatMessages).not.toHaveBeenCalled();
+    expect(sessions.listChatMessages).not.toHaveBeenCalled();
   });
 });
