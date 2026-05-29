@@ -42,6 +42,29 @@ export class InMemorySessionRepository implements ISessionRepository {
     return (this.chats.get(eventId) ?? []).length;
   }
 
+  // REFACTOR-P3-02: the map is keyed by eventId, so we use eventId itself as the
+  // synthetic zoom_session_id. resolveZoomSessionId returns it when a session
+  // exists; the *ById methods then operate on the same chats map.
+  async resolveZoomSessionId(eventId: string): Promise<string | null> {
+    return this.sessions.has(eventId) ? eventId : null;
+  }
+
+  async appendChatMessageById(zoomSessionId: string, message: string): Promise<number> {
+    const msgs = this.chats.get(zoomSessionId) ?? [];
+    msgs.push(message);
+    this.chats.set(zoomSessionId, msgs);
+    return msgs.length;
+  }
+
+  async listChatMessagesById(zoomSessionId: string, from: number, to: number): Promise<string[]> {
+    const msgs = this.chats.get(zoomSessionId) ?? [];
+    return msgs.slice(from, to + 1);
+  }
+
+  async countChatMessagesById(zoomSessionId: string): Promise<number> {
+    return (this.chats.get(zoomSessionId) ?? []).length;
+  }
+
   // REFACTOR-P3-01: in-memory tests don't exercise live delivery; no-op is
   // sufficient. Service-level tests that need to observe calls use jest mocks.
   async broadcastChatMessage(_eventId: string, _message: unknown): Promise<void> {

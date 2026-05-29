@@ -126,7 +126,12 @@ export class SessionService {
       : false;
     if (!isTutor && !isStudent) throw new UnauthorizedError();
 
-    const currentLen = await this.sessions.countChatMessages(params.eventId);
+    // REFACTOR-P3-02: resolve the zoom_session_id once, then reuse it for the
+    // count + append below — no more re-resolving eventId inside each call.
+    const zoomSessionId = await this.sessions.resolveZoomSessionId(params.eventId);
+    if (!zoomSessionId) throw new BookingNotFoundError();
+
+    const currentLen = await this.sessions.countChatMessagesById(zoomSessionId);
     const message = {
       id:          `${params.eventId}:${currentLen}`,
       senderEmail: params.senderEmail,
@@ -134,7 +139,7 @@ export class SessionService {
       text:        params.text.trim().slice(0, 1000),
       sentAt:      new Date().toISOString(),
     };
-    await this.sessions.appendChatMessage(params.eventId, JSON.stringify(message));
+    await this.sessions.appendChatMessageById(zoomSessionId, JSON.stringify(message));
 
     // REFACTOR-P3-01: best-effort live delivery. Persistence above is the
     // source of truth; subscribers that miss the broadcast catch up on
@@ -159,11 +164,17 @@ export class SessionService {
     userEmail: string;
     fromIndex: number;
   }): Promise<{ messages: string[]; nextCursor: number }> {
-    const total = await this.sessions.countChatMessages(params.eventId);
+    // REFACTOR-P3-02: resolve once; the count + list below reuse the id.
+    const zoomSessionId = await this.sessions.resolveZoomSessionId(params.eventId);
+    if (!zoomSessionId) return { messages: [], nextCursor: params.fromIndex };
+
+    // Note: P3-04 will add a membership check here. Keep its insertion point in mind.
+
+    const total = await this.sessions.countChatMessagesById(zoomSessionId);
     if (total <= params.fromIndex) {
       return { messages: [], nextCursor: params.fromIndex };
     }
-    const messages = await this.sessions.listChatMessages(params.eventId, params.fromIndex, total - 1);
+    const messages = await this.sessions.listChatMessagesById(zoomSessionId, params.fromIndex, total - 1);
     return { messages, nextCursor: total };
   }
 }

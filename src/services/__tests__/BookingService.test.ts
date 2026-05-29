@@ -63,10 +63,14 @@ const mockSessions = (): jest.Mocked<ISessionRepository> => ({
   findByEventId:        jest.fn().mockResolvedValue(null),
   deleteByEventId:      jest.fn().mockResolvedValue(undefined),
   markStudentJoined:    jest.fn().mockResolvedValue(undefined),
-  appendChatMessage:    jest.fn().mockResolvedValue(0),
-  listChatMessages:     jest.fn().mockResolvedValue([]),
-  countChatMessages:    jest.fn().mockResolvedValue(0),
-  broadcastChatMessage: jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:     jest.fn().mockResolvedValue(0),
+  listChatMessages:      jest.fn().mockResolvedValue([]),
+  countChatMessages:     jest.fn().mockResolvedValue(0),
+  resolveZoomSessionId:  jest.fn().mockResolvedValue(null),
+  appendChatMessageById: jest.fn().mockResolvedValue(0),
+  listChatMessagesById:  jest.fn().mockResolvedValue([]),
+  countChatMessagesById: jest.fn().mockResolvedValue(0),
+  broadcastChatMessage:  jest.fn().mockResolvedValue(undefined),
 });
 
 const mockCalendar = (): jest.Mocked<ICalendarClient> => ({
