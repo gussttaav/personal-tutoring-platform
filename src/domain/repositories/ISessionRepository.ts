@@ -45,4 +45,12 @@ export interface ISessionRepository {
    * eventId has no messages.
    */
   countChatMessages(eventId: string): Promise<number>;
+
+  /**
+   * REFACTOR-P3-01: Fires a best-effort broadcast on the per-eventId Realtime
+   * channel so subscribed browsers receive the message in sub-second time
+   * without polling. Implementations must not throw on transient delivery
+   * failures — persistence via appendChatMessage is the source of truth.
+   */
+  broadcastChatMessage(eventId: string, message: unknown): Promise<void>;
 }

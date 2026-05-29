@@ -54,8 +54,18 @@ const REQUIRED_ENV_VARS = [
   "ADMIN_EMAILS",
 
   // Supabase (primary data store)
-  "SUPABASE_URL",
+  // NEXT_PUBLIC_SUPABASE_URL is shared with the browser-side Realtime client;
+  // the service-role key is server-only.
+  "NEXT_PUBLIC_SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
+
+  // REFACTOR-P3-01: browser-side Supabase Realtime client (broadcast only).
+  // Anon key is intentionally public — RLS policies (REFACTOR-P2-01) enforce access.
+  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+
+  // REFACTOR-P3-01: HMAC key that makes per-eventId chat channel names
+  // unguessable. Generate with `openssl rand -hex 32`.
+  "REALTIME_CHANNEL_SECRET",
 
   // Vercel cron authentication (session-cleanup cron)
   "CRON_SECRET",

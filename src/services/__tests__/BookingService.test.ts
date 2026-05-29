@@ -59,13 +59,14 @@ const makeCreditService = (credits?: Partial<jest.Mocked<ICreditsRepository>>) =
 };
 
 const mockSessions = (): jest.Mocked<ISessionRepository> => ({
-  createSession:      jest.fn().mockResolvedValue(undefined),
-  findByEventId:      jest.fn().mockResolvedValue(null),
-  deleteByEventId:    jest.fn().mockResolvedValue(undefined),
-  markStudentJoined:  jest.fn().mockResolvedValue(undefined),
-  appendChatMessage:  jest.fn().mockResolvedValue(0),
-  listChatMessages:   jest.fn().mockResolvedValue([]),
-  countChatMessages:  jest.fn().mockResolvedValue(0),
+  createSession:        jest.fn().mockResolvedValue(undefined),
+  findByEventId:        jest.fn().mockResolvedValue(null),
+  deleteByEventId:      jest.fn().mockResolvedValue(undefined),
+  markStudentJoined:    jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:    jest.fn().mockResolvedValue(0),
+  listChatMessages:     jest.fn().mockResolvedValue([]),
+  countChatMessages:    jest.fn().mockResolvedValue(0),
+  broadcastChatMessage: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockCalendar = (): jest.Mocked<ICalendarClient> => ({

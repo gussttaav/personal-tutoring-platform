@@ -41,4 +41,10 @@ export class InMemorySessionRepository implements ISessionRepository {
   async countChatMessages(eventId: string): Promise<number> {
     return (this.chats.get(eventId) ?? []).length;
   }
+
+  // REFACTOR-P3-01: in-memory tests don't exercise live delivery; no-op is
+  // sufficient. Service-level tests that need to observe calls use jest mocks.
+  async broadcastChatMessage(_eventId: string, _message: unknown): Promise<void> {
+    /* no-op */
+  }
 }

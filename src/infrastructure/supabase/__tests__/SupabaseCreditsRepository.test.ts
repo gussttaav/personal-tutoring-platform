@@ -1,9 +1,9 @@
 // DB-02: Integration tests for SupabaseCreditsRepository.
-// Gated on SUPABASE_URL — skips in CI without a database configured.
+// Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseCreditsRepository } from "../SupabaseCreditsRepository";
 import { supabase } from "../client";
 
-const describeDb = process.env.SUPABASE_URL ? describe : describe.skip;
+const describeDb = process.env.NEXT_PUBLIC_SUPABASE_URL ? describe : describe.skip;
 
 describeDb("SupabaseCreditsRepository", () => {
   const repo      = new SupabaseCreditsRepository();
