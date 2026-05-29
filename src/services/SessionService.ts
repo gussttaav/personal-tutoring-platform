@@ -3,6 +3,9 @@
 // methods here instead of touching Redis or lib/zoom.ts directly.
 // REFACTOR-P2-05: JWT lifetime now derived from session end time + 30-min buffer,
 // capped at 4 h by generateZoomJWT. expiresAt aligns with JWT exp.
+// REFACTOR-P3-01: postChatMessage broadcasts the new message on a per-eventId
+// Realtime channel after persistence so subscribed browsers receive it without
+// polling. The broadcast is best-effort: failures are logged but never bubble.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
@@ -132,6 +135,20 @@ export class SessionService {
       sentAt:      new Date().toISOString(),
     };
     await this.sessions.appendChatMessage(params.eventId, JSON.stringify(message));
+
+    // REFACTOR-P3-01: best-effort live delivery. Persistence above is the
+    // source of truth; subscribers that miss the broadcast catch up on
+    // reconnect via /api/chat-session/channel.
+    try {
+      await this.sessions.broadcastChatMessage(params.eventId, message);
+    } catch (err) {
+      log("warn", "Realtime broadcast failed (subscribers will catch up on next reconnect)", {
+        service: "SessionService",
+        eventId: params.eventId,
+        error:   String(err),
+      });
+    }
+
     return { messageId: message.id };
   }
 

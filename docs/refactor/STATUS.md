@@ -3,8 +3,8 @@
 > Living document. Update this when starting, completing, or blocking a task.
 > See `PLAN.md` for context on the whole effort.
 
-**Last updated:** 2026-05-27 (P2-04 complete)
-**Current focus:** Phase 2 — Hardening
+**Last updated:** 2026-05-28 (P3-01 complete)
+**Current focus:** Phase 3 — Performance
 **Blocking:** _(none)_
 
 ---
@@ -67,7 +67,7 @@
 
 | Status | # | Task | Owner | PR | Notes |
 |--------|---|------|-------|----|----|
-| ⬜ | 01 | [Replace `/api/chat-session` SSE polling with Supabase Realtime](phase-3-performance/01-replace-sse-with-realtime.md) | _tbd_ | _tbd_ | |
+| ✅ | 01 | [Replace `/api/chat-session` SSE polling with Supabase Realtime](phase-3-performance/01-replace-sse-with-realtime.md) | gussttaav | local | SSE GET handler removed; new `/api/chat-session/channel` returns `{ channelName, initialMessages }`; `SessionService.postChatMessage` broadcasts after persistence (best-effort); `useSessionChatStream` rewritten to subscribe via `supabase-browser` while preserving the existing public API (so `ZoomRoomSession.tsx` is untouched); `REALTIME_CHANNEL_SECRET`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` added to startup-checks and `.env.example`; CSP `connect-src` extended with `wss://*.supabase.co`. 257 tests pass. **Deviations:** (1) task doc's `pnpm test:e2e e2e/chat.spec.ts` line is misleading — that file tests the AI chat widget, not session chat; e2e coverage for session chat is manual. (2) `pnpm build` blocked locally by Node 18 (Next 16 requires ≥20); typecheck (`tsc --noEmit`) is clean. |
 | ⬜ | 02 | [Fix `SupabaseSessionRepository` N+1 on `zoom_session_id` resolution](phase-3-performance/02-session-repository-n1.md) | _tbd_ | _tbd_ | |
 | ⬜ | 03 | [Availability cache: request coalescing + `decrement_credit` returns `pack_size`](phase-3-performance/03-availability-cache-coalescing.md) | _tbd_ | _tbd_ | |
 | ⬜ | 04 | [Chat membership check in `SessionService.getChatMessages`](phase-3-performance/04-chat-membership-check.md) | _tbd_ | _tbd_ | |

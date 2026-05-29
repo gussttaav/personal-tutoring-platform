@@ -2,9 +2,14 @@
 // Sessions are linked to bookings via calendar_event_id (the Google Calendar ID).
 // Chat messages persist in session_messages; ordered by sequential id.
 // Uses separate queries instead of PostgREST embedded joins for reliability.
+//
+// REFACTOR-P3-01: broadcastChatMessage publishes to a per-eventId Realtime
+// channel for sub-second fan-out to subscribed browsers. Best-effort — the
+// persisted row in session_messages remains the source of truth.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ZoomSession, SessionType } from "@/domain/types";
 import { supabase } from "./client";
+import { chatChannelName } from "@/lib/realtime-channel";
 
 export class SupabaseSessionRepository implements ISessionRepository {
   async createSession(eventId: string, session: ZoomSession): Promise<void> {
@@ -141,6 +146,21 @@ export class SupabaseSessionRepository implements ISessionRepository {
 
     if (error) throw error;
     return count ?? 0;
+  }
+
+  // REFACTOR-P3-01: per-eventId broadcast. Channel name is HMAC(eventId,
+  // REALTIME_CHANNEL_SECRET), unguessable without the secret. Subscribers learn
+  // the name from /api/chat-session/channel after a membership check.
+  async broadcastChatMessage(eventId: string, message: unknown): Promise<void> {
+    const channelName = chatChannelName(eventId);
+    const channel = supabase.channel(channelName, {
+      config: { broadcast: { ack: false } },
+    });
+    try {
+      await channel.send({ type: "broadcast", event: "message", payload: message });
+    } finally {
+      await supabase.removeChannel(channel);
+    }
   }
 
   private async findZoomSessionId(eventId: string): Promise<string | null> {

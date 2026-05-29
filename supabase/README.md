@@ -1,7 +1,7 @@
 # Supabase
 
 ## Local development
-1. Ensure `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are in `.env.local`
+1. Ensure `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are in `.env.local`
 2. Run `supabase start` for a local instance (optional; the remote dev project works too)
 
 ## Migrations

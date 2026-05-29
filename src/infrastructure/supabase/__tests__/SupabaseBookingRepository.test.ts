@@ -1,10 +1,10 @@
 // DB-02: Integration tests for SupabaseBookingRepository.
-// Gated on SUPABASE_URL — skips in CI without a database configured.
+// Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
 import { uniqueFutureSlot, purgeTestUsers } from "./slot-helpers";
 
-const describeDb = process.env.SUPABASE_URL ? describe : describe.skip;
+const describeDb = process.env.NEXT_PUBLIC_SUPABASE_URL ? describe : describe.skip;
 
 const TEST_EMAIL_PATTERN = "test-booking-%@example.com";
 

@@ -6,13 +6,14 @@ import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
 import type { ZoomSession } from "@/domain/types";
 
 const mockSessions = (): jest.Mocked<ISessionRepository> => ({
-  createSession:      jest.fn(),
-  findByEventId:      jest.fn(),
-  deleteByEventId:    jest.fn(),
-  markStudentJoined:  jest.fn().mockResolvedValue(undefined),
-  appendChatMessage:  jest.fn(),
-  listChatMessages:   jest.fn(),
-  countChatMessages:  jest.fn(),
+  createSession:        jest.fn(),
+  findByEventId:        jest.fn(),
+  deleteByEventId:      jest.fn(),
+  markStudentJoined:    jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:    jest.fn(),
+  listChatMessages:     jest.fn(),
+  countChatMessages:    jest.fn(),
+  broadcastChatMessage: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockZoom = (): jest.Mocked<IZoomClient> => ({
@@ -239,5 +240,39 @@ describe("SessionService.postChatMessage", () => {
 
     expect(result.messageId).toBe("evt-1:0");
     expect(sessions.appendChatMessage).toHaveBeenCalledWith("evt-1", expect.stringContaining("hello"));
+  });
+});
+
+describe("REFACTOR-P3-01: broadcast on post", () => {
+  it("broadcasts the chat message after persistence", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+    sessions.countChatMessages.mockResolvedValue(0);
+    sessions.appendChatMessage.mockResolvedValue(1);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await service.postChatMessage({
+      eventId: "evt-1", senderEmail: "alice@example.com", senderName: "Alice", text: "hello",
+    });
+
+    expect(sessions.broadcastChatMessage).toHaveBeenCalledWith(
+      "evt-1",
+      expect.objectContaining({ text: "hello", senderEmail: "alice@example.com" }),
+    );
+  });
+
+  it("does not fail postChatMessage if broadcast throws", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+    sessions.countChatMessages.mockResolvedValue(0);
+    sessions.appendChatMessage.mockResolvedValue(1);
+    sessions.broadcastChatMessage.mockRejectedValueOnce(new Error("network"));
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await expect(
+      service.postChatMessage({
+        eventId: "evt-1", senderEmail: "alice@example.com", senderName: "Alice", text: "hello",
+      }),
+    ).resolves.toEqual({ messageId: "evt-1:0" });
   });
 });
