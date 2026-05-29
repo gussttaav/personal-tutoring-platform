@@ -35,13 +35,17 @@ jobs:
       - name: Unit tests
         run: pnpm test:unit
         env:
-          SUPABASE_URL:              ${{ secrets.SUPABASE_URL_TEST }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
-          CANCEL_SECRET:             ${{ secrets.CANCEL_SECRET }}
+          NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          CANCEL_SECRET:                 ${{ secrets.CANCEL_SECRET }}
+          REALTIME_CHANNEL_SECRET:       ${{ secrets.REALTIME_CHANNEL_SECRET_TEST }}
 
       - name: Integration tests
         run: pnpm test:integration
         env:
-          SUPABASE_URL:              ${{ secrets.SUPABASE_URL_TEST }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
-          CANCEL_SECRET:             ${{ secrets.CANCEL_SECRET }}
+          NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          CANCEL_SECRET:                 ${{ secrets.CANCEL_SECRET }}
+          REALTIME_CHANNEL_SECRET:       ${{ secrets.REALTIME_CHANNEL_SECRET_TEST }}
