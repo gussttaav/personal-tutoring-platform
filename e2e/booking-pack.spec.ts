@@ -64,12 +64,15 @@ test.describe("Pack purchase + book + cancel", () => {
     // Submit the payment — button text is "Pagar €XX" (or "Pagar" if no price label)
     await page.getByRole("button", { name: /^pagar(\s|$)/i }).click();
 
-    // Wait for redirect to /pago-exitoso, then for SSE to confirm credits.
-    // The "Reservar mis clases →" CTA only renders once `isConfirmed` is true
-    // (Stripe webhook → CreditService.addCredits → SSE push). Earlier loose
-    // assertions matched the "Activando tus créditos…" loading text and
-    // raced ahead while credits weren't yet in the DB — leaving the homepage
-    // pack cards stuck on "Comprar pack".
+    // Wait for redirect to /pago-exitoso, then for Realtime to confirm credits.
+    // REFACTOR-P3-05: the "Reservar mis clases →" CTA only renders once
+    // `isConfirmed` is true (Stripe webhook → CreditService.addCredits →
+    // broadcastPaymentConfirmed → Realtime subscription; or, on the
+    // webhook-before-subscribe race, the /api/payment-confirmation/channel
+    // endpoint returns confirmed:true). Earlier loose assertions matched the
+    // "Activando tus créditos…" loading text and raced ahead while credits
+    // weren't yet in the DB — leaving the homepage pack cards stuck on
+    // "Comprar pack".
     try {
       await expect(page).toHaveURL(/\/pago-exitoso/, { timeout: 30_000 });
     } catch {

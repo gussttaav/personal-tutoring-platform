@@ -64,6 +64,14 @@ export class CreditService {
     return this.credits.hasProcessedPayment(stripeSessionId);
   }
 
+  // REFACTOR-P3-05: thin pass-through to the repository broadcast.
+  async broadcastPaymentConfirmed(
+    paymentIntentId: string,
+    payload: { credits: number; name: string; packSize: number },
+  ): Promise<void> {
+    return this.credits.broadcastPaymentConfirmed(paymentIntentId, payload);
+  }
+
   async restoreCredit(email: string): Promise<{ credits: number }> {
     const result = await this.credits.restoreCredit(email);
     // ok=false means no active pack; silently succeed with credits=0

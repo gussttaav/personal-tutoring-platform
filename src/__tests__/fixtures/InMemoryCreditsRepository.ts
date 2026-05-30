@@ -81,4 +81,12 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
   async hasProcessedPayment(stripeSessionId: string): Promise<boolean> {
     return this.usedIds.has(stripeSessionId);
   }
+
+  // REFACTOR-P3-05: no-op in tests — spy on this to assert the broadcast fired.
+  async broadcastPaymentConfirmed(
+    _paymentIntentId: string,
+    _payload: { credits: number; name: string; packSize: number },
+  ): Promise<void> {
+    // intentionally empty
+  }
 }

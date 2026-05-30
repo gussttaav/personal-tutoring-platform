@@ -344,6 +344,22 @@ export class PaymentService {
       packLabel: `Pack ${packSize} clases`, stripeSessionId: intentId,
     });
     log("info", "Pack credits written", { service: "payment", email, packSize });
+
+    // REFACTOR-P3-05: Broadcast for live confirmation. Best-effort — credits are
+    // already persisted above, so a broadcast failure just means the browser falls
+    // back to the channel-endpoint state check on (re)subscribe.
+    try {
+      const balance = await this.credits.getBalance(email);
+      await this.credits.broadcastPaymentConfirmed(intentId, {
+        credits:  balance?.credits  ?? packSize,
+        name:     balance?.name     ?? name,
+        packSize: balance?.packSize ?? packSize,
+      });
+    } catch (err) {
+      log("warn", "Realtime payment broadcast failed (browser will catch up via channel endpoint)", {
+        service: "payment", intentId, error: String(err),
+      });
+    }
   }
 
   private async processSingleSession(input: SingleSessionInput): Promise<void> {

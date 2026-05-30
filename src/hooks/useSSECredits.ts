@@ -1,13 +1,17 @@
 "use client";
 
-/**
- *
- * Opens a single Server-Sent Events connection to /api/sse?payment_intent_id=...
- * and waits for the server to push a "credits_ready" event.
- * No polling, no repeated /api/credits calls.
- */
+// REFACTOR-P3-05: replaced the polling SSE EventSource with a Supabase Realtime
+// broadcast subscription. The browser fetches the channel name + current state
+// from /api/payment-confirmation/channel and subscribes for live confirmation —
+// one WebSocket per tab, zero polling. Public API is unchanged.
+//
+// Webhook-before-subscribe race: the channel endpoint returns the current
+// confirmation state, so a late subscriber (webhook already fired) resolves
+// immediately. We also re-check state on every SUBSCRIBED (incl. reconnects),
+// mirroring useSessionChatStream, to recover a broadcast that landed in a gap.
 
 import { useState, useEffect } from "react";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 type SSEState = "idle" | "connecting" | "confirmed" | "timeout" | "error";
 
@@ -39,43 +43,61 @@ export function useSSECredits({ paymentIntentId }: UseSSECreditsOptions): SSECre
 
   useEffect(() => {
     if (!paymentIntentId) return;
+    let cancelled = false;
+    let channel: ReturnType<typeof supabaseBrowser.channel> | null = null;
 
-    const url = `/api/sse?payment_intent_id=${encodeURIComponent(paymentIntentId)}`;
-    const es = new EventSource(url);
+    const applyConfirmed = (d: { credits: number; name: string; packSize: number | null }) => {
+      setCredits(d.credits);
+      setName(d.name);
+      setPackSize(d.packSize);
+      setState("confirmed");
+    };
 
-    es.addEventListener("credits_ready", (e) => {
+    // Fetch channel name + current state. Returns channelName, or null if already
+    // resolved (race) / failed.
+    const fetchState = async (): Promise<string | null> => {
       try {
-        const data = JSON.parse(e.data) as {
-          credits: number;
-          name: string;
-          packSize: number | null;
-        };
-        setCredits(data.credits);
-        setName(data.name);
-        setPackSize(data.packSize);
-        setState("confirmed");
+        const res = await fetch(
+          `/api/payment-confirmation/channel?payment_intent_id=${encodeURIComponent(paymentIntentId)}`,
+        );
+        if (cancelled || !res.ok) return null;
+        const data = await res.json();
+        if (cancelled) return null;
+        if (data.confirmed) {
+          applyConfirmed(data); // race: webhook already fired
+          return null;
+        }
+        return data.channelName as string;
       } catch {
-        setState("error");
-      } finally {
-        es.close();
-      }
-    });
-
-    es.addEventListener("timeout", () => {
-      setState("timeout");
-      es.close();
-    });
-
-    es.onerror = () => {
-      // EventSource auto-reconnects on network errors; only mark as error
-      // if the connection was never established (readyState CLOSED immediately)
-      if (es.readyState === EventSource.CLOSED) {
-        setState("error");
+        return null;
       }
     };
 
+    (async () => {
+      const channelName = await fetchState();
+      if (cancelled || !channelName) return;
+
+      channel = supabaseBrowser
+        .channel(channelName)
+        .on("broadcast", { event: "confirmed" }, ({ payload }) => {
+          if (!payload || typeof payload !== "object") return;
+          applyConfirmed(payload as { credits: number; name: string; packSize: number | null });
+        })
+        .subscribe((status) => {
+          // On reconnect, re-check state in case the broadcast landed during the gap.
+          if (status === "SUBSCRIBED") void fetchState();
+        });
+    })();
+
+    // Client-side timeout fallback (was the server `timeout` event) → manual refresh prompt.
+    const timer = setTimeout(() => {
+      if (!cancelled) setState((s) => (s === "confirmed" ? s : "timeout"));
+    }, 30_000);
+
     return () => {
-      es.close();
+      cancelled = true;
+      clearTimeout(timer);
+      if (channel) void supabaseBrowser.removeChannel(channel);
     };
   }, [paymentIntentId]);
 

@@ -4,6 +4,7 @@
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
 import { PACK_VALIDITY_MONTHS } from "@/constants";
+import { paymentChannelName } from "@/lib/realtime-channel";
 import { supabase } from "./client";
 
 function addMonths(date: Date, months: number): Date {
@@ -97,6 +98,23 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
       .select("id", { count: "exact", head: true })
       .eq("stripe_payment_id", stripeSessionId);
     return (count ?? 0) > 0;
+  }
+
+  // REFACTOR-P3-05: Broadcast on a per-PaymentIntent channel. The name is derived
+  // via HMAC from paymentIntentId + REALTIME_CHANNEL_SECRET, so unguessable without
+  // the secret. Fire-and-forget — persistence already happened in addCredits.
+  async broadcastPaymentConfirmed(
+    paymentIntentId: string,
+    payload: { credits: number; name: string; packSize: number },
+  ): Promise<void> {
+    const channel = supabase.channel(paymentChannelName(paymentIntentId), {
+      config: { broadcast: { ack: false } },
+    });
+    try {
+      await channel.send({ type: "broadcast", event: "confirmed", payload });
+    } finally {
+      await supabase.removeChannel(channel);
+    }
   }
 
   private async findUserId(email: string): Promise<string | null> {
