@@ -46,6 +46,7 @@ const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
   decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4 }),
   restoreCredit:   jest.fn().mockResolvedValue({ ok: true, credits: 5 }),
   hasProcessedPayment: jest.fn().mockResolvedValue(false),
+  broadcastPaymentConfirmed: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockAuditRepo = (): jest.Mocked<IAuditRepository> => ({

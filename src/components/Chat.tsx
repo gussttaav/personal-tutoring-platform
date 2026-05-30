@@ -252,7 +252,7 @@ export default function Chat() {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, isLoading, sessionId]);
+  }, [isLoading, sessionId]);
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }

@@ -1307,6 +1307,8 @@ export default function ZoomRoomInner({
                 userName={userName}
                 onSend={chat.send}
                 onClose={() => setIsChatOpen(false)}
+                remoteTyping={chat.remoteTyping}
+                onTyping={chat.setTyping}
               />
             </div>
           )}
@@ -1321,6 +1323,8 @@ export default function ZoomRoomInner({
                 userName={userName}
                 onSend={chat.send}
                 onClose={() => setIsChatOpen(false)}
+                remoteTyping={chat.remoteTyping}
+                onTyping={chat.setTyping}
               />
             </div>
           </div>
