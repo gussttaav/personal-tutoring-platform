@@ -1,7 +1,7 @@
 // DB-02: Supabase-backed implementation of ICreditsRepository.
 // Credits are stored as per-pack rows in credit_packs; queries aggregate
 // across all active (non-expired) packs ordered by expires_at ASC (FIFO).
-import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
+import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
 import { PACK_VALIDITY_MONTHS } from "@/constants";
 import { paymentChannelName } from "@/lib/realtime-channel";
@@ -68,16 +68,23 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
     if (error && error.code !== "23505") throw error;
   }
 
-  async decrementCredit(email: string): Promise<{ ok: boolean; remaining: number }> {
+  async decrementCredit(email: string): Promise<DecrementResult> {
     const userId = await this.findUserId(email);
-    if (!userId) return { ok: false, remaining: 0 };
+    if (!userId) return { ok: false, remaining: 0, packSize: null };
 
     const { data, error } = await supabase.rpc("decrement_credit", {
       p_user_id: userId,
     });
 
     if (error) throw error;
-    return data as { ok: boolean; remaining: number };
+
+    // REFACTOR-P3-03: SQL function now returns pack_size
+    const result = data as { ok: boolean; remaining: number; pack_size: number | null };
+    return {
+      ok:        result.ok,
+      remaining: result.remaining,
+      packSize:  (result.pack_size as PackSize | null) ?? null,
+    };
   }
 
   async restoreCredit(email: string): Promise<{ ok: boolean; credits: number }> {

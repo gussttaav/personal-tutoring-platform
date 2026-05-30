@@ -43,7 +43,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
 const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
   getCredits:      jest.fn().mockResolvedValue({ credits: 5, packSize: 5, packLabel: "Pack 5", email: "s@t.com", name: "S", expiresAt: "", lastUpdated: "", stripeSessionId: "" }),
   addCredits:      jest.fn().mockResolvedValue(undefined),
-  decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4 }),
+  decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4, packSize: 5 }),
   restoreCredit:   jest.fn().mockResolvedValue({ ok: true, credits: 5 }),
   hasProcessedPayment: jest.fn().mockResolvedValue(false),
   broadcastPaymentConfirmed: jest.fn().mockResolvedValue(undefined),
@@ -161,7 +161,7 @@ describe("BookingService.createBooking", () => {
 
   it("throws InsufficientCreditsError and does NOT create calendar event when credits are zero", async () => {
     const creditsRepo = mockCreditsRepo();
-    creditsRepo.decrementCredit.mockResolvedValue({ ok: false, remaining: 0 });
+    creditsRepo.decrementCredit.mockResolvedValue({ ok: false, remaining: 0, packSize: null });
     const calendar = mockCalendar();
     const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
 
