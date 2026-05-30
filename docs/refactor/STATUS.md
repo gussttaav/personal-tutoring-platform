@@ -89,7 +89,7 @@
 
 | Status | # | Task | Owner | PR | Notes |
 |--------|---|------|-------|----|----|
-| ⬜ | 01 | [Stripe ↔ Supabase reconciliation cron](phase-4-observability/01-stripe-reconciliation-cron.md) | _tbd_ | _tbd_ | |
+| ✅ | 01 | [Stripe ↔ Supabase reconciliation cron](phase-4-observability/01-stripe-reconciliation-cron.md) | gussttaav | local | New `GET /api/internal/reconcile-stripe` (cron-job.org, `CRON_SECRET` bearer) lists succeeded PaymentIntents from the last 48h and verifies each was processed. 7 new route tests; `tsc --noEmit` + lint clean (`pnpm build` blocked by Node 18 per P3-01). **Deviations:** (1) **type-aware** proof-of-processing instead of a single `webhook_events` check — packs never write `webhook_events` (idempotency is the `credit_packs.stripe_payment_id` UNIQUE constraint), so pack PIs check `credit_packs` (`hasProcessedPayment`) and single PIs check `bookings`/`failed_bookings`/`webhook_events`; the verbatim spec would false-positive every pack sale. (2) **No `vercel.json`** — Vercel Hobby plan, cron runs via cron-job.org like `session-cleanup`. (3) **Repository methods** (not direct `supabase.from()` in the route): reused `hasProcessedPayment`, added `hasBookingForPayment` + `hasFailedBooking`. |
 | ⬜ | 02 | [Request ID middleware + structured `pino` logger](phase-4-observability/02-request-id-tracing.md) | _tbd_ | _tbd_ | |
 | ⬜ | 03 | [Sentry release tagging via `VERCEL_GIT_COMMIT_SHA`](phase-4-observability/03-sentry-release-tagging.md) | _tbd_ | _tbd_ | |
 

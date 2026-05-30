@@ -192,7 +192,7 @@ NOTIFY_EMAIL=your.email@gmail.com
 # ── Cancellation / Rescheduling tokens ───────────────────────────────
 CANCEL_SECRET=               # openssl rand -hex 32
 
-# ── Session cleanup cron (cron-job.org → /api/internal/session-cleanup) ──
+# ── Internal crons (cron-job.org → /api/internal/session-cleanup, /api/internal/reconcile-stripe) ──
 CRON_SECRET=                 # openssl rand -hex 32
 
 # ── Sentry ────────────────────────────────────────────────────────────

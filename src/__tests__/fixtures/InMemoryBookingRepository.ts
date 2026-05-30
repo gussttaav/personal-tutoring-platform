@@ -88,6 +88,14 @@ export class InMemoryBookingRepository implements IBookingRepository {
     };
   }
 
+  // REFACTOR-P4-01
+  async hasBookingForPayment(stripePaymentId: string): Promise<boolean> {
+    for (const record of this.bookings.values()) {
+      if (record.stripePaymentId === stripePaymentId) return true;
+    }
+    return false;
+  }
+
   async markCompleted(bookingId: string): Promise<void> {
     const record = this.bookings.get(bookingId);
     if (!record) return;

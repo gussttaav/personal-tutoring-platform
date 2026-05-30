@@ -36,6 +36,7 @@ const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   recordFailedBooking:  jest.fn(),
   listFailedBookings:   jest.fn(),
   clearFailedBooking:   jest.fn(),
+  hasFailedBooking:     jest.fn(),
 });
 
 // REFACTOR-P3-05: handlePackPayment now also reads getBalance + fires
