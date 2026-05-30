@@ -8,6 +8,16 @@ export interface UseSessionChatStream {
   messages:     ChatMessage[];
   send:         (text: string) => Promise<void>;
   lastIncoming: ChatMessage | null;
+  // Typing indicator: true while the other participant is composing.
+  remoteTyping: boolean;
+  // Emit our own typing state to the other side (ephemeral, best-effort).
+  setTyping:    (typing: boolean) => void;
+}
+
+// Ephemeral typing-broadcast payload (never persisted).
+interface TypingPayload {
+  email:  string;
+  typing: boolean;
 }
 
 // REFACTOR-P3-01: replaced the polling SSE EventSource with a Supabase Realtime
@@ -36,12 +46,19 @@ export function useSessionChatStream(
 ): UseSessionChatStream {
   const [messages,     setMessages]     = useState<ChatMessage[]>([]);
   const [lastIncoming, setLastIncoming] = useState<ChatMessage | null>(null);
+  const [remoteTyping, setRemoteTyping] = useState(false);
   const seenIdsRef = useRef(new Set<string>());
+
+  // Live channel kept in a ref so setTyping() can broadcast from outside the
+  // subscribe effect. Cleared on unsubscribe so setTyping no-ops when gone.
+  const channelRef = useRef<ReturnType<typeof supabaseBrowser.channel> | null>(null);
 
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
     let channel: ReturnType<typeof supabaseBrowser.channel> | null = null;
+    // Auto-clears remoteTyping if a `typing:false` is dropped/never sent.
+    let typingClearTimer: ReturnType<typeof setTimeout> | null = null;
 
     const ingest = (msg: ChatMessage) => {
       if (seenIdsRef.current.has(msg.id)) return;
@@ -89,6 +106,21 @@ export function useSessionChatStream(
           if (!payload || typeof payload !== "object") return;
           ingest(payload as ChatMessage);
         })
+        // Ephemeral typing signal from the other participant. Best-effort: not
+        // persisted, ignored if it's our own echo, and auto-cleared after 4s in
+        // case a trailing `typing:false` is dropped.
+        .on("broadcast", { event: "typing" }, ({ payload }) => {
+          if (!payload || typeof payload !== "object") return;
+          const { email, typing } = payload as TypingPayload;
+          if (!userEmail || email === userEmail) return;
+          if (typingClearTimer) clearTimeout(typingClearTimer);
+          if (typing) {
+            setRemoteTyping(true);
+            typingClearTimer = setTimeout(() => setRemoteTyping(false), 4000);
+          } else {
+            setRemoteTyping(false);
+          }
+        })
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             // Reconnect: re-fetch the backlog to recover anything broadcast
@@ -104,10 +136,15 @@ export function useSessionChatStream(
             disconnectedSinceSubscribe = true;
           }
         });
+
+      channelRef.current = channel;
     })();
 
     return () => {
       cancelled = true;
+      if (typingClearTimer) clearTimeout(typingClearTimer);
+      setRemoteTyping(false);
+      channelRef.current = null;
       if (channel) void supabaseBrowser.removeChannel(channel);
     };
   }, [enabled, eventId, userEmail]);
@@ -122,5 +159,16 @@ export function useSessionChatStream(
     });
   }, [eventId]);
 
-  return { messages, send, lastIncoming };
+  // Broadcast our typing state directly over the existing channel (no server
+  // round-trip). No-ops if we have no identity or the channel isn't live yet.
+  const setTyping = useCallback((typing: boolean) => {
+    if (!userEmail) return;
+    void channelRef.current?.send({
+      type:    "broadcast",
+      event:   "typing",
+      payload: { email: userEmail, typing } satisfies TypingPayload,
+    });
+  }, [userEmail]);
+
+  return { messages, send, lastIncoming, remoteTyping, setTyping };
 }
