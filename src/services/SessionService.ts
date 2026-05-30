@@ -6,6 +6,8 @@
 // REFACTOR-P3-01: postChatMessage broadcasts the new message on a per-eventId
 // Realtime channel after persistence so subscribed browsers receive it without
 // polling. The broadcast is best-effort: failures are logged but never bubble.
+// REFACTOR-P3-04: getChatMessages now enforces the same participant membership
+// check as postChatMessage/issueJoinToken — eventId is not a capability.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
@@ -157,18 +159,38 @@ export class SessionService {
     return { messageId: message.id };
   }
 
-  // Returns chat messages starting at fromIndex.
-  // No membership check — mirrors the current SSE handler behaviour.
+  // Returns chat messages starting at fromIndex. Validates that the caller is a
+  // session participant before disclosing any messages.
   async getChatMessages(params: {
     eventId:   string;
     userEmail: string;
     fromIndex: number;
   }): Promise<{ messages: string[]; nextCursor: number }> {
+    // REFACTOR-P3-04: Membership check. Previously absent — any authenticated
+    // user with knowledge of an eventId could read another session's chat.
+    const record = await this.sessions.findByEventId(params.eventId);
+    if (!record) throw new BookingNotFoundError();
+
+    const isTutor   = params.userEmail === this.tutorEmail;
+    const isStudent = record.studentEmail
+      ? record.studentEmail.toLowerCase() === params.userEmail.toLowerCase()
+      : false;
+
+    if (!record.studentEmail) {
+      // Legacy record (pre SEC-03) — tutor only
+      if (!isTutor) throw new UnauthorizedError();
+    } else if (!isTutor && !isStudent) {
+      log("warn", "Unauthorized chat read attempt", {
+        service:   "SessionService",
+        requester: params.userEmail,
+        eventId:   params.eventId,
+      });
+      throw new UnauthorizedError();
+    }
+
     // REFACTOR-P3-02: resolve once; the count + list below reuse the id.
     const zoomSessionId = await this.sessions.resolveZoomSessionId(params.eventId);
     if (!zoomSessionId) return { messages: [], nextCursor: params.fromIndex };
-
-    // Note: P3-04 will add a membership check here. Keep its insertion point in mind.
 
     const total = await this.sessions.countChatMessagesById(zoomSessionId);
     if (total <= params.fromIndex) {

@@ -317,8 +317,13 @@ describe("REFACTOR-P3-02: query counts", () => {
     expect(sessions.listChatMessages).not.toHaveBeenCalled();
   });
 
-  it("getChatMessages uses 3 DB queries and no eventId re-resolution", async () => {
+  it("getChatMessages uses 4 DB queries and no eventId re-resolution", async () => {
+    // REFACTOR-P3-04: getChatMessages now calls findByEventId once for the
+    // membership check, on top of the P3-02 read path (resolve → count → list).
+    // The N+1 guarantee still holds: resolveZoomSessionId is called once and the
+    // old eventId-based chat methods are never touched.
     const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
     sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
     sessions.countChatMessagesById.mockResolvedValue(2);
     sessions.listChatMessagesById.mockResolvedValue(["a", "b"]);
@@ -328,17 +333,75 @@ describe("REFACTOR-P3-02: query counts", () => {
       eventId: "evt-1", userEmail: "alice@example.com", fromIndex: 0,
     });
 
+    expect(sessions.findByEventId).toHaveBeenCalledTimes(1);
     expect(sessions.resolveZoomSessionId).toHaveBeenCalledTimes(1);
     expect(sessions.countChatMessagesById).toHaveBeenCalledTimes(1);
     expect(sessions.listChatMessagesById).toHaveBeenCalledTimes(1);
 
     const dbCalls =
+      sessions.findByEventId.mock.calls.length +
       sessions.resolveZoomSessionId.mock.calls.length +
       sessions.countChatMessagesById.mock.calls.length +
       sessions.listChatMessagesById.mock.calls.length;
-    expect(dbCalls).toBeLessThanOrEqual(3);
+    expect(dbCalls).toBeLessThanOrEqual(4);
 
     expect(sessions.countChatMessages).not.toHaveBeenCalled();
     expect(sessions.listChatMessages).not.toHaveBeenCalled();
+  });
+});
+
+describe("REFACTOR-P3-04: chat membership check", () => {
+  it("throws BookingNotFoundError for an unknown eventId", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(null);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await expect(service.getChatMessages({
+      eventId: "missing", userEmail: "alice@example.com", fromIndex: 0,
+    })).rejects.toThrow(BookingNotFoundError);
+  });
+
+  it("throws UnauthorizedError when caller is not tutor or student", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await expect(service.getChatMessages({
+      eventId: "evt-1", userEmail: "bob@example.com", fromIndex: 0,
+    })).rejects.toThrow(UnauthorizedError);
+  });
+
+  it("throws UnauthorizedError for a non-tutor on a legacy record without studentEmail", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue({ ...baseSession, studentEmail: "" });
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await expect(service.getChatMessages({
+      eventId: "evt-1", userEmail: "bob@example.com", fromIndex: 0,
+    })).rejects.toThrow(UnauthorizedError);
+  });
+
+  it("allows the assigned student (case-insensitive)", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+    sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
+    sessions.countChatMessagesById.mockResolvedValue(0);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await expect(service.getChatMessages({
+      eventId: "evt-1", userEmail: "ALICE@example.com", fromIndex: 0,
+    })).resolves.toEqual({ messages: [], nextCursor: 0 });
+  });
+
+  it("allows the tutor", async () => {
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(baseSession);
+    sessions.resolveZoomSessionId.mockResolvedValue("zs-1");
+    sessions.countChatMessagesById.mockResolvedValue(0);
+
+    const service = new SessionService(sessions, mockZoom(), "tutor@example.com");
+    await expect(service.getChatMessages({
+      eventId: "evt-1", userEmail: "tutor@example.com", fromIndex: 0,
+    })).resolves.toEqual({ messages: [], nextCursor: 0 });
   });
 });
