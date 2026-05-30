@@ -32,3 +32,37 @@ export async function setCached<T>(date: string, duration: number, value: T): Pr
 export async function invalidate(date: string): Promise<void> {
   await Promise.all([15, 30, 60, 120].map(d => kv.del(cacheKey(date, d))));
 }
+
+// REFACTOR-P3-03: Coalesce concurrent cache misses for the same key. The first
+// caller acquires a short Redis lock and runs `compute`; concurrent callers wait
+// briefly and re-read. Falls through to compute if the lock can't be acquired
+// (avoid deadlock if Redis flakes). Near-term dates (ttl 0) skip cache + lock.
+export async function getOrCompute<T>(
+  key: string,
+  compute: () => Promise<T>,
+  ttlSec: number,
+): Promise<T> {
+  if (ttlSec === 0) return compute();
+
+  const cached = await kv.get<T>(key);
+  if (cached) return cached;
+
+  const lockKey = `lock:${key}`;
+  const locked = await kv.set(lockKey, "1", { nx: true, ex: 10 });
+
+  if (!locked) {
+    // Someone else is computing — wait briefly and re-read once.
+    await new Promise(r => setTimeout(r, 250));
+    const retry = await kv.get<T>(key);
+    if (retry) return retry;
+    // Fall through and compute ourselves rather than spin further.
+  }
+
+  try {
+    const value = await compute();
+    await kv.set(key, value, { ex: ttlSec });
+    return value;
+  } finally {
+    if (locked) await kv.del(lockKey);
+  }
+}

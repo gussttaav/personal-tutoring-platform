@@ -179,13 +179,14 @@ export class BookingService {
       // 4. Credit decrement for pack sessions
       let packSizeForToken: number | undefined;
       if (input.sessionType === "pack") {
-        await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
+        // REFACTOR-P3-03: useCredit now returns the decremented pack's size, so
+        // we no longer need a separate getBalance roundtrip.
+        const { packSize } = await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
         compensations.push({
           description: "restore decremented credit",
           run: async () => { await this.credits.restoreCredit(input.email); },
         });
-        const creditRecord = await this.credits.getBalance(input.email);
-        packSizeForToken = creditRecord?.packSize ?? undefined;
+        packSizeForToken = packSize ?? undefined;
       }
 
       // 5. Calendar event

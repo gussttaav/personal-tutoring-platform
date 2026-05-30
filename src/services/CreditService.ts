@@ -3,6 +3,7 @@
 // Routes call methods here instead of repository functions directly so that
 // cross-cutting concerns (audit logging, domain events) live in one place.
 import type { ICreditsRepository, CreditResult } from "@/domain/repositories/ICreditsRepository";
+import type { PackSize } from "@/domain/types";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
 import { InsufficientCreditsError } from "@/domain/errors";
 import { log } from "@/lib/logger";
@@ -48,7 +49,7 @@ export class CreditService {
 
   // Atomically uses one credit. Throws InsufficientCreditsError if the user
   // has no credits, the pack is expired, or the user doesn't exist.
-  async useCredit(email: string): Promise<{ remaining: number }> {
+  async useCredit(email: string): Promise<{ remaining: number; packSize: PackSize | null }> {
     const result = await this.credits.decrementCredit(email);
     if (!result.ok) throw new InsufficientCreditsError();
 
@@ -57,7 +58,9 @@ export class CreditService {
       remaining: result.remaining,
     });
 
-    return { remaining: result.remaining };
+    // REFACTOR-P3-03: surface the decremented pack's size so callers (BookingService)
+    // don't need a separate getBalance roundtrip.
+    return { remaining: result.remaining, packSize: result.packSize };
   }
 
   async hasProcessedPayment(stripeSessionId: string): Promise<boolean> {

@@ -5,7 +5,7 @@ import { SCHEDULE, DAY_SCHEDULES } from "@/lib/booking-config";
 import { availabilityRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
-import { getCached, setCached } from "@/lib/availability-cache";
+import { getOrCompute, cacheKey, cacheTTLSeconds } from "@/lib/availability-cache";
 import type { TimeSlot } from "@/domain/types";
 
 function localizeSlots(slots: TimeSlot[], tz: string, duration: number) {
@@ -59,21 +59,20 @@ export async function GET(req: NextRequest) {
   if (DAY_SCHEDULES[dow] === null) return NextResponse.json({ slots: [] });
 
   try {
-    const cached = await getCached<{ slots: TimeSlot[] }>(date, duration);
-    if (cached) {
-      log("info", "Availability cache hit", { service: "availability", date, duration });
-      return NextResponse.json({
-        slots: localizeSlots(cached.slots, tz, duration),
-        timezone: SCHEDULE.timezone,
-        cached: true,
-      });
-    }
+    // REFACTOR-P3-03: Coalesce concurrent misses so only the first caller hits
+    // the Calendar API; the rest wait briefly and re-read the cache.
+    const ttl = cacheTTLSeconds(date);
+    const result = await getOrCompute<{ slots: TimeSlot[] }>(
+      cacheKey(date, duration),
+      async () => {
+        log("info", "Availability cache miss", { service: "availability", date, duration });
+        const slots = await getAvailableSlots(date, duration);
+        return { slots };
+      },
+      ttl,
+    );
 
-    log("info", "Availability cache miss", { service: "availability", date, duration });
-    const slots = await getAvailableSlots(date, duration);
-    await setCached(date, duration, { slots });
-
-    return NextResponse.json({ slots: localizeSlots(slots, tz, duration), timezone: SCHEDULE.timezone });
+    return NextResponse.json({ slots: localizeSlots(result.slots, tz, duration), timezone: SCHEDULE.timezone });
   } catch (err) {
     log("error", "Error fetching slots", { service: "availability", date, error: String(err) });
     return NextResponse.json({ error: "Error al consultar disponibilidad" }, { status: 500 });

@@ -1,8 +1,17 @@
 // ARCH-10: Credits repository interface.
 // ARCH-16: CreditResult moved to domain/types.ts — re-exported here for backward compat.
-import type { CreditResult } from "../types";
+import type { CreditResult, PackSize } from "../types";
 
 export type { CreditResult };
+
+// REFACTOR-P3-03: decrementCredit returns the pack_size of the pack it
+// decremented from (null when no credit was available), so callers don't need
+// a separate getBalance roundtrip just to read it.
+export interface DecrementResult {
+  ok:        boolean;
+  remaining: number;
+  packSize:  PackSize | null;
+}
 
 export interface ICreditsRepository {
   /**
@@ -29,7 +38,7 @@ export interface ICreditsRepository {
    * the user has no credits, the pack is expired, or the user doesn't exist.
    * Uses a Postgres stored procedure (decrement_credit) to prevent TOCTOU races.
    */
-  decrementCredit(email: string): Promise<{ ok: boolean; remaining: number }>;
+  decrementCredit(email: string): Promise<DecrementResult>;
 
   /**
    * Restores one credit after a cancellation. Will not exceed packSize.
