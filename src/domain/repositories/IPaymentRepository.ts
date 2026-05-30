@@ -40,4 +40,11 @@ export interface IPaymentRepository {
    * admin-triggered retry. Idempotent — safe to call if the entry is already gone.
    */
   clearFailedBooking(stripeSessionId: string): Promise<void>;
+
+  /**
+   * REFACTOR-P4-01: Returns true if a dead-letter entry exists for the given
+   * Stripe id. Used by the reconciliation cron to treat a known failed booking
+   * as an expected (non-mismatch) outcome rather than a dropped webhook.
+   */
+  hasFailedBooking(stripeSessionId: string): Promise<boolean>;
 }

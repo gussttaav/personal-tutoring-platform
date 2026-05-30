@@ -25,4 +25,9 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
   async clearFailedBooking(stripeSessionId: string): Promise<void> {
     this.deadLetter.delete(stripeSessionId);
   }
+
+  // REFACTOR-P4-01
+  async hasFailedBooking(stripeSessionId: string): Promise<boolean> {
+    return this.deadLetter.has(stripeSessionId);
+  }
 }

@@ -239,6 +239,16 @@ export class SupabaseBookingRepository implements IBookingRepository {
     return { id: data.id, status: data.status as string };
   }
 
+  // REFACTOR-P4-01: reconciliation lookup — true if a booking row exists for this PaymentIntent.
+  async hasBookingForPayment(stripePaymentId: string): Promise<boolean> {
+    const { data } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("stripe_payment_id", stripePaymentId)
+      .maybeSingle();
+    return data !== null;
+  }
+
   async markCompleted(bookingId: string): Promise<void> {
     // Conservative + idempotent: only 'confirmed' → 'completed'. Never
     // overwrites 'cancelled' / 'no_show'; a second call is a no-op.

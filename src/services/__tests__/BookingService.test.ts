@@ -31,6 +31,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   recordRescheduleFailure:    jest.fn().mockResolvedValue(undefined),
   findIdByEventIdForUser:     jest.fn().mockResolvedValue(null),
   findByEventId:              jest.fn().mockResolvedValue(null),
+  hasBookingForPayment:       jest.fn().mockResolvedValue(false),
   markCompleted:              jest.fn().mockResolvedValue(undefined),
   markNoShow:                 jest.fn().mockResolvedValue(undefined),
   countCompletedPaid:         jest.fn().mockResolvedValue(0),

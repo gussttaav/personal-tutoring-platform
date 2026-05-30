@@ -72,6 +72,13 @@ export interface IBookingRepository {
   findByEventId(eventId: string): Promise<{ id: string; status: string } | null>;
 
   /**
+   * REFACTOR-P4-01: Returns true if a booking row exists for the given Stripe
+   * PaymentIntent id. Used by the reconciliation cron to confirm a single-session
+   * webhook wrote its downstream booking.
+   */
+  hasBookingForPayment(stripePaymentId: string): Promise<boolean>;
+
+  /**
    * Marks a booking as completed. Idempotent and conservative: only transitions
    * a booking whose status is still 'confirmed' — never overwrites 'cancelled'
    * or 'no_show'.
