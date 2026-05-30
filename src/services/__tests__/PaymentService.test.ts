@@ -38,8 +38,12 @@ const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   clearFailedBooking:   jest.fn(),
 });
 
-const mockCredits = (): jest.Mocked<Pick<CreditService, "addCredits">> => ({
-  addCredits: jest.fn(),
+// REFACTOR-P3-05: handlePackPayment now also reads getBalance + fires
+// broadcastPaymentConfirmed after addCredits, so the mock stubs all three.
+const mockCredits = (): jest.Mocked<Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed">> => ({
+  addCredits:                jest.fn(),
+  getBalance:                jest.fn().mockResolvedValue(null),
+  broadcastPaymentConfirmed: jest.fn(),
 });
 
 const mockBookings = (): jest.Mocked<Pick<BookingService, "createBooking">> => ({
@@ -56,7 +60,7 @@ const mockUserService = (): jest.Mocked<Pick<UserService, "ensureUser" | "findBy
 function makeService(overrides?: {
   stripe?:       Partial<jest.Mocked<IStripeClient>>;
   paymentRepo?:  Partial<jest.Mocked<IPaymentRepository>>;
-  credits?:      Partial<jest.Mocked<Pick<CreditService, "addCredits">>>;
+  credits?:      Partial<jest.Mocked<Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed">>>;
   bookings?:     Partial<jest.Mocked<Pick<BookingService, "createBooking">>>;
   userService?:  Partial<jest.Mocked<Pick<UserService, "ensureUser" | "findByEmail">>>;
 }) {
@@ -142,6 +146,32 @@ describe("PaymentService.processWebhookEvent — pack", () => {
     };
 
     await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+});
+
+// ─── REFACTOR-P3-05: broadcast on pack confirmation ──────────────────────────
+
+describe("REFACTOR-P3-05: broadcast on pack confirmation", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("broadcasts after credits are written", async () => {
+    const { service, credits } = makeService();
+    (credits.addCredits as jest.Mock).mockResolvedValue(undefined);
+
+    await service.processWebhookEvent(fakePackEvent("pi_123"));
+
+    expect(credits.broadcastPaymentConfirmed).toHaveBeenCalledWith(
+      "pi_123",
+      expect.objectContaining({ packSize: expect.any(Number) }),
+    );
+  });
+
+  it("does not fail the webhook if broadcast throws", async () => {
+    const { service, credits } = makeService();
+    (credits.addCredits as jest.Mock).mockResolvedValue(undefined);
+    (credits.broadcastPaymentConfirmed as jest.Mock).mockRejectedValueOnce(new Error("network"));
+
+    await expect(service.processWebhookEvent(fakePackEvent("pi_123"))).resolves.toBeUndefined();
   });
 });
 

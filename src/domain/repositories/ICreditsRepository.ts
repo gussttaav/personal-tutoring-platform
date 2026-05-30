@@ -43,4 +43,10 @@ export interface ICreditsRepository {
    * a pack payment, without polling Redis.
    */
   hasProcessedPayment(stripeSessionId: string): Promise<boolean>;
+
+  // REFACTOR-P3-05
+  broadcastPaymentConfirmed(
+    paymentIntentId: string,
+    payload: { credits: number; name: string; packSize: number },
+  ): Promise<void>;
 }

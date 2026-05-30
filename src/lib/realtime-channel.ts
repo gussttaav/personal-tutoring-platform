@@ -23,3 +23,15 @@ export function chatChannelName(eventId: string): string {
     .slice(0, 32); // 128 bits
   return `chat:${mac}`;
 }
+
+// REFACTOR-P3-05: Per-PaymentIntent Realtime channel name. Same HMAC capability
+// model as chatChannelName (REFACTOR-P3-01): the server only emits this name to
+// the verified owner of the PaymentIntent, so it acts as an unguessable token.
+export function paymentChannelName(checkoutId: string): string {
+  const mac = crypto
+    .createHmac("sha256", REALTIME_CHANNEL_SECRET!)
+    .update(checkoutId)
+    .digest("hex")
+    .slice(0, 32); // 128 bits
+  return `pay:${mac}`;
+}
