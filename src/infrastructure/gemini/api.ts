@@ -5,18 +5,67 @@
  * The API key is read server-side only; it is never exposed to the browser.
  */
 
-import type { GeminiMessage } from "./IGeminiClient";
+// REFACTOR-P2-03: Gemini context caching. The system prompt is uploaded once
+// and referenced by ID on subsequent requests, cutting input token cost to ~10%
+// for the cached portion. Falls back to inline system_instruction if caching fails.
 
-const GEMINI_MODEL = "gemini-2.5-flash";
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+import type { GeminiMessage } from "./IGeminiClient";
+import { log } from "@/lib/logger";
+
+const GEMINI_MODEL        = "gemini-2.5-flash";
+const GEMINI_API_URL      = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const CACHED_CONTENTS_URL = "https://generativelanguage.googleapis.com/v1beta/cachedContents";
+const CACHE_TTL_SEC       = 300; // 5-minute minimum tier
 
 interface GeminiRequest {
-  system_instruction: { parts: [{ text: string }] };
+  system_instruction?: { parts: [{ text: string }] };
+  cachedContent?: string;
   contents: GeminiMessage[];
   generationConfig: {
     temperature: number;
     maxOutputTokens: number;
   };
+}
+
+// Process-level cache state. Survives warm invocations; each cold start starts fresh.
+let cachedSystemPrompt: { name: string; expiresAt: number } | null = null;
+
+async function getOrCreateSystemPromptCache(
+  systemPrompt: string,
+  apiKey: string,
+): Promise<string> {
+  if (cachedSystemPrompt && cachedSystemPrompt.expiresAt > Date.now() + 60_000) {
+    return cachedSystemPrompt.name;
+  }
+
+  const res = await fetch(CACHED_CONTENTS_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey,
+    },
+    body: JSON.stringify({
+      model: `models/${GEMINI_MODEL}`,
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      ttl: `${CACHE_TTL_SEC}s`,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => res.status.toString());
+    log("error", "Gemini cache creation failed — falling back to inline prompt", {
+      service: "chat",
+      status: res.status,
+      detail: errText,
+    });
+    cachedSystemPrompt = null;
+    return "";
+  }
+
+  const data = await res.json() as { name: string };
+  cachedSystemPrompt = { name: data.name, expiresAt: Date.now() + CACHE_TTL_SEC * 1000 };
+  log("info", "Gemini system prompt cached", { service: "chat", cacheName: data.name });
+  return data.name;
 }
 
 interface GeminiResponse {
@@ -45,21 +94,25 @@ export async function chat(
   history: GeminiMessage[],
   userMessage: string
 ): Promise<string> {
-  const apiKey = getApiKey();
+  const apiKey   = getApiKey();
+  const cacheName = await getOrCreateSystemPromptCache(systemPrompt, apiKey);
 
   const body: GeminiRequest = {
-    system_instruction: {
-      parts: [{ text: systemPrompt }],
-    },
     contents: [
       ...history,
       { role: "user", parts: [{ text: userMessage }] },
     ],
     generationConfig: {
-      temperature: 0.4,   // factual, consistent answers
+      temperature: 0.4,     // factual, consistent answers
       maxOutputTokens: 512, // enough for a helpful reply, not wasteful
     },
   };
+
+  if (cacheName) {
+    body.cachedContent = cacheName;
+  } else {
+    body.system_instruction = { parts: [{ text: systemPrompt }] };
+  }
 
   const res = await fetch(GEMINI_API_URL, {
     method: "POST",

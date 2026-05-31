@@ -144,7 +144,7 @@ Per CLAUDE.md: "every service change needs a test."
 - [ ] One cancellation in each locale produces the right email.
 - [ ] `grep -rn "toLocaleDateString\|new Intl\.DateTimeFormat\|new Intl\.NumberFormat" src/` returns only the `src/lib/formatting.ts` definitions (or low-level utilities) — no scattered calls in components.
 - [ ] Service-level tests for email functions cover both locales.
-- [ ] `npm run build`, `lint`, `test`, `test:e2e` clean.
+- [ ] `pnpm build`, `lint`, `test`, `test:e2e` clean.
 
 ## Verification
 
@@ -170,5 +170,5 @@ Per CLAUDE.md: "every service change needs a test."
 - [ ] English booking email renders fully translated with English date format
 - [ ] Cancellation emails localized in both languages
 - [ ] formatDate unit tests cover DST boundary
-- [ ] npm run build/lint/test/test:e2e pass
+- [ ] pnpm build/lint/test/test:e2e pass
 ```

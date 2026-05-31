@@ -9,6 +9,10 @@
  * OBS-02: Error-level logs are additionally forwarded to Sentry so that
  * spikes are visible in the Sentry dashboard and trigger configured alerts.
  *
+ * REFACTOR-P4-02: When a request is wrapped with `tracedRoute`, the request ID
+ * seeded into AsyncLocalStorage is read here and stamped onto every log line
+ * (and Sentry `extra`), so logs from concurrent requests can be correlated.
+ *
  * Output format (one JSON object per line):
  *   {"level":"info","service":"kv","message":"Credits updated","email":"...","ts":"..."}
  *
@@ -20,10 +24,11 @@
  *
  * In development the output is still valid JSON, but you can pipe through
  * `| jq .` for readable formatting:
- *   npm run dev 2>&1 | jq .
+ *   pnpm dev 2>&1 | jq .
  */
 
 import * as Sentry from "@sentry/nextjs";
+import { getRequestId } from "./request-context";
 
 type Level = "info" | "warn" | "error";
 
@@ -43,10 +48,13 @@ export function log(
   message: string,
   context: Record<string, unknown> = {}
 ): void {
+  // REFACTOR-P4-02: read the request-scoped ID (null outside a tracedRoute).
+  const requestId = getRequestId();
   const entry = {
     level,
     message,
     ts: new Date().toISOString(),
+    ...(requestId ? { requestId } : {}),
     ...context,
   };
 
@@ -58,7 +66,7 @@ export function log(
       // OBS-02: Forward errors to Sentry for aggregation and alerting
       Sentry.captureMessage(message, {
         level: "error",
-        extra: context,
+        extra: { ...context, ...(requestId ? { requestId } : {}) },
         tags: { service: String(context.service ?? "unknown") },
       });
       break;

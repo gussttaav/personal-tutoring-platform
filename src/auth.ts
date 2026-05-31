@@ -14,6 +14,12 @@ declare module "next-auth" {
   }
 }
 
+declare module "next-auth/jwt" {
+  interface JWT {
+    role?: "student" | "teacher" | "admin";
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google({
@@ -38,27 +44,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return true;
     },
 
-    // Persist the Google account's email/name/picture into the JWT
-    async jwt({ token, profile }) {
+    // Persist the Google account's email/name/picture into the JWT.
+    // REFACTOR-P2-02: Role is fetched from DB once at sign-in and cached in
+    // the JWT for the session lifetime. Roles are stable — the only way they
+    // change is via bootstrapAdminsFromEnv() on cold start.
+    async jwt({ token, profile, trigger }) {
       if (profile) {
         token.email   = profile.email   ?? token.email;
         token.name    = profile.name    ?? token.name;
         token.picture = profile.picture ?? token.picture;
       }
+
+      if (token.email && trigger === "signIn") {
+        try {
+          token.role = await userService.getRoleAndBootstrap(token.email as string);
+        } catch (err) {
+          // Don't fail auth if DB is down — fall back to existing role on the
+          // token, or 'student' on first run.
+          console.error("Failed to fetch role:", err);
+          token.role = token.role ?? "student";
+        }
+      }
+
       return token;
     },
 
     // Expose email, name, and isAdmin on the client-side session object.
-    // isAdmin is computed server-side here so the client never needs to read
-    // ADMIN_EMAILS directly.
     async session({ session, token }) {
       session.user.email = token.email as string;
       session.user.name  = token.name as string;
       session.user.image = (token.picture as string | undefined) ?? null;
-      session.user.isAdmin = (process.env.ADMIN_EMAILS ?? "")
-        .split(",")
-        .map(e => e.trim().toLowerCase())
-        .includes((token.email as string ?? "").toLowerCase());
+      // REFACTOR-P2-02: isAdmin computed from DB-backed role on the token
+      session.user.isAdmin = token.role === "admin";
       return session;
     },
   },

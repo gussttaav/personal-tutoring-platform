@@ -14,6 +14,7 @@ export interface IZoomClient {
     role:            0 | 1;
     userName:        string;
     sessionPasscode: string;
+    durationSeconds: number;  // REFACTOR-P2-05
   }): string;
 
   getDurationWithGrace(sessionType: string): number;

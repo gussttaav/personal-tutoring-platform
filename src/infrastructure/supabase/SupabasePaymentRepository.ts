@@ -63,4 +63,14 @@ export class SupabasePaymentRepository implements IPaymentRepository {
       .eq("stripe_session_id", stripeSessionId);
     if (error) throw error;
   }
+
+  // REFACTOR-P4-01: reconciliation lookup — true if a dead-letter entry exists.
+  async hasFailedBooking(stripeSessionId: string): Promise<boolean> {
+    const { data } = await supabase
+      .from("failed_bookings")
+      .select("stripe_session_id")
+      .eq("stripe_session_id", stripeSessionId)
+      .maybeSingle();
+    return data !== null;
+  }
 }

@@ -21,6 +21,7 @@ import { availabilityRatelimit } from "@/lib/ratelimit";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
+import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
 function mapDomainErrorToResponse(
   err: unknown,
@@ -36,7 +37,7 @@ function mapDomainErrorToResponse(
   throw err;
 }
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function postHandler(req: NextRequest): Promise<NextResponse> {
   // ── CSRF ───────────────────────────────────────────────────────────────────
   if (!isValidOrigin(req)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -79,3 +80,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return mapDomainErrorToResponse(err, { eventId });
   }
 }
+
+export const POST = tracedRoute(postHandler); // REFACTOR-P4-02

@@ -44,8 +44,8 @@ jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeSession(email: string): Session {
-  return { user: { email, name: "Test" }, expires: new Date(Date.now() + 3_600_000).toISOString() };
+function makeSession(email: string, isAdmin = false): Session {
+  return { user: { email, name: "Test", isAdmin }, expires: new Date(Date.now() + 3_600_000).toISOString() };
 }
 
 function makeRequest(body: unknown, email = "target@example.com"): NextRequest {
@@ -94,19 +94,19 @@ describe("POST /api/admin/students/[email]", () => {
   });
 
   it("returns 400 when reason is missing", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await POST(makeRequest({ action: "adjust_credits", amount: 1 }), { params });
     expect(res.status).toBe(400);
   });
 
   it("returns 400 when action is wrong", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await POST(makeRequest({ action: "delete_user", amount: 1, reason: "x" }), { params });
     expect(res.status).toBe(400);
   });
 
   it("calls addCredits for positive adjustment", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await POST(makeRequest({ action: "adjust_credits", amount: 3, reason: "Reposición" }), { params });
     expect(res.status).toBe(200);
     expect(mockAddCredits).toHaveBeenCalledTimes(1);
@@ -115,7 +115,7 @@ describe("POST /api/admin/students/[email]", () => {
   });
 
   it("loops useCredit for negative adjustment", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await POST(makeRequest({ action: "adjust_credits", amount: -2, reason: "Corrección" }), { params });
     expect(res.status).toBe(200);
     expect(mockUseCredit).toHaveBeenCalledTimes(2);
@@ -124,7 +124,7 @@ describe("POST /api/admin/students/[email]", () => {
   });
 
   it("does nothing for amount 0", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await POST(makeRequest({ action: "adjust_credits", amount: 0, reason: "noop" }), { params });
     expect(res.status).toBe(200);
     expect(mockAddCredits).not.toHaveBeenCalled();
@@ -169,7 +169,7 @@ describe("GET /api/admin/students", () => {
   });
 
   it("returns 200 with students for admin", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await GET(makeGetRequest());
     expect(res.status).toBe(200);
     const body = await res.json() as { students: unknown[] };
@@ -208,7 +208,7 @@ describe("GET /api/admin/bookings", () => {
   });
 
   it("returns 200 with bookings for admin", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await GET();
     expect(res.status).toBe(200);
   });
@@ -245,7 +245,7 @@ describe("GET /api/admin/payments", () => {
   });
 
   it("returns 200 with payments for admin", async () => {
-    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL));
+    mockAuth.mockResolvedValue(makeSession(ADMIN_EMAIL, true));
     const res = await GET();
     expect(res.status).toBe(200);
   });

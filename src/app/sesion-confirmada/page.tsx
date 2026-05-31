@@ -104,12 +104,14 @@ function SesionConfirmadaContent() {
   const paymentIntentId = params.get("payment_intent_id");
 
   type S = "loading" | "success" | "error";
-  const [state,    setState]    = useState<S>("loading");
+  // Lazy init: if there's no payment intent there's nothing to verify — start in
+  // the error state instead of correcting it synchronously inside the effect.
+  const [state,    setState]    = useState<S>(() => (paymentIntentId ? "loading" : "error"));
   const [duration, setDuration] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState(() => (paymentIntentId ? "" : "Sesión de pago no encontrada."));
 
   useEffect(() => {
-    if (!paymentIntentId) { setErrorMsg("Sesión de pago no encontrada."); setState("error"); return; }
+    if (!paymentIntentId) return;
     fetch(`/api/stripe/session?payment_intent_id=${encodeURIComponent(paymentIntentId)}`)
       .then(r => r.json())
       .then(d => { if (d.error) { setErrorMsg(d.error); setState("error"); } else { setDuration(d.sessionDuration ?? ""); setState("success"); } })

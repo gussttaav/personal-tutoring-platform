@@ -17,6 +17,7 @@ import type { PackSize } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
 import { log } from "@/lib/logger";
+import { PermanentWebhookError } from "@/domain/errors";
 import { sendDeadLetterNotificationEmail } from "@/infrastructure/resend/email-functions";
 import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";
@@ -99,16 +100,22 @@ export class PaymentService {
     const { email, name, packSize } = params;
     const priceId = getPackPriceId(packSize);
     const { amount, currency } = await this.stripeClient.getPriceAmount(priceId);
-    const intent = await this.stripeClient.createPaymentIntent({
-      amount,
-      currency,
-      metadata: {
-        student_name:  name,
-        student_email: email,
-        pack_size:     String(packSize),
-        checkout_type: "pack",
+    // REFACTOR-P1-05: 5-min window deduplicates double-clicks; deliberate retry
+    // after window gets a fresh PI.
+    const idempotencyKey = `pack:${email}:${packSize}:${Math.floor(Date.now() / 300_000)}`;
+    const intent = await this.stripeClient.createPaymentIntent(
+      {
+        amount,
+        currency,
+        metadata: {
+          student_name:  name,
+          student_email: email,
+          pack_size:     String(packSize),
+          checkout_type: "pack",
+        },
       },
-    });
+      { idempotencyKey },
+    );
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   }
 
@@ -123,19 +130,26 @@ export class PaymentService {
     const { email, name, duration, startIso, endIso, rescheduleToken } = params;
     const priceId = getSingleSessionPriceId(duration);
     const { amount, currency } = await this.stripeClient.getPriceAmount(priceId);
-    const intent = await this.stripeClient.createPaymentIntent({
-      amount,
-      currency,
-      metadata: {
-        student_name:     name,
-        student_email:    email,
-        checkout_type:    "single",
-        session_duration: duration,
-        start_iso:        startIso,
-        end_iso:          endIso,
-        reschedule_token: rescheduleToken ?? "",
+    // REFACTOR-P1-05: startIso in key prevents collision between genuinely
+    // different slots for the same user/duration within the same 5-min window.
+    const idempotencyKey =
+      `single:${email}:${duration}:${startIso}:${Math.floor(Date.now() / 300_000)}`;
+    const intent = await this.stripeClient.createPaymentIntent(
+      {
+        amount,
+        currency,
+        metadata: {
+          student_name:     name,
+          student_email:    email,
+          checkout_type:    "single",
+          session_duration: duration,
+          start_iso:        startIso,
+          end_iso:          endIso,
+          reschedule_token: rescheduleToken ?? "",
+        },
       },
-    });
+      { idempotencyKey },
+    );
     return { clientSecret: intent.client_secret, paymentIntentId: intent.id };
   }
 
@@ -217,12 +231,15 @@ export class PaymentService {
 
       if (!email) {
         log("error", "Missing email in webhook metadata", { service: "payment", stripeSessionId });
-        return;
+        throw new PermanentWebhookError(`Missing student_email in metadata for ${stripeSessionId}`);
       }
 
       if (checkoutType === "pack") {
         const packSize = parseInt(session.metadata?.pack_size ?? "0", 10);
-        if (!packSize) return;
+        if (!packSize) {
+          log("error", "Missing pack_size in webhook metadata", { service: "payment", stripeSessionId });
+          throw new PermanentWebhookError(`Missing pack_size in metadata for ${stripeSessionId}`);
+        }
         await this.handlePackPayment(
           { student_email: email, student_name: name, pack_size: String(packSize), checkout_type: "pack" },
           stripeSessionId,
@@ -315,11 +332,11 @@ export class PaymentService {
 
     if (!email) {
       log("error", "Missing email in pack payment metadata", { service: "payment", intentId });
-      return;
+      throw new PermanentWebhookError(`Missing student_email in pack metadata for ${intentId}`);
     }
     if (!packSize) {
       log("warn", "Missing pack_size in metadata", { service: "payment", intentId });
-      return;
+      throw new PermanentWebhookError(`Missing pack_size in metadata for ${intentId}`);
     }
 
     await this.credits.addCredits({
@@ -327,6 +344,22 @@ export class PaymentService {
       packLabel: `Pack ${packSize} clases`, stripeSessionId: intentId,
     });
     log("info", "Pack credits written", { service: "payment", email, packSize });
+
+    // REFACTOR-P3-05: Broadcast for live confirmation. Best-effort — credits are
+    // already persisted above, so a broadcast failure just means the browser falls
+    // back to the channel-endpoint state check on (re)subscribe.
+    try {
+      const balance = await this.credits.getBalance(email);
+      await this.credits.broadcastPaymentConfirmed(intentId, {
+        credits:  balance?.credits  ?? packSize,
+        name:     balance?.name     ?? name,
+        packSize: balance?.packSize ?? packSize,
+      });
+    } catch (err) {
+      log("warn", "Realtime payment broadcast failed (browser will catch up via channel endpoint)", {
+        service: "payment", intentId, error: String(err),
+      });
+    }
   }
 
   private async processSingleSession(input: SingleSessionInput): Promise<void> {
@@ -334,11 +367,11 @@ export class PaymentService {
 
     if (!email) {
       log("error", "Missing email in single-session metadata", { service: "payment", idempotencyKey });
-      return;
+      throw new PermanentWebhookError(`Missing student_email in single-session metadata for ${idempotencyKey}`);
     }
     if (!startIso || !endIso) {
       log("error", "Missing slot timing in webhook metadata", { service: "payment", idempotencyKey });
-      return;
+      throw new PermanentWebhookError(`Missing start_iso or end_iso in metadata for ${idempotencyKey}`);
     }
 
     // Idempotency check
@@ -399,6 +432,7 @@ export class PaymentService {
       log("error", "Dead-letter written for failed booking", { service: "payment", stripeSessionId, userId, startIso });
     } catch (kvErr) {
       log("error", "Failed to write dead-letter record", { service: "payment", stripeSessionId, error: String(kvErr) });
+      throw kvErr;
     }
 
     await sendDeadLetterNotificationEmail({

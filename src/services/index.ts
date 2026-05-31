@@ -20,7 +20,6 @@ import {
 } from "@/infrastructure/supabase";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient }  from "@/infrastructure/google";
-import { SchedulerClient } from "@/infrastructure/qstash";
 import { EmailClient }     from "@/infrastructure/resend";
 import { StripeClient }    from "@/infrastructure/stripe/StripeClient";
 import { GeminiClient }    from "@/infrastructure/gemini";
@@ -38,7 +37,6 @@ export const bookingService = new BookingService(
   supabaseSessionRepository,
   new CalendarClient(),
   new ZoomClient(),
-  new SchedulerClient(),
   new EmailClient(),
 );
 

@@ -1,9 +1,9 @@
 # gustavoai.dev — Project Context
 
 ## Stack
-Next.js 14 (App Router) · TypeScript strict · NextAuth v5 · Supabase (Postgres) ·
+Next.js 16 (App Router) · React 19 · TypeScript strict · NextAuth v5 · Supabase (Postgres) ·
 Stripe · Google Calendar · Zoom Video SDK · Upstash Redis (ephemeral only) ·
-Gemini · Resend · QStash · Sentry
+Gemini · Resend · Sentry
 
 ## Architecture
 
@@ -43,7 +43,7 @@ Route handler → Service → Repository interface → Supabase implementation
 ### Service Layer
 Business logic lives in `src/services/`:
 - `CreditService` — credit operations, atomic decrement via Postgres stored procedure
-- `BookingService` — orchestrates credits + calendar + Zoom + email + QStash
+- `BookingService` — orchestrates credits + calendar + Zoom + email
 - `PaymentService` — Stripe checkout, webhook processing, dead-letter recovery
 - `SessionService` — Zoom session lifecycle, JWT issuance, in-session chat
 - `ChatService` — Gemini AI chat
@@ -55,14 +55,15 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - Zod schemas in `src/lib/schemas.ts` — never inline in route handlers.
 - Structured logging via `log()` from `src/lib/logger.ts` — no `console.*`.
 - User-facing text is Spanish. Error messages go through `friendlyError()`.
-- CSRF protection via `isValidOrigin()` on all POST routes (except Stripe webhook + QStash).
+- CSRF protection via `isValidOrigin()` on all POST routes (except Stripe webhook).
 - Admin routes gated by `isAdmin()` from `src/lib/admin.ts`.
 
 ## Gotchas
 - NextAuth v5 is in beta. Session shape: `session.user.email`, `session.user.name`.
 - Upstash Redis REST API does NOT support MULTI/EXEC — use Lua via `kv.eval()`.
 - Vercel serverless functions cap at 25s (Hobby) / 60s (Pro). SSE uses 24s.
-- `setTimeout` does NOT work reliably in serverless — use QStash for delays > 10s.
+- All Zoom session cleanup is recorded to `pending_terminations` at booking time; the daily cron at `/api/internal/session-cleanup` handles the actual termination.
+- Vercel plan is **Hobby** — no native Vercel crons. Scheduled tasks use cron-job.org instead (see `/api/internal/session-cleanup`).
 - Zoom Video SDK != Zoom Meetings API. JWT signing only; no REST for session mgmt.
 - `GOOGLE_PRIVATE_KEY` needs `\\n` → `\n` replacement (handled in CalendarClient.ts).
 - Supabase TIMESTAMPTZ format differs from JS `toISOString()`:
@@ -72,10 +73,10 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - Credit atomicity uses a Postgres stored procedure (`decrement_credit`), not application-side logic.
 
 ## Testing
-- `npm test` — Jest unit + integration tests
-- `npm run test:unit` — unit tests only
-- `npm run test:integration` — integration tests only
-- `npm run test:e2e` — Playwright end-to-end tests
+- `pnpm test` — Jest unit + integration tests
+- `pnpm test:unit` — unit tests only
+- `pnpm test:integration` — integration tests only
+- `pnpm test:e2e` — Playwright end-to-end tests
 - Tests for services live in `src/services/__tests__/`
 - Tests for infrastructure live alongside: `src/infrastructure/supabase/__tests__/`
 - Integration tests in `src/__tests__/integration/`
@@ -83,11 +84,11 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - New business logic requires a service-level test with mock repositories
 
 ## Commands
-- `npm run dev` — local dev server
-- `npm run build` — production build (must pass before PR)
-- `npm run lint` — must pass
-- `npm test` — all Jest tests
-- `npm run test:e2e` — Playwright tests (requires `E2E_BASE_URL`)
+- `pnpm dev` — local dev server
+- `pnpm build` — production build (must pass before PR)
+- `pnpm lint` — must pass
+- `pnpm test` — all Jest tests
+- `pnpm test:e2e` — Playwright tests (requires `E2E_BASE_URL`)
 
 ## Database
 - Schema defined in `supabase/migrations/`
@@ -127,3 +128,21 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 - Put business logic in route handlers — it belongs in `src/services/`
 - Edit applied migration files — create new ones
 - Skip tests — every service change needs a test
+
+## Refactor workflow
+
+Refactors live in `docs/refactor/` while active, then move to
+`docs/archive/refactor-YYYY-MM-DD/` when complete.
+
+Structure of an active refactor:
+- `PLAN.md` — master audit
+- `STATUS.md` — living progress tracker
+- `phase-N-name/README.md` — phase overview
+- `phase-N-name/NN-task.md` — individual tasks
+
+Conventions:
+- Each task tagged `REFACTOR-PN-NN` in code comments
+- Each task = one PR
+- Each task md has: TL;DR, context with line refs, files affected,
+  the change, acceptance criteria, test plan, gotchas, out of scope
+- Update STATUS.md when starting, completing, or blocking a task

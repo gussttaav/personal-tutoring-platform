@@ -4,10 +4,12 @@ import type { BookingRecord, SessionType } from "@/domain/types";
 import { randomUUID } from "crypto";
 
 export class InMemoryBookingRepository implements IBookingRepository {
-  private bookings     = new Map<string, BookingRecord>();
-  private cancelTokens = new Map<string, BookingRecord>();
-  private joinTokens   = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
-  private locks        = new Set<string>();
+  private bookings             = new Map<string, BookingRecord>();
+  private cancelTokens         = new Map<string, { joinToken: string; record: BookingRecord }>();
+  private joinTokens           = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
+  private locks                = new Set<string>();
+  private pendingTerminations  = new Map<string, { fireAtMs: number; attempts: number; lastError?: string }>();
+  private statuses             = new Map<string, string>(); // eventId → status
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
@@ -17,7 +19,8 @@ export class InMemoryBookingRepository implements IBookingRepository {
     const full: BookingRecord = { ...record, used: false };
 
     this.bookings.set(record.eventId, full);
-    this.cancelTokens.set(cancelToken, full);
+    this.statuses.set(record.eventId, "confirmed");
+    this.cancelTokens.set(cancelToken, { joinToken, record: full });
     this.joinTokens.set(joinToken, {
       eventId:     record.eventId,
       email:       record.email,
@@ -30,7 +33,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   async findByCancelToken(token: string): Promise<BookingRecord | null> {
-    return this.cancelTokens.get(token) ?? null;
+    return this.cancelTokens.get(token)?.record ?? null;
   }
 
   async findByJoinToken(token: string): Promise<{ eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string } | null> {
@@ -38,16 +41,18 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   async consumeCancelToken(token: string): Promise<boolean> {
-    if (!this.cancelTokens.has(token)) return false;
+    const entry = this.cancelTokens.get(token);
+    if (!entry) return false;
     this.cancelTokens.delete(token);
+    this.statuses.set(entry.record.eventId, "cancelled");
     return true;
   }
 
-  async listByUser(email: string): Promise<{ cancelToken: string; record: BookingRecord }[]> {
-    const result: { cancelToken: string; record: BookingRecord }[] = [];
-    for (const [token, record] of this.cancelTokens) {
+  async listByUser(email: string): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]> {
+    const result: { cancelToken: string; joinToken: string; record: BookingRecord }[] = [];
+    for (const [token, { joinToken, record }] of this.cancelTokens) {
       if (record.email.toLowerCase() === email.toLowerCase() && !record.used) {
-        result.push({ cancelToken: token, record });
+        result.push({ cancelToken: token, joinToken, record });
       }
     }
     return result;
@@ -75,9 +80,34 @@ export class InMemoryBookingRepository implements IBookingRepository {
     };
   }
 
+  async findByEventId(eventId: string): Promise<{ id: string; status: string } | null> {
+    if (!this.bookings.has(eventId)) return null;
+    return {
+      id:     eventId,
+      status: this.statuses.get(eventId) ?? "confirmed",
+    };
+  }
+
+  // REFACTOR-P4-01
+  async hasBookingForPayment(stripePaymentId: string): Promise<boolean> {
+    for (const record of this.bookings.values()) {
+      if (record.stripePaymentId === stripePaymentId) return true;
+    }
+    return false;
+  }
+
   async markCompleted(bookingId: string): Promise<void> {
     const record = this.bookings.get(bookingId);
-    if (record && !record.used) record.used = true;
+    if (!record) return;
+    if ((this.statuses.get(bookingId) ?? "confirmed") !== "confirmed") return;
+    record.used = true;
+    this.statuses.set(bookingId, "completed");
+  }
+
+  async markNoShow(bookingId: string): Promise<void> {
+    if (!this.bookings.has(bookingId)) return;
+    if ((this.statuses.get(bookingId) ?? "confirmed") !== "confirmed") return;
+    this.statuses.set(bookingId, "no_show");
   }
 
   async countCompletedPaid(_userId: string): Promise<number> {
@@ -111,6 +141,36 @@ export class InMemoryBookingRepository implements IBookingRepository {
     this.locks.delete(startIso);
   }
 
+  async recordPendingTermination(eventId: string, fireAtMs: number): Promise<void> {
+    this.pendingTerminations.set(eventId, { fireAtMs, attempts: 0 });
+  }
+
+  async deletePendingTermination(eventId: string): Promise<void> {
+    this.pendingTerminations.delete(eventId);
+  }
+
+  async listDuePendingTerminations(
+    limit: number,
+    maxAttempts: number,
+  ): Promise<{ eventId: string; attempts: number }[]> {
+    const now = Date.now();
+    return [...this.pendingTerminations.entries()]
+      .filter(([, row]) => row.fireAtMs < now && row.attempts < maxAttempts)
+      .sort(([, a], [, b]) => a.fireAtMs - b.fireAtMs)
+      .slice(0, limit)
+      .map(([eventId, row]) => ({ eventId, attempts: row.attempts }));
+  }
+
+  async recordPendingTerminationFailure(
+    eventId: string,
+    attempts: number,
+    error: string,
+  ): Promise<void> {
+    const row = this.pendingTerminations.get(eventId);
+    if (!row) return;
+    this.pendingTerminations.set(eventId, { ...row, attempts, lastError: error });
+  }
+
   /** Test helper: returns all active cancel tokens. */
   get activeCancelTokenCount(): number {
     return this.cancelTokens.size;
@@ -118,9 +178,16 @@ export class InMemoryBookingRepository implements IBookingRepository {
 
   /** Test helper: find the cancel token for a given eventId. */
   findCancelTokenForEvent(eventId: string): string | undefined {
-    for (const [token, record] of this.cancelTokens) {
+    for (const [token, { record }] of this.cancelTokens) {
       if (record.eventId === eventId) return token;
     }
     return undefined;
+  }
+
+  /** Test helper: returns the pending terminations map (eventId → fireAtMs). */
+  getPendingTerminations(): Map<string, number> {
+    return new Map(
+      [...this.pendingTerminations.entries()].map(([eventId, row]) => [eventId, row.fireAtMs]),
+    );
   }
 }

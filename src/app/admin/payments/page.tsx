@@ -28,6 +28,7 @@ export default async function PaymentsPage() {
   const buckets = new Array(days).fill(0) as number[];
   for (const p of payments) {
     if (p.status !== "succeeded") continue;
+    // eslint-disable-next-line react-hooks/purity -- Server Component: renders once per request, never re-renders on the client.
     const d = Math.floor((Date.now() - new Date(p.created_at).getTime()) / 86_400_000);
     if (d >= 0 && d < days) buckets[days - 1 - d] += p.amount_cents;
   }

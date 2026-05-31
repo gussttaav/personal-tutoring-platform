@@ -12,7 +12,6 @@ import { InMemoryCreditsRepository } from "../fixtures/InMemoryCreditsRepository
 import { InMemoryBookingRepository } from "../fixtures/InMemoryBookingRepository";
 import { FakeCalendarClient }        from "../fixtures/FakeCalendarClient";
 import { FakeEmailClient }           from "../fixtures/FakeEmailClient";
-import { FakeScheduler }             from "../fixtures/FakeScheduler";
 import {
   buildTestCreditService,
   buildTestBookingService,
@@ -64,15 +63,15 @@ describe("Booking flow — pack session success", () => {
     );
   });
 
-  it("schedules a Zoom cleanup job via the scheduler", async () => {
-    const credits   = buildTestCreditService();
+  it("writes a pending_termination row on booking", async () => {
+    const credits     = buildTestCreditService();
     await credits.addCredits(creditParams);
-    const scheduler = new FakeScheduler();
-    const service   = buildTestBookingService({ credits, scheduler });
+    const bookingRepo = new InMemoryBookingRepository();
+    const service     = buildTestBookingService({ credits, bookings: bookingRepo });
 
     await service.createBooking(packInput());
 
-    expect(scheduler.scheduled).toHaveLength(1);
+    expect(bookingRepo.getPendingTerminations().size).toBe(1);
   });
 
   it("stores the booking so it is findable by cancelToken", async () => {

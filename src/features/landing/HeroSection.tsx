@@ -232,6 +232,7 @@ export default function HeroSection() {
               alt="Gustavo Torres Guerrero"
               fill
               style={{ objectFit: "cover" }}
+              sizes="(max-width: 768px) 128px, 176px"
               priority
             />
           </div>
@@ -259,6 +260,7 @@ export default function HeroSection() {
                 alt="Gustavo Torres Guerrero"
                 fill
                 style={{ objectFit: "cover" }}
+                sizes="(max-width: 448px) calc(100vw - 48px), 400px"
                 priority
               />
             </div>

@@ -4,21 +4,55 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import type { ChatMessage } from "@/app/api/chat-session/route";
 
 interface SessionChatProps {
-  messages: ChatMessage[];
-  userName: string;
-  onSend:   (text: string) => Promise<void>;
-  onClose:  () => void;
+  messages:      ChatMessage[];
+  userName:      string;
+  onSend:        (text: string) => Promise<void>;
+  onClose:       () => void;
+  remoteTyping?: boolean;
+  onTyping?:     (typing: boolean) => void;
 }
 
-export default function SessionChat({ messages, userName, onSend, onClose }: SessionChatProps) {
+export default function SessionChat({ messages, userName, onSend, onClose, remoteTyping, onTyping }: SessionChatProps) {
   const [input, setInput]     = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef             = useRef<HTMLDivElement>(null);
 
+  // ── Typing emission (throttled) ─────────────────────────────────────────────
+  // lastTypingRef: timestamp of the last `typing:true` we sent, so we broadcast
+  // at most ~once/1.5s instead of on every keystroke. idleTimerRef: fires
+  // `typing:false` once the user pauses for ~2.5s.
+  const lastTypingRef = useRef(0);
+  const idleTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const stopTyping = useCallback(() => {
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
+    }
+    lastTypingRef.current = 0;
+    onTyping?.(false);
+  }, [onTyping]);
+
+  const signalTyping = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTypingRef.current > 1500) {
+      lastTypingRef.current = now;
+      onTyping?.(true);
+    }
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(stopTyping, 2500);
+  }, [onTyping, stopTyping]);
+
+  // Clear any pending timer / typing state on unmount.
+  useEffect(() => () => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    onTyping?.(false);
+  }, [onTyping]);
+
   // ── Auto-scroll to bottom ──────────────────────────────────────────────────
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, remoteTyping]);
 
   // ── Send message ───────────────────────────────────────────────────────────
   const send = useCallback(async () => {
@@ -26,6 +60,7 @@ export default function SessionChat({ messages, userName, onSend, onClose }: Ses
     if (!text || sending) return;
     setSending(true);
     setInput("");
+    stopTyping();
     try {
       await onSend(text);
     } catch {
@@ -33,7 +68,7 @@ export default function SessionChat({ messages, userName, onSend, onClose }: Ses
     } finally {
       setSending(false);
     }
-  }, [input, sending, onSend]);
+  }, [input, sending, onSend, stopTyping]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -81,6 +116,11 @@ export default function SessionChat({ messages, userName, onSend, onClose }: Ses
             <span className="text-[#e5e1e4]/70">{msg.text}</span>
           </div>
         ))}
+        {remoteTyping && (
+          <div className="chat-typing" aria-label="El otro participante está escribiendo">
+            <span /><span /><span />
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
@@ -90,7 +130,7 @@ export default function SessionChat({ messages, userName, onSend, onClose }: Ses
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => { setInput(e.target.value); signalTyping(); }}
             onKeyDown={handleKeyDown}
             placeholder="Escribe un mensaje..."
             disabled={sending}

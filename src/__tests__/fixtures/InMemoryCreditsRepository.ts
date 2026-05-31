@@ -1,6 +1,6 @@
 // TEST-01: In-memory implementation of ICreditsRepository for integration tests.
-import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
-import type { CreditResult } from "@/domain/types";
+import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
+import type { CreditResult, PackSize } from "@/domain/types";
 
 interface CreditsRecord {
   email:           string;
@@ -24,10 +24,7 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
       credits:         rec.credits,
       name:            rec.name,
       packSize:        rec.packSize as CreditResult["packSize"],
-      packLabel:       rec.packLabel,
       expiresAt:       rec.expiresAt,
-      lastUpdated:     rec.lastUpdated,
-      stripeSessionId: rec.stripeSessionId,
     };
   }
 
@@ -65,12 +62,13 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
     }
   }
 
-  async decrementCredit(email: string): Promise<{ ok: boolean; remaining: number }> {
+  async decrementCredit(email: string): Promise<DecrementResult> {
     const rec = this.store.get(email.toLowerCase());
-    if (!rec || rec.credits <= 0) return { ok: false, remaining: 0 };
+    if (!rec || rec.credits <= 0) return { ok: false, remaining: 0, packSize: null };
     rec.credits -= 1;
     rec.lastUpdated = new Date().toISOString();
-    return { ok: true, remaining: rec.credits };
+    // REFACTOR-P3-03: surface the pack size, mirroring the SQL function
+    return { ok: true, remaining: rec.credits, packSize: rec.packSize as PackSize | null };
   }
 
   async restoreCredit(email: string): Promise<{ ok: boolean; credits: number }> {
@@ -83,5 +81,13 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
 
   async hasProcessedPayment(stripeSessionId: string): Promise<boolean> {
     return this.usedIds.has(stripeSessionId);
+  }
+
+  // REFACTOR-P3-05: no-op in tests — spy on this to assert the broadcast fired.
+  async broadcastPaymentConfirmed(
+    _paymentIntentId: string,
+    _payload: { credits: number; name: string; packSize: number },
+  ): Promise<void> {
+    // intentionally empty
   }
 }

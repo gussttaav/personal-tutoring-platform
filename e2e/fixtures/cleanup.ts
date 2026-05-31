@@ -143,7 +143,9 @@ export async function clearTestCalendar(
 export async function resetTestState(): Promise<void> {
   const env = loadMergedEnv();
 
-  const supabaseUrl    = pick(env, "SUPABASE_URL");
+  // REFACTOR-P3-01 renamed SUPABASE_URL → NEXT_PUBLIC_SUPABASE_URL (the workflow
+  // now passes the new name).
+  const supabaseUrl    = pick(env, "NEXT_PUBLIC_SUPABASE_URL");
   const serviceRoleKey = pick(env, "SUPABASE_SERVICE_ROLE_KEY");
   if (supabaseUrl && serviceRoleKey) {
     await truncateTestDb(supabaseUrl, serviceRoleKey);

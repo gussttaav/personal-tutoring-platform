@@ -1,6 +1,13 @@
 // ARCH-15: Application service for Zoom session lifecycle and in-session chat.
 // Routes that deal with Zoom tokens, session termination, and chat should call
 // methods here instead of touching Redis or lib/zoom.ts directly.
+// REFACTOR-P2-05: JWT lifetime now derived from session end time + 30-min buffer,
+// capped at 4 h by generateZoomJWT. expiresAt aligns with JWT exp.
+// REFACTOR-P3-01: postChatMessage broadcasts the new message on a per-eventId
+// Realtime channel after persistence so subscribed browsers receive it without
+// polling. The broadcast is best-effort: failures are logged but never bubble.
+// REFACTOR-P3-04: getChatMessages now enforces the same participant membership
+// check as postChatMessage/issueJoinToken — eventId is not a capability.
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
@@ -49,20 +56,45 @@ export class SessionService {
       throw new UnauthorizedError();
     }
 
+    // REFACTOR-P2-05: compute lifetime from session end + 30-min buffer so the
+    // JWT covers the full class. generateZoomJWT caps at 4 h and floors at 10 min.
+    const sessionEndMs = new Date(record.startIso).getTime()
+      + this.zoom.getDurationWithGrace(record.sessionType) * 60_000;
+    const secondsUntilEnd = Math.ceil((sessionEndMs - Date.now()) / 1000);
+    const durationSeconds = Math.max(600, secondsUntilEnd + 1800);  // +30 min buffer
+
     const role: 0 | 1 = isTutor ? 1 : 0;
     const token = this.zoom.generateJWT({
       sessionName:     record.sessionName,
       role,
       userName:        params.userName,
       sessionPasscode: record.sessionPasscode,
+      durationSeconds,
     });
 
     log("info", "Zoom token issued", {
-      service: "SessionService",
-      email:   params.userEmail,
-      eventId: params.eventId,
+      service:     "SessionService",
+      email:       params.userEmail,
+      eventId:     params.eventId,
       role,
+      lifetimeSec: durationSeconds,
     });
+
+    // Persist first student-join timestamp so the session-cleanup cron can
+    // distinguish completed sessions from no-shows. Best-effort: failing here
+    // must not block the student from joining. First-join-only is enforced in
+    // SQL via an IS NULL guard, so retries are safe.
+    if (!isTutor) {
+      try {
+        await this.sessions.markStudentJoined(params.eventId);
+      } catch (err) {
+        log("warn", "Could not record student_joined_at", {
+          service: "SessionService",
+          eventId: params.eventId,
+          error:   String(err),
+        });
+      }
+    }
 
     return {
       token,
@@ -70,7 +102,7 @@ export class SessionService {
       passcode:          record.sessionPasscode,
       startIso:          record.startIso,
       durationWithGrace: this.zoom.getDurationWithGrace(record.sessionType),
-      expiresAt:         Math.floor(Date.now() / 1000) + 3600,
+      expiresAt:         Math.floor(Date.now() / 1000) + durationSeconds,
     };
   }
 
@@ -96,7 +128,12 @@ export class SessionService {
       : false;
     if (!isTutor && !isStudent) throw new UnauthorizedError();
 
-    const currentLen = await this.sessions.countChatMessages(params.eventId);
+    // REFACTOR-P3-02: resolve the zoom_session_id once, then reuse it for the
+    // count + append below — no more re-resolving eventId inside each call.
+    const zoomSessionId = await this.sessions.resolveZoomSessionId(params.eventId);
+    if (!zoomSessionId) throw new BookingNotFoundError();
+
+    const currentLen = await this.sessions.countChatMessagesById(zoomSessionId);
     const message = {
       id:          `${params.eventId}:${currentLen}`,
       senderEmail: params.senderEmail,
@@ -104,22 +141,62 @@ export class SessionService {
       text:        params.text.trim().slice(0, 1000),
       sentAt:      new Date().toISOString(),
     };
-    await this.sessions.appendChatMessage(params.eventId, JSON.stringify(message));
+    await this.sessions.appendChatMessageById(zoomSessionId, JSON.stringify(message));
+
+    // REFACTOR-P3-01: best-effort live delivery. Persistence above is the
+    // source of truth; subscribers that miss the broadcast catch up on
+    // reconnect via /api/chat-session/channel.
+    try {
+      await this.sessions.broadcastChatMessage(params.eventId, message);
+    } catch (err) {
+      log("warn", "Realtime broadcast failed (subscribers will catch up on next reconnect)", {
+        service: "SessionService",
+        eventId: params.eventId,
+        error:   String(err),
+      });
+    }
+
     return { messageId: message.id };
   }
 
-  // Returns chat messages starting at fromIndex.
-  // No membership check — mirrors the current SSE handler behaviour.
+  // Returns chat messages starting at fromIndex. Validates that the caller is a
+  // session participant before disclosing any messages.
   async getChatMessages(params: {
     eventId:   string;
     userEmail: string;
     fromIndex: number;
   }): Promise<{ messages: string[]; nextCursor: number }> {
-    const total = await this.sessions.countChatMessages(params.eventId);
+    // REFACTOR-P3-04: Membership check. Previously absent — any authenticated
+    // user with knowledge of an eventId could read another session's chat.
+    const record = await this.sessions.findByEventId(params.eventId);
+    if (!record) throw new BookingNotFoundError();
+
+    const isTutor   = params.userEmail === this.tutorEmail;
+    const isStudent = record.studentEmail
+      ? record.studentEmail.toLowerCase() === params.userEmail.toLowerCase()
+      : false;
+
+    if (!record.studentEmail) {
+      // Legacy record (pre SEC-03) — tutor only
+      if (!isTutor) throw new UnauthorizedError();
+    } else if (!isTutor && !isStudent) {
+      log("warn", "Unauthorized chat read attempt", {
+        service:   "SessionService",
+        requester: params.userEmail,
+        eventId:   params.eventId,
+      });
+      throw new UnauthorizedError();
+    }
+
+    // REFACTOR-P3-02: resolve once; the count + list below reuse the id.
+    const zoomSessionId = await this.sessions.resolveZoomSessionId(params.eventId);
+    if (!zoomSessionId) return { messages: [], nextCursor: params.fromIndex };
+
+    const total = await this.sessions.countChatMessagesById(zoomSessionId);
     if (total <= params.fromIndex) {
       return { messages: [], nextCursor: params.fromIndex };
     }
-    const messages = await this.sessions.listChatMessages(params.eventId, params.fromIndex, total - 1);
+    const messages = await this.sessions.listChatMessagesById(zoomSessionId, params.fromIndex, total - 1);
     return { messages, nextCursor: total };
   }
 }

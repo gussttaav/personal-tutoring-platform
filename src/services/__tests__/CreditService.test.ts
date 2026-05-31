@@ -9,6 +9,8 @@ const mockCredits = (): jest.Mocked<ICreditsRepository> => ({
   addCredits:      jest.fn(),
   decrementCredit: jest.fn(),
   restoreCredit:   jest.fn(),
+  hasProcessedPayment: jest.fn(),
+  broadcastPaymentConfirmed: jest.fn(),
 });
 
 const mockAudit = (): jest.Mocked<IAuditRepository> => ({
@@ -20,7 +22,7 @@ describe("CreditService.useCredit", () => {
   it("throws InsufficientCreditsError when decrement fails", async () => {
     const credits = mockCredits();
     const audit   = mockAudit();
-    credits.decrementCredit.mockResolvedValue({ ok: false, remaining: 0 });
+    credits.decrementCredit.mockResolvedValue({ ok: false, remaining: 0, packSize: null });
 
     const service = new CreditService(credits, audit);
 
@@ -31,15 +33,28 @@ describe("CreditService.useCredit", () => {
   it("returns remaining and appends audit entry on success", async () => {
     const credits = mockCredits();
     const audit   = mockAudit();
-    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 4 });
+    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 4, packSize: 5 });
 
     const service = new CreditService(credits, audit);
     const result  = await service.useCredit("a@b.com");
 
-    expect(result).toEqual({ remaining: 4 });
+    expect(result).toEqual({ remaining: 4, packSize: 5 });
     expect(audit.append).toHaveBeenCalledWith("a@b.com", expect.objectContaining({
       action: "decrement", remaining: 4,
     }));
+  });
+
+  // REFACTOR-P3-03: useCredit surfaces the decremented pack's size so
+  // BookingService can drop its separate getBalance call.
+  it("returns the pack_size of the decremented pack", async () => {
+    const credits = mockCredits();
+    const audit   = mockAudit();
+    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 9, packSize: 10 });
+
+    const service = new CreditService(credits, audit);
+    const { packSize } = await service.useCredit("a@b.com");
+
+    expect(packSize).toBe(10);
   });
 });
 

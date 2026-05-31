@@ -21,6 +21,13 @@ export interface ISessionRepository {
   deleteByEventId(eventId: string): Promise<void>;
 
   /**
+   * Records that the student joined the session. Only writes when
+   * student_joined_at is still NULL — subsequent joins are no-ops so we keep
+   * the first-join timestamp. Idempotent.
+   */
+  markStudentJoined(eventId: string): Promise<void>;
+
+  /**
    * Appends a chat message to the session's message list. Returns the new total
    * message count. Used by the in-session chat feature.
    */
@@ -38,4 +45,22 @@ export interface ISessionRepository {
    * eventId has no messages.
    */
   countChatMessages(eventId: string): Promise<number>;
+
+  // REFACTOR-P3-02: Direct-by-id variants. SessionService resolves the
+  // zoomSessionId once per request and threads it through, eliminating the
+  // findZoomSessionId N+1 (eventId → booking_id → zoom_session_id resolved
+  // on every chat read/write). The eventId-based methods above remain as thin
+  // wrappers for convenience callers.
+  resolveZoomSessionId(eventId: string): Promise<string | null>;
+  appendChatMessageById(zoomSessionId: string, message: string): Promise<number>;
+  listChatMessagesById(zoomSessionId: string, from: number, to: number): Promise<string[]>;
+  countChatMessagesById(zoomSessionId: string): Promise<number>;
+
+  /**
+   * REFACTOR-P3-01: Fires a best-effort broadcast on the per-eventId Realtime
+   * channel so subscribed browsers receive the message in sub-second time
+   * without polling. Implementations must not throw on transient delivery
+   * failures — persistence via appendChatMessage is the source of truth.
+   */
+  broadcastChatMessage(eventId: string, message: unknown): Promise<void>;
 }

@@ -159,12 +159,13 @@ export default function InteractiveShell() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync restoredSlot (from URL params after OAuth) into pendingSlot.
-  // Fires once when isSignedIn becomes true and restoredSlot is available.
-  useEffect(() => {
-    if (router.restoredSlot) {
-      setPendingSlot(router.restoredSlot);
-    }
-  }, [router.restoredSlot]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Render-phase "adjust state on input change": restoredSlot flips from null to
+  // a slot once, after the OAuth round-trip.
+  const [prevRestoredSlot, setPrevRestoredSlot] = useState(router.restoredSlot);
+  if (router.restoredSlot !== prevRestoredSlot) {
+    setPrevRestoredSlot(router.restoredSlot);
+    if (router.restoredSlot) setPendingSlot(router.restoredSlot);
+  }
 
   // When a buy-pack OAuth intent sets selectedPack (because packCredits was 0
   // during intent consumption), but credits data loads and reveals an active pack,

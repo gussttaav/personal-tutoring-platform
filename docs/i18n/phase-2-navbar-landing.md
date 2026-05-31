@@ -156,12 +156,12 @@ Cookie only. **Do not** modify [src/auth.ts](../../src/auth.ts) session shape or
 - [ ] DevTools → `Accept-Language: es-ES`, clear cookies, visit `/` → no redirect.
 - [ ] Logged-in user can switch language without losing the session.
 - [ ] All other pages still render in Spanish (they haven't been migrated yet — this is expected).
-- [ ] `npm run build`, `lint`, `test`, `test:e2e` all clean. E2E suite is still Spanish-text-based; no test changes yet.
+- [ ] `pnpm build`, `lint`, `test`, `test:e2e` all clean. E2E suite is still Spanish-text-based; no test changes yet.
 
 ## Verification
 
 ```bash
-npm run dev
+pnpm dev
 # Manually click through navbar links in both ES and EN.
 # Toggle the switcher on / and a few sub-pages — the URL should pick up /en/.
 # Open Application → Cookies → confirm NEXT_LOCALE is set after a switch.
@@ -183,5 +183,5 @@ npm run dev
 - [ ] Accept-Language: es → no redirect
 - [ ] NEXT_LOCALE cookie persists across reloads
 - [ ] Logged-in users keep their session after switching
-- [ ] npm run build/lint/test/test:e2e pass
+- [ ] pnpm build/lint/test/test:e2e pass
 ```

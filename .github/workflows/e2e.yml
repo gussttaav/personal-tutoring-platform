@@ -18,9 +18,11 @@
 #
 #   E2E_BASE_URL
 #   SUPABASE_URL_TEST             https://<ref>.supabase.co
+#   SUPABASE_ANON_KEY_TEST        Supabase project → Settings → API → anon public key
 #   SUPABASE_SERVICE_ROLE_KEY_TEST
 #   SUPABASE_DB_URL_TEST          (postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres)
 #                                 Settings → Database → Connection pooling → Session mode
+#   REALTIME_CHANNEL_SECRET_TEST  hex string for the per-eventId chat channel HMAC (openssl rand -hex 32)
 #   GOOGLE_CALENDAR_ID            test calendar (not the production one)
 #   GOOGLE_SERVICE_ACCOUNT_EMAIL
 #   GOOGLE_PRIVATE_KEY
@@ -71,13 +73,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: pnpm/action-setup@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
+          node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v1
@@ -88,18 +92,20 @@ jobs:
         run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_TEST }}"
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: npx playwright test
+        run: pnpm exec playwright test
         env:
-          E2E_BASE_URL:          ${{ secrets.E2E_BASE_URL }}
-          SUPABASE_URL:          ${{ secrets.SUPABASE_URL_TEST }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
-          SUPABASE_DB_URL:       ${{ secrets.SUPABASE_DB_URL_TEST }}
-          GOOGLE_CALENDAR_ID:    ${{ secrets.GOOGLE_CALENDAR_ID }}
-          GOOGLE_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}
-          GOOGLE_PRIVATE_KEY:    ${{ secrets.GOOGLE_PRIVATE_KEY }}
+          E2E_BASE_URL:                  ${{ secrets.E2E_BASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL:      ${{ secrets.SUPABASE_URL_TEST }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY_TEST }}
+          SUPABASE_SERVICE_ROLE_KEY:     ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_TEST }}
+          SUPABASE_DB_URL:               ${{ secrets.SUPABASE_DB_URL_TEST }}
+          REALTIME_CHANNEL_SECRET:       ${{ secrets.REALTIME_CHANNEL_SECRET_TEST }}
+          GOOGLE_CALENDAR_ID:            ${{ secrets.GOOGLE_CALENDAR_ID }}
+          GOOGLE_SERVICE_ACCOUNT_EMAIL:  ${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}
+          GOOGLE_PRIVATE_KEY:            ${{ secrets.GOOGLE_PRIVATE_KEY }}
 
       - name: Upload test artifacts on failure
         if: failure()

@@ -13,6 +13,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { useClientValue } from "@/hooks/useClientValue";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -209,17 +210,17 @@ export default function SingleSessionBooking({
   const [sessionUrl,     setSessionUrl]     = useState("");
   const [cancelToken,    setCancelToken]    = useState("");
   const [emailFailed,    setEmailFailed]    = useState(false);
-  const [userTz,         setUserTz]         = useState<string>("");
   const [clientSecret,   setClientSecret]   = useState<string | null>(null);
 
-  useEffect(() => {
+  // Client timezone label ("<tz> (GMT±n)") after hydration; empty during SSR.
+  const userTz = useClientValue(() => {
     try {
       const tz     = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const offset = -new Date().getTimezoneOffset() / 60;
       const gmt    = `GMT${offset >= 0 ? "+" : ""}${offset}`;
-      setUserTz(`${tz} (${gmt})`);
-    } catch { /* ignore */ }
-  }, []);
+      return `${tz} (${gmt})`;
+    } catch { return ""; }
+  }, "");
 
   // Slot selected → always show review step first
   const handleSlotSelected = useCallback((slot: SelectedSlot) => {
@@ -644,6 +645,7 @@ export default function SingleSessionBooking({
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCNL3zn2YTYaO_hmbb57yzENelgbezrtOYRkI0wzW9Z4G_EpOWuwa0LT9KVy9VtWo2BxDSDjbuxyxZEfsWLJJIlFKeSHVTNRymMJ2-SPExdi6Nt_yFfNoqKma8TUebR5hch_bTaDj4ezkdy1GIHCmkwIZJpmYWdDAUlzcY6BiHlX79U-YxDZDWoL5hwLk4UoIyTcTZe4W_zJdpb8pqshHykMhp1M3mgD9ROlLalXQhZ8WZLdfGRqxxzncfpXPx6gLjVOzh6yaeehQ"
                   alt=""
                   fill
+                  sizes="420px"
                   className="object-cover grayscale brightness-50"
                   aria-hidden="true"
                 />

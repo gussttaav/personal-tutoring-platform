@@ -2,6 +2,8 @@
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
+import { PermanentWebhookError } from "@/domain/errors";
+import { FakeStripeClient } from "@/__tests__/fixtures/FakeStripeClient";
 
 // Mock getAvailableSlots before importing PaymentService (direct module import)
 const mockGetAvailableSlots = jest.fn();
@@ -34,10 +36,15 @@ const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   recordFailedBooking:  jest.fn(),
   listFailedBookings:   jest.fn(),
   clearFailedBooking:   jest.fn(),
+  hasFailedBooking:     jest.fn(),
 });
 
-const mockCredits = (): jest.Mocked<Pick<CreditService, "addCredits">> => ({
-  addCredits: jest.fn(),
+// REFACTOR-P3-05: handlePackPayment now also reads getBalance + fires
+// broadcastPaymentConfirmed after addCredits, so the mock stubs all three.
+const mockCredits = (): jest.Mocked<Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed">> => ({
+  addCredits:                jest.fn(),
+  getBalance:                jest.fn().mockResolvedValue(null),
+  broadcastPaymentConfirmed: jest.fn(),
 });
 
 const mockBookings = (): jest.Mocked<Pick<BookingService, "createBooking">> => ({
@@ -54,7 +61,7 @@ const mockUserService = (): jest.Mocked<Pick<UserService, "ensureUser" | "findBy
 function makeService(overrides?: {
   stripe?:       Partial<jest.Mocked<IStripeClient>>;
   paymentRepo?:  Partial<jest.Mocked<IPaymentRepository>>;
-  credits?:      Partial<jest.Mocked<Pick<CreditService, "addCredits">>>;
+  credits?:      Partial<jest.Mocked<Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed">>>;
   bookings?:     Partial<jest.Mocked<Pick<BookingService, "createBooking">>>;
   userService?:  Partial<jest.Mocked<Pick<UserService, "ensureUser" | "findByEmail">>>;
 }) {
@@ -132,16 +139,40 @@ describe("PaymentService.processWebhookEvent — pack", () => {
     }));
   });
 
-  it("skips pack event with missing email", async () => {
-    const { service, credits } = makeService();
+  it("throws PermanentWebhookError for pack event with missing email", async () => {
+    const { service } = makeService();
     const event = fakePackEvent();
-    (event.data.object as Record<string, unknown>).metadata = {
+    (event.data.object as unknown as Record<string, unknown>).metadata = {
       checkout_type: "pack", pack_size: "5",
     };
 
-    await service.processWebhookEvent(event);
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+});
 
-    expect(credits.addCredits).not.toHaveBeenCalled();
+// ─── REFACTOR-P3-05: broadcast on pack confirmation ──────────────────────────
+
+describe("REFACTOR-P3-05: broadcast on pack confirmation", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it("broadcasts after credits are written", async () => {
+    const { service, credits } = makeService();
+    (credits.addCredits as jest.Mock).mockResolvedValue(undefined);
+
+    await service.processWebhookEvent(fakePackEvent("pi_123"));
+
+    expect(credits.broadcastPaymentConfirmed).toHaveBeenCalledWith(
+      "pi_123",
+      expect.objectContaining({ packSize: expect.any(Number) }),
+    );
+  });
+
+  it("does not fail the webhook if broadcast throws", async () => {
+    const { service, credits } = makeService();
+    (credits.addCredits as jest.Mock).mockResolvedValue(undefined);
+    (credits.broadcastPaymentConfirmed as jest.Mock).mockRejectedValueOnce(new Error("network"));
+
+    await expect(service.processWebhookEvent(fakePackEvent("pi_123"))).resolves.toBeUndefined();
   });
 });
 
@@ -294,5 +325,144 @@ describe("PaymentService.reprocessFailedBooking", () => {
     const result = await service.reprocessFailedBooking("pi_single_123");
 
     expect(result).toEqual({ ok: false, error: "Failed to retrieve Stripe data" });
+  });
+});
+
+// ─── REFACTOR-P1-02: webhook error semantics ──────────────────────────────────
+
+describe("REFACTOR-P1-02: webhook error semantics", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+  });
+
+  it("throws PermanentWebhookError when student_email missing in pack metadata", async () => {
+    const { service } = makeService();
+    const event: Stripe.Event = {
+      id:   "evt_test",
+      type: "payment_intent.succeeded",
+      data: { object: { id: "pi_test", metadata: { checkout_type: "pack", pack_size: "5" } } },
+    } as unknown as Stripe.Event;
+
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+
+  it("throws PermanentWebhookError when student_email missing in single-session metadata", async () => {
+    const { service } = makeService();
+    const event: Stripe.Event = {
+      id:   "evt_test",
+      type: "payment_intent.succeeded",
+      data: {
+        object: {
+          id:       "pi_test",
+          metadata: {
+            checkout_type: "single",
+            start_iso:     "2099-12-01T10:00:00.000Z",
+            end_iso:       "2099-12-01T11:00:00.000Z",
+          },
+        },
+      },
+    } as unknown as Stripe.Event;
+
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+
+  it("throws PermanentWebhookError when start_iso or end_iso missing in single-session metadata", async () => {
+    const { service } = makeService();
+    const event: Stripe.Event = {
+      id:   "evt_test",
+      type: "payment_intent.succeeded",
+      data: {
+        object: {
+          id:       "pi_test",
+          metadata: {
+            checkout_type: "single",
+            student_email: "student@test.com",
+          },
+        },
+      },
+    } as unknown as Stripe.Event;
+
+    await expect(service.processWebhookEvent(event)).rejects.toBeInstanceOf(PermanentWebhookError);
+  });
+
+  it("rethrows when paymentRepo.recordFailedBooking fails inside writeDeadLetter", async () => {
+    const dbError = new Error("DB down");
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockRejectedValue(new Error("calendar API down"));
+    paymentRepo.recordFailedBooking.mockRejectedValue(dbError);
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).rejects.toThrow("DB down");
+  });
+});
+
+// ─── REFACTOR-P1-05: idempotency keys ────────────────────────────────────────
+
+describe("REFACTOR-P1-05: idempotency keys", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env.STRIPE_PRICE_ID_PACK5      = "price_pack5_test";
+    process.env.STRIPE_PRICE_ID_PACK10     = "price_pack10_test";
+    process.env.STRIPE_PRICE_ID_SESSION_1H = "price_1h_test";
+    process.env.STRIPE_PRICE_ID_SESSION_2H = "price_2h_test";
+  });
+
+  afterEach(() => {
+    delete process.env.STRIPE_PRICE_ID_PACK5;
+    delete process.env.STRIPE_PRICE_ID_PACK10;
+    delete process.env.STRIPE_PRICE_ID_SESSION_1H;
+    delete process.env.STRIPE_PRICE_ID_SESSION_2H;
+    jest.useRealTimers();
+  });
+
+  function makeServiceWithFakeStripe() {
+    const fakeStripe  = new FakeStripeClient();
+    const paymentRepo = mockPaymentRepo();
+    const credits     = mockCredits();
+    const bookings    = mockBookings();
+    const userSvc     = mockUserService();
+    const service = new PaymentService(
+      fakeStripe,
+      credits  as unknown as CreditService,
+      bookings as unknown as BookingService,
+      paymentRepo,
+      userSvc  as unknown as UserService,
+    );
+    return { service, fakeStripe };
+  }
+
+  it("returns the same PaymentIntent for two identical pack checkouts", async () => {
+    const { service } = makeServiceWithFakeStripe();
+    const a = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 5 });
+    const b = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 5 });
+    expect(a.paymentIntentId).toBe(b.paymentIntentId);
+  });
+
+  it("returns different PaymentIntents for different pack sizes", async () => {
+    const { service } = makeServiceWithFakeStripe();
+    const a = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 5 });
+    const b = await service.createPackCheckout({ email: "u@example.com", name: "U", packSize: 10 });
+    expect(a.paymentIntentId).not.toBe(b.paymentIntentId);
+  });
+
+  it("returns different PaymentIntents for the same single-session checkout in different time windows", async () => {
+    const { service } = makeServiceWithFakeStripe();
+    const params = {
+      email:    "u@example.com",
+      name:     "U",
+      duration: "1h" as const,
+      startIso: "2026-06-01T10:00:00.000Z",
+      endIso:   "2026-06-01T11:00:00.000Z",
+    };
+
+    const a = await service.createSingleSessionCheckout(params);
+
+    jest.useFakeTimers();
+    jest.advanceTimersByTime(6 * 60_000);
+
+    const b = await service.createSingleSessionCheckout(params);
+
+    expect(a.paymentIntentId).not.toBe(b.paymentIntentId);
   });
 });

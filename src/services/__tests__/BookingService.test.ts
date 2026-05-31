@@ -10,7 +10,6 @@ import type { IBookingRepository } from "@/domain/repositories/IBookingRepositor
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
-import type { IScheduler } from "@/infrastructure/qstash";
 import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "../CreditService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
@@ -21,22 +20,34 @@ import type { BookingRecord } from "@/domain/types";
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
 const mockBookings = (): jest.Mocked<IBookingRepository> => ({
-  createBooking:           jest.fn().mockResolvedValue({ cancelToken: "ctkn", joinToken: "jtkn" }),
-  findByCancelToken:       jest.fn().mockResolvedValue(null),
-  findByJoinToken:         jest.fn().mockResolvedValue(null),
-  consumeCancelToken:      jest.fn().mockResolvedValue(true),
-  listByUser:              jest.fn().mockResolvedValue([]),
-  hasAnyBooking:           jest.fn().mockResolvedValue(false),
-  acquireSlotLock:         jest.fn().mockResolvedValue(true),
-  releaseSlotLock:         jest.fn().mockResolvedValue(undefined),
-  recordRescheduleFailure: jest.fn().mockResolvedValue(undefined),
+  createBooking:              jest.fn().mockResolvedValue({ cancelToken: "ctkn", joinToken: "jtkn" }),
+  findByCancelToken:          jest.fn().mockResolvedValue(null),
+  findByJoinToken:            jest.fn().mockResolvedValue(null),
+  consumeCancelToken:         jest.fn().mockResolvedValue(true),
+  listByUser:                 jest.fn().mockResolvedValue([]),
+  hasAnyBooking:              jest.fn().mockResolvedValue(false),
+  acquireSlotLock:            jest.fn().mockResolvedValue(true),
+  releaseSlotLock:            jest.fn().mockResolvedValue(undefined),
+  recordRescheduleFailure:    jest.fn().mockResolvedValue(undefined),
+  findIdByEventIdForUser:     jest.fn().mockResolvedValue(null),
+  findByEventId:              jest.fn().mockResolvedValue(null),
+  hasBookingForPayment:       jest.fn().mockResolvedValue(false),
+  markCompleted:              jest.fn().mockResolvedValue(undefined),
+  markNoShow:                 jest.fn().mockResolvedValue(undefined),
+  countCompletedPaid:         jest.fn().mockResolvedValue(0),
+  recordPendingTermination:   jest.fn().mockResolvedValue(undefined),
+  deletePendingTermination:   jest.fn().mockResolvedValue(undefined),
+  listDuePendingTerminations: jest.fn().mockResolvedValue([]),
+  recordPendingTerminationFailure: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
   getCredits:      jest.fn().mockResolvedValue({ credits: 5, packSize: 5, packLabel: "Pack 5", email: "s@t.com", name: "S", expiresAt: "", lastUpdated: "", stripeSessionId: "" }),
   addCredits:      jest.fn().mockResolvedValue(undefined),
-  decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4 }),
+  decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4, packSize: 5 }),
   restoreCredit:   jest.fn().mockResolvedValue({ ok: true, credits: 5 }),
+  hasProcessedPayment: jest.fn().mockResolvedValue(false),
+  broadcastPaymentConfirmed: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockAuditRepo = (): jest.Mocked<IAuditRepository> => ({
@@ -50,15 +61,22 @@ const makeCreditService = (credits?: Partial<jest.Mocked<ICreditsRepository>>) =
 };
 
 const mockSessions = (): jest.Mocked<ISessionRepository> => ({
-  createSession:      jest.fn().mockResolvedValue(undefined),
-  findByEventId:      jest.fn().mockResolvedValue(null),
-  deleteByEventId:    jest.fn().mockResolvedValue(undefined),
-  appendChatMessage:  jest.fn().mockResolvedValue(0),
-  listChatMessages:   jest.fn().mockResolvedValue([]),
-  countChatMessages:  jest.fn().mockResolvedValue(0),
+  createSession:        jest.fn().mockResolvedValue(undefined),
+  findByEventId:        jest.fn().mockResolvedValue(null),
+  deleteByEventId:      jest.fn().mockResolvedValue(undefined),
+  markStudentJoined:    jest.fn().mockResolvedValue(undefined),
+  appendChatMessage:     jest.fn().mockResolvedValue(0),
+  listChatMessages:      jest.fn().mockResolvedValue([]),
+  countChatMessages:     jest.fn().mockResolvedValue(0),
+  resolveZoomSessionId:  jest.fn().mockResolvedValue(null),
+  appendChatMessageById: jest.fn().mockResolvedValue(0),
+  listChatMessagesById:  jest.fn().mockResolvedValue([]),
+  countChatMessagesById: jest.fn().mockResolvedValue(0),
+  broadcastChatMessage:  jest.fn().mockResolvedValue(undefined),
 });
 
 const mockCalendar = (): jest.Mocked<ICalendarClient> => ({
+  getAvailableSlots: jest.fn().mockResolvedValue([]),
   createEvent: jest.fn().mockResolvedValue({
     eventId: "evt1", zoomSessionName: "session-abc", zoomPasscode: "pass123",
     zoomSessionId: "zsid1", durationMinutes: 60,
@@ -70,10 +88,6 @@ const mockZoom = (): jest.Mocked<IZoomClient> => ({
   generateSessionCredentials: jest.fn(),
   generateJWT:                jest.fn(),
   getDurationWithGrace:       jest.fn().mockReturnValue(75),
-});
-
-const mockScheduler = (): jest.Mocked<IScheduler> => ({
-  scheduleAt: jest.fn().mockResolvedValue(undefined),
 });
 
 const mockEmail = (): jest.Mocked<IEmailClient> => ({
@@ -89,7 +103,6 @@ const makeService = (overrides: {
   sessions?:  jest.Mocked<ISessionRepository>;
   calendar?:  jest.Mocked<ICalendarClient>;
   zoom?:      jest.Mocked<IZoomClient>;
-  scheduler?: jest.Mocked<IScheduler>;
   email?:     jest.Mocked<IEmailClient>;
 } = {}) =>
   new BookingService(
@@ -98,7 +111,6 @@ const makeService = (overrides: {
     overrides.sessions  ?? mockSessions(),
     overrides.calendar  ?? mockCalendar(),
     overrides.zoom      ?? mockZoom(),
-    overrides.scheduler ?? mockScheduler(),
     overrides.email     ?? mockEmail(),
   );
 
@@ -150,7 +162,7 @@ describe("BookingService.createBooking", () => {
 
   it("throws InsufficientCreditsError and does NOT create calendar event when credits are zero", async () => {
     const creditsRepo = mockCreditsRepo();
-    creditsRepo.decrementCredit.mockResolvedValue({ ok: false, remaining: 0 });
+    creditsRepo.decrementCredit.mockResolvedValue({ ok: false, remaining: 0, packSize: null });
     const calendar = mockCalendar();
     const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
 
@@ -200,15 +212,13 @@ describe("BookingService.createBooking", () => {
     });
   });
 
-  it("schedules Zoom cleanup via the scheduler", async () => {
-    const scheduler = mockScheduler();
-    const service = makeService({ scheduler });
+  it("writes a pending_termination row on successful booking", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
 
     await service.createBooking(basePackInput());
 
-    expect(scheduler.scheduleAt).toHaveBeenCalledWith(expect.objectContaining({
-      body: { eventId: "evt1" },
-    }));
+    expect(bookings.recordPendingTermination).toHaveBeenCalledWith("evt1", expect.any(Number));
   });
 });
 
@@ -262,7 +272,19 @@ describe("BookingService.createBooking (reschedule)", () => {
     expect(sessions.deleteByEventId).toHaveBeenCalledWith("old-evt");
   });
 
-  it("records dead-letter when calendar fails during non-pack rescheduling", async () => {
+  it("deletes the old pending_terminations row on reschedule", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    expect(bookings.deletePendingTermination).toHaveBeenCalledWith("old-evt");
+  });
+
+  it("throws when calendar fails during non-pack rescheduling (no dead-letter — REFACTOR-P1-03)", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
       baseCancelRecord({ sessionType: "free15min", startsAt: hoursFromNow(5) })
@@ -275,11 +297,10 @@ describe("BookingService.createBooking (reschedule)", () => {
       service.createBooking({
         ...basePackInput(), sessionType: "free15min", rescheduleToken: "tkn",
       })
-    ).rejects.toThrow();
+    ).rejects.toThrow("Calendar down");
 
-    expect(bookings.recordRescheduleFailure).toHaveBeenCalledWith(
-      expect.objectContaining({ email: "student@test.com", sessionType: "free15min" })
-    );
+    // Compensation framework replaced the old recordRescheduleFailure dead-letter call.
+    expect(bookings.recordRescheduleFailure).not.toHaveBeenCalled();
   });
 });
 
@@ -330,6 +351,18 @@ describe("BookingService.cancelByToken", () => {
     await service.cancelByToken("tkn");
 
     expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-cancel-test");
+  });
+
+  it("deletes the pending_terminations row on cancellation", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ eventId: "evt-cancel-test", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+
+    await service.cancelByToken("tkn");
+
+    expect(bookings.deletePendingTermination).toHaveBeenCalledWith("evt-cancel-test");
   });
 
   it("restores credit when cancelling a pack session", async () => {
@@ -424,6 +457,144 @@ describe("BookingService.listForUser", () => {
   });
 });
 
+// ─── REFACTOR-P1-01: concurrent booking ──────────────────────────────────────
+
+describe("REFACTOR-P1-01: concurrent booking", () => {
+  it("rejects the second concurrent booking for the same slot", async () => {
+    const { buildTestBookingService } = await import("@/__tests__/fixtures/services");
+    const service = buildTestBookingService();
+    const input = {
+      email: "a@example.com", name: "A",
+      startIso: "2026-06-01T10:00:00.000Z",
+      endIso:   "2026-06-01T11:00:00.000Z",
+      sessionType: "session1h" as const,
+    };
+
+    const [first, second] = await Promise.allSettled([
+      service.createBooking(input),
+      service.createBooking({ ...input, email: "b@example.com", name: "B" }),
+    ]);
+
+    const fulfilled = [first, second].filter(r => r.status === "fulfilled");
+    const rejected  = [first, second].filter(r => r.status === "rejected");
+
+    expect(fulfilled).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
+    expect((rejected[0] as PromiseRejectedResult).reason)
+      .toBeInstanceOf(SlotUnavailableError);
+  });
+
+  it("releases the slot lock when createBooking throws inside the try block", async () => {
+    const { buildTestBookingService } = await import("@/__tests__/fixtures/services");
+    const { FakeCalendarClient } = await import("@/__tests__/fixtures/FakeCalendarClient");
+    const calendar = new FakeCalendarClient();
+    const service = buildTestBookingService({ calendar });
+
+    const input = {
+      email: "a@example.com", name: "A",
+      startIso: "2026-06-02T10:00:00.000Z",
+      endIso:   "2026-06-02T11:00:00.000Z",
+      sessionType: "session1h" as const,
+    };
+
+    // First call fails due to calendar error — lock must be released
+    calendar.shouldFail = true;
+    await expect(service.createBooking(input)).rejects.toThrow();
+
+    // Second call with same slot must succeed now that lock is released
+    calendar.shouldFail = false;
+    await expect(service.createBooking(input)).resolves.toBeDefined();
+  });
+});
+
+// ─── REFACTOR-P1-03: booking saga compensation ───────────────────────────────
+
+describe("REFACTOR-P1-03: booking saga compensation", () => {
+  it("restores credit when Calendar create fails (pack)", async () => {
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+
+    const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("Calendar down");
+
+    expect(creditsRepo.decrementCredit).toHaveBeenCalled();
+    expect(creditsRepo.restoreCredit).toHaveBeenCalledWith("student@test.com");
+  });
+
+  it("deletes Calendar event when DB booking insert fails", async () => {
+    const calendar  = mockCalendar();
+    const bookings  = mockBookings();
+    bookings.createBooking.mockRejectedValue(new Error("DB down"));
+
+    const service = makeService({ calendar, bookings });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("DB down");
+
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+  });
+
+  it("releases slot lock even when compensation runs", async () => {
+    const bookings = mockBookings();
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const input = basePackInput();
+
+    const service = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(input)).rejects.toThrow();
+
+    expect(bookings.releaseSlotLock).toHaveBeenCalledWith(input.startIso);
+  });
+
+  it("surfaces original error when compensation itself fails", async () => {
+    const calendar = mockCalendar();
+    const bookings = mockBookings();
+    bookings.createBooking.mockRejectedValue(new Error("DB"));
+    calendar.deleteEvent.mockRejectedValue(new Error("Cal delete also failed"));
+
+    const service = makeService({ calendar, bookings });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("DB");
+  });
+});
+
+// ─── REFACTOR-P1-04: pending_terminations write ───────────────────────────────
+
+describe("REFACTOR-P1-04: pending_terminations write", () => {
+  it("succeeds the booking even when pending_termination write fails", async () => {
+    const bookings = mockBookings();
+    bookings.recordPendingTermination = jest.fn().mockRejectedValueOnce(new Error("DB down"));
+
+    const service = makeService({ bookings });
+    const result  = await service.createBooking(basePackInput());
+
+    expect(result.eventId).toBeDefined();
+  });
+
+  it("records the correct fireAtMs in the pending termination row", async () => {
+    const { buildTestBookingService } = await import("@/__tests__/fixtures/services");
+    const { InMemoryBookingRepository } = await import("@/__tests__/fixtures/InMemoryBookingRepository");
+
+    const bookingRepo = new InMemoryBookingRepository();
+    const service     = buildTestBookingService({ bookings: bookingRepo });
+    const input = {
+      email: "a@example.com", name: "A",
+      startIso: hoursFromNow(10), endIso: hoursFromNow(11),
+      sessionType: "session1h" as const,
+    };
+
+    const result = await service.createBooking(input);
+
+    const pending = bookingRepo.getPendingTerminations();
+    expect(pending.has(result.eventId)).toBe(true);
+    // fireAtMs must be after the session starts (start + grace period)
+    const startMs = new Date(input.startIso).getTime();
+    expect(pending.get(result.eventId)!).toBeGreaterThan(startMs);
+  });
+});
+
 // ─── hasAnyBooking ────────────────────────────────────────────────────────────
 
 describe("BookingService.hasAnyBooking", () => {
@@ -442,5 +613,91 @@ describe("BookingService.hasAnyBooking", () => {
     const service = makeService();
     const result = await service.hasAnyBooking("nobody@test.com");
     expect(result).toBe(false);
+  });
+});
+
+// ─── finalizePastSession ──────────────────────────────────────────────────────
+
+describe("BookingService.finalizePastSession", () => {
+  const baseZoomSession = {
+    sessionId:       "zs-1",
+    sessionName:     "sess",
+    sessionPasscode: "pw",
+    studentEmail:    "s@t.com",
+    startIso:        hoursFromNow(-1),
+    durationMinutes: 60,
+    sessionType:     "session1h" as const,
+  };
+
+  it("marks booking completed when student joined", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "confirmed" });
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue({
+      ...baseZoomSession,
+      studentJoinedAt: new Date().toISOString(),
+    });
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markCompleted).toHaveBeenCalledWith("bk-1");
+    expect(bookings.markNoShow).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("marks booking no_show when student never joined", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "confirmed" });
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue({
+      ...baseZoomSession,
+      studentJoinedAt: null,
+    });
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markNoShow).toHaveBeenCalledWith("bk-1");
+    expect(bookings.markCompleted).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("also marks no_show when zoom_sessions row is missing", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "confirmed" });
+    const sessions = mockSessions();
+    sessions.findByEventId.mockResolvedValue(null);
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markNoShow).toHaveBeenCalledWith("bk-1");
+  });
+
+  it("skips status updates when booking is already cancelled", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue({ id: "bk-1", status: "cancelled" });
+    const sessions = mockSessions();
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markCompleted).not.toHaveBeenCalled();
+    expect(bookings.markNoShow).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+
+  it("skips status updates when booking is not found (orphan eventId)", async () => {
+    const bookings = mockBookings();
+    bookings.findByEventId.mockResolvedValue(null);
+    const sessions = mockSessions();
+    const service = makeService({ bookings, sessions });
+
+    await service.finalizePastSession("evt-1");
+
+    expect(bookings.markCompleted).not.toHaveBeenCalled();
+    expect(bookings.markNoShow).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
   });
 });

@@ -3,11 +3,15 @@
  *
  * Provides three exports:
  *   - createZoomSession: creates a per-booking Zoom Video SDK session via REST API
- *   - generateZoomJWT:   signs a short-lived JWT so a browser client can join
+ *   - generateZoomJWT:   signs a JWT so a browser client can join
  *   - getSessionDurationWithGrace: returns session length + grace buffer in minutes
  *
  * Applied fixes:
  *   SEC-03: added studentEmail to ZoomSessionRecord for session-membership enforcement
+ *   REFACTOR-P2-05: JWT lifetime now matches session duration + grace, capped at 4
+ *     hours. Previously hardcoded to 1 hour, which caused mid-session expiry for
+ *     2-hour bookings. The JWT lifetime is also our de facto enforcement of session
+ *     end (the Video SDK has no server-side revoke).
  */
 
 import jwt from "jsonwebtoken";
@@ -15,6 +19,9 @@ import crypto from "crypto";
 
 const ZOOM_KEY    = process.env.ZOOM_VIDEO_SDK_KEY!;
 const ZOOM_SECRET = process.env.ZOOM_VIDEO_SDK_SECRET!;
+
+const MAX_JWT_LIFETIME_SEC = 4 * 3600;  // REFACTOR-P2-05
+const MIN_JWT_LIFETIME_SEC = 600;       // REFACTOR-P2-05 — 10 min floor
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,16 +62,21 @@ export function generateZoomSessionCredentials(params: {
 // ─── generateZoomJWT ──────────────────────────────────────────────────────────
 
 /**
- * Signs a short-lived JWT (1 hour) that the browser client passes to
- * ZoomVideo client.join(). Role 1 = host, 0 = participant.
+ * Signs a JWT that the browser client passes to ZoomVideo client.join().
+ * Lifetime = durationSeconds clamped to [10 min, 4 h]. Role 1 = host, 0 = participant.
  */
 export function generateZoomJWT(params: {
   sessionName:     string;
   role:            0 | 1;
   userName:        string;
   sessionPasscode: string;
+  durationSeconds: number;  // REFACTOR-P2-05
 }): string {
   const iat = Math.floor(Date.now() / 1000);
+  const lifetime = Math.max(
+    MIN_JWT_LIFETIME_SEC,
+    Math.min(MAX_JWT_LIFETIME_SEC, params.durationSeconds),
+  );
   return jwt.sign(
     {
       app_key:       ZOOM_KEY,
@@ -74,7 +86,7 @@ export function generateZoomJWT(params: {
       user_identity: params.userName,
       session_key:   params.sessionPasscode,
       iat,
-      exp:           iat + 3600,
+      exp:           iat + lifetime,
     },
     ZOOM_SECRET,
     { algorithm: "HS256" }

@@ -6,14 +6,18 @@ const isDev = process.env.NODE_ENV === "development";
 const nextConfig = {
   transpilePackages: ["@zoom/videosdk"],
 
+  // REFACTOR-P4-03: Expose Vercel build-time vars to the browser so the
+  // client-side Sentry SDK can tag events with the deployed commit SHA.
+  // These are inlined at build time, so each deploy's bundle carries its own SHA.
+  env: {
+    NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
+    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV,
+  },
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
-  },
-
-  experimental: {
-    instrumentationHook: true,
   },
 
   async headers() {
@@ -38,7 +42,7 @@ const nextConfig = {
           "default-src 'self'",
           `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com ${zoomOrigins} ${stripeOrigins}`,
+          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us
@@ -59,7 +63,7 @@ const nextConfig = {
           // use new Function() for their codec pipeline (screen share encoding + AI features).
           `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com ${zoomOrigins} ${stripeOrigins}`,
+          `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us

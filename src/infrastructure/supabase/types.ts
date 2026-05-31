@@ -270,6 +270,30 @@ export type Database = {
           },
         ]
       }
+      pending_terminations: {
+        Row: {
+          attempts: number
+          created_at: string
+          event_id: string
+          fire_at: string
+          last_error: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          event_id: string
+          fire_at: string
+          last_error?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          event_id?: string
+          fire_at?: string
+          last_error?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           booking_id: string
@@ -444,6 +468,7 @@ export type Database = {
           session_name: string
           session_passcode: string
           started_at: string | null
+          student_joined_at: string | null
         }
         Insert: {
           booking_id: string
@@ -455,6 +480,7 @@ export type Database = {
           session_name: string
           session_passcode: string
           started_at?: string | null
+          student_joined_at?: string | null
         }
         Update: {
           booking_id?: string
@@ -466,6 +492,7 @@ export type Database = {
           session_name?: string
           session_passcode?: string
           started_at?: string | null
+          student_joined_at?: string | null
         }
         Relationships: [
           {

@@ -1,9 +1,10 @@
 // DB-02: Supabase-backed implementation of ICreditsRepository.
 // Credits are stored as per-pack rows in credit_packs; queries aggregate
 // across all active (non-expired) packs ordered by expires_at ASC (FIFO).
-import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
+import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
 import { PACK_VALIDITY_MONTHS } from "@/constants";
+import { paymentChannelName } from "@/lib/realtime-channel";
 import { supabase } from "./client";
 
 function addMonths(date: Date, months: number): Date {
@@ -67,16 +68,23 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
     if (error && error.code !== "23505") throw error;
   }
 
-  async decrementCredit(email: string): Promise<{ ok: boolean; remaining: number }> {
+  async decrementCredit(email: string): Promise<DecrementResult> {
     const userId = await this.findUserId(email);
-    if (!userId) return { ok: false, remaining: 0 };
+    if (!userId) return { ok: false, remaining: 0, packSize: null };
 
     const { data, error } = await supabase.rpc("decrement_credit", {
       p_user_id: userId,
     });
 
     if (error) throw error;
-    return data as { ok: boolean; remaining: number };
+
+    // REFACTOR-P3-03: SQL function now returns pack_size
+    const result = data as { ok: boolean; remaining: number; pack_size: number | null };
+    return {
+      ok:        result.ok,
+      remaining: result.remaining,
+      packSize:  (result.pack_size as PackSize | null) ?? null,
+    };
   }
 
   async restoreCredit(email: string): Promise<{ ok: boolean; credits: number }> {
@@ -97,6 +105,23 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
       .select("id", { count: "exact", head: true })
       .eq("stripe_payment_id", stripeSessionId);
     return (count ?? 0) > 0;
+  }
+
+  // REFACTOR-P3-05: Broadcast on a per-PaymentIntent channel. The name is derived
+  // via HMAC from paymentIntentId + REALTIME_CHANNEL_SECRET, so unguessable without
+  // the secret. Fire-and-forget — persistence already happened in addCredits.
+  async broadcastPaymentConfirmed(
+    paymentIntentId: string,
+    payload: { credits: number; name: string; packSize: number },
+  ): Promise<void> {
+    const channel = supabase.channel(paymentChannelName(paymentIntentId), {
+      config: { broadcast: { ack: false } },
+    });
+    try {
+      await channel.send({ type: "broadcast", event: "confirmed", payload });
+    } finally {
+      await supabase.removeChannel(channel);
+    }
   }
 
   private async findUserId(email: string): Promise<string | null> {

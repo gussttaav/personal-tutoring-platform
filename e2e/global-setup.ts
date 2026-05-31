@@ -81,13 +81,15 @@ export default async function globalSetup(): Promise<void> {
     await applyMigrations(dbUrl);
   }
 
-  const supabaseUrl    = pick(env, "SUPABASE_URL");
+  // REFACTOR-P3-01 renamed SUPABASE_URL → NEXT_PUBLIC_SUPABASE_URL (the workflow
+  // now passes the new name).
+  const supabaseUrl    = pick(env, "NEXT_PUBLIC_SUPABASE_URL");
   const serviceRoleKey = pick(env, "SUPABASE_SERVICE_ROLE_KEY");
   if (supabaseUrl && serviceRoleKey) {
     console.log("[e2e] Truncating test database...");
     await truncateTestDb(supabaseUrl, serviceRoleKey);
   } else {
-    console.warn("[e2e] SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set — skipping DB truncate.");
+    console.warn("[e2e] NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set — skipping DB truncate.");
   }
 
   const calendarId    = pick(env, "GOOGLE_CALENDAR_ID");
