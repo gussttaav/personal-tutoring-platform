@@ -11,8 +11,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { isValidOrigin } from "@/lib/csrf";
 import { bookingService } from "@/services";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
+import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   if (!isValidOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { token } = await req.json().catch(() => ({}));
@@ -25,3 +26,5 @@ export async function POST(req: NextRequest) {
     return mapDomainErrorToResponse(err);
   }
 }
+
+export const POST = tracedRoute(postHandler); // REFACTOR-P4-02

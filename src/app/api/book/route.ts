@@ -12,8 +12,9 @@ import { isValidOrigin } from "@/lib/csrf";
 import { BookSchema } from "@/lib/schemas";
 import { bookingService } from "@/services";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
+import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   if (!isValidOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const session = await auth();
@@ -38,3 +39,5 @@ export async function POST(req: NextRequest) {
     return mapDomainErrorToResponse(err);
   }
 }
+
+export const POST = tracedRoute(postHandler); // REFACTOR-P4-02
