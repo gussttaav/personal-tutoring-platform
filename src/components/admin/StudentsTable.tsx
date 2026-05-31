@@ -6,7 +6,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { StudentSummary } from "@/app/admin/_data";
+import type { StudentSummary } from "@/app/[locale]/admin/_data";
 import { PageHeader, Card, Empty } from "@/components/admin/ui";
 import { fmtDate, fmtShort, initials } from "@/components/admin/format";
 

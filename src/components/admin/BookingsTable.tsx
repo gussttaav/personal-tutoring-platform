@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AdminBookingRow } from "@/app/admin/_data";
+import type { AdminBookingRow } from "@/app/[locale]/admin/_data";
 import { PageHeader, Card, Empty } from "@/components/admin/ui";
 import { StatusBadge } from "@/components/admin/ui";
 import { fmtDateTime, relativeTime } from "@/components/admin/format";
