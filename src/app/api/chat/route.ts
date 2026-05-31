@@ -20,11 +20,12 @@ import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
 import { auth } from "@/auth";
 import { kv } from "@/infrastructure/redis/client";
+import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
 const MAX_MESSAGE_LENGTH        = 1000;
 const MAX_DAILY_GEMINI_REQUESTS = 1000;
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   // ── CSRF ───────────────────────────────────────────────────────────────────
   if (!isValidOrigin(req)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -120,3 +121,5 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export const POST = tracedRoute(postHandler); // REFACTOR-P4-02

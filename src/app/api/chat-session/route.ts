@@ -22,6 +22,7 @@ import { sessionService } from "@/services";
 import { chatRatelimit } from "@/lib/ratelimit";
 import { isValidOrigin } from "@/lib/csrf";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
+import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
 export interface ChatMessage {
   id:           string; // `{eventId}:{index}`
@@ -33,7 +34,7 @@ export interface ChatMessage {
 
 // ─── POST /api/chat-session ────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest): Promise<NextResponse> {
+async function postHandler(req: NextRequest): Promise<NextResponse> {
   // ── CSRF ───────────────────────────────────────────────────────────────────
   if (!isValidOrigin(req)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
@@ -82,3 +83,5 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     throw err;
   }
 }
+
+export const POST = tracedRoute(postHandler); // REFACTOR-P4-02

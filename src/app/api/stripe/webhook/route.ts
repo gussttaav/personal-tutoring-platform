@@ -19,8 +19,9 @@ import type Stripe from "stripe";
 import { paymentService } from "@/services";
 import { log } from "@/lib/logger";
 import { PermanentWebhookError } from "@/domain/errors";
+import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
-export async function POST(req: NextRequest) {
+async function postHandler(req: NextRequest) {
   const body = await req.text();
   const sig  = req.headers.get("stripe-signature");
 
@@ -66,3 +67,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }
 }
+
+export const POST = tracedRoute(postHandler); // REFACTOR-P4-02
