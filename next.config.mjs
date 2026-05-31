@@ -6,6 +6,14 @@ const isDev = process.env.NODE_ENV === "development";
 const nextConfig = {
   transpilePackages: ["@zoom/videosdk"],
 
+  // REFACTOR-P4-03: Expose Vercel build-time vars to the browser so the
+  // client-side Sentry SDK can tag events with the deployed commit SHA.
+  // These are inlined at build time, so each deploy's bundle carries its own SHA.
+  env: {
+    NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: process.env.VERCEL_GIT_COMMIT_SHA,
+    NEXT_PUBLIC_VERCEL_ENV: process.env.VERCEL_ENV,
+  },
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
