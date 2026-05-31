@@ -17,7 +17,7 @@ import {
   fetchCreditPacks,
   fetchStudentBookings,
   fetchAuditLog,
-} from "@/app/admin/_data";
+} from "@/app/[locale]/admin/_data";
 
 type Params = { params: Promise<{ email: string }> };
 
