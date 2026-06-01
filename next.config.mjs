@@ -75,7 +75,7 @@ const nextConfig = {
           `worker-src 'self' blob: ${zoomOrigins}`,
           `child-src 'self' blob: ${zoomOrigins}`,
           "media-src 'self' blob: mediastream:",
-          `frame-src ${stripeFrames}`,
+          `frame-src ${stripeFrames} https://vercel.live`,
           "object-src 'none'",
           "base-uri 'self'",
           "form-action 'self'",
