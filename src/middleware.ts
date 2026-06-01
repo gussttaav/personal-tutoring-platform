@@ -30,11 +30,15 @@ export function middleware(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  // UI routes get locale routing; API/monitoring stay request-id only so their
-  // fixed URLs (Stripe webhook, NextAuth, QStash, Resend, Sentry tunnel) are
-  // never rewritten under a locale prefix.
+  // UI routes get locale routing; API/monitoring and static assets stay
+  // request-id only. Static files (e.g. /site.webmanifest, /avatar.png) must
+  // bypass intlMiddleware: on Vercel the edge middleware runs before static
+  // file serving, so any rewrite/response from intlMiddleware takes precedence
+  // and would prevent the file from being served correctly.
   const isUiPath =
-    !pathname.startsWith("/api") && !pathname.startsWith("/monitoring");
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/monitoring") &&
+    !/\.[^/]+$/.test(pathname);
 
   if (isUiPath) {
     // Inject the request ID onto the incoming request headers so server
