@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { friendlyError } from "@/constants/errors";
 import type { UserBooking } from "./types";
 
 const MONTHS_SHORT = [
@@ -50,7 +51,7 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
       });
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error ?? "Error al cancelar la sesión.");
+        setErrorMsg(friendlyError(res.status, data.error ?? "Error al cancelar la sesión."));
         setCancelState("error");
         return;
       }

@@ -9,31 +9,31 @@ export class DomainError extends Error {
 }
 
 export class InsufficientCreditsError extends DomainError {
-  constructor() { super("Sin créditos disponibles", "INSUFFICIENT_CREDITS"); }
+  constructor() { super("No credits available", "INSUFFICIENT_CREDITS"); }
 }
 
 export class SlotUnavailableError extends DomainError {
-  constructor() { super("Este horario ya no está disponible", "SLOT_UNAVAILABLE"); }
+  constructor() { super("Slot no longer available", "SLOT_UNAVAILABLE"); }
 }
 
 export class BookingNotFoundError extends DomainError {
-  constructor() { super("Reserva no encontrada", "BOOKING_NOT_FOUND"); }
+  constructor() { super("Booking not found", "BOOKING_NOT_FOUND"); }
 }
 
 export class TokenExpiredError extends DomainError {
-  constructor() { super("El enlace ya no es válido", "TOKEN_EXPIRED"); }
+  constructor() { super("Link is no longer valid", "TOKEN_EXPIRED"); }
 }
 
 export class UnauthorizedError extends DomainError {
-  constructor() { super("No autorizado", "UNAUTHORIZED"); }
+  constructor() { super("Unauthorized", "UNAUTHORIZED"); }
 }
 
 export class AlreadySubscribedError extends DomainError {
-  constructor() { super("Ya estás suscrito a este contenido", "ALREADY_SUBSCRIBED"); }
+  constructor() { super("Already subscribed to this content", "ALREADY_SUBSCRIBED"); }
 }
 
 export class ReviewBookingNotFoundError extends DomainError {
-  constructor() { super("No se encontró la clase a valorar", "REVIEW_BOOKING_NOT_FOUND"); }
+  constructor() { super("Review booking not found", "REVIEW_BOOKING_NOT_FOUND"); }
 }
 
 // REFACTOR-P1-02: Distinguish webhook failures that should be retried by Stripe

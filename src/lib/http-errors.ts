@@ -26,7 +26,7 @@ export function mapDomainErrorToResponse(
 ): NextResponse {
   if (err instanceof DomainError) {
     const status = HTTP_STATUS_MAP[err.code] ?? 400;
-    return NextResponse.json({ error: err.message }, { status });
+    return NextResponse.json({ error: err.code }, { status });
   }
 
   // Unexpected error — capture to Sentry with full context before returning 500
@@ -35,5 +35,5 @@ export function mapDomainErrorToResponse(
     ...context,
     error: String(err),
   });
-  return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
 }

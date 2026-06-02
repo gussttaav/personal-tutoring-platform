@@ -35,6 +35,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { friendlyError } from "@/constants/errors";
 import SessionChat from "./SessionChat";
 import SessionSettings from "./SessionSettings";
 import PostClassReview from "./PostClassReview";
@@ -394,7 +395,7 @@ export default function ZoomRoomInner({
         });
         if (!res.ok) {
           const d = (await res.json()) as { error?: string };
-          throw new Error(d.error ?? `HTTP ${res.status}`);
+          throw new Error(friendlyError(res.status, d.error ?? `HTTP ${res.status}`));
         }
         const data = (await res.json()) as TokenResponse;
         if (!cancelled) { tokenRef.current = data; setState("ready"); }

@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { COLORS } from "@/constants";
+import { friendlyError } from "@/constants/errors";
 import {
   Spinner,
   ATMOSPHERE_BG,
@@ -42,7 +43,7 @@ function CancelarContent() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error ?? "Error al procesar la cancelación.");
+        setErrorMsg(friendlyError(res.status, data.error ?? "Error al procesar la cancelación."));
         setState("error");
         return;
       }
