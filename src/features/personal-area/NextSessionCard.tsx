@@ -2,29 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { friendlyError } from "@/constants/errors";
+import { useTranslations, useLocale } from "next-intl";
+import { camelCaseCode } from "@/constants/errors";
 import type { UserBooking } from "./types";
 
-const MONTHS_SHORT = [
-  "Ene", "Feb", "Mar", "Abr", "May", "Jun",
-  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic",
-];
-
-const SESSION_LABELS: Record<string, string> = {
-  free15min: "Encuentro inicial · 15 min",
-  session1h: "Sesión individual · 1h",
-  session2h: "Sesión individual · 2h",
-  pack:      "Clase de pack",
-};
+const KNOWN_SESSION_TYPES = ["free15min", "session1h", "session2h", "pack"] as const;
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-function dayOfWeekEs(date: Date): string {
-  const DAYS = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-  return DAYS[date.getDay()];
 }
 
 interface NextSessionCardProps {
@@ -33,13 +19,24 @@ interface NextSessionCardProps {
 }
 
 export default function NextSessionCard({ booking, onCancelled }: NextSessionCardProps) {
-  const router = useRouter();
+  const t       = useTranslations("areaPersonal.nextSession");
+  const tErrors = useTranslations("errors");
+  const tCommon = useTranslations("common");
+  const locale  = useLocale();
+  const router  = useRouter();
+
   const [cancelState, setCancelState] = useState<"idle" | "confirm" | "processing" | "error">("idle");
   const [errorMsg,    setErrorMsg]    = useState("");
 
   const startDate = new Date(booking.startsAt);
-  const label     = SESSION_LABELS[booking.sessionType] ?? "Sesión";
+  const typeKey   = KNOWN_SESSION_TYPES.includes(booking.sessionType as typeof KNOWN_SESSION_TYPES[number])
+    ? booking.sessionType
+    : "pack";
+  const label     = t(`sessionLabels.${typeKey}` as Parameters<typeof t>[0]);
   const timeRange = `${formatTime(booking.startsAt)} – ${formatTime(booking.endsAt)}`;
+
+  const monthStr = new Intl.DateTimeFormat(locale, { month: "short" }).format(startDate);
+  const dayStr   = new Intl.DateTimeFormat(locale, { weekday: "long" }).format(startDate);
 
   async function handleCancel() {
     setCancelState("processing");
@@ -49,15 +46,19 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({ token: booking.token }),
       });
-      const data = await res.json();
+      const data = await res.json() as { error?: string };
       if (!res.ok) {
-        setErrorMsg(friendlyError(res.status, data.error ?? "Error al cancelar la sesión."));
+        const code = data.error;
+        const msg = code
+          ? tErrors(`domain.${camelCaseCode(code)}` as Parameters<typeof tErrors>[0])
+          : tErrors(`http.${res.status}` as Parameters<typeof tErrors>[0]);
+        setErrorMsg(msg);
         setCancelState("error");
         return;
       }
       onCancelled();
     } catch {
-      setErrorMsg("Error de conexión. Inténtalo de nuevo.");
+      setErrorMsg(tErrors("http.502"));
       setCancelState("error");
     }
   }
@@ -80,7 +81,7 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
         color:         "#4edea3",
         margin:        "0 0 14px",
       }}>
-        Próxima clase
+        {t("title")}
       </p>
 
       {/* Session info */}
@@ -99,7 +100,7 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
           flexShrink:     0,
         }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: "#86948a", textTransform: "uppercase", lineHeight: 1 }}>
-            {MONTHS_SHORT[startDate.getMonth()]}
+            {monthStr}
           </span>
           <span style={{
             fontFamily: "var(--font-headline, Manrope), sans-serif",
@@ -117,11 +118,11 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
             {label}
           </p>
           <p style={{ fontSize: 11, color: "#86948a", margin: "2px 0 0" }}>
-            {dayOfWeekEs(startDate)} · {timeRange}
+            {dayStr} · {timeRange}
           </p>
           <p style={{ fontSize: 10, color: "#86948a", margin: "2px 0 0", display: "flex", alignItems: "center", gap: 4 }}>
             <span className="material-symbols-outlined" style={{ fontSize: 12 }}>video_call</span>
-            Aula virtual Zoom
+            {t("zoomLabel")}
           </p>
         </div>
       </div>
@@ -157,18 +158,18 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
             <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>
               play_circle
             </span>
-            Entrar al aula virtual
+            {t("joinButton")}
           </button>
 
           <div style={{ display: "flex", gap: 8 }}>
             <ActionButton
               icon="event_repeat"
-              label="Reprogramar"
+              label={t("reschedule")}
               onClick={() => router.push(`/?reschedule=${booking.sessionType}&token=${booking.token}`)}
             />
             <ActionButton
               icon="cancel"
-              label="Cancelar"
+              label={tCommon("cancel")}
               danger
               onClick={() => setCancelState("confirm")}
             />
@@ -187,10 +188,10 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
           }}
         >
           <p style={{ fontSize: 12, fontWeight: 700, color: "#e5e1e4", margin: "0 0 4px" }}>
-            ¿Cancelar esta sesión?
+            {t("cancelConfirmTitle")}
           </p>
           <p style={{ fontSize: 11, color: "#86948a", margin: "0 0 12px" }}>
-            Esta acción no se puede deshacer. Si es de pack, el crédito se devolverá automáticamente.
+            {t("cancelConfirmBody")}
           </p>
           <div style={{ display: "flex", gap: 8 }}>
             <button
@@ -201,7 +202,7 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
                 color: "#86948a", fontSize: 12, cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              Mantener
+              {t("keepSession")}
             </button>
             <button
               onClick={handleCancel}
@@ -211,7 +212,7 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
                 color: "#690005", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
               }}
             >
-              Sí, cancelar
+              {t("confirmCancel")}
             </button>
           </div>
         </div>
@@ -248,7 +249,7 @@ export default function NextSessionCard({ booking, onCancelled }: NextSessionCar
               color: "#86948a", fontSize: 12, cursor: "pointer", fontFamily: "inherit",
             }}
           >
-            Cerrar
+            {tCommon("close")}
           </button>
         </div>
       )}

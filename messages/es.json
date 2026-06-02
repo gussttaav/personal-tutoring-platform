@@ -110,7 +110,66 @@
     }
   },
   "auth": {},
-  "areaPersonal": {},
+  "areaPersonal": {
+    "main": {
+      "title": "Área Personal",
+      "welcomeBack": "Bienvenido de vuelta,",
+      "loadError": "No se pudieron cargar tus sesiones.",
+      "retry": "Reintentar",
+      "emptyTitle": "¿Listo para empezar?",
+      "emptySubtitle": "Reserva tu primera sesión y da el primer paso hacia tus objetivos.",
+      "bookSession": "Reservar una sesión",
+      "packTitle": "¡Tienes clases disponibles!",
+      "packCTAPrefix": "Tienes",
+      "packCTAPending": "{count, plural, one {# clase pendiente} other {# clases pendientes}}",
+      "packCTASuffix": "en tu pack. ¿Cuándo quieres practicar?",
+      "bookNextClass": "Reservar mi próxima clase"
+    },
+    "bookPanel": {
+      "title": "Reservar una sesión",
+      "usePackCredit": "Usar crédito del pack",
+      "packCredits": "{count, plural, one {# clase disponible} other {# clases disponibles}}",
+      "singleSessionsLabel": "Sesiones individuales",
+      "packsLabel": "Packs de continuidad",
+      "sessions": {
+        "free15min": { "label": "Encuentro Inicial", "sub": "15 min · Presentación", "price": "Gratis" },
+        "session1h":  { "label": "Sesión de 1 hora",  "sub": "60 min · Individual",   "price": "€16"   },
+        "session2h":  { "label": "Sesión de 2 horas", "sub": "120 min · Individual",  "price": "€30"   }
+      },
+      "packs": {
+        "pack5":  { "label": "Pack Esencial 5h",   "sub": "Ahorra €5 · 6% dto.",   "price": "€75"  },
+        "pack10": { "label": "Pack Intensivo 10h", "sub": "Ahorra €20 · 12% dto.", "price": "€140" }
+      }
+    },
+    "nextSession": {
+      "title": "Próxima clase",
+      "sessionLabels": {
+        "free15min": "Encuentro inicial · 15 min",
+        "session1h": "Sesión individual · 1h",
+        "session2h": "Sesión individual · 2h",
+        "pack":      "Clase de pack"
+      },
+      "zoomLabel": "Aula virtual Zoom",
+      "joinButton": "Entrar al aula virtual",
+      "reschedule": "Reprogramar",
+      "cancelConfirmTitle": "¿Cancelar esta sesión?",
+      "cancelConfirmBody": "Esta acción no se puede deshacer. Si es de pack, el crédito se devolverá automáticamente.",
+      "keepSession": "Mantener",
+      "confirmCancel": "Sí, cancelar"
+    },
+    "packStatus": {
+      "essentialPack": "Pack Esencial 5h",
+      "intensivePack": "Pack Intensivo 10h",
+      "active": "Activo",
+      "usedCredits": "{count, plural, one {# clase utilizada} other {# clases utilizadas}}",
+      "remainingLabel": "Clases restantes",
+      "usedShort": "{count, plural, one {# usada} other {# usadas}}",
+      "ctaPrefix": "Tienes",
+      "ctaAvailable": "{count, plural, one {# clase disponible} other {# clases disponibles}}",
+      "ctaSuffix": "en tu pack. ¡Reserva tu próxima sesión!",
+      "bookButton": "Reservar sesión del pack"
+    }
+  },
   "booking": {},
   "legal": {},
   "errors": {
@@ -141,6 +200,12 @@
       "invalidCancelToken": "El enlace de cancelación no es válido.",
       "outsideCancelWindow": "El plazo para cancelar ha finalizado.",
       "cancelTokenConsumed": "Este enlace de cancelación ya ha sido usado."
+    }
+  },
+  "meta": {
+    "areaPersonal": {
+      "title": "Área Personal — Gustavo Torres",
+      "description": "Gestiona tus sesiones reservadas, clases de pack y reserva nuevas sesiones."
     }
   },
   "emails": {}
