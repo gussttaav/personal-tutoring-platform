@@ -89,7 +89,7 @@ export default async function RootLayout({
       <head>
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <AuthProvider>{children}</AuthProvider>
           <Analytics />

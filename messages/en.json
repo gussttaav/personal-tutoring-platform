@@ -1,0 +1,118 @@
+{
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "loadMore": "Load more"
+  },
+  "nav": {
+    "courses": "Courses",
+    "mentoring": "Mentoring",
+    "blog": "Blog",
+    "personalArea": "Personal Area",
+    "adminPanel": "Admin Panel",
+    "signIn": "Sign in",
+    "signInGoogle": "Sign in with Google",
+    "signOut": "Sign out",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "languageSwitcher": "Language",
+    "packActive": "{size}h pack active",
+    "classesAvailable": "{count, plural, one {# class available} other {# classes available}}",
+    "user": "User"
+  },
+  "landing": {
+    "meta": {
+      "title": "Gustavo Torres — Programming, Math & AI Tutoring",
+      "description": "Programming, math and AI lessons with Gustavo Torres."
+    },
+    "hero": {
+      "zoomTitle": "Click to zoom",
+      "credential": "MSc. Mathematics & Computer Science",
+      "subtitle": "Programming, Math & AI Teacher",
+      "taglinePart1": "Truly understand what",
+      "taglinePart2": "AI only summarizes.",
+      "subheading": "One-on-one classes. No videos, no prompts, no wasted time.",
+      "skills": ["Java", "Python", "C", "Algorithms", "Deep Learning", "Statistics"],
+      "cta": {
+        "book": "Book a session now",
+        "availability": "Check availability"
+      },
+      "statsHint": "click for more information",
+      "close": "Close",
+      "stats": {
+        "experience": {
+          "label": "Years of experience",
+          "title": "Years of experience",
+          "body": "Over 15 years combining software development, research, teaching, online classes and consulting in programming, math and AI.",
+          "link": "View LinkedIn profile"
+        },
+        "classes": {
+          "label": "Classes taught",
+          "title": "Classes taught",
+          "body": "Over 4,700 classes delivered to university students and professionals on verified platforms like Classgap.",
+          "link": "View Classgap profile"
+        },
+        "ratings": {
+          "label": "Reviews",
+          "title": "150+ Reviews",
+          "body": "Over 150 verified reviews from real students published on Classgap.",
+          "link": "View all reviews"
+        },
+        "avg": {
+          "label": "Average rating",
+          "title": "Average rating",
+          "body": "Average score of 4.9 out of 5 based on verified reviews from real students on Classgap.",
+          "link": "View verified reviews"
+        }
+      }
+    },
+    "bio": {
+      "overline": "About Gustavo",
+      "headline": "Forged between code and equations",
+      "para1": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer, I spent five years in research and university teaching before working independently, combining education and consulting.",
+      "para2": "For over seven years I have been helping students and professionals strengthen their skills in programming, mathematics and artificial intelligence — from academic support and learning from scratch to technical interview preparation and real-world project development.",
+      "github": "GitHub",
+      "linkedin": "LinkedIn",
+      "email": "contacto@gustavoai.dev"
+    },
+    "specs": {
+      "overline": "Capabilities",
+      "headline": "Areas of Expertise",
+      "cards": {
+        "programming": {
+          "title": "Programming",
+          "body": "From core paradigms to data structures, algorithms, concurrency and design patterns — with a focus on best practices and leveraging AI without losing your own judgment."
+        },
+        "backend": {
+          "title": "Backend Development",
+          "body": "Building REST APIs and microservices, integrating SQL and NoSQL databases, cloud deployment and DevOps workflows with Docker and Git."
+        },
+        "math": {
+          "title": "Computational Mathematics",
+          "body": "Calculus, linear algebra, numerical methods, discrete mathematics and compilers/automata."
+        },
+        "ai": {
+          "title": "Artificial Intelligence",
+          "body": "Machine Learning, Deep Learning, LLMs and multi-agent programming, with mathematical foundations and hands-on implementation."
+        },
+        "data": {
+          "title": "Data Analysis & Statistics",
+          "body": "Probability, applied statistics, data mining, big data and time series."
+        },
+        "cycles": {
+          "title": "DAM / DAW Vocational Training",
+          "body": "Intensive preparation for Higher Level cycles. Support in the most demanding technical modules and expert mentoring for final projects."
+        }
+      },
+      "cta": "Request academic support",
+      "helpPrompt": "Not sure if I can help you?",
+      "askAI": "Ask the AI assistant"
+    }
+  },
+  "auth": {},
+  "areaPersonal": {},
+  "booking": {},
+  "legal": {},
+  "errors": {},
+  "emails": {}
+}

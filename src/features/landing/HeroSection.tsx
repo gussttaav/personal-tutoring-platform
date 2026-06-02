@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────
 
@@ -16,6 +17,7 @@ interface StatCardProps {
 }
 
 function StatCard({ value, label, modalTitle, modalBody, modalLinkLabel, modalLinkHref, modalSide }: StatCardProps) {
+  const t = useTranslations("landing.hero");
   const [open, setOpen] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -60,7 +62,7 @@ function StatCard({ value, label, modalTitle, modalBody, modalLinkLabel, modalLi
         onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(78,222,163,0.05)"; }}
         onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "none"; }}
         aria-expanded={open}
-        aria-label={`${value} ${label} — haz clic para más información`}
+        aria-label={`${value} ${label} — ${t("statsHint")}`}
       >
         {/* Number */}
         <div
@@ -145,7 +147,7 @@ function StatCard({ value, label, modalTitle, modalBody, modalLinkLabel, modalLi
                 lineHeight: 1,
                 fontFamily: "inherit",
               }}
-              aria-label="Cerrar"
+              aria-label={t("close")}
             >
               ✕
             </button>
@@ -180,6 +182,7 @@ function StatCard({ value, label, modalTitle, modalBody, modalLinkLabel, modalLi
 // ─── HeroSection ──────────────────────────────────────────────────────────────
 
 export default function HeroSection() {
+  const t = useTranslations("landing.hero");
   const [zoomed, setZoomed] = useState(false);
 
   const close = useCallback(() => setZoomed(false), []);
@@ -194,6 +197,45 @@ export default function HeroSection() {
       document.body.style.overflow = "";
     };
   }, [zoomed, close]);
+
+  const skills = t.raw("skills") as string[];
+
+  const statCards = [
+    {
+      value: "15+",
+      label: t("stats.experience.label"),
+      modalTitle: t("stats.experience.title"),
+      modalBody: t("stats.experience.body"),
+      modalLinkLabel: t("stats.experience.link"),
+      modalLinkHref: "https://www.linkedin.com/in/gustavo-torres-guerrero",
+    },
+    {
+      value: "4700+",
+      label: t("stats.classes.label"),
+      modalTitle: t("stats.classes.title"),
+      modalBody: t("stats.classes.body"),
+      modalLinkLabel: t("stats.classes.link"),
+      modalLinkHref: "https://www.classgap.com/es/tutor/gustavo-torres-guerrero",
+      modalSide: "right" as const,
+    },
+    {
+      value: "150+",
+      label: t("stats.ratings.label"),
+      modalTitle: t("stats.ratings.title"),
+      modalBody: t("stats.ratings.body"),
+      modalLinkLabel: t("stats.ratings.link"),
+      modalLinkHref: "https://www.classgap.com/es/tutor/gustavo-torres-guerrero",
+    },
+    {
+      value: "4.9",
+      label: t("stats.avg.label"),
+      modalTitle: t("stats.avg.title"),
+      modalBody: t("stats.avg.body"),
+      modalLinkLabel: t("stats.avg.link"),
+      modalLinkHref: "https://www.classgap.com/es/tutor/gustavo-torres-guerrero",
+      modalSide: "right" as const,
+    },
+  ];
 
   return (
     <section
@@ -225,7 +267,7 @@ export default function HeroSection() {
             className="relative w-32 h-32 md:w-44 md:h-44 rounded-xl overflow-hidden shadow-2xl cursor-zoom-in"
             style={{ border: "2px solid rgba(78,222,163,0.3)" }}
             onClick={() => setZoomed(true)}
-            title="Clic para ampliar"
+            title={t("zoomTitle")}
           >
             <Image
               src="/avatar.png"
@@ -268,7 +310,7 @@ export default function HeroSection() {
               onClick={close}
               className="absolute top-4 right-4 w-9 h-9 rounded-lg flex items-center justify-center transition-colors"
               style={{ background: "rgba(32,31,34,0.9)", border: "1px solid rgba(255,255,255,0.08)", color: "#bbcabf" }}
-              aria-label="Cerrar"
+              aria-label={t("close")}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -305,7 +347,7 @@ export default function HeroSection() {
               fontWeight: 400,
             }}
           >
-            MSc. Matemáticas y Computación
+            {t("credential")}
           </p>
         </div>
 
@@ -332,10 +374,10 @@ export default function HeroSection() {
               letterSpacing: 0,
             }}
           >
-            Profesor de Programación, Matemáticas e IA
+            {t("subtitle")}
           </span>
           <span className="hidden md:block">
-            Entiende de verdad lo que{" "}
+            {t("taglinePart1")}{" "}
           </span>
           <span
             className="hidden md:block"
@@ -346,7 +388,7 @@ export default function HeroSection() {
               backgroundClip: "text",
             }}
           >
-            la IA solo resume.
+            {t("taglinePart2")}
           </span>
         </h1>
 
@@ -362,7 +404,7 @@ export default function HeroSection() {
               fontWeight: 500,
             }}
           >
-            Clases individuales. Sin videos, sin prompts, sin perder el tiempo.
+            {t("subheading")}
           </p>
         </div>
 
@@ -376,7 +418,7 @@ export default function HeroSection() {
             gap: "10px",
           }}
         >
-          {["Java", "Python", "C", "Algorítmica", "Deep Learning", "Estadística"].map((skill) => (
+          {skills.map((skill) => (
             <span
               key={skill}
               style={{
@@ -440,7 +482,7 @@ export default function HeroSection() {
               (e.currentTarget as HTMLElement).style.boxShadow = "0 8px 32px rgba(78,222,163,0.25)";
             }}
           >
-            Reservar sesión ahora
+            {t("cta.book")}
           </button>
 
           <button
@@ -470,7 +512,7 @@ export default function HeroSection() {
               (e.currentTarget as HTMLElement).style.borderColor = "rgba(60,74,66,0.5)";
             }}
           >
-            Ver disponibilidad
+            {t("cta.availability")}
           </button>
         </div>
 
@@ -484,40 +526,9 @@ export default function HeroSection() {
             width: "100%",
           }}
         >
-          <StatCard
-            value="15+"
-            label="Años de experiencia"
-            modalTitle="Años de experiencia"
-            modalBody="Más de 15 años combinando desarrollo de software, investigación y docencia, clases online y consultoría en programación, matemáticas e IA."
-            modalLinkLabel="Ver perfil en LinkedIn"
-            modalLinkHref="https://www.linkedin.com/in/gustavo-torres-guerrero"
-          />
-          <StatCard
-            value="4700+"
-            label="Clases realizadas"
-            modalTitle="Clases realizadas"
-            modalBody="Más de 4700 clases impartidas a estudiantes de grado y profesionales en plataformas verificadas como Classgap."
-            modalLinkLabel="Ver perfil en Classgap"
-            modalLinkHref="https://www.classgap.com/es/tutor/gustavo-torres-guerrero"
-            modalSide="right"
-          />
-          <StatCard
-            value="150+"
-            label="Valoraciones"
-            modalTitle="150+ Valoraciones"
-            modalBody="Más de 150 opiniones verificadas de estudiantes reales publicadas en Classgap."
-            modalLinkLabel="Ver todas las valoraciones"
-            modalLinkHref="https://www.classgap.com/es/tutor/gustavo-torres-guerrero"
-          />
-          <StatCard
-            value="4.9"
-            label="Valoración media"
-            modalTitle="Valoración media"
-            modalBody="Puntuación media de 4.9 sobre 5 basada en reseñas verificadas de estudiantes reales en Classgap."
-            modalLinkLabel="Ver reseñas verificadas"
-            modalLinkHref="https://www.classgap.com/es/tutor/gustavo-torres-guerrero"
-            modalSide="right"
-          />
+          {statCards.map((card) => (
+            <StatCard key={card.value + card.label} {...card} />
+          ))}
         </div>
       </div>
     </section>
