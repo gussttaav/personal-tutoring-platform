@@ -129,19 +129,19 @@ export class BookingService {
 
         if (!oldRecord) {
           throw new DomainError(
-            "El enlace de reprogramación no es válido o ya ha sido usado.",
+            "Reschedule token is invalid or already used.",
             "INVALID_RESCHEDULE_TOKEN",
           );
         }
         if (new Date(oldRecord.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
           throw new DomainError(
-            "Ya no es posible reprogramar esta sesión (menos de 2 horas de antelación).",
+            "Reschedule window has closed (less than 2 hours before session).",
             "OUTSIDE_RESCHEDULE_WINDOW",
           );
         }
         if (oldRecord.sessionType !== input.sessionType) {
           throw new DomainError(
-            "El tipo de sesión no coincide con la reserva original.",
+            "Session type does not match the original booking.",
             "SESSION_TYPE_MISMATCH",
           );
         }
@@ -149,7 +149,7 @@ export class BookingService {
         const consumed = await this.bookings.consumeCancelToken(input.rescheduleToken);
         if (!consumed) {
           throw new DomainError(
-            "El enlace de reprogramación ya ha sido usado.",
+            "Reschedule token has already been consumed.",
             "RESCHEDULE_TOKEN_CONSUMED",
           );
         }
@@ -316,7 +316,7 @@ export class BookingService {
     const record = await this.bookings.findByCancelToken(token);
     if (!record) {
       throw new DomainError(
-        "El enlace de cancelación no es válido o ya ha sido usado.",
+        "Cancel token is invalid or already used.",
         "INVALID_CANCEL_TOKEN",
       );
     }
@@ -324,7 +324,7 @@ export class BookingService {
     // 2. 2-hour window check
     if (new Date(record.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
       throw new DomainError(
-        "Lo sentimos, la cancelación ya no es posible (menos de 2 horas antes de la sesión).",
+        "Cancellation window has closed (less than 2 hours before session).",
         "OUTSIDE_CANCEL_WINDOW",
       );
     }
@@ -333,7 +333,7 @@ export class BookingService {
     const consumed = await this.bookings.consumeCancelToken(token);
     if (!consumed) {
       throw new DomainError(
-        "El enlace de cancelación ya ha sido usado.",
+        "Cancel token has already been consumed.",
         "CANCEL_TOKEN_CONSUMED",
       );
     }

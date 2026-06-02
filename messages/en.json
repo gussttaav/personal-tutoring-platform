@@ -113,6 +113,35 @@
   "areaPersonal": {},
   "booking": {},
   "legal": {},
-  "errors": {},
+  "errors": {
+    "http": {
+      "400": "The submitted data is not valid. Reload the page and try again.",
+      "401": "Your session has expired. Sign out and sign back in.",
+      "403": "You don't have permission to perform this action.",
+      "409": "This time slot is no longer available. Please choose another.",
+      "429": "Too many requests. Please wait a moment and try again.",
+      "500": "Server error. If the problem persists, write to contacto@gustavoai.dev.",
+      "502": "Could not contact the service. Please try again in a few seconds."
+    },
+    "domain": {
+      "insufficientCredits": "You don't have enough credits to book this class.",
+      "slotUnavailable": "This time slot is no longer available. Please choose another.",
+      "bookingNotFound": "We couldn't find your booking.",
+      "tokenExpired": "This link is no longer valid or has expired.",
+      "unauthorized": "You don't have permission to perform this action.",
+      "alreadySubscribed": "You are already subscribed to this content.",
+      "reviewBookingNotFound": "The class to review was not found.",
+      "permanentWebhookError": "Internal error processing your payment.",
+      "internalError": "Server error. If the problem persists, write to contacto@gustavoai.dev.",
+      "invalidRescheduleToken": "The reschedule link is not valid.",
+      "outsideRescheduleWindow": "The reschedule window has closed.",
+      "sessionTypeMismatch": "The session type doesn't match the original booking.",
+      "rescheduleTokenConsumed": "This reschedule link has already been used.",
+      "requiresPayment": "This booking requires payment.",
+      "invalidCancelToken": "The cancellation link is not valid.",
+      "outsideCancelWindow": "The cancellation window has closed.",
+      "cancelTokenConsumed": "This cancellation link has already been used."
+    }
+  },
   "emails": {}
 }

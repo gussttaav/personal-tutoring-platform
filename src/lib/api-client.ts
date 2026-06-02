@@ -18,6 +18,7 @@
 
 import type { BookResponse, CreditsResponse, PaymentIntentResponse } from "@/domain/types";
 import type { BookInput, CheckoutInput } from "@/lib/schemas";
+import { friendlyError } from "@/constants/errors";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res  = await fetch(url, {
@@ -25,12 +26,19 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json", ...options?.headers },
   });
   const data = await res.json();
-  if (!res.ok) throw new ApiError(data.error ?? "Error desconocido", res.status);
+  if (!res.ok) {
+    const code = typeof data.error === "string" ? data.error : "UNKNOWN";
+    throw new ApiError(friendlyError(res.status, code), res.status, code);
+  }
   return data as T;
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code?: string,
+  ) {
     super(message);
     this.name = "ApiError";
   }

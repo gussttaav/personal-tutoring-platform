@@ -113,6 +113,35 @@
   "areaPersonal": {},
   "booking": {},
   "legal": {},
-  "errors": {},
+  "errors": {
+    "http": {
+      "400": "Los datos enviados no son válidos. Recarga la página e inténtalo de nuevo.",
+      "401": "Tu sesión ha caducado. Cierra sesión y vuelve a entrar.",
+      "403": "No tienes permiso para realizar esta acción.",
+      "409": "Este horario ya no está disponible. Por favor elige otro.",
+      "429": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
+      "500": "Error del servidor. Si el problema persiste, escribe a contacto@gustavoai.dev.",
+      "502": "Error al contactar con el servicio. Inténtalo de nuevo en unos segundos."
+    },
+    "domain": {
+      "insufficientCredits": "No tienes créditos disponibles para reservar esta clase.",
+      "slotUnavailable": "Este horario ya no está disponible. Por favor elige otro.",
+      "bookingNotFound": "No encontramos tu reserva.",
+      "tokenExpired": "El enlace ya no es válido o ha caducado.",
+      "unauthorized": "No tienes permiso para realizar esta acción.",
+      "alreadySubscribed": "Ya estás suscrito a este contenido.",
+      "reviewBookingNotFound": "No se encontró la clase a valorar.",
+      "permanentWebhookError": "Error interno al procesar el pago.",
+      "internalError": "Error del servidor. Si el problema persiste, escribe a contacto@gustavoai.dev.",
+      "invalidRescheduleToken": "El enlace de reprogramación no es válido.",
+      "outsideRescheduleWindow": "El plazo para reprogramar ha finalizado.",
+      "sessionTypeMismatch": "El tipo de sesión no coincide con la reserva original.",
+      "rescheduleTokenConsumed": "Este enlace de reprogramación ya ha sido usado.",
+      "requiresPayment": "Esta reserva requiere pago.",
+      "invalidCancelToken": "El enlace de cancelación no es válido.",
+      "outsideCancelWindow": "El plazo para cancelar ha finalizado.",
+      "cancelTokenConsumed": "Este enlace de cancelación ya ha sido usado."
+    }
+  },
   "emails": {}
 }
