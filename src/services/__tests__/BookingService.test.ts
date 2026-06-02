@@ -465,8 +465,8 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
     const service = buildTestBookingService();
     const input = {
       email: "a@example.com", name: "A",
-      startIso: "2026-06-01T10:00:00.000Z",
-      endIso:   "2026-06-01T11:00:00.000Z",
+      startIso: hoursFromNow(10),
+      endIso:   hoursFromNow(11),
       sessionType: "session1h" as const,
     };
 
@@ -492,8 +492,8 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
 
     const input = {
       email: "a@example.com", name: "A",
-      startIso: "2026-06-02T10:00:00.000Z",
-      endIso:   "2026-06-02T11:00:00.000Z",
+      startIso: hoursFromNow(10),
+      endIso:   hoursFromNow(11),
       sessionType: "session1h" as const,
     };
 
