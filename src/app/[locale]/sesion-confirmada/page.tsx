@@ -2,7 +2,9 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { COLORS } from "@/constants";
+import { camelCaseCode } from "@/constants/errors";
 import {
   Spinner,
   ATMOSPHERE_BG,
@@ -21,24 +23,14 @@ import {
   Helper,
   MiniIcon,
 } from "@/components/ui";
-const DURATION_LABELS: Record<string, string> = { "1h": "1 hora", "2h": "2 horas" };
-
-// Static single-session prices (mirror SESSION_CONFIGS in BookingModeView).
-// Inlined deliberately: importing the BookingModeView component into this
-// route just for two constants drags its whole interactive graph
-// (WeeklyCalendar, BookingLayout, …) into the bundle.
-const PRICE_BY_DURATION: Record<string, string> = { "1h": "€16", "2h": "€30" };
-
-/** Single-session price for a Stripe `session_duration`. */
-function priceForDuration(d: string): string | undefined {
-  return PRICE_BY_DURATION[d];
-}
 
 // ─── Payment-only blocks ────────────────────────────────────────────────────
 
 function ReceiptBlock({ duration }: { duration: string }) {
-  const name  = `${DURATION_LABELS[duration] ?? duration} · individual`;
-  const price = priceForDuration(duration);
+  const t = useTranslations("pages.sesionConfirmada");
+  const durationLabel = duration === "1h" ? t("duration1h") : t("duration2h");
+  const name  = t("sessionIndividual", { duration: durationLabel });
+  const price = duration === "1h" ? t("price1h") : duration === "2h" ? t("price2h") : undefined;
   return (
     <div
       style={{
@@ -65,7 +57,7 @@ function ReceiptBlock({ duration }: { duration: string }) {
             letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 2px",
           }}
         >
-          Sesión pagada
+          {t("paidBadge")}
         </p>
         <p
           style={{
@@ -90,7 +82,7 @@ function ReceiptBlock({ duration }: { duration: string }) {
               color: COLORS.textMuted, fontWeight: 500, marginTop: 4,
             }}
           >
-            IVA incluido
+            {t("vatIncluded")}
           </small>
         </div>
       )}
@@ -101,6 +93,8 @@ function ReceiptBlock({ duration }: { duration: string }) {
 function SesionConfirmadaContent() {
   const params          = useSearchParams();
   const router          = useRouter();
+  const t               = useTranslations("pages.sesionConfirmada");
+  const tErrors         = useTranslations("errors");
   const paymentIntentId = params.get("payment_intent_id");
 
   type S = "loading" | "success" | "error";
@@ -108,15 +102,26 @@ function SesionConfirmadaContent() {
   // the error state instead of correcting it synchronously inside the effect.
   const [state,    setState]    = useState<S>(() => (paymentIntentId ? "loading" : "error"));
   const [duration, setDuration] = useState("");
-  const [errorMsg, setErrorMsg] = useState(() => (paymentIntentId ? "" : "Sesión de pago no encontrada."));
+  const [errorMsg, setErrorMsg] = useState(() => (paymentIntentId ? "" : t("errorPaymentNotFound")));
 
   useEffect(() => {
     if (!paymentIntentId) return;
     fetch(`/api/stripe/session?payment_intent_id=${encodeURIComponent(paymentIntentId)}`)
       .then(r => r.json())
-      .then(d => { if (d.error) { setErrorMsg(d.error); setState("error"); } else { setDuration(d.sessionDuration ?? ""); setState("success"); } })
-      .catch(() => { setErrorMsg("Error al verificar el pago."); setState("error"); });
-  }, [paymentIntentId]);
+      .then(d => {
+        if (d.error) {
+          setErrorMsg(tErrors(`domain.${camelCaseCode(d.error)}`));
+          setState("error");
+        } else {
+          setDuration(d.sessionDuration ?? "");
+          setState("success");
+        }
+      })
+      .catch(() => {
+        setErrorMsg(tErrors("http.500"));
+        setState("error");
+      });
+  }, [paymentIntentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Loading — verifying payment ──
   if (state === "loading") {
@@ -124,30 +129,27 @@ function SesionConfirmadaContent() {
       <FeedbackMain>
         <IconHalo tone="neutral" spinner />
         <HeaderBlock>
-          <Eyebrow tone="neutral">Pago recibido</Eyebrow>
-          <FbTitle>Verificando tu pago</FbTitle>
-          <FbBody>
-            Estamos confirmando con Stripe que el cobro se procesó correctamente y
-            registrando tu sesión.
-          </FbBody>
+          <Eyebrow tone="neutral">{t("verifyingEyebrow")}</Eyebrow>
+          <FbTitle>{t("verifyingTitle")}</FbTitle>
+          <FbBody>{t("verifyingBody")}</FbBody>
         </HeaderBlock>
 
         <Steps
           items={[
-            { glyph: "check", label: "Pago procesado por Stripe", state: "done" },
-            { glyph: "sync", label: "Verificando los detalles", state: "load" },
-            { glyph: "mail", label: "Enviar email de confirmación", state: "wait" },
+            { glyph: "check", label: t("steps.stripe"),    state: "done" },
+            { glyph: "sync",  label: t("steps.verifying"), state: "load" },
+            { glyph: "mail",  label: t("steps.email"),     state: "wait" },
           ]}
         />
 
         <FbButton variant="disabled">
-          Verificando
+          {t("verifyingStatus")}
           <LoadingDots />
         </FbButton>
 
         <Helper>
           <MiniIcon glyph="lock" />
-          Tu pago está seguro · no cierres la página
+          {t("paymentSafe")}
         </Helper>
       </FeedbackMain>
     );
@@ -159,15 +161,9 @@ function SesionConfirmadaContent() {
       <FeedbackMain>
         <IconHalo tone="error" glyph="error" />
         <HeaderBlock>
-          <Eyebrow tone="error">No se pudo verificar</Eyebrow>
-          <FbTitle>Algo salió mal</FbTitle>
-          <FbBody>
-            No pudimos confirmar los detalles de tu sesión, pero{" "}
-            <strong style={{ color: COLORS.textPrimary, fontWeight: 600 }}>
-              tu pago está seguro
-            </strong>
-            .
-          </FbBody>
+          <Eyebrow tone="error">{t("errorEyebrow")}</Eyebrow>
+          <FbTitle>{t("errorTitle")}</FbTitle>
+          <FbBody>{t("errorBody")}</FbBody>
         </HeaderBlock>
 
         <InfoBox tone="error">
@@ -175,13 +171,11 @@ function SesionConfirmadaContent() {
             {errorMsg}
           </InfoRow>
           <InfoRow glyph="mail" tone="error">
-            Si el cobro fue correcto, llegará un{" "}
-            <b style={{ color: COLORS.textPrimary, fontWeight: 600 }}>email de confirmación</b>{" "}
-            automático en los próximos minutos.
+            {t("autoEmailNote")}
           </InfoRow>
           {paymentIntentId && (
             <InfoRow glyph="tag" tone="error">
-              Referencia ·{" "}
+              {t("referenceLabel")}{" "}
               <b style={{ fontFamily: "var(--font-mono, monospace)", fontSize: 12, color: COLORS.textPrimary }}>
                 {paymentIntentId}
               </b>
@@ -196,19 +190,17 @@ function SesionConfirmadaContent() {
             style={{ width: "100%" }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">forum</span>
-            Contactar con Gustavo
+            {t("contactGustavo")}
           </FbButton>
           <FbButton variant="ghost" onClick={() => router.push("/")} style={{ width: "100%" }}>
-            Volver al inicio
+            {t("backToHome")}
           </FbButton>
         </div>
 
         <Helper>
-          Escribe a{" "}
           <a href="mailto:contacto@gustavoai.dev" style={{ color: COLORS.brand, textDecoration: "none" }}>
-            contacto@gustavoai.dev
-          </a>{" "}
-          con la referencia
+            {t("contactHelp")}
+          </a>
         </Helper>
       </FeedbackMain>
     );
@@ -219,9 +211,9 @@ function SesionConfirmadaContent() {
     <FeedbackMain>
       <IconHalo tone="success" glyph="check" />
       <HeaderBlock>
-        <Eyebrow tone="success">Pago confirmado</Eyebrow>
-        <FbTitle>¡Tu sesión está reservada!</FbTitle>
-        <FbBody>¡Todo listo! Revisa tu correo para ver los detalles.</FbBody>
+        <Eyebrow tone="success">{t("successEyebrow")}</Eyebrow>
+        <FbTitle>{t("successTitle")}</FbTitle>
+        <FbBody>{t("successBody")}</FbBody>
       </HeaderBlock>
 
       <ReceiptBlock duration={duration} />
@@ -231,10 +223,10 @@ function SesionConfirmadaContent() {
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <FbButton variant="primary" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
           <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">login</span>
-          Ir a mi área personal
+          {t("goToPersonalArea")}
         </FbButton>
         <FbButton variant="ghost" onClick={() => router.push("/")} style={{ width: "100%" }}>
-          Volver al inicio
+          {t("backToHome")}
         </FbButton>
       </div>
     </FeedbackMain>

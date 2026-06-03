@@ -2,6 +2,7 @@
 
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { COLORS } from "@/constants";
 import {
   Spinner,
@@ -25,6 +26,7 @@ import { useSSECredits } from "@/hooks/useSSECredits";
 function SuccessContent() {
   const params = useSearchParams();
   const router = useRouter();
+  const t      = useTranslations("pages.pagoExitoso");
 
   const paymentIntentId = params.get("payment_intent_id");
 
@@ -44,22 +46,17 @@ function SuccessContent() {
       <FeedbackMain>
         <IconHalo tone="error" glyph="link_off" />
         <HeaderBlock>
-          <Eyebrow tone="error">Sesión no encontrada</Eyebrow>
-          <FbTitle>No encontramos tu pago</FbTitle>
-          <FbBody>
-            Has llegado a esta página sin un identificador de pago válido.
-            Probablemente la URL está incompleta o ha expirado.
-          </FbBody>
+          <Eyebrow tone="error">{t("noPaymentEyebrow")}</Eyebrow>
+          <FbTitle>{t("noPaymentTitle")}</FbTitle>
+          <FbBody>{t("noPaymentBody")}</FbBody>
         </HeaderBlock>
 
         <InfoBox>
           <InfoRow glyph="history">
-            Si acabas de pagar, comprueba tu email — incluimos siempre un enlace
-            fresco al recibo.
+            {t("receiptEmailHint")}
           </InfoRow>
           <InfoRow glyph="payments">
-            <b style={{ color: COLORS.textPrimary, fontWeight: 600 }}>No se ha cobrado nada</b>{" "}
-            simplemente por visitar esta página.
+            <b style={{ color: COLORS.textPrimary, fontWeight: 600 }}>{t("noCharge")}</b>
           </InfoRow>
         </InfoBox>
 
@@ -68,17 +65,16 @@ function SuccessContent() {
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
               home
             </span>
-            Volver al inicio
+            {t("backToHome")}
           </FbButton>
           <FbButton variant="ghost" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
-            Ir a mi área personal
+            {t("goToPersonalArea")}
           </FbButton>
         </div>
 
         <Helper>
-          ¿Crees que es un error? ·{" "}
           <a href="mailto:contacto@gustavoai.dev" style={{ color: COLORS.brand, textDecoration: "none" }}>
-            contacto@gustavoai.dev
+            {t("thinkItsError")}
           </a>
         </Helper>
       </FeedbackMain>
@@ -101,34 +97,27 @@ function SuccessContent() {
       <FeedbackMain>
         <IconHalo tone="neutral" spinner />
         <HeaderBlock>
-          <Eyebrow tone="neutral">Pago recibido</Eyebrow>
-          <FbTitle>Activando tus créditos</FbTitle>
+          <Eyebrow tone="neutral">{t("connectingEyebrow")}</Eyebrow>
+          <FbTitle>{t("connectingTitle")}</FbTitle>
           <FbBody>
-            {name ? (
-              <>
-                Gracias, <strong style={{ color: COLORS.textPrimary, fontWeight: 600 }}>{name}</strong>.{" "}
-                Estamos sincronizando tus créditos con la plataforma.
-              </>
-            ) : (
-              "Estamos sincronizando tus créditos con la plataforma."
-            )}
+            {name ? t("syncingCredits", { name }) : t("syncingCreditsAnon")}
           </FbBody>
         </HeaderBlock>
 
         <Steps
           items={[
-            { glyph: "check", label: "Pago verificado por Stripe", state: "done" },
-            { glyph: "sync", label: "Activando créditos en tu cuenta", state: "load" },
-            { glyph: "mail", label: "Enviar recibo por email", state: "wait" },
+            { glyph: "check", label: t("steps.verified"), state: "done" },
+            { glyph: "sync",  label: t("steps.activating"), state: "load" },
+            { glyph: "mail",  label: t("steps.receipt"), state: "wait" },
           ]}
         />
 
         <FbButton variant="disabled">
-          Esperando confirmación
+          {t("waitingConfirmation")}
           <LoadingDots />
         </FbButton>
 
-        <Helper>Esto puede tardar unos segundos · no cierres la página</Helper>
+        <Helper>{t("waitingHint")}</Helper>
       </FeedbackMain>
     );
   }
@@ -139,17 +128,10 @@ function SuccessContent() {
       <FeedbackMain>
         <IconHalo tone="success" glyph="check" />
         <HeaderBlock>
-          <Eyebrow tone="success">Pago completado</Eyebrow>
-          <FbTitle>{packSize ? `¡Tu Pack ${packSize} está activo!` : "¡Pago completado!"}</FbTitle>
+          <Eyebrow tone="success">{t("confirmedEyebrow")}</Eyebrow>
+          <FbTitle>{packSize ? t("packActive", { packSize }) : t("paymentCompleted")}</FbTitle>
           <FbBody>
-            {name ? (
-              <>
-                Gracias, <strong style={{ color: COLORS.textPrimary, fontWeight: 600 }}>{name}</strong>.{" "}
-                Hemos sincronizado tus créditos.
-              </>
-            ) : (
-              "Hemos sincronizado tus créditos."
-            )}
+            {name ? t("creditsSynced", { name }) : t("creditsSyncedAnon")}
           </FbBody>
         </HeaderBlock>
 
@@ -161,14 +143,14 @@ function SuccessContent() {
                 letterSpacing: "-0.02em", lineHeight: 1, color: COLORS.brand,
               }}
             >
-              {credits} clase{credits !== 1 ? "s" : ""}
+              {t("creditsLabel", { credits })}
               <small
                 style={{
                   display: "block", marginTop: 6, fontSize: 12, fontWeight: 500,
                   color: COLORS.textSecondary, letterSpacing: 0,
                 }}
               >
-                disponible{credits !== 1 ? "s" : ""} para reservar
+                {t("creditsAvailableNote", { credits })}
               </small>
             </div>
             <div
@@ -178,26 +160,26 @@ function SuccessContent() {
                 border: `1px solid ${COLORS.border}`, whiteSpace: "nowrap",
               }}
             >
-              Válidas 6 meses
+              {t("validityNote")}
             </div>
           </div>
         </InfoBox>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <FbButton variant="primary" onClick={handleScheduleClasses} style={{ width: "100%" }}>
-            Reservar mis clases
+            {t("bookMyClasses")}
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
               arrow_forward
             </span>
           </FbButton>
           <FbButton variant="ghost" onClick={() => router.push("/")} style={{ width: "100%" }}>
-            Volver al inicio
+            {t("backToHome")}
           </FbButton>
         </div>
 
         <Helper>
           <MiniIcon glyph="mail" />
-          Te hemos enviado el recibo por email
+          {t("receiptSent")}
         </Helper>
       </FeedbackMain>
     );
@@ -209,21 +191,17 @@ function SuccessContent() {
       <FeedbackMain>
         <IconHalo tone="warning" glyph="hourglass_top" />
         <HeaderBlock>
-          <Eyebrow tone="warning">Tardando un poco más</Eyebrow>
-          <FbTitle>Esto está tardando más de lo normal</FbTitle>
-          <FbBody>
-            Tu pago se completó correctamente. La activación de créditos suele ser
-            inmediata, pero ocasionalmente puede tomar unos minutos.
-          </FbBody>
+          <Eyebrow tone="warning">{t("timeoutEyebrow")}</Eyebrow>
+          <FbTitle>{t("timeoutTitle")}</FbTitle>
+          <FbBody>{t("timeoutBody")}</FbBody>
         </HeaderBlock>
 
         <InfoBox tone="warning">
           <InfoRow glyph="verified_user" tone="warning">
-            <b style={{ color: COLORS.textPrimary, fontWeight: 600 }}>Tu pago está seguro.</b>{" "}
-            Lo procesó Stripe sin errores.
+            {t("paymentSafe")}
           </InfoRow>
           <InfoRow glyph="forum" tone="warning">
-            Si no ves tus créditos en unos minutos, te contactaremos automáticamente.
+            {t("autoContact")}
           </InfoRow>
         </InfoBox>
 
@@ -232,7 +210,7 @@ function SuccessContent() {
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
               refresh
             </span>
-            Comprobar de nuevo
+            {t("checkAgain")}
           </FbButton>
           <FbButton
             variant="ghost"
@@ -242,12 +220,12 @@ function SuccessContent() {
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
               mail
             </span>
-            Contactar con Gustavo
+            {t("contactGustavo")}
           </FbButton>
         </div>
 
         <Helper>
-          Referencia ·{" "}
+          {t("reference")}{" "}
           <span style={{ fontFamily: "var(--font-mono, monospace)", color: COLORS.textSecondary }}>
             {paymentIntentId}
           </span>
@@ -262,22 +240,17 @@ function SuccessContent() {
       <FeedbackMain>
         <IconHalo tone="error" glyph="cloud_off" />
         <HeaderBlock>
-          <Eyebrow tone="error">Sin conexión</Eyebrow>
-          <FbTitle>No podemos confirmarlo ahora</FbTitle>
-          <FbBody>
-            Perdimos la conexión con el servidor mientras activábamos tus créditos.{" "}
-            <strong style={{ color: COLORS.textPrimary, fontWeight: 600 }}>
-              Tu pago se realizó correctamente.
-            </strong>
-          </FbBody>
+          <Eyebrow tone="error">{t("errorEyebrow")}</Eyebrow>
+          <FbTitle>{t("errorTitle")}</FbTitle>
+          <FbBody>{t("errorBody")}</FbBody>
         </HeaderBlock>
 
         <InfoBox tone="error">
           <InfoRow glyph="verified_user" tone="error">
-            El cobro de Stripe está confirmado y no se duplicará.
+            {t("stripeConfirmed")}
           </InfoRow>
           <InfoRow glyph="refresh" tone="error">
-            Recarga la página o vuelve en unos minutos para ver tus créditos.
+            {t("reloadHint")}
           </InfoRow>
         </InfoBox>
 
@@ -286,17 +259,16 @@ function SuccessContent() {
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
               refresh
             </span>
-            Recargar la página
+            {t("reloadPage")}
           </FbButton>
           <FbButton variant="ghost" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
-            Ir a mi área personal
+            {t("goToPersonalArea")}
           </FbButton>
         </div>
 
         <Helper>
-          Si el problema persiste ·{" "}
           <a href="mailto:contacto@gustavoai.dev" style={{ color: COLORS.brand, textDecoration: "none" }}>
-            contacto@gustavoai.dev
+            {t("errorHelp")}
           </a>
         </Helper>
       </FeedbackMain>
@@ -308,11 +280,11 @@ function SuccessContent() {
     <FeedbackMain>
       <IconHalo tone="neutral" spinner />
       <HeaderBlock>
-        <Eyebrow tone="neutral">Pago recibido</Eyebrow>
-        <FbTitle>Activando tus créditos</FbTitle>
-        <FbBody>Estamos sincronizando tus créditos con la plataforma.</FbBody>
+        <Eyebrow tone="neutral">{t("connectingEyebrow")}</Eyebrow>
+        <FbTitle>{t("connectingTitle")}</FbTitle>
+        <FbBody>{t("syncingCreditsAnon")}</FbBody>
       </HeaderBlock>
-      <Helper>Esto puede tardar unos segundos · no cierres la página</Helper>
+      <Helper>{t("waitingHint")}</Helper>
     </FeedbackMain>
   );
 }
