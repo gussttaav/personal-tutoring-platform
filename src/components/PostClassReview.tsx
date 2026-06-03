@@ -19,6 +19,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { GOOGLE_REVIEW_URL } from "@/constants";
 
 // ── Brand constants (match the design system) ───────────────────────────────
@@ -39,17 +40,11 @@ interface Rating {
   placeholder: string;
 }
 
-const RATINGS: Rating[] = [
-  { value: 1, emoji: "😞", label: "Lo siento mucho",        placeholder: "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar." },
-  { value: 2, emoji: "😕", label: "No fue lo que esperaba",  placeholder: "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar." },
-  { value: 3, emoji: "😐", label: "Estuvo bien",             placeholder: "¿Hay algo concreto que podría hacer diferente la próxima vez?" },
-  { value: 4, emoji: "🙂", label: "Muy buena clase",         placeholder: "¿Qué te resultó más útil de la clase de hoy?" },
-  { value: 5, emoji: "🤩", label: "¡Excelente!",             placeholder: "¿Qué destacarías? Si das tu permiso, podría publicarse en mi perfil." },
-];
+const RATING_EMOJIS = ["😞", "😕", "😐", "🙂", "🤩"];
 
-function initialsOf(name: string): string {
+function initialsOf(name: string, fallback: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "TÚ";
+  if (parts.length === 0) return fallback;
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
@@ -130,7 +125,7 @@ function FaceButton({
   return (
     <button
       type="button"
-      aria-label={"Valoración " + rating.value + " de 5: " + rating.label}
+      aria-label={`${rating.value}/5: ${rating.label}`}
       onClick={() => onSelect(rating.value)}
       onMouseEnter={() => onHover(rating.value)}
       onMouseLeave={onLeave}
@@ -178,14 +173,14 @@ function FaceButton({
 }
 
 // ── Rating row ──────────────────────────────────────────────────────────────
-function RatingRow({ selected, onSelect }: { selected: number | null; onSelect: (v: number) => void }) {
+function RatingRow({ selected, onSelect, ratings }: { selected: number | null; onSelect: (v: number) => void; ratings: Rating[] }) {
   const [hovered, setHovered] = useState<number | null>(null);
   return (
     <div
       style={{ display: "flex", gap: 14, justifyContent: "center", padding: "8px 4px" }}
       onMouseLeave={() => setHovered(null)}
     >
-      {RATINGS.map((r) => (
+      {ratings.map((r) => (
         <FaceButton
           key={r.value}
           rating={r}
@@ -201,10 +196,10 @@ function RatingRow({ selected, onSelect }: { selected: number | null; onSelect: 
 }
 
 // ── Dynamic label below faces ───────────────────────────────────────────────
-function RatingLabel({ rating }: { rating: number | null }) {
+function RatingLabel({ rating, ratings, tapToRate }: { rating: number | null; ratings: Rating[]; tapToRate: string }) {
   const text = rating
-    ? RATINGS.find((r) => r.value === rating)?.label
-    : "Toca una carita para valorar";
+    ? ratings.find((r) => r.value === rating)?.label
+    : tapToRate;
   return (
     <div
       key={text}
@@ -227,16 +222,21 @@ function RatingLabel({ rating }: { rating: number | null }) {
 
 // ── Comment area (textarea + send) ──────────────────────────────────────────
 function CommentArea({
-  rating, value, onChange, onSubmit, onSkip, sending,
+  rating, value, onChange, onSubmit, onSkip, sending, ratings, privateLabel, submittingLabel, submitLabel, skipLabel,
 }: {
-  rating:   number;
-  value:    string;
-  onChange: (v: string) => void;
-  onSubmit: () => void;
-  onSkip:   () => void;
-  sending:  boolean;
+  rating:          number;
+  value:           string;
+  onChange:        (v: string) => void;
+  onSubmit:        () => void;
+  onSkip:          () => void;
+  sending:         boolean;
+  ratings:         Rating[];
+  privateLabel:    string;
+  submittingLabel: string;
+  submitLabel:     string;
+  skipLabel:       string;
 }) {
-  const placeholder = RATINGS.find((r) => r.value === rating)?.placeholder || "";
+  const placeholder = ratings.find((r) => r.value === rating)?.placeholder || "";
   const taRef = useRef<HTMLTextAreaElement>(null);
   const hasText = value.trim().length > 0;
 
@@ -306,7 +306,7 @@ function CommentArea({
             <span className="material-symbols-outlined" style={{ fontSize: 14, color: TEXT_DIM }}>
               lock
             </span>
-            La valoración es privada
+            {privateLabel}
           </div>
           {hasText ? (
             <button
@@ -332,7 +332,7 @@ function CommentArea({
                 animation: "pcrFadeIn 0.2s ease both",
               }}
             >
-              {sending ? "Enviando…" : "Enviar"}
+              {sending ? submittingLabel : submitLabel}
               {!sending && (
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
                   arrow_forward
@@ -366,7 +366,7 @@ function CommentArea({
                 e.currentTarget.style.background = "transparent";
               }}
             >
-              Saltar
+              {skipLabel}
               <span className="material-symbols-outlined" style={{ fontSize: 15 }}>
                 arrow_forward
               </span>
@@ -436,7 +436,14 @@ function AnimatedCheck() {
 }
 
 // ── Google review card ──────────────────────────────────────────────────────
-function GooglePrompt({ onAccept, onDecline }: { onAccept: () => void; onDecline: () => void }) {
+function GooglePrompt({ onAccept, onDecline, shareGoogle, shareGoogleBody, leaveReview, noThanks }: {
+  onAccept: () => void;
+  onDecline: () => void;
+  shareGoogle: string;
+  shareGoogleBody: string;
+  leaveReview: string;
+  noThanks: string;
+}) {
   return (
     <div
       style={{
@@ -486,7 +493,7 @@ function GooglePrompt({ onAccept, onDecline }: { onAccept: () => void; onDecline
               marginBottom: 4,
             }}
           >
-            ¿Lo compartes también en Google?
+            {shareGoogle}
           </div>
           <div
             style={{
@@ -496,7 +503,7 @@ function GooglePrompt({ onAccept, onDecline }: { onAccept: () => void; onDecline
               lineHeight: 1.55,
             }}
           >
-            Ayuda a otros estudiantes a encontrarme. Tarda menos de un minuto.
+            {shareGoogleBody}
           </div>
         </div>
       </div>
@@ -527,7 +534,7 @@ function GooglePrompt({ onAccept, onDecline }: { onAccept: () => void; onDecline
           onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.08)")}
           onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
         >
-          Dejar reseña en Google
+          {leaveReview}
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
             open_in_new
           </span>
@@ -547,7 +554,7 @@ function GooglePrompt({ onAccept, onDecline }: { onAccept: () => void; onDecline
           onMouseEnter={(e) => (e.currentTarget.style.color = TEXT_MUTED)}
           onMouseLeave={(e) => (e.currentTarget.style.color = TEXT_DIM)}
         >
-          No, gracias
+          {noThanks}
         </button>
       </div>
     </div>
@@ -655,12 +662,21 @@ export interface PostClassReviewProps {
 }
 
 export default function PostClassReview({ eventId, userName, userAvatarUrl }: PostClassReviewProps) {
+  const t = useTranslations("postClassReview");
   const [phase, setPhase] = useState<Phase>("rating");
   const [rating, setRating] = useState<number | null>(null);
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
 
-  const initials = initialsOf(userName);
+  const initials = initialsOf(userName, t("initials"));
+
+  const rawRatings = t.raw("ratings") as { label: string; placeholder: string }[];
+  const ratings: Rating[] = rawRatings.map((r, i) => ({
+    value: i + 1,
+    emoji: RATING_EMOJIS[i]!,
+    label: r.label,
+    placeholder: r.placeholder,
+  }));
 
   const handleSelect = (v: number) => {
     setRating(v);
@@ -750,7 +766,7 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
                   animation: "pcrFadeUp 0.55s ease both",
                 }}
               >
-                ¿Cómo ha ido tu clase?
+                {t("title")}
               </div>
 
               <div
@@ -762,8 +778,8 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
                   animation: "pcrFadeUp 0.6s 0.1s ease both",
                 }}
               >
-                <RatingRow selected={rating} onSelect={handleSelect} />
-                <RatingLabel rating={rating} />
+                <RatingRow selected={rating} onSelect={handleSelect} ratings={ratings} />
+                <RatingLabel rating={rating} ratings={ratings} tapToRate={t("tapToRate")} />
               </div>
 
               {phase === "comment" && rating != null && (
@@ -774,6 +790,11 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
                   onSubmit={handleSubmitComment}
                   onSkip={() => setPhase("thanks")}
                   sending={sending}
+                  ratings={ratings}
+                  privateLabel={t("private")}
+                  submittingLabel={t("submitting")}
+                  submitLabel={t("submit")}
+                  skipLabel={t("skip")}
                 />
               )}
             </>
@@ -795,9 +816,16 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
                   animation: "pcrFadeUp 0.5s ease both",
                 }}
               >
-                ¡Me alegra que te gustara!
+                {t("goodTitle")}
               </div>
-              <GooglePrompt onAccept={handleGoogleAccept} onDecline={handleGoogleDecline} />
+              <GooglePrompt
+                onAccept={handleGoogleAccept}
+                onDecline={handleGoogleDecline}
+                shareGoogle={t("shareGoogle")}
+                shareGoogleBody={t("shareGoogleBody")}
+                leaveReview={t("leaveReview")}
+                noThanks={t("noThanks")}
+              />
             </div>
           )}
 
@@ -816,7 +844,7 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
                   animation: "pcrFadeUp 0.45s 0.25s ease both",
                 }}
               >
-                ¡Gracias!
+                {t("thanks")}
               </div>
               <div
                 style={{
@@ -830,7 +858,7 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
                   animation: "pcrFadeUp 0.45s 0.35s ease both",
                 }}
               >
-                Tu opinión me ayuda a mejorar.
+                {t("thanksBody")}
               </div>
               <button
                 type="button"
@@ -859,7 +887,7 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
                   login
                 </span>
-                Ir a mi área personal
+                {t("toPersonalArea")}
               </button>
             </div>
           )}
@@ -867,10 +895,10 @@ export default function PostClassReview({ eventId, userName, userAvatarUrl }: Po
 
         <div style={{ height: 44, display: "flex", alignItems: "center", justifyContent: "center" }}>
           {phase === "rating" && (
-            <SkipLink label="Saltar" onClick={() => setPhase("thanks")} />
+            <SkipLink label={t("skip")} onClick={() => setPhase("thanks")} />
           )}
           {phase === "google" && (
-            <SkipLink label="Continuar sin reseña" onClick={handleGoogleDecline} />
+            <SkipLink label={t("continueNoReview")} onClick={handleGoogleDecline} />
           )}
         </div>
       </div>

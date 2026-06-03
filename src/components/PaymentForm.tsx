@@ -25,6 +25,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import type { StripeElementsOptions } from "@stripe/stripe-js";
+import { useTranslations } from "next-intl";
 import { getStripePromise } from "@/lib/stripe-client";
 import { Alert } from "@/components/ui";
 
@@ -56,33 +57,17 @@ const appearance: StripeElementsOptions["appearance"] = {
   },
 };
 
-// ── Trust strip items ─────────────────────────────────────────────────────────
-
-const trustItems = [
-  {
-    label: "Transacción segura",
-    icon: (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
-    ),
-  },
-  {
-    label: "Protegido por Stripe",
-    icon: (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-      </svg>
-    ),
-  },
-  {
-    label: "Cancelación 24h",
-    icon: (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    ),
-  },
+// Trust strip icon shapes (locale-independent)
+const TRUST_ICONS = [
+  <svg key="secure" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>,
+  <svg key="shield" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>,
+  <svg key="check" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>,
 ];
 
 // ── Inner form (must be inside <Elements>) ────────────────────────────────────
@@ -106,6 +91,7 @@ function CheckoutForm({
   onSuccess,
   onCancel,
 }: CheckoutFormProps) {
+  const t        = useTranslations("payment.form");
   const stripe   = useStripe();
   const elements = useElements();
   const [ready,      setReady]      = useState(false);
@@ -154,7 +140,7 @@ function CheckoutForm({
 
         {!ready ? (
           <p style={{ textAlign: "center", color: "#bbcabf", fontSize: 14 }}>
-            Cargando formulario de pago...
+            {t("loading")}
           </p>
         ) : (
           <>
@@ -194,14 +180,14 @@ function CheckoutForm({
                       borderTopColor: "#003824",
                     }}
                   />
-                  <span>Procesando...</span>
+                  <span>{t("processing")}</span>
                 </>
               ) : (
                 <>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#003824" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
                     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
-                  <span>{priceLabel ? `Pagar ${priceLabel}` : "Pagar"}</span>
+                  <span>{priceLabel ? t("pay", { amount: priceLabel }) : t("pay", { amount: "" }).trim()}</span>
                 </>
               )}
             </button>
@@ -239,7 +225,7 @@ function CheckoutForm({
                 el.style.color = "#86948a";
               }}
             >
-              Cancelar
+              {t("cancel")}
             </button>
           </>
         )}
@@ -254,9 +240,9 @@ function CheckoutForm({
           flexWrap: "wrap",
         }}
       >
-        {trustItems.map(({ label, icon }) => (
+        {[t("secure"), t("protectedByStripe"), t("cancellation24h")].map((label, i) => (
           <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#86948a" }}>
-            {icon}
+            {TRUST_ICONS[i]}
             <span>{label}</span>
           </div>
         ))}
@@ -311,7 +297,7 @@ function CheckoutForm({
             color: "#4edea3",
           }}
         >
-          Pago seguro · cifrado SSL
+          {t("secureFooter")}
         </span>
       </div>
 

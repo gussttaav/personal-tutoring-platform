@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface WaitingRoomProps {
   isCamOff: boolean;
@@ -11,21 +12,11 @@ interface WaitingRoomProps {
   timeLabel?: string;
 }
 
-const STATUS_MESSAGES = [
-  "Conectando con el servidor...",
-  "Inicializando cámara...",
-  "Optimizando calidad de video...",
-  "Ajustando resolución y FPS...",
-  "Verificando micrófono...",
-  "Estableciendo conexión segura...",
-  "Buscando otros participantes...",
-  "Inicializando chat y recursos...",
-  "Preparando tu aula virtual...",
-];
-
 export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessionLabel, timeLabel }: WaitingRoomProps) {
+  const t                         = useTranslations("session.waitingRoom");
+  const STATUS_MESSAGES           = t.raw("statusMessages") as string[];
   const [statusIdx, setStatusIdx] = useState(0);
-  const [progress, setProgress] = useState(0);
+  const [progress, setProgress]   = useState(0);
   const [checks, setChecks] = useState({
     cam: false,
     mic: false,
@@ -114,7 +105,7 @@ export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessio
               </div>
               <div className="space-y-2">
                 <h2 className="text-xl font-bold font-headline" style={{ color: "#e5e1e4" }}>
-                  Error de conexión
+                  {t("connectionError")}
                 </h2>
                 <p className="text-sm leading-relaxed" style={{ color: "#86948a" }}>
                   {error}
@@ -129,7 +120,7 @@ export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessio
                   boxShadow: "0 0 20px rgba(16,185,129,0.25)",
                 }}
               >
-                Reintentar
+                {t("retry")}
               </button>
             </div>
           ) : (
@@ -197,7 +188,7 @@ export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessio
                   className="text-3xl md:text-4xl font-extrabold tracking-tight font-headline"
                   style={{ color: "#e5e1e4" }}
                 >
-                  Preparando tu aula virtual<span style={{ color: "#4edea3" }}>...</span>
+                  {t("preparingRoom").replace(/\.\.\.$/, "")}<span style={{ color: "#4edea3" }}>...</span>
                 </h1>
                 {(sessionLabel || timeLabel) && (
                   <div className="flex flex-col items-center gap-0.5">
@@ -208,7 +199,7 @@ export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessio
                     )}
                     {timeLabel && (
                       <p className="text-xs" style={{ color: "#86948a" }}>
-                        {timeLabel} · hora de Madrid
+                        {timeLabel} · {t("madridTime")}
                       </p>
                     )}
                   </div>
@@ -256,10 +247,10 @@ export default function WaitingRoom({ isCamOff, isMicOff, error, onRetry, sessio
         {/* ── System checks footer ── */}
         {!error && (
           <footer className="shrink-0 pb-8 px-6 flex flex-wrap justify-center gap-x-8 gap-y-3 z-10">
-            <CheckBadge label="Cámara activa" ready={checks.cam} disabled={isCamOff} />
-            <CheckBadge label="Micrófono listo" ready={checks.mic} disabled={false} />
-            <CheckBadge label="Red estable" ready={checks.network} disabled={false} />
-            <CheckBadge label="Latencia baja" ready={checks.latency} disabled={false} />
+            <CheckBadge label={t("cameraActive")} ready={checks.cam} disabled={isCamOff} />
+            <CheckBadge label={t("micReady")} ready={checks.mic} disabled={false} />
+            <CheckBadge label={t("stableNetwork")} ready={checks.network} disabled={false} />
+            <CheckBadge label={t("lowLatency")} ready={checks.latency} disabled={false} />
           </footer>
         )}
       </div>

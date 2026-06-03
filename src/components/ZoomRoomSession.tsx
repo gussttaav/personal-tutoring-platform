@@ -35,7 +35,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
-import { friendlyError } from "@/constants/errors";
+import { useTranslations } from "next-intl";
+import { ERROR_CODE_I18N_KEY } from "@/constants/errors";
 import SessionChat from "./SessionChat";
 import SessionSettings from "./SessionSettings";
 import PostClassReview from "./PostClassReview";
@@ -94,20 +95,20 @@ function playMessageSound() {
   } catch { /* Web Audio unavailable */ }
 }
 
-function Spinner() {
+function Spinner({ label }: { label: string }) {
   return (
     <div
       className="w-8 h-8 rounded-full border-2 border-transparent animate-spin"
       style={{ borderTopColor: "#4edea3" }}
       role="status"
-      aria-label="Cargando"
+      aria-label={label}
     />
   );
 }
 
 // Waiting overlay — rendered ON TOP of the always-present remoteMountRef div.
 // pointer-events-none so clicks fall through to the video element underneath.
-function WaitingOverlay() {
+function WaitingOverlay({ waiting, waitingSoon }: { waiting: string; waitingSoon: string }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none">
       <div className="pulse-ring" />
@@ -123,10 +124,10 @@ function WaitingOverlay() {
         </div>
         <div className="flex flex-col gap-1">
           <h4 className="text-on-surface font-headline font-bold text-sm tracking-wide animate-breath">
-            Esperando conexión...
+            {waiting}
           </h4>
           <p className="text-on-surface-variant/60 text-[10px] uppercase tracking-[0.2em] font-medium">
-            El participante se unirá pronto
+            {waitingSoon}
           </p>
         </div>
       </div>
@@ -135,7 +136,7 @@ function WaitingOverlay() {
 }
 
 // Camera-off overlay — covers the frozen last-frame video when cam is disabled.
-function CamOffOverlay() {
+function CamOffOverlay({ camOff }: { camOff: string }) {
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center gap-3"
@@ -148,7 +149,7 @@ function CamOffOverlay() {
         videocam_off
       </span>
       <p className="text-xs font-medium" style={{ color: "#3c4a42" }}>
-        Cámara desactivada
+        {camOff}
       </p>
     </div>
   );
@@ -193,7 +194,7 @@ function MutedMicIndicator() {
 
 // Connection-lost overlay — shown on a remote panel when stats indicate the
 // peer's stream has stalled (faster than the SDK's ~60 s heartbeat).
-function ConnectionLostOverlay() {
+function ConnectionLostOverlay({ connectionLost }: { connectionLost: string }) {
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center gap-3"
@@ -206,7 +207,7 @@ function ConnectionLostOverlay() {
         wifi_off
       </span>
       <p className="text-xs font-medium" style={{ color: "#ffb4ab" }}>
-        Conexión perdida
+        {connectionLost}
       </p>
     </div>
   );
@@ -214,7 +215,7 @@ function ConnectionLostOverlay() {
 
 // Reconnecting overlay — shown on the local self-panel while the SDK reports
 // state="Reconnecting".
-function ReconnectingOverlay() {
+function ReconnectingOverlay({ reconnecting }: { reconnecting: string }) {
   return (
     <div
       className="absolute inset-0 flex flex-col items-center justify-center gap-3"
@@ -227,7 +228,7 @@ function ReconnectingOverlay() {
         sync_problem
       </span>
       <p className="text-xs font-medium" style={{ color: "#f5c451" }}>
-        Reconectando...
+        {reconnecting}
       </p>
     </div>
   );
@@ -236,14 +237,14 @@ function ReconnectingOverlay() {
 // Poor-connection badge — small corner indicator visible to BOTH sides on the
 // affected user's panel (each side derives it independently from the SDK's
 // network-quality-change event, which is broadcast to every client).
-function PoorConnectionBadge() {
+function PoorConnectionBadge({ poorConnection }: { poorConnection: string }) {
   return (
     <div className="flex items-center h-4 bg-black/40 px-2 py-1 rounded backdrop-blur-sm">
       <span
         className="material-symbols-outlined"
         style={{ fontSize: "14px", color: "#f5c451" }}
-        aria-label="Conexión inestable"
-        title="Conexión inestable"
+        aria-label={poorConnection}
+        title={poorConnection}
       >
         signal_cellular_alt_2_bar
       </span>
@@ -290,6 +291,9 @@ export default function ZoomRoomInner({
   onError,
   onLeaveRef,
 }: ZoomRoomInnerProps) {
+  const t = useTranslations("session.zoom");
+  const tErrors = useTranslations("errors");
+
   const [state, setState]             = useState<RoomState>("loading");
   const [errorMsg, setErrorMsg]       = useState("");
   const [elapsedSec, setElapsedSec]   = useState(0);
@@ -395,7 +399,10 @@ export default function ZoomRoomInner({
         });
         if (!res.ok) {
           const d = (await res.json()) as { error?: string };
-          throw new Error(friendlyError(res.status, d.error ?? `HTTP ${res.status}`));
+          const i18nKey = ERROR_CODE_I18N_KEY[d.error ?? ""];
+          const relKey = i18nKey?.replace(/^errors\./, "") ?? `http.${res.status}`;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          throw new Error(tErrors(relKey as any));
         }
         const data = (await res.json()) as TokenResponse;
         if (!cancelled) { tokenRef.current = data; setState("ready"); }
@@ -752,7 +759,7 @@ export default function ZoomRoomInner({
               ? String((err as { reason: unknown }).reason)
               : JSON.stringify(err);
       console.error("[ZoomRoom] join failed:", err);
-      setErrorMsg(msg || "Error al unirse a la sesión");
+      setErrorMsg(msg || t("connectError"));
       setState("error");
     }
     // onLeaveRef is intentionally omitted: it's a ref-backed inline function whose
@@ -959,7 +966,7 @@ export default function ZoomRoomInner({
 
   // ── Notify parent on error ─────────────────────────────────────────────────
   useEffect(() => {
-    if (state === "error" && onError) onError(errorMsg || "Error al conectar con la sesión");
+    if (state === "error" && onError) onError(errorMsg || t("connectError"));
   }, [state, errorMsg, onError]);
 
   // ── Hard-stop enforcement (REL-02) ─────────────────────────────────────────
@@ -1058,7 +1065,7 @@ export default function ZoomRoomInner({
               <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2 text-[#e5e1e4]/60 hover:text-[#4edea3] transition-colors cursor-pointer active:opacity-80"
-                aria-label="Ajustes"
+                aria-label={t("settings")}
               >
                 <span className="material-symbols-outlined">settings</span>
               </button>
@@ -1079,7 +1086,7 @@ export default function ZoomRoomInner({
             aria-live="assertive"
             className="shrink-0 w-full bg-amber-500/15 border-b border-amber-400/30 text-amber-300 text-xs md:text-sm font-headline tracking-wide text-center px-4 py-2"
           >
-            La sesión terminará en menos de un minuto.
+            {t("endingSoon")}
           </div>
         )}
 
@@ -1124,7 +1131,7 @@ export default function ZoomRoomInner({
               {mobileShareFocus === "screen" && (
                 <div className="md:hidden absolute top-2 right-2 z-20 pointer-events-none flex items-center gap-1 bg-black/60 backdrop-blur-sm text-[#4edea3] text-[9px] font-headline uppercase tracking-widest px-2 py-1 rounded-lg">
                   <span className="material-symbols-outlined text-sm">swap_vert</span>
-                  Toca: participantes
+                  {t("screenShareHint")}
                 </div>
               )}
               {/* Media layer — keeps its own overflow-hidden so the video keeps
@@ -1156,8 +1163,8 @@ export default function ZoomRoomInner({
               <button
                 onClick={() => setIsVideosPanelHidden((v) => !v)}
                 className="hidden md:flex absolute top-1/2 -translate-y-1/2 right-0 translate-x-1/2 z-20 items-center justify-center bg-black/70 backdrop-blur-sm text-[#4edea3] w-7 h-12 rounded-md border border-white/10 shadow-lg hover:bg-black/90 transition-all active:scale-95 cursor-pointer"
-                aria-label={isVideosPanelHidden ? "Mostrar paneles de video" : "Ocultar paneles de video"}
-                title={isVideosPanelHidden ? "Mostrar participantes" : "Ocultar participantes"}
+                aria-label={isVideosPanelHidden ? t("showPanels") : t("hidePanels")}
+                title={isVideosPanelHidden ? t("showParticipants") : t("hideParticipants")}
               >
                 <span className="material-symbols-outlined text-xl">
                   {isVideosPanelHidden ? "chevron_left" : "chevron_right"}
@@ -1194,11 +1201,11 @@ export default function ZoomRoomInner({
 
                   {/* Render priority (first match wins): connection-lost > waiting > cam-off */}
                   {primaryRemote && qos.remoteStatus === "lost" ? (
-                    <ConnectionLostOverlay />
+                    <ConnectionLostOverlay connectionLost={t("connectionLost")} />
                   ) : !primaryRemote ? (
-                    <WaitingOverlay />
+                    <WaitingOverlay waiting={t("waiting")} waitingSoon={t("waitingSoon")} />
                   ) : remoteCamOffIds.includes(primaryRemote.userId) ? (
-                    <CamOffOverlay />
+                    <CamOffOverlay camOff={t("camOff")} />
                   ) : null}
 
                   {/* Voice / mute indicator + poor-connection badge — hidden
@@ -1216,7 +1223,7 @@ export default function ZoomRoomInner({
                       </div>
                       {qos.remoteStatus === "poor" && (
                         <div className="absolute bottom-4 left-16">
-                          <PoorConnectionBadge />
+                          <PoorConnectionBadge poorConnection={t("poorConnection")} />
                         </div>
                       )}
                     </>
@@ -1256,15 +1263,15 @@ export default function ZoomRoomInner({
 
                   {/* Render priority (first match wins): reconnecting > cam-off */}
                   {qos.selfStatus === "reconnecting" && isConnected ? (
-                    <ReconnectingOverlay />
+                    <ReconnectingOverlay reconnecting={t("reconnecting")} />
                   ) : isCamOff && isConnected ? (
-                    <CamOffOverlay />
+                    <CamOffOverlay camOff={t("camOff")} />
                   ) : null}
 
                   {/* Loading / joining state */}
                   {!isConnected && state !== "ended" && state !== "error" && (
                     <div className="absolute inset-0 flex items-center justify-center bg-surface-container">
-                      <Spinner />
+                      <Spinner label={t("loading")} />
                     </div>
                   )}
 
@@ -1278,7 +1285,7 @@ export default function ZoomRoomInner({
                   </div>
                   {qos.selfStatus === "poor" && isConnected && (
                     <div className="absolute bottom-4 left-16">
-                      <PoorConnectionBadge />
+                      <PoorConnectionBadge poorConnection={t("poorConnection")} />
                     </div>
                   )}
                 </section>
@@ -1350,7 +1357,7 @@ export default function ZoomRoomInner({
                 onClick={() => { void toggleMute(); }}
                 className="flex flex-col items-center justify-center p-2 w-16 h-16 cursor-pointer hover:bg-white/5 rounded-xl transition-all active:scale-90 duration-200"
                 style={{ color: isMuted ? "#ffb4ab" : "rgba(229,225,228,.5)" }}
-                aria-label={isMuted ? "Activar micrófono" : "Silenciar"}
+                aria-label={isMuted ? t("muteOn") : t("muteOff")}
               >
                 <span className="material-symbols-outlined mb-1">
                   {isMuted ? "mic_off" : "mic"}
@@ -1365,7 +1372,7 @@ export default function ZoomRoomInner({
                 onClick={() => { void toggleCamera(); }}
                 className="flex flex-col items-center justify-center p-2 w-16 h-16 cursor-pointer hover:bg-white/5 rounded-xl transition-all active:scale-90 duration-200"
                 style={{ color: isCamOff ? "#ffb4ab" : "rgba(229,225,228,.5)" }}
-                aria-label={isCamOff ? "Activar cámara" : "Desactivar cámara"}
+                aria-label={isCamOff ? t("videoOn") : t("videoOff")}
               >
                 <span className="material-symbols-outlined mb-1">
                   {isCamOff ? "videocam_off" : "videocam"}
@@ -1382,7 +1389,7 @@ export default function ZoomRoomInner({
                   else { void startScreenShare(); }
                 }}
                 disabled={!isConnected || !canShare}
-                title={!canShare ? "Compartir pantalla no está disponible en dispositivos móviles" : undefined}
+                title={!canShare ? t("shareUnavailable") : undefined}
                 className={[
                   "flex flex-col items-center justify-center rounded-xl p-2 w-16 h-16 transition-all duration-200 shadow-lg",
                   isSharingScreen
@@ -1392,10 +1399,10 @@ export default function ZoomRoomInner({
                 ].join(" ")}
                 aria-label={
                   !canShare
-                    ? "Compartir pantalla no disponible en móvil"
+                    ? t("shareUnavailableMobile")
                     : isSharingScreen
-                      ? "Dejar de compartir pantalla"
-                      : "Compartir pantalla"
+                      ? t("shareStop")
+                      : t("shareStart")
                 }
               >
                 <span
@@ -1421,7 +1428,7 @@ export default function ZoomRoomInner({
             }}
             className="relative bg-surface-container-high hover:bg-surface-container-highest w-12 h-12 rounded-xl flex items-center justify-center shadow-lg border border-white/5 transition-all active:scale-90"
             style={{ color: "#4edea3" }}
-            aria-label={isChatOpen ? "Cerrar chat" : "Abrir chat"}
+            aria-label={isChatOpen ? t("closeChat") : t("openChat")}
           >
             <span className="material-symbols-outlined text-xl">chat</span>
             {unreadCount > 0 && !isChatOpen && (
@@ -1459,7 +1466,7 @@ export default function ZoomRoomInner({
                   ✕
                 </div>
                 <h2 className="text-xl font-medium" style={{ color: "#e5e1e4" }}>
-                  Error
+                  {t("error")}
                 </h2>
                 <p className="text-sm break-words" style={{ color: "#86948a" }}>
                   {errorMsg}
@@ -1478,7 +1485,7 @@ export default function ZoomRoomInner({
                     border:     "1px solid rgba(255,255,255,0.1)",
                   }}
                 >
-                  Reintentar
+                  {t("retry")}
                 </button>
               </div>
             )}

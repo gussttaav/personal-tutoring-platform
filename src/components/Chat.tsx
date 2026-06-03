@@ -25,8 +25,10 @@ import {
   useRef,
   useEffect,
   useCallback,
+  useMemo,
   type KeyboardEvent,
 } from "react";
+import { useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Components } from "react-markdown";
@@ -41,20 +43,7 @@ interface Message {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const INITIAL_MESSAGES: Message[] = [
-  {
-    role: "bot",
-    text: "¡Hola! 👋 Soy el asistente de **Gustavo Torres**. Puedo contarte sobre sus clases, áreas de especialidad, cómo reservar una sesión o cualquier otra duda.",
-  },
-  { role: "bot", text: "¿En qué puedo ayudarte?" },
-];
-
-const SUGGESTIONS = [
-  "¿Qué asignaturas impartes?",
-  "¿Cómo reservo una sesión?",
-  "¿Qué incluye el pack?",
-  "¿Das clases en inglés?",
-];
+const INITIAL_MESSAGES_COUNT = 2; // number of initial bot greeting messages
 
 const SESSION_STORAGE_KEY = "chat:messages";
 const LOCAL_STORAGE_KEY   = "chat:sessionId";
@@ -124,10 +113,18 @@ function BotMessage({ text }: { text: string }) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Chat() {
+  const t = useTranslations("chat");
+  const suggestions = useMemo(() => t.raw("suggestions") as string[], [t]);
+  const initialMessages = useMemo<Message[]>(() => [
+    { role: "bot", text: t("initialMessage") },
+    { role: "bot", text: t("initialQuestion") },
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], []);
+
   // UX-04: Hydrate from sessionStorage on first render; fall back to greeting.
   const [messages,        setMessages]        = useState<Message[]>(() => {
     const saved = loadFromSession();
-    return saved ?? INITIAL_MESSAGES;
+    return saved ?? initialMessages;
   });
   // REFACTOR-P2-03: Server-side session ID for Gemini history continuity.
   // localStorage keeps the session alive across page reloads.
@@ -152,7 +149,7 @@ export default function Chat() {
   // We skip the initial INITIAL_MESSAGES-only state to avoid a no-op write
   // on first load, but we persist everything once the user has sent a message.
   useEffect(() => {
-    if (messages.length > INITIAL_MESSAGES.length) {
+    if (messages.length > INITIAL_MESSAGES_COUNT) {
       saveToSession(messages);
     }
   }, [messages]);
@@ -235,7 +232,7 @@ export default function Chat() {
         body:    JSON.stringify({ message: trimmed, sessionId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error desconocido");
+      if (!res.ok) throw new Error(data.error ?? t("unknownError"));
 
       // REFACTOR-P2-03: Persist the server-assigned sessionId for future turns.
       if (typeof data.sessionId === "string" && data.sessionId.length === 36) {
@@ -247,7 +244,7 @@ export default function Chat() {
     } catch (err) {
       setMessages((prev) => [
         ...prev,
-        { role: "bot", text: err instanceof Error ? err.message : "Ha ocurrido un error. Por favor, inténtalo de nuevo." },
+        { role: "bot", text: err instanceof Error ? err.message : t("error") },
       ]);
     } finally {
       setIsLoading(false);
@@ -262,22 +259,22 @@ export default function Chat() {
     <>
       <div
         className={`chat-panel${isOpen ? " chat-panel--open" : ""}${isExpanded ? " chat-panel--expanded" : ""}`}
-        role="dialog" aria-modal="true" aria-label="Asistente virtual de Gustavo Torres"
+        role="dialog" aria-modal="true" aria-label={t("assistantLabel")}
       >
         <div className="chat-header">
           <div className="chat-header-avatar" aria-hidden="true"><ChatAvatarIcon size={22} /></div>
           <div className="chat-header-info">
-            <div className="chat-header-name">Asistente de Gustavo</div>
-            <div className="chat-header-status">En línea · respuesta inmediata</div>
+            <div className="chat-header-name">{t("title")}</div>
+            <div className="chat-header-status">{t("status")}</div>
           </div>
           <div className="chat-header-actions">
-            <button className="chat-expand-btn" onClick={toggleExpand} aria-label={isExpanded ? "Reducir ventana" : "Expandir ventana"} title={isExpanded ? "Reducir" : "Expandir"}>
+            <button className="chat-expand-btn" onClick={toggleExpand} aria-label={isExpanded ? t("minimize") : t("expand")} title={isExpanded ? t("minimize") : t("expand")}>
               {isExpanded
                 ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" /></svg>
                 : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
               }
             </button>
-            <button className="chat-close-btn" onClick={togglePanel} aria-label="Cerrar chat">
+            <button className="chat-close-btn" onClick={togglePanel} aria-label={t("close")}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
               </svg>
@@ -291,13 +288,13 @@ export default function Chat() {
               {msg.role === "bot" ? <BotMessage text={msg.text} /> : msg.text}
             </div>
           ))}
-          {isLoading && <div className="chat-typing" aria-label="El asistente está escribiendo"><span /><span /><span /></div>}
+          {isLoading && <div className="chat-typing" aria-label={t("status")}><span /><span /><span /></div>}
           <div ref={messagesEndRef} />
         </div>
 
         {showSuggestions && (
           <div className="chat-suggestions">
-            {SUGGESTIONS.map((s) => (
+            {suggestions.map((s) => (
               <button key={s} className="chat-suggestion" onClick={() => sendMessage(s)} disabled={isLoading}>{s}</button>
             ))}
           </div>
@@ -305,11 +302,11 @@ export default function Chat() {
 
         <div className="chat-input-row">
           <input
-            ref={inputRef} className="chat-input" type="text" placeholder="Escribe tu pregunta…"
+            ref={inputRef} className="chat-input" type="text" placeholder={t("placeholder")}
             value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown}
-            disabled={isLoading} maxLength={1000} aria-label="Escribe tu mensaje"
+            disabled={isLoading} maxLength={1000} aria-label={t("placeholderShort")}
           />
-          <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} aria-label="Enviar mensaje">
+          <button className="chat-send" onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} aria-label={t("send")}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
             </svg>
@@ -319,7 +316,7 @@ export default function Chat() {
 
       <button
         className={`chat-fab${isOpen ? " chat-fab--open" : ""}${heroCtaOnScreen && !isOpen ? " chat-fab--hero-overlap" : ""}`}
-        onClick={togglePanel} aria-label={isOpen ? "Cerrar asistente" : "Abrir asistente"} aria-expanded={isOpen}
+        onClick={togglePanel} aria-label={isOpen ? t("closeAssistant") : t("openAssistant")} aria-expanded={isOpen}
       >
         {showDot && !isOpen && <div className="chat-fab-dot" aria-hidden="true" />}
         <svg className="chat-fab-icon-chat" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0d0f10" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

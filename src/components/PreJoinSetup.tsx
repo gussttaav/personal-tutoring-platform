@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import ZoomRoom from "./ZoomRoom";
 import PackBookingOverlay from "./PackBookingOverlay";
 import WaitingRoom from "./WaitingRoom";
@@ -85,6 +86,8 @@ export default function PreJoinSetup({
   sessionLabel,
   timeLabel,
 }: PreJoinSetupProps) {
+  const t = useTranslations("session.preJoin");
+
   // ── Phase ──────────────────────────────────────────────────────────────────
   const [phase, setPhase] = useState<"preview" | "session">("preview");
 
@@ -144,9 +147,9 @@ export default function PreJoinSetup({
     } catch (err) {
       const name = err instanceof Error ? err.name : "";
       if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-        setPermissionError("No se pudo acceder a la cámara. Comprueba los permisos del navegador.");
+        setPermissionError(t("cameraPermission"));
       } else {
-        setPermissionError("No se pudo acceder a la cámara.");
+        setPermissionError(t("cameraPermissionShort"));
       }
     }
   }, [selectedCameraId]);
@@ -286,14 +289,14 @@ export default function PreJoinSetup({
 
   // ── 60 s timeout: show error if Zoom never connects ───────────────────────
   // zoomReady is in deps so the timeout is cancelled as soon as Zoom connects.
+  const timeoutMsg = t("timeout");
   useEffect(() => {
     if (phase !== "session" || zoomReady) return;
-    const t = setTimeout(() => {
-      setZoomError((prev) =>
-        prev ?? "La sesión tardó demasiado en conectar. Por favor, inténtalo de nuevo."
-      );
+    const timer = setTimeout(() => {
+      setZoomError((prev) => prev ?? timeoutMsg);
     }, 60_000);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, retryKey, zoomReady]);
 
   // ── Stable callbacks passed to ZoomRoom ───────────────────────────────────
@@ -405,7 +408,7 @@ export default function PreJoinSetup({
             className="text-xs font-medium shrink-0"
             style={{ color: "#ffb4ab", textDecoration: "underline" }}
           >
-            Reintentar
+            {t("retry")}
           </button>
         </div>
       )}
@@ -452,7 +455,7 @@ export default function PreJoinSetup({
                     : "rgba(60,74,66,0.3)",
                   color: isMicOff ? "#ffb4ab" : "#e5e1e4",
                 }}
-                aria-label={isMicOff ? "Activar micrófono" : "Silenciar micrófono"}
+                aria-label={isMicOff ? t("micOn") : t("micOff")}
               >
                 <span className="material-symbols-outlined">
                   {isMicOff ? "mic_off" : "mic"}
@@ -470,7 +473,7 @@ export default function PreJoinSetup({
                     : "rgba(60,74,66,0.3)",
                   color: isCamOff ? "#ffb4ab" : "#e5e1e4",
                 }}
-                aria-label={isCamOff ? "Activar cámara" : "Desactivar cámara"}
+                aria-label={isCamOff ? t("camOn") : t("camOff")}
               >
                 <span className="material-symbols-outlined">
                   {isCamOff ? "videocam_off" : "videocam"}
@@ -498,10 +501,10 @@ export default function PreJoinSetup({
         <div className="lg:col-span-5 flex flex-col justify-center h-full space-y-8 pt-4">
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-5xl font-extrabold font-headline tracking-tighter text-on-surface leading-tight">
-              ¿Todo listo para tu clase?
+              {t("title")}
             </h1>
             <p className="text-on-surface-variant text-lg font-body max-w-md">
-              Configura tus dispositivos y asegúrate de que todo funcione correctamente antes de entrar al aula virtual.
+              {t("subtitle")}
             </p>
           </div>
 
@@ -514,7 +517,7 @@ export default function PreJoinSetup({
               boxShadow: "0 0 20px rgba(16,185,129,0.3)",
             }}
           >
-            Entrar al aula
+            {t("enterRoom")}
             <span className="material-symbols-outlined">arrow_forward</span>
           </button>
         </div>
@@ -528,7 +531,7 @@ export default function PreJoinSetup({
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-primary">mic</span>
               <h3 className="font-headline font-bold text-sm tracking-tight uppercase font-label text-on-surface-variant">
-                Micrófono
+                {t("microphone")}
               </h3>
             </div>
             {/* Volume bars */}
@@ -553,11 +556,11 @@ export default function PreJoinSetup({
               className="w-full appearance-none bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-3 text-on-surface text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none focus:border-primary"
             >
               {devices.audioInputs.length === 0 ? (
-                <option value="">Sin dispositivos</option>
+                <option value="">{t("noDevices")}</option>
               ) : (
                 devices.audioInputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
-                    {d.label || `Micrófono ${d.deviceId.slice(0, 6)}`}
+                    {d.label || `${t("microphone")} ${d.deviceId.slice(0, 6)}`}
                   </option>
                 ))
               )}
@@ -573,7 +576,7 @@ export default function PreJoinSetup({
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary">videocam</span>
             <h3 className="font-headline font-bold text-sm tracking-tight uppercase font-label text-on-surface-variant">
-              Cámara
+              {t("camera")}
             </h3>
           </div>
           <div className="relative">
@@ -583,11 +586,11 @@ export default function PreJoinSetup({
               className="w-full appearance-none bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-3 text-on-surface text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none focus:border-primary"
             >
               {devices.videoInputs.length === 0 ? (
-                <option value="">Sin dispositivos</option>
+                <option value="">{t("noDevices")}</option>
               ) : (
                 devices.videoInputs.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
-                    {d.label || `Cámara ${d.deviceId.slice(0, 6)}`}
+                    {d.label || `${t("camera")} ${d.deviceId.slice(0, 6)}`}
                   </option>
                 ))
               )}
@@ -603,7 +606,7 @@ export default function PreJoinSetup({
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary">speaker</span>
             <h3 className="font-headline font-bold text-sm tracking-tight uppercase font-label text-on-surface-variant">
-              Altavoz
+              {t("speaker")}
             </h3>
           </div>
           <div className="flex gap-2">
@@ -614,11 +617,11 @@ export default function PreJoinSetup({
                 className="w-full appearance-none bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-3 text-on-surface text-sm focus:ring-2 focus:ring-primary/50 focus:outline-none focus:border-primary"
               >
                 {devices.audioOutputs.length === 0 ? (
-                  <option value="">Por defecto</option>
+                  <option value="">{t("default")}</option>
                 ) : (
                   devices.audioOutputs.map((d) => (
                     <option key={d.deviceId} value={d.deviceId}>
-                      {d.label || `Altavoz ${d.deviceId.slice(0, 6)}`}
+                      {d.label || `${t("speaker")} ${d.deviceId.slice(0, 6)}`}
                     </option>
                   ))
                 )}
@@ -631,7 +634,7 @@ export default function PreJoinSetup({
               onClick={() => { void testSpeaker(); }}
               className="bg-surface-container-high px-4 py-3 rounded-lg border border-outline-variant/30 text-xs font-bold uppercase tracking-widest hover:bg-surface-container-highest transition-colors text-on-surface"
             >
-              Probar
+              {t("test")}
             </button>
           </div>
         </div>

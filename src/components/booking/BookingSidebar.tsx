@@ -8,6 +8,8 @@
  *   - "single": shows session card + price + meta rows (meet, timezone, trust badges)
  */
 
+import { useTranslations } from "next-intl";
+
 interface BookingSidebarProps {
   mode:           "pack" | "single";
   sessionName:    string;
@@ -29,6 +31,8 @@ export default function BookingSidebar({
   isReschedule  = false,
   userTz,
 }: BookingSidebarProps) {
+  const t = useTranslations("booking.sidebar");
+
   const progressPct =
     packTotal > 0 ? Math.min(100, (packRemaining / packTotal) * 100) : 0;
 
@@ -47,7 +51,7 @@ export default function BookingSidebar({
           className="font-headline text-xl mb-6"
           style={{ color: "#e5e1e4" }}
         >
-          Tu Selección
+          {t("title")}
         </h2>
 
         {/* Session card */}
@@ -59,7 +63,6 @@ export default function BookingSidebar({
             className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: "rgba(78,222,163,0.1)", color: "#4edea3" }}
           >
-            {/* Clock icon */}
             <svg
               width="22"
               height="22"
@@ -79,9 +82,8 @@ export default function BookingSidebar({
               {sessionName}
             </p>
             <p className="text-sm mt-1" style={{ color: "#bbcabf" }}>
-              Duración: {duration}
+              {t("duration", { duration })}
             </p>
-            {/* Single session: price */}
             {mode === "single" && price && (
               <p className="font-headline text-2xl mt-2" style={{ color: "#4edea3", letterSpacing: "-0.02em" }}>
                 {price}
@@ -89,7 +91,7 @@ export default function BookingSidebar({
             )}
             {mode === "single" && !price && (
               <p className="text-sm mt-1 font-semibold" style={{ color: "#4edea3" }}>
-                Sin coste
+                {t("free")}
               </p>
             )}
           </div>
@@ -106,14 +108,14 @@ export default function BookingSidebar({
                 className="text-xs font-label uppercase tracking-widest"
                 style={{ color: "#bbcabf" }}
               >
-                {isReschedule ? "Reprogramando clase" : "Bono de Horas Activo"}
+                {isReschedule ? t("reschedule") : t("packActive")}
               </span>
               {!isReschedule && (
                 <span
                   className="text-xs font-bold font-label"
                   style={{ color: "#4edea3" }}
                 >
-                  {packRemaining} / {packTotal}h rest.
+                  {t("packRemaining", { packRemaining, packTotal })}
                 </span>
               )}
             </div>
@@ -137,14 +139,14 @@ export default function BookingSidebar({
                   className="leading-tight"
                   style={{ fontSize: "10px", color: "rgba(187,202,191,0.6)" }}
                 >
-                  Esta sesión se descontará de tu pack activo.
+                  {t("packDeductNote")}
                 </p>
               </>
             )}
 
             {isReschedule && (
               <p className="text-xs" style={{ color: "#bbcabf" }}>
-                Estás modificando una reserva existente. Esta acción no consume créditos.
+                {t("rescheduleNote")}
               </p>
             )}
           </div>
@@ -156,15 +158,13 @@ export default function BookingSidebar({
             className="space-y-3 pt-6"
             style={{ borderTop: "1px solid #3c4a42" }}
           >
-            {/* Google Meet */}
             <div className="flex items-center gap-3 text-xs" style={{ color: "#bbcabf" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                 <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
               </svg>
-              Zoom (en la app)
+              {t("zoomApp")}
             </div>
 
-            {/* Timezone */}
             {userTz && (
               <div className="flex items-center gap-3 text-xs" style={{ color: "#bbcabf" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -175,21 +175,20 @@ export default function BookingSidebar({
               </div>
             )}
 
-            {/* Trust badges */}
             {[
               {
-                label: "Horarios en tiempo real",
+                label: t("realtimeSlots"),
                 icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                  <svg key="cal" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                     <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
                     <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                   </svg>
                 ),
               },
               {
-                label: "Pago seguro con Stripe",
+                label: t("securePayment"),
                 icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                  <svg key="lock" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                 ),
@@ -212,7 +211,6 @@ export default function BookingSidebar({
               border: "1px dashed #3c4a42",
             }}
           >
-            {/* Info icon */}
             <svg
               width="16"
               height="16"
@@ -227,7 +225,7 @@ export default function BookingSidebar({
               className="leading-relaxed"
               style={{ fontSize: "11px", color: "#bbcabf" }}
             >
-              Las cancelaciones deben realizarse con al menos 24h de antelación para recuperar el crédito.
+              {t("cancelNote")}
             </p>
           </div>
         )}

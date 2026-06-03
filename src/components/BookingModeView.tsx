@@ -377,9 +377,9 @@ export interface SessionConfig {
 }
 
 export const SESSION_CONFIGS: Record<string, SessionConfig> = {
-  free15min: { type: "free15min", label: "Encuentro inicial",  duration: "15 minutos", price: null,  durationMinutes: 15  },
-  session1h: { type: "session1h", label: "Sesión de 1 hora",   duration: "60 minutos", price: "€16", durationMinutes: 60  },
-  session2h: { type: "session2h", label: "Sesión de 2 horas",  duration: "2 horas",    price: "€30", durationMinutes: 120 },
+  free15min: { type: "free15min", label: "Initial meeting",  duration: "15 min", price: null,  durationMinutes: 15  },
+  session1h: { type: "session1h", label: "1-hour session",   duration: "60 min", price: "€16", durationMinutes: 60  },
+  session2h: { type: "session2h", label: "2-hour session",   duration: "2h",     price: "€30", durationMinutes: 120 },
 };
 
 /**
