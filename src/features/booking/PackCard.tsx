@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { PackSize } from "@/domain/types";
 import { PACK_CONFIG } from "@/constants";
 
@@ -25,14 +26,15 @@ export default function PackCard({
   onClick,
   onSchedule,
 }: PackCardProps) {
+  const t = useTranslations("booking.packCard");
   const cfg = PACK_CONFIG[size];
   const hasCredits = !creditsLoading && activeCredits !== null && activeCredits > 0;
   const isPrimary = recommended || hasCredits;
 
   const benefits = [
-    `${cfg.hours} sesiones de 1 hora`,
-    "Reserva flexible — tú decides cuándo",
-    "Vigencia de 180 días",
+    t("benefits.sessions", { hours: cfg.hours }),
+    t("benefits.flexible"),
+    t("benefits.validity"),
   ];
 
   return (
@@ -85,7 +87,7 @@ export default function PackCard({
             borderBottomLeftRadius: "10px",
           }}
         >
-          {hasCredits ? "Pack activo" : "Recomendado"}
+          {hasCredits ? t("activePack") : t("recommended")}
         </div>
       )}
 
@@ -142,7 +144,7 @@ export default function PackCard({
                 animation: "blink 1.4s ease-in-out infinite",
               }}
             />
-            {activeCredits} clase{activeCredits !== 1 ? "s" : ""} disponible{activeCredits !== 1 ? "s" : ""}
+            {t("classesAvailable", { count: activeCredits ?? 0 })}
           </span>
           <style>{`@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }`}</style>
         </div>
@@ -193,8 +195,7 @@ export default function PackCard({
 
           {/* ── Per-hour rate ── */}
           <div style={{ fontSize: "13px", color: "#86948a", marginBottom: "20px", lineHeight: 1 }}>
-            <span style={{ color: "#4edea3", fontWeight: 600 }}>{cfg.hourlyRate} / hora</span>
-            {" · vs €16 en sesión suelta"}
+            <span style={{ color: "#4edea3", fontWeight: 600 }}>{cfg.hourlyRate} {t("pricePerHour")}</span>
           </div>
         </>
       )}
@@ -284,7 +285,7 @@ export default function PackCard({
           }
         }}
       >
-        {checkoutLoading ? "Preparando pago..." : hasCredits ? "Reservar clase" : `Comprar pack · ${cfg.price}`}
+        {checkoutLoading ? t("preparingPayment") : hasCredits ? t("bookClass") : t("buyPack", { price: cfg.price })}
       </button>
 
     </div>

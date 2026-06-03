@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { api } from "@/lib/api-client";
 import { useUserSession } from "@/hooks/useUserSession";
 import { useBookingRouter } from "@/hooks/useBookingRouter";
@@ -65,6 +66,7 @@ function PackCardSkeleton() {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function InteractiveShell() {
+  const t = useTranslations("booking.shell");
   const { googleUser, isSignedIn, isAuthLoading, packSession, creditsLoading, updateCredits, hasBookings } =
     useUserSession();
 
@@ -221,7 +223,7 @@ export default function InteractiveShell() {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <button
               onClick={router.closePackBooking}
-              aria-label="Volver"
+              aria-label={t("back")}
               style={{
                 width: 32,
                 height: 32,
@@ -250,9 +252,9 @@ export default function InteractiveShell() {
             </button>
             <div>
               <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e1e4", fontFamily: "var(--font-headline, Manrope), sans-serif" }}>
-                Reservar clase del pack
+                {t("bookPackClass")}
               </div>
-              <div style={{ fontSize: 12, color: "#bbcabf" }}>Elige un día y hora disponible</div>
+              <div style={{ fontSize: 12, color: "#bbcabf" }}>{t("pickSlot")}</div>
             </div>
           </div>
           <span
@@ -269,7 +271,7 @@ export default function InteractiveShell() {
               color: "#63b3ed",
             }}
           >
-            Pack activo
+            {t("activePack")}
           </span>
         </div>
 
@@ -349,7 +351,7 @@ export default function InteractiveShell() {
             marginBottom: "10px",
           }}
         >
-          Sesiones individuales
+          {t("individualSessions")}
         </p>
         <h2
           style={{
@@ -361,10 +363,10 @@ export default function InteractiveShell() {
             marginBottom: "8px",
           }}
         >
-          Elige tu modalidad de sesión
+          {t("chooseMode")}
         </h2>
         <p style={{ fontSize: "14px", color: "#86948a", marginBottom: "32px" }}>
-          Desde una exploración inicial gratuita hasta sesiones de trabajo intensivo.
+          {t("modeSubtitle")}
         </p>
 
         {isAuthLoading ? (
@@ -374,27 +376,27 @@ export default function InteractiveShell() {
         ) : (
           <div className="sessions-grid">
             <SessionCard
-              badge="Gratis"
-              name="Encuentro inicial"
-              duration="15 minutos · Comentamos tu caso y definimos un plan de trabajo"
-              price="Sin coste"
+              badge={t("sessions.free15min.badge")}
+              name={t("sessions.free15min.name")}
+              duration={t("sessions.free15min.duration")}
+              price={t("sessions.free15min.price")}
               isFree
               vertical
               onClick={() => router.handleSessionClick("free15min")}
             />
             <SessionCard
-              badge="Más reservada"
-              name="Sesión de 1 hora"
-              duration="60 minutos · Resolución de dudas, proyecto o preparación de examen"
-              price="€16"
+              badge={t("sessions.session1h.badge")}
+              name={t("sessions.session1h.name")}
+              duration={t("sessions.session1h.duration")}
+              price={t("sessions.session1h.price")}
               featured
               vertical
               onClick={() => router.handleSessionClick("session1h")}
             />
             <SessionCard
-              name="Sesión de 2 horas"
-              duration="120 minutos · Para temas que requieren mayor profundidad"
-              price="€30"
+              name={t("sessions.session2h.name")}
+              duration={t("sessions.session2h.duration")}
+              price={t("sessions.session2h.price")}
               vertical
               onClick={() => router.handleSessionClick("session2h")}
             />
@@ -423,7 +425,7 @@ export default function InteractiveShell() {
             marginBottom: "10px",
           }}
         >
-          Packs de continuidad
+          {t("continuityPacks")}
         </p>
         <h2
           style={{
@@ -435,10 +437,10 @@ export default function InteractiveShell() {
             marginBottom: "8px",
           }}
         >
-          Más horas, mejor precio.
+          {t("packsSubtitle")}
         </h2>
         <p style={{ fontSize: "14px", color: "#86948a", marginBottom: "32px" }}>
-          Reserva a tu ritmo durante 6 meses y ahorra respecto a las sesiones sueltas.
+          {t("packsDescription")}
         </p>
 
         {isAuthLoading ? (

@@ -13,6 +13,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -31,7 +32,7 @@ import {
   Helper,
 } from "@/components/ui";
 import { COLORS } from "@/constants";
-import { friendlyError } from "@/constants/errors";
+import { camelCaseCode } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
@@ -153,8 +154,11 @@ export default function SingleSessionBooking({
   onBack,
   initialSlot,
 }: SingleSessionBookingProps) {
-  const router = useRouter();
-  const cfg = SESSION_CONFIGS[sessionType];
+  const t       = useTranslations("booking.singleSession");
+  const tMV     = useTranslations("booking.modeView");
+  const tErrors = useTranslations("errors");
+  const router  = useRouter();
+  const cfg     = SESSION_CONFIGS[sessionType];
 
   // 1h: start in "review" phase with the slot pre-filled (exact duration match
   //      against AvailabilityModal's 1h slots).
@@ -247,11 +251,15 @@ export default function SingleSessionBooking({
       setPhase("success");
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
-      const raw    = err instanceof ApiError ? err.message : "Error al reservar.";
-      setErrorMsg(friendlyError(status, raw));
+      const code   = err instanceof ApiError ? err.message : "";
+      setErrorMsg(
+        code
+          ? tErrors(`domain.${camelCaseCode(code)}`)
+          : tErrors(`http.${status || 500}`)
+      );
       setPhase("error");
     }
-  }, [selected, sessionType, rescheduleToken, note]);
+  }, [selected, sessionType, rescheduleToken, note, tErrors]);
 
   async function handleStartPayment() {
     if (!selected) return;
@@ -269,8 +277,12 @@ export default function SingleSessionBooking({
       setPhase("paying");
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
-      const raw    = err instanceof ApiError ? err.message : "Error al iniciar el pago.";
-      setErrorMsg(friendlyError(status, raw));
+      const code   = err instanceof ApiError ? err.message : "";
+      setErrorMsg(
+        code
+          ? tErrors(`domain.${camelCaseCode(code)}`)
+          : tErrors(`http.${status || 500}`)
+      );
       setPhase("error");
     }
   }
@@ -290,22 +302,22 @@ export default function SingleSessionBooking({
 
             <HeaderBlock>
               <Eyebrow tone="success">
-                {emailFailed ? "Reservada · email no enviado" : "Encuentro reservado"}
+                {emailFailed ? t("statusEmailFailed") : t("statusSuccess")}
               </Eyebrow>
-              <FbTitle>¡Tu sesión está confirmada!</FbTitle>
+              <FbTitle>{t("successTitle")}</FbTitle>
               {emailFailed && (
                 <FbBody>
-                  Se ha reservado la sesión, pero{" "}
+                  {t("emailFailedBodyPrefix")}{" "}
                   <strong style={{ color: COLORS.textPrimary, fontWeight: 600 }}>
-                    no se pudo enviar el email
+                    {t("emailFailedBodyBold")}
                   </strong>{" "}
-                  de confirmación.
+                  {t("emailFailedBodySuffix")}
                 </FbBody>
               )}
             </HeaderBlock>
 
             <EventCard
-              title={cfg.label}
+              title={tMV(`sessions.${cfg.type}.label`)}
               dateLabel={selected?.dateLabel}
               timeLabel={selected ? formatTimeRange(selected) : undefined}
             />
@@ -313,9 +325,7 @@ export default function SingleSessionBooking({
             {emailFailed ? (
               <InfoBox tone="warning">
                 <InfoRow glyph="manage_accounts" tone="warning">
-                  Puedes unirte, cancelar o reprogramar la sesión desde tu{" "}
-                  <strong style={{ color: COLORS.textPrimary, fontWeight: 600 }}>área personal</strong>.
-                  El problema con el email se resolverá a la mayor brevedad.
+                  {t("personalAreaNote")}
                 </InfoRow>
               </InfoBox>
             ) : (
@@ -325,23 +335,20 @@ export default function SingleSessionBooking({
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <FbButton variant="primary" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">login</span>
-                Ir a mi área personal
+                {t("goToPersonalArea")}
               </FbButton>
               <FbButton variant="ghost" onClick={onBack} style={{ width: "100%" }}>
-                Volver al inicio
+                {t("backToHome")}
               </FbButton>
             </div>
 
             <Helper>
               {emailFailed ? (
-                <>
-                  ¿Necesitas ayuda? Escribe a{" "}
-                  <a href="mailto:contacto@gustavoai.dev" style={{ color: COLORS.brand, textDecoration: "none" }}>
-                    contacto@gustavoai.dev
-                  </a>
-                </>
+                <a href="mailto:contacto@gustavoai.dev" style={{ color: COLORS.brand, textDecoration: "none" }}>
+                  {t("helpEmailFailed")}
+                </a>
               ) : (
-                "Puedes reprogramar o cancelar sin coste hasta 2 horas antes de la clase"
+                t("helpGeneral")
               )}
             </Helper>
           </FeedbackCard>
@@ -359,16 +366,16 @@ export default function SingleSessionBooking({
             <IconHalo tone="error" glyph="error" />
 
             <HeaderBlock>
-              <Eyebrow tone="error">Algo salió mal</Eyebrow>
-              <FbTitle>No pudimos completar tu reserva</FbTitle>
+              <Eyebrow tone="error">{t("errorEyebrow")}</Eyebrow>
+              <FbTitle>{t("errorTitle")}</FbTitle>
               <FbBody>
-                El horario sigue disponible, puedes intentarlo de nuevo.
+                {t("errorSlotAvailable")}
               </FbBody>
             </HeaderBlock>
 
             {selected && (
               <EventCard
-                title={cfg.label}
+                title={tMV(`sessions.${cfg.type}.label`)}
                 dateLabel={selected.dateLabel}
                 timeLabel={formatTimeRange(selected)}
                 tone="error"
@@ -378,7 +385,7 @@ export default function SingleSessionBooking({
             <InfoBox tone="error">
               <InfoRow glyph="info" tone="error">
                 <div style={{ fontSize: 13, fontWeight: 600, color: COLORS.error, marginBottom: 2 }}>
-                  Lo que ocurrió
+                  {t("whatHappened")}
                 </div>
                 <div style={{ color: COLORS.textSecondary, lineHeight: 1.5 }}>{errorMsg}</div>
               </InfoRow>
@@ -387,18 +394,17 @@ export default function SingleSessionBooking({
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <FbButton variant="primary" onClick={() => setPhase("picking")} style={{ width: "100%" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">refresh</span>
-                Intentar de nuevo
+                {t("tryAgain")}
               </FbButton>
               <FbButton variant="ghost" onClick={() => setPhase("picking")} style={{ width: "100%" }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">arrow_back</span>
-                Elegir otro horario
+                {t("chooseAnotherSlot")}
               </FbButton>
             </div>
 
             <Helper>
-              ¿Sigue fallando? ·{" "}
               <a href="mailto:contacto@gustavoai.dev" style={{ color: COLORS.brand, textDecoration: "none" }}>
-                contacto@gustavoai.dev
+                {t("helpStillFailing")}
               </a>
             </Helper>
           </FeedbackCard>
@@ -469,7 +475,7 @@ export default function SingleSessionBooking({
                 className="font-bold uppercase"
                 style={{ fontSize: 10, color: "#4edea3", letterSpacing: "0.2em", marginBottom: 20 }}
               >
-                Detalles de la cita
+                {t("appointmentDetails")}
               </p>
 
               <div className="flex items-center gap-4">
@@ -513,7 +519,7 @@ export default function SingleSessionBooking({
                       <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
                     <p className="text-sm font-medium" style={{ color: "#93c5fd" }}>
-                      Reprogramación gratuita — no se realiza ningún cobro
+                      {t("rescheduleNote")}
                     </p>
                   </div>
                 ) : (
@@ -528,7 +534,7 @@ export default function SingleSessionBooking({
                       <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                     <p className="text-sm font-medium" style={{ color: "#4edea3" }}>
-                      El pago se completará de forma segura en el siguiente paso
+                      {t("paymentSecure")}
                     </p>
                   </div>
                 )}
@@ -544,15 +550,15 @@ export default function SingleSessionBooking({
                 className="block font-bold uppercase"
                 style={{ fontSize: 10, color: "#e5e1e4", letterSpacing: "0.2em", marginBottom: 16 }}
               >
-                Motivo de la sesión{" "}
-                <span className="normal-case font-normal" style={{ color: "#bbcabf", letterSpacing: "normal", fontSize: 12 }}>(opcional)</span>
+                {t("sessionReasonLabel")}{" "}
+                <span className="normal-case font-normal" style={{ color: "#bbcabf", letterSpacing: "normal", fontSize: 12 }}>{t("sessionReasonOptional")}</span>
               </label>
               <div className="relative flex-1">
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   maxLength={1000}
-                  placeholder="Ej: tengo dudas sobre recursividad en Java, preparación de entrevista técnica..."
+                  placeholder={t("sessionReasonPlaceholder")}
                   className="w-full h-full"
                   style={{
                     minHeight: "7rem",
@@ -589,7 +595,7 @@ export default function SingleSessionBooking({
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
                 </svg>
-                También puedes enviar los detalles por email después
+                {t("emailAfterNote")}
               </p>
             </div>
 
@@ -607,7 +613,7 @@ export default function SingleSessionBooking({
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:-translate-x-1 transition-transform" aria-hidden="true">
                     <polyline points="15 18 9 12 15 6" />
                   </svg>
-                  <span>Volver atrás</span>
+                  <span>{t("back")}</span>
                 </button>
 
                 {/* Confirm button */}
@@ -620,8 +626,8 @@ export default function SingleSessionBooking({
                   className="group flex items-center justify-center gap-2"
                   style={{ ...primaryBtnStyle, width: "auto", paddingLeft: 32, paddingRight: 32 }}
                 >
-                  <span className="sm:hidden">Confirmar</span>
-                  <span className="hidden sm:inline">{isReschedule ? "Confirmar reprogramación" : cfg.price ? "Confirmar pago" : "Confirmar reserva"}</span>
+                  <span className="sm:hidden">{t("confirmShort")}</span>
+                  <span className="hidden sm:inline">{isReschedule ? t("confirmReschedule") : cfg.price ? t("confirmPay") : t("confirmBook")}</span>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:translate-x-1 transition-transform" aria-hidden="true">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
@@ -662,7 +668,7 @@ export default function SingleSessionBooking({
                       border: "1px solid rgba(78,222,163,0.3)",
                     }}
                   >
-                    Resumen
+                    {t("summaryTitle")}
                   </span>
                 </div>
               </div>
@@ -675,8 +681,8 @@ export default function SingleSessionBooking({
                   className="flex justify-between items-center pb-4"
                   style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
                 >
-                  <span style={{ color: "#bbcabf" }}>{cfg.label}</span>
-                  <span className="font-bold" style={{ color: "#e5e1e4" }}>{cfg.duration}</span>
+                  <span style={{ color: "#bbcabf" }}>{tMV(`sessions.${cfg.type}.label`)}</span>
+                  <span className="font-bold" style={{ color: "#e5e1e4" }}>{tMV(`sessions.${cfg.type}.duration`)}</span>
                 </div>
 
                 {/* Detail rows */}
@@ -689,7 +695,7 @@ export default function SingleSessionBooking({
                           <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
                           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
                         </svg>
-                        <span>Zona horaria</span>
+                        <span>{t("timezone")}</span>
                       </div>
                       <span className="text-right" style={{ color: "#e5e1e4" }}>{userTz}</span>
                     </div>
@@ -700,9 +706,9 @@ export default function SingleSessionBooking({
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
                         <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
                       </svg>
-                      <span>Plataforma</span>
+                      <span>{t("platform")}</span>
                     </div>
-                    <span style={{ color: "#e5e1e4" }}>Zoom (en la app)</span>
+                    <span style={{ color: "#e5e1e4" }}>{t("platformValue")}</span>
                   </div>
                 </div>
 
@@ -714,14 +720,14 @@ export default function SingleSessionBooking({
                   >
                     <div>
                       <p className="font-bold uppercase" style={{ fontSize: 10, color: "#bbcabf", letterSpacing: "0.15em", marginBottom: 4 }}>
-                        Total a pagar
+                        {t("total")}
                       </p>
                       <p className="font-extrabold font-headline tracking-tighter" style={{ fontSize: 40, color: "#4edea3", lineHeight: 1 }}>
                         {cfg.price}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p style={{ fontSize: 10, color: "#86948a" }}>IVA incluido</p>
+                      <p style={{ fontSize: 10, color: "#86948a" }}>{t("vatIncluded")}</p>
                     </div>
                   </div>
                 )}
@@ -735,7 +741,7 @@ export default function SingleSessionBooking({
                     <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                   </svg>
                   <p className="leading-relaxed" style={{ fontSize: 11, color: "#bbcabf" }}>
-                    Tu pago está protegido. El cargo se procesará al confirmar el siguiente paso.
+                    {t("paymentProtected")}
                   </p>
                 </div>
 
@@ -750,8 +756,8 @@ export default function SingleSessionBooking({
           {/* ── Sidebar ── */}
           <BookingSidebar
             mode="single"
-            sessionName={cfg.label}
-            duration={cfg.duration}
+            sessionName={tMV(`sessions.${cfg.type}.label`)}
+            duration={tMV(`sessions.${cfg.type}.duration`)}
             price={cfg.price}
             isReschedule={isReschedule}
             userTz={userTz}
@@ -771,7 +777,7 @@ export default function SingleSessionBooking({
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 12 }}>
                   <Spinner />
                   <p style={{ fontSize: 13, color: "#bbcabf" }}>
-                    {`Reservando ${selected?.dateLabel} a las ${selected?.label}…`}
+                    {t("bookingProgress", { dateLabel: selected?.dateLabel ?? "", label: selected?.label ?? "" })}
                   </p>
                 </div>
               ) : (
@@ -801,7 +807,7 @@ export default function SingleSessionBooking({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:-translate-x-1 transition-transform" aria-hidden="true">
                   <polyline points="15 18 9 12 15 6" />
                 </svg>
-                <span>Cambiar tipo de sesión</span>
+                <span>{t("changeSessionType")}</span>
               </button>
 
               {phase === "picking" && (
@@ -813,7 +819,7 @@ export default function SingleSessionBooking({
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#6ee8b4"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#4edea3"; }}
                   >
-                    <span>Continuar</span>
+                    <span>{t("continueButton")}</span>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:translate-x-1 transition-transform" aria-hidden="true">
                       <polyline points="9 18 15 12 9 6" />
                     </svg>
@@ -826,7 +832,7 @@ export default function SingleSessionBooking({
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                       <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
                     </svg>
-                    Selecciona un horario para continuar
+                    {t("selectSlotHint")}
                   </div>
                 )
               )}
