@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useUserSession } from "@/hooks/useUserSession";
 import type { UserBooking, BookingsState } from "./types";
 import PersonalAreaCalendar from "./PersonalAreaCalendar";
@@ -62,6 +63,7 @@ function CalendarSkeleton() {
 // ─── CTA: no sessions, no pack ────────────────────────────────────────────────
 
 function EmptyCTA() {
+  const t = useTranslations("areaPersonal.main");
   const router = useRouter();
   return (
     <div
@@ -103,10 +105,10 @@ function EmptyCTA() {
           letterSpacing: "-0.01em",
         }}
       >
-        ¿Listo para empezar?
+        {t("emptyTitle")}
       </h3>
       <p style={{ fontSize: 14, color: "#86948a", margin: "0 auto 24px", maxWidth: 340 }}>
-        Reserva tu primera sesión y da el primer paso hacia tus objetivos.
+        {t("emptySubtitle")}
       </p>
       <button
         onClick={() => router.push("/?book=free15min")}
@@ -134,7 +136,7 @@ function EmptyCTA() {
         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
           calendar_add_on
         </span>
-        Reservar una sesión
+        {t("bookSession")}
       </button>
     </div>
   );
@@ -143,6 +145,7 @@ function EmptyCTA() {
 // ─── CTA: has pack but no sessions ────────────────────────────────────────────
 
 function PackCTA({ credits }: { credits: number }) {
+  const t = useTranslations("areaPersonal.main");
   const router = useRouter();
   return (
     <div
@@ -184,14 +187,14 @@ function PackCTA({ credits }: { credits: number }) {
           letterSpacing: "-0.01em",
         }}
       >
-        ¡Tienes clases disponibles!
+        {t("packTitle")}
       </h3>
       <p style={{ fontSize: 14, color: "#86948a", margin: "0 auto 24px", maxWidth: 360 }}>
-        Tienes{" "}
+        {t("packCTAPrefix")}{" "}
         <span style={{ color: "#4edea3", fontWeight: 700 }}>
-          {credits} clase{credits !== 1 ? "s" : ""}
+          {t("packCTAPending", { count: credits })}
         </span>{" "}
-        pendiente{credits !== 1 ? "s" : ""} en tu pack. ¿Cuándo quieres practicar?
+        {t("packCTASuffix")}
       </p>
       <button
         onClick={() => router.push("/?book=pack")}
@@ -219,7 +222,7 @@ function PackCTA({ credits }: { credits: number }) {
         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
           calendar_add_on
         </span>
-        Reservar mi próxima clase
+        {t("bookNextClass")}
       </button>
     </div>
   );
@@ -228,6 +231,7 @@ function PackCTA({ credits }: { credits: number }) {
 // ─── Error state ──────────────────────────────────────────────────────────────
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
+  const t = useTranslations("areaPersonal.main");
   return (
     <div
       style={{
@@ -239,7 +243,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
       }}
     >
       <p style={{ color: "#86948a", fontSize: 14, marginBottom: 16 }}>
-        No se pudieron cargar tus sesiones.
+        {t("loadError")}
       </p>
       <button
         onClick={onRetry}
@@ -254,7 +258,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
           fontFamily: "inherit",
         }}
       >
-        Reintentar
+        {t("retry")}
       </button>
     </div>
   );
@@ -263,6 +267,7 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function PersonalArea() {
+  const t = useTranslations("areaPersonal.main");
   const { packSession, isAuthLoading } = useUserSession();
   const [bookingsState, setBookingsState] = useState<BookingsState>("loading");
   const [isMobile, setIsMobile] = useState(false);
@@ -336,11 +341,11 @@ export default function PersonalArea() {
             lineHeight:    1.2,
           }}
         >
-          Área Personal
+          {t("title")}
         </h1>
         {packSession && (
           <p style={{ fontSize: 14, color: "#86948a", marginTop: 4 }}>
-            Bienvenido de vuelta,{" "}
+            {t("welcomeBack")}{" "}
             <span style={{ color: "#e5e1e4", fontWeight: 600 }}>
               {packSession.name.split(" ")[0]}
             </span>

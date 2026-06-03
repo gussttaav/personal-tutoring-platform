@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { UserSession } from "@/domain/types";
 
 interface BookSessionsPanelProps {
@@ -9,56 +10,20 @@ interface BookSessionsPanelProps {
   packSession:   UserSession | null;
 }
 
-interface SessionOption {
-  icon:  string;
-  label: string;
-  sub:   string;
-  price: string;
-  book:  string;
-}
+// Icons are non-translatable; text comes from the dictionary.
+const SESSION_KEYS = [
+  { key: "free15min", icon: "chat_bubble" },
+  { key: "session1h", icon: "timer"        },
+  { key: "session2h", icon: "history"      },
+] as const;
 
-const SINGLE_SESSIONS: SessionOption[] = [
-  {
-    icon:  "chat_bubble",
-    label: "Encuentro Inicial",
-    sub:   "15 min · Presentación",
-    price: "Gratis",
-    book:  "free15min",
-  },
-  {
-    icon:  "timer",
-    label: "Sesión de 1 hora",
-    sub:   "60 min · Individual",
-    price: "€16",
-    book:  "session1h",
-  },
-  {
-    icon:  "history",
-    label: "Sesión de 2 horas",
-    sub:   "120 min · Individual",
-    price: "€30",
-    book:  "session2h",
-  },
-];
-
-const PACK_OPTIONS: SessionOption[] = [
-  {
-    icon:  "inventory_2",
-    label: "Pack Esencial 5h",
-    sub:   "Ahorra €5 · 6% dto.",
-    price: "€75",
-    book:  "pack5",
-  },
-  {
-    icon:  "inventory_2",
-    label: "Pack Intensivo 10h",
-    sub:   "Ahorra €20 · 12% dto.",
-    price: "€140",
-    book:  "pack10",
-  },
-];
+const PACK_KEYS = [
+  { key: "pack5",  icon: "inventory_2" },
+  { key: "pack10", icon: "inventory_2" },
+] as const;
 
 export default function BookSessionsPanel({ hasActivePack, packSession }: BookSessionsPanelProps) {
+  const t = useTranslations("areaPersonal.bookPanel");
   const router = useRouter();
 
   return (
@@ -78,7 +43,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
         letterSpacing: "-0.01em",
         margin:        "0 0 16px",
       }}>
-        Reservar una sesión
+        {t("title")}
       </h3>
 
       {/* Pack sessions CTA — only shown if user has active pack */}
@@ -121,10 +86,10 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
               </div>
               <div>
                 <p style={{ fontSize: 12, fontWeight: 700, color: "#4edea3", margin: 0 }}>
-                  Usar crédito del pack
+                  {t("usePackCredit")}
                 </p>
                 <p style={{ fontSize: 10, color: "#86948a", margin: "1px 0 0" }}>
-                  {packSession.credits} clase{packSession.credits !== 1 ? "s" : ""} disponible{packSession.credits !== 1 ? "s" : ""}
+                  {t("packCredits", { count: packSession.credits })}
                 </p>
               </div>
             </div>
@@ -146,14 +111,17 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
         color:         "#4edea3",
         margin:        "0 0 8px",
       }}>
-        Sesiones individuales
+        {t("singleSessionsLabel")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
-        {SINGLE_SESSIONS.map((opt) => (
+        {SESSION_KEYS.map(({ key, icon }) => (
           <SessionRow
-            key={opt.book}
-            option={opt}
-            onClick={() => router.push(`/?book=${opt.book}`)}
+            key={key}
+            icon={icon}
+            label={t(`sessions.${key}.label` as Parameters<typeof t>[0])}
+            sub={t(`sessions.${key}.sub` as Parameters<typeof t>[0])}
+            price={t(`sessions.${key}.price` as Parameters<typeof t>[0])}
+            onClick={() => router.push(`/?book=${key}`)}
           />
         ))}
       </div>
@@ -168,14 +136,17 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
         color:         "#4edea3",
         margin:        "0 0 8px",
       }}>
-        Packs de continuidad
+        {t("packsLabel")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {PACK_OPTIONS.map((opt) => (
+        {PACK_KEYS.map(({ key, icon }) => (
           <SessionRow
-            key={opt.book}
-            option={opt}
-            onClick={() => router.push(`/?book=${opt.book}`)}
+            key={key}
+            icon={icon}
+            label={t(`packs.${key}.label` as Parameters<typeof t>[0])}
+            sub={t(`packs.${key}.sub` as Parameters<typeof t>[0])}
+            price={t(`packs.${key}.price` as Parameters<typeof t>[0])}
+            onClick={() => router.push(`/?book=${key}`)}
           />
         ))}
       </div>
@@ -183,7 +154,9 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
   );
 }
 
-function SessionRow({ option, onClick }: { option: SessionOption; onClick: () => void }) {
+function SessionRow({
+  icon, label, sub, price, onClick,
+}: { icon: string; label: string; sub: string; price: string; onClick: () => void }) {
   const [hovered, setHovered] = useState(false);
   return (
     <button
@@ -218,16 +191,16 @@ function SessionRow({ option, onClick }: { option: SessionOption; onClick: () =>
           flexShrink:     0,
         }}>
           <span className="material-symbols-outlined" style={{ fontSize: 14, color: "#4edea3" }}>
-            {option.icon}
+            {icon}
           </span>
         </div>
         <div>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#e5e1e4", margin: 0 }}>{option.label}</p>
-          <p style={{ fontSize: 10, color: "#86948a", margin: "1px 0 0" }}>{option.sub}</p>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "#e5e1e4", margin: 0 }}>{label}</p>
+          <p style={{ fontSize: 10, color: "#86948a", margin: "1px 0 0" }}>{sub}</p>
         </div>
       </div>
       <span style={{ fontSize: 12, fontWeight: 700, color: "#4edea3", flexShrink: 0 }}>
-        {option.price}
+        {price}
       </span>
     </button>
   );
