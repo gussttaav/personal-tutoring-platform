@@ -115,7 +115,7 @@ for (const locale of LOCALES) {
       });
 
       // Cancel the booking
-      await page.getByRole("button", { name: new RegExp(d.areaPersonal.nextSession.reschedule, "i") }).first().click();
+      await page.getByRole("button", { name: new RegExp(d.common.cancel, "i") }).first().click();
 
       // Inline confirm panel
       await expect(page.getByRole("button", { name: d.areaPersonal.nextSession.confirmCancel })).toBeVisible({

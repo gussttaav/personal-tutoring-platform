@@ -820,6 +820,7 @@ function SlotCell({
   onClick?:      () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const tCal = useTranslations("booking.weeklyCalendar");
 
   if (state === "unavailable") {
     return (
@@ -894,7 +895,7 @@ function SlotCell({
         fontFamily:     "inherit",
         overflow:       "hidden",
       }}
-      aria-label={timeLabel ? `Disponible a las ${timeLabel}` : "Hora disponible"}
+      aria-label={timeLabel ? tCal("availableAt", { timeLabel }) : tCal("available")}
     />
 
   );
