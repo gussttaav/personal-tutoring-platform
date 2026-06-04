@@ -18,7 +18,6 @@
 
 import type { BookResponse, CreditsResponse, PaymentIntentResponse } from "@/domain/types";
 import type { BookInput, CheckoutInput } from "@/lib/schemas";
-import { friendlyError } from "@/constants/errors";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res  = await fetch(url, {
@@ -27,8 +26,8 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
   });
   const data = await res.json();
   if (!res.ok) {
-    const code = typeof data.error === "string" ? data.error : "UNKNOWN";
-    throw new ApiError(friendlyError(res.status, code), res.status, code);
+    const code = typeof data.error === "string" ? data.error : "";
+    throw new ApiError(code, res.status, code);
   }
   return data as T;
 }

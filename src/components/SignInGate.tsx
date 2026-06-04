@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { COLORS } from "@/constants";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 
@@ -13,6 +14,7 @@ interface SignInGateProps {
 }
 
 export default function SignInGate({ actionLabel, callbackUrl, onClose }: SignInGateProps) {
+  const t = useTranslations("booking.signInGate");
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50 p-4"
@@ -45,7 +47,7 @@ export default function SignInGate({ actionLabel, callbackUrl, onClose }: SignIn
           className="text-center text-lg font-semibold mb-2"
           style={{ color: COLORS.textPrimary }}
         >
-          Identifícate para continuar
+          {t("title")}
         </h2>
 
         {/* Description */}
@@ -53,11 +55,12 @@ export default function SignInGate({ actionLabel, callbackUrl, onClose }: SignIn
           className="text-center text-sm mb-6"
           style={{ color: COLORS.textSecondary }}
         >
-          Para{" "}
-          <span style={{ color: COLORS.textPrimary, fontWeight: 500 }}>
-            {actionLabel}
-          </span>{" "}
-          necesitamos verificar tu identidad. Solo tardará un momento.
+          {t.rich("body", {
+            actionLabel,
+            highlight: (c) => (
+              <span style={{ color: COLORS.textPrimary, fontWeight: 500 }}>{c}</span>
+            ),
+          })}
         </p>
 
         <GoogleSignInButton callbackUrl={callbackUrl ?? "/"} />
@@ -74,7 +77,7 @@ export default function SignInGate({ actionLabel, callbackUrl, onClose }: SignIn
             ((e.currentTarget as HTMLElement).style.color = COLORS.textMuted)
           }
         >
-          Cancelar
+          {t("cancel")}
         </button>
       </div>
     </div>

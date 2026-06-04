@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { COLORS } from "@/constants";
 
 /**
@@ -312,10 +313,11 @@ const CHECK_BOLD: React.CSSProperties = { color: COLORS.textPrimary, fontWeight:
 
 /** Canonical "what to expect" checklist — keep both success screens in sync. */
 export function ConfirmationChecklist() {
+  const t = useTranslations("feedback");
   const rows: { glyph: string; node: ReactNode }[] = [
-    { glyph: "mail", node: <><b style={CHECK_BOLD}>Email con el enlace</b> al aula virtual y enlaces para cancelar o reprogramar.</> },
-    { glyph: "event_available", node: <><b style={CHECK_BOLD}>Añade a tu calendario</b> con un clic desde el email.</> },
-    { glyph: "manage_accounts", node: <>También puedes <b style={CHECK_BOLD}>unirte, reprogramar o cancelar</b> desde tu área personal.</> },
+    { glyph: "mail",           node: t.rich("emailRow",       { bold: (c) => <b style={CHECK_BOLD}>{c}</b> }) },
+    { glyph: "event_available", node: t.rich("calendarRow",   { bold: (c) => <b style={CHECK_BOLD}>{c}</b> }) },
+    { glyph: "manage_accounts", node: t.rich("personalAreaRow", { bold: (c) => <b style={CHECK_BOLD}>{c}</b> }) },
   ];
   return (
     <div

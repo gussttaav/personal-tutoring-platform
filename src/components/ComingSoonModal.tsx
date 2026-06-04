@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 import { useHydrated } from "@/hooks/useClientValue";
 import { useSession, signIn } from "next-auth/react";
 import { signInWithPopup } from "@/lib/auth-popup";
@@ -13,32 +14,21 @@ interface ComingSoonModalProps {
   onClose: () => void;
 }
 
-const CONTENT = {
-  courses: {
-    badge:    "CURSOS",
-    icon:     "school",
-    headline: "Formación en profundidad",
-    subline:  "Cursos estructurados sobre IA y desarrollo. Próximamente.",
-    ctaLabel: "Suscribirse a Cursos",
-  },
-  blog: {
-    badge:    "BLOG",
-    icon:     "article",
-    headline: "Artículos y recursos",
-    subline:  "Guías, tutoriales y reflexiones sobre IA. Próximamente.",
-    ctaLabel: "Suscribirse al Blog",
-  },
-} as const;
+const CONTENT_ICONS = { courses: "school", blog: "article" } as const;
 
 export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps) {
+  const t = useTranslations("comingSoon");
   const { data: session, status, update } = useSession();
+
+  const content = type === "courses"
+    ? { badge: t("courses.badge"), icon: CONTENT_ICONS[type], headline: t("courses.headline"), subline: t("courses.subline"), ctaLabel: t("courses.ctaLabel") }
+    : { badge: t("blog.badge"),    icon: CONTENT_ICONS[type], headline: t("blog.headline"),    subline: t("blog.subline"),    ctaLabel: t("blog.ctaLabel")    };
   // Portal requires the DOM — true only after client hydration.
   const mounted = useHydrated();
   const [subscribeState, setSubscribeState] = useState<SubscribeState>("idle");
 
   const isLoaded   = status !== "loading";
   const isSignedIn = !!session?.user?.email;
-  const content    = CONTENT[type];
 
   // Scroll lock + Escape key
   useEffect(() => {
@@ -132,7 +122,7 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`Próximamente — ${content.badge}`}
+          aria-label={content.badge}
           onClick={e => e.stopPropagation()}
           style={{
             width:        "min(460px, 100%)",
@@ -164,7 +154,7 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
 
             <button
               onClick={onClose}
-              aria-label="Cerrar"
+              aria-label={t("close")}
               style={{
                 width:          "32px",
                 height:         "32px",
@@ -240,7 +230,7 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                   </svg>
                 </div>
                 <p style={{ margin: 0, fontSize: "14px", color: "#bbcabf" }}>
-                  ¡Apuntado! Te avisaremos cuando esté disponible.
+                  {t("subscribed")}
                 </p>
               </div>
               <button
@@ -261,13 +251,13 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#353437"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
-                Cerrar
+                {t("close")}
               </button>
             </>
           ) : subscribeState === "error" ? (
             <>
               <p style={{ margin: "0 0 10px", fontSize: "13px", color: "#ffb4ab" }}>
-                Algo fue mal al suscribirte.
+                {t("subscribeError")}
               </p>
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
@@ -287,7 +277,7 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#10b981"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#4edea3"; }}
                 >
-                  Reintentar
+                  {t("retry")}
                 </button>
                 <button
                   onClick={onClose}
@@ -306,16 +296,14 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                   onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#353437"; }}
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
-                  Cancelar
+                  {t("cancel")}
                 </button>
               </div>
             </>
           ) : (
             <>
               <p style={{ margin: "0 0 12px", fontSize: "13px", color: "#86948a" }}>
-                {isSignedIn
-                  ? "Recibe un aviso cuando publique nuevo contenido."
-                  : "Inicia sesión con Google para recibir un aviso al publicar."}
+                {isSignedIn ? t("loggedInPrompt") : t("loggedOutPrompt")}
               </p>
               <button
                 onClick={handleSubscribeClick}
@@ -360,7 +348,7 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                       <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
                       <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                     </svg>
-                    Continuar con Google
+                    {t("continueGoogle")}
                   </>
                 ) : content.ctaLabel}
               </button>
@@ -383,7 +371,7 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = "#353437"; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
               >
-                Cancelar
+                {t("cancel")}
               </button>
             </>
           )}

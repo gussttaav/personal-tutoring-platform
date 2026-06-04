@@ -1,16 +1,14 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
-// Render boundary for notFound() (e.g. unknown locale) and unmatched routes
-// within the [locale] segment. Spanish only in Phase 1 — translated in a later phase.
-export default function NotFound() {
+export default async function NotFound() {
+  const t = await getTranslations("pages.notFound");
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-      <h1 className="font-headline text-4xl font-bold">Página no encontrada</h1>
-      <p className="text-base opacity-80">
-        Lo sentimos, la página que buscas no existe.
-      </p>
+      <h1 className="font-headline text-4xl font-bold">{t("title")}</h1>
+      <p className="text-base opacity-80">{t("body")}</p>
       <Link href="/" className="underline">
-        Volver al inicio
+        {t("backHome")}
       </Link>
     </main>
   );

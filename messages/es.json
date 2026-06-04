@@ -107,9 +107,40 @@
       "cta": "Solicitar apoyo académico",
       "helpPrompt": "¿No estás seguro de si puedo ayudarte?",
       "askAI": "Pregunta al asistente IA"
+    },
+    "consulting": {
+      "sectionLabel": "Servicios para empresas",
+      "headlinePrefix": "Consultoría para",
+      "headlineAccent": "Empresas",
+      "body": "Integra inteligencia artificial en tus procesos, forma a tu equipo técnico e implementa soluciones que generen impacto real en tu organización.",
+      "requestInfo": "Solicitar información",
+      "noCommitment": "Sin compromiso · Respuesta en 24h",
+      "feature1": {
+        "title": "Implantación y automatización con IA",
+        "description": "Diseño e integración de agentes y flujos inteligentes adaptados a tus procesos de negocio."
+      },
+      "feature2": {
+        "title": "Análisis de datos y toma de decisiones",
+        "description": "Extracción de valor de tus datos para apoyar decisiones estratégicas con base estadística."
+      },
+      "feature3": {
+        "title": "Formación técnica para equipos",
+        "description": "Programación, arquitectura de software, IA y buenas prácticas. Adaptado al nivel y stack de tu equipo."
+      },
+      "feature4": {
+        "title": "Arquitectura y revisión de sistemas",
+        "description": "Auditoría y rediseño de backends, APIs y microservicios para mejorar escalabilidad y mantenibilidad."
+      }
     }
   },
-  "auth": {},
+  "auth": {
+    "signin": {
+      "redirecting": "Redirigiendo a Google…"
+    },
+    "callback": {
+      "closing": "Autenticación completada. Cerrando…"
+    }
+  },
   "areaPersonal": {
     "main": {
       "title": "Área Personal",
@@ -168,6 +199,24 @@
       "ctaAvailable": "{count, plural, one {# clase disponible} other {# clases disponibles}}",
       "ctaSuffix": "en tu pack. ¡Reserva tu próxima sesión!",
       "bookButton": "Reservar sesión del pack"
+    },
+    "calendar": {
+      "blockShort2h": "2h",
+      "blockShort15": "15 min",
+      "blockShort1h": "1h",
+      "blockFree": "15 min. Gratis",
+      "block1h": "1h Individual",
+      "block2h": "2h Individual",
+      "blockPack10": "1h Pack10h",
+      "blockPack5": "1h Pack5h",
+      "fullFree": "Encuentro inicial · 15 min",
+      "fullSession1h": "Sesión individual · 1 hora",
+      "fullSession2h": "Sesión individual · 2 horas",
+      "fullPack10": "Clase de pack (10h)",
+      "fullPack5": "Clase de pack (5h)",
+      "fallback": "Sesión",
+      "legendSession": "Sesión individual",
+      "legendPack": "Pack / Inicial"
     }
   },
   "booking": {
@@ -294,7 +343,275 @@
         "flexible": "Reserva flexible — tú decides cuándo",
         "validity": "Vigencia de 180 días"
       }
+    },
+    "sidebar": {
+      "title": "Tu Selección",
+      "duration": "Duración: {duration}",
+      "free": "Sin coste",
+      "reschedule": "Reprogramando clase",
+      "packActive": "Bono de Horas Activo",
+      "packRemaining": "{packRemaining} / {packTotal}h rest.",
+      "packDeductNote": "Esta sesión se descontará de tu pack activo.",
+      "rescheduleNote": "Estás modificando una reserva existente. Esta acción no consume créditos.",
+      "cancelNote": "Las cancelaciones deben realizarse con al menos 24h de antelación para recuperar el crédito.",
+      "zoomApp": "Zoom (en la app)",
+      "realtimeSlots": "Horarios en tiempo real",
+      "securePayment": "Pago seguro con Stripe"
+    },
+    "wizardProgress": {
+      "session": "Sesión",
+      "schedule": "Horario",
+      "review": "Revisión",
+      "payment": "Pago"
+    },
+    "signInGate": {
+      "title": "Identifícate para continuar",
+      "body": "Para <highlight>{actionLabel}</highlight> necesitamos verificar tu identidad. Solo tardará un momento.",
+      "cancel": "Cancelar"
+    },
+    "availabilityModal": {
+      "viewAvailability": "Ver disponibilidad",
+      "weekOf": "Semana del {day} de {month}",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "close": "Cerrar",
+      "timezone": "Horarios en tu zona · {userTz}",
+      "scheduleIn": "Horarios en {timezone}",
+      "available": "Disponible",
+      "booked": "Reservado",
+      "unavailable": "No disponible"
+    },
+    "weeklyCalendar": {
+      "subtitle": "Horarios en tu zona ({userTz})",
+      "selectHint": "Selecciona el horario que mejor encaje en tu flujo de trabajo.",
+      "prevWeek": "Semana anterior",
+      "nextWeek": "Semana siguiente",
+      "prev": "Anterior",
+      "next": "Siguiente",
+      "available": "Disponible",
+      "preselected": "Preseleccionado",
+      "confirmed": "Confirmado",
+      "booked": "Reservado",
+      "unavailable": "No disponible",
+      "availableAt": "Disponible a las {timeLabel}"
     }
+  },
+  "payment": {
+    "form": {
+      "secure": "Transacción segura",
+      "protectedByStripe": "Protegido por Stripe",
+      "cancellation24h": "Cancelación 24h",
+      "loading": "Cargando formulario de pago...",
+      "processing": "Procesando...",
+      "pay": "Pagar {amount}",
+      "cancel": "Cancelar",
+      "secureFooter": "Pago seguro · cifrado SSL"
+    }
+  },
+  "session": {
+    "preJoin": {
+      "microphone": "Micrófono",
+      "camera": "Cámara",
+      "speaker": "Altavoz",
+      "noDevices": "Sin dispositivos",
+      "default": "Por defecto",
+      "test": "Probar",
+      "cameraPermission": "No se pudo acceder a la cámara. Comprueba los permisos del navegador.",
+      "cameraPermissionShort": "No se pudo acceder a la cámara.",
+      "timeout": "La sesión tardó demasiado en conectar. Por favor, inténtalo de nuevo.",
+      "retry": "Reintentar",
+      "title": "¿Todo listo para tu clase?",
+      "subtitle": "Configura tus dispositivos y asegúrate de que todo funcione correctamente antes de entrar al aula virtual.",
+      "enterRoom": "Entrar al aula",
+      "micOn": "Activar micrófono",
+      "micOff": "Silenciar micrófono",
+      "camOn": "Activar cámara",
+      "camOff": "Desactivar cámara"
+    },
+    "zoom": {
+      "loading": "Cargando",
+      "waiting": "Esperando conexión...",
+      "waitingSoon": "El participante se unirá pronto",
+      "camOff": "Cámara desactivada",
+      "connectionLost": "Conexión perdida",
+      "reconnecting": "Reconectando...",
+      "poorConnection": "Conexión inestable",
+      "muteOn": "Activar micrófono",
+      "muteOff": "Silenciar",
+      "videoOn": "Activar cámara",
+      "videoOff": "Desactivar cámara",
+      "shareStart": "Compartir pantalla",
+      "shareStop": "Dejar de compartir pantalla",
+      "shareUnavailable": "Compartir pantalla no está disponible en dispositivos móviles",
+      "shareUnavailableMobile": "Compartir pantalla no disponible en móvil",
+      "settings": "Ajustes",
+      "endingSoon": "La sesión terminará en menos de un minuto.",
+      "screenShareHint": "Toca: participantes",
+      "showPanels": "Mostrar paneles de video",
+      "hidePanels": "Ocultar paneles de video",
+      "showParticipants": "Mostrar participantes",
+      "hideParticipants": "Ocultar participantes",
+      "waitingParticipant": "Esperando participante",
+      "openChat": "Abrir chat",
+      "closeChat": "Cerrar chat",
+      "error": "Error",
+      "retry": "Reintentar",
+      "connectError": "Error al conectar con la sesión"
+    },
+    "waitingRoom": {
+      "statusMessages": [
+        "Conectando con el servidor...",
+        "Inicializando cámara...",
+        "Optimizando calidad de video...",
+        "Ajustando resolución y FPS...",
+        "Verificando micrófono...",
+        "Estableciendo conexión segura...",
+        "Buscando otros participantes...",
+        "Inicializando chat y recursos...",
+        "Preparando tu aula virtual..."
+      ],
+      "retry": "Reintentar",
+      "connectionError": "Error de conexión",
+      "waitingConnection": "Esperando conexión...",
+      "waitingSoon": "El participante se unirá pronto",
+      "preparingRoom": "Preparando tu aula virtual...",
+      "madridTime": "hora de Madrid",
+      "cameraActive": "Cámara activa",
+      "micReady": "Micrófono listo",
+      "stableNetwork": "Red estable",
+      "lowLatency": "Latencia baja"
+    },
+    "chat": {
+      "header": "Chat de la sesión",
+      "closeChat": "Cerrar chat",
+      "empty": "Todavía no hay mensajes. ¡Di hola!",
+      "typing": "El otro participante está escribiendo",
+      "placeholder": "Escribe un mensaje...",
+      "sendMessage": "Enviar mensaje"
+    },
+    "settings": {
+      "title": "Ajustes",
+      "close": "Cerrar ajustes",
+      "audioVideo": "Audio y Vídeo",
+      "backgroundEffects": "Efectos de fondo",
+      "diagnostics": "Diagnóstico de conexión",
+      "general": "General",
+      "camera": "Cámara",
+      "microphone": "Micrófono",
+      "speaker": "Altavoz",
+      "noDevices": "Sin dispositivos",
+      "deviceId": "Dispositivo {deviceId}",
+      "reconnecting": "Reconectando",
+      "noData": "Sin datos",
+      "excellent": "Excelente",
+      "unstable": "Inestable",
+      "none": "Ninguno",
+      "blur": "Desenfoque",
+      "latency": "Latencia",
+      "jitter": "Jitter",
+      "packetLoss": "Pérdida",
+      "waitingMetrics": "Las métricas aparecerán cuando otro participante esté conectado.",
+      "noiseCancellation": "Cancelación de ruido",
+      "noiseCancellationDesc": "Filtra el ruido de fondo"
+    }
+  },
+  "chat": {
+    "initialMessage": "¡Hola! 👋 Soy el asistente de **Gustavo Torres**. Puedo contarte sobre sus clases, áreas de especialidad, cómo reservar una sesión o cualquier otra duda.",
+    "initialQuestion": "¿En qué puedo ayudarte?",
+    "suggestions": [
+      "¿Qué asignaturas impartes?",
+      "¿Cómo reservo una sesión?",
+      "¿Qué incluye el pack?",
+      "¿Das clases en inglés?"
+    ],
+    "title": "Asistente de Gustavo",
+    "status": "En línea · respuesta inmediata",
+    "minimize": "Reducir ventana",
+    "expand": "Expandir ventana",
+    "close": "Cerrar chat",
+    "placeholder": "Escribe tu pregunta…",
+    "placeholderShort": "Escribe tu mensaje",
+    "send": "Enviar mensaje",
+    "openAssistant": "Abrir asistente",
+    "closeAssistant": "Cerrar asistente",
+    "assistantLabel": "Asistente virtual de Gustavo Torres",
+    "error": "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
+    "unknownError": "Error desconocido"
+  },
+  "comingSoon": {
+    "courses": {
+      "badge": "CURSOS",
+      "headline": "Formación en profundidad",
+      "subline": "Cursos estructurados sobre IA y desarrollo. Próximamente.",
+      "ctaLabel": "Suscribirse a Cursos"
+    },
+    "blog": {
+      "badge": "BLOG",
+      "headline": "Artículos y recursos",
+      "subline": "Guías, tutoriales y reflexiones sobre IA. Próximamente.",
+      "ctaLabel": "Suscribirse al Blog"
+    },
+    "close": "Cerrar",
+    "subscribed": "¡Apuntado! Te avisaremos cuando esté disponible.",
+    "subscribeError": "Algo fue mal al suscribirte.",
+    "retry": "Reintentar",
+    "cancel": "Cancelar",
+    "loggedInPrompt": "Recibe un aviso cuando publique nuevo contenido.",
+    "loggedOutPrompt": "Inicia sesión con Google para recibir un aviso al publicar.",
+    "continueGoogle": "Continuar con Google"
+  },
+  "postClassReview": {
+    "ratings": [
+      { "label": "Lo siento mucho",       "placeholder": "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar." },
+      { "label": "No fue lo que esperaba","placeholder": "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar." },
+      { "label": "Estuvo bien",            "placeholder": "¿Hay algo concreto que podría hacer diferente la próxima vez?" },
+      { "label": "Muy buena clase",        "placeholder": "¿Qué te resultó más útil de la clase de hoy?" },
+      { "label": "¡Excelente!",            "placeholder": "¿Qué destacarías? Si das tu permiso, podría publicarse en mi perfil." }
+    ],
+    "tapToRate": "Toca una carita para valorar",
+    "private": "La valoración es privada",
+    "submitting": "Enviando…",
+    "submit": "Enviar",
+    "skip": "Saltar",
+    "shareGoogle": "¿Lo compartes también en Google?",
+    "shareGoogleBody": "Ayuda a otros estudiantes a encontrarme. Tarda menos de un minuto.",
+    "leaveReview": "Dejar reseña en Google",
+    "noThanks": "No, gracias",
+    "title": "¿Cómo ha ido tu clase?",
+    "goodTitle": "¡Me alegra que te gustara!",
+    "thanks": "¡Gracias!",
+    "thanksBody": "Tu opinión me ayuda a mejorar.",
+    "toPersonalArea": "Ir a mi área personal",
+    "continueNoReview": "Continuar sin reseña",
+    "initials": "TÚ"
+  },
+  "footer": {
+    "tagline": "Clases particulares y consultoría en programación, matemáticas e IA.",
+    "explore": "Explorar",
+    "policies": "Políticas",
+    "help": "Ayuda",
+    "copyright": "© {year} Gustavo Torres Guerrero. Todos los derechos reservados.",
+    "paymentBadge": "Pago seguro · Stripe",
+    "courses": "Cursos",
+    "blog": "Blog",
+    "mentoring": "Mentoría",
+    "askAssistant": "Pregunta al asistente IA"
+  },
+  "policy": {
+    "backHome": "Volver al inicio",
+    "lastUpdated": "Última actualización: {date}",
+    "contact": "gustavoai.dev · contacto@gustavoai.dev"
+  },
+  "footerModals": {
+    "cancellation": "Política de cancelación",
+    "terms": "Términos de servicio",
+    "privacy": "Política de privacidad",
+    "close": "Cerrar"
+  },
+  "feedback": {
+    "emailRow": "<bold>Email con el enlace</bold> al aula virtual y enlaces para cancelar o reprogramar.",
+    "calendarRow": "<bold>Añade a tu calendario</bold> con un clic desde el email.",
+    "personalAreaRow": "También puedes <bold>unirte, reprogramar o cancelar</bold> desde tu área personal."
   },
   "legal": {},
   "errors": {
@@ -331,9 +648,34 @@
     "areaPersonal": {
       "title": "Área Personal — Gustavo Torres",
       "description": "Gestiona tus sesiones reservadas, clases de pack y reserva nuevas sesiones."
+    },
+    "root": {
+      "title": "Gustavo Torres - Tutorías de programación, matemáticas e IA",
+      "description": "Clases de programación, matemáticas e IA con Gustavo Torres."
+    },
+    "privacidad": {
+      "title": "Política de privacidad — Gustavo Torres",
+      "description": "Política de privacidad de gustavoai.dev. Información sobre qué datos se recogen, cómo se usan y tus derechos."
+    },
+    "terminos": {
+      "title": "Términos de servicio — Gustavo Torres",
+      "description": "Términos de servicio de gustavoai.dev. Condiciones de uso, pagos, cancelaciones y responsabilidad."
     }
   },
   "pages": {
+    "notFound": {
+      "title": "Página no encontrada",
+      "body": "Lo sentimos, la página que buscas no existe.",
+      "backHome": "Volver al inicio"
+    },
+    "sesion": {
+      "free": "Encuentro inicial gratuito · 15 min",
+      "session1h": "Sesión individual · 1 hora",
+      "session2h": "Sesión individual · 2 horas",
+      "pack": "Clase de pack",
+      "signIn": "Inicia sesión para acceder a tu sesión.",
+      "continueGoogle": "Continuar con Google"
+    },
     "cancelar": {
       "invalidLink": "Enlace de cancelación inválido.",
       "connectionError": "Error de conexión. Inténtalo de nuevo.",

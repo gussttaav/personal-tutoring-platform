@@ -32,6 +32,7 @@ import {
   useCallback,
   forwardRef,
 } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import type { UserBooking } from "./types";
 
@@ -39,13 +40,9 @@ import type { UserBooking } from "./types";
 
 const TIME_ROWS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
-const DAY_ABBR = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"];
-const DAY_FULL = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-
-const MONTHS_ES = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
+function getDayName(date: Date, locale: string, format: "short" | "long"): string {
+  return new Intl.DateTimeFormat(locale, { weekday: format }).format(date);
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -82,28 +79,36 @@ function sessionColors(type: string) {
   return   { bg: "rgba(158,210,181,0.15)", border: "rgba(158,210,181,0.35)", text: "#9ed2b5" };
 }
 
-function blockLabel(booking: UserBooking, short: boolean): string {
+interface CalendarLabels {
+  blockShort2h: string; blockShort15: string; blockShort1h: string;
+  blockFree: string; block1h: string; block2h: string;
+  blockPack10: string; blockPack5: string;
+  fullFree: string; fullSession1h: string; fullSession2h: string;
+  fullPack10: string; fullPack5: string; fallback: string;
+}
+
+function blockLabel(booking: UserBooking, short: boolean, labels: CalendarLabels): string {
   if (short) {
-    if (booking.sessionType === "session2h") return "2h";
-    if (booking.sessionType === "free15min") return "15 min";
-    return "1h";
+    if (booking.sessionType === "session2h") return labels.blockShort2h;
+    if (booking.sessionType === "free15min") return labels.blockShort15;
+    return labels.blockShort1h;
   }
   switch (booking.sessionType) {
-    case "free15min": return "15 min. Gratis";
-    case "session1h": return "1h Individual";
-    case "session2h": return "2h Individual";
-    case "pack":      return booking.packSize === 10 ? "1h Pack10h" : "1h Pack5h";
-    default:          return "1h";
+    case "free15min": return labels.blockFree;
+    case "session1h": return labels.block1h;
+    case "session2h": return labels.block2h;
+    case "pack":      return booking.packSize === 10 ? labels.blockPack10 : labels.blockPack5;
+    default:          return labels.blockShort1h;
   }
 }
 
-function fullLabel(booking: UserBooking): string {
+function fullLabel(booking: UserBooking, labels: CalendarLabels): string {
   switch (booking.sessionType) {
-    case "free15min": return "Encuentro inicial · 15 min";
-    case "session1h": return "Sesión individual · 1 hora";
-    case "session2h": return "Sesión individual · 2 horas";
-    case "pack":      return booking.packSize === 10 ? "Clase de pack (10h)" : "Clase de pack (5h)";
-    default:          return "Sesión";
+    case "free15min": return labels.fullFree;
+    case "session1h": return labels.fullSession1h;
+    case "session2h": return labels.fullSession2h;
+    case "pack":      return booking.packSize === 10 ? labels.fullPack10 : labels.fullPack5;
+    default:          return labels.fallback;
   }
 }
 
@@ -198,9 +203,12 @@ interface ContextMenuProps {
   onCancelled: () => void;
 }
 
-const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
-  ({ booking, rect, onClose, onCancelled }, ref) => {
-    const router = useRouter();
+const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps & { labels: CalendarLabels }>(
+  ({ booking, rect, onClose, onCancelled, labels }, ref) => {
+    const router   = useRouter();
+    const tNext    = useTranslations("areaPersonal.nextSession");
+    const tCancel  = useTranslations("pages.cancelar");
+    const tCommon  = useTranslations("common");
     const [phase, setPhase]     = useState<"idle" | "confirm" | "busy" | "error">("idle");
     const [errMsg, setErrMsg]   = useState("");
     const { top, left }         = menuPosition(rect);
@@ -218,7 +226,7 @@ const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
         onClose();
         onCancelled();
       } catch {
-        setErrMsg("Error de conexión. Inténtalo de nuevo.");
+        setErrMsg(tCancel("connectionError"));
         setPhase("error");
       }
     }
@@ -240,28 +248,28 @@ const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
       <div ref={ref} style={baseStyle} onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ padding: "8px 12px 10px", borderBottom: "1px solid rgba(255,255,255,0.06)", marginBottom: 4 }}>
           <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#86948a", margin: 0 }}>
-            {fullLabel(booking)}
+            {fullLabel(booking, labels)}
           </p>
           <p style={{ fontSize: 11, fontWeight: 600, color: "#bbcabf", margin: "3px 0 0" }}>
             {fmtTime(booking.startsAt)} – {fmtTime(booking.endsAt)}
           </p>
         </div>
-        <CMenuItem icon="play_circle"  label="Entrar al aula"  color="#4edea3" onClick={() => { onClose(); window.location.href = `/sesion/${booking.joinToken}`; }} />
-        <CMenuItem icon="event_repeat" label="Reprogramar"     color="#e5e1e4" onClick={() => { onClose(); router.push(`/?reschedule=${booking.sessionType}&token=${booking.token}`); }} />
+        <CMenuItem icon="play_circle"  label={tNext("joinButton")} color="#4edea3" onClick={() => { onClose(); window.location.href = `/sesion/${booking.joinToken}`; }} />
+        <CMenuItem icon="event_repeat" label={tNext("reschedule")} color="#e5e1e4" onClick={() => { onClose(); router.push(`/?reschedule=${booking.sessionType}&token=${booking.token}`); }} />
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0" }} />
-        <CMenuItem icon="cancel"       label="Cancelar"        color="#ffb4ab" onClick={() => setPhase("confirm")} />
+        <CMenuItem icon="cancel"       label={tCommon("cancel")} color="#ffb4ab" onClick={() => setPhase("confirm")} />
       </div>
     );
 
     if (phase === "confirm") return (
       <div ref={ref} style={baseStyle} onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ padding: "12px 14px" }}>
-          <p style={{ fontSize: 12, fontWeight: 700, color: "#e5e1e4", margin: "0 0 6px" }}>¿Cancelar esta sesión?</p>
-          <p style={{ fontSize: 11, color: "#86948a", margin: "0 0 14px" }}>Esta acción no se puede deshacer.</p>
+          <p style={{ fontSize: 12, fontWeight: 700, color: "#e5e1e4", margin: "0 0 6px" }}>{tNext("cancelConfirmTitle")}</p>
+          <p style={{ fontSize: 11, color: "#86948a", margin: "0 0 14px" }}>{tNext("cancelConfirmBody")}</p>
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={() => setPhase("idle")} style={cancelBtnBase}>No</button>
+            <button onClick={() => setPhase("idle")} style={cancelBtnBase}>{tNext("keepSession")}</button>
             <button onClick={doCancel} style={{ ...cancelBtnBase, background: "#ffb4ab", border: "none", color: "#690005", fontWeight: 700 }}>
-              Sí, cancelar
+              {tNext("confirmCancel")}
             </button>
           </div>
         </div>
@@ -278,7 +286,7 @@ const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
       <div ref={ref} style={baseStyle} onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ padding: "12px 14px" }}>
           <p style={{ fontSize: 11, color: "#ffb4ab", margin: "0 0 12px" }}>{errMsg}</p>
-          <button onClick={() => setPhase("idle")} style={cancelBtnBase}>Cerrar</button>
+          <button onClick={() => setPhase("idle")} style={cancelBtnBase}>{tCommon("close")}</button>
         </div>
       </div>
     );
@@ -331,12 +339,13 @@ function Dots() {
 
 /** Free-15-min half-row slot (standalone, no connection logic needed). */
 function HalfSlot({
-  booking, isMobile, isToday, onOpen,
+  booking, isMobile, isToday, onOpen, labels,
 }: {
   booking:  UserBooking;
   isMobile: boolean;
   isToday:  boolean;
   onOpen:   (b: UserBooking, r: DOMRect) => void;
+  labels:   CalendarLabels;
 }) {
   const [hov, setHov] = useState(false);
   const colors        = sessionColors(booking.sessionType);
@@ -367,7 +376,7 @@ function HalfSlot({
       }}
     >
       <span style={{ fontSize: 9, fontWeight: 700, color: colors.text, pointerEvents: "none", userSelect: "none" }}>
-        {blockLabel(booking, isMobile)}
+        {blockLabel(booking, isMobile, labels)}
       </span>
     </button>
   );
@@ -383,7 +392,7 @@ function HalfSlot({
  *   • text can be truly vertically centered inside the full block
  */
 function SpanBlock({
-  spec, topPx, heightPx, isMobile, isToday, onOpen,
+  spec, topPx, heightPx, isMobile, isToday, onOpen, labels,
 }: {
   spec:     SessionSpec;
   topPx:    number;
@@ -391,6 +400,7 @@ function SpanBlock({
   isMobile: boolean;
   isToday:  boolean;
   onOpen:   (b: UserBooking, r: DOMRect) => void;
+  labels:   CalendarLabels;
 }) {
   const [hov, setHov] = useState(false);
   const colors        = sessionColors(spec.booking.sessionType);
@@ -424,7 +434,7 @@ function SpanBlock({
       }}
     >
       <span style={{ fontSize: isMobile ? 8 : 9, fontWeight: 700, color: colors.text, pointerEvents: "none", userSelect: "none" }}>
-        {blockLabel(spec.booking, isMobile)}
+        {blockLabel(spec.booking, isMobile, labels)}
       </span>
     </button>
   );
@@ -433,7 +443,7 @@ function SpanBlock({
 // ─── Day column ───────────────────────────────────────────────────────────────
 
 function DayColumn({
-  date, bookings, isMobile, isToday, HALF_H, HEADER_H, onOpen,
+  date, bookings, isMobile, isToday, HALF_H, HEADER_H, onOpen, locale, labels,
 }: {
   date:     Date;
   bookings: UserBooking[];
@@ -442,6 +452,8 @@ function DayColumn({
   HALF_H:   number;
   HEADER_H: number;
   onOpen:   (b: UserBooking, r: DOMRect) => void;
+  locale:   string;
+  labels:   CalendarLabels;
 }) {
   const dow      = date.getDay();
   const lookup   = buildDayLookup(bookings, date);
@@ -467,7 +479,7 @@ function DayColumn({
           <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 2, background: "#4edea3", borderRadius: "0 0 2px 2px" }} />
         )}
         <span style={{ fontSize: isMobile ? 8 : 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: isToday ? "#4edea3" : "#86948a", lineHeight: 1 }}>
-          {isMobile ? DAY_ABBR[dow] : DAY_FULL[dow]}
+          {getDayName(date, locale, isMobile ? "short" : "long")}
         </span>
         <span style={{ fontSize: isMobile ? 16 : 20, fontWeight: 800, fontFamily: "var(--font-headline, Manrope), sans-serif", color: isToday ? "#4edea3" : "#e5e1e4", lineHeight: 1 }}>
           {date.getDate()}
@@ -492,7 +504,7 @@ function DayColumn({
             {/* Top half (30 min) */}
             <div style={{ height: HALF_H, position: "relative" }}>
               {topEntry && (
-                <HalfSlot booking={topEntry} isMobile={isMobile} isToday={new Date(topEntry.startsAt).toDateString() === todayStr} onOpen={onOpen} />
+                <HalfSlot booking={topEntry} isMobile={isMobile} isToday={new Date(topEntry.startsAt).toDateString() === todayStr} onOpen={onOpen} labels={labels} />
               )}
             </div>
 
@@ -502,7 +514,7 @@ function DayColumn({
             {/* Bottom half (30 min) */}
             <div style={{ height: HALF_H, position: "relative" }}>
               {botEntry && (
-                <HalfSlot booking={botEntry} isMobile={isMobile} isToday={new Date(botEntry.startsAt).toDateString() === todayStr} onOpen={onOpen} />
+                <HalfSlot booking={botEntry} isMobile={isMobile} isToday={new Date(botEntry.startsAt).toDateString() === todayStr} onOpen={onOpen} labels={labels} />
               )}
             </div>
           </div>
@@ -529,6 +541,7 @@ function DayColumn({
             isMobile={isMobile}
             isToday={isToday}
             onOpen={onOpen}
+            labels={labels}
           />
         );
       })}
@@ -574,6 +587,26 @@ export default function PersonalAreaCalendar({
   bookings,
   onBookingCancelled,
 }: PersonalAreaCalendarProps) {
+  const tCal  = useTranslations("areaPersonal.calendar");
+  const locale = useLocale();
+
+  const labels: CalendarLabels = {
+    blockShort2h: tCal("blockShort2h"),
+    blockShort15: tCal("blockShort15"),
+    blockShort1h: tCal("blockShort1h"),
+    blockFree:    tCal("blockFree"),
+    block1h:      tCal("block1h"),
+    block2h:      tCal("block2h"),
+    blockPack10:  tCal("blockPack10"),
+    blockPack5:   tCal("blockPack5"),
+    fullFree:     tCal("fullFree"),
+    fullSession1h: tCal("fullSession1h"),
+    fullSession2h: tCal("fullSession2h"),
+    fullPack10:   tCal("fullPack10"),
+    fullPack5:    tCal("fullPack5"),
+    fallback:     tCal("fallback"),
+  };
+
   const [weekOffset, setWeekOffset] = useState(0);
   const [isMobile,   setIsMobile]   = useState(false);
   const [openMenu,   setOpenMenu]   = useState<OpenMenu | null>(null);
@@ -634,11 +667,7 @@ export default function PersonalAreaCalendar({
     );
   }, []);
 
-  const weekLabel = (() => {
-    const day   = weekStart.getDate();
-    const month = MONTHS_ES[weekStart.getMonth()];
-    return `Semana del ${day} de ${month}`;
-  })();
+  const weekLabel = new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(weekStart);
 
   return (
     <>
@@ -673,6 +702,8 @@ export default function PersonalAreaCalendar({
                 HALF_H={HALF_H}
                 HEADER_H={HEADER_H}
                 onOpen={handleBlockOpen}
+                locale={locale}
+                labels={labels}
               />
             ))}
           </div>
@@ -680,8 +711,8 @@ export default function PersonalAreaCalendar({
 
         {/* Legend */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, padding: "10px 12px 14px 64px", background: "#1c1b1d" }}>
-          <LegendItem bg="rgba(78,222,163,0.15)" border="rgba(78,222,163,0.4)" label="Sesión individual" />
-          <LegendItem bg="rgba(158,210,181,0.15)" border="rgba(158,210,181,0.35)" label="Pack / Inicial" />
+          <LegendItem bg="rgba(78,222,163,0.15)" border="rgba(78,222,163,0.4)" label={tCal("legendSession")} />
+          <LegendItem bg="rgba(158,210,181,0.15)" border="rgba(158,210,181,0.35)" label={tCal("legendPack")} />
         </div>
       </div>
 
@@ -692,6 +723,7 @@ export default function PersonalAreaCalendar({
           booking={openMenu.booking}
           rect={openMenu.rect}
           onClose={() => setOpenMenu(null)}
+          labels={labels}
           onCancelled={() => { setOpenMenu(null); onBookingCancelled(); }}
         />
       )}

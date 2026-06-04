@@ -3,7 +3,7 @@ import { Manrope, Inter } from "next/font/google";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
-import { getMessages, setRequestLocale } from "next-intl/server";
+import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
 import { routing } from "@/i18n/routing";
@@ -47,20 +47,27 @@ const materialSymbols = localFont({
   weight: "100 700",
 });
 
-export const metadata: Metadata = {
-  title: "Gustavo Torres - Tutorías de programación, matemáticas e IA",
-  description:
-    "Clases de programación, matemáticas e IA con Gustavo Torres.",
-  robots: { index: true, follow: true },
-  icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
-    ],
-    apple: "/apple-touch-icon.png",
-    shortcut: "/favicon.svg",
-  },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta.root" });
+  return {
+    title: t("title"),
+    description: t("description"),
+    robots: { index: true, follow: true },
+    icons: {
+      icon: [
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/favicon.ico", sizes: "any" },
+      ],
+      apple: "/apple-touch-icon.png",
+      shortcut: "/favicon.svg",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

@@ -17,6 +17,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import type { ZoomConnectionQuality, QosSnapshot } from "@/hooks/useZoomConnectionQuality";
 
 interface MediaDevice {
@@ -48,11 +49,12 @@ function freshestSnapshot(qos: ZoomConnectionQuality): QosSnapshot | null {
   return candidates.reduce((a, b) => (b.updatedAt > a.updatedAt ? b : a));
 }
 
-function deviceLabel(d: MediaDevice): string {
-  return d.label || `Dispositivo ${d.deviceId.slice(0, 6)}`;
-}
-
 export default function SessionSettings({ stream, qos, onClose }: SessionSettingsProps) {
+  const t = useTranslations("session.settings");
+
+  function deviceLabel(d: MediaDevice): string {
+    return d.label || t("deviceId", { deviceId: d.deviceId.slice(0, 6) });
+  }
   const [cameras,  setCameras]  = useState<MediaDevice[]>([]);
   const [mics,     setMics]     = useState<MediaDevice[]>([]);
   const [speakers, setSpeakers] = useState<MediaDevice[]>([]);
@@ -205,12 +207,12 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
 
   const statusMeta =
     qos.selfStatus === "reconnecting"
-      ? { label: "Reconectando", color: "#f5c451", bg: "rgba(245,196,81,0.2)" }
+      ? { label: t("reconnecting"), color: "#f5c451", bg: "rgba(245,196,81,0.2)" }
       : !hasData
-        ? { label: "Sin datos",  color: "#bbcabf", bg: "rgba(187,202,191,0.15)" }
+        ? { label: t("noData"),      color: "#bbcabf", bg: "rgba(187,202,191,0.15)" }
         : qos.selfStatus === "good"
-          ? { label: "Excelente", color: "#4edea3", bg: "rgba(78,222,163,0.2)" }
-          : { label: "Inestable", color: "#f5c451", bg: "rgba(245,196,81,0.2)" };
+          ? { label: t("excellent"), color: "#4edea3", bg: "rgba(78,222,163,0.2)" }
+          : { label: t("unstable"),  color: "#f5c451", bg: "rgba(245,196,81,0.2)" };
 
   return (
     <div
@@ -225,12 +227,12 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
         <div className="p-6 border-b border-white/5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="material-symbols-outlined text-primary">settings</span>
-            <h2 className="text-xl font-headline font-bold text-on-surface">Ajustes</h2>
+            <h2 className="text-xl font-headline font-bold text-on-surface">{t("title")}</h2>
           </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-surface-variant rounded-full transition-colors text-on-surface-variant cursor-pointer active:scale-90"
-            aria-label="Cerrar ajustes"
+            aria-label={t("close")}
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -242,12 +244,12 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
           {/* ── Audio y Vídeo ── */}
           <section className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-primary/80">
-              Audio y Vídeo
+              {t("audioVideo")}
             </h3>
             <div className="space-y-4">
               {/* Camera */}
               <div className="space-y-1.5">
-                <label className="text-sm text-on-surface-variant">Cámara</label>
+                <label className="text-sm text-on-surface-variant">{t("camera")}</label>
                 <div className="relative">
                   <select
                     value={activeCamera}
@@ -255,7 +257,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
                     className={selectClass}
                   >
                     {cameras.length === 0 ? (
-                      <option value="">Sin dispositivos</option>
+                      <option value="">{t("noDevices")}</option>
                     ) : (
                       cameras.map((d) => (
                         <option key={d.deviceId} value={d.deviceId}>
@@ -272,7 +274,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
 
               {/* Microphone + level meter */}
               <div className="space-y-1.5">
-                <label className="text-sm text-on-surface-variant">Micrófono</label>
+                <label className="text-sm text-on-surface-variant">{t("microphone")}</label>
                 <div className="flex gap-3 items-center">
                   <div className="relative flex-1">
                     <select
@@ -281,7 +283,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
                       className={selectClass}
                     >
                       {mics.length === 0 ? (
-                        <option value="">Sin dispositivos</option>
+                        <option value="">{t("noDevices")}</option>
                       ) : (
                         mics.map((d) => (
                           <option key={d.deviceId} value={d.deviceId}>
@@ -312,7 +314,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
 
               {/* Speaker */}
               <div className="space-y-1.5">
-                <label className="text-sm text-on-surface-variant">Altavoz</label>
+                <label className="text-sm text-on-surface-variant">{t("speaker")}</label>
                 <div className="relative">
                   <select
                     value={activeSpeaker}
@@ -320,7 +322,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
                     className={selectClass}
                   >
                     {speakers.length === 0 ? (
-                      <option value="">Sin dispositivos</option>
+                      <option value="">{t("noDevices")}</option>
                     ) : (
                       speakers.map((d) => (
                         <option key={d.deviceId} value={d.deviceId}>
@@ -341,7 +343,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
           {supportsVB && (
             <section className="space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-primary/80">
-                Efectos de fondo
+                {t("backgroundEffects")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -353,7 +355,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
                   }`}
                 >
                   <span className="material-symbols-outlined text-sm">block</span>
-                  Ninguno
+                  {t("none")}
                 </button>
                 <button
                   onClick={() => void applyBlur(true)}
@@ -364,7 +366,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
                   }`}
                 >
                   <span className="material-symbols-outlined text-sm">blur_on</span>
-                  Desenfoque
+                  {t("blur")}
                 </button>
               </div>
             </section>
@@ -373,7 +375,7 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
           {/* ── Diagnóstico de conexión ── */}
           <section className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-primary/80">
-              Diagnóstico de conexión
+              {t("diagnostics")}
             </h3>
             <div className="bg-surface-container-high rounded-xl p-4 border border-white/5 space-y-3">
               <div className="flex justify-between items-center">
@@ -388,20 +390,20 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
               <div className="grid grid-cols-3 gap-2 text-center pt-2">
                 <div className="space-y-1">
                   <div className="text-lg font-bold text-on-surface">{latency}</div>
-                  <div className="text-[10px] text-on-surface-variant uppercase">Latencia</div>
+                  <div className="text-[10px] text-on-surface-variant uppercase">{t("latency")}</div>
                 </div>
                 <div className="space-y-1 border-x border-white/5">
                   <div className="text-lg font-bold text-on-surface">{jitter}</div>
-                  <div className="text-[10px] text-on-surface-variant uppercase">Jitter</div>
+                  <div className="text-[10px] text-on-surface-variant uppercase">{t("jitter")}</div>
                 </div>
                 <div className="space-y-1">
                   <div className="text-lg font-bold text-on-surface">{loss}</div>
-                  <div className="text-[10px] text-on-surface-variant uppercase">Pérdida</div>
+                  <div className="text-[10px] text-on-surface-variant uppercase">{t("packetLoss")}</div>
                 </div>
               </div>
               {!hasData && (
                 <p className="text-[11px] text-on-surface-variant/70 pt-1 leading-snug">
-                  Las métricas aparecerán cuando otro participante esté conectado.
+                  {t("waitingMetrics")}
                 </p>
               )}
             </div>
@@ -411,13 +413,13 @@ export default function SessionSettings({ stream, qos, onClose }: SessionSetting
           {supportsNoise && (
             <section className="space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-widest text-primary/80">
-                General
+                {t("general")}
               </h3>
               <div className="flex items-center justify-between p-4 bg-surface-container-high rounded-xl border border-white/5">
                 <div>
-                  <p className="text-sm font-bold text-on-surface">Cancelación de ruido</p>
+                  <p className="text-sm font-bold text-on-surface">{t("noiseCancellation")}</p>
                   <p className="text-xs text-on-surface-variant">
-                    Filtra el ruido de fondo
+                    {t("noiseCancellationDesc")}
                   </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
