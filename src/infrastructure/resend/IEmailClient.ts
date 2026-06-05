@@ -10,6 +10,7 @@ export interface ConfirmationEmailParams {
   note:         string | null;
   studentTz:    string | null;
   sessionType:  string;
+  locale:       'es' | 'en';
 }
 
 export interface NewBookingNotificationParams {
@@ -28,6 +29,7 @@ export interface CancellationConfirmationParams {
   sessionLabel:    string;
   startIso:        string;
   creditsRestored: boolean;
+  locale:          'es' | 'en';
 }
 
 export interface CancellationNotificationParams {

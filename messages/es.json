@@ -778,5 +778,39 @@
       "goToPersonalArea": "Ir a mi área personal"
     }
   },
-  "emails": {}
+  "emails": {
+    "confirmation": {
+      "subject": "Clase confirmada · {sessionLabel} · {dateLabel}",
+      "heading": "¡Clase confirmada! ✓",
+      "intro": "Hola {name}, tu reserva ha quedado confirmada.",
+      "labelType": "Tipo de sesión",
+      "labelDate": "Fecha",
+      "labelTime": "Hora",
+      "labelLink": "Enlace de la sesión",
+      "joinBtn": "Unirse a la sesión →",
+      "labelNote": "Motivo de la sesión",
+      "addToCal": "📅 Añadir a Google Calendar",
+      "cancelPolicy": "Si necesitas cancelar o reprogramar, puedes hacerlo hasta <strong>2 horas antes</strong> sin ningún coste.",
+      "cancelBtn": "Cancelar reserva",
+      "rescheduleBtn": "Reprogramar",
+      "tzNoteMadrid": "(hora de Madrid)",
+      "tzNoteOther": "({tz})",
+      "calTitle": "{sessionLabel} con Gustavo Torres",
+      "calDescription": "Enlace de sesión: {joinUrl}\n\nClase con Gustavo Torres Guerrero — gustavoai.dev",
+      "sessionType": {
+        "free15min": "Encuentro inicial gratuito · 15 min",
+        "session1h": "Sesión individual · 1 hora",
+        "session2h": "Sesión individual · 2 horas",
+        "pack": "Clase de pack"
+      }
+    },
+    "cancellation": {
+      "subject": "Reserva cancelada · {sessionLabel} · {dateLabel}",
+      "heading": "Reserva cancelada",
+      "intro": "Hola {name}, hemos cancelado tu reserva.",
+      "labelSession": "Sesión cancelada",
+      "creditsRestoredMsg": "✓ Tu crédito ha sido devuelto automáticamente a tu pack. Puedes reservar otra clase desde <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
+      "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles."
+    }
+  }
 }

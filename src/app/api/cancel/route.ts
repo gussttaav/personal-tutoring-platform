@@ -8,6 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { isValidOrigin } from "@/lib/csrf";
 import { bookingService } from "@/services";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
@@ -19,8 +20,10 @@ async function postHandler(req: NextRequest) {
   const { token } = await req.json().catch(() => ({}));
   if (!token || typeof token !== "string") return NextResponse.json({ error: "Token inválido" }, { status: 400 });
 
+  const locale = ((await cookies()).get("NEXT_LOCALE")?.value ?? "es") as "es" | "en";
+
   try {
-    const result = await bookingService.cancelByToken(token);
+    const result = await bookingService.cancelByToken(token, locale);
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {
     return mapDomainErrorToResponse(err);
