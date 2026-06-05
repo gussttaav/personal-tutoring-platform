@@ -23,6 +23,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
 import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
+import { formatTime } from "@/lib/formatting";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -217,12 +218,7 @@ function blockToSelectedSlot(
   const startTime = firstLabel.split(/\s*[–\-]\s*/)[0]?.trim() ?? "";
   const endTime   = lastLabel.includes("–") || lastLabel.includes("-")
     ? (lastLabel.split(/\s*[–\-]\s*/)[1]?.trim() ?? "")
-    : new Date(last.end).toLocaleTimeString("es-ES", {
-        timeZone: userTz,
-        hour:     "2-digit",
-        minute:   "2-digit",
-        hour12:   false,
-      });
+    : formatTime(new Date(last.end), locale as "es" | "en", { timeZone: userTz });
 
   return {
     startIso:  first.start,

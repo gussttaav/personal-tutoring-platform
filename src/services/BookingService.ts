@@ -37,6 +37,7 @@ export interface CreateBookingInput {
   timezone?:         string;
   rescheduleToken?:  string;
   stripePaymentId?:  string;
+  locale?:           'es' | 'en';
 }
 
 export interface CreateBookingOutput {
@@ -70,6 +71,13 @@ const SESSION_LABELS: Record<SessionType, string> = {
   session1h: "Sesión individual · 1 hora",
   session2h: "Sesión individual · 2 horas",
   pack:      "Clase de pack",
+};
+
+const SESSION_LABELS_EN: Record<SessionType, string> = {
+  free15min: "Free intro call · 15 min",
+  session1h: "Individual session · 1 hour",
+  session2h: "Individual session · 2 hours",
+  pack:      "Pack class",
 };
 
 const CANCEL_WINDOW_MS = 2 * 60 * 60_000; // 2 hours
@@ -258,13 +266,17 @@ export class BookingService {
 
       // 9. Confirmation + notification emails (with per-attempt retry).
       //    Not compensated: a leaked "booking confirmed" email is better than deleting a booking.
+      const studentLocale = input.locale ?? 'es';
+      const studentLabel  = studentLocale === 'en'
+        ? SESSION_LABELS_EN[input.sessionType]
+        : sessionLabel;
       const joinUrl = `${baseUrl}/sesion/${joinToken}`;
       const [confirmSent] = await Promise.all([
         this.sendWithRetry(
           () => this.email.sendConfirmation({
             to:           input.email,
             studentName:  input.name,
-            sessionLabel,
+            sessionLabel: studentLabel,
             startIso:     input.startIso,
             endIso:       input.endIso,
             joinToken,
@@ -272,6 +284,7 @@ export class BookingService {
             note:         input.note ?? null,
             studentTz:    input.timezone ?? null,
             sessionType:  input.sessionType,
+            locale:       studentLocale,
           }),
           "confirmation email",
         ),
@@ -311,7 +324,7 @@ export class BookingService {
     }
   }
 
-  async cancelByToken(token: string): Promise<CancelByTokenOutput> {
+  async cancelByToken(token: string, locale: 'es' | 'en' = 'es'): Promise<CancelByTokenOutput> {
     // 1. Verify token
     const record = await this.bookings.findByCancelToken(token);
     if (!record) {
@@ -373,7 +386,8 @@ export class BookingService {
       await this.credits.restoreCredit(record.email);
     }
 
-    const sessionLabel = SESSION_LABELS[record.sessionType] ?? record.sessionType;
+    const sessionLabel      = (locale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
+    const sessionLabelAdmin = SESSION_LABELS[record.sessionType] ?? record.sessionType;
 
     // 6. Send emails (non-fatal)
     await Promise.all([
@@ -383,12 +397,13 @@ export class BookingService {
         sessionLabel,
         startIso:        record.startsAt,
         creditsRestored: isPack,
+        locale,
       }),
       isSingle
         ? this.email.sendCancellationNotification({
             studentEmail: record.email,
             studentName:  record.name,
-            sessionLabel,
+            sessionLabel: sessionLabelAdmin,
             startIso:     record.startsAt,
           })
         : Promise.resolve(),

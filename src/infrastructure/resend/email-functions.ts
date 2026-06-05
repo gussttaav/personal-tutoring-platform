@@ -8,6 +8,9 @@
  * email client (stored XSS).
  */
 
+import { getTranslations } from "next-intl/server";
+import { formatDate, formatTime } from "@/lib/formatting";
+
 const RESEND_API_URL = "https://api.resend.com/emails";
 const FROM     = process.env.RESEND_FROM ?? "Gustavo Torres <onboarding@resend.dev>";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.gustavoai.dev";
@@ -133,7 +136,10 @@ export async function sendConfirmationEmail(params: {
   note: string | null;
   studentTz: string | null;
   sessionType: string;
+  locale: 'es' | 'en';
 }): Promise<void> {
+  const t = await getTranslations({ locale: params.locale, namespace: "emails.confirmation" });
+
   // ── Escape all user-controlled values ────────────────────────────────────
   const safeName         = escapeHtml(params.studentName);
   const safeSessionLabel = escapeHtml(params.sessionLabel);
@@ -145,59 +151,60 @@ export async function sendConfirmationEmail(params: {
   const joinUrl    = `${BASE_URL}/sesion/${params.joinToken}`;
   const cancelUrl  = `${BASE_URL}/cancelar?token=${params.cancelToken}`;
   const reschedUrl = `${BASE_URL}${RESCHEDULE_PATHS[params.sessionType] ?? "/"}&token=${params.cancelToken}`;
-  const dateLabel  = formatDateInTz(params.startIso, tz);
-  const startLabel = formatTimeInTz(params.startIso, tz);
-  const endLabel   = formatTimeInTz(params.endIso,   tz);
-  const tzNote     = tz !== ADMIN_TZ ? ` (${tz})` : " (hora de Madrid)";
+  const dateLabel  = formatDate(params.startIso, params.locale, { weekday: "long" });
+  const startLabel = formatTime(params.startIso, params.locale);
+  const endLabel   = formatTime(params.endIso,   params.locale);
+  const tzNote     = tz !== ADMIN_TZ
+    ? ` ${t("tzNoteOther", { tz })}`
+    : ` ${t("tzNoteMadrid")}`;
 
   const addToCalUrl = googleCalendarUrl({
-    title:       `${params.sessionLabel} con Gustavo Torres`,
+    title:       t("calTitle", { sessionLabel: params.sessionLabel }),
     startIso:    params.startIso,
     endIso:      params.endIso,
-    description: `Enlace de sesión: ${joinUrl}\n\nClase con Gustavo Torres Guerrero — gustavoai.dev`,
+    description: t("calDescription", { joinUrl }),
     location:    joinUrl,
   });
 
   await send({
     to: params.to,
-    subject: `Clase confirmada · ${params.sessionLabel} · ${dateLabel}`,
+    subject: t("subject", { sessionLabel: params.sessionLabel, dateLabel }),
     html: `
       <html><head><style>${STYLES}</style></head><body>
       <div class="wrap"><div class="card">
-        <h1>¡Clase confirmada! ✓</h1>
-        <p>Hola <strong>${safeName}</strong>, tu reserva ha quedado confirmada.</p>
+        <h1>${t("heading")}</h1>
+        <p>
+          ${t.raw("intro").replace("{name}", `<strong>${safeName}</strong>`)}
+        </p>
 
-        <div class="label">Tipo de sesión</div>
+        <div class="label">${t("labelType")}</div>
         <div class="value">${safeSessionLabel}</div>
 
-        <div class="label">Fecha</div>
+        <div class="label">${t("labelDate")}</div>
         <div class="value">${dateLabel}</div>
 
-        <div class="label">Hora</div>
+        <div class="label">${t("labelTime")}</div>
         <div class="value">${startLabel} – ${endLabel}${tzNote}</div>
 
-        <div class="label">Enlace de la sesión</div>
+        <div class="label">${t("labelLink")}</div>
         <div class="value" style="margin-bottom:8px">
-          <a class="meet-btn" href="${joinUrl}">Unirse a la sesión →</a>
+          <a class="meet-btn" href="${joinUrl}">${t("joinBtn")}</a>
         </div>
 
         ${safeNote ? `
-        <div class="label">Motivo de la sesión</div>
+        <div class="label">${t("labelNote")}</div>
         <div class="note-box"><p>${safeNote}</p></div>
         ` : ""}
 
         <div class="divider"></div>
 
-        <a class="cal-btn" href="${addToCalUrl}" target="_blank">📅 Añadir a Google Calendar</a>
+        <a class="cal-btn" href="${addToCalUrl}" target="_blank">${t("addToCal")}</a>
 
         <div class="divider"></div>
 
-        <p style="font-size:13px">
-          Si necesitas cancelar o reprogramar, puedes hacerlo hasta
-          <strong>2 horas antes</strong> sin ningún coste.
-        </p>
-        <a class="action-btn" href="${cancelUrl}">Cancelar reserva</a>
-        <a class="action-btn" href="${reschedUrl}">Reprogramar</a>
+        <p style="font-size:13px">${t.raw("cancelPolicy")}</p>
+        <a class="action-btn" href="${cancelUrl}">${t("cancelBtn")}</a>
+        <a class="action-btn" href="${reschedUrl}">${t("rescheduleBtn")}</a>
 
       </div>
       <div class="footer">
@@ -219,29 +226,34 @@ export async function sendCancellationConfirmationEmail(params: {
   sessionLabel: string;
   startIso: string;
   creditsRestored: boolean;
+  locale: 'es' | 'en';
 }): Promise<void> {
+  const t = await getTranslations({ locale: params.locale, namespace: "emails.cancellation" });
+
   // ── Escape all user-controlled values ────────────────────────────────────
   const safeName         = escapeHtml(params.studentName);
   const safeSessionLabel = escapeHtml(params.sessionLabel);
 
-  const dateLabel  = formatDateInTz(params.startIso, ADMIN_TZ);
-  const startLabel = formatTimeInTz(params.startIso, ADMIN_TZ);
+  const dateLabel  = formatDate(params.startIso, params.locale, { weekday: "long" });
+  const startLabel = formatTime(params.startIso, params.locale);
+
+  const creditsHtml = t.raw("creditsRestoredMsg").replace("{baseUrl}", BASE_URL);
 
   await send({
     to: params.to,
-    subject: `Reserva cancelada · ${params.sessionLabel} · ${dateLabel}`,
+    subject: t("subject", { sessionLabel: params.sessionLabel, dateLabel }),
     html: `
       <html><head><style>${STYLES}</style></head><body>
       <div class="wrap"><div class="card">
-        <h1>Reserva cancelada</h1>
-        <p>Hola <strong>${safeName}</strong>, hemos cancelado tu reserva.</p>
-        <div class="label">Sesión cancelada</div>
+        <h1>${t("heading")}</h1>
+        <p>
+          ${t.raw("intro").replace("{name}", `<strong>${safeName}</strong>`)}
+        </p>
+        <div class="label">${t("labelSession")}</div>
         <div class="value">${safeSessionLabel} · ${dateLabel} · ${startLabel}</div>
         ${params.creditsRestored ? `
-          <p style="color:#3ddc84">✓ Tu crédito ha sido devuelto automáticamente a tu pack.
-            Puedes reservar otra clase desde <a href="${BASE_URL}" style="color:#3ddc84">gustavoai.dev</a>.
-          </p>` : `
-          <p>Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles.</p>`
+          <p style="color:#3ddc84">${creditsHtml}</p>` : `
+          <p>${t("refundMsg")}</p>`
         }
       </div>
       <div class="footer"><p style="margin:0">Gustavo Torres Guerrero ·

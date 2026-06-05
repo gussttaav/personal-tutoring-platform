@@ -778,5 +778,39 @@
       "goToPersonalArea": "Go to my personal area"
     }
   },
-  "emails": {}
+  "emails": {
+    "confirmation": {
+      "subject": "Session confirmed · {sessionLabel} · {dateLabel}",
+      "heading": "Session confirmed! ✓",
+      "intro": "Hi {name}, your booking is confirmed.",
+      "labelType": "Session type",
+      "labelDate": "Date",
+      "labelTime": "Time",
+      "labelLink": "Session link",
+      "joinBtn": "Join session →",
+      "labelNote": "Session goal",
+      "addToCal": "📅 Add to Google Calendar",
+      "cancelPolicy": "You can cancel or reschedule up to <strong>2 hours before</strong> the session at no cost.",
+      "cancelBtn": "Cancel booking",
+      "rescheduleBtn": "Reschedule",
+      "tzNoteMadrid": "(Madrid time)",
+      "tzNoteOther": "({tz})",
+      "calTitle": "{sessionLabel} with Gustavo Torres",
+      "calDescription": "Session link: {joinUrl}\n\nClass with Gustavo Torres Guerrero — gustavoai.dev",
+      "sessionType": {
+        "free15min": "Free intro call · 15 min",
+        "session1h": "Individual session · 1 hour",
+        "session2h": "Individual session · 2 hours",
+        "pack": "Pack class"
+      }
+    },
+    "cancellation": {
+      "subject": "Booking cancelled · {sessionLabel} · {dateLabel}",
+      "heading": "Booking cancelled",
+      "intro": "Hi {name}, we have cancelled your booking.",
+      "labelSession": "Cancelled session",
+      "creditsRestoredMsg": "✓ Your credit has been automatically returned to your pack. You can book another class at <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
+      "refundMsg": "If you paid for this session individually, Gustavo will process the refund within 1–3 business days."
+    }
+  }
 }

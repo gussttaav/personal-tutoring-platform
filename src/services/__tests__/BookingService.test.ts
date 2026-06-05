@@ -302,6 +302,40 @@ describe("BookingService.createBooking (reschedule)", () => {
     // Compensation framework replaced the old recordRescheduleFailure dead-letter call.
     expect(bookings.recordRescheduleFailure).not.toHaveBeenCalled();
   });
+
+  it("passes locale: 'en' to sendConfirmation when input locale is 'en'", async () => {
+    const email = mockEmail();
+    const service = makeService({ email });
+
+    await service.createBooking({ ...basePackInput(), locale: "en" });
+
+    expect(email.sendConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "en" })
+    );
+  });
+
+  it("defaults to locale: 'es' for sendConfirmation when locale is omitted", async () => {
+    const email = mockEmail();
+    const service = makeService({ email });
+
+    await service.createBooking(basePackInput());
+
+    expect(email.sendConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "es" })
+    );
+  });
+
+  it("sends English session label to student but Spanish label to admin notification", async () => {
+    const email = mockEmail();
+    const service = makeService({ email });
+
+    await service.createBooking({ ...basePackInput(), locale: "en" });
+
+    const confirmCall = email.sendConfirmation.mock.calls[0]?.[0];
+    const notifyCall  = email.sendNewBookingNotification.mock.calls[0]?.[0];
+    expect(confirmCall?.sessionLabel).toBe("Pack class");
+    expect(notifyCall?.sessionLabel).toBe("Clase de pack");
+  });
 });
 
 // ─── cancelByToken ────────────────────────────────────────────────────────────
@@ -418,6 +452,52 @@ describe("BookingService.cancelByToken", () => {
     await service.cancelByToken("tkn");
 
     expect(email.sendCancellationNotification).toHaveBeenCalled();
+  });
+
+  it("passes locale: 'en' to sendCancellationConfirmation when called with 'en'", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const service = makeService({ bookings, email });
+
+    await service.cancelByToken("tkn", "en");
+
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "en" })
+    );
+  });
+
+  it("defaults to locale: 'es' for sendCancellationConfirmation", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const service = makeService({ bookings, email });
+
+    await service.cancelByToken("tkn");
+
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "es" })
+    );
+  });
+
+  it("uses English session label for student but Spanish for admin notification on cancel", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ sessionType: "session1h", startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const service = makeService({ bookings, email });
+
+    await service.cancelByToken("tkn", "en");
+
+    const confirmCall = email.sendCancellationConfirmation.mock.calls[0]?.[0];
+    const notifyCall  = email.sendCancellationNotification.mock.calls[0]?.[0];
+    expect(confirmCall?.sessionLabel).toBe("Individual session · 1 hour");
+    expect(notifyCall?.sessionLabel).toBe("Sesión individual · 1 hora");
   });
 });
 

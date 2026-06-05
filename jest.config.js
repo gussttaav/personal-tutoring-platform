@@ -13,8 +13,33 @@ module.exports = async () => {
   // Call the async factory to get the full Next.js-enriched config (transforms, etc.)
   const base = await createJestConfig(baseUserConfig)();
 
+  // next-intl and use-intl are ESM-only packages. Extend next/jest's
+  // transformIgnorePatterns so Jest transpiles them via the SWC transform.
+  const ESM_PACKAGES = ["next-intl", "use-intl"];
+  const esmRegex = ESM_PACKAGES.join("|");
+  const transformIgnorePatterns = (base.transformIgnorePatterns ?? []).map(
+    (/** @type {string} */ pattern) => {
+      if (typeof pattern !== "string") return pattern;
+      // Regular node_modules pattern (non-pnpm)
+      if (pattern.startsWith("/node_modules/(?!.pnpm)")) {
+        return pattern.replace("(?!.pnpm)(?!(", `(?!.pnpm)(?!(${esmRegex}|`);
+      }
+      // pnpm-specific pattern
+      if (pattern.includes("\\.pnpm")) {
+        return pattern
+          .replace(/\(\?!\(([^)]+)\)@\)/, `(?!($1|${esmRegex})@)`)
+          .replace(
+            /\(\?!.*node_modules\[.*?\]\(([^)]+)\)\[.*?\]\)/,
+            (m, inner) => m.replace(inner, `${inner}|${esmRegex}`),
+          );
+      }
+      return pattern;
+    },
+  );
+
   return {
     ...base,
+    transformIgnorePatterns,
     coverageProvider: "v8",
     collectCoverageFrom: [
       "src/lib/kv.ts",
@@ -48,6 +73,7 @@ module.exports = async () => {
     projects: [
       {
         ...base,
+        transformIgnorePatterns,
         displayName: "unit",
         testMatch: [
           "<rootDir>/src/**/*.test.ts",
@@ -60,6 +86,7 @@ module.exports = async () => {
       },
       {
         ...base,
+        transformIgnorePatterns,
         displayName: "integration",
         testMatch: ["<rootDir>/src/__tests__/integration/**/*.test.ts"],
         testTimeout: 10_000,
