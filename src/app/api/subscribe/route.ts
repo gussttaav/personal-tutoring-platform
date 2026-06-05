@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = SubscribeSchema.safeParse(body);
   if (!parsed.success)
-    return NextResponse.json({ error: "Bad request" }, { status: 400 });
+    return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
 
   try {
     await subscriptionService.subscribe(session.user.email, parsed.data.type);
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
   const typeParam = req.nextUrl.searchParams.get("type");
   const parsed = SubscribeSchema.safeParse({ type: typeParam });
   if (!parsed.success)
-    return NextResponse.json({ error: "Bad request" }, { status: 400 });
+    return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
 
   try {
     const subscribed = await subscriptionService.isSubscribed(

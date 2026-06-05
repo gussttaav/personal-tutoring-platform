@@ -8,11 +8,12 @@ import SpecializationsSection from "@/features/landing/SpecializationsSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { localizedAlternates } from "@/lib/hreflang";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "landing.meta" });
-  return { title: t("title"), description: t("description") };
+  return { title: t("title"), description: t("description"), alternates: localizedAlternates("", locale) };
 }
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {

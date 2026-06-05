@@ -22,11 +22,11 @@ async function postHandler(req: NextRequest) {
   if (!session?.user?.email) return NextResponse.json({ error: "Autenticación requerida" }, { status: 401 });
 
   const parsed = BookSchema.safeParse(await req.json().catch(() => ({})));
-  if (!parsed.success) return NextResponse.json({ error: "Datos de reserva inválidos" }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
 
   const { sessionType, rescheduleToken } = parsed.data;
   if ((sessionType === "session1h" || sessionType === "session2h") && !rescheduleToken) {
-    return NextResponse.json({ error: "Las sesiones individuales requieren pago previo." }, { status: 400 });
+    return NextResponse.json({ error: "REQUIRES_PAYMENT" }, { status: 400 });
   }
 
   const locale = ((await cookies()).get("NEXT_LOCALE")?.value ?? "es") as "es" | "en";

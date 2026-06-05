@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import PolicyPage from "@/components/policy/PolicyPage";
 import { TerminosContent } from "@/components/policy/PolicyContent";
+import { localizedAlternates } from "@/lib/hreflang";
 
 export async function generateMetadata({
   params,
@@ -16,6 +17,7 @@ export async function generateMetadata({
     title: t("title"),
     description: t("description"),
     robots: { index: true, follow: true },
+    alternates: localizedAlternates("/terminos", locale),
   };
 }
 

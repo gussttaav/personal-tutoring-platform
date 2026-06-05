@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = ReviewSchema.safeParse(body);
   if (!parsed.success)
-    return NextResponse.json({ error: "Bad request" }, { status: 400 });
+    return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
 
   const email = session.user.email;
   const data = parsed.data;

@@ -22,7 +22,7 @@ import { useClientValue } from "@/hooks/useClientValue";
 import Image from "next/image";
 import { Alert, Spinner } from "@/components/ui";
 import { COLORS } from "@/constants";
-import { camelCaseCode } from "@/constants/errors";
+import { errorCodeToKey } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
@@ -129,11 +129,7 @@ export default function BookingModeView({
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
       const code   = err instanceof ApiError ? err.message : "";
-      setErrMsg(
-        code
-          ? tErrors(`domain.${camelCaseCode(code)}`)
-          : tErrors(`http.${status || 500}`)
-      );
+      setErrMsg(tErrors(errorCodeToKey(code, status) as Parameters<typeof tErrors>[0]));
       setPhase("error");
     }
   }, [selected, remaining, rescheduleToken, isReschedule, onCreditsUpdated, onExit, tErrors]);

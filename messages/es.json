@@ -642,6 +642,9 @@
       "invalidCancelToken": "El enlace de cancelación no es válido.",
       "outsideCancelWindow": "El plazo para cancelar ha finalizado.",
       "cancelTokenConsumed": "Este enlace de cancelación ya ha sido usado."
+    },
+    "validation": {
+      "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
     }
   },
   "meta": {

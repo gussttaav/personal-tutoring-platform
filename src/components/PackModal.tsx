@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { Spinner, Alert } from "@/components/ui";
 import { PACK_CONFIG } from "@/constants";
 import { api, ApiError } from "@/lib/api-client";
-import { camelCaseCode } from "@/constants/errors";
+import { errorCodeToKey } from "@/constants/errors";
 import PaymentForm from "@/components/PaymentForm";
 import type { PackSize } from "@/domain/types";
 
@@ -61,9 +61,7 @@ export default function PackModal({
         if (!controller.signal.aborted) {
           setFetchError(
             err instanceof ApiError
-              ? (err.code
-                  ? tErrors(`domain.${camelCaseCode(err.code)}` as Parameters<typeof tErrors>[0])
-                  : tErrors(`http.${err.status || 500}` as Parameters<typeof tErrors>[0]))
+              ? tErrors(errorCodeToKey(err.code, err.status) as Parameters<typeof tErrors>[0])
               : tErrors("http.500")
           );
           setFetching(false);

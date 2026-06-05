@@ -54,9 +54,20 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 ## Conventions
 - Zod schemas in `src/lib/schemas.ts` — never inline in route handlers.
 - Structured logging via `log()` from `src/lib/logger.ts` — no `console.*`.
-- User-facing text is Spanish. Error messages go through `friendlyError()`.
+- Customer-facing UI + emails are **bilingual (Spanish + English)** via `next-intl` — see the i18n section below. The **admin panel stays Spanish** (out of scope for translation).
 - CSRF protection via `isValidOrigin()` on all POST routes (except Stripe webhook).
 - Admin routes gated by `isAdmin()` from `src/lib/admin.ts`.
+
+## Internationalization (i18n)
+
+The customer-facing app is bilingual: **Spanish is the default** (unprefixed URLs), **English lives under `/en`** (`next-intl`, `localePrefix: 'as-needed'`). Routing/config in `src/i18n/`; locale persisted in the `NEXT_LOCALE` cookie (no `users.locale` column).
+
+**The rule for any UI/email text change:**
+- Never hardcode customer-facing strings in components. Add a key to **both** `messages/es.json` **and** `messages/en.json` (identical key structure, translated values) and render it with `t()` from `useTranslations(...)` (client) or `getTranslations(...)` (server).
+- The two files must stay **key-for-key in sync.** Nothing enforces this automatically yet — a key present in only one file fails silently at runtime for that locale. Always edit both.
+- Domain/validation errors carry **codes**, not localized strings; the presentation layer translates them (`src/constants/errors.ts` → `errors.{http,domain,validation}.*`). Add new error copy under those namespaces, not inline.
+- Admin panel text may stay Spanish (hardcoded is acceptable there).
+- New public page? Add `generateMetadata` with `localizedAlternates(route, locale)` from `src/lib/hreflang.ts`, list it in `src/app/sitemap.ts`, and leave auth/transactional pages out (they're disallowed in `src/app/robots.ts`).
 
 ## Gotchas
 - NextAuth v5 is in beta. Session shape: `session.user.email`, `session.user.name`.
@@ -109,6 +120,7 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 | Add a Zod schema                | `src/lib/schemas.ts`                            |
 | Change the booking schedule     | `src/lib/booking-config.ts`                     |
 | Change email templates          | `src/infrastructure/resend/email-functions.ts`   |
+| Add/change UI or email text     | `messages/es.json` **and** `messages/en.json` (keep keys in sync) |
 | Add a DB column                 | New file in `supabase/migrations/`              |
 | Add a rate limiter              | `src/lib/ratelimit.ts`                          |
 | Fix a test fixture              | `src/__tests__/fixtures/`                       |
