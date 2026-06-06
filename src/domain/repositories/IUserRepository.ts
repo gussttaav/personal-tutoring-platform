@@ -7,4 +7,10 @@ export interface IUserRepository {
 
   /** Updates a user's role. Throws if user doesn't exist. */
   setRole(email: string, role: "student" | "teacher" | "admin"): Promise<void>;
+
+  /** Returns the user's saved locale, or null if unset / user doesn't exist. */
+  getLocale(email: string): Promise<"es" | "en" | null>;
+
+  /** Persists the user's locale preference. */
+  setLocale(email: string, locale: "es" | "en"): Promise<void>;
 }

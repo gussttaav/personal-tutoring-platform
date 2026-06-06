@@ -7,6 +7,8 @@ const mockRepo = (): jest.Mocked<IUserRepository> => ({
   findByEmail:  jest.fn(),
   getRole:      jest.fn(),
   setRole:      jest.fn(),
+  getLocale:    jest.fn(),
+  setLocale:    jest.fn(),
 });
 
 describe("UserService.ensureUser", () => {
@@ -116,5 +118,75 @@ describe("REFACTOR-P2-02: bootstrapAdminsFromEnv", () => {
     process.env.ADMIN_EMAILS = "";
     const { userService } = buildTestServices();
     await expect(userService.bootstrapAdminsFromEnv()).resolves.toBeUndefined();
+  });
+});
+
+// ─── i18n: locale preference (getLocale / setLocale / seedLocaleOnLogin) ───────
+
+describe("UserService locale preference", () => {
+  it("setLocale then getLocale round-trips (explicit switch persists to DB)", async () => {
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("switcher@example.com");
+
+    await userService.setLocale("Switcher@Example.com", "en");
+
+    expect(await userService.getLocale("switcher@example.com")).toBe("en");
+  });
+
+  it("getLocale returns null when no preference is stored", async () => {
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("fresh@example.com");
+    expect(await userService.getLocale("fresh@example.com")).toBeNull();
+  });
+
+  it("setLocale normalizes the email before persisting", async () => {
+    const repo = mockRepo();
+    await new UserService(repo).setLocale("  Mixed@Case.COM ", "es");
+    expect(repo.setLocale).toHaveBeenCalledWith("mixed@case.com", "es");
+  });
+});
+
+describe("UserService.seedLocaleOnLogin", () => {
+  it("returns the stored locale when set, ignoring the cookie (DB wins → cross-device)", async () => {
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("traveler@example.com");
+    await userRepo.setLocale("traveler@example.com", "en");
+
+    // Second device's cookie defaults to Spanish; the account must still win.
+    const result = await userService.seedLocaleOnLogin("traveler@example.com", "es");
+
+    expect(result).toBe("en");
+    expect(await userRepo.getLocale("traveler@example.com")).toBe("en");
+  });
+
+  it("account wins at login even after an anonymous switch (no timestamps)", async () => {
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("owner@example.com");
+    await userRepo.setLocale("owner@example.com", "es");
+
+    // Anonymous user switched to English (cookie 'en'), then logs into a Spanish account.
+    const result = await userService.seedLocaleOnLogin("owner@example.com", "en");
+
+    expect(result).toBe("es"); // DB wins; one switcher click would correct it.
+  });
+
+  it("backfills NULL from the effective cookie locale (Option B)", async () => {
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("newuser@example.com"); // locale NULL
+
+    const result = await userService.seedLocaleOnLogin("newuser@example.com", "en");
+
+    expect(result).toBe("en");
+    expect(await userRepo.getLocale("newuser@example.com")).toBe("en");
+  });
+
+  it("backfills NULL to 'es' when there is no cookie", async () => {
+    const { userRepo, userService } = buildTestServices();
+    await userRepo.upsert("nocookie@example.com"); // locale NULL
+
+    const result = await userService.seedLocaleOnLogin("nocookie@example.com");
+
+    expect(result).toBe("es");
+    expect(await userRepo.getLocale("nocookie@example.com")).toBe("es");
   });
 });

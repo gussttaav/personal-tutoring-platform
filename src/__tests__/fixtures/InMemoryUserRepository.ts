@@ -8,6 +8,7 @@ type UserRecord = {
   name: string;
   avatarUrl?: string;
   role: "student" | "teacher" | "admin";
+  locale?: "es" | "en";
 };
 
 export class InMemoryUserRepository implements IUserRepository {
@@ -42,5 +43,23 @@ export class InMemoryUserRepository implements IUserRepository {
     const user = this.users.get(normalized);
     if (!user) throw new Error(`User not found: ${email}`);
     user.role = role;
+  }
+
+  async getLocale(email: string): Promise<"es" | "en" | null> {
+    const user = this.users.get(email.toLowerCase().trim());
+    return user?.locale ?? null;
+  }
+
+  async setLocale(email: string, locale: "es" | "en"): Promise<void> {
+    const normalized = email.toLowerCase().trim();
+    let user = this.users.get(normalized);
+    if (!user) {
+      // Mirror Supabase semantics loosely: locale is only set for known users.
+      // Create a minimal row so tests that setLocale before upsert still work.
+      const id = randomUUID();
+      user = { id, email: normalized, name: "", role: "student" };
+      this.users.set(normalized, user);
+    }
+    user.locale = locale;
   }
 }
