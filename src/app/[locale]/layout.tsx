@@ -7,6 +7,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
 import { routing } from "@/i18n/routing";
+import { localizedAlternates } from "@/lib/hreflang";
 import "../globals.css";
 
 /**
@@ -55,9 +56,11 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta.root" });
   return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev"),
     title: t("title"),
     description: t("description"),
     robots: { index: true, follow: true },
+    alternates: localizedAlternates("", locale),
     icons: {
       icon: [
         { url: "/favicon.svg", type: "image/svg+xml" },

@@ -11,6 +11,7 @@
  * Usage: t(ERROR_CODE_I18N_KEY[code] ?? 'errors.domain.internalError')
  */
 export const ERROR_CODE_I18N_KEY: Record<string, string> = {
+  INVALID_REQUEST:           "errors.validation.invalidRequest",
   INSUFFICIENT_CREDITS:      "errors.domain.insufficientCredits",
   SLOT_UNAVAILABLE:          "errors.domain.slotUnavailable",
   BOOKING_NOT_FOUND:         "errors.domain.bookingNotFound",
@@ -33,4 +34,17 @@ export const ERROR_CODE_I18N_KEY: Record<string, string> = {
 /** Converts a SCREAMING_SNAKE_CASE error code to camelCase for i18n key lookup. */
 export function camelCaseCode(code: string): string {
   return code.toLowerCase().replace(/_([a-z])/g, (_, c: string) => c.toUpperCase());
+}
+
+/**
+ * Resolves an API error code to a translation key *relative to the `errors`
+ * namespace* — for use with `useTranslations('errors')`. Known codes resolve via
+ * ERROR_CODE_I18N_KEY (e.g. `domain.insufficientCredits`,
+ * `validation.invalidRequest`); unknown/empty codes fall back to the HTTP-status
+ * key (`http.<status>`, defaulting to 500). This keeps validation, domain, and
+ * transport errors translated through a single boundary.
+ */
+export function errorCodeToKey(code: string | undefined, status: number): string {
+  const full = code ? ERROR_CODE_I18N_KEY[code] : undefined;
+  return full ? full.replace(/^errors\./, "") : `http.${status || 500}`;
 }

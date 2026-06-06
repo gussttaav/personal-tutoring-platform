@@ -18,7 +18,9 @@ import PersonalArea from "@/features/personal-area/PersonalArea";
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta.areaPersonal" });
-  return { title: t("title"), description: t("description") };
+  // Auth-gated dashboard — not a public SEO target. Override the site-wide
+  // index:true default and emit no hreflang alternates.
+  return { title: t("title"), description: t("description"), robots: { index: false, follow: false } };
 }
 
 export default async function AreaPersonalPage({ params }: { params: Promise<{ locale: string }> }) {

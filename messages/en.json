@@ -642,6 +642,9 @@
       "invalidCancelToken": "The cancellation link is not valid.",
       "outsideCancelWindow": "The cancellation window has closed.",
       "cancelTokenConsumed": "This cancellation link has already been used."
+    },
+    "validation": {
+      "invalidRequest": "The submitted data is not valid. Check the form and try again."
     }
   },
   "meta": {

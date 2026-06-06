@@ -32,7 +32,7 @@ import {
   Helper,
 } from "@/components/ui";
 import { COLORS } from "@/constants";
-import { camelCaseCode } from "@/constants/errors";
+import { errorCodeToKey } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
@@ -252,11 +252,7 @@ export default function SingleSessionBooking({
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
       const code   = err instanceof ApiError ? err.message : "";
-      setErrorMsg(
-        code
-          ? tErrors(`domain.${camelCaseCode(code)}`)
-          : tErrors(`http.${status || 500}`)
-      );
+      setErrorMsg(tErrors(errorCodeToKey(code, status) as Parameters<typeof tErrors>[0]));
       setPhase("error");
     }
   }, [selected, sessionType, rescheduleToken, note, tErrors]);
@@ -278,11 +274,7 @@ export default function SingleSessionBooking({
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
       const code   = err instanceof ApiError ? err.message : "";
-      setErrorMsg(
-        code
-          ? tErrors(`domain.${camelCaseCode(code)}`)
-          : tErrors(`http.${status || 500}`)
-      );
+      setErrorMsg(tErrors(errorCodeToKey(code, status) as Parameters<typeof tErrors>[0]));
       setPhase("error");
     }
   }
