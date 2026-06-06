@@ -55,6 +55,7 @@ export interface BookingServiceDeps {
   calendar:  ICalendarClient;
   zoom:      IZoomClient;
   email:     IEmailClient;
+  users:     IUserRepository;
 }
 
 export function buildTestBookingService(
@@ -67,6 +68,7 @@ export function buildTestBookingService(
     overrides.calendar  ?? new FakeCalendarClient(),
     overrides.zoom      ?? new FakeZoomClient(),
     overrides.email     ?? new FakeEmailClient(),
+    overrides.users     ?? new InMemoryUserRepository(),
   );
 }
 
@@ -94,6 +96,7 @@ export function buildTestPaymentService(
   const bookings = overrides.bookings ?? buildTestBookingService({
     credits,
     calendar,
+    users: userRepo,
   });
 
   const service = new PaymentService(

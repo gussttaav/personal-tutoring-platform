@@ -12,6 +12,32 @@ export class UserService {
     return this.users.findByEmail(email);
   }
 
+  // i18n: account-level locale preference. Read by the email path (fallback 'es')
+  // and seeded into the NEXT_LOCALE cookie at login — never read on the render
+  // hot path. See docs/i18n and the seedLocaleOnLogin reconciliation below.
+  async getLocale(email: string): Promise<"es" | "en" | null> {
+    return this.users.getLocale(email.toLowerCase().trim());
+  }
+
+  async setLocale(email: string, locale: "es" | "en"): Promise<void> {
+    return this.users.setLocale(email.toLowerCase().trim(), locale);
+  }
+
+  // Reconciles users.locale with the request at login and returns the locale to
+  // write into the NEXT_LOCALE cookie. Precedence: a stored preference wins
+  // (delivers cross-device); otherwise we backfill the effective locale from the
+  // cookie (Option B — persist for everyone so background emails work), defaulting
+  // to 'es'. The DB always wins at login; one switcher click corrects a mismatch.
+  async seedLocaleOnLogin(email: string, cookieLocale?: "es" | "en"): Promise<"es" | "en"> {
+    const normalized = email.toLowerCase().trim();
+    const stored = await this.users.getLocale(normalized);
+    if (stored !== null) return stored;
+
+    const effective = cookieLocale ?? "es";
+    await this.users.setLocale(normalized, effective);
+    return effective;
+  }
+
   // REFACTOR-P2-02: Pure DB role lookup. Creates the user as 'student' if they
   // don't exist yet. ADMIN_EMAILS is never consulted here — bootstrap happens
   // once at server startup via bootstrapAdminsFromEnv().

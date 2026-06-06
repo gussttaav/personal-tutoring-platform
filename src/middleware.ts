@@ -23,6 +23,44 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
 
+/**
+ * i18n locale-detection override.
+ *
+ * next-intl's built-in detection matches Accept-Language against [es, en] and
+ * falls back to the *default* locale (Spanish) for anything it can't match —
+ * so a visitor whose browser is set to French, German, Portuguese, etc. would
+ * be served Spanish. The product rule is the opposite: Spanish only for
+ * visitors who actually prefer Spanish; **everyone else gets English**.
+ *
+ * We implement that by reading the most-preferred language and, when it is not
+ * Spanish, rewriting the request's Accept-Language to "en" before handing off
+ * to next-intl (which then resolves to English and redirects "/" → "/en").
+ * Skipped when a NEXT_LOCALE cookie is present (an explicit earlier choice or
+ * switcher selection always wins) or when there is no Accept-Language header at
+ * all (no signal → keep the Spanish default, which is also the canonical URL).
+ */
+function preferEnglishForNonSpanish(req: NextRequest) {
+  if (req.cookies.get("NEXT_LOCALE")) return;
+
+  const header = req.headers.get("accept-language");
+  if (!header) return;
+
+  const top = header
+    .split(",")
+    .map((part) => {
+      const [tag, ...params] = part.trim().split(";");
+      const qParam = params.find((p) => p.trim().startsWith("q="));
+      const q = qParam ? Number.parseFloat(qParam.slice(qParam.indexOf("=") + 1)) : 1;
+      return { tag: tag.trim().toLowerCase(), q: Number.isFinite(q) ? q : 1 };
+    })
+    .filter((l) => l.tag && l.tag !== "*")
+    .sort((a, b) => b.q - a.q)[0];
+
+  if (top && !top.tag.startsWith("es")) {
+    req.headers.set("accept-language", "en");
+  }
+}
+
 export function middleware(req: NextRequest) {
   const requestId =
     req.headers.get("x-request-id") ??
@@ -44,6 +82,8 @@ export function middleware(req: NextRequest) {
     // Inject the request ID onto the incoming request headers so server
     // components and route handlers can read it during this request.
     req.headers.set("x-request-id", requestId);
+    // Default non-Spanish browsers to English before next-intl detects locale.
+    preferEnglishForNonSpanish(req);
     const res = intlMiddleware(req);
     res.headers.set("x-request-id", requestId);
     return res;

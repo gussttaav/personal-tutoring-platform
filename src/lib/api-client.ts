@@ -61,6 +61,19 @@ export const api = {
       }),
   },
 
+  locale: {
+    /**
+     * POST /api/locale
+     * Persists a logged-in user's language choice to users.locale. Cookie is
+     * already set by next-intl on switch; this keeps the DB in sync.
+     */
+    set: (locale: "es" | "en") =>
+      request<{ ok: true }>("/api/locale", {
+        method: "POST",
+        body:   JSON.stringify({ locale }),
+      }),
+  },
+
   stripe: {
     /**
      * POST /api/stripe/checkout

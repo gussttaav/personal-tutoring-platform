@@ -1,8 +1,10 @@
 'use client';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
+import { useSession } from 'next-auth/react';
 import { usePathname, useRouter } from '@/i18n/navigation';
 import { routing } from '@/i18n/routing';
+import { api } from '@/lib/api-client';
 
 interface LocaleSwitcherProps {
   onSwitch?: () => void;
@@ -13,6 +15,7 @@ export function LocaleSwitcher({ onSwitch }: LocaleSwitcherProps) {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  const { status } = useSession();
   const [isPending, startTransition] = useTransition();
 
   function onChange(nextLocale: 'es' | 'en') {
@@ -20,6 +23,11 @@ export function LocaleSwitcher({ onSwitch }: LocaleSwitcherProps) {
     startTransition(() => {
       router.replace(pathname, { locale: nextLocale });
     });
+    // For logged-in users, persist the choice to users.locale so it follows them
+    // across devices. Fire-and-forget — next-intl already set the cookie above.
+    if (status === 'authenticated') {
+      api.locale.set(nextLocale).catch(() => {});
+    }
     onSwitch?.();
   }
 

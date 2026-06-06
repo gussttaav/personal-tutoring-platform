@@ -15,6 +15,7 @@
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
+import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import type { SessionType } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
@@ -37,7 +38,6 @@ export interface CreateBookingInput {
   timezone?:         string;
   rescheduleToken?:  string;
   stripePaymentId?:  string;
-  locale?:           'es' | 'en';
 }
 
 export interface CreateBookingOutput {
@@ -94,6 +94,7 @@ export class BookingService {
     private readonly calendar:   ICalendarClient,
     private readonly zoom:       IZoomClient,
     private readonly email:      IEmailClient,
+    private readonly users:      IUserRepository,
   ) {}
 
   async createBooking(input: CreateBookingInput): Promise<CreateBookingOutput> {
@@ -266,7 +267,9 @@ export class BookingService {
 
       // 9. Confirmation + notification emails (with per-attempt retry).
       //    Not compensated: a leaked "booking confirmed" email is better than deleting a booking.
-      const studentLocale = input.locale ?? 'es';
+      //    Locale comes from users.locale (account source of truth), so background
+      //    flows (Stripe webhook) localize correctly with no cookie to read.
+      const studentLocale = (await this.users.getLocale(input.email)) ?? 'es';
       const studentLabel  = studentLocale === 'en'
         ? SESSION_LABELS_EN[input.sessionType]
         : sessionLabel;
@@ -386,18 +389,23 @@ export class BookingService {
       await this.credits.restoreCredit(record.email);
     }
 
+    // Display label follows the request locale (the cancel page renders in the
+    // current page locale). The email locale is the account source of truth.
     const sessionLabel      = (locale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
     const sessionLabelAdmin = SESSION_LABELS[record.sessionType] ?? record.sessionType;
+
+    const emailLocale      = (await this.users.getLocale(record.email)) ?? 'es';
+    const emailLabel       = (emailLocale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
 
     // 6. Send emails (non-fatal)
     await Promise.all([
       this.email.sendCancellationConfirmation({
         to:              record.email,
         studentName:     record.name,
-        sessionLabel,
+        sessionLabel:    emailLabel,
         startIso:        record.startsAt,
         creditsRestored: isPack,
-        locale,
+        locale:          emailLocale,
       }),
       isSingle
         ? this.email.sendCancellationNotification({

@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import { cookies } from "next/headers";
 import { userService } from "@/services";
 
 // Extend NextAuth types so session.user.isAdmin is available client-side.
@@ -40,6 +41,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           user.name  ?? undefined,
           user.image ?? undefined,
         );
+
+        // i18n: reconcile users.locale with the NEXT_LOCALE cookie at login.
+        // A stored preference wins (delivers cross-device); otherwise we backfill
+        // the effective locale (Option B) so background emails work for everyone.
+        // Reseed the cookie so the render path (which only reads the cookie) picks
+        // up the account's locale immediately. DB is read here, never on render.
+        try {
+          const cookieStore = await cookies();
+          const current = cookieStore.get("NEXT_LOCALE")?.value;
+          const cookieLocale = current === "es" || current === "en" ? current : undefined;
+          const effective = await userService.seedLocaleOnLogin(user.email, cookieLocale);
+          cookieStore.set("NEXT_LOCALE", effective, {
+            path:     "/",
+            sameSite: "lax",
+            maxAge:   60 * 60 * 24 * 365,
+          });
+        } catch (err) {
+          // Locale seeding is best-effort — never block sign-in on it.
+          console.error("Failed to seed locale on login:", err);
+        }
       }
       return true;
     },

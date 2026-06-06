@@ -7,7 +7,6 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { auth } from "@/auth";
 import { isValidOrigin } from "@/lib/csrf";
 import { BookSchema } from "@/lib/schemas";
@@ -29,14 +28,11 @@ async function postHandler(req: NextRequest) {
     return NextResponse.json({ error: "REQUIRES_PAYMENT" }, { status: 400 });
   }
 
-  const locale = ((await cookies()).get("NEXT_LOCALE")?.value ?? "es") as "es" | "en";
-
   try {
     const result = await bookingService.createBooking({
       email: session.user.email,
       name:  session.user.name ?? session.user.email,
       ...parsed.data,
-      locale,
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

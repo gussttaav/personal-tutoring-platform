@@ -49,4 +49,23 @@ export class SupabaseUserRepository implements IUserRepository {
       .eq("email", email.toLowerCase().trim());
     if (error) throw error;
   }
+
+  async getLocale(email: string): Promise<"es" | "en" | null> {
+    const { data, error } = await supabase
+      .from("users")
+      .select("locale")
+      .eq("email", email.toLowerCase().trim())
+      .maybeSingle();
+    if (error) throw error;
+    if (!data || data.locale === null) return null;
+    return data.locale as "es" | "en";
+  }
+
+  async setLocale(email: string, locale: "es" | "en"): Promise<void> {
+    const { error } = await supabase
+      .from("users")
+      .update({ locale })
+      .eq("email", email.toLowerCase().trim());
+    if (error) throw error;
+  }
 }

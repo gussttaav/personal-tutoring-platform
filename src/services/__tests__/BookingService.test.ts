@@ -11,6 +11,7 @@ import type { ISessionRepository } from "@/domain/repositories/ISessionRepositor
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
+import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import { CreditService } from "../CreditService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
@@ -97,6 +98,16 @@ const mockEmail = (): jest.Mocked<IEmailClient> => ({
   sendCancellationNotification: jest.fn().mockResolvedValue(undefined),
 });
 
+// getLocale defaults to null (no stored preference → 'es' fallback in the service).
+const mockUsers = (): jest.Mocked<IUserRepository> => ({
+  upsert:      jest.fn().mockResolvedValue("user-id"),
+  findByEmail: jest.fn().mockResolvedValue(null),
+  getRole:     jest.fn().mockResolvedValue("student"),
+  setRole:     jest.fn().mockResolvedValue(undefined),
+  getLocale:   jest.fn().mockResolvedValue(null),
+  setLocale:   jest.fn().mockResolvedValue(undefined),
+});
+
 const makeService = (overrides: {
   bookings?:  jest.Mocked<IBookingRepository>;
   credits?:   CreditService;
@@ -104,6 +115,7 @@ const makeService = (overrides: {
   calendar?:  jest.Mocked<ICalendarClient>;
   zoom?:      jest.Mocked<IZoomClient>;
   email?:     jest.Mocked<IEmailClient>;
+  users?:     jest.Mocked<IUserRepository>;
 } = {}) =>
   new BookingService(
     overrides.bookings  ?? mockBookings(),
@@ -112,6 +124,7 @@ const makeService = (overrides: {
     overrides.calendar  ?? mockCalendar(),
     overrides.zoom      ?? mockZoom(),
     overrides.email     ?? mockEmail(),
+    overrides.users     ?? mockUsers(),
   );
 
 // Helpers for time
@@ -303,20 +316,24 @@ describe("BookingService.createBooking (reschedule)", () => {
     expect(bookings.recordRescheduleFailure).not.toHaveBeenCalled();
   });
 
-  it("passes locale: 'en' to sendConfirmation when input locale is 'en'", async () => {
+  it("passes locale: 'en' to sendConfirmation when users.locale is 'en'", async () => {
     const email = mockEmail();
-    const service = makeService({ email });
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    const service = makeService({ email, users });
 
-    await service.createBooking({ ...basePackInput(), locale: "en" });
+    await service.createBooking(basePackInput());
 
+    expect(users.getLocale).toHaveBeenCalledWith("student@test.com");
     expect(email.sendConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "en" })
     );
   });
 
-  it("defaults to locale: 'es' for sendConfirmation when locale is omitted", async () => {
+  it("defaults to locale: 'es' for sendConfirmation when users.locale is unset", async () => {
     const email = mockEmail();
-    const service = makeService({ email });
+    const users = mockUsers(); // getLocale → null
+    const service = makeService({ email, users });
 
     await service.createBooking(basePackInput());
 
@@ -327,9 +344,11 @@ describe("BookingService.createBooking (reschedule)", () => {
 
   it("sends English session label to student but Spanish label to admin notification", async () => {
     const email = mockEmail();
-    const service = makeService({ email });
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    const service = makeService({ email, users });
 
-    await service.createBooking({ ...basePackInput(), locale: "en" });
+    await service.createBooking(basePackInput());
 
     const confirmCall = email.sendConfirmation.mock.calls[0]?.[0];
     const notifyCall  = email.sendNewBookingNotification.mock.calls[0]?.[0];
@@ -454,28 +473,32 @@ describe("BookingService.cancelByToken", () => {
     expect(email.sendCancellationNotification).toHaveBeenCalled();
   });
 
-  it("passes locale: 'en' to sendCancellationConfirmation when called with 'en'", async () => {
+  it("uses users.locale ('en') for the cancellation confirmation email, ignoring the display param", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
       baseCancelRecord({ startsAt: hoursFromNow(5) })
     );
     const email = mockEmail();
-    const service = makeService({ bookings, email });
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    // Display param is 'es' but the email must follow the account's stored locale.
+    const service = makeService({ bookings, email, users });
 
-    await service.cancelByToken("tkn", "en");
+    await service.cancelByToken("tkn", "es");
 
+    expect(users.getLocale).toHaveBeenCalledWith("s@t.com");
     expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "en" })
     );
   });
 
-  it("defaults to locale: 'es' for sendCancellationConfirmation", async () => {
+  it("defaults the cancellation email to 'es' when users.locale is unset", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
       baseCancelRecord({ startsAt: hoursFromNow(5) })
     );
     const email = mockEmail();
-    const service = makeService({ bookings, email });
+    const service = makeService({ bookings, email }); // getLocale → null
 
     await service.cancelByToken("tkn");
 
@@ -484,15 +507,17 @@ describe("BookingService.cancelByToken", () => {
     );
   });
 
-  it("uses English session label for student but Spanish for admin notification on cancel", async () => {
+  it("uses English session label for student (from users.locale) but Spanish for admin notification on cancel", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
       baseCancelRecord({ sessionType: "session1h", startsAt: hoursFromNow(5) })
     );
     const email = mockEmail();
-    const service = makeService({ bookings, email });
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    const service = makeService({ bookings, email, users });
 
-    await service.cancelByToken("tkn", "en");
+    await service.cancelByToken("tkn");
 
     const confirmCall = email.sendCancellationConfirmation.mock.calls[0]?.[0];
     const notifyCall  = email.sendCancellationNotification.mock.calls[0]?.[0];
