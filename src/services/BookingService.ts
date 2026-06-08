@@ -15,6 +15,7 @@
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
+import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import type { SessionType } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
@@ -72,6 +73,13 @@ const SESSION_LABELS: Record<SessionType, string> = {
   pack:      "Clase de pack",
 };
 
+const SESSION_LABELS_EN: Record<SessionType, string> = {
+  free15min: "Free intro call · 15 min",
+  session1h: "Individual session · 1 hour",
+  session2h: "Individual session · 2 hours",
+  pack:      "Pack class",
+};
+
 const CANCEL_WINDOW_MS = 2 * 60 * 60_000; // 2 hours
 
 type Compensation = { description: string; run: () => Promise<void> };
@@ -86,6 +94,7 @@ export class BookingService {
     private readonly calendar:   ICalendarClient,
     private readonly zoom:       IZoomClient,
     private readonly email:      IEmailClient,
+    private readonly users:      IUserRepository,
   ) {}
 
   async createBooking(input: CreateBookingInput): Promise<CreateBookingOutput> {
@@ -129,19 +138,19 @@ export class BookingService {
 
         if (!oldRecord) {
           throw new DomainError(
-            "El enlace de reprogramación no es válido o ya ha sido usado.",
+            "Reschedule token is invalid or already used.",
             "INVALID_RESCHEDULE_TOKEN",
           );
         }
         if (new Date(oldRecord.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
           throw new DomainError(
-            "Ya no es posible reprogramar esta sesión (menos de 2 horas de antelación).",
+            "Reschedule window has closed (less than 2 hours before session).",
             "OUTSIDE_RESCHEDULE_WINDOW",
           );
         }
         if (oldRecord.sessionType !== input.sessionType) {
           throw new DomainError(
-            "El tipo de sesión no coincide con la reserva original.",
+            "Session type does not match the original booking.",
             "SESSION_TYPE_MISMATCH",
           );
         }
@@ -149,7 +158,7 @@ export class BookingService {
         const consumed = await this.bookings.consumeCancelToken(input.rescheduleToken);
         if (!consumed) {
           throw new DomainError(
-            "El enlace de reprogramación ya ha sido usado.",
+            "Reschedule token has already been consumed.",
             "RESCHEDULE_TOKEN_CONSUMED",
           );
         }
@@ -258,13 +267,19 @@ export class BookingService {
 
       // 9. Confirmation + notification emails (with per-attempt retry).
       //    Not compensated: a leaked "booking confirmed" email is better than deleting a booking.
+      //    Locale comes from users.locale (account source of truth), so background
+      //    flows (Stripe webhook) localize correctly with no cookie to read.
+      const studentLocale = (await this.users.getLocale(input.email)) ?? 'es';
+      const studentLabel  = studentLocale === 'en'
+        ? SESSION_LABELS_EN[input.sessionType]
+        : sessionLabel;
       const joinUrl = `${baseUrl}/sesion/${joinToken}`;
       const [confirmSent] = await Promise.all([
         this.sendWithRetry(
           () => this.email.sendConfirmation({
             to:           input.email,
             studentName:  input.name,
-            sessionLabel,
+            sessionLabel: studentLabel,
             startIso:     input.startIso,
             endIso:       input.endIso,
             joinToken,
@@ -272,6 +287,7 @@ export class BookingService {
             note:         input.note ?? null,
             studentTz:    input.timezone ?? null,
             sessionType:  input.sessionType,
+            locale:       studentLocale,
           }),
           "confirmation email",
         ),
@@ -311,12 +327,12 @@ export class BookingService {
     }
   }
 
-  async cancelByToken(token: string): Promise<CancelByTokenOutput> {
+  async cancelByToken(token: string, locale: 'es' | 'en' = 'es'): Promise<CancelByTokenOutput> {
     // 1. Verify token
     const record = await this.bookings.findByCancelToken(token);
     if (!record) {
       throw new DomainError(
-        "El enlace de cancelación no es válido o ya ha sido usado.",
+        "Cancel token is invalid or already used.",
         "INVALID_CANCEL_TOKEN",
       );
     }
@@ -324,7 +340,7 @@ export class BookingService {
     // 2. 2-hour window check
     if (new Date(record.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
       throw new DomainError(
-        "Lo sentimos, la cancelación ya no es posible (menos de 2 horas antes de la sesión).",
+        "Cancellation window has closed (less than 2 hours before session).",
         "OUTSIDE_CANCEL_WINDOW",
       );
     }
@@ -333,7 +349,7 @@ export class BookingService {
     const consumed = await this.bookings.consumeCancelToken(token);
     if (!consumed) {
       throw new DomainError(
-        "El enlace de cancelación ya ha sido usado.",
+        "Cancel token has already been consumed.",
         "CANCEL_TOKEN_CONSUMED",
       );
     }
@@ -373,22 +389,29 @@ export class BookingService {
       await this.credits.restoreCredit(record.email);
     }
 
-    const sessionLabel = SESSION_LABELS[record.sessionType] ?? record.sessionType;
+    // Display label follows the request locale (the cancel page renders in the
+    // current page locale). The email locale is the account source of truth.
+    const sessionLabel      = (locale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
+    const sessionLabelAdmin = SESSION_LABELS[record.sessionType] ?? record.sessionType;
+
+    const emailLocale      = (await this.users.getLocale(record.email)) ?? 'es';
+    const emailLabel       = (emailLocale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
 
     // 6. Send emails (non-fatal)
     await Promise.all([
       this.email.sendCancellationConfirmation({
         to:              record.email,
         studentName:     record.name,
-        sessionLabel,
+        sessionLabel:    emailLabel,
         startIso:        record.startsAt,
         creditsRestored: isPack,
+        locale:          emailLocale,
       }),
       isSingle
         ? this.email.sendCancellationNotification({
             studentEmail: record.email,
             studentName:  record.name,
-            sessionLabel,
+            sessionLabel: sessionLabelAdmin,
             startIso:     record.startsAt,
           })
         : Promise.resolve(),

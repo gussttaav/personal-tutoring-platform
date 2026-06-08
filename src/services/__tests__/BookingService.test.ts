@@ -11,6 +11,7 @@ import type { ISessionRepository } from "@/domain/repositories/ISessionRepositor
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
+import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import { CreditService } from "../CreditService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
@@ -97,6 +98,16 @@ const mockEmail = (): jest.Mocked<IEmailClient> => ({
   sendCancellationNotification: jest.fn().mockResolvedValue(undefined),
 });
 
+// getLocale defaults to null (no stored preference → 'es' fallback in the service).
+const mockUsers = (): jest.Mocked<IUserRepository> => ({
+  upsert:      jest.fn().mockResolvedValue("user-id"),
+  findByEmail: jest.fn().mockResolvedValue(null),
+  getRole:     jest.fn().mockResolvedValue("student"),
+  setRole:     jest.fn().mockResolvedValue(undefined),
+  getLocale:   jest.fn().mockResolvedValue(null),
+  setLocale:   jest.fn().mockResolvedValue(undefined),
+});
+
 const makeService = (overrides: {
   bookings?:  jest.Mocked<IBookingRepository>;
   credits?:   CreditService;
@@ -104,6 +115,7 @@ const makeService = (overrides: {
   calendar?:  jest.Mocked<ICalendarClient>;
   zoom?:      jest.Mocked<IZoomClient>;
   email?:     jest.Mocked<IEmailClient>;
+  users?:     jest.Mocked<IUserRepository>;
 } = {}) =>
   new BookingService(
     overrides.bookings  ?? mockBookings(),
@@ -112,6 +124,7 @@ const makeService = (overrides: {
     overrides.calendar  ?? mockCalendar(),
     overrides.zoom      ?? mockZoom(),
     overrides.email     ?? mockEmail(),
+    overrides.users     ?? mockUsers(),
   );
 
 // Helpers for time
@@ -302,6 +315,46 @@ describe("BookingService.createBooking (reschedule)", () => {
     // Compensation framework replaced the old recordRescheduleFailure dead-letter call.
     expect(bookings.recordRescheduleFailure).not.toHaveBeenCalled();
   });
+
+  it("passes locale: 'en' to sendConfirmation when users.locale is 'en'", async () => {
+    const email = mockEmail();
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    const service = makeService({ email, users });
+
+    await service.createBooking(basePackInput());
+
+    expect(users.getLocale).toHaveBeenCalledWith("student@test.com");
+    expect(email.sendConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "en" })
+    );
+  });
+
+  it("defaults to locale: 'es' for sendConfirmation when users.locale is unset", async () => {
+    const email = mockEmail();
+    const users = mockUsers(); // getLocale → null
+    const service = makeService({ email, users });
+
+    await service.createBooking(basePackInput());
+
+    expect(email.sendConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "es" })
+    );
+  });
+
+  it("sends English session label to student but Spanish label to admin notification", async () => {
+    const email = mockEmail();
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    const service = makeService({ email, users });
+
+    await service.createBooking(basePackInput());
+
+    const confirmCall = email.sendConfirmation.mock.calls[0]?.[0];
+    const notifyCall  = email.sendNewBookingNotification.mock.calls[0]?.[0];
+    expect(confirmCall?.sessionLabel).toBe("Pack class");
+    expect(notifyCall?.sessionLabel).toBe("Clase de pack");
+  });
 });
 
 // ─── cancelByToken ────────────────────────────────────────────────────────────
@@ -419,6 +472,58 @@ describe("BookingService.cancelByToken", () => {
 
     expect(email.sendCancellationNotification).toHaveBeenCalled();
   });
+
+  it("uses users.locale ('en') for the cancellation confirmation email, ignoring the display param", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    // Display param is 'es' but the email must follow the account's stored locale.
+    const service = makeService({ bookings, email, users });
+
+    await service.cancelByToken("tkn", "es");
+
+    expect(users.getLocale).toHaveBeenCalledWith("s@t.com");
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "en" })
+    );
+  });
+
+  it("defaults the cancellation email to 'es' when users.locale is unset", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const service = makeService({ bookings, email }); // getLocale → null
+
+    await service.cancelByToken("tkn");
+
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "es" })
+    );
+  });
+
+  it("uses English session label for student (from users.locale) but Spanish for admin notification on cancel", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ sessionType: "session1h", startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const users = mockUsers();
+    users.getLocale.mockResolvedValue("en");
+    const service = makeService({ bookings, email, users });
+
+    await service.cancelByToken("tkn");
+
+    const confirmCall = email.sendCancellationConfirmation.mock.calls[0]?.[0];
+    const notifyCall  = email.sendCancellationNotification.mock.calls[0]?.[0];
+    expect(confirmCall?.sessionLabel).toBe("Individual session · 1 hour");
+    expect(notifyCall?.sessionLabel).toBe("Sesión individual · 1 hora");
+  });
 });
 
 // ─── listForUser ──────────────────────────────────────────────────────────────
@@ -465,8 +570,8 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
     const service = buildTestBookingService();
     const input = {
       email: "a@example.com", name: "A",
-      startIso: "2026-06-01T10:00:00.000Z",
-      endIso:   "2026-06-01T11:00:00.000Z",
+      startIso: hoursFromNow(10),
+      endIso:   hoursFromNow(11),
       sessionType: "session1h" as const,
     };
 
@@ -492,8 +597,8 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
 
     const input = {
       email: "a@example.com", name: "A",
-      startIso: "2026-06-02T10:00:00.000Z",
-      endIso:   "2026-06-02T11:00:00.000Z",
+      startIso: hoursFromNow(10),
+      endIso:   hoursFromNow(11),
       sessionType: "session1h" as const,
     };
 

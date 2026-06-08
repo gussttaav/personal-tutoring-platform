@@ -2,7 +2,9 @@
 
 import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { COLORS } from "@/constants";
+import { camelCaseCode } from "@/constants/errors";
 import {
   Spinner,
   ATMOSPHERE_BG,
@@ -24,10 +26,12 @@ type PageState = "loading" | "confirm" | "processing" | "success" | "error";
 function CancelarContent() {
   const params  = useSearchParams();
   const router  = useRouter();
+  const t       = useTranslations("pages.cancelar");
+  const tErrors = useTranslations("errors");
   const token   = params.get("token");
 
   const [state,        setState]        = useState<PageState>(token ? "confirm" : "error");
-  const [errorMsg,     setErrorMsg]     = useState(token ? "" : "Enlace de cancelación inválido.");
+  const [errorMsg,     setErrorMsg]     = useState(token ? "" : t("invalidLink"));
   const [sessionLabel, setSessionLabel] = useState("");
   const [creditsBack,  setCreditsBack]  = useState(false);
 
@@ -42,7 +46,11 @@ function CancelarContent() {
       const data = await res.json();
 
       if (!res.ok) {
-        setErrorMsg(data.error ?? "Error al procesar la cancelación.");
+        setErrorMsg(
+          data.error
+            ? tErrors(`domain.${camelCaseCode(data.error)}`)
+            : tErrors(`http.${res.status}`)
+        );
         setState("error");
         return;
       }
@@ -51,7 +59,7 @@ function CancelarContent() {
       setCreditsBack(data.creditsRestored);
       setState("success");
     } catch {
-      setErrorMsg("Error de conexión. Inténtalo de nuevo.");
+      setErrorMsg(tErrors("http.502"));
       setState("error");
     }
   }
@@ -64,39 +72,35 @@ function CancelarContent() {
           <IconHalo tone="warning" glyph="event_busy" />
 
           <HeaderBlock>
-            <Eyebrow tone="warning">Confirmación requerida</Eyebrow>
-            <FbTitle>Cancelar reserva</FbTitle>
-            <FbBody>
-              ¿Confirmas que quieres cancelar esta sesión? Esta acción no se puede deshacer.
-            </FbBody>
+            <Eyebrow tone="warning">{t("confirmEyebrow")}</Eyebrow>
+            <FbTitle>{t("confirmTitle")}</FbTitle>
+            <FbBody>{t("confirmBody")}</FbBody>
           </HeaderBlock>
 
           <InfoBox>
             <InfoRow glyph="redeem">
-              Si tienes clases de <b style={{ color: COLORS.textPrimary, fontWeight: 600 }}>pack</b>,
-              el crédito se devolverá automáticamente.
+              {t("packRefundNote")}
             </InfoRow>
             <InfoRow glyph="payments">
-              Para sesiones individuales pagadas, Gustavo tramitará el{" "}
-              <b style={{ color: COLORS.textPrimary, fontWeight: 600 }}>reembolso en 1–3 días</b> hábiles.
+              {t("paidRefundNote")}
             </InfoRow>
           </InfoBox>
 
           <div style={{ display: "flex", gap: 10 }}>
             <FbButton variant="ghost" onClick={() => router.push("/")} style={{ flex: 1 }}>
-              Mantener reserva
+              {t("keepBooking")}
             </FbButton>
             <FbButton variant="danger" onClick={handleConfirm} style={{ flex: 1 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
                 delete_outline
               </span>
-              Sí, cancelar
+              {t("confirmCancel")}
             </FbButton>
           </div>
 
           <Helper>
             <MiniIcon glyph="lock" />
-            Enlace seguro y de un solo uso
+            {t("secureLink")}
           </Helper>
         </>
       )}
@@ -108,7 +112,7 @@ function CancelarContent() {
           style={{ display: "flex", flexDirection: "column", gap: 16, alignItems: "center", padding: "20px 0" }}
         >
           <Spinner />
-          <FbBody>Procesando cancelación…</FbBody>
+          <FbBody>{t("processing")}</FbBody>
         </div>
       )}
 
@@ -118,10 +122,10 @@ function CancelarContent() {
           <IconHalo tone="success" glyph="task_alt" />
 
           <HeaderBlock>
-            <Eyebrow tone="success">Reserva cancelada</Eyebrow>
-            <FbTitle>Reserva cancelada</FbTitle>
+            <Eyebrow tone="success">{t("cancelledEyebrow")}</Eyebrow>
+            <FbTitle>{t("cancelledTitle")}</FbTitle>
             <FbBody>
-              {sessionLabel && `Tu ${sessionLabel.toLowerCase()} ha sido cancelada.`}
+              {sessionLabel && t("sessionCancelled", { sessionLabel: sessionLabel.toLowerCase() })}
             </FbBody>
           </HeaderBlock>
 
@@ -129,22 +133,22 @@ function CancelarContent() {
             <InfoBox tone="success">
               <InfoRow glyph="redeem" tone="success">
                 <div style={{ fontWeight: 600, color: COLORS.brand, marginBottom: 1 }}>
-                  Tu crédito ha sido devuelto al pack
+                  {t("creditReturnedTitle")}
                 </div>
                 <div style={{ fontSize: 12.5, color: COLORS.textSecondary, lineHeight: 1.5 }}>
-                  Puedes reservar otra clase cuando quieras.
+                  {t("creditReturnedNote")}
                 </div>
               </InfoRow>
             </InfoBox>
           )}
 
           <FbButton variant="primary" onClick={() => router.push("/")} style={{ width: "100%" }}>
-            Volver al inicio
+            {t("backToHome")}
           </FbButton>
 
           <Helper>
             <MiniIcon glyph="mail" />
-            Recibirás un email de confirmación en breve
+            {t("emailConfirmNote")}
           </Helper>
         </>
       )}
@@ -155,19 +159,18 @@ function CancelarContent() {
           <IconHalo tone="error" glyph="error" />
 
           <HeaderBlock>
-            <Eyebrow tone="error">No se pudo cancelar</Eyebrow>
-            <FbTitle>No se pudo cancelar</FbTitle>
+            <Eyebrow tone="error">{t("errorEyebrow")}</Eyebrow>
+            <FbTitle>{t("errorTitle")}</FbTitle>
             <FbBody>{errorMsg}</FbBody>
           </HeaderBlock>
 
           <FbButton variant="ghost" onClick={() => router.push("/")} style={{ width: "100%" }}>
-            Volver al inicio
+            {t("backToHome")}
           </FbButton>
 
           <Helper>
-            Si necesitas ayuda escribe a{" "}
             <a href="mailto:contacto@gustavoai.dev" style={{ color: COLORS.brand, textDecoration: "none" }}>
-              contacto@gustavoai.dev
+              {t("errorHelp")}
             </a>
           </Helper>
         </>

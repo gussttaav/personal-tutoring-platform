@@ -20,8 +20,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
 import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
+import { formatTime } from "@/lib/formatting";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -67,8 +69,9 @@ interface FocusedBlock {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const DAY_NAMES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const DAY_ABBR  = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"];
+function getDayName(date: Date, locale: string, format: "short" | "long"): string {
+  return new Intl.DateTimeFormat(locale, { weekday: format }).format(date);
+}
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -81,8 +84,8 @@ function getWeekStart(offset = 0): Date {
   return monday;
 }
 
-function formatDateLabel(date: Date): string {
-  return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+function formatDateLabel(date: Date, locale: string): string {
+  return date.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
 }
 
 function formatDateKey(date: Date): string {
@@ -92,10 +95,8 @@ function formatDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function formatWeekHeading(weekStart: Date): string {
-  const day   = weekStart.getDate();
-  const month = weekStart.toLocaleDateString("es-ES", { month: "long" });
-  return `Semana del ${day} de ${month.charAt(0).toUpperCase() + month.slice(1)}`;
+function formatWeekHeading(weekStart: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(weekStart);
 }
 
 /** Returns the current wall-clock minutes (0–1439) in the schedule's timezone. */
@@ -207,6 +208,7 @@ function blockToSelectedSlot(
   userTz:          string,
   tzDiffers:       boolean,
   durationMinutes: 15 | 60 | 120,
+  locale:          string,
 ): SelectedSlot {
   const first = block[0]!;
   const last  = block[block.length - 1]!;
@@ -216,18 +218,13 @@ function blockToSelectedSlot(
   const startTime = firstLabel.split(/\s*[–\-]\s*/)[0]?.trim() ?? "";
   const endTime   = lastLabel.includes("–") || lastLabel.includes("-")
     ? (lastLabel.split(/\s*[–\-]\s*/)[1]?.trim() ?? "")
-    : new Date(last.end).toLocaleTimeString("es-ES", {
-        timeZone: userTz,
-        hour:     "2-digit",
-        minute:   "2-digit",
-        hour12:   false,
-      });
+    : formatTime(new Date(last.end), locale as "es" | "en", { timeZone: userTz });
 
   return {
     startIso:  first.start,
     endIso:    last.end,
     label:     durationMinutes === 15 ? startTime : `${startTime}–${endTime}`,
-    dateLabel: formatDateLabel(date),
+    dateLabel: formatDateLabel(date, locale),
     timezone:  userTz,
   };
 }
@@ -243,6 +240,9 @@ export default function WeeklyCalendar({
   initialWeekOffset = 0,
   refreshToken,
 }: WeeklyCalendarProps) {
+  const t      = useTranslations("booking.weeklyCalendar");
+  const locale = useLocale();
+
   const atomicMinutes: 15 | 30 = durationMinutes === 15 ? 15 : 30;
   const cellsPerSlot            = durationMinutes === 15 ? 1 : durationMinutes === 60 ? 2 : 4;
 
@@ -363,7 +363,7 @@ export default function WeeklyCalendar({
         const tkey  = slotStartKey(match, tzDiffers);
         const block = findContiguousBlock(timeRows, tmap, tkey, cellsPerSlot);
         if (block) {
-          const slot = blockToSelectedSlot(date, block, userTz, tzDiffers, durationMinutes);
+          const slot = blockToSelectedSlot(date, block, userTz, tzDiffers, durationMinutes, locale);
           // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronises focus to availability data that arrives asynchronously into slotsMap; runs once (guarded by initialFocusedHandled).
           setFocusedBlock({ dateKey: key, block, anchorKey: tkey, slot });
           onSlotFocused?.(slot);
@@ -412,7 +412,7 @@ export default function WeeklyCalendar({
       return;
     }
 
-    const slot = blockToSelectedSlot(date, block, userTz, tzDiffers, durationMinutes);
+    const slot = blockToSelectedSlot(date, block, userTz, tzDiffers, durationMinutes, locale);
     setFocusedBlock({ dateKey: dayKey, block, anchorKey: timeKey, slot });
     onSlotFocused?.(slot);
   }, [slotsMap, tzDiffers, timeRows, cellsPerSlot, userTz, durationMinutes,
@@ -444,12 +444,12 @@ export default function WeeklyCalendar({
               className="font-headline text-3xl tracking-tight"
               style={{ color: "#e5e1e4", letterSpacing: "-0.02em" }}
             >
-              {formatWeekHeading(weekStart)}
+              {formatWeekHeading(weekStart, locale)}
             </h1>
             <p className="text-sm mt-1" style={{ color: "#bbcabf" }}>
               {tzDiffers
-                ? `Horarios en tu zona (${userTz})`
-                : "Selecciona el horario que mejor encaje en tu flujo de trabajo."}
+                ? t("subtitle", { userTz })
+                : t("selectHint")}
             </p>
           </div>
 
@@ -458,7 +458,7 @@ export default function WeeklyCalendar({
             <button
               onClick={() => goToWeek(-1)}
               disabled={weekOffset === 0}
-              aria-label="Semana anterior"
+              aria-label={t("prevWeek")}
               className="p-3 rounded-lg flex items-center gap-2 group transition-colors"
               style={{
                 background: "#201f22",
@@ -473,13 +473,13 @@ export default function WeeklyCalendar({
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:-translate-x-0.5 transition-transform" aria-hidden="true">
                 <polyline points="15 18 9 12 15 6" />
               </svg>
-              <span className="text-xs font-semibold uppercase tracking-widest pr-1">Anterior</span>
+              <span className="text-xs font-semibold uppercase tracking-widest pr-1">{t("prev")}</span>
             </button>
 
             <button
               onClick={() => goToWeek(1)}
               disabled={weekOffset >= maxWeekOffset}
-              aria-label="Semana siguiente"
+              aria-label={t("nextWeek")}
               className="p-3 rounded-lg flex items-center gap-2 group transition-colors"
               style={{
                 background: "#201f22",
@@ -491,7 +491,7 @@ export default function WeeklyCalendar({
               onMouseEnter={(e) => { if (weekOffset < maxWeekOffset) (e.currentTarget as HTMLElement).style.background = "#2a2a2c"; }}
               onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#201f22"; }}
             >
-              <span className="text-xs font-semibold uppercase tracking-widest pl-1">Siguiente</span>
+              <span className="text-xs font-semibold uppercase tracking-widest pl-1">{t("next")}</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:translate-x-0.5 transition-transform" aria-hidden="true">
                 <polyline points="9 18 15 12 9 6" />
               </svg>
@@ -655,7 +655,7 @@ export default function WeeklyCalendar({
                       color:         isToday ? "#4edea3" : "#86948a",
                       lineHeight:    1,
                     }}>
-                      {isMobile ? DAY_ABBR[dow] : DAY_NAMES[dow]}
+                      {getDayName(date, locale, isMobile ? "short" : "long")}
                     </span>
                     <span style={{
                       fontSize:   isMobile ? 16 : 20,
@@ -777,11 +777,11 @@ export default function WeeklyCalendar({
 
         {/* Legend */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 14, rowGap: 8, padding: "10px 12px 14px 12px" }}>
-          <LegendDot bg="rgba(78,222,163,0.18)" border="rgba(78,222,163,0.35)" label="Disponible" />
-          <LegendDot bg="rgba(78,222,163,0.32)" border="rgba(78,222,163,0.6)"  label="Preseleccionado" />
-          <LegendDot bg="rgba(78,222,163,0.55)" border="rgba(78,222,163,0.8)"  label="Confirmado" />
-          <LegendDot bg="rgba(255,180,171,0.07)" border="rgba(255,180,171,0.18)" label="Reservado" />
-          <LegendDot bg="repeating-linear-gradient(135deg,rgba(255,255,255,0.025) 0px,rgba(255,255,255,0.025) 1px,transparent 1px,transparent 6px)" border="rgba(255,255,255,0.04)" label="No disponible" />
+          <LegendDot bg="rgba(78,222,163,0.18)" border="rgba(78,222,163,0.35)" label={t("available")} />
+          <LegendDot bg="rgba(78,222,163,0.32)" border="rgba(78,222,163,0.6)"  label={t("preselected")} />
+          <LegendDot bg="rgba(78,222,163,0.55)" border="rgba(78,222,163,0.8)"  label={t("confirmed")} />
+          <LegendDot bg="rgba(255,180,171,0.07)" border="rgba(255,180,171,0.18)" label={t("booked")} />
+          <LegendDot bg="repeating-linear-gradient(135deg,rgba(255,255,255,0.025) 0px,rgba(255,255,255,0.025) 1px,transparent 1px,transparent 6px)" border="rgba(255,255,255,0.04)" label={t("unavailable")} />
         </div>
       </div>
 
@@ -816,6 +816,7 @@ function SlotCell({
   onClick?:      () => void;
 }) {
   const [hovered, setHovered] = useState(false);
+  const tCal = useTranslations("booking.weeklyCalendar");
 
   if (state === "unavailable") {
     return (
@@ -890,7 +891,7 @@ function SlotCell({
         fontFamily:     "inherit",
         overflow:       "hidden",
       }}
-      aria-label={timeLabel ? `Disponible a las ${timeLabel}` : "Hora disponible"}
+      aria-label={timeLabel ? tCal("availableAt", { timeLabel }) : tCal("available")}
     />
 
   );

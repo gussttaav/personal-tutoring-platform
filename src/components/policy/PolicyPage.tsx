@@ -1,6 +1,7 @@
 // RSC layout shell shared by all dedicated policy pages.
 
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
 interface PolicyPageProps {
@@ -9,7 +10,8 @@ interface PolicyPageProps {
   children: ReactNode;
 }
 
-export default function PolicyPage({ title, lastUpdated, children }: PolicyPageProps) {
+export default async function PolicyPage({ title, lastUpdated, children }: PolicyPageProps) {
+  const t = await getTranslations("policy");
   return (
     <main
       style={{
@@ -54,7 +56,7 @@ export default function PolicyPage({ title, lastUpdated, children }: PolicyPageP
             >
               <path d="M19 12H5M12 5l-7 7 7 7" />
             </svg>
-            Volver al inicio
+            {t("backHome")}
           </Link>
         </div>
 
@@ -79,7 +81,7 @@ export default function PolicyPage({ title, lastUpdated, children }: PolicyPageP
             {title}
           </h1>
           <p style={{ fontSize: 13, color: "var(--text-dim)" }}>
-            Última actualización: {lastUpdated}
+            {t("lastUpdated", { date: lastUpdated })}
           </p>
         </div>
 
@@ -112,10 +114,10 @@ export default function PolicyPage({ title, lastUpdated, children }: PolicyPageP
               gap: 6,
             }}
           >
-            ← Volver al inicio
+            ← {t("backHome")}
           </Link>
           <p style={{ fontSize: 12, color: "var(--text-dim)" }}>
-            gustavoai.dev · contacto@gustavoai.dev
+            {t("contact")}
           </p>
         </div>
       </div>

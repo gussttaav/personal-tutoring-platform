@@ -25,12 +25,19 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
     headers: { "Content-Type": "application/json", ...options?.headers },
   });
   const data = await res.json();
-  if (!res.ok) throw new ApiError(data.error ?? "Error desconocido", res.status);
+  if (!res.ok) {
+    const code = typeof data.error === "string" ? data.error : "";
+    throw new ApiError(code, res.status, code);
+  }
   return data as T;
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly code?: string,
+  ) {
     super(message);
     this.name = "ApiError";
   }
@@ -51,6 +58,19 @@ export const api = {
       request<BookResponse>("/api/book", {
         method: "POST",
         body:   JSON.stringify(body),
+      }),
+  },
+
+  locale: {
+    /**
+     * POST /api/locale
+     * Persists a logged-in user's language choice to users.locale. Cookie is
+     * already set by next-intl on switch; this keeps the DB in sync.
+     */
+    set: (locale: "es" | "en") =>
+      request<{ ok: true }>("/api/locale", {
+        method: "POST",
+        body:   JSON.stringify({ locale }),
       }),
   },
 

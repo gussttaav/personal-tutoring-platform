@@ -38,6 +38,7 @@ export const bookingService = new BookingService(
   new CalendarClient(),
   new ZoomClient(),
   new EmailClient(),
+  supabaseUserRepository,
 );
 
 export const paymentService = new PaymentService(

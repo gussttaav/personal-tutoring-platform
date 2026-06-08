@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Spinner, Alert } from "@/components/ui";
 import { PACK_CONFIG } from "@/constants";
 import { api, ApiError } from "@/lib/api-client";
+import { errorCodeToKey } from "@/constants/errors";
 import PaymentForm from "@/components/PaymentForm";
 import type { PackSize } from "@/domain/types";
 
@@ -27,7 +29,8 @@ export default function PackModal({
   userName,
   userEmail,
 }: PackModalProps) {
-  const router = useRouter();
+  const tErrors = useTranslations("errors");
+  const router  = useRouter();
   const [clientSecret, setClientSecret] = useState<string | null>(initialClientSecret ?? null);
   const [fetching,     setFetching]     = useState(!initialClientSecret);
   const [fetchError,   setFetchError]   = useState("");
@@ -57,7 +60,9 @@ export default function PackModal({
       .catch((err) => {
         if (!controller.signal.aborted) {
           setFetchError(
-            err instanceof ApiError ? err.message : "Error al iniciar el pago."
+            err instanceof ApiError
+              ? tErrors(errorCodeToKey(err.code, err.status) as Parameters<typeof tErrors>[0])
+              : tErrors("http.500")
           );
           setFetching(false);
         }

@@ -14,40 +14,49 @@
  */
 
 import { redirect } from "next/navigation";
-import { toZonedTime, format } from "date-fns-tz";
+import { toZonedTime } from "date-fns-tz";
 import { bookingService } from "@/services";
 import { auth } from "@/auth";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import PreJoinSetup from "@/components/PreJoinSetup";
-
-const SESSION_LABELS: Record<string, string> = {
-  free15min: "Encuentro inicial gratuito · 15 min",
-  session1h: "Sesión individual · 1 hora",
-  session2h: "Sesión individual · 2 horas",
-  pack:      "Clase de pack",
-};
+import { getTranslations, setRequestLocale } from "next-intl/server";
 
 const TZ = "Europe/Madrid";
 
-function formatSessionTime(iso: string): string {
-  const zoned = toZonedTime(new Date(iso), TZ);
-  return format(zoned, "d 'de' MMMM, HH:mm", { timeZone: TZ });
+function formatSessionTime(iso: string, locale: string): string {
+  const date = toZonedTime(new Date(iso), TZ);
+  return new Intl.DateTimeFormat(locale === "en" ? "en-GB" : "es-ES", {
+    timeZone: TZ,
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 export default async function SesionPage({
   params,
 }: {
-  params: Promise<{ token: string }>;
+  params: Promise<{ locale: string; token: string }>;
 }) {
-  const { token } = await params;
+  const { locale, token } = await params;
+  setRequestLocale(locale);
+  const t = await getTranslations("pages.sesion");
 
   const record = await bookingService.getJoinInfo(token);
   if (!record) redirect("/");
 
+  const SESSION_LABELS: Record<string, string> = {
+    free15min: t("free"),
+    session1h: t("session1h"),
+    session2h: t("session2h"),
+    pack:      t("pack"),
+  };
+
   const sessionLabel = SESSION_LABELS[record.sessionType] ?? record.sessionType;
-  const timeLabel    = formatSessionTime(record.startsAt);
+  const timeLabel    = formatSessionTime(record.startsAt, locale);
 
   // ── Auth gate ──────────────────────────────────────────────────────────────
   const session = await auth();
@@ -57,12 +66,10 @@ export default async function SesionPage({
         <Navbar />
         <main className="flex-1 flex items-center justify-center px-6">
           <div className="flex flex-col items-center gap-4 text-center">
-            <p className="text-on-surface-variant">
-              Inicia sesión para acceder a tu sesión.
-            </p>
+            <p className="text-on-surface-variant">{t("signIn")}</p>
             <GoogleSignInButton
               callbackUrl={`/sesion/${token}`}
-              label="Continuar con Google"
+              label={t("continueGoogle")}
               fullWidth={false}
             />
           </div>

@@ -28,11 +28,11 @@ function mapDomainErrorToResponse(
   ctx: Record<string, unknown>
 ): NextResponse {
   if (err instanceof BookingNotFoundError) {
-    return NextResponse.json({ error: err.message }, { status: 404 });
+    return NextResponse.json({ error: err.code }, { status: 404 });
   }
   if (err instanceof UnauthorizedError) {
     log("warn", "Unauthorized Zoom token request", { service: "zoom-token", ...ctx });
-    return NextResponse.json({ error: err.message }, { status: 403 });
+    return NextResponse.json({ error: err.code }, { status: 403 });
   }
   throw err;
 }

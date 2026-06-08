@@ -16,7 +16,7 @@ Personal tutoring platform for booking programming, mathematics and AI classes.
 
 ## Overview
 
-Full-stack booking platform for online tutoring sessions. Students can schedule individual sessions or purchase class packs, pay securely inside the app, join live virtual classrooms embedded in the platform, and manage all their bookings from a personal dashboard. An AI assistant powered by Gemini answers questions about services, pricing, and scheduling around the clock.
+Full-stack booking platform for online tutoring sessions. Students can schedule individual sessions or purchase class packs, pay securely inside the app, join live virtual classrooms embedded in the platform, and manage all their bookings from a personal dashboard. An AI assistant powered by Gemini answers questions about services, pricing, and scheduling around the clock. The customer-facing experience is fully **bilingual (Spanish / English)** with automatic browser-language detection and a manual switcher.
 
 ---
 
@@ -27,6 +27,7 @@ Full-stack booking platform for online tutoring sessions. Students can schedule 
 | **Next.js 16** (App Router) | Full-stack framework; RSC for static sections, client components only where interactivity is needed |
 | **TypeScript** (strict) | End-to-end type safety |
 | **NextAuth v5** | Google OAuth authentication |
+| **next-intl** | Internationalization: Spanish (default) + English under `/en`, `Accept-Language` auto-detection, localized UI, emails, and SEO metadata |
 | **Supabase** (Postgres) | Source of truth for all persistent data: users, bookings, credit packs, payments, audit log |
 | **Stripe** | Integrated payment forms (single sessions and packs); webhook processing for payment confirmation |
 | **Google Calendar API** | Reads real-time availability; creates and deletes calendar events on booking/cancellation |
@@ -52,6 +53,7 @@ Full-stack booking platform for online tutoring sessions. Students can schedule 
 - **Personal dashboard** — students see all their upcoming and past sessions and can join, reschedule, or cancel from one place
 - **Email notifications** — every booking triggers a confirmation email with calendar link, join link, and one-click reschedule/cancel links
 - **AI assistant** — Gemini chat widget answers questions about services, pricing, cancellation policy, and Gustavo's background without the student needing to send an email
+- **Bilingual (Spanish / English)** — Spanish is the default at unprefixed URLs; English lives under `/en`. First-time visitors are auto-routed by browser language, and a navbar switcher lets anyone change language on the fly (persisted in a cookie). The full customer UI and transactional emails are translated; the admin panel stays Spanish
 - **Automatic session closing** — a pending termination row is written at booking time; a daily cron sweeps and closes virtual rooms once their grace period has elapsed
 - **Google OAuth** — sign-in required before booking; session is verified server-side on all API routes
 
@@ -87,6 +89,7 @@ Route handler → Service → Repository interface → Supabase implementation
 - **Credit atomicity** — pack credit decrements use a Postgres stored procedure (`decrement_credit`) to prevent race conditions under concurrent requests.
 - **Thin route handlers** — handlers parse and validate input with Zod, call one service method, and map domain errors to HTTP responses via a central error-mapping utility. No business logic in routes.
 - **Serverless-safe session cleanup** — every booking writes the session's grace-period deadline to a `pending_terminations` table. A daily cron (`/api/internal/session-cleanup`) sweeps rows whose deadline has passed and terminates the corresponding Zoom session records. Failure to write the row is non-fatal and does not fail the booking.
+- **Locale-aware routing & SEO** — `next-intl` middleware handles `Accept-Language` detection and the `/en` prefix (`localePrefix: 'as-needed'`, so Spanish stays unprefixed). All customer-facing copy lives in `messages/{es,en}.json` and renders through `t()` — no hardcoded UI strings. Domain and validation errors travel as **codes**, translated at the presentation boundary. Public pages emit per-locale `hrefLang`/canonical tags (`src/lib/hreflang.ts`), and a locale-aware `sitemap.ts` + `robots.ts` keep both language variants correctly indexable.
 
 ---
 

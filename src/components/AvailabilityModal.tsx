@@ -14,6 +14,8 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
 import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
 import type { ApiSlot, SelectedSlot } from "@/components/WeeklyCalendar";
@@ -33,9 +35,10 @@ const TIME_ROWS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// Sun=0 … Sat=6
-const DAY_ABBR  = ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"];
-const DAY_FULL  = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+// Day name helpers — use Intl.DateTimeFormat rather than hardcoded arrays.
+function getDayName(date: Date, locale: string, format: "short" | "long"): string {
+  return new Intl.DateTimeFormat(locale, { weekday: format }).format(date);
+}
 
 function getWeekStart(offset = 0): Date {
   const today = new Date();
@@ -53,23 +56,21 @@ function formatDateKey(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-function formatDateLabel(date: Date): string {
-  return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+function formatDateLabel(date: Date, locale: string): string {
+  return date.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
 }
 
-function formatWeekHeading(weekStart: Date): string {
-  const day   = weekStart.getDate();
-  const month = weekStart.toLocaleDateString("es-ES", { month: "long" });
-  return `Semana del ${day} de ${month.charAt(0).toUpperCase() + month.slice(1)}`;
+function formatWeekHeading(weekStart: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(weekStart);
 }
 
-function buildSelectedSlot(date: Date, slot: ApiSlot, userTz: string): SelectedSlot {
+function buildSelectedSlot(date: Date, slot: ApiSlot, userTz: string, locale: string): SelectedSlot {
   const tzDiffers = userTz !== SCHEDULE.timezone;
   return {
     startIso:  slot.start,
     endIso:    slot.end,
     label:     tzDiffers ? slot.localLabel : slot.label,
-    dateLabel: formatDateLabel(date),
+    dateLabel: formatDateLabel(date, locale),
     timezone:  userTz,
   };
 }
@@ -131,6 +132,9 @@ export default function AvailabilityModal({
   onClose,
   onSlotSelected,
 }: AvailabilityModalProps) {
+  const t      = useTranslations("booking.availabilityModal");
+  const locale = useLocale();
+
   const [weekOffset,     setWeekOffset]     = useState(0);
   const [slotsMap,       setSlotsMap]       = useState<Record<string, DaySlots>>({});
   // Client timezone after hydration; SCHEDULE.timezone during SSR (avoids a
@@ -234,7 +238,7 @@ export default function AvailabilityModal({
   });
 
   const handleSlotClick = useCallback((date: Date, slot: ApiSlot) => {
-    onSlotSelected(buildSelectedSlot(date, slot, userTz));
+    onSlotSelected(buildSelectedSlot(date, slot, userTz, locale));
     onClose();
   }, [userTz, onSlotSelected, onClose]);
 
@@ -296,7 +300,7 @@ export default function AvailabilityModal({
         }}
         role="dialog"
         aria-modal="true"
-        aria-label="Ver disponibilidad"
+        aria-label={t("viewAvailability")}
       >
         {/* Panel */}
         <div style={panelStyle} onClick={(e) => e.stopPropagation()}>
@@ -330,12 +334,12 @@ export default function AvailabilityModal({
                   margin:        0,
                   lineHeight:    1.2,
                 }}>
-                  {formatWeekHeading(weekStart)}
+                  {formatWeekHeading(weekStart, locale)}
                 </p>
                 <p style={{ fontSize: 11, color: "#86948a", margin: "2px 0 0" }}>
                   {tzDiffers
-                    ? `Horarios en tu zona · ${userTz}`
-                    : `Horarios en ${SCHEDULE.timezone}`}
+                    ? t("timezone", { userTz })
+                    : t("scheduleIn", { timezone: SCHEDULE.timezone })}
                 </p>
               </div>
             </div>
@@ -353,7 +357,7 @@ export default function AvailabilityModal({
                   <button
                     onClick={() => setWeekOffset((w) => w - 1)}
                     disabled={weekOffset === 0}
-                    aria-label="Semana anterior"
+                    aria-label={t("prevWeek")}
                     style={{
                       width:          36,
                       height:         36,
@@ -377,7 +381,7 @@ export default function AvailabilityModal({
                   <button
                     onClick={() => setWeekOffset((w) => w + 1)}
                     disabled={weekOffset >= maxWeekOffset}
-                    aria-label="Semana siguiente"
+                    aria-label={t("nextWeek")}
                     style={{
                       width:          36,
                       height:         36,
@@ -403,7 +407,7 @@ export default function AvailabilityModal({
 
               <button
                 onClick={onClose}
-                aria-label="Cerrar"
+                aria-label={t("close")}
                 style={{
                   width:          32,
                   height:         32,
@@ -494,6 +498,7 @@ export default function AvailabilityModal({
                         tzDiffers={tzDiffers}
                         nowMadridMin={nowMadridMin}
                         onSlotClick={(slot) => handleSlotClick(date, slot)}
+                        locale={locale}
                       />
                     );
                   })}
@@ -515,7 +520,7 @@ export default function AvailabilityModal({
                       border: "1px solid rgba(78,222,163,0.35)",
                       display: "inline-block", flexShrink: 0,
                     }} />
-                    Disponible
+                    {t("available")}
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "#86948a" }}>
                     <span style={{
@@ -524,7 +529,7 @@ export default function AvailabilityModal({
                       border: "1px solid rgba(255,180,171,0.18)",
                       display: "inline-block", flexShrink: 0,
                     }} />
-                    Reservado
+                    {t("booked")}
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11, color: "#86948a" }}>
                     <span style={{
@@ -533,7 +538,7 @@ export default function AvailabilityModal({
                       border: "1px solid rgba(255,255,255,0.04)",
                       display: "inline-block", flexShrink: 0,
                     }} />
-                    No disponible
+                    {t("unavailable")}
                   </span>
                 </div>
           </div>
@@ -600,7 +605,7 @@ function TimeColumn({ isMobile }: { isMobile: boolean }) {
 // ─── Day column ────────────────────────────────────────────────────────────────
 
 function DayColumn({
-  date, daySlots, isMobile, isClosed, isToday, tzDiffers, nowMadridMin, onSlotClick,
+  date, daySlots, isMobile, isClosed, isToday, tzDiffers, nowMadridMin, onSlotClick, locale,
 }: {
   date:         Date;
   daySlots:     DaySlots | undefined;
@@ -608,6 +613,7 @@ function DayColumn({
   isClosed:     boolean;
   isToday:      boolean;
   tzDiffers:    boolean;
+  locale:       string;
   nowMadridMin: number;
   onSlotClick:  (slot: ApiSlot) => void;
 }) {
@@ -654,7 +660,7 @@ function DayColumn({
           color:         isToday ? "#4edea3" : "#86948a",
           lineHeight:    1,
         }}>
-          {isMobile ? DAY_ABBR[dow] : DAY_FULL[dow]}
+          {getDayName(date, locale, isMobile ? "short" : "long")}
         </span>
         <span style={{
           fontSize:   isMobile ? 16 : 20,

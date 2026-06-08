@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { UserSession } from "@/domain/types";
 
 interface PackStatusCardProps {
@@ -8,13 +9,14 @@ interface PackStatusCardProps {
 }
 
 export default function PackStatusCard({ packSession }: PackStatusCardProps) {
+  const t = useTranslations("areaPersonal.packStatus");
   const router  = useRouter();
-  const { credits, packSize, name } = packSession;
+  const { credits, packSize } = packSession;
 
   const totalCredits = packSize ?? 5;
   const usedCredits  = totalCredits - credits;
   const progress     = (credits / totalCredits) * 100;
-  const packLabel    = packSize === 10 ? "Pack Intensivo 10h" : "Pack Esencial 5h";
+  const packLabel    = packSize === 10 ? t("intensivePack") : t("essentialPack");
 
   return (
     <div
@@ -79,11 +81,11 @@ export default function PackStatusCard({ packSession }: PackStatusCardProps) {
                 borderRadius:  9999,
                 padding:       "2px 8px",
               }}>
-                Activo
+                {t("active")}
               </span>
             </div>
             <p style={{ fontSize: 11, color: "#86948a", margin: "3px 0 0" }}>
-              {usedCredits} clase{usedCredits !== 1 ? "s" : ""} utilizada{usedCredits !== 1 ? "s" : ""}
+              {t("usedCredits", { count: usedCredits })}
             </p>
           </div>
         </div>
@@ -92,7 +94,7 @@ export default function PackStatusCard({ packSession }: PackStatusCardProps) {
         <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
           <div style={{ textAlign: "right" }}>
             <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#86948a", margin: 0 }}>
-              Clases restantes
+              {t("remainingLabel")}
             </p>
             <p style={{
               fontFamily: "var(--font-headline, Manrope), sans-serif",
@@ -123,7 +125,7 @@ export default function PackStatusCard({ packSession }: PackStatusCardProps) {
               }} />
             </div>
             <p style={{ fontSize: 9, color: "#86948a", textAlign: "right", margin: 0 }}>
-              {usedCredits} usada{usedCredits !== 1 ? "s" : ""}
+              {t("usedShort", { count: usedCredits })}
             </p>
           </div>
         </div>
@@ -132,11 +134,11 @@ export default function PackStatusCard({ packSession }: PackStatusCardProps) {
       {/* CTA */}
       <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
         <p style={{ fontSize: 13, color: "#86948a", margin: "0 0 12px" }}>
-          Tienes{" "}
+          {t("ctaPrefix")}{" "}
           <span style={{ color: "#4edea3", fontWeight: 700 }}>
-            {credits} clase{credits !== 1 ? "s" : ""} disponible{credits !== 1 ? "s" : ""}
+            {t("ctaAvailable", { count: credits })}
           </span>{" "}
-          en tu pack. ¡Reserva tu próxima sesión!
+          {t("ctaSuffix")}
         </p>
         <button
           onClick={() => router.push("/?book=pack")}
@@ -163,7 +165,7 @@ export default function PackStatusCard({ packSession }: PackStatusCardProps) {
           <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 1" }}>
             calendar_add_on
           </span>
-          Reservar sesión del pack
+          {t("bookButton")}
         </button>
       </div>
     </div>

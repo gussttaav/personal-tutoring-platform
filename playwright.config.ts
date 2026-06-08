@@ -58,6 +58,7 @@ export default defineConfig({
 
   use: {
     baseURL,
+    locale: "es",  // Force Accept-Language: es so next-intl always routes to the Spanish locale
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

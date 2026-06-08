@@ -3,34 +3,37 @@
 /**
  * Navbar — Emerald Nocturne redesign
  *
- * - Desktop: brand + nav links (lg+) + auth dropdown with pack credits
- * - Mobile:  brand + hamburger → full-width panel with nav, user info, pack, auth
+ * - Desktop: brand + nav links (lg+) + auth dropdown with pack credits + locale pill
+ * - Mobile:  brand + hamburger → full-width panel with icons, unified bottom strip
  */
 
 import { useState } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useUserSession } from "@/hooks/useUserSession";
 import { signInWithPopup } from "@/lib/auth-popup";
 import ComingSoonModal from "@/components/ComingSoonModal";
 import BrandLogo from "@/components/BrandLogo";
+import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
 function openPackBooking() {
   window.dispatchEvent(new CustomEvent("open-pack-booking"));
 }
 
-const NAV_LINKS = [
-  { label: "Cursos",   href: "#", comingSoon: "courses" as const },
-  { label: "Mentoría", href: "#sessions", accent: true },
-  { label: "Blog",     href: "#", comingSoon: "blog"    as const },
-];
-
 export default function Navbar() {
+  const t = useTranslations("nav");
   const { data: session, status, update } = useSession();
   const { packSession } = useUserSession();
   const [mobileOpen,     setMobileOpen]     = useState(false);
   const [comingSoonModal, setComingSoonModal] = useState<"courses" | "blog" | null>(null);
+
+  const NAV_LINKS = [
+    { label: t("courses"),   href: "#",         comingSoon: "courses" as const, icon: "menu_book" },
+    { label: t("mentoring"), href: "#sessions",  accent: true,                  icon: "group"     },
+    { label: t("blog"),      href: "#",          comingSoon: "blog"    as const, icon: "edit_note" },
+  ];
 
   const handleSignIn = async () => {
     const result = await signInWithPopup("/");
@@ -72,6 +75,14 @@ export default function Navbar() {
         new CustomEvent("close-booking-overlay", { detail: { scrollTo: "#sessions" } })
       );
     }
+  };
+
+  // ── Shared mobile nav-item style helpers ────────────────────────────────────
+
+  const mobileNavItemBase: React.CSSProperties = {
+    color: "#bbcabf",
+    fontFamily: "var(--font-headline, Manrope), sans-serif",
+    textDecoration: "none",
   };
 
   return (
@@ -121,7 +132,7 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Right: Auth (desktop) + hamburger (mobile) */}
+        {/* Right: Auth (desktop) + locale pill + hamburger (mobile) */}
         <div className="flex items-center gap-3">
 
           {/* ── Desktop auth ── */}
@@ -134,14 +145,13 @@ export default function Navbar() {
                 >
                   <div className="hidden sm:block text-right">
                     <p className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1" style={{ color: "#bbcabf" }}>
-                      Área Personal
+                      {t("personalArea")}
                     </p>
                     <p className="text-sm font-semibold" style={{ color: "#e5e1e4" }}>
-                      {user.name?.split(" ")[0] ?? "Usuario"}
+                      {user.name?.split(" ")[0] ?? t("user")}
                     </p>
                   </div>
 
-                  {/* Avatar with green dot when pack is active */}
                   <div className="relative">
                     {user.image ? (
                       <Image
@@ -157,7 +167,7 @@ export default function Navbar() {
                         className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
                         style={{ background: "rgba(78,222,163,0.12)", color: "#4edea3", border: "1px solid rgba(78,222,163,0.2)" }}
                       >
-                        {user.name?.[0] ?? "U"}
+                        {user.name?.[0] ?? t("user")[0]}
                       </div>
                     )}
                     {hasActivePack && (
@@ -183,7 +193,6 @@ export default function Navbar() {
                     className="rounded-xl p-2"
                     style={{ width: "200px", background: "#2a2a2c", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}
                   >
-                    {/* Pack credits (if active) */}
                     {hasActivePack && (
                       <>
                         <button
@@ -194,10 +203,10 @@ export default function Navbar() {
                           onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(78,222,163,0.06)"; }}
                         >
                           <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#4edea3" }}>
-                            Pack {packSession!.packSize}h activo
+                            {t("packActive", { size: packSession!.packSize ?? "" })}
                           </span>
                           <span className="text-xs mt-0.5" style={{ color: "#bbcabf" }}>
-                            {packSession!.credits} clase{packSession!.credits !== 1 ? "s" : ""} disponible{packSession!.credits !== 1 ? "s" : ""}
+                            {t("classesAvailable", { count: packSession!.credits ?? 0 })}
                           </span>
                         </button>
                         <hr style={{ borderColor: "rgba(60,74,66,0.3)", margin: "6px 0" }} />
@@ -212,18 +221,18 @@ export default function Navbar() {
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>{isAdmin ? "admin_panel_settings" : "dashboard"}</span>
-                      {isAdmin ? "Panel de admin" : "Área personal"}
+                      {isAdmin ? t("adminPanel") : t("personalArea")}
                     </Link>
                     <hr style={{ borderColor: "rgba(60,74,66,0.3)", margin: "6px 0" }} />
                     <button
                       onClick={() => signOut()}
                       className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg text-left transition-colors"
-                      style={{ color: "#ffb4ab", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,180,171,0.08)"; }}
-                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                      style={{ color: "#86948a", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,180,171,0.08)"; (e.currentTarget as HTMLElement).style.color = "#ffb4ab"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#86948a"; }}
                     >
                       <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>logout</span>
-                      Cerrar sesión
+                      {t("signOut")}
                     </button>
                   </div>
                 </div>
@@ -242,17 +251,25 @@ export default function Navbar() {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                 </svg>
-                <span>Iniciar sesión</span>
+                <span>{t("signIn")}</span>
               </button>
             )
           )}
 
-          {/* ── Hamburger button (sm and below) ── */}
+          {/* ── Desktop locale pill ── */}
+          <div
+            className="hidden sm:flex items-center"
+            style={{ borderLeft: "1px solid rgba(60,74,66,0.4)", paddingLeft: "12px" }}
+          >
+            <LocaleSwitcher />
+          </div>
+
+          {/* ── Hamburger button (mobile) ── */}
           <button
             className="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
             style={{ background: mobileOpen ? "rgba(78,222,163,0.08)" : "transparent", border: "none", cursor: "pointer", color: "#e5e1e4" }}
             onClick={() => setMobileOpen((prev) => !prev)}
-            aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
             aria-expanded={mobileOpen}
           >
             <span className="material-symbols-outlined" style={{ fontSize: "24px" }}>
@@ -270,7 +287,7 @@ export default function Navbar() {
             background: "rgba(19,19,21,0.97)",
             backdropFilter: "blur(20px)",
             borderTop: "1px solid rgba(255,255,255,0.05)",
-            paddingBottom: "24px",
+            paddingBottom: "12px",
           }}
         >
           {isLoaded && isSignedIn && user ? (
@@ -291,11 +308,11 @@ export default function Navbar() {
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                     style={{ background: "rgba(78,222,163,0.12)", color: "#4edea3", border: "1px solid rgba(78,222,163,0.2)" }}
                   >
-                    {user.name?.[0] ?? "U"}
+                    {user.name?.[0] ?? t("user")[0]}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: "#e5e1e4" }}>{user.name ?? "Usuario"}</p>
+                  <p className="text-sm font-semibold" style={{ color: "#e5e1e4" }}>{user.name ?? t("user")}</p>
                   <p className="text-xs" style={{ color: "#86948a" }}>{user.email}</p>
                 </div>
               </div>
@@ -312,10 +329,10 @@ export default function Navbar() {
                   >
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#4edea3" }}>
-                        Pack {packSession!.packSize}h activo
+                        {t("packActive", { size: packSession!.packSize ?? "" })}
                       </p>
                       <p className="text-sm font-medium mt-0.5" style={{ color: "#e5e1e4" }}>
-                        {packSession!.credits} clase{packSession!.credits !== 1 ? "s" : ""} disponible{packSession!.credits !== 1 ? "s" : ""}
+                        {t("classesAvailable", { count: packSession!.credits ?? 0 })}
                       </p>
                     </div>
                     <span className="material-symbols-outlined" style={{ fontSize: "20px", color: "#4edea3" }}>
@@ -325,69 +342,84 @@ export default function Navbar() {
                 </div>
               )}
 
-              <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "0 0 8px" }} />
+              <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "0 0 4px" }} />
 
-              {/* Nav links */}
+              {/* Nav links with icons */}
               <nav className="px-2">
                 <Link
                   href={isAdmin ? "/admin" : "/area-personal"}
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
-                  style={{ color: "#bbcabf", fontFamily: "var(--font-headline, Manrope), sans-serif", textDecoration: "none" }}
+                  style={mobileNavItemBase}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>{isAdmin ? "admin_panel_settings" : "dashboard"}</span>
-                  {isAdmin ? "Panel de admin" : "Área Personal"}
+                  <span className="material-symbols-outlined" style={{ fontSize: "18px", color: "#86948a" }}>
+                    {isAdmin ? "admin_panel_settings" : "grid_view"}
+                  </span>
+                  {isAdmin ? t("adminPanel") : t("personalArea")}
                 </Link>
 
                 <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
 
-                {NAV_LINKS.map(({ label, href, accent, comingSoon }) => (
+                {NAV_LINKS.map(({ label, href, accent, comingSoon, icon }) => (
                   <Link
                     key={label}
                     href={href}
                     onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
-                    className="flex items-center px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
-                    style={{ color: accent ? "#4edea3" : "#bbcabf", fontFamily: "var(--font-headline, Manrope), sans-serif" }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
+                    style={{ ...mobileNavItemBase, color: accent ? "#4edea3" : "#bbcabf" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                   >
+                    <span className="material-symbols-outlined" style={{ fontSize: "18px", color: accent ? "#4edea3" : "#86948a" }}>
+                      {icon}
+                    </span>
                     {label}
                   </Link>
                 ))}
               </nav>
 
-              <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "8px 0" }} />
+              <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "8px 0 6px" }} />
 
-              {/* Sign out */}
+              {/* Bottom strip: locale pill + sign out */}
               <div className="px-2">
-                <button
-                  onClick={() => { setMobileOpen(false); signOut(); }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-lg text-sm text-left transition-colors"
-                  style={{ color: "#ffb4ab", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,180,171,0.08)"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                <div
+                  className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}
                 >
-                  <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>logout</span>
-                  Cerrar sesión
-                </button>
+                  <LocaleSwitcher onSwitch={() => setMobileOpen(false)} />
+                  <div style={{ width: "1px", height: "20px", background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
+                  <button
+                    onClick={() => { setMobileOpen(false); signOut(); }}
+                    className="flex items-center gap-1.5 text-sm transition-colors"
+                    style={{ color: "#86948a", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ffb4ab"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#86948a"; }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>logout</span>
+                    {t("signOut")}
+                  </button>
+                </div>
               </div>
             </>
           ) : (
             <>
-              {/* Nav links */}
+              {/* Nav links with icons */}
               <nav className="px-2 pt-2">
-                {NAV_LINKS.map(({ label, href, accent, comingSoon }) => (
+                {NAV_LINKS.map(({ label, href, accent, comingSoon, icon }) => (
                   <Link
                     key={label}
                     href={href}
                     onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
-                    className="flex items-center px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
-                    style={{ color: accent ? "#4edea3" : "#bbcabf", fontFamily: "var(--font-headline, Manrope), sans-serif" }}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
+                    style={{ ...mobileNavItemBase, color: accent ? "#4edea3" : "#bbcabf" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
                     onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                   >
+                    <span className="material-symbols-outlined" style={{ fontSize: "18px", color: accent ? "#4edea3" : "#86948a" }}>
+                      {icon}
+                    </span>
                     {label}
                   </Link>
                 ))}
@@ -396,7 +428,7 @@ export default function Navbar() {
               <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "8px 0" }} />
 
               {/* Sign in */}
-              <div className="px-4">
+              <div className="px-4 pb-2">
                 <button
                   onClick={() => { setMobileOpen(false); handleSignIn(); }}
                   className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
@@ -410,8 +442,20 @@ export default function Navbar() {
                     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
                     <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                   </svg>
-                  Iniciar sesión con Google
+                  {t("signInGoogle")}
                 </button>
+              </div>
+
+              <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "0 0 6px" }} />
+
+              {/* Bottom strip: locale pill only */}
+              <div className="px-2">
+                <div
+                  className="flex items-center px-3 py-2.5 rounded-xl"
+                  style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <LocaleSwitcher onSwitch={() => setMobileOpen(false)} />
+                </div>
               </div>
             </>
           )}

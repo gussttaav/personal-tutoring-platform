@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import type { ChatMessage } from "@/app/api/chat-session/route";
 
 interface SessionChatProps {
@@ -13,6 +14,7 @@ interface SessionChatProps {
 }
 
 export default function SessionChat({ messages, userName, onSend, onClose, remoteTyping, onTyping }: SessionChatProps) {
+  const t                     = useTranslations("session.chat");
   const [input, setInput]     = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef             = useRef<HTMLDivElement>(null);
@@ -87,12 +89,12 @@ export default function SessionChat({ messages, userName, onSend, onClose, remot
       {/* Header */}
       <div className="p-4 flex justify-between items-center border-b border-white/5">
         <h3 className="text-[10px] font-bold uppercase tracking-widest text-[#4edea3]">
-          Live Session Chat
+          {t("header")}
         </h3>
         <button
           onClick={onClose}
           className="text-on-surface-variant hover:text-white"
-          aria-label="Cerrar chat"
+          aria-label={t("closeChat")}
         >
           <span className="material-symbols-outlined text-lg">close</span>
         </button>
@@ -102,7 +104,7 @@ export default function SessionChat({ messages, userName, onSend, onClose, remot
       <div className="flex-1 flex flex-col gap-2 overflow-y-auto p-4 min-h-0">
         {messages.length === 0 && (
           <p className="text-[10px] text-on-surface-variant/40 text-center mt-4">
-            Todavía no hay mensajes. ¡Di hola!
+            {t("empty")}
           </p>
         )}
         {messages.map((msg) => (
@@ -117,7 +119,7 @@ export default function SessionChat({ messages, userName, onSend, onClose, remot
           </div>
         ))}
         {remoteTyping && (
-          <div className="chat-typing" aria-label="El otro participante está escribiendo">
+          <div className="chat-typing" aria-label={t("typing")}>
             <span /><span /><span />
           </div>
         )}
@@ -132,14 +134,14 @@ export default function SessionChat({ messages, userName, onSend, onClose, remot
             value={input}
             onChange={(e) => { setInput(e.target.value); signalTyping(); }}
             onKeyDown={handleKeyDown}
-            placeholder="Escribe un mensaje..."
+            placeholder={t("placeholder")}
             disabled={sending}
             className="flex-1 bg-surface-container-lowest border-none rounded-xl text-xs py-2 px-3 text-on-surface placeholder:text-on-surface-variant/40 focus:ring-1 focus:ring-[#4edea3]/50 focus:outline-none"
           />
           <button
             onClick={() => { void send(); }}
             disabled={sending || !input.trim()}
-            aria-label="Enviar mensaje"
+            aria-label={t("sendMessage")}
             className="p-1.5 rounded-lg bg-[#4edea3] disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shrink-0"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"

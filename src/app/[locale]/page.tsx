@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Spinner } from "@/components/ui";
 import HeroSection from "@/features/landing/HeroSection";
 import BiographySection from "@/features/landing/BiographySection";
@@ -7,8 +8,18 @@ import SpecializationsSection from "@/features/landing/SpecializationsSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { localizedAlternates } from "@/lib/hreflang";
 
-export default function HomePage() {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "landing.meta" });
+  return { title: t("title"), description: t("description"), alternates: localizedAlternates("", locale) };
+}
+
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   return (
     <Suspense
       fallback={
@@ -47,7 +58,7 @@ export default function HomePage() {
               }}
             />
 
-            <ConsultingSection /> 
+            <ConsultingSection />
           */}
         </div>
 

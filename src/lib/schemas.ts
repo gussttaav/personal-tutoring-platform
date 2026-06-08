@@ -93,3 +93,11 @@ export const ReviewSchema = z.discriminatedUnion("kind", [
 ]);
 
 export type ReviewInput = z.infer<typeof ReviewSchema>;
+
+// ─── Locale preference ────────────────────────────────────────────────────────
+
+export const LocaleSchema = z.object({
+  locale: z.enum(["es", "en"]),
+});
+
+export type LocaleInput = z.infer<typeof LocaleSchema>;

@@ -1,5 +1,8 @@
 import { withSentryConfig } from "@sentry/nextjs";
+import createNextIntlPlugin from "next-intl/plugin";
 /** @type {import('next').NextConfig} */
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -61,7 +64,9 @@ const nextConfig = {
           // 'wasm-unsafe-eval' is required by Zoom Video SDK to instantiate its WebAssembly engine.
           // 'unsafe-eval' is additionally required by the Zoom SDK's TensorFlow.js workers, which
           // use new Function() for their codec pipeline (screen share encoding + AI features).
-          `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} blob:`,
+          // https://vercel.live is Vercel's deployment feedback widget, injected
+          // on preview/staging deployments only (not production).
+          `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live ${zoomOrigins} ${stripeOrigins} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
           `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -70,7 +75,7 @@ const nextConfig = {
           `worker-src 'self' blob: ${zoomOrigins}`,
           `child-src 'self' blob: ${zoomOrigins}`,
           "media-src 'self' blob: mediastream:",
-          `frame-src ${stripeFrames}`,
+          `frame-src ${stripeFrames} https://vercel.live`,
           "object-src 'none'",
           "base-uri 'self'",
           "form-action 'self'",
@@ -105,7 +110,7 @@ const nextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+export default withNextIntl(withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
@@ -141,4 +146,4 @@ export default withSentryConfig(nextConfig, {
       removeDebugLogging: true,
     },
   },
-});
+}));

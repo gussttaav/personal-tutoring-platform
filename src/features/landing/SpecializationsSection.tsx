@@ -1,77 +1,79 @@
 "use client";
 
-// ─── Specializations data ──────────────────────────────────────────────────────
-
-const CARDS = [
-  {
-    colSpan: 8,
-    icon: "code",
-    iconSize: "2.5rem",
-    iconBoxSize: 56,
-    bg: "#201f22",
-    title: "Programación",
-    body: "De los paradigmas fundamentales a las estructuras de datos, algoritmos, concurrencia y patrones de diseño. Con foco en buenas prácticas y en aprovechar la IA sin perder el criterio propio.",
-    tags: ["Python", "Java / Spring Boot", "C / C++", "Haskell"],
-    layout: "large" as const,
-  },
-  {
-    colSpan: 4,
-    icon: "dns",
-    iconSize: "1.875rem",
-    iconBoxSize: 48,
-    bg: "#201f22",
-    title: "Desarrollo Backend",
-    body: "Creación de APIs REST y microservicios, integración con bases de datos SQL y NoSQL, despliegue en la nube y flujos DevOps con Docker y Git.",
-    tags: ["API REST", "SQL/NoSQL", "DevOps"],
-    layout: "medium" as const,
-  },
-  {
-    colSpan: 4,
-    icon: "calculate",
-    iconSize: "1.875rem",
-    iconBoxSize: 48,
-    bg: "#201f22",
-    title: "Matemática Computacional",
-    body: "Cálculo, álgebra lineal, métodos numéricos, mátemáticas discreta y compiladores/autómatas.",
-    tags: [],
-    layout: "medium" as const,
-  },
-  {
-    colSpan: 4,
-    icon: "psychology",
-    iconSize: "1.875rem",
-    iconBoxSize: 48,
-    bg: "#201f22",
-    title: "Inteligencia Artificial",
-    body: "Machine Learning, Deep Learning, LLMs y programación multiagente, con bases matemáticas e implementación práctica.",
-    tags: [],
-    layout: "medium" as const,
-  },
-  {
-    colSpan: 4,
-    icon: "analytics",
-    iconSize: "1.875rem",
-    iconBoxSize: 48,
-    bg: "#201f22",
-    title: "Análisis de Datos y Estadística",
-    body: "Probabilidades, estadística aplicada, minería de datos, big data y series temporales.",
-    tags: [],
-    layout: "medium" as const,
-  },
-  {
-    colSpan: 12,
-    icon: "school",
-    iconSize: "3.125rem",
-    iconBoxSize: 80,
-    bg: "#2a2a2c",
-    title: "Ciclos Formativos DAM / DAW",
-    body: "Preparación intensiva para Grado Superior. Refuerzo en los módulos técnicos más complejos y mentoría experta para proyectos finales.",
-    tags: [],
-    layout: "full" as const,
-  },
-] as const;
+import { useTranslations } from "next-intl";
 
 export default function SpecializationsSection() {
+  const t = useTranslations("landing.specs");
+
+  const CARDS = [
+    {
+      colSpan: 8,
+      icon: "code",
+      iconSize: "2.5rem",
+      iconBoxSize: 56,
+      bg: "#201f22",
+      title: t("cards.programming.title"),
+      body: t("cards.programming.body"),
+      tags: ["Python", "Java / Spring Boot", "C / C++", "Haskell"],
+      layout: "large" as const,
+    },
+    {
+      colSpan: 4,
+      icon: "dns",
+      iconSize: "1.875rem",
+      iconBoxSize: 48,
+      bg: "#201f22",
+      title: t("cards.backend.title"),
+      body: t("cards.backend.body"),
+      tags: ["API REST", "SQL/NoSQL", "DevOps"],
+      layout: "medium" as const,
+    },
+    {
+      colSpan: 4,
+      icon: "calculate",
+      iconSize: "1.875rem",
+      iconBoxSize: 48,
+      bg: "#201f22",
+      title: t("cards.math.title"),
+      body: t("cards.math.body"),
+      tags: [],
+      layout: "medium" as const,
+    },
+    {
+      colSpan: 4,
+      icon: "psychology",
+      iconSize: "1.875rem",
+      iconBoxSize: 48,
+      bg: "#201f22",
+      title: t("cards.ai.title"),
+      body: t("cards.ai.body"),
+      tags: [],
+      layout: "medium" as const,
+    },
+    {
+      colSpan: 4,
+      icon: "analytics",
+      iconSize: "1.875rem",
+      iconBoxSize: 48,
+      bg: "#201f22",
+      title: t("cards.data.title"),
+      body: t("cards.data.body"),
+      tags: [],
+      layout: "medium" as const,
+    },
+    {
+      colSpan: 12,
+      icon: "school",
+      iconSize: "3.125rem",
+      iconBoxSize: 80,
+      bg: "#2a2a2c",
+      title: t("cards.cycles.title"),
+      body: t("cards.cycles.body"),
+      tags: [],
+      layout: "full" as const,
+    },
+  ];
+
   return (
     <section style={{ paddingBottom: "64px", animation: "fadeUp 0.7s ease both 0.2s" }}>
       {/* ── Header: title left, subtitle right ── */}
@@ -89,7 +91,7 @@ export default function SpecializationsSection() {
               marginBottom: "15px",
             }}
           >
-            Capacidades
+            {t("overline")}
           </span>
           <h2
             style={{
@@ -102,7 +104,7 @@ export default function SpecializationsSection() {
               margin: 0,
             }}
           >
-            Áreas de Especialización
+            {t("headline")}
           </h2>
         </div>
       </div>
@@ -236,7 +238,7 @@ export default function SpecializationsSection() {
                     (e.currentTarget as HTMLElement).style.background = "transparent";
                   }}
                 >
-                  Solicitar apoyo académico
+                  {t("cta")}
                 </button>
               )}
             </div>
@@ -258,7 +260,7 @@ export default function SpecializationsSection() {
         }}
       >
         <span style={{ fontSize: "13px", color: "#86948a" }}>
-          ¿No estás seguro de si puedo ayudarte?
+          {t("helpPrompt")}
         </span>
         <button
           onClick={() => window.dispatchEvent(new Event("open-chat"))}
@@ -282,7 +284,7 @@ export default function SpecializationsSection() {
           <svg width="14" height="14" viewBox="0 0 24 24" fill="#4edea3" aria-hidden="true">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
-          Pregunta al asistente IA
+          {t("askAI")}
         </button>
       </div>
     </section>

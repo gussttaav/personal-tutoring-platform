@@ -3,28 +3,32 @@
 /**
  * WizardProgress — booking wizard step indicator (UI only, no logic)
  *
- * Default (3 steps): Sesión (1) → Horario (2) → Revisión (3)
- * With showPaymentStep: adds Pago (4) for paid 1h / 2h sessions
+ * Default (3 steps): Session (1) → Schedule (2) → Review (3)
+ * With showPaymentStep: adds Payment (4) for paid 1h / 2h sessions
  * - Completed: filled emerald circle with check icon
  * - Active:    filled emerald circle with step number + emerald glow
  * - Inactive:  surface-container circle with outline-variant border
  */
 
+import { useTranslations } from "next-intl";
+
 interface WizardProgressProps {
   currentStep: 1 | 2 | 3 | 4;
-  /** Pass true for paid sessions (1h / 2h) to show the Pago step */
+  /** Pass true for paid sessions (1h / 2h) to show the Payment step */
   showPaymentStep?: boolean;
 }
 
-const STEPS_BASE = [
-  { n: 1, label: "Sesión" },
-  { n: 2, label: "Horario" },
-  { n: 3, label: "Revisión" },
-] as const;
-
-const STEP_PAYMENT = { n: 4, label: "Pago" } as const;
-
 export default function WizardProgress({ currentStep, showPaymentStep = false }: WizardProgressProps) {
+  const t = useTranslations("booking.wizardProgress");
+
+  const STEPS_BASE = [
+    { n: 1, label: t("session") },
+    { n: 2, label: t("schedule") },
+    { n: 3, label: t("review") },
+  ] as const;
+
+  const STEP_PAYMENT = { n: 4 as const, label: t("payment") };
+
   const steps = showPaymentStep ? [...STEPS_BASE, STEP_PAYMENT] : STEPS_BASE;
   return (
     <div className="mb-16">
@@ -59,7 +63,6 @@ export default function WizardProgress({ currentStep, showPaymentStep = false }:
                 }
               >
                 {isDone ? (
-                  /* Check icon */
                   <svg
                     width="18"
                     height="18"

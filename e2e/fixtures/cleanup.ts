@@ -78,8 +78,25 @@ export async function truncateTestDb(
     ["slot_locks",             (q) => q.delete().neq("start_iso", "")],
   ];
 
+  // `bookings` is FK-referenced by `zoom_sessions`. Every booking (including
+  // free15min) commits a zoom_sessions row at the end of the booking flow, so an
+  // in-flight insert from a still-settling request can land in the window between
+  // the zoom_sessions delete and the bookings delete, producing a transient
+  // `zoom_sessions_booking_id_fkey` violation. When that happens, re-clear
+  // zoom_sessions and retry the bookings delete instead of failing the run.
+  const clearZoomSessions = () =>
+    supabase.from("zoom_sessions").delete().not("id", "is", null);
+
   for (const [table, run] of tables) {
-    const { error } = (await run(supabase.from(table))) as { error: { message: string } | null };
+    let { error } = (await run(supabase.from(table))) as { error: { message: string } | null };
+
+    if (error && table === "bookings" && /zoom_sessions_booking_id_fkey/.test(error.message)) {
+      for (let attempt = 0; attempt < 3 && error; attempt++) {
+        await clearZoomSessions();
+        ({ error } = (await run(supabase.from(table))) as { error: { message: string } | null });
+      }
+    }
+
     if (error) {
       throw new Error(`[e2e] Failed to truncate ${table}: ${error.message}`);
     }

@@ -1,0 +1,819 @@
+{
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "loadMore": "Load more"
+  },
+  "nav": {
+    "courses": "Courses",
+    "mentoring": "Mentoring",
+    "blog": "Blog",
+    "personalArea": "Personal Area",
+    "adminPanel": "Admin Panel",
+    "signIn": "Sign in",
+    "signInGoogle": "Sign in with Google",
+    "signOut": "Sign out",
+    "closeMenu": "Close menu",
+    "openMenu": "Open menu",
+    "languageSwitcher": "Language",
+    "packActive": "{size}h pack active",
+    "classesAvailable": "{count, plural, one {# class available} other {# classes available}}",
+    "user": "User"
+  },
+  "landing": {
+    "meta": {
+      "title": "Gustavo Torres — Programming, Math & AI Tutoring",
+      "description": "Programming, math and AI lessons with Gustavo Torres."
+    },
+    "hero": {
+      "zoomTitle": "Click to zoom",
+      "credential": "MSc. Mathematics & Computer Science",
+      "subtitle": "Programming, Math & AI Teacher",
+      "taglinePart1": "Truly understand what",
+      "taglinePart2": "AI only summarizes.",
+      "subheading": "One-on-one classes. No videos, no prompts, no wasted time.",
+      "skills": ["Java", "Python", "C", "Algorithms", "Deep Learning", "Statistics"],
+      "cta": {
+        "book": "Book a session now",
+        "availability": "Check availability"
+      },
+      "statsHint": "click for more information",
+      "close": "Close",
+      "stats": {
+        "experience": {
+          "label": "Years of experience",
+          "title": "Years of experience",
+          "body": "Over 15 years combining software development, research, teaching, online classes and consulting in programming, math and AI.",
+          "link": "View LinkedIn profile"
+        },
+        "classes": {
+          "label": "Classes taught",
+          "title": "Classes taught",
+          "body": "Over 4,700 classes delivered to university students and professionals on verified platforms like Classgap.",
+          "link": "View Classgap profile"
+        },
+        "ratings": {
+          "label": "Reviews",
+          "title": "150+ Reviews",
+          "body": "Over 150 verified reviews from real students published on Classgap.",
+          "link": "View all reviews"
+        },
+        "avg": {
+          "label": "Average rating",
+          "title": "Average rating",
+          "body": "Average score of 4.9 out of 5 based on verified reviews from real students on Classgap.",
+          "link": "View verified reviews"
+        }
+      }
+    },
+    "bio": {
+      "overline": "About Gustavo",
+      "headline": "Forged between code and equations",
+      "para1": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer, I spent five years in research and university teaching before working independently, combining education and consulting.",
+      "para2": "For over seven years I have been helping students and professionals strengthen their skills in programming, mathematics and artificial intelligence — from academic support and learning from scratch to technical interview preparation and real-world project development.",
+      "github": "GitHub",
+      "linkedin": "LinkedIn",
+      "email": "contacto@gustavoai.dev"
+    },
+    "specs": {
+      "overline": "Capabilities",
+      "headline": "Areas of Expertise",
+      "cards": {
+        "programming": {
+          "title": "Programming",
+          "body": "From core paradigms to data structures, algorithms, concurrency and design patterns — with a focus on best practices and leveraging AI without losing your own judgment."
+        },
+        "backend": {
+          "title": "Backend Development",
+          "body": "Building REST APIs and microservices, integrating SQL and NoSQL databases, cloud deployment and DevOps workflows with Docker and Git."
+        },
+        "math": {
+          "title": "Computational Mathematics",
+          "body": "Calculus, linear algebra, numerical methods, discrete mathematics and compilers/automata."
+        },
+        "ai": {
+          "title": "Artificial Intelligence",
+          "body": "Machine Learning, Deep Learning, LLMs and multi-agent programming, with mathematical foundations and hands-on implementation."
+        },
+        "data": {
+          "title": "Data Analysis & Statistics",
+          "body": "Probability, applied statistics, data mining, big data and time series."
+        },
+        "cycles": {
+          "title": "DAM / DAW Vocational Training",
+          "body": "Intensive preparation for Higher Level cycles. Support in the most demanding technical modules and expert mentoring for final projects."
+        }
+      },
+      "cta": "Request academic support",
+      "helpPrompt": "Not sure if I can help you?",
+      "askAI": "Ask the AI assistant"
+    },
+    "consulting": {
+      "sectionLabel": "Business Services",
+      "headlinePrefix": "Consulting for",
+      "headlineAccent": "Businesses",
+      "body": "Integrate artificial intelligence into your processes, train your technical team and implement solutions that generate real impact in your organisation.",
+      "requestInfo": "Request information",
+      "noCommitment": "No commitment · Reply within 24h",
+      "feature1": {
+        "title": "AI implementation and automation",
+        "description": "Design and integration of intelligent agents and workflows adapted to your business processes."
+      },
+      "feature2": {
+        "title": "Data analysis and decision-making",
+        "description": "Extract value from your data to support strategic decisions with a statistical foundation."
+      },
+      "feature3": {
+        "title": "Technical training for teams",
+        "description": "Programming, software architecture, AI and best practices — tailored to your team's level and stack."
+      },
+      "feature4": {
+        "title": "Architecture and systems review",
+        "description": "Audit and redesign of backends, APIs and microservices to improve scalability and maintainability."
+      }
+    }
+  },
+  "auth": {
+    "signin": {
+      "redirecting": "Redirecting to Google…"
+    },
+    "callback": {
+      "closing": "Authentication complete. Closing…"
+    }
+  },
+  "areaPersonal": {
+    "main": {
+      "title": "Personal Area",
+      "welcomeBack": "Welcome back,",
+      "loadError": "Could not load your sessions.",
+      "retry": "Retry",
+      "emptyTitle": "Ready to get started?",
+      "emptySubtitle": "Book your first session and take the first step toward your goals.",
+      "bookSession": "Book a session",
+      "packTitle": "You have classes available!",
+      "packCTAPrefix": "You have",
+      "packCTAPending": "{count, plural, one {# class pending} other {# classes pending}}",
+      "packCTASuffix": "in your pack. When would you like to practice?",
+      "bookNextClass": "Book my next class"
+    },
+    "bookPanel": {
+      "title": "Book a session",
+      "usePackCredit": "Use pack credit",
+      "packCredits": "{count, plural, one {# class available} other {# classes available}}",
+      "singleSessionsLabel": "Individual sessions",
+      "packsLabel": "Continuity packs",
+      "sessions": {
+        "free15min": { "label": "Initial Meeting",  "sub": "15 min · Introduction", "price": "Free" },
+        "session1h":  { "label": "1-hour session",   "sub": "60 min · Individual",   "price": "€16"  },
+        "session2h":  { "label": "2-hour session",   "sub": "120 min · Individual",  "price": "€30"  }
+      },
+      "packs": {
+        "pack5":  { "label": "Essential Pack 5h",  "sub": "Save €5 · 6% off",   "price": "€75"  },
+        "pack10": { "label": "Intensive Pack 10h", "sub": "Save €20 · 12% off", "price": "€140" }
+      }
+    },
+    "nextSession": {
+      "title": "Next class",
+      "sessionLabels": {
+        "free15min": "Initial meeting · 15 min",
+        "session1h": "Individual session · 1h",
+        "session2h": "Individual session · 2h",
+        "pack":      "Pack class"
+      },
+      "zoomLabel": "Zoom virtual classroom",
+      "joinButton": "Enter virtual classroom",
+      "reschedule": "Reschedule",
+      "cancelConfirmTitle": "Cancel this session?",
+      "cancelConfirmBody": "This action cannot be undone. If it's a pack class, the credit will be returned automatically.",
+      "keepSession": "Keep",
+      "confirmCancel": "Yes, cancel"
+    },
+    "packStatus": {
+      "essentialPack": "Essential Pack 5h",
+      "intensivePack": "Intensive Pack 10h",
+      "active": "Active",
+      "usedCredits": "{count, plural, one {# class used} other {# classes used}}",
+      "remainingLabel": "Remaining classes",
+      "usedShort": "{count, plural, one {# used} other {# used}}",
+      "ctaPrefix": "You have",
+      "ctaAvailable": "{count, plural, one {# class available} other {# classes available}}",
+      "ctaSuffix": "in your pack. Book your next session!",
+      "bookButton": "Book pack session"
+    },
+    "calendar": {
+      "blockShort2h": "2h",
+      "blockShort15": "15 min",
+      "blockShort1h": "1h",
+      "blockFree": "15 min · Free",
+      "block1h": "1h Individual",
+      "block2h": "2h Individual",
+      "blockPack10": "1h Pack 10h",
+      "blockPack5": "1h Pack 5h",
+      "fullFree": "Initial meeting · 15 min",
+      "fullSession1h": "Individual session · 1 hour",
+      "fullSession2h": "Individual session · 2 hours",
+      "fullPack10": "Pack class (10h)",
+      "fullPack5": "Pack class (5h)",
+      "fallback": "Session",
+      "legendSession": "Individual session",
+      "legendPack": "Pack / Initial"
+    }
+  },
+  "booking": {
+    "modeView": {
+      "successReschedule": "Class rescheduled!",
+      "successBook": "Class booked!",
+      "creditsRemaining": "{remaining, plural, one {# class remaining} other {# classes remaining}}",
+      "creditsExhausted": "you've used all your classes",
+      "emailError": "We couldn't send you the email. Access your session here:",
+      "joinSession": "Join session →",
+      "cancelBooking": "Cancel this booking",
+      "close": "Close",
+      "changeSessionType": "Change session type",
+      "bookingProgress": "Booking {dateLabel} at {label}…",
+      "errorTitle": "Something went wrong",
+      "tryAgain": "Try again",
+      "chooseAnotherSlot": "Choose another slot",
+      "back": "Back",
+      "fallbackDuration": "60 minutes",
+      "meetLabel": "60 minutes · Google Meet",
+      "packDeduct": "1 class will be deducted from your pack.",
+      "packRemaining": "{n, plural, one {You will have # class remaining.} other {You will have # classes remaining.}}",
+      "rescheduleNote": "Free reschedule.",
+      "rescheduleNoCharge": "This action does not consume new classes from your pack.",
+      "confirmReschedule": "Confirm reschedule",
+      "confirmBook": "Confirm booking",
+      "emailNotice": "You'll receive confirmation by email",
+      "instructorName": "Gustavo Torres Guerrero",
+      "instructorTitle": "Teacher & Consultant",
+      "realtimeSlots": "Real-time availability",
+      "securePay": "Secure payment with Stripe",
+      "sessionName": "Strategic Session",
+      "sessionDuration": "60 minutes",
+      "sessions": {
+        "free15min": { "label": "Initial meeting",  "duration": "15 minutes" },
+        "session1h":  { "label": "1-hour session",  "duration": "60 minutes" },
+        "session2h":  { "label": "2-hour session",  "duration": "2 hours"    }
+      }
+    },
+    "singleSession": {
+      "statusSuccess": "Session booked",
+      "statusEmailFailed": "Booked · email not sent",
+      "successTitle": "Your session is confirmed!",
+      "emailFailedBodyPrefix": "The session has been booked, but",
+      "emailFailedBodyBold": "we couldn't send the confirmation email",
+      "emailFailedBodySuffix": ".",
+      "personalAreaNote": "You can join, cancel or reschedule the session from your personal area.",
+      "goToPersonalArea": "Go to my personal area",
+      "backToHome": "Back to home",
+      "helpEmailFailed": "Need help? Write to contacto@gustavoai.dev",
+      "helpGeneral": "You can reschedule or cancel at no cost up to 2 hours before the class",
+      "errorEyebrow": "Something went wrong",
+      "errorTitle": "We couldn't complete your booking",
+      "errorSlotAvailable": "The slot is still available, you can try again.",
+      "whatHappened": "What happened",
+      "tryAgain": "Try again",
+      "chooseAnotherSlot": "Choose another slot",
+      "helpStillFailing": "Still failing? · contacto@gustavoai.dev",
+      "back": "Go back",
+      "continueButton": "Continue",
+      "selectSlotHint": "Select a slot to continue",
+      "appointmentDetails": "Appointment details",
+      "rescheduleNote": "Free reschedule — no charge is made",
+      "paymentSecure": "Payment will be completed securely in the next step",
+      "sessionReasonLabel": "Session reason",
+      "sessionReasonOptional": "(optional)",
+      "sessionReasonPlaceholder": "E.g.: I have questions about recursion in Java, technical interview prep...",
+      "emailAfterNote": "You can also send the details by email later",
+      "summaryTitle": "Summary",
+      "timezone": "Timezone",
+      "platform": "Platform",
+      "platformValue": "Zoom (in the app)",
+      "total": "Total",
+      "vatIncluded": "VAT included",
+      "paymentProtected": "Your payment is protected. The charge will be processed when you confirm the next step.",
+      "bookingProgress": "Booking {dateLabel} at {label}…",
+      "changeSessionType": "Change session type",
+      "confirmReschedule": "Confirm reschedule",
+      "confirmPay": "Confirm payment",
+      "confirmBook": "Confirm booking",
+      "confirmShort": "Confirm"
+    },
+    "shell": {
+      "back": "Back",
+      "bookPackClass": "Book a pack class",
+      "pickSlot": "Pick an available day and time",
+      "activePack": "Active pack",
+      "individualSessions": "Individual sessions",
+      "chooseMode": "Choose your session type",
+      "modeSubtitle": "From a free initial meeting to intensive work sessions.",
+      "continuityPacks": "Continuity packs",
+      "packsSubtitle": "More hours, better price.",
+      "packsDescription": "Book at your own pace for 6 months and save compared to individual sessions.",
+      "sessions": {
+        "free15min": {
+          "badge": "Free",
+          "name": "Initial meeting",
+          "duration": "15 minutes · We discuss your case and define a work plan",
+          "price": "No cost"
+        },
+        "session1h": {
+          "badge": "Most booked",
+          "name": "1-hour session",
+          "duration": "60 minutes · Doubt resolution, project or exam preparation",
+          "price": "€16"
+        },
+        "session2h": {
+          "name": "2-hour session",
+          "duration": "120 minutes · For topics that require greater depth",
+          "price": "€30"
+        }
+      }
+    },
+    "packCard": {
+      "activePack": "Active pack",
+      "recommended": "Recommended",
+      "classesAvailable": "{count, plural, one {# class available} other {# classes available}}",
+      "pricePerHour": "/ hour · vs €16 per individual session",
+      "preparingPayment": "Preparing payment...",
+      "bookClass": "Book a class",
+      "buyPack": "Buy pack · {price}",
+      "benefits": {
+        "sessions": "{hours} one-hour sessions",
+        "flexible": "Flexible booking — you decide when",
+        "validity": "Valid for 180 days"
+      }
+    },
+    "sidebar": {
+      "title": "Your Selection",
+      "duration": "Duration: {duration}",
+      "free": "No cost",
+      "reschedule": "Rescheduling class",
+      "packActive": "Active Hour Pack",
+      "packRemaining": "{packRemaining} / {packTotal}h rem.",
+      "packDeductNote": "This session will be deducted from your active pack.",
+      "rescheduleNote": "You are modifying an existing booking. This action does not consume credits.",
+      "cancelNote": "Cancellations must be made at least 24h in advance to recover the credit.",
+      "zoomApp": "Zoom (in the app)",
+      "realtimeSlots": "Real-time availability",
+      "securePayment": "Secure payment with Stripe"
+    },
+    "wizardProgress": {
+      "session": "Session",
+      "schedule": "Schedule",
+      "review": "Review",
+      "payment": "Payment"
+    },
+    "signInGate": {
+      "title": "Sign in to continue",
+      "body": "To <highlight>{actionLabel}</highlight> we need to verify your identity. It will only take a moment.",
+      "cancel": "Cancel"
+    },
+    "availabilityModal": {
+      "viewAvailability": "Check availability",
+      "weekOf": "Week of {month} {day}",
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "close": "Close",
+      "timezone": "Times in your zone · {userTz}",
+      "scheduleIn": "Times in {timezone}",
+      "available": "Available",
+      "booked": "Booked",
+      "unavailable": "Unavailable"
+    },
+    "weeklyCalendar": {
+      "subtitle": "Times in your zone ({userTz})",
+      "selectHint": "Select the slot that best fits your workflow.",
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "prev": "Previous",
+      "next": "Next",
+      "available": "Available",
+      "preselected": "Preselected",
+      "confirmed": "Confirmed",
+      "booked": "Booked",
+      "unavailable": "Unavailable",
+      "availableAt": "Available at {timeLabel}"
+    }
+  },
+  "payment": {
+    "form": {
+      "secure": "Secure transaction",
+      "protectedByStripe": "Protected by Stripe",
+      "cancellation24h": "24h cancellation",
+      "loading": "Loading payment form...",
+      "processing": "Processing...",
+      "pay": "Pay {amount}",
+      "cancel": "Cancel",
+      "secureFooter": "Secure payment · SSL encrypted"
+    }
+  },
+  "session": {
+    "preJoin": {
+      "microphone": "Microphone",
+      "camera": "Camera",
+      "speaker": "Speaker",
+      "noDevices": "No devices",
+      "default": "Default",
+      "test": "Test",
+      "cameraPermission": "Could not access the camera. Check your browser permissions.",
+      "cameraPermissionShort": "Could not access the camera.",
+      "timeout": "The session took too long to connect. Please try again.",
+      "retry": "Retry",
+      "title": "Ready for your class?",
+      "subtitle": "Configure your devices and make sure everything works correctly before entering the virtual classroom.",
+      "enterRoom": "Enter classroom",
+      "micOn": "Unmute microphone",
+      "micOff": "Mute microphone",
+      "camOn": "Turn on camera",
+      "camOff": "Turn off camera"
+    },
+    "zoom": {
+      "loading": "Loading",
+      "waiting": "Waiting for connection...",
+      "waitingSoon": "The participant will join shortly",
+      "camOff": "Camera off",
+      "connectionLost": "Connection lost",
+      "reconnecting": "Reconnecting...",
+      "poorConnection": "Unstable connection",
+      "muteOn": "Unmute microphone",
+      "muteOff": "Mute",
+      "videoOn": "Turn on camera",
+      "videoOff": "Turn off camera",
+      "shareStart": "Share screen",
+      "shareStop": "Stop sharing screen",
+      "shareUnavailable": "Screen sharing is not available on mobile devices",
+      "shareUnavailableMobile": "Screen sharing unavailable on mobile",
+      "settings": "Settings",
+      "endingSoon": "The session will end in less than a minute.",
+      "screenShareHint": "Tap: participants",
+      "showPanels": "Show video panels",
+      "hidePanels": "Hide video panels",
+      "showParticipants": "Show participants",
+      "hideParticipants": "Hide participants",
+      "waitingParticipant": "Waiting for participant",
+      "openChat": "Open chat",
+      "closeChat": "Close chat",
+      "error": "Error",
+      "retry": "Retry",
+      "connectError": "Error connecting to session"
+    },
+    "waitingRoom": {
+      "statusMessages": [
+        "Connecting to server...",
+        "Initialising camera...",
+        "Optimising video quality...",
+        "Adjusting resolution and FPS...",
+        "Checking microphone...",
+        "Establishing secure connection...",
+        "Looking for other participants...",
+        "Initialising chat and resources...",
+        "Preparing your virtual classroom..."
+      ],
+      "retry": "Retry",
+      "connectionError": "Connection error",
+      "waitingConnection": "Waiting for connection...",
+      "waitingSoon": "The participant will join shortly",
+      "preparingRoom": "Preparing your virtual classroom...",
+      "madridTime": "Madrid time",
+      "cameraActive": "Camera active",
+      "micReady": "Microphone ready",
+      "stableNetwork": "Stable network",
+      "lowLatency": "Low latency"
+    },
+    "chat": {
+      "header": "Session chat",
+      "closeChat": "Close chat",
+      "empty": "No messages yet. Say hello!",
+      "typing": "The other participant is typing",
+      "placeholder": "Type a message...",
+      "sendMessage": "Send message"
+    },
+    "settings": {
+      "title": "Settings",
+      "close": "Close settings",
+      "audioVideo": "Audio & Video",
+      "backgroundEffects": "Background effects",
+      "diagnostics": "Connection diagnostics",
+      "general": "General",
+      "camera": "Camera",
+      "microphone": "Microphone",
+      "speaker": "Speaker",
+      "noDevices": "No devices",
+      "deviceId": "Device {deviceId}",
+      "reconnecting": "Reconnecting",
+      "noData": "No data",
+      "excellent": "Excellent",
+      "unstable": "Unstable",
+      "none": "None",
+      "blur": "Blur",
+      "latency": "Latency",
+      "jitter": "Jitter",
+      "packetLoss": "Packet loss",
+      "waitingMetrics": "Metrics will appear when another participant is connected.",
+      "noiseCancellation": "Noise cancellation",
+      "noiseCancellationDesc": "Filters background noise"
+    }
+  },
+  "chat": {
+    "initialMessage": "Hi! 👋 I'm **Gustavo Torres**'s assistant. I can tell you about his classes, areas of expertise, how to book a session, or anything else you'd like to know.",
+    "initialQuestion": "How can I help you?",
+    "suggestions": [
+      "What subjects do you teach?",
+      "How do I book a session?",
+      "What's included in the pack?",
+      "Do you teach in English?"
+    ],
+    "title": "Gustavo's Assistant",
+    "status": "Online · immediate reply",
+    "minimize": "Minimise window",
+    "expand": "Expand window",
+    "close": "Close chat",
+    "placeholder": "Type your question…",
+    "placeholderShort": "Type your message",
+    "send": "Send message",
+    "openAssistant": "Open assistant",
+    "closeAssistant": "Close assistant",
+    "assistantLabel": "Gustavo Torres virtual assistant",
+    "error": "An error occurred. Please try again.",
+    "unknownError": "Unknown error"
+  },
+  "comingSoon": {
+    "courses": {
+      "badge": "COURSES",
+      "headline": "In-depth training",
+      "subline": "Structured courses on AI and development. Coming soon.",
+      "ctaLabel": "Subscribe to Courses"
+    },
+    "blog": {
+      "badge": "BLOG",
+      "headline": "Articles & resources",
+      "subline": "Guides, tutorials and reflections on AI. Coming soon.",
+      "ctaLabel": "Subscribe to Blog"
+    },
+    "close": "Close",
+    "subscribed": "You're in! We'll notify you when it's available.",
+    "subscribeError": "Something went wrong when subscribing.",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "loggedInPrompt": "Get notified when new content is published.",
+    "loggedOutPrompt": "Sign in with Google to get notified when content is published.",
+    "continueGoogle": "Continue with Google"
+  },
+  "postClassReview": {
+    "ratings": [
+      { "label": "I'm really sorry",         "placeholder": "What could have been better? Your feedback helps me improve." },
+      { "label": "Not what I expected",       "placeholder": "What could have been better? Your feedback helps me improve." },
+      { "label": "It was fine",               "placeholder": "Is there anything specific I could do differently next time?" },
+      { "label": "Very good class",           "placeholder": "What was most useful about today's class?" },
+      { "label": "Excellent!",                "placeholder": "What would you highlight? With your permission it could be published on my profile." }
+    ],
+    "tapToRate": "Tap a face to rate",
+    "private": "Your rating is private",
+    "submitting": "Sending…",
+    "submit": "Send",
+    "skip": "Skip",
+    "shareGoogle": "Would you also share it on Google?",
+    "shareGoogleBody": "Help other students find me. It takes less than a minute.",
+    "leaveReview": "Leave a Google review",
+    "noThanks": "No thanks",
+    "title": "How did your class go?",
+    "goodTitle": "Glad you liked it!",
+    "thanks": "Thank you!",
+    "thanksBody": "Your feedback helps me improve.",
+    "toPersonalArea": "Go to my personal area",
+    "continueNoReview": "Continue without a review",
+    "initials": "YOU"
+  },
+  "footer": {
+    "tagline": "Private tutoring and consulting in programming, mathematics and AI.",
+    "explore": "Explore",
+    "policies": "Policies",
+    "help": "Help",
+    "copyright": "© {year} Gustavo Torres Guerrero. All rights reserved.",
+    "paymentBadge": "Secure payment · Stripe",
+    "courses": "Courses",
+    "blog": "Blog",
+    "mentoring": "Mentoring",
+    "askAssistant": "Ask the AI assistant"
+  },
+  "policy": {
+    "backHome": "Back to home",
+    "lastUpdated": "Last updated: {date}",
+    "contact": "gustavoai.dev · contacto@gustavoai.dev"
+  },
+  "footerModals": {
+    "cancellation": "Cancellation policy",
+    "terms": "Terms of service",
+    "privacy": "Privacy policy",
+    "close": "Close"
+  },
+  "feedback": {
+    "emailRow": "<bold>Email with the link</bold> to the virtual classroom and links to cancel or reschedule.",
+    "calendarRow": "<bold>Add to your calendar</bold> with one click from the email.",
+    "personalAreaRow": "You can also <bold>join, reschedule or cancel</bold> from your personal area."
+  },
+  "legal": {},
+  "errors": {
+    "http": {
+      "400": "The submitted data is not valid. Reload the page and try again.",
+      "401": "Your session has expired. Sign out and sign back in.",
+      "403": "You don't have permission to perform this action.",
+      "409": "This time slot is no longer available. Please choose another.",
+      "429": "Too many requests. Please wait a moment and try again.",
+      "500": "Server error. If the problem persists, write to contacto@gustavoai.dev.",
+      "502": "Could not contact the service. Please try again in a few seconds."
+    },
+    "domain": {
+      "insufficientCredits": "You don't have enough credits to book this class.",
+      "slotUnavailable": "This time slot is no longer available. Please choose another.",
+      "bookingNotFound": "We couldn't find your booking.",
+      "tokenExpired": "This link is no longer valid or has expired.",
+      "unauthorized": "You don't have permission to perform this action.",
+      "alreadySubscribed": "You are already subscribed to this content.",
+      "reviewBookingNotFound": "The class to review was not found.",
+      "permanentWebhookError": "Internal error processing your payment.",
+      "internalError": "Server error. If the problem persists, write to contacto@gustavoai.dev.",
+      "invalidRescheduleToken": "The reschedule link is not valid.",
+      "outsideRescheduleWindow": "The reschedule window has closed.",
+      "sessionTypeMismatch": "The session type doesn't match the original booking.",
+      "rescheduleTokenConsumed": "This reschedule link has already been used.",
+      "requiresPayment": "This booking requires payment.",
+      "invalidCancelToken": "The cancellation link is not valid.",
+      "outsideCancelWindow": "The cancellation window has closed.",
+      "cancelTokenConsumed": "This cancellation link has already been used."
+    },
+    "validation": {
+      "invalidRequest": "The submitted data is not valid. Check the form and try again."
+    }
+  },
+  "meta": {
+    "areaPersonal": {
+      "title": "Personal Area — Gustavo Torres",
+      "description": "Manage your booked sessions, pack classes and book new sessions."
+    },
+    "root": {
+      "title": "Gustavo Torres — Programming, Math & AI Tutoring",
+      "description": "Programming, math and AI lessons with Gustavo Torres."
+    },
+    "privacidad": {
+      "title": "Privacy policy — Gustavo Torres",
+      "description": "Privacy policy for gustavoai.dev. Information about what data is collected, how it is used and your rights."
+    },
+    "terminos": {
+      "title": "Terms of service — Gustavo Torres",
+      "description": "Terms of service for gustavoai.dev. Conditions of use, payments, cancellations and liability."
+    }
+  },
+  "pages": {
+    "notFound": {
+      "title": "Page not found",
+      "body": "Sorry, the page you are looking for does not exist.",
+      "backHome": "Back to home"
+    },
+    "sesion": {
+      "free": "Free initial meeting · 15 min",
+      "session1h": "Individual session · 1 hour",
+      "session2h": "Individual session · 2 hours",
+      "pack": "Pack class",
+      "signIn": "Sign in to access your session.",
+      "continueGoogle": "Continue with Google"
+    },
+    "cancelar": {
+      "invalidLink": "Invalid cancellation link.",
+      "connectionError": "Connection error. Please try again.",
+      "confirmEyebrow": "Confirmation required",
+      "confirmTitle": "Cancel booking",
+      "confirmBody": "Are you sure you want to cancel this session? This action cannot be undone.",
+      "packRefundNote": "If you have pack classes, the credit will be returned automatically.",
+      "paidRefundNote": "For paid individual sessions, Gustavo will process the refund within 1–3 business days.",
+      "keepBooking": "Keep booking",
+      "confirmCancel": "Yes, cancel",
+      "secureLink": "Secure, single-use link",
+      "processing": "Processing cancellation…",
+      "cancelledEyebrow": "Booking cancelled",
+      "cancelledTitle": "Booking cancelled",
+      "sessionCancelled": "Your {sessionLabel} has been cancelled.",
+      "creditReturnedTitle": "Your credit has been returned to the pack",
+      "creditReturnedNote": "You can book another class whenever you like.",
+      "backToHome": "Back to home",
+      "emailConfirmNote": "You'll receive a confirmation email shortly",
+      "errorEyebrow": "Could not cancel",
+      "errorTitle": "Could not cancel",
+      "errorHelp": "If you need help, write to contacto@gustavoai.dev"
+    },
+    "pagoExitoso": {
+      "noPaymentEyebrow": "Session not found",
+      "noPaymentTitle": "We couldn't find your payment",
+      "noPaymentBody": "You've arrived at this page without a valid payment identifier. The URL is probably incomplete or has expired.",
+      "receiptEmailHint": "If you just paid, check your email — we always include a fresh link to the receipt.",
+      "noCharge": "Nothing has been charged simply for visiting this page.",
+      "backToHome": "Back to home",
+      "goToPersonalArea": "Go to my personal area",
+      "thinkItsError": "Think it's an error? · contacto@gustavoai.dev",
+      "connectingEyebrow": "Payment received",
+      "connectingTitle": "Activating your credits",
+      "syncingCredits": "Thanks, {name}. We're syncing your credits with the platform.",
+      "syncingCreditsAnon": "We're syncing your credits with the platform.",
+      "steps": {
+        "verified": "Payment verified by Stripe",
+        "activating": "Activating credits in your account",
+        "receipt": "Send receipt by email"
+      },
+      "waitingConfirmation": "Waiting for confirmation",
+      "waitingHint": "This may take a few seconds · don't close the page",
+      "confirmedEyebrow": "Payment completed",
+      "packActive": "Your {packSize}-session pack is active!",
+      "paymentCompleted": "Payment completed!",
+      "creditsSynced": "Thanks, {name}. We've synced your credits.",
+      "creditsSyncedAnon": "We've synced your credits.",
+      "creditsLabel": "{credits, plural, one {# class} other {# classes}}",
+      "creditsAvailableNote": "{credits, plural, one {available to book} other {available to book}}",
+      "validityNote": "Valid for 6 months",
+      "bookMyClasses": "Book my classes",
+      "receiptSent": "We've sent you the receipt by email",
+      "timeoutEyebrow": "Taking a bit longer",
+      "timeoutTitle": "This is taking longer than usual",
+      "timeoutBody": "Your payment completed successfully. Credit activation is usually instant, but can occasionally take a few minutes.",
+      "paymentSafe": "Your payment is safe. Stripe processed it without errors.",
+      "autoContact": "If you don't see your credits in a few minutes, we'll contact you automatically.",
+      "checkAgain": "Check again",
+      "contactGustavo": "Contact Gustavo",
+      "reference": "Reference ·",
+      "errorEyebrow": "No connection",
+      "errorTitle": "We can't confirm it right now",
+      "errorBody": "We lost the connection with the server while activating your credits. Your payment was made successfully.",
+      "stripeConfirmed": "The Stripe charge is confirmed and won't be duplicated.",
+      "reloadHint": "Reload the page or come back in a few minutes to see your credits.",
+      "reloadPage": "Reload the page",
+      "errorHelp": "If the problem persists · contacto@gustavoai.dev"
+    },
+    "sesionConfirmada": {
+      "errorPaymentNotFound": "Payment session not found.",
+      "duration1h": "1 hour",
+      "duration2h": "2 hours",
+      "price1h": "€16",
+      "price2h": "€30",
+      "sessionIndividual": "{duration} · individual",
+      "paidBadge": "Paid session",
+      "vatIncluded": "VAT included",
+      "verifyingEyebrow": "Payment received",
+      "verifyingTitle": "Verifying your payment",
+      "verifyingBody": "We are confirming with Stripe that the charge was processed correctly and registering your session.",
+      "steps": {
+        "stripe": "Payment processed by Stripe",
+        "verifying": "Verifying the details",
+        "email": "Send confirmation email"
+      },
+      "verifyingStatus": "Verifying",
+      "paymentSafe": "Your payment is safe · don't close the page",
+      "errorEyebrow": "Could not verify",
+      "errorTitle": "Something went wrong",
+      "errorBody": "We couldn't confirm your session details, but your payment is safe.",
+      "autoEmailNote": "If the charge was correct, an automatic confirmation email will arrive in the next few minutes.",
+      "referenceLabel": "Reference ·",
+      "contactGustavo": "Contact Gustavo",
+      "backToHome": "Back to home",
+      "contactHelp": "Write to contacto@gustavoai.dev with the reference",
+      "successEyebrow": "Payment confirmed",
+      "successTitle": "Your session is booked!",
+      "successBody": "All set! Check your email for the details.",
+      "goToPersonalArea": "Go to my personal area"
+    }
+  },
+  "emails": {
+    "confirmation": {
+      "subject": "Session confirmed · {sessionLabel} · {dateLabel}",
+      "heading": "Session confirmed! ✓",
+      "intro": "Hi {name}, your booking is confirmed.",
+      "labelType": "Session type",
+      "labelDate": "Date",
+      "labelTime": "Time",
+      "labelLink": "Session link",
+      "joinBtn": "Join session →",
+      "labelNote": "Session goal",
+      "addToCal": "📅 Add to Google Calendar",
+      "cancelPolicy": "You can cancel or reschedule up to <strong>2 hours before</strong> the session at no cost.",
+      "cancelBtn": "Cancel booking",
+      "rescheduleBtn": "Reschedule",
+      "tzNoteMadrid": "(Madrid time)",
+      "tzNoteOther": "({tz})",
+      "calTitle": "{sessionLabel} with Gustavo Torres",
+      "calDescription": "Session link: {joinUrl}\n\nClass with Gustavo Torres Guerrero — gustavoai.dev",
+      "sessionType": {
+        "free15min": "Free intro call · 15 min",
+        "session1h": "Individual session · 1 hour",
+        "session2h": "Individual session · 2 hours",
+        "pack": "Pack class"
+      }
+    },
+    "cancellation": {
+      "subject": "Booking cancelled · {sessionLabel} · {dateLabel}",
+      "heading": "Booking cancelled",
+      "intro": "Hi {name}, we have cancelled your booking.",
+      "labelSession": "Cancelled session",
+      "creditsRestoredMsg": "✓ Your credit has been automatically returned to your pack. You can book another class at <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
+      "refundMsg": "If you paid for this session individually, Gustavo will process the refund within 1–3 business days."
+    }
+  }
+}

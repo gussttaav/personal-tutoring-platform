@@ -12,11 +12,13 @@
  */
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import FooterModals from "@/features/landing/FooterModals";
 import ComingSoonModal from "@/components/ComingSoonModal";
 import BrandLogo from "@/components/BrandLogo";
 
 export default function Footer() {
+  const t = useTranslations("footer");
   const [comingSoonModal, setComingSoonModal] = useState<"courses" | "blog" | null>(null);
 
   return (
@@ -52,7 +54,7 @@ export default function Footer() {
               <span>GUSTAVO<span style={{ color: "#4edea3" }}>AI.DEV</span></span>
             </div>
             <p style={{ fontSize: "13px", color: "#86948a", lineHeight: 1.65, marginBottom: "20px" }}>
-              Clases particulares y consultoría en<br />programación, matemáticas e IA.
+              {t("tagline")}
             </p>
             <div style={{ display: "flex", gap: "10px" }}>
               <a
@@ -117,13 +119,13 @@ export default function Footer() {
                 marginBottom: "20px",
               }}
             >
-              Explorar
+              {t("explore")}
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {(["Cursos", "Blog"] as const).map((label) => (
+              {([t("courses"), t("blog")] as const).map((label, i) => (
                 <button
                   key={label}
-                  onClick={() => setComingSoonModal(label === "Cursos" ? "courses" : "blog")}
+                  onClick={() => setComingSoonModal(i === 0 ? "courses" : "blog")}
                   style={{
                     fontSize:   "13px",
                     color:      "#86948a",
@@ -152,7 +154,7 @@ export default function Footer() {
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
               >
-                Mentoría
+                {t("mentoring")}
               </a>
             </div>
           </div>
@@ -168,7 +170,7 @@ export default function Footer() {
                 marginBottom: "20px",
               }}
             >
-              Políticas
+              {t("policies")}
             </h4>
             {/* FooterModals handles the modal triggers — unchanged component */}
             <FooterModals />
@@ -185,7 +187,7 @@ export default function Footer() {
                 marginBottom: "20px",
               }}
             >
-              Ayuda
+              {t("help")}
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               <a
@@ -233,7 +235,7 @@ export default function Footer() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="#4edea3" aria-hidden="true">
                   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
                 </svg>
-                Pregunta al asistente IA
+                {t("askAssistant")}
               </button>
             </div>
           </div>
@@ -259,7 +261,7 @@ export default function Footer() {
               color: "rgba(134,148,138,0.5)",
             }}
           >
-            © {new Date().getFullYear()} Gustavo Torres Guerrero. Todos los derechos reservados.
+            {t("copyright", { year: new Date().getFullYear() })}
           </div>
 
           {/* Payment security + card logos */}
@@ -279,7 +281,7 @@ export default function Footer() {
               <svg width="12" height="12" viewBox="0 0 24 24" fill="#4edea3" aria-hidden="true">
                 <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM12 17c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1s3.1 1.39 3.1 3.1v2z"/>
               </svg>
-              Pago seguro · Stripe
+              {t("paymentBadge")}
             </span>
             {/* Visa */}
             <span

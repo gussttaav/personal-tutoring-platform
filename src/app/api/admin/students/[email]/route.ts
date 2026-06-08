@@ -17,7 +17,7 @@ import {
   fetchCreditPacks,
   fetchStudentBookings,
   fetchAuditLog,
-} from "@/app/admin/_data";
+} from "@/app/[locale]/admin/_data";
 
 type Params = { params: Promise<{ email: string }> };
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   const raw = await req.json().catch(() => null);
   const parsed = AdjustCreditsSchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request", details: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   }
 
   const { amount, reason } = parsed.data;

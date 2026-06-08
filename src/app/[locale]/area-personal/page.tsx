@@ -10,16 +10,23 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PersonalArea from "@/features/personal-area/PersonalArea";
 
-export const metadata = {
-  title: "Área Personal — Gustavo Torres",
-  description: "Gestiona tus sesiones reservadas, clases de pack y reserva nuevas sesiones.",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "meta.areaPersonal" });
+  // Auth-gated dashboard — not a public SEO target. Override the site-wide
+  // index:true default and emit no hreflang alternates.
+  return { title: t("title"), description: t("description"), robots: { index: false, follow: false } };
+}
 
-export default async function AreaPersonalPage() {
+export default async function AreaPersonalPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+
   const session = await auth();
 
   if (!session?.user?.email) {

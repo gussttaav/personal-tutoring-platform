@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { log } from "@/lib/logger";
-import { fetchPayments } from "@/app/admin/_data";
+import { fetchPayments } from "@/app/[locale]/admin/_data";
 
 export async function GET() {
   const session = await auth();

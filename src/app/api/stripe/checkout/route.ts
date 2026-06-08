@@ -40,14 +40,11 @@ export async function POST(req: NextRequest) {
 
   let rawBody: unknown;
   try { rawBody = await req.json(); }
-  catch { return NextResponse.json({ error: "Cuerpo de petición inválido" }, { status: 400 }); }
+  catch { return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 }); }
 
   const parsed = CheckoutSchema.safeParse(rawBody);
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Petición inválida" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   }
 
   const body = parsed.data;

@@ -1,23 +1,17 @@
-const FEATURES = [
-  {
-    title: "Implantación y automatización con IA",
-    desc: "Diseño e integración de agentes y flujos inteligentes adaptados a tus procesos de negocio.",
-  },
-  {
-    title: "Análisis de datos y toma de decisiones",
-    desc: "Extracción de valor de tus datos para apoyar decisiones estratégicas con base estadística.",
-  },
-  {
-    title: "Formación técnica para equipos",
-    desc: "Programación, arquitectura de software, IA y buenas prácticas. Adaptado al nivel y stack de tu equipo.",
-  },
-  {
-    title: "Arquitectura y revisión de sistemas",
-    desc: "Auditoría y rediseño de backends, APIs y microservicios para mejorar escalabilidad y mantenibilidad.",
-  },
-];
+"use client";
+
+import { useTranslations } from "next-intl";
 
 export default function ConsultingSection() {
+  const t = useTranslations("landing.consulting");
+
+  const features = [
+    { title: t("feature1.title"), description: t("feature1.description") },
+    { title: t("feature2.title"), description: t("feature2.description") },
+    { title: t("feature3.title"), description: t("feature3.description") },
+    { title: t("feature4.title"), description: t("feature4.description") },
+  ];
+
   return (
     <section style={{ animation: "fadeUp 0.7s ease both 0.25s" }}>
       {/* Section label */}
@@ -31,7 +25,7 @@ export default function ConsultingSection() {
           marginBottom: "10px",
         }}
       >
-        Servicios para empresas
+        {t("sectionLabel")}
       </p>
 
       {/* Main card */}
@@ -73,7 +67,7 @@ export default function ConsultingSection() {
                   marginBottom: "16px",
                 }}
               >
-                Consultoría para{" "}
+                {t("headlinePrefix")}{" "}
                 <span
                   style={{
                     background: "linear-gradient(135deg, #4edea3, #10b981)",
@@ -82,7 +76,7 @@ export default function ConsultingSection() {
                     backgroundClip: "text",
                   }}
                 >
-                  Empresas
+                  {t("headlineAccent")}
                 </span>
               </h2>
               <p
@@ -93,8 +87,7 @@ export default function ConsultingSection() {
                   margin: 0,
                 }}
               >
-                Integra inteligencia artificial en tus procesos, forma a tu equipo técnico e
-                implementa soluciones que generen impacto real en tu organización.
+                {t("body")}
               </p>
             </div>
 
@@ -118,22 +111,22 @@ export default function ConsultingSection() {
                   whiteSpace: "nowrap",
                 }}
               >
-                Solicitar información
+                {t("requestInfo")}
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
                 </svg>
               </button>
               <p style={{ fontSize: "11px", color: "#86948a", textAlign: "center", margin: 0 }}>
-                Sin compromiso · Respuesta en 24h
+                {t("noCommitment")}
               </p>
             </div>
           </div>
 
           {/* Feature grid */}
           <div className="consulting-features">
-            {FEATURES.map((feature) => (
+            {features.map((feature, i) => (
               <div
-                key={feature.title}
+                key={i}
                 style={{
                   background: "rgba(19,19,21,0.6)",
                   border: "1px solid rgba(255,255,255,0.06)",
@@ -170,7 +163,7 @@ export default function ConsultingSection() {
                   {feature.title}
                 </div>
                 <p style={{ fontSize: "0.875rem", color: "#86948a", lineHeight: 1.65, margin: 0 }}>
-                  {feature.desc}
+                  {feature.description}
                 </p>
               </div>
             ))}

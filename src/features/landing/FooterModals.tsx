@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import {
   CancelacionContent,
   TerminosContent,
@@ -35,6 +36,8 @@ const LINK_STYLE: React.CSSProperties = {
 };
 
 export default function FooterModals() {
+  const t      = useTranslations("footerModals");
+  const locale = useLocale();
   const [open, setOpen] = useState<ModalKey>(null);
 
   function close() {
@@ -63,7 +66,7 @@ export default function FooterModals() {
             onMouseEnter={hoverGreen}
             onMouseLeave={unhover}
           >
-            Política de cancelación
+            {t("cancellation")}
           </button>
         </li>
         <li>
@@ -73,7 +76,7 @@ export default function FooterModals() {
             onMouseEnter={hoverGreen}
             onMouseLeave={unhover}
           >
-            Términos de servicio
+            {t("terms")}
           </button>
         </li>
         <li>
@@ -83,7 +86,7 @@ export default function FooterModals() {
             onMouseEnter={hoverGreen}
             onMouseLeave={unhover}
           >
-            Política de privacidad
+            {t("privacy")}
           </button>
         </li>
       </ul>
@@ -139,13 +142,13 @@ export default function FooterModals() {
                   margin: 0,
                 }}
               >
-                {open === "cancelacion" && "Política de cancelación"}
-                {open === "terminos" && "Términos de servicio"}
-                {open === "privacidad" && "Política de privacidad"}
+                {open === "cancelacion" && t("cancellation")}
+                {open === "terminos" && t("terms")}
+                {open === "privacidad" && t("privacy")}
               </h2>
               <button
                 onClick={close}
-                aria-label="Cerrar"
+                aria-label={t("close")}
                 style={{
                   background: "none",
                   border: "none",
@@ -174,9 +177,9 @@ export default function FooterModals() {
                 flex: 1,
               }}
             >
-              {open === "cancelacion" && <CancelacionContent />}
-              {open === "terminos" && <TerminosContent />}
-              {open === "privacidad" && <PrivacidadContent />}
+              {open === "cancelacion" && <CancelacionContent locale={locale} />}
+              {open === "terminos" && <TerminosContent locale={locale} />}
+              {open === "privacidad" && <PrivacidadContent locale={locale} />}
             </div>
           </div>
         </div>

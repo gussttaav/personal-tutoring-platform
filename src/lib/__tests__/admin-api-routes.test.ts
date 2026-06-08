@@ -30,7 +30,7 @@ jest.mock("@/infrastructure/supabase", () => ({
   },
 }));
 
-jest.mock("@/app/admin/_data", () => ({
+jest.mock("@/app/[locale]/admin/_data", () => ({
   fetchStudents:       jest.fn().mockResolvedValue([]),
   fetchStudent:        jest.fn().mockResolvedValue({ id: "u1", email: "test@example.com", name: "Test User" }),
   fetchCreditPacks:    jest.fn().mockResolvedValue([]),
