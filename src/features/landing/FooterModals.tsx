@@ -12,6 +12,7 @@
 
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   CancelacionContent,
   TerminosContent,
@@ -70,24 +71,32 @@ export default function FooterModals() {
           </button>
         </li>
         <li>
-          <button
-            onClick={() => openModal("terminos")}
+          <Link
+            href="/terminos"
+            onClick={(e) => {
+              e.preventDefault();
+              openModal("terminos");
+            }}
             style={LINK_STYLE}
             onMouseEnter={hoverGreen}
             onMouseLeave={unhover}
           >
             {t("terms")}
-          </button>
+          </Link>
         </li>
         <li>
-          <button
-            onClick={() => openModal("privacidad")}
+          <Link
+            href="/privacidad"
+            onClick={(e) => {
+              e.preventDefault();
+              openModal("privacidad");
+            }}
             style={{ ...LINK_STYLE, marginBottom: 0 }}
             onMouseEnter={hoverGreen}
             onMouseLeave={unhover}
           >
             {t("privacy")}
-          </button>
+          </Link>
         </li>
       </ul>
 
