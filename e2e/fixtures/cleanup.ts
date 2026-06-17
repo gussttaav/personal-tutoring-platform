@@ -87,12 +87,34 @@ export async function truncateTestDb(
   const clearZoomSessions = () =>
     supabase.from("zoom_sessions").delete().not("id", "is", null);
 
+  // `users` is FK-referenced ON DELETE RESTRICT by several child tables
+  // (failed_bookings, subscriptions, reviews, google_review_prompts). Some of
+  // those rows are written by *async* handlers (notably Stripe dead-letter
+  // recovery → failed_bookings) that can settle AFTER the child table was
+  // already cleared above, leaving a stale row that blocks the `users` delete.
+  // Same self-heal as the zoom_sessions race: on an FK violation, re-clear every
+  // preceding (child) table and retry the `users` delete.
+  const usersIndex   = tables.findIndex(([table]) => table === "users");
+  const childTables  = tables.slice(0, usersIndex);
+  const reclearChildren = async () => {
+    for (const [table, run] of childTables) {
+      await run(supabase.from(table));
+    }
+  };
+
   for (const [table, run] of tables) {
     let { error } = (await run(supabase.from(table))) as { error: { message: string } | null };
 
     if (error && table === "bookings" && /zoom_sessions_booking_id_fkey/.test(error.message)) {
       for (let attempt = 0; attempt < 3 && error; attempt++) {
         await clearZoomSessions();
+        ({ error } = (await run(supabase.from(table))) as { error: { message: string } | null });
+      }
+    }
+
+    if (error && table === "users" && /violates foreign key constraint/.test(error.message)) {
+      for (let attempt = 0; attempt < 3 && error; attempt++) {
+        await reclearChildren();
         ({ error } = (await run(supabase.from(table))) as { error: { message: string } | null });
       }
     }
