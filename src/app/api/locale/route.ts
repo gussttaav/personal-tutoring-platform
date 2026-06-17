@@ -13,7 +13,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { isValidOrigin } from "@/lib/csrf";
 import { LocaleSchema } from "@/lib/schemas";
 import { userService } from "@/services";
@@ -24,7 +24,7 @@ const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 async function postHandler(req: NextRequest) {
   if (!isValidOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) return NextResponse.json({ error: "Autenticación requerida" }, { status: 401 });
 
   const parsed = LocaleSchema.safeParse(await req.json().catch(() => ({})));

@@ -1,6 +1,6 @@
 // ARCH-12: Use CreditService instead of calling getCredits directly.
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { bookingService, creditService } from "@/services";
 import { sanitizeEmail } from "@/lib/validation";
 import { creditsRatelimit } from "@/lib/ratelimit";
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
   }
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Autenticación requerida" }, { status: 401 });
   }

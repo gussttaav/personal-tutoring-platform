@@ -29,6 +29,7 @@
     "@vercel/functions": "^3.4.3",
     "@zoom/videosdk": "^2.4.0",
     "date-fns-tz": "^3.2.0",
+    "google-auth-library": "9.15.1",
     "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.3",
     "next": "^16",

@@ -117,4 +117,15 @@ export function validateEnv(): void {
   if (isProdDeploy && process.env.E2E_MODE === "true") {
     throw new Error("[startup] E2E_MODE must not be enabled in production");
   }
+
+  // MOBILE-AUTH-01: When mobile auth is enabled, GOOGLE_MOBILE_CLIENT_IDS must be
+  // set. It pins the `aud` claim of incoming Google ID tokens. Fail closed: an
+  // unset audience would make verifyIdToken skip the audience check entirely,
+  // accepting tokens minted for any Google OAuth client.
+  if (process.env.MOBILE_AUTH_ENABLED === "true" && !process.env.GOOGLE_MOBILE_CLIENT_IDS) {
+    throw new Error(
+      "[startup] MOBILE_AUTH_ENABLED=true requires GOOGLE_MOBILE_CLIENT_IDS " +
+      "(comma-separated mobile OAuth client IDs: iOS, Android, Expo web)."
+    );
+  }
 }

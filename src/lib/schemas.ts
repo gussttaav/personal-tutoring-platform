@@ -101,3 +101,13 @@ export const LocaleSchema = z.object({
 });
 
 export type LocaleInput = z.infer<typeof LocaleSchema>;
+
+// ─── Mobile auth ────────────────────────────────────────────────────────────────
+
+// MOBILE-AUTH-01: native Google Sign-In yields a Google ID token on-device, which
+// the app exchanges for a bearer credential at POST /api/auth/mobile.
+export const MobileAuthSchema = z.object({
+  idToken: z.string().min(1),
+});
+
+export type MobileAuthInput = z.infer<typeof MobileAuthSchema>;

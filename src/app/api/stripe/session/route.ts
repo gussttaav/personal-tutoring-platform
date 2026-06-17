@@ -9,7 +9,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { paymentService } from "@/services";
 import { log } from "@/lib/logger";
 
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "payment_intent_id inválido" }, { status: 400 });
   }
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
