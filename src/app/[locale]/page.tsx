@@ -20,17 +20,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
+  // Only InteractiveShell needs the Suspense boundary: it uses useSearchParams()
+  // (via useRescheduleIntent), which forces a client-side-rendering bailout. Keeping
+  // the boundary scoped to it lets Navbar, the landing sections, and Footer render on
+  // the server — so the content (incl. the Footer privacy/terms links) is in the
+  // static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
   return (
-    <Suspense
-      fallback={
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{ background: "#131315", position: "relative", zIndex: 1 }}
-        >
-          <Spinner />
-        </div>
-      }
-    >
+    <>
       <Navbar />
 
       <main style={{ position: "relative", zIndex: 1 }}>
@@ -47,7 +43,18 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <BiographySection />
           <SpecializationsSection />
 
-          <InteractiveShell />
+          <Suspense
+            fallback={
+              <div
+                className="flex items-center justify-center"
+                style={{ minHeight: "60vh", position: "relative", zIndex: 1 }}
+              >
+                <Spinner />
+              </div>
+            }
+          >
+            <InteractiveShell />
+          </Suspense>
 
           {/*
             <div
@@ -75,6 +82,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </main>
 
       <Footer />
-    </Suspense>
+    </>
   );
 }
