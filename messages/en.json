@@ -641,7 +641,9 @@
       "requiresPayment": "This booking requires payment.",
       "invalidCancelToken": "The cancellation link is not valid.",
       "outsideCancelWindow": "The cancellation window has closed.",
-      "cancelTokenConsumed": "This cancellation link has already been used."
+      "cancelTokenConsumed": "This cancellation link has already been used.",
+      "invalidGoogleToken": "We couldn't verify your Google sign-in. Please try again.",
+      "emailNotVerified": "Your Google email is not verified."
     },
     "validation": {
       "invalidRequest": "The submitted data is not valid. Check the form and try again."

@@ -7,7 +7,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { isValidOrigin } from "@/lib/csrf";
 import { BookSchema } from "@/lib/schemas";
 import { bookingService } from "@/services";
@@ -17,7 +17,7 @@ import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 async function postHandler(req: NextRequest) {
   if (!isValidOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) return NextResponse.json({ error: "Autenticación requerida" }, { status: 401 });
 
   const parsed = BookSchema.safeParse(await req.json().catch(() => ({})));

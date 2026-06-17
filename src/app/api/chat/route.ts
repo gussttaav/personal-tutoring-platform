@@ -18,7 +18,7 @@ import { chatService } from "@/services";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { kv } from "@/infrastructure/redis/client";
 import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
@@ -32,7 +32,7 @@ async function postHandler(req: NextRequest) {
   }
 
   const ip = getClientIp(req);
-  const session = await auth();
+  const session = await getSession();
   const isAuthenticated = !!session?.user?.email;
 
   // REL-04: Tiered rate limiting

@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { sessionService } from "@/services";
 import { availabilityRatelimit } from "@/lib/ratelimit";
 import { log } from "@/lib/logger";
@@ -44,7 +44,7 @@ async function postHandler(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── Auth ───────────────────────────────────────────────────────────────────
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Autenticación requerida" }, { status: 401 });
   }

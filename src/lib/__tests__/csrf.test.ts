@@ -74,4 +74,44 @@ describe("isValidOrigin", () => {
   it("denies when origin is absent and sec-fetch-site is absent", () => {
     expect(isValidOrigin(reqWithHeaders({}))).toBe(false);
   });
+
+  // MOBILE-AUTH-01 (A1): bearer-aware CSRF skip.
+  describe("bearer requests", () => {
+    it("allows a cookieless bearer request with no Origin (native app)", () => {
+      expect(isValidOrigin(reqWithHeaders({
+        "authorization": "Bearer abc.def.ghi",
+      }))).toBe(true);
+    });
+
+    it("allows a cookieless bearer request even with a cross-site sec-fetch-site", () => {
+      expect(isValidOrigin(reqWithHeaders({
+        "authorization": "Bearer abc.def.ghi",
+        "sec-fetch-site": "cross-site",
+      }))).toBe(true);
+    });
+
+    it("STILL enforces Origin when a session cookie is present, despite a junk bearer", () => {
+      // The core anti-bypass test: cookie + junk bearer + cross-site origin → 403.
+      expect(isValidOrigin(reqWithHeaders({
+        "authorization": "Bearer junk",
+        "cookie": "authjs.session-token=real-session-value",
+        "origin": "https://evil.example.com",
+        "sec-fetch-site": "cross-site",
+      }))).toBe(false);
+    });
+
+    it("enforces Origin for a cookie session with a junk bearer (prod cookie name)", () => {
+      expect(isValidOrigin(reqWithHeaders({
+        "authorization": "Bearer junk",
+        "cookie": "__Secure-authjs.session-token=real-session-value",
+        "sec-fetch-site": "cross-site",
+      }))).toBe(false);
+    });
+
+    it("does not skip Origin when there is no bearer (unchanged behavior)", () => {
+      expect(isValidOrigin(reqWithHeaders({
+        "cookie": "authjs.session-token=v",
+      }))).toBe(false);
+    });
+  });
 });

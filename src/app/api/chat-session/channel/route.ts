@@ -12,13 +12,13 @@
  * (see REFACTOR-P3-04 for the underlying check).
  */
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { sessionService } from "@/services";
 import { chatChannelName } from "@/lib/realtime-channel";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Autenticación requerida" }, { status: 401 });
   }
