@@ -4,7 +4,7 @@
 // is true here and no broadcast is needed.
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { creditService } from "@/services";
 import { paymentChannelName } from "@/lib/realtime-channel";
 
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Missing or invalid payment_intent_id" }, { status: 400 });
   }
 
-  const authSession = await auth();
+  const authSession = await getSession();
   if (!authSession?.user?.email) {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }

@@ -36,6 +36,19 @@ export class ReviewBookingNotFoundError extends DomainError {
   constructor() { super("Review booking not found", "REVIEW_BOOKING_NOT_FOUND"); }
 }
 
+// MOBILE-AUTH-01: The supplied Google ID token failed verification — bad
+// signature, wrong/missing audience, expired, malformed, or the verifier could
+// not be configured (fail-closed). Mapped to 401.
+export class InvalidGoogleTokenError extends DomainError {
+  constructor() { super("Invalid Google ID token", "INVALID_GOOGLE_TOKEN"); }
+}
+
+// MOBILE-AUTH-01: The Google account's email is not verified — we refuse to
+// mint a session for an unverified email to prevent account takeover. Mapped to 403.
+export class EmailNotVerifiedError extends DomainError {
+  constructor() { super("Google email is not verified", "EMAIL_NOT_VERIFIED"); }
+}
+
 // REFACTOR-P1-02: Distinguish webhook failures that should be retried by Stripe
 // from those that are permanent (malformed data we can never process). Permanent
 // errors return 200 so Stripe stops retrying; retryable ones return 500 so Stripe

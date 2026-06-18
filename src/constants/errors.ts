@@ -29,6 +29,8 @@ export const ERROR_CODE_I18N_KEY: Record<string, string> = {
   INVALID_CANCEL_TOKEN:      "errors.domain.invalidCancelToken",
   OUTSIDE_CANCEL_WINDOW:     "errors.domain.outsideCancelWindow",
   CANCEL_TOKEN_CONSUMED:     "errors.domain.cancelTokenConsumed",
+  INVALID_GOOGLE_TOKEN:      "errors.domain.invalidGoogleToken",
+  EMAIL_NOT_VERIFIED:        "errors.domain.emailNotVerified",
 };
 
 /** Converts a SCREAMING_SNAKE_CASE error code to camelCase for i18n key lookup. */

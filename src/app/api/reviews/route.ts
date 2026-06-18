@@ -8,7 +8,7 @@
  *   - "google":  records the Google-review CTA outcome (accept | decline).
  */
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { isValidOrigin } from "@/lib/csrf";
 import { ReviewSchema } from "@/lib/schemas";
 import { reviewService } from "@/services";
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   if (!isValidOrigin(req))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

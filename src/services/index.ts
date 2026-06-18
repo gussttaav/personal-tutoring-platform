@@ -7,6 +7,7 @@ import { ChatService }          from "./ChatService";
 import { SubscriptionService }  from "./SubscriptionService";
 import { UserService }          from "./UserService";
 import { ReviewService }        from "./ReviewService";
+import { MobileAuthService }    from "./MobileAuthService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -19,12 +20,15 @@ import {
   supabaseGoogleReviewPromptRepository,
 } from "@/infrastructure/supabase";
 import { ZoomClient }      from "@/infrastructure/zoom";
-import { CalendarClient }  from "@/infrastructure/google";
+import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
 import { StripeClient }    from "@/infrastructure/stripe/StripeClient";
 import { GeminiClient }    from "@/infrastructure/gemini";
 
 export const userService = new UserService(supabaseUserRepository);
+
+// MOBILE-AUTH-01: Google ID token → app identity exchange for the mobile app.
+export const mobileAuthService = new MobileAuthService(new GoogleIdTokenVerifier(), userService);
 
 export const creditService = new CreditService(supabaseCreditsRepository, supabaseAuditRepository);
 

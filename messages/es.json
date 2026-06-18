@@ -641,7 +641,9 @@
       "requiresPayment": "Esta reserva requiere pago.",
       "invalidCancelToken": "El enlace de cancelación no es válido.",
       "outsideCancelWindow": "El plazo para cancelar ha finalizado.",
-      "cancelTokenConsumed": "Este enlace de cancelación ya ha sido usado."
+      "cancelTokenConsumed": "Este enlace de cancelación ya ha sido usado.",
+      "invalidGoogleToken": "No pudimos verificar tu inicio de sesión de Google. Inténtalo de nuevo.",
+      "emailNotVerified": "Tu correo de Google no está verificado."
     },
     "validation": {
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."

@@ -11,7 +11,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { CheckoutSchema } from "@/lib/schemas";
 import { checkoutRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
   }
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Debes iniciar sesión para continuar" }, { status: 401 });
   }

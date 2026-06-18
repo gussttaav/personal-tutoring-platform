@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { getSession } from "@/lib/session";
 import { isValidOrigin } from "@/lib/csrf";
 import { SubscribeSchema } from "@/lib/schemas";
 import { subscriptionService } from "@/services";
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!isValidOrigin(req))
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   if (!success)
     return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
 
-  const session = await auth();
+  const session = await getSession();
   if (!session?.user?.email)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

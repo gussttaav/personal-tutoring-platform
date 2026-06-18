@@ -79,3 +79,12 @@ export const reviewRatelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(20, "1 m"),
   prefix:  "rl:review",
 });
+
+// MOBILE-AUTH-01: Google ID token → bearer exchange (POST /api/auth/mobile).
+// 10 requests per minute per IP — this is a pre-auth endpoint; a legitimate app
+// exchanges only on cold start / token expiry, so a low limit stops abuse.
+export const mobileAuthRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  prefix:  "rl:mobile-auth",
+});
