@@ -65,8 +65,29 @@ async function applyMigrations(dbUrl: string): Promise<void> {
   }
 }
 
+/**
+ * Best-effort warm-up of the Vercel preview deployment before the first test.
+ * Cold serverless functions are the main source of Stripe-checkout flakiness:
+ * the first POST /api/stripe/checkout in a run can be slow enough that the
+ * PaymentElement iframe misses its timeout. Pre-invoking the homepage and the
+ * checkout function (a GET 405s but still cold-starts it) takes the cold start
+ * off the critical path. Failures here are swallowed — warm-up is an
+ * optimization, never a gate.
+ */
+async function warmUpDeployment(baseUrl: string): Promise<void> {
+  const targets = [baseUrl, `${baseUrl}/api/stripe/checkout`];
+  await Promise.allSettled(
+    targets.map((url) =>
+      fetch(url, { signal: AbortSignal.timeout(15_000) }).catch(() => undefined),
+    ),
+  );
+}
+
 export default async function globalSetup(): Promise<void> {
-  if (process.env.E2E_BASE_URL) return;
+  if (process.env.E2E_BASE_URL) {
+    await warmUpDeployment(process.env.E2E_BASE_URL);
+    return;
+  }
 
   const env   = loadMergedEnv();
   const dbUrl = pick(env, "SUPABASE_DB_URL");
