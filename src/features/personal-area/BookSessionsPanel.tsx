@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { usePrices } from "@/components/pricing/PricesProvider";
 import type { UserSession } from "@/domain/types";
 
 interface BookSessionsPanelProps {
@@ -25,6 +26,7 @@ const PACK_KEYS = [
 export default function BookSessionsPanel({ hasActivePack, packSession }: BookSessionsPanelProps) {
   const t = useTranslations("areaPersonal.bookPanel");
   const router = useRouter();
+  const prices = usePrices();
 
   return (
     <div
@@ -120,7 +122,8 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
             icon={icon}
             label={t(`sessions.${key}.label` as Parameters<typeof t>[0])}
             sub={t(`sessions.${key}.sub` as Parameters<typeof t>[0])}
-            price={t(`sessions.${key}.price` as Parameters<typeof t>[0])}
+            // free15min is free (kept in i18n); paid sessions read the live price.
+            price={key === "free15min" ? t("sessions.free15min.price") : prices[key].price}
             onClick={() => router.push(`/?book=${key}`)}
           />
         ))}
@@ -139,16 +142,23 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
         {t("packsLabel")}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {PACK_KEYS.map(({ key, icon }) => (
-          <SessionRow
-            key={key}
-            icon={icon}
-            label={t(`packs.${key}.label` as Parameters<typeof t>[0])}
-            sub={t(`packs.${key}.sub` as Parameters<typeof t>[0])}
-            price={t(`packs.${key}.price` as Parameters<typeof t>[0])}
-            onClick={() => router.push(`/?book=${key}`)}
-          />
-        ))}
+        {PACK_KEYS.map(({ key, icon }) => {
+          const p = prices[key];
+          // Savings copy is computed from the live price; empty when no discount.
+          const sub = p.savingsAmount && p.savingsPct !== null
+            ? t("packs.sub", { amount: p.savingsAmount, pct: p.savingsPct })
+            : "";
+          return (
+            <SessionRow
+              key={key}
+              icon={icon}
+              label={t(`packs.${key}.label` as Parameters<typeof t>[0])}
+              sub={sub}
+              price={p.price}
+              onClick={() => router.push(`/?book=${key}`)}
+            />
+          );
+        })}
       </div>
     </div>
   );

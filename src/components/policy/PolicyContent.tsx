@@ -1,6 +1,11 @@
 // Server Component — pure content, no interactivity.
 // Imported by both the dedicated policy pages (RSC) and FooterModals (client).
 // This is the single source of truth for all policy text.
+//
+// NOTE: the refund examples below quote illustrative prices (e.g. "pack de 5
+// clases (75 €) ... 75 − 16"). These are deliberately STATIC and decoupled from
+// the admin-editable `pricing` table — they're explanatory legal prose, not live
+// prices. If you change a price in /admin/pricing, review these examples by hand.
 
 // ── Spanish content ────────────────────────────────────────────────────────────
 

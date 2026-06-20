@@ -22,6 +22,7 @@ import { sendDeadLetterNotificationEmail } from "@/infrastructure/resend/email-f
 import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";
 import { UserService } from "./UserService";
+import { PricingService } from "./PricingService";
 
 // ─── Public output types ──────────────────────────────────────────────────────
 
@@ -59,28 +60,6 @@ interface SingleSessionInput {
   refundTarget:    { payment_intent?: string; charge?: string };
 }
 
-// ─── Price ID helpers (pure, no I/O) ─────────────────────────────────────────
-
-function getPackPriceId(packSize: PackSize): string {
-  const ids: Record<number, string | undefined> = {
-    5:  process.env.STRIPE_PRICE_ID_PACK5,
-    10: process.env.STRIPE_PRICE_ID_PACK10,
-  };
-  const id = ids[packSize];
-  if (!id) throw new Error(`No price ID configured for pack size ${packSize}`);
-  return id;
-}
-
-function getSingleSessionPriceId(duration: "1h" | "2h"): string {
-  const ids = {
-    "1h": process.env.STRIPE_PRICE_ID_SESSION_1H,
-    "2h": process.env.STRIPE_PRICE_ID_SESSION_2H,
-  };
-  const id = ids[duration];
-  if (!id) throw new Error(`No price ID configured for duration ${duration}`);
-  return id;
-}
-
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export class PaymentService {
@@ -90,6 +69,7 @@ export class PaymentService {
     private readonly bookings:     BookingService,
     private readonly paymentRepo:  IPaymentRepository,
     private readonly userService:  UserService,
+    private readonly pricing:      PricingService,
   ) {}
 
   // ── Checkout ───────────────────────────────────────────────────────────────
@@ -98,8 +78,7 @@ export class PaymentService {
     email: string; name: string; packSize: PackSize;
   }): Promise<CheckoutResult> {
     const { email, name, packSize } = params;
-    const priceId = getPackPriceId(packSize);
-    const { amount, currency } = await this.stripeClient.getPriceAmount(priceId);
+    const { amount, currency } = await this.pricing.getAmount(packSize === 5 ? "pack5" : "pack10");
     // REFACTOR-P1-05: 5-min window deduplicates double-clicks; deliberate retry
     // after window gets a fresh PI.
     const idempotencyKey = `pack:${email}:${packSize}:${Math.floor(Date.now() / 300_000)}`;
@@ -128,8 +107,7 @@ export class PaymentService {
     rescheduleToken?: string;
   }): Promise<CheckoutResult> {
     const { email, name, duration, startIso, endIso, rescheduleToken } = params;
-    const priceId = getSingleSessionPriceId(duration);
-    const { amount, currency } = await this.stripeClient.getPriceAmount(priceId);
+    const { amount, currency } = await this.pricing.getAmount(duration === "1h" ? "session1h" : "session2h");
     // REFACTOR-P1-05: startIso in key prevents collision between genuinely
     // different slots for the same user/duration within the same 5-min window.
     const idempotencyKey =

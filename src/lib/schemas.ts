@@ -65,6 +65,18 @@ export const AdjustCreditsSchema = z.object({
 
 export type AdjustCreditsInput = z.infer<typeof AdjustCreditsSchema>;
 
+// Admin price update — amount in cents + reason for audit. The pack "original"
+// strikethrough is derived (1h price × hours), so it isn't an input here.
+export const UpdatePriceSchema = z.object({
+  productKey:  z.enum(["session1h", "session2h", "pack5", "pack10"]),
+  amountCents: z.number().int().positive(),
+  reason:      z.string().min(1).max(500),
+});
+
+export const UpdatePricesSchema = z.array(UpdatePriceSchema).min(1).max(4);
+
+export type UpdatePriceInput = z.infer<typeof UpdatePriceSchema>;
+
 // ─── Subscriptions ────────────────────────────────────────────────────────────
 
 export const SubscribeSchema = z.object({

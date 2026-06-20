@@ -4,6 +4,7 @@
 import { CreditService }       from "@/services/CreditService";
 import { BookingService }      from "@/services/BookingService";
 import { PaymentService }      from "@/services/PaymentService";
+import { PricingService }      from "@/services/PricingService";
 import { SessionService }      from "@/services/SessionService";
 import { SubscriptionService } from "@/services/SubscriptionService";
 import { UserService }         from "@/services/UserService";
@@ -25,6 +26,7 @@ import { InMemoryBookingRepository }      from "./InMemoryBookingRepository";
 import { InMemorySessionRepository }      from "./InMemorySessionRepository";
 import { InMemoryPaymentRepository }      from "./InMemoryPaymentRepository";
 import { InMemoryUserRepository }         from "./InMemoryUserRepository";
+import { InMemoryPricingRepository }      from "./InMemoryPricingRepository";
 import { FakeCalendarClient } from "./FakeCalendarClient";
 import { FakeZoomClient }     from "./FakeZoomClient";
 import { FakeEmailClient }    from "./FakeEmailClient";
@@ -99,12 +101,15 @@ export function buildTestPaymentService(
     users: userRepo,
   });
 
+  const pricing = new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
+
   const service = new PaymentService(
     overrides.stripe ?? stripe,
     credits,
     bookings,
     overrides.paymentRepo ?? paymentRepo,
     new UserService(userRepo),
+    pricing,
   );
 
   return { service, stripe, credits, calendar, paymentRepo };

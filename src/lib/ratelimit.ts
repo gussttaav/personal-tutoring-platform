@@ -80,6 +80,14 @@ export const reviewRatelimit = new Ratelimit({
   prefix:  "rl:review",
 });
 
+// Pricing: 60 requests per minute per IP (authenticated GET /api/pricing).
+// The mobile app fetches prices after login; 60/min leaves headroom for refetches.
+export const pricingRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
+  prefix:  "rl:pricing",
+});
+
 // MOBILE-AUTH-01: Google ID token → bearer exchange (POST /api/auth/mobile).
 // 10 requests per minute per IP — this is a pre-auth endpoint; a legitimate app
 // exchanges only on cold start / token expiry, so a low limit stops abuse.

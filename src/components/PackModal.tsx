@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Spinner, Alert } from "@/components/ui";
-import { PACK_CONFIG } from "@/constants";
+import { useProductPrice } from "@/components/pricing/PricesProvider";
 import { api, ApiError } from "@/lib/api-client";
 import { errorCodeToKey } from "@/constants/errors";
 import PaymentForm from "@/components/PaymentForm";
@@ -35,7 +35,7 @@ export default function PackModal({
   const [fetching,     setFetching]     = useState(!initialClientSecret);
   const [fetchError,   setFetchError]   = useState("");
 
-  const pack = PACK_CONFIG[packSize];
+  const pack = useProductPrice(packSize === 5 ? "pack5" : "pack10");
 
   // Hide the chat FAB on mobile while the modal is open
   useEffect(() => {

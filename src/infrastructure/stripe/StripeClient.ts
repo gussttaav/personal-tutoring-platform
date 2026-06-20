@@ -13,7 +13,6 @@ export interface CreatePaymentIntentOptions {
 
 export interface IStripeClient {
   verifyWebhookSignature(body: string, sig: string, secret: string): Stripe.Event;
-  getPriceAmount(priceId: string): Promise<{ amount: number; currency: string }>;
   createPaymentIntent(
     params: Stripe.PaymentIntentCreateParams,
     options?: CreatePaymentIntentOptions,
@@ -26,12 +25,6 @@ export interface IStripeClient {
 export class StripeClient implements IStripeClient {
   verifyWebhookSignature(body: string, sig: string, secret: string): Stripe.Event {
     return stripe.webhooks.constructEvent(body, sig, secret);
-  }
-
-  async getPriceAmount(priceId: string): Promise<{ amount: number; currency: string }> {
-    const price = await stripe.prices.retrieve(priceId);
-    if (!price.unit_amount) throw new Error(`Price ${priceId} has no unit_amount`);
-    return { amount: price.unit_amount, currency: price.currency };
   }
 
   async createPaymentIntent(

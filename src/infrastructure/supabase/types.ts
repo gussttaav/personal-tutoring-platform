@@ -294,6 +294,30 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing: {
+        Row: {
+          amount_cents: number
+          currency: string
+          product_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          currency?: string
+          product_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          currency?: string
+          product_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       reviews: {
         Row: {
           booking_id: string

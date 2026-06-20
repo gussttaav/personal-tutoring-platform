@@ -27,10 +27,6 @@ export class FakeStripeClient implements IStripeClient {
     throw new Error("FakeStripeClient: call constructFakeEvent() to build test events");
   }
 
-  async getPriceAmount(_priceId: string): Promise<{ amount: number; currency: string }> {
-    return { amount: 5000, currency: "eur" };
-  }
-
   async createPaymentIntent(
     params: Stripe.PaymentIntentCreateParams,
     options?: CreatePaymentIntentOptions,

@@ -6,6 +6,45 @@ export type PackSize = 5 | 10;
 
 export type SessionType = "free15min" | "session1h" | "session2h" | "pack";
 
+/** Products whose price is stored in the `pricing` table and is admin-editable. */
+export type ProductKey = "session1h" | "session2h" | "pack5" | "pack10";
+
+export interface PriceRecord {
+  productKey:  ProductKey;
+  amountCents: number;
+  currency:    string;
+  updatedAt:   string;
+  updatedBy:   string | null;
+}
+
+// ─── Public pricing DTO (consumed by the mobile app via GET /api/pricing) ─────
+// Numeric, serializable, no admin metadata (updatedBy/updatedAt). Clients format
+// the currency on-device.
+
+export interface PublicSessionPrice {
+  productKey:  "session1h" | "session2h";
+  amountCents: number;
+  currency:    string;
+}
+
+export interface PublicPackPrice {
+  productKey:          "pack5" | "pack10";
+  amountCents:         number;
+  currency:            string;
+  hours:               number;
+  perClassCents:       number;
+  // Derived = 1h session price × hours, present only when it beats the pack price.
+  originalAmountCents: number | null;
+  savingsCents:        number | null;
+  savingsPct:          number | null;
+}
+
+export interface PublicPricing {
+  currency: string;
+  sessions: PublicSessionPrice[];
+  packs:    PublicPackPrice[];
+}
+
 export interface BookingRecord {
   eventId:          string;
   email:            string;
