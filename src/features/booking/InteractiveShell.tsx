@@ -26,6 +26,7 @@ import SingleSessionBooking from "@/components/SingleSessionBooking";
 import AvailabilityModal from "@/components/AvailabilityModal";
 import Chat from "@/components/Chat";
 import { PACK_SIZES, PACK_CONFIG } from "@/constants";
+import { usePrices } from "@/components/pricing/PricesProvider";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
 import type { PackSize } from "@/domain/types";
@@ -67,6 +68,7 @@ function PackCardSkeleton() {
 
 export default function InteractiveShell() {
   const t = useTranslations("booking.shell");
+  const prices = usePrices();
   const { googleUser, isSignedIn, isAuthLoading, packSession, creditsLoading, updateCredits, hasBookings } =
     useUserSession();
 
@@ -388,7 +390,7 @@ export default function InteractiveShell() {
               badge={t("sessions.session1h.badge")}
               name={t("sessions.session1h.name")}
               duration={t("sessions.session1h.duration")}
-              price={t("sessions.session1h.price")}
+              price={prices.session1h.price}
               featured
               vertical
               onClick={() => router.handleSessionClick("session1h")}
@@ -396,7 +398,7 @@ export default function InteractiveShell() {
             <SessionCard
               name={t("sessions.session2h.name")}
               duration={t("sessions.session2h.duration")}
-              price={t("sessions.session2h.price")}
+              price={prices.session2h.price}
               vertical
               onClick={() => router.handleSessionClick("session2h")}
             />
@@ -456,8 +458,6 @@ export default function InteractiveShell() {
                 <PackCard
                   key={size}
                   size={size}
-                  price={cfg.price}
-                  discount={"savingsPill" in cfg ? cfg.savingsPill : ""}
                   recommended={"recommended" in cfg && cfg.recommended}
                   activeCredits={creditsLoading ? null : hasActiveCredits ? (packSession?.credits ?? null) : null}
                   creditsLoading={creditsLoading && isSignedIn}

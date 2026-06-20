@@ -164,12 +164,13 @@
       "packsLabel": "Continuity packs",
       "sessions": {
         "free15min": { "label": "Initial Meeting",  "sub": "15 min · Introduction", "price": "Free" },
-        "session1h":  { "label": "1-hour session",   "sub": "60 min · Individual",   "price": "€16"  },
-        "session2h":  { "label": "2-hour session",   "sub": "120 min · Individual",  "price": "€30"  }
+        "session1h":  { "label": "1-hour session",   "sub": "60 min · Individual"   },
+        "session2h":  { "label": "2-hour session",   "sub": "120 min · Individual"  }
       },
       "packs": {
-        "pack5":  { "label": "Essential Pack 5h",  "sub": "Save €5 · 6% off",   "price": "€75"  },
-        "pack10": { "label": "Intensive Pack 10h", "sub": "Save €20 · 12% off", "price": "€140" }
+        "sub": "Save {amount} · {pct}% off",
+        "pack5":  { "label": "Essential Pack 5h"  },
+        "pack10": { "label": "Intensive Pack 10h" }
       }
     },
     "nextSession": {
@@ -320,13 +321,11 @@
         "session1h": {
           "badge": "Most booked",
           "name": "1-hour session",
-          "duration": "60 minutes · Doubt resolution, project or exam preparation",
-          "price": "€16"
+          "duration": "60 minutes · Doubt resolution, project or exam preparation"
         },
         "session2h": {
           "name": "2-hour session",
-          "duration": "120 minutes · For topics that require greater depth",
-          "price": "€30"
+          "duration": "120 minutes · For topics that require greater depth"
         }
       }
     },
@@ -334,7 +333,8 @@
       "activePack": "Active pack",
       "recommended": "Recommended",
       "classesAvailable": "{count, plural, one {# class available} other {# classes available}}",
-      "pricePerHour": "/ hour · vs €16 per individual session",
+      "savingsPill": "Save {amount} · {pct}% off",
+      "pricePerHour": "/ hour · vs {sessionPrice} per individual session",
       "preparingPayment": "Preparing payment...",
       "bookClass": "Book a class",
       "buyPack": "Buy pack · {price}",
@@ -754,8 +754,6 @@
       "errorPaymentNotFound": "Payment session not found.",
       "duration1h": "1 hour",
       "duration2h": "2 hours",
-      "price1h": "€16",
-      "price2h": "€30",
       "sessionIndividual": "{duration} · individual",
       "paidBadge": "Paid session",
       "vatIncluded": "VAT included",

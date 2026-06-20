@@ -45,25 +45,17 @@ export const COLORS = {
 /** Available pack sizes (hours) */
 export const PACK_SIZES = [5, 10] as const;
 
+// Static, non-price pack metadata. Prices/savings/hourly-rate now live in the
+// `pricing` table and are surfaced via PricesProvider (see src/lib/pricing-display.ts).
 export const PACK_CONFIG = {
   5: {
-    hours:         5,
-    price:         "€75",
-    priceNumber:   75,
-    originalPrice: "€80",
-    savingsPill:   "Ahorras €5 · 6% dto.",
-    hourlyRate:    "€15",
-    label:         "Pack Esencial",
+    hours:       5,
+    label:       "Pack Esencial",
   },
   10: {
-    hours:         10,
-    price:         "€140",
-    priceNumber:   140,
-    originalPrice: "€160",
-    savingsPill:   "Ahorras €20 · 12% dto.",
-    hourlyRate:    "€14",
-    label:         "Pack Intensivo",
-    recommended:   true,
+    hours:       10,
+    label:       "Pack Intensivo",
+    recommended: true,
   },
 } as const;
 

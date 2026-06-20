@@ -6,6 +6,17 @@ export type PackSize = 5 | 10;
 
 export type SessionType = "free15min" | "session1h" | "session2h" | "pack";
 
+/** Products whose price is stored in the `pricing` table and is admin-editable. */
+export type ProductKey = "session1h" | "session2h" | "pack5" | "pack10";
+
+export interface PriceRecord {
+  productKey:  ProductKey;
+  amountCents: number;
+  currency:    string;
+  updatedAt:   string;
+  updatedBy:   string | null;
+}
+
 export interface BookingRecord {
   eventId:          string;
   email:            string;

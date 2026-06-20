@@ -6,6 +6,8 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
+import { PricesProvider } from "@/components/pricing/PricesProvider";
+import { getDisplayPrices } from "@/lib/pricing-display";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
 import "../globals.css";
@@ -93,6 +95,7 @@ export default async function RootLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const messages = await getMessages();
+  const prices   = await getDisplayPrices(locale);
 
   return (
     <html lang={locale} data-scroll-behavior="smooth" className={`dark ${manrope.variable} ${inter.variable} ${materialSymbols.variable}`}>
@@ -101,7 +104,9 @@ export default async function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          <AuthProvider>{children}</AuthProvider>
+          <PricesProvider value={prices}>
+            <AuthProvider>{children}</AuthProvider>
+          </PricesProvider>
           <Analytics />
         </NextIntlClientProvider>
       </body>

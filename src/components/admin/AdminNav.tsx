@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/admin/bookings", label: "Reservas", icon: "calendar_month" },
   { href: "/admin/failed-bookings", label: "Fallidas", icon: "error" },
   { href: "/admin/payments", label: "Pagos", icon: "payments" },
+  { href: "/admin/pricing", label: "Precios", icon: "sell" },
 ];
 
 export function AdminNav() {

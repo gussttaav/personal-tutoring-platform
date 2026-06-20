@@ -3,6 +3,7 @@ import { CreditService }        from "./CreditService";
 import { SessionService }       from "./SessionService";
 import { BookingService }       from "./BookingService";
 import { PaymentService }       from "./PaymentService";
+import { PricingService }       from "./PricingService";
 import { ChatService }          from "./ChatService";
 import { SubscriptionService }  from "./SubscriptionService";
 import { UserService }          from "./UserService";
@@ -15,6 +16,7 @@ import {
   supabaseSessionRepository,
   supabasePaymentRepository,
   supabaseSubscriptionRepository,
+  supabasePricingRepository,
   supabaseUserRepository,
   supabaseReviewRepository,
   supabaseGoogleReviewPromptRepository,
@@ -45,12 +47,15 @@ export const bookingService = new BookingService(
   supabaseUserRepository,
 );
 
+export const pricingService = new PricingService(supabasePricingRepository, supabaseAuditRepository);
+
 export const paymentService = new PaymentService(
   new StripeClient(),
   creditService,
   bookingService,
   supabasePaymentRepository,
   userService,
+  pricingService,
 );
 
 export const chatService = new ChatService(new GeminiClient());

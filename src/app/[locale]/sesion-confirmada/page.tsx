@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { COLORS } from "@/constants";
 import { camelCaseCode } from "@/constants/errors";
+import { useSessionPriceLabel } from "@/components/pricing/PricesProvider";
 import {
   Spinner,
   ATMOSPHERE_BG,
@@ -30,7 +31,9 @@ function ReceiptBlock({ duration }: { duration: string }) {
   const t = useTranslations("pages.sesionConfirmada");
   const durationLabel = duration === "1h" ? t("duration1h") : t("duration2h");
   const name  = t("sessionIndividual", { duration: durationLabel });
-  const price = duration === "1h" ? t("price1h") : duration === "2h" ? t("price2h") : undefined;
+  // Live price from the pricing table, so the receipt matches the charged amount.
+  const sessionPrice = useSessionPriceLabel(duration === "1h" ? "session1h" : "session2h");
+  const price = duration === "1h" || duration === "2h" ? sessionPrice ?? undefined : undefined;
   return (
     <div
       style={{

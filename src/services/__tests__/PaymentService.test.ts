@@ -4,6 +4,8 @@ import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositori
 import type Stripe from "stripe";
 import { PermanentWebhookError } from "@/domain/errors";
 import { FakeStripeClient } from "@/__tests__/fixtures/FakeStripeClient";
+import { InMemoryPricingRepository } from "@/__tests__/fixtures/InMemoryPricingRepository";
+import { InMemoryAuditRepository } from "@/__tests__/fixtures/InMemoryAuditRepository";
 
 // Mock getAvailableSlots before importing PaymentService (direct module import)
 const mockGetAvailableSlots = jest.fn();
@@ -18,17 +20,21 @@ import { PaymentService } from "../PaymentService";
 import { CreditService }  from "../CreditService";
 import { BookingService } from "../BookingService";
 import { UserService }    from "../UserService";
+import { PricingService } from "../PricingService";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
 const mockStripe = (): jest.Mocked<IStripeClient> => ({
   verifyWebhookSignature:   jest.fn(),
-  getPriceAmount:           jest.fn(),
   createPaymentIntent:      jest.fn(),
   retrievePaymentIntent:    jest.fn(),
   retrieveCheckoutSession:  jest.fn(),
   createRefund:             jest.fn(),
 });
+
+// Real PricingService backed by an in-memory repo seeded with default prices.
+const makePricing = () =>
+  new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
 
 const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   isProcessed:          jest.fn(),
@@ -76,6 +82,7 @@ function makeService(overrides?: {
     bookings as unknown as BookingService,
     paymentRepo,
     userSvc as unknown as UserService,
+    makePricing(),
   );
   return { service, stripe, paymentRepo, credits, bookings, userSvc };
 }
@@ -402,17 +409,9 @@ describe("REFACTOR-P1-02: webhook error semantics", () => {
 describe("REFACTOR-P1-05: idempotency keys", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.STRIPE_PRICE_ID_PACK5      = "price_pack5_test";
-    process.env.STRIPE_PRICE_ID_PACK10     = "price_pack10_test";
-    process.env.STRIPE_PRICE_ID_SESSION_1H = "price_1h_test";
-    process.env.STRIPE_PRICE_ID_SESSION_2H = "price_2h_test";
   });
 
   afterEach(() => {
-    delete process.env.STRIPE_PRICE_ID_PACK5;
-    delete process.env.STRIPE_PRICE_ID_PACK10;
-    delete process.env.STRIPE_PRICE_ID_SESSION_1H;
-    delete process.env.STRIPE_PRICE_ID_SESSION_2H;
     jest.useRealTimers();
   });
 
@@ -428,6 +427,7 @@ describe("REFACTOR-P1-05: idempotency keys", () => {
       bookings as unknown as BookingService,
       paymentRepo,
       userSvc  as unknown as UserService,
+      makePricing(),
     );
     return { service, fakeStripe };
   }
