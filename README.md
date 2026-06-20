@@ -134,7 +134,7 @@ pnpm test:e2e            # Playwright end-to-end tests (requires E2E_BASE_URL)
 - [pnpm](https://pnpm.io) 10+ (run `corepack enable` to get the version pinned in `package.json`)
 - [Supabase](https://supabase.com) project (free tier is sufficient)
 - [Upstash](https://console.upstash.com) Redis database (free tier is sufficient)
-- [Stripe](https://stripe.com) account with products and prices created
+- [Stripe](https://stripe.com) account (session/pack prices are managed in-app, not in Stripe)
 - Google Cloud project with **Google Calendar API** enabled and a service account
 - [Zoom](https://developers.zoom.us) app with Video SDK credentials
 - [Resend](https://resend.com) account
@@ -164,12 +164,10 @@ SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 
 # ── Stripe ────────────────────────────────────────────────────────────
+# Session/pack prices are NOT configured in Stripe — they live in the
+# Supabase `pricing` table and are edited from the admin panel (/admin/pricing).
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_ID_PACK5=price_...
-STRIPE_PRICE_ID_PACK10=price_...
-STRIPE_PRICE_ID_SESSION_1H=price_...
-STRIPE_PRICE_ID_SESSION_2H=price_...
 
 # ── Upstash Redis (rate limiting + availability cache) ────────────────
 UPSTASH_REDIS_REST_URL=https://...

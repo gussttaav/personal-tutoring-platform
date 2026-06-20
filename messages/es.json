@@ -164,12 +164,13 @@
       "packsLabel": "Packs de continuidad",
       "sessions": {
         "free15min": { "label": "Encuentro Inicial", "sub": "15 min · Presentación", "price": "Gratis" },
-        "session1h":  { "label": "Sesión de 1 hora",  "sub": "60 min · Individual",   "price": "€16"   },
-        "session2h":  { "label": "Sesión de 2 horas", "sub": "120 min · Individual",  "price": "€30"   }
+        "session1h":  { "label": "Sesión de 1 hora",  "sub": "60 min · Individual"   },
+        "session2h":  { "label": "Sesión de 2 horas", "sub": "120 min · Individual"  }
       },
       "packs": {
-        "pack5":  { "label": "Pack Esencial 5h",   "sub": "Ahorra €5 · 6% dto.",   "price": "€75"  },
-        "pack10": { "label": "Pack Intensivo 10h", "sub": "Ahorra €20 · 12% dto.", "price": "€140" }
+        "sub": "Ahorra {amount} · {pct}% dto.",
+        "pack5":  { "label": "Pack Esencial 5h"   },
+        "pack10": { "label": "Pack Intensivo 10h" }
       }
     },
     "nextSession": {
@@ -320,13 +321,11 @@
         "session1h": {
           "badge": "Más reservada",
           "name": "Sesión de 1 hora",
-          "duration": "60 minutos · Resolución de dudas, proyecto o preparación de examen",
-          "price": "€16"
+          "duration": "60 minutos · Resolución de dudas, proyecto o preparación de examen"
         },
         "session2h": {
           "name": "Sesión de 2 horas",
-          "duration": "120 minutos · Para temas que requieren mayor profundidad",
-          "price": "€30"
+          "duration": "120 minutos · Para temas que requieren mayor profundidad"
         }
       }
     },
@@ -334,7 +333,8 @@
       "activePack": "Pack activo",
       "recommended": "Recomendado",
       "classesAvailable": "{count, plural, one {# clase disponible} other {# clases disponibles}}",
-      "pricePerHour": "/ hora · vs €16 en sesión suelta",
+      "savingsPill": "Ahorras {amount} · {pct}% dto.",
+      "pricePerHour": "/ hora · vs {sessionPrice} en sesión suelta",
       "preparingPayment": "Preparando pago...",
       "bookClass": "Reservar clase",
       "buyPack": "Comprar pack · {price}",
@@ -754,8 +754,6 @@
       "errorPaymentNotFound": "Sesión de pago no encontrada.",
       "duration1h": "1 hora",
       "duration2h": "2 horas",
-      "price1h": "€16",
-      "price2h": "€30",
       "sessionIndividual": "{duration} · individual",
       "paidBadge": "Sesión pagada",
       "vatIncluded": "IVA incluido",

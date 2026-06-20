@@ -364,18 +364,19 @@ export default function BookingModeView({
 
 // ─── Exported shells & configs (unchanged signatures) ──────────────────────────
 
+// Static, non-price session metadata. Prices now live in the `pricing` table
+// and are surfaced via PricesProvider (see src/lib/pricing-display.ts).
 export interface SessionConfig {
   type:            "free15min" | "session1h" | "session2h";
   label:           string;
   duration:        string;
-  price:           string | null;
   durationMinutes: 15 | 60 | 120;
 }
 
 export const SESSION_CONFIGS: Record<string, SessionConfig> = {
-  free15min: { type: "free15min", label: "Initial meeting",  duration: "15 min", price: null,  durationMinutes: 15  },
-  session1h: { type: "session1h", label: "1-hour session",   duration: "60 min", price: "€16", durationMinutes: 60  },
-  session2h: { type: "session2h", label: "2-hour session",   duration: "2h",     price: "€30", durationMinutes: 120 },
+  free15min: { type: "free15min", label: "Initial meeting",  duration: "15 min", durationMinutes: 15  },
+  session1h: { type: "session1h", label: "1-hour session",   duration: "60 min", durationMinutes: 60  },
+  session2h: { type: "session2h", label: "2-hour session",   duration: "2h",     durationMinutes: 120 },
 };
 
 /**

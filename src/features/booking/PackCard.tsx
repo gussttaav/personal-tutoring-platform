@@ -3,11 +3,10 @@
 import { useTranslations } from "next-intl";
 import type { PackSize } from "@/domain/types";
 import { PACK_CONFIG } from "@/constants";
+import { useProductPrice } from "@/components/pricing/PricesProvider";
 
 interface PackCardProps {
   size: PackSize;
-  price: string;
-  discount: string;
   recommended?: boolean;
   activeCredits: number | null;
   creditsLoading: boolean;
@@ -28,6 +27,9 @@ export default function PackCard({
 }: PackCardProps) {
   const t = useTranslations("booking.packCard");
   const cfg = PACK_CONFIG[size];
+  // Live prices: amount/original/savings/hourly all come from the pricing table.
+  const price        = useProductPrice(size === 5 ? "pack5" : "pack10");
+  const sessionPrice = useProductPrice("session1h").price;
   const hasCredits = !creditsLoading && activeCredits !== null && activeCredits > 0;
   const isPrimary = recommended || hasCredits;
 
@@ -162,41 +164,49 @@ export default function PackCard({
                 lineHeight: 1,
               }}
             >
-              {cfg.price}
+              {price.price}
             </span>
-            <span
-              style={{
-                fontSize: "14px",
-                color: "#86948a",
-                textDecoration: "line-through",
-                lineHeight: 1,
-              }}
-            >
-              {cfg.originalPrice}
-            </span>
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                padding: "3px 8px",
-                background: "rgba(78,222,163,0.1)",
-                border: "1px solid rgba(78,222,163,0.2)",
-                borderRadius: "100px",
-                fontSize: "11px",
-                fontWeight: 600,
-                color: "#4edea3",
-                letterSpacing: "0.01em",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {cfg.savingsPill}
-            </span>
+            {price.originalPrice && (
+              <span
+                style={{
+                  fontSize: "14px",
+                  color: "#86948a",
+                  textDecoration: "line-through",
+                  lineHeight: 1,
+                }}
+              >
+                {price.originalPrice}
+              </span>
+            )}
+            {price.savingsAmount && price.savingsPct !== null && (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  padding: "3px 8px",
+                  background: "rgba(78,222,163,0.1)",
+                  border: "1px solid rgba(78,222,163,0.2)",
+                  borderRadius: "100px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  color: "#4edea3",
+                  letterSpacing: "0.01em",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {t("savingsPill", { amount: price.savingsAmount, pct: price.savingsPct })}
+              </span>
+            )}
           </div>
 
           {/* ── Per-hour rate ── */}
-          <div style={{ fontSize: "13px", color: "#86948a", marginBottom: "20px", lineHeight: 1 }}>
-            <span style={{ color: "#4edea3", fontWeight: 600 }}>{cfg.hourlyRate} {t("pricePerHour")}</span>
-          </div>
+          {price.hourlyRate && (
+            <div style={{ fontSize: "13px", color: "#86948a", marginBottom: "20px", lineHeight: 1 }}>
+              <span style={{ color: "#4edea3", fontWeight: 600 }}>
+                {price.hourlyRate} {t("pricePerHour", { sessionPrice })}
+              </span>
+            </div>
+          )}
         </>
       )}
 
@@ -285,7 +295,7 @@ export default function PackCard({
           }
         }}
       >
-        {checkoutLoading ? t("preparingPayment") : hasCredits ? t("bookClass") : t("buyPack", { price: cfg.price })}
+        {checkoutLoading ? t("preparingPayment") : hasCredits ? t("bookClass") : t("buyPack", { price: price.price })}
       </button>
 
     </div>

@@ -25,13 +25,9 @@ const REQUIRED_ENV_VARS = [
   "GOOGLE_PRIVATE_KEY",
   "GOOGLE_CALENDAR_ID",
 
-  // Stripe
+  // Stripe (prices now live in the `pricing` table, not Stripe price IDs)
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
-  "STRIPE_PRICE_ID_PACK5",
-  "STRIPE_PRICE_ID_PACK10",
-  "STRIPE_PRICE_ID_SESSION_1H",
-  "STRIPE_PRICE_ID_SESSION_2H",
 
   // Upstash Redis (KV + rate limiting)
   "UPSTASH_REDIS_REST_URL",

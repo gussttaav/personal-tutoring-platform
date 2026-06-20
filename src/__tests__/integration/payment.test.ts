@@ -23,12 +23,15 @@ import { InMemoryUserRepository }    from "../fixtures/InMemoryUserRepository";
 import { FakeCalendarClient }        from "../fixtures/FakeCalendarClient";
 import { InMemoryPaymentRepository } from "../fixtures/InMemoryPaymentRepository";
 import { FakeStripeClient }          from "../fixtures/FakeStripeClient";
+import { InMemoryPricingRepository } from "../fixtures/InMemoryPricingRepository";
+import { InMemoryAuditRepository }   from "../fixtures/InMemoryAuditRepository";
 import {
   buildTestCreditService,
   buildTestBookingService,
   buildTestPaymentService,
 } from "../fixtures/services";
 import { PaymentService } from "@/services/PaymentService";
+import { PricingService } from "@/services/PricingService";
 import { UserService }    from "@/services/UserService";
 
 const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
@@ -45,7 +48,8 @@ function makePaymentService(overrides: {
   const paymentRepo = overrides.paymentRepo ?? new InMemoryPaymentRepository();
   const userRepo    = new InMemoryUserRepository();
   const bookings    = buildTestBookingService({ credits, calendar });
-  const service     = new PaymentService(stripe, credits, bookings, paymentRepo, new UserService(userRepo));
+  const pricing     = new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
+  const service     = new PaymentService(stripe, credits, bookings, paymentRepo, new UserService(userRepo), pricing);
   return { service, stripe, credits, creditsRepo, calendar, paymentRepo, userRepo };
 }
 

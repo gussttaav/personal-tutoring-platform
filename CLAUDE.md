@@ -24,7 +24,7 @@ src/
 ### Data Storage
 
 - **Supabase (Postgres)** is the source of truth for all persistent data:
-  users, credit_packs, bookings, zoom_sessions, payments, audit_log.
+  users, credit_packs, bookings, zoom_sessions, payments, audit_log, pricing.
 - **Redis (Upstash)** is used ONLY for ephemeral state:
   rate limiting (`rl:*`), slot locks (`slot:lock:*`),
   in-session chat (`chat:session:*`), availability cache (`avail:*`).
@@ -45,6 +45,7 @@ Business logic lives in `src/services/`:
 - `CreditService` — credit operations, atomic decrement via Postgres stored procedure
 - `BookingService` — orchestrates credits + calendar + Zoom + email
 - `PaymentService` — Stripe checkout, webhook processing, dead-letter recovery
+- `PricingService` — admin-editable session/pack prices; single source of truth for charge amounts and display
 - `SessionService` — Zoom session lifecycle, JWT issuance, in-session chat
 - `ChatService` — Gemini AI chat
 
@@ -82,6 +83,7 @@ The customer-facing app is bilingual: **Spanish is the default** (unprefixed URL
   - PostgREST: `"2026-04-21T10:04:43.13+00:00"`
   **Rule:** always normalize with `new Date(dbTimestamp).toISOString()` before comparing or signing.
 - Credit atomicity uses a Postgres stored procedure (`decrement_credit`), not application-side logic.
+- Prices are NOT in Stripe. Session/pack prices live in the Supabase `pricing` table (single source of truth), edited at `/admin/pricing`. The charge reads `PricingService.getAmount()`; the web reads `src/lib/pricing-display.ts` (via the `PricesProvider` context); the mobile app reads `GET /api/pricing`. Don't reintroduce `STRIPE_PRICE_ID_*`. The pack "original/strikethrough" price is derived (`1h price × hours`), never stored.
 
 ## Testing
 - `pnpm test` — Jest unit + integration tests
@@ -117,6 +119,7 @@ The customer-facing app is bilingual: **Spanish is the default** (unprefixed URL
 | Add business logic              | `src/services/*.ts`                             |
 | Add an API route                | `src/app/api/`                                  |
 | Add an admin feature            | `src/app/admin/` + `src/app/api/admin/`         |
+| Change a session/pack price     | `/admin/pricing` (DB `pricing` table); display via `src/lib/pricing-display.ts` + `PricesProvider` |
 | Add a Zod schema                | `src/lib/schemas.ts`                            |
 | Change the booking schedule     | `src/lib/booking-config.ts`                     |
 | Change email templates          | `src/infrastructure/resend/email-functions.ts`   |

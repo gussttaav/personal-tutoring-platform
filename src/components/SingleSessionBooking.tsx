@@ -44,6 +44,7 @@ import {
   primaryBtnStyle,
   secondaryBtnStyle,
 } from "@/components/BookingModeView";
+import { useSessionPriceLabel } from "@/components/pricing/PricesProvider";
 
 export type SingleSessionType = "free15min" | "session1h" | "session2h";
 
@@ -159,6 +160,8 @@ export default function SingleSessionBooking({
   const tErrors = useTranslations("errors");
   const router  = useRouter();
   const cfg     = SESSION_CONFIGS[sessionType];
+  // Live price from the pricing table (null for the free 15-min session).
+  const price   = useSessionPriceLabel(sessionType);
 
   // 1h: start in "review" phase with the slot pre-filled (exact duration match
   //      against AvailabilityModal's 1h slots).
@@ -416,7 +419,7 @@ export default function SingleSessionBooking({
             studentName={userName}
             studentEmail={userEmail}
             appointmentLabel={`${selected.dateLabel} · ${selected.label.split(/\s*[–\-]\s*/)[0]}`}
-            priceLabel={cfg.price ?? undefined}
+            priceLabel={price ?? undefined}
             onSuccess={(paymentIntentId) =>
               router.push(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`)
             }
@@ -494,7 +497,7 @@ export default function SingleSessionBooking({
             </div>
 
             {/* Section 2: Contextual notice */}
-            {(isReschedule || cfg.price) && (
+            {(isReschedule || price) && (
               <div
                 className="px-4 md:px-8 py-4 md:py-5"
                 style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
@@ -619,7 +622,7 @@ export default function SingleSessionBooking({
                   style={{ ...primaryBtnStyle, width: "auto", paddingLeft: 32, paddingRight: 32 }}
                 >
                   <span className="sm:hidden">{t("confirmShort")}</span>
-                  <span className="hidden sm:inline">{isReschedule ? t("confirmReschedule") : cfg.price ? t("confirmPay") : t("confirmBook")}</span>
+                  <span className="hidden sm:inline">{isReschedule ? t("confirmReschedule") : price ? t("confirmPay") : t("confirmBook")}</span>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:translate-x-1 transition-transform" aria-hidden="true">
                     <polyline points="9 18 15 12 9 6" />
                   </svg>
@@ -705,7 +708,7 @@ export default function SingleSessionBooking({
                 </div>
 
                 {/* Total price */}
-                {cfg.price && !isReschedule && (
+                {price && !isReschedule && (
                   <div
                     className="flex justify-between items-end pt-6"
                     style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}
@@ -715,7 +718,7 @@ export default function SingleSessionBooking({
                         {t("total")}
                       </p>
                       <p className="font-extrabold font-headline tracking-tighter" style={{ fontSize: 40, color: "#4edea3", lineHeight: 1 }}>
-                        {cfg.price}
+                        {price}
                       </p>
                     </div>
                     <div className="text-right">
@@ -750,7 +753,7 @@ export default function SingleSessionBooking({
             mode="single"
             sessionName={tMV(`sessions.${cfg.type}.label`)}
             duration={tMV(`sessions.${cfg.type}.duration`)}
-            price={cfg.price}
+            price={price}
             isReschedule={isReschedule}
             userTz={userTz}
           />
