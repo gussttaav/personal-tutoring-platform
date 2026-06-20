@@ -17,6 +17,34 @@ export interface PriceRecord {
   updatedBy:   string | null;
 }
 
+// ─── Public pricing DTO (consumed by the mobile app via GET /api/pricing) ─────
+// Numeric, serializable, no admin metadata (updatedBy/updatedAt). Clients format
+// the currency on-device.
+
+export interface PublicSessionPrice {
+  productKey:  "session1h" | "session2h";
+  amountCents: number;
+  currency:    string;
+}
+
+export interface PublicPackPrice {
+  productKey:          "pack5" | "pack10";
+  amountCents:         number;
+  currency:            string;
+  hours:               number;
+  perClassCents:       number;
+  // Derived = 1h session price × hours, present only when it beats the pack price.
+  originalAmountCents: number | null;
+  savingsCents:        number | null;
+  savingsPct:          number | null;
+}
+
+export interface PublicPricing {
+  currency: string;
+  sessions: PublicSessionPrice[];
+  packs:    PublicPackPrice[];
+}
+
 export interface BookingRecord {
   eventId:          string;
   email:            string;
