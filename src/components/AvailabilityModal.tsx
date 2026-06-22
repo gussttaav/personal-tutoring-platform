@@ -13,11 +13,13 @@
  *   - Desktop (≥ 640px): centered dialog, up to 860px wide
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
-import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
+import { gridHourRange, isWithinBlocks } from "@/lib/booking-config";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
+import type { WeeklyHours } from "@/domain/types";
 import type { ApiSlot, SelectedSlot } from "@/components/WeeklyCalendar";
 
 interface AvailabilityModalProps {
@@ -28,10 +30,6 @@ interface AvailabilityModalProps {
 // ─── Internal types ────────────────────────────────────────────────────────────
 
 type DaySlots = ApiSlot[] | "loading" | "error";
-
-// ─── Time grid rows ────────────────────────────────────────────────────────────
-
-const TIME_ROWS = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -64,8 +62,8 @@ function formatWeekHeading(weekStart: Date, locale: string): string {
   return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(weekStart);
 }
 
-function buildSelectedSlot(date: Date, slot: ApiSlot, userTz: string, locale: string): SelectedSlot {
-  const tzDiffers = userTz !== SCHEDULE.timezone;
+function buildSelectedSlot(date: Date, slot: ApiSlot, userTz: string, scheduleTz: string, locale: string): SelectedSlot {
+  const tzDiffers = userTz !== scheduleTz;
   return {
     startIso:  slot.start,
     endIso:    slot.end,
@@ -76,9 +74,9 @@ function buildSelectedSlot(date: Date, slot: ApiSlot, userTz: string, locale: st
 }
 
 /** Returns the current wall-clock minutes (0–1439) in the schedule's timezone. */
-function getMadridMinutes(): number {
+function getNowMinutes(tz: string): number {
   const str = new Date().toLocaleTimeString("es-ES", {
-    timeZone: SCHEDULE.timezone, hour: "2-digit", minute: "2-digit", hour12: false,
+    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
   });
   const [h = "0", m = "0"] = str.split(":");
   return parseInt(h, 10) * 60 + parseInt(m, 10);
@@ -88,15 +86,8 @@ function getMadridMinutes(): number {
  * Returns true if a 60-minute slot starting at `hour` fits within the
  * configured working-hour windows for the given day-of-week.
  */
-function isHourInWorkingWindow(dow: number, hour: number): boolean {
-  const sched = DAY_SCHEDULES[dow];
-  if (!sched) return false;
-  const start = dayStartHour(dow);
-  if (hour >= start && hour + 1 <= sched.morningEnd) return true;
-  if (sched.afternoonStart !== null && sched.afternoonEnd !== null) {
-    if (hour >= sched.afternoonStart && hour + 1 <= sched.afternoonEnd) return true;
-  }
-  return false;
+function isHourInWorkingWindow(weekly: WeeklyHours, dow: number, hour: number): boolean {
+  return isWithinBlocks(weekly[dow] ?? [], hour * 60, 60);
 }
 
 /** Extract just the start time from a label like "09:00–10:00" → "09:00" */
@@ -134,20 +125,32 @@ export default function AvailabilityModal({
 }: AvailabilityModalProps) {
   const t      = useTranslations("booking.availabilityModal");
   const locale = useLocale();
+  const schedule = useScheduleConfig();
+
+  const { minHour, maxHour } = useMemo(
+    () => gridHourRange(schedule.weeklyHours),
+    [schedule.weeklyHours],
+  );
+  // Integer hour markers for the grid (e.g. [9,10,…,18]).
+  const timeRows = useMemo(() => {
+    const arr: number[] = [];
+    for (let h = minHour; h < maxHour; h++) arr.push(h);
+    return arr;
+  }, [minHour, maxHour]);
 
   const [weekOffset,     setWeekOffset]     = useState(0);
   const [slotsMap,       setSlotsMap]       = useState<Record<string, DaySlots>>({});
-  // Client timezone after hydration; SCHEDULE.timezone during SSR (avoids a
+  // Client timezone after hydration; the schedule's timezone during SSR (avoids a
   // hydration mismatch without setting state in a mount effect).
   const userTz = useClientValue(() => {
-    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return SCHEDULE.timezone; }
-  }, SCHEDULE.timezone);
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return schedule.timezone; }
+  }, schedule.timezone);
   const [isMobile,       setIsMobile]       = useState(false);
-  const [nowMadridMin,   setNowMadridMin]   = useState<number>(() => getMadridMinutes());
+  const [nowMadridMin,   setNowMadridMin]   = useState<number>(() => getNowMinutes(schedule.timezone));
 
-  const maxWeekOffset = SCHEDULE.bookingWindowWeeks - 1;
+  const maxWeekOffset = schedule.bookingWindowWeeks - 1;
   const weekStart     = getWeekStart(weekOffset);
-  const tzDiffers     = userTz !== SCHEDULE.timezone;
+  const tzDiffers     = userTz !== schedule.timezone;
 
   // Detect mobile
   useEffect(() => {
@@ -159,9 +162,9 @@ export default function AvailabilityModal({
 
   // Update current Madrid time every minute for the "now" line and past-cell logic
   useEffect(() => {
-    const id = setInterval(() => setNowMadridMin(getMadridMinutes()), 60_000);
+    const id = setInterval(() => setNowMadridMin(getNowMinutes(schedule.timezone)), 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [schedule.timezone]);
 
   // Body scroll lock + Escape key
   useEffect(() => {
@@ -195,7 +198,7 @@ export default function AvailabilityModal({
     });
 
     const today   = new Date(); today.setHours(0, 0, 0, 0);
-    const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
+    const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + schedule.bookingWindowWeeks * 7);
 
     const controllers: AbortController[] = [];
 
@@ -204,7 +207,7 @@ export default function AvailabilityModal({
       const isPast   = date < today;
       const isBeyond = date > maxDate;
       const dow      = date.getDay();
-      const noSched  = DAY_SCHEDULES[dow] === null;
+      const noSched  = (schedule.weeklyHours[dow] ?? []).length === 0;
 
       if (isPast || isBeyond || noSched) return;
 
@@ -229,7 +232,7 @@ export default function AvailabilityModal({
     });
 
     return () => controllers.forEach((c) => c.abort());
-  }, [weekOffset, userTz]);
+  }, [weekOffset, userTz, schedule.bookingWindowWeeks, schedule.weeklyHours]);
 
   const days: Date[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -238,18 +241,18 @@ export default function AvailabilityModal({
   });
 
   const handleSlotClick = useCallback((date: Date, slot: ApiSlot) => {
-    onSlotSelected(buildSelectedSlot(date, slot, userTz, locale));
+    onSlotSelected(buildSelectedSlot(date, slot, userTz, schedule.timezone, locale));
     onClose();
-  }, [userTz, onSlotSelected, onClose]);
+  }, [userTz, schedule.timezone, onSlotSelected, onClose, locale]);
 
   const today   = new Date(); today.setHours(0, 0, 0, 0);
-  const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
+  const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + schedule.bookingWindowWeeks * 7);
 
   // ── Time indicator ───────────────────────────────────────────────────────
   const ROW_H_VAL    = isMobile ? 40 : 48;
   const HEADER_H_VAL = isMobile ? 52 : 64;
-  const GRID_START_MIN = 9 * 60;
-  const GRID_END_MIN   = 19 * 60;
+  const GRID_START_MIN = minHour * 60;
+  const GRID_END_MIN   = maxHour * 60;
   const showTimeLine   = weekOffset === 0 && nowMadridMin >= GRID_START_MIN && nowMadridMin < GRID_END_MIN;
   const timeLineTop    = HEADER_H_VAL + ((nowMadridMin - GRID_START_MIN) / 60) * ROW_H_VAL;
 
@@ -339,7 +342,7 @@ export default function AvailabilityModal({
                 <p style={{ fontSize: 11, color: "#86948a", margin: "2px 0 0" }}>
                   {tzDiffers
                     ? t("timezone", { userTz })
-                    : t("scheduleIn", { timezone: SCHEDULE.timezone })}
+                    : t("scheduleIn", { timezone: schedule.timezone })}
                 </p>
               </div>
             </div>
@@ -475,7 +478,7 @@ export default function AvailabilityModal({
                     </div>
                   )}
 
-                  <TimeColumn isMobile={isMobile} />
+                  <TimeColumn isMobile={isMobile} hours={timeRows} />
 
                   {days.map((date) => {
                     const key      = formatDateKey(date);
@@ -483,7 +486,7 @@ export default function AvailabilityModal({
                     const daySlots = slotsMap[key];
                     const isPast   = date < today;
                     const isBeyond = date > maxDate;
-                    const noSched  = DAY_SCHEDULES[dow] === null;
+                    const noSched  = (schedule.weeklyHours[dow] ?? []).length === 0;
                     const isClosed = isPast || isBeyond || noSched;
                     const isToday  = date.toDateString() === today.toDateString();
 
@@ -499,6 +502,9 @@ export default function AvailabilityModal({
                         nowMadridMin={nowMadridMin}
                         onSlotClick={(slot) => handleSlotClick(date, slot)}
                         locale={locale}
+                        hours={timeRows}
+                        weekly={schedule.weeklyHours}
+                        minNoticeHours={schedule.minNoticeHours}
                       />
                     );
                   })}
@@ -563,7 +569,7 @@ export default function AvailabilityModal({
 
 // ─── Time column ───────────────────────────────────────────────────────────────
 
-function TimeColumn({ isMobile }: { isMobile: boolean }) {
+function TimeColumn({ isMobile, hours }: { isMobile: boolean; hours: number[] }) {
   const ROW_H    = isMobile ? 40 : 48;
   const HEADER_H = isMobile ? 52 : 64;
   return (
@@ -574,7 +580,7 @@ function TimeColumn({ isMobile }: { isMobile: boolean }) {
         borderBottom: "1px solid rgba(255,255,255,0.1)",
       }} />
       {/* Hour rows */}
-      {TIME_ROWS.map((hour, i) => (
+      {hours.map((hour, i) => (
         <div
           key={hour}
           style={{
@@ -606,16 +612,20 @@ function TimeColumn({ isMobile }: { isMobile: boolean }) {
 
 function DayColumn({
   date, daySlots, isMobile, isClosed, isToday, tzDiffers, nowMadridMin, onSlotClick, locale,
+  hours, weekly, minNoticeHours,
 }: {
-  date:         Date;
-  daySlots:     DaySlots | undefined;
-  isMobile:     boolean;
-  isClosed:     boolean;
-  isToday:      boolean;
-  tzDiffers:    boolean;
-  locale:       string;
-  nowMadridMin: number;
-  onSlotClick:  (slot: ApiSlot) => void;
+  date:           Date;
+  daySlots:       DaySlots | undefined;
+  isMobile:       boolean;
+  isClosed:       boolean;
+  isToday:        boolean;
+  tzDiffers:      boolean;
+  locale:         string;
+  nowMadridMin:   number;
+  onSlotClick:    (slot: ApiSlot) => void;
+  hours:          number[];
+  weekly:         WeeklyHours;
+  minNoticeHours: number;
 }) {
   const ROW_H    = isMobile ? 40 : 48;
   const HEADER_H = isMobile ? 52 : 64;
@@ -674,7 +684,7 @@ function DayColumn({
       </div>
 
       {/* Time rows */}
-      {TIME_ROWS.map((hour, i) => {
+      {hours.map((hour, i) => {
         const slot      = hourMap?.get(hour) ?? null;
         const timeLabel = slot
           ? startTimeFromLabel(tzDiffers ? slot.localLabel : slot.label)
@@ -705,7 +715,7 @@ function DayColumn({
 
         const rowMin      = hour * 60;
         const isPastRow   = isToday && rowMin + 60 <= nowMadridMin;
-        const isNoticeRow = isToday && !isPastRow && rowMin < nowMadridMin + SCHEDULE.minNoticeHours * 60;
+        const isNoticeRow = isToday && !isPastRow && rowMin < nowMadridMin + minNoticeHours * 60;
 
         if (isPastRow) {
           return (
@@ -719,7 +729,7 @@ function DayColumn({
         const cellState: "available" | "booked" | "unavailable" =
           isNoticeRow                            ? "unavailable"
           : slot                                 ? "available"
-          : isHourInWorkingWindow(dow, hour)     ? "booked"
+          : isHourInWorkingWindow(weekly, dow, hour) ? "booked"
           : "unavailable";
 
         return (

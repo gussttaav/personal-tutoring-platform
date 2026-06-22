@@ -13,6 +13,7 @@ import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import { CreditService } from "../CreditService";
+import { ScheduleService } from "../ScheduleService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
 import { InsufficientCreditsError, DomainError, SlotUnavailableError } from "@/domain/errors";
@@ -108,6 +109,20 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
   setLocale:   jest.fn().mockResolvedValue(undefined),
 });
 
+// Stub ScheduleService — BookingService only calls getConfig(). Default min
+// notice = 5h (matches the old hardcoded SCHEDULE) so existing timing holds.
+const mockSchedule = (): ScheduleService =>
+  ({
+    getConfig: jest.fn().mockResolvedValue({
+      weeklyHours: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
+      timezone: "Europe/Madrid",
+      minNoticeHours: 5,
+      bookingWindowWeeks: 8,
+    }),
+    getMinNoticeHours: jest.fn().mockResolvedValue(5),
+    updateConfig: jest.fn().mockResolvedValue(undefined),
+  } as unknown as ScheduleService);
+
 const makeService = (overrides: {
   bookings?:  jest.Mocked<IBookingRepository>;
   credits?:   CreditService;
@@ -116,6 +131,7 @@ const makeService = (overrides: {
   zoom?:      jest.Mocked<IZoomClient>;
   email?:     jest.Mocked<IEmailClient>;
   users?:     jest.Mocked<IUserRepository>;
+  schedule?:  ScheduleService;
 } = {}) =>
   new BookingService(
     overrides.bookings  ?? mockBookings(),
@@ -125,6 +141,7 @@ const makeService = (overrides: {
     overrides.zoom      ?? mockZoom(),
     overrides.email     ?? mockEmail(),
     overrides.users     ?? mockUsers(),
+    overrides.schedule  ?? mockSchedule(),
   );
 
 // Helpers for time

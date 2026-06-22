@@ -16,6 +16,7 @@
  */
 
 import { z } from "zod";
+import { SUPPORTED_TIMEZONES } from "@/lib/timezones";
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
@@ -76,6 +77,47 @@ export const UpdatePriceSchema = z.object({
 export const UpdatePricesSchema = z.array(UpdatePriceSchema).min(1).max(4);
 
 export type UpdatePriceInput = z.infer<typeof UpdatePriceSchema>;
+
+// Admin schedule update — working hours per day + min advance notice + timezone.
+// weeklyHours is keyed by day-of-week "0".."6" (0=Sun..6=Sat); an empty/absent
+// array means a non-working day. The server is the source of truth and re-checks
+// that blocks within a day are ordered and non-overlapping (no adjacency either).
+const TimeBlockSchema = z
+  .object({
+    startMinute: z.number().int().min(0).max(1439),
+    endMinute:   z.number().int().min(1).max(1440),
+  })
+  .refine((b) => b.endMinute > b.startMinute, { message: "end must be after start" });
+
+export const UpdateScheduleSchema = z
+  .object({
+    weeklyHours: z.record(
+      z.enum(["0", "1", "2", "3", "4", "5", "6"]),
+      z.array(TimeBlockSchema).max(6),
+    ),
+    timezone:       z.enum(SUPPORTED_TIMEZONES),
+    minNoticeHours: z.number().int().min(0).max(168),
+    reason:         z.string().min(1).max(500),
+  })
+  .superRefine((val, ctx) => {
+    for (const [dow, blocks] of Object.entries(val.weeklyHours)) {
+      if (!blocks || blocks.length < 2) continue;
+      const sorted = [...blocks].sort((a, b) => a.startMinute - b.startMinute);
+      for (let i = 1; i < sorted.length; i++) {
+        // Reject overlapping AND adjacent blocks (touching blocks should be one).
+        if (sorted[i]!.startMinute <= sorted[i - 1]!.endMinute) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Overlapping or adjacent blocks for day ${dow}`,
+            path: ["weeklyHours", dow],
+          });
+          break;
+        }
+      }
+    }
+  });
+
+export type UpdateScheduleInput = z.infer<typeof UpdateScheduleSchema>;
 
 // ─── Subscriptions ────────────────────────────────────────────────────────────
 

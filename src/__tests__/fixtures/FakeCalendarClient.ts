@@ -1,5 +1,6 @@
 // TEST-01: Fake ICalendarClient for integration tests.
 import type { ICalendarClient, CreateEventParams, CreateEventResult, TimeSlot } from "@/infrastructure/google/ICalendarClient";
+import type { ScheduleConfig } from "@/domain/types";
 
 export class FakeCalendarClient implements ICalendarClient {
   createdEvents:        CreateEventParams[] = [];
@@ -28,7 +29,7 @@ export class FakeCalendarClient implements ICalendarClient {
     this.deletedEventIds.push(eventId);
   }
 
-  async getAvailableSlots(_dateStr: string, _durationMinutes: number): Promise<TimeSlot[]> {
+  async getAvailableSlots(_dateStr: string, _durationMinutes: number, _config: ScheduleConfig): Promise<TimeSlot[]> {
     return [];
   }
 }

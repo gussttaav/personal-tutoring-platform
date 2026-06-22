@@ -8,6 +8,8 @@ import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
 import { PricesProvider } from "@/components/pricing/PricesProvider";
 import { getDisplayPrices } from "@/lib/pricing-display";
+import { ScheduleProvider } from "@/components/booking/ScheduleProvider";
+import { getScheduleConfig } from "@/lib/schedule-config";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
 import "../globals.css";
@@ -96,6 +98,7 @@ export default async function RootLayout({
   setRequestLocale(locale);
   const messages = await getMessages();
   const prices   = await getDisplayPrices(locale);
+  const schedule = await getScheduleConfig();
 
   return (
     <html lang={locale} data-scroll-behavior="smooth" className={`dark ${manrope.variable} ${inter.variable} ${materialSymbols.variable}`}>
@@ -105,7 +108,9 @@ export default async function RootLayout({
       <body className={inter.className} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
           <PricesProvider value={prices}>
-            <AuthProvider>{children}</AuthProvider>
+            <ScheduleProvider value={schedule}>
+              <AuthProvider>{children}</AuthProvider>
+            </ScheduleProvider>
           </PricesProvider>
           <Analytics />
         </NextIntlClientProvider>

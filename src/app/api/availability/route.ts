@@ -1,17 +1,17 @@
 // PERF-10 — Tiered availability caching via Redis; cache hit skips Google API call.
 import { NextRequest, NextResponse } from "next/server";
 import { getAvailableSlots } from "@/infrastructure/google";
-import { SCHEDULE, DAY_SCHEDULES } from "@/lib/booking-config";
+import { scheduleService } from "@/services";
 import { availabilityRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
-import { getOrCompute, cacheKey, cacheTTLSeconds } from "@/lib/availability-cache";
-import type { TimeSlot } from "@/domain/types";
+import { getOrCompute, resolveCacheKey, cacheTTLSeconds } from "@/lib/availability-cache";
+import type { ScheduleConfig, TimeSlot } from "@/domain/types";
 
-function localizeSlots(slots: TimeSlot[], tz: string, duration: number) {
+function localizeSlots(slots: TimeSlot[], tz: string, duration: number, scheduleTz: string) {
   return slots.map(slot => {
     // If the user is in the same timezone as the server, localLabel === label.
-    if (tz === SCHEDULE.timezone) {
+    if (tz === scheduleTz) {
       return { ...slot, localLabel: slot.label };
     }
 
@@ -38,9 +38,20 @@ export async function GET(req: NextRequest) {
   const { success } = await availabilityRatelimit.limit(ip);
   if (!success) return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
 
+  // Read the schedule fresh (not the 60s ISR cache) so that an admin edit takes
+  // effect on bookable slots immediately — paired with the Redis cache version
+  // bump in /api/admin/schedule.
+  let config: ScheduleConfig;
+  try {
+    config = await scheduleService.getConfig();
+  } catch (err) {
+    log("error", "Error loading schedule config", { service: "availability", error: String(err) });
+    return NextResponse.json({ error: "Error al consultar disponibilidad" }, { status: 500 });
+  }
+
   const date     = req.nextUrl.searchParams.get("date");
   const duration = parseInt(req.nextUrl.searchParams.get("duration") ?? "60", 10);
-  const tz       = req.nextUrl.searchParams.get("tz") ?? SCHEDULE.timezone;
+  const tz       = req.nextUrl.searchParams.get("tz") ?? config.timezone;
 
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date))
     return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
@@ -52,27 +63,28 @@ export async function GET(req: NextRequest) {
   if (requested < today) return NextResponse.json({ slots: [] });
 
   const maxDate = new Date();
-  maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
+  maxDate.setDate(maxDate.getDate() + config.bookingWindowWeeks * 7);
   if (requested > maxDate) return NextResponse.json({ slots: [] });
 
   const dow = new Date(`${date}T12:00:00Z`).getDay();
-  if (DAY_SCHEDULES[dow] === null) return NextResponse.json({ slots: [] });
+  if ((config.weeklyHours[dow] ?? []).length === 0) return NextResponse.json({ slots: [] });
 
   try {
     // REFACTOR-P3-03: Coalesce concurrent misses so only the first caller hits
     // the Calendar API; the rest wait briefly and re-read the cache.
     const ttl = cacheTTLSeconds(date);
+    const key = await resolveCacheKey(date, duration);
     const result = await getOrCompute<{ slots: TimeSlot[] }>(
-      cacheKey(date, duration),
+      key,
       async () => {
         log("info", "Availability cache miss", { service: "availability", date, duration });
-        const slots = await getAvailableSlots(date, duration);
+        const slots = await getAvailableSlots(date, duration, config);
         return { slots };
       },
       ttl,
     );
 
-    return NextResponse.json({ slots: localizeSlots(result.slots, tz, duration), timezone: SCHEDULE.timezone });
+    return NextResponse.json({ slots: localizeSlots(result.slots, tz, duration, config.timezone), timezone: config.timezone });
   } catch (err) {
     log("error", "Error fetching slots", { service: "availability", date, error: String(err) });
     return NextResponse.json({ error: "Error al consultar disponibilidad" }, { status: 500 });
