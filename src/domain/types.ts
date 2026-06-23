@@ -80,6 +80,30 @@ export interface TimeSlot {
   label: string;
 }
 
+// ─── Booking schedule (admin-editable) ────────────────────────────────────────
+// Replaces the values that used to be hardcoded in src/lib/booking-config.ts.
+
+/** A single working-hours block within a day, in minutes since midnight. */
+export interface TimeBlock {
+  startMinute: number;
+  endMinute:   number;
+}
+
+/**
+ * Working hours keyed by day-of-week (0=Sun..6=Sat). Each value is an ordered,
+ * non-overlapping list of blocks. An empty array means a non-working day.
+ */
+export type WeeklyHours = Record<number, TimeBlock[]>;
+
+/** The full booking schedule configuration consumed across server + client. */
+export interface ScheduleConfig {
+  weeklyHours:        WeeklyHours;
+  timezone:           string;
+  minNoticeHours:     number;
+  /** How many weeks ahead bookings are allowed. Static for now (not editable). */
+  bookingWindowWeeks: number;
+}
+
 // ─── API response types (consolidated from src/types/index.ts) ────────────────
 
 export interface StudentInfo {

@@ -4,6 +4,7 @@ import { SessionService }       from "./SessionService";
 import { BookingService }       from "./BookingService";
 import { PaymentService }       from "./PaymentService";
 import { PricingService }       from "./PricingService";
+import { ScheduleService }      from "./ScheduleService";
 import { ChatService }          from "./ChatService";
 import { SubscriptionService }  from "./SubscriptionService";
 import { UserService }          from "./UserService";
@@ -17,6 +18,7 @@ import {
   supabasePaymentRepository,
   supabaseSubscriptionRepository,
   supabasePricingRepository,
+  supabaseScheduleRepository,
   supabaseUserRepository,
   supabaseReviewRepository,
   supabaseGoogleReviewPromptRepository,
@@ -37,6 +39,8 @@ export const creditService = new CreditService(supabaseCreditsRepository, supaba
 const tutorEmail = process.env.TUTOR_EMAIL ?? "";
 export const sessionService = new SessionService(supabaseSessionRepository, new ZoomClient(), tutorEmail);
 
+export const scheduleService = new ScheduleService(supabaseScheduleRepository, supabaseAuditRepository);
+
 export const bookingService = new BookingService(
   supabaseBookingRepository,
   creditService,
@@ -45,6 +49,7 @@ export const bookingService = new BookingService(
   new ZoomClient(),
   new EmailClient(),
   supabaseUserRepository,
+  scheduleService,
 );
 
 export const pricingService = new PricingService(supabasePricingRepository, supabaseAuditRepository);
@@ -56,6 +61,7 @@ export const paymentService = new PaymentService(
   supabasePaymentRepository,
   userService,
   pricingService,
+  scheduleService,
 );
 
 export const chatService = new ChatService(new GeminiClient());

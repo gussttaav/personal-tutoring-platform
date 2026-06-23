@@ -21,6 +21,8 @@ import { CreditService }  from "../CreditService";
 import { BookingService } from "../BookingService";
 import { UserService }    from "../UserService";
 import { PricingService } from "../PricingService";
+import { ScheduleService } from "../ScheduleService";
+import { InMemoryScheduleRepository } from "@/__tests__/fixtures/InMemoryScheduleRepository";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
@@ -35,6 +37,10 @@ const mockStripe = (): jest.Mocked<IStripeClient> => ({
 // Real PricingService backed by an in-memory repo seeded with default prices.
 const makePricing = () =>
   new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
+
+// Real ScheduleService backed by the seeded in-memory repo.
+const makeSchedule = () =>
+  new ScheduleService(new InMemoryScheduleRepository(), new InMemoryAuditRepository());
 
 const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   isProcessed:          jest.fn(),
@@ -83,6 +89,7 @@ function makeService(overrides?: {
     paymentRepo,
     userSvc as unknown as UserService,
     makePricing(),
+    makeSchedule(),
   );
   return { service, stripe, paymentRepo, credits, bookings, userSvc };
 }
@@ -255,7 +262,7 @@ describe("PaymentService.processWebhookEvent — single session", () => {
       email:    "student@test.com",
       startIso: "2099-12-01T10:30:00.000Z",
     }));
-    expect(mockGetAvailableSlots).toHaveBeenCalledWith("2099-12-01", 60, 30);
+    expect(mockGetAvailableSlots).toHaveBeenCalledWith("2099-12-01", 60, expect.anything(), 30);
   });
 
   it("writes dead-letter when booking fails", async () => {
@@ -428,6 +435,7 @@ describe("REFACTOR-P1-05: idempotency keys", () => {
       paymentRepo,
       userSvc  as unknown as UserService,
       makePricing(),
+      makeSchedule(),
     );
     return { service, fakeStripe };
   }

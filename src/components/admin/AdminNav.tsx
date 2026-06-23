@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { href: "/admin/failed-bookings", label: "Fallidas", icon: "error" },
   { href: "/admin/payments", label: "Pagos", icon: "payments" },
   { href: "/admin/pricing", label: "Precios", icon: "sell" },
+  { href: "/admin/schedule", label: "Horarios", icon: "schedule" },
 ];
 
 export function AdminNav() {

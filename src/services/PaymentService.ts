@@ -23,6 +23,7 @@ import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";
 import { UserService } from "./UserService";
 import { PricingService } from "./PricingService";
+import { ScheduleService } from "./ScheduleService";
 
 // ─── Public output types ──────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ export class PaymentService {
     private readonly paymentRepo:  IPaymentRepository,
     private readonly userService:  UserService,
     private readonly pricing:      PricingService,
+    private readonly schedule:     ScheduleService,
   ) {}
 
   // ── Checkout ───────────────────────────────────────────────────────────────
@@ -361,7 +363,8 @@ export class PaymentService {
     // Slot re-check — refund if slot was taken in the meantime
     const slotDate        = startIso.slice(0, 10);
     const durationMinutes = duration === "2h" ? 120 : 60;
-    const availableSlots  = await getAvailableSlots(slotDate, durationMinutes, 30).catch(() => null);
+    const scheduleConfig  = await this.schedule.getConfig();
+    const availableSlots  = await getAvailableSlots(slotDate, durationMinutes, scheduleConfig, 30).catch(() => null);
     const slotStillFree   = availableSlots?.some(s => s.start === startIso) ?? true;
 
     if (!slotStillFree) {

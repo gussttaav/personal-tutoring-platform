@@ -5,6 +5,7 @@ import { CreditService }       from "@/services/CreditService";
 import { BookingService }      from "@/services/BookingService";
 import { PaymentService }      from "@/services/PaymentService";
 import { PricingService }      from "@/services/PricingService";
+import { ScheduleService }     from "@/services/ScheduleService";
 import { SessionService }      from "@/services/SessionService";
 import { SubscriptionService } from "@/services/SubscriptionService";
 import { UserService }         from "@/services/UserService";
@@ -27,6 +28,7 @@ import { InMemorySessionRepository }      from "./InMemorySessionRepository";
 import { InMemoryPaymentRepository }      from "./InMemoryPaymentRepository";
 import { InMemoryUserRepository }         from "./InMemoryUserRepository";
 import { InMemoryPricingRepository }      from "./InMemoryPricingRepository";
+import { InMemoryScheduleRepository }     from "./InMemoryScheduleRepository";
 import { FakeCalendarClient } from "./FakeCalendarClient";
 import { FakeZoomClient }     from "./FakeZoomClient";
 import { FakeEmailClient }    from "./FakeEmailClient";
@@ -58,6 +60,11 @@ export interface BookingServiceDeps {
   zoom:      IZoomClient;
   email:     IEmailClient;
   users:     IUserRepository;
+  schedule:  ScheduleService;
+}
+
+export function buildTestScheduleService(): ScheduleService {
+  return new ScheduleService(new InMemoryScheduleRepository(), new InMemoryAuditRepository());
 }
 
 export function buildTestBookingService(
@@ -71,6 +78,7 @@ export function buildTestBookingService(
     overrides.zoom      ?? new FakeZoomClient(),
     overrides.email     ?? new FakeEmailClient(),
     overrides.users     ?? new InMemoryUserRepository(),
+    overrides.schedule  ?? buildTestScheduleService(),
   );
 }
 
@@ -102,6 +110,7 @@ export function buildTestPaymentService(
   });
 
   const pricing = new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
+  const schedule = buildTestScheduleService();
 
   const service = new PaymentService(
     overrides.stripe ?? stripe,
@@ -110,6 +119,7 @@ export function buildTestPaymentService(
     overrides.paymentRepo ?? paymentRepo,
     new UserService(userRepo),
     pricing,
+    schedule,
   );
 
   return { service, stripe, credits, calendar, paymentRepo };

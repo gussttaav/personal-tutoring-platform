@@ -29,6 +29,7 @@ import {
   buildTestCreditService,
   buildTestBookingService,
   buildTestPaymentService,
+  buildTestScheduleService,
 } from "../fixtures/services";
 import { PaymentService } from "@/services/PaymentService";
 import { PricingService } from "@/services/PricingService";
@@ -49,7 +50,8 @@ function makePaymentService(overrides: {
   const userRepo    = new InMemoryUserRepository();
   const bookings    = buildTestBookingService({ credits, calendar });
   const pricing     = new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
-  const service     = new PaymentService(stripe, credits, bookings, paymentRepo, new UserService(userRepo), pricing);
+  const schedule    = buildTestScheduleService();
+  const service     = new PaymentService(stripe, credits, bookings, paymentRepo, new UserService(userRepo), pricing, schedule);
   return { service, stripe, credits, creditsRepo, calendar, paymentRepo, userRepo };
 }
 
