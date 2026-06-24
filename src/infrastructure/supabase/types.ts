@@ -437,6 +437,24 @@ export type Database = {
           },
         ]
       }
+      single_session_refunds: {
+        Row: {
+          reason: string
+          refunded_at: string
+          stripe_payment_id: string
+        }
+        Insert: {
+          reason?: string
+          refunded_at?: string
+          stripe_payment_id: string
+        }
+        Update: {
+          reason?: string
+          refunded_at?: string
+          stripe_payment_id?: string
+        }
+        Relationships: []
+      }
       slot_locks: {
         Row: {
           expires_at: string

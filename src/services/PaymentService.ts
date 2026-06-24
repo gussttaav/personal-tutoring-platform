@@ -13,7 +13,7 @@
 
 import type Stripe from "stripe";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
-import type { PackSize } from "@/domain/types";
+import type { PackSize, SingleSessionResolved, SingleSessionStatusResult } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
 import { log } from "@/lib/logger";
@@ -344,6 +344,9 @@ export class PaymentService {
 
   private async processSingleSession(input: SingleSessionInput): Promise<void> {
     const { email, name, startIso, endIso, duration, rescheduleToken, idempotencyKey } = input;
+    // SINGLE-SESSION-CONFIRM-01: the PaymentIntent id is the channel seed + the key the
+    // mobile client polls by (booking.stripe_payment_id, single_session_refunds).
+    const paymentIntentId = input.refundTarget.payment_intent;
 
     if (!email) {
       log("error", "Missing email in single-session metadata", { service: "payment", idempotencyKey });
@@ -360,6 +363,14 @@ export class PaymentService {
       return;
     }
 
+    // SINGLE-SESSION-CONFIRM-01: a prior run already refunded this PaymentIntent for a taken
+    // slot (the refund path does not markProcessed). Short-circuit so a duplicate webhook
+    // never attempts a second refund.
+    if (paymentIntentId && await this.paymentRepo.wasRefunded(paymentIntentId)) {
+      log("info", "Duplicate single-session webhook skipped (already refunded)", { service: "payment", idempotencyKey });
+      return;
+    }
+
     // Slot re-check — refund if slot was taken in the meantime
     const slotDate        = startIso.slice(0, 10);
     const durationMinutes = duration === "2h" ? 120 : 60;
@@ -370,6 +381,13 @@ export class PaymentService {
     if (!slotStillFree) {
       log("warn", "Slot no longer available — refunding", { service: "payment", email, startIso, idempotencyKey });
       await this.stripeClient.createRefund({ ...input.refundTarget, reason: "duplicate" });
+      // SINGLE-SESSION-CONFIRM-01: persist the queryable refund record (right after the
+      // refund actually issued, so the record only ever means "money returned"), then
+      // best-effort broadcast. Persistence precedes the fire-and-forget broadcast.
+      if (paymentIntentId) {
+        await this.paymentRepo.recordSlotTakenRefund(paymentIntentId);
+        await this.broadcastResolved(paymentIntentId, { status: "slot_taken" });
+      }
       return;
     }
 
@@ -380,21 +398,73 @@ export class PaymentService {
     const userId = await this.userService.ensureUser(email, name);
 
     try {
-      await this.bookings.createBooking({
+      // SINGLE-SESSION-CONFIRM-01: capture the booking output (previously discarded) so the
+      // success broadcast can carry the join capability + timing the mobile S08 screen needs.
+      const booking = await this.bookings.createBooking({
         email,
         name,
         startIso,
         endIso,
         sessionType,
         rescheduleToken:  rescheduleToken ?? undefined,
-        stripePaymentId:  input.refundTarget.payment_intent,
+        stripePaymentId:  paymentIntentId,
       });
       await this.paymentRepo.markProcessed(idempotencyKey);
       log("info", "Single session booked", { service: "payment", email, startIso });
+
+      // SINGLE-SESSION-CONFIRM-01: best-effort confirmation broadcast (persistence above
+      // already committed the booking; polling catches up if this is missed).
+      if (paymentIntentId) {
+        await this.broadcastResolved(paymentIntentId, {
+          status:      "confirmed",
+          eventId:     booking.eventId,
+          startIso,
+          endIso,
+          sessionType,
+          joinToken:   booking.joinToken,
+          emailFailed: booking.emailFailed,
+        });
+      }
     } catch (err) {
       log("error", "Booking failed after payment — writing dead-letter", { service: "payment", email, startIso, idempotencyKey, error: String(err) });
       await this.writeDeadLetter(idempotencyKey, userId, startIso, err, email);
+      // SINGLE-SESSION-CONFIRM-01: tell a subscribed client to leave "confirmando pago"
+      // (manual recovery handles the rest — polling is the source of truth).
+      if (paymentIntentId) {
+        await this.broadcastResolved(paymentIntentId, { status: "failed" });
+      }
     }
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: best-effort single-session resolution broadcast. Mirrors
+  // handlePackPayment's broadcast discipline — a failure only logs; the client recovers via
+  // the channel-endpoint poll on (re)subscribe.
+  private async broadcastResolved(
+    paymentIntentId: string,
+    payload: SingleSessionResolved,
+  ): Promise<void> {
+    try {
+      await this.paymentRepo.broadcastSingleSessionResolved(paymentIntentId, payload);
+    } catch (err) {
+      log("warn", "Single-session resolution broadcast failed (client will catch up via channel endpoint)", {
+        service: "payment", paymentIntentId, status: payload.status, error: String(err),
+      });
+    }
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: polling status for GET /api/payment-confirmation/channel
+  // (single branch). Total + reliable — resolves a missed broadcast and either race
+  // direction with the webhook. Order is keyed by PaymentIntent id: confirmed (status-scoped
+  // — never stale for a cancelled booking) → slot_taken → failed → pending.
+  async getSingleSessionStatus(paymentIntentId: string): Promise<SingleSessionStatusResult> {
+    const booking = await this.bookings.findByStripePaymentId(paymentIntentId);
+    if (booking) return { status: "confirmed", booking };
+
+    if (await this.paymentRepo.wasRefunded(paymentIntentId)) return { status: "slot_taken" };
+
+    if (await this.paymentRepo.hasFailedBooking(paymentIntentId)) return { status: "failed" };
+
+    return { status: "pending" };
   }
 
   private async writeDeadLetter(

@@ -1,6 +1,7 @@
 // ARCH-10: Booking repository interface.
 // ARCH-13: listByUser now returns cancel tokens alongside records; recordRescheduleFailure added.
-import type { BookingRecord, SessionType } from "../types";
+// SINGLE-SESSION-CONFIRM-01: findByStripePaymentId detail finder for the polling surface.
+import type { BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
 
 export interface IBookingRepository {
   /**
@@ -77,6 +78,15 @@ export interface IBookingRepository {
    * webhook wrote its downstream booking.
    */
   hasBookingForPayment(stripePaymentId: string): Promise<boolean>;
+
+  /**
+   * SINGLE-SESSION-CONFIRM-01: Returns the detail fields needed by the single-session
+   * polling surface for a *confirmed* booking with the given PaymentIntent id, or null.
+   * Scoped to `status = 'confirmed'` (unlike hasBookingForPayment, which is status-agnostic)
+   * so a cancelled/completed/no_show row never reports a stale `confirmed`. Timestamps are
+   * normalized via `new Date(...).toISOString()` per the TIMESTAMPTZ gotcha.
+   */
+  findByStripePaymentId(stripePaymentId: string): Promise<SingleSessionBookingDetail | null>;
 
   /**
    * Marks a booking as completed. Idempotent and conservative: only transitions

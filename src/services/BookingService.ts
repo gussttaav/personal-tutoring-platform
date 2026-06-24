@@ -16,7 +16,7 @@
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { SessionType } from "@/domain/types";
+import type { SessionType, SingleSessionBookingDetail } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
@@ -462,6 +462,12 @@ export class BookingService {
 
   async getJoinInfo(token: string): Promise<{ eventId: string; email: string; name: string; sessionType: string; startsAt: string } | null> {
     return this.bookings.findByJoinToken(token);
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: confirmed-booking detail by PaymentIntent id, for the
+  // single-session polling surface. Thin delegate — see IBookingRepository.findByStripePaymentId.
+  async findByStripePaymentId(paymentIntentId: string): Promise<SingleSessionBookingDetail | null> {
+    return this.bookings.findByStripePaymentId(paymentIntentId);
   }
 
   private async sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {
