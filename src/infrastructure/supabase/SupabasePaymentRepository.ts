@@ -1,7 +1,11 @@
 // DB-02: Supabase-backed implementation of IPaymentRepository.
 // Idempotency keys → webhook_events table.
 // Dead-letter failed bookings → failed_bookings table.
+// SINGLE-SESSION-CONFIRM-01: slot-taken refunds → single_session_refunds table;
+// single-session resolution broadcast on the per-PaymentIntent Realtime channel.
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
+import type { SingleSessionResolved } from "@/domain/types";
+import { paymentChannelName } from "@/lib/realtime-channel";
 import { supabase } from "./client";
 
 export class SupabasePaymentRepository implements IPaymentRepository {
@@ -72,5 +76,43 @@ export class SupabasePaymentRepository implements IPaymentRepository {
       .eq("stripe_session_id", stripeSessionId)
       .maybeSingle();
     return data !== null;
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: idempotent slot-taken refund record. ON CONFLICT DO NOTHING
+  // (upsert with ignoreDuplicates) so a duplicate webhook is a no-op.
+  async recordSlotTakenRefund(paymentIntentId: string): Promise<void> {
+    const { error } = await supabase
+      .from("single_session_refunds")
+      .upsert(
+        { stripe_payment_id: paymentIntentId, reason: "slot_taken" },
+        { onConflict: "stripe_payment_id", ignoreDuplicates: true },
+      );
+    if (error) throw error;
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: true if a slot-taken refund was recorded for this PaymentIntent.
+  async wasRefunded(paymentIntentId: string): Promise<boolean> {
+    const { count } = await supabase
+      .from("single_session_refunds")
+      .select("stripe_payment_id", { count: "exact", head: true })
+      .eq("stripe_payment_id", paymentIntentId);
+    return (count ?? 0) > 0;
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: best-effort broadcast on the per-PaymentIntent channel.
+  // Same HMAC capability model + fire-and-forget pattern as
+  // SupabaseCreditsRepository.broadcastPaymentConfirmed.
+  async broadcastSingleSessionResolved(
+    paymentIntentId: string,
+    payload: SingleSessionResolved,
+  ): Promise<void> {
+    const channel = supabase.channel(paymentChannelName(paymentIntentId), {
+      config: { broadcast: { ack: false } },
+    });
+    try {
+      await channel.send({ type: "broadcast", event: "resolved", payload });
+    } finally {
+      await supabase.removeChannel(channel);
+    }
   }
 }

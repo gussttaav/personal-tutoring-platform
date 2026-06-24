@@ -1,4 +1,6 @@
 // ARCH-10: Payment repository interface — idempotency keys and dead-letter queue.
+// SINGLE-SESSION-CONFIRM-01: slot-taken refund record + single-session resolution broadcast.
+import type { SingleSessionResolved } from "../types";
 
 export interface FailedBookingEntry {
   stripeSessionId: string;
@@ -47,4 +49,28 @@ export interface IPaymentRepository {
    * as an expected (non-mismatch) outcome rather than a dropped webhook.
    */
   hasFailedBooking(stripeSessionId: string): Promise<boolean>;
+
+  /**
+   * SINGLE-SESSION-CONFIRM-01: Records that a single-session payment was refunded
+   * because the slot was taken during async booking. Idempotent — duplicate calls
+   * for the same PaymentIntent are a no-op (ON CONFLICT DO NOTHING). Backs the
+   * `slot_taken` polling status and the refund-path idempotency guard.
+   */
+  recordSlotTakenRefund(paymentIntentId: string): Promise<void>;
+
+  /**
+   * SINGLE-SESSION-CONFIRM-01: Returns true if a slot-taken refund record exists
+   * for the given PaymentIntent id.
+   */
+  wasRefunded(paymentIntentId: string): Promise<boolean>;
+
+  /**
+   * SINGLE-SESSION-CONFIRM-01: Best-effort Realtime broadcast of a single-session
+   * resolution on the per-PaymentIntent channel (event: "resolved"). Mirrors the
+   * pack `broadcastPaymentConfirmed` — fire-and-forget; persistence happens first.
+   */
+  broadcastSingleSessionResolved(
+    paymentIntentId: string,
+    payload: SingleSessionResolved,
+  ): Promise<void>;
 }
