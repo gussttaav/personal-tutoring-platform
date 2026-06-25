@@ -426,7 +426,7 @@ export default function WeeklyCalendar({
 
   const ROW_H    = isMobile ? 28 : 34;
   const HEADER_H = isMobile ? 52 : 64;
-  const HOUR_GAP = 3; // extra top margin before each hour boundary row
+  const HOUR_GAP = 0; // flush rows — hour boundaries are marked by a brighter line, not a gap
 
   // Current-time indicator line — only shown on the current week and within grid range
   const GRID_START_MIN = minHour * 60;
@@ -753,7 +753,7 @@ export default function WeeklyCalendar({
                       <div key={hhmm} style={{
                         height:    ROW_H,
                         marginTop: isHourBoundary ? HOUR_GAP : 0,
-                        padding:   "2px 3px",
+                        padding:   0,
                         borderTop: rowBorderTop(i, hhmm),
                       }}>
                         <SlotCell
@@ -824,7 +824,7 @@ function SlotCell({
   if (state === "unavailable") {
     return (
       <div style={{
-        width: "100%", height: "100%", borderRadius: 3,
+        width: "100%", height: "100%", borderRadius: 0,
         border: "1px solid rgba(255,255,255,0.04)",
         background: "repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 6px)",
         cursor: "default",
@@ -835,7 +835,7 @@ function SlotCell({
   if (state === "booked") {
     return (
       <div style={{
-        width: "100%", height: "100%", borderRadius: 3,
+        width: "100%", height: "100%", borderRadius: 0,
         border: "1px solid rgba(255,180,171,0.18)",
         background: "rgba(255,180,171,0.07)",
         cursor: "default",
@@ -852,7 +852,7 @@ function SlotCell({
 
   let bg           = hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)";
   let borderColor  = hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)";
-  let radius       = "4px";
+  let radius       = "0";
   let labelColor   = "#4edea3";
 
   if (inSel) {
@@ -871,7 +871,7 @@ function SlotCell({
   if (isInvalid) {
     bg          = "rgba(239,68,68,0.25)";
     borderColor = "rgba(239,68,68,0.5)";
-    radius      = "4px";
+    radius      = "0";
   }
 
   return (
