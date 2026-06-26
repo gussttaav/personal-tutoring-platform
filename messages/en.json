@@ -183,6 +183,7 @@
       },
       "zoomLabel": "Zoom virtual classroom",
       "joinButton": "Enter virtual classroom",
+      "sessionEnded": "Session ended",
       "reschedule": "Reschedule",
       "cancelConfirmTitle": "Cancel this session?",
       "cancelConfirmBody": "This action cannot be undone. If it's a pack class, the credit will be returned automatically.",

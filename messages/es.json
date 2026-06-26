@@ -183,6 +183,7 @@
       },
       "zoomLabel": "Aula virtual Zoom",
       "joinButton": "Entrar al aula virtual",
+      "sessionEnded": "Sesión finalizada",
       "reschedule": "Reprogramar",
       "cancelConfirmTitle": "¿Cancelar esta sesión?",
       "cancelConfirmBody": "Esta acción no se puede deshacer. Si es de pack, el crédito se devolverá automáticamente.",
