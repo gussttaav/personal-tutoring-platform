@@ -77,7 +77,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Pinned: the floating `22` tag rolled forward to v22.23.0, whose
+          # bundled undici 6.27.0 throws ERR_STREAM_PREMATURE_CLOSE on the
+          # Google OAuth token request (gaxios → native fetch → undici), failing
+          # every resetTestState. curl to the same host succeeds, so it's the
+          # HTTP client, not the network. 22.22.3 ships a working undici.
+          node-version: 22.22.3
           cache: pnpm
 
       - name: Install dependencies
