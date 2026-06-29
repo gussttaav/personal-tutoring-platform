@@ -8,20 +8,9 @@
  * that run inside the browser context.
  */
 
-import { setDefaultResultOrder }    from "dns";
 import { existsSync, readFileSync } from "fs";
 import { createClient }             from "@supabase/supabase-js";
 import { google }                   from "googleapis";
-
-// GitHub Actions runners have a flaky/broken IPv6 egress path (the same reason
-// the Supabase *direct* URL is unusable from CI — see global-setup.ts). When
-// Node resolves googleapis.com to an AAAA record first, the TLS connection to
-// the OAuth token endpoint is severed mid-response ("Premature close"),
-// deterministically failing every clearTestCalendar call. Force IPv4-first
-// resolution for this process (and every Playwright worker that imports this
-// module) so Google is reached over the working IPv4 path. undici (the fetch
-// transport gaxios uses) honours dns.lookup's default order.
-setDefaultResultOrder("ipv4first");
 
 function loadEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {};
@@ -139,37 +128,6 @@ export async function truncateTestDb(
 }
 
 /**
- * Transient network failures talking to Google (notably the OAuth token
- * endpoint) surface as connection drops rather than HTTP error codes:
- * "Premature close", socket hang-ups, ECONNRESET/ETIMEDOUT, etc. These are
- * not auth rejections — a bad credential yields `invalid_grant`. Retrying with
- * a short backoff clears the flake; a real failure (auth, 4xx) still throws on
- * the final attempt.
- */
-function isTransientNetworkError(err: unknown): boolean {
-  const message = String((err as { message?: string })?.message ?? err);
-  const code    = String((err as { code?: string })?.code ?? "");
-  return /premature close|socket hang ?up|econnreset|etimedout|enetunreach|eai_again|network|fetch failed/i.test(
-    message + " " + code,
-  );
-}
-
-async function withRetry<T>(fn: () => Promise<T>, attempts = 4): Promise<T> {
-  let lastErr: unknown;
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      if (!isTransientNetworkError(err) || attempt === attempts - 1) throw err;
-      // 250ms, 500ms, 1000ms backoff.
-      await new Promise((r) => setTimeout(r, 250 * 2 ** attempt));
-    }
-  }
-  throw lastErr;
-}
-
-/**
  * Deletes every future event from the configured Google Calendar. Safe only
  * because we use a dedicated test calendar (see GOOGLE_CALENDAR_ID in
  * .env.e2e.local locally and the GitHub secret in CI).
@@ -193,22 +151,18 @@ export async function clearTestCalendar(
   let deleted = 0;
 
   do {
-    const { data } = await withRetry(() =>
-      calendar.events.list({
-        calendarId,
-        timeMin,
-        singleEvents: true,
-        maxResults:   2500,
-        pageToken,
-      }),
-    );
+    const { data } = await calendar.events.list({
+      calendarId,
+      timeMin,
+      singleEvents: true,
+      maxResults:   2500,
+      pageToken,
+    });
 
     for (const event of data.items ?? []) {
       if (!event.id) continue;
       try {
-        await withRetry(() =>
-          calendar.events.delete({ calendarId, eventId: event.id!, sendUpdates: "none" }),
-        );
+        await calendar.events.delete({ calendarId, eventId: event.id, sendUpdates: "none" });
         deleted++;
       } catch {
         // Tolerate 404/410 — event may have been removed concurrently.
