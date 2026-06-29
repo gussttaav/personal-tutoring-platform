@@ -55,6 +55,7 @@ const studentIdentity: MobileIdentity = {
   image:   "https://p/m.png",
   role:    "student",
   isAdmin: false,
+  locale:  null,
 };
 
 beforeEach(() => {
