@@ -94,6 +94,28 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      # TEMP-DIAG: diagnose the deterministic "Premature close" on the Google
+      # token endpoint that fails every resetTestState in CI. Remove once the
+      # root cause is found. Never blocks the run.
+      - name: Diagnose Google auth from runner
+        continue-on-error: true
+        env:
+          GOOGLE_CALENDAR_ID:           ${{ secrets.GOOGLE_CALENDAR_ID }}
+          GOOGLE_SERVICE_ACCOUNT_EMAIL: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_EMAIL }}
+          GOOGLE_PRIVATE_KEY:           ${{ secrets.GOOGLE_PRIVATE_KEY }}
+        run: |
+          echo "=== runtime versions ==="
+          node --version
+          node -p "'undici ' + (process.versions.undici || 'n/a')"
+          echo "=== DNS for token hosts (A + AAAA) ==="
+          getent ahosts www.googleapis.com || true
+          echo "=== raw connectivity (empty POST; 400 = reachable, error = network) ==="
+          curl -sS -m 20 -o /dev/null -w "www.googleapis.com    -> HTTP %{http_code}  connect %{time_connect}s  ip %{remote_ip}\n" -X POST https://www.googleapis.com/oauth2/v4/token || echo "curl www.googleapis.com FAILED"
+          curl -sS -m 20 -o /dev/null -w "oauth2.googleapis.com -> HTTP %{http_code}  connect %{time_connect}s  ip %{remote_ip}\n" -X POST https://oauth2.googleapis.com/token || echo "curl oauth2.googleapis.com FAILED"
+          curl -4 -sS -m 20 -o /dev/null -w "www.googleapis.com IPv4 -> HTTP %{http_code}  ip %{remote_ip}\n" -X POST https://www.googleapis.com/oauth2/v4/token || echo "curl IPv4 FAILED"
+          echo "=== googleapis auth probe with the CI secrets ==="
+          node -e 'const{google}=require("googleapis");const key=process.env.GOOGLE_PRIVATE_KEY||"";console.log("keyLen",key.length,"hasLiteralBackslashN",key.includes("\\n"),"hasRealNewline",key.includes("\n"),"starts",JSON.stringify(key.slice(0,28)));const auth=new google.auth.GoogleAuth({credentials:{client_email:process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,private_key:key.replace(/\\n/g,"\n")},scopes:["https://www.googleapis.com/auth/calendar"]});(async()=>{const t0=Date.now();try{const c=await auth.getClient();const tok=await c.getAccessToken();console.log("TOKEN_OK",Date.now()-t0,"ms",String(tok.token).slice(0,10));}catch(e){console.log("TOKEN_FAILED",Date.now()-t0,"ms");console.log("name",e&&e.name,"message",e&&e.message);console.log("code",e&&e.code,"status",e&&e.response&&e.response.status);console.log("cause",e&&e.cause&&(e.cause.message||e.cause.code));}})();' || true
+
       - name: Run E2E tests
         run: pnpm exec playwright test
         env:
