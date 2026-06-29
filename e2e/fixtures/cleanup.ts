@@ -8,9 +8,20 @@
  * that run inside the browser context.
  */
 
+import { setDefaultResultOrder }    from "dns";
 import { existsSync, readFileSync } from "fs";
 import { createClient }             from "@supabase/supabase-js";
 import { google }                   from "googleapis";
+
+// GitHub Actions runners have a flaky/broken IPv6 egress path (the same reason
+// the Supabase *direct* URL is unusable from CI — see global-setup.ts). When
+// Node resolves googleapis.com to an AAAA record first, the TLS connection to
+// the OAuth token endpoint is severed mid-response ("Premature close"),
+// deterministically failing every clearTestCalendar call. Force IPv4-first
+// resolution for this process (and every Playwright worker that imports this
+// module) so Google is reached over the working IPv4 path. undici (the fetch
+// transport gaxios uses) honours dns.lookup's default order.
+setDefaultResultOrder("ipv4first");
 
 function loadEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {};
