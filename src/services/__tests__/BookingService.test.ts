@@ -565,6 +565,7 @@ describe("BookingService.listForUser", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
+      eventId:     "e1",
       token:       "tkn1",
       joinToken:   "jtkn1",
       sessionType: "pack",

@@ -56,6 +56,7 @@ export interface CancelByTokenOutput {
 }
 
 export interface UserBooking {
+  eventId:     string;
   token:       string;
   joinToken:   string;
   sessionType: SessionType;
@@ -447,6 +448,7 @@ export class BookingService {
   async listForUser(email: string): Promise<UserBooking[]> {
     const entries = await this.bookings.listByUser(email);
     return entries.map(({ cancelToken, joinToken, record }) => ({
+      eventId:     record.eventId,
       token:       cancelToken,
       joinToken,
       sessionType: record.sessionType,
