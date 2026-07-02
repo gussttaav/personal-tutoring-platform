@@ -122,9 +122,23 @@ function getTimeRowHierarchy(hhmm: string): "hour" | "half" | "quarter" {
 function rowBorderTop(i: number, hhmm: string): string | undefined {
   if (i === 0) return undefined;
   const h = getTimeRowHierarchy(hhmm);
-  if (h === "hour")  return "1px solid rgba(255,255,255,0.10)";
-  if (h === "half")  return "1px solid rgba(255,255,255,0.045)";
+  // Hour boundary is a structural 2px line, faintly tinted with the emerald
+  // accent — a categorically different weight AND hue than the neutral
+  // half/quarter hairlines, so the eye can lock onto it on two dimensions.
+  if (h === "hour")  return "2px solid rgba(78,222,163,0.22)";
+  if (h === "half")  return "1px solid rgba(255,255,255,0.05)";
   return                    "1px solid rgba(255,255,255,0.022)";
+}
+
+/**
+ * Faint alternating background tint per whole hour, so the eye groups the rows
+ * of a single hour pre-attentively (zebra banding). Odd hours get the tint;
+ * even hours stay on the base background. Shows through the semi-transparent
+ * slot cells, so it reads on every column, not just empty/closed rows.
+ */
+function hourBandBackground(hhmm: string): string | undefined {
+  const h = parseInt(hhmm.split(":")[0] ?? "0", 10);
+  return h % 2 === 1 ? "rgba(255,255,255,0.015)" : undefined;
 }
 
 /** Build "HH:MM" time rows for the grid, bounded by the configured hours. */
@@ -566,9 +580,26 @@ export default function WeeklyCalendar({
                     justifyContent: "flex-end",
                     paddingRight:   8,
                     paddingTop:     4,
-                    borderTop: rowBorderTop(i, hhmm),
+                    borderTop:      rowBorderTop(i, hhmm),
+                    background:     hourBandBackground(hhmm),
+                    position:       "relative",
                   }}
                 >
+                  {/* Hour tick — a brighter emerald stub at the gutter's inner
+                      edge that anchors the eye to the hour line beside its label. */}
+                  {i > 0 && getTimeRowHierarchy(hhmm) === "hour" && (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position:   "absolute",
+                        top:        -2,
+                        right:      0,
+                        width:      8,
+                        height:     2,
+                        background: "rgba(78,222,163,0.5)",
+                      }}
+                    />
+                  )}
                   {(() => {
                     const tier = getTimeRowHierarchy(hhmm);
                     return (
@@ -578,7 +609,7 @@ export default function WeeklyCalendar({
                           : (tier === "hour" ? 10 : tier === "half" ? 8.5 : 8),
                         fontWeight:         tier === "hour" ? 600 : 400,
                         color:              tier === "hour"
-                          ? "#a0b0a8"
+                          ? "#c2d0c8"
                           : tier === "half"
                             ? "rgba(134,148,138,0.6)"
                             : "rgba(134,148,138,0.38)",
@@ -678,9 +709,10 @@ export default function WeeklyCalendar({
                     if (isClosed) {
                       return (
                         <div key={hhmm} style={{
-                          height:    ROW_H,
-                          marginTop: isHourBoundary ? HOUR_GAP : 0,
-                          borderTop: rowBorderTop(i, hhmm),
+                          height:     ROW_H,
+                          marginTop:  isHourBoundary ? HOUR_GAP : 0,
+                          borderTop:  rowBorderTop(i, hhmm),
+                          background: hourBandBackground(hhmm),
                         }} />
                       );
                     }
@@ -691,6 +723,7 @@ export default function WeeklyCalendar({
                           height:         ROW_H,
                           marginTop:      isHourBoundary ? HOUR_GAP : 0,
                           borderTop:      rowBorderTop(i, hhmm),
+                          background:     hourBandBackground(hhmm),
                           display:        hhmm === "10:00" ? "flex" : undefined,
                           alignItems:     "center",
                           justifyContent: "center",
@@ -735,26 +768,27 @@ export default function WeeklyCalendar({
                     // ── Focused block state ──
                     const inFocus       = !!(focusedHere && slot
                       && focusedHere.block.some((s) => s.start === slot.start));
-                    const isFocusAnchor = inFocus && hhmm === focusedHere!.anchorKey;
                     const isFocusTop    = inFocus && hhmm === focusedFirstKey;
                     const isFocusBot    = inFocus && hhmm === focusedLastKey;
 
                     if (isPastRow) {
                       return (
                         <div key={hhmm} style={{
-                          height:    ROW_H,
-                          marginTop: isHourBoundary ? HOUR_GAP : 0,
-                          borderTop: rowBorderTop(i, hhmm),
+                          height:     ROW_H,
+                          marginTop:  isHourBoundary ? HOUR_GAP : 0,
+                          borderTop:  rowBorderTop(i, hhmm),
+                          background: hourBandBackground(hhmm),
                         }} />
                       );
                     }
 
                     return (
                       <div key={hhmm} style={{
-                        height:    ROW_H,
-                        marginTop: isHourBoundary ? HOUR_GAP : 0,
-                        padding:   0,
-                        borderTop: rowBorderTop(i, hhmm),
+                        height:     ROW_H,
+                        marginTop:  isHourBoundary ? HOUR_GAP : 0,
+                        padding:    0,
+                        borderTop:  rowBorderTop(i, hhmm),
+                        background: hourBandBackground(hhmm),
                       }}>
                         <SlotCell
                           state={cellState}
@@ -763,7 +797,6 @@ export default function WeeklyCalendar({
                           isSelTop={isSelTop}
                           isSelBot={isSelBot}
                           inFocus={inFocus}
-                          isFocusAnchor={isFocusAnchor}
                           isFocusTop={isFocusTop}
                           isFocusBot={isFocusBot}
                           isInvalid={isInvalid}
@@ -802,7 +835,7 @@ function SlotCell({
   state,
   timeLabel,
   inSel, isSelTop, isSelBot,
-  inFocus, isFocusAnchor, isFocusTop, isFocusBot,
+  inFocus, isFocusTop, isFocusBot,
   isInvalid,
   onClick,
 }: {
@@ -812,7 +845,6 @@ function SlotCell({
   isSelTop:      boolean;
   isSelBot:      boolean;
   inFocus:       boolean;
-  isFocusAnchor: boolean;
   isFocusTop:    boolean;
   isFocusBot:    boolean;
   isInvalid:     boolean;
@@ -861,9 +893,10 @@ function SlotCell({
     radius      = blockRadius(isSelTop, isSelBot);
     labelColor  = "#003824";
   } else if (inFocus) {
-    // Anchor cell is slightly darker to mark the entry point
-    bg          = isFocusAnchor ? "rgba(78,222,163,0.42)" : "rgba(78,222,163,0.28)";
-    borderColor = isFocusAnchor ? "rgba(78,222,163,0.75)" : "rgba(78,222,163,0.55)";
+    // The whole focused block reads at one uniform intensity so the auto-covered
+    // cells (for 1h/2h durations) match the clicked anchor.
+    bg          = "rgba(78,222,163,0.42)";
+    borderColor = "rgba(78,222,163,0.75)";
     radius      = blockRadius(isFocusTop, isFocusBot);
     labelColor  = "#4edea3";
   }
