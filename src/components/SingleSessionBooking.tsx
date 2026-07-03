@@ -163,16 +163,19 @@ export default function SingleSessionBooking({
   // Live price from the pricing table (null for the free 15-min session).
   const price   = useSessionPriceLabel(sessionType);
 
-  // 1h: start in "review" phase with the slot pre-filled (exact duration match
-  //      against AvailabilityModal's 1h slots).
-  // 15min: truncate the 1h slot to its first 15 minutes and jump to review.
+  // AvailabilityModal emits a 30-min slot as a start hint (product-agnostic).
+  // 1h & 2h: start in "picking" phase and pre-focus the block in the calendar
+  //      (initialFocusedSlotStart), which validates contiguity before
+  //      highlighting — a free 30-min atom is not a guaranteed 1h/2h window.
+  // 15min: truncate the hint to its first 15 minutes and jump to review.
   //      The server validates duration, so we must adjust endIso + label here.
-  // 2h: start in "picking" phase but pre-focus the slot's week in the calendar
-  //      so the user picks the matching 2h sub-slot. We cannot synthesise a 2h
-  //      slot from a 1h hint.
   const preSelectedSlot: SelectedSlot | null = (() => {
     if (!initialSlot) return null;
-    if (sessionType === "session1h") return initialSlot;
+    // session1h no longer pre-confirms the modal's hint: the availability modal
+    // now emits a 30-min slot, and a free 30-min atom does not guarantee the
+    // following 30 min is free. We start in "picking" and pre-focus the block in
+    // the calendar instead (see initialFocusedSlotStart below), which validates
+    // contiguity before highlighting.
     if (sessionType === "free15min") {
       const start = new Date(initialSlot.startIso);
       const end   = new Date(start.getTime() + 15 * 60_000);
@@ -781,7 +784,7 @@ export default function SingleSessionBooking({
                   onSlotSelected={handleSlotSelected}
                   onSlotFocused={setFocusedSlot}
                   selectedSlot={selected}
-
+                  initialFocusedSlotStart={initialSlot?.startIso}
                   initialWeekOffset={initialWeekOffset}
                 />
               )}
