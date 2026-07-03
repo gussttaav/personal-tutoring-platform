@@ -380,7 +380,9 @@
       "scheduleIn": "Horarios en {timezone}",
       "available": "Disponible",
       "booked": "Reservado",
-      "unavailable": "No disponible"
+      "unavailable": "No disponible",
+      "tapToConfirm": "Toca de nuevo para confirmar",
+      "confirm": "Confirmar"
     },
     "weeklyCalendar": {
       "subtitle": "Horarios en tu zona ({userTz})",

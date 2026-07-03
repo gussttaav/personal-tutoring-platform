@@ -144,6 +144,12 @@ function isWithinWorkingHours(weekly: WeeklyHours, dow: number, hhmm: string, at
   return isWithinBlocks(weekly[dow] ?? [], totalMin, atomicMins);
 }
 
+/** Extract the display-timezone start "HH:MM" from a slot (e.g. "09:00–09:30" → "09:00"). */
+function slotStartTime(slot: ApiSlot, tzDiffers: boolean): string {
+  const label = tzDiffers ? slot.localLabel : slot.label;
+  return label.split(/\s*[–\-]\s*/)[0]?.trim() ?? label;
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AvailabilityModal({
@@ -173,6 +179,9 @@ export default function AvailabilityModal({
   }, schedule.timezone);
   const [isMobile,       setIsMobile]       = useState(false);
   const [nowMadridMin,   setNowMadridMin]   = useState<number>(() => getNowMinutes(schedule.timezone));
+  // The pre-confirmed slot: first click focuses it (highlight + footer bar);
+  // a second click on the same cell (or the footer button) confirms and closes.
+  const [focused,        setFocused]        = useState<{ date: Date; slot: ApiSlot } | null>(null);
 
   const maxWeekOffset = schedule.bookingWindowWeeks - 1;
   const weekStart     = getWeekStart(weekOffset);
@@ -213,6 +222,8 @@ export default function AvailabilityModal({
   if (fetchKey !== prevFetchKey) {
     setPrevFetchKey(fetchKey);
     setSlotsMap({});
+    // The focused cell belongs to the previous week/timezone view — drop it.
+    setFocused(null);
   }
 
   useEffect(() => {
@@ -266,10 +277,35 @@ export default function AvailabilityModal({
     return d;
   });
 
+  // First click focuses the cell; a second click on the same cell confirms.
+  // Clicking a different available cell simply moves the focus.
   const handleSlotClick = useCallback((date: Date, slot: ApiSlot) => {
-    onSlotSelected(buildSelectedSlot(date, slot, userTz, schedule.timezone, locale));
+    if (focused && focused.slot.start === slot.start) {
+      onSlotSelected(buildSelectedSlot(date, slot, userTz, schedule.timezone, locale));
+      onClose();
+      return;
+    }
+    setFocused({ date, slot });
+  }, [focused, userTz, schedule.timezone, onSlotSelected, onClose, locale]);
+
+  // Footer "Confirm" button — same effect as clicking the focused cell again.
+  const handleConfirm = useCallback(() => {
+    if (!focused) return;
+    onSlotSelected(buildSelectedSlot(focused.date, focused.slot, userTz, schedule.timezone, locale));
     onClose();
-  }, [userTz, schedule.timezone, onSlotSelected, onClose, locale]);
+  }, [focused, userTz, schedule.timezone, onSlotSelected, onClose, locale]);
+
+  // Drop a focused slot that has ticked into the past or the min-notice window,
+  // so the footer never confirms an unbookable time. Re-checks on each minute tick.
+  useEffect(() => {
+    if (!focused) return;
+    const startMs  = new Date(focused.slot.start).getTime();
+    const nowMs    = Date.now();
+    const isPast   = startMs + ATOMIC_MIN * 60_000 <= nowMs;
+    const isNotice = startMs < nowMs + schedule.minNoticeHours * 3_600_000;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- guard runs only when the focused slot expires
+    if (isPast || isNotice) setFocused(null);
+  }, [nowMadridMin, focused, schedule.minNoticeHours]);
 
   const today   = new Date(); today.setHours(0, 0, 0, 0);
   const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + schedule.bookingWindowWeeks * 7);
@@ -533,6 +569,7 @@ export default function AvailabilityModal({
                         timeRows={timeRows}
                         weekly={schedule.weeklyHours}
                         minNoticeHours={schedule.minNoticeHours}
+                        focusedStart={focused?.slot.start ?? null}
                       />
                     );
                   })}
@@ -576,6 +613,73 @@ export default function AvailabilityModal({
                   </span>
                 </div>
           </div>
+
+          {/* ── Confirmation footer ── */}
+          {focused && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                display:        "flex",
+                alignItems:     "center",
+                justifyContent: "space-between",
+                gap:            12,
+                padding:        "12px 20px",
+                borderTop:      "1px solid rgba(255,255,255,0.07)",
+                background:     "#161518",
+                flexShrink:     0,
+                animation:      "availFooterUp 0.2s ease both",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 20, color: "#4edea3", flexShrink: 0, lineHeight: 1 }}
+                >
+                  schedule
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{
+                    fontFamily:   "var(--font-headline, Manrope), sans-serif",
+                    fontSize:     isMobile ? 14 : 15,
+                    fontWeight:   700,
+                    color:        "#e5e1e4",
+                    margin:       0,
+                    lineHeight:   1.2,
+                    whiteSpace:   "nowrap",
+                    overflow:     "hidden",
+                    textOverflow: "ellipsis",
+                  }}>
+                    {formatDateLabel(focused.date, locale)} · {slotStartTime(focused.slot, tzDiffers)}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#86948a", margin: "2px 0 0" }}>
+                    {t("tapToConfirm")}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleConfirm}
+                style={{
+                  flexShrink:   0,
+                  padding:      "10px 18px",
+                  borderRadius: 10,
+                  border:       "none",
+                  background:   "#4edea3",
+                  color:        "#08130d",
+                  fontFamily:   "inherit",
+                  fontSize:     isMobile ? 13 : 14,
+                  fontWeight:   700,
+                  cursor:       "pointer",
+                  transition:   "background 0.12s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#6ee8b4"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#4edea3"; }}
+              >
+                {t("confirm")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -587,6 +691,10 @@ export default function AvailabilityModal({
         @keyframes availSheetUp {
           from { transform: translateY(100%); }
           to   { transform: translateY(0); }
+        }
+        @keyframes availFooterUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
         /* Hide the chat FAB while this modal is mounted */
         .chat-fab { display: none !important; }
@@ -662,7 +770,7 @@ function TimeColumn({ isMobile, timeRows }: { isMobile: boolean; timeRows: strin
 
 function DayColumn({
   date, daySlots, isMobile, isClosed, isToday, tzDiffers, nowMadridMin, onSlotClick, locale,
-  timeRows, weekly, minNoticeHours,
+  timeRows, weekly, minNoticeHours, focusedStart,
 }: {
   date:           Date;
   daySlots:       DaySlots | undefined;
@@ -676,6 +784,7 @@ function DayColumn({
   timeRows:       string[];
   weekly:         WeeklyHours;
   minNoticeHours: number;
+  focusedStart:   string | null;
 }) {
   const ROW_H    = isMobile ? 20 : 24;
   const HEADER_H = isMobile ? 52 : 64;
@@ -795,6 +904,7 @@ function DayColumn({
           >
             <SlotCell
               state={cellState}
+              isFocused={!!slot && slot.start === focusedStart}
               onClick={cellState === "available" && slot ? () => onSlotClick(slot) : undefined}
             />
           </div>
@@ -808,10 +918,12 @@ function DayColumn({
 
 function SlotCell({
   state,
+  isFocused,
   onClick,
 }: {
-  state:    "available" | "booked" | "unavailable";
-  onClick?: () => void;
+  state:     "available" | "booked" | "unavailable";
+  isFocused: boolean;
+  onClick?:  () => void;
 }) {
   const [hovered, setHovered] = useState(false);
 
@@ -837,17 +949,27 @@ function SlotCell({
     );
   }
 
+  // Focused (pre-confirmed) cells read at a stronger, hover-independent intensity
+  // — matching WeeklyCalendar's focus state — so the pending selection stands out.
+  const background = isFocused
+    ? "rgba(78,222,163,0.42)"
+    : hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)";
+  const borderColor = isFocused
+    ? "rgba(78,222,163,0.75)"
+    : hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)";
+
   return (
     <button
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      aria-pressed={isFocused}
       style={{
         width:        "100%",
         height:       "100%",
         cursor:       "pointer",
-        border:       `1px solid ${hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)"}`,
-        background:   hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)",
+        border:       `1px solid ${borderColor}`,
+        background,
         borderRadius: 0,
         transition:   "background 0.12s, border-color 0.12s",
         fontFamily:   "inherit",
