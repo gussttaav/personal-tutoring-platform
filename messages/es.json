@@ -295,6 +295,8 @@
       "vatIncluded": "IVA incluido",
       "paymentProtected": "Tu pago está protegido. El cargo se procesará al confirmar el siguiente paso.",
       "bookingProgress": "Reservando {dateLabel} a las {label}…",
+      "verifyingAvailability": "Comprobando disponibilidad…",
+      "hourUnavailableNotice": "El horario que elegiste ya no tiene una hora completa libre. Elige otro horario disponible en el calendario.",
       "changeSessionType": "Cambiar tipo de sesión",
       "confirmReschedule": "Confirmar reprogramación",
       "confirmPay": "Confirmar pago",

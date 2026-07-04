@@ -19,6 +19,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   Spinner,
+  Alert,
   FeedbackCard,
   IconHalo,
   Eyebrow,
@@ -31,6 +32,7 @@ import {
   ConfirmationChecklist,
   Helper,
 } from "@/components/ui";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 import { COLORS } from "@/constants";
 import { errorCodeToKey } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
@@ -54,14 +56,16 @@ interface SingleSessionBookingProps {
   userEmail:        string;
   rescheduleToken?: string | null;
   onBack:           () => void;
-  /** Pre-selected slot from AvailabilityModal. Only applied for session1h
-   *  (exact duration match). 15min and 2h start in "picking" phase. */
+  /** Pre-selected slot from AvailabilityModal. free15min pre-selects into
+   *  "review"; session1h verifies 1h availability first (review if bookable,
+   *  else picking with a notice); session2h starts in "picking". */
   initialSlot?:     SelectedSlot;
 }
 
+// "verifying" = checking whether the modal's 1h hint is actually bookable
 // "review" = slot chosen, waiting for user to confirm before payment/booking
 // "paying" = embedded PaymentElement shown inside the booking layout
-type Phase = "picking" | "review" | "booking" | "paying" | "success" | "error";
+type Phase = "picking" | "verifying" | "review" | "booking" | "paying" | "success" | "error";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "";
 
@@ -160,41 +164,42 @@ export default function SingleSessionBooking({
   const tErrors = useTranslations("errors");
   const router  = useRouter();
   const cfg     = SESSION_CONFIGS[sessionType];
+  const schedule = useScheduleConfig();
   // Live price from the pricing table (null for the free 15-min session).
   const price   = useSessionPriceLabel(sessionType);
 
-  // AvailabilityModal emits a 30-min slot as a start hint (product-agnostic).
-  // 1h & 2h: start in "picking" phase and pre-focus the block in the calendar
-  //      (initialFocusedSlotStart), which validates contiguity before
-  //      highlighting — a free 30-min atom is not a guaranteed 1h/2h window.
-  // 15min: truncate the hint to its first 15 minutes and jump to review.
-  //      The server validates duration, so we must adjust endIso + label here.
-  const preSelectedSlot: SelectedSlot | null = (() => {
+  // Synthesise the exact session-duration slot from the modal's 30-min start hint
+  // (adjusts endIso + label to the real session length; the server validates it).
+  const makeSessionSlot = (): SelectedSlot | null => {
     if (!initialSlot) return null;
-    // session1h no longer pre-confirms the modal's hint: the availability modal
-    // now emits a 30-min slot, and a free 30-min atom does not guarantee the
-    // following 30 min is free. We start in "picking" and pre-focus the block in
-    // the calendar instead (see initialFocusedSlotStart below), which validates
-    // contiguity before highlighting.
-    if (sessionType === "free15min") {
-      const start = new Date(initialSlot.startIso);
-      const end   = new Date(start.getTime() + 15 * 60_000);
-      const pad   = (n: number) => String(n).padStart(2, "0");
-      const fmt   = (d: Date) =>
-        initialSlot.timezone
-          ? d.toLocaleTimeString("es-ES", { timeZone: initialSlot.timezone, hour: "2-digit", minute: "2-digit", hour12: false })
-          : `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-      return {
-        startIso:  initialSlot.startIso,
-        endIso:    end.toISOString(),
-        label:     `${fmt(start)}–${fmt(end)}`,
-        dateLabel: initialSlot.dateLabel,
-        timezone:  initialSlot.timezone,
-      };
-    }
-    return null;
-  })();
-  const supportsPreSelect = !!preSelectedSlot;
+    const start = new Date(initialSlot.startIso);
+    const end   = new Date(start.getTime() + cfg.durationMinutes * 60_000);
+    const pad   = (n: number) => String(n).padStart(2, "0");
+    const fmt   = (d: Date) =>
+      initialSlot.timezone
+        ? d.toLocaleTimeString("es-ES", { timeZone: initialSlot.timezone, hour: "2-digit", minute: "2-digit", hour12: false })
+        : `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return {
+      startIso:  initialSlot.startIso,
+      endIso:    end.toISOString(),
+      label:     `${fmt(start)}–${fmt(end)}`,
+      dateLabel: initialSlot.dateLabel,
+      timezone:  initialSlot.timezone,
+    };
+  };
+
+  // AvailabilityModal emits a 30-min slot as a start hint (product-agnostic).
+  // 15min: start+15 stays inside the clicked 30-min atom → always bookable, so we
+  //      pre-select and jump straight to "review".
+  // 1h: start+60 extends one atom beyond the hint, which a free 30-min atom does
+  //      NOT guarantee. Start in "verifying" and check the real 60-min availability
+  //      (see the effect below): bookable → "review"; otherwise → "picking" with a
+  //      notice so the user chooses another slot.
+  // 2h: start in "picking" and pre-focus the block in the calendar
+  //      (initialFocusedSlotStart), which validates contiguity before highlighting
+  //      — we can't synthesise a 2h slot from a 30-min hint.
+  const reviewSlot     = initialSlot && sessionType === "free15min" ? makeSessionSlot() : null;
+  const needsHourCheck = !!initialSlot && sessionType === "session1h";
 
   // Initial week offset — navigate the calendar to the week containing the
   // pre-selected slot so the user sees it immediately.
@@ -212,10 +217,15 @@ export default function SingleSessionBooking({
     ));
   })();
 
-  const [phase,          setPhase]          = useState<Phase>(supportsPreSelect ? "review" : "picking");
+  const [phase,          setPhase]          = useState<Phase>(
+    reviewSlot ? "review" : needsHourCheck ? "verifying" : "picking",
+  );
   const [errorMsg,       setErrorMsg]       = useState("");
-  const [selected,       setSelected]       = useState<SelectedSlot | null>(preSelectedSlot);
+  const [selected,       setSelected]       = useState<SelectedSlot | null>(reviewSlot);
   const [focusedSlot,    setFocusedSlot]    = useState<SelectedSlot | null>(null);
+  // Set when the modal's 1h hint failed the availability check → shows a notice
+  // in the picking phase.
+  const [hourUnavailable, setHourUnavailable] = useState(false);
   const [note,           setNote]           = useState("");
   const [sessionUrl,     setSessionUrl]     = useState("");
   const [cancelToken,    setCancelToken]    = useState("");
@@ -236,7 +246,43 @@ export default function SingleSessionBooking({
   const handleSlotSelected = useCallback((slot: SelectedSlot) => {
     setSelected(slot);
     setFocusedSlot(null);
+    setHourUnavailable(false);
     setPhase("review");
+  }, []);
+
+  // session1h from AvailabilityModal: the modal only guarantees the clicked 30-min
+  // atom is free, not the full hour. Verify against the 60-min availability (which
+  // encapsulates contiguity) before committing to review. Bookable → review;
+  // otherwise → picking with a notice. On network error, degrade to picking (the
+  // calendar's initialFocusedSlotStart still pre-focuses the hour if it's free).
+  useEffect(() => {
+    if (!needsHourCheck || !initialSlot) return;
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const dayKey = new Intl.DateTimeFormat("en-CA", {
+          timeZone: schedule.timezone, year: "numeric", month: "2-digit", day: "2-digit",
+        }).format(new Date(initialSlot.startIso));
+        const tz  = encodeURIComponent(initialSlot.timezone ?? schedule.timezone);
+        const res = await fetch(`/api/availability?date=${dayKey}&duration=60&tz=${tz}`, { signal: ctrl.signal });
+        const data = await res.json();
+        const targetMs = new Date(initialSlot.startIso).getTime();
+        const bookable = Array.isArray(data.slots)
+          && data.slots.some((s: { start: string }) => new Date(s.start).getTime() === targetMs);
+        if (bookable) {
+          setSelected(makeSessionSlot());
+          setPhase("review");
+        } else {
+          setHourUnavailable(true);
+          setPhase("picking");
+        }
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        setPhase("picking");
+      }
+    })();
+    return () => ctrl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for the 1h hint
   }, []);
 
   const handleConfirm = useCallback(async () => {
@@ -770,19 +816,26 @@ export default function SingleSessionBooking({
               boxShadow: "0 20px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)",
             }}
           >
+            {hourUnavailable && phase === "picking" && (
+              <div style={{ padding: "16px 16px 0" }}>
+                <Alert variant="warning">{t("hourUnavailableNotice")}</Alert>
+              </div>
+            )}
             <div className="flex-1">
-              {phase === "booking" ? (
+              {phase === "booking" || phase === "verifying" ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 12 }}>
                   <Spinner />
                   <p style={{ fontSize: 13, color: "#bbcabf" }}>
-                    {t("bookingProgress", { dateLabel: selected?.dateLabel ?? "", label: selected?.label ?? "" })}
+                    {phase === "verifying"
+                      ? t("verifyingAvailability")
+                      : t("bookingProgress", { dateLabel: selected?.dateLabel ?? "", label: selected?.label ?? "" })}
                   </p>
                 </div>
               ) : (
                 <WeeklyCalendar
                   durationMinutes={cfg.durationMinutes}
                   onSlotSelected={handleSlotSelected}
-                  onSlotFocused={setFocusedSlot}
+                  onSlotFocused={(slot) => { setFocusedSlot(slot); if (slot) setHourUnavailable(false); }}
                   selectedSlot={selected}
                   initialFocusedSlotStart={initialSlot?.startIso}
                   initialWeekOffset={initialWeekOffset}
