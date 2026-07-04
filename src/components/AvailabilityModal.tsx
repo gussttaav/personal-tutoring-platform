@@ -4,9 +4,12 @@
  * AvailabilityModal — availability preview
  *
  * Shows an 8-column time-grid calendar (time markers + 7 day columns) of
- * 1-hour slots fetched from /api/availability (no auth required). On slot
- * selection, immediately invokes onSlotSelected and closes — the caller
- * decides which booking surface to open based on user state.
+ * 30-minute slots fetched from /api/availability (no auth required). Visual
+ * style mirrors WeeklyCalendar: per-row "HH:MM" markers with tiered
+ * de-emphasis, emerald hour-boundary lines, zebra hour banding, and flush
+ * (label-less) slot cells. On slot selection, immediately invokes
+ * onSlotSelected and closes — the caller decides which booking surface to
+ * open based on user state.
  *
  * Layout:
  *   - Mobile  (< 640px): bottom sheet, all 7 days visible, no horizontal scroll
@@ -82,39 +85,69 @@ function getNowMinutes(tz: string): number {
   return parseInt(h, 10) * 60 + parseInt(m, 10);
 }
 
+/** The atomic grid granularity — every row is a 30-minute slot. */
+const ATOMIC_MIN = 30;
+
+/** Classify a time row into its visual hierarchy tier. */
+function getTimeRowHierarchy(hhmm: string): "hour" | "half" {
+  const mins = hhmm.split(":")[1] ?? "00";
+  return mins === "00" ? "hour" : "half";
+}
+
+/** Border style for a grid row based on its position and time hierarchy. */
+function rowBorderTop(i: number, hhmm: string): string | undefined {
+  if (i === 0) return undefined;
+  // Hour boundary is a structural 2px line, faintly tinted with the emerald
+  // accent — a categorically different weight AND hue than the neutral half
+  // hairline, so the eye can lock onto it on two dimensions.
+  if (getTimeRowHierarchy(hhmm) === "hour") return "2px solid rgba(78,222,163,0.22)";
+  return "1px solid rgba(255,255,255,0.05)";
+}
+
 /**
- * Returns true if a 60-minute slot starting at `hour` fits within the
- * configured working-hour windows for the given day-of-week.
+ * Faint alternating background tint per whole hour, so the eye groups the two
+ * rows of a single hour pre-attentively (zebra banding). Odd hours get the
+ * tint; even hours stay on the base background. Shows through the
+ * semi-transparent slot cells, so it reads on every column.
  */
-function isHourInWorkingWindow(weekly: WeeklyHours, dow: number, hour: number): boolean {
-  return isWithinBlocks(weekly[dow] ?? [], hour * 60, 60);
+function hourBandBackground(hhmm: string): string | undefined {
+  const h = parseInt(hhmm.split(":")[0] ?? "0", 10);
+  return h % 2 === 1 ? "rgba(255,255,255,0.015)" : undefined;
 }
 
-/** Extract just the start time from a label like "09:00–10:00" → "09:00" */
-function startTimeFromLabel(label: string): string {
-  return label.split(/\s*[–\-]\s*/)[0] ?? label;
+/** Build "HH:MM" time rows for the grid, bounded by the configured hours. */
+function buildTimeRows(atomicMins: number, startMin: number, endMin: number): string[] {
+  const rows: string[] = [];
+  for (let m = startMin; m + atomicMins <= endMin; m += atomicMins) {
+    const h  = Math.floor(m / 60);
+    const mm = m % 60;
+    rows.push(`${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
+  }
+  return rows;
 }
 
-/** Extract the start hour integer from a label like "09:00–10:00" → 9 */
-function startHourFromLabel(label: string): number {
-  const timeStr = (label.split(/\s*[–\-]\s*/)[0] ?? "").trim();
-  return parseInt(timeStr.split(":")[0] ?? "0", 10);
-}
-
-/** Build a map of start-hour → ApiSlot for time-grid positioning */
-function buildHourMap(slots: ApiSlot[], tzDiffers: boolean): Map<number, ApiSlot> {
-  const map = new Map<number, ApiSlot>();
+/** Map each slot's display-timezone start "HH:MM" → ApiSlot. */
+function buildTimeMap(slots: ApiSlot[], tzDiffers: boolean): Map<string, ApiSlot> {
+  const map = new Map<string, ApiSlot>();
   for (const slot of slots) {
     const label = tzDiffers ? slot.localLabel : slot.label;
-    map.set(startHourFromLabel(label), slot);
+    const key   = label.split(/\s*[–\-]\s*/)[0]?.trim() ?? "";
+    if (key) map.set(key, slot);
   }
   return map;
 }
 
-function formatHourLabel(hour: number): string {
-  if (hour < 12)  return `${String(hour).padStart(2, "0")} AM`;
-  if (hour === 12) return "12 PM";
-  return `${String(hour - 12).padStart(2, "0")} PM`;
+/** Returns true if a 30-minute row falls within this day's working windows. */
+function isWithinWorkingHours(weekly: WeeklyHours, dow: number, hhmm: string, atomicMins: number): boolean {
+  const [hStr, mStr] = hhmm.split(":");
+  const totalMin     = parseInt(hStr!) * 60 + parseInt(mStr!);
+  return isWithinBlocks(weekly[dow] ?? [], totalMin, atomicMins);
+}
+
+/** Extract the display-timezone start "HH:MM" from a slot (e.g. "09:00–09:30" → "09:00"). */
+function slotStartTime(slot: ApiSlot, tzDiffers: boolean): string {
+  const label = tzDiffers ? slot.localLabel : slot.label;
+  return label.split(/\s*[–\-]\s*/)[0]?.trim() ?? label;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -131,12 +164,11 @@ export default function AvailabilityModal({
     () => gridHourRange(schedule.weeklyHours),
     [schedule.weeklyHours],
   );
-  // Integer hour markers for the grid (e.g. [9,10,…,18]).
-  const timeRows = useMemo(() => {
-    const arr: number[] = [];
-    for (let h = minHour; h < maxHour; h++) arr.push(h);
-    return arr;
-  }, [minHour, maxHour]);
+  // "HH:MM" row markers for the grid, one per 30-minute slot.
+  const timeRows = useMemo(
+    () => buildTimeRows(ATOMIC_MIN, minHour * 60, maxHour * 60),
+    [minHour, maxHour],
+  );
 
   const [weekOffset,     setWeekOffset]     = useState(0);
   const [slotsMap,       setSlotsMap]       = useState<Record<string, DaySlots>>({});
@@ -147,6 +179,9 @@ export default function AvailabilityModal({
   }, schedule.timezone);
   const [isMobile,       setIsMobile]       = useState(false);
   const [nowMadridMin,   setNowMadridMin]   = useState<number>(() => getNowMinutes(schedule.timezone));
+  // The pre-confirmed slot: first click focuses it (highlight + footer bar);
+  // a second click on the same cell (or the footer button) confirms and closes.
+  const [focused,        setFocused]        = useState<{ date: Date; slot: ApiSlot } | null>(null);
 
   const maxWeekOffset = schedule.bookingWindowWeeks - 1;
   const weekStart     = getWeekStart(weekOffset);
@@ -187,6 +222,8 @@ export default function AvailabilityModal({
   if (fetchKey !== prevFetchKey) {
     setPrevFetchKey(fetchKey);
     setSlotsMap({});
+    // The focused cell belongs to the previous week/timezone view — drop it.
+    setFocused(null);
   }
 
   useEffect(() => {
@@ -217,7 +254,7 @@ export default function AvailabilityModal({
       controllers.push(controller);
 
       const tz = encodeURIComponent(userTz);
-      fetch(`/api/availability?date=${key}&duration=60&tz=${tz}`, { signal: controller.signal })
+      fetch(`/api/availability?date=${key}&duration=${ATOMIC_MIN}&tz=${tz}`, { signal: controller.signal })
         .then((r) => r.json())
         .then((data) => {
           setSlotsMap((prev) => ({
@@ -240,21 +277,48 @@ export default function AvailabilityModal({
     return d;
   });
 
+  // First click focuses the cell; a second click on the same cell confirms.
+  // Clicking a different available cell simply moves the focus.
   const handleSlotClick = useCallback((date: Date, slot: ApiSlot) => {
-    onSlotSelected(buildSelectedSlot(date, slot, userTz, schedule.timezone, locale));
+    if (focused && focused.slot.start === slot.start) {
+      onSlotSelected(buildSelectedSlot(date, slot, userTz, schedule.timezone, locale));
+      onClose();
+      return;
+    }
+    setFocused({ date, slot });
+  }, [focused, userTz, schedule.timezone, onSlotSelected, onClose, locale]);
+
+  // Footer "Confirm" button — same effect as clicking the focused cell again.
+  const handleConfirm = useCallback(() => {
+    if (!focused) return;
+    onSlotSelected(buildSelectedSlot(focused.date, focused.slot, userTz, schedule.timezone, locale));
     onClose();
-  }, [userTz, schedule.timezone, onSlotSelected, onClose, locale]);
+  }, [focused, userTz, schedule.timezone, onSlotSelected, onClose, locale]);
+
+  // Drop a focused slot that has ticked into the past or the min-notice window,
+  // so the footer never confirms an unbookable time. Re-checks on each minute tick.
+  useEffect(() => {
+    if (!focused) return;
+    const startMs  = new Date(focused.slot.start).getTime();
+    const nowMs    = Date.now();
+    const isPast   = startMs + ATOMIC_MIN * 60_000 <= nowMs;
+    const isNotice = startMs < nowMs + schedule.minNoticeHours * 3_600_000;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- guard runs only when the focused slot expires
+    if (isPast || isNotice) setFocused(null);
+  }, [nowMadridMin, focused, schedule.minNoticeHours]);
 
   const today   = new Date(); today.setHours(0, 0, 0, 0);
   const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + schedule.bookingWindowWeeks * 7);
 
   // ── Time indicator ───────────────────────────────────────────────────────
-  const ROW_H_VAL    = isMobile ? 40 : 48;
+  // Rows are halved (20/24) vs. the old 1-hour grid (40/48) so twice as many
+  // 30-minute rows keep the overall grid height unchanged.
+  const ROW_H_VAL    = isMobile ? 20 : 24;
   const HEADER_H_VAL = isMobile ? 52 : 64;
   const GRID_START_MIN = minHour * 60;
   const GRID_END_MIN   = maxHour * 60;
   const showTimeLine   = weekOffset === 0 && nowMadridMin >= GRID_START_MIN && nowMadridMin < GRID_END_MIN;
-  const timeLineTop    = HEADER_H_VAL + ((nowMadridMin - GRID_START_MIN) / 60) * ROW_H_VAL;
+  const timeLineTop    = HEADER_H_VAL + ((nowMadridMin - GRID_START_MIN) / ATOMIC_MIN) * ROW_H_VAL;
 
   // ── Modal shell ──────────────────────────────────────────────────────────
   const NAVBAR_H = 64; // px — matches the site's h-16 fixed navbar
@@ -478,7 +542,7 @@ export default function AvailabilityModal({
                     </div>
                   )}
 
-                  <TimeColumn isMobile={isMobile} hours={timeRows} />
+                  <TimeColumn isMobile={isMobile} timeRows={timeRows} />
 
                   {days.map((date) => {
                     const key      = formatDateKey(date);
@@ -502,9 +566,10 @@ export default function AvailabilityModal({
                         nowMadridMin={nowMadridMin}
                         onSlotClick={(slot) => handleSlotClick(date, slot)}
                         locale={locale}
-                        hours={timeRows}
+                        timeRows={timeRows}
                         weekly={schedule.weeklyHours}
                         minNoticeHours={schedule.minNoticeHours}
+                        focusedStart={focused?.slot.start ?? null}
                       />
                     );
                   })}
@@ -548,6 +613,73 @@ export default function AvailabilityModal({
                   </span>
                 </div>
           </div>
+
+          {/* ── Confirmation footer ── */}
+          {focused && (
+            <div
+              role="status"
+              aria-live="polite"
+              style={{
+                display:        "flex",
+                alignItems:     "center",
+                justifyContent: "space-between",
+                gap:            12,
+                padding:        "12px 20px",
+                borderTop:      "1px solid rgba(255,255,255,0.07)",
+                background:     "#161518",
+                flexShrink:     0,
+                animation:      "availFooterUp 0.2s ease both",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                <span
+                  className="material-symbols-outlined"
+                  style={{ fontSize: 20, color: "#4edea3", flexShrink: 0, lineHeight: 1 }}
+                >
+                  schedule
+                </span>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{
+                    fontFamily:   "var(--font-headline, Manrope), sans-serif",
+                    fontSize:     isMobile ? 14 : 15,
+                    fontWeight:   700,
+                    color:        "#e5e1e4",
+                    margin:       0,
+                    lineHeight:   1.2,
+                    whiteSpace:   "nowrap",
+                    overflow:     "hidden",
+                    textOverflow: "ellipsis",
+                  }}>
+                    {formatDateLabel(focused.date, locale)} · {slotStartTime(focused.slot, tzDiffers)}
+                  </p>
+                  <p style={{ fontSize: 11, color: "#86948a", margin: "2px 0 0" }}>
+                    {t("tapToConfirm")}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleConfirm}
+                style={{
+                  flexShrink:   0,
+                  padding:      "10px 18px",
+                  borderRadius: 10,
+                  border:       "none",
+                  background:   "#4edea3",
+                  color:        "#08130d",
+                  fontFamily:   "inherit",
+                  fontSize:     isMobile ? 13 : 14,
+                  fontWeight:   700,
+                  cursor:       "pointer",
+                  transition:   "background 0.12s",
+                }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#6ee8b4"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "#4edea3"; }}
+              >
+                {t("confirm")}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -560,6 +692,10 @@ export default function AvailabilityModal({
           from { transform: translateY(100%); }
           to   { transform: translateY(0); }
         }
+        @keyframes availFooterUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         /* Hide the chat FAB while this modal is mounted */
         .chat-fab { display: none !important; }
       `}</style>
@@ -569,8 +705,8 @@ export default function AvailabilityModal({
 
 // ─── Time column ───────────────────────────────────────────────────────────────
 
-function TimeColumn({ isMobile, hours }: { isMobile: boolean; hours: number[] }) {
-  const ROW_H    = isMobile ? 40 : 48;
+function TimeColumn({ isMobile, timeRows }: { isMobile: boolean; timeRows: string[] }) {
+  const ROW_H    = isMobile ? 20 : 24;
   const HEADER_H = isMobile ? 52 : 64;
   return (
     <div style={{ background: "#111113" }}>
@@ -579,31 +715,53 @@ function TimeColumn({ isMobile, hours }: { isMobile: boolean; hours: number[] })
         height:       HEADER_H,
         borderBottom: "1px solid rgba(255,255,255,0.1)",
       }} />
-      {/* Hour rows */}
-      {hours.map((hour, i) => (
-        <div
-          key={hour}
-          style={{
-            height:         ROW_H,
-            display:        "flex",
-            alignItems:     "flex-start",
-            justifyContent: "flex-end",
-            paddingRight:   8,
-            paddingTop:     4,
-            borderTop:      i > 0 ? "1px solid rgba(255,255,255,0.05)" : undefined,
-          }}
-        >
-          <span style={{
-            fontSize:           isMobile ? 9 : 10,
-            fontWeight:         500,
-            color:              "#86948a",
-            fontVariantNumeric: "tabular-nums",
-            whiteSpace:         "nowrap",
-          }}>
-            {formatHourLabel(hour)}
-          </span>
-        </div>
-      ))}
+      {/* Time labels — "HH:MM" for every 30-minute row */}
+      {timeRows.map((hhmm, i) => {
+        const tier = getTimeRowHierarchy(hhmm);
+        return (
+          <div
+            key={hhmm}
+            style={{
+              height:         ROW_H,
+              display:        "flex",
+              alignItems:     "flex-start",
+              justifyContent: "flex-end",
+              paddingRight:   8,
+              paddingTop:     3,
+              borderTop:      rowBorderTop(i, hhmm),
+              background:     hourBandBackground(hhmm),
+              position:       "relative",
+            }}
+          >
+            {/* Hour tick — a brighter emerald stub at the gutter's inner edge
+                that anchors the eye to the hour line beside its label. */}
+            {i > 0 && tier === "hour" && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position:   "absolute",
+                  top:        -2,
+                  right:      0,
+                  width:      8,
+                  height:     2,
+                  background: "rgba(78,222,163,0.5)",
+                }}
+              />
+            )}
+            <span style={{
+              fontSize:           isMobile
+                ? (tier === "hour" ? 9 : 7.5)
+                : (tier === "hour" ? 10 : 8.5),
+              fontWeight:         tier === "hour" ? 600 : 400,
+              color:              tier === "hour" ? "#c2d0c8" : "rgba(134,148,138,0.6)",
+              fontVariantNumeric: "tabular-nums",
+              whiteSpace:         "nowrap",
+            }}>
+              {hhmm}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -612,7 +770,7 @@ function TimeColumn({ isMobile, hours }: { isMobile: boolean; hours: number[] })
 
 function DayColumn({
   date, daySlots, isMobile, isClosed, isToday, tzDiffers, nowMadridMin, onSlotClick, locale,
-  hours, weekly, minNoticeHours,
+  timeRows, weekly, minNoticeHours, focusedStart,
 }: {
   date:           Date;
   daySlots:       DaySlots | undefined;
@@ -623,14 +781,15 @@ function DayColumn({
   locale:         string;
   nowMadridMin:   number;
   onSlotClick:    (slot: ApiSlot) => void;
-  hours:          number[];
+  timeRows:       string[];
   weekly:         WeeklyHours;
   minNoticeHours: number;
+  focusedStart:   string | null;
 }) {
-  const ROW_H    = isMobile ? 40 : 48;
+  const ROW_H    = isMobile ? 20 : 24;
   const HEADER_H = isMobile ? 52 : 64;
   const dow      = date.getDay();
-  const hourMap  = Array.isArray(daySlots) ? buildHourMap(daySlots, tzDiffers) : null;
+  const timeMap  = Array.isArray(daySlots) ? buildTimeMap(daySlots, tzDiffers) : null;
   const isLoading = daySlots === "loading" || daySlots === undefined;
 
   return (
@@ -684,66 +843,68 @@ function DayColumn({
       </div>
 
       {/* Time rows */}
-      {hours.map((hour, i) => {
-        const slot      = hourMap?.get(hour) ?? null;
-        const timeLabel = slot
-          ? startTimeFromLabel(tzDiffers ? slot.localLabel : slot.label)
-          : null;
+      {timeRows.map((hhmm, i) => {
+        const slot = timeMap?.get(hhmm) ?? null;
 
         if (isClosed) {
           return (
-            <div key={hour} style={{
-              height:    ROW_H,
-              borderTop: i > 0 ? "1px solid rgba(255,255,255,0.03)" : undefined,
+            <div key={hhmm} style={{
+              height:     ROW_H,
+              borderTop:  rowBorderTop(i, hhmm),
+              background: hourBandBackground(hhmm),
             }} />
           );
         }
 
         if (isLoading) {
           return (
-            <div key={hour} style={{
+            <div key={hhmm} style={{
               height:         ROW_H,
-              borderTop:      i > 0 ? "1px solid rgba(255,255,255,0.03)" : undefined,
-              display:        hour === 10 ? "flex" : undefined,
+              borderTop:      rowBorderTop(i, hhmm),
+              background:     hourBandBackground(hhmm),
+              display:        hhmm === "10:00" ? "flex" : undefined,
               alignItems:     "center",
               justifyContent: "center",
             }}>
-              {hour === 10 && <LoadingDots />}
+              {hhmm === "10:00" && <LoadingDots />}
             </div>
           );
         }
 
-        const rowMin      = hour * 60;
-        const isPastRow   = isToday && rowMin + 60 <= nowMadridMin;
+        const [rowH, rowM] = hhmm.split(":").map(Number);
+        const rowMin      = (rowH ?? 0) * 60 + (rowM ?? 0);
+        const isPastRow   = isToday && rowMin + ATOMIC_MIN <= nowMadridMin;
         const isNoticeRow = isToday && !isPastRow && rowMin < nowMadridMin + minNoticeHours * 60;
 
         if (isPastRow) {
           return (
-            <div key={hour} style={{
-              height:    ROW_H,
-              borderTop: i > 0 ? "1px solid rgba(255,255,255,0.03)" : undefined,
+            <div key={hhmm} style={{
+              height:     ROW_H,
+              borderTop:  rowBorderTop(i, hhmm),
+              background: hourBandBackground(hhmm),
             }} />
           );
         }
 
         const cellState: "available" | "booked" | "unavailable" =
-          isNoticeRow                            ? "unavailable"
-          : slot                                 ? "available"
-          : isHourInWorkingWindow(weekly, dow, hour) ? "booked"
+          isNoticeRow                                          ? "unavailable"
+          : slot                                               ? "available"
+          : isWithinWorkingHours(weekly, dow, hhmm, ATOMIC_MIN) ? "booked"
           : "unavailable";
 
         return (
           <div
-            key={hour}
+            key={hhmm}
             style={{
-              height:    ROW_H,
-              padding:   "3px 3px",
-              borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : undefined,
+              height:     ROW_H,
+              padding:    0,
+              borderTop:  rowBorderTop(i, hhmm),
+              background: hourBandBackground(hhmm),
             }}
           >
             <SlotCell
               state={cellState}
-              timeLabel={cellState === "available" && !isMobile ? timeLabel : null}
+              isFocused={!!slot && slot.start === focusedStart}
               onClick={cellState === "available" && slot ? () => onSlotClick(slot) : undefined}
             />
           </div>
@@ -757,11 +918,11 @@ function DayColumn({
 
 function SlotCell({
   state,
-  timeLabel,
+  isFocused,
   onClick,
 }: {
   state:     "available" | "booked" | "unavailable";
-  timeLabel: string | null;
+  isFocused: boolean;
   onClick?:  () => void;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -769,7 +930,7 @@ function SlotCell({
   if (state === "unavailable") {
     return (
       <div style={{
-        width: "100%", height: "100%", borderRadius: 3,
+        width: "100%", height: "100%", borderRadius: 0,
         border: "1px solid rgba(255,255,255,0.04)",
         background: "repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 6px)",
         cursor: "default",
@@ -780,7 +941,7 @@ function SlotCell({
   if (state === "booked") {
     return (
       <div style={{
-        width: "100%", height: "100%", borderRadius: 3,
+        width: "100%", height: "100%", borderRadius: 0,
         border: "1px solid rgba(255,180,171,0.18)",
         background: "rgba(255,180,171,0.07)",
         cursor: "default",
@@ -788,43 +949,34 @@ function SlotCell({
     );
   }
 
+  // Focused (pre-confirmed) cells read at a stronger, hover-independent intensity
+  // — matching WeeklyCalendar's focus state — so the pending selection stands out.
+  const background = isFocused
+    ? "rgba(78,222,163,0.42)"
+    : hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)";
+  const borderColor = isFocused
+    ? "rgba(78,222,163,0.75)"
+    : hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)";
+
   return (
     <button
       onClick={onClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      aria-pressed={isFocused}
       style={{
-        width:          "100%",
-        height:         "100%",
-        display:        "flex",
-        alignItems:     "flex-start",
-        justifyContent: "flex-start",
-        padding:        "3px 4px",
-        cursor:         "pointer",
-        border:         `1px solid ${hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)"}`,
-        background:     hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)",
-        borderRadius:   4,
-        transition:     "background 0.12s, border-color 0.12s",
-        fontFamily:     "inherit",
-        overflow:       "hidden",
+        width:        "100%",
+        height:       "100%",
+        cursor:       "pointer",
+        border:       `1px solid ${borderColor}`,
+        background,
+        borderRadius: 0,
+        transition:   "background 0.12s, border-color 0.12s",
+        fontFamily:   "inherit",
+        overflow:     "hidden",
       }}
-      aria-label={timeLabel ? `Disponible a las ${timeLabel}` : "Hora disponible"}
-    >
-      {timeLabel && (
-        <span style={{
-          fontSize:      10,
-          fontWeight:    600,
-          color:         "#4edea3",
-          whiteSpace:    "nowrap",
-          overflow:      "hidden",
-          textOverflow:  "ellipsis",
-          lineHeight:    1,
-          pointerEvents: "none",
-        }}>
-          {timeLabel}
-        </span>
-      )}
-    </button>
+      aria-label="Hora disponible"
+    />
   );
 }
 

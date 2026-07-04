@@ -295,6 +295,8 @@
       "vatIncluded": "VAT included",
       "paymentProtected": "Your payment is protected. The charge will be processed when you confirm the next step.",
       "bookingProgress": "Booking {dateLabel} at {label}…",
+      "verifyingAvailability": "Checking availability…",
+      "hourUnavailableNotice": "The time you picked no longer has a full hour free. Please choose another available slot in the calendar.",
       "changeSessionType": "Change session type",
       "confirmReschedule": "Confirm reschedule",
       "confirmPay": "Confirm payment",
@@ -380,7 +382,9 @@
       "scheduleIn": "Times in {timezone}",
       "available": "Available",
       "booked": "Booked",
-      "unavailable": "Unavailable"
+      "unavailable": "Unavailable",
+      "tapToConfirm": "Tap again to confirm",
+      "confirm": "Confirm"
     },
     "weeklyCalendar": {
       "subtitle": "Times in your zone ({userTz})",
