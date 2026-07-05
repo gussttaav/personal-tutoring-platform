@@ -6,10 +6,17 @@
  * being interpolated into HTML strings. Without this, a student whose name
  * contained HTML tags could execute arbitrary JavaScript in the recipient's
  * email client (stored XSS).
+ *
+ * REFACTOR-R3-P1-01: send() now throws on a non-OK Resend response instead of
+ * logging and returning normally, so callers (BookingService.sendWithRetry,
+ * PaymentService.writeDeadLetter) can actually retry or record the failure.
+ * All console.* calls replaced with structured log(). The E2E-skip and
+ * missing-RESEND_API_KEY paths remain non-throwing no-ops.
  */
 
 import { getTranslations } from "next-intl/server";
 import { formatDate, formatTime } from "@/lib/formatting";
+import { log } from "@/lib/logger";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const FROM     = process.env.RESEND_FROM ?? "Gustavo Torres <onboarding@resend.dev>";
@@ -45,12 +52,15 @@ async function send(
     .map((e) => e.trim())
     .filter(Boolean);
   if (testAccounts.includes(payload.to) || (studentEmail && testAccounts.includes(studentEmail))) {
-    console.info(`[email] test booking — skipped send to ${payload.to}`);
+    log("info", "Email skipped for E2E test account", { service: "email", to: payload.to });
     return;
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) { console.warn("[email] RESEND_API_KEY not set"); return; }
+  if (!apiKey) {
+    log("warn", "RESEND_API_KEY not set — email skipped", { service: "email", to: payload.to });
+    return;
+  }
 
   const res = await fetch(RESEND_API_URL, {
     method: "POST",
@@ -60,12 +70,14 @@ async function send(
 
   if (!res.ok) {
     const body = await res.text();
-    console.error(`[email] Resend error ${res.status}: ${body}`);
-    console.error(`[email] FROM: ${FROM} — if 403, set RESEND_FROM=onboarding@resend.dev`);
-  } else {
-    const data = await res.json();
-    console.info(`[email] Sent to ${payload.to} — id: ${(data as { id?: string }).id}`);
+    log("error", "Resend send failed", {
+      service: "email", status: res.status, to: payload.to, from: FROM, body,
+    });
+    throw new Error(`Resend ${res.status}: ${body.slice(0, 200)}`);
   }
+
+  const data = await res.json();
+  log("info", "Email sent", { service: "email", to: payload.to, id: (data as { id?: string }).id });
 }
 
 const STYLES = `

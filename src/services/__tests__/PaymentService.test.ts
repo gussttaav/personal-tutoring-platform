@@ -13,7 +13,14 @@ jest.mock("@/infrastructure/google", () => ({
   getAvailableSlots: (...args: unknown[]) => mockGetAvailableSlots(...args),
 }));
 
-// Mock fetch (used by writeDeadLetter for admin notification email)
+// REFACTOR-R3-P1-01: send() now throws on Resend failure. writeDeadLetter
+// imports sendDeadLetterNotificationEmail directly (not via IEmailClient),
+// so mock the module to control failure injection per test.
+const mockSendDeadLetterEmail = jest.fn().mockResolvedValue(undefined);
+jest.mock("@/infrastructure/resend/email-functions", () => ({
+  sendDeadLetterNotificationEmail: (...args: unknown[]) => mockSendDeadLetterEmail(...args),
+}));
+
 global.fetch = jest.fn().mockResolvedValue({});
 
 import { PaymentService } from "../PaymentService";
@@ -282,6 +289,22 @@ describe("PaymentService.processWebhookEvent — single session", () => {
       stripeSessionId: "pi_single_123",
       userId:          TEST_USER_ID,
     }));
+    expect(paymentRepo.markProcessed).not.toHaveBeenCalled();
+  });
+
+  // REFACTOR-R3-P1-01: the dead-letter admin email now throws on Resend
+  // failure — writeDeadLetter's .catch(() => {}) must keep it non-fatal.
+  it("still writes dead-letter when the notification email throws", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.recordFailedBooking.mockResolvedValue(undefined);
+    (bookings.createBooking as jest.Mock).mockRejectedValue(new Error("calendar API down"));
+    mockSendDeadLetterEmail.mockRejectedValueOnce(new Error("resend down"));
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(mockSendDeadLetterEmail).toHaveBeenCalled();
+    expect(paymentRepo.recordFailedBooking).toHaveBeenCalled();
     expect(paymentRepo.markProcessed).not.toHaveBeenCalled();
   });
 });
