@@ -242,6 +242,32 @@ describe("BookingService.createBooking", () => {
     });
   });
 
+  // REFACTOR-R3-P1-01: send() now throws on Resend failure, so sendWithRetry
+  // actually retries and emailFailed reflects reality.
+  it("returns emailFailed: true after 3 failed confirmation attempts (booking still succeeds)", async () => {
+    const email = mockEmail();
+    email.sendConfirmation.mockRejectedValue(new Error("resend down"));
+    const service = makeService({ email });
+
+    const result = await service.createBooking(basePackInput());
+
+    expect(email.sendConfirmation).toHaveBeenCalledTimes(3);
+    expect(result).toMatchObject({ eventId: "evt1", emailFailed: true });
+  }, 15_000);
+
+  it("returns emailFailed: false when confirmation succeeds on the third attempt", async () => {
+    const email = mockEmail();
+    email.sendConfirmation
+      .mockRejectedValueOnce(new Error("resend down"))
+      .mockRejectedValueOnce(new Error("resend down"));
+    const service = makeService({ email });
+
+    const result = await service.createBooking(basePackInput());
+
+    expect(email.sendConfirmation).toHaveBeenCalledTimes(3);
+    expect(result.emailFailed).toBe(false);
+  }, 15_000);
+
   it("writes a pending_termination row on successful booking", async () => {
     const bookings = mockBookings();
     const service  = makeService({ bookings });

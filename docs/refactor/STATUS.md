@@ -1,6 +1,6 @@
 # Refactor Cycle 3 — Status
 
-**Started:** _not started_
+**Started:** 2026-07-05
 **Legend:** ⬜ not started · 🔄 in progress · ⛔ blocked · ✅ done
 
 Update this file when starting, completing, or blocking a task.
@@ -13,10 +13,10 @@ Update this file when starting, completing, or blocking a task.
 |------|-----|--------|-------|----|
 | [02 Slot re-check fails closed](phase-1-correctness/02-slot-recheck-fail-closed.md) | `REFACTOR-R3-P1-02` | ⬜ | _tbd_ | — |
 | [03 Booking-exists idempotency gate](phase-1-correctness/03-idempotency-booking-gate.md) | `REFACTOR-R3-P1-03` | ⬜ | _tbd_ | — |
-| [01 Email send() throws on failure](phase-1-correctness/01-email-send-throws.md) | `REFACTOR-R3-P1-01` | ⬜ | _tbd_ | — |
+| [01 Email send() throws on failure](phase-1-correctness/01-email-send-throws.md) | `REFACTOR-R3-P1-01` | ✅ | Claude | local (`refactor/p1-01-email-send-throws`) |
 
 **Exit criteria**
-- [ ] Forced Resend 4xx/5xx in a service test → `emailFailed: true` surfaces to the booking caller
+- [x] Forced Resend 4xx/5xx in a service test → `emailFailed: true` surfaces to the booking caller
 - [ ] Forced `getAvailableSlots` throw in webhook path → route returns 500 (Stripe retries), no booking, no refund
 - [ ] Simulated `markProcessed` failure + webhook redelivery → no refund issued; duplicate skipped via booking-exists gate
 - [ ] `pnpm test` and `pnpm build` green
@@ -63,7 +63,7 @@ Update this file when starting, completing, or blocking a task.
 
 ## Deviations from plan
 
-_(record here as they happen)_
+- **P1-01:** `FakeEmailClient` did NOT gain a failure mode (task listed it conditionally). Service-level tests use `jest.Mocked<IEmailClient>` factories, and the dead-letter path imports `sendDeadLetterNotificationEmail` directly (bypasses `IEmailClient`), so failure injection uses jest mocks instead. Optional `AbortSignal.timeout` on the Resend fetch was not added.
 
 ## Known regressions introduced
 

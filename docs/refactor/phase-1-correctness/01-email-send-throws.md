@@ -1,6 +1,6 @@
 # P1-01 — `send()` must throw on Resend failure
 
-**Tag:** `REFACTOR-R3-P1-01` · **Severity:** 🟠 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R3-P1-01` · **Severity:** 🟠 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
@@ -77,12 +77,12 @@ Run `grep -rn "sendConfirmation\|sendCancellation\|sendNewBooking\|sendDeadLette
 
 ## Acceptance criteria
 
-- [ ] Resend 4xx/5xx → `send()` throws; `sendWithRetry` attempts 3× with backoff
-- [ ] After 3 failures, `createBooking` returns `emailFailed: true` (booking still succeeds)
-- [ ] `email-functions.ts` contains zero `console.*`
-- [ ] Missing `RESEND_API_KEY` and E2E-skip paths remain non-throwing no-ops (now via `log()`)
-- [ ] No caller of an email function is left with an unhandled rejection path (grep audit done)
-- [ ] File-top comment block updated with `REFACTOR-R3-P1-01`
+- [x] Resend 4xx/5xx → `send()` throws; `sendWithRetry` attempts 3× with backoff
+- [x] After 3 failures, `createBooking` returns `emailFailed: true` (booking still succeeds)
+- [x] `email-functions.ts` contains zero `console.*`
+- [x] Missing `RESEND_API_KEY` and E2E-skip paths remain non-throwing no-ops (now via `log()`)
+- [x] No caller of an email function is left with an unhandled rejection path (grep audit done)
+- [x] File-top comment block updated with `REFACTOR-R3-P1-01`
 
 ## Test plan
 
