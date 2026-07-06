@@ -85,10 +85,13 @@ export interface BookingRouterState {
   restoredSlot: SelectedSlot | null;
 }
 
+// SignInGate action labels are translation KEYS (resolved in SignInGate against
+// the `booking.signInGate.actions.*` namespace), not literal strings — so the
+// gate copy stays in sync with the active locale.
 const SESSION_SIGNIN_LABELS: Record<SingleSessionType, string> = {
-  free15min: "reservar el encuentro inicial gratuito",
-  session1h: "reservar una sesión de 1 hora",
-  session2h: "reservar una sesión de 2 horas",
+  free15min: "actions.bookFree15",
+  session1h: "actions.book1h",
+  session2h: "actions.book2h",
 };
 
 const VALID_SESSION_TYPES = new Set<string>(["free15min", "session1h", "session2h"]);
@@ -255,7 +258,7 @@ export function useBookingRouter(
 
   function handlePackBuy(size: PackSize) {
     if (!isSignedIn) {
-      setSignInGateLabel("comprar un pack de clases");
+      setSignInGateLabel("actions.buyPack");
       setSignInCallbackUrl(`/?intent=buy-pack&packSize=${size}`);
       setSelectedPack(size);
       return;
@@ -265,7 +268,7 @@ export function useBookingRouter(
 
   function handlePackSchedule() {
     if (!isSignedIn) {
-      setSignInGateLabel("reservar una clase de tu pack");
+      setSignInGateLabel("actions.schedulePackClass");
       setSignInCallbackUrl("/?action=schedule-pack");
       return;
     }
@@ -291,7 +294,7 @@ export function useBookingRouter(
     if (!isSignedIn) {
       const params = new URLSearchParams({ intent: "smart-book" });
       if (slot) encodeSlotParams(params, slot);
-      setSignInGateLabel(slot ? "reservar la hora elegida" : "reservar una sesión");
+      setSignInGateLabel(slot ? "actions.bookChosenTime" : "actions.bookSession");
       setSignInCallbackUrl(`/?${params.toString()}`);
       return;
     }

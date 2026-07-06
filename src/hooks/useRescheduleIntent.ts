@@ -79,7 +79,7 @@ export function useRescheduleIntent(isSignedIn: boolean): RescheduleState {
 
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mount read of URL params (with history mutation above), not a derived-state cascade.
       setPendingReschedule({ type: reschedule, token: token ?? null, callbackUrl });
-      setSignInLabel("reprogramar tu clase");
+      setSignInLabel("actions.reschedule");
     } else {
       // Already signed in — activate immediately
       setActiveReschedule({ type: reschedule, token: token ?? null });

@@ -370,7 +370,18 @@
     "signInGate": {
       "title": "Identifícate para continuar",
       "body": "Para <highlight>{actionLabel}</highlight> necesitamos verificar tu identidad. Solo tardará un momento.",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "continueGoogle": "Continuar con Google",
+      "actions": {
+        "bookFree15": "reservar el encuentro inicial gratuito",
+        "book1h": "reservar una sesión de 1 hora",
+        "book2h": "reservar una sesión de 2 horas",
+        "buyPack": "comprar un pack de clases",
+        "schedulePackClass": "reservar una clase de tu pack",
+        "bookChosenTime": "reservar la hora elegida",
+        "bookSession": "reservar una sesión",
+        "reschedule": "reprogramar tu clase"
+      }
     },
     "availabilityModal": {
       "viewAvailability": "Ver disponibilidad",

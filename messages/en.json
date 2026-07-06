@@ -370,7 +370,18 @@
     "signInGate": {
       "title": "Sign in to continue",
       "body": "To <highlight>{actionLabel}</highlight> we need to verify your identity. It will only take a moment.",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "continueGoogle": "Continue with Google",
+      "actions": {
+        "bookFree15": "book your free intro meeting",
+        "book1h": "book a 1-hour session",
+        "book2h": "book a 2-hour session",
+        "buyPack": "buy a class pack",
+        "schedulePackClass": "book a class from your pack",
+        "bookChosenTime": "book the selected time",
+        "bookSession": "book a session",
+        "reschedule": "reschedule your class"
+      }
     },
     "availabilityModal": {
       "viewAvailability": "Check availability",
