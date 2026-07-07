@@ -249,16 +249,18 @@ describe("PaymentService.processWebhookEvent — single session", () => {
     expect(bookings.createBooking).not.toHaveBeenCalled();
   });
 
-  it("defaults to slot free when getAvailableSlots throws", async () => {
-    const { service, paymentRepo, bookings } = makeService();
+  // REFACTOR-R3-P1-02: fail CLOSED — a freebusy failure must propagate (webhook 500 →
+  // Stripe redelivers), never "assume free". No booking, no refund in that case.
+  it("rejects (no booking, no refund) when getAvailableSlots throws", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
     paymentRepo.isProcessed.mockResolvedValue(false);
-    paymentRepo.markProcessed.mockResolvedValue(undefined);
     mockGetAvailableSlots.mockRejectedValue(new Error("network error"));
-    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
 
-    await service.processWebhookEvent(fakeSingleEvent());
+    await expect(service.processWebhookEvent(fakeSingleEvent())).rejects.toThrow("network error");
 
-    expect(bookings.createBooking).toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(paymentRepo.markProcessed).not.toHaveBeenCalled();
   });
 
   it("books a single session with a half-hour start time (:30)", async () => {
@@ -498,6 +500,32 @@ describe("PaymentService.reprocessFailedBooking", () => {
 
     expect(result).toEqual({ ok: true });
     expect(paymentRepo.clearFailedBooking).toHaveBeenCalledWith("pi_single_123");
+  });
+
+  // REFACTOR-R3-P1-02: a throwing re-check must surface as { ok: false }, not an
+  // unhandled rejection — the fail-closed throw is caught by reprocessFailedBooking.
+  it("returns ok:false when the slot re-check throws", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.listFailedBookings.mockResolvedValue([deadLetterEntry]);
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    stripe.retrievePaymentIntent.mockResolvedValue({
+      id:       "pi_single_123",
+      metadata: {
+        student_email:    "student@test.com",
+        student_name:     "Student",
+        start_iso:        "2099-12-01T10:00:00.000Z",
+        end_iso:          "2099-12-01T11:00:00.000Z",
+        session_duration: "1h",
+        reschedule_token: "",
+      },
+    } as unknown as Stripe.PaymentIntent);
+    mockGetAvailableSlots.mockRejectedValue(new Error("network error"));
+
+    const result = await service.reprocessFailedBooking("pi_single_123");
+
+    expect(result.ok).toBe(false);
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(paymentRepo.clearFailedBooking).not.toHaveBeenCalled();
   });
 
   it("returns ok:false when Stripe retrieval fails", async () => {
