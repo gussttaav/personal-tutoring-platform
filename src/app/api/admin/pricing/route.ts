@@ -3,15 +3,18 @@
  * POST /api/admin/pricing — update one or more prices (requires reason).
  *
  * Thin adapter — auth + admin check, Zod validation, service delegation.
- * Prices are read fresh per request (see pricing-display.ts), so an update is
- * reflected across the customer-facing UI on the next render — no cache bust.
+ * The customer-facing UI reads prices through an ISR cache (see
+ * pricing-display.ts); on save we bust it by tag so the update is reflected on
+ * the next render.
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { log } from "@/lib/logger";
 import { UpdatePricesSchema } from "@/lib/schemas";
+import { PRICING_CACHE_TAG } from "@/lib/pricing-display";
 import { pricingService } from "@/services";
 
 export async function GET() {
@@ -52,6 +55,10 @@ export async function POST(req: NextRequest) {
       reason:      update.reason,
     });
   }
+
+  // Bust the ISR pricing cache so the new prices show on the customer-facing UI
+  // on the next render (instant — not waiting on the time-based revalidate).
+  revalidateTag(PRICING_CACHE_TAG, "max");
 
   log("info", "Admin updated pricing", {
     service: "admin",

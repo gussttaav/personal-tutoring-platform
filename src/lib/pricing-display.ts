@@ -39,14 +39,17 @@ export function formatPrice(cents: number, currency: string, locale = "es"): str
 }
 
 // Cached read so the (statically generated, SEO-critical) public pages don't hit
-// the DB per request. Time-based ISR: an admin price edit shows on public pages
-// within REVALIDATE_SECONDS. The CHARGE (PaymentService) and the admin panel read
-// pricingService directly — never this cache — so they are always immediately fresh.
-const REVALIDATE_SECONDS = 60;
+// the DB per request. An admin price edit calls `revalidateTag(PRICING_CACHE_TAG)`
+// so it shows on public pages immediately. The time-based `revalidate` is only a
+// long safety net for out-of-band DB changes — keeping it long avoids needless
+// ISR-cache rewrites on every page hit. The CHARGE (PaymentService) and the admin
+// panel read pricingService directly — never this cache — so they are always fresh.
+export const PRICING_CACHE_TAG = "pricing-all";
+const REVALIDATE_SECONDS = 3600;
 const getRawPrices = unstable_cache(
   async () => pricingService.getAll(),
   ["pricing-all"],
-  { revalidate: REVALIDATE_SECONDS },
+  { revalidate: REVALIDATE_SECONDS, tags: [PRICING_CACHE_TAG] },
 );
 
 export async function getDisplayPrices(locale = "es"): Promise<DisplayPrices> {

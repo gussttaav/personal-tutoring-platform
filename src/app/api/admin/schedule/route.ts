@@ -8,12 +8,14 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { isValidOrigin } from "@/lib/csrf";
 import { log } from "@/lib/logger";
 import { UpdateScheduleSchema } from "@/lib/schemas";
 import { bumpScheduleVersion } from "@/lib/availability-cache";
+import { SCHEDULE_CACHE_TAG } from "@/lib/schedule-config";
 import { scheduleService } from "@/services";
 import type { WeeklyHours } from "@/domain/types";
 
@@ -67,10 +69,11 @@ export async function POST(req: NextRequest) {
     reason:         parsed.data.reason,
   });
 
-  // The schedule changed: clear the Redis availability cache (all dates) so slots
-  // recompute against the new hours. The customer-facing grid reads the schedule
-  // via a 60s ISR cache (see schedule-config.ts), so it refreshes within a minute
-  // — matching the pricing feature's behaviour.
+  // The schedule changed. Invalidate the ISR schedule cache by tag so the
+  // customer-facing grid reflects the new hours on the next render (instant —
+  // not waiting on the time-based revalidate), and clear the Redis availability
+  // cache (all dates) so slots recompute against the new hours.
+  revalidateTag(SCHEDULE_CACHE_TAG, "max");
   await bumpScheduleVersion();
 
   log("info", "Admin updated schedule", {

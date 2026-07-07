@@ -6,6 +6,10 @@
 // new schedule shows up immediately (and `bumpScheduleVersion()` clears the
 // Redis availability cache). BookingService / the charge path read
 // scheduleService directly — never this cache — so they are always fresh.
+//
+// The time-based `revalidate` is only a long safety net for out-of-band DB
+// changes (e.g. a direct SQL edit) — admin saves stay instant via the tag.
+// Keeping it long avoids needless ISR-cache rewrites on every page hit.
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { scheduleService } from "@/services";
@@ -13,7 +17,7 @@ import type { ScheduleConfig } from "@/domain/types";
 
 export const SCHEDULE_CACHE_TAG = "schedule-config";
 
-const REVALIDATE_SECONDS = 60;
+const REVALIDATE_SECONDS = 3600;
 
 export const getScheduleConfig: () => Promise<ScheduleConfig> = unstable_cache(
   async () => scheduleService.getConfig(),
