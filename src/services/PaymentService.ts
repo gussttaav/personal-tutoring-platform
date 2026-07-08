@@ -9,6 +9,10 @@
  *   - src/app/api/admin/failed-bookings/route.ts  (dead-letter retry)
  *
  * Route handlers are now thin adapters: parse → call service → return response.
+ *
+ * REFACTOR-R3-P1-02: the webhook slot re-check fails CLOSED — a Google freebusy
+ * failure now propagates (webhook 500 → Stripe redelivers) instead of assuming the
+ * slot is free, so a transient outage can't double-book the tutor's manual calendar.
  */
 
 import type Stripe from "stripe";
@@ -375,8 +379,11 @@ export class PaymentService {
     const slotDate        = startIso.slice(0, 10);
     const durationMinutes = duration === "2h" ? 120 : 60;
     const scheduleConfig  = await this.schedule.getConfig();
-    const availableSlots  = await getAvailableSlots(slotDate, durationMinutes, scheduleConfig, 30).catch(() => null);
-    const slotStillFree   = availableSlots?.some(s => s.start === startIso) ?? true;
+    // REFACTOR-R3-P1-02: fail CLOSED. A freebusy failure is retryable (webhook 500 →
+    // Stripe redelivers), never "assume free": the exclusion constraint doesn't cover
+    // the tutor's manual calendar blocks.
+    const availableSlots  = await getAvailableSlots(slotDate, durationMinutes, scheduleConfig, 30);
+    const slotStillFree   = availableSlots.some(s => s.start === startIso);
 
     if (!slotStillFree) {
       log("warn", "Slot no longer available — refunding", { service: "payment", email, startIso, idempotencyKey });

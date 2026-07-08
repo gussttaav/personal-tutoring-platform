@@ -1,6 +1,6 @@
 # P1-02 — Webhook slot re-check must fail closed
 
-**Tag:** `REFACTOR-R3-P1-02` · **Severity:** 🟠 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R3-P1-02` · **Severity:** 🟠 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
