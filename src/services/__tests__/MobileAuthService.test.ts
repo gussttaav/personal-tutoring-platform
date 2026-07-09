@@ -35,7 +35,21 @@ describe("MobileAuthService.authenticate", () => {
       image:   "https://avatar/x.png",
       role:    "student",
       isAdmin: false,
+      locale:  null, // not seeded yet — mobile path does not seed
     });
+  });
+
+  it("surfaces the stored locale (null when unseeded, es/en when set)", async () => {
+    const { service, userService } = build(jest.fn().mockResolvedValue(validIdentity));
+
+    // First sign-in: no locale stored yet → null (read-only, not seeded here).
+    const first = await service.authenticate("good-token");
+    expect(first.locale).toBeNull();
+
+    // An explicit preference saved later (e.g. via POST /api/locale) is surfaced.
+    await userService.setLocale("student@example.com", "en");
+    const second = await service.authenticate("good-token");
+    expect(second.locale).toBe("en");
   });
 
   it("registers the user (ensureUser) so mobile maps to the same row as web", async () => {

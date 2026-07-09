@@ -13,7 +13,14 @@ jest.mock("@/infrastructure/google", () => ({
   getAvailableSlots: (...args: unknown[]) => mockGetAvailableSlots(...args),
 }));
 
-// Mock fetch (used by writeDeadLetter for admin notification email)
+// REFACTOR-R3-P1-01: send() now throws on Resend failure. writeDeadLetter
+// imports sendDeadLetterNotificationEmail directly (not via IEmailClient),
+// so mock the module to control failure injection per test.
+const mockSendDeadLetterEmail = jest.fn().mockResolvedValue(undefined);
+jest.mock("@/infrastructure/resend/email-functions", () => ({
+  sendDeadLetterNotificationEmail: (...args: unknown[]) => mockSendDeadLetterEmail(...args),
+}));
+
 global.fetch = jest.fn().mockResolvedValue({});
 
 import { PaymentService } from "../PaymentService";
@@ -21,6 +28,8 @@ import { CreditService }  from "../CreditService";
 import { BookingService } from "../BookingService";
 import { UserService }    from "../UserService";
 import { PricingService } from "../PricingService";
+import { ScheduleService } from "../ScheduleService";
+import { InMemoryScheduleRepository } from "@/__tests__/fixtures/InMemoryScheduleRepository";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
@@ -36,13 +45,21 @@ const mockStripe = (): jest.Mocked<IStripeClient> => ({
 const makePricing = () =>
   new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
 
+// Real ScheduleService backed by the seeded in-memory repo.
+const makeSchedule = () =>
+  new ScheduleService(new InMemoryScheduleRepository(), new InMemoryAuditRepository());
+
 const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   isProcessed:          jest.fn(),
   markProcessed:        jest.fn(),
   recordFailedBooking:  jest.fn(),
   listFailedBookings:   jest.fn(),
   clearFailedBooking:   jest.fn(),
-  hasFailedBooking:     jest.fn(),
+  hasFailedBooking:     jest.fn().mockResolvedValue(false),
+  // SINGLE-SESSION-CONFIRM-01
+  recordSlotTakenRefund:          jest.fn().mockResolvedValue(undefined),
+  wasRefunded:                    jest.fn().mockResolvedValue(false),
+  broadcastSingleSessionResolved: jest.fn().mockResolvedValue(undefined),
 });
 
 // REFACTOR-P3-05: handlePackPayment now also reads getBalance + fires
@@ -53,8 +70,9 @@ const mockCredits = (): jest.Mocked<Pick<CreditService, "addCredits" | "getBalan
   broadcastPaymentConfirmed: jest.fn(),
 });
 
-const mockBookings = (): jest.Mocked<Pick<BookingService, "createBooking">> => ({
-  createBooking: jest.fn(),
+const mockBookings = (): jest.Mocked<Pick<BookingService, "createBooking" | "findByStripePaymentId">> => ({
+  createBooking:          jest.fn(),
+  findByStripePaymentId:  jest.fn().mockResolvedValue(null),
 });
 
 const TEST_USER_ID = "user-uuid-test-123";
@@ -68,7 +86,7 @@ function makeService(overrides?: {
   stripe?:       Partial<jest.Mocked<IStripeClient>>;
   paymentRepo?:  Partial<jest.Mocked<IPaymentRepository>>;
   credits?:      Partial<jest.Mocked<Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed">>>;
-  bookings?:     Partial<jest.Mocked<Pick<BookingService, "createBooking">>>;
+  bookings?:     Partial<jest.Mocked<Pick<BookingService, "createBooking" | "findByStripePaymentId">>>;
   userService?:  Partial<jest.Mocked<Pick<UserService, "ensureUser" | "findByEmail">>>;
 }) {
   const stripe      = { ...mockStripe(),       ...overrides?.stripe };
@@ -83,6 +101,7 @@ function makeService(overrides?: {
     paymentRepo,
     userSvc as unknown as UserService,
     makePricing(),
+    makeSchedule(),
   );
   return { service, stripe, paymentRepo, credits, bookings, userSvc };
 }
@@ -230,16 +249,18 @@ describe("PaymentService.processWebhookEvent — single session", () => {
     expect(bookings.createBooking).not.toHaveBeenCalled();
   });
 
-  it("defaults to slot free when getAvailableSlots throws", async () => {
-    const { service, paymentRepo, bookings } = makeService();
+  // REFACTOR-R3-P1-02: fail CLOSED — a freebusy failure must propagate (webhook 500 →
+  // Stripe redelivers), never "assume free". No booking, no refund in that case.
+  it("rejects (no booking, no refund) when getAvailableSlots throws", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
     paymentRepo.isProcessed.mockResolvedValue(false);
-    paymentRepo.markProcessed.mockResolvedValue(undefined);
     mockGetAvailableSlots.mockRejectedValue(new Error("network error"));
-    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
 
-    await service.processWebhookEvent(fakeSingleEvent());
+    await expect(service.processWebhookEvent(fakeSingleEvent())).rejects.toThrow("network error");
 
-    expect(bookings.createBooking).toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(paymentRepo.markProcessed).not.toHaveBeenCalled();
   });
 
   it("books a single session with a half-hour start time (:30)", async () => {
@@ -255,7 +276,7 @@ describe("PaymentService.processWebhookEvent — single session", () => {
       email:    "student@test.com",
       startIso: "2099-12-01T10:30:00.000Z",
     }));
-    expect(mockGetAvailableSlots).toHaveBeenCalledWith("2099-12-01", 60, 30);
+    expect(mockGetAvailableSlots).toHaveBeenCalledWith("2099-12-01", 60, expect.anything(), 30);
   });
 
   it("writes dead-letter when booking fails", async () => {
@@ -271,6 +292,163 @@ describe("PaymentService.processWebhookEvent — single session", () => {
       userId:          TEST_USER_ID,
     }));
     expect(paymentRepo.markProcessed).not.toHaveBeenCalled();
+  });
+
+  // REFACTOR-R3-P1-01: the dead-letter admin email now throws on Resend
+  // failure — writeDeadLetter's .catch(() => {}) must keep it non-fatal.
+  it("still writes dead-letter when the notification email throws", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.recordFailedBooking.mockResolvedValue(undefined);
+    (bookings.createBooking as jest.Mock).mockRejectedValue(new Error("calendar API down"));
+    mockSendDeadLetterEmail.mockRejectedValueOnce(new Error("resend down"));
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(mockSendDeadLetterEmail).toHaveBeenCalled();
+    expect(paymentRepo.recordFailedBooking).toHaveBeenCalled();
+    expect(paymentRepo.markProcessed).not.toHaveBeenCalled();
+  });
+});
+
+// ─── SINGLE-SESSION-CONFIRM-01: async confirmation surface ───────────────────
+
+describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+  });
+
+  const fullBooking = {
+    eventId:         "evt_1",
+    zoomSessionName: "zoom-1",
+    zoomPasscode:    "pass-1",
+    cancelToken:     "c".repeat(64),
+    joinToken:       "j".repeat(64),
+    emailFailed:     false,
+  };
+
+  // 1. Success → broadcast confirmed + persist + markProcessed.
+  it("broadcasts status:confirmed with booking detail after a successful booking", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(fullBooking);
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(paymentRepo.markProcessed).toHaveBeenCalledWith("pi_single_123");
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledWith(
+      "pi_single_123",
+      {
+        status:      "confirmed",
+        eventId:     "evt_1",
+        startIso:    "2099-12-01T10:00:00.000Z",
+        endIso:      "2099-12-01T11:00:00.000Z",
+        sessionType: "session1h",
+        joinToken:   "j".repeat(64),
+        emailFailed: false,
+      },
+    );
+  });
+
+  // 1b. Broadcast failure must not fail the webhook (best-effort).
+  it("does not fail the webhook if the confirmed broadcast throws", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(fullBooking);
+    paymentRepo.broadcastSingleSessionResolved.mockRejectedValueOnce(new Error("network"));
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
+    expect(paymentRepo.markProcessed).toHaveBeenCalledWith("pi_single_123");
+  });
+
+  // 2 + 3. Polling confirms (missed broadcast / webhook-before-subscribe race).
+  it("getSingleSessionStatus returns confirmed + booking when a confirmed row exists", async () => {
+    const detail = {
+      eventId:     "evt_1",
+      startIso:    "2099-12-01T10:00:00.000Z",
+      endIso:      "2099-12-01T11:00:00.000Z",
+      sessionType: "session1h" as const,
+      joinToken:   "j".repeat(64),
+    };
+    const { service, bookings } = makeService();
+    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(detail);
+
+    await expect(service.getSingleSessionStatus("pi_single_123")).resolves.toEqual({
+      status:  "confirmed",
+      booking: detail,
+    });
+  });
+
+  // 4. Slot taken → refund issued, record persisted, broadcast slot_taken, no booking; then polling reports slot_taken.
+  it("records the refund + broadcasts slot_taken when the slot was taken", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    mockGetAvailableSlots.mockResolvedValue([]); // slot taken
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(stripe.createRefund).toHaveBeenCalledWith(expect.objectContaining({ reason: "duplicate" }));
+    expect(paymentRepo.recordSlotTakenRefund).toHaveBeenCalledWith("pi_single_123");
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledWith(
+      "pi_single_123", { status: "slot_taken" },
+    );
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(paymentRepo.markProcessed).not.toHaveBeenCalled();
+
+    // polling reflects it
+    paymentRepo.wasRefunded.mockResolvedValue(true);
+    await expect(service.getSingleSessionStatus("pi_single_123")).resolves.toEqual({ status: "slot_taken" });
+  });
+
+  // 5. Duplicate webhook after refund short-circuits before a second refund.
+  it("short-circuits a duplicate webhook for an already-refunded PaymentIntent", async () => {
+    const { service, paymentRepo, stripe } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.wasRefunded.mockResolvedValue(true); // prior run already refunded
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(paymentRepo.recordSlotTakenRefund).not.toHaveBeenCalled();
+  });
+
+  // 6. Dead-letter → failed (broadcast + polling).
+  it("broadcasts status:failed and polling reports failed when booking dead-letters", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockRejectedValue(new Error("calendar API down"));
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(paymentRepo.recordFailedBooking).toHaveBeenCalled();
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledWith(
+      "pi_single_123", { status: "failed" },
+    );
+
+    paymentRepo.hasFailedBooking.mockResolvedValue(true);
+    await expect(service.getSingleSessionStatus("pi_single_123")).resolves.toEqual({ status: "failed" });
+  });
+
+  // 7. Pending — nothing written yet.
+  it("getSingleSessionStatus returns pending when nothing is recorded", async () => {
+    const { service } = makeService();
+    await expect(service.getSingleSessionStatus("pi_single_123")).resolves.toEqual({ status: "pending" });
+  });
+
+  // 8. Confirmed-then-cancelled is not stale (correction #1): the confirmed finder is
+  //    status-scoped, so a cancelled booking returns null → pending, never confirmed.
+  it("never reports stale confirmed for a cancelled booking", async () => {
+    const { service, bookings, paymentRepo } = makeService();
+    // findByStripePaymentId is scoped to status='confirmed', so a cancelled row → null.
+    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(null);
+    paymentRepo.wasRefunded.mockResolvedValue(false);
+    paymentRepo.hasFailedBooking.mockResolvedValue(false);
+
+    const result = await service.getSingleSessionStatus("pi_single_123");
+
+    expect(result.status).not.toBe("confirmed");
+    expect(result).toEqual({ status: "pending" });
   });
 });
 
@@ -322,6 +500,32 @@ describe("PaymentService.reprocessFailedBooking", () => {
 
     expect(result).toEqual({ ok: true });
     expect(paymentRepo.clearFailedBooking).toHaveBeenCalledWith("pi_single_123");
+  });
+
+  // REFACTOR-R3-P1-02: a throwing re-check must surface as { ok: false }, not an
+  // unhandled rejection — the fail-closed throw is caught by reprocessFailedBooking.
+  it("returns ok:false when the slot re-check throws", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.listFailedBookings.mockResolvedValue([deadLetterEntry]);
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    stripe.retrievePaymentIntent.mockResolvedValue({
+      id:       "pi_single_123",
+      metadata: {
+        student_email:    "student@test.com",
+        student_name:     "Student",
+        start_iso:        "2099-12-01T10:00:00.000Z",
+        end_iso:          "2099-12-01T11:00:00.000Z",
+        session_duration: "1h",
+        reschedule_token: "",
+      },
+    } as unknown as Stripe.PaymentIntent);
+    mockGetAvailableSlots.mockRejectedValue(new Error("network error"));
+
+    const result = await service.reprocessFailedBooking("pi_single_123");
+
+    expect(result.ok).toBe(false);
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(paymentRepo.clearFailedBooking).not.toHaveBeenCalled();
   });
 
   it("returns ok:false when Stripe retrieval fails", async () => {
@@ -428,6 +632,7 @@ describe("REFACTOR-P1-05: idempotency keys", () => {
       paymentRepo,
       userSvc  as unknown as UserService,
       makePricing(),
+      makeSchedule(),
     );
     return { service, fakeStripe };
   }

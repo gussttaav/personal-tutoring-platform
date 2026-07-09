@@ -142,6 +142,19 @@ function fmtTime(iso: string): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+/**
+ * Latest moment a session can still be joined, mirroring the server grace window
+ * (jwt.ts / REL-02 hard-stop): free15min ends 5 min after endsAt, everything else 10 min.
+ */
+function joinDeadlineMs(b: UserBooking): number {
+  const graceMin = b.sessionType === "free15min" ? 5 : 10;
+  return new Date(b.endsAt).getTime() + graceMin * 60_000;
+}
+
+function weeksBetween(a: Date, b: Date): number {
+  return Math.round((b.getTime() - a.getTime()) / (7 * 86_400_000));
+}
+
 // ─── Lookup builder ───────────────────────────────────────────────────────────
 
 function buildDayLookup(bookings: UserBooking[], dayDate: Date): DayLookup {
@@ -212,6 +225,9 @@ const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps & { labels: Cale
     const [phase, setPhase]     = useState<"idle" | "confirm" | "busy" | "error">("idle");
     const [errMsg, setErrMsg]   = useState("");
     const { top, left }         = menuPosition(rect);
+    // Captured once when the menu opens (state initializer is exempt from the
+    // render-purity rule); the menu is ephemeral so the deadline won't cross.
+    const [ended]               = useState(() => Date.now() > joinDeadlineMs(booking));
 
     async function doCancel() {
       setPhase("busy");
@@ -254,7 +270,7 @@ const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps & { labels: Cale
             {fmtTime(booking.startsAt)} – {fmtTime(booking.endsAt)}
           </p>
         </div>
-        <CMenuItem icon="play_circle"  label={tNext("joinButton")} color="#4edea3" onClick={() => { onClose(); window.location.href = `/sesion/${booking.joinToken}`; }} />
+        <CMenuItem icon="play_circle"  label={ended ? tNext("sessionEnded") : tNext("joinButton")} color="#4edea3" disabled={ended} onClick={() => { onClose(); window.location.href = `/sesion/${booking.joinToken}`; }} />
         <CMenuItem icon="event_repeat" label={tNext("reschedule")} color="#e5e1e4" onClick={() => { onClose(); router.push(`/?reschedule=${booking.sessionType}&token=${booking.token}`); }} />
         <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "4px 0" }} />
         <CMenuItem icon="cancel"       label={tCommon("cancel")} color="#ffb4ab" onClick={() => setPhase("confirm")} />
@@ -300,19 +316,21 @@ const cancelBtnBase: React.CSSProperties = {
   color: "#86948a", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
 };
 
-function CMenuItem({ icon, label, color, onClick }: { icon: string; label: string; color: string; onClick: () => void }) {
+function CMenuItem({ icon, label, color, onClick, disabled = false }: { icon: string; label: string; color: string; onClick: () => void; disabled?: boolean }) {
   const [hov, setHov] = useState(false);
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
         display: "flex", alignItems: "center", gap: 8, width: "100%",
         padding: "8px 10px", borderRadius: 8,
-        background: hov ? "rgba(255,255,255,0.06)" : "transparent",
+        background: !disabled && hov ? "rgba(255,255,255,0.06)" : "transparent",
         border: "none", color, fontSize: 12, fontWeight: 600,
-        cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+        cursor: disabled ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "left",
+        opacity: disabled ? 0.4 : 1,
         transition: "background 0.1s",
       }}
     >
@@ -610,6 +628,9 @@ export default function PersonalAreaCalendar({
   const [weekOffset, setWeekOffset] = useState(0);
   const [isMobile,   setIsMobile]   = useState(false);
   const [openMenu,   setOpenMenu]   = useState<OpenMenu | null>(null);
+  // Current local time as minutes-since-midnight, for the now-line. Local time
+  // matches how blocks are placed here (new Date(startsAt).getHours()).
+  const [nowMin, setNowMin] = useState(() => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); });
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -644,15 +665,25 @@ export default function PersonalAreaCalendar({
     return () => window.removeEventListener("scroll", onScroll);
   }, [openMenu]);
 
+  // Advance the now-line once a minute
+  useEffect(() => {
+    const id = setInterval(() => { const d = new Date(); setNowMin(d.getHours() * 60 + d.getMinutes()); }, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   const HALF_H   = isMobile ? 26 : 30;
   const HEADER_H = isMobile ? 52 : 64;
 
+  // weekOffset is anchored to the CURRENT week (offset 0). Past bookings stay
+  // reachable by paging back (negative offsets), future ones by paging forward.
+  const currentWeek = mondayOf(new Date());
   const allStarts = bookings.map((b) => new Date(b.startsAt).getTime());
-  const firstWeek = allStarts.length > 0 ? mondayOf(new Date(Math.min(...allStarts))) : mondayOf(new Date());
-  const lastWeek  = allStarts.length > 0 ? mondayOf(new Date(Math.max(...allStarts))) : mondayOf(new Date());
-  const maxOffset = Math.round((lastWeek.getTime() - firstWeek.getTime()) / (7 * 86_400_000));
+  const firstWeek = allStarts.length > 0 ? mondayOf(new Date(Math.min(...allStarts))) : currentWeek;
+  const lastWeek  = allStarts.length > 0 ? mondayOf(new Date(Math.max(...allStarts))) : currentWeek;
+  const minOffset = Math.min(0, weeksBetween(currentWeek, firstWeek));
+  const maxOffset = Math.max(0, weeksBetween(currentWeek, lastWeek));
 
-  const weekStart = addWeeks(firstWeek, weekOffset);
+  const weekStart = addWeeks(currentWeek, weekOffset);
   const days: Date[] = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(weekStart.getDate() + i);
@@ -660,6 +691,13 @@ export default function PersonalAreaCalendar({
   });
 
   const todayStr = new Date().toDateString();
+
+  // Now-line geometry — only on the current week, within the visible hour band.
+  const ROW_H        = HALF_H * 2 + 1;
+  const gridStartMin = TIME_ROWS[0] * 60;
+  const gridEndMin   = (TIME_ROWS[TIME_ROWS.length - 1] + 1) * 60;
+  const showNowLine  = weekOffset === 0 && nowMin >= gridStartMin && nowMin < gridEndMin;
+  const nowTopPx     = HEADER_H + ((nowMin - gridStartMin) / 60) * ROW_H;
 
   const handleBlockOpen = useCallback((booking: UserBooking, rect: DOMRect) => {
     setOpenMenu((prev) =>
@@ -683,14 +721,22 @@ export default function PersonalAreaCalendar({
 
           {/* Week navigation */}
           <div style={{ display: "flex", alignItems: "center", background: "#0e0e10", borderRadius: 9999, border: "1px solid rgba(255,255,255,0.07)", overflow: "hidden", flexShrink: 0 }}>
-            <NavBtn dir="prev" disabled={weekOffset === 0}          onClick={() => setWeekOffset((w) => Math.max(0, w - 1))} />
+            <NavBtn dir="prev" disabled={weekOffset <= minOffset}   onClick={() => setWeekOffset((w) => Math.max(minOffset, w - 1))} />
             <NavBtn dir="next" disabled={weekOffset >= maxOffset}   onClick={() => setWeekOffset((w) => Math.min(maxOffset, w + 1))} />
           </div>
         </div>
 
         {/* Grid */}
         <div style={{ overflowX: "hidden" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "52px repeat(7, 1fr)", columnGap: 1, background: "rgba(255,255,255,0.05)" }}>
+          <div style={{ position: "relative", display: "grid", gridTemplateColumns: "52px repeat(7, 1fr)", columnGap: 1, background: "rgba(255,255,255,0.05)" }}>
+            {showNowLine && (
+              <div
+                aria-hidden="true"
+                style={{ position: "absolute", left: 53, right: 0, top: nowTopPx, height: 1, background: "rgba(78,222,163,0.5)", zIndex: 3, pointerEvents: "none" }}
+              >
+                <div style={{ position: "absolute", left: -4, top: -3, width: 7, height: 7, borderRadius: "50%", background: "#4edea3" }} />
+              </div>
+            )}
             <TimeColumn isMobile={isMobile} HALF_H={HALF_H} HEADER_H={HEADER_H} />
             {days.map((day) => (
               <DayColumn

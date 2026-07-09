@@ -25,6 +25,8 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Apply migrations to test database
         run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL_TEST }}"

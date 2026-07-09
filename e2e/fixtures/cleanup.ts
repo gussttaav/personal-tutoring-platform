@@ -71,6 +71,8 @@ export async function truncateTestDb(
     ["payments",               (q) => q.delete().not("id", "is", null)],
     ["audit_log",              (q) => q.delete().gt("id", 0)],
     ["failed_bookings",        (q) => q.delete().neq("stripe_session_id", "")],
+    ["single_session_refunds", (q) => q.delete().neq("stripe_payment_id", "")],
+    ["pending_terminations",   (q) => q.delete().neq("event_id", "")],
     ["subscriptions",          (q) => q.delete().not("id", "is", null)],
     ["google_review_prompts",  (q) => q.delete().not("user_id", "is", null)],
     ["users",                  (q) => q.delete().not("id", "is", null)],

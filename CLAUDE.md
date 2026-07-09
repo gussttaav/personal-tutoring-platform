@@ -84,6 +84,7 @@ The customer-facing app is bilingual: **Spanish is the default** (unprefixed URL
   **Rule:** always normalize with `new Date(dbTimestamp).toISOString()` before comparing or signing.
 - Credit atomicity uses a Postgres stored procedure (`decrement_credit`), not application-side logic.
 - Prices are NOT in Stripe. Session/pack prices live in the Supabase `pricing` table (single source of truth), edited at `/admin/pricing`. The charge reads `PricingService.getAmount()`; the web reads `src/lib/pricing-display.ts` (via the `PricesProvider` context); the mobile app reads `GET /api/pricing`. Don't reintroduce `STRIPE_PRICE_ID_*`. The pack "original/strikethrough" price is derived (`1h price × hours`), never stored.
+- Booking schedule (working hours, min advance notice, timezone) is NOT hardcoded. It lives in the Supabase `working_hours` + `booking_settings` tables (single source of truth), edited at `/admin/schedule`. The backend reads `ScheduleService.getConfig()`; the web reads it via the `ScheduleProvider` context (60s ISR loader `src/lib/schedule-config.ts`); the mobile app reads `GET /api/schedule` (authenticated, working-hour blocks in minutes since midnight). `src/lib/booking-config.ts` now holds only pure helpers (`slotsFromBlocks`, `isWithinBlocks`, `gridHourRange`) + the static `BOOKING_WINDOW_WEEKS`.
 
 ## Testing
 - `pnpm test` — Jest unit + integration tests
@@ -121,7 +122,7 @@ The customer-facing app is bilingual: **Spanish is the default** (unprefixed URL
 | Add an admin feature            | `src/app/admin/` + `src/app/api/admin/`         |
 | Change a session/pack price     | `/admin/pricing` (DB `pricing` table); display via `src/lib/pricing-display.ts` + `PricesProvider` |
 | Add a Zod schema                | `src/lib/schemas.ts`                            |
-| Change the booking schedule     | `src/lib/booking-config.ts`                     |
+| Change the booking schedule     | `/admin/schedule` (DB `working_hours` + `booking_settings`); helpers in `src/lib/booking-config.ts` |
 | Change email templates          | `src/infrastructure/resend/email-functions.ts`   |
 | Add/change UI or email text     | `messages/es.json` **and** `messages/en.json` (keep keys in sync) |
 | Add a DB column                 | New file in `supabase/migrations/`              |

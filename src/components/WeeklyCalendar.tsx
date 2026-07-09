@@ -22,7 +22,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
-import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
+import { gridHourRange, isWithinBlocks } from "@/lib/booking-config";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
+import type { WeeklyHours } from "@/domain/types";
 import { formatTime } from "@/lib/formatting";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -100,9 +102,9 @@ function formatWeekHeading(weekStart: Date, locale: string): string {
 }
 
 /** Returns the current wall-clock minutes (0–1439) in the schedule's timezone. */
-function getMadridMinutes(): number {
+function getNowMinutes(tz: string): number {
   const str = new Date().toLocaleTimeString("es-ES", {
-    timeZone: SCHEDULE.timezone, hour: "2-digit", minute: "2-digit", hour12: false,
+    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
   });
   const [h = "0", m = "0"] = str.split(":");
   return parseInt(h, 10) * 60 + parseInt(m, 10);
@@ -120,40 +122,46 @@ function getTimeRowHierarchy(hhmm: string): "hour" | "half" | "quarter" {
 function rowBorderTop(i: number, hhmm: string): string | undefined {
   if (i === 0) return undefined;
   const h = getTimeRowHierarchy(hhmm);
-  if (h === "hour")  return "1px solid rgba(255,255,255,0.10)";
-  if (h === "half")  return "1px solid rgba(255,255,255,0.045)";
+  // Hour boundary is a structural 2px line, faintly tinted with the emerald
+  // accent — a categorically different weight AND hue than the neutral
+  // half/quarter hairlines, so the eye can lock onto it on two dimensions.
+  if (h === "hour")  return "2px solid rgba(78,222,163,0.22)";
+  if (h === "half")  return "1px solid rgba(255,255,255,0.05)";
   return                    "1px solid rgba(255,255,255,0.022)";
 }
 
-/** Build "HH:MM" time rows for the grid. */
-function buildTimeRows(atomicMins: 15 | 30): string[] {
+/**
+ * Faint alternating background tint per whole hour, so the eye groups the rows
+ * of a single hour pre-attentively (zebra banding). Odd hours get the tint;
+ * even hours stay on the base background. Shows through the semi-transparent
+ * slot cells, so it reads on every column, not just empty/closed rows.
+ */
+function hourBandBackground(hhmm: string): string | undefined {
+  const h = parseInt(hhmm.split(":")[0] ?? "0", 10);
+  return h % 2 === 1 ? "rgba(255,255,255,0.015)" : undefined;
+}
+
+/** Build "HH:MM" time rows for the grid, bounded by the configured hours. */
+function buildTimeRows(atomicMins: 15 | 30, startMin: number, endMin: number): string[] {
   const rows: string[] = [];
-  for (let h = 9; h <= 18; h++) {
-    for (let m = 0; m < 60; m += atomicMins) {
-      if (h === 18 && m + atomicMins > 60) break; // last start ensures end ≤ 19:00
-      rows.push(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-    }
+  for (let m = startMin; m + atomicMins <= endMin; m += atomicMins) {
+    const h  = Math.floor(m / 60);
+    const mm = m % 60;
+    rows.push(`${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
   }
   return rows;
 }
 
 /** Returns true if a time row falls within this day's scheduled working windows. */
-function isWithinWorkingHours(dow: number, hhmm: string, atomicMins: 15 | 30): boolean {
-  const sched = DAY_SCHEDULES[dow];
-  if (!sched) return false;
+function isWithinWorkingHours(
+  weekly: WeeklyHours,
+  dow: number,
+  hhmm: string,
+  atomicMins: 15 | 30,
+): boolean {
   const [hStr, mStr] = hhmm.split(":");
   const totalMin     = parseInt(hStr!) * 60 + parseInt(mStr!);
-  const startMin     = dayStartHour(dow) * 60;
-  // Mirrors CalendarClient: MORNING_END_MINUTES = morningEnd * 60 - 15
-  // A valid atomic slot at totalMin requires: totalMin + atomicMins ≤ MORNING_END_MINUTES
-  const morningEndMin = sched.morningEnd * 60 - 15 - atomicMins;
-  if (totalMin >= startMin && totalMin <= morningEndMin) return true;
-  if (sched.afternoonStart !== null && sched.afternoonEnd !== null) {
-    const afStart = sched.afternoonStart * 60;
-    const afEnd   = sched.afternoonEnd * 60 - atomicMins;
-    if (totalMin >= afStart && totalMin <= afEnd) return true;
-  }
-  return false;
+  return isWithinBlocks(weekly[dow] ?? [], totalMin, atomicMins);
 }
 
 /** Map each slot's display-timezone start "HH:MM" → ApiSlot. */
@@ -242,28 +250,37 @@ export default function WeeklyCalendar({
 }: WeeklyCalendarProps) {
   const t      = useTranslations("booking.weeklyCalendar");
   const locale = useLocale();
+  const schedule = useScheduleConfig();
 
   const atomicMinutes: 15 | 30 = durationMinutes === 15 ? 15 : 30;
   const cellsPerSlot            = durationMinutes === 15 ? 1 : durationMinutes === 60 ? 2 : 4;
+
+  const { minHour, maxHour } = useMemo(
+    () => gridHourRange(schedule.weeklyHours),
+    [schedule.weeklyHours],
+  );
 
   const [weekOffset,    setWeekOffset]    = useState(initialWeekOffset);
   const [slotsMap,      setSlotsMap]      = useState<Record<string, DaySlots>>({});
   const [focusedBlock,  setFocusedBlock]  = useState<FocusedBlock | null>(null);
   const [invalidKey,    setInvalidKey]    = useState<string | null>(null);
   const [isMobile,      setIsMobile]      = useState(false);
-  // Client timezone after hydration; SCHEDULE.timezone during SSR.
+  // Client timezone after hydration; the schedule's timezone during SSR.
   const userTz = useClientValue(() => {
-    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return SCHEDULE.timezone; }
-  }, SCHEDULE.timezone);
-  const [nowMadridMin,  setNowMadridMin]  = useState<number>(() => getMadridMinutes());
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return schedule.timezone; }
+  }, schedule.timezone);
+  const [nowMadridMin,  setNowMadridMin]  = useState<number>(() => getNowMinutes(schedule.timezone));
   const initialFocusedHandled             = useRef(false);
   const prevRefreshToken                  = useRef(refreshToken);
 
-  const maxWeekOffset = SCHEDULE.bookingWindowWeeks - 1;
+  const maxWeekOffset = schedule.bookingWindowWeeks - 1;
   const weekStart     = getWeekStart(weekOffset);
-  const tzDiffers     = userTz !== SCHEDULE.timezone;
+  const tzDiffers     = userTz !== schedule.timezone;
 
-  const timeRows = useMemo(() => buildTimeRows(atomicMinutes), [atomicMinutes]);
+  const timeRows = useMemo(
+    () => buildTimeRows(atomicMinutes, minHour * 60, maxHour * 60),
+    [atomicMinutes, minHour, maxHour],
+  );
 
   const days: Date[] = useMemo(() => Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
@@ -281,9 +298,9 @@ export default function WeeklyCalendar({
 
   // Update current Madrid time every minute for the "now" line and past-cell logic
   useEffect(() => {
-    const id = setInterval(() => setNowMadridMin(getMadridMinutes()), 60_000);
+    const id = setInterval(() => setNowMadridMin(getNowMinutes(schedule.timezone)), 60_000);
     return () => clearInterval(id);
-  }, []);
+  }, [schedule.timezone]);
 
   // Navigate weeks and clear any focused block (with parent notification) in the
   // same event handler — avoids resetting state from an effect.
@@ -316,7 +333,7 @@ export default function WeeklyCalendar({
     }
 
     const today   = new Date(); today.setHours(0, 0, 0, 0);
-    const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
+    const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + schedule.bookingWindowWeeks * 7);
 
     days.forEach((date) => {
       const key = formatDateKey(date);
@@ -326,7 +343,7 @@ export default function WeeklyCalendar({
       const isPast   = date < today;
       const isBeyond = date > maxDate;
       const dow      = date.getDay();
-      const noSched  = DAY_SCHEDULES[dow] === null;
+      const noSched  = (schedule.weeklyHours[dow] ?? []).length === 0;
 
       if (isPast || isBeyond || noSched) return;
 
@@ -419,15 +436,15 @@ export default function WeeklyCalendar({
       focusedBlock, onSlotSelected, onSlotFocused]);
 
   const today   = new Date(); today.setHours(0, 0, 0, 0);
-  const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + SCHEDULE.bookingWindowWeeks * 7);
+  const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + schedule.bookingWindowWeeks * 7);
 
   const ROW_H    = isMobile ? 28 : 34;
   const HEADER_H = isMobile ? 52 : 64;
-  const HOUR_GAP = 3; // extra top margin before each hour boundary row
+  const HOUR_GAP = 0; // flush rows — hour boundaries are marked by a brighter line, not a gap
 
   // Current-time indicator line — only shown on the current week and within grid range
-  const GRID_START_MIN = 9 * 60;   // 09:00
-  const GRID_END_MIN   = 19 * 60;  // last slot ends at 19:00
+  const GRID_START_MIN = minHour * 60;
+  const GRID_END_MIN   = maxHour * 60;  // last slot ends at maxHour:00
   const showTimeLine   = weekOffset === 0 && nowMadridMin >= GRID_START_MIN && nowMadridMin < GRID_END_MIN;
   const timeLineTop    = HEADER_H + ((nowMadridMin - GRID_START_MIN) / atomicMinutes) * ROW_H;
 
@@ -563,9 +580,26 @@ export default function WeeklyCalendar({
                     justifyContent: "flex-end",
                     paddingRight:   8,
                     paddingTop:     4,
-                    borderTop: rowBorderTop(i, hhmm),
+                    borderTop:      rowBorderTop(i, hhmm),
+                    background:     hourBandBackground(hhmm),
+                    position:       "relative",
                   }}
                 >
+                  {/* Hour tick — a brighter emerald stub at the gutter's inner
+                      edge that anchors the eye to the hour line beside its label. */}
+                  {i > 0 && getTimeRowHierarchy(hhmm) === "hour" && (
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position:   "absolute",
+                        top:        -2,
+                        right:      0,
+                        width:      8,
+                        height:     2,
+                        background: "rgba(78,222,163,0.5)",
+                      }}
+                    />
+                  )}
                   {(() => {
                     const tier = getTimeRowHierarchy(hhmm);
                     return (
@@ -575,7 +609,7 @@ export default function WeeklyCalendar({
                           : (tier === "hour" ? 10 : tier === "half" ? 8.5 : 8),
                         fontWeight:         tier === "hour" ? 600 : 400,
                         color:              tier === "hour"
-                          ? "#a0b0a8"
+                          ? "#c2d0c8"
                           : tier === "half"
                             ? "rgba(134,148,138,0.6)"
                             : "rgba(134,148,138,0.38)",
@@ -597,7 +631,7 @@ export default function WeeklyCalendar({
               const daySlots  = slotsMap[key];
               const isPast    = date < today;
               const isBeyond  = date > maxDate;
-              const noSched   = DAY_SCHEDULES[dow] === null;
+              const noSched   = (schedule.weeklyHours[dow] ?? []).length === 0;
               const isClosed  = isPast || isBeyond || noSched;
               const isToday   = date.toDateString() === today.toDateString();
               const isLoading = daySlots === "loading" || (!isClosed && daySlots === undefined);
@@ -675,9 +709,10 @@ export default function WeeklyCalendar({
                     if (isClosed) {
                       return (
                         <div key={hhmm} style={{
-                          height:    ROW_H,
-                          marginTop: isHourBoundary ? HOUR_GAP : 0,
-                          borderTop: rowBorderTop(i, hhmm),
+                          height:     ROW_H,
+                          marginTop:  isHourBoundary ? HOUR_GAP : 0,
+                          borderTop:  rowBorderTop(i, hhmm),
+                          background: hourBandBackground(hhmm),
                         }} />
                       );
                     }
@@ -688,6 +723,7 @@ export default function WeeklyCalendar({
                           height:         ROW_H,
                           marginTop:      isHourBoundary ? HOUR_GAP : 0,
                           borderTop:      rowBorderTop(i, hhmm),
+                          background:     hourBandBackground(hhmm),
                           display:        hhmm === "10:00" ? "flex" : undefined,
                           alignItems:     "center",
                           justifyContent: "center",
@@ -705,10 +741,10 @@ export default function WeeklyCalendar({
                     const [rowH, rowM] = hhmm.split(":").map(Number);
                     const rowMin = (rowH ?? 0) * 60 + (rowM ?? 0);
                     const isPastRow   = isToday && rowMin + atomicMinutes <= nowMadridMin;
-                    const isNoticeRow = isToday && !isPastRow && rowMin < nowMadridMin + SCHEDULE.minNoticeHours * 60;
+                    const isNoticeRow = isToday && !isPastRow && rowMin < nowMadridMin + schedule.minNoticeHours * 60;
 
                     // Three-state classification (notice rows always show as unavailable)
-                    const inWorkingHours = isWithinWorkingHours(date.getDay(), hhmm, atomicMinutes);
+                    const inWorkingHours = isWithinWorkingHours(schedule.weeklyHours, date.getDay(), hhmm, atomicMinutes);
                     const cellState: "available" | "booked" | "unavailable" =
                       isNoticeRow ? "unavailable"
                       : slot      ? "available"
@@ -732,26 +768,27 @@ export default function WeeklyCalendar({
                     // ── Focused block state ──
                     const inFocus       = !!(focusedHere && slot
                       && focusedHere.block.some((s) => s.start === slot.start));
-                    const isFocusAnchor = inFocus && hhmm === focusedHere!.anchorKey;
                     const isFocusTop    = inFocus && hhmm === focusedFirstKey;
                     const isFocusBot    = inFocus && hhmm === focusedLastKey;
 
                     if (isPastRow) {
                       return (
                         <div key={hhmm} style={{
-                          height:    ROW_H,
-                          marginTop: isHourBoundary ? HOUR_GAP : 0,
-                          borderTop: rowBorderTop(i, hhmm),
+                          height:     ROW_H,
+                          marginTop:  isHourBoundary ? HOUR_GAP : 0,
+                          borderTop:  rowBorderTop(i, hhmm),
+                          background: hourBandBackground(hhmm),
                         }} />
                       );
                     }
 
                     return (
                       <div key={hhmm} style={{
-                        height:    ROW_H,
-                        marginTop: isHourBoundary ? HOUR_GAP : 0,
-                        padding:   "2px 3px",
-                        borderTop: rowBorderTop(i, hhmm),
+                        height:     ROW_H,
+                        marginTop:  isHourBoundary ? HOUR_GAP : 0,
+                        padding:    0,
+                        borderTop:  rowBorderTop(i, hhmm),
+                        background: hourBandBackground(hhmm),
                       }}>
                         <SlotCell
                           state={cellState}
@@ -760,7 +797,6 @@ export default function WeeklyCalendar({
                           isSelTop={isSelTop}
                           isSelBot={isSelBot}
                           inFocus={inFocus}
-                          isFocusAnchor={isFocusAnchor}
                           isFocusTop={isFocusTop}
                           isFocusBot={isFocusBot}
                           isInvalid={isInvalid}
@@ -799,7 +835,7 @@ function SlotCell({
   state,
   timeLabel,
   inSel, isSelTop, isSelBot,
-  inFocus, isFocusAnchor, isFocusTop, isFocusBot,
+  inFocus, isFocusTop, isFocusBot,
   isInvalid,
   onClick,
 }: {
@@ -809,7 +845,6 @@ function SlotCell({
   isSelTop:      boolean;
   isSelBot:      boolean;
   inFocus:       boolean;
-  isFocusAnchor: boolean;
   isFocusTop:    boolean;
   isFocusBot:    boolean;
   isInvalid:     boolean;
@@ -821,7 +856,7 @@ function SlotCell({
   if (state === "unavailable") {
     return (
       <div style={{
-        width: "100%", height: "100%", borderRadius: 3,
+        width: "100%", height: "100%", borderRadius: 0,
         border: "1px solid rgba(255,255,255,0.04)",
         background: "repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 6px)",
         cursor: "default",
@@ -832,7 +867,7 @@ function SlotCell({
   if (state === "booked") {
     return (
       <div style={{
-        width: "100%", height: "100%", borderRadius: 3,
+        width: "100%", height: "100%", borderRadius: 0,
         border: "1px solid rgba(255,180,171,0.18)",
         background: "rgba(255,180,171,0.07)",
         cursor: "default",
@@ -849,7 +884,7 @@ function SlotCell({
 
   let bg           = hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)";
   let borderColor  = hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)";
-  let radius       = "4px";
+  let radius       = "0";
   let labelColor   = "#4edea3";
 
   if (inSel) {
@@ -858,9 +893,10 @@ function SlotCell({
     radius      = blockRadius(isSelTop, isSelBot);
     labelColor  = "#003824";
   } else if (inFocus) {
-    // Anchor cell is slightly darker to mark the entry point
-    bg          = isFocusAnchor ? "rgba(78,222,163,0.42)" : "rgba(78,222,163,0.28)";
-    borderColor = isFocusAnchor ? "rgba(78,222,163,0.75)" : "rgba(78,222,163,0.55)";
+    // The whole focused block reads at one uniform intensity so the auto-covered
+    // cells (for 1h/2h durations) match the clicked anchor.
+    bg          = "rgba(78,222,163,0.42)";
+    borderColor = "rgba(78,222,163,0.75)";
     radius      = blockRadius(isFocusTop, isFocusBot);
     labelColor  = "#4edea3";
   }
@@ -868,7 +904,7 @@ function SlotCell({
   if (isInvalid) {
     bg          = "rgba(239,68,68,0.25)";
     borderColor = "rgba(239,68,68,0.5)";
-    radius      = "4px";
+    radius      = "0";
   }
 
   return (

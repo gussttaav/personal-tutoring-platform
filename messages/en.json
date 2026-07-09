@@ -183,6 +183,7 @@
       },
       "zoomLabel": "Zoom virtual classroom",
       "joinButton": "Enter virtual classroom",
+      "sessionEnded": "Session ended",
       "reschedule": "Reschedule",
       "cancelConfirmTitle": "Cancel this session?",
       "cancelConfirmBody": "This action cannot be undone. If it's a pack class, the credit will be returned automatically.",
@@ -294,6 +295,8 @@
       "vatIncluded": "VAT included",
       "paymentProtected": "Your payment is protected. The charge will be processed when you confirm the next step.",
       "bookingProgress": "Booking {dateLabel} at {label}…",
+      "verifyingAvailability": "Checking availability…",
+      "hourUnavailableNotice": "The time you picked no longer has a full hour free. Please choose another available slot in the calendar.",
       "changeSessionType": "Change session type",
       "confirmReschedule": "Confirm reschedule",
       "confirmPay": "Confirm payment",
@@ -367,7 +370,18 @@
     "signInGate": {
       "title": "Sign in to continue",
       "body": "To <highlight>{actionLabel}</highlight> we need to verify your identity. It will only take a moment.",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "continueGoogle": "Continue with Google",
+      "actions": {
+        "bookFree15": "book your free intro meeting",
+        "book1h": "book a 1-hour session",
+        "book2h": "book a 2-hour session",
+        "buyPack": "buy a class pack",
+        "schedulePackClass": "book a class from your pack",
+        "bookChosenTime": "book the selected time",
+        "bookSession": "book a session",
+        "reschedule": "reschedule your class"
+      }
     },
     "availabilityModal": {
       "viewAvailability": "Check availability",
@@ -379,7 +393,9 @@
       "scheduleIn": "Times in {timezone}",
       "available": "Available",
       "booked": "Booked",
-      "unavailable": "Unavailable"
+      "unavailable": "Unavailable",
+      "tapToConfirm": "Tap again to confirm",
+      "confirm": "Confirm"
     },
     "weeklyCalendar": {
       "subtitle": "Times in your zone ({userTz})",

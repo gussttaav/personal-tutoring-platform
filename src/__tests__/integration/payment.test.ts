@@ -2,11 +2,12 @@
 // Tests that PaymentService correctly adds credits, creates bookings, and writes
 // dead-letter entries using in-memory state.
 
-// Mock getAvailableSlots to simulate the absence of Google Calendar credentials in
-// the test environment. PaymentService.processSingleSession calls it directly (not
-// injected) and treats any failure as "slot still available" via .catch(() => null).
+// Mock getAvailableSlots — PaymentService.processSingleSession calls it directly
+// (not injected) for the slot re-check. REFACTOR-R3-P1-02: the re-check now fails
+// CLOSED, so a rejection propagates instead of being swallowed. Each single-session
+// test sets the resolved value to the slot it books (defaults to "slot taken").
 jest.mock("@/infrastructure/google", () => ({
-  getAvailableSlots: jest.fn().mockRejectedValue(new Error("no credentials in test")),
+  getAvailableSlots: jest.fn().mockResolvedValue([]),
 }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
@@ -29,12 +30,19 @@ import {
   buildTestCreditService,
   buildTestBookingService,
   buildTestPaymentService,
+  buildTestScheduleService,
 } from "../fixtures/services";
 import { PaymentService } from "@/services/PaymentService";
 import { PricingService } from "@/services/PricingService";
 import { UserService }    from "@/services/UserService";
+import { getAvailableSlots } from "@/infrastructure/google";
 
 const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
+
+// REFACTOR-R3-P1-02: the slot re-check fails closed, so single-session tests must
+// present the booked slot as still free (getAvailableSlots resolves with it).
+const slotFree = (startIso: string) =>
+  (getAvailableSlots as jest.Mock).mockResolvedValue([{ start: startIso }]);
 
 function makePaymentService(overrides: {
   creditsRepo?: InMemoryCreditsRepository;
@@ -49,7 +57,8 @@ function makePaymentService(overrides: {
   const userRepo    = new InMemoryUserRepository();
   const bookings    = buildTestBookingService({ credits, calendar });
   const pricing     = new PricingService(new InMemoryPricingRepository(), new InMemoryAuditRepository());
-  const service     = new PaymentService(stripe, credits, bookings, paymentRepo, new UserService(userRepo), pricing);
+  const schedule    = buildTestScheduleService();
+  const service     = new PaymentService(stripe, credits, bookings, paymentRepo, new UserService(userRepo), pricing, schedule);
   return { service, stripe, credits, creditsRepo, calendar, paymentRepo, userRepo };
 }
 
@@ -94,6 +103,7 @@ describe("Payment flow — single-session webhook", () => {
 
     const startIso = hoursFromNow(6);
     const endIso   = hoursFromNow(7);
+    slotFree(startIso);
 
     const event = stripe.buildSingleSessionPaymentEvent({
       email:    "eve@example.com",
@@ -114,10 +124,13 @@ describe("Payment flow — single-session webhook", () => {
   it("is idempotent — duplicate webhook does not create a second booking", async () => {
     const { service, stripe, calendar } = makePaymentService();
 
+    const startIso = hoursFromNow(6);
+    slotFree(startIso);
+
     const event = stripe.buildSingleSessionPaymentEvent({
       email:    "eve@example.com",
       name:     "Eve",
-      startIso: hoursFromNow(6),
+      startIso,
       endIso:   hoursFromNow(7),
       duration: "1h",
       intentId: "pi_single_idem_001",
@@ -135,10 +148,13 @@ describe("Payment flow — single-session webhook", () => {
 
     const { service, stripe, paymentRepo, userRepo } = makePaymentService({ calendar });
 
+    const startIso = hoursFromNow(6);
+    slotFree(startIso);
+
     const event = stripe.buildSingleSessionPaymentEvent({
       email:    "frank@example.com",
       name:     "Frank",
-      startIso: hoursFromNow(6),
+      startIso,
       endIso:   hoursFromNow(7),
       duration: "1h",
       intentId: "pi_deadletter_001",

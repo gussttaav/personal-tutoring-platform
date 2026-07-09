@@ -294,6 +294,51 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_settings: {
+        Row: {
+          id: number
+          min_notice_hours: number
+          timezone: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: number
+          min_notice_hours?: number
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          min_notice_hours?: number
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      working_hours: {
+        Row: {
+          day_of_week: number
+          end_minute: number
+          id: number
+          start_minute: number
+        }
+        Insert: {
+          day_of_week: number
+          end_minute: number
+          id?: never
+          start_minute: number
+        }
+        Update: {
+          day_of_week?: number
+          end_minute?: number
+          id?: never
+          start_minute?: number
+        }
+        Relationships: []
+      }
       pricing: {
         Row: {
           amount_cents: number
@@ -391,6 +436,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      single_session_refunds: {
+        Row: {
+          reason: string
+          refunded_at: string
+          stripe_payment_id: string
+        }
+        Insert: {
+          reason?: string
+          refunded_at?: string
+          stripe_payment_id: string
+        }
+        Update: {
+          reason?: string
+          refunded_at?: string
+          stripe_payment_id?: string
+        }
+        Relationships: []
       }
       slot_locks: {
         Row: {

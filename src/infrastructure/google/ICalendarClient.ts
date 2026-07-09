@@ -1,6 +1,6 @@
 // ARCH-13: Calendar client interface — enables testing BookingService with mocks.
 // ARCH-16: Added TimeSlot type and getAvailableSlots method.
-import type { SessionType } from "@/domain/types";
+import type { ScheduleConfig, SessionType } from "@/domain/types";
 
 export interface TimeSlot {
   start: string;
@@ -15,6 +15,8 @@ export interface CreateEventParams {
   endIso:       string;
   sessionType:  SessionType;
   studentEmail: string;
+  /** IANA timezone the Calendar event should be created in (from ScheduleConfig). */
+  timezone:     string;
 }
 
 export interface CreateEventResult {
@@ -26,7 +28,7 @@ export interface CreateEventResult {
 }
 
 export interface ICalendarClient {
-  getAvailableSlots(dateStr: string, durationMinutes: number, stepMinutes?: number): Promise<TimeSlot[]>;
+  getAvailableSlots(dateStr: string, durationMinutes: number, config: ScheduleConfig, stepMinutes?: number): Promise<TimeSlot[]>;
   createEvent(params: CreateEventParams): Promise<CreateEventResult>;
   deleteEvent(eventId: string): Promise<void>;
 }

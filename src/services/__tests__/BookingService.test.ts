@@ -13,6 +13,7 @@ import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import { CreditService } from "../CreditService";
+import { ScheduleService } from "../ScheduleService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
 import { InsufficientCreditsError, DomainError, SlotUnavailableError } from "@/domain/errors";
@@ -32,6 +33,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   recordRescheduleFailure:    jest.fn().mockResolvedValue(undefined),
   findIdByEventIdForUser:     jest.fn().mockResolvedValue(null),
   findByEventId:              jest.fn().mockResolvedValue(null),
+  findByStripePaymentId:      jest.fn().mockResolvedValue(null),
   hasBookingForPayment:       jest.fn().mockResolvedValue(false),
   markCompleted:              jest.fn().mockResolvedValue(undefined),
   markNoShow:                 jest.fn().mockResolvedValue(undefined),
@@ -108,6 +110,20 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
   setLocale:   jest.fn().mockResolvedValue(undefined),
 });
 
+// Stub ScheduleService — BookingService only calls getConfig(). Default min
+// notice = 5h (matches the old hardcoded SCHEDULE) so existing timing holds.
+const mockSchedule = (): ScheduleService =>
+  ({
+    getConfig: jest.fn().mockResolvedValue({
+      weeklyHours: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
+      timezone: "Europe/Madrid",
+      minNoticeHours: 5,
+      bookingWindowWeeks: 8,
+    }),
+    getMinNoticeHours: jest.fn().mockResolvedValue(5),
+    updateConfig: jest.fn().mockResolvedValue(undefined),
+  } as unknown as ScheduleService);
+
 const makeService = (overrides: {
   bookings?:  jest.Mocked<IBookingRepository>;
   credits?:   CreditService;
@@ -116,6 +132,7 @@ const makeService = (overrides: {
   zoom?:      jest.Mocked<IZoomClient>;
   email?:     jest.Mocked<IEmailClient>;
   users?:     jest.Mocked<IUserRepository>;
+  schedule?:  ScheduleService;
 } = {}) =>
   new BookingService(
     overrides.bookings  ?? mockBookings(),
@@ -125,6 +142,7 @@ const makeService = (overrides: {
     overrides.zoom      ?? mockZoom(),
     overrides.email     ?? mockEmail(),
     overrides.users     ?? mockUsers(),
+    overrides.schedule  ?? mockSchedule(),
   );
 
 // Helpers for time
@@ -224,6 +242,32 @@ describe("BookingService.createBooking", () => {
       emailFailed:     false,
     });
   });
+
+  // REFACTOR-R3-P1-01: send() now throws on Resend failure, so sendWithRetry
+  // actually retries and emailFailed reflects reality.
+  it("returns emailFailed: true after 3 failed confirmation attempts (booking still succeeds)", async () => {
+    const email = mockEmail();
+    email.sendConfirmation.mockRejectedValue(new Error("resend down"));
+    const service = makeService({ email });
+
+    const result = await service.createBooking(basePackInput());
+
+    expect(email.sendConfirmation).toHaveBeenCalledTimes(3);
+    expect(result).toMatchObject({ eventId: "evt1", emailFailed: true });
+  }, 15_000);
+
+  it("returns emailFailed: false when confirmation succeeds on the third attempt", async () => {
+    const email = mockEmail();
+    email.sendConfirmation
+      .mockRejectedValueOnce(new Error("resend down"))
+      .mockRejectedValueOnce(new Error("resend down"));
+    const service = makeService({ email });
+
+    const result = await service.createBooking(basePackInput());
+
+    expect(email.sendConfirmation).toHaveBeenCalledTimes(3);
+    expect(result.emailFailed).toBe(false);
+  }, 15_000);
 
   it("writes a pending_termination row on successful booking", async () => {
     const bookings = mockBookings();
@@ -548,6 +592,7 @@ describe("BookingService.listForUser", () => {
 
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
+      eventId:     "e1",
       token:       "tkn1",
       joinToken:   "jtkn1",
       sessionType: "pack",

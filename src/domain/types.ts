@@ -57,6 +57,33 @@ export interface BookingRecord {
   stripePaymentId?: string;
 }
 
+// SINGLE-SESSION-CONFIRM-01: async-confirmation surface for single-session payments.
+// Detail returned for a confirmed single-session booking (polling + broadcast payload).
+export interface SingleSessionBookingDetail {
+  eventId:     string;
+  startIso:    string;
+  endIso:      string;
+  sessionType: SessionType;
+  joinToken:   string;
+}
+
+// Terminal/transitional state of a single-session payment, keyed by PaymentIntent id.
+export type SingleSessionStatus = "pending" | "confirmed" | "slot_taken" | "failed";
+
+// Realtime broadcast payload (event: "resolved") emitted on the per-PaymentIntent
+// channel. Discriminated by `status` so a single client handler is total.
+export type SingleSessionResolved =
+  | (SingleSessionBookingDetail & { status: "confirmed"; emailFailed: boolean })
+  | { status: "slot_taken" }
+  | { status: "failed" };
+
+// Polling result for GET /api/payment-confirmation/channel (single-session branch).
+// `booking` is present only when status === "confirmed".
+export interface SingleSessionStatusResult {
+  status:   SingleSessionStatus;
+  booking?: SingleSessionBookingDetail;
+}
+
 export interface ZoomSession {
   sessionId:        string;
   sessionName:      string;
@@ -78,6 +105,30 @@ export interface TimeSlot {
   start: string;
   end:   string;
   label: string;
+}
+
+// ─── Booking schedule (admin-editable) ────────────────────────────────────────
+// Replaces the values that used to be hardcoded in src/lib/booking-config.ts.
+
+/** A single working-hours block within a day, in minutes since midnight. */
+export interface TimeBlock {
+  startMinute: number;
+  endMinute:   number;
+}
+
+/**
+ * Working hours keyed by day-of-week (0=Sun..6=Sat). Each value is an ordered,
+ * non-overlapping list of blocks. An empty array means a non-working day.
+ */
+export type WeeklyHours = Record<number, TimeBlock[]>;
+
+/** The full booking schedule configuration consumed across server + client. */
+export interface ScheduleConfig {
+  weeklyHours:        WeeklyHours;
+  timezone:           string;
+  minNoticeHours:     number;
+  /** How many weeks ahead bookings are allowed. Static for now (not editable). */
+  bookingWindowWeeks: number;
 }
 
 // ─── API response types (consolidated from src/types/index.ts) ────────────────

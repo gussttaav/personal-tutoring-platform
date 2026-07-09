@@ -4,8 +4,9 @@
 import { google } from "googleapis";
 import { toZonedTime, fromZonedTime, format } from "date-fns-tz";
 import crypto from "crypto";
-import { SCHEDULE, DAY_SCHEDULES, dayStartHour } from "@/lib/booking-config";
+import { slotsFromBlocks } from "@/lib/booking-config";
 import { generateZoomSessionCredentials } from "@/infrastructure/zoom/jwt";
+import type { ScheduleConfig } from "@/domain/types";
 import type {
   ICalendarClient,
   CreateEventParams,
@@ -13,10 +14,7 @@ import type {
   TimeSlot,
 } from "./ICalendarClient";
 
-export { SCHEDULE };
-
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
-const TZ          = SCHEDULE.timezone; // "Europe/Madrid"
 
 // ─── Google auth ──────────────────────────────────────────────────────────────
 
@@ -33,14 +31,14 @@ function getCalendar() {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatTime(date: Date): string {
-  return format(toZonedTime(date, TZ), "HH:mm", { timeZone: TZ });
+function formatTime(date: Date, tz: string): string {
+  return format(toZonedTime(date, tz), "HH:mm", { timeZone: tz });
 }
 
-function madridToUtc(dateStr: string, hours: number, minutes: number): Date {
+function zonedToUtc(dateStr: string, hours: number, minutes: number, tz: string): Date {
   const hh = String(hours).padStart(2, "0");
   const mm = String(minutes).padStart(2, "0");
-  return fromZonedTime(`${dateStr}T${hh}:${mm}:00`, TZ);
+  return fromZonedTime(`${dateStr}T${hh}:${mm}:00`, tz);
 }
 
 /**
@@ -53,11 +51,12 @@ function formatSlotLabel(
   slotStart: Date,
   slotEnd: Date,
   durationMinutes: number,
+  tz: string,
 ): string {
   if (durationMinutes === 15) {
-    return formatTime(slotStart);
+    return formatTime(slotStart, tz);
   }
-  return `${formatTime(slotStart)}–${formatTime(slotEnd)}`;
+  return `${formatTime(slotStart, tz)}–${formatTime(slotEnd, tz)}`;
 }
 
 // ─── Public standalone helpers (used by non-class callers) ────────────────────
@@ -65,62 +64,50 @@ function formatSlotLabel(
 export async function getAvailableSlots(
   dateStr: string,
   durationMinutes: number,
+  config: ScheduleConfig,
   stepMinutes = durationMinutes,
 ): Promise<TimeSlot[]> {
+  const tz       = config.timezone;
   const dow      = new Date(`${dateStr}T12:00:00Z`).getDay();
-  const daySched = DAY_SCHEDULES[dow];
-  if (!daySched) return [];
+  const blocks   = config.weeklyHours[dow] ?? [];
+  if (blocks.length === 0) return [];
 
-  const startHour           = dayStartHour(dow);
-  const MORNING_END_MINUTES = daySched.morningEnd * 60 - 15;
-  const windows: { startMin: number; endMin: number }[] = [
-    { startMin: startHour * 60, endMin: MORNING_END_MINUTES },
-  ];
-  if (daySched.afternoonStart !== null && daySched.afternoonEnd !== null) {
-    windows.push({
-      startMin: daySched.afternoonStart * 60,
-      endMin:   daySched.afternoonEnd * 60,
-    });
-  }
+  const startMinutes = slotsFromBlocks(blocks, durationMinutes, stepMinutes);
+  if (startMinutes.length === 0) return [];
 
-  const timeMin = madridToUtc(dateStr, 0, 0).toISOString();
-  const timeMax = madridToUtc(dateStr, 23, 59).toISOString();
+  const timeMin = zonedToUtc(dateStr, 0, 0, tz).toISOString();
+  const timeMax = zonedToUtc(dateStr, 23, 59, tz).toISOString();
 
   const calendar    = getCalendar();
   const freebusyRes = await calendar.freebusy.query({
-    requestBody: { timeMin, timeMax, timeZone: TZ, items: [{ id: CALENDAR_ID }] },
+    requestBody: { timeMin, timeMax, timeZone: tz, items: [{ id: CALENDAR_ID }] },
   });
 
   const busyBlocks  = freebusyRes.data.calendars?.[CALENDAR_ID]?.busy ?? [];
   const slots: TimeSlot[] = [];
-  const minBookingTime = new Date(Date.now() + SCHEDULE.minNoticeHours * 3_600_000);
+  const minBookingTime = new Date(Date.now() + config.minNoticeHours * 3_600_000);
 
-  for (const window of windows) {
-    let cursorMin = window.startMin;
+  for (const cursorMin of startMinutes) {
+    const slotStart = zonedToUtc(
+      dateStr,
+      Math.floor(cursorMin / 60),
+      cursorMin % 60,
+      tz,
+    );
+    const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000);
 
-    while (cursorMin + durationMinutes <= window.endMin) {
-      const slotStart = madridToUtc(
-        dateStr,
-        Math.floor(cursorMin / 60),
-        cursorMin % 60,
-      );
-      const slotEnd = new Date(slotStart.getTime() + durationMinutes * 60_000);
+    const overlapsBusy = busyBlocks.some((block) => {
+      const bStart = new Date(block.start!);
+      const bEnd   = new Date(block.end!);
+      return slotStart < bEnd && slotEnd > bStart;
+    });
 
-      const overlapsBusy = busyBlocks.some((block) => {
-        const bStart = new Date(block.start!);
-        const bEnd   = new Date(block.end!);
-        return slotStart < bEnd && slotEnd > bStart;
+    if (!overlapsBusy && slotStart >= minBookingTime) {
+      slots.push({
+        start: slotStart.toISOString(),
+        end:   slotEnd.toISOString(),
+        label: formatSlotLabel(slotStart, slotEnd, durationMinutes, tz),
       });
-
-      if (!overlapsBusy && slotStart >= minBookingTime) {
-        slots.push({
-          start: slotStart.toISOString(),
-          end:   slotEnd.toISOString(),
-          label: formatSlotLabel(slotStart, slotEnd, durationMinutes),
-        });
-      }
-
-      cursorMin += stepMinutes;
     }
   }
 
@@ -133,9 +120,10 @@ export class CalendarClient implements ICalendarClient {
   async getAvailableSlots(
     dateStr: string,
     durationMinutes: number,
+    config: ScheduleConfig,
     stepMinutes?: number,
   ): Promise<TimeSlot[]> {
-    return getAvailableSlots(dateStr, durationMinutes, stepMinutes);
+    return getAvailableSlots(dateStr, durationMinutes, config, stepMinutes);
   }
 
   async createEvent(params: CreateEventParams): Promise<CreateEventResult> {
@@ -147,8 +135,8 @@ export class CalendarClient implements ICalendarClient {
       requestBody: {
         summary:     params.summary,
         description: params.description,
-        start: { dateTime: params.startIso, timeZone: TZ },
-        end:   { dateTime: params.endIso,   timeZone: TZ },
+        start: { dateTime: params.startIso, timeZone: params.timezone },
+        end:   { dateTime: params.endIso,   timeZone: params.timezone },
         reminders: {
           useDefault: false,
           overrides: [

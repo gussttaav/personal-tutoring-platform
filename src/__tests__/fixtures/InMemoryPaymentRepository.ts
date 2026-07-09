@@ -1,9 +1,14 @@
 // TEST-01: In-memory implementation of IPaymentRepository for integration tests.
+// SINGLE-SESSION-CONFIRM-01: slot-taken refund record + resolution broadcast.
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
+import type { SingleSessionResolved } from "@/domain/types";
 
 export class InMemoryPaymentRepository implements IPaymentRepository {
   private processed  = new Set<string>();
   private deadLetter = new Map<string, FailedBookingEntry>();
+  private refunds    = new Set<string>();
+  /** Test helper: broadcasts captured by paymentIntentId, in call order. */
+  readonly broadcasts: { paymentIntentId: string; payload: SingleSessionResolved }[] = [];
 
   async isProcessed(idempotencyKey: string): Promise<boolean> {
     return this.processed.has(idempotencyKey);
@@ -29,5 +34,21 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
   // REFACTOR-P4-01
   async hasFailedBooking(stripeSessionId: string): Promise<boolean> {
     return this.deadLetter.has(stripeSessionId);
+  }
+
+  // SINGLE-SESSION-CONFIRM-01
+  async recordSlotTakenRefund(paymentIntentId: string): Promise<void> {
+    this.refunds.add(paymentIntentId);
+  }
+
+  async wasRefunded(paymentIntentId: string): Promise<boolean> {
+    return this.refunds.has(paymentIntentId);
+  }
+
+  async broadcastSingleSessionResolved(
+    paymentIntentId: string,
+    payload: SingleSessionResolved,
+  ): Promise<void> {
+    this.broadcasts.push({ paymentIntentId, payload });
   }
 }

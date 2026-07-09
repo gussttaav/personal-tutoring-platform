@@ -16,13 +16,13 @@
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { SessionType } from "@/domain/types";
+import type { SessionType, SingleSessionBookingDetail } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "./CreditService";
+import { ScheduleService } from "./ScheduleService";
 import { DomainError, SlotUnavailableError } from "@/domain/errors";
-import { SCHEDULE } from "@/lib/booking-config";
 import { log } from "@/lib/logger";
 import { invalidate as invalidateAvailability } from "@/lib/availability-cache";
 
@@ -56,6 +56,7 @@ export interface CancelByTokenOutput {
 }
 
 export interface UserBooking {
+  eventId:     string;
   token:       string;
   joinToken:   string;
   sessionType: SessionType;
@@ -95,12 +96,14 @@ export class BookingService {
     private readonly zoom:       IZoomClient,
     private readonly email:      IEmailClient,
     private readonly users:      IUserRepository,
+    private readonly schedule:   ScheduleService,
   ) {}
 
   async createBooking(input: CreateBookingInput): Promise<CreateBookingOutput> {
-    // 1. Min-notice guard
+    // 1. Min-notice guard — schedule config is the source of truth.
+    const config      = await this.schedule.getConfig();
     const startsAt    = new Date(input.startIso);
-    const minBookable = new Date(Date.now() + SCHEDULE.minNoticeHours * 60 * 60_000);
+    const minBookable = new Date(Date.now() + config.minNoticeHours * 60 * 60_000);
     if (startsAt < minBookable) throw new SlotUnavailableError();
 
     // 2. REFACTOR-P1-01: Acquire slot lock. Held until the booking row is committed
@@ -212,6 +215,7 @@ export class BookingService {
         endIso:       input.endIso,
         sessionType:  input.sessionType,
         studentEmail: input.email,
+        timezone:     config.timezone,
       });
       compensations.push({
         description: `delete Calendar event ${calResult.eventId}`,
@@ -444,6 +448,7 @@ export class BookingService {
   async listForUser(email: string): Promise<UserBooking[]> {
     const entries = await this.bookings.listByUser(email);
     return entries.map(({ cancelToken, joinToken, record }) => ({
+      eventId:     record.eventId,
       token:       cancelToken,
       joinToken,
       sessionType: record.sessionType,
@@ -459,6 +464,12 @@ export class BookingService {
 
   async getJoinInfo(token: string): Promise<{ eventId: string; email: string; name: string; sessionType: string; startsAt: string } | null> {
     return this.bookings.findByJoinToken(token);
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: confirmed-booking detail by PaymentIntent id, for the
+  // single-session polling surface. Thin delegate — see IBookingRepository.findByStripePaymentId.
+  async findByStripePaymentId(paymentIntentId: string): Promise<SingleSessionBookingDetail | null> {
+    return this.bookings.findByStripePaymentId(paymentIntentId);
   }
 
   private async sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {

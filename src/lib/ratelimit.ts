@@ -88,6 +88,14 @@ export const pricingRatelimit = new Ratelimit({
   prefix:  "rl:pricing",
 });
 
+// Schedule: 60 requests per minute per IP (authenticated GET /api/schedule).
+// The mobile app fetches the working hours after login; 60/min leaves headroom.
+export const scheduleRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
+  prefix:  "rl:schedule",
+});
+
 // MOBILE-AUTH-01: Google ID token → bearer exchange (POST /api/auth/mobile).
 // 10 requests per minute per IP — this is a pre-auth endpoint; a legitimate app
 // exchanges only on cold start / token expiry, so a low limit stops abuse.

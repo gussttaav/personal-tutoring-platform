@@ -24,6 +24,12 @@ export interface MobileIdentity {
   image:   string | null;
   role:    "student" | "teacher" | "admin";
   isAdmin: boolean;
+  // i18n: the user's stored account-level locale, read straight from
+  // users.locale. `null` means no explicit preference has been seeded yet
+  // (e.g. a brand-new user — the mobile path does NOT call seedLocaleOnLogin),
+  // letting the app distinguish "saved es/en" from "derive from device + seed
+  // via POST /api/locale". Read-only surfacing; seeding policy is unchanged.
+  locale:  "es" | "en" | null;
 }
 
 export class MobileAuthService {
@@ -47,12 +53,17 @@ export class MobileAuthService {
     // Same as the web jwt callback: DB is the sole source of truth for role.
     const role = await this.userService.getRoleAndBootstrap(email);
 
+    // Read-only: surface the stored locale (null when not yet seeded). We do
+    // NOT seed here — seeding stays owned by seedLocaleOnLogin / POST /api/locale.
+    const locale = await this.userService.getLocale(email);
+
     return {
       email,
       name:    identity.name ?? null,
       image:   identity.picture ?? null,
       role,
       isAdmin: role === "admin",
+      locale,
     };
   }
 }

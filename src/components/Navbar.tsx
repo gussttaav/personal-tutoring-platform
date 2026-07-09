@@ -225,7 +225,7 @@ export default function Navbar() {
                     </Link>
                     <hr style={{ borderColor: "rgba(60,74,66,0.3)", margin: "6px 0" }} />
                     <button
-                      onClick={() => signOut()}
+                      onClick={() => signOut({ callbackUrl: "/" })}
                       className="flex items-center gap-3 w-full px-3 py-2 text-sm rounded-lg text-left transition-colors"
                       style={{ color: "#86948a", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "rgba(255,180,171,0.08)"; (e.currentTarget as HTMLElement).style.color = "#ffb4ab"; }}
@@ -391,7 +391,7 @@ export default function Navbar() {
                   <LocaleSwitcher onSwitch={() => setMobileOpen(false)} />
                   <div style={{ width: "1px", height: "20px", background: "rgba(255,255,255,0.07)", flexShrink: 0 }} />
                   <button
-                    onClick={() => { setMobileOpen(false); signOut(); }}
+                    onClick={() => { setMobileOpen(false); signOut({ callbackUrl: "/" }); }}
                     className="flex items-center gap-1.5 text-sm transition-colors"
                     style={{ color: "#86948a", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
                     onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#ffb4ab"; }}

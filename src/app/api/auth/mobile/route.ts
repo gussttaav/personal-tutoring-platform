@@ -52,6 +52,12 @@ export async function POST(req: NextRequest) {
         name:    identity.name,
         image:   identity.image,
         isAdmin: identity.isAdmin,
+        // i18n: stored users.locale ("es" | "en"), or null when no preference
+        // has been seeded yet (new user before any /api/locale write). The app
+        // uses null to fall back to device language and seed via POST /api/locale.
+        // Returned identically on initial exchange and on refresh (both hit this
+        // same endpoint), so the app always has the current locale.
+        locale:  identity.locale,
       },
     });
   } catch (err) {

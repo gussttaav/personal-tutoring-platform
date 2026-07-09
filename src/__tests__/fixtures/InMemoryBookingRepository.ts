@@ -1,6 +1,6 @@
 // TEST-01: In-memory implementation of IBookingRepository for integration tests.
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
-import type { BookingRecord, SessionType } from "@/domain/types";
+import type { BookingRecord, SessionType, SingleSessionBookingDetail } from "@/domain/types";
 import { randomUUID } from "crypto";
 
 export class InMemoryBookingRepository implements IBookingRepository {
@@ -94,6 +94,34 @@ export class InMemoryBookingRepository implements IBookingRepository {
       if (record.stripePaymentId === stripePaymentId) return true;
     }
     return false;
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: confirmed-only detail finder (mirrors the status='confirmed'
+  // scope of the Supabase impl — a cancelled row never matches).
+  async findByStripePaymentId(
+    stripePaymentId: string,
+  ): Promise<SingleSessionBookingDetail | null> {
+    for (const [eventId, record] of this.bookings) {
+      if (record.stripePaymentId !== stripePaymentId) continue;
+      if ((this.statuses.get(eventId) ?? "confirmed") !== "confirmed") return null;
+      const joinToken = this.findJoinTokenForEvent(eventId);
+      if (!joinToken) return null;
+      return {
+        eventId,
+        startIso:    record.startsAt,
+        endIso:      record.endsAt,
+        sessionType: record.sessionType,
+        joinToken,
+      };
+    }
+    return null;
+  }
+
+  private findJoinTokenForEvent(eventId: string): string | undefined {
+    for (const [token, entry] of this.joinTokens) {
+      if (entry.eventId === eventId) return token;
+    }
+    return undefined;
   }
 
   async markCompleted(bookingId: string): Promise<void> {

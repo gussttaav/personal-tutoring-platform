@@ -4,7 +4,7 @@
 // Separate queries are used instead of PostgREST embedded joins to avoid
 // relying on FK-hint syntax that varies across PostgREST versions.
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
-import type { BookingRecord, SessionType } from "@/domain/types";
+import type { BookingRecord, SessionType, SingleSessionBookingDetail } from "@/domain/types";
 import { supabase } from "./client";
 import crypto from "crypto";
 
@@ -247,6 +247,30 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .eq("stripe_payment_id", stripePaymentId)
       .maybeSingle();
     return data !== null;
+  }
+
+  // SINGLE-SESSION-CONFIRM-01: detail finder for the single-session polling surface.
+  // Scoped to status='confirmed' so a cancelled/completed/no_show row never reports a
+  // stale `confirmed` (cancellation UPDATEs status in place and nulls the join token).
+  async findByStripePaymentId(
+    stripePaymentId: string,
+  ): Promise<SingleSessionBookingDetail | null> {
+    const { data, error } = await supabase
+      .from("bookings")
+      .select("calendar_event_id, starts_at, ends_at, session_type, join_token")
+      .eq("stripe_payment_id", stripePaymentId)
+      .eq("status", "confirmed")
+      .maybeSingle();
+
+    if (error || !data || !data.join_token || !data.calendar_event_id) return null;
+
+    return {
+      eventId:     data.calendar_event_id,
+      startIso:    new Date(data.starts_at).toISOString(),
+      endIso:      new Date(data.ends_at).toISOString(),
+      sessionType: data.session_type as SessionType,
+      joinToken:   data.join_token,
+    };
   }
 
   async markCompleted(bookingId: string): Promise<void> {
