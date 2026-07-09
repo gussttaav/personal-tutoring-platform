@@ -13,10 +13,24 @@ module.exports = async () => {
   // Call the async factory to get the full Next.js-enriched config (transforms, etc.)
   const base = await createJestConfig(baseUserConfig)();
 
-  // next-intl and use-intl are ESM-only packages. Extend next/jest's
-  // transformIgnorePatterns so Jest transpiles them via the SWC transform.
-  const ESM_PACKAGES = ["next-intl", "use-intl"];
+  // next-intl, use-intl and their @formatjs deps are ESM-only packages.
+  // Extend next/jest's transformIgnorePatterns so Jest transpiles them via
+  // the SWC transform. Scoped names need two spellings: pnpm stores the
+  // package dir as `@scope+name@version` while the nested node_modules path
+  // keeps `@scope/name` (SEO-01 added the @formatjs packages, pulled in by
+  // next-intl's middleware).
+  const ESM_PACKAGES = [
+    "next-intl",
+    "use-intl",
+    "@formatjs/intl-localematcher",
+    "@formatjs/fast-memoize",
+    "@formatjs/icu-messageformat-parser",
+    "@formatjs/icu-skeleton-parser",
+    "intl-messageformat",
+  ];
   const esmRegex = ESM_PACKAGES.join("|");
+  const esmPnpmDirRegex = ESM_PACKAGES.map((p) => p.replace("/", "\\+")).join("|");
+  const esmNestedRegex = ESM_PACKAGES.map((p) => p.replace("/", "[\\\\/]")).join("|");
   const transformIgnorePatterns = (base.transformIgnorePatterns ?? []).map(
     (/** @type {string} */ pattern) => {
       if (typeof pattern !== "string") return pattern;
@@ -27,10 +41,10 @@ module.exports = async () => {
       // pnpm-specific pattern
       if (pattern.includes("\\.pnpm")) {
         return pattern
-          .replace(/\(\?!\(([^)]+)\)@\)/, `(?!($1|${esmRegex})@)`)
+          .replace(/\(\?!\(([^)]+)\)@\)/, `(?!($1|${esmPnpmDirRegex})@)`)
           .replace(
             /\(\?!.*node_modules\[.*?\]\(([^)]+)\)\[.*?\]\)/,
-            (m, inner) => m.replace(inner, `${inner}|${esmRegex}`),
+            (m, inner) => m.replace(inner, `${inner}|${esmNestedRegex}`),
           );
       }
       return pattern;
