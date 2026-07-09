@@ -51,7 +51,7 @@ const makeSchedule = () =>
 
 const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   isProcessed:          jest.fn(),
-  markProcessed:        jest.fn(),
+  markProcessed:        jest.fn().mockResolvedValue(undefined),
   recordFailedBooking:  jest.fn(),
   listFailedBookings:   jest.fn(),
   clearFailedBooking:   jest.fn(),
@@ -411,6 +411,56 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
 
     expect(stripe.createRefund).not.toHaveBeenCalled();
     expect(paymentRepo.recordSlotTakenRefund).not.toHaveBeenCalled();
+  });
+
+  // REFACTOR-R3-P1-03: redelivery after createBooking committed but markProcessed failed.
+  // The booking-exists gate heals the marker and stops before the slot re-check, so a
+  // fulfilled booking is never refunded.
+  const confirmedDetail = {
+    eventId:     "evt_1",
+    startIso:    "2099-12-01T10:00:00.000Z",
+    endIso:      "2099-12-01T11:00:00.000Z",
+    sessionType: "session1h" as const,
+    joinToken:   "j".repeat(64),
+  };
+
+  it("heals the marker and skips (no refund, no second booking) when a booking already exists", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.wasRefunded.mockResolvedValue(false);
+    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(confirmedDetail);
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
+
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+    expect(paymentRepo.markProcessed).toHaveBeenCalledWith("pi_single_123");
+    expect(paymentRepo.broadcastSingleSessionResolved).not.toHaveBeenCalled();
+  });
+
+  it("still resolves when the marker heal-write itself fails", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(confirmedDetail);
+    paymentRepo.markProcessed.mockRejectedValue(new Error("db down"));
+
+    await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
+
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+  });
+
+  it("still refunds exactly once when no booking exists and the slot was genuinely taken", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.wasRefunded.mockResolvedValue(false);
+    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(null);
+    mockGetAvailableSlots.mockResolvedValue([]); // slot taken
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(stripe.createRefund).toHaveBeenCalledTimes(1);
+    expect(bookings.createBooking).not.toHaveBeenCalled();
   });
 
   // 6. Dead-letter → failed (broadcast + polling).

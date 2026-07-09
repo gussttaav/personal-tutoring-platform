@@ -12,7 +12,7 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [02 Slot re-check fails closed](phase-1-correctness/02-slot-recheck-fail-closed.md) | `REFACTOR-R3-P1-02` | ✅ | Claude | local (`fix/p1-02-slot-recheck-fail-closed`) |
-| [03 Booking-exists idempotency gate](phase-1-correctness/03-idempotency-booking-gate.md) | `REFACTOR-R3-P1-03` | ⬜ | _tbd_ | — |
+| [03 Booking-exists idempotency gate](phase-1-correctness/03-idempotency-booking-gate.md) | `REFACTOR-R3-P1-03` | ✅ | Claude | local (`fix/p1-03-idempotency-booking-gate`) |
 | [01 Email send() throws on failure](phase-1-correctness/01-email-send-throws.md) | `REFACTOR-R3-P1-01` | ✅ | Claude | local (`refactor/p1-01-email-send-throws`) |
 
 **Exit criteria**
@@ -64,6 +64,7 @@ Update this file when starting, completing, or blocking a task.
 ## Deviations from plan
 
 - **P1-01:** `FakeEmailClient` did NOT gain a failure mode (task listed it conditionally). Service-level tests use `jest.Mocked<IEmailClient>` factories, and the dead-letter path imports `sendDeadLetterNotificationEmail` directly (bypasses `IEmailClient`), so failure injection uses jest mocks instead. Optional `AbortSignal.timeout` on the Resend fetch was not added.
+- **P1-03:** the `mockPaymentRepo` default for `markProcessed` was changed from `jest.fn()` to `jest.fn().mockResolvedValue(undefined)` so the mock matches the real async signature — the new gate calls `.catch()` on the return value (unawaited), which requires a Promise. No production behavior change.
 
 ## Known regressions introduced
 

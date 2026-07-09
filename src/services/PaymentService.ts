@@ -13,6 +13,10 @@
  * REFACTOR-R3-P1-02: the webhook slot re-check fails CLOSED — a Google freebusy
  * failure now propagates (webhook 500 → Stripe redelivers) instead of assuming the
  * slot is free, so a transient outage can't double-book the tutor's manual calendar.
+ *
+ * REFACTOR-R3-P1-03: the idempotency gate short-circuits on an existing confirmed
+ * booking for the PaymentIntent — so a redelivery after createBooking committed but
+ * markProcessed failed heals the marker instead of refunding a fulfilled booking.
  */
 
 import type Stripe from "stripe";
@@ -365,6 +369,21 @@ export class PaymentService {
     if (await this.paymentRepo.isProcessed(idempotencyKey)) {
       log("info", "Duplicate single-session webhook skipped", { service: "payment", idempotencyKey });
       return;
+    }
+
+    // REFACTOR-R3-P1-03: createBooking and markProcessed are separate writes. If the
+    // booking committed but markProcessed failed, Stripe's redelivery must NOT reach the
+    // slot re-check (it would see our own calendar event and refund a fulfilled booking).
+    // A confirmed booking for this PI is proof of processing — heal the marker and stop.
+    if (paymentIntentId) {
+      const existing = await this.bookings.findByStripePaymentId(paymentIntentId);
+      if (existing) {
+        await this.paymentRepo.markProcessed(idempotencyKey).catch(() => {});
+        log("info", "Duplicate single-session webhook skipped (booking already exists)", {
+          service: "payment", idempotencyKey,
+        });
+        return;
+      }
     }
 
     // SINGLE-SESSION-CONFIRM-01: a prior run already refunded this PaymentIntent for a taken
