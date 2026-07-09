@@ -8,6 +8,7 @@ import SpecializationsSection from "@/features/landing/SpecializationsSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import StructuredData from "@/components/seo/StructuredData";
 import { localizedAlternates } from "@/lib/hreflang";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -27,6 +28,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   // static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
   return (
     <>
+      {/* SEO-04: JSON-LD (Person + Service) — server-rendered, outside the
+          Suspense boundary so it ships in the prerendered HTML. */}
+      <StructuredData locale={locale} />
       <Navbar />
 
       <main style={{ position: "relative", zIndex: 1 }}>
