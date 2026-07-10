@@ -65,6 +65,25 @@ export async function generateMetadata({
     description: t("description"),
     robots: { index: true, follow: true },
     alternates: localizedAlternates("", locale),
+    // SEO-03: OpenGraph + Twitter cards for social/link previews. Relative
+    // URLs resolve against metadataBase; /og.png is a static asset (bypasses
+    // the intl middleware via its extension check).
+    openGraph: {
+      type: "website",
+      siteName: "gustavoai.dev",
+      title: t("title"),
+      description: t("description"),
+      url: locale === "en" ? "/en" : "/",
+      locale: locale === "en" ? "en_US" : "es_ES",
+      alternateLocale: locale === "en" ? "es_ES" : "en_US",
+      images: [{ url: "/og.png", width: 1200, height: 630, alt: t("title") }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("description"),
+      images: ["/og.png"],
+    },
     icons: {
       icon: [
         { url: "/favicon.svg", type: "image/svg+xml" },
