@@ -9,9 +9,11 @@ import type { MetadataRoute } from "next";
  * transactional routes (área personal, pago-exitoso, sesión, cancelar, admin,
  * auth) are intentionally excluded — they are not SEO targets.
  *
- * SEO-05: `x-default` points at the Spanish URL, matching the page-level
- * hreflang in src/lib/hreflang.ts — the sitemap and metadata must send
- * consistent signals.
+ * SEO-05: `x-default` points at the English URL, matching the page-level
+ * hreflang in src/lib/hreflang.ts — English is the intended international
+ * fallback for searchers whose language matches neither es nor en. This is a
+ * search-ranking signal only; it does not change what a live visitor with no
+ * NEXT_LOCALE cookie sees (that stays Spanish, see src/middleware.ts).
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
@@ -21,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const languages = {
       es: `${base}${route}`,
       en: `${base}/en${route}`,
-      "x-default": `${base}${route}`,
+      "x-default": `${base}/en${route}`,
     };
     return [
       { url: `${base}${route}`, alternates: { languages } },
