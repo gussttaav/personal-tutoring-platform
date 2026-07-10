@@ -11,8 +11,11 @@
  *  - Valid token, signed in → PreJoinSetup (device preview + "Entrar al aula").
  *
  * SEC-05: Only join tokens are accepted. Cancel tokens are rejected.
+ * SEO-02: robots noindex — tokenized session URLs must never appear in
+ * search results (robots.txt disallow blocks crawling but not indexing).
  */
 
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { toZonedTime } from "date-fns-tz";
 import { bookingService } from "@/services";
@@ -22,6 +25,8 @@ import Footer from "@/components/Footer";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import PreJoinSetup from "@/components/PreJoinSetup";
 import { getTranslations, setRequestLocale } from "next-intl/server";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 const TZ = "Europe/Madrid";
 
