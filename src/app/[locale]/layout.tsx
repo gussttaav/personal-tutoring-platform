@@ -59,6 +59,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "meta.root" });
+  // SEO-03: locale-specific share image (credential + credibility stats are
+  // baked into the PNG, so each locale needs its own). Spanish is the default
+  // (`/og.png`); English uses `/og-en.png`.
+  const ogImage = locale === "en" ? "/og-en.png" : "/og.png";
   return {
     metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev"),
     title: t("title"),
@@ -66,8 +70,8 @@ export async function generateMetadata({
     robots: { index: true, follow: true },
     alternates: localizedAlternates("", locale),
     // SEO-03: OpenGraph + Twitter cards for social/link previews. Relative
-    // URLs resolve against metadataBase; /og.png is a static asset (bypasses
-    // the intl middleware via its extension check).
+    // URLs resolve against metadataBase; the og image is a static asset
+    // (bypasses the intl middleware via its extension check).
     openGraph: {
       type: "website",
       siteName: "gustavoai.dev",
@@ -76,13 +80,13 @@ export async function generateMetadata({
       url: locale === "en" ? "/en" : "/",
       locale: locale === "en" ? "en_US" : "es_ES",
       alternateLocale: locale === "en" ? "es_ES" : "en_US",
-      images: [{ url: "/og.png", width: 1200, height: 630, alt: t("title") }],
+      images: [{ url: ogImage, width: 1200, height: 630, alt: t("title") }],
     },
     twitter: {
       card: "summary_large_image",
       title: t("title"),
       description: t("description"),
-      images: ["/og.png"],
+      images: [ogImage],
     },
     icons: {
       icon: [
