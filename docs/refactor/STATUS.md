@@ -26,12 +26,12 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Admin role hourly re-fetch](phase-2-hardening/01-admin-role-hourly-refresh.md) | `REFACTOR-R3-P2-01` | 🚫 | Gustavo | won't do — see Deviations |
-| [02 Rate limits: /api/cancel + zoom/token](phase-2-hardening/02-rate-limit-cancel-zoom-token.md) | `REFACTOR-R3-P2-02` | ⬜ | _tbd_ | — |
+| [02 Rate limits: /api/cancel + zoom/token](phase-2-hardening/02-rate-limit-cancel-zoom-token.md) | `REFACTOR-R3-P2-02` | ✅ | Gustavo | local |
 | [03 Server console.* → log()](phase-2-hardening/03-server-console-to-log.md) | `REFACTOR-R3-P2-03` | ⬜ | _tbd_ | — |
 
 **Exit criteria**
 - ~~Demote a test admin in DB → admin APIs reject within ≤ 1h without re-login~~ (dropped with P2-01)
-- [ ] `POST /api/cancel` returns 429 under burst; zoom/token uses `getClientIp()` + dedicated limiter
+- [x] `POST /api/cancel` returns 429 under burst; zoom/token uses `getClientIp()` + dedicated limiter
 - [ ] `grep -rn "console\." src --include="*.ts"` (excluding client components/tests) returns nothing server-side
 - [ ] `pnpm test` and `pnpm build` green
 
@@ -74,6 +74,13 @@ Update this file when starting, completing, or blocking a task.
   `AUTH_SECRET` (instant; logs everyone out).
   _Revisit only if the app ever gains multiple admins or in-app role management._
 - **P1-03:** the `mockPaymentRepo` default for `markProcessed` was changed from `jest.fn()` to `jest.fn().mockResolvedValue(undefined)` so the mock matches the real async signature — the new gate calls `.catch()` on the return value (unawaited), which requires a Promise. No production behavior change.
+- **P2-02:** the new rate-limit test lives at `src/app/api/cancel/__tests__/route.test.ts`, not in
+  `src/__tests__/integration/` as the task md specified. That integration project holds only
+  service-level tests built on in-memory repositories — it has no route/HTTP test setup — whereas
+  route handlers are already tested colocated (`internal/reconcile-stripe/__tests__/route.test.ts`,
+  `payment-confirmation/channel/__tests__/route.test.ts`). The task md explicitly allowed this
+  fallback ("otherwise a unit test on handler ordering is enough"); the colocated test is a superset,
+  covering the 6× burst → 429, per-IP keying, leftmost-hop parsing, and limiter-before-CSRF ordering.
 
 ## Known regressions introduced
 

@@ -10,6 +10,11 @@
  * which meant availability and chat calls shared the same 20-req/min budget
  * under different key prefixes — defeating the purpose of separate limits.
  * The availability route is now on its own 60-req/min limiter.
+ *
+ * REFACTOR-R3-P2-02: Added `cancelRatelimit` (the unauthenticated /api/cancel
+ * route had no limiter at all) and `zoomTokenRatelimit` (/api/zoom/token was
+ * piggybacking on `availabilityRatelimit` under a `zoom:token:` key prefix,
+ * sharing that route's 60-req/min budget).
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
@@ -103,4 +108,21 @@ export const mobileAuthRatelimit = new Ratelimit({
   redis:   kv,
   limiter: Ratelimit.slidingWindow(10, "1 m"),
   prefix:  "rl:mobile-auth",
+});
+
+// REFACTOR-R3-P2-02: unauthenticated cancel endpoint — tight per-IP cap.
+// A human cancels once per email link; 5/min is generous for people and
+// hostile to token-guessing scanners.
+export const cancelRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(5, "1 m"),
+  prefix:  "rl:cancel",
+});
+
+// REFACTOR-R3-P2-02: dedicated limiter (was piggybacking on availabilityRatelimit).
+// A token is requested once per session join, plus the occasional rejoin.
+export const zoomTokenRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  prefix:  "rl:zoomtoken",
 });
