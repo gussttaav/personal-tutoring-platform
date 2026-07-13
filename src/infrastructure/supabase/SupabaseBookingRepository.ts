@@ -3,8 +3,19 @@
 // importing that module (it has Redis side-effects at module scope).
 // Separate queries are used instead of PostgREST embedded joins to avoid
 // relying on FK-hint syntax that varies across PostgREST versions.
+// BOOKING-HISTORY-01: listHistoryByUser — keyset-paginated past bookings.
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
-import type { BookingRecord, SessionType, SingleSessionBookingDetail } from "@/domain/types";
+import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
+import type {
+  BookingHistoryEntry,
+  BookingHistoryPage,
+  BookingRecord,
+  BookingStatus,
+  SessionType,
+  SingleSessionBookingDetail,
+} from "@/domain/types";
+import { SupabaseReviewRepository } from "./SupabaseReviewRepository";
+import { buildCursor, deriveAmount, parseCursor, type PackInfo, type PaymentInfo } from "./booking-history";
 import { supabase } from "./client";
 import crypto from "crypto";
 
@@ -17,6 +28,12 @@ function signToken(payload: string): string {
 const HEX64 = /^[0-9a-f]{64}$/;
 
 export class SupabaseBookingRepository implements IBookingRepository {
+  // The review lookup lives here because this repository already owns the
+  // multi-query fan-out for history; injecting it keeps BookingService's
+  // constructor unchanged. Default-constructed so `new SupabaseBookingRepository()`
+  // (how the singleton in ./index.ts is built) keeps working.
+  constructor(private readonly reviews: IReviewRepository = new SupabaseReviewRepository()) {}
+
   async createBooking(
     record: Omit<BookingRecord, "used">,
   ): Promise<{ cancelToken: string; joinToken: string }> {
@@ -182,6 +199,138 @@ export class SupabaseBookingRepository implements IBookingRepository {
     );
 
     return results;
+  }
+
+  async listHistoryByUser(
+    email: string,
+    opts: { limit: number; cursor?: string },
+  ): Promise<BookingHistoryPage> {
+    const normalized = email.toLowerCase().trim();
+    const keyset     = opts.cursor ? parseCursor(opts.cursor) : null;
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", normalized)
+      .maybeSingle();
+
+    if (!user) return { entries: [], nextCursor: null };
+
+    // 1. The page itself. No status filter — a cancelled class is still history.
+    //    Fetch one extra row as a has-more probe, then drop it.
+    let query = supabase
+      .from("bookings")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, status, note, credit_pack_id, stripe_payment_id")
+      .eq("user_id", user.id)
+      .lt("starts_at", new Date().toISOString())
+      .order("starts_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(opts.limit + 1);
+
+    if (keyset) {
+      query = query.or(
+        `starts_at.lt."${keyset.startsAt}",and(starts_at.eq."${keyset.startsAt}",id.lt.${keyset.id})`,
+      );
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const rows       = data ?? [];
+    const hasMore    = rows.length > opts.limit;
+    const page       = hasMore ? rows.slice(0, opts.limit) : rows;
+    if (page.length === 0) return { entries: [], nextCursor: null };
+
+    // 2-4. Bulk-resolve the enrichments. Three bounded `in` queries rather than
+    //      a per-row lookup — the ids all come from the page above.
+    const bookingIds   = page.map(r => r.id as string);
+    const packIds      = [...new Set(page.map(r => r.credit_pack_id).filter((v): v is string => !!v))];
+    const singlePayIds = page.map(r => r.stripe_payment_id).filter((v): v is string => !!v);
+
+    const [reviews, packs] = await Promise.all([
+      this.reviews.findByBookingIds(bookingIds),
+      this.fetchPacks(packIds),
+    ]);
+
+    // A pack class was paid for at pack-purchase time, so its charge is on the
+    // pack's payment, not the booking's.
+    const payIds   = [...new Set([...singlePayIds, ...[...packs.values()].map(p => p.stripePaymentId)])];
+    const payments = await this.fetchPayments(payIds, user.id);
+
+    const entries: BookingHistoryEntry[] = page.map(row => {
+      const sessionType = row.session_type as SessionType;
+      const pack        = row.credit_pack_id ? packs.get(row.credit_pack_id as string) : undefined;
+
+      const { amountCents, currency } = deriveAmount(
+        sessionType,
+        pack,
+        (row.stripe_payment_id ?? null) as string | null,
+        payments,
+      );
+
+      return {
+        id:          row.id as string,
+        eventId:     (row.calendar_event_id ?? "") as string,
+        sessionType,
+        status:      row.status as BookingStatus,
+        startsAt:    new Date(row.starts_at as string).toISOString(),
+        endsAt:      new Date(row.ends_at   as string).toISOString(),
+        ...(pack ? { packSize: pack.packSize } : {}),
+        note:        (row.note ?? null) as string | null,
+        amountCents,
+        currency,
+        review:      reviews.get(row.id as string) ?? null,
+      };
+    });
+
+    const last       = page[page.length - 1];
+    const nextCursor = hasMore
+      ? buildCursor(last.starts_at as string, last.id as string)
+      : null;
+
+    return { entries, nextCursor };
+  }
+
+  private async fetchPacks(packIds: string[]): Promise<Map<string, PackInfo>> {
+    if (packIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+      .from("credit_packs")
+      .select("id, pack_size, stripe_payment_id")
+      .in("id", packIds);
+
+    if (error) throw error;
+
+    return new Map(
+      (data ?? []).map(p => [
+        p.id as string,
+        { packSize: p.pack_size as number, stripePaymentId: p.stripe_payment_id as string },
+      ]),
+    );
+  }
+
+  private async fetchPayments(
+    stripePaymentIds: string[],
+    userId: string,
+  ): Promise<Map<string, PaymentInfo>> {
+    if (stripePaymentIds.length === 0) return new Map();
+
+    // Scoped to the user as defence-in-depth: the ids already came from this
+    // user's own bookings and packs, so this can only ever narrow the result.
+    const { data, error } = await supabase
+      .from("payments")
+      .select("stripe_payment_id, amount_cents, currency")
+      .eq("user_id", userId)
+      .in("stripe_payment_id", stripePaymentIds);
+
+    if (error) throw error;
+
+    return new Map(
+      (data ?? []).map(p => [
+        p.stripe_payment_id as string,
+        { amountCents: p.amount_cents as number, currency: p.currency as string },
+      ]),
+    );
   }
 
   async hasAnyBooking(email: string): Promise<boolean> {

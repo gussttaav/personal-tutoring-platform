@@ -57,6 +57,38 @@ export interface BookingRecord {
   stripePaymentId?: string;
 }
 
+// Lifecycle of a booking row. Every booking is created 'confirmed'; the daily
+// session-cleanup cron settles it to 'completed' (student joined the Zoom
+// session) or 'no_show' (they didn't). 'cancelled' is set by the cancel flow.
+export type BookingStatus = "confirmed" | "completed" | "cancelled" | "no_show";
+
+// BOOKING-HISTORY-01: one past booking, enriched for the history surface.
+// `amountCents` is the price actually paid (derived from the payments row, not
+// from the admin-editable `pricing` table, so past bookings stay accurate when
+// prices change). It is null for free15min and for rows with no payment record.
+export interface BookingHistoryEntry {
+  id:          string;         // bookings.id — stable display reference
+  eventId:     string;         // may be "" when no calendar event was created
+  sessionType: SessionType;
+  status:      BookingStatus;
+  startsAt:    string;
+  endsAt:      string;
+  packSize?:   number;
+  note:        string | null;
+  amountCents: number | null;
+  currency:    string | null;  // null whenever amountCents is null
+  review:      { rating: number; comment: string | null } | null;
+}
+
+// Keyset page. `nextCursor` is an opaque "<startsAt>_<id>" token; null on the
+// last page. The id is part of the key because bookings can share a startsAt —
+// the no-overlap constraint only applies to 'confirmed' rows, so a cancelled
+// booking and its replacement legitimately occupy the same slot.
+export interface BookingHistoryPage {
+  entries:    BookingHistoryEntry[];
+  nextCursor: string | null;
+}
+
 // SINGLE-SESSION-CONFIRM-01: async-confirmation surface for single-session payments.
 // Detail returned for a confirmed single-session booking (polling + broadcast payload).
 export interface SingleSessionBookingDetail {
