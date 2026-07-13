@@ -6,6 +6,7 @@ jest.mock("@/lib/availability-cache", () => ({
 }));
 
 import { BookingService } from "../BookingService";
+import { InvalidCursorError } from "@/domain/errors";
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
@@ -27,6 +28,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   findByJoinToken:            jest.fn().mockResolvedValue(null),
   consumeCancelToken:         jest.fn().mockResolvedValue(true),
   listByUser:                 jest.fn().mockResolvedValue([]),
+  listHistoryByUser:          jest.fn().mockResolvedValue({ entries: [], nextCursor: null }),
   hasAnyBooking:              jest.fn().mockResolvedValue(false),
   acquireSlotLock:            jest.fn().mockResolvedValue(true),
   releaseSlotLock:            jest.fn().mockResolvedValue(undefined),
@@ -849,5 +851,40 @@ describe("BookingService.finalizePastSession", () => {
     expect(bookings.markCompleted).not.toHaveBeenCalled();
     expect(bookings.markNoShow).not.toHaveBeenCalled();
     expect(sessions.deleteByEventId).toHaveBeenCalledWith("evt-1");
+  });
+});
+
+// BOOKING-HISTORY-01. The service is a pass-through here — the enrichment and the
+// keyset live in the repository — so this asserts the wiring only. The logic that
+// can actually be got wrong is covered by the unit tests over booking-history.ts
+// and the DB-gated SupabaseBookingRepository.history tests.
+describe("BookingService.listHistoryForUser", () => {
+  it("passes the limit and cursor through to the repository and returns its page", async () => {
+    const bookings = mockBookings();
+    const page = {
+      entries: [{
+        id: "b1", eventId: "evt-1", sessionType: "pack" as const, status: "completed" as const,
+        startsAt: "2026-06-14T17:00:00.000Z", endsAt: "2026-06-14T18:00:00.000Z",
+        packSize: 10, note: null, amountCents: 3000, currency: "eur",
+        review: { rating: 5, comment: null },
+      }],
+      nextCursor: "2026-06-14T17:00:00.000Z_b1",
+    };
+    bookings.listHistoryByUser.mockResolvedValue(page);
+    const service = makeService({ bookings });
+
+    const result = await service.listHistoryForUser("a@b.com", { limit: 20, cursor: "cur" });
+
+    expect(bookings.listHistoryByUser).toHaveBeenCalledWith("a@b.com", { limit: 20, cursor: "cur" });
+    expect(result).toEqual(page);
+  });
+
+  it("propagates a malformed-cursor rejection rather than swallowing it", async () => {
+    const bookings = mockBookings();
+    bookings.listHistoryByUser.mockRejectedValue(new InvalidCursorError());
+    const service = makeService({ bookings });
+
+    await expect(service.listHistoryForUser("a@b.com", { limit: 20, cursor: "bad" }))
+      .rejects.toBeInstanceOf(InvalidCursorError);
   });
 });

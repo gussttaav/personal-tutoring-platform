@@ -1,7 +1,8 @@
 // ARCH-10: Booking repository interface.
 // ARCH-13: listByUser now returns cancel tokens alongside records; recordRescheduleFailure added.
 // SINGLE-SESSION-CONFIRM-01: findByStripePaymentId detail finder for the polling surface.
-import type { BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
+// BOOKING-HISTORY-01: listHistoryByUser — paginated past-bookings read.
+import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
 
 export interface IBookingRepository {
   /**
@@ -45,6 +46,23 @@ export interface IBookingRepository {
    * Each entry includes both tokens alongside the record.
    */
   listByUser(email: string): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]>;
+
+  /**
+   * BOOKING-HISTORY-01: one keyset page of a user's PAST bookings, newest first,
+   * enriched with the note, the price actually paid, and the review if any.
+   *
+   * Deliberately unlike listByUser: every status is included (a cancelled class
+   * is part of your history), only past bookings are returned, and no cancel/join
+   * tokens are emitted — a past booking can be neither cancelled nor joined.
+   *
+   * `cursor` is the opaque token from the previous page's `nextCursor`; omit it
+   * for the first page. Implementations throw InvalidCursorError on a malformed
+   * cursor rather than silently restarting from page one.
+   */
+  listHistoryByUser(
+    email: string,
+    opts: { limit: number; cursor?: string },
+  ): Promise<BookingHistoryPage>;
 
   /**
    * Returns true if the user has ever created a booking, regardless of whether

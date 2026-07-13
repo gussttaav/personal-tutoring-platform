@@ -13,4 +13,14 @@ export interface IReviewRepository {
    * no review row exists yet for the booking.
    */
   setComment(bookingId: string, comment: string): Promise<void>;
+
+  /**
+   * BOOKING-HISTORY-01: bulk read for the booking-history surface. Returns a map
+   * keyed by booking id, holding only the bookings that have been reviewed —
+   * callers treat a missing key as "not reviewed yet". Safe as a map because
+   * reviews.booking_id is UNIQUE (one review per booking).
+   */
+  findByBookingIds(
+    bookingIds: string[],
+  ): Promise<Map<string, { rating: number; comment: string | null }>>;
 }

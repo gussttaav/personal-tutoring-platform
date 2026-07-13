@@ -1,6 +1,14 @@
 // TEST-01: In-memory implementation of IBookingRepository for integration tests.
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
-import type { BookingRecord, SessionType, SingleSessionBookingDetail } from "@/domain/types";
+import type {
+  BookingHistoryEntry,
+  BookingHistoryPage,
+  BookingRecord,
+  BookingStatus,
+  SessionType,
+  SingleSessionBookingDetail,
+} from "@/domain/types";
+import { buildCursor } from "@/infrastructure/supabase/booking-history";
 import { randomUUID } from "crypto";
 
 export class InMemoryBookingRepository implements IBookingRepository {
@@ -56,6 +64,57 @@ export class InMemoryBookingRepository implements IBookingRepository {
       }
     }
     return result;
+  }
+
+  // BOOKING-HISTORY-01: past bookings, newest first, keyset-paginated.
+  // This fake stores neither notes, payments nor reviews, so those come back
+  // null — the derivation of amounts and the review join are covered by unit
+  // tests over the pure helpers (booking-history.ts) and by the DB-gated
+  // integration tests. What this models faithfully is the ordering, the
+  // past-only filter, every status being included, and the cursor walk.
+  async listHistoryByUser(
+    email: string,
+    opts: { limit: number; cursor?: string },
+  ): Promise<BookingHistoryPage> {
+    const target = email.toLowerCase();
+    const now    = Date.now();
+
+    // The fake keys bookings by eventId and treats it as the booking id.
+    const all = [...this.bookings.entries()]
+      .filter(([, r]) => r.email.toLowerCase() === target)
+      .filter(([, r]) => new Date(r.startsAt).getTime() < now)
+      .map(([eventId, r]) => ({ eventId, record: r }))
+      .sort((a, b) => {
+        const byStart = new Date(b.record.startsAt).getTime() - new Date(a.record.startsAt).getTime();
+        return byStart !== 0 ? byStart : b.eventId.localeCompare(a.eventId);
+      });
+
+    const start = opts.cursor
+      ? all.findIndex(x => buildCursor(x.record.startsAt, x.eventId) === opts.cursor) + 1
+      : 0;
+
+    const slice   = all.slice(start, start + opts.limit);
+    const hasMore = all.length > start + opts.limit;
+
+    const entries: BookingHistoryEntry[] = slice.map(({ eventId, record }) => ({
+      id:          eventId,
+      eventId,
+      sessionType: record.sessionType,
+      status:      (this.statuses.get(eventId) ?? "confirmed") as BookingStatus,
+      startsAt:    record.startsAt,
+      endsAt:      record.endsAt,
+      ...(record.packSize !== undefined ? { packSize: record.packSize } : {}),
+      note:        null,
+      amountCents: null,
+      currency:    null,
+      review:      null,
+    }));
+
+    const last = slice[slice.length - 1];
+    return {
+      entries,
+      nextCursor: hasMore && last ? buildCursor(last.record.startsAt, last.eventId) : null,
+    };
   }
 
   async hasAnyBooking(email: string): Promise<boolean> {

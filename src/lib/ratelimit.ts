@@ -101,6 +101,15 @@ export const scheduleRatelimit = new Ratelimit({
   prefix:  "rl:schedule",
 });
 
+// BOOKING-HISTORY-01: 60 requests per minute per IP (authenticated GET
+// /api/my-bookings/history). The screen pages as the user scrolls, so the budget
+// has to cover a burst of cursor follow-ups, not just one fetch per visit.
+export const historyRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
+  prefix:  "rl:history",
+});
+
 // MOBILE-AUTH-01: Google ID token → bearer exchange (POST /api/auth/mobile).
 // 10 requests per minute per IP — this is a pre-auth endpoint; a legitimate app
 // exchanges only on cold start / token expiry, so a low limit stops abuse.

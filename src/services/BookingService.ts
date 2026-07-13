@@ -16,7 +16,7 @@
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { SessionType, SingleSessionBookingDetail } from "@/domain/types";
+import type { BookingHistoryPage, SessionType, SingleSessionBookingDetail } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
@@ -456,6 +456,16 @@ export class BookingService {
       endsAt:      record.endsAt,
       ...(record.packSize !== undefined ? { packSize: record.packSize } : {}),
     }));
+  }
+
+  // BOOKING-HISTORY-01: one keyset page of the user's past bookings, newest first.
+  // Distinct from listForUser, which serves the upcoming-sessions widget and is
+  // confirmed-only, ascending, and unpaginated.
+  async listHistoryForUser(
+    email: string,
+    opts: { limit: number; cursor?: string },
+  ): Promise<BookingHistoryPage> {
+    return this.bookings.listHistoryByUser(email, opts);
   }
 
   async hasAnyBooking(email: string): Promise<boolean> {
