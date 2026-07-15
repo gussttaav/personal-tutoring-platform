@@ -54,6 +54,8 @@ export class SupabaseBookingRepository implements IBookingRepository {
       cancel_token:       cancelToken,
       join_token:         joinToken,
       ...(record.stripePaymentId ? { stripe_payment_id: record.stripePaymentId } : {}),
+      // BOOKING-PACKLINK-01: link pack bookings to the pack that paid for them.
+      ...(record.creditPackId    ? { credit_pack_id:    record.creditPackId    } : {}),
     });
 
     if (error) throw error;

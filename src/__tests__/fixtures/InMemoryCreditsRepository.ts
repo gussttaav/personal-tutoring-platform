@@ -63,12 +63,15 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
   }
 
   async decrementCredit(email: string): Promise<DecrementResult> {
-    const rec = this.store.get(email.toLowerCase());
-    if (!rec || rec.credits <= 0) return { ok: false, remaining: 0, packSize: null };
+    const key = email.toLowerCase();
+    const rec = this.store.get(key);
+    if (!rec || rec.credits <= 0) return { ok: false, remaining: 0, packSize: null, packId: null };
     rec.credits -= 1;
     rec.lastUpdated = new Date().toISOString();
-    // REFACTOR-P3-03: surface the pack size, mirroring the SQL function
-    return { ok: true, remaining: rec.credits, packSize: rec.packSize as PackSize | null };
+    // REFACTOR-P3-03: surface the pack size, mirroring the SQL function.
+    // BOOKING-PACKLINK-01: and a stable synthetic pack id (this fake keeps one
+    // pack per email) so callers can assert the credit_pack_id linkage.
+    return { ok: true, remaining: rec.credits, packSize: rec.packSize as PackSize | null, packId: `pack-${key}` };
   }
 
   async restoreCredit(email: string): Promise<{ ok: boolean; credits: number }> {

@@ -55,6 +55,10 @@ export interface BookingRecord {
   used:             boolean;
   packSize?:        number;
   stripePaymentId?: string;
+  // BOOKING-PACKLINK-01: the credit pack this booking drew a credit from (pack
+  // sessions only). Persisted to bookings.credit_pack_id; the join that surfaces
+  // packSize in the my-bookings surfaces depends on it being set.
+  creditPackId?:    string;
 }
 
 // Lifecycle of a booking row. Every booking is created 'confirmed'; the daily

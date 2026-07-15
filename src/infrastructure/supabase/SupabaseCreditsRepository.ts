@@ -70,7 +70,7 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
 
   async decrementCredit(email: string): Promise<DecrementResult> {
     const userId = await this.findUserId(email);
-    if (!userId) return { ok: false, remaining: 0, packSize: null };
+    if (!userId) return { ok: false, remaining: 0, packSize: null, packId: null };
 
     const { data, error } = await supabase.rpc("decrement_credit", {
       p_user_id: userId,
@@ -78,12 +78,15 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
 
     if (error) throw error;
 
-    // REFACTOR-P3-03: SQL function now returns pack_size
-    const result = data as { ok: boolean; remaining: number; pack_size: number | null };
+    // REFACTOR-P3-03: SQL function returns pack_size; BOOKING-PACKLINK-01: and pack_id.
+    const result = data as {
+      ok: boolean; remaining: number; pack_size: number | null; pack_id: string | null;
+    };
     return {
       ok:        result.ok,
       remaining: result.remaining,
       packSize:  (result.pack_size as PackSize | null) ?? null,
+      packId:    result.pack_id ?? null,
     };
   }
 

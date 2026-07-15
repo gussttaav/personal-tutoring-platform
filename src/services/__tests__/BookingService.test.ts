@@ -49,7 +49,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
 const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
   getCredits:      jest.fn().mockResolvedValue({ credits: 5, packSize: 5, packLabel: "Pack 5", email: "s@t.com", name: "S", expiresAt: "", lastUpdated: "", stripeSessionId: "" }),
   addCredits:      jest.fn().mockResolvedValue(undefined),
-  decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4, packSize: 5 }),
+  decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4, packSize: 5, packId: "pack-1" }),
   restoreCredit:   jest.fn().mockResolvedValue({ ok: true, credits: 5 }),
   hasProcessedPayment: jest.fn().mockResolvedValue(false),
   broadcastPaymentConfirmed: jest.fn().mockResolvedValue(undefined),
@@ -193,9 +193,35 @@ describe("BookingService.createBooking", () => {
     expect(creditsRepo.decrementCredit).toHaveBeenCalledWith("student@test.com");
   });
 
+  // BOOKING-PACKLINK-01: the decremented pack's id is persisted on the booking so
+  // packSize (and later the price) can be resolved from the pack.
+  it("links a pack booking to the pack it drew a credit from", async () => {
+    const creditsRepo = mockCreditsRepo();
+    creditsRepo.decrementCredit.mockResolvedValue({ ok: true, remaining: 4, packSize: 5, packId: "pack-xyz" });
+    const bookings = mockBookings();
+    const service  = makeService({ credits: makeCreditService(creditsRepo), bookings });
+
+    await service.createBooking(basePackInput());
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ creditPackId: "pack-xyz" }),
+    );
+  });
+
+  it("does not set creditPackId for non-pack sessions", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
+
+    await service.createBooking({ ...basePackInput(), sessionType: "free15min" });
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.not.objectContaining({ creditPackId: expect.anything() }),
+    );
+  });
+
   it("throws InsufficientCreditsError and does NOT create calendar event when credits are zero", async () => {
     const creditsRepo = mockCreditsRepo();
-    creditsRepo.decrementCredit.mockResolvedValue({ ok: false, remaining: 0, packSize: null });
+    creditsRepo.decrementCredit.mockResolvedValue({ ok: false, remaining: 0, packSize: null, packId: null });
     const calendar = mockCalendar();
     const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
 

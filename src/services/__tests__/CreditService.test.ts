@@ -22,7 +22,7 @@ describe("CreditService.useCredit", () => {
   it("throws InsufficientCreditsError when decrement fails", async () => {
     const credits = mockCredits();
     const audit   = mockAudit();
-    credits.decrementCredit.mockResolvedValue({ ok: false, remaining: 0, packSize: null });
+    credits.decrementCredit.mockResolvedValue({ ok: false, remaining: 0, packSize: null, packId: null });
 
     const service = new CreditService(credits, audit);
 
@@ -33,12 +33,12 @@ describe("CreditService.useCredit", () => {
   it("returns remaining and appends audit entry on success", async () => {
     const credits = mockCredits();
     const audit   = mockAudit();
-    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 4, packSize: 5 });
+    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 4, packSize: 5, packId: "pk-1" });
 
     const service = new CreditService(credits, audit);
     const result  = await service.useCredit("a@b.com");
 
-    expect(result).toEqual({ remaining: 4, packSize: 5 });
+    expect(result).toEqual({ remaining: 4, packSize: 5, packId: "pk-1" });
     expect(audit.append).toHaveBeenCalledWith("a@b.com", expect.objectContaining({
       action: "decrement", remaining: 4,
     }));
@@ -49,12 +49,25 @@ describe("CreditService.useCredit", () => {
   it("returns the pack_size of the decremented pack", async () => {
     const credits = mockCredits();
     const audit   = mockAudit();
-    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 9, packSize: 10 });
+    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 9, packSize: 10, packId: "pk-2" });
 
     const service = new CreditService(credits, audit);
     const { packSize } = await service.useCredit("a@b.com");
 
     expect(packSize).toBe(10);
+  });
+
+  // BOOKING-PACKLINK-01: useCredit surfaces the decremented pack's id so
+  // BookingService can persist it to bookings.credit_pack_id.
+  it("returns the id of the decremented pack", async () => {
+    const credits = mockCredits();
+    const audit   = mockAudit();
+    credits.decrementCredit.mockResolvedValue({ ok: true, remaining: 9, packSize: 10, packId: "pk-abc" });
+
+    const service = new CreditService(credits, audit);
+    const { packId } = await service.useCredit("a@b.com");
+
+    expect(packId).toBe("pk-abc");
   });
 });
 
