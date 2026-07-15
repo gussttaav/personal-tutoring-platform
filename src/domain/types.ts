@@ -45,6 +45,26 @@ export interface PublicPricing {
   packs:    PublicPackPrice[];
 }
 
+// ─── Payments (audit rows in the `payments` table) ────────────────────────────
+// The generated Supabase types widen these to `string`; we narrow to the CHECK
+// constraints defined in the migration.
+
+/** Which checkout flow produced a payment: a credit pack or a single session. */
+export type PaymentCheckoutType = "pack" | "single";
+
+/** Lifecycle of a payment audit row. */
+export type PaymentStatus = "pending" | "succeeded" | "refunded" | "failed";
+
+/** Input for recording a `payments` row after a Stripe payment succeeds. */
+export interface RecordPaymentInput {
+  userId:          string;
+  stripePaymentId: string;
+  amountCents:     number;
+  currency:        string;
+  checkoutType:    PaymentCheckoutType;
+  status?:         PaymentStatus;
+}
+
 export interface BookingRecord {
   eventId:          string;
   email:            string;

@@ -1,6 +1,6 @@
 // ARCH-10: Payment repository interface — idempotency keys and dead-letter queue.
 // SINGLE-SESSION-CONFIRM-01: slot-taken refund record + single-session resolution broadcast.
-import type { SingleSessionResolved } from "../types";
+import type { RecordPaymentInput, SingleSessionResolved } from "../types";
 
 export interface FailedBookingEntry {
   stripeSessionId: string;
@@ -73,4 +73,12 @@ export interface IPaymentRepository {
     paymentIntentId: string,
     payload: SingleSessionResolved,
   ): Promise<void>;
+
+  /**
+   * PAYMENTS-AUDIT-01: Inserts an audit row into the `payments` table when a
+   * Stripe payment succeeds. Idempotent — the `stripe_payment_id` UNIQUE
+   * constraint means a duplicate webhook delivery is a no-op (23505 tolerated).
+   * Backs `amountCents`/`currency` in the booking-history + admin payments surfaces.
+   */
+  recordPayment(input: RecordPaymentInput): Promise<void>;
 }
