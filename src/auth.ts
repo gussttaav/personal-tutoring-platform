@@ -1,7 +1,16 @@
+/**
+ * NextAuth configuration — Google provider, JWT session strategy.
+ *
+ * Applied fixes:
+ *   REFACTOR-R3-P2-03: server-side console.error replaced with structured log(),
+ *     so auth failures reach Sentry and carry the request-id correlation.
+ */
+
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import { cookies } from "next/headers";
 import { userService } from "@/services";
+import { log } from "@/lib/logger";
 
 // Extend NextAuth types so session.user.isAdmin is available client-side.
 declare module "next-auth" {
@@ -59,7 +68,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
         } catch (err) {
           // Locale seeding is best-effort — never block sign-in on it.
-          console.error("Failed to seed locale on login:", err);
+          log("error", "Failed to seed locale on login", {
+            service: "auth", error: String(err),
+          });
         }
       }
       return true;
@@ -82,7 +93,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         } catch (err) {
           // Don't fail auth if DB is down — fall back to existing role on the
           // token, or 'student' on first run.
-          console.error("Failed to fetch role:", err);
+          log("error", "Role fetch failed — falling back to cached/student role", {
+            service: "auth", error: String(err),
+          });
           token.role = token.role ?? "student";
         }
       }

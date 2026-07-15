@@ -27,13 +27,13 @@ Update this file when starting, completing, or blocking a task.
 |------|-----|--------|-------|----|
 | [01 Admin role hourly re-fetch](phase-2-hardening/01-admin-role-hourly-refresh.md) | `REFACTOR-R3-P2-01` | 🚫 | Gustavo | won't do — see Deviations |
 | [02 Rate limits: /api/cancel + zoom/token](phase-2-hardening/02-rate-limit-cancel-zoom-token.md) | `REFACTOR-R3-P2-02` | ✅ | Gustavo | local |
-| [03 Server console.* → log()](phase-2-hardening/03-server-console-to-log.md) | `REFACTOR-R3-P2-03` | ⬜ | _tbd_ | — |
+| [03 Server console.* → log()](phase-2-hardening/03-server-console-to-log.md) | `REFACTOR-R3-P2-03` | ✅ | Claude | local (`refactor/p2-03-server-console-to-log`) |
 
 **Exit criteria**
 - ~~Demote a test admin in DB → admin APIs reject within ≤ 1h without re-login~~ (dropped with P2-01)
 - [x] `POST /api/cancel` returns 429 under burst; zoom/token uses `getClientIp()` + dedicated limiter
-- [ ] `grep -rn "console\." src --include="*.ts"` (excluding client components/tests) returns nothing server-side
-- [ ] `pnpm test` and `pnpm build` green
+- [x] `grep -rn "console\." src --include="*.ts"` (excluding client components/tests) returns nothing server-side
+- [x] `pnpm test` and `pnpm build` green
 
 ## Phase 3 — Architecture
 
@@ -81,6 +81,13 @@ Update this file when starting, completing, or blocking a task.
   `payment-confirmation/channel/__tests__/route.test.ts`). The task md explicitly allowed this
   fallback ("otherwise a unit test on handler ordering is enough"); the colocated test is a superset,
   covering the 6× burst → 429, per-IP keying, leftmost-hop parsing, and limiter-before-CSRF ordering.
+
+- **P2-03:** the task's manual check (point `SUPABASE_SERVICE_ROLE_KEY` at garbage in dev, sign in,
+  confirm both lines appear structured in Sentry) was **not performed** — it needs a live dev sign-in
+  with real Google OAuth. Verified statically instead: `log()` is called with `service: "auth"` on both
+  paths, and `src/lib/logger.ts` already routes every `"error"` level to `Sentry.captureMessage` with a
+  `service` tag. No new test was added — `auth.ts` is NextAuth config with no service-layer seam, and
+  the change is a like-for-like logger swap with no behavior change.
 
 ## Known regressions introduced
 
