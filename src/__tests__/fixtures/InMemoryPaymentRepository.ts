@@ -1,12 +1,15 @@
 // TEST-01: In-memory implementation of IPaymentRepository for integration tests.
 // SINGLE-SESSION-CONFIRM-01: slot-taken refund record + resolution broadcast.
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
-import type { SingleSessionResolved } from "@/domain/types";
+import type { RecordPaymentInput, SingleSessionResolved } from "@/domain/types";
 
 export class InMemoryPaymentRepository implements IPaymentRepository {
   private processed  = new Set<string>();
   private deadLetter = new Map<string, FailedBookingEntry>();
   private refunds    = new Set<string>();
+  // PAYMENTS-AUDIT-01: recorded payment rows keyed by stripe_payment_id (mirrors
+  // the DB UNIQUE constraint → duplicate insert is a no-op).
+  private payments_  = new Map<string, RecordPaymentInput>();
   /** Test helper: broadcasts captured by paymentIntentId, in call order. */
   readonly broadcasts: { paymentIntentId: string; payload: SingleSessionResolved }[] = [];
 
@@ -50,5 +53,17 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
     payload: SingleSessionResolved,
   ): Promise<void> {
     this.broadcasts.push({ paymentIntentId, payload });
+  }
+
+  // PAYMENTS-AUDIT-01: idempotent on stripe_payment_id — a second insert with the
+  // same id is a no-op, mirroring the DB UNIQUE constraint (23505).
+  async recordPayment(input: RecordPaymentInput): Promise<void> {
+    if (this.payments_.has(input.stripePaymentId)) return;
+    this.payments_.set(input.stripePaymentId, { status: "succeeded", ...input });
+  }
+
+  /** Test helper: recorded payment rows, in insertion order. */
+  get payments(): RecordPaymentInput[] {
+    return Array.from(this.payments_.values());
   }
 }

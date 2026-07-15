@@ -21,7 +21,7 @@
 
 import type Stripe from "stripe";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
-import type { PackSize, SingleSessionResolved, SingleSessionStatusResult } from "@/domain/types";
+import type { PackSize, PaymentCheckoutType, SingleSessionResolved, SingleSessionStatusResult } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
 import { log } from "@/lib/logger";
@@ -67,6 +67,11 @@ interface SingleSessionInput {
   rescheduleToken: string | null;
   idempotencyKey:  string;
   refundTarget:    { payment_intent?: string; charge?: string };
+  // PAYMENTS-AUDIT-01: charged amount from the Stripe event (intent.amount /
+  // session.amount_total). Used to record the `payments` audit row on success.
+  // Nullable: legacy checkout.session may lack amount_total.
+  amountCents?:    number | null;
+  currency?:       string | null;
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -191,7 +196,7 @@ export class PaymentService {
       const checkoutType = metadata.checkout_type ?? "pack";
 
       if (checkoutType === "pack") {
-        await this.handlePackPayment(metadata, intent.id);
+        await this.handlePackPayment(metadata, intent.id, intent.amount, intent.currency);
         return;
       }
       if (checkoutType === "single") {
@@ -204,6 +209,8 @@ export class PaymentService {
           rescheduleToken: metadata.reschedule_token || null,
           idempotencyKey:  intent.id,
           refundTarget:    { payment_intent: intent.id },
+          amountCents:     intent.amount,
+          currency:        intent.currency,
         });
       }
       return;
@@ -231,6 +238,8 @@ export class PaymentService {
         await this.handlePackPayment(
           { student_email: email, student_name: name, pack_size: String(packSize), checkout_type: "pack" },
           stripeSessionId,
+          session.amount_total,
+          session.currency,
         );
         return;
       }
@@ -245,6 +254,8 @@ export class PaymentService {
           rescheduleToken: session.metadata?.reschedule_token || null,
           idempotencyKey:  stripeSessionId,
           refundTarget:    { payment_intent: session.payment_intent as string },
+          amountCents:     session.amount_total,
+          currency:        session.currency,
         });
       }
     }
@@ -313,6 +324,8 @@ export class PaymentService {
   private async handlePackPayment(
     metadata: Record<string, string>,
     intentId: string,
+    amountCents: number | null | undefined,
+    currency: string | null | undefined,
   ): Promise<void> {
     const email    = metadata.student_email ?? "";
     const name     = metadata.student_name  ?? "";
@@ -332,6 +345,12 @@ export class PaymentService {
       packLabel: `Pack ${packSize} clases`, stripeSessionId: intentId,
     });
     log("info", "Pack credits written", { service: "payment", email, packSize });
+
+    // PAYMENTS-AUDIT-01: intentId is the credit_packs.stripe_payment_id, which is
+    // exactly the key the history/admin surfaces join `payments` on.
+    await this.recordPaymentRow({
+      email, name, stripePaymentId: intentId, amountCents, currency, checkoutType: "pack",
+    });
 
     // REFACTOR-P3-05: Broadcast for live confirmation. Best-effort — credits are
     // already persisted above, so a broadcast failure just means the browser falls
@@ -438,6 +457,14 @@ export class PaymentService {
       await this.paymentRepo.markProcessed(idempotencyKey);
       log("info", "Single session booked", { service: "payment", email, startIso });
 
+      // PAYMENTS-AUDIT-01: paymentIntentId is the booking's stripe_payment_id, the
+      // key the history/admin surfaces join `payments` on. Only the successful-booking
+      // path records — refund/slot-taken/dead-letter exits above deliberately do not.
+      await this.recordPaymentRow({
+        email, name, stripePaymentId: paymentIntentId ?? idempotencyKey,
+        amountCents: input.amountCents, currency: input.currency, checkoutType: "single",
+      });
+
       // SINGLE-SESSION-CONFIRM-01: best-effort confirmation broadcast (persistence above
       // already committed the booking; polling catches up if this is missed).
       if (paymentIntentId) {
@@ -474,6 +501,37 @@ export class PaymentService {
     } catch (err) {
       log("warn", "Single-session resolution broadcast failed (client will catch up via channel endpoint)", {
         service: "payment", paymentIntentId, status: payload.status, error: String(err),
+      });
+    }
+  }
+
+  // PAYMENTS-AUDIT-01: best-effort insert of the `payments` audit row after a payment
+  // succeeds. Best-effort by design — the row backs display/auditing only, so a failure
+  // must not break fulfillment (already committed) nor trigger a webhook retry that the
+  // idempotency guard would then skip. The insert itself is idempotent on stripe_payment_id.
+  private async recordPaymentRow(params: {
+    email:           string;
+    name:            string;
+    stripePaymentId: string;
+    amountCents:     number | null | undefined;
+    currency:        string | null | undefined;
+    checkoutType:    PaymentCheckoutType;
+  }): Promise<void> {
+    // Legacy checkout.session events may lack amount_total; nothing to record then.
+    if (params.amountCents == null) return;
+    try {
+      const userId = await this.userService.ensureUser(params.email, params.name);
+      await this.paymentRepo.recordPayment({
+        userId,
+        stripePaymentId: params.stripePaymentId,
+        amountCents:     params.amountCents,
+        currency:        params.currency ?? "eur",
+        checkoutType:    params.checkoutType,
+        status:          "succeeded",
+      });
+    } catch (err) {
+      log("warn", "Failed to record payment audit row", {
+        service: "payment", stripePaymentId: params.stripePaymentId, error: String(err),
       });
     }
   }

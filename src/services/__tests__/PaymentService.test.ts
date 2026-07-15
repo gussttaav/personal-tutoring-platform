@@ -60,6 +60,8 @@ const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   recordSlotTakenRefund:          jest.fn().mockResolvedValue(undefined),
   wasRefunded:                    jest.fn().mockResolvedValue(false),
   broadcastSingleSessionResolved: jest.fn().mockResolvedValue(undefined),
+  // PAYMENTS-AUDIT-01
+  recordPayment:                  jest.fn().mockResolvedValue(undefined),
 });
 
 // REFACTOR-P3-05: handlePackPayment now also reads getBalance + fires
@@ -115,6 +117,8 @@ function fakePackEvent(intentId = "pi_pack_123"): Stripe.Event {
     data: {
       object: {
         id:       intentId,
+        amount:   14900,
+        currency: "eur",
         metadata: {
           checkout_type:  "pack",
           student_email:  "student@test.com",
@@ -133,6 +137,8 @@ function fakeSingleEvent(intentId = "pi_single_123", startIso = "2099-12-01T10:0
     data: {
       object: {
         id:       intentId,
+        amount:   4900,
+        currency: "eur",
         metadata: {
           checkout_type:    "single",
           student_email:    "student@test.com",
@@ -162,6 +168,24 @@ describe("PaymentService.processWebhookEvent — pack", () => {
       email:           "student@test.com",
       amount:          5,
       stripeSessionId: "pi_pack_123",
+    }));
+  });
+
+  // PAYMENTS-AUDIT-01
+  it("records a payments row for pack event", async () => {
+    const { service, credits, paymentRepo } = makeService();
+    (credits.addCredits as jest.Mock).mockResolvedValue(undefined);
+
+    await service.processWebhookEvent(fakePackEvent());
+
+    expect(paymentRepo.recordPayment).toHaveBeenCalledTimes(1);
+    expect(paymentRepo.recordPayment).toHaveBeenCalledWith(expect.objectContaining({
+      userId:          TEST_USER_ID,
+      stripePaymentId: "pi_pack_123",
+      amountCents:     14900,
+      currency:        "eur",
+      checkoutType:    "pack",
+      status:          "succeeded",
     }));
   });
 
@@ -224,6 +248,37 @@ describe("PaymentService.processWebhookEvent — single session", () => {
       startIso:    "2099-12-01T10:00:00.000Z",
     }));
     expect(paymentRepo.markProcessed).toHaveBeenCalledWith("pi_single_123");
+  });
+
+  // PAYMENTS-AUDIT-01
+  it("records a payments row for single-session event", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    paymentRepo.markProcessed.mockResolvedValue(undefined);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(paymentRepo.recordPayment).toHaveBeenCalledTimes(1);
+    expect(paymentRepo.recordPayment).toHaveBeenCalledWith(expect.objectContaining({
+      userId:          TEST_USER_ID,
+      stripePaymentId: "pi_single_123",
+      amountCents:     4900,
+      currency:        "eur",
+      checkoutType:    "single",
+      status:          "succeeded",
+    }));
+  });
+
+  // PAYMENTS-AUDIT-01: the refund/slot-taken exit must not record a succeeded payment.
+  it("does not record a payments row when the slot was taken (refund path)", async () => {
+    const { service, paymentRepo } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    mockGetAvailableSlots.mockResolvedValue([]); // slot taken
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(paymentRepo.recordPayment).not.toHaveBeenCalled();
   });
 
   it("skips duplicate event (idempotency guard)", async () => {

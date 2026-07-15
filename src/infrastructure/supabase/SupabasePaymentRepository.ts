@@ -4,7 +4,7 @@
 // SINGLE-SESSION-CONFIRM-01: slot-taken refunds → single_session_refunds table;
 // single-session resolution broadcast on the per-PaymentIntent Realtime channel.
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
-import type { SingleSessionResolved } from "@/domain/types";
+import type { RecordPaymentInput, SingleSessionResolved } from "@/domain/types";
 import { paymentChannelName } from "@/lib/realtime-channel";
 import { supabase } from "./client";
 
@@ -114,5 +114,21 @@ export class SupabasePaymentRepository implements IPaymentRepository {
     } finally {
       await supabase.removeChannel(channel);
     }
+  }
+
+  // PAYMENTS-AUDIT-01: idempotent insert into `payments`. The stripe_payment_id
+  // UNIQUE constraint makes a duplicate webhook delivery a no-op (23505 tolerated,
+  // mirroring SupabaseCreditsRepository.addCredits).
+  async recordPayment(input: RecordPaymentInput): Promise<void> {
+    const { error } = await supabase.from("payments").insert({
+      user_id:           input.userId,
+      stripe_payment_id: input.stripePaymentId,
+      amount_cents:      input.amountCents,
+      currency:          input.currency,
+      checkout_type:     input.checkoutType,
+      status:            input.status ?? "succeeded",
+    });
+    // 23505 = unique_violation — stripe_payment_id already recorded, idempotent no-op
+    if (error && error.code !== "23505") throw error;
   }
 }
