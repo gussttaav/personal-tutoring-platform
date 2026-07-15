@@ -233,6 +233,7 @@
       "close": "Close",
       "changeSessionType": "Change session type",
       "bookingProgress": "Booking {dateLabel} at {label}…",
+      "verifyingAvailability": "Checking availability…",
       "errorTitle": "Something went wrong",
       "tryAgain": "Try again",
       "chooseAnotherSlot": "Choose another slot",
