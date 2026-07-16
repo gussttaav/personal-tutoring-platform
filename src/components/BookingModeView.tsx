@@ -16,7 +16,7 @@
  *   SESSION_CONFIGS, primaryBtnStyle, secondaryBtnStyle
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
 import Image from "next/image";
@@ -27,9 +27,15 @@ import { api, ApiError } from "@/lib/api-client";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import BookingSidebar from "@/components/booking/BookingSidebar";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 import type { StudentInfo } from "@/domain/types";
 
-type BookingPhase = "idle" | "selected" | "confirming" | "error";
+// A pack class is always a 1-hour session.
+const PACK_SESSION_MINUTES = 60;
+
+// "verifying" = checking whether the modal's 30-min start hint is actually
+// bookable as a full 1h pack slot before opening the confirm panel.
+type BookingPhase = "idle" | "verifying" | "selected" | "confirming" | "error";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "";
 
@@ -64,12 +70,86 @@ export default function BookingModeView({
 }: BookingModeViewProps) {
   const t      = useTranslations("booking.modeView");
   const tErrors = useTranslations("errors");
-  const [phase,                setPhase]                = useState<BookingPhase>(initialSlot ? "selected" : "idle");
+  const schedule = useScheduleConfig();
+  // A pre-selected slot from AvailabilityModal is only a 30-min start hint, not a
+  // bookable 1h slot — start in "verifying" and confirm the full hour first.
+  const [phase,                setPhase]                = useState<BookingPhase>(initialSlot ? "verifying" : "idle");
   const [remaining,            setRemaining]            = useState(student.credits);
   const [errMsg,               setErrMsg]               = useState("");
-  const [selected,             setSelected]             = useState<SelectedSlot | null>(initialSlot ?? null);
+  const [selected,             setSelected]             = useState<SelectedSlot | null>(null);
   const [successBanner,        setSuccessBanner]        = useState<SuccessBanner | null>(null);
   const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
+
+  // Synthesise the real 1-hour pack slot from the modal's 30-min start hint
+  // (adjusts endIso + label to the full hour; the server re-validates on book).
+  const makeHourSlot = (): SelectedSlot | null => {
+    if (!initialSlot) return null;
+    const start = new Date(initialSlot.startIso);
+    const end   = new Date(start.getTime() + PACK_SESSION_MINUTES * 60_000);
+    const pad   = (n: number) => String(n).padStart(2, "0");
+    const fmt   = (d: Date) =>
+      initialSlot.timezone
+        ? d.toLocaleTimeString("es-ES", { timeZone: initialSlot.timezone, hour: "2-digit", minute: "2-digit", hour12: false })
+        : `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return {
+      startIso:  initialSlot.startIso,
+      endIso:    end.toISOString(),
+      label:     `${fmt(start)}–${fmt(end)}`,
+      dateLabel: initialSlot.dateLabel,
+      timezone:  initialSlot.timezone,
+    };
+  };
+
+  // Navigate the calendar to the week containing the pre-selected slot so the
+  // user sees it immediately (mirrors SingleSessionBooking).
+  const initialWeekOffset = (() => {
+    if (!initialSlot) return 0;
+    const slotDate = new Date(initialSlot.startIso);
+    slotDate.setHours(0, 0, 0, 0);
+    const slotMonday = new Date(slotDate);
+    slotMonday.setDate(slotDate.getDate() - ((slotDate.getDay() + 6) % 7));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const thisMonday = new Date(today);
+    thisMonday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    return Math.max(0, Math.round(
+      (slotMonday.getTime() - thisMonday.getTime()) / (7 * 24 * 60 * 60 * 1000)
+    ));
+  })();
+
+  // The modal only guarantees the clicked 30-min atom is free, not the full hour.
+  // Verify against the 60-min availability (which encapsulates contiguity) before
+  // opening the confirm panel. Bookable → "selected" with the synthesised hour;
+  // otherwise → "idle" so the user picks a valid 1h block in the calendar (the
+  // hint is still pre-focused via initialFocusedSlotStart when it is free). On
+  // network error, degrade to "idle".
+  useEffect(() => {
+    if (!initialSlot) return;
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const dayKey = new Intl.DateTimeFormat("en-CA", {
+          timeZone: schedule.timezone, year: "numeric", month: "2-digit", day: "2-digit",
+        }).format(new Date(initialSlot.startIso));
+        const tz  = encodeURIComponent(initialSlot.timezone ?? schedule.timezone);
+        const res = await fetch(`/api/availability?date=${dayKey}&duration=${PACK_SESSION_MINUTES}&tz=${tz}`, { signal: ctrl.signal });
+        const data = await res.json();
+        const targetMs = new Date(initialSlot.startIso).getTime();
+        const bookable = Array.isArray(data.slots)
+          && data.slots.some((s: { start: string }) => new Date(s.start).getTime() === targetMs);
+        if (bookable) {
+          setSelected(makeHourSlot());
+          setPhase("selected");
+        } else {
+          setPhase("idle");
+        }
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        setPhase("idle");
+      }
+    })();
+    return () => ctrl.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount for the modal hint
+  }, []);
 
   // Client timezone label ("<tz> (GMT±n)") after hydration; empty during SSR.
   const userTz = useClientValue(() => {
@@ -225,12 +305,26 @@ export default function BookingModeView({
           }}
         >
           <div className="flex-1">
-            <WeeklyCalendar
-              durationMinutes={60}
-              onSlotSelected={handleSlotSelected}
-              selectedSlot={selected}
-              refreshToken={calendarRefreshToken}
-            />
+            {phase === "verifying" ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "80px 24px", gap: 12 }}>
+                <Spinner />
+                <p style={{ fontSize: 13, color: "#bbcabf" }}>{t("verifyingAvailability")}</p>
+              </div>
+            ) : (
+              <WeeklyCalendar
+                durationMinutes={60}
+                onSlotSelected={handleSlotSelected}
+                onSlotFocused={(slot) => {
+                  // Focusing a different valid slot drops the prior confirmed
+                  // highlight so the grid shows only the new preselection (not both).
+                  if (slot && slot.startIso !== selected?.startIso) setSelected(null);
+                }}
+                selectedSlot={selected}
+                initialFocusedSlotStart={initialSlot?.startIso}
+                initialWeekOffset={initialWeekOffset}
+                refreshToken={calendarRefreshToken}
+              />
+            )}
           </div>
 
           {/* ── Actions bar ── */}

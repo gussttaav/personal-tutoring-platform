@@ -339,7 +339,7 @@ export default function SingleSessionBooking({
   // ── Success ────────────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
-      <BookingLayout>
+      <BookingLayout scrollResetKey={phase}>
         <div className="flex items-start sm:items-center justify-center px-2 py-2 sm:py-6 sm:px-6">
           <FeedbackCard>
             <IconHalo tone="success" glyph="check" />
@@ -404,7 +404,7 @@ export default function SingleSessionBooking({
   // ── Error ──────────────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <BookingLayout>
+      <BookingLayout scrollResetKey={phase}>
         <div className="flex items-start sm:items-center justify-center px-2 py-2 sm:py-6 sm:px-6">
           <FeedbackCard>
             <IconHalo tone="error" glyph="error" />
@@ -460,7 +460,7 @@ export default function SingleSessionBooking({
   // ── Paying (embedded PaymentElement) ──────────────────────────────────────
   if (phase === "paying" && selected && clientSecret) {
     return (
-      <BookingLayout>
+      <BookingLayout scrollResetKey={phase}>
         <WizardProgress currentStep={4} showPaymentStep />
         <div className="max-w-lg mx-auto w-full" style={{ padding: "16px 0" }}>
           <PaymentForm
@@ -484,7 +484,7 @@ export default function SingleSessionBooking({
   const isReschedule = !!rescheduleToken;
 
   return (
-    <BookingLayout>
+    <BookingLayout scrollResetKey={phase}>
       <WizardProgress currentStep={wizardStep} showPaymentStep={needsPaymentStep} />
 
       {phase === "review" && selected ? (
@@ -835,7 +835,16 @@ export default function SingleSessionBooking({
                 <WeeklyCalendar
                   durationMinutes={cfg.durationMinutes}
                   onSlotSelected={handleSlotSelected}
-                  onSlotFocused={(slot) => { setFocusedSlot(slot); if (slot) setHourUnavailable(false); }}
+                  onSlotFocused={(slot) => {
+                    setFocusedSlot(slot);
+                    if (slot) {
+                      setHourUnavailable(false);
+                      // Picking a different valid slot clears the previously chosen
+                      // one so the grid never shows the old confirmed slot alongside
+                      // the new focus.
+                      if (slot.startIso !== selected?.startIso) setSelected(null);
+                    }
+                  }}
                   selectedSlot={selected}
                   initialFocusedSlotStart={initialSlot?.startIso}
                   initialWeekOffset={initialWeekOffset}

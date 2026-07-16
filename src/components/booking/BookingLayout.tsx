@@ -8,15 +8,20 @@
  * the landing page (matches booking.html layout).
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 interface BookingLayoutProps {
   children: React.ReactNode;
+  /** Scrolls the overlay back to the top whenever this value changes. Pass the
+   *  wizard step/phase so a new screen always starts from the top — the overlay
+   *  div is reused across steps, so its scrollTop would otherwise carry over. */
+  scrollResetKey?: string;
 }
 
-export default function BookingLayout({ children }: BookingLayoutProps) {
+export default function BookingLayout({ children, scrollResetKey }: BookingLayoutProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   // Hide the document scrollbar while the overlay is mounted so only the
   // overlay's own scrollbar is visible (globals.css sets overflow-y:scroll
   // on <html>, which would otherwise show a second, non-functional scrollbar).
@@ -28,8 +33,14 @@ export default function BookingLayout({ children }: BookingLayoutProps) {
       html.style.overflowY = prev;
     };
   }, []);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [scrollResetKey]);
+
   return (
     <div
+      ref={scrollRef}
       style={{
         position: "fixed",
         inset: 0,

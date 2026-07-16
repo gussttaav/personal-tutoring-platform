@@ -39,12 +39,12 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Extract shared week-grid module](phase-3-architecture/01-extract-week-grid.md) | `REFACTOR-R3-P3-01` | ⬜ | _tbd_ | — |
+| [01 Extract shared week-grid module](phase-3-architecture/01-extract-week-grid.md) | `REFACTOR-R3-P3-01` | ✅ | Claude | local (`refactor/p3-01-extract-week-grid`) |
 | [02 Cache ScheduleService.getConfig()](phase-3-architecture/02-schedule-config-cache.md) | `REFACTOR-R3-P3-02` | ⬜ | _tbd_ | — |
 | [03 payment-confirmation/channel via service layer](phase-3-architecture/03-payment-channel-service-layer.md) | `REFACTOR-R3-P3-03` | ⬜ | _tbd_ | — |
 
 **Exit criteria**
-- [ ] Grid helpers exist exactly once; WeeklyCalendar + AvailabilityModal both consume the shared module; e2e booking flows pass
+- [x] Grid helpers exist exactly once; WeeklyCalendar + AvailabilityModal both consume the shared module (`src/components/week-grid/` + `useWeekAvailability`); `pnpm test`/`lint`/`build` green — e2e booking flows pending (needs `E2E_BASE_URL`)
 - [ ] Availability request performs ≤ 1 Supabase round-trip for schedule config on cache hit; admin edit still takes effect immediately
 - [ ] No `new Stripe(` outside `src/infrastructure/stripe/` + `src/lib/stripe-client.ts`
 - [ ] `pnpm test`, `pnpm test:e2e` (re-run once if a single unrelated test flakes — known issue), `pnpm build` green
@@ -88,6 +88,24 @@ Update this file when starting, completing, or blocking a task.
   paths, and `src/lib/logger.ts` already routes every `"error"` level to `Sentry.captureMessage` with a
   `service` tag. No new test was added — `auth.ts` is NextAuth config with no service-layer seam, and
   the change is a like-for-like logger swap with no behavior change.
+
+- **P3-01:** three deviations from the task md, none affecting behavior parity:
+  - **Hook return shape:** `useWeekAvailability` returns the consolidated `Record<string, DaySlots>`
+    both components already render from, not the md's sketched `{ slotsByDay: Map, loadingDays: Set,
+    errorDays: Set }`. Keeping the existing shape meant zero changes to the grid-rendering reads
+    (`slotsMap[key]`), which is the lowest-risk path to pixel parity. A `resetKey` prop preserves each
+    surface's distinct cache-reset semantics (calendar clears on `refreshToken`; modal on `week|tz`).
+  - **AvailabilityModal shrank 259 lines (1008→749), just under the ≥300 target.** The remaining bulk is
+    the modal-only `DayColumn` (~130 lines), which the task explicitly scopes to stay in the consumer.
+    WeeklyCalendar shrank 313 (977→664). All copied helper bodies are gone; the ≥300 miss is purely the
+    retained DayColumn, not leftover duplication.
+  - **Pre-existing hardcoded strings preserved at the call sites, not the shared component.** The shared
+    `SlotCell` takes `availableLabel`/`bookedTitle`/`unavailableTitle` as props (i18n-free per the task
+    rule); the calendar keeps passing its hardcoded `title="Reservado"/"No disponible"` and the modal its
+    `aria-label="Hora disponible"` exactly as before. The union also always sets `aria-pressed={inFocus}`
+    (the calendar gains this a11y attribute; the modal already had it) and unifies the hover-transition to
+    `0.12s` (calendar was `0.1s` — imperceptible). Manual before/after screenshots (es/en, desktop +
+    <640px, 15/30-min) and `pnpm test:e2e` still recommended before merge.
 
 ## Known regressions introduced
 
