@@ -30,6 +30,7 @@ import { UserService }    from "../UserService";
 import { PricingService } from "../PricingService";
 import { ScheduleService } from "../ScheduleService";
 import { InMemoryScheduleRepository } from "@/__tests__/fixtures/InMemoryScheduleRepository";
+import { InMemoryConfigCache } from "@/__tests__/fixtures/InMemoryConfigCache";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
@@ -47,7 +48,11 @@ const makePricing = () =>
 
 // Real ScheduleService backed by the seeded in-memory repo.
 const makeSchedule = () =>
-  new ScheduleService(new InMemoryScheduleRepository(), new InMemoryAuditRepository());
+  new ScheduleService(
+    new InMemoryScheduleRepository(),
+    new InMemoryAuditRepository(),
+    new InMemoryConfigCache(),
+  );
 
 const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
   isProcessed:          jest.fn(),

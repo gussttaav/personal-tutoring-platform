@@ -40,12 +40,12 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Extract shared week-grid module](phase-3-architecture/01-extract-week-grid.md) | `REFACTOR-R3-P3-01` | ✅ | Claude | local (`refactor/p3-01-extract-week-grid`) |
-| [02 Cache ScheduleService.getConfig()](phase-3-architecture/02-schedule-config-cache.md) | `REFACTOR-R3-P3-02` | ⬜ | _tbd_ | — |
+| [02 Cache ScheduleService.getConfig()](phase-3-architecture/02-schedule-config-cache.md) | `REFACTOR-R3-P3-02` | ✅ | Claude | local (`refactor/p3-02-schedule-config-cache`) |
 | [03 payment-confirmation/channel via service layer](phase-3-architecture/03-payment-channel-service-layer.md) | `REFACTOR-R3-P3-03` | ⬜ | _tbd_ | — |
 
 **Exit criteria**
 - [x] Grid helpers exist exactly once; WeeklyCalendar + AvailabilityModal both consume the shared module (`src/components/week-grid/` + `useWeekAvailability`); `pnpm test`/`lint`/`build` green — e2e booking flows pending (needs `E2E_BASE_URL`)
-- [ ] Availability request performs ≤ 1 Supabase round-trip for schedule config on cache hit; admin edit still takes effect immediately
+- [x] Availability request performs ≤ 1 Supabase round-trip for schedule config on cache hit; admin edit still takes effect immediately — unit-verified (cache hit ⇒ repo untouched; version bump ⇒ refetch); manual perf/freshness check in dev still pending
 - [ ] No `new Stripe(` outside `src/infrastructure/stripe/` + `src/lib/stripe-client.ts`
 - [ ] `pnpm test`, `pnpm test:e2e` (re-run once if a single unrelated test flakes — known issue), `pnpm build` green
 
@@ -106,6 +106,25 @@ Update this file when starting, completing, or blocking a task.
     (the calendar gains this a11y attribute; the modal already had it) and unifies the hover-transition to
     `0.12s` (calendar was `0.1s` — imperceptible). Manual before/after screenshots (es/en, desktop +
     <640px, 15/30-min) and `pnpm test:e2e` still recommended before merge.
+
+- **P3-02:** three deviations from the task md, all agreed before implementation:
+  - **The port gained a `bumpVersion()` and `updateConfig` calls it** (the md sketched `get`/`set`/
+    `currentVersion` only). Without it, `updateConfig` → `getConfig` returns stale config for any caller
+    that isn't the admin HTTP route — including the existing round-trip unit test, which is the canary for
+    exactly this. The admin route's own `bumpScheduleVersion()` was deliberately left in place: it's the
+    same counter, so the edit path now increments twice. The version is only a nonce, so a double
+    increment is harmless, and leaving the route alone keeps the task within scope.
+  - **`getMinNoticeHours()` deleted** rather than routed through `getConfig()` (the md allowed either). It
+    had zero production callers — its JSDoc claimed `BookingService` used it, but `BookingService.ts:104`
+    calls `getConfig()` — and keeping it would have left an uncached second path straight to
+    `repo.getSettings()`. Its unit test and the stub property in `BookingService.test.ts` went with it.
+  - **`currentVersion()` is now exported from `src/lib/availability-cache.ts`** (was private) so
+    `RedisConfigCache` reuses the one owner of the `avail:version` counter instead of re-implementing its
+    number/string parse quirk. Added export only — no mechanics changed, per the task's out-of-scope rule.
+  - Also worth noting: cache-version resolution failure **bypasses the cache entirely** rather than
+    keying under `v0`, which would risk reading/writing under a stale namespace during a Redis blip.
+  - Still pending: the manual dev perf check (config queries per week view 14 → ≤ 2) and the
+    `/admin/schedule` edit → `/api/availability` freshness check.
 
 ## Known regressions introduced
 

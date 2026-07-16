@@ -28,6 +28,7 @@ import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google"
 import { EmailClient }     from "@/infrastructure/resend";
 import { StripeClient }    from "@/infrastructure/stripe/StripeClient";
 import { GeminiClient }    from "@/infrastructure/gemini";
+import { redisConfigCache } from "@/infrastructure/redis";
 
 export const userService = new UserService(supabaseUserRepository);
 
@@ -39,7 +40,12 @@ export const creditService = new CreditService(supabaseCreditsRepository, supaba
 const tutorEmail = process.env.TUTOR_EMAIL ?? "";
 export const sessionService = new SessionService(supabaseSessionRepository, new ZoomClient(), tutorEmail);
 
-export const scheduleService = new ScheduleService(supabaseScheduleRepository, supabaseAuditRepository);
+// REFACTOR-R3-P3-02: getConfig() reads through the version-keyed Redis config cache.
+export const scheduleService = new ScheduleService(
+  supabaseScheduleRepository,
+  supabaseAuditRepository,
+  redisConfigCache,
+);
 
 export const bookingService = new BookingService(
   supabaseBookingRepository,
