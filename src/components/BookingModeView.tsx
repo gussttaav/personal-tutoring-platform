@@ -314,6 +314,11 @@ export default function BookingModeView({
               <WeeklyCalendar
                 durationMinutes={60}
                 onSlotSelected={handleSlotSelected}
+                onSlotFocused={(slot) => {
+                  // Focusing a different valid slot drops the prior confirmed
+                  // highlight so the grid shows only the new preselection (not both).
+                  if (slot && slot.startIso !== selected?.startIso) setSelected(null);
+                }}
                 selectedSlot={selected}
                 initialFocusedSlotStart={initialSlot?.startIso}
                 initialWeekOffset={initialWeekOffset}

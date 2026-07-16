@@ -632,8 +632,7 @@ export default function WeeklyCalendar({
         {/* Legend */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 14, rowGap: 8, padding: "10px 12px 14px 12px" }}>
           <LegendDot bg="rgba(78,222,163,0.18)" border="rgba(78,222,163,0.35)" label={t("available")} />
-          <LegendDot bg="rgba(78,222,163,0.32)" border="rgba(78,222,163,0.6)"  label={t("preselected")} />
-          <LegendDot bg="rgba(78,222,163,0.55)" border="rgba(78,222,163,0.8)"  label={t("confirmed")} />
+          <LegendDot bg="rgba(78,222,163,0.55)" border="rgba(78,222,163,0.8)"  label={t("selected")} />
           <LegendDot bg="rgba(255,180,171,0.07)" border="rgba(255,180,171,0.18)" label={t("booked")} />
           <LegendDot bg="repeating-linear-gradient(135deg,rgba(255,255,255,0.025) 0px,rgba(255,255,255,0.025) 1px,transparent 1px,transparent 6px)" border="rgba(255,255,255,0.04)" label={t("unavailable")} />
         </div>

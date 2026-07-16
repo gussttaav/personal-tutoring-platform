@@ -75,16 +75,14 @@ export function SlotCell({
   let borderColor = hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)";
   let radius      = "0";
 
-  if (inSel) {
+  if (inSel || inFocus) {
+    // Focus and selection paint identically, so a picked block reads the same
+    // before and after it is committed and the single "Selected" legend entry
+    // covers both. The whole block stays one uniform intensity so the
+    // auto-covered cells (for 1h/2h durations) match the clicked anchor.
     bg          = "rgba(78,222,163,0.55)";
     borderColor = "rgba(78,222,163,0.8)";
-    radius      = blockRadius(isSelTop, isSelBot);
-  } else if (inFocus) {
-    // The whole focused block reads at one uniform intensity so the auto-covered
-    // cells (for 1h/2h durations) match the clicked anchor.
-    bg          = "rgba(78,222,163,0.42)";
-    borderColor = "rgba(78,222,163,0.75)";
-    radius      = blockRadius(isFocusTop, isFocusBot);
+    radius      = inSel ? blockRadius(isSelTop, isSelBot) : blockRadius(isFocusTop, isFocusBot);
   }
 
   if (isInvalid) {

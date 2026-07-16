@@ -835,7 +835,16 @@ export default function SingleSessionBooking({
                 <WeeklyCalendar
                   durationMinutes={cfg.durationMinutes}
                   onSlotSelected={handleSlotSelected}
-                  onSlotFocused={(slot) => { setFocusedSlot(slot); if (slot) setHourUnavailable(false); }}
+                  onSlotFocused={(slot) => {
+                    setFocusedSlot(slot);
+                    if (slot) {
+                      setHourUnavailable(false);
+                      // Picking a different valid slot clears the previously chosen
+                      // one so the grid never shows the old confirmed slot alongside
+                      // the new focus.
+                      if (slot.startIso !== selected?.startIso) setSelected(null);
+                    }
+                  }}
                   selectedSlot={selected}
                   initialFocusedSlotStart={initialSlot?.startIso}
                   initialWeekOffset={initialWeekOffset}

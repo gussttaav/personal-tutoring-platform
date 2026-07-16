@@ -406,8 +406,7 @@
       "prev": "Anterior",
       "next": "Siguiente",
       "available": "Disponible",
-      "preselected": "Preseleccionado",
-      "confirmed": "Confirmado",
+      "selected": "Seleccionado",
       "booked": "Reservado",
       "unavailable": "No disponible",
       "availableAt": "Disponible a las {timeLabel}"
