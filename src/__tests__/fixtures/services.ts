@@ -29,6 +29,7 @@ import { InMemoryPaymentRepository }      from "./InMemoryPaymentRepository";
 import { InMemoryUserRepository }         from "./InMemoryUserRepository";
 import { InMemoryPricingRepository }      from "./InMemoryPricingRepository";
 import { InMemoryScheduleRepository }     from "./InMemoryScheduleRepository";
+import { InMemoryConfigCache }            from "./InMemoryConfigCache";
 import { FakeCalendarClient } from "./FakeCalendarClient";
 import { FakeZoomClient }     from "./FakeZoomClient";
 import { FakeEmailClient }    from "./FakeEmailClient";
@@ -64,7 +65,11 @@ export interface BookingServiceDeps {
 }
 
 export function buildTestScheduleService(): ScheduleService {
-  return new ScheduleService(new InMemoryScheduleRepository(), new InMemoryAuditRepository());
+  return new ScheduleService(
+    new InMemoryScheduleRepository(),
+    new InMemoryAuditRepository(),
+    new InMemoryConfigCache(),
+  );
 }
 
 export function buildTestBookingService(

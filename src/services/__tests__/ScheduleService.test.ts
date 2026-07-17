@@ -1,14 +1,20 @@
 // Unit tests for ScheduleService.
+// REFACTOR-R3-P3-02 — adds coverage for the version-keyed config cache.
 import { ScheduleService } from "../ScheduleService";
 import { InMemoryScheduleRepository } from "@/__tests__/fixtures/InMemoryScheduleRepository";
 import { InMemoryAuditRepository } from "@/__tests__/fixtures/InMemoryAuditRepository";
+import { InMemoryConfigCache } from "@/__tests__/fixtures/InMemoryConfigCache";
 import { BOOKING_WINDOW_WEEKS } from "@/lib/booking-config";
 
 function makeService() {
   const repo    = new InMemoryScheduleRepository();
   const audit   = new InMemoryAuditRepository();
-  const service = new ScheduleService(repo, audit);
-  return { service, repo, audit };
+  const cache   = new InMemoryConfigCache();
+  const service = new ScheduleService(repo, audit, cache);
+  // The in-memory repo has no call counters of its own.
+  const getWeeklyHours = jest.spyOn(repo, "getWeeklyHours");
+  const getSettings    = jest.spyOn(repo, "getSettings");
+  return { service, repo, audit, cache, getWeeklyHours, getSettings };
 }
 
 describe("ScheduleService", () => {
@@ -30,10 +36,54 @@ describe("ScheduleService", () => {
     });
   });
 
-  describe("getMinNoticeHours", () => {
-    it("returns the configured min advance notice", async () => {
-      const { service } = makeService();
-      await expect(service.getMinNoticeHours()).resolves.toBe(5);
+  describe("getConfig caching", () => {
+    it("on a miss, reads the repo once and caches under the versioned key with a TTL backstop", async () => {
+      const { service, cache, getWeeklyHours, getSettings } = makeService();
+      await service.getConfig();
+
+      expect(getWeeklyHours).toHaveBeenCalledTimes(1);
+      expect(getSettings).toHaveBeenCalledTimes(1);
+      expect(cache.keys()).toEqual(["schedule:config:v0"]);
+      expect(cache.ttls.get("schedule:config:v0")).toBe(300);
+    });
+
+    it("on a hit, returns the cached config without touching the repo", async () => {
+      const { service, cache, getWeeklyHours, getSettings } = makeService();
+      const first = await service.getConfig();
+
+      getWeeklyHours.mockClear();
+      getSettings.mockClear();
+      cache.calls.set = 0;
+
+      const second = await service.getConfig();
+
+      expect(second).toEqual(first);
+      expect(getWeeklyHours).not.toHaveBeenCalled();
+      expect(getSettings).not.toHaveBeenCalled();
+      expect(cache.calls.set).toBe(0);
+    });
+
+    it("refetches after a version bump (the admin-edit signal)", async () => {
+      const { service, cache, getWeeklyHours } = makeService();
+      await service.getConfig();
+      getWeeklyHours.mockClear();
+
+      // Simulates what the admin schedule route does on an edit.
+      await cache.bumpVersion();
+      await service.getConfig();
+
+      expect(getWeeklyHours).toHaveBeenCalledTimes(1);
+      expect(cache.keys()).toContain("schedule:config:v1");
+    });
+
+    it("falls back to the repo when the cache throws, without throwing", async () => {
+      const { service, cache } = makeService();
+      cache.failWith = new Error("redis down");
+
+      const config = await service.getConfig();
+
+      expect(config.timezone).toBe("Europe/Madrid");
+      expect(config.minNoticeHours).toBe(5);
     });
   });
 

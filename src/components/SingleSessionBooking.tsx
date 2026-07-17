@@ -461,8 +461,8 @@ export default function SingleSessionBooking({
   if (phase === "paying" && selected && clientSecret) {
     return (
       <BookingLayout scrollResetKey={phase}>
-        <WizardProgress currentStep={4} showPaymentStep />
-        <div className="max-w-lg mx-auto w-full" style={{ padding: "16px 0" }}>
+        <WizardProgress currentStep={4} showPaymentStep spacingClassName="mb-8" />
+        <div className="max-w-lg mx-auto w-full" style={{ paddingBottom: 16 }}>
           <PaymentForm
             clientSecret={clientSecret}
             studentName={userName}

@@ -122,7 +122,6 @@ const mockSchedule = (): ScheduleService =>
       minNoticeHours: 5,
       bookingWindowWeeks: 8,
     }),
-    getMinNoticeHours: jest.fn().mockResolvedValue(5),
     updateConfig: jest.fn().mockResolvedValue(undefined),
   } as unknown as ScheduleService);
 

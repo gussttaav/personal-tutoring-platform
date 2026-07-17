@@ -10,7 +10,8 @@ import { kv } from "@/infrastructure/redis/client";
 // orphaned and expire on their own TTL. Reads resolve the version once per call.
 const VERSION_KEY = "avail:version";
 
-async function currentVersion(): Promise<number> {
+/** Resolves the current version counter (0 when unset). Shared with the config cache. */
+export async function currentVersion(): Promise<number> {
   const v = await kv.get<number | string>(VERSION_KEY);
   const n = typeof v === "string" ? parseInt(v, 10) : v;
   return Number.isFinite(n as number) ? (n as number) : 0;
