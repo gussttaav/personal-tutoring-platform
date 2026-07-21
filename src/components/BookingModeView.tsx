@@ -283,7 +283,7 @@ export default function BookingModeView({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
         {/* ── Sidebar ── */}
         <BookingSidebar
           mode="pack"

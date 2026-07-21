@@ -6,6 +6,13 @@
  * Supports two modes:
  *   - "pack":   shows session card + pack status (credits + progress bar) + cancellation notice
  *   - "single": shows session card + price + meta rows (meet, timezone, trust badges)
+ *
+ * Below lg the sidebar stacks above the calendar, so it collapses to a compact
+ * summary strip: the session card only (name + duration + price/credits, laid
+ * out in a single row). The panel title, trust/meta rows and cancellation note
+ * are desktop-only — the calendar already surfaces the timezone when it differs
+ * from the schedule's, and the rest is reassurance that costs a phone viewport
+ * more than it gives back.
  */
 
 import { useTranslations } from "next-intl";
@@ -39,7 +46,7 @@ export default function BookingSidebar({
   return (
     <div className="lg:col-span-3">
       <div
-        className="p-8 rounded-xl sticky"
+        className="p-4 lg:p-8 rounded-xl lg:sticky"
         style={{
           background: "#1c1b1d",
           border: "1px solid rgba(255,255,255,0.05)",
@@ -48,19 +55,21 @@ export default function BookingSidebar({
         }}
       >
         <h2
-          className="font-headline text-xl mb-6"
+          className="hidden lg:block font-headline text-xl mb-6"
           style={{ color: "#e5e1e4" }}
         >
           {t("title")}
         </h2>
 
-        {/* Session card */}
+        {/* Session card — single row below lg, stacked block on desktop */}
         <div
-          className="flex items-start gap-4 p-4 rounded-lg mb-8"
+          className={`flex items-center lg:items-start gap-3 lg:gap-4 p-3 lg:p-4 rounded-lg ${
+            mode === "pack" ? "mb-6 lg:mb-8" : "mb-0 lg:mb-8"
+          }`}
           style={{ background: "#201f22" }}
         >
           <div
-            className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
+            className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center shrink-0"
             style={{ background: "rgba(78,222,163,0.1)", color: "#4edea3" }}
           >
             <svg
@@ -77,20 +86,25 @@ export default function BookingSidebar({
               <polyline points="12 6 12 12 16 14" />
             </svg>
           </div>
-          <div>
-            <p className="font-headline text-lg leading-tight" style={{ color: "#e5e1e4" }}>
-              {sessionName}
-            </p>
-            <p className="text-sm mt-1" style={{ color: "#bbcabf" }}>
-              {t("duration", { duration })}
-            </p>
+          <div className="flex-1 min-w-0 flex items-center justify-between gap-3 lg:block">
+            <div className="min-w-0">
+              <p className="font-headline text-base lg:text-lg leading-tight" style={{ color: "#e5e1e4" }}>
+                {sessionName}
+              </p>
+              <p className="text-sm mt-1" style={{ color: "#bbcabf" }}>
+                {t("duration", { duration })}
+              </p>
+            </div>
             {mode === "single" && price && (
-              <p className="font-headline text-2xl mt-2" style={{ color: "#4edea3", letterSpacing: "-0.02em" }}>
+              <p
+                className="font-headline text-xl lg:text-2xl lg:mt-2 shrink-0"
+                style={{ color: "#4edea3", letterSpacing: "-0.02em" }}
+              >
                 {price}
               </p>
             )}
             {mode === "single" && !price && (
-              <p className="text-sm mt-1 font-semibold" style={{ color: "#4edea3" }}>
+              <p className="text-sm lg:mt-1 font-semibold shrink-0" style={{ color: "#4edea3" }}>
                 {t("free")}
               </p>
             )}
@@ -155,7 +169,7 @@ export default function BookingSidebar({
         {/* ── Single session meta rows ── */}
         {mode === "single" && (
           <div
-            className="space-y-3 pt-6"
+            className="hidden lg:block space-y-3 pt-6"
             style={{ borderTop: "1px solid #3c4a42" }}
           >
             <div className="flex items-center gap-3 text-xs" style={{ color: "#bbcabf" }}>
@@ -205,7 +219,7 @@ export default function BookingSidebar({
         {/* ── Pack mode: cancellation notice ── */}
         {mode === "pack" && !isReschedule && (
           <div
-            className="mt-8 p-4 rounded-xl flex items-start gap-3"
+            className="hidden lg:flex mt-8 p-4 rounded-xl items-start gap-3"
             style={{
               background: "#0e0e10",
               border: "1px dashed #3c4a42",

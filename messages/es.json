@@ -294,6 +294,8 @@
       "platformValue": "Zoom (en la app)",
       "total": "Total a pagar",
       "vatIncluded": "IVA incluido",
+      "free": "Gratis",
+      "freeNote": "Esta sesión es gratuita, no se requiere ningún pago.",
       "paymentProtected": "Tu pago está protegido. El cargo se procesará al confirmar el siguiente paso.",
       "bookingProgress": "Reservando {dateLabel} a las {label}…",
       "verifyingAvailability": "Comprobando disponibilidad…",

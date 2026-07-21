@@ -294,6 +294,8 @@
       "platformValue": "Zoom (in the app)",
       "total": "Total",
       "vatIncluded": "VAT included",
+      "free": "Free",
+      "freeNote": "This session is free — no payment required.",
       "paymentProtected": "Your payment is protected. The charge will be processed when you confirm the next step.",
       "bookingProgress": "Booking {dateLabel} at {label}…",
       "verifyingAvailability": "Checking availability…",
