@@ -16,14 +16,15 @@ interface WizardProgressProps {
   currentStep: 1 | 2 | 3 | 4;
   /** Pass true for paid sessions (1h / 2h) to show the Payment step */
   showPaymentStep?: boolean;
-  /** Bottom-margin utility class; override to tighten the gap below the indicator */
+  /** Spacing utility classes for the outer wrapper; override to tighten the gap.
+   *  Default is responsive: less top/bottom room on mobile, full room from sm up. */
   spacingClassName?: string;
 }
 
 export default function WizardProgress({
   currentStep,
   showPaymentStep = false,
-  spacingClassName = "mb-16",
+  spacingClassName = "mt-4 sm:mt-0 mb-5 sm:mb-16",
 }: WizardProgressProps) {
   const t = useTranslations("booking.wizardProgress");
 
@@ -39,9 +40,9 @@ export default function WizardProgress({
   return (
     <div className={spacingClassName}>
       <div className="flex items-center justify-between max-w-2xl mx-auto relative">
-        {/* Connecting line */}
+        {/* Connecting line — top matches the circle centre at each breakpoint */}
         <div
-          className="absolute top-5 left-0 w-full h-px"
+          className="absolute top-4 sm:top-5 left-0 w-full h-px"
           style={{ background: "#3c4a42", zIndex: 0 }}
         />
 
@@ -50,10 +51,10 @@ export default function WizardProgress({
           const isActive = n === currentStep;
 
           return (
-            <div key={n} className="flex flex-col items-center gap-3" style={{ zIndex: 1 }}>
+            <div key={n} className="flex flex-col items-center gap-2 sm:gap-3" style={{ zIndex: 1 }}>
               {/* Circle */}
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center"
+                className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center"
                 style={
                   isDone || isActive
                     ? {
@@ -90,7 +91,7 @@ export default function WizardProgress({
 
               {/* Label */}
               <span
-                className="text-xs font-label uppercase tracking-widest font-semibold"
+                className="text-[10px] sm:text-xs font-label uppercase tracking-widest font-semibold"
                 style={{
                   color: isDone || isActive ? "#4edea3" : "#bbcabf",
                   letterSpacing: "0.1em",
