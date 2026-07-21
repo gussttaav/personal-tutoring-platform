@@ -21,6 +21,12 @@ jest.mock("@/infrastructure/resend/email-functions", () => ({
   sendDeadLetterNotificationEmail: (...args: unknown[]) => mockSendDeadLetterEmail(...args),
 }));
 
+// REFACTOR-R3-P3-03: getConfirmationChannelState derives the channel name via HMAC.
+// Stub it so the expected bodies below are exact literals instead of env-dependent MACs.
+jest.mock("@/lib/realtime-channel", () => ({
+  paymentChannelName: (id: string) => `pay:mac-${id}`,
+}));
+
 global.fetch = jest.fn().mockResolvedValue({});
 
 import { PaymentService } from "../PaymentService";
@@ -71,10 +77,16 @@ const mockPaymentRepo = (): jest.Mocked<IPaymentRepository> => ({
 
 // REFACTOR-P3-05: handlePackPayment now also reads getBalance + fires
 // broadcastPaymentConfirmed after addCredits, so the mock stubs all three.
-const mockCredits = (): jest.Mocked<Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed">> => ({
+// REFACTOR-R3-P3-03: getConfirmationChannelState adds hasProcessedPayment.
+type MockedCredits = jest.Mocked<
+  Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed" | "hasProcessedPayment">
+>;
+
+const mockCredits = (): MockedCredits => ({
   addCredits:                jest.fn(),
   getBalance:                jest.fn().mockResolvedValue(null),
   broadcastPaymentConfirmed: jest.fn(),
+  hasProcessedPayment:       jest.fn().mockResolvedValue(false),
 });
 
 const mockBookings = (): jest.Mocked<Pick<BookingService, "createBooking" | "findByStripePaymentId">> => ({
@@ -92,7 +104,7 @@ const mockUserService = (): jest.Mocked<Pick<UserService, "ensureUser" | "findBy
 function makeService(overrides?: {
   stripe?:       Partial<jest.Mocked<IStripeClient>>;
   paymentRepo?:  Partial<jest.Mocked<IPaymentRepository>>;
-  credits?:      Partial<jest.Mocked<Pick<CreditService, "addCredits" | "getBalance" | "broadcastPaymentConfirmed">>>;
+  credits?:      Partial<MockedCredits>;
   bookings?:     Partial<jest.Mocked<Pick<BookingService, "createBooking" | "findByStripePaymentId">>>;
   userService?:  Partial<jest.Mocked<Pick<UserService, "ensureUser" | "findByEmail">>>;
 }) {
@@ -559,6 +571,176 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
 
     expect(result.status).not.toBe("confirmed");
     expect(result).toEqual({ status: "pending" });
+  });
+});
+
+// ─── REFACTOR-R3-P3-03: payment-confirmation channel state ───────────────────
+
+describe("REFACTOR-R3-P3-03: getConfirmationChannelState", () => {
+  const OWNER = "student@test.com";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  function packIntent(overrides?: Record<string, string>) {
+    return {
+      id:       "pi_pack_123",
+      metadata: {
+        checkout_type: "pack",
+        student_email: OWNER,
+        student_name:  "Student",
+        pack_size:     "5",
+        ...overrides,
+      },
+    } as unknown as Stripe.PaymentIntent;
+  }
+
+  function singleIntent(overrides?: Record<string, string>) {
+    return {
+      id:       "pi_single_123",
+      metadata: {
+        checkout_type: "single",
+        student_email: OWNER,
+        student_name:  "Student",
+        ...overrides,
+      },
+    } as unknown as Stripe.PaymentIntent;
+  }
+
+  const bookingDetail = {
+    eventId:     "evt_1",
+    startIso:    "2099-12-01T10:00:00.000Z",
+    endIso:      "2099-12-01T11:00:00.000Z",
+    sessionType: "session1h" as const,
+    joinToken:   "j".repeat(64),
+  };
+
+  // Wire-contract assertion: the pack body is exactly these 5 keys — no checkoutType.
+  it("returns the confirmed pack body from the credit balance", async () => {
+    const { service, stripe, credits } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(packIntent());
+    credits.hasProcessedPayment.mockResolvedValue(true);
+    credits.getBalance.mockResolvedValue({ credits: 5, name: "Student", packSize: 5 });
+
+    await expect(
+      service.getConfirmationChannelState({ paymentIntentId: "pi_pack_123", authenticatedEmail: OWNER }),
+    ).resolves.toEqual({
+      channelName: "pay:mac-pi_pack_123",
+      confirmed:   true,
+      credits:     5,
+      name:        "Student",
+      packSize:    5,
+    });
+    expect(credits.getBalance).toHaveBeenCalledWith(OWNER);
+  });
+
+  it("returns the pending pack body (no balance lookup) when the webhook has not landed", async () => {
+    const { service, stripe, credits } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(packIntent());
+    credits.hasProcessedPayment.mockResolvedValue(false);
+
+    await expect(
+      service.getConfirmationChannelState({ paymentIntentId: "pi_pack_123", authenticatedEmail: OWNER }),
+    ).resolves.toEqual({
+      channelName: "pay:mac-pi_pack_123",
+      confirmed:   false,
+      credits:     null,
+      name:        "Student",
+      packSize:    5,
+    });
+    expect(credits.getBalance).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the PaymentIntent metadata when confirmed but no balance row exists", async () => {
+    const { service, stripe, credits } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(packIntent());
+    credits.hasProcessedPayment.mockResolvedValue(true);
+    credits.getBalance.mockResolvedValue(null);
+
+    await expect(
+      service.getConfirmationChannelState({ paymentIntentId: "pi_pack_123", authenticatedEmail: OWNER }),
+    ).resolves.toEqual({
+      channelName: "pay:mac-pi_pack_123",
+      confirmed:   true,
+      credits:     5,
+      name:        "Student",
+      packSize:    5,
+    });
+  });
+
+  it("returns the single-session body with booking detail when confirmed", async () => {
+    const { service, stripe, bookings } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(singleIntent());
+    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(bookingDetail);
+
+    await expect(
+      service.getConfirmationChannelState({ paymentIntentId: "pi_single_123", authenticatedEmail: OWNER }),
+    ).resolves.toEqual({
+      channelName:  "pay:mac-pi_single_123",
+      checkoutType: "single",
+      status:       "confirmed",
+      booking:      bookingDetail,
+    });
+  });
+
+  it("omits booking for a non-confirmed single-session status", async () => {
+    const { service, stripe, paymentRepo } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(singleIntent());
+    paymentRepo.wasRefunded.mockResolvedValue(true);
+
+    const state = await service.getConfirmationChannelState({
+      paymentIntentId: "pi_single_123", authenticatedEmail: OWNER,
+    });
+
+    expect(state).toEqual({
+      channelName:  "pay:mac-pi_single_123",
+      checkoutType: "single",
+      status:       "slot_taken",
+    });
+    expect("booking" in state).toBe(false);
+  });
+
+  // Ownership gate sits before any booking/credit lookup — a non-owner learns nothing.
+  it("throws a 403-shaped error for a non-owner without touching the status lookup", async () => {
+    const { service, stripe, bookings, credits } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(singleIntent());
+
+    await expect(
+      service.getConfirmationChannelState({
+        paymentIntentId: "pi_single_123", authenticatedEmail: "someone-else@test.com",
+      }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+
+    expect(bookings.findByStripePaymentId).not.toHaveBeenCalled();
+    expect(credits.hasProcessedPayment).not.toHaveBeenCalled();
+  });
+
+  it("matches ownership case-insensitively and ignoring surrounding whitespace", async () => {
+    const { service, stripe } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(packIntent({ student_email: " Student@Test.com " }));
+
+    await expect(
+      service.getConfirmationChannelState({ paymentIntentId: "pi_pack_123", authenticatedEmail: OWNER }),
+    ).resolves.toMatchObject({ confirmed: false });
+  });
+
+  it("throws a 400-shaped error when the PaymentIntent has no student_email", async () => {
+    const { service, stripe } = makeService();
+    stripe.retrievePaymentIntent.mockResolvedValue(packIntent({ student_email: "" }));
+
+    await expect(
+      service.getConfirmationChannelState({ paymentIntentId: "pi_pack_123", authenticatedEmail: OWNER }),
+    ).rejects.toMatchObject({ statusCode: 400 });
+  });
+
+  it("propagates a Stripe retrieval failure (route maps it to 500)", async () => {
+    const { service, stripe } = makeService();
+    stripe.retrievePaymentIntent.mockRejectedValue(new Error("stripe down"));
+
+    await expect(
+      service.getConfirmationChannelState({ paymentIntentId: "pi_pack_123", authenticatedEmail: OWNER }),
+    ).rejects.toThrow("stripe down");
   });
 });
 

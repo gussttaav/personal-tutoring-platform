@@ -15,6 +15,9 @@
  * route had no limiter at all) and `zoomTokenRatelimit` (/api/zoom/token was
  * piggybacking on `availabilityRatelimit` under a `zoom:token:` key prefix,
  * sharing that route's 60-req/min budget).
+ *
+ * REFACTOR-R3-P3-03: Added `paymentChannelRatelimit` — GET
+ * /api/payment-confirmation/channel had no limiter at all.
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
@@ -134,4 +137,16 @@ export const zoomTokenRatelimit = new Ratelimit({
   redis:   kv,
   limiter: Ratelimit.slidingWindow(10, "1 m"),
   prefix:  "rl:zoomtoken",
+});
+
+// REFACTOR-R3-P3-03: payment-confirmation channel poll — 30 requests per minute,
+// keyed by the AUTHENTICATED EMAIL, not the IP: it's an authenticated endpoint and
+// mobile clients share carrier NATs, so per-IP would punish unrelated users. The web
+// hook hits it once per mount plus once per Realtime (re)SUBSCRIBED; the mobile S08
+// screen polls it. 30/min covers a 2s poll or any reconnect storm within the 30s
+// confirmation window.
+export const paymentChannelRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(30, "1 m"),
+  prefix:  "rl:paychannel",
 });
