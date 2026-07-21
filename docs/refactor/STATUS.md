@@ -41,13 +41,13 @@ Update this file when starting, completing, or blocking a task.
 |------|-----|--------|-------|----|
 | [01 Extract shared week-grid module](phase-3-architecture/01-extract-week-grid.md) | `REFACTOR-R3-P3-01` | ✅ | Claude | local (`refactor/p3-01-extract-week-grid`) |
 | [02 Cache ScheduleService.getConfig()](phase-3-architecture/02-schedule-config-cache.md) | `REFACTOR-R3-P3-02` | ✅ | Claude | local (`refactor/p3-02-schedule-config-cache`) |
-| [03 payment-confirmation/channel via service layer](phase-3-architecture/03-payment-channel-service-layer.md) | `REFACTOR-R3-P3-03` | ⬜ | _tbd_ | — |
+| [03 payment-confirmation/channel via service layer](phase-3-architecture/03-payment-channel-service-layer.md) | `REFACTOR-R3-P3-03` | ✅ | Claude | local (`refactor/p3-03-payment-channel-service`) |
 
 **Exit criteria**
 - [x] Grid helpers exist exactly once; WeeklyCalendar + AvailabilityModal both consume the shared module (`src/components/week-grid/` + `useWeekAvailability`); `pnpm test`/`lint`/`build` green — e2e booking flows pending (needs `E2E_BASE_URL`)
 - [x] Availability request performs ≤ 1 Supabase round-trip for schedule config on cache hit; admin edit still takes effect immediately — unit-verified (cache hit ⇒ repo untouched; version bump ⇒ refetch); manual perf/freshness check in dev still pending
-- [ ] No `new Stripe(` outside `src/infrastructure/stripe/` + `src/lib/stripe-client.ts`
-- [ ] `pnpm test`, `pnpm test:e2e` (re-run once if a single unrelated test flakes — known issue), `pnpm build` green
+- [x] No `new Stripe(` outside `src/infrastructure/stripe/` — `grep -rn "new Stripe(" src` now hits only `src/infrastructure/stripe/client-singleton.ts:22` (the other two hits are the new comment blocks). The criterion's `src/lib/stripe-client.ts` never existed; the singleton lives in `infrastructure/`.
+- [ ] `pnpm test`, `pnpm test:e2e` (re-run once if a single unrelated test flakes — known issue), `pnpm build` green — `pnpm test` 459/459 and `pnpm build` green after P3-03; `pnpm test:e2e` still pending (needs `E2E_BASE_URL`)
 
 ## Phase 4 — Docs
 
@@ -125,6 +125,27 @@ Update this file when starting, completing, or blocking a task.
     keying under `v0`, which would risk reading/writing under a stale namespace during a Redis blip.
   - Still pending: the manual dev perf check (config queries per week view 14 → ≤ 2) and the
     `/admin/schedule` edit → `/api/availability` freshness check.
+
+- **P3-03:** three deviations from the task md, all agreed before implementation:
+  - **The pack variant of `ConfirmationChannelState` carries no `checkoutType`.** The md's sketch put
+    `checkoutType: "pack"` on it, but the shipped pack response never had that key — adding it would
+    move a wire contract the mobile client already parses. The union discriminates on `checkoutType`
+    (single) vs `confirmed` (pack) instead. Consequence: the union **is** the response body, so the
+    route serializes it verbatim (`NextResponse.json(state)`) and has zero `checkout_type` branching —
+    which satisfies the acceptance criterion more directly than a route-side assembly would have.
+  - **The limiter runs after `getSession()`, not before it.** The md's route sketch said "limiter →
+    auth", but the gotcha section requires keying by the authenticated email — which isn't known until
+    auth resolves. An unauthenticated request therefore costs a JWT decode and no Redis call; the 401
+    path is not rate-limited. `paymentChannelRatelimit` = 30/min per email (`rl:paychannel`), sized per
+    Gustavo's call — the mobile S08 poll interval could not be checked (separate repo).
+  - **The route test was rewritten rather than extended.** With the Stripe call and the branching gone,
+    its `jest.mock("stripe")` + `creditService` mocks no longer had anything to intercept. It now mocks
+    `paymentService.getConfirmationChannelState` + the limiter and covers what the route still owns
+    (validation, auth, limiter keying/429, error mapping, verbatim body pass-through); the branch logic
+    and both wire shapes are asserted service-side in `PaymentService.test.ts`. Also: `mockCredits()` in
+    that file gained `hasProcessedPayment` (the new method reads it).
+  - Still pending: the manual Stripe-test-mode check (pack purchase → `pago-exitoso` live confirm;
+    webhook-delay fallback) and the mobile single-session poll against a dev deploy.
 
 ## Known regressions introduced
 

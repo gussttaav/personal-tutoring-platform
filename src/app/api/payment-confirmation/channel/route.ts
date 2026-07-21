@@ -6,11 +6,17 @@
 // SINGLE-SESSION-CONFIRM-01: extended with a single-session branch (checkout_type ===
 // "single") that returns a discriminated status + booking detail. The pack/default branch
 // is unchanged and reached only for non-single PIs. Consumed by the mobile app only.
+//
+// REFACTOR-R3-P3-03: thin dispatcher. The inline `new Stripe(...)` client, the ownership
+// gate and the single/pack branching moved to PaymentService.getConfirmationChannelState;
+// the route now only rate-limits, authenticates, and maps statusCode-carrying errors.
+// The limiter runs after getSession() because it is keyed by the authenticated email
+// (mobile clients share carrier NATs, so per-IP would punish unrelated users).
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
 import { getSession } from "@/lib/session";
-import { creditService, paymentService } from "@/services";
-import { paymentChannelName } from "@/lib/realtime-channel";
+import { paymentService } from "@/services";
+import { paymentChannelRatelimit } from "@/lib/ratelimit";
+import { log } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -25,44 +31,26 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Authentication required" }, { status: 401 });
   }
 
-  // Resolve identity from PaymentIntent metadata (never trust URL params) — same as the old /api/sse gate.
-  let email: string, name: string, packSize: number, checkoutType: string;
+  const { success } = await paymentChannelRatelimit.limit(authSession.user.email);
+  if (!success) {
+    return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
+  }
+
   try {
-    const intent = await new Stripe(process.env.STRIPE_SECRET_KEY!).paymentIntents.retrieve(paymentIntentId);
-    email        = intent.metadata?.student_email ?? "";
-    name         = intent.metadata?.student_name  ?? "";
-    packSize     = parseInt(intent.metadata?.pack_size ?? "0", 10);
-    checkoutType = intent.metadata?.checkout_type ?? "pack";
-    if (!email) return NextResponse.json({ error: "PaymentIntent metadata incomplete" }, { status: 400 });
-  } catch {
+    const state = await paymentService.getConfirmationChannelState({
+      paymentIntentId,
+      authenticatedEmail: authSession.user.email,
+    });
+    return NextResponse.json(state);
+  } catch (err) {
+    const statusCode = (err as { statusCode?: number }).statusCode;
+    if (statusCode === 403) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    if (statusCode === 400) {
+      return NextResponse.json({ error: "PaymentIntent metadata incomplete" }, { status: 400 });
+    }
+    log("error", "Error resolving payment confirmation channel state", {
+      service: "payment", paymentIntentId, error: String(err),
+    });
     return NextResponse.json({ error: "Could not retrieve PaymentIntent" }, { status: 500 });
   }
-
-  if (email.toLowerCase() !== authSession.user.email.toLowerCase()) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  // SINGLE-SESSION-CONFIRM-01: single-session branch — sits AFTER the ownership gate, so no
-  // booking/join detail is computed before the 403. Same channelName scheme as packs.
-  if (checkoutType === "single") {
-    const { status, booking } = await paymentService.getSingleSessionStatus(paymentIntentId);
-    return NextResponse.json({
-      channelName:  paymentChannelName(paymentIntentId),
-      checkoutType: "single",
-      status,
-      ...(booking ? { booking } : {}),
-    });
-  }
-
-  // Current state ("backlog" equivalent): if the webhook already landed, return the balance now.
-  const confirmed = await creditService.hasProcessedPayment(paymentIntentId);
-  const balance   = confirmed ? await creditService.getBalance(email) : null;
-
-  return NextResponse.json({
-    channelName: paymentChannelName(paymentIntentId),
-    confirmed,
-    credits:  balance?.credits  ?? (confirmed ? packSize : null),
-    name:     balance?.name     ?? name,
-    packSize: balance?.packSize ?? packSize,
-  });
 }
