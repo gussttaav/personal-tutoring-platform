@@ -16,9 +16,16 @@ interface WizardProgressProps {
   currentStep: 1 | 2 | 3 | 4;
   /** Pass true for paid sessions (1h / 2h) to show the Payment step */
   showPaymentStep?: boolean;
+  /** Spacing utility classes for the outer wrapper; override to tighten the gap.
+   *  Default is responsive: less top/bottom room on mobile, full room from sm up. */
+  spacingClassName?: string;
 }
 
-export default function WizardProgress({ currentStep, showPaymentStep = false }: WizardProgressProps) {
+export default function WizardProgress({
+  currentStep,
+  showPaymentStep = false,
+  spacingClassName = "mt-4 sm:mt-0 mb-5 sm:mb-16",
+}: WizardProgressProps) {
   const t = useTranslations("booking.wizardProgress");
 
   const STEPS_BASE = [
@@ -31,7 +38,7 @@ export default function WizardProgress({ currentStep, showPaymentStep = false }:
 
   const steps = showPaymentStep ? [...STEPS_BASE, STEP_PAYMENT] : STEPS_BASE;
   return (
-    <div className="mt-4 sm:mt-0 mb-5 sm:mb-16">
+    <div className={spacingClassName}>
       <div className="flex items-center justify-between max-w-2xl mx-auto relative">
         {/* Connecting line — top matches the circle centre at each breakpoint */}
         <div
