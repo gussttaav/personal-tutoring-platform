@@ -49,7 +49,7 @@ export class CreditService {
 
   // Atomically uses one credit. Throws InsufficientCreditsError if the user
   // has no credits, the pack is expired, or the user doesn't exist.
-  async useCredit(email: string): Promise<{ remaining: number; packSize: PackSize | null }> {
+  async useCredit(email: string): Promise<{ remaining: number; packSize: PackSize | null; packId: string | null }> {
     const result = await this.credits.decrementCredit(email);
     if (!result.ok) throw new InsufficientCreditsError();
 
@@ -60,7 +60,9 @@ export class CreditService {
 
     // REFACTOR-P3-03: surface the decremented pack's size so callers (BookingService)
     // don't need a separate getBalance roundtrip.
-    return { remaining: result.remaining, packSize: result.packSize };
+    // BOOKING-PACKLINK-01: surface the pack id too, so BookingService can link the
+    // booking to it via bookings.credit_pack_id.
+    return { remaining: result.remaining, packSize: result.packSize, packId: result.packId };
   }
 
   async hasProcessedPayment(stripeSessionId: string): Promise<boolean> {

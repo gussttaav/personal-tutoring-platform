@@ -16,7 +16,7 @@
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { SessionType, SingleSessionBookingDetail } from "@/domain/types";
+import type { BookingHistoryPage, SessionType, SingleSessionBookingDetail } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
@@ -190,15 +190,19 @@ export class BookingService {
 
       // 4. Credit decrement for pack sessions
       let packSizeForToken: number | undefined;
+      let creditPackId: string | undefined;
       if (input.sessionType === "pack") {
         // REFACTOR-P3-03: useCredit now returns the decremented pack's size, so
         // we no longer need a separate getBalance roundtrip.
-        const { packSize } = await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
+        // BOOKING-PACKLINK-01: it also returns the pack id, which we persist on the
+        // booking below so packSize/price can be resolved from the pack later.
+        const { packSize, packId } = await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
         compensations.push({
           description: "restore decremented credit",
           run: async () => { await this.credits.restoreCredit(input.email); },
         });
         packSizeForToken = packSize ?? undefined;
+        creditPackId     = packId ?? undefined;
       }
 
       // 5. Calendar event
@@ -233,6 +237,7 @@ export class BookingService {
         startsAt:    input.startIso,
         endsAt:      input.endIso,
         ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
+        ...(creditPackId        !== undefined ? { creditPackId:    creditPackId        } : {}),
         ...(input.stripePaymentId             ? { stripePaymentId: input.stripePaymentId } : {}),
       });
       compensations.push({
@@ -456,6 +461,16 @@ export class BookingService {
       endsAt:      record.endsAt,
       ...(record.packSize !== undefined ? { packSize: record.packSize } : {}),
     }));
+  }
+
+  // BOOKING-HISTORY-01: one keyset page of the user's past bookings, newest first.
+  // Distinct from listForUser, which serves the upcoming-sessions widget and is
+  // confirmed-only, ascending, and unpaginated.
+  async listHistoryForUser(
+    email: string,
+    opts: { limit: number; cursor?: string },
+  ): Promise<BookingHistoryPage> {
+    return this.bookings.listHistoryByUser(email, opts);
   }
 
   async hasAnyBooking(email: string): Promise<boolean> {

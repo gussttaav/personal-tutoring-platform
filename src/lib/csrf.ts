@@ -12,10 +12,11 @@
  *   - It catches cross-site requests even when Origin happens to be missing
  *   - It's cheaper than parsing a URL
  *
- * Exemptions:
+ * Exemptions (REFACTOR-R3-P4-01: refreshed — the QStash-signed internal routes
+ * this list used to name were removed in cycle 2):
  *   - /api/stripe/webhook has signature verification (better auth than CSRF)
- *   - /api/internal/zoom-terminate has QStash signature verification
- *   - /api/internal/zoom-terminate-fallback has CRON_SECRET
+ *   - /api/internal/session-cleanup has CRON_SECRET
+ *   - /api/internal/reconcile-stripe has CRON_SECRET
  *   - /api/auth/* handled by NextAuth
  *
  * MOBILE-AUTH-01 / SEC: Bearer-authenticated requests are not CSRF-able. A

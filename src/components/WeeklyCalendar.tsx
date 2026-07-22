@@ -1,6 +1,8 @@
 "use client";
 
 /**
+ * REFACTOR-R3-P3-01 — consumes the shared week-grid module
+ *
  * WeeklyCalendar — Emerald Nocturne · time-grid redesign
  *
  * Visual style mirrors AvailabilityModal: a sticky time-labels column + 7 day
@@ -16,34 +18,43 @@
  *   60 min  → 30-min atoms, contiguous 2-cell check
  *   120 min → 30-min atoms, contiguous 4-cell check
  *
- * Exported types (ApiSlot, SelectedSlot) and component props are unchanged.
+ * Date/format/grid helpers, SlotCell, LoadingDots, TimeColumn and the per-day
+ * fetch (useWeekAvailability) live in src/components/week-grid; block-selection
+ * logic (findContiguousBlock, blockToSelectedSlot) stays here. ApiSlot and
+ * SelectedSlot are re-exported below for back-compat with existing import sites.
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
-import { gridHourRange, isWithinBlocks } from "@/lib/booking-config";
+import { gridHourRange } from "@/lib/booking-config";
 import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
-import type { WeeklyHours } from "@/domain/types";
 import { formatTime } from "@/lib/formatting";
+import type { ApiSlot, SelectedSlot } from "@/components/week-grid/types";
+import {
+  getDayName,
+  getWeekStart,
+  formatDateLabel,
+  formatDateKey,
+  formatWeekHeading,
+  getNowMinutes,
+  getTimeRowHierarchy,
+  rowBorderTop,
+  hourBandBackground,
+  buildTimeRows,
+  isWithinWorkingHours,
+  buildTimeMap,
+  slotStartKey,
+} from "@/components/week-grid/helpers";
+import { SlotCell } from "@/components/week-grid/SlotCell";
+import { LoadingDots } from "@/components/week-grid/LoadingDots";
+import { TimeColumn } from "@/components/week-grid/TimeColumn";
+import { useWeekAvailability } from "@/hooks/useWeekAvailability";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface ApiSlot {
-  start:      string;
-  end:        string;
-  label:      string;
-  localLabel: string;
-}
-
-export interface SelectedSlot {
-  startIso:  string;
-  endIso:    string;
-  label:     string;
-  dateLabel: string;
-  note?:     string;
-  timezone?: string;
-}
+// Re-exported for back-compat: several modules still import these from here.
+export type { ApiSlot, SelectedSlot } from "@/components/week-grid/types";
 
 interface WeeklyCalendarProps {
   durationMinutes: 15 | 60 | 120;
@@ -59,8 +70,6 @@ interface WeeklyCalendarProps {
   refreshToken?: number;
 }
 
-type DaySlots = ApiSlot[] | "loading" | "error";
-
 /** Internal focused block: the pre-confirmed selection state. */
 interface FocusedBlock {
   dateKey:    string;       // formatDateKey of the day
@@ -69,117 +78,7 @@ interface FocusedBlock {
   slot:       SelectedSlot;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-function getDayName(date: Date, locale: string, format: "short" | "long"): string {
-  return new Intl.DateTimeFormat(locale, { weekday: format }).format(date);
-}
-
-// ─── Pure helpers ─────────────────────────────────────────────────────────────
-
-function getWeekStart(offset = 0): Date {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const dow    = today.getDay();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((dow + 6) % 7) + offset * 7);
-  return monday;
-}
-
-function formatDateLabel(date: Date, locale: string): string {
-  return date.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
-}
-
-function formatDateKey(date: Date): string {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function formatWeekHeading(weekStart: Date, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { day: "numeric", month: "long" }).format(weekStart);
-}
-
-/** Returns the current wall-clock minutes (0–1439) in the schedule's timezone. */
-function getNowMinutes(tz: string): number {
-  const str = new Date().toLocaleTimeString("es-ES", {
-    timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false,
-  });
-  const [h = "0", m = "0"] = str.split(":");
-  return parseInt(h, 10) * 60 + parseInt(m, 10);
-}
-
-/** Classify a time row into its visual hierarchy tier. */
-function getTimeRowHierarchy(hhmm: string): "hour" | "half" | "quarter" {
-  const mins = hhmm.split(":")[1] ?? "00";
-  if (mins === "00") return "hour";
-  if (mins === "30") return "half";
-  return "quarter";
-}
-
-/** Border style for a grid row based on its position and time hierarchy. */
-function rowBorderTop(i: number, hhmm: string): string | undefined {
-  if (i === 0) return undefined;
-  const h = getTimeRowHierarchy(hhmm);
-  // Hour boundary is a structural 2px line, faintly tinted with the emerald
-  // accent — a categorically different weight AND hue than the neutral
-  // half/quarter hairlines, so the eye can lock onto it on two dimensions.
-  if (h === "hour")  return "2px solid rgba(78,222,163,0.22)";
-  if (h === "half")  return "1px solid rgba(255,255,255,0.05)";
-  return                    "1px solid rgba(255,255,255,0.022)";
-}
-
-/**
- * Faint alternating background tint per whole hour, so the eye groups the rows
- * of a single hour pre-attentively (zebra banding). Odd hours get the tint;
- * even hours stay on the base background. Shows through the semi-transparent
- * slot cells, so it reads on every column, not just empty/closed rows.
- */
-function hourBandBackground(hhmm: string): string | undefined {
-  const h = parseInt(hhmm.split(":")[0] ?? "0", 10);
-  return h % 2 === 1 ? "rgba(255,255,255,0.015)" : undefined;
-}
-
-/** Build "HH:MM" time rows for the grid, bounded by the configured hours. */
-function buildTimeRows(atomicMins: 15 | 30, startMin: number, endMin: number): string[] {
-  const rows: string[] = [];
-  for (let m = startMin; m + atomicMins <= endMin; m += atomicMins) {
-    const h  = Math.floor(m / 60);
-    const mm = m % 60;
-    rows.push(`${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
-  }
-  return rows;
-}
-
-/** Returns true if a time row falls within this day's scheduled working windows. */
-function isWithinWorkingHours(
-  weekly: WeeklyHours,
-  dow: number,
-  hhmm: string,
-  atomicMins: 15 | 30,
-): boolean {
-  const [hStr, mStr] = hhmm.split(":");
-  const totalMin     = parseInt(hStr!) * 60 + parseInt(mStr!);
-  return isWithinBlocks(weekly[dow] ?? [], totalMin, atomicMins);
-}
-
-/** Map each slot's display-timezone start "HH:MM" → ApiSlot. */
-function buildTimeMap(slots: ApiSlot[], tzDiffers: boolean): Map<string, ApiSlot> {
-  const map = new Map<string, ApiSlot>();
-  for (const slot of slots) {
-    const label = tzDiffers ? slot.localLabel : slot.label;
-    const key   = label.split(/\s*[–\-]\s*/)[0]?.trim() ?? "";
-    if (key) map.set(key, slot);
-  }
-  return map;
-}
-
-/** Extract the display start "HH:MM" from a slot. */
-function slotStartKey(slot: ApiSlot, tzDiffers: boolean): string {
-  const label = tzDiffers ? slot.localLabel : slot.label;
-  return label.split(/\s*[–\-]\s*/)[0]?.trim() ?? "";
-}
+// ─── Block-selection helpers (calendar-only) ────────────────────────────────────
 
 /**
  * Attempt to pick `cellsNeeded` contiguous available atoms starting from or
@@ -261,7 +160,6 @@ export default function WeeklyCalendar({
   );
 
   const [weekOffset,    setWeekOffset]    = useState(initialWeekOffset);
-  const [slotsMap,      setSlotsMap]      = useState<Record<string, DaySlots>>({});
   const [focusedBlock,  setFocusedBlock]  = useState<FocusedBlock | null>(null);
   const [invalidKey,    setInvalidKey]    = useState<string | null>(null);
   const [isMobile,      setIsMobile]      = useState(false);
@@ -271,11 +169,30 @@ export default function WeeklyCalendar({
   }, schedule.timezone);
   const [nowMadridMin,  setNowMadridMin]  = useState<number>(() => getNowMinutes(schedule.timezone));
   const initialFocusedHandled             = useRef(false);
-  const prevRefreshToken                  = useRef(refreshToken);
 
   const maxWeekOffset = schedule.bookingWindowWeeks - 1;
   const weekStart     = getWeekStart(weekOffset);
   const tzDiffers     = userTz !== schedule.timezone;
+
+  // Per-day availability fetch (shared hook). resetKey = refreshToken so the
+  // cache clears + refetches only when a booking is confirmed; navigating weeks
+  // keeps other weeks cached (incremental skip-loaded).
+  const { slotsMap } = useWeekAvailability({
+    weekStart,
+    atomicMinutes,
+    userTz,
+    weeklyHours:        schedule.weeklyHours,
+    bookingWindowWeeks: schedule.bookingWindowWeeks,
+    resetKey:           String(refreshToken),
+  });
+
+  // Clear the focused block when a refresh drops the cached slots (the focused
+  // block may reference a slot that no longer exists). Render-phase adjust.
+  const [prevRefreshToken, setPrevRefreshToken] = useState(refreshToken);
+  if (refreshToken !== prevRefreshToken) {
+    setPrevRefreshToken(refreshToken);
+    setFocusedBlock(null);
+  }
 
   const timeRows = useMemo(
     () => buildTimeRows(atomicMinutes, minHour * 60, maxHour * 60),
@@ -318,51 +235,6 @@ export default function WeeklyCalendar({
     setPrevSelectedSlotStart(selectedSlot?.startIso);
     if (selectedSlot) setFocusedBlock(null);
   }
-
-  // Fetch atomic slots for each day in the window.
-  // When refreshToken increments (a booking was just confirmed), the backend
-  // has already invalidated Redis — we clear our local cache and re-fetch so
-  // the booked slot disappears immediately without a page reload.
-  useEffect(() => {
-    const isRefresh = refreshToken !== undefined && refreshToken !== prevRefreshToken.current;
-    prevRefreshToken.current = refreshToken;
-
-    if (isRefresh) {
-      setSlotsMap({});
-      setFocusedBlock(null);
-    }
-
-    const today   = new Date(); today.setHours(0, 0, 0, 0);
-    const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + schedule.bookingWindowWeeks * 7);
-
-    days.forEach((date) => {
-      const key = formatDateKey(date);
-      // On a normal render skip already-loaded days; on a refresh re-fetch all.
-      if (!isRefresh && slotsMap[key]) return;
-
-      const isPast   = date < today;
-      const isBeyond = date > maxDate;
-      const dow      = date.getDay();
-      const noSched  = (schedule.weeklyHours[dow] ?? []).length === 0;
-
-      if (isPast || isBeyond || noSched) return;
-
-      setSlotsMap((prev) => ({ ...prev, [key]: "loading" }));
-
-      const tz = encodeURIComponent(userTz);
-      fetch(`/api/availability?date=${key}&duration=${atomicMinutes}&tz=${tz}`)
-        .then((r) => r.json())
-        .then((data) => {
-          setSlotsMap((prev) => ({
-            ...prev,
-            [key]: Array.isArray(data.slots) ? data.slots : "error",
-          }));
-        })
-        .catch(() => {
-          setSlotsMap((prev) => ({ ...prev, [key]: "error" }));
-        });
-    });
-  }, [weekOffset, atomicMinutes, userTz, refreshToken]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-focus initialFocusedSlotStart once its day's slots load.
   // Fires onSlotFocused (not onSlotSelected) — preserves original contract.
@@ -559,70 +431,14 @@ export default function WeeklyCalendar({
               </div>
             )}
             {/* ── Sticky time column ── */}
-            <div style={{
-              background:  "#111113",
-              position:    "sticky",
-              left:        0,
-              zIndex:      2,
-              boxShadow:   "2px 0 6px rgba(0,0,0,0.5)",
-            }}>
-              {/* Header spacer */}
-              <div style={{ height: HEADER_H, borderBottom: "1px solid rgba(255,255,255,0.1)" }} />
-              {/* Time labels — "HH:MM" for every row */}
-              {timeRows.map((hhmm, i) => (
-                <div
-                  key={hhmm}
-                  style={{
-                    height:         ROW_H,
-                    marginTop:      i > 0 && getTimeRowHierarchy(hhmm) === "hour" ? HOUR_GAP : 0,
-                    display:        "flex",
-                    alignItems:     "flex-start",
-                    justifyContent: "flex-end",
-                    paddingRight:   8,
-                    paddingTop:     4,
-                    borderTop:      rowBorderTop(i, hhmm),
-                    background:     hourBandBackground(hhmm),
-                    position:       "relative",
-                  }}
-                >
-                  {/* Hour tick — a brighter emerald stub at the gutter's inner
-                      edge that anchors the eye to the hour line beside its label. */}
-                  {i > 0 && getTimeRowHierarchy(hhmm) === "hour" && (
-                    <div
-                      aria-hidden="true"
-                      style={{
-                        position:   "absolute",
-                        top:        -2,
-                        right:      0,
-                        width:      8,
-                        height:     2,
-                        background: "rgba(78,222,163,0.5)",
-                      }}
-                    />
-                  )}
-                  {(() => {
-                    const tier = getTimeRowHierarchy(hhmm);
-                    return (
-                      <span style={{
-                        fontSize:           isMobile
-                          ? (tier === "hour" ? 9 : tier === "half" ? 7.5 : 7)
-                          : (tier === "hour" ? 10 : tier === "half" ? 8.5 : 8),
-                        fontWeight:         tier === "hour" ? 600 : 400,
-                        color:              tier === "hour"
-                          ? "#c2d0c8"
-                          : tier === "half"
-                            ? "rgba(134,148,138,0.6)"
-                            : "rgba(134,148,138,0.38)",
-                        fontVariantNumeric: "tabular-nums",
-                        whiteSpace:         "nowrap",
-                      }}>
-                        {hhmm}
-                      </span>
-                    );
-                  })()}
-                </div>
-              ))}
-            </div>
+            <TimeColumn
+              isMobile={isMobile}
+              timeRows={timeRows}
+              rowHeight={ROW_H}
+              headerHeight={HEADER_H}
+              paddingTop={4}
+              sticky
+            />
 
             {/* ── Day columns ── */}
             {days.map((date) => {
@@ -792,7 +608,9 @@ export default function WeeklyCalendar({
                       }}>
                         <SlotCell
                           state={cellState}
-                          timeLabel={hhmm}
+                          availableLabel={t("availableAt", { timeLabel: hhmm })}
+                          unavailableTitle="No disponible"
+                          bookedTitle="Reservado"
                           inSel={inSel}
                           isSelTop={isSelTop}
                           isSelBot={isSelBot}
@@ -814,8 +632,7 @@ export default function WeeklyCalendar({
         {/* Legend */}
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", columnGap: 14, rowGap: 8, padding: "10px 12px 14px 12px" }}>
           <LegendDot bg="rgba(78,222,163,0.18)" border="rgba(78,222,163,0.35)" label={t("available")} />
-          <LegendDot bg="rgba(78,222,163,0.32)" border="rgba(78,222,163,0.6)"  label={t("preselected")} />
-          <LegendDot bg="rgba(78,222,163,0.55)" border="rgba(78,222,163,0.8)"  label={t("confirmed")} />
+          <LegendDot bg="rgba(78,222,163,0.55)" border="rgba(78,222,163,0.8)"  label={t("selected")} />
           <LegendDot bg="rgba(255,180,171,0.07)" border="rgba(255,180,171,0.18)" label={t("booked")} />
           <LegendDot bg="repeating-linear-gradient(135deg,rgba(255,255,255,0.025) 0px,rgba(255,255,255,0.025) 1px,transparent 1px,transparent 6px)" border="rgba(255,255,255,0.04)" label={t("unavailable")} />
         </div>
@@ -826,110 +643,6 @@ export default function WeeklyCalendar({
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </>
-  );
-}
-
-// ─── Slot cell ─────────────────────────────────────────────────────────────────
-
-function SlotCell({
-  state,
-  timeLabel,
-  inSel, isSelTop, isSelBot,
-  inFocus, isFocusTop, isFocusBot,
-  isInvalid,
-  onClick,
-}: {
-  state:         "available" | "booked" | "unavailable";
-  timeLabel?:    string;
-  inSel:         boolean;
-  isSelTop:      boolean;
-  isSelBot:      boolean;
-  inFocus:       boolean;
-  isFocusTop:    boolean;
-  isFocusBot:    boolean;
-  isInvalid:     boolean;
-  onClick?:      () => void;
-}) {
-  const [hovered, setHovered] = useState(false);
-  const tCal = useTranslations("booking.weeklyCalendar");
-
-  if (state === "unavailable") {
-    return (
-      <div style={{
-        width: "100%", height: "100%", borderRadius: 0,
-        border: "1px solid rgba(255,255,255,0.04)",
-        background: "repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 6px)",
-        cursor: "default",
-      }} title="No disponible" />
-    );
-  }
-
-  if (state === "booked") {
-    return (
-      <div style={{
-        width: "100%", height: "100%", borderRadius: 0,
-        border: "1px solid rgba(255,180,171,0.18)",
-        background: "rgba(255,180,171,0.07)",
-        cursor: "default",
-      }} title="Reservado" />
-    );
-  }
-
-  // Compute border-radius based on block position
-  function blockRadius(isTop: boolean, isBot: boolean): string {
-    const t = isTop ? 4 : 0;
-    const b = isBot ? 4 : 0;
-    return `${t}px ${t}px ${b}px ${b}px`;
-  }
-
-  let bg           = hovered ? "rgba(78,222,163,0.22)" : "rgba(78,222,163,0.13)";
-  let borderColor  = hovered ? "rgba(78,222,163,0.55)" : "rgba(78,222,163,0.3)";
-  let radius       = "0";
-  let labelColor   = "#4edea3";
-
-  if (inSel) {
-    bg          = "rgba(78,222,163,0.55)";
-    borderColor = "rgba(78,222,163,0.8)";
-    radius      = blockRadius(isSelTop, isSelBot);
-    labelColor  = "#003824";
-  } else if (inFocus) {
-    // The whole focused block reads at one uniform intensity so the auto-covered
-    // cells (for 1h/2h durations) match the clicked anchor.
-    bg          = "rgba(78,222,163,0.42)";
-    borderColor = "rgba(78,222,163,0.75)";
-    radius      = blockRadius(isFocusTop, isFocusBot);
-    labelColor  = "#4edea3";
-  }
-
-  if (isInvalid) {
-    bg          = "rgba(239,68,68,0.25)";
-    borderColor = "rgba(239,68,68,0.5)";
-    radius      = "0";
-  }
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        width:          "100%",
-        height:         "100%",
-        display:        "flex",
-        alignItems:     "flex-start",
-        justifyContent: "flex-start",
-        padding:        "3px 4px",
-        cursor:         "pointer",
-        border:         `1px solid ${borderColor}`,
-        background:     bg,
-        borderRadius:   radius,
-        transition:     "background 0.1s, border-color 0.1s",
-        fontFamily:     "inherit",
-        overflow:       "hidden",
-      }}
-      aria-label={timeLabel ? tCal("availableAt", { timeLabel }) : tCal("available")}
-    />
-
   );
 }
 
@@ -946,32 +659,5 @@ function LegendDot({ bg, border, label }: { bg: string; border: string; label: s
       }} />
       {label}
     </span>
-  );
-}
-
-// ─── Loading dots ─────────────────────────────────────────────────────────────
-
-function LoadingDots() {
-  return (
-    <div style={{ display: "flex", gap: 3 }}>
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          style={{
-            width:        3,
-            height:       3,
-            borderRadius: "50%",
-            background:   "#86948a",
-            animation:    `wcalPulse 1.2s ease-in-out ${i * 0.2}s infinite`,
-          }}
-        />
-      ))}
-      <style>{`
-        @keyframes wcalPulse {
-          0%, 100% { opacity: 0.3; transform: scale(0.8); }
-          50%       { opacity: 1;   transform: scale(1);   }
-        }
-      `}</style>
-    </div>
   );
 }

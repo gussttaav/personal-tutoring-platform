@@ -20,7 +20,9 @@ import { log } from "@/lib/logger";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const FROM     = process.env.RESEND_FROM ?? "Gustavo Torres <onboarding@resend.dev>";
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.gustavoai.dev";
+// SEO-05: non-www default, consistent with sitemap.ts / robots.ts / layout.tsx
+// (the canonical host is https://gustavoai.dev).
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
 
 // ─── Security: HTML escaping ──────────────────────────────────────────────────
 

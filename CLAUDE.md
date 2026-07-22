@@ -26,8 +26,10 @@ src/
 - **Supabase (Postgres)** is the source of truth for all persistent data:
   users, credit_packs, bookings, zoom_sessions, payments, audit_log, pricing.
 - **Redis (Upstash)** is used ONLY for ephemeral state:
-  rate limiting (`rl:*`), slot locks (`slot:lock:*`),
-  in-session chat (`chat:session:*`), availability cache (`avail:*`).
+  rate limiting (`rl:*`), in-session chat (`chat:session:*`),
+  availability + schedule-config cache (`avail:*`, `schedule:config:*`).
+- **Slot locking is a Postgres concern**, not Redis: the `slot_locks` table via the
+  `acquire_slot_lock` / `release_slot_lock` RPCs.
 - **Never store persistent data in Redis.** If it matters after a page refresh, it goes in Supabase.
 
 ### Repository Pattern
@@ -61,7 +63,9 @@ Domain errors (`src/domain/errors.ts`) are mapped to HTTP via `src/lib/http-erro
 
 ## Internationalization (i18n)
 
-The customer-facing app is bilingual: **Spanish is the default** (unprefixed URLs), **English lives under `/en`** (`next-intl`, `localePrefix: 'as-needed'`). Routing/config in `src/i18n/`; locale persisted in the `NEXT_LOCALE` cookie (no `users.locale` column).
+The customer-facing app is bilingual: **Spanish is the default** (unprefixed URLs), **English lives under `/en`** (`next-intl`, `localePrefix: 'as-needed'`). Routing/config in `src/i18n/`.
+
+Locale has two sources, by design: the `NEXT_LOCALE` cookie drives **rendering** (which URL/locale the visitor sees), while **`users.locale`** (migration `0010_user_locale.sql`) is the account-level source of truth used by background flows that have no request context — e.g. the emails `BookingService` sends from the Stripe webhook. The two are reconciled at login by `UserService.seedLocaleOnLogin`, and an explicit switch persists via `setLocale`.
 
 **The rule for any UI/email text change:**
 - Never hardcode customer-facing strings in components. Add a key to **both** `messages/es.json` **and** `messages/en.json` (identical key structure, translated values) and render it with `t()` from `useTranslations(...)` (client) or `getTranslations(...)` (server).
@@ -157,7 +161,8 @@ Structure of an active refactor:
 - `phase-N-name/NN-task.md` — individual tasks
 
 Conventions:
-- Each task tagged `REFACTOR-PN-NN` in code comments
+- Each task tagged `REFACTOR-PN-NN` in code comments (from cycle 3 on, the tag
+  carries the cycle: `REFACTOR-R3-PN-NN`)
 - Each task = one PR
 - Each task md has: TL;DR, context with line refs, files affected,
   the change, acceptance criteria, test plan, gotchas, out of scope

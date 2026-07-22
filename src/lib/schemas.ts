@@ -165,3 +165,16 @@ export const MobileAuthSchema = z.object({
 });
 
 export type MobileAuthInput = z.infer<typeof MobileAuthSchema>;
+
+// ─── Booking history ──────────────────────────────────────────────────────────
+
+// BOOKING-HISTORY-01: query params for GET /api/my-bookings/history. Unlike every
+// other schema here this one models a query string, so `limit` arrives as a string
+// and needs coercion. `cursor` is the opaque "<startsAt>_<id>" keyset token echoed
+// back from the previous page; it is validated for shape in the repository.
+export const BookingHistoryQuerySchema = z.object({
+  limit:  z.coerce.number().int().min(1).max(50).default(20),
+  cursor: z.string().min(1).optional(),
+});
+
+export type BookingHistoryQuery = z.infer<typeof BookingHistoryQuerySchema>;

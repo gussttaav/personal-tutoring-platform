@@ -12,8 +12,9 @@ const EVENT_ID   = "evt-123";
 const EMAIL      = "student@example.com";
 
 const mockReviews = (): jest.Mocked<IReviewRepository> => ({
-  upsertRating: jest.fn().mockResolvedValue(undefined),
-  setComment:   jest.fn().mockResolvedValue(undefined),
+  upsertRating:     jest.fn().mockResolvedValue(undefined),
+  setComment:       jest.fn().mockResolvedValue(undefined),
+  findByBookingIds: jest.fn().mockResolvedValue(new Map()),
 });
 
 const mockGprompt = (): jest.Mocked<IGoogleReviewPromptRepository> => ({

@@ -386,6 +386,11 @@ export default function HeroSection() {
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
+              // background-clip:text paints only inside the box; the tight
+              // line-height clips descenders (g, p, y). Extend the box and
+              // pull it back so surrounding layout is unchanged.
+              paddingBottom: "0.15em",
+              marginBottom: "-0.15em",
             }}
           >
             {t("taglinePart2")}

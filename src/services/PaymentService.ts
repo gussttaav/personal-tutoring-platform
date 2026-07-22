@@ -17,14 +17,22 @@
  * REFACTOR-R3-P1-03: the idempotency gate short-circuits on an existing confirmed
  * booking for the PaymentIntent — so a redelivery after createBooking committed but
  * markProcessed failed heals the marker instead of refunding a fulfilled booking.
+ *
+ * REFACTOR-R3-P3-03: `getConfirmationChannelState` absorbs the logic that used to sit
+ * in GET /api/payment-confirmation/channel — which built its own `new Stripe(...)`
+ * client inline instead of going through IStripeClient.
  */
 
 import type Stripe from "stripe";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
-import type { PackSize, SingleSessionResolved, SingleSessionStatusResult } from "@/domain/types";
+import type {
+  PackSize, PaymentCheckoutType, SingleSessionBookingDetail,
+  SingleSessionResolved, SingleSessionStatusResult,
+} from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
 import { log } from "@/lib/logger";
+import { paymentChannelName } from "@/lib/realtime-channel";
 import { PermanentWebhookError } from "@/domain/errors";
 import { sendDeadLetterNotificationEmail } from "@/infrastructure/resend/email-functions";
 import { CreditService } from "./CreditService";
@@ -56,6 +64,26 @@ export interface SinglePaymentSummary {
 
 export type PaymentSummary = PackPaymentSummary | SinglePaymentSummary;
 
+// REFACTOR-R3-P3-03: the response body of GET /api/payment-confirmation/channel.
+// This union IS the wire contract (the mobile app consumes the single branch), so the
+// route serializes it verbatim — no per-branch assembly in the handler. Note the pack
+// variant deliberately carries no `checkoutType`: the shipped pack response never had
+// one, and adding it would move a contract the mobile client already parses.
+export type ConfirmationChannelState =
+  | {
+      channelName:  string;
+      checkoutType: "single";
+      status:       SingleSessionStatusResult["status"];
+      booking?:     SingleSessionBookingDetail;
+    }
+  | {
+      channelName: string;
+      confirmed:   boolean;
+      credits:     number | null;
+      name:        string;
+      packSize:    number;
+    };
+
 // ─── Internal types ───────────────────────────────────────────────────────────
 
 interface SingleSessionInput {
@@ -67,6 +95,11 @@ interface SingleSessionInput {
   rescheduleToken: string | null;
   idempotencyKey:  string;
   refundTarget:    { payment_intent?: string; charge?: string };
+  // PAYMENTS-AUDIT-01: charged amount from the Stripe event (intent.amount /
+  // session.amount_total). Used to record the `payments` audit row on success.
+  // Nullable: legacy checkout.session may lack amount_total.
+  amountCents?:    number | null;
+  currency?:       string | null;
 }
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -191,7 +224,7 @@ export class PaymentService {
       const checkoutType = metadata.checkout_type ?? "pack";
 
       if (checkoutType === "pack") {
-        await this.handlePackPayment(metadata, intent.id);
+        await this.handlePackPayment(metadata, intent.id, intent.amount, intent.currency);
         return;
       }
       if (checkoutType === "single") {
@@ -204,6 +237,8 @@ export class PaymentService {
           rescheduleToken: metadata.reschedule_token || null,
           idempotencyKey:  intent.id,
           refundTarget:    { payment_intent: intent.id },
+          amountCents:     intent.amount,
+          currency:        intent.currency,
         });
       }
       return;
@@ -231,6 +266,8 @@ export class PaymentService {
         await this.handlePackPayment(
           { student_email: email, student_name: name, pack_size: String(packSize), checkout_type: "pack" },
           stripeSessionId,
+          session.amount_total,
+          session.currency,
         );
         return;
       }
@@ -245,6 +282,8 @@ export class PaymentService {
           rescheduleToken: session.metadata?.reschedule_token || null,
           idempotencyKey:  stripeSessionId,
           refundTarget:    { payment_intent: session.payment_intent as string },
+          amountCents:     session.amount_total,
+          currency:        session.currency,
         });
       }
     }
@@ -313,6 +352,8 @@ export class PaymentService {
   private async handlePackPayment(
     metadata: Record<string, string>,
     intentId: string,
+    amountCents: number | null | undefined,
+    currency: string | null | undefined,
   ): Promise<void> {
     const email    = metadata.student_email ?? "";
     const name     = metadata.student_name  ?? "";
@@ -332,6 +373,12 @@ export class PaymentService {
       packLabel: `Pack ${packSize} clases`, stripeSessionId: intentId,
     });
     log("info", "Pack credits written", { service: "payment", email, packSize });
+
+    // PAYMENTS-AUDIT-01: intentId is the credit_packs.stripe_payment_id, which is
+    // exactly the key the history/admin surfaces join `payments` on.
+    await this.recordPaymentRow({
+      email, name, stripePaymentId: intentId, amountCents, currency, checkoutType: "pack",
+    });
 
     // REFACTOR-P3-05: Broadcast for live confirmation. Best-effort — credits are
     // already persisted above, so a broadcast failure just means the browser falls
@@ -438,6 +485,14 @@ export class PaymentService {
       await this.paymentRepo.markProcessed(idempotencyKey);
       log("info", "Single session booked", { service: "payment", email, startIso });
 
+      // PAYMENTS-AUDIT-01: paymentIntentId is the booking's stripe_payment_id, the
+      // key the history/admin surfaces join `payments` on. Only the successful-booking
+      // path records — refund/slot-taken/dead-letter exits above deliberately do not.
+      await this.recordPaymentRow({
+        email, name, stripePaymentId: paymentIntentId ?? idempotencyKey,
+        amountCents: input.amountCents, currency: input.currency, checkoutType: "single",
+      });
+
       // SINGLE-SESSION-CONFIRM-01: best-effort confirmation broadcast (persistence above
       // already committed the booking; polling catches up if this is missed).
       if (paymentIntentId) {
@@ -478,6 +533,37 @@ export class PaymentService {
     }
   }
 
+  // PAYMENTS-AUDIT-01: best-effort insert of the `payments` audit row after a payment
+  // succeeds. Best-effort by design — the row backs display/auditing only, so a failure
+  // must not break fulfillment (already committed) nor trigger a webhook retry that the
+  // idempotency guard would then skip. The insert itself is idempotent on stripe_payment_id.
+  private async recordPaymentRow(params: {
+    email:           string;
+    name:            string;
+    stripePaymentId: string;
+    amountCents:     number | null | undefined;
+    currency:        string | null | undefined;
+    checkoutType:    PaymentCheckoutType;
+  }): Promise<void> {
+    // Legacy checkout.session events may lack amount_total; nothing to record then.
+    if (params.amountCents == null) return;
+    try {
+      const userId = await this.userService.ensureUser(params.email, params.name);
+      await this.paymentRepo.recordPayment({
+        userId,
+        stripePaymentId: params.stripePaymentId,
+        amountCents:     params.amountCents,
+        currency:        params.currency ?? "eur",
+        checkoutType:    params.checkoutType,
+        status:          "succeeded",
+      });
+    } catch (err) {
+      log("warn", "Failed to record payment audit row", {
+        service: "payment", stripePaymentId: params.stripePaymentId, error: String(err),
+      });
+    }
+  }
+
   // SINGLE-SESSION-CONFIRM-01: polling status for GET /api/payment-confirmation/channel
   // (single branch). Total + reliable — resolves a missed broadcast and either race
   // direction with the webhook. Order is keyed by PaymentIntent id: confirmed (status-scoped
@@ -491,6 +577,51 @@ export class PaymentService {
     if (await this.paymentRepo.hasFailedBooking(paymentIntentId)) return { status: "failed" };
 
     return { status: "pending" };
+  }
+
+  // REFACTOR-R3-P3-03: state behind GET /api/payment-confirmation/channel. Identity is
+  // resolved from PaymentIntent metadata (never from the URL param) — same gate the old
+  // /api/sse used — and the single/pack branching that used to live in the route handler
+  // now sits here, behind IStripeClient.
+  async getConfirmationChannelState(params: {
+    paymentIntentId:    string;
+    authenticatedEmail: string;
+  }): Promise<ConfirmationChannelState> {
+    const { paymentIntentId, authenticatedEmail } = params;
+    const intent = await this.stripeClient.retrievePaymentIntent(paymentIntentId);
+
+    const email = intent.metadata?.student_email ?? "";
+    if (!email) {
+      throw Object.assign(new Error("PaymentIntent metadata incomplete"), { statusCode: 400 });
+    }
+    if (email.toLowerCase().trim() !== authenticatedEmail.toLowerCase().trim()) {
+      log("warn", "Unauthorized payment-confirmation channel access attempt", {
+        service: "payment", authenticatedEmail, paymentIntentId,
+      });
+      throw Object.assign(new Error("Forbidden"), { statusCode: 403 });
+    }
+
+    const channelName = paymentChannelName(paymentIntentId);
+
+    // SINGLE-SESSION-CONFIRM-01: single-session branch — sits AFTER the ownership gate, so
+    // no booking/join detail is computed before the 403. Same channelName scheme as packs.
+    if ((intent.metadata?.checkout_type ?? "pack") === "single") {
+      const { status, booking } = await this.getSingleSessionStatus(paymentIntentId);
+      return { channelName, checkoutType: "single", status, ...(booking ? { booking } : {}) };
+    }
+
+    // Current state ("backlog" equivalent): if the webhook already landed, return the balance now.
+    const metaPackSize = parseInt(intent.metadata?.pack_size ?? "0", 10);
+    const confirmed    = await this.credits.hasProcessedPayment(paymentIntentId);
+    const balance      = confirmed ? await this.credits.getBalance(email) : null;
+
+    return {
+      channelName,
+      confirmed,
+      credits:  balance?.credits  ?? (confirmed ? metaPackSize : null),
+      name:     balance?.name     ?? (intent.metadata?.student_name ?? ""),
+      packSize: balance?.packSize ?? metaPackSize,
+    };
   }
 
   private async writeDeadLetter(

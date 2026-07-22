@@ -36,6 +36,13 @@ export class ReviewBookingNotFoundError extends DomainError {
   constructor() { super("Review booking not found", "REVIEW_BOOKING_NOT_FOUND"); }
 }
 
+// BOOKING-HISTORY-01: the pagination cursor was not a well-formed
+// "<startsAt>_<id>" token. Rejected rather than ignored — silently falling back
+// to the first page would make a paging client loop forever. Mapped to 400.
+export class InvalidCursorError extends DomainError {
+  constructor() { super("Malformed pagination cursor", "INVALID_CURSOR"); }
+}
+
 // MOBILE-AUTH-01: The supplied Google ID token failed verification — bad
 // signature, wrong/missing audience, expired, malformed, or the verifier could
 // not be configured (fail-closed). Mapped to 401.

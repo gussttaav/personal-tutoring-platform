@@ -10,6 +10,14 @@
  * which meant availability and chat calls shared the same 20-req/min budget
  * under different key prefixes — defeating the purpose of separate limits.
  * The availability route is now on its own 60-req/min limiter.
+ *
+ * REFACTOR-R3-P2-02: Added `cancelRatelimit` (the unauthenticated /api/cancel
+ * route had no limiter at all) and `zoomTokenRatelimit` (/api/zoom/token was
+ * piggybacking on `availabilityRatelimit` under a `zoom:token:` key prefix,
+ * sharing that route's 60-req/min budget).
+ *
+ * REFACTOR-R3-P3-03: Added `paymentChannelRatelimit` — GET
+ * /api/payment-confirmation/channel had no limiter at all.
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
@@ -96,6 +104,15 @@ export const scheduleRatelimit = new Ratelimit({
   prefix:  "rl:schedule",
 });
 
+// BOOKING-HISTORY-01: 60 requests per minute per IP (authenticated GET
+// /api/my-bookings/history). The screen pages as the user scrolls, so the budget
+// has to cover a burst of cursor follow-ups, not just one fetch per visit.
+export const historyRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(60, "1 m"),
+  prefix:  "rl:history",
+});
+
 // MOBILE-AUTH-01: Google ID token → bearer exchange (POST /api/auth/mobile).
 // 10 requests per minute per IP — this is a pre-auth endpoint; a legitimate app
 // exchanges only on cold start / token expiry, so a low limit stops abuse.
@@ -103,4 +120,33 @@ export const mobileAuthRatelimit = new Ratelimit({
   redis:   kv,
   limiter: Ratelimit.slidingWindow(10, "1 m"),
   prefix:  "rl:mobile-auth",
+});
+
+// REFACTOR-R3-P2-02: unauthenticated cancel endpoint — tight per-IP cap.
+// A human cancels once per email link; 5/min is generous for people and
+// hostile to token-guessing scanners.
+export const cancelRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(5, "1 m"),
+  prefix:  "rl:cancel",
+});
+
+// REFACTOR-R3-P2-02: dedicated limiter (was piggybacking on availabilityRatelimit).
+// A token is requested once per session join, plus the occasional rejoin.
+export const zoomTokenRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  prefix:  "rl:zoomtoken",
+});
+
+// REFACTOR-R3-P3-03: payment-confirmation channel poll — 30 requests per minute,
+// keyed by the AUTHENTICATED EMAIL, not the IP: it's an authenticated endpoint and
+// mobile clients share carrier NATs, so per-IP would punish unrelated users. The web
+// hook hits it once per mount plus once per Realtime (re)SUBSCRIBED; the mobile S08
+// screen polls it. 30/min covers a 2s poll or any reconnect storm within the 30s
+// confirmation window.
+export const paymentChannelRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(30, "1 m"),
+  prefix:  "rl:paychannel",
 });

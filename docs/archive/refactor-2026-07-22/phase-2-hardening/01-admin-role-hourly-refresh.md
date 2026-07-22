@@ -1,6 +1,28 @@
 # P2-01 — Hourly admin-role re-fetch in the JWT callback
 
-**Tag:** `REFACTOR-R3-P2-01` · **Severity:** 🟠 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R3-P2-01` · **Severity:** 🟠 · **Effort:** S · **Owner:** Gustavo · **Status:** 🚫 WON'T DO
+
+> ## 🚫 Rejected — 2026-07-13
+>
+> **The premise of this task is wrong for this app.** The 🟠 severity assumes a multi-admin
+> deployment where an admin can turn hostile and must be revoked fast. Reality:
+>
+> - There is exactly **one admin: Gustavo, the tutor/owner.** There is nobody to demote.
+> - The app has **no role-management feature.** Promotion/demotion is a manual `users.role` edit
+>   in Supabase and essentially never happens — so "propagate a role change within ≤ 1h" solves a
+>   transition that does not occur.
+> - Admins and students have **disjoint feature sets** (admin panel vs. booking/paying), so a stale
+>   role does not silently grant a student anything.
+> - The cost lands on the wrong people: one role query per hour for every **student**, who gain
+>   nothing from it.
+> - A leaked admin cookie already has a revocation lever — rotate `AUTH_SECRET` (instant, blunt:
+>   logs out all users).
+>
+> It was implemented and then reverted; `src/auth.ts` is unchanged. **Revisit only if the app gains
+> multiple admins or in-app role management.** Known unrelated TODO (Gustavo's, not urgent): make
+> the admin panel the landing page for admins so they no longer see the booking flow.
+>
+> The original task text is preserved below for context.
 
 ## TL;DR
 
@@ -65,6 +87,8 @@ async jwt({ token, profile, trigger }) {
 (If P2-03 hasn't landed yet, use the `log()` call anyway — it's the same import.)
 
 ## Acceptance criteria
+
+_(Moot — task rejected; see the banner at the top.)_
 
 - [ ] Flipping `users.role` admin→student in the DB → admin API calls return 403 within ≤ 1h with the same cookie
 - [ ] Promotion propagates the same way (student→admin usable within ≤ 1h)

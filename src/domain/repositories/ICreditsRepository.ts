@@ -7,10 +7,13 @@ export type { CreditResult };
 // REFACTOR-P3-03: decrementCredit returns the pack_size of the pack it
 // decremented from (null when no credit was available), so callers don't need
 // a separate getBalance roundtrip just to read it.
+// BOOKING-PACKLINK-01: also returns that pack's id, so BookingService can link
+// the booking to it via bookings.credit_pack_id. Both are null when ok is false.
 export interface DecrementResult {
   ok:        boolean;
   remaining: number;
   packSize:  PackSize | null;
+  packId:    string | null;
 }
 
 export interface ICreditsRepository {

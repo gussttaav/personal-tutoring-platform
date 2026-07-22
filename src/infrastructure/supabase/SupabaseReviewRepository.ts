@@ -29,4 +29,24 @@ export class SupabaseReviewRepository implements IReviewRepository {
 
     if (error) throw error;
   }
+
+  async findByBookingIds(
+    bookingIds: string[],
+  ): Promise<Map<string, { rating: number; comment: string | null }>> {
+    if (bookingIds.length === 0) return new Map();
+
+    const { data, error } = await supabase
+      .from("reviews")
+      .select("booking_id, rating, comment")
+      .in("booking_id", bookingIds);
+
+    if (error) throw error;
+
+    return new Map(
+      (data ?? []).map(r => [
+        r.booking_id as string,
+        { rating: r.rating as number, comment: (r.comment ?? null) as string | null },
+      ]),
+    );
+  }
 }

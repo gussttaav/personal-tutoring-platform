@@ -12,12 +12,15 @@
  *   SEC-03: session-membership check — only the registered student or tutor may obtain a token
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
  *   ARCH-15: SessionService.issueJoinToken replaces inline lookup + membership check + JWT signing
+ *   REFACTOR-R3-P2-02: dedicated `zoomTokenRatelimit` (was borrowing availabilityRatelimit)
+ *     and the shared `getClientIp()` helper (was parsing x-forwarded-for inline)
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { sessionService } from "@/services";
-import { availabilityRatelimit } from "@/lib/ratelimit";
+import { zoomTokenRatelimit } from "@/lib/ratelimit";
+import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
 import { BookingNotFoundError, UnauthorizedError } from "@/domain/errors";
@@ -50,8 +53,7 @@ async function postHandler(req: NextRequest): Promise<NextResponse> {
   }
 
   // ── Rate limit ─────────────────────────────────────────────────────────────
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const { success } = await availabilityRatelimit.limit(`zoom:token:${ip}`);
+  const { success } = await zoomTokenRatelimit.limit(getClientIp(req));
   if (!success) {
     return NextResponse.json({ error: "Demasiadas solicitudes" }, { status: 429 });
   }

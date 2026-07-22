@@ -45,6 +45,26 @@ export interface PublicPricing {
   packs:    PublicPackPrice[];
 }
 
+// ─── Payments (audit rows in the `payments` table) ────────────────────────────
+// The generated Supabase types widen these to `string`; we narrow to the CHECK
+// constraints defined in the migration.
+
+/** Which checkout flow produced a payment: a credit pack or a single session. */
+export type PaymentCheckoutType = "pack" | "single";
+
+/** Lifecycle of a payment audit row. */
+export type PaymentStatus = "pending" | "succeeded" | "refunded" | "failed";
+
+/** Input for recording a `payments` row after a Stripe payment succeeds. */
+export interface RecordPaymentInput {
+  userId:          string;
+  stripePaymentId: string;
+  amountCents:     number;
+  currency:        string;
+  checkoutType:    PaymentCheckoutType;
+  status?:         PaymentStatus;
+}
+
 export interface BookingRecord {
   eventId:          string;
   email:            string;
@@ -55,6 +75,42 @@ export interface BookingRecord {
   used:             boolean;
   packSize?:        number;
   stripePaymentId?: string;
+  // BOOKING-PACKLINK-01: the credit pack this booking drew a credit from (pack
+  // sessions only). Persisted to bookings.credit_pack_id; the join that surfaces
+  // packSize in the my-bookings surfaces depends on it being set.
+  creditPackId?:    string;
+}
+
+// Lifecycle of a booking row. Every booking is created 'confirmed'; the daily
+// session-cleanup cron settles it to 'completed' (student joined the Zoom
+// session) or 'no_show' (they didn't). 'cancelled' is set by the cancel flow.
+export type BookingStatus = "confirmed" | "completed" | "cancelled" | "no_show";
+
+// BOOKING-HISTORY-01: one past booking, enriched for the history surface.
+// `amountCents` is the price actually paid (derived from the payments row, not
+// from the admin-editable `pricing` table, so past bookings stay accurate when
+// prices change). It is null for free15min and for rows with no payment record.
+export interface BookingHistoryEntry {
+  id:          string;         // bookings.id — stable display reference
+  eventId:     string;         // may be "" when no calendar event was created
+  sessionType: SessionType;
+  status:      BookingStatus;
+  startsAt:    string;
+  endsAt:      string;
+  packSize?:   number;
+  note:        string | null;
+  amountCents: number | null;
+  currency:    string | null;  // null whenever amountCents is null
+  review:      { rating: number; comment: string | null } | null;
+}
+
+// Keyset page. `nextCursor` is an opaque "<startsAt>_<id>" token; null on the
+// last page. The id is part of the key because bookings can share a startsAt —
+// the no-overlap constraint only applies to 'confirmed' rows, so a cancelled
+// booking and its replacement legitimately occupy the same slot.
+export interface BookingHistoryPage {
+  entries:    BookingHistoryEntry[];
+  nextCursor: string | null;
 }
 
 // SINGLE-SESSION-CONFIRM-01: async-confirmation surface for single-session payments.

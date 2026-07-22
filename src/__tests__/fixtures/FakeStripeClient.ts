@@ -6,6 +6,8 @@ type FakePaymentIntent = {
   id:            string;
   client_secret: string;
   status:        string;
+  amount:        number;
+  currency:      string;
   metadata:      Record<string, string>;
 };
 
@@ -40,6 +42,8 @@ export class FakeStripeClient implements IStripeClient {
       id,
       client_secret: `${id}_secret`,
       status:        "succeeded",
+      amount:        params.amount,
+      currency:      params.currency,
       metadata:      (params.metadata ?? {}) as Record<string, string>,
     };
     this.intents.set(id, intent);
@@ -71,15 +75,18 @@ export class FakeStripeClient implements IStripeClient {
 
   /** Test helper: build a payment_intent.succeeded event. */
   buildPackPaymentEvent(params: {
-    email:    string;
-    name:     string;
-    packSize: number;
-    intentId: string;
+    email:        string;
+    name:         string;
+    packSize:     number;
+    intentId:     string;
+    amountCents?: number;
   }): Stripe.Event {
     const intent: FakePaymentIntent = {
       id:            params.intentId,
       client_secret: `${params.intentId}_secret`,
       status:        "succeeded",
+      amount:        params.amountCents ?? 14900,
+      currency:      "eur",
       metadata: {
         student_email: params.email,
         student_name:  params.name,
@@ -97,17 +104,20 @@ export class FakeStripeClient implements IStripeClient {
 
   /** Test helper: build a payment_intent.succeeded event for a single session. */
   buildSingleSessionPaymentEvent(params: {
-    email:    string;
-    name:     string;
-    startIso: string;
-    endIso:   string;
-    duration: "1h" | "2h";
-    intentId: string;
+    email:        string;
+    name:         string;
+    startIso:     string;
+    endIso:       string;
+    duration:     "1h" | "2h";
+    intentId:     string;
+    amountCents?: number;
   }): Stripe.Event {
     const intent: FakePaymentIntent = {
       id:            params.intentId,
       client_secret: `${params.intentId}_secret`,
       status:        "succeeded",
+      amount:        params.amountCents ?? 4900,
+      currency:      "eur",
       metadata: {
         student_email:    params.email,
         student_name:     params.name,

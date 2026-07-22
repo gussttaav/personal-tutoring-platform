@@ -339,7 +339,7 @@ export default function SingleSessionBooking({
   // ── Success ────────────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
-      <BookingLayout>
+      <BookingLayout scrollResetKey={phase}>
         <div className="flex items-start sm:items-center justify-center px-2 py-2 sm:py-6 sm:px-6">
           <FeedbackCard>
             <IconHalo tone="success" glyph="check" />
@@ -404,7 +404,7 @@ export default function SingleSessionBooking({
   // ── Error ──────────────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <BookingLayout>
+      <BookingLayout scrollResetKey={phase}>
         <div className="flex items-start sm:items-center justify-center px-2 py-2 sm:py-6 sm:px-6">
           <FeedbackCard>
             <IconHalo tone="error" glyph="error" />
@@ -460,9 +460,9 @@ export default function SingleSessionBooking({
   // ── Paying (embedded PaymentElement) ──────────────────────────────────────
   if (phase === "paying" && selected && clientSecret) {
     return (
-      <BookingLayout>
-        <WizardProgress currentStep={4} showPaymentStep />
-        <div className="max-w-lg mx-auto w-full" style={{ padding: "16px 0" }}>
+      <BookingLayout scrollResetKey={phase}>
+        <WizardProgress currentStep={4} showPaymentStep spacingClassName="mt-4 sm:mt-0 mb-5 sm:mb-8" />
+        <div className="max-w-lg mx-auto w-full" style={{ paddingBottom: 16 }}>
           <PaymentForm
             clientSecret={clientSecret}
             studentName={userName}
@@ -484,7 +484,7 @@ export default function SingleSessionBooking({
   const isReschedule = !!rescheduleToken;
 
   return (
-    <BookingLayout>
+    <BookingLayout scrollResetKey={phase}>
       <WizardProgress currentStep={wizardStep} showPaymentStep={needsPaymentStep} />
 
       {phase === "review" && selected ? (
@@ -517,7 +517,7 @@ export default function SingleSessionBooking({
 
               <p
                 className="font-bold uppercase"
-                style={{ fontSize: 10, color: "#4edea3", letterSpacing: "0.2em", marginBottom: 20 }}
+                style={{ fontSize: 10, color: "#4edea3", letterSpacing: "0.2em", marginBottom: 10 }}
               >
                 {t("appointmentDetails")}
               </p>
@@ -545,12 +545,13 @@ export default function SingleSessionBooking({
               </div>
             </div>
 
-            {/* Section 2: Contextual notice */}
-            {(isReschedule || price) && (
-              <div
-                className="px-4 md:px-8 py-4 md:py-5"
-                style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
-              >
+            {/* Section 2: Contextual notice — always present in review. One of:
+                reschedule note, paid price pill (mobile) / security badge (desktop),
+                or free-session pill (mobile) / badge (desktop). */}
+            <div
+              className="px-4 md:px-8 py-4 md:py-5"
+              style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}
+            >
                 {isReschedule ? (
                   <div
                     className="rounded-xl px-4 py-3 flex items-center gap-3"
@@ -566,24 +567,131 @@ export default function SingleSessionBooking({
                       {t("rescheduleNote")}
                     </p>
                   </div>
+                ) : price ? (
+                  <>
+                    {/* Below lg the summary sidebar is hidden, so this slot carries
+                        the price + timezone instead of the security badge — that
+                        payment happens next is already told by the wizard's
+                        Payment step. */}
+                    <div
+                      className="lg:hidden rounded-xl px-4 py-3 flex flex-col gap-2.5"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(78,222,163,0.08) 0%, rgba(16,185,129,0.12) 100%)",
+                        border: "1px solid rgba(78,222,163,0.2)",
+                      }}
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span
+                          className="font-bold uppercase"
+                          style={{ fontSize: 10, color: "#bbcabf", letterSpacing: "0.15em" }}
+                        >
+                          {t("total")}
+                        </span>
+                        <span
+                          className="font-headline font-extrabold"
+                          style={{ fontSize: 24, color: "#4edea3", letterSpacing: "-0.02em", lineHeight: 1 }}
+                        >
+                          {price}
+                        </span>
+                      </div>
+
+                      {userTz && (
+                        <div
+                          className="flex items-center gap-2"
+                          style={{
+                            color: "#bbcabf",
+                            borderTop: "1px solid rgba(78,222,163,0.15)",
+                            paddingTop: 10,
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="flex-shrink-0" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                          </svg>
+                          <span className="text-xs">{userTz}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* lg+: the sidebar already shows price + timezone */}
+                    <div
+                      className="hidden lg:flex rounded-xl px-4 py-3 items-center gap-3"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(78,222,163,0.08) 0%, rgba(16,185,129,0.12) 100%)",
+                        border: "1px solid rgba(78,222,163,0.2)",
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                      <p className="text-sm font-medium" style={{ color: "#4edea3" }}>
+                        {t("paymentSecure")}
+                      </p>
+                    </div>
+                  </>
                 ) : (
-                  <div
-                    className="rounded-xl px-4 py-3 flex items-center gap-3"
-                    style={{
-                      background: "linear-gradient(135deg, rgba(78,222,163,0.08) 0%, rgba(16,185,129,0.12) 100%)",
-                      border: "1px solid rgba(78,222,163,0.2)",
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    <p className="text-sm font-medium" style={{ color: "#4edea3" }}>
-                      {t("paymentSecure")}
-                    </p>
-                  </div>
+                  <>
+                    {/* Free session. Below lg the sidebar (with its "free" +
+                        duration) is hidden, so this pill carries them plus the
+                        timezone. */}
+                    <div
+                      className="lg:hidden rounded-xl px-4 py-3 flex flex-col gap-2.5"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(78,222,163,0.08) 0%, rgba(16,185,129,0.12) 100%)",
+                        border: "1px solid rgba(78,222,163,0.2)",
+                      }}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2" style={{ color: "#bbcabf" }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="flex-shrink-0" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          <span className="text-xs">{tMV(`sessions.${cfg.type}.duration`)}</span>
+                        </div>
+                        <span
+                          className="font-headline font-extrabold"
+                          style={{ fontSize: 20, color: "#4edea3", letterSpacing: "-0.02em", lineHeight: 1 }}
+                        >
+                          {t("free")}
+                        </span>
+                      </div>
+
+                      {userTz && (
+                        <div
+                          className="flex items-center gap-2"
+                          style={{
+                            color: "#bbcabf",
+                            borderTop: "1px solid rgba(78,222,163,0.15)",
+                            paddingTop: 10,
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="flex-shrink-0" aria-hidden="true">
+                            <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                          </svg>
+                          <span className="text-xs">{userTz}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* lg+: the sidebar already shows the free indicator + duration */}
+                    <div
+                      className="hidden lg:flex rounded-xl px-4 py-3 items-center gap-3"
+                      style={{
+                        background: "linear-gradient(135deg, rgba(78,222,163,0.08) 0%, rgba(16,185,129,0.12) 100%)",
+                        border: "1px solid rgba(78,222,163,0.2)",
+                      }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <p className="text-sm font-medium" style={{ color: "#4edea3" }}>
+                        {t("freeNote")}
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
-            )}
 
             {/* Section 3: Note textarea */}
             <div
@@ -756,7 +864,8 @@ export default function SingleSessionBooking({
                   </div>
                 </div>
 
-                {/* Total price */}
+                {/* Total price — paid only. Free sessions convey "no charge"
+                    through the note below, so no TOTAL row here. */}
                 {price && !isReschedule && (
                   <div
                     className="flex justify-between items-end pt-6"
@@ -776,18 +885,34 @@ export default function SingleSessionBooking({
                   </div>
                 )}
 
-                {/* Security note */}
-                <div
-                  className="rounded-lg p-4 flex items-start gap-3"
-                  style={{ background: "#1c1b1d" }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="flex-shrink-0 mt-0.5" style={{ color: "#bbcabf" }} aria-hidden="true">
-                    <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                  <p className="leading-relaxed" style={{ fontSize: 11, color: "#bbcabf" }}>
-                    {t("paymentProtected")}
-                  </p>
-                </div>
+                {/* Bottom note. Free session (no price, not a reschedule) →
+                    "no payment required"; every other case keeps the original
+                    payment-protected note (paid, and reschedule as before). */}
+                {!price && !isReschedule ? (
+                  <div
+                    className="rounded-lg p-4 flex items-start gap-3"
+                    style={{ background: "#1c1b1d" }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4edea3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5" aria-hidden="true">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    <p className="leading-relaxed" style={{ fontSize: 11, color: "#bbcabf" }}>
+                      {t("freeNote")}
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    className="rounded-lg p-4 flex items-start gap-3"
+                    style={{ background: "#1c1b1d" }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="flex-shrink-0 mt-0.5" style={{ color: "#bbcabf" }} aria-hidden="true">
+                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <p className="leading-relaxed" style={{ fontSize: 11, color: "#bbcabf" }}>
+                      {t("paymentProtected")}
+                    </p>
+                  </div>
+                )}
 
               </div>
             </div>
@@ -796,7 +921,7 @@ export default function SingleSessionBooking({
         </div>
       ) : (
         /* ── Picking / booking / redirecting layout: original 3+9 columns ───── */
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8">
           {/* ── Sidebar ── */}
           <BookingSidebar
             mode="single"
@@ -835,7 +960,16 @@ export default function SingleSessionBooking({
                 <WeeklyCalendar
                   durationMinutes={cfg.durationMinutes}
                   onSlotSelected={handleSlotSelected}
-                  onSlotFocused={(slot) => { setFocusedSlot(slot); if (slot) setHourUnavailable(false); }}
+                  onSlotFocused={(slot) => {
+                    setFocusedSlot(slot);
+                    if (slot) {
+                      setHourUnavailable(false);
+                      // Picking a different valid slot clears the previously chosen
+                      // one so the grid never shows the old confirmed slot alongside
+                      // the new focus.
+                      if (slot.startIso !== selected?.startIso) setSelected(null);
+                    }
+                  }}
                   selectedSlot={selected}
                   initialFocusedSlotStart={initialSlot?.startIso}
                   initialWeekOffset={initialWeekOffset}
