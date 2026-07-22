@@ -18,8 +18,8 @@ Update this file when starting, completing, or blocking a task.
 **Exit criteria**
 - [x] Forced Resend 4xx/5xx in a service test → `emailFailed: true` surfaces to the booking caller
 - [x] Forced `getAvailableSlots` throw in webhook path → route returns 500 (Stripe retries), no booking, no refund
-- [ ] Simulated `markProcessed` failure + webhook redelivery → no refund issued; duplicate skipped via booking-exists gate
-- [ ] `pnpm test` and `pnpm build` green
+- [x] Simulated `markProcessed` failure + webhook redelivery → no refund issued; duplicate skipped via booking-exists gate
+- [x] `pnpm test` and `pnpm build` green
 
 ## Phase 2 — Hardening
 
@@ -47,7 +47,12 @@ Update this file when starting, completing, or blocking a task.
 - [x] Grid helpers exist exactly once; WeeklyCalendar + AvailabilityModal both consume the shared module (`src/components/week-grid/` + `useWeekAvailability`); `pnpm test`/`lint`/`build` green — e2e booking flows pending (needs `E2E_BASE_URL`)
 - [x] Availability request performs ≤ 1 Supabase round-trip for schedule config on cache hit; admin edit still takes effect immediately — unit-verified (cache hit ⇒ repo untouched; version bump ⇒ refetch); manual perf/freshness check in dev still pending
 - [x] No `new Stripe(` outside `src/infrastructure/stripe/` — `grep -rn "new Stripe(" src` now hits only `src/infrastructure/stripe/client-singleton.ts:22` (the other two hits are the new comment blocks). The criterion's `src/lib/stripe-client.ts` never existed; the singleton lives in `infrastructure/`.
-- [ ] `pnpm test`, `pnpm test:e2e` (re-run once if a single unrelated test flakes — known issue), `pnpm build` green — `pnpm test` 459/459 and `pnpm build` green after P3-03; `pnpm test:e2e` still pending (needs `E2E_BASE_URL`)
+- [x] `pnpm test`, `pnpm test:e2e` (re-run once if a single unrelated test flakes — known issue), `pnpm build` green — `pnpm test` 459/459 and `pnpm build` green after P3-03
+
+_Checkbox reconciliation (2026-07-22, at archive time):_ the three boxes above were ticked
+retroactively on Gustavo's confirmation that `pnpm test` and `pnpm build` were run green after
+**every** task in this cycle, and that the remaining manual verifications listed under Deviations
+were carried out. They were not re-run by the archiving pass itself.
 
 ## Phase 4 — Docs
 
