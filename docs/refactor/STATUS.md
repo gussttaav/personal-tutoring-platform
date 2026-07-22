@@ -53,11 +53,11 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Fix CLAUDE.md drift + stale comments](phase-4-docs/01-claude-md-drift.md) | `REFACTOR-R3-P4-01` | ⬜ | _tbd_ | — |
+| [01 Fix CLAUDE.md drift + stale comments](phase-4-docs/01-claude-md-drift.md) | `REFACTOR-R3-P4-01` | ✅ | Claude | local (`staging`) |
 
 **Exit criteria**
-- [ ] CLAUDE.md matches shipped reality (users.locale, Postgres slot locks, current internal route names)
-- [ ] `csrf.ts` exemption comment names only live routes
+- [x] CLAUDE.md matches shipped reality (users.locale, Postgres slot locks, current internal route names)
+- [x] `csrf.ts` exemption comment names only live routes
 
 ---
 
@@ -146,6 +146,16 @@ Update this file when starting, completing, or blocking a task.
     that file gained `hasProcessedPayment` (the new method reads it).
   - Still pending: the manual Stripe-test-mode check (pack purchase → `pago-exitoso` live confirm;
     webhook-delay fallback) and the mobile single-session poll against a dev deploy.
+
+- **P4-01:** two small additions beyond the task md's suggested wording, both inside the sections it
+  scopes. (1) The Data Storage list's slot-lock line names `release_slot_lock` too, not just
+  `acquire_slot_lock` — both RPCs are live (`SupabaseBookingRepository.ts:488`, `types.ts:602-609`).
+  (2) `schedule:config:*` **was** included in the Redis key list, since P3-02 landed (key format
+  `schedule:config:v{version}`). The optional R3 tag-convention note was added to the refactor-workflow
+  section. Work was done directly on `staging` at Gustavo's direction — no task branch, so no PR link.
+  Spot-checked (grep, not memory) and found accurate, so left unchanged: the persistent-table list, the
+  `decrement_credit` stored procedure, `pending_terminations` + the session-cleanup cron, the pricing
+  and booking-schedule gotchas, and `booking-config.ts`'s remaining exports.
 
 ## Known regressions introduced
 
