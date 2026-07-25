@@ -1,0 +1,46 @@
+/*
+ * COURSE-P1-01 — KaTeX styles for course lessons.
+ *
+ * Imported ONLY from the lesson segment (wired in P1-04), never the shared
+ * layout, so its ~23 KB gzipped weight loads only on routes that render math.
+ *
+ * The @import pulls the stylesheet FROM THE npm PACKAGE, which self-hosts the
+ * KaTeX fonts under our own origin (served from _next/static). Do NOT swap this
+ * for a CDN URL — the CSP `font-src` is `'self' https://fonts.gstatic.com`, so
+ * CDN-hosted KaTeX fonts would be blocked.
+ */
+
+@import "katex/dist/katex.min.css";
+
+/* Wide display math (e.g. long aligned derivations) scrolls inside its own box
+ * rather than widening the page body. Code blocks and tables are contained by
+ * their component wrappers in mdx-components.tsx. */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  /* Vertical padding gives superscripts/subscripts breathing room: because
+   * overflow-x is `auto`, the browser forces overflow-y to a non-visible value,
+   * so without this the top exponents and bottom indices get clipped — and the
+   * bottom padding also clears the horizontal scrollbar. */
+  padding: 0.6em 0;
+}
+
+/* Thin horizontal scrollbar in the app's Emerald Nocturne style. The global rule
+ * (globals.css) only sizes the vertical scrollbar's `width`, so a horizontal one
+ * would otherwise use the chunky browser default; we re-declare height + thumb/
+ * track here. NB: avoid the standard `scrollbar-width` property — in Chromium it
+ * disables these ::-webkit- pseudo-elements and reverts to the default gray bar. */
+.katex-display::-webkit-scrollbar {
+  height: 6px;
+}
+.katex-display::-webkit-scrollbar-track {
+  background: transparent;
+}
+.katex-display::-webkit-scrollbar-thumb {
+  background: var(--border-variant);
+  border-radius: 10px;
+}
+.katex-display::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+}

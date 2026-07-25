@@ -1,7 +1,7 @@
 # Courses — Status
 
 **Planned:** 2026-07-24
-**Started:** _not yet_
+**Started:** 2026-07-25
 **Legend:** ⬜ not started · 🔄 in progress · ⛔ blocked · ✅ done · 🚫 won't do
 
 Update this file when starting, completing, or blocking a task.
@@ -12,7 +12,7 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 MDX + KaTeX + Shiki pipeline](phase-1-foundations/01-content-pipeline.md) | `COURSE-P1-01` | ⬜ | _tbd_ | |
+| [01 MDX + KaTeX + Shiki pipeline](phase-1-foundations/01-content-pipeline.md) | `COURSE-P1-01` | ✅ | _tbd_ | local |
 | [02 Content registry + Zod schemas](phase-1-foundations/02-content-registry.md) | `COURSE-P1-02` | ⬜ | _tbd_ | |
 | [03 Catalog + course landing](phase-1-foundations/03-catalog-and-landing.md) | `COURSE-P1-03` | ⬜ | _tbd_ | |
 | [04 Responsive lesson reader](phase-1-foundations/04-lesson-reader.md) | `COURSE-P1-04` | ⬜ | _tbd_ | |
@@ -103,4 +103,23 @@ Update this file when starting, completing, or blocking a task.
 
 ## Deviations
 
-_None yet. Record here any task closed as 🚫 or implemented differently from its doc, with the reason._
+**COURSE-P1-01** — Closed per doc, no scope changes. Notes:
+- **Spike landed on the PRIMARY path**: `next-mdx-remote/rsc` `compileMDX` works under
+  Next 16 + React 19 RSC with remark-math / rehype-katex / rehype-pretty-code. Neither
+  Fallback A (`@next/mdx`) nor B (precompile) was needed; `next.config.mjs` untouched.
+  Recorded in the file-top comment of `src/lib/courses/mdx.ts` (every later task assumes it).
+- **Type sourcing:** pnpm keeps `unified` / `mdx/types` as non-hoisted transitives that TS
+  can't resolve directly, so `PluginList` and `MDXComponents` are derived from the direct
+  dep `next-mdx-remote/rsc`'s exported `MDXRemoteProps` (type-only imports, erased at runtime).
+- **Shiki theme:** `github-dark-default` (in `src/constants/shiki-theme.ts`).
+- **KaTeX version pin:** `katex` is pinned to `^0.16` to MATCH the version `rehype-katex@7`
+  renders HTML with. `pnpm add katex` first pulled 0.18.1, whose CSS renamed the
+  `sizing` class → `katex-sizing`; imported against 0.16-rendered markup the
+  script-shrink rules silently no-op'd and sub/superscripts rendered full-size.
+  Keep katex aligned with rehype-katex's range on any future bump.
+- **Verification** used a temporary, uncommitted route (`cursos/verify-fixture`, since deleted).
+  Built as SSG static HTML: KaTeX (HTML+MathML), Shiki highlighting, and all four components
+  render at build time; client chunks carry no katex/shiki/MDX-compiler JS; KaTeX fonts resolve
+  to relative `/_next/static/media` URLs (no CSP `font-src` violation). The real lesson reader
+  that imports `_styles/katex.css` on the segment is P1-04.
+- Not yet committed to a branch/PR (**local**).
