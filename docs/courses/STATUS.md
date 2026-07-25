@@ -13,7 +13,7 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 MDX + KaTeX + Shiki pipeline](phase-1-foundations/01-content-pipeline.md) | `COURSE-P1-01` | ✅ | _tbd_ | local |
-| [02 Content registry + Zod schemas](phase-1-foundations/02-content-registry.md) | `COURSE-P1-02` | ⬜ | _tbd_ | |
+| [02 Content registry + Zod schemas](phase-1-foundations/02-content-registry.md) | `COURSE-P1-02` | ✅ | _tbd_ | local |
 | [03 Catalog + course landing](phase-1-foundations/03-catalog-and-landing.md) | `COURSE-P1-03` | ⬜ | _tbd_ | |
 | [04 Responsive lesson reader](phase-1-foundations/04-lesson-reader.md) | `COURSE-P1-04` | ⬜ | _tbd_ | |
 
@@ -122,4 +122,25 @@ Update this file when starting, completing, or blocking a task.
   render at build time; client chunks carry no katex/shiki/MDX-compiler JS; KaTeX fonts resolve
   to relative `/_next/static/media` URLs (no CSP `font-src` violation). The real lesson reader
   that imports `_styles/katex.css` on the segment is P1-04.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P1-02** — Closed. Registry, both Zod schemas, manifest, lint script + CI step all landed.
+Deviations from the task doc:
+- **`pnpm build` enforcement is deferred, not skipped.** The acceptance line "malformed
+  frontmatter fails `pnpm build`" only fully holds once a route consumes the registry (P1-03) —
+  in this task nothing imports it at build time yet. The standalone enforcement is
+  **`pnpm lint:content`** (via `validateAllContent`), wired into CI right after `pnpm lint`.
+  Verified: a `mintues:` typo in the fixture fails the lint naming the file + field, exit 1.
+- **P1-01 fixture touched (not in the task's Files-affected list, but required).** The strict
+  lesson schema rejects the old two-field frontmatter, so `content/courses/dl-nlp/es/00-pipeline-fixture.mdx`
+  now carries the full field set (`slug: pipeline-fixture`, `block: 0`, `order: 0`, `minutes: 1`,
+  `summary`, `hasCode/hasQuiz: false`, `quiz: []`), still `draft: true`. This keeps a single
+  validation path (no fixture special-casing in the scanner); the fixture stays out of every
+  `list*` because it is a draft. Block 0 is declared in the manifest so it validates.
+- **Runner:** no `tsx`/`ts-node` existed, so `tsx` was added as a devDep to run
+  `scripts/lint-content.ts` as the task specifies (script uses `console`, not the Sentry/Next-coupled `log()`).
+- **YAML:** added `js-yaml` (dep, resolved to nodeca `js-yaml@5.x`; `load()` verified) +
+  `@types/js-yaml` (devDep) to parse the standalone `course.es.yml`; lesson frontmatter still via `gray-matter`.
+- **New test precedent:** `registry.test.ts` introduces the repo's first `os.tmpdir()`/`mkdtempSync`
+  fs-fixture tests. `schemas.test.ts` introduces the first `expect(() => Schema.parse(bad)).toThrow()` pattern.
 - Not yet committed to a branch/PR (**local**).

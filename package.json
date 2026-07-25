@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "lint:content": "tsx scripts/lint-content.ts",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",
@@ -32,6 +33,7 @@
     "google-auth-library": "9.15.1",
     "googleapis": "^144.0.0",
     "gray-matter": "^4.0.3",
+    "js-yaml": "^5.2.2",
     "jsonwebtoken": "^9.0.3",
     "katex": "^0.16.47",
     "next": "^16",
@@ -52,6 +54,7 @@
   "devDependencies": {
     "@playwright/test": "^1.59.1",
     "@types/jest": "^30.0.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22",
     "@types/react": "^19",
@@ -64,6 +67,7 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.4.6",
+    "tsx": "^4.23.1",
     "typescript": "^6"
   },
   "packageManager": "pnpm@10.33.4+sha512.1c67b3b359b2d408119ba1ed289f34b8fc3c6873412bec6fd264fbdc82489e510fcbecb9ce9d22dae7f3b76269d8441046014bdca53b9979cd7a561ad631b800",

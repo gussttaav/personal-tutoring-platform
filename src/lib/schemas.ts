@@ -178,3 +178,46 @@ export const BookingHistoryQuerySchema = z.object({
 });
 
 export type BookingHistoryQuery = z.infer<typeof BookingHistoryQuerySchema>;
+
+// ─── Courses ──────────────────────────────────────────────────────────────────
+// COURSE-P1-02: validate the git-versioned course manifest + lesson frontmatter at
+// BUILD time (see src/lib/courses/registry.ts). Both use `z.strictObject` on
+// purpose: a silently-ignored typo'd key (`mintues:` instead of `minutes:`) is
+// exactly the failure mode this task exists to prevent, so unknown keys are
+// rejected, not dropped. These validate raw YAML into the pure domain types
+// `Course`/`Lesson` (src/domain/types.ts).
+
+export const CourseBlockSchema = z.strictObject({
+  id:      z.number().int().nonnegative(),
+  title:   z.string().min(1),
+  summary: z.string().min(1),
+});
+
+export const CourseManifestSchema = z.strictObject({
+  slug:           z.string().min(1),
+  title:          z.string().min(1),
+  tagline:        z.string().min(1),
+  level:          z.string().min(1),
+  estimatedHours: z.number().positive(),
+  prerequisites:  z.array(z.string().min(1)),
+  blocks:         z.array(CourseBlockSchema).min(1),
+});
+
+export type CourseManifestInput = z.infer<typeof CourseManifestSchema>;
+
+export const LessonFrontmatterSchema = z.strictObject({
+  slug:    z.string().min(1),
+  title:   z.string().min(1),
+  block:   z.number().int().nonnegative(),
+  order:   z.number().int().nonnegative(),
+  minutes: z.number().int().positive(),
+  summary: z.string().min(1),
+  draft:   z.boolean(),
+  hasCode: z.boolean(),
+  hasQuiz: z.boolean(),
+  // Quiz questions are only checked as "is an array" here; P3-01 tightens this to
+  // a real discriminated-union question schema.
+  quiz:    z.array(z.unknown()),
+});
+
+export type LessonFrontmatterInput = z.infer<typeof LessonFrontmatterSchema>;

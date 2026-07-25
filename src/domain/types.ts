@@ -276,3 +276,57 @@ export interface GoogleReviewPromptState {
   lastShownCompletedCount: number | null;
   acceptedAt:              string | null;
 }
+
+// ─── Courses ──────────────────────────────────────────────────────────────────
+// COURSE-P1-02: the typed content registry (src/lib/courses/registry.ts) builds
+// these from git-versioned MDX + a per-locale YAML manifest at BUILD time. They
+// are the metadata half of the load-bearing "prose is never queried; metadata
+// always is" split — read by the sidebar, syllabus, sitemap, and a future mobile
+// API. Prose (the MDX body) is deliberately NOT modelled here; it is web-only.
+// These are PURE types: no Zod, no external imports (see file header). Zod lives
+// in src/lib/schemas.ts and validates the raw files into these shapes.
+
+/** A block groups ordered lessons within a course. `id` is locale-invariant, so
+ *  English is a purely additive translation of `title`/`summary`. */
+export interface CourseBlock {
+  id:      number;
+  title:   string;
+  summary: string;
+}
+
+/** Course-level metadata from `course.<locale>.yml`. `blocks` is ordering +
+ *  prose; individual lessons live in the sibling `<locale>/*.mdx` files and are
+ *  attached by the registry (not stored in the manifest). */
+export interface Course {
+  slug:           string;
+  title:          string;
+  tagline:        string;
+  level:          string;
+  estimatedHours: number;
+  prerequisites:  string[];
+  blocks:         CourseBlock[];
+}
+
+/** One lesson's metadata (frontmatter), never its prose. `slug` is unique within
+ *  a course and locale-invariant. `hasCode`/`hasQuiz` are authored, not derived,
+ *  so the reader knows what to lazy-load BEFORE parsing the MDX body (P2-03). */
+export interface Lesson {
+  slug:    string;
+  title:   string;
+  block:   number;
+  order:   number;
+  minutes: number;
+  summary: string;
+  draft:   boolean;
+  hasCode: boolean;
+  hasQuiz: boolean;
+  // Quiz definitions live in frontmatter; validated only as "is an array" here,
+  // tightened to a real question schema in P3-01.
+  quiz:    unknown[];
+}
+
+/** A minimal lesson pointer used for prev/next navigation. */
+export interface LessonRef {
+  slug:  string;
+  title: string;
+}
