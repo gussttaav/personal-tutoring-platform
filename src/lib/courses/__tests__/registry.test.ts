@@ -14,6 +14,7 @@ import {
   getCourse,
   getLesson,
   listCourses,
+  listCourseManifests,
   listLessons,
   lessonNeighbours,
   __setContentRoot,
@@ -203,6 +204,19 @@ describe("publication + empty-locale handling", () => {
   it("returns [] when the content root itself is absent", () => {
     __setContentRoot(path.join(os.tmpdir(), "does-not-exist-courses-xyz"));
     expect(listCourses("es")).toEqual([]);
+  });
+
+  // COURSE-P1-03: the landing route's generateStaticParams enumerates courses regardless
+  // of publication so the page is reviewable before P5 — unlike listCourses (published-only).
+  it("listCourseManifests returns a draft-only course that listCourses hides", () => {
+    const root = makeTree({
+      lessons: [{ filename: "00-a.mdx", fm: { slug: "a", draft: true } }],
+    });
+    __setContentRoot(root);
+
+    expect(listCourses("es")).toEqual([]);
+    expect(listCourseManifests("es").map((c) => c.slug)).toEqual(["dl-nlp"]);
+    expect(listCourseManifests("en")).toEqual([]);
   });
 });
 

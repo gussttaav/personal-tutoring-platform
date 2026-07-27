@@ -1,0 +1,158 @@
+/*
+ * COURSE-P1-03 — Course landing hero.
+ *
+ * Server Component. Leads with the course title/tagline and, above all, WHAT YOU
+ * WILL HAVE BUILT by the end — the single strongest conversion signal. `firstLessonSlug`
+ * is null until P5 publishes a lesson; the primary CTA degrades to a disabled "soon"
+ * state rather than linking nowhere.
+ *
+ * Layout note: the meta row is deliberately its own block so a P4 progress bar can slot
+ * in beneath it without a redesign (no persistence exists yet — see P4-02).
+ */
+
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
+import type { Course } from "@/domain/types";
+
+interface CourseHeroProps {
+  course: Course;
+  lessonCount: number;
+  firstLessonSlug: string | null;
+  locale: string;
+}
+
+export default async function CourseHero({
+  course,
+  lessonCount,
+  firstLessonSlug,
+  locale,
+}: CourseHeroProps) {
+  const t = await getTranslations({ locale, namespace: "courses.landing.hero" });
+
+  return (
+    <section style={{ paddingTop: "48px", paddingBottom: "8px" }}>
+      <h1
+        style={{
+          fontFamily: "var(--font-headline, Manrope), sans-serif",
+          fontSize: "clamp(2rem, 5vw, 3.25rem)",
+          fontWeight: 800,
+          letterSpacing: "-0.02em",
+          lineHeight: 1.1,
+          color: "var(--text)",
+          margin: 0,
+        }}
+      >
+        {course.title}
+      </h1>
+
+      <p
+        style={{
+          marginTop: "16px",
+          maxWidth: "680px",
+          fontSize: "clamp(1rem, 2.2vw, 1.25rem)",
+          lineHeight: 1.6,
+          color: "var(--text-muted)",
+        }}
+      >
+        {course.tagline}
+      </p>
+
+      {/* What you'll build — the conversion lever */}
+      <div
+        style={{
+          marginTop: "28px",
+          maxWidth: "680px",
+          padding: "20px 24px",
+          background: "var(--green-dim)",
+          border: "1px solid var(--green-mid)",
+          borderRadius: "var(--radius)",
+        }}
+      >
+        <p
+          style={{
+            fontSize: "11px",
+            fontWeight: 700,
+            letterSpacing: "0.1em",
+            textTransform: "uppercase",
+            color: "var(--green)",
+            margin: "0 0 8px",
+          }}
+        >
+          {t("outcomeLabel")}
+        </p>
+        <p style={{ fontSize: "1.0625rem", lineHeight: 1.55, color: "var(--text)", margin: 0 }}>
+          {t("outcome")}
+        </p>
+      </div>
+
+      {/* Meta row — a progress bar can slot in directly below this in P4. */}
+      <div
+        style={{
+          marginTop: "24px",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: "12px",
+          fontSize: "0.875rem",
+          color: "var(--text-dim)",
+        }}
+      >
+        <span>
+          {t("levelLabel")}: <strong style={{ color: "var(--text-muted)" }}>{course.level}</strong>
+        </span>
+        <span aria-hidden="true">·</span>
+        <span>{t("hours", { hours: course.estimatedHours })}</span>
+        {lessonCount > 0 ? (
+          <>
+            <span aria-hidden="true">·</span>
+            <span>{t("lessons", { count: lessonCount })}</span>
+          </>
+        ) : null}
+      </div>
+
+      <div style={{ marginTop: "28px" }}>
+        {firstLessonSlug ? (
+          <Link
+            href={`/cursos/${course.slug}/${firstLessonSlug}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "14px 28px",
+              background: "linear-gradient(135deg, #4edea3, #10b981)",
+              color: "#003824",
+              borderRadius: "10px",
+              fontFamily: "var(--font-headline, Manrope), sans-serif",
+              fontWeight: 700,
+              fontSize: "0.95rem",
+              textDecoration: "none",
+              boxShadow: "0 8px 32px rgba(78,222,163,0.25)",
+            }}
+          >
+            {t("start")}
+            <span className="material-symbols-outlined" style={{ fontSize: "1.25rem" }} aria-hidden="true">
+              arrow_forward
+            </span>
+          </Link>
+        ) : (
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "14px 28px",
+              borderRadius: "10px",
+              border: "1px solid var(--border-variant)",
+              color: "var(--text-dim)",
+              fontFamily: "var(--font-headline, Manrope), sans-serif",
+              fontWeight: 700,
+              fontSize: "0.95rem",
+            }}
+          >
+            {t("soon")}
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}

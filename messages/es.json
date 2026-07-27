@@ -667,6 +667,64 @@
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
     }
   },
+  "courses": {
+    "catalog": {
+      "overline": "Formación",
+      "heading": "Cursos interactivos",
+      "subtitle": "Aprende construyendo: teoría con rigor, código que se ejecuta en el navegador y ejercicios que se corrigen solos.",
+      "empty": {
+        "title": "Próximamente",
+        "body": "Aún no hay cursos publicados. Estoy preparando el primero — vuelve pronto."
+      },
+      "card": {
+        "hours": "{hours} h",
+        "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
+        "blocks": "{count, plural, =1 {# módulo} other {# módulos}}",
+        "cta": "Ver curso"
+      }
+    },
+    "landing": {
+      "backToCatalog": "Todos los cursos",
+      "hero": {
+        "outcomeLabel": "Lo que construirás",
+        "outcome": "Un Transformer funcional, implementado desde cero en NumPy — la arquitectura que impulsa los modelos de lenguaje modernos.",
+        "levelLabel": "Nivel",
+        "hours": "{hours} h",
+        "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
+        "start": "Empezar el curso",
+        "soon": "Próximamente"
+      },
+      "prerequisites": {
+        "heading": "Requisitos previos",
+        "intro": "Este curso tiene rigor matemático. Antes de empezar, necesitas:"
+      },
+      "syllabus": {
+        "heading": "Temario",
+        "blockMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · {minutes} min",
+        "minutes": "{minutes} min",
+        "empty": "El temario detallado se publicará muy pronto."
+      },
+      "instructor": {
+        "heading": "Tu instructor"
+      },
+      "faq": {
+        "heading": "Preguntas frecuentes",
+        "items": [
+          { "q": "¿Cuánto cuesta?", "a": "Nada. El curso es completamente gratuito." },
+          { "q": "¿Qué necesito saber antes de empezar?", "a": "Python intermedio, álgebra lineal (vectores y matrices) y cálculo (derivadas parciales y regla de la cadena). Están detallados en la sección de requisitos previos." },
+          { "q": "¿Cuánto tiempo me llevará?", "a": "Alrededor de 40 horas si haces los ejercicios. Vas a tu ritmo; no hay fechas límite." },
+          { "q": "¿Está en inglés?", "a": "De momento solo en español. La versión en inglés está planificada." },
+          { "q": "¿Qué necesito instalar?", "a": "Nada. Todo — el código en Python incluido — se ejecuta directamente en el navegador." }
+        ]
+      },
+      "cta": {
+        "heading": "¿Listo para construir un Transformer?",
+        "body": "Empieza por la primera lección. No necesitas cuenta para leer.",
+        "start": "Empezar el curso",
+        "soon": "Próximamente"
+      }
+    }
+  },
   "meta": {
     "areaPersonal": {
       "title": "Área Personal — Gustavo Torres",
@@ -683,6 +741,10 @@
     "terminos": {
       "title": "Términos de servicio — Gustavo Torres",
       "description": "Términos de servicio de gustavoai.dev. Condiciones de uso, pagos, cancelaciones y responsabilidad."
+    },
+    "cursos": {
+      "title": "Cursos interactivos — Gustavo Torres",
+      "description": "Cursos gratuitos e interactivos de programación, matemáticas e IA. Aprende construyendo, con código que se ejecuta en el navegador."
     }
   },
   "pages": {

@@ -667,6 +667,64 @@
       "invalidRequest": "The submitted data is not valid. Check the form and try again."
     }
   },
+  "courses": {
+    "catalog": {
+      "overline": "Learn",
+      "heading": "Interactive courses",
+      "subtitle": "Learn by building: rigorous theory, code that runs in your browser and exercises that grade themselves.",
+      "empty": {
+        "title": "Coming soon",
+        "body": "No courses published yet. The first one is on its way — check back soon."
+      },
+      "card": {
+        "hours": "{hours} h",
+        "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
+        "blocks": "{count, plural, =1 {# module} other {# modules}}",
+        "cta": "View course"
+      }
+    },
+    "landing": {
+      "backToCatalog": "All courses",
+      "hero": {
+        "outcomeLabel": "What you'll build",
+        "outcome": "A working Transformer, implemented from scratch in NumPy — the architecture behind modern language models.",
+        "levelLabel": "Level",
+        "hours": "{hours} h",
+        "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
+        "start": "Start the course",
+        "soon": "Coming soon"
+      },
+      "prerequisites": {
+        "heading": "Prerequisites",
+        "intro": "This course is mathematically rigorous. Before you start, you'll need:"
+      },
+      "syllabus": {
+        "heading": "Syllabus",
+        "blockMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · {minutes} min",
+        "minutes": "{minutes} min",
+        "empty": "The detailed syllabus will be published soon."
+      },
+      "instructor": {
+        "heading": "Your instructor"
+      },
+      "faq": {
+        "heading": "Frequently asked questions",
+        "items": [
+          { "q": "How much does it cost?", "a": "Nothing. The course is completely free." },
+          { "q": "What do I need to know before starting?", "a": "Intermediate Python, linear algebra (vectors and matrices) and calculus (partial derivatives and the chain rule). They're listed in the prerequisites section." },
+          { "q": "How long will it take?", "a": "Around 40 hours if you do the exercises. Go at your own pace; there are no deadlines." },
+          { "q": "Is it in English?", "a": "Spanish only for now. An English version is planned." },
+          { "q": "What do I need to install?", "a": "Nothing. Everything — the Python code included — runs directly in your browser." }
+        ]
+      },
+      "cta": {
+        "heading": "Ready to build a Transformer?",
+        "body": "Start with the first lesson. You don't need an account to read.",
+        "start": "Start the course",
+        "soon": "Coming soon"
+      }
+    }
+  },
   "meta": {
     "areaPersonal": {
       "title": "Personal Area — Gustavo Torres",
@@ -683,6 +741,10 @@
     "terminos": {
       "title": "Terms of service — Gustavo Torres",
       "description": "Terms of service for gustavoai.dev. Conditions of use, payments, cancellations and liability."
+    },
+    "cursos": {
+      "title": "Interactive courses — Gustavo Torres",
+      "description": "Free, interactive courses on programming, mathematics and AI. Learn by building, with code that runs in your browser."
     }
   },
   "pages": {

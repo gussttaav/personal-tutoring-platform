@@ -1,0 +1,136 @@
+/*
+ * COURSE-P1-03 — Syllabus accordion.
+ *
+ * Server Component built on the native <details>/<summary> element (same pattern as
+ * `Details` in src/lib/courses/mdx-components.tsx): it ships ZERO client JS and the full
+ * syllabus is present in the server-rendered HTML even while collapsed — so crawlers, and
+ * visitors with JS disabled, still see every lesson.
+ *
+ * `groupLessonsByBlock` is a PURE function (exported for unit testing). It walks the
+ * manifest blocks in order and attaches the PUBLISHED lessons the caller passes in — so a
+ * block whose lessons are all drafts (already filtered out by `listLessons`) has zero
+ * lessons and is OMITTED, never rendered empty-but-present.
+ */
+
+import { getTranslations } from "next-intl/server";
+import type { Course, CourseBlock, Lesson } from "@/domain/types";
+
+export interface SyllabusBlock {
+  block: CourseBlock;
+  lessons: Lesson[];
+  totalMinutes: number;
+}
+
+/** Group published lessons under their manifest block, in manifest order, dropping
+ *  blocks with no published lessons. `lessons` is expected pre-sorted by (block, order),
+ *  as `listLessons` returns it. */
+export function groupLessonsByBlock(course: Course, lessons: Lesson[]): SyllabusBlock[] {
+  return course.blocks
+    .map((block) => {
+      const blockLessons = lessons.filter((l) => l.block === block.id);
+      const totalMinutes = blockLessons.reduce((sum, l) => sum + l.minutes, 0);
+      return { block, lessons: blockLessons, totalMinutes };
+    })
+    .filter((group) => group.lessons.length > 0);
+}
+
+interface SyllabusAccordionProps {
+  course: Course;
+  lessons: Lesson[];
+  locale: string;
+}
+
+export default async function SyllabusAccordion({ course, lessons, locale }: SyllabusAccordionProps) {
+  const t = await getTranslations({ locale, namespace: "courses.landing.syllabus" });
+  const groups = groupLessonsByBlock(course, lessons);
+
+  return (
+    <section style={{ paddingTop: "48px" }}>
+      <h2
+        style={{
+          fontFamily: "var(--font-headline, Manrope), sans-serif",
+          fontSize: "clamp(1.5rem, 3vw, 2rem)",
+          fontWeight: 800,
+          letterSpacing: "-0.01em",
+          color: "var(--text)",
+          margin: "0 0 24px",
+        }}
+      >
+        {t("heading")}
+      </h2>
+
+      {groups.length === 0 ? (
+        <p style={{ fontSize: "0.9375rem", color: "var(--text-dim)", margin: 0 }}>{t("empty")}</p>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {groups.map((group, index) => (
+            <details
+              key={group.block.id}
+              open={index === 0}
+              style={{
+                border: "1px solid var(--border-variant)",
+                borderRadius: "var(--radius)",
+                background: "var(--surface-container)",
+                padding: "16px 20px",
+              }}
+            >
+              <summary style={{ cursor: "pointer", listStyle: "none" }}>
+                <span
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    gap: "16px",
+                    flexWrap: "wrap",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: "var(--font-headline, Manrope), sans-serif",
+                      fontSize: "1.0625rem",
+                      fontWeight: 700,
+                      color: "var(--text)",
+                    }}
+                  >
+                    {group.block.title}
+                  </span>
+                  <span style={{ fontSize: "0.8125rem", color: "var(--text-dim)", whiteSpace: "nowrap" }}>
+                    {t("blockMeta", { lessons: group.lessons.length, minutes: group.totalMinutes })}
+                  </span>
+                </span>
+              </summary>
+
+              <div style={{ marginTop: "14px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                {group.block.summary ? (
+                  <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", margin: 0 }}>
+                    {group.block.summary}
+                  </p>
+                ) : null}
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {group.lessons.map((lesson) => (
+                    <li
+                      key={lesson.slug}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: "16px",
+                        paddingTop: "8px",
+                        borderTop: "1px solid var(--border)",
+                        fontSize: "0.9375rem",
+                      }}
+                    >
+                      <span style={{ color: "var(--text)" }}>{lesson.title}</span>
+                      <span style={{ color: "var(--text-dim)", whiteSpace: "nowrap" }}>
+                        {t("minutes", { minutes: lesson.minutes })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}

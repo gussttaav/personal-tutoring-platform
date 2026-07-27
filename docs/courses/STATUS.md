@@ -14,7 +14,7 @@ Update this file when starting, completing, or blocking a task.
 |------|-----|--------|-------|----|
 | [01 MDX + KaTeX + Shiki pipeline](phase-1-foundations/01-content-pipeline.md) | `COURSE-P1-01` | ✅ | _tbd_ | local |
 | [02 Content registry + Zod schemas](phase-1-foundations/02-content-registry.md) | `COURSE-P1-02` | ✅ | _tbd_ | local |
-| [03 Catalog + course landing](phase-1-foundations/03-catalog-and-landing.md) | `COURSE-P1-03` | ⬜ | _tbd_ | |
+| [03 Catalog + course landing](phase-1-foundations/03-catalog-and-landing.md) | `COURSE-P1-03` | ✅ | _tbd_ | local |
 | [04 Responsive lesson reader](phase-1-foundations/04-lesson-reader.md) | `COURSE-P1-04` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -143,4 +143,38 @@ Deviations from the task doc:
   `@types/js-yaml` (devDep) to parse the standalone `course.es.yml`; lesson frontmatter still via `gray-matter`.
 - **New test precedent:** `registry.test.ts` introduces the repo's first `os.tmpdir()`/`mkdtempSync`
   fs-fixture tests. `schemas.test.ts` introduces the first `expect(() => Schema.parse(bad)).toThrow()` pattern.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P1-03** — Closed. `/cursos` (catalog) + `/cursos/[courseSlug]` (landing) both statically
+generated; `CourseCard` + five landing components (`CourseHero`, `Prerequisites`, `SyllabusAccordion`,
+`CourseFaq`, `CourseCta`); `courses.*` + `meta.cursos` added key-for-key to both message files.
+Build/lint/unit all green. Verified in the prerendered HTML: prerequisites, the "what you'll build"
+outcome, and FAQ answers (collapsed `<details>`) are all in the static markup (JS-disabled criterion);
+catalog renders the honest empty state in **both** locales; landing generated for `/es/cursos/dl-nlp`
+only (en has no manifest → not generated). Deviations from the task doc:
+- **`registry.ts` touched (not in the task's Files-affected list).** Added one additive selector,
+  `listCourseManifests(locale)`, used ONLY by the landing route's `generateStaticParams`. dl-nlp has
+  zero *published* lessons today (only the P1-01 draft fixture), so `listCourses` — and therefore a
+  published-only static-params source — would generate **no** landing page, making the conversion
+  surface un-reviewable on preview until P5. `listCourseManifests` enumerates manifest courses
+  regardless of publication so `/cursos/dl-nlp` renders now; **counts and the syllabus still use the
+  published-only `listCourses`/`listLessons`**, so drafts appear in neither. The **catalog stays
+  published-only** (empty "próximamente" state today). User-confirmed decision during planning.
+- **Course-specific landing copy lives in the message files, not the manifest.** The hero "what
+  you'll build" outcome and the FAQ Q&A are under `courses.landing.*`; the manifest (`course.es.yml`)
+  has no field for them and adding one would mean editing the P1-02 Zod schema (out of scope). The
+  task explicitly permits FAQ "in the manifest or a message file". With one course this is keyed
+  generically; a second course will key it per course — a known, acceptable future refactor.
+- **`SyllabusAccordion` is a Server Component on native `<details>`** (same pattern as `Details` in
+  `mdx-components.tsx`), not a `"use client"` disclosure. This ships zero client JS and keeps the full
+  syllabus in the HTML while collapsed — the only way to satisfy the JS-disabled acceptance criterion.
+  Its pure grouper `groupLessonsByBlock` is exported and unit-tested (incl. the all-drafts-block →
+  omitted case) via the `os.tmpdir()` registry-fixture pattern.
+- **`generateStaticParams` on the catalog page** is declared over locales as the task asks, though the
+  root `layout.tsx` already cascades locale params (harmless redundancy, matches the task text).
+- **The "free sample lesson" section (task item 4) was removed** at the user's request. Rationale: the
+  course is free and needs no sign-up to read, so a "try one lesson free" card falsely implies the rest
+  is paid — it made no sense here. Its `courses.landing.sample.*` keys were dropped from both message
+  files. This is a deliberate departure from the task spec, which listed the sample lesson as its own
+  section. The hero and closing CTA still provide the "start the course" entry points.
 - Not yet committed to a branch/PR (**local**).

@@ -233,6 +233,19 @@ export function listCourses(locale: string): Course[] {
     .map((e) => e.course);
 }
 
+// ─── COURSE-P1-03 — ungated enumerator for static-param generation ────────────
+// The landing route (/cursos/[courseSlug]) is built and reviewed on a preview deploy
+// BEFORE any lesson is published (P5). `listCourses` is published-only, so today — with
+// dl-nlp holding only a draft — it would generate zero landing pages. This returns every
+// course present in the manifest regardless of publication, and is used ONLY by the
+// landing route's `generateStaticParams` so the page renders for review. Counts and the
+// syllabus still go through the published-only `listCourses`/`listLessons`, so drafts
+// never appear in either. The catalog stays on `listCourses` (empty state until P5).
+/** Every course present in the manifest for a locale, published or not. */
+export function listCourseManifests(locale: string): Course[] {
+  return [...getLocaleRegistry(locale).values()].map((e) => e.course);
+}
+
 /** Published lessons only, `(block, order)` sorted. Missing course/locale → `[]`. */
 export function listLessons(courseSlug: string, locale: string): Lesson[] {
   return getLocaleRegistry(locale).get(courseSlug)?.lessons.filter(isPublished) ?? [];
