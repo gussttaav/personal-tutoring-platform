@@ -1,12 +1,17 @@
 /*
  * COURSE-P1-01 — MDX → React component map for course lessons.
+ * COURSE-P2-01 — + `Explorable`, the entry point for interactive widgets.
  *
- * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Two groups:
+ * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Three groups:
  *   1. Element overrides that keep wide content (code, tables, images) from
  *      breaking the page body's horizontal scroll — each scrolls in its OWN box.
- *   2. Four custom block components authors use in MDX (widgets arrive in P2).
+ *   2. Four custom block components authors use in MDX.
+ *   3. `Explorable` — a Client Component that lazy-loads an interactive widget
+ *      (see src/features/courses/widgets). It is the only client component here;
+ *      referencing it from this server map SSRs its frame and hydrates the widget
+ *      on the lesson route only (bundle guard keeps it off shared surfaces).
  *
- * Everything here is a Server Component — `<Details>` uses the native
+ * Everything else is a Server Component — `<Details>` uses the native
  * <details>/<summary> element — so lessons ship no client JS for any of it.
  * Styling reuses the global CSS variables from src/app/globals.css.
  */
@@ -15,6 +20,8 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 // Component-map type via the direct dep; `mdx/types` is a non-hoisted transitive
 // under pnpm that TS can't resolve from here.
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
+
+import { Explorable } from "@/features/courses/widgets/Explorable";
 
 type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
 
@@ -224,4 +231,5 @@ export const mdxComponents: MDXComponents = {
   Figure,
   Details,
   ColabLink,
+  Explorable,
 };

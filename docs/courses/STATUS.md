@@ -29,7 +29,7 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Widget registry + math core](phase-2-interactivity/01-widget-registry.md) | `COURSE-P2-01` | ⬜ | _tbd_ | |
+| [01 Widget registry + math core](phase-2-interactivity/01-widget-registry.md) | `COURSE-P2-01` | ✅ | _tbd_ | local |
 | [02 First explorables](phase-2-interactivity/02-first-explorables.md) | `COURSE-P2-02` | ⬜ | _tbd_ | |
 | [03 Pyodide worker + PyCell](phase-2-interactivity/03-pyodide-cells.md) | `COURSE-P2-03` | ⬜ | _tbd_ | |
 
@@ -237,4 +237,39 @@ route, correctly exempting the lesson route. Deviations from the task doc:
   feeds it via the prop or the `data-lesson-slug` hooks now on each lesson link. Message keys
   `courses.reader.backToCourseAria` + `progressLabel` added key-for-key; the mark-complete
   control and `courses.progress.*` copy remain P4-02's scope.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P2-01** — Closed. Widget registry + pure math core + one reference widget landed under
+`src/features/courses/widgets/`. `Explorable` wired into the MDX map; `pnpm lint:content` now also
+validates `<Explorable id>`. `pnpm test:unit` (510 pass), `pnpm lint` (0 errors), `pnpm build`,
+`pnpm check:bundle` all green. Verified end-to-end by temporarily publishing the P1-01 fixture with
+`<Explorable id="sigmoid-explorer" />`: the lesson route generated, the widget's `WidgetFrame` (with
+its `aspect-ratio` reserved box + caption) SSR'd into the static HTML — so no layout shift on hydrate
+— and `check:bundle` stayed green *with* widgets present (lesson route correctly exempt); fixture
+reverted after. Deviations from the task doc:
+- **WidgetId sourcing split from the registry** (doc showed `WidgetId = keyof typeof WIDGETS`). The
+  content linter runs under Node/`tsx` and must know the valid ids **without** importing
+  `next/dynamic` or any client `.tsx`. So a pure, zero-import `widget-ids.ts` owns
+  `WIDGET_IDS`/`WidgetId`/`isWidgetId`, and `registry.ts` maps them typed `Record<WidgetId, …>` —
+  which keeps the "unknown id ⇒ compile error" guarantee (missing or extra key fails typecheck)
+  while staying Node-importable.
+- **Only the primitives the reference widget needs were built** (`WidgetFrame`, `Slider`, `Plot2D`);
+  **`Heatmap` + `VectorField` deferred** to the task whose widget first needs them (P2-02 / P5), to
+  avoid shipping untested, unused scaffolding. User-confirmed during planning. The full four-module
+  **math core** (`activations`, `optimisation`, `linalg`, `attention`) **was** built with tests — it
+  is the task's named deliverable, is fully unit-tested (softmax stable at `[1000,1001]`; every
+  derivative checked vs central finite differences), and is tree-shaken off the client unless a
+  widget imports it (only `activations.sigmoid` ships today, via `SigmoidExplorer`).
+- **New `src/lib/courses/validate-explorables.ts` (+ test), not in the task's Files-affected list.**
+  The doc put the id-validation in `scripts/lint-content.ts`; extracting it into a Node-clean lib
+  module (imports only the pure `widget-ids`) keeps the pure helpers (`findExplorables`,
+  `explorableProblems`) unit-testable and follows the P1-04 precedent of a separate body-reader
+  rather than extending the metadata-only content registry. `lint-content.ts` just calls it.
+  Verified failing: an unregistered id exits 1 naming the file + id.
+- **No jsdom/RTL added.** The repo has no component-render test infra; per the doc (math tests are
+  "the bulk") and user confirmation, automated coverage is the pure math, the lint id-validator, and
+  a registry-integrity test. Explorable's dev fallback and the `WidgetErrorBoundary` containment are
+  code-level + manual (a class error boundary — no hook equivalent in React 19).
+- **Deps:** `d3-scale` + `d3-shape` (+ `@types/*`) added, imported only by `Plot2D` (client,
+  lesson-route-only). Hand-rolled SVG scales/paths, no chart library, per the task.
 - Not yet committed to a branch/PR (**local**).
