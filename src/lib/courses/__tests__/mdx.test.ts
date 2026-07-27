@@ -13,6 +13,7 @@
 
 jest.mock("remark-gfm", () => ({ __esModule: true, default: "remark-gfm" }));
 jest.mock("remark-math", () => ({ __esModule: true, default: "remark-math" }));
+jest.mock("rehype-slug", () => ({ __esModule: true, default: "rehype-slug" }));
 jest.mock("rehype-katex", () => ({ __esModule: true, default: "rehype-katex" }));
 jest.mock("rehype-pretty-code", () => ({ __esModule: true, default: "rehype-pretty-code" }));
 
@@ -29,8 +30,14 @@ describe("courses MDX plugin chain", () => {
     expect(remarkPlugins.map(pluginId)).toEqual(["remark-gfm", "remark-math"]);
   });
 
-  it("runs KaTeX before pretty-code in the rehype chain", () => {
-    expect(rehypePlugins.map(pluginId)).toEqual(["rehype-katex", "rehype-pretty-code"]);
+  it("runs slug before KaTeX before pretty-code in the rehype chain", () => {
+    // rehype-slug (COURSE-P1-04) must run before KaTeX rewrites heading contents,
+    // so the heading id derives from its text.
+    expect(rehypePlugins.map(pluginId)).toEqual([
+      "rehype-slug",
+      "rehype-katex",
+      "rehype-pretty-code",
+    ]);
   });
 
   it("configures pretty-code with the shared Shiki theme and no forced background", () => {

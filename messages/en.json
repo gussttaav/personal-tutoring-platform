@@ -723,6 +723,18 @@
         "start": "Start the course",
         "soon": "Coming soon"
       }
+    },
+    "reader": {
+      "contentsLabel": "Course contents",
+      "backToCourseAria": "Back to course: {course}",
+      "progressLabel": "{done} of {total} lessons completed",
+      "onThisPage": "On this page",
+      "lessonNav": "Lesson navigation",
+      "previous": "Previous",
+      "next": "Next",
+      "readingTime": "{minutes} min read",
+      "openNav": "Open course contents",
+      "closeNav": "Close course contents"
     }
   },
   "meta": {

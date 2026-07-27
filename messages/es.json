@@ -723,6 +723,18 @@
         "start": "Empezar el curso",
         "soon": "Próximamente"
       }
+    },
+    "reader": {
+      "contentsLabel": "Contenido del curso",
+      "backToCourseAria": "Volver al curso: {course}",
+      "progressLabel": "{done} de {total} lecciones completadas",
+      "onThisPage": "En esta página",
+      "lessonNav": "Navegación entre lecciones",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "readingTime": "{minutes} min de lectura",
+      "openNav": "Abrir el contenido del curso",
+      "closeNav": "Cerrar el contenido del curso"
     }
   },
   "meta": {

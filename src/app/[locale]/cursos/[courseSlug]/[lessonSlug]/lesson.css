@@ -1,0 +1,180 @@
+/*
+ * COURSE-P1-04 — Lesson reader layout + reading typography.
+ *
+ * Imported ONLY from the lesson segment's page.tsx (alongside katex.css), never the
+ * shared layout, so none of this loads on non-lesson routes.
+ *
+ * Containment of wide content is deliberately NOT re-declared here: `pre`, `table`,
+ * and `img` are contained by their component wrappers in mdx-components.tsx, and
+ * `.katex-display` by _styles/katex.css. This file owns the GRID, the reading
+ * typography, and the sticky-bar `scroll-margin-top` — nothing those already handle.
+ *
+ * Mobile-first: the base rules are the 360px single-column reader; media queries add
+ * the sidebar (≥768) and the on-this-page rail (≥1280).
+ */
+
+/* ── Offsets for the global fixed chrome ────────────────────────────────── */
+
+/* The site Navbar (src/components/Navbar.tsx) is `position: fixed` at the top, so
+   every region here must reserve space for it — otherwise the lesson h1, the sticky
+   rails, and anchor jump-targets all slide under it. These two heights drive every
+   top offset below; keep them in sync with the Navbar / MobileLessonBar heights. */
+.lesson-shell,
+.lesson-mobilebar {
+  --nav-h: 72px;        /* fixed global Navbar height */
+  --mobile-bar-h: 52px; /* sticky lesson bar height (MobileLessonBar) */
+}
+
+/* ── Collapsible sidebar blocks (native <details>) ──────────────────────── */
+
+/* Drop the default disclosure triangle; the chevron in the summary replaces it. */
+.lesson-block-summary {
+  list-style: none;
+}
+.lesson-block-summary::-webkit-details-marker {
+  display: none;
+}
+.lesson-block-summary::marker {
+  content: "";
+}
+/* Chevron points down when open, right when collapsed. */
+.lesson-block-chevron {
+  transition: transform 0.15s ease;
+}
+.lesson-block:not([open]) .lesson-block-chevron {
+  transform: rotate(-90deg);
+}
+
+/* ── Shell grid ─────────────────────────────────────────────────────────── */
+
+.lesson-shell {
+  /* Mobile: single column, comfortable gutters. The mobile bar (.lesson-mobilebar)
+     sits above this in flow and is the only nav affordance below 768px. */
+  max-width: 100%;
+  padding: 24px 16px 64px;
+}
+
+/* Push the sticky mobile bar below the fixed navbar (it sticks at `--nav-h`, so its
+   flow start must clear the navbar too). Mobile-only; hidden ≥768px. */
+.lesson-mobilebar {
+  padding-top: var(--nav-h);
+}
+
+/* The sticky rails (sidebar + on-this-page) need the VIEWPORT as their scroll
+   container. The global `body { overflow-x: hidden }` (globals.css) turns body into a
+   scroll container instead, which silently breaks `position: sticky` for its
+   descendants. `overflow-x: clip` prevents the same horizontal scroll WITHOUT
+   establishing a scroll container, so the rails stick. Scoped to the lesson page
+   (`:has(.lesson-shell)`) so the rest of the site keeps the global rule unchanged. */
+body:has(.lesson-shell) {
+  overflow-x: clip;
+}
+
+.lesson-sidebar-desktop,
+.lesson-onthispage {
+  display: none; /* revealed at their breakpoints below */
+}
+
+/* Reading column: capped for line length, centered in its track. `min-width:0` lets
+   the grid track shrink so wide children scroll in their own box instead of forcing
+   the page body to scroll horizontally. */
+.lesson-content {
+  max-width: 72ch;
+  min-width: 0;
+  margin: 0 auto;
+  font-size: 1.0625rem;          /* ~17px reading size, larger than marketing pages */
+  line-height: 1.75;
+  color: var(--text-muted);
+  overflow-wrap: break-word;     /* long inline tokens (incl. inline math) wrap, not overflow */
+}
+
+/* Real breathing room between a paragraph and the display equation it introduces,
+   and around section headings. Inline styles in mdx-components.tsx set colors/sizes;
+   these spacing + anchor rules are additive and don't fight them. */
+.lesson-content p {
+  margin: 1.25rem 0;
+}
+.lesson-content .katex-display {
+  margin: 1.75rem 0;
+}
+
+/* Anchor jump-targets must clear BOTH the fixed navbar and the sticky lesson bar on
+   mobile, or a heading lands hidden behind them. */
+.lesson-content :is(h1, h2, h3, h4) {
+  scroll-margin-top: calc(var(--nav-h) + var(--mobile-bar-h) + 8px);
+}
+
+/* Thin horizontal scrollbar for the two OTHER wide-content boxes — code blocks
+   (`pre`) and the table wrapper (the `div` mdx-components.tsx wraps every table in).
+   Without this they fall back to the chunky browser default, which looks wrong next
+   to the 6px KaTeX bar that _styles/katex.css already styles. Same rules as that
+   file. NB (per katex.css): do NOT add `scrollbar-width` — in Chromium it disables
+   these ::-webkit- pseudo-elements and reverts to the default gray bar. */
+.lesson-content pre::-webkit-scrollbar,
+.lesson-content div:has(> table)::-webkit-scrollbar {
+  height: 6px;
+}
+.lesson-content pre::-webkit-scrollbar-track,
+.lesson-content div:has(> table)::-webkit-scrollbar-track {
+  background: transparent;
+}
+.lesson-content pre::-webkit-scrollbar-thumb,
+.lesson-content div:has(> table)::-webkit-scrollbar-thumb {
+  background: var(--border-variant);
+  border-radius: 10px;
+}
+.lesson-content pre::-webkit-scrollbar-thumb:hover,
+.lesson-content div:has(> table)::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+}
+
+/* ── ≥768px: two columns (sidebar + content), no right rail ─────────────── */
+
+@media (min-width: 768px) {
+  .lesson-mobilebar {
+    display: none; /* the drawer/bar is mobile-only */
+  }
+
+  .lesson-shell {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 40px;
+    max-width: 1120px;
+    margin: 0 auto;
+    /* Top clears the fixed navbar (no mobile bar on desktop). */
+    padding: calc(var(--nav-h) + 16px) 24px 80px;
+    align-items: start;
+  }
+
+  .lesson-sidebar-desktop {
+    display: block;
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+    max-height: calc(100vh - var(--nav-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* Only the fixed navbar to clear here (no sticky bar on desktop). */
+  .lesson-content :is(h1, h2, h3, h4) {
+    scroll-margin-top: calc(var(--nav-h) + 24px);
+  }
+}
+
+/* ── ≥1280px: three columns (sidebar + content + on-this-page) ──────────── */
+
+@media (min-width: 1280px) {
+  .lesson-shell {
+    grid-template-columns: 280px minmax(0, 1fr) 240px;
+    max-width: 1360px;
+  }
+
+  .lesson-onthispage {
+    display: block;
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+    max-height: calc(100vh - var(--nav-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}

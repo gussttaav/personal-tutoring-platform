@@ -27,6 +27,8 @@ module.exports = async () => {
     "@formatjs/icu-messageformat-parser",
     "@formatjs/icu-skeleton-parser",
     "intl-messageformat",
+    // COURSE-P1-04: github-slugger (used by src/lib/courses/headings.ts) is ESM-only.
+    "github-slugger",
   ];
   const esmRegex = ESM_PACKAGES.join("|");
   const esmPnpmDirRegex = ESM_PACKAGES.map((p) => p.replace("/", "\\+")).join("|");

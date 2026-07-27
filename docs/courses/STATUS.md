@@ -15,7 +15,7 @@ Update this file when starting, completing, or blocking a task.
 | [01 MDX + KaTeX + Shiki pipeline](phase-1-foundations/01-content-pipeline.md) | `COURSE-P1-01` | ✅ | _tbd_ | local |
 | [02 Content registry + Zod schemas](phase-1-foundations/02-content-registry.md) | `COURSE-P1-02` | ✅ | _tbd_ | local |
 | [03 Catalog + course landing](phase-1-foundations/03-catalog-and-landing.md) | `COURSE-P1-03` | ✅ | _tbd_ | local |
-| [04 Responsive lesson reader](phase-1-foundations/04-lesson-reader.md) | `COURSE-P1-04` | ⬜ | _tbd_ | |
+| [04 Responsive lesson reader](phase-1-foundations/04-lesson-reader.md) | `COURSE-P1-04` | ✅ | _tbd_ | local |
 
 **Exit criteria**
 - [ ] A prose lesson with display math and a highlighted code block renders at `/cursos/dl-nlp/<slug>`, statically generated
@@ -177,4 +177,64 @@ only (en has no manifest → not generated). Deviations from the task doc:
   is paid — it made no sense here. Its `courses.landing.sample.*` keys were dropped from both message
   files. This is a deliberate departure from the task spec, which listed the sample lesson as its own
   section. The hero and closing CTA still provide the "start the course" entry points.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P1-04** — Closed. The lesson reader route `/cursos/[courseSlug]/[lessonSlug]` +
+five reader components (`LessonLayout`, `LessonSidebar`, `OnThisPage`, `LessonNav`,
+`MobileLessonBar`), `lesson.css` (grid + reading typography + `scroll-margin-top`), and the
+`scripts/check-bundle.ts` guard. `courses.reader.*` added key-for-key to both message files.
+`pnpm lint` (0 errors), `pnpm build`, `pnpm test:unit` (470 pass) all green; bundle guard
+green on a clean build and proven to fail (exit 1) when a marker is present off the lesson
+route, correctly exempting the lesson route. Deviations from the task doc:
+- **`src/lib/courses/mdx.ts` touched (not in Files-affected).** Added `rehype-slug` as the
+  first rehype plugin so headings get `id`s — required for anchor links, `scroll-margin-top`,
+  and the on-this-page rail. New deps `rehype-slug` + `github-slugger`. The order-guard test
+  `mdx.test.ts` was updated to assert `[slug, katex, pretty-code]`.
+- **Two new lib helpers instead of extending the registry** (which is deliberately
+  metadata-only / prose-free): `src/lib/courses/lesson-source.ts` (`getLessonSource` — the one
+  place that reads a lesson's MDX body off disk) and `src/lib/courses/headings.ts`
+  (`extractHeadings`, unit-tested; shares `github-slugger` with the pipeline so the on-this-page
+  ids match the rendered heading ids).
+- **`jest.config.js` touched.** `github-slugger` is ESM-only → added to the `ESM_PACKAGES`
+  allowlist so `headings.test.ts` transpiles it (same mechanism next-intl already uses).
+- **`lessonNeighbours` unit tests already existed** in `registry.test.ts` (null ends, middle,
+  draft-skip, unknown→null) — the task's "add tests" item was already satisfied, so no new
+  neighbour tests were written. Added `headings.test.ts` (h2/h3-only, code-fence skip, slug
+  de-dup, inline-markdown stripping).
+- **Containment not re-declared in `lesson.css`.** `pre`/`table`/`img` are already contained by
+  `mdx-components.tsx` and `.katex-display` by `_styles/katex.css` (both from P1-01); `lesson.css`
+  owns only the grid, reading typography, and `scroll-margin-top`, per the task's "don't
+  duplicate" intent.
+- **`generateStaticParams` is published-only** (via `listCourseManifests` × `listLessons`), so
+  **no lesson page is generated while dl-nlp has only the draft fixture** and `en` generates
+  nothing (404s cleanly) — drafts stay absent from routes/sitemap (Phase-1 exit criterion). The
+  reader was verified by temporarily flipping the fixture to `draft: false` for a build (reverted
+  after), mirroring the P1-01 temporary-verification approach.
+- **`package.json`** gained a `check:bundle` script (`tsx scripts/check-bundle.ts`); the guard
+  reads `.next/diagnostics/route-bundle-stats.json` (Next 16's per-route first-load chunk list —
+  `app-build-manifest.json` was removed in Next 16). Not wired into CI (out of scope).
+- **`sitemap.ts` / JSON-LD / hreflang correction untouched** (P6-01), progress slot in
+  `MobileLessonBar` left empty (P4-02). Reading-position restore not built (deferred to P4-02).
+- **Two fixes from live manual review** (`pnpm dev`, fixture temporarily published):
+  (1) the global Navbar is `position: fixed`, so `lesson.css` now anchors all top offsets
+  (content padding, sticky-rail `top`, mobile-bar `top`, heading `scroll-margin-top`) and the
+  open drawer's z-index to a `--nav-h: 72px` var — otherwise the h1/rails slid under the navbar;
+  (2) code (`pre`) and table wrappers got the same thin 6px `::-webkit-scrollbar` styling as
+  `.katex-display` (they were showing the chunky browser default);
+  (3) the sidebar + on-this-page rails are `position: sticky`, but the global
+  `body { overflow-x: hidden }` (globals.css) made body a scroll container and silently broke
+  sticky — fixed by scoping `body:has(.lesson-shell) { overflow-x: clip }` in lesson.css (clips
+  the same horizontal overflow without creating a scroll container; global rule untouched for
+  the rest of the site). Redundant inner `sticky` on the OnThisPage `<nav>` removed (the aside
+  owns stickiness).
+- **Sidebar redesign (user request during review).** The back link now NAMES its destination
+  (`course.title`) and the redundant "Contenido del curso" header was dropped; block headers are
+  numbered overlines (`01 · <title>`). A **progress layer** (per-lesson completion check +
+  a "done / total" counter) was added but is **dormant** — driven by an optional
+  `completedSlugs` prop that nothing passes in P1-04, so a signed-out reader sees a clean list
+  with the current lesson highlighted. This is the **basis for P4-02** (which already lists
+  `LessonSidebar → "Completed markers"`): P4-02 fetches progress client-side after hydration and
+  feeds it via the prop or the `data-lesson-slug` hooks now on each lesson link. Message keys
+  `courses.reader.backToCourseAria` + `progressLabel` added key-for-key; the mark-complete
+  control and `courses.progress.*` copy remain P4-02's scope.
 - Not yet committed to a branch/PR (**local**).

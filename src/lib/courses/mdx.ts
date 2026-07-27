@@ -27,6 +27,7 @@ import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import rehypeSlug from "rehype-slug";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 
@@ -45,8 +46,13 @@ type PluginList = NonNullable<
 export const remarkPlugins: PluginList = [remarkGfm, remarkMath];
 
 /**
- * Rehype chain, in order: KaTeX → pretty-code (Shiki).
+ * Rehype chain, in order: slug → KaTeX → pretty-code (Shiki).
  *
+ * - `rehype-slug` (COURSE-P1-04) assigns a github-slugger `id` to every heading so
+ *   the reader's on-this-page rail and anchor links have jump targets. It runs
+ *   FIRST, before KaTeX rewrites heading contents, so the id derives from the
+ *   heading text. `src/lib/courses/headings.ts` re-derives the same ids from the
+ *   MDX source with the same slugger, so the two agree in document order.
  * - `rehype-katex` renders math to HTML at build time, emitting MathML alongside
  *   for screen readers. Its default throw-on-malformed behaviour is KEPT on
  *   purpose — a typo in a derivation should fail the build, not ship a red error
@@ -55,6 +61,7 @@ export const remarkPlugins: PluginList = [remarkGfm, remarkMath];
  *   is off so code blocks inherit the lesson surface rather than the theme's own.
  */
 export const rehypePlugins: PluginList = [
+  rehypeSlug,
   rehypeKatex,
   [rehypePrettyCode, { theme: SHIKI_THEME, keepBackground: false }],
 ];
