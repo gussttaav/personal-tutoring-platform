@@ -24,4 +24,13 @@ export type WidgetComponent = ComponentType<Record<string, unknown>>;
 
 export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "sigmoid-explorer": dynamic(() => import("./activations/SigmoidExplorer"), { ssr: false }),
+  // COURSE-P2-02 — Block 0 (NLP) + Block 1 (MLP) explorables.
+  "tokenizer-playground": dynamic(() => import("./nlp/TokenizerPlayground"), { ssr: false }),
+  "onehot-vs-embedding": dynamic(() => import("./nlp/OneHotVsEmbedding"), { ssr: false }),
+  "embedding-projection": dynamic(() => import("./nlp/EmbeddingProjection"), { ssr: false }),
+  "activation-explorer": dynamic(() => import("./nn/ActivationExplorer"), { ssr: false }),
+  "perceptron-boundary": dynamic(() => import("./nn/PerceptronBoundary"), { ssr: false }),
+  "gradient-descent-2d": dynamic(() => import("./nn/GradientDescent2D"), { ssr: false }),
+  "backprop-trace": dynamic(() => import("./nn/BackpropTrace"), { ssr: false }),
+  "loss-landscape": dynamic(() => import("./nn/LossLandscape"), { ssr: false }),
 };

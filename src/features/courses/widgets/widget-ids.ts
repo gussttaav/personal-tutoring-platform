@@ -11,7 +11,18 @@
  * Adding a widget = add its id here, then add its entry in `registry.ts`.
  */
 
-export const WIDGET_IDS = ["sigmoid-explorer"] as const;
+export const WIDGET_IDS = [
+  "sigmoid-explorer",
+  // COURSE-P2-02 — Block 0 (NLP) + Block 1 (MLP) explorables.
+  "tokenizer-playground",
+  "onehot-vs-embedding",
+  "embedding-projection",
+  "activation-explorer",
+  "perceptron-boundary",
+  "gradient-descent-2d",
+  "backprop-trace",
+  "loss-landscape",
+] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
 
