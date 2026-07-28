@@ -91,7 +91,8 @@ export default async function LessonPage({
 
   // COURSE-P3-01: the frontmatter quiz questions are handed to the compiler so
   // `<Quiz id="…" />` in the prose can resolve against them.
-  const { content } = await renderLesson(source, lesson.quiz);
+  // COURSE-P3-02: likewise the code challenges, for `<CodeChallenge id="…" />`.
+  const { content } = await renderLesson(source, lesson.quiz, lesson.challenges);
   const headings = extractHeadings(source);
   const { prev, next } = lessonNeighbours(courseSlug, lessonSlug, locale);
 

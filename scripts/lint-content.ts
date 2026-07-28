@@ -3,11 +3,12 @@
  * COURSE-P2-01 — + validate every `<Explorable id>` in lesson bodies resolves.
  * COURSE-P2-03 — + validate `<PyCell>` agrees with the `hasCode` frontmatter flag.
  * COURSE-P3-01 — + validate every `<Quiz id>` resolves to a frontmatter question.
+ * COURSE-P3-02 — + the same for every `<CodeChallenge id>`.
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the
- * lesson bodies so an unknown `<Explorable id>` or `<Quiz id>` — or a `hasCode` /
- * `hasQuiz` flag that contradicts the body — fails too. Runs in CI
+ * lesson bodies so an unknown `<Explorable id>`, `<Quiz id>` or `<CodeChallenge id>`
+ * — or a `hasCode` / `hasQuiz` flag that contradicts the body — fails too. Runs in CI
  * (`pnpm lint:content`) so a bad manifest, a typo'd frontmatter key, or an
  * unregistered widget id fails a PR. Exits non-zero, naming the offending file, on
  * the first failure.
@@ -20,6 +21,7 @@
  */
 
 import { validateAllContent } from "@/lib/courses/registry";
+import { validateChallengeRefs } from "@/lib/courses/validate-challenges";
 import { validateExplorableIds } from "@/lib/courses/validate-explorables";
 import { validatePyCellFlags } from "@/lib/courses/validate-pycells";
 import { validateQuizRefs } from "@/lib/courses/validate-quizzes";
@@ -29,6 +31,7 @@ try {
   validateExplorableIds();
   validatePyCellFlags();
   validateQuizRefs();
+  validateChallengeRefs();
   console.log("✓ content lint passed");
 } catch (err) {
   console.error(`✗ content lint failed: ${(err as Error).message}`);

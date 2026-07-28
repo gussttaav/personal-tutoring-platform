@@ -751,6 +751,43 @@
       "predictPrompt": "What does this code print?",
       "outputPlaceholder": "Type the exact output",
       "attempt": "{count, plural, =1 {# attempt} other {# attempts}}"
+    },
+    "challenge": {
+      "run": "Run tests",
+      "running": "Running…",
+      "stop": "Stop",
+      "reset": "Reset",
+      "editorLabel": "Your Python solution",
+      "firstRunNote": "The first run downloads the Python interpreter (~15 MB); after that it stays in the browser cache.",
+      "keyboardNote": "This challenge is much easier to solve on a physical keyboard: on a phone, read it and come back later.",
+      "stage": {
+        "runtime": "Downloading the Python interpreter…",
+        "packages": "Loading packages…",
+        "preamble": "Preparing the environment…",
+        "ready": "Running the tests…"
+      },
+      "outputLabel": "Your code's output",
+      "score": "{passed} of {total} tests passing",
+      "allPassed": "All tests pass!",
+      "assertionFailed": "The assertion does not hold.",
+      "notRunNote": "Never ran.",
+      "tracebackLabel": "Show the full traceback",
+      "studentErrorTitle": "Your code could not run",
+      "status": {
+        "pass": "Test passed",
+        "fail": "Test failed",
+        "error": "Error while running the test",
+        "notRun": "Test not run"
+      },
+      "showSolution": "Show the solution",
+      "solutionLabel": "Reference solution",
+      "explanationLabel": "Explanation",
+      "lockedNote": "{count, plural, =1 {The solution unlocks after # more attempt.} other {The solution unlocks after # more attempts.}}",
+      "attempt": "{count, plural, =1 {# attempt} other {# attempts}}",
+      "timeoutRun": "The run went past {seconds} s and was stopped. That usually means your code has an infinite loop.",
+      "timeoutLoad": "The interpreter took too long to download. Check your connection and try again.",
+      "stopped": "Run stopped. It does not count as an attempt.",
+      "crashed": "The interpreter shut down unexpectedly: {error}"
     }
   },
   "meta": {

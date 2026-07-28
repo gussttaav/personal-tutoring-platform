@@ -1,14 +1,21 @@
 /*
  * COURSE-P2-03 — Content lint tying `<PyCell>` to the `hasCode` frontmatter flag.
+ * COURSE-P3-02 — `<CodeChallenge>` counts too.
  *
  * `hasCode` was added in P1-02 precisely so the reader knows, before parsing the MDX
  * body, whether a lesson needs the Python runtime prepared at all. Until this lint
  * existed, nothing checked the two agreed — a field that documents an invariant but
  * doesn't enforce it drifts, quietly, and then something downstream trusts it.
  *
+ * `hasCode` means "this lesson runs Python", not "this lesson contains a `<PyCell>`".
+ * A code challenge runs the student's Python through the very same worker, so it
+ * satisfies the flag exactly as a cell does — and a challenge-only lesson would
+ * otherwise be unable to satisfy this lint in either direction.
+ *
  * Both directions are errors:
- *   - a `<PyCell>` in a lesson with `hasCode: false` (the flag under-reports)
- *   - `hasCode: true` on a lesson with no cell (the flag over-reports)
+ *   - a `<PyCell>` or `<CodeChallenge>` in a lesson with `hasCode: false` (the flag
+ *     under-reports)
+ *   - `hasCode: true` on a lesson with neither (the flag over-reports)
  *
  * Deliberately Node-clean and dependency-light, mirroring `validate-explorables.ts`:
  * the pure helpers below are unit-tested without touching the filesystem, and
@@ -22,12 +29,14 @@ const DEFAULT_CONTENT_ROOT = path.join(process.cwd(), "content", "courses");
 
 // Opening tag only; `\b` stops `<PyCellClient>`-style names from matching.
 const PYCELL_TAG = /<PyCell\b/;
+// COURSE-P3-02: the other component that runs Python in a lesson.
+const CHALLENGE_TAG = /<CodeChallenge\b/;
 // `hasCode:` in the YAML frontmatter block at the top of the file.
 const HAS_CODE = /^hasCode:\s*(true|false)\s*$/m;
 
-/** Does this lesson body contain at least one `<PyCell>`? */
+/** Does this lesson body run Python — through a `<PyCell>` or a `<CodeChallenge>`? */
 export function hasPyCell(source: string): boolean {
-  return PYCELL_TAG.test(source);
+  return PYCELL_TAG.test(source) || CHALLENGE_TAG.test(source);
 }
 
 /**
@@ -50,10 +59,12 @@ export function pyCellProblems(source: string): string[] {
 
   const present = hasPyCell(source);
   if (present && !declared) {
-    return ["lesson uses <PyCell> but declares `hasCode: false` — set it to true"];
+    return ["lesson runs Python (<PyCell> or <CodeChallenge>) but declares `hasCode: false` — set it to true"];
   }
   if (!present && declared) {
-    return ["lesson declares `hasCode: true` but contains no <PyCell> — set it to false"];
+    return [
+      "lesson declares `hasCode: true` but contains no <PyCell> or <CodeChallenge> — set it to false",
+    ];
   }
   return [];
 }

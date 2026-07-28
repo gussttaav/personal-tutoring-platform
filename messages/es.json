@@ -751,6 +751,43 @@
       "predictPrompt": "¿Qué imprime este código?",
       "outputPlaceholder": "Escribe la salida exacta",
       "attempt": "{count, plural, =1 {# intento} other {# intentos}}"
+    },
+    "challenge": {
+      "run": "Comprobar",
+      "running": "Comprobando…",
+      "stop": "Detener",
+      "reset": "Reiniciar",
+      "editorLabel": "Tu solución en Python",
+      "firstRunNote": "La primera comprobación descarga el intérprete de Python (~15 MB); después queda en la caché del navegador.",
+      "keyboardNote": "Este desafío se resuelve mejor con un teclado físico: en el móvil puedes leerlo y volver luego.",
+      "stage": {
+        "runtime": "Descargando el intérprete de Python…",
+        "packages": "Cargando paquetes…",
+        "preamble": "Preparando el entorno…",
+        "ready": "Ejecutando las pruebas…"
+      },
+      "outputLabel": "Salida de tu código",
+      "score": "{passed} de {total} pruebas superadas",
+      "allPassed": "¡Todas las pruebas pasan!",
+      "assertionFailed": "La comprobación no se cumple.",
+      "notRunNote": "No llegó a ejecutarse.",
+      "tracebackLabel": "Ver la traza completa",
+      "studentErrorTitle": "Tu código no llegó a ejecutarse",
+      "status": {
+        "pass": "Prueba superada",
+        "fail": "Prueba fallida",
+        "error": "Error al ejecutar la prueba",
+        "notRun": "Prueba no ejecutada"
+      },
+      "showSolution": "Ver la solución",
+      "solutionLabel": "Solución de referencia",
+      "explanationLabel": "Explicación",
+      "lockedNote": "{count, plural, =1 {La solución se desbloquea tras # intento más.} other {La solución se desbloquea tras # intentos más.}}",
+      "attempt": "{count, plural, =1 {# intento} other {# intentos}}",
+      "timeoutRun": "La comprobación superó los {seconds} s y se detuvo. Suele significar que tu código tiene un bucle infinito.",
+      "timeoutLoad": "La descarga del intérprete tardó demasiado. Comprueba tu conexión y vuelve a intentarlo.",
+      "stopped": "Comprobación detenida. No cuenta como intento.",
+      "crashed": "El intérprete se cerró inesperadamente: {error}"
     }
   },
   "meta": {

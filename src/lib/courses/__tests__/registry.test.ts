@@ -63,6 +63,7 @@ function lessonFile(fm: LessonFm): string {
     hasCode: false,
     hasQuiz: false,
     quiz: [],
+    challenges: [],
     ...fm,
   };
   const yaml = Object.entries(full)
@@ -142,7 +143,7 @@ describe("build-time validation failures", () => {
     // `mintues:` typo + missing `minutes` — strict schema must reject.
     fs.writeFileSync(
       path.join(esDir, "00-intro.mdx"),
-      `---\nslug: intro\ntitle: "x"\nblock: 0\norder: 1\nmintues: 5\nsummary: "y"\ndraft: false\nhasCode: false\nhasQuiz: false\nquiz: []\n---\n`,
+      `---\nslug: intro\ntitle: "x"\nblock: 0\norder: 1\nmintues: 5\nsummary: "y"\ndraft: false\nhasCode: false\nhasQuiz: false\nquiz: []\nchallenges: []\n---\n`,
     );
 
     expect(() => buildRegistry(root, "es")).toThrow(/00-intro\.mdx/);

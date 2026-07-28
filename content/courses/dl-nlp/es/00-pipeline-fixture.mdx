@@ -49,6 +49,40 @@ quiz:
       print(np.arange(3) + 1)
     answer: '[1 2 3]'
     explanation: 'El escalar `1` se difunde (*broadcast*) sobre todo el array, sumándose a cada elemento de `[0 1 2]`.'
+challenges:
+  - id: ch-softmax
+    prompt: |
+      Implementa `softmax` de forma **numéricamente estable**:
+      $\text{softmax}(x)_i = \dfrac{e^{x_i}}{\sum_j e^{x_j}}$.
+      La versión ingenua desborda con valores grandes; resta el máximo antes de exponenciar.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def softmax(x):
+          # tu código aquí
+          pass
+    tests:
+      - name: "las probabilidades suman 1"
+        code: "assert np.isclose(softmax(np.array([1., 2., 3.])).sum(), 1.0), 'la salida debe sumar 1'"
+      - name: "estable con valores grandes"
+        code: "assert not np.isnan(softmax(np.array([1000., 1001.])).sum()), 'desborda: resta el máximo antes de exponenciar'"
+      - name: "invariante al desplazamiento"
+        code: "assert np.allclose(softmax(np.array([1., 2., 3.])), softmax(np.array([101., 102., 103.])))"
+    solution: |
+      import numpy as np
+
+
+      def softmax(x):
+          z = x - np.max(x)
+          e = np.exp(z)
+          return e / e.sum()
+    explanation: |
+      Restar $\max(x)$ no cambia el resultado —
+      $\dfrac{e^{x_i - m}}{\sum_j e^{x_j - m}} = \dfrac{e^{x_i}}{\sum_j e^{x_j}}$, porque
+      $e^{-m}$ se cancela arriba y abajo — pero sí cambia lo que calcula el ordenador:
+      el mayor exponente pasa a ser $e^{0} = 1$, así que nunca desborda.
 ---
 
 {/* COURSE-P1-01 — Rendering regression fixture. Keep `draft: true` PERMANENTLY:
@@ -215,3 +249,14 @@ Predicción de salida — el código se resalta con Shiki en tiempo de compilaci
 es ejecutable (para eso está `<PyCell>`):
 
 <Quiz id="q-broadcasting" />
+
+{/* COURSE-P3-02 — Desafío de código: el estudiante escribe la función y las
+    aserciones ocultas la corrigen en el mismo worker de Pyodide que las celdas de
+    arriba. Cubre: prueba que pasa, prueba que falla (aserción), error que NO es una
+    aserción (NameError si borra la función), traceback plegado, y el desbloqueo de
+    la solución tras 3 intentos fallidos. La solución de referencia está verificada
+    contra sus propias pruebas. */}
+
+## Desafíos de código
+
+<CodeChallenge id="ch-softmax" />

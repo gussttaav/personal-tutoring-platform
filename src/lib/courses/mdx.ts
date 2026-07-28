@@ -31,7 +31,7 @@ import rehypeSlug from "rehype-slug";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 
-import type { QuizQuestion } from "@/domain/types";
+import type { CodeChallenge, QuizQuestion } from "@/domain/types";
 import { SHIKI_THEME } from "@/constants/shiki-theme";
 import { lessonMdxComponents } from "./mdx-components";
 
@@ -85,16 +85,19 @@ export interface RenderedLesson {
  * COURSE-P3-01: `quiz` is the lesson's already-validated frontmatter questions (the
  * caller has them from the registry). They are passed in rather than re-parsed here
  * so `<Quiz id="…" />` can resolve its id — see `lessonMdxComponents`.
+ *
+ * COURSE-P3-02: `challenges` travels the same way, for `<CodeChallenge id="…" />`.
  */
 export async function renderLesson(
   source: string,
   quiz: QuizQuestion[] = [],
+  challenges: CodeChallenge[] = [],
 ): Promise<RenderedLesson> {
   const { compileMDX } = await import("next-mdx-remote/rsc");
 
   return compileMDX<LessonFrontmatter>({
     source,
-    components: lessonMdxComponents(quiz),
+    components: lessonMdxComponents(quiz, challenges),
     options: {
       parseFrontmatter: true,
       // COURSE-P2-03: next-mdx-remote v6 defaults `blockJS` to TRUE, which injects a

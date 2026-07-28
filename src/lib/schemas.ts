@@ -302,6 +302,45 @@ export const QuizQuestionSchema = z
 
 export type QuizQuestionInput = z.infer<typeof QuizQuestionSchema>;
 
+// COURSE-P3-02: code challenges, authored in the same lesson frontmatter. The
+// assertions run in the browser (P2-03's Pyodide worker), so everything the runner
+// needs must be here and must be right at BUILD time — a challenge with no tests
+// grades every submission as a pass, which is worse than no challenge at all.
+
+const ChallengeTestSchema = z.strictObject({
+  name: z.string().min(1),
+  code: z.string().min(1),
+});
+
+export const CodeChallengeSchema = z.strictObject({
+  id:      z.string().min(1),
+  prompt:  z.string().min(1),
+  // An empty starter is almost always a YAML block-scalar mistake (`starter: |`
+  // with nothing under it), and it leaves the student a blank box with no signature.
+  starter: z.string().min(1),
+  // `.min(1)`: the acceptance criterion. Zero tests = a challenge that cannot fail.
+  tests:   z.array(ChallengeTestSchema).min(1).superRefine((tests, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, test] of tests.entries()) {
+      if (seen.has(test.name)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate test name "${test.name}"`,
+          path:    [i, "name"],
+        });
+      }
+      seen.add(test.name);
+    }
+  }),
+  // Required: a challenge with no reference solution is unrevealable, and the
+  // student who gets stuck at three failures has nowhere to go.
+  solution:    z.string().min(1),
+  explanation: z.string().min(1),
+  packages:    z.array(z.string().min(1)).optional(),
+});
+
+export type CodeChallengeInput = z.infer<typeof CodeChallengeSchema>;
+
 export const LessonFrontmatterSchema = z.strictObject({
   slug:    z.string().min(1),
   title:   z.string().min(1),
@@ -325,6 +364,21 @@ export const LessonFrontmatterSchema = z.strictObject({
         });
       }
       seen.add(q.id);
+    }
+  }),
+  // COURSE-P3-02: same rule, same reason — `<CodeChallenge id="…" />` resolves
+  // against this list.
+  challenges: z.array(CodeChallengeSchema).superRefine((challenges, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, challenge] of challenges.entries()) {
+      if (seen.has(challenge.id)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate challenge id "${challenge.id}"`,
+          path:    [i, "id"],
+        });
+      }
+      seen.add(challenge.id);
     }
   }),
 });

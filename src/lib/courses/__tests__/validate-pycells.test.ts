@@ -36,6 +36,16 @@ describe("hasPyCell", () => {
   it("is false for prose with no cell", () => {
     expect(hasPyCell("Texto normal con `código` en línea.")).toBe(false);
   });
+
+  // COURSE-P3-02: `hasCode` means "runs Python", and a challenge runs the student's
+  // Python through the same worker.
+  it("counts a <CodeChallenge> as running Python", () => {
+    expect(hasPyCell('<CodeChallenge id="ch-softmax" />')).toBe(true);
+  });
+
+  it("does not match a longer challenge component name", () => {
+    expect(hasPyCell('<CodeChallengeCard id="ch1" />')).toBe(false);
+  });
 });
 
 describe("readHasCode", () => {
@@ -72,5 +82,15 @@ describe("pyCellProblems", () => {
 
   it("stays silent when hasCode is missing — that is the Zod schema's error to raise", () => {
     expect(pyCellProblems("---\nslug: demo\n---\n\n<PyCell code={`x`} />")).toEqual([]);
+  });
+
+  it("accepts a challenge-only lesson that declares hasCode", () => {
+    expect(pyCellProblems(lesson("true", '<CodeChallenge id="ch-softmax" />'))).toEqual([]);
+  });
+
+  it("rejects a challenge-only lesson that declares hasCode false", () => {
+    const problems = pyCellProblems(lesson("false", '<CodeChallenge id="ch-softmax" />'));
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(/hasCode: false/);
   });
 });

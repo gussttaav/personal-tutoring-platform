@@ -45,11 +45,11 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Quiz schema + grading](phase-3-assessment/01-quiz-engine.md) | `COURSE-P3-01` | ✅ | _tbd_ | local |
-| [02 Code challenges](phase-3-assessment/02-code-challenges.md) | `COURSE-P3-02` | ⬜ | _tbd_ | |
+| [02 Code challenges](phase-3-assessment/02-code-challenges.md) | `COURSE-P3-02` | ✅ | _tbd_ | local |
 
 **Exit criteria**
-- [ ] All five question types render and grade correctly (unit-tested pure grader)
-- [ ] A code challenge passes/fails against hidden assertions in Pyodide
+- [x] All five question types render and grade correctly (unit-tested pure grader)
+- [x] A code challenge passes/fails against hidden assertions in Pyodide
 - [ ] **Walking skeleton:** lesson 1 of Block 0 is complete — prose + display math + one explorable + one NumPy cell + one quiz — and reads correctly on a phone
 - [ ] `pnpm test` + `pnpm build` green
 
@@ -464,4 +464,118 @@ bracket auto-close work in a real browser; Reiniciar restores the original code.
   until P5 begins. Revisit at P5-00.
 - `pnpm test:unit` (701 tests, 66 suites), `pnpm lint`, `pnpm lint:content`, `pnpm build` and
   `pnpm check:bundle` all green.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P3-02** — Closed. Code challenges with hidden assertions: `<CodeChallenge id="…" />`
+runs the student's Python against author-written `assert`s in the P2-03 worker and reports
+pass/fail per test. New `src/lib/courses/pyodide/run-tests.ts` (program generation + result
+parsing), `src/features/courses/code/{CodeChallenge,CodeChallengeCard}.tsx` +
+`challenge-state.ts`, `src/lib/courses/validate-challenges.ts`, `CodeChallengeSchema` +
+`challenges` in the lesson frontmatter, `courses.challenge.*` key-for-key in both message files.
+
+- **One Pyodide run grades the whole suite, not one run per test.** The P2-03 client gives a run
+  a single wall-clock budget and a single terminate path; N runs would multiply both and would
+  lose the student's definitions the moment one of them timed out. So the suite becomes one
+  generated program: the student's code is exec'd once, then each test independently inside its
+  own `try/except` that PRINTS a structured result line rather than propagating. A failing test
+  therefore cannot mask the ones after it — the acceptance criterion — and the whole protocol is
+  pure string work, unit-testable with no Pyodide at all.
+- **Student code and tests cross into Python as ONE JSON payload**, embedded as a single string
+  literal and parsed by `json.loads` on the other side. JSON string syntax is a subset of
+  Python's, so arbitrary student code (triple quotes, backslashes, newlines) needs no bespoke
+  escaper — there is exactly one place where untrusted text enters the source.
+- **The harness cannot be shadowed** (the task's gotcha): student code is exec'd into its own
+  namespace dict while every harness name is `_`-prefixed in the wrapper's own globals, and each
+  test runs against a fresh `dict(_ns)` copy so one test cannot decide the next. Verified: a
+  student defining `_json`, `_emit` and `_payload` still grades correctly.
+- **`fail` and `error` are different statuses, decided in Python.** An `AssertionError` is a
+  wrong answer; anything else (`NameError`, `TypeError`, `OverflowError`) is a different problem
+  and the UI says so — different icon, different colour, the exception line rather than the
+  assertion message. Tracebacks are trimmed of the harness frame (`tb.tb_next`) so the student
+  reads only their own, and are folded behind a `<details>` rather than shoved in their face.
+- **Result-reporting: a SIBLING type, not a widened `QuizResult`** (user-confirmed during
+  planning). `ChallengeResult` + `ChallengeAttemptContext` mirror `QuizResult` +
+  `QuizAttemptContext` field for field where the meaning matches, and a new
+  `AssessmentResult = QuizResult | ChallengeResult` union discriminates on `type`. P4-02 writes
+  ONE `(r: AssessmentResult) => void` handler and hands the same function to both providers
+  (contravariance makes it assignable to each), so the doc's "one persistence path" holds without
+  reopening `QuizCard.tsx` or making `QuizQuestionType` mean something it doesn't.
+- **`challenge-state.ts` may import only TYPES from `lib/courses/pyodide/`** — caught in review
+  after the first draft had it importing `allPassed`/`passedCount` as values. The card imports
+  the state module statically, so that one import would have pulled the whole test harness into
+  the lesson's first-load JS and quietly defeated the load gate. The two derivations now live in
+  `challenge-state.ts`, where deciding what counts as "correct" belongs anyway, and `run-tests.ts`
+  is reached ONLY through the `await import()` in `handleRun`, next to `spawn.ts`.
+- **Which failures burn an attempt.** A graded run is one that EXECUTED: success, assertion
+  failures, student errors, and a RUN-phase timeout (whose partial output is still parsed — "tests
+  1 and 2 passed, then it hung" is real information). A LOAD-phase timeout (slow network), a
+  crash (device gave up) and Stop (the student's own choice) say nothing about their code, so they
+  show a notice and cost nothing. The reveal gate counts only real failures.
+- **Solution reveal is guarded in the reducer, not only in the UI** — all-pass OR ≥3 failures,
+  sticky once revealed, and recorded on every later result. A rule that lives in a `disabled`
+  attribute is one `disabled={false}` from gone.
+- **Plain `<textarea>`, no Shiki display swap** (user-confirmed). PyCell's highlighted-when-blurred
+  view earns its keep on an author's finished snippet; a challenge's starter is deliberately
+  incomplete and gets edited within seconds, so it would have meant duplicating ~40 lines of
+  editing/focus/caret state for a view almost nobody sees. The pure `editing.ts` helpers
+  (tab-to-indent, indent-aware Enter, bracket matching) ARE reused as-is.
+- **All chrome is translated (`courses.challenge.*`, 31 keys × 2 files)**, unlike the hardcoded
+  Spanish of `PyCellClient`/`CodeOutput`. That follows the task doc and P3-01's precedent that
+  assessment copy is translated; it does mean a lesson can show a translated challenge next to a
+  Spanish-only `<PyCell>` until someone revisits the widget layer. `CodeOutput` was deliberately
+  NOT reused for the challenge's output panel for exactly this reason (it hardcodes two Spanish
+  strings) — the card renders its own small `<pre>` instead.
+- **`validate-pycells.ts` widened (not in the task's Files-affected list).** `hasCode` means "this
+  lesson runs Python", so `<CodeChallenge>` now satisfies it exactly as `<PyCell>` does —
+  otherwise a challenge-only lesson could not satisfy the lint in EITHER direction. Plus a new
+  `validate-challenges.ts` (id resolves; no id placed twice, since P4-02 keys attempts by it) as
+  the fifth `lint:content` pass, mirroring the quiz lint.
+- **`challenges` is REQUIRED in lesson frontmatter**, like `quiz` (user-confirmed): every lesson
+  writes `challenges: []`. Consistent with the strict-object discipline; the three existing
+  frontmatter test fixtures (`schemas`, `registry`, `SyllabusAccordion`) were updated.
+- **One real `softmax` challenge added PERMANENTLY to `00-pipeline-fixture.mdx`** (numpy, three
+  tests: sums to 1, stable at `[1000., 1001.]`, shift-invariant), matching what P2-02/P2-03/P3-01
+  each did. Its reference solution is verified against its own tests, and the naive version
+  genuinely fails the stability test rather than merely looking wrong.
+- **Verified against a REAL Python interpreter** (CPython 3, via a throwaway script) for all five
+  paths the parser claims to handle: correct solution, wrong solution, missing function
+  (`NameError`), syntax error (student-error box with the caret line), and harness shadowing.
+  Tracebacks came back trimmed to the student's frames and partial `print(..., end="")` output was
+  preserved alongside the results.
+- **Verified LIVE in a real browser with real Pyodide** — production build (`pnpm build && pnpm start`),
+  fixture lesson, driven by a throwaway uncommitted Playwright script: **21/21 checks**, one page
+  load, no reloads, zero CSP violations. Confirmed: the naive softmax scores **2 de 3** (it really
+  does satisfy "sums to 1" and "shift-invariant" and really does fail only the stability test —
+  the sharpest available proof that each test is graded on its own); the author's assertion
+  message surfaces on the one failure; a renamed function reads as `NameError` rather than as a
+  wrong answer; a syntax error produces the student-error box with the caret line and no test
+  runs; the solution stays locked at 1 and 2 failures and unlocks on the 3rd; `while True: pass`
+  is killed at **10.5 s** with the tab responsive; the very next run passes every test on the
+  restarted worker; Reset restores the starter.
+- **A false green was caught and corrected during that pass, and it is worth recording.** The
+  first run reported 21/21 too — but the naive-softmax attempt scored 0/3, which is arithmetically
+  impossible for that function. Cause: Playwright's `fill()` on a controlled `<textarea>` that has
+  never been focused INSERTS instead of replacing, so the editor held "naive code + starter" and
+  the second `def softmax` (the starter's `pass`) won — the harness ran exactly what was in the
+  box and was right to. Not a product defect: clicking first, Ctrl+A + typing, and Ctrl+A +
+  pasting all replace correctly, and `fill()` behaves identically on P2-03's shipped `PyCell`
+  editor once focused. The probe now clicks before filling and asserts the editor took the code.
+  The lesson generalises to any future browser test of these editors.
+- **The four new lint failures were proven, then reverted:** a typo'd `<CodeChallenge id>`, the
+  same challenge placed twice, an empty `tests: []`, and a duplicate challenge id in frontmatter
+  each exit 1 naming the file and the problem.
+- **Not verified: a real 360px device.** The card is a single column of native controls and the
+  editor contains its own horizontal scroll, so it should hold, but no phone was exercised — and
+  the task itself says mobile editing is genuinely awkward, which is why `courses.challenge.keyboardNote`
+  says so out loud rather than pretending otherwise. Left for the user's manual pass (mirrors
+  P2-01…P3-01).
+- `pnpm test:unit` (760 tests, 69 suites), `pnpm lint` (0 errors), `pnpm lint:content`,
+  `pnpm build` and `pnpm check:bundle` all green.
+- **Two pre-existing type errors fixed in passing** (user-requested, after the task's own work was
+  complete). `npx tsc --noEmit` was reporting TS7022 + TS7006 in
+  `src/lib/courses/__tests__/validate-quizzes.test.ts`, which arrived with P3-01: its `lesson()`
+  helper defaults `hasQuiz` off `ids` inside the same destructuring pattern, and that
+  self-reference makes TypeScript abandon inference for `ids` (and for its `.map` callback), so
+  the `as string[]` cast never applied. The parameter is now explicitly typed; defaults, call
+  sites and behaviour are unchanged. **`npx tsc --noEmit` now exits 0 across the whole repo.**
 - Not yet committed to a branch/PR (**local**).

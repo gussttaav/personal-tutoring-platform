@@ -322,6 +322,9 @@ export interface Lesson {
   hasQuiz: boolean;
   // Quiz definitions live in frontmatter, validated by QuizQuestionSchema (P3-01).
   quiz:    QuizQuestion[];
+  // Code challenges, same idea, validated by CodeChallengeSchema (P3-02). `hasCode`
+  // covers these too: a challenge runs Python exactly like a `<PyCell>` does.
+  challenges: CodeChallenge[];
 }
 
 /** A minimal lesson pointer used for prev/next navigation. */
@@ -425,3 +428,71 @@ export interface QuizResult {
   /** 1-based: retries are allowed and each one fires its own result. */
   attempt:  number;
 }
+
+// ─── Course code challenges ───────────────────────────────────────────────────
+// COURSE-P3-02: "implement softmax so these tests pass". Authored in lesson
+// frontmatter next to the quiz questions and placed in the prose with
+// `<CodeChallenge id="…" />`. The assertions are run in the P2-03 Pyodide worker,
+// in the student's own browser — there is no server-side execution, ever.
+//
+// The tests are hidden from the PAGE, not from the bundle: they travel in the
+// lesson's HTML like everything else in frontmatter. That is fine for
+// self-assessment and is stated here so it is not mistaken for an oversight.
+
+/** One hidden assertion. `name` is what the student sees in the results list, so it
+ *  should describe the property ("suma 1"), not the code. */
+export interface ChallengeTest {
+  name: string;
+  code: string;
+}
+
+/** One challenge: starter code the student edits, tests it must satisfy, and a
+ *  reference solution unlocked only after success or repeated failure. */
+export interface CodeChallenge {
+  id:      string;
+  prompt:  string;
+  /** Pre-filled editor contents — a signature plus `# tu código aquí`. */
+  starter: string;
+  tests:   ChallengeTest[];
+  /** Reference solution, revealed per the rule in features/courses/code/challenge-state.ts. */
+  solution:    string;
+  explanation: string;
+  /** Pyodide packages the challenge needs, e.g. ["numpy"] — same list `<PyCell>` takes. */
+  packages?:   string[];
+}
+
+/**
+ * The outcome of ONE hidden test.
+ *   - `fail`    — an `AssertionError`: the code ran but is wrong.
+ *   - `error`   — anything else (`NameError`, `TypeError`, …): a different problem
+ *                 entirely, and the UI must not present it as a wrong answer.
+ *   - `not-run` — no result came back, i.e. the run was killed mid-suite.
+ */
+export interface TestResult {
+  name:   string;
+  status: "pass" | "fail" | "error" | "not-run";
+  /** Assertion message, or `TypeError: …` for an error. Empty when the test passed. */
+  message?:  string;
+  /** Full Python traceback, student frames only. Absent for a pass. */
+  traceback?: string;
+}
+
+/** The graded outcome of ONE run, shaped to sit alongside `QuizResult` so P4-02
+ *  persists both through a single path (see `AssessmentResult`). */
+export interface ChallengeResult {
+  challengeId: string;
+  type:        "code-challenge";
+  /** Every declared test passed. */
+  correct: boolean;
+  passed:  number;
+  total:   number;
+  /** 1-based, like `QuizResult.attempt`. */
+  attempt: number;
+  /** Whether the reference solution had been revealed when this run was made. */
+  solutionRevealed: boolean;
+}
+
+/** Everything a lesson can report about a student's work. The two members
+ *  discriminate on `type`, so P4-02 wires ONE handler and hands it to both
+ *  `QuizAttemptContext` and `ChallengeAttemptContext`. */
+export type AssessmentResult = QuizResult | ChallengeResult;

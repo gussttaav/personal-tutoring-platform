@@ -18,10 +18,18 @@ import {
   validateQuizRefs,
 } from "../validate-quizzes";
 
+// The parameter type is annotated rather than inferred from the defaults: `hasQuiz`
+// defaults off `ids` within the same destructuring pattern, and that self-reference
+// makes TypeScript fall back to `any` for `ids` (TS7022) and for its `.map` callback
+// (TS7006) — errors `tsc --noEmit` reports even though Jest runs the file happily.
 function lesson({
-  ids = [] as string[],
+  ids = [],
   hasQuiz = ids.length > 0,
   body = "",
+}: {
+  ids?: string[];
+  hasQuiz?: boolean;
+  body?: string;
 }): string {
   const quiz =
     ids.length === 0

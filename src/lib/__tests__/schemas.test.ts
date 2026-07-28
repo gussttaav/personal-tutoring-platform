@@ -5,6 +5,7 @@
 // prevent (`mintues:` sailing through as valid).
 
 import {
+  CodeChallengeSchema,
   CourseManifestSchema,
   LessonFrontmatterSchema,
   QuizQuestionSchema,
@@ -63,6 +64,7 @@ describe("LessonFrontmatterSchema", () => {
     hasCode: false,
     hasQuiz: false,
     quiz: [],
+    challenges: [],
   };
 
   it("accepts well-formed frontmatter", () => {
@@ -116,6 +118,106 @@ describe("LessonFrontmatterSchema", () => {
       ],
     });
     expect(parsed.quiz).toHaveLength(2);
+  });
+
+  // COURSE-P3-02: the challenge array, same discipline as the quiz one.
+  it("rejects two challenges sharing an id — `<CodeChallenge id>` would be ambiguous", () => {
+    const challenge = {
+      id: "ch1",
+      prompt: "p",
+      starter: "pass",
+      tests: [{ name: "t", code: "assert True" }],
+      solution: "pass",
+      explanation: "e",
+    };
+    expect(() =>
+      LessonFrontmatterSchema.parse({
+        ...valid,
+        hasCode: true,
+        challenges: [challenge, { ...challenge }],
+      }),
+    ).toThrow(/duplicate challenge id/);
+  });
+
+  it("accepts a well-formed challenge", () => {
+    const parsed = LessonFrontmatterSchema.parse({
+      ...valid,
+      hasCode: true,
+      challenges: [
+        {
+          id: "ch-softmax",
+          prompt: "Implementa softmax.",
+          starter: "def softmax(x):\n    pass",
+          tests: [{ name: "suma 1", code: "assert True" }],
+          solution: "def softmax(x):\n    ...",
+          explanation: "Resta el máximo.",
+          packages: ["numpy"],
+        },
+      ],
+    });
+    expect(parsed.challenges).toHaveLength(1);
+  });
+});
+
+// ─── CodeChallengeSchema ──────────────────────────────────────────────────────
+//
+// COURSE-P3-02. The failure that matters most is an empty `tests` array: a challenge
+// with no assertions marks every submission — including an untouched starter — as a
+// pass, which is worse than having no challenge at all.
+
+describe("CodeChallengeSchema", () => {
+  const valid = {
+    id: "ch-softmax",
+    prompt: "Implementa softmax de forma estable.",
+    starter: "import numpy as np\n\ndef softmax(x):\n    pass",
+    tests: [{ name: "suma 1", code: "assert np.isclose(softmax(np.ones(3)).sum(), 1.0)" }],
+    solution: "def softmax(x):\n    ...",
+    explanation: "Resta el máximo antes de exponenciar.",
+  };
+
+  it("accepts a well-formed challenge, with or without packages", () => {
+    expect(CodeChallengeSchema.parse(valid)).toEqual(valid);
+    expect(CodeChallengeSchema.parse({ ...valid, packages: ["numpy"] }).packages).toEqual(["numpy"]);
+  });
+
+  it("rejects an empty tests array — nothing could ever fail", () => {
+    expect(() => CodeChallengeSchema.parse({ ...valid, tests: [] })).toThrow();
+  });
+
+  it("rejects a missing starter — the student would face a blank box", () => {
+    const { starter: _drop, ...rest } = valid;
+    expect(() => CodeChallengeSchema.parse(rest)).toThrow();
+  });
+
+  it("rejects an empty starter (a `starter: |` block scalar with nothing under it)", () => {
+    expect(() => CodeChallengeSchema.parse({ ...valid, starter: "" })).toThrow();
+  });
+
+  it("rejects a missing reference solution — the reveal would have nothing to show", () => {
+    const { solution: _drop, ...rest } = valid;
+    expect(() => CodeChallengeSchema.parse(rest)).toThrow();
+  });
+
+  it("rejects a test with no assertion code", () => {
+    expect(() =>
+      CodeChallengeSchema.parse({ ...valid, tests: [{ name: "t", code: "" }] }),
+    ).toThrow();
+  });
+
+  it("rejects two tests with the same name — the results list would be ambiguous", () => {
+    expect(() =>
+      CodeChallengeSchema.parse({
+        ...valid,
+        tests: [
+          { name: "suma 1", code: "assert True" },
+          { name: "suma 1", code: "assert False" },
+        ],
+      }),
+    ).toThrow(/duplicate test name/);
+  });
+
+  it("rejects a typo'd key (strict)", () => {
+    expect(() => CodeChallengeSchema.parse({ ...valid, solucion: "..." })).toThrow();
   });
 });
 
