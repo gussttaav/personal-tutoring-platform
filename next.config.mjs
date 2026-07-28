@@ -39,17 +39,28 @@ const nextConfig = {
     const stripeOrigins = "https://js.stripe.com https://api.stripe.com";
     const stripeFrames  = "https://*.stripe.com";
 
+    // COURSE-P2-03: Pyodide (Python/WASM for the course code cells) is loaded from
+    // jsDelivr at a PINNED version — see src/lib/courses/pyodide/protocol.ts. It needs
+    // three directives, because the runtime arrives by three different mechanisms:
+    //   script-src  : the worker `import()`s pyodide.mjs from the CDN
+    //   connect-src : pyodide.asm.wasm, pyodide-lock.json and the package wheels are fetched
+    //   worker-src  : Pyodide spawns internal workers of its own
+    // Self-hosting escape hatch: drop ~20 MB under public/pyodide/, point
+    // PYODIDE_CDN_BASE at it, and delete this origin from all three directives.
+    const pyodideOrigin = "https://cdn.jsdelivr.net";
+
     const csp = isDev
       ? [
           // Dev: relaxed — allows Next.js HMR, webpack eval, etc.
           "default-src 'self'",
-          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} blob:`,
+          `script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins}`,
+          `connect-src 'self' ws://localhost:* wss://localhost:* https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us
-          `worker-src 'self' blob: ${zoomOrigins}`,
+          // COURSE-P2-03: Pyodide does the same from jsDelivr.
+          `worker-src 'self' blob: ${zoomOrigins} ${pyodideOrigin}`,
           `child-src 'self' blob: ${zoomOrigins}`,
           "media-src 'self' blob: mediastream:",
           `frame-src ${stripeFrames}`,
@@ -66,13 +77,14 @@ const nextConfig = {
           // use new Function() for their codec pipeline (screen share encoding + AI features).
           // https://vercel.live is Vercel's deployment feedback widget, injected
           // on preview/staging deployments only (not production).
-          `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live ${zoomOrigins} ${stripeOrigins} blob:`,
+          `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin} blob:`,
           "img-src 'self' https://lh3.googleusercontent.com data: blob:",
-          `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins}`,
+          `connect-src 'self' https://www.googleapis.com https://generativelanguage.googleapis.com https://*.upstash.io https://*.zmtg.com https://*.supabase.co wss://*.supabase.co ${zoomOrigins} ${stripeOrigins} ${pyodideOrigin}`,
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' https://fonts.gstatic.com",
           // Zoom Video SDK loads its WASM engine inside a Web Worker from CloudFront/source.zoom.us
-          `worker-src 'self' blob: ${zoomOrigins}`,
+          // COURSE-P2-03: Pyodide does the same from jsDelivr.
+          `worker-src 'self' blob: ${zoomOrigins} ${pyodideOrigin}`,
           `child-src 'self' blob: ${zoomOrigins}`,
           "media-src 'self' blob: mediastream:",
           `frame-src ${stripeFrames} https://vercel.live`,

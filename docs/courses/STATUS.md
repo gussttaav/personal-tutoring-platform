@@ -31,14 +31,14 @@ Update this file when starting, completing, or blocking a task.
 |------|-----|--------|-------|----|
 | [01 Widget registry + math core](phase-2-interactivity/01-widget-registry.md) | `COURSE-P2-01` | ✅ | _tbd_ | local |
 | [02 First explorables](phase-2-interactivity/02-first-explorables.md) | `COURSE-P2-02` | ✅ | _tbd_ | local |
-| [03 Pyodide worker + PyCell](phase-2-interactivity/03-pyodide-cells.md) | `COURSE-P2-03` | ⬜ | _tbd_ | |
+| [03 Pyodide worker + PyCell](phase-2-interactivity/03-pyodide-cells.md) | `COURSE-P2-03` | ✅ | _tbd_ | local |
 
 **Exit criteria**
-- [ ] A widget renders from `<Explorable id="…" />` in MDX; an unknown id fails the build
-- [ ] Widget math functions unit-tested with no DOM
-- [ ] A NumPy snippet runs in-browser and prints output; `while True:` is killed by the timeout without freezing the tab
-- [ ] Pyodide loads only after the first Run click, only on `hasCode` lessons
-- [ ] `pnpm test` + `pnpm build` green
+- [x] A widget renders from `<Explorable id="…" />` in MDX; an unknown id fails the build
+- [x] Widget math functions unit-tested with no DOM
+- [x] A NumPy snippet runs in-browser and prints output; `while True:` is killed by the timeout without freezing the tab
+- [x] Pyodide loads only after the first Run click, only on `hasCode` lessons
+- [x] `pnpm test` + `pnpm build` green
 
 ## Phase 3 — Assessment
 
@@ -321,4 +321,88 @@ bundle). Deviations from the task doc:
   browser here). Automated coverage is the pure maths, the committed-data guard, the hook snapshot,
   content-lint id validation, and the full build; the manual pass is left for review (mirrors P2-01,
   which verified live separately).
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P2-03** — Closed. Pyodide runs in a Web Worker behind `<PyCell>`: `src/lib/courses/pyodide/`
+(`protocol` · `worker` · `client` · `spawn`) plus `src/features/courses/code/`
+(`PyCell` · `PyCellClient` · `CodeOutput` · pure `editing` + `output`). CSP gained
+`https://cdn.jsdelivr.net` on `script-src`/`connect-src`/`worker-src` in **both** arrays.
+`pnpm test:unit` (619 pass), `pnpm lint` (0 errors), `npx tsc --noEmit` (0 errors),
+`pnpm lint:content`, `pnpm build`, `pnpm check:bundle` all green.
+
+**Verified live** in a production build (`pnpm build && pnpm start`) with the fixture temporarily
+published and driven by a throwaway, uncommitted Playwright script — **14/15 checks passed**, the one
+"failure" being a local-only `/_vercel/insights/script.js` MIME error, not a CSP violation (a strict
+re-check for "Content Security Policy" during a real run found **zero**). Confirmed: no jsDelivr
+request before the first Run click; numpy imports and prints (5–6 s cold start); cell 2 sees cell 1's
+state; `plot()` renders through `Plot2D`; a `ValueError` shows the full traceback; `print()` in a loop
+streams incrementally (2.09 s between first and last line); `while True: pass` is killed at 10.1 s
+**with the tab responsive throughout**; the next run restarts the worker and succeeds; Enter-indent and
+bracket auto-close work in a real browser; Reiniciar restores the original code. Deviations:
+
+- **`src/lib/courses/mdx.ts` touched (not in Files-affected) — and this was a latent trap for the whole
+  course, not just this task.** next-mdx-remote v6 defaults `blockJS: true`, which injects a remark
+  plugin that **silently strips every JSX expression attribute**: `<PyCell packages={["numpy"]}
+  code={`…`} />` compiled to `jsx(PyCell, {})` with no build-time warning, so the component received
+  no props at all. `blockJS: false` is now set with a comment explaining the threat model (lessons are
+  first-party files compiled at build time, reviewed in the same PR as the code they call);
+  `blockDangerousJS` stays at its default `true`. Without this, **any** author-supplied component prop
+  fails the same way.
+- **Pyodide pinned to `v0.29.3`** (Python 3.13.2, numpy 2.2.5), user-confirmed during planning. Pyodide
+  has since moved to a CPython-aligned scheme whose current release (`v314.0.3`, Python 3.14 /
+  numpy 2.4.3) was four days old at the time; the mature line was chosen deliberately. The pin is one
+  constant in `protocol.ts`, which also documents the self-hosting escape hatch.
+- **`setStdout({ write })`, not `{ batched }`.** Pyodide's `batched` handler delivers fragments with
+  the newlines stripped, so `print("suma:", x)` — one line, several writes — was indistinguishable
+  from two lines and rendered broken. `write` gives the raw bytes; `appendChunk` reassembles lines
+  across chunk boundaries (a chunk with no trailing newline leaves the line OPEN). Both the fragment
+  case and the interleaved-stderr case are unit-tested.
+- **Python's stdout is reopened UNBUFFERED in the preamble** (found in review, after the first pass).
+  Python line-buffers `sys.stdout`, so a snippet that never writes a newline —
+  `for num in range(10): print(num, end=" ")`, an entirely ordinary teaching example — produced
+  **absolutely nothing**: the text sat in Python's buffer until an interpreter exit that never comes.
+  Neither Pyodide's `isatty` option nor `reconfigure(write_through=True)` fixes it (both verified
+  against a local Pyodide); the buffering is in the binary layer underneath. Reopening both streams
+  over their own fds with an unbuffered `FileIO` does, and upgrades streaming from per-line to
+  per-write. The worker additionally calls `_pycell_flush()` before posting each result, in case
+  student code swapped `sys.stdout` for something buffered. Re-verified live: `end=" "` loops,
+  no-trailing-newline prints, accented Spanish output, numpy, and partial output preserved
+  alongside a traceback all render correctly, with no regression to the other 14 checks.
+- **Two files beyond the task's list, both deliberate:** `protocol.ts` (pure shared contract, so worker
+  and client never import each other's graph — the `widget-ids.ts` precedent) and `spawn.ts` (the only
+  module containing `new Worker(new URL(…, import.meta.url))`, isolated so `client.ts` — the part with
+  the timeout/terminate logic worth testing — stays loadable in Jest's `node` project, which has no
+  jsdom and no `Worker`).
+- **`PyCell` is an async Server Component + a client child**, per the task's "Shiki render when not
+  focused". It highlights with `codeToHtml` at BUILD time (lazily imported, mirroring how `mdx.ts`
+  lazily imports `compileMDX`, because shiki is ESM-only and a top-level import made the whole MDX
+  component map unloadable in Jest). The highlighted `<pre>` shows when blurred **and** unedited;
+  the textarea otherwise — a display swap, not an overlay. Known limitation: edited code is not
+  re-highlighted, since that would mean shipping Shiki to the client.
+- **`scripts/check-bundle.ts` split into two marker lists.** `pyodide` is now forbidden in **every**
+  route's first-load JS including the lesson route (its only legal home is the lazy chunk behind the
+  Run click); katex/shiki/widgets keep the old lesson-route exemption. Proven to fail: a temporary
+  static `import` of `spawn.ts` in `PyCellClient` exits 1 naming the lesson route; reverted.
+- **New `src/lib/courses/validate-pycells.ts` + `lint-content.ts` wiring (not in Files-affected).**
+  Makes the task's first load gate real: `<PyCell>` present ⇔ `hasCode: true`, both directions.
+  `hasCode` existed since P1-02 with nothing enforcing it. Verified failing: flipping the fixture's
+  flag exits 1 naming the file.
+- **`CodeOutput` loads `Plot2D` via `next/dynamic` (`ssr:false`)**, matching `widgets/registry.ts`:
+  d3-scale/d3-shape stay out of the cell's chunk until a cell actually calls `plot()`.
+- **No Playwright spec committed** (user-confirmed during planning). No published `hasCode` lesson
+  exists — `generateStaticParams` is published-only and the only content is the draft fixture — so the
+  spec would be permanently skipped. **Deferred to P5**, when the first real code lesson lands.
+- **Fixture restored to `draft: true`.** It was sitting at `draft: false` on arrival, contradicting its
+  own file-top comment ("Keep `draft: true` PERMANENTLY") — apparently left published by P2-02's
+  verification pass. Since this task adds two runnable Python cells to it, leaving it public was not
+  acceptable; it is now draft again, per its documented intent. **Flag for review** in case that was
+  intentional.
+- **Pre-existing bug surfaced while the fixture was temporarily published:** the catalog throws
+  `MISSING_MESSAGE: courses.catalog.{hours,lessons,blocks,cta} (es)`. Those keys live under
+  `courses.catalog.card.*` in both message files, and `CourseCard` (P1-03) reads them one level too
+  high. It is invisible today only because no course has a published lesson — **it will fire the moment
+  P5 publishes real content.** Untouched here (out of scope); worth a P5-00 or P1-03 follow-up.
+- **Not verified: real iOS Safari / Chrome Android.** Pyodide's memory footprint is the likeliest place
+  this breaks and needs a physical device; the headless Chromium pass above is not a substitute.
+  Left for the user's manual pass (mirrors P2-01/P2-02).
 - Not yet committed to a branch/PR (**local**).

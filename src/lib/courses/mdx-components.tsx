@@ -1,15 +1,19 @@
 /*
  * COURSE-P1-01 — MDX → React component map for course lessons.
  * COURSE-P2-01 — + `Explorable`, the entry point for interactive widgets.
+ * COURSE-P2-03 — + `PyCell`, the entry point for runnable Python.
  *
- * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Three groups:
+ * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Four groups:
  *   1. Element overrides that keep wide content (code, tables, images) from
  *      breaking the page body's horizontal scroll — each scrolls in its OWN box.
  *   2. Four custom block components authors use in MDX.
  *   3. `Explorable` — a Client Component that lazy-loads an interactive widget
- *      (see src/features/courses/widgets). It is the only client component here;
- *      referencing it from this server map SSRs its frame and hydrates the widget
- *      on the lesson route only (bundle guard keeps it off shared surfaces).
+ *      (see src/features/courses/widgets). Referencing it from this server map
+ *      SSRs its frame and hydrates the widget on the lesson route only (bundle
+ *      guard keeps it off shared surfaces).
+ *   4. `PyCell` — an async Server Component that Shiki-highlights the author's
+ *      Python at build time and hands it to a small client editor. Pyodide itself
+ *      loads only on the first Run click; see src/features/courses/code/.
  *
  * Everything else is a Server Component — `<Details>` uses the native
  * <details>/<summary> element — so lessons ship no client JS for any of it.
@@ -22,6 +26,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 
 import { Explorable } from "@/features/courses/widgets/Explorable";
+import { PyCell } from "@/features/courses/code/PyCell";
 
 type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
 
@@ -232,4 +237,5 @@ export const mdxComponents: MDXComponents = {
   Details,
   ColabLink,
   Explorable,
+  PyCell,
 };

@@ -89,6 +89,18 @@ export async function renderLesson(source: string): Promise<RenderedLesson> {
     components: mdxComponents,
     options: {
       parseFrontmatter: true,
+      // COURSE-P2-03: next-mdx-remote v6 defaults `blockJS` to TRUE, which injects a
+      // remark plugin that strips every JSX EXPRESSION ATTRIBUTE from the source —
+      // silently. `<PyCell packages={["numpy"]} code={`…`} />` compiles to
+      // `jsx(PyCell, {})` and the component receives no props at all, with no warning
+      // at build time. That default exists for MDX arriving from a CMS or a user; our
+      // lessons are first-party files in this repo, compiled at BUILD time, reviewed
+      // in the same PR as the code they call. Blocking JS buys nothing here and costs
+      // every author-supplied prop, on every component, forever.
+      //
+      // `blockDangerousJS` stays at its default (true), so the library still strips
+      // dangerous call expressions. Do not set that one to false.
+      blockJS: false,
       mdxOptions: { remarkPlugins, rehypePlugins },
     },
   });

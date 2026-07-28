@@ -31,10 +31,19 @@ const STATS = path.join(process.cwd(), ".next", "diagnostics", "route-bundle-sta
 // Substrings that must never appear in a non-lesson first-load chunk. KaTeX, Shiki and
 // Pyodide all emit their own name as runtime strings (class names, error text, loader
 // URLs), so an accidental client import surfaces the marker even after minification.
-const FORBIDDEN = ["katex", "shiki", "pyodide", "courses/widgets"];
+const FORBIDDEN_OFF_LESSON = ["katex", "shiki", "pyodide", "courses/widgets"];
 
-// The single route allowed to carry the forbidden modules — matched by its dynamic
-// lesson segment so a course-slug rename can't accidentally widen the exemption.
+// COURSE-P2-03: Pyodide is stricter than the rest. It is ~15 MB fetched from a CDN and
+// must load ONLY after a student clicks Run — so it is forbidden in EVERY route's
+// first-load JS, the lesson route included. Its only legal home is the lazy chunk
+// behind the `await import()` in PyCellClient.handleRun. If this ever fires on the
+// lesson route without an actual regression, check whether the bundler kept the
+// literal module path (".../courses/pyodide/spawn") in the parent chunk's import map;
+// if that is the sole cause, narrow this marker to "cdn.jsdelivr.net/pyodide".
+const FORBIDDEN_EVERYWHERE = ["pyodide"];
+
+// The single route allowed to carry the off-lesson forbidden modules — matched by its
+// dynamic lesson segment so a course-slug rename can't accidentally widen the exemption.
 const LESSON_ROUTE_MARKER = "[lessonSlug]";
 
 interface RouteStat {
@@ -69,12 +78,15 @@ function readChunk(chunk: string): string {
 }
 
 for (const { route, firstLoadChunkPaths } of stats) {
-  if (route.includes(LESSON_ROUTE_MARKER)) continue; // the one allowed route
+  // The lesson route may carry KaTeX/Shiki/widgets, but never Pyodide.
+  const markers = route.includes(LESSON_ROUTE_MARKER)
+    ? FORBIDDEN_EVERYWHERE
+    : FORBIDDEN_OFF_LESSON;
 
   for (const chunk of firstLoadChunkPaths ?? []) {
     const text = readChunk(chunk);
     if (!text) continue;
-    for (const marker of FORBIDDEN) {
+    for (const marker of markers) {
       if (text.includes(marker)) {
         violations.push(`  "${marker}" in ${chunk}  (route ${route})`);
       }
@@ -84,10 +96,13 @@ for (const { route, firstLoadChunkPaths } of stats) {
 
 if (violations.length > 0) {
   fail(
-    "forbidden heavy modules leaked off the lesson route:\n" +
+    "forbidden heavy modules leaked into first-load JS:\n" +
       [...new Set(violations)].join("\n") +
-      "\n\nKaTeX/Shiki/Pyodide/widgets must load ONLY on /cursos/[courseSlug]/[lessonSlug].",
+      "\n\nKaTeX/Shiki/widgets must load ONLY on /cursos/[courseSlug]/[lessonSlug]," +
+      "\nand Pyodide only in its lazy chunk, behind the first Run click.",
   );
 }
 
-console.log("✓ bundle guard: no KaTeX/Shiki/Pyodide/widgets outside the lesson route");
+console.log(
+  "✓ bundle guard: no KaTeX/Shiki/widgets outside the lesson route, no Pyodide in any first-load JS",
+);

@@ -6,7 +6,7 @@ order: 0
 minutes: 1
 summary: "Fixture de regresión del pipeline de renderizado — nunca se publica."
 draft: false
-hasCode: false
+hasCode: true
 hasQuiz: false
 quiz: []
 ---
@@ -117,3 +117,32 @@ Abrir en Colab
 <Explorable id="backprop-trace" caption="La regla de la cadena, término a término." />
 
 <Explorable id="loss-landscape" caption="Dos cuencas; el inicio decide el mínimo." />
+
+{/* COURSE-P2-03 — Dos celdas ejecutables, deliberadamente. Comparten un mismo
+    intérprete, así que la segunda usa lo que definió la primera: es la comprobación
+    de que el worker es único por página y de que el estado sobrevive entre celdas.
+    Este fichero es un fixture en borrador, así que nunca se publica. */}
+
+## Celdas ejecutables
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+def softmax(z):
+    z = z - np.max(z)          # estabilidad numérica
+    exp = np.exp(z)
+    return exp / exp.sum()
+
+logits = np.array([2.0, 1.0, 0.1])
+print(softmax(logits))
+`} />
+
+La segunda celda no vuelve a importar nada: `softmax` y `logits` siguen vivos.
+
+<PyCell packages={["numpy"]} code={`
+p = softmax(logits)
+print("suma:", p.sum())
+
+xs = np.linspace(-6, 6, 120)
+plot(xs, 1 / (1 + np.exp(-xs)), "sigmoide")
+`} />
