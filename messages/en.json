@@ -735,6 +735,22 @@
       "readingTime": "{minutes} min read",
       "openNav": "Open course contents",
       "closeNav": "Close course contents"
+    },
+    "quiz": {
+      "submit": "Check",
+      "retry": "Try again",
+      "showHint": "Show hint",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "explanationLabel": "Explanation",
+      "multiNotice": "Select every correct option. This is graded all-or-nothing: there is no partial credit.",
+      "true": "True",
+      "false": "False",
+      "numericPlaceholder": "Your answer",
+      "toleranceNote": "A margin of ±{tolerance} is accepted.",
+      "predictPrompt": "What does this code print?",
+      "outputPlaceholder": "Type the exact output",
+      "attempt": "{count, plural, =1 {# attempt} other {# attempts}}"
     }
   },
   "meta": {

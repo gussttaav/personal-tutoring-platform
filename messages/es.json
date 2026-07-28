@@ -735,6 +735,22 @@
       "readingTime": "{minutes} min de lectura",
       "openNav": "Abrir el contenido del curso",
       "closeNav": "Cerrar el contenido del curso"
+    },
+    "quiz": {
+      "submit": "Comprobar",
+      "retry": "Intentar de nuevo",
+      "showHint": "Ver pista",
+      "correct": "Correcto",
+      "incorrect": "Incorrecto",
+      "explanationLabel": "Explicación",
+      "multiNotice": "Marca todas las opciones correctas. Se corrige todo o nada: no hay puntuación parcial.",
+      "true": "Verdadero",
+      "false": "Falso",
+      "numericPlaceholder": "Tu respuesta",
+      "toleranceNote": "Se acepta un margen de ±{tolerance}.",
+      "predictPrompt": "¿Qué imprime este código?",
+      "outputPlaceholder": "Escribe la salida exacta",
+      "attempt": "{count, plural, =1 {# intento} other {# intentos}}"
     }
   },
   "meta": {

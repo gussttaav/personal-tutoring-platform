@@ -31,8 +31,9 @@ import rehypeSlug from "rehype-slug";
 import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 
+import type { QuizQuestion } from "@/domain/types";
 import { SHIKI_THEME } from "@/constants/shiki-theme";
-import { mdxComponents } from "./mdx-components";
+import { lessonMdxComponents } from "./mdx-components";
 
 /** unified `PluggableList`, reached through next-mdx-remote's options type. */
 type PluginList = NonNullable<
@@ -80,13 +81,20 @@ export interface RenderedLesson {
  * pipeline above and the custom component map. Runs at build time on static
  * routes. `compileMDX` is imported lazily so this file stays importable in unit
  * tests without pulling the ESM-only compiler.
+ *
+ * COURSE-P3-01: `quiz` is the lesson's already-validated frontmatter questions (the
+ * caller has them from the registry). They are passed in rather than re-parsed here
+ * so `<Quiz id="…" />` can resolve its id — see `lessonMdxComponents`.
  */
-export async function renderLesson(source: string): Promise<RenderedLesson> {
+export async function renderLesson(
+  source: string,
+  quiz: QuizQuestion[] = [],
+): Promise<RenderedLesson> {
   const { compileMDX } = await import("next-mdx-remote/rsc");
 
   return compileMDX<LessonFrontmatter>({
     source,
-    components: mdxComponents,
+    components: lessonMdxComponents(quiz),
     options: {
       parseFrontmatter: true,
       // COURSE-P2-03: next-mdx-remote v6 defaults `blockJS` to TRUE, which injects a

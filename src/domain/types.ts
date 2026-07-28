@@ -320,13 +320,108 @@ export interface Lesson {
   draft:   boolean;
   hasCode: boolean;
   hasQuiz: boolean;
-  // Quiz definitions live in frontmatter; validated only as "is an array" here,
-  // tightened to a real question schema in P3-01.
-  quiz:    unknown[];
+  // Quiz definitions live in frontmatter, validated by QuizQuestionSchema (P3-01).
+  quiz:    QuizQuestion[];
 }
 
 /** A minimal lesson pointer used for prev/next navigation. */
 export interface LessonRef {
   slug:  string;
   title: string;
+}
+
+// ─── Course quizzes ───────────────────────────────────────────────────────────
+// COURSE-P3-01: self-assessment questions authored in lesson frontmatter and
+// placed in the prose with `<Quiz id="…" />`. Graded CLIENT-side by the pure
+// `gradeQuestion` (src/lib/courses/quiz/grade.ts) for instant feedback — a
+// deliberate choice for a free course, not an oversight: see the note in
+// docs/courses/phase-3-assessment/01-quiz-engine.md before "fixing" it.
+//
+// `prompt`, `options[].text`, `explanation` and `hint` may contain LaTeX; they
+// are rendered through the same build-time KaTeX path as the prose.
+
+export type QuizQuestionType = "single" | "multi" | "boolean" | "numeric" | "predict-output";
+
+/** One selectable option. `id` is what the author writes in `answer`, and it is
+ *  stable: options are never shuffled, so an explanation may say "la opción B". */
+export interface QuizOption {
+  id:   string;
+  text: string;
+}
+
+/** Fields every question carries. `explanation` is MANDATORY and shown whether the
+ *  answer was right or wrong — in a rigorous course the explanation is the
+ *  teaching, the score is not. */
+interface QuizQuestionBase {
+  id:          string;
+  prompt:      string;
+  explanation: string;
+  hint?:       string;
+}
+
+/** Exactly one correct option. */
+export interface SingleQuizQuestion extends QuizQuestionBase {
+  type:    "single";
+  options: QuizOption[];
+  answer:  string;
+}
+
+/** Several correct options, graded ALL-OR-NOTHING — there is no partial credit,
+ *  and the UI says so before submission. */
+export interface MultiQuizQuestion extends QuizQuestionBase {
+  type:    "multi";
+  options: QuizOption[];
+  answer:  string[];
+}
+
+/** True/false. A 50% guess is worthless without the explanation, which is why the
+ *  base type requires one. */
+export interface BooleanQuizQuestion extends QuizQuestionBase {
+  type:   "boolean";
+  answer: boolean;
+}
+
+/** A computed number, compared within `tolerance` — never with `===`. Authors write
+ *  `0.3`; a student who computes `0.1 + 0.2` must still be marked correct. */
+export interface NumericQuizQuestion extends QuizQuestionBase {
+  type:      "numeric";
+  answer:    number;
+  tolerance: number;
+  unit?:     string;
+}
+
+/** Show code, ask what it prints. `answer` is the expected stdout, compared after
+ *  whitespace normalisation (see gradeQuestion) but case-sensitively. */
+export interface PredictOutputQuizQuestion extends QuizQuestionBase {
+  type:      "predict-output";
+  code:      string;
+  answer:    string;
+  language?: string;
+}
+
+export type QuizQuestion =
+  | SingleQuizQuestion
+  | MultiQuizQuestion
+  | BooleanQuizQuestion
+  | NumericQuizQuestion
+  | PredictOutputQuizQuestion;
+
+/** What the student submitted, shaped by question type: an option id (`single`),
+ *  option ids (`multi`), a boolean, a number, or typed stdout (`predict-output`).
+ *  `null` is "nothing answered" and always grades incorrect. */
+export type QuizAnswer = string | string[] | boolean | number | null;
+
+/** The graded outcome of ONE attempt. Fired at the `onAnswered` callback on every
+ *  submission; P4-02 persists it to `quiz_attempts` (append-only, one row per
+ *  attempt), which is why `attempt` and `hintUsed` travel with it. */
+export interface QuizResult {
+  quizId:   string;
+  type:     QuizQuestionType;
+  correct:  boolean;
+  /** The submitted answer, normalised (multi is sorted + deduped). */
+  answer:   QuizAnswer;
+  /** Whether the optional hint had been revealed when this answer was submitted. */
+  hintUsed: boolean;
+  /** 1-based: retries are allowed and each one fires its own result. */
+  attempt:  number;
 }

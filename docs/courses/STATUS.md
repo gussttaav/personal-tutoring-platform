@@ -44,7 +44,7 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Quiz schema + grading](phase-3-assessment/01-quiz-engine.md) | `COURSE-P3-01` | ⬜ | _tbd_ | |
+| [01 Quiz schema + grading](phase-3-assessment/01-quiz-engine.md) | `COURSE-P3-01` | ✅ | _tbd_ | local |
 | [02 Code challenges](phase-3-assessment/02-code-challenges.md) | `COURSE-P3-02` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -405,4 +405,63 @@ bracket auto-close work in a real browser; Reiniciar restores the original code.
 - **Not verified: real iOS Safari / Chrome Android.** Pyodide's memory footprint is the likeliest place
   this breaks and needs a physical device; the headless Chromium pass above is not a substitute.
   Left for the user's manual pass (mirrors P2-01/P2-02).
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P3-01** — Closed. Quiz schema, components and grading.
+
+- **Schemas are PascalCase.** The task doc writes `quizQuestionSchema` / `lessonFrontmatterSchema`;
+  every schema in `src/lib/schemas.ts` is `PascalCase` + `Schema`, so they landed as
+  `QuizQuestionSchema` / `QuizOptionSchema`. Cross-field rules (`answer` ∈ `options`, unique option
+  ids) live in a `.superRefine` on the **union**, not on its members — `z.discriminatedUnion` wants
+  plain objects. Duplicate question ids are caught by a second `.superRefine` on the array.
+- **Quiz strings are rendered through `compileMDX`, one call per string, at build time**
+  (`src/lib/courses/quiz/render.tsx`). Prompts/options/explanations live in YAML, so `rehype-katex`
+  never sees them, and there was no string→KaTeX path in the repo. Reusing `mdx.ts`'s exported
+  `remarkPlugins`/`rehypePlugins` was the only way to get *literally* the same KaTeX output with **no
+  new dependencies** — `unified`/`remark-parse`/`rehype-stringify` are non-hoisted pnpm transitives.
+  Bonuses: GFM markdown in quiz text, and Shiki on the `predict-output` snippet, both free. Verified
+  in the built HTML: 87 KaTeX nodes and a fully colour-tokenised Python block, zero client KaTeX/Shiki
+  (bundle guard green). The inline variant overrides `p` to a Fragment — `<p>` inside `<label>` is
+  invalid and breaks click-to-select.
+- **`renderLesson(source, quiz = [])` gained a second argument, and `mdx-components.tsx` gained
+  `lessonMdxComponents(quiz)` rather than a static `Quiz` entry.** `<Quiz id="…" />` carries only an
+  id while the question lives in frontmatter; a Server Component has no context to bridge that, so the
+  questions are closed over per compiled lesson. The lesson page already had them from the registry.
+- **`onAnswered` arrives via `QuizAttemptContext`, not a prop** (addition to the task doc). `Quiz` is
+  rendered from the *server* MDX map, so a function prop cannot cross the boundary — a context with a
+  no-op default is the only shape that lets P4-02 wire persistence **without reopening `QuizCard`**,
+  which is what the doc asks for. P4-02 wraps the reader in one provider.
+- **Component tested as a pure reducer, not by rendering** (user-confirmed during planning). The repo
+  has no jsdom and no RTL, consistent with the P2-02 note above, so the state machine lives in
+  `src/features/courses/quiz/state.ts` and `__tests__/state.test.ts` asserts what a render test would:
+  result shape, retry clearing the input but not the attempt count, hint use sticky across retries, a
+  fresh result object per attempt. **The card's markup itself has no automated test.**
+- **`predict-output` takes free-text stdout**, not multiple choice (user-confirmed). Reading a loop and
+  predicting its output is the skill; a list is guessable. Graded after normalising CRLF and trailing
+  whitespace, but case-sensitively.
+- **New `src/lib/courses/validate-quizzes.ts` + a fourth `lint-content.ts` call.** Beyond the doc's
+  "every `<Quiz id>` resolves", it also rejects the same question placed twice (P4-02 keys attempts by
+  quiz id) and `hasQuiz` disagreeing with the body in **both** directions — same reasoning as
+  `validate-pycells.ts`, since `hasQuiz` had nothing enforcing it either. Proven failing: a typo'd id
+  and a duplicated `<Quiz>` each exit 1 naming the file; reverted.
+- **`WidgetButton` reused from `widgets/primitives/`** rather than duplicated, following
+  `PyCellClient`'s precedent. Legal because quiz components only ever render on the lesson route, which
+  is the one route exempt from the `courses/widgets` bundle marker.
+- **One existing test replaced, not repaired:** `schemas.test.ts`'s "accepts a non-empty quiz array
+  without inspecting its contents (P3-01 tightens it)" was written to be retired by this task.
+- **One example of each of the five types added PERMANENTLY to `00-pipeline-fixture.mdx`**, matching
+  what P2-02 did for the eight explorables and P2-03 for the two `<PyCell>`s: the fixture is where the
+  render check and `pnpm lint:content` cover every feature. Includes heavy LaTeX in prompts, options
+  and explanations, a deliberately over-wide option to exercise horizontal scroll, and two hints.
+  Verified on both `pnpm build` output and a running dev server: 114 KaTeX nodes, 5 radios, 4
+  checkboxes, the number input, the textarea and the Shiki-highlighted snippet.
+- **Not verified: a real 360px device pass and a keyboard-only pass.** The rendered markup is native
+  radios/checkboxes/inputs in labels with `role="group"` + `aria-labelledby`, so both should hold, but
+  neither was exercised in a browser. Left for the user's manual pass (mirrors P2-01/P2-02/P2-03).
+- **The fixture stays at `draft: false` by explicit decision** (user-confirmed, 2026-07-28), superseding
+  the P2-03 note above. Phases 3–4 are still adding features that need to be looked at in a browser, and
+  no real content is published yet, so the fixture stays reachable at `/cursos/dl-nlp/pipeline-fixture`
+  until P5 begins. Revisit at P5-00.
+- `pnpm test:unit` (701 tests, 66 suites), `pnpm lint`, `pnpm lint:content`, `pnpm build` and
+  `pnpm check:bundle` all green.
 - Not yet committed to a branch/PR (**local**).

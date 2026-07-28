@@ -14,6 +14,10 @@
  *   4. `PyCell` — an async Server Component that Shiki-highlights the author's
  *      Python at build time and hands it to a small client editor. Pyodide itself
  *      loads only on the first Run click; see src/features/courses/code/.
+ *   5. `Quiz` — a self-assessment question. Unlike everything above it needs data
+ *      from OUTSIDE the prose (the lesson's frontmatter), so it is NOT in the static
+ *      map: use `lessonMdxComponents(quiz)` at the bottom of this file, which binds
+ *      it to the questions of the lesson being compiled.
  *
  * Everything else is a Server Component — `<Details>` uses the native
  * <details>/<summary> element — so lessons ship no client JS for any of it.
@@ -25,8 +29,10 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 // under pnpm that TS can't resolve from here.
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 
+import type { QuizQuestion } from "@/domain/types";
 import { Explorable } from "@/features/courses/widgets/Explorable";
 import { PyCell } from "@/features/courses/code/PyCell";
+import { Quiz } from "@/features/courses/quiz/Quiz";
 
 type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
 
@@ -239,3 +245,18 @@ export const mdxComponents: MDXComponents = {
   Explorable,
   PyCell,
 };
+
+/*
+ * COURSE-P3-01 — the per-lesson map.
+ *
+ * `<Quiz id="…" />` carries only an id; the question itself lives in the lesson's
+ * frontmatter. A React Server Component has no context to reach it through and the
+ * map above is a module-level constant, so the questions are closed over HERE, once
+ * per compiled lesson, by `renderLesson` (./mdx.ts).
+ */
+export function lessonMdxComponents(quiz: QuizQuestion[]): MDXComponents {
+  return {
+    ...mdxComponents,
+    Quiz: ({ id }: { id: string }) => <Quiz id={id} questions={quiz} />,
+  };
+}

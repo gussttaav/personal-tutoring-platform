@@ -89,7 +89,9 @@ export default async function LessonPage({
   const source = getLessonSource(courseSlug, lessonSlug, locale);
   if (!source) notFound();
 
-  const { content } = await renderLesson(source);
+  // COURSE-P3-01: the frontmatter quiz questions are handed to the compiler so
+  // `<Quiz id="…" />` in the prose can resolve against them.
+  const { content } = await renderLesson(source, lesson.quiz);
   const headings = extractHeadings(source);
   const { prev, next } = lessonNeighbours(courseSlug, lessonSlug, locale);
 

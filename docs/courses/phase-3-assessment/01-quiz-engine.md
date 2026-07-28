@@ -1,6 +1,6 @@
 # P3-01 — Quiz schema, components and grading
 
-**Tag:** `COURSE-P3-01` · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-P3-01` · **Effort:** M · **Owner:** _tbd_ · **Status:** ✅
 
 ## TL;DR
 

@@ -205,6 +205,103 @@ export const CourseManifestSchema = z.strictObject({
 
 export type CourseManifestInput = z.infer<typeof CourseManifestSchema>;
 
+// COURSE-P3-01: quiz questions, authored in that same lesson frontmatter. The five
+// types are a discriminated union on `type`, so an unknown type — or a `numeric`
+// question missing its `tolerance` — is a build failure rather than a question that
+// silently never grades correct. `explanation` is required on EVERY member: a
+// question with no explanation teaches nothing, and this is where that is enforced.
+//
+// Cross-field rules (`answer` must name a real option, option ids unique) live in a
+// `.superRefine` on the UNION rather than on the members, because
+// `z.discriminatedUnion` needs plain objects as its members.
+
+const QuizOptionSchema = z.strictObject({
+  id:   z.string().min(1),
+  text: z.string().min(1),
+});
+
+// Spread into each member below; `hint` is optional everywhere.
+const quizQuestionBase = {
+  id:          z.string().min(1),
+  prompt:      z.string().min(1),
+  explanation: z.string().min(1),
+  hint:        z.string().min(1).optional(),
+};
+
+const SingleQuizQuestionSchema = z.strictObject({
+  ...quizQuestionBase,
+  type:    z.literal("single"),
+  options: z.array(QuizOptionSchema).min(2),
+  answer:  z.string().min(1),
+});
+
+const MultiQuizQuestionSchema = z.strictObject({
+  ...quizQuestionBase,
+  type:    z.literal("multi"),
+  options: z.array(QuizOptionSchema).min(2),
+  answer:  z.array(z.string().min(1)).min(1),
+});
+
+const BooleanQuizQuestionSchema = z.strictObject({
+  ...quizQuestionBase,
+  type:   z.literal("boolean"),
+  answer: z.boolean(),
+});
+
+const NumericQuizQuestionSchema = z.strictObject({
+  ...quizQuestionBase,
+  type:      z.literal("numeric"),
+  answer:    z.number(),
+  // Zero is allowed (an exact integer answer) but must be written explicitly, so
+  // the author has decided rather than inherited a default.
+  tolerance: z.number().nonnegative(),
+  unit:      z.string().min(1).optional(),
+});
+
+const PredictOutputQuizQuestionSchema = z.strictObject({
+  ...quizQuestionBase,
+  type:     z.literal("predict-output"),
+  code:     z.string().min(1),
+  answer:   z.string().min(1),
+  language: z.string().min(1).optional(),
+});
+
+export const QuizQuestionSchema = z
+  .discriminatedUnion("type", [
+    SingleQuizQuestionSchema,
+    MultiQuizQuestionSchema,
+    BooleanQuizQuestionSchema,
+    NumericQuizQuestionSchema,
+    PredictOutputQuizQuestionSchema,
+  ])
+  .superRefine((q, ctx) => {
+    if (q.type !== "single" && q.type !== "multi") return;
+
+    const ids = q.options.map((o) => o.id);
+    if (new Set(ids).size !== ids.length) {
+      ctx.addIssue({
+        code:    z.ZodIssueCode.custom,
+        message: `duplicate option id in question "${q.id}"`,
+        path:    ["options"],
+      });
+    }
+
+    // An `answer` naming an option that does not exist is the single most likely
+    // authoring typo, and it produces a question nobody can ever get right.
+    const answers = q.type === "single" ? [q.answer] : q.answer;
+    for (const a of answers) {
+      if (!ids.includes(a)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `answer "${a}" is not among the options of question "${q.id}"`,
+          path:    ["answer"],
+        });
+      }
+    }
+  });
+
+export type QuizQuestionInput = z.infer<typeof QuizQuestionSchema>;
+
 export const LessonFrontmatterSchema = z.strictObject({
   slug:    z.string().min(1),
   title:   z.string().min(1),
@@ -215,9 +312,21 @@ export const LessonFrontmatterSchema = z.strictObject({
   draft:   z.boolean(),
   hasCode: z.boolean(),
   hasQuiz: z.boolean(),
-  // Quiz questions are only checked as "is an array" here; P3-01 tightens this to
-  // a real discriminated-union question schema.
-  quiz:    z.array(z.unknown()),
+  // COURSE-P3-01: ids must be unique WITHIN a lesson — `<Quiz id="…" />` resolves
+  // against this list, so a duplicate makes the reference ambiguous.
+  quiz:    z.array(QuizQuestionSchema).superRefine((questions, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, q] of questions.entries()) {
+      if (seen.has(q.id)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate quiz question id "${q.id}"`,
+          path:    [i, "id"],
+        });
+      }
+      seen.add(q.id);
+    }
+  }),
 });
 
 export type LessonFrontmatterInput = z.infer<typeof LessonFrontmatterSchema>;

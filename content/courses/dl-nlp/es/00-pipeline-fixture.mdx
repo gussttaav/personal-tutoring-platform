@@ -7,8 +7,48 @@ minutes: 1
 summary: "Fixture de regresión del pipeline de renderizado — nunca se publica."
 draft: false
 hasCode: true
-hasQuiz: false
-quiz: []
+hasQuiz: true
+quiz:
+  - id: q-sigmoide-derivada
+    type: single
+    prompt: '¿Cuál es la derivada de $\sigma(x) = \dfrac{1}{1 + e^{-x}}$?'
+    options:
+      - { id: a, text: '$\sigma(x)\,\bigl(1 - \sigma(x)\bigr)$' }
+      - { id: b, text: '$-\sigma(x)^{2}$' }
+      - { id: c, text: '$\displaystyle\frac{\partial}{\partial x}\left[\sum_{i=1}^{n} w_i x_i + b\right] = w_i \quad \text{para todo } i \in \{1, \dots, n\}$' }
+    answer: a
+    explanation: 'Escribiendo $\sigma = (1 + e^{-x})^{-1}$ y aplicando la regla de la cadena: $\dfrac{d\sigma}{dx} = \sigma\,(1-\sigma)$.'
+    hint: 'La opción C es deliberadamente larguísima — está ahí para comprobar el scroll horizontal a 360px.'
+  - id: q-saturacion
+    type: multi
+    prompt: '¿Qué activaciones **saturan** cuando $|x|$ es grande?'
+    options:
+      - { id: a, text: 'sigmoide' }
+      - { id: b, text: 'tanh' }
+      - { id: c, text: 'ReLU' }
+      - { id: d, text: 'Leaky ReLU' }
+    answer: [a, b]
+    explanation: 'Sigmoide y tanh aplastan su salida en $[0,1]$ y $[-1,1]$, así que su derivada tiende a $0$ en los extremos — de ahí el gradiente que se desvanece. ReLU y Leaky ReLU no saturan para $x > 0$.'
+  - id: q-relu-lineal
+    type: boolean
+    prompt: 'ReLU es una función lineal.'
+    answer: false
+    explanation: 'Es lineal *a trozos*, que no es lo mismo. Si fuera lineal, apilar capas no añadiría capacidad ninguna: la composición de funciones lineales vuelve a ser lineal.'
+  - id: q-sigmoide-cero
+    type: numeric
+    prompt: 'Calcula $\sigma(0)$, con $\sigma(x) = \dfrac{1}{1 + e^{-x}}$.'
+    answer: 0.5
+    tolerance: 0.001
+    explanation: '$\sigma(0) = \dfrac{1}{1 + e^{0}} = \dfrac{1}{1 + 1} = 0.5$.'
+    hint: 'Recuerda que $e^{0} = 1$.'
+  - id: q-broadcasting
+    type: predict-output
+    prompt: 'Broadcasting de NumPy:'
+    code: |
+      import numpy as np
+      print(np.arange(3) + 1)
+    answer: '[1 2 3]'
+    explanation: 'El escalar `1` se difunde (*broadcast*) sobre todo el array, sumándose a cada elemento de `[0 1 2]`.'
 ---
 
 {/* COURSE-P1-01 — Rendering regression fixture. Keep `draft: true` PERMANENTLY:
@@ -146,3 +186,32 @@ print("suma:", p.sum())
 xs = np.linspace(-6, 6, 120)
 plot(xs, 1 / (1 + np.exp(-xs)), "sigmoide")
 `} />
+
+{/* COURSE-P3-01 — Un ejemplo de cada uno de los cinco tipos de pregunta, para que el
+    render check y `pnpm lint:content` (validate-quizzes) los cubran todos. Nótese que
+    la opción C de la primera pregunta es deliberadamente larguísima: comprueba que una
+    expresión ancha hace scroll DENTRO de su propia caja en lugar de ensanchar la
+    lección. Las dos preguntas con `hint` cubren la revelación de pistas. */}
+
+## Quizzes
+
+Opción única, con LaTeX en el enunciado, en las opciones y en la explicación:
+
+<Quiz id="q-sigmoide-derivada" />
+
+Opción múltiple — se corrige todo o nada, y el aviso aparece antes de responder:
+
+<Quiz id="q-saturacion" />
+
+Verdadero/falso:
+
+<Quiz id="q-relu-lineal" />
+
+Numérica, con tolerancia:
+
+<Quiz id="q-sigmoide-cero" />
+
+Predicción de salida — el código se resalta con Shiki en tiempo de compilación y **no**
+es ejecutable (para eso está `<PyCell>`):
+
+<Quiz id="q-broadcasting" />

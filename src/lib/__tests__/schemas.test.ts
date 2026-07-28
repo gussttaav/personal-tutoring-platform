@@ -7,6 +7,7 @@
 import {
   CourseManifestSchema,
   LessonFrontmatterSchema,
+  QuizQuestionSchema,
 } from "@/lib/schemas";
 
 // ─── CourseManifestSchema ─────────────────────────────────────────────────────
@@ -82,12 +83,146 @@ describe("LessonFrontmatterSchema", () => {
     expect(() => LessonFrontmatterSchema.parse({ ...valid, minutes: 12.5 })).toThrow();
   });
 
-  it("accepts a non-empty quiz array without inspecting its contents (P3-01 tightens it)", () => {
-    const parsed = LessonFrontmatterSchema.parse({ ...valid, quiz: [{ anything: true }] });
-    expect(parsed.quiz).toHaveLength(1);
-  });
-
   it("rejects a non-array quiz", () => {
     expect(() => LessonFrontmatterSchema.parse({ ...valid, quiz: "no" })).toThrow();
+  });
+
+  // COURSE-P3-01: the quiz array is no longer `unknown[]`.
+  it("rejects a quiz entry that is not a real question", () => {
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, quiz: [{ anything: true }] })).toThrow();
+  });
+
+  it("rejects two questions sharing an id — `<Quiz id>` would be ambiguous", () => {
+    const q = {
+      id: "q1",
+      type: "boolean",
+      prompt: "¿Es lineal?",
+      explanation: "No.",
+      answer: false,
+    };
+    // Zod serialises its issues as JSON, so the id appears escaped in the message.
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, quiz: [q, { ...q }] })).toThrow(
+      /duplicate quiz question id/,
+    );
+  });
+
+  it("accepts distinct well-formed questions", () => {
+    const parsed = LessonFrontmatterSchema.parse({
+      ...valid,
+      hasQuiz: true,
+      quiz: [
+        { id: "q1", type: "boolean", prompt: "p", explanation: "e", answer: true },
+        { id: "q2", type: "numeric", prompt: "p", explanation: "e", answer: 0.3, tolerance: 0.001 },
+      ],
+    });
+    expect(parsed.quiz).toHaveLength(2);
+  });
+});
+
+// ─── QuizQuestionSchema ───────────────────────────────────────────────────────
+//
+// COURSE-P3-01. Two failure modes matter most, because both produce a question that
+// LOOKS fine and can never be answered correctly: an `answer` naming an option that
+// does not exist, and a missing `explanation` (which leaves nothing to learn from).
+
+describe("QuizQuestionSchema", () => {
+  const single = {
+    id: "q-vanishing",
+    type: "single",
+    prompt: "¿Por qué se desvanece el gradiente?",
+    explanation: "Producto de derivadas menores que 1.",
+    options: [
+      { id: "a", text: "..." },
+      { id: "b", text: "..." },
+    ],
+    answer: "b",
+  };
+
+  it("accepts a well-formed single-choice question", () => {
+    expect(QuizQuestionSchema.parse(single)).toEqual(single);
+  });
+
+  it("accepts an optional hint", () => {
+    expect(QuizQuestionSchema.parse({ ...single, hint: "Piensa en el producto..." })).toMatchObject({
+      hint: "Piensa en el producto...",
+    });
+  });
+
+  it("rejects an answer that is not among the options", () => {
+    expect(() => QuizQuestionSchema.parse({ ...single, answer: "z" })).toThrow(
+      /not among the options/,
+    );
+  });
+
+  it("rejects duplicate option ids", () => {
+    expect(() =>
+      QuizQuestionSchema.parse({
+        ...single,
+        options: [
+          { id: "a", text: "..." },
+          { id: "a", text: "..." },
+        ],
+      }),
+    ).toThrow(/duplicate option id/);
+  });
+
+  it("rejects a missing explanation — every question must teach", () => {
+    const { explanation: _drop, ...rest } = single;
+    expect(() => QuizQuestionSchema.parse(rest)).toThrow();
+  });
+
+  it("rejects an empty explanation", () => {
+    expect(() => QuizQuestionSchema.parse({ ...single, explanation: "" })).toThrow();
+  });
+
+  it("rejects an unknown question type", () => {
+    expect(() => QuizQuestionSchema.parse({ ...single, type: "essay" })).toThrow();
+  });
+
+  it("rejects an unknown key (strict)", () => {
+    expect(() => QuizQuestionSchema.parse({ ...single, points: 5 })).toThrow();
+  });
+
+  it("rejects a single-option question", () => {
+    expect(() =>
+      QuizQuestionSchema.parse({ ...single, options: [{ id: "b", text: "..." }] }),
+    ).toThrow();
+  });
+
+  it("checks every id of a multi answer against the options", () => {
+    const multi = { ...single, type: "multi", answer: ["a", "b"] };
+    expect(QuizQuestionSchema.parse(multi)).toEqual(multi);
+    expect(() => QuizQuestionSchema.parse({ ...multi, answer: ["a", "z"] })).toThrow(
+      /not among the options/,
+    );
+  });
+
+  it("requires an explicit tolerance on a numeric question", () => {
+    const numeric = { id: "n", type: "numeric", prompt: "p", explanation: "e", answer: 0.3 };
+    expect(() => QuizQuestionSchema.parse(numeric)).toThrow();
+    expect(QuizQuestionSchema.parse({ ...numeric, tolerance: 0.001 })).toMatchObject({
+      tolerance: 0.001,
+    });
+  });
+
+  it("rejects a negative tolerance", () => {
+    expect(() =>
+      QuizQuestionSchema.parse({
+        id: "n",
+        type: "numeric",
+        prompt: "p",
+        explanation: "e",
+        answer: 0.3,
+        tolerance: -0.1,
+      }),
+    ).toThrow();
+  });
+
+  it("requires code on a predict-output question", () => {
+    const predict = { id: "p", type: "predict-output", prompt: "p", explanation: "e", answer: "[1 2 3]" };
+    expect(() => QuizQuestionSchema.parse(predict)).toThrow();
+    expect(QuizQuestionSchema.parse({ ...predict, code: "print(1)" })).toMatchObject({
+      code: "print(1)",
+    });
   });
 });
