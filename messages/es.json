@@ -219,6 +219,19 @@
       "fallback": "Sesión",
       "legendSession": "Sesión individual",
       "legendPack": "Pack / Inicial"
+    },
+    "courses": {
+      "title": "Mis cursos",
+      "lessonsDone": "{done} de {total} lecciones",
+      "percent": "{percent}%",
+      "continueCta": "Continuar",
+      "startCta": "Empezar",
+      "completedBadge": "Completado",
+      "completedNote": "Has terminado el curso. ¿Lo llevamos a la práctica?",
+      "bookSessionCta": "Reservar sesión 1:1",
+      "emptyTitle": "Aprende a tu ritmo",
+      "emptyBody": "Cursos interactivos con código que se ejecuta en el navegador y ejercicios que se corrigen solos.",
+      "emptyCta": "Ver cursos"
     }
   },
   "booking": {

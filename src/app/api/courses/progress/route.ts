@@ -3,6 +3,12 @@
  *
  *   POST /api/courses/progress   { courseSlug, lessonSlug, action: "seen"|"completed" }
  *   GET  /api/courses/progress?courseSlug=…  → CourseProgressDetail
+ *   GET  /api/courses/progress[?locale=…]    → { enrollments: EnrolledCourseView[] }  (P4-03)
+ *
+ * COURSE-P4-03 adds the second GET shape: without `courseSlug` the endpoint answers with
+ * every enrolment, which is what the "Mis cursos" panel in /area-personal reads. Titles are
+ * merged in from the registry here (see lib/courses/enrollment-view.ts) — they live in git,
+ * not Postgres, so the client stays on one round trip without denormalising them into the DB.
  *
  * Thin dispatchers over CourseService (CLAUDE.md): parse → service → map errors.
  *
@@ -27,10 +33,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { isValidOrigin } from "@/lib/csrf";
-import { CourseProgressQuerySchema, CourseProgressUpdateSchema } from "@/lib/schemas";
+import {
+  CourseEnrollmentsQuerySchema,
+  CourseProgressQuerySchema,
+  CourseProgressUpdateSchema,
+} from "@/lib/schemas";
 import { courseService } from "@/services";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
 import { courseProgressRatelimit } from "@/lib/ratelimit";
+import { registryCourseMeta, toEnrolledCourseViews } from "@/lib/courses/enrollment-view";
+import { routing } from "@/i18n/routing";
 
 /** Progress is a convenience, not a resource: no session means nothing to report. */
 const noContent = () => new NextResponse(null, { status: 204 });
@@ -70,6 +82,24 @@ export async function GET(req: NextRequest) {
 
   const { success } = await courseProgressRatelimit.limit(email);
   if (!success) return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
+
+  // No `courseSlug` → the P4-03 list shape. An unknown locale is not an error here:
+  // it only picks the content tree the titles are read from.
+  if (!req.nextUrl.searchParams.get("courseSlug")) {
+    const query  = CourseEnrollmentsQuerySchema.safeParse({
+      locale: req.nextUrl.searchParams.get("locale") ?? undefined,
+    });
+    const locale = (query.success ? query.data.locale : undefined) ?? routing.defaultLocale;
+
+    try {
+      const summaries = await courseService.listEnrollments(email);
+      return NextResponse.json({
+        enrollments: toEnrolledCourseViews(summaries, registryCourseMeta(locale)),
+      });
+    } catch (err) {
+      return mapDomainErrorToResponse(err, { email, locale });
+    }
+  }
 
   const parsed = CourseProgressQuerySchema.safeParse({
     courseSlug: req.nextUrl.searchParams.get("courseSlug") ?? undefined,

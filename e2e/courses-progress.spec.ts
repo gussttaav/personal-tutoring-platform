@@ -30,6 +30,8 @@ import { dict }              from "./helpers/dict";
 const d = dict.es;
 const LESSON_URL = "/cursos/dl-nlp/pipeline-fixture";
 const LESSON_SLUG = "pipeline-fixture";
+/** From content/courses/dl-nlp/course.es.yml — the title the P4-03 panel renders. */
+const COURSE_TITLE = "Deep Learning para NLP: del Perceptrón al Transformer";
 
 test.describe("Course lesson progress [es]", () => {
   test.beforeEach(async () => {
@@ -77,5 +79,31 @@ test.describe("Course lesson progress [es]", () => {
     await expect(
       page.locator(`[data-lesson-slug="${LESSON_SLUG}"][data-lesson-done="true"]`).first(),
     ).toBeAttached({ timeout: 30_000 });
+  });
+
+  // COURSE-P4-03 — the same enrolment, seen from the other half of the site.
+  test("the personal area lists the enrolled course with a resume link", async ({ page }) => {
+    await loginAs(page, E2E_USER.email, E2E_USER.name);
+
+    // Opening the lesson is what enrols (there is no enrol button); waiting for the
+    // progress UI proves the `seen` write has been accepted before we navigate away.
+    await page.goto(LESSON_URL);
+    await expect(
+      page.getByRole("button", { name: d.courses.progress.markComplete }),
+    ).toBeVisible({ timeout: 30_000 });
+
+    await page.goto("/area-personal");
+
+    await expect(page.getByText(d.areaPersonal.courses.title, { exact: true })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText(COURSE_TITLE, { exact: true })).toBeVisible();
+
+    // Nothing completed yet, so the card offers "empezar" — and it points at a lesson.
+    const resume = page.getByRole("link", {
+      name: new RegExp(d.areaPersonal.courses.startCta, "i"),
+    });
+    await expect(resume).toBeVisible();
+    await expect(resume).toHaveAttribute("href", new RegExp(`/cursos/dl-nlp/`));
   });
 });

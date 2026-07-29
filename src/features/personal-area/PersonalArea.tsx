@@ -18,6 +18,7 @@ import PersonalAreaCalendar from "./PersonalAreaCalendar";
 import PackStatusCard from "./PackStatusCard";
 import NextSessionCard from "./NextSessionCard";
 import BookSessionsPanel from "./BookSessionsPanel";
+import MyCoursesPanel from "./MyCoursesPanel";
 import { useRouter } from "next/navigation";
 
 // ─── Loading skeleton ─────────────────────────────────────────────────────────
@@ -405,6 +406,11 @@ export default function PersonalArea() {
           )}
           <BookSessionsPanel hasActivePack={hasActivePack} packSession={packSession} />
         </div>
+      </div>
+
+      {/* ── COURSE-P4-03 — enrolled courses, below the session cards ── */}
+      <div style={{ marginTop: isMobile ? 24 : 32 }}>
+        <MyCoursesPanel />
       </div>
     </div>
   );

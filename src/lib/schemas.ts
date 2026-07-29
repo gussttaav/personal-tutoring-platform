@@ -410,6 +410,16 @@ export const CourseProgressQuerySchema = z.object({
 
 export type CourseProgressQuery = z.infer<typeof CourseProgressQuerySchema>;
 
+/** COURSE-P4-03 — the same GET without `courseSlug`: every enrolment, for the
+ *  personal-area panel. `locale` only selects which content tree supplies the
+ *  titles, so an absent or unknown value falls back to the default locale
+ *  rather than failing the request. */
+export const CourseEnrollmentsQuerySchema = z.object({
+  locale: z.enum(["es", "en"]).optional(),
+});
+
+export type CourseEnrollmentsQuery = z.infer<typeof CourseEnrollmentsQuerySchema>;
+
 export const CourseAttemptSchema = z.object({
   courseSlug: z.string().min(1).max(100),
   lessonSlug: z.string().min(1).max(100),

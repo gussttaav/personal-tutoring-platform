@@ -59,15 +59,28 @@ Update this file when starting, completing, or blocking a task.
 |------|-----|--------|-------|----|
 | [01 Schema + repository + service](phase-4-persistence/01-schema-and-service.md) | `COURSE-P4-01` | ✅ | _tbd_ | local |
 | [02 Progress API + reader wiring](phase-4-persistence/02-progress-api.md) | `COURSE-P4-02` | ✅ | _tbd_ | local |
-| [03 "Mis cursos" panel](phase-4-persistence/03-mis-cursos-panel.md) | `COURSE-P4-03` | ⬜ | _tbd_ | |
+| [03 "Mis cursos" panel](phase-4-persistence/03-mis-cursos-panel.md) | `COURSE-P4-03` | ✅ | _tbd_ | local |
 
 **Exit criteria**
 - [x] Migration `0016` applied; deny-anon RLS present on all three tables per the `0007` pattern
 - [x] `CourseService` tested against in-memory fakes; zero infrastructure imports
 - [x] Completing a lesson survives a refresh and a different device — refresh proven by E2E against the real DB; cross-device follows from the same server-side read (not separately exercised)
 - [x] Signed-out reading still works (progress silently not tracked)
-- [ ] `/area-personal` shows enrolled courses with % complete and a resume link
-- [ ] `pnpm test` + `pnpm build` green
+- [x] `/area-personal` shows enrolled courses with % complete and a resume link
+- [x] `pnpm test` + `pnpm build` green
+
+**P4-03 notes**
+- `GET /api/courses/progress` without `courseSlug` now returns `{ enrollments: EnrolledCourseView[] }`
+  instead of 400. Titles are merged in from the registry server-side (`src/lib/courses/enrollment-view.ts`);
+  nothing is denormalised into Postgres.
+- Title/lesson lookup falls back to the default locale when the request locale has no content tree
+  (`dl-nlp` has no `en/` today), and the view carries the locale that resolved so the card links an
+  English reader to the Spanish lesson that exists rather than a 404.
+- Panel placement: full-width section **below** the two-column row in `PersonalArea.tsx`.
+- The card's `resumeHref` is exported and unit-tested; there is still no jsdom/RTL in the repo, so the
+  task's "card renders 0 / partial / 100%" case is covered on the pure mapping
+  (`src/lib/courses/__tests__/enrollment-view.test.ts`) rather than by rendering.
+- Manual pass (three viewports, both locales) not yet run — automated checks only.
 
 ## Phase 5 — Content
 

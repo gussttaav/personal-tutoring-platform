@@ -27,15 +27,27 @@ jest.mock("@/lib/csrf", () => ({ isValidOrigin: (...args: unknown[]) => mockIsVa
 const mockGetSession = jest.fn();
 jest.mock("@/lib/session", () => ({ getSession: () => mockGetSession() }));
 
-const mockMarkSeen      = jest.fn();
-const mockMarkCompleted = jest.fn();
-const mockGetDetail     = jest.fn();
+const mockMarkSeen        = jest.fn();
+const mockMarkCompleted   = jest.fn();
+const mockGetDetail       = jest.fn();
+const mockListEnrollments = jest.fn();
 jest.mock("@/services", () => ({
   courseService: {
     markLessonSeen:          (...args: unknown[]) => mockMarkSeen(...args),
     markLessonCompleted:     (...args: unknown[]) => mockMarkCompleted(...args),
     getCourseProgressDetail: (...args: unknown[]) => mockGetDetail(...args),
+    listEnrollments:         (...args: unknown[]) => mockListEnrollments(...args),
   },
+}));
+
+// COURSE-P4-03: the list shape merges titles in from the registry, which reads the
+// filesystem. Mocked here so the route test stays off disk; the merge itself is
+// covered in src/lib/courses/__tests__/enrollment-view.test.ts.
+const mockGetCourse   = jest.fn();
+const mockListLessons = jest.fn();
+jest.mock("@/lib/courses/registry", () => ({
+  getCourse:   (...args: unknown[]) => mockGetCourse(...args),
+  listLessons: (...args: unknown[]) => mockListLessons(...args),
 }));
 
 import { GET, POST } from "@/app/api/courses/progress/route";
@@ -65,6 +77,9 @@ beforeEach(() => {
   mockMarkSeen.mockResolvedValue(undefined);
   mockMarkCompleted.mockResolvedValue(undefined);
   mockGetDetail.mockResolvedValue({ courseSlug: "dl-nlp", totalLessons: 2, completedLessonSlugs: [] });
+  mockListEnrollments.mockResolvedValue([]);
+  mockGetCourse.mockReturnValue({ slug: "dl-nlp", title: "Curso" });
+  mockListLessons.mockReturnValue([{ slug: "l1" }, { slug: "l2" }]);
 });
 
 describe("COURSE-P4-02: POST /api/courses/progress", () => {
@@ -161,12 +176,8 @@ describe("COURSE-P4-02: GET /api/courses/progress", () => {
     expect(mockGetDetail).not.toHaveBeenCalled();
   });
 
-  it("400s when courseSlug is missing", async () => {
-    const res = await GET(getReq(""));
-
-    expect(res.status).toBe(400);
-    expect(mockGetDetail).not.toHaveBeenCalled();
-  });
+  // Was a 400 until P4-03: a GET with no courseSlug is now the enrolment list,
+  // exercised in the describe block below.
 
   it("returns the detail summary for the signed-in reader", async () => {
     const detail = {
@@ -194,5 +205,100 @@ describe("COURSE-P4-02: GET /api/courses/progress", () => {
     const res = await GET(getReq("?courseSlug=dl-nlp"));
 
     expect(res.status).toBe(200);
+  });
+});
+
+describe("COURSE-P4-03: GET /api/courses/progress (enrolment list)", () => {
+  const enrollment = {
+    courseSlug:         "dl-nlp",
+    totalLessons:       2,
+    completedLessons:   1,
+    percentComplete:    50,
+    lastSeenLessonSlug: "l1",
+    enrolledAt:         "2026-07-01T00:00:00.000Z",
+    completedAt:        null,
+  };
+
+  it("returns every enrolment merged with its registry title", async () => {
+    mockListEnrollments.mockResolvedValue([enrollment]);
+
+    const res = await GET(getReq(""));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      enrollments: [
+        {
+          courseSlug:       "dl-nlp",
+          title:            "Curso",
+          totalLessons:     2,
+          completedLessons: 1,
+          percentComplete:  50,
+          resumeLessonSlug: "l1",
+          completedAt:      null,
+          contentLocale:    "es",
+        },
+      ],
+    });
+    expect(mockListEnrollments).toHaveBeenCalledWith(EMAIL);
+    expect(mockGetDetail).not.toHaveBeenCalled();
+  });
+
+  it("reads titles from the requested locale", async () => {
+    mockListEnrollments.mockResolvedValue([enrollment]);
+    mockGetCourse.mockImplementation((_slug: string, locale: string) =>
+      locale === "en" ? { slug: "dl-nlp", title: "Course" } : { slug: "dl-nlp", title: "Curso" },
+    );
+
+    const res = await GET(getReq("?locale=en"));
+
+    expect((await res.json()).enrollments[0]).toMatchObject({
+      title:         "Course",
+      contentLocale: "en",
+    });
+  });
+
+  it("ignores an unknown locale rather than 400ing — it only picks a content tree", async () => {
+    mockListEnrollments.mockResolvedValue([enrollment]);
+
+    const res = await GET(getReq("?locale=klingon"));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).enrollments[0].contentLocale).toBe("es");
+  });
+
+  it("returns an empty list for a reader with no enrolments", async () => {
+    const res = await GET(getReq(""));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ enrollments: [] });
+  });
+
+  it("returns 204 for a signed-out reader without calling the service", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    const res = await GET(getReq(""));
+
+    expect(res.status).toBe(204);
+    expect(mockListEnrollments).not.toHaveBeenCalled();
+  });
+
+  it("429s past the limiter budget, keyed by email", async () => {
+    for (let i = 0; i < LIMIT; i++) await GET(getReq(""));
+    mockListEnrollments.mockClear();
+
+    const res = await GET(getReq(""));
+
+    expect(res.status).toBe(429);
+    expect(mockLimit).toHaveBeenLastCalledWith(EMAIL);
+    expect(mockListEnrollments).not.toHaveBeenCalled();
+  });
+
+  it("maps an infrastructure failure through http-errors instead of throwing", async () => {
+    mockListEnrollments.mockRejectedValue(new Error("supabase down"));
+
+    const res = await GET(getReq(""));
+
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: "INTERNAL_ERROR" });
   });
 });

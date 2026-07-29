@@ -569,3 +569,24 @@ export interface CourseProgressDetail extends CourseProgressSummary {
   /** Completed lessons that are still published, in reading order. */
   completedLessonSlugs: string[];
 }
+
+/** COURSE-P4-03: a `CourseProgressSummary` merged with the registry metadata the
+ *  "Mis cursos" panel needs to render — the title and where "continuar" points.
+ *  Neither lives in Postgres (see the content/state split above), so the merge
+ *  happens server-side in the route and this is what crosses the wire. */
+export interface EnrolledCourseView {
+  courseSlug:       string;
+  title:            string;
+  totalLessons:     number;
+  completedLessons: number;
+  /** 0–100, rounded. */
+  percentComplete:  number;
+  /** `lastSeenLessonSlug`, else the first published lesson, else `null` — which
+   *  means "no published lesson to resume", so link the course landing instead. */
+  resumeLessonSlug: string | null;
+  completedAt:      string | null;
+  /** The locale whose content tree resolved the title. May differ from the
+   *  request locale: a course with no English tree still renders (in Spanish)
+   *  for an English reader rather than disappearing from the panel. */
+  contentLocale:    string;
+}
