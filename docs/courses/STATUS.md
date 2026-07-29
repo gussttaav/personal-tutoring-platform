@@ -57,13 +57,13 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Schema + repository + service](phase-4-persistence/01-schema-and-service.md) | `COURSE-P4-01` | ⬜ | _tbd_ | |
+| [01 Schema + repository + service](phase-4-persistence/01-schema-and-service.md) | `COURSE-P4-01` | ✅ | _tbd_ | local |
 | [02 Progress API + reader wiring](phase-4-persistence/02-progress-api.md) | `COURSE-P4-02` | ⬜ | _tbd_ | |
 | [03 "Mis cursos" panel](phase-4-persistence/03-mis-cursos-panel.md) | `COURSE-P4-03` | ⬜ | _tbd_ | |
 
 **Exit criteria**
 - [ ] Migration `0016` applied; deny-anon RLS present on all three tables per the `0007` pattern
-- [ ] `CourseService` tested against in-memory fakes; zero infrastructure imports
+- [x] `CourseService` tested against in-memory fakes; zero infrastructure imports
 - [ ] Completing a lesson survives a refresh and a different device
 - [ ] Signed-out reading still works (progress silently not tracked)
 - [ ] `/area-personal` shows enrolled courses with % complete and a resume link
@@ -578,4 +578,57 @@ parsing), `src/features/courses/code/{CodeChallenge,CodeChallengeCard}.tsx` +
   self-reference makes TypeScript abandon inference for `ids` (and for its `.map` callback), so
   the `as string[]` cast never applied. The parameter is now explicitly typed; defaults, call
   sites and behaviour are unchanged. **`npx tsc --noEmit` now exits 0 across the whole repo.**
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P4-01** — Closed. Migration `0016_courses.sql` (`enrollments`, `lesson_progress`,
+`quiz_attempts` + deny-anon RLS), `ICourseRepository` / `SupabaseCourseRepository`, a new
+`ICourseCatalog` port with its registry adapter (`src/lib/courses/catalog.ts`), `CourseService`,
+and the `InMemoryCourseRepository` / `FakeCourseCatalog` fixtures. Backend only — no routes, no UI.
+
+- **The registry is INJECTED, not imported** (user-confirmed during planning; new precedent in
+  this repo). `CourseService` takes an `ICourseCatalog` — `courseExists` + `listLessonSlugs` — and
+  `src/services/index.ts` wires the registry-backed adapter. Importing `listLessons` directly
+  would have satisfied the "zero infrastructure imports" criterion by the letter (the registry
+  lives in `src/lib/`), but it does filesystem I/O, so every percentage test would have had to
+  build a temp MDX tree and re-point `__setContentRoot`. With the port, a test sets the
+  denominator with `new FakeCourseCatalog({ 'dl-nlp': ['l1','l2'] })`. It sits in
+  `src/domain/repositories/` next to `IConfigCache.ts`, which set the "port that isn't a
+  repository" precedent.
+- **The catalog is pinned to the canonical locale (`es`), not the request locale.** The task doc's
+  service signatures carry no `locale`, but every registry selector needs one. Since `Lesson.slug`
+  is locale-invariant by design and `content/courses/dl-nlp/` has no `en` tree, resolving against
+  the request locale would report `totalLessons: 0` — and 0% — to every English reader until the
+  translation lands. One canonical denominator; the reasoning is in the file header of
+  `src/lib/courses/catalog.ts`.
+- **`touchLesson` never writes `status`** — this is the guard for the bug the task doc calls the
+  most likely one in the phase. PostgREST builds `ON CONFLICT DO UPDATE SET` from the payload
+  columns only, so omitting `status` from the upsert means an existing `completed` row keeps its
+  status while `last_seen_at` moves, and a fresh row still gets the DB's `DEFAULT 'started'`.
+  `completeLesson` is then a `touchLesson` + a guarded `UPDATE … .is("completed_at", null)`, which
+  is also what makes a second completion a no-op rather than a new timestamp. The in-memory fake
+  mirrors both rules, and a test asserts the seen-after-completed case directly.
+- **Course completion is re-derived, not counted.** `markLessonCompleted` re-reads progress and
+  compares it against the published list rather than incrementing a counter, so it self-corrects
+  when a lesson is published or withdrawn between two completions. Progress rows for lessons that
+  are no longer published are dropped from BOTH sides of the fraction, so a rename can never push
+  a percentage past 100.
+- **One `(user_id, course_slug)` index skipped.** The task doc asks for it on both progress
+  tables; on `lesson_progress` it is a strict prefix of the `UNIQUE (user_id, course_slug,
+  lesson_slug)` index Postgres already builds, so it would cost writes and buy nothing. Created on
+  `quiz_attempts` (which has no unique constraint) and skipped on `lesson_progress`, with the
+  reasoning in a SQL comment.
+- **Migration NOT applied; `types.ts` hand-written** (user-confirmed). The three tables were added
+  to `src/infrastructure/supabase/types.ts` by hand in the generated format so the repo typechecks
+  and builds. **Pending on the user:** `supabase db push`, then
+  `supabase gen types typescript --project-id <ref> > src/infrastructure/supabase/types.ts`, and
+  diff against the hand-written block.
+- **Repository test is a pure mapper test, not `describeDb`.** `next/jest` loads `.env.local`, so
+  a DB-gated integration test would have run against the real project and failed until the
+  migration is pushed. `src/infrastructure/supabase/__tests__/course-mappers.test.ts` covers what
+  actually carries risk — the TIMESTAMPTZ normalisation (`"…:43.13+00:00"` → `"…:43.130Z"`) —
+  with no database, following `booking-history.test.ts`.
+- `pnpm test` (812 tests, 76 suites), `pnpm lint` (0 errors; 7 pre-existing warnings in untouched
+  components) and `pnpm build` all green. The build still logs the pre-existing
+  `MISSING_MESSAGE: courses.catalog.{hours,lessons,blocks,cta}` from the `CourseCard` key bug
+  recorded under P1-03 — untouched here.
 - Not yet committed to a branch/PR (**local**).

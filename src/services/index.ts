@@ -10,6 +10,7 @@ import { SubscriptionService }  from "./SubscriptionService";
 import { UserService }          from "./UserService";
 import { ReviewService }        from "./ReviewService";
 import { MobileAuthService }    from "./MobileAuthService";
+import { CourseService }        from "./CourseService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -21,8 +22,10 @@ import {
   supabaseScheduleRepository,
   supabaseUserRepository,
   supabaseReviewRepository,
+  supabaseCourseRepository,
   supabaseGoogleReviewPromptRepository,
 } from "@/infrastructure/supabase";
+import { registryCourseCatalog } from "@/lib/courses/catalog";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
@@ -73,6 +76,14 @@ export const paymentService = new PaymentService(
 export const chatService = new ChatService(new GeminiClient());
 
 export const subscriptionService = new SubscriptionService(supabaseSubscriptionRepository, userService);
+
+// COURSE-P4-01: the catalog is the published-content half of course progress —
+// the registry read, injected so CourseService stays free of filesystem I/O.
+export const courseService = new CourseService(
+  supabaseCourseRepository,
+  registryCourseCatalog,
+  userService,
+);
 
 export const reviewService = new ReviewService(
   supabaseReviewRepository,

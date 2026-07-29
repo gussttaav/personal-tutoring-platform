@@ -496,3 +496,67 @@ export interface ChallengeResult {
  *  discriminate on `type`, so P4-02 wires ONE handler and hands it to both
  *  `QuizAttemptContext` and `ChallengeAttemptContext`. */
 export type AssessmentResult = QuizResult | ChallengeResult;
+
+// ─── Course progress ──────────────────────────────────────────────────────────
+// COURSE-P4-01: the STATE half of the content/state split. Everything above in
+// the course sections is content read from git at build time; everything here is
+// per-user state read from Postgres at request time. `courseSlug`/`lessonSlug`
+// are plain strings on both sides — there is no `courses` table, so nothing here
+// is a foreign key into content.
+//
+// The join happens in CourseService, not in SQL: the DB supplies the numerator
+// (which lessons this user finished), the registry supplies the denominator (how
+// many published lessons the course has today).
+
+/** A lesson is `started` the first time it is opened and `completed` once the
+ *  reader marks it done. The transition is one-way — see `ICourseRepository`. */
+export type LessonStatus = "started" | "completed";
+
+/** One user's enrolment in one course. Created implicitly on first lesson view
+ *  (there is no enrol button). `completedAt` is set once every published lesson
+ *  is completed, and is never moved afterwards. */
+export interface Enrollment {
+  courseSlug:  string;
+  enrolledAt:  string;
+  completedAt: string | null;
+}
+
+/** One user's state for one lesson. `lastSeenAt` powers "continuar donde lo
+ *  dejaste"; it moves on every view, including views of an already-completed
+ *  lesson (which must NOT regress `status`). */
+export interface LessonProgress {
+  courseSlug:  string;
+  lessonSlug:  string;
+  status:      LessonStatus;
+  completedAt: string | null;
+  lastSeenAt:  string;
+}
+
+/** One graded quiz answer. The table is append-only: every attempt is a row, so
+ *  "which question does everyone get wrong" stays answerable later. */
+export interface QuizAttempt {
+  courseSlug:  string;
+  lessonSlug:  string;
+  quizId:      string;
+  correct:     boolean;
+  /** The submitted answer, shape-dependent per question type. Stored as JSONB. */
+  answer:      unknown;
+  attemptedAt: string;
+}
+
+/** What the UI needs to render a progress bar and a resume link. Computed, never
+ *  stored: `totalLessons` comes from the registry (published lessons only), so
+ *  publishing a new lesson correctly LOWERS everyone's percentage instead of
+ *  leaving a stale denominator behind. */
+export interface CourseProgressSummary {
+  courseSlug:         string;
+  totalLessons:       number;
+  completedLessons:   number;
+  /** 0–100, rounded. `0` when the course has no published lessons yet. */
+  percentComplete:    number;
+  /** Most recently viewed published lesson, or `null` before the first view. */
+  lastSeenLessonSlug: string | null;
+  /** `null` when the user is not enrolled (progress is still reported as zeroes). */
+  enrolledAt:         string | null;
+  completedAt:        string | null;
+}

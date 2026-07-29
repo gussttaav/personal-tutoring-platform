@@ -9,6 +9,7 @@ import { ScheduleService }     from "@/services/ScheduleService";
 import { SessionService }      from "@/services/SessionService";
 import { SubscriptionService } from "@/services/SubscriptionService";
 import { UserService }         from "@/services/UserService";
+import { CourseService }       from "@/services/CourseService";
 import type { ICreditsRepository }      from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository }        from "@/domain/repositories/IAuditRepository";
 import type { IBookingRepository }      from "@/domain/repositories/IBookingRepository";
@@ -16,6 +17,8 @@ import type { ISessionRepository }      from "@/domain/repositories/ISessionRepo
 import type { IPaymentRepository }      from "@/domain/repositories/IPaymentRepository";
 import type { ISubscriptionRepository } from "@/domain/repositories/ISubscriptionRepository";
 import type { IUserRepository }         from "@/domain/repositories/IUserRepository";
+import type { ICourseRepository }       from "@/domain/repositories/ICourseRepository";
+import type { ICourseCatalog }          from "@/domain/repositories/ICourseCatalog";
 import type { ICalendarClient } from "@/infrastructure/google/ICalendarClient";
 import type { IZoomClient }     from "@/infrastructure/zoom/ZoomClient";
 import type { IEmailClient }    from "@/infrastructure/resend/IEmailClient";
@@ -30,6 +33,8 @@ import { InMemoryUserRepository }         from "./InMemoryUserRepository";
 import { InMemoryPricingRepository }      from "./InMemoryPricingRepository";
 import { InMemoryScheduleRepository }     from "./InMemoryScheduleRepository";
 import { InMemoryConfigCache }            from "./InMemoryConfigCache";
+import { InMemoryCourseRepository }       from "./InMemoryCourseRepository";
+import { FakeCourseCatalog }              from "./FakeCourseCatalog";
 import { FakeCalendarClient } from "./FakeCalendarClient";
 import { FakeZoomClient }     from "./FakeZoomClient";
 import { FakeEmailClient }    from "./FakeEmailClient";
@@ -150,6 +155,27 @@ export function buildTestSubscriptionService(
 
   const service = new SubscriptionService(subs, new UserService(userRepo));
   return { service, userRepo };
+}
+
+// ─── CourseService builder ───────────────────────────────────────────────────
+// COURSE-P4-01: `catalog` is the published-content half — pass a plain
+// `{ courseSlug: lessonSlugs }` map to set the progress denominator.
+
+export interface CourseServiceDeps {
+  courses:  ICourseRepository;
+  catalog:  ICourseCatalog;
+  userRepo: IUserRepository;
+}
+
+export function buildTestCourseService(
+  overrides: Partial<CourseServiceDeps> = {},
+): { service: CourseService; courses: InMemoryCourseRepository; userRepo: InMemoryUserRepository } {
+  const courses  = (overrides.courses  as InMemoryCourseRepository) ?? new InMemoryCourseRepository();
+  const userRepo = (overrides.userRepo as InMemoryUserRepository)   ?? new InMemoryUserRepository();
+  const catalog  = overrides.catalog ?? new FakeCourseCatalog({});
+
+  const service = new CourseService(courses, catalog, new UserService(userRepo));
+  return { service, courses, userRepo };
 }
 
 // ─── SessionService builder ───────────────────────────────────────────────────
