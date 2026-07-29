@@ -6,7 +6,9 @@
 
 import {
   CodeChallengeSchema,
+  CourseAttemptSchema,
   CourseManifestSchema,
+  CourseProgressUpdateSchema,
   LessonFrontmatterSchema,
   QuizQuestionSchema,
 } from "@/lib/schemas";
@@ -326,5 +328,62 @@ describe("QuizQuestionSchema", () => {
     expect(QuizQuestionSchema.parse({ ...predict, code: "print(1)" })).toMatchObject({
       code: "print(1)",
     });
+  });
+});
+
+// ─── Course request payloads (COURSE-P4-02) ───────────────────────────────────
+//
+// These are REQUEST schemas, so unlike the content schemas above they use plain
+// `z.object` — an unknown key from an older or newer client is stripped, not fatal.
+
+describe("CourseProgressUpdateSchema", () => {
+  const valid = { courseSlug: "dl-nlp", lessonSlug: "l1", action: "seen" };
+
+  it("accepts both actions", () => {
+    expect(CourseProgressUpdateSchema.safeParse(valid).success).toBe(true);
+    expect(CourseProgressUpdateSchema.safeParse({ ...valid, action: "completed" }).success).toBe(true);
+  });
+
+  it("rejects an unknown action", () => {
+    expect(CourseProgressUpdateSchema.safeParse({ ...valid, action: "skipped" }).success).toBe(false);
+  });
+
+  it("rejects empty slugs", () => {
+    expect(CourseProgressUpdateSchema.safeParse({ ...valid, lessonSlug: "" }).success).toBe(false);
+  });
+
+  it("strips unknown keys rather than failing — a request is not a content file", () => {
+    const parsed = CourseProgressUpdateSchema.safeParse({ ...valid, extra: 1 });
+
+    expect(parsed.success).toBe(true);
+    expect(parsed.success && "extra" in parsed.data).toBe(false);
+  });
+});
+
+describe("CourseAttemptSchema", () => {
+  const valid = { courseSlug: "dl-nlp", lessonSlug: "l1", quizId: "q1", correct: true };
+
+  it("accepts an omitted answer", () => {
+    // `.refine()` wraps the schema in ZodEffects, which makes even an `unknown`
+    // key required — hence the trailing `.optional()`. Without it a client that
+    // omits `answer` gets a 400, which is why this case is pinned.
+    expect(CourseAttemptSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it("accepts null and structured answers", () => {
+    expect(CourseAttemptSchema.safeParse({ ...valid, answer: null }).success).toBe(true);
+    expect(
+      CourseAttemptSchema.safeParse({ ...valid, answer: { kind: "quiz", value: ["a", "b"] } }).success,
+    ).toBe(true);
+  });
+
+  it("rejects an answer too large to be anything but a blob", () => {
+    // The JSONB column records WHAT was answered — it is not storage for a
+    // student's edited code.
+    expect(CourseAttemptSchema.safeParse({ ...valid, answer: "x".repeat(4000) }).success).toBe(false);
+  });
+
+  it("requires `correct` — an attempt with no outcome is not an attempt", () => {
+    expect(CourseAttemptSchema.safeParse({ ...valid, correct: undefined }).success).toBe(false);
   });
 });

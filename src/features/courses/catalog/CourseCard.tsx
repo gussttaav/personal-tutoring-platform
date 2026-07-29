@@ -5,6 +5,11 @@
  * tagline, level, hours, lesson count and block count. Counts are computed by the
  * caller from the PUBLISHED-only registry selectors, so drafts never inflate them.
  * Hover styling is CSS-only (`.course-card` rules live in the catalog page's <style>).
+ *
+ * Namespace fix: the card's four strings live under `courses.catalog.card.*`, but this
+ * resolved them against `courses.catalog`, so every one of them threw MISSING_MESSAGE.
+ * It stayed invisible while no course had a published lesson (the catalog rendered its
+ * empty state and this component never ran) and surfaced as soon as one did.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -24,7 +29,7 @@ export default async function CourseCard({
   blockCount,
   locale,
 }: CourseCardProps) {
-  const t = await getTranslations({ locale, namespace: "courses.catalog" });
+  const t = await getTranslations({ locale, namespace: "courses.catalog.card" });
 
   return (
     <Link

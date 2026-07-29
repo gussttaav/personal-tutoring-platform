@@ -6,13 +6,16 @@
  * is null until P5 publishes a lesson; the primary CTA degrades to a disabled "soon"
  * state rather than linking nowhere.
  *
- * Layout note: the meta row is deliberately its own block so a P4 progress bar can slot
- * in beneath it without a redesign (no persistence exists yet — see P4-02).
+ * Layout note: the meta row is deliberately its own block so a progress bar can slot in
+ * beneath it without a redesign. COURSE-P4-02 fills that slot with `CourseProgressResume`
+ * — a client leaf, because this page is static and readable signed-out, so progress is
+ * fetched after hydration. It renders nothing for a visitor with nothing to resume.
  */
 
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Course } from "@/domain/types";
+import CourseProgressResume from "./CourseProgressResume";
 
 interface CourseHeroProps {
   course: Course;
@@ -85,7 +88,7 @@ export default async function CourseHero({
         </p>
       </div>
 
-      {/* Meta row — a progress bar can slot in directly below this in P4. */}
+      {/* Meta row — the progress bar slots in directly below it. */}
       <div
         style={{
           marginTop: "24px",
@@ -109,6 +112,8 @@ export default async function CourseHero({
           </>
         ) : null}
       </div>
+
+      <CourseProgressResume courseSlug={course.slug} />
 
       <div style={{ marginTop: "28px" }}>
         {firstLessonSlug ? (

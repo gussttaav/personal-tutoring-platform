@@ -788,6 +788,13 @@
       "timeoutLoad": "The interpreter took too long to download. Check your connection and try again.",
       "stopped": "Run stopped. It does not count as an attempt.",
       "crashed": "The interpreter shut down unexpectedly: {error}"
+    },
+    "progress": {
+      "markComplete": "Mark as complete",
+      "completed": "Lesson completed",
+      "prompt": "Finished this lesson? Mark it to keep track of your progress.",
+      "resume": "Resume where you left off",
+      "lessonsDone": "{done} of {total} lessons completed"
     }
   },
   "meta": {

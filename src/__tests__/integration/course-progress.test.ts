@@ -64,4 +64,31 @@ describe("Course progress flow", () => {
 
     expect(await courses.listEnrollments(EMAIL)).toEqual([]);
   });
+
+  // COURSE-P4-02: the round trip the reader actually performs — mark a lesson
+  // complete, then re-read progress the way the sidebar does after a refresh.
+  it("reflects a completed lesson in the next detail read", async () => {
+    const { service: courses } = service();
+
+    const before = await courses.getCourseProgressDetail(EMAIL, COURSE);
+    expect(before.completedLessonSlugs).toEqual([]);
+
+    await courses.markLessonCompleted(EMAIL, COURSE, "tokens");
+
+    const after = await courses.getCourseProgressDetail(EMAIL, COURSE);
+    expect(after.completedLessonSlugs).toEqual(["tokens"]);
+    expect(after.completedLessons).toBe(1);
+    expect(after.percentComplete).toBe(25);
+    expect(after.lastSeenLessonSlug).toBe("tokens");
+  });
+
+  it("does not double-count a lesson completed twice", async () => {
+    const { service: courses } = service();
+
+    await courses.markLessonCompleted(EMAIL, COURSE, "tokens");
+    await courses.markLessonCompleted(EMAIL, COURSE, "tokens");
+
+    const detail = await courses.getCourseProgressDetail(EMAIL, COURSE);
+    expect(detail.completedLessonSlugs).toEqual(["tokens"]);
+  });
 });

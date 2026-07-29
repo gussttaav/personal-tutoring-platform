@@ -58,14 +58,14 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Schema + repository + service](phase-4-persistence/01-schema-and-service.md) | `COURSE-P4-01` | ✅ | _tbd_ | local |
-| [02 Progress API + reader wiring](phase-4-persistence/02-progress-api.md) | `COURSE-P4-02` | ⬜ | _tbd_ | |
+| [02 Progress API + reader wiring](phase-4-persistence/02-progress-api.md) | `COURSE-P4-02` | ✅ | _tbd_ | local |
 | [03 "Mis cursos" panel](phase-4-persistence/03-mis-cursos-panel.md) | `COURSE-P4-03` | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] Migration `0016` applied; deny-anon RLS present on all three tables per the `0007` pattern
+- [x] Migration `0016` applied; deny-anon RLS present on all three tables per the `0007` pattern
 - [x] `CourseService` tested against in-memory fakes; zero infrastructure imports
-- [ ] Completing a lesson survives a refresh and a different device
-- [ ] Signed-out reading still works (progress silently not tracked)
+- [x] Completing a lesson survives a refresh and a different device — refresh proven by E2E against the real DB; cross-device follows from the same server-side read (not separately exercised)
+- [x] Signed-out reading still works (progress silently not tracked)
 - [ ] `/area-personal` shows enrolled courses with % complete and a resume link
 - [ ] `pnpm test` + `pnpm build` green
 
@@ -631,4 +631,137 @@ and the `InMemoryCourseRepository` / `FakeCourseCatalog` fixtures. Backend only 
   components) and `pnpm build` all green. The build still logs the pre-existing
   `MISSING_MESSAGE: courses.catalog.{hours,lessons,blocks,cta}` from the `CourseCard` key bug
   recorded under P1-03 — untouched here.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P4-02** — Closed. Three thin routes (`POST`/`GET /api/courses/progress`,
+`POST /api/courses/attempt`), the `useCourseProgress` hook + its pure state module, and
+the reader/landing wiring that fills every progress slot Phases 1–3 left behind
+(`CourseProgressProvider`, `SidebarProgressBar`, `SidebarLessonList`, `LessonComplete`,
+`MobileProgressIndicator`, `CourseProgressResume`). `courses.progress.*` added key-for-key
+to both message files. Backend additions: `CourseProgressDetail` + `getCourseProgressDetail`.
+
+- **`completedSlugs` could never have been a prop — the whole sidebar design assumed
+  something impossible.** P1-04 built the completion layer behind an optional
+  `ReadonlySet<string>` prop on `LessonSidebar`, an async Server Component on a
+  statically generated page: there is no request, no session and no reader identity at
+  render time, so nothing could ever pass it. The prop is gone. `LessonSidebar` stays a
+  Server Component for what genuinely needs build-time data (translations, block
+  grouping) and delegates the two progress-dependent regions to client leaves reading
+  `CourseProgressProvider`'s context. **User-confirmed during planning** over the
+  alternative (leave the file alone; have a client component paint `[data-lesson-slug]`
+  rows by DOM mutation), which was rejected as imperative and because the row's inline
+  styles would have had to move to CSS to be overridable at all.
+- **Four files touched beyond the task's "Files affected" table**, each unavoidable:
+  `src/domain/types.ts` + `src/services/CourseService.ts` (see below),
+  `LessonLayout.tsx` (the only shared parent of both sidebar instances, the mobile bar
+  and the MDX body — the provider has nowhere else to go, and putting it in `page.tsx`
+  was the one thing the task forbids), and `CourseHero.tsx` (the task's prose and
+  acceptance criteria call for landing-page progress + "continuar donde lo dejaste"
+  even though the file table omits it — **user-confirmed** to include).
+- **`Quiz.tsx` and `CodeChallenge.tsx` were NOT touched**, though the table lists them.
+  P3-01/P3-02 deliberately put `QuizAttemptContext`/`ChallengeAttemptContext` in the
+  `*Card` files with no-op defaults so P4-02 could wire persistence *without* reopening
+  them, and both file headers say so. The provider hands ONE
+  `(r: AssessmentResult) => void` to both, exactly as P3-02 designed.
+- **`onAnswered` must keep a stable identity, and this was nearly a duplicate-write
+  bug.** Both cards fire it from an effect keyed `[state.result, onAnswered]`, so a
+  handler that changed identity when progress finished loading would re-run the effect
+  and record the same attempt twice. The signed-in check therefore reads a ref rather
+  than closing over `tracking`; the callback's deps are `[courseSlug, lessonSlug]` only.
+- **`CourseProgressSummary` is scalar, so the sidebar's read had to be widened.** New
+  `CourseProgressDetail` (summary + `completedLessonSlugs`) and
+  `CourseService.getCourseProgressDetail`. **The first attempt was wrong and a test
+  caught it:** making `getCourseProgress` delegate to the detail method leaked
+  `completedLessonSlugs` into its runtime payload, and P4-01's
+  `getCourseProgress` shape assertion (`toEqual`) failed. Fixed at the source, not in
+  the test — both methods now share a private `readProgress` fetch and each returns
+  exactly its declared shape. One read, two contracts, no extra query.
+- **Signed-out is `204`, not `401`** — the task's central call, and there is no
+  precedent for it anywhere else in `src/app/api/`. It is what keeps an anonymous
+  reader's console clean, and it doubles as the client's signal that progress is
+  untracked (no `useSession()` anywhere in this task). Pinned by tests on all three
+  paths, including "the service was never called".
+- **The limiter is keyed by the authenticated email, after the session check**, not by
+  IP before it — the `paymentChannelRatelimit` precedent, for the same reason (students
+  share school and office NATs). A side benefit: anonymous readers, the majority, never
+  touch Redis at all, which a test also pins. Named `courseProgressRatelimit` per the
+  file's `<domain>Ratelimit` convention (the doc says `courseProgressLimiter`), 120/min,
+  prefix `rl:courses`. Schemas likewise landed PascalCase (`CourseProgressUpdateSchema`,
+  `CourseProgressQuerySchema`, `CourseAttemptSchema`), the same rename P3-01 recorded.
+- **A latent 400 was found and fixed while probing the schema.** `z.unknown().refine(…)`
+  wraps the schema in `ZodEffects`, which makes the key REQUIRED even though `unknown`
+  admits `undefined` — so a client that simply omitted `answer` would have been
+  rejected. The trailing `.optional()` is load-bearing and now has its own test.
+- **`e2e/fixtures/cleanup.ts` touched (not in the table), and this one would have broken
+  every OTHER spec.** The three course tables reference `users(id)` with no
+  `ON DELETE CASCADE`, so one progress row would make `truncateTestDb`'s `users` delete
+  fail — for the whole suite, not just the courses spec. They are cleared before `users`,
+  and marked optional (a missing-relation error is skipped) so the suite still runs in
+  environments where migration `0016` has not been applied.
+- **No jsdom/RTL added** — consistent with P2-01…P3-02. The hook's risk-carrying logic
+  (how an HTTP response becomes UI state; optimistic tick and rollback) lives in the
+  pure `src/hooks/course-progress-state.ts` and is tested there, following the
+  `quiz/state.ts` precedent. **Not covered automatically:** that `seen` fires exactly
+  once per mount — that guard is a `useRef` inside an effect and needs a renderer.
+- **`console.warn`, not `log()`, in client code.** `@/lib/logger` reads AsyncLocalStorage
+  and is server-only; no `"use client"` file in the repo imports it. Same choice as
+  `SessionSettings.tsx`. Failures are otherwise silent by design — no toast, no retry,
+  never blocking the lesson.
+- **Verified staticness**, which is an acceptance criterion rather than a nicety: the
+  build still marks `/[locale]/cursos/[courseSlug]/[lessonSlug]` as `●` (SSG) and emits
+  `/es/cursos/dl-nlp/pipeline-fixture`. Confirmed in the prerendered HTML that no
+  progress markup is present for a signed-out reader — the only occurrence of
+  "Marcar como completada" is inside next-intl's client message payload (pre-existing
+  behaviour: every `courses.*` namespace already ships), not as rendered markup.
+- **Migration `0016` IS applied** — P4-01's note above ("Migration NOT applied") is stale.
+  Verified directly against the project: `enrollments`, `lesson_progress` and
+  `quiz_attempts` all answer PostgREST `200` (empty). What remains owed from P4-01 is
+  only the type regeneration:
+  `supabase gen types typescript --project-id <ref> > src/infrastructure/supabase/types.ts`,
+  diffed against the hand-written block. Persistence itself works today.
+- **E2E run and GREEN — 2/2** (`e2e/courses-progress.spec.ts`, Spanish only, since
+  `generateStaticParams` is published-only and `/en/cursos/...` legitimately 404s until
+  P5). Proven against the real database and a real browser: a signed-out reader gets the
+  full lesson with no progress UI and no 401s; a signed-in reader marks the lesson
+  complete, and after a **reload** the confirmation and the sidebar's
+  `[data-lesson-done="true"]` are both still there — which they can only be if the state
+  came back from Postgres.
+- **The first E2E run failed, and the cause is worth recording because it was NOT a
+  product defect.** The mark-complete assertion timed out at 10s. Diagnosed rather than
+  patched: the API answered `200` with the correct body, the browser received `200` for
+  both the GET and the `seen` POST, the button was in the DOM, and its computed
+  accessible name was exactly `"Marcar como completada"` (the `aria-hidden` icon is
+  correctly excluded) — the exact-string role locator matched with `count: 1`. It was
+  purely **hydration time**: progress is client-fetched after hydration, and this lesson
+  is the heaviest page in the app (MDX + KaTeX + eight widgets + two Pyodide cells), so
+  under the local `pnpm dev` server first paint of the button lands past 10s. The
+  timeouts are now 30s with a comment saying why, so nobody trims them back to what a
+  production build gets away with.
+- **`resetTestState()` truncates the target database, and there is no isolation:**
+  `.env.local` and `.env.e2e.local` point at the **same Supabase project**, despite
+  `playwright.config.ts` saying the override exists "so the dev server uses the test DB,
+  not the live one". Pre-existing (every spec calls it), but worth knowing before running
+  the suite — this run deleted the existing `lastgtorres@gmail.com` user row and 3
+  bookings. **User-authorised** before running.
+- `pnpm test` (858 tests, 79 suites), `pnpm lint` (0 errors; the same 7 pre-existing
+  warnings in untouched components), `npx tsc --noEmit` (0 errors), `pnpm lint:content`,
+  `pnpm build` and `pnpm check:bundle` all green. The build still logs the pre-existing
+  `MISSING_MESSAGE: courses.catalog.{hours,lessons,blocks,cta}` from the `CourseCard`
+  key bug recorded under P1-03 — untouched here.
+- **The P1-03 `CourseCard` key bug was fixed in passing** (user-requested, after this
+  task's own work was complete) — the follow-up predicted under P2-03 above. Its four
+  strings live under `courses.catalog.card.*` but it resolved them against
+  `courses.catalog`, so `hours`/`lessons`/`blocks`/`cta` each threw `MISSING_MESSAGE`.
+  The card uses **no** key outside `card.*`, so the fix is one line — the namespace, not
+  four call sites. It had been invisible only while no course had a published lesson
+  (the catalog rendered its empty state and the component never ran); publishing the
+  fixture made `/cursos` the first page a visitor hits and the first one to break.
+  Verified in the prerendered HTML: `40 h · 1 lección · 1 módulo · Ver curso` in Spanish,
+  `View course` in English, no `courses.catalog.*` literals, and **zero `MISSING_MESSAGE`
+  in the build**. The English catalog still correctly renders its "Coming soon" empty
+  state with no card, since there is no English content.
+- **Not verified: a real 360px device pass and a keyboard-only pass.** The E2E run does
+  now cover signed-out reading in a real browser (no 401s, no progress UI) and the
+  mark-complete round trip, but no phone and no keyboard-only pass. Left for the user's
+  manual pass, mirroring P2-01…P3-02.
 - Not yet committed to a branch/PR (**local**).

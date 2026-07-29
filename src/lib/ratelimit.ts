@@ -150,3 +150,15 @@ export const paymentChannelRatelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(30, "1 m"),
   prefix:  "rl:paychannel",
 });
+
+// COURSE-P4-02: course progress + quiz attempts, keyed by the AUTHENTICATED EMAIL
+// for the same reason as paymentChannelRatelimit above — these are authenticated
+// endpoints, and students on a school or office NAT would otherwise share a budget.
+// The limit is about abuse, not normal use: a lesson view writes once, and a
+// 5-question quiz answered twice is ~10 writes, so 120/min is far above any real
+// reader while still capping a scripted flood.
+export const courseProgressRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(120, "1 m"),
+  prefix:  "rl:courses",
+});

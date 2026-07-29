@@ -384,3 +384,47 @@ export const LessonFrontmatterSchema = z.strictObject({
 });
 
 export type LessonFrontmatterInput = z.infer<typeof LessonFrontmatterSchema>;
+
+// ─── Courses — request payloads ───────────────────────────────────────────────
+// COURSE-P4-02: unlike the build-time content schemas above, these validate HTTP
+// request bodies, so they use plain `z.object` (an unknown key from an older client
+// is stripped, not a hard failure) rather than `z.strictObject`.
+
+/** Cap on the serialised `answer` blob. An attempt records WHAT was answered, never
+ *  the student's edited code — 2 KB is roomy for any answer shape and hostile to
+ *  anyone trying to use the JSONB column as free storage. */
+const MAX_ANSWER_CHARS = 2000;
+
+export const CourseProgressUpdateSchema = z.object({
+  courseSlug: z.string().min(1).max(100),
+  lessonSlug: z.string().min(1).max(100),
+  action:     z.enum(["seen", "completed"]),
+});
+
+export type CourseProgressUpdateInput = z.infer<typeof CourseProgressUpdateSchema>;
+
+/** Models a query string, so it is parsed from `searchParams`, not a JSON body. */
+export const CourseProgressQuerySchema = z.object({
+  courseSlug: z.string().min(1).max(100),
+});
+
+export type CourseProgressQuery = z.infer<typeof CourseProgressQuerySchema>;
+
+export const CourseAttemptSchema = z.object({
+  courseSlug: z.string().min(1).max(100),
+  lessonSlug: z.string().min(1).max(100),
+  /** Quiz question id, or a code challenge id — both are lesson-unique (P3 lints). */
+  quizId:     z.string().min(1).max(100),
+  correct:    z.boolean(),
+  // `.optional()` AFTER `.refine()` is load-bearing: `.refine` wraps the schema in
+  // ZodEffects, which makes the key REQUIRED even though `unknown` admits undefined.
+  // Without it, a client that simply omits `answer` gets a 400.
+  answer:     z
+    .unknown()
+    .refine((value) => JSON.stringify(value ?? null).length <= MAX_ANSWER_CHARS, {
+      message: `answer must serialise to at most ${MAX_ANSWER_CHARS} characters`,
+    })
+    .optional(),
+});
+
+export type CourseAttemptInput = z.infer<typeof CourseAttemptSchema>;

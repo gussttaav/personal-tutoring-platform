@@ -560,3 +560,12 @@ export interface CourseProgressSummary {
   enrolledAt:         string | null;
   completedAt:        string | null;
 }
+
+/** COURSE-P4-02: the summary plus the per-lesson detail the reader needs. The
+ *  sidebar ticks individual lessons, which the scalar counts above cannot express;
+ *  this rides along on the same two queries rather than costing a second read.
+ *  The personal-area panel (P4-03) stays on the scalar `CourseProgressSummary`. */
+export interface CourseProgressDetail extends CourseProgressSummary {
+  /** Completed lessons that are still published, in reading order. */
+  completedLessonSlugs: string[];
+}

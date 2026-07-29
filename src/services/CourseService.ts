@@ -19,7 +19,12 @@
  */
 import type { ICourseRepository } from "@/domain/repositories/ICourseRepository";
 import type { ICourseCatalog } from "@/domain/repositories/ICourseCatalog";
-import type { CourseProgressSummary, Enrollment, LessonProgress } from "@/domain/types";
+import type {
+  CourseProgressDetail,
+  CourseProgressSummary,
+  Enrollment,
+  LessonProgress,
+} from "@/domain/types";
 import { log } from "@/lib/logger";
 import { UserService } from "./UserService";
 
@@ -118,17 +123,49 @@ export class CourseService {
   }
 
   async getCourseProgress(email: string, courseSlug: string): Promise<CourseProgressSummary> {
+    const { publishedSlugs, progress, enrollment } = await this.readProgress(email, courseSlug);
+    return summarise(courseSlug, publishedSlugs, progress, enrollment);
+  }
+
+  /**
+   * COURSE-P4-02: the reader's read — the summary plus the completed slugs the
+   * sidebar needs to tick individual lessons. Shares `readProgress` with
+   * `getCourseProgress` rather than delegating to it, so each method returns
+   * EXACTLY its declared shape and no caller is handed fields it did not ask for.
+   */
+  async getCourseProgressDetail(email: string, courseSlug: string): Promise<CourseProgressDetail> {
+    const { publishedSlugs, progress, enrollment } = await this.readProgress(email, courseSlug);
+
+    // Driven off the published list, so the order is reading order and rows for
+    // unpublished lessons drop out — the same rule `summarise` applies to the counts.
+    const completed = new Set(
+      progress.filter((p) => p.status === "completed").map((p) => p.lessonSlug),
+    );
+
+    return {
+      ...summarise(courseSlug, publishedSlugs, progress, enrollment),
+      completedLessonSlugs: publishedSlugs.filter((slug) => completed.has(slug)),
+    };
+  }
+
+  /** The two reads above share one fetch: the registry half plus, for a known user,
+   *  the enrolment and the progress rows. Never creates a user. */
+  private async readProgress(email: string, courseSlug: string): Promise<{
+    publishedSlugs: string[];
+    progress:       LessonProgress[];
+    enrollment:     Enrollment | null;
+  }> {
     const publishedSlugs = this.catalog.listLessonSlugs(courseSlug);
 
     const user = await this.userService.findByEmail(email);
-    if (!user) return summarise(courseSlug, publishedSlugs, [], null);
+    if (!user) return { publishedSlugs, progress: [], enrollment: null };
 
     const [enrollment, progress] = await Promise.all([
       this.courses.findEnrollment(user.id, courseSlug),
       this.courses.listLessonProgress(user.id, courseSlug),
     ]);
 
-    return summarise(courseSlug, publishedSlugs, progress, enrollment);
+    return { publishedSlugs, progress, enrollment };
   }
 
   async listEnrollments(email: string): Promise<CourseProgressSummary[]> {

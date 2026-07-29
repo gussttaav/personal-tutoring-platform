@@ -788,6 +788,13 @@
       "timeoutLoad": "La descarga del intérprete tardó demasiado. Comprueba tu conexión y vuelve a intentarlo.",
       "stopped": "Comprobación detenida. No cuenta como intento.",
       "crashed": "El intérprete se cerró inesperadamente: {error}"
+    },
+    "progress": {
+      "markComplete": "Marcar como completada",
+      "completed": "Lección completada",
+      "prompt": "¿Terminaste esta lección? Márcala para seguir tu progreso.",
+      "resume": "Continuar donde lo dejaste",
+      "lessonsDone": "{done} de {total} lecciones completadas"
     }
   },
   "meta": {

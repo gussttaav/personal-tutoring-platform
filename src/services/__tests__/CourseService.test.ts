@@ -294,3 +294,74 @@ describe("CourseService.recordQuizAttempt", () => {
     expect(courses.attempts).toHaveLength(0);
   });
 });
+
+// COURSE-P4-02: the reader's read. Same two queries as getCourseProgress, plus the
+// completed slugs the sidebar ticks — so the invariants that matter are that the
+// list agrees with the count, and that it applies the same published-only filter.
+describe("CourseService.getCourseProgressDetail", () => {
+  it("returns no completed slugs before anything is finished", async () => {
+    const { service } = makeService();
+
+    await service.markLessonSeen(EMAIL, COURSE, "l1");
+    const detail = await service.getCourseProgressDetail(EMAIL, COURSE);
+
+    expect(detail.completedLessonSlugs).toEqual([]);
+    expect(detail.completedLessons).toBe(0);
+  });
+
+  it("lists exactly the completed lessons, in reading order", async () => {
+    const { service } = makeService();
+
+    // Completed out of order on purpose — the list must follow the catalog, not
+    // the order the student happened to finish them in.
+    await service.markLessonCompleted(EMAIL, COURSE, "l3");
+    await service.markLessonCompleted(EMAIL, COURSE, "l1");
+
+    const detail = await service.getCourseProgressDetail(EMAIL, COURSE);
+
+    expect(detail.completedLessonSlugs).toEqual(["l1", "l3"]);
+    expect(detail.completedLessons).toBe(detail.completedLessonSlugs.length);
+  });
+
+  it("omits a lesson that has been seen but not completed", async () => {
+    const { service } = makeService();
+
+    await service.markLessonCompleted(EMAIL, COURSE, "l1");
+    await service.markLessonSeen(EMAIL, COURSE, "l2");
+
+    const detail = await service.getCourseProgressDetail(EMAIL, COURSE);
+
+    expect(detail.completedLessonSlugs).toEqual(["l1"]);
+  });
+
+  it("drops progress rows for lessons that are no longer published", async () => {
+    const courses  = new InMemoryCourseRepository();
+    const userRepo = new InMemoryUserRepository();
+    const wide     = new FakeCourseCatalog({ [COURSE]: ["l1", "l2"] });
+    const service  = new CourseService(courses, wide, new UserService(userRepo));
+
+    await service.markLessonCompleted(EMAIL, COURSE, "l1");
+    await service.markLessonCompleted(EMAIL, COURSE, "l2");
+
+    // l2 is withdrawn: it must leave BOTH the list and the counts.
+    const narrowed = new CourseService(
+      courses,
+      new FakeCourseCatalog({ [COURSE]: ["l1"] }),
+      new UserService(userRepo),
+    );
+    const detail = await narrowed.getCourseProgressDetail(EMAIL, COURSE);
+
+    expect(detail.completedLessonSlugs).toEqual(["l1"]);
+    expect(detail.percentComplete).toBe(100);
+  });
+
+  it("returns an empty list for an unknown user without creating one", async () => {
+    const { service, userRepo } = makeService();
+
+    const detail = await service.getCourseProgressDetail("nobody@example.com", COURSE);
+
+    expect(detail.completedLessonSlugs).toEqual([]);
+    expect(detail.enrolledAt).toBeNull();
+    expect(await userRepo.findByEmail("nobody@example.com")).toBeNull();
+  });
+});

@@ -4,8 +4,9 @@
  * COURSE-P1-04 — Sticky mobile top bar + navigation drawer.
  *
  * Shown only below 768px (LessonLayout's CSS hides the wrapper on desktop). The bar
- * carries the drawer toggle, the lesson title, and an EMPTY progress slot that P4-02
- * fills — slot only, no logic here.
+ * carries the drawer toggle, the lesson title, and a progress slot — filled by
+ * COURSE-P4-02 with `MobileProgressIndicator`, which owns all the logic; this file
+ * still holds none.
  *
  * The drawer reuses the ComingSoonModal dismissal pattern — body scroll-lock via
  * `document.body.style.overflow`, close on Escape, close on backdrop click — and ADDS
@@ -17,6 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
+import MobileProgressIndicator from "./MobileProgressIndicator";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -138,8 +140,11 @@ export default function MobileLessonBar({ title, children }: MobileLessonBarProp
           {title}
         </span>
 
-        {/* P4-02 progress indicator lands here. Slot only — no logic. */}
-        <div className="lesson-progress-slot" style={{ flexShrink: 0 }} />
+        {/* COURSE-P4-02: the slot P1-04 reserved, now filled. The indicator renders
+            nothing at all when progress is untracked. */}
+        <div className="lesson-progress-slot" style={{ flexShrink: 0 }}>
+          <MobileProgressIndicator />
+        </div>
       </div>
 
       {open ? (

@@ -12,6 +12,11 @@
  * `drawer` variant inside `MobileLessonBar` — with `display:none` hiding whichever
  * the viewport doesn't use, so exactly one is in the accessibility tree. The lesson
  * title is rendered here as the page `<h1>`; lesson bodies use h2/h3 for sections.
+ *
+ * COURSE-P4-02: this is also where `CourseProgressProvider` mounts. It has to be
+ * here rather than in `page.tsx` — this is the only shared parent of the two sidebar
+ * instances, the mobile bar and the MDX body, and every one of them has a progress
+ * leaf inside it. The page itself stays untouched and therefore stays static.
  */
 
 import type { ReactNode } from "react";
@@ -22,6 +27,8 @@ import LessonSidebar from "./LessonSidebar";
 import OnThisPage from "./OnThisPage";
 import LessonNav from "./LessonNav";
 import MobileLessonBar from "./MobileLessonBar";
+import CourseProgressProvider from "./CourseProgressProvider";
+import LessonComplete from "./LessonComplete";
 
 interface LessonLayoutProps {
   course:      Course;
@@ -54,7 +61,7 @@ export default async function LessonLayout({
   const sidebarProps = { course, lessons, courseSlug, currentSlug, locale };
 
   return (
-    <>
+    <CourseProgressProvider courseSlug={courseSlug} lessonSlug={currentSlug}>
       <MobileLessonBar title={title}>
         <LessonSidebar {...sidebarProps} variant="drawer" />
       </MobileLessonBar>
@@ -87,6 +94,8 @@ export default async function LessonLayout({
 
             {children}
 
+            <LessonComplete lessonSlug={currentSlug} />
+
             <LessonNav courseSlug={courseSlug} prev={prev} next={next} locale={locale} />
           </article>
         </div>
@@ -95,6 +104,6 @@ export default async function LessonLayout({
           <OnThisPage headings={headings} />
         </aside>
       </div>
-    </>
+    </CourseProgressProvider>
   );
 }
