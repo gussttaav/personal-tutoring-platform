@@ -31,6 +31,10 @@ export async function GET(req: NextRequest) {
       name:        result?.name ?? "",
       packSize:    result?.packSize ?? null,
       hasBookings,
+      // Validity date of the soonest-expiring active pack. The repository has always
+      // resolved it; it was simply dropped here before the personal-area pack banner
+      // needed to show "válido hasta el …".
+      expiresAt:   result?.expiresAt ?? null,
     });
   } catch (err) {
     log("error", "Error fetching credits", { service: "credits", email, error: String(err) });

@@ -94,9 +94,16 @@ test.describe("Course lesson progress [es]", () => {
 
     await page.goto("/area-personal");
 
-    await expect(page.getByText(d.areaPersonal.courses.title, { exact: true })).toBeVisible({
-      timeout: 30_000,
+    // The redesign put enrolled courses behind a tab. The tab button carries the
+    // "Mis cursos" label (the pane deliberately does not repeat it as a heading,
+    // or this exact-match locator would resolve to two elements), so waiting on it
+    // still proves the page rendered — but the card itself needs the tab opened.
+    const coursesTab = page.getByRole("tab", {
+      name: new RegExp(d.areaPersonal.main.tabs.courses, "i"),
     });
+    await expect(coursesTab).toBeVisible({ timeout: 30_000 });
+    await coursesTab.click();
+
     await expect(page.getByText(COURSE_TITLE, { exact: true })).toBeVisible();
 
     // Nothing completed yet, so the card offers "empezar" — and it points at a lesson.

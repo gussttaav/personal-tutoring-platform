@@ -27,6 +27,7 @@
   --green-container:       #10b981;  /* Brand anchor */
   --green-dim:             rgba(78, 222, 163, 0.12);
   --green-mid:             rgba(78, 222, 163, 0.25);
+  --green-on:              #003824;  /* on-primary — text/icons on a green fill */
 
   /* Legacy green alias */
   --color-brand:           #4edea3;

@@ -1,4 +1,4 @@
-import { formatDate, formatTime, formatCurrency } from "../formatting";
+import { formatDate, formatTime, formatCurrency, formatRelative } from "../formatting";
 
 // All tests use Europe/Madrid as the implicit timezone (pinned in formatting.ts).
 
@@ -66,6 +66,61 @@ describe("formatTime", () => {
 
   it("accepts a Date object", () => {
     expect(() => formatTime(new Date(), "en")).not.toThrow();
+  });
+});
+
+describe("formatRelative", () => {
+  // "now" is injected so these never depend on the wall clock.
+  const now = new Date("2026-07-29T12:00:00.000Z");
+
+  it("prefers natural wording for the nearest days", () => {
+    // numeric: "auto" is chosen for exactly this — "mañana" reads better than
+    // "en 1 día" in the hero overline, and Spanish even has a word for +2.
+    expect(formatRelative("2026-07-30T12:00:00.000Z", "es", now).toLowerCase()).toContain("mañana");
+    expect(formatRelative("2026-07-31T12:00:00.000Z", "es", now).toLowerCase()).toBe("pasado mañana");
+    expect(formatRelative("2026-07-30T12:00:00.000Z", "en", now).toLowerCase()).toBe("tomorrow");
+  });
+
+  it("counts days once past the natural-wording range", () => {
+    const result = formatRelative("2026-08-05T12:00:00.000Z", "es", now);
+    expect(result).toMatch(/7/);
+    expect(result.toLowerCase()).toContain("día");
+  });
+
+  it("describes a past day behind", () => {
+    const result = formatRelative("2026-07-23T12:00:00.000Z", "es", now);
+    expect(result.toLowerCase()).toContain("hace");
+    expect(result).toMatch(/6/);
+  });
+
+  it("uses hours inside a day", () => {
+    const result = formatRelative("2026-07-29T15:00:00.000Z", "en", now);
+    expect(result.toLowerCase()).toContain("hour");
+    expect(result).toMatch(/3/);
+  });
+
+  it("uses minutes inside an hour", () => {
+    const result = formatRelative("2026-07-29T12:20:00.000Z", "en", now);
+    expect(result.toLowerCase()).toContain("minute");
+    expect(result).toMatch(/20/);
+  });
+
+  it("collapses sub-minute differences to the present", () => {
+    // numeric: "auto" turns a zero offset into "now" / "ahora", not "in 0 minutes".
+    const result = formatRelative("2026-07-29T12:00:20.000Z", "en", now);
+    expect(result.toLowerCase()).not.toMatch(/\d/);
+  });
+
+  it("translates the same offset per locale", () => {
+    const es = formatRelative("2026-08-05T12:00:00.000Z", "es", now);
+    const en = formatRelative("2026-08-05T12:00:00.000Z", "en", now);
+    expect(es).not.toBe(en);
+    expect(es.toLowerCase()).toContain("día");
+    expect(en.toLowerCase()).toContain("day");
+  });
+
+  it("accepts a Date object", () => {
+    expect(() => formatRelative(new Date("2026-08-01T12:00:00.000Z"), "es", now)).not.toThrow();
   });
 });
 

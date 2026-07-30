@@ -230,6 +230,8 @@ export interface CreditsResponse {
   name:        string;
   packSize:    PackSize | null;
   hasBookings: boolean;
+  /** ISO date the soonest-expiring active pack lapses; null when there is no pack. */
+  expiresAt:   string | null;
 }
 
 export interface CheckoutResponse {
@@ -247,6 +249,24 @@ export interface UserSession {
   credits:              number;
   packSize:             PackSize | null;
   creditsConfirmedAt?:  string;
+  /** ISO date the soonest-expiring active pack lapses; null when unknown. */
+  expiresAt?:           string | null;
+}
+
+/**
+ * One upcoming booking as returned by GET /api/my-bookings.
+ *
+ * Lives here rather than in BookingService so client components can import the
+ * type without pulling server code into the bundle.
+ */
+export interface UserBooking {
+  eventId:     string;   // Google Calendar event id; lookup key consumed by the mobile app
+  token:       string;   // cancel token
+  joinToken:   string;
+  sessionType: SessionType;
+  startsAt:    string;   // ISO 8601
+  endsAt:      string;   // ISO 8601
+  packSize?:   number;   // only for sessionType "pack"
 }
 
 // ─── Subscriptions ────────────────────────────────────────────────────────────

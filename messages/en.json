@@ -32,7 +32,14 @@
       "taglinePart1": "Master difficult topics",
       "taglinePart2": "with expert guidance.",
       "subheading": "One-on-one classes. No videos, no prompts, no wasted time.",
-      "skills": ["Java", "Python", "C", "Algorithms", "Deep Learning", "Statistics"],
+      "skills": [
+        "Java",
+        "Python",
+        "C",
+        "Algorithms",
+        "Deep Learning",
+        "Statistics"
+      ],
       "cta": {
         "book": "Book a session now",
         "availability": "Check availability"
@@ -147,30 +154,42 @@
       "welcomeBack": "Welcome back,",
       "loadError": "Could not load your sessions.",
       "retry": "Retry",
-      "emptyTitle": "Ready to get started?",
-      "emptySubtitle": "Book your first session and take the first step toward your goals.",
-      "bookSession": "Book a session",
-      "packTitle": "You have classes available!",
-      "packCTAPrefix": "You have",
-      "packCTAPending": "{count, plural, one {# class pending} other {# classes pending}}",
-      "packCTASuffix": "in your pack. When would you like to practice?",
-      "bookNextClass": "Book my next class"
+      "tabs": {
+        "upcoming": "Upcoming",
+        "history": "History",
+        "courses": "My courses"
+      }
     },
     "bookPanel": {
       "title": "Book a session",
+      "subtitle": "Pick the format that best fits what you need.",
       "usePackCredit": "Use pack credit",
       "packCredits": "{count, plural, one {# class available} other {# classes available}}",
       "singleSessionsLabel": "Individual sessions",
       "packsLabel": "Continuity packs",
       "sessions": {
-        "free15min": { "label": "Initial Meeting",  "sub": "15 min · Introduction", "price": "Free" },
-        "session1h":  { "label": "1-hour session",   "sub": "60 min · Individual"   },
-        "session2h":  { "label": "2-hour session",   "sub": "120 min · Individual"  }
+        "free15min": {
+          "label": "Initial Meeting",
+          "sub": "15 min · Introduction",
+          "price": "Free"
+        },
+        "session1h": {
+          "label": "1-hour session",
+          "sub": "60 min · Individual"
+        },
+        "session2h": {
+          "label": "2-hour session",
+          "sub": "120 min · Individual"
+        }
       },
       "packs": {
         "sub": "Save {amount} · {pct}% off",
-        "pack5":  { "label": "Essential Pack 5h"  },
-        "pack10": { "label": "Intensive Pack 10h" }
+        "pack5": {
+          "label": "Essential Pack 5h"
+        },
+        "pack10": {
+          "label": "Intensive Pack 10h"
+        }
       }
     },
     "nextSession": {
@@ -179,11 +198,10 @@
         "free15min": "Initial meeting · 15 min",
         "session1h": "Individual session · 1h",
         "session2h": "Individual session · 2h",
-        "pack":      "Pack class"
+        "pack": "Pack class"
       },
       "zoomLabel": "Zoom virtual classroom",
       "joinButton": "Enter virtual classroom",
-      "sessionEnded": "Session ended",
       "reschedule": "Reschedule",
       "cancelConfirmTitle": "Cancel this session?",
       "cancelConfirmBody": "This action cannot be undone. If it's a pack class, the credit will be returned automatically.",
@@ -196,32 +214,13 @@
       "active": "Active",
       "usedCredits": "{count, plural, one {# class used} other {# classes used}}",
       "remainingLabel": "Remaining classes",
-      "usedShort": "{count, plural, one {# used} other {# used}}",
       "ctaPrefix": "You have",
       "ctaAvailable": "{count, plural, one {# class available} other {# classes available}}",
       "ctaSuffix": "in your pack. Book your next session!",
-      "bookButton": "Book pack session"
-    },
-    "calendar": {
-      "blockShort2h": "2h",
-      "blockShort15": "15 min",
-      "blockShort1h": "1h",
-      "blockFree": "15 min · Free",
-      "block1h": "1h Individual",
-      "block2h": "2h Individual",
-      "blockPack10": "1h Pack 10h",
-      "blockPack5": "1h Pack 5h",
-      "fullFree": "Initial meeting · 15 min",
-      "fullSession1h": "Individual session · 1 hour",
-      "fullSession2h": "Individual session · 2 hours",
-      "fullPack10": "Pack class (10h)",
-      "fullPack5": "Pack class (5h)",
-      "fallback": "Session",
-      "legendSession": "Individual session",
-      "legendPack": "Pack / Initial"
+      "bookButton": "Book pack session",
+      "validUntil": "valid until {date}"
     },
     "courses": {
-      "title": "My courses",
       "lessonsDone": "{done} of {total} lessons",
       "percent": "{percent}%",
       "continueCta": "Continue",
@@ -232,6 +231,51 @@
       "emptyTitle": "Learn at your own pace",
       "emptyBody": "Interactive courses with code that runs in the browser and exercises that grade themselves.",
       "emptyCta": "Browse courses"
+    },
+    "upcoming": {
+      "join": "Enter classroom",
+      "reschedule": "Reschedule",
+      "chipFree": "Free",
+      "chipPack": "Pack",
+      "zoomShort": "Zoom",
+      "emptyTitle": "Ready to get started?",
+      "emptyBody": "You have no classes booked yet. Book your first session and take the first step toward your goals.",
+      "emptyCta": "Book a session"
+    },
+    "history": {
+      "statCompleted": "Completed",
+      "statAvgRating": "Your average rating",
+      "statHours": "Time with Gustavo",
+      "hoursValue": "{hours} h",
+      "noRatings": "—",
+      "pillReview": "Review",
+      "pillCancelled": "Cancelled",
+      "payCredit": "1 pack credit",
+      "payCreditRefunded": "credit refunded",
+      "payCard": "{amount} · card",
+      "payFree": "Free",
+      "end": "End of history",
+      "emptyTitle": "No history yet",
+      "emptyBody": "Once you complete your first class it will show up here, with your ratings and details.",
+      "loadError": "Could not load your history.",
+      "modal": {
+        "title": "Past class",
+        "badgeCompleted": "Completed",
+        "badgeCancelled": "Cancelled",
+        "rowDate": "Date",
+        "rowTime": "Time",
+        "rowPayment": "Payment",
+        "yourNote": "Your note for Gustavo",
+        "withTutor": "with Gustavo",
+        "reviewNudgeTitle": "You haven't rated this class yet",
+        "reviewNudgeBody": "Your feedback helps Gustavo improve.",
+        "rateLabel": "Your rating",
+        "starLabel": "{count, plural, one {# star} other {# stars}}",
+        "commentPlaceholder": "Anything you'd like to add? (optional)",
+        "submitComment": "Send comment",
+        "thanks": "Thanks for your rating!",
+        "bookSame": "Book another like this"
+      }
     }
   },
   "booking": {
@@ -267,9 +311,18 @@
       "sessionName": "Strategic Session",
       "sessionDuration": "60 minutes",
       "sessions": {
-        "free15min": { "label": "Initial meeting",  "duration": "15 minutes" },
-        "session1h":  { "label": "1-hour session",  "duration": "60 minutes" },
-        "session2h":  { "label": "2-hour session",  "duration": "2 hours"    }
+        "free15min": {
+          "label": "Initial meeting",
+          "duration": "15 minutes"
+        },
+        "session1h": {
+          "label": "1-hour session",
+          "duration": "60 minutes"
+        },
+        "session2h": {
+          "label": "2-hour session",
+          "duration": "2 hours"
+        }
       }
     },
     "singleSession": {
@@ -593,11 +646,26 @@
   },
   "postClassReview": {
     "ratings": [
-      { "label": "I'm really sorry",         "placeholder": "What could have been better? Your feedback helps me improve." },
-      { "label": "Not what I expected",       "placeholder": "What could have been better? Your feedback helps me improve." },
-      { "label": "It was fine",               "placeholder": "Is there anything specific I could do differently next time?" },
-      { "label": "Very good class",           "placeholder": "What was most useful about today's class?" },
-      { "label": "Excellent!",                "placeholder": "What would you highlight? With your permission it could be published on my profile." }
+      {
+        "label": "I'm really sorry",
+        "placeholder": "What could have been better? Your feedback helps me improve."
+      },
+      {
+        "label": "Not what I expected",
+        "placeholder": "What could have been better? Your feedback helps me improve."
+      },
+      {
+        "label": "It was fine",
+        "placeholder": "Is there anything specific I could do differently next time?"
+      },
+      {
+        "label": "Very good class",
+        "placeholder": "What was most useful about today's class?"
+      },
+      {
+        "label": "Excellent!",
+        "placeholder": "What would you highlight? With your permission it could be published on my profile."
+      }
     ],
     "tapToRate": "Tap a face to rate",
     "private": "Your rating is private",
@@ -723,11 +791,26 @@
       "faq": {
         "heading": "Frequently asked questions",
         "items": [
-          { "q": "How much does it cost?", "a": "Nothing. The course is completely free." },
-          { "q": "What do I need to know before starting?", "a": "Intermediate Python, linear algebra (vectors and matrices) and calculus (partial derivatives and the chain rule). They're listed in the prerequisites section." },
-          { "q": "How long will it take?", "a": "Around 40 hours if you do the exercises. Go at your own pace; there are no deadlines." },
-          { "q": "Is it in English?", "a": "Spanish only for now. An English version is planned." },
-          { "q": "What do I need to install?", "a": "Nothing. Everything — the Python code included — runs directly in your browser." }
+          {
+            "q": "How much does it cost?",
+            "a": "Nothing. The course is completely free."
+          },
+          {
+            "q": "What do I need to know before starting?",
+            "a": "Intermediate Python, linear algebra (vectors and matrices) and calculus (partial derivatives and the chain rule). They're listed in the prerequisites section."
+          },
+          {
+            "q": "How long will it take?",
+            "a": "Around 40 hours if you do the exercises. Go at your own pace; there are no deadlines."
+          },
+          {
+            "q": "Is it in English?",
+            "a": "Spanish only for now. An English version is planned."
+          },
+          {
+            "q": "What do I need to install?",
+            "a": "Nothing. Everything — the Python code included — runs directly in your browser."
+          }
         ]
       },
       "cta": {

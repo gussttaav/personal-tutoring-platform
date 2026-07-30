@@ -77,6 +77,11 @@ Update this file when starting, completing, or blocking a task.
   (`dl-nlp` has no `en/` today), and the view carries the locale that resolved so the card links an
   English reader to the Spanish lesson that exists rather than a 404.
 - Panel placement: full-width section **below** the two-column row in `PersonalArea.tsx`.
+  **Superseded by the /area-personal redesign:** `MyCoursesPanel.tsx` is gone; enrolled courses are
+  now the third tab (`CoursesTab.tsx`), its fetch lifted into `usePersonalAreaData` so the tab strip
+  can show a count badge. The `areaPersonal.courses.title` key was dropped — the tab button carries
+  that label via `areaPersonal.main.tabs.courses`. `CourseProgressCard` and `resumeHref` survive
+  unchanged in behaviour; only their styling moved to `area-personal.css`.
 - The card's `resumeHref` is exported and unit-tested; there is still no jsdom/RTL in the repo, so the
   task's "card renders 0 / partial / 100%" case is covered on the pure mapping
   (`src/lib/courses/__tests__/enrollment-view.test.ts`) rather than by rendering.

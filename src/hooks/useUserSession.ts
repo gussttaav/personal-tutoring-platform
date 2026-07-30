@@ -51,7 +51,13 @@ export function useUserSession() {
       try {
         const data = await api.credits.get();
         if (data.credits > 0) {
-          setPackSession({ email, name, credits: data.credits, packSize: data.packSize });
+          setPackSession({
+            email,
+            name,
+            credits:   data.credits,
+            packSize:  data.packSize,
+            expiresAt: data.expiresAt,
+          });
         } else {
           setPackSession(null);
         }

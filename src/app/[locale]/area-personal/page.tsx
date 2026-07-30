@@ -14,6 +14,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PersonalArea from "@/features/personal-area/PersonalArea";
+// Segment-scoped stylesheet for the dashboard, same pattern as admin.css / lesson.css.
+import "./area-personal.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
