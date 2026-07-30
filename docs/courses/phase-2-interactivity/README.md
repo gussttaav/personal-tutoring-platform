@@ -11,7 +11,7 @@ phase is ordered so the cheap, high-value half lands first.
 ## Tasks
 
 1. [01-widget-registry.md](01-widget-registry.md) — `COURSE-P2-01` (M) — registry + pure math core
-2. [02-first-explorables.md](02-first-explorables.md) — `COURSE-P2-02` (L) — the Block 0/1 widget set
+2. [02-first-explorables.md](02-first-explorables.md) — `COURSE-P2-02` (L) — the Block 1/2 widget set
 3. [03-pyodide-cells.md](03-pyodide-cells.md) — `COURSE-P2-03` (L) — worker, `PyCell`, CSP
 
 **Landing order:** strictly sequential. P2-03 is independent of P2-02 in principle, but landing

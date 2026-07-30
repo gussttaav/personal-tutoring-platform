@@ -2,6 +2,7 @@
  * COURSE-P1-01 — MDX → React component map for course lessons.
  * COURSE-P2-01 — + `Explorable`, the entry point for interactive widgets.
  * COURSE-P2-03 — + `PyCell`, the entry point for runnable Python.
+ * COURSE-P5-00 — + `h3`, which Tailwind Preflight had been flattening to body text.
  *
  * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Four groups:
  *   1. Element overrides that keep wide content (code, tables, images) from
@@ -108,6 +109,10 @@ function Img(props: ComponentPropsWithoutRef<"img">) {
   return <img {...props} alt={props.alt ?? ""} style={{ maxWidth: "100%", height: "auto", ...props.style }} />;
 }
 
+// COURSE-P5-00 — `fontWeight` added for the same reason as `H3` below: Preflight had
+// left it at the body's 400, so the lesson h1 (800) dropped straight to a normal-weight
+// h2. Without it, adding a properly weighted h3 would have made a SUBSECTION heading
+// look bolder than the section containing it.
 function H2(props: ComponentPropsWithoutRef<"h2">) {
   return (
     <h2
@@ -116,7 +121,40 @@ function H2(props: ComponentPropsWithoutRef<"h2">) {
         marginTop: "2.5rem",
         marginBottom: "1rem",
         fontSize: "1.5rem",
+        fontWeight: 700,
         lineHeight: 1.3,
+        color: "var(--text)",
+        ...props.style,
+      }}
+    />
+  );
+}
+
+/*
+ * COURSE-P5-00 — h3 was rendering as body text.
+ *
+ * `globals.css` opens with `@tailwind base`, and Preflight resets EVERY heading to
+ * `font-size: inherit; font-weight: inherit`. `h2` escaped that only because it is
+ * overridden above; `h3` was never given the same treatment, so a `###` subsection was
+ * typographically invisible — a heading the on-this-page rail listed but the page did
+ * not show.
+ *
+ * Sized between `h2` (1.5rem) and the 1.0625rem body, and — unlike `h2` — carrying an
+ * explicit weight: at this size, size alone does not read as a heading against 17px
+ * prose, and restoring the weight is the cheapest way to make the hierarchy legible.
+ * `h4` stays unstyled deliberately: the outline only collects h2/h3 and AUTHORING.md
+ * tells authors not to go deeper.
+ */
+function H3(props: ComponentPropsWithoutRef<"h3">) {
+  return (
+    <h3
+      {...props}
+      style={{
+        marginTop: "2rem",
+        marginBottom: "0.6rem",
+        fontSize: "1.175rem",
+        fontWeight: 600,
+        lineHeight: 1.4,
         color: "var(--text)",
         ...props.style,
       }}
@@ -203,7 +241,7 @@ function Details({ summary, children }: { summary: string; children: ReactNode }
   );
 }
 
-// Block 4's escape hatch to GPU work. `notebook` is a Colab URL (or a Colab
+// Block 5's escape hatch to GPU work. `notebook` is a Colab URL (or a Colab
 // notebook path such as "github/user/repo/blob/main/nb.ipynb").
 function ColabLink({ notebook, children }: { notebook: string; children?: ReactNode }) {
   const href = notebook.startsWith("http") ? notebook : `https://colab.research.google.com/${notebook}`;
@@ -239,6 +277,7 @@ export const mdxComponents: MDXComponents = {
   td: Td,
   img: Img,
   h2: H2,
+  h3: H3,
   Callout,
   Figure,
   Details,

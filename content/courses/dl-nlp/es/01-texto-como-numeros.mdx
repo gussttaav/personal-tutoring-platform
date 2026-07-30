@@ -1,0 +1,207 @@
+---
+slug: texto-como-numeros
+title: "El problema de representar el lenguaje"
+block: 1
+order: 1
+minutes: 8
+summary: "Una red solo opera con números reales; el texto no lo es. Este es el enunciado preciso del problema del que vive todo el bloque."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-por-que-no-texto
+    type: single
+    prompt: "¿Cuál es la razón de fondo por la que una red no puede recibir la cadena `\"hola\"` directamente?"
+    options:
+      - { id: a, text: "Porque las cadenas de texto ocupan demasiada memoria." }
+      - { id: b, text: "Porque una red solo está definida sobre vectores de números reales." }
+      - { id: c, text: "Porque el español tiene acentos y la red se entrena en inglés." }
+      - { id: d, text: "Porque las redes procesan un caracter a la vez y `\"hola\"` es una palabra." }
+    answer: b
+    explanation: "Una red es una función entre espacios vectoriales reales: su entrada tiene que vivir en $\\mathbb{R}^d$. Un símbolo del vocabulario no es un vector, así que ni siquiera está mal calculado dárselo, no está definido. Nada tiene que ver con la memoria, el idioma ni los caracteres."
+  - id: q-indice-alfabetico
+    type: single
+    prompt: "Numerar el vocabulario por orden alfabético — *casa* → 1, *gato* → 2, *perro* → 3 — es una representación válida, porque asigna a cada palabra un número de forma determinista."
+    options:
+      - { id: a, text: "Verdadero" }
+      - { id: b, text: "Falso" }
+    answer: b
+    explanation: "Es determinista, sí, pero al colocar las palabras sobre la recta real heredan su geometría, y esa geometría afirma cosas que nadie quiso afirmar: que *casa* se parece más a *gato* que a *perro*, y que *gato* está justo a mitad de camino entre las otras dos. El alfabeto es un orden inventado para buscar en un diccionario; no sabe nada de significados."
+  - id: q-propiedades-de-r
+    type: multi
+    prompt: "¿Qué propiedades tiene que cumplir una función de representación $r$ para poder alimentar a una red? Marca todas las correctas."
+    options:
+      - { id: a, text: "Estar definida para cualquier palabra que pueda llegar, incluidas las que no viste al construirla." }
+      - { id: b, text: "Devolver siempre vectores de la misma dimensión $d$." }
+      - { id: c, text: "Ser inyectiva: dos palabras distintas nunca comparten vector." }
+      - { id: d, text: "Ser determinista: la misma palabra produce siempre el mismo vector." }
+    answer: [a, b, d]
+    explanation: "Totalidad (a), dimensión fija (b) y determinismo (d) son las tres exigencias. La inyectividad (c) *no* lo es: renunciarás a ella a propósito más de una vez, las palabras raras compartirán un mismo vector, y las subpalabras harán que *gato* y *gatos* compartan casi todo. Perder algo de información es a menudo lo que hace que el modelo generalice."
+challenges: []
+---
+
+{/* ── 1. MOTIVACIÓN — sin título ── */}
+
+Una red neuronal no puede recibir directamente la palabra *hola*. En esencia, una red neuronal es una función matemática que opera sobre vectores de números reales. Sus cálculos presuponen que las entradas pertenecen a un espacio donde conceptos como «distancia», «dirección» o «proximidad» están bien definidos. El texto, por sí mismo, no vive en ese tipo de espacio. Entre *casa* y *gato* no existe un punto intermedio, ni una dirección que conduzca de una palabra a la otra, ni un paso a medio camino entre ambas.
+
+Y, sin embargo, los modelos de lenguaje funcionan. El reto consiste precisamente en salvar la distancia entre un texto y una función sobre números reales. Resolver ese problema es el objetivo de este bloque, pues las decisiones que se toman aquí determinan todo lo que viene después: la tokenización, el vocabulario, los *embeddings* y, en última instancia, la propia arquitectura del modelo.
+
+{/* ── 2. INTUICIÓN — sin título ── */}
+
+Así que hace falta un traductor: una función que transforme texto en vectores reales, colocada *antes* de la red, de modo que la red solo procese representaciones numéricas. La parte incómoda es
+que ese traductor no es neutral. En cuanto colocas palabras en un espacio numérico, ese espacio
+empieza a hacer afirmaciones sobre ellas: cuáles están cerca, cuáles lejos, cuáles a mitad de
+camino. No puedes evitar hacer esas afirmaciones, solo puedes elegir hacerlas a propósito o por
+accidente.
+
+<Callout type="intuition" title="La idea en una frase">
+Representar texto no es codificarlo: es elegir una geometría para el significado. La pregunta no es si esa geometría expresa relaciones, sino si expresa las correctas.
+</Callout>
+
+Esto es lo que hace que el problema sea interesante y no un trámite. Un traductor cualquiera
+—numerar las palabras por orden alfabético, por ejemplo— cumple el requisito formal, pero destruye cualquier noción de significado.
+
+{/* ── 3. FORMALIZACIÓN — con título, por contenido ── */}
+
+## Qué le tienes que dar a una red, exactamente
+
+Fijemos el vocabulario, el conjunto de unidades que el modelo reconoce, y llamémoslo $V$. Por
+ahora «unidad» quiere decir «palabra»; la lección 2, sobre tokenización, mostrará que esa decisión es más delicada de
+lo que parece. Un texto es entonces una secuencia finita de elementos de $V$:
+
+$$
+s = (w_1, w_2, \dots, w_T), \qquad w_t \in V, \quad T \in \mathbb{N}
+$$
+
+Una red, en cambio, es una función entre espacios de números reales. Podemos escribir su tipo sin
+saber todavía nada de lo que hace por dentro: recibe un vector de un tamaño fijo y devuelve otro,
+
+$$
+f : \mathbb{R}^d \to \mathbb{R}^k,
+$$
+
+donde $d$ es la dimensión del espacio de entrada y $k$ la del espacio de salida. Qué ocurre entre la
+entrada y la salida — las capas, los pesos, el entrenamiento — es el tema del siguiente bloque; aquí solo
+importa que la red necesita recibir vectores de $\mathbb{R}^d$. 
+
+El problema aparece de inmediato: el texto es una secuencia de símbolos, lo que $f$ pide es un vector de
+$\mathbb{R}^d$. Nada convierte un elemento de $V$ en uno de $\mathbb{R}^d$ por sí solo. Necesitas
+una función que salve esa distancia:
+
+$$
+r : V \to \mathbb{R}^d
+$$
+
+y con ella cada palabra de la secuencia se vuelve un vector, de modo que el texto entero se
+convierte en una matriz de números, una fila por posición, $d$ columnas por palabra:
+
+$$
+X = \big(\, r(w_1),\; r(w_2),\; \dots,\; r(w_T) \,\big) \in \mathbb{R}^{T \times d}
+$$
+
+Todo este bloque trata de cómo construir $r$. Antes de proponer ninguna, conviene fijar qué se le
+va a exigir. Son tres cosas.
+
+**Totalidad.** $r$ tiene que estar definida para cualquier palabra que llegue en producción, no
+solo para las que viste al construirla. El día que alguien escriba *criptomoneda* y esa palabra no
+estuviera en $V$, la función tiene que devolver algo igualmente. Esta es la exigencia que parece
+burocrática y resulta ser la más cara de las tres: es el problema de las palabras fuera de
+vocabulario (*out-of-vocabulary*, OOV), y le dedicamos entera la lección 3.
+
+**Dimensión fija.** $r(w) \in \mathbb{R}^d$ con la misma $d$ para toda $w$. La red se diseña
+esperando vectores de un tamaño concreto; una representación que a veces devolviera un vector de
+cinco números y a veces de nueve sencillamente no encajaría en la puerta de entrada.
+
+**Determinismo.** La misma palabra produce siempre el mismo vector. Si $r$ cambiara entre dos
+ejecuciones, lo que el modelo aprendió dejaría de corresponderse con lo que recibe.
+
+<Callout type="note" title="Lo que NO se exige">
+$r$ no tiene por qué ser inyectiva. Es tentador pedir que dos palabras distintas nunca compartan
+vector, pero renunciarás a ello a propósito más de una vez: en la lección 3, la del problema OOV, todas las palabras
+raras compartirán un mismo vector, y las representaciones por subpalabras harán que *gato* y
+*gatos* compartan casi todo. Perder algo de información es a menudo lo que hace que el modelo
+generalice.
+</Callout>
+
+### La representación que parece funcionar y no funciona
+
+Con esas tres condiciones sobre la mesa, la propuesta más corta es ordenar el vocabulario y
+quedarse con el índice. Con $V = \{\textit{casa}, \textit{gato}, \textit{perro}\}$ en orden
+alfabético:
+
+$$
+r_{\text{ord}}(\textit{casa}) = 1, \qquad r_{\text{ord}}(\textit{gato}) = 2, \qquad r_{\text{ord}}(\textit{perro}) = 3
+$$
+
+Es total sobre $V$, tiene dimensión fija $d = 1$ y es determinista. Cumple las tres condiciones y
+aun así es una mala representación, porque cumplirlas no era todo lo que hacía falta. Al meter las
+palabras en $\mathbb{R}$ heredan su estructura, y esa estructura afirma cosas:
+
+$$
+\lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{gato}) \,\rvert = 1 \;<\; \lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{perro}) \,\rvert = 2
+$$
+
+Leído en voz alta: *casa* se parece más a *gato* que a *perro*. Y también que *gato* está entre las
+otras dos, y que el punto medio del camino entre *casa* y *perro* es exactamente *gato*. Ninguna de
+esas tres afirmaciones la has hecho tú. Salen del alfabeto, que es un orden inventado para buscar
+en un diccionario y que no sabe nada de significados.
+
+Lo importante no es que las afirmaciones sean falsas, sino que la red no tiene forma de saber que
+lo son. Lo único que recibe son los números; para ella, una geometría inventada tiene exactamente
+la misma cara que una verdadera, y no puede distinguirlas. Le has dado información falsa disfrazada
+de buena.
+
+<Details summary="Por qué no basta con reescalar los índices">
+Podrías pensar que el problema es la escala y que dividir por $\lvert V \rvert$ lo arregla. No lo
+arregla: dividir por una constante es una transformación monótona y afín, así que conserva el orden
+y conserva las razones entre distancias. *Gato* sigue estando entre *casa* y *perro*. Cualquier
+$r$ con $d = 1$ tiene el mismo defecto de fondo, porque $\mathbb{R}$ está totalmente ordenado y las
+palabras no. Salir del problema exige subir de dimensión, y ese es el argumento que lleva a la
+lección 4, la del one-hot.
+</Details>
+
+{/* ── 4. CONCRECIÓN — a mano, con título por contenido ── */}
+
+## Compruébalo tú mismo con una frase en español
+
+Toma la frase *el gato bebe leche* y el vocabulario ordenado alfabéticamente
+$V = \{\textit{bebe}, \textit{el}, \textit{gato}, \textit{leche}\}$, con índices $1$ a $4$. La
+frase se convierte en la secuencia $(2, 3, 1, 4)$, y con $d = 1$ la matriz $X$ del apartado
+anterior tiene forma $4 \times 1$. Ahora responde tres preguntas mirando **solo** esos números,
+como los mira la red:
+
+1. Según los números, ¿qué dos palabras de la frase se parecen más? Compara $\lvert 2 - 3 \rvert$,
+   $\lvert 3 - 1 \rvert$ y las demás distancias. ¿Coincide con lo que tú sabes de esas palabras?
+2. ¿Qué palabra cae en el punto medio entre *el* $(2)$ y *leche* $(4)$? ¿Significa algo esa
+   pregunta fuera de los números?
+3. Añade *agua* al vocabulario. Reordena alfabéticamente y reasigna los índices. ¿Cuántas de las
+   palabras originales cambian de número, pese a que la frase no ha cambiado en absoluto?
+
+La tercera es la más incómoda: una palabra nueva reescribe la representación de palabras que no
+tienen nada que ver con ella. Un modelo entrenado con la $V$ anterior queda inservible. Guarda esa
+observación, porque es la que hará que en la lección 4, la del one-hot, el salto a un espacio mucho más grande
+parezca razonable a pesar de su coste.
+
+{/* ── 5. VERIFICACIÓN — con título ── */}
+
+## Comprueba tu intuición
+
+Tres preguntas sobre lo que acabamos de enunciar: por qué la red no recibe texto, qué le pasa
+a un vocabulario numerado por orden, y qué le pedimos exactamente a la función $r$.
+
+<Quiz id="q-por-que-no-texto" />
+
+<Quiz id="q-indice-alfabetico" />
+
+<Quiz id="q-propiedades-de-r" />
+
+{/* ── 6. PUENTE — sin título ── */}
+
+Queda enunciado el problema del que vive el resto del bloque: hace falta una función
+$r : V \to \mathbb{R}^d$, total, de dimensión fija y determinista, y además con una geometría que
+no afirme por accidente cosas falsas sobre las palabras. Sabemos ya que $d = 1$ no sirve. Pero hay
+una pregunta anterior que hemos dado por resuelta al escribir $V$ como si fuera evidente: antes de
+decidir qué vector le corresponde a *dámelo*, hay que decidir si *dámelo* es una unidad del
+vocabulario, o tres (*da*, *me*, *lo*), o seis letras. Esa decisión fija el tamaño de $V$, define
+qué significa que una palabra sea «nueva» y, en última instancia, acota qué puede llegar a aprender
+el modelo.

@@ -1,11 +1,11 @@
 ---
 slug: pipeline-fixture
 title: "Fixture del pipeline (no publicar)"
-block: 0
+block: 1
 order: 0
 minutes: 1
 summary: "Fixture de regresión del pipeline de renderizado — nunca se publica."
-draft: false
+draft: true
 hasCode: true
 hasQuiz: true
 quiz:
@@ -89,7 +89,16 @@ challenges:
     this file exists to exercise every part of the MDX pipeline (math, code,
     tables, custom components, overflow), NOT as course content.
     COURSE-P1-02 — Frontmatter expanded to the full lesson schema so the registry
-    scan accepts it; `draft: true` keeps it out of every `list*` result. */}
+    scan accepts it; `draft: true` keeps it out of every `list*` result.
+    COURSE-P5-00 — `draft` is back to `true`, closing the P3-01 decision to publish it
+    temporarily: Block 1 lesson 1 now exists, so the catalog and the lesson routes have
+    real content to render and the fixture no longer has to stand in for it. */}
+
+{/* content-budget: ignore — this is a coverage surface, not a lesson. It embeds every
+    explorable and all five question types ON PURPOSE, so it breaks the per-lesson
+    budget by design and would warn on every `pnpm lint:content` run forever. The
+    NOTATION contract still applies: it costs nothing to honour and the fixture is the
+    file authors read to see what the pipeline supports. */}
 
 Texto con **negrita**, _cursiva_ y matemática en línea como $a^2 + b^2 = c^2$
 dentro del párrafo.
@@ -99,19 +108,19 @@ dentro del párrafo.
 La regla de la cadena para el gradiente (fences en su propia línea → display):
 
 $$
-\frac{\partial L}{\partial w_{ij}}
+\frac{\partial \mathcal{L}}{\partial w_{ij}}
 $$
 
 Y la misma en una sola línea `$$…$$` → remark-math la trata como math **en línea**
-(más pequeña, alineada con el texto): $$\frac{\partial L}{\partial w_{ij}}$$
+(más pequeña, alineada con el texto): $$\frac{\partial \mathcal{L}}{\partial w_{ij}}$$
 
 Derivación alineada de varias líneas:
 
 $$
 \begin{aligned}
-\hat{y} &= \sigma(Wx + b) \\
-L &= -\sum_{k} y_k \log \hat{y}_k \\
-\frac{\partial L}{\partial W} &= (\hat{y} - y)\, x^{\top}
+\hat{\mathbf{y}} &= \sigma(\mathbf{W}\mathbf{x} + \mathbf{b}) \\
+\mathcal{L} &= -\sum_{k} y_k \log \hat{y}_k \\
+\frac{\partial \mathcal{L}}{\partial \mathbf{W}} &= (\hat{\mathbf{y}} - \mathbf{y})\, \mathbf{x}^{\top}
 \end{aligned}
 $$
 
@@ -155,24 +164,24 @@ Cuidado con el overflow numérico en `exp` sin restar el máximo.
 </Callout>
 
 <Callout type="math">
-Formalmente, $\nabla_\theta L$ es el vector de derivadas parciales.
+Formalmente, $\nabla_\theta \mathcal{L}$ es el vector de derivadas parciales.
 </Callout>
 
 <Figure src="/og.png" alt="Diagrama de ejemplo" caption="Figura 1. Pie de figura de ejemplo." />
 
 <Details summary="Ver la derivación completa">
-El desarrollo paso a paso de $\frac{\partial L}{\partial W}$ para la entropía cruzada.
+El desarrollo paso a paso de $\frac{\partial \mathcal{L}}{\partial \mathbf{W}}$ para la entropía cruzada.
 </Details>
 
 <ColabLink notebook="github/gussttaav/dl-nlp/blob/main/00-intro.ipynb">
 Abrir en Colab
 </ColabLink>
 
-{/* COURSE-P2-02 — Every Block 0/1 explorable embedded here so the render check and
+{/* COURSE-P2-02 — Every Block 1/2 explorable embedded here so the render check and
     `pnpm lint:content` (validate-explorables) cover all eight ids. This is a draft
     fixture, so it never publishes. */}
 
-## Explorables — Bloque 0 (NLP)
+## Explorables — Bloque 1 (NLP)
 
 <Explorable id="tokenizer-playground" caption="Escribe una frase y compárala en tres tokenizaciones." />
 
@@ -180,7 +189,7 @@ Abrir en Colab
 
 <Explorable id="embedding-projection" caption="rey − hombre + mujer ≈ reina." />
 
-## Explorables — Bloque 1 (MLP)
+## Explorables — Bloque 2 (MLP)
 
 <Explorable id="activation-explorer" caption="Activaciones y sus derivadas; zonas de saturación." />
 

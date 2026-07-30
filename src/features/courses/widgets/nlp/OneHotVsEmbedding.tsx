@@ -1,7 +1,7 @@
 /*
  * COURSE-P2-02 — `onehot-vs-embedding`: the same word as a sparse one-hot vector
  * (one 1 in `vocab` dimensions) vs a short dense embedding. A vocabulary-size slider
- * drives the dimensionality counter, making Block 0's bridge argument visual: one-hot
+ * drives the dimensionality counter, making Block 1's bridge argument visual: one-hot
  * grows without bound and carries no similarity; the embedding stays small and dense.
  * Static, deterministic data; local state only.
  */

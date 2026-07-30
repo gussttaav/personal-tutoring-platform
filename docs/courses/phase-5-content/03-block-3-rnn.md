@@ -1,7 +1,7 @@
-# P5-03 — Block 2: Redes Neuronales Recurrentes
+# P5-03 — Block 3: Redes Neuronales Recurrentes
 
 **Tag:** `COURSE-P5-03` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
-**Depends on:** P5-02 · Block 2 widgets (built in this task, on the P2-01 registry)
+**Depends on:** P5-02 · Block 3 widgets (built in this task, on the P2-01 registry)
 
 ## TL;DR
 
@@ -34,7 +34,7 @@ abstract on the page and obvious on a chart.
 | 8 | `seq2seq` | Seq2seq: de secuencia a secuencia | — | 2 | 4 | — |
 
 **Bridge out:** lesson 8 introduces the encoder-decoder and ends on the fixed context vector —
-one vector must carry an entire sentence. That is the exact problem Block 3 opens with.
+one vector must carry an entire sentence. That is the exact problem Block 4 opens with.
 
 ## Mathematical content
 
@@ -48,7 +48,7 @@ one vector must carry an entire sentence. That is the exact problem Block 3 open
   gradient** — this is the whole point of the LSTM and is usually glossed
 - GRU equations, and the parameter-count comparison
 
-Lesson 4 is where Block 1's `activation-explorer` saturation regions pay off. Reference it
+Lesson 4 is where Block 2's `activation-explorer` saturation regions pay off. Reference it
 explicitly — the student has already *seen* $\sigma' \approx 0$.
 
 ## Acceptance criteria
@@ -79,14 +79,14 @@ explicitly — the student has already *seen* $\sigma' \approx 0$.
 - Seed everything. Generated text differing from the prose reads as a broken lesson.
 - The LSTM has four gates and a cell state; presented as a wall of equations it is hopeless.
   Introduce one gate at a time, each motivated by a concrete failure of the previous version.
-- Don't cover bidirectional RNNs, stacked RNNs or attention here. Attention is Block 3 and
-  arriving early would undercut the bridge Block 3 exists to build.
+- Don't cover bidirectional RNNs, stacked RNNs or attention here. Attention is Block 4 and
+  arriving early would undercut the bridge Block 4 exists to build.
 - `vanishing-gradient` should let the spectral radius go **above** 1 too — exploding gradients are
   half the phenomenon and are usually shown only as a footnote.
 
 ## Out of scope
 
 - Bidirectional and deep/stacked RNNs (mention only).
-- Attention (Block 3).
+- Attention (Block 4).
 - Teacher forcing beyond a brief note in lesson 8.
 - Beam search decoding.

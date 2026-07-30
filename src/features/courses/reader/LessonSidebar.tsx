@@ -89,7 +89,12 @@ export default async function LessonSidebar({
 
       <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "20px" }}>
         {groups.map((group) => {
-          const ordinal = course.blocks.findIndex((b) => b.id === group.block.id) + 1;
+          // COURSE-P5-00 — the block's own id, NOT its position. These agreed only by
+          // accident once blocks were renumbered 1..5, and the prose, the manifest and
+          // every planning doc all name blocks by id: a sidebar that numbers by
+          // position would silently disagree again the moment a block is added,
+          // removed or reordered.
+          const ordinal = group.block.id;
           const containsCurrent = group.lessons.some((l) => l.slug === currentSlug);
           return (
             <li key={group.block.id}>

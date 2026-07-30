@@ -2,7 +2,7 @@
 
 Everything needed to turn an MDX file on disk into a statically-generated, responsive,
 mathematically-typeset lesson page. No persistence, no widgets, no quizzes — but by the end
-of this phase a real prose lesson from Block 0 is readable on a phone at a real URL.
+of this phase a real prose lesson from Block 1 is readable on a phone at a real URL.
 
 This phase is the **authoring loop**. It is worth over-investing here: the cost of friction
 gets multiplied by ~40 lessons.

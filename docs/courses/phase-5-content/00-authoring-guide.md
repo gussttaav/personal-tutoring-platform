@@ -50,7 +50,7 @@ The pattern this course commits to, in order:
 5. **Verification** — a quiz and/or a challenge.
 6. **Bridge** — what this leaves unsolved, and which lesson solves it.
 
-Step 6 is what makes the course a course rather than a pile of tutorials. Block 3 exists entirely
+Step 6 is what makes the course a course rather than a pile of tutorials. Block 4 exists entirely
 because most courses skip that bridge and attention ends up looking like it appeared from
 nowhere. Every lesson should end pointing forward.
 
@@ -63,9 +63,9 @@ nowhere. Every lesson should end pointing forward.
 - Batch dimension first, always
 - Loss $\mathcal{L}$, activation $\sigma$, learning rate $\eta$
 - Sequence length $T$, model dimension $d_{\text{model}}$, heads $h$ — matching *Attention is All
-  You Need* so Block 4 aligns with the paper the student will go read
+  You Need* so Block 5 aligns with the paper the student will go read
 
-Notation drifting between Block 1 and Block 4 is a real and common failure in DL courses, and it
+Notation drifting between Block 2 and Block 5 is a real and common failure in DL courses, and it
 is exactly the kind of thing that makes a rigorous course feel unrigorous.
 
 ## Tone
@@ -80,7 +80,7 @@ is exactly the kind of thing that makes a rigorous course feel unrigorous.
 ## Acceptance criteria
 
 - [ ] `AUTHORING.md` covers structure, budget, notation, tone, and the mechanical steps to add a lesson
-- [ ] `NOTATION.md` covers every symbol used in Blocks 0–4
+- [ ] `NOTATION.md` covers every symbol used in Blocks 1–5
 - [ ] `_template.mdx` produces a valid lesson when copied and filled
 - [ ] `lint:content` **warns** (not fails) on budget overruns and reports per-lesson counts
 - [ ] `lint:content` **fails** on a `<Quiz>` / `<Explorable>` / `<CodeChallenge>` id that doesn't resolve
@@ -89,7 +89,7 @@ is exactly the kind of thing that makes a rigorous course feel unrigorous.
 
 ## Test plan
 
-- **Dogfood:** author Block 0 lesson 2 using only the guide and the template. Every place you had
+- **Dogfood:** author Block 1 lesson 2 using only the guide and the template. Every place you had
   to guess is a gap in the guide — fix it before writing lesson 3.
 - **Lint:** verify warnings fire on a deliberately over-budget fixture and that hard errors fire on unresolved ids.
 

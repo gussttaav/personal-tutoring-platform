@@ -1,7 +1,7 @@
-# P5-04 — Block 3: El Puente hacia la Atención
+# P5-04 — Block 4: El Puente hacia la Atención
 
 **Tag:** `COURSE-P5-04` · **Effort:** L · **Owner:** _tbd_ · **Status:** ⬜
-**Depends on:** P5-03 · Block 3 widgets (built in this task)
+**Depends on:** P5-03 · Block 4 widgets (built in this task)
 
 ## TL;DR
 
@@ -20,7 +20,7 @@ The Transformer only makes sense as an answer to a question, and this block is t
 | `attention-alignment` | Bahdanau alignment heat map over a translation pair; hover a target word, see the source it attends to |
 
 `attention-alignment` is the visual that makes attention click. Get it right; it is reused
-conceptually in Block 4.
+conceptually in Block 5.
 
 ## Lessons
 
@@ -34,7 +34,7 @@ conceptually in Block 4.
 | 6 | `atencion-como-consulta` | Atención como consulta, clave y valor | — | 1 | 5 | 1 |
 
 **Lesson 6 is the most important lesson in the course.** It reframes what lessons 4–5 built as
-query/key/value — the exact vocabulary of Block 4. A student who arrives at *Attention is All You
+query/key/value — the exact vocabulary of Block 5. A student who arrives at *Attention is All You
 Need* already fluent in Q/K/V finds the paper readable instead of impenetrable. Do not rush it,
 and do not merge it into lesson 5.
 
@@ -50,7 +50,7 @@ and do not merge it into lesson 5.
   why the dot product is cheaper and parallelises — a forward pointer to why the Transformer picked it
 - The Q/K/V reframing; gradients flow to the attention weights too
 
-Lesson 5's parallelisation argument is the seed of Block 4's entire motivation. Plant it clearly.
+Lesson 5's parallelisation argument is the seed of Block 5's entire motivation. Plant it clearly.
 
 ## Acceptance criteria
 
@@ -77,13 +77,13 @@ Lesson 5's parallelisation argument is the seed of Block 4's entire motivation. 
 - Choose the translation pair carefully — an example where attention visibly does something
   interesting (reordering, a many-to-one alignment) teaches far more than a monotonic one.
 - Keep the block short. Six lessons is right; padding it dilutes the hinge.
-- Notation must **exactly** match what Block 4 will use ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$,
-  $d_k$). This block's job is to make Block 4 feel inevitable.
-- Don't mention self-attention yet. Lesson 6 sets up the vocabulary; Block 4 delivers the twist
+- Notation must **exactly** match what Block 5 will use ($\mathbf{Q}, \mathbf{K}, \mathbf{V}$,
+  $d_k$). This block's job is to make Block 5 feel inevitable.
+- Don't mention self-attention yet. Lesson 6 sets up the vocabulary; Block 5 delivers the twist
   that the query can come from the same sequence.
 
 ## Out of scope
 
-- Self-attention, multi-head attention, positional encoding (Block 4).
+- Self-attention, multi-head attention, positional encoding (Block 5).
 - Transformer architecture of any kind.
 - Coverage/copy mechanisms, pointer networks.

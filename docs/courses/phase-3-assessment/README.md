@@ -20,7 +20,7 @@ records what would be needed to re-grade.
 - [ ] All five question types render and grade correctly; grader unit-tested as a pure function
 - [ ] A code challenge passes/fails against hidden assertions in Pyodide
 - [ ] Malformed quiz frontmatter fails the build
-- [ ] **Walking skeleton:** lesson 1 of Block 0 is complete end-to-end — prose + display math + one explorable + one NumPy cell + one quiz — and reads correctly on a phone
+- [ ] **Walking skeleton:** lesson 1 of Block 1 is complete end-to-end — prose + display math + one explorable + one NumPy cell + one quiz — and reads correctly on a phone
 - [ ] `pnpm test` + `pnpm build` green
 
 ## Why the skeleton criterion lives here

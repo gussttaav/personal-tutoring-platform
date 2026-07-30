@@ -100,7 +100,7 @@ softmax numerical stability with large inputs, and shape correctness for the mat
 
 ## Out of scope
 
-- The actual widgets for Blocks 0–1 (P2-02) — this task ships the registry, primitives, math and
+- The actual widgets for Blocks 1–2 (P2-02) — this task ships the registry, primitives, math and
   **one** trivial reference widget to prove the path.
 - Pyodide (P2-03).
-- Widgets for Blocks 2–4 — authored alongside their content in P5.
+- Widgets for Blocks 3–5 — authored alongside their content in P5.

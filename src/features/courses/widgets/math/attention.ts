@@ -1,7 +1,7 @@
 /*
  * COURSE-P2-01 — Scaled dot-product attention, the pure kernel.
  *
- * The single most important computation in the course (Block 3/4). Kept as a pure
+ * The single most important computation in the course (Block 4/5). Kept as a pure
  * function over plain matrices so it can be unit-tested for shape and known values,
  * and so the attention heat-map widget (P5) just renders whatever this returns.
  */

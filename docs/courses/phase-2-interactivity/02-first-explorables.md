@@ -1,17 +1,17 @@
-# P2-02 — First explorables (Blocks 0–1)
+# P2-02 — First explorables (Blocks 1–2)
 
 **Tag:** `COURSE-P2-02` · **Effort:** L · **Owner:** _tbd_ · **Status:** ⬜
 
 ## TL;DR
 
-Build the widget set for Blocks 0 and 1 on top of the P2-01 registry. These are the widgets that
-prove the format works — and Block 1's backprop visualisations are where the "mathematical
+Build the widget set for Blocks 1 and 1 on top of the P2-01 registry. These are the widgets that
+prove the format works — and Block 2's backprop visualisations are where the "mathematical
 rigour, made intuitive" promise either lands or doesn't.
 
 ## Context
 
-- Blocks 0–1 are the first content written (P5-01/02), so these widgets unblock content.
-- Widgets for Blocks 2–4 are deliberately deferred to P5 and authored next to their lessons —
+- Blocks 1–2 are the first content written (P5-01/02), so these widgets unblock content.
+- Widgets for Blocks 3–5 are deliberately deferred to P5 and authored next to their lessons —
   building them now would be guessing at what the prose needs.
 
 ## Files affected
@@ -26,19 +26,19 @@ rigour, made intuitive" promise either lands or doesn't.
 
 ## The widgets
 
-**Block 0 — Fundamentos**
+**Block 1 — Fundamentos**
 
 | Id | What it does | Why it earns its place |
 |---|---|---|
 | `tokenizer-playground` | Type a sentence, see word / character / subword segmentation side by side | Makes "tokenisation is a *choice*" concrete in five seconds |
-| `onehot-vs-embedding` | Same vocabulary as sparse one-hot vs. dense vector; dimensionality counter | The bridge argument of Block 0, made visual |
+| `onehot-vs-embedding` | Same vocabulary as sparse one-hot vs. dense vector; dimensionality counter | The bridge argument of Block 1, made visual |
 | `embedding-projection` | 2D scatter of precomputed embeddings; hover a word, see nearest neighbours; the king−man+woman vector drawn | The single most persuasive demo in NLP teaching |
 
-**Block 1 — Perceptrón Multicapa**
+**Block 2 — Perceptrón Multicapa**
 
 | Id | What it does | Why it earns its place |
 |---|---|---|
-| `activation-explorer` | Overlay σ/tanh/ReLU/GELU + their derivatives; highlight saturation regions | Saturation is *seen*, which sets up vanishing gradients in Block 2 |
+| `activation-explorer` | Overlay σ/tanh/ReLU/GELU + their derivatives; highlight saturation regions | Saturation is *seen*, which sets up vanishing gradients in Block 3 |
 | `perceptron-boundary` | Drag 2D points, watch the decision boundary; XOR preset that cannot be separated | The classic motivation for hidden layers, felt rather than asserted |
 | `gradient-descent-2d` | Contour plot, adjustable learning rate, step-through or animate; divergence at high lr | Learning rate intuition |
 | `backprop-trace` | Small network diagram; click an output, see the chain rule propagate backwards term by term | **The centrepiece.** Backprop is the hardest thing in the course to teach |
@@ -82,6 +82,6 @@ JSON of ~200 common Spanish words already projected to 2D. No model download, no
 
 ## Out of scope
 
-- Widgets for Blocks 2–4 (RNN unrolling, LSTM gates, attention alignment, self-attention heat
+- Widgets for Blocks 3–5 (RNN unrolling, LSTM gates, attention alignment, self-attention heat
   maps, positional encoding) — authored with their content in P5-03/04/05 using this same registry.
 - Any Python execution (P2-03).

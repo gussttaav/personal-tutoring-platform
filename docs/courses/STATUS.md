@@ -50,8 +50,13 @@ Update this file when starting, completing, or blocking a task.
 **Exit criteria**
 - [x] All five question types render and grade correctly (unit-tested pure grader)
 - [x] A code challenge passes/fails against hidden assertions in Pyodide
-- [ ] **Walking skeleton:** lesson 1 of Block 0 is complete — prose + display math + one explorable + one NumPy cell + one quiz — and reads correctly on a phone
-- [ ] `pnpm test` + `pnpm build` green
+- [x] **Walking skeleton:** lesson 1 of Block 1 is complete — closed by P5-00, which authored
+  `es/01-texto-como-numeros.mdx` as the dogfood lesson. **Partially:** the lesson is prose + display
+  math + quiz, with no explorable and no NumPy cell, because P5-01 specifies lesson 1 as
+  deliberately widget-free and code-free (it is the free sample lesson and the first impression).
+  Explorable + `<PyCell>` in a *published* lesson first land with lesson 2, `tokenizacion`. The
+  fixture has covered both mechanically since P2-02/P2-03. Phone reading not yet done — see below.
+- [x] `pnpm test` + `pnpm build` green
 
 ## Phase 4 — Persistence
 
@@ -91,17 +96,18 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [00 Authoring guide + budget](phase-5-content/00-authoring-guide.md) | `COURSE-P5-00` | ⬜ | _tbd_ | |
-| [01 Block 0 — Fundamentos de NLP](phase-5-content/01-block-0-fundamentos.md) | `COURSE-P5-01` | ⬜ | _tbd_ | |
-| [02 Block 1 — Perceptrón Multicapa](phase-5-content/02-block-1-mlp.md) | `COURSE-P5-02` | ⬜ | _tbd_ | |
-| [03 Block 2 — Redes Recurrentes](phase-5-content/03-block-2-rnn.md) | `COURSE-P5-03` | ⬜ | _tbd_ | |
-| [04 Block 3 — El Puente hacia la Atención](phase-5-content/04-block-3-atencion.md) | `COURSE-P5-04` | ⬜ | _tbd_ | |
-| [05 Block 4 — El Transformer](phase-5-content/05-block-4-transformer.md) | `COURSE-P5-05` | ⬜ | _tbd_ | |
+| [00 Authoring guide + budget](phase-5-content/00-authoring-guide.md) | `COURSE-P5-00` | ✅ | _tbd_ | local |
+| [01 Block 1 — Fundamentos de NLP](phase-5-content/01-block-1-fundamentos.md) | `COURSE-P5-01` | ⬜ | _tbd_ | |
+| [02 Block 2 — Perceptrón Multicapa](phase-5-content/02-block-2-mlp.md) | `COURSE-P5-02` | ⬜ | _tbd_ | |
+| [03 Block 3 — Redes Recurrentes](phase-5-content/03-block-3-rnn.md) | `COURSE-P5-03` | ⬜ | _tbd_ | |
+| [04 Block 4 — El Puente hacia la Atención](phase-5-content/04-block-4-atencion.md) | `COURSE-P5-04` | ⬜ | _tbd_ | |
+| [05 Block 5 — El Transformer](phase-5-content/05-block-5-transformer.md) | `COURSE-P5-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
 - [ ] All five blocks published (`draft: false`), prerequisites stated on the landing page
-- [ ] Every lesson within the P5-00 budget
-- [ ] Content lint green in CI
+- [ ] Every lesson within the P5-00 budget — measured by `pnpm lint:content` since P5-00; green for
+  the one published lesson so far
+- [x] Content lint green in CI
 
 ## Phase 6 — Launch
 
@@ -154,7 +160,7 @@ Deviations from the task doc:
   now carries the full field set (`slug: pipeline-fixture`, `block: 0`, `order: 0`, `minutes: 1`,
   `summary`, `hasCode/hasQuiz: false`, `quiz: []`), still `draft: true`. This keeps a single
   validation path (no fixture special-casing in the scanner); the fixture stays out of every
-  `list*` because it is a draft. Block 0 is declared in the manifest so it validates.
+  `list*` because it is a draft. Block 1 is declared in the manifest so it validates.
 - **Runner:** no `tsx`/`ts-node` existed, so `tsx` was added as a devDep to run
   `scripts/lint-content.ts` as the task specifies (script uses `console`, not the Sentry/Next-coupled `log()`).
 - **YAML:** added `js-yaml` (dep, resolved to nodeca `js-yaml@5.x`; `load()` verified) +
@@ -292,7 +298,7 @@ reverted after. Deviations from the task doc:
   lesson-route-only). Hand-rolled SVG scales/paths, no chart library, per the task.
 - Not yet committed to a branch/PR (**local**).
 
-**COURSE-P2-02** — Closed. All eight Block 0/1 explorables landed: NLP
+**COURSE-P2-02** — Closed. All eight Block 1/2 explorables landed: NLP
 (`tokenizer-playground`, `onehot-vs-embedding`, `embedding-projection`) under
 `src/features/courses/widgets/nlp/`, MLP (`activation-explorer`, `perceptron-boundary`,
 `gradient-descent-2d`, `backprop-trace`, `loss-landscape`) under `.../nn/`. Registered in
@@ -782,4 +788,220 @@ to both message files. Backend additions: `CourseProgressDetail` + `getCoursePro
   now cover signed-out reading in a real browser (no 401s, no progress UI) and the
   mark-complete round trip, but no phone and no keyboard-only pass. Left for the user's
   manual pass, mirroring P2-01…P3-02.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P5-00** — Closed per doc. Deviations and notes:
+- **The dogfood lesson was authored inside this task** (user-confirmed, 2026-07-30). The task doc
+  assumes the P3 walking skeleton produced a lesson to generalise from; it did not — the only file
+  under `es/` was the P1-01 rendering fixture, and the Phase-3 exit criterion was still unchecked.
+  Its own acceptance criterion ("the guide is written against a real authored lesson, not
+  hypothetically") is unsatisfiable without one, so Block 1 lesson 1
+  (`es/01-texto-como-numeros.mdx`, `draft: false`) was written here. Lessons 2–8 stay in P5-01.
+  Guide, template and lint were then corrected against what writing it actually exposed — that is
+  the whole point of the exercise, and four separate things came out of it:
+  1. **`minutes` was calibrated at a skim rate and contradicted the budget.** At 180 wpm a
+     mid-budget 1,600-word lesson estimates ~11 minutes against a 20–30 minute band, so every
+     lesson would have warned on one axis or the other forever. Now 120 wpm — a *study* rate — and
+     the two axes agree.
+  2. **A code-free lesson had no step 4.** P5-01 specifies lesson 1 as deliberately code-free, and
+     the six-step structure demands an "Implementación". Resolved in the guide: step 4 becomes
+     "Implementación a mano", a worked example on paper. It may change form; it may not be absent.
+  3. **`\mathbb{R}^{T \times d}` tripped the transpose rule.** A shape is the single most common
+     correct `T` superscript in the course. The rule now fires only when `T` is the whole
+     superscript, and big-operator limits (`\sum_{t=1}^{T}`) are stripped before any rule runs.
+  4. **The template did not lint when copied.** A `<CodeChallenge>` written inside an MDX comment
+     as an example still counts: the content passes read the file with regular expressions, not an
+     MDX parser. Template fixed, and the behaviour is now documented — to disable a component,
+     delete it, do not comment it out.
+- **A draft lesson has no page, so it cannot be previewed.** `generateStaticParams` is
+  published-only, so `draft: true` 404s even in dev, and authoring means flipping the flag back and
+  forth. Documented in AUTHORING.md §8 with the risk it creates (committing the wrong state), and
+  flagged there as the first candidate if authoring friction needs fixing. **Not fixed here** — a
+  dev-only draft preview is its own change and P5-00 is already the widest task in the phase.
+- **The rendering fixture is back to `draft: true`**, closing the "Revisit at P5-00" note left
+  under P3-01: the real lesson now supplies the published page, so nothing depends on the fixture
+  being reachable. Its maths was also made `NOTATION.md`-conformant (`Wx` → `\mathbf{W}\mathbf{x}`,
+  `L` → `\mathcal{L}`) — it is the file authors read to see what the pipeline supports, so it
+  should not model off-contract notation.
+- **`collectMdxFiles` was extracted** to `src/lib/courses/content-files.ts`. It was copy-pasted
+  verbatim in four validators; this task adds two more callers AND a rule that must hold in all of
+  them — **`_`-prefixed files and directories are not lessons** — so it now lives in one place.
+  `registry.ts` honours the same rule, so a `_wip.mdx` scratch draft next to real lessons does not
+  have to satisfy the frontmatter schema. This is what keeps `_template.mdx` out of the lint.
+- **Budget overruns warn; they never fail.** `scripts/lint-content.ts` now has two phases: the five
+  correctness passes (throw, exit 1, unchanged) and a new advisory phase that prints per-lesson
+  counts plus budget and notation warnings and **never touches the exit code**. Verified both ways:
+  a deliberately over-budget file warned on every axis at exit 0, and an unresolved `<Quiz id>` and
+  an unresolved `<Explorable id>` each still failed at exit 1.
+- **Word counting excludes LaTeX, code and JSX**, including `<PyCell code={`…`}>` template
+  literals; component counts additionally ignore anything in backticks, so prose *about* a
+  component is not counted as one. Hand-rolled and fence-aware in the style of `headings.ts` —
+  `unified`/`remark-parse` remain unimportable non-hoisted transitives (P3-01).
+- **The notation ruleset is deliberately five rules**, all decidable from the source: `\mathbf`
+  vs `\bf`/`\textbf`/`\boldsymbol`/`\vec`, bare `W`, `^l` vs `^{(l)}`, `d_model`, and `^T`/`^t` vs
+  `^{\top}`. Whether a bare `$x$` is a scalar or an unbolded vector is **not** decidable, and a
+  rule that fires on correct lessons trains authors to skip the ones that are right.
+  `\boldsymbol{\delta}` (Block 2, where `\mathbf` cannot embolden a Greek letter) is a known and
+  documented false positive — one warning, in the backprop lessons.
+- **A budget opt-out exists and has exactly one user:** `{/* content-budget: ignore — … */}` in the
+  rendering fixture, which embeds every explorable and all five question types on purpose. Notation
+  has no opt-out.
+- **Conflict flagged, not resolved:** P5-01 requires "Lesson 1 is the free sample lesson linked
+  from the course landing page", but P1-03 records that the sample-lesson section was removed from
+  the landing page at the user's request. The lesson exists and is published; whether the landing
+  page links to it is P5-01's call, not this task's.
+- `pnpm lint:content` (green, no warnings on the published lesson), `pnpm test:ci` (954 tests, 85
+  suites), `pnpm lint` (0 errors; the same 7 pre-existing warnings in untouched components) and
+  `pnpm build` all green. The build generates `/es/cursos/dl-nlp/texto-como-numeros`; the prerendered
+  HTML has 165 KaTeX spans, all six section anchors, all three quiz cards and no `TODO` leaks.
+- **Not verified: a real 360px device pass.** The lesson has been read only in the prerendered
+  HTML. Left for the user's manual pass, mirroring P2-01…P4-03.
+- **The six steps are no longer headings** (user-directed revision, 2026-07-30, after the first
+  pass shipped them as `## Motivación` / `## Intuición` / … in both the guide and the lesson).
+  **A template is a great authoring tool and a terrible reader interface**: identical scaffolding
+  headings in all ~40 lessons expose the machinery and read as a form being filled in rather than
+  an explanation. The structure is unchanged — what changed is that it is now invisible:
+  - Motivación, intuición and **puente** get **no heading**. They are narrative moments: the
+    opening paragraphs and the closing ones. A `##` on any of them turns a continuous line of
+    thought into compartments, and `## Puente` exposes the mechanism worst of all.
+  - Implementación and verificación **keep** a heading, because they are mode changes — "stop
+    reading, run this" / "stop reading, test yourself" — and the on-this-page rail wants them.
+    Formalización usually keeps one for the same reason when the maths runs long.
+  - Every heading is titled **by content**, never by step: "Compruébalo a mano con una frase en
+    español", not "Implementación".
+  - New `src/lib/courses/validate-structure.ts` warns when a heading is one of the six step names
+    (accent- and case-insensitive, reusing `extractHeadings` so it sees exactly what the rail
+    shows). Warn-only, like budget and notation. This is the half of the rule a machine can check,
+    and it is precisely the sort of thing that creeps back one tired evening at a time.
+  - Lesson 1 went from six scaffolding headings to three `##` + one `###`, all content-named;
+    verified in the prerendered HTML.
+- **Lesson 1 was rewritten to stop borrowing from Block 2** (user-directed, 2026-07-30). The first
+  version explained why a network cannot take text using `\mathbf{z} = \mathbf{W}\mathbf{x} +
+  \mathbf{b}`, "la primera capa" and el descenso de gradiente — the weight matrix, the layer and
+  the training rule are what **Block 2** exists to build, so Block 1 lesson 1 was resting its
+  central argument on three things the student had not been given. Methodologically wrong, and it
+  is the first lesson of the course.
+  - Rewritten at the level Block 1 owns: a network is a **function**, `f : \mathbb{R}^d \to
+    \mathbb{R}^m`; functions take numbers; text is not numbers. The "learning is correcting a
+    little at a time, and *a little* needs a space where small moves mean something" argument
+    stayed, but is now explicitly signposted as a forward reference ("eso es el bloque 2").
+  - The "dimensión fija" requirement no longer appeals to `\mathbf{W}`'s column count but to the
+    arity of the consuming function; two quiz options/explanations were rewritten for the same
+    reason. Swept the file for `capa` / `peso` / `gradiente` / `activación` / `perceptrón` —
+    the only survivors are the bare name "red neuronal" and signposted forward references.
+  - **The rewrite came out stronger, not weaker**, which is the usual result and is now recorded
+    as the argument for the rule.
+  - New **AUTHORING.md §2, "What a lesson may assume"** (sections renumbered 2→3…9→10, all `§`
+    cross-references updated): a lesson may use the course prerequisites and the lessons before it,
+    nothing else. **Matrices are a prerequisite; weight matrices are not.** Forward references are
+    fine only when signposted. Plus the three things that are true when you reach for a later
+    concept (make the argument lower; the lesson is misplaced; a prerequisite is missing from
+    `course.es.yml`). Added to the pre-merge checklist and to the template's header comment.
+    **Not machine-checkable** — it is a review question, and the first one to ask.
+  - Lesson 1: 1,401 → 1,573 words, still in budget; 189 KaTeX spans; build green.
+- **Two reader bugs found by authoring, both fixed** (user-reported, 2026-07-30). Both are P1-04
+  code, and neither was visible until a lesson written to the §1 heading rules rendered — which is
+  the argument for authoring a real lesson inside this task rather than deferring it:
+  1. **The on-this-page rail highlighted section 1 from the top of the page.** `OnThisPage`
+     initialised `activeId` to `headings[0]` and fell back to it in the scroll handler, so while
+     the reader was still in the untitled opening prose — which every lesson now has, by rule — the
+     rail pointed at somewhere they had not reached. A progress indicator that is confidently wrong
+     is worse than one that admits it does not know, so **nothing is active above the first
+     heading**. Logic extracted to `src/features/courses/reader/scroll-spy.ts` and unit-tested
+     (8 tests): the repo has no jsdom/RTL, so pure logic pulled out of a component is how
+     components get covered here.
+  2. **`###` rendered as body text.** `globals.css` opens with `@tailwind base`, and Preflight
+     resets every heading to `font-size: inherit; font-weight: inherit`. `h2` escaped it only
+     because `mdx-components.tsx` overrides it; there was **no `h3` override at all**, so a
+     subsection was a heading the rail listed and the page did not show. Added `h3` — 1.175rem,
+     weight 600.
+  - **`h2` had the same defect, less visibly:** its override set size and colour but never weight,
+    so it sat at the body's 400 while the lesson h1 is Manrope 800. Adding a weighted h3 without
+    fixing that would have made a subsection look *bolder* than its parent section, so `h2` now
+    carries `fontWeight: 700`. Hierarchy is h1 800 → h2 700 → h3 600.
+  - **Not changed, flagged instead:** body headings use the body font while the lesson h1 uses
+    `--font-headline` (Manrope). Possibly also unintended, but that is a design decision rather
+    than a stripped browser default, so it was left alone.
+- **New AUTHORING.md §5 subsection, "Terminology — one term per concept"** (user decision,
+  2026-07-30), prompted by noticing that Block 1 lesson 1 uses `red neuronal` and `modelo`
+  interchangeably. The cost is not that synonyms are bad writing — in ordinary prose they are good
+  writing — but that **in a technical explanation a reader cannot tell a synonym from a
+  distinction**, and pays that tax on every page for 40 lessons. It is the prose counterpart of
+  NOTATION.md: that fixes the symbols, this fixes the words, and both say "add the entry before
+  writing the lesson that needs it".
+  - `modelo` / `red neuronal` / `sistema` are given three distinct senses rather than one being
+    banned: the network specifically / the trained artefact, neural or not / anything downstream.
+    Lesson 1 already honours that split in 7 of 8 places, which is what suggested it. **In Block 1,
+    prefer `modelo` or `sistema`** — bolsa de palabras, TF-IDF and cosine similarity are not neural
+    networks, so `red neuronal` there is both over-specific and a §2 forward reference.
+  - A Spanish/English table, grounded in what the syllabus **already commits to** rather than
+    invented: *embedding*, *token*, *batch*, *attention*, *one-hot encoding*, *fine-tuning*,
+    *softmax*, *encoder*/*decoder* stay English; capa, peso, pérdida, gradiente, entrenamiento,
+    vocabulario, tokenización, bolsa de palabras stay Spanish. The test is whether the Spanish term
+    is genuinely used by people who do this work, not which language sounds better.
+  - **One live conflict surfaced and left for the user:** `course.es.yml`'s Block 2 summary says
+    *retropropagación*, while the syllabus uses *backpropagation* in three lesson titles and in the
+    `backpropagation` slug. The table assumes the slug wins; the manifest was **not** edited, since
+    it is customer-facing copy. Flagged in the doc as `> Open:`.
+  - Checklist item added; the rule is also in the template header, where lessons get written.
+  - **Lesson 1 was not edited** for this. Only its line 69 deviates from the split it otherwise
+    follows.
+- **Acronym rule added to the same §5 subsection**, after the user caught `OOV` being used in
+  lesson 1 with no expansion — introduced by this task's own cross-reference pass, which wrote
+  "la lección 3, sobre vocabulario y OOV" one clause after naming the concept in plain Spanish.
+  Fixed in place: *palabras fuera de vocabulario (out-of-vocabulary, OOV)*, and the redundant tail
+  dropped.
+  - The rule is **expand on first use per LESSON, not per course**. Lessons are entered from search,
+    from the sidebar and from links in other lessons, so "I defined it in lesson 3" is no defence
+    in lesson 8. Framed in the doc as §2 in miniature: an unexpanded acronym is something the
+    student has not been given, dressed as something they should already know.
+  - Checklist item names the ones this course will actually use: OOV, BPE, BPTT, TF-IDF, MLP, RNN.
+  - Swept both content files: no other bare acronym in the published lesson; the two in the
+    rendering fixture (`NLP`, `MLP`) are in headings of a draft coverage file that never publishes.
+- **The reading-time budget lost its lower bound** (user decision, 2026-07-30). It was a *second*
+  measure of "is this lesson substantial enough", and `words` already measures that — calibrated
+  differently, so the two could not both be satisfied. `estimatedMinutes` for a prose-only lesson
+  is `words/120 + questions`, so clearing a 20-minute floor needed **≥2,040 words**, past the
+  2,000-word target: every widget-free lesson warned on one axis or the other, forever. Block 1
+  lesson 1 (deliberately widget- and code-free) was the one that exposed it.
+  - `warnUnder: false` on the `minutes` axis. The **ceiling stays** — a 40-minute lesson really
+    should split — and the drift check still catches a `minutes` that contradicts the content, so
+    a lesson claiming 40 minutes' worth of nothing is still called out.
+  - Note the earlier 180→120 wpm recalibration was an attempt to fix this same contradiction and
+    only narrowed it. The estimate is now explicitly **advisory**: it feeds the `(≈N)` in the
+    report and the drift check, and no warning fires merely because it is low.
+  - AUTHORING.md updated in both places that documented the old behaviour; 3 new tests pin the
+    new one (no warning below the band, still warns above it and past the ceiling).
+- **Blocks renumbered 0..4 → 1..5, everywhere** (user decision, 2026-07-30). The prose, the
+  manifest and every planning doc said "block 0"; `LessonSidebar` rendered `index + 1` zero-padded
+  and showed **01**. Off by one, and a reader following a cross-reference landed in the wrong
+  block. The user chose to move the numbering rather than the UI, so `course.es.yml` ids, the
+  `block:` field in every lesson and the template, PLAN.md (prose *and* the bare-number column of
+  its structure table), all six phase-5 docs, the phase-1/2/3 docs, AUTHORING.md, NOTATION.md,
+  STATUS.md and the block references in code comments all moved together.
+  - **The five phase-5 block docs were renamed too** (`01-block-0-fundamentos.md` →
+    `01-block-1-fundamentos.md`, and so on), since their filenames encode the block. A side effect
+    worth having: task number and block number now agree — P5-01 is Block 1, P5-05 is Block 5.
+    All six inbound links verified to resolve.
+  - **Test fixtures were deliberately left alone.** The block ids in `registry.test.ts`,
+    `schemas.test.ts`, `SyllabusAccordion.test.ts` and `enrollment-view.test.ts` are arbitrary
+    inputs to grouping and validation logic, not references to real course blocks; renumbering
+    them would have implied a coupling that does not exist.
+  - `LessonSidebar` now renders `group.block.id` instead of `findIndex + 1`. After the renumber the
+    two agree by accident, and an accident is not a guarantee: numbering by position would silently
+    disagree again the first time a block is added, removed or reordered.
+- **Lessons are now numbered in the sidebar** (`SidebarLessonList`, ordinal within the block), so
+  prose that says "la lección 3" points at something a reader can find. It was previously an
+  unnumbered list of titles, and every numeric cross-reference in the course was unresolvable.
+  Kept as real content rather than `aria-hidden`: the list has `list-style: none`, so screen
+  readers cannot be relied on to announce position.
+- **New AUTHORING.md rule, "Referring to other blocks and lessons":** blocks 1..5, lessons numbered
+  within their block, both **lowercase** in Spanish prose (*la lección 3*, not *la Lección 3*), and
+  — the load-bearing part — **always name the topic alongside the number**: "la lección 3, sobre
+  vocabulario y OOV". A bare ordinal is a reference that rots: insert one lesson and every
+  "la lección 3" elsewhere silently points at the wrong place, across 40 lessons, with nothing
+  checking it. Applied to lesson 1's six cross-references; its self-reference to its own block
+  became "todo **este** bloque", which cannot drift at all.
+- 64 new unit tests across `budget.test.ts`, `validate-notation.test.ts`, `content-files.test.ts`,
+  `validate-structure.test.ts` and `reader/__tests__/scroll-spy.test.ts`.
 - Not yet committed to a branch/PR (**local**).

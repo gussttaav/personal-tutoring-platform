@@ -21,7 +21,7 @@ These were settled before planning; every task below assumes them.
 | Database | **Same Supabase** | The data is relational (`users → enrollments → lesson_progress → quiz_attempts`). ~8 MB at 1,000 students × 40 lessons — capacity is a non-issue. MongoDB would add a second ops surface, a second free tier, and a second type system for zero benefit. |
 | Content storage | **MDX files in git**, not the DB | Versioned, diffable, reviewable in PRs — which matters for a course where derivations *will* be corrected. The DB holds user state only. |
 | Rendering | **Static generation** (`generateStaticParams`) | Math (KaTeX) and highlighting (Shiki) resolve at build time. A lesson costs **zero function invocations** to serve — this is what keeps the whole thing inside Vercel Hobby regardless of traffic. |
-| Python | **Pyodide in a Web Worker** (client-side) | Zero server cost. PyTorch does not run in Pyodide; NumPy does — which aligns exactly with a from-scratch course. Block 4's fine-tuning goes to Colab links. |
+| Python | **Pyodide in a Web Worker** (client-side) | Zero server cost. PyTorch does not run in Pyodide; NumPy does — which aligns exactly with a from-scratch course. Block 5's fine-tuning goes to Colab links. |
 | Language | **Spanish first**, English additive later | Slugs are identical across locales, so English is a pure content addition — no new routes, no redirects, no slug migration. |
 | Mobile app | **Out of scope, hedged** | The MDX body is web-only. Lesson *metadata* stays in a queryable registry so a future `GET /api/courses` + webview deep-link is additive, not a rewrite. |
 | Access | **Free, sign-in required for progress** | The course is a funnel into the existing 1:1 booking business. Paid is a later config change (new `ProductKey` + existing PaymentIntent flow), not a rewrite. |
@@ -41,17 +41,17 @@ These were settled before planning; every task below assumes them.
 
 | # | Phase | Tasks | Ships |
 |---|-------|-------|-------|
-| 1 | **[Foundations](phase-1-foundations/README.md)** | 4 | Content pipeline, registry, catalog + course landing, responsive reader. Prose lessons render. |
-| 2 | **[Interactivity](phase-2-interactivity/README.md)** | 3 | Widget registry, first explorables, Pyodide code cells. |
-| 3 | **[Assessment](phase-3-assessment/README.md)** | 2 | Quizzes + code challenges. **Exit = one lesson complete end-to-end.** |
-| 4 | **[Persistence](phase-4-persistence/README.md)** | 3 | Migration `0016`, progress API, "Mis cursos" in `/area-personal`. |
+| 2 | **[Foundations](phase-1-foundations/README.md)** | 4 | Content pipeline, registry, catalog + course landing, responsive reader. Prose lessons render. |
+| 3 | **[Interactivity](phase-2-interactivity/README.md)** | 3 | Widget registry, first explorables, Pyodide code cells. |
+| 4 | **[Assessment](phase-3-assessment/README.md)** | 2 | Quizzes + code challenges. **Exit = one lesson complete end-to-end.** |
+| 5 | **[Persistence](phase-4-persistence/README.md)** | 3 | Migration `0016`, progress API, "Mis cursos" in `/area-personal`. |
 | 5 | **[Content](phase-5-content/README.md)** | 6 | Authoring guide + the five syllabus blocks. |
 | 6 | **[Launch](phase-6-launch/README.md)** | 3 | SEO/JSON-LD/sitemap/hreflang, waitlist email, gate flip. |
 
 ### The walking skeleton
 
 There is deliberately **no separate "skeleton" phase**. Instead, the **exit criterion of Phase 3**
-is that lesson 1 of Block 0 is authored end-to-end — prose + display math + one explorable +
+is that lesson 1 of Block 1 is authored end-to-end — prose + display math + one explorable +
 one runnable NumPy cell + one quiz — and read on a phone.
 
 The reason: the authoring loop is what decides whether a 40-lesson course finishes. Everything
@@ -113,13 +113,13 @@ mapped to HTTP by `src/lib/http-errors.ts`. Zod schemas in `src/lib/schemas.ts`.
 
 | Block | Title (es) | Interactivity profile |
 |---|---|---|
-| 0 | Fundamentos de NLP | Tokenizer playground, embedding projection. Prose-heavy — good first content. |
-| 1 | El Perceptrón Multicapa | Activation explorer, live gradient descent, backprop trace. NumPy MLP from scratch. |
-| 2 | Redes Neuronales Recurrentes | Unrolled-RNN diagram, vanishing-gradient visualiser, LSTM gate explorer. |
-| 3 | El Puente hacia la Atención | Context-bottleneck demo, Bahdanau alignment heat map. |
-| 4 | El Transformer | Self-attention heat map, multi-head view, positional-encoding explorer. Fine-tuning → **Colab**. |
+| 1 | Fundamentos de NLP | Tokenizer playground, embedding projection. Prose-heavy — good first content. |
+| 2 | El Perceptrón Multicapa | Activation explorer, live gradient descent, backprop trace. NumPy MLP from scratch. |
+| 3 | Redes Neuronales Recurrentes | Unrolled-RNN diagram, vanishing-gradient visualiser, LSTM gate explorer. |
+| 4 | El Puente hacia la Atención | Context-bottleneck demo, Bahdanau alignment heat map. |
+| 5 | El Transformer | Self-attention heat map, multi-head view, positional-encoding explorer. Fine-tuning → **Colab**. |
 
-Block 4's final project cannot run in Pyodide (no PyTorch). That is by design, not a gap.
+Block 5's final project cannot run in Pyodide (no PyTorch). That is by design, not a gap.
 
 ---
 

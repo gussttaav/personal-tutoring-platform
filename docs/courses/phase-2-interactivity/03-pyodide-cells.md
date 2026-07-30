@@ -10,9 +10,9 @@ an optimisation: it is the only way a student's `while True:` doesn't freeze the
 
 ## Context
 
-- **PyTorch does not run in Pyodide. NumPy does.** Blocks 0–3 are "implement it from scratch in
+- **PyTorch does not run in Pyodide. NumPy does.** Blocks 1–4 are "implement it from scratch in
   NumPy", which is both the pedagogically right choice for a rigour-focused course and the only
-  thing that runs client-side. Block 4's fine-tuning goes to Colab (`<ColabLink>` from P1-01).
+  thing that runs client-side. Block 5's fine-tuning goes to Colab (`<ColabLink>` from P1-01).
 - The CSP already permits `'wasm-unsafe-eval'`, `'unsafe-eval'`, `worker-src 'self' blob:` and
   `child-src 'self' blob:` — all present for the Zoom SDK (`next.config.mjs`). **The WASM/worker
   fight is already won**; only the CDN origin needs adding.

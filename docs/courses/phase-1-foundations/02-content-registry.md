@@ -44,7 +44,7 @@ prerequisites:
   - "Álgebra lineal: vectores, matrices, producto matricial"
   - "Cálculo: derivadas parciales y regla de la cadena"
 blocks:
-  - id: 0
+  - id: 1
     title: "Fundamentos de NLP"
     summary: "..."
 ```
@@ -54,7 +54,7 @@ blocks:
 ```yaml
 slug: tokenizacion          # globally unique within the course
 title: "Tokenización y vocabulario"
-block: 0
+block: 1
 order: 1
 minutes: 25
 summary: "..."              # used by the sidebar, meta description and JSON-LD

@@ -1,5 +1,5 @@
 /*
- * COURSE-P2-02 — Small toolbar button shared by the Block 0–1 widgets.
+ * COURSE-P2-02 — Small toolbar button shared by the Block 1–2 widgets.
  *
  * `Explorable` already wraps every widget in one `WidgetFrame` (border/bg/caption),
  * so widgets must NOT render a second frame just to get its Reset button — that

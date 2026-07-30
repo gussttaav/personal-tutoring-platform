@@ -15,18 +15,18 @@ prerequisites:
   - "Álgebra lineal: vectores, matrices, producto matricial"
   - "Cálculo: derivadas parciales y regla de la cadena"
 blocks:
-  - id: 0
+  - id: 1
     title: "Fundamentos de NLP"
     summary: "Tokenización, vocabularios y las primeras representaciones vectoriales del texto."
-  - id: 1
+  - id: 2
     title: "El Perceptrón Multicapa"
     summary: "Del perceptrón a una red multicapa entrenada con descenso de gradiente y retropropagación."
-  - id: 2
+  - id: 3
     title: "Redes Neuronales Recurrentes"
     summary: "Secuencias, memoria y el problema del gradiente que se desvanece."
-  - id: 3
+  - id: 4
     title: "El Puente hacia la Atención"
     summary: "El cuello de botella del contexto y la alineación que lo resuelve."
-  - id: 4
+  - id: 5
     title: "El Transformer"
     summary: "Auto-atención, múltiples cabezas y codificación posicional."

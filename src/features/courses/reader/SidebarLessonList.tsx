@@ -46,9 +46,14 @@ export default function SidebarLessonList({
         gap: tracking ? "0" : "2px",
       }}
     >
-      {lessons.map((lesson) => {
+      {lessons.map((lesson, index) => {
         const isCurrent = lesson.slug === currentSlug;
         const isDone = tracking && progress!.completed.has(lesson.slug);
+        // COURSE-P5-00 — lesson ordinal WITHIN its block, so prose that says
+        // "la lección 3" points at something the reader can actually find. Derived
+        // from position, not from the `order` frontmatter: `order` is a sort key that
+        // may have gaps, and what a reader counts is rows on the screen.
+        const ordinal = index + 1;
         return (
           <li key={lesson.slug}>
             <Link
@@ -96,6 +101,19 @@ export default function SidebarLessonList({
                   check
                 </span>
               ) : null}
+              {/* Ordinal sits in its own fixed-width, tabular-figures slot so titles
+                  align down the column regardless of the number's width. */}
+              <span
+                style={{
+                  flexShrink: 0,
+                  minWidth: "1.1rem",
+                  fontVariantNumeric: "tabular-nums",
+                  fontSize: "0.8125rem",
+                  color: isCurrent ? "var(--text-muted)" : "var(--text-dim)",
+                }}
+              >
+                {ordinal}.
+              </span>
               <span style={{ minWidth: 0 }}>{lesson.title}</span>
             </Link>
           </li>

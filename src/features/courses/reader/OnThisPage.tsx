@@ -19,6 +19,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { HeadingOutline } from "@/lib/courses/headings";
+import { activeHeadingId } from "./scroll-spy";
 
 interface OnThisPageProps {
   headings: HeadingOutline[];
@@ -30,7 +31,10 @@ const SPY_OFFSET = 100;
 
 export default function OnThisPage({ headings }: OnThisPageProps) {
   const t = useTranslations("courses.reader");
-  const [activeId, setActiveId] = useState<string | null>(headings[0]?.id ?? null);
+  // COURSE-P5-00: starts as `null`, NOT `headings[0]`. Every lesson opens with untitled
+  // prose (motivación + intuición — see docs/courses/AUTHORING.md §1), so highlighting
+  // the first section on load pointed the rail at somewhere the reader had not reached.
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   useEffect(() => {
     if (headings.length === 0) return;
@@ -38,15 +42,13 @@ export default function OnThisPage({ headings }: OnThisPageProps) {
 
     const onScroll = () => {
       // Headings are in document order → the active one is the LAST whose top has
-      // crossed the reading line.
-      let current = ids[0] ?? null;
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (!el) continue;
-        if (el.getBoundingClientRect().top - SPY_OFFSET <= 0) current = id;
-        else break;
-      }
-      setActiveId(current);
+      // crossed the reading line, and none is active above the first.
+      const positions = ids
+        .map((id) => ({ id, el: document.getElementById(id) }))
+        .filter((p): p is { id: string; el: HTMLElement } => p.el !== null)
+        .map(({ id, el }) => ({ id, top: el.getBoundingClientRect().top }));
+
+      setActiveId(activeHeadingId(positions, SPY_OFFSET));
     };
 
     onScroll();

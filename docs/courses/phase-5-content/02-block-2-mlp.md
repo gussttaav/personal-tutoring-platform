@@ -1,7 +1,7 @@
-# P5-02 — Block 1: El Perceptrón Multicapa
+# P5-02 — Block 2: El Perceptrón Multicapa
 
 **Tag:** `COURSE-P5-02` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
-**Depends on:** P2 (all Block 1 widgets), P3 (quizzes + challenges)
+**Depends on:** P2 (all Block 2 widgets), P3 (quizzes + challenges)
 
 ## TL;DR
 
@@ -41,7 +41,7 @@ the *algorithm* rather than about remembering calculus.
 - Gradient descent, learning rate, convergence, divergence
 - Chain rule: single variable → multivariable → the vector/Jacobian form
 - **Full backpropagation derivation** for a 2-hidden-layer network, per-layer, indices explicit
-- Weight initialisation: why zeros fail (symmetry), why scale matters (a forward pointer to Block 2)
+- Weight initialisation: why zeros fail (symmetry), why scale matters (a forward pointer to Block 3)
 
 ## Acceptance criteria
 
@@ -74,7 +74,7 @@ the *algorithm* rather than about remembering calculus.
   the prose will assume the lesson is wrong.
 - Lessons 7–8 will be the longest. Split rather than exceed the ceiling; use `<Details>` for the
   index-heavy algebra so the flow stays readable.
-- Reuse the Block 0 bag-of-words representation for lesson 10 — the callback is the point of
+- Reuse the Block 1 bag-of-words representation for lesson 10 — the callback is the point of
   putting the project here.
 
 ## Out of scope

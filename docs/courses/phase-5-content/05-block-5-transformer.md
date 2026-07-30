@@ -1,7 +1,7 @@
-# P5-05 — Block 4: El Transformer
+# P5-05 — Block 5: El Transformer
 
 **Tag:** `COURSE-P5-05` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
-**Depends on:** P5-04 · Block 4 widgets (built in this task)
+**Depends on:** P5-04 · Block 5 widgets (built in this task)
 
 ## TL;DR
 
@@ -44,12 +44,12 @@ block is finished.
 - Self-attention: $\text{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}}\right)\mathbf{V}$
 - **Derive the $\sqrt{d_k}$ scaling** — the variance argument for why unscaled dot products push
   softmax into saturation. Lesson 3 exists solely for this, and it connects directly back to
-  Block 1's saturation and Block 2's vanishing gradients. It is the course's thesis in miniature
+  Block 2's saturation and Block 3's vanishing gradients. It is the course's thesis in miniature
 - $\mathbf{Q},\mathbf{K},\mathbf{V}$ as learned projections of the same input — the *self* in self-attention
 - Multi-head: parallel heads, concatenation, output projection; parameter count vs. single head
 - Sinusoidal positional encoding: $PE_{(pos,2i)} = \sin(pos/10000^{2i/d})$, and **why** sinusoids
   (relative positions expressible as a linear function of the encoding)
-- Residual connections and layer norm — why they're necessary at depth (callback to Block 2's
+- Residual connections and layer norm — why they're necessary at depth (callback to Block 3's
   gradient flow argument)
 - Causal masking, and how it makes the decoder autoregressive
 - Complexity: $O(T^2 d)$ vs. the RNN's $O(T d^2)$, and the parallelism trade this buys
@@ -89,7 +89,7 @@ block is finished.
   from a real pretrained model, chosen so the heads visibly differ.
 - Lesson 10 (BERT/GPT) should stay conceptual and short — it's a map of where to go next, not a
   new architecture course. Resist expansion.
-- Close the course by pointing back at Block 0's *banco* example: the thing a static embedding
+- Close the course by pointing back at Block 1's *banco* example: the thing a static embedding
   couldn't do, self-attention now does. Ending where you started is worth the paragraph.
 
 ## Out of scope

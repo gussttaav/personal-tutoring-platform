@@ -66,7 +66,7 @@ Custom components to expose to MDX in this task (widgets come in P2):
 | `<Callout type="note\|warning\|intuition\|math">` | The "intuition before rigour" pattern this course needs throughout |
 | `<Figure src alt caption>` | Consistent captions + `max-width: 100%` |
 | `<Details summary>` | Collapsible full derivations — keeps rigour available without wrecking flow |
-| `<ColabLink notebook>` | Block 4's escape hatch to GPU work |
+| `<ColabLink notebook>` | Block 5's escape hatch to GPU work |
 
 Pick **one** Shiki theme and put it in `src/constants/` next to the existing design tokens.
 Dark-only is fine — the site is dark-only.

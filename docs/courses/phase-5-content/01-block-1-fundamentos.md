@@ -1,4 +1,4 @@
-# P5-01 — Block 0: Fundamentos de NLP
+# P5-01 — Block 1: Fundamentos de NLP
 
 **Tag:** `COURSE-P5-01` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
 **Depends on:** P1 (renders), P2-02 (`tokenizer-playground`, `onehot-vs-embedding`, `embedding-projection`)
@@ -57,7 +57,7 @@ it". Give that idea room — it recurs throughout the course.
 - Read every lesson on a phone.
 - Run every code cell in a production build.
 - Have someone who is *not* a DL practitioner read lessons 1–3 and report where they got lost.
-  Block 0 is the highest-drop-off point in every course of this kind.
+  Block 1 is the highest-drop-off point in every course of this kind.
 
 ## Notes / gotchas
 
@@ -72,6 +72,6 @@ it". Give that idea room — it recurs throughout the course.
 
 ## Out of scope
 
-- Contextual embeddings (ELMo, BERT) — Block 4.
+- Contextual embeddings (ELMo, BERT) — Block 5.
 - Byte-pair encoding implementation details beyond the playground demo.
 - Multilingual or cross-lingual embeddings.

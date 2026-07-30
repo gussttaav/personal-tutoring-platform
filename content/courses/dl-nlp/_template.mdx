@@ -1,0 +1,142 @@
+---
+slug: TODO-slug-igual-que-el-nombre-del-fichero
+title: "TODO — el título que ve el estudiante"
+block: 1
+order: 1
+minutes: 25
+summary: "TODO — una frase. Aparece en el índice del curso y en los metadatos de la página."
+draft: true
+hasCode: true      # `true` porque abajo hay un <PyCell>. Si lo borras, pon `false`.
+hasQuiz: true
+quiz:
+  - id: q-TODO
+    type: single
+    prompt: "TODO — el enunciado. Admite **markdown** y $\\LaTeX$."
+    options:
+      - { id: a, text: "TODO" }
+      - { id: b, text: "TODO" }
+    answer: a
+    explanation: "TODO — por qué. Obligatorio: una pregunta sin explicación no enseña nada."
+challenges: []
+---
+
+{/*
+  COURSE-P5-00 — Plantilla de lección. Cópiala a `es/NN-slug.mdx` y bórralo todo.
+
+  El prefijo `_` mantiene este fichero fuera del registro y de `pnpm lint:content`,
+  así que puede contener TODOs sin romper CI. Un fichero de trabajo se llama igual:
+  `_loquesea.mdx`, o cualquier cosa dentro de `_drafts/`.
+
+  Antes de escribir: docs/courses/AUTHORING.md (estructura, presupuesto, tono, trampas
+  de MDX/LaTeX) y docs/courses/NOTATION.md (notación, para todo el curso).
+
+  La regla que más fácil se rompe (AUTHORING.md §2): esta lección sólo puede usar los
+  prerrequisitos del curso y lo enseñado en las lecciones ANTERIORES. Lo que a ti te
+  resulta evidente porque ya sabes el bloque 5 es deuda que el estudiante todavía no
+  puede pagar. Si necesitas un concepto posterior, o lo dices en voz alta («eso es el
+  bloque 2; por ahora basta con…») o el argumento se puede hacer más abajo — y casi
+  siempre se puede, y casi siempre sale mejor.
+
+  Un concepto, una palabra, en todo el curso (AUTHORING.md §5, «Terminology»). `modelo`,
+  `red neuronal` y `sistema` NO son sinónimos: el lector no puede distinguir un sinónimo
+  de una distinción, y se pasa el párrafo decidiendo si el cambio significaba algo. Si
+  necesitas un término que no esté en la tabla, añádelo allí ANTES de escribir.
+
+  Los seis pasos marcados abajo con comentarios son el contrato, en este orden, siempre.
+  PERO NO SON TÍTULOS: los comentarios se borran al escribir. Un estudiante que lee
+  «## Motivación», «## Intuición», «## Formalización» lección tras lección no está
+  siguiendo una explicación, está viendo rellenarse un formulario. El andamio es para ti.
+
+  Regla: ningún título lleva el nombre de un paso, y la mayoría de los pasos no llevan
+  título. Motivación, intuición y puente son prosa corrida — el principio y el final de
+  la lección. Sólo cambian de modo, y por tanto sólo se titulan, los sitios donde el
+  estudiante deja de leer y hace algo. Y el título dice qué se hace AQUÍ:
+  «## Construyendo la matriz one-hot en NumPy», nunca «## Implementación».
+  Dos a cuatro `##` por lección. `pnpm lint:content` avisa si se te cuela un paso.
+*/}
+
+{/* ── 1. MOTIVACIÓN — sin título. Es el arranque de la lección. ───────────────── */}
+
+TODO — dos párrafos. La pregunta que responde esta lección, y por qué le importa a alguien. No
+resumas lo que viene: plantea el problema tan bien que el estudiante quiera la respuesta.
+
+TODO — segundo párrafo. Si puedes, un ejemplo concreto en español que falle de forma visible.
+
+{/* ── 2. INTUICIÓN — sin título. Sale de la motivación, no se anuncia. ────────── */}
+
+TODO — la idea en palabras y dibujos, **antes de cualquier símbolo**. Aquí suele ir un explorable:
+que el estudiante mueva algo y vea qué cambia antes de leer la fórmula que lo describe.
+
+{/* Ids válidos en src/features/courses/widgets/widget-ids.ts. Un id que no exista es
+    un error duro del lint. Borra la línea si esta lección no lleva widget. */}
+
+<Explorable id="tokenizer-playground" caption="TODO — qué debe mirar el estudiante aquí." />
+
+<Callout type="intuition" title="La idea en una frase">
+TODO — el resumen que te gustaría que recordara dentro de seis meses.
+</Callout>
+
+{/* ── 3. FORMALIZACIÓN — suele llevar título, porque cambia el modo y el estudiante
+       querrá volver aquí. Titúlalo por lo que se formaliza, no «Formalización». ──── */}
+
+## TODO — qué se define o se deriva aquí
+
+TODO — las matemáticas, completas. La derivación se muestra, no se afirma: es lo que diferencia a
+este curso. Di la forma de cada array la primera vez que aparece.
+
+$$
+\mathbf{h}^{(l)} = \sigma\!\left(\mathbf{W}^{(l)} \mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}\right)
+$$
+
+{/* Las vallas `$$` van en su propia línea. En una sola línea, `$$…$$` se renderiza
+    como matemática EN LÍNEA — y el lint la cuenta así. */}
+
+con $\mathbf{W}^{(l)} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$.
+
+<Details summary="TODO — ver la derivación completa">
+TODO — los pasos largos van aquí. Plegados, no ausentes: el estudiante que quiere el detalle lo
+tiene, y el que no, sigue leyendo.
+</Details>
+
+{/* ── 4. IMPLEMENTACIÓN — con título: «deja de leer y ejecuta esto». Di qué se
+       construye. Si la lección no lleva código a propósito, es un ejemplo resuelto a
+       mano («## Compruébalo a mano con…»). Lo que no puede es faltar. ────────────── */}
+
+## TODO — qué construye el estudiante aquí
+
+TODO — NumPy desde cero. Una celda que el estudiante ejecuta de verdad.
+
+{/* `code` es una PROP, no children: MDX parsearía el cuerpo como markdown y
+    destrozaría la indentación, que en Python es sintaxis. Si añades una celda,
+    `hasCode` pasa a `true` (el lint lo comprueba en ambas direcciones). */}
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# TODO
+print(np.arange(3))
+`} />
+
+{/* ── 5. VERIFICACIÓN — con título: «deja de leer y ponte a prueba». Algo como
+       «## Comprueba tu intuición», nunca «## Verificación». ─────────────────────── */}
+
+## TODO — invita a comprobar, con las palabras de esta lección
+
+TODO — una o dos frases que enlacen la pregunta con lo que se acaba de explicar.
+
+<Quiz id="q-TODO" />
+
+{/* Y, si hay algo que construir, añade un desafío: decláralo en `challenges:` arriba y
+    colócalo aquí con la etiqueta CodeChallenge y su id.
+
+    OJO: el lint lee el fichero con expresiones regulares, no con un parser de MDX, así
+    que una etiqueta escrita DENTRO de un comentario cuenta igual. No comentes un
+    Quiz, un PyCell ni un CodeChallenge para desactivarlo — bórralo. */}
+
+{/* ── 6. PUENTE — SIN TÍTULO, y esto importa más que en ningún otro paso. Un `##` que
+       diga «Puente» enseña el mecanismo de la peor forma posible. Es el párrafo final
+       de la lección, sin anunciarse. ────────────────────────────────────────────── */}
+
+TODO — **lo más importante de la lección**. Qué queda sin resolver, y qué lección lo resuelve.
+Esto es lo que convierte el curso en un curso y no en un montón de tutoriales sueltos. Termina
+siempre mirando hacia adelante.

@@ -1,7 +1,7 @@
 /*
  * COURSE-P2-02 — `activation-explorer`: overlay an activation and its derivative,
  * and SHADE the saturation regions where the derivative ≈ 0. Seeing saturation is
- * the whole point — it sets up vanishing gradients in Block 2. Pure activations from
+ * the whole point — it sets up vanishing gradients in Block 3. Pure activations from
  * math/activations (all derivative-checked vs finite differences). Local state only.
  */
 

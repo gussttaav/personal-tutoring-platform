@@ -81,9 +81,12 @@ function readLessons(
   // Missing locale dir is normal (the `en` state for months) — no lessons, no throw.
   if (!fs.existsSync(localeDir)) return [];
 
+  // COURSE-P5-00: `_`-prefixed files are not lessons — the same opt-out the content
+  // validators honour (see ./content-files.ts), so a `_wip.mdx` scratch draft next to
+  // real lessons does not have to satisfy the frontmatter schema to keep the build green.
   const files = fs
     .readdirSync(localeDir)
-    .filter((f) => f.endsWith(".mdx"))
+    .filter((f) => f.endsWith(".mdx") && !f.startsWith("_"))
     .sort();
 
   const lessons: Lesson[] = [];

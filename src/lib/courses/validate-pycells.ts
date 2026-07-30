@@ -23,9 +23,8 @@
  */
 
 import fs from "node:fs";
-import path from "node:path";
 
-const DEFAULT_CONTENT_ROOT = path.join(process.cwd(), "content", "courses");
+import { DEFAULT_CONTENT_ROOT, collectMdxFiles } from "./content-files";
 
 // Opening tag only; `\b` stops `<PyCellClient>`-style names from matching.
 const PYCELL_TAG = /<PyCell\b/;
@@ -67,21 +66,6 @@ export function pyCellProblems(source: string): string[] {
     ];
   }
   return [];
-}
-
-/** Recursively collect every `.mdx` file path under `dir`. */
-function collectMdxFiles(dir: string): string[] {
-  if (!fs.existsSync(dir)) return [];
-  const out: string[] = [];
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      out.push(...collectMdxFiles(full));
-    } else if (entry.isFile() && entry.name.endsWith(".mdx")) {
-      out.push(full);
-    }
-  }
-  return out;
 }
 
 /**

@@ -33,7 +33,7 @@ import { PyCellClient } from "./PyCellClient";
 
 export interface PyCellProps {
   code: string;
-  /** Pyodide packages to load before running. Only NumPy is expected in Blocks 0–3. */
+  /** Pyodide packages to load before running. Only NumPy is expected in Blocks 1–4. */
   packages?: string[];
 }
 
