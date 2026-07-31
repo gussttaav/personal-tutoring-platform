@@ -927,6 +927,50 @@ to both message files. Backend additions: `CourseProgressDetail` + `getCoursePro
   - **Not changed, flagged instead:** body headings use the body font while the lesson h1 uses
     `--font-headline` (Manrope). Possibly also unintended, but that is a design decision rather
     than a stripped browser default, so it was left alone.
+- **A third Preflight bug, and the reason there was a third** (user-reported, 2026-07-31). The
+  ordered list in lesson 1's *«Compruébalo tú mismo…»* section rendered as three unnumbered,
+  unindented run-on lines. Not a parsing failure — `remark-gfm` emits a correct `<ol>`; Preflight
+  resets `ol, ul, menu` to `list-style: none; margin: 0; padding: 0`, and with no
+  `@tailwindcss/typography` and no `prose` class on `.lesson-content`, nothing put it back.
+  - **The pattern is what matters, not the bug.** Three findings in two days, all the same
+    sentence: *Preflight strips a browser default, and lesson prose is the only surface in this
+    app that relies on browser defaults.* Every other surface is composed of components that
+    style themselves. So this pass stopped fixing them one at a time and swept the reset for
+    everything markdown can still emit: `a` (`color`/`text-decoration: inherit` — a link was
+    indistinguishable from body text), `blockquote` (`margin: 0` — indistinguishable from a
+    paragraph), and inline `code` (mono font, no boundary). All four now live in one commented
+    block in `lesson.css`. `h4` stays unstyled deliberately — the outline collects h2/h3 only.
+  - **The fix is CSS, not a `mdx-components.tsx` override, unlike h2/h3.** Component overrides
+    cannot reach `::marker`, cannot give nested levels their own markers, and — the load-bearing
+    one — cannot reach `li > p`. A *loose* list (blank lines between items) has remark wrap each
+    item in a `<p>`, which then inherits `.lesson-content p { margin: 1.25rem 0 }` and blows the
+    items a full paragraph apart.
+  - **`.lesson-content` alone is NOT a tight enough scope, and browser-checking the change is
+    what showed it.** The reading column also holds component-rendered prose elements, and two
+    of them were caught by the first draft:
+    - `.lesson-content a` turned `LessonNav`'s prev/next card **green**. The card sets
+      `textDecoration` inline (so it kept its lack of underline) but not `color`. Invisible
+      today only because its two child spans set explicit colours — the next unstyled span in
+      that card would have shipped green. Now scoped to
+      `:is(p, li, blockquote, td, th) a`: a markdown link always lands in one of those, a
+      component link never does.
+    - `.lesson-content li { margin }` would have loosened `CodeChallengeCard`'s test-results
+      list, a `display: grid` whose spacing is a `gap`. Its inline `list-style: none` already
+      outranked the marker rules, but its `<li>`s set no margin, so the descendant rules got
+      through. Every list rule now carries `:not([style])` — remark never emits a `style`
+      attribute and every component list here sets one, so that attribute *is* the
+      authored-in-markdown test.
+  - **The real defect was in the fixture, not the CSS.** `00-pipeline-fixture.mdx` exists to
+    exercise every part of the pipeline and had covered math, code, tables, every callout and all
+    five question types since P1-01 — but contained **no list, no link and no blockquote**, in any
+    of its 200 lines. A coverage surface only catches what it thought to include. It now has a
+    `## Listas y prosa` section with the tight list, the loose list, a nested list, an inline link,
+    an inline code chip and a blockquote. Its `content-budget: ignore` already covers the words.
+  - No `AUTHORING.md` change: with the rendering correct there is no gotcha left to document, and
+    the fixture is already the file authors read to see what the pipeline supports.
+  - **Same bug, different surface, left alone:** `.policy-body ul` (`globals.css`, duplicated
+    inline in `PolicyPage.tsx`) restores `padding-left` but not `list-style`, so the legal-policy
+    modals are marker-less too. Not this feature.
 - **New AUTHORING.md §5 subsection, "Terminology — one term per concept"** (user decision,
   2026-07-30), prompted by noticing that Block 1 lesson 1 uses `red neuronal` and `modelo`
   interchangeably. The cost is not that synonyms are bad writing — in ordinary prose they are good

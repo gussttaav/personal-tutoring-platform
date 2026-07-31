@@ -153,6 +153,48 @@ python train.py --epochs 10 --lr 3e-4
 | Densa     |    262 144 | ReLU       |
 | Salida    |     10 250 | Softmax    |
 
+{/* COURSE-P5-00 — Listas, enlaces, cita y código en línea. Esta sección existe porque
+    su ausencia dejó pasar un fallo: Tailwind Preflight (`@tailwind base`) pone
+    `list-style: none; padding: 0` en todo `ol`/`ul`, y como aquí no había ninguna lista,
+    nadie lo vio hasta que la lección 1 del bloque 1 escribió tres preguntas numeradas y
+    salieron sin números. Lo mismo valía para `a` (`color`/`text-decoration: inherit`) y
+    para `blockquote` (`margin: 0`). Las reglas que lo arreglan están en `lesson.css`; lo
+    que sigue es la superficie que impide que vuelva. */}
+
+## Listas y prosa
+
+Lista ordenada **compacta** — sin línea en blanco entre elementos, así que cada `<li>`
+lleva texto pelado. Es la forma exacta que se rompió, y lleva matemática en línea:
+
+1. Compara $\lvert 2 - 3 \rvert$ con $\lvert 3 - 1 \rvert$; los marcadores deben verse y
+   la fórmula debe quedar sobre la línea base del elemento.
+2. El segundo elemento comprueba que la sangría es la misma al envolver a dos líneas de
+   texto, y que el número no se separa de su párrafo.
+3. El tercero, que la lista termina con el mismo margen con el que empezó.
+
+Lista ordenada **suelta** — con línea en blanco entre elementos, así que remark envuelve
+cada uno en un `<p>`:
+
+1. Los elementos deben quedar algo más separados que arriba, pero **no** un párrafo
+   entero: eso sería el margen de `.lesson-content p` filtrándose dentro del `<li>`.
+
+2. Este es el caso que sólo se puede arreglar desde CSS, no desde un componente MDX.
+
+Lista sin ordenar, con una sublista anidada — cada nivel con su propio marcador:
+
+- Primer nivel: disco.
+- Segundo elemento, con hijos:
+  - Segundo nivel: círculo, no disco.
+  - Y la sublista pegada a su elemento padre, sin aire de párrafo.
+- Tercer elemento, de vuelta al primer nivel.
+
+Prosa con un [enlace en línea](https://es.wikipedia.org/wiki/Procesamiento_de_lenguajes_naturales)
+—que tiene que distinguirse del texto normal— y una ficha de código en línea como
+`softmax(z)`, que necesita su propio fondo y borde para leerse como código.
+
+> Cita en bloque. Debe leerse como una cita y **no** como un `<Callout>`: filete a la
+> izquierda, texto más apagado, y nada de icono ni de fondo.
+
 ## Componentes personalizados
 
 <Callout type="intuition" title="Intuición">
