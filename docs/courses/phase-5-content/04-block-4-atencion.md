@@ -38,6 +38,18 @@ query/key/value — the exact vocabulary of Block 5. A student who arrives at *A
 Need* already fluent in Q/K/V finds the paper readable instead of impenetrable. Do not rush it,
 and do not merge it into lesson 5.
 
+## Lesson progress
+
+One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
+when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+
+- [ ] 1. `encoder-decoder` — PR:
+- [ ] 2. `el-cuello-de-botella` — PR:
+- [ ] 3. `la-idea-de-atencion` — PR:
+- [ ] 4. `bahdanau` — PR:
+- [ ] 5. `luong` — PR:
+- [ ] 6. `atencion-como-consulta` — PR:
+
 ## Mathematical content
 
 - Encoder-decoder: $\mathbf{c} = \mathbf{h}_T$, and why compressing $T$ tokens into one fixed

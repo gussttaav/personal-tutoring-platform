@@ -39,6 +39,23 @@ block is finished.
 | 10 | `bert-y-gpt` | De aquí a BERT y GPT | — | 1 | 4 | — |
 | 11 | `fine-tuning-colab` | Fine-tuning en la práctica (Colab) | — | — | 3 | — |
 
+## Lesson progress
+
+One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
+when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+
+- [ ] 1. `adios-recurrencia` — PR:
+- [ ] 2. `self-attention` — PR:
+- [ ] 3. `scaled-dot-product` — PR:
+- [ ] 4. `multi-head` — PR:
+- [ ] 5. `codificacion-posicional` — PR:
+- [ ] 6. `bloque-transformer` — PR:
+- [ ] 7. `encoder-decoder-masking` — PR:
+- [ ] 8. `arquitectura-completa` — PR:
+- [ ] 9. `proyecto-transformer` — PR:
+- [ ] 10. `bert-y-gpt` — PR:
+- [ ] 11. `fine-tuning-colab` — PR:
+
 ## Mathematical content
 
 - Self-attention: $\text{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^T}{\sqrt{d_k}}\right)\mathbf{V}$

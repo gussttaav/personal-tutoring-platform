@@ -36,6 +36,20 @@ abstract on the page and obvious on a chart.
 **Bridge out:** lesson 8 introduces the encoder-decoder and ends on the fixed context vector —
 one vector must carry an entire sentence. That is the exact problem Block 4 opens with.
 
+## Lesson progress
+
+One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
+when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+
+- [ ] 1. `por-que-falla-el-mlp` — PR:
+- [ ] 2. `la-rnn-vanilla` — PR:
+- [ ] 3. `bptt` — PR:
+- [ ] 4. `gradiente-desvanecido` — PR:
+- [ ] 5. `lstm` — PR:
+- [ ] 6. `gru` — PR:
+- [ ] 7. `proyecto-char-lm` — PR:
+- [ ] 8. `seq2seq` — PR:
+
 ## Mathematical content
 
 - $\mathbf{h}_t = \sigma(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b})$

@@ -28,6 +28,20 @@ Tempting to skip. Skipping it means students never understand *what* feeds the n
 embedding gives *banco* one vector whether it's a bench or a bank. Context-dependence is the
 thread that runs to the Transformer.
 
+## Lesson progress
+
+One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
+when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+
+- [ ] 1. `texto-como-numeros` — PR:
+- [ ] 2. `tokenizacion` — PR:
+- [ ] 3. `vocabulario-oov` — PR:
+- [ ] 4. `one-hot` — PR:
+- [ ] 5. `bolsa-de-palabras` — PR:
+- [ ] 6. `embeddings-densos` — PR:
+- [ ] 7. `word2vec` — PR:
+- [ ] 8. `glove-y-limites` — PR:
+
 ## Mathematical content
 
 - Vocabulary as a set; the mapping $V \to \{0,1\}^{|V|}$

@@ -31,6 +31,22 @@ doesn't will be pattern-matching for the rest of the course.
 backpropagation lesson and lose half the audience. Separating them means lesson 8 can be about
 the *algorithm* rather than about remembering calculus.
 
+## Lesson progress
+
+One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
+when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+
+- [ ] 1. `la-neurona` — PR:
+- [ ] 2. `funciones-activacion` — PR:
+- [ ] 3. `xor-y-capas-ocultas` — PR:
+- [ ] 4. `forward-pass` — PR:
+- [ ] 5. `funcion-de-perdida` — PR:
+- [ ] 6. `descenso-gradiente` — PR:
+- [ ] 7. `regla-de-la-cadena` — PR:
+- [ ] 8. `backpropagation` — PR:
+- [ ] 9. `implementar-mlp` — PR:
+- [ ] 10. `proyecto-sentimiento` — PR:
+
 ## Mathematical content
 
 - $z = \mathbf{W}\mathbf{x} + \mathbf{b}$, $a = \sigma(z)$; the matrix form for a batch
