@@ -331,6 +331,7 @@ de exponenciar'` is worth ten minutes of their time.
 
 | Component | Props | Notes |
 |---|---|---|
+| `<W>` | none — wraps the string | A word/phrase the lesson talks *about*. Not italics, not backticks — [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about) |
 | `<Callout>` | `type?`: `note` \| `warning` \| `intuition` \| `math`, `title?` | Server-rendered, no JS |
 | `<Figure>` | `src`, `alt` (both required), `caption?` | |
 | `<Details summary="…">` | `summary` required | Native `<details>`; use for long derivations |

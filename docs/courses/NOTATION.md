@@ -160,6 +160,46 @@ course where a superscript is not a layer.
 
 ---
 
+## 6. Object language — words the lesson talks *about*
+
+This is a course about text, so lessons mention strings constantly: *entre casa y gato no hay un
+punto intermedio*. Those words are **mentioned, not used** — they are data the sentence points at,
+not part of its own grammar — and the reader has to see that boundary to parse the sentence.
+
+**A mentioned string goes in `<W>`.** Never italics, never backticks.
+
+```mdx
+Entre <W>casa</W> y <W>gato</W> no existe un punto intermedio.
+Toma la frase <W>el gato bebe leche</W> y el vocabulario ordenado.
+El día que alguien escriba <W>criptomoneda</W>…
+```
+
+Italics was the obvious choice and is wrong, for two reasons that both get worse with every
+lesson. It is **overloaded**: `*…*` already means emphasis (*antes* de la red) and foreign terms
+(*embeddings*), and Block 1 lesson 1 alone had 33 mentions against 8 of those — one signal with
+three meanings is no signal, and the genuine emphasis is what loses. And it has **no boundaries**:
+in *el gato bebe leche* the reader must parse the Spanish to find where the mention ends. Block 2
+is nearly all multi-token examples, so this only gets worse.
+
+Inline code was the other candidate. It is rejected because from Block 1 lesson 2 on, backticks
+mean **Python** — `numpy`, `softmax()` — and a course that spells *gato* the same way it spells an
+identifier has thrown away a distinction it needs.
+
+Three consequences worth stating:
+
+- **`<W>` shows whitespace faithfully.** `<W> gato</W>` and `<W>gato</W>` are different strings, and
+  from the BPE lesson on that difference carries weight. Italics could not show it at all.
+- **Inside maths, a mention stays `\textit{…}`** — $V = \{\textit{casa}, \textit{gato}\}$. `<W>` is a
+  prose mark; it does not go in a `$…$` span.
+- **It works in quiz frontmatter too** (`prompt`, `options`, `explanation`), because quiz strings
+  compile through MDX with `W` in scope. It is the only custom component available there.
+
+Not machine-checked, and deliberately so: whether an italicised word is a mention or an emphasis is
+not decidable from the source, and by the rule below a check that fires on correct lessons costs
+more than no check. This one is held by review.
+
+---
+
 ## The machine-checked rules
 
 `pnpm lint:content` warns (never fails) on the subset of this contract that is decidable from the

@@ -24,8 +24,19 @@ import type { ReactElement, ReactNode } from "react";
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 
 import { remarkPlugins, rehypePlugins } from "../mdx";
+import { W } from "../word";
 
 type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
+
+/*
+ * COURSE-P5-00 — quiz text needs `<W>` for exactly the reason the prose does: a prompt
+ * like "numerar el vocabulario — <W>casa</W> → 1 …" is mentioning words, not using
+ * them. `W` is the ONLY custom component here. The full `mdxComponents` map is not
+ * importable from this module (it imports Quiz, which imports this file), and quiz
+ * text has no business hosting a widget or a code cell anyway — an undefined
+ * component in frontmatter is a build error, which is the right answer for those.
+ */
+const CUSTOM_COMPONENTS: MDXComponents = { W };
 
 /**
  * Inline context (an option label, a hint) drops the paragraph wrapper: option text
@@ -33,6 +44,7 @@ type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
  * break the label out of the control, which costs the click-to-select behaviour.
  */
 const INLINE_COMPONENTS: MDXComponents = {
+  ...CUSTOM_COMPONENTS,
   p: ({ children }: { children?: ReactNode }) => <>{children}</>,
 };
 
@@ -58,7 +70,7 @@ async function compile(text: string, components?: MDXComponents): Promise<ReactE
 
 /** Block context — prompts, explanations, `predict-output` code fences. */
 export function renderQuizText(text: string): Promise<ReactElement> {
-  return compile(text);
+  return compile(text, CUSTOM_COMPONENTS);
 }
 
 /** Inline context — option labels, hints. No paragraph wrapper. */

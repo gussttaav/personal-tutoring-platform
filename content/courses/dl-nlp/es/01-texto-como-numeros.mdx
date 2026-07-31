@@ -11,22 +11,22 @@ hasQuiz: true
 quiz:
   - id: q-por-que-no-texto
     type: single
-    prompt: "¿Cuál es la razón de fondo por la que una red no puede recibir la cadena `\"hola\"` directamente?"
+    prompt: "¿Cuál es la razón de fondo por la que una red no puede recibir la cadena <W>hola</W> directamente?"
     options:
       - { id: a, text: "Porque las cadenas de texto ocupan demasiada memoria." }
       - { id: b, text: "Porque una red solo está definida sobre vectores de números reales." }
       - { id: c, text: "Porque el español tiene acentos y la red se entrena en inglés." }
-      - { id: d, text: "Porque las redes procesan un caracter a la vez y `\"hola\"` es una palabra." }
+      - { id: d, text: "Porque las redes procesan un caracter a la vez y <W>hola</W> es una palabra." }
     answer: b
     explanation: "Una red es una función entre espacios vectoriales reales: su entrada tiene que vivir en $\\mathbb{R}^d$. Un símbolo del vocabulario no es un vector, así que ni siquiera está mal calculado dárselo, no está definido. Nada tiene que ver con la memoria, el idioma ni los caracteres."
   - id: q-indice-alfabetico
     type: single
-    prompt: "Numerar el vocabulario por orden alfabético — *casa* → 1, *gato* → 2, *perro* → 3 — es una representación válida, porque asigna a cada palabra un número de forma determinista."
+    prompt: "Numerar el vocabulario por orden alfabético — <W>casa</W> → 1, <W>gato</W> → 2, <W>perro</W> → 3 — es una representación válida, porque asigna a cada palabra un número de forma determinista."
     options:
       - { id: a, text: "Verdadero" }
       - { id: b, text: "Falso" }
     answer: b
-    explanation: "Es determinista, sí, pero al colocar las palabras sobre la recta real heredan su geometría, y esa geometría afirma cosas que nadie quiso afirmar: que *casa* se parece más a *gato* que a *perro*, y que *gato* está justo a mitad de camino entre las otras dos. El alfabeto es un orden inventado para buscar en un diccionario; no sabe nada de significados."
+    explanation: "Es determinista, sí, pero al colocar las palabras sobre la recta real heredan su geometría, y esa geometría afirma cosas que nadie quiso afirmar: que <W>casa</W> se parece más a <W>gato</W> que a <W>perro</W>, y que <W>gato</W> está justo a mitad de camino entre las otras dos. El alfabeto es un orden inventado para buscar en un diccionario; no sabe nada de significados."
   - id: q-propiedades-de-r
     type: multi
     prompt: "¿Qué propiedades tiene que cumplir una función de representación $r$ para poder alimentar a una red? Marca todas las correctas."
@@ -36,13 +36,13 @@ quiz:
       - { id: c, text: "Ser inyectiva: dos palabras distintas nunca comparten vector." }
       - { id: d, text: "Ser determinista: la misma palabra produce siempre el mismo vector." }
     answer: [a, b, d]
-    explanation: "Totalidad (a), dimensión fija (b) y determinismo (d) son las tres exigencias. La inyectividad (c) *no* lo es: renunciarás a ella a propósito más de una vez, las palabras raras compartirán un mismo vector, y las subpalabras harán que *gato* y *gatos* compartan casi todo. Perder algo de información es a menudo lo que hace que el modelo generalice."
+    explanation: "Totalidad (a), dimensión fija (b) y determinismo (d) son las tres exigencias. La inyectividad (c) *no* lo es: renunciarás a ella a propósito más de una vez, las palabras raras compartirán un mismo vector, y las subpalabras harán que <W>gato</W> y <W>gatos</W> compartan casi todo. Perder algo de información es a menudo lo que hace que el modelo generalice."
 challenges: []
 ---
 
 {/* ── 1. MOTIVACIÓN — sin título ── */}
 
-Una red neuronal no puede recibir directamente la palabra *hola*. En esencia, una red neuronal es una función matemática que opera sobre vectores de números reales. Sus cálculos presuponen que las entradas pertenecen a un espacio donde conceptos como «distancia», «dirección» o «proximidad» están bien definidos. El texto, por sí mismo, no vive en ese tipo de espacio. Entre *casa* y *gato* no existe un punto intermedio, ni una dirección que conduzca de una palabra a la otra, ni un paso a medio camino entre ambas.
+Una red neuronal no puede recibir directamente la palabra <W>hola</W>. En esencia, una red neuronal es una función matemática que opera sobre vectores de números reales. Sus cálculos presuponen que las entradas pertenecen a un espacio donde conceptos como «distancia», «dirección» o «proximidad» están bien definidos. El texto, por sí mismo, no vive en ese tipo de espacio. Entre <W>casa</W> y <W>gato</W> no existe un punto intermedio, ni una dirección que conduzca de una palabra a la otra, ni un paso a medio camino entre ambas.
 
 Y, sin embargo, los modelos de lenguaje funcionan. El reto consiste precisamente en salvar la distancia entre un texto y una función sobre números reales. Resolver ese problema es el objetivo de este bloque, pues las decisiones que se toman aquí determinan todo lo que viene después: la tokenización, el vocabulario, los *embeddings* y, en última instancia, la propia arquitectura del modelo.
 
@@ -58,8 +58,9 @@ accidente.
 Representar texto no es codificarlo: es elegir una geometría para el significado. La pregunta no es si esa geometría expresa relaciones, sino si expresa las correctas.
 </Callout>
 
-Esto es lo que hace que el problema sea interesante y no un trámite. Un traductor cualquiera como
-numerar las palabras por orden alfabético, por ejemplo, cumple el requisito, pero destruye cualquier noción de significado.
+Esto es lo que hace que el problema sea interesante y no un trámite. Un traductor cualquiera
+—numerar las palabras por orden alfabético, por ejemplo— produce números perfectamente válidos,
+pero destruye cualquier noción de significado.
 
 {/* ── 3. FORMALIZACIÓN — con título, por contenido ── */}
 
@@ -103,7 +104,7 @@ Todo este bloque trata de cómo construir $r$. Antes de proponer ninguna, convie
 va a exigir. Son tres cosas.
 
 **Totalidad.** $r$ tiene que estar definida para cualquier palabra que llegue en producción, no
-solo para las que viste al construirla. El día que alguien escriba *criptomoneda* y esa palabra no
+solo para las que viste al construirla. El día que alguien escriba <W>criptomoneda</W> y esa palabra no
 estuviera en $V$, la función tiene que devolver algo igualmente. Esta es la exigencia que parece
 burocrática y resulta ser la más cara de las tres: es el problema de las palabras fuera de
 vocabulario (*out-of-vocabulary*, OOV), y le dedicamos entera la lección 3.
@@ -118,8 +119,8 @@ ejecuciones, lo que el modelo aprendió dejaría de corresponderse con lo que re
 <Callout type="note" title="Lo que NO se exige">
 $r$ no tiene por qué ser inyectiva. Es tentador pedir que dos palabras distintas nunca compartan
 vector, pero renunciarás a ello a propósito más de una vez: en la lección 3, la del problema OOV, todas las palabras
-raras compartirán un mismo vector, y las representaciones por subpalabras harán que *gato* y
-*gatos* compartan casi todo. Perder algo de información es a menudo lo que hace que el modelo
+raras compartirán un mismo vector, y las representaciones por subpalabras harán que <W>gato</W> y
+<W>gatos</W> compartan casi todo. Perder algo de información es a menudo lo que hace que el modelo
 generalice.
 </Callout>
 
@@ -133,16 +134,21 @@ $$
 r_{\text{ord}}(\textit{casa}) = 1, \qquad r_{\text{ord}}(\textit{gato}) = 2, \qquad r_{\text{ord}}(\textit{perro}) = 3
 $$
 
-Es total sobre $V$, tiene dimensión fija $d = 1$ y es determinista. Cumple las tres condiciones y
-aun así es una mala representación, porque cumplirlas no era todo lo que hacía falta. Al meter las
-palabras en $\mathbb{R}$ heredan su estructura, y esa estructura afirma cosas:
+Supongamos por un momento que $V$ es cerrado, que no llegará ninguna palabra nueva. Con esa
+concesión, y solo con ella, $r_{\text{ord}}$ es total; además tiene dimensión fija $d = 1$ y es
+determinista. La concesión es grande: en cuanto alguien escriba <W>criptomoneda</W>, $r_{\text{ord}}$ no
+tiene ningún índice que devolver, y esa es exactamente la falla de la que vive la lección 3. La
+aparcamos aquí a propósito, porque lo que queremos ver es qué pasa *aun cuando* las tres
+condiciones se cumplen. Y lo que pasa es que aun así la representación es
+mala, porque cumplirlas no era todo lo que hacía falta. Al meter las palabras en $\mathbb{R}$
+heredan su estructura, y esa estructura afirma cosas:
 
 $$
 \lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{gato}) \,\rvert = 1 \;<\; \lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{perro}) \,\rvert = 2
 $$
 
-Leído en voz alta: *casa* se parece más a *gato* que a *perro*. Y también que *gato* está entre las
-otras dos, y que el punto medio del camino entre *casa* y *perro* es exactamente *gato*. Ninguna de
+Leído en voz alta: <W>casa</W> se parece más a <W>gato</W> que a <W>perro</W>. Y también que <W>gato</W> está entre las
+otras dos, y que el punto medio del camino entre <W>casa</W> y <W>perro</W> es exactamente <W>gato</W>. Ninguna de
 esas tres afirmaciones la has hecho tú. Salen del alfabeto, que es un orden inventado para buscar
 en un diccionario y que no sabe nada de significados.
 
@@ -151,36 +157,47 @@ lo son. Lo único que recibe son los números; para ella, una geometría inventa
 la misma cara que una verdadera, y no puede distinguirlas. Le has dado información falsa disfrazada
 de buena.
 
-<Details summary="Por qué no basta con reescalar los índices">
-Podrías pensar que el problema es la escala y que dividir por $\lvert V \rvert$ lo arregla. No lo
-arregla: dividir por una constante es una transformación monótona y afín, así que conserva el orden
-y conserva las razones entre distancias. *Gato* sigue estando entre *casa* y *perro*. Cualquier
-$r$ con $d = 1$ tiene el mismo defecto de fondo, porque $\mathbb{R}$ está totalmente ordenado y las
-palabras no. Salir del problema exige subir de dimensión, y ese es el argumento que lleva a la
-lección 4, la del one-hot.
+Y el defecto no es de esta representación en particular. Podrías reescalar los índices dividiendo
+por $\lvert V \rvert$, y no cambiaría nada: dividir por una constante conserva el orden y conserva
+las razones entre distancias, así que <W>gato</W> seguiría estando entre <W>casa</W> y <W>perro</W>. Cualquier $r$
+con $d = 1$ arrastra el mismo problema de fondo, porque $\mathbb{R}$ está totalmente ordenado y las
+palabras no. Salir de él exige subir de dimensión, y ese es el argumento que lleva a la lección 4,
+la del one-hot.
+
+<Details summary="Cuántas dimensiones hacen falta para no mentir">
+Pide lo mínimo que se puede pedir: que la representación no afirme *nada*, que ninguna palabra esté
+más cerca de otra que del resto. Es decir, que todas las distancias entre pares sean iguales.
+
+En $\mathbb{R}$ eso es imposible ya con tres palabras. Si $a < b < c$, entonces
+$\lvert a - c \rvert > \lvert a - b \rvert$: siempre hay una que queda en medio. En el plano sí se
+puede — un triángulo equilátero — pero solo con tres. Cuatro puntos equidistantes exigen salir al
+espacio, y en general $n$ puntos mutuamente equidistantes necesitan $n - 1$ dimensiones.
 </Details>
 
 {/* ── 4. CONCRECIÓN — a mano, con título por contenido ── */}
 
 ## Compruébalo tú mismo con una frase en español
 
-Toma la frase *el gato bebe leche* y el vocabulario ordenado alfabéticamente
+Toma la frase <W>el gato bebe leche</W> y el vocabulario ordenado alfabéticamente
 $V = \{\textit{bebe}, \textit{el}, \textit{gato}, \textit{leche}\}$, con índices $1$ a $4$. La
 frase se convierte en la secuencia $(2, 3, 1, 4)$, y con $d = 1$ la matriz $X$ del apartado
 anterior tiene forma $4 \times 1$. Ahora responde tres preguntas mirando **solo** esos números,
 como los mira la red:
 
-1. Según los números, ¿qué dos palabras de la frase se parecen más? Compara $\lvert 2 - 3 \rvert$,
-   $\lvert 3 - 1 \rvert$ y las demás distancias. ¿Coincide con lo que tú sabes de esas palabras?
-2. ¿Qué palabra cae en el punto medio entre *el* $(2)$ y *leche* $(4)$? ¿Significa algo esa
+1. Según los números, ¿qué dos palabras de la frase se parecen más? Compara $\lvert 2 - 3 \rvert, 
+   \lvert 3 - 1 \rvert$ y las demás distancias. ¿Coincide con lo que tú sabes de esas palabras?
+2. ¿Qué palabra cae en el punto medio entre <W>el</W> $(2)$ y <W>leche</W> $(4)$? ¿Significa algo esa
    pregunta fuera de los números?
-3. Añade *agua* al vocabulario. Reordena alfabéticamente y reasigna los índices. ¿Cuántas de las
+3. Añade <W>agua</W> al vocabulario. Reordena alfabéticamente y reasigna los índices. ¿Cuántas de las
    palabras originales cambian de número, pese a que la frase no ha cambiado en absoluto?
 
 La tercera es la más incómoda: una palabra nueva reescribe la representación de palabras que no
-tienen nada que ver con ella. Un modelo entrenado con la $V$ anterior queda inservible. Guarda esa
-observación, porque es la que hará que en la lección 4, la del one-hot, el salto a un espacio mucho más grande
-parezca razonable a pesar de su coste.
+tienen nada que ver con ella. Un modelo entrenado con la $V$ anterior queda inservible. Fíjate en
+que es un defecto distinto de los dos anteriores: no es la geometría inventada, y tampoco es el
+problema OOV — <W>agua</W> sí acaba teniendo índice, el vocabulario crece sin dificultad. Lo que falla
+es que la representación no es **estable**: depende de todo $V$ a la vez, así que tocar una entrada
+mueve todas las demás. Guarda esa observación, porque es la que hará que en la lección 4, la del
+one-hot, el salto a un espacio mucho más grande parezca razonable a pesar de su coste.
 
 {/* ── 5. VERIFICACIÓN — con título ── */}
 
@@ -201,7 +218,7 @@ Queda enunciado el problema del que vive el resto del bloque: hace falta una fun
 $r : V \to \mathbb{R}^d$, total, de dimensión fija y determinista, y además con una geometría que
 no afirme por accidente cosas falsas sobre las palabras. Sabemos ya que $d = 1$ no sirve. Pero hay
 una pregunta anterior que hemos dado por resuelta al escribir $V$ como si fuera evidente: antes de
-decidir qué vector le corresponde a *dámelo*, hay que decidir si *dámelo* es una unidad del
-vocabulario, o tres (*da*, *me*, *lo*), o seis letras. Esa decisión fija el tamaño de $V$, define
+decidir qué vector le corresponde a <W>dámelo</W>, hay que decidir si <W>dámelo</W> es una unidad del
+vocabulario, o tres (<W>da</W>, <W>me</W>, <W>lo</W>), o seis letras. Esa decisión fija el tamaño de $V$, define
 qué significa que una palabra sea «nueva» y, en última instancia, acota qué puede llegar a aprender
 el modelo.

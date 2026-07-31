@@ -3,6 +3,7 @@
  * COURSE-P2-01 — + `Explorable`, the entry point for interactive widgets.
  * COURSE-P2-03 — + `PyCell`, the entry point for runnable Python.
  * COURSE-P5-00 — + `h3`, which Tailwind Preflight had been flattening to body text.
+ * COURSE-P5-00 — + `W`, the object-language mark (defined in ./word.tsx).
  *
  * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Four groups:
  *   1. Element overrides that keep wide content (code, tables, images) from
@@ -35,6 +36,7 @@ import { Explorable } from "@/features/courses/widgets/Explorable";
 import { CodeChallenge } from "@/features/courses/code/CodeChallenge";
 import { PyCell } from "@/features/courses/code/PyCell";
 import { Quiz } from "@/features/courses/quiz/Quiz";
+import { W } from "@/lib/courses/word";
 
 type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
 
@@ -284,6 +286,7 @@ export const mdxComponents: MDXComponents = {
   ColabLink,
   Explorable,
   PyCell,
+  W,
 };
 
 /*
