@@ -30,17 +30,18 @@ thread that runs to the Transformer.
 
 ## Lesson progress
 
-One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
-when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+Authored one at a time via `/course-lesson`, on the shared branch, reviewed before commit. This
+task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
+here; STATUS stays phase-level.
 
-- [ ] 1. `texto-como-numeros` — PR:
-- [ ] 2. `tokenizacion` — PR:
-- [ ] 3. `vocabulario-oov` — PR:
-- [ ] 4. `one-hot` — PR:
-- [ ] 5. `bolsa-de-palabras` — PR:
-- [ ] 6. `embeddings-densos` — PR:
-- [ ] 7. `word2vec` — PR:
-- [ ] 8. `glove-y-limites` — PR:
+- [ ] 1. `texto-como-numeros`
+- [ ] 2. `tokenizacion`
+- [ ] 3. `vocabulario-oov`
+- [ ] 4. `one-hot`
+- [ ] 5. `bolsa-de-palabras`
+- [ ] 6. `embeddings-densos`
+- [ ] 7. `word2vec`
+- [ ] 8. `glove-y-limites`
 
 ## Mathematical content
 

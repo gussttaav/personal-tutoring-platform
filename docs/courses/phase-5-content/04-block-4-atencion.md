@@ -40,15 +40,16 @@ and do not merge it into lesson 5.
 
 ## Lesson progress
 
-One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
-when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+Authored one at a time via `/course-lesson`, on the shared branch, reviewed before commit. This
+task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
+here; STATUS stays phase-level.
 
-- [ ] 1. `encoder-decoder` — PR:
-- [ ] 2. `el-cuello-de-botella` — PR:
-- [ ] 3. `la-idea-de-atencion` — PR:
-- [ ] 4. `bahdanau` — PR:
-- [ ] 5. `luong` — PR:
-- [ ] 6. `atencion-como-consulta` — PR:
+- [ ] 1. `encoder-decoder`
+- [ ] 2. `el-cuello-de-botella`
+- [ ] 3. `la-idea-de-atencion`
+- [ ] 4. `bahdanau`
+- [ ] 5. `luong`
+- [ ] 6. `atencion-como-consulta`
 
 ## Mathematical content
 

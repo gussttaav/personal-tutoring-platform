@@ -38,17 +38,18 @@ one vector must carry an entire sentence. That is the exact problem Block 4 open
 
 ## Lesson progress
 
-One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
-when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+Authored one at a time via `/course-lesson`, on the shared branch, reviewed before commit. This
+task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
+here; STATUS stays phase-level.
 
-- [ ] 1. `por-que-falla-el-mlp` — PR:
-- [ ] 2. `la-rnn-vanilla` — PR:
-- [ ] 3. `bptt` — PR:
-- [ ] 4. `gradiente-desvanecido` — PR:
-- [ ] 5. `lstm` — PR:
-- [ ] 6. `gru` — PR:
-- [ ] 7. `proyecto-char-lm` — PR:
-- [ ] 8. `seq2seq` — PR:
+- [ ] 1. `por-que-falla-el-mlp`
+- [ ] 2. `la-rnn-vanilla`
+- [ ] 3. `bptt`
+- [ ] 4. `gradiente-desvanecido`
+- [ ] 5. `lstm`
+- [ ] 6. `gru`
+- [ ] 7. `proyecto-char-lm`
+- [ ] 8. `seq2seq`
 
 ## Mathematical content
 

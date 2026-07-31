@@ -41,20 +41,21 @@ block is finished.
 
 ## Lesson progress
 
-One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
-when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+Authored one at a time via `/course-lesson`, on the shared branch, reviewed before commit. This
+task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
+here; STATUS stays phase-level.
 
-- [ ] 1. `adios-recurrencia` — PR:
-- [ ] 2. `self-attention` — PR:
-- [ ] 3. `scaled-dot-product` — PR:
-- [ ] 4. `multi-head` — PR:
-- [ ] 5. `codificacion-posicional` — PR:
-- [ ] 6. `bloque-transformer` — PR:
-- [ ] 7. `encoder-decoder-masking` — PR:
-- [ ] 8. `arquitectura-completa` — PR:
-- [ ] 9. `proyecto-transformer` — PR:
-- [ ] 10. `bert-y-gpt` — PR:
-- [ ] 11. `fine-tuning-colab` — PR:
+- [ ] 1. `adios-recurrencia`
+- [ ] 2. `self-attention`
+- [ ] 3. `scaled-dot-product`
+- [ ] 4. `multi-head`
+- [ ] 5. `codificacion-posicional`
+- [ ] 6. `bloque-transformer`
+- [ ] 7. `encoder-decoder-masking`
+- [ ] 8. `arquitectura-completa`
+- [ ] 9. `proyecto-transformer`
+- [ ] 10. `bert-y-gpt`
+- [ ] 11. `fine-tuning-colab`
 
 ## Mathematical content
 

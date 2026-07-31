@@ -33,19 +33,20 @@ the *algorithm* rather than about remembering calculus.
 
 ## Lesson progress
 
-One lesson = one PR, authored via `/course-lesson`. This task's STATUS.md row flips to ✅ **only
-when every box below is ticked.** Granular progress lives here; STATUS stays phase-level.
+Authored one at a time via `/course-lesson`, on the shared branch, reviewed before commit. This
+task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
+here; STATUS stays phase-level.
 
-- [ ] 1. `la-neurona` — PR:
-- [ ] 2. `funciones-activacion` — PR:
-- [ ] 3. `xor-y-capas-ocultas` — PR:
-- [ ] 4. `forward-pass` — PR:
-- [ ] 5. `funcion-de-perdida` — PR:
-- [ ] 6. `descenso-gradiente` — PR:
-- [ ] 7. `regla-de-la-cadena` — PR:
-- [ ] 8. `backpropagation` — PR:
-- [ ] 9. `implementar-mlp` — PR:
-- [ ] 10. `proyecto-sentimiento` — PR:
+- [ ] 1. `la-neurona`
+- [ ] 2. `funciones-activacion`
+- [ ] 3. `xor-y-capas-ocultas`
+- [ ] 4. `forward-pass`
+- [ ] 5. `funcion-de-perdida`
+- [ ] 6. `descenso-gradiente`
+- [ ] 7. `regla-de-la-cadena`
+- [ ] 8. `backpropagation`
+- [ ] 9. `implementar-mlp`
+- [ ] 10. `proyecto-sentimiento`
 
 ## Mathematical content
 

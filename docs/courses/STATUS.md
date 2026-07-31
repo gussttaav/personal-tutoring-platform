@@ -94,10 +94,10 @@ Update this file when starting, completing, or blocking a task.
 
 ## Phase 5 — Content
 
-Each block is authored **one lesson per PR** via `/course-lesson`. Per-lesson progress lives in
-each block task's "Lesson progress" checklist; a block's row here flips to ✅ **only when every
-lesson box in that block doc is ticked.** This table stays a phase-level dashboard — do not add
-per-lesson rows to it.
+Each block is authored **one lesson at a time** via `/course-lesson`, on the shared branch and
+reviewed before commit. Per-lesson progress lives in each block task's "Lesson progress"
+checklist; a block's row here flips to ✅ **only when every lesson box in that block doc is
+ticked.** This table stays a phase-level dashboard — do not add per-lesson rows to it.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
