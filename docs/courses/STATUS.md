@@ -65,6 +65,7 @@ Update this file when starting, completing, or blocking a task.
 | [01 Schema + repository + service](phase-4-persistence/01-schema-and-service.md) | `COURSE-P4-01` | ✅ | _tbd_ | local |
 | [02 Progress API + reader wiring](phase-4-persistence/02-progress-api.md) | `COURSE-P4-02` | ✅ | _tbd_ | local |
 | [03 "Mis cursos" panel](phase-4-persistence/03-mis-cursos-panel.md) | `COURSE-P4-03` | ✅ | _tbd_ | local |
+| [04 Attempt history: read it back](phase-4-persistence/04-attempt-history.md) | `COURSE-P4-04` | ✅ | _tbd_ | local |
 
 **Exit criteria**
 - [x] Migration `0016` applied; deny-anon RLS present on all three tables per the `0007` pattern
@@ -72,6 +73,8 @@ Update this file when starting, completing, or blocking a task.
 - [x] Completing a lesson survives a refresh and a different device — refresh proven by E2E against the real DB; cross-device follows from the same server-side read (not separately exercised)
 - [x] Signed-out reading still works (progress silently not tracked)
 - [x] `/area-personal` shows enrolled courses with % complete and a resume link
+- [ ] A quiz answered in a previous visit comes back answered; a solved challenge keeps its
+  reference solution unlocked (P4-04)
 - [x] `pnpm test` + `pnpm build` green
 
 **P4-03 notes**
@@ -793,6 +796,104 @@ to both message files. Backend additions: `CourseProgressDetail` + `getCoursePro
   now cover signed-out reading in a real browser (no 401s, no progress UI) and the
   mark-complete round trip, but no phone and no keyboard-only pass. Left for the user's
   manual pass, mirroring P2-01…P3-02.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P4-04** — Closed. The read path for `quiz_attempts` (`listQuizAttempts` →
+`summariseAttempts` → `getLessonProgressDetail` → the existing progress GET) plus hydration of
+both assessment cards, the sign-in nudge, and the solved counter next to mark-complete.
+`courses.{quiz,challenge}.history.*` and three `courses.progress.*` keys added key-for-key.
+
+- **The table was written on every attempt and read by nobody.** That is the whole bug: P4-02
+  wired `POST /api/courses/attempt` and stopped there, so `ICourseRepository` had
+  `recordQuizAttempt` and no `list…`, and both cards seeded from their `initial*State` on every
+  mount. A quiz answered last week showed as untouched, and — worse — a code challenge whose
+  reference solution the student had EARNED locked itself again on the next visit.
+- **⚠️ The duplicate-write trap, and it is the reason `restored` exists.** `QuizCard` fires
+  `onAnswered(state.result)` from an effect keyed on the result object. Hydrating a result
+  through the same field would have POSTed a fresh `quiz_attempts` row on EVERY page load —
+  each one then read back as another attempt, so the count would climb on its own. The reducer
+  marks a replayed result `restored`, the effect skips those, and a unit test pins it. The
+  challenge reducer sidesteps it structurally: `hydrate` never sets `outcome`/`result`, because
+  there is no editor state to restore anyway.
+- **Restored answers are RE-GRADED locally, not trusted.** `gradeQuestion` runs again against the
+  current answer key, so a question whose key was corrected after someone answered it shows the
+  honest verdict rather than a stale stored `correct`. The stored `correct` survives only as
+  `solved`/`lastCorrect` in the history, which is about the row, not about the card.
+- **New pure `src/lib/courses/quiz/restore.ts` is where content drift is absorbed.** The JSONB is
+  `unknown`, written by an older client against a possibly older question, so it is validated
+  against the CURRENT question: wrong `questionType`, a deleted option id, a partially valid
+  multi-selection (all-or-nothing grading makes a partial restore a different answer), a
+  non-finite number, empty typed output — each degrades to a badge with live inputs. A
+  confidently wrong restore is worse than an honest blank one; same argument P5-00 made for the
+  on-this-page rail.
+- **`AttemptHistoryContext` is its own module** (`reader/attempt-history.ts`), not part of
+  `CourseProgressProvider`, because the provider already imports both card files for the
+  write-side contexts — putting the read-side context there would have made that import cycle
+  back on itself. Its `status` field is load-bearing: history lands after hydration, so a card
+  that only checked `byId.get(id)` would paint "never attempted" and then jump.
+- **`readProgress` gained an optional `lessonSlug`** rather than a second fetch, so the attempts
+  query joins the SAME `Promise.all`. One lesson view is still one request and one round of
+  queries. `LessonProgressDetail` extends `CourseProgressDetail` (the P4-02 precedent over
+  `CourseProgressSummary`) so the P4-03 list callers keep the shape they asked for — pinned by a
+  test asserting `getCourseProgressDetail` still has no `exercises` key.
+- **The counter's denominator comes from the BODY, not the frontmatter.** New
+  `src/lib/courses/exercise-ids.ts` reuses the lint's own `findQuizRefs`/`findChallengeRefs`, so
+  the reader counts exactly what `pnpm lint:content` validates. Frontmatter may declare a question
+  that is never placed (the lint forbids only the reverse), which would have made "3 de 3"
+  unreachable. Read at build time; the page stays static.
+- **`SaveAttemptsNotice` imports `signIn` lazily, inside the click handler** — and this was a
+  test failure first, not a preference. Both cards import the notice statically and both are
+  reachable from `mdx-components.tsx`, so a top-level `next-auth/react` import dragged an ESM-only
+  package into the MDX component graph that the node-environment tests load directly
+  (`mdx.test.ts` broke immediately). Lazy import rather than a new `ESM_PACKAGES` entry: it fixes
+  the cause instead of transforming next-auth in every test run. Same shape as `mdx.ts`'s lazy
+  `compileMDX`.
+- **The nudge appears only AFTER a submission.** Before that an anonymous reader's page is exactly
+  as clean as it is today — `LessonComplete` renders nothing at all when untracked for the same
+  reason. Telling someone their work was not saved is honest; telling them before they have done
+  any is a nag.
+- **`e2e/courses-progress.spec.ts` pointed at a lesson that 404s** — pre-existing, not from this
+  task: P5-00 restored `00-pipeline-fixture.mdx` to `draft: true`, and
+  `generateStaticParams` is published-only, so `/cursos/dl-nlp/pipeline-fixture` stopped existing.
+  Repointed at `texto-como-numeros` (the real published lesson) and a third test added: answer a
+  quiz, reload, and the selection, verdict, Retry state AND "1 intento" all come back — that last
+  assertion is what proves a page load records nothing.
+- **E2E NOT RUN in this shell.** `resetTestState()` truncates the target database and
+  `.env.local`/`.env.e2e.local` point at the SAME Supabase project (pre-existing, recorded under
+  P4-02) — running it would delete the live user and bookings again. Needs the user's explicit
+  authorisation, so the specs are written and left unrun. **This is the only acceptance criterion
+  not exercised.**
+- **A P3-01 rendering bug was found by the user and fixed here: a graded option no longer shows
+  which one you chose.** Reported from a screenshot ("the circle is not filled") and reproduced
+  in a real browser SIGNED OUT — so it predates this task and has nothing to do with restored
+  history. The DOM was never wrong (`input.checked === true` both before and after grading); the
+  cause is that grading sets `disabled`, and **no browser honours `accent-color` on a disabled
+  control** — it greys it, which on these dark rows makes the checked dot grey-on-grey and
+  invisible. `boolean` was worse still: it receives no `answer` prop, so its rows are never
+  coloured and the greyed control was the ONLY trace of the reader's choice.
+  - Fixed by stating the choice in text — a small "Tu respuesta" tag on the chosen row, in all
+    three option types — **not** by dropping `disabled`. A graded group must not be editable
+    until Retry, and `disabled` is the honest way to say that to the pointer, the keyboard and
+    the accessibility tree at once; the fix must not weaken it to win back a pixel.
+  - It also closes an ambiguity that predates the styling problem: on a CORRECT answer the green
+    row said "this is the right answer" and nothing said "…and it is the one you picked".
+  - `optionRowStyle` gained `flexWrap` and `optionTextStyle` a `10rem` flex-basis so the tag
+    drops to its own line instead of squeezing the option into a two-word column — at 360px the
+    first version wrapped "Porque las redes / procesan un / caracter a la vez y". Verified at 900px
+    and 360px, correct and incorrect, single and multi: no horizontal page scroll at either width.
+  - New key `courses.quiz.yourAnswer`, both message files.
+- **Verified in a real browser** (production build, throwaway Playwright script, signed out — so
+  no database writes): the live answer path, the graded state at 900px and 360px, and the
+  sign-in notice appearing only after a submission. The static HTML was also checked — all new
+  strings appear ONLY inside next-intl's client message payload, never as rendered markup for a
+  signed-out reader, and the lesson route is still `●` SSG.
+- **Not verified: the RESTORE path in a browser.** That needs a signed-in session against the real
+  database, which is the same reason the E2E run is pending. The reducer, the restorer and the
+  route are covered by unit tests; what has not been watched with human eyes is a real row coming
+  back into a real card.
+- `pnpm test` (1036 tests, 89 suites), `pnpm lint` (0 errors; the same 7 pre-existing warnings),
+  `npx tsc --noEmit` (0 errors), `pnpm lint:content` (green, no warnings), `pnpm build` (no
+  `MISSING_MESSAGE`) and `pnpm check:bundle` all green.
 - Not yet committed to a branch/PR (**local**).
 
 **COURSE-P5-00** — Closed per doc. Deviations and notes:

@@ -44,4 +44,16 @@ export interface ICourseRepository {
 
   /** Append-only: one row per attempt, never an update. */
   recordQuizAttempt(userId: string, attempt: Omit<QuizAttempt, "attemptedAt">): Promise<void>;
+
+  /**
+   * COURSE-P4-04 — the only READ of that append-only table, and it is scoped to one
+   * lesson: a reader looking at a page needs that page's history, not the course's.
+   * Ordered by `attemptedAt` ascending, because the service's aggregation takes the
+   * LAST row as the current state.
+   */
+  listQuizAttempts(
+    userId: string,
+    courseSlug: string,
+    lessonSlug: string,
+  ): Promise<QuizAttempt[]>;
 }

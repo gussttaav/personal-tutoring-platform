@@ -11,7 +11,7 @@
  * skip a re-render on a redundant update.
  */
 
-import type { CourseProgressDetail } from "@/domain/types";
+import type { CourseProgressDetail, ExerciseAttemptHistory, LessonProgressDetail } from "@/domain/types";
 
 /** `loading` until the first read answers; `untracked` means no progress UI. */
 export type ProgressStatus = "loading" | "untracked" | "ready";
@@ -21,15 +21,20 @@ export interface ProgressSnapshot {
   totalLessons:       number;
   completed:          ReadonlySet<string>;
   lastSeenLessonSlug: string | null;
+  /** COURSE-P4-04: this lesson's exercise history, by quiz/challenge id. Always
+   *  empty unless the request named a lesson AND the reader is signed in. */
+  exercises:          ReadonlyMap<string, ExerciseAttemptHistory>;
 }
 
 const EMPTY: ReadonlySet<string> = new Set();
+const NO_EXERCISES: ReadonlyMap<string, ExerciseAttemptHistory> = new Map();
 
 export const LOADING_SNAPSHOT: ProgressSnapshot = {
   status:             "loading",
   totalLessons:       0,
   completed:          EMPTY,
   lastSeenLessonSlug: null,
+  exercises:          NO_EXERCISES,
 };
 
 export const UNTRACKED_SNAPSHOT: ProgressSnapshot = {
@@ -46,16 +51,21 @@ export const UNTRACKED_SNAPSHOT: ProgressSnapshot = {
  */
 export function snapshotFromResponse(
   httpStatus: number,
-  body: CourseProgressDetail | null,
+  body: CourseProgressDetail | LessonProgressDetail | null,
 ): ProgressSnapshot {
   const ok = httpStatus >= 200 && httpStatus < 300;
   if (!ok || httpStatus === 204 || body === null) return UNTRACKED_SNAPSHOT;
+
+  // `exercises` rides along only when the request named a lesson (P4-04); the
+  // landing page's course-wide read legitimately has none.
+  const exercises = "exercises" in body ? body.exercises : [];
 
   return {
     status:             "ready",
     totalLessons:       body.totalLessons,
     completed:          new Set(body.completedLessonSlugs),
     lastSeenLessonSlug: body.lastSeenLessonSlug,
+    exercises:          new Map(exercises.map((e) => [e.quizId, e])),
   };
 }
 

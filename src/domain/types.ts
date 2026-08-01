@@ -590,6 +590,38 @@ export interface CourseProgressDetail extends CourseProgressSummary {
   completedLessonSlugs: string[];
 }
 
+/** COURSE-P4-04: one exercise's history, aggregated from the append-only rows.
+ *  "Exercise" is either a quiz question or a code challenge — both write to
+ *  `quiz_attempts.quiz_id`, so one shape serves both cards.
+ *
+ *  `solved` is sticky (correct on ANY attempt) while `lastCorrect` describes only
+ *  the most recent one: a reader who got it right and then re-tried and slipped has
+ *  solved it, and the card still shows the answer they actually left behind. */
+export interface ExerciseAttemptHistory {
+  quizId:   string;
+  attempts: number;
+  solved:   boolean;
+  lastCorrect: boolean;
+  /** The stored JSONB payload of the LAST attempt. `unknown` on purpose: it was
+   *  written by an older build of the client against a possibly older question, so
+   *  it is validated at the client boundary (lib/courses/quiz/restore.ts) and never
+   *  trusted straight into a reducer. */
+  lastAnswer:      unknown;
+  lastAttemptedAt: string;
+}
+
+/** COURSE-P4-04: `CourseProgressDetail` plus ONE lesson's exercise history —
+ *  returned only when the progress GET carries a `lessonSlug`. Extends rather than
+ *  widens, exactly as `CourseProgressDetail` did over `CourseProgressSummary`, so
+ *  the P4-03 list callers keep the shape they asked for.
+ *
+ *  Scoped to a single lesson deliberately: a course-wide attempt read would be a
+ *  much larger payload for a reader who is looking at one page. */
+export interface LessonProgressDetail extends CourseProgressDetail {
+  lessonSlug: string;
+  exercises:  ExerciseAttemptHistory[];
+}
+
 /** COURSE-P4-03: a `CourseProgressSummary` merged with the registry metadata the
  *  "Mis cursos" panel needs to render — the title and where "continuar" points.
  *  Neither lives in Postgres (see the content/state split above), so the merge

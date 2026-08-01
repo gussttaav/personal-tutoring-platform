@@ -11,16 +11,23 @@
  * that boundary. The default is a no-op, so the quiz works standalone (as it does in
  * this task) and gains persistence later without a change here.
  *
+ * COURSE-P4-04 — it also no longer stores nothing across visits: `AttemptHistoryContext`
+ * (the read-side twin, same reasoning about the server boundary) replays the last
+ * recorded attempt. A replayed result is marked `restored` and is NOT reported — see
+ * the effect below, which is the one place this file can create a duplicate row.
+ *
  * All the behaviour worth testing lives in `./state.ts`; this file is wiring and markup.
  */
 
 "use client";
 
-import { createContext, useContext, useEffect, useId, useMemo, useReducer, type ReactElement } from "react";
-import { useTranslations } from "next-intl";
+import { createContext, useContext, useEffect, useId, useMemo, useReducer, useRef, type ReactElement } from "react";
+import { useFormatter, useTranslations } from "next-intl";
 
 import type { QuizQuestion, QuizResult } from "@/domain/types";
 import { WidgetButton } from "@/features/courses/widgets/primitives/WidgetButton";
+import { useExerciseHistory } from "@/features/courses/reader/attempt-history";
+import { SaveAttemptsNotice } from "@/features/courses/reader/SaveAttemptsNotice";
 
 import { canSubmit, createQuizReducer, initialQuizState } from "./state";
 import { BooleanChoice } from "./questions/BooleanChoice";
@@ -38,6 +45,10 @@ export interface RenderedOption {
 /** P4-02's wiring point: provide a handler and every attempt on the page reports to it. */
 export const QuizAttemptContext = createContext<(result: QuizResult) => void>(() => {});
 
+/** Explicit options rather than a named next-intl format: the app declares no
+ *  `formats` config, so a name like "short" would have nothing to resolve against. */
+const DATE_FORMAT = { day: "numeric", month: "short" } as const;
+
 export interface QuizCardProps {
   question: QuizQuestion;
   prompt: ReactElement;
@@ -50,6 +61,7 @@ export interface QuizCardProps {
 
 export function QuizCard({ question, prompt, explanation, hint, options, code }: QuizCardProps) {
   const t = useTranslations("courses.quiz");
+  const format = useFormatter();
   const onAnswered = useContext(QuizAttemptContext);
 
   const reducer = useMemo(() => createQuizReducer(question), [question]);
@@ -58,14 +70,34 @@ export function QuizCard({ question, prompt, explanation, hint, options, code }:
   const promptId = useId();
   const feedbackId = useId();
 
+  // COURSE-P4-04 — replay a previous session's attempt once the history lands. The
+  // ref guards a second dispatch (Strict Mode's double effect, a context re-publish);
+  // the reducer independently refuses to overwrite an answer given in this session,
+  // so a student who answers before the fetch returns keeps their own work.
+  const { status: historyStatus, history } = useExerciseHistory(question.id);
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    if (hydrated.current || !history) return;
+    hydrated.current = true;
+    dispatch({ kind: "hydrate", history });
+  }, [history]);
+
   // Every submission produces a NEW result object, so this fires exactly once per
   // attempt — including a retry that lands on the same answer.
+  //
+  // COURSE-P4-04: `restored` results are excluded. They are a replay of a row that is
+  // already in the table; reporting one would append a duplicate attempt on EVERY
+  // page load and corrupt the history this card just read.
   useEffect(() => {
-    if (state.result) onAnswered(state.result);
-  }, [state.result, onAnswered]);
+    if (state.result && !state.restored) onAnswered(state.result);
+  }, [state.result, state.restored, onAnswered]);
 
   const answered = state.result !== null;
   const locked = answered;
+  // Signed out AND they have done work that would have been saved. Nothing before
+  // the first submission — see SaveAttemptsNotice.
+  const showSaveNotice = historyStatus === "untracked" && state.attempts > 0;
 
   return (
     <section
@@ -81,6 +113,30 @@ export function QuizCard({ question, prompt, explanation, hint, options, code }:
         maxWidth: "100%",
       }}
     >
+      {/* COURSE-P4-04 — what a previous session left behind. When the answer itself
+          was restored this is just a date stamp under the verdict below; when it
+          could not be (the question changed since), it is the ONLY record, so it
+          also has to say whether they got it right. */}
+      {state.lastAttemptedAt ? (
+        <p
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            margin: "0 0 0.85rem",
+            fontSize: "0.8rem",
+            color: state.restored ? "var(--text-dim)" : "var(--text-muted)",
+          }}
+        >
+          <span aria-hidden="true">{state.previouslySolved ? "✓" : "↻"}</span>
+          {state.restored
+            ? t("history.answeredOn", { date: format.dateTime(new Date(state.lastAttemptedAt), DATE_FORMAT) })
+            : t(state.previouslySolved ? "history.solved" : "history.attempted", {
+                date: format.dateTime(new Date(state.lastAttemptedAt), DATE_FORMAT),
+              })}
+        </p>
+      ) : null}
+
       <div id={promptId} style={{ color: "var(--text)", fontWeight: 600, minWidth: 0 }}>
         {prompt}
       </div>
@@ -93,6 +149,7 @@ export function QuizCard({ question, prompt, explanation, hint, options, code }:
             selection={typeof state.selection === "string" ? state.selection : null}
             answer={answered ? question.answer : null}
             disabled={locked}
+            chosenLabel={t("yourAnswer")}
             onSelect={(value) => dispatch({ kind: "select", value })}
           />
         ) : null}
@@ -104,6 +161,7 @@ export function QuizCard({ question, prompt, explanation, hint, options, code }:
             answer={answered ? question.answer : null}
             disabled={locked}
             notice={t("multiNotice")}
+            chosenLabel={t("yourAnswer")}
             onToggle={(optionId) => dispatch({ kind: "toggle", optionId })}
           />
         ) : null}
@@ -113,8 +171,10 @@ export function QuizCard({ question, prompt, explanation, hint, options, code }:
             name={promptId}
             selection={typeof state.selection === "boolean" ? state.selection : null}
             disabled={locked}
+            graded={answered}
             trueLabel={t("true")}
             falseLabel={t("false")}
+            chosenLabel={t("yourAnswer")}
             onSelect={(value) => dispatch({ kind: "select", value })}
           />
         ) : null}
@@ -211,6 +271,8 @@ export function QuizCard({ question, prompt, explanation, hint, options, code }:
           </>
         ) : null}
       </div>
+
+      {showSaveNotice ? <SaveAttemptsNotice /> : null}
     </section>
   );
 }

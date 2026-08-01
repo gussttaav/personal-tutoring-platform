@@ -23,7 +23,10 @@ import type {
   CourseProgressDetail,
   CourseProgressSummary,
   Enrollment,
+  ExerciseAttemptHistory,
   LessonProgress,
+  LessonProgressDetail,
+  QuizAttempt,
 } from "@/domain/types";
 import { log } from "@/lib/logger";
 import { UserService } from "./UserService";
@@ -57,6 +60,33 @@ function summarise(
     enrolledAt:         enrollment?.enrolledAt  ?? null,
     completedAt:        enrollment?.completedAt ?? null,
   };
+}
+
+/**
+ * COURSE-P4-04 — collapses the append-only attempt rows into one entry per exercise.
+ * Pure, like `summarise` above.
+ *
+ * `attempts` must arrive in `attemptedAt` order (the repository guarantees it), because
+ * the LAST row is what the card restores. `solved` is sticky across all of them: a
+ * reader who answered correctly and then re-tried and slipped has still solved it, and
+ * the card still shows the answer they actually left behind.
+ */
+export function summariseAttempts(attempts: QuizAttempt[]): ExerciseAttemptHistory[] {
+  const byId = new Map<string, ExerciseAttemptHistory>();
+
+  for (const attempt of attempts) {
+    const previous = byId.get(attempt.quizId);
+    byId.set(attempt.quizId, {
+      quizId:          attempt.quizId,
+      attempts:        (previous?.attempts ?? 0) + 1,
+      solved:          (previous?.solved ?? false) || attempt.correct,
+      lastCorrect:     attempt.correct,
+      lastAnswer:      attempt.answer ?? null,
+      lastAttemptedAt: attempt.attemptedAt,
+    });
+  }
+
+  return [...byId.values()];
 }
 
 export class CourseService {
@@ -148,24 +178,62 @@ export class CourseService {
     };
   }
 
-  /** The two reads above share one fetch: the registry half plus, for a known user,
-   *  the enrolment and the progress rows. Never creates a user. */
-  private async readProgress(email: string, courseSlug: string): Promise<{
+  /**
+   * COURSE-P4-04: the reader's read, one lesson deep — everything
+   * `getCourseProgressDetail` returns plus that lesson's exercise history, so the
+   * reader still makes exactly ONE request per lesson view.
+   *
+   * An unknown or unpublished lesson yields `exercises: []` rather than an error, the
+   * same "a stale bookmark is a no-op" policy the writes follow — and it is honest:
+   * a lesson that is not published has no history to show.
+   */
+  async getLessonProgressDetail(
+    email: string,
+    courseSlug: string,
+    lessonSlug: string,
+  ): Promise<LessonProgressDetail> {
+    const published = this.catalog.listLessonSlugs(courseSlug);
+    const { publishedSlugs, progress, enrollment, attempts } = await this.readProgress(
+      email,
+      courseSlug,
+      published.includes(lessonSlug) ? lessonSlug : undefined,
+    );
+
+    const completed = new Set(
+      progress.filter((p) => p.status === "completed").map((p) => p.lessonSlug),
+    );
+
+    return {
+      ...summarise(courseSlug, publishedSlugs, progress, enrollment),
+      completedLessonSlugs: publishedSlugs.filter((slug) => completed.has(slug)),
+      lessonSlug,
+      exercises:            summariseAttempts(attempts),
+    };
+  }
+
+  /** The reads above share one fetch: the registry half plus, for a known user, the
+   *  enrolment and the progress rows — and, when a lesson is named, that lesson's
+   *  attempts in the SAME round of queries rather than after it. Never creates a user. */
+  private async readProgress(email: string, courseSlug: string, lessonSlug?: string): Promise<{
     publishedSlugs: string[];
     progress:       LessonProgress[];
     enrollment:     Enrollment | null;
+    attempts:       QuizAttempt[];
   }> {
     const publishedSlugs = this.catalog.listLessonSlugs(courseSlug);
 
     const user = await this.userService.findByEmail(email);
-    if (!user) return { publishedSlugs, progress: [], enrollment: null };
+    if (!user) return { publishedSlugs, progress: [], enrollment: null, attempts: [] };
 
-    const [enrollment, progress] = await Promise.all([
+    const [enrollment, progress, attempts] = await Promise.all([
       this.courses.findEnrollment(user.id, courseSlug),
       this.courses.listLessonProgress(user.id, courseSlug),
+      lessonSlug
+        ? this.courses.listQuizAttempts(user.id, courseSlug, lessonSlug)
+        : Promise.resolve<QuizAttempt[]>([]),
     ]);
 
-    return { publishedSlugs, progress, enrollment };
+    return { publishedSlugs, progress, enrollment, attempts };
   }
 
   async listEnrollments(email: string): Promise<CourseProgressSummary[]> {

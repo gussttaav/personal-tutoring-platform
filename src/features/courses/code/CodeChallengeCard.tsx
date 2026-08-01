@@ -36,10 +36,12 @@ import {
   useState,
   type ReactElement,
 } from "react";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 
 import type { ChallengeResult, CodeChallenge, TestResult } from "@/domain/types";
 import { WidgetButton } from "@/features/courses/widgets/primitives/WidgetButton";
+import { useExerciseHistory } from "@/features/courses/reader/attempt-history";
+import { SaveAttemptsNotice } from "@/features/courses/reader/SaveAttemptsNotice";
 // Type-only — erased at build, so nothing under `lib/courses/pyodide/` reaches the
 // lesson's first-load chunk.
 import type { LoadStage, RunResult } from "@/lib/courses/pyodide/client";
@@ -55,6 +57,9 @@ import { applyAutoClose, applyBackspacePair, applyEnter, applyTab } from "./edit
 /** P4-02's wiring point, twinned with `QuizAttemptContext`: provide a handler and
  *  every graded run on the page reports to it. Both take an `AssessmentResult`. */
 export const ChallengeAttemptContext = createContext<(result: ChallengeResult) => void>(() => {});
+
+/** Explicit options rather than a named next-intl format — same reason as QuizCard. */
+const DATE_FORMAT = { day: "numeric", month: "short" } as const;
 
 export interface CodeChallengeCardProps {
   challenge: CodeChallenge;
@@ -96,10 +101,23 @@ export function CodeChallengeCard({
   solution,
 }: CodeChallengeCardProps) {
   const t = useTranslations("courses.challenge");
+  const format = useFormatter();
   const onAnswered = useContext(ChallengeAttemptContext);
 
   const reducer = useMemo(() => createChallengeReducer(challenge.id), [challenge.id]);
   const [state, dispatch] = useReducer(reducer, undefined, initialChallengeState);
+
+  // COURSE-P4-04 — replay previous runs once the history lands: the attempt count,
+  // and above all the reveal gate, so a solution already earned stays unlocked. The
+  // reducer refuses to overwrite a run made in this session.
+  const { status: historyStatus, history } = useExerciseHistory(challenge.id);
+  const hydrated = useRef(false);
+
+  useEffect(() => {
+    if (hydrated.current || !history) return;
+    hydrated.current = true;
+    dispatch({ kind: "hydrate", history });
+  }, [history]);
 
   const [value, setValue] = useState(challenge.starter);
   const [status, setStatus] = useState<Status>("idle");
@@ -276,6 +294,30 @@ export function CodeChallengeCard({
         maxWidth: "100%",
       }}
     >
+      {/* COURSE-P4-04 — what a previous session left behind. The editor is NOT
+          restored (P4-02 records the outcome, never the student's code), so this
+          line and the still-unlocked solution below are the whole of the memory. */}
+      {state.restored ? (
+        <p
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "0.4rem",
+            margin: "0 0 0.85rem",
+            fontSize: "0.8rem",
+            color: state.solved ? "var(--green)" : "var(--text-muted)",
+          }}
+        >
+          <span aria-hidden="true">{state.solved ? "✓" : "↻"}</span>
+          {t(state.solved ? "history.solved" : "history.attempted", {
+            passed:  state.restored.passed,
+            total:   state.restored.total,
+            count:   state.attempts,
+            date:    format.dateTime(new Date(state.restored.at), DATE_FORMAT),
+          })}
+        </p>
+      ) : null}
+
       <div id={promptId} style={{ color: "var(--text)", fontWeight: 600, minWidth: 0 }}>
         {prompt}
       </div>
@@ -472,6 +514,8 @@ export function CodeChallengeCard({
           </p>
         ) : null}
       </div>
+
+      {historyStatus === "untracked" && state.attempts > 0 ? <SaveAttemptsNotice /> : null}
     </section>
   );
 }

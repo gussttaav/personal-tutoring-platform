@@ -30,12 +30,14 @@ jest.mock("@/lib/session", () => ({ getSession: () => mockGetSession() }));
 const mockMarkSeen        = jest.fn();
 const mockMarkCompleted   = jest.fn();
 const mockGetDetail       = jest.fn();
+const mockGetLessonDetail = jest.fn();
 const mockListEnrollments = jest.fn();
 jest.mock("@/services", () => ({
   courseService: {
     markLessonSeen:          (...args: unknown[]) => mockMarkSeen(...args),
     markLessonCompleted:     (...args: unknown[]) => mockMarkCompleted(...args),
     getCourseProgressDetail: (...args: unknown[]) => mockGetDetail(...args),
+    getLessonProgressDetail: (...args: unknown[]) => mockGetLessonDetail(...args),
     listEnrollments:         (...args: unknown[]) => mockListEnrollments(...args),
   },
 }));
@@ -300,5 +302,74 @@ describe("COURSE-P4-03: GET /api/courses/progress (enrolment list)", () => {
 
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: "INTERNAL_ERROR" });
+  });
+});
+
+describe("COURSE-P4-04: GET /api/courses/progress (with lessonSlug)", () => {
+  const lessonDetail = {
+    courseSlug: "dl-nlp",
+    totalLessons: 4,
+    completedLessons: 1,
+    percentComplete: 25,
+    lastSeenLessonSlug: "l1",
+    enrolledAt: "2026-07-01T00:00:00.000Z",
+    completedAt: null,
+    completedLessonSlugs: ["l1"],
+    lessonSlug: "l1",
+    exercises: [
+      {
+        quizId: "q1",
+        attempts: 2,
+        solved: true,
+        lastCorrect: true,
+        lastAnswer: { kind: "quiz", questionType: "single", value: "b" },
+        lastAttemptedAt: "2026-07-28T10:00:00.000Z",
+      },
+    ],
+  };
+
+  it("returns 204 for a signed-out reader without calling the service", async () => {
+    mockGetSession.mockResolvedValue(null);
+
+    const res = await GET(getReq("?courseSlug=dl-nlp&lessonSlug=l1"));
+
+    expect(res.status).toBe(204);
+    expect(mockGetLessonDetail).not.toHaveBeenCalled();
+  });
+
+  it("returns the lesson detail, exercise history included", async () => {
+    mockGetLessonDetail.mockResolvedValue(lessonDetail);
+
+    const res = await GET(getReq("?courseSlug=dl-nlp&lessonSlug=l1"));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(lessonDetail);
+    expect(mockGetLessonDetail).toHaveBeenCalledWith(EMAIL, "dl-nlp", "l1");
+    // The course-wide read must not ALSO run — one lesson view, one query set.
+    expect(mockGetDetail).not.toHaveBeenCalled();
+  });
+
+  it("keeps the course-wide shape when no lesson is named", async () => {
+    mockGetDetail.mockResolvedValue({ ...lessonDetail, lessonSlug: undefined, exercises: undefined });
+
+    await GET(getReq("?courseSlug=dl-nlp"));
+
+    expect(mockGetDetail).toHaveBeenCalledWith(EMAIL, "dl-nlp");
+    expect(mockGetLessonDetail).not.toHaveBeenCalled();
+  });
+
+  it("400s on an empty lessonSlug rather than silently ignoring it", async () => {
+    const res = await GET(getReq("?courseSlug=dl-nlp&lessonSlug="));
+
+    expect(res.status).toBe(400);
+    expect(mockGetLessonDetail).not.toHaveBeenCalled();
+    expect(mockGetDetail).not.toHaveBeenCalled();
+  });
+
+  it("400s on an over-long lessonSlug", async () => {
+    const res = await GET(getReq(`?courseSlug=dl-nlp&lessonSlug=${"x".repeat(101)}`));
+
+    expect(res.status).toBe(400);
+    expect(mockGetLessonDetail).not.toHaveBeenCalled();
   });
 });

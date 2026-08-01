@@ -846,7 +846,13 @@
       "toleranceNote": "A margin of ±{tolerance} is accepted.",
       "predictPrompt": "What does this code print?",
       "outputPlaceholder": "Type the exact output",
-      "attempt": "{count, plural, =1 {# attempt} other {# attempts}}"
+      "attempt": "{count, plural, =1 {# attempt} other {# attempts}}",
+      "yourAnswer": "Your answer",
+      "history": {
+        "answeredOn": "Answered on {date}",
+        "solved": "You already got this one right on {date}",
+        "attempted": "You already tried this one on {date}"
+      }
     },
     "challenge": {
       "run": "Run tests",
@@ -883,14 +889,21 @@
       "timeoutRun": "The run went past {seconds} s and was stopped. That usually means your code has an infinite loop.",
       "timeoutLoad": "The interpreter took too long to download. Check your connection and try again.",
       "stopped": "Run stopped. It does not count as an attempt.",
-      "crashed": "The interpreter shut down unexpectedly: {error}"
+      "crashed": "The interpreter shut down unexpectedly: {error}",
+      "history": {
+        "solved": "Solved · {passed}/{total} tests · {date}",
+        "attempted": "You tried this {count, plural, =1 {# time} other {# times}} · {date}"
+      }
     },
     "progress": {
       "markComplete": "Mark as complete",
       "completed": "Lesson completed",
       "prompt": "Finished this lesson? Mark it to keep track of your progress.",
       "resume": "Resume where you left off",
-      "lessonsDone": "{done} of {total} lessons completed"
+      "lessonsDone": "{done} of {total} lessons completed",
+      "exercisesDone": "Exercises: {done} of {total} solved",
+      "saveAttempts": "Your answers are not being saved.",
+      "saveAttemptsCta": "Sign in to keep them"
     }
   },
   "meta": {

@@ -12,7 +12,7 @@
 "use client";
 
 import type { RenderedOption } from "../QuizCard";
-import { optionInputStyle, optionRowStyle, optionTextStyle } from "./choice-styles";
+import { chosenTagStyle, optionInputStyle, optionRowStyle, optionTextStyle } from "./choice-styles";
 
 export interface SingleChoiceProps {
   /** Shared radio group name; the card passes a `useId` value. */
@@ -22,19 +22,30 @@ export interface SingleChoiceProps {
   /** The correct option id — supplied only once the answer has been graded. */
   answer: string | null;
   disabled: boolean;
+  /** "Tu respuesta" — see chosenTagStyle for why the choice is stated in text. */
+  chosenLabel: string;
   onSelect: (optionId: string) => void;
 }
 
-export function SingleChoice({ name, options, selection, answer, disabled, onSelect }: SingleChoiceProps) {
+export function SingleChoice({
+  name,
+  options,
+  selection,
+  answer,
+  disabled,
+  chosenLabel,
+  onSelect,
+}: SingleChoiceProps) {
   return (
     <>
       {options.map((option) => {
         const graded = answer !== null;
+        const chosen = option.id === selection;
         const state = !graded
           ? "idle"
           : option.id === answer
             ? "correct"
-            : option.id === selection
+            : chosen
               ? "missed"
               : "idle";
 
@@ -44,12 +55,13 @@ export function SingleChoice({ name, options, selection, answer, disabled, onSel
               type="radio"
               name={name}
               value={option.id}
-              checked={selection === option.id}
+              checked={chosen}
               disabled={disabled}
               onChange={() => onSelect(option.id)}
               style={optionInputStyle}
             />
             <span style={optionTextStyle}>{option.label}</span>
+            {graded && chosen ? <span style={chosenTagStyle}>{chosenLabel}</span> : null}
           </label>
         );
       })}

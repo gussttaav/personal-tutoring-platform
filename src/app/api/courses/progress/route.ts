@@ -2,8 +2,9 @@
  * COURSE-P4-02 — course progress.
  *
  *   POST /api/courses/progress   { courseSlug, lessonSlug, action: "seen"|"completed" }
- *   GET  /api/courses/progress?courseSlug=…  → CourseProgressDetail
- *   GET  /api/courses/progress[?locale=…]    → { enrollments: EnrolledCourseView[] }  (P4-03)
+ *   GET  /api/courses/progress?courseSlug=…               → CourseProgressDetail
+ *   GET  /api/courses/progress?courseSlug=…&lessonSlug=…  → LessonProgressDetail    (P4-04)
+ *   GET  /api/courses/progress[?locale=…]                 → { enrollments: … }      (P4-03)
  *
  * COURSE-P4-03 adds the second GET shape: without `courseSlug` the endpoint answers with
  * every enrolment, which is what the "Mis cursos" panel in /area-personal reads. Titles are
@@ -103,13 +104,20 @@ export async function GET(req: NextRequest) {
 
   const parsed = CourseProgressQuerySchema.safeParse({
     courseSlug: req.nextUrl.searchParams.get("courseSlug") ?? undefined,
+    lessonSlug: req.nextUrl.searchParams.get("lessonSlug") ?? undefined,
   });
   if (!parsed.success) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
 
+  const { courseSlug, lessonSlug } = parsed.data;
+
   try {
-    const progress = await courseService.getCourseProgressDetail(email, parsed.data.courseSlug);
+    // COURSE-P4-04: naming a lesson widens the response with that lesson's exercise
+    // history. The reader always names one; the landing page never does.
+    const progress = lessonSlug
+      ? await courseService.getLessonProgressDetail(email, courseSlug, lessonSlug)
+      : await courseService.getCourseProgressDetail(email, courseSlug);
     return NextResponse.json(progress);
   } catch (err) {
-    return mapDomainErrorToResponse(err, { email, courseSlug: parsed.data.courseSlug });
+    return mapDomainErrorToResponse(err, { email, courseSlug, lessonSlug });
   }
 }

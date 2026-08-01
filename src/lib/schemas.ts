@@ -403,9 +403,14 @@ export const CourseProgressUpdateSchema = z.object({
 
 export type CourseProgressUpdateInput = z.infer<typeof CourseProgressUpdateSchema>;
 
-/** Models a query string, so it is parsed from `searchParams`, not a JSON body. */
+/** Models a query string, so it is parsed from `searchParams`, not a JSON body.
+ *
+ *  COURSE-P4-04: `lessonSlug` is optional and only WIDENS the response — with it the
+ *  GET also carries that lesson's exercise history, so the reader keeps making one
+ *  request per lesson view instead of two. */
 export const CourseProgressQuerySchema = z.object({
   courseSlug: z.string().min(1).max(100),
+  lessonSlug: z.string().min(1).max(100).optional(),
 });
 
 export type CourseProgressQuery = z.infer<typeof CourseProgressQuerySchema>;

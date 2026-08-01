@@ -38,6 +38,9 @@ interface LessonLayoutProps {
   title:       string;
   minutes:     number;
   headings:    HeadingOutline[];
+  /** COURSE-P4-04: quiz + challenge ids placed in this lesson's body, for the
+   *  solved counter next to mark-complete. Empty on a lesson with no exercises. */
+  exerciseIds: string[];
   prev:        LessonRef | null;
   next:        LessonRef | null;
   locale:      string;
@@ -52,6 +55,7 @@ export default async function LessonLayout({
   title,
   minutes,
   headings,
+  exerciseIds,
   prev,
   next,
   locale,
@@ -94,7 +98,7 @@ export default async function LessonLayout({
 
             {children}
 
-            <LessonComplete lessonSlug={currentSlug} />
+            <LessonComplete lessonSlug={currentSlug} exerciseIds={exerciseIds} />
 
             <LessonNav courseSlug={courseSlug} prev={prev} next={next} locale={locale} />
           </article>

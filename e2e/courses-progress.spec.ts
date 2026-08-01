@@ -12,8 +12,10 @@
  * no `en` content tree, so `/en/cursos/...` legitimately 404s until P5 translates.
  * Adding the locale loop here would assert a page that is not supposed to exist.
  *
- * The lesson under test is the P1-01 rendering fixture, which is the only published
- * lesson until Phase 5. When real content lands, prefer a real lesson slug.
+ * The lesson under test is Block 1 lesson 1, the first real published lesson. It was
+ * the P1-01 rendering fixture until P5-00 restored that file to `draft: true` — which
+ * made `generateStaticParams` stop emitting it, so the old URL here 404'd. Any future
+ * change to which lessons are published has to be reflected in this constant.
  *
  * TIMEOUTS: generous on purpose, and not padding. The progress UI is client-fetched
  * after hydration, and this lesson is the heaviest page in the app — MDX + KaTeX +
@@ -28,8 +30,11 @@ import { resetTestState }    from "./fixtures/cleanup";
 import { dict }              from "./helpers/dict";
 
 const d = dict.es;
-const LESSON_URL = "/cursos/dl-nlp/pipeline-fixture";
-const LESSON_SLUG = "pipeline-fixture";
+const LESSON_URL = "/cursos/dl-nlp/texto-como-numeros";
+const LESSON_SLUG = "texto-como-numeros";
+/** First `<Quiz>` in that lesson; option "b" is its correct answer. */
+const QUIZ_PROMPT = /¿Cuál es la razón de fondo/;
+const QUIZ_CORRECT = /Porque una red solo está definida sobre vectores de números reales/;
 /** From content/courses/dl-nlp/course.es.yml — the title the P4-03 panel renders. */
 const COURSE_TITLE = "Deep Learning para NLP: del Perceptrón al Transformer";
 
@@ -79,6 +84,37 @@ test.describe("Course lesson progress [es]", () => {
     await expect(
       page.locator(`[data-lesson-slug="${LESSON_SLUG}"][data-lesson-done="true"]`).first(),
     ).toBeAttached({ timeout: 30_000 });
+  });
+
+  // COURSE-P4-04 — the attempt itself survives, not just the lesson tick.
+  test("an answered quiz comes back answered after a reload", async ({ page }) => {
+    await loginAs(page, E2E_USER.email, E2E_USER.name);
+
+    await page.goto(LESSON_URL);
+
+    // Scope to the first quiz card: the lesson has three, and every one of them
+    // renders the same control labels.
+    const card = page.locator("section").filter({ hasText: QUIZ_PROMPT }).first();
+    await expect(card).toBeVisible({ timeout: 30_000 });
+
+    await card.getByText(QUIZ_CORRECT).click();
+    await card.getByRole("button", { name: d.courses.quiz.submit }).click();
+
+    await expect(card.getByText(d.courses.quiz.correct, { exact: false })).toBeVisible();
+
+    // The real assertion: after a reload this can only have come from quiz_attempts.
+    await page.reload();
+
+    const restored = page.locator("section").filter({ hasText: QUIZ_PROMPT }).first();
+    await expect(restored.getByText(d.courses.quiz.correct, { exact: false })).toBeVisible({
+      timeout: 30_000,
+    });
+    // Their own answer is selected again, and the card is back in its answered state.
+    await expect(restored.getByRole("radio", { name: QUIZ_CORRECT })).toBeChecked();
+    await expect(restored.getByRole("button", { name: d.courses.quiz.retry })).toBeVisible();
+
+    // Still ONE attempt: a page load must never record a new one.
+    await expect(restored.getByText(/^1 intento$/)).toBeVisible();
   });
 
   // COURSE-P4-03 — the same enrolment, seen from the other half of the site.

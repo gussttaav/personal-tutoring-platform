@@ -31,6 +31,7 @@ import {
 } from "@/lib/courses/registry";
 import { getLessonSource } from "@/lib/courses/lesson-source";
 import { extractHeadings } from "@/lib/courses/headings";
+import { placedExerciseIds } from "@/lib/courses/exercise-ids";
 import { renderLesson } from "@/lib/courses/mdx";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
@@ -95,6 +96,9 @@ export default async function LessonPage({
   const { content } = await renderLesson(source, lesson.quiz, lesson.challenges);
   const headings = extractHeadings(source);
   const { prev, next } = lessonNeighbours(courseSlug, lessonSlug, locale);
+  // COURSE-P4-04: the denominator for the "N de M ejercicios resueltos" counter.
+  // Read at BUILD time from the body, so the page stays static.
+  const exerciseIds = placedExerciseIds(source);
 
   return (
     <>
@@ -107,6 +111,7 @@ export default async function LessonPage({
         title={lesson.title}
         minutes={lesson.minutes}
         headings={headings}
+        exerciseIds={exerciseIds}
         prev={prev}
         next={next}
         locale={locale}

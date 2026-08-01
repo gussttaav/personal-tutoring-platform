@@ -25,7 +25,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CourseProgressDetail } from "@/domain/types";
+import type {
+  CourseProgressDetail,
+  ExerciseAttemptHistory,
+  LessonProgressDetail,
+} from "@/domain/types";
 import {
   derive,
   snapshotFromResponse,
@@ -46,6 +50,9 @@ export interface CourseProgress {
   percentComplete:    number;
   completed:          ReadonlySet<string>;
   lastSeenLessonSlug: string | null;
+  /** COURSE-P4-04: the current lesson's exercise history, by quiz/challenge id.
+   *  Empty while loading, when untracked, and on the landing page (no lesson). */
+  exercises:          ReadonlyMap<string, ExerciseAttemptHistory>;
   /** Optimistic: ticks immediately, reverts if the write fails. */
   markCompleted:      (lessonSlug: string) => void;
 }
@@ -81,9 +88,17 @@ export function useCourseProgress({ courseSlug, lessonSlug }: Options): CoursePr
 
     // Fired together, not chained: the read and the view-write are independent, and
     // a signed-out reader gets two cheap 204s rather than a waterfall.
-    fetch(`/api/courses/progress?courseSlug=${encodeURIComponent(courseSlug)}`)
+    // Naming the lesson widens the response with its exercise history (P4-04) —
+    // same request, same round trip.
+    const query = new URLSearchParams({ courseSlug });
+    if (lessonSlug) query.set("lessonSlug", lessonSlug);
+
+    fetch(`/api/courses/progress?${query}`)
       .then(async (res) => {
-        const body = res.ok && res.status !== 204 ? ((await res.json()) as CourseProgressDetail) : null;
+        const body =
+          res.ok && res.status !== 204
+            ? ((await res.json()) as CourseProgressDetail | LessonProgressDetail)
+            : null;
         if (!cancelled) setSnapshot(snapshotFromResponse(res.status, body));
       })
       .catch((err) => {
@@ -128,6 +143,7 @@ export function useCourseProgress({ courseSlug, lessonSlug }: Options): CoursePr
       totalLessons:       snapshot.totalLessons,
       completed:          snapshot.completed,
       lastSeenLessonSlug: snapshot.lastSeenLessonSlug,
+      exercises:          snapshot.exercises,
       markCompleted,
     }),
     [snapshot, markCompleted],

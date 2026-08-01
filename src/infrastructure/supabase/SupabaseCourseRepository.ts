@@ -46,8 +46,30 @@ export function toLessonProgress(row: LessonProgressRow): LessonProgress {
   };
 }
 
+// COURSE-P4-04
+interface QuizAttemptRow {
+  course_slug:  string;
+  lesson_slug:  string;
+  quiz_id:      string;
+  correct:      boolean;
+  answer:       Json | null;
+  attempted_at: string;
+}
+
+export function toQuizAttempt(row: QuizAttemptRow): QuizAttempt {
+  return {
+    courseSlug:  row.course_slug,
+    lessonSlug:  row.lesson_slug,
+    quizId:      row.quiz_id,
+    correct:     row.correct,
+    answer:      row.answer ?? null,
+    attemptedAt: new Date(row.attempted_at).toISOString(),
+  };
+}
+
 const ENROLLMENT_COLUMNS = "course_slug, enrolled_at, completed_at";
 const PROGRESS_COLUMNS   = "course_slug, lesson_slug, status, completed_at, last_seen_at";
+const ATTEMPT_COLUMNS    = "course_slug, lesson_slug, quiz_id, correct, answer, attempted_at";
 
 export class SupabaseCourseRepository implements ICourseRepository {
   async enroll(userId: string, courseSlug: string): Promise<void> {
@@ -179,5 +201,24 @@ export class SupabaseCourseRepository implements ICourseRepository {
       });
 
     if (error) throw error;
+  }
+
+  // COURSE-P4-04: ascending, because `summariseAttempts` reads the LAST row as the
+  // exercise's current state.
+  async listQuizAttempts(
+    userId: string,
+    courseSlug: string,
+    lessonSlug: string,
+  ): Promise<QuizAttempt[]> {
+    const { data, error } = await supabase
+      .from("quiz_attempts")
+      .select(ATTEMPT_COLUMNS)
+      .eq("user_id", userId)
+      .eq("course_slug", courseSlug)
+      .eq("lesson_slug", lessonSlug)
+      .order("attempted_at", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []).map(toQuizAttempt);
   }
 }

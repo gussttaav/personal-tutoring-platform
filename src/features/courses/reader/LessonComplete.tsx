@@ -14,18 +14,24 @@
 
 import { useTranslations } from "next-intl";
 import { useReaderProgress } from "./CourseProgressProvider";
+import { countSolved } from "./attempt-history";
 
 interface LessonCompleteProps {
   lessonSlug: string;
+  /** COURSE-P4-04: quiz + challenge ids placed in this lesson, from the build. */
+  exerciseIds: string[];
 }
 
-export default function LessonComplete({ lessonSlug }: LessonCompleteProps) {
+export default function LessonComplete({ lessonSlug, exerciseIds }: LessonCompleteProps) {
   const t = useTranslations("courses.progress");
   const progress = useReaderProgress();
 
   if (!progress?.tracking) return null;
 
   const done = progress.completed.has(lessonSlug);
+  // COURSE-P4-04: exercises are OPTIONAL — this reports, it never gates. A reader who
+  // skipped every quiz still marks the lesson complete with the same one click.
+  const solved = countSolved(exerciseIds, progress.exercises);
 
   return (
     <div
@@ -87,6 +93,21 @@ export default function LessonComplete({ lessonSlug }: LessonCompleteProps) {
           </button>
         </>
       )}
+
+      {/* Its own line (the row wraps), so it reads as a note about the lesson rather
+          than as a condition attached to the button next to it. */}
+      {exerciseIds.length > 0 ? (
+        <p
+          style={{
+            flexBasis: "100%",
+            margin: 0,
+            fontSize: "0.8rem",
+            color: "var(--text-dim)",
+          }}
+        >
+          {t("exercisesDone", { done: solved, total: exerciseIds.length })}
+        </p>
+      ) : null}
     </div>
   );
 }

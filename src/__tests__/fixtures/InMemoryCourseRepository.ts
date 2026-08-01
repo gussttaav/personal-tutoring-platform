@@ -131,6 +131,20 @@ export class InMemoryCourseRepository implements ICourseRepository {
   ): Promise<void> {
     this.attempts.push({ ...attempt, userId, attemptedAt: this.now() });
   }
+
+  // COURSE-P4-04: insertion order IS `attemptedAt` order here (the clock ticks once
+  // per write), so the ascending guarantee the interface makes holds for free.
+  async listQuizAttempts(
+    userId: string,
+    courseSlug: string,
+    lessonSlug: string,
+  ): Promise<QuizAttempt[]> {
+    return this.attempts
+      .filter(
+        (a) => a.userId === userId && a.courseSlug === courseSlug && a.lessonSlug === lessonSlug,
+      )
+      .map(({ userId: _userId, ...attempt }) => attempt);
+  }
 }
 
 function toEnrollment(rec: EnrollmentRecord): Enrollment {

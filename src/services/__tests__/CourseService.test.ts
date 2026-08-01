@@ -4,7 +4,8 @@
 // denominator is the array passed to `FakeCourseCatalog`, so "drafts are
 // excluded" is expressed by leaving a slug out rather than by building an MDX
 // tree and re-pointing the registry.
-import { CourseService } from "../CourseService";
+import type { QuizAttempt } from "@/domain/types";
+import { CourseService, summariseAttempts } from "../CourseService";
 import { UserService }   from "../UserService";
 import { InMemoryCourseRepository } from "@/__tests__/fixtures/InMemoryCourseRepository";
 import { FakeCourseCatalog }        from "@/__tests__/fixtures/FakeCourseCatalog";
@@ -363,5 +364,120 @@ describe("CourseService.getCourseProgressDetail", () => {
     expect(detail.completedLessonSlugs).toEqual([]);
     expect(detail.enrolledAt).toBeNull();
     expect(await userRepo.findByEmail("nobody@example.com")).toBeNull();
+  });
+});
+
+// ─── COURSE-P4-04 ────────────────────────────────────────────────────────────
+
+describe("summariseAttempts", () => {
+  const attempt = (over: Partial<QuizAttempt> = {}): QuizAttempt => ({
+    courseSlug:  COURSE,
+    lessonSlug:  "l1",
+    quizId:      "q1",
+    correct:     false,
+    answer:      null,
+    attemptedAt: "2026-07-28T10:00:00.000Z",
+    ...over,
+  });
+
+  it("returns nothing for a reader who has attempted nothing", () => {
+    expect(summariseAttempts([])).toEqual([]);
+  });
+
+  it("groups by exercise and counts every attempt", () => {
+    const history = summariseAttempts([
+      attempt({ quizId: "q1" }),
+      attempt({ quizId: "q2" }),
+      attempt({ quizId: "q1" }),
+    ]);
+
+    expect(history).toHaveLength(2);
+    expect(history.find((h) => h.quizId === "q1")?.attempts).toBe(2);
+    expect(history.find((h) => h.quizId === "q2")?.attempts).toBe(1);
+  });
+
+  it("marks `solved` if ANY attempt was correct, and keeps the LAST one's answer", () => {
+    const [history] = summariseAttempts([
+      attempt({ correct: true,  answer: "first",  attemptedAt: "2026-07-28T10:00:00.000Z" }),
+      attempt({ correct: false, answer: "second", attemptedAt: "2026-07-29T10:00:00.000Z" }),
+    ]);
+
+    // Solved once is solved; the card still shows what they actually left behind.
+    expect(history.solved).toBe(true);
+    expect(history.lastCorrect).toBe(false);
+    expect(history.lastAnswer).toBe("second");
+    expect(history.lastAttemptedAt).toBe("2026-07-29T10:00:00.000Z");
+  });
+});
+
+describe("CourseService.getLessonProgressDetail", () => {
+  const ANSWER = { kind: "quiz", questionType: "single", value: "b", hintUsed: false, attempt: 1 };
+
+  it("returns this lesson's attempts alongside the usual progress detail", async () => {
+    const { service } = makeService();
+
+    await service.markLessonSeen(EMAIL, COURSE, "l1");
+    await service.markLessonCompleted(EMAIL, COURSE, "l1");
+    await service.recordQuizAttempt(EMAIL, COURSE, "l1", "q1", false, ANSWER);
+    await service.recordQuizAttempt(EMAIL, COURSE, "l1", "q1", true, ANSWER);
+
+    const detail = await service.getLessonProgressDetail(EMAIL, COURSE, "l1");
+
+    expect(detail.lessonSlug).toBe("l1");
+    expect(detail.completedLessonSlugs).toEqual(["l1"]);
+    expect(detail.totalLessons).toBe(4);
+    expect(detail.exercises).toEqual([
+      expect.objectContaining({ quizId: "q1", attempts: 2, solved: true, lastCorrect: true }),
+    ]);
+  });
+
+  it("does not leak another lesson's attempts", async () => {
+    const { service } = makeService();
+
+    await service.recordQuizAttempt(EMAIL, COURSE, "l1", "q1", true, ANSWER);
+    await service.recordQuizAttempt(EMAIL, COURSE, "l2", "q2", true, ANSWER);
+
+    const detail = await service.getLessonProgressDetail(EMAIL, COURSE, "l1");
+    expect(detail.exercises.map((e) => e.quizId)).toEqual(["q1"]);
+  });
+
+  it("does not leak another reader's attempts", async () => {
+    const { service } = makeService();
+
+    await service.recordQuizAttempt("other@example.com", COURSE, "l1", "q1", true, ANSWER);
+
+    const detail = await service.getLessonProgressDetail(EMAIL, COURSE, "l1");
+    expect(detail.exercises).toEqual([]);
+  });
+
+  it("returns zeroes for a reader who has never touched the course", async () => {
+    const { service } = makeService();
+
+    const detail = await service.getLessonProgressDetail("nobody@example.com", COURSE, "l1");
+
+    expect(detail.exercises).toEqual([]);
+    expect(detail.completedLessonSlugs).toEqual([]);
+    expect(detail.percentComplete).toBe(0);
+  });
+
+  it("answers for an unpublished lesson with an empty history instead of throwing", async () => {
+    const { service } = makeService(["l1", "l2"]);
+
+    await service.recordQuizAttempt(EMAIL, COURSE, "l1", "q1", true, ANSWER);
+
+    // A stale bookmark to a withdrawn lesson is a no-op, never a 500 (P4-01 policy).
+    const detail = await service.getLessonProgressDetail(EMAIL, COURSE, "withdrawn");
+    expect(detail.exercises).toEqual([]);
+    expect(detail.lessonSlug).toBe("withdrawn");
+  });
+
+  it("leaves `getCourseProgressDetail`'s shape alone — no exercises leak into it", async () => {
+    const { service } = makeService();
+
+    await service.recordQuizAttempt(EMAIL, COURSE, "l1", "q1", true, ANSWER);
+
+    const detail = await service.getCourseProgressDetail(EMAIL, COURSE);
+    expect(detail).not.toHaveProperty("exercises");
+    expect(detail).not.toHaveProperty("lessonSlug");
   });
 });

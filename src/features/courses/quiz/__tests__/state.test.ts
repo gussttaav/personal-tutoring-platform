@@ -8,7 +8,11 @@
  * right shape", "retry resets the input but not the attempt count" — is checked here.
  */
 
-import type { MultiQuizQuestion, SingleQuizQuestion } from "@/domain/types";
+import type {
+  ExerciseAttemptHistory,
+  MultiQuizQuestion,
+  SingleQuizQuestion,
+} from "@/domain/types";
 
 import { canSubmit, createQuizReducer, initialQuizState } from "../state";
 
@@ -47,6 +51,10 @@ describe("initialQuizState", () => {
       result: null,
       hintUsed: false,
       attempts: 0,
+      // COURSE-P4-04 — nothing replayed until the history fetch lands.
+      restored: false,
+      previouslySolved: false,
+      lastAttemptedAt: null,
     });
   });
 
@@ -199,5 +207,121 @@ describe("quizReducer — hint", () => {
   it("is idempotent", () => {
     const revealed = reduce(initialQuizState(single), { kind: "revealHint" });
     expect(reduce(revealed, { kind: "revealHint" })).toBe(revealed);
+  });
+});
+
+/*
+ * COURSE-P4-04 — hydration from `quiz_attempts`.
+ *
+ * The rule that carries the most risk is the LAST one here: a restored result must be
+ * marked `restored`, because the card reports every non-restored result to the
+ * persistence layer. Miss it and every page load appends a duplicate attempt row.
+ */
+
+const history = (over: Partial<ExerciseAttemptHistory> = {}): ExerciseAttemptHistory => ({
+  quizId:          "q-single",
+  attempts:        2,
+  solved:          true,
+  lastCorrect:     true,
+  lastAnswer:      { kind: "quiz", questionType: "single", value: "b", hintUsed: false, attempt: 2 },
+  lastAttemptedAt: "2026-07-28T10:00:00.000Z",
+  ...over,
+});
+
+describe("quizReducer — hydrate", () => {
+  it("replays the stored answer, verdict and attempt count", () => {
+    const state = reduce(initialQuizState(single), { kind: "hydrate", history: history() });
+
+    expect(state.selection).toBe("b");
+    expect(state.attempts).toBe(2);
+    expect(state.result).toMatchObject({ correct: true, attempt: 2 });
+    expect(state.lastAttemptedAt).toBe("2026-07-28T10:00:00.000Z");
+    expect(state.previouslySolved).toBe(true);
+  });
+
+  it("marks the replayed result `restored` — the card must NOT report it", () => {
+    const state = reduce(initialQuizState(single), { kind: "hydrate", history: history() });
+    expect(state.restored).toBe(true);
+  });
+
+  it("re-grades against the CURRENT answer key rather than trusting the stored verdict", () => {
+    // The row says they were right; the answer key has since been corrected to "b",
+    // and "a" is now wrong. The honest verdict wins.
+    const state = reduce(initialQuizState(single), {
+      kind: "hydrate",
+      history: history({
+        lastCorrect: true,
+        lastAnswer: { kind: "quiz", questionType: "single", value: "a", hintUsed: false, attempt: 1 },
+      }),
+    });
+
+    expect(state.selection).toBe("a");
+    expect(state.result).toMatchObject({ correct: false });
+  });
+
+  it("restores hint use, so the replayed result still says the hint was seen", () => {
+    const state = reduce(initialQuizState(single), {
+      kind: "hydrate",
+      history: history({
+        lastAnswer: { kind: "quiz", questionType: "single", value: "b", hintUsed: true, attempt: 2 },
+      }),
+    });
+
+    expect(state.hintUsed).toBe(true);
+    expect(state.result).toMatchObject({ hintUsed: true });
+  });
+
+  it("falls back to a badge when the stored answer no longer fits the question", () => {
+    const state = reduce(initialQuizState(single), {
+      kind: "hydrate",
+      history: history({ lastAnswer: { kind: "quiz", questionType: "single", value: "deleted-option" } }),
+    });
+
+    // We know they answered and solved it; we cannot show what they answered.
+    expect(state.attempts).toBe(2);
+    expect(state.previouslySolved).toBe(true);
+    expect(state.result).toBeNull();
+    expect(state.selection).toBeNull();
+    expect(state.restored).toBe(false);
+  });
+
+  it("NEVER overwrites an answer given in this session", () => {
+    let state = reduce(initialQuizState(single), { kind: "select", value: "a" });
+    state = reduce(state, { kind: "submit" });
+
+    const after = reduce(state, { kind: "hydrate", history: history() });
+
+    expect(after).toBe(state);
+    expect(after.selection).toBe("a");
+    expect(after.attempts).toBe(1);
+  });
+
+  it("ignores an empty history", () => {
+    const initial = initialQuizState(single);
+    expect(reduce(initial, { kind: "hydrate", history: history({ attempts: 0 }) })).toBe(initial);
+  });
+
+  it("continues the attempt count: a retry after two stored attempts is attempt 3", () => {
+    let state = reduce(initialQuizState(single), { kind: "hydrate", history: history() });
+    state = reduce(state, { kind: "retry" });
+
+    expect(state.restored).toBe(false); // the replay is gone; the next result is theirs
+    expect(state.attempts).toBe(2);
+
+    state = reduce(state, { kind: "select", value: "b" });
+    state = reduce(state, { kind: "submit" });
+
+    expect(state.result).toMatchObject({ attempt: 3 });
+    expect(state.restored).toBe(false);
+  });
+
+  it("keeps `previouslySolved` when a later attempt is wrong", () => {
+    let state = reduce(initialQuizState(single), { kind: "hydrate", history: history() });
+    state = reduce(state, { kind: "retry" });
+    state = reduce(state, { kind: "select", value: "a" });
+    state = reduce(state, { kind: "submit" });
+
+    expect(state.result).toMatchObject({ correct: false });
+    expect(state.previouslySolved).toBe(true);
   });
 });

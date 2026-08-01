@@ -3,7 +3,11 @@
 // The repo has no jsdom/RTL (see P2-01…P3-02), so this covers what a render test
 // would have: how a response becomes UI state, and that an optimistic tick both
 // applies and rolls back cleanly.
-import type { CourseProgressDetail } from "@/domain/types";
+import type {
+  CourseProgressDetail,
+  ExerciseAttemptHistory,
+  LessonProgressDetail,
+} from "@/domain/types";
 import {
   derive,
   snapshotFromResponse,
@@ -97,5 +101,51 @@ describe("COURSE-P4-02: derive", () => {
     const empty = snapshotFromResponse(200, detail({ totalLessons: 0, completedLessonSlugs: [] }));
 
     expect(derive(empty).percentComplete).toBe(0);
+  });
+});
+
+// ─── COURSE-P4-04 ────────────────────────────────────────────────────────────
+
+describe("COURSE-P4-04: exercise history in the snapshot", () => {
+  const exercise = (over: Partial<ExerciseAttemptHistory> = {}): ExerciseAttemptHistory => ({
+    quizId:          "q1",
+    attempts:        2,
+    solved:          true,
+    lastCorrect:     true,
+    lastAnswer:      null,
+    lastAttemptedAt: "2026-07-28T10:00:00.000Z",
+    ...over,
+  });
+
+  const lessonDetail = (exercises: ExerciseAttemptHistory[]): LessonProgressDetail => ({
+    ...detail(),
+    lessonSlug: "l2",
+    exercises,
+  });
+
+  it("indexes the lesson's exercises by id", () => {
+    const snap = snapshotFromResponse(200, lessonDetail([exercise(), exercise({ quizId: "q2" })]));
+
+    expect(snap.status).toBe("ready");
+    expect(snap.exercises.get("q1")?.attempts).toBe(2);
+    expect(snap.exercises.get("q2")?.solved).toBe(true);
+    expect(snap.exercises.get("nope")).toBeUndefined();
+  });
+
+  it("is empty for the course-wide read, which carries no exercises", () => {
+    expect(snapshotFromResponse(200, detail()).exercises.size).toBe(0);
+  });
+
+  it("is empty when signed out", () => {
+    expect(snapshotFromResponse(204, null).exercises.size).toBe(0);
+  });
+
+  it("is empty when the request failed — the reader must not see a stale history", () => {
+    expect(snapshotFromResponse(500, null).exercises.size).toBe(0);
+  });
+
+  it("survives an optimistic completion tick untouched", () => {
+    const snap = withCompleted(snapshotFromResponse(200, lessonDetail([exercise()])), "l3");
+    expect(snap.exercises.get("q1")?.attempts).toBe(2);
   });
 });

@@ -12,7 +12,7 @@
 "use client";
 
 import type { RenderedOption } from "../QuizCard";
-import { optionInputStyle, optionRowStyle, optionTextStyle } from "./choice-styles";
+import { chosenTagStyle, optionInputStyle, optionRowStyle, optionTextStyle } from "./choice-styles";
 
 export interface MultiChoiceProps {
   options: RenderedOption[];
@@ -21,10 +21,20 @@ export interface MultiChoiceProps {
   answer: string[] | null;
   disabled: boolean;
   notice: string;
+  /** "Tu respuesta" — see chosenTagStyle for why the choice is stated in text. */
+  chosenLabel: string;
   onToggle: (optionId: string) => void;
 }
 
-export function MultiChoice({ options, selection, answer, disabled, notice, onToggle }: MultiChoiceProps) {
+export function MultiChoice({
+  options,
+  selection,
+  answer,
+  disabled,
+  notice,
+  chosenLabel,
+  onToggle,
+}: MultiChoiceProps) {
   return (
     <>
       <p style={{ margin: "0 0 0.6rem", fontSize: "0.8rem", color: "var(--text-dim)" }}>{notice}</p>
@@ -49,6 +59,7 @@ export function MultiChoice({ options, selection, answer, disabled, notice, onTo
               style={optionInputStyle}
             />
             <span style={optionTextStyle}>{option.label}</span>
+            {answer && checked ? <span style={chosenTagStyle}>{chosenLabel}</span> : null}
           </label>
         );
       })}

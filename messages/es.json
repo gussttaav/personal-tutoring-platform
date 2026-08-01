@@ -846,7 +846,13 @@
       "toleranceNote": "Se acepta un margen de ±{tolerance}.",
       "predictPrompt": "¿Qué imprime este código?",
       "outputPlaceholder": "Escribe la salida exacta",
-      "attempt": "{count, plural, =1 {# intento} other {# intentos}}"
+      "attempt": "{count, plural, =1 {# intento} other {# intentos}}",
+      "yourAnswer": "Tu respuesta",
+      "history": {
+        "answeredOn": "Respondida el {date}",
+        "solved": "Ya la resolviste correctamente el {date}",
+        "attempted": "Ya la intentaste el {date}"
+      }
     },
     "challenge": {
       "run": "Comprobar",
@@ -883,14 +889,21 @@
       "timeoutRun": "La comprobación superó los {seconds} s y se detuvo. Suele significar que tu código tiene un bucle infinito.",
       "timeoutLoad": "La descarga del intérprete tardó demasiado. Comprueba tu conexión y vuelve a intentarlo.",
       "stopped": "Comprobación detenida. No cuenta como intento.",
-      "crashed": "El intérprete se cerró inesperadamente: {error}"
+      "crashed": "El intérprete se cerró inesperadamente: {error}",
+      "history": {
+        "solved": "Resuelto · {passed}/{total} pruebas · {date}",
+        "attempted": "Lo intentaste {count, plural, =1 {# vez} other {# veces}} · {date}"
+      }
     },
     "progress": {
       "markComplete": "Marcar como completada",
       "completed": "Lección completada",
       "prompt": "¿Terminaste esta lección? Márcala para seguir tu progreso.",
       "resume": "Continuar donde lo dejaste",
-      "lessonsDone": "{done} de {total} lecciones completadas"
+      "lessonsDone": "{done} de {total} lecciones completadas",
+      "exercisesDone": "Ejercicios: {done} de {total} resueltos",
+      "saveAttempts": "Tus respuestas no se están guardando.",
+      "saveAttemptsCta": "Inicia sesión para guardarlas"
     }
   },
   "meta": {

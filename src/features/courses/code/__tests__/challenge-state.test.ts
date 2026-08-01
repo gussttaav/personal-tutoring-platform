@@ -7,7 +7,7 @@
  * attempt (see the header of ../challenge-state.ts).
  */
 
-import type { TestResult } from "@/domain/types";
+import type { ExerciseAttemptHistory, TestResult } from "@/domain/types";
 import type { ChallengeOutcome } from "@/lib/courses/pyodide/run-tests";
 
 import {
@@ -168,5 +168,100 @@ describe("reset", () => {
 
     expect(state.solved).toBe(true);
     expect(canRevealSolution(state)).toBe(true);
+  });
+});
+
+/*
+ * COURSE-P4-04 — hydration from `quiz_attempts`.
+ *
+ * The point of restoring anything here is the reveal gate: a reference solution the
+ * student already earned must not lock itself again when they come back.
+ */
+
+const history = (over: Partial<ExerciseAttemptHistory> = {}): ExerciseAttemptHistory => ({
+  quizId:          "ch-softmax",
+  attempts:        2,
+  solved:          true,
+  lastCorrect:     true,
+  lastAnswer:      { kind: "challenge", passed: 3, total: 3, attempt: 2, solutionRevealed: false },
+  lastAttemptedAt: "2026-07-28T10:00:00.000Z",
+  ...over,
+});
+
+describe("createChallengeReducer — hydrate", () => {
+  it("restores the counters and the solved flag", () => {
+    const state = reduce(initialChallengeState(), { kind: "hydrate", history: history() });
+
+    expect(state.attempts).toBe(2);
+    expect(state.solved).toBe(true);
+    expect(state.restored).toEqual({ passed: 3, total: 3, attempt: 2, at: "2026-07-28T10:00:00.000Z" });
+  });
+
+  it("keeps the reference solution unlocked for a challenge already solved", () => {
+    const state = reduce(initialChallengeState(), { kind: "hydrate", history: history() });
+    expect(canRevealSolution(state)).toBe(true);
+  });
+
+  it("keeps it unlocked for a student who earned it by failing enough times", () => {
+    const state = reduce(initialChallengeState(), {
+      kind: "hydrate",
+      history: history({
+        solved:      false,
+        lastCorrect: false,
+        attempts:    REVEAL_AFTER_FAILURES,
+        lastAnswer:  { kind: "challenge", passed: 1, total: 3, attempt: 3, solutionRevealed: true },
+      }),
+    });
+
+    expect(state.failures).toBe(REVEAL_AFTER_FAILURES);
+    expect(canRevealSolution(state)).toBe(true);
+    // Sticky: a solution already seen cannot be un-seen.
+    expect(state.solutionRevealed).toBe(true);
+  });
+
+  it("never sets a result — hydration must not re-report an attempt already recorded", () => {
+    const state = reduce(initialChallengeState(), { kind: "hydrate", history: history() });
+    expect(state.result).toBeNull();
+    expect(state.outcome).toBeNull();
+  });
+
+  it("does not restore the student's code — there is none to restore", () => {
+    const state = reduce(initialChallengeState(), { kind: "hydrate", history: history() });
+    expect(state).not.toHaveProperty("code");
+    expect(state.outcome).toBeNull();
+  });
+
+  it("NEVER overwrites a run made in this session", () => {
+    const live = reduce(initialChallengeState(), { kind: "graded", outcome: outcome(["fail"]) });
+    const after = reduce(live, { kind: "hydrate", history: history() });
+
+    expect(after).toBe(live);
+    expect(after.solved).toBe(false);
+    expect(after.attempts).toBe(1);
+  });
+
+  it("ignores an empty history", () => {
+    const initial = initialChallengeState();
+    expect(reduce(initial, { kind: "hydrate", history: history({ attempts: 0 }) })).toBe(initial);
+  });
+
+  it("continues the attempt count, and a live run clears the restored badge", () => {
+    let state = reduce(initialChallengeState(), { kind: "hydrate", history: history() });
+    state = reduce(state, { kind: "graded", outcome: outcome(["pass", "pass", "pass"]) });
+
+    expect(state.result).toMatchObject({ attempt: 3 });
+    expect(state.restored).toBeNull();
+  });
+
+  it("tolerates a payload with no usable run summary", () => {
+    const state = reduce(initialChallengeState(), {
+      kind: "hydrate",
+      history: history({ lastAnswer: null }),
+    });
+
+    // The counters still come from the rows; only the badge detail is missing.
+    expect(state.attempts).toBe(2);
+    expect(state.solved).toBe(true);
+    expect(state.restored).toBeNull();
   });
 });

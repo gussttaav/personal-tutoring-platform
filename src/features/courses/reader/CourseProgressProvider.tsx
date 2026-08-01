@@ -12,7 +12,11 @@
  *      the leaves find this provider even though their elements were created on the
  *      server. Nothing about the page becomes dynamic.
  *
- *   2. Fills the two wiring points P3-01/P3-02 left behind. `QuizAttemptContext` and
+ *   2. COURSE-P4-04: publishes the current lesson's ATTEMPT HISTORY through
+ *      `AttemptHistoryContext`, which is what lets a quiz answered last week come
+ *      back answered. Same fetch as (1) — the GET carries `lessonSlug` now.
+ *
+ *   3. Fills the two wiring points P3-01/P3-02 left behind. `QuizAttemptContext` and
  *      `ChallengeAttemptContext` get the SAME handler — `AssessmentResult` is the
  *      union of both payloads, and contravariance makes one
  *      `(r: AssessmentResult) => void` assignable to each — so persistence lives in
@@ -24,12 +28,13 @@
  * signed-in check reads a ref rather than closing over `tracking`.
  */
 
-import { createContext, useCallback, useContext, useEffect, useRef } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import type { ReactNode } from "react";
 import type { AssessmentResult } from "@/domain/types";
 import { useCourseProgress, type CourseProgress } from "@/hooks/useCourseProgress";
 import { QuizAttemptContext } from "@/features/courses/quiz/QuizCard";
 import { ChallengeAttemptContext } from "@/features/courses/code/CodeChallengeCard";
+import { AttemptHistoryContext, type AttemptHistory } from "./attempt-history";
 
 const CourseProgressContext = createContext<CourseProgress | null>(null);
 
@@ -99,13 +104,25 @@ export default function CourseProgressProvider({
     [courseSlug, lessonSlug],
   );
 
+  // COURSE-P4-04 — the read side of the same wiring. `loading` until the fetch
+  // answers, so a card never claims "never attempted" before it knows.
+  const history = useMemo<AttemptHistory>(
+    () => ({
+      status: progress.loading ? "loading" : progress.tracking ? "ready" : "untracked",
+      byId:   progress.exercises,
+    }),
+    [progress.loading, progress.tracking, progress.exercises],
+  );
+
   return (
     <CourseProgressContext.Provider value={progress}>
-      <QuizAttemptContext.Provider value={onAnswered}>
-        <ChallengeAttemptContext.Provider value={onAnswered}>
-          {children}
-        </ChallengeAttemptContext.Provider>
-      </QuizAttemptContext.Provider>
+      <AttemptHistoryContext.Provider value={history}>
+        <QuizAttemptContext.Provider value={onAnswered}>
+          <ChallengeAttemptContext.Provider value={onAnswered}>
+            {children}
+          </ChallengeAttemptContext.Provider>
+        </QuizAttemptContext.Provider>
+      </AttemptHistoryContext.Provider>
     </CourseProgressContext.Provider>
   );
 }
