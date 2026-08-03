@@ -3,8 +3,24 @@
  *
  * Server Component. Fed by `lessonNeighbours` (src/lib/courses/registry.ts), which
  * walks the PUBLISHED, (block, order)-sorted list — so drafts are skipped and each
- * side is correctly `null` at the ends of the course. A null side renders an empty
- * spacer so the present side keeps its edge (prev left, next right).
+ * side is correctly `null` at the ends of the course.
+ *
+ * COURSE-P5-01 — restyled, and the presentation moved to lesson.css (`.lesson-nav*`).
+ * Three things changed, all driven by how long the titles in this course actually are
+ * ("Tokenización: palabras, caracteres, subpalabras"):
+ *
+ *   - The arrow has its own column instead of sitting inside the label, so the title
+ *     gets the card's full text width and the card reads as a control.
+ *   - A lone neighbour now fills the row. It used to render an empty spacer opposite,
+ *     which pinned the card to half the column — the width where these titles wrap —
+ *     and left a hole beside it at the two ends of the course. Direction is carried by
+ *     the arrow and the alignment, which is what a reader looks at anyway.
+ *   - Hover/focus states, which inline styles cannot express: the border and arrow take
+ *     the accent colour and the arrow nudges the way it points.
+ *
+ * The title stays clamped to two lines rather than ellipsed on one — the destination is
+ * the whole point of the card — and `overflow-wrap: anywhere` covers a title made of one
+ * unbreakable word.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -21,56 +37,41 @@ interface LessonNavProps {
 export default async function LessonNav({ courseSlug, prev, next, locale }: LessonNavProps) {
   const t = await getTranslations({ locale, namespace: "courses.reader" });
 
-  const cardStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    flex: "1 1 0",
-    minWidth: 0,
-    padding: "16px 20px",
-    border: "1px solid var(--border-variant)",
-    borderRadius: "var(--radius)",
-    background: "var(--surface-container)",
-    textDecoration: "none",
-  };
-  const labelStyle: React.CSSProperties = {
-    fontSize: "0.75rem",
-    fontWeight: 600,
-    letterSpacing: "0.04em",
-    textTransform: "uppercase",
-    color: "var(--text-dim)",
-  };
-  const titleStyle: React.CSSProperties = {
-    fontSize: "0.9375rem",
-    fontWeight: 600,
-    color: "var(--text)",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  };
+  // Nothing to render at all would only happen in a one-lesson course, but an empty
+  // <nav> with a label is noise for a screen reader either way.
+  if (!prev && !next) return null;
 
   return (
-    <nav
-      aria-label={t("lessonNav")}
-      style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "48px" }}
-    >
+    <nav aria-label={t("lessonNav")} className="lesson-nav">
       {prev ? (
-        <Link href={`/cursos/${courseSlug}/${prev.slug}`} rel="prev" style={cardStyle}>
-          <span style={labelStyle}>← {t("previous")}</span>
-          <span style={titleStyle}>{prev.title}</span>
+        <Link
+          href={`/cursos/${courseSlug}/${prev.slug}`}
+          rel="prev"
+          className="lesson-nav-card"
+          data-dir="prev"
+        >
+          <span className="lesson-nav-arrow" aria-hidden="true">←</span>
+          <span className="lesson-nav-text">
+            <span className="lesson-nav-label">{t("previous")}</span>
+            <span className="lesson-nav-title">{prev.title}</span>
+          </span>
         </Link>
-      ) : (
-        <span style={{ flex: "1 1 0" }} aria-hidden="true" />
-      )}
+      ) : null}
 
       {next ? (
-        <Link href={`/cursos/${courseSlug}/${next.slug}`} rel="next" style={{ ...cardStyle, textAlign: "right", alignItems: "flex-end" }}>
-          <span style={labelStyle}>{t("next")} →</span>
-          <span style={titleStyle}>{next.title}</span>
+        <Link
+          href={`/cursos/${courseSlug}/${next.slug}`}
+          rel="next"
+          className="lesson-nav-card"
+          data-dir="next"
+        >
+          <span className="lesson-nav-text">
+            <span className="lesson-nav-label">{t("next")}</span>
+            <span className="lesson-nav-title">{next.title}</span>
+          </span>
+          <span className="lesson-nav-arrow" aria-hidden="true">→</span>
         </Link>
-      ) : (
-        <span style={{ flex: "1 1 0" }} aria-hidden="true" />
-      )}
+      ) : null}
     </nav>
   );
 }

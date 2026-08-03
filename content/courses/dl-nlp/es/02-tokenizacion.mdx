@@ -1,0 +1,285 @@
+---
+slug: tokenizacion
+title: "Tokenización: palabras, caracteres, subpalabras"
+block: 1
+order: 2
+minutes: 20
+summary: "Antes de decidir qué vector le corresponde a una unidad hay que decidir cuál es la unidad. Esa elección fija el tamaño del vocabulario, la longitud de las secuencias y qué significa que una palabra sea nueva."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-espectro
+    type: single
+    prompt: 'Cambias un tokenizador de palabras por uno de caracteres, sobre el mismo corpus. ¿Qué le ocurre al tamaño del vocabulario $\lvert V \rvert$ y a la longitud $T$ de cada secuencia?'
+    options:
+      - { id: a, text: '$\lvert V \rvert$ baja mucho y $T$ sube mucho.' }
+      - { id: b, text: '$\lvert V \rvert$ sube mucho y $T$ baja mucho.' }
+      - { id: c, text: 'Los dos bajan: hay menos símbolos distintos y también menos tokens.' }
+      - { id: d, text: 'Ninguno de los dos cambia; solo cambia cómo se imprimen los tokens.' }
+    answer: a
+    explanation: 'El corpus tiene $C$ caracteres, los pongas como los pongas, y $T\bar{\ell} = C$. Al pasar a caracteres la longitud media cae a $\bar{\ell} = 1$, así que $T = C$: la secuencia se alarga tanto como corta es la unidad. Y el vocabulario se reduce al alfabeto, unas decenas de símbolos, porque ya no hay que guardar una entrada por cada forma de cada palabra. Los dos efectos son el mismo efecto visto desde sus dos extremos.'
+  - id: q-subpalabras-damelo
+    type: multi
+    prompt: 'La palabra <W>dámelo</W> no aparece en el corpus con el que construiste $V$. Sí aparecen <W>dá</W>, <W>me</W> y <W>lo</W>. ¿Qué tokenizadores pueden representarla sin tratarla como una unidad desconocida? Marca todos los que valgan.'
+    options:
+      - { id: a, text: 'El de palabras.' }
+      - { id: b, text: 'El de caracteres.' }
+      - { id: c, text: 'El de subpalabras.' }
+      - { id: d, text: 'Ninguno: si la palabra no está en $V$, no hay nada que hacer.' }
+    answer: [b, c]
+    explanation: 'El de caracteres nunca se queda sin unidades, porque las letras de <W>dámelo</W> ya estaban todas en $V$; paga ese seguro con secuencias muy largas. El de subpalabras la parte en piezas que sí conoce, y además en piezas con sentido: la misma que representa a <W>me</W> reaparece aquí. El de palabras (a) falla, porque <W>dámelo</W> es para él una entrada nueva y entera. Y (d) es precisamente la respuesta que la tokenización por subpalabras existe para desmentir.'
+  - id: q-nfc
+    type: boolean
+    prompt: 'El texto llega con la <W>ñ</W> escrita como dos puntos de código: una <W>n</W> seguida de una tilde combinante. Sin normalizar antes a la forma NFC, un tokenizador de caracteres produce dos tokens donde debería haber uno.'
+    answer: true
+    explanation: 'Unicode admite dos escrituras de la misma letra, y la descompuesta es literalmente una secuencia de dos puntos de código. Un tokenizador de caracteres corta por puntos de código, así que produce <W>n</W> y la tilde por separado — y <W>niño</W> pasa a tener seis tokens en lugar de cinco, con un vocabulario que ahora contiene una tilde suelta. La normalización a NFC no es una manía de limpieza: es lo que hace que dos textos idénticos en pantalla lo sean también para el tokenizador.'
+  - id: q-longitud
+    type: numeric
+    prompt: '¿Cuántos tokens produce un tokenizador de caracteres sobre la frase <W>El niño juega.</W>? Cuenta también los espacios y el punto final.'
+    answer: 14
+    tolerance: 0
+    explanation: 'Catorce: <W>E</W>, <W>l</W>, espacio, <W>n</W>, <W>i</W>, <W>ñ</W>, <W>o</W>, espacio, <W>j</W>, <W>u</W>, <W>e</W>, <W>g</W>, <W>a</W> y el punto final. La <W>ñ</W> cuenta como uno solo si el texto está normalizado a NFC. El tokenizador de palabras produce cuatro sobre la misma frase, y esa razón de tres a uno es lo que $T = C / \bar{\ell}$ dice en general.'
+challenges: []
+---
+
+{/* COURSE-P5-01 — Bloque 1, lección 2. */}
+
+La lección anterior, dedicada al problema de representar el lenguaje, terminó con una cuestión pendiente. Allí introdujimos
+el vocabulario $V$ como si sus elementos vinieran dados, y todo el planteamiento —una función
+$r : V \to \mathbb{R}^d$, total, de dimensión fija y determinista— se apoya en esa lista de unidades. Pero esa lista no existe de antemano:
+hay que construirla.  Antes de decidir qué vector le corresponde a <W>dámelo</W> hay que decidir
+si <W>dámelo</W> es una unidad del vocabulario, o tres (<W>dá</W>, <W>me</W>, <W>lo</W>), o seis letras. A esa decisión
+—dónde se corta el texto y qué cuenta como unidad— se le llama tokenización, y a cada unidad
+resultante, un *token*.
+
+Tokenizar es elegir dónde cortar, y hay tres respuestas naturales. Cortar por palabras, que es como
+lees tú. Cortar por caracteres, que es como está escrito el fichero. O cortar por trozos de palabra
+o *subpalabras*: una solución intermedia que puede parecer poco intuitiva al principio, pero que hoy
+emplean la mayoría de los modelos de lenguaje modernos. Observa cómo se tokeniza una misma frase con cada una de estas estrategias.
+Escribe también una frase propia y fíjate especialmente en el número que acompaña a cada ejemplo:
+indica cuántos tokens son necesarios para representar exactamente el mismo texto.
+
+<Explorable id="tokenizer-playground" caption="La misma frase, tres cortes. Mira cuántos tokens produce cada uno y qué le pasa a una palabra larga como «programación»." />
+
+Cada corte produce un vocabulario distinto y secuencias de longitudes muy variables.
+Eso es lo que hay que retener antes de seguir: no hay una tokenización
+verdadera esperando a ser descubierta.
+
+<Callout type="intuition" title="La idea en una frase">
+La tokenización no descubre las unidades del texto: las elige. Esa elección siempre equilibra dos costes:
+el tamaño del vocabulario y el número de tokens necesarios para representar un texto.
+</Callout>
+
+## El compromiso entre el tamaño del vocabulario y la longitud de la secuencia
+
+Fijemos primero el alfabeto $\Sigma$: el conjunto de caracteres que pueden aparecer. Para el español
+son las letras con sus acentos, la <W>ñ</W>, los dígitos, la puntuación y el espacio.
+
+Un texto no es un carácter, sino una sucesión de ellos, y para hablar de «todas las sucesiones que
+se pueden escribir con un conjunto de símbolos» hay una notación estándar que usaremos a partir de
+aquí. Se escribe con un asterisco: $\Sigma^{*}$ es el conjunto de todas las cadenas finitas
+formadas con caracteres de $\Sigma$, incluida la cadena vacía. Tanto <W>ñ</W> como <W>niño</W> como
+<W>El niño juega.</W> son elementos de $\Sigma^{*}$; el asterisco no dice nada sobre la longitud,
+solo que es finita. Cuando la cadena vacía estorba se escribe $\Sigma^{+}$, que es lo mismo
+excluyéndola. Y el asterisco vale para cualquier conjunto, no solo para el alfabeto: $V^{*}$ son las
+secuencias finitas de tokens de $V$.
+
+Con eso, un texto es un elemento de $\Sigma^{*}$ y un tokenizador es una función que lo convierte en
+una secuencia de elementos del vocabulario:
+
+$$
+\tau : \Sigma^{*} \to V^{*}, \qquad V \subset \Sigma^{+}
+$$
+
+Cada token es, por tanto, una cadena no vacía de caracteres, y el vocabulario $V$ no se declara a
+mano: lo induce $\tau$ al recorrer un **corpus**, la colección de textos que se reúne de antemano
+para construirlo.
+
+A $\tau$ le pedimos dos cosas. **Determinismo**, por la misma
+razón que en la lección anterior, sobre representar el lenguaje: si $\tau$ cortara hoy distinto que
+ayer, lo que el modelo aprendió dejaría de corresponderse con lo que recibe. Y **reconstrucción**:
+concatenar los tokens tiene que devolver el texto de partida, salvo el convenio que se haya adoptado
+con los espacios. Es lo que separa cortar de limpiar. Un tokenizador que de paso baja todo a
+minúsculas o borra las tildes ya no divide el texto, lo altera: después de eso <W>papá</W> y
+<W>papa</W> son la misma unidad, y la distinción se perdió antes de que el modelo llegara a verla.
+Todo lo que $\tau$ descarta, el modelo no volverá a verlo jamás.
+
+Ahora el compromiso, que se deriva de contar caracteres. Toma un corpus con $C$ caracteres en
+total sumando todos sus documentos, y aplícale una tokenización $\tau$, que lo parte en $T$ tokens
+$u_1, \dots, u_T$. Denotaremos por $\lvert u \rvert$ la longitud,
+en caracteres, del token $u$. Como los tokens son trozos del propio texto, sus
+longitudes suman el texto entero:
+
+$$
+\sum_{i=1}^{T} \lvert u_i \rvert = C
+$$
+
+Llamemos $\bar{\ell}$ a la longitud media de un token:
+
+$$
+\bar{\ell} = \frac{1}{T}\sum_{i=1}^{T} \lvert u_i \rvert
+$$
+
+El sumatorio que aparece ahí es el mismo que acabamos de igualar a $C$, así que
+
+$$
+\bar{\ell} = \frac{C}{T}, \qquad \text{o lo que es igual,} \qquad T = \frac{C}{\bar{\ell}}
+$$
+
+Esta igualdad resume la primera mitad del compromiso. El texto fija $C$, así que $T$ y $\bar{\ell}$
+no pueden variar de manera independiente. Si eliges tokens más cortos, disminuye $\bar{\ell}$ y
+la secuencia contiene más tokens; si eliges tokens más largos, ocurre lo contrario.
+Con una tokenización por caracteres, $\bar{\ell} = 1$ y $T = C$. Con una tokenización por palabras en español,
+$\bar{\ell}$ ronda los cinco caracteres, de modo que la secuencia es aproximadamente cinco veces más corta.
+
+¿Y el otro extremo del compromiso, el tamaño de $V$? Si fijamos una longitud $\ell$, el número de cadenas distintas
+que pueden formarse sobre un alfabeto $\Sigma$ es
+
+$$
+\lvert \Sigma \rvert^{\ell}
+$$
+
+Es decir, el conjunto de candidatos a formar parte del vocabulario crece exponencialmente con la longitud de las unidades.
+El idioma solo utiliza una pequeña fracción de esas combinaciones, la inmensa mayoría de las cadenas de cinco letras
+no son palabras del español, pero la tendencia es la misma: cuanto más largas son las unidades elegidas, mayor es el espacio
+del que puede extraerse el vocabulario y, en consecuencia, mayor tiende a ser este.
+
+| $\tau$ | $\bar{\ell}$ | $T$ | $\lvert V \rvert$ típico |
+|---|---|---|---|
+| caracteres | $1$ | $C$ | decenas |
+| subpalabras | $3$–$4$ | $\approx C/3.5$ | 30 000–50 000, **elegido de antemano** |
+| palabras | $\approx 5$ | $\approx C/5$ | cientos de miles, y creciendo |
+
+<Details summary="Por qué el vocabulario de palabras no es solo grande, sino ilimitado">
+La última columna dice «y creciendo», y esa es la diferencia importante. El vocabulario de
+caracteres se satura: los símbolos distintos del español son unas decenas, y con un par de páginas
+de texto ya han aparecido casi todos, de modo que leer un millón de páginas más no añade
+prácticamente ninguno. El de palabras no se satura nunca, y el español lo empeora.
+
+Un verbo regular tiene del orden de cincuenta formas conjugadas — <W>canto</W>, <W>cantas</W>,
+<W>cantaba</W>, <W>cantaríamos</W>, <W>cantasen</W> — y cada una es una entrada distinta de $V$ que no
+comparte nada con las demás: el vocabulario de palabras no sabe que están emparentadas, porque su
+única noción de identidad es la igualdad de cadenas. Añade los clíticos pegados (<W>cántalo</W>,
+<W>cántamelo</W>), el género y el número (<W>niño</W>, <W>niña</W>, <W>niños</W>, <W>niñas</W>), la
+derivación (<W>niñez</W>, <W>aniñado</W>), los nombres
+propios y las palabras que se inventaron el mes pasado, y tienes una lista que crece con cada
+documento nuevo que leas.
+
+Ese crecimiento sin fin es el que hace que la pregunta «¿qué hago con una palabra que no está en
+$V$?» no sea un caso raro sino el caso normal, y es el asunto de la lección 3, sobre vocabulario,
+frecuencia y palabras fuera de vocabulario.
+</Details>
+
+La solución a este compromiso da nombre a la tercera columna. En lugar de dejar que el tamaño del
+vocabulario sea una consecuencia de la tokenización, se fija de antemano —por ejemplo, 30 000 tokens—
+y se deja que un algoritmo decida qué unidades lo compondrán. El más extendido es el *byte-pair encoding* (BPE): empieza tratando cada
+carácter como una unidad y va fusionando repetidamente el par de unidades adyacentes más frecuente
+del corpus, hasta llegar al tamaño fijado. Las secuencias frecuentes acaban fusionadas en una sola
+pieza y las raras se quedan partidas en trozos que sí son frecuentes. Por
+eso una palabra que el algoritmo no vio jamás sigue teniendo representación: se escribe con piezas
+conocidas. Los detalles de BPE quedan fuera de esta lección; el explorable de arriba muestra su
+resultado, que es lo que hace falta aquí.
+
+## Dos tokenizadores en Python, sobre el mismo corpus
+
+La igualdad $T = C / \bar{\ell}$ conviene verla como números y no como álgebra. La celda tokeniza un
+corpus corto en español de las dos formas extremas, por palabras y por caracteres, y para cada una
+imprime $T$, el tamaño del vocabulario y la longitud media. Mira tres cosas: que $T \times \bar{\ell}$
+reproduce $C$, que los tamaños de vocabulario van en el sentido contrario a $T$, y las dos últimas
+líneas. Ejecútala tal cual y después cambia el corpus por un texto tuyo.
+
+<PyCell code={`
+import unicodedata
+
+CORPUS = " ".join([
+    "El niño enseña programación en español.",
+    "La niña aprende programación en la escuela del barrio.",
+    "Dámelo, por favor: el libro es del profesor.",
+    "Vamos al río y luego al mar, como cada verano.",
+    "Los niños juegan, cantan y aprenden mientras el sol baja.",
+    "Enseñar no es lo mismo que aprender, aunque ocurran a la vez.",
+])
+
+def normaliza(texto):
+    # NFC: la ñ y las vocales acentuadas quedan como UN solo carácter
+    return unicodedata.normalize("NFC", texto)
+
+def por_caracteres(texto):
+    return list(normaliza(texto))
+
+def por_palabras(texto):
+    tokens, actual = [], ""
+    for c in normaliza(texto):
+        if c.isalnum():
+            actual = actual + c
+            continue
+        if actual:
+            tokens.append(actual)
+            actual = ""
+        if not c.isspace():
+            tokens.append(c)          # la puntuación es un token propio
+    if actual:
+        tokens.append(actual)
+    return tokens
+
+C = len(normaliza(CORPUS))
+print("C =", C, "caracteres")
+
+for nombre, tokens in [("palabras", por_palabras(CORPUS)), ("caracteres", por_caracteres(CORPUS))]:
+    T = len(tokens)
+    media = sum(len(t) for t in tokens) / T
+    print(nombre.rjust(10),
+          "| T =", str(T).rjust(3),
+          "| |V| =", str(len(set(tokens))).rjust(3),
+          "| media =", round(media, 2),
+          "| T x media =", round(T * media, 1))
+
+print()
+print(por_palabras("¡Dámelo! Vamos del bar al río."))
+
+# Y lo que ocurre en cuanto llega una frase que el corpus no contenía
+V = set(por_palabras(CORPUS))
+nueva = por_palabras("El niño programa una criptomoneda")
+print("fuera de V:", [t for t in nueva if t not in V])
+`} />
+
+Con caracteres, $T \times \bar{\ell}$ da $C$ exactamente. Con palabras se queda por debajo, y la
+diferencia son los espacios: el tokenizador los tiró, así que ya no se puede reconstruir el texto a
+partir de los tokens. Es la condición de reconstrucción rota a cambio de una comodidad, y por eso
+los tokenizadores de subpalabras marcan de algún modo dónde estaban los espacios —el <W>##</W> que ves
+en el explorable cumple ese papel.
+
+La penúltima línea muestra el corte sobre una frase con clíticos y contracciones: <W>Dámelo</W> sale
+entero, <W>del</W> y <W>al</W> también, aunque cada una sea de por sí dos palabras (<W>de el</W>, <W>a el</W>). El
+tokenizador no lo sabe, y no necesita saberlo mientras sea coherente. La última línea es más
+incómoda: de los cinco tokens de una frase nueva y perfectamente corriente, tres no están en $V$.
+
+## Comprueba tu intuición
+
+Cuatro preguntas sobre lo que acabas de ver: el compromiso entre vocabulario y longitud, qué gana
+cortar por debajo de la palabra, la trampa que el español tiene reservada a los tokenizadores de
+caracteres, y una cuenta a mano.
+
+<Quiz id="q-espectro" />
+
+<Quiz id="q-subpalabras-damelo" />
+
+<Quiz id="q-nfc" />
+
+<Quiz id="q-longitud" />
+
+Con la tokenización ya fijada, el vocabulario deja de ser una abstracción y pasa a ser una lista
+concreta de tokens. Esa lista siempre es finita, porque se construye a partir de un corpus que alguien
+recopiló en algún momento. Y aquí reaparece la exigencia de totalidad de la lección 1: $r$ tenía que
+estar definida para cualquier palabra que llegue. La última línea de la celda de código enseña el agujero
+sin adornos, <W>criptomoneda</W> no está en $V$, y sobre ella $r$ no vale
+nada, porque ni siquiera está definida.
+
+Quedan entonces tres preguntas encadenadas, y son las tres de la lección siguiente. Cuántos tokens
+distintos aparecen de verdad en un corpus, y con qué frecuencia. La respuesta tiene una forma
+muy característica que decide todo lo demás.
+Cuáles de ellos entran en $V$: guardarlos todos es caro, porque cada uno necesita su propia
+representación $r(w)$, pero cada token que dejes fuera es texto que el modelo ya no puede leer. Y
+qué hacer cuando llega uno de los que quedaron fuera. Eso es la lección 3, sobre vocabulario,
+frecuencia y el problema de las palabras fuera de vocabulario (*out-of-vocabulary*, OOV).

@@ -4,8 +4,16 @@
  * Its NON-NEGOTIABLE job: reserve the widget's height BEFORE it hydrates, so the
  * lesson never reflows under the reader while a widget loads (widgets are
  * `ssr:false`, so their body is empty in the server HTML — the frame is what holds
- * the space). It does that with a fixed-`minHeight` body plus an `aspectRatio`
- * hint, and renders the same box for the loading skeleton, the widget, and an error.
+ * the space). It does that with a fixed-`minHeight` body, and renders the same box
+ * for the loading skeleton, the widget, and an error.
+ *
+ * COURSE-P5-01 — the body used to carry `aspectRatio: minWidth / height` as well.
+ * That was dead weight at best and a bug in practice: `minHeight` alone reserves the
+ * space, while the ratio also made the box GROW with the column, so at a ~560px
+ * reading width a 1:1 ratio demanded ~560px of height for content that needs ~330 —
+ * a band of empty background above and below every widget. No widget relied on it:
+ * each one sizes its own SVG with a fixed pixel `height` and scales the drawing via
+ * `viewBox`, so the ratio never determined anything.
  *
  * It also carries the consistent border/background/radius from the design tokens
  * (mirrors mdx-components.tsx), an optional caption, and an optional reset control.
@@ -93,7 +101,7 @@ export function WidgetFrame({
       )}
 
       {/* The space-reserving body. minHeight holds the row height even while empty. */}
-      <div style={{ ...bodyBase, minHeight: height, aspectRatio: `${minWidth} / ${height}`, padding: "0.75rem" }}>
+      <div style={{ ...bodyBase, minHeight: height, padding: "0.75rem" }}>
         <div style={{ minWidth, width: "100%" }}>{children}</div>
       </div>
 

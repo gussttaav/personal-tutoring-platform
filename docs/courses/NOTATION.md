@@ -87,13 +87,42 @@ prose immediately after.
 |---|---|
 | $V$, $\lvert V \rvert$ | vocabulary, vocabulary size |
 | $w$, $t$ | a word / a term |
+| $\Sigma$ | the character alphabet |
+| $\Sigma^{*}$, $\Sigma^{+}$ | all finite strings over $\Sigma$; the same without the empty string |
+| $\lvert u \rvert$ | length of the string $u$, in characters |
+| $\tau : \Sigma^{*} \to V^{*}$ | a tokeniser — a string to a sequence of tokens |
+| $r : V \to \mathbb{R}^{d}$ | a representation function: one token to one vector |
 | $d$, $D$, $N$ | a document, the corpus, $\lvert D \rvert$ |
+| $C$ | corpus length, in characters |
+| $\bar{\ell}$ | mean token length, in characters |
 | $\text{tf}(t,d)$, $\text{df}(t)$ | term frequency, document frequency |
 | $\mathbf{e}_w \in \mathbb{R}^{d_{\text{model}}}$ | the embedding of word $w$ |
 | $\mathbf{o}_w \in \{0,1\}^{\lvert V \rvert}$ | one-hot encoding of $w$ |
 | $\cos(\mathbf{u}, \mathbf{v})$ | cosine similarity |
 | $c$ | a context word (Word2Vec) |
 | $X_{ij}$ | co-occurrence count of words $i$ and $j$ (GloVe) |
+
+**The corpus is not the alphabet**, and a lesson that uses both says so — they are both "characters",
+which is exactly why the confusion is easy. $\Sigma$ is a *set* of distinct symbols. The corpus $D$
+is a **collection of documents**, each document an element of $\Sigma^{*}$ — ordered, full of
+repetitions, and plural: it is not one long string, even where an argument treats it as though the
+documents were concatenated. Its size therefore has two measures: $C$ counts characters across the
+whole corpus, $N = \lvert D \rvert$ counts documents. A lesson using both names which it means.
+
+The bars are **"how many"** in both of their uses — elements of a set in $\lvert V \rvert$,
+characters of a string in $\lvert u \rvert$ — and a lesson that writes both says that out loud the
+first time, in one clause. They are not two notations; reading them as one is what keeps
+$\sum_i \lvert u_i \rvert = C$ from looking like a new symbol.
+
+The star is the **Kleene star**, and it applies to any set, not just to $\Sigma$: $V^{*}$ is the
+finite sequences of tokens. It is not a course prerequisite — the prerequisites are Python, linear
+algebra and calculus — so the lesson that first writes it **defines it in prose**, in one sentence,
+before the equation that uses it. Block 1 lesson 2, on tokenisation, is that lesson.
+
+$d$ is a document in the TF-IDF lessons and the dimension of $\mathbb{R}^d$ in the representation
+ones. The two never appear in the same equation; the lesson that needs both says which it means, in
+words, the first time — same rule as $\mathbf{x}^{(i)}$ in §2. Where the dimension is the *model's*
+and not an arbitrary one, prefer $d_{\text{model}}$.
 
 ### Block 2 — El Perceptrón Multicapa
 

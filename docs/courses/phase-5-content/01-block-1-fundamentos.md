@@ -34,8 +34,8 @@ Authored one at a time via `/course-lesson`, on the shared branch, reviewed befo
 task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
 here; STATUS stays phase-level.
 
-- [ ] 1. `texto-como-numeros`
-- [ ] 2. `tokenizacion`
+- [x] 1. `texto-como-numeros`
+- [x] 2. `tokenizacion`
 - [ ] 3. `vocabulario-oov`
 - [ ] 4. `one-hot`
 - [ ] 5. `bolsa-de-palabras`

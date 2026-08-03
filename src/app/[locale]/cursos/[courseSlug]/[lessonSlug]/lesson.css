@@ -244,6 +244,107 @@ body:has(.lesson-shell) {
   background: var(--green);
 }
 
+/* ── Prev/next lesson footer (COURSE-P5-01) ─────────────────────────────── */
+
+/* Lives here rather than inline in LessonNav.tsx because the card needs hover and
+   focus states, and an inline `style` object cannot express either. The rest of the
+   card is here too so its appearance is in one place instead of two. */
+
+.lesson-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 48px;
+}
+
+/* `1 1 260px`: two cards share the row, and a LONE card grows to fill it. 260px is the
+   width below which a two-line title starts to look cramped, so under ~530px of column
+   the two cards stack instead of squeezing. */
+.lesson-nav-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--border-variant);
+  border-radius: var(--radius);
+  background: var(--surface-container);
+  text-decoration: none;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.lesson-nav-card[data-dir="next"] {
+  justify-content: flex-end;
+}
+.lesson-nav-card:hover {
+  border-color: var(--green);
+  background: var(--surface-high);
+}
+.lesson-nav-card:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+
+.lesson-nav-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.lesson-nav-card[data-dir="next"] .lesson-nav-text {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.lesson-nav-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* Two lines, not one line with an ellipsis: the destination title is what the card is
+   for, and the titles in this course routinely pass a half-column in width. */
+.lesson-nav-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.lesson-nav-arrow {
+  flex-shrink: 0;
+  font-size: 1.15rem;
+  line-height: 1;
+  color: var(--text-dim);
+  transition: transform 150ms ease, color 150ms ease;
+}
+.lesson-nav-card:hover .lesson-nav-arrow {
+  color: var(--green);
+}
+.lesson-nav-card[data-dir="next"]:hover .lesson-nav-arrow {
+  transform: translateX(3px);
+}
+.lesson-nav-card[data-dir="prev"]:hover .lesson-nav-arrow {
+  transform: translateX(-3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-nav-card,
+  .lesson-nav-arrow {
+    transition: none;
+  }
+  .lesson-nav-card:hover .lesson-nav-arrow {
+    transform: none;
+  }
+}
+
 /* ── ≥768px: two columns (sidebar + content), no right rail ─────────────── */
 
 @media (min-width: 768px) {

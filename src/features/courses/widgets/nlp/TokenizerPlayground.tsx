@@ -72,7 +72,7 @@ export default function TokenizerPlayground() {
     () => [
       { title: "Palabras", tokens: tokenizeWords(text), hint: "Divide por espacios y puntuación." },
       { title: "Caracteres", tokens: tokenizeChars(text), hint: "Cada símbolo, incluidos los espacios (␣)." },
-      { title: "Subpalabras (BPE)", tokens: tokenizeSubwords(text), hint: "## marca continuación de palabra." },
+      { title: "Subpalabras", tokens: tokenizeSubwords(text), hint: "## marca continuación de palabra." },
     ],
     [text],
   );
@@ -83,7 +83,7 @@ export default function TokenizerPlayground() {
         <textarea
           aria-label="Frase para tokenizar"
           value={text}
-          rows={2}
+          rows={1}
           onChange={(e) => setText(e.target.value)}
           style={{
             flex: 1,
