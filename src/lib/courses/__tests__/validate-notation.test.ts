@@ -91,7 +91,7 @@ describe("notationWarnings", () => {
 
   it("does not read a shape as a transpose", () => {
     // `\mathbb{R}^{T \times d}` is the most common correct `T` superscript in the
-    // course, and it appears in Block 0 lesson 1.
+    // course, and it appears in Block 1 lesson 1.
     expect(notationWarnings(lesson("$\\mathbf{X} \\in \\mathbb{R}^{T \\times d}$"))).toEqual([]);
     expect(notationWarnings(lesson("$\\mathbb{R}^{B \\times T \\times d}$"))).toEqual([]);
   });

@@ -31,11 +31,11 @@ level: intermedio
 estimatedHours: 40
 prerequisites: []
 blocks:
-  - id: 0
-    title: "Bloque 0"
-    summary: "..."
   - id: 1
     title: "Bloque 1"
+    summary: "..."
+  - id: 2
+    title: "Bloque 2"
     summary: "..."
 `;
 
@@ -55,7 +55,7 @@ interface LessonFm {
 function lessonFile(fm: LessonFm): string {
   const full = {
     title: `Lección ${fm.slug}`,
-    block: 0,
+    block: 1,
     order: 1,
     minutes: 10,
     summary: "...",
@@ -121,9 +121,9 @@ describe("valid course", () => {
   it("sorts lessons by (block, order), not by filename", () => {
     const root = makeTree({
       lessons: [
-        { filename: "00-b.mdx", fm: { slug: "b", block: 1, order: 1 } },
-        { filename: "01-a.mdx", fm: { slug: "a", block: 0, order: 5 } },
-        { filename: "02-c.mdx", fm: { slug: "c", block: 0, order: 1 } },
+        { filename: "00-b.mdx", fm: { slug: "b", block: 2, order: 1 } },
+        { filename: "01-a.mdx", fm: { slug: "a", block: 1, order: 5 } },
+        { filename: "02-c.mdx", fm: { slug: "c", block: 1, order: 1 } },
       ],
     });
     __setContentRoot(root);
@@ -143,7 +143,7 @@ describe("build-time validation failures", () => {
     // `mintues:` typo + missing `minutes` — strict schema must reject.
     fs.writeFileSync(
       path.join(esDir, "00-intro.mdx"),
-      `---\nslug: intro\ntitle: "x"\nblock: 0\norder: 1\nmintues: 5\nsummary: "y"\ndraft: false\nhasCode: false\nhasQuiz: false\nquiz: []\nchallenges: []\n---\n`,
+      `---\nslug: intro\ntitle: "x"\nblock: 1\norder: 1\nmintues: 5\nsummary: "y"\ndraft: false\nhasCode: false\nhasQuiz: false\nquiz: []\nchallenges: []\n---\n`,
     );
 
     expect(() => buildRegistry(root, "es")).toThrow(/00-intro\.mdx/);

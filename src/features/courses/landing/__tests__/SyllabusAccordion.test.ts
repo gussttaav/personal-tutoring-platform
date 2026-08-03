@@ -13,7 +13,7 @@ import path from "node:path";
 import { getCourse, listLessons, __setContentRoot, __resetRegistry } from "@/lib/courses/registry";
 import { groupLessonsByBlock } from "@/features/courses/landing/SyllabusAccordion";
 
-// Three declared blocks (0, 1, 2) so we can leave block 1 all-drafts.
+// Three declared blocks (1, 2, 3) so we can leave block 2 all-drafts.
 const MANIFEST = `
 slug: dl-nlp
 title: "Curso"
@@ -22,15 +22,15 @@ level: intermedio
 estimatedHours: 40
 prerequisites: []
 blocks:
-  - id: 0
-    title: "Bloque 0"
-    summary: "Resumen 0"
   - id: 1
     title: "Bloque 1"
     summary: "Resumen 1"
   - id: 2
     title: "Bloque 2"
     summary: "Resumen 2"
+  - id: 3
+    title: "Bloque 3"
+    summary: "Resumen 3"
 `;
 
 interface LessonFm {
@@ -45,7 +45,7 @@ interface LessonFm {
 function lessonFile(fm: LessonFm): string {
   const full = {
     title: `Lección ${fm.slug}`,
-    block: 0,
+    block: 1,
     order: 1,
     minutes: 10,
     summary: "...",
@@ -78,18 +78,18 @@ afterEach(() => __resetRegistry());
 describe("groupLessonsByBlock", () => {
   it("groups published lessons under their manifest block, ordered, with block totals", () => {
     const root = makeTree([
-      // block 0: two published lessons, given out of order to prove (block, order) sorting
-      { filename: "00-b.mdx", fm: { slug: "b", block: 0, order: 2, minutes: 15 } },
-      { filename: "01-a.mdx", fm: { slug: "a", block: 0, order: 1, minutes: 10 } },
-      // block 2: one published lesson
-      { filename: "02-c.mdx", fm: { slug: "c", block: 2, order: 1, minutes: 20 } },
+      // block 1: two published lessons, given out of order to prove (block, order) sorting
+      { filename: "00-b.mdx", fm: { slug: "b", block: 1, order: 2, minutes: 15 } },
+      { filename: "01-a.mdx", fm: { slug: "a", block: 1, order: 1, minutes: 10 } },
+      // block 3: one published lesson
+      { filename: "02-c.mdx", fm: { slug: "c", block: 3, order: 1, minutes: 20 } },
     ]);
     __setContentRoot(root);
 
     const course = getCourse("dl-nlp", "es")!;
     const groups = groupLessonsByBlock(course, listLessons("dl-nlp", "es"));
 
-    expect(groups.map((g) => g.block.id)).toEqual([0, 2]);
+    expect(groups.map((g) => g.block.id)).toEqual([1, 3]);
     expect(groups[0].lessons.map((l) => l.slug)).toEqual(["a", "b"]);
     expect(groups[0].totalMinutes).toBe(25);
     expect(groups[1].lessons.map((l) => l.slug)).toEqual(["c"]);
@@ -98,20 +98,20 @@ describe("groupLessonsByBlock", () => {
 
   it("omits a block whose lessons are all drafts (not rendered empty-but-present)", () => {
     const root = makeTree([
-      { filename: "00-a.mdx", fm: { slug: "a", block: 0, order: 1, minutes: 10 } },
-      // block 1: only drafts → listLessons drops them → block must be omitted
-      { filename: "01-d1.mdx", fm: { slug: "d1", block: 1, order: 1, draft: true } },
-      { filename: "02-d2.mdx", fm: { slug: "d2", block: 1, order: 2, draft: true } },
-      { filename: "03-c.mdx", fm: { slug: "c", block: 2, order: 1, minutes: 5 } },
+      { filename: "00-a.mdx", fm: { slug: "a", block: 1, order: 1, minutes: 10 } },
+      // block 2: only drafts → listLessons drops them → block must be omitted
+      { filename: "01-d1.mdx", fm: { slug: "d1", block: 2, order: 1, draft: true } },
+      { filename: "02-d2.mdx", fm: { slug: "d2", block: 2, order: 2, draft: true } },
+      { filename: "03-c.mdx", fm: { slug: "c", block: 3, order: 1, minutes: 5 } },
     ]);
     __setContentRoot(root);
 
     const course = getCourse("dl-nlp", "es")!;
     const groups = groupLessonsByBlock(course, listLessons("dl-nlp", "es"));
 
-    // Block 1 has three declared position but zero published lessons → absent.
-    expect(groups.map((g) => g.block.id)).toEqual([0, 2]);
-    expect(groups.some((g) => g.block.id === 1)).toBe(false);
+    // Block 2 has two declared positions but zero published lessons → absent.
+    expect(groups.map((g) => g.block.id)).toEqual([1, 3]);
+    expect(groups.some((g) => g.block.id === 2)).toBe(false);
   });
 
   it("returns an empty array when the course has no published lessons", () => {

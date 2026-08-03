@@ -21,7 +21,7 @@ quiz:
     explanation: "Una red es una función entre espacios vectoriales reales: su entrada tiene que vivir en $\\mathbb{R}^d$. Un símbolo del vocabulario no es un vector, así que ni siquiera está mal calculado dárselo, no está definido. Nada tiene que ver con la memoria, el idioma ni los caracteres."
   - id: q-indice-alfabetico
     type: single
-    prompt: "Numerar el vocabulario por orden alfabético — <W>casa</W> → 1, <W>gato</W> → 2, <W>perro</W> → 3 — es una representación válida, porque asigna a cada palabra un número de forma determinista."
+    prompt: "Numerar el vocabulario por orden alfabético —<W>casa</W> → 1, <W>gato</W> → 2, <W>perro</W> → 3— es una representación válida, porque asigna a cada palabra un número de forma determinista."
     options:
       - { id: a, text: "Verdadero" }
       - { id: b, text: "Falso" }
@@ -82,8 +82,8 @@ f : \mathbb{R}^d \to \mathbb{R}^k,
 $$
 
 donde $d$ es la dimensión del espacio de entrada y $k$ la del espacio de salida. Qué ocurre entre la
-entrada y la salida — las capas, los pesos, el entrenamiento — es el tema del siguiente bloque; aquí solo
-importa que la red necesita recibir vectores de $\mathbb{R}^d$. 
+entrada y la salida —las capas, los pesos, el entrenamiento— es el tema del siguiente bloque; aquí solo
+importa que la red necesita recibir vectores de $\mathbb{R}^d$.
 
 El problema aparece de inmediato: el texto es una secuencia de símbolos, lo que $f$ pide es un vector de
 $\mathbb{R}^d$. Nada convierte un elemento de $V$ en uno de $\mathbb{R}^d$ por sí solo. Necesitas
@@ -111,7 +111,7 @@ vocabulario (*out-of-vocabulary*, OOV), y le dedicamos entera la lección 3.
 
 **Dimensión fija.** $r(w) \in \mathbb{R}^d$ con la misma $d$ para toda $w$. La red se diseña
 esperando vectores de un tamaño concreto; una representación que a veces devolviera un vector de
-cinco números y a veces de nueve sencillamente no encajaría en la puerta de entrada.
+cinco números y a veces de nueve no encajaría en la puerta de entrada.
 
 **Determinismo.** La misma palabra produce siempre el mismo vector. Si $r$ cambiara entre dos
 ejecuciones, lo que el modelo aprendió dejaría de corresponderse con lo que recibe.
@@ -170,7 +170,7 @@ más cerca de otra que del resto. Es decir, que todas las distancias entre pares
 
 En $\mathbb{R}$ eso es imposible ya con tres palabras. Si $a < b < c$, entonces
 $\lvert a - c \rvert > \lvert a - b \rvert$: siempre hay una que queda en medio. En el plano sí se
-puede — un triángulo equilátero — pero solo con tres. Cuatro puntos equidistantes exigen salir al
+puede —un triángulo equilátero— pero solo con tres. Cuatro puntos equidistantes exigen salir al
 espacio, y en general $n$ puntos mutuamente equidistantes necesitan $n - 1$ dimensiones.
 </Details>
 
@@ -181,7 +181,7 @@ espacio, y en general $n$ puntos mutuamente equidistantes necesitan $n - 1$ dime
 Toma la frase <W>el gato bebe leche</W> y el vocabulario ordenado alfabéticamente
 $V = \{\textit{bebe}, \textit{el}, \textit{gato}, \textit{leche}\}$, con índices $1$ a $4$. La
 frase se convierte en la secuencia $(2, 3, 1, 4)$, y con $d = 1$ la matriz $X$ del apartado
-anterior tiene forma $4 \times 1$. Ahora responde tres preguntas mirando **solo** esos números,
+anterior tiene forma $4 \times 1$. Ahora responde tres preguntas mirando *solo* esos números,
 como los mira la red:
 
 1. Según los números, ¿qué dos palabras de la frase se parecen más? Compara $\lvert 2 - 3 \rvert, 
@@ -212,7 +212,9 @@ a un vocabulario numerado por orden, y qué le pedimos exactamente a la función
 
 <Quiz id="q-propiedades-de-r" />
 
-{/* ── 6. PUENTE — sin título ── */}
+{/* ── 6. PUENTE — sin título, precedido por su raya y por nada más ── */}
+
+---
 
 Queda enunciado el problema del que vive el resto del bloque: hace falta una función
 $r : V \to \mathbb{R}^d$, total, de dimensión fija y determinista, y además con una geometría que

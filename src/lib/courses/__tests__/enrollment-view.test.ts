@@ -119,15 +119,15 @@ level: intermedio
 estimatedHours: 40
 prerequisites: []
 blocks:
-  - id: 0
-    title: "Bloque 0"
+  - id: 1
+    title: "Bloque 1"
     summary: "..."
 `;
 
 function lessonFile(slug: string, order: number, draft = false): string {
   const fm = {
     title: `Lección ${slug}`,
-    block: 0,
+    block: 1,
     order,
     minutes: 10,
     summary: "...",

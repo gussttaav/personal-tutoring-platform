@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: 'El texto llega con la <W>ñ</W> escrita como dos puntos de código: una <W>n</W> seguida de una tilde combinante. Sin normalizar antes a la forma NFC, un tokenizador de caracteres produce dos tokens donde debería haber uno.'
     answer: true
-    explanation: 'Unicode admite dos escrituras de la misma letra, y la descompuesta es literalmente una secuencia de dos puntos de código. Un tokenizador de caracteres corta por puntos de código, así que produce <W>n</W> y la tilde por separado — y <W>niño</W> pasa a tener seis tokens en lugar de cinco, con un vocabulario que ahora contiene una tilde suelta. La normalización a NFC no es una manía de limpieza: es lo que hace que dos textos idénticos en pantalla lo sean también para el tokenizador.'
+    explanation: 'Unicode admite dos escrituras de la misma letra, y la descompuesta es literalmente una secuencia de dos puntos de código. Un tokenizador de caracteres corta por puntos de código, así que produce <W>n</W> y la tilde por separado —y <W>niño</W> pasa a tener seis tokens en lugar de cinco, con un vocabulario que ahora contiene una tilde suelta. La normalización a NFC no es una manía de limpieza: es lo que hace que dos textos idénticos en pantalla lo sean también para el tokenizador.'
   - id: q-longitud
     type: numeric
     prompt: '¿Cuántos tokens produce un tokenizador de caracteres sobre la frase <W>El niño juega.</W>? Cuenta también los espacios y el punto final.'
@@ -54,9 +54,9 @@ si <W>dámelo</W> es una unidad del vocabulario, o tres (<W>dá</W>, <W>me</W>, 
 resultante, un *token*.
 
 Tokenizar es elegir dónde cortar, y hay tres respuestas naturales. Cortar por palabras, que es como
-lees tú. Cortar por caracteres, que es como está escrito el fichero. O cortar por trozos de palabra
-o *subpalabras*: una solución intermedia que puede parecer poco intuitiva al principio, pero que hoy
-emplean la mayoría de los modelos de lenguaje modernos. Observa cómo se tokeniza una misma frase con cada una de estas estrategias.
+lees tú. Cortar por caracteres, que es como está escrito el fichero. O cortar por trozos de palabra,
+por **subpalabras**: una solución intermedia que puede parecer poco intuitiva al principio, pero que
+hoy emplean la mayoría de los modelos de lenguaje modernos. Observa cómo se tokeniza una misma frase con cada una de estas estrategias.
 Escribe también una frase propia y fíjate especialmente en el número que acompaña a cada ejemplo:
 indica cuántos tokens son necesarios para representar exactamente el mismo texto.
 
@@ -75,6 +75,14 @@ el tamaño del vocabulario y el número de tokens necesarios para representar un
 
 Fijemos primero el alfabeto $\Sigma$: el conjunto de caracteres que pueden aparecer. Para el español
 son las letras con sus acentos, la <W>ñ</W>, los dígitos, la puntuación y el espacio.
+
+Ese conjunto tiene una trampa que conviene desactivar antes de contar nada. Unicode admite dos
+escrituras para la misma letra acentuada: la <W>ñ</W> puede ser un único carácter, o una <W>n</W>
+seguida de una tilde que se dibuja encima de la anterior. En la pantalla se ven igual; para $\Sigma$
+son cosas distintas, y una de las dos ocupa dos posiciones en lugar de una. Por eso el texto se
+**normaliza** antes de tokenizar, a la forma en que cada letra acentuada es un solo carácter —la
+forma de normalización C (*Normalization Form C*, NFC). Sin ese paso, dos textos idénticos a la
+vista producen tokenizaciones distintas, y el vocabulario acaba conteniendo tildes sueltas.
 
 Un texto no es un carácter, sino una sucesión de ellos, y para hablar de «todas las sucesiones que
 se pueden escribir con un conjunto de símbolos» hay una notación estándar que usaremos a partir de
@@ -148,7 +156,7 @@ del que puede extraerse el vocabulario y, en consecuencia, mayor tiende a ser es
 | $\tau$ | $\bar{\ell}$ | $T$ | $\lvert V \rvert$ típico |
 |---|---|---|---|
 | caracteres | $1$ | $C$ | decenas |
-| subpalabras | $3$–$4$ | $\approx C/3.5$ | 30 000–50 000, **elegido de antemano** |
+| subpalabras | $3$–$4$ | $\approx C/3.5$ | 30 000–50 000, *elegido de antemano* |
 | palabras | $\approx 5$ | $\approx C/5$ | cientos de miles, y creciendo |
 
 <Details summary="Por qué el vocabulario de palabras no es solo grande, sino ilimitado">
@@ -157,8 +165,8 @@ caracteres se satura: los símbolos distintos del español son unas decenas, y c
 de texto ya han aparecido casi todos, de modo que leer un millón de páginas más no añade
 prácticamente ninguno. El de palabras no se satura nunca, y el español lo empeora.
 
-Un verbo regular tiene del orden de cincuenta formas conjugadas — <W>canto</W>, <W>cantas</W>,
-<W>cantaba</W>, <W>cantaríamos</W>, <W>cantasen</W> — y cada una es una entrada distinta de $V$ que no
+Un verbo regular tiene del orden de cincuenta formas conjugadas —<W>canto</W>, <W>cantas</W>,
+<W>cantaba</W>, <W>cantaríamos</W>, <W>cantasen</W>— y cada una es una entrada distinta de $V$ que no
 comparte nada con las demás: el vocabulario de palabras no sabe que están emparentadas, porque su
 única noción de identidad es la igualdad de cadenas. Añade los clíticos pegados (<W>cántalo</W>,
 <W>cántamelo</W>), el género y el número (<W>niño</W>, <W>niña</W>, <W>niños</W>, <W>niñas</W>), la
@@ -171,9 +179,12 @@ $V$?» no sea un caso raro sino el caso normal, y es el asunto de la lección 3,
 frecuencia y palabras fuera de vocabulario.
 </Details>
 
-La solución a este compromiso da nombre a la tercera columna. En lugar de dejar que el tamaño del
-vocabulario sea una consecuencia de la tokenización, se fija de antemano —por ejemplo, 30 000 tokens—
-y se deja que un algoritmo decida qué unidades lo compondrán. El más extendido es el *byte-pair encoding* (BPE): empieza tratando cada
+### Fijar el vocabulario y dejar que el algoritmo elija las unidades
+
+La solución a este compromiso es la fila central de la tabla, la de las subpalabras, y su celda de
+$\lvert V \rvert$ dice en qué consiste: *elegido de antemano*. En lugar de dejar que el tamaño del
+vocabulario sea una consecuencia de la tokenización, se fija por adelantado —por ejemplo, 30 000
+tokens— y se deja que un algoritmo decida qué unidades lo compondrán. El más extendido es el *byte-pair encoding* (BPE): empieza tratando cada
 carácter como una unidad y va fusionando repetidamente el par de unidades adyacentes más frecuente
 del corpus, hasta llegar al tamaño fijado. Las secuencias frecuentes acaban fusionadas en una sola
 pieza y las raras se quedan partidas en trozos que sí son frecuentes. Por
@@ -268,6 +279,8 @@ caracteres, y una cuenta a mano.
 <Quiz id="q-nfc" />
 
 <Quiz id="q-longitud" />
+
+---
 
 Con la tokenización ya fijada, el vocabulario deja de ser una abstracción y pasa a ser una lista
 concreta de tokens. Esa lista siempre es finita, porque se construye a partir de un corpus que alguien

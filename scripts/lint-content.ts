@@ -5,6 +5,7 @@
  * COURSE-P3-01 — + validate every `<Quiz id>` resolves to a frontmatter question.
  * COURSE-P3-02 — + the same for every `<CodeChallenge id>`.
  * COURSE-P5-00 — + a second, NON-FATAL phase: per-lesson counts, budget and notation.
+ * COURSE-P5-00 — + the voice pass (banned-word families) and the bridge's `---`.
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the
@@ -48,6 +49,7 @@ import { notationWarnings } from "@/lib/courses/validate-notation";
 import { validatePyCellFlags } from "@/lib/courses/validate-pycells";
 import { validateQuizRefs } from "@/lib/courses/validate-quizzes";
 import { structureWarnings } from "@/lib/courses/validate-structure";
+import { voiceWarnings } from "@/lib/courses/validate-voice";
 
 // ─── Phase 1 — correctness. Fatal. ────────────────────────────────────────────
 
@@ -79,14 +81,17 @@ for (const filePath of files) {
   const skipBudget = isBudgetExempt(source);
   if (skipBudget) exempt += 1;
 
-  // Notation and structure apply to every file, exempt or not. The notation contract is
-  // what keeps Block 2 and Block 5 legible as one course; the structure rule keeps the
-  // authoring scaffolding from reaching the reader. Neither has a "work in progress"
-  // excuse, and both are cheap to honour from the first draft.
+  // Notation, structure and voice apply to every file, exempt or not. The notation
+  // contract is what keeps Block 2 and Block 5 legible as one course; the structure rule
+  // keeps the authoring scaffolding from reaching the reader; the voice rules keep 40
+  // lessons sounding like one person. None has a "work in progress" excuse, and all are
+  // cheap to honour from the first draft. Only the BUDGET is skippable, because it is the
+  // only one that measures a lesson's size rather than its contract.
   const warnings = [
     ...(skipBudget ? [] : budgetWarnings(counts)),
     ...structureWarnings(source),
     ...notationWarnings(source),
+    ...voiceWarnings(source),
   ];
   if (warnings.length > 0) warned += 1;
 

@@ -220,7 +220,7 @@ describe("budgetWarnings", () => {
   });
 
   it("stays quiet about a lesson with no widget and no code cell — that is a choice", () => {
-    // Block 0 lesson 1 is deliberately prose-only; warning every run would train
+    // Block 1 lesson 1 is deliberately prose-only; warning every run would train
     // authors to skip the warnings that matter.
     expect(budgetWarnings({ ...inBudget, widgets: 0, codeCells: 0, displayEquations: 0 })).toEqual([]);
   });

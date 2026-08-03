@@ -42,6 +42,18 @@ challenges: []
   de una distinción, y se pasa el párrafo decidiendo si el cambio significaba algo. Si
   necesitas un término que no esté en la tabla, añádelo allí ANTES de escribir.
 
+  Las cinco marcas, una tarea cada una (AUTHORING.md §5, «The five marks»):
+    **negrita** el término que se DEFINE, ahí donde se define, una vez.
+    *cursiva*   un anglicismo en su primer uso de la lección, o la palabra que le da
+                la vuelta a la frase. Nunca un término español.
+    <W>…</W>    una cadena de la que la lección HABLA (NOTATION.md §6).
+    «…»         una palabra en su sentido corriente, todavía sin precisar.
+    `código`    Python, y sólo Python.
+  Y la voz: `tú` para lo que hace el estudiante, `nosotros` sólo para la derivación que
+  hacéis juntos en la página. Nunca impersonal («se debe…», «el estudiante debe…»).
+  Prohibidas: «obviamente», «simplemente», «sencillamente», «basta con», «cabe destacar»,
+  «como podemos ver»… `pnpm lint:content` avisa de las dos familias.
+
   Los seis pasos marcados abajo con comentarios son el contrato, en este orden, siempre.
   PERO NO SON TÍTULOS: los comentarios se borran al escribir. Un estudiante que lee
   «## Motivación», «## Intuición», «## Formalización» lección tras lección no está
@@ -55,7 +67,13 @@ challenges: []
   Dos a cuatro `##` por lección. `pnpm lint:content` avisa si se te cuela un paso.
 */}
 
-{/* ── 1. MOTIVACIÓN — sin título. Es el arranque de la lección. ───────────────── */}
+{/* ── 1. MOTIVACIÓN — sin título. Es el arranque de la lección. ───────────────────
+       SI ESTA NO ES LA PRIMERA LECCIÓN: el primer párrafo RECOGE EL PUENTE DE LA
+       ANTERIOR antes de plantear su propia pregunta, y la nombra por su tema, no sólo
+       por su número («La lección anterior, dedicada al problema de representar el
+       lenguaje, terminó con una cuestión pendiente»). La primera lección de un BLOQUE
+       recoge la última del bloque anterior: eso es lo que hace que cinco bloques sean
+       un curso. Un puente que nadie recoge es una promesa que el curso no cumple. ──── */}
 
 TODO — dos párrafos. La pregunta que responde esta lección, y por qué le importa a alguien. No
 resumas lo que viene: plantea el problema tan bien que el estudiante quiera la respuesta.
@@ -77,7 +95,13 @@ TODO — el resumen que te gustaría que recordara dentro de seis meses.
 </Callout>
 
 {/* ── 3. FORMALIZACIÓN — suele llevar título, porque cambia el modo y el estudiante
-       querrá volver aquí. Titúlalo por lo que se formaliza, no «Formalización». ──── */}
+       querrá volver aquí. Titúlalo por lo que se formaliza, no «Formalización».
+       Se subdivide POR EL ARGUMENTO, no por la longitud: un título marca una AFIRMACIÓN
+       nueva, no una pantalla nueva. Dos movimientos (qué ES el objeto, y qué CUESTA) son
+       dos títulos aunque sean cortos; un movimiento largo es un título aunque ocupe una
+       página. En orden de dependencia: nada bajo un título puede apoyarse en algo que se
+       establece bajo uno posterior. Pasados ~600 palabras bajo un mismo título, ve a
+       buscar el segundo movimiento: casi siempre está ahí sin nombrar. ───────────── */}
 
 ## TODO — qué se define o se deriva aquí
 
@@ -135,7 +159,19 @@ TODO — una o dos frases que enlacen la pregunta con lo que se acaba de explica
 
 {/* ── 6. PUENTE — SIN TÍTULO, y esto importa más que en ningún otro paso. Un `##` que
        diga «Puente» enseña el mecanismo de la peor forma posible. Es el párrafo final
-       de la lección, sin anunciarse. ────────────────────────────────────────────── */}
+       de la lección, sin anunciarse.
+
+       Sí lleva una marca, y es la línea de abajo: `---`, una raya centrada y corta. El
+       puente viene DESPUÉS de una sección (normalmente el quiz), así que sin marca se
+       lee como una coletilla de la última pregunta. La raya dice «el argumento se cierra
+       aquí» sin decir qué es lo que se cierra.
+
+       DOS REGLAS. El `---` va precedido de una línea EN BLANCO: pegado al párrafo de
+       arriba, markdown lo lee como un título (setext) y falla en silencio. Y es el único
+       de la lección: `---` está reservado para el puente y no se usa en ningún otro
+       sitio. `pnpm lint:content` comprueba las dos cosas. ─────────────────────────── */}
+
+---
 
 TODO — **lo más importante de la lección**. Qué queda sin resolver, y qué lección lo resuelve.
 Esto es lo que convierte el curso en un curso y no en un montón de tutoriales sueltos. Termina

@@ -187,8 +187,14 @@ export type BookingHistoryQuery = z.infer<typeof BookingHistoryQuerySchema>;
 // rejected, not dropped. These validate raw YAML into the pure domain types
 // `Course`/`Lesson` (src/domain/types.ts).
 
+// COURSE-P5-00: blocks are 1..5 and the id is the number the sidebar shows and the
+// number the prose writes, so `.positive()` — not `.nonnegative()`. They were 0..4
+// until P5-00, and a numbering that half-migrated is worse than either numbering:
+// "el bloque 2" in one lesson and a sidebar reading "01" is a cross-reference the
+// student cannot resolve. This is the one place that can make the old scheme
+// unreachable rather than merely discouraged. See docs/courses/AUTHORING.md §2.
 export const CourseBlockSchema = z.strictObject({
-  id:      z.number().int().nonnegative(),
+  id:      z.number().int().positive(),
   title:   z.string().min(1),
   summary: z.string().min(1),
 });
@@ -344,7 +350,10 @@ export type CodeChallengeInput = z.infer<typeof CodeChallengeSchema>;
 export const LessonFrontmatterSchema = z.strictObject({
   slug:    z.string().min(1),
   title:   z.string().min(1),
-  block:   z.number().int().nonnegative(),
+  // COURSE-P5-00: `block` is positive for the reason given on CourseBlockSchema above.
+  // `order` stays non-negative — 0 is a legitimate position, and `00-pipeline-fixture`
+  // uses it to sort ahead of every real lesson.
+  block:   z.number().int().positive(),
   order:   z.number().int().nonnegative(),
   minutes: z.number().int().positive(),
   summary: z.string().min(1),

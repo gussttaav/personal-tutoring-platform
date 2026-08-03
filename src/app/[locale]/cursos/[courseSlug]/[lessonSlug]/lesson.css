@@ -2,6 +2,7 @@
  * COURSE-P1-04 — Lesson reader layout + reading typography.
  * COURSE-P5-00 — + the prose elements Tailwind Preflight had been flattening
  *                (lists, links, blockquotes, inline code).
+ * COURSE-P5-00 — + `hr`, the bridge's mark.
  *
  * Imported ONLY from the lesson segment's page.tsx (alongside katex.css), never the
  * shared layout, so none of this loads on non-lesson routes.
@@ -212,6 +213,30 @@ body:has(.lesson-shell) {
   border: 1px solid var(--border);
   background: var(--surface-lowest);
   font-size: 0.9em;
+}
+
+/*
+ * COURSE-P5-00 — the bridge's mark.
+ *
+ * A lesson's last two paragraphs say what it leaves unsolved and which lesson solves it
+ * (AUTHORING.md §1). They carry no heading on purpose — a `## Puente` would show the
+ * reader the template — but they come AFTER a section, normally the quiz, so with no
+ * mark at all they read as a remark about the last question.
+ *
+ * Hence a SHORT CENTRED rule, not a full-width one: a full-width hairline is what a
+ * section boundary looks like, and the bridge is the opposite of a new section. Wide
+ * margins do most of the work; the rule is there so the gap reads as deliberate rather
+ * than as a spacing bug.
+ *
+ * `hr` is another Preflight casualty (`height: 0; border-top-width: 1px` in the inherited
+ * colour), so every property here is set explicitly rather than adjusted.
+ */
+.lesson-content hr {
+  width: 4rem;
+  height: 0;
+  margin: 3.5rem auto 2.5rem;
+  border: 0;
+  border-top: 1px solid var(--border-variant);
 }
 
 /* Anchor jump-targets must clear BOTH the fixed navbar and the sticky lesson bar on

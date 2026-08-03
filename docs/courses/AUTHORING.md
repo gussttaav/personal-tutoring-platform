@@ -22,7 +22,8 @@ Every lesson, in this order:
    derivations, so the page stays readable without hiding the rigour.
 4. **Implementación** — NumPy from scratch, in a `<PyCell>` the student actually runs.
 5. **Verificación** — a `<Quiz>`, and a `<CodeChallenge>` when there is something to build.
-6. **Puente** — what this lesson leaves unsolved, and which lesson solves it.
+6. **Puente** — what this lesson leaves unsolved, and which lesson solves it. Preceded by a `---`
+   and by nothing else.
 
 Step 4 is the only one that may take a different form: in a deliberately code-free lesson (Block 1
 lesson 1 is one, because it is the first impression) it becomes a worked example the student
@@ -35,6 +36,25 @@ because most courses skip the bridge, and attention ends up looking like it appe
 Every lesson ends pointing forward — including the last one of a block, which points at the next
 block.
 
+### And a non-first lesson opens by picking up the previous bridge
+
+Step 6 leaves a door open. **The next lesson walks through it in its first paragraph**, naming the
+previous lesson by its topic (§2's naming rule) before posing its own question. Lesson 2 of Block 1
+is the shape:
+
+> La lección anterior, dedicada al problema de representar el lenguaje, terminó con una cuestión
+> pendiente.
+
+The first lesson of a *block* picks up the last lesson of the previous block — that is what makes
+five blocks one course rather than five courses. Only the very first lesson of the course has
+nothing to pick up.
+
+This closes the loop step 6 opens, and it is why the two rules belong together: **a bridge nothing
+picks up is a promise the course did not keep.** Writing the bridge is easy to remember because it
+ends the lesson you are working on; the pickup is easy to forget because it belongs to a lesson you
+have not written yet. When you finish a lesson, the last thing you do is read its bridge — that is
+the opening of the next one.
+
 ### These six are not headings
 
 **A template is a great authoring tool and a terrible reader interface.** The six steps are the
@@ -42,7 +62,7 @@ shape of the argument, and the argument should be invisible: a student reading `
 `## Intuición`, `## Formalización` in lesson after lesson is not reading an explanation, they are
 watching a form get filled in. The machinery is for you. Never ship it.
 
-Two rules follow.
+Three rules follow.
 
 **1. Never use a step name as heading text.** Not `## Motivación`, not `## Puente`, not
 `## Implementación`. If a heading earns its place, it says what *this* lesson does there:
@@ -54,6 +74,20 @@ you hook the reader, build the picture, then leave a door open. That is prose an
 labels. Motivation is the first two paragraphs. The bridge is the last two. Putting a heading on
 either turns a continuous line of thought into compartments.
 
+**3. The bridge is preceded by a thematic break** — `---` on its own line, with a blank line above
+and below. Not a heading, no label, nothing named: a short centred rule, and then the closing
+paragraphs.
+
+It earns that mark for a reason the other unheaded steps don't have. Motivación and intuición open
+the lesson, so nothing above them can swallow them. The bridge comes *after* a section — normally
+the quiz — and without a mark it reads as the tail of that section, as though "what this lesson
+leaves unsolved" were a remark about the last question. The break says the argument has closed
+without saying what closes it.
+
+**Reserve `---` for exactly this: one per lesson, nowhere else.** A thematic break used twice is a
+divider again, and the bridge stops being the place the lesson ends. `pnpm lint:content` warns on
+zero, on more than one, and on one that is not the last thing in the file.
+
 What reliably earns a heading is a **change of mode** — the point where the student stops reading
 and starts doing:
 
@@ -61,14 +95,38 @@ and starts doing:
 |---|---|
 | Motivación | No. It is the opening paragraphs. |
 | Intuición | No — it flows out of the motivation. |
-| Formalización | Usually yes, when the maths runs long: it is also a mode change ("now we get precise"), and the reader wants an anchor back to it. Title it by content. |
+| Formalización | Usually yes: it is also a mode change ("now we get precise"), and the reader wants an anchor back to it. Title it by content — and see the subdivision rule below. |
 | Implementación | **Yes.** "Stop reading, run this." |
 | Verificación | **Yes.** "Stop reading, test yourself." |
-| Puente | No. It is the closing paragraphs. |
+| Puente | No — but it opens with a `---`. It is the closing paragraphs. |
 
 So a typical lesson has **two to four `##` headings**, all of them describing content. A lesson with
 six headings named after the six steps has failed this rule even though it followed the structure
 perfectly.
+
+### Subdividing the formalisation: by the argument, not by the length
+
+Formalización is the step that runs long, so it is the one that gets split. **A heading marks a new
+claim being established, not a new screenful.**
+
+If the derivation has two movements — first what the object *is*, then what it *costs* — those are
+two headings even when both are short. If it has one long movement, it is one heading even when it
+runs a page: splitting it in the middle tells the reader a new argument has started when it hasn't,
+which is worse than a long section. Block 1 lesson 1 splits at exactly such a seam: `##` establishes
+what a network needs and what $r$ must satisfy, and `###` then takes the one representation that
+satisfies all of it and shows it failing anyway. Two claims, two headings.
+
+Two rules come with that:
+
+- **Dependency order.** Nothing under a heading may rest on something established under a later
+  one. If it does, the two are in the wrong order, or they were never two claims.
+- **Title with the claim, not the material.** `### La representación que parece funcionar y no
+  funciona`, not `### Índices y orden alfabético`. The reader scanning the on-this-page rail should
+  be able to reconstruct the argument from the headings alone.
+
+Length is still worth watching, but as a **symptom**: past roughly 600 words under one heading there
+is usually a second movement in there that has not been named. Go and look for it. If it genuinely
+is one movement, leave it alone.
 
 Only `##` and `###` feed the on-this-page rail. Don't use `#` — the lesson title comes from the
 frontmatter and is rendered by the reader chrome.
@@ -116,8 +174,10 @@ Nothing checks this mechanically. It is a review question, and the first one to 
 ### Referring to other blocks and lessons
 
 **Blocks are 1..5** — the `id` in `course.es.yml`, the number the sidebar shows, and the number the
-prose uses are all the same number. (They were 0..4 until P5-00; if you find a stray "bloque 0"
-anywhere, it is a leftover.)
+prose uses are all the same number. (They were 0..4 until P5-00. The schemas in
+[`src/lib/schemas.ts`](../../src/lib/schemas.ts) now reject a block id or a lesson `block` of 0
+outright, so the old numbering cannot come back through content; a stray "bloque 0" in *prose* is
+still just a leftover, and still yours to fix.)
 
 **Lessons are numbered within their block**, starting at 1, and the sidebar shows that number.
 
@@ -184,20 +244,154 @@ rules are checked mechanically by the lint (warnings, not failures). The short v
 - $\mathcal{L}$ loss, $\sigma$ sigmoid, $\eta$ learning rate, $T$ sequence length,
   $d_{\text{model}}$ model dimension, $h$ heads.
 
-## 5. Tone
+## 5. Voice and tone
 
-- **Spanish, `tú` form.** Technical but not stiff.
-- **Anglicisms where they are the real term** — *embedding*, *attention*, *batch*, *token*.
-  Italicise on first use in a lesson, then plain. Translating *embedding* to *incrustación* helps
-  nobody. Which words those are is fixed below, not decided per lesson.
-- **Never "obviamente", "simplemente", "trivialmente".** If it were obvious the lesson wouldn't
-  exist, and these words are how you make a student feel stupid for needing the explanation.
-  ("Basta con" and "no es más que" are the same move wearing a hat.)
+Two things this section is not. It is not a preference — the course has one voice across ~40
+lessons written over months, and "technical but not stiff" is four words two authors will read two
+ways, which is the exact failure this file exists to prevent. And it is not decoration: the voice is
+what decides whether a student who does not yet understand the material feels informed or feels
+stupid, and that decision gets made in every paragraph.
+
+The rules are in English; **the examples are in Spanish and every one of them is lifted from a
+lesson in this course.** A rule about Spanish rhythm stated only in English is a rule nobody can
+apply — the same reason [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)
+argues its case with `<W>casa</W>` rather than in the abstract.
+
+The two constants, before anything else:
+
 - **Derivations shown, not asserted.** This is the course's differentiator: it does the algebra. If
   a step is long, it goes in `<Details>` — it does not go away.
 - **Spanish examples throughout.** A Spanish course tokenising English sentences is a small,
   constant signal that it is a translation of someone else's material. Spanish has better examples
   anyway: clitics (*dámelo*), contractions (*del*, *al*), inflection, `ñ` and accents.
+
+### Person and mood — `tú` does one job, `nosotros` does another
+
+Spanish gives you two voices here and they are **not** interchangeable:
+
+- **`tú` and the imperative for what the student does or experiences.** *Toma la frase <W>el gato
+  bebe leche</W>.* · *Ejecútala tal cual y después cambia el corpus por un texto tuyo.* · *Fíjate en
+  que es un defecto distinto de los dos anteriores.* · *Guarda esa observación.* · *Añade
+  <W>agua</W> al vocabulario.*
+- **`nosotros` only for mathematical work being done jointly on the page.** *Fijemos el vocabulario
+  y llamémoslo $V$.* · *Llamemos $\bar{\ell}$ a la longitud media de un token.* · *Denotaremos por
+  $\lvert u \rvert$ la longitud, en caracteres, del token $u$.*
+
+The distinction is real and the reader feels it: **we** are deriving, **you** are doing. Swap them
+and the derivation reads as homework assigned to the student, while the exercise reads as something
+being performed at them.
+
+**Never the impersonal or the passive for either.** Not *se debe normalizar a NFC*, not *el
+estudiante debe ejecutar la celda*, not *el lector observará que*. Spanish makes impersonal
+constructions very easy to reach for, which is precisely why this needs saying: they are the default
+register of a badly translated manual, and they put a pane of glass between the student and the
+thing they are supposed to be doing.
+
+### Sentence rhythm — the claim is short
+
+Build-up may run long. **The sentence that lands the point stands alone, and it is short:**
+
+> Y, sin embargo, los modelos de lenguaje funcionan.
+>
+> Tokenizar es elegir dónde cortar.
+>
+> Son tres cosas.
+>
+> Todo lo que $\tau$ descarta, el modelo no volverá a verlo jamás.
+
+That is where the rhythm comes from: long, qualified setup; short, unqualified conclusion. A
+paragraph in which every sentence is the same length reads as a wall whatever it says, and the
+reader cannot tell which sentence was the one that mattered.
+
+**Paragraphs: one idea, three to six sentences.** A paragraph that needs a semicolon to hold two
+ideas together is two paragraphs.
+
+### Name the consequence
+
+State the fact, then say what it costs. This is the move that separates an explanation from a
+description, and both lessons lean on it:
+
+> Lo importante no es que las afirmaciones sean falsas, sino que la red no tiene forma de saber que
+> lo son.
+>
+> La tercera es la más incómoda: una palabra nueva reescribe la representación de palabras que no
+> tienen nada que ver con ella.
+
+If a paragraph states something true and stops, ask what the student is supposed to *do* with it.
+Usually the answer is the next sentence, and it was missing.
+
+### Say what you are giving up
+
+When the lesson defers something, simplifies something, or concedes something, it says so, in the
+same paragraph, out loud:
+
+> La concesión es grande.
+>
+> Los detalles de BPE quedan fuera de esta lección; el explorable de arriba muestra su resultado,
+> que es lo que hace falta aquí.
+
+This is §2's signposting rule seen from the voice side. A silent simplification is the thing that
+leaves a reader quietly convinced they missed something.
+
+### What the voice never does
+
+Two families, banned outright, for two different reasons.
+
+**Condescension.** *obviamente* · *evidentemente* · *claramente* · *por supuesto* · *simplemente* ·
+*sencillamente* · *trivialmente* · *basta con* · *no es más que* · *sin más*. If it were obvious the
+lesson would not exist. These words cost the reader who already understood nothing, and cost the
+reader who did not the belief that they can. Note that the ban is on the **family**, not on four
+specific words: *sencillamente* is *simplemente* wearing a hat, exactly as *basta con* is.
+
+**Padding.** *cabe destacar / señalar / mencionar* · *es importante señalar* · *como podemos ver /
+observar* · *a continuación veremos* · *en esta sección vamos a* · *en el presente apartado*. The
+lesson does not narrate itself; the argument just proceeds. Across 40 lessons this is a measurable
+amount of the student's time spent on words that carry nothing.
+
+The one legal exception is a lead-in that changes what the student **does**, not one that announces
+what you are about to write: *Mira tres cosas:* before a code cell is instruction, not padding.
+
+`pnpm lint:content` warns on both families.
+
+### The five marks — one job each
+
+The single rule most easily broken, because every mark looks fine in isolation and the damage is
+cumulative. A mark with three jobs is not a mark — the argument
+[NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about) makes for `<W>`, applied
+to all five:
+
+| Mark | Its one job | From our lessons |
+|---|---|---|
+| `**negrita**` | the term **being defined**, at its definition, once | **corpus**, **Determinismo**, **reconstrucción**, **Totalidad.** |
+| `*cursiva*` | (a) an anglicism on first use *per lesson*; (b) the one word that flips the sentence | *embedding*, *byte-pair encoding*, *out-of-vocabulary*; *antes* de la red, que no afirme *nada* |
+| `<W>…</W>` | a string the lesson talks *about* — see NOTATION §6 | <W>dámelo</W>, <W>el gato bebe leche</W> |
+| `«…»` | a word used in its loose, non-technical sense | «distancia», «dirección», «unidad», «nueva» |
+| `` `código` `` | Python, and only Python: identifiers, calls, modules | `numpy`, `softmax()`, `isalnum()` |
+
+Three consequences that are easy to get wrong:
+
+- **Never italicise a Spanish term.** Italics mean "this word is not Spanish" or "read this word
+  harder". A Spanish term at its definition is **bold**; every use after that is plain. The terms
+  are fixed in the tables below — *tokenización*, *subpalabra*, *capa*, *pérdida* are Spanish and
+  are never italicised.
+- **Never bold for emphasis.** That is italics' job. Bold appearing twice in a paragraph means one
+  of the two is emphasis and should be italics.
+- **`«…»` is not `<W>`.** «unidad» is the ordinary word *unidad* being used loosely, before the
+  lesson has pinned it down. <W>gato</W> is the string g-a-t-o as an object on the page. Both are
+  "a word being pointed at", which is exactly why they need different marks.
+
+Spanish typography, since this is Spanish prose and half of it differs from English:
+
+- **La raya `—` is glued to the text it encloses, with the space outside**: `el traductor —numerar
+  las palabras por orden alfabético, por ejemplo— produce números válidos`. A single raya
+  introducing a final clause glues the same way: `…y la tilde por separado —y <W>niño</W> pasa a
+  tener seis tokens`. Never ` — ` spaced on both sides, which is the English convention; never `-`
+  (guion) or `–` (semirraya) in its place.
+- **Opening `¿` and `¡` always.** Their absence is the single clearest tell of prose drafted in
+  English.
+- **Numbers in prose take the decimal comma and a space for thousands**: `1,5`, `30 000`. Inside
+  `$…$` the decimal point stays — `C/3.5` is maths, and maths is set the way NOTATION.md says.
+- **Quotes are `«…»`.** Never `"…"`.
 
 ### Terminology — one term per concept
 
@@ -238,17 +432,15 @@ plain. Never italicise the Spanish terms.
 | capa, peso, sesgo | Spanish | layer, weight, bias |
 | pérdida, gradiente, descenso de gradiente | Spanish | loss, gradient, gradient descent |
 | entrenamiento, entrenar | Spanish | training, entrenar el *training* |
-| vocabulario, tokenización, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, bag of words, positional encoding |
+| vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
 
 The line is not "English is cooler": it is whether a Spanish term is genuinely in use among people
 who do this work. *Capa* and *pérdida* are; *incrustación* and *atención* are not. Where both
 circulate — *backpropagation* / *retropropagación* — the course picks one and this table is where
-it is picked, because the alternative is that each lesson picks separately.
-
-> **Open:** `course.es.yml` still says *retropropagación* in the Block 2 summary, against
-> *backpropagation* in the syllabus titles and the `backpropagation` slug. One of the two has to
-> move; the table above assumes the slug wins.
+it is picked, because the alternative is that each lesson picks separately. `course.es.yml`'s Block 2
+summary said *retropropagación* until this table settled it; the manifest now says
+*backpropagation*, matching the syllabus titles and the `backpropagation` slug.
 
 #### Acronyms
 
@@ -382,6 +574,11 @@ These cost real time the first time. Read them before writing, not after.
 
 - **MDX comments are `{/* … */}`**, never `<!-- -->`. HTML comments render as literal text.
 
+- **The bridge's `---` needs a blank line above it.** Directly under a paragraph, `---` is a *setext
+  heading* — markdown reads the text above it as an `h2`. It renders as a heading nobody wrote, and
+  it fails **silently**: `extractHeadings` matches `##`-style headings only, so the on-this-page rail
+  never shows it and the step-name lint never sees it. One blank line is the whole fix.
+
 - **A component tag inside an MDX comment still counts for the lint.** The content passes read the
   file with regular expressions, not an MDX parser, so a commented-out `<Quiz id="…" />` is still a
   reference that has to resolve, and a commented-out `<PyCell>` still forces `hasCode: true`. To
@@ -442,11 +639,22 @@ Copy this into the PR description.
 - [ ] **Uses nothing beyond the prerequisites and the lessons before it**; every forward reference
       is signposted as one
 - [ ] Six steps present, in order, and the lesson **ends on a bridge forward**
+- [ ] **The bridge is preceded by `---`** — exactly one in the lesson, blank line above it, nothing
+      after it but the closing paragraphs
+- [ ] **A non-first lesson opens on the previous lesson's bridge**, naming that lesson by its topic
 - [ ] **No heading is named after a step**; two to four `##`, each describing what this lesson does
       there; motivation, intuition and bridge are prose with no heading at all
+- [ ] The formalisation is **split by its argument, not by its length** — one heading per claim, in
+      dependency order
 - [ ] Within budget on every axis, or the overrun is deliberate and explained in the PR
 - [ ] Notation matches `NOTATION.md`; `pnpm lint:content` reports no notation warnings
-- [ ] Spanish `tú`; no "obviamente" / "simplemente" / "trivialmente"; Spanish examples
+- [ ] Spanish `tú` for the student, `nosotros` only for the derivation; no impersonal *se debe* / *el
+      estudiante debe*; Spanish examples
+- [ ] **No banned word** — the condescension family (*obviamente*, *simplemente*, *sencillamente*,
+      *basta con*…) or the padding family (*cabe destacar*, *como podemos ver*…)
+- [ ] **The five marks do their own jobs**: bold defines, italics emphasises or marks an anglicism,
+      `<W>` mentions, `«…»` loosens, backticks are Python
+- [ ] Spanish typography: raya glued (`—así—`), opening `¿` and `¡`, decimal comma in prose
 - [ ] **One term per concept**, matching the §5 terminology tables; `modelo` / `red neuronal` /
       `sistema` used for their own senses, not as synonyms; anglicisms italicised on first use only
 - [ ] **Every acronym expanded on first use in *this* lesson** — OOV, BPE, BPTT, TF-IDF, MLP, RNN —

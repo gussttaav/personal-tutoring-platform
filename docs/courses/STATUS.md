@@ -1155,3 +1155,89 @@ both assessment cards, the sign-in nudge, and the solved counter next to mark-co
 - 64 new unit tests across `budget.test.ts`, `validate-notation.test.ts`, `content-files.test.ts`,
   `validate-structure.test.ts` and `reader/__tests__/scroll-spy.test.ts`.
 - Not yet committed to a branch/PR (**local**).
+
+**COURSE-P5-00 — amendments after lesson 2** (2026-08-03). Six gaps found by reading AUTHORING.md
+against the two finished lessons, fixed before Block 1 lesson 3 makes them 38 lessons' worth of
+drift. The guide is the deliverable; correcting it *and* the lessons written against the old text
+is what closes the loop.
+
+- **The bridge now carries a thematic break.** Step 6 correctly has no heading, but unlike
+  motivación and intuición it comes AFTER a section — normally the quiz — so with no mark at all
+  it read as a remark about the last question. `---` before the closing paragraphs, styled in
+  `lesson.css` as a **short centred rule** (4rem, `--border-variant`, 3.5/2.5rem margins), not a
+  full-width hairline: a full-width rule is what a section boundary looks like, and the bridge is
+  the opposite of a new section. Reserved to that one job, one per lesson.
+  - `hr` was another Tailwind-Preflight casualty, so every property is set rather than adjusted —
+    same root cause as the lists/links/blockquotes fixed earlier in this task.
+  - Added to `00-pipeline-fixture.mdx` too: it is a rendered element now, and the fixture is where
+    rendered elements get checked.
+- **Formalización is subdivided by the argument, not the length.** A heading marks a new *claim*,
+  not a new screenful; subsections go in dependency order; the title states the claim. Length
+  survives only as a symptom (~600 words under one heading usually hides a second movement).
+  Applied to lesson 2, whose single `##` ran across three movements — it gained one `###` at the
+  BPE turn.
+- **A non-first lesson opens by picking up the previous lesson's bridge.** Lesson 2 already did
+  this; the guide never said so. Named as the mirror of step 6 — *a bridge nothing picks up is a
+  promise the course did not keep* — and put in the template's step-1 comment, where it is needed.
+- **§5 "Tone" became "Voice and tone", from four words to seven subsections.** It was the weakest
+  section in a file whose purpose is to stop two authors reading one rule two ways, and it is the
+  section that matters most. Every rule is stated in English and **every example is Spanish, lifted
+  from our own two lessons** — the NOTATION.md `<W>casa</W>` precedent. What it now fixes:
+  - **Person and mood**: `tú` + imperative for what the student does, `nosotros` ONLY for the
+    derivation being done jointly on the page, never the impersonal *se debe* / *el estudiante
+    debe*. Both lessons already split this way; nothing said why.
+  - **Rhythm**: long setup, short unqualified conclusion. Plus name-the-consequence and
+    say-what-you-are-giving-up, both patterns the lessons use and the guide never named.
+  - **The five marks, one job each** — bold defines, italics emphasises or marks an anglicism,
+    `<W>` mentions, `«…»` loosens, backticks are Python. This is the rule the finished lessons
+    were breaking: bold and italics were BOTH doing emphasis while bold was also the definition
+    mark. The `<W>` argument in NOTATION §6, applied to all five.
+  - **Spanish typography**: la raya glued to what it encloses (`—así—`), opening `¿`/`¡`, decimal
+    comma in prose but the point inside `$…$`, `«…»` never `"…"`. The two lessons had the raya
+    written both ways.
+  - `subpalabra` added to the Spanish-terms table — lesson 2 needed it and it was not there, which
+    is exactly the "add the row before writing the lesson" rule failing in practice.
+- **New `validate-voice.ts` (+ 15 tests), wired into the lint's advisory phase.** Two banned
+  families: condescension (*obviamente*, *simplemente*, *sencillamente*, *basta con*…) and padding
+  (*cabe destacar*, *como podemos ver*…). Scans `prose()` plus the raw frontmatter, so quiz copy is
+  covered and Python/LaTeX cannot trip it; de-duplicated by phrase; accent-aware boundaries, since
+  `\b` splits «señalar» down the middle.
+  - **This is the case that justified the module.** `sencillamente` had been sitting in Block 1
+    lesson 1 through a full review, because the guide listed `simplemente` and a reviewer reads
+    what the guide says. The ban is on the family; a machine is what holds a family.
+  - `validate-structure.ts` gained `bridgeWarnings`: exactly one thematic break, blank line above
+    it, nothing but prose after it. The blank-line rule is the sharpest — `---` glued to a
+    paragraph is a **setext heading**, and it fails silently in both directions, since
+    `extractHeadings` matches ATX headings only.
+  - Deliberately NOT checked: whether an italicised word is an anglicism or a Spanish term, and
+    whether a raya encloses an incise. Both need to know what the sentence means, and NOTATION's
+    bar ("five rules that are always right beat twenty that are usually right") excludes them.
+- **The two published lessons were corrected**, since these are violations of rules this pass wrote
+  down: the `sencillamente`; bold-as-emphasis → italics (`**solo**`, `**elegido de antemano**`);
+  `*subpalabras*` → bold, as a Spanish term at its definition; five rayas re-glued; and the bridge
+  break in both. Lesson 2 grew 1,644 → 1,768 words, still inside the band.
+- **Lesson 2 was quizzing NFC without ever teaching it.** `q-nfc` turns on Unicode normalisation;
+  the body mentioned it only inside a Python comment and never expanded the acronym. That is a §2
+  violation (a thing the student was not given) dressed as a style one. Fixed with a paragraph
+  where $\Sigma$ is fixed, introducing *la forma de normalización C (Normalization Form C, NFC)*
+  and the two spellings of `ñ` — which is also where the alphabet's own trap belonged.
+- **The `> Open:` note is resolved.** `course.es.yml`'s Block 2 summary now says *backpropagation*,
+  per the §5 table's "the slug wins".
+- **Block 0 is now unrepresentable, not merely discouraged.** `CourseBlockSchema.id` and
+  `LessonFrontmatterSchema.block` moved from `.nonnegative()` to `.positive()`. `order` stays
+  non-negative — `00-pipeline-fixture` legitimately uses 0.
+  - **This supersedes the "test fixtures were deliberately left alone" decision above.** That
+    reasoning was right when 0 was a legal-but-unused value; it stops being right once the schema
+    rejects it, because a fixture that cannot exist is not testing anything. The four fixture files
+    were renumbered by shifting each block up one (0,1,2 → 1,2,3), preserving the distinctions the
+    tests were built on — `SyllabusAccordion`'s all-drafts block is still the middle one.
+  - Two stale comments naming the old scheme ("Block 0 lesson 1") corrected in
+    `validate-notation.test.ts` and `budget.test.ts`.
+  - A repo-wide grep for `bloque 0` / `block 0` now returns only the two deliberate historical
+    references: AUTHORING §2 and this file.
+- **The full cross-reference audit came back otherwise clean**: PLAN.md's block table,
+  `course.es.yml` ids 1–5, NOTATION.md's per-block sections, AUTHORING's two by-number references
+  (Block 4 = *El Puente hacia la Atención*, bloque 2 = the MLP), the §7 widget-id list against
+  `widget-ids.ts` (9/9), all five phase-5 task docs, and every `la lección N` in both lessons —
+  all agree, all name their topic.
+- Not yet committed to a branch/PR (**local**).

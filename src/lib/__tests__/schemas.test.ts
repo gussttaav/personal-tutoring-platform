@@ -23,7 +23,7 @@ describe("CourseManifestSchema", () => {
     level: "intermedio",
     estimatedHours: 40,
     prerequisites: ["Python"],
-    blocks: [{ id: 0, title: "Bloque 0", summary: "..." }],
+    blocks: [{ id: 1, title: "Bloque 1", summary: "..." }],
   };
 
   it("accepts a well-formed manifest", () => {
@@ -46,7 +46,7 @@ describe("CourseManifestSchema", () => {
     expect(() =>
       CourseManifestSchema.parse({
         ...valid,
-        blocks: [{ id: 0, title: "B", summary: "...", extra: true }],
+        blocks: [{ id: 1, title: "B", summary: "...", extra: true }],
       }),
     ).toThrow();
   });
@@ -58,7 +58,7 @@ describe("LessonFrontmatterSchema", () => {
   const valid = {
     slug: "tokenizacion",
     title: "Tokenización",
-    block: 0,
+    block: 1,
     order: 1,
     minutes: 25,
     summary: "...",

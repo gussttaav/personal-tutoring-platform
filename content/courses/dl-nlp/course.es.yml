@@ -20,7 +20,7 @@ blocks:
     summary: "Tokenización, vocabularios y las primeras representaciones vectoriales del texto."
   - id: 2
     title: "El Perceptrón Multicapa"
-    summary: "Del perceptrón a una red multicapa entrenada con descenso de gradiente y retropropagación."
+    summary: "Del perceptrón a una red multicapa entrenada con descenso de gradiente y backpropagation."
   - id: 3
     title: "Redes Neuronales Recurrentes"
     summary: "Secuencias, memoria y el problema del gradiente que se desvanece."
