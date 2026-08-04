@@ -95,6 +95,13 @@ prose immediately after.
 | $d$, $D$, $N$ | a document, the corpus, $\lvert D \rvert$ |
 | $C$ | corpus length, in characters |
 | $\bar{\ell}$ | mean token length, in characters |
+| $M$ | number of distinct types in the corpus |
+| $f_i$ | frequency of the $i$-th most frequent type |
+| $k$ | vocabulary cutoff — the $k$ most frequent types |
+| $\text{cob}(k)$ | coverage: the fraction of occurrences those $k$ types account for |
+| $\beta$ | Heaps' law exponent, $M \approx c \cdot T^{\beta}$ ($c$ a corpus constant) |
+| $T'$, $M'$, $U$ | the same counts on a *held-out* text: its tokens, its types, and the set of them |
+| $\texttt{<UNK>}$ | the token every out-of-vocabulary word collapses onto |
 | $\text{tf}(t,d)$, $\text{df}(t)$ | term frequency, document frequency |
 | $\mathbf{e}_w \in \mathbb{R}^{d_{\text{model}}}$ | the embedding of word $w$ |
 | $\mathbf{o}_w \in \{0,1\}^{\lvert V \rvert}$ | one-hot encoding of $w$ |
@@ -118,6 +125,41 @@ The star is the **Kleene star**, and it applies to any set, not just to $\Sigma$
 finite sequences of tokens. It is not a course prerequisite — the prerequisites are Python, linear
 algebra and calculus — so the lesson that first writes it **defines it in prose**, in one sentence,
 before the equation that uses it. Block 1 lesson 2, on tokenisation, is that lesson.
+
+**Rank is $i$, never $r$.** Ordering the types from most to least frequent gives each one a
+position, and the obvious letter for it is taken: $r$ is the representation function
+$r : V \to \mathbb{R}^{d}$ for the whole of Block 1, and the lesson that ranks types is also the
+lesson that has to keep $r$ total. So the rank is $i$ and the frequency at that rank is $f_i$.
+
+**$T$ counts occurrences, $M$ counts types**, and the distinction is the whole subject of Block 1
+lesson 3. $T$ is what $\tau$ produces over the corpus — every repetition of *de* counted again —
+while $M$ is how many *distinct* strings appear among them, so $M \leq T$ always and in
+practice $M \ll T$. A lesson using both says which it means the first time, in words: the reader
+who has just met $\lvert V \rvert$ will otherwise assume $M$ is a third name for the same thing.
+It is not — $M$ belongs to the corpus, $\lvert V \rvert$ to the vocabulary someone chose from it.
+
+**A prime means "measured on a held-out text", never a derivative.** $T'$ and $M'$ are the token and
+type counts of a text the vocabulary did not see, against the unprimed $T$ and $M$ of the corpus that
+built it — the only comparison in which an OOV rate means anything. Nothing in Block 1 differentiates,
+so the notation is free; a later block that needs a derivative writes $\frac{d}{dx}$, which is the
+course's form anyway.
+
+**Counting sets: the bars, and what is inside them.** Write $\lvert \cdot \rvert$ for "how many", never
+$\#$ — one notation for one idea, and $\lvert V \rvert$ already established it. The rule that actually
+bites is what the set ranges over, because the same-looking expression counts two different things:
+$\lvert\{\,t \le T' : w_t \notin V\,\}\rvert$ is a set of **positions** and counts occurrences, while
+$\lvert\{\,w \in U : w \notin V\,\}\rvert$ is a set of **strings** and counts types. Dropping the index
+turns the first into the second silently. Always state the domain — $t \le T'$ or $w \in U$ — even
+where it feels obvious.
+
+**Coverage is $\text{cob}(k)$ — never $\text{cov}(k)$, and never $C(k)$.** Both of the obvious
+spellings are taken. $\text{cov}$ is the covariance everywhere else in maths and statistics, and a
+reader meets it here in the one lesson whose whole argument is about a *distribution* — precisely the
+context that makes the wrong reading plausible. $C$ is already the corpus length in characters, two
+rows up in this table and load-bearing throughout lesson 2 ($T = C/\bar{\ell}$); reusing it for a
+function one lesson later is the drift this file exists to prevent, and italic uppercase means a
+**set** by §1 anyway, not a function. `cob` collides with nothing, stays roman as §1 requires for
+functions, and the lesson introduces it in the same breath as the Spanish word it abbreviates.
 
 $d$ is a document in the TF-IDF lessons and the dimension of $\mathbb{R}^d$ in the representation
 ones. The two never appear in the same equation; the lesson that needs both says which it means, in

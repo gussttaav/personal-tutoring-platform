@@ -214,9 +214,23 @@ function Callout({
 
 function Figure({ src, alt, caption }: { src: string; alt: string; caption?: string }) {
   return (
-    <figure style={{ margin: "1.5rem 0", textAlign: "center" }}>
+    <figure style={{ margin: "1rem 0 1.5rem", textAlign: "center" }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- static lesson asset */}
-      <img src={src} alt={alt} style={{ maxWidth: "100%", height: "auto", borderRadius: "var(--radius)" }} />
+      <img
+        src={src}
+        alt={alt}
+        style={{
+          // COURSE-P5-01 — `display: block` + auto margins, not the figure's
+          // `text-align: center`. Tailwind Preflight sets `img { display: block }`,
+          // and text-align does not centre a block-level child, so the figure was
+          // rendering flush left. Same class of Preflight damage as P5-00's prose fix.
+          display: "block",
+          margin: "0 auto",
+          maxWidth: "100%",
+          height: "auto",
+          borderRadius: "var(--radius)",
+        }}
+      />
       {caption ? (
         <figcaption style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "var(--text-dim)" }}>
           {caption}

@@ -434,6 +434,26 @@ plain. Never italicise the Spanish terms.
 | entrenamiento, entrenar | Spanish | training, entrenar el *training* |
 | vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
+| tipo — one distinct entry; *token* / ocurrencia — each appearance of one | `tipo`, `token`, `ocurrencia` | *type*; `token` for both senses |
+| the place an element holds in an ordered sequence | posición | puesto, rango, ranking |
+
+That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
+one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
+the whole content of "words repeat". Say `tipo` for a distinct string, counted by $M$, and `token`
+for a single appearance of one, counted by $T$. Never `token` for both.
+
+`posición`, never `puesto`. Ordering things and then pointing at the $i$-th one is a move this course
+makes constantly — Zipf ranks in Block 1, sequence positions from Block 3 on, sorted vocabularies
+everywhere. `puesto` is where a runner finishes: it drags in competition, and it reads as prize-giving
+rather than indexing. `rango` is worse, being already taken twice over by *rango de una matriz* and by
+the statistical range. `posición` is the only one of the three that means a place in a sequence and
+nothing else.
+
+`ocurrencia` is the **same** concept as `token`, licensed for one job: the counting noun when the two
+are being contrasted. *La fracción de ocurrencias que cubren esos $k$ tipos* reads; *la fracción de
+tokens que cubren esos $k$ tipos* invites the reader to hunt for a difference between "tokens" and
+"tipos" that is grammatical rather than conceptual. Outside that contrast, use `token`. And neither
+is `palabra`, which stays the everyday word and is never a unit of counting.
 
 The line is not "English is cooler": it is whether a Spanish term is genuinely in use among people
 who do this work. *Capa* and *pérdida* are; *incrustación* and *atención* are not. Where both
@@ -525,13 +545,23 @@ de exponenciar'` is worth ten minutes of their time.
 |---|---|---|
 | `<W>` | none — wraps the string | A word/phrase the lesson talks *about*. Not italics, not backticks — [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about) |
 | `<Callout>` | `type?`: `note` \| `warning` \| `intuition` \| `math`, `title?` | Server-rendered, no JS |
-| `<Figure>` | `src`, `alt` (both required), `caption?` | |
+| `<Figure>` | `src`, `alt` (both required), `caption?` | Assets live in `public/courses/<course-slug>/`; `src` is the path from `public`. **`caption` and `alt` are plain text** — no markdown, no LaTeX, so write `1/i`, not `$1/i$` |
 | `<Details summary="…">` | `summary` required | Native `<details>`; use for long derivations |
 | `<ColabLink notebook="…">` | URL, or `github/user/repo/blob/main/nb.ipynb` | Block 5's escape hatch to a GPU |
 | `<Explorable id="…" caption?="…">` | `id` must be a registered widget | Lazy-loaded on the lesson route only |
 | `<PyCell code={`…`} packages?={[…]}>` | `code` is a **prop, not children** | Requires `hasCode: true` |
 | `<Quiz id="…">` | `id` must match a frontmatter question | Requires `hasQuiz: true` |
 | `<CodeChallenge id="…">` | `id` must match a frontmatter challenge | Also satisfies `hasCode: true` |
+
+**Static diagrams are SVG, hand-written, and dark-only.** A geometric argument the prose is already
+making — the rectangles under $1/x$ in Block 1 lesson 3 — is worth a picture, and an SVG committed to
+`public/courses/dl-nlp/` is the cheapest one: no build step, no raster to regenerate at 2×, and it
+scales to a 360px phone by itself. Two constraints. The site has **one theme** (a single `:root` in
+`globals.css`, no toggle), so hardcode the palette's hex values — `#4edea3`, `#86948a`, `#bbcabf` —
+and leave the background transparent so the figure sits on whatever surface hosts it, including a
+`<Details>`. And `<Figure>` renders through `<img>`, which cannot reach the page's CSS variables, so
+`currentColor` and `var(--text)` silently render as black. Check the file at 360px before shipping:
+label text below 12px in the source is unreadable once the image scales down.
 
 **Widget ids** ([`widget-ids.ts`](../../src/features/courses/widgets/widget-ids.ts)) — an id not on
 this list is a hard lint failure:
@@ -590,9 +620,18 @@ These cost real time the first time. Read them before writing, not after.
 - **YAML frontmatter with LaTeX: single-quote it.** `prompt: '¿Cuál es $\sigma(x)$?'` — double
   quotes make YAML interpret `\s` as an escape. Multi-line prose uses a `|` block scalar.
 
-- **Frontmatter text is markdown, not MDX.** Quiz prompts, options and explanations render through
-  `react-markdown`, so a literal `<UNK>` inside backticks is safe there — while the same thing in
-  the prose body is JSX and needs escaping. Two different parsers, two different rules.
+- **Frontmatter text goes through the same MDX compiler the body does.** Quiz prompts, options and
+  explanations are compiled by `compileMDX` with the body's own remark/rehype plugins
+  ([`src/lib/courses/quiz/render.tsx`](../../src/lib/courses/quiz/render.tsx)) — that is why LaTeX
+  and `<W>` work there. One parser, one set of rules: whatever needs escaping in the body needs
+  escaping in a quiz prompt too.
+
+- **An angle-bracketed special token needs escaping, everywhere.** A bare `<UNK>` is an undefined
+  JSX component, which is a hard build failure and not an obvious one — the error names the
+  component, not the lesson. Write it `<W>\<UNK></W>`, and if a construct ever refuses the escape,
+  the `&lt;UNK&gt;` entity always works. Backticks are not the way out: they mean Python
+  ([NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)), and `<UNK>` is a
+  string the lesson talks about, so it belongs in `<W>` like any other mention.
 
 - **A `#` inside a fenced Python block is not a heading.** The outline extractor is fence-aware, so
   comments in code cells are safe.

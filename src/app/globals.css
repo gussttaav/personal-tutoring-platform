@@ -136,7 +136,15 @@ body::after {
 
 /* ─── Custom scrollbar (Emerald Nocturne style) ──────────────────────────── */
 
-::-webkit-scrollbar { width: 6px; }
+/* `width` only governs VERTICAL scrollbars; a horizontal one takes its thickness from
+   `height`. Missing it here, every sideways-scrolling box fell back to the browser's
+   chunky default — which is why _styles/katex.css and the lesson.css block for
+   `pre` / table wrappers each re-declare `height: 6px` for one more selector. The
+   course code cell was the case none of them caught: it is a `div`, not a `pre`.
+   Fixing the base rule covers all four and anything added later.
+   NB (per katex.css): do NOT add `scrollbar-width` alongside these — in Chromium it
+   disables the ::-webkit- pseudo-elements and reverts to the default gray bar. */
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border-variant); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--green); }

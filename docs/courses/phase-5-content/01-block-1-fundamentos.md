@@ -36,7 +36,7 @@ here; STATUS stays phase-level.
 
 - [x] 1. `texto-como-numeros`
 - [x] 2. `tokenizacion`
-- [ ] 3. `vocabulario-oov`
+- [x] 3. `vocabulario-oov`
 - [ ] 4. `one-hot`
 - [ ] 5. `bolsa-de-palabras`
 - [ ] 6. `embeddings-densos`
