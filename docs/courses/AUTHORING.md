@@ -474,8 +474,18 @@ existe un punto intermedio* is right, because those are words. **It is the claim
 precise, not the illustrations.**
 
 This row went in after Block 1 lesson 4 rather than before it, against the rule at the end of this
-section, and the cost was exactly what that rule predicts: three finished lessons calling an entry
-of $V$ a *palabra* between thirty and forty times each, to be corrected afterwards.
+section, and the cost was exactly what that rule predicts: three finished lessons to reread and
+correct. What the retrofit found is worth keeping, because it is not what the word counts suggested.
+Lesson 2 needed **no term swaps at all** — its thirty-odd *palabras* name a tokenisation *strategy*
+(«cortar por palabras», «el vocabulario de palabras no se satura»), which is that lesson's subject,
+and replacing them would have broken it. Lesson 3 needed eight, every one of them a *palabra* with a
+number attached, in the lesson whose whole topic is that tokens and tipos are counted differently.
+
+So the rule to carry forward is narrower than "avoid `palabra`": **the violation is `palabra` used as
+a counted unit**, and a grep is not enough to find it. Lesson 3 also shows where the seam falls —
+before $M$ **tipos** is defined, a count has no formal name yet, so it says `cadena distinta` (which
+lesson 2 already established) and the definition then names what the reader has been counting. That
+is better than either reaching forward to `tipo` or leaving `palabra` in place.
 
 The line is not "English is cooler": it is whether a Spanish term is genuinely in use among people
 who do this work. *Capa* and *pérdida* are; *incrustación* and *atención* are not. Where both

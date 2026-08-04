@@ -47,7 +47,8 @@ challenges: []
 
 La lección anterior, dedicada a la tokenización, terminó con la consecuencia inevitable de construir
 un vocabulario finito. Fijada la tokenización $\tau$, $V$ es el conjunto de tokens distintos del corpus
-con el que lo construyes, y esa lista nunca puede contenerlo todo. Tarde o temprano llega un
+con el que lo construyes —palabras enteras o trozos de palabra, según lo que $\tau$ decidiera— y
+esa lista nunca puede contenerlo todo. Tarde o temprano llega un
 token que no pertenece a $V$, y sobre él $r$ deja de estar definida. Entender por qué ocurre exige
 mirar el corpus desde otro ángulo: saber qué tokens aparecen es la mitad de la información, y la otra
 mitad es con qué frecuencia aparece cada uno.
@@ -58,28 +59,28 @@ fuera y, en consecuencia, cada cuánto se encontrará el modelo con palabras fue
 cómo se reparten las frecuencias en un corpus, cómo ese reparto condiciona la construcción de $V$, y
 qué hacer con los tokens que quedaron fuera de él.
 
-Cuenta las palabras de cualquier texto en español y aparece siempre la misma escena. En la cabeza, un
+Cuenta los tokens de cualquier texto en español y aparece siempre la misma escena. En la cabeza, un
 puñado de piezas que salen sin parar: <W>de</W>, <W>la</W>, <W>que</W>, <W>el</W>, <W>en</W>, y la
 puntuación. En la cola, una multitud que aparece una sola vez en todo el texto y no vuelve:
 <W>bibliotecario</W>, <W>criptomoneda</W>, <W>monasterio</W>. En el corpus de juguete con el que
 trabajarás en esta lección, 237 tokens en total, el más frecuente sale 19 veces y 65 de las 104
-palabras distintas salen exactamente una vez.
+cadenas distintas salen exactamente una vez.
 
-Es una sola observación, y tira en dos direcciones opuestas. Las palabras frecuentes son tan pocas
+Es una sola observación, y tira en dos direcciones opuestas. Las cadenas frecuentes son tan pocas
 que guardarlas todas sale casi gratis; las raras son tantas que guardarlas todas es imposible. Y la parte incómoda es que casi todo lo que te interesa de una frase vive en la
 cola: los nombres propios, los términos técnicos, las palabras que se inventaron el mes pasado.
 
 <Callout type="intuition" title="La idea en una frase">
-Unas pocas palabras se llevan la mayor parte del texto y casi todas las palabras distintas aparecen
-una sola vez. Cualquier vocabulario que quepa en memoria deja fuera muchísimas palabras, pero solo
-una pequeña fracción del texto. Esa asimetría es, a la vez, lo que hace viable un vocabulario finito y lo que lo hace mentir.
+Unas pocas cadenas se llevan la mayor parte del texto y casi todas las distintas aparecen una sola
+vez. Cualquier vocabulario que quepa en memoria deja fuera muchísimas, pero solo una pequeña
+fracción del texto. Esa asimetría es, a la vez, lo que hace viable un vocabulario finito y lo que lo hace mentir.
 </Callout>
 
-## La forma que tiene la frecuencia de las palabras
+## La forma que tienen las frecuencias de un corpus
 
 Contar exige separar dos cosas que hasta ahora iban juntas. Aplica $\tau$ a un corpus y obtienes una
 secuencia de $T$ tokens; cada uno es una **ocurrencia**, y las repeticiones cuentan cada vez.
-Agrúpalos por cadenas iguales y obtienes $M$ **tipos**: las palabras distintas, contadas una sola
+Agrúpalos por cadenas iguales y obtienes $M$ **tipos**: las cadenas distintas, contadas una sola
 vez. En <W>la escuela de la plaza</W> hay cinco tokens y cuatro tipos, porque <W>la</W> sale dos
 veces. Siempre $M \leq T$, y en un corpus real $M$ es muchísimo menor.
 
@@ -177,7 +178,7 @@ las demás.
 El precio de bajar $k$ es el texto que queda al otro lado del corte, la fracción
 $1 - \text{cob}(k)$ de las ocurrencias. Medida así parece pequeña, y ese es el problema: la misma
 decisión, medida sobre tipos, deja fuera a la mayoría del idioma. Con $M = 100\,000$ y $k = 31\,600$
-pierdes el 10 % de las ocurrencias y el 68 % de las palabras distintas. Y no son un 68 %
+pierdes el 10 % de las ocurrencias y el 68 % de los tipos. Y no son un 68 %
 cualquiera: los tipos que caen son los de la cola —nombres propios, tecnicismos, palabras nuevas—,
 aquello que hace que una frase diga algo en lugar de otra cosa. Un corte que suena barato en tokens
 está tirando justo la parte informativa.
@@ -241,7 +242,7 @@ $$
 
 Al ser $\beta < 1$, el crecimiento se frena: duplicar el corpus multiplica los tipos por
 $2^{\beta} \approx 1.4$, no por dos. Pero nunca se para. Siempre hay tipos nuevos, y la proporción
-de los que aparecen una sola vez se mantiene alta por muchos millones de palabras que leas.
+de los que aparecen una sola vez se mantiene alta por muchos millones de tokens que leas.
 
 Compáralo con el vocabulario de caracteres de la lección anterior, que sí se satura con un par de
 páginas: el alfabeto está cerrado y el idioma no. Las palabras fuera de vocabulario no son un defecto de

@@ -104,6 +104,11 @@ Cada token es, por tanto, una cadena no vacía de caracteres, y el vocabulario $
 mano: lo induce $\tau$ al recorrer un **corpus**, la colección de textos que se reúne de antemano
 para construirlo.
 
+De ahí sale algo que el resto del bloque da por sabido. Cada **entrada** de $V$ es un token, y qué
+sea depende de $\tau$: con un tokenizador de palabras las entradas son palabras enteras, y con uno de
+subpalabras son trozos de palabra, de modo que <W>dámelo</W> puede ocupar tres. Una entrada del
+vocabulario no es, por tanto, lo mismo que una palabra.
+
 A $\tau$ le pedimos dos cosas. **Determinismo**, por la misma
 razón que en la lección anterior, sobre representar el lenguaje: si $\tau$ cortara hoy distinto que
 ayer, lo que el modelo aprendió dejaría de corresponderse con lo que recibe. Y **reconstrucción**:
