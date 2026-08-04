@@ -435,6 +435,7 @@ plain. Never italicise the Spanish terms.
 | vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
 | tipo — one distinct entry; *token* / ocurrencia — each appearance of one | `tipo`, `token`, `ocurrencia` | *type*; `token` for both senses |
+| an element of the vocabulary $V$ | `entrada del vocabulario`, then `entrada` | palabra, término |
 | the place an element holds in an ordered sequence | posición | puesto, rango, ranking |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
@@ -454,6 +455,27 @@ are being contrasted. *La fracción de ocurrencias que cubren esos $k$ tipos* re
 tokens que cubren esos $k$ tipos* invites the reader to hunt for a difference between "tokens" and
 "tipos" that is grammatical rather than conceptual. Outside that contrast, use `token`. And neither
 is `palabra`, which stays the everyday word and is never a unit of counting.
+
+`entrada del vocabulario` — the row that every representation lesson leans on, and the one that was
+missing longest. From Block 1 lesson 2 the elements of $V$ are whatever $\tau$ produced, so under a
+subword tokeniser an entry is a *piece* of a word: <W>dámelo</W> may be three of them. That makes
+*una dimensión por palabra* false as written and *una dimensión por entrada* true, and the
+difference is not cosmetic — a window of $n$ tokens is not a window of $n$ words, so the $\lvert V
+\rvert^{n}$ count in the one-hot lesson is a count over entries or it is wrong. The test is one
+question: **would the sentence still have to hold under a subword tokeniser?** If it would, it
+cannot say `palabra`.
+
+That leaves three words on three jobs, and they are genuinely three things: `token` is what $\tau$
+emits, `tipo` is a distinct string counted by $M$, `entrada` is a member of the vocabulary someone
+chose — the same separation [NOTATION.md](NOTATION.md) already makes when it says $M$ belongs to the
+corpus and $\lvert V \rvert$ to the vocabulary built from it. `palabra` keeps exactly one job:
+the everyday word inside examples that are literally words. *Entre <W>casa</W> y <W>gato</W> no
+existe un punto intermedio* is right, because those are words. **It is the claims that have to be
+precise, not the illustrations.**
+
+This row went in after Block 1 lesson 4 rather than before it, against the rule at the end of this
+section, and the cost was exactly what that rule predicts: three finished lessons calling an entry
+of $V$ a *palabra* between thirty and forty times each, to be corrected afterwards.
 
 The line is not "English is cooler": it is whether a Spanish term is genuinely in use among people
 who do this work. *Capa* and *pérdida* are; *incrustación* and *atención* are not. Where both
@@ -696,6 +718,9 @@ Copy this into the PR description.
 - [ ] Spanish typography: raya glued (`—así—`), opening `¿` and `¡`, decimal comma in prose
 - [ ] **One term per concept**, matching the §5 terminology tables; `modelo` / `red neuronal` /
       `sistema` used for their own senses, not as synonyms; anglicisms italicised on first use only
+- [ ] **`entrada` for a member of $V$, never `palabra`** — every claim that would still have to hold
+      under a subword tokeniser says `entrada`, `token` or `tipo`; `palabra` only inside examples
+      that are literally words
 - [ ] **Every acronym expanded on first use in *this* lesson** — OOV, BPE, BPTT, TF-IDF, MLP, RNN —
       even if an earlier lesson already expanded it
 - [ ] Every derivation shown, not asserted
