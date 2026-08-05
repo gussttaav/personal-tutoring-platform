@@ -19,7 +19,7 @@ Tempting to skip. Skipping it means students never understand *what* feeds the n
 | 2 | `tokenizacion` | Tokenización: palabras, caracteres, subpalabras | `tokenizer-playground` | 1 | 4 |
 | 3 | `vocabulario-oov` | Vocabulario, frecuencia y el problema OOV | — | 1 | 4 |
 | 4 | `one-hot` | One-hot encoding y la maldición de la dimensionalidad | `onehot-vs-embedding` | 1 | 4 |
-| 5 | `bolsa-de-palabras` | Bolsa de palabras y TF-IDF | — | 2 | 4 |
+| 5 | `bolsa-de-palabras` | Bolsa de palabras y TF-IDF | `bag-of-words` | 1 | 4 |
 | 6 | `embeddings-densos` | Representaciones densas: la idea central | `embedding-projection` | 1 | 4 |
 | 7 | `word2vec` | Word2Vec: skip-gram y CBOW | — | 1 | 5 |
 | 8 | `glove-y-limites` | GloVe y los límites de los embeddings estáticos | `embedding-projection` | 1 | 4 |
@@ -38,7 +38,7 @@ here; STATUS stays phase-level.
 - [x] 2. `tokenizacion`
 - [x] 3. `vocabulario-oov`
 - [x] 4. `one-hot`
-- [ ] 5. `bolsa-de-palabras`
+- [x] 5. `bolsa-de-palabras`
 - [ ] 6. `embeddings-densos`
 - [ ] 7. `word2vec`
 - [ ] 8. `glove-y-limites`

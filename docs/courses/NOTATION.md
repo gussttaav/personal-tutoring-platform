@@ -93,6 +93,7 @@ prose immediately after.
 | $\tau : \Sigma^{*} \to V^{*}$ | a tokeniser — a string to a sequence of tokens |
 | $r : V \to \mathbb{R}^{d}$ | a representation function: one token to one vector |
 | $d$, $D$, $N$ | a document, the corpus, $\lvert D \rvert$ |
+| $T_d$ | number of token occurrences in the document $d$ |
 | $C$ | corpus length, in characters |
 | $\bar{\ell}$ | mean token length, in characters |
 | $M$ | number of distinct types in the corpus |
@@ -103,6 +104,8 @@ prose immediately after.
 | $T'$, $M'$, $U$ | the same counts on a *held-out* text: its tokens, its types, and the set of them |
 | $\texttt{<UNK>}$ | the token every out-of-vocabulary word collapses onto |
 | $\text{tf}(t,d)$, $\text{df}(t)$ | term frequency, document frequency |
+| $\text{idf}(t)$, $\text{tfidf}(t,d)$ | inverse document frequency, and the weight built from the two |
+| $\mathbf{x}_d \in \mathbb{R}^{\lvert V \rvert}$ | the vector of the document $d$ — counts in a bag of words, weights in TF-IDF |
 | $\mathbf{e}_w \in \mathbb{R}^{d_{\text{model}}}$ | the embedding of word $w$ |
 | $\mathbf{o}_w \in \{0,1\}^{\lvert V \rvert}$ | one-hot encoding of $w$ |
 | $\cos(\mathbf{u}, \mathbf{v})$ | cosine similarity |
@@ -160,6 +163,14 @@ rows up in this table and load-bearing throughout lesson 2 ($T = C/\bar{\ell}$);
 function one lesson later is the drift this file exists to prevent, and italic uppercase means a
 **set** by §1 anyway, not a function. `cob` collides with nothing, stays roman as §1 requires for
 functions, and the lesson introduces it in the same breath as the Spanish word it abbreviates.
+
+**$t$ is a term inside $\text{tf}(t,d)$ and $\text{df}(t)$, and a position everywhere else.** §2
+fixes the sequence position as a subscript $t$, and Block 1 lesson 4 already writes
+$\sum_{t=1}^{T}\mathbf{o}_{w_t}$ over the positions of a document; the TF-IDF row above fixes the
+other reading, and both spellings are the ones the literature uses. Block 1 lesson 5, on the bag of
+words, is the one lesson that needs both: it writes the sum over positions first, **says at the
+switch which $t$ it means from then on**, and uses $t$ for the term for the rest of the file. Any
+later lesson needing both does the same — same rule as $d$ below, and as $\mathbf{c}$ in Block 4.
 
 $d$ is a document in the TF-IDF lessons and the dimension of $\mathbb{R}^d$ in the representation
 ones. The two never appear in the same equation; the lesson that needs both says which it means, in

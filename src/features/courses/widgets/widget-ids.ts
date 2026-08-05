@@ -17,6 +17,8 @@ export const WIDGET_IDS = [
   "tokenizer-playground",
   "onehot-vs-embedding",
   "embedding-projection",
+  // COURSE-P5-01 — Block 1 lesson 5 (bolsa de palabras).
+  "bag-of-words",
   "activation-explorer",
   "perceptron-boundary",
   "gradient-descent-2d",

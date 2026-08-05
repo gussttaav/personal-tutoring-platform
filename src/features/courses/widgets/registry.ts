@@ -28,6 +28,8 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "tokenizer-playground": dynamic(() => import("./nlp/TokenizerPlayground"), { ssr: false }),
   "onehot-vs-embedding": dynamic(() => import("./nlp/OneHotVsEmbedding"), { ssr: false }),
   "embedding-projection": dynamic(() => import("./nlp/EmbeddingProjection"), { ssr: false }),
+  // COURSE-P5-01 — Block 1 lesson 5 (bolsa de palabras).
+  "bag-of-words": dynamic(() => import("./nlp/BagOfWords"), { ssr: false }),
   "activation-explorer": dynamic(() => import("./nn/ActivationExplorer"), { ssr: false }),
   "perceptron-boundary": dynamic(() => import("./nn/PerceptronBoundary"), { ssr: false }),
   "gradient-descent-2d": dynamic(() => import("./nn/GradientDescent2D"), { ssr: false }),
