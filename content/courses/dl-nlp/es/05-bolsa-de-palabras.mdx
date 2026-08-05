@@ -92,7 +92,7 @@ sentido de la lección 3, sobre vocabulario y frecuencia.
 La **bolsa de palabras** de $d$ es la suma de los vectores one-hot de sus tokens:
 
 $$
-\mathbf{x}_d = \sum_{t=1}^{T_d} \mathbf{o}_{w_t} \in \mathbb{R}^{\lvert V \rvert}
+\mathbf{x}_d = \sum_{t=1}^{T_d} \mathbf{o}_{w_t} \in \mathbb{R}^{\lvert V \rvert}.
 $$
 
 El índice $t$ recorre aquí las $T_d$ posiciones del documento, y el corpus entero pasa a ser una
@@ -101,7 +101,7 @@ matriz de forma $N \times \lvert V \rvert$, una fila por documento.
 Cada coordenada del vector indica cuántas veces aparece un término del vocabulario:
 
 $$
-(\mathbf{x}_d)_i = \sum_{t=1}^{T_d} (\mathbf{o}_{w_t})_i = \lvert\{\, t \le T_d \;:\; w_t = w_i \,\}\rvert
+(\mathbf{x}_d)_i = \sum_{t=1}^{T_d} (\mathbf{o}_{w_t})_i = \lvert\{\, t \le T_d \;:\; w_t = w_i \,\}\rvert,
 $$
 
 porque $(\mathbf{o}_{w_t})_i$ vale $1$ cuando el token de la posición $t$ es $w_i$, y $0$ en cualquier otro caso.
@@ -144,7 +144,7 @@ saber que $t$ está en este documento. Elige un documento al azar de entre los $
 misma probabilidad; la probabilidad de que contenga $t$ es
 
 $$
-p(t) = \frac{\text{df}(t)}{N}
+p(t) = \frac{\text{df}(t)}{N}.
 $$
 
 Si $p(t) = 1$ —el término sale en todos— enterarte de que está en este no te ha dicho nada, y la
@@ -155,7 +155,7 @@ se anule en $p = 1$ es un logaritmo cambiado de signo, y esa cantidad es la info
 suceso. De ahí sale la **frecuencia inversa de documento**:
 
 $$
-\text{idf}(t) = -\log p(t) = \log \frac{N}{\text{df}(t)}
+\text{idf}(t) = -\log p(t) = \log \frac{N}{\text{df}(t)}.
 $$
 
 Que sea la *única* medida con esas dos propiedades es un teorema de teoría de la información que
@@ -166,7 +166,7 @@ El peso completo, *term frequency–inverse document frequency* (TF-IDF), es el 
 medidas que la intuición pedía:
 
 $$
-\text{tfidf}(t, d) = \text{tf}(t, d) \cdot \log \frac{N}{\text{df}(t)}
+\text{tfidf}(t, d) = \text{tf}(t, d) \cdot \log \frac{N}{\text{df}(t)},
 $$
 
 y el vector del documento pasa a tener $\text{tfidf}(w_i, d)$ en su coordenada $i$, con la misma
@@ -203,7 +203,7 @@ Toma un documento $d_1$ y pégalo consigo mismo para formar $d_2$, con lo que
 $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. La distancia entre los dos vale
 
 $$
-\lVert \mathbf{x}_{d_2} - \mathbf{x}_{d_1} \rVert = \lVert \mathbf{x}_{d_1} \rVert
+\lVert \mathbf{x}_{d_2} - \mathbf{x}_{d_1} \rVert = \lVert \mathbf{x}_{d_1} \rVert,
 $$
 
 que es tan grande como el propio documento, cuando los dos textos dicen exactamente lo mismo. La
@@ -215,14 +215,14 @@ del ángulo que forman. Para dos vectores no nulos $\mathbf{u}$ y $\mathbf{v}$, 
 coseno** es su producto escalar dividido por el producto de sus normas:
 
 $$
-\cos(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u}^{\top} \mathbf{v}}{\lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert}
+\cos(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u}^{\top} \mathbf{v}}{\lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert}.
 $$
 
 La propiedad que se le pedía se comprueba en una línea. Multiplica uno de los dos por un número
 $\alpha > 0$: el numerador queda multiplicado por $\alpha$, la norma del denominador también, y
 
 $$
-\cos(\alpha \mathbf{u}, \mathbf{v}) = \frac{\alpha \, \mathbf{u}^{\top} \mathbf{v}}{\alpha \lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert} = \cos(\mathbf{u}, \mathbf{v})
+\cos(\alpha \mathbf{u}, \mathbf{v}) = \frac{\alpha \, \mathbf{u}^{\top} \mathbf{v}}{\alpha \lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert} = \cos(\mathbf{u}, \mathbf{v}).
 $$
 
 De modo que el documento pegado consigo mismo tiene similitud $1$ con el original: la respuesta

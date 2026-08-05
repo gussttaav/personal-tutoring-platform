@@ -1325,6 +1325,38 @@ solved all four, and only tells the truth on a later visit.
   If the two ever disagree the counter changes on reload, which is the original bug in a new hat.
 - Not yet committed to a branch/PR (**local**).
 
+**COURSE-P5-00 — display maths is punctuated** (2026-08-05). User-reported: *«equations in the
+ambient `$$ … $$` are not punctuated. If there is an equation that finishes a sentence, there is no
+period at the end of the formula.»* Correct, and it was true of 38 of the 39 display blocks in
+Block 1 — the only punctuated one being lesson 1's `f : \mathbb{R}^d \to \mathbb{R}^k,`, which is
+what made the course inconsistent with itself rather than merely unpunctuated.
+
+- **The rule is that a display equation is a clause, not a picture**, so it carries the sentence's
+  punctuation, as the last character INSIDE the fence: `.` when the sentence ends there, `,` when
+  the next clause would take a pause in prose, nothing when the sentence runs straight through it.
+  In AUTHORING §5 (with the three cases and their examples), §8 (the two placements — after
+  `\end{cases}`, outside `\text{…}`), §10 (checklist) and the template's own example equation,
+  which is a comma case and now shows one.
+- **29 periods, 8 commas, 1 left bare** across lessons 1–5. The bare one is lesson 4's
+  $\approx 4 \times 10^{-13}$: the equation is the object of «el modelo llega a ver …» and the
+  sentence finishes on the line below it. The comma cases are the judgement in this change — they
+  were decided by reading the equation and the line after it aloud as one sentence, which is also
+  the test the guide now states.
+- **A sixth advisory pass**, `src/lib/courses/validate-math-punctuation.ts` (+ 15 unit tests),
+  wired into `lint-content.ts` next to notation/structure/voice. Warns, never fails.
+- **It fires on ONE case and stays quiet on every other**, per the NOTATION.md bar: unpunctuated
+  block + next paragraph opening with a capital (or `¿`/`¡`), which in Spanish is always a new
+  sentence. A block followed by a heading, a `<Details>`, a table or a list usually ends a sentence
+  too, and *usually* is the whole problem — lesson 3 has a sentence-ending equation before a
+  `<Details>` that this pass will never see, and review holds it. Whether a mid-sentence block wants
+  a comma or nothing needs the grammar of the next clause and is not decidable from the source.
+- **`00-pipeline-fixture.mdx` was left alone** (scope decision: it is a renderer fixture, not
+  prose), so it carries **two permanent warnings** in the content report. Two characters would clear
+  them if that noise ever becomes the thing that trains authors to skip the report.
+- Word counts, budget, notation, structure and voice warnings all unchanged — `prose()` strips
+  display maths before counting, so punctuation inside a fence is invisible to every other pass.
+- Not yet committed to a branch/PR (**local**).
+
 **COURSE-P2-02 — `onehot-vs-embedding` removed** (2026-08-05). Block 1 lesson 4 shipped with a
 hand-written SVG (`one-hot-equidistancia.svg`) instead of the explorable, which left the widget with
 no consumer but the draft render fixture.

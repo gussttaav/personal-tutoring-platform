@@ -71,7 +71,7 @@ ahora «unidad» quiere decir «palabra»; la lección 2, sobre tokenización, m
 lo que parece. Un texto es entonces una secuencia finita de elementos de $V$:
 
 $$
-s = (w_1, w_2, \dots, w_T), \qquad w_t \in V, \quad T \in \mathbb{N}
+s = (w_1, w_2, \dots, w_T), \qquad w_t \in V, \quad T \in \mathbb{N}.
 $$
 
 Una red, en cambio, es una función entre espacios de números reales. Podemos escribir su tipo sin
@@ -90,14 +90,14 @@ $\mathbb{R}^d$. Nada convierte un elemento de $V$ en uno de $\mathbb{R}^d$ por s
 una función que salve esa distancia:
 
 $$
-r : V \to \mathbb{R}^d
+r : V \to \mathbb{R}^d,
 $$
 
 y con ella cada palabra de la secuencia se vuelve un vector, de modo que el texto entero se
 convierte en una matriz de números, una fila por posición, $d$ columnas por palabra:
 
 $$
-X = \big(\, r(w_1),\; r(w_2),\; \dots,\; r(w_T) \,\big) \in \mathbb{R}^{T \times d}
+X = \big(\, r(w_1),\; r(w_2),\; \dots,\; r(w_T) \,\big) \in \mathbb{R}^{T \times d}.
 $$
 
 Todo este bloque trata de cómo construir $r$. Antes de proponer ninguna, conviene fijar qué se le
@@ -131,7 +131,7 @@ quedarse con el índice. Con $V = \{\textit{casa}, \textit{gato}, \textit{perro}
 alfabético:
 
 $$
-r_{\text{ord}}(\textit{casa}) = 1, \qquad r_{\text{ord}}(\textit{gato}) = 2, \qquad r_{\text{ord}}(\textit{perro}) = 3
+r_{\text{ord}}(\textit{casa}) = 1, \qquad r_{\text{ord}}(\textit{gato}) = 2, \qquad r_{\text{ord}}(\textit{perro}) = 3.
 $$
 
 Supongamos por un momento que $V$ es cerrado, que no llegará ninguna palabra nueva. Con esa
@@ -144,7 +144,7 @@ mala, porque cumplirlas no era todo lo que hacía falta. Al meter las palabras e
 heredan su estructura, y esa estructura afirma cosas:
 
 $$
-\lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{gato}) \,\rvert = 1 \;<\; \lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{perro}) \,\rvert = 2
+\lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{gato}) \,\rvert = 1 \;<\; \lvert\, r_{\text{ord}}(\textit{casa}) - r_{\text{ord}}(\textit{perro}) \,\rvert = 2.
 $$
 
 Leído en voz alta: <W>casa</W> se parece más a <W>gato</W> que a <W>perro</W>. Y también que <W>gato</W> está entre las

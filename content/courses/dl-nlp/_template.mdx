@@ -123,11 +123,15 @@ TODO — las matemáticas, completas. La derivación se muestra, no se afirma: e
 este curso. Di la forma de cada array la primera vez que aparece.
 
 $$
-\mathbf{h}^{(l)} = \sigma\!\left(\mathbf{W}^{(l)} \mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}\right)
+\mathbf{h}^{(l)} = \sigma\!\left(\mathbf{W}^{(l)} \mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}\right),
 $$
 
 {/* Las vallas `$$` van en su propia línea. En una sola línea, `$$…$$` se renderiza
-    como matemática EN LÍNEA — y el lint la cuenta así. */}
+    como matemática EN LÍNEA — y el lint la cuenta así.
+
+    La ecuación forma parte de la frase y lleva su puntuación, como último carácter
+    DENTRO de la valla: punto si la frase termina ahí, coma si lo que sigue pediría una
+    pausa —como este «con …»—, nada si la frase la atraviesa. */}
 
 con $\mathbf{W}^{(l)} \in \mathbb{R}^{d_{\text{out}} \times d_{\text{in}}}$.
 

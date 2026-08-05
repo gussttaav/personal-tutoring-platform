@@ -6,6 +6,7 @@
  * COURSE-P3-02 — + the same for every `<CodeChallenge id>`.
  * COURSE-P5-00 — + a second, NON-FATAL phase: per-lesson counts, budget and notation.
  * COURSE-P5-00 — + the voice pass (banned-word families) and the bridge's `---`.
+ * COURSE-P5-00 — + display maths that ends a sentence without punctuating it.
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the
@@ -45,6 +46,7 @@ import { DEFAULT_CONTENT_ROOT, collectMdxFiles } from "@/lib/courses/content-fil
 import { validateAllContent } from "@/lib/courses/registry";
 import { validateChallengeRefs } from "@/lib/courses/validate-challenges";
 import { validateExplorableIds } from "@/lib/courses/validate-explorables";
+import { mathPunctuationWarnings } from "@/lib/courses/validate-math-punctuation";
 import { notationWarnings } from "@/lib/courses/validate-notation";
 import { validatePyCellFlags } from "@/lib/courses/validate-pycells";
 import { validateQuizRefs } from "@/lib/courses/validate-quizzes";
@@ -81,16 +83,18 @@ for (const filePath of files) {
   const skipBudget = isBudgetExempt(source);
   if (skipBudget) exempt += 1;
 
-  // Notation, structure and voice apply to every file, exempt or not. The notation
-  // contract is what keeps Block 2 and Block 5 legible as one course; the structure rule
-  // keeps the authoring scaffolding from reaching the reader; the voice rules keep 40
-  // lessons sounding like one person. None has a "work in progress" excuse, and all are
+  // Notation, structure, punctuation and voice apply to every file, exempt or not. The
+  // notation contract is what keeps Block 2 and Block 5 legible as one course; the structure
+  // rule keeps the authoring scaffolding from reaching the reader; the punctuation rule keeps
+  // a display equation part of its sentence; the voice rules keep 40 lessons sounding like one
+  // person. None has a "work in progress" excuse, and all are
   // cheap to honour from the first draft. Only the BUDGET is skippable, because it is the
   // only one that measures a lesson's size rather than its contract.
   const warnings = [
     ...(skipBudget ? [] : budgetWarnings(counts)),
     ...structureWarnings(source),
     ...notationWarnings(source),
+    ...mathPunctuationWarnings(source),
     ...voiceWarnings(source),
   ];
   if (warnings.length > 0) warned += 1;

@@ -95,7 +95,7 @@ Con eso, un texto es un elemento de $\Sigma^{*}$ y un tokenizador es una funció
 una secuencia de elementos del vocabulario:
 
 $$
-\tau : \Sigma^{*} \to V^{*}, \qquad V \subset \Sigma^{+}
+\tau : \Sigma^{*} \to V^{*}, \qquad V \subset \Sigma^{+}.
 $$
 
 Cada token es, por tanto, una cadena no vacía de caracteres, y el vocabulario $V$ no se declara a
@@ -123,19 +123,19 @@ en caracteres, del token $u$. Como los tokens son trozos del propio texto, sus
 longitudes suman el texto entero:
 
 $$
-\sum_{i=1}^{T} \lvert u_i \rvert = C
+\sum_{i=1}^{T} \lvert u_i \rvert = C.
 $$
 
 Llamemos $\bar{\ell}$ a la longitud media de un token:
 
 $$
-\bar{\ell} = \frac{1}{T}\sum_{i=1}^{T} \lvert u_i \rvert
+\bar{\ell} = \frac{1}{T}\sum_{i=1}^{T} \lvert u_i \rvert.
 $$
 
 El sumatorio que aparece ahí es el mismo que acabamos de igualar a $C$, así que
 
 $$
-\bar{\ell} = \frac{C}{T}, \qquad \text{o lo que es igual,} \qquad T = \frac{C}{\bar{\ell}}
+\bar{\ell} = \frac{C}{T}, \qquad \text{o lo que es igual,} \qquad T = \frac{C}{\bar{\ell}}.
 $$
 
 Esta igualdad resume la primera mitad del compromiso. El texto fija $C$, así que $T$ y $\bar{\ell}$
@@ -148,7 +148,7 @@ $\bar{\ell}$ ronda los cinco caracteres, de modo que la secuencia es aproximadam
 que pueden formarse sobre un alfabeto $\Sigma$ es
 
 $$
-\lvert \Sigma \rvert^{\ell}
+\lvert \Sigma \rvert^{\ell}.
 $$
 
 Es decir, el conjunto de candidatos a formar parte del vocabulario crece exponencialmente con la longitud de las unidades.

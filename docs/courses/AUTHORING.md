@@ -451,6 +451,21 @@ Spanish typography, since this is Spanish prose and half of it differs from Engl
 - **Numbers in prose take the decimal comma and a space for thousands**: `1,5`, `30 000`. Inside
   `$…$` the decimal point stays — `C/3.5` is maths, and maths is set the way NOTATION.md says.
 - **Quotes are `«…»`.** Never `"…"`.
+- **A display equation is part of its sentence and carries that sentence's punctuation.** A `$$…$$`
+  block is not a picture dropped between two paragraphs — it is a clause, and it is read aloud as
+  one. The mark is the **last character inside the fence** (§8 says where exactly), and which mark
+  it is depends on what follows:
+
+  | The sentence… | Mark | From our lessons |
+  |---|---|---|
+  | ends at the equation | `.` | `… \quad T \in \mathbb{N}.` → «Una red, en cambio, …» |
+  | continues with a clause that would take a pause in prose — a «donde …», an apposition, an explicative relative, an independent clause joined by *y*, an explanatory *porque* | `,` | `f : \mathbb{R}^d \to \mathbb{R}^k,` → «donde $d$ es la dimensión…» |
+  | runs straight through the equation, which is its grammatical object | nothing | `… \approx 4 \times 10^{-13}` → «del espacio de entradas.» |
+
+  `pnpm lint:content` warns on the first case — an unpunctuated block whose next paragraph starts
+  with a capital letter. It cannot see the other two, or a block followed by a heading, a
+  `<Details>` or a table; those are held by reading the equation and the next line aloud as one
+  sentence, which is the whole test.
 
 ### Terminology — one term per concept
 
@@ -680,6 +695,16 @@ These cost real time the first time. Read them before writing, not after.
   The lint's equation count follows the same rule, so a lesson that looks equation-heavy but reports
   `0 eq` has its fences inline.
 
+- **The sentence's punctuation goes INSIDE the fence** (§5), as the last character of the last line
+  — never after the closing `$$`, never on a line of its own, where markdown would start a
+  paragraph with a stray full stop. Two placements follow from that and are worth writing down
+  because both look wrong until you see them rendered:
+
+  ```mdx
+  \end{cases}.                          ← after the environment, not inside its last row
+  \lvert V \rvert^{2} \quad \text{números}.   ← outside \text{…}, not \text{números.}
+  ```
+
 - **`rehype-katex` throws on malformed LaTeX, by design.** A missing brace fails `pnpm build` rather
   than shipping a red error box. That is good; it also means `pnpm build` is a LaTeX check.
 
@@ -791,6 +816,9 @@ Copy this into the PR description.
 - [ ] **The five marks do their own jobs**: bold defines, italics emphasises or marks an anglicism,
       `<W>` mentions, `«…»` loosens, backticks are Python
 - [ ] Spanish typography: raya glued (`—así—`), opening `¿` and `¡`, decimal comma in prose
+- [ ] **Every display equation punctuated as part of its sentence** — the mark inside the fence:
+      `.` when the sentence ends there, `,` when the next clause takes a pause, nothing when the
+      sentence runs through it. Read each equation aloud with the line after it
 - [ ] **One term per concept**, matching the §5 terminology tables; `modelo` / `red neuronal` /
       `sistema` used for their own senses, not as synonyms; anglicisms italicised on first use only
 - [ ] **`entrada` for a member of $V$, never `palabra`** — every claim that would still have to hold

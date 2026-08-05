@@ -86,14 +86,14 @@ ocupa la posición $i$, de modo que $f_1 \geq f_2 \geq \dots \geq f_M$. Por cons
 las frecuencias suman el corpus entero:
 
 $$
-\sum_{i=1}^{M} f_i = T
+\sum_{i=1}^{M} f_i = T.
 $$
 
 Ese orden revela una regularidad empírica que aparece en todos los idiomas medidos, la ley de Zipf:
 la frecuencia de un tipo es aproximadamente inversa a su posición,
 
 $$
-f_i \approx \frac{a}{i}
+f_i \approx \frac{a}{i},
 $$
 
 con $a$ una constante que depende del corpus. El segundo tipo sale la mitad de veces que el primero,
@@ -104,20 +104,20 @@ Llamemos **cobertura** de los $k$ tipos más frecuentes, y la escribiremos $\tex
 fracción de ocurrencias del corpus que esos $k$ tipos explican:
 
 $$
-\text{cob}(k) = \frac{1}{T}\sum_{i=1}^{k} f_i
+\text{cob}(k) = \frac{1}{T}\sum_{i=1}^{k} f_i.
 $$
 
 Sustituyendo la aproximación de Zipf, tanto el numerador como $T$ se vuelven sumas de $1/i$:
 
 $$
-\text{cob}(k) \approx \frac{a\sum_{i=1}^{k} 1/i}{a\sum_{i=1}^{M} 1/i} = \frac{\sum_{i=1}^{k} 1/i}{\sum_{i=1}^{M} 1/i}
+\text{cob}(k) \approx \frac{a\sum_{i=1}^{k} 1/i}{a\sum_{i=1}^{M} 1/i} = \frac{\sum_{i=1}^{k} 1/i}{\sum_{i=1}^{M} 1/i}.
 $$
 
 La constante $a$ se cancela, y esas sumas son sumas parciales de la serie armónica, que crecen como
 un logaritmo: $\sum_{i=1}^{k} 1/i \approx \ln k + \gamma$, con $\gamma \approx 0.577$. Por tanto
 
 $$
-\text{cob}(k) \approx \frac{\ln k + \gamma}{\ln M + \gamma}
+\text{cob}(k) \approx \frac{\ln k + \gamma}{\ln M + \gamma}.
 $$
 
 <Details summary="Por qué la suma de 1/i crece como un logaritmo">
@@ -134,7 +134,7 @@ Suma la segunda desigualdad sobre todos los $i$ y la primera desde $i = 2$ —el
 $1$ y se saca aparte— y los rectángulos quedan atrapados:
 
 $$
-\int_{1}^{k+1} \frac{dx}{x} \;\leq\; \sum_{i=1}^{k} \frac{1}{i} \;\leq\; 1 + \int_{1}^{k} \frac{dx}{x}
+\int_{1}^{k+1} \frac{dx}{x} \;\leq\; \sum_{i=1}^{k} \frac{1}{i} \;\leq\; 1 + \int_{1}^{k} \frac{dx}{x}.
 $$
 
 Los dos extremos valen $\ln(k+1)$ y $1 + \ln k$, así que la suma es $\ln k$ más algo que se queda
@@ -147,7 +147,7 @@ Como $\ln M$ ronda $11.5$ para un corpus con cien mil tipos, $\gamma$ es desprec
 la ecuación $\ln k \approx p \ln M$ deja
 
 $$
-k \approx M^{p}
+k \approx M^{p}.
 $$
 
 Ese exponente lo decide todo: la cobertura no se paga en proporción, se paga en potencias. Con $M = 100\,000$ tipos, cubrir la mitad del
@@ -165,7 +165,7 @@ representación es una función $r : V \to \mathbb{R}^{d}$, y una función así 
 tabla con una fila por entrada del vocabulario y $d$ columnas. Son
 
 $$
-\lvert V \rvert \cdot d \quad \text{números}
+\lvert V \rvert \cdot d \quad \text{números}.
 $$
 
 Con $d = 300$, un vocabulario de 30 000 tipos son nueve millones de números; uno de 100 000, treinta
@@ -187,7 +187,7 @@ quedaron fuera. El arreglo estándar es añadir al vocabulario una entrada más 
 ninguna palabra concreta y que las absorbe a todas, escrita <W>\<UNK></W> por *unknown*, desconocida:
 
 $$
-V' = V \cup \{\texttt{<UNK>}\}
+V' = V \cup \{\texttt{<UNK>}\},
 $$
 
 y, antes de representar nada, cada palabra pasa por un filtro que la deja intacta o la sustituye:
@@ -197,7 +197,7 @@ $$
 \begin{cases}
 w & \text{si } w \in V \\
 \texttt{<UNK>} & \text{en caso contrario}
-\end{cases}
+\end{cases}.
 $$
 
 Con eso, $r(\tilde{w})$ está definida para cualquier palabra que llegue. Esa
@@ -214,7 +214,7 @@ medido sobre ese texto y no sobre el corpus original. Entonces
 $$
 \text{oov}_{\text{tok}} = \frac{\lvert\{\, t \le T' \;:\; w_t \notin V \,\}\rvert}{T'},
 \qquad
-\text{oov}_{\text{tipo}} = \frac{\lvert\{\, w \in U \;:\; w \notin V \,\}\rvert}{M'}
+\text{oov}_{\text{tipo}} = \frac{\lvert\{\, w \in U \;:\; w \notin V \,\}\rvert}{M'}.
 $$
 
 A la izquierda hay *posiciones*: si <W>criptomoneda</W> sale diez veces, aporta diez. A la derecha hay
@@ -234,7 +234,7 @@ No funciona, y el motivo tiene su propia regularidad empírica, la ley de Heaps:
 crece con el número de tokens como una potencia, con $c$ una constante del corpus,
 
 $$
-M \approx c \cdot T^{\beta}, \qquad \beta \approx 0.5 \text{–} 0.6
+M \approx c \cdot T^{\beta}, \qquad \beta \approx 0.5 \text{–} 0.6.
 $$
 
 Al ser $\beta < 1$, el crecimiento se frena: duplicar el corpus multiplica los tipos por

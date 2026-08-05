@@ -101,7 +101,7 @@ $$
 \begin{cases}
 1 & \text{si } j = i \\
 0 & \text{si } j \neq i
-\end{cases}
+\end{cases}.
 $$
 
 Es una $r$ como la que pedía la lección 1, con la dimensión fijada por el propio vocabulario:
@@ -113,7 +113,7 @@ posición $i$ y $v$ en la posición $j$, con $i \neq j$. Su producto escalar rec
 $k$ y en cada una encuentra un cero:
 
 $$
-\mathbf{o}_u^{\top} \mathbf{o}_v = \sum_{k=1}^{\lvert V \rvert} (\mathbf{o}_u)_k \, (\mathbf{o}_v)_k = 0
+\mathbf{o}_u^{\top} \mathbf{o}_v = \sum_{k=1}^{\lvert V \rvert} (\mathbf{o}_u)_k \, (\mathbf{o}_v)_k = 0,
 $$
 
 porque el único término que podría no anularse exigiría $k = i$ y $k = j$ a la vez. Los vectores son
@@ -125,7 +125,7 @@ La resta $\mathbf{o}_u - \mathbf{o}_v$ vale $+1$ en la posición $i$, $-1$ en la
 de modo que
 
 $$
-\lVert \mathbf{o}_u - \mathbf{o}_v \rVert^{2} = \sum_{k=1}^{\lvert V \rvert} \big( (\mathbf{o}_u)_k - (\mathbf{o}_v)_k \big)^{2} = 1^{2} + (-1)^{2} = 2
+\lVert \mathbf{o}_u - \mathbf{o}_v \rVert^{2} = \sum_{k=1}^{\lvert V \rvert} \big( (\mathbf{o}_u)_k - (\mathbf{o}_v)_k \big)^{2} = 1^{2} + (-1)^{2} = 2,
 $$
 
 y por tanto $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert = \sqrt{2}$, sean cuales sean $u$ y $v$, y sea
@@ -143,7 +143,7 @@ mirando dónde viven estos vectores.
 Todos ellos cumplen la misma ecuación, porque cada uno tiene un solo $1$:
 
 $$
-\sum_{j=1}^{\lvert V \rvert} (\mathbf{o}_w)_j = 1
+\sum_{j=1}^{\lvert V \rvert} (\mathbf{o}_w)_j = 1.
 $$
 
 Eso es un hiperplano de $\mathbb{R}^{\lvert V \rvert}$, y un hiperplano tiene una dimensión menos que
@@ -161,7 +161,7 @@ tabla, una fila por entrada del vocabulario y $d$ columnas, cuesta $\lvert V \rv
 con $d = \lvert V \rvert$ eso es
 
 $$
-\lvert V \rvert^{2} \quad \text{números}
+\lvert V \rvert^{2} \quad \text{números}.
 $$
 
 Con el vocabulario de subpalabras de la lección 2, sobre tokenización, entre 30 000 y 50 000
@@ -179,7 +179,7 @@ coordenadas y solo una es distinta de cero, así que la parte del vector que lle
 
 $$
 \frac{\text{coordenadas no nulas}}{\text{coordenadas del vector}}
-= \frac{1}{\lvert V \rvert} = \frac{1}{50\,000} = 0{,}00002 = 0{,}002\ \%
+= \frac{1}{\lvert V \rvert} = \frac{1}{50\,000} = 0{,}00002 = 0{,}002\ \%.
 $$
 
 Antes de seguir, un apunte a favor. La lección 1 te pidió que guardaras una observación: allí, añadir
@@ -196,7 +196,7 @@ en total. ¿Cuántas entradas distintas puede recibir? Cada una de las $n$ posic
 de las $\lvert V \rvert$ entradas del vocabulario, con independencia de las demás, así que
 
 $$
-\lvert V \rvert^{n}
+\lvert V \rvert^{n}.
 $$
 
 Pon números de los pequeños: $\lvert V \rvert = 30\,000$ y una ventana de $n = 5$ tokens, que en
