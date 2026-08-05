@@ -45,22 +45,21 @@ challenges: []
 
 {/* COURSE-P5-01 — Bloque 1, lección 4. */}
 
-La lección anterior dejó el vocabulario completamente definido: una lista cerrada de
-$\lvert V \rvert$ entradas, construida a partir de las palabras más frecuentes y completada con
-<W>\<UNK></W> para todo lo que queda fuera. Con eso, $r$ ya puede recibir cualquier texto. Solo
-queda decidir qué vector asignar a cada una de las entradas del vocabulario.
+La lección anterior, sobre vocabulario y frecuencia, dejó el vocabulario completamente definido: 
+una lista cerrada de $\lvert V \rvert$ entradas, construida a partir de las palabras más frecuentes
+y completada con <W>\<UNK></W> para todo lo que queda fuera. Con eso, $r$ ya puede recibir cualquier 
+texto. Solo queda decidir qué vector asignar a cada una de las entradas del vocabulario.
 
-La lección 1, sobre el problema de representar el lenguaje, ya había descartado una posibilidad:
-cuando $d = 1$, el orden de la recta real impone relaciones de cercanía entre palabras que no
-significan nada. La alternativa más directa consiste en no imponer ninguna. Reserva una dimensión
-para cada entrada del vocabulario, con un $1$ en su posición y ceros en todas las demás. Esa
-representación recibe el nombre de *one-hot encoding* y cumple exactamente lo que se le pide, pero
-tiene un coste inmediato: si el vocabulario contiene decenas de miles de entradas, también habrá
-decenas de miles de dimensiones. Esa factura es el asunto de lo que sigue, y no se paga solo en
-memoria.
+Hay una respuesta inmediata a esa pregunta, y la lección existe porque esa respuesta es *correcta*:
+cumple una por una las exigencias que la lección 1, sobre el problema de representar el lenguaje, le
+puso a $r$, y aun así no basta. Tiene nombre —*one-hot encoding*— y lo que queda por hacer con ella
+es ponerle precio. Una parte del precio se ve venir, porque los vectores salen enormes, y es
+precisamente la parte que no importa. La otra aparece al preguntar qué puede aprender un modelo que
+recibe entradas así, y esa no la arregla ninguna máquina más grande.
 
-Mira las mismas tres palabras de aquella lección colocadas de las dos maneras, antes de leer una
-sola fórmula. Sobre la recta, los índices $1$, $2$ y $3$ dejan a <W>gato</W> a distancia $1$ de
+Mira colocadas de las dos maneras las tres palabras con las que aquella lección descartó $d = 1$,
+antes de leer una sola fórmula. Sobre la recta, los
+índices $1$, $2$ y $3$ dejan a <W>gato</W> a distancia $1$ de
 <W>casa</W> y a <W>perro</W> a distancia $2$: hay un medio, y alguien lo ocupa. Con un eje por
 palabra hay tres ejes perpendiculares y cada palabra cae sobre el suyo, en $(1,0,0)$, $(0,1,0)$ y
 $(0,0,1)$. Cuenta cuántos lados distintos tiene el triángulo que forman.
@@ -318,8 +317,8 @@ separado, y no hay corpus para eso. Para salir hacen falta dos cosas a la vez, y
 faltan aquí: muchas menos coordenadas que $\lvert V \rvert$, y coordenadas que signifiquen algo, de
 modo que dos palabras parecidas acaben cerca.
 
-La segunda es la difícil y ocupa el resto del bloque; la lección 6, sobre representaciones densas, es
-donde se ataca. Pero antes hay un cambio de pregunta que sale casi gratis desde aquí. Hasta ahora
+La segunda es la difícil y ocupa el resto del bloque. Pero antes hay un cambio de pregunta que sale
+casi gratis desde aquí, y conviene hacerlo ahora, con los vectores one-hot todavía a la vista. Hasta ahora
 $r$ representa *una* palabra, y lo que un sistema suele necesitar es el vector de un documento
 entero: una reseña, un correo, una noticia. La forma más directa de obtenerlo es sumar los vectores
 one-hot de todos sus tokens, $\sum_{t=1}^{T} \mathbf{o}_{w_t}$, donde $t$ recorre las $T$ posiciones

@@ -46,11 +46,10 @@ challenges: []
 {/* COURSE-P5-01 — Bloque 1, lección 5. */}
 
 La lección anterior, sobre one-hot encoding y la maldición de la dimensionalidad, terminó cambiando
-la pregunta. Hasta ahí, $r$ representaba una entrada del vocabulario; lo que un sistema suele
-necesitar es el vector de un documento entero —una reseña, un correo, una noticia—, y la vía más
-corta estaba a la vista: sumar los vectores one-hot de todos sus *tokens*. Cada
-coordenada pasa entonces a contar cuántas veces sale su entrada, y el vector deja de ser mudo,
-porque la coordenada de <W>balón</W> ya distingue una crónica deportiva de una receta.
+la pregunta: el vector que hace falta no es el de una entrada del vocabulario, sino el de un
+documento entero, y se obtiene sumando los one-hot de todos sus *tokens*. La suma cuesta una línea y
+cambia la naturaleza de lo que sale. Los sumandos eran vectores de ceros y un uno, que no afirmaban
+nada; el resultado es un vector de cuentas, y una cuenta sí afirma algo.
 
 Deja de ser mudo y empieza a decir la cosa equivocada. La lección 3, sobre vocabulario y frecuencia,
 midió cómo se reparten las ocurrencias: unas pocas entradas se llevan la mayor parte del texto. Son
@@ -372,15 +371,13 @@ que ese documento tiene de propio, y la comparación entre dos funciona, sin ent
 ajustar un solo parámetro. Sigue en producción cincuenta años después, y con razón.
 
 Lo que no arregla es nada de lo que la lección anterior dejó pendiente, porque no toca la
-representación de las entradas. El vector sigue teniendo $\lvert V \rvert$ coordenadas y sigue
-siendo casi todo ceros, y las coordenadas siguen siendo independientes: <W>coche</W> y
-<W>automóvil</W> ocupan dos ejes distintos, igual de perpendiculares que <W>coche</W> y
-<W>harina</W>. La consecuencia se lee en las similitudes que acabas de calcular: dos documentos que hablan
-de lo mismo con distintas palabras no comparten ninguna entrada con peso positivo, y su coseno
-es exactamente $0$ —el mismo número que si hablaran de cosas opuestas.
-
-La equidistancia de la lección anterior sigue intacta un nivel más abajo: se ha aprendido a comparar
-documentos, no entradas del vocabulario. Para que dos entradas parecidas queden cerca hay que
-abandonar la idea de que cada una tenga su propio eje y dejar que compartan coordenadas, muchas
-menos que $\lvert V \rvert$ y ninguna asignada a nadie. Eso es un *embedding*, y la lección 6, sobre
-representaciones densas, es donde se construye.
+representación de las entradas: el vector sigue teniendo $\lvert V \rvert$ coordenadas, sigue siendo
+casi todo ceros y sus coordenadas siguen siendo independientes, de modo que <W>coche</W> y
+<W>automóvil</W> son tan perpendiculares entre sí como <W>coche</W> y <W>harina</W>. La consecuencia
+se lee en las similitudes que acabas de calcular: dos documentos que hablan de lo mismo con
+distintas palabras no comparten ninguna entrada con peso positivo, y su coseno es exactamente $0$
+—el mismo número que si hablaran de cosas opuestas. La equidistancia sigue intacta un nivel más
+abajo, y lo que has aprendido a comparar son documentos, no entradas del vocabulario. Para que dos
+entradas parecidas queden cerca hay que abandonar la idea de que cada una tenga su propio eje y
+dejar que compartan coordenadas, muchas menos que $\lvert V \rvert$ y ninguna asignada a nadie. Eso
+es un *embedding*, y la lección 6, sobre representaciones densas, es donde se construye.

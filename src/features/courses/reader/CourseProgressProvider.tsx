@@ -26,6 +26,15 @@
  * `[state.result, onAnswered]`, so a handler that changed identity when progress
  * loaded would re-fire the effect and record the same attempt twice. That is why the
  * signed-in check reads a ref rather than closing over `tracking`.
+ *
+ * COURSE-P4-04 (fix) — `onAnswered` now writes BOTH ways: it merges the attempt into the
+ * local snapshot and then persists it. It used to only persist, which left `exercises`
+ * frozen at whatever the mount-time GET returned, so `LessonComplete` reported "0 de N"
+ * to a student who had just solved all N, and only told the truth on a later visit.
+ *
+ * The local merge cannot re-hydrate the card that produced it: `QuizCard` guards with a
+ * `hydrated` ref, and the reducer refuses a `hydrate` once `attempts > 0 || result !==
+ * null`. Both hold for a card the student has just answered.
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from "react";
@@ -55,6 +64,11 @@ export default function CourseProgressProvider({
   children,
 }: CourseProgressProviderProps) {
   const progress = useCourseProgress({ courseSlug, lessonSlug });
+
+  // Destructured, not read off `progress` inside the handler: `progress` is a fresh
+  // object on every snapshot change, and `onAnswered` must not be. `recordAttempt` is
+  // built with empty deps precisely so this stays stable — see useCourseProgress.
+  const { recordAttempt } = progress;
 
   const trackingRef = useRef(false);
   useEffect(() => {
@@ -92,6 +106,20 @@ export default function CourseProgressProvider({
               },
             };
 
+      // COURSE-P4-04 — merge locally FIRST, then persist. Without this the exercise
+      // counter at the foot of the lesson reads "0 de 4" for a student who just solved
+      // all four: `exercises` came from the GET at mount and nothing wrote to it again.
+      //
+      // `attemptedAt` is a JS ISO string (`…Z`) while the server returns PostgREST's
+      // `…+00:00`. Display-only on both paths — never compared, never signed — so the
+      // normalisation rule in CLAUDE.md does not apply here.
+      recordAttempt({
+        quizId,
+        correct:     result.correct,
+        answer,
+        attemptedAt: new Date().toISOString(),
+      });
+
       fetch("/api/courses/attempt", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +129,7 @@ export default function CourseProgressProvider({
         console.warn("[CourseProgressProvider] recordAttempt failed:", err);
       });
     },
-    [courseSlug, lessonSlug],
+    [courseSlug, lessonSlug, recordAttempt],
   );
 
   // COURSE-P4-04 — the read side of the same wiring. `loading` until the fetch

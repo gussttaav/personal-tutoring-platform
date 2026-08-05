@@ -45,19 +45,16 @@ challenges: []
 
 {/* COURSE-P5-01 — Bloque 1, lección 3. */}
 
-La lección anterior, dedicada a la tokenización, terminó con la consecuencia inevitable de construir
-un vocabulario finito. Fijada la tokenización $\tau$, $V$ es el conjunto de tokens distintos del corpus
-con el que lo construyes —palabras enteras o trozos de palabra, según lo que $\tau$ decidiera— y
-esa lista nunca puede contenerlo todo. Tarde o temprano llega un
-token que no pertenece a $V$, y sobre él $r$ deja de estar definida. Entender por qué ocurre exige
-mirar el corpus desde otro ángulo: saber qué tokens aparecen es la mitad de la información, y la otra
-mitad es con qué frecuencia aparece cada uno.
+La lección anterior, dedicada a la tokenización, terminó dejando $V$ convertido en una lista finita
+y, por serlo, con una limitación: tarde o temprano llega un token que no está en ella. Entender el alcance
+de esa limitación exige mirar el corpus desde otro ángulo. Saber qué tokens aparecen es la mitad de la información; la
+otra mitad, la que determina cuántos acabarán fuera del vocabulario, es con qué frecuencia aparece cada uno.
 
 Esa distribución de frecuencias decide qué tokens merece la pena conservar, cuáles es razonable dejar
 fuera y, en consecuencia, cada cuánto se encontrará el modelo con palabras fuera de vocabulario
-(*out-of-vocabulary*, OOV). De ahí salen las tres preguntas encadenadas que quedaron pendientes:
-cómo se reparten las frecuencias en un corpus, cómo ese reparto condiciona la construcción de $V$, y
-qué hacer con los tokens que quedaron fuera de él.
+(*out-of-vocabulary*, OOV). Tiene además una forma muy poco igualitaria, y es la misma en cualquier
+corpus y en cualquier idioma. Esa forma —no el tamaño del corpus, no la lengua— es la que fija
+cuánto texto llegas a cubrir con un vocabulario que quepa en memoria.
 
 Cuenta los tokens de cualquier texto en español y aparece siempre la misma escena. En la cabeza, un
 puñado de piezas que salen sin parar: <W>de</W>, <W>la</W>, <W>que</W>, <W>el</W>, <W>en</W>, y la

@@ -45,13 +45,11 @@ challenges: []
 
 {/* COURSE-P5-01 — Bloque 1, lección 2. */}
 
-La lección anterior, dedicada al problema de representar el lenguaje, terminó con una cuestión pendiente. Allí introdujimos
-el vocabulario $V$ como si sus elementos vinieran dados, y todo el planteamiento —una función
-$r : V \to \mathbb{R}^d$, total, de dimensión fija y determinista— se apoya en esa lista de unidades. Pero esa lista no existe de antemano:
-hay que construirla.  Antes de decidir qué vector le corresponde a <W>dámelo</W> hay que decidir
-si <W>dámelo</W> es una unidad del vocabulario, o tres (<W>dá</W>, <W>me</W>, <W>lo</W>), o seis letras. A esa decisión
-—dónde se corta el texto y qué cuenta como unidad— se le llama tokenización, y a cada unidad
-resultante, un *token*.
+La lección anterior, dedicada al problema de representar el lenguaje, terminó con una cuestión
+pendiente: allí escribimos el vocabulario $V$ como si sus elementos vinieran dados. No vienen dados.
+Esa lista hay que construirla, y construirla obliga a decidir antes dónde termina una unidad de
+texto y dónde empieza la siguiente —una decisión que nadie toma por ti y que el idioma no trae
+resuelta—. A eso se le llama tokenización, y a cada unidad resultante, un *token*.
 
 Tokenizar es elegir dónde cortar, y hay tres respuestas naturales. Cortar por palabras, que es como
 lees tú. Cortar por caracteres, que es como está escrito el fichero. O cortar por trozos de palabra,

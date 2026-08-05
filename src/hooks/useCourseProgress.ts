@@ -34,9 +34,11 @@ import {
   derive,
   snapshotFromResponse,
   withCompleted,
+  withExerciseAttempt,
   withoutCompleted,
   LOADING_SNAPSHOT,
   UNTRACKED_SNAPSHOT,
+  type LocalAttempt,
   type ProgressSnapshot,
 } from "./course-progress-state";
 
@@ -55,6 +57,10 @@ export interface CourseProgress {
   exercises:          ReadonlyMap<string, ExerciseAttemptHistory>;
   /** Optimistic: ticks immediately, reverts if the write fails. */
   markCompleted:      (lessonSlug: string) => void;
+  /** COURSE-P4-04: merge an attempt the student just made into `exercises`, so the
+   *  end-of-lesson counter is right in the session that earned it. Never reverts —
+   *  see the comment at the implementation. STABLE IDENTITY, deliberately. */
+  recordAttempt:      (attempt: LocalAttempt) => void;
 }
 
 interface Options {
@@ -137,6 +143,27 @@ export function useCourseProgress({ courseSlug, lessonSlug }: Options): CoursePr
     [courseSlug],
   );
 
+  /*
+   * COURSE-P4-04 — the local half of recording an attempt. The POST lives in
+   * `CourseProgressProvider`; this is what makes the counter and the attempt history
+   * true before the next GET.
+   *
+   * EMPTY DEPS ARE LOAD-BEARING. The quiz and challenge cards fire their report from
+   * an effect keyed on the handler's identity, so a callback that changed identity —
+   * when progress loaded, when a lesson slug changed — would re-fire that effect and
+   * record the same attempt twice. The functional updater is what buys the empty list:
+   * nothing from the render scope is captured.
+   *
+   * NO ROLLBACK, and this is the one place it diverges from `markCompleted` above.
+   * A failed write does not un-solve the exercise: the student answered it, and
+   * reverting the counter to 0 is precisely the bug this fixes. The attempt POST is
+   * already silent-by-design for the same reason — a lost attempt must never
+   * interrupt a student mid-quiz.
+   */
+  const recordAttempt = useCallback((attempt: LocalAttempt) => {
+    setSnapshot((prev) => withExerciseAttempt(prev, attempt));
+  }, []);
+
   return useMemo(
     () => ({
       ...derive(snapshot),
@@ -145,7 +172,8 @@ export function useCourseProgress({ courseSlug, lessonSlug }: Options): CoursePr
       lastSeenLessonSlug: snapshot.lastSeenLessonSlug,
       exercises:          snapshot.exercises,
       markCompleted,
+      recordAttempt,
     }),
-    [snapshot, markCompleted],
+    [snapshot, markCompleted, recordAttempt],
   );
 }

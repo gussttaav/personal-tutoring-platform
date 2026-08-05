@@ -26,7 +26,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "sigmoid-explorer": dynamic(() => import("./activations/SigmoidExplorer"), { ssr: false }),
   // COURSE-P2-02 — Block 1 (NLP) + Block 2 (MLP) explorables.
   "tokenizer-playground": dynamic(() => import("./nlp/TokenizerPlayground"), { ssr: false }),
-  "onehot-vs-embedding": dynamic(() => import("./nlp/OneHotVsEmbedding"), { ssr: false }),
   "embedding-projection": dynamic(() => import("./nlp/EmbeddingProjection"), { ssr: false }),
   // COURSE-P5-01 — Block 1 lesson 5 (bolsa de palabras).
   "bag-of-words": dynamic(() => import("./nlp/BagOfWords"), { ssr: false }),

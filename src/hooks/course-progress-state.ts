@@ -85,6 +85,55 @@ export function withoutCompleted(prev: ProgressSnapshot, lessonSlug: string): Pr
   return { ...prev, completed };
 }
 
+/** One attempt as the client just observed it, before the server has seen it. */
+export interface LocalAttempt {
+  quizId:      string;
+  correct:     boolean;
+  /** The same JSONB payload the POST carries, so a re-hydrate restores what was given. */
+  answer:      unknown;
+  attemptedAt: string;
+}
+
+/*
+ * COURSE-P4-04 — the optimistic twin of `summariseAttempts` (services/CourseService.ts).
+ *
+ * `exercises` used to be written exactly once, by the initial GET, and never again:
+ * answering a quiz POSTed the attempt and returned. So the end-of-lesson counter read
+ * "0 de 4" for a student who had just solved all four, and only told the truth on a
+ * later visit, once the GET had the rows. This is the missing merge.
+ *
+ * It must agree with `summariseAttempts` row for row, because the two produce the same
+ * history from the same attempts by two different routes — this session's optimistic
+ * one, and the next session's read from Postgres. Two rules carry that agreement:
+ *
+ *   - `solved` is STICKY. Correct on any attempt means solved, even if a later retry
+ *     slipped; `lastCorrect` is what describes the most recent one.
+ *   - `attempts` is COUNTED HERE, not taken from the caller. The server counts rows,
+ *     so counting locally is what keeps the two definitions the same one.
+ *
+ * Untracked snapshots are returned unchanged: a signed-out reader records nothing, and
+ * a counter that moved for them would promise a save that never happened.
+ */
+export function withExerciseAttempt(
+  prev: ProgressSnapshot,
+  attempt: LocalAttempt,
+): ProgressSnapshot {
+  if (prev.status !== "ready") return prev;
+
+  const previous = prev.exercises.get(attempt.quizId);
+  const exercises = new Map(prev.exercises);
+  exercises.set(attempt.quizId, {
+    quizId:          attempt.quizId,
+    attempts:        (previous?.attempts ?? 0) + 1,
+    solved:          (previous?.solved ?? false) || attempt.correct,
+    lastCorrect:     attempt.correct,
+    lastAnswer:      attempt.answer ?? null,
+    lastAttemptedAt: attempt.attemptedAt,
+  });
+
+  return { ...prev, exercises };
+}
+
 export interface DerivedProgress {
   tracking:         boolean;
   loading:          boolean;

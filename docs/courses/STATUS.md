@@ -1241,3 +1241,107 @@ is what closes the loop.
   `widget-ids.ts` (9/9), all five phase-5 task docs, and every `la lección N` in both lessons —
   all agree, all name their topic.
 - Not yet committed to a branch/PR (**local**).
+
+**COURSE-P5-00 — the pickup rule, after lesson 5** (2026-08-05). User-reported, and the report is
+the clearest statement of it: *«the first two paragraphs of a lesson always try to reproduce the
+last two of the previous one — a student who finishes one lesson and starts the next feels like
+reading the same thing twice.»* Correct, and it is a gap in the guide rather than a slip by any
+lesson.
+
+- **The rule said the pickup must happen; it never said how big it is.** Three artefacts repeated
+  the "must" — AUTHORING §1, the template's step-1 comment, the §10 checklist — and none of them
+  bounded it, so across four lessons it grew from one sentence into a full paraphrase. Lesson 4 was
+  the extreme: both of lesson 3's closing paragraphs replayed in order ($d = 1$, «no imponer
+  ninguna», one axis per entry, «la factura», «decenas de miles»).
+- **The first attempt at the bound was a word count, and it was wrong.** It said *one sentence*, and
+  the user rejected it before it shipped, correctly: «the student can start reading a lesson after
+  some time, not directly coming from the previous lesson, and in this case the student should be
+  refreshed. It should be a balance, not strict.» A one-sentence pickup optimises for the reader who
+  just finished the previous lesson and strands the one who did not.
+- **What replaced it: `#### How much of it to restate: two readers, not one`.** The opening is read
+  by the continuous reader, who has the previous lesson in their head, and the returning reader, who
+  has the topic but not the argument. Both failures are real and **they are not equally bad** —
+  boring the first costs patience, stranding the second costs them the lesson — so when the two pull
+  against each other, favour the reader who needs help.
+- **The correct rule turned out to govern form, not length**, which is why the first attempt missed
+  it. What makes a continuous reader feel they are reading twice is not the *presence* of a recap
+  but the same sentences, in the same order, with the same example. A recap that asserts instead of
+  re-deriving, in different words, entering from a different point, reads as orientation to one
+  reader and as nothing at all to the other. So: no word count (two to four sentences is an
+  observation, not a target), five form rules, and the **two-reader test** — back to back nothing
+  reads twice; read cold and alone the opening still says where the course had got to. *The pickup
+  is the state, not the story.*
+- **Two bridge rules came out of the same sweep**, both defects the comparison exposed:
+  - **A bridge names the NEXT lesson**, and only that one. Lessons 4 and 5 both promised lesson 6
+    in nearly the same sentence («es donde se ataca» / «es donde se construye»), which leaves the
+    second one to arrive with no door to open. Lesson 4's forward pointer is now «el resto del
+    bloque»; lesson 5 keeps the named promise.
+  - **A bridge is two paragraphs**, like the motivation it mirrors. They had been growing —
+    1, 2, 2, 2, 3. Lesson 5's third paragraph merged into its second; lesson 1's single paragraph
+    split in two and now names lesson 2 by its topic, which it never did.
+- **Openings reworked in lessons 2, 3 and 5.** Lesson 4 keeps its two-paragraph motivation — it was
+  rewritten to the one-sentence version and reverted when that rule was dropped — and gained only
+  the previous lesson's topic in its first line. `pnpm lint:content`: no warnings, every lesson
+  inside the word budget (1,545 / 1,818 / 1,974 / 2,000 / 1,992).
+  - **Lesson 4's second paragraph was reworked separately**, and it is the clearest illustration of
+    what the form rules do that a word count cannot. It used to replay four of lesson 3's bridge
+    sentences in order — the $d = 1$ dismissal, «la alternativa más directa», the one-axis
+    definition, «decenas de miles» — at full length. The replacement is the **same length** and
+    shares nothing: it states that one-hot is the *correct* answer and still not enough, names it,
+    and splits its cost into the part everyone looks at (huge vectors) and the part that decides the
+    lesson (what a model can learn from such an input). The definition itself moved to where it
+    belongs, in the formalisation. The figure lead-in went back to «aquella lección», since the new
+    paragraph now supplies the antecedent it had lost.
+- **No lint pass was added.** An n-gram overlap check between a bridge and the next opening is
+  buildable and was considered; the thresholds are guesswork until there is more than one block of
+  content to calibrate against, and a false warning on a legitimate pickup costs more than the rule
+  in prose. Revisit if Block 2 regresses.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P4-04 — the exercise counter was blind to the session that earned it** (2026-08-05).
+User-reported: the end-of-lesson footer reads `Ejercicios: 0 de 4` for a student who has just
+solved all four, and only tells the truth on a later visit.
+
+- **Cause.** `snapshot.exercises` was written in exactly one place — the mount-time
+  `GET /api/courses/progress` — and never again. `CourseProgressProvider.onAnswered` was
+  fire-and-forget: POST the attempt, return. So `countSolved()` kept reading the map fetched before
+  the student had answered anything.
+- **Fix: an optimistic local merge**, the shape `markCompleted` already uses. New pure transition
+  `withExerciseAttempt` in `hooks/course-progress-state.ts`, a stable `recordAttempt` on
+  `useCourseProgress`, called from `onAnswered` before the fetch. Fixes `AttemptHistoryContext` at
+  the same time — same map — and code challenges for free, since both contexts share `onAnswered`.
+- **`recordAttempt` has an empty dep list, and that is load-bearing.** The cards report from an
+  effect keyed on the handler's identity, so a callback that changed identity would record the same
+  attempt twice. The functional `setSnapshot` updater is what buys the empty list.
+- **No rollback on a failed write**, and this is the one place it diverges from `markCompleted`.
+  The student solved the exercise; reverting the counter to 0 is precisely the bug being fixed, and
+  the attempt POST is already silent-by-design.
+- **Re-hydration needed no new guard.** An optimistic write makes `history` defined for the card
+  that just answered, but `QuizCard`'s `hydrated` ref and the reducer's
+  `if (state.attempts > 0 || state.result !== null) return state` both bail. Documented rather than
+  re-implemented.
+- 9 new unit tests, including the one that actually protects this: **the same attempt sequence
+  through `withExerciseAttempt` and through `summariseAttempts` must produce the same history.**
+  If the two ever disagree the counter changes on reload, which is the original bug in a new hat.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P2-02 — `onehot-vs-embedding` removed** (2026-08-05). Block 1 lesson 4 shipped with a
+hand-written SVG (`one-hot-equidistancia.svg`) instead of the explorable, which left the widget with
+no consumer but the draft render fixture.
+
+- Deleted `widgets/nlp/OneHotVsEmbedding.tsx`; dropped the id from `widget-ids.ts` and `registry.ts`
+  (they move together — `Record<WidgetId, …>` makes one without the other a compile error) and the
+  `<Explorable>` from `00-pipeline-fixture.mdx`.
+- Nothing orphaned: `Slider` is shared with `LossLandscape`, `GradientDescent2D` and
+  `SigmoidExplorer`; no file in `widgets/nlp/` imports another. `registry.test.ts` is generic and
+  self-adjusts.
+- The fixture's «cover all eight ids» comment was **already stale** — ten ids existed and it embedded
+  eight, `bag-of-words` never having been added. The count is gone rather than restated: it drifts
+  every time a widget is added, and a stale number reads as a contract nobody is keeping.
+- AUTHORING §7's id list corrected the same way — it was missing `bag-of-words` too.
+- `phase-5-content/01-block-1-fundamentos.md` updated: lesson 4's widget cell is `—` (stale since
+  the lesson shipped) and the id is out of `Depends on`.
+- **`phase-2-interactivity/02-first-explorables.md` and STATUS's own P2-02 entry were left alone.**
+  Both are records of what P2-02 shipped, and it did ship this widget; rewriting them would make
+  the history claim otherwise. This entry is the record of the removal.
+- Not yet committed to a branch/PR (**local**).

@@ -1,7 +1,7 @@
 # P5-01 — Block 1: Fundamentos de NLP
 
 **Tag:** `COURSE-P5-01` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
-**Depends on:** P1 (renders), P2-02 (`tokenizer-playground`, `onehot-vs-embedding`, `embedding-projection`)
+**Depends on:** P1 (renders), P2-02 (`tokenizer-playground`, `embedding-projection`)
 
 ## TL;DR
 
@@ -18,7 +18,7 @@ Tempting to skip. Skipping it means students never understand *what* feeds the n
 | 1 | `texto-como-numeros` | Por qué las redes no leen texto | — | — | 3 |
 | 2 | `tokenizacion` | Tokenización: palabras, caracteres, subpalabras | `tokenizer-playground` | 1 | 4 |
 | 3 | `vocabulario-oov` | Vocabulario, frecuencia y el problema OOV | — | 1 | 4 |
-| 4 | `one-hot` | One-hot encoding y la maldición de la dimensionalidad | `onehot-vs-embedding` | 1 | 4 |
+| 4 | `one-hot` | One-hot encoding y la maldición de la dimensionalidad | — | 1 | 4 |
 | 5 | `bolsa-de-palabras` | Bolsa de palabras y TF-IDF | `bag-of-words` | 1 | 4 |
 | 6 | `embeddings-densos` | Representaciones densas: la idea central | `embedding-projection` | 1 | 4 |
 | 7 | `word2vec` | Word2Vec: skip-gram y CBOW | — | 1 | 5 |

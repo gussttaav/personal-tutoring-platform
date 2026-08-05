@@ -36,9 +36,16 @@ because most courses skip the bridge, and attention ends up looking like it appe
 Every lesson ends pointing forward — including the last one of a block, which points at the next
 block.
 
+Two things bound it. **The bridge names the *next* lesson**, and only that one: anything further
+ahead is a signpost («eso ocupa el resto del bloque»), not a named promise. Two lessons promising
+the same lesson in nearly the same sentence is a defect — the second one to arrive finds the door
+already open and has nothing to hand over. And **the bridge is two paragraphs**, like the motivation
+it mirrors. Three is a lesson that did not finish closing: the third paragraph is almost always
+material that belonged in the argument above the `---`.
+
 ### And a non-first lesson opens by picking up the previous bridge
 
-Step 6 leaves a door open. **The next lesson walks through it in its first paragraph**, naming the
+Step 6 leaves a door open. **The next lesson walks through it in its first sentence**, naming the
 previous lesson by its topic (§2's naming rule) before posing its own question. Lesson 2 of Block 1
 is the shape:
 
@@ -54,6 +61,58 @@ picks up is a promise the course did not keep.** Writing the bridge is easy to r
 ends the lesson you are working on; the pickup is easy to forget because it belongs to a lesson you
 have not written yet. When you finish a lesson, the last thing you do is read its bridge — that is
 the opening of the next one.
+
+#### How much of it to restate: two readers, not one
+
+The rule above says the pickup must happen. This says what shape it takes, and it exists because the
+opening is read by two people whose needs point in opposite directions.
+
+**The continuous reader** has just finished the previous lesson and still has all of it in their
+head. **The returning reader** last opened the course a fortnight ago, or arrived from a search
+result, and remembers the topic but not the argument. Write only for the first and the second is
+dropped into a lesson that assumes a conversation they no longer recall. Write only for the second
+and the first reads the same two paragraphs twice — which is what happened by lesson 4, whose
+opening was both of lesson 3's closing paragraphs paraphrased in order.
+
+**Both failures are real, and they are not equally bad.** Boring the continuous reader costs them
+some patience. Stranding the returning reader costs them the lesson: they reach the formalisation
+without knowing what question it answers, which is the exact failure this guide exists to prevent.
+When the two pull against each other, favour the reader who needs help.
+
+So there is **no word count here**, and any rule that gave one would be wrong. The pickup is as long
+as it takes to put someone back where the course had got to — usually two to four sentences, but the
+number is an observation, not a target. What decides whether it is right is its **form**, because
+form is what the two readers experience differently:
+
+1. **It states; it does not re-derive.** «La lección anterior descartó $d = 1$» re-situates a
+   returning reader in nine words. Re-explaining *why* $d = 1$ fails is the previous lesson, one
+   click away, and it is the part the continuous reader has just read. The conclusion serves both;
+   the derivation serves neither.
+2. **Different words.** A sentence that survives from the bridge nearly intact is what makes a
+   reader *certain* they have read this before — far more than the fact of a recap does. Say the
+   same thing another way and it stops registering as a repeat, while losing nothing for the reader
+   who needs it.
+3. **Different order.** The bridge ended on its last point. An opening that starts from that same
+   point, in that same sequence, replays the paragraph even in fresh words. Enter from where the
+   previous lesson leaves *this* one, which is rarely where the bridge finished.
+4. **Not the same example.** <W>dámelo</W>, «una reseña, un correo, una noticia», la crónica frente
+   a la receta — a concrete case is the most recognisable thing on the page, so reusing one is the
+   loudest possible signal of repetition. When the example is this lesson's own subject, it belongs
+   further down, where it does new work.
+5. **The second paragraph is this lesson's own.** Motivation is two paragraphs; the pickup lives in
+   the first. If it has spilled into the second, it stopped being an entrance and became a summary.
+
+**The two-reader test**, and it takes a minute:
+
+> Read the previous lesson's closing paragraphs and this opening back to back, in that order —
+> nothing should read twice. Then read the opening **alone and cold**: someone who last opened the
+> course a fortnight ago should finish it knowing where they are and what is about to be settled.
+>
+> Failing the first is a recap. Failing the second is a door with no handle. Fix either; if you can
+> only fix one, fix the second.
+
+This is not a licence to restate everything, and the difference is worth naming because it is the
+whole rule in four words: **the pickup is the state, not the story.**
 
 ### These six are not headings
 
@@ -598,7 +657,7 @@ label text below 12px in the source is unreadable once the image scales down.
 **Widget ids** ([`widget-ids.ts`](../../src/features/courses/widgets/widget-ids.ts)) — an id not on
 this list is a hard lint failure:
 
-`sigmoid-explorer` · `tokenizer-playground` · `onehot-vs-embedding` · `embedding-projection` ·
+`sigmoid-explorer` · `tokenizer-playground` · `embedding-projection` · `bag-of-words` ·
 `activation-explorer` · `perceptron-boundary` · `gradient-descent-2d` · `backprop-trace` ·
 `loss-landscape`
 
@@ -712,7 +771,13 @@ Copy this into the PR description.
 - [ ] Six steps present, in order, and the lesson **ends on a bridge forward**
 - [ ] **The bridge is preceded by `---`** — exactly one in the lesson, blank line above it, nothing
       after it but the closing paragraphs
+- [ ] **The bridge is two paragraphs and names the NEXT lesson** — anything further ahead is a
+      signpost, not a named promise, and no other lesson already promised the same one
 - [ ] **A non-first lesson opens on the previous lesson's bridge**, naming that lesson by its topic
+- [ ] **The pickup states, it does not re-derive** — different words, different order, not the same
+      example; it stays inside the first motivation paragraph
+- [ ] **The two-reader test passes.** Back to back with the previous lesson's closing, nothing reads
+      twice; read cold and alone, the opening still says where the course had got to
 - [ ] **No heading is named after a step**; two to four `##`, each describing what this lesson does
       there; motivation, intuition and bridge are prose with no heading at all
 - [ ] The formalisation is **split by its argument, not by its length** — one heading per claim, in

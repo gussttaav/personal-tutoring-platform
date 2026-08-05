@@ -15,7 +15,6 @@ export const WIDGET_IDS = [
   "sigmoid-explorer",
   // COURSE-P2-02 — Block 1 (NLP) + Block 2 (MLP) explorables.
   "tokenizer-playground",
-  "onehot-vs-embedding",
   "embedding-projection",
   // COURSE-P5-01 — Block 1 lesson 5 (bolsa de palabras).
   "bag-of-words",
