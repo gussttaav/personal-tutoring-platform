@@ -508,6 +508,7 @@ plain. Never italicise the Spanish terms.
 | entrenamiento, entrenar | Spanish | training, entrenar el *training* |
 | vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
+| denso, disperso | Spanish | *dense*, *sparse* |
 | tipo — one distinct entry; *token* / ocurrencia — each appearance of one | `tipo`, `token`, `ocurrencia` | *type*; `token` for both senses |
 | an element of the vocabulary $V$ | `entrada del vocabulario`, then `entrada` | palabra, término |
 | the place an element holds in an ordered sequence | posición | puesto, rango, ranking |

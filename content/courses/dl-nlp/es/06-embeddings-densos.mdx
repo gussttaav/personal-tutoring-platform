@@ -1,0 +1,334 @@
+---
+slug: embeddings-densos
+title: "Representaciones densas: la idea central"
+block: 1
+order: 6
+minutes: 23
+summary: "Dar a cada entrada del vocabulario unas pocas coordenadas reales, todas compartidas y ninguna reservada, rompe la equidistancia del one-hot y deja la tabla de la representación en una matriz que sí cabe. Los 15 millones de números que la llenan no los escribe nadie a mano: la hipótesis distribucional dice de dónde salen."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-lookup
+    type: single
+    prompt: 'Guardas los vectores en la matriz $\mathbf{E} \in \mathbb{R}^{\lvert V \rvert \times d_{\text{model}}}$ y quieres el de la entrada que ocupa la posición $i$. ¿Qué calcula $\mathbf{o}_{w_i}^{\top}\mathbf{E}$?'
+    options:
+      - { id: a, text: 'La fila $i$ de $\mathbf{E}$, que es $\mathbf{e}_{w_i}^{\top}$.' }
+      - { id: b, text: 'La columna $i$ de $\mathbf{E}$, un vector de $\lvert V \rvert$ coordenadas.' }
+      - { id: c, text: 'Otro vector de $\lvert V \rvert$ coordenadas con un único uno, igual que $\mathbf{o}_{w_i}$.' }
+      - { id: d, text: 'Una combinación de todas las filas de $\mathbf{E}$ que no coincide con ninguna fila concreta.' }
+    answer: a
+    explanation: 'La coordenada $j$ del resultado es $\sum_k (\mathbf{o}_{w_i})_k \mathbf{E}_{kj}$, y de esa suma solo sobrevive el sumando $k = i$, donde el one-hot vale $1$: sale $\mathbf{E}_{ij}$, es decir, la fila $i$ entera. La opción (d) describe bien la operación —sí es una combinación de todas las filas— y se equivoca en el final: los pesos son $\lvert V \rvert - 1$ ceros y un uno, así que la combinación *es* una fila. La consecuencia práctica es que nadie construye el vector de 50 000 coordenadas para multiplicarlo; se lee la fila y se acabó. Que la operación siga siendo un producto de matrices importa igualmente, porque es como el embedding se conecta con lo que venga detrás.'
+  - id: q-que-compra
+    type: multi
+    prompt: 'Cambias one-hot por vectores densos de $d_{\text{model}} = 300$ sobre un vocabulario de $\lvert V \rvert = 50\,000$ entradas. ¿Qué se gana? Marca todo lo que valga.'
+    options:
+      - { id: a, text: 'Dos entradas pueden quedar cerca, de modo que lo aprendido sobre una tiene por dónde servir para la otra.' }
+      - { id: b, text: 'La tabla pasa de $\lvert V \rvert^{2}$ a $\lvert V \rvert \cdot d_{\text{model}}$ números, y el vector deja de ser casi todo ceros.' }
+      - { id: c, text: 'Las coordenadas pasan a significar algo por el hecho de ser pocas y estar todas ocupadas.' }
+      - { id: d, text: 'Deja de hacer falta fijar el vocabulario de antemano, porque ninguna coordenada está asignada a una entrada.' }
+    answer: [a, b]
+    explanation: '(a) es el resultado de la lección: la equidistancia se rompe y con ella desaparece la objeción de la lección 4, sobre la maldición de la dimensionalidad. (b) son 15 millones de números frente a 2 500 millones, y una fracción no nula que deja de ser $1/\lvert V \rvert$. (c) es la trampa, y va justo al revés: una $\mathbf{E}$ rellena de ruido es igual de densa y sus vecinos son igual de falsos, así que la densidad hace *posible* el parecido, no lo produce. (d) confunde las dos dimensiones de la tabla: $\mathbf{E}$ sigue teniendo una fila por entrada, así que $V$ sigue habiendo que cerrarlo, con <W>\<UNK></W> incluido.'
+  - id: q-coseno-negativo
+    type: boolean
+    prompt: 'Entre dos vectores TF-IDF la similitud coseno vivía en $[0, 1]$. Entre dos vectores densos puede salir negativa.'
+    answer: true
+    explanation: 'Puede, y es el único cambio que trae la fórmula al mudarse de objeto. Los pesos TF-IDF son productos de un conteo por un logaritmo no negativo, así que ninguna coordenada bajaba de cero y el producto escalar tampoco. Las coordenadas de un vector denso son reales cualesquiera, de modo que el producto escalar puede ser negativo y el coseno recorre $[-1, 1]$ entero: el cero deja de ser el mínimo y pasa a significar «sin relación», con los valores negativos por debajo. En la celda de esta lección, <W>coche</W> y <W>harina</W> dan $-0{,}48$.'
+  - id: q-distribucional
+    type: single
+    prompt: '¿Qué afirma exactamente la hipótesis distribucional?'
+    options:
+      - { id: a, text: 'Que dos entradas rodeadas de las mismas entradas tienden a significar cosas parecidas, de modo que el parecido se puede medir contando compañías.' }
+      - { id: b, text: 'Que dos entradas que aparecen en la misma frase significan lo mismo.' }
+      - { id: c, text: 'Que dos sinónimos aparecen juntos, en el mismo documento, con mucha más frecuencia de la esperable.' }
+      - { id: d, text: 'Que cada coordenada de $\mathbf{e}_w$ corresponde a un rasgo del significado —el género, el número, si es un ser vivo— y por eso los vectores se pueden leer.' }
+    answer: a
+    explanation: 'La hipótesis habla de los *contextos* de una entrada, no de sus compañeros de frase ni de sus coordenadas. (b) es demasiado fuerte y falso de inmediato: <W>el gato bebe leche</W> pone en la misma frase cuatro entradas que no significan lo mismo. (c) va al revés que los datos: dos sinónimos rara vez se usan en la misma oración, precisamente porque uno hace el trabajo del otro; lo que comparten son los huecos donde encajan. (d) es la lectura que invitan los números escritos a mano de la celda de arriba, y no sobrevive a un embedding entrenado: ninguna coordenada tiene nombre, y el significado está en la dirección del vector entero.'
+challenges: []
+---
+
+{/* COURSE-P5-01 — Bloque 1, lección 6. */}
+
+Un *embedding* es, por ahora, un nombre. La lección anterior, sobre bolsa de palabras y TF-IDF
+(*term frequency–inverse document frequency*), terminó de agotar lo que se puede hacer con un eje
+reservado para cada entrada del vocabulario —contar, pesar, comparar documentos— y planteó la salida:
+en lugar de un eje para cada entrada, tomar unas pocas coordenadas, muchas menos que
+$\lvert V \rvert$, en las que *todas* las entradas tienen un valor.
+Lo que aquella lección no dijo es qué objeto es ese, cómo se guarda, qué
+relación tiene con el one-hot al que sustituye y de dónde salen sus números.
+
+El vocabulario de subpalabras de la lección 2, sobre tokenización, tiene
+$\lvert V \rvert = 50\,000$ entradas. La otra cifra es cuántas coordenadas darle a cada una: 300, un
+valor habitual que no fija ninguna teoría —se elige probando, y en uso van desde unas decenas hasta
+unos miles—, así que nada de lo que sigue depende de que sean 300 exactamente. Con un eje
+por entrada, lo que un modelo aprenda de <W>estupenda</W> no le sirve de nada al
+encontrarse con <W>magnífica</W>: son dos ejes distintos y ahí se acaba la historia. En cuanto las dos comparten coordenadas eso deja de ser
+cierto, y deja de serlo para las 50 000 entradas a la vez. El precio son los números de la tabla,
+$50\,000 \times 300 = 15$ millones, y quién los decide es la pregunta con la que termina la lección.
+
+Antes de la definición, un mapa. Cada punto es una palabra del español colocada por sus dos
+coordenadas; elige <W>coche</W>, <W>manzana</W> o <W>gato</W> en el desplegable y mira qué se
+enciende alrededor.
+
+<Explorable
+  id="embedding-projection"
+  caption="Los vecinos de la palabra elegida se unen a ella con una línea. Prueba con palabras de grupos distintos y fíjate en que esas listas no las ha escrito nadie: salen de las coordenadas."
+/>
+
+Dos advertencias, porque el mapa promete más de lo que puede dar. Sus coordenadas están puestas a
+mano para el curso: no salen de ningún modelo entrenado. Y un embedding de verdad tiene cientos de
+dimensiones; lo que sobrevive al aplastarlo hasta dos es la vecindad, que es lo que hay que mirar
+aquí. El botón de la analogía enseña algo más fuerte —que también las direcciones significan— y esta
+lección no lo cobra: eso ocupa el resto del bloque.
+
+<Callout type="intuition" title="La idea en una frase">
+Lo que hace útil a una representación no es que cada entrada tenga su sitio, sino que las entradas
+parecidas compartan valores en las mismas coordenadas. Ahí es donde lo aprendido sobre una empieza a
+servir para otra.
+</Callout>
+
+## Un vector corto para cada entrada del vocabulario
+
+Fija un número $d_{\text{model}}$ mucho menor que $\lvert V \rvert$ y asigna a cada entrada del
+vocabulario un vector de esa dimensión, con coordenadas reales cualesquiera. Ese vector es el
+*embedding* de la entrada $w$, y lo escribimos $\mathbf{e}_w$:
+
+$$
+r(w) = \mathbf{e}_w \in \mathbb{R}^{d_{\text{model}}}, \qquad d_{\text{model}} \ll \lvert V \rvert.
+$$
+
+El vector one-hot era **disperso**: $\lvert V \rvert$ coordenadas de las cuales una sola es distinta
+de cero. Este es **denso**: pocas coordenadas y todas ocupadas. El cambio de nombre marca un cambio
+de idea. En one-hot, la coordenada $j$ respondía a una pregunta con sentido —«¿es esta la entrada que
+ocupa la posición $j$ del vocabulario?»— y por eso una sola coordenada bastaba para identificar la
+entrada. Aquí ninguna coordenada responde por separado a nada que sepamos formular: quien sitúa a la
+entrada es $\mathbf{e}_w$ completo, sus $d_{\text{model}}$ coordenadas a la vez.
+
+Guardar $r$ vuelve a ser guardar una tabla, y esta vez la tabla cabe en memoria. Con el vocabulario
+ordenado como en la lección 4, la del one-hot, la **matriz de embeddings** es
+
+$$
+\mathbf{E} \in \mathbb{R}^{\lvert V \rvert \times d_{\text{model}}},
+$$
+
+una fila por entrada y $d_{\text{model}}$ columnas, con la fila $i$ igual a $\mathbf{e}_{w_i}^{\top}$,
+usando traspuesta porque los vectores son columnas en este curso.
+
+Buscar el vector de una entrada parece entonces un acceso a memoria y no una operación matemática.
+Las dos cosas coinciden, y verlo cuesta una línea. Multiplica por la matriz el vector one-hot de la
+lección 4 y mira la coordenada $j$ del resultado:
+
+$$
+\left(\mathbf{o}_{w_i}^{\top}\mathbf{E}\right)_j = \sum_{k=1}^{\lvert V \rvert} (\mathbf{o}_{w_i})_k \, \mathbf{E}_{kj} = \mathbf{E}_{ij},
+$$
+
+porque el único sumando que no se anula es el de $k = i$, donde el one-hot vale $1$. Coordenada a
+coordenada, lo que sale es la fila $i$:
+
+$$
+\mathbf{e}_{w_i}^{\top} = \mathbf{o}_{w_i}^{\top}\mathbf{E}.
+$$
+
+El one-hot no desaparece, entonces: se convierte en el índice con el que se lee una fila. En la
+práctica nadie construye las 50 000 coordenadas para multiplicarlas —se escribe `E[i]`—, y aun así
+la operación que se está haciendo es un producto de matrices. Un texto entero hereda la cuenta:
+aquella lección convertía $T$ tokens en $\mathbf{X} \in \mathbb{R}^{T \times \lvert V \rvert}$, una
+fila one-hot por posición, y multiplicar por $\mathbf{E}$ da
+
+$$
+\mathbf{X}\mathbf{E} \in \mathbb{R}^{T \times d_{\text{model}}},
+$$
+
+la misma frase escrita con 300 columnas en lugar de 50 000.
+
+Las tres exigencias de la lección 1, la del problema de representar el lenguaje, siguen cumplidas. La
+dimensión es fija, $d_{\text{model}}$ para toda entrada. El determinismo lo da que $\mathbf{E}$ se
+congele al terminar el entrenamiento. Y la totalidad la sigue dando <W>\<UNK></W>, que tiene su fila
+como cualquier otra entrada, igual que en la lección 3, sobre vocabulario y palabras fuera de
+vocabulario.
+
+Lo que sí cambia es el precio de la tabla. Son
+
+$$
+\lvert V \rvert \cdot d_{\text{model}} \quad \text{números},
+$$
+
+frente a los $\lvert V \rvert^{2}$ del one-hot: 15 millones frente a 2 500 millones, unos 60 MB en
+lugar de 10 GB. La comparación es real y no es el argumento: la tabla del one-hot es la identidad y
+no se guarda nunca. Lo que se gana es que el vector que el sistema recibe tenga 300 coordenadas y no
+50 000, todas con información.
+
+### Lo que compra que dos entradas puedan estar cerca
+
+Con vectores densos vuelve a haber geometría, y esta vez no la hereda de un orden alfabético que no
+sabe nada de significados. La medida es la de la lección anterior, la similitud coseno, que allí
+comparaba documentos y aquí compara entradas:
+
+$$
+\cos(\mathbf{e}_u, \mathbf{e}_v) = \frac{\mathbf{e}_u^{\top}\mathbf{e}_v}{\lVert \mathbf{e}_u \rVert \, \lVert \mathbf{e}_v \rVert}.
+$$
+
+Una cosa cambia al cambiar de objeto. Los pesos TF-IDF nunca eran negativos, así que el coseno vivía
+en $[0, 1]$; las coordenadas de un vector denso son reales cualesquiera, el producto escalar puede
+salir negativo y el coseno recorre $[-1, 1]$ entero. El cero deja de ser el mínimo y pasa a
+significar «sin relación», con los negativos por debajo.
+
+El contraste con el one-hot cierra el argumento. Allí, dos entradas distintas daban producto escalar
+$0$ y distancia $\sqrt{2}$ siempre, un único valor sin excepción. Aquí el coseno puede valer
+cualquier cosa, y qué valga depende de los números de $\mathbf{E}$: la equidistancia se ha roto, y
+romperla era la condición para todo lo demás.
+
+Con eso, el argumento que aquella lección no podía usar queda disponible: las representaciones de
+dimensión alta se salvan porque tienen vecindad —dos fotografías que difieren en un píxel son
+parecidas—, y el one-hot no podía acogerse a eso porque en él no hay vecinos. Con vectores densos los
+hay: si $\mathbf{e}_{\textit{niño}}$ y $\mathbf{e}_{\textit{niña}}$ apuntan casi en la misma
+dirección, la ventana <W>la niña juega en la plaza</W> deja de ser territorio desconocido para un
+modelo que solo vio <W>el niño juega en la plaza</W>. Por qué una entrada parecida produce una salida
+parecida es cosa del bloque 2, sobre el perceptrón multicapa; lo que hace falta aquí es que la
+representación permita el parecido.
+
+Y aquí la concesión, que es grande. Nada de lo anterior dice que las coordenadas de $\mathbf{E}$
+signifiquen algo: rellena la matriz con números al azar y tendrás vectores densos de 300 dimensiones,
+con vecinos equivocados. La densidad hace *posible* que <W>estupenda</W> y <W>magnífica</W> queden
+cerca; no las acerca. Quien las acerca son los números, y no los ha puesto nadie todavía.
+
+## La hipótesis de la que salen los números
+
+Son 15 millones y no hay forma humana de escribirlos: fijar a mano las 300 coordenadas de una sola
+entrada ya es dudoso —¿cuánto vale la tercera coordenada de <W>harina</W>?—, y hay 50 000 entradas.
+Los tiene que poner un procedimiento automático a partir de texto, y para que exista uno hace falta
+antes una hipótesis sobre dónde está, en un corpus, la información del significado.
+
+La **hipótesis distribucional** es esa hipótesis: dos entradas que aparecen rodeadas de las mismas
+entradas tienden a significar cosas parecidas. Se cita casi siempre en la frase de Firth —*you shall
+know a word by the company it keeps*— y se comprueba con un par de huecos en español. En «sirvió una
+copa de ___», «una botella de ___ en la mesa» y «el ___ estaba frío» encajan <W>vino</W> y
+<W>zumo</W>, y no encajan <W>martillo</W> ni <W>lunes</W>. Nadie ha dicho qué significan <W>vino</W>
+y <W>zumo</W>; lo que se ha mirado es con qué se juntan.
+
+Lo que compra la hipótesis es un cambio de pregunta. «¿Qué significa esta entrada?» no se responde
+contando nada. «¿Con qué otras entradas aparece?» se responde recorriendo el corpus, sin que nadie
+tenga que anotarlo antes: el texto crudo ya trae la respuesta dentro. El significado deja de ser algo
+que introducir a mano y pasa a ser algo que se mide.
+
+Conviene ver también lo que la hipótesis no dice, porque de ahí saldrán los límites de este bloque.
+No dice que dos entradas con el mismo contexto sean sinónimas: <W>frío</W> y <W>caliente</W> aparecen
+en contextos casi idénticos y significan lo contrario, y una representación construida así los coloca
+cerca. Y no es un teorema, sino una apuesta empírica que vale lo que valgan sus resultados. Resulta
+que valen mucho.
+
+## Vectores densos en NumPy: la búsqueda, el coseno y los vecinos
+
+La celda monta una matriz $\mathbf{E}$ de ocho entradas en español con $d_{\text{model}} = 4$ y
+comprueba sobre ella lo que acabas de derivar. Sus números los he puesto yo a mano —con 50 000
+entradas sería imposible, y ese es el problema abierto—, y a esta escala sirven para ver la mecánica.
+Ejecútala y mira tres cosas: que el producto por el one-hot devuelve la fila, qué aspecto tiene la
+matriz de cosenos frente a la del one-hot, y cuántos números ocupa cada tabla.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+V = ["<UNK>", "coche", "automóvil", "camión", "harina", "azúcar", "gato", "perro"]
+d_model = 4
+
+# Los números de E los he puesto a mano. Aquí no hay nada entrenado todavía.
+E = np.array([
+    [ 0.12,  0.09,  0.11,  0.95],   # <UNK>
+    [ 0.91, -0.28,  0.19,  0.06],   # coche
+    [ 0.86, -0.21,  0.27,  0.10],   # automóvil
+    [ 0.79, -0.16,  0.12,  0.24],   # camión
+    [-0.22,  0.88,  0.07,  0.13],   # harina
+    [-0.31,  0.86,  0.10,  0.05],   # azúcar
+    [ 0.06,  0.13,  0.93, -0.11],   # gato
+    [ 0.03,  0.19,  0.87, -0.05],   # perro
+])
+print("E tiene forma", E.shape, " ->  una fila por entrada,", d_model, "columnas")
+print()
+
+# La búsqueda ES un producto por el one-hot, y por eso nadie construye el one-hot.
+i = V.index("coche")
+o = np.zeros(len(V))
+o[i] = 1.0
+print("o_coche @ E =", o @ E)
+print("E[i]        =", E[i])
+print("iguales:", np.array_equal(o @ E, E[i]))
+print()
+
+# Coseno entre todas las entradas: normaliza las filas y multiplica por la traspuesta.
+U = E / np.linalg.norm(E, axis=1, keepdims=True)
+S = U @ U.T
+
+print("similitud coseno")
+print(" " * 10 + "".join(w[:6].rjust(7) for w in V))
+for j, w in enumerate(V):
+    print(w[:9].rjust(10) + "".join(("%+.2f" % S[j, k]).rjust(7) for k in range(len(V))))
+print()
+
+def vecinos(w, k=2):
+    j = V.index(w)
+    orden = np.argsort(-S[j])
+    return [(V[m], round(float(S[j, m]), 2)) for m in orden if m != j][:k]
+
+for w in ["coche", "harina", "gato"]:
+    print("vecinos de", w.ljust(9), vecinos(w))
+print()
+
+# La misma cuenta sobre one-hot, la representación de la lección 4.
+O = np.eye(len(V))
+fuera = O @ O.T - np.eye(len(V))
+print("one-hot: el mayor coseno entre dos entradas distintas es", fuera.max())
+print()
+
+# Lo que ocupa cada tabla. Calculado, NO reservado.
+print("   |V|  d_model      E: |V|*d_model     one-hot: |V|^2")
+for tam, dm in [(8, 4), (50000, 300)]:
+    print(str(tam).rjust(6), str(dm).rjust(8), str(tam * dm).rjust(18), str(tam * tam).rjust(20))
+`} />
+
+La búsqueda sale exacta: `o @ E` y `E[i]` son el mismo vector coordenada a coordenada, que es lo que
+la derivación prometía. La matriz de cosenos es lo que había que ver. <W>coche</W> con
+<W>automóvil</W> da $0{,}99$ y con <W>camión</W> $0{,}97$; con <W>harina</W> da $-0{,}48$, un valor
+negativo que en one-hot no podía existir; <W>gato</W> con <W>\<UNK></W> da $0{,}02$, que es «nada que
+ver» escrito en números. Debajo, la misma cuenta sobre one-hot devuelve un cero en cada casilla fuera
+de la diagonal: el «un solo valor» de la lección 4, ahora al lado de una matriz con relieve.
+
+Un detalle sin maquillar: el segundo vecino de <W>gato</W> es <W>automóvil</W>, con
+$0{,}30$. Es ruido, y está ahí porque me he inventado los números: con cuatro coordenadas y ocho
+entradas no hay sitio para más. Con 300 coordenadas y un corpus detrás, ese segundo vecino sería otro
+animal.
+
+Una prueba de treinta segundos. Copia la fila de <W>coche</W> en la de <W>harina</W>, cambiándole un
+par de decimales, y ejecuta otra vez: <W>harina</W> se va con los vehículos, sin que nadie haya
+tocado el vocabulario ni la forma de la tabla. La representación no está en la tabla, está en sus
+números.
+
+## Comprueba tu intuición
+
+Cuatro preguntas sobre lo que acabas de derivar: qué calcula el producto por el one-hot, qué compra
+la densidad, qué le pasa al coseno al cambiar de objeto y qué afirma exactamente la hipótesis
+distribucional.
+
+<Quiz id="q-lookup" />
+
+<Quiz id="q-que-compra" />
+
+<Quiz id="q-coseno-negativo" />
+
+<Quiz id="q-distribucional" />
+
+---
+
+El objeto ya está definido, y con él la mitad de lo que la lección del one-hot dejó pendiente: 300
+coordenadas en lugar de 50 000, todas con información, y una geometría donde dos entradas pueden
+estar cerca. La otra mitad sigue abierta: la matriz $\mathbf{E}$ son 15 millones de números, y todo
+lo que has visto vale igual para una $\mathbf{E}$ llena de ruido. La hipótesis distribucional dice
+dónde mirar —en las compañías de cada entrada—, pero mirar
+no es un procedimiento: de contar contextos a fijar 300 coordenadas hay un salto que nadie ha dado
+todavía.
+
+Darlo es la lección 7, sobre Word2Vec. En lugar de contar contextos, se le pide a un modelo que los
+prediga, y se usan como embedding los números que le permiten acertar: el *skip-gram* predice el
+contexto a partir de la entrada, y CBOW (*continuous bag of words*) hace lo contrario. Las dos
+tropiezan con la misma piedra en cuanto se escriben con cuidado, y es una piedra grande: repartir
+probabilidad entre las entradas posibles obliga a sumar sobre las 50 000, una vez por cada token del
+corpus. Quitar esa suma de en medio ocupa media lección.

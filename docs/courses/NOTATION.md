@@ -59,6 +59,28 @@ A layer's weight matrix maps *input to output*: $\mathbf{W}^{(l)} \in \mathbb{R}
 \mathbf{b}^{(l)}\right)$ for a single example. When a lesson switches to the batched form
 $\mathbf{H} \mathbf{W}^{\top}$, it says so explicitly.
 
+### Vectors are columns, so a row of a matrix is a transpose
+
+$\mathbf{x} \in \mathbb{R}^{d}$ is $d \times 1$. That is not a preference: it is what makes
+$\mathbf{W}^{(l)} \mathbf{h}^{(l-1)}$ above a legal product at all, and it is why the dot product is
+written $\mathbf{u}^{\top}\mathbf{v}$ and never $\mathbf{u}\mathbf{v}^{\top}$.
+
+The consequence is the part that has to be said out loud, because it is where the transpose shows up
+in a lesson: **when a matrix stores one vector per row, its row $i$ is $\mathbf{x}_i^{\top}$, not
+$\mathbf{x}_i$** — row $i$ of the embedding matrix is $\mathbf{e}_{w_i}^{\top}$. A lesson that stacks
+vectors into rows writes that transpose the first time, and says in one clause why it is there.
+
+The rule was implicit for the whole of Block 1 and got written down only when Block 1 lesson 6, on
+dense representations, needed to set a row equal to a vector. That delay is the usual failure this
+file exists to catch: two earlier lessons had already relied on the convention —
+$\mathbf{o}_u^{\top}\mathbf{o}_v$ in the one-hot lesson, $\cos(\mathbf{u}, \mathbf{v})$ in the
+TF-IDF one — while nothing had stated it, so a student meeting their first transposed row has no way
+to tell a convention from a typo.
+
+The one place rows are the default is the batched form named just above, where the batch dimension
+comes first and NumPy hands back `E[i]` as a row. That is the announced deviation, not a second
+convention: the maths is in columns, and code that is row-major says so where it switches.
+
 ## 4. Reserved symbols — never reuse these for anything else
 
 | Symbol | Meaning |
@@ -107,6 +129,7 @@ prose immediately after.
 | $\text{idf}(t)$, $\text{tfidf}(t,d)$ | inverse document frequency, and the weight built from the two |
 | $\mathbf{x}_d \in \mathbb{R}^{\lvert V \rvert}$ | the vector of the document $d$ — counts in a bag of words, weights in TF-IDF |
 | $\mathbf{e}_w \in \mathbb{R}^{d_{\text{model}}}$ | the embedding of word $w$ |
+| $\mathbf{E} \in \mathbb{R}^{\lvert V \rvert \times d_{\text{model}}}$ | the embedding matrix — row $i$ is $\mathbf{e}_{w_i}^{\top}$ |
 | $\mathbf{o}_w \in \{0,1\}^{\lvert V \rvert}$ | one-hot encoding of $w$ |
 | $\cos(\mathbf{u}, \mathbf{v})$ | cosine similarity |
 | $c$ | a context word (Word2Vec) |
@@ -171,6 +194,16 @@ other reading, and both spellings are the ones the literature uses. Block 1 less
 words, is the one lesson that needs both: it writes the sum over positions first, **says at the
 switch which $t$ it means from then on**, and uses $t$ for the term for the rest of the file. Any
 later lesson needing both does the same — same rule as $d$ below, and as $\mathbf{c}$ in Block 4.
+
+**$\mathbf{E}$ is stored row-major, and it is not a layer weight matrix.** One row per vocabulary
+entry, $d_{\text{model}}$ columns — the shape Block 1 lesson 4 already used for "la tabla que guarda
+$r$", and the shape NumPy indexes with `E[i]`. It buys two things that a transposed $\mathbf{E}$
+would cost: the lookup is a right-multiplication by a one-hot row,
+$\mathbf{e}_{w}^{\top} = \mathbf{o}_{w}^{\top}\mathbf{E}$, and a whole text composes with it
+directly, $\mathbf{X}\mathbf{E} \in \mathbb{R}^{T \times d_{\text{model}}}$ for the
+$\mathbf{X} \in \mathbb{R}^{T \times \lvert V \rvert}$ of that same lesson. §3's
+$d_{\text{out}} \times d_{\text{in}}$ rule is about the weight matrix of a **layer**, which
+$\mathbf{E}$ is not, and Block 2 says so where the two first sit on the same page.
 
 $d$ is a document in the TF-IDF lessons and the dimension of $\mathbb{R}^d$ in the representation
 ones. The two never appear in the same equation; the lesson that needs both says which it means, in

@@ -39,7 +39,7 @@ here; STATUS stays phase-level.
 - [x] 3. `vocabulario-oov`
 - [x] 4. `one-hot`
 - [x] 5. `bolsa-de-palabras`
-- [ ] 6. `embeddings-densos`
+- [x] 6. `embeddings-densos`
 - [ ] 7. `word2vec`
 - [ ] 8. `glove-y-limites`
 
