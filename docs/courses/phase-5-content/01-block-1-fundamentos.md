@@ -40,7 +40,7 @@ here; STATUS stays phase-level.
 - [x] 4. `one-hot`
 - [x] 5. `bolsa-de-palabras`
 - [x] 6. `embeddings-densos`
-- [ ] 7. `word2vec`
+- [x] 7. `word2vec`
 - [ ] 8. `glove-y-limites`
 
 ## Mathematical content

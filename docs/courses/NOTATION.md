@@ -133,6 +133,11 @@ prose immediately after.
 | $\mathbf{o}_w \in \{0,1\}^{\lvert V \rvert}$ | one-hot encoding of $w$ |
 | $\cos(\mathbf{u}, \mathbf{v})$ | cosine similarity |
 | $c$ | a context word (Word2Vec) |
+| $\mathbf{u}_c \in \mathbb{R}^{d_{\text{model}}}$ | the vector of $c$ **as context** — row of $\mathbf{U}$; the centre role keeps $\mathbf{e}_w$ |
+| $\mathbf{U} \in \mathbb{R}^{\lvert V \rvert \times d_{\text{model}}}$ | the context matrix, discarded when training ends |
+| $m$ | window half-width — $m$ tokens each side, so $2m$ pairs per position |
+| $n_{\text{neg}}$ | negative samples drawn per real pair |
+| $P_{\text{neg}}$ | the noise distribution they come from, $P_{\text{neg}}(w) \propto f_w^{3/4}$ |
 | $X_{ij}$ | co-occurrence count of words $i$ and $j$ (GloVe) |
 
 **The corpus is not the alphabet**, and a lesson that uses both says so — they are both "characters",
@@ -204,6 +209,24 @@ directly, $\mathbf{X}\mathbf{E} \in \mathbb{R}^{T \times d_{\text{model}}}$ for 
 $\mathbf{X} \in \mathbb{R}^{T \times \lvert V \rvert}$ of that same lesson. §3's
 $d_{\text{out}} \times d_{\text{in}}$ rule is about the weight matrix of a **layer**, which
 $\mathbf{E}$ is not, and Block 2 says so where the two first sit on the same page.
+
+**Two vectors per entry, and the second matrix is $\mathbf{U}$ — never $\mathbf{V}$.** Word2Vec
+gives each entry a vector for the times it is the centre of a window and another for the times it is
+context, so Block 1 lesson 7 needs a name for each. The centre one is **$\mathbf{e}_w$, unchanged**
+from lesson 6 on dense representations: it is the vector that survives training, the row of
+$\mathbf{E}$, and what every later block means by an embedding. The context one is $\mathbf{u}_c$,
+the row of $\mathbf{U}$, thrown away when training ends. The Word2Vec papers write $\mathbf{v}_w$
+for the centre vector and a reader will meet that spelling; the course does not adopt it, because
+renaming the object a lesson has just defined costs the student more than matching a source does.
+$\mathbf{V}$ is not available for the context matrix either: $V$ is the vocabulary, and
+$\mathbf{V}$ is the value matrix of Block 5.
+
+**$n_{\text{neg}}$, not $k$, and $f_w$ is $f$ indexed by type.** The obvious letter for "how many
+negatives" is taken by the vocabulary cutoff of lesson 3, where it is load-bearing across a whole
+argument about coverage; a second meaning one lesson later is exactly the drift this file exists to
+stop. $f_w$ is the corpus frequency of the type $w$ — the same $f$ as $f_i$, indexed by the type
+itself rather than by its position in the ranking, because $P_{\text{neg}}$ needs a frequency per
+entry and not a frequency per rank.
 
 $d$ is a document in the TF-IDF lessons and the dimension of $\mathbb{R}^d$ in the representation
 ones. The two never appear in the same equation; the lesson that needs both says which it means, in
