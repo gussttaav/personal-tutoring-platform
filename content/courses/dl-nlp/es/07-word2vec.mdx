@@ -64,9 +64,9 @@ donde no se espera: no calcula las coordenadas de nadie. Las deja caer como resi
 La tarea es un juego de adivinar. Toma <W>el perro ladra en el patio de la escuela</W>, tapa todo
 menos <W>perro</W> y pregunta qué había alrededor; un modelo que responda <W>ladra</W> antes que
 <W>escuela</W> ha aprendido algo, y para responder necesita números con los que puntuar candidatos.
-Esos números son la matriz $\mathbf{E}$: se le ponen números al azar a un modelo que a nadie le interesa
-y se corrigen hasta que acierta —eso es **entrenarlo**—, se tira el modelo y se guarda lo que había dentro.
-Queda por decidir qué se predice, con qué parámetros y qué
+Esos números están en la matriz $\mathbf{E}$, que se incorpora a un modelo con valores al azar y este
+los va corrigiendo hasta que acierta —eso es **entrenar**—, luego se tira el modelo y se guarda $\mathbf{E}$.
+Queda por decidir con qué parámetros se puntúan los candidatos y qué
 quiere decir «acertar» medido en una cuenta —y esa cuenta, escrita con cuidado, sale impagable.
 
 Desliza por el corpus una ventana de $m$ tokens a cada lado: el token del medio es el **centro**, los de los lados
@@ -85,8 +85,8 @@ parámetros terminan pareciéndose entre sí exactamente cuando las entradas com
 ## Predecir el contexto: el objetivo del skip-gram
 
 Fija la ventana en $m$ y recorre el corpus. El *skip-gram* toma cada posición $t$, con su token
-central $w_t$, y pide predecir cada uno de sus vecinos por separado. Queda escribir en qué consiste
-acertar, y eso se escribe como una **pérdida**: un solo número, calculado a partir de los parámetros
+central $w_t$, y pide predecir cada uno de sus vecinos por separado. Acertar se escribe como una
+**pérdida**: un solo número, calculado a partir de los parámetros
 y del corpus entero, que mide lo mal que lo hace el modelo. Corregir los parámetros hasta que
 acierte es hacer pequeño ese número. La del skip-gram es la log-verosimilitud negativa media de
 los pares:
@@ -99,7 +99,7 @@ donde $t$ recorre las $T$ posiciones del corpus y el signo menos da la vuelta al
 probabilidad del par real hay que subirla, así que $\mathcal{L}$ hay que bajarla. Falta lo esencial:
 qué es $P(c \mid w)$.
 
-Predecir es elegir entre candidatos, y elegir exige puntuarlos: hace falta un número que diga cómo
+Predecir es elegir entre candidatos, y elegir exige puntuarlos. Hace falta un número que diga cómo
 de bien encajan el centro $w$ y un candidato a contexto $c$. Word2Vec toma el más simple que hay
 entre dos vectores, su producto escalar: crece cuando apuntan en direcciones parecidas, y crece
 también cuando son largos. Llamémoslo la **afinidad** del par.
@@ -124,13 +124,13 @@ $\mathbf{e}_{w_i}^{\top}$. La afinidad del par pasa a ser $\mathbf{u}_c^{\top}\m
 una entrada consigo misma, $\mathbf{u}_w^{\top}\mathbf{e}_w$, puede bajar sin que $\mathbf{e}_w$
 tenga que encogerse.
 
-Para leer una afinidad como probabilidad hacen falta dos cosas, y el *softmax* hace las dos:
+Leer afinidad como probabilidad pide volverla positiva y que todas sumen 1; el *softmax* hace las dos:
 
 $$
 P(c \mid w) = \frac{\exp\!\left(\mathbf{u}_c^{\top}\mathbf{e}_w\right)}{\sum_{w' \in V} \exp\!\left(\mathbf{u}_{w'}^{\top}\mathbf{e}_w\right)}.
 $$
 
-La exponencial vuelve positivo cualquier número real y conserva el orden, así que el candidato con
+La función exponencial conserva el orden, así que el candidato con
 más afinidad se lleva la probabilidad más alta; el denominador hace que las $\lvert V \rvert$
 probabilidades sumen $1$. Guarda esa frase: el denominador está ahí para que las afinidades sean una
 distribución sobre $V$, y para nada más.
@@ -166,7 +166,7 @@ $$
 $$
 
 Quince millones por un solo par. Y hay $2m = 4$ pares por
-token: sobre el corpus enorme de la lección 4, la del one-hot, con $T = 10^{10}$ tokens, salen
+token, que sobre un corpus enorme con $T = 10^{10}$ tokens, salen
 $4 \times 10^{10}$ pares. Una pasada entera cuesta
 
 $$
@@ -194,10 +194,9 @@ cada una de las 50 000 entradas de acompañarla?», pregunta: «este par, ¿sale
 inventado?». Una pregunta de sí o no no reparte nada entre nadie.
 
 Hacen falta pares falsos, y se fabrican: al par real $(w, c)$ se le añaden
-$n_{\text{neg}}$ pares $(w, w_j)$ con el contexto sacado al azar, y el modelo tiene que decir que sí
-al primero y que no a los otros. La probabilidad de «sí» sale de aplastar la afinidad al intervalo
-$(0,1)$ con la logística $\sigma(x) = 1/(1 + e^{-x})$, la misma que el bloque 2 usa como activación.
-La pérdida de un par real y sus negativos es
+$n_{\text{neg}}$ pares $(w, w_j)$ con el contexto sacado al azar. A cada par se calcula su probabilidad
+aplastando su afinidad al intervalo $(0,1)$ con la logística $\sigma(x) = 1/(1 + e^{-x})$, la misma que el bloque 2 usa
+como activación. Se busca que el par real tenga mayor probabilidad que los inventados. La pérdida de un par real y sus negativos es
 
 $$
 \mathcal{L}_{\text{par}} = -\log \sigma\!\left(\mathbf{u}_c^{\top}\mathbf{e}_w\right) - \sum_{j=1}^{n_{\text{neg}}} \log \sigma\!\left(-\mathbf{u}_{w_j}^{\top}\mathbf{e}_w\right),
@@ -404,13 +403,16 @@ qué cambia el muestreo negativo y qué hace el exponente $3/4$.
 
 ---
 
-Los números de $\mathbf{E}$ ya los pone alguien: el hueco con el que terminó la lección anterior. Queda una peculiaridad: Word2Vec no ve el corpus, ve una ventana cada vez. Que
-<W>perro</W> y <W>gato</W> se parecen lo concluye a base de tropezarse con miles de ventanas, y la
-cuenta que las resume —cuántas veces aparecen juntas dos entradas— es una tabla que la lección 5,
-sobre la bolsa de palabras, ya te enseñó a construir de una pasada.
+La matriz $\mathbf{E}$ ya no está vacía, la deuda con la que terminó la lección anterior queda saldada.
+Queda una peculiaridad. Word2Vec no ve el corpus, ve una ventana cada vez, y que <W>perro</W> y
+<W>gato</W> se parecen lo concluye a base de tropezarse con miles de ellas. Pero eso ya está contado
+antes de entrenar nada: una pasada anotando, para cada par de entradas, cuántas veces una cayó
+dentro de la ventana de la otra, y sale una tabla de $\lvert V \rvert \times \lvert V \rvert$
+**coocurrencias** donde la fila de <W>perro</W> y la de <W>gato</W> ya se parecen. Word2Vec nunca
+llega a escribirla.
 
 Aprovecharla directamente es la lección 8, sobre GloVe y los límites de los embeddings estáticos.
-GloVe (*global vectors*) vuelve a las coocurrencias y busca los vectores que las explican: otro
-objetivo, resultados de la misma familia. Y con las dos técnicas sobre la
-mesa, esa lección cierra el bloque cobrando lo que esconde la palabra «estáticos»: cada entrada del
-vocabulario tiene un vector, uno solo, para siempre.
+GloVe (*global vectors*) construye esa tabla y busca los vectores que la explican: otro objetivo,
+resultados de la misma familia. Y con las dos técnicas sobre la mesa, esa lección cierra el bloque
+cobrando lo que esconde la palabra «estáticos»: cada entrada del vocabulario tiene un vector, uno
+solo, para siempre.

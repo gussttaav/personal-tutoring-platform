@@ -105,7 +105,7 @@ ticked.** This table stays a phase-level dashboard — do not add per-lesson row
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [00 Authoring guide + budget](phase-5-content/00-authoring-guide.md) | `COURSE-P5-00` | ✅ | _tbd_ | local |
-| [01 Block 1 — Fundamentos de NLP](phase-5-content/01-block-1-fundamentos.md) | `COURSE-P5-01` | ⬜ | _tbd_ | |
+| [01 Block 1 — Fundamentos de NLP](phase-5-content/01-block-1-fundamentos.md) | `COURSE-P5-01` | ✅ | _tbd_ | local |
 | [02 Block 2 — Perceptrón Multicapa](phase-5-content/02-block-2-mlp.md) | `COURSE-P5-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Redes Recurrentes](phase-5-content/03-block-3-rnn.md) | `COURSE-P5-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El Puente hacia la Atención](phase-5-content/04-block-4-atencion.md) | `COURSE-P5-04` | ⬜ | _tbd_ | |

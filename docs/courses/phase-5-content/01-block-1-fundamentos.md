@@ -41,7 +41,7 @@ here; STATUS stays phase-level.
 - [x] 5. `bolsa-de-palabras`
 - [x] 6. `embeddings-densos`
 - [x] 7. `word2vec`
-- [ ] 8. `glove-y-limites`
+- [x] 8. `glove-y-limites`
 
 ## Mathematical content
 

@@ -139,6 +139,10 @@ prose immediately after.
 | $n_{\text{neg}}$ | negative samples drawn per real pair |
 | $P_{\text{neg}}$ | the noise distribution they come from, $P_{\text{neg}}(w) \propto f_w^{3/4}$ |
 | $X_{ij}$ | co-occurrence count of words $i$ and $j$ (GloVe) |
+| $X_i$ | $\sum_k X_{ik}$ — every co-occurrence in which $i$ is the centre |
+| $P(j \mid i)$ | $X_{ij}/X_i$, the co-occurrence probability |
+| $g$ | GloVe's weighting, $g(x) = \min\!\left((x/x_{\max})^{\alpha},\, 1\right)$ |
+| $b_i$, $\tilde{b}_k$ | GloVe's two biases — centre role and context role |
 
 **The corpus is not the alphabet**, and a lesson that uses both says so — they are both "characters",
 which is exactly why the confusion is easy. $\Sigma$ is a *set* of distinct symbols. The corpus $D$
@@ -227,6 +231,18 @@ argument about coverage; a second meaning one lesson later is exactly the drift 
 stop. $f_w$ is the corpus frequency of the type $w$ — the same $f$ as $f_i$, indexed by the type
 itself rather than by its position in the ranking, because $P_{\text{neg}}$ needs a frequency per
 entry and not a frequency per rank.
+
+**GloVe's weighting is $g$, never $f$, and its two biases carry a tilde.** The paper writes
+$f(X_{ij})$, and that letter is taken twice over by the row above and by lesson 3: $f_i$ is the
+frequency at rank $i$, $f_w$ the frequency of the type $w$, and $f_w^{3/4}$ is on the page one
+lesson before GloVe arrives. A reader who meets $f$ applied to a co-occurrence count, having just
+read $f$ subscripted by a type, has to decide whether the two are related — same drift that
+$\text{cob}$ and $n_{\text{neg}}$ exist to prevent, and $g$ collides with nothing. The biases are
+$b_i$ for the centre role and $\tilde{b}_k$ for the context role, which is the $\mathbf{e}$/$\mathbf{u}$
+split of Word2Vec written for scalars; $\mathbf{b}$ stays free for Block 2's layer bias, and the
+tilde is unused elsewhere in the course. Everything else GloVe needs it inherits: the two vectors
+per entry are $\mathbf{e}_{w}$ and $\mathbf{u}_{c}$, in the same $\mathbf{E}$ and $\mathbf{U}$ that
+Word2Vec fills, so the second technique of the block costs no second notation.
 
 $d$ is a document in the TF-IDF lessons and the dimension of $\mathbb{R}^d$ in the representation
 ones. The two never appear in the same equation; the lesson that needs both says which it means, in
