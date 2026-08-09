@@ -1,0 +1,333 @@
+---
+slug: la-neurona
+title: "La neurona artificial"
+block: 2
+order: 1
+minutes: 22
+summary: "Una suma ponderada y un umbral bastan para que un solo objeto convierta un vector en una decisión. Sus pesos son la perpendicular de una frontera que parte el espacio en dos, y el número que calcula antes de decidir mide a qué distancia de esa frontera ha caído la entrada."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-z-a-mano
+    type: numeric
+    prompt: 'Una neurona con pesos $\mathbf{w} = (2,\, -1,\, 3)^{\top}$ y sesgo $b = -6$ recibe la entrada $\mathbf{x} = (1,\, 3,\, 2)^{\top}$. ¿Cuánto vale su preactivación $z$?'
+    answer: -1
+    tolerance: 0.01
+    explanation: 'Coordenada a coordenada, $2 \cdot 1 = 2$, $(-1) \cdot 3 = -3$ y $3 \cdot 2 = 6$; la suma vale $5$ y el sesgo la baja a $z = -1$. Como $z < 0$, el escalón entrega $a = 0$: la neurona dice que no. Fíjate en lo cerca que se queda de decir lo contrario —con $\lVert \mathbf{w} \rVert = \sqrt{14} \approx 3{,}74$, el punto cae a $0{,}27$ de la frontera, y un sesgo de $-5$ lo habría volteado—, y en que $a$ no transmite nada de eso.'
+  - id: q-sesgo
+    type: single
+    prompt: '¿Qué pierde una neurona a la que le quitas el sesgo, es decir, con $b = 0$ fijo?'
+    options:
+      - { id: a, text: 'Su frontera pasa forzosamente por el origen, así que el vector de ceros cae siempre del mismo lado y ninguna frontera separada del origen está a su alcance.' }
+      - { id: b, text: 'Nada: el sesgo se recupera escalando $\mathbf{w}$, porque multiplicar los pesos por una constante desplaza la frontera.' }
+      - { id: c, text: 'La capacidad de separar nada, porque sin sesgo la preactivación vale $z = 0$ para toda entrada.' }
+      - { id: d, text: 'Una dimensión: con $\mathbf{x} \in \mathbb{R}^{d}$ y $b = 0$ la frontera pasa a tener dimensión $d - 2$.' }
+    answer: a
+    explanation: 'Con $b = 0$ el vector nulo cumple $\mathbf{w}^{\top}\mathbf{0} = 0$, así que está en la frontera pase lo que pase con los pesos, y la frontera queda clavada al origen. Sobre las reseñas eso significa que una sin ninguna entrada del vocabulario recibe siempre el mismo veredicto. (b) confunde escalar con desplazar: multiplicar $\mathbf{w}$ por una constante positiva deja la frontera exactamente donde estaba, que es justo lo que enseña la celda al multiplicar por diez. (c) es falso —$z = \mathbf{w}^{\top}\mathbf{x}$ sigue variando con la entrada—, y (d) también: el hiperplano sigue teniendo dimensión $d - 1$, sólo que ahora pasa por un punto concreto.'
+  - id: q-frontera
+    type: multi
+    prompt: 'Sobre la frontera de decisión $\mathbf{w}^{\top}\mathbf{x} + b = 0$ de una neurona con escalón, marca todo lo que sea cierto.'
+    options:
+      - { id: a, text: '$\mathbf{w}$ es perpendicular a ella: la diferencia entre dos puntos cualesquiera de la frontera anula su producto escalar con $\mathbf{w}$.' }
+      - { id: b, text: 'Multiplicar $\mathbf{w}$ y $b$ por $10$ deja la frontera donde estaba y no cambia ni una decisión.' }
+      - { id: c, text: 'El valor de $a$ dice a qué distancia de la frontera ha caído $\mathbf{x}$.' }
+      - { id: d, text: 'En $\mathbb{R}^{d}$ tiene dimensión $d - 1$: una recta en el plano, un plano en el espacio.' }
+    answer: [a, b, d]
+    explanation: 'Las tres ciertas son las tres cosas que la geometría de la lección establece. (a) sale de restar las dos ecuaciones, $\mathbf{w}^{\top}(\mathbf{x} - \mathbf{x}^{\prime}) = 0$; (b) sale de que la frontera es un conjunto donde algo vale cero, y multiplicar por diez no cambia quién vale cero; (d) es lo que quiere decir hiperplano. La falsa es (c), y por poco: la distancia con signo es $z / \lVert \mathbf{w} \rVert$, un número que existe y que la neurona calcula por el camino, pero $a$ es lo que queda después del escalón y sólo dice de qué lado. Esa pérdida es el asunto de la lección siguiente.'
+challenges: []
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 1. */}
+
+Un vector no decide nada por su cuenta. Ocho lecciones de tokenizar, contar y ajustar han dejado el
+texto convertido en coordenadas, y eso resuelve el lado de la entrada: falta el objeto que mira
+esas coordenadas y decide. De ese objeto conoces sólo el tipo —$f : \mathbb{R}^d \to
+\mathbb{R}^k$, escrito en la primera lección del curso, sobre el problema de representar el
+lenguaje, y aparcado allí mismo—, y un tipo, por sí solo, no computa nada. Esta lección monta la unidad de la que
+$f$ está hecho por dentro, y resulta que una sola ya decide.
+
+Pon un caso encima de la mesa. Diez reseñas de una película, de una línea cada una, y un vocabulario
+de ocho entradas; cada reseña es su bolsa de palabras, el vector que cuenta cuántas veces aparece
+cada entrada, igual que en la lección 5 del bloque anterior, sobre la bolsa de palabras. Así, <W>buena película la
+recomiendo</W> y <W>mala película muy lenta</W> son dos puntos de $\mathbb{R}^{8}$, y de cada uno quieres lo mismo:
+si la reseña habla bien o mal de la película. Dos respuestas posibles. Entre el punto y la respuesta, por ahora, no hay nada.
+
+Lo más corto que se puede poner ahí es una votación. Cada coordenada del vector aporta algo a favor
+o en contra según lo que valga, y con cuánta fuerza lo aporta lo fija un número asociado a esa
+coordenada. Se suman todas las aportaciones, sale un único número, y ese número se compara con un
+umbral: por encima, una respuesta; por debajo, la otra. Ahí acaba el objeto. No hay nada más.
+
+Esa suma tiene una lectura geométrica que conviene ver antes de escribirla. Con dos coordenadas por
+punto, que es lo que cabe en un dibujo, el conjunto de puntos donde la suma vale justo el umbral es
+una recta, y lo que hace el objeto es mirar de qué lado de la recta has caído.
+
+<Explorable
+  id="perceptron-boundary"
+  caption="Arrastra los puntos y mira cómo la recta se recoloca para dejar cada color de un lado. El segundo botón carga cuatro puntos que ninguna recta separa, y por qué eso importa tanto ocupa una lección entera de este bloque."
+/>
+
+La recta se mueve sola porque el explorable corrige sus números cada vez que un punto queda del lado
+que no le toca; de dónde salen esos números es el asunto de buena parte del bloque, y aquí sólo hace
+falta verla llegar. Con los dos grupos separados llega y se para. Fíjate en cuántas rectas distintas
+valen: si hay holgura entre los grupos, hay un margen entero de posiciones que no cometen ni un
+error, y el explorable se queda con la primera que encuentra. Y arrastra un punto verde hasta el
+otro grupo: el aviso de debajo cambia en cuanto ninguna recta puede con el reparto.
+
+<Callout type="intuition" title="La idea en una frase">
+Una neurona no compara la entrada con nada guardado: parte el espacio en dos con una superficie
+plana y mira de qué lado has caído. Todo lo que puede llegar a distinguir está en dónde pone esa
+superficie.
+</Callout>
+
+## Qué calcula una neurona
+
+Fijemos la entrada: un vector $\mathbf{x} \in \mathbb{R}^{d}$, columna, como todos los del curso.
+Una **neurona** son dos cosas. Un vector de **pesos** $\mathbf{w} \in \mathbb{R}^{d}$, uno por
+coordenada de la entrada, y un escalar $b \in \mathbb{R}$ llamado **sesgo**. Con ellos calcula un
+número,
+
+$$
+z = \mathbf{w}^{\top}\mathbf{x} + b = \sum_{i=1}^{d} w_i x_i + b,
+$$
+
+que es la **preactivación**, y a ese número le aplica una **función de activación** $\varphi$, cuyo
+resultado
+
+$$
+a = \varphi(z)
+$$
+
+es lo que la neurona entrega. Los dos son escalares: una neurona, mire el vector que mire, devuelve
+un número. El tipo que quedó aparcado en el arranque del curso pedía $k$ números de salida, y uno
+alcanza para decidir entre dos respuestas; los otros $k - 1$ salen de poner más neuronas al lado,
+cada una con sus propios pesos, y eso llega más adelante en este bloque.
+
+Falta elegir $\varphi$, y aquí la fijo por decreto con la más antigua de
+todas, el escalón:
+
+$$
+\text{escalón}(z) = \begin{cases}
+  1 & \text{si } z \geq 0 \\
+  0 & \text{si } z < 0
+\end{cases}.
+$$
+
+Con eso la neurona entrega un $1$ o un $0$, y nada entre medias. Una neurona con escalón tiene
+nombre propio desde 1958, y es el que da título a este bloque: **perceptrón**. Que hay otras candidatas,
+y que la elección pese, lo verás enseguida; el escalón está aquí porque es
+el que deja la geometría a la vista.
+
+Merece la pena leer $\mathbf{w}$ despacio cuando la entrada es una bolsa de palabras, porque
+entonces cada coordenada de $\mathbf{x}$ cuenta ocurrencias de una entrada del vocabulario y cada
+peso es la opinión de la neurona sobre esa entrada: un número, positivo o negativo, y uno solo. Como
+$z$ es una suma, esas opiniones se acumulan sin estorbarse —dos apariciones de <W>buena</W> aportan
+el doble que una— y el orden de la reseña no interviene en ningún sitio, porque tampoco intervenía
+en la representación. Lo que la neurona añade sobre aquella bolsa es el veredicto; lo que la bolsa
+traía perdido sigue perdido.
+
+El sesgo no es la opinión sobre ninguna palabra: es lo que la neurona opina antes de leer nada.
+Fija dónde cae el umbral, porque comparar $z$ con cero es comparar la suma de las opiniones con $-b$. Y
+en el dibujo, es lo que permite que la recta no tenga que pasar por el origen.
+
+El término neurona viene prestado de la biología y conviene no estirarlo. Una célula nerviosa
+integra señales y se dispara al pasar de cierto umbral, y ahí termina el parecido. Lo que has leído
+es una suma ponderada seguida de una comparación, y eso es todo lo que hay que defender.
+
+### La frontera que separa, y a qué distancia caes de ella
+
+$\varphi$ no mira $z$, mira su signo. Así que todo lo que la neurona distingue está contenido en el
+conjunto de puntos donde $z$ cambia de signo, su **frontera de decisión**:
+
+$$
+\{\, \mathbf{x} \in \mathbb{R}^{d} \;:\; \mathbf{w}^{\top}\mathbf{x} + b = 0 \,\}.
+$$
+
+Con $d = 2$ y $\mathbf{x} = (x_1, x_2)^{\top}$ esa ecuación se despeja,
+
+$$
+x_2 = -\frac{w_1 x_1 + b}{w_2},
+$$
+
+y es la recta del explorable de arriba, siempre que $w_2 \neq 0$; si vale cero la recta es vertical y
+la ecuación de partida sigue describiéndola igual de bien. En $\mathbb{R}^{3}$ el mismo conjunto es
+un plano, y en $\mathbb{R}^{d}$ un **hiperplano**: un objeto de dimensión $d - 1$ que parte el
+espacio en dos mitades. Con las reseñas de abajo $d = 8$, y con un vocabulario real serían decenas
+de miles; el hiperplano no se dibuja, pero es el mismo.
+
+Los pesos no sólo colocan esa frontera, son perpendiculares a ella. Toma dos puntos cualesquiera
+$\mathbf{x}$ y $\mathbf{x}^{\prime}$ que estén en ella. Los dos anulan la ecuación, así que restando
+una de otra el sesgo se cancela y queda
+
+$$
+\mathbf{w}^{\top}\mathbf{x} - \mathbf{w}^{\top}\mathbf{x}^{\prime} = \mathbf{w}^{\top}\left(\mathbf{x} - \mathbf{x}^{\prime}\right) = 0,
+$$
+
+donde $\mathbf{x} - \mathbf{x}^{\prime}$ es una dirección cualquiera contenida en la frontera. El
+producto escalar de $\mathbf{w}$ con todas ellas es cero: $\mathbf{w}$ apunta perpendicular a la
+frontera, hacia el lado en el que $z$ es positivo.
+
+Y el sesgo la desplaza. Con $b = 0$ el vector nulo cumple la ecuación, así que la frontera pasa por
+el origen y no puede pasar por otro sitio; en cuanto $b \neq 0$ se despega de él. Sin sesgo, la
+respuesta depende sólo de la dirección de $\mathbf{x}$; con él, también de dónde está.
+
+Falta lo que hace que $z$ valga algo más que su signo. La distancia de un punto cualquiera a la
+frontera, con signo —positiva de un lado, negativa del otro—, es
+
+$$
+\frac{\mathbf{w}^{\top}\mathbf{x} + b}{\lVert \mathbf{w} \rVert} = \frac{z}{\lVert \mathbf{w} \rVert},
+$$
+
+de modo que $z$ es esa distancia multiplicada por $\lVert \mathbf{w} \rVert$. Su magnitud dice cuánto
+margen tiene la decisión, y el escalón se queda con el signo y tira el resto.
+
+<Details summary="La distancia con signo, paso a paso">
+
+Sea $\mathbf{x}$ un punto cualquiera y $\mathbf{p}$ el punto de la frontera más próximo a él. El
+segmento que los une es perpendicular a la frontera, y la dirección perpendicular acabamos de verla:
+es la de $\mathbf{w}$. Escribamos entonces
+
+$$
+\mathbf{x} = \mathbf{p} + t\,\frac{\mathbf{w}}{\lVert \mathbf{w} \rVert},
+$$
+
+donde $\mathbf{w} / \lVert \mathbf{w} \rVert$ tiene longitud $1$ y $t \in \mathbb{R}$ es por tanto la
+distancia con signo que buscamos. Multiplicando los dos lados por $\mathbf{w}^{\top}$ y sumando $b$,
+
+$$
+\mathbf{w}^{\top}\mathbf{x} + b = \underbrace{\mathbf{w}^{\top}\mathbf{p} + b}_{= \,0} + \; t\,\frac{\mathbf{w}^{\top}\mathbf{w}}{\lVert \mathbf{w} \rVert}.
+$$
+
+El primer sumando de la derecha vale cero porque $\mathbf{p}$ está en la frontera, que es lo que
+significa estar en ella. En el segundo, $\mathbf{w}^{\top}\mathbf{w} = \lVert \mathbf{w} \rVert^{2}$
+por definición de la norma, así que se queda en $t \, \lVert \mathbf{w} \rVert$. El lado izquierdo es
+$z$, luego $z = t \, \lVert \mathbf{w} \rVert$ y
+
+$$
+t = \frac{z}{\lVert \mathbf{w} \rVert}.
+$$
+
+</Details>
+
+## Una neurona que puntúa reseñas en NumPy
+
+La celda monta el caso del principio: diez reseñas, ocho entradas, la bolsa de palabras de cada una
+y una neurona encima. Los pesos los he puesto yo a mano —$+1$ a las entradas que suman, $-1$ a las
+que restan, $0$ a las que no opinan—, porque en esta lección todavía no hay nada que los elija.
+Ejecútala y mira tres cosas: la columna de $z$, lo que pasa al multiplicar los pesos por diez, y lo
+que pasa al mover el sesgo medio punto.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# --- Diez reseñas de una línea, con lo que diría de cada una una persona.
+resenas = [
+    ("la película es divertida y la recomiendo", 1),
+    ("la película es lenta y aburrida", 0),
+    ("buena película la recomiendo", 1),
+    ("mala película muy lenta", 0),
+    ("divertida y buena", 1),
+    ("la película es mala", 0),
+    ("aburrida y lenta", 0),
+    ("la recomiendo", 1),
+    ("buena película pero lenta", 0),
+    ("divertida y la recomiendo", 1),
+]
+
+# Ocho entradas. Lo que no está en el vocabulario no llega al vector.
+V = ["aburrida", "buena", "divertida", "la", "lenta", "mala", "película", "recomiendo"]
+pos = {e: i for i, e in enumerate(V)}
+
+X = np.zeros((len(resenas), len(V)))
+for f, (texto, _) in enumerate(resenas):
+    for token in texto.split():
+        if token in pos:
+            X[f, pos[token]] += 1.0
+y = np.array([etiqueta for _, etiqueta in resenas])
+
+print("X tiene forma", X.shape, "— una fila por reseña,", len(V), "columnas")
+print("  ", " ".join(e.rjust(11) for e in V))
+print("x1:", " ".join(str(int(v)).rjust(11) for v in X[0]))
+print()
+
+# Los pesos los he puesto yo a mano: +1 lo que suma, -1 lo que resta, 0 lo que no opina.
+w = np.array([-1.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0])
+b = 0.0
+print("w: ", " ".join(("%+d" % v).rjust(11) for v in w), "   b =", b)
+print()
+
+
+def decide(X, w, b):
+    z = X @ w + b
+    return z, (z >= 0).astype(int)        # escalón: 1 si z >= 0, 0 si no
+
+
+z, a = decide(X, w, b)
+print("reseña".ljust(41), "z".rjust(5), " decide".ljust(12), "etiqueta")
+for f, (texto, etiqueta) in enumerate(resenas):
+    print(texto.ljust(41), ("%.1f" % z[f]).rjust(5),
+          (" positiva" if a[f] else " negativa").ljust(12),
+          "positiva" if etiqueta else "negativa")
+print()
+print("aciertos:", int((a == y).sum()), "de", len(y))
+print()
+
+# 1. Multiplicar (w, b) por diez multiplica todas las z y no mueve una sola decisión.
+z10, a10 = decide(X, 10 * w, 10 * b)
+print("con (10w, 10b)   z =", np.round(z10, 1))
+print("                 mismas decisiones:", bool(np.array_equal(a, a10)))
+print()
+
+# 2. El sesgo desliza la frontera: la reseña que caía justo encima cambia de lado.
+z05, a05 = decide(X, w, -0.5)
+cambian = [resenas[f][0] for f in np.nonzero(a != a05)[0]]
+print("con b = -0.5     cambia de lado:", cambian)
+print("                 aciertos:", int((a05 == y).sum()), "de", len(y))
+print()
+
+# 3. A qué distancia de la frontera cae cada reseña: z entre la norma de w.
+norma = float(np.linalg.norm(w))
+print("norma de w =", round(norma, 3))
+for f in [0, 5, 8]:
+    print("  ", resenas[f][0].ljust(41), "distancia", round(float(z[f]) / norma, 3))
+`} />
+
+Nueve aciertos de diez, y el fallo está donde tenía que estar. <W>buena película pero lenta</W> suma
+$+1$ por <W>buena</W> y $-1$ por <W>lenta</W>, así que su $z$ vale exactamente $0$ y cae encima de la
+frontera; el escalón resuelve el empate hacia arriba y la manda al lado positivo, y la etiqueta decía
+negativa.
+
+Las dos sondas siguientes son el asunto de la lección. Multiplicar $\mathbf{w}$ y $b$ por diez
+multiplica por diez las diez preactivaciones —$2{,}0$ pasa a $20$, $-1{,}0$ a $-10$— y no cambia ni
+una decisión: la frontera es el conjunto donde $z$ vale cero, y quién vale cero no depende de la
+escala. Mover el sesgo a $-0{,}5$, en cambio, desliza la frontera medio punto, la reseña que estaba
+justo encima cae del otro lado y los aciertos suben a diez de diez.
+
+Las últimas líneas imprimen la distancia. Con $\lVert \mathbf{w} \rVert = 2{,}449$, la primera reseña
+cae a $0{,}816$ de la frontera y <W>la película es mala</W> a $-0{,}408$: la mitad de lejos, del otro
+lado. Esa diferencia existe en $z$, y a $a$ no llega.
+
+## Comprueba tu intuición
+
+Tres preguntas: cuánto vale una preactivación, qué se pierde al quitar el sesgo y qué es cierto de la
+frontera.
+
+<Quiz id="q-z-a-mano" />
+
+<Quiz id="q-sesgo" />
+
+<Quiz id="q-frontera" />
+
+---
+
+Dos cosas quedan abiertas y no son igual de urgentes. Los ocho pesos de arriba los escribí yo
+mirando las reseñas, y eso no se puede repetir con un vocabulario de cincuenta mil entradas: que la
+neurona los encuentre sola, a partir de ejemplos, ocupa buena parte de lo que queda del bloque. La
+otra está más cerca. La geometría le dio un significado a la magnitud de $z$ —la distancia a la
+frontera, escalada por $\lVert \mathbf{w} \rVert$— y el escalón lo tira entero: a la reseña que cae a
+$0{,}816$ y a la que cae rozando la frontera les entrega el mismo $1$.
+
+El escalón entró en esa casilla por decreto, y caben en ella muchas más funciones. Algunas conservan la
+distancia en lugar de aplastarla; otras cambian de raíz lo que se puede llegar a calcular cuando
+varias neuronas se apilan. Cuál poner en $\varphi$, y qué se gana y se pierde con cada una, es la
+lección 2 de este bloque, sobre funciones de activación y no linealidad.

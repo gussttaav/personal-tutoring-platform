@@ -253,6 +253,21 @@ elsewhere in the course silently points at the wrong place — across 40 lessons
 months, that *will* happen, and nothing checks it. Naming the topic makes the reference
 self-correcting: the number may drift, but the reader can still find what you meant.
 
+**And from Block 2 on, say which block.** Lessons restart at 1 in every block, so the course has
+five lesson 5s. Inside its own block a bare number is fine — the reader is standing there. Pointing
+anywhere else, name the block:
+
+> ✅ la lección 5 del bloque anterior, sobre la bolsa de palabras · la lección 2 de este bloque,
+> sobre funciones de activación y no linealidad
+> ❌ la lección 5, sobre la bolsa de palabras
+
+Prefer «del bloque anterior» to «del bloque 1» when it *is* the preceding block: it survives a
+renumbering of the syllabus, and the topic is already there to pin it down. Two blocks back or
+further, use the number.
+
+Block 1 is exempt by accident of being first, and its existing references are correct as written —
+every one of them points inside Block 1.
+
 ## 3. The budget
 
 Targets, not laws. But a lesson over them should be **split**, and `pnpm lint:content` says so.

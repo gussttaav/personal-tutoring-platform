@@ -253,15 +253,41 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 
 | Symbol | Meaning |
 |---|---|
+| $\mathbf{w} \in \mathbb{R}^{d}$, $b$ | weights and bias of a **single** neuron |
+| $z$, $a$ | that neuron's pre-activation and activation, $z = \mathbf{w}^{\top}\mathbf{x} + b$ and $a = \varphi(z)$ |
+| $\varphi$ | the activation slot — a generic activation function |
+| $\text{escalón}$ | the threshold activation: $1$ when $z \geq 0$, $0$ otherwise |
 | $\mathbf{W}^{(l)}$, $\mathbf{b}^{(l)}$ | weights and bias of layer $l$ |
 | $\mathbf{z}^{(l)}$ | pre-activation, $\mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}$ |
-| $\mathbf{h}^{(l)}$ | activation, $\sigma(\mathbf{z}^{(l)})$; $\mathbf{h}^{(0)} = \mathbf{x}$ |
+| $\mathbf{h}^{(l)}$ | activation, $\varphi(\mathbf{z}^{(l)})$; $\mathbf{h}^{(0)} = \mathbf{x}$ |
 | $\hat{\mathbf{y}}$, $\mathbf{y}$ | prediction, target |
 | $\boldsymbol{\delta}^{(l)}$ | $\partial\mathcal{L}/\partial\mathbf{z}^{(l)}$, the backprop error signal |
-| $\sigma$, $\tanh$, $\text{ReLU}$ | activations |
+| $\sigma$, $\tanh$, $\text{ReLU}$ | the activations that go in that slot |
 
 $\boldsymbol{\delta}$ is the **one** allowed `\boldsymbol`, because `\mathbf` does not embolden
 Greek letters in KaTeX. It is the exception that proves the rule; do not extend it to Latin letters.
+
+**The single neuron and the layer are the same object at two sizes**, and the block says so where
+the two first share a page. Block 2 lesson 1 has one neuron and no layers, so its weights are a
+vector $\mathbf{w}$ and its bias, pre-activation and activation are scalars. Once the lessons on
+hidden layers and the forward pass stack them, that neuron is row $j$ of $\mathbf{W}^{(l)}$, its
+bias is $b^{(l)}_j$, and its $z$ and $a$ are $z^{(l)}_j$ and $h^{(l)}_j$. A reader who meets
+$\mathbf{w}$ in one lesson and $\mathbf{W}^{(l)}$ in the next cannot otherwise tell a change of size
+from a change of meaning.
+
+**$\varphi$ is the slot; $\sigma$ is one thing that goes in it.** The row above used to write the
+activation as $\sigma(\mathbf{z}^{(l)})$, which contradicts §4 — there $\sigma$ is the logistic
+sigmoid and nothing else, so a network with $\tanh$ or ReLU could not be written down. Neither
+obvious alternative letter is free: $f$ is the model as a whole,
+$f : \mathbb{R}^d \to \mathbb{R}^k$, fixed by Block 1 lesson 1 and still on the page in Block 2, and
+$g$ is GloVe's weighting one lesson earlier. $\varphi$ collides with nothing and is what the
+literature reaches for.
+
+**The step is $\text{escalón}$, roman and Spanish.** §1 sets functions roman, and the course already
+prefers a Spanish abbreviation where one is unambiguous ($\text{cob}$ for coverage). $H$ for
+Heaviside was the alternative and is rejected for the reason $\text{cov}$ was: $\mathbf{H}$ is the
+batched activation matrix of §3, and a reader meeting $H$ beside $\mathbf{h}^{(l)}$ has to decide
+whether the two are related.
 
 ### Block 3 — Redes Neuronales Recurrentes
 

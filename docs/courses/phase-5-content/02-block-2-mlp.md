@@ -37,7 +37,7 @@ Authored one at a time via `/course-lesson`, on the shared branch, reviewed befo
 task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
 here; STATUS stays phase-level.
 
-- [ ] 1. `la-neurona`
+- [x] 1. `la-neurona`
 - [ ] 2. `funciones-activacion`
 - [ ] 3. `xor-y-capas-ocultas`
 - [ ] 4. `forward-pass`
