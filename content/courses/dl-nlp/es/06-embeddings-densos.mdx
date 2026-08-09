@@ -75,7 +75,7 @@ enciende alrededor.
   caption="Los vecinos de la palabra elegida se unen a ella con una línea. Prueba con palabras de grupos distintos y fíjate en que esas listas no las ha escrito nadie: salen de las coordenadas."
 />
 
-Dos advertencias, porque el mapa promete más de lo que puede dar. Sus coordenadas están puestas a
+Dos advertencias, porque el mapa promete más de lo que puede dar. Sus coordenadas las he puesto yo a
 mano para el curso: no salen de ningún modelo entrenado. Y un embedding de verdad tiene cientos de
 dimensiones; lo que sobrevive al aplastarlo hasta dos es la vecindad, que es lo que hay que mirar
 aquí. El botón de la analogía enseña algo más fuerte —que también las direcciones significan— y esta
@@ -330,5 +330,5 @@ Darlo es la lección 7, sobre Word2Vec. En lugar de contar contextos, se le pide
 prediga, y se usan como embedding los números que le permiten acertar: el *skip-gram* predice el
 contexto a partir de la entrada, y CBOW (*continuous bag of words*) hace lo contrario. Las dos
 tropiezan con la misma piedra en cuanto se escriben con cuidado, y es una piedra grande: repartir
-probabilidad entre las entradas posibles obliga a sumar sobre las 50 000, una vez por cada token del
-corpus. Quitar esa suma de en medio ocupa media lección.
+probabilidad entre las entradas posibles obliga a sumar sobre las 50 000, una vez por cada par
+(entrada, contexto) del corpus. Quitar esa suma de en medio ocupa media lección.

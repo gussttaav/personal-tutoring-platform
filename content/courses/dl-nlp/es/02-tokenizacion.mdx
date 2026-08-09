@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Los dos bajan: hay menos símbolos distintos y también menos tokens.' }
       - { id: d, text: 'Ninguno de los dos cambia; solo cambia cómo se imprimen los tokens.' }
     answer: a
-    explanation: 'El corpus tiene $C$ caracteres, los pongas como los pongas, y $T\bar{\ell} = C$. Al pasar a caracteres la longitud media cae a $\bar{\ell} = 1$, así que $T = C$: la secuencia se alarga tanto como corta es la unidad. Y el vocabulario se reduce al alfabeto, unas decenas de símbolos, porque ya no hay que guardar una entrada por cada forma de cada palabra. Los dos efectos son el mismo efecto visto desde sus dos extremos.'
+    explanation: 'El corpus tiene $C$ caracteres y $T\bar{\ell} = C$. Al pasar a caracteres la longitud media cae a $\bar{\ell} = 1$, así que $T = C$: la secuencia se alarga tanto como corta es la unidad. Y el vocabulario se reduce al alfabeto, unas decenas de símbolos, porque ya no hay que guardar una entrada por cada forma de cada palabra. Los dos efectos son el mismo efecto visto desde sus dos extremos.'
   - id: q-subpalabras-damelo
     type: multi
     prompt: 'La palabra <W>dámelo</W> no aparece en el corpus con el que construiste $V$. Sí aparecen <W>dá</W>, <W>me</W> y <W>lo</W>. ¿Qué tokenizadores pueden representarla sin tratarla como una unidad desconocida? Marca todos los que valgan.'
@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: 'El texto llega con la <W>ñ</W> escrita como dos puntos de código: una <W>n</W> seguida de una tilde combinante. Sin normalizar antes a la forma NFC, un tokenizador de caracteres produce dos tokens donde debería haber uno.'
     answer: true
-    explanation: 'Unicode admite dos escrituras de la misma letra, y la descompuesta es literalmente una secuencia de dos puntos de código. Un tokenizador de caracteres corta por puntos de código, así que produce <W>n</W> y la tilde por separado —y <W>niño</W> pasa a tener seis tokens en lugar de cinco, con un vocabulario que ahora contiene una tilde suelta. La normalización a NFC no es una manía de limpieza: es lo que hace que dos textos idénticos en pantalla lo sean también para el tokenizador.'
+    explanation: 'Unicode admite dos escrituras de la misma letra, y la descompuesta es literalmente una secuencia de dos puntos de código. Un tokenizador de caracteres corta por puntos de código, así que produce <W>n</W> y la tilde por separado —y <W>niño</W> pasa a tener cinco tokens en lugar de cuatro, con un vocabulario que ahora contiene una tilde suelta. La normalización a NFC no es una manía de limpieza: es lo que hace que dos textos idénticos en pantalla lo sean también para el tokenizador.'
   - id: q-longitud
     type: numeric
     prompt: '¿Cuántos tokens produce un tokenizador de caracteres sobre la frase <W>El niño juega.</W>? Cuenta también los espacios y el punto final.'
@@ -54,9 +54,9 @@ resuelta—. A eso se le llama tokenización, y a cada unidad resultante, un *to
 Tokenizar es elegir dónde cortar, y hay tres respuestas naturales. Cortar por palabras, que es como
 lees tú. Cortar por caracteres, que es como está escrito el fichero. O cortar por trozos de palabra,
 por **subpalabras**: una solución intermedia que puede parecer poco intuitiva al principio, pero que
-hoy emplean la mayoría de los modelos de lenguaje modernos. Observa cómo se tokeniza una misma frase con cada una de estas estrategias.
-Escribe también una frase propia y fíjate especialmente en el número que acompaña a cada ejemplo:
-indica cuántos tokens son necesarios para representar exactamente el mismo texto.
+hoy emplean la mayoría de los modelos de lenguaje modernos. El explorable de abajo corta una misma
+frase con las tres y pone, junto a cada corte, cuántos tokens le hacen falta para escribir ese
+mismo texto. Escribe una frase tuya y compara esos tres números.
 
 <Explorable id="tokenizer-playground" caption="La misma frase, tres cortes. Mira cuántos tokens produce cada uno y qué le pasa a una palabra larga como «programación»." />
 
@@ -119,12 +119,15 @@ Todo lo que $\tau$ descarta, el modelo no volverá a verlo jamás.
 Ahora el compromiso, que se deriva de contar caracteres. Toma un corpus con $C$ caracteres en
 total sumando todos sus documentos, y aplícale una tokenización $\tau$, que lo parte en $T$ tokens
 $u_1, \dots, u_T$. Denotaremos por $\lvert u \rvert$ la longitud,
-en caracteres, del token $u$. Como los tokens son trozos del propio texto, sus
-longitudes suman el texto entero:
+en caracteres, del token $u$. Los tokens son trozos del propio texto, así que si $\tau$ conserva
+todos los caracteres —la condición de reconstrucción sin convenios— sus longitudes suman el texto
+entero:
 
 $$
 \sum_{i=1}^{T} \lvert u_i \rvert = C.
 $$
+
+Si descarta los espacios, la suma se queda un poco por debajo de $C$, y lo verás en la celda.
 
 Llamemos $\bar{\ell}$ a la longitud media de un token:
 
@@ -261,8 +264,9 @@ print("fuera de V:", [t for t in nueva if t not in V])
 Con caracteres, $T \times \bar{\ell}$ da $C$ exactamente. Con palabras se queda por debajo, y la
 diferencia son los espacios: el tokenizador los tiró, así que ya no se puede reconstruir el texto a
 partir de los tokens. Es la condición de reconstrucción rota a cambio de una comodidad, y por eso
-los tokenizadores de subpalabras marcan de algún modo dónde estaban los espacios —el <W>##</W> que ves
-en el explorable cumple ese papel.
+los tokenizadores de subpalabras marcan de algún modo dónde estaban los espacios. El <W>##</W> que ves
+en el explorable marca que el trozo continúa la palabra anterior —la ausencia de espacio—, y con eso
+el espacio se reconstruye.
 
 La penúltima línea muestra el corte sobre una frase con clíticos y contracciones: <W>Dámelo</W> sale
 entero, <W>del</W> y <W>al</W> también, aunque cada una sea de por sí dos palabras (<W>de el</W>, <W>a el</W>). El

@@ -13,7 +13,7 @@ quiz:
     type: boolean
     prompt: 'Con un mismo vocabulario, <W>el perro muerde al niño</W> y <W>el niño muerde al perro</W> reciben vectores de bolsa de palabras distintos.'
     answer: false
-    explanation: 'Reciben el mismo vector, y el nombre de la representación lo anuncia. Los dos textos tienen los mismos tokens con las mismas ocurrencias, y la suma $\sum_{t} \mathbf{o}_{w_t}$ no depende del orden en que se sumen sus términos: cada coordenada acaba contando lo mismo. Lo que cuesta es concreto: quién muerde a quién es exactamente la información que se pierde, y ninguna tarea que dependa de ella —traducir, responder preguntas, decidir si una reseña habla bien o mal de algo— se puede resolver sobre este vector. Recuperar el orden es lo que ocupa el bloque 3, sobre redes recurrentes, y después el bloque 5, sobre el Transformer.'
+    explanation: 'Reciben el mismo vector, y el nombre de la representación lo anuncia. Los dos textos tienen los mismos tokens con las mismas ocurrencias, y la suma $\sum_{t} \mathbf{o}_{w_t}$ no depende del orden en que se sumen sus términos: cada coordenada acaba contando lo mismo. Lo que cuesta es concreto: quién muerde a quién es exactamente la información que se pierde, y ninguna tarea que dependa de ella —traducir, responder preguntas, decidir si una reseña que dice <W>no está mal</W> habla bien o mal— se puede resolver sobre este vector. Recuperar el orden es lo que ocupa el bloque 3, sobre redes recurrentes, y después el bloque 5, sobre el Transformer.'
   - id: q-idf-cero
     type: numeric
     prompt: 'Un corpus tiene $N = 1\,000$ documentos y la entrada <W>de</W> aparece en todos ellos. En un documento donde <W>de</W> sale 57 veces, ¿cuánto vale $\text{tfidf}(\textit{de}, d)$?'
@@ -39,7 +39,7 @@ quiz:
       - { id: c, text: 'La similitud coseno también se dobla.' }
       - { id: d, text: 'La distancia euclídea mide aquí la longitud del documento, que no es de lo que el documento trata.' }
     answer: [a, b, d]
-    explanation: 'La resta vale $2\mathbf{x}_{d_1} - \mathbf{x}_{d_1} = \mathbf{x}_{d_1}$, así que la distancia es su norma (a) y crece con el documento (d), aunque los dos textos digan exactamente lo mismo. El coseno no se mueve (b), porque $2\mathbf{x}_{d_1}$ apunta en la misma dirección y el factor $2$ se cancela entre el numerador y la norma del denominador. (c) es falso por partida doble: el coseno de dos vectores con coordenadas no negativas nunca pasa de $1$, y aquí ya estaba en $1$.'
+    explanation: 'La resta vale $2\mathbf{x}_{d_1} - \mathbf{x}_{d_1} = \mathbf{x}_{d_1}$, así que la distancia es su norma (a) y crece con el documento (d), aunque los dos textos digan exactamente lo mismo. El coseno no se mueve (b), porque $2\mathbf{x}_{d_1}$ apunta en la misma dirección y el factor $2$ se cancela entre el numerador y la norma del denominador. (c) es falso por partida doble: el coseno nunca pasa de $1$, y aquí ya estaba en $1$.'
 challenges: []
 ---
 

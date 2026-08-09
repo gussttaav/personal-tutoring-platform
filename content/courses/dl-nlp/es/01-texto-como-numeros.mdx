@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: "Porque el español tiene acentos y la red se entrena en inglés." }
       - { id: d, text: "Porque las redes procesan un caracter a la vez y <W>hola</W> es una palabra." }
     answer: b
-    explanation: "Una red es una función entre espacios vectoriales reales: su entrada tiene que vivir en $\\mathbb{R}^d$. Un símbolo del vocabulario no es un vector, así que ni siquiera está mal calculado dárselo, no está definido. Nada tiene que ver con la memoria, el idioma ni los caracteres."
+    explanation: "Una red es una función entre espacios vectoriales reales: su entrada tiene que vivir en $\\mathbb{R}^d$. Un símbolo del vocabulario no es un vector, así que dárselo no produce un cálculo erróneo: produce uno que no está definido. Nada tiene que ver con la memoria, el idioma ni los caracteres."
   - id: q-indice-alfabetico
     type: single
     prompt: "Numerar el vocabulario por orden alfabético —<W>casa</W> → 1, <W>gato</W> → 2, <W>perro</W> → 3— es una representación válida, porque asigna a cada palabra un número de forma determinista."
@@ -94,10 +94,18 @@ r : V \to \mathbb{R}^d,
 $$
 
 y con ella cada palabra de la secuencia se vuelve un vector, de modo que el texto entero se
-convierte en una matriz de números, una fila por posición, $d$ columnas por palabra:
+convierte en una matriz de números, una fila por posición y $d$ columnas —los vectores de este
+curso son columnas, así que al apilarlos cada uno se escribe tumbado, como fila—:
 
 $$
-X = \big(\, r(w_1),\; r(w_2),\; \dots,\; r(w_T) \,\big) \in \mathbb{R}^{T \times d}.
+\mathbf{X} =
+\begin{pmatrix}
+r(w_1) \\
+r(w_2) \\
+\vdots \\
+r(w_T)
+\end{pmatrix}
+\in \mathbb{R}^{T \times d}.
 $$
 
 Todo este bloque trata de cómo construir $r$. Antes de proponer ninguna, conviene fijar qué se le
@@ -180,12 +188,14 @@ espacio, y en general $n$ puntos mutuamente equidistantes necesitan $n - 1$ dime
 
 Toma la frase <W>el gato bebe leche</W> y el vocabulario ordenado alfabéticamente
 $V = \{\textit{bebe}, \textit{el}, \textit{gato}, \textit{leche}\}$, con índices $1$ a $4$. La
-frase se convierte en la secuencia $(2, 3, 1, 4)$, y con $d = 1$ la matriz $X$ del apartado
+frase se convierte en la secuencia $(2, 3, 1, 4)$, y con $d = 1$ la matriz $\mathbf{X}$ del apartado
 anterior tiene forma $4 \times 1$. Ahora responde tres preguntas mirando *solo* esos números,
 como los mira la red:
 
-1. Según los números, ¿qué dos palabras de la frase se parecen más? Compara $\lvert 2 - 3 \rvert, 
-   \lvert 3 - 1 \rvert$ y las demás distancias. ¿Coincide con lo que tú sabes de esas palabras?
+1. Según los números, ¿qué dos palabras de la frase se parecen más? Compara $\lvert 2 - 3 \rvert,
+   \lvert 3 - 1 \rvert$ y las demás distancias, y no busques una sola ganadora: hay tres parejas
+   empatadas a distancia $1$ —<W>bebe</W> y <W>el</W>, <W>el</W> y <W>gato</W>, <W>gato</W> y
+   <W>leche</W>—, y no has contado mal. ¿Coincide ese empate con lo que tú sabes de esas palabras?
 2. ¿Qué palabra cae en el punto medio entre <W>el</W> $(2)$ y <W>leche</W> $(4)$? ¿Significa algo esa
    pregunta fuera de los números?
 3. Añade <W>agua</W> al vocabulario. Reordena alfabéticamente y reasigna los índices. ¿Cuántas de las

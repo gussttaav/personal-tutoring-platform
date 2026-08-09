@@ -24,7 +24,7 @@ quiz:
     prompt: 'Una frase de 12 tokens, ventana de $m = 3$ a cada lado. ¿Cuántos pares (centro, contexto) produce el skip-gram? Cuenta los bordes: los tokens del principio y del final tienen menos vecinos.'
     answer: 60
     tolerance: 0
-    explanation: 'En el interior cada posición da $2m = 6$ pares, lo que sugiere $2mT = 72$. Los bordes recortan: para cada desplazamiento $j$ entre $1$ y $m$ se pierden dos pares (uno por cada extremo), así que el total exacto es $2mT - m(m+1) = 72 - 12 = 60$. La cuenta importa por lo que viene después: el número de pares crece con $T$ y con $m$, y el coste de un paso multiplica a ese número.'
+    explanation: 'En el interior cada posición da $2m = 6$ pares, lo que sugiere $2mT = 72$. Los bordes recortan: para cada desplazamiento $j$ entre $1$ y $m$ se pierden $2j$ pares —los $j$ primeros tokens no tienen vecino a distancia $j$ por la izquierda, ni los $j$ últimos por la derecha—, y $\sum_{j=1}^{m} 2j = m(m+1)$, así que el total exacto es $2mT - m(m+1) = 72 - 12 = 60$. La cuenta importa por lo que viene después: el número de pares crece con $T$ y con $m$, y el coste de un paso multiplica a ese número.'
   - id: q-denominador
     type: single
     prompt: '¿Qué es exactamente lo que hace impagable el objetivo exacto del skip-gram?'
@@ -58,7 +58,7 @@ challenges: []
 La lección anterior, sobre representaciones densas, dejó la tabla montada y vacía: la matriz de embeddings
 $\mathbf{E}$ tiene forma, tamaño y una geometría que ya sabes leer, y ni un solo número puesto. La hipótesis
 distribucional quedó aceptada y sin consecuencias prácticas, porque afirma dónde vive el significado
-y no dice cómo calcularlo. Word2Vec fue el primero que salvó ese hueco entero, en 2013, y llega por
+y no dice cómo calcularlo. Word2Vec fue el primero que salvó ese hueco a escala real, en 2013, y llega por
 donde no se espera: no calcula las coordenadas de nadie. Las deja caer como residuo de otra tarea.
 
 La tarea es un juego de adivinar. Toma <W>el perro ladra en el patio de la escuela</W>, tapa todo

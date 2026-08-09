@@ -68,7 +68,7 @@ representaciones densas.
 Restar <W>hombre</W> a <W>rey</W> y sumar el resultado a <W>mujer</W> cae sobre <W>reina</W>. Lo que
 afirma el dibujo no es que <W>rey</W> y <W>reina</W> estén cerca —esa vecindad ya la daba aquella
 lección—, sino algo más fuerte: que la *diferencia* entre dos vectores significa por sí misma y
-reaparece intacta en otro par. La advertencia es la de entonces: las coordenadas están puestas a mano,
+reaparece intacta en otro par. La advertencia es la de entonces: las coordenadas las he puesto yo a mano,
 así que el mapa enseña la forma de la afirmación, no su prueba.
 
 Que las diferencias signifiquen no puede ser un accidente: si restar vectores da algo con sentido,
@@ -95,7 +95,7 @@ Los conteos dicen con quién aparece cada entrada; sus razones, qué la separa d
 la información. GloVe sale de exigirles a las diferencias de vectores que reproduzcan esas razones.
 </Callout>
 
-## Qué le piden a los vectores las razones de coocurrencia
+## Qué les piden a los vectores las razones de coocurrencia
 
 Llamemos $X_{ik}$ a la casilla de la tabla de coocurrencias: el conteo de la entrada $k$ dentro de la
 ventana de la entrada $i$, con la misma $m$ de la lección anterior. Es simétrica y tiene
@@ -252,7 +252,7 @@ en la que aparece, porque la frase no entra en la función. **Estático** quiere
 ## Contar los pares y ajustar GloVe en NumPy
 
 La celda cuenta y ajusta. El corpus son 680 tokens de plantillas, con <W>banco</W> plantado en dos
-mundos, el del dinero y el del parque; $d_{\text{model}} = 3$ va corta adrede, porque con más
+mundos, el del dinero y el del parque; he dejado $d_{\text{model}} = 3$ adrede, porque con más
 coordenadas la tabla se ajusta casi exacta y no se ve trabajar a la pérdida. Minimizar $\mathcal{L}$
 es descenso de gradiente, que es el bloque 2: por ahora vale con que corrija los parámetros poco a
 poco. Ejecútala y mira tres cosas: la columna de razones, los vecinos del ajuste y las tres filas del
@@ -328,7 +328,8 @@ def ajusta(X, semilla=3):
     E = 0.1 * r.standard_normal((n, d_model))
     U = 0.1 * r.standard_normal((n, d_model))
     bE, bU = np.zeros(n), np.zeros(n)
-    # AdaGrad: cada parámetro lleva su propio paso, que decae con lo que ya se ha movido.
+    # AdaGrad es una variante del descenso de gradiente del bloque 2; aquí solo estabiliza
+    # el paso: cada parámetro lleva el suyo, y decae con lo que ese parámetro ya se ha movido.
     aE, aU = np.ones((n, d_model)), np.ones((n, d_model))
     abE, abU = np.ones(n), np.ones(n)
 
@@ -402,8 +403,8 @@ print("lo mismo contando también las vacías    ",
       round(coseno(fila(X2, pos2, "banco_dinero", todas), fila(X2, pos2, "banco_parque", todas)), 2))
 `} />
 
-La tabla ocupa 432 celdas, frente a los 5 440 pares que recorrería la ventana deslizante sobre el
-mismo texto. Y sus razones reproducen en 680 tokens el patrón de
+La tabla ocupa 432 celdas, frente a los 3 840 pares que la ventana deslizante genera sobre el
+mismo texto —los bordes de cada frase ya descontados, como en la lección anterior—. Y sus razones reproducen en 680 tokens el patrón de
 <W>hielo</W> y <W>vapor</W>: <W>cliente</W> vale $3{,}00$ a favor de <W>hipoteca</W>, <W>niña</W> vale
 $0{,}33$, y <W>banco</W> y <W>en</W> dan $1{,}00$ exacto porque salen igual con las dos.
 

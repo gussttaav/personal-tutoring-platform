@@ -14,7 +14,7 @@ quiz:
     prompt: 'Un corpus de 36 tokens tiene 8 tipos, con estas frecuencias: <W>de</W> 12, <W>la</W> 9, <W>niño</W> 5, <W>escuela</W> 4, <W>programación</W> 2, <W>río</W> 2, <W>criptomoneda</W> 1, <W>gramática</W> 1. Cortas el vocabulario en $k = 4$. ¿Cuántas de las 36 ocurrencias quedan convertidas en <W>\<UNK></W>?'
     answer: 6
     tolerance: 0
-    explanation: 'Los cuatro tipos más frecuentes suman $12 + 9 + 5 + 4 = 30$ ocurrencias, así que las $36 - 30 = 6$ restantes pasan a <W>\<UNK></W>. Mira el reparto que sale de ahí: con $k = 4$ te quedas con la mitad de los tipos y cubres el 83 % de los tokens, $\text{cob}(4) = 30/36$. Esa asimetría es la que hace que un corte agresivo parezca barato cuando lo mides sobre tokens, y es también la razón por la que esa medida engaña: los seis tokens que pierdes son <W>criptomoneda</W> y <W>gramática</W>, no <W>de</W> y <W>la</W>.'
+    explanation: 'Los cuatro tipos más frecuentes suman $12 + 9 + 5 + 4 = 30$ ocurrencias, así que las $36 - 30 = 6$ restantes pasan a <W>\<UNK></W>. Mira el reparto que sale de ahí: con $k = 4$ te quedas con la mitad de los tipos y cubres el 83 % de los tokens, $\text{cob}(4) = 30/36$. Esa asimetría es la que hace que un corte agresivo parezca barato cuando lo mides sobre tokens, y es también la razón por la que esa medida engaña: los seis tokens que pierdes son <W>programación</W>, <W>río</W>, <W>criptomoneda</W> y <W>gramática</W>, no <W>de</W> y <W>la</W>.'
   - id: q-zipf-cobertura
     type: single
     prompt: 'Un corpus tiene $M = 100\,000$ tipos y sus frecuencias siguen $f_i \approx a/i$. Quieres un vocabulario que cubra el 90 % de las ocurrencias. ¿Cuántos tipos necesitas, aproximadamente?'
@@ -378,8 +378,9 @@ recupera y qué gasta el token desconocido, y qué significa de verdad una tasa 
 ---
 
 El vocabulario ya es una lista cerrada: $k$ tipos elegidos por frecuencia, más una entrada al final
-que recoge todo lo demás. Con eso, $r$ vuelve a estar definida sobre cualquier texto, que era la
-condición de partida. Pero de $r$ solo conocemos qué recibe y qué devuelve.
+que recoge todo lo demás. A esa lista, la $V'$ de más arriba, la llamamos $V$ de aquí en adelante,
+con <W>\<UNK></W> como una entrada más. Con eso, $r$ vuelve a estar definida sobre cualquier texto,
+que era la condición de partida. Pero de $r$ solo conocemos qué recibe y qué devuelve.
 Sigue haciendo falta decidir qué vector concreto le toca a cada una de esas $\lvert V \rvert$
 entradas, y la lección 1, la
 del problema de representar el lenguaje, dejó dicho lo que no vale: con $d = 1$ el orden de la recta

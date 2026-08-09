@@ -340,6 +340,19 @@ The distinction is real and the reader feels it: **we** are deriving, **you** ar
 and the derivation reads as homework assigned to the student, while the exercise reads as something
 being performed at them.
 
+There is a third, rare voice, and it has exactly one job:
+
+- **First person singular for what the author did to the material** — numbers invented for a toy
+  example, a parameter deliberately set low, a figure drawn by hand rather than trained. *Sus
+  coordenadas las he puesto yo a mano para el curso.* · *está ahí porque me he inventado los
+  números* · *he dejado $d_{\text{model}} = 3$ adrede*.
+
+This is "say what you are giving up" with someone owning it, so the impersonal alternative defeats
+the purpose: *las coordenadas están puestas a mano* discloses that they were placed while hiding
+that a person chose them, which is the whole content of the sentence. Use it only for that — never
+for the derivation, never for the student — and expect a handful of these moments per block, not one
+per lesson.
+
 **Never the impersonal or the passive for either.** Not *se debe normalizar a NFC*, not *el
 estudiante debe ejecutar la celda*, not *el lector observará que*. Spanish makes impersonal
 constructions very easy to reach for, which is precisely why this needs saying: they are the default
@@ -438,6 +451,11 @@ Three consequences that are easy to get wrong:
 - **`«…»` is not `<W>`.** «unidad» is the ordinary word *unidad* being used loosely, before the
   lesson has pinned it down. <W>gato</W> is the string g-a-t-o as an object on the page. Both are
   "a word being pointed at", which is exactly why they need different marks.
+- **In a plain-text prop there is no `<W>`, so `«…»` covers for it.** `caption`, `alt` and `summary`
+  are strings (§7), so a string the lesson talks *about* is written `«programación»` there —
+  `caption="…qué le pasa a una palabra larga como «programación»"`. This is the one place the two
+  marks collide, and it is a limitation of the prop, not a second meaning for `«…»`: in prose the
+  same word still takes `<W>`.
 
 Spanish typography, since this is Spanish prose and half of it differs from English:
 
@@ -655,7 +673,7 @@ de exponenciar'` is worth ten minutes of their time.
 | `<Figure>` | `src`, `alt` (both required), `caption?` | Assets live in `public/courses/<course-slug>/`; `src` is the path from `public`. **`caption` and `alt` are plain text** — no markdown, no LaTeX, so write `1/i`, not `$1/i$` |
 | `<Details summary="…">` | `summary` required | Native `<details>`; use for long derivations |
 | `<ColabLink notebook="…">` | URL, or `github/user/repo/blob/main/nb.ipynb` | Block 5's escape hatch to a GPU |
-| `<Explorable id="…" caption?="…">` | `id` must be a registered widget | Lazy-loaded on the lesson route only |
+| `<Explorable id="…" caption?="…">` | `id` must be a registered widget | Lazy-loaded on the lesson route only. **`caption` is plain text**, like `<Figure>`'s — see §5 for the `«…»` that stands in for `<W>` there |
 | `<PyCell code={`…`} packages?={[…]}>` | `code` is a **prop, not children** | Requires `hasCode: true` |
 | `<Quiz id="…">` | `id` must match a frontmatter question | Requires `hasQuiz: true` |
 | `<CodeChallenge id="…">` | `id` must match a frontmatter challenge | Also satisfies `hasCode: true` |
