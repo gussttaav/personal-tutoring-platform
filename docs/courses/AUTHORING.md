@@ -693,6 +693,50 @@ de exponenciar'` is worth ten minutes of their time.
 | `<Quiz id="…">` | `id` must match a frontmatter question | Requires `hasQuiz: true` |
 | `<CodeChallenge id="…">` | `id` must match a frontmatter challenge | Also satisfies `hasCode: true` |
 
+### When a figure earns its place
+
+Everything below this line is *how* to make a diagram. Nothing said *when*, and the content showed
+it: the first ten lessons of the course carry two figures between them, one of those buried inside a
+`<Details>`. That was not ten deliberate decisions to go without — the template offered an
+`<Explorable>` slot and a `<PyCell>` slot and never mentioned `<Figure>`, so the question never got
+asked. Same failure as the bridge pickup in §1: the step nothing prompts is the step that gets
+skipped.
+
+Two triggers, and they are different enough to name separately.
+
+**1. The prose is describing a shape or a position.** When a sentence leans on *entre*, *por debajo*,
+*paralelas*, *opuestas*, *perpendicular*, *la franja*, the reader is being asked to draw the picture
+in their head from a description — which is the one job prose is worst at. The rectangles under
+$1/x$ in Block 1 lesson 3, the three points on three axes in lesson 4, the band between two lines in
+Block 2 lesson 3: in all three the argument **is** the picture, and the paragraph was a caption for
+a figure that was missing.
+
+**2. The object has a conventional picture the student will meet everywhere else.** Circles and
+arrows in layers is how every paper and every library's documentation draws a network. A student who
+finishes Block 2 without seeing it has to pick the convention up somewhere else, and will suspect
+the course of hiding something. Block 3's unrolled recurrence and Block 5's encoder/decoder stack
+are the same case.
+
+And the case against, which covers most lessons. **No figure that re-draws an equation, restates a
+table, or duplicates an `<Explorable>` already on the page.** A widget and a figure of the same
+object need separate jobs to both survive: in Block 2 lesson 3 the widget shows the neuron failing
+and the figure shows the two lines that succeed, and neither would do the other's work.
+
+Two consequences, both easy to get backwards:
+
+- **A figure replaces prose; it does not accompany it.** If the paragraph beside it still spells out
+  what the picture shows, one of the two is redundant, and it is the paragraph. Block 2 lesson 3
+  lost its sentence about the two positive phrases landing on the same vector the moment the caption
+  said it.
+- **The caption carries the claim; `alt` carries the description.** «Las mismas tres palabras, dos
+  representaciones» tells the reader what to conclude. «Un diagrama de tres puntos» tells them what
+  they can already see — and that belongs in `alt`, which is written for someone who cannot see the
+  figure at all.
+
+There is deliberately **no figure count in the §3 budget**. Every axis there measures load a student
+has to get through; a figure reduces it. A minimum would produce decorative diagrams in the lessons
+that do not need one, which is the opposite of this rule.
+
 **Static diagrams are SVG, hand-written, and dark-only.** A geometric argument the prose is already
 making — the rectangles under $1/x$ in Block 1 lesson 3 — is worth a picture, and an SVG committed to
 `public/courses/dl-nlp/` is the cheapest one: no build step, no raster to regenerate at 2×, and it
@@ -703,8 +747,10 @@ and leave the background transparent so the figure sits on whatever surface host
 `currentColor` and `var(--text)` silently render as black. Check the file at 360px before shipping:
 label text below 12px in the source is unreadable once the image scales down.
 
-**Widget ids** ([`widget-ids.ts`](../../src/features/courses/widgets/widget-ids.ts)) — an id not on
-this list is a hard lint failure:
+### Widget ids
+
+[`widget-ids.ts`](../../src/features/courses/widgets/widget-ids.ts) — an id not on this list is a
+hard lint failure:
 
 `sigmoid-explorer` · `tokenizer-playground` · `embedding-projection` · `bag-of-words` ·
 `activation-explorer` · `perceptron-boundary` · `gradient-descent-2d` · `backprop-trace` ·
@@ -861,6 +907,9 @@ Copy this into the PR description.
 - [ ] **Every acronym expanded on first use in *this* lesson** — OOV, BPE, BPTT, TF-IDF, MLP, RNN —
       even if an earlier lesson already expanded it
 - [ ] Every derivation shown, not asserted
+- [ ] **No paragraph asks the reader to picture a shape or a position that a figure could just
+      show** (§7); where there is a figure it *replaced* that prose rather than joining it, its
+      caption states the claim and its `alt` describes the picture
 - [ ] `summary`, `minutes`, `block`, `order` filled and honest
 - [ ] `hasCode` / `hasQuiz` agree with the body
 - [ ] **Every code cell run in the browser, output correct**

@@ -104,6 +104,37 @@ que el estudiante mueva algo y vea qué cambia antes de leer la fórmula que lo 
 
 <Explorable id="tokenizer-playground" caption="TODO — qué debe mirar el estudiante aquí." />
 
+{/* ¿LLEVA FIGURA? Pregúntatelo aquí, que es donde toca, y no lo dejes en «no» por
+    omisión (AUTHORING.md §7, «When a figure earns its place»). Dos casos la piden:
+
+      1. El argumento es una FORMA o una POSICIÓN. Si la prosa se apoya en «entre»,
+         «por debajo», «paralelas», «opuestas», «perpendicular», «la franja», le estás
+         pidiendo al lector que dibuje él el cuadro a partir de una descripción, que es
+         justo lo que peor hace la prosa.
+      2. El objeto tiene un dibujo CONVENCIONAL que el estudiante se va a encontrar en
+         cualquier paper y en cualquier otro curso —la red por capas, la recurrencia
+         desplegada, la pila encoder/decoder—.
+
+    Y casi siempre no la lleva: nada de redibujar una ecuación, repetir una tabla ni
+    duplicar el explorable que ya está arriba.
+
+    La figura SUSTITUYE a la prosa que la describiría, no la acompaña. El `caption` dice
+    la conclusión; el `alt` describe el dibujo, y es para quien no puede verlo. Los dos
+    son texto plano: ni markdown ni LaTeX.
+
+    El SVG va en public/courses/dl-nlp/, escrito a mano, con los hex del tema puestos a
+    pelo y el fondo transparente. Descoméntalo si la lección lleva figura, y bórralo si
+    no. (Va comentado a propósito: el lint valida los ids de Explorable, PyCell, Quiz y
+    CodeChallenge, pero NO la `src` de una Figure, así que una que se quede aquí olvidada
+    da un 404 en silencio.)
+
+<Figure
+  src="/courses/dl-nlp/TODO.svg"
+  alt="TODO — qué se ve en el dibujo, para quien no puede verlo."
+  caption="TODO — qué tiene que concluir el estudiante, no lo que ya está viendo."
+/>
+*/}
+
 <Callout type="intuition" title="La idea en una frase">
 TODO — el resumen que te gustaría que recordara dentro de seis meses.
 </Callout>

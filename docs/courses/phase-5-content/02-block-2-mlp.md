@@ -39,7 +39,7 @@ here; STATUS stays phase-level.
 
 - [x] 1. `la-neurona`
 - [x] 2. `funciones-activacion`
-- [ ] 3. `xor-y-capas-ocultas`
+- [x] 3. `xor-y-capas-ocultas`
 - [ ] 4. `forward-pass`
 - [ ] 5. `funcion-de-perdida`
 - [ ] 6. `descenso-gradiente`
