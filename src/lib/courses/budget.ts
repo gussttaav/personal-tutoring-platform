@@ -33,6 +33,15 @@ const BUDGET_IGNORE = /\{\/\*\s*content-budget:\s*ignore/;
 const PYCELL_TAG = /<PyCell\b/g;
 
 /*
+ * A cell's own `code={`…`}` literal. The middle `[\s\S]*?` is lazy, so it stops at
+ * the FIRST `code={` after the tag rather than running into the next cell, and the
+ * body ends at the first backtick — which is why AUTHORING.md requires backticks
+ * inside a cell to be escaped. An escaped one would end the match early and
+ * under-count; that is a warning being conservative, not a wrong build.
+ */
+const PYCELL_CODE = /<PyCell\b[\s\S]*?code=\{`([\s\S]*?)`\}/g;
+
+/*
  * Words per minute — a STUDY rate, not a reading rate: this is prose the student
  * re-reads and works derivations out of, not text they skim. A skim rate (~180 wpm)
  * would put a mid-budget lesson at ~11 minutes, which is not what reading one costs.
@@ -61,6 +70,10 @@ export interface LessonCounts {
   widgets: number;
   /** `<PyCell>` placements. */
   codeCells: number;
+  /** Lines in the LONGEST single `<PyCell>` — how tall the biggest wall of code is.
+   *  Separate from `codeCells` on purpose: three short cells and one 142-line cell
+   *  are both "1–3 cells", and only one of them is a lesson the student can read. */
+  longestCodeCell: number;
   /** Questions declared in the frontmatter `quiz` array. */
   quizQuestions: number;
   /** Challenges declared in the frontmatter `challenges` array. */
@@ -92,6 +105,10 @@ interface Axis {
   max: number;
   ceiling: number;
   warnUnder: boolean;
+  /** What to do about it. Defaults to splitting the lesson, which is right for every
+   *  axis that measures the whole lesson — and wrong for the one that measures a
+   *  single cell, where the fix is to split that cell. */
+  ceilingAdvice?: string;
 }
 
 /** The table from docs/courses/AUTHORING.md, in code. Keep the two in sync. */
@@ -101,6 +118,11 @@ const AXES: Axis[] = [
   { key: "displayEquations", label: "display equations", min: 5,    max: 12,   ceiling: 20,   warnUnder: false },
   { key: "widgets",          label: "widgets",           min: 1,    max: 2,    ceiling: 3,    warnUnder: false },
   { key: "codeCells",        label: "code cells",        min: 1,    max: 3,    ceiling: 5,    warnUnder: false },
+  // The editor shows 20 lines before it scrolls (features/courses/code/editor-metrics.ts),
+  // so the target is two screenfuls of that box and the ceiling is four. Past the
+  // ceiling the student is scrolling a window through a program, which is not reading.
+  { key: "longestCodeCell",  label: "longest code cell (lines)", min: 0, max: 45, ceiling: 90, warnUnder: false,
+    ceilingAdvice: "split this cell" },
   { key: "quizQuestions",    label: "quiz questions",    min: 3,    max: 5,    ceiling: 8,    warnUnder: true  },
   { key: "challenges",       label: "code challenges",   min: 0,    max: 1,    ceiling: 2,    warnUnder: false },
 ];
@@ -193,6 +215,27 @@ function countTag(body: string, tag: RegExp): number {
   return body.match(new RegExp(tag.source, "g"))?.length ?? 0;
 }
 
+/**
+ * Lines in the tallest `<PyCell>` in this body, 0 if there are none. Blank interior
+ * lines count: they occupy the box exactly like code does. Fence-aware for the same
+ * reason `withoutCode` is — a cell quoted inside an ```mdx fence is documentation
+ * ABOUT a cell, not a cell the student has to scroll through.
+ */
+export function countLongestCodeCell(body: string): number {
+  const source = withoutFences(body);
+  let longest = 0;
+  for (const [, literal] of source.matchAll(PYCELL_CODE)) {
+    // Mirrors `dedent()` in PyCell.tsx: the blank leading/trailing lines a template
+    // literal inherits from its position in the file are stripped before render, so
+    // they are not lines the student ever sees.
+    const lines = literal.split("\n");
+    while (lines.length > 0 && lines[0].trim() === "") lines.shift();
+    while (lines.length > 0 && lines[lines.length - 1].trim() === "") lines.pop();
+    longest = Math.max(longest, lines.length);
+  }
+  return longest;
+}
+
 /** Measure one lesson source on every budget axis. Pure — no filesystem. */
 export function lessonCounts(source: string): LessonCounts {
   const { data, content } = matter(source);
@@ -212,6 +255,10 @@ export function lessonCounts(source: string): LessonCounts {
     displayEquations: countDisplayEquations(content),
     widgets,
     codeCells,
+    // Off `content`, not `placed`: `withoutCode` strips inline code, and a cell's
+    // `code={`…`}` literal routinely contains backticks-free Python that survives it
+    // fine — but the fence-stripping this axis needs is done inside the counter.
+    longestCodeCell: countLongestCodeCell(content),
     quizQuestions,
     challenges,
     estimatedMinutes: Math.round(
@@ -231,7 +278,7 @@ export function formatCounts(c: LessonCounts): string {
     `${c.minutes} min (≈${c.estimatedMinutes})`,
     `${c.displayEquations} eq`,
     `${c.widgets} widgets`,
-    `${c.codeCells} cells`,
+    `${c.codeCells} cells (max ${c.longestCodeCell} lines)`,
     `${c.quizQuestions} quiz`,
     `${c.challenges} challenges`,
   ].join(" · ");
@@ -249,7 +296,8 @@ export function budgetWarnings(c: LessonCounts): string[] {
     const band = `target ${axis.min}–${axis.max}, ceiling ${axis.ceiling}`;
     if (value > axis.ceiling) {
       warnings.push(
-        `${axis.label}: ${value} — past the hard ceiling of ${axis.ceiling}; split this lesson`,
+        `${axis.label}: ${value} — past the hard ceiling of ${axis.ceiling}; ` +
+          `${axis.ceilingAdvice ?? "split this lesson"}`,
       );
     } else if (value > axis.max) {
       warnings.push(`${axis.label}: ${value} — over budget (${band})`);

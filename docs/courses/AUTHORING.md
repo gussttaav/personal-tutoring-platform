@@ -279,6 +279,7 @@ Targets, not laws. But a lesson over them should be **split**, and `pnpm lint:co
 | Display equations | 5–12 | 20 |
 | Widgets | 1–2 | 3 |
 | Code cells | 1–3 | 5 |
+| Longest code cell (lines) | ≤ 45 | 90 |
 | Quiz questions | 3–5 | 8 |
 | Code challenges | 0–1 | 2 |
 
@@ -288,6 +289,13 @@ Word counts exclude LaTeX, code and JSX — the number tracks how much *prose* a
 through, not how maths-heavy the lesson is. Zero widgets and zero code cells never warn: a
 prose-only lesson (Block 1 lesson 1) is a legitimate design choice. Being under budget on **words**
 or **quiz questions** does warn — a 400-word lesson is usually half a lesson.
+
+**Cell length is its own axis, because the cell count cannot see it.** Three cells and one 142-line
+cell are both "1–3 code cells", and only one of them is readable. The editor shows **20 lines**
+before it scrolls (`src/features/courses/code/editor-metrics.ts`), so the target is two screenfuls
+of that box and the ceiling is four. Past the ceiling the fix is to **split the cell** — usually
+into "set it up" and "now run it", with a paragraph in between — not to split the lesson. Blank
+lines inside the cell count; they take up the same space.
 
 `minutes` in the frontmatter is what the reader UI promises the student. The lint estimates it from
 the content — **120 wpm**, plus a flat cost per widget, cell, question and challenge — and warns

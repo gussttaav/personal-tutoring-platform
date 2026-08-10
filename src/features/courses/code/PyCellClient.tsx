@@ -16,12 +16,18 @@
  * can drift out of alignment. Known limitation: once edited, the code stays
  * unhighlighted, because re-highlighting would mean shipping Shiki to the client.
  *
+ * The editor SCROLLS past `EDITOR_MAX_LINES` rather than growing (see
+ * `./editor-metrics.ts` for the size and why). Two consequences are load-bearing and
+ * must not be undone: the swap restores `scrollTop` across the two elements, and the
+ * caret lands at the START of the code rather than the end. Without either, clicking
+ * into — or running — a long cell yanks the box to its last line.
+ *
  * All copy is hardcoded Spanish, matching the rest of the widget layer (P2-01/02).
  */
 
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { WidgetButton } from "@/features/courses/widgets/primitives/WidgetButton";
 // Type-only — erased at build, so nothing under `lib/courses/pyodide/` reaches the
@@ -31,6 +37,7 @@ import type { LoadStage, RunResult } from "@/lib/courses/pyodide/client";
 
 import { CodeOutput, type CellPlot } from "./CodeOutput";
 import { applyAutoClose, applyBackspacePair, applyEnter, applyTab } from "./editing";
+import { EDITOR_MAX_HEIGHT, isCapped } from "./editor-metrics";
 import { appendChunk, EMPTY_OUTPUT, type OutputBufferState } from "./output";
 
 export interface PyCellClientProps {
@@ -64,6 +71,7 @@ const editorBox = {
   fontSize: "0.85rem",
   lineHeight: 1.6,
   tabSize: 4,
+  overflowY: "auto",
 } as const;
 
 export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientProps) {
@@ -78,8 +86,12 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [hasRun, setHasRun] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
+  const editorId = useId();
   const textarea = useRef<HTMLTextAreaElement>(null);
+  const highlighted = useRef<HTMLDivElement>(null);
+  const scrollOffset = useRef(0);
   const pendingSelection = useRef<[number, number] | null>(null);
   const stop = useRef<(() => void) | null>(null);
   const release = useRef<(() => void) | null>(null);
@@ -87,6 +99,11 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
   const dirty = value !== code;
   const busy = status !== "idle";
   const showHighlighted = !editing && !dirty && highlightedHtml.length > 0;
+  const capped = isCapped(value);
+
+  const rememberScroll = useCallback((event: React.UIEvent<HTMLElement>) => {
+    scrollOffset.current = event.currentTarget.scrollTop;
+  }, []);
 
   // Release this cell's claim on the shared interpreter. Only ever set if the cell
   // actually ran, so an unused cell never touches the Pyodide module graph.
@@ -101,12 +118,26 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
     }
   });
 
+  // The highlighted <div> and the <textarea> are different elements, so the display
+  // swap loses the scroll offset. In a capped box that is not cosmetic: scrolling to
+  // line 100 and then clicking Ejecutar (which blurs the textarea, and so swaps back)
+  // would snap the code to line 1 exactly when the student wants to keep their place.
+  useLayoutEffect(() => {
+    const element = showHighlighted ? highlighted.current : textarea.current;
+    if (element) element.scrollTop = scrollOffset.current;
+  }, [showHighlighted]);
+
   // Entering edit mode replaces the <pre> with the textarea — move focus with it.
+  // The caret goes to the START, not the end: `setSelectionRange` scrolls the caret
+  // into view, so a cell capped at 20 lines would jump to line 142 the moment the
+  // student clicked near its top. `preventScroll` keeps the PAGE still for the same
+  // reason, and the offset is reapplied last because the selection call moves it.
   useEffect(() => {
     if (!editing || !textarea.current) return;
     const element = textarea.current;
-    element.focus();
-    element.setSelectionRange(element.value.length, element.value.length);
+    element.focus({ preventScroll: true });
+    element.setSelectionRange(0, 0);
+    element.scrollTop = scrollOffset.current;
   }, [editing]);
 
   const handleRun = useCallback(async () => {
@@ -199,16 +230,23 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
   }, []);
 
   const lineCount = value.split("\n").length;
+  // `none` while expanded so the textarea's `resize: vertical` handle works again —
+  // a max-height clamps the height the drag sets, which reads as a broken control.
+  const maxHeight = expanded ? "none" : EDITOR_MAX_HEIGHT;
 
   return (
     <div style={{ margin: "1.75rem 0" }}>
       {showHighlighted ? (
         <div
+          id={editorId}
+          ref={highlighted}
+          className="pycell-editor"
           role="button"
           tabIndex={0}
           aria-label="Editar el código de esta celda"
           onClick={() => setEditing(true)}
           onFocus={() => setEditing(true)}
+          onScroll={rememberScroll}
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
@@ -223,6 +261,7 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
             whiteSpace: "pre",
             overflowX: "auto",
             maxWidth: "100%",
+            maxHeight,
             color: "var(--text)",
           }}
           // Build-time Shiki output from PyCell.tsx — never student input.
@@ -230,7 +269,9 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
         />
       ) : (
         <textarea
+          id={editorId}
           ref={textarea}
+          className="pycell-editor"
           value={value}
           spellCheck={false}
           autoCapitalize="off"
@@ -241,11 +282,13 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
           onKeyDown={handleKeyDown}
           onFocus={() => setEditing(true)}
           onBlur={() => setEditing(false)}
+          onScroll={rememberScroll}
           style={{
             ...editorBox,
             display: "block",
             width: "100%",
             minHeight: "3rem",
+            maxHeight,
             resize: "vertical",
             color: "var(--text)",
             whiteSpace: "pre",
@@ -271,6 +314,18 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
         <WidgetButton onClick={handleReset} disabled={busy || (!dirty && !hasRun)}>
           Reiniciar
         </WidgetButton>
+        {/* Only when something is actually hidden — and it doubles as the affordance
+            that the box is capped, which the scrollbar alone cannot be: on macOS the
+            overlay bar fades out and the cell just looks like a short cell. */}
+        {capped ? (
+          <WidgetButton
+            onClick={() => setExpanded((previous) => !previous)}
+            aria-expanded={expanded}
+            aria-controls={editorId}
+          >
+            {expanded ? "Contraer" : `Ver las ${lineCount} líneas`}
+          </WidgetButton>
+        ) : null}
         {packages.length > 0 ? (
           <span style={{ fontSize: "0.78rem", color: "var(--text-dim)" }}>
             {packages.join(" · ")}

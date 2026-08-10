@@ -10,11 +10,18 @@
 import {
   budgetWarnings,
   countDisplayEquations,
+  countLongestCodeCell,
   countWords,
   isBudgetExempt,
   lessonCounts,
   prose,
 } from "../budget";
+
+/** A `<PyCell>` whose body is exactly `n` lines of Python. */
+function cell(n: number, packages = ""): string {
+  const code = Array.from({ length: n }, (_, i) => `print(${i})`).join("\n");
+  return `<PyCell ${packages}code={\`\n${code}\n\`} />`;
+}
 
 /** A lesson source with `n` prose words in its body, plus whatever else is asked for. */
 function lesson({
@@ -120,6 +127,42 @@ describe("countDisplayEquations", () => {
   });
 });
 
+describe("countLongestCodeCell", () => {
+  it("is 0 when the lesson has no cell", () => {
+    expect(countLongestCodeCell("Solo prosa, y una ecuación $a^2$.")).toBe(0);
+  });
+
+  it("counts the lines a cell actually renders, not the literal's blank edges", () => {
+    // The leading and trailing newlines a template literal inherits from its position
+    // in the MDX file are stripped by `dedent()` before the student ever sees them.
+    expect(countLongestCodeCell(cell(12))).toBe(12);
+  });
+
+  it("counts blank lines inside a cell — they occupy the box like code does", () => {
+    expect(countLongestCodeCell("<PyCell code={`\na = 1\n\n\nb = 2\n`} />")).toBe(4);
+  });
+
+  it("reports the LONGEST cell, not the last or the total", () => {
+    const body = [cell(8), "Prosa entre las dos celdas.", cell(30), cell(5)].join("\n\n");
+    expect(countLongestCodeCell(body)).toBe(30);
+  });
+
+  it("ignores a cell quoted inside a fence — that is documentation, not a cell", () => {
+    const body = ["```mdx", cell(60), "```", cell(9)].join("\n");
+    expect(countLongestCodeCell(body)).toBe(9);
+  });
+
+  it("does not run past a cell into the next one when props sit before `code`", () => {
+    const body = [cell(4, 'packages={["numpy"]} '), cell(7)].join("\n\n");
+    expect(countLongestCodeCell(body)).toBe(7);
+  });
+
+  it("handles Python containing `>` and `{`, which must not end the match early", () => {
+    const body = "<PyCell code={`\nif a > b:\n    d = {\"k\": 1}\n    print(d)\n`} />";
+    expect(countLongestCodeCell(body)).toBe(3);
+  });
+});
+
 describe("lessonCounts", () => {
   it("reads the interactive counts off the body and the frontmatter", () => {
     const source = lesson({
@@ -140,6 +183,7 @@ describe("lessonCounts", () => {
       displayEquations: 1,
       widgets: 1,
       codeCells: 1,
+      longestCodeCell: 1,
       quizQuestions: 4,
       challenges: 1,
     });
@@ -223,6 +267,24 @@ describe("budgetWarnings", () => {
     // Block 1 lesson 1 is deliberately prose-only; warning every run would train
     // authors to skip the warnings that matter.
     expect(budgetWarnings({ ...inBudget, widgets: 0, codeCells: 0, displayEquations: 0 })).toEqual([]);
+  });
+
+  it("warns about one over-long cell even when the cell COUNT is fine", () => {
+    // Three cells is within budget; one of them being 60 lines is not, and the old
+    // per-lesson count could not tell the two situations apart.
+    const warnings = budgetWarnings({ ...inBudget, codeCells: 3, longestCodeCell: 60 });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/longest code cell \(lines\): 60 — over budget/);
+  });
+
+  it("says to split the CELL, not the lesson, past that ceiling", () => {
+    const warnings = budgetWarnings({ ...inBudget, longestCodeCell: 142 });
+    expect(warnings[0]).toMatch(/longest code cell \(lines\): 142 .* split this cell/);
+    expect(warnings[0]).not.toMatch(/split this lesson/);
+  });
+
+  it("stays quiet about a lesson with no code cell at all", () => {
+    expect(budgetWarnings({ ...inBudget, codeCells: 0, longestCodeCell: 0 })).toEqual([]);
   });
 
   it("flags a declared `minutes` the content does not support", () => {

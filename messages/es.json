@@ -859,6 +859,8 @@
       "running": "Comprobando…",
       "stop": "Detener",
       "reset": "Reiniciar",
+      "expand": "Ver las {count} líneas",
+      "collapse": "Contraer",
       "editorLabel": "Tu solución en Python",
       "firstRunNote": "La primera comprobación descarga el intérprete de Python (~15 MB); después queda en la caché del navegador.",
       "keyboardNote": "Este desafío se resuelve mejor con un teclado físico: en el móvil puedes leerlo y volver luego.",

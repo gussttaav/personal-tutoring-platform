@@ -439,6 +439,67 @@ bracket auto-close work in a real browser; Reiniciar restores the original code.
   Left for the user's manual pass (mirrors P2-01/P2-02).
 - Not yet committed to a branch/PR (**local**).
 
+**COURSE-P2-03 follow-up (2026-08-10) — the editor got a height cap.** Amends this task's
+component rather than opening a new one, so it is recorded here. Prompted by reading Block 2:
+the editor had `overflowX` but no vertical bound, so a cell rendered its author's listing at
+full height while the output panel below it had been capped at 320px since day one — the part
+the student must READ was bounded and the part they mostly SKIM was not. Measured on shipped
+content, **10 of 13 cells exceed 40 lines**; `08-glove-y-limites` is 142 lines, **3,116px** as
+rendered, four screens of code between the prose and Ejecutar.
+
+- **New `src/features/courses/code/editor-metrics.ts`.** `EDITOR_MAX_LINES = 20` and a
+  `min(calc(32em + 1.7rem), 60vh)` height, applied by BOTH `PyCellClient` and
+  `CodeChallengeCard` so two editors with the same box metrics cannot drift. `em`, not `rem`:
+  the cap re-derives itself from the box's own font-size instead of being a guess about it.
+  Measured live: editor 462px, and **506px from the top of the code to the bottom of Ejecutar**
+  (was ~1,500px on the 65-line cell, ~3,170px on the 142-line one).
+- **Two fixes were mandatory, not polish — without them the cap is WORSE than no cap.**
+  (1) The `<div>` ⇄ `<textarea>` display swap loses `scrollTop`, because they are different
+  elements; a student who scrolled to line 100 and clicked Ejecutar (which blurs, and so swaps
+  back) snapped to line 1. One `scrollOffset` ref + `onScroll` on both branches + a
+  `useLayoutEffect` on `showHighlighted`. (2) The focus effect put the caret at
+  `value.length`, and `setSelectionRange` scrolls the caret into view — so clicking near the
+  top of the GloVe cell would have jumped to line 142. Caret now lands at `(0, 0)`, the offset
+  is reapplied AFTER the selection call (order matters), and `focus({ preventScroll: true })`
+  keeps the page still.
+- **An expand toggle, not just a scrollbar.** `Ver las 142 líneas` / `Contraer`, rendered only
+  when something is actually hidden. It is the affordance the scrollbar cannot be — on macOS
+  the overlay bar fades out and a capped cell just looks like a short cell — and it keeps the
+  full listing one click away for a student reading the cell as part of the narrative.
+  `maxHeight: none` while expanded, which also un-breaks the textarea's `resize: vertical`
+  (a max-height silently clamps the height a drag sets).
+- **`CodeChallengeCard` got the same cap** (user-confirmed). **Correction to the planning
+  note:** its starter in `10-funciones-activacion` is **12 lines, not 52** — that figure came
+  from an awk script that ran past `starter:` into the `tests:` block. So the cap is dormant on
+  every shipped challenge and exists for the STUDENT's solution as it grows. Verified live: the
+  12-line starter is uncapped with no toggle, and both appear once the box passes 20 lines.
+  Its copy is translated, so `courses.challenge.{expand,collapse}` were added key-for-key
+  (28 keys, both files) — unlike `PyCellClient`, whose copy stays hardcoded Spanish per P2-03.
+- **`lesson.css` scrollbar rule widened** to `.pycell-editor`, and `width: 6px` added next to
+  the existing `height: 6px` — which also fixes the chunky VERTICAL bar the already-capped
+  output/traceback `<pre>`s have had all along. Per the NB already in that block,
+  `scrollbar-width` is still not used (it disables the `::-webkit-` pseudo-elements in Chromium).
+- **New budget axis, because the cap hides the cause.** `budget.ts` gained
+  `countLongestCodeCell` + a `longest code cell (lines)` axis (target ≤ 45 ≈ two windows,
+  ceiling 90 ≈ four) and an optional `Axis.ceilingAdvice`, since "split this lesson" is the
+  wrong advice for one over-long cell. The cell COUNT could never see this: three cells and one
+  142-line cell are both "1–3 code cells". Fence-aware, so a cell quoted in an ```mdx fence is
+  documentation, not a cell. **It fires on 10 shipped lessons today** (3 past the ceiling:
+  142/93/91) — that is the honest signal, and `budgetWarnings` still never touches the exit
+  code. Acting on it is a separate content pass. Row mirrored into `AUTHORING.md`.
+- **Verified live** in a production build (`pnpm build && pnpm start`) with a throwaway,
+  uncommitted Playwright probe: **19/19 checks, zero CSP violations.** Covers the cap and its
+  scroll, the toggle's label/`aria-expanded`/`aria-controls`, expand→collapse round trip, the
+  caret NOT jumping, the offset surviving the swap, the cell still running to the right answer,
+  no horizontal scroll at 360px, the `60vh` clause biting on a short viewport (442px), and the
+  challenge editor's uncapped→capped transition. The cap and the toggle are in the PRERENDERED
+  HTML, so there is no layout shift on hydrate.
+- **The English toggle copy was NOT exercised in a browser**: `dl-nlp` has no `en/` tree, so
+  `/en/cursos/dl-nlp/*` 404s by design and every `courses.challenge.*` string is in the same
+  position. Verified structurally instead (both files, identical key lists).
+- `pnpm lint` (0 errors), `npx tsc --noEmit` (0 errors), `pnpm test:unit` (1,087), `pnpm
+  lint:content`, `pnpm build`, `pnpm check:bundle` all green.
+
 **COURSE-P3-01** — Closed. Quiz schema, components and grading.
 
 - **Schemas are PascalCase.** The task doc writes `quizQuestionSchema` / `lessonFrontmatterSchema`;

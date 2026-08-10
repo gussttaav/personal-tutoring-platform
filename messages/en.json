@@ -859,6 +859,8 @@
       "running": "Running…",
       "stop": "Stop",
       "reset": "Reset",
+      "expand": "Show all {count} lines",
+      "collapse": "Collapse",
       "editorLabel": "Your Python solution",
       "firstRunNote": "The first run downloads the Python interpreter (~15 MB); after that it stays in the browser cache.",
       "keyboardNote": "This challenge is much easier to solve on a physical keyboard: on a phone, read it and come back later.",

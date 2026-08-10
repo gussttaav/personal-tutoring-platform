@@ -53,6 +53,7 @@ import {
   initialChallengeState,
 } from "./challenge-state";
 import { applyAutoClose, applyBackspacePair, applyEnter, applyTab } from "./editing";
+import { EDITOR_MAX_HEIGHT, isCapped } from "./editor-metrics";
 
 /** P4-02's wiring point, twinned with `QuizAttemptContext`: provide a handler and
  *  every graded run on the page reports to it. Both take an `AssessmentResult`. */
@@ -126,6 +127,7 @@ export function CodeChallengeCard({
   );
   const [stdout, setStdout] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   const textarea = useRef<HTMLTextAreaElement>(null);
   const pendingSelection = useRef<[number, number] | null>(null);
@@ -133,7 +135,10 @@ export function CodeChallengeCard({
   const release = useRef<(() => void) | null>(null);
 
   const promptId = useId();
+  const editorId = useId();
   const busy = status !== "idle";
+  const lineCount = value.split("\n").length;
+  const capped = isCapped(value);
 
   const STAGE_LABEL: Record<LoadStage, string> = {
     runtime:  t("stage.runtime"),
@@ -323,14 +328,16 @@ export function CodeChallengeCard({
       </div>
 
       <textarea
+        id={editorId}
         ref={textarea}
+        className="pycell-editor"
         value={value}
         spellCheck={false}
         autoCapitalize="off"
         autoCorrect="off"
         aria-label={t("editorLabel")}
         aria-describedby={promptId}
-        rows={value.split("\n").length + 1}
+        rows={lineCount + 1}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
         style={{
@@ -339,6 +346,12 @@ export function CodeChallengeCard({
           margin: "1rem 0 0",
           padding: "0.85rem 1rem",
           minHeight: "6rem",
+          // Same cap as `<PyCell>`. Today's starters are stubs well under it, so this
+          // is here for the STUDENT's solution — the box grows a line at a time as
+          // they work, and without a ceiling it eventually pushes Comprobar off the
+          // screen they need it on. `none` while expanded so `resize` works again.
+          maxHeight: expanded ? "none" : EDITOR_MAX_HEIGHT,
+          overflowY: "auto",
           resize: "vertical",
           borderRadius: "var(--radius)",
           border: "1px solid var(--border)",
@@ -371,6 +384,17 @@ export function CodeChallengeCard({
         <WidgetButton onClick={handleReset} disabled={busy}>
           {t("reset")}
         </WidgetButton>
+        {/* Only when something is actually hidden — and it is also what tells the
+            student the box is capped, which a scrollbar that fades out cannot. */}
+        {capped ? (
+          <WidgetButton
+            onClick={() => setExpanded((previous) => !previous)}
+            aria-expanded={expanded}
+            aria-controls={editorId}
+          >
+            {expanded ? t("collapse") : t("expand", { count: lineCount })}
+          </WidgetButton>
+        ) : null}
         {state.attempts > 0 ? (
           <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
             {t("attempt", { count: state.attempts })}

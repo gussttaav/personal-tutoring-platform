@@ -245,27 +245,34 @@ body:has(.lesson-shell) {
   scroll-margin-top: calc(var(--nav-h) + var(--mobile-bar-h) + 8px);
 }
 
-/* Thin horizontal scrollbar for the two OTHER wide-content boxes — code blocks
-   (`pre`) and the table wrapper (the `div` mdx-components.tsx wraps every table in).
-   Without this they fall back to the chunky browser default, which looks wrong next
-   to the 6px KaTeX bar that _styles/katex.css already styles. Same rules as that
-   file. NB (per katex.css): do NOT add `scrollbar-width` — in Chromium it disables
-   these ::-webkit- pseudo-elements and reverts to the default gray bar. */
+/* Thin scrollbars for the OTHER scrolling boxes — code blocks (`pre`, which also
+   covers the cell output and traceback panels), the table wrapper (the `div`
+   mdx-components.tsx wraps every table in), and the `<PyCell>` / `<CodeChallenge>`
+   editors, which since COURSE-P2-03's height cap scroll VERTICALLY too. Without
+   this they fall back to the chunky browser default, which looks wrong next to the
+   6px KaTeX bar that _styles/katex.css already styles. Same rules as that file.
+   NB (per katex.css): do NOT add `scrollbar-width` — in Chromium it disables these
+   ::-webkit- pseudo-elements and reverts to the default gray bar. */
 .lesson-content pre::-webkit-scrollbar,
-.lesson-content div:has(> table)::-webkit-scrollbar {
+.lesson-content div:has(> table)::-webkit-scrollbar,
+.lesson-content .pycell-editor::-webkit-scrollbar {
+  width: 6px;
   height: 6px;
 }
 .lesson-content pre::-webkit-scrollbar-track,
-.lesson-content div:has(> table)::-webkit-scrollbar-track {
+.lesson-content div:has(> table)::-webkit-scrollbar-track,
+.lesson-content .pycell-editor::-webkit-scrollbar-track {
   background: transparent;
 }
 .lesson-content pre::-webkit-scrollbar-thumb,
-.lesson-content div:has(> table)::-webkit-scrollbar-thumb {
+.lesson-content div:has(> table)::-webkit-scrollbar-thumb,
+.lesson-content .pycell-editor::-webkit-scrollbar-thumb {
   background: var(--border-variant);
   border-radius: 10px;
 }
 .lesson-content pre::-webkit-scrollbar-thumb:hover,
-.lesson-content div:has(> table)::-webkit-scrollbar-thumb:hover {
+.lesson-content div:has(> table)::-webkit-scrollbar-thumb:hover,
+.lesson-content .pycell-editor::-webkit-scrollbar-thumb:hover {
   background: var(--green);
 }
 
