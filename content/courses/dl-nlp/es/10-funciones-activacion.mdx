@@ -1,0 +1,486 @@
+---
+slug: funciones-activacion
+title: "Funciones de activación y no linealidad"
+block: 2
+order: 2
+minutes: 30
+summary: "El escalón deja pasar el signo de la preactivación y tira lo demás, y su derivada vale cero allí donde existe. Sigmoide, tangente hiperbólica y ReLU devuelven la magnitud y admiten derivada; ninguna puede ser una recta, porque encadenar funciones afines vuelve a dar una función afín."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-derivada-sigmoide
+    type: numeric
+    prompt: 'Para cierta entrada, una neurona con sigmoide da $\sigma(z) = 0{,}9$. ¿Cuánto vale $\dfrac{d\sigma}{dz}$ en ese mismo punto?'
+    answer: 0.09
+    tolerance: 0.001
+    explanation: 'La derivada de la sigmoide se escribe con el valor de la propia sigmoide, $\dfrac{d\sigma}{dz} = \sigma(z)\left(1 - \sigma(z)\right)$, así que no hace falta ni conocer $z$ ni volver a exponenciar: $0{,}9 \times 0{,}1 = 0{,}09$. Fíjate en lo pequeño que es ya —poco más de un tercio del máximo $0{,}25$ que alcanza en el origen— y en que $\sigma(z) = 0{,}9$ corresponde a $z \approx 2{,}2$, un valor que en la gráfica de la función no parece extremo en absoluto. La saturación empieza antes de lo que sugiere el dibujo.'
+  - id: q-identidad
+    type: single
+    prompt: 'Encadenas dos neuronas: la primera calcula $a^{(1)} = \left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}$ y la segunda $a^{(2)} = w^{(2)} a^{(1)} + b^{(2)}$, con la identidad en las dos activaciones. ¿Qué función de $\mathbf{x}$ resulta?'
+    options:
+      - { id: a, text: 'Una sola neurona, con vector de pesos $w^{(2)}\mathbf{w}^{(1)}$ y sesgo $w^{(2)}b^{(1)} + b^{(2)}$.' }
+      - { id: b, text: 'Una función que ninguna neurona reproduce: encadenar dos preactivaciones deja un término cuadrático en $\mathbf{x}$.' }
+      - { id: c, text: 'Una sola neurona, con vector de pesos $\mathbf{w}^{(1)} + w^{(2)}$ y sesgo $b^{(1)} + b^{(2)}$.' }
+      - { id: d, text: 'Depende de $\mathbf{x}$: para unas entradas coincide con una neurona y para otras no.' }
+    answer: a
+    explanation: 'Sustituye y agrupa: $w^{(2)}\left(\left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}\right) + b^{(2)} = \left(w^{(2)}\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + \left(w^{(2)}b^{(1)} + b^{(2)}\right)$, que tiene exactamente la forma de una neurona. (b) haría falta que la segunda neurona multiplicara dos preactivaciones entre sí, y lo que hace es multiplicar una por un escalar. (c) ni siquiera cuadra en dimensiones: $\mathbf{w}^{(1)}$ vive en $\mathbb{R}^{d}$ y $w^{(2)}$ es un número. Y (d) confunde una identidad algebraica con una coincidencia numérica: la igualdad se cumple para toda $\mathbf{x}$, y eso es justo lo que la vuelve grave.'
+  - id: q-saturacion
+    type: multi
+    prompt: 'Marca todo lo que sea cierto sobre las derivadas de las activaciones de esta lección.'
+    options:
+      - { id: a, text: 'La sigmoide y la tangente hiperbólica saturan por los dos lados: su derivada tiende a cero cuando $\lvert z \rvert$ crece, en las dos direcciones.' }
+      - { id: b, text: 'La derivada de ReLU vale cero en todo $z < 0$, y de forma exacta, no aproximada.' }
+      - { id: c, text: 'La derivada de la tangente hiperbólica alcanza $1$ en el origen, y la de la sigmoide, $0{,}25$.' }
+      - { id: d, text: 'ReLU no satura por ningún lado, y por eso su derivada no se anula nunca.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras son las tres cosas que la tabla de la celda mide. (a) es lo que dibujan las bandas rojas del explorable a izquierda y derecha; (b) es la mitad izquierda entera, y ahí está el defecto propio de ReLU: una neurona cuya preactivación se queda negativa para todos los ejemplos que ve tiene derivada cero en todos ellos, así que nada la mueve —la ReLU muerta—; (c) sale de evaluar $\sigma(0)\left(1-\sigma(0)\right) = 0{,}25$ y $1 - \tanh^{2}(0) = 1$. La falsa es (d), y falla por la segunda mitad: es cierto que ReLU no satura —a la derecha su derivada vale $1$ tan lejos como quieras ir—, pero de eso no se sigue que no se anule, porque a la izquierda vale cero en todas partes.'
+  - id: q-relu-numpy
+    type: predict-output
+    prompt: 'Esta es la derivada de ReLU tal como la escribe la celda. ¿Qué imprime?'
+    language: python
+    code: |
+      import numpy as np
+
+      z = np.array([-2., 0., 3.])
+      print((z > 0).astype(float))
+    answer: '[0. 0. 1.]'
+    explanation: 'La comparación `z > 0` produce el array de booleanos `[False False True]` y `.astype(float)` lo convierte en ceros y unos. Lo que hay que mirar es el segundo elemento: en $z = 0$ la derivada de ReLU no existe —hay un pico, y un pico no tiene una sola tangente— y la comparación estricta elige el $0$ que el curso toma por convención. Con `>=` habrías obtenido `[0. 1. 1.]`, que en $z = 0$ no es ni más ni menos correcto, pero sí distinto.'
+    hint: 'Cuida el formato tanto como los valores: `.astype(float)` devuelve flotantes, y NumPy los imprime con el punto —`1.`, no `1`—, entre corchetes y separados por espacios, sin comas.'
+challenges:
+  - id: ch-relu
+    prompt: |
+      Escribe las dos funciones con las que la celda maneja ReLU, sobre un array de NumPy de la
+      forma que sea y sin bucles de Python:
+
+      - `relu(z)` devuelve $\max(0, z)$ coordenada a coordenada.
+      - `d_relu(z)` devuelve su derivada: $1$ donde $z > 0$ y $0$ en el resto, tomando $0$ también
+        en $z = 0$.
+
+      Ninguna de las dos puede modificar el array que recibe.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def relu(z):
+          # tu código aquí
+          pass
+
+
+      def d_relu(z):
+          # tu código aquí
+          pass
+    tests:
+      - name: "recorta los negativos"
+        code: |
+          import numpy as np
+          assert np.allclose(relu(np.array([-2., 0., 3.])), [0., 0., 3.]), 'relu(z) deja pasar lo positivo tal cual y manda lo negativo a cero'
+      - name: "la derivada vale 1 sólo donde z > 0"
+        code: |
+          import numpy as np
+          assert np.allclose(d_relu(np.array([-2., 0., 3.])), [0., 0., 1.]), 'en z = 0 la derivada no existe y el curso toma 0: la comparación tiene que ser estricta'
+      - name: "conserva la forma del array"
+        code: |
+          import numpy as np
+          assert relu(np.zeros((2, 3))).shape == (2, 3), 'no aplanes ni reduzcas: la forma de la salida es la de la entrada'
+      - name: "no modifica el array que recibe"
+        code: |
+          import numpy as np
+          z = np.array([-1., 2.])
+          relu(z)
+          assert np.allclose(z, [-1., 2.]), 'z[z < 0] = 0 escribe en el array de quien te llama; devuelve uno nuevo'
+    solution: |
+      import numpy as np
+
+
+      def relu(z):
+          return np.maximum(z, 0.0)
+
+
+      def d_relu(z):
+          return (z > 0).astype(float)
+    explanation: |
+      `np.maximum` compara elemento a elemento contra el cero y devuelve un array nuevo, así que
+      resuelve las tres primeras pruebas de una vez.
+
+      La cuarta es la que esconde algo. `z[z < 0] = 0` también «funciona» y además es la forma que
+      primero se le ocurre a mucha gente, pero escribe sobre el array que le han pasado: quien
+      llamó a `relu` se encuentra con su entrada destruida y sin ningún error que se lo diga. El
+      síntoma aparece mucho después y en otro sitio, que es lo que lo vuelve caro.
+
+      Para la derivada, `(z > 0)` produce booleanos y `.astype(float)` los pasa a $0$ y $1$. La
+      comparación es estricta a propósito: en $z = 0$ ReLU tiene un pico, la derivada no existe, y
+      el curso toma $0$ ahí.
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 2. */}
+
+La lección anterior, sobre la neurona artificial, dejó una pieza sin elegir. Los pesos y el sesgo son
+la neurona —fijan el hiperplano, y con él todo lo que puede llegar a distinguir—, pero entre la
+preactivación $z$ y lo que la neurona entrega hay una función más, $\varphi$, que todavía no
+se ha elegido: la ocupa por defecto el escalón, con la etiqueta de provisional encima.
+Elegirla es el asunto de esta lección, y no es un remate cosmético. De $\varphi$ dependen dos cosas:
+cuánto sobrevive del número que la neurona acaba de calcular, y qué se consigue al poner una neurona
+detrás de otra.
+
+Mira lo que hace el escalón con un peso que se mueve. Toma una neurona cualquiera y sube uno solo de
+sus pesos de $1{,}0$ a $1{,}1$, a $1{,}2$, a $1{,}3$. La preactivación acompaña el movimiento: crece
+un poco cada vez, y todos los valores intermedios existen. La salida no se entera.
+Se queda en $0$ mientras $z$ sea negativa, y en el instante en que cruza el cero salta a $1$ y ahí se
+queda. Todo lo que había que saber sobre cuánto ha subido el peso se pierde por el camino, y siempre
+en el mismo sitio.
+
+Antes de escribir una sola candidata conviene mirarlas juntas. El explorable dibuja cada una en $[-5, 5]$,
+superpone su derivada como línea discontinua y sombrea en rojo los tramos donde esa derivada casi se anula.
+
+<Explorable
+  id="activation-explorer"
+  caption="Compara en cada función la curva continua con la discontinua, que es su derivada, y fíjate en el ancho de las bandas rojas: la de ReLU ocupa media gráfica. Mira también las cifras del eje vertical, porque cambian con cada función: la derivada de tanh llega a 1 donde la de la sigmoide se queda en 0,25. El último botón es el escalón de la lección anterior, y ahí el rojo lo cubre todo."
+/>
+
+El botón «derivada f′» dibuja esa curva discontinua. Las cuatro primeras curvas continuas se parecen
+entre sí —suben, y más deprisa cerca del cero—, pero sus discontinuas no se parecen en nada: es la
+derivada, y no la función, la que separa a unas candidatas de otras. Y al final está el escalón, que
+enseña de golpe lo que le falta: su discontinua es una recta pegada al cero y el rojo cubre la
+gráfica entera.
+
+<Callout type="intuition" title="La idea en una frase">
+La activación tiene dos exigencias independientes: que no sea una recta, porque si lo es apilar
+neuronas no construye nada nuevo, y que su derivada no sea cero en todas partes, porque de ella
+saldrá más adelante la corrección de los pesos. El escalón cumple la primera y falla la segunda del
+modo más completo posible.
+</Callout>
+
+## Por qué la activación no puede ser una recta
+
+Empecemos por la exigencia que no depende de ningún caso. Pon dos neuronas en cadena: la
+primera mira la entrada $\mathbf{x} \in \mathbb{R}^{d}$ y entrega un número, y la segunda mira ese
+número y entrega otro. Hay una neurona en cada nivel, así que los pesos del primero son un vector y
+los del segundo un escalar; el superíndice entre paréntesis dice el nivel, la misma marca que
+llevarán las capas cuando haya varias neuronas en cada una:
+
+$$
+a^{(1)} = \varphi\left(\left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}\right),
+\qquad
+a^{(2)} = \varphi\left(w^{(2)} a^{(1)} + b^{(2)}\right),
+$$
+
+con $\mathbf{w}^{(1)} \in \mathbb{R}^{d}$ y $b^{(1)}, w^{(2)}, b^{(2)} \in \mathbb{R}$. Ahora pon la
+identidad en las dos activaciones, $\varphi(z) = z$, y sustituye la primera expresión dentro de la
+segunda:
+
+$$
+a^{(2)} = w^{(2)}\left(\left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}\right) + b^{(2)}
+= \left(w^{(2)}\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + \left(w^{(2)}b^{(1)} + b^{(2)}\right).
+$$
+
+El lado derecho es una neurona. Una sola, con vector de pesos $w^{(2)}\mathbf{w}^{(1)}$ y sesgo
+$w^{(2)}b^{(1)} + b^{(2)}$, y no hay entrada que la distinga de la cadena que la produjo: para
+toda $\mathbf{x}$ dan el mismo número. La lección anterior ya dijo qué significa eso: todo lo que una
+neurona distingue está en su frontera, y esa frontera es un hiperplano. La cadena de dos separa con
+un hiperplano también. Apilar no ha curvado la frontera.
+
+Y la identidad no tenía nada de especial. Pon en $\varphi$ la recta general,
+$\varphi(z) = \alpha z + \beta$ con $\alpha \neq 0$, y verás que $\alpha$ se absorbe en los pesos del
+nivel siguiente y $\beta$ en su sesgo: lo que sale vuelve a ser una preactivación. Cualquier recta
+hace lo mismo.
+
+Conviene decirlo con el nombre exacto. La expresión $\mathbf{w}^{\top}\mathbf{x} + b$ no es lineal en
+el sentido del álgebra —una aplicación lineal manda el cero al cero, y esta lo manda a $b$—: es
+**afín**. Componer funciones afines vuelve a dar una función afín, y eso se encadena sin límite: cien
+neuronas seguidas con una recta en $\varphi$ son una neurona. La propiedad que hay que romper —y hay
+que romperla en la activación, no en otro sitio— es la que da título a esta lección:
+**no linealidad**, aunque lo que se rompe con precisión sea la afinidad.
+
+<Details summary="La misma cuenta con varias neuronas en cada nivel">
+
+Nada de lo anterior depende de que hubiera una neurona sola por nivel. Con varias, los pesos de cada
+nivel se agrupan en una matriz y los sesgos en un vector, y la cadena queda
+
+$$
+\mathbf{W}^{(2)}\left(\mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)}\right) + \mathbf{b}^{(2)}
+= \left(\mathbf{W}^{(2)}\mathbf{W}^{(1)}\right)\mathbf{x}
++ \left(\mathbf{W}^{(2)}\mathbf{b}^{(1)} + \mathbf{b}^{(2)}\right),
+$$
+
+que vuelve a ser un solo nivel. La forma matricial completa, con sus tamaños,
+es la lección 4 de este bloque, sobre el *forward pass*; aquí sirve para una cosa: el colapso no era
+un artefacto de haber puesto una neurona en cada nivel.
+
+</Details>
+
+La segunda exigencia se ve mejor por lo que le pasa al escalón. Su derivada vale cero en todos los
+puntos donde existe,
+
+$$
+\frac{d}{dz}\,\text{escalón}(z) = 0 \quad \text{para todo } z \neq 0,
+$$
+
+y en $z = 0$ ni siquiera existe, porque ahí la función salta. Hay una deuda que digo en voz alta:
+cómo consigue una neurona sus propios pesos a partir de ejemplos es la lección 6 de este bloque,
+sobre descenso de gradiente. Lo único que hace falta adelantar es de qué está hecho ese método: de
+derivadas de $\varphi$. Una activación cuya derivada es cero en todas partes no dice nada sobre en qué
+dirección mover los pesos, y el procedimiento se queda quieto. El escalón supera la primera exigencia
+—no es una recta, ni de lejos— y suspende la segunda.
+
+## Tres candidatas y su derivada
+
+Las tres que siguen cumplen las dos exigencias, y las escribo con su derivada ya calculada: el resto del bloque
+vivirá de esas derivadas más que de las funciones.
+
+La **sigmoide** ya tiene símbolo reservado en el curso, $\sigma$:
+
+$$
+\sigma(z) = \frac{1}{1 + e^{-z}},
+$$
+
+continua, creciente, con valores en $(0, 1)$: manda $z = 0$ a $\sigma(0) = 1/2$ y aplasta los
+extremos contra $0$ y contra $1$ sin llegar a tocarlos. Derivémosla. Escrita como
+$\sigma(z) = \left(1 + e^{-z}\right)^{-1}$, la regla de la cadena y un reparto de la fracción dan
+
+$$
+\begin{aligned}
+\frac{d\sigma}{dz}
+&= -\left(1 + e^{-z}\right)^{-2} \cdot \left(-e^{-z}\right)
+ = \frac{e^{-z}}{\left(1 + e^{-z}\right)^{2}} \\[2pt]
+&= \frac{1}{1 + e^{-z}} \cdot \frac{e^{-z}}{1 + e^{-z}}
+ = \sigma(z)\left(1 - \sigma(z)\right),
+\end{aligned}
+$$
+
+donde el último paso sale de que
+$\dfrac{e^{-z}}{1 + e^{-z}} = \dfrac{1 + e^{-z} - 1}{1 + e^{-z}} = 1 - \sigma(z)$.
+La derivada de la sigmoide se calcula con su propio valor, sin volver a exponenciar nada, y
+eso la hará barata cuando haya que evaluarla miles de veces.
+
+La **tangente hiperbólica** tiene la misma silueta y otro recorrido. Es
+$\tanh(z) = \left(e^{z} - e^{-z}\right) / \left(e^{z} + e^{-z}\right)$, toma valores en $(-1, 1)$ y
+cumple $\tanh(0) = 0$: está centrada en el cero, que es la diferencia que importa frente a la
+sigmoide, cuya salida es siempre positiva. Su derivada tiene una forma igual de cómoda,
+
+$$
+\frac{d\tanh}{dz} = 1 - \tanh^{2}(z),
+$$
+
+y en el origen vale $1$, cuatro veces lo que alcanza la sigmoide en su punto más alto.
+
+<Details summary="De dónde sale 1 − tanh², y el parecido entre las dos curvas">
+
+Para la derivada, llamemos $u = e^{z} - e^{-z}$ y $v = e^{z} + e^{-z}$: cada una es la derivada de la
+otra, $\frac{du}{dz} = v$ y $\frac{dv}{dz} = u$. La regla del cociente da entonces
+
+$$
+\frac{d\tanh}{dz} = \frac{v \cdot v - u \cdot u}{v^{2}}
+= 1 - \left(\frac{u}{v}\right)^{2} = 1 - \tanh^{2}(z).
+$$
+
+El parecido entre las dos curvas tampoco es casualidad: la tangente hiperbólica es una sigmoide
+estirada al doble y desplazada, $\tanh(z) = 2\sigma(2z) - 1$. Desarrolla el lado derecho y multiplica
+arriba y abajo por $e^{z}$,
+
+$$
+2\sigma(2z) - 1 = \frac{2}{1 + e^{-2z}} - 1 = \frac{1 - e^{-2z}}{1 + e^{-2z}}
+= \frac{e^{z} - e^{-z}}{e^{z} + e^{-z}} = \tanh(z),
+$$
+
+y de paso queda explicado el factor cuatro entre las dos derivadas: derivar $2\sigma(2z) - 1$
+multiplica por $2$ el factor de fuera y por otro $2$ el de la regla de la cadena.
+
+</Details>
+
+La tercera es la más joven y la que más se usa: **ReLU**, de *rectified linear unit*. Es
+$\text{ReLU}(z) = \max(0, z)$ —deja pasar lo positivo tal cual y manda lo negativo a cero—, así que
+no aplasta nada por arriba: la magnitud de $z$ llega entera a la salida siempre que sea positiva.
+Su derivada es
+
+$$
+\frac{d}{dz}\,\text{ReLU}(z) = \begin{cases}
+  1 & \text{si } z > 0 \\
+  0 & \text{si } z < 0
+\end{cases},
+$$
+
+y en $z = 0$ no existe: por la izquierda la pendiente vale $0$ y por la derecha vale $1$, y una
+función con un pico no tiene una sola tangente ahí. El curso toma $0$ ahí: es una convención, no un
+teorema, y la elección no cambia nada medible.
+
+### Dónde se apaga cada una
+
+Las tres derivadas comparten un problema y lo reparten distinto. Llamemos **saturación** a la región
+donde la derivada de $\varphi$ está tan cerca de cero que la entrada puede moverse mucho y la salida
+apenas se mueve: son las bandas rojas del explorable.
+
+Para la sigmoide la cuenta es directa. En $z = 5$ vale $\sigma(5) \approx 0{,}9933$, de modo que su
+derivada allí es $0{,}9933 \times 0{,}0067 \approx 0{,}0066$: casi cuarenta veces menos que en el
+origen. La tangente hiperbólica se apaga antes y más deprisa
+—$1 - \tanh^{2}(5) \approx 1{,}8 \times 10^{-4}$, más de treinta veces por debajo de la sigmoide en
+el mismo punto—, y por eso sus bandas rojas empiezan más cerca del origen aunque su derivada
+arranque cuatro veces más alta: empezar más arriba y caer más deprisa son compatibles.
+
+ReLU rompe ese reparto, y su banda roja de media gráfica no lo contradice. A la derecha su derivada vale $1$ exactamente, tan lejos como quieras ir: ahí no satura, y ese es todo su
+atractivo. A la izquierda tampoco satura —saturar es acercarse a cero—: está apagada, con la derivada
+valiendo $0$ en medio eje entero. De ahí sale un defecto con nombre propio, la **ReLU muerta**
+(*dying ReLU*): si la preactivación se queda negativa para todos los ejemplos que ve, la derivada
+vale cero en todos ellos, nada la mueve, y nunca sale de ahí.
+
+Queda el cuarto botón. **GELU**, de *Gaussian error linear unit*, es la de los Transformers
+del bloque 5; su definición pide la función de distribución de una normal, y queda
+fuera de esta lección. Se parece a ReLU salvo cerca del origen, donde en vez de
+doblarse en un pico se curva.
+
+## Las activaciones y sus derivadas en NumPy
+
+La celda escribe las cuatro funciones y las tres derivadas, y las somete a cuatro pruebas. Ejecútala
+y mira, en este orden: si las derivadas resisten una comprobación numérica, cuánto queda de cada una
+lejos del origen, qué le pasa a la cadena al cambiar la identidad por la sigmoide, y qué hace la
+sigmoide con las diez reseñas de la lección anterior.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+np.random.seed(0)
+
+# --- Las cuatro candidatas, y la derivada de las tres que la tienen.
+def escalon(z):
+    return (z >= 0).astype(float)
+
+
+def sigmoide(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def d_sigmoide(z):
+    s = sigmoide(z)
+    return s * (1.0 - s)
+
+
+def d_tanh(z):
+    t = np.tanh(z)
+    return 1.0 - t * t
+
+
+def relu(z):
+    return np.maximum(z, 0.0)
+
+
+def d_relu(z):
+    return (z > 0).astype(float)
+
+
+# 1. ¿Están bien derivadas? Diferencia central contra la fórmula cerrada.
+h = 1e-5
+zs = np.array([-3.0, -0.5, 0.7, 2.5])
+print("z =", zs, "  forma", zs.shape)
+for nombre, f, df in [("sigmoide", sigmoide, d_sigmoide),
+                      ("tanh", np.tanh, d_tanh),
+                      ("ReLU", relu, d_relu)]:
+    central = (f(zs + h) - f(zs - h)) / (2 * h)
+    print("  ", nombre.ljust(9), "max |formula - diferencia central| =",
+          "%.1e" % np.abs(df(zs) - central).max())
+print()
+
+# 2. Cuánto queda de cada derivada según nos alejamos del origen.
+lejos = np.array([0.0, 2.0, 5.0, 10.0])
+print("        z:", "  ".join("%9.1f" % v for v in lejos))
+print("    dσ/dz:", "  ".join("%9.2e" % v for v in d_sigmoide(lejos)))
+print(" dtanh/dz:", "  ".join("%9.2e" % v for v in d_tanh(lejos)))
+print(" dReLU/dz:", "  ".join("%9.2e" % v for v in d_relu(lejos)))
+print()
+
+# 3. Dos neuronas en cadena. Toda función afín anula f(x+y) - f(x) - f(y) + f(0).
+d = 8
+w1 = np.random.randn(d)
+b1 = 0.4
+w2 = -1.3
+b2 = 0.7
+
+
+def identidad(z):
+    return z
+
+
+def cadena(x, phi):
+    return w2 * phi(w1 @ x + b1) + b2
+
+
+x = np.random.randn(d)
+y = np.random.randn(d)
+cero = np.zeros(d)
+for nombre, phi in [("identidad", identidad), ("sigmoide ", sigmoide)]:
+    defecto = cadena(x + y, phi) - cadena(x, phi) - cadena(y, phi) + cadena(cero, phi)
+    print("φ =", nombre, "  f(x+y) - f(x) - f(y) + f(0) =", "%+.2e" % defecto)
+
+w_eq = w2 * w1
+b_eq = w2 * b1 + b2
+print("con la identidad, una sola neurona la reproduce:",
+      bool(np.isclose(cadena(x, identidad), w_eq @ x + b_eq)))
+print()
+
+# 4. Las diez preactivaciones de la neurona de reseñas de la lección anterior.
+z_resenas = np.array([2.0, -2.0, 2.0, -2.0, 2.0, -1.0, -2.0, 1.0, 0.0, 2.0])
+print("        z:", "  ".join("%6.1f" % v for v in z_resenas))
+print("  escalón:", "  ".join("%6.0f" % v for v in escalon(z_resenas)))
+print("        σ:", "  ".join("%6.3f" % v for v in sigmoide(z_resenas)))
+`} />
+
+La primera prueba da derecho a usar todo lo demás. La diferencia central
+$\left(\varphi(z+h) - \varphi(z-h)\right) / 2h$ con $h = 10^{-5}$ aproxima la derivada sin saber nada
+de la fórmula, y las tres coinciden hasta unos $10^{-11}$. Si derivas mal una
+activación, esto te lo dice en dos líneas.
+
+La segunda tabla pone números a la saturación. La derivada de la sigmoide pasa de
+$2{,}50 \times 10^{-1}$ en el origen a $4{,}54 \times 10^{-5}$ en $z = 10$, cuatro órdenes de
+magnitud; la de la tangente hiperbólica recorre ocho en el mismo tramo. La fila de ReLU no decae:
+$1$ en las tres últimas columnas, tan lejos como se quiera ir. El $0$ de la primera es la convención
+de arriba puesta en código.
+
+La tercera prueba decide la cuestión sin entrenar nada. Toda función afín $f$ cumple la identidad
+
+$$
+f(\mathbf{x} + \mathbf{y}) - f(\mathbf{x}) - f(\mathbf{y}) + f(\mathbf{0}) = 0,
+$$
+
+sean cuales sean $\mathbf{x}$ e $\mathbf{y}$ —desarróllala y verás que los cuatro sesgos se
+cancelan—. Con
+la identidad en
+$\varphi$, la cadena de dos neuronas da $-6{,}66 \times 10^{-16}$: cero, hasta donde llega la
+aritmética del ordenador. Con la sigmoide da $-0{,}564$. Es el mismo par de neuronas y las mismas
+entradas; lo único que ha cambiado es la activación.
+
+La última tabla vuelve sobre la lección anterior: las diez preactivaciones de aquella neurona de
+reseñas, con sus pesos intactos, pasadas por el escalón y por la sigmoide. El escalón
+entrega la columna de siempre; la sigmoide separa lo que él juntaba. La reseña que caía justo encima
+de la frontera pasa de un $1$ rotundo a $0{,}500$, y las cuatro negativas, que recibían todas el
+mismo $0$, se reparten ahora en dos valores: $0{,}269$ la que estaba a $-1$, $0{,}119$ las tres que
+estaban a $-2$. La magnitud de $z$ ha vuelto, y sin tocar ni un peso.
+
+## Comprueba tu intuición
+
+Cuatro preguntas —una derivada, el colapso de la cadena, dónde se apaga cada activación y una salida
+de NumPy— y un desafío con ReLU.
+
+<Quiz id="q-derivada-sigmoide" />
+
+<Quiz id="q-identidad" />
+
+<Quiz id="q-saturacion" />
+
+<Quiz id="q-relu-numpy" />
+
+<CodeChallenge id="ch-relu" />
+
+---
+
+Queda algo por decir sobre lo que $\varphi$ no ha cambiado, antes de que parezca que la sigmoide ha
+resuelto más de lo que resuelve. La frontera de decisión sigue exactamente donde
+estaba. Preguntar por dónde $\sigma(z)$ cruza $0{,}5$ es preguntar por dónde $z$ cruza $0$, porque
+$\sigma$ es creciente y $\sigma(0) = 1/2$: el hiperplano de la lección anterior sobrevive intacto a
+todas las sustituciones de esta. Lo que ha cambiado es lo que la neurona informa sobre su
+decisión, no cuál es.
+
+Así que apilar neuronas ya puede construir algo que una sola no construye —sin la no linealidad ni
+siquiera podía—, pero nadie ha enseñado todavía un problema que obligue a apilarlas. Falta una
+pregunta anterior y más incómoda: ¿hay algo que una neurona, con la activación que sea, no
+pueda hacer nunca? Lo hay, cabe en cuatro puntos dibujados en una hoja, y es la lección 3 de este
+bloque, sobre XOR —el o exclusivo— y las capas ocultas.

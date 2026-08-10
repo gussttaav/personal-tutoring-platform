@@ -3,6 +3,8 @@
  */
 
 import {
+  step,
+  stepPrime,
   sigmoid,
   sigmoidPrime,
   tanh,
@@ -21,6 +23,29 @@ function fdApprox(f: (x: number) => number, x: number, h = 1e-5): number {
 }
 
 const SAMPLES = [-3, -1.5, -0.25, 0.5, 1.7, 4];
+
+// COURSE-P5-02 — the step is the one activation here whose derivative is not total.
+describe("step", () => {
+  it("hits known values, taking 1 at the jump", () => {
+    expect(step(0)).toBe(1);
+    expect(step(-1e-9)).toBe(0);
+    expect(step(3)).toBe(1);
+    expect(step(-3)).toBe(0);
+  });
+
+  it("derivative is zero away from the jump, and agrees with finite differences", () => {
+    for (const x of SAMPLES) {
+      expect(stepPrime(x)).toBe(0);
+      expect(stepPrime(x)).toBeCloseTo(fdApprox(step, x), 6);
+    }
+  });
+
+  it("derivative is UNDEFINED at the jump, not zero", () => {
+    // NaN, deliberately: unlike ReLU's kink there is no sub-gradient to fall back on,
+    // and a caller that plots 0 here would draw a derivative that does not exist.
+    expect(Number.isNaN(stepPrime(0))).toBe(true);
+  });
+});
 
 describe("sigmoid", () => {
   it("hits known values", () => {

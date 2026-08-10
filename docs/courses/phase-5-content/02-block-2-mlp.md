@@ -38,7 +38,7 @@ task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granu
 here; STATUS stays phase-level.
 
 - [x] 1. `la-neurona`
-- [ ] 2. `funciones-activacion`
+- [x] 2. `funciones-activacion`
 - [ ] 3. `xor-y-capas-ocultas`
 - [ ] 4. `forward-pass`
 - [ ] 5. `funcion-de-perdida`

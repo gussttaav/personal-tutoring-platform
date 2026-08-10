@@ -6,6 +6,30 @@
  * Every derivative has a finite-difference test guarding it.
  */
 
+/*
+ * COURSE-P5-02 — the step (escalón), the perceptron's activation from Block 2
+ * lesson 1. It is in this module to be COMPARED against the others, not used: the
+ * whole argument of lesson 2 is that its derivative carries no information.
+ */
+
+/** Heaviside step: 1 for x ≥ 0, else 0. The perceptron's activation. */
+export function step(x: number): number {
+  return x >= 0 ? 1 : 0;
+}
+
+/**
+ * step'(x) = 0 away from the jump, and **NaN at 0** — undefined, not a sub-gradient.
+ *
+ * This is the one derivative here that is not total, and the deviation is deliberate.
+ * `reluPrime` may take 0 at its kink because ReLU is continuous there and 0 is a
+ * genuine sub-gradient; the step is not even continuous at 0, so no such fallback
+ * exists and returning 0 would assert something false. Callers must handle the gap:
+ * `ActivationExplorer` breaks its path there rather than drawing the jump as a line.
+ */
+export function stepPrime(x: number): number {
+  return x === 0 ? NaN : 0;
+}
+
 /** Logistic sigmoid, σ(x) = 1 / (1 + e⁻ˣ). Range (0, 1). */
 export function sigmoid(x: number): number {
   // Split by sign to avoid overflow of e^x for large positive x.
