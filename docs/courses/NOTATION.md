@@ -261,6 +261,11 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 | $\mathbf{z}^{(l)}$ | pre-activation, $\mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}$ |
 | $\mathbf{h}^{(l)}$ | activation, $\varphi(\mathbf{z}^{(l)})$; $\mathbf{h}^{(0)} = \mathbf{x}$ |
 | $\hat{\mathbf{y}}$, $\mathbf{y}$ | prediction, target |
+| $d_l$ | width of layer $l$ — how many neurons it has; $d_0$ is the input dimension |
+| $\mathbf{X} \in \mathbb{R}^{B \times d_0}$ | a batch of $B$ examples, one per row |
+| $\mathbf{Z}^{(l)}$, $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ | the batched pre-activation and activation; $\mathbf{H}^{(0)} = \mathbf{X}$ |
+| $\hat{\mathbf{Y}}$, $\mathbf{Y} \in \mathbb{R}^{B \times d_L}$ | the batched predictions and targets |
+| $\mathbf{1}_B \in \mathbb{R}^{B}$ | the all-ones column, so $\mathbf{1}_B\mathbf{b}^{\top}$ is a legal matrix sum |
 | $\boldsymbol{\delta}^{(l)}$ | $\partial\mathcal{L}/\partial\mathbf{z}^{(l)}$, the backprop error signal |
 | $\sigma$, $\tanh$, $\text{ReLU}$ | the activations that go in that slot |
 
@@ -288,6 +293,30 @@ prefers a Spanish abbreviation where one is unambiguous ($\text{cob}$ for covera
 Heaviside was the alternative and is rejected for the reason $\text{cov}$ was: $\mathbf{H}$ is the
 batched activation matrix of §3, and a reader meeting $H$ beside $\mathbf{h}^{(l)}$ has to decide
 whether the two are related.
+
+**Capital is the batch, lowercase is the example**, and the whole of §3's transpose follows from
+it. $\mathbf{h}^{(l)} \in \mathbb{R}^{d_l}$ is one example's activation and it is a column, by
+§3's rule that vectors are columns; $\mathbf{H}^{(l)}$ stacks $B$ of them as **rows**, so row $i$
+is $\left(\mathbf{h}^{(l)}_i\right)^{\top}$ and the layer that was
+$\mathbf{W}^{(l)}\mathbf{h}^{(l-1)}$ becomes
+$\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top}$. The same split names the two forms of
+everything else the batch touches: $\mathbf{z}^{(l)}$ against $\mathbf{Z}^{(l)}$,
+$\hat{\mathbf{y}}$ against $\hat{\mathbf{Y}}$. Block 2 lesson 4, on the *forward pass*, is where
+the course switches, and it says so in prose — which is the announcement §3 requires.
+
+**$\mathbf{1}_B$ rather than a silent broadcast.** $\mathbf{Z}^{(l)}$ is $B \times d_l$ and
+$\mathbf{b}^{(l)}$ is a $d_l$-vector, so `+ b` is not a matrix sum: what is meant is
+$\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}$, the same bias row repeated once per example.
+NumPy writes the short form and the course writes the long one, because the student who never
+sees the outer product cannot tell a broadcast that is right from one that is off by a transpose
+— which is the most common shape bug in this material.
+
+**$d_l$ once there is a chain, $d_{\text{in}}$ / $d_{\text{out}}$ for a single layer.** §3's pair
+names the two sides of *one* weight matrix and it stays right there. It stops working the moment
+$L$ layers are composed, because layer $l$'s input is layer $l-1$'s output and the two names would
+have to mean different numbers in the same sum. So a chain is indexed:
+$\mathbf{W}^{(l)} \in \mathbb{R}^{d_l \times d_{l-1}}$, with $d_0$ the input dimension and $d_L$
+the output one. $d_{\text{model}}$ stays reserved for §4's meaning and is not one of these.
 
 ### Block 3 — Redes Neuronales Recurrentes
 
