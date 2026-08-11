@@ -546,18 +546,39 @@ plain. Never italicise the Spanish terms.
 | *backpropagation* | the English term | retropropagación |
 | capa, peso, sesgo | Spanish | layer, weight, bias |
 | pérdida, gradiente, descenso de gradiente | Spanish | loss, gradient, gradient descent |
+| entropía cruzada, verosimilitud | Spanish | cross-entropy, likelihood |
+| error cuadrático medio, then MSE | Spanish, with the acronym expanded on first use | bare *MSE*; *error medio cuadrático* |
 | entrenamiento, entrenar | Spanish | training, entrenar el *training* |
 | vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
 | denso, disperso | Spanish | *dense*, *sparse* |
 | tipo — one distinct entry; *token* / ocurrencia — each appearance of one | `tipo`, `token`, `ocurrencia` | *type*; `token` for both senses |
 | an element of the vocabulary $V$ | `entrada del vocabulario`, then `entrada` | palabra, término |
+| one case shown to the network, and the answer wanted for it | `ejemplo`, `etiqueta` | muestra, dato, caso; *sample*, *label*, *target* |
 | the place an element holds in an ordered sequence | posición | puesto, rango, ranking |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
 one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
 the whole content of "words repeat". Say `tipo` for a distinct string, counted by $M$, and `token`
 for a single appearance of one, counted by $T$. Never `token` for both.
+
+`ejemplo` and `etiqueta` are **defined in Block 2 lesson 1**, on the artificial neuron, where the ten
+reviews and the verdict a person wrote for each first sit on the same page. That row went in late,
+after four lessons had already leaned on both words, and the audit that found it is worth recording
+because the damage was not where the word counts pointed. Neither term had ever been introduced:
+`etiqueta` first appeared *inside a code cell*, then in prose as though already given, and Block 2
+lesson 3's «la etiqueta $y$ vale $1$ si la frase habla bien» fixes an **encoding** without ever
+saying what the thing is. Nothing in the course says `supervisado` at all, and neither word is a
+course prerequisite — so by §2 every use of them was a debt.
+
+The subtler half is a **sense shift**, and it is the reason the definition is worded the way it is.
+Block 2 lesson 4, on the forward pass, makes `ejemplo` mean *a row of $\mathbf{X}$* — input only, no
+label in sight; Block 2 lesson 5, on loss functions, needs it to mean *the thing that has a label*
+($\ell$ compares one example's prediction against its etiqueta). One word, two concepts, which is
+exactly what this section exists to stop. So an **ejemplo is the case shown to the network,
+identified with its input vector**, and its **etiqueta rides alongside** rather than being part of
+it. Both later uses are then correct as written, which is why the retrofit cost one paragraph in
+lesson 1 and no edits anywhere else.
 
 `posición`, never `puesto`. Ordering things and then pointing at the $i$-th one is a move this course
 makes constantly — Zipf ranks in Block 1, sequence positions from Block 3 on, sorted vocabularies

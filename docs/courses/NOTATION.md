@@ -261,6 +261,8 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 | $\mathbf{z}^{(l)}$ | pre-activation, $\mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}$ |
 | $\mathbf{h}^{(l)}$ | activation, $\varphi(\mathbf{z}^{(l)})$; $\mathbf{h}^{(0)} = \mathbf{x}$ |
 | $\hat{\mathbf{y}}$, $\mathbf{y}$ | prediction, target |
+| $\ell(\hat{\mathbf{y}}, \mathbf{y})$ | the loss of **one** example; $\mathcal{L}$ is its mean over the batch |
+| $\mathcal{L}_{\text{MSE}}$, $\mathcal{L}_{\text{EC}}$ | the two candidate losses, where both are on the same page |
 | $d_l$ | width of layer $l$ — how many neurons it has; $d_0$ is the input dimension |
 | $\mathbf{X} \in \mathbb{R}^{B \times d_0}$ | a batch of $B$ examples, one per row |
 | $\mathbf{Z}^{(l)}$, $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ | the batched pre-activation and activation; $\mathbf{H}^{(0)} = \mathbf{X}$ |
@@ -310,6 +312,31 @@ $\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}$, the same bias row repeated o
 NumPy writes the short form and the course writes the long one, because the student who never
 sees the outer product cannot tell a broadcast that is right from one that is off by a transpose
 — which is the most common shape bug in this material.
+
+**The loss comes in two sizes, and the small one is $\ell$.** §4 reserves $\mathcal{L}$ for the
+objective being minimised, which is a number per *batch*; every derivation in this block starts from
+one example, and the two need separate names or the $1/B$ goes missing in the algebra. The obvious
+alternative, $\mathcal{L}_i$, collides with the subscript that Block 2 already spends on the example
+index inside a batch ($\mathbf{h}^{(l)}_i$, row $i$ of $\mathbf{H}^{(l)}$), so a per-example loss and
+the $i$-th coordinate of something would be written the same way. $\ell$ is free: Block 1's $\bar{\ell}$
+is mean token length, always barred and always in the tokenisation lessons, and no lesson carries both.
+The pair is fixed as $\mathcal{L} = \frac{1}{B}\sum_{i} \ell(\hat{\mathbf{y}}_i, \mathbf{y}_i)$, mean and
+not sum, so that $\mathcal{L}$ does not scale with $B$.
+
+**A subscripted $\mathcal{L}$ names a candidate, never an example.** Block 2 lesson 5 puts
+$\mathcal{L}_{\text{MSE}}$ and $\mathcal{L}_{\text{EC}}$ side by side because it compares them; a lesson
+using only one writes plain $\mathcal{L}$. The subscript is roman and abbreviates the Spanish term, the
+same convention as $\text{cob}$ and $\text{escalón}$. (Block 1 lesson 7 already wrote
+$\mathcal{L}_{\text{par}}$ for Word2Vec's per-pair loss, which is this rule applied before it was
+written down.)
+
+**The softmax Jacobian is derived in its two explicit cases, not with a Kronecker delta.** The
+literature writes $\partial \hat{y}_k / \partial z_j = \hat{y}_k(\delta_{kj} - \hat{y}_j)$, and the
+course does not, for one reason: $\boldsymbol{\delta}^{(l)}$ is the backprop error signal three
+lessons later, and a reader who meets $\delta_{kj}$ in the loss lesson and $\boldsymbol{\delta}^{(l)}_j$
+in the backpropagation one has to work out that bold-versus-italic and one-subscript-versus-two are
+carrying the whole distinction. Writing $j = c$ and $j \neq c$ separately costs two display equations
+and teaches the derivation better, which is the trade this course makes everywhere else too.
 
 **$d_l$ once there is a chain, $d_{\text{in}}$ / $d_{\text{out}}$ for a single layer.** §3's pair
 names the two sides of *one* weight matrix and it stays right there. It stops working the moment
