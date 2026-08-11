@@ -272,11 +272,20 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 | $\dfrac{\partial\mathbf{u}}{\partial\mathbf{x}} \in \mathbb{R}^{m \times n}$ | the Jacobian of $\mathbf{u} \in \mathbb{R}^{m}$ with respect to $\mathbf{x} \in \mathbb{R}^{n}$ — row $i$, column $j$ is $\partial u_i/\partial x_j$ |
 | $\text{diag}(\mathbf{v})$ | the square matrix carrying $\mathbf{v}$ on its diagonal and zeros everywhere else |
 | $\odot$ | element-wise (Hadamard) product |
-| $\boldsymbol{\delta}^{(l)}$ | $\partial\mathcal{L}/\partial\mathbf{z}^{(l)}$, the backprop error signal |
+| $\boldsymbol{\delta}^{(l)}$ | $\partial\ell/\partial\mathbf{z}^{(l)}$, the **error** of layer $l$ — one example, one coordinate per neuron |
 | $\sigma$, $\tanh$, $\text{ReLU}$ | the activations that go in that slot |
 
 $\boldsymbol{\delta}$ is the **one** allowed `\boldsymbol`, because `\mathbf` does not embolden
 Greek letters in KaTeX. It is the exception that proves the rule; do not extend it to Latin letters.
+
+**$\boldsymbol{\delta}^{(l)}$ is built on $\ell$, not on $\mathcal{L}$**, and the row said
+$\partial\mathcal{L}/\partial\mathbf{z}^{(l)}$ until Block 2 lesson 8 derived it. That spelling
+contradicted the two-sizes rule below: every derivation in this block starts from one example, so a
+$\boldsymbol{\delta}$ defined against the batch mean carries a $1/B$ that none of the per-layer
+algebra wants, and the recurrence
+$\boldsymbol{\delta}^{(l)} = \left(\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(l)}\right)$
+would then be false as written for a single example. The batched form is a later lesson's job and
+gets its own symbol when it arrives; until then $\boldsymbol{\delta}^{(l)}$ is one example's error.
 
 **The single neuron and the layer are the same object at two sizes**, and the block says so where
 the two first share a page. Block 2 lesson 1 has one neuron and no layers, so its weights are a

@@ -1,5 +1,6 @@
 /*
  * COURSE-P2-02 — Backpropagation, as a pure function, for `backprop-trace`.
+ * COURSE-P5-02 — Display labels rewritten in the course's notation (see below).
  *
  * This is the course's centrepiece widget, so its NUMBERS must be trustworthy: the
  * whole value of the explorable is that a student believes the chain-rule factors
@@ -9,7 +10,17 @@
  *
  * The fixed architecture is a tiny MLP:
  *
- *   x (2) ── W1,b1 ──▶ z1 (2) ──σ──▶ a1 (2) ── w2,b2 ──▶ z2 ──σ──▶ o ──▶ L = ½(o−t)²
+ *   x (2) ── W1,b1 ──▶ z1 (2) ──σ──▶ a1 (2) ── w2,b2 ──▶ z2 ──σ──▶ ŷ ──▶ ℓ = ½(ŷ−y)²
+ *
+ * TWO NAMING LAYERS, AND THE SPLIT IS DELIBERATE. The identifiers here (`a1`, `o`,
+ * `w2`, `target`, and the step `id`s) are internal: the tests and the widget's
+ * `highlight()` match on them, and they are 0-indexed like the arrays they name.
+ * The `label` and `target` STRINGS are what the student reads, and those follow
+ * docs/courses/NOTATION.md exactly — 1-indexed, `ℓ` for the per-example loss, `ŷ`
+ * for the prediction, `h(1)ⱼ` for a hidden activation, `W(2)₁ⱼ` for an output
+ * weight. Block 2 lesson 8 quotes these numbers digit for digit, so a reader
+ * comparing the two must not meet a second notation. Change the strings freely;
+ * changing an `id` breaks `highlight()`.
  *
  * `runBackprop` returns the forward values, all parameter gradients, AND an ordered
  * list of chain-rule steps (each factor with its numeric value and their product),
@@ -23,14 +34,15 @@ export interface MlpParams {
   W1: number[][];
   /** Hidden biases, one per hidden neuron. Length 2. */
   b1: number[];
-  /** Output weights, one per hidden neuron. Length 2. */
+  /** Output weights, one per hidden neuron. Length 2 — row 1 of W(2) to the student. */
   w2: number[];
-  /** Output bias. */
+  /** Output bias — b(2)₁ to the student. */
   b2: number;
-  /** Target for the squared-error loss. */
+  /** The example's label, `y`, for the squared-error loss. */
   target: number;
 }
 
+/** Internal names; to the student these are x, z(1), h(1), z(2)₁, ŷ and ℓ. */
 export interface ForwardState {
   x: number[];
   z1: number[];
@@ -48,14 +60,14 @@ export interface Gradients {
 }
 
 export interface TraceFactor {
-  /** Human-readable symbol, e.g. "∂L/∂o" or "a1₀". */
+  /** Symbol as the student reads it, in course notation — e.g. "∂ℓ/∂ŷ" or "h(1)₁". */
   label: string;
   value: number;
 }
 
 export interface TraceStep {
   id: string;
-  /** The derivative this step computes, e.g. "∂L/∂w2₀". */
+  /** The derivative this step computes, in course notation — e.g. "∂ℓ/∂W(2)₁₁". */
   target: string;
   /** Ordered factors whose product is `value`. */
   factors: TraceFactor[];
@@ -68,7 +80,8 @@ export interface BackpropResult {
   steps: TraceStep[];
 }
 
-const SUB = ["₀", "₁", "₂", "₃"] as const;
+/** 0-based array index → the 1-based subscript the course prints. `SUB[0]` is "₁". */
+const SUB = ["₁", "₂", "₃", "₄"] as const;
 const sigmoidPrimeFrom = (a: number) => a * (1 - a); // σ'(z) in terms of a = σ(z)
 
 /** Forward pass through the fixed 2-2-1 sigmoid MLP with ½(o−t)² loss. */
@@ -101,22 +114,22 @@ export function runBackprop(params: MlpParams, x: number[]): BackpropResult {
 
   steps.push({
     id: "dL_do",
-    target: "∂L/∂o",
-    factors: [{ label: "o − t", value: dLdo }],
+    target: "∂ℓ/∂ŷ",
+    factors: [{ label: "ŷ − y", value: dLdo }],
     value: dLdo,
   });
   steps.push({
     id: "do_dz2",
-    target: "∂o/∂z2",
-    factors: [{ label: "o(1 − o)", value: doDz2 }],
+    target: "∂ŷ/∂z(2)₁",
+    factors: [{ label: "ŷ(1 − ŷ)", value: doDz2 }],
     value: doDz2,
   });
   steps.push({
     id: "dL_dz2",
-    target: "∂L/∂z2",
+    target: "δ(2)₁ = ∂ℓ/∂z(2)₁",
     factors: [
-      { label: "∂L/∂o", value: dLdo },
-      { label: "∂o/∂z2", value: doDz2 },
+      { label: "∂ℓ/∂ŷ", value: dLdo },
+      { label: "∂ŷ/∂z(2)₁", value: doDz2 },
     ],
     value: delta2,
   });
@@ -127,18 +140,18 @@ export function runBackprop(params: MlpParams, x: number[]): BackpropResult {
   dw2.forEach((g, j) => {
     steps.push({
       id: `dL_dw2_${j}`,
-      target: `∂L/∂w2${SUB[j]}`,
+      target: `∂ℓ/∂W(2)₁${SUB[j]}`,
       factors: [
-        { label: "∂L/∂z2", value: delta2 },
-        { label: `a1${SUB[j]}`, value: a1[j] },
+        { label: "δ(2)₁", value: delta2 },
+        { label: `h(1)${SUB[j]}`, value: a1[j] },
       ],
       value: g,
     });
   });
   steps.push({
     id: "dL_db2",
-    target: "∂L/∂b2",
-    factors: [{ label: "∂L/∂z2", value: delta2 }],
+    target: "∂ℓ/∂b(2)₁",
+    factors: [{ label: "δ(2)₁", value: delta2 }],
     value: db2,
   });
 
@@ -150,19 +163,19 @@ export function runBackprop(params: MlpParams, x: number[]): BackpropResult {
   dLda1.forEach((d, j) => {
     steps.push({
       id: `dL_da1_${j}`,
-      target: `∂L/∂a1${SUB[j]}`,
+      target: `∂ℓ/∂h(1)${SUB[j]}`,
       factors: [
-        { label: "∂L/∂z2", value: delta2 },
-        { label: `w2${SUB[j]}`, value: w2[j] },
+        { label: "δ(2)₁", value: delta2 },
+        { label: `W(2)₁${SUB[j]}`, value: w2[j] },
       ],
       value: d,
     });
     steps.push({
       id: `dL_dz1_${j}`,
-      target: `∂L/∂z1${SUB[j]}`,
+      target: `δ(1)${SUB[j]} = ∂ℓ/∂z(1)${SUB[j]}`,
       factors: [
-        { label: `∂L/∂a1${SUB[j]}`, value: d },
-        { label: `a1${SUB[j]}(1 − a1${SUB[j]})`, value: da1Dz1[j] },
+        { label: `∂ℓ/∂h(1)${SUB[j]}`, value: d },
+        { label: `φ'(z(1)${SUB[j]})`, value: da1Dz1[j] },
       ],
       value: delta1[j],
     });
@@ -175,9 +188,9 @@ export function runBackprop(params: MlpParams, x: number[]): BackpropResult {
     row.forEach((g, k) => {
       steps.push({
         id: `dL_dW1_${j}_${k}`,
-        target: `∂L/∂W1${SUB[j]}${SUB[k]}`,
+        target: `∂ℓ/∂W(1)${SUB[j]}${SUB[k]}`,
         factors: [
-          { label: `∂L/∂z1${SUB[j]}`, value: delta1[j] },
+          { label: `δ(1)${SUB[j]}`, value: delta1[j] },
           { label: `x${SUB[k]}`, value: x[k] },
         ],
         value: g,

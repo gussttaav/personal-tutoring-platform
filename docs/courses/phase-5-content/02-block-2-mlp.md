@@ -44,7 +44,7 @@ here; STATUS stays phase-level.
 - [x] 5. `funcion-de-perdida`
 - [x] 6. `descenso-gradiente`
 - [x] 7. `regla-de-la-cadena`
-- [ ] 8. `backpropagation`
+- [x] 8. `backpropagation`
 - [ ] 9. `implementar-mlp`
 - [ ] 10. `proyecto-sentimiento`
 

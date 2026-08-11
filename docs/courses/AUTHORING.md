@@ -557,6 +557,7 @@ plain. Never italicise the Spanish terms.
 | an element of the vocabulary $V$ | `entrada del vocabulario`, then `entrada` | palabra, término |
 | one case shown to the network, and the answer wanted for it | `ejemplo`, `etiqueta` | muestra, dato, caso; *sample*, *label*, *target* |
 | the place an element holds in an ordered sequence | posición | puesto, rango, ranking |
+| $\boldsymbol{\delta}^{(l)}$ — what the loss owes a layer's pre-activation | `error` (de la capa, de la neurona) | delta, señal de error, término de error |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
 one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -587,6 +588,23 @@ everywhere. `puesto` is where a runner finishes: it drags in competition, and it
 rather than indexing. `rango` is worse, being already taken twice over by *rango de una matriz* and by
 the statistical range. `posición` is the only one of the three that means a place in a sequence and
 nothing else.
+
+`error` for $\boldsymbol{\delta}^{(l)}$, and the word is **not** being borrowed — it is being kept.
+Block 2 lesson 6, on gradient descent, already calls $\hat{y} - y$ «el error» for a network with no
+hidden layer, and backpropagation's own recurrence starts at
+$\boldsymbol{\delta}^{(L)} = \hat{\mathbf{y}} - \mathbf{y}$: the same quantity, at the same place,
+now with a name that survives having layers underneath it. Using a second word for the general case
+would tell the reader that lesson 6's error and lesson 8's $\boldsymbol{\delta}$ are two things, and
+the whole point is that the first is the last layer of the second. `delta` as a noun in prose («el
+delta de la capa 2») is the tempting alternative and is rejected for the reason `puesto` is: it
+names the letter rather than the thing, and the letter is already on the page.
+
+The collision to watch is *error cuadrático medio*, two rows up, which is a **fixed compound** and a
+different concept — it measures a prediction, it is not the derivative of anything. They never share
+a sentence, and a lesson that needs both writes the compound in full and never shortens it to
+`error`. Note also that «error» is the concept and $\boldsymbol{\delta}^{(l)}$ is its symbol: prose
+says *el error de la capa 2*, maths says $\boldsymbol{\delta}^{(2)}$, and neither is a synonym for
+`gradiente`, which stays the general word for a vector of derivatives with respect to anything.
 
 `ocurrencia` is the **same** concept as `token`, licensed for one job: the counting noun when the two
 are being contrasted. *La fracción de ocurrencias que cubren esos $k$ tipos* reads; *la fracción de

@@ -4,6 +4,10 @@
  * value ("this × this = that"), highlighting the edge/node it belongs to. Steps go
  * both directions (◀ ▶ or arrow keys). Every number comes from math/backprop, which
  * is verified against finite differences AND a hand-computed example. Local state only.
+ *
+ * COURSE-P5-02 — Labels rewritten in the course's notation. Block 2 lesson 8 prints
+ * these same numbers, so the diagram may not carry a second naming scheme; see the
+ * header of math/backprop.ts for the internal-vs-displayed split.
  */
 
 "use client";
@@ -16,14 +20,26 @@ import { WidgetButton } from "../primitives/WidgetButton";
 const W = 460;
 const H = 240;
 
+// Keys are internal — `highlight()` builds them from the 0-indexed step ids. The
+// `label` is what the student reads, and it is 1-indexed course notation.
 const NODES: Record<string, { x: number; y: number; label: string }> = {
-  x0: { x: 40, y: 70, label: "x₀" },
-  x1: { x: 40, y: 170, label: "x₁" },
-  h0: { x: 180, y: 70, label: "h₀" },
-  h1: { x: 180, y: 170, label: "h₁" },
-  o: { x: 320, y: 120, label: "o" },
-  L: { x: 420, y: 120, label: "L" },
+  x0: { x: 40, y: 70, label: "x₁" },
+  x1: { x: 40, y: 170, label: "x₂" },
+  h0: { x: 180, y: 70, label: "h(1)₁" },
+  h1: { x: 180, y: 170, label: "h(1)₂" },
+  o: { x: 320, y: 120, label: "ŷ" },
+  L: { x: 420, y: 120, label: "ℓ" },
 };
+
+/*
+ * ONE radius for every node, set by the widest label. `h(1)₁` is ~29px at 13px/600,
+ * so r=24 clears it with ~9px of padding a side. Two rejected alternatives: sizing
+ * each node to its own label makes the hidden pair ellipses among circles, which
+ * reads as a distinction the network does not have; and shrinking the font to fit
+ * a smaller disc is worse still, since the drawing scales to ~0.78 on a 360px
+ * phone and 10px in the source lands at ~8px on the device.
+ */
+const NODE_R = 24;
 
 const EDGES: { id: string; from: string; to: string }[] = [
   { id: "W1_0_0", from: "x0", to: "h0" },
@@ -83,7 +99,14 @@ export default function BackpropTrace() {
         }
       }}
     >
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} role="img" aria-label="Diagrama de la red 2-2-1" style={{ display: "block", maxWidth: "100%" }}>
+      {/*
+        `height: auto` rather than a fixed H: with a pinned pixel height the default
+        preserveAspectRatio letterboxes the drawing — it renders at its intrinsic
+        460px and pads the sides — so the diagram stayed small in a wider column.
+        Scaling with the width instead makes the labels grow with the container;
+        maxWidth stops it ballooning past the measure of the prose.
+      */}
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Diagrama de la red 2-2-1" style={{ display: "block", width: "100%", height: "auto", maxWidth: 560, margin: "0 auto" }}>
         {EDGES.map((e) => {
           const a = NODES[e.from];
           const b = NODES[e.to];
@@ -94,19 +117,20 @@ export default function BackpropTrace() {
           const on = hi.nodes.has(id);
           return (
             <g key={id}>
-              <circle cx={n.x} cy={n.y} r={18} fill={on ? "var(--green-container)" : "var(--surface-lowest)"} stroke={on ? "var(--green)" : "var(--border-variant)"} strokeWidth={on ? 2.5 : 1.5} />
+              <circle cx={n.x} cy={n.y} r={NODE_R} fill={on ? "var(--green-container)" : "var(--surface-lowest)"} stroke={on ? "var(--green)" : "var(--border-variant)"} strokeWidth={on ? 2.5 : 1.5} />
               <text x={n.x} y={n.y} dy="0.32em" textAnchor="middle" fontSize={13} fill={on ? "#04140d" : "var(--text)"} fontWeight={600}>
                 {n.label}
               </text>
             </g>
           );
         })}
-        {/* forward readouts */}
-        <text x={NODES.o.x} y={NODES.o.y + 34} textAnchor="middle" fontSize={10} fill="var(--text-dim)">
-          o = {fmt(forward.o)}
+        {/* Forward readouts. The offset clears NODE_R plus a gap — a baseline is not
+            a top edge, so `+ 34` left these sitting 2px under a radius-24 circle. */}
+        <text x={NODES.o.x} y={NODES.o.y + NODE_R + 18} textAnchor="middle" fontSize={11} fill="var(--text-dim)">
+          ŷ = {fmt(forward.o)}
         </text>
-        <text x={NODES.L.x} y={NODES.L.y + 34} textAnchor="middle" fontSize={10} fill="var(--text-dim)">
-          L = {fmt(forward.loss)}
+        <text x={NODES.L.x} y={NODES.L.y + NODE_R + 18} textAnchor="middle" fontSize={11} fill="var(--text-dim)">
+          ℓ = {fmt(forward.loss)}
         </text>
       </svg>
 
@@ -129,10 +153,10 @@ export default function BackpropTrace() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         <WidgetButton onClick={() => go(-1)} disabled={i === 0}>
-          ◀ atrás
+          ◀ anterior
         </WidgetButton>
         <WidgetButton onClick={() => go(1)} disabled={i === steps.length - 1}>
-          adelante ▶
+          siguiente ▶
         </WidgetButton>
         <WidgetButton onClick={() => setI(0)}>Reset</WidgetButton>
         <span style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>

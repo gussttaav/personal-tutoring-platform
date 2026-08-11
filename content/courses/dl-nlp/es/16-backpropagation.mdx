@@ -1,0 +1,575 @@
+---
+slug: backpropagation
+title: "Backpropagation: la derivación completa"
+block: 2
+order: 8
+minutes: 35
+summary: "Derivar peso a peso obliga a recorrer la red una vez por parámetro, y esos recorridos comparten casi todo. Backpropagation calcula en su lugar un solo número por preactivación —el error de esa neurona—, con una única pasada del final al principio, y deja que cada peso lea su derivada como el producto de ese error por lo que tenía delante."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-leer-un-gradiente
+    type: numeric
+    prompt: 'En la red de la segunda celda, la pasada hacia atrás deja $\boldsymbol{\delta}^{(1)} = (0{,}323559,\; -0{,}493520,\; -0{,}493520,\; 0)^{\top}$, y la entrada de esa reseña es $\mathbf{x} = (0, 0, 1, 2, 0, 0, 1, 1)^{\top}$. ¿Cuánto vale $\partial \ell / \partial \mathbf{W}^{(1)}_{24}$, la derivada del peso que la segunda neurona oculta le da a la cuarta entrada del vocabulario?'
+    answer: -0.98704
+    tolerance: 0.001
+    explanation: 'Es una multiplicación, y ése es el resultado de la lección: $\delta^{(1)}_2\,x_4 = -0{,}493520 \times 2 = -0{,}98704$. No hace falta recorrer nada, porque el recorrido ya está hecho y su resultado es ese $-0{,}493520$. Fíjate en de dónde sale el factor $2$: la cuarta entrada del vocabulario es <W>la</W>, que aparece dos veces en la reseña, así que su peso se corrige el doble que el de una entrada que aparece una sola vez —el mismo reparto que la lección 6 de este bloque, sobre descenso de gradiente, encontró con una neurona suelta—. Y la cuarta fila entera de $\nabla_{\mathbf{W}^{(1)}}\ell$ vale cero, porque $\delta^{(1)}_4 = 0$: esa neurona está apagada y ninguno de sus ocho pesos se mueve.'
+  - id: q-que-se-reutiliza
+    type: single
+    prompt: 'Backpropagation no usa ninguna regla de derivación que la lección anterior no tuviera ya. ¿Qué es entonces lo que ahorra?'
+    options:
+      - { id: a, text: 'Que calcula una sola vez el gradiente de la pérdida respecto de cada preactivación, y las derivadas de todos los pesos de una capa se leen de él multiplicando por una activación que la pasada hacia adelante ya dejó guardada.' }
+      - { id: b, text: 'Que aprovecha que con ReLU la mitad de las derivadas son cero, y saltarse los ceros divide el trabajo por dos.' }
+      - { id: c, text: 'Que sustituye las derivadas exactas por diferencias finitas, que cuestan una evaluación en lugar de una derivación simbólica.' }
+      - { id: d, text: 'Que multiplica entre sí las jacobianas de todas las capas antes de aplicarlas, y un único producto de matrices sale más barato que muchos productos matriz por vector.' }
+    answer: a
+    explanation: 'La (a) es el algoritmo entero: un número por preactivación, y todo lo demás leído de él. La (b) confunde una propiedad de esta reseña con el método —cuántas neuronas estén apagadas depende del ejemplo que entre, y con sigmoide no hay ni un cero, pero el ahorro es el mismo—. La (c) va justo al revés: el sondeo numérico es el camino caro, el que cuesta dos pasadas por parámetro, y es lo que backpropagation viene a sustituir. Y la (d) elige la asociación equivocada del producto, que es la observación que la lección anterior dejó guardada sin usar: multiplicar matriz por matriz es más caro que llevar un vector hacia atrás, y aquí no se construye ni una sola matriz intermedia.'
+  - id: q-formas-backward
+    type: multi
+    prompt: 'Marca todo lo que sea cierto de la pasada hacia atrás por una capa $l$, con $\mathbf{W}^{(l)} \in \mathbb{R}^{d_l \times d_{l-1}}$.'
+    options:
+      - { id: a, text: '$\nabla_{\mathbf{W}^{(l)}}\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$ tiene forma $d_l \times d_{l-1}$, la misma que $\mathbf{W}^{(l)}$, y por eso sirve de comprobación.' }
+      - { id: b, text: '$\boldsymbol{\delta}^{(l)}$ tiene una coordenada por neurona de la capa, y $\nabla_{\mathbf{b}^{(l)}}\ell$ es exactamente ese vector, sin ningún factor más.' }
+      - { id: c, text: 'El error se transporta con $\left(\mathbf{W}^{(l+1)}\right)^{\top}$, de forma $d_l \times d_{l+1}$: los mismos pesos de la ida, leídos por columnas.' }
+      - { id: d, text: 'Como cada $\boldsymbol{\delta}^{(l)}$ se calcula a partir de $\boldsymbol{\delta}^{(l+1)}$, hay que conservarlos todos hasta el final para multiplicarlos entre sí.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras son las tres formas de la sección. La (a) es el producto exterior, y la coincidencia de formas es lo primero que hay que mirar cuando una derivada escrita a mano no cuadra. La (b) sale de que la preactivación depende del sesgo con derivada $1$. La (c) es el transporte, y merece leerse dos veces: la matriz de la ida y la de la vuelta son la misma, sin ningún parámetro propio. La falsa es la (d), y se equivoca en las dos mitades: ningún $\boldsymbol{\delta}$ se multiplica por otro $\boldsymbol{\delta}$, y cada uno se puede tirar en cuanto su capa ha leído sus dos gradientes. Lo que sí hay que conservar hasta la vuelta es la ida —los $\mathbf{h}^{(l-1)}$ y los $\mathbf{z}^{(l)}$—, que es otra cosa.'
+  - id: q-mascara
+    type: predict-output
+    prompt: 'Así aplica la celda la máscara de ReLU a un error que llega de la capa siguiente. ¿Qué imprime?'
+    language: python
+    code: |
+      import numpy as np
+
+      z = np.array([2., -1., 0., 3.])
+      g = np.array([0.5, -0.5, 1.5, -1.5])
+      print(np.round(g * (z > 0), 2))
+    answer: '[ 0.5 -0.   0.  -1.5]'
+    explanation: 'La comparación da `[True False False True]`, y multiplicar por ella deja pasar la primera y la cuarta coordenada y anula las otras dos. La tercera es la que enseña algo: $z = 0$ es donde ReLU tiene el pico y la derivada no existe, y la comparación estricta elige el $0$ que el curso fijó por convención en la lección 2 de este bloque, sobre funciones de activación. Con `>=` esa coordenada habría dejado pasar su $1{,}5$ entero. Y mira el `-0.`: multiplicar $-0{,}5$ por `False` da cero negativo, que aritméticamente es cero y se imprime con signo. Es la razón de que la segunda celda sume `+ 0.` antes de enseñar una matriz de gradientes.'
+    hint: 'El formato cuenta tanto como los valores. NumPy alinea las cuatro casillas al ancho de la más larga, `-1.5`, así que las positivas llevan delante un espacio de relleno; y un cero con signo se escribe `-0.`, no `0.`.'
+  - id: q-tirar-el-forward
+    type: single
+    prompt: 'Una red se queda sin memoria al entrenar, y alguien propone liberar cada $\mathbf{h}^{(l)}$ en cuanto la capa $l+1$ lo ha consumido. ¿Qué ocurre?'
+    options:
+      - { id: a, text: 'Que la pasada hacia adelante termina bien y la de atrás ya no se puede hacer: $\nabla_{\mathbf{W}^{(l)}}\ell$ necesita $\mathbf{h}^{(l-1)}$, y el único sitio donde ese vector existía era la memoria que se acaba de liberar.' }
+      - { id: b, text: 'Que no ocurre nada: la recurrencia de $\boldsymbol{\delta}$ sólo usa las matrices de pesos, que no se liberan nunca.' }
+      - { id: c, text: 'Que los gradientes salen con el valor correcto y el signo cambiado, porque falta el factor de la activación.' }
+      - { id: d, text: 'Que falla únicamente en la capa de salida; las demás reconstruyen $\mathbf{h}^{(l-1)}$ a partir de su propio $\boldsymbol{\delta}^{(l)}$.' }
+    answer: a
+    explanation: 'La (a) es la concesión que la sección dice en voz alta: predecir permite tirar cada capa en cuanto se usa, y entrenar no. La (b) se queda a medias y por eso es la trampa: es verdad que las matrices no se liberan, pero la recurrencia también pide $\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)$, y el producto exterior pide $\mathbf{h}^{(l-1)}$. La (c) inventa un fallo de signo donde lo que hay es un dato que falta. Y la (d) va al revés: de $\boldsymbol{\delta}^{(l)}$ no se reconstruye nada, porque el error es lo que baja y la activación es lo que subió. Lo que sí se hace de verdad es guardar $\mathbf{z}^{(l)}$ y recalcular $\mathbf{h}^{(l)} = \varphi\left(\mathbf{z}^{(l)}\right)$ en la vuelta: eso cambia memoria por aritmética, y es un cambio, no un ahorro gratis.'
+challenges:
+  - id: ch-backprop
+    prompt: |
+      Escribe la pasada hacia atrás de una red de $L$ capas, a partir de lo que la de ida dejó
+      guardado. La activación oculta es ReLU y la capa de salida lleva softmax con entropía
+      cruzada.
+
+      - `errores(Ws, zs, y_hat, y)` recibe la lista de matrices de pesos, la lista de
+        preactivaciones —una por capa, en orden de ida— y la predicción con su etiqueta, y
+        devuelve la lista de los $L$ vectores $\boldsymbol{\delta}$, también en orden de ida.
+      - `gradientes(deltas, hs)` recibe esos $\boldsymbol{\delta}$ y la lista `hs`, donde `hs[l]`
+        es lo que entra en la capa $l+1$ y `hs[0]` es $\mathbf{x}$. Devuelve la lista de los
+        $\nabla_{\mathbf{W}^{(l)}}\ell$, uno por capa.
+
+      Ninguna de las dos puede escribir en las listas ni en los arrays que recibe.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def errores(Ws, zs, y_hat, y):
+          # tu código aquí
+          pass
+
+
+      def gradientes(deltas, hs):
+          # tu código aquí
+          pass
+    tests:
+      - name: "la última capa entra con la predicción menos la etiqueta"
+        code: |
+          import numpy as np
+          Ws = [np.array([[1., 0.], [0., 1.]]), np.array([[1., -1.], [2., 0.5]])]
+          zs = [np.array([1., -1.]), np.array([0.3, -0.2])]
+          d = errores(Ws, zs, np.array([0.7, 0.3]), np.array([1., 0.]))
+          assert d is not None and len(d) == 2, 'devuelve un delta por capa, en orden de ida'
+          assert np.allclose(d[-1], [-0.3, 0.3]), 'el de la ultima capa es y_hat - y, sin ningun factor mas'
+      - name: "la recurrencia transporta con la transpuesta y enmascara con ReLU"
+        code: |
+          import numpy as np
+          Ws = [np.array([[1., 0.], [0., 1.]]), np.array([[1., -1.], [2., 0.5]])]
+          zs = [np.array([1., -1.]), np.array([0.3, -0.2])]
+          d = errores(Ws, zs, np.array([0.7, 0.3]), np.array([1., 0.]))
+          assert d is not None and d[0] is not None, 'faltan los deltas de las capas ocultas'
+          assert np.allclose(d[0], (Ws[1].T @ np.array([-0.3, 0.3])) * (zs[0] > 0.)), 'transporta con la TRANSPUESTA de la capa siguiente, y despues enmascara'
+          assert np.isclose(d[0][1], 0.), 'z(1) vale -1 en esa neurona: ReLU la apaga y su delta tiene que ser cero'
+      - name: "un gradiente por capa, con la forma de su matriz de pesos"
+        code: |
+          import numpy as np
+          G = gradientes([np.array([1., -2., 3.]), np.array([0.5, -0.5])],
+                         [np.array([1., 2., 3., 4.]), np.array([1., 0., 2.])])
+          assert G is not None and len(G) == 2, 'un gradiente por capa'
+          assert G[0].shape == (3, 4) and G[1].shape == (2, 3), 'la forma es (d_l, d_{l-1}), la de W(l): es un producto exterior, no un producto escalar'
+          assert np.allclose(G[0][1], [-2., -4., -6., -8.]), 'la fila j es delta[j] multiplicando a h(l-1) entera'
+      - name: "no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          Ws = [np.array([[1., 0.], [0., 1.]]), np.array([[1., -1.], [2., 0.5]])]
+          zs = [np.array([1., -1.]), np.array([0.3, -0.2])]
+          W0, y_hat = Ws[0].copy(), np.array([0.7, 0.3])
+          errores(Ws, zs, y_hat, np.array([1., 0.]))
+          assert np.allclose(Ws[0], W0), 'no toques las matrices de quien te llama'
+          assert np.allclose(y_hat, [0.7, 0.3]), 'y_hat -= y escribe en el array de quien te llama; resta a una copia'
+      - name: "coincide con el sondeo sobre una red de dos capas ocultas"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(0)
+          Ws = [rng.normal(size=(4, 5)), rng.normal(size=(3, 4)), rng.normal(size=(2, 3))]
+          bs = [rng.normal(size=4), rng.normal(size=3), rng.normal(size=2)]
+          x, y = rng.normal(size=5), np.array([0., 1.])
+          def paso():
+              hs, zs = [x], []
+              for l in range(3):
+                  zs.append(Ws[l] @ hs[-1] + bs[l])
+                  hs.append(np.maximum(zs[-1], 0.))
+              e = np.exp(zs[-1] - zs[-1].max())
+              p = e / e.sum()
+              return hs, zs, p, float(-np.log(p @ y))
+          hs, zs, p, _ = paso()
+          G = gradientes(errores(Ws, zs, p, y), hs)
+          assert G is not None and all(g is not None for g in G), 'devuelve la lista entera de gradientes'
+          peor = 0.
+          for l in range(3):
+              for k in np.ndindex(Ws[l].shape):
+                  v = Ws[l][k]
+                  Ws[l][k] = v + 1e-6
+                  d = paso()[3]
+                  Ws[l][k] = v - 1e-6
+                  d -= paso()[3]
+                  Ws[l][k] = v
+                  peor = max(peor, abs(d / 2e-6 - G[l][k]))
+          assert peor < 1e-6, 'los gradientes no coinciden con el sondeo numerico: revisa el orden de la recurrencia'
+    solution: |
+      import numpy as np
+
+
+      def errores(Ws, zs, y_hat, y):
+          deltas = [None] * len(Ws)
+          deltas[-1] = np.asarray(y_hat, dtype=float) - np.asarray(y, dtype=float)
+          for l in range(len(Ws) - 2, -1, -1):
+              deltas[l] = (Ws[l + 1].T @ deltas[l + 1]) * (zs[l] > 0.)
+          return deltas
+
+
+      def gradientes(deltas, hs):
+          return [np.outer(deltas[l], hs[l]) for l in range(len(deltas))]
+    explanation: |
+      `errores` cabe en cinco líneas y todas las decisiones están en el `range`. Va de
+      `len(Ws) - 2` a `0` con paso $-1$ porque la capa $l$ necesita el $\boldsymbol{\delta}$ de la
+      $l+1$, que sólo existe si ya se calculó: el orden no es una preferencia, es la única
+      dirección en la que la recurrencia está definida. Recorrerla al derecho da `None` en la
+      primera vuelta.
+
+      La transpuesta es lo otro que hay que acertar. `Ws[l + 1].T @ deltas[l + 1]` toma la matriz
+      de la ida y la lee por columnas, porque la casilla $(i, j)$ dice cuánto pesa la neurona $j$
+      de abajo en la $i$ de arriba, y aquí se reparte al revés. Sin la `.T` el producto ni siquiera
+      existe salvo que las dos capas tengan la misma anchura, y ése es el caso peligroso: existe,
+      da números, y ninguno es la derivada que buscabas.
+
+      `gradientes` es una línea porque no hay nada que decidir. `np.outer(delta, h)` es exactamente
+      $\boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$, con la forma
+      $(d_l,\, d_{l-1})$ que la tercera prueba comprueba; `delta @ h` habría dado un solo número, y
+      `np.outer(h, delta)` la transpuesta. Fíjate en lo que ninguna de las dos funciones hace: no
+      construye ni una matriz intermedia. Lo más caro que ocurre en toda la vuelta es una matriz
+      por un vector, una vez por capa.
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 8. */}
+
+Todo lo que hace *backpropagation* lo hace con la regla de la cadena, y la regla de la cadena ya
+está derivada. La lección anterior la dejó en su forma vectorial —jacobianas que se multiplican, un
+gradiente que entra por un extremo y sale convertido en el de la capa anterior— y con ella la razón
+por la que así, tal cual, no se puede ejecutar: aplicarla parámetro a parámetro cuesta un recorrido
+completo de la red por cada número que haya que ajustar. Lo que falta no es matemática nueva. Es un
+orden.
+
+Y el orden se ve mejor pequeño que grande. Toma la red más pequeña que todavía tiene una capa
+oculta: dos entradas, dos neuronas ocultas y una de salida. Tiene nueve parámetros —cuatro pesos de
+entrada, dos sesgos ocultos, dos pesos de salida y un sesgo—, así que hay nueve derivadas que
+calcular. Detrás de las nueve hay tres números, uno por preactivación de la red. Calculados esos
+tres, cada una de las nueve derivadas es un producto de dos factores, y ninguno de los dos hay que
+ir a buscarlo lejos.
+
+<Explorable
+  id="backprop-trace"
+  caption="Recorre los catorce pasos con las flechas y vigila un número: δ(2)₁, el error de la neurona de salida, que se calcula en el tercer paso y vuelve como primer factor en los cinco siguientes. Ese es todo el ahorro. Compara además el cuarto paso con el quinto: dos pesos distintos, el mismo primer factor, y lo único que cambia es lo que cada uno tenía delante."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Hacia atrás no viaja una derivada por peso: viaja un número por neurona. Cada peso consigue el suyo
+multiplicando el número de su neurona por lo que esa neurona tenía delante.
+</Callout>
+
+## Un número por preactivación, y las derivadas que cuelgan de él
+
+Fijemos una capa $l$ y un solo ejemplo. Derivar respecto de un peso ya está resuelto; lo que hay que
+decidir es respecto de qué conviene derivar *primero*, y la respuesta es la preactivación. Llamemos
+**error** de la capa $l$, y $\boldsymbol{\delta}^{(l)}$, al gradiente de la pérdida de ese ejemplo
+respecto de $\mathbf{z}^{(l)}$:
+
+$$
+\boldsymbol{\delta}^{(l)} = \nabla_{\mathbf{z}^{(l)}}\,\ell \in \mathbb{R}^{d_l},
+$$
+
+una coordenada por neurona de la capa, y en columna, que es la transpuesta de la jacobiana de una
+fila con la que la lección anterior escribía el gradiente de un escalar. Es $\ell$ y no
+$\mathcal{L}$: la pérdida de *un* ejemplo, como en todo el bloque desde la lección 5, sobre
+funciones de pérdida.
+
+Con ese vector en la mano, los parámetros de la capa $l$ salen sin recorrer nada. Su preactivación
+es $\mathbf{z}^{(l)} = \mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}$, y coordenada a
+coordenada, $z^{(l)}_i = \sum_k \mathbf{W}^{(l)}_{ik} h^{(l-1)}_k + b^{(l)}_i$. Mira dónde aparece
+un peso concreto: $\mathbf{W}^{(l)}_{jk}$ está en una sola de las $d_l$ coordenadas, la $j$, así que
+de la suma sobre caminos de la lección anterior sobrevive un único sumando:
+
+$$
+\frac{\partial \ell}{\partial \mathbf{W}^{(l)}_{jk}}
+= \sum_{i=1}^{d_l} \frac{\partial \ell}{\partial z^{(l)}_i}\,\frac{\partial z^{(l)}_i}{\partial \mathbf{W}^{(l)}_{jk}}
+= \delta^{(l)}_j\, h^{(l-1)}_k,
+\qquad
+\frac{\partial \ell}{\partial b^{(l)}_j} = \delta^{(l)}_j,
+$$
+
+porque $\partial z^{(l)}_i / \partial \mathbf{W}^{(l)}_{jk}$ vale $h^{(l-1)}_k$ cuando $i = j$ y cero
+en los otros $d_l - 1$ casos, y la derivada respecto del sesgo es la misma cuenta con un $1$ en
+lugar de una activación. Apiladas, las $d_l \times d_{l-1}$ casillas son un producto exterior:
+
+$$
+\nabla_{\mathbf{W}^{(l)}}\,\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top} \in \mathbb{R}^{d_l \times d_{l-1}},
+\qquad
+\nabla_{\mathbf{b}^{(l)}}\,\ell = \boldsymbol{\delta}^{(l)}.
+$$
+
+Una columna de $d_l$ por una fila de $d_{l-1}$, que es exactamente la forma de $\mathbf{W}^{(l)}$
+—y esa coincidencia es la comprobación más barata que existe: si el producto exterior no sale con
+la forma de la matriz que deriva, hay algo transpuesto.
+
+Cuenta ahora lo que acaba de pasar, porque es el argumento entero. La capa $l$ tiene
+$d_l\,d_{l-1} + d_l$ parámetros, y sus derivadas salen todas de $d_l + d_{l-1}$ números: las
+coordenadas de $\boldsymbol{\delta}^{(l)}$ y las de $\mathbf{h}^{(l-1)}$, que la pasada hacia
+adelante ya calculó. En la primera capa de la red de la lección anterior eso son treinta y seis
+derivadas leídas de doce números. Queda una sola pregunta, y ocupa el resto de la lección: de dónde
+sale $\boldsymbol{\delta}^{(l)}$.
+
+## De dónde sale ese número: la recurrencia hacia atrás
+
+De la capa de al lado, y por eso el recorrido va del final al principio.
+
+Empieza por el final, donde no hay nada que hacer. La última capa entrega $\mathbf{z}^{(L)}$, el
+*softmax* lo convierte en $\hat{\mathbf{y}}$ y la entropía cruzada lo compara con la etiqueta; la
+lección 5 de este bloque derivó ese par entero y de las dos cosas juntas salió
+
+$$
+\boldsymbol{\delta}^{(L)} = \hat{\mathbf{y}} - \mathbf{y}.
+$$
+
+Nada de lo que sigue depende de que sea ésa. Cambia la pérdida o la activación de salida y ese
+vector cambia; el resto del algoritmo no se entera, porque sólo lo recibe. La red del explorable de
+arriba es el ejemplo: tiene una sigmoide en la salida y la pérdida
+$\tfrac{1}{2}\left(\hat{y} - y\right)^{2}$ —el $\tfrac{1}{2}$ es la convención que la lección 5 dijo
+no adoptar, y aquí está puesto para que los números salgan cortos—, con lo que su capa de salida
+entra con $\delta^{(2)}_1 = \left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right)$ y no con
+$\hat{y} - y$: el factor de más es la sigmoide, que aquí no se cancela con nada. Todo lo demás es
+idéntico.
+
+Ahora el paso hacia atrás. Sea $l < L$. La preactivación de la capa siguiente se construye a partir
+de la de ésta en dos movimientos,
+$\mathbf{z}^{(l+1)} = \mathbf{W}^{(l+1)}\varphi\left(\mathbf{z}^{(l)}\right) + \mathbf{b}^{(l+1)}$,
+y la lección anterior tiene la jacobiana de los dos: la de una aplicación afín es su propia matriz,
+y la de una $\varphi$ aplicada coordenada a coordenada es diagonal. Componiéndolas,
+
+$$
+\frac{\partial \mathbf{z}^{(l+1)}}{\partial \mathbf{z}^{(l)}} = \mathbf{W}^{(l+1)}\,\text{diag}\left(\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)\right) \in \mathbb{R}^{d_{l+1} \times d_l},
+$$
+
+y esa misma lección dijo qué hacer con una jacobiana cuando lo que se propaga es el gradiente de un
+escalar: se transpone y se le multiplica el gradiente por la derecha. Como $\text{diag}$ es
+simétrica y transponer un producto le da la vuelta al orden de los factores,
+
+$$
+\boldsymbol{\delta}^{(l)}
+= \left(\frac{\partial \mathbf{z}^{(l+1)}}{\partial \mathbf{z}^{(l)}}\right)^{\top}\boldsymbol{\delta}^{(l+1)}
+= \text{diag}\left(\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)\right)\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)},
+$$
+
+que escrito con el producto de Hadamard, para no construir la diagonal, es la forma que se
+implementa:
+
+$$
+\boldsymbol{\delta}^{(l)} = \left(\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(l)}\right).
+$$
+
+Léela en dos movimientos, porque hacen dos cosas distintas. El primero,
+$\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}$, **transporta**: reparte el error
+de las $d_{l+1}$ neuronas de arriba entre las $d_l$ de abajo, a cada una según el peso con que las
+alimentaba en la ida. Son los mismos pesos, sin ningún parámetro nuevo. El segundo **enmascara**:
+multiplica lo que le llega a cada neurona por su propia pendiente. Con ReLU (*rectified linear
+unit*) esa pendiente vale $0$ o $1$, así que una neurona con la preactivación negativa recibe un
+cero y corta ahí todo lo que venía de arriba.
+
+<Details summary="La misma recurrencia, índice a índice">
+
+Sin matrices por medio. La coordenada $j$ de $\boldsymbol{\delta}^{(l)}$ es la derivada de $\ell$
+respecto de $z^{(l)}_j$, y $z^{(l)}_j$ llega a la pérdida a través de las $d_{l+1}$ preactivaciones
+de la capa siguiente: es la suma sobre caminos de la lección anterior, con $d_{l+1}$ caminos.
+
+$$
+\delta^{(l)}_j = \sum_{i=1}^{d_{l+1}} \frac{\partial \ell}{\partial z^{(l+1)}_i}\,\frac{\partial z^{(l+1)}_i}{\partial z^{(l)}_j} = \sum_{i=1}^{d_{l+1}} \delta^{(l+1)}_i\,\frac{\partial z^{(l+1)}_i}{\partial z^{(l)}_j},
+$$
+
+donde la segunda igualdad no hace nada más que nombrar el primer factor. El segundo sale de escribir
+la capa siguiente con sus índices,
+$z^{(l+1)}_i = \sum_{k=1}^{d_l} \mathbf{W}^{(l+1)}_{ik}\,\varphi\left(z^{(l)}_k\right) + b^{(l+1)}_i$.
+Al derivar respecto de $z^{(l)}_j$ sobrevive un solo sumando de esa suma, el de $k = j$, y la
+activación aporta su derivada:
+
+$$
+\frac{\partial z^{(l+1)}_i}{\partial z^{(l)}_j} = \mathbf{W}^{(l+1)}_{ij}\,\varphi^{\prime}\left(z^{(l)}_j\right).
+$$
+
+Ese último factor no depende de $i$, así que sale fuera de la suma:
+
+$$
+\delta^{(l)}_j = \left(\sum_{i=1}^{d_{l+1}} \mathbf{W}^{(l+1)}_{ij}\,\delta^{(l+1)}_i\right)\varphi^{\prime}\left(z^{(l)}_j\right).
+$$
+
+Y ya está escrita la fórmula de arriba. La suma recorre la columna $j$ de $\mathbf{W}^{(l+1)}$, que
+es la fila $j$ de su transpuesta, o sea la coordenada $j$ del transporte; el factor de fuera es la
+coordenada $j$ del enmascarado. Las dos formas dicen lo mismo, y la de las matrices sólo tiene de
+más que el ordenador la ejecuta sin escribir ni un índice.
+
+</Details>
+
+### El algoritmo entero, escrito para dos capas ocultas
+
+Con $L = 3$ cabe entero y sin puntos suspensivos. Hacia adelante, que es la lección 4 de este
+bloque, sobre el *forward pass*:
+
+$$
+\mathbf{h}^{(0)} = \mathbf{x},
+\quad
+\mathbf{z}^{(l)} = \mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)},
+\quad
+\mathbf{h}^{(l)} = \varphi\left(\mathbf{z}^{(l)}\right)
+\;\; (l = 1, 2),
+\quad
+\hat{\mathbf{y}} = \text{softmax}\left(\mathbf{z}^{(3)}\right),
+$$
+
+guardando por el camino los $\mathbf{h}^{(l-1)}$ y los $\mathbf{z}^{(l)}$. Hacia atrás, del final al
+principio:
+
+$$
+\begin{aligned}
+\boldsymbol{\delta}^{(3)} &= \hat{\mathbf{y}} - \mathbf{y}, \\[2pt]
+\boldsymbol{\delta}^{(2)} &= \left(\left(\mathbf{W}^{(3)}\right)^{\top}\boldsymbol{\delta}^{(3)}\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(2)}\right), \\[2pt]
+\boldsymbol{\delta}^{(1)} &= \left(\left(\mathbf{W}^{(2)}\right)^{\top}\boldsymbol{\delta}^{(2)}\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(1)}\right),
+\end{aligned}
+$$
+
+y de esos tres vectores salen los seis gradientes,
+$\nabla_{\mathbf{W}^{(l)}}\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$ y
+$\nabla_{\mathbf{b}^{(l)}}\ell = \boldsymbol{\delta}^{(l)}$ para $l = 1, 2, 3$. Eso es
+backpropagation completo. Tres errores, seis gradientes, y no hay un paso más.
+
+Lo que cuesta se lee en las formas. La vuelta hace un producto de matriz por vector en cada capa,
+con las mismas matrices de la ida: el mismo orden de operaciones, una sola vez, sea cual sea $L$.
+Sondear los parámetros de uno en uno cuesta dos pasadas hacia adelante por parámetro, y el número de
+parámetros no lo acota nada. En la red de abajo son $63$ parámetros, $126$ pasadas contra una; con
+el vocabulario de veinte mil entradas de la lección 4 de este bloque la proporción no cambia de
+forma, sólo de tamaño.
+
+Hay un precio y conviene decirlo, porque no es el tiempo. La vuelta necesita los
+$\mathbf{h}^{(l-1)}$ y los $\mathbf{z}^{(l)}$ de todas las capas, así que hay que conservarlos
+mientras se calcula hacia adelante. Una red que sólo predice puede tirar cada capa en cuanto la ha
+usado; una que va a entrenar, no, y esa memoria crece con la profundidad y con el *batch*.
+
+## Del explorable a una red con dos capas ocultas
+
+La primera celda es la red del explorable con sus mismos pesos, para que puedas comparar cifra a
+cifra. Ejecútala y ve leyendo la salida contra los pasos de arriba: los tres errores primero, los
+nueve gradientes después. La última línea sondea los nueve parámetros de uno en uno, que es la
+comprobación de la lección anterior aplicada aquí.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# La red del explorable: dos entradas, dos neuronas ocultas y una de salida, con
+# sigmoide en las dos capas y la pérdida ½(ŷ − y)². Los pesos son los suyos.
+x, y = np.array([1.0, 0.5]), 1.0
+W1 = np.array([[0.5, -0.3], [0.8, 0.2]])
+b1 = np.array([0.1, -0.2])
+W2 = np.array([[0.7, -0.6]])          # una fila: la capa de salida tiene una neurona
+b2 = np.array([0.15])
+sigmoide = lambda z: 1.0 / (1.0 + np.exp(-z))
+
+
+def forward():
+    h1 = sigmoide(W1 @ x + b1)
+    y_hat = sigmoide(W2 @ h1 + b2)[0]
+    return h1, y_hat, 0.5 * (y_hat - y) ** 2
+
+
+h1, y_hat, perdida = forward()
+print("h(1) =", np.round(h1, 3), "  ŷ = %.3f   ℓ = %.3f" % (y_hat, perdida))
+
+# Hacia atrás. Un δ por preactivación: tres números, y ahí se acaba la cadena.
+d2 = np.array([(y_hat - y) * y_hat * (1.0 - y_hat)])
+d1 = (W2.T @ d2) * h1 * (1.0 - h1)          # transporta con la transpuesta, y enmascara
+print("∂ℓ/∂ŷ = %+.3f   ∂ŷ/∂z(2)₁ = %.3f   δ(2)₁ = %+.3f"
+      % (y_hat - y, y_hat * (1.0 - y_hat), d2[0]))
+print("∂ℓ/∂h(1) =", np.round(W2.T @ d2, 3),
+      "  φ'(z(1)) =", np.round(h1 * (1.0 - h1), 3),
+      "  δ(1) =", np.round(d1, 3))
+
+# Los nueve gradientes, leídos de esos tres números.
+grad = {"W1": np.outer(d1, x), "b1": d1, "W2": np.outer(d2, h1), "b2": d2}
+print("∇W(1) =", np.round(grad["W1"], 3).tolist())
+print("∇W(2) =", np.round(grad["W2"], 3).tolist(), "  ∂ℓ/∂b(2)₁ = %+.3f" % d2[0])
+
+# Y la comprobación: sondear los nueve parámetros de uno en uno.
+peor = 0.0
+for nombre, P in [("W1", W1), ("b1", b1), ("W2", W2), ("b2", b2)]:
+    for k in np.ndindex(P.shape):
+        viejo = P[k]
+        P[k] = viejo + 1e-6
+        mas = forward()[2]
+        P[k] = viejo - 1e-6
+        menos = forward()[2]
+        P[k] = viejo
+        peor = max(peor, abs((mas - menos) / 2e-6 - grad[nombre][k]))
+print("nueve parámetros, mayor diferencia con el sondeo: %.1e" % peor)
+`} />
+
+Los números son los del explorable a la tercera cifra, y los nombres también, así que puedes leer
+las dos cosas en paralelo. La tercera línea enseña los dos movimientos por separado. El transporte deja $\partial \ell / \partial \mathbf{h}^{(1)} = (-0{,}079,\ 0{,}068)$:
+un solo error, $-0{,}113$, repartido entre las dos neuronas ocultas según sus pesos $0{,}7$ y
+$-0{,}6$, y por eso la segunda coordenada sale con el signo cambiado. El enmascarado son los
+$(0{,}238,\ 0{,}222)$ de al lado, que es la derivada de la sigmoide en cada preactivación.
+
+Y mira $\nabla_{\mathbf{W}^{(1)}}\ell$, que vale $(-0{,}019,\ -0{,}009)$ arriba y
+$(0{,}015,\ 0{,}008)$ abajo. Su primera columna es $\boldsymbol{\delta}^{(1)}$ tal cual, porque
+$x_1 = 1$; la segunda es $\boldsymbol{\delta}^{(1)}$ a la mitad, porque $x_2 = 0{,}5$. Eso es un
+producto exterior visto de cerca, y es la razón de que nueve derivadas quepan en tres números y dos
+entradas.
+
+La segunda celda es la red de reseñas con una capa oculta más, que es donde la recurrencia se aplica
+dos veces en lugar de una: ocho entradas, cuatro neuronas ocultas, tres, y tres salidas con softmax.
+Los pesos los he elegido yo para que las preactivaciones salgan redondas. Ejecútala y mira dos
+cosas: dónde aparecen ceros, y las dos últimas líneas.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# La red de la lección anterior con una capa oculta más: 8 -> 4 -> 3 -> 3.
+x = np.array([0., 0., 1., 2., 0., 0., 1., 1.])   # «la película es divertida y la recomiendo»
+y = np.array([1., 0., 0.])                       # etiqueta: positiva, de tres clases
+W1 = np.array([[-1., 1., 1., 0., -1., -1., 0., 1.],    # los pesos los he puesto yo a mano:
+               [0., 0., -1., 0.5, 0., 0., 1., 0.],     # no hay un solo número al azar
+               [0., 0.5, 0., 0.5, 0., 0., 0.5, 0.5],
+               [1., -1., 0., 0.5, 1., 1., 0.5, -1.]])
+W2 = np.array([[0.5, 0., 0., -1.], [-1., 0.5, 0., 1.], [0., 1., 1., 0.5]])
+W3 = np.array([[-0.5, 1., 0.5], [1., -1., -0.5], [0.5, 0.5, -0.5]])
+Ws = [W1, W2, W3]
+bs = [np.array([0., 0., -0.5, -1.5]), np.array([0., 0.5, -0.5]), np.zeros(3)]
+llamadas = 0
+
+
+def forward():
+    global llamadas
+    llamadas += 1
+    hs, zs = [x], []                              # h(0) = x
+    for l in range(3):
+        zs.append(Ws[l] @ hs[-1] + bs[l])
+        hs.append(np.maximum(zs[-1], 0.))         # ReLU; la de la capa 3 no se usa
+    e = np.exp(zs[-1] - zs[-1].max())
+    return hs, zs, e / e.sum()
+
+
+hs, zs, y_hat = forward()
+print("z(1) =", zs[0], " h(1) =", hs[1], "  <- una neurona apagada")
+print("z(2) =", zs[1], "      h(2) =", hs[2], "         <- otra")
+print("z(3) =", zs[2], " ŷ =", np.round(y_hat, 4), " ℓ = %.6f" % -np.log(y_hat @ y))
+
+# Hacia atrás: un δ por capa, del final al principio, y no hay nada más.
+deltas = [None, None, y_hat - y]                  # softmax + entropía cruzada
+for l in (1, 0):
+    deltas[l] = np.where(zs[l] > 0., Ws[l + 1].T @ deltas[l + 1], 0.)
+for l in (2, 1, 0):                               # en el orden en que salen
+    print("δ(%d) =" % (l + 1), np.round(deltas[l], 6))
+grad_W = [np.outer(deltas[l], hs[l]) for l in range(3)]
+print("∇W(2) =", (np.round(grad_W[1], 4) + 0.).tolist())   # el + 0. quita ceros con signo
+
+# Los 63 gradientes contra el sondeo, que es lo que cuesta el otro camino.
+peor, llamadas = 0., 0
+for P, G in [(Ws[l], grad_W[l]) for l in range(3)] + [(bs[l], deltas[l]) for l in range(3)]:
+    for k in np.ndindex(P.shape):
+        v = P[k]
+        P[k] = v + 1e-6
+        d = -np.log(forward()[2] @ y)
+        P[k] = v - 1e-6
+        d -= -np.log(forward()[2] @ y)
+        P[k] = v
+        peor = max(peor, abs(d / 2e-6 - G[k]))
+print("63 parámetros, mayor diferencia con el sondeo: %.1e" % peor)
+print("forward pass gastados en el sondeo: %d.  Por backpropagation: 1." % llamadas)
+`} />
+
+Los ceros son ReLU trabajando, y hay dos. La cuarta neurona de la primera capa oculta tiene
+$z^{(1)}_4 = -1$ y la segunda de la segunda tiene $z^{(2)}_2 = -1$: las dos están apagadas para esta
+reseña y las dos ponen un cero en su $\boldsymbol{\delta}$. Ese cero se ve dos veces en
+$\nabla_{\mathbf{W}^{(2)}}\ell$, y por motivos distintos. Su segunda fila es nula porque
+$\delta^{(2)}_2 = 0$, o sea que ninguno de los cuatro pesos de esa neurona se corrige; su cuarta
+columna es nula porque $h^{(1)}_4 = 0$, o sea que la entrada que esos pesos leen no aporta nada.
+Fila y columna son las dos mitades del producto exterior, y cada una se anula por su cuenta.
+
+Las dos últimas líneas son la lección. Los $63$ gradientes coinciden con el sondeo hasta
+$10^{-10}$, que es el error del sondeo y no del algoritmo. Y conseguirlos sondeando ha costado $126$
+pasadas hacia adelante contra la única que hace backpropagation. Eso en una red de juguete, con tres
+capas y ocho entradas: el factor es el número de parámetros multiplicado por dos, así que crece con
+cada peso que se añada y no deja de crecer nunca.
+
+## Comprueba tu intuición
+
+Cinco preguntas —un gradiente leído de un error, qué es exactamente lo que se reutiliza, las formas
+de la vuelta, la máscara de ReLU y qué pasa si se tira la ida— y un desafío que es el algoritmo
+entero.
+
+<Quiz id="q-leer-un-gradiente" />
+
+<Quiz id="q-que-se-reutiliza" />
+
+<Quiz id="q-formas-backward" />
+
+<Quiz id="q-mascara" />
+
+<Quiz id="q-tirar-el-forward" />
+
+<CodeChallenge id="ch-backprop" />
+
+---
+
+El algoritmo está completo y no ha entrenado nada. Las dos celdas calculan el gradiente de un
+ejemplo con unos pesos que puse yo, lo imprimen, y ahí se acaban: nadie ha restado nada y nadie ha
+vuelto a empezar. Lo que falta para cerrar el círculo lleva escrito desde la lección 6 de este
+bloque, sobre descenso de gradiente —$\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}$—,
+esperando exactamente al gradiente que esta lección acaba de producir.
+
+Juntar las dos mitades exige tres decisiones que ninguna de las dos lecciones ha tomado. Los
+ejemplos entran de $B$ en $B$, así que los errores dejan de ser columnas y $\mathcal{L}$ vuelve a
+ser la media de las $\ell$. Los pesos tienen que empezar en algún sitio, y el sitio evidente —todos
+a cero— falla por una razón que se lee en la fórmula de $\boldsymbol{\delta}$ que acabas de derivar.
+Y hay que decidir cuándo parar. Tomar las tres, montarlas sobre un perceptrón multicapa
+(*multilayer perceptron*, MLP) escrito desde cero y ver caer la pérdida es la lección 9 de este
+bloque, sobre implementar un MLP.
