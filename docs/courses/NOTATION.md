@@ -269,6 +269,9 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 | $\hat{\mathbf{Y}}$, $\mathbf{Y} \in \mathbb{R}^{B \times d_L}$ | the batched predictions and targets |
 | $\mathbf{1}_B \in \mathbb{R}^{B}$ | the all-ones column, so $\mathbf{1}_B\mathbf{b}^{\top}$ is a legal matrix sum |
 | $\theta_t$, $\mathbf{w}_t$ | the parameters after $t$ steps of gradient descent; $\theta_0$ is the initialisation |
+| $\dfrac{\partial\mathbf{u}}{\partial\mathbf{x}} \in \mathbb{R}^{m \times n}$ | the Jacobian of $\mathbf{u} \in \mathbb{R}^{m}$ with respect to $\mathbf{x} \in \mathbb{R}^{n}$ — row $i$, column $j$ is $\partial u_i/\partial x_j$ |
+| $\text{diag}(\mathbf{v})$ | the square matrix carrying $\mathbf{v}$ on its diagonal and zeros everywhere else |
+| $\odot$ | element-wise (Hadamard) product |
 | $\boldsymbol{\delta}^{(l)}$ | $\partial\mathcal{L}/\partial\mathbf{z}^{(l)}$, the backprop error signal |
 | $\sigma$, $\tanh$, $\text{ReLU}$ | the activations that go in that slot |
 
@@ -363,6 +366,25 @@ closed form raises something to the power $t$ — $(1-2\eta)^{t}$ — and the ru
 because it cannot tell a genuine exponent from a transpose written the wrong way. It is the same
 trade the `\boldsymbol{\delta}` exception below already makes: one warning, in the lessons that
 iterate, on a line that is deliberately correct. Note it in the PR and move on.
+
+**The Jacobian is written as a fraction, never $\mathbf{J}$.** Block 2 lesson 7, on the chain rule,
+puts four of them in a single product — $\mathcal{L}$ to $\mathbf{z}^{(L)}$, $\mathbf{z}^{(L)}$ to
+$\mathbf{h}^{(L-1)}$, and so on down to a weight — and a bare $\mathbf{J}$ records nothing about
+which two objects it relates, so that product would need a subscript on every factor before it could
+be read at all. The fraction carries the pair already, and carries the **shape** with it: numerator
+length by denominator length, which is §3's "say the shape" moved from the sentence into the symbol.
+What it costs is width, and that is the cheaper of the two prices. The convention the row fixes is
+**output first**, $m \times n$, and both of the things this block does with a Jacobian follow from
+it: the chain rule is a matrix product read right to left, and a scalar loss has a $1 \times n$
+Jacobian whose transpose is the column gradient §4 already reserves.
+
+**$\odot$ enters the course here, and Block 3 lists the same symbol rather than a second one.** An
+activation applied coordinate by coordinate has a diagonal Jacobian, so
+$\text{diag}(\mathbf{v})\,\mathbf{g} = \mathbf{v} \odot \mathbf{g}$ — $m$ multiplications instead of
+$m^{2}$, and no matrix built — which is why every lesson from the chain rule on writes the
+right-hand side. $\text{diag}$ is roman by §1's rule for functions and needs no further defence; it
+is $\odot$ that is worth the row, because it is the one piece of Block 3's table that is load-bearing
+two blocks earlier.
 
 ### Block 3 — Redes Neuronales Recurrentes
 
