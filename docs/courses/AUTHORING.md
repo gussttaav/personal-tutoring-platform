@@ -546,6 +546,7 @@ plain. Never italicise the Spanish terms.
 | *backpropagation* | the English term | retropropagación |
 | capa, peso, sesgo | Spanish | layer, weight, bias |
 | pérdida, gradiente, descenso de gradiente | Spanish | loss, gradient, gradient descent |
+| tasa de aprendizaje | Spanish | *learning rate* |
 | entropía cruzada, verosimilitud | Spanish | cross-entropy, likelihood |
 | error cuadrático medio, then MSE | Spanish, with the acronym expanded on first use | bare *MSE*; *error medio cuadrático* |
 | entrenamiento, entrenar | Spanish | training, entrenar el *training* |

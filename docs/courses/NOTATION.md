@@ -268,6 +268,7 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 | $\mathbf{Z}^{(l)}$, $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ | the batched pre-activation and activation; $\mathbf{H}^{(0)} = \mathbf{X}$ |
 | $\hat{\mathbf{Y}}$, $\mathbf{Y} \in \mathbb{R}^{B \times d_L}$ | the batched predictions and targets |
 | $\mathbf{1}_B \in \mathbb{R}^{B}$ | the all-ones column, so $\mathbf{1}_B\mathbf{b}^{\top}$ is a legal matrix sum |
+| $\theta_t$, $\mathbf{w}_t$ | the parameters after $t$ steps of gradient descent; $\theta_0$ is the initialisation |
 | $\boldsymbol{\delta}^{(l)}$ | $\partial\mathcal{L}/\partial\mathbf{z}^{(l)}$, the backprop error signal |
 | $\sigma$, $\tanh$, $\text{ReLU}$ | the activations that go in that slot |
 
@@ -344,6 +345,24 @@ $L$ layers are composed, because layer $l$'s input is layer $l-1$'s output and t
 have to mean different numbers in the same sum. So a chain is indexed:
 $\mathbf{W}^{(l)} \in \mathbb{R}^{d_l \times d_{l-1}}$, with $d_0$ the input dimension and $d_L$
 the output one. $d_{\text{model}}$ stays reserved for §4's meaning and is not one of these.
+
+**The descent step is a subscript $t$, and it is §2's rule rather than a new one.** Block 2 lesson
+6, on gradient descent, needs to write the iterates — $\theta_{t+1} = \theta_t - \eta
+\nabla_{\theta}\mathcal{L}(\theta_t)$, and the closed form $w_t = (1-2\eta)^{t}w_0$ that makes
+convergence and divergence exact instead of asserted — so it needs an index, and neither of the
+course's two index positions is free: the superscript in parentheses is the layer, and the plain
+subscript is already the coordinate. §2 has the answer, having fixed a step of any kind as a
+subscript. The collision worth naming is with Block 3, where $t$ is the sequence position: Block 2
+carries no sequences, so nothing in this block has to disambiguate, and a later lesson holding both
+a training step and a sequence position says which it means in words — the clause §2 requires
+anyway. $k$ was the alternative and is worse today: it is the class index of the loss lesson and
+the vocabulary cutoff of Block 1 lesson 3.
+
+That choice **trips the `transpose` rule**, and the warning is expected rather than a defect. A
+closed form raises something to the power $t$ — $(1-2\eta)^{t}$ — and the rule fires on any `^{t}`
+because it cannot tell a genuine exponent from a transpose written the wrong way. It is the same
+trade the `\boldsymbol{\delta}` exception below already makes: one warning, in the lessons that
+iterate, on a line that is deliberately correct. Note it in the PR and move on.
 
 ### Block 3 — Redes Neuronales Recurrentes
 

@@ -8,6 +8,10 @@
  * here; the slider is keyboard-operable via the native range input.
  *
  * The full Block 1/2 widget set is P2-02; this file just establishes the pattern.
+ *
+ * COURSE-P5-02 — control labels and aria-label in Spanish. AUTHORING.md §5 fixes `peso`
+ * and `sesgo` as Spanish outright, and every sibling widget already names its controls
+ * and describes its plot that way; this one predates the table.
  */
 
 "use client";
@@ -43,11 +47,11 @@ export default function SigmoidExplorer() {
         series={series}
         xDomain={[X_MIN, X_MAX]}
         yDomain={[0, 1]}
-        ariaLabel={`Sigmoid of ${w} times x plus ${b}`}
+        ariaLabel={`Curva de la sigmoide con peso ${w} y sesgo ${b}`}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: 420 }}>
         <Slider
-          label="weight (w)"
+          label="Peso (w)"
           value={w}
           min={-5}
           max={5}
@@ -56,7 +60,7 @@ export default function SigmoidExplorer() {
           format={(v) => v.toFixed(1)}
         />
         <Slider
-          label="bias (b)"
+          label="Sesgo (b)"
           value={b}
           min={-5}
           max={5}

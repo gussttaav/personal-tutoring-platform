@@ -4,6 +4,10 @@
  * rate makes the path VISIBLY diverge (a red badge + an outward arrow) instead of
  * silently clipping off-screen. Pure maths: contour fields + gradientDescentPath.
  * Animation is `prefers-reduced-motion` aware (step-only when reduce is requested).
+ *
+ * COURSE-P5-02 — control labels in Spanish. AUTHORING.md §5 fixes the concept as
+ * `tasa de aprendizaje`, which the divergence message below already said while the
+ * slider twelve lines up said "Learning rate": one component, one concept, two words.
  */
 
 "use client";
@@ -117,7 +121,7 @@ export default function GradientDescent2D() {
       />
 
       <Slider
-        label="Learning rate (η)"
+        label="Tasa de aprendizaje (η)"
         value={lr}
         min={0.01}
         max={0.3}

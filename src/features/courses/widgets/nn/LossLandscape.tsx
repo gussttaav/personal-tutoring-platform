@@ -4,6 +4,10 @@
  * it rolls into — tying "gradient descent" to what the loss surface actually is. Pure
  * maths (contour field + gradientDescentPath); animation respects prefers-reduced-motion.
  * Local state only.
+ *
+ * COURSE-P5-02 — control labels in Spanish. AUTHORING.md §5 fixes the concept as
+ * `tasa de aprendizaje`, and an English slider label sitting next to "Inicio x₀" was
+ * drift, not a decision. The lesson still gives the English once, in prose.
  */
 
 "use client";
@@ -90,7 +94,7 @@ export default function LossLandscape() {
       />
 
       <Slider label="Inicio x₀" value={startX} min={-1.9} max={1.9} step={0.1} onChange={(v) => { setStartX(v); reset(); }} format={(v) => v.toFixed(1)} />
-      <Slider label="Learning rate (η)" value={lr} min={0.01} max={0.2} step={0.005} onChange={(v) => { setLr(v); reset(); }} format={(v) => v.toFixed(3)} />
+      <Slider label="Tasa de aprendizaje (η)" value={lr} min={0.01} max={0.2} step={0.005} onChange={(v) => { setLr(v); reset(); }} format={(v) => v.toFixed(3)} />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         <WidgetButton onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
