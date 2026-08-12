@@ -273,10 +273,12 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 | $\text{diag}(\mathbf{v})$ | the square matrix carrying $\mathbf{v}$ on its diagonal and zeros everywhere else |
 | $\odot$ | element-wise (Hadamard) product |
 | $\boldsymbol{\delta}^{(l)}$ | $\partial\ell/\partial\mathbf{z}^{(l)}$, the **error** of layer $l$ — one example, one coordinate per neuron |
+| $\boldsymbol{\Delta}^{(l)} \in \mathbb{R}^{B \times d_l}$ | the batched error — row $i$ is $\left(\boldsymbol{\delta}^{(l)}_i\right)^{\top}$ |
 | $\sigma$, $\tanh$, $\text{ReLU}$ | the activations that go in that slot |
 
-$\boldsymbol{\delta}$ is the **one** allowed `\boldsymbol`, because `\mathbf` does not embolden
-Greek letters in KaTeX. It is the exception that proves the rule; do not extend it to Latin letters.
+$\boldsymbol{\delta}$ and $\boldsymbol{\Delta}$ are the **only** allowed `\boldsymbol`, because
+`\mathbf` does not embolden Greek letters in KaTeX. They are the exception that proves the rule; do
+not extend it to Latin letters.
 
 **$\boldsymbol{\delta}^{(l)}$ is built on $\ell$, not on $\mathcal{L}$**, and the row said
 $\partial\mathcal{L}/\partial\mathbf{z}^{(l)}$ until Block 2 lesson 8 derived it. That spelling
@@ -286,6 +288,22 @@ algebra wants, and the recurrence
 $\boldsymbol{\delta}^{(l)} = \left(\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(l)}\right)$
 would then be false as written for a single example. The batched form is a later lesson's job and
 gets its own symbol when it arrives; until then $\boldsymbol{\delta}^{(l)}$ is one example's error.
+
+**And it arrives as $\boldsymbol{\Delta}^{(l)}$**, in Block 2 lesson 9, on implementing an MLP —
+the capital-is-the-batch rule below applied to the one object that had not yet needed it. The
+per-example recurrence transposes entire, and in doing so **loses** the transpose that the forward
+pass **gained** when it went to rows:
+$\boldsymbol{\Delta}^{(l)} = \left(\boldsymbol{\Delta}^{(l+1)}\mathbf{W}^{(l+1)}\right) \odot \varphi^{\prime}\left(\mathbf{Z}^{(l)}\right)$,
+against $\mathbf{Z}^{(l)} = \mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top} + \dots$ — the
+same matrix read with the examples in rows, both times, and a lesson writing both says so once.
+The $1/B$ then belongs to the **gradients** and not to $\boldsymbol{\Delta}$, which is what keeps
+$\boldsymbol{\delta}$ built on $\ell$ and $\nabla\mathcal{L}$ built on the mean:
+
+$$
+\nabla_{\mathbf{W}^{(l)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{H}^{(l-1)},
+\qquad
+\nabla_{\mathbf{b}^{(l)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{1}_B.
+$$
 
 **The single neuron and the layer are the same object at two sizes**, and the block says so where
 the two first share a page. Block 2 lesson 1 has one neuron and no layers, so its weights are a
@@ -508,6 +526,6 @@ right beat twenty that are usually right. New rules go in only when they meet th
 Everything else in this file is enforced by reading the lesson. Summation limits (`\sum_{t=1}^{T}`)
 are stripped before the rules run, so the correct form never trips the transpose rule.
 
-The `\boldsymbol{\delta}` exception above **will** trip the `bold` rule. That is acceptable: it is
-one warning, in the lessons that derive backpropagation, on a line that is deliberately correct.
-Note it in the PR and move on.
+The `\boldsymbol{\delta}` and `\boldsymbol{\Delta}` exceptions above **will** trip the `bold` rule.
+That is acceptable: it is one warning, in the lessons that derive and implement backpropagation, on
+a line that is deliberately correct. Note it in the PR and move on.

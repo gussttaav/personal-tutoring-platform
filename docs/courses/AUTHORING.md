@@ -550,6 +550,8 @@ plain. Never italicise the Spanish terms.
 | entropía cruzada, verosimilitud | Spanish | cross-entropy, likelihood |
 | error cuadrático medio, then MSE | Spanish, with the acronym expanded on first use | bare *MSE*; *error medio cuadrático* |
 | entrenamiento, entrenar | Spanish | training, entrenar el *training* |
+| conjunto de entrenamiento | Spanish | *training set*, datos de entrenamiento, muestra |
+| inicialización, inicializar | Spanish | *initialisation*, arranque; `semilla` is the generator's, not the weights' |
 | vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
 | denso, disperso | Spanish | *dense*, *sparse* |
