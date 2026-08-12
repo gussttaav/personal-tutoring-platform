@@ -551,6 +551,8 @@ plain. Never italicise the Spanish terms.
 | error cuadrático medio, then MSE | Spanish, with the acronym expanded on first use | bare *MSE*; *error medio cuadrático* |
 | entrenamiento, entrenar | Spanish | training, entrenar el *training* |
 | conjunto de entrenamiento | Spanish | *training set*, datos de entrenamiento, muestra |
+| conjunto de prueba | Spanish | *test set*, conjunto de validación, datos de prueba |
+| tasa de acierto — and `acertar` for the verb | Spanish | *accuracy*, precisión, exactitud |
 | inicialización, inicializar | Spanish | *initialisation*, arranque; `semilla` is the generator's, not the weights' |
 | vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
@@ -607,6 +609,19 @@ a sentence, and a lesson that needs both writes the compound in full and never s
 `error`. Note also that «error» is the concept and $\boldsymbol{\delta}^{(l)}$ is its symbol: prose
 says *el error de la capa 2*, maths says $\boldsymbol{\delta}^{(2)}$, and neither is a synonym for
 `gradiente`, which stays the general word for a vector of derivatives with respect to anything.
+
+`conjunto de prueba` and `tasa de acierto` arrive together in Block 2 lesson 10, the sentiment
+project, because that lesson is the first one that measures anything on examples the network was not
+fitted on. `conjunto de validación` is not a synonym and is not in the course: it names a **third**
+split, used to choose between models before the test set is touched, and this course never has one —
+calling the sixty held-back reviews a validation set would promise a distinction no lesson makes.
+`precisión` is the row that matters, and it is banned for the opposite reason to the usual one: it is
+not vaguer than *accuracy*, it is a **different metric** (the fraction of the predicted positives that
+were right), so a reader who has met both elsewhere would read the wrong quantity. `exactitud` is
+free of that collision and rejected only because two Spanish words for one number is the drift this
+section exists to stop. Note the shape of the pair: `tasa de acierto` is the quantity,
+$\text{acierto}(D)$ is its symbol ([NOTATION.md](NOTATION.md#block-2--el-perceptrón-multicapa)), and
+`acertar` is what the network does to one review.
 
 `ocurrencia` is the **same** concept as `token`, licensed for one job: the counting noun when the two
 are being contrasted. *La fracción de ocurrencias que cubren esos $k$ tipos* reads; *la fracción de

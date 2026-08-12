@@ -268,6 +268,8 @@ and not an arbitrary one, prefer $d_{\text{model}}$.
 | $\mathbf{Z}^{(l)}$, $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ | the batched pre-activation and activation; $\mathbf{H}^{(0)} = \mathbf{X}$ |
 | $\hat{\mathbf{Y}}$, $\mathbf{Y} \in \mathbb{R}^{B \times d_L}$ | the batched predictions and targets |
 | $\mathbf{1}_B \in \mathbb{R}^{B}$ | the all-ones column, so $\mathbf{1}_B\mathbf{b}^{\top}$ is a legal matrix sum |
+| $D_{\text{ent}}$, $D_{\text{prueba}}$ | the labelled examples split in two — the ones the model is fitted on, and the ones kept back to measure it; $N_{\text{ent}}$, $N_{\text{prueba}}$ their sizes |
+| $\text{acierto}(D)$ | the fraction of $D$ the network classifies correctly |
 | $\theta_t$, $\mathbf{w}_t$ | the parameters after $t$ steps of gradient descent; $\theta_0$ is the initialisation |
 | $\dfrac{\partial\mathbf{u}}{\partial\mathbf{x}} \in \mathbb{R}^{m \times n}$ | the Jacobian of $\mathbf{u} \in \mathbb{R}^{m}$ with respect to $\mathbf{x} \in \mathbb{R}^{n}$ — row $i$, column $j$ is $\partial u_i/\partial x_j$ |
 | $\text{diag}(\mathbf{v})$ | the square matrix carrying $\mathbf{v}$ on its diagonal and zeros everywhere else |
@@ -412,6 +414,25 @@ $m^{2}$, and no matrix built — which is why every lesson from the chain rule o
 right-hand side. $\text{diag}$ is roman by §1's rule for functions and needs no further defence; it
 is $\odot$ that is worth the row, because it is the one piece of Block 3's table that is load-bearing
 two blocks earlier.
+
+**The two halves of the data are subscripted, not primed, and $D$ is Block 1's own letter.** Block 2
+lesson 10, the sentiment project, is the first lesson that measures anything on examples the network
+was not fitted on, so it needs a name for each half. $D$ arrives already meaning "a collection of
+documents" from Block 1's table, and a review is a document, so $D_{\text{ent}}$ and
+$D_{\text{prueba}}$ cost no new letter — only the roman-Spanish subscript that
+$\mathcal{L}_{\text{MSE}}$ and $\mathcal{L}_{\text{EC}}$ already established. The prime is the
+tempting alternative, and Block 1's own note licenses it: $T'$ and $M'$ are measured on a held-out
+text, which is exactly what $D_{\text{prueba}}$ is. It is refused here because **Block 2 spends the
+prime on the derivative**, $\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)$, on nearly every page
+from the chain rule on — and both spellings would land inside this one lesson, whose training loop
+carries $\varphi^{\prime}$ and whose measurement carries the split.
+
+$\text{acierto}$ is roman and Spanish for the reason $\text{escalón}$ and $\text{cob}$ are, and it
+takes a **set** as its argument rather than a pair of vectors: the quantity is a property of the
+data being scored, and writing $\text{acierto}(D_{\text{ent}})$ beside
+$\text{acierto}(D_{\text{prueba}})$ is the whole content of that lesson's result. Note that it is
+not a loss and never appears in a gradient — $\mathcal{L}$ is what descent minimises, $\text{acierto}$
+is what the reader is told at the end, and a lesson using both says so once.
 
 ### Block 3 — Redes Neuronales Recurrentes
 

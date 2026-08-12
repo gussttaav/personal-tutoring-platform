@@ -46,7 +46,7 @@ here; STATUS stays phase-level.
 - [x] 7. `regla-de-la-cadena`
 - [x] 8. `backpropagation`
 - [x] 9. `implementar-mlp`
-- [ ] 10. `proyecto-sentimiento`
+- [x] 10. `proyecto-sentimiento`
 
 ## Mathematical content
 
