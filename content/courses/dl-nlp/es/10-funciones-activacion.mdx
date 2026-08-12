@@ -14,7 +14,7 @@ quiz:
     prompt: 'Para cierta entrada, una neurona con sigmoide da $\sigma(z) = 0{,}9$. ¿Cuánto vale $\dfrac{d\sigma}{dz}$ en ese mismo punto?'
     answer: 0.09
     tolerance: 0.001
-    explanation: 'La derivada de la sigmoide se escribe con el valor de la propia sigmoide, $\dfrac{d\sigma}{dz} = \sigma(z)\left(1 - \sigma(z)\right)$, así que no hace falta ni conocer $z$ ni volver a exponenciar: $0{,}9 \times 0{,}1 = 0{,}09$. Fíjate en lo pequeño que es ya —poco más de un tercio del máximo $0{,}25$ que alcanza en el origen— y en que $\sigma(z) = 0{,}9$ corresponde a $z \approx 2{,}2$, un valor que en la gráfica de la función no parece extremo en absoluto. La saturación empieza antes de lo que sugiere el dibujo.'
+    explanation: 'La derivada de la sigmoide se escribe con el valor de la propia sigmoide, $\dfrac{d\sigma}{dz} = \sigma(z)\left(1 - \sigma(z)\right)$, así que no hace falta ni conocer $z$ ni volver a exponenciar: $0{,}9 \cdot 0{,}1 = 0{,}09$. Fíjate en lo pequeño que es ya —poco más de un tercio del máximo $0{,}25$ que alcanza en el origen— y en que $\sigma(z) = 0{,}9$ corresponde a $z \approx 2{,}2$, un valor que en la gráfica de la función no parece extremo en absoluto. La saturación empieza antes de lo que sugiere el dibujo.'
   - id: q-identidad
     type: single
     prompt: 'Encadenas dos neuronas: la primera calcula $a^{(1)} = \left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}$ y la segunda $a^{(2)} = w^{(2)} a^{(1)} + b^{(2)}$, con la identidad en las dos activaciones. ¿Qué función de $\mathbf{x}$ resulta?'
@@ -312,7 +312,7 @@ donde la derivada de $\varphi$ está tan cerca de cero que la entrada puede move
 apenas se mueve: son las bandas rojas del explorable.
 
 Para la sigmoide la cuenta es directa. En $z = 5$ vale $\sigma(5) \approx 0{,}9933$, de modo que su
-derivada allí es $0{,}9933 \times 0{,}0067 \approx 0{,}0066$: casi cuarenta veces menos que en el
+derivada allí es $0{,}9933 \cdot 0{,}0067 \approx 0{,}0066$: casi cuarenta veces menos que en el
 origen. La tangente hiperbólica se apaga antes y más deprisa
 —$1 - \tanh^{2}(5) \approx 1{,}8 \times 10^{-4}$, más de treinta veces por debajo de la sigmoide en
 el mismo punto—, y por eso sus bandas rojas empiezan más cerca del origen aunque su derivada

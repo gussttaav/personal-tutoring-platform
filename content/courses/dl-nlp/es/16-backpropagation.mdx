@@ -14,7 +14,7 @@ quiz:
     prompt: 'En la red de la segunda celda, la pasada hacia atrás deja $\boldsymbol{\delta}^{(1)} = (0{,}323559,\; -0{,}493520,\; -0{,}493520,\; 0)^{\top}$, y la entrada de esa reseña es $\mathbf{x} = (0, 0, 1, 2, 0, 0, 1, 1)^{\top}$. ¿Cuánto vale $\partial \ell / \partial \mathbf{W}^{(1)}_{24}$, la derivada del peso que la segunda neurona oculta le da a la cuarta entrada del vocabulario?'
     answer: -0.98704
     tolerance: 0.001
-    explanation: 'Es una multiplicación, y ése es el resultado de la lección: $\delta^{(1)}_2\,x_4 = -0{,}493520 \times 2 = -0{,}98704$. No hace falta recorrer nada, porque el recorrido ya está hecho y su resultado es ese $-0{,}493520$. Fíjate en de dónde sale el factor $2$: la cuarta entrada del vocabulario es <W>la</W>, que aparece dos veces en la reseña, así que su peso se corrige el doble que el de una entrada que aparece una sola vez —el mismo reparto que la lección 6 de este bloque, sobre descenso de gradiente, encontró con una neurona suelta—. Y la cuarta fila entera de $\nabla_{\mathbf{W}^{(1)}}\ell$ vale cero, porque $\delta^{(1)}_4 = 0$: esa neurona está apagada y ninguno de sus ocho pesos se mueve.'
+    explanation: 'Es una multiplicación, y ése es el resultado de la lección: $\delta^{(1)}_2 \cdot x_4 = -0{,}493520 \cdot 2 = -0{,}98704$. No hace falta recorrer nada, porque el recorrido ya está hecho y su resultado es ese $-0{,}493520$. Fíjate en de dónde sale el factor $2$: la cuarta entrada del vocabulario es <W>la</W>, que aparece dos veces en la reseña, así que su peso se corrige el doble que el de una entrada que aparece una sola vez —el mismo reparto que la lección 6 de este bloque, sobre descenso de gradiente, encontró con una neurona suelta—. Y la cuarta fila entera de $\nabla_{\mathbf{W}^{(1)}}\ell$ vale cero, porque $\delta^{(1)}_4 = 0$: esa neurona está apagada y ninguno de sus ocho pesos se mueve.'
   - id: q-que-se-reutiliza
     type: single
     prompt: 'Backpropagation no usa ninguna regla de derivación que la lección anterior no tuviera ya. ¿Qué es entonces lo que ahorra?'
@@ -256,7 +256,7 @@ Una columna de $d_l$ por una fila de $d_{l-1}$, que es exactamente la forma de $
 la forma de la matriz que deriva, hay algo transpuesto.
 
 Cuenta ahora lo que acaba de pasar, porque es el argumento entero. La capa $l$ tiene
-$d_l\,d_{l-1} + d_l$ parámetros, y sus derivadas salen todas de $d_l + d_{l-1}$ números: las
+$d_l \cdot d_{l-1} + d_l$ parámetros, y sus derivadas salen todas de $d_l + d_{l-1}$ números: las
 coordenadas de $\boldsymbol{\delta}^{(l)}$ y las de $\mathbf{h}^{(l-1)}$, que la pasada hacia
 adelante ya calculó. En la primera capa de la red de la lección anterior eso son treinta y seis
 derivadas leídas de doce números. Queda una sola pregunta, y ocupa el resto de la lección: de dónde

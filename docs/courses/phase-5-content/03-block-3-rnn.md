@@ -1,6 +1,6 @@
 # P5-03 — Block 3: Redes Neuronales Recurrentes
 
-**Tag:** `COURSE-P5-03` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-P5-03` · **Effort:** XL · **Owner:** _tbd_ · **Status:** 🔄
 **Depends on:** P5-02 · Block 3 widgets (built in this task, on the P2-01 registry)
 
 ## TL;DR
@@ -42,7 +42,7 @@ Authored one at a time via `/course-lesson`, on the shared branch, reviewed befo
 task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
 here; STATUS stays phase-level.
 
-- [ ] 1. `por-que-falla-el-mlp`
+- [x] 1. `por-que-falla-el-mlp`
 - [ ] 2. `la-rnn-vanilla`
 - [ ] 3. `bptt`
 - [ ] 4. `gradiente-desvanecido`

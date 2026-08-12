@@ -14,7 +14,7 @@ quiz:
     prompt: 'Una red recibe vectores de $300$ coordenadas, tiene una capa oculta de $128$ neuronas y una capa de salida de $2$. ¿Cuántos números guarda en total, entre pesos y sesgos?'
     answer: 38786
     tolerance: 0
-    explanation: 'La capa oculta aporta $\mathbf{W}^{(1)} \in \mathbb{R}^{128 \times 300}$ y $\mathbf{b}^{(1)} \in \mathbb{R}^{128}$, es decir $128 \times 300 + 128 = 38\,528$ números; la de salida aporta $2 \times 128 + 2 = 258$. En total, $38\,786$. Mira dónde está el peso de la cuenta: $\mathbf{W}^{(1)}$ sola se lleva el $99\,\%$, porque los pesos crecen con el producto de dos anchuras y los sesgos sólo con una. Y mira lo que no aparece por ningún lado: $B$. La red ocupa lo mismo tanto si le pasas un ejemplo como si le pasas mil de una vez.'
+    explanation: 'La capa oculta aporta $\mathbf{W}^{(1)} \in \mathbb{R}^{128 \times 300}$ y $\mathbf{b}^{(1)} \in \mathbb{R}^{128}$, es decir $128 \cdot 300 + 128 = 38\,528$ números; la de salida aporta $2 \cdot 128 + 2 = 258$. En total, $38\,786$. Mira dónde está el peso de la cuenta: $\mathbf{W}^{(1)}$ sola se lleva el $99\,\%$, porque los pesos crecen con el producto de dos anchuras y los sesgos sólo con una. Y mira lo que no aparece por ningún lado: $B$. La red ocupa lo mismo tanto si le pasas un ejemplo como si le pasas mil de una vez.'
   - id: q-transpuesta
     type: single
     prompt: 'Para un solo ejemplo, la capa es $\mathbf{W}^{(l)}\mathbf{h}^{(l-1)}$; para un batch entero es $\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top}$. ¿De dónde sale esa transpuesta?'
@@ -157,7 +157,7 @@ neurona artificial, con aquel vocabulario de ocho entradas. Lo que entra en la r
 sino su bolsa de palabras: un vector de ocho coordenadas, una por entrada del vocabulario, con las
 veces que esa entrada aparece en la reseña. Eso es todo lo que la red va a leer. Pon encima una
 capa oculta de cuatro neuronas: cada una mira esas ocho coordenadas y devuelve un número, de modo
-que las diez reseñas dan $10 \times 4 = 40$ preactivaciones ocultas, cada una de ellas una suma de
+que las diez reseñas dan $10 \cdot 4 = 40$ preactivaciones ocultas, cada una de ellas una suma de
 ocho productos más un sesgo. De una en una son cuarenta cuentas, o dos bucles encajados si
 prefieres que las haga el ordenador. Las cuarenta caben en un solo producto de matrices, y la capa
 siguiente vuelve a salir de otro igual. Lo que hay que fijar es qué multiplica a qué, y por dónde
@@ -212,7 +212,7 @@ $$
 Esa suma es la neurona de la lección 1 de este bloque, sobre la neurona artificial, con la fila $j$
 de $\mathbf{W}^{(l)}$ haciendo de vector de pesos. El producto de matrices no añade ninguna
 operación: agrupa las $d_l$ sumas que ya había, y su única aportación es que ahora no hay que
-escribirlas. La cuenta de lo que cuesta también sale de ahí, $d_l\, d_{l-1}$ productos por ejemplo,
+escribirlas. La cuenta de lo que cuesta también sale de ahí, $d_l \cdot d_{l-1}$ productos por ejemplo,
 y esa cifra crece con el tamaño de la capa aunque el número de líneas se quede en una.
 
 ### El batch entra por la izquierda, y por eso aparece la transpuesta
@@ -303,7 +303,7 @@ entren a la vez es una decisión de quien ejecuta la red, no una propiedad de la
 el recuento de lo que ocupa:
 
 $$
-\sum_{l=1}^{L}\left(d_l\, d_{l-1} + d_l\right).
+\sum_{l=1}^{L}\left(d_l \cdot d_{l-1} + d_l\right).
 $$
 
 Para la red de reseñas de abajo, con $d_0 = 8$, $d_1 = 4$ y $d_2 = 1$, son $41$ números. Cambia el

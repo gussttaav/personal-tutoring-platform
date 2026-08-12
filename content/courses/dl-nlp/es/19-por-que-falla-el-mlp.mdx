@@ -1,0 +1,328 @@
+---
+slug: por-que-falla-el-mlp
+title: "Por qué el MLP falla con secuencias"
+block: 3
+order: 1
+minutes: 23
+summary: "Poner los vectores de los tokens en fila mete el orden dentro de la entrada, y cobra dos cosas por ello: una longitud fija que hay que truncar o rellenar, y una primera capa partida en tantos bloques como posiciones, cada uno ajustado sólo por lo que cae en la suya. Una red que aprende «no» en las cuatro primeras posiciones acierta el 0,500 cuando «no» aparece en la quinta."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-pesos
+    type: numeric
+    prompt: 'Un MLP concatenado con $T_{\max} = 40$ posiciones, *embeddings* de $d_{\text{model}} = 128$ y una capa oculta de $d_1 = 64$ neuronas. ¿Cuántos pesos tiene $\mathbf{W}^{(1)}$?'
+    answer: 327680
+    tolerance: 0
+    explanation: 'La entrada mide $d_0 = T_{\max} \cdot d_{\text{model}} = 40 \cdot 128 = 5\,120$ coordenadas, y la capa tiene una fila por neurona, así que $\mathbf{W}^{(1)}$ tiene forma $64 \times 5\,120$ y guarda $64 \cdot 5\,120 = 327\,680$ pesos. Lo interesante es la segunda cuenta: subir $T_{\max}$ a $80$ para leer textos el doble de largos deja la matriz en $655\,360$ pesos, y los $327\,680$ nuevos empiezan en su inicialización sin que nada de lo aprendido en los cuarenta primeros bloques les llegue.'
+    hint: 'Cuenta primero cuántas coordenadas tiene la entrada concatenada.'
+  - id: q-por-que-falla
+    type: single
+    prompt: 'La celda entrena con <W>no</W> en las cuatro primeras posiciones y examina con <W>no</W> en las dos últimas. El acierto de prueba se queda en $0{,}500$, y no lo mueven ni más pasos, ni más neuronas ocultas, ni otra tasa de aprendizaje. ¿Cuál es la razón?'
+    options:
+      - { id: a, text: 'Que $\nabla_{\mathbf{W}^{(1)}_t}\ell = \boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ se anula en la columna de <W>no</W> de los bloques 5 y 6 para todos los ejemplos de entrenamiento, así que esas columnas terminan exactamente donde empezaron.' }
+      - { id: b, text: 'Que 600 ejemplos son pocos para los 768 pesos de la primera capa, y la red se queda sin datos con los que fijarlos.' }
+      - { id: c, text: 'Que la tangente hiperbólica se satura con entradas one-hot, de modo que el gradiente se apaga antes de llegar a la primera capa.' }
+      - { id: d, text: 'Que el conjunto de prueba está desequilibrado y la mitad de sus ejemplos no tiene la etiqueta que le corresponde.' }
+    answer: a
+    explanation: 'La (a) es lo que imprime la última parte de la celda: la columna de <W>no</W> se mueve unas $2{,}4$ unidades en los bloques 1 a 4 y exactamente $0{,}000000$ en los bloques 5 y 6. No es que se mueva poco, es que el gradiente que la mueve es el vector nulo en todos los ejemplos, y ningún método de optimización corrige un peso con un cero. La (b) va contra el dato —el acierto de entrenamiento es $1{,}000$, así que datos hay de sobra para lo que la red sí aprende—; la (c) también, porque esa saturación impediría aprender los bloques 1 a 4 y esos se aprenden; y la (d) es falsa por construcción: la celda pone la etiqueta $1$ en los ejemplos de índice par, ciento cincuenta de trescientos.'
+  - id: q-longitud-fija
+    type: multi
+    prompt: 'Marca todo lo que sea cierto de un MLP que recibe la concatenación de $T_{\max}$ posiciones.'
+    options:
+      - { id: a, text: 'Rellenar con el vector nulo una posición hace que el gradiente del bloque de esa posición valga exactamente cero en ese ejemplo.' }
+      - { id: b, text: 'Truncar en $T_{\max}$ pierde texto según dónde caiga y no según lo raro que sea, así que el mismo tipo puede desaparecer de un documento y sobrevivir en otro.' }
+      - { id: c, text: 'Subir $T_{\max}$ de $30$ a $60$ dobla los pesos de la primera capa y dobla también los ejemplos con los que se ajusta cada bloque.' }
+      - { id: d, text: 'Dos documentos con los mismos tokens en distinto orden reciben la misma entrada.' }
+    answer: [a, b]
+    explanation: 'La (a) sale de la fórmula sin hacer ninguna cuenta: $\boldsymbol{\delta}^{(1)}\mathbf{0}^{\top}$ es la matriz nula, valga lo que valga el error de la capa. La (b) es la diferencia con el problema OOV del bloque 1: allí caían los tipos raros, aquí cae lo que esté después de la posición $T_{\max}$, y eso no tiene nada que ver con la frecuencia. La (c) es la trampa de la lección: el corpus tiene los ejemplos que tiene, así que doblar las posiciones reparte los mismos ejemplos entre el doble de bloques —los pesos se doblan, la experiencia por bloque se parte—. Y la (d) es falsa, y conviene tenerlo claro: concatenar sí distingue el orden. Ése era el defecto que veníamos a corregir, y queda corregido; lo que esta lección mide es el precio.'
+  - id: q-bolsa-mejor
+    type: boolean
+    prompt: 'En el experimento de la celda, la bolsa de palabras acierta el examen desplazado y la concatenación no. ¿Autoriza eso a concluir que la bolsa de palabras es la mejor de las dos representaciones?'
+    answer: false
+    explanation: 'No, y las dos mitades importan. La bolsa gana ahí porque la tarea inventada para la celda —¿aparece <W>no</W> en algún sitio?— no necesita el orden para nada, y porque sus ocho coordenadas son las mismas se mire la posición que se mire: una sola columna por entrada, ajustada con todas las ocurrencias. Eso es exactamente lo que le falta a la concatenación. Pero la bolsa le da el mismo vector a <W>la actriz salva la película</W> y a <W>la película salva la actriz</W>, que es la razón por la que este bloque existe. Lo que el experimento sí autoriza a decir es más preciso y más útil: compartir los pesos entre posiciones es lo que hace que lo aprendido en una sirva en las demás, y la concatenación lo perdió al ganar el orden.'
+challenges: []
+---
+
+{/* COURSE-P5-03 — Bloque 3, lección 1. */}
+
+Una capa de entrada tiene el ancho que se le dio al construirla; un texto tiene el largo que tenga.
+El bloque anterior, dedicado al perceptrón multicapa (*multilayer perceptron*, MLP), terminó
+chocando contra esa tensión sin llegar a escribirla: su clasificador de reseñas acertaba el
+$88{,}3\ \%$ de las que no había leído, y el techo se lo ponía la entrada y no la red, porque el
+orden de los tokens no llegaba a cruzar la puerta. Corregirlo obliga a cambiar la entrada, y cambiar
+la entrada obliga a volver sobre $\mathbf{W}^{(1)}$, que tiene $d_0$ columnas desde el instante en
+que se construye.
+
+La reparación que se le ocurre a cualquiera es ponerlos en fila. Cada token trae su vector —el
+*embedding* de la lección 6 del bloque 1, sobre representaciones densas—, y pegar esos vectores uno
+detrás de otro deja el orden escrito en el sitio que ocupa cada uno: la posición pasa a ser una
+coordenada, y ninguna suma la borra. La reparación aguanta hasta el segundo texto. <W>la fotografía
+es magnífica</W> trae cuatro vectores y <W>guion flojo</W> trae dos, de modo que producen entradas de
+dos anchuras distintas, y una capa que multiplica por $\mathbf{W}^{(1)}$ acepta una sola.
+
+Hay una segunda consecuencia, y ésa no se ve hasta dibujarla.
+
+<Figure
+  src="/courses/dl-nlp/concatenacion-bloques.svg"
+  alt="Arriba, una barra horizontal etiquetada x a su izquierda y dividida en seis segmentos iguales numerados del uno al seis, uno por posición de la secuencia. El tercer segmento y el quinto están sombreados en verde y llevan encima la etiqueta «no». Debajo, un rectángulo ancho etiquetado W uno, de la misma anchura que la barra y dividido en seis bloques de columnas alineados con los segmentos de arriba y numerados igual, del uno al seis; de esos bloques sólo están sombreados el tercero y el quinto. Dos líneas de puntos verdes bajan del tercer segmento al tercer bloque y del quinto al quinto. Bajo el rectángulo, su forma: d uno por T max por d model."
+  caption="La misma entrada del vocabulario en dos posiciones no toca los mismos pesos: en un caso la multiplica el tercer bloque y en el otro el quinto, y esos dos bloques se ajustan por separado."
+/>
+
+Lo que queda de lección es esa figura escrita con símbolos, y después medida con NumPy.
+
+<Callout type="intuition" title="La idea en una frase">
+Concatenar mete el orden dentro de la entrada y lo cobra: cada posición se lleva su propio trozo de
+la primera capa. Lo que la red aprenda sobre una entrada del vocabulario en la posición 3 no está
+disponible en la posición 5, porque son pesos distintos, ajustados con ejemplos distintos.
+</Callout>
+
+## Una secuencia que no cabe en una entrada de tamaño fijo
+
+El tokenizador convierte un documento en una secuencia de tokens $w_1, \dots, w_T$. Esa longitud $T$
+pertenece a ese documento: el siguiente traerá otra. Cada posición aporta el vector de su entrada del
+vocabulario, $\mathbf{x}_t = \mathbf{e}_{w_t} \in \mathbb{R}^{d_{\text{model}}}$, la fila de
+$\mathbf{E}$ que le corresponde. Apilarlos en una sola columna es escribir
+
+$$
+\mathbf{x} = \left[\mathbf{x}_1 ; \mathbf{x}_2 ; \dots ; \mathbf{x}_T\right] \in \mathbb{R}^{T \cdot d_{\text{model}}},
+$$
+
+donde los puntos y comas apilan hacia abajo: lo que sale es un vector de $T \cdot d_{\text{model}}$
+números, no una matriz de $T$ filas. El orden está dentro, intacto, y leerlo es cuestión de mirar el
+tramo que toque. Las dos escrituras de la letra conviven a propósito y conviene fijarlas aquí:
+$\mathbf{x}$ sin subíndice es la entrada del ejemplo entero, como en todo el bloque anterior, y
+$\mathbf{x}_t$ es el trozo que aporta la posición $t$.
+
+Enfrente hay una capa que no admite negociación. $\mathbf{W}^{(1)} \in \mathbb{R}^{d_1 \times d_0}$
+tiene $d_0$ columnas, ese número se elige al construir la red y no sabe nada del documento que vaya a
+entrar. Con $\mathbf{x}$ midiendo $T \cdot d_{\text{model}}$ y con $T$ cambiando en cada texto, el
+producto $\mathbf{W}^{(1)}\mathbf{x}$ está definido para los documentos de una longitud y no lo está
+para los demás. No es un problema de precisión ni de ajuste: es que la multiplicación no existe.
+
+La salida —la única disponible sin cambiar de arquitectura— es fijar un número de posiciones
+$T_{\max}$ y obligar a todos los documentos a medir eso:
+
+$$
+\mathbf{x}_t = \begin{cases}
+\mathbf{e}_{w_t} & \text{si } t \leq T,\\
+\mathbf{0} & \text{si } T < t \leq T_{\max},
+\end{cases}
+$$
+
+quedándose con las $T_{\max}$ primeras posiciones cuando $T > T_{\max}$. Rellenar con el vector nulo
+lo que sobra se llama *padding*; cortar por $T_{\max}$ es **truncar**. Con las dos cosas,
+$d_0 = T_{\max} \cdot d_{\text{model}}$ para todo documento y la red ya se puede construir.
+
+Las dos mitades de ese arreglo cuestan cosas distintas y las dos hay que decirlas en voz alta.
+Truncar pierde el final entero de cualquier documento largo, y lo pierde *por posición*: no se
+parece al problema de las palabras fuera de vocabulario (*out-of-vocabulary*, OOV) de la lección 3
+del bloque 1, donde lo que caía eran los tipos raros y por eso la pérdida era pequeña. Aquí puede
+caer la entrada más frecuente del corpus, si le toca estar en la posición $T_{\max} + 1$. Y el
+*padding* paga por el otro extremo: con $T_{\max}$ puesto donde llegue el documento más largo, un
+documento de longitud media entra en la red con más de la mitad de su vector a cero.
+
+## Cada posición aprende por su cuenta
+
+Corta $\mathbf{W}^{(1)}$ por donde ya está cortada la entrada. Sus $d_0 = T_{\max} \cdot d_{\text{model}}$
+columnas se reparten en $T_{\max}$ bloques consecutivos de $d_{\text{model}}$ columnas cada uno,
+$\mathbf{W}^{(1)} = \left[\mathbf{W}^{(1)}_1 \mid \dots \mid \mathbf{W}^{(1)}_{T_{\max}}\right]$ con
+$\mathbf{W}^{(1)}_t \in \mathbb{R}^{d_1 \times d_{\text{model}}}$ —ese subíndice es una posición de
+la secuencia, no una coordenada—, y el producto se parte con ella:
+
+$$
+\mathbf{z}^{(1)} = \mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)} = \sum_{t=1}^{T_{\max}} \mathbf{W}^{(1)}_t\,\mathbf{x}_t + \mathbf{b}^{(1)}.
+$$
+
+Ahí no ha pasado nada todavía: es el mismo producto de siempre, agrupado por tramos en lugar de por
+columnas sueltas. Lo que pasa se ve al derivar.
+
+La lección 8 del bloque anterior, sobre *backpropagation*, deja el gradiente de una capa en una
+línea, $\nabla_{\mathbf{W}^{(l)}}\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$,
+y para la primera capa $\mathbf{h}^{(0)} = \mathbf{x}$, así que
+
+$$
+\nabla_{\mathbf{W}^{(1)}}\ell = \boldsymbol{\delta}^{(1)}\,\mathbf{x}^{\top} \in \mathbb{R}^{d_1 \times d_0}.
+$$
+
+Ese producto exterior se parte por columnas exactamente por donde se partió $\mathbf{W}^{(1)}$, y el
+trozo que le toca a cada bloque es
+
+$$
+\nabla_{\mathbf{W}^{(1)}_t}\ell = \boldsymbol{\delta}^{(1)}\,\mathbf{x}_t^{\top} \in \mathbb{R}^{d_1 \times d_{\text{model}}}.
+$$
+
+<Details summary="Ver el corte por columnas">
+El producto exterior se define coordenada a coordenada: la casilla $(i, j)$ de
+$\boldsymbol{\delta}^{(1)}\mathbf{x}^{\top}$ vale $\delta^{(1)}_i \cdot x_j$, con $i$ recorriendo las $d_1$
+neuronas y $j$ las $d_0$ columnas.
+
+La columna $j$ pertenece al bloque $t$ cuando $(t-1) \cdot d_{\text{model}} < j \leq t \cdot d_{\text{model}}$,
+y dentro de ese bloque ocupa la posición $j - (t-1) \cdot d_{\text{model}}$. Como la concatenación define
+$x_j$ como la coordenada $j - (t-1) \cdot d_{\text{model}}$ de $\mathbf{x}_t$, la submatriz formada por
+esas $d_{\text{model}}$ columnas tiene en su casilla $(i, k)$ el número $\delta^{(1)}_i \cdot x_{t,k}$
+—que es, casilla por casilla, $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$—.
+
+El corte funciona porque las dos cosas que se están cortando están cortadas por el mismo sitio: las
+columnas de $\mathbf{W}^{(1)}$ y las coordenadas de $\mathbf{x}$. Y nada más entra en la cuenta:
+$\boldsymbol{\delta}^{(1)}$ va entero a todos los bloques, así que lo único que distingue el gradiente
+de un bloque del de otro es qué vector de la secuencia lo multiplica.
+</Details>
+
+Léela despacio, porque es el resultado de la lección. El gradiente del bloque $t$ depende de
+$\mathbf{x}_t$ y de ninguna otra parte de la entrada. Si esa posición viene rellenada,
+$\mathbf{x}_t = \mathbf{0}$, el bloque recibe la matriz nula: ese ejemplo no le enseña nada, ni poco
+ni mucho. Y si la entrada llega en one-hot, $\mathbf{x}_t = \mathbf{o}_{w_t}$ tiene un solo uno, de
+manera que $\boldsymbol{\delta}^{(1)}\mathbf{o}_{w_t}^{\top}$ es nula salvo en una columna: dentro
+del bloque $t$, la única columna que se mueve es la de la entrada del vocabulario que ocupó esa
+posición.
+
+Junta las dos frases y sale la afirmación que da título a este apartado. La columna que representa a
+una entrada dentro del bloque $t$ se ajusta *sólo* con los ejemplos en los que esa entrada apareció
+en la posición $t$. Una entrada que en el conjunto de entrenamiento no llegó nunca a la posición 5
+deja las columnas correspondientes del bloque 5 tal y como salieron de la inicialización, por muchos
+pasos que dé el descenso; y lo que la red haya averiguado sobre esa misma entrada en la posición 3
+está guardado en otros pesos, a los que la posición 5 no tiene acceso.
+
+### Lo que cuesta en pesos
+
+$\mathbf{W}^{(1)}$ tiene forma $d_1 \times d_0$, así que guarda $d_1 \cdot d_0$ pesos, y con la entrada
+concatenada eso es
+
+$$
+d_1 \cdot T_{\max} \cdot d_{\text{model}} \quad \text{pesos}.
+$$
+
+Pon números de un tamaño corriente: *embeddings* de $d_{\text{model}} = 100$, una capa oculta de
+$d_1 = 128$ neuronas y $T_{\max} = 30$ posiciones dan $384\,000$ pesos en la primera capa. El
+clasificador de reseñas de la lección anterior, con la misma capa oculta sobre una bolsa de palabras,
+tenía $5\,329$ parámetros en total. Y leer párrafos en vez de frases, $T_{\max} = 300$, sube la cifra
+a $3\,840\,000$.
+
+Ese crecimiento no es el problema; es el síntoma. Lo que hay debajo es que los $3\,456\,000$ pesos
+añadidos al pasar de $30$ posiciones a $300$ son pesos *nuevos*, que empiezan en su inicialización
+y a los que no les llega nada de lo aprendido en los treinta primeros bloques. El corpus, mientras
+tanto, sigue teniendo los ejemplos que tenía: más posiciones significa los mismos ejemplos repartidos
+entre más bloques, es decir, menos experiencia por parámetro justo cuando hay más parámetros.
+
+## Midiéndolo con NumPy
+
+Un experimento pequeño lo pone en números. Las secuencias me las he inventado para el curso: seis
+posiciones, ocho entradas de vocabulario, y la etiqueta vale $1$ cuando aparece <W>no</W> entre
+ellas. La diferencia está en dónde aparece —en el entrenamiento, sólo en las cuatro primeras
+posiciones; en el examen, sólo en las dos últimas—, y esa es la única diferencia entre los dos
+conjuntos.
+
+Con los mismos datos se entrena dos veces la misma red: una sobre la concatenación de las seis
+posiciones y otra sobre su bolsa de palabras, que son las mismas ocho coordenadas sumadas. El bucle
+es el de la lección 9 del bloque anterior, sobre implementar un MLP, sin tocar una línea. Mira su
+salida en tres tramos: qué hace la concatenación, qué hace la bolsa de palabras con esos mismos
+datos, y qué le ha pasado a cada bloque de $\mathbf{W}^{(1)}$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+V = ["la", "película", "es", "muy", "buena", "larga", "divertida", "no"]
+NO, T = 7, 6                                  # «no» es la última entrada; seis posiciones
+rng = np.random.default_rng(0)
+
+
+def corpus(n, posiciones):
+    S = rng.integers(0, NO, size=(n, T))      # relleno, sacado de las siete primeras
+    y = np.zeros((n, 1))
+    y[::2] = 1.0                              # la mitad exacta lleva «no»...
+    for i in np.nonzero(y[:, 0])[0]:
+        S[i, rng.choice(posiciones)] = NO     # ...y sólo donde se le diga
+    U = np.eye(len(V))[S]                     # (n, 6, 8): un one-hot por posición
+    return U.reshape(n, T * len(V)), U.sum(1), y   # concatenarlos, o sumarlos
+
+
+C_ent, B_ent, Y_ent = corpus(600, [0, 1, 2, 3])    # «no» en las posiciones 1-4
+C_pru, B_pru, Y_pru = corpus(300, [4, 5])          # en el examen, sólo en las 5-6
+
+
+def entrena(X_ent, X_pru, pasos=1500, eta=0.5, d1=16):
+    r = np.random.default_rng(1)
+    W1, b1 = r.normal(size=(d1, X_ent.shape[1])) * 0.1, np.zeros(d1)
+    W2, b2 = r.normal(size=(1, d1)) * 0.1, np.zeros(1)
+    W1_ini = W1.copy()
+
+    def salida(X):
+        H = np.tanh(X @ W1.T + b1)
+        return H, 1.0 / (1.0 + np.exp(-(H @ W2.T + b2)))
+
+    def acierto(X, Y):
+        return float(((salida(X)[1] >= 0.5) == (Y == 1.0)).mean())
+
+    for _ in range(pasos):                    # el bucle del bloque anterior, sin tocar
+        H, P = salida(X_ent)
+        D2 = P - Y_ent
+        D1 = (D2 @ W2) * (1.0 - H ** 2)
+        W1 -= eta * (D1.T @ X_ent) / len(X_ent)
+        b1 -= eta * D1.sum(0) / len(X_ent)
+        W2 -= eta * (D2.T @ H) / len(X_ent)
+        b2 -= eta * D2.sum(0) / len(X_ent)
+    return acierto(X_ent, Y_ent), acierto(X_pru, Y_pru), W1 - W1_ini, salida(X_pru)[1]
+
+
+ac_e, ac_p, mov, P_pru = entrena(C_ent, C_pru)
+print("concatenación       entrenamiento %.3f   prueba %.3f" % (ac_e, ac_p))
+print("bolsa de palabras   entrenamiento %.3f   prueba %.3f" % entrena(B_ent, B_pru)[:2])
+print("ŷ medio de las 150 de prueba que llevan «no»: %.4f" % P_pru[Y_pru == 1.0].mean())
+
+print("\\ncuánto se ha movido la columna de «no» en cada bloque:")
+for t in range(T):
+    print("   posición %d:  %.6f" % (t + 1, np.linalg.norm(mov[:, t * len(V) + NO])))
+`} />
+
+La primera línea es el fallo: $1{,}000$ sobre lo que ha visto y $0{,}500$ sobre lo que no. Ese
+$0{,}500$ no es una moneda al aire. Las ciento cincuenta secuencias del examen que *no* llevan
+<W>no</W> las acierta todas, y las ciento cincuenta que sí lo llevan las falla todas, porque a sus
+ojos son idénticas a las primeras. La tercera línea dice hasta qué punto: el $\hat{y}$ medio de las
+ciento cincuenta positivas es $0{,}0014$. No está dudando entre las dos respuestas; está segura y
+equivocada.
+
+La segunda línea es la incómoda. La bolsa de palabras —la representación que este bloque ha venido a
+sustituir, la que no distingue un orden de otro— acierta el $1{,}000$ en el examen desplazado.
+Su ventaja es exactamente lo que le falta a la otra: tiene *una* coordenada para <W>no</W>, que
+recoge las ocurrencias de las seis posiciones a la vez, así que un peso ajustado con lo que pasó en
+la posición 2 sirve tal cual cuando <W>no</W> aparece en la 5. Concatenar ganó el orden y perdió eso.
+
+La última salida es la fórmula, verificada. La columna de <W>no</W> se ha movido unas $2{,}4$
+unidades en los bloques 1 a 4, y $0{,}000000$ en los bloques 5 y 6 —cero exacto, no cero
+redondeado—, porque su gradiente $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ fue la matriz nula en
+los seiscientos ejemplos y en los mil quinientos pasos. Cambia la inicialización y la cifra de los
+cuatro primeros bloques cambia; los dos últimos siguen dando cero, y el acierto de prueba sigue
+dando $0{,}500$.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: cuántos pesos pide la concatenación, por qué la posición nueva es invisible, qué
+cuestan el *padding* y el truncamiento, y qué se puede y qué no se puede concluir del hecho de que
+la bolsa de palabras gane este examen.
+
+<Quiz id="q-pesos" />
+
+<Quiz id="q-por-que-falla" />
+
+<Quiz id="q-longitud-fija" />
+
+<Quiz id="q-bolsa-mejor" />
+
+---
+
+Las dos cosas que esta lección ha medido son la misma cosa. La longitud fija obliga a truncar y a
+rellenar porque la primera capa tiene un bloque por posición y ninguno de más; y lo aprendido en una
+posición no llega a las demás porque cada bloque se ajusta con lo suyo. Las dos salen de haber puesto
+la secuencia entera delante de la red de una vez, como si fuera un punto de $\mathbb{R}^{d_0}$ con
+muchas coordenadas, y ninguna se arregla desde dentro de esa idea: ni con más neuronas, ni con más
+pasos, ni con un $T_{\max}$ mayor, que empeora las dos.
+
+Lo que hace falta es una red en la que la posición 5 multiplique por *los mismos* pesos que la
+posición 3, de manera que ajustarlos con una ocurrencia los deje ajustados para todas. Eso obliga a
+dos cosas a la vez: leer la secuencia una posición cada vez en lugar de toda de golpe, y guardar en
+algún sitio lo ya leído —porque si la matriz es la misma en todas las posiciones, el orden no puede
+estar guardado en ella—. Eso es la lección 2 de este bloque, sobre la red neuronal recurrente
+(*recurrent neural network*, RNN) más simple que hay: una sola matriz aplicada $T$ veces, un estado
+que pasa de un paso al siguiente, y una entrada que ya no tiene que medir lo mismo en todos los
+documentos.

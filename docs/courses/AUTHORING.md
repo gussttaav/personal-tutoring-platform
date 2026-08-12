@@ -555,6 +555,8 @@ plain. Never italicise the Spanish terms.
 | tasa de acierto — and `acertar` for the verb | Spanish | *accuracy*, precisión, exactitud |
 | inicialización, inicializar | Spanish | *initialisation*, arranque; `semilla` is the generator's, not the weights' |
 | vocabulario, tokenización, subpalabra, bolsa de palabras, codificación posicional | Spanish | vocabulary, tokenisation, subword, bag of words, positional encoding |
+| filling the leftover positions of a fixed-length input | *padding* | relleno, acolchado |
+| cutting a text at $T_{\max}$ | truncar, truncamiento | recortar, cortar |
 | maldición de la dimensionalidad | Spanish | curse of dimensionality |
 | denso, disperso | Spanish | *dense*, *sparse* |
 | tipo — one distinct entry; *token* / ocurrencia — each appearance of one | `tipo`, `token`, `ocurrencia` | *type*; `token` for both senses |
@@ -666,6 +668,17 @@ circulate — *backpropagation* / *retropropagación* — the course picks one a
 it is picked, because the alternative is that each lesson picks separately. `course.es.yml`'s Block 2
 summary said *retropropagación* until this table settled it; the manifest now says
 *backpropagation*, matching the syllabus titles and the `backpropagation` slug.
+
+*padding* is English by that criterion, and the two obvious translations are both **already spent
+inside this course**, which is the sharper argument. `relleno` is what NumPy puts between the columns
+it aligns, in Block 2 lessons 5 and 9 — «un espacio de relleno además del que las separa» — so a
+reader meets it as a formatting artefact two blocks before meeting it as an architectural decision.
+`acolchado` is upholstery. The other half of the operation goes the other way and is ordinary
+Spanish: `truncar` a text at $T_{\max}$, `truncamiento` for the loss. Not `recortar`, and for the
+same reason: Block 1 lesson 3 cuts the *vocabulary* at the $k$ most frequent types and Block 2 lesson
+5 cuts the *probabilities* before the logarithm, both of them «recorte», and neither is what happens
+to a text that ran past the last position. Three cuts on three objects need three verbs or they need
+one, and one is not available.
 
 #### Acronyms
 

@@ -202,7 +202,7 @@ resultado, que es lo que hace falta aquí.
 
 La igualdad $T = C / \bar{\ell}$ conviene verla como números y no como álgebra. La celda tokeniza un
 corpus corto en español de las dos formas extremas, por palabras y por caracteres, y para cada una
-imprime $T$, el tamaño del vocabulario y la longitud media. Mira tres cosas: que $T \times \bar{\ell}$
+imprime $T$, el tamaño del vocabulario y la longitud media. Mira tres cosas: que $T \cdot \bar{\ell}$
 reproduce $C$, que los tamaños de vocabulario van en el sentido contrario a $T$, y las dos últimas
 líneas. Ejecútala tal cual y después cambia el corpus por un texto tuyo.
 
@@ -261,7 +261,7 @@ nueva = por_palabras("El niño programa una criptomoneda")
 print("fuera de V:", [t for t in nueva if t not in V])
 `} />
 
-Con caracteres, $T \times \bar{\ell}$ da $C$ exactamente. Con palabras se queda por debajo, y la
+Con caracteres, $T \cdot \bar{\ell}$ da $C$ exactamente. Con palabras se queda por debajo, y la
 diferencia son los espacios: el tokenizador los tiró, así que ya no se puede reconstruir el texto a
 partir de los tokens. Es la condición de reconstrucción rota a cambio de una comodidad, y por eso
 los tokenizadores de subpalabras marcan de algún modo dónde estaban los espacios. El <W>##</W> que ves

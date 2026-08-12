@@ -162,7 +162,7 @@ $d_{\text{model}}$ multiplicaciones. El denominador es un producto escalar por c
 vocabulario:
 
 $$
-\lvert V \rvert \cdot d_{\text{model}} = 50\,000 \times 300 = 1{,}5 \times 10^{7} \quad \text{operaciones}.
+\lvert V \rvert \cdot d_{\text{model}} = 50\,000 \cdot 300 = 1{,}5 \times 10^{7} \quad \text{operaciones}.
 $$
 
 Quince millones por un solo par. Y hay $2m = 4$ pares por
@@ -170,7 +170,7 @@ token, que sobre un corpus enorme con $T = 10^{10}$ tokens, salen
 $4 \times 10^{10}$ pares. Una pasada entera cuesta
 
 $$
-4 \times 10^{10} \times 1{,}5 \times 10^{7} = 6 \times 10^{17} \quad \text{operaciones},
+\left(4 \times 10^{10}\right) \cdot \left(1{,}5 \times 10^{7}\right) = 6 \times 10^{17} \quad \text{operaciones},
 $$
 
 y el entrenamiento da varias pasadas. Ninguna máquina iba a pagar eso por un *embedding*, ni en 2013
@@ -222,7 +222,7 @@ Ahora la cuenta, el motivo de todo esto. Un paso toca el centro, el contexto rea
 $n_{\text{neg}}$ negativos, un producto escalar por vector:
 
 $$
-(n_{\text{neg}} + 1) \cdot d_{\text{model}} = 6 \times 300 = 1\,800 \quad \text{operaciones},
+(n_{\text{neg}} + 1) \cdot d_{\text{model}} = 6 \cdot 300 = 1\,800 \quad \text{operaciones},
 $$
 
 frente a los 15 millones de antes. El factor es $\lvert V \rvert / (n_{\text{neg}} + 1) \approx

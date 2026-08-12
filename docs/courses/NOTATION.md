@@ -59,6 +59,74 @@ A layer's weight matrix maps *input to output*: $\mathbf{W}^{(l)} \in \mathbb{R}
 \mathbf{b}^{(l)}\right)$ for a single example. When a lesson switches to the batched form
 $\mathbf{H} \mathbf{W}^{\top}$, it says so explicitly.
 
+### $\times$ is the shape sign; $\cdot$ is the multiplication sign
+
+Two jobs, two signs, and they never overlap — plus the cases where no sign is written at all:
+
+| Job | Sign | Example |
+|---|---|---|
+| separating the axes of an array | $\times$ | $\mathbb{R}^{B \times T \times d_{\text{model}}}$ · $\mathbf{W}^{(l)}$ tiene forma $d_l \times d_{l-1}$ |
+| multiplying two **scalars** | $\cdot$ | $50\,000 \cdot 300$ · $d_1 \cdot d_0$ · $T \cdot d_{\text{model}}$ · $\delta^{(1)}_i \cdot x_j$ |
+| …unless both are bare single letters | juxtaposition | $2mT$ · $m(m+1)$ · $c\,T^{\beta}$ |
+| multiplying **arrays** | juxtaposition, always | $\mathbf{W}^{(1)}\mathbf{x}$ · $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ · $\mathbf{H}\mathbf{W}^{\top}$ |
+| a power of ten | $\times$, as a fixed compound | $4 \times 10^{10}$ · $9 \times 10^{-4}$ |
+
+**Inside a shape, $\times$ separates axes and does not multiply.**
+$\mathbb{R}^{B \times T \times d_{\text{model}}}$ has **three** axes;
+$\mathbb{R}^{T \cdot d_{\text{model}}}$ has **one**, of length $T$ times $d_{\text{model}}$. Same
+count of numbers, different space — so a product of dimensions written in an exponent takes the
+$\cdot$, never $\times$, because $\mathbb{R}^{T \times d_{\text{model}}}$ already means the matrix.
+Block 3 lesson 1, on why the MLP fails on sequences, is where that bites: concatenating $T$ token
+vectors gives $\mathbb{R}^{T \cdot d_{\text{model}}}$, a single column and the only thing
+$\mathbf{W}^{(1)}$ can multiply, and the paragraph under the equation says «no una matriz de $T$
+filas» in words. With a $\times$ the equation would contradict its own gloss.
+
+**And outside a shape the multiplication sign is $\cdot$, not $\times$** — which is the same
+one-glyph-one-job argument [§6](#6-object-language--words-the-lesson-talks-about) makes for `<W>`.
+The confusable pair is not exotic: $d_1 \times d_0$ meaning *a matrix that shape* and
+$d_1 \times d_0$ meaning *how many weights it holds* are the same six characters around the same two
+symbols, and only the surrounding sentence tells them apart. With $\cdot$ for the product, the two
+can sit in one clause and stay legible — «$\mathbf{W}^{(1)}$ tiene forma $d_1 \times d_0$, así que
+guarda $d_1 \cdot d_0$ pesos» — and a count spelled out reads $64 \cdot 5\,120 = 327\,680$.
+
+**Juxtaposition is not a third way of saying $\cdot$; it is what you write when there is nothing to
+disambiguate.** Between bare single letters it is the universal convention and the course keeps it:
+$2mT$, $m(m+1)$. It stops working the moment a factor carries a subscript, because then the operator
+is a thin space between two symbols that already contain small type — and in a **superscript** that
+thin space very nearly disappears. $\mathbb{R}^{T\,d_{\text{model}}}$ against
+$\mathbb{R}^{T \times d_{\text{model}}}$ asks the reader to distinguish *a mark* from *no mark* at
+half size; $\mathbb{R}^{T \cdot d_{\text{model}}}$ against $\mathbb{R}^{T \times d_{\text{model}}}$
+gives them two marks to tell apart, and each one says what it does. So: **if either factor has a
+subscript, write the $\cdot$.**
+
+**The one place $\cdot$ is forbidden is between arrays**, and there the reason is not legibility but
+meaning: $\mathbf{u} \cdot \mathbf{v}$ is the dot product in most of the literature, and this course
+spends $\mathbf{u}^{\top}\mathbf{v}$ on that (§3). So a matrix product is juxtaposed however many
+subscripts it carries — $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$, never
+$\boldsymbol{\delta}^{(1)} \cdot \mathbf{x}_t^{\top}$ — and the bold is what tells the reader which
+rule is in force. Note that the scalar and array versions of the same statement therefore look
+different on purpose: the casilla $\delta^{(1)}_i \cdot x_j$ against the outer product
+$\boldsymbol{\delta}^{(1)}\mathbf{x}^{\top}$, one line apart in Block 3 lesson 1.
+
+The rule was written after Block 3 lesson 1 rather than before it, and what it caught is the usual
+argument for writing these down early. Block 1 lesson 7, on Word2Vec, had
+$\lvert V \rvert \cdot d_{\text{model}} = 50\,000 \times 300$ — **both** signs for one operation,
+four characters apart, on a shipped page; and its cost equation was
+$4 \times 10^{10} \times 1{,}5 \times 10^{7}$, four $\times$ of which two were powers of ten and one
+was the product, distinguishable only by doing the arithmetic. Both are fixed, along with ~12 other
+sites in Blocks 1 and 2, and ~17 more where a juxtaposed product had a subscripted factor.
+
+**The power-of-ten carve-out is deliberate**, and it does not give $\times$ a second job in any place
+that matters: $a \times 10^{n}$ is read as one number, never appears in an exponent of $\mathbb{R}$,
+and always carries a power of ten on its right, so nothing about it can be mistaken for a shape. It
+is also what every paper the student will go on to read writes. It buys the clearest form of the
+Word2Vec line, where the two roles finally become visible:
+$\left(4 \times 10^{10}\right) \cdot \left(1{,}5 \times 10^{7}\right)$.
+
+Not machine-checked, and it fails this file's bar on purpose: a rule keyed on "$\times$ between two
+numbers" would fire on «una $3 \times 4$ por una $4 \times 8$», which is Block 2 lesson 7 talking
+about shapes in prose and is correct as written. Held by review, like §6.
+
 ### Vectors are columns, so a row of a matrix is a transpose
 
 $\mathbf{x} \in \mathbb{R}^{d}$ is $d \times 1$. That is not a preference: it is what makes
@@ -438,12 +506,46 @@ is what the reader is told at the end, and a lesson using both says so once.
 
 | Symbol | Meaning |
 |---|---|
+| $\mathbf{x}_t \in \mathbb{R}^{d_{\text{model}}}$ | the vector of the token at position $t$ |
+| $T_{\max}$ | how many positions a **fixed-length** input has room for |
+| $\left[\mathbf{x}_1 ; \dots ; \mathbf{x}_T\right]$ | vertical concatenation — the semicolons stack, a comma would lay them in a row |
+| $\mathbf{W}^{(1)}_t \in \mathbb{R}^{d_1 \times d_{\text{model}}}$ | the column block of $\mathbf{W}^{(1)}$ that multiplies position $t$ |
 | $\mathbf{h}_t$ | hidden state at step $t$ |
 | $\mathbf{c}_t$ | LSTM cell state |
 | $\mathbf{W}_{hh}$, $\mathbf{W}_{xh}$, $\mathbf{W}_{hy}$ | recurrent, input and output weights |
 | $\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ | LSTM forget, input and output gates |
 | $\mathbf{r}_t$, $\mathbf{z}_t$ | GRU reset and update gates |
 | $\odot$ | element-wise (Hadamard) product |
+
+**$\mathbf{x}_t$ is one token's vector, and Block 2's $\mathbf{x}$ is one example's input.** The two
+are not in conflict and the block keeps both: what changes in Block 3 is that an example is now a
+*sequence*, so its input is $T$ vectors instead of one, and which one is fixed by §2's sequence
+position. Block 3 lesson 1, on why the MLP fails on sequences, is where they share a page — its
+concatenated input is a single example *and* $T_{\max}$ token vectors at once — so there the
+unsubscripted $\mathbf{x}$ is the whole example and $\mathbf{x}_t$ is its $t$-th piece, said once in
+prose. Where the token vector comes from is Block 1's business: $\mathbf{x}_t = \mathbf{e}_{w_t}$,
+the row of $\mathbf{E}$ belonging to the entry at that position.
+
+**$T$ varies, $T_{\max}$ does not**, and a lesson needs both only while the input has a fixed size.
+§4 reserves $T$ for the length of *a* sequence — a property of the text, different for every
+document, which is precisely the fact that breaks a fixed $d_0$. $T_{\max}$ is a property of the
+**architecture**: how many positions it has room for. A text with $T > T_{\max}$ is truncated and one
+with $T < T_{\max}$ is padded, and both of those are losses the lesson names. An RNN reads $T$ steps
+whatever $T$ is and has no $T_{\max}$ at all, which is one way to say what it fixes.
+
+**The subscript on $\mathbf{W}^{(1)}_t$ is a position, not an element index.** §2 spends the *double*
+subscript on coordinates — $\mathbf{W}^{(l)}_{ij}$ is row $i$, column $j$ — which leaves a single
+subscript free, and Block 3 lesson 1 spends it on the piece of $\mathbf{W}^{(1)}$ that multiplies
+position $t$: $T_{\max}$ blocks of $d_1 \times d_{\text{model}}$, laid side by side, so that
+$\mathbf{W}^{(1)}\mathbf{x} = \sum_t \mathbf{W}^{(1)}_t\mathbf{x}_t$. It is the one matrix in the
+course carrying a layer superscript and a time subscript at once, and the lesson that writes it says
+so in a clause.
+
+That is **not** what the subscripts on $\mathbf{W}_{hh}$ and $\mathbf{W}_{xh}$ mean, three rows up,
+and the difference is the whole subject of the block. Those name a **role** — which pair of spaces
+the matrix maps between — and there is exactly one $\mathbf{W}_{hh}$ for the entire sequence, while
+there are $T_{\max}$ different $\mathbf{W}^{(1)}_t$. A reader who takes the second spelling for the
+first has read the recurrence as an MLP.
 
 ### Block 4 — El Puente hacia la Atención
 
