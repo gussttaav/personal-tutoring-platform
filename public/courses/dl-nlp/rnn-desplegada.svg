@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 136" width="540" height="204" role="img" aria-label="Cuatro cajas iguales en fila, etiquetadas h uno, h dos, h tres y h cuatro. Una flecha verde horizontal entra en la primera desde la etiqueta h cero igual a cero, y sigue después de cada caja a la siguiente; encima de las cuatro flechas se repite siempre el mismo rótulo, W hache hache. Debajo de la fila hay cuatro etiquetas, x uno, x dos, x tres y x cuatro, y de cada una sube una flecha gris a la caja que tiene encima; junto a las cuatro se repite siempre el mismo rótulo, W equis hache. Ninguna caja lleva pesos propios.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: none; }
+    .nombre { font-size: 13px; fill: #bbcabf; text-anchor: middle; }
+    /* Los dos rótulos de matriz son la carga del dibujo: se repiten idénticos en las
+       cuatro posiciones, y esa repetición es justo lo que la ecuación no enseña. */
+    .peso { font-size: 12.5px; fill: #86948a; text-anchor: middle; }
+    /* El camino del estado va en verde porque es lo único que distingue una posición
+       de otra; la entrada de cada token va en gris, como todo lo que se repite. */
+    .hilo { stroke: #4edea3; stroke-width: 1.3; fill: none; }
+    .token { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: none; }
+    .inicio { font-size: 12.5px; fill: #86948a; text-anchor: end; }
+  </style>
+
+  <defs>
+    <marker id="pv" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
+    <marker id="pg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="rgba(134,148,138,0.75)" />
+    </marker>
+  </defs>
+
+  <!-- El estado de partida, que la recurrencia necesita para poder empezar. -->
+  <text class="inicio" x="36" y="57">h<tspan font-size="10" dy="3">0</tspan><tspan dy="-3"> = 0</tspan></text>
+
+  <!-- Las cuatro flechas del estado, con el mismo rótulo las cuatro veces. -->
+  <text class="peso" x="53" y="38">W<tspan font-size="10" dy="3">hh</tspan></text>
+  <text class="peso" x="127" y="38">W<tspan font-size="10" dy="3">hh</tspan></text>
+  <text class="peso" x="201" y="38">W<tspan font-size="10" dy="3">hh</tspan></text>
+  <text class="peso" x="275" y="38">W<tspan font-size="10" dy="3">hh</tspan></text>
+  <line class="hilo" x1="40" y1="53" x2="66" y2="53" marker-end="url(#pv)" />
+  <line class="hilo" x1="114" y1="53" x2="140" y2="53" marker-end="url(#pv)" />
+  <line class="hilo" x1="188" y1="53" x2="214" y2="53" marker-end="url(#pv)" />
+  <line class="hilo" x1="262" y1="53" x2="288" y2="53" marker-end="url(#pv)" />
+
+  <!-- Las cuatro posiciones. Cajas idénticas: ninguna guarda pesos propios. -->
+  <rect class="caja" x="68" y="40" width="44" height="26" />
+  <rect class="caja" x="142" y="40" width="44" height="26" />
+  <rect class="caja" x="216" y="40" width="44" height="26" />
+  <rect class="caja" x="290" y="40" width="44" height="26" />
+  <text class="nombre" x="90" y="58">h<tspan font-size="10" dy="3">1</tspan></text>
+  <text class="nombre" x="164" y="58">h<tspan font-size="10" dy="3">2</tspan></text>
+  <text class="nombre" x="238" y="58">h<tspan font-size="10" dy="3">3</tspan></text>
+  <text class="nombre" x="312" y="58">h<tspan font-size="10" dy="3">4</tspan></text>
+
+  <!-- Cada token entra por abajo, y también por el mismo sitio las cuatro veces. -->
+  <line class="token" x1="90" y1="94" x2="90" y2="68" marker-end="url(#pg)" />
+  <line class="token" x1="164" y1="94" x2="164" y2="68" marker-end="url(#pg)" />
+  <line class="token" x1="238" y1="94" x2="238" y2="68" marker-end="url(#pg)" />
+  <line class="token" x1="312" y1="94" x2="312" y2="68" marker-end="url(#pg)" />
+  <text class="peso" x="113" y="86">W<tspan font-size="10" dy="3">xh</tspan></text>
+  <text class="peso" x="187" y="86">W<tspan font-size="10" dy="3">xh</tspan></text>
+  <text class="peso" x="261" y="86">W<tspan font-size="10" dy="3">xh</tspan></text>
+  <text class="peso" x="335" y="86">W<tspan font-size="10" dy="3">xh</tspan></text>
+
+  <text class="nombre" x="90" y="112">x<tspan font-size="10" dy="3">1</tspan></text>
+  <text class="nombre" x="164" y="112">x<tspan font-size="10" dy="3">2</tspan></text>
+  <text class="nombre" x="238" y="112">x<tspan font-size="10" dy="3">3</tspan></text>
+  <text class="nombre" x="312" y="112">x<tspan font-size="10" dy="3">4</tspan></text>
+
+  <text class="peso" x="201" y="131">…y así hasta x<tspan font-size="10" dy="3">T</tspan><tspan dy="-3">, sin estrenar un solo peso</tspan></text>
+</svg>

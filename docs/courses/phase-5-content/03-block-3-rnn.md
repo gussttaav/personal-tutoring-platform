@@ -43,7 +43,7 @@ task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granu
 here; STATUS stays phase-level.
 
 - [x] 1. `por-que-falla-el-mlp`
-- [ ] 2. `la-rnn-vanilla`
+- [x] 2. `la-rnn-vanilla`
 - [ ] 3. `bptt`
 - [ ] 4. `gradiente-desvanecido`
 - [ ] 5. `lstm`
@@ -53,10 +53,10 @@ here; STATUS stays phase-level.
 
 ## Mathematical content
 
-- $\mathbf{h}_t = \sigma(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b})$
+- $\mathbf{h}_t = \tanh(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h)$
 - Parameter sharing across timesteps, and why it is what makes an RNN an RNN
 - **Full BPTT derivation** — the gradient as a sum over timesteps
-- The vanishing/exploding gradient: the $\prod \mathbf{W}_{hh}^T \text{diag}(\sigma')$ term, and
+- The vanishing/exploding gradient: the $\prod \mathbf{W}_{hh}^{\top} \text{diag}(\tanh')$ term, and
   the spectral-radius argument for why it decays or explodes exponentially
 - Gradient clipping
 - LSTM: all four gate equations plus the cell state, with **why the additive cell path preserves

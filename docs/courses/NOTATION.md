@@ -511,8 +511,11 @@ is what the reader is told at the end, and a lesson using both says so once.
 | $\left[\mathbf{x}_1 ; \dots ; \mathbf{x}_T\right]$ | vertical concatenation — the semicolons stack, a comma would lay them in a row |
 | $\mathbf{W}^{(1)}_t \in \mathbb{R}^{d_1 \times d_{\text{model}}}$ | the column block of $\mathbf{W}^{(1)}$ that multiplies position $t$ |
 | $\mathbf{h}_t$ | hidden state at step $t$ |
+| $d_h$ | width of the hidden state — how many coordinates $\mathbf{h}_t$ has |
+| $\mathbf{h}_0 = \mathbf{0}$ | the state the recurrence starts from, before any token has been read |
 | $\mathbf{c}_t$ | LSTM cell state |
 | $\mathbf{W}_{hh}$, $\mathbf{W}_{xh}$, $\mathbf{W}_{hy}$ | recurrent, input and output weights |
+| $\mathbf{b}_h$, $\mathbf{b}_y$ | the recurrence bias and the output bias — subscripted by role, like the matrices above |
 | $\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ | LSTM forget, input and output gates |
 | $\mathbf{r}_t$, $\mathbf{z}_t$ | GRU reset and update gates |
 | $\odot$ | element-wise (Hadamard) product |
@@ -546,6 +549,31 @@ and the difference is the whole subject of the block. Those name a **role** — 
 the matrix maps between — and there is exactly one $\mathbf{W}_{hh}$ for the entire sequence, while
 there are $T_{\max}$ different $\mathbf{W}^{(1)}_t$. A reader who takes the second spelling for the
 first has read the recurrence as an MLP.
+
+**The hidden state's width is $d_h$, not $d_1$.** Block 2's $d_l$ indexes a layer inside a chain,
+where $d_0$ is the input and $d_L$ the output and every intermediate number names a different
+matrix. The hidden state is not that: it is **one** object of **one** width, applied $T$ times, and
+writing it $d_1$ would hand the reader the exact misreading the block spends lesson 1 dismantling —
+that position $t$ is layer $t$. $d_h$ says instead which vector it measures, which is what
+$\mathbf{W}_{hh}$ and $\mathbf{W}_{xh}$ already do one row up. So
+$\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ and
+$\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$, and the recurrence's parameter count
+$d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h$ can be written without $T$ appearing in it —
+which is the whole claim of Block 3 lesson 2, on the vanilla RNN.
+
+**The biases carry a role subscript, not a layer superscript.** $\mathbf{b}^{(l)}$ is Block 2's
+spelling and its superscript is a layer index; an RNN has no layers to index, and the two biases it
+does have are told apart by *which* product they are added to. That is the distinction
+$\mathbf{W}_{hh}$/$\mathbf{W}_{hy}$ already makes, so $\mathbf{b}_h$ rides with the recurrence and
+$\mathbf{b}_y$ with the output. Note that a bare $\mathbf{b}$ is then free for a lesson carrying
+only one of them.
+
+**$\mathbf{h}_0$ is fixed at $\mathbf{0}$ and the course says so.** The recurrence reads
+$\mathbf{h}_{t-1}$, so at $t = 1$ it reads something that no step produced, and leaving that
+implicit is what makes a first step look like a special case with its own rule. It is not one:
+$\mathbf{h}_0 = \mathbf{0}$ makes $\mathbf{h}_1 = \tanh(\mathbf{W}_{xh}\mathbf{x}_1 + \mathbf{b}_h)$
+fall out of the same line as every other step. The zero is a choice rather than a necessity — it
+could be learned — and the lesson that writes it says which it is.
 
 ### Block 4 — El Puente hacia la Atención
 

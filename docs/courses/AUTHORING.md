@@ -491,6 +491,13 @@ Spanish typography, since this is Spanish prose and half of it differs from Engl
   English.
 - **Numbers in prose take the decimal comma and a space for thousands**: `1,5`, `30 000`. Inside
   `$…$` the decimal point stays — `C/3.5` is maths, and maths is set the way NOTATION.md says.
+  **The carve-out is a number the prose is *reporting*,** which keeps the comma even inside a `$…$`
+  wrapper, and takes `\,` for the thousands the way prose takes a space: `$0{,}500$` de acierto,
+  una columna que se mueve `$2{,}4$` unidades, `$29\,312$` pesos. The fences are there to set the
+  digits, not because the number belongs to an expression, and a result quoted mid-sentence is read
+  aloud in Spanish. The test is whether an operator or a symbol is standing next to it. This is
+  what every lesson from Block 2 on already does — the rule went in after them, which is why it
+  reads as an exception rather than as the main case it actually is.
 - **Quotes are `«…»`.** Never `"…"`.
 - **A display equation is part of its sentence and carries that sentence's punctuation.** A `$$…$$`
   block is not a picture dropped between two paragraphs — it is a clause, and it is read aloud as
