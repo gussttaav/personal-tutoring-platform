@@ -513,6 +513,8 @@ is what the reader is told at the end, and a lesson using both says so once.
 | $\mathbf{h}_t$ | hidden state at step $t$ |
 | $d_h$ | width of the hidden state — how many coordinates $\mathbf{h}_t$ has |
 | $\mathbf{h}_0 = \mathbf{0}$ | the state the recurrence starts from, before any token has been read |
+| $\mathbf{p}_t$ | the recurrence pre-activation, $\mathbf{h}_t = \tanh(\mathbf{p}_t)$ — the argument of the $\tanh$ |
+| $\boldsymbol{\delta}_t$ | the error of step $t$: $\nabla_{\mathbf{p}_t}\ell$, the time-analogue of Block 2's $\boldsymbol{\delta}^{(l)}$ |
 | $\mathbf{c}_t$ | LSTM cell state |
 | $\mathbf{W}_{hh}$, $\mathbf{W}_{xh}$, $\mathbf{W}_{hy}$ | recurrent, input and output weights |
 | $\mathbf{b}_h$, $\mathbf{b}_y$ | the recurrence bias and the output bias — subscripted by role, like the matrices above |
@@ -574,6 +576,24 @@ implicit is what makes a first step look like a special case with its own rule. 
 $\mathbf{h}_0 = \mathbf{0}$ makes $\mathbf{h}_1 = \tanh(\mathbf{W}_{xh}\mathbf{x}_1 + \mathbf{b}_h)$
 fall out of the same line as every other step. The zero is a choice rather than a necessity — it
 could be learned — and the lesson that writes it says which it is.
+
+**$\mathbf{p}_t$ is the pre-activation and $\boldsymbol{\delta}_t = \nabla_{\mathbf{p}_t}\ell$ its
+error — the recurrence's $\mathbf{z}^{(l)}$ and $\boldsymbol{\delta}^{(l)}$.** Block 3 lesson 3, on
+BPTT, needs both: a name for the argument of the $\tanh$ that lesson 2 left unwritten, and a name for
+the gradient the backward pass carries from one step to the previous. Neither of Block 2's spellings
+survives the move. $\mathbf{z}^{(l)}$ is out because $\mathbf{z}_t$ is already the GRU update gate two
+rows up — the same subscript, a different object, in the same block — so the pre-activation takes
+$\mathbf{p}_t$, for *preactivación*, which collides with nothing. $\mathbf{a}_t$, the other obvious
+letter, is worse than free: Block 2 lesson 1 spent $a$ on a neuron's **activation**, the post-$\varphi$
+value, so a bold $\mathbf{a}_t$ meaning the pre-activation would invert a letter the course already
+fixed. The error, by contrast, keeps its name on purpose. $\boldsymbol{\delta}_t$ is Block 2's
+$\boldsymbol{\delta}^{(l)}$ with a step of the time in place of a layer — the same quantity at the same
+place in the graph, built on the one-example $\ell$ and not $\mathcal{L}$ the way Block 2's is, so
+that BPTT reads as the sum over $t$ of the per-layer gradient rather than a new object. Calling it anything else would tell the
+reader the two are different when the whole of the lesson is that they are one. It is a `\boldsymbol`
+for the reason Block 2's is — `\mathbf` does not embolden Greek in KaTeX — and it trips the `bold`
+lint the same way: one warning, in the lessons that derive BPTT, on a line that is deliberately
+correct.
 
 ### Block 4 — El Puente hacia la Atención
 
