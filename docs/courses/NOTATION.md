@@ -521,6 +521,8 @@ is what the reader is told at the end, and a lesson using both says so once.
 | $\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ | LSTM forget, input and output gates |
 | $\mathbf{r}_t$, $\mathbf{z}_t$ | GRU reset and update gates |
 | $\odot$ | element-wise (Hadamard) product |
+| $\rho(\mathbf{W}_{hh})$ | spectral radius — the largest of the moduli of the eigenvalues |
+| $\sigma_{\max}$ | largest singular value (the operator 2-norm) — the most a matrix can stretch a vector |
 
 **$\mathbf{x}_t$ is one token's vector, and Block 2's $\mathbf{x}$ is one example's input.** The two
 are not in conflict and the block keeps both: what changes in Block 3 is that an example is now a
@@ -594,6 +596,21 @@ reader the two are different when the whole of the lesson is that they are one. 
 for the reason Block 2's is — `\mathbf` does not embolden Greek in KaTeX — and it trips the `bold`
 lint the same way: one warning, in the lessons that derive BPTT, on a line that is deliberately
 correct.
+
+**$\rho$ and $\sigma_{\max}$ size a repeated product, and Block 3 lesson 4, on the vanishing
+gradient, needs both.** The backward pass multiplies by $\mathbf{W}_{hh}^{\top}$ once per step, so the
+error at a distance $d$ carries that matrix applied $d$ times, and how it grows is a fact about the
+matrix, not the sequence. $\sigma_{\max}$, the largest singular value, bounds a **single** step —
+$\lVert \mathbf{W}\mathbf{v} \rVert \le \sigma_{\max}\lVert \mathbf{v} \rVert$ — so the product is at
+most $\sigma_{\max}^{d}$; $\rho(\mathbf{W}_{hh})$, the spectral radius, is the **long-run** rate,
+$\left\lVert \mathbf{W}^{d} \right\rVert^{1/d} \to \rho$, so $\rho < 1$ is what decides the vanishing
+and $\rho > 1$ the explosion. Neither eigenvalues nor singular values are course prerequisites — those
+are the matrix product, not its spectrum — so the lesson **defines each in a clause** where it first
+uses it, and the `vanishing-gradient` explorable puts $\rho$ on a slider. $\sigma_{\max}$ does reuse the
+$\sigma$ that §4 reserves for the logistic sigmoid, and is kept for the reason $\mathbf{c}$ is shared
+with Block 4: it is the notation the literature uses, and the two never collide on the page — the
+sigmoid is always $\sigma(\cdot)$ applied to an argument, while $\sigma_{\max}$ is a subscripted scalar
+property of a matrix, applied to nothing.
 
 ### Block 4 — El Puente hacia la Atención
 

@@ -45,7 +45,7 @@ here; STATUS stays phase-level.
 - [x] 1. `por-que-falla-el-mlp`
 - [x] 2. `la-rnn-vanilla`
 - [x] 3. `bptt`
-- [ ] 4. `gradiente-desvanecido`
+- [x] 4. `gradiente-desvanecido`
 - [ ] 5. `lstm`
 - [ ] 6. `gru`
 - [ ] 7. `proyecto-char-lm`
