@@ -47,7 +47,7 @@ here; STATUS stays phase-level.
 - [x] 3. `bptt`
 - [x] 4. `gradiente-desvanecido`
 - [x] 5. `lstm`
-- [ ] 6. `gru`
+- [x] 6. `gru`
 - [ ] 7. `proyecto-char-lm`
 - [ ] 8. `seq2seq`
 

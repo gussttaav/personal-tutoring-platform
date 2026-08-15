@@ -571,9 +571,11 @@ plain. Never italicise the Spanish terms.
 | one case shown to the network, and the answer wanted for it | `ejemplo`, `etiqueta` | muestra, dato, caso; *sample*, *label*, *target* |
 | the place an element holds in an ordered sequence | posición | puesto, rango, ranking |
 | an LSTM/GRU gate — a coordinate-wise multiplier in $(0,1)$ | compuerta | *gate*, puerta, válvula |
+| the three LSTM gates $\mathbf{f}_t$ / $\mathbf{i}_t$ / $\mathbf{o}_t$ | compuerta de olvido / de entrada / de salida | *forget / input / output gate* |
+| the two GRU gates $\mathbf{z}_t$ / $\mathbf{r}_t$ | compuerta de actualización / de reset | *update / reset gate*; reset kept untranslated (standard in Spanish ML), never «de reinicio», and as part of the term name it is not italicised |
 | the LSTM's second state, the memory the gates guard | estado de celda | *cell state*, celda, memoria de celda |
-| $\tilde{\mathbf{c}}_t$ — the vector a step proposes to write to the cell | candidato | *candidate*, propuesta |
-| the cell's summing route from one step to the next | vía aditiva | camino aditivo, *additive path* |
+| the vector a step proposes to write — to the cell in the LSTM ($\tilde{\mathbf{c}}_t$), to the state in the GRU ($\tilde{\mathbf{h}}_t$) | candidato | *candidate*, propuesta |
+| the summing route the memory takes from one step to the next — the LSTM cell, or the GRU's convex combination on the state | vía aditiva | camino aditivo, *additive path* |
 | $\boldsymbol{\delta}^{(l)}$ — what the loss owes a layer's pre-activation | `error` (de la capa, de la neurona) | delta, señal de error, término de error |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using

@@ -522,6 +522,8 @@ is what the reader is told at the end, and a lesson using both says so once.
 | $\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ | LSTM forget, input and output gates |
 | $\mathbf{W}_{x\ast}$, $\mathbf{W}_{h\ast}$, $\mathbf{b}_{\ast}$ | the input weights, recurrent weights and bias of piece $\ast \in \{f, i, o, c\}$ — eight matrices and four biases, each shaped like the RNN's |
 | $\mathbf{r}_t$, $\mathbf{z}_t$ | GRU reset and update gates |
+| $\tilde{\mathbf{h}}_t$ | GRU candidate — what step $t$ proposes to write to the state, a $\tanh$ over $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ |
+| $\mathbf{W}_{x\ast}$, $\mathbf{W}_{h\ast}$, $\mathbf{b}_{\ast}$, $\ast \in \{z, r\}$ | the two GRU gates' weights, the same role-subscript shapes as the RNN's; the candidate reuses the RNN's own $\mathbf{W}_{xh}$, $\mathbf{W}_{hh}$, $\mathbf{b}_h$ — six matrices and three biases in all |
 | $\odot$ | element-wise (Hadamard) product |
 | $\rho(\mathbf{W}_{hh})$ | spectral radius — the largest of the moduli of the eigenvalues |
 | $\sigma_{\max}$ | largest singular value (the operator 2-norm) — the most a matrix can stretch a vector |
@@ -629,6 +631,22 @@ $\tilde{b}_k$, one block away and never on the same page, so there is no collisi
 cell along the additive path is written $\nabla_{\mathbf{c}_t}\ell$ in full rather than given a symbol
 of its own: a bare superscript would fight §2's layer index, and the lesson uses it too rarely to earn
 a letter.
+
+**The GRU is the vanilla RNN wrapped in two gates, and its candidate is $\tilde{\mathbf{h}}_t$ — a
+state, not a cell.** Block 3 lesson 6, on the GRU, needs a name for what a step proposes to write, and
+unlike the LSTM there is no separate cell to write it into: the proposal is a candidate *hidden state*,
+so it carries an $\mathbf{h}$ under the tilde rather than a $\mathbf{c}$. The tilde does the same job it
+does for $\tilde{\mathbf{c}}_t$ — keeping the proposal distinct from the state itself in
+$\mathbf{h}_t = (1 - \mathbf{z}_t) \odot \mathbf{h}_{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t$ —
+and the two never share a page, so there is no collision with the LSTM's candidate. The two gates take
+the same subscript-by-role weights as everything else in the block,
+$\mathbf{W}_{x\ast}, \mathbf{W}_{h\ast}, \mathbf{b}_{\ast}$ with $\ast \in \{z, r\}$; the candidate, by
+contrast, **reuses the vanilla RNN's own $\mathbf{W}_{xh}, \mathbf{W}_{hh}, \mathbf{b}_h$**, because it
+*is* that recurrence, only reading $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ in place of $\mathbf{h}_{t-1}$.
+So the GRU costs three pieces to the LSTM's four — three quarters of the weights — and the reuse is
+what makes that count exact rather than approximate. The gradient of the state along the direct path is
+written $\nabla_{\mathbf{h}_t}\ell$ in full, like the LSTM's $\nabla_{\mathbf{c}_t}\ell$ and for the
+same reason: too rare to earn a symbol of its own.
 
 ### Block 4 — El Puente hacia la Atención
 
