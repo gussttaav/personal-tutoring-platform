@@ -56,10 +56,10 @@ si la reseña habla bien o mal de la película. Dos respuestas posibles.
 Cada una de esas diez reseñas es un **ejemplo**: un vector que entra, y al lado la respuesta que
 quieres a la salida. Esa respuesta es su **etiqueta**, un número $y$ que aquí vale $1$ si la reseña
 habla bien y $0$ si habla mal. Las diez las ha puesto una persona leyéndolas —no salen de ningún
-cálculo—, y sin ellas no habría forma de decir que una respuesta está equivocada. Entre el punto y
+cálculo—, y sin ellas no habría forma de decir que una respuesta está equivocada. Entre la entrada y
 la respuesta, por ahora, no hay nada.
 
-Lo más corto que se puede poner ahí es una votación. Cada coordenada del vector aporta algo a favor
+Lo más corto que cabe en medio es una votación. Cada coordenada del vector de la reseña aporta algo a favor
 o en contra según lo que valga, y con cuánta fuerza lo aporta lo fija un número asociado a esa
 coordenada. Se suman todas las aportaciones, sale un único número, y ese número se compara con un
 umbral: por encima, una respuesta; por debajo, la otra. Ahí acaba el objeto. No hay nada más.
@@ -89,7 +89,7 @@ superficie.
 ## Qué calcula una neurona
 
 Fijemos la entrada: un vector $\mathbf{x} \in \mathbb{R}^{d}$, columna, como todos los del curso.
-Una **neurona** son dos cosas. Un vector de **pesos** $\mathbf{w} \in \mathbb{R}^{d}$, uno por
+Una **neurona** se compone de dos cosas: un vector de **pesos** $\mathbf{w} \in \mathbb{R}^{d}$, uno por
 coordenada de la entrada, y un escalar $b \in \mathbb{R}$ llamado **sesgo**. Con ellos calcula un
 número,
 
