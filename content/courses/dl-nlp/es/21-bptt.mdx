@@ -198,15 +198,15 @@ y el resultado tiene nombre propio: *backpropagation through time* (BPTT). Lo qu
 él no es enunciarlo, es derivarlo entero y comprobar, casilla por casilla, que sus gradientes son los
 que un sondeo numérico confirma.
 
-Desplegar el bucle deja la red dibujada como una fila de pasos, y sobre esa fila la vuelta se ve de un
-vistazo. La pérdida está al final, colgada del último estado; para llegar a un peso, su influencia
-tiene que volver por donde vino, del último estado al anterior y del anterior al de más atrás, cruzando
-en cada salto la misma $\mathbf{W}_{hh}$. No hay otro camino de vuelta porque no hubo otro de ida.
+Desplegar el bucle deja la red como una fila de pasos, y sobre esa fila la vuelta se recorre a mano. La
+pérdida está al final, colgada del último estado; para llegar a un peso, su influencia tiene que volver
+por donde vino, del último estado al anterior y del anterior al de más atrás, cruzando en cada salto la
+misma $\mathbf{W}_{hh}$. No hay otro camino de vuelta porque no hubo otro de ida.
 
-<Figure
-  src="/courses/dl-nlp/bptt-desplegada.svg"
-  alt="Una fila de cuatro cajas iguales etiquetadas h uno a h cuatro. A la derecha del todo está la pérdida, ele minúscula; de ella sale una flecha verde hacia la izquierda, rotulada W hache y griega transpuesta, que entra en la cuarta caja. Entre cada caja y la de su izquierda hay otra flecha verde apuntando a la izquierda, y las tres llevan el mismo rótulo, W hache hache transpuesta. De la parte de abajo de cada una de las cuatro cajas baja una flecha gris a una misma barra horizontal, dentro de la cual está escrito el gradiente de W hache hache respecto de la pérdida. Las cuatro flechas entran en la misma barra."
-  caption="El error vuelve por la fila cruzando siempre la misma matriz recurrente, y cada posición deja su aportación en el mismo sitio: el gradiente del peso compartido es la suma de las cuatro, una por paso."
+<Explorable
+  id="rnn-unrolled"
+  direction="backward"
+  caption="Avanza paso a paso hacia atrás: cada paso deja su aporte en el mismo acumulador de forma d_h por d_h. Sube T y comprueba que se suman más términos sin que cambie la forma del gradiente; en el último paso el aporte al gradiente de Whh es cero porque h0 es cero, y al cambiar el acumulador a Wxh verás que el suyo no lo es."
 />
 
 <Callout type="intuition" title="La idea en una frase">

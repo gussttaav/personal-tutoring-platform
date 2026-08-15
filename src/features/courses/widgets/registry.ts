@@ -34,4 +34,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "gradient-descent-2d": dynamic(() => import("./nn/GradientDescent2D"), { ssr: false }),
   "backprop-trace": dynamic(() => import("./nn/BackpropTrace"), { ssr: false }),
   "loss-landscape": dynamic(() => import("./nn/LossLandscape"), { ssr: false }),
+  // COURSE-P5-03 — Block 3 (RNN) explorable, used by lessons 2 and 3.
+  "rnn-unrolled": dynamic(() => import("./nn/RnnUnrolled"), { ssr: false }),
 };

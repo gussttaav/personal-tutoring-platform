@@ -168,18 +168,21 @@ que todo el mundo llama *vanilla*— cabe en dos matrices y un bucle. Lo difíci
 funciona, que son dos líneas, sino por qué algo tan corto consigue lo que la red grande no conseguía.
 La respuesta está entera en una renuncia: esta red no mira la frase, la recorre.
 
-Aquí la tienes dibujada, y así es como te la vas a encontrar en cualquier libro que la trate.
+Recórrela antes de seguir. En el explorable de abajo, cada avance aplica el mismo paso a una posición
+más: las dos matrices son siempre las mismas y sólo cambia el estado que entra por la izquierda. Así es,
+además, como la vas a encontrar dibujada en cualquier libro que la trate.
 
-<Figure
-  src="/courses/dl-nlp/rnn-desplegada.svg"
-  alt="Cuatro cajas iguales en fila, etiquetadas h uno, h dos, h tres y h cuatro. Una flecha verde horizontal entra en la primera desde la etiqueta h cero igual a cero, y sigue después de cada caja a la siguiente; encima de las cuatro flechas se repite siempre el mismo rótulo, W hache hache. Debajo de la fila hay cuatro etiquetas, x uno, x dos, x tres y x cuatro, y de cada una sube una flecha gris a la caja que tiene encima; junto a las cuatro se repite siempre el mismo rótulo, W equis hache. Ninguna caja lleva pesos propios."
-  caption="Las cuatro posiciones multiplican por las mismas dos matrices; lo único que distingue a una de otra es la flecha horizontal, que es por donde viaja lo ya leído."
+<Explorable
+  id="rnn-unrolled"
+  direction="forward"
+  lockDirection
+  caption="Avanza posición a posición: comprueba que Whh y Wxh son las mismas en cada paso, y que lo único que cambia de una posición a otra es el estado que entra por la izquierda."
 />
 
-Hay una lectura que ese dibujo invita a hacer y que es falsa: las cuatro cajas no son cuatro capas.
-Son la misma función dibujada cuatro veces, como se dibujarían las cuatro vueltas de un bucle `for`,
-y por eso los rótulos se repiten en lugar de numerarse. Una red de cuatro capas tendría cuatro juegos
-de pesos; ésta tiene uno.
+Hay una lectura que esa secuencia invita a hacer y que es falsa: las cajas no son capas distintas. Son la
+misma función dibujada una vez por posición, como se dibujarían las vueltas de un bucle `for`, y por
+eso los rótulos se repiten en lugar de numerarse. Una red con una capa por posición tendría un juego
+de pesos por cada una; ésta tiene uno solo, valga la secuencia lo que valga.
 
 <Callout type="intuition" title="La idea en una frase">
 Una RNN es un bucle: el mismo paso, aplicado a cada posición, arrastrando consigo un vector que

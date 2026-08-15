@@ -23,6 +23,8 @@ export const WIDGET_IDS = [
   "gradient-descent-2d",
   "backprop-trace",
   "loss-landscape",
+  // COURSE-P5-03 — Block 3 (RNN) explorable, used by lessons 2 and 3.
+  "rnn-unrolled",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
