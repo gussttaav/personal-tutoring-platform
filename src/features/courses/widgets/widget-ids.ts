@@ -25,6 +25,8 @@ export const WIDGET_IDS = [
   "loss-landscape",
   // COURSE-P5-03 — Block 3 (RNN) explorable, used by lessons 2 and 3.
   "rnn-unrolled",
+  // COURSE-P5-03 — Block 3 (RNN) lesson 4 (gradiente desvanecido).
+  "vanishing-gradient",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
