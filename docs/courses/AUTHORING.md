@@ -570,6 +570,10 @@ plain. Never italicise the Spanish terms.
 | an element of the vocabulary $V$ | `entrada del vocabulario`, then `entrada` | palabra, término |
 | one case shown to the network, and the answer wanted for it | `ejemplo`, `etiqueta` | muestra, dato, caso; *sample*, *label*, *target* |
 | the place an element holds in an ordered sequence | posición | puesto, rango, ranking |
+| an LSTM/GRU gate — a coordinate-wise multiplier in $(0,1)$ | compuerta | *gate*, puerta, válvula |
+| the LSTM's second state, the memory the gates guard | estado de celda | *cell state*, celda, memoria de celda |
+| $\tilde{\mathbf{c}}_t$ — the vector a step proposes to write to the cell | candidato | *candidate*, propuesta |
+| the cell's summing route from one step to the next | vía aditiva | camino aditivo, *additive path* |
 | $\boldsymbol{\delta}^{(l)}$ — what the loss owes a layer's pre-activation | `error` (de la capa, de la neurona) | delta, señal de error, término de error |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
@@ -839,10 +843,41 @@ hard lint failure:
 
 `sigmoid-explorer` · `tokenizer-playground` · `embedding-projection` · `bag-of-words` ·
 `activation-explorer` · `perceptron-boundary` · `gradient-descent-2d` · `backprop-trace` ·
-`loss-landscape`
+`loss-landscape` · `rnn-unrolled` · `vanishing-gradient` · `lstm-gates`
 
-Blocks 3–5 widgets do not exist yet. Adding one is `widget-ids.ts` + `registry.ts`, and it is a
-separate PR from the lesson that uses it.
+**A widget a lesson calls for is built in the same task as that lesson, not deferred.** When a block
+plan assigns a widget id to a lesson and that id is not yet in `widget-ids.ts`, building it is part of
+authoring the lesson — you do not fall back to a `<Figure>` and leave the widget for later, and you do
+not open a separate PR for it. The lesson and its widget ship together, in one PR, because a lesson
+whose intuition step was designed around an explorable is not the same lesson with a static picture
+bolted on: the widget is load-bearing, and splitting it out means the lesson is reviewed without the
+thing it was built around. (This reverses the earlier rule that deferred Block 3–5 widgets to their
+own PRs. It cost `lstm-gates` a lesson that shipped with a figure standing in for the widget, then a
+retrofit — the usual price of deferring the step nothing forces.)
+
+Building a widget is three files plus its wiring, and the maths is the part that gets tested:
+
+- **`widget-ids.ts`** — add the id (a tagged comment says which lesson[s] use it). An id not on this
+  list is a hard lint failure, so this is also what lets the lesson's `<Explorable>` resolve.
+- **`registry.ts`** — map the id to a `dynamic(() => import(…), { ssr: false })` entry. The
+  `Record<WidgetId, …>` type makes a missing entry a compile error; `__tests__/registry.test.ts`
+  checks it at runtime too.
+- **`math/<name>.ts`** — the widget's numbers as a **pure, DOM-free function**, so they can be
+  unit-tested without a browser. This is not optional: the teaching claim rests on those numbers, and
+  a widget that quotes a figure the prose also quotes must agree with it. Put a `math/__tests__/
+  <name>.test.ts` beside it that verifies the maths two independent ways — exact hand/limit cases and
+  reference values matching what the lesson's prose or code cell quotes (see `math/lstm.ts` and its
+  test for the pattern: saturation limits at `d_h = 1`, plus the preset's survival numbers the lesson
+  reports).
+- **`nn/<Name>.tsx`** (or `nlp/`, `activations/`) — the component. `"use client"`, local state only,
+  keyboard-operable (a native `<Slider>`, arrow-key stepping), and it reads every colour from the CSS
+  tokens (`var(--green)`, `var(--text)`, …) so it themes with the page. It imports the maths; it does
+  not recompute it inline.
+
+The one thing that legitimately stays separate is the div between a widget and a **figure of the same
+object**: they survive together only with separate jobs (§7 above). `lstm-gates` shows the gates
+opening and the memory surviving as `b_f` moves — dynamic behaviour; `lstm-celda.svg` shows the
+data-flow topology — what connects to what. Neither does the other's work, so the lesson carries both.
 
 ## 8. MDX and LaTeX gotchas
 

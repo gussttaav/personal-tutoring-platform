@@ -27,6 +27,8 @@ export const WIDGET_IDS = [
   "rnn-unrolled",
   // COURSE-P5-03 — Block 3 (RNN) lesson 4 (gradiente desvanecido).
   "vanishing-gradient",
+  // COURSE-P5-03 — Block 3 (RNN) lessons 5 and 6 (LSTM, GRU).
+  "lstm-gates",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

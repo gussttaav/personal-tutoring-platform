@@ -516,9 +516,11 @@ is what the reader is told at the end, and a lesson using both says so once.
 | $\mathbf{p}_t$ | the recurrence pre-activation, $\mathbf{h}_t = \tanh(\mathbf{p}_t)$ — the argument of the $\tanh$ |
 | $\boldsymbol{\delta}_t$ | the error of step $t$: $\nabla_{\mathbf{p}_t}\ell$, the time-analogue of Block 2's $\boldsymbol{\delta}^{(l)}$ |
 | $\mathbf{c}_t$ | LSTM cell state |
+| $\tilde{\mathbf{c}}_t$ | LSTM candidate — what step $t$ proposes to write into the cell, a $\tanh$ |
 | $\mathbf{W}_{hh}$, $\mathbf{W}_{xh}$, $\mathbf{W}_{hy}$ | recurrent, input and output weights |
 | $\mathbf{b}_h$, $\mathbf{b}_y$ | the recurrence bias and the output bias — subscripted by role, like the matrices above |
 | $\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ | LSTM forget, input and output gates |
+| $\mathbf{W}_{x\ast}$, $\mathbf{W}_{h\ast}$, $\mathbf{b}_{\ast}$ | the input weights, recurrent weights and bias of piece $\ast \in \{f, i, o, c\}$ — eight matrices and four biases, each shaped like the RNN's |
 | $\mathbf{r}_t$, $\mathbf{z}_t$ | GRU reset and update gates |
 | $\odot$ | element-wise (Hadamard) product |
 | $\rho(\mathbf{W}_{hh})$ | spectral radius — the largest of the moduli of the eigenvalues |
@@ -611,6 +613,22 @@ $\sigma$ that §4 reserves for the logistic sigmoid, and is kept for the reason 
 with Block 4: it is the notation the literature uses, and the two never collide on the page — the
 sigmoid is always $\sigma(\cdot)$ applied to an argument, while $\sigma_{\max}$ is a subscripted scalar
 property of a matrix, applied to nothing.
+
+**The LSTM's four pieces are the RNN recurrence subscripted by role, and $\tilde{\mathbf{c}}_t$ carries
+a tilde so it is not the cell.** Block 3 lesson 5, on the LSTM, needs a name for each of the forget,
+input, output and candidate computations, and each is the vanilla recurrence of lesson 2 with its own
+weights: $\mathbf{W}_{x\ast} \in \mathbb{R}^{d_h \times d_{\text{model}}}$,
+$\mathbf{W}_{h\ast} \in \mathbb{R}^{d_h \times d_h}$ and $\mathbf{b}_{\ast} \in \mathbb{R}^{d_h}$, with
+$\ast$ the gate's own letter. That is the same subscript-by-role convention $\mathbf{W}_{hh}$ and
+$\mathbf{b}_h$ already use two rows up — a subscript naming *which* map, never a position — so the eight
+matrices cost no new idea, only the letters $f$, $i$, $o$, $c$. The candidate reuses $\mathbf{c}$
+because it is a proposed cell value, and the **tilde is what keeps it distinct from $\mathbf{c}_t$
+itself**: $\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t$
+would be unreadable if both wore the same symbol. The tilde is otherwise spent only on GloVe's
+$\tilde{b}_k$, one block away and never on the same page, so there is no collision. The gradient of the
+cell along the additive path is written $\nabla_{\mathbf{c}_t}\ell$ in full rather than given a symbol
+of its own: a bare superscript would fight §2's layer index, and the lesson uses it too rarely to earn
+a letter.
 
 ### Block 4 — El Puente hacia la Atención
 

@@ -38,4 +38,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "rnn-unrolled": dynamic(() => import("./nn/RnnUnrolled"), { ssr: false }),
   // COURSE-P5-03 — Block 3 (RNN) lesson 4 (gradiente desvanecido).
   "vanishing-gradient": dynamic(() => import("./nn/VanishingGradient"), { ssr: false }),
+  // COURSE-P5-03 — Block 3 (RNN) lessons 5 and 6 (LSTM, GRU).
+  "lstm-gates": dynamic(() => import("./nn/LstmGates"), { ssr: false }),
 };

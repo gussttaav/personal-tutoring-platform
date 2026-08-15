@@ -46,7 +46,7 @@ here; STATUS stays phase-level.
 - [x] 2. `la-rnn-vanilla`
 - [x] 3. `bptt`
 - [x] 4. `gradiente-desvanecido`
-- [ ] 5. `lstm`
+- [x] 5. `lstm`
 - [ ] 6. `gru`
 - [ ] 7. `proyecto-char-lm`
 - [ ] 8. `seq2seq`
