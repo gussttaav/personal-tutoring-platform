@@ -527,6 +527,11 @@ is what the reader is told at the end, and a lesson using both says so once.
 | $\odot$ | element-wise (Hadamard) product |
 | $\rho(\mathbf{W}_{hh})$ | spectral radius — the largest of the moduli of the eigenvalues |
 | $\sigma_{\max}$ | largest singular value (the operator 2-norm) — the most a matrix can stretch a vector |
+| $\bar{\mathbf{h}}_j$ | seq2seq encoder state at input position $j$ — the bar marks it as the encoder's, against the decoder's $\mathbf{s}_i$ (Block 3 lesson 8; shared with Block 4) |
+| $\mathbf{s}_i$ | seq2seq decoder state at output position $i$ (Block 3 lesson 8; shared with Block 4) |
+| $\mathbf{c} = \bar{\mathbf{h}}_{T_x}$ | the context vector — the encoder's last state, the one fixed-size summary the decoder sees of the whole input |
+| $T_x$, $T_y$ | source and target sequence lengths in seq2seq; they need not be equal |
+| $\mathbf{W}^{\text{enc}}_{\ast}$, $\mathbf{W}^{\text{dec}}_{\ast}$ | the encoder's and decoder's own recurrence weights — the superscript is a role label (which network), not a layer index |
 
 **$\mathbf{x}_t$ is one token's vector, and Block 2's $\mathbf{x}$ is one example's input.** The two
 are not in conflict and the block keeps both: what changes in Block 3 is that an example is now a
@@ -648,15 +653,29 @@ what makes that count exact rather than approximate. The gradient of the state a
 written $\nabla_{\mathbf{h}_t}\ell$ in full, like the LSTM's $\nabla_{\mathbf{c}_t}\ell$ and for the
 same reason: too rare to earn a symbol of its own.
 
+**Seq2seq is two RNNs, and the context vector is where Block 4 attacks.** Block 3 lesson 8, on
+seq2seq, chains an encoder and a decoder, each the vanilla recurrence of lesson 2 with its own
+weights — hence the role-label superscripts $\mathbf{W}^{\text{enc}}_{\ast}$ and
+$\mathbf{W}^{\text{dec}}_{\ast}$, which name *which network* a weight belongs to and are the one
+superscript in the course that is not a layer index (Block 5's projection labels are the other). The
+encoder's states are $\bar{\mathbf{h}}_j$ and the decoder's are $\mathbf{s}_i$ — the same two symbols
+Block 4 uses, introduced here so its opening inherits them unchanged. The seam between the two is a
+single vector, $\mathbf{c} = \bar{\mathbf{h}}_{T_x}$, and it carries **no subscript on purpose**: it
+is the same summary at every decoder step. Block 4's $\mathbf{c}_i$ is exactly this vector made
+per-step — a different context for each output position — which is what attention adds, so the
+missing subscript here is the whole shape of the problem Block 4 opens with. $T_x$ and $T_y$ are the
+two lengths, distinct because a seq2seq maps a source to a target of its own length; they generalise
+§4's single $T$ and are needed only while two sequences share a page.
+
 ### Block 4 — El Puente hacia la Atención
 
 | Symbol | Meaning |
 |---|---|
-| $\mathbf{s}_i$ | decoder state at output step $i$ |
-| $\bar{\mathbf{h}}_j$ | encoder state at input step $j$ |
+| $\mathbf{s}_i$ | decoder state at output step $i$ (introduced in Block 3 lesson 8) |
+| $\bar{\mathbf{h}}_j$ | encoder state at input step $j$ (introduced in Block 3 lesson 8) |
 | $e_{ij}$ | alignment score between $\mathbf{s}_{i-1}$ and $\bar{\mathbf{h}}_j$ |
 | $\alpha_{ij}$ | attention weight, $\text{softmax}_j(e_{ij})$ |
-| $\mathbf{c}_i$ | context vector, $\sum_j \alpha_{ij} \bar{\mathbf{h}}_j$ |
+| $\mathbf{c}_i$ | context vector, $\sum_j \alpha_{ij} \bar{\mathbf{h}}_j$ — the per-step version of Block 3 lesson 8's single $\mathbf{c}$ |
 
 $\mathbf{c}$ is the context vector here and the LSTM cell state in Block 3. That collision is
 inherited from the literature; Block 4 names it in prose the first time it appears.

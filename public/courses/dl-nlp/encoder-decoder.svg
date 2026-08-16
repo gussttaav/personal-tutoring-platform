@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 150" width="540" height="225" role="img" aria-label="La arquitectura encoder-decoder: dos filas de celdas unidas por un solo vector de contexto.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: none; }
+    /* La vía verde es el único camino por el que pasa todo lo leído: encoder -> c -> decoder. */
+    .cbox { stroke: #4edea3; stroke-width: 1.6; fill: rgba(78,222,163,0.16); }
+    .via { stroke: #4edea3; stroke-width: 1.7; fill: none; }
+    .flujo { stroke: rgba(134,148,138,0.7); stroke-width: 1.3; fill: none; }
+    .est { font-size: 11px; fill: #bbcabf; text-anchor: middle; }
+    .io { font-size: 11.5px; fill: #bbcabf; text-anchor: middle; }
+    .cc { font-size: 15px; fill: #4edea3; text-anchor: middle; }
+    .nota { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+    .sub { font-size: 8px; }
+  </style>
+
+  <defs>
+    <marker id="pv" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
+    <marker id="pg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="rgba(134,148,138,0.7)" />
+    </marker>
+  </defs>
+
+  <!-- La espina horizontal: el estado que corre de celda en celda, y por el medio, c. -->
+  <line class="flujo" x1="42" y1="69" x2="54" y2="69" marker-end="url(#pg)" />
+  <line class="flujo" x1="88" y1="69" x2="100" y2="69" marker-end="url(#pg)" />
+  <line class="via"   x1="134" y1="69" x2="148" y2="69" marker-end="url(#pv)" />
+  <line class="via"   x1="182" y1="69" x2="198" y2="69" marker-end="url(#pv)" />
+  <line class="flujo" x1="232" y1="69" x2="244" y2="69" marker-end="url(#pg)" />
+  <line class="flujo" x1="278" y1="69" x2="290" y2="69" marker-end="url(#pg)" />
+
+  <!-- Encoder: tres celdas que leen la fuente. -->
+  <rect class="caja" x="8"   y="54" width="34" height="30" rx="5" />
+  <rect class="caja" x="54"  y="54" width="34" height="30" rx="5" />
+  <rect class="caja" x="100" y="54" width="34" height="30" rx="5" />
+  <text class="est" x="25"  y="73">h<tspan class="sub" dy="3">1</tspan></text>
+  <text class="est" x="71"  y="73">h<tspan class="sub" dy="3">2</tspan></text>
+  <text class="est" x="117" y="73">h<tspan class="sub" dy="3">Tx</tspan></text>
+
+  <!-- El vector de contexto: un solo vector, el último estado del encoder. -->
+  <rect class="cbox" x="148" y="55" width="34" height="28" rx="5" />
+  <text class="cc" x="165" y="74">c</text>
+  <text class="nota" x="165" y="99">d<tspan class="sub" dy="2">h</tspan> números</text>
+
+  <!-- Decoder: tres celdas que escriben desde c. -->
+  <rect class="caja" x="198" y="54" width="34" height="30" rx="5" />
+  <rect class="caja" x="244" y="54" width="34" height="30" rx="5" />
+  <rect class="caja" x="290" y="54" width="34" height="30" rx="5" />
+  <text class="est" x="215" y="73">s<tspan class="sub" dy="3">1</tspan></text>
+  <text class="est" x="261" y="73">s<tspan class="sub" dy="3">2</tspan></text>
+  <text class="est" x="307" y="73">s<tspan class="sub" dy="3">3</tspan></text>
+
+  <!-- Entradas del encoder: la fuente, por debajo. -->
+  <line class="flujo" x1="25"  y1="112" x2="25"  y2="86" marker-end="url(#pg)" />
+  <line class="flujo" x1="71"  y1="112" x2="71"  y2="86" marker-end="url(#pg)" />
+  <line class="flujo" x1="117" y1="112" x2="117" y2="86" marker-end="url(#pg)" />
+  <text class="io" x="25"  y="123">x<tspan class="sub" dy="3">1</tspan></text>
+  <text class="io" x="71"  y="123">x<tspan class="sub" dy="3">2</tspan></text>
+  <text class="io" x="117" y="123">x<tspan class="sub" dy="3">Tx</tspan></text>
+
+  <!-- Entradas del decoder: arranca con GO y luego lee lo que él mismo escribió. -->
+  <line class="flujo" x1="215" y1="112" x2="215" y2="86" marker-end="url(#pg)" />
+  <line class="flujo" x1="261" y1="112" x2="261" y2="86" marker-end="url(#pg)" />
+  <line class="flujo" x1="307" y1="112" x2="307" y2="86" marker-end="url(#pg)" />
+  <text class="io" x="215" y="123">GO</text>
+  <text class="io" x="261" y="123">y&#770;<tspan class="sub" dy="3">1</tspan></text>
+  <text class="io" x="307" y="123">y&#770;<tspan class="sub" dy="3">2</tspan></text>
+
+  <!-- Salidas del decoder: un carácter por paso, por arriba. -->
+  <line class="flujo" x1="215" y1="54" x2="215" y2="40" marker-end="url(#pg)" />
+  <line class="flujo" x1="261" y1="54" x2="261" y2="40" marker-end="url(#pg)" />
+  <line class="flujo" x1="307" y1="54" x2="307" y2="40" marker-end="url(#pg)" />
+  <text class="io" x="215" y="34">y&#770;<tspan class="sub" dy="3">1</tspan></text>
+  <text class="io" x="261" y="34">y&#770;<tspan class="sub" dy="3">2</tspan></text>
+  <text class="io" x="307" y="34">y&#770;<tspan class="sub" dy="3">3</tspan></text>
+
+  <!-- Los dos lados. -->
+  <text class="nota" x="71"  y="142">encoder</text>
+  <text class="nota" x="261" y="142">decoder</text>
+</svg>

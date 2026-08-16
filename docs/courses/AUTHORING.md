@@ -586,6 +586,9 @@ plain. Never italicise the Spanish terms.
 | un experimento breve corrido en una celda de código, cuyo resultado interpreta el texto que sigue | `experimento` | `sonda` — en español designa un instrumento físico (sonda espacial, sonda médica), no un experimento |
 | desarrollar un argumento o una fórmula algebraica paso a paso hasta un resultado, sin diferenciar nada | `desarrollar`, `desarrollo` | `derivar`, `derivación` — reservados para la derivada de una función |
 | always advancing to the single highest-probability output, deterministically — the alternative to sampling when generating | `voraz`, decodificación voraz (*greedy*) | avara, ávida — «avara» lee como tacaña en español, lo contrario del algoritmo, que siempre toma el máximo |
+| a model that maps a source sequence to a target sequence | `modelo de secuencia a secuencia`, apodo *seq2seq* | *sequence-to-sequence* traducido literalmente |
+| the fixed vector the encoder hands the decoder in a seq2seq | `vector de contexto` | *context vector*; the per-step attention version keeps the same Spanish name |
+| feeding the decoder the true previous token during training, not its own output | *teacher forcing* | any translation — kept in English, and it earns only a brief note (Block 3 lesson 8) |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
 one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
