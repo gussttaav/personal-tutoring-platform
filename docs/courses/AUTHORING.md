@@ -579,6 +579,9 @@ plain. Never italicise the Spanish terms.
 | $\boldsymbol{\delta}^{(l)}$ — what the loss owes a layer's pre-activation | `error` (de la capa, de la neurona) | delta, señal de error, término de error |
 | a network trained to predict what comes next in a text | `modelo de lenguaje` | *language model* |
 | the random draw a model makes from its own output distribution, one step of generating | `muestrear`, `muestreo` (*sampling*) | *samplear* |
+| asignar un valor a una variable, parámetro o símbolo, en prosa | `asignar a` | `poner en` — «poner en $\varphi$» se lee como insertar algo dentro de un contenedor, no como fijar su valor |
+| un experimento breve corrido en una celda de código, cuyo resultado interpreta el texto que sigue | `experimento` | `sonda` — en español designa un instrumento físico (sonda espacial, sonda médica), no un experimento |
+| desarrollar un argumento o una fórmula algebraica paso a paso hasta un resultado, sin diferenciar nada | `desarrollar`, `desarrollo` | `derivar`, `derivación` — reservados para la derivada de una función |
 | always advancing to the single highest-probability output, deterministically — the alternative to sampling when generating | `voraz`, decodificación voraz (*greedy*) | avara, ávida — «avara» lee como tacaña en español, lo contrario del algoritmo, que siempre toma el máximo |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
@@ -704,6 +707,30 @@ lesson 7, on Word2Vec, already spends `muestreo` inside a **fixed compound**, «
 (*negative sampling*): a specific technique for avoiding a full-vocabulary softmax, not the generic
 verb. The two never share a page, but a lesson that needed both would write the compound in full and
 never shorten it to bare `muestreo`, the same rule this section already gives *error cuadrático medio*.
+
+`asignar a`, not `poner en`, for the moment a symbol or variable is given its value. «Poner en
+$\varphi$» reads like placing an object inside a container, not fixing what $\varphi$ equals — an
+audit of Blocks 1–3 found the confusion in six lessons, not only as that literal phrase but one
+level down: a code cell that «pone un cero en $\boldsymbol{\delta}$» or «pone la etiqueta $1$ en
+los ejemplos» is doing the same assignment and deserves the same verb. `asignar a` says exactly
+what happens — the symbol receives a value — and nothing is being inserted anywhere.
+
+`experimento`, not `sonda`. Two Block 2 lessons used «sonda» for a short check run in a `<PyCell>`
+whose result the prose interprets in the next sentence, and it reads as the physical instrument —
+a space probe, a medical probe — because that is the only thing «sonda» means in Spanish outside
+this course. Not to be confused with `sondeo`/`sondeo numérico` (a finite-difference gradient
+check, e.g. `16-backpropagation.mdx`, `21-bptt.mdx`), which is a different, correct word and stays.
+
+`desarrollar`/`desarrollo`, not `derivar`/`derivación`, for working an algebraic argument step by
+step to a result — absorbing a bias into a ratio, proving a transpose identity, building the
+reasoning behind a formula — when nothing is being differentiated. The collision is real, not
+cosmetic: from Block 2 on, `derivar` names the calculus operation more than 200 times (the chain
+rule, backpropagation, gradient descent all lean on it), so reusing the same verb for "work out a
+formula" tells the reader nothing about which is meant until the next sentence resolves it. Two
+existing uses are a *different* sense again and are correct as written, not candidates for
+`desarrollar`: `derivarse de` («se deriva de», "to stem from" — `02-tokenizacion.mdx`, the
+trade-off that follows from counting characters) and `derivación` as the linguistic term for
+word-formation (`02-tokenizacion.mdx`'s «niñez, aniñado»).
 
 #### Acronyms
 

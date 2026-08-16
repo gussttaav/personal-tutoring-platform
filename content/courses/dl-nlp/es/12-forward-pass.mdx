@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'De que $\mathbf{W}^{(l)}$ no suele ser cuadrada. Cuando $d_l = d_{l-1}$ la transpuesta se puede quitar y el resultado no cambia.' }
       - { id: d, text: 'De que hay que sumar sobre los $B$ ejemplos, y la transpuesta es lo que hace desaparecer ese índice del resultado.' }
     answer: a
-    explanation: 'La (a) es la derivación entera en una frase: $\left(\mathbf{W}\mathbf{h}\right)^{\top} = \mathbf{h}^{\top}\mathbf{W}^{\top}$, y apilar esas filas para $i = 1, \dots, B$ es exactamente el producto de la izquierda. La (b) confunde rendimiento con álgebra: el orden en memoria decide lo que tarda un producto, no cuál es. La (c) es falsa aunque las formas cuadren, porque $\mathbf{W}$ y $\mathbf{W}^{\top}$ son matrices distintas salvo que la matriz sea simétrica: sin transponer, cada neurona leería una columna que no contiene sus pesos. Y la (d) invierte lo que pasa: $B$ no desaparece —sobrevive como el número de filas de $\mathbf{Z}^{(l)}$—, y la dimensión que sí desaparece es $d_{l-1}$, la única que comparten los dos factores.'
+    explanation: 'La (a) es la justificación entera en una frase: $\left(\mathbf{W}\mathbf{h}\right)^{\top} = \mathbf{h}^{\top}\mathbf{W}^{\top}$, y apilar esas filas para $i = 1, \dots, B$ es exactamente el producto de la izquierda. La (b) confunde rendimiento con álgebra: el orden en memoria decide lo que tarda un producto, no cuál es. La (c) es falsa aunque las formas cuadren, porque $\mathbf{W}$ y $\mathbf{W}^{\top}$ son matrices distintas salvo que la matriz sea simétrica: sin transponer, cada neurona leería una columna que no contiene sus pesos. Y la (d) invierte lo que pasa: $B$ no desaparece —sobrevive como el número de filas de $\mathbf{Z}^{(l)}$—, y la dimensión que sí desaparece es $d_{l-1}$, la única que comparten los dos factores.'
   - id: q-broadcast
     type: predict-output
     prompt: 'Esta es la capa de la lección sobre un batch de tres ejemplos. ¿Qué imprime?'
@@ -148,7 +148,7 @@ La red de la lección anterior, sobre XOR y las capas ocultas, quedó completa y
 Completa porque no le falta ninguna pieza: neuronas agrupadas en capas, cada una con sus pesos y su
 sesgo, y una $\varphi$ en medio que impide que apilarlas se contraiga en una neurona
 sola. Sin escribir porque allí cada preactivación se calculó por separado, y una colección de
-cuentas sueltas no es una fórmula: no se deriva sobre ella y no se programa. El recorrido que va de
+cuentas sueltas no es una fórmula: no se desarrolla sobre ella y no se programa. El recorrido que va de
 la entrada hasta la salida tiene un nombre —el *forward pass*— y tiene una forma en la que se
 escribe siempre. Esta lección es esa forma.
 
@@ -372,7 +372,7 @@ operaciones —hace
 exactamente las mismas—, sino que las $4\,096$ vueltas del bucle las da Python una a una, mientras
 el producto las da dentro de una rutina compilada sin volver a pasar por el intérprete.
 
-Las dos últimas sondas son las dos trampas de forma. `X @ W` no existe, y NumPy lo dice nombrando
+Los dos últimos experimentos son las dos trampas de forma. `X @ W` no existe, y NumPy lo dice nombrando
 las dos dimensiones que no encajan; y la diferencia entre $\mathbf{Z}$ y el producto sin sesgo es
 la misma terna $-0{,}761$, $3{,}221$, $0{,}221$ en la fila $0$ y en la fila $127$, que es
 $\mathbf{1}_B\mathbf{b}^{\top}$ hecho visible.

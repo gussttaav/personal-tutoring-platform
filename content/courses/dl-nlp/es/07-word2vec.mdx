@@ -49,7 +49,7 @@ quiz:
     type: boolean
     prompt: 'Sacar los negativos de $P_{\text{neg}}(w) \propto f_w^{3/4}$, en lugar de hacerlo de la frecuencia $f_w$ tal cual, hace que las entradas raras aparezcan como negativas más a menudo de lo que les tocaría por frecuencia.'
     answer: true
-    explanation: 'El exponente $3/4$ está entre $0$ y $1$, así que comprime las diferencias: entre un tipo que sale 1 000 veces y otro que sale 10, la razón de frecuencias es 100 y la de $f_w^{3/4}$ es $177{,}8 / 5{,}6 \approx 31{,}6$. Los dos extremos dicen por qué se elige ahí: con exponente $1$ los negativos serían casi siempre <W>de</W>, <W>la</W> y <W>que</W>, contra los que no cuesta nada acertar; con exponente $0$ serían uniformes, y la mayoría caerían en entradas tan raras que el modelo no aprende nada distinguiéndolas. El $3/4$ no sale de ninguna derivación: es el valor que funcionó.'
+    explanation: 'El exponente $3/4$ está entre $0$ y $1$, así que comprime las diferencias: entre un tipo que sale 1 000 veces y otro que sale 10, la razón de frecuencias es 100 y la de $f_w^{3/4}$ es $177{,}8 / 5{,}6 \approx 31{,}6$. Los dos extremos dicen por qué se elige ahí: con exponente $1$ los negativos serían casi siempre <W>de</W>, <W>la</W> y <W>que</W>, contra los que no cuesta nada acertar; con exponente $0$ serían uniformes, y la mayoría caerían en entradas tan raras que el modelo no aprende nada distinguiéndolas. El $3/4$ no se deduce de la teoría: es simplemente el valor que funcionó.'
 challenges: []
 ---
 
@@ -216,7 +216,7 @@ $$
 con $f_w$ la frecuencia del tipo $w$ en el corpus. El exponente $3/4$ cae entre los dos extremos
 malos: con $1$ los negativos serían casi siempre las palabras vacías de la lección 5, la de la bolsa
 de palabras; con $0$, entradas rarísimas. Contra ninguna de las dos cuesta acertar. Comprime la
-distribución sin aplanarla, y no hay derivación detrás: es el valor que funcionó.
+distribución sin aplanarla, y no hay un desarrollo detrás: es el valor que funcionó.
 
 Ahora la cuenta, el motivo de todo esto. Un paso toca el centro, el contexto real y los
 $n_{\text{neg}}$ negativos, un producto escalar por vector:
@@ -383,7 +383,7 @@ aprendido.
 
 Pon `n_neg = 0` y ejecuta otra vez. La pérdida se desploma hasta $0{,}02$ —sin negativos, decir que
 sí a todo es perfecto— y los vecinos se vuelven basura: <W>perro</W> con <W>en</W> y con <W>el</W>,
-todo cerca de todo. Los negativos no eran solo el ahorro de la derivación: sin algo contra lo que
+todo cerca de todo. Los negativos no eran solo el ahorro del desarrollo: sin algo contra lo que
 empujar, la pérdida baja y la representación no existe.
 
 ## Comprueba tu intuición

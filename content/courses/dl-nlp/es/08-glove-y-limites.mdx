@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'El conteo crudo $X_{ik}$, sin logaritmo: el logaritmo aparece después, al normalizar los vectores.' }
       - { id: d, text: 'La probabilidad $P(c \mid w)$ del contexto dado el centro, igual que el skip-gram, pero calculada sobre la tabla en vez de sobre ventanas.' }
     answer: a
-    explanation: 'La razón (b) es de dónde sale la derivación, y es justo lo que la derivación consigue quitar de en medio: absorber $\log X_i$ en el sesgo $b_i$ convierte una condición sobre ternas $(i, j, k)$ en una ecuación por **par**, y eso baja el número de ecuaciones de $\lvert V \rvert^{3}$ a $\lvert V \rvert^{2}$ —de las cuales solo se usan las no nulas. (c) invierte el orden: el logaritmo está ahí desde que se toman logaritmos en $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, y sin él la igualdad no sería lineal en los vectores. (d) es la lección anterior; GloVe no calcula ninguna probabilidad condicionada durante el ajuste.'
+    explanation: 'La razón (b) es de dónde sale la transformación, y es justo lo que esta transformación consigue quitar de en medio: absorber $\log X_i$ en el sesgo $b_i$ convierte una condición sobre ternas $(i, j, k)$ en una ecuación por **par**, y eso baja el número de ecuaciones de $\lvert V \rvert^{3}$ a $\lvert V \rvert^{2}$ —de las cuales solo se usan las no nulas. (c) invierte el orden: el logaritmo está ahí desde que se toman logaritmos en $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, y sin él la igualdad no sería lineal en los vectores. (d) es la lección anterior; GloVe no calcula ninguna probabilidad condicionada durante el ajuste.'
   - id: q-peso
     type: multi
     prompt: 'Sobre la suma $\mathcal{L} = \sum g(X_{ik})(\dots)^2$, marca todo lo que sea cierto.'
@@ -305,7 +305,7 @@ T = sum(len(d) for d in docs)
 print("T =", T, "tokens |", len(V), "entradas |", int((X > 0).sum()), "celdas no nulas de", X.size)
 print()
 
-# La razón de la derivación, medida aquí: P(k|i) = X_ik / X_i.
+# La razón del desarrollo, medida aquí: P(k|i) = X_ik / X_i.
 X_i = X.sum(axis=1)
 print("k          P(k|hipoteca)  P(k|estanque)   razón")
 for k in ["cliente", "niña", "banco", "en"]:

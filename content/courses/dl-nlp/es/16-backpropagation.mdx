@@ -528,7 +528,7 @@ print("forward pass gastados en el sondeo: %d.  Por backpropagation: 1." % llama
 
 Los ceros son ReLU trabajando, y hay dos. La cuarta neurona de la primera capa oculta tiene
 $z^{(1)}_4 = -1$ y la segunda de la segunda tiene $z^{(2)}_2 = -1$: las dos están apagadas para esta
-reseña y las dos ponen un cero en su $\boldsymbol{\delta}$. Ese cero se ve dos veces en
+reseña y las dos asignan un cero a su $\boldsymbol{\delta}$. Ese cero se ve dos veces en
 $\nabla_{\mathbf{W}^{(2)}}\ell$, y por motivos distintos. Su segunda fila es nula porque
 $\delta^{(2)}_2 = 0$, o sea que ninguno de los cuatro pesos de esa neurona se corrige; su cuarta
 columna es nula porque $h^{(1)}_4 = 0$, o sea que la entrada que esos pesos leen no aporta nada.

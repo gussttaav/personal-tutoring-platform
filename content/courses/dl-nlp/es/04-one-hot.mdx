@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'Al no afirmar parecidos falsos, el modelo generaliza mejor de una palabra a otra.' }
       - { id: d, text: 'Recupera la totalidad sin ayuda: ya no hace falta la entrada <W>\<UNK></W>.' }
     answer: [a, b]
-    explanation: 'Las dos mejoras son reales. (a) es la derivación central: todas las distancias entre pares valen $\sqrt{2}$, así que la geometría no dice nada, que era lo que se pedía. (b) es la observación que la lección 1 te dijo que guardaras: allí, añadir <W>agua</W> renumeraba palabras que no tenían nada que ver; aquí solo añade un eje. (c) es la trampa de esta lección y va justo al revés: como no hay parecidos, tampoco hay nada que transferir de <W>gato</W> a <W>gata</W>. Y (d) es falso: la totalidad la sigue dando <W>\<UNK></W>, de la lección 3, sobre vocabulario y palabras fuera de vocabulario, porque un eje solo existe para las entradas que ya están en $V$.'
+    explanation: 'Las dos mejoras son reales. (a) es la deducción principal: todas las distancias entre pares valen $\sqrt{2}$, así que la geometría no dice nada, que era lo que se pedía. (b) es la observación que la lección 1 te dijo que guardaras: allí, añadir <W>agua</W> renumeraba palabras que no tenían nada que ver; aquí solo añade un eje. (c) es la trampa de esta lección y va justo al revés: como no hay parecidos, tampoco hay nada que transferir de <W>gato</W> a <W>gata</W>. Y (d) es falso: la totalidad la sigue dando <W>\<UNK></W>, de la lección 3, sobre vocabulario y palabras fuera de vocabulario, porque un eje solo existe para las entradas que ya están en $V$.'
   - id: q-coste
     type: single
     prompt: 'Con $\lvert V \rvert = 50\,000$, ¿cuántos números tendría la tabla que guarda $r$ explícitamente, una fila por entrada del vocabulario?'
@@ -218,7 +218,7 @@ Dicho así suena a condena general, y no lo es. Los modelos trabajan con entrada
 y aprenden de todos modos, porque en esas entradas hay vecindad: dos fotografías que difieren en un
 píxel son parecidas, lo aprendido sobre una vale para la otra, y por eso una fracción minúscula del
 espacio alcanza. Ese es el argumento que salva a cualquier representación de dimensión alta, y es el
-que el one-hot no puede usar. La equidistancia derivada arriba dice, con otras palabras, que aquí no
+que el one-hot no puede usar. La equidistancia desarrollada arriba dice, con otras palabras, que aquí no
 hay vecinos: la ventana <W>el niño juega en la plaza</W> y la ventana <W>la niña juega en la
 plaza</W> están a la misma distancia entre sí que de cualquier otra.
 
@@ -296,7 +296,7 @@ $\lvert V \rvert$ no entra en esa cuenta.
 
 ## Comprueba tu intuición
 
-Cuatro preguntas sobre lo que acabas de derivar: cuánto mide la distancia entre dos palabras, qué
+Cuatro preguntas sobre lo que acabas de obtener: cuánto mide la distancia entre dos palabras, qué
 arregla el one-hot respecto de la lección 1, qué cuesta la tabla y qué pasa con dos palabras que se
 parecen.
 

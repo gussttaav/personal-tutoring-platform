@@ -220,7 +220,7 @@ que valen mucho.
 ## Vectores densos en NumPy: la búsqueda, el coseno y los vecinos
 
 La celda monta una matriz $\mathbf{E}$ de ocho entradas en español con $d_{\text{model}} = 4$ y
-comprueba sobre ella lo que acabas de derivar. Sus números los he puesto yo a mano —con 50 000
+comprueba sobre ella lo que acabas de desarrollar. Sus números los he puesto yo a mano —con 50 000
 entradas sería imposible, y ese es el problema abierto—, y a esta escala sirven para ver la mecánica.
 Ejecútala y mira tres cosas: que el producto por el one-hot devuelve la fila, qué aspecto tiene la
 matriz de cosenos frente a la del one-hot, y cuántos números ocupa cada tabla.
@@ -286,7 +286,7 @@ for tam, dm in [(8, 4), (50000, 300)]:
 `} />
 
 La búsqueda sale exacta: `o @ E` y `E[i]` son el mismo vector coordenada a coordenada, que es lo que
-la derivación prometía. La matriz de cosenos es lo que había que ver. <W>coche</W> con
+el desarrollo prometía. La matriz de cosenos es lo que había que ver. <W>coche</W> con
 <W>automóvil</W> da $0{,}99$ y con <W>camión</W> $0{,}97$; con <W>harina</W> da $-0{,}48$, un valor
 negativo que en one-hot no podía existir; <W>gato</W> con <W>\<UNK></W> da $0{,}02$, que es «nada que
 ver» escrito en números. Debajo, la misma cuenta sobre one-hot devuelve un cero en cada casilla fuera
@@ -304,7 +304,7 @@ números.
 
 ## Comprueba tu intuición
 
-Cuatro preguntas sobre lo que acabas de derivar: qué calcula el producto por el one-hot, qué compra
+Cuatro preguntas sobre lo que acabas de obtener: qué calcula el producto por el one-hot, qué compra
 la densidad, qué le pasa al coseno al cambiar de objeto y qué afirma exactamente la hipótesis
 distribucional.
 

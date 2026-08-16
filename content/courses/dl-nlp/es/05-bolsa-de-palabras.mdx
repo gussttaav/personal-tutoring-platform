@@ -29,7 +29,7 @@ quiz:
       - { id: c, text: 'Porque el logaritmo deja $\text{idf}(t)$ acotada entre $0$ y $1$, y así el peso no se dispara.' }
       - { id: d, text: 'Porque sin él la similitud coseno cambiaría de orden al cambiar la base del logaritmo.' }
     answer: a
-    explanation: 'El logaritmo viene de la derivación, no se añade después. Las otras tres describen cosas reales pero distintas. (b) es el $1 + \text{df}(t)$ del denominador, una convención aparte que está en el desplegable de esta lección y que no tiene nada que ver con el logaritmo. (c) es falso: $\text{idf}(t)$ llega hasta $\log N$, que con un millón de documentos ronda $13{,}8$. Y (d) va justo al revés: cambiar la base multiplica todos los $\text{idf}$ por la misma constante, y el coseno no se entera.'
+    explanation: 'El logaritmo se infiere, no se añade después. Las otras tres describen cosas reales pero distintas. (b) es el $1 + \text{df}(t)$ del denominador, una convención aparte que está en el desplegable de esta lección y que no tiene nada que ver con el logaritmo. (c) es falso: $\text{idf}(t)$ llega hasta $\log N$, que con un millón de documentos ronda $13{,}8$. Y (d) va justo al revés: cambiar la base multiplica todos los $\text{idf}$ por la misma constante, y el coseno no se entera.'
   - id: q-coseno
     type: multi
     prompt: 'Pegas un documento consigo mismo. Llamas $d_1$ al original y $d_2$ al resultado, medidos contra el mismo corpus, de modo que $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. ¿Qué es cierto? Marca todo lo que valga.'
@@ -353,7 +353,7 @@ entrada no es suyo, es del corpus donde se mide.
 
 ## Comprueba tu intuición
 
-Cuatro preguntas sobre lo que acabas de derivar: qué pierde la bolsa, qué le pasa a una entrada que
+Cuatro preguntas sobre lo que acabas de obtener: qué pierde la bolsa, qué le pasa a una entrada que
 está en todos los documentos, de dónde sale el logaritmo y qué mide cada forma de comparar.
 
 <Quiz id="q-orden" />
