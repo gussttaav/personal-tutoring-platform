@@ -1,0 +1,361 @@
+---
+slug: proyecto-char-lm
+title: "Proyecto: un modelo de lenguaje a nivel de carácter"
+block: 3
+order: 7
+minutes: 30
+summary: "La RNN de la lección 2 y la BPTT de la lección 3, juntas en una red que predice el siguiente carácter en cada posición: un texto de T caracteres son T ejemplos apilados, y la etiqueta de cada paso es, gratis, el carácter que viene. Se entrena con recorte del gradiente sobre unos miles de caracteres —pocos pasos, para caber en el navegador— y después escribe, realimentando lo que muestrea. La pérdida cae de ln 32 a alrededor de 2,5 y el texto pasa de ruido a español mal hecho —palabras cortas reales, cuasi-palabras largas, ni una frase con sentido—: es lo que aprende un modelo de caracteres, y decirlo sin adornos es la lección."
+draft: true
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-t-ejemplos
+    type: single
+    prompt: 'El corpus de esta lección tiene 2 632 caracteres. ¿Cuántos ejemplos de entrenamiento contiene para este modelo, y por qué?'
+    options:
+      - { id: a, text: 'Casi tantos como caracteres: en cada posición la red predice el siguiente, así que un texto de $T$ caracteres aporta $T$ pares (lo leído hasta aquí, el carácter que viene), y la pérdida de una secuencia suma una entropía cruzada por posición. La etiqueta no la pone nadie: es el propio texto corrido una posición.' }
+      - { id: b, text: 'Uno: el texto entero es un solo ejemplo y la red da un único veredicto al final, como el clasificador de reseñas del bloque anterior.' }
+      - { id: c, text: '32, uno por cada carácter distinto del vocabulario.' }
+      - { id: d, text: 'Ninguno mientras no se fije un $T_{\max}$ y se rellene, porque la red necesita entradas de longitud fija.' }
+    answer: a
+    explanation: 'La (a) es el truco entero del modelo de lenguaje: cada posición es una pregunta —¿qué carácter sigue?— con su respuesta ya escrita en el corpus, el carácter de la posición siguiente, así que un texto se convierte en tantos ejemplos como caracteres tiene sin que nadie etiquete nada. La (b) es el clasificador del bloque anterior, que sí colgaba una sola salida del último estado; aquí hay una salida por paso. La (c) confunde el número de ejemplos con el tamaño del vocabulario, que es otra cosa —cuántos caracteres distintos existen, no cuántas veces se predice—. La (d) le pega a la RNN el defecto del MLP: como en toda la recurrencia del bloque, ninguna forma menciona $T$, así que no hay $T_{\max}$ ni relleno.'
+    hint: 'En cada carácter, ¿qué le pides a la red que prediga, y de dónde sale la respuesta correcta?'
+  - id: q-dos-errores
+    type: multi
+    prompt: 'En la lección 3 de este bloque, sobre BPTT, un paso interior $t < T$ recibía su error de un solo sitio. En este modelo de lenguaje, ¿de dónde le llega el error a $\boldsymbol{\delta}_t$? Marca todo lo que sea cierto.'
+    options:
+      - { id: a, text: 'De su propia salida: en el paso $t$ la red ya predice un carácter, así que $\hat{\mathbf{y}}_t - \mathbf{y}_t$ vuelve al estado por $\mathbf{W}_{hy}^{\top}$.' }
+      - { id: b, text: 'Del paso siguiente: el error transportado $\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}$, exactamente como en la lección 3.' }
+      - { id: c, text: 'De ninguno hasta el último paso; los interiores no aportan gradiente y sólo $\boldsymbol{\delta}_T$ arranca la vuelta.' }
+      - { id: d, text: 'Sólo de su salida: como ahora hay una pérdida por posición, la recurrencia hacia atrás ya no hace falta.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b) son las dos rutas por las que el estado $\mathbf{h}_t$ toca la pérdida, y la regla de la cadena las suma: $\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hy}^{\top}(\hat{\mathbf{y}}_t - \mathbf{y}_t) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right)$. No es notación nueva: son las dos líneas de la lección 3 —el arranque desde la salida y el transporte desde el paso siguiente— que allí vivían en pasos distintos y aquí conviven en cada paso interior. La (c) describe justo el caso del clasificador, donde la pérdida colgaba sólo del final; con una salida por posición eso ya no vale. La (d) es la trampa peligrosa: el transporte sigue haciendo falta —es lo único que conecta un carácter con los que vinieron antes—, y con él vuelve el producto por $\mathbf{W}_{hh}^{\top}$ y el desvanecimiento de la lección 4.'
+    hint: 'Dibuja el paso $t$: sale una predicción de él, y su estado alimenta el paso $t+1$. ¿Por cuántos caminos llega la pérdida hasta $\mathbf{h}_t$?'
+  - id: q-por-que-malo
+    type: single
+    prompt: 'El texto que genera la red es reconociblemente español y a la vez un disparate sin sentido. Si la entrenaras diez veces más pasos, ¿qué cabría esperar?'
+    options:
+      - { id: a, text: 'Que afine la estadística de caracteres —menos cuasi-palabras imposibles— pero siga sin escribir frases con sentido. Con unos miles de caracteres y un estado de 64 coordenadas, la red aprende qué letra sigue a cuál, no qué significan las palabras ni cómo se ordenan: el techo está en los datos y en el tamaño, no en el número de pasos.' }
+      - { id: b, text: 'Que empiece a escribir frases coherentes, porque la pérdida seguiría bajando y una pérdida más baja es texto mejor.' }
+      - { id: c, text: 'Que el texto deje de parecerse al español, porque entrenar de más borra lo aprendido.' }
+      - { id: d, text: 'Que reproduzca el corpus palabra por palabra, porque lo habrá memorizado entero.' }
+    answer: a
+    explanation: 'La (a) es la lección dicha sin adornos: un modelo de caracteres de este tamaño persigue la estadística local —qué carácter es probable después de los últimos—, y eso lo pule con más pasos, pero el sentido de una frase vive en dependencias que ni caben en un estado de 64 coordenadas ni sobreviven al corte en trozos de 25 caracteres. La (b) confunde la pérdida con la comprensión: bajarla más ajusta mejor la probabilidad del próximo carácter, no fabrica gramática. La (c) inventa un fenómeno que aquí no se ve —la pérdida se estabiliza, no se dispara—. La (d) es tentadora porque la red sí memoriza algo, pero muestrear introduce azar en cada paso y el texto nunca sale idéntico al corpus; que la versión voraz se quede en un bucle corto lo confirma. Lo que falta es más datos, más tamaño y una unidad mayor que el carácter, no más vueltas.'
+    hint: '¿Qué parte del problema arreglan más pasos de descenso, y qué parte está fijada por cuántos datos y cuánto estado tiene la red?'
+challenges: []
+---
+
+{/* COURSE-P5-03 — Bloque 3, lección 7. */}
+
+La lección anterior, sobre la GRU, dejó el bloque con toda su maquinaria montada y ninguna pieza en
+marcha: una red que lee textos de cualquier longitud, un gradiente que la recorre por el tiempo, y dos
+celdas que le dan una memoria capaz de sobrevivir a la distancia. Lo que falta no es otra pieza, es un
+trabajo que las use. Este es ese trabajo, y consiste en construir un modelo que, leído un texto, sepa
+seguir escribiéndolo.
+
+Ese modelo tiene nombre: un **modelo de lenguaje** (*language model*) es una red que, dado un trozo de
+texto, predice qué viene después. **A nivel de carácter** —la tokenización por caracteres de la lección
+2 del bloque 1— eso es el próximo carácter, una letra, un espacio o un punto, y en esa pregunta
+minúscula cabe toda la tarea. Se entrena sobre un corpus pequeño, unos
+miles de caracteres, y después se le pide que escriba, carácter a carácter, realimentándose lo que va
+produciendo. El texto que sale es la red hablándose a sí misma. Saldrá malo —lo diré con todas las
+letras cuando salga—, y será la primera vez en el curso que algo escribe.
+
+La red que entrenamos en la lección 3 leía una reseña entera y daba un solo veredicto, una salida y una
+pérdida, colgadas del último estado. Un modelo de lenguaje cambia una cosa y sólo una: saca una
+predicción en **cada** posición. En el paso $t$, con el estado $\mathbf{h}_t$ que resume lo leído hasta
+ahí, predice el carácter $t+1$; de modo que un texto de $T$ caracteres son $T$ predicciones en una sola
+pasada, y su pérdida suma las $T$. Ahí está lo que convierte un texto en un conjunto de entrenamiento
+sin que nadie lo etiquete: la respuesta correcta de cada posición es el carácter de la siguiente, ya
+escrito en el corpus.
+
+Lo honesto es decir de entrada qué aprende y qué no. Con unos miles de caracteres y un estado de unas
+decenas de coordenadas, la red aprende la estadística de los caracteres: dónde caen los espacios, que
+tras la <W>q</W> viene casi siempre una <W>u</W>, que <W>la</W>, <W>de</W> y <W>el</W> están por todas
+partes. No aprende nada del significado ni de la gramática. Así que lo que genera se parece al español
+visto desde la otra punta de una sala ruidosa: palabras cortas de verdad, palabras largas verosímiles
+que no existen, y ni una frase que quiera decir algo. Eso no es un defecto que esta lección venga a
+arreglar: es lo que un modelo de caracteres de este tamaño aprende, y nombrarlo sin rodeos es media
+lección.
+
+<Callout type="intuition" title="La idea en una frase">
+Un modelo de lenguaje a nivel de carácter predice el siguiente carácter en cada posición: un texto de
+$T$ caracteres son $T$ ejemplos apilados en una secuencia, y su etiqueta en cada paso es, gratis, el
+carácter que viene. Generar es invertir eso: elegir un carácter según las probabilidades que da la red,
+realimentarlo, y repetir.
+</Callout>
+
+## Una salida en cada posición
+
+La recurrencia es la de la lección 2 de este bloque, sobre la RNN vanilla, sin tocar una letra:
+$\mathbf{h}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{b}_h\right)$,
+con $\mathbf{h}_0 = \mathbf{0}$. Lo nuevo es $\mathbf{x}_t$: como cada token es un carácter, la entrada
+de la posición $t$ es el one-hot de ese carácter,
+$\mathbf{x}_t = \mathbf{o}_{c_t} \in \{0,1\}^{\lvert V \rvert}$, donde $V$ es el conjunto de caracteres
+distintos del corpus. El vocabulario ya no son palabras: son caracteres, así que
+$d_{\text{model}} = \lvert V \rvert$ y $\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times \lvert V \rvert}$.
+
+Ese one-hot trae el atajo de la lección 4 del bloque 1, sobre one-hot: multiplicar una matriz por un
+one-hot escoge una de sus columnas, $\mathbf{W}_{xh}\mathbf{o}_{c} =$ columna $c$ de $\mathbf{W}_{xh}$.
+Así que las columnas de $\mathbf{W}_{xh}$ son los vectores de entrada de cada carácter, que la red
+aprende sobre la marcha.
+
+Lo nuevo es la salida. La lección 2 leía un veredicto del último estado; el modelo de lenguaje lee uno
+de **cada** estado, y es una distribución sobre el próximo carácter:
+
+$$
+\hat{\mathbf{y}}_t = \text{softmax}\left(\mathbf{W}_{hy}\mathbf{h}_t + \mathbf{b}_y\right) \in \mathbb{R}^{\lvert V \rvert},
+$$
+
+con $\mathbf{W}_{hy} \in \mathbb{R}^{\lvert V \rvert \times d_h}$, una fila por cada carácter que podría
+venir. La etiqueta es la que el corpus puso de verdad: el one-hot del carácter siguiente,
+$\mathbf{y}_t = \mathbf{o}_{c_{t+1}}$. La pérdida de esa posición es la entropía cruzada de la lección 5
+del bloque anterior, sobre funciones de pérdida, y la de la secuencia entera suma una por posición,
+promediada por carácter:
+
+$$
+\ell = \frac{1}{T}\sum_{t=1}^{T} -\log \hat{y}_{t,\,c_{t+1}},
+$$
+
+donde $\hat{y}_{t,\,c_{t+1}}$ es la probabilidad que la red le dio al carácter que de verdad venía. El
+$1/T$ es la media por posición, el análogo del $1/B$ del bloque anterior repartiendo $\mathcal{L}$ entre
+el *batch* —sólo que aquí el «lote» son las $T$ posiciones de una misma secuencia—.
+
+## La vuelta: cada paso recibe dos errores
+
+La lección 3, sobre BPTT, ya hizo casi toda esta cuenta. Allí sólo el último estado tocaba la pérdida,
+así que sólo $\boldsymbol{\delta}_T$ arrancaba desde una salida y los pasos interiores recibían su error
+transportado del siguiente. El modelo de lenguaje cambia exactamente eso: cada posición tiene su propia
+salida, de modo que cada paso arranca un error propio **y** además pasa hacia atrás el que viene de
+adelante.
+
+Sigue siendo $\boldsymbol{\delta}_t = \nabla_{\mathbf{p}_t}\ell$, el error de la preactivación. Lo que
+cambia es que el estado $\mathbf{h}_t$ llega ahora a la pérdida por dos caminos —su salida en $t$ y el
+paso $t+1$—, y la regla de la cadena de la lección 7 del bloque anterior los suma:
+
+$$
+\nabla_{\mathbf{h}_t}\ell = \mathbf{W}_{hy}^{\top}\left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1},
+$$
+
+donde el primer término es la salida de la lección 5 del bloque anterior —softmax con entropía cruzada
+entrega $\hat{\mathbf{y}}_t - \mathbf{y}_t$— repartida entre las coordenadas del estado por
+$\mathbf{W}_{hy}^{\top}$, y el segundo es el transporte de la lección 3, intacto. Enmascara con la
+pendiente del $\tanh$ y tienes el error del paso:
+
+$$
+\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hy}^{\top}\left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right),
+$$
+
+con $\boldsymbol{\delta}_{T+1} = \mathbf{0}$, porque después del último paso no hay ninguno. Ponla al
+lado de las dos líneas de la lección 3 y verás que son sus dos mitades juntas: el arranque desde la
+salida, que allí era sólo de $\boldsymbol{\delta}_T$, y el transporte, que allí era sólo de los
+interiores.
+
+Con el error de cada paso en la mano, los gradientes son los de la lección 3 más el de la capa de
+salida, todos sumados sobre las $T$ posiciones:
+
+$$
+\nabla_{\mathbf{W}_{hh}}\ell = \frac{1}{T}\sum_{t=1}^{T} \boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top},
+\qquad
+\nabla_{\mathbf{W}_{xh}}\ell = \frac{1}{T}\sum_{t=1}^{T} \boldsymbol{\delta}_t\mathbf{x}_t^{\top},
+\qquad
+\nabla_{\mathbf{W}_{hy}}\ell = \frac{1}{T}\sum_{t=1}^{T} \left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right)\mathbf{h}_t^{\top},
+$$
+
+y los sesgos igual, sumados. Todo lo que va bajo la suma es una pieza ya derivada; lo único nuevo es que
+$\mathbf{W}_{hy}$ también se comparte entre las posiciones —una salida por paso, no una al final—, así
+que su gradiente se une a la suma sobre el tiempo en lugar de ser un producto suelto.
+
+<Details summary="Ver por qué la estadística cercana se aprende y la lejana no">
+El transporte sigue multiplicando por $\mathbf{W}_{hh}^{\top}$ una vez por paso, así que el
+desvanecimiento de la lección 4 sigue en pie: un error que deba volver muchos pasos atrás llega apagado.
+La diferencia con el clasificador es que ahora cada posición inyecta un error fresco desde su propia
+salida, sin haber cruzado todavía ninguna $\mathbf{W}_{hh}$. Por eso el modelo aprende bien lo cercano y
+lo lejano se le escapa: la señal que ata un carácter con su vecino no viaja, y la que lo ataría con algo
+de veinte posiciones atrás se apaga por el camino. Es la frontera que motivaba las celdas con compuerta,
+vista desde el texto que producen.
+</Details>
+
+## Entrenar y generar en NumPy
+
+Tres celdas: el corpus, el entrenamiento y la escritura. Ejecútalas en orden.
+
+La primera trae el corpus —unos párrafos sobre un pueblo de mar, escritos para el curso—, lo pasa a
+minúsculas, le quita todo lo que no sea letra, espacio, punto o coma, y lo deja como una tira de
+índices. Mira el vocabulario que queda, y la última línea, que enseña el modelo entero en dos palabras:
+lo que **entra** es el texto, y lo que **sale** es el mismo texto corrido una posición.
+
+<PyCell packages={["numpy"]} code={`
+import re
+import numpy as np
+from pyodide.http import open_url
+
+raw = open_url("/courses/dl-nlp/corpus-mar.txt").read()
+texto = raw.lower()
+texto = re.sub(r"[^a-záéíóúñ .,]", " ", texto)      # deja letras, ñ, tildes, espacio, . y ,
+texto = re.sub(r"\\s+", " ", texto).strip()          # un solo espacio entre palabras
+
+V = sorted(set(texto))                              # el vocabulario: los caracteres distintos
+a_ix = {c: i for i, c in enumerate(V)}
+datos = np.array([a_ix[c] for c in texto])          # el corpus entero, como indices
+n_v = len(V)
+
+print("corpus: %d caracteres" % len(texto))
+print("vocabulario: %d caracteres  ->  «%s»" % (n_v, "".join(V)))
+print("entra:", repr("".join(V[i] for i in datos[:12])))
+print("sale: ", repr("".join(V[i] for i in datos[1:13])), " (el mismo, corrido una posicion)")
+`} />
+
+Salen 2 632 caracteres y 32 caracteres distintos —las letras, la <W>ñ</W>, las cinco vocales con tilde,
+el espacio y dos signos—, así que $\lvert V \rvert = 32$. Las dos últimas líneas son el conjunto de
+entrenamiento entero: <W>el pueblo es</W> como entrada y <W>l pueblo est</W> como etiqueta, la misma
+tira desplazada un lugar. De ahí salen los casi 2 632 ejemplos, uno por posición, sin etiquetar nada.
+
+La segunda es el modelo completo: la ida de la lección 2, que en cada posición saca una puntuación por
+carácter y el softmax vuelve probabilidades; la vuelta de la lección 3 con el error de la salida sumado
+en cada paso; el recorte del gradiente de la lección 4; y un descenso que actualiza los cinco grupos de
+pesos. Entrena 1 200 pasos sobre trozos de 25 caracteres, y cada trozo es una secuencia independiente
+que arranca en $\mathbf{h}_0 = \mathbf{0}$, como en la lección 3. Mira las dos cosas que imprime cada
+pocos cientos de pasos: la pérdida por carácter, y una muestra de lo que la red escribiría entonces.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita la celda anterior: datos, V, a_ix, n_v.
+d_h, seq = 64, 25                                   # anchura del estado y longitud de cada trozo
+eta, theta, iters = 0.3, 5.0, 1200
+
+rng = np.random.default_rng(0)                      # semilla fija: veras estos numeros
+Wxh = rng.normal(size=(d_h, n_v)) * 0.01            # (d_h, n_v): columna c = vector del caracter c
+Whh = rng.normal(size=(d_h, d_h)) * 0.01            # (d_h, d_h): la recurrencia de la leccion 2
+Why = rng.normal(size=(n_v, d_h)) * 0.01            # (n_v, d_h): del estado a una puntuacion por caracter
+bh, by = np.zeros(d_h), np.zeros(n_v)
+
+
+def adelante(inp, tgt):
+    H, h = np.zeros((d_h, len(inp))), np.zeros(d_h)
+    for t in range(len(inp)):
+        h = np.tanh(Wxh[:, inp[t]] + Whh @ h + bh)  # la recurrencia paso a paso (Wxh @ one-hot = columna)
+        H[:, t] = h
+    O = Why @ H + by[:, None]                        # (n_v, seq): una columna de puntuaciones por posicion
+    O -= O.max(0); P = np.exp(O); P /= P.sum(0)      # softmax en cada columna
+    loss = -np.log(P[tgt, np.arange(len(inp))]).mean()   # entropia cruzada, media por caracter
+    return H, P, loss
+
+
+def atras(inp, tgt, H, P):
+    T = len(inp)
+    dO = P.copy(); dO[tgt, np.arange(T)] -= 1.0      # (y_hat - y) en cada posicion
+    gWhy = dO @ H.T; gby = dO.sum(1); dHy = Why.T @ dO   # capa de salida, sumada sobre el tiempo
+    gWxh, gWhh, gbh = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(bh)
+    dh_sig = np.zeros(d_h)
+    for t in reversed(range(T)):
+        dp = (1 - H[:, t] ** 2) * (dHy[:, t] + dh_sig)   # delta_t: el error de la salida de t y el del paso t+1
+        h_ant = H[:, t - 1] if t > 0 else np.zeros(d_h)
+        gWhh += np.outer(dp, h_ant); gWxh[:, inp[t]] += dp; gbh += dp
+        dh_sig = Whh.T @ dp                          # transporta el error a t-1, como en la leccion 3
+    return [g / T for g in (gWxh, gWhh, gWhy, gbh, gby)]
+
+
+def genera(n, semilla):
+    g = np.random.default_rng(semilla); h = np.zeros(d_h); ix = a_ix[" "]; salida = []
+    for _ in range(n):
+        h = np.tanh(Wxh[:, ix] + Whh @ h + bh)
+        o = Why @ h + by; o -= o.max(); p = np.exp(o); p /= p.sum()
+        ix = g.choice(n_v, p=p); salida.append(ix)  # muestrea el proximo y lo realimenta
+    return "".join(V[i] for i in salida)
+
+
+j, suave = 0, None
+for it in range(iters):
+    if j + seq + 1 >= len(datos): j = 0
+    inp, tgt = datos[j:j + seq], datos[j + 1:j + seq + 1]; j += seq
+    H, P, loss = adelante(inp, tgt)
+    grads = atras(inp, tgt, H, P)
+    for g in grads:
+        nrm = np.linalg.norm(g)
+        if nrm > theta: g *= theta / nrm            # recorte del gradiente, leccion 4
+    for Pm, g in zip([Wxh, Whh, Why, bh, by], grads):
+        Pm -= eta * g
+    suave = loss if suave is None else 0.999 * suave + 0.001 * loss
+    if it % 300 == 0 or it == iters - 1:
+        print("iter %4d   perdida/car %.3f   «%s»" % (it, suave, genera(48, 0)))
+`} />
+
+La pérdida arranca en $3{,}47$, que no es un número cualquiera: es $\ln 32$, la pérdida de una red que
+reparte por igual entre los 32 caracteres —el eco del $\log 2$ del clasificador del bloque anterior,
+con 32 caras en lugar de 2—. De ahí baja sin sobresaltos hasta rondar $2{,}5$, y seguiría bajando: el
+bucle se corta pronto para caber en los diez segundos que el navegador da a una celda, porque mediocre y
+a tiempo vale más que bueno y nunca. La muestra de cada
+línea cuenta la misma historia por otro lado: la primera es ruido, caracteres al azar y tildes sueltas;
+hacia la mitad ya hay espacios en su sitio y palabras cortas; al final es español mal hecho: palabras
+cortas reales —<W>la</W>, <W>el</W>, <W>de</W>, <W>y</W>— enhebradas entre palabras largas que suenan a
+español sin serlo.
+
+El corte en trozos tiene un segundo precio: como cada trozo empieza de cero, la red nunca ve una
+dependencia más larga que 25 caracteres. Para un modelo que sólo persigue la estadística local se paga a
+gusto; y esa dependencia larga a la que se renuncia es justo la que las celdas con compuerta de las
+lecciones 5 y 6 sabían conservar.
+
+La tercera celda usa los pesos ya entrenados para escribir. Generar invierte el entrenamiento: en vez
+del carácter real que venía, la red recibe el que ella misma propone. Arranca en
+$\mathbf{h}_0 = \mathbf{0}$ con un carácter cualquiera —un espacio, para empezar palabra—, calcula
+$\hat{\mathbf{y}}$, **muestrea** de esa distribución el siguiente (*sampling*: extraer uno al azar con la
+probabilidad que le da), lo realimenta como entrada, y repite. La celda genera dos veces muestreando y
+una tercera tomando siempre el carácter más probable, para ver la diferencia.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita las dos celdas anteriores: los pesos entrenados, genera, V, a_ix, d_h.
+print("MUESTREANDO (varia con la semilla):")
+for s in [0, 1]:
+    print("  «%s»" % genera(200, s))
+
+
+def genera_voraz(n):                                # siempre el mas probable: determinista
+    h = np.zeros(d_h); ix = a_ix[" "]; salida = []
+    for _ in range(n):
+        h = np.tanh(Wxh[:, ix] + Whh @ h + bh)
+        o = Why @ h + by; o -= o.max(); p = np.exp(o); p /= p.sum()
+        ix = int(p.argmax()); salida.append(ix)     # el mas probable, sin azar
+    return "".join(V[i] for i in salida)
+
+
+print("\\nSIEMPRE EL MAS PROBABLE (determinista):")
+print("  «%s»" % genera_voraz(200))
+`} />
+
+Las dos primeras líneas salen distintas entre sí —el azar del muestreo— y las dos son español mal
+hecho. La última no: tomar siempre el carácter más probable es determinista, y en cuanto entra en una
+racha de alta probabilidad se queda atrapado repitiendo un mismo fragmento una y otra vez. Por eso se
+muestrea en lugar de ir a lo seguro: el azar es lo que impide que la red se muerda la cola. Y con todo,
+ninguna de las dos escribe nada que signifique algo. No puede: nunca vio una palabra como unidad, sólo
+caracteres, y olvidó cuanto quedaba más atrás de 25. Es exactamente lo que se prometió —malo—, y verlo
+salir es la lección.
+
+## Comprueba tu intuición
+
+Tres preguntas: cuántos ejemplos esconde un texto para este modelo, de dónde le llega el error a cada
+paso de la vuelta, y qué arreglaría —y qué no— entrenar mucho más.
+
+<Quiz id="q-t-ejemplos" />
+
+<Quiz id="q-dos-errores" />
+
+<Quiz id="q-por-que-malo" />
+
+---
+
+Por primera vez en el curso, una red ha escrito. Es poco y es malo, pero es suyo: ningún carácter de
+esas líneas estaba en el corpus en ese orden, y aun así se parecen al español porque la red aprendió,
+letra a letra, en qué consiste parecerse al español. Toda la maquinaria del bloque —leer cualquier
+longitud, entrenar por el tiempo, arreglar la vía por la que el gradiente vuelve— estaba para poder
+llegar hasta aquí y encender algo.
+
+Pero este modelo hace una sola cosa: continuar una tira de texto en el mismo idioma en que la leyó. No
+sabe tomar una secuencia y devolver otra distinta —una pregunta y su respuesta, una frase en español y
+la misma en inglés— porque sólo maneja una secuencia, no dos. Leer una entera con una red y escribir
+otra con otra, atándolas por lo que la primera entendió, es la lección 8 de este bloque, sobre modelos
+de secuencia a secuencia: el *encoder* que resume lo leído y el *decoder* que escribe a partir de ese
+resumen, el último paso antes de salir del bloque.

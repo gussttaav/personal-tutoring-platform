@@ -577,6 +577,9 @@ plain. Never italicise the Spanish terms.
 | the vector a step proposes to write — to the cell in the LSTM ($\tilde{\mathbf{c}}_t$), to the state in the GRU ($\tilde{\mathbf{h}}_t$) | candidato | *candidate*, propuesta |
 | the summing route the memory takes from one step to the next — the LSTM cell, or the GRU's convex combination on the state | vía aditiva | camino aditivo, *additive path* |
 | $\boldsymbol{\delta}^{(l)}$ — what the loss owes a layer's pre-activation | `error` (de la capa, de la neurona) | delta, señal de error, término de error |
+| a network trained to predict what comes next in a text | `modelo de lenguaje` | *language model* |
+| the random draw a model makes from its own output distribution, one step of generating | `muestrear`, `muestreo` (*sampling*) | *samplear* |
+| always advancing to the single highest-probability output, deterministically — the alternative to sampling when generating | `voraz`, decodificación voraz (*greedy*) | avara, ávida — «avara» lee como tacaña en español, lo contrario del algoritmo, que siempre toma el máximo |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
 one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -692,6 +695,15 @@ same reason: Block 1 lesson 3 cuts the *vocabulary* at the $k$ most frequent typ
 5 cuts the *probabilities* before the logarithm, both of them «recorte», and neither is what happens
 to a text that ran past the last position. Three cuts on three objects need three verbs or they need
 one, and one is not available.
+
+`muestrear`/`muestreo`, for the random draw a model makes from its own output distribution when
+generating, collides with two things already on this page and has to stay clear of both. The noun
+`muestra` is banned earlier in this table as a synonym for `ejemplo` — a lesson using both must never
+let `muestreo` (the action) read as *una muestra* (a training example, which it is not). And Block 1
+lesson 7, on Word2Vec, already spends `muestreo` inside a **fixed compound**, «muestreo negativo»
+(*negative sampling*): a specific technique for avoiding a full-vocabulary softmax, not the generic
+verb. The two never share a page, but a lesson that needed both would write the compound in full and
+never shorten it to bare `muestreo`, the same rule this section already gives *error cuadrático medio*.
 
 #### Acronyms
 

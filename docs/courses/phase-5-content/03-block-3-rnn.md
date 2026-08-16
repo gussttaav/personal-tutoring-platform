@@ -48,7 +48,7 @@ here; STATUS stays phase-level.
 - [x] 4. `gradiente-desvanecido`
 - [x] 5. `lstm`
 - [x] 6. `gru`
-- [ ] 7. `proyecto-char-lm`
+- [x] 7. `proyecto-char-lm`
 - [ ] 8. `seq2seq`
 
 ## Mathematical content
