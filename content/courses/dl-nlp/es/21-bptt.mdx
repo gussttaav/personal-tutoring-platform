@@ -53,7 +53,7 @@ quiz:
           g += d
       print(g)
     answer: '[ 0.5 -0.5]'
-    explanation: 'Sumar los tres vectores casilla por casilla da $(1 + 0{,}5 - 1,\ -2 + 0{,}5 + 1) = (0{,}5,\ -0{,}5)$. Eso es $\nabla_{\mathbf{b}_h}\ell$ entero: el sesgo de la recurrencia recibe una aportación por posición, y su gradiente es la suma de los errores de los $T$ pasos, sin ningún factor más —el mismo $\boldsymbol{\delta}^{(l)}$ que era el gradiente del sesgo en el bloque anterior, ahora sumado sobre el tiempo—. El formato es lo otro que hay que acertar: NumPy alinea las dos casillas al ancho de la más larga, `-0.5`, así que la positiva lleva delante un espacio de relleno.'
+    explanation: 'Sumar los tres vectores casilla por casilla da $(1 + 0.5 - 1,\ -2 + 0.5 + 1) = (0.5,\ -0.5)$. Eso es $\nabla_{\mathbf{b}_h}\ell$ entero: el sesgo de la recurrencia recibe una aportación por posición, y su gradiente es la suma de los errores de los $T$ pasos, sin ningún factor más —el mismo $\boldsymbol{\delta}^{(l)}$ que era el gradiente del sesgo en el bloque anterior, ahora sumado sobre el tiempo—. El formato es lo otro que hay que acertar: NumPy alinea las dos casillas al ancho de la más larga, `-0.5`, así que la positiva lleva delante un espacio de relleno.'
     hint: 'Suma los tres vectores casilla por casilla. Y fíjate en cómo alinea NumPy un vector que tiene una componente negativa.'
   - id: q-guardar-la-ida
     type: single

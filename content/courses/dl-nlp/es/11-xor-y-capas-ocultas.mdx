@@ -21,15 +21,15 @@ quiz:
     explanation: 'La (a) es la demostración entera, y lo que la cierra es que las dos sumas coinciden: las dos valen $2b$, así que exigirle a una $\geq 0$ y a la otra $< 0$ es exigirle a $b$ dos cosas incompatibles. La (b) no demuestra nada —tres números clasifican bien conjuntos de cien ejemplos todos los días, y lo que decide no es cuántos hay sino dónde están—. La (c) es cierta y no viene al caso: el problema no lo causa el escalón, y por eso la lección comprueba aparte que con cualquier activación creciente el conjunto de las entradas que reciben un sí vuelve a ser un semiplano. Y la (d) es falsa en su segunda mitad: con $x_3 = x_1 x_2$ las dos frases positivas pasan a tener $x_3 = -1$ y las dos negativas $x_3 = +1$, así que $z = -x_3$ las separa. Cambiar las coordenadas funciona; una capa oculta es la forma de que las cambie el propio sistema.'
   - id: q-activacion
     type: boolean
-    prompt: 'Cambias el escalón por la sigmoide y lees la salida así: la frase habla bien cuando $\sigma(z) \geq 0{,}5$. Con esa lectura existe alguna elección de $\mathbf{w}$ y $b$ que acierta las cuatro frases.'
+    prompt: 'Cambias el escalón por la sigmoide y lees la salida así: la frase habla bien cuando $\sigma(z) \geq 0.5$. Con esa lectura existe alguna elección de $\mathbf{w}$ y $b$ que acierta las cuatro frases.'
     answer: false
-    explanation: 'La sigmoide es creciente y cumple $\sigma(0) = 1/2$, de modo que $\sigma(z) \geq 0{,}5$ equivale a $z \geq 0$: el conjunto de las frases que reciben un sí es el mismo semiplano de antes y la contradicción se repite palabra por palabra. Y no es cuestión de mover el umbral. Para cualquier $\varphi$ creciente y cualquier umbral $\theta$, pedir $\varphi(z) \geq \theta$ es pedir $z \geq \varphi^{-1}(\theta)$, que es otra vez una neurona con el sesgo desplazado.'
+    explanation: 'La sigmoide es creciente y cumple $\sigma(0) = 1/2$, de modo que $\sigma(z) \geq 0.5$ equivale a $z \geq 0$: el conjunto de las frases que reciben un sí es el mismo semiplano de antes y la contradicción se repite palabra por palabra. Y no es cuestión de mover el umbral. Para cualquier $\varphi$ creciente y cualquier umbral $\theta$, pedir $\varphi(z) \geq \theta$ es pedir $z \geq \varphi^{-1}(\theta)$, que es otra vez una neurona con el sesgo desplazado.'
   - id: q-capa-oculta
     type: numeric
     prompt: 'Con los pesos que fija la lección, ¿cuánto vale la preactivación de salida $z^{(2)}_1$ para la frase <W>no está bien</W>, es decir para $\mathbf{x} = (1,\, 1)^{\top}$?'
     answer: -0.5
     tolerance: 0.01
-    explanation: 'Las dos filas de $\mathbf{W}^{(1)}$ son iguales, así que las dos preactivaciones ocultas salen de $x_1 + x_2 = 2$ y sólo las separa el sesgo: $\mathbf{z}^{(1)} = (3,\, 1)^{\top}$. Las dos son positivas, luego $\mathbf{h}^{(1)} = (1,\, 1)^{\top}$, y la neurona de salida calcula $1 - 1 - 0{,}5 = -0{,}5$. El escalón entrega $0$, que es la etiqueta correcta. Fíjate en que <W>está mal</W> obtiene ese mismo $-0{,}5$ desde un vector oculto distinto, $(0,\, 0)^{\top}$: la capa de salida no necesita saber de qué esquina viene cada frase.'
+    explanation: 'Las dos filas de $\mathbf{W}^{(1)}$ son iguales, así que las dos preactivaciones ocultas salen de $x_1 + x_2 = 2$ y sólo las separa el sesgo: $\mathbf{z}^{(1)} = (3,\, 1)^{\top}$. Las dos son positivas, luego $\mathbf{h}^{(1)} = (1,\, 1)^{\top}$, y la neurona de salida calcula $1 - 1 - 0.5 = -0.5$. El escalón entrega $0$, que es la etiqueta correcta. Fíjate en que <W>está mal</W> obtiene ese mismo $-0.5$ desde un vector oculto distinto, $(0,\, 0)^{\top}$: la capa de salida no necesita saber de qué esquina viene cada frase.'
   - id: q-representacion
     type: predict-output
     prompt: 'Esta es la capa oculta de la lección aplicada a <W>no está mal</W>. ¿Qué imprime?'
@@ -255,10 +255,10 @@ segunda.
 
 | frase | $x_1 + x_2$ | $\mathbf{z}^{(1)}$ | $\mathbf{h}^{(1)}$ | $z^{(2)}_1$ | $\hat{y}$ | $y$ |
 |---|---|---|---|---|---|---|
-| <W>está bien</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0{,}5$ | $1$ | $1$ |
-| <W>está mal</W> | $-2$ | $(-1,\, -3)^{\top}$ | $(0,\, 0)^{\top}$ | $-0{,}5$ | $0$ | $0$ |
-| <W>no está bien</W> | $2$ | $(3,\, 1)^{\top}$ | $(1,\, 1)^{\top}$ | $-0{,}5$ | $0$ | $0$ |
-| <W>no está mal</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0{,}5$ | $1$ | $1$ |
+| <W>está bien</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0.5$ | $1$ | $1$ |
+| <W>está mal</W> | $-2$ | $(-1,\, -3)^{\top}$ | $(0,\, 0)^{\top}$ | $-0.5$ | $0$ | $0$ |
+| <W>no está bien</W> | $2$ | $(3,\, 1)^{\top}$ | $(1,\, 1)^{\top}$ | $-0.5$ | $0$ | $0$ |
+| <W>no está mal</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0.5$ | $1$ | $1$ |
 
 La columna de $\mathbf{h}^{(1)}$ es la que tiene el resultado. Cuatro puntos de entrada han salido
 convertidos en tres —$(0,\, 0)^{\top}$, $(1,\, 0)^{\top}$ y $(1,\, 1)^{\top}$—, y la clase positiva
@@ -354,7 +354,7 @@ arriba, y por eso va antes—. Lo que aporta es el techo. Tres aciertos no es un
 camino que se arregle afinando la búsqueda; es el máximo, y el máximo se toca por todas partes.
 
 La red acierta las cuatro. La tabla de la celda es la misma de arriba, ahora calculada, y en ella
-$z^{(2)}_1$ vale $+0{,}5$ en las dos frases positivas y $-0{,}5$ en las dos negativas, con la misma
+$z^{(2)}_1$ vale $+0.5$ en las dos frases positivas y $-0.5$ en las dos negativas, con la misma
 holgura por los dos lados. Y la última comprobación imprime lo que hace la
 capa oculta: <W>está bien</W> y <W>no está mal</W>, que ocupan esquinas opuestas del cuadrado de
 entrada, salen las dos como $(1,\, 0)^{\top}$. Empezaron lo más lejos que podían estar y terminaron

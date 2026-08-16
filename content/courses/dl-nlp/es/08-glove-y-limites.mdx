@@ -80,10 +80,10 @@ que publicaron los autores de GloVe sobre un corpus de 6 000 millones de tokens:
 
 | $k$ | $P(k \mid \textit{hielo})$ | $P(k \mid \textit{vapor})$ | razón |
 |---|---|---|---|
-| <W>sólido</W> | $1{,}9 \times 10^{-4}$ | $2{,}2 \times 10^{-5}$ | $8{,}9$ |
-| <W>gas</W> | $6{,}6 \times 10^{-5}$ | $7{,}8 \times 10^{-4}$ | $0{,}085$ |
-| <W>agua</W> | $3{,}0 \times 10^{-3}$ | $2{,}2 \times 10^{-3}$ | $1{,}36$ |
-| <W>moda</W> | $1{,}7 \times 10^{-5}$ | $1{,}8 \times 10^{-5}$ | $0{,}96$ |
+| <W>sólido</W> | $1.9 \times 10^{-4}$ | $2.2 \times 10^{-5}$ | $8.9$ |
+| <W>gas</W> | $6.6 \times 10^{-5}$ | $7.8 \times 10^{-4}$ | $0.085$ |
+| <W>agua</W> | $3.0 \times 10^{-3}$ | $2.2 \times 10^{-3}$ | $1.36$ |
+| <W>moda</W> | $1.7 \times 10^{-5}$ | $1.8 \times 10^{-5}$ | $0.96$ |
 
 Las probabilidades sueltas confunden frecuente con característico: <W>agua</W> sale con <W>hielo</W> más
 que <W>sólido</W>. La razón, no. Vale mucho más que $1$ cuando $k$ es del mundo de la primera, mucho
@@ -405,22 +405,22 @@ print("lo mismo contando también las vacías    ",
 
 La tabla ocupa 432 celdas, frente a los 3 840 pares que la ventana deslizante genera sobre el
 mismo texto —los bordes de cada frase ya descontados, como en la lección anterior—. Y sus razones reproducen en 680 tokens el patrón de
-<W>hielo</W> y <W>vapor</W>: <W>cliente</W> vale $3{,}00$ a favor de <W>hipoteca</W>, <W>niña</W> vale
-$0{,}33$, y <W>banco</W> y <W>en</W> dan $1{,}00$ exacto porque salen igual con las dos.
+<W>hielo</W> y <W>vapor</W>: <W>cliente</W> vale $3.00$ a favor de <W>hipoteca</W>, <W>niña</W> vale
+$0.33$, y <W>banco</W> y <W>en</W> dan $1.00$ exacto porque salen igual con las dos.
 
-El ajuste baja de $3{,}22$ a $0{,}02$ por celda y los vecinos son los que tienen que ser:
+El ajuste baja de $3.22$ a $0.02$ por celda y los vecinos son los que tienen que ser:
 <W>préstamo</W>, <W>dinero</W> y <W>nómina</W> para <W>hipoteca</W>; <W>seto</W>, <W>columpio</W> y
-<W>árbol</W> para <W>estanque</W>. Ese $1{,}00$ redondo es el precio de las plantillas: dentro de cada
+<W>árbol</W> para <W>estanque</W>. Ese $1.00$ redondo es el precio de las plantillas: dentro de cada
 grupo las entradas ocupan huecos idénticos, y sus filas de la tabla también.
 
 Las tres últimas filas son el asunto de la lección. La de <W>banco</W> vale $8$ en <W>dinero</W>, en
 <W>hipoteca</W>, en <W>árbol</W> y en <W>seto</W>, y separando los dos sentidos se ve que es, casilla a
-casilla, la suma de dos filas que no tienen nada que ver: entre ellas el coseno vale $0{,}00$ sobre las
-palabras con contenido, y $0{,}55$ contando las vacías, que es lo único que comparten. La compartida se
-queda a $0{,}71$ de cada una, a mitad de camino exacta, y es esa la que GloVe explica con un vector.
+casilla, la suma de dos filas que no tienen nada que ver: entre ellas el coseno vale $0.00$ sobre las
+palabras con contenido, y $0.55$ contando las vacías, que es lo único que comparten. La compartida se
+queda a $0.71$ de cada una, a mitad de camino exacta, y es esa la que GloVe explica con un vector.
 
 Una prueba de treinta segundos. Sube `d_model` a $8$ y ejecuta otra vez: la pérdida por celda cae a
-$0{,}0001$ y los vecinos son los mismos. Más coordenadas ajustan mejor la misma tabla; no le sacan lo
+$0.0001$ y los vecinos son los mismos. Más coordenadas ajustan mejor la misma tabla; no le sacan lo
 que la tabla no tiene.
 
 ## Comprueba tu intuición

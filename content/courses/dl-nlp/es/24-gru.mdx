@@ -305,7 +305,7 @@ la lección 4: lo aparta del camino largo y lo deja en los cortos.
 </Details>
 
 Dos concesiones cierran la cuenta, las mismas que en la LSTM. Si la red aprende $z_{t,j}$ alrededor de
-$0{,}3$, el producto se hunde igual que en la RNN, sólo que porque la red lo decide y no porque la
+$0.3$, el producto se hunde igual que en la RNN, sólo que porque la red lo decide y no porque la
 arquitectura lo imponga. Y la explosión sigue siendo posible por los caminos del recuadro, así que la
 GRU se entrena con recorte del gradiente igual que todo lo anterior. La vía aditiva no regala una
 garantía; hace alcanzable una opción que antes no lo era.
@@ -364,9 +364,9 @@ for sesgo in [0.0, -3.0]:
 `} />
 
 Las dos compuertas viven en $(0,1)$ y ninguna vale lo mismo en dos coordenadas. Compara los dos bloques
-por la última línea. Con $\mathbf{b}_z = 0$ la de actualización ronda $0{,}5$, se reemplaza medio estado
+por la última línea. Con $\mathbf{b}_z = 0$ la de actualización ronda $0.5$, se reemplaza medio estado
 en cada paso y de $\mathbf{h}_1$ llega a $\mathbf{h}_6$ un $3\,\%$ escaso; con $\mathbf{b}_z = -3$ ronda
-$0{,}05$, casi no se actualiza nada, y sobrevive un $77\,\%$, con los mismos pesos y la misma secuencia.
+$0.05$, casi no se actualiza nada, y sobrevive un $77\,\%$, con los mismos pesos y la misma secuencia.
 De ahí la costumbre de inicializar $\mathbf{b}_z$ negativo, por lo mismo que $\mathbf{b}_f$ positivo en
 la LSTM: sale más barato que la red aprenda a escribir que aprenda a recordar. Y fíjate en el precio del
 atajo: con $\mathbf{b}_z = -3$ el estado casi no se mueve —$\mathbf{h}_t$ se queda en centésimas—,

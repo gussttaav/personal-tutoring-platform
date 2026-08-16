@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: 'Entre dos vectores TF-IDF la similitud coseno vivía en $[0, 1]$. Entre dos vectores densos puede salir negativa.'
     answer: true
-    explanation: 'Puede, y es el único cambio que trae la fórmula al mudarse de objeto. Los pesos TF-IDF son productos de un conteo por un logaritmo no negativo, así que ninguna coordenada bajaba de cero y el producto escalar tampoco. Las coordenadas de un vector denso son reales cualesquiera, de modo que el producto escalar puede ser negativo y el coseno recorre $[-1, 1]$ entero: el cero deja de ser el mínimo y pasa a significar «sin relación», con los valores negativos por debajo. En la celda de esta lección, <W>coche</W> y <W>harina</W> dan $-0{,}48$.'
+    explanation: 'Puede, y es el único cambio que trae la fórmula al mudarse de objeto. Los pesos TF-IDF son productos de un conteo por un logaritmo no negativo, así que ninguna coordenada bajaba de cero y el producto escalar tampoco. Las coordenadas de un vector denso son reales cualesquiera, de modo que el producto escalar puede ser negativo y el coseno recorre $[-1, 1]$ entero: el cero deja de ser el mínimo y pasa a significar «sin relación», con los valores negativos por debajo. En la celda de esta lección, <W>coche</W> y <W>harina</W> dan $-0.48$.'
   - id: q-distribucional
     type: single
     prompt: '¿Qué afirma exactamente la hipótesis distribucional?'
@@ -287,13 +287,13 @@ for tam, dm in [(8, 4), (50000, 300)]:
 
 La búsqueda sale exacta: `o @ E` y `E[i]` son el mismo vector coordenada a coordenada, que es lo que
 el desarrollo prometía. La matriz de cosenos es lo que había que ver. <W>coche</W> con
-<W>automóvil</W> da $0{,}99$ y con <W>camión</W> $0{,}97$; con <W>harina</W> da $-0{,}48$, un valor
-negativo que en one-hot no podía existir; <W>gato</W> con <W>\<UNK></W> da $0{,}02$, que es «nada que
+<W>automóvil</W> da $0.99$ y con <W>camión</W> $0.97$; con <W>harina</W> da $-0.48$, un valor
+negativo que en one-hot no podía existir; <W>gato</W> con <W>\<UNK></W> da $0.02$, que es «nada que
 ver» escrito en números. Debajo, la misma cuenta sobre one-hot devuelve un cero en cada casilla fuera
 de la diagonal: el «un solo valor» de la lección 4, ahora al lado de una matriz con relieve.
 
 Un detalle sin maquillar: el segundo vecino de <W>gato</W> es <W>automóvil</W>, con
-$0{,}30$. Es ruido, y está ahí porque me he inventado los números: con cuatro coordenadas y ocho
+$0.30$. Es ruido, y está ahí porque me he inventado los números: con cuatro coordenadas y ocho
 entradas no hay sitio para más. Con 300 coordenadas y un corpus detrás, ese segundo vecino sería otro
 animal.
 

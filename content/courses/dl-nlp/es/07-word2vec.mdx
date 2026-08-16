@@ -49,7 +49,7 @@ quiz:
     type: boolean
     prompt: 'Sacar los negativos de $P_{\text{neg}}(w) \propto f_w^{3/4}$, en lugar de hacerlo de la frecuencia $f_w$ tal cual, hace que las entradas raras aparezcan como negativas más a menudo de lo que les tocaría por frecuencia.'
     answer: true
-    explanation: 'El exponente $3/4$ está entre $0$ y $1$, así que comprime las diferencias: entre un tipo que sale 1 000 veces y otro que sale 10, la razón de frecuencias es 100 y la de $f_w^{3/4}$ es $177{,}8 / 5{,}6 \approx 31{,}6$. Los dos extremos dicen por qué se elige ahí: con exponente $1$ los negativos serían casi siempre <W>de</W>, <W>la</W> y <W>que</W>, contra los que no cuesta nada acertar; con exponente $0$ serían uniformes, y la mayoría caerían en entradas tan raras que el modelo no aprende nada distinguiéndolas. El $3/4$ no se deduce de la teoría: es simplemente el valor que funcionó.'
+    explanation: 'El exponente $3/4$ está entre $0$ y $1$, así que comprime las diferencias: entre un tipo que sale 1 000 veces y otro que sale 10, la razón de frecuencias es 100 y la de $f_w^{3/4}$ es $177.8 / 5.6 \approx 31.6$. Los dos extremos dicen por qué se elige ahí: con exponente $1$ los negativos serían casi siempre <W>de</W>, <W>la</W> y <W>que</W>, contra los que no cuesta nada acertar; con exponente $0$ serían uniformes, y la mayoría caerían en entradas tan raras que el modelo no aprende nada distinguiéndolas. El $3/4$ no se deduce de la teoría: es simplemente el valor que funcionó.'
 challenges: []
 ---
 
@@ -162,7 +162,7 @@ $d_{\text{model}}$ multiplicaciones. El denominador es un producto escalar por c
 vocabulario:
 
 $$
-\lvert V \rvert \cdot d_{\text{model}} = 50\,000 \cdot 300 = 1{,}5 \times 10^{7} \quad \text{operaciones}.
+\lvert V \rvert \cdot d_{\text{model}} = 50\,000 \cdot 300 = 1.5 \times 10^{7} \quad \text{operaciones}.
 $$
 
 Quince millones por un solo par. Y hay $2m = 4$ pares por
@@ -170,7 +170,7 @@ token, que sobre un corpus enorme con $T = 10^{10}$ tokens, salen
 $4 \times 10^{10}$ pares. Una pasada entera cuesta
 
 $$
-\left(4 \times 10^{10}\right) \cdot \left(1{,}5 \times 10^{7}\right) = 6 \times 10^{17} \quad \text{operaciones},
+\left(4 \times 10^{10}\right) \cdot \left(1.5 \times 10^{7}\right) = 6 \times 10^{17} \quad \text{operaciones},
 $$
 
 y el entrenamiento da varias pasadas. Ninguna máquina iba a pagar eso por un *embedding*, ni en 2013
@@ -226,7 +226,7 @@ $$
 $$
 
 frente a los 15 millones de antes. El factor es $\lvert V \rvert / (n_{\text{neg}} + 1) \approx
-8\,333$, y la pasada entera baja de $6 \times 10^{17}$ a $7{,}2 \times 10^{13}$: de imposible a una
+8\,333$, y la pasada entera baja de $6 \times 10^{17}$ a $7.2 \times 10^{13}$: de imposible a una
 tarde. Fíjate en qué ha desaparecido y qué no: el coste por par deja de depender de $\lvert V
 \rvert$, que era el problema, y los $4 \times 10^{10}$ pares siguen ahí.
 
@@ -370,9 +370,9 @@ print("  softmax exacto", n_pasos * len(V), " (|V| =", len(V), ")")
 print("  a |V| = 50 000 la razón sería", 50000 // (n_neg + 1))
 `} />
 
-Antes de entrenar, el vecino más cercano a <W>perro</W> es <W>establo</W> con $0{,}68$: puro ruido.
+Antes de entrenar, el vecino más cercano a <W>perro</W> es <W>establo</W> con $0.68$: puro ruido.
 Cuatro pasadas después son <W>ratón</W>, <W>gato</W> y <W>caballo</W>,
-por encima de $0{,}97$; los de <W>carne</W> son las otras tres comidas y los de <W>patio</W>, los
+por encima de $0.97$; los de <W>carne</W> son las otras tres comidas y los de <W>patio</W>, los
 otros tres lugares. Nadie ha dicho que <W>perro</W> y <W>gato</W> se parezcan: solo han entrado
 pares de ventanas y un $1$ o un $0$ por par.
 
@@ -381,7 +381,7 @@ construcción: de ahí unos cosenos que rozan el $1$ y que con texto de verdad n
 <W>niña</W> se queda con <W>la</W> y <W>ve</W>: aparece en un solo molde, y es el molde lo
 aprendido.
 
-Pon `n_neg = 0` y ejecuta otra vez. La pérdida se desploma hasta $0{,}02$ —sin negativos, decir que
+Pon `n_neg = 0` y ejecuta otra vez. La pérdida se desploma hasta $0.02$ —sin negativos, decir que
 sí a todo es perfecto— y los vecinos se vuelven basura: <W>perro</W> con <W>en</W> y con <W>el</W>,
 todo cerca de todo. Los negativos no eran solo el ahorro del desarrollo: sin algo contra lo que
 empujar, la pérdida baja y la representación no existe.

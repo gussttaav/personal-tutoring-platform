@@ -489,15 +489,18 @@ Spanish typography, since this is Spanish prose and half of it differs from Engl
   (guion) or `–` (semirraya) in its place.
 - **Opening `¿` and `¡` always.** Their absence is the single clearest tell of prose drafted in
   English.
-- **Numbers in prose take the decimal comma and a space for thousands**: `1,5`, `30 000`. Inside
-  `$…$` the decimal point stays — `C/3.5` is maths, and maths is set the way NOTATION.md says.
-  **The carve-out is a number the prose is *reporting*,** which keeps the comma even inside a `$…$`
-  wrapper, and takes `\,` for the thousands the way prose takes a space: `$0{,}500$` de acierto,
-  una columna que se mueve `$2{,}4$` unidades, `$29\,312$` pesos. The fences are there to set the
-  digits, not because the number belongs to an expression, and a result quoted mid-sentence is read
-  aloud in Spanish. The test is whether an operator or a symbol is standing next to it. This is
-  what every lesson from Block 2 on already does — the rule went in after them, which is why it
-  reads as an exception rather than as the main case it actually is.
+- **Numbers in prose take the decimal point and a space for thousands**: `1.5`, `30 000`. Inside
+  `$…$` the decimal point is the same point — `C/3.5` is maths, and maths is set the way
+  NOTATION.md says. A number the prose is *reporting* needs no escaping to make that true: `$0.500$`
+  de acierto, una columna que se mueve `$2.4$` unidades, `$29\,312$` pesos, are typeset exactly like
+  a bare expression. Thousands still take `\,` inside `$…$` the way prose takes a space. **Changed
+  from the decimal comma on 2026-08-16** — see the P5-00 deviation in STATUS.md for why (a sentence
+  reading four numbers in a row, `de 1,0 a 1,1, a 1,2, a 1,3`, is unreadable as a list before it is
+  read as four decimals) and for the note that every lesson through Block 3 was rewritten the same
+  day, so there is no mixed-convention period to account for. The old rule needed a carve-out
+  (`$0{,}500$`, comma-escaped) so a reported number would still read as a decimal inside `$…$`
+  instead of tripping KaTeX's comma-spacing; the point needs none, which is the second reason to
+  prefer it, not just the first.
 - **Quotes are `«…»`.** Never `"…"`.
 - **A display equation is part of its sentence and carries that sentence's punctuation.** A `$$…$$`
   block is not a picture dropped between two paragraphs — it is a clause, and it is read aloud as
@@ -1056,7 +1059,7 @@ Copy this into the PR description.
       *basta con*…) or the padding family (*cabe destacar*, *como podemos ver*…)
 - [ ] **The five marks do their own jobs**: bold defines, italics emphasises or marks an anglicism,
       `<W>` mentions, `«…»` loosens, backticks are Python
-- [ ] Spanish typography: raya glued (`—así—`), opening `¿` and `¡`, decimal comma in prose
+- [ ] Spanish typography: raya glued (`—así—`), opening `¿` and `¡`, decimal point in prose
 - [ ] **Every display equation punctuated as part of its sentence** — the mark inside the fence:
       `.` when the sentence ends there, `,` when the next clause takes a pause, nothing when the
       sentence runs through it. Read each equation aloud with the line after it

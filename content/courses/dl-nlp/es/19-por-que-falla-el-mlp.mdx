@@ -4,7 +4,7 @@ title: "Por qué el MLP falla con secuencias"
 block: 3
 order: 1
 minutes: 23
-summary: "Poner los vectores de los tokens en fila mete el orden dentro de la entrada, y cobra dos cosas por ello: una longitud fija que hay que truncar o rellenar, y una primera capa partida en tantos bloques como posiciones, cada uno ajustado sólo por lo que cae en la suya. Una red que aprende «no» en las cuatro primeras posiciones acierta el 0,500 cuando «no» aparece en la quinta."
+summary: "Poner los vectores de los tokens en fila mete el orden dentro de la entrada, y cobra dos cosas por ello: una longitud fija que hay que truncar o rellenar, y una primera capa partida en tantos bloques como posiciones, cada uno ajustado sólo por lo que cae en la suya. Una red que aprende «no» en las cuatro primeras posiciones acierta el 0.500 cuando «no» aparece en la quinta."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -18,14 +18,14 @@ quiz:
     hint: 'Cuenta primero cuántas coordenadas tiene la entrada concatenada.'
   - id: q-por-que-falla
     type: single
-    prompt: 'La celda entrena con <W>no</W> en las cuatro primeras posiciones y examina con <W>no</W> en las dos últimas. El acierto de prueba se queda en $0{,}500$, y no lo mueven ni más pasos, ni más neuronas ocultas, ni otra tasa de aprendizaje. ¿Cuál es la razón?'
+    prompt: 'La celda entrena con <W>no</W> en las cuatro primeras posiciones y examina con <W>no</W> en las dos últimas. El acierto de prueba se queda en $0.500$, y no lo mueven ni más pasos, ni más neuronas ocultas, ni otra tasa de aprendizaje. ¿Cuál es la razón?'
     options:
       - { id: a, text: 'Que $\nabla_{\mathbf{W}^{(1)}_t}\ell = \boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ se anula en la columna de <W>no</W> de los bloques 5 y 6 para todos los ejemplos de entrenamiento, así que esas columnas terminan exactamente donde empezaron.' }
       - { id: b, text: 'Que 600 ejemplos son pocos para los 768 pesos de la primera capa, y la red se queda sin datos con los que fijarlos.' }
       - { id: c, text: 'Que la tangente hiperbólica se satura con entradas one-hot, de modo que el gradiente se apaga antes de llegar a la primera capa.' }
       - { id: d, text: 'Que el conjunto de prueba está desequilibrado y la mitad de sus ejemplos no tiene la etiqueta que le corresponde.' }
     answer: a
-    explanation: 'La (a) es lo que imprime la última parte de la celda: la columna de <W>no</W> se mueve unas $2{,}4$ unidades en los bloques 1 a 4 y exactamente $0{,}000000$ en los bloques 5 y 6. No es que se mueva poco, es que el gradiente que la mueve es el vector nulo en todos los ejemplos, y ningún método de optimización corrige un peso con un cero. La (b) va contra el dato —el acierto de entrenamiento es $1{,}000$, así que datos hay de sobra para lo que la red sí aprende—; la (c) también, porque esa saturación impediría aprender los bloques 1 a 4 y esos se aprenden; y la (d) es falsa por construcción: la celda asigna la etiqueta $1$ a los ejemplos de índice par, ciento cincuenta de trescientos.'
+    explanation: 'La (a) es lo que imprime la última parte de la celda: la columna de <W>no</W> se mueve unas $2.4$ unidades en los bloques 1 a 4 y exactamente $0.000000$ en los bloques 5 y 6. No es que se mueva poco, es que el gradiente que la mueve es el vector nulo en todos los ejemplos, y ningún método de optimización corrige un peso con un cero. La (b) va contra el dato —el acierto de entrenamiento es $1.000$, así que datos hay de sobra para lo que la red sí aprende—; la (c) también, porque esa saturación impediría aprender los bloques 1 a 4 y esos se aprenden; y la (d) es falsa por construcción: la celda asigna la etiqueta $1$ a los ejemplos de índice par, ciento cincuenta de trescientos.'
   - id: q-longitud-fija
     type: multi
     prompt: 'Marca todo lo que sea cierto de un MLP que recibe la concatenación de $T_{\max}$ posiciones.'
@@ -49,7 +49,7 @@ challenges: []
 Una capa de entrada tiene el ancho que se le dio al construirla; un texto tiene el largo que tenga.
 El bloque anterior, dedicado al perceptrón multicapa (*multilayer perceptron*, MLP), terminó
 chocando contra esa tensión sin llegar a escribirla: su clasificador de reseñas acertaba el
-$88{,}3\ \%$ de las que no había leído, y el techo se lo ponía la entrada y no la red, porque el
+$88.3\ \%$ de las que no había leído, y el techo se lo ponía la entrada y no la red, porque el
 orden de los tokens no llegaba a cruzar la puerta. Corregirlo obliga a cambiar la entrada, y cambiar
 la entrada obliga a volver sobre $\mathbf{W}^{(1)}$, que tiene $d_0$ columnas desde el instante en
 que se construye.
@@ -275,25 +275,25 @@ for t in range(T):
     print("   posición %d:  %.6f" % (t + 1, np.linalg.norm(mov[:, t * len(V) + NO])))
 `} />
 
-La primera línea es el fallo: $1{,}000$ sobre lo que ha visto y $0{,}500$ sobre lo que no. Ese
-$0{,}500$ no es una moneda al aire. Las ciento cincuenta secuencias del examen que *no* llevan
+La primera línea es el fallo: $1.000$ sobre lo que ha visto y $0.500$ sobre lo que no. Ese
+$0.500$ no es una moneda al aire. Las ciento cincuenta secuencias del examen que *no* llevan
 <W>no</W> las acierta todas, y las ciento cincuenta que sí lo llevan las falla todas, porque a sus
 ojos son idénticas a las primeras. La tercera línea dice hasta qué punto: el $\hat{y}$ medio de las
-ciento cincuenta positivas es $0{,}0014$. No está dudando entre las dos respuestas; está segura y
+ciento cincuenta positivas es $0.0014$. No está dudando entre las dos respuestas; está segura y
 equivocada.
 
 La segunda línea es la incómoda. La bolsa de palabras —la representación que este bloque ha venido a
-sustituir, la que no distingue un orden de otro— acierta el $1{,}000$ en el examen desplazado.
+sustituir, la que no distingue un orden de otro— acierta el $1.000$ en el examen desplazado.
 Su ventaja es exactamente lo que le falta a la otra: tiene *una* coordenada para <W>no</W>, que
 recoge las ocurrencias de las seis posiciones a la vez, así que un peso ajustado con lo que pasó en
 la posición 2 sirve tal cual cuando <W>no</W> aparece en la 5. Concatenar ganó el orden y perdió eso.
 
-La última salida es la fórmula, verificada. La columna de <W>no</W> se ha movido unas $2{,}4$
-unidades en los bloques 1 a 4, y $0{,}000000$ en los bloques 5 y 6 —cero exacto, no cero
+La última salida es la fórmula, verificada. La columna de <W>no</W> se ha movido unas $2.4$
+unidades en los bloques 1 a 4, y $0.000000$ en los bloques 5 y 6 —cero exacto, no cero
 redondeado—, porque su gradiente $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ fue la matriz nula en
 los seiscientos ejemplos y en los mil quinientos pasos. Cambia la inicialización y la cifra de los
 cuatro primeros bloques cambia; los dos últimos siguen dando cero, y el acierto de prueba sigue
-dando $0{,}500$.
+dando $0.500$.
 
 ## Comprueba tu intuición
 

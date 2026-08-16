@@ -29,7 +29,7 @@ quiz:
       - { id: c, text: 'Porque el logaritmo deja $\text{idf}(t)$ acotada entre $0$ y $1$, y así el peso no se dispara.' }
       - { id: d, text: 'Porque sin él la similitud coseno cambiaría de orden al cambiar la base del logaritmo.' }
     answer: a
-    explanation: 'El logaritmo se infiere, no se añade después. Las otras tres describen cosas reales pero distintas. (b) es el $1 + \text{df}(t)$ del denominador, una convención aparte que está en el desplegable de esta lección y que no tiene nada que ver con el logaritmo. (c) es falso: $\text{idf}(t)$ llega hasta $\log N$, que con un millón de documentos ronda $13{,}8$. Y (d) va justo al revés: cambiar la base multiplica todos los $\text{idf}$ por la misma constante, y el coseno no se entera.'
+    explanation: 'El logaritmo se infiere, no se añade después. Las otras tres describen cosas reales pero distintas. (b) es el $1 + \text{df}(t)$ del denominador, una convención aparte que está en el desplegable de esta lección y que no tiene nada que ver con el logaritmo. (c) es falso: $\text{idf}(t)$ llega hasta $\log N$, que con un millón de documentos ronda $13.8$. Y (d) va justo al revés: cambiar la base multiplica todos los $\text{idf}$ por la misma constante, y el coseno no se entera.'
   - id: q-coseno
     type: multi
     prompt: 'Pegas un documento consigo mismo. Llamas $d_1$ al original y $d_2$ al resultado, medidos contra el mismo corpus, de modo que $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. ¿Qué es cierto? Marca todo lo que valga.'
@@ -338,13 +338,13 @@ la tabla de la motivación medida sobre un corpus, y ninguna dice nada del tema.
 
 Los pesos le dan la vuelta. Las entradas de los seis documentos —<W>.</W>, <W>de</W>, <W>la</W>,
 <W>y</W>— tienen $\text{idf}$ exactamente $0$ y desaparecen, mientras que <W>gol</W>, <W>horno</W>
-y <W>lista</W> valen $1{,}10$ y <W>árbitro</W>, que sale una vez, $1{,}79$. Las de más peso de cada documento pasan a ser <W>delantero</W> y <W>gol</W>,
+y <W>lista</W> valen $1.10$ y <W>árbitro</W>, que sale una vez, $1.79$. Las de más peso de cada documento pasan a ser <W>delantero</W> y <W>gol</W>,
 <W>masa</W> y <W>horno</W>, <W>función</W> y <W>bucle</W>: el tema del texto, sin que nadie le
 haya dicho al programa qué es un tema.
 
-Las similitudes lo confirman en bloque. Los pares del mismo tema valen $0{,}23$, $0{,}35$ y
-$0{,}30$, y los doce restantes se quedan entre $0{,}00$ y $0{,}06$. El corpus de juguete exagera
-esa separación, pero el orden es el de uno real. Y la última línea cierra el argumento del coseno: entre un documento y su copia doblada, la distancia euclídea vale $6{,}47$ y el coseno
+Las similitudes lo confirman en bloque. Los pares del mismo tema valen $0.23$, $0.35$ y
+$0.30$, y los doce restantes se quedan entre $0.00$ y $0.06$. El corpus de juguete exagera
+esa separación, pero el orden es el de uno real. Y la última línea cierra el argumento del coseno: entre un documento y su copia doblada, la distancia euclídea vale $6.47$ y el coseno
 exactamente $1$.
 
 Una prueba de treinta segundos. Añade un séptimo documento de fútbol y ejecuta otra vez: el

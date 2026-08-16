@@ -35,7 +35,7 @@ quiz:
       - { id: c, text: 'Hay una $\mathbf{W}_{hh}$ distinta por posición, igual que la concatenación tenía un bloque $\mathbf{W}^{(1)}_t$ por posición.' }
       - { id: d, text: 'Como los pesos son los mismos en todas las posiciones, dos secuencias con los mismos tokens en distinto orden acaban en el mismo $\mathbf{h}_T$.' }
     answer: [a, b]
-    explanation: 'La (a) sale de leer las formas: $d_h \times d_h$, $d_h \times d_{\text{model}}$ y $d_h$, y en ninguna aparece $T$. La (b) sale de sustituir $\mathbf{h}_{t-1}$ por su definición hasta llegar a $\mathbf{h}_0$: cada token queda dentro del anidamiento. La (c) es exactamente lo contrario de lo que dice la fórmula —un subíndice $t$ en $\mathbf{W}^{(1)}_t$ señala una posición y hay $T_{\max}$ matrices; los subíndices de $\mathbf{W}_{hh}$ señalan un papel y hay una sola—, y confundirlas es leer la recurrencia como si fuera un MLP. La (d) es la trampa, porque su primera mitad es verdad y la conclusión no se sigue: la segunda celda pone las dos frases una debajo de otra y los estados finales son $(0{,}117,\ 0{,}087,\ 0{,}171)$ y $(-0{,}141,\ 0{,}701,\ -0{,}632)$. El orden no está en los pesos, está en cuántas veces cruza $\mathbf{W}_{hh}$ cada token.'
+    explanation: 'La (a) sale de leer las formas: $d_h \times d_h$, $d_h \times d_{\text{model}}$ y $d_h$, y en ninguna aparece $T$. La (b) sale de sustituir $\mathbf{h}_{t-1}$ por su definición hasta llegar a $\mathbf{h}_0$: cada token queda dentro del anidamiento. La (c) es exactamente lo contrario de lo que dice la fórmula —un subíndice $t$ en $\mathbf{W}^{(1)}_t$ señala una posición y hay $T_{\max}$ matrices; los subíndices de $\mathbf{W}_{hh}$ señalan un papel y hay una sola—, y confundirlas es leer la recurrencia como si fuera un MLP. La (d) es la trampa, porque su primera mitad es verdad y la conclusión no se sigue: la segunda celda pone las dos frases una debajo de otra y los estados finales son $(0.117,\ 0.087,\ 0.171)$ y $(-0.141,\ 0.701,\ -0.632)$. El orden no está en los pesos, está en cuántas veces cruza $\mathbf{W}_{hh}$ cada token.'
   - id: q-memoria
     type: predict-output
     prompt: 'La misma recurrencia, con $\mathbf{W}_{hh}$ puesta a cero a mano. ¿Qué imprime?'
@@ -351,7 +351,7 @@ recortar ni rellenar nada —el bucle da las vueltas que le pida la frase—.
 
 Las dos últimas líneas son la lección anterior contestada. <W>el guion</W> ocupa las posiciones 1 y 2
 de la primera frase y las 7 y 8 de la segunda, y los estados que produce son casi los mismos:
-$(0{,}509,\ 0{,}947,\ 0{,}072)$ frente a $(0{,}481,\ 0{,}935,\ 0{,}024)$. Casi, no exactamente, y las
+$(0.509,\ 0.947,\ 0.072)$ frente a $(0.481,\ 0.935,\ 0.024)$. Casi, no exactamente, y las
 dos mitades cuentan. Se parecen porque los pesos que leen esos dos tokens son los mismos pesos, estén
 donde estén; en el MLP concatenado no había ninguna razón para que se parecieran, y la lección
 anterior midió que no se parecían en absoluto. Y difieren porque el estado que traían de antes no era
@@ -399,8 +399,8 @@ print("recurr.    %-13d %d" % tuple(recurr))
 `} />
 
 La bolsa de palabras devuelve el mismo vector para las dos frases, casilla por casilla, porque suma y
-la suma no tiene orden. El estado final no: $(0{,}117,\ 0{,}087,\ 0{,}171)$ contra
-$(-0{,}141,\ 0{,}701,\ -0{,}632)$, y no es una diferencia de matiz, porque cambian los tres signos.
+la suma no tiene orden. El estado final no: $(0.117,\ 0.087,\ 0.171)$ contra
+$(-0.141,\ 0.701,\ -0.632)$, y no es una diferencia de matiz, porque cambian los tres signos.
 La recurrencia se ha quedado con lo bueno de las dos representaciones que el bloque lleva comparando:
 distingue el orden, como la concatenación, y comparte los pesos, como la bolsa.
 

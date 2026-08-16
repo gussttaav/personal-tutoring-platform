@@ -11,10 +11,10 @@ hasQuiz: true
 quiz:
   - id: q-leer-un-gradiente
     type: numeric
-    prompt: 'En la red de la segunda celda, la pasada hacia atrás deja $\boldsymbol{\delta}^{(1)} = (0{,}323559,\; -0{,}493520,\; -0{,}493520,\; 0)^{\top}$, y la entrada de esa reseña es $\mathbf{x} = (0, 0, 1, 2, 0, 0, 1, 1)^{\top}$. ¿Cuánto vale $\partial \ell / \partial \mathbf{W}^{(1)}_{24}$, la derivada del peso que la segunda neurona oculta le da a la cuarta entrada del vocabulario?'
+    prompt: 'En la red de la segunda celda, la pasada hacia atrás deja $\boldsymbol{\delta}^{(1)} = (0.323559,\; -0.493520,\; -0.493520,\; 0)^{\top}$, y la entrada de esa reseña es $\mathbf{x} = (0, 0, 1, 2, 0, 0, 1, 1)^{\top}$. ¿Cuánto vale $\partial \ell / \partial \mathbf{W}^{(1)}_{24}$, la derivada del peso que la segunda neurona oculta le da a la cuarta entrada del vocabulario?'
     answer: -0.98704
     tolerance: 0.001
-    explanation: 'Es una multiplicación, y ése es el resultado de la lección: $\delta^{(1)}_2 \cdot x_4 = -0{,}493520 \cdot 2 = -0{,}98704$. No hace falta recorrer nada, porque el recorrido ya está hecho y su resultado es ese $-0{,}493520$. Fíjate en de dónde sale el factor $2$: la cuarta entrada del vocabulario es <W>la</W>, que aparece dos veces en la reseña, así que su peso se corrige el doble que el de una entrada que aparece una sola vez —el mismo reparto que la lección 6 de este bloque, sobre descenso de gradiente, encontró con una neurona suelta—. Y la cuarta fila entera de $\nabla_{\mathbf{W}^{(1)}}\ell$ vale cero, porque $\delta^{(1)}_4 = 0$: esa neurona está apagada y ninguno de sus ocho pesos se mueve.'
+    explanation: 'Es una multiplicación, y ése es el resultado de la lección: $\delta^{(1)}_2 \cdot x_4 = -0.493520 \cdot 2 = -0.98704$. No hace falta recorrer nada, porque el recorrido ya está hecho y su resultado es ese $-0.493520$. Fíjate en de dónde sale el factor $2$: la cuarta entrada del vocabulario es <W>la</W>, que aparece dos veces en la reseña, así que su peso se corrige el doble que el de una entrada que aparece una sola vez —el mismo reparto que la lección 6 de este bloque, sobre descenso de gradiente, encontró con una neurona suelta—. Y la cuarta fila entera de $\nabla_{\mathbf{W}^{(1)}}\ell$ vale cero, porque $\delta^{(1)}_4 = 0$: esa neurona está apagada y ninguno de sus ocho pesos se mueve.'
   - id: q-que-se-reutiliza
     type: single
     prompt: 'Backpropagation no usa ninguna regla de derivación que la lección anterior no tuviera ya. ¿Qué es entonces lo que ahorra?'
@@ -46,7 +46,7 @@ quiz:
       g = np.array([0.5, -0.5, 1.5, -1.5])
       print(np.round(g * (z > 0), 2))
     answer: '[ 0.5 -0.   0.  -1.5]'
-    explanation: 'La comparación da `[True False False True]`, y multiplicar por ella deja pasar la primera y la cuarta coordenada y anula las otras dos. La tercera es la que enseña algo: $z = 0$ es donde ReLU tiene el pico y la derivada no existe, y la comparación estricta elige el $0$ que el curso fijó por convención en la lección 2 de este bloque, sobre funciones de activación. Con `>=` esa coordenada habría dejado pasar su $1{,}5$ entero. Y mira el `-0.`: multiplicar $-0{,}5$ por `False` da cero negativo, que aritméticamente es cero y se imprime con signo. Es la razón de que la segunda celda sume `+ 0.` antes de enseñar una matriz de gradientes.'
+    explanation: 'La comparación da `[True False False True]`, y multiplicar por ella deja pasar la primera y la cuarta coordenada y anula las otras dos. La tercera es la que enseña algo: $z = 0$ es donde ReLU tiene el pico y la derivada no existe, y la comparación estricta elige el $0$ que el curso fijó por convención en la lección 2 de este bloque, sobre funciones de activación. Con `>=` esa coordenada habría dejado pasar su $1.5$ entero. Y mira el `-0.`: multiplicar $-0.5$ por `False` da cero negativo, que aritméticamente es cero y se imprime con signo. Es la razón de que la segunda celda sume `+ 0.` antes de enseñar una matriz de gradientes.'
     hint: 'El formato cuenta tanto como los valores. NumPy alinea las cuatro casillas al ancho de la más larga, `-1.5`, así que las positivas llevan delante un espacio de relleno; y un cero con signo se escribe `-0.`, no `0.`.'
   - id: q-tirar-el-forward
     type: single
@@ -453,14 +453,14 @@ print("nueve parámetros, mayor diferencia con el sondeo: %.1e" % peor)
 `} />
 
 Los números son los del explorable a la tercera cifra, y los nombres también, así que puedes leer
-las dos cosas en paralelo. La tercera línea enseña los dos movimientos por separado. El transporte deja $\partial \ell / \partial \mathbf{h}^{(1)} = (-0{,}079,\ 0{,}068)$:
-un solo error, $-0{,}113$, repartido entre las dos neuronas ocultas según sus pesos $0{,}7$ y
-$-0{,}6$, y por eso la segunda coordenada sale con el signo cambiado. El enmascarado son los
-$(0{,}238,\ 0{,}222)$ de al lado, que es la derivada de la sigmoide en cada preactivación.
+las dos cosas en paralelo. La tercera línea enseña los dos movimientos por separado. El transporte deja $\partial \ell / \partial \mathbf{h}^{(1)} = (-0.079,\ 0.068)$:
+un solo error, $-0.113$, repartido entre las dos neuronas ocultas según sus pesos $0.7$ y
+$-0.6$, y por eso la segunda coordenada sale con el signo cambiado. El enmascarado son los
+$(0.238,\ 0.222)$ de al lado, que es la derivada de la sigmoide en cada preactivación.
 
-Y mira $\nabla_{\mathbf{W}^{(1)}}\ell$, que vale $(-0{,}019,\ -0{,}009)$ arriba y
-$(0{,}015,\ 0{,}008)$ abajo. Su primera columna es $\boldsymbol{\delta}^{(1)}$ tal cual, porque
-$x_1 = 1$; la segunda es $\boldsymbol{\delta}^{(1)}$ a la mitad, porque $x_2 = 0{,}5$. Eso es un
+Y mira $\nabla_{\mathbf{W}^{(1)}}\ell$, que vale $(-0.019,\ -0.009)$ arriba y
+$(0.015,\ 0.008)$ abajo. Su primera columna es $\boldsymbol{\delta}^{(1)}$ tal cual, porque
+$x_1 = 1$; la segunda es $\boldsymbol{\delta}^{(1)}$ a la mitad, porque $x_2 = 0.5$. Eso es un
 producto exterior visto de cerca, y es la razón de que nueve derivadas quepan en tres números y dos
 entradas.
 

@@ -14,7 +14,7 @@ quiz:
     prompt: 'Una neurona con pesos $\mathbf{w} = (2,\, -1,\, 3)^{\top}$ y sesgo $b = -6$ recibe la entrada $\mathbf{x} = (1,\, 3,\, 2)^{\top}$. ¿Cuánto vale su preactivación $z$?'
     answer: -1
     tolerance: 0.01
-    explanation: 'Coordenada a coordenada, $2 \cdot 1 = 2$, $(-1) \cdot 3 = -3$ y $3 \cdot 2 = 6$; la suma vale $5$ y el sesgo la baja a $z = -1$. Como $z < 0$, el escalón entrega $a = 0$: la neurona dice que no. Fíjate en lo cerca que se queda de decir lo contrario —con $\lVert \mathbf{w} \rVert = \sqrt{14} \approx 3{,}74$, el punto cae a $0{,}27$ de la frontera, y un sesgo de $-5$ lo habría volteado—, y en que $a$ no transmite nada de eso.'
+    explanation: 'Coordenada a coordenada, $2 \cdot 1 = 2$, $(-1) \cdot 3 = -3$ y $3 \cdot 2 = 6$; la suma vale $5$ y el sesgo la baja a $z = -1$. Como $z < 0$, el escalón entrega $a = 0$: la neurona dice que no. Fíjate en lo cerca que se queda de decir lo contrario —con $\lVert \mathbf{w} \rVert = \sqrt{14} \approx 3.74$, el punto cae a $0.27$ de la frontera, y un sesgo de $-5$ lo habría volteado—, y en que $a$ no transmite nada de eso.'
   - id: q-sesgo
     type: single
     prompt: '¿Qué pierde una neurona a la que le quitas el sesgo, es decir, con $b = 0$ fijo?'
@@ -304,13 +304,13 @@ frontera; el escalón resuelve el empate hacia arriba y la manda al lado positiv
 negativa.
 
 Los dos experimentos siguientes son el asunto de la lección. Multiplicar $\mathbf{w}$ y $b$ por diez
-multiplica por diez las diez preactivaciones —$2{,}0$ pasa a $20$, $-1{,}0$ a $-10$— y no cambia ni
+multiplica por diez las diez preactivaciones —$2.0$ pasa a $20$, $-1.0$ a $-10$— y no cambia ni
 una decisión: la frontera es el conjunto donde $z$ vale cero, y quién vale cero no depende de la
-escala. Mover el sesgo a $-0{,}5$, en cambio, desliza la frontera medio punto, la reseña que estaba
+escala. Mover el sesgo a $-0.5$, en cambio, desliza la frontera medio punto, la reseña que estaba
 justo encima cae del otro lado y los aciertos suben a diez de diez.
 
-Las últimas líneas imprimen la distancia. Con $\lVert \mathbf{w} \rVert = 2{,}449$, la primera reseña
-cae a $0{,}816$ de la frontera y <W>la película es mala</W> a $-0{,}408$: la mitad de lejos, del otro
+Las últimas líneas imprimen la distancia. Con $\lVert \mathbf{w} \rVert = 2.449$, la primera reseña
+cae a $0.816$ de la frontera y <W>la película es mala</W> a $-0.408$: la mitad de lejos, del otro
 lado. Esa diferencia existe en $z$, y a $a$ no llega.
 
 ## Comprueba tu intuición
@@ -331,7 +331,7 @@ mirando las reseñas, y eso no se puede repetir con un vocabulario de cincuenta 
 neurona los encuentre sola, a partir de ejemplos, ocupa buena parte de lo que queda del bloque. La
 otra está más cerca. La geometría le dio un significado a la magnitud de $z$ —la distancia a la
 frontera, escalada por $\lVert \mathbf{w} \rVert$— y el escalón lo tira entero: a la reseña que cae a
-$0{,}816$ y a la que cae rozando la frontera les entrega el mismo $1$.
+$0.816$ y a la que cae rozando la frontera les entrega el mismo $1$.
 
 $\varphi$ se fijó por decreto, y hay muchas más funciones donde elegir. Algunas conservan la
 distancia en lugar de aplastarla; otras cambian de raíz lo que se puede llegar a calcular cuando

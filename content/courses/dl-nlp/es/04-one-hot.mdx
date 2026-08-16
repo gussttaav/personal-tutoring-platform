@@ -14,7 +14,7 @@ quiz:
     prompt: 'Tu vocabulario tiene $\lvert V \rvert = 20\,000$ entradas y representas cada una con su vector one-hot. ¿Cuánto vale la distancia euclídea $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert$ entre las de dos entradas distintas $u$ y $v$?'
     answer: 1.414
     tolerance: 0.01
-    explanation: 'Vale $\sqrt{2} \approx 1{,}414$, y lo notable es lo que *no* aparece en esa respuesta. Los dos vectores se diferencian en exactamente dos posiciones —donde uno tiene su $1$ el otro tiene un $0$, y al revés—, así que la suma de los cuadrados de las diferencias es $1 + 1 = 2$ y la distancia es su raíz. Ni $\lvert V \rvert$ ni qué palabras sean $u$ y $v$ entran en la cuenta: <W>gato</W> está tan lejos de <W>gata</W> como de <W>criptomoneda</W>.'
+    explanation: 'Vale $\sqrt{2} \approx 1.414$, y lo notable es lo que *no* aparece en esa respuesta. Los dos vectores se diferencian en exactamente dos posiciones —donde uno tiene su $1$ el otro tiene un $0$, y al revés—, así que la suma de los cuadrados de las diferencias es $1 + 1 = 2$ y la distancia es su raíz. Ni $\lvert V \rvert$ ni qué palabras sean $u$ y $v$ entran en la cuenta: <W>gato</W> está tan lejos de <W>gata</W> como de <W>criptomoneda</W>.'
   - id: q-que-cumple
     type: multi
     prompt: 'Comparas el one-hot con la representación por índices de la lección 1, sobre el problema de representar el lenguaje. ¿En qué mejora? Marca todo lo que valga.'
@@ -179,7 +179,7 @@ coordenadas y solo una es distinta de cero, así que la parte del vector que lle
 
 $$
 \frac{\text{coordenadas no nulas}}{\text{coordenadas del vector}}
-= \frac{1}{\lvert V \rvert} = \frac{1}{50\,000} = 0{,}00002 = 0{,}002\ \%.
+= \frac{1}{\lvert V \rvert} = \frac{1}{50\,000} = 0.00002 = 0.002\ \%.
 $$
 
 Antes de seguir, un apunte a favor. La lección 1 te pidió que guardaras una observación: allí, añadir
@@ -200,12 +200,12 @@ $$
 $$
 
 Pon números de los pequeños: $\lvert V \rvert = 30\,000$ y una ventana de $n = 5$ tokens, un cuarto
-de la frase de veinte tokens de la lección 3. Son $30\,000^{5} \approx 2{,}4 \times 10^{22}$ entradas posibles. Un corpus
+de la frase de veinte tokens de la lección 3. Son $30\,000^{5} \approx 2.4 \times 10^{22}$ entradas posibles. Un corpus
 enorme tiene del orden de $T = 10^{10}$ tokens, y por tanto como mucho $10^{10}$ ventanas distintas,
 de modo que el modelo llega a ver
 
 $$
-\frac{10^{10}}{2{,}4 \times 10^{22}} \approx 4 \times 10^{-13}
+\frac{10^{10}}{2.4 \times 10^{22}} \approx 4 \times 10^{-13}
 $$
 
 del espacio de entradas. Cuatro diezmillonésimas de millonésima. Y no hay corpus que arregle eso: el
@@ -224,7 +224,7 @@ plaza</W> están a la misma distancia entre sí que de cualquier otra.
 
 De modo que la virtud es el defecto, y es la misma propiedad vista dos veces. Pedimos una
 representación que no afirmara parecidos falsos y salió una que no afirma parecidos, punto. Cada una
-de esas $2{,}4 \times 10^{22}$ entradas hay que aprenderla por separado, porque ninguna se parece a
+de esas $2.4 \times 10^{22}$ entradas hay que aprenderla por separado, porque ninguna se parece a
 ninguna, y solo se van a ver $10^{10}$.
 
 ## La matriz one-hot en NumPy, y lo que pesaría
@@ -284,11 +284,11 @@ entre pares tiene **un solo elemento**. No es que se parezcan, es que no hay má
 ocho palabras se ve de un vistazo; con 50 000 sigue siendo el problema.
 
 La tabla de tamaños tiene una fila que sorprende y otra que no. La que no: 50 000 entradas piden
-9,31 GB, y por eso nadie guarda esta tabla. La que sí: la columna de la derecha, el porcentaje de
-coordenadas no nulas, que ya con 30 000 entradas es 0,003 %. Y las últimas líneas son la maldición de
+9.31 GB, y por eso nadie guarda esta tabla. La que sí: la columna de la derecha, el porcentaje de
+coordenadas no nulas, que ya con 30 000 entradas es 0.003 %. Y las últimas líneas son la maldición de
 la dimensionalidad en cuatro renglones: con una o dos palabras de contexto el corpus cubre el espacio
-entero, con tres cubre ya solo el 0,04 %, y con cinco la fracción se escribe con doce ceros detrás de
-la coma. El salto ocurre entre la segunda palabra de contexto y la tercera, no en el infinito.
+entero, con tres cubre ya solo el 0.04 %, y con cinco la fracción se escribe con doce ceros detrás del
+punto. El salto ocurre entre la segunda palabra de contexto y la tercera, no en el infinito.
 
 Una prueba de treinta segundos. Cambia `V` por un vocabulario de dos palabras y vuelve a ejecutar: la
 distancia entre pares sigue valiendo $\sqrt{2}$, exactamente igual que con ocho. Ahí ves que

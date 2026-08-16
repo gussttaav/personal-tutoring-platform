@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Porque el cero es un mínimo de la pérdida y el descenso se para en los mínimos: la red ya ha convergido, y lo que falla es la tasa de aprendizaje.' }
       - { id: d, text: 'Porque los números son demasiado pequeños para la precisión de la coma flotante. Multiplicar todos los pesos por cien al empezar lo arregla.' }
     answer: a
-    explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona —y una neurona sola no separa estas cuatro frases, que es lo que demostró la lección 3 de este bloque, sobre XOR y las capas ocultas—. La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0{,}01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
+    explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona —y una neurona sola no separa estas cuatro frases, que es lo que demostró la lección 3 de este bloque, sobre XOR y las capas ocultas—. La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0.01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
   - id: q-gradiente-batch
     type: predict-output
     prompt: 'Así calcula la celda el gradiente de una capa a partir del error del batch. ¿Qué imprime?'
@@ -30,14 +30,14 @@ quiz:
       H = np.array([[1., 0., 2.], [0., 1., 1.]])
       print((D.T @ H).shape, (D.T @ H / len(H))[0])
     answer: '(2, 3) [0.5 1.  2. ]'
-    explanation: 'Las formas mandan: `D` es $(B, d_l) = (2, 2)$ y `H` es $(B, d_{l-1}) = (2, 3)$, así que `D.T @ H` es $(d_l, d_{l-1}) = (2, 3)$ —la forma de $\mathbf{W}^{(l)}$, que es la comprobación más barata que hay—. La fila $0$ suma los dos ejemplos con el error de la primera neurona como peso: $1 \cdot (1, 0, 2) + 2 \cdot (0, 1, 1) = (1, 2, 4)$, y el $1/B$ la deja en $(0{,}5,\ 1,\ 2)$. Ese producto de matrices es la suma sobre los $B$ ejemplos: no hay ningún bucle que escribir porque el índice que se recorre y desaparece es justo el del batch.'
+    explanation: 'Las formas mandan: `D` es $(B, d_l) = (2, 2)$ y `H` es $(B, d_{l-1}) = (2, 3)$, así que `D.T @ H` es $(d_l, d_{l-1}) = (2, 3)$ —la forma de $\mathbf{W}^{(l)}$, que es la comprobación más barata que hay—. La fila $0$ suma los dos ejemplos con el error de la primera neurona como peso: $1 \cdot (1, 0, 2) + 2 \cdot (0, 1, 1) = (1, 2, 4)$, y el $1/B$ la deja en $(0.5,\ 1,\ 2)$. Ese producto de matrices es la suma sobre los $B$ ejemplos: no hay ningún bucle que escribir porque el índice que se recorre y desaparece es justo el del batch.'
     hint: 'El formato cuenta tanto como los valores. La forma se imprime como tupla, y NumPy alinea las tres casillas al ancho de la más larga, `0.5`, de modo que el $1$ y el $2$ salen como `1.` y `2.` con un espacio de relleno detrás.'
   - id: q-parar
     type: multi
     prompt: 'Marca todo lo que sea cierto sobre las curvas de pérdida que imprimen la segunda y la tercera celda.'
     options:
-      - { id: a, text: 'Una curva plana no distingue por sí sola una red que ya ha terminado de una que avanza demasiado despacio: con la escala $0{,}01$ la pérdida no se mueve en mil pasos, y con cien mil pasos la red llega a las cuatro frases.' }
-      - { id: b, text: 'El $0{,}6931$ de las dos primeras filas de la tabla es $\log 2$, que es lo que vale la pérdida cuando la red contesta $0{,}5$ a los cuatro ejemplos.' }
+      - { id: a, text: 'Una curva plana no distingue por sí sola una red que ya ha terminado de una que avanza demasiado despacio: con la escala $0.01$ la pérdida no se mueve en mil pasos, y con cien mil pasos la red llega a las cuatro frases.' }
+      - { id: b, text: 'El $0.6931$ de las dos primeras filas de la tabla es $\log 2$, que es lo que vale la pérdida cuando la red contesta $0.5$ a los cuatro ejemplos.' }
       - { id: c, text: 'En la fila del paso $25$ los aciertos ya son cuatro de cuatro, y la pérdida sigue bajando dos mil pasos después, así que contar aciertos no sirve para decidir cuándo parar.' }
       - { id: d, text: 'Como la pérdida baja en todos los pasos que imprime la segunda celda, está garantizado que bajó también en los pasos intermedios que no se imprimen.' }
     answer: [a, b, c]
@@ -134,7 +134,7 @@ challenges:
           curva, W1, b1, W2, b2 = r
           assert len(curva) == 2001, 'una perdida antes de cada paso y una al final: pasos + 1'
           assert abs(curva[0] - 0.7260) < 1e-3, 'la primera perdida se mide ANTES del primer paso'
-          assert curva[-1] < 0.01, 'dos mil pasos tienen que dejar la perdida por debajo de 0,01'
+          assert curva[-1] < 0.01, 'dos mil pasos tienen que dejar la perdida por debajo de 0.01'
           Y_hat = 1 / (1 + np.exp(-(np.tanh(X @ W1.T + b1) @ W2.T + b2)))
           assert int(((Y_hat >= 0.5) == (Y == 1.)).sum()) == 4, 'la red entrenada tiene que acertar las cuatro frases'
     solution: |
@@ -405,7 +405,7 @@ forma de sus parámetros. La última línea comprueba el $1/B$ y da cero: los cu
 exteriores de la lección anterior, promediados a mano, son casilla por casilla el producto de
 matrices de arriba.
 
-La segunda celda mete eso en un bucle y lo repite dos mil veces, con $\eta = 0{,}5$. Ejecútala y
+La segunda celda mete eso en un bucle y lo repite dos mil veces, con $\eta = 0.5$. Ejecútala y
 mira caer la pérdida.
 
 <PyCell packages={["numpy"]} code={`
@@ -449,17 +449,17 @@ for frase, a in zip(frases, aporta):
           % (frase, a[1] + a[3], a[0] + a[2]))
 `} />
 
-La pérdida sale de $0{,}7260$ y llega a $0{,}0011$, y los cuatro aciertos aparecen antes del paso
+La pérdida sale de $0.7260$ y llega a $0.0011$, y los cuatro aciertos aparecen antes del paso
 $25$. La deuda está pagada: nadie le ha dicho a la red que <W>no</W> invierte el signo de lo que
 sigue, y los pesos que ha encontrado no son los que escribí en la lección 3.
 
 Son mejores que eso: son los mismos, redescubiertos. Mira las neuronas $2$ y $4$. Sus pesos apuntan
-casi en la misma dirección —$(1{,}83,\ 1{,}77)$ y $(1{,}79,\ 1{,}85)$, las dos casi
-$x_1 + x_2$—, sus sesgos son opuestos —$-1{,}80$ y $+1{,}80$— y sus pesos de salida también
-—$-3{,}98$ y $+3{,}93$—. Eso es la franja de la lección 3: dos rectas paralelas y una resta entre
-las dos. La última tabla lo confirma: esa pareja aporta $+7{,}5$ a las dos frases positivas y
-$+0{,}2$ a las otras dos. Y la pareja $1$ y $3$ hace lo mismo sobre la otra diagonal con el signo
-cambiado, restando $6{,}7$ justo donde la primera se calla.
+casi en la misma dirección —$(1.83,\ 1.77)$ y $(1.79,\ 1.85)$, las dos casi
+$x_1 + x_2$—, sus sesgos son opuestos —$-1.80$ y $+1.80$— y sus pesos de salida también
+—$-3.98$ y $+3.93$—. Eso es la franja de la lección 3: dos rectas paralelas y una resta entre
+las dos. La última tabla lo confirma: esa pareja aporta $+7.5$ a las dos frases positivas y
+$+0.2$ a las otras dos. Y la pareja $1$ y $3$ hace lo mismo sobre la otra diagonal con el signo
+cambiado, restando $6.7$ justo donde la primera se calla.
 
 Falta decir cuándo parar, y es la decisión más floja de las tres. Aquí paro en un número redondo de
 pasos porque la curva se ha aplanado; podría haber parado cuando la pérdida dejara de bajar una
@@ -518,18 +518,18 @@ print("W(1) tras 1000 pasos:", np.round(W1, 4).tolist())
 print("¿las cuatro filas siguen siendo la misma?", bool(np.allclose(W1, W1[0])))
 `} />
 
-Las dos primeras filas de la tabla no se mueven de $0{,}6931$, que es $\log 2$: la red contesta
-$0{,}5$ a las cuatro frases al empezar y sigue contestando lo mismo mil pasos después. La segunda
-de las dos es la que enseña algo, porque su escala es $0{,}01$ y no cero: las cuatro neuronas sí son
+Las dos primeras filas de la tabla no se mueven de $0.6931$, que es $\log 2$: la red contesta
+$0.5$ a las cuatro frases al empezar y sigue contestando lo mismo mil pasos después. La segunda
+de las dos es la que enseña algo, porque su escala es $0.01$ y no cero: las cuatro neuronas sí son
 distintas. Lo que pasa es que cada capa recibe un gradiente multiplicado por la escala de la otra,
 y con dos factores pequeños todo avanza cientos de veces más despacio: esa red
 no está atascada, llega a las cuatro frases hacia el paso cien mil. Al otro extremo, la escala $10$
-arranca en $4{,}73$ —confiadamente equivocada— y se recupera: con dos capas eso sale barato, y con
+arranca en $4.73$ —confiadamente equivocada— y se recupera: con dos capas eso sale barato, y con
 profundidad deja de salirlo.
 
 Las tres últimas líneas son la simetría sin ceros de por medio. Las cuatro neuronas empiezan con
 pesos normales, sólo que iguales entre sí, y mil pasos después siguen siendo la misma fila repetida
-cuatro veces. La pérdida ha bajado de $0{,}7240$ a $0{,}6931$, que es exactamente lo que consigue
+cuatro veces. La pérdida ha bajado de $0.7240$ a $0.6931$, que es exactamente lo que consigue
 una red que contesta lo mismo a todo: cuatro neuronas trabajando como una, y una no puede.
 
 ## Comprueba tu intuición

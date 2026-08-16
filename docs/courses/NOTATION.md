@@ -112,7 +112,7 @@ The rule was written after Block 3 lesson 1 rather than before it, and what it c
 argument for writing these down early. Block 1 lesson 7, on Word2Vec, had
 $\lvert V \rvert \cdot d_{\text{model}} = 50\,000 \times 300$ — **both** signs for one operation,
 four characters apart, on a shipped page; and its cost equation was
-$4 \times 10^{10} \times 1{,}5 \times 10^{7}$, four $\times$ of which two were powers of ten and one
+$4 \times 10^{10} \times 1.5 \times 10^{7}$, four $\times$ of which two were powers of ten and one
 was the product, distinguishable only by doing the arithmetic. Both are fixed, along with ~12 other
 sites in Blocks 1 and 2, and ~17 more where a juxtaposed product had a subscripted factor.
 
@@ -121,7 +121,7 @@ that matters: $a \times 10^{n}$ is read as one number, never appears in an expon
 and always carries a power of ten on its right, so nothing about it can be mistaken for a shape. It
 is also what every paper the student will go on to read writes. It buys the clearest form of the
 Word2Vec line, where the two roles finally become visible:
-$\left(4 \times 10^{10}\right) \cdot \left(1{,}5 \times 10^{7}\right)$.
+$\left(4 \times 10^{10}\right) \cdot \left(1.5 \times 10^{7}\right)$.
 
 Not machine-checked, and it fails this file's bar on purpose: a rule keyed on "$\times$ between two
 numbers" would fire on «una $3 \times 4$ por una $4 \times 8$», which is Block 2 lesson 7 talking

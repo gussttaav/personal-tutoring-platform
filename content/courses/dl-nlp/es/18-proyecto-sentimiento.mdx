@@ -4,7 +4,7 @@ title: "Proyecto: un clasificador de sentimiento"
 block: 2
 order: 10
 minutes: 28
-summary: "El bucle del bloque entero, ahora sobre 240 reseñas de cine y con la bolsa de palabras del bloque 1 a la entrada. La red acierta las 180 con las que entrena y el 88,3 % de las 60 que no ha leído, y las siete que falla no son ruido: cuatro llevan un «no» que la bolsa de palabras no sabe dónde colocar."
+summary: "El bucle del bloque entero, ahora sobre 240 reseñas de cine y con la bolsa de palabras del bloque 1 a la entrada. La red acierta las 180 con las que entrena y el 88.3 % de las 60 que no ha leído, y las siete que falla no son ruido: cuatro llevan un «no» que la bolsa de palabras no sabe dónde colocar."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -13,18 +13,18 @@ quiz:
     type: multi
     prompt: 'El vocabulario de esta lección sale sólo de las 180 reseñas de entrenamiento. Si se construyera sobre las 240, ¿qué sería cierto? Marca todo lo que valga.'
     options:
-      - { id: a, text: 'Las reseñas de prueba dejarían de tener tokens fuera del vocabulario, así que el 8,3 % de ocurrencias que hoy se pierden desaparecería de la medición sin haber desaparecido del problema.' }
+      - { id: a, text: 'Las reseñas de prueba dejarían de tener tokens fuera del vocabulario, así que el 8.3 % de ocurrencias que hoy se pierden desaparecería de la medición sin haber desaparecido del problema.' }
       - { id: b, text: 'El vector de una reseña de prueba tendría coordenadas que existen porque esa misma reseña existe, de modo que la cifra final ya no diría qué hace la red con un texto que llega después.' }
       - { id: c, text: 'La red vería las etiquetas de las 60 reseñas de prueba mientras entrena.' }
       - { id: d, text: 'El acierto sobre las 180 de entrenamiento bajaría, porque un vocabulario mayor obliga a ajustar más pesos con los mismos ejemplos.' }
     answer: [a, b]
-    explanation: 'La (a) y la (b) son la misma fuga vista por sus dos extremos: por el lado de la representación, coordenadas hechas a medida del examen; por el lado del resultado, un número que ya no responde a la pregunta que se le hizo. La (c) es la trampa, y merece la pena verla bien: construir un vocabulario no lee ninguna etiqueta —sólo mira qué cadenas aparecen—, y aun así contamina la medida. Por eso «no le hemos enseñado las respuestas» no basta como defensa: lo que se filtra aquí es la forma del espacio, no las etiquetas. Y la (d) es falsa: las 442 coordenadas de hoy ya llevan la red a $1{,}000$ sobre las 180, y añadir 35 más no le quita capacidad, se la da.'
+    explanation: 'La (a) y la (b) son la misma fuga vista por sus dos extremos: por el lado de la representación, coordenadas hechas a medida del examen; por el lado del resultado, un número que ya no responde a la pregunta que se le hizo. La (c) es la trampa, y merece la pena verla bien: construir un vocabulario no lee ninguna etiqueta —sólo mira qué cadenas aparecen—, y aun así contamina la medida. Por eso «no le hemos enseñado las respuestas» no basta como defensa: lo que se filtra aquí es la forma del espacio, no las etiquetas. Y la (d) es falsa: las 442 coordenadas de hoy ya llevan la red a $1.000$ sobre las 180, y añadir 35 más no le quita capacidad, se la da.'
   - id: q-oov
     type: numeric
     prompt: 'Mides otro conjunto de prueba con este mismo vocabulario. Sus reseñas suman 500 ocurrencias de 320 tipos distintos, y 80 de esos tipos —100 ocurrencias entre todos— no están en $V$. ¿Qué fracción de las **ocurrencias** de ese conjunto se queda fuera del vocabulario?'
     answer: 0.2
     tolerance: 0.005
-    explanation: 'Vale $100/500 = 0{,}2$. El otro número que la pregunta pone delante, $80/320 = 0{,}25$, cuenta tipos y responde a otra cosa: cuántas *cadenas distintas* son nuevas. Los dos se escriben con las mismas barras y cuentan conjuntos distintos —uno de posiciones, otro de cadenas—, que es la razón por la que la lección 3 del bloque anterior, sobre vocabulario y OOV, exige decir siempre sobre qué se cuenta. Aquí la diferencia es pequeña; en un corpus real es enorme, porque los tipos nuevos son casi todos raros y aportan una ocurrencia cada uno.'
+    explanation: 'Vale $100/500 = 0.2$. El otro número que la pregunta pone delante, $80/320 = 0.25$, cuenta tipos y responde a otra cosa: cuántas *cadenas distintas* son nuevas. Los dos se escriben con las mismas barras y cuentan conjuntos distintos —uno de posiciones, otro de cadenas—, que es la razón por la que la lección 3 del bloque anterior, sobre vocabulario y OOV, exige decir siempre sobre qué se cuenta. Aquí la diferencia es pequeña; en un corpus real es enorme, porque los tipos nuevos son casi todos raros y aportan una ocurrencia cada uno.'
     hint: 'Dos de los cuatro números sobran. Mira cuál es el conjunto sobre el que te piden contar.'
   - id: q-brecha
     type: single
@@ -125,9 +125,9 @@ tenía diecisiete números que ajustar, ésta tiene 5 329.
 Ese salto obliga a mirar otra vez una sola decisión, la escala de la inicialización. Cada reseña
 enciende unas siete coordenadas de las 442, así que la preactivación de una neurona oculta es una
 suma de unos siete pesos: con pesos normales de escala $1$ eso da valores lo bastante grandes como
-para dejar la tangente hiperbólica saturada desde el primer paso, y con escala $0{,}1$ no. La
-diferencia se mide en el resultado —$0{,}783$ de acierto sobre las reseñas nuevas frente a
-$0{,}883$—, y es la razón de que las celdas de abajo multipliquen por $0{,}1$. Que la escala buena
+para dejar la tangente hiperbólica saturada desde el primer paso, y con escala $0.1$ no. La
+diferencia se mide en el resultado —$0.783$ de acierto sobre las reseñas nuevas frente a
+$0.883$—, y es la razón de que las celdas de abajo multipliquen por $0.1$. Que la escala buena
 dependa de la anchura de las capas y de la profundidad de la red es la deuda que la lección
 anterior dejó apuntada al bloque 3, y sigue apuntada.
 
@@ -170,8 +170,8 @@ un número que no depende de la reseña sino sólo de los sesgos: todas las rese
 este vocabulario reciben el mismo veredicto, sea el que sea. Es el hueco que ya señalaba la lección
 1 de este bloque, sobre la neurona artificial, al mirar qué contesta una neurona ante el vector
 nulo, ahora con un texto real detrás. Y una segunda concesión, más aburrida y más frecuente: sesenta reseñas medidas una vez
-dan un número con la firmeza de sesenta tiradas, suficiente para separar un $0{,}9$ de un $0{,}5$ y
-no para separarlo de un $0{,}87$.
+dan un número con la firmeza de sesenta tiradas, suficiente para separar un $0.9$ de un $0.5$ y
+no para separarlo de un $0.87$.
 
 ## El clasificador, de punta a punta
 
@@ -228,9 +228,9 @@ print("su vector, sin los ceros:",
 `} />
 
 Los tres números dicen en qué se ha metido la red. El vector tiene 442 coordenadas y una reseña
-enciende $7{,}1$ de media, el $1{,}6\ \%$: la representación es dispersa, como anunciaba el bloque
+enciende $7.1$ de media, el $1.6\ \%$: la representación es dispersa, como anunciaba el bloque
 anterior, y cada ejemplo deja unas 435 coordenadas sin decir nada. Y de las 432 ocurrencias del
-conjunto de prueba, 36 —el $8{,}3\ \%$, repartidas en 35 tipos— no están en el vocabulario. La
+conjunto de prueba, 36 —el $8.3\ \%$, repartidas en 35 tipos— no están en el vocabulario. La
 última línea enseña una de ellas: la reseña <W>una película preciosa que recomiendo sin
 reservas</W> llega a la red con seis coordenadas, porque <W>reservas</W> no aparece en ninguna de
 las 180 y desaparece sin dejar rastro.
@@ -286,17 +286,17 @@ for i in falla:
     print("   ŷ = %.3f   y = %d   %s" % (P_pru[i, 0], int(Y_pru[i, 0]), pru[i]["texto"]))
 `} />
 
-En el paso $0$ la red contesta a cara o cruz, $0{,}550$ y $0{,}517$, con la pérdida en $0{,}6906$
-—el $\log 2$ de una red que dice lo mismo a todo—. En el paso $100$ ya lleva $0{,}989$ sobre las
-reseñas que está viendo y $0{,}883$ sobre las que no, y en el paso $150$ alcanza el $1{,}000$ y no
+En el paso $0$ la red contesta a cara o cruz, $0.550$ y $0.517$, con la pérdida en $0.6906$
+—el $\log 2$ de una red que dice lo mismo a todo—. En el paso $100$ ya lleva $0.989$ sobre las
+reseñas que está viendo y $0.883$ sobre las que no, y en el paso $150$ alcanza el $1.000$ y no
 lo suelta. Lo interesante empieza ahí: entre el paso $150$ y el $600$ la pérdida se divide por
-trece, de $0{,}0482$ a $0{,}0037$, y la columna de la derecha no se mueve ni una milésima. Con
-20 000 pasos en lugar de 600 sigue en $0{,}883$. Las siete reseñas que falla no las falla por poco
+trece, de $0.0482$ a $0.0037$, y la columna de la derecha no se mueve ni una milésima. Con
+20 000 pasos en lugar de 600 sigue en $0.883$. Las siete reseñas que falla no las falla por poco
 entrenamiento.
 
 Léelas, que es donde está el resultado de la lección. Cuatro de las siete llevan un <W>no</W>:
-<W>no me aburrí ni un minuto</W> recibe $0{,}016$ y <W>no se hace larga en ningún momento</W>
-recibe $0{,}000$, y las dos hablan bien de la película. Las otras tres fallan por motivos distintos
+<W>no me aburrí ni un minuto</W> recibe $0.016$ y <W>no se hace larga en ningún momento</W>
+recibe $0.000$, y las dos hablan bien de la película. Las otras tres fallan por motivos distintos
 —dos traen tipos que el vocabulario no tiene, <W>convencen</W> y <W>eterna</W>, y la tercera junta
 <W>sobreactuada</W> con <W>de principio a fin</W>, que en el entrenamiento aparece en reseñas
 positivas—. La tercera celda pregunta por las cuatro primeras.
@@ -336,7 +336,7 @@ print("\\n%s\\n   vector nulo: %s   ŷ = %.4f"
 
 Las dos primeras frases tienen las mismas palabras, con las mismas repeticiones, en otro orden, y
 dicen cosas opuestas. Su vector es idéntico —lo dice la primera línea— y su probabilidad también,
-$0{,}0014$ las dos: la red las llama negativas, y con una de ellas acierta por casualidad. Ninguna
+$0.0014$ las dos: la red las llama negativas, y con una de ellas acierta por casualidad. Ninguna
 tasa de acierto puede pasar de ahí, porque el error ya está cometido cuando la red recibe su
 entrada.
 
@@ -345,8 +345,8 @@ reseñas positivas del entrenamiento y 24 en las negativas, así que su coordena
 hacia lo negativo, que es lo mejor que puede hacer: la coordenada dice cuántas veces sale
 <W>no</W>, y no sobre qué cae. Y la última línea cierra la concesión de la sección anterior con un
 número: <W>peliculón sublime, cinta imprescindible</W> no comparte ninguna entrada con el
-vocabulario, recibe el vector nulo y con él un $0{,}4537$ que no depende de lo que diga, sólo de
-los sesgos. Cualquier otra reseña ilegible recibiría ese mismo $0{,}4537$, y como está por debajo
+vocabulario, recibe el vector nulo y con él un $0.4537$ que no depende de lo que diga, sólo de
+los sesgos. Cualquier otra reseña ilegible recibiría ese mismo $0.4537$, y como está por debajo
 de $1/2$, todas serían negativas.
 
 ## Comprueba tu intuición

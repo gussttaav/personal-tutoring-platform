@@ -1438,3 +1438,34 @@ no consumer but the draft render fixture.
   Both are records of what P2-02 shipped, and it did ship this widget; rewriting them would make
   the history claim otherwise. This entry is the record of the removal.
 - Not yet committed to a branch/PR (**local**).
+
+**COURSE-P5-00 — decimal separator switched to the point** (2026-08-16). User-reported: a screenshot
+of Block 2's activation-function lesson — *«sube uno solo de sus pesos de 1,0 a 1,1, a 1,2, a
+1,3»* — where the four decimal commas read as a five-item list before they read as four numbers.
+The ambiguity is structural in Spanish (the decimal comma and the list separator are the same
+character), not a one-off phrasing problem, and it was only going to keep recurring in a
+number-dense course.
+
+- **AUTHORING §5's typography rule now reads decimal point, not decimal comma** — `1.5`, not `1,5`.
+  Thousands are unaffected (`30 000`, `\,` inside `$…$`). The old carve-out that comma-escaped a
+  prose-reported number inside `$…$` (`$0{,}500$`) is gone: a point needs no escaping to survive
+  KaTeX's comma-spacing, so a reported number and a bare expression are now typeset identically.
+  Checklist item and NOTATION.md's two `1{,}5` examples updated to match.
+- **Every lesson through Block 3 lesson 7 (`01` through `25`) was rewritten the same day** — there
+  is deliberately no mixed-convention period for a reader to land in. Two passes, both by hand
+  rather than a blind find-and-replace:
+  - **`{,}` → `.` everywhere** (the escaped math-mode decimal marker) — unambiguous, since that
+    escape has no other use in this codebase; ~340 sites across every lesson from `04` on.
+  - **Bare `\d,\d` reviewed one match at a time**, because the same shape is also how this course
+    writes an open interval (`$(0,1)$`), a coordinate or shape tuple (`$(1,0,0)$`, `$(3,2)$`), a
+    set (`$\{0,1\}$`), and a NumPy index in a code comment (`W1[0,2]`) — none of which are decimals
+    and none of which change. ~19 genuine decimals converted across 8 lessons; everything else
+    (intervals, tuples, sets, one code-comment index) left exactly as written.
+  - **Two prose references to the mark itself**, not to a number: `04-one-hot.mdx`'s «doce ceros
+    detrás de la coma» and `23-lstm.mdx`'s «tres ceros tras la coma», both now «el punto» — the
+    old wording would have been describing the wrong character.
+  - **`coma flotante` (floating point) was left alone everywhere it appears** — it is the Spanish
+    term for the number representation, not an instance of the decimal mark, and confusing the two
+    was the one trap in this pass worth naming.
+- `pnpm lint:content` and `pnpm build` both green after the rewrite.
+- Not yet committed to a branch/PR (**local**).

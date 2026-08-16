@@ -11,10 +11,10 @@ hasQuiz: true
 quiz:
   - id: q-derivada-sigmoide
     type: numeric
-    prompt: 'Para cierta entrada, una neurona con sigmoide da $\sigma(z) = 0{,}9$. ¿Cuánto vale $\dfrac{d\sigma}{dz}$ en ese mismo punto?'
+    prompt: 'Para cierta entrada, una neurona con sigmoide da $\sigma(z) = 0.9$. ¿Cuánto vale $\dfrac{d\sigma}{dz}$ en ese mismo punto?'
     answer: 0.09
     tolerance: 0.001
-    explanation: 'La derivada de la sigmoide se escribe con el valor de la propia sigmoide, $\dfrac{d\sigma}{dz} = \sigma(z)\left(1 - \sigma(z)\right)$, así que no hace falta ni conocer $z$ ni volver a exponenciar: $0{,}9 \cdot 0{,}1 = 0{,}09$. Fíjate en lo pequeño que es ya —poco más de un tercio del máximo $0{,}25$ que alcanza en el origen— y en que $\sigma(z) = 0{,}9$ corresponde a $z \approx 2{,}2$, un valor que en la gráfica de la función no parece extremo en absoluto. La saturación empieza antes de lo que sugiere el dibujo.'
+    explanation: 'La derivada de la sigmoide se escribe con el valor de la propia sigmoide, $\dfrac{d\sigma}{dz} = \sigma(z)\left(1 - \sigma(z)\right)$, así que no hace falta ni conocer $z$ ni volver a exponenciar: $0.9 \cdot 0.1 = 0.09$. Fíjate en lo pequeño que es ya —poco más de un tercio del máximo $0.25$ que alcanza en el origen— y en que $\sigma(z) = 0.9$ corresponde a $z \approx 2.2$, un valor que en la gráfica de la función no parece extremo en absoluto. La saturación empieza antes de lo que sugiere el dibujo.'
   - id: q-identidad
     type: single
     prompt: 'Encadenas dos neuronas: la primera calcula $a^{(1)} = \left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}$ y la segunda $a^{(2)} = w^{(2)} a^{(1)} + b^{(2)}$, con la identidad en las dos activaciones. ¿Qué función de $\mathbf{x}$ resulta?'
@@ -31,10 +31,10 @@ quiz:
     options:
       - { id: a, text: 'La sigmoide y la tangente hiperbólica saturan por los dos lados: su derivada tiende a cero cuando $\lvert z \rvert$ crece, en las dos direcciones.' }
       - { id: b, text: 'La derivada de ReLU vale cero en todo $z < 0$, y de forma exacta, no aproximada.' }
-      - { id: c, text: 'La derivada de la tangente hiperbólica alcanza $1$ en el origen, y la de la sigmoide, $0{,}25$.' }
+      - { id: c, text: 'La derivada de la tangente hiperbólica alcanza $1$ en el origen, y la de la sigmoide, $0.25$.' }
       - { id: d, text: 'ReLU no satura por ningún lado, y por eso su derivada no se anula nunca.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras son las tres cosas que la tabla de la celda mide. (a) es lo que dibujan las bandas rojas del explorable a izquierda y derecha; (b) es la mitad izquierda entera, y ahí está el defecto propio de ReLU: una neurona cuya preactivación se queda negativa para todos los ejemplos que ve tiene derivada cero en todos ellos, así que nada la mueve —la ReLU muerta—; (c) sale de evaluar $\sigma(0)\left(1-\sigma(0)\right) = 0{,}25$ y $1 - \tanh^{2}(0) = 1$. La falsa es (d), y falla por la segunda mitad: es cierto que ReLU no satura —a la derecha su derivada vale $1$ tan lejos como quieras ir—, pero de eso no se sigue que no se anule, porque a la izquierda vale cero en todas partes.'
+    explanation: 'Las tres primeras son las tres cosas que la tabla de la celda mide. (a) es lo que dibujan las bandas rojas del explorable a izquierda y derecha; (b) es la mitad izquierda entera, y ahí está el defecto propio de ReLU: una neurona cuya preactivación se queda negativa para todos los ejemplos que ve tiene derivada cero en todos ellos, así que nada la mueve —la ReLU muerta—; (c) sale de evaluar $\sigma(0)\left(1-\sigma(0)\right) = 0.25$ y $1 - \tanh^{2}(0) = 1$. La falsa es (d), y falla por la segunda mitad: es cierto que ReLU no satura —a la derecha su derivada vale $1$ tan lejos como quieras ir—, pero de eso no se sigue que no se anule, porque a la izquierda vale cero en todas partes.'
   - id: q-relu-numpy
     type: predict-output
     prompt: 'Esta es la derivada de ReLU tal como la escribe la celda. ¿Qué imprime?'
@@ -125,7 +125,7 @@ cuánto sobrevive del número que la neurona acaba de calcular, y qué se consig
 detrás de otra.
 
 Mira lo que hace el escalón con un peso que se mueve. Toma una neurona cualquiera y sube uno solo de
-sus pesos de $1{,}0$ a $1{,}1$, a $1{,}2$, a $1{,}3$. La preactivación acompaña el movimiento: crece
+sus pesos de $1.0$ a $1.1$, a $1.2$, a $1.3$. La preactivación acompaña el movimiento: crece
 un poco cada vez, y todos los valores intermedios existen. La salida no se entera.
 Se queda en $0$ mientras $z$ sea negativa, y en el instante en que cruza el cero salta a $1$ y ahí se
 queda. Todo lo que había que saber sobre cuánto ha subido el peso se pierde por el camino, y siempre
@@ -136,7 +136,7 @@ superpone su derivada como línea discontinua y sombrea en rojo los tramos donde
 
 <Explorable
   id="activation-explorer"
-  caption="Compara en cada función la curva continua con la discontinua, que es su derivada, y fíjate en el ancho de las bandas rojas: la de ReLU ocupa media gráfica. Mira también las cifras del eje vertical, porque cambian con cada función: la derivada de tanh llega a 1 donde la de la sigmoide se queda en 0,25. El último botón es el escalón de la lección anterior, y ahí el rojo lo cubre todo."
+  caption="Compara en cada función la curva continua con la discontinua, que es su derivada, y fíjate en el ancho de las bandas rojas: la de ReLU ocupa media gráfica. Mira también las cifras del eje vertical, porque cambian con cada función: la derivada de tanh llega a 1 donde la de la sigmoide se queda en 0.25. El último botón es el escalón de la lección anterior, y ahí el rojo lo cubre todo."
 />
 
 El botón «derivada f′» dibuja esa curva discontinua. Las cuatro primeras curvas continuas se parecen
@@ -311,10 +311,10 @@ Las tres derivadas comparten un problema y lo reparten distinto. Llamemos **satu
 donde la derivada de $\varphi$ está tan cerca de cero que la entrada puede moverse mucho y la salida
 apenas se mueve: son las bandas rojas del explorable.
 
-Para la sigmoide la cuenta es directa. En $z = 5$ vale $\sigma(5) \approx 0{,}9933$, de modo que su
-derivada allí es $0{,}9933 \cdot 0{,}0067 \approx 0{,}0066$: casi cuarenta veces menos que en el
+Para la sigmoide la cuenta es directa. En $z = 5$ vale $\sigma(5) \approx 0.9933$, de modo que su
+derivada allí es $0.9933 \cdot 0.0067 \approx 0.0066$: casi cuarenta veces menos que en el
 origen. La tangente hiperbólica se apaga antes y más deprisa
-—$1 - \tanh^{2}(5) \approx 1{,}8 \times 10^{-4}$, más de treinta veces por debajo de la sigmoide en
+—$1 - \tanh^{2}(5) \approx 1.8 \times 10^{-4}$, más de treinta veces por debajo de la sigmoide en
 el mismo punto—, y por eso sus bandas rojas empiezan más cerca del origen aunque su derivada
 arranque cuatro veces más alta: empezar más arriba y caer más deprisa son compatibles.
 
@@ -430,7 +430,7 @@ de la fórmula, y las tres coinciden hasta unos $10^{-11}$. Si derivas mal una
 activación, esto te lo dice en dos líneas.
 
 La segunda tabla pone números a la saturación. La derivada de la sigmoide pasa de
-$2{,}50 \times 10^{-1}$ en el origen a $4{,}54 \times 10^{-5}$ en $z = 10$, cuatro órdenes de
+$2.50 \times 10^{-1}$ en el origen a $4.54 \times 10^{-5}$ en $z = 10$, cuatro órdenes de
 magnitud; la de la tangente hiperbólica recorre ocho en el mismo tramo. La fila de ReLU no decae:
 $1$ en las tres últimas columnas, tan lejos como se quiera ir. El $0$ de la primera es la convención
 de arriba puesta en código.
@@ -444,15 +444,15 @@ $$
 sean cuales sean $\mathbf{x}$ e $\mathbf{y}$ —desarróllala y verás que los cuatro sesgos se
 cancelan—. Con
 la identidad en
-$\varphi$, la cadena de dos neuronas da $-6{,}66 \times 10^{-16}$: cero, hasta donde llega la
-aritmética del ordenador. Con la sigmoide da $-0{,}564$. Es el mismo par de neuronas y las mismas
+$\varphi$, la cadena de dos neuronas da $-6.66 \times 10^{-16}$: cero, hasta donde llega la
+aritmética del ordenador. Con la sigmoide da $-0.564$. Es el mismo par de neuronas y las mismas
 entradas; lo único que ha cambiado es la activación.
 
 La última tabla vuelve sobre la lección anterior: las diez preactivaciones de aquella neurona de
 reseñas, con sus pesos intactos, pasadas por el escalón y por la sigmoide. El escalón
 entrega la columna de siempre; la sigmoide separa lo que él juntaba. La reseña que caía justo encima
-de la frontera pasa de un $1$ rotundo a $0{,}500$, y las cuatro negativas, que recibían todas el
-mismo $0$, se reparten ahora en dos valores: $0{,}269$ la que estaba a $-1$, $0{,}119$ las tres que
+de la frontera pasa de un $1$ rotundo a $0.500$, y las cuatro negativas, que recibían todas el
+mismo $0$, se reparten ahora en dos valores: $0.269$ la que estaba a $-1$, $0.119$ las tres que
 estaban a $-2$. La magnitud de $z$ ha vuelto, y sin tocar ni un peso.
 
 ## Comprueba tu intuición
@@ -474,7 +474,7 @@ de NumPy— y un desafío con ReLU.
 
 Queda algo por decir sobre lo que $\varphi$ no ha cambiado, antes de que parezca que la sigmoide ha
 resuelto más de lo que resuelve. La frontera de decisión sigue exactamente donde
-estaba. Preguntar por dónde $\sigma(z)$ cruza $0{,}5$ es preguntar por dónde $z$ cruza $0$, porque
+estaba. Preguntar por dónde $\sigma(z)$ cruza $0.5$ es preguntar por dónde $z$ cruza $0$, porque
 $\sigma$ es creciente y $\sigma(0) = 1/2$: el hiperplano de la lección anterior sobrevive intacto a
 todas las sustituciones de esta. Lo que ha cambiado es lo que la neurona informa sobre su
 decisión, no cuál es.

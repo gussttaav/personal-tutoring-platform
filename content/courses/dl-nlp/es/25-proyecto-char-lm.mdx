@@ -4,7 +4,7 @@ title: "Proyecto: un modelo de lenguaje a nivel de carácter"
 block: 3
 order: 7
 minutes: 30
-summary: "La RNN de la lección 2 y la BPTT de la lección 3, juntas en una red que predice el siguiente carácter en cada posición: un texto de T caracteres son T ejemplos apilados, y la etiqueta de cada paso es, gratis, el carácter que viene. Se entrena con recorte del gradiente sobre unos miles de caracteres —pocos pasos, para caber en el navegador— y después escribe, realimentando lo que muestrea. La pérdida cae de ln 32 a alrededor de 2,5 y el texto pasa de ruido a español mal hecho —palabras cortas reales, cuasi-palabras largas, ni una frase con sentido—: es lo que aprende un modelo de caracteres, y decirlo sin adornos es la lección."
+summary: "La RNN de la lección 2 y la BPTT de la lección 3, juntas en una red que predice el siguiente carácter en cada posición: un texto de T caracteres son T ejemplos apilados, y la etiqueta de cada paso es, gratis, el carácter que viene. Se entrena con recorte del gradiente sobre unos miles de caracteres —pocos pasos, para caber en el navegador— y después escribe, realimentando lo que muestrea. La pérdida cae de ln 32 a alrededor de 2.5 y el texto pasa de ruido a español mal hecho —palabras cortas reales, cuasi-palabras largas, ni una frase con sentido—: es lo que aprende un modelo de caracteres, y decirlo sin adornos es la lección."
 draft: true
 hasCode: true
 hasQuiz: true
@@ -282,9 +282,9 @@ for it in range(iters):
         print("iter %4d   perdida/car %.3f   «%s»" % (it, suave, genera(48, 0)))
 `} />
 
-La pérdida arranca en $3{,}47$, que no es un número cualquiera: es $\ln 32$, la pérdida de una red que
+La pérdida arranca en $3.47$, que no es un número cualquiera: es $\ln 32$, la pérdida de una red que
 reparte por igual entre los 32 caracteres —el eco del $\log 2$ del clasificador del bloque anterior,
-con 32 caras en lugar de 2—. De ahí baja sin sobresaltos hasta rondar $2{,}5$, y seguiría bajando: el
+con 32 caras en lugar de 2—. De ahí baja sin sobresaltos hasta rondar $2.5$, y seguiría bajando: el
 bucle se corta pronto para caber en los diez segundos que el navegador da a una celda, porque mediocre y
 a tiempo vale más que bueno y nunca. La muestra de cada
 línea cuenta la misma historia por otro lado: la primera es ruido, caracteres al azar y tildes sueltas;

@@ -38,7 +38,7 @@ quiz:
       Z = H @ W.T + b
       print(Z.shape, Z[0])
     answer: '(3, 2) [4.5 3.5]'
-    explanation: 'El producto `H @ W.T` tiene forma $(3, 2)$ —tres ejemplos, dos neuronas— y todas sus casillas valen $4$, porque cada una suma cuatro unos. Al sumar `b`, que tiene forma $(2,)$, NumPy lo reparte por columnas: $+0{,}5$ a la de la primera neurona y $-0{,}5$ a la de la segunda, en las tres filas por igual. Eso es el $\mathbf{1}_B\mathbf{b}^{\top}$ de la lección calculado sin construir la matriz. La regla de formas está trabajando aquí: con un `b` de tres números, $(3,2)$ y $(3,)$ no encajan y NumPy da un error en vez de sumar cualquier cosa.'
+    explanation: 'El producto `H @ W.T` tiene forma $(3, 2)$ —tres ejemplos, dos neuronas— y todas sus casillas valen $4$, porque cada una suma cuatro unos. Al sumar `b`, que tiene forma $(2,)$, NumPy lo reparte por columnas: $+0.5$ a la de la primera neurona y $-0.5$ a la de la segunda, en las tres filas por igual. Eso es el $\mathbf{1}_B\mathbf{b}^{\top}$ de la lección calculado sin construir la matriz. La regla de formas está trabajando aquí: con un `b` de tres números, $(3,2)$ y $(3,)$ no encajan y NumPy da un error en vez de sumar cualquier cosa.'
     hint: 'El formato cuenta tanto como los valores: la forma se imprime como una tupla y el array con corchetes, con el punto decimal y separados por un espacio, sin comas.'
   - id: q-cadena
     type: multi
@@ -374,7 +374,7 @@ el producto las da dentro de una rutina compilada sin volver a pasar por el int�
 
 Los dos últimos experimentos son las dos trampas de forma. `X @ W` no existe, y NumPy lo dice nombrando
 las dos dimensiones que no encajan; y la diferencia entre $\mathbf{Z}$ y el producto sin sesgo es
-la misma terna $-0{,}761$, $3{,}221$, $0{,}221$ en la fila $0$ y en la fila $127$, que es
+la misma terna $-0.761$, $3.221$, $0.221$ en la fila $0$ y en la fila $127$, que es
 $\mathbf{1}_B\mathbf{b}^{\top}$ hecho visible.
 
 La segunda celda monta la red entera sobre las diez reseñas: ocho entradas, cuatro neuronas ocultas
@@ -432,7 +432,7 @@ segunda dimensión va cambiando $8 \to 4 \to 1$ al ritmo de las anchuras. La red
 parámetros de la cuenta de arriba.
 
 Y ahora la última línea, que es la que importa. Cinco aciertos de diez. Las diez salidas están por
-debajo de $0{,}5$ —la mayor es $0{,}357$, para <W>divertida y buena</W>—, así que la red contesta
+debajo de $0.5$ —la mayor es $0.357$, para <W>divertida y buena</W>—, así que la red contesta
 que no a las diez reseñas, y acierta exactamente las cinco que eran negativas. Es la puntuación de
 quien no lee nada y dice que no siempre. Los pesos salieron de `np.random.randn`, y no hay ninguna
 razón para que fueran otra cosa.
@@ -459,7 +459,7 @@ cosas caben juntas porque el forward pass no contiene ninguna noción de acierto
 productos que transforma $\mathbf{X}$ en $\hat{\mathbf{Y}}$ y que habría corrido exactamente igual
 con los pesos buenos, si alguien supiera cuáles son. Para corregirlos hay que empezar por medirlos,
 y medir no es contar aciertos. La cuenta de la última línea vale lo mismo con una salida de
-$0{,}499$ que con una de $0{,}036$, y no se mueve cuando un peso cambia un poco: no distingue entre
+$0.499$ que con una de $0.036$, y no se mueve cuando un peso cambia un poco: no distingue entre
 equivocarse por poco y equivocarse del todo, que es justo lo único que sirve para decidir hacia
 dónde mover un peso.
 

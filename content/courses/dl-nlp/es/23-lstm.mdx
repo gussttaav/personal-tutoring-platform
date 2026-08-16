@@ -47,13 +47,13 @@ quiz:
     answer: |
       0.0
       0.669
-    explanation: 'Con $0{,}6$ por paso, cuarenta pasos dejan $4 \times 10^{-9}$, que `round(..., 3)` imprime como $0{,}0$: el desvanecimiento de la lección anterior. Con $0{,}99$ queda el $66{,}9\,\%$ de la señal después de cuarenta pasos, y a doscientos todavía el $13\,\%$. La diferencia entre las dos filas no está en la fórmula —las dos son el mismo producto— sino en de dónde sale la base: en la RNN la fija el radio espectral de una matriz compartida por todas las coordenadas y todas las secuencias, y en la LSTM la calcula la red para esta coordenada y este paso.'
+    explanation: 'Con $0.6$ por paso, cuarenta pasos dejan $4 \times 10^{-9}$, que `round(..., 3)` imprime como $0.0$: el desvanecimiento de la lección anterior. Con $0.99$ queda el $66.9\,\%$ de la señal después de cuarenta pasos, y a doscientos todavía el $13\,\%$. La diferencia entre las dos filas no está en la fórmula —las dos son el mismo producto— sino en de dónde sale la base: en la RNN la fija el radio espectral de una matriz compartida por todas las coordenadas y todas las secuencias, y en la LSTM la calcula la red para esta coordenada y este paso.'
     hint: 'Los dos son el mismo cálculo, $x^{40}$, con dos bases muy parecidas y muy distintas.'
   - id: q-que-no-arregla
     type: multi
     prompt: 'Marca todo lo que la LSTM **no** garantiza.'
     options:
-      - { id: a, text: 'Que el gradiente no se desvanezca nunca: si la red aprende $f_{t,j}$ alrededor de $0{,}7$, el producto de esa coordenada se hunde igual, sólo que porque la red lo ha decidido y no porque la arquitectura lo imponga.' }
+      - { id: a, text: 'Que el gradiente no se desvanezca nunca: si la red aprende $f_{t,j}$ alrededor de $0.7$, el producto de esa coordenada se hunde igual, sólo que porque la red lo ha decidido y no porque la arquitectura lo imponga.' }
       - { id: b, text: 'Que el gradiente no explote: por las compuertas y por las matrices $\mathbf{W}_{h\ast}$ sigue habiendo caminos multiplicativos, así que el recorte del gradiente de la lección anterior se sigue usando.' }
       - { id: c, text: 'Que la red lea secuencias de cualquier longitud sin truncar ni rellenar.' }
       - { id: d, text: 'Que los pesos se compartan entre posiciones.' }
@@ -327,7 +327,7 @@ de la lección anterior: lo aparta del camino largo y lo deja en los cortos.
 </Details>
 
 Dos concesiones cierran la cuenta, porque sin ellas esto se lee como una garantía. Si la red aprende
-$f_{t,j}$ alrededor de $0{,}7$, el producto se hunde igual que antes; la diferencia es que se hunde
+$f_{t,j}$ alrededor de $0.7$, el producto se hunde igual que antes; la diferencia es que se hunde
 porque la red lo ha decidido y no porque la arquitectura lo imponga. Y la explosión sigue siendo
 posible por los caminos del recuadro de arriba, así que el recorte del gradiente de la lección
 anterior se sigue usando tal cual.
@@ -385,8 +385,8 @@ for sesgo in [1.0, 3.0]:
 
 Las tres compuertas viven en $(0,1)$ y ninguna vale lo mismo en dos coordenadas, que es todo lo que la
 fórmula prometía. Compara ahora los dos bloques. Con $\mathbf{b}_f = 1$ la de olvido se mueve
-alrededor de $0{,}7$ y de $\mathbf{c}_1$ llega a $\mathbf{c}_6$ un $20\,\%$ escaso; con
-$\mathbf{b}_f = 3$ ronda $0{,}95$ y llega un $78\,\%$, con los mismos pesos y la misma frase. Cinco
+alrededor de $0.7$ y de $\mathbf{c}_1$ llega a $\mathbf{c}_6$ un $20\,\%$ escaso; con
+$\mathbf{b}_f = 3$ ronda $0.95$ y llega un $78\,\%$, con los mismos pesos y la misma frase. Cinco
 pasos bastan para que un sesgo separe una memoria de un colador, y de ahí la costumbre de inicializar
 $\mathbf{b}_f$ positivo: sale más barato que la red aprenda a olvidar que aprenda a recordar. La
 primera fila de $\mathbf{c}_t$, en cambio, es idéntica en los dos: en $t = 1$ la compuerta multiplica
@@ -434,14 +434,14 @@ for b_f in [0.0, 3.0, 5.0]:
     print("  LSTM, b_f = %.0f       %.2e   (f_t alrededor de %.3f)" % (b_f, q, sigmoide(b_f)))
 `} />
 
-Cuatro números y tres lecturas. De la RNN llega $1{,}1 \times 10^{-3}$: $0{,}9^{39} \approx 0{,}016$
+Cuatro números y tres lecturas. De la RNN llega $1.1 \times 10^{-3}$: $0.9^{39} \approx 0.016$
 lo pone la matriz y el resto —un orden de magnitud— la máscara del $\tanh$, ese $\gamma \le 1$ que la
 lección anterior dijo que sólo podía empeorar las cosas. La segunda línea es la LSTM saliendo **peor**
-que la RNN: con $\mathbf{b}_f = 0$ la compuerta ronda $0{,}5$, el producto cae a $10^{-11}$ y la
+que la RNN: con $\mathbf{b}_f = 0$ la compuerta ronda $0.5$, el producto cae a $10^{-11}$ y la
 memoria es peor que la que venía a arreglar. La vía aditiva no regala nada, sólo hace alcanzable lo
-que en la RNN no lo era. Las dos últimas líneas son ese «alcanzable»: con la compuerta en $0{,}95$
-sobrevive el $14\,\%$ y con ella en $0{,}993$, el $76\,\%$, a la distancia donde la RNN llevaba tres
-ceros tras la coma.
+que en la RNN no lo era. Las dos últimas líneas son ese «alcanzable»: con la compuerta en $0.95$
+sobrevive el $14\,\%$ y con ella en $0.993$, el $76\,\%$, a la distancia donde la RNN llevaba tres
+ceros tras el punto.
 
 ## Comprueba tu intuición
 

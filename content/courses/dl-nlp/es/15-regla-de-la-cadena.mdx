@@ -415,13 +415,13 @@ print("formas   (1, 3) x", W2.shape, "x", np.diag(d_relu).shape, "x", J_w.shape)
 print("producto de jacobianas %+.8f" % J[0, 0])
 `} />
 
-Las tres coinciden en $-0{,}07427622$, y el sondeo es el que menos derecho tenía a hacerlo: no sabe
+Las tres coinciden en $-0.07427622$, y el sondeo es el que menos derecho tenía a hacerlo: no sabe
 nada de la red, sólo evalúa la pérdida con el peso movido una cienmilésima arriba y otra abajo. Que
 dé lo mismo que la cadena es la comprobación que conviene tener a mano cuando una derivada escrita a
 mano no cuadre.
 
 La cuarta cifra es la que enseña de qué va la lección. Olvidar un camino —el tercero, el que pasa
-por la neurona de salida de la clase neutra— deja la derivada en $-0{,}13342693$, casi el doble de
+por la neurona de salida de la clase neutra— deja la derivada en $-0.13342693$, casi el doble de
 lo que vale. Y mira los tres sumandos, porque el error no es de tamaño: los dos primeros son
 negativos y el tercero es **positivo**. Ese camino tiraba en contra, y quitarlo no recorta la
 corrección, la agranda. Un camino olvidado no da una derivada aproximada: da la derivada de otra
