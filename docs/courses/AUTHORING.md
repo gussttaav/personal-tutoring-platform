@@ -551,7 +551,8 @@ plain. Never italicise the Spanish terms.
 
 | Concept | Use | Not |
 |---|---|---|
-| *embedding*, *token*, *batch*, *attention*, *self-attention* | the English term | incrustación, ficha, lote, atención |
+| *embedding*, *token*, *batch* | the English term | incrustación, ficha, lote |
+| atención, auto-atención | Spanish | *attention*, *self-attention* |
 | *one-hot encoding*, *scaled dot-product*, *multi-head*, *layer norm*, *fine-tuning*, *softmax*, *encoder*, *decoder*, *forward pass* | the English term | any translation |
 | *backpropagation* | the English term | retropropagación |
 | capa, peso, sesgo | Spanish | layer, weight, bias |
@@ -757,6 +758,19 @@ that greedy decoding does not maximise the product it decodes — the concession
 concession that refuses to name what it is conceding to is not much of one. Named once, in English,
 never derived: «búsqueda en haz» circulates in Spanish translations of textbooks but not among
 people doing the work, and a reader who only met the Spanish could not search for it.
+
+`atención` and `auto-atención` are **Spanish**, and this row was wrong until Block 4 lesson 3
+went to write the word. It sat in the anglicism row beside *embedding* and *token*, with
+«atención» named as the rejected form — against which stands everything the course had
+already shipped: `course.es.yml` calls block 4 «El Puente hacia la Atención» and block 5
+«Auto-atención, múltiples cabezas y codificación posicional», the syllabus titles two lessons
+with it, and the bridges of Block 3 lesson 8 and Block 4 lesson 2 both promise «la atención»
+in prose. A lesson body writing *attention* would have put the sidebar, the page title and the
+first paragraph in two different languages. The line this section draws is whether a Spanish
+term is genuinely in use among people who do this work, and «mecanismo de atención» plainly
+is — which is what separates it from *incrustación*, the case the row was really built to
+stop. *Attention is All You Need* keeps its English title, being a title; the mechanism it
+names does not.
 
 #### Acronyms
 

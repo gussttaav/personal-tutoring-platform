@@ -680,9 +680,11 @@ two lengths, distinct because a seq2seq maps a source to a target of its own len
 | $P(y_i \mid y_{<i}, \mathbf{c})$ | the distribution the decoder puts on step $i$; its coordinates are $\hat{\mathbf{y}}_i$ |
 | $q$ | how many levels of one coordinate of $\mathbf{c}$ are distinguishable — a stated assumption, not a property of the architecture |
 | $T^{\star}$ | $\lfloor d_h \log q / \log \lvert V_x \rvert \rfloor$ — the longest source that counting alone does not rule out |
+| $a(\mathbf{s}, \bar{\mathbf{h}})$ | the alignment score function — a slot, like $\varphi$; Block 4 lesson 4 is what fills it |
 | $e_{ij}$ | alignment score between $\mathbf{s}_{i-1}$ and $\bar{\mathbf{h}}_j$ |
 | $\alpha_{ij}$ | attention weight, $\text{softmax}_j(e_{ij})$ |
 | $\mathbf{c}_i$ | context vector, $\sum_j \alpha_{ij} \bar{\mathbf{h}}_j$ — the per-step version of Block 3 lesson 8's single $\mathbf{c}$ |
+| $\mathbf{W}_{ch} \in \mathbb{R}^{d_h \times d_h}$ | the decoder's weights on $\mathbf{c}_i$ — role-subscripted like $\mathbf{W}_{xh}$ and $\mathbf{W}_{hh}$ |
 
 $\mathbf{c}$ is the context vector here and the LSTM cell state in Block 3. That collision is
 inherited from the literature; Block 4 names it in prose the first time it appears.
@@ -725,6 +727,33 @@ $\lvert V_x \rvert^{T} \le q^{d_h}$. Note what it is not: it is a **ceiling from
 length at which a trained model actually degrades — which lesson 2 measures separately and finds far
 below. A lesson writing both says which is which, in a clause, the way Block 3's $\rho$ and
 $\sigma_{\max}$ already have to.
+
+**$a$ is the score slot, and the collision with Block 2's activation is kept on purpose.**
+Block 4 lesson 3, on the idea of attention, establishes the mechanism without saying how the
+scores are computed — that is lesson 4's whole subject — so it needs a name for the function
+it is deferring, exactly as Block 2 needed $\varphi$ for the activation it had not chosen yet.
+The letter is Bahdanau's own, and it is also what the block plan and every paper the student
+will go on to read write. It does reuse the $a$ that Block 2 lesson 1 spends on a single
+neuron's activation, $a = \varphi(z)$, and that is tolerated for the reason $\sigma_{\max}$
+reuses $\sigma$: the two never collide on the page. Block 2's $a$ is a **scalar value**, two
+blocks back, superseded by $h^{(l)}_j$ the moment layers stack; Block 4's is a **function
+applied to two bold vectors**, and it never appears without its arguments. A roman Spanish
+name was the alternative — $\text{cob}$ and $\text{acierto}$ are the precedent — and is
+refused because it would hand the student a symbol they will not meet again anywhere, in the
+one block whose job is to make Block 5 and its sources readable.
+
+**$\mathbf{W}_{ch}$, and $\mathbf{s}_0$ stops being $\mathbf{c}$.** Once the context is
+per-step there is no single vector to start the decoder from, so lesson 3 does two things that
+need recording. The context enters the recurrence as an input of its own, with its own
+weights: $\mathbf{W}_{ch}$, subscripted by the pair of spaces it maps between, which is Block
+3's convention for $\mathbf{W}_{xh}$ and $\mathbf{W}_{hh}$ and costs no new idea. And the
+decoder starts at $\mathbf{s}_0 = \mathbf{0}$, matching Block 3's $\mathbf{h}_0 = \mathbf{0}$
+rather than Block 3 lesson 8's $\mathbf{s}_0 = \mathbf{c}$ — a choice, not a necessity (a
+learned projection of $\bar{\mathbf{h}}_{T_x}$ is the common alternative), and the lesson says
+which it is. Note what the pair of them buys: with $\mathbf{c}$ gone from the initial state
+and $\mathbf{c}_i$ entering at every step, no equation in Block 4 from lesson 3 on carries an
+unsubscripted context vector, so the missing subscript keeps meaning what Block 3 lesson 8
+made it mean.
 
 ### Block 5 — El Transformer
 

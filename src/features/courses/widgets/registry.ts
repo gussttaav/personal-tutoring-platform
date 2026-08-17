@@ -42,4 +42,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "lstm-gates": dynamic(() => import("./nn/LstmGates"), { ssr: false }),
   // COURSE-P5-04 — Block 4 lesson 2 (el cuello de botella del vector de contexto).
   "context-bottleneck": dynamic(() => import("./nn/ContextBottleneck"), { ssr: false }),
+  // COURSE-P5-04 — Block 4 lessons 3 and 4 (la idea de atención, Bahdanau).
+  "attention-alignment": dynamic(() => import("./nn/AttentionAlignment"), { ssr: false }),
 };

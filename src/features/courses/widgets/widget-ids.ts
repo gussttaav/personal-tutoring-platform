@@ -31,6 +31,8 @@ export const WIDGET_IDS = [
   "lstm-gates",
   // COURSE-P5-04 — Block 4 lesson 2 (el cuello de botella del vector de contexto).
   "context-bottleneck",
+  // COURSE-P5-04 — Block 4 lessons 3 and 4 (la idea de atención, Bahdanau).
+  "attention-alignment",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
