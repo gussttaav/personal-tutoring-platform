@@ -589,6 +589,9 @@ plain. Never italicise the Spanish terms.
 | a model that maps a source sequence to a target sequence | `modelo de secuencia a secuencia`, apodo *seq2seq* | *sequence-to-sequence* traducido literalmente |
 | the fixed vector the encoder hands the decoder in a seq2seq | `vector de contexto` | *context vector*; the per-step attention version keeps the same Spanish name |
 | feeding the decoder the true previous token during training, not its own output | *teacher forcing* | any translation — kept in English, and it earns only a brief note (Block 3 lesson 8) |
+| pasar un texto de un idioma a otro con un modelo | `traducción automática` | *machine translation* |
+| the token that ends a generated sequence | `<EOS>`, glossed once per lesson as «símbolo de fin de secuencia» | *end token*, «símbolo de parada», «marca de fin», FIN |
+| the decoding search this course does **not** cover, named once so the concession is honest | *beam search* | «búsqueda en haz», «búsqueda por haces» |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
 one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -737,6 +740,23 @@ existing uses are a *different* sense again and are correct as written, not cand
 `desarrollar`: `derivarse de` («se deriva de», "to stem from" — `02-tokenizacion.mdx`, the
 trade-off that follows from counting characters) and `derivación` as the linguistic term for
 word-formation (`02-tokenizacion.mdx`'s «niñez, aniñado»).
+
+`<EOS>` is a **special token, not a word**, and that is why it is not translated: it is written the
+way it appears in a vocabulary file and in every paper the student will read, exactly as Block 1
+keeps `<UNK>` rather than inventing a Spanish spelling for it. What it does earn is a gloss — «el
+símbolo de fin de secuencia» — once per lesson, on the same first-use rule as an acronym, because a
+reader arriving from a search result meets a bare `<EOS>` with nothing to hang it on. The rejected
+alternatives all describe the *effect* instead of naming the object: «símbolo de parada» reads as
+something outside the vocabulary that halts the loop, which is precisely the misreading Block 4
+lesson 1 exists to prevent — the model predicts this token like any other, and the loop stops
+because it was predicted.
+
+*beam search* is on this table despite the course never teaching it, and the row is there to stop
+the obvious mistranslation rather than to license the topic. Block 4 lesson 1 has to say out loud
+that greedy decoding does not maximise the product it decodes — the concession rule above — and a
+concession that refuses to name what it is conceding to is not much of one. Named once, in English,
+never derived: «búsqueda en haz» circulates in Spanish translations of textbooks but not among
+people doing the work, and a reader who only met the Spanish could not search for it.
 
 #### Acronyms
 

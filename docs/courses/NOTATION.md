@@ -673,12 +673,38 @@ two lengths, distinct because a seq2seq maps a source to a target of its own len
 |---|---|
 | $\mathbf{s}_i$ | decoder state at output step $i$ (introduced in Block 3 lesson 8) |
 | $\bar{\mathbf{h}}_j$ | encoder state at input step $j$ (introduced in Block 3 lesson 8) |
+| $V_x$, $V_y$ | the source and target vocabularies; $\lvert V_x \rvert$, $\lvert V_y \rvert$ their sizes |
+| $\texttt{<EOS>}$ | the token that ends an output sequence — an entry of $V_y$ like any other |
+| $x_{1:T_x}$, $y_{1:T_y}$ | the source and target **token sequences**, against $\mathbf{x}_j$ and $\hat{\mathbf{y}}_i$, which are one vector each |
+| $y_{<i}$ | the target prefix $y_1, \dots, y_{i-1}$ — what the decoder has written before step $i$ |
+| $P(y_i \mid y_{<i}, \mathbf{c})$ | the distribution the decoder puts on step $i$; its coordinates are $\hat{\mathbf{y}}_i$ |
 | $e_{ij}$ | alignment score between $\mathbf{s}_{i-1}$ and $\bar{\mathbf{h}}_j$ |
 | $\alpha_{ij}$ | attention weight, $\text{softmax}_j(e_{ij})$ |
 | $\mathbf{c}_i$ | context vector, $\sum_j \alpha_{ij} \bar{\mathbf{h}}_j$ — the per-step version of Block 3 lesson 8's single $\mathbf{c}$ |
 
 $\mathbf{c}$ is the context vector here and the LSTM cell state in Block 3. That collision is
 inherited from the literature; Block 4 names it in prose the first time it appears.
+
+**A sequence of tokens takes a range subscript, not a bold letter.** Block 4 lesson 1, on the
+encoder-decoder at full size, is the first lesson that has to name a whole output *sequence* as one
+object — the thing a translation is — and neither bold letter is free. $\mathbf{y}$ is Block 2's
+target vector for one example and $\hat{\mathbf{y}}_i$ is Block 3 lesson 8's distribution over one
+step, both of them a single vector; a bold $\mathbf{y}$ meaning $T_y$ tokens would collide with
+both, on the same page, in the same lesson. $y_{1:T_y}$ says «these tokens, in this order» and
+leaves the bold letters their existing jobs, and $y_{<i}$ then costs nothing extra. Note the shape
+of the pair: $y_i$ is the token at position $i$ — an index into $V_y$, as it already was in Block 3
+lesson 8's loss — and $\hat{\mathbf{y}}_i$ is the vector of probabilities that step assigns to every
+entry of $V_y$, so $P(y_i \mid y_{<i}, \mathbf{c})$ is one coordinate of it.
+
+**Two vocabularies, because the two sides are two languages.** Block 1's $V$ is a single vocabulary
+because a single text was being tokenised, and Block 3 lesson 8's toy kept that — its reverser reads
+and writes the same six letters. A translator does not: the encoder's one-hot lives in
+$\{0,1\}^{\lvert V_x \rvert}$ and the decoder's softmax is over $V_y$, of a different size. The
+asymmetry is load-bearing rather than decorative, and $\texttt{<EOS>}$ is where it shows: the token
+that ends an output is a **target-side** entry, predicted by the same softmax as every other, which
+is what makes «when to stop» something the model learns instead of something the loop is told. It
+takes Block 1's $\texttt{<UNK>}$ spelling, and in prose it is written `<W>\<EOS></W>` — the escape
+[AUTHORING.md §8](AUTHORING.md#8-mdx-and-latex-gotchas) requires for any angle-bracketed token.
 
 ### Block 5 — El Transformer
 

@@ -1,6 +1,6 @@
 # P5-04 — Block 4: El Puente hacia la Atención
 
-**Tag:** `COURSE-P5-04` · **Effort:** L · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-P5-04` · **Effort:** L · **Owner:** _tbd_ · **Status:** 🔄
 **Depends on:** P5-03 · Block 4 widgets (built in this task)
 
 ## TL;DR
@@ -44,7 +44,7 @@ Authored one at a time via `/course-lesson`, on the shared branch, reviewed befo
 task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
 here; STATUS stays phase-level.
 
-- [ ] 1. `encoder-decoder`
+- [x] 1. `encoder-decoder`
 - [ ] 2. `el-cuello-de-botella`
 - [ ] 3. `la-idea-de-atencion`
 - [ ] 4. `bahdanau`
