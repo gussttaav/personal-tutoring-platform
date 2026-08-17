@@ -678,6 +678,8 @@ two lengths, distinct because a seq2seq maps a source to a target of its own len
 | $x_{1:T_x}$, $y_{1:T_y}$ | the source and target **token sequences**, against $\mathbf{x}_j$ and $\hat{\mathbf{y}}_i$, which are one vector each |
 | $y_{<i}$ | the target prefix $y_1, \dots, y_{i-1}$ — what the decoder has written before step $i$ |
 | $P(y_i \mid y_{<i}, \mathbf{c})$ | the distribution the decoder puts on step $i$; its coordinates are $\hat{\mathbf{y}}_i$ |
+| $q$ | how many levels of one coordinate of $\mathbf{c}$ are distinguishable — a stated assumption, not a property of the architecture |
+| $T^{\star}$ | $\lfloor d_h \log q / \log \lvert V_x \rvert \rfloor$ — the longest source that counting alone does not rule out |
 | $e_{ij}$ | alignment score between $\mathbf{s}_{i-1}$ and $\bar{\mathbf{h}}_j$ |
 | $\alpha_{ij}$ | attention weight, $\text{softmax}_j(e_{ij})$ |
 | $\mathbf{c}_i$ | context vector, $\sum_j \alpha_{ij} \bar{\mathbf{h}}_j$ — the per-step version of Block 3 lesson 8's single $\mathbf{c}$ |
@@ -705,6 +707,24 @@ that ends an output is a **target-side** entry, predicted by the same softmax as
 is what makes «when to stop» something the model learns instead of something the loop is told. It
 takes Block 1's $\texttt{<UNK>}$ spelling, and in prose it is written `<W>\<EOS></W>` — the escape
 [AUTHORING.md §8](AUTHORING.md#8-mdx-and-latex-gotchas) requires for any angle-bracketed token.
+
+**$q$ counts levels, not bits, and $T^{\star}$ is where the two counts cross.** Block 4 lesson 2, on
+the bottleneck, argues that $\mathbf{c}$ holds at most $q^{d_h}$ distinct messages against the
+$\lvert V_x \rvert^{T_x}$ sources that exist, so it needs a name for the resolution of one
+coordinate. **Bits** is the obvious unit and is refused twice over: $b$ is Block 2's neuron bias and
+GloVe's centre-role bias, $B$ is §4's batch size, and counting in bits drags $\log_2$ and an
+information-theoretic vocabulary into a lesson whose prerequisites are Python, linear algebra and
+calculus. Levels need none of that — $q^{d_h}$ against $\lvert V_x \rvert^{T_x}$ is two counts of
+things, compared by taking a logarithm in whatever base is to hand. $q$ collides with nothing in the
+course, and the lesson says out loud that its value is an assumption the author supplies, which is
+also why the widget puts it on a slider: the crossing moves, the crossing's existence does not.
+
+The star marks a **threshold**, and it is the course's only one, so nothing has to be disambiguated:
+$T^{\star}$ is a length like $T$, $T_x$ and $T_{\max}$, and it is the largest one satisfying
+$\lvert V_x \rvert^{T} \le q^{d_h}$. Note what it is not: it is a **ceiling from counting**, not the
+length at which a trained model actually degrades — which lesson 2 measures separately and finds far
+below. A lesson writing both says which is which, in a clause, the way Block 3's $\rho$ and
+$\sigma_{\max}$ already have to.
 
 ### Block 5 — El Transformer
 

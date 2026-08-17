@@ -45,7 +45,7 @@ task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granu
 here; STATUS stays phase-level.
 
 - [x] 1. `encoder-decoder`
-- [ ] 2. `el-cuello-de-botella`
+- [x] 2. `el-cuello-de-botella`
 - [ ] 3. `la-idea-de-atencion`
 - [ ] 4. `bahdanau`
 - [ ] 5. `luong`

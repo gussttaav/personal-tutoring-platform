@@ -40,4 +40,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "vanishing-gradient": dynamic(() => import("./nn/VanishingGradient"), { ssr: false }),
   // COURSE-P5-03 — Block 3 (RNN) lessons 5 and 6 (LSTM, GRU).
   "lstm-gates": dynamic(() => import("./nn/LstmGates"), { ssr: false }),
+  // COURSE-P5-04 — Block 4 lesson 2 (el cuello de botella del vector de contexto).
+  "context-bottleneck": dynamic(() => import("./nn/ContextBottleneck"), { ssr: false }),
 };
