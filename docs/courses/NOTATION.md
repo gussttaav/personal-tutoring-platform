@@ -693,6 +693,11 @@ two lengths, distinct because a seq2seq maps a source to a target of its own len
 | $\bar{\mathbf{H}} \in \mathbb{R}^{T_x \times d_h}$ | the encoder states stacked — row $j$ is $\bar{\mathbf{h}}_j^{\top}$ |
 | $\mathbf{S} \in \mathbb{R}^{T_y \times d_h}$ | the decoder states stacked — row $i$ is $\mathbf{s}_{i-1}^{\top}$, the state that scores step $i$ |
 | $\mathbf{A} \in \mathbb{R}^{T_y \times T_x}$ | the attention weights as a matrix — entry $(i,j)$ is $\alpha_{ij}$, and every row sums to $1$ |
+| $\mathbf{q}_i \in \mathbb{R}^{d_k}$ | the **query** of output step $i$ — what that step asks with; in this block, $\mathbf{s}_{i-1}$ (Block 4 lesson 6) |
+| $\mathbf{k}_j \in \mathbb{R}^{d_k}$ | the **key** at source position $j$ — the vector the query is compared against; in this block, $\bar{\mathbf{h}}_j$ |
+| $\mathbf{v}_j \in \mathbb{R}^{d_v}$ | the **value** at source position $j$ — the vector the weights mix; in this block, $\bar{\mathbf{h}}_j$ again |
+| $d_k$, $d_v$ | the width queries and keys are compared in, and the width of a value; $d_k = d_v = d_h$ for as long as one vector plays both roles |
+| $\mathbf{Q} \in \mathbb{R}^{T_y \times d_k}$, $\mathbf{K} \in \mathbb{R}^{T_x \times d_k}$, $\mathbf{V} \in \mathbb{R}^{T_x \times d_v}$ | the three stacked — row $i$ of $\mathbf{Q}$ is $\mathbf{q}_i^{\top}$, and row $j$ of $\mathbf{K}$ and of $\mathbf{V}$ is $\mathbf{k}_j^{\top}$ and $\mathbf{v}_j^{\top}$; they generalise $\mathbf{S}$ and $\bar{\mathbf{H}}$ |
 
 $\mathbf{c}$ is the context vector here and the LSTM cell state in Block 3. That collision is
 inherited from the literature; Block 4 names it in prose the first time it appears.
@@ -817,6 +822,37 @@ block. So the product is written inside the softmax and never named,
 $\mathbf{A} = \text{softmax}\left(\mathbf{S}\mathbf{W}_a\bar{\mathbf{H}}^{\top}\right)$ by rows,
 which costs nothing — no lesson refers to the raw grid twice — and is already the shape Block 5's
 $\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V})$ has.
+
+**The three roles get Block 5's letters, one block early.** Block 4 lesson 6 renames what lessons
+3–5 built — the state that asks, the states that are scored, the states that are mixed — as query,
+key and value, and the whole point of that lesson is that the student meets $\mathbf{Q}$,
+$\mathbf{K}$ and $\mathbf{V}$ there rather than in the paper. So the letters are the Block 5
+table's, unchanged, and what these rows add is the per-vector form of each and its seq2seq reading:
+$\mathbf{q}_i = \mathbf{s}_{i-1}$, $\mathbf{k}_j = \mathbf{v}_j = \bar{\mathbf{h}}_j$. Four
+collisions come with them, all four tolerated on the test $\mathbf{c}$ and $\sigma_{\max}$ already
+pass — two spellings never meaning two things on one page:
+
+- **$\mathbf{q}_i$ against $q$.** Lesson 2's $q$ counts the distinguishable levels of one coordinate
+  of $\mathbf{c}$ and lives entirely inside the $T^{\star}$ argument: an italic scalar, four lessons
+  away, never subscripted.
+- **$\mathbf{v}_j$ against $\mathbf{v}_a$.** These two *do* share lesson 6's page, and the subscript
+  is what separates them — the separation this block already runs on. $a$ is an owner, so
+  $\mathbf{v}_a$ belongs to the score exactly as $\mathbf{W}_a$ and $d_a$ do; $j$ is a position, so
+  $\mathbf{v}_j$ is the $j$-th of $T_x$ vectors.
+- **$\mathbf{V}$ against $V_x$ and $V_y$.** Bold uppercase is a matrix and italic uppercase is a set
+  by §1, and Block 1's Word2Vec note already refused $\mathbf{V}$ to the context matrix on the
+  grounds that the values would need it. The two are on one page here — $\texttt{<EOS>}$ is an entry
+  of $V_y$ — so the lesson that writes both says which is which, in a clause.
+- **$d_k$ and $d_v$ against $d_h$ and $d_a$.** The two older widths measure a **network**: how wide a
+  recurrent state is, how many units the alignment model has. The two new ones measure a **role**,
+  and in this block they equal $d_h$ by the accident that one vector plays two roles. Naming them
+  apart is what lets the lesson say that the accident is not a requirement.
+- **And one index has to move.** Block 4 lesson 3 normalises with
+  $\sum_{k=1}^{T_x}\exp(e_{ik})$, spending $k$ on the softmax's summation index; from lesson 6 on
+  that letter belongs to the keys, so the index becomes $m$ and the lesson says so in a clause. It
+  is not a symbol this file fixes — a summation index is local to its equation — but it is the one
+  place where an existing spelling had to give way to make room for these rows, and a later lesson
+  writing both a key and a row-normalising sum does the same.
 
 ### Block 5 — El Transformer
 

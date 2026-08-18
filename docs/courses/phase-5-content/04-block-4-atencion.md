@@ -49,7 +49,7 @@ here; STATUS stays phase-level.
 - [x] 3. `la-idea-de-atencion`
 - [x] 4. `bahdanau`
 - [x] 5. `luong`
-- [ ] 6. `atencion-como-consulta`
+- [x] 6. `atencion-como-consulta`
 
 ## Mathematical content
 

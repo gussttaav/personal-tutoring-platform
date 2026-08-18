@@ -596,9 +596,10 @@ plain. Never italicise the Spanish terms.
 | the small network that computes the score $a$ | `modelo de alineación` | red de atención, *alignment model* |
 | Bahdanau's score — two projections added, squashed, then read out | `atención aditiva` | *additive attention* |
 | Luong's score — the two states multiplied through one matrix | `atención multiplicativa` | *multiplicative attention*, atención por producto |
+| the three roles of one attention call | `consulta`, `clave`, `valor` — Spanish, with the English given once per lesson (*query*, *key*, *value*) so $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ can be read | untranslated *query* / *key* / *value*; «petición», «llave», «contenido» |
 
-That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
-one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
+The `tipo` / `token` / `ocurrencia` row is a **distinction**, not a translation, and it is the one
+place in Block 1 where using one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
 the whole content of "words repeat". Say `tipo` for a distinct string, counted by $M$, and `token`
 for a single appearance of one, counted by $T$. Never `token` for both.
 
@@ -789,6 +790,18 @@ term is genuinely in use among people who do this work, and «mecanismo de atenc
 is — which is what separates it from *incrustación*, the case the row was really built to
 stop. *Attention is All You Need* keeps its English title, being a title; the mechanism it
 names does not.
+
+`consulta`, `clave` and `valor` are Spanish, and the row is here to stop drift rather than to
+argue a hard case: all three are ordinary words, they are what a Spanish-speaking practitioner
+says, and Block 4 lesson 5's bridge already shipped them in prose. What the row adds is the
+**gloss**. The symbols the student is about to meet on every page of Block 5 and in the paper —
+$\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$, $d_k$ — are initials of the English words, so a lesson
+that never writes *query* beside `consulta` leaves four letters unexplained. That is the acronym
+rule below, applied where the acronym is a single letter: give the English once, in this lesson,
+and stay in Spanish afterwards. «Petición» and «llave» are refused for being second names for
+objects that already have one, and «contenido» for the value because it says what a value holds
+instead of naming the role it plays — the same objection that loses «red de atención» to
+`modelo de alineación` two rows up.
 
 #### Acronyms
 
