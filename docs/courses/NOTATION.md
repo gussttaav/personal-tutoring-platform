@@ -861,10 +861,12 @@ go and read the paper, and a different notation would tax exactly that.
 
 | Symbol | Meaning |
 |---|---|
+| $\mathbf{X} \in \mathbb{R}^{T \times d_{\text{model}}}$ | the input sequence stacked — row $t$ is $\mathbf{x}_t^{\top}$ |
 | $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$ | queries, keys, values |
 | $d_k$, $d_v$ | key/query and value dimension |
 | $d_{\text{model}}$ | model dimension |
 | $h$ | number of heads; $d_k = d_{\text{model}}/h$ |
+| $\mathbf{W}^Q, \mathbf{W}^K, \mathbf{W}^V$ | the three projections of a **single** head — $\mathbf{Q} = \mathbf{X}\mathbf{W}^Q$, and the same for the other two |
 | $\mathbf{W}^Q_i, \mathbf{W}^K_i, \mathbf{W}^V_i$ | per-head projections |
 | $\mathbf{W}^O$ | output projection |
 | $PE_{(pos, 2i)}$ | positional encoding |
@@ -879,6 +881,29 @@ $$
 Note the one deviation from the paper: superscripts on $\mathbf{W}^Q$ are **projection labels**, not
 layer indices. Block 5 says so where it introduces them, because it is the single place in the
 course where a superscript is not a layer.
+
+**$\mathbf{X}$ stacks positions here, and Block 2's stacks examples.** Block 5 lesson 2, on
+auto-atención, needs a name for the whole input sequence as one object, because the three lists are
+three products with the same matrix — $\mathbf{Q} = \mathbf{X}\mathbf{W}^Q$, and likewise for
+$\mathbf{K}$ and $\mathbf{V}$ — and writing that one position at a time hides the only fact the
+lesson is about. The letter is the paper's own, and nothing else is free: $\bar{\mathbf{H}}$ and
+$\mathbf{S}$ are Block 4's two stacks of **recurrent states**, and a Transformer has neither. What
+it costs is a collision with Block 2's $\mathbf{X} \in \mathbb{R}^{B \times d_0}$, whose rows are
+examples where these are positions — tolerated on the test $\mathbf{c}$ and $\sigma_{\max}$ already
+pass, since the two never share a page: an axis of examples and an axis of positions meet only in
+code, and there §3's $\mathbb{R}^{B \times T \times d_{\text{model}}}$ already carries both. A
+lesson writing $\mathbf{X}$ for a sequence says which it means in a clause, the way Block 3 lesson 1
+does for $\mathbf{x}$ against $\mathbf{x}_t$. Block 4's $\mathbf{A}$ and $\alpha_{ij}$ carry over
+unchanged and need no row of their own; what changes is that the map is now square, $T \times T$,
+because both of its axes are the same sequence — so $\alpha_{ii}$ exists and means something.
+
+**The head subscript is absent while there is one head.** The paper writes $\mathbf{W}^Q_i$ for
+head $i$ and the row above keeps it, but Block 5 lesson 2 builds a single attention layer and has no
+$i$ to write: it uses the bare $\mathbf{W}^Q, \mathbf{W}^K, \mathbf{W}^V$ and says in a clause that
+a real layer carries several of them in parallel. The subscript arrives with the heads, in Block 5
+lesson 4, meaning what it means in the paper. What does not change is the superscript: it is a
+**projection label** in both spellings, which is the deviation named just below — and the lesson
+that first writes one of these matrices is the lesson that has to say so.
 
 **$O(\cdot)$ names a form, it never carries an argument.** Every cost in the first four blocks is an
 exact count — $\lvert V \rvert \cdot d_{\text{model}}$ for Word2Vec's softmax, $2mT - m(m+1)$ for its

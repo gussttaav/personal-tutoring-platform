@@ -36,6 +36,8 @@ export const WIDGET_IDS = [
   // COURSE-P5-05 — Block 5 lessons 1, 6 and 8 (adiós a la recurrencia, el bloque
   // completo, la arquitectura completa del paper).
   "transformer-architecture",
+  // COURSE-P5-05 — Block 5 lessons 2 and 7 (auto-atención, encoder/decoder y máscaras).
+  "self-attention-heatmap",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

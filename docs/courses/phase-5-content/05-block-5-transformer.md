@@ -50,7 +50,7 @@ task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granu
 here; STATUS stays phase-level.
 
 - [x] 1. `adios-recurrencia`
-- [ ] 2. `self-attention`
+- [x] 2. `self-attention`
 - [ ] 3. `scaled-dot-product`
 - [ ] 4. `multi-head`
 - [ ] 5. `codificacion-posicional`

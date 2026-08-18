@@ -48,4 +48,8 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "transformer-architecture": dynamic(() => import("./nn/TransformerArchitecture"), {
     ssr: false,
   }),
+  // COURSE-P5-05 — Block 5 lessons 2 and 7 (auto-atención, encoder/decoder y máscaras).
+  "self-attention-heatmap": dynamic(() => import("./nn/SelfAttentionHeatmap"), {
+    ssr: false,
+  }),
 };
