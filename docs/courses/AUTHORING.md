@@ -553,7 +553,7 @@ plain. Never italicise the Spanish terms.
 |---|---|---|
 | *embedding*, *token*, *batch* | the English term | incrustación, ficha, lote |
 | atención, auto-atención | Spanish | *attention*, *self-attention* |
-| *one-hot encoding*, *scaled dot-product*, *multi-head*, *layer norm*, *fine-tuning*, *softmax*, *encoder*, *decoder*, *forward pass* | the English term | any translation |
+| *one-hot encoding*, *multi-head*, *layer norm*, *fine-tuning*, *softmax*, *encoder*, *decoder*, *forward pass* | the English term | any translation |
 | *backpropagation* | the English term | retropropagación |
 | capa, peso, sesgo | Spanish | layer, weight, bias |
 | pérdida, gradiente, descenso de gradiente | Spanish | loss, gradient, gradient descent |
@@ -599,6 +599,9 @@ plain. Never italicise the Spanish terms.
 | the three roles of one attention call | `consulta`, `clave`, `valor` — Spanish, with the English given once per lesson (*query*, *key*, *value*) so $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ can be read | untranslated *query* / *key* / *value*; «petición», «llave», «contenido» |
 | the two-layer network a Transformer block applies to each position on its own | `perceptrón por posiciones` | *feed-forward*, red hacia delante, capa densa, red posicional |
 | the decoder sublayer whose queries are the decoder's and whose keys and values are the encoder's | `atención encoder-decoder` | atención cruzada, *cross-attention* |
+| the paper's *scaled dot-product* — the whole attention formula, divisor included | `producto interno escalado`, with the English given once per lesson | «producto escalar escalado»; and `producto escalar` still names the operation $\mathbf{q}^{\top}\mathbf{k}$ itself |
+| the average of a quantity over the randomness assumed of it | `media`, written $\mathbb{E}[\cdot]$ | `esperanza`, `valor esperado`, `promedio` |
+| how far a centred quantity typically lands from zero | `desviación típica` | `desviación estándar`; and never the letter $\sigma$, which NOTATION.md §4 reserves |
 
 The `tipo` / `token` / `ocurrencia` row is a **distinction**, not a translation, and it is the one
 place in Block 1 where using one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -822,6 +825,35 @@ this section exists to stop — and it leaves the reader to work out which two t
 crossed, which is exactly what the encoder/decoder spelling says out loud. It needs no gloss beyond
 the ones already given: `encoder` and `decoder` are English by the table above, and the three roles
 are Spanish by the row above that.
+
+`producto interno escalado` is the one row in this table that deliberately keeps **two** Spanish
+names in play, and it is here to say which is which rather than to license drift. `producto escalar`
+is and stays the **operation** — $\mathbf{q}^{\top}\mathbf{k}$, named 51 times across thirteen
+lessons from Block 1 lesson 4 on — and nothing about it changes. What needed a name is the
+**compound**: the whole formula the paper calls *scaled dot-product*, divisor included. Gluing the
+obvious adjective onto the existing term gives «producto escalar escalado», which puts the same root
+twice in three words for two unrelated reasons — *escalar* because the result is a scalar, *escalado*
+because it is divided by $\sqrt{d_k}$ — so a reader is entitled to think the two are connected. They
+are not. «Producto interno» is standard Spanish for the same product, collides with nothing in the
+course, and takes the adjective cleanly.
+
+The price is the one this section normally refuses to pay, so it gets paid out loud instead: **the
+lesson that uses the compound states in a clause that the two name the same product.** That is the
+whole defect two names cause — a reader who cannot tell a synonym from a distinction — and said
+plainly there is nothing left to hunt for. It is the move [NOTATION.md](NOTATION.md) already makes
+for $\mathbf{c}$ and $\sigma_{\max}$: a collision is tolerable exactly when the page carrying both
+names it. The alternative was a full retrofit to `producto interno` everywhere, and it is refused on
+size against benefit — 51 sites in three blocks, to swap one standard term for another.
+
+`media` and `desviación típica` arrive in Block 5 lesson 3, which derives the $\sqrt{d_k}$ of the
+attention formula and therefore has to say how big a dot product gets. Both are the ordinary Spanish
+words and neither is a translation of anything, so the row is here only to stop the drift: `esperanza`
+and `valor esperado` are the terms a statistics course would use, and a lesson mixing them with
+`media` would invite a reader to hunt for a distinction that this course never makes. `promedio` is
+refused for a sharper reason — the lesson computes the bracket **as** an average over $2^{d_k}$ sign
+patterns before generalising it, so the two words would name the same operation at two moments of the
+same page and read as two operations. One word, both times. The symbol and the ban on $\sigma$ are
+[NOTATION.md](NOTATION.md#block-5--el-transformer)'s business, argued there.
 
 #### Acronyms
 

@@ -872,6 +872,7 @@ go and read the paper, and a different notation would tax exactly that.
 | $PE_{(pos, 2i)}$ | positional encoding |
 | $T$ | sequence length |
 | $O(\cdot)$ | asymptotic cost — **only** to name the form the paper's Table 1 writes |
+| $\mathbb{E}[\cdot]$ | the average of a quantity over the randomness of an initialisation |
 
 $$
 \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) =
@@ -915,6 +916,29 @@ written $O(T^{2} \cdot d)$ against $O(T \cdot d^{2})$, and a course that never w
 leave them to guess that the two statements are the same one. Write the count, derive the
 conclusion from the count, then name the paper's spelling in a clause — never the reverse, and
 never as the step that establishes anything.
+
+**$\mathbb{E}[\cdot]$ averages over the initialisation, and the spread it measures is never
+$\sigma$.** Block 5 lesson 3 derives the $\sqrt{d_k}$ of the formula above, and that derivation is a
+statement about the **size** of a dot product: with $\mathbf{q}$ and $\mathbf{k}$ built from freshly
+initialised weights, $\mathbb{E}\left[\left(\mathbf{q}^{\top}\mathbf{k}\right)^{2}\right] = d_k$.
+Probability is not a course prerequisite — those are Python, linear algebra and calculus — so the
+lesson **defines the bracket by computing it**, on coordinates in $\{-1, +1\}$ where the average runs
+over $2^{d_k}$ sign patterns and is therefore arithmetic; only then does it carry the same
+cancellation across to a real initialisation. That is
+[AUTHORING.md §2](AUTHORING.md#2-what-a-lesson-may-assume)'s "make the argument at a lower level",
+and it is also why this earns a row rather than a new prerequisite: one symbol, one lesson, and
+nothing else in the course averages over anything.
+
+Three spellings come with it. The letter is **blackboard bold**, against Block 1's $\mathbf{E}$, the
+embedding matrix — tolerated on the test $\mathbf{c}$ and $\sigma_{\max}$ already pass, since a
+lesson counting how big a score gets is not a lesson looking anything up in a table, and $\mathbb{R}$
+and $\mathbb{N}$ have meant "a fixed object of the mathematics" since Block 1. The argument goes in
+**brackets**, $\mathbb{E}\left[e^{2}\right]$, so it cannot be read as a product the way
+$\mathbb{E}(e^{2})$ can. And the spread is **never written $\sigma$**: §4 reserves that letter for the
+logistic sigmoid, Block 3 already subscripted it for the largest singular value, and Block 5 lesson
+3's whole subject is saturation — the sigmoid's own failure — so a third meaning would land on the
+one page that can least afford it. In prose it is «la desviación típica»; in maths it is
+$\sqrt{\mathbb{E}\left[e^{2}\right]}$, or $\sqrt{d_k}$ once the count is done.
 
 ---
 
