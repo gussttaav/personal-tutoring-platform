@@ -689,6 +689,10 @@ two lengths, distinct because a seq2seq maps a source to a target of its own len
 | $\mathbf{W}_{sa}$, $\mathbf{W}_{ha} \in \mathbb{R}^{d_a \times d_h}$ | that network's weights on the decoder state and on the encoder state (Block 4 lesson 4) |
 | $\mathbf{p}_{ij} \in \mathbb{R}^{d_a}$ | its pre-activation, $\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j$ — the argument of the $\tanh$ |
 | $\mathbf{v}_a \in \mathbb{R}^{d_a}$ | the read-out that turns $\tanh(\mathbf{p}_{ij})$ into the single number $e_{ij}$ |
+| $\mathbf{W}_a \in \mathbb{R}^{d_h \times d_h}$ | the multiplicative score's single matrix — the whole of $a$ in Luong's form (Block 4 lesson 5) |
+| $\bar{\mathbf{H}} \in \mathbb{R}^{T_x \times d_h}$ | the encoder states stacked — row $j$ is $\bar{\mathbf{h}}_j^{\top}$ |
+| $\mathbf{S} \in \mathbb{R}^{T_y \times d_h}$ | the decoder states stacked — row $i$ is $\mathbf{s}_{i-1}^{\top}$, the state that scores step $i$ |
+| $\mathbf{A} \in \mathbb{R}^{T_y \times T_x}$ | the attention weights as a matrix — entry $(i,j)$ is $\alpha_{ij}$, and every row sums to $1$ |
 
 $\mathbf{c}$ is the context vector here and the LSTM cell state in Block 3. That collision is
 inherited from the literature; Block 4 names it in prose the first time it appears.
@@ -784,6 +788,35 @@ not to a step. $\mathbf{v}_a$, meanwhile, could have gone bare, and does not, be
 is the anonymous second vector of $\cos(\mathbf{u}, \mathbf{v})$ in Block 1 lesson 5 and of the
 convexity argument in Block 2 lesson 3 — free, but free the way a variable name is free. The
 subscript makes it a parameter with an owner.
+
+**$\mathbf{W}_a$ keeps Luong's own letter, because this time there is only one matrix.** Block 4
+lesson 5 fills the same $a$ slot with $\mathbf{s}_{i-1}^{\top}\mathbf{W}_a\bar{\mathbf{h}}_j$ — one
+bilinear form, no hidden space of its own, so no $d_a$ appears anywhere in it. The rename one lesson
+earlier was argued from a defect this form does not have: a bare $\mathbf{W}_a$ beside a bare
+$\mathbf{U}_a$ records nothing about **which** of the two states each one multiplies, and here a
+single matrix multiplies both, one from each side. What remains is the ordinary reason to match a
+source — this block exists so the student can go and read these papers — so the subscript keeps
+meaning «belongs to the score $a$», exactly as it does in $\mathbf{v}_a$ and $d_a$. A role subscript
+on the model of $\mathbf{W}_{xh}$ was the alternative, $\mathbf{W}_{hs}$ for the map from the
+encoder's space into the decoder's, and it is refused for spending a symbol the student will not meet
+again in the one block whose job is to make Block 5 and its sources readable. Luong's dot-product
+variant is this same row with $\mathbf{W}_a$ the identity and no parameters at all, which needs no
+notation of its own: an identity matrix is linear algebra, and linear algebra is a prerequisite.
+
+**The stacked states are capitals, and the grid of scores gets no letter at all.** The whole point of
+the multiplicative score is that the $T_x \cdot T_y$ scores are one matrix product, so lesson 5 needs
+names for the two stacks: $\bar{\mathbf{H}}$ and $\mathbf{S}$, row $j$ being $\bar{\mathbf{h}}_j^{\top}$
+and row $i$ being $\mathbf{s}_{i-1}^{\top}$. That is Block 2's **capital is the batch, lowercase is
+the example** with positions in place of examples, and the transposed rows are §3's rule rather than a
+new one; the bar stays where Block 3 lesson 8 put it, marking the encoder's. $\mathbf{A}$ collides
+with nothing and holds the weights, so «cada fila de $\mathbf{A}$ suma $1$» can be said in one clause.
+The grid of **unnormalised** scores is the one object left deliberately anonymous. Its obvious letter
+is $\mathbf{E}$, whose entries would be $e_{ij}$ — and $\mathbf{E}$ is Block 1's embedding matrix,
+$\lvert V \rvert \times d_{\text{model}}$, the table the encoder still reads on every page of this
+block. So the product is written inside the softmax and never named,
+$\mathbf{A} = \text{softmax}\left(\mathbf{S}\mathbf{W}_a\bar{\mathbf{H}}^{\top}\right)$ by rows,
+which costs nothing — no lesson refers to the raw grid twice — and is already the shape Block 5's
+$\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V})$ has.
 
 ### Block 5 — El Transformer
 

@@ -48,7 +48,7 @@ here; STATUS stays phase-level.
 - [x] 2. `el-cuello-de-botella`
 - [x] 3. `la-idea-de-atencion`
 - [x] 4. `bahdanau`
-- [ ] 5. `luong`
+- [x] 5. `luong`
 - [ ] 6. `atencion-como-consulta`
 
 ## Mathematical content
