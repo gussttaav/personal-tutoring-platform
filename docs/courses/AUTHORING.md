@@ -593,6 +593,9 @@ plain. Never italicise the Spanish terms.
 | pasar un texto de un idioma a otro con un modelo | `traducción automática` | *machine translation* |
 | the token that ends a generated sequence | `<EOS>`, glossed once per lesson as «símbolo de fin de secuencia» | *end token*, «símbolo de parada», «marca de fin», FIN |
 | the decoding search this course does **not** cover, named once so the concession is honest | *beam search* | «búsqueda en haz», «búsqueda por haces» |
+| the small network that computes the score $a$ | `modelo de alineación` | red de atención, *alignment model* |
+| Bahdanau's score — two projections added, squashed, then read out | `atención aditiva` | *additive attention* |
+| Luong's score — the two states multiplied through one matrix | `atención multiplicativa` | *multiplicative attention*, atención por producto |
 
 That last row is a **distinction**, not a translation, and it is the one place in Block 1 where using
 one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -758,6 +761,21 @@ that greedy decoding does not maximise the product it decodes — the concession
 concession that refuses to name what it is conceding to is not much of one. Named once, in English,
 never derived: «búsqueda en haz» circulates in Spanish translations of textbooks but not among
 people doing the work, and a reader who only met the Spanish could not search for it.
+
+`atención aditiva` and `atención multiplicativa` name the two scores by **what they do with the
+two vectors**, which is the distinction Block 4 lessons 4 and 5 exist to draw: one adds two
+projections and squashes the sum, the other multiplies the two states through a single matrix. Both
+adjectives are what the literature uses and both are ordinary Spanish, so the row costs nothing;
+what it buys is that neither lesson has to name its own subject mid-paragraph. «Atención por
+producto» is refused for being a description rather than a term the reader will meet again, and it
+would leave the first of the pair with no matching name.
+
+`modelo de alineación` is Bahdanau's own «alignment model», and it names the **network**, not the
+mechanism. The separation is the point: `atención` is what the architecture does — mix the states by
+weights — while the alignment model is one small multilayer perceptron inside it, whose output is
+scored, normalised and then thrown away. «Red de atención» would collapse the two and leave the
+block unable to say «la atención se queda, el modelo de alineación cambia», which is precisely what
+Block 4 lesson 5 has to say.
 
 `atención` and `auto-atención` are **Spanish**, and this row was wrong until Block 4 lesson 3
 went to write the word. It sat in the anglicism row beside *embedding* and *token*, with

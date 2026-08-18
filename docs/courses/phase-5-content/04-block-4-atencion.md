@@ -47,7 +47,7 @@ here; STATUS stays phase-level.
 - [x] 1. `encoder-decoder`
 - [x] 2. `el-cuello-de-botella`
 - [x] 3. `la-idea-de-atencion`
-- [ ] 4. `bahdanau`
+- [x] 4. `bahdanau`
 - [ ] 5. `luong`
 - [ ] 6. `atencion-como-consulta`
 

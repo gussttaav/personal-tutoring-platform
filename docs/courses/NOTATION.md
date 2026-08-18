@@ -685,6 +685,10 @@ two lengths, distinct because a seq2seq maps a source to a target of its own len
 | $\alpha_{ij}$ | attention weight, $\text{softmax}_j(e_{ij})$ |
 | $\mathbf{c}_i$ | context vector, $\sum_j \alpha_{ij} \bar{\mathbf{h}}_j$ — the per-step version of Block 3 lesson 8's single $\mathbf{c}$ |
 | $\mathbf{W}_{ch} \in \mathbb{R}^{d_h \times d_h}$ | the decoder's weights on $\mathbf{c}_i$ — role-subscripted like $\mathbf{W}_{xh}$ and $\mathbf{W}_{hh}$ |
+| $d_a$ | the width of the alignment model — how many units the small network that computes $a$ has |
+| $\mathbf{W}_{sa}$, $\mathbf{W}_{ha} \in \mathbb{R}^{d_a \times d_h}$ | that network's weights on the decoder state and on the encoder state (Block 4 lesson 4) |
+| $\mathbf{p}_{ij} \in \mathbb{R}^{d_a}$ | its pre-activation, $\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j$ — the argument of the $\tanh$ |
+| $\mathbf{v}_a \in \mathbb{R}^{d_a}$ | the read-out that turns $\tanh(\mathbf{p}_{ij})$ into the single number $e_{ij}$ |
 
 $\mathbf{c}$ is the context vector here and the LSTM cell state in Block 3. That collision is
 inherited from the literature; Block 4 names it in prose the first time it appears.
@@ -754,6 +758,32 @@ which it is. Note what the pair of them buys: with $\mathbf{c}$ gone from the in
 and $\mathbf{c}_i$ entering at every step, no equation in Block 4 from lesson 3 on carries an
 unsubscripted context vector, so the missing subscript keeps meaning what Block 3 lesson 8
 made it mean.
+
+**Bahdanau's score is a network, so its weights are subscripted by role like every other
+one in the course.** Block 4 lesson 4 fills the $a$ slot with
+$\mathbf{v}_a^{\top}\tanh\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$
+— one hidden layer of width $d_a$ and a linear read-out — so it needs names for two matrices, one
+vector and one width. The paper writes $\mathbf{W}_a$, $\mathbf{U}_a$ and $\mathbf{v}_a$, and the
+course keeps only the third. $\mathbf{U}$ is Word2Vec's context matrix, one row of Block 1's table;
+and the sharper objection is that a bare $\mathbf{W}_a$ beside a bare $\mathbf{U}_a$ records
+nothing about **which** of the two states each one multiplies, which is precisely what a reader
+needs when the two products are added inside one $\tanh$. $\mathbf{W}_{sa}$ and $\mathbf{W}_{ha}$
+say it in the subscript, exactly as $\mathbf{W}_{xh}$, $\mathbf{W}_{hh}$ and $\mathbf{W}_{ch}$
+already do; what is new is the second letter, which names a space the course did not have — not the
+decoder's, not the encoder's, but the alignment model's own, the one $d_a$ measures. Numbered
+subscripts were the other candidate and are refused because the course spends numbers on layers and
+positions: $\mathbf{W}^{(l)}$ is a layer and $\mathbf{W}^{(1)}_t$ is Block 3 lesson 1's column
+block, so a $\mathbf{W}_1$ inside a score would ask the reader to rule out both.
+
+**$\mathbf{p}_{ij}$ is Block 3's pre-activation with a pair for an index, and $\mathbf{v}_a$ keeps
+its subscript.** The gradient of $e_{ij}$ has to name the argument of the $\tanh$ — it is where
+$\tanh^{\prime} = 1 - \tanh^{2}$ is evaluated — and Block 3 lesson 3 already chose $\mathbf{p}$
+for exactly that job, having found $\mathbf{z}$ taken by the GRU gate and $\mathbf{a}$ inverted by
+Block 2's activation. The double subscript is the one thing that changes: a score belongs to a pair,
+not to a step. $\mathbf{v}_a$, meanwhile, could have gone bare, and does not, because $\mathbf{v}$
+is the anonymous second vector of $\cos(\mathbf{u}, \mathbf{v})$ in Block 1 lesson 5 and of the
+convexity argument in Block 2 lesson 3 — free, but free the way a variable name is free. The
+subscript makes it a parameter with an owner.
 
 ### Block 5 — El Transformer
 
