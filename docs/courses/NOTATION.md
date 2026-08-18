@@ -869,6 +869,7 @@ go and read the paper, and a different notation would tax exactly that.
 | $\mathbf{W}^O$ | output projection |
 | $PE_{(pos, 2i)}$ | positional encoding |
 | $T$ | sequence length |
+| $O(\cdot)$ | asymptotic cost — **only** to name the form the paper's Table 1 writes |
 
 $$
 \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) =
@@ -878,6 +879,17 @@ $$
 Note the one deviation from the paper: superscripts on $\mathbf{W}^Q$ are **projection labels**, not
 layer indices. Block 5 says so where it introduces them, because it is the single place in the
 course where a superscript is not a layer.
+
+**$O(\cdot)$ names a form, it never carries an argument.** Every cost in the first four blocks is an
+exact count — $\lvert V \rvert \cdot d_{\text{model}}$ for Word2Vec's softmax, $2mT - m(m+1)$ for its
+pairs, $T_x \cdot T_y$ for Block 4's grid — and Block 5 keeps that: lesson 1 compares
+$T\left(d_h \cdot d_h + d_h \cdot d_{\text{model}}\right)$ against $T^{2}\left(d_k + d_v\right)$ and
+finds the crossing at $T = d$ exactly, which an asymptotic statement cannot do. So the symbol earns
+its row for one job only: the student is about to read *Attention is All You Need*, whose Table 1 is
+written $O(T^{2} \cdot d)$ against $O(T \cdot d^{2})$, and a course that never wrote it that way would
+leave them to guess that the two statements are the same one. Write the count, derive the
+conclusion from the count, then name the paper's spelling in a clause — never the reverse, and
+never as the step that establishes anything.
 
 ---
 

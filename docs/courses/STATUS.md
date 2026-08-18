@@ -109,7 +109,7 @@ ticked.** This table stays a phase-level dashboard — do not add per-lesson row
 | [02 Block 2 — Perceptrón Multicapa](phase-5-content/02-block-2-mlp.md) | `COURSE-P5-02` | ✅ | _tbd_ | local |
 | [03 Block 3 — Redes Recurrentes](phase-5-content/03-block-3-rnn.md) | `COURSE-P5-03` | ✅ | _tbd_ | local |
 | [04 Block 4 — El Puente hacia la Atención](phase-5-content/04-block-4-atencion.md) | `COURSE-P5-04` | ✅ | _tbd_ | local |
-| [05 Block 5 — El Transformer](phase-5-content/05-block-5-transformer.md) | `COURSE-P5-05` | ⬜ | _tbd_ | |
+| [05 Block 5 — El Transformer](phase-5-content/05-block-5-transformer.md) | `COURSE-P5-05` | 🔄 | _tbd_ | local |
 
 **Exit criteria**
 - [ ] All five blocks published (`draft: false`), prerequisites stated on the landing page

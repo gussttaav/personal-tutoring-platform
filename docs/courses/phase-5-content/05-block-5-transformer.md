@@ -1,6 +1,6 @@
 # P5-05 — Block 5: El Transformer
 
-**Tag:** `COURSE-P5-05` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-P5-05` · **Effort:** XL · **Owner:** _tbd_ · **Status:** 🔄
 **Depends on:** P5-04 · Block 5 widgets (built in this task)
 
 ## TL;DR
@@ -18,10 +18,14 @@ The payoff block. Every earlier block exists to make this one land.
 | `self-attention-heatmap` | Type a Spanish sentence, see the token-to-token attention matrix |
 | `multi-head-view` | The same sentence across heads — different heads capture different relations |
 | `positional-encoding` | The sinusoidal encoding as a heat map; adjust dimension and position; see the frequency structure |
-| `transformer-architecture` | Clickable block diagram; click a component, jump to the lesson that explains it |
+| `transformer-architecture` | Clickable block diagram; click a component, read what it does and which lesson builds it |
 
 `transformer-architecture` doubles as the block's navigation and as a revision tool once the
-block is finished.
+block is finished. It **names** each component's lesson in prose («la lección 4 de este bloque,
+sobre la atención multi-head») rather than linking to it — no lesson in this course links to
+another, a link would 404 for every lesson still in draft, and a named topic survives a
+renumbering where an href does not. It also carries a toggle that marks the boxes which mix
+positions, which is what lesson 1 leans on.
 
 ## Lessons
 
@@ -45,7 +49,7 @@ Authored one at a time via `/course-lesson`, on the shared branch, reviewed befo
 task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
 here; STATUS stays phase-level.
 
-- [ ] 1. `adios-recurrencia`
+- [x] 1. `adios-recurrencia`
 - [ ] 2. `self-attention`
 - [ ] 3. `scaled-dot-product`
 - [ ] 4. `multi-head`

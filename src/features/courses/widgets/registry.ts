@@ -44,4 +44,8 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "context-bottleneck": dynamic(() => import("./nn/ContextBottleneck"), { ssr: false }),
   // COURSE-P5-04 — Block 4 lessons 3 and 4 (la idea de atención, Bahdanau).
   "attention-alignment": dynamic(() => import("./nn/AttentionAlignment"), { ssr: false }),
+  // COURSE-P5-05 — Block 5 lessons 1, 6 and 8 (la arquitectura, como mapa del bloque).
+  "transformer-architecture": dynamic(() => import("./nn/TransformerArchitecture"), {
+    ssr: false,
+  }),
 };

@@ -33,6 +33,9 @@ export const WIDGET_IDS = [
   "context-bottleneck",
   // COURSE-P5-04 — Block 4 lessons 3 and 4 (la idea de atención, Bahdanau).
   "attention-alignment",
+  // COURSE-P5-05 — Block 5 lessons 1, 6 and 8 (adiós a la recurrencia, el bloque
+  // completo, la arquitectura completa del paper).
+  "transformer-architecture",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

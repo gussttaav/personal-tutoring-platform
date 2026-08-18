@@ -597,6 +597,8 @@ plain. Never italicise the Spanish terms.
 | Bahdanau's score — two projections added, squashed, then read out | `atención aditiva` | *additive attention* |
 | Luong's score — the two states multiplied through one matrix | `atención multiplicativa` | *multiplicative attention*, atención por producto |
 | the three roles of one attention call | `consulta`, `clave`, `valor` — Spanish, with the English given once per lesson (*query*, *key*, *value*) so $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ can be read | untranslated *query* / *key* / *value*; «petición», «llave», «contenido» |
+| the two-layer network a Transformer block applies to each position on its own | `perceptrón por posiciones` | *feed-forward*, red hacia delante, capa densa, red posicional |
+| the decoder sublayer whose queries are the decoder's and whose keys and values are the encoder's | `atención encoder-decoder` | atención cruzada, *cross-attention* |
 
 The `tipo` / `token` / `ocurrencia` row is a **distinction**, not a translation, and it is the one
 place in Block 1 where using one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -802,6 +804,24 @@ and stay in Spanish afterwards. «Petición» and «llave» are refused for bein
 objects that already have one, and «contenido» for the value because it says what a value holds
 instead of naming the role it plays — the same objection that loses «red de atención» to
 `modelo de alineación` two rows up.
+
+`perceptrón por posiciones` is the course's own vocabulary doing a job the paper's name cannot.
+*Feed-forward* is what *Attention is All You Need* calls that box, and as a term it says the one
+thing about it that is **not** the point — every layer in Blocks 2 and 3 was feed-forward too. What
+the box actually is, is Block 2's multilayer perceptron applied to one row at a time with the same
+weights in every position, and «por posiciones» is precisely what Block 5 lesson 1 needs said: of
+the fifteen boxes in the paper's figure, only the three attention ones look at another position.
+So the course names it by what distinguishes it. «Capa densa» is refused for naming an
+implementation detail no lesson introduces, and «red posicional» for colliding with
+`codificación posicional`, a different object two boxes away.
+
+`atención encoder-decoder` is the paper's own name, kept for the reason $\mathbf{W}_a$ keeps
+Luong's letter: this block exists so the student can go and read the sources. «Atención cruzada»
+circulates in Spanish and is refused as a **second** name for a thing already named — the drift
+this section exists to stop — and it leaves the reader to work out which two things are being
+crossed, which is exactly what the encoder/decoder spelling says out loud. It needs no gloss beyond
+the ones already given: `encoder` and `decoder` are English by the table above, and the three roles
+are Spanish by the row above that.
 
 #### Acronyms
 
