@@ -1,0 +1,492 @@
+---
+slug: multi-head
+title: "Varias cabezas, varios repartos"
+block: 5
+order: 4
+minutes: 29
+summary: "Una posición tiene una fila y en esa fila cabe una sola manera de mirar la frase. La atención multi-head monta h atenciones en paralelo sobre la misma X, cada una con sus tres proyecciones y su propio mapa, y las junta concatenando y proyectando. Lo que cambia no son las puntuaciones sino dónde se normaliza: cada grupo de coordenadas con su propio softmax, en vez de todas sumadas antes de uno solo, que es lo que deja a una regla tapar a otra sin dejar rastro. Y de repartir la anchura, d_k = d_model/h, sale que el coste no depende de h: los mismos parámetros y las mismas multiplicaciones con una cabeza que con dieciséis."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-donde-se-normaliza
+    type: single
+    prompt: 'Una capa tiene una cabeza con $d_k = 4$. Otra tiene cuatro cabezas de $d_k = 1$, y sus columnas son exactamente las cuatro de la primera. ¿En qué se diferencian?'
+    options:
+      - { id: a, text: 'En dónde se normaliza. Los cuatro términos del producto escalar son los mismos; la primera los suma y aplica un *softmax* al total, la segunda le da a cada uno su propio *softmax*. Por eso en la primera un término grande puede tapar a otro, y el reparto que sale ya no se puede descomponer.' }
+      - { id: b, text: 'En las puntuaciones, que son cuatro números por pareja en vez de uno, así que la segunda capa compara con más resolución que la primera.' }
+      - { id: c, text: 'En nada observable: el *softmax* es creciente y respeta el orden de las puntuaciones, así que las dos reparten igual y sólo cambia cómo está escrito el cálculo.' }
+      - { id: d, text: 'En el número de parámetros: cuatro cabezas llevan cuatro veces más matrices que una.' }
+    answer: a
+    explanation: 'La (a). Las dos capas guardan los mismos números en las mismas columnas —de ahí que la (d) sea falsa: son las mismas matrices, partidas de otra forma—, y todo lo que cambia es que la suma sobre $m$ ocurre dentro del *softmax* en un caso y fuera en el otro. La (b) confunde tener cuatro puntuaciones con comparar mejor: cada una de esas cuatro mira una sola coordenada, que es menos resolución por comparación, no más. La (c) usa un hecho cierto en el sitio equivocado: el *softmax* conserva el orden **dentro de la fila que recibe**, y aquí la discusión es sobre qué fila recibe —una suma de cuatro términos, o cuatro filas por separado—.'
+    hint: '¿Dónde cae la suma sobre las coordenadas en cada una de las dos, antes o después de normalizar?'
+  - id: q-cuenta-parametros
+    type: numeric
+    prompt: 'Una capa multi-head con $d_{\text{model}} = 512$ y $h = 8$, repartiendo la anchura como manda el artículo ($d_k = d_v = d_{\text{model}}/h$). ¿Cuántos parámetros tiene en total, contando $\mathbf{W}^O$?'
+    answer: 1048576
+    tolerance: 0
+    unit: parámetros
+    explanation: 'Un millón cuarenta y ocho mil quinientos setenta y seis, que es $4 \cdot 512^{2}$. Las tres proyecciones de las ocho cabezas dan $8 \cdot 512 \cdot 3 \cdot 64 = 786\,432$, y $\mathbf{W}^O$, de $512 \times 512$, añade $262\,144$. Lo que conviene guardar no es la cifra sino que $h$ no aparece en ella: con una cabeza de $d_k = 512$ sale exactamente lo mismo, y con dieciséis de $d_k = 32$ también. El error de bulto es olvidarse de $\mathbf{W}^O$ y quedarse en $786\,432$: es la única matriz de la capa que no pertenece a ninguna cabeza, y es la cuarta parte del total.'
+    hint: 'Cuenta primero una cabeza, multiplica por ocho y acuérdate de la matriz que junta las salidas.'
+  - id: q-de-donde-sale-dk
+    type: single
+    prompt: '¿Por qué $d_k = d_{\text{model}}/h$ y no cualquier otra anchura?'
+    options:
+      - { id: a, text: 'Porque con ese reparto el total de parámetros queda en $4d_{\text{model}}^{2}$ y las multiplicaciones en $2T^{2}d_{\text{model}}$, sin que $h$ aparezca en ninguna de las dos: así $h$ se elige por lo que hace y no por lo que cuesta.' }
+      - { id: b, text: 'Porque la concatenación tiene que salir con anchura $d_{\text{model}}$ para que la capa devuelva lo mismo que recibió, y eso obliga a que $h \cdot d_v = d_{\text{model}}$.' }
+      - { id: c, text: 'Porque el divisor $\sqrt{d_k}$ de la lección anterior sólo compensa bien cuando $d_k$ divide a $d_{\text{model}}$; con otras anchuras las puntuaciones se quedan descompensadas.' }
+      - { id: d, text: 'Porque cada cabeza tiene que quedarse con una parte distinta de las coordenadas de $\mathbf{x}_t$, y hay $d_{\text{model}}$ para repartir entre $h$.' }
+    answer: a
+    explanation: 'La (a), y sale de una cancelación, no de una preferencia: $h$ cabezas de $d_{\text{model}}/h$ cuestan $h \cdot d_{\text{model}} \cdot 3d_{\text{model}}/h$, donde la $h$ de arriba y la de abajo se van. La (b) es la trampa buena, porque describe algo real —la salida vuelve a $d_{\text{model}}$— pero se lo atribuye a la concatenación: quien devuelve la anchura es $\mathbf{W}^O$, que es $\left(h \cdot d_v\right) \times d_{\text{model}}$ y funciona con cualquier $d_v$. La (c) inventa una condición: la cuenta del divisor sólo usa cuántas coordenadas se suman, y no sabe nada de $d_{\text{model}}$. La (d) describe una capa que no es ésta: las $h$ cabezas leen **la misma** $\mathbf{X}$ entera; lo que se reparte es la anchura de salida de cada proyección, no las coordenadas de entrada.'
+    hint: 'Escribe el total con $d_k = d_v = d_{\text{model}}/h$ y busca dónde se va la $h$.'
+  - id: q-cabezas-iguales
+    type: multi
+    prompt: 'Inicializas las $h$ cabezas con exactamente las mismas $\mathbf{W}^Q_i$, $\mathbf{W}^K_i$ y $\mathbf{W}^V_i$. Marca lo que es cierto de la capa en ese momento.'
+    options:
+      - { id: a, text: 'Los $h$ mapas salen idénticos casilla a casilla, porque cada uno se calcula de la misma $\mathbf{X}$ con los mismos pesos.' }
+      - { id: b, text: 'La concatenación es el mismo bloque repetido $h$ veces, así que $\mathbf{W}^O$ sólo puede combinar copias de un único vector por posición.' }
+      - { id: c, text: 'Lo que separa a unas cabezas de otras tiene que venir de la inicialización: ningún término de la pérdida le asigna un papel a ninguna.' }
+      - { id: d, text: 'Las filas dejan de sumar $1$, porque $h$ mapas repartiendo una unidad cada uno reparten $h$ en total.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras. La (a) y la (b) son la misma observación en dos sitios: la cabeza es una función de $\mathbf{X}$ y de sus tres matrices, así que con las matrices iguales las salidas son iguales, y concatenar copias no añade información que $\mathbf{W}^O$ pueda aprovechar. La (c) es la concesión que conviene llevarse: las cabezas se especializan porque empiezan distintas, no porque nada se lo pida —y si además los $h$ bloques de filas de $\mathbf{W}^O$ empezasen iguales, la simetría se mantendría paso a paso y las $h$ cabezas serían una para siempre—. La (d) confunde dos cosas: cada mapa normaliza sus propias filas y sigue sumando $1$; lo que hay son $h$ repartos, no un reparto de $h$.'
+    hint: 'Una cabeza es una función de $\mathbf{X}$ y de sus tres matrices. ¿Qué devuelve esa función con los mismos argumentos?'
+  - id: q-promediar
+    type: boolean
+    prompt: 'Promediar las $h$ cabezas es algo que la concatenación seguida de $\mathbf{W}^O$ no puede hacer.'
+    answer: false
+    explanation: 'Falso, y por eso se concatena. Con $d_v = d_{\text{model}}$, la $\mathbf{W}^O$ que apila $h$ copias de $\frac{1}{h}\mathbf{I}$ da exactamente $\frac{1}{h}\sum_i \text{head}_i$: el promedio es un valor concreto de una matriz que la capa aprende, así que concatenar puede hacer eso y todo lo demás. Lo que se gana no es poder, entonces, sino no tener que fijarlo de antemano —y una cosa más, que es la razón práctica: promediando, las $h$ cabezas escriben en las mismas coordenadas y dos de ellas pueden cancelarse antes de que nada las lea; concatenadas, cada una tiene las suyas y $\mathbf{W}^O$ decide después a cuál hacer caso—.'
+    hint: '¿Qué tiene que valer $\mathbf{W}^O$ para que el producto salga la media?'
+challenges:
+  - id: ch-multi-head
+    prompt: |
+      Escribe `multi_head(X, Wq, Wk, Wv, Wo, h)`. Recibe la frase ya vectorizada, `X` de forma
+      $(T, d_{\text{model}})$; las tres proyecciones **enteras**, `Wq`, `Wk` y `Wv`, las tres de
+      forma $(d_{\text{model}}, d_{\text{model}})$; la proyección de salida `Wo`, de la misma
+      forma; y el número de cabezas `h`, que divide a $d_{\text{model}}$.
+
+      La cabeza $i$ se queda con el bloque de columnas $i$-ésimo de cada proyección —de
+      `i * d_k` a `(i + 1) * d_k`, con `d_k = d_v = d_model // h`— y hace con él la atención de
+      siempre, dividiendo entre $\sqrt{d_k}$.
+
+      Devuelve **la pareja** `(salida, A)`, en ese orden: la salida de forma
+      $(T, d_{\text{model}})$, con las $h$ cabezas concatenadas por columnas y proyectadas por
+      `Wo`; y los $h$ mapas apilados, `A` de forma $(h, T, T)$, cada fila de cada uno sumando $1$.
+
+      No escribas en los arrays que recibes.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def multi_head(X, Wq, Wk, Wv, Wo, h):
+          # tu código aquí
+          pass
+    tests:
+      - name: "las dos formas, y una distribución por fila de cada cabeza"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          X = rng.normal(size=(7, 12))
+          Wq, Wk, Wv, Wo = (rng.normal(size=(12, 12)) for _ in range(4))
+          res = multi_head(X, Wq, Wk, Wv, Wo, 4)
+          assert res is not None, 'multi_head tiene que devolver (salida, A), no imprimirlas'
+          assert isinstance(res, tuple) and len(res) == 2, 'devuelve la pareja (salida, A), en ese orden'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert Y.shape == (7, 12), 'la salida vuelve a d_model: W^O deshace la concatenacion'
+          assert A.shape == (4, 7, 7), 'un mapa cuadrado por cabeza, apilados: (h, T, T)'
+          assert np.allclose(A.sum(axis=2), 1.0), 'cada fila de cada cabeza reparte su propia unidad'
+      - name: "coincide con montar las cabezas una a una"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          X = rng.normal(size=(7, 12))
+          Wq, Wk, Wv, Wo = (rng.normal(size=(12, 12)) for _ in range(4))
+          h, d_k = 4, 3
+          trozos, mapas = [], []
+          for i in range(h):
+              c = slice(i * d_k, (i + 1) * d_k)
+              Q, K, V = X @ Wq[:, c], X @ Wk[:, c], X @ Wv[:, c]
+              E = Q @ K.T / np.sqrt(d_k)
+              Z = np.exp(E - E.max(axis=1, keepdims=True))
+              M = Z / Z.sum(axis=1, keepdims=True)
+              mapas.append(M)
+              trozos.append(M @ V)
+          esperado = np.concatenate(trozos, axis=1) @ Wo
+          Y, A = (np.asarray(v) for v in multi_head(X, Wq, Wk, Wv, Wo, h))
+          assert np.allclose(A, np.stack(mapas)), 'el mapa i sale del bloque de columnas i, y divide entre la raiz de d_k, no de d_model'
+          assert np.allclose(Y, esperado), 'concatena en el orden de las cabezas y proyecta despues, no antes'
+      - name: "con h = 1 es la capa de una sola cabeza"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(8)
+          X = rng.normal(size=(5, 6))
+          Wq, Wk, Wv, Wo = (rng.normal(size=(6, 6)) for _ in range(4))
+          E = (X @ Wq) @ (X @ Wk).T / np.sqrt(6)
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          M = Z / Z.sum(axis=1, keepdims=True)
+          Y, A = (np.asarray(v) for v in multi_head(X, Wq, Wk, Wv, Wo, 1))
+          assert A.shape == (1, 5, 5), 'con una cabeza sigue habiendo un eje de cabezas'
+          assert np.allclose(A[0], M), 'con h = 1 el bloque de columnas es la matriz entera y d_k = d_model'
+          assert np.allclose(Y, M @ (X @ Wv) @ Wo)
+      - name: "cabezas iguales, mapas iguales"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(12)
+          X = rng.normal(size=(6, 8))
+          bloque = rng.normal(size=(8, 2))
+          iguales = np.tile(bloque, (1, 4))
+          Wo = rng.normal(size=(8, 8))
+          A = np.asarray(multi_head(X, iguales, iguales, iguales, Wo, 4)[1])
+          assert np.abs(A - A[0]).max() < 1e-12, 'con los cuatro bloques de columnas iguales los cuatro mapas tienen que salir iguales'
+      - name: "no desborda y no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(19)
+          X = rng.normal(size=(5, 8)) * 40
+          Wq, Wk, Wv, Wo = (rng.normal(size=(8, 8)) * 5 for _ in range(4))
+          copias = [X.copy(), Wq.copy(), Wk.copy(), Wv.copy(), Wo.copy()]
+          Y, A = (np.asarray(v) for v in multi_head(X, Wq, Wk, Wv, Wo, 2))
+          assert np.isfinite(Y).all() and np.isfinite(A).all(), 'desborda: resta el maximo de cada fila antes de exponenciar'
+          assert all(np.array_equal(u, v) for u, v in zip([X, Wq, Wk, Wv, Wo], copias)), 'no escribas en los arrays que recibes'
+    solution: |
+      import numpy as np
+
+
+      def multi_head(X, Wq, Wk, Wv, Wo, h):
+          T, d_model = X.shape
+          d_k = d_model // h
+          # (T, d_model) -> (h, T, d_k): el bloque de columnas i pasa a ser la cabeza i.
+          Q = (X @ Wq).reshape(T, h, d_k).transpose(1, 0, 2)
+          K = (X @ Wk).reshape(T, h, d_k).transpose(1, 0, 2)
+          V = (X @ Wv).reshape(T, h, d_k).transpose(1, 0, 2)
+          E = Q @ K.transpose(0, 2, 1) / np.sqrt(d_k)      # (h, T, T)
+          Z = np.exp(E - E.max(axis=2, keepdims=True))
+          A = Z / Z.sum(axis=2, keepdims=True)
+          concat = (A @ V).transpose(1, 0, 2).reshape(T, d_model)
+          return concat @ Wo, A
+    explanation: |
+      Las tres proyecciones se hacen **enteras** y se parten después: `X @ Wq` ya contiene las $h$
+      consultas una al lado de otra, y `reshape(T, h, d_k)` no mueve un solo número, sólo cambia
+      cómo se leen las columnas. Por eso una capa de verdad no tiene $3h$ matrices sino tres: el
+      bloque de columnas $i$ **es** $\mathbf{W}^Q_i$.
+
+      A partir de ahí todo es la atención de la lección 2 de este bloque, sobre la auto-atención,
+      con un eje más delante: `Q @ K.transpose(0, 2, 1)` hace los $h$ productos de una vez, y el
+      `keepdims` del *softmax* pasa a mirar el eje $2$, que es el de las columnas de cada mapa.
+      Dos errores valen lo mismo aquí y son los que comprueban los tests: dividir entre
+      $\sqrt{d_{\text{model}}}$ en vez de entre $\sqrt{d_k}$ —el divisor cuenta las coordenadas
+      que se suman, y ahora se suman $d_k$—, y proyectar por `Wo` cada cabeza antes de
+      concatenarlas, que da la suma de $h$ proyecciones y no la proyección de la concatenación.
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 4. */}
+
+La lección anterior justificó el $\sqrt{d_k}$ de la fórmula de la atención contando cuánto crece un
+producto escalar cuando se le añaden coordenadas, y al cerrar esa cuenta dejó dos cosas señaladas.
+La primera es de forma: una capa de auto-atención no le da a cada posición más que una fila de
+$\mathbf{A}$, fabricada por un único par de matrices, $\mathbf{W}^Q$ y $\mathbf{W}^K$ —una manera de
+mirar la frase, la misma para todas las posiciones y para todas las relaciones que haya que
+encontrar entre ellas—. La segunda es más pequeña y sale del mismo sitio: $d_k$ entra en la fórmula
+sin que nada diga cuánto debería valer.
+
+Mira lo que esa única fila le pide a una frase como <W>el ratón pequeño que persiguen los gatos duerme</W>.
+<W>duerme</W> tiene que encontrar a <W>ratón</W> por encima de la subordinada entera, y
+<W>persiguen</W>, tres posiciones antes, tiene que encontrar a <W>gatos</W>, que le queda detrás:
+dos verbos, dos sujetos, en direcciones opuestas. Ninguna relación sola los resuelve —quién es
+sustantivo no distingue <W>ratón</W> de <W>gatos</W>, y quién concuerda en número no distingue un
+sujeto de un determinante—, así que la única fila que hay tiene que llevar las dos a la vez. Y
+puede: las puntuaciones se suman antes del *softmax*, y la suma decide. Esta lección trata de lo
+que esa suma cuesta, y de la alternativa, que consiste en no hacerla.
+
+Las rejillas de abajo son esa misma frase vista por cuatro reglas distintas, una por cabeza, y en
+el quinto botón por la capa de la lección anterior, que lleva las cuatro sumadas en una sola fila.
+Ponte en la fila de <W>duerme</W> y lee el panel de abajo entero antes de tocar nada: la primera
+cabeza empata <W>ratón</W> con <W>gatos</W> a $0.30$; la segunda descarta <W>gatos</W> —le deja
+$0.01$— pero reparte su peso mayor entre tres singulares y ninguno de los tres es el sujeto; dos no
+dicen nada de esa fila; y la capa de una sola cabeza contesta <W>ratón</W>. Pásate luego a la fila de <W>persiguen</W>: la primera cabeza repite su fila anterior
+número a número, porque no sabe distinguir un verbo de otro; la segunda se da la vuelta entera; y
+la respuesta de la capa de una cabeza cambia a <W>gatos</W>.
+
+<Explorable
+  id="multi-head-view"
+  caption="Cuatro reglas, cuatro repartos, y un quinto botón con las cuatro sumadas en una sola fila. La cabeza del verbo empata «ratón» con «gatos» en las dos filas de verbo; la de concordancia sí los separa, pero se queda con tres palabras que no son el sujeto. Sólo juntas contestan, y juntarlas de esa manera no sale gratis."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Multi-head no cambia lo que se compara: cambia dónde se normaliza. En vez de sumar todas las
+coordenadas de la comparación y repartir una vez, reparte por grupos y suma después.
+</Callout>
+
+## La misma matriz leída por varias atenciones a la vez
+
+Cada cabeza es la capa de la lección 2 de este bloque, sobre la auto-atención, entera: sus tres
+proyecciones sobre la misma matriz y su propio mapa. Lo único que hay que añadir es el subíndice
+que allí no hizo falta escribir porque sólo había una.
+
+$$
+\text{head}_i = \text{Attention}\left(\mathbf{X}\mathbf{W}^Q_i,\; \mathbf{X}\mathbf{W}^K_i,\; \mathbf{X}\mathbf{W}^V_i\right) \in \mathbb{R}^{T \times d_v},
+$$
+
+con $i = 1, \dots, h$, y con $\mathbf{W}^Q_i, \mathbf{W}^K_i \in \mathbb{R}^{d_{\text{model}} \times
+d_k}$ y $\mathbf{W}^V_i \in \mathbb{R}^{d_{\text{model}} \times d_v}$. Fíjate en que las $h$ leen
+**la misma** $\mathbf{X}$: no se reparten la frase, ni se reparten las coordenadas de entrada. Cada
+una saca de ella sus propias consultas (*queries*), claves (*keys*) y valores (*values*), y con
+ellas su propio mapa $\mathbf{A}_i \in \mathbb{R}^{T \times T}$, cuadrado y con las filas sumando
+$1$ igual que el de la lección 2.
+
+Quedan entonces $h$ salidas de $T \times d_v$ y la capa tiene que devolver una. Se ponen una al
+lado de otra y se proyectan:
+
+$$
+\text{MultiHead}(\mathbf{X}) = \text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O \in \mathbb{R}^{T \times d_{\text{model}}},
+$$
+
+donde $\text{Concat}$ pega las $h$ matrices **por columnas** —una fila por posición, con los $h$
+trozos seguidos dentro de ella, de modo que el resultado es $T \times \left(h \cdot d_v\right)$— y
+$\mathbf{W}^O \in \mathbb{R}^{\left(h \cdot d_v\right) \times d_{\text{model}}}$ es la única matriz
+de la capa que no pertenece a ninguna cabeza. Su superíndice es una etiqueta de papel, como los de
+las otras tres.
+
+### Dónde se normaliza
+
+La puntuación de una cabeza ya era una suma, y la lección anterior la escribió así precisamente
+para poder contarla:
+
+$$
+e_{ij} = \frac{1}{\sqrt{d_k}}\sum_{m=1}^{d_k} q_{im}k_{jm},
+$$
+
+donde $q_{im}$ es la coordenada $m$ de la consulta de la posición $i$. Cada coordenada de la
+comparación aporta su término, y el *softmax* no ve los términos: ve el total. Dos coordenadas que
+midan dos cosas distintas llegan sumadas a la normalización, y lo que salga de esa suma es lo único
+que la fila tiene para repartir. Un término grande se lleva la fila; lo que otra coordenada tenía
+que decir de esa misma pareja desaparece, y no queda dónde ir a buscarlo.
+
+El explorable de arriba es ese caso con $d_k = 4$ y una regla por coordenada, así que la cuenta se
+puede seguir número a número. Vuelve a <W>las llaves del coche están ahí</W>, la frase de la
+lección 2, y a su fila de <W>llaves</W>. La regla que lleva un sustantivo hacia su determinante y
+sus modificadores, ella sola, pone en esa fila su peso mayor sobre <W>ahí</W>, con $0.40$, y deja
+<W>las</W> en $0.23$. Añádele la de concordancia, que carga sobre <W>las</W> y <W>están</W> por ser
+los plurales de la frase, y la misma fila cambia de ganador: <W>las</W> sube a $0.37$ y <W>ahí</W>
+baja a $0.17$. Ninguna de las dos reglas ha cambiado un solo número. Lo que ha pasado es que se
+sumaron antes de normalizar.
+
+Ahí está la operación entera. Separar las coordenadas en $h$ grupos y darle a cada grupo su propio
+*softmax* es **normalizar antes de combinar**, en vez de combinar antes de normalizar. Salen $h$
+distribuciones en lugar de una, cada una con su denominador, y llegan hasta la salida sin tocarse;
+lo que las combina es $\mathbf{W}^O$, que es una matriz que se aprende y que las recibe ya
+repartidas. La suma que la capa de una cabeza hacía dentro del *softmax* era irreversible; hecha
+fuera, todavía se puede decidir cuánto pesa cada parte.
+
+### El reparto de la anchura
+
+Queda elegir $d_k$, que era la otra pregunta abierta, y se elige contando. Cada cabeza cuesta lo
+que costaba la capa entera de la lección 2:
+
+$$
+d_{\text{model}}\left(2d_k + d_v\right) \quad \text{parámetros},
+$$
+
+hay $h$ de ellas, y encima está $\mathbf{W}^O$ con $h \cdot d_v \cdot d_{\text{model}}$ más, de
+modo que la capa completa pide
+
+$$
+h \cdot d_{\text{model}}\left(2d_k + d_v\right) + h \cdot d_v \cdot d_{\text{model}}.
+$$
+
+Asigna ahora a $d_k$ y a $d_v$ el valor $d_{\text{model}}/h$ —repartir la anchura del modelo entre
+las cabezas, en vez de darle a cada una la anchura entera— y mira lo que ocurre:
+
+$$
+h \cdot d_{\text{model}} \cdot \frac{3d_{\text{model}}}{h} + h \cdot \frac{d_{\text{model}}}{h} \cdot d_{\text{model}} = 3d_{\text{model}}^{2} + d_{\text{model}}^{2} = 4d_{\text{model}}^{2}.
+$$
+
+La $h$ se ha ido. Ocho cabezas cuestan lo mismo que una, y dieciséis lo mismo que ocho. Las
+multiplicaciones se comportan igual: la lección 1 de este bloque, sobre el adiós a la recurrencia,
+midió una atención en $T^{2}\left(d_k + d_v\right)$, y $h$ de ellas dan
+$h \cdot T^{2}\left(d_k + d_v\right) = 2T^{2}d_{\text{model}}$, que es exactamente lo que costaba
+una sola de anchura $d_{\text{model}}$.
+
+De modo que $h$ se elige por lo que hace y no por lo que cuesta, y $d_k$ deja de ser un número
+suelto: es lo que queda de $d_{\text{model}}$ al partirlo. Con las cifras del artículo,
+$d_{\text{model}} = 512$ y $h = 8$, sale $d_k = 64$ —el número con el que la lección anterior hizo
+sus cuentas— y la capa entera pesa $4 \cdot 512^{2} = 1\,048\,576$ parámetros.
+
+Lo que se paga conviene decirlo, porque no es cero. Cada cabeza compara en $64$ coordenadas donde
+una sola habría comparado en $512$: no son ocho comparaciones tan finas como la que había, son ocho
+comparaciones ocho veces más estrechas. El trato es ése, y es una apuesta sobre el lenguaje —que
+compensan varias relaciones gruesas frente a una sola muy fina— y no un teorema.
+
+### Concatenar y proyectar, no promediar
+
+La alternativa evidente a concatenar es promediar: dale a cada cabeza la anchura entera,
+$d_v = d_{\text{model}}$, y devuelve $\frac{1}{h}\sum_i \text{head}_i$, que ya tiene la forma
+correcta sin necesidad de ninguna matriz más. Merece la pena verla como lo que es, un caso
+particular de lo que la capa ya hace. Toma la $\mathbf{W}^O$ que apila $h$ copias de
+$\frac{1}{h}\mathbf{I}$:
+
+$$
+\mathbf{W}^O = \frac{1}{h}\begin{bmatrix}\mathbf{I} \\ \vdots \\ \mathbf{I}\end{bmatrix}
+\quad\Longrightarrow\quad
+\text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O = \frac{1}{h}\sum_{i=1}^{h}\text{head}_i.
+$$
+
+Concatenar con una $\mathbf{W}^O$ que se aprende puede, entonces, dar el promedio y cualquier otra
+cosa; promediar es fijar de antemano un punto de todo eso. Y fijarlo cuesta algo muy concreto:
+obliga a las $h$ cabezas a escribir en las mismas $d_{\text{model}}$ coordenadas, de manera que dos
+cabezas que han encontrado dos cosas distintas pueden cancelarse antes de que nadie las lea.
+Concatenadas, cada una tiene sus $d_v$ coordenadas para ella sola, y $\mathbf{W}^O$ decide después,
+coordenada de salida por coordenada de salida, a cuál hace caso.
+
+Esa matriz hace además una segunda cosa que aquí sólo queda señalada: devuelve la salida a
+$d_{\text{model}}$, la anchura con la que entró. Eso es lo que permite apilar estas capas una sobre
+otra, y quien lo necesita de verdad es la lección 6 de este bloque, sobre el bloque completo con
+residuales y *layer norm*.
+
+Falta decir lo que esta construcción **no** hace, porque los dibujos de los artículos invitan a
+creer lo contrario. Nada en la pérdida le asigna un papel a una cabeza: no existe ningún término
+que diga «la cabeza 2 se ocupa de la concordancia». Las cabezas hacen cosas distintas porque
+empiezan distintas, y por nada más. Los nombres del explorable de arriba se los he puesto yo,
+escribiendo las cuatro reglas a mano; en una capa entrenada no los pone nadie y hay que salir a
+buscarlos después, cuando están. Ni siquiera el orden significa nada: intercambia dos cabezas junto
+con sus dos bloques de filas de $\mathbf{W}^O$ y no cambia un número de la salida, así que «la
+cabeza 3» no nombra lo mismo en dos entrenamientos del mismo modelo.
+
+## Las cabezas en NumPy
+
+La primera celda monta la capa con las proyecciones enteras y un bloque de columnas por cabeza, que
+es como se implementa de verdad, y después pasa la cuenta de parámetros por cinco valores de $h$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model, h = 6, 8, 4
+d_k = d_v = d_model // h
+rng = np.random.default_rng(5)
+X = rng.normal(size=(T, d_model))
+Wq = rng.normal(size=(d_model, d_model)) * 0.6   # las h cabezas, una al lado de otra
+Wk = rng.normal(size=(d_model, d_model)) * 0.6
+Wv = rng.normal(size=(d_model, d_model)) * 0.6
+Wo = rng.normal(size=(h * d_v, d_model)) * 0.6
+
+
+def softmax_filas(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+salidas, mapas = [], []
+for i in range(h):
+    col = slice(i * d_k, (i + 1) * d_k)           # el bloque de columnas de la cabeza i
+    Q, K, V = X @ Wq[:, col], X @ Wk[:, col], X @ Wv[:, col]
+    A = softmax_filas(Q @ K.T / np.sqrt(d_k))
+    salidas.append(A @ V)
+    mapas.append(A)
+
+concat = np.concatenate(salidas, axis=1)          # (T, h*d_v): los h trozos seguidos
+Y = concat @ Wo
+
+print("una cabeza", salidas[0].shape, " concatenadas", concat.shape, " salida", Y.shape)
+print("mapas:", len(mapas), "de", mapas[0].shape,
+      " cada fila suma 1:", bool(np.allclose([A.sum(axis=1) for A in mapas], 1.0)))
+print("fila 0 de la cabeza 1:", np.round(mapas[0][0], 3))
+print("fila 0 de la cabeza 2:", np.round(mapas[1][0], 3))
+
+d = 512                                           # la anchura del articulo
+print("\\n  h    d_k   proyecciones      W^O        total")
+for hh in (1, 2, 4, 8, 16):
+    dk = d // hh
+    proy, sal = hh * d * 3 * dk, hh * dk * d
+    print(f"{hh:3d}   {dk:4d}   {proy:12d}   {sal:8d}   {proy + sal:9d}")
+`} />
+
+Las dos filas impresas son la misma posición vista por dos cabezas, y no se parecen en nada: la
+primera pone $0.591$ sobre la posición $1$ y la segunda $0.531$ sobre la $5$, con la que la primera
+gastaba $0.005$. Aquí las cabezas se han separado sólo porque `rng` les dio pesos distintos, que es
+todo lo que las separa también en un modelo entrenado. Y la tabla es la cancelación de arriba
+comprobada: las tres columnas de la derecha no se mueven de $786\,432$, $262\,144$ y $1\,048\,576$
+mientras $d_k$ baja de $512$ a $32$.
+
+La segunda celda mide la concesión. Si las $h$ cabezas empiezan con los mismos pesos, no hay $h$
+cabezas.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model, h = 6, 8, 4
+d_k = d_model // h
+rng = np.random.default_rng(5)
+X = rng.normal(size=(T, d_model))
+
+
+def softmax_filas(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+def mapas(Wq, Wk):
+    salida = []
+    for i in range(h):
+        col = slice(i * d_k, (i + 1) * d_k)
+        Q, K = X @ Wq[:, col], X @ Wk[:, col]
+        salida.append(softmax_filas(Q @ K.T / np.sqrt(d_k)))
+    return np.stack(salida)                       # (h, T, T)
+
+
+bloque = rng.normal(size=(d_model, d_k)) * 0.6
+iguales = np.tile(bloque, (1, h))                 # las h cabezas, con los mismos pesos
+A = mapas(iguales, iguales)
+print("h mapas identicos:", bool(np.allclose(A, A[0])))
+print("mayor diferencia con la cabeza 1:", np.abs(A - A[0]).max(axis=(1, 2)))
+
+distintas = iguales.copy()
+distintas[:, :d_k] += 0.4 * rng.normal(size=(d_model, d_k))   # solo la cabeza 1
+B = mapas(distintas, distintas)
+print("tras mover solo la cabeza 1:")
+print("  lo que dista cada una de la cabeza 1:", np.round(np.abs(B - B[0]).max(axis=(1, 2)), 3))
+print("  y lo que dista cada una de la cabeza 2:", np.round(np.abs(B - B[1]).max(axis=(1, 2)), 3))
+print("fila 0, cabeza 1:", np.round(B[0][0], 3))
+print("fila 0, cabeza 2:", np.round(B[1][0], 3))
+`} />
+
+Con los cuatro bloques de columnas iguales las cuatro distancias salen exactamente $0$: los cuatro
+mapas son el mismo, y $\mathbf{W}^O$ recibe cuatro copias de un mismo vector por posición. Mover un
+solo bloque separa a esa cabeza de las otras tres —$0.458$ en las tres casillas de la primera
+línea— y deja a esas tres idénticas entre ellas, que es lo que dicen los tres ceros de la segunda.
+La asimetría no aparece sola: entra por la inicialización, y en un entrenamiento se mantiene porque
+las cabezas y los bloques de filas de $\mathbf{W}^O$ empiezan todos distintos. Con todo simétrico,
+el gradiente no tendría por dónde romperlo.
+
+## Comprueba tu intuición
+
+Cinco preguntas: qué separa a $h$ cabezas de una sola, cuánto pesa la capa, de dónde sale $d_k$,
+qué calcula la capa con las cabezas iguales, y si promediar era una opción.
+
+<Quiz id="q-donde-se-normaliza" />
+
+<Quiz id="q-cuenta-parametros" />
+
+<Quiz id="q-de-donde-sale-dk" />
+
+<Quiz id="q-cabezas-iguales" />
+
+<Quiz id="q-promediar" />
+
+<CodeChallenge id="ch-multi-head" />
+
+---
+
+Con $h$ cabezas, una posición tiene $h$ respuestas donde tenía una, y $\mathbf{W}^O$ decide qué
+hacer con ellas. Pero mira de dónde salen las $h$: de la misma $\mathbf{X}$, con la misma fórmula,
+y en $e_{ij}$ siguen sin aparecer $i$ ni $j$ por ningún sitio. Multiplicar las cabezas multiplica
+**qué** se compara, y no añade ni una coordenada de **dónde**. Ninguna de las $h$ puede aprender
+«el sustantivo que tengo a la izquierda», por muchas que pongas, porque en lo que la capa lee no
+hay izquierda.
+
+La pieza que falta no está en la capa: está en la entrada, y consiste en que dos posiciones
+distintas le lleguen a $\mathbf{X}$ como dos filas distintas aunque el token sea el mismo. Eso es
+la lección 5 de este bloque, sobre la codificación posicional, y lo que la hace interesante no es
+que haga falta —eso ya se sabía desde la primera lección de este bloque— sino la forma concreta que
+elige el artículo: unos senos y unos cosenos con los que la distancia entre dos posiciones se puede
+escribir como una operación lineal sobre lo que se ha añadido. Esa propiedad se enseña, no se
+afirma, y ocupa la lección entera.

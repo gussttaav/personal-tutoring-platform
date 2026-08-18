@@ -52,4 +52,8 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "self-attention-heatmap": dynamic(() => import("./nn/SelfAttentionHeatmap"), {
     ssr: false,
   }),
+  // COURSE-P5-05 — Block 5 lesson 4 (atención multi-head).
+  "multi-head-view": dynamic(() => import("./nn/MultiHeadView"), {
+    ssr: false,
+  }),
 };

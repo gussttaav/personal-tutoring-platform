@@ -52,7 +52,7 @@ here; STATUS stays phase-level.
 - [x] 1. `adios-recurrencia`
 - [x] 2. `self-attention`
 - [x] 3. `scaled-dot-product`
-- [ ] 4. `multi-head`
+- [x] 4. `multi-head`
 - [ ] 5. `codificacion-posicional`
 - [ ] 6. `bloque-transformer`
 - [ ] 7. `encoder-decoder-masking`

@@ -600,6 +600,7 @@ plain. Never italicise the Spanish terms.
 | the two-layer network a Transformer block applies to each position on its own | `perceptrón por posiciones` | *feed-forward*, red hacia delante, capa densa, red posicional |
 | the decoder sublayer whose queries are the decoder's and whose keys and values are the encoder's | `atención encoder-decoder` | atención cruzada, *cross-attention* |
 | the paper's *scaled dot-product* — the whole attention formula, divisor included | `producto interno escalado`, with the English given once per lesson | «producto escalar escalado»; and `producto escalar` still names the operation $\mathbf{q}^{\top}\mathbf{k}$ itself |
+| one of the $h$ attentions a multi-head layer runs in parallel | `cabeza` | *head*; «cabezal», «cabecera» |
 | the average of a quantity over the randomness assumed of it | `media`, written $\mathbb{E}[\cdot]$ | `esperanza`, `valor esperado`, `promedio` |
 | how far a centred quantity typically lands from zero | `desviación típica` | `desviación estándar`; and never the letter $\sigma$, which NOTATION.md §4 reserves |
 
@@ -844,6 +845,19 @@ plainly there is nothing left to hunt for. It is the move [NOTATION.md](NOTATION
 for $\mathbf{c}$ and $\sigma_{\max}$: a collision is tolerable exactly when the page carrying both
 names it. The alternative was a full retrofit to `producto interno` everywhere, and it is refused on
 size against benefit — 51 sites in three blocks, to swap one standard term for another.
+
+`cabeza` is Spanish, and the row is here to stop one page being written in two languages rather than
+to argue a hard case. `course.es.yml` already summarises block 5 as «Auto-atención, múltiples cabezas
+y codificación posicional», so the sidebar says *cabezas* before any lesson body says anything — the
+same situation that settled `atención` four rows up, where the manifest, two syllabus titles and two
+bridges had all shipped the Spanish while this table still listed it as the rejected form. What the
+row adds beyond the choice is the **boundary with the row above it**: *multi-head* stays English as
+the name of the **compound** —`atención multi-head`, what the paper calls that layer— while `cabeza`
+is the ordinary Spanish noun for one of the $h$ things inside it. That is the split
+`producto interno escalado` already makes between an operation and the compound that names it, and
+it is what lets one sentence carry both: «la atención multi-head reparte $d_{\text{model}}$ entre sus
+$h$ cabezas». «Cabezal» is a part of a machine and «cabecera» is a header; neither is a second name
+for anything the course has.
 
 `media` and `desviación típica` arrive in Block 5 lesson 3, which derives the $\sqrt{d_k}$ of the
 attention formula and therefore has to say how big a dot product gets. Both are the ordinary Spanish

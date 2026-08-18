@@ -869,6 +869,8 @@ go and read the paper, and a different notation would tax exactly that.
 | $\mathbf{W}^Q, \mathbf{W}^K, \mathbf{W}^V$ | the three projections of a **single** head — $\mathbf{Q} = \mathbf{X}\mathbf{W}^Q$, and the same for the other two |
 | $\mathbf{W}^Q_i, \mathbf{W}^K_i, \mathbf{W}^V_i$ | per-head projections |
 | $\mathbf{W}^O$ | output projection |
+| $\text{head}_i$ | the output of head $i$ — $\text{Attention}$ of that head's own three projections, shape $T \times d_v$ |
+| $\text{Concat}(\cdot)$ | concatenation **along columns**: $h$ blocks of $T \times d_v$ laid side by side into one $T \times \left(h \cdot d_v\right)$ |
 | $PE_{(pos, 2i)}$ | positional encoding |
 | $T$ | sequence length |
 | $O(\cdot)$ | asymptotic cost — **only** to name the form the paper's Table 1 writes |
@@ -905,6 +907,23 @@ a real layer carries several of them in parallel. The subscript arrives with the
 lesson 4, meaning what it means in the paper. What does not change is the superscript: it is a
 **projection label** in both spellings, which is the deviation named just below — and the lesson
 that first writes one of these matrices is the lesson that has to say so.
+
+**$\text{head}_i$ and $\text{Concat}$ arrive together, and Block 3's bracket cannot do the second
+one.** Block 5 lesson 4, on multi-head attention, runs $h$ attentions in parallel and then lays their
+outputs side by side, so it needs a name for one head's output and a name for the laying. The first
+is the paper's own $\text{head}_i$, roman by §1's rule for functions and subscripted by the head
+exactly as $\mathbf{W}^Q_i$ already is. The second is where the care goes. Block 3's
+$\left[\mathbf{x}_1 ; \dots ; \mathbf{x}_T\right]$ is a concatenation too, and its own row fixes
+what the semicolons do — they **stack**, «a comma would lay them in a row» — while multi-head lays
+them in a row. Reusing that bracket would state the opposite of what happens, on the one page where
+the shape carries the argument: $h$ blocks of $T \times d_v$ become one
+$T \times \left(h \cdot d_v\right)$, which is what makes
+$\mathbf{W}^O \in \mathbb{R}^{\left(h \cdot d_v\right) \times d_{\text{model}}}$ a legal
+product and what returns the layer's output to $d_{\text{model}}$. $\text{Concat}$ is the paper's
+spelling, it is roman like every other operator in §1, and it names its axis in words where a bracket
+can only imply one. Note what $\mathbf{W}^O$ then is: the only matrix of the layer that is **not**
+per-head, carrying no subscript for that reason, and its superscript is a projection label like the
+other three rather than a second deviation.
 
 **$O(\cdot)$ names a form, it never carries an argument.** Every cost in the first four blocks is an
 exact count — $\lvert V \rvert \cdot d_{\text{model}}$ for Word2Vec's softmax, $2mT - m(m+1)$ for its

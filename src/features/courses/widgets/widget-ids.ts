@@ -38,6 +38,8 @@ export const WIDGET_IDS = [
   "transformer-architecture",
   // COURSE-P5-05 — Block 5 lessons 2 and 7 (auto-atención, encoder/decoder y máscaras).
   "self-attention-heatmap",
+  // COURSE-P5-05 — Block 5 lesson 4 (atención multi-head).
+  "multi-head-view",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
