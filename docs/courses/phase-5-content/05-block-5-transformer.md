@@ -53,7 +53,7 @@ here; STATUS stays phase-level.
 - [x] 2. `self-attention`
 - [x] 3. `scaled-dot-product`
 - [x] 4. `multi-head`
-- [ ] 5. `codificacion-posicional`
+- [x] 5. `codificacion-posicional`
 - [ ] 6. `bloque-transformer`
 - [ ] 7. `encoder-decoder-masking`
 - [ ] 8. `arquitectura-completa`

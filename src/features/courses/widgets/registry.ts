@@ -56,4 +56,8 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "multi-head-view": dynamic(() => import("./nn/MultiHeadView"), {
     ssr: false,
   }),
+  // COURSE-P5-05 — Block 5 lesson 5 (codificación posicional).
+  "positional-encoding": dynamic(() => import("./nn/PositionalEncoding"), {
+    ssr: false,
+  }),
 };

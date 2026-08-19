@@ -40,6 +40,8 @@ export const WIDGET_IDS = [
   "self-attention-heatmap",
   // COURSE-P5-05 — Block 5 lesson 4 (atención multi-head).
   "multi-head-view",
+  // COURSE-P5-05 — Block 5 lesson 5 (codificación posicional).
+  "positional-encoding",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

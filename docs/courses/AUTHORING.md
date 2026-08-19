@@ -603,6 +603,7 @@ plain. Never italicise the Spanish terms.
 | one of the $h$ attentions a multi-head layer runs in parallel | `cabeza` | *head*; «cabezal», «cabecera» |
 | the average of a quantity over the randomness assumed of it | `media`, written $\mathbb{E}[\cdot]$ | `esperanza`, `valor esperado`, `promedio` |
 | how far a centred quantity typically lands from zero | `desviación típica` | `desviación estándar`; and never the letter $\sigma$, which NOTATION.md §4 reserves |
+| how many positions a coordinate of the positional encoding takes to come back round | `longitud de onda` | `periodo`, `frecuencia` — the last one is $\omega_i$, a different number |
 
 The `tipo` / `token` / `ocurrencia` row is a **distinction**, not a translation, and it is the one
 place in Block 1 where using one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -868,6 +869,15 @@ refused for a sharper reason — the lesson computes the bracket **as** an avera
 patterns before generalising it, so the two words would name the same operation at two moments of the
 same page and read as two operations. One word, both times. The symbol and the ban on $\sigma$ are
 [NOTATION.md](NOTATION.md#block-5--el-transformer)'s business, argued there.
+
+`longitud de onda` arrives in Block 5 lesson 5, on codificación posicional, and the row exists
+because the lesson quotes that number a dozen times: this coordinate comes back round every $6.28$
+positions, that one every $35\,000$. It is the paper's own word — «the wavelengths form a geometric
+progression» — and ordinary Spanish besides. `frecuencia` is not a synonym but the **other**
+quantity, $\omega_i$, which the lesson also writes, so letting the two swap would put a number and
+its reciprocal under one name. `periodo` describes the same thing correctly and is refused for the
+reason `promedio` is refused two rows up: two words for one quantity, on the page whose whole first
+claim is that these numbers form a ladder.
 
 #### Acronyms
 

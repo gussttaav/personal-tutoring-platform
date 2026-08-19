@@ -871,7 +871,10 @@ go and read the paper, and a different notation would tax exactly that.
 | $\mathbf{W}^O$ | output projection |
 | $\text{head}_i$ | the output of head $i$ — $\text{Attention}$ of that head's own three projections, shape $T \times d_v$ |
 | $\text{Concat}(\cdot)$ | concatenation **along columns**: $h$ blocks of $T \times d_v$ laid side by side into one $T \times \left(h \cdot d_v\right)$ |
-| $PE_{(pos, 2i)}$ | positional encoding |
+| $\text{PE} \in \mathbb{R}^{T \times d_{\text{model}}}$ | the positional encoding stacked — row $\text{pos}$ is $\text{PE}_{\text{pos}}^{\top}$ |
+| $\text{PE}_{(\text{pos},\,2i)}$ | one entry of it: coordinate $2i$ of position $\text{pos}$ |
+| $\omega_i = 1/10000^{2i/d_{\text{model}}}$ | the angular frequency of the pair $i$ — its wavelength is $2\pi/\omega_i$, in positions |
+| $\mathbf{M}_k$ | the shift matrix of the offset $k$: $\text{PE}_{\text{pos}+k} = \mathbf{M}_k\text{PE}_{\text{pos}}$, the same matrix at every $\text{pos}$ |
 | $T$ | sequence length |
 | $O(\cdot)$ | asymptotic cost — **only** to name the form the paper's Table 1 writes |
 | $\mathbb{E}[\cdot]$ | the average of a quantity over the randomness of an initialisation |
@@ -958,6 +961,31 @@ logistic sigmoid, Block 3 already subscripted it for the largest singular value,
 3's whole subject is saturation — the sigmoid's own failure — so a third meaning would land on the
 one page that can least afford it. In prose it is «la desviación típica»; in maths it is
 $\sqrt{\mathbb{E}\left[e^{2}\right]}$, or $\sqrt{d_k}$ once the count is done.
+
+**$\text{PE}$ is roman, and $\text{pos}$ is $t$ wearing the paper's clothes.** The row above used
+to read $PE_{(pos, 2i)}$, which is §1 broken twice over in five characters: KaTeX sets $PE$ as the
+product $P \cdot E$ and $pos$ as $p \cdot o \cdot s$, exactly the reading $d_{\text{model}}$
+exists to prevent. Both go in `\text{}` like every other multi-letter name in this file. The index
+is the harder half. §2 fixes the sequence position as a subscript $t$ and Block 5's own
+$\mathbf{X}$ has row $t$ equal to $\mathbf{x}_t^{\top}$, so a lesson writing $\text{pos}$ for the
+same thing owes the reader a word — but the paper writes $\text{pos}$, and this is the block whose
+job is to make the paper readable. Block 5 lesson 5, on codificación posicional, holds both the way
+the rest of the file already holds $\mathbf{c}$ and $d$: the paper's spelling **inside the two
+defining equations**, one clause saying that $\text{pos}$ is the course's $t$, and $t$ everywhere
+the sequence is what is being talked about — $\mathbf{x}_t = \mathbf{e}_{w_t} + \text{PE}_t$.
+
+**$\omega_i$ names a frequency, and the wavelength gets no letter.** The lesson's whole first claim
+is that the $d_{\text{model}}/2$ pairs oscillate at speeds in geometric progression, so it needs to
+write one of those speeds down; $\omega$ is what the literature reaches for and it appears nowhere
+else in the course. Its wavelength — how many positions a coordinate takes to come back round — is
+the number the prose actually quotes, and it stays $2\pi/\omega_i$ rather than becoming
+$\lambda_i$: Block 2 lesson 3 spends $\lambda$ on the convex combination that proves an affine
+function cannot separate XOR, the fraction is no wider than the letter, and a symbol defined once to
+be used twice is a symbol the reader has to keep. **$\mathbf{M}_k$ is the one matrix in this block
+that is not a projection**, so it carries no superscript label, and its subscript is the **offset**
+— not a position, not a coordinate. $\mathbf{R}_k$ for *rotación* was the obvious name and is
+refused for sitting one glyph from $\mathbb{R}$, on a page that writes shapes in $\mathbb{R}$ in
+nearly every equation.
 
 ---
 
