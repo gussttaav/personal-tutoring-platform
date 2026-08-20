@@ -86,9 +86,9 @@ que publicaron los autores de GloVe sobre un corpus de 6 000 millones de tokens:
 | <W>moda</W> | $1.7 \times 10^{-5}$ | $1.8 \times 10^{-5}$ | $0.96$ |
 
 Las probabilidades sueltas confunden frecuente con característico: <W>agua</W> sale con <W>hielo</W> más
-que <W>sólido</W>. La razón, no. Vale mucho más que $1$ cuando $k$ es del mundo de la primera, mucho
-menos cuando es del de la segunda, y se pega a $1$ cuando no distingue: <W>moda</W>, que no sale con
-ninguna, y <W>agua</W>, que sale con las dos por igual. La frecuencia base se cancela al dividir.
+que <W>sólido</W>. La razón, no: mide el contraste con <W>vapor</W>, no la frecuencia. Vale mucho más que $1$
+cuando $k$ es del mundo de la primera, mucho menos cuando es del de la segunda, y se pega a $1$ cuando no distingue:
+<W>moda</W>, que no sale con ninguna, y <W>agua</W>, que sale con las dos por igual. La frecuencia base se cancela al dividir.
 
 <Callout type="intuition" title="La idea en una frase">
 Los conteos dicen con quién aparece cada entrada; sus razones, qué la separa de las demás, y ahí está
@@ -211,11 +211,35 @@ $$
 \mathcal{L} = \sum_{i,\, k \;:\; X_{ik} > 0} g(X_{ik}) \left(\mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k - \log X_{ik}\right)^{2},
 $$
 
-con parámetros $\theta = (\mathbf{E}, \mathbf{U}, b, \tilde{b})$ y nada más. Frente a la lección
-anterior, la diferencia no está donde parece: las dos ajustan una función de
-$\mathbf{u}^{\top}\mathbf{e}$ a una estadística de coocurrencia, y lo que cambia es cuándo se cuenta.
-Word2Vec cuenta mientras aprende; GloVe cuenta primero y luego ajusta sin volver a abrir el corpus.
-Los resultados salen de la misma familia.
+con parámetros $\theta = (\mathbf{E}, \mathbf{U}, b, \tilde{b})$ y nada más. Minimizarla es descenso
+de gradiente, y cada paso necesita el gradiente de $\mathcal{L}$.
+
+<Details summary="El gradiente de la pérdida usado en cada paso">
+
+El peso $g(X_{ik})$ y el objetivo $\log X_{ik}$ salen de la tabla de coocurrencias: en la derivada
+son constantes. Llamando $r_{ik}$ al error de la celda,
+
+$$
+\ell_{ik} = g(X_{ik})\,r_{ik}^{2}, \qquad r_{ik} = \mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k - \log X_{ik},
+$$
+
+la regla de la cadena sobre el cuadrado deja $2r_{ik}$ multiplicando a cuatro derivadas inmediatas:
+
+$$
+\frac{\partial \ell_{ik}}{\partial \mathbf{e}_i} = 2\,g(X_{ik})\,r_{ik}\,\mathbf{u}_k, \qquad
+\frac{\partial \ell_{ik}}{\partial \mathbf{u}_k} = 2\,g(X_{ik})\,r_{ik}\,\mathbf{e}_i, \qquad
+\frac{\partial \ell_{ik}}{\partial b_i} = \frac{\partial \ell_{ik}}{\partial \tilde{b}_k} = 2\,g(X_{ik})\,r_{ik}.
+$$
+
+Las cuatro comparten coeficiente, y cada vector recibe al otro. Una celda ya explicada, con
+$r_{ik} \approx 0$, no mueve nada.
+
+</Details>
+
+La diferencia con la lección anterior no está donde parece: las dos ajustan una función de
+$\mathbf{u}^{\top}\mathbf{e}$ a una estadística de coocurrencia, y lo que cambia es cuándo se
+cuenta. Word2Vec cuenta mientras aprende; GloVe cuenta primero y luego ajusta sin volver a abrir el
+corpus.
 
 ## Un vector, uno solo, para siempre
 
@@ -252,11 +276,10 @@ en la que aparece, porque la frase no entra en la función. **Estático** quiere
 ## Contar los pares y ajustar GloVe en NumPy
 
 La celda cuenta y ajusta. El corpus son 680 tokens de plantillas, con <W>banco</W> plantado en dos
-mundos, el del dinero y el del parque; he dejado $d_{\text{model}} = 3$ adrede, porque con más
-coordenadas la tabla se ajusta casi exacta y no se ve trabajar a la pérdida. Minimizar $\mathcal{L}$
-es descenso de gradiente, que es el bloque 2: por ahora vale con que corrija los parámetros poco a
-poco. Ejecútala y mira tres cosas: la columna de razones, los vecinos del ajuste y las tres filas del
-final.
+mundos; he dejado $d_{\text{model}} = 3$ adrede: con más coordenadas la tabla se ajusta casi exacta
+y la pérdida no se ve trabajar. La tasa de aprendizaje decae hasta casi cero, como en la lección
+anterior. Ejecútala y mira tres cosas: la columna de razones, los vecinos del ajuste y las tres
+filas del final.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -314,7 +337,7 @@ for k in ["cliente", "niña", "banco", "en"]:
     print("  ", k.ljust(9), ("%.4f" % a).rjust(9), ("%.4f" % b).rjust(14), ("%.2f" % (a / b)).rjust(9))
 print()
 
-d_model, x_max, alpha, eta, epocas = 3, 10.0, 0.75, 0.1, 600
+d_model, x_max, alpha, eta0, epocas = 3, 10.0, 0.75, 0.1, 30
 
 
 def ajusta(X, semilla=3):
@@ -328,29 +351,29 @@ def ajusta(X, semilla=3):
     E = 0.1 * r.standard_normal((n, d_model))
     U = 0.1 * r.standard_normal((n, d_model))
     bE, bU = np.zeros(n), np.zeros(n)
-    # AdaGrad es una variante del descenso de gradiente del bloque 2; aquí solo estabiliza
-    # el paso: cada parámetro lleva el suyo, y decae con lo que ese parámetro ya se ha movido.
-    aE, aU = np.ones((n, d_model)), np.ones((n, d_model))
-    abE, abU = np.ones(n), np.ones(n)
 
+    n_pasos = epocas * len(fila)
+    paso = 0
     for epoca in range(1, epocas + 1):
-        pred = (E[fila] * U[col]).sum(axis=1) + bE[fila] + bU[col]
-        error = pred - objetivo
-        coef = 2.0 * g * error                    # la derivada respecto de la predicción
+        perdida = 0.0
+        for idx in r.permutation(len(fila)):
+            i, k = fila[idx], col[idx]
+            eta = eta0 * max(1e-4, 1.0 - paso / n_pasos)   # decae hasta casi cero
+            paso += 1
 
-        GE, GU = np.zeros_like(E), np.zeros_like(U)
-        GbE, GbU = np.zeros(n), np.zeros(n)
-        np.add.at(GE, fila, coef[:, None] * U[col])
-        np.add.at(GU, col, coef[:, None] * E[fila])
-        np.add.at(GbE, fila, coef)
-        np.add.at(GbU, col, coef)
+            e, u = E[i].copy(), U[k]
+            error = e @ u + bE[i] + bU[k] - objetivo[idx]
+            perdida += g[idx] * error ** 2
 
-        aE += GE ** 2; aU += GU ** 2; abE += GbE ** 2; abU += GbU ** 2
-        E -= eta * GE / np.sqrt(aE); U -= eta * GU / np.sqrt(aU)
-        bE -= eta * GbE / np.sqrt(abE); bU -= eta * GbU / np.sqrt(abU)
-        if epoca in (1, 200, 400, epocas):
-            print("   época", str(epoca).rjust(3), " pérdida media por celda",
-                  round(float((g * error ** 2).mean()), 4))
+            # El gradiente del desplegable: 2 g(X_ik) por el error, y cada vector recibe al otro.
+            coef = 2.0 * g[idx] * error
+            E[i] -= eta * coef * u
+            U[k] -= eta * coef * e
+            bE[i] -= eta * coef
+            bU[k] -= eta * coef
+        if epoca in (1, 10, 20, epocas):
+            print("   época", str(epoca).rjust(2), " pérdida media por celda",
+                  round(float(perdida / len(fila)), 4))
     return E + U        # las implementaciones se quedan con la suma de las dos tablas
 
 
@@ -403,25 +426,24 @@ print("lo mismo contando también las vacías    ",
       round(coseno(fila(X2, pos2, "banco_dinero", todas), fila(X2, pos2, "banco_parque", todas)), 2))
 `} />
 
-La tabla ocupa 432 celdas, frente a los 3 840 pares que la ventana deslizante genera sobre el
-mismo texto —los bordes de cada frase ya descontados, como en la lección anterior—. Y sus razones reproducen en 680 tokens el patrón de
-<W>hielo</W> y <W>vapor</W>: <W>cliente</W> vale $3.00$ a favor de <W>hipoteca</W>, <W>niña</W> vale
-$0.33$, y <W>banco</W> y <W>en</W> dan $1.00$ exacto porque salen igual con las dos.
+La tabla ocupa 432 celdas, frente a los 3 840 pares que la ventana genera sobre el mismo texto. Y
+sus razones reproducen el patrón de <W>hielo</W> y <W>vapor</W>: <W>cliente</W> vale $3.00$ a favor
+de <W>hipoteca</W>, <W>niña</W> vale $0.33$, y <W>banco</W> y <W>en</W> dan $1.00$ exacto porque
+salen igual con las dos.
 
-El ajuste baja de $3.22$ a $0.02$ por celda y los vecinos son los que tienen que ser:
-<W>préstamo</W>, <W>dinero</W> y <W>nómina</W> para <W>hipoteca</W>; <W>seto</W>, <W>columpio</W> y
-<W>árbol</W> para <W>estanque</W>. Ese $1.00$ redondo es el precio de las plantillas: dentro de cada
-grupo las entradas ocupan huecos idénticos, y sus filas de la tabla también.
+El ajuste baja de $0.55$ a $0.02$ por celda y los vecinos son los que tienen que ser:
+<W>préstamo</W>, <W>dinero</W> y <W>ahorro</W> para <W>hipoteca</W>; <W>columpio</W>, <W>seto</W> y
+<W>sendero</W> para <W>estanque</W>. Esos $1.00$ redondos son el precio de las plantillas: dentro de
+cada grupo las entradas ocupan huecos idénticos, y sus filas también.
 
-Las tres últimas filas son el asunto de la lección. La de <W>banco</W> vale $8$ en <W>dinero</W>, en
-<W>hipoteca</W>, en <W>árbol</W> y en <W>seto</W>, y separando los dos sentidos se ve que es, casilla a
-casilla, la suma de dos filas que no tienen nada que ver: entre ellas el coseno vale $0.00$ sobre las
-palabras con contenido, y $0.55$ contando las vacías, que es lo único que comparten. La compartida se
-queda a $0.71$ de cada una, a mitad de camino exacta, y es esa la que GloVe explica con un vector.
+Las tres últimas filas son el asunto de la lección: la de <W>banco</W> vale $8$ en <W>dinero</W>, en
+<W>hipoteca</W>, en <W>árbol</W> y en <W>seto</W>, y, separados los sentidos, es casilla a casilla
+la suma de dos filas sin nada que ver: entre ellas el coseno vale $0.00$ sobre las palabras con
+contenido, y $0.55$ contando las vacías, lo único que comparten. La compartida se queda a $0.71$ de
+cada una, a mitad de camino, y es esa la que GloVe explica con un vector.
 
-Una prueba de treinta segundos. Sube `d_model` a $8$ y ejecuta otra vez: la pérdida por celda cae a
-$0.0001$ y los vecinos son los mismos. Más coordenadas ajustan mejor la misma tabla; no le sacan lo
-que la tabla no tiene.
+Sube `d_model` a $8$ y ejecuta otra vez: la pérdida por celda cae a la sexta parte y los vecinos son
+los mismos. Más coordenadas ajustan mejor la misma tabla; no le sacan lo que no tiene.
 
 ## Comprueba tu intuición
 
