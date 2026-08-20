@@ -131,7 +131,7 @@ más afinidad se lleva la probabilidad más alta. Y guarda esto del denominador:
 $\lvert V \rvert$ afinidades sean una distribución de probabilidad sobre $V$, y para nada más.
 
 Los parámetros son $\theta = (\mathbf{E}, \mathbf{U})$, y $\mathcal{L}$ no depende de nada más.
-Para minimizarla usamos el **descenso de gradiente**, que es el bloque 2,
+Para minimizarla usamos el **descenso de gradiente**, que veremos en detalle en el bloque 2,
 sobre el perceptrón multicapa.
 
 El gradiente $\nabla_{\theta}\mathcal{L}$ indica la dirección de máximo crecimiento de la pérdida. Por eso,
@@ -147,8 +147,8 @@ aquel bloque: demasiado grande y el descenso diverge.
 
 ### CBOW: la misma idea con los papeles cambiados
 
-CBOW (*continuous bag of words*) invierte la pregunta: adivina el centro desde el contexto, no al
-revés. Los $2m$ vecinos entran promediados en un solo vector,
+CBOW (*continuous bag of words*) invierte la pregunta: adivina el centro desde el contexto.
+Los $2m$ vecinos entran promediados en un solo vector,
 
 $$
 \bar{\mathbf{e}}_t = \frac{1}{2m} \sum_{\substack{-m \leq j \leq m \\ j \neq 0}} \mathbf{e}_{w_{t+j}},
@@ -172,13 +172,13 @@ $$
 $$
 
 Quince millones por un solo par. Con $2m = 4$ pares por token y un corpus de $T = 10^{10}$, salen
-$4 \times 10^{10}$ pares, y una pasada entera cuesta $\left(4 \cdot 1.5 \right) \times 10^{10+7} = 6 \times 10^{17}$ operaciones,
+$4 \times 10^{10}$ pares, y una pasada entera cuesta $6 \times 10^{17}$ operaciones,
 y el entrenamiento da varias. Ninguna máquina iba a pagar eso por un *embedding*, ni en 2013 ni
 ahora.
 
 Mira dónde está el gasto, porque de ahí sale la salida. Que <W>ladra</W> puntúe alto junto a
 <W>perro</W> cuesta 300 multiplicaciones; los otros 14 999 700 se van en una suma cuyo único
-trabajo es que los números sumen uno. Pagas por una distribución sobre 50 000 entradas que no vas a
+trabajo es que las probabilidades sumen uno. Pagas por una distribución sobre 50 000 entradas que no vas a
 usar: al terminar tiras el modelo y te quedas con $\mathbf{E}$.
 
 Así que el objetivo exacto se abandona, y conviene decirlo con todas sus letras, porque es un
@@ -190,24 +190,29 @@ primera.
 ## Muestreo negativo: de repartir probabilidad a distinguir pares
 
 La sustitución cambia la pregunta. En vez de «dada <W>perro</W>, ¿qué probabilidad tiene cada una
-de las 50 000 entradas de acompañarla?», pregunta: «este par, ¿sale del corpus o me lo he
-inventado?». Un sí o un no no reparte nada entre nadie.
+de las 50 000 entradas de acompañarla?», pregunta: «este par elegido al azar, ¿sale del corpus o me lo he
+inventado?».
 
 Hacen falta pares falsos, y se fabrican: al par real $(w, c)$ se le añaden
-$n_{\text{neg}}$ pares $(w, w_j)$ con el contexto sacado al azar. El número lo fijó el artículo
+$n_{\text{neg}}$ pares $(w, c_j)$ con el contexto sacado al azar. El número lo fijó el artículo
 original probando: de $5$ a $20$ con corpus pequeños, de $2$ a $5$ con los grandes. Toma
-$n_{\text{neg}} = 5$. A cada par se calcula su probabilidad aplastando su afinidad al intervalo
-$(0,1)$ con la logística $\sigma(x) = 1/(1 + e^{-x})$, la misma que el bloque 2 usa como activación.
+$n_{\text{neg}} = 5$. A cada par se le calcula su probabilidad aplastando su afinidad al intervalo
+$(0,1)$ con la función logística 
+
+$$
+\sigma(x) = \frac{1}{1 + e^{-x}}.
+$$
+
 La pérdida de un par real y sus negativos es
 
 $$
-\mathcal{L}_{\text{par}} = -\log \sigma\!\left(\mathbf{u}_c^{\top}\mathbf{e}_w\right) - \sum_{j=1}^{n_{\text{neg}}} \log \sigma\!\left(-\mathbf{u}_{w_j}^{\top}\mathbf{e}_w\right),
+\mathcal{L}_{\text{par}} = -\log \sigma\!\left(\mathbf{u}_c^{\top}\mathbf{e}_w\right) - \sum_{j=1}^{n_{\text{neg}}} \log \sigma\!\left(-\mathbf{u}_{c_j}^{\top}\mathbf{e}_w\right),
 $$
 
 y se lee de izquierda a derecha. El primer término baja cuando $\sigma(\mathbf{u}_c^{\top}
 \mathbf{e}_w)$ sube hacia $1$: cuando el centro se acerca al contexto real. En el segundo,
 $\sigma(-x)$ es la probabilidad de «no», y cada sumando baja cuando la afinidad con un contexto
-inventado se hace negativa. Acercarse a uno, alejarse de $n_{\text{neg}}$.
+inventado se hace negativa. Acercarse a uno, alejarse de los otros cinco.
 
 Los negativos no se sacan al azar uniforme, sino de
 
@@ -276,10 +281,11 @@ ya puntúa alto, $\sigma(s) \approx 1$ y su coeficiente se va a cero.
 
 La celda entrena de verdad, en pequeño: 800 tokens de un corpus de juguete por plantillas, 21
 entradas, $d_{\text{model}} = 12$, $n_{\text{neg}} = 5$, cuatro pasadas. La actualización es el
-gradiente del desplegable: `g = s - etiquetas` vale $\sigma(s) - 1$ en el par real y
-$\sigma(s_j)$ en cada negativo, y restárselo escalado a cada vector es el paso de más arriba. La
-tasa de aprendizaje arranca en $0.05$ y decae hasta casi cero: los últimos pasos afinan en lugar de
-saltar. Ejecútala y mira los vecinos de <W>perro</W> antes y después.
+gradiente del desplegable: `g = s - etiquetas`, donde `s` es la salida de la sigmoide aplicada
+a la afinidad de cada par y `etiquetas` es el vector con 1 para el par real y 0 para los negativos. 
+Restárselo escalado a cada vector es el descenso gradiente. La tasa de aprendizaje arranca en $0.05$
+y decae hasta casi cero: los últimos pasos afinan en lugar de saltar. Ejecútala y mira los vecinos
+de <W>perro</W> antes y después.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
