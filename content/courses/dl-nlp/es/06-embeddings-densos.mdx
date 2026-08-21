@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: 'Entre dos vectores TF-IDF la similitud coseno vivía en $[0, 1]$. Entre dos vectores densos puede salir negativa.'
     answer: true
-    explanation: 'Puede, y es el único cambio que trae la fórmula al mudarse de objeto. Los pesos TF-IDF son productos de un conteo por un logaritmo no negativo, así que ninguna coordenada bajaba de cero y el producto escalar tampoco. Las coordenadas de un vector denso son reales cualesquiera, de modo que el producto escalar puede ser negativo y el coseno recorre $[-1, 1]$ entero: el cero deja de ser el mínimo y pasa a significar «sin relación», con los valores negativos por debajo. En la celda de esta lección, <W>coche</W> y <W>harina</W> dan $-0.48$.'
+    explanation: 'Puede, y es el único cambio que trae la fórmula al mudarse de objeto. Los pesos TF-IDF son productos de un conteo por un logaritmo no negativo, así que ninguna coordenada bajaba de cero y el producto escalar tampoco. Las coordenadas de un vector denso son reales cualesquiera, de modo que el producto escalar puede ser negativo y el coseno recorre $[-1, 1]$ entero: el cero deja de ser el mínimo y pasa a significar «sin relación», con los valores negativos apuntando en direcciones opuestas. En la celda de esta lección, <W>coche</W> y <W>harina</W> dan $-0.48$.'
   - id: q-distribucional
     type: single
     prompt: '¿Qué afirma exactamente la hipótesis distribucional?'
@@ -171,7 +171,7 @@ $$
 Una cosa cambia al cambiar de objeto. Los pesos TF-IDF nunca eran negativos, así que el coseno vivía
 en $[0, 1]$; las coordenadas de un vector denso son reales cualesquiera, el producto escalar puede
 salir negativo y el coseno recorre $[-1, 1]$ entero. El cero deja de ser el mínimo y pasa a
-significar «sin relación», con los negativos por debajo.
+significar «sin relación», con los negativos apuntando en direcciones opuestas.
 
 El contraste con el one-hot cierra el argumento. Allí, dos entradas distintas daban producto escalar
 $0$ y distancia $\sqrt{2}$ siempre, un único valor sin excepción. Aquí el coseno puede valer
