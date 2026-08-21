@@ -54,7 +54,7 @@ here; STATUS stays phase-level.
 - [x] 3. `scaled-dot-product`
 - [x] 4. `multi-head`
 - [x] 5. `codificacion-posicional`
-- [ ] 6. `bloque-transformer`
+- [x] 6. `bloque-transformer`
 - [ ] 7. `encoder-decoder-masking`
 - [ ] 8. `arquitectura-completa`
 - [ ] 9. `proyecto-transformer`

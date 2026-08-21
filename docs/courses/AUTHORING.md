@@ -604,6 +604,7 @@ plain. Never italicise the Spanish terms.
 | the average of a quantity over the randomness assumed of it | `media`, written $\mathbb{E}[\cdot]$ | `esperanza`, `valor esperado`, `promedio` |
 | how far a centred quantity typically lands from zero | `desviación típica` | `desviación estándar`; and never the letter $\sigma$, which NOTATION.md §4 reserves |
 | how many positions a coordinate of the positional encoding takes to come back round | `longitud de onda` | `periodo`, `frecuencia` — the last one is $\omega_i$, a different number |
+| the line that carries a sublayer's input around it and adds it back to its output | `conexión residual`, and `los residuales` for several | *residual connection*, *skip connection*, «atajo», «salto», «puente» |
 
 The `tipo` / `token` / `ocurrencia` row is a **distinction**, not a translation, and it is the one
 place in Block 1 where using one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -878,6 +879,16 @@ quantity, $\omega_i$, which the lesson also writes, so letting the two swap woul
 its reciprocal under one name. `periodo` describes the same thing correctly and is refused for the
 reason `promedio` is refused two rows up: two words for one quantity, on the page whose whole first
 claim is that these numbers form a ladder.
+
+`conexión residual` is Spanish and the row is here to fix the plural more than the singular. Block 5
+lesson 6 names the thing once and then refers to it a dozen times as *los residuales*, which is what
+`course.es.yml` and the block plan already say, so the noun has to be a Spanish one or the sidebar
+and the paragraph disagree — the same argument that settled `atención` and `cabeza`. The English is
+refused for that reason alone, not for being unclear. «Atajo» and «salto» describe the picture
+instead of naming the object, and both say the wrong thing about it: nothing is skipped and nothing
+jumps, the sublayer runs exactly as it did and its output is **added** to what it was given, which
+is the one fact the whole lesson turns on. «Puente» is worse still, being the course's own name for
+block 4.
 
 #### Acronyms
 

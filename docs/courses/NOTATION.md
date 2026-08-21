@@ -875,6 +875,15 @@ go and read the paper, and a different notation would tax exactly that.
 | $\text{PE}_{(\text{pos},\,2i)}$ | one entry of it: coordinate $2i$ of position $\text{pos}$ |
 | $\omega_i = 1/10000^{2i/d_{\text{model}}}$ | the angular frequency of the pair $i$ — its wavelength is $2\pi/\omega_i$, in positions |
 | $\mathbf{M}_k$ | the shift matrix of the offset $k$: $\text{PE}_{\text{pos}+k} = \mathbf{M}_k\text{PE}_{\text{pos}}$, the same matrix at every $\text{pos}$ |
+| $\text{Sublayer}(\cdot)$ | the slot for whichever sublayer is being wrapped — the attention or the perceptrón por posiciones |
+| $\text{LayerNorm}(\cdot)$ | the normalisation of **one row**, applied to every row of $\mathbf{X}$ on its own |
+| $\mu_t$, $s_t$ | the mean and the desviación típica of the $d_{\text{model}}$ coordinates of row $t$ |
+| $\varepsilon$ | the constant added under $\text{LayerNorm}$'s root so the division is safe |
+| $\boldsymbol{\gamma}$, $\boldsymbol{\beta} \in \mathbb{R}^{d_{\text{model}}}$ | its two learned vectors — the gain and the shift, both applied coordinate by coordinate |
+| $\text{FFN}(\cdot)$ | the paper's name for the box this course's prose calls the perceptrón por posiciones |
+| $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$, $\mathbf{W}_2 \in \mathbb{R}^{d_{\text{ff}} \times d_{\text{model}}}$ | its two layers, with biases $\mathbf{b}_1 \in \mathbb{R}^{d_{\text{ff}}}$ and $\mathbf{b}_2 \in \mathbb{R}^{d_{\text{model}}}$ |
+| $d_{\text{ff}}$ | the width between those two layers — $2048$ in the paper, four times $d_{\text{model}}$ |
+| $N$ | how many blocks the stack repeats — the «$\times\,N$» of the figure, $6$ in the paper |
 | $T$ | sequence length |
 | $O(\cdot)$ | asymptotic cost — **only** to name the form the paper's Table 1 writes |
 | $\mathbb{E}[\cdot]$ | the average of a quantity over the randomness of an initialisation |
@@ -986,6 +995,69 @@ that is not a projection**, so it carries no superscript label, and its subscrip
 — not a position, not a coordinate. $\mathbf{R}_k$ for *rotación* was the obvious name and is
 refused for sitting one glyph from $\mathbb{R}$, on a page that writes shapes in $\mathbb{R}$ in
 nearly every equation.
+
+**$\text{LayerNorm}$ normalises along a row, so its two statistics carry the position.** Block 5
+lesson 6, on the complete block, needs a name for the mean and for the spread of the
+$d_{\text{model}}$ numbers sitting in one row of $\mathbf{X}$ — and the whole content of the
+operation is *which* axis those two run along, so both take the subscript §2 already spends on the
+sequence position: $\mu_t$ and $s_t$ belong to row $t$ and are computed without looking at any other
+row. That is what keeps the operation out of the three boxes of Block 5 lesson 1 that mix positions,
+which is a claim the lesson has to be able to make in one clause. The spread is **not** $\sigma$,
+for the third time in this file: §4 reserves that letter for the logistic sigmoid, Block 3
+subscripted it for the largest singular value, and Block 5 lesson 3 already refused it for the
+spread of a dot product. $s$ is what statistics writes for a standard deviation computed from the
+numbers to hand rather than assumed of them, which is exactly what this is, and the only $s$ the
+course has spent is Block 4's **bold** $\mathbf{s}_i$, a decoder state in an architecture that has
+none. $\varepsilon$ is the constant under the root and appears nowhere else in the course; it is
+worth the row rather than a silent $10^{-6}$ in a code cell, because a reader who meets it only in
+NumPy cannot tell a numerical guard from a piece of the definition.
+
+**$\boldsymbol{\gamma}$ and $\boldsymbol{\beta}$ extend the `\boldsymbol` exception to Greek
+vectors, and that is the same exception rather than a second one.** Block 2 licensed
+$\boldsymbol{\delta}$ on one ground — `\mathbf` does not embolden Greek in KaTeX — and closed the
+door with «do not extend it to Latin letters», which is the door these two are not walking through:
+they are Greek, they are vectors, and there is no spelling of them that obeys §1 and renders. What
+they cost is two name collisions, both tolerated on the test $\mathbf{c}$ and $\sigma_{\max}$
+already pass. Block 1's $\beta$ is Heaps' law exponent, an italic scalar in an exponent, four
+blocks back. Block 3's $\gamma$ is the bound on $\tanh^{\prime}$ inside the vanishing-gradient
+product, an italic scalar — and that one is closer than it looks, because Block 5 lesson 6's whole
+residual argument is a callback to exactly that lesson. So the rule the lesson inherits is narrow
+and worth writing down: **it makes that callback in prose and never writes Block 3's $\gamma$.**
+Both symbols trip the `bold` lint, like every $\boldsymbol{\delta}$ before them; note it in the PR
+and move on. The alternative was Ba's own $\mathbf{g}$ and $\mathbf{b}$, refused because
+$\mathbf{b}$ is spent twice on the very page that would carry it — $\mathbf{b}_1$ and
+$\mathbf{b}_2$ are one row up — and because $\boldsymbol{\gamma}$/$\boldsymbol{\beta}$ is what
+every library and every later paper writes.
+
+**The perceptrón por posiciones keeps the paper's numbered subscript, and the number is a layer.**
+Block 4 refused numbered subscripts for Bahdanau's score and the reason it gave does not reach here:
+there the objection was that $\mathbf{W}_1$ beside $\mathbf{W}_2$ records nothing about *which* of
+two states each one multiplies, whereas these two are the first and the second layer of one small
+multilayer perceptron, applied in that order, and the number says so. Block 2's $\mathbf{W}^{(l)}$
+was the obvious alternative and carries something this block has already dropped: the
+$d_{\text{out}} \times d_{\text{in}}$ shape of §3, against $\mathbf{Q} = \mathbf{X}\mathbf{W}^Q$
+with $\mathbf{W}^Q \in \mathbb{R}^{d_{\text{model}} \times d_k}$, input by output and no
+transpose anywhere. Writing the block's own perceptron the other way round would put two conventions
+in one equation. $d_{\text{ff}}$ is the paper's spelling of the width between the two layers, and
+§1's `\text{}` rule covers it like $d_{\text{model}}$. The lesson that writes $\text{FFN}$ owes one
+clause, and it is the clause AUTHORING.md already charges for `producto interno escalado`: the
+paper's box and the course's perceptrón por posiciones are the same object under two names, said
+once, so there is nothing left to hunt for. The bias broadcast is Block 2's
+$\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}$ with positions in place of examples,
+$\mathbf{1}_T\mathbf{b}_1^{\top}$, and needs no row of its own — only the same clause that rule
+already asks for.
+
+**$N$ counts blocks, and it is not §4's $L$.** What repeats in the figure is a **block** — two
+sublayers in the encoder, three in the decoder, each of them already wrapped in its own sum and its
+own normalisation — and §4's $L$ counts *layers* in Block 2's sense, which is not the unit being
+stacked. The decisive argument is smaller and harder to argue with: the `transformer-architecture`
+explorable draws «$\times\,N$» on the page the prose sits on, and the paper writes $N = 6$, so
+$L$ would put the diagram and the paragraph beside it in two notations — the failure this whole file
+exists to prevent. $N$ is Block 1's document count $\lvert D \rvert$ and the size of Block 2's two
+splits, both of them dataset sizes, neither of them within four blocks of a Transformer. And
+$\text{Sublayer}$ is a **slot**, like $\varphi$ in Block 2 and $a$ in Block 4: the wrapper is the
+same whatever goes inside it, which is precisely what the block's one line has to say, so the name
+stands for the attention on one reading and the perceptron on the other.
 
 ---
 
