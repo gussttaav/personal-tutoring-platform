@@ -224,7 +224,7 @@ del 30 % o el 40 %. La primera es la que se cita, porque es la que tranquiliza. 
 y de dos maneras.
 
 Una es aritmética. La tasa se mide por token, pero el texto se lee por frases, y una frase se salva
-solo si *todos* sus tokens están en $V$. Con veinte tokens por frase, eso ocurre con probabilidad
+solo si *todos* sus tokens están en $V$. Con veinte tokens por frase y una tasa OOV del 2 %, eso ocurre con probabilidad
 $0.98^{20} \approx 0.67$: una de cada tres frases contiene alguna palabra que el modelo no puede
 leer. La otra manera es que los tokens que caen no son cualesquiera, sino los de la cola, los que
 cargan con lo que la frase dice. Un 2 % de tokens perdidos no es un 2 % de daño.
