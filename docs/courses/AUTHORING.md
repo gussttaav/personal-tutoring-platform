@@ -592,6 +592,7 @@ plain. Never italicise the Spanish terms.
 | feeding the decoder the true previous token during training, not its own output | *teacher forcing* | any translation — kept in English, and it earns only a brief note (Block 3 lesson 8) |
 | pasar un texto de un idioma a otro con un modelo | `traducción automática` | *machine translation* |
 | the token that ends a generated sequence | `<EOS>`, glossed once per lesson as «símbolo de fin de secuencia» | *end token*, «símbolo de parada», «marca de fin», FIN |
+| the token the decoder is fed at its first position, where there is no previous target token | `<GO>`, glossed once per lesson as «símbolo de arranque» | *start token*, `<BOS>`, «símbolo de inicio», INICIO |
 | the decoding search this course does **not** cover, named once so the concession is honest | *beam search* | «búsqueda en haz», «búsqueda por haces» |
 | the small network that computes the score $a$ | `modelo de alineación` | red de atención, *alignment model* |
 | Bahdanau's score — two projections added, squashed, then read out | `atención aditiva` | *additive attention* |
@@ -763,6 +764,18 @@ alternatives all describe the *effect* instead of naming the object: «símbolo 
 something outside the vocabulary that halts the loop, which is precisely the misreading Block 4
 lesson 1 exists to prevent — the model predicts this token like any other, and the loop stops
 because it was predicted.
+
+`<GO>` is the same rule applied to the other end of the sequence, and it is on this table because
+the course has been spelling it **only in code** since Block 3 lesson 8 — `ent =
+np.concatenate(([GO], y[:-1]))`, three cells across two blocks — while no prose has ever said what
+it is. Block 5 lesson 7, on the encoder, the decoder and the masks, is where that stops working: the
+decoder's input is the target shifted one position, so position $1$ receives something that is not a
+target token at all, and a lesson that cannot name it cannot state the shift. It takes `<EOS>`'s
+treatment exactly — a special token, not a word, written the way a vocabulary file writes it,
+`<W>\<GO></W>` in prose by [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about),
+glossed once per lesson. `<BOS>` is what much of the literature writes and is refused for being a
+second spelling of a token the course's own cells already spell one way; the Spanish alternatives are
+refused for the reason «símbolo de parada» is, one paragraph up.
 
 *beam search* is on this table despite the course never teaching it, and the row is there to stop
 the obvious mistranslation rather than to license the topic. Block 4 lesson 1 has to say out loud

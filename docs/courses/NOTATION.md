@@ -862,6 +862,7 @@ go and read the paper, and a different notation would tax exactly that.
 | Symbol | Meaning |
 |---|---|
 | $\mathbf{X} \in \mathbb{R}^{T \times d_{\text{model}}}$ | the input sequence stacked — row $t$ is $\mathbf{x}_t^{\top}$ |
+| $\mathbf{X}^{\text{enc}}$, $\mathbf{X}^{\text{dec}}$ | the same object in each of the two stacks, where one lesson holds both — the superscript is a role label, like $\mathbf{W}^Q$'s and unlike $\mathbf{W}^{(l)}$'s |
 | $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$ | queries, keys, values |
 | $d_k$, $d_v$ | key/query and value dimension |
 | $d_{\text{model}}$ | model dimension |
@@ -883,6 +884,8 @@ go and read the paper, and a different notation would tax exactly that.
 | $\text{FFN}(\cdot)$ | the paper's name for the box this course's prose calls the perceptrón por posiciones |
 | $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$, $\mathbf{W}_2 \in \mathbb{R}^{d_{\text{ff}} \times d_{\text{model}}}$ | its two layers, with biases $\mathbf{b}_1 \in \mathbb{R}^{d_{\text{ff}}}$ and $\mathbf{b}_2 \in \mathbb{R}^{d_{\text{model}}}$ |
 | $d_{\text{ff}}$ | the width between those two layers — $2048$ in the paper, four times $d_{\text{model}}$ |
+| $\mathbf{M} \in \mathbb{R}^{T \times T}$ | the causal mask: $0$ where a position may look, $-\infty$ where it may not, added to the scores **before** the softmax |
+| $T_x$, $T_y$ | source and target lengths (Block 3 lesson 8), needed again wherever the two stacks share a page |
 | $N$ | how many blocks the stack repeats — the «$\times\,N$» of the figure, $6$ in the paper |
 | $T$ | sequence length |
 | $O(\cdot)$ | asymptotic cost — **only** to name the form the paper's Table 1 writes |
@@ -1058,6 +1061,36 @@ splits, both of them dataset sizes, neither of them within four blocks of a Tran
 $\text{Sublayer}$ is a **slot**, like $\varphi$ in Block 2 and $a$ in Block 4: the wrapper is the
 same whatever goes inside it, which is precisely what the block's one line has to say, so the name
 stands for the attention on one reading and the perceptron on the other.
+
+**$\mathbf{M}$ carries no subscript, and that is what separates it from $\mathbf{M}_k$.** Block 5
+lesson 7, on the encoder, the decoder and the masks, has to write down the thing that stops a
+position looking at the ones after it, and the operation is an **addition inside the softmax** —
+$\text{softmax}\!\left(\mathbf{Q}\mathbf{K}^{\top}/\sqrt{d_k} + \mathbf{M}\right)$ — so what it
+needs is a matrix and not a rule about a loop. The letter is the one every implementation uses, and
+the collision it costs is with the shift matrix of lesson 5, two lessons earlier. The two are told
+apart by the same device the rest of this file already runs on: $\mathbf{M}_k$ **always** carries its
+offset, is a rotation with entries in $[-1, 1]$, and multiplies a column of $\text{PE}$;
+$\mathbf{M}$ never carries anything, holds only $0$ and $-\infty$, and is added to a grid of scores.
+Neither lesson writes the other's matrix, and lesson 8, which recaps both boxes, writes neither.
+$\mathbf{M}^{\text{causal}}$ was the alternative and is refused for spending width on a distinction
+that the presence or absence of a subscript already makes — and for promising a family
+($\mathbf{M}^{\text{pad}}$) that this course never builds, *padding* being named once as a concession
+and no more.
+
+**$\mathbf{X}^{\text{enc}}$ and $\mathbf{X}^{\text{dec}}$, because from lesson 7 on there are two
+sequences on the page.** Lessons 2 to 6 have one stack and a bare $\mathbf{X}$ is unambiguous; the
+encoder-decoder attention puts both in one line — $\mathbf{Q}$ from what is being written,
+$\mathbf{K}$ and $\mathbf{V}$ from what was read — and there the bare letter would have to mean two
+things three symbols apart. The superscript is Block 3 lesson 8's own
+$\mathbf{W}^{\text{enc}}_{\ast}$ / $\mathbf{W}^{\text{dec}}_{\ast}$ convention, which that block
+already named as the one superscript in the course that is not a layer index, «Block 5's projection
+labels are the other» — so this adds no third kind of superscript, only a second user of the second
+kind. $\mathbf{Y}$ was the obvious alternative and is refused twice over: Block 2 spends it on the
+batched targets, and the decoder's rows would then be $\mathbf{Y}$ on the very page where
+$y_{1:T_y}$ is the sequence of target **tokens** being fed in, one object read into the other.
+$T_x$ and $T_y$ come back with them, unchanged from Block 3 lesson 8, and for the reason they were
+introduced there: the two sides need not be the same length, which is exactly what makes the
+encoder-decoder map rectangular where the other two are square.
 
 ---
 

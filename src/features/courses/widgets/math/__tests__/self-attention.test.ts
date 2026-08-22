@@ -197,3 +197,59 @@ describe("selfAttentionMap", () => {
     expect(map.truncated).toBe(false);
   });
 });
+
+/*
+ * COURSE-P5-05 — the causal mask (Block 5 lesson 7). Three claims, and the third is the
+ * one worth the file: masking then normalising is the SAME operation restricted, so a
+ * masked row is the unmasked row's prefix divided by what that prefix summed to. That
+ * gives an independent route to every masked number — computed from the unmasked map,
+ * which the tests above already pin down — so a bug in the mask cannot pass both.
+ */
+describe("selfAttentionMap with the causal mask", () => {
+  it("blanks the future exactly and still hands every row a distribution", () => {
+    for (const preset of PRESETS) {
+      const { weights } = selfAttentionMap(preset, true, true);
+      weights.forEach((row, i) => {
+        expect(total(row)).toBeCloseTo(1, 12);
+        row.forEach((w, j) => {
+          if (j > i) expect(w).toBe(0);
+          else expect(w).toBeGreaterThan(0);
+        });
+      });
+    }
+  });
+
+  it("leaves the first position with nowhere to look but itself", () => {
+    const { weights } = selfAttentionMap(FLAGSHIP, true, true);
+    expect(weights[0][0]).toBe(1);
+    expect(weights[0].slice(1).every((w) => w === 0)).toBe(true);
+  });
+
+  it("equals the unmasked row's prefix renormalised", () => {
+    for (const project of [true, false]) {
+      const open = selfAttentionMap(FLAGSHIP, project).weights;
+      const masked = selfAttentionMap(FLAGSHIP, project, true).weights;
+      masked.forEach((row, i) => {
+        const prefix = open[i].slice(0, i + 1);
+        const kept = prefix.reduce((acc, w) => acc + w, 0);
+        prefix.forEach((w, j) => expect(row[j]).toBeCloseTo(w / kept, 12));
+      });
+    }
+  });
+
+  it("keeps what a position reads independent of everything after it", () => {
+    // The invariant the lesson turns on: cut the sentence short and the rows that
+    // survive read exactly what they read in the long one.
+    const long = selfAttentionMap("el gato duerme y los perros comen", true, true);
+    const short = selfAttentionMap("el gato duerme y", true, true);
+    expect(short.tokens).toEqual(long.tokens.slice(0, short.tokens.length));
+    short.output.forEach((row, i) =>
+      row.forEach((coordinate, c) => expect(coordinate).toBeCloseTo(long.output[i][c], 12)),
+    );
+  });
+
+  it("does nothing to a one-token sentence, masked or not", () => {
+    const { weights } = selfAttentionMap("gato", true, true);
+    expect(weights).toEqual([[1]]);
+  });
+});

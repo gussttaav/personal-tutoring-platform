@@ -259,8 +259,16 @@ export interface SelfAttentionMap extends TokenisedSentence {
  * which is the ablation Block 5 lesson 2 argues from: the scores are then symmetric and
  * each row's maximum is its own diagonal, so the layer hands every position back
  * roughly what it already had.
+ *
+ * With `causal: true` the map is the decoder's, of Block 5 lesson 7: position i sees
+ * 1..i and nothing after, the first row has nowhere to look but itself, and every row
+ * still sums to 1 because the mask goes in before the softmax and not after it.
  */
-export function selfAttentionMap(text: string, project = true): SelfAttentionMap {
+export function selfAttentionMap(
+  text: string,
+  project = true,
+  causal = false,
+): SelfAttentionMap {
   const { tokens, known, truncated } = tokeniseSentence(text);
   const x = embedTokens(tokens);
   if (tokens.length === 0) {
@@ -270,6 +278,6 @@ export function selfAttentionMap(text: string, project = true): SelfAttentionMap
   const q = project ? matmul(x, W_Q) : x;
   const k = project ? matmul(x, W_K) : x;
   const v = project ? matmul(x, W_V) : x;
-  const { scores, weights, output } = scaledDotProductAttention(q, k, v);
+  const { scores, weights, output } = scaledDotProductAttention(q, k, v, causal);
   return { tokens, known, truncated, x, scores, weights, output };
 }

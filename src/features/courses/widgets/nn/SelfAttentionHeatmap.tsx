@@ -18,6 +18,14 @@
  * the one claim on the page a reader cannot check by eye. All the numbers come from
  * math/self-attention, which is unit-tested; this file only draws them. Local state only.
  *
+ * THE SECOND TOGGLE IS LESSON 7's (encoder, decoder y máscaras). «Con máscara causal»
+ * blanks every cell to the right of the diagonal — position i may look at 1..i and at
+ * nothing after — and the rows that survive renormalise themselves, so the sum column
+ * still reads 1.00 on every row. That is the claim a static picture cannot make: the
+ * mask is not a rule applied after the fact, it goes in before the softmax, which is why
+ * nothing is left over. Row 1 is the degenerate case and the widget lands it for free:
+ * with nowhere else to look, it gives itself 1.00.
+ *
  * The vectors and the projections are hand-set — mine, not a trained model's — and the
  * component says so under the map rather than letting the reader assume otherwise. A
  * token outside the lexicon is marked with a dot and named in that same line: its vector
@@ -59,12 +67,13 @@ const short = (token: string) => (token.length > 6 ? `${token.slice(0, 5)}·` : 
 export default function SelfAttentionHeatmap() {
   const [text, setText] = useState<string>(PRESETS[0]);
   const [project, setProject] = useState(true);
+  const [causal, setCausal] = useState(false);
   // «están» in the first preset: the row the lesson's prose points at, so the widget
   // lands its claim before the reader touches anything.
   const [row, setRow] = useState(4);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const map = useMemo(() => selfAttentionMap(text, project), [text, project]);
+  const map = useMemo(() => selfAttentionMap(text, project, causal), [text, project, causal]);
   const { tokens, known, truncated, weights } = map;
   const t = tokens.length;
 
@@ -122,6 +131,15 @@ export default function SelfAttentionHeatmap() {
         </WidgetButton>
         <WidgetButton active={!project} aria-pressed={!project} onClick={() => setProject(false)}>
           Sin proyectar
+        </WidgetButton>
+      </div>
+
+      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+        <WidgetButton active={!causal} aria-pressed={!causal} onClick={() => setCausal(false)}>
+          Sin máscara
+        </WidgetButton>
+        <WidgetButton active={causal} aria-pressed={causal} onClick={() => setCausal(true)}>
+          Con máscara causal
         </WidgetButton>
       </div>
 
@@ -211,30 +229,37 @@ export default function SelfAttentionHeatmap() {
                         </span>
                       )}
                     </span>
-                    {weights[i].map((w, j) => (
-                      <span
-                        key={`c${j}`}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          height: 26,
-                          borderRadius: 3,
-                          background: shade(w),
-                          color: "#e6fff4",
-                          fontSize: "0.64rem",
-                          fontVariantNumeric: "tabular-nums",
-                          boxShadow:
-                            selected && i === j
-                              ? "inset 0 0 0 1.5px rgba(230,255,244,0.75)"
-                              : selected
-                                ? "inset 0 0 0 1px rgba(78,222,163,0.55)"
-                                : "none",
-                        }}
-                      >
-                        {fmt2(w)}
-                      </span>
-                    ))}
+                    {weights[i].map((w, j) => {
+                      // A masked cell is drawn as absent rather than as 0.00: the row is
+                      // a distribution over what is left of it, and shade(0) is so close
+                      // to shade(0.02) that the triangle would not read.
+                      const tachada = causal && j > i;
+                      return (
+                        <span
+                          key={`c${j}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            height: 26,
+                            borderRadius: 3,
+                            background: tachada ? "var(--surface-lowest)" : shade(w),
+                            border: tachada ? "1px dashed var(--border-variant)" : "none",
+                            color: "#e6fff4",
+                            fontSize: "0.64rem",
+                            fontVariantNumeric: "tabular-nums",
+                            boxShadow:
+                              selected && i === j
+                                ? "inset 0 0 0 1.5px rgba(230,255,244,0.75)"
+                                : selected && !tachada
+                                  ? "inset 0 0 0 1px rgba(78,222,163,0.55)"
+                                  : "none",
+                          }}
+                        >
+                          {tachada ? "" : fmt2(w)}
+                        </span>
+                      );
+                    })}
                     <span
                       style={{
                         display: "flex",
@@ -266,7 +291,29 @@ export default function SelfAttentionHeatmap() {
           }}
         >
           <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-            {project ? (
+            {causal ? (
+              <>
+                {step === 0 ? (
+                  <>
+                    Con la máscara, la posición 1 no tiene nada detrás:{" "}
+                    <strong style={{ color: "var(--text)" }}>{tokens[0]}</strong> se lleva{" "}
+                    {fmt2(weights[0][0])} sobre sí misma y {t - 1}{" "}
+                    {t - 1 === 1 ? "casilla queda tachada" : "casillas quedan tachadas"} a su
+                    derecha. La fila suma {fmt2(sums[0])} igual que las demás: lo que se tacha se
+                    reparte entre lo que queda, porque la máscara entra antes del softmax.
+                  </>
+                ) : (
+                  <>
+                    Con la máscara, la posición {step + 1},{" "}
+                    <strong style={{ color: "var(--text)" }}>{tokens[step]}</strong>, sólo puede
+                    mirar de la 1 a la {step + 1}. Su peso más alto —{fmt2(peak.weight)}— va a{" "}
+                    <strong style={{ color: "var(--text)" }}>{tokens[peak.index]}</strong>, y la
+                    fila sigue sumando {fmt2(sums[step])} con {t - 1 - step}{" "}
+                    {t - 1 - step === 1 ? "casilla tachada" : "casillas tachadas"}.
+                  </>
+                )}
+              </>
+            ) : project ? (
               <>
                 La posición {step + 1},{" "}
                 <strong style={{ color: "var(--text)" }}>{tokens[step]}</strong>, le da su peso más
@@ -293,6 +340,7 @@ export default function SelfAttentionHeatmap() {
         Los vectores ({D_MODEL} coordenadas, {LEXICON_WORDS.length} palabras en el léxico) y las
         proyecciones —{D_K} coordenadas para comparar, {D_V} para mezclar— los he puesto yo a mano
         para el curso; ningún modelo entrenado hay aquí dentro.
+        {causal ? " Las casillas de trazo discontinuo son las que la máscara tacha." : ""}
         {unknown.length > 0
           ? ` Fuera del léxico: ${unknown.join(", ")} — su vector sale de un hash de sus letras, así que esa fila no dice nada.`
           : ""}
