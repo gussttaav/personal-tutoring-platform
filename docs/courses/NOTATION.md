@@ -915,6 +915,17 @@ does for $\mathbf{x}$ against $\mathbf{x}_t$. Block 4's $\mathbf{A}$ and $\alpha
 unchanged and need no row of their own; what changes is that the map is now square, $T \times T$,
 because both of its axes are the same sequence — so $\alpha_{ii}$ exists and means something.
 
+**$\mathbf{V}$ and $V$ do share a page, and there the fix is to not write the letter.** The
+collisions above are tolerated because the two spellings never meet; Block 5 lesson 9, the project,
+is where these two do. It fixes $\lvert V \rvert = 12$ for the toy vocabulary in one section and
+has to describe a masked row as a mix of value rows in the next, with one glyph of bold
+carrying the whole distinction — enough for a reader to stop and hunt for a relation that is not
+there. So: **when the sentence can say the role in words — «mezcla valores de filas que no pasan de
+$t$» — say it in words and leave the letter out.** Naming the collision out loud, which is what
+$\mathbf{c}$ and $\sigma_{\max}$ do, is the fallback for the pages where the letter is
+load-bearing: lessons 2 to 4, where $\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V})$ is
+the object being defined and cannot be paraphrased away.
+
 **The head subscript is absent while there is one head.** The paper writes $\mathbf{W}^Q_i$ for
 head $i$ and the row above keeps it, but Block 5 lesson 2 builds a single attention layer and has no
 $i$ to write: it uses the bare $\mathbf{W}^Q, \mathbf{W}^K, \mathbf{W}^V$ and says in a clause that

@@ -597,7 +597,7 @@ plain. Never italicise the Spanish terms.
 | the small network that computes the score $a$ | `modelo de alineación` | red de atención, *alignment model* |
 | Bahdanau's score — two projections added, squashed, then read out | `atención aditiva` | *additive attention* |
 | Luong's score — the two states multiplied through one matrix | `atención multiplicativa` | *multiplicative attention*, atención por producto |
-| the three roles of one attention call | `consulta`, `clave`, `valor` — Spanish, with the English given once per lesson (*query*, *key*, *value*) so $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ can be read | untranslated *query* / *key* / *value*; «petición», «llave», «contenido» |
+| the three roles of one attention call | `consulta`, `clave`, `valor` — Spanish, with the English given once per lesson **that writes the letters** (*query*, *key*, *value*), so $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$ can be read | untranslated *query* / *key* / *value*; «petición», «llave», «contenido» |
 | the two-layer network a Transformer block applies to each position on its own | `perceptrón por posiciones` | *feed-forward*, red hacia delante, capa densa, red posicional |
 | the decoder sublayer whose queries are the decoder's and whose keys and values are the encoder's | `atención encoder-decoder` | atención cruzada, *cross-attention* |
 | the paper's *scaled dot-product* — the whole attention formula, divisor included | `producto interno escalado`, with the English given once per lesson | «producto escalar escalado»; and `producto escalar` still names the operation $\mathbf{q}^{\top}\mathbf{k}$ itself |
@@ -819,7 +819,16 @@ says, and Block 4 lesson 5's bridge already shipped them in prose. What the row 
 $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$, $d_k$ — are initials of the English words, so a lesson
 that never writes *query* beside `consulta` leaves four letters unexplained. That is the acronym
 rule below, applied where the acronym is a single letter: give the English once, in this lesson,
-and stay in Spanish afterwards. «Petición» and «llave» are refused for being second names for
+and stay in Spanish afterwards.
+
+**What the gloss is for is the letters, so a lesson with no letters owes nothing.** Block 5 lesson
+9, the project, names all three roles in prose — «consultas de $\mathbf{X}^{\text{dec}}$, claves y
+valores de $\mathbf{X}^{\text{enc}}$» — and writes $\mathbf{Q}$, $\mathbf{K}$ and $\mathbf{V}$
+nowhere, because by then the three projections live inside a function the student calls. Glossing
+there would introduce three English words to explain symbols that are not on the page, which is
+the acronym rule running backwards. The trigger is the **letters**, not the words.
+
+«Petición» and «llave» are refused for being second names for
 objects that already have one, and «contenido» for the value because it says what a value holds
 instead of naming the role it plays — the same objection that loses «red de atención» to
 `modelo de alineación` two rows up.
