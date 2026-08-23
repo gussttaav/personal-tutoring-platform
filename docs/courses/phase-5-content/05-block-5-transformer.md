@@ -56,7 +56,7 @@ here; STATUS stays phase-level.
 - [x] 5. `codificacion-posicional`
 - [x] 6. `bloque-transformer`
 - [x] 7. `encoder-decoder-masking`
-- [ ] 8. `arquitectura-completa`
+- [x] 8. `arquitectura-completa`
 - [ ] 9. `proyecto-transformer`
 - [ ] 10. `bert-y-gpt`
 - [ ] 11. `fine-tuning-colab`
