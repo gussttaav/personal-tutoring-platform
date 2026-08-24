@@ -26,7 +26,8 @@ import CourseFaq from "@/features/courses/landing/CourseFaq";
 import CourseCta from "@/features/courses/landing/CourseCta";
 import { getCourse, listLessons, listCourseManifests } from "@/lib/courses/registry";
 import { routing } from "@/i18n/routing";
-import { localizedAlternates } from "@/lib/hreflang";
+import { availableLocaleAlternates } from "@/lib/hreflang";
+import CourseStructuredData from "@/components/seo/CourseStructuredData";
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -45,11 +46,15 @@ export async function generateMetadata({
   if (!course) {
     return { title: tMeta("title"), description: tMeta("description") };
   }
+  // COURSE-P6-01: advertise only the locales the course landing actually exists in
+  // (a manifest is present). `en` has no manifest for months → no `/en/cursos/...`
+  // alternate is emitted while it 404s.
+  const available = routing.locales.filter((l) => getCourse(course.slug, l) !== null);
   return {
     title: `${course.title} — Gustavo Torres`,
     description: course.tagline,
     robots: { index: true, follow: true },
-    alternates: localizedAlternates(`/cursos/${course.slug}`, locale),
+    alternates: availableLocaleAlternates(`/cursos/${course.slug}`, locale, available),
   };
 }
 
@@ -72,6 +77,8 @@ export default async function CourseLandingPage({
 
   return (
     <>
+      {/* COURSE-P6-01: Course JSON-LD — server-rendered, ships in the static HTML. */}
+      <CourseStructuredData course={course} locale={locale} />
       <Navbar />
       <main style={{ position: "relative", zIndex: 1 }}>
         <div style={{ maxWidth: 840, margin: "0 auto", padding: "32px 20px 0" }}>

@@ -121,12 +121,12 @@ ticked.** This table stays a phase-level dashboard — do not add per-lesson row
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 SEO: JSON-LD, sitemap, hreflang](phase-6-launch/01-seo.md) | `COURSE-P6-01` | ⬜ | _tbd_ | |
+| [01 SEO: JSON-LD, sitemap, hreflang](phase-6-launch/01-seo.md) | `COURSE-P6-01` | ✅ | _tbd_ | local |
 | [02 Waitlist launch email](phase-6-launch/02-waitlist-email.md) | `COURSE-P6-02` | ⬜ | _tbd_ | |
 | [03 Publication gate flip](phase-6-launch/03-publication-gate.md) | `COURSE-P6-03` | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] Sitemap lists every published lesson; **no `en` hreflang alternate is emitted while English content does not exist**
+- [x] Sitemap lists every published lesson; **no `en` hreflang alternate is emitted while English content does not exist** _(P6-01)_
 - [ ] `Course` + `LearningResource` JSON-LD validates
 - [ ] Waitlist email sent to `subscriptions WHERE type = 'courses'`, bilingual per `users.locale`
 - [ ] Navbar/Footer "Cursos" links to `/cursos`; ComingSoonModal no longer reachable for courses (blog untouched)
