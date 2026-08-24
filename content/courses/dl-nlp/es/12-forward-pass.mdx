@@ -1,0 +1,471 @@
+---
+slug: forward-pass
+title: "El forward pass en forma matricial"
+block: 2
+order: 4
+minutes: 30
+summary: "Una capa entera cabe en un producto de matrices, y un batch entero cabe en ese mismo producto con una fila por ejemplo. De ahí sale la transpuesta —los ejemplos se apilan por filas y un ejemplo es una columna— y de encadenar esos productos de la entrada a la salida sale el forward pass, cuyo coste en parámetros no depende de cuántos ejemplos entren a la vez."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-parametros
+    type: numeric
+    prompt: 'Una red recibe vectores de $300$ coordenadas, tiene una capa oculta de $128$ neuronas y una capa de salida de $2$. ¿Cuántos números guarda en total, entre pesos y sesgos?'
+    answer: 38786
+    tolerance: 0
+    explanation: 'La capa oculta aporta $\mathbf{W}^{(1)} \in \mathbb{R}^{128 \times 300}$ y $\mathbf{b}^{(1)} \in \mathbb{R}^{128}$, es decir $128 \cdot 300 + 128 = 38\,528$ números; la de salida aporta $2 \cdot 128 + 2 = 258$. En total, $38\,786$. Mira dónde está el peso de la cuenta: $\mathbf{W}^{(1)}$ sola se lleva el $99\,\%$, porque los pesos crecen con el producto de dos anchuras y los sesgos sólo con una. Y mira lo que no aparece por ningún lado: $B$. La red ocupa lo mismo tanto si le pasas un ejemplo como si le pasas mil de una vez.'
+  - id: q-transpuesta
+    type: single
+    prompt: 'Para un solo ejemplo, la capa es $\mathbf{W}^{(l)}\mathbf{h}^{(l-1)}$; para un batch entero es $\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top}$. ¿De dónde sale esa transpuesta?'
+    options:
+      - { id: a, text: 'De que $\mathbf{H}^{(l-1)}$ guarda un ejemplo por fila y un ejemplo es un vector columna: su fila $i$ es $\left(\mathbf{h}^{(l-1)}_i\right)^{\top}$, y transponer un producto le da la vuelta al orden de los factores.' }
+      - { id: b, text: 'De que NumPy guarda las matrices por filas, así que el producto sale más rápido si el segundo factor se recorre en ese orden.' }
+      - { id: c, text: 'De que $\mathbf{W}^{(l)}$ no suele ser cuadrada. Cuando $d_l = d_{l-1}$ la transpuesta se puede quitar y el resultado no cambia.' }
+      - { id: d, text: 'De que hay que sumar sobre los $B$ ejemplos, y la transpuesta es lo que hace desaparecer ese índice del resultado.' }
+    answer: a
+    explanation: 'La (a) es la justificación entera en una frase: $\left(\mathbf{W}\mathbf{h}\right)^{\top} = \mathbf{h}^{\top}\mathbf{W}^{\top}$, y apilar esas filas para $i = 1, \dots, B$ es exactamente el producto de la izquierda. La (b) confunde rendimiento con álgebra: el orden en memoria decide lo que tarda un producto, no cuál es. La (c) es falsa aunque las formas cuadren, porque $\mathbf{W}$ y $\mathbf{W}^{\top}$ son matrices distintas salvo que la matriz sea simétrica: sin transponer, cada neurona leería una columna que no contiene sus pesos. Y la (d) invierte lo que pasa: $B$ no desaparece —sobrevive como el número de filas de $\mathbf{Z}^{(l)}$—, y la dimensión que sí desaparece es $d_{l-1}$, la única que comparten los dos factores.'
+  - id: q-broadcast
+    type: predict-output
+    prompt: 'Esta es la capa de la lección sobre un batch de tres ejemplos. ¿Qué imprime?'
+    language: python
+    code: |
+      import numpy as np
+
+      H = np.ones((3, 4))
+      W = np.ones((2, 4))
+      b = np.array([0.5, -0.5])
+      Z = H @ W.T + b
+      print(Z.shape, Z[0])
+    answer: '(3, 2) [4.5 3.5]'
+    explanation: 'El producto `H @ W.T` tiene forma $(3, 2)$ —tres ejemplos, dos neuronas— y todas sus casillas valen $4$, porque cada una suma cuatro unos. Al sumar `b`, que tiene forma $(2,)$, NumPy lo reparte por columnas: $+0.5$ a la de la primera neurona y $-0.5$ a la de la segunda, en las tres filas por igual. Eso es el $\mathbf{1}_B\mathbf{b}^{\top}$ de la lección calculado sin construir la matriz. La regla de formas está trabajando aquí: con un `b` de tres números, $(3,2)$ y $(3,)$ no encajan y NumPy da un error en vez de sumar cualquier cosa.'
+    hint: 'El formato cuenta tanto como los valores: la forma se imprime como una tupla y el array con corchetes, con el punto decimal y separados por un espacio, sin comas.'
+  - id: q-cadena
+    type: multi
+    prompt: 'Una red de $L$ capas encadena $\mathbf{H}^{(l)} = \varphi\left(\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}\right)$ partiendo de $\mathbf{H}^{(0)} = \mathbf{X}$. Marca todo lo que sea cierto.'
+    options:
+      - { id: a, text: 'El número de columnas de $\mathbf{H}^{(l-1)}$ tiene que coincidir con el de $\mathbf{W}^{(l)}$: las dos valen $d_{l-1}$.' }
+      - { id: b, text: '$B$ no aparece en ninguna matriz de pesos, así que cambiar cuántos ejemplos entran a la vez no cambia ni un parámetro.' }
+      - { id: c, text: 'Las capas se calculan en orden a la fuerza, porque $\mathbf{H}^{(l)}$ necesita $\mathbf{H}^{(l-1)}$ ya calculada.' }
+      - { id: d, text: 'Si quitas las $L$ activaciones, la cadena ya no se puede acortar: un producto de matrices seguido de otro no vuelve a ser un producto de matrices.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras son las tres cosas que fija la forma matricial. La (a) es la condición que encadena las capas, y es la única que hay: elegida la anchura $d_{l-1}$, la matriz siguiente tiene que tener esas columnas. La (b) es lo que hace que el mismo código sirva para un ejemplo y para mil. La (c) es la razón de que esto sea un recorrido y no un conjunto de cuentas independientes. La falsa es la (d), y la contesta la lección 2 de este bloque, sobre funciones de activación y no linealidad: sin $\varphi$ la cadena se contrae en $\mathbf{X}\left(\mathbf{W}^{(L)}\cdots\mathbf{W}^{(1)}\right)^{\top}$ más un sesgo, que es una capa sola. Los productos de matrices se componen igual que las funciones afines, y ese es justo el problema que $\varphi$ existe para romper.'
+challenges:
+  - id: ch-forward
+    prompt: |
+      Escribe el forward pass en su forma matricial, para un batch entero y sin recorrer los
+      ejemplos uno a uno:
+
+      - `capa(H, W, b)` devuelve la preactivación de una capa. `H` tiene forma
+        $(B,\, d_{\text{in}})$, `W` tiene forma $(d_{\text{out}},\, d_{\text{in}})$ —una fila por
+        neurona— y `b` tiene forma $(d_{\text{out}},)$; la salida tiene forma
+        $(B,\, d_{\text{out}})$.
+      - `forward(X, capas, phi)` encadena una lista de pares `(W, b)` desde `X`, aplicando `phi`
+        a la salida de cada capa.
+
+      Ninguna de las dos puede escribir en los arrays que recibe.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def capa(H, W, b):
+          # tu código aquí
+          pass
+
+
+      def forward(X, capas, phi):
+          # tu código aquí
+          pass
+    tests:
+      - name: "la salida tiene forma (B, d_out)"
+        code: |
+          import numpy as np
+          Z = capa(np.zeros((5, 3)), np.zeros((2, 3)), np.zeros(2))
+          assert Z is not None and Z.shape == (5, 2), 'una fila por ejemplo y una columna por neurona: (B, d_out)'
+      - name: "la fila j de W son los pesos de la neurona j"
+        code: |
+          import numpy as np
+          H = np.array([[1., 2., 3.]])
+          W = np.array([[1., 0., -1.],
+                        [2., 1.,  0.]])
+          Z = capa(H, W, np.array([0.5, -0.5]))
+          assert Z is not None and np.allclose(Z, [[-1.5, 3.5]]), 'cada neurona multiplica su fila de W por el ejemplo: H @ W.T, no H @ W'
+      - name: "el sesgo va uno por neurona, no uno por ejemplo"
+        code: |
+          import numpy as np
+          Z = capa(np.zeros((3, 4)), np.zeros((2, 4)), np.array([1., -1.]))
+          assert Z is not None and np.allclose(Z, [[1., -1.], [1., -1.], [1., -1.]]), 'b se reparte por columnas y se repite en las tres filas'
+      - name: "forward encadena las capas en orden"
+        code: |
+          import numpy as np
+          capas = [(np.array([[1., 1.]]), np.array([0.])), (np.array([[2.]]), np.array([1.]))]
+          S = forward(np.array([[1., 3.]]), capas, lambda z: z)
+          assert S is not None and np.allclose(S, [[9.]]), 'primero la capa 1 y luego la 2 sobre su salida: 2 * (1 + 3) + 1'
+      - name: "phi se aplica a la salida de cada capa"
+        code: |
+          import numpy as np
+          capas = [(np.array([[1., 1.]]), np.array([0.])), (np.array([[2.]]), np.array([1.]))]
+          S = forward(np.array([[-1., -1.]]), capas, lambda z: np.maximum(z, 0.))
+          assert S is not None and np.allclose(S, [[1.]]), 'con ReLU la primera capa entrega 0, no -2, y la segunda calcula 2 * 0 + 1'
+      - name: "no escribe en los arrays que recibe"
+        code: |
+          import numpy as np
+          H = np.array([[1., 2.]])
+          b = np.array([5.])
+          capa(H, np.array([[1., 1.]]), b)
+          assert np.allclose(H, [[1., 2.]]) and np.allclose(b, [5.]), 'devuelve un array nuevo; no acumules el sesgo dentro de H ni de b'
+    solution: |
+      import numpy as np
+
+
+      def capa(H, W, b):
+          return H @ W.T + b
+
+
+      def forward(X, capas, phi):
+          H = X
+          for W, b in capas:
+              H = phi(capa(H, W, b))
+          return H
+    explanation: |
+      `H @ W.T + b` es la fórmula de la lección puesta en código, y las tres primeras pruebas
+      comprueban sus tres decisiones: la forma de la salida, la orientación de `W` y el reparto
+      del sesgo. La transpuesta está ahí porque `H` guarda un ejemplo por fila y `W` guarda una
+      neurona por fila; sin ella, `H @ W` ni siquiera existe cuando las dos anchuras no coinciden,
+      que es la suerte que tienes.
+
+      En `forward`, la variable `H` es la que va cambiando de capa en capa, y por eso el bucle
+      recorre las capas y no los ejemplos: el batch entero viaja dentro de `H`. Fíjate en que
+      `phi` se aplica también en la última capa. Es una elección, no una ley —hay redes que dejan
+      la salida sin activación—, pero tiene que ser explícita: una `phi` que se aplica a veces sí
+      y a veces no es un bug esperando a que alguien cambie el número de capas.
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 4. */}
+
+La red de la lección anterior, sobre XOR y las capas ocultas, quedó completa y sin escribir.
+Completa porque no le falta ninguna pieza: neuronas agrupadas en capas, cada una con sus pesos y su
+sesgo, y una $\varphi$ en medio que impide que apilarlas se contraiga en una neurona
+sola. Sin escribir porque allí cada preactivación se calculó por separado, y una colección de
+cuentas sueltas no es una fórmula: no se desarrolla sobre ella y no se programa. El recorrido que va de
+la entrada hasta la salida tiene un nombre —el *forward pass*— y tiene una forma en la que se
+escribe siempre. Esta lección es esa forma.
+
+Ponle números antes de escribirla. Toma las diez reseñas de la lección 1 de este bloque, sobre la
+neurona artificial, con aquel vocabulario de ocho entradas. Lo que entra en la red no es la reseña
+sino su bolsa de palabras: un vector de ocho coordenadas, una por entrada del vocabulario, con las
+veces que esa entrada aparece en la reseña. Eso es todo lo que la red va a leer. Pon encima una
+capa oculta de cuatro neuronas: cada una mira esas ocho coordenadas y devuelve un número, de modo
+que las diez reseñas dan $10 \cdot 4 = 40$ preactivaciones ocultas, cada una de ellas una suma de
+ocho productos más un sesgo. De una en una son cuarenta cuentas, o dos bucles encajados si
+prefieres que las haga el ordenador. Las cuarenta caben en un solo producto de matrices, y la capa
+siguiente vuelve a salir de otro igual. Lo que hay que fijar es qué multiplica a qué, y por dónde
+entran las diez reseñas. Porque van a entrar juntas: un grupo de ejemplos que atraviesan la red a
+la vez es un **batch**, y el de esta lección tiene diez.
+
+Ese producto no es una abreviatura de los dos bucles: es el mismo cálculo con la contabilidad
+metida en las formas de los arrays. Mira dónde acaba cada número.
+
+<Figure
+  src="/courses/dl-nlp/forward-shapes.svg"
+  alt="Tres rectángulos en fila, separados por un signo de multiplicar y un signo de igual. El primero, etiquetado X, está dividido en seis filas y lleva debajo la forma B por d cero; su tercera fila está sombreada en verde y marcada a la izquierda con la letra i. El segundo, etiquetado W uno transpuesta, está dividido en cuatro columnas y lleva debajo la forma d cero por d uno; su segunda columna está sombreada en verde y marcada debajo con la letra j. El tercero, etiquetado Z uno, tiene las seis filas del primero y las cuatro columnas del segundo, y lleva debajo la forma B por d uno; de él sólo está sombreada la casilla donde se cruzan la tercera fila y la segunda columna. La d cero aparece en verde en las dos primeras formas y no aparece en la tercera."
+  caption="La dimensión que comparten los dos factores es la única que desaparece del resultado. Cada casilla de la derecha es una neurona opinando sobre un ejemplo, y meter un ejemplo más añade una fila a la izquierda y otra a la derecha sin tocar los pesos."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Una capa no es un bucle sobre sus neuronas, y un batch no es un bucle sobre sus ejemplos: los dos
+son índices de un producto de matrices, y el producto los recorre sin que nadie los escriba. Lo que
+hay que llevar con cuidado no son los bucles, son las formas.
+</Callout>
+
+## Una capa entera en un solo producto
+
+Fijemos una capa cualquiera y llamemos $d_l$ a su anchura, el número de neuronas que tiene. La capa
+$l$ recibe $d_{l-1}$ números y entrega $d_l$, de modo que sus pesos son una matriz
+$\mathbf{W}^{(l)} \in \mathbb{R}^{d_l \times d_{l-1}}$ y sus sesgos un vector
+$\mathbf{b}^{(l)} \in \mathbb{R}^{d_l}$, uno por neurona. Con un solo ejemplo entrando, la lección
+anterior ya escribió el resultado:
+
+$$
+\mathbf{z}^{(l)} = \mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)},
+\qquad
+\mathbf{h}^{(l)} = \varphi\left(\mathbf{z}^{(l)}\right),
+$$
+
+con $\mathbf{h}^{(l-1)} \in \mathbb{R}^{d_{l-1}}$, con $\mathbf{z}^{(l)}, \mathbf{h}^{(l)} \in
+\mathbb{R}^{d_l}$ y con $\varphi$ aplicada coordenada a coordenada. Los vectores son columnas, como
+todos los del curso, y por eso el producto está escrito en ese orden.
+
+Cada capa se apoya en la anterior, así que la cadena necesita un principio. La primera capa no tiene
+ninguna delante: lo que recibe es el ejemplo tal cual, y el convenio es contar la entrada como una
+capa $0$ que no calcula nada, $\mathbf{h}^{(0)} = \mathbf{x}$. Eso hace de $d_0$ la dimensión de la
+entrada y no la anchura de ninguna capa de neuronas. Con las reseñas de arriba, $\mathbf{h}^{(0)}$
+son las ocho cuentas de la bolsa de palabras y $d_0 = 8$.
+
+Lo que hace falta ver es que dentro de ese producto no hay nada nuevo. Desarrolla la coordenada $j$:
+
+$$
+z^{(l)}_j = \sum_{k=1}^{d_{l-1}} \mathbf{W}^{(l)}_{jk}\, h^{(l-1)}_k + b^{(l)}_j.
+$$
+
+Esa suma es la neurona de la lección 1 de este bloque, sobre la neurona artificial, con la fila $j$
+de $\mathbf{W}^{(l)}$ haciendo de vector de pesos. El producto de matrices no añade ninguna
+operación: agrupa las $d_l$ sumas que ya había, y su única aportación es que ahora no hay que
+escribirlas. La cuenta de lo que cuesta también sale de ahí, $d_l \cdot d_{l-1}$ productos por ejemplo,
+y esa cifra crece con el tamaño de la capa aunque el número de líneas se quede en una.
+
+### El batch entra por la izquierda, y por eso aparece la transpuesta
+
+Ahora los ejemplos. Llamemos $B$ al tamaño del batch y guardemos los
+$B$ ejemplos en una matriz $\mathbf{X} \in \mathbb{R}^{B \times d_0}$, con un ejemplo en cada fila.
+Ese orden, el batch primero, es el del curso entero y el que usa NumPy. Con la misma disposición
+para lo que sale de cada capa, $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$, la fila $i$ de $\mathbf{H}^{(l-1)}$
+es el ejemplo $i$ tumbado: es $\left(\mathbf{h}^{(l-1)}_i\right)^{\top}$, con su transpuesta,
+porque el vector es una columna y la fila de una matriz no lo es.
+
+Esa transpuesta es la que se propaga, y con ella sale todo lo demás. Transpón la ecuación de arriba
+para el ejemplo $i$, recordando que transponer un producto le da la vuelta al orden de los factores:
+
+$$
+\left(\mathbf{z}^{(l)}_i\right)^{\top}
+= \left(\mathbf{W}^{(l)}\mathbf{h}^{(l-1)}_i\right)^{\top} + \left(\mathbf{b}^{(l)}\right)^{\top}
+= \left(\mathbf{h}^{(l-1)}_i\right)^{\top}\left(\mathbf{W}^{(l)}\right)^{\top} + \left(\mathbf{b}^{(l)}\right)^{\top},
+$$
+
+que es una igualdad entre filas: a la izquierda, la fila $i$ de $\mathbf{Z}^{(l)}$; a la derecha, la
+fila $i$ de $\mathbf{H}^{(l-1)}$ multiplicada por la misma matriz que las demás. Apilar las $B$
+filas es entonces un solo producto:
+
+$$
+\mathbf{Z}^{(l)} = \mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top},
+\qquad
+\mathbf{H}^{(l)} = \varphi\left(\mathbf{Z}^{(l)}\right),
+$$
+
+con $\mathbf{Z}^{(l)}, \mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ y con
+$\mathbf{1}_B \in \mathbb{R}^{B}$ el vector de unos. Ese último factor merece una frase, porque es
+lo único de la fórmula que no está en el código. $\mathbf{Z}^{(l)}$ tiene $B$ filas y
+$\mathbf{b}^{(l)}$ tiene $d_l$ coordenadas: sumarlos no es una operación entre matrices, así que lo
+que hay escrito es el producto $\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}$, la misma fila de
+sesgos repetida $B$ veces. NumPy hace esa repetición él solo cuando escribes `+ b`, sin construir
+la matriz, y por eso conviene haber visto una vez lo que está haciendo por debajo.
+
+<Details summary="La comprobación casilla a casilla">
+
+Que el producto contiene las mismas sumas de antes se ve mirando una casilla cualquiera. La casilla
+$(k, j)$ de $\left(\mathbf{W}^{(l)}\right)^{\top}$ es la casilla $(j, k)$ de $\mathbf{W}^{(l)}$, así
+que por la definición del producto de matrices
+
+$$
+\left[\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top}\right]_{ij}
+= \sum_{k=1}^{d_{l-1}} \mathbf{H}^{(l-1)}_{ik}\, \mathbf{W}^{(l)}_{jk},
+$$
+
+donde $\mathbf{H}^{(l-1)}_{ik}$ es la coordenada $k$ del ejemplo $i$. El sumando del sesgo aporta
+
+$$
+\left[\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}\right]_{ij} = 1 \cdot b^{(l)}_j = b^{(l)}_j,
+$$
+
+el mismo número para toda fila $i$, que es lo que significa «un sesgo por neurona». Sumando las
+dos, la casilla $(i, j)$ de $\mathbf{Z}^{(l)}$ es la preactivación de la neurona $j$ para el
+ejemplo $i$: la suma de la sección anterior, término a término. El índice $k$ es el que se recorre
+y desaparece; $i$ y $j$ son los que sobreviven, y son las dos dimensiones del resultado.
+
+</Details>
+
+## De la entrada a la salida, una capa detrás de otra
+
+Con una capa resuelta, la red es la repetición. Sea $L$ el número de capas —la de salida
+incluida— y sean $d_0, d_1, \dots, d_L$ las anchuras de la cadena, empezando por la de la entrada.
+El forward pass es esta recurrencia:
+
+$$
+\mathbf{H}^{(0)} = \mathbf{X},
+\qquad
+\mathbf{H}^{(l)} = \varphi\left(\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}\right)
+\quad \text{para } l = 1, \dots, L,
+$$
+
+y lo que sale de la última capa es la predicción de la red para los $B$ ejemplos a la vez,
+$\hat{\mathbf{Y}} = \mathbf{H}^{(L)} \in \mathbb{R}^{B \times d_L}$. Esa cadena es todo lo que
+calcula un perceptrón multicapa (*multilayer perceptron*, MLP): no hay más pasos, y los de más
+adelante en el bloque no añadirán ninguno, sólo cambiarán los números que hay dentro de las
+matrices.
+
+Dos cosas se leen directamente en las formas. La primera es la única condición que hay que
+respetar al diseñar una red: $\mathbf{H}^{(l-1)}$ tiene $d_{l-1}$ columnas y
+$\mathbf{W}^{(l)}$ también, y si las dos anchuras no coinciden el producto no existe. Las
+anchuras intermedias las eliges tú; $d_0$ te la da la representación de la entrada y $d_L$, cuántas
+respuestas quieres. La segunda es que $B$ no aparece en ninguna matriz de pesos. Cuántos ejemplos
+entren a la vez es una decisión de quien ejecuta la red, no una propiedad de la red, y de ahí sale
+el recuento de lo que ocupa:
+
+$$
+\sum_{l=1}^{L}\left(d_l \cdot d_{l-1} + d_l\right).
+$$
+
+Para la red de reseñas de abajo, con $d_0 = 8$, $d_1 = 4$ y $d_2 = 1$, son $41$ números. Cambia el
+vocabulario por uno de $20\,000$ entradas y la capa oculta por una de $128$ neuronas, y son
+$2\,560\,257$: casi todos en $\mathbf{W}^{(1)}$, ninguno en función de $B$.
+
+## El bucle, el producto y la red de reseñas en NumPy
+
+La primera celda pone las dos versiones frente a frente sobre una capa de treinta y dos neuronas:
+el doble bucle que se sigue de la definición, y el producto. Ejecútala y mira tres cosas: si dan lo
+mismo, cuánto tarda cada una, y qué pasa cuando el producto se escribe sin transponer.
+
+<PyCell packages={["numpy"]} code={`
+import time
+
+import numpy as np
+
+np.random.seed(0)
+
+# --- Una capa de 32 neuronas sobre un batch de 128 ejemplos de 64 coordenadas.
+B, d0, d1 = 128, 64, 32
+X = np.random.randn(B, d0)
+W = np.random.randn(d1, d0)
+b = np.random.randn(d1)
+print("X", X.shape, " W", W.shape, " b", b.shape, "->", B * d1, "preactivaciones")
+
+sin_sesgo = X @ W.T   # se usa abajo; de paso calienta la rutina compilada
+
+# 1. Neurona a neurona y ejemplo a ejemplo, como está escrita la definición.
+t0 = time.perf_counter()
+Z_bucle = np.zeros((B, d1))
+for i in range(B):
+    for j in range(d1):
+        Z_bucle[i, j] = W[j] @ X[i] + b[j]
+t1 = time.perf_counter()
+
+# 2. El mismo cálculo, un producto.
+Z = X @ W.T + b
+t2 = time.perf_counter()
+
+print("Z", Z.shape, " ¿los mismos números?", bool(np.allclose(Z, Z_bucle)))
+print("máxima diferencia:", "%.1e" % np.abs(Z - Z_bucle).max())
+print("bucle:    %8.2f ms" % ((t1 - t0) * 1e3))
+print("producto: %8.2f ms" % ((t2 - t1) * 1e3))
+print("factor:   %8.0f" % ((t1 - t0) / (t2 - t1)))
+print()
+
+# 3. La orientación no se negocia: sin transponer, el producto no existe.
+try:
+    X @ W
+except ValueError as e:
+    print("X @ W ->", e)
+print()
+
+# 4. El sesgo se reparte por columnas: uno por neurona, el mismo en las 128 filas.
+print("b, 3 primeras:         ", np.round(b[:3], 3))
+print("Z - X @ W.T, fila 0:   ", np.round((Z - sin_sesgo)[0, :3], 3))
+print("Z - X @ W.T, fila 127: ", np.round((Z - sin_sesgo)[-1, :3], 3))
+`} />
+
+Las dos versiones coinciden hasta el orden de $10^{-14}$, que es lo que separa a dos maneras de
+sumar los mismos números en coma flotante. Obtenerlas no cuesta lo mismo: el producto tarda entre
+uno y dos órdenes de magnitud menos, y el factor exacto depende de la máquina y del navegador. De
+dónde sale ese factor no depende de ninguno de los dos. No es que el producto haga menos
+operaciones —hace
+exactamente las mismas—, sino que las $4\,096$ vueltas del bucle las da Python una a una, mientras
+el producto las da dentro de una rutina compilada sin volver a pasar por el intérprete.
+
+Los dos últimos experimentos son las dos trampas de forma. `X @ W` no existe, y NumPy lo dice nombrando
+las dos dimensiones que no encajan; y la diferencia entre $\mathbf{Z}$ y el producto sin sesgo es
+la misma terna $-0.761$, $3.221$, $0.221$ en la fila $0$ y en la fila $127$, que es
+$\mathbf{1}_B\mathbf{b}^{\top}$ hecho visible.
+
+La segunda celda monta la red entera sobre las diez reseñas: ocho entradas, cuatro neuronas ocultas
+con ReLU (*rectified linear unit*) y una de salida con sigmoide, para que lo que entregue sea un
+número entre $0$ y $1$. Ejecútala y quédate con la columna de formas y con la última línea.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+np.random.seed(0)
+
+# --- Las diez reseñas de la lección 1 y su mismo vocabulario de ocho entradas.
+resenas = [
+    "la película es divertida y la recomiendo",
+    "la película es lenta y aburrida",
+    "buena película la recomiendo",
+    "mala película muy lenta",
+    "divertida y buena",
+    "la película es mala",
+    "aburrida y lenta",
+    "la recomiendo",
+    "buena película pero lenta",
+    "divertida y la recomiendo",
+]
+etiquetas = np.array([1, 0, 1, 0, 1, 0, 0, 1, 0, 1])
+V = ["aburrida", "buena", "divertida", "la", "lenta", "mala", "película", "recomiendo"]
+X = np.array([[texto.split().count(e) for e in V] for texto in resenas], dtype=float)
+
+# Ocho entradas -> cuatro neuronas ocultas -> una de salida. Los pesos, al azar.
+d0, d1, d2 = len(V), 4, 1
+W1 = np.random.randn(d1, d0) * 0.5
+b1 = np.zeros(d1)
+W2 = np.random.randn(d2, d1) * 0.5
+b2 = np.zeros(d2)
+
+H0 = X                                    # (B, d0)
+Z1 = H0 @ W1.T + b1                       # (B, d1)
+H1 = np.maximum(Z1, 0.0)                  # ReLU, coordenada a coordenada
+Z2 = H1 @ W2.T + b2                       # (B, d2)
+Y = 1.0 / (1.0 + np.exp(-Z2))             # sigmoide en la capa de salida
+
+for nombre, A in [("H(0)", H0), ("Z(1)", Z1), ("H(1)", H1), ("Z(2)", Z2), ("Y", Y)]:
+    print(nombre, A.shape)
+print("parámetros de la red:", W1.size + b1.size + W2.size + b2.size)
+print()
+for texto, y in zip(resenas, Y[:, 0]):
+    print(texto.ljust(41), "%.3f" % y)
+print()
+print("aciertos:", int(((Y[:, 0] >= 0.5) == (etiquetas == 1)).sum()), "de 10")
+`} />
+
+Cinco líneas de código para la red entera, y en la columna de formas está la razón: el $10$ de la
+primera dimensión no vuelve a aparecer en ningún sitio y llega intacto hasta el final, mientras la
+segunda dimensión va cambiando $8 \to 4 \to 1$ al ritmo de las anchuras. La red tiene los $41$
+parámetros de la cuenta de arriba.
+
+Y ahora la última línea, que es la que importa. Cinco aciertos de diez. Las diez salidas están por
+debajo de $0.5$ —la mayor es $0.357$, para <W>divertida y buena</W>—, así que la red contesta
+que no a las diez reseñas, y acierta exactamente las cinco que eran negativas. Es la puntuación de
+quien no lee nada y dice que no siempre. Los pesos salieron de `np.random.randn`, y no hay ninguna
+razón para que fueran otra cosa.
+
+## Comprueba tu intuición
+
+Cuatro preguntas —cuántos números guarda una red, de dónde sale la transpuesta, qué hace NumPy con
+el sesgo y qué fija la cadena— y un desafío que es el forward pass completo.
+
+<Quiz id="q-parametros" />
+
+<Quiz id="q-transpuesta" />
+
+<Quiz id="q-broadcast" />
+
+<Quiz id="q-cadena" />
+
+<CodeChallenge id="ch-forward" />
+
+---
+
+La red ya sabe contestar, a un ejemplo o a mil, y lo que ha contestado es inservible. Esas dos
+cosas caben juntas porque el forward pass no contiene ninguna noción de acierto: es una cadena de
+productos que transforma $\mathbf{X}$ en $\hat{\mathbf{Y}}$ y que habría corrido exactamente igual
+con los pesos buenos, si alguien supiera cuáles son. Para corregirlos hay que empezar por medirlos,
+y medir no es contar aciertos. La cuenta de la última línea vale lo mismo con una salida de
+$0.499$ que con una de $0.036$, y no se mueve cuando un peso cambia un poco: no distingue entre
+equivocarse por poco y equivocarse del todo, que es justo lo único que sirve para decidir hacia
+dónde mover un peso.
+
+Hace falta un número que sí lo distinga. Uno solo para todo el batch, que crezca cuando
+$\hat{\mathbf{Y}}$ se aleja de las etiquetas, que baje cuando se acerca, y que cambie de forma
+continua para que tenga derivada. Cómo se construye ese número, por qué el primer candidato que se
+le ocurre a cualquiera —elevar al cuadrado la diferencia— es el correcto para unas tareas y una
+mala idea para clasificar, y qué se usa en su lugar, es la lección 5 de este bloque, sobre
+funciones de pérdida: el error cuadrático medio y la entropía cruzada.

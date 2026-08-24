@@ -32,7 +32,14 @@
       "taglinePart1": "Master difficult topics",
       "taglinePart2": "with expert guidance.",
       "subheading": "One-on-one classes. No videos, no prompts, no wasted time.",
-      "skills": ["Java", "Python", "C", "Algorithms", "Deep Learning", "Statistics"],
+      "skills": [
+        "Java",
+        "Python",
+        "C",
+        "Algorithms",
+        "Deep Learning",
+        "Statistics"
+      ],
       "cta": {
         "book": "Book a session now",
         "availability": "Check availability"
@@ -147,30 +154,42 @@
       "welcomeBack": "Welcome back,",
       "loadError": "Could not load your sessions.",
       "retry": "Retry",
-      "emptyTitle": "Ready to get started?",
-      "emptySubtitle": "Book your first session and take the first step toward your goals.",
-      "bookSession": "Book a session",
-      "packTitle": "You have classes available!",
-      "packCTAPrefix": "You have",
-      "packCTAPending": "{count, plural, one {# class pending} other {# classes pending}}",
-      "packCTASuffix": "in your pack. When would you like to practice?",
-      "bookNextClass": "Book my next class"
+      "tabs": {
+        "upcoming": "Upcoming",
+        "history": "History",
+        "courses": "My courses"
+      }
     },
     "bookPanel": {
       "title": "Book a session",
+      "subtitle": "Pick the format that best fits what you need.",
       "usePackCredit": "Use pack credit",
       "packCredits": "{count, plural, one {# class available} other {# classes available}}",
       "singleSessionsLabel": "Individual sessions",
       "packsLabel": "Continuity packs",
       "sessions": {
-        "free15min": { "label": "Initial Meeting",  "sub": "15 min · Introduction", "price": "Free" },
-        "session1h":  { "label": "1-hour session",   "sub": "60 min · Individual"   },
-        "session2h":  { "label": "2-hour session",   "sub": "120 min · Individual"  }
+        "free15min": {
+          "label": "Initial Meeting",
+          "sub": "15 min · Introduction",
+          "price": "Free"
+        },
+        "session1h": {
+          "label": "1-hour session",
+          "sub": "60 min · Individual"
+        },
+        "session2h": {
+          "label": "2-hour session",
+          "sub": "120 min · Individual"
+        }
       },
       "packs": {
         "sub": "Save {amount} · {pct}% off",
-        "pack5":  { "label": "Essential Pack 5h"  },
-        "pack10": { "label": "Intensive Pack 10h" }
+        "pack5": {
+          "label": "Essential Pack 5h"
+        },
+        "pack10": {
+          "label": "Intensive Pack 10h"
+        }
       }
     },
     "nextSession": {
@@ -179,11 +198,10 @@
         "free15min": "Initial meeting · 15 min",
         "session1h": "Individual session · 1h",
         "session2h": "Individual session · 2h",
-        "pack":      "Pack class"
+        "pack": "Pack class"
       },
       "zoomLabel": "Zoom virtual classroom",
       "joinButton": "Enter virtual classroom",
-      "sessionEnded": "Session ended",
       "reschedule": "Reschedule",
       "cancelConfirmTitle": "Cancel this session?",
       "cancelConfirmBody": "This action cannot be undone. If it's a pack class, the credit will be returned automatically.",
@@ -196,29 +214,68 @@
       "active": "Active",
       "usedCredits": "{count, plural, one {# class used} other {# classes used}}",
       "remainingLabel": "Remaining classes",
-      "usedShort": "{count, plural, one {# used} other {# used}}",
       "ctaPrefix": "You have",
       "ctaAvailable": "{count, plural, one {# class available} other {# classes available}}",
       "ctaSuffix": "in your pack. Book your next session!",
-      "bookButton": "Book pack session"
+      "bookButton": "Book pack session",
+      "validUntil": "valid until {date}"
     },
-    "calendar": {
-      "blockShort2h": "2h",
-      "blockShort15": "15 min",
-      "blockShort1h": "1h",
-      "blockFree": "15 min · Free",
-      "block1h": "1h Individual",
-      "block2h": "2h Individual",
-      "blockPack10": "1h Pack 10h",
-      "blockPack5": "1h Pack 5h",
-      "fullFree": "Initial meeting · 15 min",
-      "fullSession1h": "Individual session · 1 hour",
-      "fullSession2h": "Individual session · 2 hours",
-      "fullPack10": "Pack class (10h)",
-      "fullPack5": "Pack class (5h)",
-      "fallback": "Session",
-      "legendSession": "Individual session",
-      "legendPack": "Pack / Initial"
+    "courses": {
+      "lessonsDone": "{done} of {total} lessons",
+      "percent": "{percent}%",
+      "continueCta": "Continue",
+      "startCta": "Start",
+      "completedBadge": "Completed",
+      "completedNote": "You finished the course. Shall we put it into practice?",
+      "bookSessionCta": "Book a 1:1 session",
+      "emptyTitle": "Learn at your own pace",
+      "emptyBody": "Interactive courses with code that runs in the browser and exercises that grade themselves.",
+      "emptyCta": "Browse courses"
+    },
+    "upcoming": {
+      "join": "Enter classroom",
+      "reschedule": "Reschedule",
+      "chipFree": "Free",
+      "chipPack": "Pack",
+      "zoomShort": "Zoom",
+      "emptyTitle": "Ready to get started?",
+      "emptyBody": "You have no classes booked yet. Book your first session and take the first step toward your goals.",
+      "emptyCta": "Book a session"
+    },
+    "history": {
+      "statCompleted": "Completed",
+      "statAvgRating": "Your average rating",
+      "statHours": "Time with Gustavo",
+      "hoursValue": "{hours} h",
+      "noRatings": "—",
+      "pillReview": "Review",
+      "pillCancelled": "Cancelled",
+      "payCredit": "1 pack credit",
+      "payCreditRefunded": "credit refunded",
+      "payCard": "{amount} · card",
+      "payFree": "Free",
+      "end": "End of history",
+      "emptyTitle": "No history yet",
+      "emptyBody": "Once you complete your first class it will show up here, with your ratings and details.",
+      "loadError": "Could not load your history.",
+      "modal": {
+        "title": "Past class",
+        "badgeCompleted": "Completed",
+        "badgeCancelled": "Cancelled",
+        "rowDate": "Date",
+        "rowTime": "Time",
+        "rowPayment": "Payment",
+        "yourNote": "Your note for Gustavo",
+        "withTutor": "with Gustavo",
+        "reviewNudgeTitle": "You haven't rated this class yet",
+        "reviewNudgeBody": "Your feedback helps Gustavo improve.",
+        "rateLabel": "Your rating",
+        "starLabel": "{count, plural, one {# star} other {# stars}}",
+        "commentPlaceholder": "Anything you'd like to add? (optional)",
+        "submitComment": "Send comment",
+        "thanks": "Thanks for your rating!",
+        "bookSame": "Book another like this"
+      }
     }
   },
   "booking": {
@@ -254,9 +311,18 @@
       "sessionName": "Strategic Session",
       "sessionDuration": "60 minutes",
       "sessions": {
-        "free15min": { "label": "Initial meeting",  "duration": "15 minutes" },
-        "session1h":  { "label": "1-hour session",  "duration": "60 minutes" },
-        "session2h":  { "label": "2-hour session",  "duration": "2 hours"    }
+        "free15min": {
+          "label": "Initial meeting",
+          "duration": "15 minutes"
+        },
+        "session1h": {
+          "label": "1-hour session",
+          "duration": "60 minutes"
+        },
+        "session2h": {
+          "label": "2-hour session",
+          "duration": "2 hours"
+        }
       }
     },
     "singleSession": {
@@ -580,11 +646,26 @@
   },
   "postClassReview": {
     "ratings": [
-      { "label": "I'm really sorry",         "placeholder": "What could have been better? Your feedback helps me improve." },
-      { "label": "Not what I expected",       "placeholder": "What could have been better? Your feedback helps me improve." },
-      { "label": "It was fine",               "placeholder": "Is there anything specific I could do differently next time?" },
-      { "label": "Very good class",           "placeholder": "What was most useful about today's class?" },
-      { "label": "Excellent!",                "placeholder": "What would you highlight? With your permission it could be published on my profile." }
+      {
+        "label": "I'm really sorry",
+        "placeholder": "What could have been better? Your feedback helps me improve."
+      },
+      {
+        "label": "Not what I expected",
+        "placeholder": "What could have been better? Your feedback helps me improve."
+      },
+      {
+        "label": "It was fine",
+        "placeholder": "Is there anything specific I could do differently next time?"
+      },
+      {
+        "label": "Very good class",
+        "placeholder": "What was most useful about today's class?"
+      },
+      {
+        "label": "Excellent!",
+        "placeholder": "What would you highlight? With your permission it could be published on my profile."
+      }
     ],
     "tapToRate": "Tap a face to rate",
     "private": "Your rating is private",
@@ -667,6 +748,166 @@
       "invalidRequest": "The submitted data is not valid. Check the form and try again."
     }
   },
+  "courses": {
+    "catalog": {
+      "overline": "Learn",
+      "heading": "Interactive courses",
+      "subtitle": "Learn by building: rigorous theory, code that runs in your browser and exercises that grade themselves.",
+      "empty": {
+        "title": "Coming soon",
+        "body": "No courses published yet. The first one is on its way — check back soon."
+      },
+      "card": {
+        "hours": "{hours} h",
+        "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
+        "blocks": "{count, plural, =1 {# module} other {# modules}}",
+        "cta": "View course"
+      }
+    },
+    "landing": {
+      "backToCatalog": "All courses",
+      "hero": {
+        "outcomeLabel": "What you'll build",
+        "outcome": "A working Transformer, implemented from scratch in NumPy — the architecture behind modern language models.",
+        "levelLabel": "Level",
+        "hours": "{hours} h",
+        "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
+        "start": "Start the course",
+        "soon": "Coming soon"
+      },
+      "prerequisites": {
+        "heading": "Prerequisites",
+        "intro": "This course is mathematically rigorous. Before you start, you'll need:"
+      },
+      "syllabus": {
+        "heading": "Syllabus",
+        "blockMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · {minutes} min",
+        "minutes": "{minutes} min",
+        "empty": "The detailed syllabus will be published soon."
+      },
+      "instructor": {
+        "heading": "Your instructor"
+      },
+      "faq": {
+        "heading": "Frequently asked questions",
+        "items": [
+          {
+            "q": "How much does it cost?",
+            "a": "Nothing. The course is completely free."
+          },
+          {
+            "q": "What do I need to know before starting?",
+            "a": "Intermediate Python, linear algebra (vectors and matrices) and calculus (partial derivatives and the chain rule). They're listed in the prerequisites section."
+          },
+          {
+            "q": "How long will it take?",
+            "a": "Around 40 hours if you do the exercises. Go at your own pace; there are no deadlines."
+          },
+          {
+            "q": "Is it in English?",
+            "a": "Spanish only for now. An English version is planned."
+          },
+          {
+            "q": "What do I need to install?",
+            "a": "Nothing. Everything — the Python code included — runs directly in your browser."
+          }
+        ]
+      },
+      "cta": {
+        "heading": "Ready to build a Transformer?",
+        "body": "Start with the first lesson. You don't need an account to read.",
+        "start": "Start the course",
+        "soon": "Coming soon"
+      }
+    },
+    "reader": {
+      "contentsLabel": "Course contents",
+      "backToCourseAria": "Back to course: {course}",
+      "progressLabel": "{done} of {total} lessons completed",
+      "onThisPage": "On this page",
+      "lessonNav": "Lesson navigation",
+      "previous": "Previous",
+      "next": "Next",
+      "readingTime": "{minutes} min read",
+      "openNav": "Open course contents",
+      "closeNav": "Close course contents"
+    },
+    "quiz": {
+      "submit": "Check",
+      "retry": "Try again",
+      "showHint": "Show hint",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "explanationLabel": "Explanation",
+      "multiNotice": "Select every correct option. This is graded all-or-nothing: there is no partial credit.",
+      "true": "True",
+      "false": "False",
+      "numericPlaceholder": "Your answer",
+      "toleranceNote": "A margin of ±{tolerance} is accepted.",
+      "predictPrompt": "What does this code print?",
+      "outputPlaceholder": "Type the exact output",
+      "attempt": "{count, plural, =1 {# attempt} other {# attempts}}",
+      "yourAnswer": "Your answer",
+      "history": {
+        "answeredOn": "Answered on {date}",
+        "solved": "You already got this one right on {date}",
+        "attempted": "You already tried this one on {date}"
+      }
+    },
+    "challenge": {
+      "run": "Run tests",
+      "running": "Running…",
+      "stop": "Stop",
+      "reset": "Reset",
+      "expand": "Show all {count} lines",
+      "collapse": "Collapse",
+      "editorLabel": "Your Python solution",
+      "firstRunNote": "The first run downloads the Python interpreter (~15 MB); after that it stays in the browser cache.",
+      "keyboardNote": "This challenge is much easier to solve on a physical keyboard: on a phone, read it and come back later.",
+      "stage": {
+        "runtime": "Downloading the Python interpreter…",
+        "packages": "Loading packages…",
+        "preamble": "Preparing the environment…",
+        "ready": "Running the tests…"
+      },
+      "outputLabel": "Your code's output",
+      "score": "{passed} of {total} tests passing",
+      "allPassed": "All tests pass!",
+      "assertionFailed": "The assertion does not hold.",
+      "notRunNote": "Never ran.",
+      "tracebackLabel": "Show the full traceback",
+      "studentErrorTitle": "Your code could not run",
+      "status": {
+        "pass": "Test passed",
+        "fail": "Test failed",
+        "error": "Error while running the test",
+        "notRun": "Test not run"
+      },
+      "showSolution": "Show the solution",
+      "solutionLabel": "Reference solution",
+      "explanationLabel": "Explanation",
+      "lockedNote": "{count, plural, =1 {The solution unlocks after # more attempt.} other {The solution unlocks after # more attempts.}}",
+      "attempt": "{count, plural, =1 {# attempt} other {# attempts}}",
+      "timeoutRun": "The run went past {seconds} s and was stopped. That usually means your code has an infinite loop.",
+      "timeoutLoad": "The interpreter took too long to download. Check your connection and try again.",
+      "stopped": "Run stopped. It does not count as an attempt.",
+      "crashed": "The interpreter shut down unexpectedly: {error}",
+      "history": {
+        "solved": "Solved · {passed}/{total} tests · {date}",
+        "attempted": "You tried this {count, plural, =1 {# time} other {# times}} · {date}"
+      }
+    },
+    "progress": {
+      "markComplete": "Mark as complete",
+      "completed": "Lesson completed",
+      "prompt": "Finished this lesson? Mark it to keep track of your progress.",
+      "resume": "Resume where you left off",
+      "lessonsDone": "{done} of {total} lessons completed",
+      "exercisesDone": "Exercises: {done} of {total} solved",
+      "saveAttempts": "Your answers are not being saved.",
+      "saveAttemptsCta": "Sign in to keep them"
+    }
+  },
   "meta": {
     "areaPersonal": {
       "title": "Personal Area — Gustavo Torres",
@@ -683,6 +924,10 @@
     "terminos": {
       "title": "Terms of service — Gustavo Torres",
       "description": "Terms of service for gustavoai.dev. Conditions of use, payments, cancellations and liability."
+    },
+    "cursos": {
+      "title": "Interactive courses — Gustavo Torres",
+      "description": "Free, interactive courses on programming, mathematics and AI. Learn by building, with code that runs in your browser."
     }
   },
   "pages": {

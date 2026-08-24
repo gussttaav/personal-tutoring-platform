@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" width="360" height="240" role="img" aria-label="Tres columnas de círculos unidas por flechas. La primera, con el rótulo capa de entrada, tiene dos círculos de trazo discontinuo etiquetados x1 y x2. La segunda, la capa oculta, tiene dos círculos de trazo verde continuo etiquetados h(1) sub 1 y h(1) sub 2, y cada uno recibe una flecha de los dos círculos de la entrada. La tercera, la capa de salida, tiene un solo círculo verde etiquetado y con acento circunflejo, que recibe una flecha de cada neurona oculta. El haz de flechas de la izquierda lleva el rótulo W(1), b(1) y el de la derecha W(2), b(2).">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .hdr { font-size: 13px; fill: #86948a; text-anchor: middle; }
+    .lbl { font-size: 15px; fill: #e5e1e4; text-anchor: middle; }
+    .mat { font-size: 13px; fill: #bbcabf; text-anchor: middle; font-weight: 700; }
+    .cap { font-size: 13px; fill: #86948a; text-anchor: middle; }
+    .edge { stroke: #86948a; stroke-width: 1.2; fill: none; }
+    /* Las neuronas calculan y llevan trazo verde continuo; la columna de la
+       entrada no calcula nada, y por eso va en discontinuo y en gris. */
+    .neuron { stroke: #4edea3; stroke-width: 2; fill: none; }
+    .input { stroke: #86948a; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+  </style>
+
+  <defs>
+    <marker id="punta" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
+    </marker>
+  </defs>
+
+  <text class="hdr" x="60" y="32">capa de entrada</text>
+  <text class="hdr" x="180" y="32">capa oculta</text>
+  <text class="hdr" x="300" y="32">capa de salida</text>
+
+  <text class="mat" x="120" y="66">W<tspan font-size="10" dy="-5">(1)</tspan><tspan dy="5">, b</tspan><tspan font-size="10" dy="-5">(1)</tspan></text>
+  <text class="mat" x="240" y="66">W<tspan font-size="10" dy="-5">(2)</tspan><tspan dy="5">, b</tspan><tspan font-size="10" dy="-5">(2)</tspan></text>
+
+  <!-- Entrada → capa oculta: los cuatro pesos de W(1), uno por flecha. Los
+       extremos van del borde de un círculo al del otro (radio 25 + 3 de aire). -->
+  <line class="edge" x1="88" y1="100" x2="152" y2="100" marker-end="url(#punta)" />
+  <line class="edge" x1="88" y1="180" x2="152" y2="180" marker-end="url(#punta)" />
+  <line class="edge" x1="83.3" y1="115.5" x2="156.7" y2="164.5" marker-end="url(#punta)" />
+  <line class="edge" x1="83.3" y1="164.5" x2="156.7" y2="115.5" marker-end="url(#punta)" />
+
+  <!-- Capa oculta → salida: los dos pesos de W(2). -->
+  <line class="edge" x1="206.6" y1="108.9" x2="273.4" y2="131.1" marker-end="url(#punta)" />
+  <line class="edge" x1="206.6" y1="171.1" x2="273.4" y2="148.9" marker-end="url(#punta)" />
+
+  <circle class="input" cx="60" cy="100" r="25" />
+  <circle class="input" cx="60" cy="180" r="25" />
+  <text class="lbl" x="60" y="105">x<tspan font-size="10" dy="4">1</tspan></text>
+  <text class="lbl" x="60" y="185">x<tspan font-size="10" dy="4">2</tspan></text>
+
+  <circle class="neuron" cx="180" cy="100" r="25" />
+  <circle class="neuron" cx="180" cy="180" r="25" />
+  <text class="lbl" x="180" y="105">h<tspan font-size="10" dy="-5">(1)</tspan><tspan font-size="10" dy="9">1</tspan></text>
+  <text class="lbl" x="180" y="185">h<tspan font-size="10" dy="-5">(1)</tspan><tspan font-size="10" dy="9">2</tspan></text>
+
+  <circle class="neuron" cx="300" cy="140" r="25" />
+  <text class="lbl" x="300" y="146">ŷ</text>
+
+  <text class="cap" x="180" y="228">la primera columna no calcula nada: es la entrada</text>
+</svg>

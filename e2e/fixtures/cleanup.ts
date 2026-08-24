@@ -75,10 +75,25 @@ export async function truncateTestDb(
     ["pending_terminations",   (q) => q.delete().neq("event_id", "")],
     ["subscriptions",          (q) => q.delete().not("id", "is", null)],
     ["google_review_prompts",  (q) => q.delete().not("user_id", "is", null)],
+    // COURSE-P4-02: all three reference users(id) with no ON DELETE CASCADE
+    // (migration 0016), so a single course-progress row would block the `users`
+    // delete below and break EVERY spec, not just the courses one. They are in
+    // OPTIONAL_TABLES because 0016 is not applied in every environment yet —
+    // where the tables are absent there is nothing to clear and no FK to block.
+    ["quiz_attempts",          (q) => q.delete().not("id", "is", null)],
+    ["lesson_progress",        (q) => q.delete().not("id", "is", null)],
+    ["enrollments",            (q) => q.delete().not("id", "is", null)],
     ["users",                  (q) => q.delete().not("id", "is", null)],
     ["webhook_events",         (q) => q.delete().neq("idempotency_key", "")],
     ["slot_locks",             (q) => q.delete().neq("start_iso", "")],
   ];
+
+  // COURSE-P4-02: tables that may legitimately not exist yet, because the migration
+  // that creates them has not been applied in this environment. A missing table is
+  // skipped rather than failing the whole run — there is nothing in it to clear.
+  const OPTIONAL_TABLES = new Set(["quiz_attempts", "lesson_progress", "enrollments"]);
+  const isMissingRelation = (message: string) =>
+    /does not exist|schema cache|Could not find the table/i.test(message);
 
   // `bookings` is FK-referenced by `zoom_sessions`. Every booking (including
   // free15min) commits a zoom_sessions row at the end of the booking flow, so an
@@ -119,6 +134,10 @@ export async function truncateTestDb(
         await reclearChildren();
         ({ error } = (await run(supabase.from(table))) as { error: { message: string } | null });
       }
+    }
+
+    if (error && OPTIONAL_TABLES.has(table) && isMissingRelation(error.message)) {
+      continue;
     }
 
     if (error) {

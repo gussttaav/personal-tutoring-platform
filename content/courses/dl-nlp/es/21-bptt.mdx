@@ -1,0 +1,435 @@
+---
+slug: bptt
+title: "Backpropagation through time"
+block: 3
+order: 3
+minutes: 29
+summary: "La recurrencia comparte una matriz entre todas las posiciones, y eso reescribe su gradiente. Backpropagation through time es la pasada hacia atrás del bloque anterior con las capas tumbadas sobre el tiempo: un error por paso, transportado del final al principio por la misma W_hh, y un gradiente que —por reutilizar esa matriz en cada posición— es la suma de lo que cada paso le reclama. Se deriva completa y se comprueba, número a número, contra un sondeo numérico."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-forma-gradiente
+    type: numeric
+    prompt: 'Una RNN con un estado de $d_h = 64$ coordenadas lee un documento de $T = 40$ tokens. ¿Cuántos números tiene $\nabla_{\mathbf{W}_{hh}}\ell$?'
+    answer: 4096
+    tolerance: 0
+    explanation: 'La suma $\nabla_{\mathbf{W}_{hh}}\ell = \sum_{t=1}^{40} \boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top}$ tiene cuarenta términos, pero cada uno es una matriz $64 \times 64$ y la suma también: el gradiente tiene la forma del objeto que corrige, $64 \cdot 64 = 4\,096$ números, lea el documento cuarenta tokens o cuatrocientos. Es la comprobación de formas de la lección 8 del bloque anterior, sobre backpropagation, sin un cambio. Lo que la longitud decide no es el tamaño del gradiente, sino cuántos términos entran en la suma: confundir las dos cosas —creer que un texto más largo produce un gradiente más grande— es leer la suma como si apilara sus términos en vez de sumarlos.'
+    hint: 'La forma de un gradiente es siempre la del objeto que deriva. ¿Cambia esa forma con $T$?'
+  - id: q-de-donde-la-suma
+    type: single
+    prompt: 'En una red del bloque anterior, el gradiente de cada matriz de pesos era un solo producto exterior. En la RNN, $\nabla_{\mathbf{W}_{hh}}\ell$ es una suma de $T$ de ellos. ¿De dónde sale esa suma?'
+    options:
+      - { id: a, text: 'De que $\mathbf{W}_{hh}$ es una sola matriz que el bucle usa en las $T$ posiciones, así que la pérdida la alcanza por $T$ caminos, y la regla de la cadena suma las contribuciones de todos.' }
+      - { id: b, text: 'De que la recurrencia tiene $T$ matrices $\mathbf{W}_{hh}$ distintas, una por posición, y hay que derivar respecto de cada una.' }
+      - { id: c, text: 'De promediar el gradiente sobre las $T$ posiciones para que no dependa de la longitud del documento.' }
+      - { id: d, text: 'De que el estado $\mathbf{h}_t$ acumula las $t$ posiciones anteriores, y derivar un acumulado obliga a sumar sus términos.' }
+    answer: a
+    explanation: 'La (a) es la lección entera: un peso compartido se alcanza por un camino por posición, y entre caminos se suma —la regla de la cadena de la lección 7 del bloque anterior, sin variación—. La (b) es lo contrario de lo que hace a una RNN una RNN: hay una sola $\mathbf{W}_{hh}$ para toda la secuencia; una por posición sería el MLP concatenado de la lección 1 de este bloque. La (c) confunde el gradiente con la media sobre el *batch*: promediar es lo que reparte $\mathcal{L}$ entre los documentos, y ocurre un nivel más arriba, no dentro de una secuencia. Y la (d) mezcla dos sumas distintas: que $\mathbf{h}_t$ dependa de lo anterior es la pasada hacia adelante; la suma del gradiente sale de compartir la matriz, no de acumular el estado.'
+  - id: q-recurrencia-atras
+    type: multi
+    prompt: 'Marca todo lo que sea cierto de la recurrencia hacia atrás $\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right)$.'
+    options:
+      - { id: a, text: 'Transporta el error con $\mathbf{W}_{hh}^{\top}$ y lo enmascara con la pendiente del $\tanh$, los dos movimientos de la pasada hacia atrás del bloque anterior; lo nuevo es que la matriz del transporte es la misma en todos los pasos.' }
+      - { id: b, text: 'La máscara $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$ es $\tanh^{\prime}$ en ese paso, y se lee del estado $\mathbf{h}_t$ que la pasada hacia adelante ya guardó, sin necesidad de la preactivación.' }
+      - { id: c, text: 'Cada paso transporta con una matriz distinta, igual que los bloques $\mathbf{W}^{(1)}_t$ de la primera capa concatenada tenían uno por posición.' }
+      - { id: d, text: 'El error del último paso, $\boldsymbol{\delta}_T$, sale de esta misma recurrencia poniendo $\boldsymbol{\delta}_{T+1} = \mathbf{0}$.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b) son la recurrencia leída en sus dos movimientos, los mismos de la lección 8 del bloque anterior: transportar con la transpuesta y enmascarar con la derivada de la activación. Lo único que cambia —y es lo que la lección 4 de este bloque va a cobrar— es que el transporte usa siempre la misma $\mathbf{W}_{hh}$. La (c) la lee al revés: los subíndices de $\mathbf{W}_{hh}$ señalan un papel, no una posición, y hay una sola matriz, no $T_{\max}$ como en la concatenación de la lección 1. La (d) es la trampa: $\boldsymbol{\delta}_T$ no es un caso más de la recurrencia, es su arranque, y viene de la capa de salida —$\left(\mathbf{1} - \mathbf{h}_T \odot \mathbf{h}_T\right) \odot \left(\hat{y} - y\right)\mathbf{W}_{hy}^{\top}$—; poner $\boldsymbol{\delta}_{T+1} = \mathbf{0}$ dejaría el gradiente entero a cero, porque nunca entraría nada desde la pérdida.'
+  - id: q-sesgo-suma
+    type: predict-output
+    prompt: 'La pasada hacia atrás acumula $\nabla_{\mathbf{b}_h}\ell = \sum_t \boldsymbol{\delta}_t$ paso a paso. Con estos tres errores, ¿qué imprime?'
+    language: python
+    code: |
+      import numpy as np
+
+      deltas = [
+          np.array([1.0, -2.0]),
+          np.array([0.5, 0.5]),
+          np.array([-1.0, 1.0]),
+      ]
+      g = np.zeros(2)
+      for d in deltas:
+          g += d
+      print(g)
+    answer: '[ 0.5 -0.5]'
+    explanation: 'Sumar los tres vectores casilla por casilla da $(1 + 0.5 - 1,\ -2 + 0.5 + 1) = (0.5,\ -0.5)$. Eso es $\nabla_{\mathbf{b}_h}\ell$ entero: el sesgo de la recurrencia recibe una aportación por posición, y su gradiente es la suma de los errores de los $T$ pasos, sin ningún factor más —el mismo $\boldsymbol{\delta}^{(l)}$ que era el gradiente del sesgo en el bloque anterior, ahora sumado sobre el tiempo—. El formato es lo otro que hay que acertar: NumPy alinea las dos casillas al ancho de la más larga, `-0.5`, así que la positiva lleva delante un espacio de relleno.'
+    hint: 'Suma los tres vectores casilla por casilla. Y fíjate en cómo alinea NumPy un vector que tiene una componente negativa.'
+  - id: q-guardar-la-ida
+    type: single
+    prompt: 'La pasada hacia atrás recorre los pasos de $T$ a $1$ y en cada uno usa $\mathbf{h}_t$ y $\mathbf{h}_{t-1}$. ¿Qué obliga eso a hacer durante la pasada hacia adelante?'
+    options:
+      - { id: a, text: 'Guardar los estados $\mathbf{h}_1, \dots, \mathbf{h}_T$ hasta el final, porque el gradiente de cada paso los necesita y la vuelta no empieza hasta haber leído el último token; la memoria crece con la longitud del documento.' }
+      - { id: b, text: 'Nada: la recurrencia hacia atrás sólo usa $\mathbf{W}_{hh}$ y $\mathbf{W}_{xh}$, que no se liberan nunca.' }
+      - { id: c, text: 'Guardar únicamente $\mathbf{h}_T$, porque los estados anteriores se reconstruyen aplicando la recurrencia al revés desde el último.' }
+      - { id: d, text: 'Recalcular cada $\mathbf{h}_t$ dos veces, una en la ida y otra en la vuelta, para no ocupar memoria.' }
+    answer: a
+    explanation: 'La (a) es la concesión que ya dijo en voz alta la lección 8 del bloque anterior, sobre backpropagation: entrenar obliga a conservar la ida, y aquí esa ida son los $T$ estados —uno por posición—, así que la memoria de una RNN crece con lo largo que sea el documento, no sólo con $d_h$. La (b) se queda a medias y por eso es la trampa: es cierto que las matrices no se liberan, pero el producto exterior $\boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top}$ pide $\mathbf{h}_{t-1}$ y la máscara pide $\mathbf{h}_t$. La (c) suena razonable y es falsa: volver de $\mathbf{h}_t$ a $\mathbf{h}_{t-1}$ exigiría deshacer el $\tanh$ y además invertir $\mathbf{W}_{hh}$, que ni siquiera tiene por qué ser invertible, así que en la práctica los estados se guardan, no se recuperan. Y la (d) describe una técnica de ahorro de memoria real, pero no es lo que la vuelta obliga a hacer: es una elección posterior, y cambia memoria por aritmética.'
+challenges:
+  - id: ch-bptt
+    prompt: |
+      Escribe la pasada hacia atrás de la recurrencia —los gradientes de los pesos compartidos—,
+      a partir de lo que la de ida dejó guardado.
+
+      - `bptt(hs, X, Whh, dhT)` recibe la lista de estados `hs` $= [\mathbf{h}_0, \dots, \mathbf{h}_T]$
+        con $\mathbf{h}_0 = \mathbf{0}$; la entrada `X` de forma $(T, d_{\text{model}})$, cuya fila
+        $t-1$ es $\mathbf{x}_t$; la matriz recurrente `Whh`; y `dhT` $= \nabla_{\mathbf{h}_T}\ell$, el
+        gradiente que la capa de salida entrega al último estado.
+      - Devuelve la terna `(gWhh, gWxh, gbh)`, cada una sumada sobre los $T$ pasos.
+
+      La función no puede escribir en la lista ni en los arrays que recibe.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def bptt(hs, X, Whh, dhT):
+          # tu código aquí
+          pass
+    tests:
+      - name: "un gradiente por peso, con la forma de su objeto"
+        code: |
+          import numpy as np
+          hs = [np.zeros(2), np.array([0.3, -0.4]), np.array([0.1, 0.2])]
+          X = np.array([[1., -1., 0.], [0.5, 0.5, -0.5]])   # T=2, d_model=3
+          Whh = np.array([[0.2, -0.1], [0.0, 0.3]])
+          G = bptt(hs, X, Whh, np.array([0.5, 0.5]))
+          assert G is not None and len(G) == 3, 'devuelve (gWhh, gWxh, gbh)'
+          gWhh, gWxh, gbh = G
+          assert gWhh.shape == (2, 2), 'gWhh tiene la forma de Whh: (d_h, d_h)'
+          assert gWxh.shape == (2, 3), 'gWxh tiene la forma de Wxh: (d_h, d_model)'
+          assert np.asarray(gbh).shape == (2,), 'gbh tiene la forma de bh: (d_h,)'
+      - name: "con Whh = 0 el error no se transporta: solo aporta el ultimo paso"
+        code: |
+          import numpy as np
+          hs = [np.zeros(2), np.array([0.5, -0.5]), np.array([0.2, 0.8])]
+          X = np.array([[1., 0.], [0., 1.]])                # T=2, d_model=2
+          Whh = np.zeros((2, 2))
+          dhT = np.array([1.0, -1.0])
+          gWhh, gWxh, gbh = bptt(hs, X, Whh, dhT)
+          dT = (1 - hs[2] ** 2) * dhT                       # delta_T, el unico no nulo
+          assert np.allclose(gbh, dT), 'con Whh=0 nada llega de t=T a t=1: gbh es solo delta_T'
+          assert np.allclose(gWhh, np.outer(dT, hs[1])), 'la aportacion del ultimo paso es delta_T h_{T-1}ᵀ'
+          assert np.allclose(gWxh, np.outer(dT, X[1])), 'y gWxh del ultimo paso es delta_T x_Tᵀ'
+      - name: "coincide con el sondeo numerico sobre una RNN entera"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(1)
+          d_model, d_h, T = 3, 2, 4
+          Wxh = rng.normal(size=(d_h, d_model)); Whh = rng.normal(size=(d_h, d_h)) * 0.5
+          bh = rng.normal(size=d_h); Why = rng.normal(size=(1, d_h)); by = rng.normal(size=1)
+          X = rng.normal(size=(T, d_model)); y = 1.0
+          def fwd(Whh, Wxh, bh):
+              hs = [np.zeros(d_h)]
+              for x in X:
+                  hs.append(np.tanh(Whh @ hs[-1] + Wxh @ x + bh))
+              p = 1.0 / (1.0 + np.exp(-(Why @ hs[-1] + by)[0]))
+              return hs, p, -(y * np.log(p) + (1 - y) * np.log(1 - p))
+          hs, p, _ = fwd(Whh, Wxh, bh)
+          G = bptt(hs, X, Whh, Why[0] * (p - y))
+          assert G is not None and all(g is not None for g in G), 'devuelve los tres gradientes'
+          gWhh, gWxh, gbh = G
+          peor = 0.
+          for P, Gp in [(Whh, gWhh), (Wxh, gWxh), (bh, gbh)]:
+              for k in np.ndindex(P.shape):
+                  v = P[k]
+                  P[k] = v + 1e-6; a = fwd(Whh, Wxh, bh)[2]
+                  P[k] = v - 1e-6; b = fwd(Whh, Wxh, bh)[2]
+                  P[k] = v
+                  peor = max(peor, abs((a - b) / 2e-6 - Gp[k]))
+          assert peor < 1e-6, 'los gradientes no cuadran con el sondeo: revisa el orden de la vuelta y la mascara 1 - h_t²'
+      - name: "no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          hs = [np.zeros(2), np.array([0.3, -0.4]), np.array([0.1, 0.2])]
+          X = np.array([[1., -1.], [0.5, 0.5]])
+          Whh = np.array([[0.2, -0.1], [0.0, 0.3]])
+          dhT = np.array([0.5, 0.5])
+          guardas = [[h.copy() for h in hs], X.copy(), Whh.copy(), dhT.copy()]
+          bptt(hs, X, Whh, dhT)
+          assert all(np.array_equal(a, b) for a, b in zip(hs, guardas[0])), 'no escribas en la lista de estados'
+          assert np.array_equal(X, guardas[1]) and np.array_equal(Whh, guardas[2]), 'no toques X ni Whh'
+          assert np.array_equal(dhT, guardas[3]), 'dh = dhT comparte memoria; copia dhT antes de arrastrarlo hacia atras'
+    solution: |
+      import numpy as np
+
+
+      def bptt(hs, X, Whh, dhT):
+          d_h, d_model, T = Whh.shape[0], X.shape[1], len(hs) - 1
+          gWhh, gWxh, gbh = np.zeros((d_h, d_h)), np.zeros((d_h, d_model)), np.zeros(d_h)
+          dh = np.array(dhT, dtype=float)                  # ∂ℓ/∂h_T, copiado para no tocar el original
+          for t in range(T, 0, -1):
+              delta = (1 - np.asarray(hs[t]) ** 2) * dh    # δ_t = (1 - h_t²) ⊙ (∂ℓ/∂h_t)
+              gWhh += np.outer(delta, hs[t - 1])           # δ_t h_{t-1}ᵀ : lo que aporta el paso t
+              gWxh += np.outer(delta, X[t - 1])
+              gbh += delta
+              dh = Whh.T @ delta                           # ∂ℓ/∂h_{t-1} : transporta con Whhᵀ
+          return gWhh, gWxh, gbh
+    explanation: |
+      La estructura es la de la pasada hacia atrás del bloque anterior, con una diferencia: los
+      gradientes no se devuelven paso a paso, se **acumulan** en `gWhh`, `gWxh` y `gbh`, porque la
+      misma matriz recibe una aportación en cada posición. El bucle va de `T` a `1` porque $\boldsymbol{\delta}_t$
+      necesita el error ya transportado desde $t+1$; recorrerlo al derecho pediría un $\boldsymbol{\delta}$
+      que todavía no existe.
+
+      Tres detalles hacen el trabajo. `dh = np.array(dhT)` copia el error de entrada, porque
+      `dh = Whh.T @ delta` lo va a reescribir en cada vuelta y el array de quien llama no debe
+      moverse. La máscara `(1 - hs[t] ** 2)` es $\tanh^{\prime}$ leído del estado, sin guardar la
+      preactivación. Y `np.outer(delta, hs[t - 1])` en el paso `t = 1` multiplica por $\mathbf{h}_0 = \mathbf{0}$,
+      así que ese término entra como matriz nula: el primer paso no le debe nada a $\mathbf{W}_{hh}$,
+      porque nunca la usó.
+---
+
+{/* COURSE-P5-03 — Bloque 3, lección 3. */}
+
+La lección anterior, sobre la RNN vanilla, se detuvo justo antes de entrenarla: la red lee cualquier
+longitud con dos matrices y un bucle, pero sus pesos siguen siendo los que un generador escribió al
+construirla, y no se ha movido ni uno. Moverlos es pedir el gradiente de la pérdida respecto de esos
+pesos, y al pedirlo aparece una particularidad que el bloque anterior no tenía. La red neuronal
+recurrente (*recurrent neural network*, RNN) no reparte su trabajo en una matriz por capa:
+$\mathbf{W}_{hh}$ es una sola matriz que el bucle usa en cada posición, enredada en la secuencia
+entera.
+
+¿Cómo se deriva respecto de un peso que interviene en los $T$ pasos a la vez? El bloque anterior tiene
+las dos piezas para contestar. La regla de la cadena —lección 7— dice qué ocurre cuando un peso influye
+en la pérdida por varios sitios; backpropagation —lección 8— consigue todas las derivadas de una red
+con una sola pasada del final al principio, sin sondear un peso cada vez. Falta encajarlas en un bucle,
+y el resultado tiene nombre propio: *backpropagation through time* (BPTT). Lo que esta lección hace con
+él no es enunciarlo, es derivarlo entero y comprobar, casilla por casilla, que sus gradientes son los
+que un sondeo numérico confirma.
+
+Desplegar el bucle deja la red como una fila de pasos, y sobre esa fila la vuelta se recorre a mano. La
+pérdida está al final, colgada del último estado; para llegar a un peso, su influencia tiene que volver
+por donde vino, del último estado al anterior y del anterior al de más atrás, cruzando en cada salto la
+misma $\mathbf{W}_{hh}$. No hay otro camino de vuelta porque no hubo otro de ida.
+
+<Explorable
+  id="rnn-unrolled"
+  direction="backward"
+  caption="Avanza paso a paso hacia atrás: cada paso deja su aporte en el mismo acumulador de forma d_h por d_h. Sube T y comprueba que se suman más términos sin que cambie la forma del gradiente; en el último paso el aporte al gradiente de Whh es cero porque h0 es cero, y al cambiar el acumulador a Wxh verás que el suyo no lo es."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+BPTT es la pasada hacia atrás del bloque anterior con las capas puestas en el tiempo. Como la misma
+$\mathbf{W}_{hh}$ actúa en todas las posiciones, su gradiente no sale de un paso: es la suma de lo que
+cada paso le reclama.
+</Callout>
+
+## El error que vuelve, un paso a la vez
+
+Fijemos una secuencia —un documento— y derivemos para ella sola, así que la pérdida es $\ell$, la de
+un ejemplo, como en todo el bloque anterior desde la lección 5; la media sobre el *batch*,
+$\mathcal{L} = \frac{1}{B}\sum_i \ell_i$, promedia estos gradientes por documento y es un nivel de más
+arriba que no toca nada de lo que sigue. La respuesta se lee del último estado, igual que en la
+lección anterior:
+
+$$
+\hat{y} = \sigma\left(\mathbf{W}_{hy}\mathbf{h}_T + \mathbf{b}_y\right),
+$$
+
+de modo que los pesos de la recurrencia llegan a la pérdida por un único sitio: a través de
+$\mathbf{h}_T$. Todo lo demás de la vuelta es reconstruir, paso a paso, cómo cada estado afecta a ese
+último.
+
+Dale un nombre a lo que el bloque anterior dejó sin nombrar. La preactivación del paso $t$ —el
+argumento del $\tanh$— es
+
+$$
+\mathbf{p}_t = \mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h \in \mathbb{R}^{d_h},
+\qquad
+\mathbf{h}_t = \tanh\left(\mathbf{p}_t\right),
+$$
+
+y llamemos **error del paso** $t$, y $\boldsymbol{\delta}_t \in \mathbb{R}^{d_h}$, al gradiente de la
+pérdida respecto de esa preactivación, $\boldsymbol{\delta}_t = \nabla_{\mathbf{p}_t}\,\ell$. Es
+exactamente el $\boldsymbol{\delta}^{(l)}$ de la lección 8 del bloque anterior —el error de una capa,
+en su preactivación—, sólo que el índice ya no cuenta capas sino pasos del tiempo.
+
+Ese error se calcula del final al principio, y en dos movimientos por paso. El $\tanh$ se aplica
+coordenada a coordenada, así que pasar de $\mathbf{h}_t$ a $\mathbf{p}_t$ es multiplicar por su
+pendiente, y esa pendiente, por la identidad $\tanh^{\prime} = 1 - \tanh^{2}$ de la lección 2 del
+bloque anterior, es $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$: se lee directamente del estado que
+la ida ya guardó, sin conservar $\mathbf{p}_t$. Queda el otro factor, $\nabla_{\mathbf{h}_t}\ell$, y
+tiene dos casos según de dónde le llegue a $\mathbf{h}_t$ la pérdida. En el último paso, sólo de la
+capa de salida; en los demás, sólo del paso siguiente:
+
+$$
+\boldsymbol{\delta}_T = \left(\mathbf{1} - \mathbf{h}_T \odot \mathbf{h}_T\right) \odot \left(\left(\hat{y} - y\right)\mathbf{W}_{hy}^{\top}\right),
+$$
+
+$$
+\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right), \qquad t = T-1, \dots, 1.
+$$
+
+El arranque, $\boldsymbol{\delta}_T$, es la capa de salida de la lección anterior derivada hacia atrás:
+la sigmoide con la entropía cruzada entrega $\hat{y} - y$, y $\mathbf{W}_{hy}^{\top}$ lo reparte entre
+las $d_h$ coordenadas del estado. La recurrencia es lo demás, y son los dos movimientos de la lección
+8 sin ninguna variación: **transporta** el error con $\mathbf{W}_{hh}^{\top}$ y lo **enmascara** con la
+pendiente del $\tanh$. Lo único distinto es que el transporte usa siempre la misma matriz —guárdalo,
+porque es media lección 4 de este bloque.
+
+<Details summary="Ver el transporte índice a índice">
+Sin matrices por medio, y para un paso interior $t < T$, donde $\mathbf{h}_t$ sólo alcanza la pérdida
+a través del paso siguiente. La coordenada $j$ de $\nabla_{\mathbf{h}_t}\ell$ es la derivada de $\ell$
+respecto de $h_{t,j}$, y $h_{t,j}$ entra en la preactivación $\mathbf{p}_{t+1}$ por cada una de sus
+$d_h$ coordenadas: es la suma sobre caminos de la lección 7 del bloque anterior, con $d_h$ caminos.
+
+$$
+\frac{\partial \ell}{\partial h_{t,j}} = \sum_{i=1}^{d_h} \frac{\partial \ell}{\partial p_{t+1,i}}\,\frac{\partial p_{t+1,i}}{\partial h_{t,j}} = \sum_{i=1}^{d_h} \delta_{t+1,i}\,(\mathbf{W}_{hh})_{ij},
+$$
+
+donde el primer factor es $\delta_{t+1,i}$ por la definición del error, y el segundo sale de que
+$p_{t+1,i} = \sum_k (\mathbf{W}_{hh})_{ik}\,h_{t,k} + \dots$ depende de $h_{t,j}$ sólo por el sumando
+$k = j$, con derivada $(\mathbf{W}_{hh})_{ij}$. Esa suma recorre la columna $j$ de $\mathbf{W}_{hh}$,
+que es la fila $j$ de su transpuesta, o sea la coordenada $j$ de $\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}$.
+Así que $\nabla_{\mathbf{h}_t}\ell = \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}$, y multiplicar por
+la pendiente del $\tanh$ da $\boldsymbol{\delta}_t$. En el último paso el mismo argumento arranca de la
+capa de salida en vez del paso siguiente, y de ahí sale el otro renglón.
+</Details>
+
+## El gradiente del peso compartido es una suma
+
+Con un error por paso en la mano, los gradientes de los pesos salen sin recorrer nada más —y ahí
+aparece la suma que la lección anterior anunció—. Mira dónde interviene $\mathbf{W}_{hh}$: en la
+preactivación de **cada** paso, $\mathbf{p}_t = \mathbf{W}_{hh}\mathbf{h}_{t-1} + \dots$, con $t$ de
+$1$ a $T$. Es un solo peso alcanzado por $T$ caminos, uno por posición, y la regla de la cadena de la
+lección 7 del bloque anterior ya zanjó qué hacer con eso: entre caminos se suma. Cada camino aporta lo
+que la lección 8 deja para una preactivación —el error por la entrada transpuesta—, y el total es la
+suma de las $T$ aportaciones:
+
+$$
+\nabla_{\mathbf{W}_{hh}}\ell = \sum_{t=1}^{T} \boldsymbol{\delta}_t\,\mathbf{h}_{t-1}^{\top},
+\qquad
+\nabla_{\mathbf{W}_{xh}}\ell = \sum_{t=1}^{T} \boldsymbol{\delta}_t\,\mathbf{x}_t^{\top},
+\qquad
+\nabla_{\mathbf{b}_h}\ell = \sum_{t=1}^{T} \boldsymbol{\delta}_t.
+$$
+
+Léelas al lado de las del bloque anterior y verás que son las mismas. Allí el gradiente de una capa
+era $\boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$, un solo producto exterior;
+aquí es ese producto exterior sumado sobre los pasos, porque allí cada matriz aparecía una vez y aquí
+$\mathbf{W}_{hh}$ aparece $T$ veces. Esa suma es la única diferencia entre backpropagation y
+backpropagation through time, y es el precio exacto de compartir: una matriz, $T$ trabajos, $T$
+aportaciones que recoger.
+
+Dos comprobaciones cierran la cuenta. La primera es de formas, el reflejo de la lección 8: cada
+sumando de $\nabla_{\mathbf{W}_{hh}}\ell$ es $d_h \times d_h$, y la suma también, así que el gradiente
+tiene la forma de la matriz que corrige por más larga que sea la secuencia —$T$ decide cuántos
+términos se suman, no el tamaño del resultado—. La segunda mira el primer término: en
+$\nabla_{\mathbf{W}_{hh}}\ell$ el sumando de $t = 1$ es $\boldsymbol{\delta}_1\mathbf{h}_0^{\top}$, y
+como $\mathbf{h}_0 = \mathbf{0}$ es la matriz nula. Cuadra con la lección anterior, donde
+$\mathbf{h}_1 = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_1 + \mathbf{b}_h\right)$ no llevaba término de
+$\mathbf{W}_{hh}$: el primer paso no usó esa matriz, así que no le debe gradiente. En
+$\nabla_{\mathbf{W}_{xh}}\ell$, en cambio, el término de $t = 1$ sí cuenta, porque $\mathbf{x}_1$ es un
+token de verdad.
+
+Quedan los pesos de la salida, $\mathbf{W}_{hy}$ y $\mathbf{b}_y$, y no traen nada nuevo. Aparecen una
+sola vez —la respuesta se lee una sola vez, al final—, así que su gradiente es un producto exterior
+sin suma, $\nabla_{\mathbf{W}_{hy}}\ell = \left(\hat{y} - y\right)\mathbf{h}_T^{\top}$: la capa de
+salida del bloque anterior, tal cual. La suma sobre el tiempo es asunto de los tres pesos compartidos,
+y de nadie más.
+
+## BPTT en NumPy, contra el sondeo numérico
+
+La misma comprobación de la lección 8 del bloque anterior, aplicada aquí: derivar a mano y contrastar
+cada número contra un sondeo que mueve el peso un poquito y mide cómo cambia la pérdida. Una RNN de
+juguete con semilla fija, un estado de $d_h = 3$ y una secuencia de $T = 5$. Ejecútala y mira dos
+cosas: la aportación de cada paso a $\nabla_{\mathbf{W}_{hh}}$ —la última, la de $t = 1$, sale cero— y
+la línea final.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(0)
+d_model, d_h, T = 4, 3, 5
+Wxh = rng.normal(size=(d_h, d_model)) * 0.5
+Whh = rng.normal(size=(d_h, d_h)) * 0.5
+bh = np.zeros(d_h)
+Why = rng.normal(size=(1, d_h)) * 0.5             # salida escalar: 1 x d_h
+by = np.zeros(1)
+X = rng.normal(size=(T, d_model)) * 0.5           # una fila por posición
+y = 1.0                                            # etiqueta del documento
+
+
+def forward():
+    hs = [np.zeros(d_h)]                           # h_0 = 0
+    for x in X:
+        hs.append(np.tanh(Whh @ hs[-1] + Wxh @ x + bh))
+    p = 1.0 / (1.0 + np.exp(-(Why @ hs[-1] + by)[0]))
+    return hs, p, -(y * np.log(p) + (1 - y) * np.log(1 - p))
+
+
+hs, p, perdida = forward()
+print("ŷ = %.4f   ℓ = %.4f" % (p, perdida))
+
+# Hacia atrás: un delta por posición, del final al principio.
+gWhh, gWxh, gbh = np.zeros_like(Whh), np.zeros_like(Wxh), np.zeros_like(bh)
+dh = Why[0] * (p - y)                              # ∂ℓ/∂h_T, de la capa de salida
+aporte = []
+for t in range(T, 0, -1):
+    delta = (1 - hs[t] ** 2) * dh                  # δ_t = (1 - h_t²) ⊙ (∂ℓ/∂h_t)
+    gWhh += np.outer(delta, hs[t - 1])             # δ_t h_{t-1}ᵀ : lo que aporta el paso t
+    gWxh += np.outer(delta, X[t - 1])
+    gbh += delta
+    aporte.append(np.linalg.norm(np.outer(delta, hs[t - 1])))
+    dh = Whh.T @ delta                             # ∂ℓ/∂h_{t-1} : transporta con Whhᵀ
+gWhy, gby = np.outer([p - y], hs[T]), np.array([p - y])
+
+print("aporte de cada paso a ∇Whh, de t=%d a t=1:" % T)
+print("  ", np.round(aporte, 4), " <- el ultimo, t=1, es 0 porque h_0 = 0")
+
+# El sondeo: mover cada peso a mano y ver cuánto cambia la pérdida.
+peor = 0.0
+for P, G in [(Whh, gWhh), (Wxh, gWxh), (bh, gbh), (Why, gWhy), (by, gby)]:
+    for k in np.ndindex(P.shape):
+        v = P[k]
+        P[k] = v + 1e-6; mas = forward()[2]
+        P[k] = v - 1e-6; menos = forward()[2]
+        P[k] = v
+        peor = max(peor, abs((mas - menos) / 2e-6 - G[k]))
+print("mayor diferencia con el sondeo numerico: %.1e" % peor)
+`} />
+
+Lee la salida contra la derivación. La lista de aportes tiene cinco números, uno por paso, y el
+último es cero exacto: el paso $t = 1$ multiplica por $\mathbf{h}_0 = \mathbf{0}$ y no le pide nada a
+$\mathbf{W}_{hh}$, tal como decía la cuenta. Y la última línea es la lección: los gradientes de los
+cinco grupos de pesos coinciden con el sondeo hasta $10^{-10}$, que es el error del sondeo y no del
+algoritmo. La suma sobre el tiempo no es una aproximación ni un apaño; es el gradiente exacto, y el
+sondeo lo confirma número a número.
+
+## Comprueba tu intuición
+
+Cinco preguntas: qué forma tiene el gradiente del peso compartido, de dónde sale su suma, cómo es la
+recurrencia hacia atrás, qué acumula el sesgo y qué obliga a guardar la vuelta.
+
+<Quiz id="q-forma-gradiente" />
+
+<Quiz id="q-de-donde-la-suma" />
+
+<Quiz id="q-recurrencia-atras" />
+
+<Quiz id="q-sesgo-suma" />
+
+<Quiz id="q-guardar-la-ida" />
+
+Y la vuelta entera escrita por ti, que es la pieza que faltaba para entrenar la RNN de la lección
+anterior.
+
+<CodeChallenge id="ch-bptt" />
+
+---
+
+El gradiente ya está, exacto y comprobado, y trae dentro una advertencia que aún no hemos leído. La
+recurrencia hacia atrás multiplica por $\mathbf{W}_{hh}^{\top}$ en cada paso —la misma matriz, una vez
+por posición—, y además enmascara con las pendientes $1 - \mathbf{h}_t \odot \mathbf{h}_t$, esas que la
+lección 2 del bloque anterior, sobre funciones de activación, ya te enseñó a apagarse cuando el estado
+se satura. Un error que sale de la posición $T$ y tiene que llegar hasta la $1$ cruza ese producto
+decenas de veces, y multiplicar tantas veces por una misma matriz hace una de dos cosas: encoge hacia
+nada, o se dispara.
+
+Cualquiera de las dos rompe justo lo que la RNN venía a arreglar. Si el gradiente que conecta la
+primera posición con la pérdida llega desvanecido, la red no puede aprender que algo del principio del
+documento importaba para el final —la dependencia larga, que era el motivo de tener memoria—. Cuánto
+encoge o crece, y por qué depende de una sola propiedad de $\mathbf{W}_{hh}$, es la lección 4 de este
+bloque, sobre el gradiente que se desvanece: la derivamos con cuidado y la vemos, en una gráfica, caer
+en picado con la distancia.

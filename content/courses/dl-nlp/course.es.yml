@@ -1,0 +1,32 @@
+# COURSE-P1-02 — Course manifest (Spanish).
+# Per-locale by design: title, tagline and prerequisites are prose. Block *ids* and
+# lesson *slugs* are locale-invariant — that invariant is what makes English purely
+# additive later (a sibling course.en.yml + en/ dir, no route or slug changes).
+# Validated by CourseManifestSchema in src/lib/schemas.ts (z.strictObject: a typo'd
+# key fails the build). Read at build time only — never a DB call.
+
+slug: dl-nlp
+title: "Deep Learning para NLP: del Perceptrón al Transformer"
+tagline: "Construye, desde cero y con rigor matemático, la arquitectura que impulsa los modelos de lenguaje modernos."
+level: intermedio
+estimatedHours: 40
+prerequisites:
+  - "Python intermedio (funciones, clases, NumPy básico)"
+  - "Álgebra lineal: vectores, matrices, producto matricial"
+  - "Cálculo: derivadas parciales y regla de la cadena"
+blocks:
+  - id: 1
+    title: "Fundamentos de NLP"
+    summary: "Tokenización, vocabularios y las primeras representaciones vectoriales del texto."
+  - id: 2
+    title: "El Perceptrón Multicapa"
+    summary: "Del perceptrón a una red multicapa entrenada con descenso de gradiente y backpropagation."
+  - id: 3
+    title: "Redes Neuronales Recurrentes"
+    summary: "Secuencias, memoria y el problema del gradiente que se desvanece."
+  - id: 4
+    title: "El Puente hacia la Atención"
+    summary: "El cuello de botella del contexto y la alineación que lo resuelve."
+  - id: 5
+    title: "El Transformer"
+    summary: "Auto-atención, múltiples cabezas y codificación posicional."

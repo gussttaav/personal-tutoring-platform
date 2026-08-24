@@ -1,0 +1,377 @@
+---
+slug: proyecto-sentimiento
+title: "Proyecto: un clasificador de sentimiento"
+block: 2
+order: 10
+minutes: 28
+summary: "El bucle del bloque entero, ahora sobre 240 reseñas de cine y con la bolsa de palabras del bloque 1 a la entrada. La red acierta las 180 con las que entrena y el 88.3 % de las 60 que no ha leído, y las siete que falla no son ruido: cuatro llevan un «no» que la bolsa de palabras no sabe dónde colocar."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-vocabulario
+    type: multi
+    prompt: 'El vocabulario de esta lección sale sólo de las 180 reseñas de entrenamiento. Si se construyera sobre las 240, ¿qué sería cierto? Marca todo lo que valga.'
+    options:
+      - { id: a, text: 'Las reseñas de prueba dejarían de tener tokens fuera del vocabulario, así que el 8.3 % de ocurrencias que hoy se pierden desaparecería de la medición sin haber desaparecido del problema.' }
+      - { id: b, text: 'El vector de una reseña de prueba tendría coordenadas que existen porque esa misma reseña existe, de modo que la cifra final ya no diría qué hace la red con un texto que llega después.' }
+      - { id: c, text: 'La red vería las etiquetas de las 60 reseñas de prueba mientras entrena.' }
+      - { id: d, text: 'El acierto sobre las 180 de entrenamiento bajaría, porque un vocabulario mayor obliga a ajustar más pesos con los mismos ejemplos.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b) son la misma fuga vista por sus dos extremos: por el lado de la representación, coordenadas hechas a medida del examen; por el lado del resultado, un número que ya no responde a la pregunta que se le hizo. La (c) es la trampa, y merece la pena verla bien: construir un vocabulario no lee ninguna etiqueta —sólo mira qué cadenas aparecen—, y aun así contamina la medida. Por eso «no le hemos enseñado las respuestas» no basta como defensa: lo que se filtra aquí es la forma del espacio, no las etiquetas. Y la (d) es falsa: las 442 coordenadas de hoy ya llevan la red a $1.000$ sobre las 180, y añadir 35 más no le quita capacidad, se la da.'
+  - id: q-oov
+    type: numeric
+    prompt: 'Mides otro conjunto de prueba con este mismo vocabulario. Sus reseñas suman 500 ocurrencias de 320 tipos distintos, y 80 de esos tipos —100 ocurrencias entre todos— no están en $V$. ¿Qué fracción de las **ocurrencias** de ese conjunto se queda fuera del vocabulario?'
+    answer: 0.2
+    tolerance: 0.005
+    explanation: 'Vale $100/500 = 0.2$. El otro número que la pregunta pone delante, $80/320 = 0.25$, cuenta tipos y responde a otra cosa: cuántas *cadenas distintas* son nuevas. Los dos se escriben con las mismas barras y cuentan conjuntos distintos —uno de posiciones, otro de cadenas—, que es la razón por la que la lección 3 del bloque anterior, sobre vocabulario y OOV, exige decir siempre sobre qué se cuenta. Aquí la diferencia es pequeña; en un corpus real es enorme, porque los tipos nuevos son casi todos raros y aportan una ocurrencia cada uno.'
+    hint: 'Dos de los cuatro números sobran. Mira cuál es el conjunto sobre el que te piden contar.'
+  - id: q-brecha
+    type: single
+    prompt: 'La red acierta las 180 reseñas de entrenamiento y 53 de las 60 de prueba. Entrenarla 20 000 pasos en vez de 600 deja esa segunda cifra exactamente donde estaba. ¿Qué se puede concluir de ahí?'
+    options:
+      - { id: a, text: 'Que las siete que falla no las falla por falta de entrenamiento: la pérdida sigue bajando sobre las 180 sin mover el acierto de prueba, de modo que lo que separa las dos cifras está fuera del alcance del descenso.' }
+      - { id: b, text: 'Que el descenso ha caído en un mínimo local, y con otra inicialización la red llegaría a las 60.' }
+      - { id: c, text: 'Que la tasa de aprendizaje es demasiado alta y el paso se está saltando la zona donde las siete se arreglarían.' }
+      - { id: d, text: 'Que las 60 reseñas de prueba están mal etiquetadas, porque una red que acierta el 100 % de lo que ve no debería fallar en un texto parecido.' }
+    answer: a
+    explanation: 'La (a) es lo único que el experimento autoriza a decir, y es bastante: hay una parte del error que entrenar más no toca. La (b) se comprueba y no se sostiene —ocho semillas distintas dan entre 53 y 54 aciertos de 60, nunca 60—, y en cualquier caso confunde el mínimo de la pérdida sobre $D_{\text{ent}}$, que es donde el descenso está llegando, con el acierto sobre $D_{\text{prueba}}$, que ninguna de las dos cosas optimiza. La (c) va contra el dato: con esa tasa de aprendizaje la pérdida baja en todos los pasos que imprime la celda. Y la (d) invierte la carga de la prueba: cuatro de las siete llevan un <W>no</W> cuyo sentido está en el orden de la frase, y la etiqueta que llevan es la que le pondría cualquiera que las leyera.'
+challenges: []
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 10. */}
+
+Un acierto sobre ejemplos ya vistos no es una medida, es un recuerdo. Ahí se quedó la lección
+anterior, sobre implementar un MLP (*multilayer perceptron*, perceptrón multicapa) desde cero: un
+bucle que entrena solo, dos coordenadas de entrada que escribí yo y cuatro ejemplos —los
+suficientes para que la red acabe acertándolos todos, los justos para que acertarlos no demuestre
+nada—. Entrenar mejor no arregla ninguna de las dos cosas. Hay que preguntarle a la red por algo
+que no haya leído, y hace falta un número que conteste.
+
+Las dos piezas que eso pide vienen de sitios distintos. La representación estaba resuelta desde el
+bloque anterior: la bolsa de palabras convierte cualquier texto en un vector de longitud fija, y lo
+hace sin que nadie tenga que leerse los datos antes. La otra no ha aparecido todavía en el curso y
+es la que ocupa media lección: apartar unas cuantas reseñas antes de empezar, no dejar que
+intervengan en nada y preguntarle por ellas a la red cuando ya no quede nada por ajustar. Con las
+dos puestas, esto es el bloque 1 a la entrada y el bloque 2 encima, sin cambiar una línea del bucle
+—comprobarlo es parte del trabajo—; lo único nuevo es de dónde sale cada cosa.
+
+Las reseñas las he generado con inteligencia artificial: 240 reseñas de cine de una línea, la mitad
+hablando bien de la película y la mitad hablando mal, en el mismo registro que las diez de la
+lección 1 de este bloque, sobre la neurona artificial. Eso conviene tenerlo delante al leer la
+cifra del final, porque un corpus generado así sale más regular que uno recogido de internet
+—menos erratas, menos ironía, vocabulario más repetido—, y todo eso le pone las cosas fáciles al
+clasificador. Están en <a href="/courses/dl-nlp/resenas-cine.json" target="_blank"
+rel="noopener noreferrer">este fichero</a>, y ábrelo antes de seguir: leerse los datos con los
+que va a entrenar un modelo es parte del trabajo, y aquí son dos minutos. Dentro va también el
+reparto —180 para entrenar, 60 para medir—, escrito en el fichero en lugar de sortearse al
+ejecutar, para que los números de abajo te salgan idénticos a ti.
+
+<Figure
+  src="/courses/dl-nlp/reparto-resenas.svg"
+  alt="Cinco cajas unidas por flechas. Arriba a la izquierda, 180 reseñas de entrenamiento; arriba a la derecha, 60 reseñas de prueba. De la caja de entrenamiento baja una flecha al vocabulario, de 442 entradas, y del vocabulario baja otra a los pesos, con el rótulo 600 pasos. Del vocabulario sale además una flecha verde que gira a la derecha y sube hasta la caja de prueba, con el rótulo las representa. Por el borde derecho baja una flecha larga desde la caja de prueba hasta la caja del acierto, 53 de 60, con el rótulo sólo al final; a esa misma caja llega una flecha corta desde los pesos."
+  caption="Todo lo que la red aprende sale de la columna izquierda. Las 60 reseñas de la derecha reciben una sola cosa del entrenamiento —el vocabulario con el que se las representa— y entran en el cálculo una vez, cuando ya no queda nada por ajustar."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Entrenar y medir tienen que mirar reseñas distintas. En cuanto una reseña interviene en algo —en
+los pesos, en el vocabulario, en cualquier número que alguien elija—, deja de servir para decir qué
+hará la red con un texto que aún no existe.
+</Callout>
+
+## De la reseña al vector, y de ahí a la red
+
+La entrada la fija el bloque anterior. Cada reseña es un documento $d$, y su bolsa de palabras es
+el vector que cuenta cuántas veces aparece en él cada entrada del vocabulario,
+
+$$
+\mathbf{x}_d = \sum_{t=1}^{T_d} \mathbf{o}_{w_t} \in \mathbb{R}^{\lvert V \rvert},
+$$
+
+con $T_d$ el número de *tokens* del documento y $\mathbf{o}_w$ el one-hot de la entrada $w$. El
+vocabulario $V$ son los 442 tipos distintos que aparecen en las 180 reseñas de entrenamiento, sin
+recorte por frecuencia: la lección 3 del bloque anterior, sobre el vocabulario y las palabras fuera
+de vocabulario (*out-of-vocabulary*, OOV), cortaba por los $k$ tipos más frecuentes porque el
+corpus era grande, y 1 299 ocurrencias no dan para tirar nada.
+
+Apilando una reseña por fila, la entrada de la red es
+$\mathbf{X} \in \mathbb{R}^{N_{\text{ent}} \times \lvert V \rvert} = \mathbb{R}^{180 \times 442}$,
+con las etiquetas en $\mathbf{Y} \in \mathbb{R}^{180 \times 1}$ valiendo $1$ cuando la reseña habla
+bien. Encima va el mismo MLP de la lección anterior con otros tamaños: una capa oculta de $d_1 = 12$
+neuronas con $\tanh$ y una salida con sigmoide, o sea $d_0, d_1, d_2 = 442, 12, 1$. Cada paso mira
+el conjunto de entrenamiento entero, de modo que $B = N_{\text{ent}} = 180$ y el *forward pass*
+ocupa las dos líneas de siempre:
+
+$$
+\mathbf{H}^{(1)} = \tanh\left(\mathbf{X}\left(\mathbf{W}^{(1)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(1)}\right)^{\top}\right) \in \mathbb{R}^{180 \times 12},
+\qquad
+\hat{\mathbf{Y}} = \sigma\left(\mathbf{H}^{(1)}\left(\mathbf{W}^{(2)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(2)}\right)^{\top}\right) \in \mathbb{R}^{180 \times 1}.
+$$
+
+La pérdida es la entropía cruzada binaria de la lección 5 de este bloque, sobre funciones de
+pérdida, promediada sobre las 180 reseñas, y la vuelta es la de la lección anterior sin tocar nada:
+$\boldsymbol{\Delta}^{(2)} = \hat{\mathbf{Y}} - \mathbf{Y}$, la recurrencia que la transporta a la
+capa oculta y los cuatro gradientes con su $1/B$,
+
+$$
+\nabla_{\mathbf{W}^{(l)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{H}^{(l-1)},
+\qquad
+\nabla_{\mathbf{b}^{(l)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{1}_B.
+$$
+
+Lo único que ha cambiado son los tamaños, y han cambiado mucho: donde la red de las cuatro frases
+tenía diecisiete números que ajustar, ésta tiene 5 329.
+
+Ese salto obliga a mirar otra vez una sola decisión, la escala de la inicialización. Cada reseña
+enciende unas siete coordenadas de las 442, así que la preactivación de una neurona oculta es una
+suma de unos siete pesos: con pesos normales de escala $1$ eso da valores lo bastante grandes como
+para dejar la tangente hiperbólica saturada desde el primer paso, y con escala $0.1$ no. La
+diferencia se mide en el resultado —$0.783$ de acierto sobre las reseñas nuevas frente a
+$0.883$—, y es la razón de que las celdas de abajo multipliquen por $0.1$. Que la escala buena
+dependa de la anchura de las capas y de la profundidad de la red es la deuda que la lección
+anterior dejó apuntada al bloque 3, y sigue apuntada.
+
+## Medir donde el acierto significa algo
+
+Llamemos $D_{\text{ent}}$ a las 180 reseñas con las que se entrena y $D_{\text{prueba}}$ a las 60
+que se guardan, con $N_{\text{ent}} = 180$ y $N_{\text{prueba}} = 60$. No comparten ninguna reseña,
+y esa es toda su relación.
+
+A cada uno se le puede pedir la misma cifra, la **tasa de acierto**: qué fracción de sus reseñas
+recibe el veredicto correcto. La salida es una probabilidad, así que el veredicto es «positiva»
+cuando $\hat{y}_d \geq 1/2$ —la frontera de la lección 1 de este bloque— y «negativa» cuando no, y
+la cuenta es
+
+$$
+\text{acierto}(D) = \frac{1}{\lvert D \rvert}\left\lvert\left\{\, d \in D \;:\; \hat{y}_d \geq \tfrac{1}{2} \iff y_d = 1 \,\right\}\right\rvert.
+$$
+
+La doble implicación dice que las dos afirmaciones valen lo mismo: o la red dice que sí y la
+etiqueta también, o ninguna de las dos. Y el conjunto sobre el que se cuenta va escrito dentro, que
+es lo que distingue $\text{acierto}(D_{\text{ent}})$ de $\text{acierto}(D_{\text{prueba}})$ —dos
+números que esta lección va a mirar juntos y que no significan lo mismo ni de lejos—.
+
+Que $V$ salga sólo de $D_{\text{ent}}$ es parte de la medida, no un detalle de la implementación.
+Un vocabulario construido sobre las 240 le daría a cada reseña de prueba una coordenada propia para
+cada uno de sus tipos raros, coordenadas que existirían porque esa reseña existe, y la red llegaría
+al examen con el espacio hecho a su medida. Lo que desaparecería es justo lo que hay que medir: los
+tipos que un texto nuevo trae y el vocabulario no tiene. Es el problema OOV de aquella lección, y
+aquí llega sin la red de seguridad que ella le puso: no hay <W>\<UNK></W> que los recoja, de modo
+que un token fuera del vocabulario no llega al vector en absoluto.
+
+La concesión hay que decirla entera, porque tiene un caso extremo. Una reseña cuyos tokens
+estuvieran todos fuera del vocabulario recibiría $\mathbf{x}_d = \mathbf{0}$, y con él
+
+$$
+\hat{y} = \sigma\left(\mathbf{W}^{(2)}\tanh\left(\mathbf{b}^{(1)}\right) + b^{(2)}\right),
+$$
+
+un número que no depende de la reseña sino sólo de los sesgos: todas las reseñas ilegibles para
+este vocabulario reciben el mismo veredicto, sea el que sea. Es el hueco que ya señalaba la lección
+1 de este bloque, sobre la neurona artificial, al mirar qué contesta una neurona ante el vector
+nulo, ahora con un texto real detrás. Y una segunda concesión, más aburrida y más frecuente: sesenta reseñas medidas una vez
+dan un número con la firmeza de sesenta tiradas, suficiente para separar un $0.9$ de un $0.5$ y
+no para separarlo de un $0.87$.
+
+## El clasificador, de punta a punta
+
+La primera celda trae las reseñas, las tokeniza y construye las dos matrices. Ejecútala y mira tres
+cosas: la anchura del vector, cuántas de sus coordenadas son distintas de cero y cuántos tokens de
+prueba se quedan por el camino.
+
+<PyCell packages={["numpy"]} code={`
+import json, re
+import numpy as np
+from collections import Counter
+from pyodide.http import open_url
+
+D = json.load(open_url("/courses/dl-nlp/resenas-cine.json"))
+ent, pru = D["entrenamiento"], D["prueba"]
+
+
+def tokeniza(texto):                          # la lección 2 del bloque anterior, en una
+    return re.findall(r"\\w+", texto.lower())  # línea: a minúsculas y fuera la puntuación
+
+
+frec = Counter(w for r in ent for w in tokeniza(r["texto"]))
+V = sorted(frec)                              # el vocabulario sale SÓLO del entrenamiento
+pos = {e: i for i, e in enumerate(V)}
+
+
+def matriz(resenas):
+    X = np.zeros((len(resenas), len(V)))
+    for i, r in enumerate(resenas):
+        for token in tokeniza(r["texto"]):
+            if token in pos:                  # lo que no está en V no llega al vector
+                X[i, pos[token]] += 1.0
+    return X, np.array([[float(r["etiqueta"])] for r in resenas])
+
+
+X_ent, Y_ent = matriz(ent)
+X_pru, Y_pru = matriz(pru)
+
+print("entrenamiento: %d reseñas, %d positivas" % (len(ent), int(Y_ent.sum())))
+print("prueba:        %d reseñas, %d positivas" % (len(pru), int(Y_pru.sum())))
+print("vocabulario:   %d entradas sobre %d ocurrencias" % (len(V), sum(frec.values())))
+print("X_ent", X_ent.shape, "  X_pru", X_pru.shape)
+print("coordenadas no nulas: %.1f por reseña, el %.1f %% del vector"
+      % (X_ent.astype(bool).sum(1).mean(), 100 * X_ent.astype(bool).mean()))
+
+tokens_pru = [w for r in pru for w in tokeniza(r["texto"])]
+fuera = [w for w in tokens_pru if w not in pos]
+print("\\nfuera de vocabulario: %d de %d ocurrencias (%.1f %%), %d tipos"
+      % (len(fuera), len(tokens_pru), 100 * len(fuera) / len(tokens_pru), len(set(fuera))))
+
+print("\\nreseña de prueba:", pru[0]["texto"])
+print("su vector, sin los ceros:",
+      {V[j]: int(X_pru[0, j]) for j in np.nonzero(X_pru[0])[0]})
+`} />
+
+Los tres números dicen en qué se ha metido la red. El vector tiene 442 coordenadas y una reseña
+enciende $7.1$ de media, el $1.6\ \%$: la representación es dispersa, como anunciaba el bloque
+anterior, y cada ejemplo deja unas 435 coordenadas sin decir nada. Y de las 432 ocurrencias del
+conjunto de prueba, 36 —el $8.3\ \%$, repartidas en 35 tipos— no están en el vocabulario. La
+última línea enseña una de ellas: la reseña <W>una película preciosa que recomiendo sin
+reservas</W> llega a la red con seis coordenadas, porque <W>reservas</W> no aparece en ninguna de
+las 180 y desaparece sin dejar rastro.
+
+La segunda celda es el bucle de la lección anterior con los nombres cambiados. Necesita lo que dejó
+la primera, así que ejecútalas en orden. Mira las dos últimas columnas a la vez, que es la lección
+entera.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita la celda anterior: X_ent, Y_ent, X_pru, Y_pru y V.
+B, d0, d1, d2 = len(X_ent), len(V), 12, 1
+eta, pasos = 0.5, 600
+
+rng = np.random.default_rng(0)                # semilla fija: verás estos números
+W1, b1 = rng.normal(size=(d1, d0)) * 0.1, np.zeros(d1)
+W2, b2 = rng.normal(size=(d2, d1)) * 0.1, np.zeros(d2)
+
+
+def salida(X, W1, b1, W2, b2):
+    H1 = np.tanh(X @ W1.T + b1)
+    return H1, 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+
+
+def acierto(X, Y, W1, b1, W2, b2):
+    P = salida(X, W1, b1, W2, b2)[1]
+    return float(((P >= 0.5) == (Y == 1.0)).mean())
+
+
+print(" paso   pérdida   acierto entrenamiento   acierto prueba")
+for t in range(pasos + 1):
+    H1, Y_hat = salida(X_ent, W1, b1, W2, b2)
+    if t % 50 == 0:
+        p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)
+        print("%5d   %7.4f   %19.3f   %14.3f"
+              % (t, -np.mean(Y_ent * np.log(p) + (1.0 - Y_ent) * np.log(1.0 - p)),
+                 acierto(X_ent, Y_ent, W1, b1, W2, b2),
+                 acierto(X_pru, Y_pru, W1, b1, W2, b2)))
+    if t == pasos:
+        break
+    D2 = Y_hat - Y_ent                        # la vuelta, igual que en la lección anterior
+    D1 = (D2 @ W2) * (1.0 - H1 ** 2)
+    W1 -= eta * (D1.T @ X_ent) / B
+    b1 -= eta * D1.sum(0) / B
+    W2 -= eta * (D2.T @ H1) / B
+    b2 -= eta * D2.sum(0) / B
+
+P_pru = salida(X_pru, W1, b1, W2, b2)[1]
+falla = np.nonzero((P_pru >= 0.5) != (Y_pru == 1.0))[0]
+print("\\nse equivoca en %d de las %d reseñas de prueba:" % (len(falla), len(pru)))
+for i in falla:
+    print("   ŷ = %.3f   y = %d   %s" % (P_pru[i, 0], int(Y_pru[i, 0]), pru[i]["texto"]))
+`} />
+
+En el paso $0$ la red contesta a cara o cruz, $0.550$ y $0.517$, con la pérdida en $0.6906$
+—el $\log 2$ de una red que dice lo mismo a todo—. En el paso $100$ ya lleva $0.989$ sobre las
+reseñas que está viendo y $0.883$ sobre las que no, y en el paso $150$ alcanza el $1.000$ y no
+lo suelta. Lo interesante empieza ahí: entre el paso $150$ y el $600$ la pérdida se divide por
+trece, de $0.0482$ a $0.0037$, y la columna de la derecha no se mueve ni una milésima. Con
+20 000 pasos en lugar de 600 sigue en $0.883$. Las siete reseñas que falla no las falla por poco
+entrenamiento.
+
+Léelas, que es donde está el resultado de la lección. Cuatro de las siete llevan un <W>no</W>:
+<W>no me aburrí ni un minuto</W> recibe $0.016$ y <W>no se hace larga en ningún momento</W>
+recibe $0.000$, y las dos hablan bien de la película. Las otras tres fallan por motivos distintos
+—dos traen tipos que el vocabulario no tiene, <W>convencen</W> y <W>eterna</W>, y la tercera junta
+<W>sobreactuada</W> con <W>de principio a fin</W>, que en el entrenamiento aparece en reseñas
+positivas—. La tercera celda pregunta por las cuatro primeras.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita las dos celdas anteriores: tokeniza, pos, V, salida y los pesos entrenados.
+def vector(texto):
+    x = np.zeros((1, len(V)))
+    for token in tokeniza(texto):
+        if token in pos:
+            x[0, pos[token]] += 1.0
+    return x
+
+
+def probabilidad(texto):
+    return float(salida(vector(texto), W1, b1, W2, b2)[1][0, 0])
+
+
+a = "la película no es aburrida, es divertida"
+b = "la película no es divertida, es aburrida"
+print("¿el mismo vector?", bool(np.array_equal(vector(a), vector(b))))
+print("ŷ = %.4f   %s" % (probabilidad(a), a))
+print("ŷ = %.4f   %s" % (probabilidad(b), b))
+
+# ¿Qué puede saber la red de «no»? Lo que diga su columna, y su columna dice esto.
+n_pos = sum(tokeniza(r["texto"]).count("no") for r in ent if r["etiqueta"] == 1)
+n_neg = sum(tokeniza(r["texto"]).count("no") for r in ent if r["etiqueta"] == 0)
+print("\\n«no»: %d ocurrencias en reseñas positivas, %d en negativas" % (n_pos, n_neg))
+
+# Y una reseña que no comparte ninguna entrada con el vocabulario.
+nueva = "peliculón sublime, cinta imprescindible"
+print("\\n%s\\n   vector nulo: %s   ŷ = %.4f"
+      % (nueva, not vector(nueva).any(), probabilidad(nueva)))
+`} />
+
+Las dos primeras frases tienen las mismas palabras, con las mismas repeticiones, en otro orden, y
+dicen cosas opuestas. Su vector es idéntico —lo dice la primera línea— y su probabilidad también,
+$0.0014$ las dos: la red las llama negativas, y con una de ellas acierta por casualidad. Ninguna
+tasa de acierto puede pasar de ahí, porque el error ya está cometido cuando la red recibe su
+entrada.
+
+La segunda salida explica los cuatro fallos con <W>no</W>. Esa entrada aparece 5 veces en las
+reseñas positivas del entrenamiento y 24 en las negativas, así que su coordenada acaba pesando
+hacia lo negativo, que es lo mejor que puede hacer: la coordenada dice cuántas veces sale
+<W>no</W>, y no sobre qué cae. Y la última línea cierra la concesión de la sección anterior con un
+número: <W>peliculón sublime, cinta imprescindible</W> no comparte ninguna entrada con el
+vocabulario, recibe el vector nulo y con él un $0.4537$ que no depende de lo que diga, sólo de
+los sesgos. Cualquier otra reseña ilegible recibiría ese mismo $0.4537$, y como está por debajo
+de $1/2$, todas serían negativas.
+
+## Comprueba tu intuición
+
+Tres preguntas: de dónde puede salir el vocabulario, sobre qué se cuenta una tasa de OOV y qué
+autoriza a concluir la distancia entre las dos columnas.
+
+<Quiz id="q-vocabulario" />
+
+<Quiz id="q-oov" />
+
+<Quiz id="q-brecha" />
+
+---
+
+El bloque termina con un clasificador que funciona y con el techo de su representación a la vista.
+Las dos frases de la última celda no son un caso rebuscado montado para que falle: son la
+consecuencia de que $\mathbf{x}_d$ sume los one-hot de los tokens, y una suma no recuerda en qué
+orden le llegaron sus sumandos. Todo lo que este bloque ha construido —la neurona, las capas, el
+descenso, la vuelta entera— trabaja después de esa suma, y ninguna cantidad de entrenamiento
+alcanza a recuperar lo que la entrada tiró antes de existir. Por eso las siete reseñas resisten a
+20 000 pasos: no es la red la que se queda corta.
+
+Lo que falta, entonces, es una entrada que llegue en orden y una red capaz de leerla así, token a
+token, arrastrando lo que ya ha visto. Eso es el bloque 3, sobre redes neuronales
+recurrentes, y su lección 1, sobre por qué el MLP falla con secuencias, empieza midiendo el
+tamaño exacto del problema: qué le pasa a un perceptrón multicapa cuando la entrada deja de tener
+una longitud fija y la posición que ocupa cada token pasa a significar algo.

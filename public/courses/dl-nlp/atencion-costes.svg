@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200" width="540" height="300" role="img" aria-label="Las dos puntuaciones llegan a la misma rejilla: la aditiva a través de un bloque tridimensional, la multiplicativa con dos productos de matrices.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    /* Gris: la maquinaria intermedia. Verde: la rejilla, que es lo que las dos producen. */
+    .bloque { stroke: #86948a; stroke-width: 1.2; fill: rgba(134,148,138,0.10); }
+    .cara { stroke: #86948a; stroke-width: 1.2; fill: rgba(134,148,138,0.18); }
+    .celda { stroke: rgba(134,148,138,0.5); stroke-width: 0.7; }
+    .caja { stroke: rgba(134,148,138,0.7); stroke-width: 1.3; fill: rgba(134,148,138,0.10); }
+    .rej { stroke: #4edea3; stroke-width: 1.5; fill: rgba(78,222,163,0.14); }
+    .rejcel { stroke: rgba(78,222,163,0.45); stroke-width: 0.7; }
+    .via { stroke: #4edea3; stroke-width: 1.6; fill: none; }
+    .sep { stroke: rgba(134,148,138,0.28); stroke-width: 1; }
+    .tit { font-size: 12.5px; fill: #bbcabf; text-anchor: middle; }
+    .lab { font-size: 12px; fill: #bbcabf; text-anchor: middle; }
+    .dim { font-size: 11px; fill: #86948a; text-anchor: middle; }
+    .nota { font-size: 11px; fill: #86948a; text-anchor: middle; }
+    .op { font-size: 15px; fill: #86948a; text-anchor: middle; }
+    .sub { font-size: 8.5px; }
+  </style>
+
+  <defs>
+    <marker id="av" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
+  </defs>
+
+  <line class="sep" x1="180" y1="10" x2="180" y2="190" />
+
+  <!-- IZQUIERDA: la aditiva construye un vector de d_a coordenadas por pareja. -->
+  <text class="tit" x="88" y="14">aditiva</text>
+
+  <polygon class="cara" points="46,32 118,32 134,18 62,18" />
+  <polygon class="cara" points="118,32 134,18 134,74 118,88" />
+  <rect class="bloque" x="46" y="32" width="72" height="56" />
+  <line class="celda" x1="64"  y1="32" x2="64"  y2="88" />
+  <line class="celda" x1="82"  y1="32" x2="82"  y2="88" />
+  <line class="celda" x1="100" y1="32" x2="100" y2="88" />
+  <line class="celda" x1="46"  y1="51" x2="118" y2="51" />
+  <line class="celda" x1="46"  y1="70" x2="118" y2="70" />
+  <text class="dim" x="150" y="48">d<tspan class="sub" dy="2">a</tspan></text>
+
+  <text class="nota" x="88" y="104">una suma, un tanh y una lectura</text>
+  <text class="nota" x="88" y="117">en cada casilla</text>
+  <line class="via" x1="88" y1="122" x2="88" y2="134" marker-end="url(#av)" />
+
+  <!-- DERECHA: la multiplicativa va de los estados a la rejilla con dos productos. -->
+  <text class="tit" x="272" y="14">multiplicativa</text>
+
+  <rect class="caja" x="206" y="30" width="30" height="52" />
+  <text class="lab" x="221" y="60">S W<tspan class="sub" dy="2">a</tspan></text>
+  <text class="dim" x="221" y="94">T<tspan class="sub" dy="2">y</tspan><tspan class="sub" dy="-2"> </tspan>&#215; d<tspan class="sub" dy="2">h</tspan></text>
+
+  <text class="op" x="250" y="60">&#215;</text>
+
+  <rect class="caja" x="264" y="44" width="62" height="24" />
+  <text class="lab" x="295" y="60">H&#772;<tspan class="sub" dy="2">&#8203;</tspan>&#8868;</text>
+  <text class="dim" x="295" y="82">d<tspan class="sub" dy="2">h</tspan><tspan class="sub" dy="-2"> </tspan>&#215; T<tspan class="sub" dy="2">x</tspan></text>
+
+  <text class="nota" x="272" y="117">dos productos y nada en medio</text>
+  <line class="via" x1="272" y1="122" x2="272" y2="134" marker-end="url(#av)" />
+
+  <!-- ABAJO: la misma rejilla, dos veces. -->
+  <rect class="rej" x="46" y="136" width="84" height="42" />
+  <line class="rejcel" x1="67"  y1="136" x2="67"  y2="178" />
+  <line class="rejcel" x1="88"  y1="136" x2="88"  y2="178" />
+  <line class="rejcel" x1="109" y1="136" x2="109" y2="178" />
+  <line class="rejcel" x1="46"  y1="150" x2="130" y2="150" />
+  <line class="rejcel" x1="46"  y1="164" x2="130" y2="164" />
+  <text class="dim" x="88" y="192">T<tspan class="sub" dy="2">y</tspan><tspan class="sub" dy="-2"> </tspan>&#215; T<tspan class="sub" dy="2">x</tspan> puntuaciones</text>
+
+  <rect class="rej" x="230" y="136" width="84" height="42" />
+  <line class="rejcel" x1="251" y1="136" x2="251" y2="178" />
+  <line class="rejcel" x1="272" y1="136" x2="272" y2="178" />
+  <line class="rejcel" x1="293" y1="136" x2="293" y2="178" />
+  <line class="rejcel" x1="230" y1="150" x2="314" y2="150" />
+  <line class="rejcel" x1="230" y1="164" x2="314" y2="164" />
+  <text class="dim" x="272" y="192">T<tspan class="sub" dy="2">y</tspan><tspan class="sub" dy="-2"> </tspan>&#215; T<tspan class="sub" dy="2">x</tspan> puntuaciones</text>
+</svg>

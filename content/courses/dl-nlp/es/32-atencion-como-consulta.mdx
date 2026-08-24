@@ -1,0 +1,430 @@
+---
+slug: atencion-como-consulta
+title: "Atención como consulta, clave y valor"
+block: 4
+order: 6
+minutes: 28
+summary: "El mecanismo del bloque está escrito con el vocabulario de una máquina concreta —un encoder que lee, un decoder que escribe, estados con barra y sin ella— y casi nada de eso le hace falta. Aquí se reescribe entero con tres papeles: una consulta, una lista de claves contra las que se compara y una lista de valores que se mezclan. No cambia ni una ecuación, y a cambio salen tres cosas: que la clave y el valor son el mismo vector por costumbre y no por necesidad, que el gradiente le llega a cada papel por una ruta y no por dos, y que la rejilla entera cabe en un producto de tres matrices con los nombres que usa el bloque siguiente."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-quien-es-cada-papel
+    type: single
+    prompt: 'En la atención de las tres lecciones anteriores, ¿qué vector hace cada papel?'
+    options:
+      - { id: a, text: 'La consulta es el estado del decoder $\mathbf{s}_{i-1}$, y la clave y el valor son los dos el mismo vector: el estado del encoder $\bar{\mathbf{h}}_j$, uno por posición de la fuente.' }
+      - { id: b, text: 'La consulta es el contexto $\mathbf{c}_i$, la clave es $\mathbf{s}_{i-1}$ y el valor es $\bar{\mathbf{h}}_j$.' }
+      - { id: c, text: 'La consulta es $\mathbf{s}_{i-1}$, la clave es $\bar{\mathbf{h}}_j$ y el valor es el vector del token que hay en esa posición de la fuente.' }
+      - { id: d, text: 'La consulta es $\mathbf{s}_{i-1}$, la clave es $\mathbf{W}_a$ —lo que se compara contra el estado del decoder— y el valor es $\bar{\mathbf{h}}_j$.' }
+    answer: a
+    explanation: 'La (a). Las tres piezas se leen en las dos ecuaciones del mecanismo: quien entra en $a$ por la izquierda es la consulta, quien entra por la derecha es la clave, y quien aparece en la suma $\sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ es el valor —y en la segunda y la tercera está el mismo vector—. La (b) confunde el resultado con la pregunta: $\mathbf{c}_i$ es lo que la llamada devuelve, y ni siquiera existe todavía cuando hay que puntuar. La (c) es la trampa que hay que ver venir: lo que se mezcla es el estado del encoder, no el vector del token, y la diferencia es todo el bloque 3 —el estado ya ha leído la frase hasta esa posición—. La (d) asciende a papel lo que es un peso: $\mathbf{W}_a$ es parte de la función que compara, no una de las cosas comparadas.'
+    hint: 'Mira las dos ecuaciones del mecanismo y pregúntate quién entra en cada una.'
+  - id: q-forma-de-la-salida
+    type: numeric
+    prompt: 'Una llamada de atención con $T_x = 12$ parejas, consultas y claves de $d_k = 64$ coordenadas y valores de $d_v = 32$. ¿Cuántos números devuelve una consulta?'
+    answer: 32
+    tolerance: 0
+    unit: números
+    explanation: 'Treinta y dos: lo que sale es una mezcla de valores, así que tiene el tamaño de un valor. $d_k$ no aparece en la salida —gobierna la comparación, y ahí muere—, y $T_x$ tampoco: las doce parejas producen doce pesos que suman $1$, y la suma ponderada los consume. Ésa es la propiedad de forma que la lección 3 de este bloque, sobre la idea de atención, necesitaba para que el contexto cupiera en el hueco de siempre, escrita ahora sin mencionar ninguna recurrencia: la entrada crece con las parejas, la salida no.'
+    hint: '¿De qué son mezcla los números que salen?'
+  - id: q-clave-contra-valor
+    type: single
+    prompt: 'Cambias los valores $\mathbf{v}_j$ por otros y dejas las consultas y las claves como estaban. ¿Qué le pasa al mapa de pesos $\mathbf{A}$?'
+    options:
+      - { id: a, text: 'No se mueve. Los valores no entran en la puntuación, así que el reparto es el mismo hasta el último decimal; lo que cambia es la salida, que es la mezcla de esos valores.' }
+      - { id: b, text: 'Cambia entero: los pesos miden cuánto aporta cada posición, y eso se calcula sobre lo que se va a mezclar.' }
+      - { id: c, text: 'Cambia sólo si los nuevos valores tienen otra dimensión, porque entonces el softmax normaliza sobre un eje de otro tamaño.' }
+      - { id: d, text: 'No se mueve el mapa, y la salida tampoco: mientras los pesos sumen $1$, la mezcla devuelve lo mismo.' }
+    answer: a
+    explanation: 'La (a), y es la separación entera en una frase: la clave decide **cuánto**, el valor decide **qué**. Escríbelo con los índices delante —$e_{ij} = a(\mathbf{q}_i, \mathbf{k}_j)$ no menciona $\mathbf{v}_j$ por ninguna parte— y la celda de arriba lo comprueba en una línea. La (b) es lo que uno diría antes de separar los papeles, y es justo lo que deja de ser cierto al separarlos. La (c) se inventa un eje: el softmax recorre las posiciones, y cuántas coordenadas tenga un valor no le incumbe. La (d) acierta en el mapa y falla en lo demás: los pesos son los mismos, pero se están aplicando a otros vectores.'
+    hint: '¿Aparece $\mathbf{v}_j$ en la fórmula de la puntuación?'
+  - id: q-rutas-del-gradiente
+    type: multi
+    prompt: 'Con la clave y el valor desatados —dos vectores distintos en cada posición—, marca lo que es cierto sobre cómo les llega el gradiente de la pérdida.'
+    options:
+      - { id: a, text: 'A $\mathbf{v}_j$ le llega una sola ruta, la de la mezcla, y suma sobre los pasos: $\sum_i \alpha_{ij}\nabla_{\mathbf{c}_i}\ell$.' }
+      - { id: b, text: 'A $\mathbf{k}_j$ le llega una sola ruta, la de la puntuación, y pasa entera por $\partial\ell/\partial e_{ij}$.' }
+      - { id: c, text: 'Si los dos papeles se vuelven a atar en un mismo vector, ese vector recibe la suma de las dos rutas, que es la fórmula de la lección 4 de este bloque, sobre la atención aditiva.' }
+      - { id: d, text: 'Al desatarlos, la derivada respecto de una puntuación deja de comparar nada: sin un vector que haga los dos papeles, la resta que aparecía en ella no se puede escribir.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras. Cada papel aparece en un solo sitio de las ecuaciones, así que la regla de la cadena de la lección 7 del bloque 2, sobre la regla de la cadena, tiene un solo término que sumar para cada uno; atarlos es lo que crea el segundo, porque un vector que aparece dos veces recibe dos veces —la misma cuenta que hace un peso compartido en la recurrencia del bloque anterior—. La (d) es la trampa buena: la resta sigue ahí, sólo que ahora se lee con precisión, $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right)$. Lo que se compara con la mezcla es el **valor** de esa posición; la corrección cae sobre su **clave**. Con los dos papeles atados no había forma de ver cuál de los dos hacía cada cosa.'
+    hint: 'Cuenta en cuántos sitios de las dos ecuaciones aparece cada uno de los dos vectores.'
+  - id: q-donde-fue-wa
+    type: single
+    prompt: '¿Dónde queda la matriz $\mathbf{W}_a$ de la lección anterior cuando la rejilla se escribe como $\mathbf{Q}\mathbf{K}^{\top}$?'
+    options:
+      - { id: a, text: 'Dentro de las consultas. Con $\mathbf{q}_i = \mathbf{W}_a^{\top}\mathbf{s}_{i-1}$ —esto es, $\mathbf{Q} = \mathbf{S}\mathbf{W}_a$— y las claves iguales a los estados del encoder, $\mathbf{Q}\mathbf{K}^{\top}$ es la rejilla de la lección anterior sin cambiar una cifra, y la puntuación se queda en el producto escalar pelado.' }
+      - { id: b, text: 'Se ha perdido por el camino: $\mathbf{Q}\mathbf{K}^{\top}$ no tiene ningún parámetro, así que la forma de tres matrices sólo sirve para la variante sin pesos.' }
+      - { id: c, text: 'Está dentro del softmax, que la aplica a cada fila antes de normalizarla.' }
+      - { id: d, text: 'Está en los valores, $\mathbf{V} = \bar{\mathbf{H}}\mathbf{W}_a$, que es donde caben los parámetros sin estropear el reparto.' }
+    answer: a
+    explanation: 'La (a). Los parámetros no desaparecen, cambian de sitio: dejan de ser parte de la comparación y pasan a ser parte de lo que se compara, que es la razón por la que en esta forma la función $a$ puede ser siempre el producto escalar. La (b) confunde «no tiene parámetros» con «no puede tenerlos»; lo que la fórmula no dice es de dónde salen $\mathbf{Q}$ y $\mathbf{K}$, y ahí es donde se han metido. La (c) le da al softmax un trabajo que no hace: normaliza una fila, no la transforma. La (d) rompe justo la propiedad que esta lección separa —los valores no entran en la puntuación—, así que multiplicarlos por una matriz no cambiaría ni un peso. Y la puntuación aditiva de la lección 4 de este bloque no admite la mudanza: el $\tanh$ está entre las dos proyecciones y la lectura, y una función no lineal de una suma no se deja repartir entre sus sumandos.'
+    hint: 'Escribe la rejilla de la lección anterior y agrupa los dos primeros factores.'
+challenges:
+  - id: ch-atencion-qkv
+    prompt: |
+      Escribe `atencion(Q, K, V)`, la función de esta lección. Recibe las consultas `Q`, de forma
+      $(T_q, d_k)$ —una fila por consulta—, las claves `K`, de forma $(T_k, d_k)$, y los valores
+      `V`, de forma $(T_k, d_v)$: una clave y un valor por posición. Devuelve **la pareja**
+      `(salida, A)`, en ese orden —la salida, de forma $(T_q, d_v)$, y el mapa de pesos
+      $\mathbf{A}$, de forma $(T_q, T_k)$, ya normalizado por filas—.
+
+      La puntuación es el producto escalar de cada consulta con cada clave, sin matriz en medio.
+      Escríbela con productos de matrices, sin recorrer las parejas una a una, y no escribas en
+      los arrays que recibes.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def atencion(Q, K, V):
+          # tu código aquí
+          pass
+    tests:
+      - name: "devuelve las dos formas y cada fila de A suma 1"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          Q, K, V = rng.normal(size=(4, 5)), rng.normal(size=(9, 5)), rng.normal(size=(9, 5))
+          res = atencion(Q, K, V)
+          assert res is not None, 'atencion tiene que devolver (salida, A), no imprimirlas'
+          assert isinstance(res, tuple) and len(res) == 2, 'devuelve la pareja (salida, A), en ese orden'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert A.shape == (4, 9), 'el mapa A tiene una fila por consulta y una columna por posicion'
+          assert Y.shape == (4, 5), 'la salida tiene una fila por consulta y d_v columnas'
+          assert np.allclose(A.sum(axis=1), 1.0), 'el softmax va por filas: cada consulta reparte una unidad entre las posiciones'
+      - name: "coincide con puntuar y mezclar a mano"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          Q, K, V = rng.normal(size=(4, 5)), rng.normal(size=(9, 5)), rng.normal(size=(9, 5))
+          E = np.array([[Q[i] @ K[j] for j in range(9)] for i in range(4)])
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          esperado = Z / Z.sum(axis=1, keepdims=True)
+          res = atencion(Q, K, V)
+          assert res is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert np.allclose(A, esperado), 'el peso (i, j) sale del producto escalar de la consulta i con la clave j'
+          assert np.allclose(Y, esperado @ V), 'la salida de cada consulta es la suma de los valores con esos pesos'
+      - name: "la salida tiene el tamano de un valor"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(15)
+          Q, K, V = rng.normal(size=(6, 3)), rng.normal(size=(11, 3)), rng.normal(size=(11, 8))
+          res = atencion(Q, K, V)
+          assert res is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert A.shape == (6, 11), 'el mapa tiene una fila por consulta y una columna por posicion'
+          assert Y.shape == (6, 8), 'lo que sale es una mezcla de valores: d_v columnas, no d_k'
+          assert np.allclose(A.sum(axis=1), 1.0), 'cada consulta reparte una unidad entre las posiciones'
+      - name: "recupera la rejilla de la leccion anterior"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          S, H = rng.normal(size=(8, 5)) * 0.6, rng.normal(size=(6, 5)) * 0.6
+          Wa = rng.normal(size=(5, 5)) * 0.4
+          E = S @ Wa @ H.T
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          res = atencion(S @ Wa, H, H)
+          assert res is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          A = np.asarray(res[1])
+          assert np.allclose(A, Z / Z.sum(axis=1, keepdims=True)), 'con Q = S Wa y K = H tiene que salir la alineacion multiplicativa'
+      - name: "no desborda con puntuaciones grandes"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          Q, K, V = rng.normal(size=(4, 5)) * 400, rng.normal(size=(9, 5)), rng.normal(size=(9, 5))
+          res = atencion(Q, K, V)
+          assert res is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          assert np.isfinite(np.asarray(res[0])).all(), 'desborda: resta el maximo de cada fila antes de exponenciar'
+          assert np.isfinite(np.asarray(res[1])).all(), 'desborda: resta el maximo de cada fila antes de exponenciar'
+      - name: "no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(21)
+          Q, K, V = rng.normal(size=(4, 5)), rng.normal(size=(9, 5)), rng.normal(size=(9, 5))
+          copias = [Q.copy(), K.copy(), V.copy()]
+          atencion(Q, K, V)
+          assert all(np.array_equal(u, v) for u, v in zip([Q, K, V], copias)), 'no escribas en los arrays que recibes: E -= E.max(...) sobre una vista los estropea'
+    solution: |
+      import numpy as np
+
+
+      def atencion(Q, K, V):
+          E = Q @ K.T                                  # (T_q, T_k): una puntuacion por pareja
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          return A @ V, A
+    explanation: |
+      Tres líneas y ningún bucle. `Q @ K.T` puntúa todas las parejas de una vez —la fila $i$ de
+      `Q` contra la columna $j$ de `K.T`, que es la clave $j$—, el softmax por filas convierte
+      esas puntuaciones en un reparto, y `A @ V` mezcla los valores con él. Las formas se
+      encadenan solas: $(T_q, d_k)$ contra $(d_k, T_k)$ da $(T_q, T_k)$, y eso contra
+      $(T_k, d_v)$ da $(T_q, d_v)$ —el $d_k$ desaparece en la comparación y el $T_k$ en la
+      mezcla—. La resta del máximo es la invariancia al desplazamiento de la lección 5 del
+      bloque 2, sobre funciones de pérdida: cambia lo que se exponencia, no lo que sale.
+---
+
+{/* COURSE-P5-04 — Bloque 4, lección 6. */}
+
+El bloque ha montado un mecanismo completo y dos maneras distintas de rellenar su única casilla
+libre. Lo que no ha mirado en ningún momento es el vocabulario con el que está escrito todo eso:
+cada ecuación de las tres lecciones anteriores habla de un encoder que lee, de un decoder que
+escribe, de estados con barra y de estados sin ella. Ese vocabulario viene de una máquina concreta
+—dos redes recurrentes encadenadas para traducir—, y la pregunta de esta lección es cuánta de esa
+máquina necesita de verdad la atención.
+
+Hazlo a lo bruto: tacha de las ecuaciones todo lo que hable de recurrencia y mira qué queda en
+pie. Queda un vector que pregunta, una lista de vectores contra los que se le compara y una lista
+de vectores que se mezclan; queda un softmax entre las dos listas y una suma ponderada al final.
+Ni una de esas piezas menciona una recurrencia, ni un idioma, ni una traducción. Son tres listas y
+una operación, cada una con su nombre fijado desde hace años —y con la inicial que el bloque
+siguiente pone en todas sus ecuaciones, empezando por la primera línea del artículo que las
+escribe—.
+
+Hay una operación que ya has escrito y que hace casi exactamente esto. En los desafíos de la
+lección 5 y la lección 6 del bloque anterior, sobre la LSTM (*long short-term memory*) y la GRU
+(*gated recurrent unit*), los pesos llegaban en un diccionario `P` y se sacaban con `P["z"]`: das una **consulta** (*query*), Python la compara con
+las **claves** (*keys*) guardadas y te devuelve el **valor** (*value*) de la que coincide. Falla
+una letra y no hay respuesta.
+
+La atención es esa búsqueda con la exigencia de coincidir quitada. La consulta no tiene que ser
+igual a ninguna clave: se compara con todas, cada comparación se convierte en un peso, y lo que
+vuelve no es un valor sino la mezcla de todos ellos, cada uno en la proporción que le tocó. Un
+diccionario devuelve una entrada; la atención devuelve una combinación de todas. En lo que llevas
+de bloque los tres papeles están repartidos así: pregunta el estado del decoder, y cada posición de
+la fuente pone las dos cosas restantes: con qué se la compara y qué vierte en la mezcla.
+
+<Figure
+  src="/courses/dl-nlp/atencion-qkv.svg"
+  alt="Arriba a la izquierda, una caja verde etiquetada q sub i, de la que sale una flecha hacia la derecha que entra en una franja ancha etiquetada a de q sub i y k sub j, y softmax sobre las posiciones. Debajo, en el centro, tres cajas en fila etiquetadas h con barra sub uno, sub dos y sub tres; a su izquierda, la nota k sub j igual a v sub j, un solo vector. De la parte de arriba de cada caja sale una flecha que sube hasta la franja, en un carril etiquetado claves. De la parte de abajo de cada caja sale una flecha que baja hasta una caja verde etiquetada c sub i, en un carril etiquetado valores; las tres flechas tienen grosores distintos y están etiquetadas alfa sub i uno, alfa sub i dos y alfa sub i tres, la del medio la más gruesa. Bajo la caja verde, la nota d sub v números."
+  caption="Cada posición de la fuente pone dos cosas con un mismo vector: la clave con la que se la compara y el valor que se mezcla. Ninguna ecuación del bloque pide que sean el mismo."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+La atención es una búsqueda en un diccionario a la que le han quitado la obligación de acertar la
+clave: la consulta se compara con todas, y lo que vuelve es la mezcla de todos los valores.
+</Callout>
+
+## Tres papeles, tres argumentos
+
+Fijemos los tres papeles como tres objetos, sin decir de dónde salen. Una **consulta**
+$\mathbf{q}_i \in \mathbb{R}^{d_k}$, y $T_x$ parejas de **clave** y **valor**,
+$\mathbf{k}_j \in \mathbb{R}^{d_k}$ y $\mathbf{v}_j \in \mathbb{R}^{d_v}$, una pareja por posición.
+La consulta y las claves miden lo mismo porque van a compararse entre sí; los valores no tienen
+por qué. Con eso, la llamada de atención son tres pasos:
+
+$$
+e_{ij} = a\left(\mathbf{q}_i, \mathbf{k}_j\right),
+\qquad
+\alpha_{ij} = \frac{\exp(e_{ij})}{\sum_{m=1}^{T_x} \exp(e_{im})},
+\qquad
+\mathbf{c}_i = \sum_{j=1}^{T_x} \alpha_{ij}\,\mathbf{v}_j \in \mathbb{R}^{d_v}.
+$$
+
+Es el mecanismo de la lección 3 de este bloque, sobre la idea de atención, con otros nombres: se
+puntúa cada pareja, se normaliza la fila con un softmax sobre las posiciones y se mezclan con esos
+pesos. El índice del denominador cambia de letra —$m$ donde antes iba $k$— porque la $k$ está
+ocupada de aquí en adelante por las claves.
+
+Mira las formas, que es donde la reescritura empieza a pagar. La salida tiene $d_v$ coordenadas:
+el tamaño de un **valor**, no el de la consulta y no el número de parejas. $d_k$ vive entero dentro
+de la comparación y muere ahí, en el número $e_{ij}$; $T_x$ vive en la fila de pesos y muere en la
+suma. De modo que la lista de parejas puede crecer todo lo que quiera y el hueco donde cae el
+resultado no se entera —que es la propiedad de forma de la lección 3, dicha ahora sin nombrar
+ninguna recurrencia—.
+
+Y las tres lecciones anteriores son un caso particular de esto, sin cambiar una ecuación:
+$\mathbf{q}_i = \mathbf{s}_{i-1}$, y $\mathbf{k}_j = \mathbf{v}_j = \bar{\mathbf{h}}_j$, con
+$d_k = d_v = d_h$. La función $a$ es la que se eligiera —la aditiva de Bahdanau o la
+multiplicativa de Luong—, el softmax es el mismo y la suma ponderada es la misma. Lo único que ha
+pasado es que cada pieza tiene ahora un nombre que no menciona quién la produjo.
+
+### La clave y el valor son el mismo vector, y ninguna ecuación lo pide
+
+La igualdad del medio, $\mathbf{k}_j = \mathbf{v}_j$, es lo interesante, porque no la exige nada de
+lo que hay escrito arriba. Repasa
+dónde aparece cada uno: $\mathbf{k}_j$ está dentro de $a$ y en ningún otro sitio, y $\mathbf{v}_j$
+está dentro de la suma y en ningún otro sitio. Son dos trabajos separados —uno decide cuánto pesa
+la posición $j$, el otro es lo que llega al decoder cuando pesa— y en el modelo del bloque los
+hace un mismo vector. Eso obliga a las $d_h$ coordenadas de $\bar{\mathbf{h}}_j$ a servir para las
+dos cosas a la vez: a ser buenas para que las comparen y buenas para que las lean.
+
+La cuenta del gradiente lo enseña mejor que la fórmula. Desatados, cada papel aparece en un solo
+sitio, así que la regla de la cadena de la lección 7 del bloque 2, sobre la regla de la cadena,
+recorre un solo camino para cada uno; lo que suma es sobre los $T_y$ pasos, porque las dos listas
+se usan en todos:
+
+$$
+\nabla_{\mathbf{v}_j}\ell = \sum_{i=1}^{T_y} \alpha_{ij}\,\nabla_{\mathbf{c}_i}\ell,
+\qquad
+\nabla_{\mathbf{k}_j}\ell = \sum_{i=1}^{T_y} \frac{\partial \ell}{\partial e_{ij}}\,\nabla_{\mathbf{k}_j} e_{ij},
+$$
+
+y el paso por el softmax es el de la lección 4 de este bloque, sobre la atención aditiva, sin
+tocar una coma, sólo que ahora dice con precisión qué se compara con qué:
+
+$$
+\frac{\partial \ell}{\partial e_{ij}} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right).
+$$
+
+Quien se compara con la mezcla es el **valor** de esa posición; quien recibe la corrección es su
+**clave**. Con un solo vector haciendo los dos papeles esa frase no se podía ni escribir.
+
+<Details summary="Y al atarlos otra vez sale la fórmula de la lección anterior">
+
+Poner $\mathbf{k}_j = \mathbf{v}_j = \bar{\mathbf{h}}_j$ no es un caso nuevo del gradiente: es un
+peso compartido, como el $\mathbf{W}_{hh}$ que recorre todas las posiciones en la recurrencia del
+bloque anterior o el $\mathbf{W}_a$ que puntúa todas las parejas. Un objeto que aparece en dos
+sitios recibe la suma de lo que le llega por cada uno, de modo que las dos rutas de arriba se
+suman:
+
+$$
+\nabla_{\bar{\mathbf{h}}_j}\ell = \sum_{i=1}^{T_y} \alpha_{ij}\,\nabla_{\mathbf{c}_i}\ell + \sum_{i=1}^{T_y} \frac{\partial \ell}{\partial e_{ij}}\,\nabla_{\bar{\mathbf{h}}_j} e_{ij},
+$$
+
+que es, término a término, la línea de las dos rutas de la lección 4 de este bloque —allí el
+segundo sumando estaba desarrollado para la puntuación aditiva, $\mathbf{W}_{ha}^{\top}\nabla_{\mathbf{p}_{ij}}\ell$,
+que es este mismo con $\nabla_{\bar{\mathbf{h}}_j} e_{ij}$ escrito por dentro—. Lo que en aquella
+lección era una peculiaridad de la arquitectura —«a este estado le llega el gradiente por dos
+caminos»— resulta ser una consecuencia de haber atado dos papeles.
+
+</Details>
+
+## La rejilla entera con tres matrices
+
+Apila los tres papeles por filas, como la lección anterior apilaba los estados:
+$\mathbf{Q} \in \mathbb{R}^{T_y \times d_k}$ con la consulta del paso $i$ en la fila $i$,
+$\mathbf{K} \in \mathbb{R}^{T_x \times d_k}$ y $\mathbf{V} \in \mathbb{R}^{T_x \times d_v}$ con la
+clave y el valor de la posición $j$ en su fila $j$ —transpuestos, porque en este curso los
+vectores son columnas—. Con la puntuación en su forma más barata, el producto escalar, las tres
+operaciones de arriba caben en una línea:
+
+$$
+\text{Attention}\left(\mathbf{Q}, \mathbf{K}, \mathbf{V}\right) = \text{softmax}\left(\mathbf{Q}\mathbf{K}^{\top}\right)\mathbf{V} \in \mathbb{R}^{T_y \times d_v},
+$$
+
+con el softmax por filas, de modo que cada fila de $\mathbf{Q}\mathbf{K}^{\top}$ —una consulta
+contra las $T_x$ claves— sale sumando $1$. El nombre de la función se queda en inglés, como el
+título del artículo que la fija: es así como vas a encontrarla escrita en todas partes.
+
+Y ahora la pregunta que decide el bloque siguiente: ¿dónde ha quedado $\mathbf{W}_a$? La rejilla
+de la lección anterior era $\mathbf{S}\mathbf{W}_a\bar{\mathbf{H}}^{\top}$, así que agrupa los dos
+primeros factores y compara con la línea de arriba. Sale $\mathbf{Q} = \mathbf{S}\mathbf{W}_a$
+—esto es, $\mathbf{q}_i = \mathbf{W}_a^{\top}\mathbf{s}_{i-1}$— y
+$\mathbf{K} = \mathbf{V} = \bar{\mathbf{H}}$. La matriz no ha desaparecido: ha dejado de ser parte
+de la comparación para ser parte de lo que se compara. Y con ella fuera, la función $a$ se queda
+en el producto escalar pelado para siempre; todo lo que un modelo quiera aprender sobre cómo
+comparar tiene que estar ya metido en cómo se fabrican $\mathbf{Q}$ y $\mathbf{K}$, que es un
+asunto del que esta línea no dice nada y del que el bloque siguiente no habla de otra cosa.
+
+La aditiva no se deja mudar de sitio, y es el mismo argumento de la lección 4 de este bloque: entre
+las dos proyecciones y la lectura hay un $\tanh$, y una función no lineal de una suma no se reparte
+entre sus sumandos. Por eso esta forma de tres matrices —la que el bloque siguiente hereda— existe
+gracias a la elección que hizo la lección anterior, y no a pesar de ella.
+
+Queda una deuda, y conviene decirla en voz alta porque la vas a ver escrita. La forma del bloque
+siguiente lleva un factor más:
+
+$$
+\text{Attention}\left(\mathbf{Q}, \mathbf{K}, \mathbf{V}\right) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V}.
+$$
+
+Ese divisor responde a lo que la lección anterior midió sin arreglarlo: con pesos recién
+inicializados el mayor peso de una fila se iba a $0.851$ frente al $0.167$ del reparto uniforme,
+porque un producto escalar sin acotar crece con el tamaño de los vectores que multiplica. En esta
+escritura ese tamaño tiene nombre, $d_k$, y por eso el arreglo cabe en una división. De dónde sale la raíz —y por qué $\sqrt{d_k}$ y no otra cosa— es la lección 3 del bloque
+siguiente, sobre el producto interno escalado; lo que hace falta aquí es saber que el factor está
+ahí y a qué problema contesta.
+
+## Los tres argumentos, en NumPy
+
+La función entera son dos líneas, y lo que la celda comprueba es que no ha cambiado nada al
+cambiarle los nombres. Primero recupera la rejilla de la lección anterior repartiendo los papeles
+—la consulta es el estado del decoder reescrito por $\mathbf{W}_a$, la clave y el valor son el
+mismo estado del encoder— y después los desata: una lectura para comparar de $d_k = 3$ coordenadas
+y otra para mezclar de $d_v = 7$. Mira sobre todo las tres últimas líneas.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T_y, T_x, d_h = 8, 6, 5
+rng = np.random.default_rng(4)
+S = rng.normal(size=(T_y, d_h)) * 0.6      # fila i: el estado s_{i-1} del decoder
+H = rng.normal(size=(T_x, d_h)) * 0.6      # fila j: el estado del encoder en la posicion j
+Wa = rng.normal(size=(d_h, d_h)) * 0.4     # la matriz de la puntuacion multiplicativa
+
+
+def softmax_filas(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+def atencion(Q, K, V):
+    A = softmax_filas(Q @ K.T)              # (T_q, T_k): un peso por pareja, filas que suman 1
+    return A @ V, A                         # (T_q, d_v): una mezcla de valores por consulta
+
+
+# 1. La leccion anterior, con los papeles repartidos: la consulta es el estado del
+#    decoder reescrito por Wa, y la clave y el valor son el mismo estado del encoder.
+Y, A = atencion(S @ Wa, H, H)
+print("misma rejilla que la leccion anterior:", bool(np.allclose(A, softmax_filas(S @ Wa @ H.T))))
+print("cada fila de A suma 1:", bool(np.allclose(A.sum(axis=1), 1.0)))
+print("formas:  Q", (S @ Wa).shape, " K", H.shape, " V", H.shape, " ->  salida", Y.shape)
+print()
+
+# 2. Desatados: dos lecturas distintas del mismo estado, y ya ni miden lo mismo.
+d_k, d_v = 3, 7
+Wq, Wk, Wv = (rng.normal(size=(d_h, d_k)), rng.normal(size=(d_h, d_k)), rng.normal(size=(d_h, d_v)))
+Q, K, V = S @ Wq, H @ Wk, H @ Wv
+Y2, A2 = atencion(Q, K, V)
+print("con d_k =", d_k, "y d_v =", d_v, " ->  A", A2.shape, " salida", Y2.shape,
+      " filas que suman 1:", bool(np.allclose(A2.sum(axis=1), 1.0)))
+
+# 3. Los dos papeles, uno contra otro: quien decide el reparto y quien llega al decoder.
+otra_K, otra_V = rng.normal(size=(T_x, d_k)), rng.normal(size=(T_x, d_v))
+print("cambiar V mueve el mapa: ", bool(not np.allclose(atencion(Q, K, otra_V)[1], A2)))
+print("cambiar K mueve el mapa: ", bool(not np.allclose(atencion(Q, otra_K, V)[1], A2)))
+print("cambiar V mueve la salida:", bool(not np.allclose(atencion(Q, K, otra_V)[0], Y2)))
+`} />
+
+Cambiar los valores enteros no mueve ni un peso del mapa, y cambiar las claves lo mueve todo. Ésa
+es la separación que las tres lecciones anteriores no podían enseñar, porque el vector era uno y
+tocarlo cambiaba las dos cosas a la vez. Fíjate también en las formas del segundo bloque: la
+consulta mide $3$, la salida mide $7$ y el mapa sigue siendo $8 \times 6$, una fila por paso y una
+columna por posición. Cambia `d_v` a $2$ y ejecuta otra vez: la salida encoge y el mapa no se
+inmuta.
+
+## Comprueba tu intuición
+
+Cinco preguntas: quién hace cada papel en lo que ya sabes, qué tamaño tiene lo que sale, qué pasa
+al tocar sólo los valores, por dónde le llega el gradiente a cada papel y dónde ha quedado
+$\mathbf{W}_a$.
+
+<Quiz id="q-quien-es-cada-papel" />
+
+<Quiz id="q-forma-de-la-salida" />
+
+<Quiz id="q-clave-contra-valor" />
+
+<Quiz id="q-rutas-del-gradiente" />
+
+<Quiz id="q-donde-fue-wa" />
+
+<CodeChallenge id="ch-atencion-qkv" />
+
+---
+
+Con los nombres puestos, lo que falta se ve de otra manera. $\mathbf{K}$ y $\mathbf{V}$ existen
+enteras en cuanto el encoder termina de leer: sólo dependen de la fuente, y ninguna de sus filas
+espera a ninguna otra. $\mathbf{Q}$ no. Sus filas se fabrican de una en una, porque cada consulta
+es un estado del decoder y cada estado del decoder pide el contexto del paso anterior. Dos de las tres
+matrices están completas de golpe y la tercera sigue yendo en fila india, que es la cuenta
+pendiente de la lección anterior dicha con el vocabulario de ésta.
+
+Y ahí es donde el curso gira. La primera lección del bloque siguiente, sobre quitar la recurrencia,
+se toma en serio la única pregunta que queda: si lo que estrangula el paralelismo es la
+recurrencia, y la atención ya sabe leer una secuencia entera sin recorrerla paso a paso, ¿qué
+queda si se quita? La respuesta ocupa el resto del curso, y llegas a ella con las tres palabras y
+las tres letras ya puestas —que es lo único que este bloque tenía que dejar hecho—.

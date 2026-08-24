@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 420" width="380" height="420" role="img" aria-label="Arriba, casa, gato y perro sobre una recta con los índices 1, 2 y 3: gato queda a distancia 1 de casa y perro a distancia 2, de modo que gato cae entre las otras dos. Abajo, las mismas tres palabras en un espacio de tres ejes perpendiculares, una sobre cada eje, en los puntos (1,0,0), (0,1,0) y (0,0,1); los tres puntos forman un triángulo equilátero cuyos lados miden raíz de 2.">
+  <style>
+    .ax  { stroke: #86948a; stroke-width: 1.2; fill: none; }
+    .msr { stroke: #86948a; stroke-width: 1.1; fill: none; }
+    .dot { fill: #86948a; }
+    .tri { stroke: #4edea3; stroke-width: 2.2; fill: rgba(78,222,163,0.10); stroke-linejoin: round; }
+    .vtx { fill: #4edea3; }
+    text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+    .ttl { font-size: 13px; fill: #86948a; }
+    .wrd { font-size: 14px; font-style: italic; }
+    .crd { font-size: 12.5px; fill: #86948a; }
+    .num { font-size: 13px; fill: #86948a; }
+    .cap { font-size: 13px; text-anchor: middle; }
+    /* El signo radical va DIBUJADO, no escrito: «√» (U+221A) falta en algunas
+       fuentes de interfaz y ahí la etiqueta se vería como un cuadrado vacío. */
+    .rad path { stroke: #4edea3; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .rad text { font-size: 13px; fill: #4edea3; }
+  </style>
+
+  <!-- ── Panel A · la recta de la lección 1 ───────────────────────────────── -->
+
+  <text class="ttl" x="20" y="24">un índice por palabra · d = 1</text>
+
+  <line class="msr" x1="90" y1="46" x2="290" y2="46" />
+  <line class="msr" x1="90" y1="42" x2="90" y2="50" />
+  <line class="msr" x1="290" y1="42" x2="290" y2="50" />
+  <text class="num" x="190" y="38" text-anchor="middle">2</text>
+
+  <line class="msr" x1="90" y1="68" x2="190" y2="68" />
+  <line class="msr" x1="90" y1="64" x2="90" y2="72" />
+  <line class="msr" x1="190" y1="64" x2="190" y2="72" />
+  <text class="num" x="140" y="60" text-anchor="middle">1</text>
+
+  <line class="ax" x1="30" y1="92" x2="350" y2="92" />
+  <circle class="dot" cx="90" cy="92" r="5.5" />
+  <circle class="dot" cx="190" cy="92" r="5.5" />
+  <circle class="dot" cx="290" cy="92" r="5.5" />
+
+  <text class="wrd" x="90" y="114" text-anchor="middle">casa</text>
+  <text class="wrd" x="190" y="114" text-anchor="middle">gato</text>
+  <text class="wrd" x="290" y="114" text-anchor="middle">perro</text>
+
+  <text class="cap" x="190" y="140">gato queda entre casa y perro</text>
+
+  <!-- ── Panel B · los tres ejes ──────────────────────────────────────────
+       Vista isométrica por la diagonal (1,1,1): los tres ejes se proyectan a
+       120° unos de otros, así que el triángulo sale equilátero EN PANTALLA y
+       no solo en el espacio. Origen (190,315), longitud unidad 80. ──────── -->
+
+  <text class="ttl" x="20" y="176">un eje por palabra · d = |V| = 3</text>
+
+  <line class="ax" x1="190" y1="315" x2="190" y2="209" />
+  <line class="ax" x1="190" y1="315" x2="98.5" y2="368" />
+  <line class="ax" x1="190" y1="315" x2="281.5" y2="368" />
+  <circle class="dot" cx="190" cy="315" r="3" />
+
+  <polygon class="tri" points="190,235 120.7,355 259.3,355" />
+  <circle class="vtx" cx="190" cy="235" r="5.5" />
+  <circle class="vtx" cx="120.7" cy="355" r="5.5" />
+  <circle class="vtx" cx="259.3" cy="355" r="5.5" />
+
+  <text class="wrd" x="206" y="230" text-anchor="start">gato</text>
+  <text class="crd" x="206" y="245" text-anchor="start">(0, 1, 0)</text>
+  <text class="wrd" x="105" y="382" text-anchor="end">casa</text>
+  <text class="crd" x="105" y="397" text-anchor="end">(1, 0, 0)</text>
+  <text class="wrd" x="275" y="382" text-anchor="start">perro</text>
+  <text class="crd" x="275" y="397" text-anchor="start">(0, 0, 1)</text>
+
+  <g class="rad" transform="translate(118,295)">
+    <path d="M 0,-3 L 3.5,1 L 7,-11 L 19,-11" />
+    <text x="9.5" y="0">2</text>
+  </g>
+  <g class="rad" transform="translate(236,295)">
+    <path d="M 0,-3 L 3.5,1 L 7,-11 L 19,-11" />
+    <text x="9.5" y="0">2</text>
+  </g>
+  <g class="rad" transform="translate(176,375)">
+    <path d="M 0,-3 L 3.5,1 L 7,-11 L 19,-11" />
+    <text x="9.5" y="0">2</text>
+  </g>
+
+  <text class="cap" x="190" y="412">ninguna queda entre las otras dos</text>
+</svg>

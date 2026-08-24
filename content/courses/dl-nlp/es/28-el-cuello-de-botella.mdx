@@ -1,0 +1,319 @@
+---
+slug: el-cuello-de-botella
+title: "El cuello de botella del vector de contexto"
+block: 4
+order: 2
+minutes: 27
+summary: "El encoder resume la entrada en un vector de tamaño fijo, y ese tamaño se decide antes de ver ninguna frase. Esta lección separa dos formas de fallar que se confunden con facilidad: contar cuántos mensajes distintos caben en el vector demuestra que la pared existe y no depende del entrenamiento; medir una tarea de juguete con dos anchos de estado y tres presupuestos de entrenamiento muestra que el modelo se rompe muchísimo antes de ese techo, que entrenar más compra acierto en las frases que caben y nada en las que no, y por qué el principio de la entrada es lo primero que se pierde."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-entrenar-mas
+    type: single
+    prompt: 'El modelo estrecho de la tabla, con $d_h = 8$, acierta buena parte de las tiras de tres letras y casi ninguna de las de seis. Lo entrenas diez veces más. ¿Qué esperas ver?'
+    options:
+      - { id: a, text: 'Que sigan subiendo las columnas cortas y que las largas se queden a ras de suelo: entrenar compra acierto en lo que cabe en $\mathbf{c}$, y no cambia cuánto cabe.' }
+      - { id: b, text: 'Que todas las longitudes suban en la misma proporción, porque el descenso de gradiente reparte la mejora entre todos los ejemplos del entrenamiento.' }
+      - { id: c, text: 'Que no cambie nada, porque la pérdida ya está en su mínimo y el gradiente vale cero.' }
+      - { id: d, text: 'Que suban sobre todo las largas, que son las que más términos aportan a la pérdida y por tanto las que más gradiente reciben.' }
+    answer: a
+    explanation: 'La (a), y la tabla de la celda separa las dos mitades: al pasar de 1 000 a 2 000 iteraciones con $d_h = 8$, las columnas cortas siguen subiendo —las tiras de dos letras llegan al pleno— y las de cinco, seis y siete se quedan a ras de suelo. El entrenamiento no se ha agotado; lo que se ha agotado es el sitio. La (b) describe algo que no pasa: las longitudes no son ejemplos intercambiables, y la que no cabe no cabe más por insistir. La (c) es falsa de hecho —la pérdida sigue bajando— y además no haría falta: aunque el mínimo estuviera alcanzado, sería el mínimo de un modelo con ese $\mathbf{c}$. La (d) invierte el argumento del gradiente desvanecido de la lección 4 del bloque anterior: una ruta más larga no entrega más gradiente, entrega menos.'
+    hint: 'Mira las filas de 1 000 y 2 000 iteraciones, columna a columna. ¿Cuáles se mueven y cuáles no?'
+  - id: q-cuenta-tmax
+    type: numeric
+    prompt: 'Un encoder tiene $d_h = 64$ coordenadas y de cada una se distinguen $q = 8$ niveles. Lee frases escritas sobre un vocabulario de $\lvert V_x \rvert = 4096$ entradas. ¿Cuántos tokens mide la frase más larga que la cuenta de esta lección **no** descarta?'
+    answer: 16
+    tolerance: 0
+    unit: tokens
+    explanation: 'Caben $q^{d_h} = 8^{64}$ mensajes distintos y hay $4096^{T_x}$ frases de longitud $T_x$. Como $8^{64} = 2^{192}$ y $4096^{T_x} = 2^{12 T_x}$, la condición $4096^{T_x} \le 8^{64}$ es $12 T_x \le 192$, es decir $T_x \le 16$. En la forma general, $T^{\star} = \lfloor d_h \log q / \log \lvert V_x \rvert \rfloor = \lfloor 64 \cdot 3/12 \rfloor = 16$. Y recuerda qué clase de número es: un techo que no depende del entrenamiento, muy por encima de donde un modelo de verdad se rompe.'
+    hint: 'Escribe los dos recuentos como potencias de $2$ y compara los exponentes.'
+  - id: q-doblar-dh
+    type: boolean
+    prompt: 'Según la cuenta de esta lección, doblar $d_h$ dobla $T^{\star}$ —la longitud máxima que el recuento no descarta—, salvo el redondeo a entero.'
+    answer: true
+    explanation: 'Cierto: $T^{\star} = \lfloor d_h \log q / \log \lvert V_x \rvert \rfloor$ es lineal en $d_h$, así que doblar el ancho del estado dobla el techo. Lo interesante es el precio. La recurrencia guarda $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$, así que doblar $d_h$ multiplica por cuatro esos pesos: la longitud se compra de forma lineal y se paga de forma cuadrática. Y el techo no es la longitud que el modelo maneja —esa se queda mucho más abajo—, de modo que la compra rinde todavía menos de lo que la cuenta promete.'
+    hint: '¿Dónde aparece $d_h$ en la fórmula, y con qué exponente?'
+  - id: q-primer-token
+    type: single
+    prompt: 'En una entrada de $T_x$ tokens, ¿cuál es el que peor sobrevive dentro de $\mathbf{c}$?'
+    options:
+      - { id: a, text: 'El primero: la ruta que va desde cualquier término de la pérdida hasta él es la más larga que hay —$i + T_x - j$ multiplicaciones, máxima en $j = 1$—, y por una ruta larga el gradiente llega desvanecido.' }
+      - { id: b, text: 'El último, porque el encoder llega a él con el estado ya saturado por todo lo que ha leído antes.' }
+      - { id: c, text: 'El del medio, que queda lejos del principio y del final a la vez y no se beneficia de ninguno de los dos.' }
+      - { id: d, text: 'Ninguno en particular: $\mathbf{c}$ resume la entrada entera y no privilegia ninguna posición.' }
+    answer: a
+    explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$ —el argumento de la lección 4 del bloque anterior, sobre el gradiente desvanecido, aplicado a esta ruta concreta—. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora y la que la tabla desmiente: si todas las posiciones se conservaran igual, las tiras largas fallarían por el medio y no por el principio.'
+    hint: 'Cuenta las multiplicaciones que separan la pérdida del token $j$.'
+challenges: []
+---
+
+{/* COURSE-P5-04 — Bloque 4, lección 2. */}
+
+El decoder de la lección anterior, sobre la arquitectura encoder-decoder, no lee nunca la frase de
+entrada: lee un vector. $\mathbf{c}$ tiene $d_h$ coordenadas, ese número se fija al construir la red
+—antes de ver ninguna frase— y es el mismo para cinco tokens que para quinientos. Aquella lección
+dejó eso anotado como lo que es: una apuesta sobre lo que cabe en $d_h$ números, no algo que se
+demuestre.
+
+Una apuesta se puede perder de dos maneras muy distintas, y separarlas es todo el trabajo de hoy. Un
+modelo puede fallar porque está mal ajustado, y entonces entrenarlo más lo arregla. O puede fallar
+porque lo que se le pide no cabe donde se le pide que quepa, y entonces no hay entrenamiento que
+valga: la pared no se mueve. Esta lección hace las dos cosas por separado. Primero cuenta, con lápiz,
+cuántos mensajes distintos caben en $\mathbf{c}$ y cuántas frases distintas hay que meter en él.
+Después mide qué le pasa a un modelo de verdad cuando la entrada se alarga, con dos anchos de estado
+y varios presupuestos de entrenamiento.
+
+Las dos cantidades de la cuenta crecen de formas incompatibles, y el explorable las pone una sobre
+otra. La recta verde no se mueve con la longitud: dice cuántos mensajes distintos puede llegar a
+codificar un vector de $d_h$ coordenadas, y ese número no sabe nada de la frase que está resumiendo.
+La ámbar sube un escalón entero por cada token que añades a la entrada. Ensancha el estado todo lo
+que quieras y busca después el punto donde se cruzan.
+
+<Explorable
+  id="context-bottleneck"
+  caption="Ensancha el estado cuanto quieras: la recta verde sube, pero sigue siendo horizontal. La ambar tiene pendiente, y una recta con pendiente termina cruzando a cualquier horizontal."
+/>
+
+## Cuántos mensajes caben y cuántas frases hay
+
+El estado del encoder sale de un $\tanh$, así que cada coordenada de $\mathbf{c}$ vive en el
+intervalo $(-1, 1)$. Sobre el papel eso es un continuo y cabe en él cualquier cosa; en un modelo que
+se entrena con gradientes y se lee con otra red, no. Llamemos $q$ al número de niveles que de una
+coordenada se distinguen de verdad —dos valores más próximos que eso llegan al decoder como el mismo
+número—. El valor de $q$ me lo doy yo: ocho niveles, dieciséis, treinta y dos, según lo optimista que
+uno quiera ser. Lo que viene ahora no depende de cuál elijas.
+
+Con esa convención, el encoder tiene un número finito de mensajes distintos que enviar, y las frases
+que tiene que distinguir son todas las de longitud $T_x$ sobre el vocabulario de entrada:
+
+$$
+\lvert\{\text{códigos}\}\rvert \le q^{d_h},
+\qquad
+\lvert\{\text{fuentes de longitud } T_x\}\rvert = \lvert V_x \rvert^{T_x}.
+$$
+
+Fíjate en dónde está cada letra. En el primer recuento, $T_x$ *no aparece*: el vector de contexto
+es igual de grande para una frase corta que para una larga, que es exactamente la decisión de diseño
+de la lección anterior. En el segundo, $T_x$ está en el exponente.
+
+Ahora el paso que convierte esa asimetría en una imposibilidad. Una vez fijado $\mathbf{c}$, todo lo
+que el decoder escribe está determinado: arranca en $\mathbf{s}_0 = \mathbf{c}$, toma en cada paso la
+coordenada mayor y se realimenta con lo que acaba de escribir. La salida completa es, por tanto, una
+*función* de $\mathbf{c}$, y una función no puede dar dos respuestas distintas al mismo argumento. Si
+hay menos códigos que frases, dos frases distintas comparten código y el decoder devuelve la misma
+salida para las dos, de modo que al menos una de ellas la reconstruye mal. Contando las que puede
+acertar:
+
+$$
+\frac{\lvert\{\text{fuentes reconstruidas exactamente}\}\rvert}{\lvert V_x \rvert^{T_x}}
+\le \min\left(1,\, \frac{q^{d_h}}{\lvert V_x \rvert^{T_x}}\right).
+$$
+
+El techo vale $1$ —no dice nada— mientras las frases quepan, y a partir de ahí se divide entre
+$\lvert V_x \rvert$ con cada token nuevo. El punto donde cambia se despeja tomando logaritmos en
+$\lvert V_x \rvert^{T_x} \le q^{d_h}$:
+
+$$
+T^{\star} = \left\lfloor \frac{d_h \log q}{\log \lvert V_x \rvert} \right\rfloor.
+$$
+
+Pon números de los que se usan de verdad. Un estado de $d_h = 256$ coordenadas, ocho niveles por
+coordenada y un vocabulario de subpalabras de $\lvert V_x \rvert = 32\,768$ entradas dan
+$T^{\star} = 51$ tokens; diez tokens más allá, el techo de arriba ha caído a $10^{-44}$. Y hay una
+palabra que no aparece en ninguna de las tres fórmulas: entrenamiento. Ni el número de
+iteraciones, ni la tasa de aprendizaje, ni los datos entran en el argumento, porque lo que se ha
+contado es cuántas respuestas distintas puede llegar a dar un mecanismo, no cómo de bien las elige.
+
+<Callout type="warning" title="Lo que se compra al ensanchar el estado">
+$T^{\star}$ es lineal en $d_h$: doblar el ancho del estado dobla la longitud máxima. La recurrencia,
+en cambio, guarda $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$, así que doblar $d_h$ multiplica
+por cuatro esos pesos. La longitud se compra de forma lineal y se paga de forma cuadrática.
+</Callout>
+
+## Un techo muy por encima de donde se rompe
+
+Ese recuento demuestra que la pared existe. No dice dónde está, y conviene ser explícito con la
+diferencia, porque el mejor modelo de la celda siguiente tiene $d_h = 32$, $q = 8$ niveles y
+$\lvert V_x \rvert = 4$ —cuatro letras—, lo que le da un techo de $T^{\star} = 48$ tokens. En tiras
+de cinco letras acertará una de cada tres.
+
+La distancia entre esas dos cifras tiene una explicación, y es material del bloque anterior mirado
+desde un sitio nuevo. El gradiente que enseña al encoder a conservar el token $j$ de la entrada sale del
+término de la pérdida en la posición $i$ de la salida, retrocede por los pasos del decoder hasta
+$\mathbf{s}_0 = \mathbf{c}$, y desde ahí sigue por los del encoder hasta la posición $j$. No hay otra
+ruta —$\mathbf{c}$ es el único punto de contacto entre las dos redes—, y su longitud es
+
+$$
+i + (T_x - j) \quad \text{multiplicaciones},
+$$
+
+máxima cuando $j = 1$, es decir para el primer token de la entrada. La lección 4 del bloque anterior,
+sobre el gradiente desvanecido, dice qué le ocurre a una señal que atraviesa esa ruta: cada paso la
+multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$, y con un radio espectral menor
+que uno la magnitud cae de forma exponencial con la distancia. Al primer token de la frase le llega
+la señal más débil de todas.
+
+De modo que el encoder no reparte $\mathbf{c}$ entre las posiciones como lo haría un código óptimo:
+lo llena sobre todo con lo último que ha leído, porque es lo único que consigue aprender a conservar.
+Los $48$ tokens de la cuenta suponen un codificador perfecto; el puñado de letras del experimento es
+lo que se consigue entrenando una recurrencia con descenso de gradiente. Las dos cosas son ciertas y
+dicen cosas distintas: contar demuestra que la pared existe; entrenar enseña dónde está.
+
+## Dos anchos de estado y tres presupuestos de entrenamiento
+
+La tarea es la de la lección 8 del bloque anterior, sobre modelos de secuencia a secuencia: leer una
+tira de letras y escribirla al revés. Es deliberadamente pobre —no hay gramática, ni significado, ni
+nada que generalizar— y esa pobreza es la que hace limpio el experimento: para invertir una tira no
+hace falta más que recordarla, así que todo lo que falle es memoria.
+
+La primera celda monta un modelo del ancho que le pidas y define su ida y vuelta, línea por línea las
+de la lección anterior. Lo único que hace falta mirar es que $\mathbf{c}$ sigue siendo el único
+enlace entre las dos redes: una sola variable, marcada en el código.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# La tarea de la leccion 8 del bloque anterior: leer una tira de letras y escribirla al reves.
+V = list("abcd")                                       # cuatro letras: |V_x| = 4
+n_sim, GO = 4, 4                                       # GO solo entra al decoder, nunca se predice
+L_MIN, L_MAX = 2, 7
+eta, theta = 0.10, 5.0
+
+
+def monta(d_h):                                        # misma semilla: los modelos parten igual
+    r = np.random.default_rng(1); sc = 0.1
+    return [r.normal(size=(d_h, 5)) * sc, r.normal(size=(d_h, d_h)) * sc, np.zeros(d_h),
+            r.normal(size=(d_h, 5)) * sc, r.normal(size=(d_h, d_h)) * sc, np.zeros(d_h),
+            r.normal(size=(n_sim, d_h)) * sc, np.zeros(n_sim)]
+
+
+def paso(pesos, x, y):                                 # ida y vuelta, las de la leccion anterior
+    Wxh_e, Whh_e, bh_e, Wxh_d, Whh_d, bh_d, Why, by = pesos
+    d_h = len(bh_e); L = len(x)
+    He = np.zeros((d_h, L)); h = np.zeros(d_h)
+    for j in range(L):
+        h = np.tanh(Wxh_e[:, x[j]] + Whh_e @ h + bh_e); He[:, j] = h
+    c = h                                              # el cuello: por aqui pasa todo
+    ent = np.concatenate(([GO], y[:-1]))               # teacher forcing
+    S = np.zeros((d_h, L)); P = np.zeros((n_sim, L)); s = c.copy()
+    for i in range(L):
+        s = np.tanh(Wxh_d[:, ent[i]] + Whh_d @ s + bh_d); S[:, i] = s
+        o = Why @ s + by; o -= o.max(); p = np.exp(o); P[:, i] = p / p.sum()
+    gWxh_e = np.zeros_like(Wxh_e); gWhh_e = np.zeros_like(Whh_e); gbh_e = np.zeros_like(bh_e)
+    gWxh_d = np.zeros_like(Wxh_d); gWhh_d = np.zeros_like(Whh_d); gbh_d = np.zeros_like(bh_d)
+    gWhy = np.zeros_like(Why); gby = np.zeros_like(by); ds = np.zeros(d_h)
+    for i in reversed(range(L)):                       # --- vuelta del decoder ---
+        dO = P[:, i].copy(); dO[y[i]] -= 1.0
+        gWhy += np.outer(dO, S[:, i]); gby += dO
+        dp = (1 - S[:, i] ** 2) * (Why.T @ dO + ds)
+        gWhh_d += np.outer(dp, S[:, i - 1] if i > 0 else c); gWxh_d[:, ent[i]] += dp; gbh_d += dp
+        ds = Whh_d.T @ dp
+    dh = ds                                            # unico enlace entre las dos redes
+    for j in reversed(range(L)):                       # --- vuelta del encoder ---
+        dp = (1 - He[:, j] ** 2) * dh
+        gWhh_e += np.outer(dp, He[:, j - 1] if j > 0 else np.zeros(d_h))
+        gWxh_e[:, x[j]] += dp; gbh_e += dp
+        dh = Whh_e.T @ dp
+    return [g / L for g in (gWxh_e, gWhh_e, gbh_e, gWxh_d, gWhh_d, gbh_d, gWhy, gby)]
+`} />
+
+La segunda entrena y mide: por cada longitud, el porcentaje de tiras que salen *exactas* —ciento
+veinte tiras nuevas por casilla, generadas sin *teacher forcing*—. Salen cuatro filas. Las tres
+primeras son el mismo estado estrecho, $d_h = 8$, en tres momentos de su entrenamiento; la cuarta
+tiene el estado cuatro veces más ancho y entrena la mitad que la tercera. Las tiras de prueba son las
+mismas en las cuatro filas y las redes parten de la misma semilla, de modo que la única diferencia
+entre filas es lo que dice su etiqueta.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita la celda anterior: monta, paso, n_sim, GO, L_MIN, L_MAX, eta, theta.
+def escribe(pesos, x):                                 # generacion voraz, sin teacher forcing
+    Wxh_e, Whh_e, bh_e, Wxh_d, Whh_d, bh_d, Why, by = pesos
+    h = np.zeros(len(bh_e))
+    for j in range(len(x)):
+        h = np.tanh(Wxh_e[:, x[j]] + Whh_e @ h + bh_e)
+    s = h; ix = GO; out = []
+    for _ in range(len(x)):
+        s = np.tanh(Wxh_d[:, ix] + Whh_d @ s + bh_d)
+        ix = int((Why @ s + by).argmax()); out.append(ix)
+    return out
+
+
+def acierto(pesos):                                    # % de tiras EXACTAS, por longitud
+    ac = np.random.default_rng(123)                    # mismas tiras de prueba en todas las filas
+    fila = []
+    for L in range(L_MIN, L_MAX + 1):
+        bien = 0
+        for _ in range(120):
+            x = ac.integers(0, n_sim, size=L)
+            bien += int(escribe(pesos, x) == list(x[::-1]))
+        fila.append(100 * bien / 120)
+    return fila
+
+
+print("  modelo               " + "".join("L=%d   " % L for L in range(L_MIN, L_MAX + 1)))
+for d_h, cortes in [(8, (250, 1000, 2000)), (32, (1000,))]:
+    pesos = monta(d_h); rng = np.random.default_rng(2)
+    for it in range(max(cortes)):
+        L = int(rng.integers(L_MIN, L_MAX + 1))
+        x = rng.integers(0, n_sim, size=L); y = x[::-1].copy()
+        grads = paso(pesos, x, y)
+        for g in grads:
+            nrm = np.linalg.norm(g)
+            if nrm > theta: g *= theta / nrm           # recorte del gradiente, bloque anterior
+        for Pm, g in zip(pesos, grads):
+            Pm -= eta * g
+        if it + 1 in cortes:
+            print("  d_h=%2d, %4d iter    " % (d_h, it + 1)
+                  + "".join("%3.0f%%   " % v for v in acierto(pesos)))
+`} />
+
+Lee la tabla por parejas de filas. De la primera a la segunda, el entrenamiento hace exactamente lo
+que se espera de él: en 750 iteraciones más, las tiras de dos y tres letras pasan de no salir nunca a
+salir la mayoría de las veces. De la segunda a la tercera, al doblar el presupuesto, ese progreso
+continúa —y sólo en las columnas cortas—: las tiras de dos letras llegan al pleno y las de tres y
+cuatro suben otro tramo, mientras que las de cinco, seis y siete se quedan a ras de suelo, donde ya
+estaban. Ahí está el hallazgo, y conviene decirlo despacio: entrenar compra acierto en lo que cabe, y
+no compra nada en lo que no cabe.
+
+Y ahora la cuarta fila, que entrena la mitad que la tercera con un estado cuatro veces más ancho:
+sube todo lo que tenía margen para subir, y las tres columnas largas pasan de anecdóticas a reales
+—una de cada tres tiras de cinco letras, contra una de cada doce—. Esa es la respuesta a la pregunta
+del principio, medida y no intuida. El ancho de $\mathbf{c}$ y el presupuesto de entrenamiento no
+compran lo mismo: el segundo afina el uso del vector hasta donde el vector llega, y sólo el primero
+mueve la pared.
+
+Lo más revelador, sin embargo, es *cómo* se equivoca, que es la sección anterior vista desde el lado
+de la salida. La lección 8 del bloque anterior ya lo dejaba ver en esta misma tarea: en una tira
+larga, el principio de lo que el decoder escribe —que es el final de lo que el encoder leyó, lo más
+reciente en $\mathbf{c}$— suele estar bien, y lo que se desordena es el final, que le pediría recordar
+el primer token de la entrada. El token peor conservado es el que está al final de la ruta más larga.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: qué arregla entrenar más, cuánto mide el techo del recuento, qué se compra al
+ensanchar el estado, y qué token de la entrada es el que peor sobrevive.
+
+<Quiz id="q-entrenar-mas" />
+
+<Quiz id="q-cuenta-tmax" />
+
+<Quiz id="q-doblar-dh" />
+
+<Quiz id="q-primer-token" />
+
+---
+
+Las dos mitades de la lección apuntan al mismo sitio, y no es al tamaño de $d_h$. El recuento compara
+los mensajes que caben con las frases que hay porque hemos aceptado que haya *un solo* mensaje; la
+ruta se hace larga porque toda la información pasa por *un solo* punto. Ensanchar $\mathbf{c}$ mueve
+el techo unos tokens y deja las dos frases anteriores intactas. Lo que hay debajo no es un vector
+pequeño: es la idea de resumir.
+
+Y hay algo que llama la atención en cuanto se dice así. El encoder calculó $\bar{\mathbf{h}}_1,
+\dots, \bar{\mathbf{h}}_{T_x}$, un estado por token de la entrada, y la arquitectura tira todos menos
+el último. Los otros existieron, se calcularon y se descartaron. Recuperarlos —dejar que el decoder
+mire hacia atrás, a la entrada entera, en lugar de conformarse con el resumen— es la lección
+siguiente, sobre la idea de atención. Ponerle fórmulas a esa mirada ocupa el resto del bloque.

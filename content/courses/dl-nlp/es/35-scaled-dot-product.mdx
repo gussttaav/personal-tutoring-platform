@@ -1,0 +1,428 @@
+---
+slug: scaled-dot-product
+title: "La raíz que faltaba en la atención"
+block: 5
+order: 3
+minutes: 28
+summary: "De la fórmula de la atención queda un solo símbolo sin justificar, y no se justifica midiendo: se cuenta. Una puntuación es una suma de d_k términos, y lo que crece al añadir sumandos no es su tamaño sino cuánto se aleja del cero la suma, que va con la raíz de d_k. Lo que ese tamaño le hace al softmax es lo que el curso ya vio dos veces con otra ropa: la fila se cierra sobre una posición, las dos derivadas del softmax se apagan a la vez y las dos únicas matrices que hay antes de las puntuaciones dejan de recibir gradiente. Dividir entre la raíz devuelve las puntuaciones a una escala que no menciona la anchura del modelo, y con ellas el reparto y el gradiente."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-tamano-tipico
+    type: numeric
+    prompt: 'Las consultas y las claves de una capa tienen $d_k = 64$ coordenadas, centradas e independientes, de tamaño típico $1$. Sin dividir, ¿cuánto mide típicamente una puntuación $\mathbf{q}^{\top}\mathbf{k}$?'
+    answer: 8
+    tolerance: 0
+    explanation: 'Ocho. El promedio del cuadrado es $\mathbb{E}\left[e^{2}\right] = d_k = 64$, y lo que mide el alejamiento típico del cero es su raíz, $\sqrt{64} = 8$. Los dos errores de bulto están en los dos extremos de esa línea: $64$ es el promedio del *cuadrado*, no un tamaño —tiene las unidades equivocadas—, y $1$ es lo que mide cada uno de los $64$ sumandos por separado. Lo que la cuenta dice es precisamente que sumar $64$ términos de tamaño $1$ que no se cancelan del todo deja un número ocho veces mayor que cada uno.'
+    hint: '¿Qué vale $\mathbb{E}\left[e^{2}\right]$, y qué relación tiene con el tamaño de $e$?'
+  - id: q-por-que-la-raiz
+    type: single
+    prompt: '¿Por qué el divisor es $\sqrt{d_k}$ y no $d_k$?'
+    options:
+      - { id: a, text: 'Porque lo que vale $d_k$ es el promedio del cuadrado, así que el tamaño de una puntuación es su raíz. Dividir entre $d_k$ dejaría las puntuaciones en $1/\sqrt{d_k}$, cada vez más cerca del cero cuanto más ancho el modelo, y todas las filas se irían al reparto uniforme.' }
+      - { id: b, text: 'Porque hay que dividir entre la longitud de los dos vectores para que la puntuación sea un coseno, y un vector de $d_k$ coordenadas de tamaño $1$ mide $\sqrt{d_k}$.' }
+      - { id: c, text: 'Porque el softmax no se entera de que se le sume una constante a toda la fila, pero sí de que se le multiplique, y $\sqrt{d_k}$ es el factor que deja la fila plana.' }
+      - { id: d, text: 'Porque el artículo probó varios divisores sobre la tarea de traducción y $\sqrt{d_k}$ fue el que mejor entrenó.' }
+    answer: a
+    explanation: 'La (a), y lo que la sostiene es que el fallo tiene dos lados. Puntuaciones demasiado grandes cierran la fila sobre una posición; demasiado pequeñas la aplanan hasta $1/T$, y una fila plana tampoco elige nada. La raíz es el único exponente que no cae en ninguno de los dos. La (b) confunde dos divisores: normalizar a coseno pediría $\lVert\mathbf{q}\rVert\lVert\mathbf{k}\rVert$, que con estas hipótesis vale $d_k$ y no su raíz —y es justo el caso que la (a) descarta—. La (c) usa dos hechos ciertos para concluir uno falso: dividir no aplana la fila, la reparte; lo que hace plana a una fila es que sus puntuaciones se acerquen entre sí. La (d) es la lectura que esta lección existe para desmontar: el divisor sale de una cuenta, y la cuenta se hace en media página.'
+    hint: 'Escribe qué tamaño típico tendría la puntuación con cada uno de los dos divisores.'
+  - id: q-fila-saturada
+    type: multi
+    prompt: 'Una fila del mapa se ha ido casi entera a una posición: $\alpha_{i1} \approx 1$ y las demás $\approx 0$. Marca lo que es cierto.'
+    options:
+      - { id: a, text: 'Las dos derivadas del softmax, $\alpha_{ij}\left(1 - \alpha_{ij}\right)$ y $-\alpha_{ij}\alpha_{im}$, valen casi cero en todas las casillas de esa fila.' }
+      - { id: b, text: 'Por esa fila no le llega gradiente ni a $\mathbf{W}^Q$ ni a $\mathbf{W}^K$, que son lo único que hay antes de las puntuaciones.' }
+      - { id: c, text: 'La capa sigue calculando una salida perfectamente definida; lo que ha dejado de poder es cambiar a quién mira esa posición.' }
+      - { id: d, text: 'Se arregla subiendo la tasa de aprendizaje, que compensa lo pequeño que ha quedado el gradiente.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras. La (a) sale de mirar los dos casos con $\alpha_{i1} \approx 1$: el de la diagonal es $1 \cdot 0$, y el cruzado siempre tiene un factor casi nulo. La (b) es lo que eso cuesta —las puntuaciones salen de $\mathbf{Q}\mathbf{K}^{\top}$ y de nada más, así que si el gradiente no atraviesa el softmax, las dos matrices que fabrican las consultas y las claves se quedan sin corrección—. La (c) es la distinción que conviene guardar: no hay ningún error de cálculo, hay un aprendizaje detenido. La (d) es falsa y peligrosa: multiplicar por $\eta$ un gradiente que vale $10^{-8}$ da un paso de $10^{-8}$ veces $\eta$, y subir $\eta$ lo bastante para compensarlo desbarata todas las demás filas, que no están saturadas.'
+    hint: 'Con $\alpha_{i1} \approx 1$, evalúa las dos derivadas casilla a casilla.'
+  - id: q-sin-logaritmo
+    type: single
+    prompt: 'El bloque 2 también puso un softmax en la red y nunca habló de que saturase. ¿Por qué no le pasaba esto?'
+    options:
+      - { id: a, text: 'Porque allí el softmax iba seguido de la entropía cruzada, y el $-\log$ aporta el factor inverso exacto: las dos juntas dan $\hat{\mathbf{y}} - \mathbf{y}$, que no se apaga por muy segura que esté la red. Detrás de este softmax sólo hay una multiplicación por $\mathbf{V}$.' }
+      - { id: b, text: 'Porque allí el softmax repartía entre tres clases y aquí reparte entre $T$ posiciones, y una fila con pocas casillas no llega a cerrarse sobre una sola.' }
+      - { id: c, text: 'Porque las preactivaciones de una capa de salida son productos de una matriz por un vector, no productos escalares, así que no crecen con la anchura.' }
+      - { id: d, text: 'Porque el softmax del bloque 2 era la última operación de la red, y la última operación de una red no recibe gradiente de nada que esté por encima.' }
+    answer: a
+    explanation: 'La (a). La jacobiana del softmax es la misma en los dos sitios; lo que cambia es con qué se compone. En el bloque 2 se cancela contra la derivada del logaritmo y sale $\hat{y}_c - 1$ en la clase correcta, que vale $-1$ cuando la red se equivoca del todo y sigue sin anularse cuando acierta; aquí no hay logaritmo que la cancele y la jacobiana se queda entera, con su cero incluido. La (b) apunta a algo real —cuantas más casillas, más fácil es que una se lleve todo— pero no es la razón, y el bloque 2 predecía sobre vocabularios de decenas de miles. La (c) inventa una diferencia: la coordenada $j$ de $\mathbf{W}\mathbf{x}$ *es* un producto escalar, fila por vector. La (d) confunde el sitio con la dirección: la pérdida está justo encima de esa capa y es de donde arranca toda la cadena.'
+    hint: '¿Qué operación viene inmediatamente después del softmax en cada uno de los dos casos?'
+  - id: q-orden-de-la-fila
+    type: boolean
+    prompt: 'Dividir las puntuaciones de una fila entre $\sqrt{d_k}$ puede cambiar cuál de las posiciones se lleva el peso mayor.'
+    answer: false
+    explanation: 'Falso. $\sqrt{d_k}$ es positivo y es el mismo número en toda la rejilla, así que dividir conserva el orden de las puntuaciones dentro de la fila, y el softmax es creciente: la posición que ganaba sigue ganando. Lo que cambia es por cuánto —las distancias entre las puntuaciones se encogen con el mismo factor, y con ellas lo cerrada que queda la fila—. Guarda de paso la otra cosa que no cambia: el divisor es una constante, no un peso, así que la cuenta de parámetros de la lección anterior, $d_{\text{model}}\left(2d_k + d_v\right)$, se queda exactamente igual.'
+    hint: '¿Qué le hace a un orden dividir todos sus números entre el mismo número positivo?'
+challenges:
+  - id: ch-gradiente-softmax
+    prompt: |
+      Escribe `gradiente_puntuaciones(A, G)`, la vuelta del softmax por filas. Recibe el mapa de
+      pesos ya normalizado, `A` de forma $(T, T)$ con cada fila sumando $1$, y el gradiente que
+      baja desde arriba, `G` de la misma forma, con $g_{ij} = \partial\ell/\partial\alpha_{ij}$.
+      Devuelve $\partial\ell/\partial e$, de forma $(T, T)$.
+
+      Los dos casos de la derivada están desarrollados arriba; encadenados dan, casilla a casilla,
+      $\dfrac{\partial\ell}{\partial e_{ij}} = \alpha_{ij}\left(g_{ij} - \sum_{m} g_{im}\alpha_{im}\right)$,
+      donde $m$ recorre la fila $i$.
+
+      Escríbelo con operaciones sobre arrays —sin recorrer las casillas una a una y sin construir
+      ninguna jacobiana— y no escribas en los arrays que recibes.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def gradiente_puntuaciones(A, G):
+          # tu código aquí
+          pass
+    tests:
+      - name: "la forma, y cada fila sumando cero"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          E = rng.normal(size=(5, 5))
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          G = rng.normal(size=(5, 5))
+          res = gradiente_puntuaciones(A, G)
+          assert res is not None, 'gradiente_puntuaciones tiene que devolver el array, no imprimirlo'
+          D = np.asarray(res)
+          assert D.shape == (5, 5), 'una derivada por puntuacion: la misma forma que A'
+          assert np.abs(D.sum(axis=1)).max() < 1e-9, 'cada fila suma cero: la fila de pesos vale 1 pasa lo que pase, asi que mover las puntuaciones solo reparte peso entre posiciones'
+      - name: "coincide con la jacobiana construida a mano"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          E = rng.normal(size=(5, 5))
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          G = rng.normal(size=(5, 5))
+          esperado = np.stack([(np.diag(A[i]) - np.outer(A[i], A[i])) @ G[i] for i in range(5)])
+          D = np.asarray(gradiente_puntuaciones(A, G))
+          assert np.allclose(D, esperado), 'la correccion que se resta es la misma para toda la fila: sum_m g_im * a_im, un numero por fila'
+      - name: "una fila saturada no devuelve gradiente"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          E = rng.normal(size=(5, 5))
+          G = rng.normal(size=(5, 5))
+          Zs = np.exp(E * 200 - (E * 200).max(axis=1, keepdims=True))
+          As = Zs / Zs.sum(axis=1, keepdims=True)
+          Dsat = np.asarray(gradiente_puntuaciones(As, G))
+          Dplana = np.asarray(gradiente_puntuaciones(np.full((5, 5), 0.2), G))
+          assert np.abs(Dsat).max() < 1e-6, 'una fila saturada no devuelve gradiente: ese es el precio de no dividir'
+          assert np.abs(Dplana).max() > 0.05, 'una fila repartida si lo devuelve: el factor a_ij no vale cero en ninguna casilla'
+      - name: "no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(19)
+          A = np.full((4, 4), 0.25)
+          G = rng.normal(size=(4, 4))
+          copias = [A.copy(), G.copy()]
+          gradiente_puntuaciones(A, G)
+          assert all(np.array_equal(u, v) for u, v in zip([A, G], copias)), 'no escribas en los arrays que recibes: G -= ... sobre una vista los estropea'
+    solution: |
+      import numpy as np
+
+
+      def gradiente_puntuaciones(A, G):
+          corr = (G * A).sum(axis=1, keepdims=True)   # (T, 1): un numero por fila
+          return A * (G - corr)
+    explanation: |
+      Dos líneas, y las dos salen de los dos casos de la derivada. El caso cruzado,
+      $-\alpha_{ij}\alpha_{im}$, aporta a cada casilla de la fila el mismo término
+      $-\alpha_{ij}\sum_m g_{im}\alpha_{im}$, y por eso `corr` es *un número por fila* y no una
+      matriz: es lo que se le resta a $g_{ij}$ antes de multiplicar por el peso. El caso de la
+      diagonal es lo que queda, $\alpha_{ij}g_{ij}$.
+
+      De ahí salen las dos propiedades que comprueban los tests. Cada fila suma cero porque
+      $\sum_j \alpha_{ij}\left(g_{ij} - \text{corr}_i\right) = \text{corr}_i - \text{corr}_i \cdot 1$,
+      usando que la fila de pesos suma $1$; dicho de otra forma, mover las puntuaciones no puede
+      añadir peso a la fila, sólo pasarlo de una posición a otra. Y el factor $\alpha_{ij}$ de
+      delante es el que apaga la fila saturada: con un peso en $1$ y el resto en $0$, todas las
+      casillas se anulan a la vez, incluida la del máximo, donde $g_{ij} - \text{corr}_i$ tiende a
+      cero porque la corrección se ha convertido en $g_{ij}$ mismo.
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 3. */}
+
+La auto-atención quedó montada del todo salvo por un símbolo. Las tres proyecciones tienen su
+argumento, la rejilla cuadrada tiene su forma y el *softmax* por filas reparte una unidad entre las
+posiciones; el $\sqrt{d_k}$ del denominador entró en la fórmula sin nada detrás y así sigue. Es el
+único préstamo que sigue abierto, y esta lección lo salda.
+
+La pregunta tiene más filo del que parece. ¿Por qué una raíz, y no el propio $d_k$? ¿Y por qué
+de $d_k$, y no de $d_{\text{model}}$ o de la longitud de la frase? Las dos se contestan de una vez,
+porque las dos dependen de averiguar cuánto se aleja del cero una suma cuando se le van añadiendo
+sumandos. Nada de lo que viene necesita más
+probabilidad que un promedio, y el promedio se hace sobre una lista finita.
+
+Toma la versión más cruda posible de una consulta (*query*) y una clave (*key*): todas sus
+coordenadas valen $+1$ o $-1$. La puntuación es entonces una cuenta de coincidencias, porque cada
+término aporta $+1$ si las dos coordenadas comparten signo y $-1$ si no. Con cuatro coordenadas,
+tres coincidencias y una discrepancia dan $3 - 1 = 2$. Con cuatrocientas, la misma proporción
+—trescientas contra cien— da $200$.
+
+Y ahí está lo que hay que ver, que no es que los términos se hayan hecho mayores: siguen valiendo
+$\pm 1$. Es que hay cien veces más. Una desviación pequeña respecto de la mitad exacta, repetida
+sobre más sumandos, se convierte en un número grande, y ese número se lo va a comer una
+exponencial.
+
+<Figure
+  src="/courses/dl-nlp/escalado-softmax.svg"
+  alt="Arriba, seis puntuaciones con signo alrededor de un eje. Abajo, cuatro grupos de seis barras: el reparto tras dividir, y los repartos sin dividir con d_k igual a 4, 16 y 64. La barra mayor pasa de destacar poco a ocuparlo todo."
+  caption="El mismo reparto deja de ser un reparto. Estirar las seis puntuaciones no cambia cuál gana, cambia cuánto gana, y con d_k = 64 el softmax ya no mezcla: se queda con una posición y tira las otras cinco."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+La raíz no ajusta el reparto a ojo: le quita a la puntuación exactamente lo que el número de
+coordenadas le había puesto, y deja la misma escala en un modelo estrecho y en uno ancho.
+</Callout>
+
+## Una puntuación crece con la raíz de la anchura
+
+Las consultas y las claves de una capa viven en $\mathbb{R}^{d_k}$, y la puntuación de una pareja
+es su producto escalar:
+
+$$
+e = \mathbf{q}^{\top}\mathbf{k} = \sum_{m=1}^{d_k} q_m k_m,
+$$
+
+una suma de $d_k$ términos. De qué tamaño sale depende de qué tamaño entra, así que fijemos primero
+el caso exacto: las coordenadas valen $+1$ o $-1$, como en la cuenta de coincidencias de arriba.
+Llamemos $s_m = q_m k_m$ al término $m$-ésimo, que vale entonces $+1$ o $-1$, y $e = \sum_m s_m$.
+
+Elevar al cuadrado separa la diagonal del resto:
+
+$$
+e^{2} = \left(\sum_{m} s_m\right)^{2} = \sum_{m} s_m^{2} + \sum_{m \neq n} s_m s_n = d_k + \sum_{m \neq n} s_m s_n,
+$$
+
+porque $s_m^{2} = 1$ sea cual sea el signo. El primer sumando ya no depende de nada. El segundo es
+el que hay que promediar, y promediar aquí quiere decir algo perfectamente finito: recorrer las
+$2^{d_k}$ combinaciones de signos que puede tomar $\mathbf{q}$, con $\mathbf{k}$ fija, y hacer la
+media. La escribiremos $\mathbb{E}\left[\cdot\right]$ —la **media** de una cantidad sobre el azar
+que se le supone—. Los términos cruzados se van todos.
+
+<Details summary="Ver por qué cada término cruzado promedia cero">
+
+Fija dos índices distintos $m \neq n$ y mira el término $s_m s_n = q_m k_m q_n k_n$. Empareja cada
+combinación de signos con la que resulta de cambiarle el signo a $q_m$ y dejar las otras
+$d_k - 1$ coordenadas donde están. Es un emparejamiento perfecto de las $2^{d_k}$ combinaciones en
+$2^{d_k - 1}$ parejas: cada combinación tiene exactamente una compañera, y no es ella misma.
+
+Dentro de una pareja, $q_n$, $k_m$ y $k_n$ no se han movido y $q_m$ ha cambiado de signo, de modo
+que los dos valores de $s_m s_n$ son opuestos y suman cero. Sumar cero $2^{d_k - 1}$ veces y
+dividir entre $2^{d_k}$ deja
+
+$$
+\mathbb{E}\left[s_m s_n\right] = 0, \qquad m \neq n.
+$$
+
+El mismo emparejamiento da $\mathbb{E}\left[e\right] = 0$: en $e = \sum_m s_m$ cada sumando cambia
+de signo junto con su propia coordenada, así que cada uno promedia cero por separado.
+
+</Details>
+
+De modo que del cuadrado sobrevive el primer sumando y nada más:
+
+$$
+\mathbb{E}\left[e^{2}\right] = d_k.
+$$
+
+Con $\mathbb{E}\left[e\right] = 0$, eso es cuanto hace falta. La puntuación se reparte alrededor
+del cero, y lo que mide su alejamiento típico —la **desviación típica**— es la raíz de ese
+promedio:
+
+$$
+\sqrt{\mathbb{E}\left[e^{2}\right]} = \sqrt{d_k},
+$$
+
+que es la respuesta a la mitad de la pregunta. Dividir entre $\sqrt{d_k}$ deja
+$\mathbb{E}\left[\left(e/\sqrt{d_k}\right)^{2}\right] = 1$, y en ese $1$ no aparece $d_k$: la misma
+escala con consultas de ocho coordenadas y con consultas de mil.
+
+Con el divisor puesto, la operación entera —producto, división, *softmax* y mezcla— pasa a tener
+nombre propio: es el **producto interno escalado**, que es como el artículo escribe
+*scaled dot-product*. El producto interno es el producto escalar de siempre, el de la línea de
+arriba; lo escalado es esta división y nada más.
+
+Los signos estaban ahí para que la cuenta fuese exacta, pero fíjate en qué propiedades le hicieron
+falta de verdad. Dos: que $\mathbb{E}\left[s_m\right] = 0$ y que
+$\mathbb{E}\left[s_m^{2}\right] = 1$. Cualquier inicialización centrada cuyas coordenadas sean independientes y de tamaño típico $1$ las
+cumple —las gaussianas de `rng.normal` que el curso lleva usando desde la lección 9 del bloque 2,
+sobre implementar el MLP (*multilayer perceptron*), entre ellas—, y con ellas la misma cancelación
+deja el mismo $\mathbb{E}\left[e^{2}\right] = d_k$. La primera celda lo mide.
+
+Conviene decir en voz alta de qué habla esa hipótesis, porque no habla del modelo que te
+encontrarás. Habla de pesos *recién inicializados*: nada garantiza que después de miles de pasos
+las coordenadas de $\mathbf{q}$ sigan siendo independientes ni midiendo $1$. Por eso el divisor se
+fija al diseñar la capa y no se mide sobre la marcha —arregla el arranque, que es donde el problema
+detiene el entrenamiento antes de que llegue a empezar—.
+
+Queda la parte que suele darse por sabida: por qué la raíz y no $d_k$. El divisor tiene que
+quitarle a la puntuación exactamente lo que la anchura le puso, y lo que le puso es un factor
+$\sqrt{d_k}$. Dividir entre $d_k$ dejaría las puntuaciones en un tamaño típico de
+$1/\sqrt{d_k}$, cada vez más cerca del cero cuanto más ancho el modelo; y unas puntuaciones que
+tienden a cero dan un *softmax* que tiende al reparto uniforme, $1/T$ en cada casilla, con lo que
+la fila deja de elegir nada. Son dos fallos, uno a cada lado, y la raíz es el único exponente que
+no cae en ninguno.
+
+## Una fila cerrada no devuelve gradiente
+
+Si las puntuaciones miden $\sqrt{d_k}$, las *diferencias* entre las de una misma fila miden eso
+también, y lo que el *softmax* mira son las diferencias:
+
+$$
+\alpha_{ij} = \frac{\exp\left(e_{ij}\right)}{\sum_{m=1}^{T}\exp\left(e_{im}\right)},
+$$
+
+con $m$ recorriendo las posiciones de la fila $i$. Dos puntuaciones separadas por $8$ —una
+distancia corriente cuando el tamaño típico es $8$, que es lo que da $d_k = 64$— quedan a un
+factor $\exp(8) \approx 2\,981$ la una de la otra, y con eso el reparto se ha terminado: una
+posición se lleva casi la unidad entera.
+
+Que una fila elija fuerte no suena a defecto. El defecto está en la derivada.
+
+Deriva $\alpha_{ij}$ respecto de las puntuaciones de su propia fila. Es la misma cuenta que la
+lección 5 del bloque 2, sobre las funciones de pérdida, hizo con el *softmax* de la capa de salida,
+y salen los mismos dos casos según el índice coincida o no:
+
+$$
+\frac{\partial \alpha_{ij}}{\partial e_{ij}} = \alpha_{ij}\left(1 - \alpha_{ij}\right), \qquad
+\frac{\partial \alpha_{ij}}{\partial e_{im}} = -\alpha_{ij}\,\alpha_{im} \quad (m \neq j).
+$$
+
+Pon ahora la fila cerrada, con un peso en casi $1$ y el resto en casi $0$. El caso de la diagonal
+da $1$ por $0$; el cruzado, en cualquier casilla, arrastra al menos un factor casi nulo. Las dos
+derivadas se apagan a la vez, y con ellas la fila entera.
+
+Lo que eso cuesta se ve mirando qué hay antes de las puntuaciones. Sólo $\mathbf{W}^Q$ y
+$\mathbf{W}^K$: la rejilla sale de $\mathbf{Q}\mathbf{K}^{\top}$ y no entra nada más. Si el
+gradiente no atraviesa el *softmax*, esas dos matrices no reciben nada por esa fila, y son
+precisamente las que tendrían que aprender a quién debe mirar cada posición. La capa sigue
+calculando —una salida saturada es una salida perfectamente definida—; lo que ha dejado de poder
+es cambiar de opinión.
+
+Merece la pena pararse en por qué el bloque 2 no se topó con esto, porque la diferencia es de una
+línea. Allí el *softmax* iba seguido de la entropía cruzada, y el $-\log$ de la pérdida aporta el
+factor inverso exacto: las dos juntas dieron
+$\nabla_{\mathbf{z}}\,\ell = \hat{\mathbf{y}} - \mathbf{y}$, que vale $\hat{y}_c - 1$ en la clase correcta y no se anula por muy segura que esté la red. Aquí
+detrás del *softmax* no hay ningún logaritmo, sólo la multiplicación por $\mathbf{V}$, la lista de
+valores (*values*). La jacobiana no se cancela contra nada: se queda entera, ceros incluidos.
+
+Y así reaparecen dos cosas que el curso dio por cerradas en bloques distintos. La curva
+$\alpha\left(1 - \alpha\right)$ es la misma que la derivada de la sigmoide, con su máximo de
+$0.25$ en la mitad y sus dos colas planas: la saturación de la lección 2 del bloque 2, sobre las
+funciones de activación, en una capa donde no hay ninguna sigmoide. Y un gradiente que llega
+apagado a las matrices que tenían que aprender es el bloque 3 entero, en una arquitectura sin una
+sola recurrencia. Lo que las une no era la sigmoide ni el estado recurrente: era que en las dos
+había una función aplanándose.
+
+Una fila entera se resume en un número, y sale de sumar el caso de la diagonal sobre las $T$
+posiciones:
+
+$$
+\sum_{j=1}^{T} \alpha_{ij}\left(1 - \alpha_{ij}\right) = \sum_{j} \alpha_{ij} - \sum_{j} \alpha_{ij}^{2} = 1 - \sum_{j=1}^{T} \alpha_{ij}^{2},
+$$
+
+donde la última igualdad usa que la fila suma $1$. Con la fila repartida por igual vale
+$1 - 1/T$; con la fila entera en una posición vale $0$. Es la suma de la diagonal de la jacobiana,
+y mide lo mismo por los dos lados: cuánto reparte esa fila, y cuánto le queda por aprender.
+
+## El divisor, medido en NumPy
+
+La primera celda saca la cuenta del caso de los signos y la comprueba donde de verdad se aplica:
+coordenadas gaussianas, cinco anchuras, la columna del promedio medido contra la columna de
+$\sqrt{d_k}$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(7)
+N = 8000                                       # parejas de vectores por cada anchura
+
+print("  d_k     media   tamano tipico   raiz(d_k)   tras dividir")
+for d_k in (4, 16, 64, 256, 1024):
+    Q = rng.normal(size=(N, d_k))              # coordenadas centradas, de tamano tipico 1
+    K = rng.normal(size=(N, d_k))
+    e = np.sum(Q * K, axis=1)                  # una puntuacion por pareja
+    tipico = np.sqrt(np.mean(e ** 2))
+    print(f"{d_k:5d}   {e.mean():7.3f}   {tipico:13.2f}   {np.sqrt(d_k):9.2f}   {tipico / np.sqrt(d_k):12.2f}")
+`} />
+
+Las dos columnas centrales coinciden hasta donde llega la precisión de medir con ocho mil parejas,
+y la de la derecha se queda clavada en $1$: dividir deja el tamaño donde estaba, sea cual sea la
+anchura. La columna de la media es pequeña frente al tamaño típico de su fila —a $d_k = 1\,024$,
+$0.236$ contra $32.03$—, que es lo que dice $\mathbb{E}\left[e\right] = 0$ cuando se mide en vez de
+demostrarse.
+
+La segunda celda pasa de las puntuaciones a lo que sale de ellas. Mira sobre todo la última
+columna, que es la que decide si la capa puede aprender.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(11)
+T, N = 8, 4000                                 # 8 posiciones por fila, 4000 filas medidas
+
+
+def softmax_filas(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+print("                d_k   peso mayor   reparto   mayor a(1-a)")
+for d_k in (8, 64, 512):
+    Q = rng.normal(size=(N, d_k))              # N consultas contra las mismas T claves
+    K = rng.normal(size=(T, d_k))
+    E = Q @ K.T
+    for nombre, Esc in (("sin dividir", E), ("dividiendo", E / np.sqrt(d_k))):
+        A = softmax_filas(Esc)
+        print(f"{nombre:>17} {d_k:5d}   {A.max(axis=1).mean():10.3f}   "
+              f"{(1 - (A ** 2).sum(axis=1)).mean():7.3f}   {(A * (1 - A)).max(axis=1).mean():12.4f}")
+`} />
+
+Léela por parejas de líneas. Sin dividir, el peso mayor sube de $0.670$ a $0.953$ y el reparto
+$1 - \sum_j \alpha_{ij}^{2}$ se hunde de $0.445$ a $0.066$ —el máximo posible con ocho posiciones
+es $1 - 1/8 = 0.875$—, mientras la mayor casilla de la diagonal de la jacobiana cae de $0.1755$ a
+$0.0321$: más de cinco veces menos gradiente por el mero hecho de haber ensanchado el modelo.
+Dividiendo, las tres columnas dejan de moverse: $0.36$ de peso mayor, $0.77$ de reparto y $0.216$ de derivada
+en las tres anchuras, incluida la de $512$. Ésa es la propiedad que se compra con el divisor, y no
+es que los números sean mejores, es que dejan de depender de $d_k$.
+
+## Comprueba tu intuición
+
+Cinco preguntas: cuánto mide una puntuación, por qué la raíz y no otra cosa, qué pierde una fila
+cerrada, por qué el bloque 2 se libró de esto y qué es lo que dividir no toca.
+
+<Quiz id="q-tamano-tipico" />
+
+<Quiz id="q-por-que-la-raiz" />
+
+<Quiz id="q-fila-saturada" />
+
+<Quiz id="q-sin-logaritmo" />
+
+<Quiz id="q-orden-de-la-fila" />
+
+<CodeChallenge id="ch-gradiente-softmax" />
+
+---
+
+Con el divisor puesto, la escala de las puntuaciones deja de depender de la anchura, y el reparto y
+el gradiente dejan de depender de ella con la misma cuenta. Pero mira lo que el divisor da por
+hecho: recibe $d_k$ ya decidido. Nada de lo que hemos contado dice cuánto debería medir una
+consulta —sólo cómo compensar lo que mida—, y hasta aquí $d_k$ es un número que apareció porque las
+proyecciones de la lección anterior tenían que salir a alguna anchura.
+
+Hay una segunda cosa que esta capa no sabe hacer, y apunta al mismo sitio. Una fila de $\mathbf{A}$
+es un reparto y sólo uno: en <W>las llaves del coche están ahí</W>, la posición de <W>están</W>
+tiene que decidir con un único juego de pesos si mira a <W>llaves</W>, que es con quien concuerda,
+o a <W>del coche</W>, que es lo que la separa de ella; y con una fila no puede hacer las dos cosas.
+La respuesta a las dos preguntas es la misma y ocupa la lección 4 de este bloque, sobre la atención
+multi-head: varias parejas de proyecciones trabajando en paralelo, cada una con su propio reparto y
+su propia anchura, repartida entre todas a partir de $d_{\text{model}}$. Ahí $d_k$ deja de ser un
+número dado y pasa a ser una decisión con un motivo.

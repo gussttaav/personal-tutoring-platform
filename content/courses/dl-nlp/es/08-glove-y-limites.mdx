@@ -1,0 +1,474 @@
+---
+slug: glove-y-limites
+title: "GloVe y los límites de los embeddings estáticos"
+block: 1
+order: 8
+minutes: 25
+summary: "Las coocurrencias ya estaban contadas antes de entrenar nada, y sus razones son lo que separa una entrada de otra. Exigirle a las diferencias de vectores que reproduzcan esas razones da la ecuación de GloVe; y las dos técnicas del bloque terminan compartiendo el mismo techo: una fila por entrada del vocabulario, diga lo que diga la frase."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-razon
+    type: numeric
+    prompt: 'En un corpus, la entrada <W>hielo</W> tiene $X_{\textit{hielo}} = 2\,000\,000$ coocurrencias en total, de las cuales $1\,800$ son con <W>sólido</W>. La entrada <W>vapor</W> tiene $X_{\textit{vapor}} = 1\,000\,000$ en total y $90$ con <W>sólido</W>. ¿Cuánto vale la razón $P(\textit{sólido} \mid \textit{hielo}) \,/\, P(\textit{sólido} \mid \textit{vapor})$?'
+    answer: 10
+    tolerance: 0.01
+    explanation: 'Las dos probabilidades son $1\,800 / 2\,000\,000 = 9 \times 10^{-4}$ y $90 / 1\,000\,000 = 9 \times 10^{-5}$, y su razón vale $10$. Fíjate en lo que hacen los totales: <W>hielo</W> sale el doble de veces que <W>vapor</W> en el corpus, y esa diferencia se cancela al dividir por $X_i$ antes de comparar. Las dos probabilidades sueltas son minúsculas y no dicen nada por separado; lo que informa es que una sea diez veces la otra.'
+  - id: q-objetivo
+    type: single
+    prompt: '¿Qué cantidad ajusta la pérdida de GloVe, celda a celda?'
+    options:
+      - { id: a, text: 'El logaritmo del conteo de coocurrencias del par, $\log X_{ik}$, con un peso que depende del propio conteo.' }
+      - { id: b, text: 'La razón $P(k \mid i) / P(k \mid j)$, una ecuación por cada terna de entradas.' }
+      - { id: c, text: 'El conteo crudo $X_{ik}$, sin logaritmo: el logaritmo aparece después, al normalizar los vectores.' }
+      - { id: d, text: 'La probabilidad $P(c \mid w)$ del contexto dado el centro, igual que el skip-gram, pero calculada sobre la tabla en vez de sobre ventanas.' }
+    answer: a
+    explanation: 'La razón (b) es de dónde sale la transformación, y es justo lo que esta transformación consigue quitar de en medio: absorber $\log X_i$ en el sesgo $b_i$ convierte una condición sobre ternas $(i, j, k)$ en una ecuación por **par**, y eso baja el número de ecuaciones de $\lvert V \rvert^{3}$ a $\lvert V \rvert^{2}$ —de las cuales solo se usan las no nulas. (c) invierte el orden: el logaritmo está ahí desde que se toman logaritmos en $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, y sin él la igualdad no sería lineal en los vectores. (d) es la lección anterior; GloVe no calcula ninguna probabilidad condicionada durante el ajuste.'
+  - id: q-peso
+    type: multi
+    prompt: 'Sobre la suma $\mathcal{L} = \sum g(X_{ik})(\dots)^2$, marca todo lo que sea cierto.'
+    options:
+      - { id: a, text: 'Las celdas con $X_{ik} = 0$ quedan fuera de la suma, y son la mayor parte de la tabla.' }
+      - { id: b, text: '$g$ crece con el conteo, de modo que un par visto una vez pesa menos que uno visto mil veces.' }
+      - { id: c, text: '$g$ está acotada por $1$, de modo que los pares frecuentísimos no se llevan el ajuste entero.' }
+      - { id: d, text: 'Quitar $g$ dejaría la suma con $\lvert V \rvert^{2}$ sumandos, así que es $g$ lo que hace barato el ajuste.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras son las tres decisiones de esa línea, y cada una arregla algo distinto: (a) evita $\log 0$ —y de paso es lo que abarata el ajuste—, (b) quita peso a las celdas que son casi ruido y (c) se lo quita a las palabras vacías de la lección 5, sobre la bolsa de palabras, que si no decidirían solas dónde van todos los vectores. (d) atribuye el ahorro a quien no es: lo que deja fuera las $\lvert V \rvert^{2}$ celdas vacías es la condición $X_{ik} > 0$ del sumatorio, no el peso. $g$ vale $0$ en $x = 0$, sí, pero un sumando de peso cero seguiría costando calcular $\log 0$.'
+  - id: q-banco
+    type: single
+    prompt: 'El vector de <W>banco</W> mezcla el sentido del dinero y el del parque. ¿Cuál de estos cambios lo arregla?'
+    options:
+      - { id: a, text: 'Ninguno de los otros tres: mientras el argumento de la representación sea la entrada del vocabulario, <W>banco</W> tiene una fila y esa fila es un compromiso.' }
+      - { id: b, text: 'Un corpus mucho mayor: con bastantes más ocurrencias de cada sentido, el ajuste acabaría separándolos.' }
+      - { id: c, text: 'Más coordenadas: con $d_{\text{model}} = 1\,000$ sobra sitio para meter los dos sentidos en el mismo vector.' }
+      - { id: d, text: 'Una ventana más ancha, que recoja bastante contexto alrededor de cada ocurrencia como para distinguirlas.' }
+    answer: a
+    explanation: 'El problema no está en los datos ni en la capacidad, sino en la forma de la función. (b) empeora si acaso: más corpus significa más ocurrencias de los dos sentidos sumadas en la misma fila de la tabla. (c) confunde tener sitio con tener dónde ponerlo; la celda ejecutada arriba lo enseña al subir $d_{\text{model}}$, que ajusta mejor la misma tabla sin cambiar un vecino. Y (d) es el más fino: una ventana ancha sí distingue las dos ocurrencias mientras se está contando, pero el conteo se acumula sobre el tipo <W>banco</W> y ahí se pierde de qué ocurrencia venía. Para que el vector dependa de la frase, la frase tiene que ser argumento de la representación.'
+challenges: []
+---
+
+{/* COURSE-P5-01 — Bloque 1, lección 8. */}
+
+La lección anterior, sobre Word2Vec, dejó $\mathbf{E}$ completa y, al final, una tabla de
+coocurrencias descrita y sin estrenar. De ella parte GloVe (*global vectors*), publicado en 2014. Lo
+que la tabla no trae decidido es qué hay que pedirle, y ahí empieza el objetivo. Un conteo bruto
+informa de poco: <W>banco</W> sale muchísimas veces junto a <W>el</W> y de ahí no se sigue nada.
+
+Lo que distingue a una entrada de otra no es con quién aparece, sino en qué proporción. Esa
+proporción decide la forma entera del objetivo, y de paso explica algo que el bloque lleva dos
+lecciones enseñando sin cobrar: lo que ocurre al pulsar el botón del mapa de la lección 6, sobre
+representaciones densas.
+
+<Explorable
+  id="embedding-projection"
+  caption="Pulsa el botón de la analogía. Las dos flechas son el mismo desplazamiento aplicado en dos sitios distintos; el círculo marca dónde cae la suma, antes de preguntar qué palabra hay allí."
+/>
+
+Restar <W>hombre</W> a <W>rey</W> y sumar el resultado a <W>mujer</W> cae sobre <W>reina</W>. Lo que
+afirma el dibujo no es que <W>rey</W> y <W>reina</W> estén cerca —esa vecindad ya la daba aquella
+lección—, sino algo más fuerte: que la *diferencia* entre dos vectores significa por sí misma y
+reaparece intacta en otro par. La advertencia es la de entonces: las coordenadas las he puesto yo a mano,
+así que el mapa enseña la forma de la afirmación, no su prueba.
+
+Que las diferencias signifiquen no puede ser un accidente: si restar vectores da algo con sentido,
+el objetivo tuvo que pedirles que reprodujeran algo que ya funciona por resta. Restar cancela lo
+compartido y deja lo que separa; en los conteos, la operación que hace eso es dividir. Toma
+<W>hielo</W> y <W>vapor</W> y, en lugar de mirar con qué aparece cada una, divide una frecuencia por
+la otra, entrada por entrada. Estas son las cifras
+que publicaron los autores de GloVe sobre un corpus de 6 000 millones de tokens:
+
+| $k$ | $P(k \mid \textit{hielo})$ | $P(k \mid \textit{vapor})$ | razón |
+|---|---|---|---|
+| <W>sólido</W> | $1.9 \times 10^{-4}$ | $2.2 \times 10^{-5}$ | $8.9$ |
+| <W>gas</W> | $6.6 \times 10^{-5}$ | $7.8 \times 10^{-4}$ | $0.085$ |
+| <W>agua</W> | $3.0 \times 10^{-3}$ | $2.2 \times 10^{-3}$ | $1.36$ |
+| <W>moda</W> | $1.7 \times 10^{-5}$ | $1.8 \times 10^{-5}$ | $0.96$ |
+
+Las probabilidades sueltas confunden frecuente con característico: <W>agua</W> sale con <W>hielo</W> más
+que <W>sólido</W>. La razón, no: mide el contraste con <W>vapor</W>, no la frecuencia. Vale mucho más que $1$
+cuando $k$ es del mundo de la primera, mucho menos cuando es del de la segunda, y se pega a $1$ cuando no distingue:
+<W>moda</W>, que no sale con ninguna, y <W>agua</W>, que sale con las dos por igual. La frecuencia base se cancela al dividir.
+
+<Callout type="intuition" title="La idea en una frase">
+Los conteos dicen con quién aparece cada entrada; sus razones, qué la separa de las demás, y ahí está
+la información. GloVe sale de exigirles a las diferencias de vectores que reproduzcan esas razones.
+</Callout>
+
+## Qué les piden a los vectores las razones de coocurrencia
+
+Llamemos $X_{ik}$ a la casilla de la tabla de coocurrencias: el conteo de la entrada $k$ dentro de la
+ventana de la entrada $i$, con la misma $m$ de la lección anterior. Es simétrica y tiene
+$\lvert V \rvert^{2}$ casillas. Escribamos también $\mathbf{e}_i$ y $\mathbf{u}_k$ por
+$\mathbf{e}_{w_i}$ y $\mathbf{u}_{w_k}$, los vectores de centro y de contexto de aquella lección.
+
+Sumando una fila entera sale el total de vecinos de $i$, y con él la probabilidad de que, mirando una
+ventana centrada en $i$, aparezca $k$:
+
+$$
+X_i = \sum_{k} X_{ik}, \qquad P(k \mid i) = \frac{X_{ik}}{X_i}.
+$$
+
+La tabla de <W>hielo</W> y <W>vapor</W> señalaba la razón entre dos de estas probabilidades.
+Pedírsela a los vectores se escribe con una $F$ todavía sin decidir:
+
+$$
+F\!\left(\mathbf{e}_i,\, \mathbf{e}_j,\, \mathbf{u}_k\right) = \frac{P(k \mid i)}{P(k \mid j)}.
+$$
+
+Dos decisiones la dejan casi fijada. Lo que separa a $i$ de $j$ a la derecha es un cociente, y a la
+izquierda lo que la función recibe de los dos es su diferencia $\mathbf{e}_i - \mathbf{e}_j$, la del
+mapa de arriba. Y para convertirla junto con $\mathbf{u}_k$ en un solo número está el producto
+escalar de la lección 5, sobre la bolsa de palabras. Con las dos, $F$ es una función de una variable
+real:
+
+$$
+F\!\left(\mathbf{u}_k^{\top}\left(\mathbf{e}_i - \mathbf{e}_j\right)\right) = \frac{P(k \mid i)}{P(k \mid j)}.
+$$
+
+Queda una $F$ que convierta una resta en su argumento en una división en su valor, y esa propiedad la
+determina: la exponencial.
+
+<Details summary="Por qué la exponencial es la única salida">
+
+Se busca una función continua $F : \mathbb{R} \to (0, \infty)$ con $F(a - b) = F(a) / F(b)$ para
+cualesquiera $a$ y $b$. Con $a = b$ sale $F(0) = 1$; con $a = x + y$ y $b = y$, la condición se
+reordena en
+
+$$
+F(x + y) = F(x)\,F(y),
+$$
+
+la ecuación funcional de Cauchy en su forma multiplicativa, cuyas únicas soluciones continuas y no
+idénticamente nulas son $F(x) = e^{cx}$. La constante se absorbe en la escala de los vectores —si
+$e^{cx}$ sirve para unos $\mathbf{e}_i$, $e^{x}$ sirve para $c\,\mathbf{e}_i$—, así que tomar $c = 1$
+no pierde nada.
+
+</Details>
+
+Con $F = \exp$ la igualdad se cumple en cuanto cada probabilidad se empareja con su exponencial,
+
+$$
+\exp\!\left(\mathbf{u}_k^{\top}\mathbf{e}_i\right) = P(k \mid i),
+$$
+
+porque el cociente de la derecha pasa a ser el de dos exponenciales. Tomando logaritmos,
+$\mathbf{u}_k^{\top}\mathbf{e}_i = \log P(k \mid i)$, y restando esa igualdad para $i$ y para $j$
+aparece lo que la intuición prometía:
+
+$$
+\mathbf{u}_k^{\top}\left(\mathbf{e}_i - \mathbf{e}_j\right) = \log \frac{P(k \mid i)}{P(k \mid j)}.
+$$
+
+La diferencia de dos vectores, proyectada sobre un tercero, es el logaritmo de la razón de la tabla.
+Ahí empiezan a significar las direcciones: la analogía del mapa es esta línea leída al revés.
+
+Falta dejarla en una forma que se pueda ajustar. Sustituyendo $P(k \mid i) = X_{ik} / X_i$,
+
+$$
+\mathbf{u}_k^{\top}\mathbf{e}_i = \log X_{ik} - \log X_i,
+$$
+
+y ese $\log X_i$ tiene arreglo barato: no depende de $k$, así que es una constante por cada entrada
+$i$. Se le da nombre, $b_i$, y se pasa al otro lado. Con eso la igualdad deja de ser simétrica
+—$X_{ik} = X_{ki}$, pero el lado izquierdo ya no—, así que un segundo escalar $\tilde{b}_k$ para la
+entrada que hace de contexto la devuelve:
+
+$$
+\mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k = \log X_{ik}.
+$$
+
+Son dos números reales más por entrada, uno en cada papel, y lo ganado no es cosmético: la condición
+de partida hablaba de ternas $(i, j, k)$ y esta, de un par. Una ecuación por casilla de la tabla.
+
+### El peso que impide que los pares más frecuentes decidan por todos
+
+Ese sistema no tiene solución exacta: son $\lvert V \rvert^{2}$ ecuaciones —2 500 millones con el
+vocabulario de 50 000 entradas del bloque— contra unos 30 millones de incógnitas. Se pide entonces lo
+posible, en el sentido de los mínimos cuadrados, y antes hay que arreglar dos cosas.
+
+La primera es que la mayor parte de la tabla son ceros —dos entradas cualesquiera no coinciden jamás
+en una ventana— y $\log 0$ no existe. Las vacías se dejan fuera, que es además lo que abarata el
+ajuste: se paga por los pares vistos y no por $\lvert V \rvert^{2}$.
+
+La segunda es que las celdas no valen lo mismo. Una con $X_{ik} = 1$ es casi ruido, y una con
+$X_{ik} = 10^{6}$ —dos palabras vacías de la lección 5, la de la bolsa de palabras— no debería decidir
+sola dónde van los vectores. El arreglo es un peso que dependa del propio conteo:
+
+$$
+g(x) = \begin{cases}
+  \left(x / x_{\max}\right)^{\alpha} & \text{si } x < x_{\max} \\
+  1 & \text{si } x \geq x_{\max}
+\end{cases}.
+$$
+
+Crece mientras el conteo es pequeño, así que un par visto una vez pesa poco, y se aplana a partir de
+$x_{\max}$, así que los frecuentísimos no arrastran el ajuste. El artículo toma $x_{\max} = 100$ y
+$\alpha = 3/4$, el mismo exponente del muestreo negativo de la lección anterior y encontrado igual:
+probando. La pérdida de GloVe es entonces
+
+$$
+\mathcal{L} = \sum_{i,\, k \;:\; X_{ik} > 0} g(X_{ik}) \left(\mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k - \log X_{ik}\right)^{2},
+$$
+
+con parámetros $\theta = (\mathbf{E}, \mathbf{U}, b, \tilde{b})$ y nada más. Minimizarla es descenso
+de gradiente, y cada paso necesita el gradiente de $\mathcal{L}$.
+
+<Details summary="El gradiente de la pérdida usado en cada paso">
+
+El peso $g(X_{ik})$ y el objetivo $\log X_{ik}$ salen de la tabla de coocurrencias: en la derivada
+son constantes. Llamando $r_{ik}$ al error de la celda,
+
+$$
+\ell_{ik} = g(X_{ik})\,r_{ik}^{2}, \qquad r_{ik} = \mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k - \log X_{ik},
+$$
+
+la regla de la cadena sobre el cuadrado deja $2r_{ik}$ multiplicando a cuatro derivadas inmediatas:
+
+$$
+\frac{\partial \ell_{ik}}{\partial \mathbf{e}_i} = 2\,g(X_{ik})\,r_{ik}\,\mathbf{u}_k, \qquad
+\frac{\partial \ell_{ik}}{\partial \mathbf{u}_k} = 2\,g(X_{ik})\,r_{ik}\,\mathbf{e}_i, \qquad
+\frac{\partial \ell_{ik}}{\partial b_i} = \frac{\partial \ell_{ik}}{\partial \tilde{b}_k} = 2\,g(X_{ik})\,r_{ik}.
+$$
+
+Las cuatro comparten coeficiente, y cada vector recibe al otro. Una celda ya explicada, con
+$r_{ik} \approx 0$, no mueve nada.
+
+</Details>
+
+La diferencia con la lección anterior no está donde parece: las dos ajustan una función de
+$\mathbf{u}^{\top}\mathbf{e}$ a una estadística de coocurrencia, y lo que cambia es cuándo se
+cuenta. Word2Vec cuenta mientras aprende; GloVe cuenta primero y luego ajusta sin volver a abrir el
+corpus.
+
+## Un vector, uno solo, para siempre
+
+El bloque tiene ya dos formas de llenar $\mathbf{E}$, y comparten un rasgo que ninguna menciona. Mira
+el sujeto de esa suma: $i$ recorre las entradas del vocabulario. Hay una fila de $\mathbf{E}$ por
+entrada, y una sola.
+
+<W>banco</W> es una entrada del vocabulario. En un corpus del español aparece en <W>saqué el dinero
+del banco</W> y en <W>me senté en el banco del parque</W>, y la tabla de coocurrencias no separa las
+dos: acumula en la misma fila los vecinos de una y de otra. Nada en $X_{ik}$ recuerda de qué
+ocurrencia venía cada conteo, porque los conteos se hacen sobre el tipo, y el tipo es la misma cadena.
+Al ajuste le queda un compromiso, y la pérdida dice cuál: la fila que la minimiza explica la *suma* de
+los dos perfiles, que no se parece a ninguno.
+
+No es un defecto de GloVe. Word2Vec lo tiene por la misma razón, y el one-hot de la lección 4 y el
+TF-IDF (*term frequency–inverse document frequency*) de la lección 5 lo tenían antes. Y no viene solo:
+la lección 6, la de las representaciones densas, anotó otro límite de la misma familia, y es que
+<W>frío</W> y <W>caliente</W> aparecen en contextos casi idénticos, así que la hipótesis distribucional los coloca cerca y la representación no
+tiene con qué separarlos. El tercero es el de siempre: una entrada que no estaba en el corpus no tiene
+fila, y hay que devolverle la de <W>\<UNK></W>, como en la lección 3, sobre palabras fuera de
+vocabulario (*out-of-vocabulary*, OOV).
+
+Los tres son el mismo hecho escrito de tres maneras, y se lee en el arranque del bloque: la lección 1,
+sobre el problema de representar el lenguaje, pidió una función
+
+$$
+r : V \to \mathbb{R}^{d},
+$$
+
+y discutió despacio qué debía cumplir. Lo que ata aquí no es ninguna de aquellas condiciones: es el
+dominio. Si el argumento de $r$ es una entrada del vocabulario, su valor no puede depender de la frase
+en la que aparece, porque la frase no entra en la función. **Estático** quiere decir eso.
+
+## Contar los pares y ajustar GloVe en NumPy
+
+La celda cuenta y ajusta. El corpus son 680 tokens de plantillas, con <W>banco</W> plantado en dos
+mundos; he dejado $d_{\text{model}} = 3$ adrede: con más coordenadas la tabla se ajusta casi exacta
+y la pérdida no se ve trabajar. La tasa de aprendizaje decae hasta casi cero, como en la lección
+anterior. Ejecútala y mira tres cosas: la columna de razones, los vecinos del ajuste y las tres
+filas del final.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# --- Un corpus de juguete donde <banco> sale en sus dos sentidos.
+finanzas = ["dinero", "hipoteca", "nómina", "ahorro", "préstamo"]
+parque = ["árbol", "seto", "sendero", "estanque", "columpio"]
+
+
+def escribe(banco_f, banco_p):
+    frases = []
+    for f in finanzas:
+        for v in ["ingresó", "retiró", "consultó"]:
+            frases.append(f"el cliente {v} su {f} en el {banco_f}")
+        for f2 in finanzas:
+            if f2 != f:
+                frases.append(f"el {banco_f} anotó su {f} y su {f2}")
+        frases.append(f"la niña ingresó su {f} en el {banco_f}")
+    for p in parque:
+        for v in ["descansó", "esperó", "leyó"]:
+            frases.append(f"la niña {v} junto al {p} en el {banco_p}")
+        for p2 in parque:
+            if p2 != p:
+                frases.append(f"el {banco_p} quedó entre el {p} y el {p2}")
+        frases.append(f"el cliente descansó junto al {p} en el {banco_p}")
+    return [f.split() for f in frases]
+
+
+# X_ik: cuántas veces cae k en una ventana de m tokens alrededor de i. UNA pasada.
+def coocurrencias(docs, m=4):
+    V = sorted({w for d in docs for w in d})
+    pos = {w: i for i, w in enumerate(V)}
+    X = np.zeros((len(V), len(V)))
+    for d in docs:
+        ids = [pos[w] for w in d]
+        for t, i in enumerate(ids):
+            for j in range(max(0, t - m), min(len(ids), t + m + 1)):
+                if j != t:
+                    X[i, ids[j]] += 1.0
+    return V, pos, X
+
+
+docs = escribe("banco", "banco")
+V, pos, X = coocurrencias(docs)
+T = sum(len(d) for d in docs)
+print("T =", T, "tokens |", len(V), "entradas |", int((X > 0).sum()), "celdas no nulas de", X.size)
+print()
+
+# La razón del desarrollo, medida aquí: P(k|i) = X_ik / X_i.
+X_i = X.sum(axis=1)
+print("k          P(k|hipoteca)  P(k|estanque)   razón")
+for k in ["cliente", "niña", "banco", "en"]:
+    a = X[pos["hipoteca"], pos[k]] / X_i[pos["hipoteca"]]
+    b = X[pos["estanque"], pos[k]] / X_i[pos["estanque"]]
+    print("  ", k.ljust(9), ("%.4f" % a).rjust(9), ("%.4f" % b).rjust(14), ("%.2f" % (a / b)).rjust(9))
+print()
+
+d_model, x_max, alpha, eta0, epocas = 3, 10.0, 0.75, 0.1, 30
+
+
+def ajusta(X, semilla=3):
+    """Minimiza sum g(X_ik) (u_k . e_i + b_i + b_k - log X_ik)^2 sobre las celdas NO NULAS."""
+    r = np.random.default_rng(semilla)
+    n = len(X)
+    fila, col = np.nonzero(X)
+    g = np.minimum((X[fila, col] / x_max) ** alpha, 1.0)
+    objetivo = np.log(X[fila, col])
+
+    E = 0.1 * r.standard_normal((n, d_model))
+    U = 0.1 * r.standard_normal((n, d_model))
+    bE, bU = np.zeros(n), np.zeros(n)
+
+    n_pasos = epocas * len(fila)
+    paso = 0
+    for epoca in range(1, epocas + 1):
+        perdida = 0.0
+        for idx in r.permutation(len(fila)):
+            i, k = fila[idx], col[idx]
+            eta = eta0 * max(1e-4, 1.0 - paso / n_pasos)   # decae hasta casi cero
+            paso += 1
+
+            e, u = E[i].copy(), U[k]
+            error = e @ u + bE[i] + bU[k] - objetivo[idx]
+            perdida += g[idx] * error ** 2
+
+            # El gradiente del desplegable: 2 g(X_ik) por el error, y cada vector recibe al otro.
+            coef = 2.0 * g[idx] * error
+            E[i] -= eta * coef * u
+            U[k] -= eta * coef * e
+            bE[i] -= eta * coef
+            bU[k] -= eta * coef
+        if epoca in (1, 10, 20, epocas):
+            print("   época", str(epoca).rjust(2), " pérdida media por celda",
+                  round(float(perdida / len(fila)), 4))
+    return E + U        # las implementaciones se quedan con la suma de las dos tablas
+
+
+W = ajusta(X)
+N = W / np.linalg.norm(W, axis=1, keepdims=True)
+S = N @ N.T
+
+# Vecinos entre palabras con contenido: en 680 tokens las vacías caen en todas las ventanas.
+contenido = finanzas + parque + ["cliente", "niña", "banco"]
+
+
+def vecinos(w, k=3):
+    i = pos[w]
+    orden = sorted((pos[c] for c in contenido if c != w), key=lambda j: -S[i, j])
+    return [(V[j], round(float(S[i, j]), 2)) for j in orden[:k]]
+
+
+print()
+for w in ["hipoteca", "estanque"]:
+    print("vecinos de", w.ljust(10), vecinos(w))
+print()
+
+# --- La fila que GloVe tiene que explicar, contra las dos que la componen.
+V2, pos2, X2 = coocurrencias(escribe("banco_dinero", "banco_parque"))
+muestra = ["dinero", "hipoteca", "árbol", "seto"]
+print("fila de X".ljust(18) + "".join(w.rjust(10) for w in muestra))
+print("banco".ljust(18) + "".join(str(int(X[pos["banco"], pos[w]])).rjust(10) for w in muestra))
+for w in ["banco_dinero", "banco_parque"]:
+    print(("  " + w).ljust(18) + "".join(str(int(X2[pos2[w], pos2[c]])).rjust(10) for c in muestra))
+print()
+
+
+def coseno(u, v):
+    return float(u @ v / (np.linalg.norm(u) * np.linalg.norm(v)))
+
+
+def fila(X, pos, w, columnas):
+    return np.array([X[pos[w], pos[c]] for c in columnas])
+
+
+cols = finanzas + parque
+b = fila(X, pos, "banco", cols)
+u = fila(X2, pos2, "banco_dinero", cols)
+v = fila(X2, pos2, "banco_parque", cols)
+print("la fila de banco es la suma de las dos:", np.array_equal(b, u + v))
+print("coseno entre los dos sentidos           ", round(coseno(u, v), 2))
+print("coseno de la fila compartida con cada uno", round(coseno(b, u), 2), round(coseno(b, v), 2))
+todas = [w for w in V if w in pos2]
+print("lo mismo contando también las vacías    ",
+      round(coseno(fila(X2, pos2, "banco_dinero", todas), fila(X2, pos2, "banco_parque", todas)), 2))
+`} />
+
+La tabla ocupa 432 celdas, frente a los 3 840 pares que la ventana genera sobre el mismo texto. Y
+sus razones reproducen el patrón de <W>hielo</W> y <W>vapor</W>: <W>cliente</W> vale $3.00$ a favor
+de <W>hipoteca</W>, <W>niña</W> vale $0.33$, y <W>banco</W> y <W>en</W> dan $1.00$ exacto porque
+salen igual con las dos.
+
+El ajuste baja de $0.55$ a $0.02$ por celda y los vecinos son los que tienen que ser:
+<W>préstamo</W>, <W>dinero</W> y <W>ahorro</W> para <W>hipoteca</W>; <W>columpio</W>, <W>seto</W> y
+<W>sendero</W> para <W>estanque</W>. Esos $1.00$ redondos son el precio de las plantillas: dentro de
+cada grupo las entradas ocupan huecos idénticos, y sus filas también.
+
+Las tres últimas filas son el asunto de la lección: la de <W>banco</W> vale $8$ en <W>dinero</W>, en
+<W>hipoteca</W>, en <W>árbol</W> y en <W>seto</W>, y, separados los sentidos, es casilla a casilla
+la suma de dos filas sin nada que ver: entre ellas el coseno vale $0.00$ sobre las palabras con
+contenido, y $0.55$ contando las vacías, lo único que comparten. La compartida se queda a $0.71$ de
+cada una, a mitad de camino, y es esa la que GloVe explica con un vector.
+
+Sube `d_model` a $8$ y ejecuta otra vez: la pérdida por celda cae a la sexta parte y los vecinos son
+los mismos. Más coordenadas ajustan mejor la misma tabla; no le sacan lo que no tiene.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: cuánto vale una razón, qué se ajusta, qué hacen el peso y la condición del
+sumatorio, y qué hace falta para que <W>banco</W> tenga dos vectores.
+
+<Quiz id="q-razon" />
+
+<Quiz id="q-objetivo" />
+
+<Quiz id="q-peso" />
+
+<Quiz id="q-banco" />
+
+---
+
+El bloque cierra así su encargo: hay una $r$ que convierte texto en vectores, dos procedimientos para
+sus números y una geometría donde el parecido significa algo. Sin resolver queda la palabra
+del título. Cada entrada sale de aquí con un vector y con uno solo, así que <W>el banco cerró a las
+dos</W> y <W>el banco estaba mojado</W> reciben la misma fila de $\mathbf{E}$, y ninguna de las dos
+frases tiene forma de pedir otra. Que la representación dependa del contexto es el hilo que atraviesa
+lo que viene y se cobra al final, en el bloque 5, sobre el Transformer.
+
+Antes hay que construir lo que va a consumir esos vectores, y todavía no existe. La lección 1 de este
+bloque supuso una función que recibe un vector y devuelve una respuesta, y dejó dicho que cómo es por
+dentro era asunto del bloque siguiente. El bloque 2, sobre el perceptrón multicapa,
+empieza por ahí: su lección 1, sobre la neurona artificial, define la pieza más pequeña que hace ese
+trabajo —recibe un vector, lo pondera y devuelve un número— y la suposición se acaba.

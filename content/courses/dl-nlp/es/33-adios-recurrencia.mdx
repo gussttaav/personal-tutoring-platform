@@ -1,0 +1,243 @@
+---
+slug: adios-recurrencia
+title: "Adiós a la recurrencia"
+block: 5
+order: 1
+minutes: 22
+summary: "La atención ya no necesita a la recurrencia, pero la máquina que la rodea sigue siendo recurrente, y eso fija dos cosas que ningún ordenador arregla: una frase de T tokens obliga a T pasos que no se pueden solapar, y lo que la posición 1 le aporta a la posición T pasa por T menos 1 productos por la misma matriz. Quitar la recurrencia deja las dos en un número que no crece con la frase, a cambio de una rejilla de T por T puntuaciones que sale más barata que la recurrencia mientras la frase mida menos que el modelo. Y a cambio de otra cosa que no se paga en multiplicaciones: el orden."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-cadena-de-esperas
+    type: single
+    prompt: 'Tienes un ordenador con tantos procesadores como quieras y una frase de $T$ tokens ya tokenizada entera. ¿Qué es lo que sigue costando $T$ pasos que no se pueden solapar?'
+    options:
+      - { id: a, text: 'Los estados. Cada $\mathbf{h}_t$ se calcula a partir de $\mathbf{h}_{t-1}$, así que el paso $t$ no puede empezar hasta que el $t-1$ haya terminado, y eso no lo cambia añadir procesadores.' }
+      - { id: b, text: 'Los tokens. Tokenizar es un recorrido de izquierda a derecha, y hasta que no termina no hay nada que meter en la red.' }
+      - { id: c, text: 'El softmax de la salida, que normaliza sobre las $T$ posiciones y necesita todas las puntuaciones antes de empezar.' }
+      - { id: d, text: 'Nada: con la entrada entera disponible, las $T$ multiplicaciones $\mathbf{W}_{xh}\mathbf{x}_t$ se hacen a la vez y la recurrencia se paraleliza.' }
+    answer: a
+    explanation: 'La (a), y conviene decirlo con precisión: lo que impide solapar no es el tamaño del cálculo, es su forma. La (d) acierta a medias y por eso es la trampa: los productos $\mathbf{W}_{xh}\mathbf{x}_t$ sí se calculan todos a la vez, porque cada uno sólo mira su propio token; lo que no se puede adelantar es $\mathbf{W}_{hh}\mathbf{h}_{t-1}$, y con él el $\tanh$ que produce el estado. Una de las dos mitades de la recurrencia se reparte y la otra no, y la que no se reparte es la que decide. La (b) confunde el preprocesado con el modelo: tokenizar se hace una vez y no vuelve a aparecer. La (c) le atribuye al softmax una espera que no tiene: normaliza una fila, y las filas son independientes entre sí.'
+    hint: '¿Qué necesita el paso $t$ que sólo existe cuando el paso $t-1$ ha terminado?'
+  - id: q-donde-se-cruzan
+    type: numeric
+    prompt: 'Con $d_h = d_{\text{model}} = d_k = d_v = 512$, ¿a partir de qué longitud $T$ cuesta más multiplicaciones la rejilla de atención que la recurrencia?'
+    answer: 512
+    tolerance: 0
+    unit: tokens
+    explanation: 'A partir de $T = 512$, que es $d$. La recurrencia cuesta $2Td^{2}$ y la rejilla $2T^{2}d$, así que su razón es $T/d$ y las dos se cruzan cuando la frase mide lo que mide el modelo. Debajo de esa longitud la rejilla es la más barata de las dos —a $T = 50$, diez veces— y encima crece más deprisa. Guarda las dos mitades del resultado: el cruce está donde está porque $T$ aparece al cuadrado en un sitio y $d$ al cuadrado en el otro, y en textos de longitud corriente el que va al cuadrado es el pequeño.'
+    hint: 'Iguala $2Td^{2}$ y $2T^{2}d$ y despeja.'
+  - id: q-ciega-al-orden
+    type: single
+    prompt: 'Le pasas a la llamada de atención las mismas filas en otro orden —los mismos tokens, barajados—. ¿Qué sale?'
+    options:
+      - { id: a, text: 'Las mismas filas de salida, barajadas igual. Ningún número cambia: $e_{ij}$ se calcula con los dos vectores de la pareja y no mira dónde está cada uno.' }
+      - { id: b, text: 'Otra cosa distinta, porque el softmax normaliza por filas y barajar cambia el orden de los sumandos del denominador.' }
+      - { id: c, text: 'Un error de formas: la operación está definida sobre una secuencia, así que exige que las filas lleguen en el orden en que se leyeron.' }
+      - { id: d, text: 'Las mismas filas y en el mismo orden que antes, porque la mezcla suma sobre todas las posiciones y una suma no depende del orden.' }
+    answer: a
+    explanation: 'La (a), y ése es el agujero que esta lección deja abierto: la operación no distingue una frase de sus propias palabras barajadas. La (b) se apoya en algo cierto para concluir algo falso: la suma del denominador no depende del orden de sus sumandos, que es justamente por lo que el peso de una pareja no se entera de la baraja. La (c) inventa una restricción: lo único que la operación exige es que las claves y los valores vengan emparejados. La (d) acierta en que la suma no depende del orden y se pasa de frenada: la salida de la consulta $i$ no cambia, pero las consultas también se han barajado, así que las filas del resultado salen en el orden nuevo. Cuidado con la lectura fácil: la atención no es que ignore el orden, es que no tiene por dónde enterarse.'
+    hint: 'Mira los índices de $e_{ij} = a(\mathbf{q}_i, \mathbf{k}_j)$: ¿aparecen $i$ y $j$ dentro de la cuenta, o sólo señalan qué vectores entran?'
+  - id: q-camino-mas-largo
+    type: multi
+    prompt: 'Sobre el camino que une la posición $1$ con la posición $T$, marca lo que es cierto.'
+    options:
+      - { id: a, text: 'En la recurrencia ese camino pasa por $T-1$ productos por $\mathbf{W}_{hh}$, uno por paso intermedio.' }
+      - { id: b, text: 'En la atención el camino es un solo peso, $\alpha_{T1}$, sea cual sea $T$.' }
+      - { id: c, text: 'Al acortarse el camino desaparece el producto repetido de la lección 4 del bloque 3, sobre el gradiente que se desvanece, que es lo que hacía que la señal se apagara con la distancia.' }
+      - { id: d, text: 'La atención acorta el camino de ida, pero el de vuelta sigue midiendo $T-1$: el gradiente tiene que recorrer las posiciones intermedias aunque la salida no las haya usado.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras. La longitud del camino es la cuenta que la lección 4 del bloque 3, sobre el gradiente que se desvanece, dejó hecha: multiplicar $T-1$ veces por la misma matriz mata o dispara la señal según su radio espectral, y la LSTM y la GRU respondieron abriéndole una vía aditiva en lugar de acortarlo. La atención lo acorta: entre dos posiciones cualesquiera hay un peso y una suma, y ni la ida ni la vuelta tienen nada intermedio que recorrer —por eso la (d) es falsa: el camino del gradiente es el mismo camino, recorrido al revés—. Lo que no desaparece es el problema de fondo: sigue habiendo profundidad, sólo que ahora es la de las capas apiladas y no la de la frase, y ésa no crece cuando el texto se alarga.'
+    hint: 'Cuenta cuántas matrices hay entre las dos posiciones en cada una de las dos arquitecturas.'
+challenges: []
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 1. */}
+
+El bloque anterior terminó dejando la atención en los huesos: tres listas de vectores, una función
+que compara y una suma ponderada, sin una sola recurrencia por dentro. Lo que no tocó fue la
+máquina que la rodea, y esa sigue siendo recurrente de arriba abajo: quien llena las listas es un
+decoder que produce un estado por paso y no sabe producir el siguiente antes que el anterior. La
+operación ya no espera a nada; espera a quien se la pide.
+
+Esta lección quita esa máquina entera y se queda mirando lo que sobrevive. Y la pregunta no es
+estética, porque la recurrencia cobra un precio que se puede contar. Toma una noticia de $800$
+tokens y una red recurrente cualquiera: leerla son $800$ pasos que ocurren uno después de otro, y
+comprar una máquina con $800$ procesadores no cambia nada, porque el paso $401$ necesita un
+número que el paso $400$ todavía no ha terminado de calcular. Esa es la primera factura. La
+segunda la pagó el bloque 3 entero: lo que la posición $1$ tenga que decirle a la posición $800$
+viaja por $799$ multiplicaciones por la misma matriz, y para cuando llega no queda casi nada. Las
+dos facturas tienen el mismo origen, y quitarlo se lleva las dos por delante.
+
+El diagrama de abajo es dónde acaba todo esto: la arquitectura completa que el bloque construye,
+la figura 1 del artículo *Attention is All You Need*, caja por caja. A estas alturas la mitad de
+los nombres no te dicen nada, y no pasa nada —cada caja lleva escrita la lección que la
+construye—. Lo que sí se lee hoy es lo único que esta lección afirma: enciende el marcador y, de
+las quince cajas, se iluminan tres. Las otras doce trabajan sobre una fila cada vez y no tienen
+forma de saber qué hay en la de al lado.
+
+<Explorable
+  id="transformer-architecture"
+  caption="Quince cajas y ninguna flecha que vaya de una posición a la siguiente. Las tres que mezclan posiciones son las tres de atención; el resto trata cada posición por separado."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Si lo único que necesita mirar hacia otras posiciones es la atención, y la atención mira a todas de
+una vez, entonces nada dentro del modelo tiene que esperar a la posición anterior.
+</Callout>
+
+## La cadena de esperas que ningún ordenador acorta
+
+La recurrencia del bloque anterior se escribe en una línea, y esa línea lo dice todo:
+
+$$
+\mathbf{h}_t = \tanh\left(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h\right),
+$$
+
+con $\mathbf{h}_t \in \mathbb{R}^{d_h}$ y $\mathbf{h}_0 = \mathbf{0}$. De los dos sumandos, el
+segundo no espera a nadie: $\mathbf{W}_{xh}\mathbf{x}_t$ sólo mira el token de su posición, así que
+los $T$ productos se pueden calcular a la vez en cuanto el texto está tokenizado. El primero sí
+espera. $\mathbf{h}_{t-1}$ es el resultado del paso anterior, y no hay manera de adelantarlo sin
+calcularlo. Una de las dos mitades se reparte entre procesadores y la otra no, y la que no se
+reparte es la que fija el resultado: la profundidad de la cadena —cuántas operaciones tienen que
+ocurrir en fila, una detrás de otra— es $T$.
+
+Ponlo frente a la llamada de atención tal como quedó escrita. La puntuación de la pareja $(i,j)$
+es
+
+$$
+e_{ij} = a\left(\mathbf{q}_i, \mathbf{k}_j\right),
+$$
+
+y ahí no aparece ningún $e$ de ninguna otra pareja. Cada una de las $T^{2}$ puntuaciones se calcula
+con dos vectores que ya existen, de modo que las $T^{2}$ se pueden calcular simultáneamente —que
+es lo que significa que quepan en un solo producto de matrices, $\mathbf{Q}\mathbf{K}^{\top}$—. El
+softmax normaliza cada fila con la suya y ninguna fila mira a otra; la mezcla es un segundo
+producto. Tres operaciones en fila, y ese tres no se mueve cuando el texto se alarga.
+
+### La otra distancia, la que el bloque 3 no pudo acortar
+
+La profundidad de la cadena decide cuánto se tarda. Hay una segunda distancia, y decide algo peor.
+
+Pregúntate por dónde viaja lo que la posición $1$ le aporta a la posición $T$. En la recurrencia
+viaja por dentro del estado, y el estado se reescribe en cada paso, así que ese aporte pasa por
+$T-1$ productos por $\mathbf{W}_{hh}$ antes de llegar. Es exactamente la cuenta de la lección 4 del
+bloque 3, sobre el gradiente que se desvanece: multiplicar $T-1$ veces por la misma matriz apaga la
+señal si su radio espectral es menor que $1$ y la dispara si es mayor, y la LSTM (*long short-term
+memory*) y la GRU (*gated recurrent unit*) no acortaron ese camino, le abrieron una vía aditiva al
+lado para que sobreviviera el viaje.
+
+En la atención el camino entre esas dos posiciones es un peso:
+
+$$
+\mathbf{c}_T = \alpha_{T1}\,\mathbf{v}_1 + \alpha_{T2}\,\mathbf{v}_2 + \dots + \alpha_{TT}\,\mathbf{v}_T.
+$$
+
+Lo que aporta la posición $1$ es su sumando, y delante lleva un solo factor: $\alpha_{T1}$. Uno,
+no $T-1$. Y como el camino de vuelta es el de ida recorrido al revés, el gradiente que llega a la
+posición $1$ desde la pérdida del paso $T$ tampoco atraviesa nada intermedio. La distancia entre
+dos posiciones cualesquiera deja de depender de cuántas haya en medio, que es más de lo que el
+bloque 3 consiguió: la compuerta hizo el viaje sobrevivible, no corto.
+
+## Lo que cuesta cambiar los pasos por una rejilla
+
+Nada de esto es gratis, y el precio se cuenta en multiplicaciones. Empieza por la recurrencia. Un
+paso multiplica $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ por un vector y
+$\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$ por otro, y multiplicar una matriz
+por un vector cuesta una multiplicación por casilla, así que el paso cuesta un producto por cada
+peso que tiene. Esa es la cuenta de la lección 2 del bloque 3, sobre la RNN (*recurrent neural
+network*) vanilla, leída como coste en lugar de como memoria. Sobre la frase entera:
+
+$$
+T\left(d_h \cdot d_h + d_h \cdot d_{\text{model}}\right) \quad \text{multiplicaciones}.
+$$
+
+Ahora la rejilla. $\mathbf{Q}\mathbf{K}^{\top}$ multiplica una matriz $T \times d_k$ por una
+$d_k \times T$: cada una de las $T^{2}$ casillas del resultado es un producto escalar de $d_k$
+términos, y son $T^{2} \cdot d_k$ multiplicaciones. La mezcla $\mathbf{A}\mathbf{V}$ tiene $T \cdot d_v$
+casillas y cada una suma $T$ términos, otras $T^{2} \cdot d_v$. En total:
+
+$$
+T^{2}\left(d_k + d_v\right) \quad \text{multiplicaciones}.
+$$
+
+Las dos cuentas se comparan mejor con las cuatro anchuras iguales. Supongámoslas iguales y
+llamémoslas $d$: quedan $2Td^{2}$ frente a $2T^{2}d$, y la razón entre las dos es $T/d$. La
+rejilla cuesta menos que la recurrencia mientras la frase mida menos que el modelo, y más en
+cuanto lo pasa; se cruzan cuando $T = d$, y no antes. En el artículo estas dos cuentas
+aparecen escritas como $O(T^{2}d)$ frente a $O(Td^{2})$, que es la misma comparación con las
+constantes borradas; te la vas a encontrar así en su tabla 1.
+
+Lo que se ha comprado con eso conviene decirlo entero, porque no es «más rápido». Es un cambio de
+eje: el trabajo total crece —con $T$ al cuadrado, en textos largos—, y a cambio ese trabajo se
+puede repartir, mientras que los $T$ pasos de la recurrencia no se pueden repartir de ninguna
+manera. Una cuenta grande que cabe en un solo producto de matrices se resuelve antes que una
+cuenta pequeña partida en $T$ esperas.
+
+### El precio que no se paga en multiplicaciones
+
+Vuelve a mirar la puntuación, y esta vez fíjate en los índices. En $e_{ij} = a(\mathbf{q}_i,
+\mathbf{k}_j)$ los subíndices sólo señalan qué dos vectores entran; dentro de la cuenta no aparece
+ni $i$ ni $j$. Lo mismo vale para la mezcla, que es una suma, y una suma no distingue el orden de
+sus sumandos. La consecuencia es incómoda: si barajas las filas de $\mathbf{K}$ y $\mathbf{V}$, las
+salidas se barajan igual y ningún número cambia.
+
+De modo que <W>el perro muerde al cartero</W> y <W>al cartero muerde el perro</W> llegan a la
+capa como el mismo conjunto de vectores. La recurrencia no tenía este problema, y no por virtud
+propia: lo tenía resuelto de nacimiento, porque leía en orden y el orden de lectura era el orden de
+la frase. El MLP (*multilayer perceptron*) concatenado de la lección 1 del bloque 3, sobre por qué
+falla el MLP en secuencias, tampoco lo tenía, por la razón contraria: cada posición multiplicaba su
+propio bloque de pesos, y por eso sabía distinguirlas y no sabía generalizar entre ellas. La
+atención no tiene ni lo uno ni lo otro.
+
+La concesión es grande y esta lección no la arregla: quitar la recurrencia se lleva por delante lo
+único que sabía el orden. Se arregla sumándole a cada fila algo que dependa de dónde está, y eso es
+la lección 5 de este bloque, sobre la codificación posicional. Hasta entonces, todo lo que sigue
+trata la entrada como una bolsa de vectores.
+
+## Compruébalo a mano con una frase de 50 tokens
+
+Haz las dos cuentas con números, que es donde se ve que el cambio no es teórico. Toma
+$d = 512$ —la anchura del modelo del artículo— y una frase de $T = 50$ tokens.
+
+La recurrencia: $2 \cdot 50 \cdot 512^{2} = 26\,214\,400$ multiplicaciones, repartidas en $50$
+pasos que van uno detrás de otro. La rejilla: $2 \cdot 50^{2} \cdot 512 = 2\,560\,000$, y no en
+$50$ esperas sino en dos productos de matrices. Diez veces menos trabajo, y la profundidad de la
+cadena ha pasado de $50$ a un número que ni siquiera menciona a $50$.
+
+Sube ahora a $T = 1\,000$, un texto largo. La rejilla pide
+$2 \cdot 1\,000^{2} \cdot 512 = 1\,024\,000\,000$ y la recurrencia
+$2 \cdot 1\,000 \cdot 512^{2} = 524\,288\,000$: casi el doble, y esta vez el caro es el nuevo. La
+razón entre los dos es $1\,000/512 \approx 1.95$, tal como decía $T/d$. Hazlo tú con $T = 2\,000$ y comprueba que sale $3.9$ —y fíjate en que la profundidad de la
+cadena sigue sin moverse, mientras la de la recurrencia se ha ido a $2\,000$—.
+
+Ese es el trato, con sus dos columnas a la vista: se paga trabajo, que se puede repartir entre
+procesadores, y se compra espera, que no se puede repartir entre nada.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: qué es lo que no se puede solapar, dónde se cruzan las dos cuentas, qué pasa si
+barajas las filas y qué le ocurre al camino entre dos posiciones lejanas.
+
+<Quiz id="q-cadena-de-esperas" />
+
+<Quiz id="q-donde-se-cruzan" />
+
+<Quiz id="q-ciega-al-orden" />
+
+<Quiz id="q-camino-mas-largo" />
+
+---
+
+Queda un agujero en el sitio más visible. La llamada de atención necesita tres listas, y en todo
+el bloque anterior las consultas venían del decoder: eran sus estados, uno por paso. Ese decoder
+acaba de desaparecer del dibujo. Nadie fabrica ya $\mathbf{Q}$, y sin consultas la operación que
+esta lección ha puesto en el centro de la arquitectura no tiene con qué empezar.
+
+La respuesta es la que le da nombre a la lección 2 de este bloque, sobre la auto-atención: que
+pregunte la propia secuencia. Si las consultas, las claves y los valores son tres lecturas de la
+misma lista de vectores, no hace falta ninguna segunda red que produzca nada —y cada posición pasa
+a mirar a todas las demás, incluida ella misma—. Es la operación de siempre con los tres papeles
+repartidos de otra manera, y es lo que convierte el diagrama de arriba en algo que se puede
+calcular.

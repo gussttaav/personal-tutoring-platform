@@ -8,8 +8,8 @@
  *   2. Acquires pack credits (live Stripe payment in one locale; seeded in the
  *      other — see the locale note below)
  *   3. Books a pack session using the credits
- *   4. Navigates to /area-personal and asserts the booking is listed (NextSessionCard)
- *   5. Cancels inline via NextSessionCard and asserts card disappears
+ *   4. Navigates to /area-personal and asserts the booking is listed (NextClassHero)
+ *   5. Cancels inline via NextClassHero and asserts the hero disappears
  *
  * Locale note: only ONE locale performs the live Stripe payment. Stripe's
  * PaymentElement is not localized by our app (we pass no locale to Elements),
@@ -124,7 +124,7 @@ for (const locale of LOCALES) {
       });
       await page.getByRole("button", { name: d.areaPersonal.nextSession.confirmCancel }).click();
 
-      // NextSessionCard disappears once bookings refresh.
+      // NextClassHero disappears once bookings refresh.
       await expect(page.getByText(d.areaPersonal.nextSession.title, { exact: true })).not.toBeVisible({
         timeout: 30_000,
       });

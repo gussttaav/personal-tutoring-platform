@@ -1,0 +1,485 @@
+---
+slug: funcion-de-perdida
+title: "Funciones de pérdida: MSE y entropía cruzada"
+block: 2
+order: 5
+minutes: 30
+summary: "Una pérdida resume en un número lo mal que lo hace la red, y entre dos candidatas decide su derivada. El error cuadrático medio entrega su corrección más pequeña justo donde la red se equivoca con más seguridad; la entropía cruzada, que sale de leer la salida como probabilidad, deja esa derivada en la diferencia entre lo predicho y la etiqueta."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-ec-a-mano
+    type: numeric
+    prompt: 'Una red con sigmoide en la salida le asigna $\hat{y} = 0.2$ a una reseña cuya etiqueta es $y = 1$. ¿Cuánto vale la entropía cruzada de ese ejemplo?'
+    answer: 1.609
+    tolerance: 0.01
+    explanation: 'Con $y = 1$ el segundo sumando se anula y queda $-\log \hat{y} = -\log 0.2 = 1.609$. Compáralo con lo que diría el error cuadrático medio del mismo ejemplo, $(0.2 - 1)^{2} = 0.64$: un número más pequeño que $1$, y acotado por $1$ pase lo que pase, mientras la entropía cruzada crece sin techo según $\hat{y}$ se acerca a cero. Y mira la corrección, que es lo que decide: $\partial \ell / \partial z = \hat{y} - y = -0.8$ con la entropía cruzada, frente a $2(\hat{y} - y)\,\hat{y}(1 - \hat{y}) = -0.256$ con el MSE.'
+  - id: q-mse-clasificar
+    type: single
+    prompt: '¿Qué le pasa al error cuadrático medio cuando la salida de la red es una sigmoide y la etiqueta vale $0$ o $1$?'
+    options:
+      - { id: a, text: 'Que su derivada respecto de $z$ arrastra el factor $\hat{y}(1 - \hat{y})$, que se acerca a cero justo cuando la red se equivoca con más seguridad: el peor error produce la corrección más pequeña.' }
+      - { id: b, text: 'Que puede dar un número mayor que $1$, y una pérdida acotada es imprescindible para comparar redes distintas.' }
+      - { id: c, text: 'Que no distingue entre equivocarse por poco y equivocarse del todo, porque eleva al cuadrado y el cuadrado borra esa diferencia.' }
+      - { id: d, text: 'Que sólo sirve con dos clases: con tres o más deja de estar definido, y por eso hace falta la entropía cruzada.' }
+    answer: a
+    explanation: 'La (a) es la cuenta de la lección: $\partial \ell / \partial z = 2(\hat{y} - y)\,\hat{y}(1 - \hat{y})$, y en $z = -6$ con $y = 1$ eso vale $0.0049$ frente al $0.9975$ de la entropía cruzada. El defecto no está en lo que el MSE mide, está en lo que entrega al derivar. La (b) va al revés: el MSE con salidas en $(0,1)$ y etiquetas en $\{0, 1\}$ nunca pasa de $1$, y es la entropía cruzada la que no está acotada. La (c) describe justo lo contrario de lo que hace el cuadrado, que amplifica los errores grandes en lugar de borrarlos. Y la (d) es falsa: el MSE está perfectamente definido con más clases —sigue siendo una suma de cuadrados—, lo que pasa es que ahí falla por la misma razón que aquí.'
+  - id: q-gradiente-limpio
+    type: multi
+    prompt: 'Marca todo lo que sea cierto sobre el resultado $\dfrac{\partial \ell}{\partial z} = \hat{y} - y$ de esta lección.'
+    options:
+      - { id: a, text: 'Sale de que el $\hat{y}(1 - \hat{y})$ que aporta derivar la sigmoide es exactamente el que había en el denominador al derivar el logaritmo, y los dos se cancelan.' }
+      - { id: b, text: 'Con softmax y varias clases vale coordenada a coordenada: la corrección de la capa de salida es $\hat{\mathbf{y}} - \mathbf{y}$.' }
+      - { id: c, text: 'Su magnitud nunca llega a $1$, pero se acerca todo lo que haga falta según la red se equivoca con más confianza.' }
+      - { id: d, text: 'Como la fórmula no menciona a $\varphi$, la sigmoide de la capa de salida se puede quitar sin que la corrección cambie.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras son el resultado y sus dos lecturas. La (a) es la cancelación, y es la única razón de que la fórmula quede tan corta. La (b) es la generalización del desplegable, con $\mathbf{y}$ codificada one-hot. La (c) sale de que $\hat{y} \in (0,1)$ y $y \in \{0, 1\}$: la diferencia vive en $(-1, 1)$ y no alcanza los extremos, pero llega a $0.9975$ en $z = -6$. La falsa es la (d), y se equivoca justo al revés: la fórmula no menciona a $\varphi$ porque la sigmoide ya se ha usado y se ha cancelado. Quítala y la cancelación no ocurre, porque el denominador del logaritmo se queda sin su pareja.'
+  - id: q-log-cero
+    type: predict-output
+    prompt: 'Así recorta la celda las probabilidades antes de tomar el logaritmo. ¿Qué imprime?'
+    language: python
+    code: |
+      import numpy as np
+
+      p = np.array([0.9, 1e-15, 0.5])
+      print(np.round(-np.log(np.clip(p, 1e-12, 1.0)), 2))
+    answer: '[ 0.11 27.63  0.69]'
+    explanation: 'El recorte sube el $10^{-15}$ hasta $10^{-12}$ y deja los otros dos donde estaban, así que los tres logaritmos existen: $-\log 0.9 = 0.11$, $-\log 10^{-12} = 27.63$ y $-\log 0.5 = 0.69$. Sin el recorte, el segundo sería $-\log 0 = \infty$ y la media del batch entero valdría infinito por culpa de un solo ejemplo. Fíjate en el precio: el $27.63$ es un número inventado por el recorte, no medido. Lo que compra es que el resto del batch siga diciendo algo.'
+    hint: 'El formato cuenta tanto como los valores. NumPy alinea las tres casillas al ancho de la más larga, `27.63`, así que las otras dos van precedidas de un espacio de relleno además del que las separa.'
+  - id: q-softmax
+    type: single
+    prompt: '`softmax(z)` y `softmax(z + 100)` devuelven exactamente lo mismo. ¿Por qué, y qué se gana restando el máximo de cada fila antes de exponenciar?'
+    options:
+      - { id: a, text: 'Porque sumar una constante multiplica numerador y denominador por el mismo $e^{100}$, que se cancela. Restar el máximo aprovecha esa libertad para que el mayor exponente sea $e^{0} = 1$, de modo que nada desborda y el resultado no cambia.' }
+      - { id: b, text: 'Porque el softmax normaliza al final, y cualquier desplazamiento se pierde en esa normalización aunque los numeradores sí cambien de valor relativo.' }
+      - { id: c, text: 'Porque restar el máximo es lo que hace que las salidas sumen $1$; sin ese paso el denominador no alcanza para normalizarlas.' }
+      - { id: d, text: 'Porque el desplazamiento cambia el resultado en menos de $10^{-12}$, y a esa escala los dos valores son indistinguibles en coma flotante.' }
+    answer: a
+    explanation: 'La (a) dice las dos mitades: la invariancia es algebraica —$e^{z_k + c}/\sum_m e^{z_m + c} = e^{c}e^{z_k} / (e^{c}\sum_m e^{z_m})$— y restar el máximo es esa misma invariancia usada a propósito, porque `np.exp(1000)` desborda a infinito y el cociente sale `nan`. La (b) se contradice a sí misma: si los numeradores cambiaran de valor relativo, el resultado cambiaría. La (c) confunde los dos papeles: normalizar lo hace el denominador, y lo hace con o sin desplazamiento. Y la (d) convierte en aproximación algo que es una igualdad exacta.'
+challenges:
+  - id: ch-entropia-cruzada
+    prompt: |
+      Escribe la capa de salida de una red de varias clases, sobre un batch entero y sin bucles de
+      Python:
+
+      - `softmax(Z)` recibe `Z` de forma $(B,\, d_L)$ y devuelve las probabilidades fila a fila.
+        Cada fila tiene que sumar $1$, y la función tiene que sobrevivir a preactivaciones grandes:
+        `np.exp(1000)` desborda.
+      - `entropia_cruzada(Y_hat, Y)` devuelve la media sobre el batch de $-\sum_k y_k \log \hat{y}_k$,
+        con `Y` codificada one-hot. Un $\hat{y}_k$ que valga cero no puede devolver `inf`.
+
+      Ninguna de las dos puede escribir en los arrays que recibe.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def softmax(Z):
+          # tu código aquí
+          pass
+
+
+      def entropia_cruzada(Y_hat, Y):
+          # tu código aquí
+          pass
+    tests:
+      - name: "cada fila suma 1 y conserva la forma"
+        code: |
+          import numpy as np
+          P = softmax(np.array([[1., 2., 3.], [0., 0., 0.]]))
+          assert P is not None and P.shape == (2, 3), 'una fila por ejemplo y una columna por clase: la forma de Z'
+          assert np.allclose(P.sum(axis=1), [1., 1.]), 'suma por filas (axis=1), no sobre la matriz entera'
+      - name: "el orden de las clases se respeta"
+        code: |
+          import numpy as np
+          P = softmax(np.array([[1., 2., 3.]]))
+          assert P is not None and np.allclose(P, [[0.09003057, 0.24472847, 0.66524096]]), 'la exponencial conserva el orden: la mayor preactivacion se lleva la mayor probabilidad'
+      - name: "no desborda con preactivaciones grandes"
+        code: |
+          import numpy as np
+          P = softmax(np.array([[1000., 1000., 1000.]]))
+          assert P is not None and np.isfinite(P).all(), 'desborda: resta el maximo de cada fila antes de exponenciar'
+          assert np.allclose(P, [[1/3, 1/3, 1/3]]), 'sumar una constante a toda la fila no cambia el softmax'
+      - name: "la entropía cruzada es la media del batch"
+        code: |
+          import numpy as np
+          Y_hat = softmax(np.array([[1., 2., 3.], [1., 1., 1.]]))
+          Y = np.array([[0., 0., 1.], [1., 0., 0.]])
+          L = entropia_cruzada(Y_hat, Y)
+          assert L is not None and np.isclose(float(L), 0.7531093), 'promedia sobre los B ejemplos: la suma de 0.4076 y 1.0986 dividida entre 2'
+      - name: "una probabilidad nula no devuelve inf"
+        code: |
+          import numpy as np
+          L = entropia_cruzada(np.array([[1., 0.]]), np.array([[0., 1.]]))
+          assert L is not None and np.isfinite(float(L)), 'recorta antes del logaritmo: np.clip(Y_hat, 1e-12, 1.0)'
+      - name: "no escribe en los arrays que recibe"
+        code: |
+          import numpy as np
+          Z = np.array([[1., 2.]])
+          P = softmax(Z)
+          assert P is not None and np.allclose(Z, [[1., 2.]]), 'Z -= Z.max() escribe en el array de quien te llama; devuelve uno nuevo'
+    solution: |
+      import numpy as np
+
+
+      def softmax(Z):
+          E = np.exp(Z - Z.max(axis=1, keepdims=True))
+          return E / E.sum(axis=1, keepdims=True)
+
+
+      def entropia_cruzada(Y_hat, Y):
+          P = np.clip(Y_hat, 1e-12, 1.0)
+          return float(-np.sum(Y * np.log(P), axis=1).mean())
+    explanation: |
+      Las dos funciones caben en cuatro líneas y las cuatro decisiones están en los `axis`. En
+      `softmax`, `axis=1` es «por filas» —cada ejemplo se normaliza contra sus propias clases y no
+      contra las de los demás— y `keepdims=True` es lo que deja la forma en $(B, 1)$ para que reste
+      y divida fila a fila; sin él, NumPy da un error de formas, que es la suerte que tienes.
+
+      `Z - Z.max(...)` construye un array nuevo, y ahí está la última prueba: `Z -= Z.max(...)`
+      hace lo mismo aritméticamente y además destruye la entrada de quien te llamó. Ese
+      desplazamiento no cambia el resultado —sumar una constante a toda la fila multiplica arriba
+      y abajo por lo mismo— y evita que `np.exp` desborde, porque el mayor exponente pasa a ser
+      $e^{0} = 1$.
+
+      En `entropia_cruzada`, el recorte es lo que impide que un $\hat{y}_k$ nulo se lleve por
+      delante la media del batch entero. Fíjate en que `Y * np.log(P)` recorre las $d_L$ clases y
+      la one-hot anula todas menos una: la suma por filas se queda en $-\log \hat{y}_c$, el
+      logaritmo de la probabilidad que la red le dio a la clase correcta.
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 5. */}
+
+Medir no es contestar, y la red sólo sabe contestar. La lección anterior, sobre el *forward pass* en
+forma matricial, cerró la mitad del recorrido que va de $\mathbf{X}$ a $\hat{\mathbf{Y}}$: una cadena
+de productos que atraviesa las capas sin preguntarse ni una vez si lo que entrega se parece a lo que
+debía. La otra mitad empieza aquí, fijando una regla que compare $\hat{\mathbf{Y}}$ con $\mathbf{Y}$
+y resuma en un único número lo mal que va el batch. Esa regla se llama función de pérdida, y hay que elegirla.
+
+Reglas que sirvan hay muchas, y la elección pesa. Toma <W>divertida y la recomiendo</W>, que habla
+bien de la película: su etiqueta es $y = 1$, y la red contesta con un número entre $0$ y $1$ que
+vale más cuanto más se incline por esa clase. Supón que entrega un $0.002$. Falla, porque tenía
+que haber dado algo pegado al $1$, y falla con toda la seguridad del mundo, porque más cerca del $0$
+no podía quedarse. Esta lección compara dos candidatas, el error cuadrático medio y la entropía
+cruzada, y las dos coinciden en que ahí la pérdida es alta: por ahí no se distinguen. Lo que las
+separa es cuánto cambia esa pérdida cuando un peso cambia, y en un ejemplo así la primera de las
+dos, que es la que se le ocurre a cualquiera, apenas se inmuta.
+
+Antes de escribir ninguna fórmula, mira la forma de esa diferencia. Lo dibujado no son las dos
+pérdidas sino la **corrección** que entrega cada una: cuánto se mueve por cada unidad que se mueva la
+preactivación $z$ de la neurona de salida, que es de donde tiran los pesos. En verde la entropía
+cruzada; en gris el error cuadrático medio (*mean squared error*, MSE). Con la etiqueta valiendo
+$1$, la red acierta hacia la derecha del dibujo y falla hacia la izquierda.
+
+<Figure
+  src="/courses/dl-nlp/perdida-correccion.svg"
+  alt="Una gráfica con la preactivación z de menos 6 a 6 en el eje horizontal y la corrección, de 0 a 1, en el vertical. La curva de la entropía cruzada, en verde, entra por la esquina superior izquierda pegada al 1, baja atravesando el centro por 0.5 y termina pegada al 0 en la derecha: decrece sin parar. La curva del MSE, en gris, entra por la esquina inferior izquierda pegada al 0, sube hasta un máximo de 0.30 poco antes del centro y vuelve a caer hasta el 0 por la derecha: es una joroba con las dos colas en el suelo."
+  caption="Las dos colas del MSE valen lo mismo y significan lo contrario: la de la derecha es una red que acierta y no necesita corrección, y la de la izquierda es una red que falla con seguridad y tampoco la recibe. La entropía cruzada sólo se calla en un extremo."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Una pérdida no se elige por lo que mide, se elige por lo que entrega al derivarla.
+</Callout>
+
+## De predicciones a un solo número
+
+La red entrega $\hat{\mathbf{Y}} \in \mathbb{R}^{B \times d_L}$, y los ejemplos traen sus etiquetas en
+un array de la misma forma, $\mathbf{Y} \in \mathbb{R}^{B \times d_L}$, fila con fila. Una
+**pérdida** resume ese par en un número, y se construye en dos niveles: una función $\ell$ que juzga
+*un* ejemplo comparando su predicción con su etiqueta, y la media de las $B$ que resulta,
+
+$$
+\mathcal{L} = \frac{1}{B} \sum_{i=1}^{B} \ell\left(\hat{\mathbf{y}}_i, \mathbf{y}_i\right),
+$$
+
+donde $\hat{\mathbf{y}}_i, \mathbf{y}_i \in \mathbb{R}^{d_L}$ son la predicción y la etiqueta del
+ejemplo $i$: las filas $i$ de $\hat{\mathbf{Y}}$ y de $\mathbf{Y}$, escritas en columna. Es la media
+y no la suma para que $\mathcal{L}$ no crezca con $B$.
+
+De $\ell$ se exigen tres cosas y no pesan igual: que devuelva un número, que baje al acercarse la
+predicción a la etiqueta, y que tenga derivada respecto de cada parámetro, porque de esas derivadas
+está hecho el método que corrige los pesos —la lección 6 de este bloque, sobre descenso de
+gradiente—. Las dos primeras las cumple casi cualquier cosa; la tercera es la que descarta
+candidatas, y es el mismo criterio con el que la lección 2 de este bloque, sobre funciones de
+activación y no linealidad, eligió $\varphi$: allí el escalón se cayó por tener derivada nula, no
+por medir mal.
+
+La primera de las dos mide la distancia al cuadrado. El **error cuadrático medio** es
+
+$$
+\mathcal{L}_{\text{MSE}} = \frac{1}{B} \sum_{i=1}^{B} \left\lVert \hat{\mathbf{y}}_i - \mathbf{y}_i \right\rVert^{2},
+\qquad
+\ell_{\text{MSE}}(\hat{y}, y) = (\hat{y} - y)^{2},
+$$
+
+con el subíndice nombrando cuál de las candidatas es, y con la segunda forma escrita para $d_L = 1$
+—la red de reseñas—, donde $\hat{y}$ e $y$ son escalares y los escribo sin negrita. El cuadrado hace
+dos cosas: quita el signo, de modo que pasarse y quedarse corto cuestan lo mismo, y castiga
+los errores grandes más que proporcionalmente, porque fallar por $0.8$ cuesta dieciséis veces lo
+que fallar por $0.2$, no cuatro.
+
+Ese es el criterio correcto cuando la red predice una cantidad: si hay que adivinar cuántas
+estrellas le puso su autor, la diferencia $\hat{y} - y$ son estrellas y su cuadrado mide
+lo que se busca. Al derivar sale
+$\partial \ell_{\text{MSE}} / \partial \hat{y} = 2(\hat{y} - y)$, la primera propiedad buena de esta
+pérdida: la corrección es proporcional al error. Sobre ese factor $2$ hay una convención que no
+adopto —mucha gente pone un $\tfrac{1}{2}$ delante para que se cancele al derivar—, y no cambia nada
+medible: multiplicar todas las correcciones por una constante se absorbe en el tamaño del paso, que
+es lo que ajusta la lección siguiente.
+
+### Por qué se apaga justo cuando más falta hace
+
+Clasificar no es predecir una cantidad, y ahí la cuenta cambia. La etiqueta vale $0$ o $1$, la salida
+sale de una sigmoide, $\hat{y} = \sigma(z)$, y la derivada que hace falta no es la de $\hat{y}$ sino
+la de $z$, que es lo que los pesos controlan. Encadenando, y con
+$\sigma'(z) = \sigma(z)\left(1 - \sigma(z)\right)$ de la lección 2 de este bloque:
+
+$$
+\frac{\partial \ell_{\text{MSE}}}{\partial z}
+= \frac{\partial \ell_{\text{MSE}}}{\partial \hat{y}} \cdot \frac{d\hat{y}}{dz}
+= 2\left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right).
+$$
+
+Mira el producto de los dos últimos factores: es la derivada de la sigmoide, y la lección 2 ya dijo
+dónde se apaga: cuando $\hat{y}$ se acerca a $0$ o a $1$, o sea, cuando la red está segura. La
+saturación que allí era un defecto de la activación reaparece aquí multiplicando a la corrección.
+Con $y = 1$ y $z = -6$ —la red dice que no, con convicción, y se equivoca— el primer factor vale
+casi $-2$, pero $\hat{y}\left(1 - \hat{y}\right)$ vale $0.0025$, y el producto se queda en
+$0.0049$. El peor error del batch pide la corrección más pequeña del batch.
+
+No es un caso raro elegido a mano: es la mitad izquierda entera de la curva gris de arriba. Y ningún
+ajuste del tamaño del paso arregla una pérdida que confunde sus dos colas, porque las escala a las
+dos por igual.
+
+## La entropía cruzada, leyendo la salida como probabilidad
+
+El arreglo no es parchear la fórmula, sino cambiar lo que se supone que la red está
+diciendo. Hasta aquí $\hat{y}$ era un número entre $0$ y $1$; tómalo ahora como la probabilidad que
+la red le da a la clase positiva, $\hat{y} = P(y = 1 \mid \mathbf{x})$. Con eso, la probabilidad que
+le asigna a la etiqueta que traía el ejemplo se escribe de una vez para los dos casos,
+
+$$
+P(y \mid \mathbf{x}) = \hat{y}^{\,y}\left(1 - \hat{y}\right)^{1-y},
+$$
+
+porque con $y = 1$ el segundo factor vale $1$ y queda $\hat{y}$, y con $y = 0$ es el primero el que
+desaparece. Suponiendo los $B$ ejemplos independientes, la probabilidad de observar el conjunto
+entero es el producto de las $B$, y a esa cantidad, como función de los parámetros, se la llama
+la **verosimilitud**. Hay que hacerla grande. Multiplicar $B$ números menores que uno lleva el
+producto a cero muy deprisa, así que tomamos logaritmos —que conservan el orden, luego el máximo no
+se mueve—, le damos la vuelta al signo para tener algo que minimizar y dividimos entre $B$. Sale la
+**entropía cruzada**:
+
+$$
+\mathcal{L}_{\text{EC}} = -\frac{1}{B} \sum_{i=1}^{B} \left[\, y_i \log \hat{y}_i + \left(1 - y_i\right)\log\left(1 - \hat{y}_i\right) \right].
+$$
+
+Léela por ejemplos. Uno con $y_i = 1$ aporta $-\log \hat{y}_i$: vale
+$0$ si la red le da probabilidad $1$ y crece sin techo según esa probabilidad baja hacia cero, y uno
+con $y_i = 0$ mira a $1 - \hat{y}_i$. Que no haya techo es la diferencia de fondo con el MSE, que
+nunca pasaba de $1$.
+
+Ahora la derivada, que es lo que decide. Derivamos $\ell_{\text{EC}} = -y\log\hat{y} -
+(1-y)\log(1-\hat{y})$ respecto de $\hat{y}$, ponemos los dos términos sobre denominador común y
+encadenamos con la sigmoide:
+
+$$
+\begin{aligned}
+\frac{\partial \ell_{\text{EC}}}{\partial \hat{y}}
+&= -\frac{y}{\hat{y}} + \frac{1 - y}{1 - \hat{y}}
+ = \frac{-y\left(1 - \hat{y}\right) + \hat{y}\left(1 - y\right)}{\hat{y}\left(1 - \hat{y}\right)}
+ = \frac{\hat{y} - y}{\hat{y}\left(1 - \hat{y}\right)}, \\[4pt]
+\frac{\partial \ell_{\text{EC}}}{\partial z}
+&= \frac{\hat{y} - y}{\hat{y}\left(1 - \hat{y}\right)} \cdot \hat{y}\left(1 - \hat{y}\right)
+ = \hat{y} - y
+\end{aligned}.
+$$
+
+En la primera línea el numerador se simplifica porque los dos productos $y\hat{y}$ se cancelan. En la
+segunda, el denominador es exactamente el $\hat{y}(1 - \hat{y})$ que la sigmoide aporta al
+encadenar, y los dos se van.
+
+La corrección es la diferencia entre lo que la red dijo y lo que debía decir. Nada más. En el
+ejemplo de antes vale $-0.9975$ en lugar de los $0.0049$ del MSE. La saturación no ha
+desaparecido, la sigue teniendo la sigmoide; lo que pasa es que la pérdida trae en su derivada el
+factor inverso exacto que la deshace, y por eso la fórmula final no menciona a $\varphi$.
+
+### Más de dos clases: softmax
+
+Con tres respuestas en lugar de dos —positiva, negativa y neutra— la capa de salida tiene
+$d_L = 3$ neuronas y la sigmoide ya no sirve: aplasta cada coordenada por su cuenta, y tres números
+en $(0,1)$ no forman una distribución. La función que sí lo hace es el *softmax*, el mismo de la
+lección 7 del bloque anterior, sobre Word2Vec, que repartía probabilidad entre las entradas del
+vocabulario:
+
+$$
+\hat{y}_k = \frac{e^{z_k}}{\sum_{m=1}^{d_L} e^{z_m}}, \qquad k = 1, \dots, d_L,
+$$
+
+positivo por ser exponencial y sumando $1$ por el denominador. La etiqueta se
+escribe one-hot, $\mathbf{y} \in \{0,1\}^{d_L}$ con un único $1$ en la posición de la clase correcta
+$c$, tal como la lección 4 del bloque anterior codificaba una entrada del vocabulario. La pérdida es
+la de antes, escrita para $d_L$ clases:
+
+$$
+\ell = -\sum_{k=1}^{d_L} y_k \log \hat{y}_k = -\log \hat{y}_c,
+$$
+
+donde la segunda igualdad sale de que la one-hot anula todos los sumandos menos uno. Sólo cuenta la
+probabilidad que la red le dio a la clase verdadera; lo que reparta entre las otras importa porque
+el denominador las ata a todas.
+
+<Details summary="La derivada, con las dos clases de índice que hay que distinguir">
+
+Derivamos $\ell = -\log \hat{y}_c$ respecto de cada $z_j$. El softmax mete todas las coordenadas en
+cada una —mover $z_j$ mueve el denominador, y con él las $d_L$ probabilidades—, así que hacen falta
+dos cuentas, según $j$ sea o no la clase correcta. Llamemos $S = \sum_{m} e^{z_m}$, con
+$\partial S / \partial z_j = e^{z_j}$.
+
+Cuando $j = c$, el numerador también depende de $z_j$, y es una derivada de un cociente:
+
+$$
+\frac{\partial \hat{y}_c}{\partial z_c}
+= \frac{e^{z_c} S - e^{z_c} e^{z_c}}{S^{2}}
+= \frac{e^{z_c}}{S}\left(1 - \frac{e^{z_c}}{S}\right)
+= \hat{y}_c\left(1 - \hat{y}_c\right).
+$$
+
+Cuando $j \neq c$, el numerador $e^{z_c}$ no depende de $z_j$ y sólo se mueve el
+denominador:
+
+$$
+\frac{\partial \hat{y}_c}{\partial z_j}
+= e^{z_c} \cdot \left(-\frac{1}{S^{2}}\right) e^{z_j}
+= -\frac{e^{z_c}}{S}\cdot\frac{e^{z_j}}{S}
+= -\hat{y}_c\,\hat{y}_j.
+$$
+
+Con $\partial \ell / \partial \hat{y}_c = -1/\hat{y}_c$, la regla de la cadena da los dos casos:
+
+$$
+\frac{\partial \ell}{\partial z_c} = -\frac{1}{\hat{y}_c}\,\hat{y}_c\left(1 - \hat{y}_c\right) = \hat{y}_c - 1,
+\qquad
+\frac{\partial \ell}{\partial z_j} = -\frac{1}{\hat{y}_c}\left(-\hat{y}_c\,\hat{y}_j\right) = \hat{y}_j \quad (j \neq c),
+$$
+
+y las dos son la misma expresión, porque $y_c = 1$ y $y_j = 0$. Coordenada a coordenada:
+
+$$
+\nabla_{\mathbf{z}}\,\ell = \hat{\mathbf{y}} - \mathbf{y}.
+$$
+
+Con $d_L = 2$ esto reproduce el caso binario: la fórmula corta de la sección anterior no era un
+accidente de tener una sola salida.
+
+</Details>
+
+Las dos derivaciones llegan al mismo sitio, y por eso merece la pena hacerlas una vez: de aquí a la
+lección 8 de este bloque, sobre *backpropagation*, la capa de salida no vuelve a derivarse, entra
+con $\hat{\mathbf{y}} - \mathbf{y}$ y ya está. El softmax está aquí porque el resto del curso
+predice sobre vocabularios enteros, donde las clases son decenas de miles.
+
+## Las dos pérdidas sobre las diez reseñas
+
+La celda evalúa las dos candidatas sobre las diez reseñas de siempre, con las preactivaciones de la
+neurona de pesos puestos a mano de la lección 1 de este bloque, sobre la neurona artificial. Nada va
+al azar. Ejecútala y mira tres cosas: qué ordena cada columna, dónde se apaga cada corrección, y qué
+pasa con un logaritmo de cero.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# --- Las diez reseñas de la lección 1, con sus etiquetas y sus preactivaciones.
+y = np.array([1., 0., 1., 0., 1., 0., 0., 1., 0., 1.])
+z = np.array([2., -2., 2., -2., 2., -1., -2., 1., 0., 2.])
+sigmoide = lambda z: 1.0 / (1.0 + np.exp(-z))
+
+
+def mse(y_hat, y):
+    return float(np.mean((y_hat - y) ** 2))
+
+
+def entropia_cruzada(y_hat, y):
+    p = np.clip(y_hat, 1e-12, 1.0 - 1e-12)          # sin esto, un 0 se lleva la media entera
+    return float(-np.mean(y * np.log(p) + (1.0 - y) * np.log(1.0 - p)))
+
+
+# 1. Tres redes: la de la lección 1, la misma sin convicción, y una que contesta 0.5 a todo.
+convencida = sigmoide(z)
+tibia = 0.5 + (convencida - 0.5) * 0.1
+
+print("%-25s %8s %8s %8s" % ("", "aciertos", "MSE", "EC"))
+for nombre, p in [("neurona de la lección 1", convencida),
+                  ("la misma, sin convicción", tibia),
+                  ("contesta 0.5 a todo", np.full(10, 0.5))]:
+    aciertos = int(((p >= 0.5) == (y == 1.0)).sum())
+    print("%-25s %8d %8.4f %8.4f" % (nombre, aciertos, mse(p, y), entropia_cruzada(p, y)))
+print()
+
+# 2. La corrección de cada pérdida, para un ejemplo cuya etiqueta vale 1.
+print("%6s %6s %11s %11s %9s" % ("z", "ŷ", "|dMSE/dz|", "|dEC/dz|", "cociente"))
+for zz in [-6.0, -3.0, 0.0, 3.0, 6.0]:
+    s = sigmoide(zz)
+    d_mse = abs(2.0 * (s - 1.0) * s * (1.0 - s))
+    d_ec = abs(s - 1.0)
+    print("%6.1f %6.3f %11.6f %11.6f %9.1f" % (zz, s, d_mse, d_ec, d_ec / d_mse))
+print()
+
+# 3. El logaritmo de cero, y lo que cuesta taparlo.
+p = np.array([0.9, 0.0, 0.5])
+recortada = np.clip(p, 1e-12, 1.0)
+with np.errstate(divide="ignore"):
+    print("sin recortar:", -np.log(p), " media:", float(-np.mean(np.log(p))))
+print("recortando:  ", np.round(-np.log(recortada), 2),
+      " media:", round(float(-np.mean(np.log(recortada))), 2))
+`} />
+
+La primera tabla justifica la lección. El recuento de aciertos empata las dos primeras en
+nueve de diez: no distingue entre decir $0.881$ y decir $0.538$, porque las dos caen del mismo
+lado. Las dos pérdidas las separan —$0.049$ contra $0.220$ la convencida, $0.220$ contra
+$0.633$ la tibia—, y dejan en último lugar a la que contesta $0.5$ a todo, con $0.250$
+y $0.693$, que es $\log 2$. Ordenan igual. Lo que no hacen igual es corregir.
+
+Eso es la segunda tabla. En $z = -6$, con la etiqueta valiendo $1$, la entropía cruzada entrega
+$0.9975$ y el MSE $0.0049$: un cociente de $202.7$. En $z = 0$, con la red sin opinión, es $2$.
+La ventaja crece hacia los extremos, y uno de ellos es donde la red se equivoca. La última
+fila repite el $202.7$ con la red acertando, y ahí las dos correcciones son minúsculas porque
+deben serlo.
+
+La tercera prueba enseña el detalle que rompe una implementación. $-\log 0$ es infinito, y basta un
+ejemplo al que la red le dé probabilidad cero para que la media del batch entero valga infinito y
+deje de decir nada. El recorte a $10^{-12}$ lo evita a un precio que digo en voz alta: ese $27.63$
+no lo ha medido nadie.
+
+## Comprueba tu intuición
+
+Cinco preguntas —una entropía cruzada a mano, el MSE al clasificar, la corrección limpia, el
+recorte del logaritmo y el máximo del softmax— y un desafío con la capa de salida.
+
+<Quiz id="q-ec-a-mano" />
+
+<Quiz id="q-mse-clasificar" />
+
+<Quiz id="q-gradiente-limpio" />
+
+<Quiz id="q-log-cero" />
+
+<Quiz id="q-softmax" />
+
+<CodeChallenge id="ch-entropia-cruzada" />
+
+---
+
+Ya hay un número que dice lo mal que va la red, y en toda la lección no se ha movido ni un peso. Las
+tres redes llegaron con sus números puestos, la pérdida las ha ordenado, que es lo que se le pedía,
+y ninguna ha mejorado por haber sido medida.
+
+Entrenar es hacer pequeño ese número, y lo único que se puede tocar para conseguirlo son los pesos:
+cambiarlos cambia $\hat{\mathbf{Y}}$, y con ella $\mathcal{L}$. De ese movimiento, la derivada da el
+sentido —si $\hat{y} - y$ es positivo, subir $z$ sube la pérdida, luego hay que
+bajarlo— y no da la distancia: describe la pendiente en el punto donde estás y deja de valer en
+cuanto te mueves. Así que los pesos no se corrigen de una vez, sino a pasos, y el tamaño de cada
+paso es una decisión: demasiado corto no llega nunca, demasiado largo se pasa. Cómo se elige, qué
+ocurre cuando se elige mal y por qué repetirlo acaba dando con el mínimo sin verlo, es la lección 6
+de este bloque, sobre descenso de gradiente.

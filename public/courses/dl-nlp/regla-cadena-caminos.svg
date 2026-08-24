@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 190" width="360" height="190" role="img" aria-label="Cinco círculos unidos por flechas. A la izquierda, uno solo etiquetado w. En el centro, una columna de tres, etiquetados u sub 1 arriba, u sub 2 en medio y u sub 3 abajo; cada uno recibe una flecha del círculo de la izquierda. A la derecha, uno solo etiquetado L caligráfica, que recibe una flecha de cada uno de los tres del centro. El recorrido de arriba, el que va de w a u sub 1 y de u sub 1 a L, está trazado en verde y más grueso que los demás, y sus dos flechas llevan escrito, respectivamente, la derivada parcial de u sub 1 respecto de w y la derivada parcial de L respecto de u sub 1. Los otros dos recorridos, los que pasan por u sub 2 y por u sub 3, están en gris.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .lbl { font-size: 15px; fill: #e5e1e4; text-anchor: middle; }
+    .fac { font-size: 12.5px; fill: #4edea3; text-anchor: middle; }
+    .nodo { stroke: #86948a; stroke-width: 1.6; fill: none; }
+    .edge { stroke: #86948a; stroke-width: 1.2; fill: none; }
+    /* Un solo recorrido va resaltado: enseña qué es UN camino. Que haya tres, y que
+       se sumen, lo dice el pie de la figura — dibujar los tres en verde no diría
+       ninguna de las dos cosas. */
+    .via { stroke: #4edea3; stroke-width: 2.2; fill: none; }
+    .nodo-via { stroke: #4edea3; stroke-width: 2.2; fill: none; }
+  </style>
+
+  <defs>
+    <marker id="p-gris" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
+    </marker>
+    <marker id="p-verde" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4edea3" />
+    </marker>
+  </defs>
+
+  <!-- Los dos caminos que no se resaltan, primero, para que el verde quede encima. -->
+  <line class="edge" x1="64" y1="95" x2="145" y2="95" marker-end="url(#p-gris)" />
+  <line class="edge" x1="62.2" y1="103.7" x2="147" y2="140.1" marker-end="url(#p-gris)" />
+  <line class="edge" x1="192" y1="95" x2="285" y2="95" marker-end="url(#p-gris)" />
+  <line class="edge" x1="190.5" y1="142" x2="286.7" y2="104.1" marker-end="url(#p-gris)" />
+
+  <!-- El camino resaltado: w → u1 → L, sus dos tramos y sus dos factores. -->
+  <line class="via" x1="62.2" y1="86.3" x2="147" y2="49.9" marker-end="url(#p-verde)" />
+  <line class="via" x1="190.5" y1="48" x2="286.7" y2="85.9" marker-end="url(#p-verde)" />
+  <text class="fac" x="98" y="56">∂u<tspan font-size="9" dy="3">1</tspan><tspan dy="-3">/∂w</tspan></text>
+  <text class="fac" x="250" y="56">∂ℒ/∂u<tspan font-size="9" dy="3">1</tspan></text>
+
+  <circle class="nodo" cx="42" cy="95" r="22" />
+  <text class="lbl" x="42" y="100">w</text>
+
+  <circle class="nodo-via" cx="170" cy="40" r="22" />
+  <circle class="nodo" cx="170" cy="95" r="22" />
+  <circle class="nodo" cx="170" cy="150" r="22" />
+  <text class="lbl" x="170" y="45">u<tspan font-size="10" dy="4">1</tspan></text>
+  <text class="lbl" x="170" y="100">u<tspan font-size="10" dy="4">2</tspan></text>
+  <text class="lbl" x="170" y="155">u<tspan font-size="10" dy="4">3</tspan></text>
+
+  <circle class="nodo" cx="310" cy="95" r="22" />
+  <text class="lbl" x="310" y="101">ℒ</text>
+</svg>

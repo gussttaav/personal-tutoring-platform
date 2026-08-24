@@ -1,0 +1,429 @@
+---
+slug: word2vec
+title: "Word2Vec: skip-gram y CBOW"
+block: 1
+order: 7
+minutes: 26
+summary: "Word2Vec no calcula los números del embedding: se los pide prestados a un modelo que predice contextos y se queda con los parámetros que le permiten acertar. Escrito con cuidado, ese objetivo obliga a repartir probabilidad entre las 50 000 entradas del vocabulario una vez por par, y quitar esa suma de en medio es el muestreo negativo."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-se-guarda
+    type: single
+    prompt: 'Terminas de entrenar un skip-gram. Tienes dos tablas, $\mathbf{E}$ con las filas $\mathbf{e}_w^{\top}$ y $\mathbf{U}$ con las filas $\mathbf{u}_c^{\top}$, y un modelo que predice contextos. ¿Qué te llevas como embedding?'
+    options:
+      - { id: a, text: '$\mathbf{E}$. La tarea de predecir y la tabla $\mathbf{U}$ se tiran: eran el pretexto para fijar los números.' }
+      - { id: b, text: 'El modelo entero, porque el vector de una entrada se obtiene ejecutando la predicción cada vez que hace falta.' }
+      - { id: c, text: '$\mathbf{U}$, porque es la tabla que representa los contextos, que es donde la hipótesis distribucional dice que está el significado.' }
+      - { id: d, text: 'Las probabilidades $P(c \mid w)$ de cada par, que son $\lvert V \rvert$ números por entrada.' }
+    answer: a
+    explanation: 'Esta es la inversión de la lección: el objetivo declarado —adivinar el contexto— no le interesa a nadie, y lo que se conserva son los parámetros que lo cumplen. (b) devuelve el problema al principio: se quería una tabla de vectores, no un procedimiento que hay que ejecutar. (c) confunde los papeles; $\mathbf{U}$ guarda a las mismas entradas en su papel de contexto, y se descarta porque los vectores que quedan cerca por parecerse son los $\mathbf{e}_w$ —hay implementaciones que promedian las dos tablas, y aun así lo que sale es una tabla de vectores, no el modelo. (d) es justo el objeto que el bloque lleva cuatro lecciones evitando: $\lvert V \rvert$ coordenadas por entrada.'
+  - id: q-pares
+    type: numeric
+    prompt: 'Una frase de 12 tokens, ventana de $m = 3$ a cada lado. ¿Cuántos pares (centro, contexto) produce el skip-gram? Cuenta los bordes: los tokens del principio y del final tienen menos vecinos.'
+    answer: 60
+    tolerance: 0
+    explanation: 'En el interior cada posición da $2m = 6$ pares, lo que sugiere $2mT = 72$. Los bordes recortan: para cada desplazamiento $j$ entre $1$ y $m$ se pierden $2j$ pares —los $j$ primeros tokens no tienen vecino a distancia $j$ por la izquierda, ni los $j$ últimos por la derecha—, y $\sum_{j=1}^{m} 2j = m(m+1)$, así que el total exacto es $2mT - m(m+1) = 72 - 12 = 60$. La cuenta importa por lo que viene después: el número de pares crece con $T$ y con $m$, y el coste de un paso multiplica a ese número.'
+  - id: q-denominador
+    type: single
+    prompt: '¿Qué es exactamente lo que hace impagable el objetivo exacto del skip-gram?'
+    options:
+      - { id: a, text: 'La normalización: el denominador recorre las $\lvert V \rvert$ entradas del vocabulario, y hay que recorrerlo una vez por par.' }
+      - { id: b, text: 'La exponencial, que es una función cara comparada con una suma o un producto.' }
+      - { id: c, text: 'El tamaño del corpus: con $T = 10^{10}$ tokens ningún objetivo es viable.' }
+      - { id: d, text: 'La dimensión de los vectores: $d_{\text{model}} = 300$ multiplicaciones por cada producto escalar.' }
+    answer: a
+    explanation: 'El numerador de $P(c \mid w)$ cuesta $d_{\text{model}}$ operaciones; el denominador cuesta $\lvert V \rvert \cdot d_{\text{model}}$, que con 50 000 entradas y 300 coordenadas son 15 millones, y hay que pagarlo entero para calcular una sola probabilidad. (b) mide mal el culpable: son $\lvert V \rvert$ exponenciales porque hay $\lvert V \rvert$ sumandos, y el problema es cuántos, no cuál. (c) confunde lo caro con lo grande: el corpus multiplica cualquier objetivo por igual, y el muestreo negativo lo deja intacto —sigue habiendo $4 \times 10^{10}$ pares que mirar. (d) es el coste que sí se conserva: los 300 productos del par real se pagan en los dos objetivos.'
+  - id: q-negativos
+    type: multi
+    prompt: 'Marca todo lo que sea cierto del muestreo negativo.'
+    options:
+      - { id: a, text: 'Cambia la pregunta: de «¿qué entrada acompaña a esta?» a «¿es real este par o me lo he inventado?».' }
+      - { id: b, text: 'El coste por par pasa de $\lvert V \rvert \cdot d_{\text{model}}$ a $(n_{\text{neg}} + 1) \cdot d_{\text{model}}$.' }
+      - { id: c, text: 'Es una aproximación del softmax: subiendo $n_{\text{neg}}$ lo suficiente se recupera el objetivo exacto.' }
+      - { id: d, text: 'Permite dejar el vocabulario abierto, porque ya no hay que recorrerlo entero.' }
+    answer: [a, b]
+    explanation: '(a) y (b) son las dos caras de la misma sustitución: la pregunta binaria no necesita repartir nada entre las entradas, y por eso su coste deja de depender de $\lvert V \rvert$. (c) es la trampa, y es la concesión que la lección hace en voz alta: el objetivo con negativos no converge al softmax al crecer $n_{\text{neg}}$, es otro problema cuyos óptimos resultan servir para lo mismo. (d) se lo lleva por delante $P_{\text{neg}}$, que se define sobre las frecuencias de un vocabulario cerrado; además $\mathbf{U}$ y $\mathbf{E}$ siguen teniendo una fila por entrada, con <W>\<UNK></W> incluido.'
+  - id: q-ruido
+    type: boolean
+    prompt: 'Sacar los negativos de $P_{\text{neg}}(w) \propto f_w^{3/4}$, en lugar de hacerlo de la frecuencia $f_w$ tal cual, hace que las entradas raras aparezcan como negativas más a menudo de lo que les tocaría por frecuencia.'
+    answer: true
+    explanation: 'El exponente $3/4$ está entre $0$ y $1$, así que comprime las diferencias: entre un tipo que sale 1 000 veces y otro que sale 10, la razón de frecuencias es 100 y la de $f_w^{3/4}$ es $177.8 / 5.6 \approx 31.6$. Los dos extremos dicen por qué se elige ahí: con exponente $1$ los negativos serían casi siempre <W>de</W>, <W>la</W> y <W>que</W>, contra los que no cuesta nada acertar; con exponente $0$ serían uniformes, y la mayoría caerían en entradas tan raras que el modelo no aprende nada distinguiéndolas. El $3/4$ no se deduce de la teoría: es el valor que funcionó.'
+challenges: []
+---
+
+{/* COURSE-P5-01 — Bloque 1, lección 7. */}
+
+La lección anterior, sobre representaciones densas, dejó la tabla montada y vacía: la matriz de
+embeddings $\mathbf{E}$ tiene forma, tamaño y una geometría que ya sabes leer, y ni un número
+puesto. La hipótesis distribucional afirma dónde vive el significado y no dice cómo calcularlo.
+Word2Vec fue el primero que salvó ese hueco a escala real, en 2013, y llega por donde no se espera:
+no calcula las coordenadas de nadie, las deja caer como residuo de otra tarea.
+
+La tarea es un juego de adivinar. Toma <W>el perro ladra en el patio de la escuela</W>, tapa todo
+menos <W>perro</W> y pregunta qué había alrededor; un modelo que responda <W>ladra</W> antes que
+<W>escuela</W> ha aprendido algo, y para responder necesita números con los que puntuar candidatos.
+Esos números están en la matriz $\mathbf{E}$, que entra en un modelo con valores al azar y este los
+va corrigiendo hasta que acierta —eso es **entrenar**—; luego se tira el modelo y se guarda $\mathbf{E}$.
+Word2Vec es esa idea convertida en **técnica**, y son tres piezas: una tarea de predicción sobre ventanas
+de texto, dos maneras de resolverla —*skip-gram* y CBOW— y una simplificación que hace viable el cálculo:
+el muestreo negativo. Queda decidir con qué parámetros se puntúa y qué
+quiere decir «acertar» medido en una cuenta que, escrita con cuidado, sale impagable.
+
+Desliza por el corpus una ventana de $m$ tokens a cada lado: el del medio es el **centro**, los de
+los lados su **contexto**, y sale un par por cada vecino. Con $m = 2$, el centro <W>patio</W> de la
+frase de arriba produce cuatro: con <W>en</W>, <W>el</W>, <W>de</W> y <W>la</W>. El corpus crudo ya
+trae los pares dentro: la promesa de la hipótesis distribucional, cobrada.
+
+<Callout type="intuition" title="La idea en una frase">
+La predicción es el pretexto. Lo que buscamos son los parámetros que la hacen posible, y terminan
+pareciéndose entre sí exactamente cuando las entradas comparten compañías.
+</Callout>
+
+## Predecir el contexto: el objetivo del skip-gram
+
+Fija la ventana en $m$ y recorre el corpus. El *skip-gram* toma cada posición $t$, con su token
+central $w_t$, y pide predecir cada uno de sus vecinos por separado. Acertar se escribe como una
+**pérdida**: un número, calculado de los parámetros y del corpus entero, que mide lo mal que lo
+hace el modelo; corregirlos hasta que acierte es hacerlo pequeño. La del skip-gram es la
+log-verosimilitud negativa media de los pares:
+
+$$
+\mathcal{L} = -\frac{1}{T} \sum_{t=1}^{T} \; \sum_{\substack{-m \leq j \leq m \\ j \neq 0}} \log P(w_{t+j} \mid w_t),
+$$
+
+donde $t$ recorre las $T$ posiciones del corpus y el signo menos da la vuelta al criterio: la
+probabilidad del par real hay que subirla, así que $\mathcal{L}$ hay que bajarla. Falta lo esencial:
+qué es $P(c \mid w)$.
+
+Predecir es elegir entre candidatos, y elegir exige puntuarlos. Hace falta un número que diga cómo
+de bien encajan el centro $w$ y un candidato a contexto $c$. Word2Vec toma el más simple entre dos
+vectores, su producto escalar: crece cuando apuntan en direcciones parecidas y cuando son largos. Llamémoslo la
+**afinidad** del par.
+
+Por ahora solo tenemos la tabla $\mathbf{E}$ con un vector por entrada; la afinidad de un par sale de leer
+dos de sus filas. Eso fuerza a cada entrada a usar el mismo vector de centro y de candidato, y el
+defecto se ve en el par de una entrada consigo misma:
+$\mathbf{e}_w^{\top}\mathbf{e}_w = \lVert\mathbf{e}_w\rVert^2$, positiva y tanto mayor cuanto más
+largo sea el vector. El coseno de la lección anterior lo anulaba al dividir por las normas; en la
+afinidad no hay división. Y el corpus pide lo contrario: <W>perro</W> casi nunca cae dentro de su
+propia ventana, y hay que poder puntuarla baja. Pero bajar $\lVert\mathbf{e}_w\rVert^2$ obliga a
+encoger $\mathbf{e}_w$, y eso baja a la vez todas las afinidades en las que $w$ hace de centro.
+
+De ahí la decisión de diseño que define a Word2Vec: cada entrada recibe *dos* vectores de
+$d_{\text{model}}$ coordenadas, el $\mathbf{e}_w$ para cuando actúa de centro y uno nuevo,
+$\mathbf{u}_c$, para cuando actúa de contexto. Viven en dos tablas de la misma forma,
+$\mathbf{E}, \mathbf{U} \in \mathbb{R}^{\lvert V \rvert \times d_{\text{model}}}$, con la fila $i$
+de $\mathbf{U}$ igual a $\mathbf{u}_{w_i}^{\top}$ tal como la de $\mathbf{E}$ es
+$\mathbf{e}_{w_i}^{\top}$. La afinidad pasa a ser $\mathbf{u}_c^{\top}\mathbf{e}_w$, y la de una
+entrada consigo misma, $\mathbf{u}_w^{\top}\mathbf{e}_w$, puede bajar sin que $\mathbf{e}_w$ se
+encoja.
+
+Leer afinidad como probabilidad pide volverla positiva y que todas sumen 1; el *softmax* hace las dos:
+
+$$
+P(c \mid w) = \frac{\exp\!\left(\mathbf{u}_c^{\top}\mathbf{e}_w\right)}{\sum_{w' \in V} \exp\!\left(\mathbf{u}_{w'}^{\top}\mathbf{e}_w\right)}.
+$$
+
+La función exponencial conserva el orden, así que el candidato con
+más afinidad se lleva la probabilidad más alta. Y guarda esto del denominador: está ahí para que las
+$\lvert V \rvert$ afinidades sean una distribución de probabilidad sobre $V$, y para nada más.
+
+Los parámetros son $\theta = (\mathbf{E}, \mathbf{U})$, y $\mathcal{L}$ no depende de nada más.
+Para minimizarla usamos el **descenso de gradiente**, que veremos en detalle en el bloque 2,
+sobre el perceptrón multicapa.
+
+El gradiente $\nabla_{\theta}\mathcal{L}$ indica la dirección de máximo crecimiento de la pérdida. Por eso,
+en cada paso $t$, actualizamos los parámetros en sentido opuesto,
+
+$$
+\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t),
+$$
+
+donde el subíndice $t$ cuenta pasos del descenso, no posiciones del corpus,
+y $\eta$ es la **tasa de aprendizaje**, el tamaño del paso. Elegirla es cosa de
+aquel bloque: demasiado grande y el descenso diverge.
+
+### CBOW: la misma idea con los papeles cambiados
+
+CBOW (*continuous bag of words*) invierte la pregunta: adivina el centro desde el contexto.
+Los $2m$ vecinos entran promediados en un solo vector,
+
+$$
+\bar{\mathbf{e}}_t = \frac{1}{2m} \sum_{\substack{-m \leq j \leq m \\ j \neq 0}} \mathbf{e}_{w_{t+j}},
+$$
+
+y la probabilidad del centro es el mismo softmax con $\bar{\mathbf{e}}_t$ en el lugar de
+$\mathbf{e}_w$. El promedio pierde el orden: la bolsa de palabras de la lección 5
+en pequeño, y de ahí el nombre.
+
+Las dos se usan: CBOW va más rápido —una predicción por posición en lugar de $2m$— y el skip-gram le
+saca más partido a las entradas raras, que pierden al quedar promediadas. Lo que comparten es lo que
+importa ahora: un softmax sobre $V$.
+
+### La suma que hace impagable el objetivo
+
+Cuenta las operaciones de una sola probabilidad. El numerador es un producto escalar,
+$d_{\text{model}}$ multiplicaciones; el denominador, uno por cada entrada del vocabulario:
+
+$$
+\lvert V \rvert \cdot d_{\text{model}} = 50\,000 \cdot 300 = 1.5 \times 10^{7} \quad \text{operaciones}.
+$$
+
+Quince millones por un solo par. Con $2m = 4$ pares por token y un corpus de $T = 10^{10}$, salen
+$4 \times 10^{10}$ pares, y una pasada entera cuesta $6 \times 10^{17}$ operaciones,
+y el entrenamiento da varias. Ninguna máquina iba a pagar eso por un *embedding*, ni en 2013 ni
+ahora.
+
+Mira dónde está el gasto, porque de ahí sale la salida. Que <W>ladra</W> puntúe alto junto a
+<W>perro</W> cuesta 300 multiplicaciones; los otros 14 999 700 se van en una suma cuyo único
+trabajo es que las probabilidades sumen uno. Pagas por una distribución sobre 50 000 entradas que no vas a
+usar: al terminar tiras el modelo y te quedas con $\mathbf{E}$.
+
+Así que el objetivo exacto se abandona, y conviene decirlo con todas sus letras, porque es un
+movimiento que el curso repetirá —lo verás en el bloque 5, con la atención—: cuando la cantidad
+correcta es impagable, se sustituye por otra que se pueda pagar y tenga óptimos parecidos, y luego
+se comprueba si el cambio ha estropeado algo. Lo que no se hace es fingir que la segunda es la
+primera.
+
+## Muestreo negativo: de repartir probabilidad a distinguir pares
+
+La sustitución cambia la pregunta. En vez de «dada <W>perro</W>, ¿qué probabilidad tiene cada una
+de las 50 000 entradas de acompañarla?», pregunta: «este par elegido al azar, ¿sale del corpus o me lo he
+inventado?».
+
+Hacen falta pares falsos, y se fabrican: al par real $(w, c)$ se le añaden
+$n_{\text{neg}}$ pares $(w, c_j)$ con el contexto sacado al azar. El número lo fijó el artículo
+original probando: de $5$ a $20$ con corpus pequeños, de $2$ a $5$ con los grandes. Toma
+$n_{\text{neg}} = 5$. A cada par se le calcula su probabilidad aplastando su afinidad al intervalo
+$(0,1)$ con la función logística 
+
+$$
+\sigma(x) = \frac{1}{1 + e^{-x}}.
+$$
+
+La pérdida de un par real y sus negativos es
+
+$$
+\mathcal{L}_{\text{par}} = -\log \sigma\!\left(\mathbf{u}_c^{\top}\mathbf{e}_w\right) - \sum_{j=1}^{n_{\text{neg}}} \log \sigma\!\left(-\mathbf{u}_{c_j}^{\top}\mathbf{e}_w\right),
+$$
+
+y se lee de izquierda a derecha. El primer término baja cuando $\sigma(\mathbf{u}_c^{\top}
+\mathbf{e}_w)$ sube hacia $1$: cuando el centro se acerca al contexto real. En el segundo,
+$\sigma(-x)$ es la probabilidad de «no», y cada sumando baja cuando la afinidad con un contexto
+inventado se hace negativa. Acercarse a uno, alejarse de los otros cinco.
+
+Los negativos no se sacan al azar uniforme, sino de
+
+$$
+P_{\text{neg}}(w) = \frac{f_w^{3/4}}{\sum_{w' \in V} f_{w'}^{3/4}},
+$$
+
+con $f_w$ la frecuencia del tipo $w$ en el corpus. El exponente $3/4$ comprime la distribución sin
+aplanarla, entre dos extremos malos: con $1$ los negativos serían las palabras vacías de la lección
+5, con $0$ entradas rarísimas, y contra ninguna cuesta acertar. No hay desarrollo detrás; es el
+valor que funcionó.
+
+Ahora la cuenta, el motivo de todo esto. Un paso toca el centro, el contexto real y los
+$n_{\text{neg}}$ negativos, un producto escalar por vector:
+
+$$
+(n_{\text{neg}} + 1) \cdot d_{\text{model}} = (5 + 1) \cdot 300 = 1\,800 \quad \text{operaciones},
+$$
+
+frente a los 15 millones de antes. El factor es $\lvert V \rvert / (n_{\text{neg}} + 1) \approx
+8\,333$, y la pasada entera baja de $6 \times 10^{17}$ a $7.2 \times 10^{13}$: de imposible a una
+tarde. Fíjate en qué ha desaparecido y qué no: el coste por par deja de depender de $\lvert V
+\rvert$, y los $4 \times 10^{10}$ pares siguen ahí.
+
+La concesión, en voz alta: esto no es el softmax calculado más rápido, es otra pérdida, y subir
+$n_{\text{neg}}$ no la hace converger a $\mathcal{L}$. Que sus óptimos coloquen los vectores donde
+nos sirven se comprueba mirando los vecinos que salen. El artículo trae un segundo atajo con el
+mismo fin, el *softmax jerárquico*, que esta lección no recorre.
+
+El paso necesita $\partial \mathcal{L}_{\text{par}} / \partial \mathbf{e}_w$, y sale de dos
+derivadas que dicen, de paso, adónde empuja cada término.
+
+<Details summary="De dónde sale el paso: el gradiente de la pérdida de un par respecto al vector del centro">
+
+La derivada de la logística es $\sigma'(x) = \sigma(x)\left(1 - \sigma(x)\right)$, de donde
+
+$$
+\frac{\partial}{\partial x} \log \sigma(x) = \frac{\sigma(x)\left(1 - \sigma(x)\right)}{\sigma(x)} = 1 - \sigma(x).
+$$
+
+Llama $s = \mathbf{u}_c^{\top}\mathbf{e}_w$ y $s_j = \mathbf{u}_{w_j}^{\top}\mathbf{e}_w$, con
+$\partial s / \partial \mathbf{e}_w = \mathbf{u}_c$ y $\partial(-s_j) / \partial \mathbf{e}_w =
+-\mathbf{u}_{w_j}$. Por la regla de la cadena, cada término aporta
+
+$$
+\frac{\partial}{\partial \mathbf{e}_w}\left(-\log \sigma(s)\right) = -\left(1 - \sigma(s)\right)\mathbf{u}_c = \left(\sigma(s) - 1\right)\mathbf{u}_c,
+$$
+
+$$
+\frac{\partial}{\partial \mathbf{e}_w}\left(-\log \sigma(-s_j)\right) = \left(1 - \sigma(-s_j)\right)\mathbf{u}_{w_j} = \sigma(s_j)\,\mathbf{u}_{w_j},
+$$
+
+usando $1 - \sigma(-x) = \sigma(x)$ en el segundo. Sumando:
+
+$$
+\frac{\partial \mathcal{L}_{\text{par}}}{\partial \mathbf{e}_w} = \left(\sigma(s) - 1\right)\mathbf{u}_c + \sum_{j=1}^{n_{\text{neg}}} \sigma(s_j)\,\mathbf{u}_{w_j}.
+$$
+
+El coeficiente de $\mathbf{u}_c$ es negativo, así que el paso mueve $\mathbf{e}_w$ hacia el contexto
+real; los de los negativos son positivos y empujan en contra. Y se apagan solos: si el par real
+ya puntúa alto, $\sigma(s) \approx 1$ y su coeficiente se va a cero.
+
+</Details>
+
+## Entrenar un skip-gram diminuto en NumPy
+
+La celda entrena de verdad, en pequeño: 800 tokens de un corpus de juguete por plantillas, 21
+entradas, $d_{\text{model}} = 12$, $n_{\text{neg}} = 5$, cuatro pasadas. La actualización es el
+gradiente del desplegable: `g = s - etiquetas`, donde `s` es la salida de la sigmoide aplicada
+a la afinidad de cada par y `etiquetas` es el vector con 1 para el par real y 0 para los negativos. 
+Restárselo escalado a cada vector es el descenso gradiente. La tasa de aprendizaje arranca en $0.05$
+y decae hasta casi cero: los últimos pasos afinan en lugar de saltar. Ejecútala y mira los vecinos
+de <W>perro</W> antes y después.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(7)
+
+# --- Un corpus de juguete, escrito por plantillas para que haya qué aprender.
+animales = ["perro", "gato", "caballo", "ratón"]
+comidas = ["carne", "pescado", "hierba", "queso"]
+lugares = ["patio", "cocina", "establo", "granero"]
+bebidas = ["agua", "leche"]
+
+frases = []
+for a in animales:
+    for l in lugares:
+        for c in comidas:
+            frases.append(f"el {a} come {c} en el {l}")
+        for b in bebidas:
+            frases.append(f"el {a} bebe {b} en el {l}")
+        frases.append(f"la niña ve el {a} en el {l}")
+
+corpus = " ".join(frases).split()
+V = sorted(set(corpus))
+pos = {w: i for i, w in enumerate(V)}
+ids = np.array([pos[w] for w in corpus])
+
+d_model, m, n_neg, eta0, epocas = 12, 2, 5, 0.05, 4
+
+# Los pares (centro, contexto): el corpus crudo, sin que nadie anote nada.
+centros, contextos = [], []
+for t, w in enumerate(ids):
+    for j in range(max(0, t - m), min(len(ids), t + m + 1)):
+        if j != t:
+            centros.append(w)
+            contextos.append(ids[j])
+centros, contextos = np.array(centros), np.array(contextos)
+print("T =", len(corpus), "tokens |", len(V), "entradas |", len(centros), "pares")
+
+# P_neg(w) proporcional a f_w^0.75, y todos los negativos de una vez.
+f = np.bincount(ids, minlength=len(V)).astype(float)
+P_neg = f ** 0.75
+P_neg = P_neg / P_neg.sum()
+n_pasos = epocas * len(centros)
+negativos = rng.choice(len(V), size=(n_pasos, n_neg), p=P_neg)
+
+E = 0.1 * rng.standard_normal((len(V), d_model))
+U = 0.1 * rng.standard_normal((len(V), d_model))
+
+# Un 1 para el par real y un 0 para cada negativo: esa es toda la supervisión.
+etiquetas = np.zeros(n_neg + 1)
+etiquetas[0] = 1.0
+
+
+def vecinos(w, k=3):
+    N = E / np.linalg.norm(E, axis=1, keepdims=True)
+    s = N @ N[pos[w]]
+    return [(V[i], round(float(s[i]), 2)) for i in np.argsort(-s) if i != pos[w]][:k]
+
+
+print("antes    perro ->", vecinos("perro"))
+print("         carne ->", vecinos("carne"))
+print()
+
+paso = 0
+for epoca in range(epocas):
+    perdida = 0.0
+    for idx in rng.permutation(len(centros)):
+        w = centros[idx]
+        filas = np.concatenate(([contextos[idx]], negativos[paso]))
+        eta = eta0 * max(1e-4, 1.0 - paso / n_pasos)   # decae hasta casi cero
+        paso += 1
+
+        v = E[w]
+        # Afinidad del par real y de los negativos, aplastada por la logística.
+        s = 1.0 / (1.0 + np.exp(-np.clip(U[filas] @ v, -6.0, 6.0)))
+        perdida += -np.log(np.where(etiquetas == 1.0, s, 1.0 - s) + 1e-10).sum()
+
+        # El gradiente derivado arriba: (sigma - etiqueta) multiplica al otro vector.
+        g = s - etiquetas
+        E[w] = v - eta * (g @ U[filas])
+        np.add.at(U, filas, -eta * g[:, None] * v)
+    print("época", epoca + 1, " pérdida media por par", round(perdida / len(centros), 3))
+
+print()
+print("después  perro ->", vecinos("perro"))
+print("         carne ->", vecinos("carne"))
+print("         patio ->", vecinos("patio"))
+print("         niña  ->", vecinos("niña"))
+print()
+
+# Lo que ha costado, y lo que habría costado el objetivo exacto.
+print("productos escalares en", n_pasos, "pasos")
+print("  con negativos ", n_pasos * (n_neg + 1))
+print("  softmax exacto", n_pasos * len(V), " (|V| =", len(V), ")")
+print("  a |V| = 50 000 la razón sería", 50000 // (n_neg + 1))
+`} />
+
+Antes de entrenar, el vecino más cercano a <W>perro</W> es <W>establo</W> con $0.68$: puro ruido.
+Cuatro pasadas después son <W>ratón</W>, <W>gato</W> y <W>caballo</W>,
+por encima de $0.97$; los de <W>carne</W> son las otras tres comidas y los de <W>patio</W>, los
+otros tres lugares. Nadie ha dicho que se parezcan: solo han entrado pares de ventanas y un $1$ o
+un $0$ por par.
+
+Dos cosas sin maquillar. El corpus es artificial y los animales son intercambiables por
+construcción: de ahí unos cosenos que rozan el $1$ y con texto de verdad no salen. Y <W>niña</W> se
+queda con <W>la</W> y <W>ve</W>: aparece en un solo molde, y es el molde lo aprendido.
+
+Pon `n_neg = 0` y ejecuta otra vez. La pérdida se desploma hasta $0.02$ —sin negativos, decir que
+sí a todo es perfecto— y los vecinos se vuelven basura: <W>perro</W> con <W>en</W> y con <W>el</W>,
+todo cerca de todo. Los negativos no eran solo el ahorro: sin algo contra lo que empujar, la
+pérdida baja y la representación no existe.
+
+## Comprueba tu intuición
+
+Cinco preguntas: qué se conserva al terminar, cuántos pares da una ventana, dónde estaba el gasto,
+qué cambia el muestreo negativo y qué hace el exponente $3/4$.
+
+<Quiz id="q-que-se-guarda" />
+
+<Quiz id="q-pares" />
+
+<Quiz id="q-denominador" />
+
+<Quiz id="q-negativos" />
+
+<Quiz id="q-ruido" />
+
+---
+
+La matriz $\mathbf{E}$ ya no está vacía, la deuda con la que terminó la lección anterior queda
+saldada. Queda una peculiaridad. Word2Vec no ve el corpus, ve una ventana cada vez, y que
+<W>perro</W> y <W>gato</W> se parecen lo concluye tropezándose con miles de ellas. Pero eso ya está
+contado antes de entrenar nada: una pasada anotando cuántas veces cada entrada cayó dentro de la
+ventana de otra da una tabla de $\lvert V \rvert \times \lvert V \rvert$ **coocurrencias** donde la
+fila de <W>perro</W> y la de <W>gato</W> ya se parecen. Word2Vec nunca llega a escribirla.
+
+Aprovecharla es la lección 8, sobre GloVe y los límites de los embeddings estáticos: GloVe
+(*global vectors*) construye esa tabla y busca los vectores que la explican, otro objetivo con
+resultados de la misma familia. Y con las dos técnicas sobre la mesa, esa lección cierra el bloque
+cobrando lo que esconde la palabra «estáticos»: cada entrada tiene un vector, uno solo, para
+siempre.

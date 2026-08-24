@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 190" width="540" height="285" role="img" aria-label="El contexto del paso i, construido como mezcla de todos los estados del encoder.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: none; }
+    /* Verde: el camino del contexto. Aquí ya no es un vector, es uno por paso. */
+    .cbox { stroke: #4edea3; stroke-width: 1.6; fill: rgba(78,222,163,0.16); }
+    .via { stroke: #4edea3; stroke-width: 1.7; fill: none; }
+    .flujo { stroke: rgba(134,148,138,0.7); stroke-width: 1.3; fill: none; }
+    /* El grosor de cada hilo es su peso: la mezcla no reparte por igual. */
+    .hilo1 { stroke: #4edea3; stroke-width: 1; fill: none; opacity: 0.5; }
+    .hilo2 { stroke: #4edea3; stroke-width: 2.8; fill: none; opacity: 0.95; }
+    .hilo3 { stroke: #4edea3; stroke-width: 1.5; fill: none; opacity: 0.65; }
+    .est { font-size: 11px; fill: #bbcabf; text-anchor: middle; }
+    .io { font-size: 11px; fill: #bbcabf; text-anchor: middle; }
+    .cc { font-size: 15px; fill: #4edea3; text-anchor: middle; }
+    .nota { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+    .peso { font-size: 10.5px; fill: #4edea3; }
+    .sub { font-size: 8px; }
+  </style>
+
+  <defs>
+    <marker id="av" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
+    <marker id="ag" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="rgba(134,148,138,0.7)" />
+    </marker>
+  </defs>
+
+  <!-- La fuente entra por arriba, un token por celda. -->
+  <text class="io" x="34"  y="12">x<tspan class="sub" dy="3">1</tspan></text>
+  <text class="io" x="86"  y="12">x<tspan class="sub" dy="3">2</tspan></text>
+  <text class="io" x="138" y="12">x<tspan class="sub" dy="3">Tx</tspan></text>
+  <line class="flujo" x1="34"  y1="17" x2="34"  y2="25" marker-end="url(#ag)" />
+  <line class="flujo" x1="86"  y1="17" x2="86"  y2="25" marker-end="url(#ag)" />
+  <line class="flujo" x1="138" y1="17" x2="138" y2="25" marker-end="url(#ag)" />
+
+  <!-- El encoder: un estado por token, y esta vez NINGUNO se tira. -->
+  <rect class="caja" x="14"  y="27" width="40" height="28" rx="5" />
+  <rect class="caja" x="66"  y="27" width="40" height="28" rx="5" />
+  <rect class="caja" x="118" y="27" width="40" height="28" rx="5" />
+  <text class="est" x="34"  y="45">h&#772;<tspan class="sub" dy="3">1</tspan></text>
+  <text class="est" x="86"  y="45">h&#772;<tspan class="sub" dy="3">2</tspan></text>
+  <text class="est" x="138" y="45">h&#772;<tspan class="sub" dy="3">Tx</tspan></text>
+  <line class="flujo" x1="54"  y1="41" x2="64"  y2="41" marker-end="url(#ag)" />
+  <line class="flujo" x1="106" y1="41" x2="116" y2="41" marker-end="url(#ag)" />
+
+  <!-- Los tres hilos que se juntan: la mezcla. El grosor es el peso. -->
+  <line class="hilo1" x1="34"  y1="57" x2="76" y2="109" marker-end="url(#av)" />
+  <line class="hilo2" x1="86"  y1="57" x2="86" y2="109" marker-end="url(#av)" />
+  <line class="hilo3" x1="138" y1="57" x2="98" y2="109" marker-end="url(#av)" />
+  <text class="peso" x="30"  y="82" text-anchor="end">&#945;<tspan class="sub" dy="3">i1</tspan></text>
+  <text class="peso" x="96"  y="82">&#945;<tspan class="sub" dy="3">i2</tspan></text>
+  <text class="peso" x="142" y="82">&#945;<tspan class="sub" dy="3">iTx</tspan></text>
+
+  <!-- El contexto del paso i: mismo tamaño que el resumen fijo, distinto en cada paso. -->
+  <rect class="cbox" x="66" y="112" width="44" height="28" rx="5" />
+  <text class="cc" x="88" y="131">c<tspan class="sub" dy="3">i</tspan></text>
+  <text class="nota" x="88" y="156">d<tspan class="sub" dy="2">h</tspan> números</text>
+
+  <!-- Y entra en la celda del decoder como una entrada más. -->
+  <line class="via" x1="112" y1="126" x2="208" y2="126" marker-end="url(#av)" />
+  <rect class="caja" x="214" y="110" width="54" height="32" rx="5" />
+  <text class="est" x="241" y="131">s<tspan class="sub" dy="3">i</tspan></text>
+
+  <line class="flujo" x1="241" y1="84"  x2="241" y2="106" marker-end="url(#ag)" />
+  <text class="io" x="241" y="78">s<tspan class="sub" dy="3">i&#8722;1</tspan></text>
+  <line class="flujo" x1="241" y1="170" x2="241" y2="147" marker-end="url(#ag)" />
+  <text class="io" x="241" y="182">y&#770;<tspan class="sub" dy="3">i&#8722;1</tspan></text>
+  <line class="flujo" x1="270" y1="126" x2="292" y2="126" marker-end="url(#ag)" />
+  <text class="io" x="312" y="130">y&#770;<tspan class="sub" dy="3">i</tspan></text>
+</svg>

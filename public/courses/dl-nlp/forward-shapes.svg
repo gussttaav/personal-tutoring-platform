@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 172" width="540" height="258" role="img" aria-label="Tres rectángulos en fila, separados por un signo de multiplicar y un signo de igual. El primero, etiquetado X, está dividido en seis filas y lleva debajo la forma B por d cero; su tercera fila está sombreada en verde y marcada a la izquierda con la letra i. El segundo, etiquetado W uno transpuesta, está dividido en cuatro columnas y lleva debajo la forma d cero por d uno; su segunda columna está sombreada en verde y marcada debajo con la letra j. El tercero, etiquetado Z uno, tiene las seis filas del primero y las cuatro columnas del segundo, y lleva debajo la forma B por d uno; de él sólo está sombreada la casilla donde se cruzan la tercera fila y la segunda columna. La d cero aparece en verde en las dos primeras formas y no aparece en la tercera.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: none; }
+    .div { stroke: rgba(134,148,138,0.22); stroke-width: 1; }
+    /* Las franjas de entrada se sombrean; la casilla de salida, además, se perfila:
+       es la única de las tres que es un resultado y no un dato. */
+    .franja { fill: rgba(78,222,163,0.16); }
+    .casilla { fill: rgba(78,222,163,0.42); stroke: #4edea3; stroke-width: 1.2; }
+    .nombre { font-size: 13px; fill: #bbcabf; text-anchor: middle; }
+    .forma { font-size: 12.5px; fill: #86948a; text-anchor: middle; }
+    /* La dimensión compartida, la que desaparece, en el verde del tema. */
+    .comun { fill: #4edea3; }
+    .op { font-size: 15px; fill: #86948a; text-anchor: middle; }
+    .idx { font-size: 12.5px; fill: #4edea3; text-anchor: middle; }
+  </style>
+
+  <!-- X — seis filas, una por ejemplo del batch. -->
+  <rect class="franja" x="60" y="74" width="70" height="15" />
+  <line class="div" x1="60" y1="59" x2="130" y2="59" />
+  <line class="div" x1="60" y1="74" x2="130" y2="74" />
+  <line class="div" x1="60" y1="89" x2="130" y2="89" />
+  <line class="div" x1="60" y1="104" x2="130" y2="104" />
+  <line class="div" x1="60" y1="119" x2="130" y2="119" />
+  <rect class="caja" x="60" y="44" width="70" height="90" />
+  <text class="idx" x="52" y="86">i</text>
+  <text class="nombre" x="95" y="36">X</text>
+  <text class="forma" x="95" y="152">B × <tspan class="comun">d<tspan font-size="10" dy="3">0</tspan></tspan></text>
+
+  <text class="op" x="144" y="94">×</text>
+
+  <!-- W(1) transpuesta — cuatro columnas, una por neurona de la capa. -->
+  <rect class="franja" x="171.8" y="54" width="13.7" height="70" />
+  <line class="div" x1="171.8" y1="54" x2="171.8" y2="124" />
+  <line class="div" x1="185.5" y1="54" x2="185.5" y2="124" />
+  <line class="div" x1="199.2" y1="54" x2="199.2" y2="124" />
+  <rect class="caja" x="158" y="54" width="55" height="70" />
+  <text class="nombre" x="185.5" y="36">W<tspan font-size="10" dy="-4">(1)⊤</tspan></text>
+  <text class="idx" x="178.6" y="137">j</text>
+  <text class="forma" x="185.5" y="152"><tspan class="comun">d<tspan font-size="10" dy="3">0</tspan></tspan><tspan dy="-3"> × d</tspan><tspan font-size="10" dy="3">1</tspan></text>
+
+  <text class="op" x="228" y="94">=</text>
+
+  <!-- Z(1) — las filas del primero y las columnas del segundo. -->
+  <line class="div" x1="244" y1="59" x2="299" y2="59" />
+  <line class="div" x1="244" y1="74" x2="299" y2="74" />
+  <line class="div" x1="244" y1="89" x2="299" y2="89" />
+  <line class="div" x1="244" y1="104" x2="299" y2="104" />
+  <line class="div" x1="244" y1="119" x2="299" y2="119" />
+  <line class="div" x1="257.8" y1="44" x2="257.8" y2="134" />
+  <line class="div" x1="271.5" y1="44" x2="271.5" y2="134" />
+  <line class="div" x1="285.2" y1="44" x2="285.2" y2="134" />
+  <rect class="casilla" x="257.8" y="74" width="13.7" height="15" />
+  <rect class="caja" x="244" y="44" width="55" height="90" />
+  <text class="nombre" x="271.5" y="36">Z<tspan font-size="10" dy="-4">(1)</tspan></text>
+  <text class="forma" x="271.5" y="152">B × d<tspan font-size="10" dy="3">1</tspan></text>
+</svg>

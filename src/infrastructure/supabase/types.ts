@@ -153,6 +153,38 @@ export type Database = {
           },
         ]
       }
+      enrollments: {
+        Row: {
+          completed_at: string | null
+          course_slug: string
+          enrolled_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_slug: string
+          enrolled_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_slug?: string
+          enrolled_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       failed_bookings: {
         Row: {
           error: string
@@ -221,6 +253,44 @@ export type Database = {
             foreignKeyName: "google_review_prompts_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_progress: {
+        Row: {
+          completed_at: string | null
+          course_slug: string
+          id: string
+          last_seen_at: string
+          lesson_slug: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          course_slug: string
+          id?: string
+          last_seen_at?: string
+          lesson_slug: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          course_slug?: string
+          id?: string
+          last_seen_at?: string
+          lesson_slug?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
           },
@@ -362,6 +432,47 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      quiz_attempts: {
+        Row: {
+          answer: Json | null
+          attempted_at: string
+          correct: boolean
+          course_slug: string
+          id: string
+          lesson_slug: string
+          quiz_id: string
+          user_id: string
+        }
+        Insert: {
+          answer?: Json | null
+          attempted_at?: string
+          correct: boolean
+          course_slug: string
+          id?: string
+          lesson_slug: string
+          quiz_id: string
+          user_id: string
+        }
+        Update: {
+          answer?: Json | null
+          attempted_at?: string
+          correct?: boolean
+          course_slug?: string
+          id?: string
+          lesson_slug?: string
+          quiz_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {

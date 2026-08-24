@@ -1,0 +1,324 @@
+---
+slug: pipeline-fixture
+title: "Fixture del pipeline (no publicar)"
+block: 1
+order: 0
+minutes: 1
+summary: "Fixture de regresión del pipeline de renderizado — nunca se publica."
+draft: true
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-sigmoide-derivada
+    type: single
+    prompt: '¿Cuál es la derivada de $\sigma(x) = \dfrac{1}{1 + e^{-x}}$?'
+    options:
+      - { id: a, text: '$\sigma(x)\,\bigl(1 - \sigma(x)\bigr)$' }
+      - { id: b, text: '$-\sigma(x)^{2}$' }
+      - { id: c, text: '$\displaystyle\frac{\partial}{\partial x}\left[\sum_{i=1}^{n} w_i x_i + b\right] = w_i \quad \text{para todo } i \in \{1, \dots, n\}$' }
+    answer: a
+    explanation: 'Escribiendo $\sigma = (1 + e^{-x})^{-1}$ y aplicando la regla de la cadena: $\dfrac{d\sigma}{dx} = \sigma\,(1-\sigma)$.'
+    hint: 'La opción C es deliberadamente larguísima — está ahí para comprobar el scroll horizontal a 360px.'
+  - id: q-saturacion
+    type: multi
+    prompt: '¿Qué activaciones **saturan** cuando $|x|$ es grande?'
+    options:
+      - { id: a, text: 'sigmoide' }
+      - { id: b, text: 'tanh' }
+      - { id: c, text: 'ReLU' }
+      - { id: d, text: 'Leaky ReLU' }
+    answer: [a, b]
+    explanation: 'Sigmoide y tanh aplastan su salida en $[0,1]$ y $[-1,1]$, así que su derivada tiende a $0$ en los extremos — de ahí el gradiente que se desvanece. ReLU y Leaky ReLU no saturan para $x > 0$.'
+  - id: q-relu-lineal
+    type: boolean
+    prompt: 'ReLU es una función lineal.'
+    answer: false
+    explanation: 'Es lineal *a trozos*, que no es lo mismo. Si fuera lineal, apilar capas no añadiría capacidad ninguna: la composición de funciones lineales vuelve a ser lineal.'
+  - id: q-sigmoide-cero
+    type: numeric
+    prompt: 'Calcula $\sigma(0)$, con $\sigma(x) = \dfrac{1}{1 + e^{-x}}$.'
+    answer: 0.5
+    tolerance: 0.001
+    explanation: '$\sigma(0) = \dfrac{1}{1 + e^{0}} = \dfrac{1}{1 + 1} = 0.5$.'
+    hint: 'Recuerda que $e^{0} = 1$.'
+  - id: q-broadcasting
+    type: predict-output
+    prompt: 'Broadcasting de NumPy:'
+    code: |
+      import numpy as np
+      print(np.arange(3) + 1)
+    answer: '[1 2 3]'
+    explanation: 'El escalar `1` se difunde (*broadcast*) sobre todo el array, sumándose a cada elemento de `[0 1 2]`.'
+challenges:
+  - id: ch-softmax
+    prompt: |
+      Implementa `softmax` de forma **numéricamente estable**:
+      $\text{softmax}(x)_i = \dfrac{e^{x_i}}{\sum_j e^{x_j}}$.
+      La versión ingenua desborda con valores grandes; resta el máximo antes de exponenciar.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def softmax(x):
+          # tu código aquí
+          pass
+    tests:
+      - name: "las probabilidades suman 1"
+        code: "assert np.isclose(softmax(np.array([1., 2., 3.])).sum(), 1.0), 'la salida debe sumar 1'"
+      - name: "estable con valores grandes"
+        code: "assert not np.isnan(softmax(np.array([1000., 1001.])).sum()), 'desborda: resta el máximo antes de exponenciar'"
+      - name: "invariante al desplazamiento"
+        code: "assert np.allclose(softmax(np.array([1., 2., 3.])), softmax(np.array([101., 102., 103.])))"
+    solution: |
+      import numpy as np
+
+
+      def softmax(x):
+          z = x - np.max(x)
+          e = np.exp(z)
+          return e / e.sum()
+    explanation: |
+      Restar $\max(x)$ no cambia el resultado —
+      $\dfrac{e^{x_i - m}}{\sum_j e^{x_j - m}} = \dfrac{e^{x_i}}{\sum_j e^{x_j}}$, porque
+      $e^{-m}$ se cancela arriba y abajo — pero sí cambia lo que calcula el ordenador:
+      el mayor exponente pasa a ser $e^{0} = 1$, así que nunca desborda.
+---
+
+{/* COURSE-P1-01 — Rendering regression fixture. Keep `draft: true` PERMANENTLY:
+    this file exists to exercise every part of the MDX pipeline (math, code,
+    tables, custom components, overflow), NOT as course content.
+    COURSE-P1-02 — Frontmatter expanded to the full lesson schema so the registry
+    scan accepts it; `draft: true` keeps it out of every `list*` result.
+    COURSE-P5-00 — `draft` is back to `true`, closing the P3-01 decision to publish it
+    temporarily: Block 1 lesson 1 now exists, so the catalog and the lesson routes have
+    real content to render and the fixture no longer has to stand in for it. */}
+
+{/* content-budget: ignore — this is a coverage surface, not a lesson. It embeds every
+    explorable and all five question types ON PURPOSE, so it breaks the per-lesson
+    budget by design and would warn on every `pnpm lint:content` run forever. The
+    NOTATION contract still applies: it costs nothing to honour and the fixture is the
+    file authors read to see what the pipeline supports. */}
+
+Texto con **negrita**, _cursiva_ y matemática en línea como $a^2 + b^2 = c^2$
+dentro del párrafo.
+
+## Matemática en bloque
+
+La regla de la cadena para el gradiente (fences en su propia línea → display):
+
+$$
+\frac{\partial \mathcal{L}}{\partial w_{ij}}
+$$
+
+Y la misma en una sola línea `$$…$$` → remark-math la trata como math **en línea**
+(más pequeña, alineada con el texto): $$\frac{\partial \mathcal{L}}{\partial w_{ij}}$$
+
+Derivación alineada de varias líneas:
+
+$$
+\begin{aligned}
+\hat{\mathbf{y}} &= \sigma(\mathbf{W}\mathbf{x} + \mathbf{b}) \\
+\mathcal{L} &= -\sum_{k} y_k \log \hat{y}_k \\
+\frac{\partial \mathcal{L}}{\partial \mathbf{W}} &= (\hat{\mathbf{y}} - \mathbf{y})\, \mathbf{x}^{\top}
+\end{aligned}
+$$
+
+Ecuación deliberadamente ancha (debe hacer scroll dentro de su propia caja):
+
+$$
+f(x) = a_0 + a_1 x + a_2 x^2 + a_3 x^3 + a_4 x^4 + a_5 x^5 + a_6 x^6 + a_7 x^7 + a_8 x^8 + a_9 x^9 + a_{10} x^{10} + a_{11} x^{11} + a_{12} x^{12} + a_{13} x^{13} + a_{14} x^{14}
+$$
+
+## Código
+
+```python
+import numpy as np
+
+def softmax(z):
+    z = z - np.max(z)          # estabilidad numérica
+    exp = np.exp(z)
+    return exp / exp.sum()
+```
+
+```bash
+python train.py --epochs 10 --lr 3e-4
+```
+
+## Tabla
+
+| Capa      | Parámetros | Activación |
+|-----------|-----------:|------------|
+| Embedding |    512 000 | —          |
+| Densa     |    262 144 | ReLU       |
+| Salida    |     10 250 | Softmax    |
+
+{/* COURSE-P5-00 — Listas, enlaces, cita y código en línea. Esta sección existe porque
+    su ausencia dejó pasar un fallo: Tailwind Preflight (`@tailwind base`) pone
+    `list-style: none; padding: 0` en todo `ol`/`ul`, y como aquí no había ninguna lista,
+    nadie lo vio hasta que la lección 1 del bloque 1 escribió tres preguntas numeradas y
+    salieron sin números. Lo mismo valía para `a` (`color`/`text-decoration: inherit`) y
+    para `blockquote` (`margin: 0`). Las reglas que lo arreglan están en `lesson.css`; lo
+    que sigue es la superficie que impide que vuelva. */}
+
+## Listas y prosa
+
+Lista ordenada **compacta** — sin línea en blanco entre elementos, así que cada `<li>`
+lleva texto pelado. Es la forma exacta que se rompió, y lleva matemática en línea:
+
+1. Compara $\lvert 2 - 3 \rvert$ con $\lvert 3 - 1 \rvert$; los marcadores deben verse y
+   la fórmula debe quedar sobre la línea base del elemento.
+2. El segundo elemento comprueba que la sangría es la misma al envolver a dos líneas de
+   texto, y que el número no se separa de su párrafo.
+3. El tercero, que la lista termina con el mismo margen con el que empezó.
+
+Lista ordenada **suelta** — con línea en blanco entre elementos, así que remark envuelve
+cada uno en un `<p>`:
+
+1. Los elementos deben quedar algo más separados que arriba, pero **no** un párrafo
+   entero: eso sería el margen de `.lesson-content p` filtrándose dentro del `<li>`.
+
+2. Este es el caso que sólo se puede arreglar desde CSS, no desde un componente MDX.
+
+Lista sin ordenar, con una sublista anidada — cada nivel con su propio marcador:
+
+- Primer nivel: disco.
+- Segundo elemento, con hijos:
+  - Segundo nivel: círculo, no disco.
+  - Y la sublista pegada a su elemento padre, sin aire de párrafo.
+- Tercer elemento, de vuelta al primer nivel.
+
+Prosa con un [enlace en línea](https://es.wikipedia.org/wiki/Procesamiento_de_lenguajes_naturales)
+—que tiene que distinguirse del texto normal— y una ficha de código en línea como
+`softmax(z)`, que necesita su propio fondo y borde para leerse como código.
+
+> Cita en bloque. Debe leerse como una cita y **no** como un `<Callout>`: filete a la
+> izquierda, texto más apagado, y nada de icono ni de fondo.
+
+## Componentes personalizados
+
+<Callout type="intuition" title="Intuición">
+Antes del rigor: un gradiente apunta en la dirección de mayor aumento del error.
+</Callout>
+
+<Callout type="warning">
+Cuidado con el overflow numérico en `exp` sin restar el máximo.
+</Callout>
+
+<Callout type="math">
+Formalmente, $\nabla_\theta \mathcal{L}$ es el vector de derivadas parciales.
+</Callout>
+
+<Figure src="/og.png" alt="Diagrama de ejemplo" caption="Figura 1. Pie de figura de ejemplo." />
+
+<Details summary="Ver la derivación completa">
+El desarrollo paso a paso de $\frac{\partial \mathcal{L}}{\partial \mathbf{W}}$ para la entropía cruzada.
+</Details>
+
+<ColabLink notebook="github/gussttaav/dl-nlp/blob/main/00-intro.ipynb">
+Abrir en Colab
+</ColabLink>
+
+{/* COURSE-P2-02 — Every Block 1/2 explorable embedded here so the render check and
+    `pnpm lint:content` (validate-explorables) exercise them. This is a draft fixture,
+    so it never publishes. No count is stated on purpose: the fixture drifts behind
+    `widget-ids.ts` every time a widget is added or removed, and a stale number reads
+    as a contract nobody is keeping. */}
+
+## Explorables — Bloque 1 (NLP)
+
+<Explorable id="tokenizer-playground" caption="Escribe una frase y compárala en tres tokenizaciones." />
+
+<Explorable id="embedding-projection" caption="rey − hombre + mujer ≈ reina." />
+
+## Explorables — Bloque 2 (MLP)
+
+<Explorable id="activation-explorer" caption="Activaciones y sus derivadas; zonas de saturación." />
+
+<Explorable id="perceptron-boundary" caption="XOR no es linealmente separable." />
+
+<Explorable id="gradient-descent-2d" caption="Descenso de gradiente y divergencia con η alto." />
+
+<Explorable id="backprop-trace" caption="La regla de la cadena, término a término." />
+
+<Explorable id="loss-landscape" caption="Dos cuencas; el inicio decide el mínimo." />
+
+{/* COURSE-P2-03 — Dos celdas ejecutables, deliberadamente. Comparten un mismo
+    intérprete, así que la segunda usa lo que definió la primera: es la comprobación
+    de que el worker es único por página y de que el estado sobrevive entre celdas.
+    Este fichero es un fixture en borrador, así que nunca se publica. */}
+
+## Celdas ejecutables
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+def softmax(z):
+    z = z - np.max(z)          # estabilidad numérica
+    exp = np.exp(z)
+    return exp / exp.sum()
+
+logits = np.array([2.0, 1.0, 0.1])
+print(softmax(logits))
+`} />
+
+La segunda celda no vuelve a importar nada: `softmax` y `logits` siguen vivos.
+
+<PyCell packages={["numpy"]} code={`
+p = softmax(logits)
+print("suma:", p.sum())
+
+xs = np.linspace(-6, 6, 120)
+plot(xs, 1 / (1 + np.exp(-xs)), "sigmoide")
+`} />
+
+{/* COURSE-P3-01 — Un ejemplo de cada uno de los cinco tipos de pregunta, para que el
+    render check y `pnpm lint:content` (validate-quizzes) los cubran todos. Nótese que
+    la opción C de la primera pregunta es deliberadamente larguísima: comprueba que una
+    expresión ancha hace scroll DENTRO de su propia caja en lugar de ensanchar la
+    lección. Las dos preguntas con `hint` cubren la revelación de pistas. */}
+
+## Quizzes
+
+Opción única, con LaTeX en el enunciado, en las opciones y en la explicación:
+
+<Quiz id="q-sigmoide-derivada" />
+
+Opción múltiple — se corrige todo o nada, y el aviso aparece antes de responder:
+
+<Quiz id="q-saturacion" />
+
+Verdadero/falso:
+
+<Quiz id="q-relu-lineal" />
+
+Numérica, con tolerancia:
+
+<Quiz id="q-sigmoide-cero" />
+
+Predicción de salida — el código se resalta con Shiki en tiempo de compilación y **no**
+es ejecutable (para eso está `<PyCell>`):
+
+<Quiz id="q-broadcasting" />
+
+{/* COURSE-P3-02 — Desafío de código: el estudiante escribe la función y las
+    aserciones ocultas la corrigen en el mismo worker de Pyodide que las celdas de
+    arriba. Cubre: prueba que pasa, prueba que falla (aserción), error que NO es una
+    aserción (NameError si borra la función), traceback plegado, y el desbloqueo de
+    la solución tras 3 intentos fallidos. La solución de referencia está verificada
+    contra sus propias pruebas. */}
+
+## Desafíos de código
+
+<CodeChallenge id="ch-softmax" />
+
+{/* COURSE-P5-00 — La raya del puente. Es un elemento RENDERIZADO desde que las
+    lecciones cierran con ella (AUTHORING.md §1), así que se comprueba aquí como
+    todo lo demás: `lesson.css` la convierte en una raya corta y centrada, no en un
+    separador de ancho completo. Ojo con la línea en blanco de encima — pegada al
+    párrafo anterior, markdown la leería como un título. */}
+
+---
+
+Y así cierra la lección: dos párrafos que dicen qué queda sin resolver, sin título y
+precedidos por su raya.
