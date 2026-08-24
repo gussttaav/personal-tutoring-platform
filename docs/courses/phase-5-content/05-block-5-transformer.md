@@ -59,7 +59,7 @@ here; STATUS stays phase-level.
 - [x] 8. `arquitectura-completa`
 - [x] 9. `proyecto-transformer`
 - [x] 10. `bert-y-gpt`
-- [ ] 11. `fine-tuning-colab`
+- [x] 11. `fine-tuning-colab`
 
 ## Mathematical content
 
