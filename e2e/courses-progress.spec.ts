@@ -69,10 +69,23 @@ test.describe("Course lesson progress [es]", () => {
     const markComplete = page.getByRole("button", { name: d.courses.progress.markComplete });
     await expect(markComplete).toBeVisible({ timeout: 30_000 });
 
+    // Same fire-and-forget shape as the quiz attempt: the "completed" POST is optimistic
+    // and a reload would abort it in flight. Arm the wait before clicking, then block on
+    // the persisted 200 so the reload below can only read a row that already exists.
+    const completedSaved = page.waitForResponse(
+      (res) =>
+        res.url().includes("/api/courses/progress") &&
+        res.request().method() === "POST" &&
+        (res.request().postData() ?? "").includes('"completed"') &&
+        res.ok(),
+      { timeout: 30_000 },
+    );
+
     await markComplete.click();
 
     // Optimistic: the confirmation swaps in without waiting for the round trip.
     await expect(page.getByText(d.courses.progress.completed)).toBeVisible();
+    await completedSaved;
 
     // The real assertion — after a reload the tick can only come from Postgres.
     await page.reload();
@@ -91,6 +104,15 @@ test.describe("Course lesson progress [es]", () => {
     await loginAs(page, E2E_USER.email, E2E_USER.name);
 
     await page.goto(LESSON_URL);
+
+    // An attempt is only recorded once progress tracking is live: the provider drops
+    // the write while `tracking` is still false, and that flips true only after the
+    // progress GET returns. The mark-complete button appears on that same signal, so
+    // waiting for it guarantees a submit will actually be POSTed rather than silently
+    // dropped — the sibling test above leans on the same button for the same reason.
+    await expect(
+      page.getByRole("button", { name: d.courses.progress.markComplete }),
+    ).toBeVisible({ timeout: 30_000 });
 
     // Scope to the first quiz card: the lesson has three, and every one of them
     // renders the same control labels.
