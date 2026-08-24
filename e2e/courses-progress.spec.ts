@@ -97,10 +97,24 @@ test.describe("Course lesson progress [es]", () => {
     const card = page.locator("section").filter({ hasText: QUIZ_PROMPT }).first();
     await expect(card).toBeVisible({ timeout: 30_000 });
 
+    // The attempt POST is fire-and-forget by design (a lost attempt must never
+    // interrupt a student mid-quiz) AND it fires from an effect one tick after the
+    // optimistic verdict renders. So the verdict below is NOT proof the row exists:
+    // reloading on it alone aborts the in-flight request and the reload restores
+    // nothing. Arm the wait before submitting, then block on the persisted 200.
+    const attemptSaved = page.waitForResponse(
+      (res) =>
+        res.url().includes("/api/courses/attempt") &&
+        res.request().method() === "POST" &&
+        res.ok(),
+      { timeout: 30_000 },
+    );
+
     await card.getByText(QUIZ_CORRECT).click();
     await card.getByRole("button", { name: d.courses.quiz.submit }).click();
 
     await expect(card.getByText(d.courses.quiz.correct, { exact: false })).toBeVisible();
+    await attemptSaved;
 
     // The real assertion: after a reload this can only have come from quiz_attempts.
     await page.reload();
