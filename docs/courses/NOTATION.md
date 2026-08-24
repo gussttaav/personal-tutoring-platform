@@ -890,6 +890,8 @@ go and read the paper, and a different notation would tax exactly that.
 | $T$ | sequence length |
 | $O(\cdot)$ | asymptotic cost — **only** to name the form the paper's Table 1 writes |
 | $\mathbb{E}[\cdot]$ | the average of a quantity over the randomness of an initialisation |
+| $w_{1:t}$, $w_{<t}$, $w_{1:T}$ | a run of tokens as **one argument** — Block 1's $w$ carrying Block 3 lesson 8's slice; the middle one excludes $t$ |
+| $\tilde{w}_{1:T}$ | the same sequence after some of its positions have been replaced by `[MASK]` |
 
 $$
 \text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) =
@@ -1102,6 +1104,34 @@ $y_{1:T_y}$ is the sequence of target **tokens** being fed in, one object read i
 $T_x$ and $T_y$ come back with them, unchanged from Block 3 lesson 8, and for the reason they were
 introduced there: the two sides need not be the same length, which is exactly what makes the
 encoder-decoder map rectangular where the other two are square.
+
+**$r$ comes back in lesson 10 with two more domains, and the change of domain is the lesson.**
+Block 1 lesson 1 fixed the representation function as $r : V \to \mathbb{R}^{d}$ and Block 1
+lesson 8 closed on what that signature cannot do: its argument is an entry, so <W>banco</W> has one
+vector and no sentence can ask for another. Block 5 lesson 10 answers by writing the other two
+signatures the same way — $r : V^{*} \to \mathbb{R}^{d_{\text{model}}}$ for a causal stack, whose
+vector at position $t$ is $r(w_{1:t})$, and
+$r : V^{*} \times \mathbb{N} \to \mathbb{R}^{d_{\text{model}}}$ for a bidirectional one, whose
+vector at position $t$ is $r(w_{1:T},\, t)$. Three claims ride on keeping the same letter. The
+$\mathbb{R}^{d}$ of the first reads as $\mathbb{R}^{d_{\text{model}}}$ here, which the $d$
+paragraph at the end of Block 1's own notes already licenses. $V^{*}$ is that block's Kleene star,
+defined in prose in its lesson 2 and free for any set. And the causal signature takes **no position
+argument** because the position is the last index of the prefix, and that is the whole reason a
+causal stack gives one vector per *prefix* rather than one per sentence — two sentences sharing a
+prefix share the vector.
+
+**$\tilde{w}_{1:T}$ wears the tilde for «corrupted», and the collision is named rather than
+avoided.** Block 3 spends a tilde on the two candidates, $\tilde{\mathbf{c}}_t$ and
+$\tilde{\mathbf{h}}_t$, and Block 1 on GloVe's context bias $\tilde{b}_k$ — a bold vector and an
+italic scalar, three and four blocks back, neither of which shares a page with this one. What the
+mark means here is what it means in the masked-language-modelling literature: the same object, with
+something done to it. The alternative was a **set** of hidden positions, so the loss could be
+written as a sum over it, and it is refused on the $\mathbf{V}$/$V$ rule above: the free italic
+capital is $A$, one glyph of bold from Block 4 and 5's attention map $\mathbf{A}$, which is that
+objection exactly. So the lesson does what that entry says to do — writes the
+per-position term $-\log P\left(w_t \mid \tilde{w}_{1:T}\right)$ and says «la media sobre las
+posiciones tapadas» in words. $\ell$ stays Block 3 lesson 7's per-text loss in both formulas, so
+neither family's objective costs a new loss symbol.
 
 ---
 

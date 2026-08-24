@@ -606,6 +606,11 @@ plain. Never italicise the Spanish terms.
 | how far a centred quantity typically lands from zero | `desviación típica` | `desviación estándar`; and never the letter $\sigma$, which NOTATION.md §4 reserves |
 | how many positions a coordinate of the positional encoding takes to come back round | `longitud de onda` | `periodo`, `frecuencia` — the last one is $\omega_i$, a different number |
 | the line that carries a sublayer's input around it and adds it back to its output | `conexión residual`, and `los residuales` for several | *residual connection*, *skip connection*, «atajo», «salto», «puente» |
+| training a model against raw text before it is shown any task | `preentrenamiento`, `preentrenar` | *pre-training*, «entrenamiento previo»; the other half of the recipe, *fine-tuning*, stays English |
+| the vector the stack produces for one position, which depends on the whole sequence | `representación contextual` | *contextual embedding*, «embedding contextual», «vector contextual» |
+| BERT's objective — hide some positions and predict them from both sides | `modelado de lenguaje enmascarado`, with the English given once per lesson (*masked language modelling*, MLM) | «enmascaramiento», «modelo de lenguaje enmascarado», bare MLM |
+| the token that replaces a hidden position | `[MASK]`, glossed once per lesson as «la marca que tapa una posición» | any translation — same rule as `<EOS>` and `<GO>` |
+| the two mask regimes, as adjectives on a model or an attention | `causal`, `bidireccional` | «unidireccional», «de izquierda a derecha», «no causal» |
 
 The `tipo` / `token` / `ocurrencia` row is a **distinction**, not a translation, and it is the one
 place in Block 1 where using one word for two concepts breaks a sentence outright: *el corpus tiene 4 000 tokens y 900 tipos* is
@@ -911,6 +916,50 @@ instead of naming the object, and both say the wrong thing about it: nothing is 
 jumps, the sublayer runs exactly as it did and its output is **added** to what it was given, which
 is the one fact the whole lesson turns on. «Puente» is worse still, being the course's own name for
 block 4.
+
+`preentrenamiento` is Spanish and *fine-tuning*, fixed in the English-terms row near the top of
+this table, is not — and the split is deliberate rather than an oversight. The line this section draws is whether a Spanish term is
+genuinely in use among people who do this work, and the two halves of that recipe answer
+differently: *preentrenar un modelo* is what a Spanish-speaking practitioner says, while nobody
+says «ajuste fino» out loud — and `course.es.yml`'s own syllabus already titles Block 5 lesson 11
+«Fine-tuning en la práctica», so the English half is settled by something already shipped, exactly
+as `atención` and `cabeza` were. «Entrenamiento previo» is refused for describing the order of two
+things instead of naming one of them: what makes preentrenamiento a concept is that the text it
+runs on has nothing to do with the task, not that it happens first.
+
+`representación contextual` is the term Block 1 has been owed since its lesson 8, on GloVe and the
+limits of a static table, closed on <W>banco</W> receiving one row of $\mathbf{E}$ for two
+sentences. `representación` is already the course's word — Block 1 lesson 1 fixes
+$r : V \to \mathbb{R}^{d}$ and every representation lesson since has used it — so the concept
+needs an adjective and not a second noun. That is also what rules out «vector contextual»: the
+thing that changes is **what $r$ takes as an argument**, and a name built on the output says
+nothing about it. *Contextual embedding* is what the literature writes and is refused on the row
+above's own logic: *embedding* stays English as the name of the static object, and gluing a Spanish
+adjective to it would put one term in two languages.
+
+`modelado de lenguaje enmascarado`, not «modelo de lenguaje enmascarado», and the one-letter
+difference is the whole point: the table already spends `modelo de lenguaje` on *a network trained
+to predict what comes next in a text*, which is precisely what BERT is not. What the row names is
+the **objective** — an activity, hence *modelado* — and keeping the two apart is what lets one
+sentence say that BERT is trained by masked language modelling and is not a language model in this
+course's sense. The English and the acronym come once per lesson under the rule below, because the
+student will meet MLM bare in every paper afterwards.
+
+`[MASK]` takes `<EOS>`'s and `<GO>`'s treatment for `<EOS>`'s and `<GO>`'s reason: it is a special
+token written the way a vocabulary file writes it, not a word, so it is not translated and it goes
+in `<W>` in prose. Note that the square brackets are BERT's own spelling and the angle brackets are
+the sequence tokens' — the course keeps each as its source writes it rather than unifying them,
+because a reader who meets one spelling here and the other in the paper would be entitled to think
+the difference meant something.
+
+`causal` and `bidireccional` are the two adjectives Block 5 lesson 10 leans on in nearly every
+paragraph, and both are ordinary Spanish. «Unidireccional» is the tempting partner for the second
+and is refused for being a **third** name for a thing that already has two: the mask of Block 5
+lesson 7 and the adjective here. «De izquierda a derecha» describes the reading order and is true,
+but it is a phrase rather than a term and cannot modify a noun without a subordinate clause. And
+«no causal» is refused for the reason «no lineal» would be if the course had a choice: naming half
+the distinction by the absence of the other half makes the maskless case read as the deviation,
+when in this lesson it is one of two symmetric answers.
 
 #### Acronyms
 
