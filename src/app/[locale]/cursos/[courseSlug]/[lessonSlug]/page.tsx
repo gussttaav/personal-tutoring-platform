@@ -34,7 +34,8 @@ import { extractHeadings } from "@/lib/courses/headings";
 import { placedExerciseIds } from "@/lib/courses/exercise-ids";
 import { renderLesson } from "@/lib/courses/mdx";
 import { routing } from "@/i18n/routing";
-import { localizedAlternates } from "@/lib/hreflang";
+import { availableLocaleAlternates, localeUrl } from "@/lib/hreflang";
+import LessonStructuredData from "@/components/seo/LessonStructuredData";
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -63,11 +64,30 @@ export async function generateMetadata({
     return { title: tMeta("title"), description: tMeta("description") };
   }
 
+  // COURSE-P6-01: advertise only the locales this lesson is published in. `en` has
+  // no content for months → no `/en/cursos/...` alternate is emitted while it 404s.
+  const route = `/cursos/${courseSlug}/${lessonSlug}`;
+  const available = routing.locales.filter((l) =>
+    listLessons(courseSlug, l).some((les) => les.slug === lessonSlug),
+  );
+  // COURSE-P6-01: per-lesson OpenGraph so shares carry the lesson's own title/description
+  // instead of inheriting the site-level card from the layout. The og image is still the
+  // generic /og.png (a known placeholder — a per-course image is out of scope, docs/seo).
+  const ogImage = locale === "en" ? "/og-en.png" : "/og.png";
   return {
     title: `${lesson.title} — ${course.title}`,
     description: lesson.summary,
     robots: { index: true, follow: true },
-    alternates: localizedAlternates(`/cursos/${courseSlug}/${lessonSlug}`, locale),
+    alternates: availableLocaleAlternates(route, locale, available),
+    openGraph: {
+      type: "article",
+      siteName: "gustavoai.dev",
+      title: `${lesson.title} — ${course.title}`,
+      description: lesson.summary,
+      url: localeUrl(route, locale),
+      locale: locale === "en" ? "en_US" : "es_ES",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: lesson.title }],
+    },
   };
 }
 
@@ -102,6 +122,8 @@ export default async function LessonPage({
 
   return (
     <>
+      {/* COURSE-P6-01: LearningResource JSON-LD — server-rendered, ships in the static HTML. */}
+      <LessonStructuredData course={course} lesson={lesson} locale={locale} />
       <Navbar />
       <LessonLayout
         course={course}
