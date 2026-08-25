@@ -1092,7 +1092,7 @@
       "creditsRestoredMsg": "✓ Your credit has been automatically returned to your pack. You can book another class at <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
       "refundMsg": "If you paid for this session individually, Gustavo will process the refund within 1–3 business days."
     },
-    "courseNews": {
+    "courseLaunch": {
       "subject": "{courseTitle} is live",
       "heading": "The course is published",
       "intro": "You asked to be told about new courses on gustavoai.dev. This is that email — the first one.",
@@ -1100,6 +1100,26 @@
       "body2": "Nothing to install: the Python runs in your browser. The lessons are written in Spanish for now — an English version is planned, and you will get an email when it lands.",
       "cta": "Start the first lesson",
       "landingCta": "See the full syllabus",
+      "unsubscribe": "Don't want these emails? Turn them off on the courses page."
+    },
+    "courseEnglish": {
+      "subject": "{courseTitle} is now available in English",
+      "heading": "The English version is here",
+      "intro": "You asked to be told about course news on gustavoai.dev. This is one of those emails.",
+      "body1": "<strong>{courseTitle}</strong> can now be read end to end in English. Same course, same lessons, same code — translated.",
+      "body2": "The Spanish original stays exactly where it was, so nothing you had bookmarked has moved.",
+      "cta": "Start in English",
+      "landingCta": "See the course in English",
+      "unsubscribe": "Don't want these emails? Turn them off on the courses page."
+    },
+    "courseUpdate": {
+      "subject": "What's new in {courseTitle}",
+      "heading": "I've updated the course",
+      "intro": "You asked to be told when a course gets a major update. This is one of those times.",
+      "body1": "I've reworked <strong>{courseTitle}</strong>. Here's what changed:",
+      "whatsNewLabel": "What's new",
+      "body2": "If you had already started, your progress is still saved exactly where you left it.",
+      "landingCta": "See the course",
       "unsubscribe": "Don't want these emails? Turn them off on the courses page."
     }
   }

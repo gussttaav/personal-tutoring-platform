@@ -1092,7 +1092,7 @@
       "creditsRestoredMsg": "✓ Tu crédito ha sido devuelto automáticamente a tu pack. Puedes reservar otra clase desde <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
       "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles."
     },
-    "courseNews": {
+    "courseLaunch": {
       "subject": "Ya está publicado: {courseTitle}",
       "heading": "El curso ya está publicado",
       "intro": "Pediste que te avisara de los cursos nuevos en gustavoai.dev. Este es ese correo — el primero.",
@@ -1100,6 +1100,26 @@
       "body2": "No hay nada que instalar: el código Python se ejecuta en tu navegador.",
       "cta": "Empezar la primera lección",
       "landingCta": "Ver el programa completo",
+      "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
+    },
+    "courseEnglish": {
+      "subject": "Ya está en inglés: {courseTitle}",
+      "heading": "La versión en inglés ya está disponible",
+      "intro": "Pediste que te avisara de las novedades de los cursos de gustavoai.dev. Esta es una de ellas.",
+      "body1": "<strong>{courseTitle}</strong> ya se puede leer entero en inglés. Es el mismo curso — las mismas lecciones, el mismo código — traducido.",
+      "body2": "La versión en español sigue donde estaba, así que no tienes que cambiar de idioma si no quieres.",
+      "cta": "Empezar en inglés",
+      "landingCta": "Ver el curso en inglés",
+      "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
+    },
+    "courseUpdate": {
+      "subject": "Novedades en {courseTitle}",
+      "heading": "He actualizado el curso",
+      "intro": "Pediste que te avisara cuando actualizara a fondo un curso. Esta es una de esas veces.",
+      "body1": "He revisado <strong>{courseTitle}</strong>. Esto es lo que ha cambiado:",
+      "whatsNewLabel": "Novedades",
+      "body2": "Si ya lo habías empezado, tu progreso sigue guardado donde lo dejaste.",
+      "landingCta": "Ver el curso",
       "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
     }
   }

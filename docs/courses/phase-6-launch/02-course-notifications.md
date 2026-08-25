@@ -46,7 +46,7 @@ dry, so the first announcement is not written under launch pressure.
 | `src/infrastructure/supabase/SupabaseAuditRepository.ts` | Implement — `.eq(action)` + JSONB `.contains({ announcementKey })` |
 | `src/infrastructure/resend/email-functions.ts` | + `renderCourseNewsEmail` / `sendCourseNewsEmail` |
 | `src/lib/schemas.ts` | + `CourseAnnounceSchema` |
-| `messages/es.json` + `messages/en.json` | + `courses.notify.*`, `emails.courseNews.*` (**both**) |
+| `messages/es.json` + `messages/en.json` | + `courses.notify.*`, `emails.courseLaunch.*` / `courseEnglish.*` / `courseUpdate.*` (**both**) |
 | `src/app/api/admin/course-announce/route.ts` (new) | Admin-gated trigger, dry-run by default |
 | `src/__tests__/fixtures/` | Extend the in-memory subscription + audit fakes |
 
@@ -126,22 +126,43 @@ not a conditional in the template.
 - Don't send at a weekend or late at night in the audience's timezone.
 - Don't build a newsletter system. There is no free-text composition on purpose.
 
-## Known follow-ups (deliberately not built here)
+## COURSE-P6-02b — the two follow-ups, now built
 
-- **The opt-in promises more than the send delivers.** The notify card says "new courses OR a
-  major update, including the English translation," but there is exactly ONE email template and
-  it is launch-specific ("the course is published, here is what it is"). The *targeting* is
-  generic — arbitrary `announcementKey`, per-`users.locale` resolution, idempotency, chunking —
-  but the *content* only supports a launch. An "English version available" or "course updated"
-  announcement is therefore NOT deliverable today without new template copy.
-  **Decided approach (not yet implemented):** add a small fixed set of announcement *kinds*
-  (`launch` / `english` / `update`), each with its own bilingual namespace, the `update` kind
-  taking one admin-typed "what's new" line. Keeps it non-newsletter (no free-form body).
-  Idempotency caveat: `launch`/`english` are one-shot keys, but each `update` must use a key
-  unique per update (e.g. `update:<slug>:<date>`) or the audit-log de-dupe will suppress it.
-- **Admin panel UI.** Sending today means hitting `POST /api/admin/course-announce` directly
-  (dry run, then `confirm: true`). A panel page with type selector + preview + confirm is a
-  planned follow-up; the route is ready for it.
+Both items previously listed here as "decided, not yet implemented" have shipped.
+
+**Three announcement kinds.** `kind` is a required field on `CourseAnnounceSchema`
+(`launch` | `english` | `update`), each mapped to its own bilingual namespace by
+`ANNOUNCEMENT_NAMESPACE` in `email-functions.ts` — `emails.courseLaunch`, `emails.courseEnglish`,
+`emails.courseUpdate`. `update` carries one admin-typed "what's new" line, escaped with
+`escapeHtml` and rendered in the template's existing `.note-box`; there is still no free-form
+body. `english` pins its links to the `/en` tree regardless of the recipient's locale, because
+the body is written in the reader's language but the thing being announced is the English course.
+
+`kind` has **no default**: a POST that does not say which announcement it is gets a 400. Same
+instinct as `confirm` being optional — the accidental call should be the harmless one.
+
+**The `update` key.** `launch:<slug>` and `english:<slug>` are once-ever. `update` defaults to
+`update:<slug>:<yyyy-mm-dd>` and the panel shows the resolved key with a warning, because reusing
+a previous key means `listNotifiedEmails` skips everyone who received it — a silent no-op.
+
+**Admin panel UI.** `/admin/course-announce` (`CourseAnnounceForm`). Type selector → mandatory
+dry run, which renders both locale samples in a permission-less `<iframe sandbox="">` → type
+`ENVIAR` → send. Editing any field discards the preview and re-locks the button, and the confirm
+word re-arms for every chunk. The UI never attaches `confirm: true` to a body a dry run has not
+already returned.
+
+**Chunking, corrected.** The obvious continuation — re-POST with the `nextOffset` the response
+hands back — is wrong. `offset` indexes into `pending`, which is the subscriber list *after*
+already-notified addresses are filtered out, and a confirmed chunk records everyone it reached.
+So `pending` shrinks between calls, and resuming at `nextOffset` steps clean over the people the
+previous chunk just removed. The panel re-POSTs with **`offset: 0`** and lets the audit log do
+the paging; `remaining` stays accurate across the walk. `offset` survives for its one remaining
+use — stepping past an address that fails every time and would otherwise block the head of the
+queue. Pinned by the two tests in `describe("chunked walk")`.
+
+**Parity guard.** `src/__tests__/i18n-parity.test.ts` now fails the build on a key present in
+only one message file — previously nothing caught that, and for an email template the first
+symptom would have been an already-sent email.
 
 ## Out of scope
 

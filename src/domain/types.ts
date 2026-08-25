@@ -293,6 +293,13 @@ export interface SubscriptionRecipient {
   locale: "es" | "en";
 }
 
+/** COURSE-P6-02b: which of the three things the courses opt-in promises is being announced.
+ *
+ *  `launch` and `english` happen once per course, ever. `update` happens as often as the
+ *  course changes — which is why it is the only one whose idempotency key has to carry a
+ *  discriminator (see CourseAnnounceSchema and the announce route). */
+export type AnnouncementKind = "launch" | "english" | "update";
+
 // ─── Reviews ──────────────────────────────────────────────────────────────────
 
 /** Decision returned after a rating is captured: whether the post-class flow
