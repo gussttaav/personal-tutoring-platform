@@ -151,6 +151,8 @@ export function buildTestSubscriptionService(
   const subs: ISubscriptionRepository = overrides.subs ?? {
     async subscribe() {},
     async isSubscribed() { return false; },
+    async unsubscribe() {},
+    async listByType() { return []; },
   };
 
   const service = new SubscriptionService(subs, new UserService(userRepo));

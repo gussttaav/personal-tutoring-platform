@@ -19,9 +19,14 @@ import { useCourseProgress } from "@/hooks/useCourseProgress";
 
 interface CourseProgressResumeProps {
   courseSlug: string;
+  /** COURSE-P6-03: locale the lessons live in — see CourseHero. Omit when it equals the page's. */
+  contentLocale?: string;
 }
 
-export default function CourseProgressResume({ courseSlug }: CourseProgressResumeProps) {
+export default function CourseProgressResume({
+  courseSlug,
+  contentLocale,
+}: CourseProgressResumeProps) {
   const t = useTranslations("courses.progress");
   // No `lessonSlug`: viewing the landing page is not viewing a lesson, so this
   // records nothing — it only reads.
@@ -56,6 +61,7 @@ export default function CourseProgressResume({ courseSlug }: CourseProgressResum
         </p>
         <Link
           href={`/cursos/${courseSlug}/${lastSeenLessonSlug}`}
+          locale={contentLocale}
           style={{
             display: "inline-flex",
             alignItems: "center",

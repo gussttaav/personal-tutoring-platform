@@ -9,7 +9,8 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
+import { useSessionsAnchor } from "@/hooks/useSessionsAnchor";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useUserSession } from "@/hooks/useUserSession";
@@ -27,13 +28,35 @@ export default function Navbar() {
   const { data: session, status, update } = useSession();
   const { packSession } = useUserSession();
   const [mobileOpen,     setMobileOpen]     = useState(false);
-  const [comingSoonModal, setComingSoonModal] = useState<"courses" | "blog" | null>(null);
+  const [comingSoonModal, setComingSoonModal] = useState<"blog" | null>(null);
 
+  // COURSE-P6-03: `usePathname` from @/i18n/navigation returns the pathname with the locale
+  // prefix already stripped, so "/en/cursos" and "/cursos" both read as "/cursos" — one match
+  // rule for both locales.
+  const pathname = usePathname();
+  const onSessionsClick = useSessionsAnchor();
+
+  // `match` is the route that makes an item CURRENT. Mentoría's is "/" because the landing
+  // page IS the mentoring offering — `#sessions` is a section of it, not a page of its own.
+  // Blog has none: it opens a modal and is never anywhere.
   const NAV_LINKS = [
-    { label: t("courses"),   href: "#",         comingSoon: "courses" as const, icon: "menu_book" },
-    { label: t("mentoring"), href: "#sessions",  accent: true,                  icon: "group"     },
+    { label: t("courses"),   href: "/cursos",    match: "/cursos",               icon: "menu_book" },
+    { label: t("mentoring"), href: "/#sessions", match: "/",                     icon: "group"     },
     { label: t("blog"),      href: "#",          comingSoon: "blog"    as const, icon: "edit_note" },
   ];
+
+  // ONE visual rule: the current item is green and underlined, and nothing else is emphasised.
+  //
+  // This used to be two rules — Mentoría carried a permanent green "call to action" accent
+  // while the current page was marked in white — and two rules meant the two items could never
+  // render alike: clicking Cursos gave you white + underline, clicking Mentoría gave you green
+  // and no underline, for what a reader experiences as the same act. Colour now means exactly
+  // one thing. The landing page looks as it always did (Mentoría green) because there it IS
+  // the current item; the difference is that it stops claiming to be one anywhere else.
+  const isActive = (match?: string) =>
+    match === "/"
+      ? pathname === "/"
+      : match !== undefined && (pathname === match || pathname.startsWith(`${match}/`));
 
   const handleSignIn = async () => {
     const result = await signInWithPopup("/");
@@ -60,20 +83,23 @@ export default function Navbar() {
   const handleNavLinkClick = (
     e: React.MouseEvent,
     href: string,
-    comingSoon?: "courses" | "blog",
+    comingSoon?: "blog",
   ) => {
+    // COURSE-P6-03: every branch closes the mobile panel, including the plain-navigation
+    // one that "Cursos" now takes — otherwise the panel stays open over the page it just
+    // client-side navigated to.
+    setMobileOpen(false);
+
     if (comingSoon) {
       e.preventDefault();
-      setMobileOpen(false);
       setComingSoonModal(comingSoon);
       return;
     }
-    if (href === "#sessions") {
-      e.preventDefault();
-      setMobileOpen(false);
-      window.dispatchEvent(
-        new CustomEvent("close-booking-overlay", { detail: { scrollTo: "#sessions" } })
-      );
+    // "Mentoría" is a section of the landing page, not a page. One shared handler so it
+    // behaves identically from here and from the Footer — see useSessionsAnchor.
+    if (href === "/#sessions") {
+      onSessionsClick(e);
+      return;
     }
   };
 
@@ -116,19 +142,28 @@ export default function Navbar() {
             className="hidden lg:flex items-center gap-8"
             style={{ fontFamily: "var(--font-headline, Manrope), sans-serif", fontWeight: 600 }}
           >
-            {NAV_LINKS.map(({ label, href, accent, comingSoon }) => (
-              <Link
-                key={label}
-                href={href}
-                className="transition-colors"
-                style={{ color: accent ? "#4edea3" : "rgba(229,225,228,0.6)" }}
-                onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
-                onMouseEnter={(e) => { if (!accent) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
-                onMouseLeave={(e) => { if (!accent) (e.currentTarget as HTMLElement).style.color = "rgba(229,225,228,0.6)"; }}
-              >
-                {label}
-              </Link>
-            ))}
+            {NAV_LINKS.map(({ label, href, comingSoon, match }) => {
+              const active = isActive(match);
+              const restColor = active ? "#4edea3" : "rgba(229,225,228,0.6)";
+              return (
+                <Link
+                  key={label}
+                  href={href}
+                  aria-current={active ? "page" : undefined}
+                  className="transition-colors"
+                  style={{
+                    color: restColor,
+                    paddingBottom: "2px",
+                    borderBottom: active ? "2px solid #4edea3" : "2px solid transparent",
+                  }}
+                  onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
+                  onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
+                  onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = restColor; }}
+                >
+                  {label}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -362,22 +397,30 @@ export default function Navbar() {
 
                 <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
 
-                {NAV_LINKS.map(({ label, href, accent, comingSoon, icon }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
-                    style={{ ...mobileNavItemBase, color: accent ? "#4edea3" : "#bbcabf" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "18px", color: accent ? "#4edea3" : "#86948a" }}>
-                      {icon}
-                    </span>
-                    {label}
-                  </Link>
-                ))}
+                {NAV_LINKS.map(({ label, href, comingSoon, icon, match }) => {
+                  const active = isActive(match);
+                  return (
+                    <Link
+                      key={label}
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
+                      style={{
+                        ...mobileNavItemBase,
+                        color: active ? "#4edea3" : "#bbcabf",
+                        background: active ? "#1c1b1d" : "transparent",
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = active ? "#1c1b1d" : "transparent"; }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: "18px", color: active ? "#4edea3" : "#86948a" }}>
+                        {icon}
+                      </span>
+                      {label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "8px 0 6px" }} />
@@ -407,22 +450,30 @@ export default function Navbar() {
             <>
               {/* Nav links with icons */}
               <nav className="px-2 pt-2">
-                {NAV_LINKS.map(({ label, href, accent, comingSoon, icon }) => (
-                  <Link
-                    key={label}
-                    href={href}
-                    onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
-                    style={{ ...mobileNavItemBase, color: accent ? "#4edea3" : "#bbcabf" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: "18px", color: accent ? "#4edea3" : "#86948a" }}>
-                      {icon}
-                    </span>
-                    {label}
-                  </Link>
-                ))}
+                {NAV_LINKS.map(({ label, href, comingSoon, icon, match }) => {
+                  const active = isActive(match);
+                  return (
+                    <Link
+                      key={label}
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
+                      style={{
+                        ...mobileNavItemBase,
+                        color: active ? "#4edea3" : "#bbcabf",
+                        background: active ? "#1c1b1d" : "transparent",
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = active ? "#1c1b1d" : "transparent"; }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: "18px", color: active ? "#4edea3" : "#86948a" }}>
+                        {icon}
+                      </span>
+                      {label}
+                    </Link>
+                  );
+                })}
               </nav>
 
               <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "8px 0" }} />

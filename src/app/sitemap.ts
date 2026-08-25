@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
-import { listCourses, listLessons } from "@/lib/courses/registry";
+import { listLessons } from "@/lib/courses/registry";
+import { catalogLocales, courseLocales, listCatalogEntries } from "@/lib/courses/catalog-view";
 import { availableLocaleAlternates } from "@/lib/hreflang";
 
 /**
@@ -19,10 +20,15 @@ import { availableLocaleAlternates } from "@/lib/hreflang";
  *
  * COURSE-P6-01: course routes are registry-driven — `/cursos`, each published course
  * landing, and each published lesson — emitted only for the locales where the content
- * actually exists. Courses are Spanish-only for months, so no `/en/cursos/...` URL is
- * advertised while it 404s; there `x-default` is the Spanish URL (its only variant).
- * Drafts and gated content never appear because `listCourses`/`listLessons` are
- * published-only.
+ * actually exists. Drafts never appear because the selectors are published-only.
+ *
+ * COURSE-P6-03: the catalog and the landing pages are BILINGUAL; the lessons are not, and
+ * the split is deliberate. A course translated at the manifest level (course.en.yml) has a
+ * real English catalog card and landing page, so both are listed for `en` and paired by
+ * hreflang — `listCatalogEntries`, the same selector the pages themselves use, so the
+ * sitemap and the pages' `alternates` cannot disagree. The LESSON loop still uses
+ * `listLessons(slug, locale)`, so a lesson URL is listed only in the locales its MDX exists
+ * in: no `/en/cursos/dl-nlp/<slug>` and no `en` lesson alternate while `en/` is empty.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
@@ -54,22 +60,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const courseEntries: MetadataRoute.Sitemap = [];
 
-  // The catalog `/cursos` is listed for every locale that has ≥1 published course.
-  const catalogLocales = routing.locales.filter((l) => listCourses(l).length > 0);
-  for (const locale of catalogLocales) {
-    const languages = absolute("/cursos", locale, catalogLocales);
+  // The catalog `/cursos` is listed for every locale that has ≥1 showable course.
+  const catalogIn = catalogLocales();
+  for (const locale of catalogIn) {
+    const languages = absolute("/cursos", locale, catalogIn);
     courseEntries.push({ url: `${base}${localePrefix(locale)}/cursos`, alternates: { languages } });
   }
 
   for (const locale of routing.locales) {
-    for (const course of listCourses(locale)) {
+    for (const { course } of listCatalogEntries(locale)) {
       const courseRoute = `/cursos/${course.slug}`;
-      const courseLocales = routing.locales.filter((l) =>
-        listCourses(l).some((c) => c.slug === course.slug),
-      );
       courseEntries.push({
         url: `${base}${localePrefix(locale)}${courseRoute}`,
-        alternates: { languages: absolute(courseRoute, locale, courseLocales) },
+        alternates: { languages: absolute(courseRoute, locale, courseLocales(course.slug)) },
       });
 
       for (const lesson of listLessons(course.slug, locale)) {

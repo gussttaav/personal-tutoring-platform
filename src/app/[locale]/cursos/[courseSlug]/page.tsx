@@ -5,11 +5,18 @@
  * via `listCourseManifests` (published OR not) so the page is reviewable on a preview deploy
  * BEFORE P5 publishes lessons — while all counts and the syllabus still flow through the
  * published-only `listLessons`, so drafts never appear. `firstLessonSlug` is null until a
- * lesson is published; the hero + closing CTA degrade to a "soon" state. English has no
- * manifest yet, so only the Spanish `dl-nlp` page is generated (en → 404, by design).
+ * lesson is published; the hero + closing CTA degrade to a "soon" state.
+ *
+ * COURSE-P6-03: the page is now bilingual even though the LESSONS are not. `getCatalogEntry`
+ * takes the manifest from the request locale and the lessons from whichever locale has them,
+ * so /en/cursos/dl-nlp is a real English page — hero, prerequisites, syllabus headings, FAQ —
+ * whose lesson links point into the Spanish reader, with `ContentLanguageNotice` saying so
+ * plainly. `contentLocale` is threaded into every component that builds a lesson href; each
+ * passes it to next-intl's <Link locale=…> so the href crosses locales deliberately rather
+ * than 404ing under /en. When `en/` lessons land, all of this stops firing on its own.
  *
  * Reading requires no sign-in (P4-02); no progress UI here (P4). hreflang correction and
- * sitemap/JSON-LD land in P6-01. Navbar/Footer keep the ComingSoonModal (P6-03).
+ * sitemap/JSON-LD land in P6-01. Only the blog keeps the ComingSoonModal (P6-03).
  */
 
 import type { Metadata } from "next";
@@ -24,7 +31,9 @@ import Prerequisites from "@/features/courses/landing/Prerequisites";
 import SyllabusAccordion from "@/features/courses/landing/SyllabusAccordion";
 import CourseFaq from "@/features/courses/landing/CourseFaq";
 import CourseCta from "@/features/courses/landing/CourseCta";
-import { getCourse, listLessons, listCourseManifests } from "@/lib/courses/registry";
+import ContentLanguageNotice from "@/features/courses/landing/ContentLanguageNotice";
+import { getCourse, listCourseManifests } from "@/lib/courses/registry";
+import { courseLocales, getCatalogEntry } from "@/lib/courses/catalog-view";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates } from "@/lib/hreflang";
 import CourseStructuredData from "@/components/seo/CourseStructuredData";
@@ -46,10 +55,10 @@ export async function generateMetadata({
   if (!course) {
     return { title: tMeta("title"), description: tMeta("description") };
   }
-  // COURSE-P6-01: advertise only the locales the course landing actually exists in
-  // (a manifest is present). `en` has no manifest for months → no `/en/cursos/...`
-  // alternate is emitted while it 404s.
-  const available = routing.locales.filter((l) => getCourse(course.slug, l) !== null);
+  // COURSE-P6-01/P6-03: advertise only the locales the course landing actually renders in.
+  // That is a manifest AND lessons resolvable from somewhere — the same predicate the
+  // catalog and the sitemap use, so all three agree on which URLs exist.
+  const available = courseLocales(course.slug);
   return {
     title: `${course.title} — Gustavo Torres`,
     description: course.tagline,
@@ -69,8 +78,14 @@ export default async function CourseLandingPage({
   const course = getCourse(courseSlug, locale);
   if (!course) notFound();
 
-  const lessons = listLessons(course.slug, locale);
+  // A manifest with no lessons in ANY locale still renders — that is P1-03's "soon" degrade,
+  // and `generateStaticParams` deliberately enumerates unpublished courses so a landing page
+  // is reviewable on a preview deploy. `getCatalogEntry` is null in exactly that case.
+  const entry = getCatalogEntry(courseSlug, locale);
+  const lessons         = entry?.lessons ?? [];
+  const contentLocale   = entry?.contentLocale ?? locale;
   const firstLessonSlug = lessons[0]?.slug ?? null;
+  const translated      = contentLocale === locale;
 
   const tLanding = await getTranslations({ locale, namespace: "courses.landing" });
   const tBio = await getTranslations({ locale, namespace: "landing.bio" });
@@ -105,7 +120,10 @@ export default async function CourseLandingPage({
             lessonCount={lessons.length}
             firstLessonSlug={firstLessonSlug}
             locale={locale}
+            contentLocale={contentLocale}
           />
+
+          {!translated && <ContentLanguageNotice locale={locale} />}
 
           <Prerequisites prerequisites={course.prerequisites} locale={locale} />
 
@@ -165,7 +183,12 @@ export default async function CourseLandingPage({
 
           <CourseFaq locale={locale} />
 
-          <CourseCta courseSlug={course.slug} firstLessonSlug={firstLessonSlug} locale={locale} />
+          <CourseCta
+            courseSlug={course.slug}
+            firstLessonSlug={firstLessonSlug}
+            locale={locale}
+            contentLocale={contentLocale}
+          />
         </div>
       </main>
       <Footer />

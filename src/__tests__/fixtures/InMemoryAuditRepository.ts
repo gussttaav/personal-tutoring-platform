@@ -17,6 +17,18 @@ export class InMemoryAuditRepository implements IAuditRepository {
     return entries.slice(-limit);
   }
 
+  // COURSE-P6-02: mirrors the Supabase `action` + `details.announcementKey` match.
+  async listNotifiedEmails(action: string, announcementKey: string): Promise<Set<string>> {
+    const emails = new Set<string>();
+    for (const [email, entries] of this.store) {
+      const hit = entries.some(
+        (e) => e.action === action && e.announcementKey === announcementKey,
+      );
+      if (hit) emails.add(email);
+    }
+    return emails;
+  }
+
   /** Test helper: returns all entries for an email. */
   getAll(email: string): AuditEntry[] {
     return this.store.get(email.toLowerCase()) ?? [];

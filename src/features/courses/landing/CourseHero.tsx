@@ -6,8 +6,18 @@
  * is null until P5 publishes a lesson; the primary CTA degrades to a disabled "soon"
  * state rather than linking nowhere.
  *
- * Layout note: the meta row is deliberately its own block so a progress bar can slot in
- * beneath it without a redesign. COURSE-P4-02 fills that slot with `CourseProgressResume`
+ * COURSE-P6-03: `contentLocale` is the locale the LESSONS live in, which differs from the
+ * page locale while a course is translated only at the manifest level. It is passed straight
+ * to next-intl's <Link locale=…>, which emits the EXPLICIT prefix (`/es/cursos/...`) even
+ * though `as-needed` makes the Spanish URL unprefixed. That prefix is load-bearing, not
+ * noise: locale detection is pathname → NEXT_LOCALE cookie → default (see src/middleware.ts),
+ * so an unprefixed `/cursos/...` clicked by a reader whose cookie says `en` would be sent to
+ * `/en/cursos/...` and 404. The prefixed URL flips the cookie to `es` and redirects to the
+ * canonical unprefixed one — which is also correct, because following this link means the
+ * reader is now reading the Spanish site.
+ *
+ * Layout note: the meta row is deliberately its own block so a progress bar can
+ * slot in beneath it without a redesign. COURSE-P4-02 fills that slot with `CourseProgressResume`
  * — a client leaf, because this page is static and readable signed-out, so progress is
  * fetched after hydration. It renders nothing for a visitor with nothing to resume.
  */
@@ -22,6 +32,8 @@ interface CourseHeroProps {
   lessonCount: number;
   firstLessonSlug: string | null;
   locale: string;
+  /** Locale the lessons live in. Omit when it always equals `locale`. */
+  contentLocale?: string;
 }
 
 export default async function CourseHero({
@@ -29,6 +41,7 @@ export default async function CourseHero({
   lessonCount,
   firstLessonSlug,
   locale,
+  contentLocale,
 }: CourseHeroProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.hero" });
 
@@ -113,12 +126,13 @@ export default async function CourseHero({
         ) : null}
       </div>
 
-      <CourseProgressResume courseSlug={course.slug} />
+      <CourseProgressResume courseSlug={course.slug} contentLocale={contentLocale} />
 
       <div style={{ marginTop: "28px" }}>
         {firstLessonSlug ? (
           <Link
             href={`/cursos/${course.slug}/${firstLessonSlug}`}
+            locale={contentLocale}
             style={{
               display: "inline-flex",
               alignItems: "center",

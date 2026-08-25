@@ -1,0 +1,36 @@
+# COURSE-P6-03 — Course manifest (English).
+# Sibling of course.es.yml, exactly as its header anticipated: `slug`, block `id`s and
+# `estimatedHours` are locale-invariant and MUST match the Spanish manifest; only the
+# prose (title, tagline, level, prerequisites, block titles/summaries) is translated.
+#
+# The lessons themselves are NOT translated yet — there is no `en/` directory. That is a
+# supported state: `src/lib/courses/catalog-view.ts` resolves the manifest from the
+# requested locale and the lessons from whichever locale has them, so /en/cursos/dl-nlp
+# renders in English and links into the Spanish reader, with an explicit notice saying so.
+# When `en/` lessons land, that fallback stops firing on its own — no code change.
+
+slug: dl-nlp
+title: "Deep Learning for NLP: from the Perceptron to the Transformer"
+tagline: "Build the architecture behind modern language models from scratch, with full mathematical rigour."
+level: intermediate
+estimatedHours: 40
+prerequisites:
+  - "Intermediate Python (functions, classes, basic NumPy)"
+  - "Linear algebra: vectors, matrices, matrix multiplication"
+  - "Calculus: partial derivatives and the chain rule"
+blocks:
+  - id: 1
+    title: "NLP Fundamentals"
+    summary: "Tokenization, vocabularies and the first vector representations of text."
+  - id: 2
+    title: "The Multilayer Perceptron"
+    summary: "From the perceptron to a multilayer network trained with gradient descent and backpropagation."
+  - id: 3
+    title: "Recurrent Neural Networks"
+    summary: "Sequences, memory and the problem of the vanishing gradient."
+  - id: 4
+    title: "The Bridge to Attention"
+    summary: "The context bottleneck and the alignment that solves it."
+  - id: 5
+    title: "The Transformer"
+    summary: "Self-attention, multiple heads and positional encoding."

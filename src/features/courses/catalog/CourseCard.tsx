@@ -6,6 +6,11 @@
  * caller from the PUBLISHED-only registry selectors, so drafts never inflate them.
  * Hover styling is CSS-only (`.course-card` rules live in the catalog page's <style>).
  *
+ * COURSE-P6-03: `contentLocale` is the locale the LESSONS resolved in, which can differ from
+ * the page locale while a course is translated only at the manifest level. When it does, the
+ * card says so — an English visitor should learn the lessons are in Spanish here, not after
+ * clicking through.
+ *
  * Namespace fix: the card's four strings live under `courses.catalog.card.*`, but this
  * resolved them against `courses.catalog`, so every one of them threw MISSING_MESSAGE.
  * It stayed invisible while no course had a published lesson (the catalog rendered its
@@ -21,6 +26,8 @@ interface CourseCardProps {
   lessonCount: number;
   blockCount: number;
   locale: string;
+  /** Locale the lessons resolved in. Omit when it always equals `locale`. */
+  contentLocale?: string;
 }
 
 export default async function CourseCard({
@@ -28,8 +35,10 @@ export default async function CourseCard({
   lessonCount,
   blockCount,
   locale,
+  contentLocale,
 }: CourseCardProps) {
   const t = await getTranslations({ locale, namespace: "courses.catalog.card" });
+  const translated = contentLocale === undefined || contentLocale === locale;
 
   return (
     <Link
@@ -47,23 +56,40 @@ export default async function CourseCard({
         transition: "border-color 0.2s, transform 0.2s",
       }}
     >
-      {/* Level */}
-      <span
-        style={{
-          alignSelf: "flex-start",
-          fontSize: "11px",
-          fontWeight: 600,
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "var(--green)",
-          background: "var(--green-dim)",
-          border: "1px solid var(--green-mid)",
-          borderRadius: "100px",
-          padding: "4px 12px",
-        }}
-      >
-        {course.level}
-      </span>
+      {/* Level + (when the lessons are in another language) the content-language badge */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+        <span
+          style={{
+            fontSize: "11px",
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--green)",
+            background: "var(--green-dim)",
+            border: "1px solid var(--green-mid)",
+            borderRadius: "100px",
+            padding: "4px 12px",
+          }}
+        >
+          {course.level}
+        </span>
+        {!translated && (
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              color: "var(--text-dim)",
+              border: "1px solid var(--border-variant)",
+              borderRadius: "100px",
+              padding: "4px 12px",
+            }}
+          >
+            {t("contentLanguage")}
+          </span>
+        )}
+      </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <h3

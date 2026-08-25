@@ -1,11 +1,16 @@
 /*
  * COURSE-P1-03 — Course catalog (/cursos).
  *
- * Statically generated. The card list is sourced from `listCourses` (PUBLISHED-only), so
- * with dl-nlp still a draft it is empty today and the honest "próximamente" empty state
- * renders — never a blank page. Per-card counts come from `listLessons` (also published-
- * only), so drafts never inflate them. Navbar/Footer keep the ComingSoonModal; the link
- * swap is P6-03.
+ * Statically generated. Counts come from PUBLISHED-only registry selectors, so drafts never
+ * inflate them, and the honest empty state renders rather than a blank page when a locale
+ * has nothing at all.
+ *
+ * COURSE-P6-03: the card list is sourced from `listCatalogEntries`, not `listCourses`. The
+ * difference is the English catalog: `listCourses("en")` is empty until the LESSONS are
+ * translated, which would show "coming soon" to an English visitor while a finished course
+ * sits one directory away. `listCatalogEntries` pairs the English manifest with the Spanish
+ * lessons and reports which locale those lessons came from, so the card can say so.
+ * Navbar/Footer link here now; only the blog keeps the ComingSoonModal.
  */
 
 import type { Metadata } from "next";
@@ -13,9 +18,10 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CourseCard from "@/features/courses/catalog/CourseCard";
-import { listCourses, listLessons } from "@/lib/courses/registry";
+import CourseNotifyCard from "@/features/courses/CourseNotifyCard";
+import { catalogLocales, listCatalogEntries } from "@/lib/courses/catalog-view";
 import { routing } from "@/i18n/routing";
-import { localizedAlternates } from "@/lib/hreflang";
+import { availableLocaleAlternates } from "@/lib/hreflang";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -32,7 +38,9 @@ export async function generateMetadata({
     title: t("title"),
     description: t("description"),
     robots: { index: true, follow: true },
-    alternates: localizedAlternates("/cursos", locale),
+    // COURSE-P6-03: advertise only the locales whose catalog actually has a course. This
+    // used to be `localizedAlternates` (always both), which disagreed with sitemap.ts.
+    alternates: availableLocaleAlternates("/cursos", locale, catalogLocales()),
   };
 }
 
@@ -41,15 +49,12 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "courses.catalog" });
 
-  const courses = listCourses(locale);
-  const cards = courses.map((course) => {
-    const lessons = listLessons(course.slug, locale);
-    return {
-      course,
-      lessonCount: lessons.length,
-      blockCount: new Set(lessons.map((l) => l.block)).size,
-    };
-  });
+  const cards = listCatalogEntries(locale).map(({ course, contentLocale, lessons }) => ({
+    course,
+    contentLocale,
+    lessonCount: lessons.length,
+    blockCount:  new Set(lessons.map((l) => l.block)).size,
+  }));
 
   return (
     <>
@@ -121,17 +126,21 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
             </div>
           ) : (
             <div className="courses-grid">
-              {cards.map(({ course, lessonCount, blockCount }) => (
+              {cards.map(({ course, contentLocale, lessonCount, blockCount }) => (
                 <CourseCard
                   key={course.slug}
                   course={course}
                   lessonCount={lessonCount}
                   blockCount={blockCount}
                   locale={locale}
+                  contentLocale={contentLocale}
                 />
               ))}
             </div>
           )}
+
+          {/* COURSE-P6-02 — opt-in for new courses and major updates. */}
+          <CourseNotifyCard />
         </div>
 
         <style>{`

@@ -122,14 +122,15 @@ ticked.** This table stays a phase-level dashboard — do not add per-lesson row
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 SEO: JSON-LD, sitemap, hreflang](phase-6-launch/01-seo.md) | `COURSE-P6-01` | ✅ | _tbd_ | local |
-| [02 Waitlist launch email](phase-6-launch/02-waitlist-email.md) | `COURSE-P6-02` | ⬜ | _tbd_ | |
-| [03 Publication gate flip](phase-6-launch/03-publication-gate.md) | `COURSE-P6-03` | ⬜ | _tbd_ | |
+| [02 Course notifications](phase-6-launch/02-course-notifications.md) | `COURSE-P6-02` | ✅ | _tbd_ | |
+| [03 Launch: bilingual catalog + link swap](phase-6-launch/03-publication-gate.md) | `COURSE-P6-03` | ✅ | _tbd_ | |
 
 **Exit criteria**
-- [x] Sitemap lists every published lesson; **no `en` hreflang alternate is emitted while English content does not exist** _(P6-01)_
+- [x] Sitemap lists every published lesson; **no `en` hreflang alternate is emitted for a lesson while English lesson content does not exist** _(P6-01, P6-03)_
 - [ ] `Course` + `LearningResource` JSON-LD validates
-- [ ] Waitlist email sent to `subscriptions WHERE type = 'courses'`, bilingual per `users.locale`
-- [ ] Navbar/Footer "Cursos" links to `/cursos`; ComingSoonModal no longer reachable for courses (blog untouched)
+- [x] A course-notification opt-in exists with an unsubscribe path and a working (dry) send behind it _(P6-02)_
+- [x] Navbar/Footer "Cursos" links to `/cursos`; the courses ComingSoonModal is gone (blog untouched) _(P6-03)_
+- [x] `/en/cursos` shows a real English card; `/en/cursos/dl-nlp` is a real English landing page _(P6-03)_
 
 ---
 

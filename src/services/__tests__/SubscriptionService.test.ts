@@ -8,6 +8,8 @@ const TEST_USER_ID = "user-uuid-sub-test";
 const mockSubs = (): jest.Mocked<ISubscriptionRepository> => ({
   subscribe:    jest.fn(),
   isSubscribed: jest.fn(),
+  unsubscribe:  jest.fn(),
+  listByType:   jest.fn(),
 });
 
 const mockUserService = (): jest.Mocked<Pick<UserService, "ensureUser" | "findByEmail">> => ({
@@ -88,5 +90,50 @@ describe("SubscriptionService.isSubscribed", () => {
 
     expect(result).toBe(false);
     expect(subs.isSubscribed).not.toHaveBeenCalled();
+  });
+});
+
+// COURSE-P6-02 — the notify card's toggle and the announce email's unsubscribe link.
+describe("SubscriptionService.unsubscribe", () => {
+  it("resolves the user then calls repo.unsubscribe with userId", async () => {
+    const { service, subs, userSvc } = makeService();
+
+    await service.unsubscribe("user@example.com", "courses");
+
+    expect(userSvc.findByEmail).toHaveBeenCalledWith("user@example.com");
+    expect(subs.unsubscribe).toHaveBeenCalledWith(TEST_USER_ID, "courses");
+  });
+
+  it("is a no-op for a user that does not exist — never creates one", async () => {
+    const { service, subs, userSvc } = makeService(
+      {},
+      { findByEmail: jest.fn().mockResolvedValue(null) },
+    );
+
+    await expect(service.unsubscribe("unknown@example.com", "courses")).resolves.toBeUndefined();
+
+    expect(subs.unsubscribe).not.toHaveBeenCalled();
+    expect(userSvc.ensureUser).not.toHaveBeenCalled();
+  });
+
+  it("does not throw when there was nothing to remove", async () => {
+    const { service, subs } = makeService();
+    subs.unsubscribe.mockResolvedValue(undefined);
+
+    await expect(service.unsubscribe("user@example.com", "blog")).resolves.toBeUndefined();
+  });
+});
+
+describe("SubscriptionService.listSubscribers", () => {
+  it("passes the type through to the repository", async () => {
+    const { service, subs } = makeService();
+    subs.listByType.mockResolvedValue([
+      { userId: TEST_USER_ID, email: "a@b.com", locale: "en" },
+    ]);
+
+    const recipients = await service.listSubscribers("courses");
+
+    expect(subs.listByType).toHaveBeenCalledWith("courses");
+    expect(recipients).toEqual([{ userId: TEST_USER_ID, email: "a@b.com", locale: "en" }]);
   });
 });

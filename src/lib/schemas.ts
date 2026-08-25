@@ -127,6 +127,44 @@ export const SubscribeSchema = z.object({
 
 export type SubscribeInput = z.infer<typeof SubscribeSchema>;
 
+/** One line, not a body. Long enough for a real sentence, short enough to stay one. */
+const MAX_WHATS_NEW_CHARS = 300;
+
+// COURSE-P6-02: admin course announcement. `confirm` is what separates a dry run from an
+// irreversible bulk send, and it is deliberately OPTIONAL so the accidental call — a POST
+// with no body — is the harmless one. `offset`/`limit` exist so a list too large for the
+// 25s Vercel cap can be walked in chunks rather than needing a queue.
+//
+// COURSE-P6-02b: `kind` is REQUIRED and has no default. Which of the three emails goes out is
+// not something to infer — a POST that forgot to say now 400s, which is the same instinct that
+// made `confirm` optional.
+export const CourseAnnounceSchema = z
+  .object({
+    courseSlug:      z.string().min(1),
+    kind:            z.enum(["launch", "english", "update"]),
+    /** The one admin-typed line, rendered as escaped text. `update` only, and required there
+     *  (see the superRefine below). Single line by design — this is not a newsletter body. */
+    whatsNew:        z.string().min(1).max(MAX_WHATS_NEW_CHARS).optional(),
+    /** Idempotency key. Defaults per kind in the route: `launch:<slug>` and `english:<slug>`
+     *  are once-ever, but `update:<slug>:<yyyy-mm-dd>` must differ per update or the audit-log
+     *  de-dupe suppresses every recipient who got the previous one. */
+    announcementKey: z.string().min(1).optional(),
+    confirm:         z.boolean().optional(),
+    offset:          z.number().int().nonnegative().optional(),
+    limit:           z.number().int().positive().max(200).optional(),
+  })
+  .superRefine((val, ctx) => {
+    if (val.kind === "update" && !val.whatsNew?.trim()) {
+      ctx.addIssue({
+        code:    z.ZodIssueCode.custom,
+        message: "whatsNew is required when kind is 'update'",
+        path:    ["whatsNew"],
+      });
+    }
+  });
+
+export type CourseAnnounceInput = z.infer<typeof CourseAnnounceSchema>;
+
 // ─── Post-class reviews ───────────────────────────────────────────────────────
 
 export const ReviewSchema = z.discriminatedUnion("kind", [

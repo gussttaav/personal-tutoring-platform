@@ -58,6 +58,7 @@ const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
 const mockAuditRepo = (): jest.Mocked<IAuditRepository> => ({
   append: jest.fn().mockResolvedValue(undefined),
   list:   jest.fn().mockResolvedValue([]),
+  listNotifiedEmails: jest.fn().mockResolvedValue(new Set<string>()),
 });
 
 const makeCreditService = (credits?: Partial<jest.Mocked<ICreditsRepository>>) => {

@@ -47,6 +47,26 @@ export class SupabaseAuditRepository implements IAuditRepository {
     });
   }
 
+  // COURSE-P6-02: `details` is JSONB, so `.contains` is an index-friendly @> match on the
+  // key rather than a scan. The `users!inner` embed turns the user_id FK back into the
+  // address the send actually keys on.
+  async listNotifiedEmails(action: string, announcementKey: string): Promise<Set<string>> {
+    const { data, error } = await supabase
+      .from("audit_log")
+      .select("users!inner(email)")
+      .eq("action", action)
+      .contains("details", { announcementKey });
+
+    if (error) throw error;
+
+    const emails = new Set<string>();
+    for (const row of data ?? []) {
+      const user = row.users as unknown as { email: string } | null;
+      if (user?.email) emails.add(user.email.toLowerCase());
+    }
+    return emails;
+  }
+
   private async upsertUser(email: string): Promise<string> {
     const normalized = email.toLowerCase().trim();
     const { data, error } = await supabase
