@@ -4,6 +4,12 @@
  * Server Component. "Empezar el curso" → the first published lesson. Sign-in is NOT
  * required to read (P4-02). Until P5 publishes a lesson, `firstLessonSlug` is null and the
  * button degrades to a disabled "soon" state instead of linking nowhere.
+ *
+ * COURSE-P6-03: `contentLocale` is the locale the LESSONS live in, which differs from the
+ * page locale while a course is translated only at the manifest level. It is passed straight
+ * to next-intl's <Link locale=…> so the href crosses locales on purpose — an English reader
+ * goes to the Spanish lesson that exists instead of a /en URL that 404s. See CourseHero for
+ * why the emitted URL carries an explicit `/es` prefix.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -13,9 +19,16 @@ interface CourseCtaProps {
   courseSlug: string;
   firstLessonSlug: string | null;
   locale: string;
+  /** Locale the lessons live in. Omit when it always equals `locale`. */
+  contentLocale?: string;
 }
 
-export default async function CourseCta({ courseSlug, firstLessonSlug, locale }: CourseCtaProps) {
+export default async function CourseCta({
+  courseSlug,
+  firstLessonSlug,
+  locale,
+  contentLocale,
+}: CourseCtaProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.cta" });
 
   return (
@@ -48,6 +61,7 @@ export default async function CourseCta({ courseSlug, firstLessonSlug, locale }:
         {firstLessonSlug ? (
           <Link
             href={`/cursos/${courseSlug}/${firstLessonSlug}`}
+            locale={contentLocale}
             style={{
               display: "inline-flex",
               alignItems: "center",

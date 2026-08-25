@@ -623,12 +623,6 @@
     "unknownError": "Error desconocido"
   },
   "comingSoon": {
-    "courses": {
-      "badge": "CURSOS",
-      "headline": "Formación en profundidad",
-      "subline": "Cursos estructurados sobre IA y desarrollo. Próximamente.",
-      "ctaLabel": "Suscribirse a Cursos"
-    },
     "blog": {
       "badge": "BLOG",
       "headline": "Artículos y recursos",
@@ -761,7 +755,8 @@
         "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "blocks": "{count, plural, =1 {# módulo} other {# módulos}}",
-        "cta": "Ver curso"
+        "cta": "Ver curso",
+        "contentLanguage": "Lecciones en español"
       }
     },
     "landing": {
@@ -818,7 +813,22 @@
         "body": "Empieza por la primera lección. No necesitas cuenta para leer.",
         "start": "Empezar el curso",
         "soon": "Próximamente"
+      },
+      "languageNotice": {
+        "title": "Las lecciones están en español",
+        "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante."
       }
+    },
+    "notify": {
+      "heading": "Recibe un aviso",
+      "body": "Un correo cuando publique un curso nuevo, o cuando actualice a fondo uno existente. Nada más.",
+      "cta": "Avísame",
+      "signIn": "Continuar con Google",
+      "signInHint": "Inicia sesión para que sepa a dónde escribirte.",
+      "subscribed": "Estás apuntado. Te aviso por correo.",
+      "unsubscribe": "Dejar de recibirlos",
+      "error": "Algo ha fallado. Inténtalo de nuevo.",
+      "retry": "Reintentar"
     },
     "reader": {
       "contentsLabel": "Contenido del curso",
@@ -830,7 +840,11 @@
       "next": "Siguiente",
       "readingTime": "{minutes} min de lectura",
       "openNav": "Abrir el contenido del curso",
-      "closeNav": "Cerrar el contenido del curso"
+      "closeNav": "Cerrar el contenido del curso",
+      "translationPending": {
+        "title": "Esta lección aún no está traducida",
+        "body": "El resto de la página está en español, pero el texto de esta lección está en otro idioma. Tu progreso se guarda igualmente."
+      }
     },
     "quiz": {
       "submit": "Comprobar",
@@ -1077,6 +1091,16 @@
       "labelSession": "Sesión cancelada",
       "creditsRestoredMsg": "✓ Tu crédito ha sido devuelto automáticamente a tu pack. Puedes reservar otra clase desde <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
       "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles."
+    },
+    "courseNews": {
+      "subject": "Ya está publicado: {courseTitle}",
+      "heading": "El curso ya está publicado",
+      "intro": "Pediste que te avisara de los cursos nuevos en gustavoai.dev. Este es ese correo — el primero.",
+      "body1": "<strong>{courseTitle}</strong> ya está online y es gratuito. {lessonCount} lecciones que construyen un Transformer desde cero, desde cómo el texto se convierte en números hasta una implementación que escribes tú.",
+      "body2": "No hay nada que instalar: el código Python se ejecuta en tu navegador.",
+      "cta": "Empezar la primera lección",
+      "landingCta": "Ver el programa completo",
+      "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
     }
   }
 }

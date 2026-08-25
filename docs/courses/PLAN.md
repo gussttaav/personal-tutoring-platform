@@ -46,7 +46,7 @@ These were settled before planning; every task below assumes them.
 | 4 | **[Assessment](phase-3-assessment/README.md)** | 2 | Quizzes + code challenges. **Exit = one lesson complete end-to-end.** |
 | 5 | **[Persistence](phase-4-persistence/README.md)** | 3 | Migration `0016`, progress API, "Mis cursos" in `/area-personal`. |
 | 5 | **[Content](phase-5-content/README.md)** | 6 | Authoring guide + the five syllabus blocks. |
-| 6 | **[Launch](phase-6-launch/README.md)** | 3 | SEO/JSON-LD/sitemap/hreflang, waitlist email, gate flip. |
+| 6 | **[Launch](phase-6-launch/README.md)** | 3 | SEO/JSON-LD/sitemap/hreflang, bilingual catalog + link swap, notification opt-in. |
 
 ### The walking skeleton
 
@@ -72,7 +72,9 @@ P1 ──► P2 ──► P3 ──► P5 (content production)
 - **P5 starts as soon as P1 lands** for prose-only lessons; interactive lessons wait for P2/P3.
   In practice P5 overlaps P2–P4 for months. This is what the `draft: true` flag and the
   publication gate are for: main stays continuously mergeable.
-- **P6 last** — it makes the feature publicly visible and emails the waitlist.
+- **P6 last** — it makes the feature publicly visible. (It was also going to email a waitlist;
+  `subscriptions` turned out to be empty, so P6-02 became the notification opt-in instead and
+  nothing is sent at launch — see phase-6-launch/README.md.)
 
 ---
 

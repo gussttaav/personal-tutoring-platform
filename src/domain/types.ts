@@ -280,6 +280,19 @@ export interface SubscriptionRecord {
   createdAt: string;
 }
 
+/** COURSE-P6-02: a subscriber, resolved for a background send.
+ *
+ *  Every subscription row has a `users` row behind it — `POST /api/subscribe` requires a
+ *  session and `SubscriptionService.subscribe` calls `ensureUser` first — so `email` always
+ *  resolves. `locale` is `users.locale`, NOT the NEXT_LOCALE cookie: a send has no request
+ *  context, the same rule the Stripe-webhook booking emails follow. It may be NULL for a
+ *  user who never triggered `seedLocaleOnLogin`, which the repository defaults to "es". */
+export interface SubscriptionRecipient {
+  userId: string;
+  email:  string;
+  locale: "es" | "en";
+}
+
 // ─── Reviews ──────────────────────────────────────────────────────────────────
 
 /** Decision returned after a rating is captured: whether the post-class flow

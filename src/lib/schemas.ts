@@ -127,6 +127,22 @@ export const SubscribeSchema = z.object({
 
 export type SubscribeInput = z.infer<typeof SubscribeSchema>;
 
+// COURSE-P6-02: admin course announcement. `confirm` is what separates a dry run from an
+// irreversible bulk send, and it is deliberately OPTIONAL so the accidental call — a POST
+// with no body — is the harmless one. `offset`/`limit` exist so a list too large for the
+// 25s Vercel cap can be walked in chunks rather than needing a queue.
+export const CourseAnnounceSchema = z.object({
+  courseSlug:      z.string().min(1),
+  /** Idempotency key. Defaults to `launch:<courseSlug>`; change it for a second announcement
+   *  about the same course (e.g. the English translation landing). */
+  announcementKey: z.string().min(1).optional(),
+  confirm:         z.boolean().optional(),
+  offset:          z.number().int().nonnegative().optional(),
+  limit:           z.number().int().positive().max(200).optional(),
+});
+
+export type CourseAnnounceInput = z.infer<typeof CourseAnnounceSchema>;
+
 // ─── Post-class reviews ───────────────────────────────────────────────────────
 
 export const ReviewSchema = z.discriminatedUnion("kind", [

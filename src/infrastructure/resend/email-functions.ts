@@ -7,6 +7,13 @@
  * contained HTML tags could execute arbitrary JavaScript in the recipient's
  * email client (stored XSS).
  *
+ * COURSE-P6-02: sendCourseNewsEmail is the one BULK send in this file — everything else is
+ * transactional. Render and send are split (renderCourseNewsEmail / sendCourseNewsEmail) so
+ * the admin announce route can show a real rendered sample on a dry run without touching
+ * Resend, and so the template is unit-testable. Locale comes from `users.locale`, never a
+ * cookie: a bulk send has no request context, the same rule the Stripe-webhook booking
+ * emails follow.
+ *
  * REFACTOR-R3-P1-01: send() now throws on a non-OK Resend response instead of
  * logging and returning normally, so callers (BookingService.sendWithRetry,
  * PaymentService.writeDeadLetter) can actually retry or record the failure.
@@ -16,6 +23,7 @@
 
 import { getTranslations } from "next-intl/server";
 import { formatDate, formatTime } from "@/lib/formatting";
+import { localeUrl } from "@/lib/hreflang";
 import { log } from "@/lib/logger";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
@@ -389,4 +397,75 @@ export async function sendNewBookingNotificationEmail(params: {
       </div></div></body></html>
     `,
   }, params.studentEmail);
+}
+
+// ─── Course announcement (bulk, COURSE-P6-02) ─────────────────────────────────
+
+export interface CourseNewsParams {
+  to:              string;
+  locale:          'es' | 'en';
+  courseSlug:      string;
+  courseTitle:     string;
+  lessonCount:     number;
+  firstLessonSlug: string | null;
+  /** Locale the LESSONS live in — the reader URL must use it, not `locale`. See
+   *  src/lib/courses/catalog-view.ts. */
+  contentLocale:   string;
+}
+
+/**
+ * Renders the announcement without sending it. The admin route calls this for its dry run,
+ * which is the only way to read the real thing before it is irreversible.
+ */
+export async function renderCourseNewsEmail(
+  params: Omit<CourseNewsParams, "to">,
+): Promise<{ subject: string; html: string }> {
+  const t = await getTranslations({ locale: params.locale, namespace: "emails.courseNews" });
+
+  // Course titles come from a git-versioned manifest, not user input — but this file's rule
+  // is that everything interpolated into HTML is escaped, and a rule with exceptions is not
+  // a rule. (CRIT-04)
+  const safeTitle = escapeHtml(params.courseTitle);
+
+  const landingUrl = localeUrl(`/cursos/${params.courseSlug}`, params.locale);
+  const lessonUrl  = params.firstLessonSlug
+    ? localeUrl(`/cursos/${params.courseSlug}/${params.firstLessonSlug}`, params.contentLocale)
+    : null;
+  // The notify card on the catalog IS the unsubscribe control — no token needed, because
+  // subscribing required a signed-in account in the first place.
+  const unsubUrl = `${localeUrl("/cursos", params.locale)}#notificaciones`;
+
+  return {
+    subject: t("subject", { courseTitle: params.courseTitle }),
+    html: `
+      <html><head><style>${STYLES}</style></head><body>
+      <div class="wrap"><div class="card">
+        <h1>${t("heading")}</h1>
+        <p>${t("intro")}</p>
+
+        <p>${t.raw("body1").replace("{courseTitle}", safeTitle).replace("{lessonCount}", String(params.lessonCount))}</p>
+        <p>${t("body2")}</p>
+
+        <div class="divider"></div>
+
+        ${lessonUrl ? `<a class="meet-btn" href="${lessonUrl}">${t("cta")}</a>` : ""}
+        <a class="action-btn" href="${landingUrl}">${t("landingCta")}</a>
+
+      </div>
+      <div class="footer">
+        <p style="margin:0 0 6px"><a href="${unsubUrl}">${t("unsubscribe")}</a></p>
+        <p style="margin:0">Gustavo Torres Guerrero ·
+          <a href="${BASE_URL}">gustavoai.dev</a> ·
+          <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>
+        </p>
+      </div></div>
+      </body></html>
+    `,
+  };
+}
+
+export async function sendCourseNewsEmail(params: CourseNewsParams): Promise<void> {
+  const { to, ...rest } = params;
+  const { subject, html } = await renderCourseNewsEmail(rest);
+  await send({ to, subject, html });
 }

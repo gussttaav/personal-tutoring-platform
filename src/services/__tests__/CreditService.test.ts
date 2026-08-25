@@ -16,6 +16,7 @@ const mockCredits = (): jest.Mocked<ICreditsRepository> => ({
 const mockAudit = (): jest.Mocked<IAuditRepository> => ({
   append: jest.fn(),
   list:   jest.fn(),
+  listNotifiedEmails: jest.fn(),
 });
 
 describe("CreditService.useCredit", () => {
