@@ -295,7 +295,9 @@ body:has(.lesson-shell) {
    0` with `margin-inline: auto` then centres the card IN THE COLUMN, where it physically
    cannot leave the page. The cost is that the card sits above the paragraph rather than
    above the line; it is a non-interactive label that appears under the reader's cursor,
-   so a few lines of distance costs nothing next to losing half of it. */
+   so a few lines of distance costs nothing next to losing half of it. This is now the
+   FALLBACK — the `@supports (anchor-name)` block below anchors the card to the link
+   itself where the browser can keep it on-screen without a fixed containing block. */
 .lesson-content :is(p, li, blockquote, td, th):has(.lesson-ref-wrap) {
   position: relative;
 }
@@ -381,6 +383,45 @@ body:has(.lesson-shell) {
     -webkit-line-clamp: 5;
     overflow: hidden;
     color: var(--text-dim);
+  }
+}
+
+/* COURSE-P7-01 — Anchor the card to the hovered LINK where CSS anchor positioning is
+   available (Chromium 125+); the paragraph-anchored rules above stay the fallback for
+   browsers that lack it (Firefox, older Safari). The fallback centres every card over
+   the whole prose block, which has two visible failures the moment prose gets dense: two
+   references in one paragraph stack both cards in the same spot, and a reference on the
+   last line floats its card up to the paragraph's TOP, lines away from the cursor.
+   Binding to the link fixes both. `position: fixed` makes the VIEWPORT the overflow
+   boundary (no ancestor transforms the reading column), so `flip-block` drops the card
+   below only when it would leave the top of the screen — not the small paragraph box an
+   `absolute` card would test against — and `anchor-center` keeps it clamped on-screen
+   horizontally, the page-edge clipping the fallback was built to avoid. Every link shares
+   one anchor name, so `anchor-scope` on the wrapper confines each name to its own subtree
+   — without it a card resolves the name to the LAST link in the document, not its own
+   (measured). `anchor-scope` (Chromium 131+) is the narrower feature, so the query gates
+   on it: a browser with `anchor-name` but not `anchor-scope` keeps the fallback. */
+@supports (anchor-name: --a) and (anchor-scope: all) {
+  @media (hover: hover) and (pointer: fine) {
+    .lesson-ref-wrap {
+      anchor-scope: --leccion-ref;
+    }
+
+    .lesson-ref {
+      anchor-name: --leccion-ref;
+    }
+
+    .lesson-ref-card {
+      position: fixed;
+      position-anchor: --leccion-ref;
+      /* Clear the fallback's block/inline insets, then place above the link, centred. */
+      inset: auto;
+      margin-inline: 0;
+      bottom: anchor(top);
+      margin-bottom: 8px;
+      justify-self: anchor-center;
+      position-try-fallbacks: flip-block;
+    }
   }
 }
 
