@@ -47,9 +47,9 @@ Convert **one block per commit**, in course order — earlier blocks are referen
 slugs stabilise first. A block is done when `pnpm lint:content` is green and no `lección \d` survives
 in it.
 
-- [ ] **Block 1 — Fundamentos de NLP** · 8 lessons · 61 refs
-  - [ ] `01-texto-como-numeros` (7) · [ ] `02-tokenizacion` (4) · [ ] `03-vocabulario-oov` (5) · [ ] `04-one-hot` (14)
-  - [ ] `05-bolsa-de-palabras` (5) · [ ] `06-embeddings-densos` (10) · [ ] `07-word2vec` (4) · [ ] `08-glove-y-limites` (12)
+- [x] **Block 1 — Fundamentos de NLP** · 8 lessons · 61 refs
+  - [x] `01-texto-como-numeros` (7) · [x] `02-tokenizacion` (4) · [x] `03-vocabulario-oov` (5) · [x] `04-one-hot` (14)
+  - [x] `05-bolsa-de-palabras` (5) · [x] `06-embeddings-densos` (10) · [x] `07-word2vec` (4) · [x] `08-glove-y-limites` (12)
 - [ ] **Block 2 — El Perceptrón Multicapa** · 10 lessons · 83 refs
   - [ ] `09-la-neurona` (3) · [ ] `10-funciones-activacion` (4) · [ ] `11-xor-y-capas-ocultas` (5) · [ ] `12-forward-pass` (6) · [ ] `13-funcion-de-perdida` (13)
   - [ ] `14-descenso-gradiente` (7) · [ ] `15-regla-de-la-cadena` (9) · [ ] `16-backpropagation` (10) · [ ] `17-implementar-mlp` (17) · [ ] `18-proyecto-sentimiento` (9)

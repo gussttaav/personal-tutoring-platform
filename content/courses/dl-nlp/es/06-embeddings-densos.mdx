@@ -28,7 +28,7 @@ quiz:
       - { id: c, text: 'Las coordenadas pasan a significar algo por el hecho de ser pocas y estar todas ocupadas.' }
       - { id: d, text: 'Deja de hacer falta fijar el vocabulario de antemano, porque ninguna coordenada está asignada a una entrada.' }
     answer: [a, b]
-    explanation: '(a) es el resultado de la lección: la equidistancia se rompe y con ella desaparece la objeción de la lección 4, sobre la maldición de la dimensionalidad. (b) son 15 millones de números frente a 2 500 millones, y una fracción no nula que deja de ser $1/\lvert V \rvert$. (c) es la trampa, y va justo al revés: una $\mathbf{E}$ rellena de ruido es igual de densa y sus vecinos son igual de falsos, así que la densidad hace *posible* el parecido, no lo produce. (d) confunde las dos dimensiones de la tabla: $\mathbf{E}$ sigue teniendo una fila por entrada, así que $V$ sigue habiendo que cerrarlo, con <W>\<UNK></W> incluido.'
+    explanation: '(a) es el resultado de la lección: la equidistancia se rompe y con ella desaparece la objeción de <Leccion slug="one-hot">la lección sobre la maldición de la dimensionalidad</Leccion>. (b) son 15 millones de números frente a 2 500 millones, y una fracción no nula que deja de ser $1/\lvert V \rvert$. (c) es la trampa, y va justo al revés: una $\mathbf{E}$ rellena de ruido es igual de densa y sus vecinos son igual de falsos, así que la densidad hace *posible* el parecido, no lo produce. (d) confunde las dos dimensiones de la tabla: $\mathbf{E}$ sigue teniendo una fila por entrada, así que $V$ sigue habiendo que cerrarlo, con <W>\<UNK></W> incluido.'
   - id: q-coseno-negativo
     type: boolean
     prompt: 'Entre dos vectores TF-IDF la similitud coseno vivía en $[0, 1]$. Entre dos vectores densos puede salir negativa.'
@@ -57,7 +57,7 @@ $\lvert V \rvert$, en las que *todas* las entradas tienen un valor.
 Lo que aquella lección no dijo es qué objeto es ese, cómo se guarda, qué
 relación tiene con el one-hot al que sustituye y de dónde salen sus números.
 
-El vocabulario de subpalabras de la lección 2, sobre tokenización, tiene
+El vocabulario de subpalabras de <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion> tiene
 $\lvert V \rvert = 50\,000$ entradas. La otra cifra es cuántas coordenadas darle a cada una: 300, un
 valor habitual que no fija ninguna teoría —se elige probando, y en uso van desde unas decenas hasta
 unos miles—, así que nada de lo que sigue depende de que sean 300 exactamente. Con un eje
@@ -105,7 +105,7 @@ entrada. Aquí ninguna coordenada responde por separado a nada que sepamos formu
 entrada es $\mathbf{e}_w$ completo, sus $d_{\text{model}}$ coordenadas a la vez.
 
 Guardar $r$ vuelve a ser guardar una tabla, y esta vez la tabla cabe en memoria. Con el vocabulario
-ordenado como en la lección 4, la del one-hot, la **matriz de embeddings** es
+ordenado como en <Leccion slug="one-hot">la lección del one-hot</Leccion>, la **matriz de embeddings** es
 
 $$
 \mathbf{E} \in \mathbb{R}^{\lvert V \rvert \times d_{\text{model}}},
@@ -115,8 +115,8 @@ una fila por entrada y $d_{\text{model}}$ columnas, con la fila $i$ igual a $\ma
 usando traspuesta porque los vectores son columnas en este curso.
 
 Buscar el vector de una entrada parece entonces un acceso a memoria y no una operación matemática.
-Las dos cosas coinciden, y verlo cuesta una línea. Multiplica por la matriz el vector one-hot de la
-lección 4 y mira la coordenada $j$ del resultado:
+Las dos cosas coinciden, y verlo cuesta una línea. Multiplica por la matriz el vector one-hot de <Leccion slug="one-hot">la
+lección del one-hot</Leccion> y mira la coordenada $j$ del resultado:
 
 $$
 \left(\mathbf{o}_{w_i}^{\top}\mathbf{E}\right)_j = \sum_{k=1}^{\lvert V \rvert} (\mathbf{o}_{w_i})_k \, \mathbf{E}_{kj} = \mathbf{E}_{ij},
@@ -141,11 +141,10 @@ $$
 
 la misma frase escrita con 300 columnas en lugar de 50 000.
 
-Las tres exigencias de la lección 1, la del problema de representar el lenguaje, siguen cumplidas. La
+Las tres exigencias de <Leccion slug="texto-como-numeros">la lección del problema de representar el lenguaje</Leccion> siguen cumplidas. La
 dimensión es fija, $d_{\text{model}}$ para toda entrada. El determinismo lo da que $\mathbf{E}$ se
 congele al terminar el entrenamiento. Y la totalidad la sigue dando <W>\<UNK></W>, que tiene su fila
-como cualquier otra entrada, igual que en la lección 3, sobre vocabulario y palabras fuera de
-vocabulario.
+como cualquier otra entrada, igual que en <Leccion slug="vocabulario-oov">la lección sobre vocabulario y palabras fuera de vocabulario</Leccion>.
 
 Lo que sí cambia es el precio de la tabla. Son
 
@@ -273,7 +272,7 @@ for w in ["coche", "harina", "gato"]:
     print("vecinos de", w.ljust(9), vecinos(w))
 print()
 
-# La misma cuenta sobre one-hot, la representación de la lección 4.
+# La misma cuenta sobre one-hot, la representación anterior.
 O = np.eye(len(V))
 fuera = O @ O.T - np.eye(len(V))
 print("one-hot: el mayor coseno entre dos entradas distintas es", fuera.max())
@@ -290,7 +289,7 @@ el desarrollo prometía. La matriz de cosenos es lo que había que ver. <W>coche
 <W>automóvil</W> da $0.99$ y con <W>camión</W> $0.97$; con <W>harina</W> da $-0.48$, un valor
 negativo que en one-hot no podía existir; <W>gato</W> con <W>\<UNK></W> da $0.02$, que es «nada que
 ver» escrito en números. Debajo, la misma cuenta sobre one-hot devuelve un cero en cada casilla fuera
-de la diagonal: el «un solo valor» de la lección 4, ahora al lado de una matriz con relieve.
+de la diagonal: el «un solo valor» de <Leccion slug="one-hot">la lección del one-hot</Leccion>, ahora al lado de una matriz con relieve.
 
 Un detalle sin maquillar: el segundo vecino de <W>gato</W> es <W>automóvil</W>, con
 $0.30$. Es ruido, y está ahí porque me he inventado los números: con cuatro coordenadas y ocho
@@ -326,7 +325,7 @@ dónde mirar —en las compañías de cada entrada—, pero mirar
 no es un procedimiento: de contar contextos a fijar 300 coordenadas hay un salto que nadie ha dado
 todavía.
 
-Darlo es la lección 7, sobre Word2Vec. En lugar de contar contextos, se le pide a un modelo que los
+Darlo es <Leccion slug="word2vec">la lección sobre Word2Vec</Leccion>. En lugar de contar contextos, se le pide a un modelo que los
 prediga, y se usan como embedding los números que le permiten acertar: el *skip-gram* predice el
 contexto a partir de la entrada, y CBOW (*continuous bag of words*) hace lo contrario. Las dos
 tropiezan con la misma piedra en cuanto se escriben con cuidado, y es una piedra grande: repartir

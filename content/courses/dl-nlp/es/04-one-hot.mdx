@@ -17,14 +17,14 @@ quiz:
     explanation: 'Vale $\sqrt{2} \approx 1.414$, y lo notable es lo que *no* aparece en esa respuesta. Los dos vectores se diferencian en exactamente dos posiciones —donde uno tiene su $1$ el otro tiene un $0$, y al revés—, así que la suma de los cuadrados de las diferencias es $1 + 1 = 2$ y la distancia es su raíz. Ni $\lvert V \rvert$ ni qué palabras sean $u$ y $v$ entran en la cuenta: <W>gato</W> está tan lejos de <W>gata</W> como de <W>criptomoneda</W>.'
   - id: q-que-cumple
     type: multi
-    prompt: 'Comparas el one-hot con la representación por índices de la lección 1, sobre el problema de representar el lenguaje. ¿En qué mejora? Marca todo lo que valga.'
+    prompt: 'Comparas el one-hot con la representación por índices de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>. ¿En qué mejora? Marca todo lo que valga.'
     options:
       - { id: a, text: 'No afirma parecidos que nadie quiso afirmar: ninguna entrada del vocabulario queda entre otras dos.' }
       - { id: b, text: 'Es estable: añadir una entrada al final deja intactas las coordenadas de todas las demás.' }
       - { id: c, text: 'Al no afirmar parecidos falsos, el modelo generaliza mejor de una palabra a otra.' }
       - { id: d, text: 'Recupera la totalidad sin ayuda: ya no hace falta la entrada <W>\<UNK></W>.' }
     answer: [a, b]
-    explanation: 'Las dos mejoras son reales. (a) es la deducción principal: todas las distancias entre pares valen $\sqrt{2}$, así que la geometría no dice nada, que era lo que se pedía. (b) es la observación que la lección 1 te dijo que guardaras: allí, añadir <W>agua</W> renumeraba palabras que no tenían nada que ver; aquí solo añade un eje. (c) es la trampa de esta lección y va justo al revés: como no hay parecidos, tampoco hay nada que transferir de <W>gato</W> a <W>gata</W>. Y (d) es falso: la totalidad la sigue dando <W>\<UNK></W>, de la lección 3, sobre vocabulario y palabras fuera de vocabulario, porque un eje solo existe para las entradas que ya están en $V$.'
+    explanation: 'Las dos mejoras son reales. (a) es la deducción principal: todas las distancias entre pares valen $\sqrt{2}$, así que la geometría no dice nada, que era lo que se pedía. (b) es la observación que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> te dijo que guardaras: allí, añadir <W>agua</W> renumeraba palabras que no tenían nada que ver; aquí solo añade un eje. (c) es la trampa de esta lección y va justo al revés: como no hay parecidos, tampoco hay nada que transferir de <W>gato</W> a <W>gata</W>. Y (d) es falso: la totalidad la sigue dando <W>\<UNK></W>, de <Leccion slug="vocabulario-oov">la lección sobre vocabulario y palabras fuera de vocabulario</Leccion>, porque un eje solo existe para las entradas que ya están en $V$.'
   - id: q-coste
     type: single
     prompt: 'Con $\lvert V \rvert = 50\,000$, ¿cuántos números tendría la tabla que guarda $r$ explícitamente, una fila por entrada del vocabulario?'
@@ -51,7 +51,7 @@ y completada con <W>\<UNK></W> para todo lo que queda fuera. Con eso, $r$ ya pue
 texto. Solo queda decidir qué vector asignar a cada una de las entradas del vocabulario.
 
 Hay una respuesta inmediata a esa pregunta, y la lección existe porque esa respuesta es *correcta*:
-cumple una por una las exigencias que la lección 1, sobre el problema de representar el lenguaje, le
+cumple una por una las exigencias que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> le
 puso a $r$, y aun así no basta. Tiene nombre —*one-hot encoding*— y lo que queda por hacer con ella
 es ponerle precio. Una parte del precio se ve venir, porque los vectores salen enormes, y es
 precisamente la parte que no importa. La otra aparece al preguntar qué puede aprender un modelo que
@@ -80,13 +80,13 @@ el modelo aprenda sobre una no le sirve para ninguna otra.
 
 Ordena el vocabulario de una vez por todas y escríbelo como $V = \{w_1, w_2, \dots, w_{\lvert V
 \rvert}\}$. El orden da igual —alfabético, por frecuencia, el que salga— mientras no cambie después;
-es el determinismo que la lección 1 exigía. Lo que ese orden aporta es una correspondencia: la
+es el determinismo que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> exigía. Lo que ese orden aporta es una correspondencia: la
 entrada que ocupa la posición $i$ tendrá reservada la coordenada $i$ del vector, y ninguna otra
 entrada la usará. Posiciones del vocabulario y coordenadas del vector son, de aquí en adelante, la
 misma lista de números de $1$ a $\lvert V \rvert$.
 
 Queda precisar de qué está hecha esa lista, porque el resto de la lección lo da por sabido. Las
-entradas de $V$ son *tokens*, y qué sean depende de la tokenización que fijó la lección 2: palabras
+entradas de $V$ son *tokens*, y qué sean depende de la tokenización que fijó <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion>: palabras
 enteras con un tokenizador de palabras, trozos de palabra con uno de subpalabras. Nada de lo que
 sigue cambia por eso, y los ejemplos usan palabras enteras porque se leen mejor.
 
@@ -104,7 +104,7 @@ $$
 \end{cases}.
 $$
 
-Es una $r$ como la que pedía la lección 1, con la dimensión fijada por el propio vocabulario:
+Es una $r$ como la que pedía <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>, con la dimensión fijada por el propio vocabulario:
 $r(w) = \mathbf{o}_w$ y $d = \lvert V \rvert$. Un texto de $T$ tokens se convierte entonces en una
 matriz $\mathbf{X} \in \mathbb{R}^{T \times \lvert V \rvert}$, una fila por posición.
 
@@ -132,7 +132,7 @@ y por tanto $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert = \sqrt{2}$, sean cuales 
 cual sea el tamaño del vocabulario. Ahí está lo que se buscaba, escrito en una línea: **todos los
 pares de palabras están exactamente a la misma distancia.** Ninguna queda entre otras dos, y nada de
 lo que la representación dice del idioma se puede leer mal, porque no dice nada. La geometría
-inventada de la lección 1 ha desaparecido.
+inventada de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> ha desaparecido.
 
 <Details summary="Por qué las dimensiones son |V| y no |V| − 1">
 Aquella lección terminaba con una cuenta: $n$ puntos mutuamente equidistantes necesitan $n - 1$
@@ -164,7 +164,7 @@ $$
 \lvert V \rvert^{2} \quad \text{números}.
 $$
 
-Con el vocabulario de subpalabras de la lección 2, sobre tokenización, entre 30 000 y 50 000
+Con el vocabulario de subpalabras de <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion>, entre 30 000 y 50 000
 entradas, son entre 900 y 2 500 millones de números: unos 10 GB con cuatro bytes cada uno. Y crece al
 cuadrado: duplicar el vocabulario cuadruplica la tabla.
 
@@ -182,7 +182,7 @@ $$
 = \frac{1}{\lvert V \rvert} = \frac{1}{50\,000} = 0.00002 = 0.002\ \%.
 $$
 
-Antes de seguir, un apunte a favor. La lección 1 te pidió que guardaras una observación: allí, añadir
+Antes de seguir, un apunte a favor. <Leccion slug="texto-como-numeros">La lección sobre el problema de representar el lenguaje</Leccion> te pidió que guardaras una observación: allí, añadir
 <W>agua</W> al vocabulario renumeraba palabras que no tenían nada que ver con ella y dejaba
 inservible cualquier modelo entrenado antes. El one-hot no tiene ese defecto. Añade una entrada al final y cada vector antiguo conserva sus coordenadas; solo le crece un
 cero. Es la **estabilidad** que faltaba. Es real, aunque en la práctica $V$ se congela una sola vez
@@ -200,7 +200,7 @@ $$
 $$
 
 Pon números de los pequeños: $\lvert V \rvert = 30\,000$ y una ventana de $n = 5$ tokens, un cuarto
-de la frase de veinte tokens de la lección 3. Son $30\,000^{5} \approx 2.4 \times 10^{22}$ entradas posibles. Un corpus
+de la frase de veinte tokens de <Leccion slug="vocabulario-oov">la lección sobre vocabulario y frecuencia</Leccion>. Son $30\,000^{5} \approx 2.4 \times 10^{22}$ entradas posibles. Un corpus
 enorme tiene del orden de $T = 10^{10}$ tokens, y por tanto como mucho $10^{10}$ ventanas distintas,
 de modo que el modelo llega a ver
 
@@ -297,7 +297,7 @@ $\lvert V \rvert$ no entra en esa cuenta.
 ## Comprueba tu intuición
 
 Cuatro preguntas sobre lo que acabas de obtener: cuánto mide la distancia entre dos palabras, qué
-arregla el one-hot respecto de la lección 1, qué cuesta la tabla y qué pasa con dos palabras que se
+arregla el one-hot respecto de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>, qué cuesta la tabla y qué pasa con dos palabras que se
 parecen.
 
 <Quiz id="q-distancia" />
@@ -326,4 +326,4 @@ del documento y no las entradas del vocabulario. Cada coordenada pasa entonces a
 veces sale su palabra. Eso ya no es un vector de ceros y unos, y ya no es tan mudo: la
 coordenada de <W>gol</W> distingue una crónica deportiva de una receta. Sigue teniendo $\lvert V
 \rvert$ dimensiones y sigue sin saber en qué orden iban las palabras. Es la bolsa de palabras, y con
-la corrección que la hace útil —TF-IDF— es la lección 5.
+la corrección que la hace útil —TF-IDF— es <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras y TF-IDF</Leccion>.

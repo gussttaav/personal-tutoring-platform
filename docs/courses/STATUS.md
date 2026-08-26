@@ -141,7 +141,7 @@ the block checklist inside the P7-02 doc; this table stays a phase-level dashboa
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 `<Leccion>` + bridge pre-pass + crosslink lint](phase-7-crosslinks/01-component-and-lint.md) | `COURSE-P7-01` | ✅ | _tbd_ | local |
-| [02 Content pass: 43 lessons, block by block](phase-7-crosslinks/02-content-migration.md) | `COURSE-P7-02` | ⬜ | _tbd_ | |
+| [02 Content pass: 43 lessons, block by block](phase-7-crosslinks/02-content-migration.md) | `COURSE-P7-02` | 🔄 | _tbd_ | local |
 
 **Exit criteria**
 - [ ] No published lesson contains a hand-written lesson number in a cross-reference
@@ -1536,4 +1536,33 @@ and notes:
 - All three fatal lint modes confirmed to exit 1 naming file, slug and anchor (typo'd slug, stale
   `ancla`, missing `slug`), then reverted. `pnpm lint` (0 errors), `pnpm lint:content`, `pnpm test`
   (1366 passing), `pnpm build` and `pnpm check:bundle` all green — the card ships no client JS.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P7-02** — In progress. **Block 1 (Fundamentos de NLP) done**; blocks 2–5 pending. 53
+`<Leccion>` tags across the 8 lessons, `pnpm lint:content` green (every slug + anchor resolves, no
+crosslink error). Scope decisions and notes:
+- **Numbered references only.** The block-checklist per-lesson counts match the count of `lección N`
+  references (plus the one `{/* … Bloque 1, lección N */}` marker comment) exactly — 01(7) 02(4)
+  03(5) 04(14) 05(5) 06(10) 07(4) 08(12). Relative references that carry no number — *«la lección
+  anterior»*, *«la lección siguiente»*, *«la lección del one-hot»* — are left as prose: they are
+  already reorder-safe, the digit-regex acceptance gate does not target them, and AUTHORING §1 treats
+  *«la lección anterior»* as an intentional bridge-pickup phrasing. Block references (*«el bloque 3»*)
+  stay too — there is no `<Bloque>` component (AUTHORING §2).
+- **One reword instead of a `<Leccion>`.** `06-embeddings-densos` had a `lección 4` inside a `<PyCell
+  code={…}>` Python comment, where a `<Leccion>` tag can't render. Reworded the comment to *«la
+  representación anterior»* so the digit-regex is clean without injecting a broken tag into code.
+- **Forward-above-bridge refs reworded to state direction** where the number was the only cue —
+  *«la falla de la que vive la lección 3»* → *«… de la que vive una lección más adelante, la del
+  problema OOV»*; *«es el asunto de la lección 3»* → *«… es el asunto de una lección más adelante, la
+  de vocabulario»*. Verified live: lesson 01's six above-bridge forward refs render as links with the
+  «Más adelante · Bloque 1 · Lección N» kicker; lesson 04's backward refs render as links with no
+  prefix; both bridge hand-offs render as plain text.
+- **Word counts drop 18–69 words per lesson, by design, not a regression.** The drop is exactly
+  proportional to the reference count (~5–6 words/ref across all 8 files), i.e. it is only the
+  `<Leccion>` label text leaving the budget under the P7-01 exemption (`prose()` strips the tag *and*
+  its children). No surrounding prose is eaten — the diagnostic the criterion actually guards against.
+  Estimated `minutes` moves at most 1 on any lesson; frontmatter `minutes` untouched.
+- Reorder drill not run this pass (a phase-level, one-time demonstration; the reclassification
+  mechanism is already unit-tested via `isAhead` in P7-01). `pnpm build` / `pnpm check:bundle` are
+  phase-level acceptance gates, run once the content pass is complete.
 - Not yet committed to a branch/PR (**local**).
