@@ -47,6 +47,7 @@ These were settled before planning; every task below assumes them.
 | 5 | **[Persistence](phase-4-persistence/README.md)** | 3 | Migration `0016`, progress API, "Mis cursos" in `/area-personal`. |
 | 5 | **[Content](phase-5-content/README.md)** | 6 | Authoring guide + the five syllabus blocks. |
 | 6 | **[Launch](phase-6-launch/README.md)** | 3 | SEO/JSON-LD/sitemap/hreflang, bilingual catalog + link swap, notification opt-in. |
+| 7 | **[Cross-links](phase-7-crosslinks/README.md)** | 2 | `<Leccion>` + bridge-aware linking, crosslink lint, the 43-lesson content pass. |
 
 ### The walking skeleton
 

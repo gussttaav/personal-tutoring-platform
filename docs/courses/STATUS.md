@@ -132,6 +132,25 @@ ticked.** This table stays a phase-level dashboard — do not add per-lesson row
 - [x] Navbar/Footer "Cursos" links to `/cursos`; the courses ComingSoonModal is gone (blog untouched) _(P6-03)_
 - [x] `/en/cursos` shows a real English card; `/en/cursos/dl-nlp` is a real English landing page _(P6-03)_
 
+## Phase 7 — Cross-links
+
+Turn the ~403 hand-written cross-references into build-validated links. P7-02 is **blocked on
+P7-01**: without the lint pass the migration is 403 unvalidated edits. Per-lesson progress lives in
+the block checklist inside the P7-02 doc; this table stays a phase-level dashboard.
+
+| Task | Tag | Status | Owner | PR |
+|------|-----|--------|-------|----|
+| [01 `<Leccion>` + bridge pre-pass + crosslink lint](phase-7-crosslinks/01-component-and-lint.md) | `COURSE-P7-01` | ⬜ | _tbd_ | |
+| [02 Content pass: 43 lessons, block by block](phase-7-crosslinks/02-content-migration.md) | `COURSE-P7-02` | ⬜ | _tbd_ | |
+
+**Exit criteria**
+- [ ] No published lesson contains a hand-written lesson number in a cross-reference
+- [ ] Every `<Leccion slug>` resolves; an unknown slug or a stale anchor fails `pnpm lint:content`
+- [ ] Reordering a lesson in the manifest changes which references link, with no content edit
+- [ ] `<Leccion>` text is excluded from the word budget
+- [ ] Every forward reference above a `---` states its direction in the sentence
+- [ ] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
+
 ---
 
 ## Deviations
