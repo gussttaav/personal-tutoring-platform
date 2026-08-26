@@ -45,6 +45,10 @@ import {
 import { DEFAULT_CONTENT_ROOT, collectMdxFiles } from "@/lib/courses/content-files";
 import { validateAllContent } from "@/lib/courses/registry";
 import { validateChallengeRefs } from "@/lib/courses/validate-challenges";
+import {
+  collectCrosslinkWarnings,
+  validateCrosslinks,
+} from "@/lib/courses/validate-crosslinks";
 import { validateExplorableIds } from "@/lib/courses/validate-explorables";
 import { mathPunctuationWarnings } from "@/lib/courses/validate-math-punctuation";
 import { notationWarnings } from "@/lib/courses/validate-notation";
@@ -61,6 +65,7 @@ try {
   validatePyCellFlags();
   validateQuizRefs();
   validateChallengeRefs();
+  validateCrosslinks();
   console.log("✓ content lint passed");
 } catch (err) {
   console.error(`✗ content lint failed: ${(err as Error).message}`);
@@ -70,6 +75,9 @@ try {
 // ─── Phase 2 — budget + notation. Advisory only; never changes the exit code. ──
 
 const files = collectMdxFiles(DEFAULT_CONTENT_ROOT);
+// COURSE-P7-01: draft-target warnings need the whole locale tree at once, which the
+// per-file loop below cannot see. Computed once here, looked up per file.
+const crosslinkNotes = collectCrosslinkWarnings(DEFAULT_CONTENT_ROOT);
 let warned = 0;
 let exempt = 0;
 
@@ -96,6 +104,7 @@ for (const filePath of files) {
     ...notationWarnings(source),
     ...mathPunctuationWarnings(source),
     ...voiceWarnings(source),
+    ...(crosslinkNotes.get(filePath) ?? []),
   ];
   if (warnings.length > 0) warned += 1;
 

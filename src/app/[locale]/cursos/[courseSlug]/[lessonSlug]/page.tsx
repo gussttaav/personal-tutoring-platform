@@ -154,7 +154,15 @@ export default async function LessonPage({
   // COURSE-P3-01: the frontmatter quiz questions are handed to the compiler so
   // `<Quiz id="…" />` in the prose can resolve against them.
   // COURSE-P3-02: likewise the code challenges, for `<CodeChallenge id="…" />`.
-  const { content } = await renderLesson(source, lesson.quiz, lesson.challenges);
+  // COURSE-P7-01: and the lesson's own identity, so `<Leccion slug="…">` can tell a
+  // backward reference from a forward one. Slugs resolve against `view.contentLocale`
+  // — the tree the prose actually came from — while the URL prefix follows `locale`.
+  const { content } = await renderLesson(source, lesson.quiz, lesson.challenges, {
+    courseSlug,
+    locale,
+    contentLocale: view.contentLocale,
+    current: lesson,
+  });
   const headings = extractHeadings(source);
   const { prev, next } = lessonViewNeighbours(courseSlug, lessonSlug, locale);
   // COURSE-P4-04: the denominator for the "N de M ejercicios resueltos" counter.

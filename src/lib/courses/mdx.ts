@@ -33,6 +33,8 @@ import rehypePrettyCode from "rehype-pretty-code";
 
 import type { CodeChallenge, QuizQuestion } from "@/domain/types";
 import { SHIKI_THEME } from "@/constants/shiki-theme";
+import { markBridgeReferences } from "./bridge";
+import type { LeccionCtx } from "./Leccion";
 import { lessonMdxComponents } from "./mdx-components";
 
 /** unified `PluggableList`, reached through next-mdx-remote's options type. */
@@ -87,17 +89,23 @@ export interface RenderedLesson {
  * so `<Quiz id="…" />` can resolve its id — see `lessonMdxComponents`.
  *
  * COURSE-P3-02: `challenges` travels the same way, for `<CodeChallenge id="…" />`.
+ *
+ * COURSE-P7-01: `ctx` says WHICH lesson this is, which is what `<Leccion>` needs to
+ * tell a backward reference from a forward one. The source goes through
+ * `markBridgeReferences` first — the one place a reference's position in the document
+ * is still visible, before the compiler turns it into a component call.
  */
 export async function renderLesson(
   source: string,
   quiz: QuizQuestion[] = [],
   challenges: CodeChallenge[] = [],
+  ctx?: LeccionCtx,
 ): Promise<RenderedLesson> {
   const { compileMDX } = await import("next-mdx-remote/rsc");
 
   return compileMDX<LessonFrontmatter>({
-    source,
-    components: lessonMdxComponents(quiz, challenges),
+    source: markBridgeReferences(source),
+    components: lessonMdxComponents(quiz, challenges, ctx),
     options: {
       parseFrontmatter: true,
       // COURSE-P2-03: next-mdx-remote v6 defaults `blockJS` to TRUE, which injects a

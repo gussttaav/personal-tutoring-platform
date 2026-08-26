@@ -166,6 +166,15 @@ export function withoutCode(body: string): string {
  * template literal (Python, often with `$` and backticks in it) can never be mistaken
  * for math or for words. Fenced code goes next, then display math, then inline math,
  * then the remaining tags, then the inline markdown syntax itself.
+ *
+ * COURSE-P7-01: `<Leccion>` is the one tag whose CHILDREN go too. The generic tag strip
+ * below keeps them — "la lección sobre X" reads as prose either way — but that would
+ * charge an author words for turning a reference into a link, and the whole point of the
+ * component is that linking is free. Self-closing form FIRST: otherwise the paired
+ * pattern runs from a `<Leccion … />` to the next `</Leccion>` and eats the sentence
+ * between them. `withoutFences` has already run, so this never reaches into a ```mdx
+ * sample: the whole fenced block is gone by now, exactly as `countLongestCodeCell` never
+ * sees a quoted `<PyCell>`.
  */
 export function prose(body: string): string {
   const text = withoutFences(
@@ -176,6 +185,8 @@ export function prose(body: string): string {
   );
 
   return text
+    .replace(/<Leccion\b[^>]*\/>/g, " ")                  // cross-reference, no label
+    .replace(/<Leccion\b[^>]*>[\s\S]*?<\/Leccion>/g, " ") // cross-reference + its label
     .replace(/^\$\$[\s\S]*?^\$\$/gm, " ")      // display math blocks
     .replace(/\$\$[^\n]*?\$\$/g, " ")          // single-line $$…$$ (inline to remark-math)
     .replace(/\$[^$\n]*?\$/g, " ")             // inline math

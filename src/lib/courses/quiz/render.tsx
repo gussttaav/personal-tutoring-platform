@@ -23,6 +23,7 @@
 import type { ReactElement, ReactNode } from "react";
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 
+import { makeLeccion, type LeccionCtx } from "../Leccion";
 import { remarkPlugins, rehypePlugins } from "../mdx";
 import { W } from "../word";
 
@@ -37,6 +38,20 @@ type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
  * component in frontmatter is a build error, which is the right answer for those.
  */
 const CUSTOM_COMPONENTS: MDXComponents = { W };
+
+/*
+ * COURSE-P7-01 — `<Leccion>` is the second exception, and it is not a small one: 72 of
+ * the course's cross-references live in quiz and challenge frontmatter, across 30
+ * lessons. An explanation is also where "go back and check" is worth the most — the
+ * student has just got the question wrong. Leaving this map out would mean those 30
+ * lessons keep hand-written lesson numbers that nothing validates.
+ *
+ * Unlike the prose map this one takes no `bridge`: frontmatter copy has no position in
+ * the document, so a reference in it is never inside the bridge.
+ */
+function withLeccion(base: MDXComponents, ctx?: LeccionCtx): MDXComponents {
+  return ctx ? { ...base, Leccion: makeLeccion(ctx) } : base;
+}
 
 /**
  * Inline context (an option label, a hint) drops the paragraph wrapper: option text
@@ -69,11 +84,11 @@ async function compile(text: string, components?: MDXComponents): Promise<ReactE
 }
 
 /** Block context — prompts, explanations, `predict-output` code fences. */
-export function renderQuizText(text: string): Promise<ReactElement> {
-  return compile(text, CUSTOM_COMPONENTS);
+export function renderQuizText(text: string, ctx?: LeccionCtx): Promise<ReactElement> {
+  return compile(text, withLeccion(CUSTOM_COMPONENTS, ctx));
 }
 
 /** Inline context — option labels, hints. No paragraph wrapper. */
-export function renderQuizInline(text: string): Promise<ReactElement> {
-  return compile(text, INLINE_COMPONENTS);
+export function renderQuizInline(text: string, ctx?: LeccionCtx): Promise<ReactElement> {
+  return compile(text, withLeccion(INLINE_COMPONENTS, ctx));
 }

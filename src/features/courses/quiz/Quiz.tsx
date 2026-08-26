@@ -17,6 +17,7 @@
  */
 
 import type { QuizQuestion } from "@/domain/types";
+import type { LeccionCtx } from "@/lib/courses/Leccion";
 import { renderQuizInline, renderQuizText } from "@/lib/courses/quiz/render";
 
 import { QuizCard, type RenderedOption } from "./QuizCard";
@@ -25,9 +26,15 @@ export interface QuizProps {
   id: string;
   /** The lesson's frontmatter questions, bound at compile time — not author-supplied. */
   questions?: QuizQuestion[];
+  /**
+   * COURSE-P7-01 — which lesson is being compiled, so a `<Leccion>` in a prompt or an
+   * explanation resolves. Bound at compile time like `questions`. Server-only: it never
+   * reaches `QuizCard`, which is a Client Component.
+   */
+  ctx?: LeccionCtx;
 }
 
-export async function Quiz({ id, questions = [] }: QuizProps) {
+export async function Quiz({ id, questions = [], ctx }: QuizProps) {
   const question = questions.find((q) => q.id === id);
 
   if (!question) {
@@ -42,16 +49,19 @@ export async function Quiz({ id, questions = [] }: QuizProps) {
   }
 
   const [prompt, explanation] = await Promise.all([
-    renderQuizText(question.prompt),
-    renderQuizText(question.explanation),
+    renderQuizText(question.prompt, ctx),
+    renderQuizText(question.explanation, ctx),
   ]);
 
-  const hint = question.hint ? await renderQuizInline(question.hint) : null;
+  const hint = question.hint ? await renderQuizInline(question.hint, ctx) : null;
 
   const options: RenderedOption[] =
     question.type === "single" || question.type === "multi"
       ? await Promise.all(
-          question.options.map(async (o) => ({ id: o.id, label: await renderQuizInline(o.text) })),
+          question.options.map(async (o) => ({
+            id: o.id,
+            label: await renderQuizInline(o.text, ctx),
+          })),
         )
       : [];
 
@@ -59,7 +69,10 @@ export async function Quiz({ id, questions = [] }: QuizProps) {
   // the same highlighting the lesson's own code blocks get, at build time.
   const code =
     question.type === "predict-output"
-      ? await renderQuizText(`\`\`\`${question.language ?? "python"}\n${question.code}\n\`\`\``)
+      ? await renderQuizText(
+          `\`\`\`${question.language ?? "python"}\n${question.code}\n\`\`\``,
+          ctx,
+        )
       : null;
 
   return (

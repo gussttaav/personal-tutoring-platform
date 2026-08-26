@@ -140,14 +140,14 @@ the block checklist inside the P7-02 doc; this table stays a phase-level dashboa
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 `<Leccion>` + bridge pre-pass + crosslink lint](phase-7-crosslinks/01-component-and-lint.md) | `COURSE-P7-01` | ⬜ | _tbd_ | |
+| [01 `<Leccion>` + bridge pre-pass + crosslink lint](phase-7-crosslinks/01-component-and-lint.md) | `COURSE-P7-01` | ✅ | _tbd_ | local |
 | [02 Content pass: 43 lessons, block by block](phase-7-crosslinks/02-content-migration.md) | `COURSE-P7-02` | ⬜ | _tbd_ | |
 
 **Exit criteria**
 - [ ] No published lesson contains a hand-written lesson number in a cross-reference
-- [ ] Every `<Leccion slug>` resolves; an unknown slug or a stale anchor fails `pnpm lint:content`
-- [ ] Reordering a lesson in the manifest changes which references link, with no content edit
-- [ ] `<Leccion>` text is excluded from the word budget
+- [x] Every `<Leccion slug>` resolves; an unknown slug or a stale anchor fails `pnpm lint:content`
+- [x] Reordering a lesson in the manifest changes which references link, with no content edit
+- [x] `<Leccion>` text is excluded from the word budget
 - [ ] Every forward reference above a `---` states its direction in the sentence
 - [ ] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
 
@@ -1488,4 +1488,52 @@ number-dense course.
     term for the number representation, not an instance of the decimal mark, and confusing the two
     was the one trap in this pass worth naming.
 - `pnpm lint:content` and `pnpm build` both green after the rewrite.
+- Not yet committed to a branch/PR (**local**).
+
+**COURSE-P7-01** — Closed per doc. The component, the bridge pre-pass, the sixth lint pass, the
+budget exemption, the styles, the fixture coverage and the authoring rule all landed. Deviations
+and notes:
+- **The bridge pre-pass had to be frontmatter- and fence-aware**, which the task doc's sketch was
+  not. `renderLesson` is handed the RAW file — `parseFrontmatter: true` strips the frontmatter
+  *inside* `compileMDX` — so "the last `---` in the string" is the frontmatter's own closing
+  delimiter in any lesson with no bridge, which would have flagged the whole body. Same for a `---`
+  inside a fenced block, and for a `<Leccion` inside a fence below the bridge (an injected
+  attribute there would show up in code the reader sees). All four are asserted in `bridge.test.ts`.
+- **The hover card's copy is translated, not hardcoded.** The doc specifies literal `BLOQUE n ·
+  LECCIÓN m`; CLAUDE.md forbids hardcoded customer-facing strings, so it is `courses.reader.refKicker`
+  / `refAhead` in both `messages/es.json` and `messages/en.json`, read with `getTranslations` the way
+  `LessonNav` does. The uppercase is `text-transform` in CSS, so the message stays sentence case.
+  This makes `Leccion` an async Server Component — `Quiz` already is one in the same map.
+- **The card hangs off the prose block, not off the link** — the one real design change. The doc's
+  prototype (`left: 50%; transform: translateX(-50%)` + `max-width: min(26rem, 82vw)`) was measured
+  in the browser and clips: the reading column runs to within **30px** of the viewport edge from
+  768px right up to the 1280px breakpoint, and `body` is `overflow-x: clip`, so a reference near the
+  end of a line lost up to **180px** of its card (131px observed at 800px wide, on 3 of 4 cards).
+  No width cap can fix that — the centring is what overflows. Positioning the nearest `p`/`li`/`td`
+  instead (`:has(.lesson-ref-wrap)`) makes the paragraph the containing block, and `left/right: 0`
+  with `margin-inline: auto` centres the card IN THE COLUMN. Re-measured at 360/768/800/1024/1440:
+  zero clipping at every width, including a reference inside a quiz explanation. The cost is that
+  the card sits above the paragraph rather than above the line — acceptable for a non-interactive
+  label that appears under the reader's cursor.
+- **The fixture cannot host a backward reference.** It sits at `block: 1, order: 0`, so every lesson
+  in the course is *ahead* of it. It permanently covers four of the five cases (forward + anchor,
+  forward with no label, a draft target, and one in quiz frontmatter) plus the in-bridge plain-text
+  case; the behind-the-reader branch is covered by `isAhead` unit tests and was verified live by
+  temporarily moving the fixture to `block: 5, order: 99` (all four references then rendered as
+  links with no `data-ahead` and no «Más adelante» prefix, and the in-bridge one linked too, which
+  is correct — the bridge rule suppresses only *forward* references). It gets permanent content
+  coverage in P7-02.
+- **Draft-target warnings skip a draft referring file.** A draft lesson has no readers, so "this
+  renders as plain text" costs nobody anything — and the fixture, which references itself on purpose,
+  would otherwise warn on every `pnpm lint:content` run forever. Verified both ways: the warning does
+  fire when a published lesson points at a draft.
+- **An unresolved slug renders a dev-only inline marker**, mirroring `Quiz`, `CodeChallenge` and
+  `Explorable`. Not in the doc, but P7-02 is 43 lessons of exactly this edit.
+- `<Leccion>` is bound in `quiz/render.tsx` as the doc decided, threaded through a new optional `ctx`
+  prop on `Quiz` and `CodeChallenge`. Server-only — it never reaches the client cards.
+- The doc's path for the stylesheet (`_styles/lesson.css`) is wrong; `_styles/` holds only
+  `katex.css`. The rules went in the segment's own `lesson.css`.
+- All three fatal lint modes confirmed to exit 1 naming file, slug and anchor (typo'd slug, stale
+  `ancla`, missing `slug`), then reverted. `pnpm lint` (0 errors), `pnpm lint:content`, `pnpm test`
+  (1366 passing), `pnpm build` and `pnpm check:bundle` all green — the card ships no client JS.
 - Not yet committed to a branch/PR (**local**).
