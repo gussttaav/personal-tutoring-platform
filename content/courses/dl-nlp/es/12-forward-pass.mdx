@@ -49,7 +49,7 @@ quiz:
       - { id: c, text: 'Las capas se calculan en orden a la fuerza, porque $\mathbf{H}^{(l)}$ necesita $\mathbf{H}^{(l-1)}$ ya calculada.' }
       - { id: d, text: 'Si quitas las $L$ activaciones, la cadena ya no se puede acortar: un producto de matrices seguido de otro no vuelve a ser un producto de matrices.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras son las tres cosas que fija la forma matricial. La (a) es la condición que encadena las capas, y es la única que hay: elegida la anchura $d_{l-1}$, la matriz siguiente tiene que tener esas columnas. La (b) es lo que hace que el mismo código sirva para un ejemplo y para mil. La (c) es la razón de que esto sea un recorrido y no un conjunto de cuentas independientes. La falsa es la (d), y la contesta la lección 2 de este bloque, sobre funciones de activación y no linealidad: sin $\varphi$ la cadena se contrae en $\mathbf{X}\left(\mathbf{W}^{(L)}\cdots\mathbf{W}^{(1)}\right)^{\top}$ más un sesgo, que es una capa sola. Los productos de matrices se componen igual que las funciones afines, y ese es justo el problema que $\varphi$ existe para romper.'
+    explanation: 'Las tres primeras son las tres cosas que fija la forma matricial. La (a) es la condición que encadena las capas, y es la única que hay: elegida la anchura $d_{l-1}$, la matriz siguiente tiene que tener esas columnas. La (b) es lo que hace que el mismo código sirva para un ejemplo y para mil. La (c) es la razón de que esto sea un recorrido y no un conjunto de cuentas independientes. La falsa es la (d), y la contesta <Leccion slug="funciones-activacion">la lección sobre funciones de activación y no linealidad</Leccion>: sin $\varphi$ la cadena se contrae en $\mathbf{X}\left(\mathbf{W}^{(L)}\cdots\mathbf{W}^{(1)}\right)^{\top}$ más un sesgo, que es una capa sola. Los productos de matrices se componen igual que las funciones afines, y ese es justo el problema que $\varphi$ existe para romper.'
 challenges:
   - id: ch-forward
     prompt: |
@@ -152,8 +152,7 @@ cuentas sueltas no es una fórmula: no se desarrolla sobre ella y no se programa
 la entrada hasta la salida tiene un nombre —el *forward pass*— y tiene una forma en la que se
 escribe siempre. Esta lección es esa forma.
 
-Ponle números antes de escribirla. Toma las diez reseñas de la lección 1 de este bloque, sobre la
-neurona artificial, con aquel vocabulario de ocho entradas. Lo que entra en la red no es la reseña
+Ponle números antes de escribirla. Toma las diez reseñas de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, con aquel vocabulario de ocho entradas. Lo que entra en la red no es la reseña
 sino su bolsa de palabras: un vector de ocho coordenadas, una por entrada del vocabulario, con las
 veces que esa entrada aparece en la reseña. Eso es todo lo que la red va a leer. Pon encima una
 capa oculta de cuatro neuronas: cada una mira esas ocho coordenadas y devuelve un número, de modo
@@ -209,7 +208,7 @@ $$
 z^{(l)}_j = \sum_{k=1}^{d_{l-1}} \mathbf{W}^{(l)}_{jk}\, h^{(l-1)}_k + b^{(l)}_j.
 $$
 
-Esa suma es la neurona de la lección 1 de este bloque, sobre la neurona artificial, con la fila $j$
+Esa suma es la neurona de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, con la fila $j$
 de $\mathbf{W}^{(l)}$ haciendo de vector de pesos. El producto de matrices no añade ninguna
 operación: agrupa las $d_l$ sumas que ya había, y su única aportación es que ahora no hay que
 escribirlas. La cuenta de lo que cuesta también sale de ahí, $d_l \cdot d_{l-1}$ productos por ejemplo,
@@ -386,7 +385,7 @@ import numpy as np
 
 np.random.seed(0)
 
-# --- Las diez reseñas de la lección 1 y su mismo vocabulario de ocho entradas.
+# --- Las diez reseñas de siempre y su mismo vocabulario de ocho entradas.
 resenas = [
     "la película es divertida y la recomiendo",
     "la película es lenta y aburrida",
@@ -467,5 +466,4 @@ Hace falta un número que sí lo distinga. Uno solo para todo el batch, que crez
 $\hat{\mathbf{Y}}$ se aleja de las etiquetas, que baje cuando se acerca, y que cambie de forma
 continua para que tenga derivada. Cómo se construye ese número, por qué el primer candidato que se
 le ocurre a cualquiera —elevar al cuadrado la diferencia— es el correcto para unas tareas y una
-mala idea para clasificar, y qué se usa en su lugar, es la lección 5 de este bloque, sobre
-funciones de pérdida: el error cuadrático medio y la entropía cruzada.
+mala idea para clasificar, y qué se usa en su lugar, es <Leccion slug="funcion-de-perdida">la siguiente lección, sobre funciones de pérdida</Leccion>: el error cuadrático medio y la entropía cruzada.

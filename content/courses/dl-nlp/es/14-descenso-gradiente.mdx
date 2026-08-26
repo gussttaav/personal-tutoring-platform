@@ -59,8 +59,7 @@ challenges: []
 Ya se puede escribir entera la pregunta del entrenamiento, y escribirla no la resuelve. La lección
 anterior, sobre funciones de pérdida, dejó puesta la última pieza: una regla que compara lo que la
 red contesta con lo que debía contestar y lo resume en un número. Buscar los parámetros que lo hacen
-mínimo ya es una pregunta bien planteada, y sigue sin haber forma de contestarla probando. La red de
-la lección 4 de este bloque, sobre el *forward pass*, guarda $41$ números; con un vocabulario de
+mínimo ya es una pregunta bien planteada, y sigue sin haber forma de contestarla probando. La red de <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion> guarda $41$ números; con un vocabulario de
 veinte mil entradas y una capa oculta de $128$ neuronas son $2\,560\,257$, y cada uno de ellos es un
 número real.
 
@@ -99,8 +98,7 @@ capas, apilados en un solo vector de $P$ coordenadas— y $\mathcal{L}(\theta)$ 
 batch. El **gradiente** es el vector que reúne una derivada parcial por parámetro,
 $\nabla_{\theta}\mathcal{L} \in \mathbb{R}^{P}$. Cada una de sus coordenadas dice a qué ritmo cambia
 la pérdida cuando se mueve un parámetro y los demás se quedan quietos: lo que medía el sondeo de una
-centésima, ahora exacto y sin evaluar nada dos veces. Para la neurona de la lección 1 de este
-bloque, sobre la neurona artificial, con sus pesos $\mathbf{w} \in \mathbb{R}^{d}$ y su sesgo $b$,
+centésima, ahora exacto y sin evaluar nada dos veces. Para la neurona de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, con sus pesos $\mathbf{w} \in \mathbb{R}^{d}$ y su sesgo $b$,
 son $d + 1$ números:
 
 $$
@@ -304,7 +302,7 @@ $w$ ya vale $0.04$. Con $1.05$ el factor es $-1.1$, los signos alternan, las mag
 y la pérdida final vale $2.59$: dos veces y media la del punto de partida, después de cinco pasos
 dedicados a bajarla.
 
-La segunda celda entrena de verdad. La neurona es la de la lección 1 de este bloque, con las mismas
+La segunda celda entrena de verdad. La neurona es la de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, con las mismas
 diez reseñas y el mismo vocabulario, y esta vez sus pesos empiezan en cero: con
 $\mathbf{w} = \mathbf{0}$ y $b = 0$ la sigmoide contesta $0.5$ a las diez, que es la peor de las
 tres redes que ordenó la lección anterior. No hay un solo número al azar, así que verás estos
@@ -313,7 +311,7 @@ valores y no otros. Ejecútala y mira caer la pérdida.
 <PyCell packages={["numpy"]} code={`
 import numpy as np
 
-# --- Las diez reseñas de la lección 1, su vocabulario y sus etiquetas.
+# --- Las diez reseñas de siempre, su vocabulario y sus etiquetas.
 resenas = [
     "la película es divertida y la recomiendo",
     "la película es lenta y aburrida",
@@ -351,7 +349,7 @@ for paso in range(201):
     b -= eta * float(error.sum()) / B
 
 a_mano = np.array([-1., 1., 1., 0., -1., -1., 0., 1.])
-print("\\ncon los pesos que puse a mano en la lección 1:",
+print("\\ncon los pesos que puse a mano:",
       "%.4f" % entropia_cruzada(1.0 / (1.0 + np.exp(-(X @ a_mano)))))
 for entrada, peso in sorted(zip(V, w), key=lambda par: -par[1]):
     print("  %-11s %+6.3f" % (entrada, peso))
@@ -398,6 +396,5 @@ hay nada que restar.
 La regla de la cadena que hemos usado dos veces, la de una variable, no cubre ese caso: está escrita
 para una cantidad que llega a la siguiente por un único camino. Cómo se deriva una composición
 cuando las variables intermedias son vectores, y qué objeto sustituye a la derivada cuando hay
-muchas entradas y muchas salidas a la vez, es la lección 7 de este bloque, sobre la regla de la
-cadena. Convertirla después en un procedimiento que recorra una red entera sin repetir ninguna
+muchas entradas y muchas salidas a la vez, es <Leccion slug="regla-de-la-cadena">la siguiente lección, sobre la regla de la cadena</Leccion>. Convertirla después en un procedimiento que recorra una red entera sin repetir ninguna
 cuenta ocupa el resto del bloque.

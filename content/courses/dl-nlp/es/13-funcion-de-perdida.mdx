@@ -199,10 +199,8 @@ y no la suma para que $\mathcal{L}$ no crezca con $B$.
 
 De $\ell$ se exigen tres cosas y no pesan igual: que devuelva un número, que baje al acercarse la
 predicción a la etiqueta, y que tenga derivada respecto de cada parámetro, porque de esas derivadas
-está hecho el método que corrige los pesos —la lección 6 de este bloque, sobre descenso de
-gradiente—. Las dos primeras las cumple casi cualquier cosa; la tercera es la que descarta
-candidatas, y es el mismo criterio con el que la lección 2 de este bloque, sobre funciones de
-activación y no linealidad, eligió $\varphi$: allí el escalón se cayó por tener derivada nula, no
+está hecho el método que corrige los pesos —<Leccion slug="descenso-gradiente">la siguiente lección sobre el descenso de gradiente</Leccion>—. Las dos primeras las cumple casi cualquier cosa; la tercera es la que descarta
+candidatas, y es el mismo criterio con el que <Leccion slug="funciones-activacion">la lección sobre funciones de activación y no linealidad</Leccion> eligió $\varphi$: allí el escalón se cayó por tener derivada nula, no
 por medir mal.
 
 La primera de las dos mide la distancia al cuadrado. El **error cuadrático medio** es
@@ -233,7 +231,7 @@ es lo que ajusta la lección siguiente.
 Clasificar no es predecir una cantidad, y ahí la cuenta cambia. La etiqueta vale $0$ o $1$, la salida
 sale de una sigmoide, $\hat{y} = \sigma(z)$, y la derivada que hace falta no es la de $\hat{y}$ sino
 la de $z$, que es lo que los pesos controlan. Encadenando, y con
-$\sigma'(z) = \sigma(z)\left(1 - \sigma(z)\right)$ de la lección 2 de este bloque:
+$\sigma'(z) = \sigma(z)\left(1 - \sigma(z)\right)$ de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>:
 
 $$
 \frac{\partial \ell_{\text{MSE}}}{\partial z}
@@ -241,7 +239,7 @@ $$
 = 2\left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right).
 $$
 
-Mira el producto de los dos últimos factores: es la derivada de la sigmoide, y la lección 2 ya dijo
+Mira el producto de los dos últimos factores: es la derivada de la sigmoide, y <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya dijo
 dónde se apaga: cuando $\hat{y}$ se acerca a $0$ o a $1$, o sea, cuando la red está segura. La
 saturación que allí era un defecto de la activación reaparece aquí multiplicando a la corrección.
 Con $y = 1$ y $z = -6$ —la red dice que no, con convicción, y se equivoca— el primer factor vale
@@ -309,8 +307,7 @@ factor inverso exacto que la deshace, y por eso la fórmula final no menciona a 
 
 Con tres respuestas en lugar de dos —positiva, negativa y neutra— la capa de salida tiene
 $d_L = 3$ neuronas y la sigmoide ya no sirve: aplasta cada coordenada por su cuenta, y tres números
-en $(0,1)$ no forman una distribución. La función que sí lo hace es el *softmax*, el mismo de la
-lección 7 del bloque anterior, sobre Word2Vec, que repartía probabilidad entre las entradas del
+en $(0,1)$ no forman una distribución. La función que sí lo hace es el *softmax*, el mismo de <Leccion slug="word2vec">la lección sobre Word2Vec</Leccion>, que repartía probabilidad entre las entradas del
 vocabulario:
 
 $$
@@ -319,7 +316,7 @@ $$
 
 positivo por ser exponencial y sumando $1$ por el denominador. La etiqueta se
 escribe one-hot, $\mathbf{y} \in \{0,1\}^{d_L}$ con un único $1$ en la posición de la clase correcta
-$c$, tal como la lección 4 del bloque anterior codificaba una entrada del vocabulario. La pérdida es
+$c$, tal como <Leccion slug="one-hot">la lección sobre one-hot</Leccion> codificaba una entrada del vocabulario. La pérdida es
 la de antes, escrita para $d_L$ clases:
 
 $$
@@ -375,22 +372,21 @@ accidente de tener una sola salida.
 
 </Details>
 
-Las dos derivaciones llegan al mismo sitio, y por eso merece la pena hacerlas una vez: de aquí a la
-lección 8 de este bloque, sobre *backpropagation*, la capa de salida no vuelve a derivarse, entra
+Las dos derivaciones llegan al mismo sitio, y por eso merece la pena hacerlas una vez: de aquí a <Leccion slug="backpropagation">la lección sobre *backpropagation*</Leccion>, la capa de salida no vuelve a derivarse, entra
 con $\hat{\mathbf{y}} - \mathbf{y}$ y ya está. El softmax está aquí porque el resto del curso
 predice sobre vocabularios enteros, donde las clases son decenas de miles.
 
 ## Las dos pérdidas sobre las diez reseñas
 
 La celda evalúa las dos candidatas sobre las diez reseñas de siempre, con las preactivaciones de la
-neurona de pesos puestos a mano de la lección 1 de este bloque, sobre la neurona artificial. Nada va
+neurona de pesos puestos a mano de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>. Nada va
 al azar. Ejecútala y mira tres cosas: qué ordena cada columna, dónde se apaga cada corrección, y qué
 pasa con un logaritmo de cero.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
 
-# --- Las diez reseñas de la lección 1, con sus etiquetas y sus preactivaciones.
+# --- Las diez reseñas de siempre, con sus etiquetas y sus preactivaciones.
 y = np.array([1., 0., 1., 0., 1., 0., 0., 1., 0., 1.])
 z = np.array([2., -2., 2., -2., 2., -1., -2., 1., 0., 2.])
 sigmoide = lambda z: 1.0 / (1.0 + np.exp(-z))
@@ -405,12 +401,12 @@ def entropia_cruzada(y_hat, y):
     return float(-np.mean(y * np.log(p) + (1.0 - y) * np.log(1.0 - p)))
 
 
-# 1. Tres redes: la de la lección 1, la misma sin convicción, y una que contesta 0.5 a todo.
+# 1. Tres redes: la de pesos a mano, la misma sin convicción, y una que contesta 0.5 a todo.
 convencida = sigmoide(z)
 tibia = 0.5 + (convencida - 0.5) * 0.1
 
 print("%-25s %8s %8s %8s" % ("", "aciertos", "MSE", "EC"))
-for nombre, p in [("neurona de la lección 1", convencida),
+for nombre, p in [("neurona de pesos a mano", convencida),
                   ("la misma, sin convicción", tibia),
                   ("contesta 0.5 a todo", np.full(10, 0.5))]:
     aciertos = int(((p >= 0.5) == (y == 1.0)).sum())
@@ -481,5 +477,4 @@ sentido —si $\hat{y} - y$ es positivo, subir $z$ sube la pérdida, luego hay q
 bajarlo— y no da la distancia: describe la pendiente en el punto donde estás y deja de valer en
 cuanto te mueves. Así que los pesos no se corrigen de una vez, sino a pasos, y el tamaño de cada
 paso es una decisión: demasiado corto no llega nunca, demasiado largo se pasa. Cómo se elige, qué
-ocurre cuando se elige mal y por qué repetirlo acaba dando con el mínimo sin verlo, es la lección 6
-de este bloque, sobre descenso de gradiente.
+ocurre cuando se elige mal y por qué repetirlo acaba dando con el mínimo sin verlo, es <Leccion slug="descenso-gradiente">la siguiente lección, sobre descenso de gradiente</Leccion>.

@@ -14,7 +14,7 @@ quiz:
     prompt: 'En la red de la segunda celda, la pasada hacia atrás deja $\boldsymbol{\delta}^{(1)} = (0.323559,\; -0.493520,\; -0.493520,\; 0)^{\top}$, y la entrada de esa reseña es $\mathbf{x} = (0, 0, 1, 2, 0, 0, 1, 1)^{\top}$. ¿Cuánto vale $\partial \ell / \partial \mathbf{W}^{(1)}_{24}$, la derivada del peso que la segunda neurona oculta le da a la cuarta entrada del vocabulario?'
     answer: -0.98704
     tolerance: 0.001
-    explanation: 'Es una multiplicación, y ése es el resultado de la lección: $\delta^{(1)}_2 \cdot x_4 = -0.493520 \cdot 2 = -0.98704$. No hace falta recorrer nada, porque el recorrido ya está hecho y su resultado es ese $-0.493520$. Fíjate en de dónde sale el factor $2$: la cuarta entrada del vocabulario es <W>la</W>, que aparece dos veces en la reseña, así que su peso se corrige el doble que el de una entrada que aparece una sola vez —el mismo reparto que la lección 6 de este bloque, sobre descenso de gradiente, encontró con una neurona suelta—. Y la cuarta fila entera de $\nabla_{\mathbf{W}^{(1)}}\ell$ vale cero, porque $\delta^{(1)}_4 = 0$: esa neurona está apagada y ninguno de sus ocho pesos se mueve.'
+    explanation: 'Es una multiplicación, y ése es el resultado de la lección: $\delta^{(1)}_2 \cdot x_4 = -0.493520 \cdot 2 = -0.98704$. No hace falta recorrer nada, porque el recorrido ya está hecho y su resultado es ese $-0.493520$. Fíjate en de dónde sale el factor $2$: la cuarta entrada del vocabulario es <W>la</W>, que aparece dos veces en la reseña, así que su peso se corrige el doble que el de una entrada que aparece una sola vez —el mismo reparto que <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion> encontró con una neurona suelta—. Y la cuarta fila entera de $\nabla_{\mathbf{W}^{(1)}}\ell$ vale cero, porque $\delta^{(1)}_4 = 0$: esa neurona está apagada y ninguno de sus ocho pesos se mueve.'
   - id: q-que-se-reutiliza
     type: single
     prompt: 'Backpropagation no usa ninguna regla de derivación que la lección anterior no tuviera ya. ¿Qué es entonces lo que ahorra?'
@@ -46,7 +46,7 @@ quiz:
       g = np.array([0.5, -0.5, 1.5, -1.5])
       print(np.round(g * (z > 0), 2))
     answer: '[ 0.5 -0.   0.  -1.5]'
-    explanation: 'La comparación da `[True False False True]`, y multiplicar por ella deja pasar la primera y la cuarta coordenada y anula las otras dos. La tercera es la que enseña algo: $z = 0$ es donde ReLU tiene el pico y la derivada no existe, y la comparación estricta elige el $0$ que el curso fijó por convención en la lección 2 de este bloque, sobre funciones de activación. Con `>=` esa coordenada habría dejado pasar su $1.5$ entero. Y mira el `-0.`: multiplicar $-0.5$ por `False` da cero negativo, que aritméticamente es cero y se imprime con signo. Es la razón de que la segunda celda sume `+ 0.` antes de enseñar una matriz de gradientes.'
+    explanation: 'La comparación da `[True False False True]`, y multiplicar por ella deja pasar la primera y la cuarta coordenada y anula las otras dos. La tercera es la que enseña algo: $z = 0$ es donde ReLU tiene el pico y la derivada no existe, y la comparación estricta elige el $0$ que el curso fijó por convención en <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>. Con `>=` esa coordenada habría dejado pasar su $1.5$ entero. Y mira el `-0.`: multiplicar $-0.5$ por `False` da cero negativo, que aritméticamente es cero y se imprime con signo. Es la razón de que la segunda celda sume `+ 0.` antes de enseñar una matriz de gradientes.'
     hint: 'El formato cuenta tanto como los valores. NumPy alinea las cuatro casillas al ancho de la más larga, `-1.5`, así que las positivas llevan delante un espacio de relleno; y un cero con signo se escribe `-0.`, no `0.`.'
   - id: q-tirar-el-forward
     type: single
@@ -224,8 +224,7 @@ $$
 
 una coordenada por neurona de la capa, y en columna, que es la transpuesta de la jacobiana de una
 fila con la que la lección anterior escribía el gradiente de un escalar. Es $\ell$ y no
-$\mathcal{L}$: la pérdida de *un* ejemplo, como en todo el bloque desde la lección 5, sobre
-funciones de pérdida.
+$\mathcal{L}$: la pérdida de *un* ejemplo, como en todo el bloque desde <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>.
 
 Con ese vector en la mano, los parámetros de la capa $l$ salen sin recorrer nada. Su preactivación
 es $\mathbf{z}^{(l)} = \mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)}$, y coordenada a
@@ -267,8 +266,7 @@ sale $\boldsymbol{\delta}^{(l)}$.
 De la capa de al lado, y por eso el recorrido va del final al principio.
 
 Empieza por el final, donde no hay nada que hacer. La última capa entrega $\mathbf{z}^{(L)}$, el
-*softmax* lo convierte en $\hat{\mathbf{y}}$ y la entropía cruzada lo compara con la etiqueta; la
-lección 5 de este bloque derivó ese par entero y de las dos cosas juntas salió
+*softmax* lo convierte en $\hat{\mathbf{y}}$ y la entropía cruzada lo compara con la etiqueta; <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> derivó ese par entero y de las dos cosas juntas salió
 
 $$
 \boldsymbol{\delta}^{(L)} = \hat{\mathbf{y}} - \mathbf{y}.
@@ -277,8 +275,7 @@ $$
 Nada de lo que sigue depende de que sea ésa. Cambia la pérdida o la activación de salida y ese
 vector cambia; el resto del algoritmo no se entera, porque sólo lo recibe. La red del explorable de
 arriba es el ejemplo: tiene una sigmoide en la salida y la pérdida
-$\tfrac{1}{2}\left(\hat{y} - y\right)^{2}$ —el $\tfrac{1}{2}$ es la convención que la lección 5 dijo
-no adoptar, y aquí está puesto para que los números salgan cortos—, con lo que su capa de salida
+$\tfrac{1}{2}\left(\hat{y} - y\right)^{2}$ —el $\tfrac{1}{2}$ es la convención que <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> dijo no adoptar, y aquí está puesto para que los números salgan cortos—, con lo que su capa de salida
 entra con $\delta^{(2)}_1 = \left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right)$ y no con
 $\hat{y} - y$: el factor de más es la sigmoide, que aquí no se cancela con nada. Todo lo demás es
 idéntico.
@@ -353,8 +350,7 @@ más que el ordenador la ejecuta sin escribir ni un índice.
 
 ### El algoritmo entero, escrito para dos capas ocultas
 
-Con $L = 3$ cabe entero y sin puntos suspensivos. Hacia adelante, que es la lección 4 de este
-bloque, sobre el *forward pass*:
+Con $L = 3$ cabe entero y sin puntos suspensivos. Hacia adelante, que es <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>:
 
 $$
 \mathbf{h}^{(0)} = \mathbf{x},
@@ -387,7 +383,7 @@ Lo que cuesta se lee en las formas. La vuelta hace un producto de matriz por vec
 con las mismas matrices de la ida: el mismo orden de operaciones, una sola vez, sea cual sea $L$.
 Sondear los parámetros de uno en uno cuesta dos pasadas hacia adelante por parámetro, y el número de
 parámetros no lo acota nada. En la red de abajo son $63$ parámetros, $126$ pasadas contra una; con
-el vocabulario de veinte mil entradas de la lección 4 de este bloque la proporción no cambia de
+el vocabulario de veinte mil entradas de <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion> la proporción no cambia de
 forma, sólo de tamaño.
 
 Hay un precio y conviene decirlo, porque no es el tiempo. La vuelta necesita los
@@ -562,8 +558,7 @@ entero.
 
 El algoritmo está completo y no ha entrenado nada. Las dos celdas calculan el gradiente de un
 ejemplo con unos pesos que puse yo, lo imprimen, y ahí se acaban: nadie ha restado nada y nadie ha
-vuelto a empezar. Lo que falta para cerrar el círculo lleva escrito desde la lección 6 de este
-bloque, sobre descenso de gradiente —$\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}$—,
+vuelto a empezar. Lo que falta para cerrar el círculo lleva escrito desde <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion> —$\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}$—,
 esperando exactamente al gradiente que esta lección acaba de producir.
 
 Juntar las dos mitades exige tres decisiones que ninguna de las dos lecciones ha tomado. Los
@@ -571,5 +566,4 @@ ejemplos entran de $B$ en $B$, así que los errores dejan de ser columnas y $\ma
 ser la media de las $\ell$. Los pesos tienen que empezar en algún sitio, y el sitio evidente —todos
 a cero— falla por una razón que se lee en la fórmula de $\boldsymbol{\delta}$ que acabas de derivar.
 Y hay que decidir cuándo parar. Tomar las tres, montarlas sobre un perceptrón multicapa
-(*multilayer perceptron*, MLP) escrito desde cero y ver caer la pérdida es la lección 9 de este
-bloque, sobre implementar un MLP.
+(*multilayer perceptron*, MLP) escrito desde cero y ver caer la pérdida es <Leccion slug="implementar-mlp">la siguiente lección, sobre implementar un MLP</Leccion>.

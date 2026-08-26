@@ -50,9 +50,9 @@ in it.
 - [x] **Block 1 — Fundamentos de NLP** · 8 lessons · 61 refs
   - [x] `01-texto-como-numeros` (7) · [x] `02-tokenizacion` (4) · [x] `03-vocabulario-oov` (5) · [x] `04-one-hot` (14)
   - [x] `05-bolsa-de-palabras` (5) · [x] `06-embeddings-densos` (10) · [x] `07-word2vec` (4) · [x] `08-glove-y-limites` (12)
-- [ ] **Block 2 — El Perceptrón Multicapa** · 10 lessons · 83 refs
-  - [ ] `09-la-neurona` (3) · [ ] `10-funciones-activacion` (4) · [ ] `11-xor-y-capas-ocultas` (5) · [ ] `12-forward-pass` (6) · [ ] `13-funcion-de-perdida` (13)
-  - [ ] `14-descenso-gradiente` (7) · [ ] `15-regla-de-la-cadena` (9) · [ ] `16-backpropagation` (10) · [ ] `17-implementar-mlp` (17) · [ ] `18-proyecto-sentimiento` (9)
+- [x] **Block 2 — El Perceptrón Multicapa** · 10 lessons · 83 refs
+  - [x] `09-la-neurona` (3) · [x] `10-funciones-activacion` (4) · [x] `11-xor-y-capas-ocultas` (5) · [x] `12-forward-pass` (6) · [x] `13-funcion-de-perdida` (13)
+  - [x] `14-descenso-gradiente` (7) · [x] `15-regla-de-la-cadena` (9) · [x] `16-backpropagation` (10) · [x] `17-implementar-mlp` (17) · [x] `18-proyecto-sentimiento` (9)
 - [ ] **Block 3 — Redes Recurrentes** · 8 lessons · 102 refs
   - [ ] `19-por-que-falla-el-mlp` (6) · [ ] `20-la-rnn-vanilla` (3) · [ ] `21-bptt` (22) · [ ] `22-gradiente-desvanecido` (6)
   - [ ] `23-lstm` (10) · [ ] `24-gru` (13) · [ ] `25-proyecto-char-lm` (28) · [ ] `26-seq2seq` (14)

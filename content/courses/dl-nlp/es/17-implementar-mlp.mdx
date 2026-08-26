@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Porque el cero es un mínimo de la pérdida y el descenso se para en los mínimos: la red ya ha convergido, y lo que falla es la tasa de aprendizaje.' }
       - { id: d, text: 'Porque los números son demasiado pequeños para la precisión de la coma flotante. Multiplicar todos los pesos por cien al empezar lo arregla.' }
     answer: a
-    explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona —y una neurona sola no separa estas cuatro frases, que es lo que demostró la lección 3 de este bloque, sobre XOR y las capas ocultas—. La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0.01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
+    explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona —y una neurona sola no separa estas cuatro frases, que es lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>—. La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0.01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
   - id: q-gradiente-batch
     type: predict-output
     prompt: 'Así calcula la celda el gradiente de una capa a partir del error del batch. ¿Qué imprime?'
@@ -41,7 +41,7 @@ quiz:
       - { id: c, text: 'En la fila del paso $25$ los aciertos ya son cuatro de cuatro, y la pérdida sigue bajando dos mil pasos después, así que contar aciertos no sirve para decidir cuándo parar.' }
       - { id: d, text: 'Como la pérdida baja en todos los pasos que imprime la segunda celda, está garantizado que bajó también en los pasos intermedios que no se imprimen.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras son lo que hay que leer en esas dos salidas. La (a) es la razón de que «se ha estancado» no sea una observación, sino una hipótesis. La (b) es el punto de partida de cualquier red que conteste lo mismo a todo, el mismo $\log 2$ que apareció en la lección 6 de este bloque, sobre descenso de gradiente. La (c) es el motivo de que la pérdida y no los aciertos sea lo que se mira: con cuatro ejemplos los aciertos sólo tienen cinco valores posibles y se agotan enseguida. La falsa es la (d), y su defecto es de método más que de aritmética: ocho filas de una curva de dos mil pasos no dicen nada de los mil novecientos noventa y dos pasos que no enseñan, y la lección 6 ya mostró trayectorias que suben y bajan alternando. Aquí bajó en todos, pero eso hay que comprobarlo, no deducirlo.'
+    explanation: 'Las tres primeras son lo que hay que leer en esas dos salidas. La (a) es la razón de que «se ha estancado» no sea una observación, sino una hipótesis. La (b) es el punto de partida de cualquier red que conteste lo mismo a todo, el mismo $\log 2$ que apareció en <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion>. La (c) es el motivo de que la pérdida y no los aciertos sea lo que se mira: con cuatro ejemplos los aciertos sólo tienen cinco valores posibles y se agotan enseguida. La falsa es la (d), y su defecto es de método más que de aritmética: ocho filas de una curva de dos mil pasos no dicen nada de los mil novecientos noventa y dos pasos que no enseñan, y <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion> ya mostró trayectorias que suben y bajan alternando. Aquí bajó en todos, pero eso hay que comprobarlo, no deducirlo.'
 challenges:
   - id: ch-entrena
     prompt: |
@@ -197,8 +197,7 @@ curso. Sus cuatro piezas sí, repartidas en cuatro lecciones de este bloque, y j
 una deuda abierta desde el principio: los ocho pesos de la neurona de reseñas y los siete que
 separan las frases de XOR (*exclusive or*, o exclusivo) los escribí yo, mirando los datos.
 
-El sitio donde comprobarlo está elegido desde entonces. La lección 3 de este bloque, sobre XOR y
-las capas ocultas, demostró que ninguna recta deja <W>está bien</W> y <W>no está mal</W> a un lado
+El sitio donde comprobarlo está elegido desde entonces. <Leccion slug="xor-y-capas-ocultas">La lección sobre XOR y las capas ocultas</Leccion> demostró que ninguna recta deja <W>está bien</W> y <W>no está mal</W> a un lado
 y las otras dos frases al otro, y resolvió después las cuatro con una capa oculta cuyos siete
 números elegí a mano. Si el bucle funciona, la red tiene que dar con unos pesos que acierten las
 cuatro —no necesariamente los míos— partiendo de números que no significan nada. Y si no funciona
@@ -208,7 +207,7 @@ Las cuatro piezas no están sueltas. Están en un orden, y el orden se cierra so
 
 <Figure
   src="/courses/dl-nlp/bucle-entrenamiento.svg"
-  alt="Cuatro cajas colocadas en las esquinas de un rectángulo y unidas por flechas que giran en el sentido de las agujas del reloj. Arriba a la izquierda, forward pass, con el rótulo lección 4. Arriba a la derecha, pérdida, con el rótulo lección 5. Abajo a la derecha, gradiente, con el rótulo lección 8. Abajo a la izquierda, actualización de los pesos, con el rótulo lección 6. Las tres primeras flechas son grises; la cuarta, la que sube desde la actualización hasta el forward pass y cierra el círculo, es verde y lleva escrito al lado y otra vez."
+  alt="Cuatro cajas colocadas en las esquinas de un rectángulo y unidas por flechas que giran en el sentido de las agujas del reloj. Arriba a la izquierda, forward pass; arriba a la derecha, pérdida; abajo a la derecha, gradiente; abajo a la izquierda, actualización de los pesos. Las tres primeras flechas son grises; la cuarta, la que sube desde la actualización hasta el forward pass y cierra el círculo, es verde y lleva escrito al lado y otra vez."
   caption="Entrenar no añade ninguna operación nueva: añade una vuelta. Cada caja se derivó en su lección y ninguna cambia aquí, y lo único que esta lección escribe por primera vez es la flecha que devuelve el control al principio."
 />
 
@@ -221,7 +220,7 @@ congelada para siempre.
 ## Del ejemplo al batch: la vuelta, apilada por filas
 
 La lección anterior derivó la vuelta para un ejemplo, con vectores columna. La ida ya está escrita
-para un batch entero desde la lección 4 de este bloque, sobre el *forward pass*: un ejemplo por
+para un batch entero desde <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>: un ejemplo por
 fila en $\mathbf{X} \in \mathbb{R}^{B \times d_0}$, y de ahí
 $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ capa a capa. Falta el mismo trato para la vuelta,
 y son dos cambios: uno de forma y otro de tamaño.
@@ -271,11 +270,11 @@ $$
 \nabla_{\mathbf{b}^{(l)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{1}_B,
 $$
 
-con $\mathbf{1}_B \in \mathbb{R}^{B}$ el vector de unos de la lección 4. La suma sobre ejemplos que
+con $\mathbf{1}_B \in \mathbb{R}^{B}$ el vector de unos de <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>. La suma sobre ejemplos que
 la lección anterior escribía a mano es exactamente el índice que el producto de matrices recorre y
 descarta: por eso el resultado tiene la forma de $\mathbf{W}^{(l)}$ y no se acuerda de $B$.
 
-Con eso, la regla del descenso de la lección 6 de este bloque no cambia ni una letra:
+Con eso, la regla del descenso de <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion> no cambia ni una letra:
 $\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t)$, aplicada a cada matriz y a
 cada vector de sesgos por separado. La concesión, dicha en voz alta: cada paso mira entero el
 **conjunto de entrenamiento** —los ejemplos con etiqueta de los que dispone la red, aquí las cuatro
@@ -335,7 +334,7 @@ Restar cantidades iguales a cantidades iguales conserva la igualdad, así que la
 del paso tan idénticas como entraron. Y del siguiente. Cuatro copias de una misma neurona
 calculan lo que calcula una, por muchos pasos que den: la capa oculta tiene la anchura de una
 neurona por más que $d_1$ diga cuatro. Y una neurona sola no separa estas cuatro frases, que es
-justo lo que demostró la lección 3.
+justo lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>.
 
 Nada del algoritmo rompe esa igualdad, porque todo lo que hace es determinista: tiene que venir de
 fuera, y la fuente más barata de «distintos» es una tirada al azar. Elegir esos diecisiete números
@@ -354,7 +353,7 @@ vuelta, sin bucle todavía. Ejecútala y mira la columna de formas y la última 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
 
-# Las cuatro frases de la lección 3: x1 vale +1 si aparece «no» y x2 vale +1 si la
+# Las cuatro frases de XOR: x1 vale +1 si aparece «no» y x2 vale +1 si la
 # palabra que valora es «bien». La etiqueta vale 1 si la frase habla bien.
 X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
 Y = np.array([[1.], [0.], [0.], [1.]])
@@ -451,12 +450,12 @@ for frase, a in zip(frases, aporta):
 
 La pérdida sale de $0.7260$ y llega a $0.0011$, y los cuatro aciertos aparecen antes del paso
 $25$. La deuda está pagada: nadie le ha dicho a la red que <W>no</W> invierte el signo de lo que
-sigue, y los pesos que ha encontrado no son los que escribí en la lección 3.
+sigue, y los pesos que ha encontrado no son los que escribí en <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>.
 
 Son mejores que eso: son los mismos, redescubiertos. Mira las neuronas $2$ y $4$. Sus pesos apuntan
 casi en la misma dirección —$(1.83,\ 1.77)$ y $(1.79,\ 1.85)$, las dos casi
 $x_1 + x_2$—, sus sesgos son opuestos —$-1.80$ y $+1.80$— y sus pesos de salida también
-—$-3.98$ y $+3.93$—. Eso es la franja de la lección 3: dos rectas paralelas y una resta entre
+—$-3.98$ y $+3.93$—. Eso es la franja de <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>: dos rectas paralelas y una resta entre
 las dos. La última tabla lo confirma: esa pareja aporta $+7.5$ a las dos frases positivas y
 $+0.2$ a las otras dos. Y la pareja $1$ y $3$ hace lo mismo sobre la otra diagonal con el signo
 cambiado, restando $6.7$ justo donde la primera se calla.
@@ -557,5 +556,4 @@ inventé yo: «¿aparece <W>no</W>?» y «¿la palabra que valora es <W>bien</W>
 preguntas que alguien tuvo que formular después de leer las cuatro frases, y un texto cualquiera no
 llega en dos números. Llegaba, eso sí, en la bolsa de palabras del bloque anterior. Montar este
 mismo bucle sobre unos cientos de reseñas representadas así, medir por primera vez sobre reseñas
-que la red no ha visto y ver qué queda del acierto es la lección 10 de este bloque, el proyecto de
-clasificación de sentimiento.
+que la red no ha visto y ver qué queda del acierto es <Leccion slug="proyecto-sentimiento">la siguiente lección, el proyecto de clasificación de sentimiento</Leccion>.

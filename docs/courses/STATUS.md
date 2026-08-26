@@ -1538,9 +1538,9 @@ and notes:
   (1366 passing), `pnpm build` and `pnpm check:bundle` all green — the card ships no client JS.
 - Not yet committed to a branch/PR (**local**).
 
-**COURSE-P7-02** — In progress. **Block 1 (Fundamentos de NLP) done**; blocks 2–5 pending. 53
-`<Leccion>` tags across the 8 lessons, `pnpm lint:content` green (every slug + anchor resolves, no
-crosslink error). Scope decisions and notes:
+**COURSE-P7-02** — In progress. **Blocks 1–2 done**; blocks 3–5 pending. Block 1: 53 `<Leccion>`
+tags across 8 lessons. Block 2: 62 tags across 10 lessons. `pnpm lint:content` + `pnpm build` +
+`pnpm check:bundle` all green (every slug + anchor resolves, no crosslink error). Scope decisions and notes:
 - **Numbered references only.** The block-checklist per-lesson counts match the count of `lección N`
   references (plus the one `{/* … Bloque 1, lección N */}` marker comment) exactly — 01(7) 02(4)
   03(5) 04(14) 05(5) 06(10) 07(4) 08(12). Relative references that carry no number — *«la lección
@@ -1563,6 +1563,25 @@ crosslink error). Scope decisions and notes:
   its children). No surrounding prose is eaten — the diagnostic the criterion actually guards against.
   Estimated `minutes` moves at most 1 on any lesson; frontmatter `minutes` untouched.
 - Reorder drill not run this pass (a phase-level, one-time demonstration; the reclassification
-  mechanism is already unit-tested via `isAhead` in P7-01). `pnpm build` / `pnpm check:bundle` are
-  phase-level acceptance gates, run once the content pass is complete.
+  mechanism is already unit-tested via `isAhead` in P7-01).
+- **Block 2 (El Perceptrón Multicapa) — 62 `<Leccion>` tags, 10 lessons.** Same rules as Block 1.
+  Per-lesson word counts drop 30–74 (all now comfortably under the 2000-word ceiling that several
+  were brushing); estimated `minutes` within 1 of frontmatter. Three Block-2-specific calls:
+  - **A figure carried baked-in lesson numbers.** `17-implementar-mlp`'s `bucle-entrenamiento.svg`
+    labelled each loop-stage box with a *«lección N»* rótulo, mirrored in the MDX `alt` and the SVG
+    `aria-label` — a hand-written lesson-number reference a `<Leccion>` can't reach (it lives in an
+    SVG asset and an `alt` attribute). Dropped the four numeric labels from the SVG and the alt text;
+    the stage titles + the figure caption keep the meaning. The acceptance grep scans `alt`, so leaving
+    it would have failed the gate. Only file touched outside `content/courses/dl-nlp/es/`.
+  - **PyCell/print rewords** where a number sat inside Python (a comment or a display string), which a
+    `<Leccion>` can't render — `12`(1) `13`(3) `14`(2) `17`(1) `18`(1). Reworded to drop the digit,
+    exactly as Block 1's one PyCell case.
+  - **Cross-block bridge.** `18-proyecto-sentimiento` closes the block pointing into Block 3;
+    `<Leccion slug="por-que-falla-el-mlp">` resolves across blocks and renders plain text (forward +
+    bridge). One reference was split across a line break (*«la lección\n1 de este bloque»*), which the
+    line-based grep misses — caught by reading.
+  Verified live in the build's prerendered HTML: `funcion-de-perdida`'s 8 in-prose refs land on the
+  right lessons (backward → link; forward-above-bridge → link with the «Más adelante» kicker; bridge →
+  plain text), and the cross-block bridge in `18` renders as plain text.
+- `pnpm build` and `pnpm check:bundle` are phase-level acceptance gates; both green after Block 2.
 - Not yet committed to a branch/PR (**local**).
