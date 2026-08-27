@@ -26,7 +26,7 @@ quiz:
     answer: 4128
     tolerance: 0
     unit: pesos
-    explanation: 'Dos matrices de $32 \times 64$ y un vector de $32$: $2 \cdot 32 \cdot 64 + 32 = 4\,128$. Lo que importa de esa cuenta es lo que no aparece en ella. No aparece $T_x$, no aparece $T_y$ y no aparece la pareja: hay **un** juego de pesos, y con él se puntúan las $T_x \cdot T_y$ parejas de la frase y las de todas las demás frases, exactamente como un solo $\mathbf{W}_{hh}$ recorre todas las posiciones en la recurrencia de la lección 2 del bloque anterior, sobre la RNN vanilla —una red neuronal recurrente (*recurrent neural network*, RNN)—. Alargar la frase cuesta más cálculo; no cuesta ni un peso más.'
+    explanation: 'Dos matrices de $32 \times 64$ y un vector de $32$: $2 \cdot 32 \cdot 64 + 32 = 4\,128$. Lo que importa de esa cuenta es lo que no aparece en ella. No aparece $T_x$, no aparece $T_y$ y no aparece la pareja: hay **un** juego de pesos, y con él se puntúan las $T_x \cdot T_y$ parejas de la frase y las de todas las demás frases, exactamente como un solo $\mathbf{W}_{hh}$ recorre todas las posiciones en la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion> —una red neuronal recurrente (*recurrent neural network*, RNN)—. Alargar la frase cuesta más cálculo; no cuesta ni un peso más.'
     hint: 'Cuenta las tres piezas por separado y fíjate en si alguna depende de la longitud de la frase.'
   - id: q-dos-caminos
     type: multi
@@ -37,7 +37,7 @@ quiz:
       - { id: c, text: 'Desde $\hat{\mathbf{y}}_i$ directamente, sin pasar por $\mathbf{c}_i$: el estado del encoder es una de las entradas del softmax de salida.' }
       - { id: d, text: 'A través de $\mathbf{W}_{sa}$, la matriz que multiplica a $\bar{\mathbf{h}}_j$ dentro de la puntuación.' }
     answer: [a, b]
-    explanation: 'La (a) y la (b) son las dos, y merece la pena decir por qué son dos y no una: $\bar{\mathbf{h}}_j$ aparece dos veces en la misma fórmula, una como cosa que se mezcla y otra como cosa que se puntúa, así que la regla de la cadena de la lección 7 del bloque 2, sobre la regla de la cadena, suma dos términos. La (c) se salta el mecanismo entero: el decoder no ve la entrada, ve $\mathbf{c}_i$, y ése es todo el argumento del bloque desde la lección 1. La (d) cambia las matrices de sitio: $\mathbf{W}_{sa}$ multiplica al estado del decoder y $\mathbf{W}_{ha}$ al del encoder, que es justo lo que dicen sus subíndices.'
+    explanation: 'La (a) y la (b) son las dos, y merece la pena decir por qué son dos y no una: $\bar{\mathbf{h}}_j$ aparece dos veces en la misma fórmula, una como cosa que se mezcla y otra como cosa que se puntúa, así que la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> suma dos términos. La (c) se salta el mecanismo entero: el decoder no ve la entrada, ve $\mathbf{c}_i$, y ése es todo el argumento del bloque desde <Leccion slug="encoder-decoder">su primera lección</Leccion>. La (d) cambia las matrices de sitio: $\mathbf{W}_{sa}$ multiplica al estado del decoder y $\mathbf{W}_{ha}$ al del encoder, que es justo lo que dicen sus subíndices.'
     hint: 'Escribe $\mathbf{c}_i = \sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ y pregúntate en cuántos sitios de esa línea aparece $\bar{\mathbf{h}}_j$.'
   - id: q-comparacion
     type: single
@@ -147,7 +147,7 @@ challenges:
       largo de las posiciones y la segunda a lo largo de los pasos, y sale el bloque de
       $(T_y, T_x, d_a)$ que el $\tanh$ aplasta. Sólo entonces entra `va`, que contrae la última
       dimensión y deja una puntuación por pareja. La resta del máximo es la invariancia al
-      desplazamiento de la lección 5 del bloque 2, sobre funciones de pérdida, usada como allí:
+      desplazamiento de <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>, usada como allí:
       cambia lo que se exponencia, no lo que sale.
 ---
 
@@ -226,8 +226,8 @@ $$
 
 dos números que se suman y que no se han mirado el uno al otro. El primero no lleva $j$: dentro de
 la fila $i$ es la misma cantidad en las $T_x$ puntuaciones. Y una constante sumada a una fila
-entera no cambia su softmax —es la invariancia al desplazamiento de la lección 5 del bloque 2,
-sobre funciones de pérdida, la misma que permite restar el máximo antes de exponenciar—, así que se
+entera no cambia su softmax —es la invariancia al desplazamiento de <Leccion slug="funcion-de-perdida">la lección
+sobre funciones de pérdida</Leccion>, la misma que permite restar el máximo antes de exponenciar—, así que se
 cancela arriba y abajo:
 
 $$
@@ -257,7 +257,7 @@ y sigue por el softmax, que reparte cada puntuación entre todos los pesos de su
 
 Con $i$ fijo, $\alpha_{ij}$ depende de las $T_x$ puntuaciones de la fila, así que la derivada
 respecto de una de ellas suma sobre todas. La derivada del softmax tiene dos casos —los mismos de
-la lección 5 del bloque 2, sobre funciones de pérdida—: cuando el peso y la puntuación son el
+<Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>—: cuando el peso y la puntuación son el
 mismo índice vale $\alpha_{ij}\left(1 - \alpha_{ij}\right)$, y cuando no, $-\alpha_{ik}\alpha_{ij}$.
 Separando el término $k = j$ del resto:
 
@@ -313,8 +313,8 @@ $\bar{\mathbf{h}}_{j+1}$ por la recurrencia del encoder, y ahí está lo interes
 arriba **no** pasan por ella. Van del paso $i$ del decoder a la posición $j$ de la entrada sin
 recorrer el trecho de recurrencia que separa esa posición del final de la frase, así que no
 multiplican por $\mathbf{W}^{\text{enc}}_{hh}$ ni una sola vez y su longitud no crece cuando $j$ se
-aleja. El producto de matrices que la lección 4 del bloque anterior, sobre el gradiente
-desvanecido, señalaba como causa del problema no aparece en estas dos rutas.
+aleja. El producto de matrices que <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente
+desvanecido</Leccion> señalaba como causa del problema no aparece en estas dos rutas.
 
 ## La puntuación, en NumPy
 
@@ -449,7 +449,7 @@ de tres dimensiones. El hardware que entrena estas redes hace una cosa mucho mej
 no es ésa.
 
 Hay otra forma de puntuar una pareja que evita el problema entero, y su fórmula cabe en cinco
-símbolos: la atención de Luong, multiplicativa, que es la lección siguiente. En vez de proyectar,
+símbolos: la atención de Luong, multiplicativa, que es <Leccion slug="luong">la lección siguiente</Leccion>. En vez de proyectar,
 sumar y aplastar, multiplica los dos estados a través de una matriz, con lo que la rejilla completa
 de puntuaciones pasa a ser **un** producto de matrices. La lección compara las dos puntuaciones
 —qué cuesta cada una, qué puede hacer cada una— y ahí empieza a decidirse cómo será el bloque 5.

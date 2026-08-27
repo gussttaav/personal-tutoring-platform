@@ -24,7 +24,7 @@ quiz:
     type: single
     prompt: 'Fijas $\alpha_{ij} = 1$ cuando $j = T_x$ y $\alpha_{ij} = 0$ en todo lo demás, igual en todos los pasos $i$. ¿Qué modelo te queda?'
     options:
-      - { id: a, text: 'El encoder-decoder de la lección 1 de este bloque, exactamente: la mezcla se queda en $\mathbf{c}_i = \bar{\mathbf{h}}_{T_x}$, que es el vector de contexto de siempre, el mismo en cada paso.' }
+      - { id: a, text: 'El encoder-decoder de <Leccion slug="encoder-decoder">su lección</Leccion>, exactamente: la mezcla se queda en $\mathbf{c}_i = \bar{\mathbf{h}}_{T_x}$, que es el vector de contexto de siempre, el mismo en cada paso.' }
       - { id: b, text: 'Un modelo que no puede escribir nada, porque todos los pesos menos uno valen cero y la mezcla se anula.' }
       - { id: c, text: 'Un modelo que sólo sabe traducir frases de un token, que es lo único que cabe en un peso que no se reparte.' }
       - { id: d, text: 'Un modelo equivalente al de esta lección pero más rápido, porque se ahorra el cálculo de los pesos.' }
@@ -40,7 +40,7 @@ quiz:
       - { id: c, text: 'La condición de que los pesos sumen $1$: quedarse con un estado equivale a poner un peso mayor que uno en él.' }
       - { id: d, text: 'El coste. Buscar el máximo entre $T_x$ puntuaciones sale más caro que sumar $T_x$ vectores, y en frases largas eso se nota.' }
     answer: a
-    explanation: 'La (a). El softmax no está ahí por elegancia: está porque convierte unas puntuaciones en una mezcla *derivable*, y sólo así la regla de la cadena de la lección 7 del bloque 2, sobre la regla de la cadena, llega desde la pérdida hasta los parámetros que producen $e_{ij}$. Con un máximo duro la señal se corta ahí. La (b) se inventa una forma: $\bar{\mathbf{h}}_{j^{\star}}$ mide $d_h$ y la mezcla también, que es precisamente lo que hace que las dos quepan en el mismo sitio. La (c) es falsa: quedarse con un estado es poner un peso de $1$ en él y $0$ en el resto, y eso suma $1$ —de hecho es el caso extremo que esta lección llama elección dura—. La (d) invierte los costes y, aunque no lo hiciera, el problema no es el precio.'
+    explanation: 'La (a). El softmax no está ahí por elegancia: está porque convierte unas puntuaciones en una mezcla *derivable*, y sólo así la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> llega desde la pérdida hasta los parámetros que producen $e_{ij}$. Con un máximo duro la señal se corta ahí. La (b) se inventa una forma: $\bar{\mathbf{h}}_{j^{\star}}$ mide $d_h$ y la mezcla también, que es precisamente lo que hace que las dos quepan en el mismo sitio. La (c) es falsa: quedarse con un estado es poner un peso de $1$ en él y $0$ en el resto, y eso suma $1$ —de hecho es el caso extremo que esta lección llama elección dura—. La (d) invierte los costes y, aunque no lo hiciera, el problema no es el precio.'
     hint: '¿Cuánto cambia un índice entero cuando mueves un peso una millonésima?'
   - id: q-cuantas-puntuaciones
     type: numeric
@@ -65,8 +65,8 @@ Antes de la primera pregunta hay un obstáculo de forma, y es el que decide la r
 del encoder son tantos como tokens tenga la frase: seis para una, treinta para otra. El decoder, en
 cambio, tiene un tamaño decidido antes de ver ninguna —sus matrices de pesos tienen un número fijo de
 columnas—, de modo que ponerle los estados en fila y multiplicarlos por una matriz choca contra el
-mismo muro que la lección 1 del bloque anterior, sobre por qué el perceptrón multicapa falla en
-secuencias: una entrada cuya longitud cambia no cabe en una matriz cuya forma no cambia. Leerlos
+mismo muro que <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el perceptrón multicapa falla en
+secuencias</Leccion>: una entrada cuya longitud cambia no cabe en una matriz cuya forma no cambia. Leerlos
 todos tendrá que significar otra cosa. Tendrá que significar combinarlos en un solo vector del
 tamaño que el decoder ya esperaba, y entonces lo único que queda por decidir es cuánto de cada uno.
 
@@ -77,7 +77,7 @@ precio que no se puede pagar. Repartir, en cambio, se hace con números. El paso
 vierte de <W>muy</W>. Cada paso se lleva su propia mezcla, y a ese reparto —una cantidad por
 posición de la entrada, distinta en cada paso de la salida— es a lo que llamamos **atención**.
 
-El explorable trae la pareja de la lección 1 de este bloque, sobre la arquitectura encoder-decoder,
+El explorable trae la pareja de <Leccion slug="encoder-decoder">la lección sobre la arquitectura encoder-decoder</Leccion>,
 con una fila por paso de la salida. Recórrelas y mira dos sitios. <W>i</W> y <W>read</W> tiran del
 mismo token, <W>leí</W>, porque el español lleva el pronombre dentro del verbo y el inglés lo escribe
 aparte. Y <W>book</W>, en el paso 7, vuelve a <W>libro</W> —que está en la posición 4— después de
@@ -151,13 +151,13 @@ $$
 \mathbf{s}_i = \tanh\left(\mathbf{W}^{\text{dec}}_{xh}\mathbf{o}_{y_{i-1}} + \mathbf{W}^{\text{dec}}_{hh}\mathbf{s}_{i-1} + \mathbf{W}_{ch}\mathbf{c}_i + \mathbf{b}^{\text{dec}}_h\right),
 $$
 
-y el estado de partida cambia de sitio. En la lección 1 de este bloque el decoder arrancaba en
+y el estado de partida cambia de sitio. En <Leccion slug="encoder-decoder">la lección sobre la arquitectura encoder-decoder</Leccion> el decoder arrancaba en
 $\mathbf{s}_0 = \mathbf{c}$, porque había un $\mathbf{c}$ y sólo uno; ahora no lo hay, así que
 tomamos $\mathbf{s}_0 = \mathbf{0}$, como la recurrencia del bloque anterior. Es una elección, no una
 necesidad —lo habitual es arrancar de una proyección aprendida de $\bar{\mathbf{h}}_{T_x}$—, y no
 cambia nada de lo que sigue.
 
-Con eso, la línea incómoda de la lección 1 de este bloque queda reescrita:
+Con eso, la línea incómoda de <Leccion slug="encoder-decoder">la lección sobre la arquitectura encoder-decoder</Leccion> queda reescrita:
 
 $$
 P\left(y_i \mid y_{<i},\, \mathbf{c}\right)
@@ -217,8 +217,7 @@ mejor puntuado, $\arg\max_j e_{ij}$, y ahorrarse la suma entera. Pero eso devuel
 una posición es un entero: mueve los parámetros de $a$ una millonésima y el índice no se inmuta,
 hasta que un día salta. La derivada de $\mathbf{c}_i$ respecto de esos parámetros vale cero donde
 existe, de modo que la pérdida no tendría por dónde enseñarle a $a$ a puntuar mejor. Con el softmax,
-$\mathbf{c}_i$ depende de las puntuaciones de forma continua, y la regla de la cadena de la lección 7
-del bloque 2, sobre la regla de la cadena, atraviesa los pesos igual que atraviesa cualquier otra
+$\mathbf{c}_i$ depende de las puntuaciones de forma continua, y la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> atraviesa los pesos igual que atraviesa cualquier otra
 cosa. Elegir suave es lo que hace que elegir se pueda aprender.
 
 Falta la función $a$ y no se define aquí. Lo que esta lección necesita de ella es sólo que devuelva
@@ -305,7 +304,7 @@ escriba. Tiene que puntuar cada pareja $(\mathbf{s}_{i-1}, \bar{\mathbf{h}}_j)$ 
 una función que empieza sabiendo tan poco como el resto de la red y que aprende al mismo tiempo que
 ella.
 
-Esa función es $a$, y la lección siguiente, sobre la atención de Bahdanau, es la que la escribe: le
+Esa función es $a$, y <Leccion slug="bahdanau">la lección siguiente, sobre la atención de Bahdanau</Leccion>, es la que la escribe: le
 da sus propios parámetros —una capa pequeña, con su matriz y su vector—, la mete en el mismo descenso
 de gradiente que ya entrena al encoder y al decoder, y desarrolla por dónde le llega el gradiente,
 que resulta venir por dos caminos a la vez. Que haya más de una forma razonable de puntuar una

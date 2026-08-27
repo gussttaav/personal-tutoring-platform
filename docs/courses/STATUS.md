@@ -1538,10 +1538,10 @@ and notes:
   (1366 passing), `pnpm build` and `pnpm check:bundle` all green — the card ships no client JS.
 - Not yet committed to a branch/PR (**local**).
 
-**COURSE-P7-02** — In progress. **Blocks 1–3 done**; blocks 4–5 pending. Block 1: 53 `<Leccion>`
+**COURSE-P7-02** — In progress. **Blocks 1–4 done**; block 5 pending. Block 1: 53 `<Leccion>`
 tags across 8 lessons. Block 2: 62 tags across 10 lessons. Block 3: 89 tags across 8 lessons.
-`pnpm lint:content` + `pnpm build` + `pnpm check:bundle` all green (every slug + anchor resolves,
-no crosslink error). Scope decisions and notes:
+Block 4: 47 tags across 6 lessons. `pnpm lint:content` + `pnpm build` + `pnpm check:bundle` all
+green (every slug + anchor resolves, no crosslink error). Scope decisions and notes:
 - **Numbered references only.** The block-checklist per-lesson counts match the count of `lección N`
   references (plus the one `{/* … Bloque 1, lección N */}` marker comment) exactly — 01(7) 02(4)
   03(5) 04(14) 05(5) 06(10) 07(4) 08(12). Relative references that carry no number — *«la lección
@@ -1614,5 +1614,30 @@ no crosslink error). Scope decisions and notes:
   - **Bridges.** Each of `19`→`20`→…→`25` closes pointing at the next lesson (forward + below `---` →
     plain text); `26` closes into Block 4 in prose (*«el bloque 4»*), no `<Leccion>` — it names a block,
     not a lesson.
-- `pnpm build` and `pnpm check:bundle` are phase-level acceptance gates; both green after Block 3.
+- **Block 4 (El Puente hacia la Atención) — 47 `<Leccion>` tags, 6 lessons.** Same rules as Blocks 1–3.
+  Per-lesson word counts drop 33–90 (proportional, ~6 words/ref: only the deleted number/positional
+  phrase and the `<Leccion>` label leaving the budget under the P7-01 exemption — no prose eaten,
+  matching Block 3's heaviest file, `25`, which dropped 100 for 28 refs); estimated `minutes` within 1
+  of frontmatter, which is untouched. Per-lesson refs: `27`(4) `28`(7) `29`(8) `30`(8) `31`(6) `32`(15).
+  Block-4-specific calls:
+  - **One PyCell reword instead of a tag.** `28-el-cuello-de-botella` had a *«leccion 8 del bloque
+    anterior»* inside a `<PyCell>` Python comment, where a `<Leccion>` can't render; reworded to *«La
+    tarea de secuencia a secuencia del bloque anterior»* (its 7th ref, so 47 tags for 48 refs), as in
+    Blocks 1–3.
+  - **A plural cross-block ref the singular grep misses.** `32-atencion-como-consulta` cites *«la lección
+    5 y la lección 6 del bloque anterior, sobre la LSTM … y la GRU …»* — converted to two adjacent tags
+    (`lstm`, `gru`), as Block 3's *«lecciones 5 y 6»* were.
+  - **Two forward refs into Block 5, both resolving across the block boundary.** `32` points ahead by
+    block, not by *«siguiente»*: *«la lección 3 del bloque siguiente, sobre el producto interno
+    escalado»* → `scaled-dot-product` (forward, **above** the `---` → link with the «Más adelante»
+    kicker — the block's only such case), and its bridge *«La primera lección del bloque siguiente, sobre
+    quitar la recurrencia»* → `adios-recurrencia` (forward, below `---` → plain text).
+  - **`su lección` / `esa lección` labels where the topic word already precedes the ref** — e.g. *«la
+    regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion>»*, *«El encoder-decoder
+    de <Leccion slug="encoder-decoder">su lección</Leccion>»* — to avoid the triple-repeat *«X … la lección
+    sobre X»*, matching Block 3's varied children (*«la lección que la derivó»*).
+  - **Bridges.** Each of `27`→`28`→`29`→`30`→`31`→`32` closes pointing at the next lesson (forward +
+    below `---` → plain text); `32`'s bridge crosses into Block 5 (`adios-recurrencia`), a lesson this
+    time rather than the bare block reference `26` used.
+- `pnpm build` and `pnpm check:bundle` are phase-level acceptance gates; both green after Block 4.
 - Not yet committed to a branch/PR (**local**).

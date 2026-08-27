@@ -56,9 +56,9 @@ in it.
 - [x] **Block 3 — Redes Recurrentes** · 8 lessons · 102 refs
   - [x] `19-por-que-falla-el-mlp` (6) · [x] `20-la-rnn-vanilla` (3) · [x] `21-bptt` (22) · [x] `22-gradiente-desvanecido` (6)
   - [x] `23-lstm` (10) · [x] `24-gru` (13) · [x] `25-proyecto-char-lm` (28) · [x] `26-seq2seq` (14)
-- [ ] **Block 4 — El Puente hacia la Atención** · 6 lessons · 48 refs
-  - [ ] `27-encoder-decoder` (4) · [ ] `28-el-cuello-de-botella` (7) · [ ] `29-la-idea-de-atencion` (8)
-  - [ ] `30-bahdanau` (8) · [ ] `31-luong` (6) · [ ] `32-atencion-como-consulta` (15)
+- [x] **Block 4 — El Puente hacia la Atención** · 6 lessons · 48 refs
+  - [x] `27-encoder-decoder` (4) · [x] `28-el-cuello-de-botella` (7) · [x] `29-la-idea-de-atencion` (8)
+  - [x] `30-bahdanau` (8) · [x] `31-luong` (6) · [x] `32-atencion-como-consulta` (15)
 - [ ] **Block 5 — El Transformer** · 11 lessons · 109 refs
   - [ ] `33-adios-recurrencia` (8) · [ ] `34-self-attention` (10) · [ ] `35-scaled-dot-product` (5) · [ ] `36-multi-head` (9) · [ ] `37-codificacion-posicional` (2) · [ ] `38-bloque-transformer` (10)
   - [ ] `39-encoder-decoder-masking` (12) · [ ] `40-arquitectura-completa` (12) · [ ] `41-proyecto-transformer` (15) · [ ] `42-bert-y-gpt` (10) · [ ] `43-fine-tuning-colab` (16)

@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Que no cambie nada, porque la pérdida ya está en su mínimo y el gradiente vale cero.' }
       - { id: d, text: 'Que suban sobre todo las largas, que son las que más términos aportan a la pérdida y por tanto las que más gradiente reciben.' }
     answer: a
-    explanation: 'La (a), y la tabla de la celda separa las dos mitades: al pasar de 1 000 a 2 000 iteraciones con $d_h = 8$, las columnas cortas siguen subiendo —las tiras de dos letras llegan al pleno— y las de cinco, seis y siete se quedan a ras de suelo. El entrenamiento no se ha agotado; lo que se ha agotado es el sitio. La (b) describe algo que no pasa: las longitudes no son ejemplos intercambiables, y la que no cabe no cabe más por insistir. La (c) es falsa de hecho —la pérdida sigue bajando— y además no haría falta: aunque el mínimo estuviera alcanzado, sería el mínimo de un modelo con ese $\mathbf{c}$. La (d) invierte el argumento del gradiente desvanecido de la lección 4 del bloque anterior: una ruta más larga no entrega más gradiente, entrega menos.'
+    explanation: 'La (a), y la tabla de la celda separa las dos mitades: al pasar de 1 000 a 2 000 iteraciones con $d_h = 8$, las columnas cortas siguen subiendo —las tiras de dos letras llegan al pleno— y las de cinco, seis y siete se quedan a ras de suelo. El entrenamiento no se ha agotado; lo que se ha agotado es el sitio. La (b) describe algo que no pasa: las longitudes no son ejemplos intercambiables, y la que no cabe no cabe más por insistir. La (c) es falsa de hecho —la pérdida sigue bajando— y además no haría falta: aunque el mínimo estuviera alcanzado, sería el mínimo de un modelo con ese $\mathbf{c}$. La (d) invierte el argumento del gradiente desvanecido de <Leccion slug="gradiente-desvanecido">su lección</Leccion>: una ruta más larga no entrega más gradiente, entrega menos.'
     hint: 'Mira las filas de 1 000 y 2 000 iteraciones, columna a columna. ¿Cuáles se mueven y cuáles no?'
   - id: q-cuenta-tmax
     type: numeric
@@ -43,7 +43,7 @@ quiz:
       - { id: c, text: 'El del medio, que queda lejos del principio y del final a la vez y no se beneficia de ninguno de los dos.' }
       - { id: d, text: 'Ninguno en particular: $\mathbf{c}$ resume la entrada entera y no privilegia ninguna posición.' }
     answer: a
-    explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$ —el argumento de la lección 4 del bloque anterior, sobre el gradiente desvanecido, aplicado a esta ruta concreta—. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora y la que la tabla desmiente: si todas las posiciones se conservaran igual, las tiras largas fallarían por el medio y no por el principio.'
+    explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$ —el argumento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente desvanecido</Leccion>, aplicado a esta ruta concreta—. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora y la que la tabla desmiente: si todas las posiciones se conservaran igual, las tiras largas fallarían por el medio y no por el principio.'
     hint: 'Cuenta las multiplicaciones que separan la pérdida del token $j$.'
 challenges: []
 ---
@@ -148,8 +148,8 @@ $$
 i + (T_x - j) \quad \text{multiplicaciones},
 $$
 
-máxima cuando $j = 1$, es decir para el primer token de la entrada. La lección 4 del bloque anterior,
-sobre el gradiente desvanecido, dice qué le ocurre a una señal que atraviesa esa ruta: cada paso la
+máxima cuando $j = 1$, es decir para el primer token de la entrada. <Leccion slug="gradiente-desvanecido">La lección
+sobre el gradiente desvanecido</Leccion> dice qué le ocurre a una señal que atraviesa esa ruta: cada paso la
 multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$, y con un radio espectral menor
 que uno la magnitud cae de forma exponencial con la distancia. Al primer token de la frase le llega
 la señal más débil de todas.
@@ -162,7 +162,7 @@ dicen cosas distintas: contar demuestra que la pared existe; entrenar enseña d�
 
 ## Dos anchos de estado y tres presupuestos de entrenamiento
 
-La tarea es la de la lección 8 del bloque anterior, sobre modelos de secuencia a secuencia: leer una
+La tarea es la de <Leccion slug="seq2seq">la lección sobre modelos de secuencia a secuencia</Leccion>: leer una
 tira de letras y escribirla al revés. Es deliberadamente pobre —no hay gramática, ni significado, ni
 nada que generalizar— y esa pobreza es la que hace limpio el experimento: para invertir una tira no
 hace falta más que recordarla, así que todo lo que falle es memoria.
@@ -174,7 +174,7 @@ enlace entre las dos redes: una sola variable, marcada en el código.
 <PyCell packages={["numpy"]} code={`
 import numpy as np
 
-# La tarea de la leccion 8 del bloque anterior: leer una tira de letras y escribirla al reves.
+# La tarea de secuencia a secuencia del bloque anterior: leer una tira de letras y escribirla al reves.
 V = list("abcd")                                       # cuatro letras: |V_x| = 4
 n_sim, GO = 4, 4                                       # GO solo entra al decoder, nunca se predice
 L_MIN, L_MAX = 2, 7
@@ -286,7 +286,7 @@ compran lo mismo: el segundo afina el uso del vector hasta donde el vector llega
 mueve la pared.
 
 Lo más revelador, sin embargo, es *cómo* se equivoca, que es la sección anterior vista desde el lado
-de la salida. La lección 8 del bloque anterior ya lo dejaba ver en esta misma tarea: en una tira
+de la salida. <Leccion slug="seq2seq">La lección sobre modelos de secuencia a secuencia</Leccion> ya lo dejaba ver en esta misma tarea: en una tira
 larga, el principio de lo que el decoder escribe —que es el final de lo que el encoder leyó, lo más
 reciente en $\mathbf{c}$— suele estar bien, y lo que se desordena es el final, que le pediría recordar
 el primer token de la entrada. El token peor conservado es el que está al final de la ruta más larga.
@@ -315,5 +315,5 @@ pequeño: es la idea de resumir.
 Y hay algo que llama la atención en cuanto se dice así. El encoder calculó $\bar{\mathbf{h}}_1,
 \dots, \bar{\mathbf{h}}_{T_x}$, un estado por token de la entrada, y la arquitectura tira todos menos
 el último. Los otros existieron, se calcularon y se descartaron. Recuperarlos —dejar que el decoder
-mire hacia atrás, a la entrada entera, en lugar de conformarse con el resumen— es la lección
-siguiente, sobre la idea de atención. Ponerle fórmulas a esa mirada ocupa el resto del bloque.
+mire hacia atrás, a la entrada entera, en lugar de conformarse con el resumen— es <Leccion slug="la-idea-de-atencion">la lección
+siguiente, sobre la idea de atención</Leccion>. Ponerle fórmulas a esa mirada ocupa el resto del bloque.

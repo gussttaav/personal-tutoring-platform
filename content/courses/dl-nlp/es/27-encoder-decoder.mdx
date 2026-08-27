@@ -46,7 +46,7 @@ quiz:
       - { id: c, text: 'De un umbral: cuando la probabilidad del token más probable baja de cierto valor, el decoder se detiene.' }
       - { id: d, text: 'Del encoder, que guarda en $\mathbf{c}$ la longitud que tendrá la salida.' }
     answer: a
-    explanation: 'La (a): <W>\<EOS></W> es una entrada de $V_y$ como <W>book</W> o <W>red</W>, y se aprende igual que ellas, con la misma entropía cruzada de la lección 8 del bloque anterior, sobre modelos de secuencia a secuencia. Predecir el fin es predecir un token más. La (b) describe la red de seguridad del código, no lo aprendido: si el modelo nunca escribiera <W>\<EOS></W>, `max_len` evitaría un bucle infinito y la salida sería igualmente basura. La (c) inventa un mecanismo que no está en ninguna ecuación de la lección. La (d) es tentadora porque $\mathbf{c}$ sí condiciona todo lo que el decoder escribe, pero ahí no hay ningún número marcado como «longitud»: la longitud es una consecuencia de dónde gana <W>\<EOS></W>.'
+    explanation: 'La (a): <W>\<EOS></W> es una entrada de $V_y$ como <W>book</W> o <W>red</W>, y se aprende igual que ellas, con la misma entropía cruzada de <Leccion slug="seq2seq">la lección sobre modelos de secuencia a secuencia</Leccion>. Predecir el fin es predecir un token más. La (b) describe la red de seguridad del código, no lo aprendido: si el modelo nunca escribiera <W>\<EOS></W>, `max_len` evitaría un bucle infinito y la salida sería igualmente basura. La (c) inventa un mecanismo que no está en ninguna ecuación de la lección. La (d) es tentadora porque $\mathbf{c}$ sí condiciona todo lo que el decoder escribe, pero ahí no hay ningún número marcado como «longitud»: la longitud es una consecuencia de dónde gana <W>\<EOS></W>.'
     hint: '¿Qué posiciones aportan un término a la pérdida, y qué símbolo ocupa la última?'
 challenges: []
 ---
@@ -133,8 +133,8 @@ obliga a que $\lvert V_x \rvert$ y $\lvert V_y \rvert$ se parezcan.
 Ahora el token que faltaba. A $V_y$ —y sólo a $V_y$— le añadimos una entrada más,
 <W>\<EOS></W>, el símbolo de fin de secuencia, y toda traducción del entrenamiento termina en ella:
 si la salida correcta tiene $n$ tokens, la secuencia de entrenamiento tiene $T_y = n + 1$ y
-el último es $y_{T_y} = \texttt{<EOS>}$. La pérdida es la de la lección 8 del bloque anterior, sobre
-modelos de secuencia a secuencia, sin tocar una línea,
+el último es $y_{T_y} = \texttt{<EOS>}$. La pérdida es la de <Leccion slug="seq2seq">la lección sobre
+modelos de secuencia a secuencia</Leccion>, sin tocar una línea,
 
 $$
 \ell = \frac{1}{T_y}\sum_{i=1}^{T_y} -\log \hat{y}_{i,\,y_i},
@@ -192,8 +192,8 @@ $$
 y_i = \arg\max_{k \in V_y} \hat{y}_{i,k},
 $$
 
-realimentar el token elegido y seguir hasta <W>\<EOS></W>. Es la decodificación voraz, la misma de la
-lección 7 del bloque anterior, sobre el modelo de lenguaje a nivel de carácter, y cuesta un paso por
+realimentar el token elegido y seguir hasta <W>\<EOS></W>. Es la decodificación voraz, la misma de
+<Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>, y cuesta un paso por
 token de salida.
 
 La concesión es que ese camino no es, en general, el más probable. Nada garantiza que el producto de
@@ -391,7 +391,7 @@ una decisión de diseño, y afirma algo fuerte —que $d_h$ números bastan para
 tenga que aportar a cualquier posición de la salida—. En un juguete de tres tokens nadie lo notaría.
 La pregunta es qué le pasa a esa afirmación cuando la entrada es una frase de verdad.
 
-Esa pregunta tiene una respuesta que se puede medir, y es la lección siguiente, sobre el cuello de
-botella del vector de contexto. Allí la entrada se va alargando mientras se mira qué le ocurre a la
+Esa pregunta tiene una respuesta que se puede medir, y es <Leccion slug="el-cuello-de-botella">la lección siguiente, sobre el cuello de
+botella del vector de contexto</Leccion>. Allí la entrada se va alargando mientras se mira qué le ocurre a la
 salida, hasta ver dónde deja de aguantar la igualdad de arriba y por qué el sitio donde se rompe no
 depende de cuánto se entrene.

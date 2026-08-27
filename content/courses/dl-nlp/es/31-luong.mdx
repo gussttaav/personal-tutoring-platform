@@ -145,8 +145,8 @@ challenges:
       producto los contrae contra los $T_x$ estados de la fuente, dejando un número por pareja.
       El paréntesis no cambia el resultado pero sí el trabajo: `Wa @ H.T` sólo depende de la
       fuente, así que un traductor de verdad lo calcularía una vez por frase y lo reaprovecharía
-      en los $T_y$ pasos. La resta del máximo es la invariancia al desplazamiento de la lección 5
-      del bloque 2, sobre funciones de pérdida, usada como allí: cambia lo que se exponencia, no
+      en los $T_y$ pasos. La resta del máximo es la invariancia al desplazamiento de <Leccion slug="funcion-de-perdida">la lección
+      sobre funciones de pérdida</Leccion>, usada como allí: cambia lo que se exponencia, no
       lo que sale.
 ---
 
@@ -167,7 +167,7 @@ no se parece a una red: se parece a un producto. Y como la calidad de las dos fo
 todo lo demás: cuánto cuestan, qué memoria mueven y qué forma tiene su cálculo.
 
 Vuelve a lo que la puntuación tiene que hacer. Un número que sube cuando dos vectores apuntan al
-mismo sitio ya está en el curso desde la lección 5 del bloque 1, sobre la bolsa de palabras: el
+mismo sitio ya está en el curso desde <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras</Leccion>: el
 producto escalar $\mathbf{u}^{\top}\mathbf{v}$, que la similitud coseno se limita a
 normalizar. Sería una puntuación gratis —cero parámetros— y sería función de la pareja, que es la
 condición que la lección anterior declaró irrenunciable: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$
@@ -207,8 +207,8 @@ tienen, sino qué operaciones hacen con ellos.**
 
 Aquí conviene decir qué se está dejando fuera. Luong y sus coautores cambian además dónde entra el
 contexto —puntúan con el estado del paso en curso, $\mathbf{s}_i$, y mezclan el contexto *después* de
-la recurrencia en vez de dentro de ella— y este curso no lo sigue: mantiene la colocación de la
-lección 3 de este bloque, sobre la idea de atención, para que entre aquella lección, la anterior y
+la recurrencia en vez de dentro de ella— y este curso no lo sigue: mantiene la colocación de
+<Leccion slug="la-idea-de-atencion">la lección sobre la idea de atención</Leccion>, para que entre aquella lección, la anterior y
 ésta cambie una sola cosa. Lo que se compara es la función $a$, con todo lo demás quieto.
 
 El gradiente es más corto que el de la aditiva, y por la misma razón por la que el cálculo lo es. Las
@@ -271,8 +271,8 @@ $$
 \mathbf{A} = \text{softmax}\left(\mathbf{S}\mathbf{W}_a\bar{\mathbf{H}}^{\top}\right) \in \mathbb{R}^{T_y \times T_x},
 $$
 
-con el softmax aplicado por filas, que es sobre las posiciones de la entrada, como en la lección 3 de
-este bloque. Comprueba la casilla $(i, j)$: la fila $i$ de $\mathbf{S}\mathbf{W}_a$ es
+con el softmax aplicado por filas, que es sobre las posiciones de la entrada, como en <Leccion slug="la-idea-de-atencion">la lección
+sobre la idea de atención</Leccion>. Comprueba la casilla $(i, j)$: la fila $i$ de $\mathbf{S}\mathbf{W}_a$ es
 $\mathbf{s}_{i-1}^{\top}\mathbf{W}_a$ y la columna $j$ de $\bar{\mathbf{H}}^{\top}$ es
 $\bar{\mathbf{h}}_j$, así que su producto es $e_{ij}$ y no otra cosa.
 
@@ -301,7 +301,7 @@ Y hay una diferencia de forma que no aparece en ninguno de esos números. El tra
 multiplicativa son dos productos de matrices; el de la aditiva son sumas y $\tanh$ sobre un bloque
 tridimensional, coordenada a coordenada. La misma cantidad de aritmética repartida de las dos
 maneras no cuesta lo mismo en el hardware que entrena estas redes, que está construido justamente
-para lo primero —es la lección 4 del bloque 2, sobre el *forward pass*, medida allí con un bucle
+para lo primero —es <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>, medida allí con un bucle
 contra un producto—.
 
 Falta lo honesto, y es lo que abre el bloque siguiente. Escribir $\mathbf{S}$ supone tener los $T_y$
@@ -439,7 +439,7 @@ contenido acaba llegando al decoder. El estado del decoder, en cambio, entra una
 del mismo lado: es el que pregunta. Tres papeles, y ninguna de las dos fórmulas exige que los dos
 primeros los haga el mismo vector —lo hace porque nadie ha propuesto todavía separarlos.
 
-Separarlos y ponerles nombre —consulta, clave y valor— es la lección siguiente, la última del bloque,
+Separarlos y ponerles nombre —consulta, clave y valor— es <Leccion slug="atencion-como-consulta">la lección siguiente, la última del bloque</Leccion>,
 y es la más importante de este curso. No cambia ni una ecuación de las que ya has visto: reescribe
 las mismas con las palabras y los símbolos con los que el bloque 5 lo escribe todo, incluida la
 elección de puntuación que esta lección acaba de justificar. Lo que aquí quedó pendiente —que los
