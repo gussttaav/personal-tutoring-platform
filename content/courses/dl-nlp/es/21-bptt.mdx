@@ -14,7 +14,7 @@ quiz:
     prompt: 'Una RNN con un estado de $d_h = 64$ coordenadas lee un documento de $T = 40$ tokens. ¿Cuántos números tiene $\nabla_{\mathbf{W}_{hh}}\ell$?'
     answer: 4096
     tolerance: 0
-    explanation: 'La suma $\nabla_{\mathbf{W}_{hh}}\ell = \sum_{t=1}^{40} \boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top}$ tiene cuarenta términos, pero cada uno es una matriz $64 \times 64$ y la suma también: el gradiente tiene la forma del objeto que corrige, $64 \cdot 64 = 4\,096$ números, lea el documento cuarenta tokens o cuatrocientos. Es la comprobación de formas de la lección 8 del bloque anterior, sobre backpropagation, sin un cambio. Lo que la longitud decide no es el tamaño del gradiente, sino cuántos términos entran en la suma: confundir las dos cosas —creer que un texto más largo produce un gradiente más grande— es leer la suma como si apilara sus términos en vez de sumarlos.'
+    explanation: 'La suma $\nabla_{\mathbf{W}_{hh}}\ell = \sum_{t=1}^{40} \boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top}$ tiene cuarenta términos, pero cada uno es una matriz $64 \times 64$ y la suma también: el gradiente tiene la forma del objeto que corrige, $64 \cdot 64 = 4\,096$ números, lea el documento cuarenta tokens o cuatrocientos. Es la comprobación de formas de <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion>, sin un cambio. Lo que la longitud decide no es el tamaño del gradiente, sino cuántos términos entran en la suma: confundir las dos cosas —creer que un texto más largo produce un gradiente más grande— es leer la suma como si apilara sus términos en vez de sumarlos.'
     hint: 'La forma de un gradiente es siempre la del objeto que deriva. ¿Cambia esa forma con $T$?'
   - id: q-de-donde-la-suma
     type: single
@@ -25,7 +25,7 @@ quiz:
       - { id: c, text: 'De promediar el gradiente sobre las $T$ posiciones para que no dependa de la longitud del documento.' }
       - { id: d, text: 'De que el estado $\mathbf{h}_t$ acumula las $t$ posiciones anteriores, y derivar un acumulado obliga a sumar sus términos.' }
     answer: a
-    explanation: 'La (a) es la lección entera: un peso compartido se alcanza por un camino por posición, y entre caminos se suma —la regla de la cadena de la lección 7 del bloque anterior, sin variación—. La (b) es lo contrario de lo que hace a una RNN una RNN: hay una sola $\mathbf{W}_{hh}$ para toda la secuencia; una por posición sería el MLP concatenado de la lección 1 de este bloque. La (c) confunde el gradiente con la media sobre el *batch*: promediar es lo que reparte $\mathcal{L}$ entre los documentos, y ocurre un nivel más arriba, no dentro de una secuencia. Y la (d) mezcla dos sumas distintas: que $\mathbf{h}_t$ dependa de lo anterior es la pasada hacia adelante; la suma del gradiente sale de compartir la matriz, no de acumular el estado.'
+    explanation: 'La (a) es la lección entera: un peso compartido se alcanza por un camino por posición, y entre caminos se suma —<Leccion slug="regla-de-la-cadena">la regla de la cadena</Leccion> del bloque anterior, sin variación—. La (b) es lo contrario de lo que hace a una RNN una RNN: hay una sola $\mathbf{W}_{hh}$ para toda la secuencia; una por posición sería el MLP concatenado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el MLP falla con secuencias</Leccion>. La (c) confunde el gradiente con la media sobre el *batch*: promediar es lo que reparte $\mathcal{L}$ entre los documentos, y ocurre un nivel más arriba, no dentro de una secuencia. Y la (d) mezcla dos sumas distintas: que $\mathbf{h}_t$ dependa de lo anterior es la pasada hacia adelante; la suma del gradiente sale de compartir la matriz, no de acumular el estado.'
   - id: q-recurrencia-atras
     type: multi
     prompt: 'Marca todo lo que sea cierto de la recurrencia hacia atrás $\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right)$.'
@@ -35,7 +35,7 @@ quiz:
       - { id: c, text: 'Cada paso transporta con una matriz distinta, igual que los bloques $\mathbf{W}^{(1)}_t$ de la primera capa concatenada tenían uno por posición.' }
       - { id: d, text: 'El error del último paso, $\boldsymbol{\delta}_T$, sale de esta misma recurrencia poniendo $\boldsymbol{\delta}_{T+1} = \mathbf{0}$.' }
     answer: [a, b]
-    explanation: 'La (a) y la (b) son la recurrencia leída en sus dos movimientos, los mismos de la lección 8 del bloque anterior: transportar con la transpuesta y enmascarar con la derivada de la activación. Lo único que cambia —y es lo que la lección 4 de este bloque va a cobrar— es que el transporte usa siempre la misma $\mathbf{W}_{hh}$. La (c) la lee al revés: los subíndices de $\mathbf{W}_{hh}$ señalan un papel, no una posición, y hay una sola matriz, no $T_{\max}$ como en la concatenación de la lección 1. La (d) es la trampa: $\boldsymbol{\delta}_T$ no es un caso más de la recurrencia, es su arranque, y viene de la capa de salida —$\left(\mathbf{1} - \mathbf{h}_T \odot \mathbf{h}_T\right) \odot \left(\hat{y} - y\right)\mathbf{W}_{hy}^{\top}$—; poner $\boldsymbol{\delta}_{T+1} = \mathbf{0}$ dejaría el gradiente entero a cero, porque nunca entraría nada desde la pérdida.'
+    explanation: 'La (a) y la (b) son la recurrencia leída en sus dos movimientos, los mismos de <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion>: transportar con la transpuesta y enmascarar con la derivada de la activación. Lo único que cambia —y es lo que <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion> va a cobrar— es que el transporte usa siempre la misma $\mathbf{W}_{hh}$. La (c) la lee al revés: los subíndices de $\mathbf{W}_{hh}$ señalan un papel, no una posición, y hay una sola matriz, no $T_{\max}$ como en la concatenación de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el MLP falla con secuencias</Leccion>. La (d) es la trampa: $\boldsymbol{\delta}_T$ no es un caso más de la recurrencia, es su arranque, y viene de la capa de salida —$\left(\mathbf{1} - \mathbf{h}_T \odot \mathbf{h}_T\right) \odot \left(\hat{y} - y\right)\mathbf{W}_{hy}^{\top}$—; poner $\boldsymbol{\delta}_{T+1} = \mathbf{0}$ dejaría el gradiente entero a cero, porque nunca entraría nada desde la pérdida.'
   - id: q-sesgo-suma
     type: predict-output
     prompt: 'La pasada hacia atrás acumula $\nabla_{\mathbf{b}_h}\ell = \sum_t \boldsymbol{\delta}_t$ paso a paso. Con estos tres errores, ¿qué imprime?'
@@ -64,7 +64,7 @@ quiz:
       - { id: c, text: 'Guardar únicamente $\mathbf{h}_T$, porque los estados anteriores se reconstruyen aplicando la recurrencia al revés desde el último.' }
       - { id: d, text: 'Recalcular cada $\mathbf{h}_t$ dos veces, una en la ida y otra en la vuelta, para no ocupar memoria.' }
     answer: a
-    explanation: 'La (a) es la concesión que ya dijo en voz alta la lección 8 del bloque anterior, sobre backpropagation: entrenar obliga a conservar la ida, y aquí esa ida son los $T$ estados —uno por posición—, así que la memoria de una RNN crece con lo largo que sea el documento, no sólo con $d_h$. La (b) se queda a medias y por eso es la trampa: es cierto que las matrices no se liberan, pero el producto exterior $\boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top}$ pide $\mathbf{h}_{t-1}$ y la máscara pide $\mathbf{h}_t$. La (c) suena razonable y es falsa: volver de $\mathbf{h}_t$ a $\mathbf{h}_{t-1}$ exigiría deshacer el $\tanh$ y además invertir $\mathbf{W}_{hh}$, que ni siquiera tiene por qué ser invertible, así que en la práctica los estados se guardan, no se recuperan. Y la (d) describe una técnica de ahorro de memoria real, pero no es lo que la vuelta obliga a hacer: es una elección posterior, y cambia memoria por aritmética.'
+    explanation: 'La (a) es la concesión que ya dijo en voz alta <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion>: entrenar obliga a conservar la ida, y aquí esa ida son los $T$ estados —uno por posición—, así que la memoria de una RNN crece con lo largo que sea el documento, no sólo con $d_h$. La (b) se queda a medias y por eso es la trampa: es cierto que las matrices no se liberan, pero el producto exterior $\boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top}$ pide $\mathbf{h}_{t-1}$ y la máscara pide $\mathbf{h}_t$. La (c) suena razonable y es falsa: volver de $\mathbf{h}_t$ a $\mathbf{h}_{t-1}$ exigiría deshacer el $\tanh$ y además invertir $\mathbf{W}_{hh}$, que ni siquiera tiene por qué ser invertible, así que en la práctica los estados se guardan, no se recuperan. Y la (d) describe una técnica de ahorro de memoria real, pero no es lo que la vuelta obliga a hacer: es una elección posterior, y cambia memoria por aritmética.'
 challenges:
   - id: ch-bptt
     prompt: |
@@ -191,8 +191,8 @@ $\mathbf{W}_{hh}$ es una sola matriz que el bucle usa en cada posición, enredad
 entera.
 
 ¿Cómo se deriva respecto de un peso que interviene en los $T$ pasos a la vez? El bloque anterior tiene
-las dos piezas para contestar. La regla de la cadena —lección 7— dice qué ocurre cuando un peso influye
-en la pérdida por varios sitios; backpropagation —lección 8— consigue todas las derivadas de una red
+las dos piezas para contestar. <Leccion slug="regla-de-la-cadena">La regla de la cadena</Leccion> dice qué ocurre cuando un peso influye
+en la pérdida por varios sitios; <Leccion slug="backpropagation">backpropagation</Leccion> consigue todas las derivadas de una red
 con una sola pasada del final al principio, sin sondear un peso cada vez. Falta encajarlas en un bucle,
 y el resultado tiene nombre propio: *backpropagation through time* (BPTT). Lo que esta lección hace con
 él no es enunciarlo, es derivarlo entero y comprobar, casilla por casilla, que sus gradientes son los
@@ -218,7 +218,7 @@ cada paso le reclama.
 ## El error que vuelve, un paso a la vez
 
 Fijemos una secuencia —un documento— y derivemos para ella sola, así que la pérdida es $\ell$, la de
-un ejemplo, como en todo el bloque anterior desde la lección 5; la media sobre el *batch*,
+un ejemplo, como en todo el bloque anterior desde <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>; la media sobre el *batch*,
 $\mathcal{L} = \frac{1}{B}\sum_i \ell_i$, promedia estos gradientes por documento y es un nivel de más
 arriba que no toca nada de lo que sigue. La respuesta se lee del último estado, igual que en la
 lección anterior:
@@ -242,13 +242,12 @@ $$
 
 y llamemos **error del paso** $t$, y $\boldsymbol{\delta}_t \in \mathbb{R}^{d_h}$, al gradiente de la
 pérdida respecto de esa preactivación, $\boldsymbol{\delta}_t = \nabla_{\mathbf{p}_t}\,\ell$. Es
-exactamente el $\boldsymbol{\delta}^{(l)}$ de la lección 8 del bloque anterior —el error de una capa,
+exactamente el $\boldsymbol{\delta}^{(l)}$ de <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion> —el error de una capa,
 en su preactivación—, sólo que el índice ya no cuenta capas sino pasos del tiempo.
 
 Ese error se calcula del final al principio, y en dos movimientos por paso. El $\tanh$ se aplica
 coordenada a coordenada, así que pasar de $\mathbf{h}_t$ a $\mathbf{p}_t$ es multiplicar por su
-pendiente, y esa pendiente, por la identidad $\tanh^{\prime} = 1 - \tanh^{2}$ de la lección 2 del
-bloque anterior, es $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$: se lee directamente del estado que
+pendiente, y esa pendiente, por la identidad $\tanh^{\prime} = 1 - \tanh^{2}$ de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>, es $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$: se lee directamente del estado que
 la ida ya guardó, sin conservar $\mathbf{p}_t$. Queda el otro factor, $\nabla_{\mathbf{h}_t}\ell$, y
 tiene dos casos según de dónde le llegue a $\mathbf{h}_t$ la pérdida. En el último paso, sólo de la
 capa de salida; en los demás, sólo del paso siguiente:
@@ -263,16 +262,15 @@ $$
 
 El arranque, $\boldsymbol{\delta}_T$, es la capa de salida de la lección anterior derivada hacia atrás:
 la sigmoide con la entropía cruzada entrega $\hat{y} - y$, y $\mathbf{W}_{hy}^{\top}$ lo reparte entre
-las $d_h$ coordenadas del estado. La recurrencia es lo demás, y son los dos movimientos de la lección
-8 sin ninguna variación: **transporta** el error con $\mathbf{W}_{hh}^{\top}$ y lo **enmascara** con la
+las $d_h$ coordenadas del estado. La recurrencia es lo demás, y son los dos movimientos de <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion> sin ninguna variación: **transporta** el error con $\mathbf{W}_{hh}^{\top}$ y lo **enmascara** con la
 pendiente del $\tanh$. Lo único distinto es que el transporte usa siempre la misma matriz —guárdalo,
-porque es media lección 4 de este bloque.
+porque es la mitad de <Leccion slug="gradiente-desvanecido">una lección más adelante, la del gradiente que se desvanece</Leccion>.
 
 <Details summary="Ver el transporte índice a índice">
 Sin matrices por medio, y para un paso interior $t < T$, donde $\mathbf{h}_t$ sólo alcanza la pérdida
 a través del paso siguiente. La coordenada $j$ de $\nabla_{\mathbf{h}_t}\ell$ es la derivada de $\ell$
 respecto de $h_{t,j}$, y $h_{t,j}$ entra en la preactivación $\mathbf{p}_{t+1}$ por cada una de sus
-$d_h$ coordenadas: es la suma sobre caminos de la lección 7 del bloque anterior, con $d_h$ caminos.
+$d_h$ coordenadas: es la suma sobre caminos de <Leccion slug="regla-de-la-cadena">la lección sobre la regla de la cadena</Leccion>, con $d_h$ caminos.
 
 $$
 \frac{\partial \ell}{\partial h_{t,j}} = \sum_{i=1}^{d_h} \frac{\partial \ell}{\partial p_{t+1,i}}\,\frac{\partial p_{t+1,i}}{\partial h_{t,j}} = \sum_{i=1}^{d_h} \delta_{t+1,i}\,(\mathbf{W}_{hh})_{ij},
@@ -292,9 +290,8 @@ capa de salida en vez del paso siguiente, y de ahí sale el otro renglón.
 Con un error por paso en la mano, los gradientes de los pesos salen sin recorrer nada más —y ahí
 aparece la suma que la lección anterior anunció—. Mira dónde interviene $\mathbf{W}_{hh}$: en la
 preactivación de **cada** paso, $\mathbf{p}_t = \mathbf{W}_{hh}\mathbf{h}_{t-1} + \dots$, con $t$ de
-$1$ a $T$. Es un solo peso alcanzado por $T$ caminos, uno por posición, y la regla de la cadena de la
-lección 7 del bloque anterior ya zanjó qué hacer con eso: entre caminos se suma. Cada camino aporta lo
-que la lección 8 deja para una preactivación —el error por la entrada transpuesta—, y el total es la
+$1$ a $T$. Es un solo peso alcanzado por $T$ caminos, uno por posición, y <Leccion slug="regla-de-la-cadena">la regla de la cadena</Leccion> del bloque anterior ya zanjó qué hacer con eso: entre caminos se suma. Cada camino aporta lo
+que <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion> deja para una preactivación —el error por la entrada transpuesta—, y el total es la
 suma de las $T$ aportaciones:
 
 $$
@@ -312,7 +309,7 @@ $\mathbf{W}_{hh}$ aparece $T$ veces. Esa suma es la única diferencia entre back
 backpropagation through time, y es el precio exacto de compartir: una matriz, $T$ trabajos, $T$
 aportaciones que recoger.
 
-Dos comprobaciones cierran la cuenta. La primera es de formas, el reflejo de la lección 8: cada
+Dos comprobaciones cierran la cuenta. La primera es de formas, el reflejo de <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion>: cada
 sumando de $\nabla_{\mathbf{W}_{hh}}\ell$ es $d_h \times d_h$, y la suma también, así que el gradiente
 tiene la forma de la matriz que corrige por más larga que sea la secuencia —$T$ decide cuántos
 términos se suman, no el tamaño del resultado—. La segunda mira el primer término: en
@@ -331,7 +328,7 @@ y de nadie más.
 
 ## BPTT en NumPy, contra el sondeo numérico
 
-La misma comprobación de la lección 8 del bloque anterior, aplicada aquí: derivar a mano y contrastar
+La misma comprobación de <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion>, aplicada aquí: derivar a mano y contrastar
 cada número contra un sondeo que mueve el peso un poquito y mide cómo cambia la pérdida. Una RNN de
 juguete con semilla fija, un estado de $d_h = 3$ y una secuencia de $T = 5$. Ejecútala y mira dos
 cosas: la aportación de cada paso a $\nabla_{\mathbf{W}_{hh}}$ —la última, la de $t = 1$, sale cero— y
@@ -421,8 +418,7 @@ anterior.
 
 El gradiente ya está, exacto y comprobado, y trae dentro una advertencia que aún no hemos leído. La
 recurrencia hacia atrás multiplica por $\mathbf{W}_{hh}^{\top}$ en cada paso —la misma matriz, una vez
-por posición—, y además enmascara con las pendientes $1 - \mathbf{h}_t \odot \mathbf{h}_t$, esas que la
-lección 2 del bloque anterior, sobre funciones de activación, ya te enseñó a apagarse cuando el estado
+por posición—, y además enmascara con las pendientes $1 - \mathbf{h}_t \odot \mathbf{h}_t$, esas que <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya te enseñó a apagarse cuando el estado
 se satura. Un error que sale de la posición $T$ y tiene que llegar hasta la $1$ cruza ese producto
 decenas de veces, y multiplicar tantas veces por una misma matriz hace una de dos cosas: encoge hacia
 nada, o se dispara.
@@ -430,6 +426,5 @@ nada, o se dispara.
 Cualquiera de las dos rompe justo lo que la RNN venía a arreglar. Si el gradiente que conecta la
 primera posición con la pérdida llega desvanecido, la red no puede aprender que algo del principio del
 documento importaba para el final —la dependencia larga, que era el motivo de tener memoria—. Cuánto
-encoge o crece, y por qué depende de una sola propiedad de $\mathbf{W}_{hh}$, es la lección 4 de este
-bloque, sobre el gradiente que se desvanece: la derivamos con cuidado y la vemos, en una gráfica, caer
+encoge o crece, y por qué depende de una sola propiedad de $\mathbf{W}_{hh}$, es <Leccion slug="gradiente-desvanecido">la siguiente lección, sobre el gradiente que se desvanece</Leccion>: la derivamos con cuidado y la vemos, en una gráfica, caer
 en picado con la distancia.

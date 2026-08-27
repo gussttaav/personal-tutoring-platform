@@ -48,7 +48,7 @@ quiz:
     type: single
     prompt: 'La máscara $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$ que aparece en cada paso de la vuelta es la pendiente del $\tanh$. ¿Puede rescatar un gradiente que se desvanece?'
     options:
-      - { id: a, text: 'No: sus valores caen entre $0$ y $1$, así que solo encoge, nunca agranda —y donde el estado se satura, como en las bandas rojas del explorador de activaciones de la lección 2 del bloque anterior, se acerca a $0$ y lo apaga del todo—.' }
+      - { id: a, text: 'No: sus valores caen entre $0$ y $1$, así que solo encoge, nunca agranda —y donde el estado se satura, como en las bandas rojas del explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>, se acerca a $0$ y lo apaga del todo—.' }
       - { id: b, text: 'Sí: cuando el gradiente se desvanece, la máscara sube por encima de $1$ para compensar la pérdida.' }
       - { id: c, text: 'Sí, si el estado no está saturado: entonces la máscara vale $1$ y devuelve el gradiente a su tamaño original.' }
     answer: a
@@ -62,7 +62,7 @@ quiz:
       - { id: c, text: 'La respuesta $\hat{y}$, que se vuelve $0$ cuando el gradiente es pequeño.' }
       - { id: d, text: 'Nada de peso: el desvanecimiento solo hace el entrenamiento más lento, pero la red acaba aprendiendo lo mismo.' }
     answer: a
-    explanation: 'La (a) es el coste, y es el que importa: sin señal que vuelva hasta las primeras posiciones, la red no puede atar una causa temprana a un efecto tardío, y pierde exactamente la memoria a distancia que motivó pasar del MLP a la RNN. La (b) confunde el desvanecimiento con el truncamiento, que era el problema de la red de la lección 1 de este bloque, no de esta. La (c) mezcla el gradiente con la salida: $\hat{y}$ se calcula en la ida y no depende del tamaño del gradiente. La (d) es la mentira cómoda: no es que aprenda lo mismo más despacio, es que la dependencia larga se vuelve, en la práctica, inaprendible.'
+    explanation: 'La (a) es el coste, y es el que importa: sin señal que vuelva hasta las primeras posiciones, la red no puede atar una causa temprana a un efecto tardío, y pierde exactamente la memoria a distancia que motivó pasar del MLP a la RNN. La (b) confunde el desvanecimiento con el truncamiento, que era el problema de la red de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el MLP falla con secuencias</Leccion>, no de esta. La (c) mezcla el gradiente con la salida: $\hat{y}$ se calcula en la ida y no depende del tamaño del gradiente. La (d) es la mentira cómoda: no es que aprenda lo mismo más despacio, es que la dependencia larga se vuelve, en la práctica, inaprendible.'
 challenges: []
 ---
 
@@ -130,7 +130,7 @@ $$
 El producto tiene $T - k$ parejas, una por cada paso entre $k$ y $T$ —la **distancia** que el error
 recorre—. Y dentro de cada pareja, la misma $\mathbf{W}_{hh}^{\top}$ que en todas las demás: esto no es
 una capa distinta por posición, como lo eran los bloques $\mathbf{W}^{(1)}_t$ de la primera capa
-concatenada de la lección 1 de este bloque, sino una sola matriz elevada, en la práctica, a la potencia
+concatenada de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el MLP falla con secuencias</Leccion>, sino una sola matriz elevada, en la práctica, a la potencia
 de la distancia. Ese es el gesto que la lección anterior repetía sin mirarlo.
 
 ## Por qué decae o explota
@@ -144,7 +144,7 @@ $$
 
 Los dos factores de cada pareja tienen un techo. El de la diagonal es la pendiente del $\tanh$, que
 nunca pasa de $1$ y en cuanto el estado se satura se acerca a $0$ —son las bandas rojas que el
-explorador de activaciones de la lección 2 del bloque anterior, sobre funciones de activación, ya te
+explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya te
 dejó ver—; llámalo $\gamma \le 1$. El de $\mathbf{W}_{hh}^{\top}$ es el único hecho nuevo que necesitas
 aquí: una matriz estira la longitud de un vector como mucho por su **mayor valor singular**
 $\sigma_{\max}$, así que multiplicar por ella $d$ veces la estira, a lo sumo, por $\sigma_{\max}^{d}$.
@@ -262,5 +262,5 @@ La salida es cambiar el camino. Hace falta una vía por la que el estado avance 
 **sumando**, en lugar de volver a pasar por $\mathbf{W}_{hh}$: sobre una suma el gradiente fluye sin
 multiplicarse una vez por posición, y así ni se hunde ni se dispara. Esa vía aditiva es el estado de
 celda de la LSTM (*long short-term memory*), y construirla —una compuerta cada vez, cada una arreglando
-un fallo concreto de la RNN vanilla— es la lección 5 de este bloque, sobre la LSTM: memoria con
-compuertas.
+un fallo concreto de la RNN vanilla— es <Leccion slug="lstm">la siguiente lección, sobre la LSTM: memoria con
+compuertas</Leccion>.

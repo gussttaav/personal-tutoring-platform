@@ -1538,9 +1538,10 @@ and notes:
   (1366 passing), `pnpm build` and `pnpm check:bundle` all green — the card ships no client JS.
 - Not yet committed to a branch/PR (**local**).
 
-**COURSE-P7-02** — In progress. **Blocks 1–2 done**; blocks 3–5 pending. Block 1: 53 `<Leccion>`
-tags across 8 lessons. Block 2: 62 tags across 10 lessons. `pnpm lint:content` + `pnpm build` +
-`pnpm check:bundle` all green (every slug + anchor resolves, no crosslink error). Scope decisions and notes:
+**COURSE-P7-02** — In progress. **Blocks 1–3 done**; blocks 4–5 pending. Block 1: 53 `<Leccion>`
+tags across 8 lessons. Block 2: 62 tags across 10 lessons. Block 3: 89 tags across 8 lessons.
+`pnpm lint:content` + `pnpm build` + `pnpm check:bundle` all green (every slug + anchor resolves,
+no crosslink error). Scope decisions and notes:
 - **Numbered references only.** The block-checklist per-lesson counts match the count of `lección N`
   references (plus the one `{/* … Bloque 1, lección N */}` marker comment) exactly — 01(7) 02(4)
   03(5) 04(14) 05(5) 06(10) 07(4) 08(12). Relative references that carry no number — *«la lección
@@ -1583,5 +1584,35 @@ tags across 8 lessons. Block 2: 62 tags across 10 lessons. `pnpm lint:content` +
   Verified live in the build's prerendered HTML: `funcion-de-perdida`'s 8 in-prose refs land on the
   right lessons (backward → link; forward-above-bridge → link with the «Más adelante» kicker; bridge →
   plain text), and the cross-block bridge in `18` renders as plain text.
-- `pnpm build` and `pnpm check:bundle` are phase-level acceptance gates; both green after Block 2.
+- **Block 3 (Redes Recurrentes) — 89 `<Leccion>` tags, 8 lessons.** Same rules as Blocks 1–2. Per-lesson
+  word counts drop 26–100 (again proportional: ~4 words/ref, only the deleted number + positional phrase
+  — *«N de este bloque»*, *«N del bloque anterior, sobre …»* — leaving the budget; `<Leccion>` children
+  are kept, verified by the ~4-vs-~8-words/ref ratio); estimated `minutes` within 1 of frontmatter, which
+  is untouched. Block-3-specific calls:
+  - **`de este bloque` vs `del bloque anterior` is the whole game in this block.** *«la lección 2 de este
+    bloque»* is `la-rnn-vanilla`, *«la lección 2 del bloque anterior»* is `funciones-activacion`; likewise
+    *«lección 3/4/5/7 de este bloque»* (bptt / gradiente-desvanecido / lstm / proyecto-char-lm) vs the
+    same digits *«del bloque anterior»* (regla-de-la-cadena / funcion-de-perdida / …). Every tag was
+    assigned by reading the clause, not the number, and the assignment was re-audited by grepping each
+    `funciones-activacion`/`la-rnn-vanilla` tag back to its sentence.
+  - **`21-bptt`'s backward-from-the-number cross-block refs** (*«La regla de la cadena —lección 7—»*,
+    *«backpropagation —lección 8—»*, under *«El bloque anterior tiene las dos piezas»*) were read as
+    backward, as the task warned — wrapped on the name (`regla-de-la-cadena`, `backpropagation`) with the
+    dash-number dropped, not treated as same-block forward.
+  - **Line-break-split refs the line-based grep misses.** `21-bptt` (*«de la lección\n8»*) and
+    `25-proyecto-char-lm` (*«la lección\n2 del bloque 1»*, → `tokenizacion`) each hid a reference across a
+    newline; caught by a newline-collapsed grep + reading. The per-lesson counts only reconcile with the
+    task's (21→22, 25→28) once these are included.
+  - **PyCell/summary rewords** where a number sat where a `<Leccion>` can't render — `25`'s frontmatter
+    `summary` (plain-text metadata: *«La RNN de la lección 2 y la BPTT de la lección 3»* → *«La RNN vanilla
+    y la BPTT»*) and Python comments in `25` (3) and `26` (3). Reworded to drop the digit, as in Blocks 1–2.
+  - **Plural `«las lecciones 5 y 6»`** (`25`, `26`) are the one form the singular acceptance grep does not
+    match, so they sit outside the per-lesson counts. Converted anyway — two adjacent tags,
+    *«las compuertas de <Leccion slug="lstm">la LSTM</Leccion> y <Leccion slug="gru">la GRU</Leccion>»* —
+    since the phase goal is to delete hardcoded lesson numbers of *every* form. (Block 5's unconverted
+    `40-arquitectura-completa` still carries one *«lecciones 2 …»*; it belongs to that block's pass.)
+  - **Bridges.** Each of `19`→`20`→…→`25` closes pointing at the next lesson (forward + below `---` →
+    plain text); `26` closes into Block 4 in prose (*«el bloque 4»*), no `<Leccion>` — it names a block,
+    not a lesson.
+- `pnpm build` and `pnpm check:bundle` are phase-level acceptance gates; both green after Block 3.
 - Not yet committed to a branch/PR (**local**).

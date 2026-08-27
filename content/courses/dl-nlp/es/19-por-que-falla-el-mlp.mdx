@@ -55,7 +55,7 @@ la entrada obliga a volver sobre $\mathbf{W}^{(1)}$, que tiene $d_0$ columnas de
 que se construye.
 
 La reparación que se le ocurre a cualquiera es ponerlos en fila. Cada token trae su vector —el
-*embedding* de la lección 6 del bloque 1, sobre representaciones densas—, y pegar esos vectores uno
+*embedding* de <Leccion slug="embeddings-densos">la lección sobre representaciones densas</Leccion>—, y pegar esos vectores uno
 detrás de otro deja el orden escrito en el sitio que ocupa cada uno: la posición pasa a ser una
 coordenada, y ninguna suma la borra. La reparación aguanta hasta el segundo texto. <W>la fotografía
 es magnífica</W> trae cuatro vectores y <W>guion flojo</W> trae dos, de modo que producen entradas de
@@ -116,8 +116,7 @@ $d_0 = T_{\max} \cdot d_{\text{model}}$ para todo documento y la red ya se puede
 
 Las dos mitades de ese arreglo cuestan cosas distintas y las dos hay que decirlas en voz alta.
 Truncar pierde el final entero de cualquier documento largo, y lo pierde *por posición*: no se
-parece al problema de las palabras fuera de vocabulario (*out-of-vocabulary*, OOV) de la lección 3
-del bloque 1, donde lo que caía eran los tipos raros y por eso la pérdida era pequeña. Aquí puede
+parece al problema de las palabras fuera de vocabulario (*out-of-vocabulary*, OOV) de <Leccion slug="vocabulario-oov">la lección sobre el vocabulario</Leccion>, donde lo que caía eran los tipos raros y por eso la pérdida era pequeña. Aquí puede
 caer la entrada más frecuente del corpus, si le toca estar en la posición $T_{\max} + 1$. Y el
 *padding* paga por el otro extremo: con $T_{\max}$ puesto donde llegue el documento más largo, un
 documento de longitud media entra en la red con más de la mitad de su vector a cero.
@@ -137,7 +136,7 @@ $$
 Ahí no ha pasado nada todavía: es el mismo producto de siempre, agrupado por tramos en lugar de por
 columnas sueltas. Lo que pasa se ve al derivar.
 
-La lección 8 del bloque anterior, sobre *backpropagation*, deja el gradiente de una capa en una
+<Leccion slug="backpropagation">La lección sobre *backpropagation*</Leccion> deja el gradiente de una capa en una
 línea, $\nabla_{\mathbf{W}^{(l)}}\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$,
 y para la primera capa $\mathbf{h}^{(0)} = \mathbf{x}$, así que
 
@@ -215,7 +214,7 @@ conjuntos.
 
 Con los mismos datos se entrena dos veces la misma red: una sobre la concatenación de las seis
 posiciones y otra sobre su bolsa de palabras, que son las mismas ocho coordenadas sumadas. El bucle
-es el de la lección 9 del bloque anterior, sobre implementar un MLP, sin tocar una línea. Mira su
+es el de <Leccion slug="implementar-mlp">la lección sobre implementar un MLP</Leccion>, sin tocar una línea. Mira su
 salida en tres tramos: qué hace la concatenación, qué hace la bolsa de palabras con esos mismos
 datos, y qué le ha pasado a cada bloque de $\mathbf{W}^{(1)}$.
 
@@ -322,7 +321,7 @@ Lo que hace falta es una red en la que la posición 5 multiplique por *los mismo
 posición 3, de manera que ajustarlos con una ocurrencia los deje ajustados para todas. Eso obliga a
 dos cosas a la vez: leer la secuencia una posición cada vez en lugar de toda de golpe, y guardar en
 algún sitio lo ya leído —porque si la matriz es la misma en todas las posiciones, el orden no puede
-estar guardado en ella—. Eso es la lección 2 de este bloque, sobre la red neuronal recurrente
-(*recurrent neural network*, RNN) más simple que hay: una sola matriz aplicada $T$ veces, un estado
+estar guardado en ella—. Eso es <Leccion slug="la-rnn-vanilla">la siguiente lección, sobre la red neuronal recurrente
+(*recurrent neural network*, RNN) más simple que hay</Leccion>: una sola matriz aplicada $T$ veces, un estado
 que pasa de un paso al siguiente, y una entrada que ya no tiene que medir lo mismo en todos los
 documentos.

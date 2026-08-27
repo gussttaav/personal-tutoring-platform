@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Porque la LSTM tiene cuatro veces más pesos que la RNN vanilla, y con más pesos el gradiente se reparte y no se desvanece.' }
       - { id: d, text: 'Porque el estado de celda no interviene en la pérdida, así que no hay gradiente que se desvanezca por él.' }
     answer: a
-    explanation: 'La (a) es la lección entera. Lo que mataba al gradiente no era el número de pasos sino que cada paso lo multiplicara por la misma $\mathbf{W}_{hh}^{\top}$; en la vía aditiva el paso lo multiplica por $f_{t,j}$, un escalar por coordenada, y el producto $\prod_t f_{t,j}$ se queda donde la red quiera dejarlo. La (b) invierte lo que ya viste en el explorador de activaciones de la lección 2 del bloque anterior: $\sigma$ se satura, y aquí eso juega a favor —un $\mathbf{f}_t$ saturado en $1$ es una memoria que se conserva—. La (c) confunde tamaño con estructura: cuadruplicar los pesos de una RNN vanilla no cambia en nada el producto de la lección anterior. La (d) es falsa: $\mathbf{c}_t$ alcanza la pérdida a través de $\mathbf{h}_t = \mathbf{o}_t \odot \tanh(\mathbf{c}_t)$, y es precisamente por ahí por donde entra el gradiente que después viaja hacia atrás.'
+    explanation: 'La (a) es la lección entera. Lo que mataba al gradiente no era el número de pasos sino que cada paso lo multiplicara por la misma $\mathbf{W}_{hh}^{\top}$; en la vía aditiva el paso lo multiplica por $f_{t,j}$, un escalar por coordenada, y el producto $\prod_t f_{t,j}$ se queda donde la red quiera dejarlo. La (b) invierte lo que ya viste en el explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>: $\sigma$ se satura, y aquí eso juega a favor —un $\mathbf{f}_t$ saturado en $1$ es una memoria que se conserva—. La (c) confunde tamaño con estructura: cuadruplicar los pesos de una RNN vanilla no cambia en nada el producto de la lección anterior. La (d) es falsa: $\mathbf{c}_t$ alcanza la pérdida a través de $\mathbf{h}_t = \mathbf{o}_t \odot \tanh(\mathbf{c}_t)$, y es precisamente por ahí por donde entra el gradiente que después viaja hacia atrás.'
     hint: 'Escribe qué multiplica a $\mathbf{c}_{t-1}$ en la recurrencia de la celda, y compáralo con lo que multiplicaba a $\boldsymbol{\delta}_{t+1}$ en la RNN.'
   - id: q-que-compuerta
     type: single
@@ -35,8 +35,8 @@ quiz:
     prompt: 'Una LSTM con un estado de $d_h = 64$ coordenadas sobre *embeddings* de $d_{\text{model}} = 128$. ¿Cuántos pesos suman sus ocho matrices y sus cuatro sesgos?'
     answer: 49408
     tolerance: 0
-    explanation: 'Cada una de las cuatro piezas —$\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ y $\tilde{\mathbf{c}}_t$— tiene la forma exacta de la recurrencia de la lección 2 de este bloque, sobre la RNN vanilla: $64 \cdot 64 = 4\,096$ de su $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ de su $\mathbf{W}_{x\ast}$ y $64$ del sesgo, o sea $12\,352$. Cuatro veces eso da $49\,408$, y ése es el precio de las compuertas: la misma cuenta de allí multiplicada por cuatro. Lo que no cambia es lo que importaba de aquella cuenta —tampoco aquí aparece $T$—, así que la LSTM sigue leyendo cualquier longitud con el mismo juego de pesos.'
-    hint: 'Cuenta primero una sola de las cuatro piezas: es la misma recurrencia de la lección 2 de este bloque.'
+    explanation: 'Cada una de las cuatro piezas —$\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ y $\tilde{\mathbf{c}}_t$— tiene la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: $64 \cdot 64 = 4\,096$ de su $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ de su $\mathbf{W}_{x\ast}$ y $64$ del sesgo, o sea $12\,352$. Cuatro veces eso da $49\,408$, y ése es el precio de las compuertas: la misma cuenta de allí multiplicada por cuatro. Lo que no cambia es lo que importaba de aquella cuenta —tampoco aquí aparece $T$—, así que la LSTM sigue leyendo cualquier longitud con el mismo juego de pesos.'
+    hint: 'Cuenta primero una sola de las cuatro piezas: es la misma recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>.'
   - id: q-producto
     type: predict-output
     language: python
@@ -58,7 +58,7 @@ quiz:
       - { id: c, text: 'Que la red lea secuencias de cualquier longitud sin truncar ni rellenar.' }
       - { id: d, text: 'Que los pesos se compartan entre posiciones.' }
     answer: [a, b]
-    explanation: 'La (a) y la (b) son las dos concesiones, y decirlas en voz alta es parte de entender qué se ha comprado: la vía aditiva hace **alcanzable** un factor de $1$ por paso, no obligatorio, y no es el único camino de vuelta que tiene la red. Por eso las LSTM se entrenan con recorte del gradiente igual que las RNN. La (c) y la (d) sí están garantizadas, y no son mérito de las compuertas sino de la recurrencia que la LSTM hereda de la lección 2 de este bloque: ninguna de las formas de sus doce piezas menciona $T$, y hay un solo juego de pesos para todas las posiciones.'
+    explanation: 'La (a) y la (b) son las dos concesiones, y decirlas en voz alta es parte de entender qué se ha comprado: la vía aditiva hace **alcanzable** un factor de $1$ por paso, no obligatorio, y no es el único camino de vuelta que tiene la red. Por eso las LSTM se entrenan con recorte del gradiente igual que las RNN. La (c) y la (d) sí están garantizadas, y no son mérito de las compuertas sino de la recurrencia que la LSTM hereda de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: ninguna de las formas de sus doce piezas menciona $T$, y hay un solo juego de pesos para todas las posiciones.'
     hint: 'Dos de las cuatro afirmaciones son propiedades de cualquier recurrencia, y las trae la RNN vanilla de serie.'
 challenges:
   - id: ch-lstm-paso
@@ -199,7 +199,7 @@ identidad, sin matriz que aplicar $d$ veces—, y para la memoria es inservible 
 olvida: lo que entró en la coordenada 3 leyendo <W>cámaras</W> sigue ahí trescientos tokens después,
 en un párrafo que habla de otra cosa. Y crece sin freno: cada término vive en $(-1, 1)$ y se suman
 $T$, así que una coordenada puede acabar valiendo $40$, donde el $\tanh$ que la lea está plano —la
-saturación que el explorador de activaciones de la lección 2 del bloque anterior ya te dejó ver—.
+saturación que el explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya te dejó ver—.
 
 Los dos fallos son el mismo: la suma no tiene forma de decir *no*. Dásela con un factor por
 coordenada, entre $0$ y $1$, que la red calcule en cada paso a partir de lo que está leyendo. Ésa es
@@ -212,7 +212,7 @@ $$
 $$
 
 La activación es la sigmoide logística y no la $\tanh$ del candidato, por lo mismo que la capa de
-salida de la lección 2 de este bloque: hace falta una fracción de lo que había, y las fracciones van
+salida de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: hace falta una fracción de lo que había, y las fracciones van
 de $0$ a $1$. El $\odot$ pide leerse igual de despacio. Multiplicar coordenada a coordenada deja que
 la 3 se conserve entera mientras la 7 se borra en el mismo paso; una matriz mezclaría las dos, y
 mezclar es lo que menos le conviene a una memoria.
@@ -257,7 +257,7 @@ $$
 \end{aligned}.
 $$
 
-Cuatro líneas idénticas y dos que no. Las de arriba son la recurrencia de la lección 2 de este bloque
+Cuatro líneas idénticas y dos que no. Las de arriba son la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>
 copiada cuatro veces, con $\mathbf{W}_{x\ast} \in \mathbb{R}^{d_h \times d_{\text{model}}}$,
 $\mathbf{W}_{h\ast} \in \mathbb{R}^{d_h \times d_h}$ y $\mathbf{b}_{\ast} \in \mathbb{R}^{d_h}$ en
 todas ellas, y ahí está el precio: la LSTM cuesta
@@ -393,8 +393,7 @@ primera fila de $\mathbf{c}_t$, en cambio, es idéntica en los dos: en $t = 1$ l
 $\mathbf{c}_0 = \mathbf{0}$.
 
 La segunda celda mide la vía de vuelta sin derivar nada: mueve el estado del primer paso una
-cantidad diminuta, deja correr treinta y nueve pasos más y compara. Es el sondeo numérico de la
-lección 3 de este bloque, sobre BPTT (*backpropagation through time*), aplicado a la distancia en vez
+cantidad diminuta, deja correr treinta y nueve pasos más y compara. Es el sondeo numérico de <Leccion slug="bptt">la lección sobre BPTT (*backpropagation through time*)</Leccion>, aplicado a la distancia en vez
 de a un peso. Las compuertas de este juguete leen sólo el token —he desconectado el estado a mano—
 para medir la vía aditiva y nada más.
 
@@ -474,5 +473,5 @@ vas a guardar lo nuevo, es porque lo viejo te importa menos.
 
 Alguien tiró de ese hilo. Fundir esas dos compuertas en una, borrar la de salida junto con el estado
 de celda entero y quedarse con tres cuartas partes de los pesos —conservando casi todo lo que esta
-lección acaba de comprar— es la lección 6 de este bloque, sobre la GRU (*gated recurrent unit*): la
-versión simplificada.
+lección acaba de comprar— es <Leccion slug="gru">la siguiente lección, sobre la GRU (*gated recurrent unit*): la
+versión simplificada</Leccion>.
