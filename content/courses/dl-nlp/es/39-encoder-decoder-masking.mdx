@@ -26,7 +26,7 @@ quiz:
     answer: 21
     tolerance: 0
     unit: casillas
-    explanation: 'Veintiuna. La fila $i$ conserva $i$ casillas —de la $1$ a la $i$—, así que salen $1 + 2 + 3 + 4 + 5 + 6 = 6 \cdot 7 / 2 = 21$ de las $36$, algo más de la mitad. Y hay una segunda cuenta que conviene no confundir con ésta: las $36$ se calculan igual. La máscara tacha después de multiplicar, no en vez de multiplicar, así que el coste sigue siendo el $T^{2}$ de la lección 1 de este bloque, sobre el adiós a la recurrencia; lo que la máscara prohíbe es mirar, no es un ahorro.'
+    explanation: 'Veintiuna. La fila $i$ conserva $i$ casillas —de la $1$ a la $i$—, así que salen $1 + 2 + 3 + 4 + 5 + 6 = 6 \cdot 7 / 2 = 21$ de las $36$, algo más de la mitad. Y hay una segunda cuenta que conviene no confundir con ésta: las $36$ se calculan igual. La máscara tacha después de multiplicar, no en vez de multiplicar, así que el coste sigue siendo el $T^{2}$ de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>; lo que la máscara prohíbe es mirar, no es un ahorro.'
     hint: 'Cuenta cuántas casillas sobreviven en cada fila y súmalas.'
   - id: q-tres-atenciones
     type: multi
@@ -161,8 +161,8 @@ challenges:
           A = Z / Z.sum(axis=1, keepdims=True)
           return A @ V, A
     explanation: |
-      Una línea de diferencia con el desafío de la lección 2 de este bloque, sobre la
-      auto-atención, y la línea va donde va: **entre** la puntuación y el softmax. Puesta
+      Una línea de diferencia con el desafío de <Leccion slug="self-attention">la lección sobre la
+      auto-atención</Leccion>, y la línea va donde va: **entre** la puntuación y el softmax. Puesta
       después —`A = np.where(futuro, 0.0, A)`— pasa el test de los ceros y falla el de las
       sumas, que es la razón de que los dos estén en la misma prueba.
 
@@ -185,7 +185,7 @@ recurrencia— la respuesta acaba sentada al lado de la posición que tiene que 
 
 Míralo en <W>el gato bebe leche</W>, que es lo que el modelo tendría que aprender a escribir. Si
 las cuatro posiciones se calculan a la vez y cada una mira a todas —que es exactamente lo que hace
-la capa de la lección 2 de este bloque, sobre la auto-atención—, la posición que debe producir
+la capa de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>—, la posición que debe producir
 <W>bebe</W> está mirando <W>leche</W> mientras la produce. Adivinar con la respuesta delante sale
 muy bien: la pérdida baja a cero durante el entrenamiento. Al generar de verdad no hay nada a la
 derecha, porque todavía no se ha escrito, y el modelo no ha aprendido a hacer otra cosa. Esta
@@ -224,8 +224,8 @@ $$
 $$
 
 con $\mathbf{M} \in \mathbb{R}^{T \times T}$ y el softmax por filas, como siempre. Nada de lo de
-dentro se toca: las tres proyecciones son las mismas, el divisor de la lección 3 de este bloque,
-sobre el producto interno escalado, es el mismo, y las cabezas de la lección 4 son las mismas —cada
+dentro se toca: las tres proyecciones son las mismas, el divisor de <Leccion slug="scaled-dot-product">la lección
+sobre el producto interno escalado</Leccion> es el mismo, y las cabezas de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion> son las mismas —cada
 una recibe la misma $\mathbf{M}$—.
 
 Por qué $-\infty$ y no otra cosa se ve escribiendo el peso entero:
@@ -257,7 +257,7 @@ $$
 \alpha^{\text{causal}}_{ij} = \frac{\exp\left(e_{ij}\right)}{\sum_{m \leq i}\exp\left(e_{im}\right)} = \frac{\alpha_{ij}}{\sum_{m \leq i}\alpha_{im}}, \qquad j \leq i.
 $$
 
-Es decir: coge la fila que la lección 2 calculaba, tira la parte de la derecha y divide lo que queda
+Es decir: coge la fila que <Leccion slug="self-attention">la auto-atención</Leccion> calculaba, tira la parte de la derecha y divide lo que queda
 entre lo que sumaba. De ahí salen tres cosas, y ninguna necesita otra cuenta. El orden dentro de lo que sobrevive
 **no cambia**, porque todas esas casillas se dividen entre el mismo número: la máscara no altera
 preferencias, retira candidatos. La fila $1$ se queda con un solo candidato y por tanto con
@@ -277,7 +277,7 @@ $$
 P\left(y_i \mid y_{<i}, x_{1:T_x}\right),
 $$
 
-una por fila. Eso es el *teacher forcing* de la lección 8 del bloque 3, sobre seq2seq, sin ningún
+una por fila. Eso es el *teacher forcing* de <Leccion slug="seq2seq">la lección sobre seq2seq</Leccion>, sin ningún
 cambio en la idea: se le da al modelo el token verdadero en lugar del que él escribió. Lo que cambia
 es el precio. Allí las $T_y$ filas salían de $T_y$ pasos de una recurrencia; aquí salen de un
 producto de matrices, y la máscara es lo que hace que esa barra vertical diga la verdad —sin ella,
@@ -302,7 +302,7 @@ $$
 donde $\mathbf{X}^{\text{dec}} \in \mathbb{R}^{T_y \times d_{\text{model}}}$ es lo que se lleva
 escrito y $\mathbf{X}^{\text{enc}} \in \mathbb{R}^{T_x \times d_{\text{model}}}$ es lo que el
 encoder dejó leído. Los superíndices de $\mathbf{X}$ dicen **de qué columna** viene la matriz; los
-de $\mathbf{W}$ siguen diciendo qué papel proyecta cada una, como desde la lección 2. Ninguno de los
+de $\mathbf{W}$ siguen diciendo qué papel proyecta cada una, como desde <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>. Ninguno de los
 dos cuenta capas.
 
 La forma del mapa cae sola y es la que delata de dónde viene esta subcapa:
@@ -312,7 +312,7 @@ $$
 $$
 
 rectangular, una fila por posición de la salida y una columna por posición de la entrada. Es la
-rejilla del bloque anterior, la de la lección 5 sobre la atención multiplicativa, con los mismos dos
+rejilla del bloque anterior, la de <Leccion slug="luong">la lección sobre la atención multiplicativa</Leccion>, con los mismos dos
 ejes y la misma fila sumando $1$. Lo que ha cambiado desde entonces son tres cosas y ninguna es la
 operación: la puntuación es el producto interno escalado en lugar del modelo de alineación, hay $h$
 cabezas en paralelo en lugar de una, y la consulta ya no es el estado de una red recurrente sino una
@@ -326,8 +326,8 @@ otra máscara aquí, la del *padding*, para que las posiciones de relleno de un 
 es el mismo mecanismo aplicado a otro problema y queda fuera de esta lección.)
 
 Con esto, las tres llamadas a la atención del artículo se pueden poner en una tabla, y son las
-tres cajas que se encendían en el diagrama de la lección 1 de este bloque, sobre el adiós a la
-recurrencia:
+tres cajas que se encendían en el diagrama de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la
+recurrencia</Leccion>:
 
 | Llamada | Consultas | Claves y valores | Forma de $\mathbf{A}$ | ¿Máscara? |
 |---|---|---|---|---|
@@ -460,7 +460,7 @@ estas siete lecciones son los **números**: cuántos bloques se apilan, cuánto 
 hay, qué tablas comparten pesos y cuántos parámetros suma todo junto. Cada pieza se ha construido
 con las anchuras que le hacían falta al argumento, y el artículo eligió unas concretas.
 
-Ésa es la lección 8 de este bloque, sobre la arquitectura completa del artículo: la figura 1 caja
+Ésa es <Leccion slug="arquitectura-completa">la lección siguiente, sobre la arquitectura completa del artículo</Leccion>: la figura 1 caja
 por caja, con sus tamaños, puesta al lado de lo que llevamos construido. Es la lección que convierte
 *Attention is All You Need* en un texto que puedes abrir y leer de principio a fin, que era la
 promesa con la que empezó el bloque.

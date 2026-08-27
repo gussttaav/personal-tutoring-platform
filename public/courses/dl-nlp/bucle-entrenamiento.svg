@@ -1,8 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-label="Cuatro cajas colocadas en las esquinas de un rectángulo y unidas por flechas que giran en el sentido de las agujas del reloj. Arriba a la izquierda, forward pass, con el rótulo lección 4. Arriba a la derecha, pérdida, con el rótulo lección 5. Abajo a la derecha, gradiente, con el rótulo lección 8. Abajo a la izquierda, actualización de los pesos, con el rótulo lección 6. Las tres primeras flechas son grises; la cuarta, la que sube desde la actualización hasta el forward pass y cierra el círculo, es verde y lleva escrito al lado y otra vez.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-label="Cuatro cajas colocadas en las esquinas de un rectángulo y unidas por flechas que giran en el sentido de las agujas del reloj. Arriba a la izquierda, forward pass; arriba a la derecha, pérdida; abajo a la derecha, gradiente; abajo a la izquierda, actualización de los pesos. Las tres primeras flechas son grises; la cuarta, la que sube desde la actualización hasta el forward pass y cierra el círculo, es verde y lleva escrito al lado y otra vez.">
   <style>
     text { font-family: ui-sans-serif, system-ui, sans-serif; }
     .ttl { font-size: 14px; fill: #e5e1e4; text-anchor: middle; }
-    .src { font-size: 13px; fill: #86948a; text-anchor: middle; }
     .box { stroke: #86948a; stroke-width: 1.4; fill: none; }
     .edge { stroke: #86948a; stroke-width: 1.4; fill: none; }
     /* La única flecha que esta lección añade: las otras tres ya estaban escritas. */
@@ -21,20 +20,16 @@
   </defs>
 
   <rect class="box" x="24" y="34" width="140" height="60" rx="8" />
-  <text class="ttl" x="94" y="62">forward pass</text>
-  <text class="src" x="94" y="80">lección 4</text>
+  <text class="ttl" x="94" y="68">forward pass</text>
 
   <rect class="box" x="196" y="34" width="140" height="60" rx="8" />
-  <text class="ttl" x="266" y="62">pérdida</text>
-  <text class="src" x="266" y="80">lección 5</text>
+  <text class="ttl" x="266" y="68">pérdida</text>
 
   <rect class="box" x="196" y="150" width="140" height="60" rx="8" />
-  <text class="ttl" x="266" y="178">gradiente</text>
-  <text class="src" x="266" y="196">lección 8</text>
+  <text class="ttl" x="266" y="184">gradiente</text>
 
   <rect class="box" x="24" y="150" width="140" height="60" rx="8" />
-  <text class="ttl" x="94" y="178">actualización</text>
-  <text class="src" x="94" y="196">lección 6</text>
+  <text class="ttl" x="94" y="184">actualización</text>
 
   <line class="edge" x1="170" y1="64" x2="190" y2="64" marker-end="url(#gris)" />
   <line class="edge" x1="266" y1="100" x2="266" y2="144" marker-end="url(#gris)" />

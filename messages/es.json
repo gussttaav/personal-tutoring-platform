@@ -839,6 +839,8 @@
       "previous": "Anterior",
       "next": "Siguiente",
       "readingTime": "{minutes} min de lectura",
+      "refKicker": "Bloque {block} · Lección {order}",
+      "refAhead": "Más adelante",
       "openNav": "Abrir el contenido del curso",
       "closeNav": "Cerrar el contenido del curso",
       "translationPending": {

@@ -155,7 +155,7 @@ $$
 $$
 
 y la probabilidad del centro es el mismo softmax con $\bar{\mathbf{e}}_t$ en el lugar de
-$\mathbf{e}_w$. El promedio pierde el orden: la bolsa de palabras de la lección 5
+$\mathbf{e}_w$. El promedio pierde el orden: la bolsa de palabras de <Leccion slug="bolsa-de-palabras">la lección sobre TF-IDF</Leccion>
 en pequeño, y de ahí el nombre.
 
 Las dos se usan: CBOW va más rápido —una predicción por posición en lugar de $2m$— y el skip-gram le
@@ -221,8 +221,7 @@ P_{\text{neg}}(w) = \frac{f_w^{3/4}}{\sum_{w' \in V} f_{w'}^{3/4}},
 $$
 
 con $f_w$ la frecuencia del tipo $w$ en el corpus. El exponente $3/4$ comprime la distribución sin
-aplanarla, entre dos extremos malos: con $1$ los negativos serían las palabras vacías de la lección
-5, con $0$ entradas rarísimas, y contra ninguna cuesta acertar. No hay desarrollo detrás; es el
+aplanarla, entre dos extremos malos: con $1$ los negativos serían las palabras vacías de <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras</Leccion>, con $0$ entradas rarísimas, y contra ninguna cuesta acertar. No hay desarrollo detrás; es el
 valor que funcionó.
 
 Ahora la cuenta, el motivo de todo esto. Un paso toca el centro, el contexto real y los
@@ -422,7 +421,7 @@ contado antes de entrenar nada: una pasada anotando cuántas veces cada entrada 
 ventana de otra da una tabla de $\lvert V \rvert \times \lvert V \rvert$ **coocurrencias** donde la
 fila de <W>perro</W> y la de <W>gato</W> ya se parecen. Word2Vec nunca llega a escribirla.
 
-Aprovecharla es la lección 8, sobre GloVe y los límites de los embeddings estáticos: GloVe
+Aprovecharla es <Leccion slug="glove-y-limites">la lección sobre GloVe y los límites de los embeddings estáticos</Leccion>: GloVe
 (*global vectors*) construye esa tabla y busca los vectores que la explican, otro objetivo con
 resultados de la misma familia. Y con las dos técnicas sobre la mesa, esa lección cierra el bloque
 cobrando lo que esconde la palabra «estáticos»: cada entrada tiene un vector, uno solo, para

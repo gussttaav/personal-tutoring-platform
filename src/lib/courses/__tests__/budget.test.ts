@@ -93,6 +93,33 @@ describe("countWords", () => {
   it("does not count table rules or bullet markers as words", () => {
     expect(countWords("| Capa | Salida |\n|------|--------|\n| Densa | ReLU |")).toBe(4);
   });
+
+  /*
+   * COURSE-P7-01 — `<Leccion>` is the one component whose CHILDREN are exempt too. A
+   * cross-reference is navigation, not reading, and charging an author words for
+   * turning "la lección 5 de este bloque" into a link the build can validate would be
+   * a toll on the entire point of the phase.
+   */
+  it("excludes a <Leccion> label — linking costs no words", () => {
+    const source = 'Dos palabras <Leccion slug="la-neurona">la neurona artificial</Leccion>';
+    expect(countWords(source)).toBe(2);
+  });
+
+  it("excludes a self-closing <Leccion>, which has no label to strip", () => {
+    expect(countWords('Dos palabras <Leccion slug="la-neurona" />')).toBe(2);
+  });
+
+  it("does not swallow the prose between a self-closing <Leccion> and a later one", () => {
+    // The ordering trap: run the PAIRED pattern first and it matches from the
+    // self-closing tag to the `</Leccion>` three words later, eating the sentence.
+    const source = 'Uno <Leccion slug="a" /> dos tres <Leccion slug="b">cuatro</Leccion> cinco';
+    expect(countWords(source)).toBe(4);
+  });
+
+  it("leaves a <Leccion> quoted in a fence out of it — the whole fence is already gone", () => {
+    const source = 'Dos palabras\n\n```mdx\n<Leccion slug="la-neurona">la neurona</Leccion>\n```\n';
+    expect(countWords(source)).toBe(2);
+  });
 });
 
 describe("prose", () => {

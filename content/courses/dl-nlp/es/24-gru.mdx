@@ -35,8 +35,8 @@ quiz:
     prompt: 'Una GRU con un estado de $d_h = 64$ coordenadas sobre *embeddings* de $d_{\text{model}} = 128$, las mismas dimensiones de la LSTM de la lección anterior. ¿Cuántos pesos suman sus seis matrices y sus tres sesgos?'
     answer: 37056
     tolerance: 0
-    explanation: 'Cada una de las tres piezas —$\mathbf{z}_t$, $\mathbf{r}_t$ y $\tilde{\mathbf{h}}_t$— tiene la forma exacta de la recurrencia de la lección 2 de este bloque, sobre la RNN vanilla: $64 \cdot 64 = 4\,096$ de su $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ de su $\mathbf{W}_{x\ast}$ y $64$ del sesgo, o sea $12\,352$. Tres veces eso da $37\,056$: tres cuartas partes de los $49\,408$ de la LSTM, que era la misma cuenta por cuatro. Y como allí, $T$ no aparece en ninguna de las formas, así que la GRU lee cualquier longitud con el mismo juego de pesos.'
-    hint: 'Cuenta una sola de las tres piezas —es la recurrencia de la lección 2 de este bloque— y multiplícala por cuántas hay.'
+    explanation: 'Cada una de las tres piezas —$\mathbf{z}_t$, $\mathbf{r}_t$ y $\tilde{\mathbf{h}}_t$— tiene la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: $64 \cdot 64 = 4\,096$ de su $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ de su $\mathbf{W}_{x\ast}$ y $64$ del sesgo, o sea $12\,352$. Tres veces eso da $37\,056$: tres cuartas partes de los $49\,408$ de la LSTM, que era la misma cuenta por cuatro. Y como allí, $T$ no aparece en ninguna de las formas, así que la GRU lee cualquier longitud con el mismo juego de pesos.'
+    hint: 'Cuenta una sola de las tres piezas —es la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>— y multiplícala por cuántas hay.'
   - id: q-tradeoff
     type: multi
     prompt: 'Marca todo lo que sea cierto de la GRU frente a la LSTM.'
@@ -223,7 +223,7 @@ $$
 
 con $\mathbf{W}_{xz} \in \mathbb{R}^{d_h \times d_{\text{model}}}$,
 $\mathbf{W}_{hz} \in \mathbb{R}^{d_h \times d_h}$ y $\mathbf{b}_z \in \mathbb{R}^{d_h}$: las mismas
-formas de la recurrencia de la lección 2 de este bloque, sobre la RNN vanilla.
+formas de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>.
 
 Falta el candidato, y aquí entra la segunda compuerta. En la LSTM el candidato leía siempre el estado
 anterior completo; la GRU le pone delante un filtro, la compuerta de reset $\mathbf{r}_t$, que decide
@@ -236,7 +236,7 @@ $$
 $$
 
 El $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ es lo único que distingue este candidato del de una RNN vanilla:
-con $\mathbf{r}_t = \mathbf{1}$ el candidato es la recurrencia de la lección 2 tal cual, y con
+con $\mathbf{r}_t = \mathbf{1}$ el candidato es la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion> tal cual, y con
 $\mathbf{r}_t = \mathbf{0}$ en una coordenada esa coordenada del candidato se calcula sólo con el token,
 como si la secuencia empezara ahí. Conviene no confundir las dos compuertas: $\mathbf{z}_t$ decide si el
 estado se actualiza, $\mathbf{r}_t$ decide qué mira el candidato para proponer. Una gobierna la memoria;
@@ -253,15 +253,14 @@ $$
 \end{aligned}.
 $$
 
-Tres piezas —dos compuertas y un candidato—, cada una con la forma exacta de la recurrencia de la
-lección 2: seis matrices y tres sesgos, $3\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$
+Tres piezas —dos compuertas y un candidato—, cada una con la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: seis matrices y tres sesgos, $3\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$
 pesos. Frente a los cuatro grupos de la LSTM, tres cuartas partes; y como allí, $T$ no aparece en
 ninguna de las formas, así que la GRU lee cualquier longitud con el mismo juego de pesos.
 
 ## Por qué la vía de vuelta sobrevive al recorte
 
 Toda la lección pende de una comprobación: que la vía por la que el gradiente vuelve —la que la LSTM
-compró y la lección 4 de este bloque, sobre el gradiente que se desvanece, explicó por qué hacía
+compró y <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion> explicó por qué hacía
 falta— siga en pie con un estado en lugar de dos. Mira la última línea coordenada a coordenada, que es
 donde se ve lo que el $\odot$ significa:
 
@@ -277,7 +276,7 @@ $$
 \frac{\partial h_{t,j}}{\partial h_{t-1,j}} = 1 - z_{t,j},
 $$
 
-un número, no una matriz. Encadénalo hacia atrás hasta un paso lejano $k$, igual que la lección 4
+un número, no una matriz. Encadénalo hacia atrás hasta un paso lejano $k$, igual que <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>
 encadenaba la recurrencia, y lo que llega por la vía directa es un producto de esos números:
 
 $$
@@ -288,7 +287,7 @@ Es, letra por letra, el $\prod f_{t,j}$ de la LSTM con $1 - z_{t,j}$ en el sitio
 compuerta de actualización cerrada ($z_{t,j} \to 0$) hace de compuerta de olvido abierta. Y vale lo
 mismo que allí —$1 - z_{t,j} = 1$ es alcanzable y estable, porque una sigmoide saturada se queda plana
 en el extremo—, así que una coordenada que la red aprenda a no actualizar multiplica por $1$ tantos
-pasos como haga falta. Frente al $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ de la lección 4, la base ha
+pasos como haga falta. Frente al $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>, la base ha
 dejado de ser una propiedad de una matriz compartida por todo para ser un número por coordenada y por
 paso que la red calcula.
 
@@ -296,12 +295,11 @@ paso que la red calcula.
 $\mathbf{z}_t$, $\mathbf{r}_t$ y $\tilde{\mathbf{h}}_t$ se calculan a partir de $\mathbf{h}_{t-1}$, así
 que la derivada completa suma, al $1 - z_{t,j}$ del camino directo, los caminos que pasan por las dos
 compuertas y por el candidato. Todos ellos cruzan una $\mathbf{W}_{h\ast}$ y una máscara de activación,
-y se desvanecen igual que los de la lección 4 de este bloque.
+y se desvanecen igual que los de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>.
 
 Que se desvanezcan no rompe nada, y es la misma lectura que en la LSTM. Esos caminos ajustan *cómo se
 decide* en cada paso, y una decisión de este paso se toma con lo que hay cerca; el que tiene que llegar
-de lejos es el de la vía directa, y ése no cruza ninguna matriz. El recorte no elimina el producto de
-la lección 4: lo aparta del camino largo y lo deja en los cortos.
+de lejos es el de la vía directa, y ése no cruza ninguna matriz. El recorte no elimina el producto de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>: lo aparta del camino largo y lo deja en los cortos.
 </Details>
 
 Dos concesiones cierran la cuenta, las mismas que en la LSTM. Si la red aprende $z_{t,j}$ alrededor de
@@ -385,7 +383,7 @@ memoria, cuánto cuesta la arquitectura, y qué se lleva la GRU de la LSTM y qu�
 
 <Quiz id="q-tradeoff" />
 
-Y el paso completo escrito por ti, que es la recurrencia de la RNN vanilla de la lección 2 envuelta en
+Y el paso completo escrito por ti, que es la recurrencia de <Leccion slug="la-rnn-vanilla">la RNN vanilla</Leccion> envuelta en
 dos compuertas.
 
 <CodeChallenge id="ch-gru-paso" />
@@ -398,7 +396,7 @@ que deja al gradiente volver desde lejos. Pero saber construir la celda no es lo
 construido algo con ella. En todo el bloque no ha corrido todavía una red que lea un texto de principio
 a fin y produzca lenguaje propio: se ha derivado la maquinaria sin encenderla.
 
-Encenderla es la lección 7 de este bloque, el proyecto de un modelo de lenguaje a nivel de carácter.
+Encenderla es <Leccion slug="proyecto-char-lm">la siguiente lección, el proyecto de un modelo de lenguaje a nivel de carácter</Leccion>.
 Junta la RNN, la BPTT (*backpropagation through time*) y una de estas celdas en una red que se entrena
 sobre unos pocos miles de caracteres y después genera, carácter a carácter, un texto nuevo. Saldrá malo
 —lo diré sin adornos cuando salga—, correrá en el navegador en unos segundos, y será la primera vez en

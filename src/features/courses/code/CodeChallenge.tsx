@@ -18,6 +18,7 @@
  */
 
 import type { CodeChallenge as CodeChallengeData } from "@/domain/types";
+import type { LeccionCtx } from "@/lib/courses/Leccion";
 import { renderQuizText } from "@/lib/courses/quiz/render";
 
 import { CodeChallengeCard } from "./CodeChallengeCard";
@@ -26,9 +27,14 @@ export interface CodeChallengeProps {
   id: string;
   /** The lesson's frontmatter challenges, bound at compile time — not author-supplied. */
   challenges?: CodeChallengeData[];
+  /**
+   * COURSE-P7-01 — which lesson is being compiled, so a `<Leccion>` in the prompt or the
+   * explanation resolves. Server-only: it never reaches the client card.
+   */
+  ctx?: LeccionCtx;
 }
 
-export async function CodeChallenge({ id, challenges = [] }: CodeChallengeProps) {
+export async function CodeChallenge({ id, challenges = [], ctx }: CodeChallengeProps) {
   const challenge = challenges.find((c) => c.id === id);
 
   if (!challenge) {
@@ -45,9 +51,9 @@ export async function CodeChallenge({ id, challenges = [] }: CodeChallengeProps)
   }
 
   const [prompt, explanation, solution] = await Promise.all([
-    renderQuizText(challenge.prompt),
-    renderQuizText(challenge.explanation),
-    renderQuizText(`\`\`\`python\n${challenge.solution.trimEnd()}\n\`\`\``),
+    renderQuizText(challenge.prompt, ctx),
+    renderQuizText(challenge.explanation, ctx),
+    renderQuizText(`\`\`\`python\n${challenge.solution.trimEnd()}\n\`\`\``, ctx),
   ]);
 
   return (

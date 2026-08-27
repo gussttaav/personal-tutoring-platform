@@ -51,7 +51,7 @@ documento entero, y se obtiene sumando los one-hot de todos sus *tokens*. La sum
 cambia la naturaleza de lo que sale. Los sumandos eran vectores de ceros y un uno, que no afirmaban
 nada; el resultado es un vector de cuentas, y una cuenta sí afirma algo.
 
-Deja de ser mudo y empieza a decir la cosa equivocada. La lección 3, sobre vocabulario y frecuencia,
+Deja de ser mudo y empieza a decir la cosa equivocada. <Leccion slug="vocabulario-oov">La lección sobre vocabulario y frecuencia</Leccion>
 midió cómo se reparten las ocurrencias: unas pocas entradas se llevan la mayor parte del texto. Son
 <W>de</W>, <W>la</W>, <W>que</W>, <W>el</W>, y salen en cualquier texto, hable de lo que hable. De
 modo que las coordenadas mayores del corpus corresponden a esas entradas, y no al tema de ninguno de
@@ -87,7 +87,7 @@ partes acaba pesando poco.
 Fija el vocabulario $V = \{w_1, \dots, w_{\lvert V \rvert}\}$ con el orden de la lección anterior, y
 toma el corpus $D$, una colección de $N = \lvert D \rvert$ documentos. Un documento $d$ es una
 secuencia de $T_d$ tokens $w_1, \dots, w_{T_d}$, donde $T_d$ cuenta ocurrencias y no tipos, en el
-sentido de la lección 3, sobre vocabulario y frecuencia.
+sentido de <Leccion slug="vocabulario-oov">la lección sobre vocabulario y frecuencia</Leccion>.
 
 La **bolsa de palabras** de $d$ es la suma de los vectores one-hot de sus tokens:
 
@@ -186,8 +186,7 @@ razonables y no consecuencias de nada:
 - **Frecuencia sublineal**, $1 + \log \text{tf}(t, d)$ en lugar de $\text{tf}(t, d)$. La décima
   ocurrencia de <W>horno</W> en una receta informa menos que la segunda.
 - **Suavizado del denominador**, $\log\frac{N}{1 + \text{df}(t)}$, para términos que llegan con los
-  $\text{idf}$ ya calculados y tienen $\text{df}(t) = 0$: el problema de <W>\<UNK></W> en la
-  lección 3, sobre palabras fuera de vocabulario, visto desde la aritmética.
+  $\text{idf}$ ya calculados y tienen $\text{df}(t) = 0$: el problema de <W>\<UNK></W> en <Leccion slug="vocabulario-oov">la lección sobre palabras fuera de vocabulario</Leccion>, visto desde la aritmética.
 - **Normalización**, dividir cada fila por su norma euclídea, que ataca la longitud en lugar de
   dejársela al coseno.
 
@@ -380,4 +379,4 @@ distintas palabras no comparten ninguna entrada con peso positivo, y su coseno e
 abajo, y lo que has aprendido a comparar son documentos, no entradas del vocabulario. Para que dos
 entradas parecidas queden cerca hay que abandonar la idea de que cada una tenga su propio eje y
 dejar que compartan coordenadas, muchas menos que $\lvert V \rvert$ y ninguna asignada a nadie. Eso
-es un *embedding*, y la lección 6, sobre representaciones densas, es donde se construye.
+es un *embedding*, y <Leccion slug="embeddings-densos">la lección sobre representaciones densas</Leccion> es donde se construye.

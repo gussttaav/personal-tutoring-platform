@@ -181,8 +181,8 @@ propios y las palabras que se inventaron el mes pasado, y tienes una lista que c
 documento nuevo que leas.
 
 Ese crecimiento sin fin es el que hace que la pregunta «¿qué hago con una palabra que no está en
-$V$?» no sea un caso raro sino el caso normal, y es el asunto de la lección 3, sobre vocabulario,
-frecuencia y palabras fuera de vocabulario.
+$V$?» no sea un caso raro sino el caso normal, y es el asunto de <Leccion slug="vocabulario-oov">una lección más adelante, la de vocabulario,
+frecuencia y palabras fuera de vocabulario</Leccion>.
 </Details>
 
 ### Fijar el vocabulario y dejar que el algoritmo elija las unidades
@@ -291,7 +291,7 @@ caracteres, y una cuenta a mano.
 
 Con la tokenización ya fijada, el vocabulario deja de ser una abstracción y pasa a ser una lista
 concreta de tokens. Esa lista siempre es finita, porque se construye a partir de un corpus que alguien
-recopiló en algún momento. Y aquí reaparece la exigencia de totalidad de la lección 1: $r$ tenía que
+recopiló en algún momento. Y aquí reaparece la exigencia de totalidad de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>: $r$ tenía que
 estar definida para cualquier palabra que llegue. La última línea de la celda de código enseña el agujero
 sin adornos, <W>criptomoneda</W> no está en $V$, y sobre ella $r$ no vale
 nada, porque ni siquiera está definida.
@@ -301,5 +301,5 @@ distintos aparecen de verdad en un corpus, y con qué frecuencia. La respuesta t
 muy característica que decide todo lo demás.
 Cuáles de ellos entran en $V$: guardarlos todos es caro, porque cada uno necesita su propia
 representación $r(w)$, pero cada token que dejes fuera es texto que el modelo ya no puede leer. Y
-qué hacer cuando llega uno de los que quedaron fuera. Eso es la lección 3, sobre vocabulario,
-frecuencia y el problema de las palabras fuera de vocabulario (*out-of-vocabulary*, OOV).
+qué hacer cuando llega uno de los que quedaron fuera. Eso es <Leccion slug="vocabulario-oov">la lección sobre vocabulario,
+frecuencia y el problema de las palabras fuera de vocabulario (*out-of-vocabulary*, OOV)</Leccion>.

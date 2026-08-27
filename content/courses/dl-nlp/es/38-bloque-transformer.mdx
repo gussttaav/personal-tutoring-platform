@@ -40,7 +40,7 @@ quiz:
       - { id: c, text: 'No cambia si la frase se alarga o se acorta.' }
       - { id: d, text: 'Sigue teniendo media $0$ y desviación típica $1$ después de aplicar $\boldsymbol{\gamma}$ y $\boldsymbol{\beta}$, que se limitan a repartir las coordenadas dentro de la fila.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras, y las tres salen de lo mismo: $\mu_t$ y $s_t$ se calculan con los $d_{\text{model}}$ números de la fila $t$ y con ningún otro, así que ni las demás posiciones, ni las demás frases del *batch*, ni $T$ entran en la cuenta. Eso es lo que mantiene en pie la afirmación de la lección 1 de este bloque, sobre el adiós a la recurrencia: las cajas que mezclan posiciones siguen siendo las tres de atención y ninguna más. La (d) es falsa y merece la pena verla despacio: $\boldsymbol{\gamma}$ multiplica coordenada a coordenada y $\boldsymbol{\beta}$ suma, así que la fila sale con la media y la escala que esos dos vectores decidan —que es justamente para lo que están—. La normalización a media $0$ y desviación $1$ es un paso intermedio, no la salida.'
+    explanation: 'Las tres primeras, y las tres salen de lo mismo: $\mu_t$ y $s_t$ se calculan con los $d_{\text{model}}$ números de la fila $t$ y con ningún otro, así que ni las demás posiciones, ni las demás frases del *batch*, ni $T$ entran en la cuenta. Eso es lo que mantiene en pie la afirmación de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>: las cajas que mezclan posiciones siguen siendo las tres de atención y ninguna más. La (d) es falsa y merece la pena verla despacio: $\boldsymbol{\gamma}$ multiplica coordenada a coordenada y $\boldsymbol{\beta}$ suma, así que la fila sale con la media y la escala que esos dos vectores decidan —que es justamente para lo que están—. La normalización a media $0$ y desviación $1$ es un paso intermedio, no la salida.'
     hint: '¿Qué números entran en $\mu_t$ y en $s_t$, y cuáles no?'
   - id: q-donde-estan-los-parametros
     type: numeric
@@ -207,7 +207,7 @@ las capas, y son seis se alargue el texto lo que se alargue—, pero seis produc
 productos. Esta lección es lo que hay que ponerle alrededor a una subcapa para que esa cuenta salga
 distinta, y son dos cosas.
 
-Vuelve al diagrama de la lección 1 de este bloque, sobre el adiós a la recurrencia, y mira las
+Vuelve al diagrama de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> y mira las
 cajas que dejó sin explicar. Cinco de las quince se llaman «Suma y layer norm», y de cada una sale una línea que baja por el lado de fuera
 de su columna y vuelve a entrar por debajo de la subcapa que esa caja cierra. Pincha una: esa línea
 es la mitad de lo que la caja suma.
@@ -232,8 +232,8 @@ $$
 
 donde $\text{Sublayer}$ es un hueco —como el $\varphi$ del bloque 2 o el $a$ del bloque anterior— que
 ocupa la atención multi-head en la primera subcapa y el perceptrón por posiciones en la segunda. Lo
-interesante está en su derivada. Pon las $T$ filas de $\mathbf{X}$ una debajo de otra, como en la
-lección 1 del bloque 3, sobre por qué falla el MLP (*multilayer perceptron*) en secuencias, y llama
+interesante está en su derivada. Pon las $T$ filas de $\mathbf{X}$ una debajo de otra, como en
+<Leccion slug="por-que-falla-el-mlp">la lección sobre por qué falla el MLP (*multilayer perceptron*) en secuencias</Leccion>, y llama
 $\mathbf{x} \in \mathbb{R}^{T \cdot d_{\text{model}}}$ a esa columna. Derivar una suma es derivar
 cada sumando:
 
@@ -242,8 +242,8 @@ $$
 $$
 
 Ahí está todo. El jacobiano de la subcapa depende de sus pesos y puede valer lo que sea, incluso
-cero; el otro sumando es la identidad y no depende de nada. Y como la regla de la cadena de la
-lección 7 del bloque 2 convierte una composición en un producto de jacobianos, apilar $N$ bloques
+cero; el otro sumando es la identidad y no depende de nada. Y como la regla de la cadena de
+<Leccion slug="regla-de-la-cadena">su lección</Leccion> convierte una composición en un producto de jacobianos, apilar $N$ bloques
 multiplica $N$ paréntesis así, cada uno con su identidad dentro.
 
 <Details summary="Dos bloques, multiplicados">
@@ -260,7 +260,7 @@ identidad y la subcapa, y entre ellos hay siempre exactamente uno que no atravie
 
 </Details>
 
-En la lección 4 del bloque 3, sobre el gradiente que se desvanece, no había paréntesis: cada factor
+En <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion> no había paréntesis: cada factor
 era un producto pelado y el único camino entre el paso $1$ y el paso $T$ los atravesaba todos. La
 LSTM (*long short-term memory*) respondió abriendo una vía aditiva al lado. La conexión residual es
 esa misma idea con la profundidad en el sitio del tiempo: aquí lo que se apila no son posiciones,
@@ -276,7 +276,7 @@ La suma trae una restricción escondida: $\mathbf{X}$ y $\text{Sublayer}(\mathbf
 casilla a casilla, así que la subcapa tiene prohibido devolver otra forma que no sea
 $T \times d_{\text{model}}$. Ninguna de las dos la respeta por dentro y las dos hacen el viaje de
 vuelta: la atención multi-head baja a $d_v$ por cabeza y $\mathbf{W}^O$ la devuelve —para esto lo
-dejó señalado la lección 4 de este bloque, sobre la atención multi-head—, y el perceptrón por
+dejó señalado <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>—, y el perceptrón por
 posiciones sube a $d_{\text{ff}}$ y vuelve a bajar.
 
 Eso convierte a $d_{\text{model}}$ en el único número que hay que elegir para todo el modelo. En el
@@ -287,7 +287,7 @@ artículo son los mismos en la primera capa y en la sexta, y esa rigidez es el p
 ## Cada fila se normaliza con sus propias coordenadas
 
 La suma crea un problema ella sola: si cada subcapa añade sin quitar, lo que circula va creciendo
-capa a capa, y la lección 3 de este bloque, sobre el producto interno escalado, ya midió lo que le
+capa a capa, y <Leccion slug="scaled-dot-product">la lección sobre el producto interno escalado</Leccion> ya midió lo que le
 pasa a un *softmax* cuando le llegan números grandes. Hay que devolver la escala a su sitio después
 de cada suma, y eso es el *layer norm*.
 
@@ -323,7 +323,7 @@ después a una frase suelta.
 
 Con la fila no aparece ninguna de las tres, porque $\mu_t$ y $s_t$ salen de la fila $t$ y de nada
 más. Guarda la tercera: la caja «Suma y layer norm» **no mezcla posiciones**, y por eso la
-afirmación de la lección 1 de este bloque —tres de las quince cajas miran más allá de su propia
+afirmación de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> —tres de las quince cajas miran más allá de su propia
 fila— sigue en pie ahora que sabemos qué hacen las otras doce.
 
 ## La subcapa que no mira a ninguna otra posición
@@ -491,7 +491,7 @@ enmascarada», que es una palabra que no ha salido en estas seis lecciones.
 
 Las tres cosas son la misma cosa, y es la que separa leer un texto de escribirlo. Un encoder puede
 mirar la frase entera porque la tiene delante; un decoder produce la salida token a token, y al
-escribir el cuarto no puede mirar el quinto, que todavía no existe. Eso es la lección 7 de este
-bloque, sobre el encoder, el decoder y las máscaras, y lo bueno es que no toca ni una línea de lo
+escribir el cuarto no puede mirar el quinto, que todavía no existe. Eso es <Leccion slug="encoder-decoder-masking">la lección siguiente, sobre
+el encoder, el decoder y las máscaras</Leccion>, y lo bueno es que no toca ni una línea de lo
 que llevamos: tachar el futuro se hace sumándole a la rejilla de puntuaciones una matriz de ceros y
 de menos infinitos antes del *softmax*.

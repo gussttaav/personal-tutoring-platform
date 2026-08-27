@@ -32,11 +32,11 @@ quiz:
     prompt: 'El encoder no tiene salida propia: no predice nada en ninguna de sus posiciones. Aun así, se entrena. ¿Por qué caminos le llega el gradiente? Marca todo lo que sea cierto.'
     options:
       - { id: a, text: 'La vuelta empieza en la pérdida del decoder y, paso a paso hacia atrás, llega hasta su estado inicial $\mathbf{s}_0 = \mathbf{c}$; ese gradiente en $\mathbf{c}$ es el único que entra al encoder.' }
-      - { id: b, text: 'Desde $\mathbf{c}$, el encoder corre su propia BPTT —la de la lección 3 de este bloque— repartiendo ese único gradiente entre todos sus pasos y sus pesos.' }
+      - { id: b, text: 'Desde $\mathbf{c}$, el encoder corre su propia BPTT —la de <Leccion slug="bptt">la lección sobre BPTT</Leccion>— repartiendo ese único gradiente entre todos sus pasos y sus pesos.' }
       - { id: c, text: 'Tiene una pérdida por cada token de entrada, como el modelo de la lección anterior, y de ahí saca su gradiente.' }
       - { id: d, text: 'No aprende: sus pesos se quedan como se inicializaron, y sólo el decoder se entrena.' }
     answer: [a, b]
-    explanation: 'La (a) y la (b) son la cadena entera: el error nace en la única pérdida que hay —la del decoder—, viaja hacia atrás por el decoder hasta su estado inicial $\mathbf{s}_0$, que es $\mathbf{c}$, y desde ahí el encoder hace la vuelta por el tiempo de la lección 3 como si $\mathbf{c}$ fuese el error de su último paso. La (c) le pega al encoder el esquema del modelo de lenguaje de la lección anterior, donde cada posición sí tenía salida y pérdida; el encoder no la tiene. La (d) es la trampa: sin salida propia parece que no habría de dónde aprender, pero el gradiente que el decoder le devuelve en $\mathbf{c}$ basta —y es lo que obliga a $\mathbf{c}$ a volverse un buen resumen—.'
+    explanation: 'La (a) y la (b) son la cadena entera: el error nace en la única pérdida que hay —la del decoder—, viaja hacia atrás por el decoder hasta su estado inicial $\mathbf{s}_0$, que es $\mathbf{c}$, y desde ahí el encoder hace la vuelta por el tiempo de <Leccion slug="bptt">la lección sobre BPTT</Leccion> como si $\mathbf{c}$ fuese el error de su último paso. La (c) le pega al encoder el esquema del modelo de lenguaje de la lección anterior, donde cada posición sí tenía salida y pérdida; el encoder no la tiene. La (d) es la trampa: sin salida propia parece que no habría de dónde aprender, pero el gradiente que el decoder le devuelve en $\mathbf{c}$ basta —y es lo que obliga a $\mathbf{c}$ a volverse un buen resumen—.'
     hint: 'La pérdida vive sólo en el decoder. Sigue el gradiente hacia atrás: ¿dónde toca el encoder por primera vez?'
   - id: q-cuello-botella
     type: single
@@ -94,7 +94,7 @@ redes se entrenan a la vez, aunque sólo el decoder tenga pérdida.
 
 ## El encoder resume, el decoder escribe
 
-Las dos redes son la RNN vanilla de la lección 2 de este bloque —red neuronal recurrente
+Las dos redes son <Leccion slug="la-rnn-vanilla">la RNN vanilla</Leccion> —red neuronal recurrente
 (*recurrent neural network*, RNN)—, sin novedad en la recurrencia; lo único nuevo es cómo se encadenan.
 El **encoder** lee los tokens de la entrada $\mathbf{x}_1, \dots, \mathbf{x}_{T_x}$ —cada $\mathbf{x}_j$
 el one-hot del $j$-ésimo símbolo, como en la lección anterior— y va actualizando su estado:
@@ -154,7 +154,7 @@ lección anterior, con GO en el arranque en lugar de un espacio.
 
 Si el encoder no tiene pérdida, ¿de dónde saca su gradiente? De un solo sitio —y por eso este modelo
 entrena de punta a punta pese a tener dos redes—. La vuelta empieza en la única pérdida que hay, la del
-decoder, y paso a paso es la de la lección 7 de este bloque, sin cambiar una línea: cada posición
+decoder, y paso a paso es la de <Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>, sin cambiar una línea: cada posición
 arranca su error desde su salida y lo transporta al paso anterior. Lo nuevo pasa al final de esa
 vuelta. El primer estado del decoder es $\mathbf{s}_0 = \mathbf{c}$, así que cuando el error termina de
 recorrer el decoder hacia atrás, deja un gradiente sobre el vector de contexto:
@@ -163,11 +163,10 @@ $$
 \nabla_{\mathbf{c}}\ell = \left(\mathbf{W}^{\text{dec}}_{hh}\right)^{\top}\boldsymbol{\delta}_1,
 $$
 
-donde $\boldsymbol{\delta}_1$ es el error del primer paso del decoder, el mismo de la lección 7. Ese
+donde $\boldsymbol{\delta}_1$ es el error del primer paso del decoder, el mismo de <Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>. Ese
 $\nabla_{\mathbf{c}}\ell$ es el único gradiente que el encoder recibe, y le basta: como
 $\mathbf{c} = \bar{\mathbf{h}}_{T_x}$, es exactamente el error del último estado del encoder, y desde él
-el encoder corre su propia BPTT —la vuelta por el tiempo (*backpropagation through time*, BPTT) de la
-lección 3— como si $\nabla_{\mathbf{c}}\ell$ fuese la señal que allí entraba por la salida. Repartido
+el encoder corre su propia BPTT —la vuelta por el tiempo (*backpropagation through time*, BPTT) de <Leccion slug="bptt">la lección que la derivó</Leccion>— como si $\nabla_{\mathbf{c}}\ell$ fuese la señal que allí entraba por la salida. Repartido
 hacia atrás por sus $T_x$ pasos, ese único gradiente ajusta $\mathbf{W}^{\text{enc}}_{hh}$,
 $\mathbf{W}^{\text{enc}}_{xh}$ y $\mathbf{b}^{\text{enc}}_h$.
 
@@ -177,14 +176,14 @@ usarlo ni el gradiente puede pedir que se guarde. Cuanto más larga es la entrad
 en el mismo vector.
 
 <Details summary="Ver la vuelta completa, del decoder al encoder">
-La vuelta del decoder es la de la lección 7, con $\mathbf{s}$ en lugar de $\mathbf{h}$: el error de la
+La vuelta del decoder es la de <Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>, con $\mathbf{s}$ en lugar de $\mathbf{h}$: el error de la
 preactivación en cada posición es
 $$
 \boldsymbol{\delta}_i = \left(\mathbf{1} - \mathbf{s}_i \odot \mathbf{s}_i\right) \odot \left(\mathbf{W}_{hy}^{\top}\left(\hat{\mathbf{y}}_i - \mathbf{y}_i\right) + \left(\mathbf{W}^{\text{dec}}_{hh}\right)^{\top}\boldsymbol{\delta}_{i+1}\right),
 $$
 con $\boldsymbol{\delta}_{T_y+1} = \mathbf{0}$. Recorridos los $T_y$ pasos, el transporte llega a
 $\mathbf{s}_0 = \mathbf{c}$ y se detiene ahí: $\nabla_{\mathbf{c}}\ell = (\mathbf{W}^{\text{dec}}_{hh})^{\top}\boldsymbol{\delta}_1$.
-Ese vector arranca la vuelta del encoder, que es la de la lección 3 pero **sin término de salida** —el
+Ese vector arranca la vuelta del encoder, que es la de <Leccion slug="bptt">la lección sobre BPTT</Leccion> pero **sin término de salida** —el
 encoder no predice en ningún paso, así que el paréntesis con $\hat{\mathbf{y}}$ desaparece y sólo queda
 el transporte—:
 $$
@@ -233,7 +232,7 @@ def paso(x, y):                                        # x: la fuente; y: la fue
         s = np.tanh(Wxh_d[:, ent[i]] + Whh_d @ s + bh_d); S[:, i] = s
         o = Why @ s + by; o -= o.max(); p = np.exp(o); p /= p.sum(); P[:, i] = p
         loss -= np.log(p[y[i]] + 1e-12)
-    gWhy = np.zeros_like(Why); gby = np.zeros_like(by)  # --- vuelta del decoder (leccion 7) ---
+    gWhy = np.zeros_like(Why); gby = np.zeros_like(by)  # --- vuelta del decoder ---
     gWxh_d = np.zeros_like(Wxh_d); gWhh_d = np.zeros_like(Whh_d); gbh_d = np.zeros_like(bh_d)
     ds = np.zeros(d_h)
     for i in reversed(range(L)):
@@ -245,7 +244,7 @@ def paso(x, y):                                        # x: la fuente; y: la fue
         ds = Whh_d.T @ dp
     gWxh_e = np.zeros_like(Wxh_e); gWhh_e = np.zeros_like(Whh_e); gbh_e = np.zeros_like(bh_e)
     dh = ds                                            # unico enlace: el gradiente en c
-    for j in reversed(range(L)):                       # --- vuelta del encoder (leccion 3) ---
+    for j in reversed(range(L)):                       # --- vuelta del encoder ---
         dp = (1 - He[:, j] ** 2) * dh
         h_ant = He[:, j - 1] if j > 0 else np.zeros(d_h)
         gWhh_e += np.outer(dp, h_ant); gWxh_e[:, x[j]] += dp; gbh_e += dp
@@ -260,7 +259,7 @@ for it in range(iters):
     loss, grads = paso(x, y)
     for g in grads:
         nrm = np.linalg.norm(g)
-        if nrm > theta: g *= theta / nrm               # recorte del gradiente, leccion 4
+        if nrm > theta: g *= theta / nrm               # recorte del gradiente
     for Pm, g in zip(pesos, grads):
         Pm -= eta * g
     suave = loss if suave is None else 0.99 * suave + 0.01 * loss
@@ -333,8 +332,8 @@ resumen, cómo aprende el encoder sin salida propia, y qué arreglaría —y qu�
 
 ---
 
-Con esto el bloque cierra. La RNN vanilla de la lección 2 leía cualquier longitud; la vuelta por el
-tiempo de la lección 3 la entrenaba; las compuertas de las lecciones 5 y 6 le daban una memoria capaz
+Con esto el bloque cierra. <Leccion slug="la-rnn-vanilla">La RNN vanilla</Leccion> leía cualquier longitud; la vuelta por el
+tiempo de <Leccion slug="bptt">la lección sobre BPTT</Leccion> la entrenaba; las compuertas de <Leccion slug="lstm">la LSTM</Leccion> y <Leccion slug="gru">la GRU</Leccion> le daban una memoria capaz
 de aguantar la distancia. El modelo de secuencia a secuencia los pone a todos a trabajar juntos en la
 primera tarea del curso que transforma una secuencia en otra distinta, en vez de sólo continuarla o
 colgarle un veredicto.

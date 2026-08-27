@@ -207,8 +207,8 @@ $$
 
 con $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ leyendo el estado anterior,
 $\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$ leyendo el token de turno y
-$\mathbf{b}_h \in \mathbb{R}^{d_h}$. La tangente hiperbólica ocupa el hueco $\varphi$ de la lección 2
-del bloque anterior, sobre funciones de activación; ahí caben las tres que se vieron allí, y la
+$\mathbf{b}_h \in \mathbb{R}^{d_h}$. La tangente hiperbólica ocupa el hueco $\varphi$ de <Leccion slug="funciones-activacion">la lección
+sobre funciones de activación</Leccion>; ahí caben las tres que se vieron allí, y la
 escribo con su nombre porque es la que la recurrencia lleva en todo el bloque.
 
 El paso $t = 1$ parece pedir una regla aparte, y no la pide. Con $\mathbf{h}_0 = \mathbf{0}$ el
@@ -437,8 +437,8 @@ camino de la entrada a la pérdida, y eso es lo que hacía que su gradiente fuer
 $\mathbf{W}_{hh}$ aparece $T$ veces.
 
 Qué hacer con esos $T$ caminos —sumarlos, y recorrer la secuencia entera hacia atrás para
-obtenerlos— es la lección 3 de este bloque, sobre *backpropagation* a través del tiempo
-(*backpropagation through time*, BPTT). Es la regla de la cadena del bloque anterior sin ninguna
+obtenerlos— es <Leccion slug="bptt">la siguiente lección, sobre *backpropagation* a través del tiempo
+(*backpropagation through time*, BPTT)</Leccion>. Es la regla de la cadena del bloque anterior sin ninguna
 variación, aplicada a un grafo que en vez de tener $L$ capas de altura tiene $T$ pasos de largo, y de
 ahí sale la cuenta completa de $\nabla_{\mathbf{W}_{hh}}\mathcal{L}$,
 $\nabla_{\mathbf{W}_{xh}}\mathcal{L}$ y $\nabla_{\mathbf{b}_h}\mathcal{L}$.

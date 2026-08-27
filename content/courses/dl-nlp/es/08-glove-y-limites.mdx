@@ -34,7 +34,7 @@ quiz:
       - { id: c, text: '$g$ está acotada por $1$, de modo que los pares frecuentísimos no se llevan el ajuste entero.' }
       - { id: d, text: 'Quitar $g$ dejaría la suma con $\lvert V \rvert^{2}$ sumandos, así que es $g$ lo que hace barato el ajuste.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras son las tres decisiones de esa línea, y cada una arregla algo distinto: (a) evita $\log 0$ —y de paso es lo que abarata el ajuste—, (b) quita peso a las celdas que son casi ruido y (c) se lo quita a las palabras vacías de la lección 5, sobre la bolsa de palabras, que si no decidirían solas dónde van todos los vectores. (d) atribuye el ahorro a quien no es: lo que deja fuera las $\lvert V \rvert^{2}$ celdas vacías es la condición $X_{ik} > 0$ del sumatorio, no el peso. $g$ vale $0$ en $x = 0$, sí, pero un sumando de peso cero seguiría costando calcular $\log 0$.'
+    explanation: 'Las tres primeras son las tres decisiones de esa línea, y cada una arregla algo distinto: (a) evita $\log 0$ —y de paso es lo que abarata el ajuste—, (b) quita peso a las celdas que son casi ruido y (c) se lo quita a las palabras vacías de <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras</Leccion>, que si no decidirían solas dónde van todos los vectores. (d) atribuye el ahorro a quien no es: lo que deja fuera las $\lvert V \rvert^{2}$ celdas vacías es la condición $X_{ik} > 0$ del sumatorio, no el peso. $g$ vale $0$ en $x = 0$, sí, pero un sumando de peso cero seguiría costando calcular $\log 0$.'
   - id: q-banco
     type: single
     prompt: 'El vector de <W>banco</W> mezcla el sentido del dinero y el del parque. ¿Cuál de estos cambios lo arregla?'
@@ -57,8 +57,8 @@ informa de poco: <W>banco</W> sale muchísimas veces junto a <W>el</W> y de ahí
 
 Lo que distingue a una entrada de otra no es con quién aparece, sino en qué proporción. Esa
 proporción decide la forma entera del objetivo, y de paso explica algo que el bloque lleva dos
-lecciones enseñando sin cobrar: lo que ocurre al pulsar el botón del mapa de la lección 6, sobre
-representaciones densas.
+lecciones enseñando sin cobrar: lo que ocurre al pulsar el botón del mapa de <Leccion slug="embeddings-densos">la lección sobre
+representaciones densas</Leccion>.
 
 <Explorable
   id="embedding-projection"
@@ -119,7 +119,7 @@ $$
 Dos decisiones la dejan casi fijada. Lo que separa a $i$ de $j$ a la derecha es un cociente, y a la
 izquierda lo que la función recibe de los dos es su diferencia $\mathbf{e}_i - \mathbf{e}_j$, la del
 mapa de arriba. Y para convertirla junto con $\mathbf{u}_k$ en un solo número está el producto
-escalar de la lección 5, sobre la bolsa de palabras. Con las dos, $F$ es una función de una variable
+escalar de <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras</Leccion>. Con las dos, $F$ es una función de una variable
 real:
 
 $$
@@ -192,7 +192,7 @@ en una ventana— y $\log 0$ no existe. Las vacías se dejan fuera, que es adem�
 ajuste: se paga por los pares vistos y no por $\lvert V \rvert^{2}$.
 
 La segunda es que las celdas no valen lo mismo. Una con $X_{ik} = 1$ es casi ruido, y una con
-$X_{ik} = 10^{6}$ —dos palabras vacías de la lección 5, la de la bolsa de palabras— no debería decidir
+$X_{ik} = 10^{6}$ —dos palabras vacías de <Leccion slug="bolsa-de-palabras">la lección de la bolsa de palabras</Leccion>— no debería decidir
 sola dónde van los vectores. El arreglo es un peso que dependa del propio conteo:
 
 $$
@@ -254,16 +254,16 @@ ocurrencia venía cada conteo, porque los conteos se hacen sobre el tipo, y el t
 Al ajuste le queda un compromiso, y la pérdida dice cuál: la fila que la minimiza explica la *suma* de
 los dos perfiles, que no se parece a ninguno.
 
-No es un defecto de GloVe. Word2Vec lo tiene por la misma razón, y el one-hot de la lección 4 y el
-TF-IDF (*term frequency–inverse document frequency*) de la lección 5 lo tenían antes. Y no viene solo:
-la lección 6, la de las representaciones densas, anotó otro límite de la misma familia, y es que
+No es un defecto de GloVe. Word2Vec lo tiene por la misma razón, y el one-hot de <Leccion slug="one-hot">la lección de la maldición de la dimensionalidad</Leccion> y el
+TF-IDF (*term frequency–inverse document frequency*) de <Leccion slug="bolsa-de-palabras">la lección de la bolsa de palabras</Leccion> lo tenían antes. Y no viene solo:
+<Leccion slug="embeddings-densos">la lección de las representaciones densas</Leccion> anotó otro límite de la misma familia, y es que
 <W>frío</W> y <W>caliente</W> aparecen en contextos casi idénticos, así que la hipótesis distribucional los coloca cerca y la representación no
 tiene con qué separarlos. El tercero es el de siempre: una entrada que no estaba en el corpus no tiene
-fila, y hay que devolverle la de <W>\<UNK></W>, como en la lección 3, sobre palabras fuera de
-vocabulario (*out-of-vocabulary*, OOV).
+fila, y hay que devolverle la de <W>\<UNK></W>, como en <Leccion slug="vocabulario-oov">la lección sobre palabras fuera de
+vocabulario (*out-of-vocabulary*, OOV)</Leccion>.
 
-Los tres son el mismo hecho escrito de tres maneras, y se lee en el arranque del bloque: la lección 1,
-sobre el problema de representar el lenguaje, pidió una función
+Los tres son el mismo hecho escrito de tres maneras, y se lee en el arranque del bloque: <Leccion slug="texto-como-numeros">la lección
+sobre el problema de representar el lenguaje</Leccion> pidió una función
 
 $$
 r : V \to \mathbb{R}^{d},
@@ -467,8 +467,7 @@ dos</W> y <W>el banco estaba mojado</W> reciben la misma fila de $\mathbf{E}$, y
 frases tiene forma de pedir otra. Que la representación dependa del contexto es el hilo que atraviesa
 lo que viene y se cobra al final, en el bloque 5, sobre el Transformer.
 
-Antes hay que construir lo que va a consumir esos vectores, y todavía no existe. La lección 1 de este
-bloque supuso una función que recibe un vector y devuelve una respuesta, y dejó dicho que cómo es por
+Antes hay que construir lo que va a consumir esos vectores, y todavía no existe. <Leccion slug="texto-como-numeros">La lección sobre el problema de representar el lenguaje</Leccion> supuso una función que recibe un vector y devuelve una respuesta, y dejó dicho que cómo es por
 dentro era asunto del bloque siguiente. El bloque 2, sobre el perceptrón multicapa,
-empieza por ahí: su lección 1, sobre la neurona artificial, define la pieza más pequeña que hace ese
+empieza por ahí: su <Leccion slug="la-neurona">lección sobre la neurona artificial</Leccion> define la pieza más pequeña que hace ese
 trabajo —recibe un vector, lo pondera y devuelve un número— y la suposición se acaba.

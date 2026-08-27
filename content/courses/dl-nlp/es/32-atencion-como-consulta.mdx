@@ -26,7 +26,7 @@ quiz:
     answer: 32
     tolerance: 0
     unit: números
-    explanation: 'Treinta y dos: lo que sale es una mezcla de valores, así que tiene el tamaño de un valor. $d_k$ no aparece en la salida —gobierna la comparación, y ahí muere—, y $T_x$ tampoco: las doce parejas producen doce pesos que suman $1$, y la suma ponderada los consume. Ésa es la propiedad de forma que la lección 3 de este bloque, sobre la idea de atención, necesitaba para que el contexto cupiera en el hueco de siempre, escrita ahora sin mencionar ninguna recurrencia: la entrada crece con las parejas, la salida no.'
+    explanation: 'Treinta y dos: lo que sale es una mezcla de valores, así que tiene el tamaño de un valor. $d_k$ no aparece en la salida —gobierna la comparación, y ahí muere—, y $T_x$ tampoco: las doce parejas producen doce pesos que suman $1$, y la suma ponderada los consume. Ésa es la propiedad de forma que <Leccion slug="la-idea-de-atencion">la lección sobre la idea de atención</Leccion> necesitaba para que el contexto cupiera en el hueco de siempre, escrita ahora sin mencionar ninguna recurrencia: la entrada crece con las parejas, la salida no.'
     hint: '¿De qué son mezcla los números que salen?'
   - id: q-clave-contra-valor
     type: single
@@ -45,10 +45,10 @@ quiz:
     options:
       - { id: a, text: 'A $\mathbf{v}_j$ le llega una sola ruta, la de la mezcla, y suma sobre los pasos: $\sum_i \alpha_{ij}\nabla_{\mathbf{c}_i}\ell$.' }
       - { id: b, text: 'A $\mathbf{k}_j$ le llega una sola ruta, la de la puntuación, y pasa entera por $\partial\ell/\partial e_{ij}$.' }
-      - { id: c, text: 'Si los dos papeles se vuelven a atar en un mismo vector, ese vector recibe la suma de las dos rutas, que es la fórmula de la lección 4 de este bloque, sobre la atención aditiva.' }
+      - { id: c, text: 'Si los dos papeles se vuelven a atar en un mismo vector, ese vector recibe la suma de las dos rutas, que es la fórmula de <Leccion slug="bahdanau">la lección sobre la atención aditiva</Leccion>.' }
       - { id: d, text: 'Al desatarlos, la derivada respecto de una puntuación deja de comparar nada: sin un vector que haga los dos papeles, la resta que aparecía en ella no se puede escribir.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras. Cada papel aparece en un solo sitio de las ecuaciones, así que la regla de la cadena de la lección 7 del bloque 2, sobre la regla de la cadena, tiene un solo término que sumar para cada uno; atarlos es lo que crea el segundo, porque un vector que aparece dos veces recibe dos veces —la misma cuenta que hace un peso compartido en la recurrencia del bloque anterior—. La (d) es la trampa buena: la resta sigue ahí, sólo que ahora se lee con precisión, $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right)$. Lo que se compara con la mezcla es el **valor** de esa posición; la corrección cae sobre su **clave**. Con los dos papeles atados no había forma de ver cuál de los dos hacía cada cosa.'
+    explanation: 'Las tres primeras. Cada papel aparece en un solo sitio de las ecuaciones, así que la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> tiene un solo término que sumar para cada uno; atarlos es lo que crea el segundo, porque un vector que aparece dos veces recibe dos veces —la misma cuenta que hace un peso compartido en la recurrencia del bloque anterior—. La (d) es la trampa buena: la resta sigue ahí, sólo que ahora se lee con precisión, $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right)$. Lo que se compara con la mezcla es el **valor** de esa posición; la corrección cae sobre su **clave**. Con los dos papeles atados no había forma de ver cuál de los dos hacía cada cosa.'
     hint: 'Cuenta en cuántos sitios de las dos ecuaciones aparece cada uno de los dos vectores.'
   - id: q-donde-fue-wa
     type: single
@@ -59,7 +59,7 @@ quiz:
       - { id: c, text: 'Está dentro del softmax, que la aplica a cada fila antes de normalizarla.' }
       - { id: d, text: 'Está en los valores, $\mathbf{V} = \bar{\mathbf{H}}\mathbf{W}_a$, que es donde caben los parámetros sin estropear el reparto.' }
     answer: a
-    explanation: 'La (a). Los parámetros no desaparecen, cambian de sitio: dejan de ser parte de la comparación y pasan a ser parte de lo que se compara, que es la razón por la que en esta forma la función $a$ puede ser siempre el producto escalar. La (b) confunde «no tiene parámetros» con «no puede tenerlos»; lo que la fórmula no dice es de dónde salen $\mathbf{Q}$ y $\mathbf{K}$, y ahí es donde se han metido. La (c) le da al softmax un trabajo que no hace: normaliza una fila, no la transforma. La (d) rompe justo la propiedad que esta lección separa —los valores no entran en la puntuación—, así que multiplicarlos por una matriz no cambiaría ni un peso. Y la puntuación aditiva de la lección 4 de este bloque no admite la mudanza: el $\tanh$ está entre las dos proyecciones y la lectura, y una función no lineal de una suma no se deja repartir entre sus sumandos.'
+    explanation: 'La (a). Los parámetros no desaparecen, cambian de sitio: dejan de ser parte de la comparación y pasan a ser parte de lo que se compara, que es la razón por la que en esta forma la función $a$ puede ser siempre el producto escalar. La (b) confunde «no tiene parámetros» con «no puede tenerlos»; lo que la fórmula no dice es de dónde salen $\mathbf{Q}$ y $\mathbf{K}$, y ahí es donde se han metido. La (c) le da al softmax un trabajo que no hace: normaliza una fila, no la transforma. La (d) rompe justo la propiedad que esta lección separa —los valores no entran en la puntuación—, así que multiplicarlos por una matriz no cambiaría ni un peso. Y la puntuación aditiva de <Leccion slug="bahdanau">su lección</Leccion> no admite la mudanza: el $\tanh$ está entre las dos proyecciones y la lectura, y una función no lineal de una suma no se deja repartir entre sus sumandos.'
     hint: 'Escribe la rejilla de la lección anterior y agrupa los dos primeros factores.'
 challenges:
   - id: ch-atencion-qkv
@@ -162,8 +162,8 @@ challenges:
       esas puntuaciones en un reparto, y `A @ V` mezcla los valores con él. Las formas se
       encadenan solas: $(T_q, d_k)$ contra $(d_k, T_k)$ da $(T_q, T_k)$, y eso contra
       $(T_k, d_v)$ da $(T_q, d_v)$ —el $d_k$ desaparece en la comparación y el $T_k$ en la
-      mezcla—. La resta del máximo es la invariancia al desplazamiento de la lección 5 del
-      bloque 2, sobre funciones de pérdida: cambia lo que se exponencia, no lo que sale.
+      mezcla—. La resta del máximo es la invariancia al desplazamiento de <Leccion slug="funcion-de-perdida">la lección
+      sobre funciones de pérdida</Leccion>: cambia lo que se exponencia, no lo que sale.
 ---
 
 {/* COURSE-P5-04 — Bloque 4, lección 6. */}
@@ -183,9 +183,9 @@ una operación, cada una con su nombre fijado desde hace años —y con la inici
 siguiente pone en todas sus ecuaciones, empezando por la primera línea del artículo que las
 escribe—.
 
-Hay una operación que ya has escrito y que hace casi exactamente esto. En los desafíos de la
-lección 5 y la lección 6 del bloque anterior, sobre la LSTM (*long short-term memory*) y la GRU
-(*gated recurrent unit*), los pesos llegaban en un diccionario `P` y se sacaban con `P["z"]`: das una **consulta** (*query*), Python la compara con
+Hay una operación que ya has escrito y que hace casi exactamente esto. En los desafíos de
+<Leccion slug="lstm">la lección sobre la LSTM (*long short-term memory*)</Leccion> y <Leccion slug="gru">la lección sobre la GRU
+(*gated recurrent unit*)</Leccion>, los pesos llegaban en un diccionario `P` y se sacaban con `P["z"]`: das una **consulta** (*query*), Python la compara con
 las **claves** (*keys*) guardadas y te devuelve el **valor** (*value*) de la que coincide. Falla
 una letra y no hay respuesta.
 
@@ -223,7 +223,7 @@ e_{ij} = a\left(\mathbf{q}_i, \mathbf{k}_j\right),
 \mathbf{c}_i = \sum_{j=1}^{T_x} \alpha_{ij}\,\mathbf{v}_j \in \mathbb{R}^{d_v}.
 $$
 
-Es el mecanismo de la lección 3 de este bloque, sobre la idea de atención, con otros nombres: se
+Es el mecanismo de <Leccion slug="la-idea-de-atencion">la lección sobre la idea de atención</Leccion>, con otros nombres: se
 puntúa cada pareja, se normaliza la fila con un softmax sobre las posiciones y se mezclan con esos
 pesos. El índice del denominador cambia de letra —$m$ donde antes iba $k$— porque la $k$ está
 ocupada de aquí en adelante por las claves.
@@ -232,7 +232,7 @@ Mira las formas, que es donde la reescritura empieza a pagar. La salida tiene $d
 el tamaño de un **valor**, no el de la consulta y no el número de parejas. $d_k$ vive entero dentro
 de la comparación y muere ahí, en el número $e_{ij}$; $T_x$ vive en la fila de pesos y muere en la
 suma. De modo que la lista de parejas puede crecer todo lo que quiera y el hueco donde cae el
-resultado no se entera —que es la propiedad de forma de la lección 3, dicha ahora sin nombrar
+resultado no se entera —que es la propiedad de forma de <Leccion slug="la-idea-de-atencion">esa lección</Leccion>, dicha ahora sin nombrar
 ninguna recurrencia—.
 
 Y las tres lecciones anteriores son un caso particular de esto, sin cambiar una ecuación:
@@ -252,7 +252,7 @@ hace un mismo vector. Eso obliga a las $d_h$ coordenadas de $\bar{\mathbf{h}}_j$
 dos cosas a la vez: a ser buenas para que las comparen y buenas para que las lean.
 
 La cuenta del gradiente lo enseña mejor que la fórmula. Desatados, cada papel aparece en un solo
-sitio, así que la regla de la cadena de la lección 7 del bloque 2, sobre la regla de la cadena,
+sitio, así que la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion>
 recorre un solo camino para cada uno; lo que suma es sobre los $T_y$ pasos, porque las dos listas
 se usan en todos:
 
@@ -262,7 +262,7 @@ $$
 \nabla_{\mathbf{k}_j}\ell = \sum_{i=1}^{T_y} \frac{\partial \ell}{\partial e_{ij}}\,\nabla_{\mathbf{k}_j} e_{ij},
 $$
 
-y el paso por el softmax es el de la lección 4 de este bloque, sobre la atención aditiva, sin
+y el paso por el softmax es el de <Leccion slug="bahdanau">la lección sobre la atención aditiva</Leccion>, sin
 tocar una coma, sólo que ahora dice con precisión qué se compara con qué:
 
 $$
@@ -284,7 +284,7 @@ $$
 \nabla_{\bar{\mathbf{h}}_j}\ell = \sum_{i=1}^{T_y} \alpha_{ij}\,\nabla_{\mathbf{c}_i}\ell + \sum_{i=1}^{T_y} \frac{\partial \ell}{\partial e_{ij}}\,\nabla_{\bar{\mathbf{h}}_j} e_{ij},
 $$
 
-que es, término a término, la línea de las dos rutas de la lección 4 de este bloque —allí el
+que es, término a término, la línea de las dos rutas de <Leccion slug="bahdanau">la lección sobre la atención aditiva</Leccion> —allí el
 segundo sumando estaba desarrollado para la puntuación aditiva, $\mathbf{W}_{ha}^{\top}\nabla_{\mathbf{p}_{ij}}\ell$,
 que es este mismo con $\nabla_{\bar{\mathbf{h}}_j} e_{ij}$ escrito por dentro—. Lo que en aquella
 lección era una peculiaridad de la arquitectura —«a este estado le llega el gradiente por dos
@@ -319,7 +319,7 @@ en el producto escalar pelado para siempre; todo lo que un modelo quiera aprende
 comparar tiene que estar ya metido en cómo se fabrican $\mathbf{Q}$ y $\mathbf{K}$, que es un
 asunto del que esta línea no dice nada y del que el bloque siguiente no habla de otra cosa.
 
-La aditiva no se deja mudar de sitio, y es el mismo argumento de la lección 4 de este bloque: entre
+La aditiva no se deja mudar de sitio, y es el mismo argumento de <Leccion slug="bahdanau">su lección</Leccion>: entre
 las dos proyecciones y la lectura hay un $\tanh$, y una función no lineal de una suma no se reparte
 entre sus sumandos. Por eso esta forma de tres matrices —la que el bloque siguiente hereda— existe
 gracias a la elección que hizo la lección anterior, y no a pesar de ella.
@@ -334,8 +334,8 @@ $$
 Ese divisor responde a lo que la lección anterior midió sin arreglarlo: con pesos recién
 inicializados el mayor peso de una fila se iba a $0.851$ frente al $0.167$ del reparto uniforme,
 porque un producto escalar sin acotar crece con el tamaño de los vectores que multiplica. En esta
-escritura ese tamaño tiene nombre, $d_k$, y por eso el arreglo cabe en una división. De dónde sale la raíz —y por qué $\sqrt{d_k}$ y no otra cosa— es la lección 3 del bloque
-siguiente, sobre el producto interno escalado; lo que hace falta aquí es saber que el factor está
+escritura ese tamaño tiene nombre, $d_k$, y por eso el arreglo cabe en una división. De dónde sale la raíz —y por qué $\sqrt{d_k}$ y no otra cosa— es <Leccion slug="scaled-dot-product">la lección del bloque
+siguiente, sobre el producto interno escalado</Leccion>; lo que hace falta aquí es saber que el factor está
 ahí y a qué problema contesta.
 
 ## Los tres argumentos, en NumPy
@@ -423,7 +423,7 @@ es un estado del decoder y cada estado del decoder pide el contexto del paso ant
 matrices están completas de golpe y la tercera sigue yendo en fila india, que es la cuenta
 pendiente de la lección anterior dicha con el vocabulario de ésta.
 
-Y ahí es donde el curso gira. La primera lección del bloque siguiente, sobre quitar la recurrencia,
+Y ahí es donde el curso gira. <Leccion slug="adios-recurrencia">La primera lección del bloque siguiente, sobre quitar la recurrencia</Leccion>
 se toma en serio la única pregunta que queda: si lo que estrangula el paralelismo es la
 recurrencia, y la atención ya sabe leer una secuencia entera sin recorrerla paso a paso, ¿qué
 queda si se quita? La respuesta ocupa el resto del curso, y llegas a ella con las tres palabras y

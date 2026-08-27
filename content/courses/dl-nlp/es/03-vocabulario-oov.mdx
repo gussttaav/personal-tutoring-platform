@@ -34,7 +34,7 @@ quiz:
       - { id: c, text: '$\lvert V \rvert$ crece con cada palabra nueva que aparezca en producción.' }
       - { id: d, text: 'Se renuncia a que $r$ sea inyectiva, algo que la lección sobre el problema de representar el lenguaje ya había dejado fuera de las exigencias.' }
     answer: [a, b, d]
-    explanation: 'Recuperas la totalidad (a), que era la primera de las tres exigencias de la lección 1, sobre el problema de representar el lenguaje. La pagas con (b) y (d): <W>criptomoneda</W> y <W>bibliotecario</W> reciben el mismo vector, y esa es la inyectividad que aquella lección anunció que ibas a gastar. (c) es falso y conviene verlo: <W>\<UNK></W> añade *una* entrada, una sola vez. El vocabulario queda fijo para siempre, y ese es justo el motivo por el que este arreglo funciona.'
+    explanation: 'Recuperas la totalidad (a), que era la primera de las tres exigencias de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>. La pagas con (b) y (d): <W>criptomoneda</W> y <W>bibliotecario</W> reciben el mismo vector, y esa es la inyectividad que aquella lección anunció que ibas a gastar. (c) es falso y conviene verlo: <W>\<UNK></W> añade *una* entrada, una sola vez. El vocabulario queda fijo para siempre, y ese es justo el motivo por el que este arreglo funciona.'
   - id: q-tasa-oov-frases
     type: boolean
     prompt: 'Tu vocabulario deja fuera el 2 % de los tokens de un texto nuevo. Entonces solo el 2 % de las frases de ese texto contiene alguna palabra desconocida.'
@@ -160,7 +160,7 @@ El vocabulario es entonces una decisión con dos precios enfrentados. Elegir $V$
 $k$ tipos más frecuentes —o, desde otro ángulo, exigir una frecuencia mínima $f_i \geq m$— es elegir
 dónde se para el intercambio.
 
-El precio de subir $k$ lo pone la lección 1, sobre el problema de representar el lenguaje: la
+El precio de subir $k$ lo pone <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>: la
 representación es una función $r : V \to \mathbb{R}^{d}$, y una función así se almacena como una
 tabla con una fila por entrada del vocabulario y $d$ columnas. Son
 
@@ -382,8 +382,7 @@ que recoge todo lo demás. A esa lista, la $V'$ de más arriba, la llamamos $V$ 
 con <W>\<UNK></W> como una entrada más. Con eso, $r$ vuelve a estar definida sobre cualquier texto,
 que era la condición de partida. Pero de $r$ solo conocemos qué recibe y qué devuelve.
 Sigue haciendo falta decidir qué vector concreto le toca a cada una de esas $\lvert V \rvert$
-entradas, y la lección 1, la
-del problema de representar el lenguaje, dejó dicho lo que no vale: con $d = 1$ el orden de la recta
+entradas, y <Leccion slug="texto-como-numeros">la lección del problema de representar el lenguaje</Leccion> dejó dicho lo que no vale: con $d = 1$ el orden de la recta
 real inventa parecidos entre palabras que no los tienen.
 
 La salida más directa es no elegir ningún parecido. Si ninguna entrada del vocabulario debe estar
@@ -391,5 +390,5 @@ más cerca de otra que del resto, dale a cada una su propio eje: una dimensión 
 entrada, un uno en su posición y ceros en el resto. Esa representación existe, se llama *one-hot encoding* y no
 afirma nada sobre el idioma, que es justo lo que le pedíamos. Su factura acaba de
 quedar escrita en esta lección: $\lvert V \rvert$ vale decenas de miles, y esa es la dimensión que
-tendrían los vectores. La lección 4, sobre one-hot encoding y la maldición de la dimensionalidad,
+tendrían los vectores. <Leccion slug="one-hot">La lección sobre one-hot encoding y la maldición de la dimensionalidad</Leccion>
 mira esa factura de cerca.

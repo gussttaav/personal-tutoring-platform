@@ -4,6 +4,7 @@
  * COURSE-P2-03 — + `PyCell`, the entry point for runnable Python.
  * COURSE-P5-00 — + `h3`, which Tailwind Preflight had been flattening to body text.
  * COURSE-P5-00 — + `W`, the object-language mark (defined in ./word.tsx).
+ * COURSE-P7-01 — + `Leccion`, the cross-lesson reference (defined in ./Leccion.tsx).
  *
  * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Four groups:
  *   1. Element overrides that keep wide content (code, tables, images) from
@@ -18,8 +19,11 @@
  *      loads only on the first Run click; see src/features/courses/code/.
  *   5. `Quiz` and `CodeChallenge` — self-assessment. Unlike everything above they
  *      need data from OUTSIDE the prose (the lesson's frontmatter), so they are NOT
- *      in the static map: use `lessonMdxComponents(quiz, challenges)` at the bottom
- *      of this file, which binds them to the lesson being compiled.
+ *      in the static map: use `lessonMdxComponents(quiz, challenges, ctx)` at the
+ *      bottom of this file, which binds them to the lesson being compiled.
+ *   6. `Leccion` — a cross-lesson reference. Same problem as 5 and the same answer:
+ *      it needs to know WHICH lesson it is being compiled into before it can tell a
+ *      backward reference from a forward one, so it is bound there too.
  *
  * Everything else is a Server Component — `<Details>` uses the native
  * <details>/<summary> element — so lessons ship no client JS for any of it.
@@ -37,6 +41,8 @@ import { CodeChallenge } from "@/features/courses/code/CodeChallenge";
 import { PyCell } from "@/features/courses/code/PyCell";
 import { Quiz } from "@/features/courses/quiz/Quiz";
 import { W } from "@/lib/courses/word";
+
+import { makeLeccion, type LeccionCtx } from "./Leccion";
 
 type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
 
@@ -306,19 +312,29 @@ export const mdxComponents: MDXComponents = {
 /*
  * COURSE-P3-01 — the per-lesson map.
  * COURSE-P3-02 — + `CodeChallenge`, bound the same way.
+ * COURSE-P7-01 — + `Leccion`, and `ctx` forwarded to the two components above, whose
+ *                frontmatter copy may reference other lessons as well.
  *
  * `<Quiz id="…" />` carries only an id; the question itself lives in the lesson's
  * frontmatter. A React Server Component has no context to reach it through and the
  * map above is a module-level constant, so the questions are closed over HERE, once
  * per compiled lesson, by `renderLesson` (./mdx.ts).
+ *
+ * `ctx` is optional so a caller that only wants the prose components (a test, a
+ * preview) still gets a working map; without it `<Leccion>` is simply undefined,
+ * which MDX reports as a build error rather than swallowing.
  */
 export function lessonMdxComponents(
   quiz: QuizQuestion[],
   challenges: CodeChallengeData[] = [],
+  ctx?: LeccionCtx,
 ): MDXComponents {
   return {
     ...mdxComponents,
-    Quiz: ({ id }: { id: string }) => <Quiz id={id} questions={quiz} />,
-    CodeChallenge: ({ id }: { id: string }) => <CodeChallenge id={id} challenges={challenges} />,
+    Quiz: ({ id }: { id: string }) => <Quiz id={id} questions={quiz} ctx={ctx} />,
+    CodeChallenge: ({ id }: { id: string }) => (
+      <CodeChallenge id={id} challenges={challenges} ctx={ctx} />
+    ),
+    ...(ctx ? { Leccion: makeLeccion(ctx) } : {}),
   };
 }

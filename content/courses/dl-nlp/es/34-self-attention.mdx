@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Las tres son $\mathbf{X}$ tal cual. Las proyecciones aparecen después, para ahorrar cuentas cuando $d_{\text{model}}$ es grande.' }
       - { id: d, text: 'La consulta sale de la posición que pregunta y las claves y los valores de las posiciones anteriores a ella, que son las únicas que ya se han leído.' }
     answer: a
-    explanation: 'La (a), y ahí está el «auto» del nombre: una sola lista de vectores leída de tres maneras. La (b) parte la capa en dos sitios que no existen —no hay ninguna otra red produciendo nada, que es justo lo que la lección anterior dejó vacío—. La (c) es la trampa que esta lección desmonta entera: con las tres listas iguales la rejilla se va a su propia diagonal y la capa no tiene un solo peso que aprender, así que las proyecciones no ahorran nada, son lo único que hace que la operación sirva. La (d) describe una máscara, que es otra cosa y llega en la lección 7 de este bloque, sobre el encoder, el decoder y las máscaras; sin ella toda posición mira a todas.'
+    explanation: 'La (a), y ahí está el «auto» del nombre: una sola lista de vectores leída de tres maneras. La (b) parte la capa en dos sitios que no existen —no hay ninguna otra red produciendo nada, que es justo lo que la lección anterior dejó vacío—. La (c) es la trampa que esta lección desmonta entera: con las tres listas iguales la rejilla se va a su propia diagonal y la capa no tiene un solo peso que aprender, así que las proyecciones no ahorran nada, son lo único que hace que la operación sirva. La (d) describe una máscara, que es otra cosa y llega en <Leccion slug="encoder-decoder-masking">la lección sobre el encoder, el decoder y las máscaras</Leccion>; sin ella toda posición mira a todas.'
     hint: '¿Cuántas listas de vectores distintas hay en la entrada de la capa?'
   - id: q-forma-cuadrada
     type: numeric
@@ -59,7 +59,7 @@ quiz:
       - { id: c, text: 'Cada fila del mapa sigue sumando $1$, sólo que reparte esa unidad entre diez veces más posiciones.' }
       - { id: d, text: 'Lo que sale de cada posición pasa a tener más coordenadas, porque hay más valores que mezclar.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras. La (a) es la rejilla cuadrada: $T^{2}$ casillas, que es la cuenta cuyo precio midió la lección anterior. La (b) es la propiedad que separa esta capa del MLP (*multilayer perceptron*) concatenado de la lección 1 del bloque 3, sobre por qué falla el MLP en secuencias: allí cada posición tenía su propio bloque de pesos y alargar la entrada obligaba a añadir parámetros, y aquí las tres matrices multiplican filas, no posiciones. La (c) es lo que hace el softmax por filas, y de paso dice algo incómodo que la lección 3 de este bloque recoge: repartir una unidad entre $200$ posiciones deja pesos muy pequeños. La (d) es falsa: lo que sale es una mezcla de valores, así que mide $d_v$ vengan diez valores o doscientos.'
+    explanation: 'Las tres primeras. La (a) es la rejilla cuadrada: $T^{2}$ casillas, que es la cuenta cuyo precio midió la lección anterior. La (b) es la propiedad que separa esta capa del MLP (*multilayer perceptron*) concatenado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué falla el MLP en secuencias</Leccion>: allí cada posición tenía su propio bloque de pesos y alargar la entrada obligaba a añadir parámetros, y aquí las tres matrices multiplican filas, no posiciones. La (c) es lo que hace el softmax por filas, y de paso dice algo incómodo que recoge más adelante <Leccion slug="scaled-dot-product">la lección sobre el producto interno escalado</Leccion>: repartir una unidad entre $200$ posiciones deja pesos muy pequeños. La (d) es falsa: lo que sale es una mezcla de valores, así que mide $d_v$ vengan diez valores o doscientos.'
     hint: 'Mira dónde aparece $T$ en cada una de las tres formas: $\mathbf{A}$, las matrices y la salida.'
 challenges:
   - id: ch-auto-atencion
@@ -152,8 +152,8 @@ challenges:
           A = Z / Z.sum(axis=1, keepdims=True)
           return A @ V, A
     explanation: |
-      Una línea más que el desafío de la lección 6 del bloque anterior, sobre la consulta, la
-      clave y el valor, y esa línea es la lección entera: las tres listas se fabrican de la misma
+      Una línea más que el desafío de <Leccion slug="atencion-como-consulta">la lección sobre la consulta, la
+      clave y el valor</Leccion>, y esa línea es la lección entera: las tres listas se fabrican de la misma
       `X`. A partir de ahí no hay nada nuevo —producto, softmax por filas, mezcla—, y las formas
       se encadenan solas: $(T, d_{\text{model}})$ contra $(d_{\text{model}}, d_k)$ da $(T, d_k)$,
       y $\mathbf{Q}\mathbf{K}^{\top}$ sale $(T, T)$ porque las dos son la misma frase. `Wq.shape[1]`
@@ -218,10 +218,10 @@ $\mathbf{Q}, \mathbf{K} \in \mathbb{R}^{T \times d_k}$ y $\mathbf{V} \in \mathbb
 Los superíndices de estas tres matrices son **etiquetas del papel que hace cada una**, no índices de
 capa: es el único sitio del curso donde un superíndice no cuenta capas, y viene de la notación del
 artículo. Aquí hay una sola de estas tres parejas de proyecciones; una capa de verdad lleva varias
-en paralelo, y eso es la lección 4 de este bloque, sobre la atención multi-head.
+en paralelo, y eso es <Leccion slug="multi-head">una lección más adelante, sobre la atención multi-head</Leccion>.
 
-Ahí está el «auto» del nombre, y es lo único que separa esta lección de la lección 6 del bloque
-anterior, sobre la consulta, la clave y el valor. Allí la consulta era el estado de una red y las
+Ahí está el «auto» del nombre, y es lo único que separa esta lección de <Leccion slug="atencion-como-consulta">la lección
+sobre la consulta, la clave y el valor</Leccion>. Allí la consulta era el estado de una red y las
 claves y los valores eran los estados de otra: tres listas de dos sitios distintos. Aquí las tres
 salen de la misma $\mathbf{X}$, y lo que cambia no es la operación —es idéntica— sino quién le pasa
 los argumentos.
@@ -249,8 +249,8 @@ d_{\text{model}}\left(2d_k + d_v\right) \quad \text{parámetros},
 $$
 
 y $T$ no aparece en esa cuenta. Multiplican filas de $\mathbf{X}$, y les da igual cuántas filas
-haya. Ponlo al lado de la lección 1 del bloque 3, sobre por qué falla el MLP (*multilayer
-perceptron*) en secuencias: allí cada posición tenía su propio bloque de columnas
+haya. Ponlo al lado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué falla el MLP (*multilayer
+perceptron*) en secuencias</Leccion>: allí cada posición tenía su propio bloque de columnas
 $\mathbf{W}^{(1)}_t$, así que alargar la entrada obligaba a añadir pesos y cada posición aprendía
 por su cuenta. Estas tres matrices son las mismas para todas las posiciones y para todas las
 longitudes.
@@ -405,13 +405,13 @@ sus matrices, qué es simétrico y qué no, y qué se mueve cuando la frase se a
 Queda el divisor, y ya no se puede dejar pasar. El tercer bloque de la última celda lo mide sin
 tocar nada más: con consultas y claves de $d_k = 8$ el mayor peso de una fila se queda en $0.558$,
 y con los mismos vectores aleatorios a $d_k = 512$ sube a $0.983$. Una fila así ha dejado de ser una
-mezcla —es quedarse con una posición y tirar las otras cinco—, y eso tiene nombre desde la lección 2
-del bloque 2, sobre las funciones de activación: está saturada. Dividiendo entre $\sqrt{d_k}$ el
+mezcla —es quedarse con una posición y tirar las otras cinco—, y eso tiene nombre desde <Leccion slug="funciones-activacion">la lección
+sobre las funciones de activación</Leccion>: está saturada. Dividiendo entre $\sqrt{d_k}$ el
 máximo también crece, pero despacio, de $0.330$ a $0.486$, y la fila sigue repartiendo.
 
 Esa raíz no es una constante que alguien fuera probando hasta que las cosas salieron bien: se
 calcula, y lo que hay que calcular es cuánto crece un producto escalar a medida que se le añaden
-coordenadas. La cuenta ocupa entera la lección 3 de este bloque, sobre el producto interno escalado,
+coordenadas. La cuenta ocupa entera <Leccion slug="scaled-dot-product">la lección siguiente, sobre el producto interno escalado</Leccion>,
 y merece hacerse despacio, porque es donde vuelven a encontrarse dos cosas que este curso dejó en
 bloques distintos: la saturación que apaga un reparto y el gradiente que se desvanece cuando lo
 atraviesa. Ninguna de las dos necesitaba una sigmoide ni una recurrencia para aparecer.

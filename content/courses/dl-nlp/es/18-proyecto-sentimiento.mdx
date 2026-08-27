@@ -24,7 +24,7 @@ quiz:
     prompt: 'Mides otro conjunto de prueba con este mismo vocabulario. Sus reseñas suman 500 ocurrencias de 320 tipos distintos, y 80 de esos tipos —100 ocurrencias entre todos— no están en $V$. ¿Qué fracción de las **ocurrencias** de ese conjunto se queda fuera del vocabulario?'
     answer: 0.2
     tolerance: 0.005
-    explanation: 'Vale $100/500 = 0.2$. El otro número que la pregunta pone delante, $80/320 = 0.25$, cuenta tipos y responde a otra cosa: cuántas *cadenas distintas* son nuevas. Los dos se escriben con las mismas barras y cuentan conjuntos distintos —uno de posiciones, otro de cadenas—, que es la razón por la que la lección 3 del bloque anterior, sobre vocabulario y OOV, exige decir siempre sobre qué se cuenta. Aquí la diferencia es pequeña; en un corpus real es enorme, porque los tipos nuevos son casi todos raros y aportan una ocurrencia cada uno.'
+    explanation: 'Vale $100/500 = 0.2$. El otro número que la pregunta pone delante, $80/320 = 0.25$, cuenta tipos y responde a otra cosa: cuántas *cadenas distintas* son nuevas. Los dos se escriben con las mismas barras y cuentan conjuntos distintos —uno de posiciones, otro de cadenas—, que es la razón por la que <Leccion slug="vocabulario-oov">la lección sobre vocabulario y OOV</Leccion> exige decir siempre sobre qué se cuenta. Aquí la diferencia es pequeña; en un corpus real es enorme, porque los tipos nuevos son casi todos raros y aportan una ocurrencia cada uno.'
     hint: 'Dos de los cuatro números sobran. Mira cuál es el conjunto sobre el que te piden contar.'
   - id: q-brecha
     type: single
@@ -57,8 +57,7 @@ dos puestas, esto es el bloque 1 a la entrada y el bloque 2 encima, sin cambiar 
 —comprobarlo es parte del trabajo—; lo único nuevo es de dónde sale cada cosa.
 
 Las reseñas las he generado con inteligencia artificial: 240 reseñas de cine de una línea, la mitad
-hablando bien de la película y la mitad hablando mal, en el mismo registro que las diez de la
-lección 1 de este bloque, sobre la neurona artificial. Eso conviene tenerlo delante al leer la
+hablando bien de la película y la mitad hablando mal, en el mismo registro que las diez de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>. Eso conviene tenerlo delante al leer la
 cifra del final, porque un corpus generado así sale más regular que uno recogido de internet
 —menos erratas, menos ironía, vocabulario más repetido—, y todo eso le pone las cosas fáciles al
 clasificador. Están en <a href="/courses/dl-nlp/resenas-cine.json" target="_blank"
@@ -90,8 +89,7 @@ $$
 
 con $T_d$ el número de *tokens* del documento y $\mathbf{o}_w$ el one-hot de la entrada $w$. El
 vocabulario $V$ son los 442 tipos distintos que aparecen en las 180 reseñas de entrenamiento, sin
-recorte por frecuencia: la lección 3 del bloque anterior, sobre el vocabulario y las palabras fuera
-de vocabulario (*out-of-vocabulary*, OOV), cortaba por los $k$ tipos más frecuentes porque el
+recorte por frecuencia: <Leccion slug="vocabulario-oov">la lección sobre el vocabulario y las palabras fuera de vocabulario</Leccion> (*out-of-vocabulary*, OOV) cortaba por los $k$ tipos más frecuentes porque el
 corpus era grande, y 1 299 ocurrencias no dan para tirar nada.
 
 Apilando una reseña por fila, la entrada de la red es
@@ -108,8 +106,7 @@ $$
 \hat{\mathbf{Y}} = \sigma\left(\mathbf{H}^{(1)}\left(\mathbf{W}^{(2)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(2)}\right)^{\top}\right) \in \mathbb{R}^{180 \times 1}.
 $$
 
-La pérdida es la entropía cruzada binaria de la lección 5 de este bloque, sobre funciones de
-pérdida, promediada sobre las 180 reseñas, y la vuelta es la de la lección anterior sin tocar nada:
+La pérdida es la entropía cruzada binaria de <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>, promediada sobre las 180 reseñas, y la vuelta es la de la lección anterior sin tocar nada:
 $\boldsymbol{\Delta}^{(2)} = \hat{\mathbf{Y}} - \mathbf{Y}$, la recurrencia que la transporta a la
 capa oculta y los cuatro gradientes con su $1/B$,
 
@@ -139,7 +136,7 @@ y esa es toda su relación.
 
 A cada uno se le puede pedir la misma cifra, la **tasa de acierto**: qué fracción de sus reseñas
 recibe el veredicto correcto. La salida es una probabilidad, así que el veredicto es «positiva»
-cuando $\hat{y}_d \geq 1/2$ —la frontera de la lección 1 de este bloque— y «negativa» cuando no, y
+cuando $\hat{y}_d \geq 1/2$ —la frontera de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>— y «negativa» cuando no, y
 la cuenta es
 
 $$
@@ -167,8 +164,7 @@ $$
 $$
 
 un número que no depende de la reseña sino sólo de los sesgos: todas las reseñas ilegibles para
-este vocabulario reciben el mismo veredicto, sea el que sea. Es el hueco que ya señalaba la lección
-1 de este bloque, sobre la neurona artificial, al mirar qué contesta una neurona ante el vector
+este vocabulario reciben el mismo veredicto, sea el que sea. Es el hueco que ya señalaba <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, al mirar qué contesta una neurona ante el vector
 nulo, ahora con un texto real detrás. Y una segunda concesión, más aburrida y más frecuente: sesenta reseñas medidas una vez
 dan un número con la firmeza de sesenta tiradas, suficiente para separar un $0.9$ de un $0.5$ y
 no para separarlo de un $0.87$.
@@ -189,7 +185,7 @@ D = json.load(open_url("/courses/dl-nlp/resenas-cine.json"))
 ent, pru = D["entrenamiento"], D["prueba"]
 
 
-def tokeniza(texto):                          # la lección 2 del bloque anterior, en una
+def tokeniza(texto):                          # la tokenización del bloque anterior, en una
     return re.findall(r"\\w+", texto.lower())  # línea: a minúsculas y fuera la puntuación
 
 
@@ -372,6 +368,6 @@ alcanza a recuperar lo que la entrada tiró antes de existir. Por eso las siete 
 
 Lo que falta, entonces, es una entrada que llegue en orden y una red capaz de leerla así, token a
 token, arrastrando lo que ya ha visto. Eso es el bloque 3, sobre redes neuronales
-recurrentes, y su lección 1, sobre por qué el MLP falla con secuencias, empieza midiendo el
+recurrentes, y <Leccion slug="por-que-falla-el-mlp">su lección sobre por qué el MLP falla con secuencias</Leccion> empieza midiendo el
 tamaño exacto del problema: qué le pasa a un perceptrón multicapa cuando la entrada deja de tener
 una longitud fija y la posición que ocupa cada token pasa a significar algo.

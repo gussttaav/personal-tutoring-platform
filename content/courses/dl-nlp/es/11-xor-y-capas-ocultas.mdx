@@ -65,8 +65,7 @@ es <W>bien</W> o <W>mal</W>—, de modo que dos coordenadas las describen entera
 <W>no</W>. No aporta un signo propio: le da la vuelta al de la palabra que le sigue. Y un peso es un
 signo fijo.
 
-Esas dos coordenadas caben en un dibujo, que es el de la lección 1 de este bloque, sobre la neurona
-artificial: cada frase es un punto del plano, su color es lo que dice, y la neurona busca una recta
+Esas dos coordenadas caben en un dibujo, que es el de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>: cada frase es un punto del plano, su color es lo que dice, y la neurona busca una recta
 que deje un color a cada lado. El segundo botón del explorable carga exactamente esos cuatro puntos.
 
 <Explorable
@@ -200,7 +199,7 @@ contesta.
 
 Con varias neuronas en un nivel, el vector de pesos de cada una pasa a ser una fila. La neurona $j$
 de la capa $l$ guarda sus pesos en la fila $j$ de $\mathbf{W}^{(l)}$ y su sesgo en $b^{(l)}_j$, y lo
-que en la lección 1 de este bloque, sobre la neurona artificial, eran los escalares $z$ y $a$ son
+que en <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion> eran los escalares $z$ y $a$ son
 ahora las coordenadas $z^{(l)}_j$ y $h^{(l)}_j$. Es el mismo objeto apilado; por dentro no ha
 cambiado nada. Con $\mathbf{h}^{(0)} = \mathbf{x}$, la capa oculta calcula
 
@@ -238,7 +237,7 @@ $$
 \mathbf{b}^{(2)} = \begin{pmatrix} -\tfrac{1}{2} \end{pmatrix}.
 $$
 
-Los he elegido yo a mano, igual que los ocho pesos de la neurona de reseñas de la lección 1, porque
+Los he elegido yo a mano, igual que los ocho pesos de la neurona de reseñas de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, porque
 todavía no hay nada en el curso que los busque solo. Y están elegidos para que se lean. Las dos
 filas de $\mathbf{W}^{(1)}$ son idénticas, así que las dos neuronas ocultas miran la misma dirección
 y sólo las separa el sesgo: la primera pregunta si $x_1 + x_2 \geq -1$ y la segunda si
@@ -386,5 +385,4 @@ Antes de eso hay un problema más pequeño y más urgente, y es de escritura. La
 cabe en una tabla porque tiene tres neuronas; con un vocabulario de cincuenta mil entradas y un par
 de cientos de neuronas ocultas, recorrerla neurona a neurona no cabe en ninguna página ni en ningún
 bucle que merezca la pena ejecutar. Hace falta la forma en la que una capa entera es un producto de
-matrices, y un montón de ejemplos entra de una vez por el mismo producto: es la lección 4 de este
-bloque, sobre el *forward pass*.
+matrices, y un montón de ejemplos entra de una vez por el mismo producto: es <Leccion slug="forward-pass">la siguiente lección, sobre el *forward pass*</Leccion>.

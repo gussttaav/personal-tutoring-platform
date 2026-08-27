@@ -67,7 +67,7 @@ pero destruye cualquier noción de significado.
 ## Qué le tienes que dar a una red, exactamente
 
 Fijemos el vocabulario, el conjunto de unidades que el modelo reconoce, y llamémoslo $V$. Por
-ahora «unidad» quiere decir «palabra»; la lección 2, sobre tokenización, mostrará que esa decisión es más delicada de
+ahora «unidad» quiere decir «palabra»; <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion> mostrará que esa decisión es más delicada de
 lo que parece. Un texto es entonces una secuencia finita de elementos de $V$:
 
 $$
@@ -115,7 +115,7 @@ va a exigir. Son tres cosas.
 solo para las que viste al construirla. El día que alguien escriba <W>criptomoneda</W> y esa palabra no
 estuviera en $V$, la función tiene que devolver algo igualmente. Esta es la exigencia que parece
 burocrática y resulta ser la más cara de las tres: es el problema de las palabras fuera de
-vocabulario (*out-of-vocabulary*, OOV), y le dedicamos entera la lección 3.
+vocabulario (*out-of-vocabulary*, OOV), y le dedicamos más adelante <Leccion slug="vocabulario-oov">una lección entera, la del problema OOV</Leccion>.
 
 **Dimensión fija.** $r(w) \in \mathbb{R}^d$ con la misma $d$ para toda $w$. La red se diseña
 esperando vectores de un tamaño concreto; una representación que a veces devolviera un vector de
@@ -126,7 +126,7 @@ ejecuciones, lo que el modelo aprendió dejaría de corresponderse con lo que re
 
 <Callout type="note" title="Lo que NO se exige">
 $r$ no tiene por qué ser inyectiva. Es tentador pedir que dos palabras distintas nunca compartan
-vector, pero renunciarás a ello a propósito más de una vez: en la lección 3, la del problema OOV, todas las palabras
+vector, pero renunciarás a ello a propósito más de una vez: en <Leccion slug="vocabulario-oov">la lección del problema OOV</Leccion>, todas las palabras
 raras compartirán un mismo vector, y las representaciones por subpalabras harán que <W>gato</W> y
 <W>gatos</W> compartan casi todo. Perder algo de información es a menudo lo que hace que el modelo
 generalice.
@@ -145,7 +145,7 @@ $$
 Supongamos por un momento que $V$ es cerrado, que no llegará ninguna palabra nueva. Con esa
 concesión, y solo con ella, $r_{\text{ord}}$ es total; además tiene dimensión fija $d = 1$ y es
 determinista. La concesión es grande: en cuanto alguien escriba <W>criptomoneda</W>, $r_{\text{ord}}$ no
-tiene ningún índice que devolver, y esa es exactamente la falla de la que vive la lección 3. La
+tiene ningún índice que devolver, y esa es exactamente la falla de la que vive <Leccion slug="vocabulario-oov">la lección sobre el problema OOV</Leccion>. La
 aparcamos aquí a propósito, porque lo que queremos ver es qué pasa *aun cuando* las tres
 condiciones se cumplen. Y lo que pasa es que aun así la representación es
 mala, porque cumplirlas no era todo lo que hacía falta. Al meter las palabras en $\mathbb{R}$
@@ -169,8 +169,7 @@ Y el defecto no es de esta representación en particular. Podrías reescalar los
 por $\lvert V \rvert$, y no cambiaría nada: dividir por una constante conserva el orden y conserva
 las razones entre distancias, así que <W>gato</W> seguiría estando entre <W>casa</W> y <W>perro</W>. Cualquier $r$
 con $d = 1$ arrastra el mismo problema de fondo, porque $\mathbb{R}$ está totalmente ordenado y las
-palabras no. Salir de él exige subir de dimensión, y ese es el argumento que lleva a la lección 4,
-la del one-hot.
+palabras no. Salir de él exige subir de dimensión, y ese es el argumento que lleva a <Leccion slug="one-hot">la lección del one-hot</Leccion>.
 
 <Details summary="Cuántas dimensiones hacen falta para no mentir">
 Pide lo mínimo que se puede pedir: que la representación no afirme *nada*, que ninguna palabra esté
@@ -206,8 +205,7 @@ tienen nada que ver con ella. Un modelo entrenado con la $V$ anterior queda inse
 que es un defecto distinto de los dos anteriores: no es la geometría inventada, y tampoco es el
 problema OOV — <W>agua</W> sí acaba teniendo índice, el vocabulario crece sin dificultad. Lo que falla
 es que la representación no es **estable**: depende de todo $V$ a la vez, así que tocar una entrada
-mueve todas las demás. Guarda esa observación, porque es la que hará que en la lección 4, la del
-one-hot, el salto a un espacio mucho más grande parezca razonable a pesar de su coste.
+mueve todas las demás. Guarda esa observación, porque es la que hará que en <Leccion slug="one-hot">la lección del one-hot</Leccion>, el salto a un espacio mucho más grande parezca razonable a pesar de su coste.
 
 {/* ── 5. VERIFICACIÓN — con título ── */}
 
@@ -234,4 +232,4 @@ Pero hay una pregunta anterior que hemos dado por resuelta al escribir $V$ como 
 antes de decidir qué vector le corresponde a <W>dámelo</W>, hay que decidir si <W>dámelo</W> es una
 unidad del vocabulario, o tres (<W>dá</W>, <W>me</W>, <W>lo</W>), o seis letras. Esa decisión fija el
 tamaño de $V$, define qué significa que una palabra sea «nueva» y, en última instancia, acota qué
-puede llegar a aprender el modelo. Es la lección 2, sobre tokenización.
+puede llegar a aprender el modelo. Es <Leccion slug="tokenizacion">la siguiente lección, sobre tokenización</Leccion>.

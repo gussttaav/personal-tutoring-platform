@@ -57,7 +57,7 @@ quiz:
       - { id: c, text: '$3 \times 8$, pero del producto en el otro orden, $\dfrac{\partial\mathbf{h}^{(1)}}{\partial\mathbf{x}}\dfrac{\partial\mathbf{z}^{(2)}}{\partial\mathbf{h}^{(1)}}$, que es el orden en el que la red calcula.' }
       - { id: d, text: 'No tiene una sola forma: hay cuatro caminos de $\mathbf{x}$ a $\mathbf{z}^{(2)}$, uno por neurona oculta, y cada uno da su propia jacobiana.' }
     answer: a
-    explanation: 'La (a) es la regla y su cuenta de formas: la anchura compartida, $d_1 = 4$, es la única dimensión que desaparece del resultado, igual que en el *forward pass* de la lección 4 de este bloque. La (b) invierte el convenio: la salida va por filas, y es eso lo que hace que la jacobiana de una pérdida sea una fila. La (c) es la trampa que importa, porque su primera mitad es correcta: la red calcula hacia adelante y las jacobianas se multiplican hacia atrás, y aquí el orden equivocado ni siquiera existe —una $4 \times 8$ por una $3 \times 4$ no es un producto legal—, que es la suerte que tienes. Y la (d) confunde un camino con un resultado: los cuatro caminos que van de $x_j$ a $z^{(2)}_i$ son los cuatro sumandos de una sola casilla, no cuatro respuestas distintas.'
+    explanation: 'La (a) es la regla y su cuenta de formas: la anchura compartida, $d_1 = 4$, es la única dimensión que desaparece del resultado, igual que en <Leccion slug="forward-pass">el *forward pass*</Leccion>. La (b) invierte el convenio: la salida va por filas, y es eso lo que hace que la jacobiana de una pérdida sea una fila. La (c) es la trampa que importa, porque su primera mitad es correcta: la red calcula hacia adelante y las jacobianas se multiplican hacia atrás, y aquí el orden equivocado ni siquiera existe —una $4 \times 8$ por una $3 \times 4$ no es un producto legal—, que es la suerte que tienes. Y la (d) confunde un camino con un resultado: los cuatro caminos que van de $x_j$ a $z^{(2)}_i$ son los cuatro sumandos de una sola casilla, no cuatro respuestas distintas.'
 challenges:
   - id: ch-cadena-vectorial
     prompt: |
@@ -171,8 +171,7 @@ el paso sabe qué hacer con el gradiente, y para una red con capas ocultas todav
 calcularlo. Esta lección es esa pieza, y es sólo cálculo.
 
 Mira dónde se complica, porque no es donde parece. Toma la red de las reseñas con tres respuestas en
-lugar de dos —positiva, negativa y neutra, las clases con las que la lección 5 de este bloque, sobre
-funciones de pérdida, llegó al *softmax*—: ocho entradas, cuatro neuronas ocultas y tres de salida.
+lugar de dos —positiva, negativa y neutra, las clases con las que <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> llegó al *softmax*—: ocho entradas, cuatro neuronas ocultas y tres de salida.
 Elige un peso cualquiera de la primera capa, pongamos el que la primera neurona oculta le da a
 <W>divertida</W>, y muévelo una milésima. Su neurona cambia de valor: hasta ahí, la cuenta de
 siempre. Lo que viene después no lo es, porque esa neurona alimenta a las tres de salida, las tres
@@ -256,11 +255,9 @@ $$
 \underbrace{\frac{\partial z^{(1)}_1}{\partial \mathbf{W}^{(1)}_{13}}}_{x_3}.
 $$
 
-Ninguno de los cuatro es nuevo. El primero es el resultado con el que la lección 5 de este bloque
-cerró la capa de salida al juntar *softmax* y entropía cruzada. El segundo sale de que $z^{(2)}_k$
+Ninguno de los cuatro es nuevo. El primero es el resultado con el que <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> cerró la capa de salida al juntar *softmax* y entropía cruzada. El segundo sale de que $z^{(2)}_k$
 es una suma en la que $h^{(1)}_1$ aparece una vez, multiplicada por su peso. El tercero es la
-derivada de la activación, tabulada para las tres candidatas en la lección 2 de este bloque, sobre
-funciones de activación y no linealidad. Y el cuarto es el de la lección anterior: la preactivación
+derivada de la activación, tabulada para las tres candidatas en <Leccion slug="funciones-activacion">la lección sobre funciones de activación y no linealidad</Leccion>. Y el cuarto es el de la lección anterior: la preactivación
 es lineal en sus pesos, así que la derivada respecto de uno es la entrada que lo acompaña. Lo único
 que hacía falta era saber que los tres caminos se suman.
 
@@ -291,7 +288,7 @@ $$
 
 un producto de una matriz $p \times m$ por una $m \times n$ que entrega la $p \times n$ que hace
 falta. La dimensión que se recorre y desaparece es $m$, la de las variables intermedias, igual que
-en el *forward pass* de la lección 4 de este bloque desaparecía la anchura compartida por dos capas.
+en <Leccion slug="forward-pass">el *forward pass*</Leccion> desaparecía la anchura compartida por dos capas.
 
 Y ese producto no es un objeto nuevo, es el anterior apilado. Desarrolla la casilla $(i, j)$ con la
 definición del producto de matrices:
@@ -351,11 +348,10 @@ $$
 De ahí en adelante nadie construye la matriz: son $m$ productos en vez de $m^{2}$, y $m$ números
 guardados en vez de $m^{2}$ de los cuales $m^{2} - m$ son ceros. Con ReLU (*rectified linear unit*)
 la diagonal vale $0$ o $1$ y es una máscara: una neurona oculta con la preactivación negativa pone
-un cero en su casilla, y ese cero corta todos los caminos que pasaban por ella. Es la ReLU muerta de
-la lección 2 de este bloque, vista desde el otro lado.
+un cero en su casilla, y ese cero corta todos los caminos que pasaban por ella. Es la ReLU muerta de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>, vista desde el otro lado.
 
 El *softmax* es la excepción, y hay que decirlo: mezcla todas las coordenadas, así que su jacobiana
-no tiene un solo cero. Aquí no hace falta, porque la lección 5 de este bloque ya la derivó con la
+no tiene un solo cero. Aquí no hace falta, porque <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> ya la derivó con la
 entropía cruzada y de las dos juntas salió $\hat{\mathbf{y}} - \mathbf{y}$, el gradiente con el que
 arranca la cadena.
 
@@ -463,4 +459,4 @@ compartido se recalcula una vez por parámetro. Lo que hace falta es darle la vu
 sentido de la marcha —calcular una sola vez, empezando por la última capa, cuánto le debe la pérdida
 a cada preactivación de la red, y dejar que cada peso lea su derivada de una cantidad que ya está
 ahí—. Ese procedimiento tiene nombre propio, se deriva capa por capa y con los índices a la vista, y
-es la lección 8 de este bloque, sobre *backpropagation*.
+es <Leccion slug="backpropagation">la siguiente lección, sobre *backpropagation*</Leccion>.

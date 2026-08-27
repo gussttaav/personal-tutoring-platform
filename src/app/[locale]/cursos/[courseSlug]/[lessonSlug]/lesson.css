@@ -3,6 +3,7 @@
  * COURSE-P5-00 — + the prose elements Tailwind Preflight had been flattening
  *                (lists, links, blockquotes, inline code).
  * COURSE-P5-00 — + `hr`, the bridge's mark.
+ * COURSE-P7-01 — + `.lesson-ref*`, the cross-lesson reference and its hover card.
  *
  * Imported ONLY from the lesson segment's page.tsx (alongside katex.css), never the
  * shared layout, so none of this loads on non-lesson routes.
@@ -274,6 +275,160 @@ body:has(.lesson-shell) {
 .lesson-content div:has(> table)::-webkit-scrollbar-thumb:hover,
 .lesson-content .pycell-editor::-webkit-scrollbar-thumb:hover {
   background: var(--green);
+}
+
+/* ── Cross-lesson references (COURSE-P7-01) ─────────────────────────────── */
+
+/* `<Leccion>` (src/lib/courses/Leccion.tsx) renders the link and its card as SIBLINGS
+   inside a `.lesson-ref-wrap`, both inline `<span>`s: a reference lives mid-sentence,
+   inside a `<p>`, where a block-level neighbour would be invalid HTML. The link itself
+   gets no rules of its own — a cross-reference IS a link, and the prose-link rule above
+   already says what a link looks like here. The wrapper is deliberately NOT positioned;
+   the block below explains what is.
+
+   The card hangs off the PROSE BLOCK, not off the link, and that is the whole reason
+   this rule exists. Centring the card on the link is what a tooltip wants to do, but the
+   reading column runs to within 30px of the viewport edge from 768px up to the 1280px
+   breakpoint, and `body` is `overflow-x: clip` — so a reference near the end of a line
+   had up to 180px of its card silently cut off, measured, not guessed. Positioning the
+   nearest prose block instead makes the paragraph the containing block, and `left/right:
+   0` with `margin-inline: auto` then centres the card IN THE COLUMN, where it physically
+   cannot leave the page. The cost is that the card sits above the paragraph rather than
+   above the line; it is a non-interactive label that appears under the reader's cursor,
+   so a few lines of distance costs nothing next to losing half of it. This is now the
+   FALLBACK — the `@supports (anchor-name)` block below anchors the card to the link
+   itself where the browser can keep it on-screen without a fixed containing block. */
+.lesson-content :is(p, li, blockquote, td, th):has(.lesson-ref-wrap) {
+  position: relative;
+}
+
+/* Hidden outright unless the pointer can hover. On a touch screen the first tap must
+   NAVIGATE; a card the reader then has to dismiss is worse than no card at all. */
+.lesson-ref-card {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lesson-ref-card {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 50; /* over the prose, under the navbar (globals.css: 100) */
+    /* `max-content` up to the cap, so a two-line summary is not padded out to 26rem, and
+       `100%` — the prose block — as the outer bound, which is what keeps the card on the
+       page. `margin-inline: auto` is what centres it inside that. */
+    width: max-content;
+    max-width: min(26rem, 100%);
+    margin-inline: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--border-variant);
+    border-radius: var(--radius);
+    /* Layer 3 — the floating/popover surface. A callout background here would make the
+       card read as another box IN the prose rather than one floating above it. */
+    background: var(--surface-highest);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+    /* The prose sets a reading measure and a generous line-height; a card is a label. */
+    font-size: 0.85rem;
+    line-height: 1.45;
+    text-align: left;
+    /* Revealed with opacity, not with `display`, so the card is in the prerendered HTML
+       and already laid out: hovering costs no reflow and cannot shift the paragraph. */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 120ms ease;
+  }
+
+  /* Focus counts as hover here: a keyboard reader tabbing through the prose gets the
+     same three fields, from the sibling selector the card's DOM order allows. */
+  .lesson-ref-wrap:hover .lesson-ref-card,
+  .lesson-ref:focus-visible + .lesson-ref-card {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .lesson-ref-kicker,
+  .lesson-ref-title {
+    display: block;
+  }
+
+  .lesson-ref-kicker {
+    margin-bottom: 4px;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    /* Uppercase is presentation, so it lives here — the message key stays sentence case
+       and stays translatable. */
+    text-transform: uppercase;
+  }
+
+  /* The target is ahead of the reader. The kicker already says «Más adelante»; this is
+     the colour the rest of the app uses for "mind this". */
+  .lesson-ref-wrap[data-ahead] .lesson-ref-kicker {
+    color: var(--warning);
+  }
+
+  .lesson-ref-title {
+    margin-bottom: 4px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Summaries run to 869 characters at the top end. Five lines is the most a floating
+     card can show before it becomes the thing the reader has to read. */
+  .lesson-ref-summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+    color: var(--text-dim);
+  }
+}
+
+/* COURSE-P7-01 — Anchor the card to the hovered LINK where CSS anchor positioning is
+   available (Chromium 125+); the paragraph-anchored rules above stay the fallback for
+   browsers that lack it (Firefox, older Safari). The fallback centres every card over
+   the whole prose block, which has two visible failures the moment prose gets dense: two
+   references in one paragraph stack both cards in the same spot, and a reference on the
+   last line floats its card up to the paragraph's TOP, lines away from the cursor.
+   Binding to the link fixes both. `position: fixed` makes the VIEWPORT the overflow
+   boundary (no ancestor transforms the reading column), so `flip-block` drops the card
+   below only when it would leave the top of the screen — not the small paragraph box an
+   `absolute` card would test against — and `anchor-center` keeps it clamped on-screen
+   horizontally, the page-edge clipping the fallback was built to avoid. Every link shares
+   one anchor name, so `anchor-scope` on the wrapper confines each name to its own subtree
+   — without it a card resolves the name to the LAST link in the document, not its own
+   (measured). `anchor-scope` (Chromium 131+) is the narrower feature, so the query gates
+   on it: a browser with `anchor-name` but not `anchor-scope` keeps the fallback. */
+@supports (anchor-name: --a) and (anchor-scope: all) {
+  @media (hover: hover) and (pointer: fine) {
+    .lesson-ref-wrap {
+      anchor-scope: --leccion-ref;
+    }
+
+    .lesson-ref {
+      anchor-name: --leccion-ref;
+    }
+
+    .lesson-ref-card {
+      position: fixed;
+      position-anchor: --leccion-ref;
+      /* Clear the fallback's block/inline insets, then place above the link, centred. */
+      inset: auto;
+      margin-inline: 0;
+      bottom: anchor(top);
+      margin-bottom: 8px;
+      justify-self: anchor-center;
+      position-try-fallbacks: flip-block;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-ref-card {
+    transition: none;
+  }
 }
 
 /* ── Prev/next lesson footer (COURSE-P5-01) ─────────────────────────────── */

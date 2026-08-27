@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: 'ReLU es una función lineal.'
     answer: false
-    explanation: 'Es lineal *a trozos*, que no es lo mismo. Si fuera lineal, apilar capas no añadiría capacidad ninguna: la composición de funciones lineales vuelve a ser lineal.'
+    explanation: 'Es lineal *a trozos*, que no es lo mismo. Si fuera lineal, apilar capas no añadiría capacidad ninguna: la composición de funciones lineales vuelve a ser lineal. Lo desarrollan <Leccion slug="funciones-activacion">las funciones de activación</Leccion>.'
   - id: q-sigmoide-cero
     type: numeric
     prompt: 'Calcula $\sigma(0)$, con $\sigma(x) = \dfrac{1}{1 + e^{-x}}$.'
@@ -312,6 +312,24 @@ es ejecutable (para eso está `<PyCell>`):
 
 <CodeChallenge id="ch-softmax" />
 
+{/* COURSE-P7-01 — Referencias entre lecciones. Una de cada clase que el componente
+    distingue, para que el render check y `pnpm lint:content` (validate-crosslinks) las
+    cubran todas. Ojo con lo que NO se puede montar aquí: el fixture vive en el bloque 1,
+    orden 0, así que toda lección le queda por delante y la referencia HACIA ATRÁS no
+    tiene destino posible; esa rama la cubren las pruebas de `isAhead`. La quinta clase
+    —una referencia dentro de la explicación de un quiz— está en el frontmatter, en
+    `q-relu-lineal`. */}
+
+## Referencias entre lecciones
+
+Hacia adelante y por encima de la raya, con ancla a una sección concreta: enlaza, y su
+tarjeta se marca «Más adelante» — es el caso de <Leccion slug="descenso-gradiente" ancla="el-gradiente-apunta-cuesta-arriba-y-por-eso-se-resta">el paso que resta el gradiente</Leccion>.
+
+Sin etiqueta, el enlace toma el título del destino: <Leccion slug="tokenizacion" />.
+
+Y a una lección en borrador —este mismo fixture— que se renderiza como texto plano, sin
+enlace: <Leccion slug="pipeline-fixture">el fixture del pipeline</Leccion>.
+
 {/* COURSE-P5-00 — La raya del puente. Es un elemento RENDERIZADO desde que las
     lecciones cierran con ella (AUTHORING.md §1), así que se comprueba aquí como
     todo lo demás: `lesson.css` la convierte en una raya corta y centrada, no en un
@@ -322,3 +340,8 @@ es ejecutable (para eso está `<PyCell>`):
 
 Y así cierra la lección: dos párrafos que dicen qué queda sin resolver, sin título y
 precedidos por su raya.
+
+Y el segundo entrega la siguiente. <Leccion slug="funciones-activacion">Las funciones de
+activación</Leccion> aparece aquí como texto plano —misma lección que enlaza la
+explicación de `q-relu-lineal` más arriba— porque `LessonNav` ya enlaza esa lección dos
+párrafos más abajo.

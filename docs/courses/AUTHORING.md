@@ -238,35 +238,40 @@ prose uses are all the same number. (They were 0..4 until P5-00. The schemas in
 outright, so the old numbering cannot come back through content; a stray "bloque 0" in *prose* is
 still just a leftover, and still yours to fix.)
 
-**Lessons are numbered within their block**, starting at 1, and the sidebar shows that number.
+**A lesson is never referred to by its number** (`COURSE-P7-01`). Write a
+[`<Leccion>`](#7-components) and let the build resolve it:
 
-In Spanish prose both are common nouns and stay **lowercase** mid-sentence: *el bloque 2*, *la
-lección 3* — never *el Bloque 2*. Capitalise only at the start of a sentence or in a heading.
+> ✅ `como en <Leccion slug="bolsa-de-palabras">la bolsa de palabras</Leccion>`
+> ❌ como en la lección 5 del bloque anterior, sobre la bolsa de palabras
 
-**Always name the topic alongside the number:**
+A bare ordinal is a reference that rots. Insert one lesson into a block and every "la lección 5"
+elsewhere in the course points at the wrong place — across 43 lessons written over months that
+*will* happen, and until P7-01 nothing checked it. The slug is checked: an unknown one fails
+`pnpm lint:content`. The number the reader may want — *BLOQUE 2 · LECCIÓN 5* — comes out of the
+registry into the hover card, so it cannot go stale, and the component decides on its own whether
+the reference is a link at all.
 
-> ✅ la lección 3, sobre vocabulario y OOV · lo verás en el bloque 2, al construir el MLP
-> ❌ la lección 3 · lo verás en el bloque 2
+**The label still names the topic**, exactly as the old rule demanded, and for the same reason:
 
-A bare ordinal is a reference that rots. Insert one lesson into a block and every "la lección 3"
-elsewhere in the course silently points at the wrong place — across 40 lessons, written over
-months, that *will* happen, and nothing checks it. Naming the topic makes the reference
-self-correcting: the number may drift, but the reader can still find what you meant.
+> ✅ `<Leccion slug="vocabulario-oov">el vocabulario y las palabras fuera de él</Leccion>`
+> ❌ `<Leccion slug="vocabulario-oov">la lección anterior</Leccion>`
 
-**And from Block 2 on, say which block.** Lessons restart at 1 in every block, so the course has
-five lesson 5s. Inside its own block a bare number is fine — the reader is standing there. Pointing
-anywhere else, name the block:
+The sentence has to work for a student who never hovers anything — and when the reference renders
+as plain text (a draft target, or a forward reference inside the bridge) the label *is* the whole
+reference.
 
-> ✅ la lección 5 del bloque anterior, sobre la bolsa de palabras · la lección 2 de este bloque,
-> sobre funciones de activación y no linealidad
-> ❌ la lección 5, sobre la bolsa de palabras
+**A forward reference says that it is one, in the sentence.** The component renders a card marked
+«Más adelante»; it never puts a word in your prose, and a card is not something a reader on a phone
+ever sees:
 
-Prefer «del bloque anterior» to «del bloque 1» when it *is* the preceding block: it survives a
-renumbering of the syllabus, and the topic is already there to pin it down. Two blocks back or
-further, use the number.
+> ✅ eso lo construye <Leccion …>el forward pass</Leccion> · de aquí a <Leccion …>…</Leccion>
+> ❌ como vimos en <Leccion …>el forward pass</Leccion>  ← the target is ahead
 
-Block 1 is exempt by accident of being first, and its existing references are correct as written —
-every one of them points inside Block 1.
+**Blocks keep their numbers.** There is no `<Bloque>`: a block is a section of the syllabus, not a
+page to link to. In Spanish prose both are common nouns and stay **lowercase** mid-sentence: *el
+bloque 2*, *la lección 3* — never *el Bloque 2*. Capitalise only at the start of a sentence or in a
+heading. Name the block when you point outside the current one, and prefer «del bloque anterior» to
+«del bloque 1» when it *is* the preceding block: it survives a renumbering of the syllabus.
 
 ## 3. The budget
 
@@ -1051,6 +1056,7 @@ de exponenciar'` is worth ten minutes of their time.
 | `<PyCell code={`…`} packages?={[…]}>` | `code` is a **prop, not children** | Requires `hasCode: true` |
 | `<Quiz id="…">` | `id` must match a frontmatter question | Requires `hasQuiz: true` |
 | `<CodeChallenge id="…">` | `id` must match a frontmatter challenge | Also satisfies `hasCode: true` |
+| `<Leccion slug="…" ancla?="…">` | `slug` must resolve; `ancla` must be a heading id in the target | A cross-reference. Children are the label, falling back to the target's title — see below |
 
 ### When a figure earns its place
 
@@ -1105,6 +1111,34 @@ and leave the background transparent so the figure sits on whatever surface host
 `<Details>`. And `<Figure>` renders through `<img>`, which cannot reach the page's CSS variables, so
 `currentColor` and `var(--text)` silently render as black. Check the file at 360px before shipping:
 label text below 12px in the source is unreadable once the image scales down.
+
+### Referring to another lesson
+
+`<Leccion>` replaces every hand-written lesson number (§2). It works in lesson prose **and** in quiz
+and challenge copy in the frontmatter, which is where 72 of the course's references live.
+
+Whether it renders as a link is **not** yours to decide. It follows from where the target sits:
+
+| The target is… | Renders | Why |
+|---|---|---|
+| behind the reader | link + hover card | they have been there; going back is useful |
+| ahead, above the `---` | link + card marked «Más adelante» | mid-argument, often several lessons out |
+| ahead, below the `---` | plain text | the bridge's hand-off; `LessonNav` links that same lesson two paragraphs down |
+| `draft: true` | plain text | the route is not generated, so a link would 404 |
+
+So a reference moves between those cases on its own when a lesson is reordered, and the bridge needs
+no special syntax — being *after the `---`* is the whole signal.
+
+The label is the children: `<Leccion slug="la-neurona">la neurona artificial</Leccion>`. Omit them
+(`<Leccion slug="la-neurona" />`) and the target's own title is used, which is right for a sentence
+that means to name the lesson and wrong for one that means to name the topic. `<Leccion>` text does
+not count toward the word budget (§3).
+
+`ancla` points at a section: it is the heading's **id**, the slug of the heading text, the same one
+in the `#…` of the on-this-page rail. It is checked against the target's real headings, so
+retitling a section elsewhere in the course fails the build here rather than dropping readers at the
+top of the page. The card still names the *lesson*, never the section — a heading above a lesson
+summary is two different things pretending to be one.
 
 ### Widget ids
 
@@ -1268,6 +1302,8 @@ Copy this into the PR description.
       after it but the closing paragraphs
 - [ ] **The bridge is two paragraphs and names the NEXT lesson** — anything further ahead is a
       signpost, not a named promise, and no other lesson already promised the same one
+- [ ] **Every cross-reference to another lesson is a `<Leccion slug>`**, never a number; its label
+      names the topic, and a forward reference says it is one in the sentence
 - [ ] **A non-first lesson opens on the previous lesson's bridge**, naming that lesson by its topic
 - [ ] **The pickup states, it does not re-derive** — different words, different order, not the same
       example; it stays inside the first motivation paragraph

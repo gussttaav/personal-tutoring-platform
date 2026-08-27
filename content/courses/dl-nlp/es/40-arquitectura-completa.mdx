@@ -43,7 +43,7 @@ quiz:
     type: boolean
     prompt: 'Pasas de traducir frases de $50$ tokens a traducir textos de $1\,000$. El modelo base necesita más parámetros.'
     answer: false
-    explanation: 'Falso, y es la propiedad que separa esta arquitectura de la del bloque 3. En el recuento no aparece $T$ por ninguna parte: las proyecciones, el perceptrón por posiciones y los vectores de normalización son los mismos en la posición $3$ y en la $300$, y la codificación posicional es una fórmula y no una tabla —si el artículo hubiera aprendido un vector por posición, ahí sí habría un $T_{\max} \cdot d_{\text{model}}$ que crecería—. Lo que sí crece es el trabajo: la rejilla de la lección 1 de este bloque, sobre el adiós a la recurrencia, cuesta $T^{2}$, y con mil tokens eso ya se nota. Más cuentas con los mismos pesos.'
+    explanation: 'Falso, y es la propiedad que separa esta arquitectura de la del bloque 3. En el recuento no aparece $T$ por ninguna parte: las proyecciones, el perceptrón por posiciones y los vectores de normalización son los mismos en la posición $3$ y en la $300$, y la codificación posicional es una fórmula y no una tabla —si el artículo hubiera aprendido un vector por posición, ahí sí habría un $T_{\max} \cdot d_{\text{model}}$ que crecería—. Lo que sí crece es el trabajo: la rejilla de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> cuesta $T^{2}$, y con mil tokens eso ya se nota. Más cuentas con los mismos pesos.'
     hint: '¿Aparece $T$ en la forma de alguna de las matrices del modelo?'
   - id: q-salida-del-decoder
     type: predict-output
@@ -81,7 +81,7 @@ no quince: fijados ésos, todas las formas del modelo quedan determinadas —inc
 parecen libres y no lo son—, y de ellos sale el recuento entero de parámetros y, con él, el reparto,
 que no está donde el dibujo sugiere. Antes hay que cerrar la caja que ninguna lección construyó, la
 que corona la columna del decoder, y su respuesta viene de mucho más atrás que el resto del bloque:
-es la tabla de *embeddings* de la lección 6 del bloque 1, sobre las representaciones densas, leída
+es la tabla de *embeddings* de <Leccion slug="embeddings-densos">la lección sobre las representaciones densas</Leccion>, leída
 al revés.
 
 <Explorable
@@ -99,14 +99,14 @@ primero es la correspondencia, rótulo por rótulo:
 
 | Rótulo en la figura | Qué caja es | Dónde se construyó |
 |---|---|---|
-| <W>Input Embedding</W>, <W>Output Embedding</W> | la tabla $\mathbf{E}$, la misma en las dos | lección 6 del bloque 1, sobre las representaciones densas |
+| <W>Input Embedding</W>, <W>Output Embedding</W> | la tabla $\mathbf{E}$, la misma en las dos | <Leccion slug="embeddings-densos">la lección sobre las representaciones densas</Leccion> |
 | <W>Outputs (shifted right)</W> | lo ya escrito, corrido una posición | la lección anterior, sobre el decoder y su máscara |
-| <W>Positional Encoding</W> | $\text{PE}$, sumada una sola vez abajo del todo | lección 5, sobre la codificación posicional |
-| <W>Multi-Head Attention</W> (izquierda) | la auto-atención del encoder | lecciones 2, 3 y 4: auto-atención, producto interno escalado y cabezas |
+| <W>Positional Encoding</W> | $\text{PE}$, sumada una sola vez abajo del todo | <Leccion slug="codificacion-posicional">la lección sobre la codificación posicional</Leccion> |
+| <W>Multi-Head Attention</W> (izquierda) | la auto-atención del encoder | <Leccion slug="self-attention">auto-atención</Leccion>, <Leccion slug="scaled-dot-product">producto interno escalado</Leccion> y <Leccion slug="multi-head">cabezas</Leccion> |
 | <W>Masked Multi-Head Attention</W> | la misma, con $\mathbf{M}$ sumada a las puntuaciones | la lección anterior, sobre las máscaras |
 | <W>Multi-Head Attention</W> (centro de la derecha) | la atención encoder-decoder | la lección anterior, sobre la subcapa que junta las dos columnas |
-| <W>Add & Norm</W>, cinco veces | $\text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right)$ | lección 6, sobre los residuales y el *layer norm* |
-| <W>Feed Forward</W>, dos veces | el perceptrón por posiciones | lección 6, sobre los residuales y el *layer norm* |
+| <W>Add & Norm</W>, cinco veces | $\text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right)$ | <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> |
+| <W>Feed Forward</W>, dos veces | el perceptrón por posiciones | <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> |
 | <W>Nx</W> | $N$ bloques apilados | esta lección |
 | <W>Linear</W>, <W>Softmax</W> | la proyección al vocabulario | esta lección |
 
@@ -145,11 +145,11 @@ y ni un parámetro nuevo en toda la caja.
 El artículo va más lejos que eso y usa esa matriz *tres* veces: en el *embedding* de entrada, en
 el de salida y en la proyección al vocabulario. Eso exige un vocabulario común a los dos idiomas, y
 lo tiene: sus $37\,000$ entradas salen de un BPE (*byte-pair encoding*) entrenado sobre los dos
-textos a la vez, la técnica de la lección 2 del bloque 1, sobre la tokenización. Una tabla de
+textos a la vez, la técnica de <Leccion slug="tokenizacion">la lección sobre la tokenización</Leccion>. Una tabla de
 $37\,000 \times 512$ son $18\,944\,000$ parámetros, y lo que se compra compartiéndola es no pagarla
 tres veces.
 
-Queda un factor que la lección 5 de este bloque, sobre la codificación posicional, dejó fuera. Allí
+Queda un factor que <Leccion slug="codificacion-posicional">la lección sobre la codificación posicional</Leccion> dejó fuera. Allí
 la entrada de la primera capa se escribió $\mathbf{x}_t = \mathbf{e}_{w_t} + \text{PE}_t$; el
 artículo multiplica el primer sumando:
 
@@ -178,8 +178,8 @@ La tabla 3 del artículo tiene una fila por cada modelo que entrenaron. La prime
 | $d_{\text{ff}}$ | $2\,048$ | la anchura interior del perceptrón por posiciones |
 | $\lvert V \rvert$ | $37\,000$ | cuántas filas tiene $\mathbf{E}$ |
 
-Todo lo demás sale de esos cinco. El reparto de la lección 4 de este bloque, sobre la atención
-multi-head, da $d_k = d_v = d_{\text{model}}/h = 64$, y con él $\mathbf{W}^Q_i$, $\mathbf{W}^K_i$ y
+Todo lo demás sale de esos cinco. El reparto de <Leccion slug="multi-head">la lección sobre la atención
+multi-head</Leccion> da $d_k = d_v = d_{\text{model}}/h = 64$, y con él $\mathbf{W}^Q_i$, $\mathbf{W}^K_i$ y
 $\mathbf{W}^V_i$ miden $512 \times 64$ y $\mathbf{W}^O$ mide
 $(h \cdot d_v) \times d_{\text{model}} = 512 \times 512$; el perceptrón por posiciones sube a
 $2\,048$ y vuelve a bajar; cada normalización aporta dos vectores de $512$. Lo que no está en la
@@ -189,8 +189,8 @@ arquitectura, y quedan fuera del curso.
 
 ### Un tercio del modelo es una tabla de búsqueda
 
-Un bloque del encoder pesa $3\,150\,336$ parámetros —la cuenta de la lección 6 de este bloque, sobre
-los residuales y el *layer norm*, con sus sesgos y sus vectores de normalización dentro—. Uno del
+Un bloque del encoder pesa $3\,150\,336$ parámetros —la cuenta de <Leccion slug="bloque-transformer">la lección sobre
+los residuales y el *layer norm*</Leccion>, con sus sesgos y sus vectores de normalización dentro—. Uno del
 decoder lleva exactamente una atención y una normalización más:
 
 $$
@@ -282,7 +282,7 @@ el tamaño: sesenta y tres millones de parámetros no se mueven dentro de un nav
 se construye es la arquitectura con anchuras de juguete —las mismas fórmulas, dos capas en lugar de
 seis, dos cabezas en lugar de ocho— y una frase corta que se pueda seguir a ojo.
 
-Eso es la lección 9 de este bloque, el proyecto: un Transformer desde cero. Casi todas las piezas
+Eso es <Leccion slug="proyecto-transformer">la lección siguiente, el proyecto</Leccion>: un Transformer desde cero. Casi todas las piezas
 están escritas ya, cada una en el desafío de su lección —el *softmax* por filas, la atención con su
 máscara, el *layer norm*, el perceptrón por posiciones, la codificación posicional—, y lo que queda
 es ensamblarlas y hacer una pasada hacia delante de principio a fin: de una frase de tokens a una
