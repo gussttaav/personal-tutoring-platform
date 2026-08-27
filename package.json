@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/diagnose-supabase.mjs; next build",
     "start": "next start",
     "lint": "eslint .",
     "lint:content": "tsx scripts/lint-content.ts",
