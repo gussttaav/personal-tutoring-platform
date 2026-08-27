@@ -37,6 +37,7 @@ function lessonFile(fm: { slug: string; order: number; draft?: boolean }): strin
     hasQuiz: false,
     quiz: [],
     challenges: [],
+    reading: [],
     slug: fm.slug,
   };
   const yaml = Object.entries(full)

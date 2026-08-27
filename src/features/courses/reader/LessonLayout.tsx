@@ -21,7 +21,7 @@
 
 import type { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
-import type { Course, Lesson, LessonRef } from "@/domain/types";
+import type { Course, Lesson, LessonRef, ReadingItem } from "@/domain/types";
 import type { HeadingOutline } from "@/lib/courses/headings";
 import LessonSidebar from "./LessonSidebar";
 import OnThisPage from "./OnThisPage";
@@ -29,6 +29,7 @@ import LessonNav from "./LessonNav";
 import MobileLessonBar from "./MobileLessonBar";
 import CourseProgressProvider from "./CourseProgressProvider";
 import LessonComplete from "./LessonComplete";
+import LessonReading from "./LessonReading";
 
 interface LessonLayoutProps {
   course:      Course;
@@ -41,6 +42,8 @@ interface LessonLayoutProps {
   /** COURSE-P4-04: quiz + challenge ids placed in this lesson's body, for the
    *  solved counter next to mark-complete. Empty on a lesson with no exercises. */
   exerciseIds: string[];
+  /** COURSE-P8-01: "Para profundizar" entries. Empty renders nothing. */
+  reading:     ReadingItem[];
   prev:        LessonRef | null;
   next:        LessonRef | null;
   locale:      string;
@@ -56,6 +59,7 @@ export default async function LessonLayout({
   minutes,
   headings,
   exerciseIds,
+  reading,
   prev,
   next,
   locale,
@@ -97,6 +101,10 @@ export default async function LessonLayout({
             </header>
 
             {children}
+
+            {/* COURSE-P8-01: between the body and mark-complete. The bridge stays the
+                lesson's last prose; this joins the footer chrome below it. */}
+            <LessonReading reading={reading} locale={locale} />
 
             <LessonComplete lessonSlug={currentSlug} exerciseIds={exerciseIds} />
 

@@ -54,6 +54,7 @@ function lessonFile(fm: LessonFm): string {
     hasQuiz: false,
     quiz: [],
     challenges: [],
+    reading: [],
     ...fm,
   };
   const yaml = Object.entries(full)

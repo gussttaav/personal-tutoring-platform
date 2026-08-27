@@ -3,6 +3,7 @@
  * COURSE-P2-01 — + validate every `<Explorable id>` in lesson bodies resolves.
  * COURSE-P2-03 — + validate `<PyCell>` agrees with the `hasCode` frontmatter flag.
  * COURSE-P3-01 — + validate every `<Quiz id>` resolves to a frontmatter question.
+ * COURSE-P8-01 — + validate the frontmatter `reading` array's links.
  * COURSE-P3-02 — + the same for every `<CodeChallenge id>`.
  * COURSE-P5-00 — + a second, NON-FATAL phase: per-lesson counts, budget and notation.
  * COURSE-P5-00 — + the voice pass (banned-word families) and the bridge's `---`.
@@ -54,6 +55,7 @@ import { mathPunctuationWarnings } from "@/lib/courses/validate-math-punctuation
 import { notationWarnings } from "@/lib/courses/validate-notation";
 import { validatePyCellFlags } from "@/lib/courses/validate-pycells";
 import { validateQuizRefs } from "@/lib/courses/validate-quizzes";
+import { validateReading } from "@/lib/courses/validate-reading";
 import { structureWarnings } from "@/lib/courses/validate-structure";
 import { voiceWarnings } from "@/lib/courses/validate-voice";
 
@@ -66,6 +68,7 @@ try {
   validateQuizRefs();
   validateChallengeRefs();
   validateCrosslinks();
+  validateReading();
   console.log("✓ content lint passed");
 } catch (err) {
   console.error(`✗ content lint failed: ${(err as Error).message}`);

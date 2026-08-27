@@ -46,6 +46,7 @@ quiz:
     explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$ —el argumento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente desvanecido</Leccion>, aplicado a esta ruta concreta—. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora y la que la tabla desmiente: si todas las posiciones se conservaran igual, las tiras largas fallarían por el medio y no por el principio.'
     hint: 'Cuenta las multiplicaciones que separan la pérdida del token $j$.'
 challenges: []
+reading: []
 ---
 
 {/* COURSE-P5-04 — Bloque 4, lección 2. */}

@@ -922,6 +922,29 @@
       "exercisesDone": "Exercises: {done} of {total} solved",
       "saveAttempts": "Your answers are not being saved.",
       "saveAttemptsCta": "Sign in to keep them"
+    },
+    "reading": {
+      "title": "Further reading",
+      "lede": "Where this lesson comes from, and where to go next. None of it is needed to carry on with the course.",
+      "count": "{count, plural, one {# source} other {# sources}}",
+      "kindCount": {
+        "paper": "{count, plural, one {# paper} other {# papers}}",
+        "libro": "{count, plural, one {# book} other {# books}}",
+        "blog": "{count, plural, one {# article} other {# articles}}",
+        "video": "{count, plural, one {# video} other {# videos}}",
+        "interactivo": "{count, plural, one {# interactive} other {# interactive}}"
+      },
+      "kind": {
+        "paper": "paper",
+        "libro": "book",
+        "blog": "article",
+        "video": "video",
+        "interactivo": "interactive"
+      },
+      "lang": {
+        "es": "In Spanish",
+        "en": "In English"
+      }
     }
   },
   "meta": {

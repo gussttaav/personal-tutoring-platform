@@ -385,6 +385,50 @@ export const CodeChallengeSchema = z.strictObject({
 
 export type CodeChallengeInput = z.infer<typeof CodeChallengeSchema>;
 
+/*
+ * COURSE-P8-01 — "Para profundizar", the per-lesson further-reading list.
+ *
+ * Data, not prose: the author declares entries here and the reader renders them
+ * (src/features/courses/reader/LessonReading.tsx). Writing the block by hand in MDX
+ * would put a recurring `## Para profundizar` in 43 lessons, which is exactly the
+ * "watching a form get filled out" failure AUTHORING.md §1 forbids.
+ *
+ * Named `reading`, NOT `refs`: this codebase already has a `LessonRef` (the prev/next
+ * pointer, src/domain/types.ts) and a `lesson-ref-*` CSS family (the P7 cross-lesson
+ * hover card). A third meaning for "ref" would collide with both.
+ */
+export const READING_KINDS = ["paper", "libro", "blog", "video", "interactivo"] as const;
+
+/** The curation cap. A reading list nobody finishes is a link dump with margins. */
+export const READING_MAX = 5;
+
+/** One line. The note says what the STUDENT gets, not what the source is about. */
+export const READING_NOTE_MAX = 240;
+
+export const ReadingItemSchema = z.strictObject({
+  kind:    z.enum(READING_KINDS),
+  title:   z.string().min(1),
+  authors: z.string().min(1),
+  // Optional and a STRING: "2013" but also "3.ª ed., borrador libre", and a living
+  // web tool has no meaningful year at all.
+  year:    z.string().min(1).optional(),
+  // Where it lives, as the reader should recognise it: "arXiv:1301.3781", "stanford.edu".
+  venue:   z.string().min(1),
+  // The course is Spanish and nearly every primary source is English. Saying so per
+  // entry is what stops a student clicking blind into a 60-page English paper.
+  lang:    z.enum(["es", "en"]),
+  // https only: these are links a student opens from a page we control, and an
+  // http:// entry would be a mixed-content warning in the browser.
+  url:     z.string().refine((u) => u.startsWith("https://"), {
+    message: "url must start with https://",
+  }),
+  // Required, and capped. The annotation is the whole reason this beats a link dump;
+  // the cap keeps it the one line the card is designed around.
+  note:    z.string().min(1).max(READING_NOTE_MAX),
+});
+
+export type ReadingItemInput = z.infer<typeof ReadingItemSchema>;
+
 export const LessonFrontmatterSchema = z.strictObject({
   slug:    z.string().min(1),
   title:   z.string().min(1),
@@ -426,6 +470,22 @@ export const LessonFrontmatterSchema = z.strictObject({
         });
       }
       seen.add(challenge.id);
+    }
+  }),
+  // COURSE-P8-01: required like `quiz` and `challenges` — a lesson with nothing to
+  // recommend writes `reading: []` and says so, rather than defaulting to "no" by
+  // omission. Same reasoning the template applies to figures.
+  reading: z.array(ReadingItemSchema).max(READING_MAX).superRefine((items, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, item] of items.entries()) {
+      if (seen.has(item.url)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate reading url "${item.url}"`,
+          path:    [i, "url"],
+        });
+      }
+      seen.add(item.url);
     }
   }),
 });

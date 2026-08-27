@@ -52,6 +52,7 @@ quiz:
     answer: '[0.25, -0.5]'
     explanation: 'Con $\mathbf{w} = \mathbf{0}$ las dos preactivaciones valen cero y la sigmoide contesta $0.5$ a los dos ejemplos, así que el error $\hat{\mathbf{Y}} - \mathbf{Y}$ vale $(-0.5,\ 0.5)^{\top}$. El primer ejemplo pide subir su preactivación y el segundo bajarla, y como cada uno toca una coordenada distinta, los dos pesos salen con signos opuestos. La magnitud es lo interesante: el segundo se mueve el doble que el primero pese a que los dos errores miden $0.5$, porque su coordenada vale $2$ y el gradiente es $(\hat{y} - y)\,\mathbf{x}$. Una entrada que aparece dos veces tira el doble.'
 challenges: []
+reading: []
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 6. */}

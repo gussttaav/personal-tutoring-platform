@@ -185,6 +185,7 @@ export default async function LessonPage({
         minutes={lesson.minutes}
         headings={headings}
         exerciseIds={exerciseIds}
+        reading={lesson.reading}
         prev={prev}
         next={next}
         locale={locale}
