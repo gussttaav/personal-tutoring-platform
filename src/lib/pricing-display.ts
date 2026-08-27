@@ -6,6 +6,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { pricingService } from "@/services";
+import { withRetry } from "@/lib/with-retry";
 import type { ProductKey } from "@/domain/types";
 
 /** Static hours-per-pack, used to derive the per-hour rate. */
@@ -47,7 +48,9 @@ export function formatPrice(cents: number, currency: string, locale = "es"): str
 export const PRICING_CACHE_TAG = "pricing-all";
 const REVALIDATE_SECONDS = 3600;
 const getRawPrices = unstable_cache(
-  async () => pricingService.getAll(),
+  // BUILD-02: retry a transient Supabase blip (see with-retry.ts) so a JWT
+  // hiccup during build-time prerender can't abort the whole Vercel deploy.
+  async () => withRetry(() => pricingService.getAll(), "pricing-all"),
   ["pricing-all"],
   { revalidate: REVALIDATE_SECONDS, tags: [PRICING_CACHE_TAG] },
 );

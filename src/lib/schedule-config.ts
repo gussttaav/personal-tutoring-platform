@@ -13,6 +13,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { scheduleService } from "@/services";
+import { withRetry } from "@/lib/with-retry";
 import type { ScheduleConfig } from "@/domain/types";
 
 export const SCHEDULE_CACHE_TAG = "schedule-config";
@@ -20,7 +21,9 @@ export const SCHEDULE_CACHE_TAG = "schedule-config";
 const REVALIDATE_SECONDS = 3600;
 
 export const getScheduleConfig: () => Promise<ScheduleConfig> = unstable_cache(
-  async () => scheduleService.getConfig(),
+  // BUILD-02: retry a transient Supabase blip (see with-retry.ts) so a JWT
+  // hiccup during build-time prerender can't abort the whole Vercel deploy.
+  async () => withRetry(() => scheduleService.getConfig(), "schedule-config"),
   ["schedule-config"],
   { revalidate: REVALIDATE_SECONDS, tags: [SCHEDULE_CACHE_TAG] },
 );
