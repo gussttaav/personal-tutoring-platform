@@ -45,10 +45,10 @@ quiz:
     options:
       - { id: a, text: 'En la recurrencia ese camino pasa por $T-1$ productos por $\mathbf{W}_{hh}$, uno por paso intermedio.' }
       - { id: b, text: 'En la atención el camino es un solo peso, $\alpha_{T1}$, sea cual sea $T$.' }
-      - { id: c, text: 'Al acortarse el camino desaparece el producto repetido de la lección 4 del bloque 3, sobre el gradiente que se desvanece, que es lo que hacía que la señal se apagara con la distancia.' }
+      - { id: c, text: 'Al acortarse el camino desaparece el producto repetido de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>, que es lo que hacía que la señal se apagara con la distancia.' }
       - { id: d, text: 'La atención acorta el camino de ida, pero el de vuelta sigue midiendo $T-1$: el gradiente tiene que recorrer las posiciones intermedias aunque la salida no las haya usado.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras. La longitud del camino es la cuenta que la lección 4 del bloque 3, sobre el gradiente que se desvanece, dejó hecha: multiplicar $T-1$ veces por la misma matriz mata o dispara la señal según su radio espectral, y la LSTM y la GRU respondieron abriéndole una vía aditiva en lugar de acortarlo. La atención lo acorta: entre dos posiciones cualesquiera hay un peso y una suma, y ni la ida ni la vuelta tienen nada intermedio que recorrer —por eso la (d) es falsa: el camino del gradiente es el mismo camino, recorrido al revés—. Lo que no desaparece es el problema de fondo: sigue habiendo profundidad, sólo que ahora es la de las capas apiladas y no la de la frase, y ésa no crece cuando el texto se alarga.'
+    explanation: 'Las tres primeras. La longitud del camino es la cuenta que <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion> dejó hecha: multiplicar $T-1$ veces por la misma matriz mata o dispara la señal según su radio espectral, y la LSTM y la GRU respondieron abriéndole una vía aditiva en lugar de acortarlo. La atención lo acorta: entre dos posiciones cualesquiera hay un peso y una suma, y ni la ida ni la vuelta tienen nada intermedio que recorrer —por eso la (d) es falsa: el camino del gradiente es el mismo camino, recorrido al revés—. Lo que no desaparece es el problema de fondo: sigue habiendo profundidad, sólo que ahora es la de las capas apiladas y no la de la frase, y ésa no crece cuando el texto se alarga.'
     hint: 'Cuenta cuántas matrices hay entre las dos posiciones en cada una de las dos arquitecturas.'
 challenges: []
 ---
@@ -122,8 +122,8 @@ La profundidad de la cadena decide cuánto se tarda. Hay una segunda distancia, 
 
 Pregúntate por dónde viaja lo que la posición $1$ le aporta a la posición $T$. En la recurrencia
 viaja por dentro del estado, y el estado se reescribe en cada paso, así que ese aporte pasa por
-$T-1$ productos por $\mathbf{W}_{hh}$ antes de llegar. Es exactamente la cuenta de la lección 4 del
-bloque 3, sobre el gradiente que se desvanece: multiplicar $T-1$ veces por la misma matriz apaga la
+$T-1$ productos por $\mathbf{W}_{hh}$ antes de llegar. Es exactamente la cuenta de <Leccion slug="gradiente-desvanecido">la
+lección sobre el gradiente que se desvanece</Leccion>: multiplicar $T-1$ veces por la misma matriz apaga la
 señal si su radio espectral es menor que $1$ y la dispara si es mayor, y la LSTM (*long short-term
 memory*) y la GRU (*gated recurrent unit*) no acortaron ese camino, le abrieron una vía aditiva al
 lado para que sobreviviera el viaje.
@@ -146,8 +146,8 @@ Nada de esto es gratis, y el precio se cuenta en multiplicaciones. Empieza por l
 paso multiplica $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ por un vector y
 $\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$ por otro, y multiplicar una matriz
 por un vector cuesta una multiplicación por casilla, así que el paso cuesta un producto por cada
-peso que tiene. Esa es la cuenta de la lección 2 del bloque 3, sobre la RNN (*recurrent neural
-network*) vanilla, leída como coste en lugar de como memoria. Sobre la frase entera:
+peso que tiene. Esa es la cuenta de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN (*recurrent neural
+network*) vanilla</Leccion>, leída como coste en lugar de como memoria. Sobre la frase entera:
 
 $$
 T\left(d_h \cdot d_h + d_h \cdot d_{\text{model}}\right) \quad \text{multiplicaciones}.
@@ -186,14 +186,14 @@ salidas se barajan igual y ningún número cambia.
 De modo que <W>el perro muerde al cartero</W> y <W>al cartero muerde el perro</W> llegan a la
 capa como el mismo conjunto de vectores. La recurrencia no tenía este problema, y no por virtud
 propia: lo tenía resuelto de nacimiento, porque leía en orden y el orden de lectura era el orden de
-la frase. El MLP (*multilayer perceptron*) concatenado de la lección 1 del bloque 3, sobre por qué
-falla el MLP en secuencias, tampoco lo tenía, por la razón contraria: cada posición multiplicaba su
+la frase. El MLP (*multilayer perceptron*) concatenado de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué
+falla el MLP en secuencias</Leccion>, tampoco lo tenía, por la razón contraria: cada posición multiplicaba su
 propio bloque de pesos, y por eso sabía distinguirlas y no sabía generalizar entre ellas. La
 atención no tiene ni lo uno ni lo otro.
 
 La concesión es grande y esta lección no la arregla: quitar la recurrencia se lleva por delante lo
 único que sabía el orden. Se arregla sumándole a cada fila algo que dependa de dónde está, y eso es
-la lección 5 de este bloque, sobre la codificación posicional. Hasta entonces, todo lo que sigue
+<Leccion slug="codificacion-posicional">una lección más adelante, sobre la codificación posicional</Leccion>. Hasta entonces, todo lo que sigue
 trata la entrada como una bolsa de vectores.
 
 ## Compruébalo a mano con una frase de 50 tokens
@@ -235,7 +235,7 @@ el bloque anterior las consultas venían del decoder: eran sus estados, uno por 
 acaba de desaparecer del dibujo. Nadie fabrica ya $\mathbf{Q}$, y sin consultas la operación que
 esta lección ha puesto en el centro de la arquitectura no tiene con qué empezar.
 
-La respuesta es la que le da nombre a la lección 2 de este bloque, sobre la auto-atención: que
+La respuesta es la que le da nombre a <Leccion slug="self-attention">la lección siguiente, sobre la auto-atención</Leccion>: que
 pregunte la propia secuencia. Si las consultas, las claves y los valores son tres lecturas de la
 misma lista de vectores, no hace falta ninguna segunda red que produzca nada —y cada posición pasa
 a mirar a todas las demás, incluida ella misma—. Es la operación de siempre con los tres papeles

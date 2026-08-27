@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Qué se le pide predecir, y con ello qué texto sirve de conjunto de entrenamiento.' }
       - { id: d, text: 'La fórmula de la atención: uno de los dos cambió el divisor $\sqrt{d_k}$ para poder mirar en las dos direcciones.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras, y la (d) es la que conviene descartar despacio, porque es la tentación de esta lección entera. El divisor sale de lo grande que se hace un producto interno de $d_k$ coordenadas —la cuenta de la lección 3 de este bloque, sobre el producto interno escalado (*scaled dot-product*)— y esa cuenta no sabe nada de máscaras ni de columnas: sale igual mirando a la derecha que sin mirar. La atención es la misma operación en los dos modelos, letra por letra. Lo que cambia son las tres primeras, y la (a) sale de la (c): quien se queda sin encoder se queda sin nada a lo que dirigir las claves y los valores de la subcapa de en medio.'
+    explanation: 'Las tres primeras, y la (d) es la que conviene descartar despacio, porque es la tentación de esta lección entera. El divisor sale de lo grande que se hace un producto interno de $d_k$ coordenadas —la cuenta de <Leccion slug="scaled-dot-product">la lección sobre el producto interno escalado (*scaled dot-product*)</Leccion>— y esa cuenta no sabe nada de máscaras ni de columnas: sale igual mirando a la derecha que sin mirar. La atención es la misma operación en los dos modelos, letra por letra. Lo que cambia son las tres primeras, y la (a) sale de la (c): quien se queda sin encoder se queda sin nada a lo que dirigir las claves y los valores de la subcapa de en medio.'
     hint: '¿Cuál de las cuatro habla de una fórmula, y de dónde salía esa fórmula?'
   - id: q-encoder-siguiente
     type: boolean
@@ -46,7 +46,7 @@ quiz:
       - { id: c, text: 'El Transformer de dos columnas de la lección anterior, dándole las novelas por las dos entradas: aprendería a llevar el español al español, que es un caso particular de traducir.' }
       - { id: d, text: 'Un clasificador de reseñas, pidiéndole la etiqueta de cada novela.' }
     answer: [a, b]
-    explanation: 'Las dos primeras, que es la razón entera de que estas dos familias crecieran y el seq2seq de la lección 1 del bloque anterior no: la etiqueta la pone el texto. La (d) falla por lo que dice el enunciado —no hay etiquetas, y ninguna arquitectura las inventa—. La (c) es la interesante, porque correr correría: lo que aprendería es a copiar. El encoder lee la frase entera, incluido el token que el decoder tiene que escribir a continuación, y la subcapa de en medio se lo pasa; es la fuga de la segunda pregunta entrando por la otra columna. Un modelo que copia tiene la pérdida en el suelo y no ha mirado el español.'
+    explanation: 'Las dos primeras, que es la razón entera de que estas dos familias crecieran y el seq2seq de <Leccion slug="encoder-decoder">la lección sobre el encoder y el decoder</Leccion> no: la etiqueta la pone el texto. La (d) falla por lo que dice el enunciado —no hay etiquetas, y ninguna arquitectura las inventa—. La (c) es la interesante, porque correr correría: lo que aprendería es a copiar. El encoder lee la frase entera, incluido el token que el decoder tiene que escribir a continuación, y la subcapa de en medio se lo pasa; es la fuga de la segunda pregunta entrando por la otra columna. Un modelo que copia tiene la pérdida en el suelo y no ha mirado el español.'
     hint: 'Para cada una, pregúntate de dónde saldría la respuesta correcta de cada ejemplo. Si sale del propio texto, sirve; si tiene que escribirla alguien, no.'
 challenges: []
 ---
@@ -60,8 +60,8 @@ es de los caros: pares de frases, cada una con su traducción, escritos uno a un
 sabe los dos idiomas. Texto suelto, en cambio, sobra —hay muchísimo más del que
 nadie va a leer nunca—. La pregunta de hoy es qué se le puede enseñar a un modelo con un texto y nada más.
 
-Hay una segunda deuda que vence hoy, y es mucho más vieja. El bloque 1 se despidió —su lección 8,
-sobre GloVe y los límites de los embeddings estáticos— con una entrada del vocabulario que no cabía
+Hay una segunda deuda que vence hoy, y es mucho más vieja. El bloque 1 se despidió —<Leccion slug="glove-y-limites">su última lección,
+sobre GloVe y los límites de los embeddings estáticos</Leccion>— con una entrada del vocabulario que no cabía
 en su propia maquinaria: <W>banco</W> tiene una fila de $\mathbf{E}$ y
 tiene una sola, de modo que <W>el banco cerró a las dos</W> y <W>el banco estaba mojado</W> se
 llevan el mismo vector y ninguna de las dos frases tiene manera de pedir otro. Las dos deudas
@@ -74,15 +74,15 @@ devuelve su fila, y la frase alrededor podría no existir. Un Transformer contes
 su auto-atención mezcla filas: lo que sale en una posición depende de las posiciones que esa
 posición pudo mirar.
 
-Y cuáles pudo mirar lo decide una sola cosa, la máscara de la lección 7 de este bloque, sobre el
-encoder, el decoder y las máscaras. Con ella puesta, la posición de <W>banco</W> ve <W>el banco</W>
+Y cuáles pudo mirar lo decide una sola cosa, la máscara de <Leccion slug="encoder-decoder-masking">la lección sobre el
+encoder, el decoder y las máscaras</Leccion>. Con ella puesta, la posición de <W>banco</W> ve <W>el banco</W>
 y se acaba ahí; sin ella ve la frase entera, <W>cerró a las dos</W> incluido. No es un detalle
 interno del decoder: es el interruptor que decide cuánto del texto llega a cada posición, y las dos
 posiciones de ese interruptor son los dos modelos de esta lección.
 
 ## De qué depende el vector de una posición
 
-La lección 1 del bloque 1, sobre el problema de representar el lenguaje, escribió la
+<Leccion slug="texto-como-numeros">La lección sobre el problema de representar el lenguaje</Leccion> escribió la
 representación como una función:
 
 $$
@@ -94,7 +94,7 @@ la frase nada distingue las dos apariciones de <W>banco</W>. Cambiar los número
 toca el problema; hay que cambiar el argumento.
 
 Un modelo causal lo cambia por lo escrito hasta esa posición. Llamando $V^{*}$ a las secuencias
-finitas de tokens —la estrella de la lección 2 del bloque 1, sobre la tokenización—:
+finitas de tokens —la estrella de <Leccion slug="tokenizacion">la lección sobre la tokenización</Leccion>—:
 
 $$
 r : V^{*} \to \mathbb{R}^{d_{\text{model}}},
@@ -125,8 +125,8 @@ en esa posición, la paga la tercera firma y sólo ella.
 subcapa —la atención encoder-decoder no tiene a quién mirar cuando no hay encoder—, así que sus
 bloques llevan dos, igual que los del encoder, con la diferencia de que la auto-atención lleva
 máscara en todos ellos, que es lo que la lección anterior midió. Lo que se le pide predecir es el
-token siguiente, y la fórmula no es nueva: es la del modelo de lenguaje de caracteres de la lección
-7 del bloque 3, con tokens donde había caracteres y el Transformer donde estaba la RNN
+token siguiente, y la fórmula no es nueva: es la del modelo de lenguaje de caracteres de
+<Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>, con tokens donde había caracteres y el Transformer donde estaba la RNN
 (*recurrent neural network*),
 
 $$
@@ -169,8 +169,8 @@ cambió los detalles de las quince cajas y no la aritmética que escribiste en l
 
 La celda pone las dos frases una al lado de otra, con <W>banco</W> en la misma posición en las dos,
 y las mete por una llamada de auto-atención con un interruptor para la máscara. Compara los dos
-vectores de esa posición con la similitud coseno de la lección 5 del bloque 1, sobre la bolsa de
-palabras. Son tres números, y dos de ellos valen $1$ por construcción, no por
+vectores de esa posición con la similitud coseno de <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de
+palabras</Leccion>. Son tres números, y dos de ellos valen $1$ por construcción, no por
 suerte.
 
 <PyCell packages={["numpy"]} code={`
@@ -253,7 +253,7 @@ que falta es la segunda mitad de la receta, y es la mitad corta —unas pocas vu
 pocos miles de ejemplos etiquetados, partiendo de los pesos del preentrenamiento en lugar del
 generador de números aleatorios.
 
-Eso es el *fine-tuning*, y es la lección 11 de este bloque, la última: hacerlo de verdad, sobre un
+Eso es el *fine-tuning*, y es <Leccion slug="fine-tuning-colab">la lección siguiente, la última</Leccion>: hacerlo de verdad, sobre un
 modelo preentrenado de verdad. No corre en el navegador, y la lección empieza diciendo por qué —los
 pesos que hay que mover no caben donde han cabido las celdas de este curso—. Se hace en un cuaderno
 de Colab, con la máquina que hace falta al otro lado.

@@ -170,7 +170,7 @@ challenges:
       cómo se leen las columnas. Por eso una capa de verdad no tiene $3h$ matrices sino tres: el
       bloque de columnas $i$ **es** $\mathbf{W}^Q_i$.
 
-      A partir de ahí todo es la atención de la lección 2 de este bloque, sobre la auto-atención,
+      A partir de ahí todo es la atención de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>,
       con un eje más delante: `Q @ K.transpose(0, 2, 1)` hace los $h$ productos de una vez, y el
       `keepdims` del *softmax* pasa a mirar el eje $2$, que es el de las columnas de cada mapa.
       Dos errores valen lo mismo aquí y son los que comprueban los tests: dividir entre
@@ -219,7 +219,7 @@ coordenadas de la comparación y repartir una vez, reparte por grupos y suma des
 
 ## La misma matriz leída por varias atenciones a la vez
 
-Cada cabeza es la capa de la lección 2 de este bloque, sobre la auto-atención, entera: sus tres
+Cada cabeza es la capa de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>, entera: sus tres
 proyecciones sobre la misma matriz y su propio mapa. Lo único que hay que añadir es el subíndice
 que allí no hizo falta escribir porque sólo había una.
 
@@ -232,7 +232,7 @@ d_k}$ y $\mathbf{W}^V_i \in \mathbb{R}^{d_{\text{model}} \times d_v}$. Fíjate e
 **la misma** $\mathbf{X}$: no se reparten la frase, ni se reparten las coordenadas de entrada. Cada
 una saca de ella sus propias consultas (*queries*), claves (*keys*) y valores (*values*), y con
 ellas su propio mapa $\mathbf{A}_i \in \mathbb{R}^{T \times T}$, cuadrado y con las filas sumando
-$1$ igual que el de la lección 2.
+$1$ igual que el de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>.
 
 Quedan entonces $h$ salidas de $T \times d_v$ y la capa tiene que devolver una. Se ponen una al
 lado de otra y se proyectan:
@@ -263,8 +263,8 @@ que la fila tiene para repartir. Un término grande se lleva la fila; lo que otr
 que decir de esa misma pareja desaparece, y no queda dónde ir a buscarlo.
 
 El explorable de arriba es ese caso con $d_k = 4$ y una regla por coordenada, así que la cuenta se
-puede seguir número a número. Vuelve a <W>las llaves del coche están ahí</W>, la frase de la
-lección 2, y a su fila de <W>llaves</W>. La regla que lleva un sustantivo hacia su determinante y
+puede seguir número a número. Vuelve a <W>las llaves del coche están ahí</W>, la frase de
+<Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>, y a su fila de <W>llaves</W>. La regla que lleva un sustantivo hacia su determinante y
 sus modificadores, ella sola, pone en esa fila su peso mayor sobre <W>ahí</W>, con $0.40$, y deja
 <W>las</W> en $0.23$. Añádele la de concordancia, que carga sobre <W>las</W> y <W>están</W> por ser
 los plurales de la frase, y la misma fila cambia de ganador: <W>las</W> sube a $0.37$ y <W>ahí</W>
@@ -281,7 +281,7 @@ fuera, todavía se puede decidir cuánto pesa cada parte.
 ### El reparto de la anchura
 
 Queda elegir $d_k$, que era la otra pregunta abierta, y se elige contando. Cada cabeza cuesta lo
-que costaba la capa entera de la lección 2:
+que costaba la capa entera de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>:
 
 $$
 d_{\text{model}}\left(2d_k + d_v\right) \quad \text{parámetros},
@@ -302,7 +302,7 @@ h \cdot d_{\text{model}} \cdot \frac{3d_{\text{model}}}{h} + h \cdot \frac{d_{\t
 $$
 
 La $h$ se ha ido. Ocho cabezas cuestan lo mismo que una, y dieciséis lo mismo que ocho. Las
-multiplicaciones se comportan igual: la lección 1 de este bloque, sobre el adiós a la recurrencia,
+multiplicaciones se comportan igual: <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>
 midió una atención en $T^{2}\left(d_k + d_v\right)$, y $h$ de ellas dan
 $h \cdot T^{2}\left(d_k + d_v\right) = 2T^{2}d_{\text{model}}$, que es exactamente lo que costaba
 una sola de anchura $d_{\text{model}}$.
@@ -340,8 +340,8 @@ coordenada de salida por coordenada de salida, a cuál hace caso.
 
 Esa matriz hace además una segunda cosa que aquí sólo queda señalada: devuelve la salida a
 $d_{\text{model}}$, la anchura con la que entró. Eso es lo que permite apilar estas capas una sobre
-otra, y quien lo necesita de verdad es la lección 6 de este bloque, sobre el bloque completo con
-residuales y *layer norm*.
+otra, y quien lo necesita de verdad es <Leccion slug="bloque-transformer">una lección más adelante, sobre el bloque completo con
+residuales y *layer norm*</Leccion>.
 
 Falta decir lo que esta construcción **no** hace, porque los dibujos de los artículos invitan a
 creer lo contrario. Nada en la pérdida le asigna un papel a una cabeza: no existe ningún término
@@ -485,7 +485,7 @@ hay izquierda.
 
 La pieza que falta no está en la capa: está en la entrada, y consiste en que dos posiciones
 distintas le lleguen a $\mathbf{X}$ como dos filas distintas aunque el token sea el mismo. Eso es
-la lección 5 de este bloque, sobre la codificación posicional, y lo que la hace interesante no es
+<Leccion slug="codificacion-posicional">la lección siguiente, sobre la codificación posicional</Leccion>, y lo que la hace interesante no es
 que haga falta —eso ya se sabía desde la primera lección de este bloque— sino la forma concreta que
 elige el artículo: unos senos y unos cosenos con los que la distancia entre dos posiciones se puede
 escribir como una operación lineal sobre lo que se ha añadido. Esa propiedad se enseña, no se

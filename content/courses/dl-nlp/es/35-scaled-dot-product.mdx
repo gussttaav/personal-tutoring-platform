@@ -252,8 +252,8 @@ arriba; lo escalado es esta división y nada más.
 Los signos estaban ahí para que la cuenta fuese exacta, pero fíjate en qué propiedades le hicieron
 falta de verdad. Dos: que $\mathbb{E}\left[s_m\right] = 0$ y que
 $\mathbb{E}\left[s_m^{2}\right] = 1$. Cualquier inicialización centrada cuyas coordenadas sean independientes y de tamaño típico $1$ las
-cumple —las gaussianas de `rng.normal` que el curso lleva usando desde la lección 9 del bloque 2,
-sobre implementar el MLP (*multilayer perceptron*), entre ellas—, y con ellas la misma cancelación
+cumple —las gaussianas de `rng.normal` que el curso lleva usando desde <Leccion slug="implementar-mlp">la lección
+sobre implementar el MLP (*multilayer perceptron*)</Leccion>, entre ellas—, y con ellas la misma cancelación
 deja el mismo $\mathbb{E}\left[e^{2}\right] = d_k$. La primera celda lo mide.
 
 Conviene decir en voz alta de qué habla esa hipótesis, porque no habla del modelo que te
@@ -286,8 +286,8 @@ posición se lleva casi la unidad entera.
 
 Que una fila elija fuerte no suena a defecto. El defecto está en la derivada.
 
-Deriva $\alpha_{ij}$ respecto de las puntuaciones de su propia fila. Es la misma cuenta que la
-lección 5 del bloque 2, sobre las funciones de pérdida, hizo con el *softmax* de la capa de salida,
+Deriva $\alpha_{ij}$ respecto de las puntuaciones de su propia fila. Es la misma cuenta que
+<Leccion slug="funcion-de-perdida">la lección sobre las funciones de pérdida</Leccion> hizo con el *softmax* de la capa de salida,
 y salen los mismos dos casos según el índice coincida o no:
 
 $$
@@ -315,8 +315,8 @@ valores (*values*). La jacobiana no se cancela contra nada: se queda entera, cer
 
 Y así reaparecen dos cosas que el curso dio por cerradas en bloques distintos. La curva
 $\alpha\left(1 - \alpha\right)$ es la misma que la derivada de la sigmoide, con su máximo de
-$0.25$ en la mitad y sus dos colas planas: la saturación de la lección 2 del bloque 2, sobre las
-funciones de activación, en una capa donde no hay ninguna sigmoide. Y un gradiente que llega
+$0.25$ en la mitad y sus dos colas planas: la saturación de <Leccion slug="funciones-activacion">la lección sobre las
+funciones de activación</Leccion>, en una capa donde no hay ninguna sigmoide. Y un gradiente que llega
 apagado a las matrices que tenían que aprender es el bloque 3 entero, en una arquitectura sin una
 sola recurrencia. Lo que las une no era la sigmoide ni el estado recurrente: era que en las dos
 había una función aplanándose.
@@ -422,7 +422,7 @@ Hay una segunda cosa que esta capa no sabe hacer, y apunta al mismo sitio. Una f
 es un reparto y sólo uno: en <W>las llaves del coche están ahí</W>, la posición de <W>están</W>
 tiene que decidir con un único juego de pesos si mira a <W>llaves</W>, que es con quien concuerda,
 o a <W>del coche</W>, que es lo que la separa de ella; y con una fila no puede hacer las dos cosas.
-La respuesta a las dos preguntas es la misma y ocupa la lección 4 de este bloque, sobre la atención
-multi-head: varias parejas de proyecciones trabajando en paralelo, cada una con su propio reparto y
+La respuesta a las dos preguntas es la misma y ocupa <Leccion slug="multi-head">la lección siguiente, sobre la atención
+multi-head</Leccion>: varias parejas de proyecciones trabajando en paralelo, cada una con su propio reparto y
 su propia anchura, repartida entre todas a partir de $d_{\text{model}}$. Ahí $d_k$ deja de ser un
 número dado y pasa a ser una decisión con un motivo.

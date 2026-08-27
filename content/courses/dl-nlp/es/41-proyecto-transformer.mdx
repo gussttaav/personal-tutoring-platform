@@ -32,7 +32,7 @@ quiz:
     answer: 4096
     tolerance: 0
     unit: parámetros
-    explanation: 'Cuatro mil noventa y seis, que es $4d_{\text{model}}^{2}$, y la cuenta vale por lo que **no** aparece en ella: $h$. Cada cabeza proyecta a $d_k = d_v = d_{\text{model}}/h = 16$, así que las tres proyecciones suman $3 \cdot h \cdot d_{\text{model}} \cdot d_k = 3d_{\text{model}}^{2}$ salga el número de cabezas que salga —el reparto de la lección 4 de este bloque, sobre la atención multi-head— y $\mathbf{W}^O$ mide $(h \cdot d_v) \times d_{\text{model}} = 32 \times 32$. Con las anchuras del artículo, $d_{\text{model}} = 512$ y $h = 8$, la misma cuenta da $1\,048\,576$, que es lo que la lección anterior sumaba doce veces.'
+    explanation: 'Cuatro mil noventa y seis, que es $4d_{\text{model}}^{2}$, y la cuenta vale por lo que **no** aparece en ella: $h$. Cada cabeza proyecta a $d_k = d_v = d_{\text{model}}/h = 16$, así que las tres proyecciones suman $3 \cdot h \cdot d_{\text{model}} \cdot d_k = 3d_{\text{model}}^{2}$ salga el número de cabezas que salga —el reparto de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>— y $\mathbf{W}^O$ mide $(h \cdot d_v) \times d_{\text{model}} = 32 \times 32$. Con las anchuras del artículo, $d_{\text{model}} = 512$ y $h = 8$, la misma cuenta da $1\,048\,576$, que es lo que la lección anterior sumaba doce veces.'
     hint: 'Escribe las cuatro matrices con sus formas y suma. ¿Cuántas columnas tienen entre todas las cabezas?'
 challenges:
   - id: ch-genera-voraz
@@ -46,8 +46,8 @@ challenges:
       probabilidades de la posición **siguiente**, un array de forma $(\lvert V \rvert,)$. No la
       escribes tú, te la dan.
 
-      En cada vuelta elige la entrada más probable —decodificación voraz, la de la lección 1 del
-      bloque anterior, sobre el encoder y el decoder—, apúntala y realiméntala. Para al elegir
+      En cada vuelta elige la entrada más probable —decodificación voraz, la de <Leccion slug="encoder-decoder">la lección
+      sobre el encoder y el decoder</Leccion>—, apúntala y realiméntala. Para al elegir
       `eos`, que sí va en el resultado, o al llevar `max_pasos` tokens, lo que ocurra antes.
       Devuelve la lista de los tokens elegidos, sin `go`.
     packages: [numpy]
@@ -136,7 +136,7 @@ challenges:
     explanation: |
       El bucle tiene dos listas y no una, y ahí está casi todo: `entrada` es lo que ve el decoder
       —arranca en `[go]` y crece por el final— y `salida` es lo que se ha escrito, que es lo mismo
-      corrido una posición y sin `go`. Es el desplazamiento de la lección 7 de este bloque
+      corrido una posición y sin `go`. Es el desplazamiento de <Leccion slug="encoder-decoder-masking">su lección</Leccion>
       construyéndose paso a paso en lugar de venir dado.
 
       Las dos condiciones de parada no son intercambiables. El `break` va **después** de apuntar
@@ -167,8 +167,8 @@ Montar quince cajas suena peor de lo que es, y la razón cabe en una frase: salv
 extremos, todo lo que hay dentro recibe una matriz de $T$ filas y $d_{\text{model}}$ columnas y
 devuelve otra de la misma forma. La atención multi-head baja a $d_v$ por cabeza y $\mathbf{W}^O$ la
 sube de vuelta; el perceptrón por posiciones sube a $d_{\text{ff}}$ y $\mathbf{W}_2$ la baja; el
-*layer norm* no toca ninguna forma. No es una casualidad afortunada: la conexión residual de la
-lección 6 de este bloque lo **exige**, porque suma casilla a casilla lo que entró con lo que salió, y
+*layer norm* no toca ninguna forma. No es una casualidad afortunada: la conexión residual de
+<Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> lo **exige**, porque suma casilla a casilla lo que entró con lo que salió, y
 dos matrices de formas distintas no se suman.
 
 De modo que el programa entero cambia de forma dos veces, y las dos están en los extremos: abajo,
@@ -201,7 +201,7 @@ idiomas, como en el artículo. La frase es <W>me gusta la casa roja</W>, cinco t
 traducción <W>i like the red house</W>, cinco más <W>\<EOS></W>, el símbolo de fin de secuencia:
 $T_x = 5$ y $T_y = 6$.
 
-Por abajo entra la caja de la lección 5 de este bloque, sobre la codificación posicional, con el
+Por abajo entra la caja de <Leccion slug="codificacion-posicional">la lección sobre la codificación posicional</Leccion>, con el
 factor que la lección anterior le añadió:
 
 $$
@@ -210,8 +210,8 @@ $$
 
 la misma operación en las dos columnas, con la misma tabla $\mathbf{E}$. Apiladas por filas dan
 $\mathbf{X}^{\text{enc}} \in \mathbb{R}^{5 \times 32}$ y
-$\mathbf{X}^{\text{dec}} \in \mathbb{R}^{6 \times 32}$. A partir de ahí sólo hay una línea, la de la
-lección 6 de este bloque, sobre los residuales y el *layer norm*:
+$\mathbf{X}^{\text{dec}} \in \mathbb{R}^{6 \times 32}$. A partir de ahí sólo hay una línea, la de
+<Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion>:
 
 $$
 \text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right),
@@ -240,7 +240,7 @@ cuántas veces da la vuelta un bucle. Poner seis bloques en lugar de dos no toca
 
 ## Por qué la máscara va en todos los bloques y no sólo en el primero
 
-La lección 7 de este bloque, sobre el encoder, el decoder y las máscaras, dejó demostrado que una
+<Leccion slug="encoder-decoder-masking">La lección sobre el encoder, el decoder y las máscaras</Leccion> dejó demostrado que una
 llamada enmascarada respeta el pasado: en su fila $t$ no entra ninguna columna a la derecha de $t$.
 Lo que hace falta al montar el modelo es otra cosa, y es lo único que este ensamblaje añade a lo ya
 escrito: que la propiedad **sobreviva a apilar**. Entre lo que entra al decoder y lo que sale hay
@@ -252,7 +252,7 @@ a $t$ de lo que entró. Tres observaciones bastan.
 La primera es que las cajas que trabajan fila a fila lo respetan sin hacer nada. El perceptrón por
 posiciones aplica los mismos pesos a cada fila por separado, el *layer norm* normaliza cada fila con
 su propia media y su propia desviación típica, y la suma residual suma la fila $t$ con la fila $t$.
-Es la cuenta de la lección 1 de este bloque, sobre el adiós a la recurrencia: de las quince cajas
+Es la cuenta de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>: de las quince cajas
 del dibujo, sólo las tres de atención miran a otra posición.
 
 La segunda es que la auto-atención enmascarada lo respeta por construcción, que es de lo que
@@ -326,9 +326,9 @@ print("al decoder:", [V[i] for i in ent_dec], "->", X_dec.shape)
 `} />
 
 La segunda no trae nada nuevo, y ése es el hallazgo: son seis funciones y las seis son el cuerpo de
-un desafío que ya resolviste. `softmax_filas` viene de la lección 2, sobre la auto-atención;
-`atencion` es el de la lección 7, con su máscara opcional; `multi_head` reparte las columnas entre
-las cabezas como el de la lección 4; `layer_norm` y `subcapa` son los de la lección 6. Lo único
+un desafío que ya resolviste. `softmax_filas` viene de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>;
+`atencion` es el de <Leccion slug="encoder-decoder-masking">la lección sobre las máscaras</Leccion>, con su máscara opcional; `multi_head` reparte las columnas entre
+las cabezas como el de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>; `layer_norm` y `subcapa` son los de <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion>. Lo único
 escrito para hoy es `ffn`, que son dos líneas.
 
 <PyCell packages={["numpy"]} code={`
@@ -511,8 +511,7 @@ bloque le alcanza al decoder entero, y cuántos parámetros guarda una capa de a
 <Quiz id="q-parametros-atencion" />
 
 Queda una cosa que este modelo no ha hecho ni puede hacer de una pasada. Las seis filas salen a la
-vez porque la salida correcta está sobre la mesa —el *teacher forcing* que la lección 7 de este
-bloque puso al lado de la máscara—, y al escribir de verdad no la hay: el decoder arranca con
+vez porque la salida correcta está sobre la mesa —el *teacher forcing* que <Leccion slug="encoder-decoder-masking">su lección</Leccion> puso al lado de la máscara—, y al escribir de verdad no la hay: el decoder arranca con
 <W>\<GO></W> solo, elige un token, lo realimenta y vuelve a llamarse. Ese bucle es el desafío, escrito
 contra una función `paso` que hace de modelo.
 
@@ -526,7 +525,7 @@ una subcapa que las junta. Nada de lo que has escrito obliga a esa forma —las 
 la tubería, las piezas y hasta la tabla—, y en cuanto la tarea deja de ser traducir, la pregunta de
 cuántas columnas hacen falta se abre.
 
-Las dos respuestas que se dieron son la lección 10 de este bloque, sobre BERT y GPT: una se quedó
+Las dos respuestas que se dieron son <Leccion slug="bert-y-gpt">la lección siguiente, sobre BERT y GPT</Leccion>: una se quedó
 con la columna de la izquierda y con ninguna máscara, la otra con la de la derecha y con todas, y
 las dos dejaron de traducir para entrenarse contra textos que no tienen traducción al lado. La
 aritmética que las mueve es la que acabas de escribir, sin una operación nueva; lo que cambia es qué

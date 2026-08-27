@@ -141,15 +141,15 @@ the block checklist inside the P7-02 doc; this table stays a phase-level dashboa
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 `<Leccion>` + bridge pre-pass + crosslink lint](phase-7-crosslinks/01-component-and-lint.md) | `COURSE-P7-01` | ✅ | _tbd_ | local |
-| [02 Content pass: 43 lessons, block by block](phase-7-crosslinks/02-content-migration.md) | `COURSE-P7-02` | 🔄 | _tbd_ | local |
+| [02 Content pass: 43 lessons, block by block](phase-7-crosslinks/02-content-migration.md) | `COURSE-P7-02` | ✅ | _tbd_ | local |
 
 **Exit criteria**
-- [ ] No published lesson contains a hand-written lesson number in a cross-reference
+- [x] No published lesson contains a hand-written lesson number in a cross-reference
 - [x] Every `<Leccion slug>` resolves; an unknown slug or a stale anchor fails `pnpm lint:content`
 - [x] Reordering a lesson in the manifest changes which references link, with no content edit
 - [x] `<Leccion>` text is excluded from the word budget
-- [ ] Every forward reference above a `---` states its direction in the sentence
-- [ ] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
+- [x] Every forward reference above a `---` states its direction in the sentence
+- [x] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
 
 ---
 
@@ -1538,10 +1538,12 @@ and notes:
   (1366 passing), `pnpm build` and `pnpm check:bundle` all green — the card ships no client JS.
 - Not yet committed to a branch/PR (**local**).
 
-**COURSE-P7-02** — In progress. **Blocks 1–4 done**; block 5 pending. Block 1: 53 `<Leccion>`
+**COURSE-P7-02** — **Done. All 5 blocks converted (43 lessons, 353 `<Leccion>` tags).** Block 1: 53
 tags across 8 lessons. Block 2: 62 tags across 10 lessons. Block 3: 89 tags across 8 lessons.
-Block 4: 47 tags across 6 lessons. `pnpm lint:content` + `pnpm build` + `pnpm check:bundle` all
-green (every slug + anchor resolves, no crosslink error). Scope decisions and notes:
+Block 4: 47 tags across 6 lessons. Block 5: 102 tags across 11 lessons. `pnpm lint` + `pnpm lint:content`
++ `pnpm test` (1366) + `pnpm build` + `pnpm check:bundle` all green (every slug + anchor resolves, no
+crosslink error); a comment-aware sweep of all 43 lessons finds no `lecci[oó]n \d` outside a comment.
+Scope decisions and notes:
 - **Numbered references only.** The block-checklist per-lesson counts match the count of `lección N`
   references (plus the one `{/* … Bloque 1, lección N */}` marker comment) exactly — 01(7) 02(4)
   03(5) 04(14) 05(5) 06(10) 07(4) 08(12). Relative references that carry no number — *«la lección
@@ -1639,5 +1641,45 @@ green (every slug + anchor resolves, no crosslink error). Scope decisions and no
   - **Bridges.** Each of `27`→`28`→`29`→`30`→`31`→`32` closes pointing at the next lesson (forward +
     below `---` → plain text); `32`'s bridge crosses into Block 5 (`adios-recurrencia`), a lesson this
     time rather than the bare block reference `26` used.
-- `pnpm build` and `pnpm check:bundle` are phase-level acceptance gates; both green after Block 4.
-- Not yet committed to a branch/PR (**local**).
+- **Block 5 (El Transformer) — 102 `<Leccion>` tags, 11 lessons.** Same rules as Blocks 1–4. Per-lesson
+  tags: `33`(7) `34`(9) `35`(4) `36`(8) `37`(1) `38`(9) `39`(11) `40`(14) `41`(14) `42`(9) `43`(16). Per-lesson
+  word counts drop 15–103 (proportional, ~5–10 words/ref: only the deleted number + positional phrase
+  (*«N de este bloque»*, *«N del bloque anterior/2/3»*) and the `<Leccion>` label leaving the budget under
+  the P7-01 exemption — every diff hunk touches only the reference clause, no surrounding prose);
+  estimated `minutes` moves at most 1 on any lesson, frontmatter `minutes` untouched. 20 of the 102 are
+  in quiz/challenge frontmatter (bound via `quiz/render.tsx`, `bridge` always false there). Verified in
+  the build's prerendered HTML: zero raw `<Leccion` and zero dev "no resuelve" markers; backward refs
+  and forward-above-bridge refs render as `.lesson-ref` links with the hover card, bridge hand-offs
+  render as plain text (`33`'s *«…le da nombre a la lección siguiente, sobre la auto-atención»*).
+  Block-5-specific calls:
+  - **102 tags + 11 marker comments = 113 vs the checklist's 109; the +4 is grep artefacts of the kind
+    the earlier blocks documented.** `40`'s figure-label table has a plural cell — *«lecciones 2, 3 y 4:
+    auto-atención, producto interno escalado y cabezas»* — that the singular `lección \d` grep counts
+    once and that became three adjacent tags (`self-attention`, `scaled-dot-product`, `multi-head`),
+    +2; `40`'s original had 13 `lección \d` (marker included) against a checklist count of 12, +1;
+    `43`'s *«…derivaste en la lección 8 del bloque 2 y programaste en la 9»* hides a second reference
+    (`implementar-mlp`) behind an ellipsis with no «lección» word, +1.
+  - **`<Leccion>` in `td` cells.** `40`'s "Dónde se construyó" table takes five converted cells (six
+    tags); the P7-01 hover-card CSS already anchors to the nearest `p`/`li`/`td`, so it is supported and
+    renders.
+  - **Numberless positional/relative refs left as prose**, exactly as Blocks 1–4 left *«la lección
+    anterior»* / *«la lección del one-hot»*: `36`'s bridge *«…ya se sabía desde la primera lección de
+    este bloque»*, `40`'s three *«la lección anterior, sobre …»* table cells (all → lesson 7), `43`'s
+    *«como en el proyecto del bloque 2»*. Scope is numbered references; these are reorder-safe and
+    outside the digit-regex gate. A follow-up could link `40`'s three "la lección anterior" cells for
+    table consistency — flagged, not done.
+  - **Forward-above-bridge refs reworded to state direction** — all to *«una lección más adelante, sobre
+    X»* (or *«…que recoge más adelante la lección sobre X»* in a quiz explanation): `33`→`codificacion-posicional`,
+    `34`→`multi-head` and (quiz) →`scaled-dot-product`, `36`→`bloque-transformer`. `43` is the course's
+    last lesson: its bridge points only backward (`arquitectura-completa`, `proyecto-transformer` — both
+    links), no forward hand-off.
+  - **"Read the clause, not the number."** `42`'s *«el seq2seq de la lección 1 del bloque anterior,
+    sobre el encoder y el decoder»* is `encoder-decoder` (block 4 lesson 1), not `seq2seq` (block 3);
+    `41`'s challenge cites the same lesson for greedy decoding. `39`/`41`/`42`/`43` carry line-break-split
+    refs the line-based grep misses (*«la lección\n7 del bloque 3»*, *«la lección 8\ndel bloque 2»*),
+    caught by reading.
+- `pnpm build` and `pnpm check:bundle` are phase-level acceptance gates; both green after Block 5,
+  which closes the content pass.
+- Not yet committed to a branch/PR (**local**). Blocks 1–4 each landed as one commit
+  (`feat(courses): convert Block N cross-references to <Leccion> (COURSE-P7-02)`); Block 5 is staged
+  the same way, uncommitted, awaiting the user.

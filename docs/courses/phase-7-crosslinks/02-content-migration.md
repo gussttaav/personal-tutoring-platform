@@ -59,9 +59,9 @@ in it.
 - [x] **Block 4 — El Puente hacia la Atención** · 6 lessons · 48 refs
   - [x] `27-encoder-decoder` (4) · [x] `28-el-cuello-de-botella` (7) · [x] `29-la-idea-de-atencion` (8)
   - [x] `30-bahdanau` (8) · [x] `31-luong` (6) · [x] `32-atencion-como-consulta` (15)
-- [ ] **Block 5 — El Transformer** · 11 lessons · 109 refs
-  - [ ] `33-adios-recurrencia` (8) · [ ] `34-self-attention` (10) · [ ] `35-scaled-dot-product` (5) · [ ] `36-multi-head` (9) · [ ] `37-codificacion-posicional` (2) · [ ] `38-bloque-transformer` (10)
-  - [ ] `39-encoder-decoder-masking` (12) · [ ] `40-arquitectura-completa` (12) · [ ] `41-proyecto-transformer` (15) · [ ] `42-bert-y-gpt` (10) · [ ] `43-fine-tuning-colab` (16)
+- [x] **Block 5 — El Transformer** · 11 lessons · 109 refs
+  - [x] `33-adios-recurrencia` (8) · [x] `34-self-attention` (10) · [x] `35-scaled-dot-product` (5) · [x] `36-multi-head` (9) · [x] `37-codificacion-posicional` (2) · [x] `38-bloque-transformer` (10)
+  - [x] `39-encoder-decoder-masking` (12) · [x] `40-arquitectura-completa` (12) · [x] `41-proyecto-transformer` (15) · [x] `42-bert-y-gpt` (10) · [x] `43-fine-tuning-colab` (16)
 
 **The heavy files are the ones to schedule first in a session, not last:** `25-proyecto-char-lm`
 (28), `21-bptt` (22), `17-implementar-mlp` (17), `43-fine-tuning-colab` (16),

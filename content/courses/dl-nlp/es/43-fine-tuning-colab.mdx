@@ -26,14 +26,14 @@ quiz:
     options:
       - { id: a, text: 'Las primeras actualizaciones mueven $\theta$ tan lejos de donde lo dejó el preentrenamiento que lo tiran, y a partir de ahí estás ajustando $110$ millones de parámetros contra unos pocos miles de reseñas.' }
       - { id: b, text: 'Nada malo: $\eta$ sólo decide cuántas vueltas hacen falta, así que con $10^{-3}$ llegas antes al mismo sitio.' }
-      - { id: c, text: 'Que el descenso diverge, y ése es el único riesgo: con $\eta$ grande la pérdida crece en cada paso, como en la lección 6 del bloque 2.' }
+      - { id: c, text: 'Que el descenso diverge, y ése es el único riesgo: con $\eta$ grande la pérdida crece en cada paso, como en <Leccion slug="descenso-gradiente">la lección sobre el descenso de gradiente</Leccion>.' }
       - { id: d, text: 'Que la capa de salida se entrena y la pila de debajo no se entera, porque el gradiente llega desvanecido después de doce bloques.' }
     answer: a
-    explanation: 'La (a), y lo que la separa de la (c) es que el daño llega mucho antes que la divergencia. La lección 6 del bloque 2, sobre el descenso de gradiente, sacó de $w_t = (1-2\eta)^{t}w_0$ la condición exacta bajo la que la pérdida crece, y aquí no hace falta llegar ahí: mover $\theta$ a un sitio cualquiera lejos del preentrenamiento ya destruye lo que costó semanas, aunque cada paso baje la pérdida del conjunto de entrenamiento. La (b) confunde la tasa de aprendizaje con la impaciencia. La (d) invoca el gradiente desvanecido del bloque 3 en la única arquitectura que lo tiene resuelto: los residuales de la lección 6 de este bloque existen precisamente para que el gradiente llegue entero a doce bloques de profundidad.'
+    explanation: 'La (a), y lo que la separa de la (c) es que el daño llega mucho antes que la divergencia. <Leccion slug="descenso-gradiente">La lección sobre el descenso de gradiente</Leccion> sacó de $w_t = (1-2\eta)^{t}w_0$ la condición exacta bajo la que la pérdida crece, y aquí no hace falta llegar ahí: mover $\theta$ a un sitio cualquiera lejos del preentrenamiento ya destruye lo que costó semanas, aunque cada paso baje la pérdida del conjunto de entrenamiento. La (b) confunde la tasa de aprendizaje con la impaciencia. La (d) invoca el gradiente desvanecido del bloque 3 en la única arquitectura que lo tiene resuelto: los residuales de <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> existen precisamente para que el gradiente llegue entero a doce bloques de profundidad.'
     hint: '¿De qué sirve haber empezado en un buen sitio si el primer paso te saca de él?'
   - id: q-que-aporta-preentrenar
     type: multi
-    prompt: 'La lección 10 del bloque 2, el proyecto de sentimiento, ajustó un clasificador de reseñas desde el generador de números aleatorios y acertó el 88.3 % de las 60 que no había leído. Marca lo que el preentrenamiento pone hoy sobre la mesa y aquel proyecto no tenía.'
+    prompt: '<Leccion slug="proyecto-sentimiento">La lección del proyecto de sentimiento</Leccion> ajustó un clasificador de reseñas desde el generador de números aleatorios y acertó el 88.3 % de las 60 que no había leído. Marca lo que el preentrenamiento pone hoy sobre la mesa y aquel proyecto no tenía.'
     options:
       - { id: a, text: 'Una representación cuyo argumento es la frase entera: lo que sale en una posición depende de las demás, así que un <W>no</W> delante cambia el vector de lo que viene detrás.' }
       - { id: b, text: 'Ciento diez millones de números ya colocados, de modo que las tres vueltas de hoy sólo tienen que moverlos un poco y ajustar los $1\,538$ de la capa de salida.' }
@@ -58,8 +58,8 @@ otras dos: cuánta memoria ocupan mientras se mueven y cuánto tarda una vuelta.
 misma conclusión, y por eso esta lección no tiene celdas. Lo que tiene es un cuaderno, y hay que ir
 a ejecutarlo fuera.
 
-Antes de las cuentas, mira qué es exactamente lo que se reaprovecha. La lección 10 del bloque 2, el
-proyecto de sentimiento, ajustó un clasificador de reseñas de cine desde el generador de números
+Antes de las cuentas, mira qué es exactamente lo que se reaprovecha. <Leccion slug="proyecto-sentimiento">La lección del
+proyecto de sentimiento</Leccion> ajustó un clasificador de reseñas de cine desde el generador de números
 aleatorios: 180 reseñas para entrenar, 60 guardadas, un 88.3 % de acierto sobre esas 60 y siete
 fallos, cuatro de ellos con un <W>no</W> que la bolsa de palabras no sabía dónde colocar. No lo
 sabía porque a la bolsa de palabras nunca le llegó el orden.
@@ -75,8 +75,8 @@ conviene contar despacio.
 El modelo del cuaderno es BETO, el BERT que la Universidad de Chile entrenó en español. Por dentro
 es el encoder del artículo con sus cinco números puestos: $N = 12$ bloques, $d_{\text{model}} = 768$,
 $h = 12$ cabezas, $d_{\text{ff}} = 3072$ y un vocabulario de $\lvert V \rvert = 31\,002$ entradas.
-Con eso, la cuenta de parámetros es la de la lección 8 de este bloque, sobre las quince cajas del
-artículo, evaluada:
+Con eso, la cuenta de parámetros es la de <Leccion slug="arquitectura-completa">la lección sobre las quince cajas del
+artículo</Leccion>, evaluada:
 
 $$
 N\left(4 d_{\text{model}}^{2} + 2\,d_{\text{model}}d_{\text{ff}}\right) = 12 \cdot 7\,077\,888 = 84\,934\,656,
@@ -96,10 +96,10 @@ $$
 \left(110 \times 10^{6}\right) \cdot 4 \approx 4.4 \times 10^{8} \quad \text{bytes},
 $$
 
-unos 440 MB sólo para los pesos. Entrenar pide dos cosas más al lado. Backpropagation —la lección 8
-del bloque 2— produce un gradiente por parámetro, que es otra copia entera; y el optimizador que
+unos 440 MB sólo para los pesos. Entrenar pide dos cosas más al lado. Backpropagation —<Leccion slug="backpropagation">su lección</Leccion>—
+produce un gradiente por parámetro, que es otra copia entera; y el optimizador que
 usan estas bibliotecas guarda además dos números por parámetro, un promedio del gradiente y otro de
-su cuadrado, que es una mejora del descenso de la lección 6 del bloque 2 y queda fuera de este curso.
+su cuadrado, que es una mejora del descenso de gradiente de <Leccion slug="descenso-gradiente">su lección</Leccion> y queda fuera de este curso.
 Cuatro copias de $440$ MB pasan de $1.7$ GB, y todavía no se ha guardado ni una activación.
 
 Son tres cosas las que dejan esto fuera del navegador, y cada una por su cuenta ya sobraría. La
@@ -122,7 +122,7 @@ diez segundos.
 ## Lo único que cambia es de dónde parte el descenso
 
 Con las cuentas hechas, lo que queda es notablemente pequeño. El bucle que corre en el cuaderno es
-el de la lección 6 del bloque 2, sobre el descenso de gradiente, letra por letra:
+el de <Leccion slug="descenso-gradiente">la lección sobre el descenso de gradiente</Leccion>, letra por letra:
 
 $$
 \theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t).
@@ -135,7 +135,7 @@ toca.
 Encima de la pila hace falta algo que diga si una reseña habla bien o mal, porque lo que sale por
 arriba son $T$ filas de $d_{\text{model}}$ números y ninguna de ellas es una respuesta. El
 clasificador toma la fila de la primera posición —la que BERT reserva para eso— y le pone una capa
-de salida de dos unidades, entrenada con la entropía cruzada de la lección 5 del bloque 2:
+de salida de dos unidades, entrenada con la entropía cruzada de <Leccion slug="funcion-de-perdida">la lección sobre las funciones de pérdida</Leccion>:
 
 $$
 2 \cdot d_{\text{model}} + 2 = 2 \cdot 768 + 2 = 1\,538
@@ -146,7 +146,7 @@ generador, y son los únicos.
 
 Queda la tasa de aprendizaje, y es la decisión con más consecuencias del cuaderno. El bloque 2
 entrenaba con $\eta$ del orden de $10^{-3}$; aquí se usa $2 \times 10^{-5}$, unas cincuenta veces
-menos. El motivo no es la divergencia que la lección 6 del bloque 2 derivó para $\eta$ grande, sino
+menos. El motivo no es la divergencia que <Leccion slug="descenso-gradiente">esa lección</Leccion> derivó para $\eta$ grande, sino
 algo que ocurre mucho antes: $\theta_0$ está ya en un sitio que costó semanas de máquina, y un paso
 del tamaño que hace falta cuando se parte del ruido saca a $\theta$ de ese sitio en las primeras
 actualizaciones. Con la pérdida bajando, además, porque ajustar $110$ millones de parámetros a unos
@@ -168,7 +168,7 @@ un resultado reproducible, y dejar la segunda al aire es la manera más silencio
 deje de funcionar dentro de un año.
 
 Después, cinco cosas, en este orden. El tokenizador viene **con** el modelo y no lo eliges tú: es un
-tokenizador de subpalabras como los de la lección 2 del bloque 1, y sus entradas son exactamente las
+tokenizador de subpalabras como los de <Leccion slug="tokenizacion">la lección sobre la tokenización</Leccion>, y sus entradas son exactamente las
 filas de la tabla de embeddings preentrenada, así que cambiarlo dejaría esas filas sin dueño. Las
 reseñas se parten en $D_{\text{ent}}$ y $D_{\text{prueba}}$, como en el proyecto del bloque 2, y se
 truncan a $T_{\max} = 128$ posiciones. Se dan tres vueltas. Se imprime $\mathcal{L}$ después de cada
@@ -182,7 +182,7 @@ hay debajo.
 
 Y una concesión, dicha en voz alta porque es la primera del curso de este tamaño. En el cuaderno,
 `loss.backward()` calcula el gradiente de todo el modelo en una línea. Eso es exactamente la
-recurrencia que derivaste en la lección 8 del bloque 2 y programaste en la 9, corriendo sobre un
+recurrencia que derivaste en <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion> y programaste en <Leccion slug="implementar-mlp">la de implementar el MLP</Leccion>, corriendo sobre un
 grafo que la biblioteca ha construido sola mientras hacía el forward pass. Es la única pieza de este
 cuaderno que hace algo que tú no has escrito, y ahora sabes qué es lo que hace.
 
@@ -206,10 +206,10 @@ cajas. El modelo que acabas de ajustar no lleva dentro ni una operación que no 
 en una lección y ejecutado después en una celda.
 
 Lo que queda es leer. *Attention is All You Need* es un artículo corto y ahora se lee caja por caja
-—la lección 8 de este bloque las puso todas sobre su figura 1—, y detrás de él hay una literatura
+—<Leccion slug="arquitectura-completa">la lección sobre las quince cajas</Leccion> las puso todas sobre su figura 1—, y detrás de él hay una literatura
 que se dedica a cambiarle piezas: otras maneras de codificar la posición, atenciones que calculan lo
 mismo moviendo menos memoria, bloques donde cada token activa sólo una parte del perceptrón,
 variantes para contextos de cientos de miles de posiciones. Ninguna de ellas es una arquitectura
-nueva. Todas son ediciones sobre la aritmética que montaste en la lección 9 de este bloque, y ése es
+nueva. Todas son ediciones sobre la aritmética que montaste en <Leccion slug="proyecto-transformer">el proyecto del Transformer</Leccion>, y ése es
 el sitio donde este curso te deja: no delante de un modelo que funciona, sino delante de un artículo
 que puedes discutir.
