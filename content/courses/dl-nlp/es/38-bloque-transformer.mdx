@@ -190,7 +190,39 @@ challenges:
       posiciones recibe, y lo que se le vuelve a sumar es eso mismo y no la entrada del
       bloque. Fíjate también en que `gamma` y `beta` entran **después** de dividir; puestos
       antes, la normalización los borraría a los dos.
-reading: []
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.1 da la envoltura LayerNorm(x + Sublayer(x)) y el apilado N = 6; su §3.3, el perceptrón por posiciones con d_ff = 2048. Cada una en una frase: por qué la suma salva el apilado que hundió al bloque 3 es cosa tuya.'
+  - kind: paper
+    title: 'Layer Normalization'
+    authors: 'Ba, Kiros y Hinton'
+    year: '2016'
+    venue: 'arXiv:1607.06450'
+    lang: en
+    url: 'https://arxiv.org/abs/1607.06450'
+    note: 'Normaliza cada caso con sus propias unidades en vez de con la columna del batch, y por tus mismas razones: vale en recurrentes y no guarda estadísticas para responder a una frase suelta. Lo ensaya en RNN, no en un Transformer.'
+  - kind: paper
+    title: 'Identity Mappings in Deep Residual Networks'
+    authors: 'He, Zhang, Ren y Sun'
+    year: '2016'
+    venue: 'arXiv:1603.05027'
+    lang: en
+    url: 'https://arxiv.org/abs/1603.05027'
+    note: 'Analiza lo que aquí desarrollas: con la conexión identidad el gradiente lleva un sumando que baja directo entre bloques y no se cancela. Es sobre redes de imagen y pide la identidad también tras la suma, algo que el Transformer no hace.'
+  - kind: paper
+    title: 'On Layer Normalization in the Transformer Architecture'
+    authors: 'Xiong, Yang, He y otros'
+    year: '2020'
+    venue: 'arXiv:2002.04745'
+    lang: en
+    url: 'https://arxiv.org/abs/2002.04745'
+    note: 'Contesta lo que la lección deja abierto: normalizar antes de la subcapa (pre-norm) y no después deja el gradiente sano al arrancar y quita el calentamiento de la tasa. El post-norm del artículo lo necesita. Medido, no demostrado.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 6. */}

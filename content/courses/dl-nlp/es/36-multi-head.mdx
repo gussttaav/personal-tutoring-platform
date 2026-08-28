@@ -177,7 +177,15 @@ challenges:
       $\sqrt{d_{\text{model}}}$ en vez de entre $\sqrt{d_k}$ —el divisor cuenta las coordenadas
       que se suman, y ahora se suman $d_k$—, y proyectar por `Wo` cada cabeza antes de
       concatenarlas, que da la suma de $h$ proyecciones y no la proyección de la concatenación.
-reading: []
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.2.2 trae la concatenación con W^O y el reparto d_k = d_model/h, y afirma en una línea que h cabezas cuestan como una. Esa cancelación la desarrollas tú, y el marco «dónde se normaliza» no está en el artículo.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 4. */}

@@ -194,7 +194,23 @@ challenges:
       perfectamente válida que lleva las filas en la dirección contraria. Fíjate también
       en la forma en que se aplica: $\mathbf{M}_k$ multiplica un vector columna, y las
       filas de $\text{PE}$ están tumbadas, así que en NumPy es `PE @ M.T`.
-reading: []
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.5 define los senos y cosenos y afirma —sin probarlo— que desplazarse k posiciones es una función lineal de PE_pos. Esa prueba, la matriz M_k, es el centro de esta lección; el artículo solo dice que existe.'
+  - kind: blog
+    title: 'Transformer Architecture: The Positional Encoding'
+    authors: 'Amirhossein Kazemnejad'
+    year: '2019'
+    venue: 'kazemnejad.com'
+    lang: en
+    url: 'https://kazemnejad.com/blog/transformer_architecture_positional_encoding/'
+    note: 'Hace la cuenta que el artículo se salta: monta la matriz de giro M_k pareja a pareja y comprueba que no depende de la posición, tu misma demostración. Estira algo más el tema hacia la distancia relativa entre posiciones.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 5. */}

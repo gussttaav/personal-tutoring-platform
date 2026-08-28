@@ -144,7 +144,15 @@ challenges:
       delante es el que apaga la fila saturada: con un peso en $1$ y el resto en $0$, todas las
       casillas se anulan a la vez, incluida la del máximo, donde $g_{ij} - \text{corr}_i$ tiende a
       cero porque la corrección se ha convertido en $g_{ij}$ mismo.
-reading: []
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.2.1 y su nota al pie 4 son esta lección en dos frases: con q y k de media 0 y varianza 1, q·k tiene varianza d_k, y de ahí √d_k. No llega a la saturación del softmax ni al gradiente que se apaga; eso es tuyo.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 3. */}
