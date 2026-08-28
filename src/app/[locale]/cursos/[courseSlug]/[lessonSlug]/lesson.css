@@ -431,6 +431,177 @@ body:has(.lesson-shell) {
   }
 }
 
+/* ── "Para profundizar" (COURSE-P8-01) ──────────────────────────────────── */
+
+/*
+ * The further-reading block, rendered by LessonReading.tsx between the MDX body and
+ * mark-complete. Native <details>, so everything here is styling — no client JS.
+ *
+ * It sits INSIDE `.lesson-content`, which means the prose rules above apply to it.
+ * Two consequences, both handled deliberately rather than by accident:
+ *   - the `<ul>` carries an inline `list-style` so the `:not([style])` guard above
+ *     excludes it from the markdown-list rules (the mechanism that block documents);
+ *   - `<p>` inside it would inherit the 1.25rem prose paragraph margins, so the lede
+ *     and the note set their own.
+ *
+ * A full-width hairline opens the block on purpose. The bridge's `hr` is short and
+ * centred precisely because it is NOT a section boundary; this is one — it is where
+ * the lesson stops and its apparatus starts.
+ */
+.lesson-reading {
+  margin: 44px 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.lesson-reading-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  cursor: pointer;
+  /* Drop the native disclosure triangle; the chevron replaces it (same two-property
+     removal the sidebar's block accordion needs). */
+  list-style: none;
+}
+.lesson-reading-summary::-webkit-details-marker { display: none; }
+.lesson-reading-summary::marker { content: ""; }
+.lesson-reading-summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.lesson-reading-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+  transition: transform 150ms ease, color 150ms ease;
+}
+.lesson-reading:not([open]) .lesson-reading-chevron { transform: rotate(-90deg); }
+.lesson-reading-summary:hover .lesson-reading-chevron { color: var(--green); }
+
+.lesson-reading-kicker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 150ms ease;
+}
+.lesson-reading-summary:hover .lesson-reading-kicker { color: var(--text); }
+
+/* Closed, this line is the whole advertisement for what is behind the fold. */
+.lesson-reading-count {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* Under ~480px the kicker plus a five-kind breakdown wraps the summary to three lines
+   (measured at 375px), which makes the closed block taller than the card it hides. The
+   count survives; the breakdown is what goes. */
+@media (max-width: 480px) {
+  .lesson-reading-breakdown { display: none; }
+}
+
+.lesson-reading-body { padding-bottom: 6px; }
+
+/* `.lesson-content` prefix is load-bearing, not decoration: the prose rule above is
+   `.lesson-content p` — specificity (0,1,1) — so a bare `.lesson-reading-lede` (0,1,0)
+   LOSES to it and the paragraph silently keeps the 1.25rem prose margin. Measured in a
+   browser, which is the only way this kind of collision shows up. Same for the note. */
+.lesson-content .lesson-reading-lede {
+  margin: 0 0 18px;
+  max-width: 54ch;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* The inline `list-style` in the component is what keeps the prose list rules off
+   this; the reset here is the rest of what Preflight would otherwise leave behind. */
+.lesson-reading-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+}
+
+.lesson-reading-item {
+  padding: 16px 18px;
+  border: 1px solid var(--border-variant);
+  border-radius: var(--radius);
+  background: var(--surface-container);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.lesson-reading-item:hover {
+  border-color: var(--green);
+  background: var(--surface-high);
+}
+
+.lesson-reading-title {
+  display: inline-block;
+  margin-bottom: 4px;
+  color: var(--green);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+}
+.lesson-reading-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
+}
+.lesson-reading-title:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.lesson-reading-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.lesson-reading-kind {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* The one kind that is not reading at all — a thing the student operates. */
+.lesson-reading-kind[data-kind="interactivo"] { color: var(--green); }
+
+.lesson-reading-lang {
+  padding: 1px 5px;
+  border: 1px solid var(--border-variant);
+  border-radius: 3px;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+}
+
+.lesson-content .lesson-reading-note {
+  margin: 5px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lesson-reading-chevron,
+  .lesson-reading-item,
+  .lesson-reading-kicker {
+    transition: none;
+  }
+}
+
 /* ── Prev/next lesson footer (COURSE-P5-01) ─────────────────────────────── */
 
 /* Lives here rather than inline in LessonNav.tsx because the card needs hover and

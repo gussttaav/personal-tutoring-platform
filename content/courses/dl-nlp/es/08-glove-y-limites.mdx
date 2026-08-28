@@ -46,6 +46,22 @@ quiz:
     answer: a
     explanation: 'El problema no está en los datos ni en la capacidad, sino en la forma de la función. (b) empeora si acaso: más corpus significa más ocurrencias de los dos sentidos sumadas en la misma fila de la tabla. (c) confunde tener sitio con tener dónde ponerlo; la celda ejecutada arriba lo enseña al subir $d_{\text{model}}$, que ajusta mejor la misma tabla sin cambiar un vecino. Y (d) es el más fino: una ventana ancha sí distingue las dos ocurrencias mientras se está contando, pero el conteo se acumula sobre el tipo <W>banco</W> y ahí se pierde de qué ocurrencia venía. Para que el vector dependa de la frase, la frase tiene que ser argumento de la representación.'
 challenges: []
+reading:
+  - kind: paper
+    title: 'GloVe: Global Vectors for Word Representation'
+    authors: 'Pennington, Socher y Manning'
+    year: '2014'
+    venue: 'EMNLP 2014'
+    lang: en
+    url: 'https://aclanthology.org/D14-1162/'
+    note: 'El artículo de GloVe. De aquí salen la tabla de «hielo» y «vapor» y los valores del peso —x_máx = 100 y exponente 3/4— que usa la lección. Ese 3/4 es el mismo del muestreo negativo y, como allí, se eligió probando.'
+  - kind: interactivo
+    title: 'Word2Vec Explorer'
+    authors: 'Daniel Guetta'
+    venue: 'daniel.guetta.com'
+    lang: en
+    url: 'https://daniel.guetta.com/word2vec'
+    note: 'La analogía que aquí desarrollas —rey - hombre + mujer ≈ reina— sobre vectores reales, no el mapa dibujado a mano de la lección. Son de word2vec, no de GloVe, pero de la misma familia, y con su mismo límite: una palabra, un vector.'
 ---
 
 {/* COURSE-P5-01 — Bloque 1, lección 8. */}

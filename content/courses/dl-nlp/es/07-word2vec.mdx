@@ -51,6 +51,30 @@ quiz:
     answer: true
     explanation: 'El exponente $3/4$ está entre $0$ y $1$, así que comprime las diferencias: entre un tipo que sale 1 000 veces y otro que sale 10, la razón de frecuencias es 100 y la de $f_w^{3/4}$ es $177.8 / 5.6 \approx 31.6$. Los dos extremos dicen por qué se elige ahí: con exponente $1$ los negativos serían casi siempre <W>de</W>, <W>la</W> y <W>que</W>, contra los que no cuesta nada acertar; con exponente $0$ serían uniformes, y la mayoría caerían en entradas tan raras que el modelo no aprende nada distinguiéndolas. El $3/4$ no se deduce de la teoría: es el valor que funcionó.'
 challenges: []
+reading:
+  - kind: paper
+    title: 'Efficient Estimation of Word Representations in Vector Space'
+    authors: 'Mikolov, Chen, Corrado y Dean'
+    year: '2013'
+    venue: 'arXiv:1301.3781'
+    lang: en
+    url: 'https://arxiv.org/abs/1301.3781'
+    note: 'Presenta skip-gram y CBOW, corto y legible. Su tabla de complejidad es la cuenta de operaciones que aquí haces a mano. No trae el muestreo negativo; eso llega en el otro artículo de Mikolov de ese mismo año.'
+  - kind: paper
+    title: 'Distributed Representations of Words and Phrases and their Compositionality'
+    authors: 'Mikolov, Sutskever, Chen, Corrado y Dean'
+    year: '2013'
+    venue: 'arXiv:1310.4546'
+    lang: en
+    url: 'https://arxiv.org/abs/1310.4546'
+    note: 'De aquí salen el muestreo negativo y el exponente 3/4, en su §2.2. Confirma lo que dice la lección: el 3/4 se eligió porque funcionó, y el artículo no da más razón que esa.'
+  - kind: interactivo
+    title: 'Word2Vec Explorer'
+    authors: 'Daniel Guetta'
+    venue: 'daniel.guetta.com'
+    lang: en
+    url: 'https://daniel.guetta.com/word2vec'
+    note: 'Vectores word2vec preentrenados de 300 dimensiones, no tu corpus de juguete: busca vecinos por coseno como en la celda y prueba la aritmética rey - hombre + mujer ≈ reina, la analogía que el bloque deja para más adelante.'
 ---
 
 {/* COURSE-P5-01 — Bloque 1, lección 7. */}

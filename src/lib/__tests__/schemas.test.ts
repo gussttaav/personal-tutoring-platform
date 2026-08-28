@@ -67,6 +67,7 @@ describe("LessonFrontmatterSchema", () => {
     hasQuiz: false,
     quiz: [],
     challenges: [],
+    reading: [],
   };
 
   it("accepts well-formed frontmatter", () => {
@@ -158,6 +159,78 @@ describe("LessonFrontmatterSchema", () => {
       ],
     });
     expect(parsed.challenges).toHaveLength(1);
+  });
+
+  // ── COURSE-P8-01: `reading` ────────────────────────────────────────────────
+  //
+  // The shape rules live here; the link rules a schema cannot express (arXiv /abs/,
+  // venue-vs-url agreement, duplicate titles) are in validate-reading.test.ts.
+
+  const item = {
+    kind:    "paper" as const,
+    title:   "Efficient Estimation of Word Representations in Vector Space",
+    authors: "Mikolov et al.",
+    year:    "2013",
+    venue:   "arXiv:1301.3781",
+    lang:    "en" as const,
+    url:     "https://arxiv.org/abs/1301.3781",
+    note:    "Skip-gram y CBOW, con la tabla de costes.",
+  };
+
+  it("accepts a well-formed reading entry", () => {
+    const parsed = LessonFrontmatterSchema.parse({ ...valid, reading: [item] });
+    expect(parsed.reading).toHaveLength(1);
+  });
+
+  it("accepts an entry with no year — a living resource has none", () => {
+    const { year: _drop, ...noYear } = item;
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: [noYear] })).not.toThrow();
+  });
+
+  it("rejects `reading` missing entirely — it is required, like `challenges`", () => {
+    const { reading: _drop, ...rest } = valid;
+    expect(() => LessonFrontmatterSchema.parse(rest)).toThrow();
+  });
+
+  it("rejects a sixth entry — READING_MAX is the curation cap", () => {
+    const six = Array.from({ length: 6 }, (_, i) => ({ ...item, url: `https://x.dev/${i}` }));
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: six })).toThrow();
+    const five = six.slice(0, 5);
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: five })).not.toThrow();
+  });
+
+  it("rejects the same url twice in one lesson", () => {
+    expect(() =>
+      LessonFrontmatterSchema.parse({ ...valid, reading: [item, { ...item }] }),
+    ).toThrow();
+  });
+
+  it("rejects a non-https url — these are links we hand a student", () => {
+    const insecure = { ...item, url: "http://arxiv.org/abs/1301.3781" };
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: [insecure] })).toThrow();
+  });
+
+  it("rejects an unknown kind", () => {
+    const bad = { ...item, kind: "podcast" };
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: [bad] })).toThrow();
+  });
+
+  it("rejects an empty note — the annotation is the point", () => {
+    expect(() =>
+      LessonFrontmatterSchema.parse({ ...valid, reading: [{ ...item, note: "" }] }),
+    ).toThrow();
+  });
+
+  it("rejects a note past READING_NOTE_MAX — it has to stay one line", () => {
+    const long = { ...item, note: "a".repeat(241) };
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: [long] })).toThrow();
+    const atCap = { ...item, note: "a".repeat(240) };
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: [atCap] })).not.toThrow();
+  });
+
+  it("rejects an unknown key inside an entry (strict)", () => {
+    const extra = { ...item, doi: "10.48550/arXiv.1301.3781" };
+    expect(() => LessonFrontmatterSchema.parse({ ...valid, reading: [extra] })).toThrow();
   });
 });
 

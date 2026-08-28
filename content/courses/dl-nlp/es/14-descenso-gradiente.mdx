@@ -52,6 +52,23 @@ quiz:
     answer: '[0.25, -0.5]'
     explanation: 'Con $\mathbf{w} = \mathbf{0}$ las dos preactivaciones valen cero y la sigmoide contesta $0.5$ a los dos ejemplos, así que el error $\hat{\mathbf{Y}} - \mathbf{Y}$ vale $(-0.5,\ 0.5)^{\top}$. El primer ejemplo pide subir su preactivación y el segundo bajarla, y como cada uno toca una coordenada distinta, los dos pesos salen con signos opuestos. La magnitud es lo interesante: el segundo se mueve el doble que el primero pese a que los dos errores miden $0.5$, porque su coordenada vale $2$ y el gradiente es $(\hat{y} - y)\,\mathbf{x}$. Una entrada que aparece dos veces tira el doble.'
 challenges: []
+reading:
+  - kind: libro
+    title: 'Deep Learning, cap. 4: Numerical Computation'
+    authors: 'Goodfellow, Bengio y Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/numerical.html'
+    note: 'Su §4.3 explica por qué el paso va en contra del gradiente (la derivada direccional) y cómo la curvatura —el número de condición del hessiano— fija el paso más largo que no diverge: el x² + 20y² de la lección dicho en general.'
+  - kind: paper
+    title: 'An overview of gradient descent optimization algorithms'
+    authors: 'Sebastian Ruder'
+    year: '2016'
+    venue: 'arXiv:1609.04747'
+    lang: en
+    url: 'https://arxiv.org/abs/1609.04747'
+    note: 'Sigue donde la lección lo deja: momentum, Adam y los demás métodos que hacen que una sola tasa de aprendizaje sirva para todas las direcciones, y el reparto del batch en trozos. Es un repaso; no desarrolla los métodos desde cero.'
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 6. */}

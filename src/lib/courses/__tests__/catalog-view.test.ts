@@ -40,7 +40,7 @@ blocks:
 function lessonFile(slug: string, order: number, draft = false): string {
   const fm = {
     slug, title: `Lección ${slug}`, block: 1, order, minutes: 10,
-    summary: "...", draft, hasCode: false, hasQuiz: false, quiz: [], challenges: [],
+    summary: "...", draft, hasCode: false, hasQuiz: false, quiz: [], challenges: [], reading: [],
   };
   const yaml = Object.entries(fm).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("\n");
   return `---\n${yaml}\n---\n\nCuerpo.\n`;

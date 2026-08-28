@@ -136,6 +136,7 @@ function lessonFile(slug: string, order: number, draft = false): string {
     hasQuiz: false,
     quiz: [],
     challenges: [],
+    reading: [],
     slug,
   };
   const yaml = Object.entries(fm)

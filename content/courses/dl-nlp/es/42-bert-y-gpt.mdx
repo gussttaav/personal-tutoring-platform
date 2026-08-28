@@ -49,6 +49,23 @@ quiz:
     explanation: 'Las dos primeras, que es la razón entera de que estas dos familias crecieran y el seq2seq de <Leccion slug="encoder-decoder">la lección sobre el encoder y el decoder</Leccion> no: la etiqueta la pone el texto. La (d) falla por lo que dice el enunciado —no hay etiquetas, y ninguna arquitectura las inventa—. La (c) es la interesante, porque correr correría: lo que aprendería es a copiar. El encoder lee la frase entera, incluido el token que el decoder tiene que escribir a continuación, y la subcapa de en medio se lo pasa; es la fuga de la segunda pregunta entrando por la otra columna. Un modelo que copia tiene la pérdida en el suelo y no ha mirado el español.'
     hint: 'Para cada una, pregúntate de dónde saldría la respuesta correcta de cada ejemplo. Si sale del propio texto, sirve; si tiene que escribirla alguien, no.'
 challenges: []
+reading:
+  - kind: paper
+    title: 'Improving Language Understanding by Generative Pre-Training'
+    authors: 'Radford, Narasimhan, Salimans y Sutskever'
+    year: '2018'
+    venue: 'OpenAI'
+    lang: en
+    url: 'https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf'
+    note: 'El GPT de la lección: un decoder de doce bloques con máscara en todas las auto-atenciones, preentrenado a predecir el token siguiente y luego afinado por tarea. Buena parte del artículo va del afinado, que es la lección siguiente.'
+  - kind: paper
+    title: 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding'
+    authors: 'Devlin, Chang, Lee y Toutanova'
+    year: '2019'
+    venue: 'arXiv:1810.04805'
+    lang: en
+    url: 'https://arxiv.org/abs/1810.04805'
+    note: 'Su tarea #1, el lenguaje enmascarado, es tu argumento: sin máscara el modelo «se ve a sí mismo» y predecir lo siguiente sería copiar; tapando el 15 % y pidiéndolo, no. Su segunda tarea, la de pares de frases, queda fuera.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 10. */}

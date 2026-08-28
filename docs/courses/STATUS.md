@@ -151,6 +151,26 @@ the block checklist inside the P7-02 doc; this table stays a phase-level dashboa
 - [x] Every forward reference above a `---` states its direction in the sentence
 - [x] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
 
+## Phase 8 — Further reading
+
+Give every lesson that has one an annotated «Para profundizar» block. P8-02 is **blocked on
+P8-01** for the same reason P7-02 was: without the lint the migration is ~120 unvalidated links.
+Per-lesson progress lives in the block checklist inside the P8-02 doc; this table stays a
+phase-level dashboard.
+
+| Task | Tag | Status | Owner | PR |
+|------|-----|--------|-------|----|
+| [01 Schema + collapsed block + reading lint](phase-8-further-reading/01-component-and-lint.md) | `COURSE-P8-01` | ✅ | _tbd_ | local |
+| [02 Content pass: 43 lessons, block by block](phase-8-further-reading/02-content-migration.md) | `COURSE-P8-02` | ⬜ | _tbd_ | |
+
+**Exit criteria**
+- [x] `reading` is required frontmatter; the shape rules and the three link rules all fail the build
+- [x] The block renders collapsed after the bridge, and renders nothing on `reading: []`
+- [x] Zero client JS added; entries are in the prerendered HTML while closed
+- [ ] Every published lesson has a considered `reading` — entries or a deliberate `[]` (P8-02)
+- [ ] Every URL resolves and points at what its `title` claims (P8-02)
+- [x] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
+
 ---
 
 ## Deviations
@@ -1683,3 +1703,47 @@ Scope decisions and notes:
 - Not yet committed to a branch/PR (**local**). Blocks 1–4 each landed as one commit
   (`feat(courses): convert Block N cross-references to <Leccion> (COURSE-P7-02)`); Block 5 is staged
   the same way, uncommitted, awaiting the user.
+
+**COURSE-P8-01** — Closed. `reading` frontmatter + the «Para profundizar» block + a sixth
+`lint:content` pass. Design was prototyped and reviewed before any code (three treatments ×
+two placements × two initial states); the chosen combination is cards, after the bridge,
+collapsed, capped at five. Rationale for each is in phase-8-further-reading/README.md.
+
+- **Named `reading`, NOT `refs`.** `LessonRef` is already the prev/next pointer
+  (`src/domain/types.ts`) and `lesson-ref-*` is already the P7 cross-lesson hover card. A third
+  meaning for "ref" in the same reader would have collided with both.
+- **A CSS specificity collision was caught in the browser, and it would have shipped.**
+  `.lesson-content p` is (0,1,1) and outranks a bare `.lesson-reading-lede` / `-note` (0,1,0), so
+  both paragraphs silently kept the 1.25rem prose margin instead of the 18px/5px they declare —
+  the note sat 20px from its title rather than 5px. Both selectors are now `.lesson-content`-
+  prefixed. Worth remembering: **anything added inside the reading column inherits this hazard**,
+  and it is invisible in source review.
+- **`required`, so all 44 lesson files gained `reading: []`** (scripted), plus six test fixtures
+  (`schemas`, `registry`, `catalog-view`, `enrollment-view`, `sitemap`, `SyllabusAccordion`) —
+  the same churn `challenges` caused in P3-02, for the same reason.
+- **The mobile summary drops its breakdown under 480px.** With all five kinds the summary wrapped
+  to three lines at 375px (84px tall) — taller than the thing it hides. The count survives, the
+  breakdown goes; measured back down to 54px.
+- **`reading` is deliberately absent from `estimatedMinutes`** and its budget axis **cannot warn**
+  (`max` = `ceiling` = `READING_MAX`, and the schema rejects a sixth). The axis exists only to put
+  the count in the report line, which is what makes P8-02's remaining work visible. Consistent with
+  the AXES comment's rule that a warning firing on a legitimate choice is one authors learn to skip.
+- **Liveness is not a build gate**, by decision: CI has no network guarantee and a lint that fails
+  on someone else's downtime gets disabled. Shape and internal consistency are linted; the author
+  opens the link. The `/abs/`-not-`/pdf/` rule is the durable-address half of that.
+- **One entry of each `kind` added PERMANENTLY to `00-pipeline-fixture.mdx`**, matching what
+  P2-02/P2-03/P3-01/P3-02 each did — it covers `year` absent, `lang: es`, a long note, and the
+  five-entry cap. All five URLs were checked (HTTP 200) rather than recalled.
+- **All five failure modes proven, then reverted:** arXiv PDF link, venue/url id mismatch,
+  duplicate title, note past 240, unknown kind — each exits 1 naming the file and the problem.
+- **Verified live** against a dev server with the fixture temporarily published (reverted after),
+  by computed styles and measured geometry: collapsed `<details>`, all five kinds translated, both
+  `lang` chips, green title, hidden marker, zero `<script>` inside the block, `list-style` opt-out
+  holding, no horizontal scroll at 375px or desktop. **No screenshot** — the Browser pane in this
+  environment does not composite, so `computer{screenshot}` fails; this mirrors the manual-pass gap
+  noted on P2-01/P2-02/P2-03.
+- **Not verified:** a real phone, and the English copy in a browser (`dl-nlp` has no `en/` tree, so
+  every `courses.reading.*` string is in the same position as `courses.challenge.*` — checked
+  structurally, both files key-for-key).
+- `pnpm lint` (0 errors), `npx tsc --noEmit` (0 errors in `src/`), `pnpm test:unit` (1,362 across
+  108 suites), `pnpm lint:content`, `pnpm build`, `pnpm check:bundle` all green.

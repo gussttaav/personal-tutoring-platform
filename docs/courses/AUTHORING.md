@@ -287,6 +287,7 @@ Targets, not laws. But a lesson over them should be **split**, and `pnpm lint:co
 | Longest code cell (lines) | ≤ 45 | 90 |
 | Quiz questions | 3–5 | 8 |
 | Code challenges | 0–1 | 2 |
+| Further reading | 0–5 | 5 (schema-enforced) |
 
 **A lesson at the ceiling on every axis is not a lesson, it is a chapter.**
 
@@ -988,7 +989,7 @@ mid-paragraph is settled by whichever word came out first.
 
 ## 6. Frontmatter reference
 
-All eleven keys are **required**, including empty arrays. The schema is `z.strictObject`
+All twelve keys are **required**, including empty arrays. The schema is `z.strictObject`
 ([`src/lib/schemas.ts`](../../src/lib/schemas.ts)) — an unknown key is a hard build failure, which
 is exactly how the `mintues:` typo gets caught.
 
@@ -1004,6 +1005,7 @@ hasCode: true             # must agree with the body — see §8
 hasQuiz: true             # must agree with the body — see §8
 quiz: []                  # required even when empty
 challenges: []            # required even when empty
+reading: []               # required even when empty — see below
 ```
 
 ### Quiz questions
@@ -1042,6 +1044,45 @@ challenges:
 
 Write assertion messages for the student, not for you: `assert …, 'desborda: resta el máximo antes
 de exponenciar'` is worth ten minutes of their time.
+
+### Further reading (`reading`)
+
+The «Para profundizar» block at the foot of the lesson (COURSE-P8-01). Declared here, never written
+in the body: a recurring `## Para profundizar` in 43 lessons is the "watching a form get filled out"
+failure §1 exists to prevent. It renders as a **collapsed** `<details>` between the bridge and the
+prev/next footer, so the bridge stays the lesson's last prose.
+
+```yaml
+reading:
+  - kind: paper                                  # paper | libro | blog | video | interactivo
+    title: 'Efficient Estimation of Word Representations in Vector Space'
+    authors: 'Mikolov, Chen, Corrado y Dean'
+    year: '2013'                                 # optional — a living web tool has none
+    venue: 'arXiv:1301.3781'                     # how the reader should recognise it
+    lang: en                                     # es | en — shown as a chip
+    url: 'https://arxiv.org/abs/1301.3781'       # https, and /abs/ not /pdf/
+    note: 'El paper que presenta skip-gram y CBOW. Corto y legible; su sección 3 es la tabla de costes que esta lección deriva a mano.'
+```
+
+**Five entries maximum** (`READING_MAX`), and the cap is the feature: curation is what makes this
+worth having over a list of links. Most lessons want two or three; `reading: []` is a legitimate and
+common answer — lesson 1 has no natural primary source, and an invented citation there is worse than
+none.
+
+The rules the lint enforces (`validate-reading.ts`, plus `ReadingItemSchema`):
+
+| Rule | Why |
+|---|---|
+| `note` required, ≤240 chars | The annotation is the whole point, and it has to stay the one line the card is built around. Say what the STUDENT gets, not what the source is about. |
+| ≤5 entries | The curation cap. |
+| `url` must be `https://` | These are links handed to a student from a page we control. |
+| arXiv links use `/abs/`, not `/pdf/` | `/abs/` is the stable address and does not hand a phone a 2 MB download. |
+| a `venue` naming an arXiv id must match the url's id | Catches the copy-paste that updates the title but leaves the old link. |
+| no duplicate url, no duplicate title | The same source twice under two addresses. |
+
+Link **liveness is not checked** — CI has no network guarantee, and a lint that fails because
+someone else's server is down is a lint people disable. Check the URL yourself before committing;
+rot is a periodic manual pass.
 
 ## 7. Components
 

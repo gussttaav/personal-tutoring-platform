@@ -64,6 +64,23 @@ quiz:
     answer: a
     explanation: 'La (a) es el coste, y es el que importa: sin señal que vuelva hasta las primeras posiciones, la red no puede atar una causa temprana a un efecto tardío, y pierde exactamente la memoria a distancia que motivó pasar del MLP a la RNN. La (b) confunde el desvanecimiento con el truncamiento, que era el problema de la red de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el MLP falla con secuencias</Leccion>, no de esta. La (c) mezcla el gradiente con la salida: $\hat{y}$ se calcula en la ida y no depende del tamaño del gradiente. La (d) es la mentira cómoda: no es que aprenda lo mismo más despacio, es que la dependencia larga se vuelve, en la práctica, inaprendible.'
 challenges: []
+reading:
+  - kind: paper
+    title: 'On the difficulty of training Recurrent Neural Networks'
+    authors: 'Pascanu, Mikolov y Bengio'
+    year: '2013'
+    venue: 'arXiv:1211.5063'
+    lang: en
+    url: 'https://arxiv.org/abs/1211.5063'
+    note: 'De aquí salen las dos piezas de la lección: el radio espectral de W_hh como frontera entre desvanecerse y explotar, y el recorte que limita la norma del gradiente a un umbral θ. Lo justifica con más aparato; las compuertas no las toca.'
+  - kind: libro
+    title: 'Gradient Flow in Recurrent Nets: the Difficulty of Learning Long-Term Dependencies'
+    authors: 'Hochreiter, Bengio, Frasconi y Schmidhuber'
+    year: '2001'
+    venue: 'A Field Guide to Dynamical Recurrent Networks'
+    lang: en
+    url: 'https://ml.jku.at/publications/older/ch7.pdf'
+    note: 'Su §2 demuestra lo que aquí ves en una gráfica: el error que retrocede por la secuencia decae o crece de forma exponencial en el número de pasos. Reúne las pruebas de 1991 y 1994; se queda en el diagnóstico, sin proponer arreglo.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 4. */}

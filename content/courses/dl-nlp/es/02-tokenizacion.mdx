@@ -41,6 +41,30 @@ quiz:
     tolerance: 0
     explanation: 'Catorce: <W>E</W>, <W>l</W>, espacio, <W>n</W>, <W>i</W>, <W>ñ</W>, <W>o</W>, espacio, <W>j</W>, <W>u</W>, <W>e</W>, <W>g</W>, <W>a</W> y el punto final. La <W>ñ</W> cuenta como uno solo si el texto está normalizado a NFC. El tokenizador de palabras produce cuatro sobre la misma frase, y esa razón de tres a uno es lo que $T = C / \bar{\ell}$ dice en general.'
 challenges: []
+reading:
+  - kind: paper
+    title: 'Neural Machine Translation of Rare Words with Subword Units'
+    authors: 'Sennrich, Haddow y Birch'
+    year: '2016'
+    venue: 'arXiv:1508.07909'
+    lang: en
+    url: 'https://arxiv.org/abs/1508.07909'
+    note: 'El algoritmo BPE que la lección nombra sin desarrollar: fusionar el par de piezas más frecuente hasta el vocabulario fijado. Se presenta aquí para traducción automática, no como el tokenizador general en que acabó.'
+  - kind: libro
+    title: 'Speech and Language Processing, cap. 2: Words and Tokens'
+    authors: 'Jurafsky y Martin'
+    year: '3.ª ed., borrador libre'
+    venue: 'stanford.edu'
+    lang: en
+    url: 'https://web.stanford.edu/~jurafsky/slp3/2.pdf'
+    note: 'El capítulo de referencia sobre tokenización y normalización: los mismos objetos de esta lección —Unicode, NFC, BPE— con más ejemplos y menos desarrollo. El libro entero es gratis.'
+  - kind: interactivo
+    title: 'Tokenizer Playground'
+    authors: 'Taubyte'
+    venue: 'taubyte.com'
+    lang: en
+    url: 'https://taubyte.com/tools/tokenizer'
+    note: 'Pega tu texto y mira cómo lo parten modelos como GPT-4, BERT o T5, con el recuento de tokens y la razón tokens/carácter de la lección. Pruébalo en español: verás cómo las piezas se multiplican frente al inglés.'
 ---
 
 {/* COURSE-P5-01 — Bloque 1, lección 2. */}

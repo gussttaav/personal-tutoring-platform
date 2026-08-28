@@ -83,6 +83,49 @@ challenges:
       $\dfrac{e^{x_i - m}}{\sum_j e^{x_j - m}} = \dfrac{e^{x_i}}{\sum_j e^{x_j}}$, porque
       $e^{-m}$ se cancela arriba y abajo — pero sí cambia lo que calcula el ordenador:
       el mayor exponente pasa a ser $e^{0} = 1$, así que nunca desborda.
+reading:
+  # COURSE-P8-01 — un ejemplar de cada `kind`, como P2-02/P3-01/P3-02 hicieron con sus
+  # componentes: el fixture es donde el render y `pnpm lint:content` cubren la función
+  # entera. Cubre además los casos límite: `year` ausente, `lang: es`, una nota larga,
+  # y las cinco entradas del tope (READING_MAX).
+  - kind: paper
+    title: 'Efficient Estimation of Word Representations in Vector Space'
+    authors: 'Mikolov, Chen, Corrado y Dean'
+    year: '2013'
+    venue: 'arXiv:1301.3781'
+    lang: en
+    url: 'https://arxiv.org/abs/1301.3781'
+    note: 'El paper que presenta skip-gram y CBOW. Corto y legible; su sección 3 es la tabla de costes que esta lección deriva a mano.'
+  - kind: libro
+    title: 'Speech and Language Processing, cap. 6: Vector Semantics and Embeddings'
+    authors: 'Jurafsky y Martin'
+    year: '3.ª ed., borrador libre'
+    venue: 'stanford.edu'
+    lang: en
+    url: 'https://web.stanford.edu/~jurafsky/slp3/'
+    note: 'El capítulo de referencia sobre semántica vectorial: los mismos objetos de esta lección con más ejemplos y menos desarrollo. El libro entero es gratis y sirve de mapa para el resto del curso, así que merece un marcador.'
+  - kind: blog
+    title: 'Word2vec'
+    authors: 'Wikipedia en español'
+    venue: 'es.wikipedia.org'
+    lang: es
+    url: 'https://es.wikipedia.org/wiki/Word2vec'
+    note: 'La entrada en español, para fijar el vocabulario antes de abrir un paper. Útil sobre todo si los términos en inglés te están costando más que las matemáticas.'
+  - kind: video
+    title: 'Neural networks'
+    authors: '3Blue1Brown'
+    year: '2017'
+    venue: '3blue1brown.com'
+    lang: en
+    url: 'https://www.3blue1brown.com/topics/neural-networks'
+    note: 'La serie que ver si la geometría de una red se te queda abstracta: las ideas del bloque 2 contadas en movimiento en lugar de en ecuaciones.'
+  - kind: interactivo
+    title: 'TensorFlow Embedding Projector'
+    authors: 'Google'
+    venue: 'projector.tensorflow.org'
+    lang: en
+    url: 'https://projector.tensorflow.org/'
+    note: 'Embeddings de verdad en 3D, con vecinos y analogías sobre vocabularios reales. La versión a escala del explorable de esta lección.'
 ---
 
 {/* COURSE-P1-01 — Rendering regression fixture. Keep `draft: true` PERMANENTLY:

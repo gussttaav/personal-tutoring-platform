@@ -365,6 +365,24 @@ export interface Lesson {
   // Code challenges, same idea, validated by CodeChallengeSchema (P3-02). `hasCode`
   // covers these too: a challenge runs Python exactly like a `<PyCell>` does.
   challenges: CodeChallenge[];
+  // COURSE-P8-01: "Para profundizar". Empty on a lesson with nothing to recommend —
+  // the reader renders nothing at all in that case.
+  reading: ReadingItem[];
+}
+
+/** COURSE-P8-01 — one further-reading entry, validated by `ReadingItemSchema`. */
+export interface ReadingItem {
+  kind:    "paper" | "libro" | "blog" | "video" | "interactivo";
+  title:   string;
+  authors: string;
+  /** Absent for a living resource with no meaningful year (a web tool). */
+  year?:   string;
+  venue:   string;
+  /** The course is Spanish; most primary sources are not. Stated per entry. */
+  lang:    "es" | "en";
+  url:     string;
+  /** One line: what the student gets by going there. */
+  note:    string;
 }
 
 /** A minimal lesson pointer used for prev/next navigation. */

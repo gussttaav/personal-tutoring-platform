@@ -159,6 +159,23 @@ challenges:
       y $\mathbf{Q}\mathbf{K}^{\top}$ sale $(T, T)$ porque las dos son la misma frase. `Wq.shape[1]`
       es $d_k$, que es lo que hay que meter en la raíz; leerlo de `X` da $d_{\text{model}}$ y el
       reparto sale distinto.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'La operación está en su ecuación (1); que las tres listas salgan de la misma secuencia, en su §3.2.3, en una frase. Lo que el artículo no hace es defender las proyecciones: por qué sin ellas la capa se copia a sí misma es tuyo.'
+  - kind: blog
+    title: 'The Illustrated Transformer'
+    authors: 'Jay Alammar'
+    year: '2018'
+    venue: 'jalammar.github.io'
+    lang: en
+    url: 'https://jalammar.github.io/illustrated-transformer/'
+    note: 'Recorre con dibujos el cálculo de Q, K y V y la rejilla de pesos, primero vector a vector y luego en forma matricial. Se queda en la mecánica: la simetría y la diagonal con las que aquí justificas las tres matrices no las toca.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 2. */}

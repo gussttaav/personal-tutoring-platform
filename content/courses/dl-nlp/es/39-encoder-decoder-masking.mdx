@@ -171,6 +171,15 @@ challenges:
       sin ninguna casilla y el softmax dividiría entre cero. Y restar el máximo de cada
       fila sigue siendo seguro con los $-\infty$ dentro, porque la casilla $(i, i)$ nunca
       está tachada: el máximo de la fila es siempre un número de verdad.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.2.3 es tu tabla de tres llamadas, con el enmascarado escrito como «−∞ en la entrada del softmax»; su §3.1, el decoder con la salida corrida una posición. Por qué −∞ y no un cero después, y el teacher forcing, son de la lección.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 7. */}

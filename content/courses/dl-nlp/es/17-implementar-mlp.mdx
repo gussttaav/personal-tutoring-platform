@@ -184,6 +184,22 @@ challenges:
       modifica el array en su sitio, y eso es lo que quieres dentro del bucle y no fuera. Y la
       pérdida se mide **antes** de actualizar, de modo que `curva[0]` es la red sin entrenar y
       `curva[-1]` la red final: por eso hay `pasos + 1` valores y no `pasos`.
+reading:
+  - kind: paper
+    title: 'Understanding the difficulty of training deep feedforward neural networks'
+    authors: 'Glorot y Bengio'
+    year: '2010'
+    venue: 'AISTATS 2010'
+    lang: en
+    url: 'https://proceedings.mlr.press/v9/glorot10a.html'
+    note: 'El artículo al que remite la lección al aplazar «qué escala» al bloque 3: fija la escala de inicialización a partir de la anchura de cada capa para que la señal ni sature ni se apague. La simetría no la trata; eso ya lo hace la lección.'
+  - kind: interactivo
+    title: 'A Neural Network Playground'
+    authors: 'Smilkov y Carter'
+    venue: 'playground.tensorflow.org'
+    lang: en
+    url: 'https://playground.tensorflow.org/'
+    note: 'El bucle que acabas de escribir, con mandos: mueve la tasa de aprendizaje, las capas, las neuronas y la activación, y mira caer la pérdida. Trabaja sobre puntos en el plano, no sobre texto, y trae regularización ajena al curso.'
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 9. */}

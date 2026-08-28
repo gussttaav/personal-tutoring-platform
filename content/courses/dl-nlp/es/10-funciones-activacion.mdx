@@ -112,6 +112,23 @@ challenges:
       Para la derivada, `(z > 0)` produce booleanos y `.astype(float)` los pasa a $0$ y $1$. La
       comparación es estricta a propósito: en $z = 0$ ReLU tiene un pico, la derivada no existe, y
       el curso toma $0$ ahí.
+reading:
+  - kind: libro
+    title: 'Deep Learning, cap. 6: Deep Feedforward Networks'
+    authors: 'Goodfellow, Bengio y Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/mlp.html'
+    note: 'Su §6.3, «Hidden Units», ordena las tres activaciones —ReLU, sigmoide, tangente hiperbólica— y argumenta por qué ReLU es hoy la opción por defecto. Elige por lo que funciona, no por lo que se demuestra; la saturación la toca de pasada.'
+  - kind: paper
+    title: 'Gaussian Error Linear Units (GELUs)'
+    authors: 'Hendrycks y Gimpel'
+    year: '2016'
+    venue: 'arXiv:1606.08415'
+    lang: en
+    url: 'https://arxiv.org/abs/1606.08415'
+    note: 'Define la GELU que la lección nombra sin desarrollar: la entrada multiplicada por la función de distribución de una normal. La mide contra ReLU y ELU en visión, texto y voz; no dice nada de la saturación ni de la ReLU muerta.'
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 2. */}

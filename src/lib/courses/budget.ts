@@ -78,6 +78,10 @@ export interface LessonCounts {
   quizQuestions: number;
   /** Challenges declared in the frontmatter `challenges` array. */
   challenges: number;
+  /** COURSE-P8-01: "Para profundizar" entries in the frontmatter `reading` array.
+   *  Report-only — the hard cap of five is enforced by `ReadingItemSchema`, so this
+   *  axis exists to show coverage across the course, not to warn. */
+  reading: number;
   /** Minutes implied by the counts above — a sanity check on the declared `minutes`. */
   estimatedMinutes: number;
 }
@@ -125,6 +129,10 @@ const AXES: Axis[] = [
     ceilingAdvice: "split this cell" },
   { key: "quizQuestions",    label: "quiz questions",    min: 3,    max: 5,    ceiling: 8,    warnUnder: true  },
   { key: "challenges",       label: "code challenges",   min: 0,    max: 1,    ceiling: 2,    warnUnder: false },
+  // `max`/`ceiling` are READING_MAX: the schema rejects a sixth entry outright, so this
+  // axis can never warn. It is here to put the count in the report line, which is what
+  // makes "which lessons still have none" visible while P8-02 fills them in.
+  { key: "reading",          label: "further reading",   min: 0,    max: 5,    ceiling: 5,    warnUnder: false },
 ];
 
 /** Does this file opt out of the budget report? Used by the rendering fixture, which
@@ -259,6 +267,7 @@ export function lessonCounts(source: string): LessonCounts {
   const codeCells = countTag(placed, PYCELL_TAG);
   const quizQuestions = Array.isArray(data.quiz) ? data.quiz.length : 0;
   const challenges = Array.isArray(data.challenges) ? data.challenges.length : 0;
+  const reading = Array.isArray(data.reading) ? data.reading.length : 0;
 
   return {
     words,
@@ -272,6 +281,10 @@ export function lessonCounts(source: string): LessonCounts {
     longestCodeCell: countLongestCodeCell(content),
     quizQuestions,
     challenges,
+    reading,
+    // Deliberately NOT in `estimatedMinutes`: the block ships collapsed and nothing in
+    // it is required to finish the lesson, so counting it as reading time would inflate
+    // every estimate with minutes the student is never asked to spend.
     estimatedMinutes: Math.round(
       words / WORDS_PER_MINUTE +
         widgets * MINUTES_PER_WIDGET +
@@ -292,6 +305,7 @@ export function formatCounts(c: LessonCounts): string {
     `${c.codeCells} cells (max ${c.longestCodeCell} lines)`,
     `${c.quizQuestions} quiz`,
     `${c.challenges} challenges`,
+    `${c.reading} reading`,
   ].join(" · ");
 }
 

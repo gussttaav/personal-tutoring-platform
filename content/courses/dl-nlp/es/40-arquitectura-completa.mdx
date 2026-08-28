@@ -66,6 +66,23 @@ quiz:
     explanation: 'Una fila por posición escrita y una columna por entrada del vocabulario, con cada fila sumando $1$. Las dos mitades dicen lo mismo desde dos sitios: la forma dice que la salida del modelo no es un token sino una distribución por posición, y la suma dice que el reparto es el de siempre, el mismo *softmax* por filas que lleva usándose desde la primera lección del bloque. Fíjate en que la matriz que hace el trabajo es $\mathbf{E}$ transpuesta, sin un solo parámetro nuevo: la tabla que abajo se lee por filas, aquí se lee por columnas.'
     hint: '¿Qué eje normaliza `axis=1`, y cuántas columnas tiene $\mathbf{X}^{\text{dec}}\mathbf{E}^{\top}$?'
 challenges: []
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.4 comparte la tabla E entre las dos entradas y la salida y la multiplica por √d_model; su tabla 3, fila «base», da tus cinco números. Los 65 millones los reconstruyes tú, y no cuadran al detalle con lo que declara.'
+  - kind: paper
+    title: 'Using the Output Embedding to Improve Language Models'
+    authors: 'Press y Wolf'
+    year: '2017'
+    venue: 'arXiv:1608.05859'
+    lang: en
+    url: 'https://arxiv.org/abs/1608.05859'
+    note: 'El Transformer lo cita para leer E al revés en la salida. Aquí está el porqué: atar la matriz de entrada con la de salida baja la perplejidad y reduce el modelo a menos de la mitad. Es sobre LSTM; la cuenta de parámetros es tuya.'
 ---
 
 {/* COURSE-P5-05 — Bloque 5, lección 8. */}

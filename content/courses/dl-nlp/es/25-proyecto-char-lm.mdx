@@ -43,6 +43,23 @@ quiz:
     explanation: 'La (a) es la lección dicha sin adornos: un modelo de caracteres de este tamaño persigue la estadística local —qué carácter es probable después de los últimos—, y eso lo pule con más pasos, pero el sentido de una frase vive en dependencias que ni caben en un estado de 64 coordenadas ni sobreviven al corte en trozos de 25 caracteres. La (b) confunde la pérdida con la comprensión: bajarla más ajusta mejor la probabilidad del próximo carácter, no fabrica gramática. La (c) inventa un fenómeno que aquí no se ve —la pérdida se estabiliza, no se dispara—. La (d) es tentadora porque la red sí memoriza algo, pero muestrear introduce azar en cada paso y el texto nunca sale idéntico al corpus; que la versión voraz se quede en un bucle corto lo confirma. Lo que falta es más datos, más tamaño y una unidad mayor que el carácter, no más vueltas.'
     hint: '¿Qué parte del problema arreglan más pasos de descenso, y qué parte está fijada por cuántos datos y cuánto estado tiene la red?'
 challenges: []
+reading:
+  - kind: blog
+    title: 'The Unreasonable Effectiveness of Recurrent Neural Networks'
+    authors: 'Andrej Karpathy'
+    year: '2015'
+    venue: 'karpathy.github.io'
+    lang: en
+    url: 'https://karpathy.github.io/2015/05/21/rnn-effectiveness/'
+    note: 'Su gist min-char-rnn es casi tu celda: una RNN vanilla que predice el siguiente carácter, con BPTT y recorte del gradiente. Sus muestras salen mejores porque usa LSTM de varias capas y megabytes de texto, no unos miles de caracteres.'
+  - kind: paper
+    title: 'Generating Sequences With Recurrent Neural Networks'
+    authors: 'Alex Graves'
+    year: '2013'
+    venue: 'arXiv:1308.0850'
+    lang: en
+    url: 'https://arxiv.org/abs/1308.0850'
+    note: 'La versión seria de lo que haces: un modelo a nivel de carácter, entrenado sobre Wikipedia con LSTM, que genera muestreando un carácter cada vez. Consigue texto con estructura de párrafo; además hace escritura a mano, que no te toca.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 7. */}

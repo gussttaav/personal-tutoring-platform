@@ -183,6 +183,23 @@ challenges:
       `np.outer(h, delta)` la transpuesta. Fíjate en lo que ninguna de las dos funciones hace: no
       construye ni una matriz intermedia. Lo más caro que ocurre en toda la vuelta es una matriz
       por un vector, una vez por capa.
+reading:
+  - kind: paper
+    title: 'Learning representations by back-propagating errors'
+    authors: 'Rumelhart, Hinton y Williams'
+    year: '1986'
+    venue: 'Nature 323'
+    lang: en
+    url: 'https://www.cs.toronto.edu/~hinton/absps/naturebp.pdf'
+    note: 'Las cuatro páginas que pusieron backpropagation en el mapa. Traen la misma recurrencia con el mismo error por neurona, y el punto que el bloque no deja de rozar: las neuronas ocultas acaban representando rasgos que nadie fijó.'
+  - kind: libro
+    title: 'Deep Learning, cap. 6: Deep Feedforward Networks'
+    authors: 'Goodfellow, Bengio y Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/mlp.html'
+    note: 'Su §6.5 saca backpropagation de la red de capas fijas y lo pone sobre un grafo de cómputo cualquiera, que es lo que hace la diferenciación automática de una librería: la misma regla de la cadena, recorrida por el grafo en vez de a mano.'
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 8. */}

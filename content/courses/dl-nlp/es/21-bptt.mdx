@@ -178,6 +178,15 @@ challenges:
       preactivación. Y `np.outer(delta, hs[t - 1])` en el paso `t = 1` multiplica por $\mathbf{h}_0 = \mathbf{0}$,
       así que ese término entra como matriz nula: el primer paso no le debe nada a $\mathbf{W}_{hh}$,
       porque nunca la usó.
+reading:
+  - kind: libro
+    title: 'Deep Learning, cap. 10: Sequence Modeling: Recurrent and Recursive Nets'
+    authors: 'Goodfellow, Bengio y Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/rnn.html'
+    note: 'Su §10.2.2 es esta misma derivación: en su ecuación 10.13 reaparecen el transporte por la matriz recurrente y la máscara 1 - h². Más corta que la tuya y sin comprobación numérica; llama W, U y V a tus W_hh, W_xh y W_hy.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 3. */}
