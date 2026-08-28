@@ -13,34 +13,19 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { scheduleService } from "@/services";
-import { log } from "@/lib/logger";
+import { singleFlight, withRetry } from "@/lib/single-flight";
 import type { ScheduleConfig } from "@/domain/types";
 
 export const SCHEDULE_CACHE_TAG = "schedule-config";
 
 const REVALIDATE_SECONDS = 3600;
 
+// BUILD-04: see pricing-display.ts — dedupe the prerender burst, then retry.
+const readSchedule = singleFlight("schedule-config", () =>
+  withRetry(() => scheduleService.getConfig(), "schedule-config"));
+
 export const getScheduleConfig: () => Promise<ScheduleConfig> = unstable_cache(
-  // BUILD-03b: TEMPORARY instrumentation — see pricing-display.ts.
-  async () => {
-    const t0 = Date.now();
-    log("info", "BUILD-DIAG schedule read start", {
-      service: "build-diag", at: new Date().toISOString(),
-    });
-    try {
-      const cfg = await scheduleService.getConfig();
-      log("info", "BUILD-DIAG schedule read OK", {
-        service: "build-diag", ms: Date.now() - t0,
-      });
-      return cfg;
-    } catch (err) {
-      log("error", "BUILD-DIAG schedule read FAILED", {
-        service: "build-diag", ms: Date.now() - t0,
-        error: (err as Error).message, detail: JSON.stringify(err),
-      });
-      throw err;
-    }
-  },
+  readSchedule,
   ["schedule-config"],
   { revalidate: REVALIDATE_SECONDS, tags: [SCHEDULE_CACHE_TAG] },
 );

@@ -6,7 +6,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { pricingService } from "@/services";
-import { log } from "@/lib/logger";
+import { singleFlight, withRetry } from "@/lib/single-flight";
 import type { ProductKey } from "@/domain/types";
 
 /** Static hours-per-pack, used to derive the per-hour rate. */
@@ -47,31 +47,14 @@ export function formatPrice(cents: number, currency: string, locale = "es"): str
 // panel read pricingService directly — never this cache — so they are always fresh.
 export const PRICING_CACHE_TAG = "pricing-all";
 const REVALIDATE_SECONDS = 3600;
+// BUILD-04: the prerender fires one identical read per concurrent page, and a
+// PGRST303 rejection on any one of them aborts the whole export. singleFlight
+// collapses that burst into one request; withRetry covers the residual.
+const readPrices = singleFlight("pricing-all", () =>
+  withRetry(() => pricingService.getAll(), "pricing-all"));
+
 const getRawPrices = unstable_cache(
-  // BUILD-03b: TEMPORARY instrumentation of the exact path that aborts the
-  // build. `ms` is the discriminator: a real PostgREST round trip from the
-  // build container measures ~300-800ms (see the [SB-DIAG] probes), whereas a
-  // replay of a poisoned entry from the restored Next fetch-cache returns in
-  // ~0ms with no network at all. Remove with the rest of BUILD-03.
-  async () => {
-    const t0 = Date.now();
-    log("info", "BUILD-DIAG pricing read start", {
-      service: "build-diag", at: new Date().toISOString(),
-    });
-    try {
-      const rows = await pricingService.getAll();
-      log("info", "BUILD-DIAG pricing read OK", {
-        service: "build-diag", ms: Date.now() - t0, rows: rows.length,
-      });
-      return rows;
-    } catch (err) {
-      log("error", "BUILD-DIAG pricing read FAILED", {
-        service: "build-diag", ms: Date.now() - t0,
-        error: (err as Error).message, detail: JSON.stringify(err),
-      });
-      throw err;
-    }
-  },
+  readPrices,
   ["pricing-all"],
   { revalidate: REVALIDATE_SECONDS, tags: [PRICING_CACHE_TAG] },
 );
