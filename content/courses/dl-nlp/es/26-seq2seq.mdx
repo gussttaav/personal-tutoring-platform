@@ -50,7 +50,23 @@ quiz:
     explanation: 'La (a) nombra el límite: el resumen es un vector de $d_h$ números fijos, y meter en él una secuencia larga obliga a tirar información que la corta no tenía que tirar; más descenso ajusta los pesos, pero no cambia el tamaño de $\mathbf{c}$. La (b) confunde entrenar con capacidad: no hay pesos que ensanchen un canal demasiado estrecho. La (c) inventa un fenómeno que aquí no se ve. La (d) describe justo lo que este modelo no puede hacer, y lo que el bloque siguiente irá a construir: dejar que el decoder vuelva a mirar la entrada en vez de conformarse con un resumen.'
     hint: '¿Qué arreglan más pasos de descenso, y qué está fijado por el tamaño de $\mathbf{c}$?'
 challenges: []
-reading: []
+reading:
+  - kind: paper
+    title: 'Sequence to Sequence Learning with Neural Networks'
+    authors: 'Sutskever, Vinyals y Le'
+    year: '2014'
+    venue: 'arXiv:1409.3215'
+    lang: en
+    url: 'https://arxiv.org/abs/1409.3215'
+    note: 'La arquitectura de esta lección: un LSTM comprime la entrada en un vector fijo y otro escribe la salida desde él. Invierten la frase de entrada, y —al revés que tu inversor— informan de que las frases largas no les dieron problema.'
+  - kind: paper
+    title: 'On the Properties of Neural Machine Translation: Encoder-Decoder Approaches'
+    authors: 'Cho, van Merriënboer, Bahdanau y Bengio'
+    year: '2014'
+    venue: 'arXiv:1409.1259'
+    lang: en
+    url: 'https://arxiv.org/abs/1409.1259'
+    note: 'Mide el cuello de botella de tu última celda: con el vector de contexto de tamaño fijo, la calidad cae en picado según crece la frase de entrada. El arreglo —dejar que el decoder vuelva a mirar la entrada— es el bloque 4.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 8. */}

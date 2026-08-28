@@ -146,7 +146,23 @@ challenges:
       `r * h` en lugar de `h`—. La última línea es la mezcla atada: `(1 - z)` conserva y `z` escribe,
       y como el resultado va a una variable nueva en vez de sobrescribir `h`, los arrays recibidos
       quedan intactos.
-reading: []
+reading:
+  - kind: paper
+    title: 'Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation'
+    authors: 'Cho, van Merriënboer, Gulcehre, Bahdanau y otros'
+    year: '2014'
+    venue: 'arXiv:1406.1078'
+    lang: en
+    url: 'https://arxiv.org/abs/1406.1078'
+    note: 'Su §2.3 introduce las compuertas de reset y de actualización que montas aquí. Ojo al signo: su z conserva y tu z escribe, así que donde tú pones z él pone 1-z. El nombre «GRU» aún no aparece, y el grueso del artículo va de traducción.'
+  - kind: paper
+    title: 'Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling'
+    authors: 'Chung, Gulcehre, Cho y Bengio'
+    year: '2014'
+    venue: 'arXiv:1412.3555'
+    lang: en
+    url: 'https://arxiv.org/abs/1412.3555'
+    note: 'Aquí se fija el nombre «GRU» y la convención de la lección, con z que escribe. Compara GRU y LSTM en música y voz y respalda tu «casi siempre, no siempre»: quedan parejas y el artículo no se moja sobre cuál gana. No toca texto.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 6. */}

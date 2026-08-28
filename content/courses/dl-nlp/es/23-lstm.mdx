@@ -152,7 +152,31 @@ challenges:
       calculan con el $\mathbf{h}_{t-1}$ que entró, no con el que se va a devolver: por eso `entra`
       cierra sobre `h` y `c_nuevo` se guarda en una variable propia en vez de sobrescribir `c`, que
       además es lo que mantiene intactos los arrays recibidos.
-reading: []
+reading:
+  - kind: paper
+    title: 'Long Short-Term Memory'
+    authors: 'Hochreiter y Schmidhuber'
+    year: '1997'
+    venue: 'Neural Computation 9(8)'
+    lang: en
+    url: 'https://www.bioinf.jku.at/publications/older/2604.pdf'
+    note: 'El artículo que la introdujo. Trae el estado de celda y el flujo constante de error que lo recorre —tu vía aditiva—, pero sólo con compuertas de entrada y salida: la de olvido la añaden Gers, Schmidhuber y Cummins en 2000.'
+  - kind: blog
+    title: 'Understanding LSTM Networks'
+    authors: 'Christopher Olah'
+    year: '2015'
+    venue: 'colah.github.io'
+    lang: en
+    url: 'https://colah.github.io/posts/2015-08-Understanding-LSTMs/'
+    note: 'Recorre con diagramas las tres compuertas y el estado de celda como «cinta transportadora» —la figura de esta lección—, y de paso presenta la GRU. Dice por qué la vía aditiva ayuda al gradiente; no lo deriva, eso lo has hecho tú.'
+  - kind: paper
+    title: 'LSTM: A Search Space Odyssey'
+    authors: 'Greff, Srivastava, Koutník, Steunebrink y Schmidhuber'
+    year: '2017'
+    venue: 'arXiv:1503.04069'
+    lang: en
+    url: 'https://arxiv.org/abs/1503.04069'
+    note: 'Ocho variantes de la LSTM en 5 400 entrenamientos: lo que de verdad importa es la compuerta de olvido y la activación de salida; acoplar entrada y olvido —lo que hará la GRU— casi no cambia nada. Ninguna variante supera a la estándar.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 5. */}
