@@ -51,7 +51,23 @@ quiz:
     explanation: 'Una por cada pareja de paso y posición, es decir $T_x \cdot T_y = 6 \cdot 8 = 48$. Ese producto es el precio de la idea y conviene tenerlo delante: el resumen fijo calculaba cero puntuaciones y por eso se ahogaba, mientras que aquí el coste del mecanismo crece con el producto de las dos longitudes, no con su suma. En una frase de sesenta tokens traducida a sesenta son $3\,600$ puntuaciones, y cada una pasa por la función $a$.'
     hint: '¿Cuántos pesos tiene una fila, y cuántas filas hay?'
 challenges: []
-reading: []
+reading:
+  - kind: paper
+    title: 'Neural Machine Translation by Jointly Learning to Align and Translate'
+    authors: 'Bahdanau, Cho y Bengio'
+    year: '2015'
+    venue: 'arXiv:1409.0473'
+    lang: en
+    url: 'https://arxiv.org/abs/1409.0473'
+    note: 'El paper que descongeló los pesos. Su §3.1 es el mecanismo de esta lección, ecs. (5)-(6): un contexto por paso, suma de los estados del encoder con pesos de un softmax sobre las posiciones. La función que puntúa llega después.'
+  - kind: blog
+    title: 'Visualizing A Neural Machine Translation Model (Mechanics of Seq2seq Models With Attention)'
+    authors: 'Jay Alammar'
+    year: '2018'
+    venue: 'jalammar.github.io'
+    lang: en
+    url: 'https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/'
+    note: 'El mapa de alineación que esta lección dibuja a mano, aquí animado: de qué posición de la entrada tira cada palabra al escribirse. Se queda en la imagen, sin gradiente ni función de puntuación.'
 ---
 
 {/* COURSE-P5-04 — Bloque 4, lección 3. */}
