@@ -147,7 +147,15 @@ challenges:
       delante la media del batch entero. Fíjate en que `Y * np.log(P)` recorre las $d_L$ clases y
       la one-hot anula todas menos una: la suma por filas se queda en $-\log \hat{y}_c$, el
       logaritmo de la probabilidad que la red le dio a la clase correcta.
-reading: []
+reading:
+  - kind: libro
+    title: 'Deep Learning, cap. 6: Deep Feedforward Networks'
+    authors: 'Goodfellow, Bengio y Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/mlp.html'
+    note: 'Su §6.2 saca la pérdida de la verosimilitud —que es la entropía cruzada— y explica por qué una salida que satura no va con el error cuadrático medio, y cómo el logaritmo lo arregla. El argumento de la lección, con menos álgebra.'
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 5. */}

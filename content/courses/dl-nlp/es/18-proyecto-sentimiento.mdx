@@ -37,7 +37,15 @@ quiz:
     answer: a
     explanation: 'La (a) es lo único que el experimento autoriza a decir, y es bastante: hay una parte del error que entrenar más no toca. La (b) se comprueba y no se sostiene —ocho semillas distintas dan entre 53 y 54 aciertos de 60, nunca 60—, y en cualquier caso confunde el mínimo de la pérdida sobre $D_{\text{ent}}$, que es donde el descenso está llegando, con el acierto sobre $D_{\text{prueba}}$, que ninguna de las dos cosas optimiza. La (c) va contra el dato: con esa tasa de aprendizaje la pérdida baja en todos los pasos que imprime la celda. Y la (d) invierte la carga de la prueba: cuatro de las siete llevan un <W>no</W> cuyo sentido está en el orden de la frase, y la etiqueta que llevan es la que le pondría cualquiera que las leyera.'
 challenges: []
-reading: []
+reading:
+  - kind: paper
+    title: 'Thumbs up? Sentiment Classification using Machine Learning Techniques'
+    authors: 'Pang, Lee y Vaithyanathan'
+    year: '2002'
+    venue: 'EMNLP 2002'
+    lang: en
+    url: 'https://aclanthology.org/W02-1011/'
+    note: 'El artículo que fundó la clasificación de sentimiento, con reseñas de cine y bolsa de palabras como aquí. Choca con el mismo muro —83 % como techo, marcar el «no» apenas ayuda— y concluye que el orden pide algo que la bolsa no da.'
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 10. */}

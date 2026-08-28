@@ -158,7 +158,23 @@ challenges:
       de una vez sólo es posible aquí porque `f2(f1(v))` se puede escribir y evaluar; en una red
       con capas ocultas esa función existe pero nadie la deriva a mano, y lo que queda es
       justamente esto: las jacobianas de cada trozo, multiplicadas en orden.
-reading: []
+reading:
+  - kind: paper
+    title: 'The Matrix Calculus You Need For Deep Learning'
+    authors: 'Parr y Howard'
+    year: '2018'
+    venue: 'arXiv:1802.01528'
+    lang: en
+    url: 'https://arxiv.org/abs/1802.01528'
+    note: 'La regla de la cadena vectorial y la jacobiana enteras, con el caso de la activación coordenada a coordenada —jacobiana diagonal— que la lección usa. No pide más que cálculo de una variable, y es más mecánico que conceptual.'
+  - kind: blog
+    title: 'Calculus on Computational Graphs: Backpropagation'
+    authors: 'Christopher Olah'
+    year: '2015'
+    venue: 'colah.github.io'
+    lang: en
+    url: 'https://colah.github.io/posts/2015-08-Backprop/'
+    note: 'Lee la suma sobre caminos como un grafo de cómputo y nombra lo que la lección aparca: multiplicar matrices entre sí o llevar un vector hacia atrás son los modos directo e inverso de derivar, y el inverso es lo que abarata la vuelta.'
 ---
 
 {/* COURSE-P5-02 — Bloque 2, lección 7. */}
