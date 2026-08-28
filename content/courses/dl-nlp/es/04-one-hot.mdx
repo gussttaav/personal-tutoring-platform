@@ -41,7 +41,15 @@ quiz:
     answer: false
     explanation: 'No le ayuda nada, y ese es el resultado de la lección. El parecido tendría que estar en los vectores, y en one-hot no está: $\mathbf{o}_{\text{niño}}$ y $\mathbf{o}_{\text{niña}}$ son ortogonales, exactamente igual que $\mathbf{o}_{\text{niño}}$ y $\mathbf{o}_{\text{criptomoneda}}$. Para el modelo, <W>niña</W> es una entrada del vocabulario que no ha visto en esa posición nunca, y no tiene por dónde empezar. Que las dos palabras se parezcan es cosa tuya; a la representación no se lo dijo nadie.'
 challenges: []
-reading: []
+reading:
+  - kind: paper
+    title: 'A Neural Probabilistic Language Model'
+    authors: 'Bengio, Ducharme, Vincent y Jauvin'
+    year: '2003'
+    venue: 'JMLR 3'
+    lang: en
+    url: 'https://www.jmlr.org/papers/v3/bengio03a.html'
+    note: 'Plantea la maldición de la dimensionalidad para el lenguaje y propone salir de ella con vectores densos: el argumento que acabas de desarrollar. Va más allá y monta un modelo de lenguaje entero, cosa ya del bloque 2.'
 ---
 
 {/* COURSE-P5-01 — Bloque 1, lección 4. */}
