@@ -20,7 +20,7 @@
  * in Jest without pulling in the ESM-only compiler.
  */
 
-import type { ReactElement, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, ReactElement, ReactNode } from "react";
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 
 import { makeLeccion, type LeccionCtx } from "../Leccion";
@@ -30,14 +30,41 @@ import { W } from "../word";
 type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
 
 /*
+ * A `predict-output` snippet — and any fenced block an author puts in a prompt or
+ * explanation — is compiled through THIS map, never the lesson's MDX component map, so
+ * it never met the `Pre` override there that keeps a wide line scrolling inside its own
+ * box. rehype-pretty-code emits a bare `<pre><code>`; without this a long line is
+ * silently clipped by `body { overflow-x: clip }` on the lesson route (COURSE-P1-04),
+ * overflowing the quiz card on mobile. Mirrors `Pre` in ../mdx-components.tsx — a copy
+ * rather than an import, since that module imports Quiz, which imports this file.
+ */
+function Pre(props: ComponentPropsWithoutRef<"pre">) {
+  return (
+    <pre
+      {...props}
+      style={{
+        overflowX: "auto",
+        maxWidth: "100%",
+        padding: "1rem",
+        borderRadius: "var(--radius)",
+        border: "1px solid var(--border)",
+        background: "var(--surface-lowest)",
+        ...props.style,
+      }}
+    />
+  );
+}
+
+/*
  * COURSE-P5-00 — quiz text needs `<W>` for exactly the reason the prose does: a prompt
  * like "numerar el vocabulario — <W>casa</W> → 1 …" is mentioning words, not using
- * them. `W` is the ONLY custom component here. The full `mdxComponents` map is not
- * importable from this module (it imports Quiz, which imports this file), and quiz
- * text has no business hosting a widget or a code cell anyway — an undefined
- * component in frontmatter is a build error, which is the right answer for those.
+ * them. `W` and the `pre` override above are the ONLY components here. The full
+ * `mdxComponents` map is not importable from this module (it imports Quiz, which
+ * imports this file), and quiz text has no business hosting a widget or a code cell
+ * anyway — an undefined component in frontmatter is a build error, which is the right
+ * answer for those.
  */
-const CUSTOM_COMPONENTS: MDXComponents = { W };
+const CUSTOM_COMPONENTS: MDXComponents = { W, pre: Pre };
 
 /*
  * COURSE-P7-01 — `<Leccion>` is the second exception, and it is not a small one: 72 of
