@@ -945,6 +945,30 @@
         "es": "In Spanish",
         "en": "In English"
       }
+    },
+    "search": {
+      "trigger": "Search this course",
+      "triggerAria": "Search the course content",
+      "dialogTitle": "Search this course",
+      "placeholder": "Search {count} lessons…",
+      "clear": "Clear search",
+      "close": "Close search",
+      "resultsLabel": "Search results",
+      "resultCount": "{count, plural, =0 {No results} =1 {# lesson} other {# lessons}}",
+      "moreSections": "{count, plural, =1 {+# more match} other {+# more matches}}",
+      "introSection": "Introduction",
+      "tipsHeading": "Try",
+      "scopeNote": "Searches lesson text, titles and section headings. Code and formulas are not included.",
+      "loading": "Preparing search…",
+      "minChars": "Type at least two letters.",
+      "emptyTitle": "No results for “{query}”",
+      "emptyBody": "Try fewer words, or a more general term. Code and formulas are not searched.",
+      "errorTitle": "Search could not be loaded",
+      "errorBody": "Please try again in a moment.",
+      "errorRetry": "Retry",
+      "hintNavigate": "navigate",
+      "hintOpen": "open",
+      "hintClose": "close"
     }
   },
   "meta": {

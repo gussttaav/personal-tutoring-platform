@@ -25,6 +25,7 @@
  */
 
 import "../../_styles/katex.css";
+import "../../_styles/search.css";
 import "./lesson.css";
 
 import type { Metadata } from "next";
@@ -40,6 +41,7 @@ import {
   listLessonViews,
 } from "@/lib/courses/catalog-view";
 import { getLessonSource } from "@/lib/courses/lesson-source";
+import { searchIndexVersion } from "@/lib/courses/search/build-index";
 import { extractHeadings } from "@/lib/courses/headings";
 import { placedExerciseIds } from "@/lib/courses/exercise-ids";
 import { renderLesson } from "@/lib/courses/mdx";
@@ -189,6 +191,7 @@ export default async function LessonPage({
         prev={prev}
         next={next}
         locale={locale}
+        searchVersion={searchIndexVersion(courseSlug, locale)}
       >
         {isFallback && <TranslationPendingNotice locale={locale} />}
         {content}

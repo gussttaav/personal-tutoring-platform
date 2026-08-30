@@ -1747,3 +1747,58 @@ collapsed, capped at five. Rationale for each is in phase-8-further-reading/READ
   structurally, both files key-for-key).
 - `pnpm lint` (0 errors), `npx tsc --noEmit` (0 errors in `src/`), `pnpm test:unit` (1,362 across
   108 suites), `pnpm lint:content`, `pnpm build`, `pnpm check:bundle` all green.
+
+---
+
+## Phase 9 — Cross-lesson search
+
+Full-text search over a course's lessons, scoped to one course and one locale, reusable for any
+future course. Build-time index + client-side matching; **not Pagefind** — see the phase README for
+that decision and the measurements behind it.
+
+| Task | Tag | Status | Owner | PR |
+|------|-----|--------|-------|----|
+| [01 Index + engine + palette](phase-9-search/01-course-search.md) | `COURSE-P9-01` | ✅ | _tbd_ | local |
+
+**Exit criteria**
+- [x] The index route prerenders (`●` in the build route table) for every course × locale; zero
+      serverless invocations, `immutable` headers preserved into `prerender-manifest.json`
+- [x] Search is reachable from the lesson reader — desktop sidebar and mobile bar — scoped to the
+      course being read, with nothing hardcoded to `dl-nlp`
+- [x] Results group by lesson with up to three section snippets, query highlighted, each deep-linked
+      to a `#heading` that lands on the rendered heading
+- [x] Accent-, case- and separator-insensitive (`atencion`→`atención`, `self attention`→`self-attention`);
+      prefix matches only at a word start
+- [x] `/en` searches the prose it actually renders and says so; result URLs keep the `/en` prefix
+- [x] `pnpm lint`, `pnpm test:unit`, `pnpm build`, `pnpm check:bundle`, `pnpm lint:content` green
+
+**Notes**
+- **254 section chunks / 416 KB of prose / ~116 KB brotli**, fetched once on first open and cached
+  at module level. `prepareIndex` normalizes the whole corpus in ~11 ms; a typical query is 0.5–1 ms.
+- **`budget.ts` is untouched** — `searchableText` is a deliberate near-copy of `prose()` with two
+  documented divergences (`<Leccion>` children kept; punctuation reattached), guarded by a canary
+  test. `pnpm lint:content` word counts are byte-identical to before.
+- **Fixed a latent LaTeX leak** that `prose()` shares: inline math wrapped across a source line
+  break puts the `$` pairing out of phase. Invisible in a word count, visible in a snippet. 0 of 254
+  chunks now contain `$` or a TeX command.
+- **Two bugs found in the browser, not by tests:** the `/en` result hrefs lost their locale prefix
+  (raw `<a>` gets no next-intl treatment — now via `getPathname`), and the language notice rendered
+  the scope note instead of "The lessons are in Spanish".
+- **Perf work was needed:** the first engine took 14 ms on `"de la"` and 8.7 ms on `"a b c d e"`.
+  Bounded range collection, an existence-only AND gate, an ASCII fast path for the word-boundary
+  test, and dropping single-character terms brought those to 4.5 ms and 3 µs.
+- **`MobileLessonBar`'s scroll lock is now ref-counted** (`src/hooks/scroll-lock.ts`). With a second
+  overlay the direct `body.style.overflow` version unlocked the page behind the still-open drawer.
+- **Verified live** in the Browser pane at 1400×900 and 375×812: dialog open/close, arrow keys and
+  Enter, Escape, focus restore, scroll lock released, deep link scrolling to the real heading
+  (`scrollY 1555`), `/en` chrome and prefixed hrefs, mobile full-screen sheet. Screenshots worked
+  in this session, unlike the P8-01 pass.
+- **Not verified:** a real phone, and a real screen reader. The ARIA contract
+  (`combobox`/`listbox`/`option` + `aria-activedescendant`) was checked structurally in the DOM.
+- **No ⌘K**, deliberately: the reader hosts Python textareas and a global key grab is a hazard.
+  The provider is the single mount point if it is ever wanted.
+- **Scoped to the reader after review.** Search was first built on `/cursos` and the course landing
+  page as well, and removed on the same pass: those pages sell and start the course, and the
+  syllabus accordion is the better way to browse lessons you have not read. The removal also
+  collapsed `search()` from `PreparedIndex[]` to a single index, deleting the cross-course ranking,
+  the per-result course label and two message keys — dead generality, not headroom.

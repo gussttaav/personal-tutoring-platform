@@ -945,6 +945,30 @@
         "es": "En español",
         "en": "En inglés"
       }
+    },
+    "search": {
+      "trigger": "Buscar en el curso",
+      "triggerAria": "Buscar en el contenido del curso",
+      "dialogTitle": "Buscar en el curso",
+      "placeholder": "Busca en las {count} lecciones…",
+      "clear": "Borrar la búsqueda",
+      "close": "Cerrar la búsqueda",
+      "resultsLabel": "Resultados de la búsqueda",
+      "resultCount": "{count, plural, =0 {Sin resultados} =1 {# lección} other {# lecciones}}",
+      "moreSections": "{count, plural, =1 {+# coincidencia más} other {+# coincidencias más}}",
+      "introSection": "Introducción",
+      "tipsHeading": "Prueba con",
+      "scopeNote": "Se busca en el texto de las lecciones, sus títulos y sus apartados. No incluye el código ni las fórmulas.",
+      "loading": "Preparando la búsqueda…",
+      "minChars": "Escribe al menos dos letras.",
+      "emptyTitle": "Sin resultados para «{query}»",
+      "emptyBody": "Prueba con menos palabras o con un término más general. La búsqueda no cubre el código ni las fórmulas.",
+      "errorTitle": "No se pudo cargar la búsqueda",
+      "errorBody": "Vuelve a intentarlo en un momento.",
+      "errorRetry": "Reintentar",
+      "hintNavigate": "navegar",
+      "hintOpen": "abrir",
+      "hintClose": "cerrar"
     }
   },
   "meta": {
