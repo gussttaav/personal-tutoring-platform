@@ -29,7 +29,8 @@ export interface PredictOutputProps {
 export function PredictOutput({ code, value, disabled, label, placeholder, onChange }: PredictOutputProps) {
   return (
     <div style={{ minWidth: 0 }}>
-      {/* The <Pre> override in the MDX component map already scrolls this in its own box. */}
+      {/* The `pre` override in the quiz render map (lib/courses/quiz/render.tsx)
+          scrolls this in its own box, so a long line never widens the card. */}
       <div style={{ minWidth: 0, maxWidth: "100%" }}>{code}</div>
       <label style={{ display: "block", marginTop: "0.9rem" }}>
         <span style={{ display: "block", marginBottom: "0.35rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>

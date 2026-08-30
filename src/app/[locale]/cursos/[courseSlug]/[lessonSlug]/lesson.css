@@ -58,10 +58,11 @@
   padding: 24px 16px 64px;
 }
 
-/* Push the sticky mobile bar below the fixed navbar (it sticks at `--nav-h`, so its
-   flow start must clear the navbar too). Mobile-only; hidden ≥768px. */
+/* The mobile bar is `position: fixed` (MobileLessonBar.tsx), so this wrapper carries
+   no in-flow height of its own — it reserves the navbar + bar height as padding so the
+   lesson content below starts clear of both. Mobile-only; hidden ≥768px. */
 .lesson-mobilebar {
-  padding-top: var(--nav-h);
+  padding-top: calc(var(--nav-h) + var(--mobile-bar-h));
 }
 
 /* The sticky rails (sidebar + on-this-page) need the VIEWPORT as their scroll

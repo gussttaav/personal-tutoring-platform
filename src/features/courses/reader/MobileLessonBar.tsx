@@ -1,12 +1,21 @@
 "use client";
 
 /*
- * COURSE-P1-04 — Sticky mobile top bar + navigation drawer.
+ * COURSE-P1-04 — Fixed mobile top bar + navigation drawer.
  *
  * Shown only below 768px (LessonLayout's CSS hides the wrapper on desktop). The bar
  * carries the drawer toggle, the lesson title, and a progress slot — filled by
  * COURSE-P4-02 with `MobileProgressIndicator`, which owns all the logic; this file
  * still holds none.
+ *
+ * The bar is `position: fixed` and hides on scroll-DOWN, reveals on scroll-UP (and
+ * whenever the reader is near the top) — a lesson is a long read on a phone and a
+ * permanently parked bar is 52px of prose lost on every screen. It was `position:
+ * sticky` before, but its sticky container (`.lesson-mobilebar`) wraps only the bar,
+ * not the article beside it, so it was never actually sticky over the content. The
+ * drawer toggle AND the search trigger live here, so the reveal-on-scroll-up gesture
+ * is the reader's way back to both from mid-lesson; opening either overlay also forces
+ * the bar shown so its controls are there again the moment the overlay closes.
  *
  * The drawer reuses the ComingSoonModal dismissal pattern — body scroll-lock, close on
  * Escape, close on backdrop click — and ADDS the two things that modal lacks and this task
@@ -25,7 +34,9 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import MobileProgressIndicator from "./MobileProgressIndicator";
 import CourseSearchTrigger from "@/features/courses/search/CourseSearchTrigger";
+import { useCourseSearch } from "@/features/courses/search/CourseSearchProvider";
 import { lockBodyScroll } from "@/hooks/scroll-lock";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -37,11 +48,53 @@ interface MobileLessonBarProps {
 
 export default function MobileLessonBar({ title, children }: MobileLessonBarProps) {
   const t = useTranslations("courses.reader");
+  const { open: searchOpen } = useCourseSearch();
+  const reducedMotion = useReducedMotion();
   const [open, setOpen] = useState(false);
+  // Scroll-direction state only — never forced here. `showBar` below OR-s in the two
+  // overlays, so an open drawer/search always renders the bar shown without this
+  // effect having to write state synchronously.
+  const [scrolledAway, setScrolledAway] = useState(false);
+
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => setOpen(false), []);
+
+  // Hide on scroll-down, reveal on scroll-up / near the top. The listener is off while
+  // the drawer or the search dialog owns the screen (they lock body scroll anyway).
+  useEffect(() => {
+    if (open || searchOpen) return;
+
+    const REVEAL_ABOVE = 96; // px from the top: always shown here
+    const JITTER = 6;        // px: ignore rubber-band / sub-pixel scroll noise
+
+    let lastY = Math.max(0, window.scrollY);
+    let raf = 0;
+
+    const onScroll = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        const y = Math.max(0, window.scrollY);
+        const delta = y - lastY;
+        if (Math.abs(delta) < JITTER) return; // let small moves accumulate
+        if (y <= REVEAL_ABOVE) setScrolledAway(false);
+        else setScrolledAway(delta > 0);
+        lastY = y;
+      });
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [open, searchOpen]);
+
+  // Tapping Search must open it regardless of scroll position, and the drawer toggle
+  // is only tappable when the bar is already up — so an open overlay pins the bar.
+  const showBar = open || searchOpen || !scrolledAway;
 
   // Scroll-lock + Escape + focus trap while open; restore focus to the toggle on close.
   useEffect(() => {
@@ -93,10 +146,12 @@ export default function MobileLessonBar({ title, children }: MobileLessonBarProp
     <div className="lesson-mobilebar">
       <div
         style={{
-          position: "sticky",
+          position: "fixed",
           // Sit just below the fixed global navbar (see --nav-h in lesson.css),
-          // not underneath it.
+          // not underneath it. `.lesson-mobilebar` reserves this height in flow.
           top: "var(--nav-h, 72px)",
+          left: 0,
+          right: 0,
           zIndex: 30,
           display: "flex",
           alignItems: "center",
@@ -105,6 +160,11 @@ export default function MobileLessonBar({ title, children }: MobileLessonBarProp
           padding: "0 12px",
           background: "var(--surface)",
           borderBottom: "1px solid var(--border)",
+          // Hidden = slid fully above the viewport (clear of the translucent navbar).
+          transform: showBar
+            ? "translateY(0)"
+            : "translateY(calc(-100% - var(--nav-h, 72px)))",
+          transition: reducedMotion ? "none" : "transform 0.22s ease",
         }}
       >
         <button
