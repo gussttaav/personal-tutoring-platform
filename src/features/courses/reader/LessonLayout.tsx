@@ -17,6 +17,11 @@
  * here rather than in `page.tsx` — this is the only shared parent of the two sidebar
  * instances, the mobile bar and the MDX body, and every one of them has a progress
  * leaf inside it. The page itself stays untouched and therefore stays static.
+ *
+ * COURSE-P9-01: `CourseSearchProvider` mounts here for the same reason — it owns one
+ * dialog shared by the desktop and mobile triggers. The DESKTOP trigger is rendered here,
+ * in the `<aside>` above `LessonSidebar`, and the mobile one in `MobileLessonBar`; neither
+ * goes inside `LessonSidebar`, which is rendered twice and would duplicate it.
  */
 
 import type { ReactNode } from "react";
@@ -28,6 +33,8 @@ import OnThisPage from "./OnThisPage";
 import LessonNav from "./LessonNav";
 import MobileLessonBar from "./MobileLessonBar";
 import CourseProgressProvider from "./CourseProgressProvider";
+import CourseSearchProvider from "@/features/courses/search/CourseSearchProvider";
+import CourseSearchTrigger from "@/features/courses/search/CourseSearchTrigger";
 import LessonComplete from "./LessonComplete";
 import LessonReading from "./LessonReading";
 
@@ -47,6 +54,8 @@ interface LessonLayoutProps {
   prev:        LessonRef | null;
   next:        LessonRef | null;
   locale:      string;
+  /** COURSE-P9-01: content hash of the search index, for the client's `?v=` cache buster. */
+  searchVersion: string;
   children:    ReactNode; // rendered MDX body
 }
 
@@ -63,6 +72,7 @@ export default async function LessonLayout({
   prev,
   next,
   locale,
+  searchVersion,
   children,
 }: LessonLayoutProps) {
   const t = await getTranslations({ locale, namespace: "courses.reader" });
@@ -70,12 +80,24 @@ export default async function LessonLayout({
 
   return (
     <CourseProgressProvider courseSlug={courseSlug} lessonSlug={currentSlug}>
+      <CourseSearchProvider
+        courseSlug={courseSlug}
+        version={searchVersion}
+        locale={locale}
+        lessonCount={lessons.length}
+      >
       <MobileLessonBar title={title}>
         <LessonSidebar {...sidebarProps} variant="drawer" />
       </MobileLessonBar>
 
       <div className="lesson-shell">
         <aside className="lesson-sidebar-desktop">
+          {/* 16px here + the sidebar nav's own 8px top padding = a 24px gap, matching the
+              24px the back-link already leaves beneath itself. At 0 the search field sat
+              almost flush against the course title. */}
+          <div style={{ padding: "8px 4px 16px" }}>
+            <CourseSearchTrigger />
+          </div>
           <LessonSidebar {...sidebarProps} variant="desktop" />
         </aside>
 
@@ -116,6 +138,7 @@ export default async function LessonLayout({
           <OnThisPage headings={headings} />
         </aside>
       </div>
+      </CourseSearchProvider>
     </CourseProgressProvider>
   );
 }

@@ -146,7 +146,12 @@ Block 5's final project cannot run in Pyodide (no PyTorch). That is by design, n
 - **Paid courses / certificates.** Schema is shaped so it's a later addition; nothing here implements it.
 - **Video.** If ever added: YouTube unlisted or Cloudflare Stream, never self-hosted on Vercel.
 - **Per-lesson comments / Q&A.** Moderation cost is real and competes with the actual monetisation (booking a session).
-- **Cross-lesson search.** Later, via Pagefind (build-time index, zero server cost) — not Postgres FTS.
+- ~~**Cross-lesson search.**~~ **Built in [Phase 9](phase-9-search/README.md)** (`COURSE-P9-01`).
+  Not via Pagefind in the end — the intent behind that note (build-time index, zero server cost,
+  not Postgres FTS) is kept, the tool is not. Pagefind indexes *built HTML*, needing a post-`next
+  build` binary step and a WASM runtime, to index a dirtier corpus than the MDX strippers this repo
+  already has. Measured: 416 KB of prose → ~116 KB brotli, 0.6 ms per query in a plain `indexOf`
+  loop. Revisit past ~5× this corpus; the reasoning and the numbers are in the phase README.
 - **Mobile app course delivery.** Hedged via the registry; not built.
 - **`/admin/cursos` analytics.** Worth doing eventually (per-lesson drop-off tells you which lesson is too hard); `lesson_progress` is shaped to answer it. Spanish-only per the admin convention. Not this cycle.
 - **English content.** The pipeline supports it; no English lesson is written here.

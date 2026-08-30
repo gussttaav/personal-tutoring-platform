@@ -8,17 +8,24 @@
  * COURSE-P4-02 with `MobileProgressIndicator`, which owns all the logic; this file
  * still holds none.
  *
- * The drawer reuses the ComingSoonModal dismissal pattern — body scroll-lock via
- * `document.body.style.overflow`, close on Escape, close on backdrop click — and ADDS
- * the two things that modal lacks and this task requires: a focus TRAP (Tab cycles
- * within the panel) and focus RESTORE to the toggle on close. The panel receives the
- * server-rendered `LessonSidebar` as `children`.
+ * The drawer reuses the ComingSoonModal dismissal pattern — body scroll-lock, close on
+ * Escape, close on backdrop click — and ADDS the two things that modal lacks and this task
+ * requires: a focus TRAP (Tab cycles within the panel) and focus RESTORE to the toggle on
+ * close. The panel receives the server-rendered `LessonSidebar` as `children`.
+ *
+ * COURSE-P9-01: the scroll lock now goes through the ref-counted `lockBodyScroll` instead
+ * of setting `document.body.style.overflow` here. With the search dialog as a second
+ * overlay, the direct version was a bug waiting to happen: open the drawer, open search
+ * from inside it, close search — and the page unlocks while the drawer is still up.
+ * This file also carries the MOBILE search trigger; the desktop one is in LessonLayout.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import MobileProgressIndicator from "./MobileProgressIndicator";
+import CourseSearchTrigger from "@/features/courses/search/CourseSearchTrigger";
+import { lockBodyScroll } from "@/hooks/scroll-lock";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -41,7 +48,7 @@ export default function MobileLessonBar({ title, children }: MobileLessonBarProp
     if (!open) return;
 
     const previouslyFocused = triggerRef.current;
-    document.body.style.overflow = "hidden";
+    const releaseScroll = lockBodyScroll();
 
     // Move focus into the panel (first focusable, else the panel itself).
     const panel = panelRef.current;
@@ -75,7 +82,7 @@ export default function MobileLessonBar({ title, children }: MobileLessonBarProp
 
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = "";
+      releaseScroll();
       window.removeEventListener("keydown", onKey);
       // Restore focus to the control that opened the drawer.
       previouslyFocused?.focus();
@@ -139,6 +146,10 @@ export default function MobileLessonBar({ title, children }: MobileLessonBarProp
         >
           {title}
         </span>
+
+        {/* COURSE-P9-01: search sits beside the progress slot, in the persistent bar
+            rather than behind the drawer toggle — it is a primary action on mobile too. */}
+        <CourseSearchTrigger variant="icon" />
 
         {/* COURSE-P4-02: the slot P1-04 reserved, now filled. The indicator renders
             nothing at all when progress is untracked. */}
