@@ -1,11 +1,11 @@
 # COURSE-P1-02 — Course manifest (Spanish).
-# Per-locale by design: title, tagline, outcome, prerequisites, the FAQ and the closing
+# Per-locale by design: title, tagline, prerequisites, the FAQ and the closing
 # CTA are prose. Block *ids* and lesson *slugs* are locale-invariant — that invariant is
 # what makes English purely additive later (a sibling course.en.yml + en/ dir, no route or
 # slug changes). Validated by CourseManifestSchema in src/lib/schemas.ts (z.strictObject: a
 # typo'd key fails the build). Read at build time only — never a DB call.
 #
-# The landing-page conversion copy (outcome / prerequisites.intro / cta / faq) lives here,
+# The landing-page conversion copy (prerequisites.intro / cta / faq) lives here,
 # not in messages/*.json, precisely because it is course-specific: a second course must not
 # inherit dl-nlp's "build a Transformer" pitch.
 
@@ -13,15 +13,18 @@ slug: dl-nlp
 title: "Deep Learning para NLP: del Perceptrón al Transformer"
 tagline: "Construye, desde cero y con rigor matemático, la arquitectura que impulsa los modelos de lenguaje modernos."
 level: intermedio
-outcome:
-  label: "Lo que construirás"
-  body: "Un Transformer funcional, implementado desde cero en NumPy — la arquitectura que impulsa los modelos de lenguaje modernos."
+# Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
+# Purely presentational; a course may omit it or pick another design.
+heroMotif: attention-matrix
 prerequisites:
   intro: "Este curso tiene rigor matemático. Antes de empezar, necesitas:"
   items:
-    - "Python intermedio (funciones, clases, NumPy básico)"
-    - "Álgebra lineal: vectores, matrices, producto matricial"
-    - "Cálculo: derivadas parciales y regla de la cadena"
+    - title: "Python intermedio"
+      detail: "Funciones, clases, NumPy básico."
+    - title: "Álgebra lineal"
+      detail: "Vectores, matrices, producto matricial."
+    - title: "Cálculo"
+      detail: "Derivadas parciales y regla de la cadena."
 cta:
   heading: "¿Listo para construir un Transformer?"
   body: "Empieza por la primera lección. No necesitas cuenta para leer."

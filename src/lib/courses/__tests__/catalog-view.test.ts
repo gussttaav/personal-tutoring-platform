@@ -28,9 +28,6 @@ slug: dl-nlp
 title: ${JSON.stringify(title)}
 tagline: "..."
 level: intermedio
-outcome:
-  label: "Lo que construirás"
-  body: "..."
 prerequisites:
   intro: "..."
   items: []

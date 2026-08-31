@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Inter } from "next/font/google";
+import { Manrope, Inter, Newsreader } from "next/font/google";
 import localFont from "next/font/local";
 import { Analytics } from "@vercel/analytics/next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
@@ -24,6 +24,7 @@ import "../globals.css";
  * CSS variables exposed:
  *   --font-headline  → Manrope
  *   --font-body      → Inter
+ *   --font-serif     → Newsreader (editorial display serif — course landing headings)
  *
  * All existing logic (AuthProvider, Analytics, metadata) is unchanged.
  */
@@ -40,6 +41,16 @@ const inter = Inter({
   display: "swap",
   variable: "--font-body",
   weight: ["300", "400", "500", "600"],
+});
+
+// Editorial display serif for the course-landing headings (COURSE landing redesign).
+// Italic is load-bearing — the hero and closing CTA lean on the italic cut for accent.
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-serif",
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 // Material Symbols icon font — self-hosted via next/font/local (not in the
@@ -124,7 +135,7 @@ export default async function RootLayout({
   const schedule = await getScheduleConfig();
 
   return (
-    <html lang={locale} data-scroll-behavior="smooth" className={`dark ${manrope.variable} ${inter.variable} ${materialSymbols.variable}`}>
+    <html lang={locale} data-scroll-behavior="smooth" className={`dark ${manrope.variable} ${inter.variable} ${newsreader.variable} ${materialSymbols.variable}`}>
       <head>
         <link rel="manifest" href="/site.webmanifest" />
       </head>

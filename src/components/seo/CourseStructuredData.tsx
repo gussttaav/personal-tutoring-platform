@@ -34,7 +34,9 @@ export default function CourseStructuredData({
     url,
     inLanguage: locale,
     educationalLevel: course.level,
-    coursePrerequisites: course.prerequisites.items,
+    coursePrerequisites: course.prerequisites.items.map((i) =>
+      i.detail ? `${i.title}: ${i.detail}` : i.title,
+    ),
     isAccessibleForFree: true,
     provider: {
       "@type": "Person",

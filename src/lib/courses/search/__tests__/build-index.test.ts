@@ -17,9 +17,6 @@ slug: dl-nlp
 title: "Curso ${locale}"
 tagline: "..."
 level: intermedio
-outcome:
-  label: "Lo que construirás"
-  body: "..."
 prerequisites:
   intro: "..."
   items: []

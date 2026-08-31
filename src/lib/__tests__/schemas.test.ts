@@ -21,8 +21,7 @@ describe("CourseManifestSchema", () => {
     title: "Curso",
     tagline: "...",
     level: "intermedio",
-    outcome: { label: "Lo que construirás", body: "Un Transformer." },
-    prerequisites: { intro: "Necesitas:", items: ["Python"] },
+    prerequisites: { intro: "Necesitas:", items: [{ title: "Python", detail: "básico" }] },
     cta: { heading: "¿Listo?", body: "Empieza ya." },
     faq: [{ q: "¿Cuánto cuesta?", a: "Nada." }],
     blocks: [{ id: 1, title: "Bloque 1", summary: "..." }],
@@ -53,21 +52,32 @@ describe("CourseManifestSchema", () => {
     ).toThrow();
   });
 
-  it("rejects an unknown key inside outcome/prerequisites/cta (strict, nested)", () => {
-    expect(() =>
-      CourseManifestSchema.parse({ ...valid, outcome: { label: "x", body: "y", extra: true } }),
-    ).toThrow();
+  it("rejects an unknown key inside prerequisites/cta (strict, nested)", () => {
     expect(() =>
       CourseManifestSchema.parse({ ...valid, prerequisites: { intro: "x", items: [], extra: 1 } }),
+    ).toThrow();
+    expect(() =>
+      CourseManifestSchema.parse({
+        ...valid,
+        prerequisites: { intro: "x", items: [{ title: "y", extra: true }] },
+      }),
     ).toThrow();
     expect(() =>
       CourseManifestSchema.parse({ ...valid, cta: { heading: "x", body: "y", extra: true } }),
     ).toThrow();
   });
 
+  it("accepts an optional heroMotif and rejects an unknown one", () => {
+    expect(
+      CourseManifestSchema.parse({ ...valid, heroMotif: "attention-matrix" }).heroMotif,
+    ).toBe("attention-matrix");
+    expect(CourseManifestSchema.parse(valid).heroMotif).toBeUndefined();
+    expect(() => CourseManifestSchema.parse({ ...valid, heroMotif: "spirals" })).toThrow();
+  });
+
   it("rejects a prose field flattened to a bare string (shape changed in landing-refinements)", () => {
     expect(() => CourseManifestSchema.parse({ ...valid, prerequisites: ["Python"] })).toThrow();
-    expect(() => CourseManifestSchema.parse({ ...valid, outcome: "Un Transformer." })).toThrow();
+    expect(() => CourseManifestSchema.parse({ ...valid, cta: "Empieza ya." })).toThrow();
   });
 });
 

@@ -764,10 +764,12 @@
         "levelLabel": "Level",
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "start": "Start the course",
-        "soon": "Coming soon"
+        "soon": "Coming soon",
+        "viewSyllabus": "View the syllabus"
       },
       "prerequisites": {
-        "heading": "Prerequisites"
+        "heading": "Prerequisites",
+        "kicker": "Before you start"
       },
       "syllabus": {
         "heading": "Syllabus",
@@ -775,21 +777,35 @@
         "minutes": "{minutes} min",
         "durationHours": "{hours}h {minutes}m",
         "durationHoursExact": "{hours}h",
-        "empty": "The detailed syllabus will be published soon."
+        "empty": "The detailed syllabus will be published soon.",
+        "kicker": "Content",
+        "summary": "{blocks, plural, =1 {# block} other {# blocks}} · {lessons, plural, =1 {# lesson} other {# lessons}} · ~{hours}h reading"
       },
       "instructor": {
-        "heading": "Your instructor"
+        "heading": "Your instructor",
+        "kicker": "About Gustavo",
+        "role": "Instructor"
       },
       "faq": {
-        "heading": "Frequently asked questions"
+        "heading": "Frequently asked questions",
+        "kicker": "Frequently asked questions"
       },
       "cta": {
         "start": "Start the course",
-        "soon": "Coming soon"
+        "soon": "Coming soon",
+        "overline": "Start today",
+        "resumeOverline": "Keep going",
+        "resumeHeading": "Pick up where you left off",
+        "resumeBody": "Jump back into your next lesson and keep going at your own pace — no rush, no deadlines.",
+        "resume": "Continue the course"
       },
       "languageNotice": {
         "title": "The lessons are in Spanish",
         "body": "This course has not been translated yet. The lessons, exercises and quizzes are written in Spanish — everything else on this page is in English. An English version is planned."
+      },
+      "authorNote": {
+        "kicker": "Author's note",
+        "body": "This course was built with the help of AI tools, which I used to review, correct and polish the writing of my notes and materials, greatly speeding up the process. The content, the approach and the structure are guided by me, and every explanation, paragraph and equation has been carefully reviewed to ensure its clarity, coherence and reliability. Many lessons also include interactive explorables that reinforce the learning. I hope you find it useful. And if you ever get stuck or want to move faster, <book>book a session with me</book>: I'll be glad to help."
       }
     },
     "notify": {

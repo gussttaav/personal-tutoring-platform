@@ -764,10 +764,12 @@
         "levelLabel": "Nivel",
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "start": "Empezar el curso",
-        "soon": "Próximamente"
+        "soon": "Próximamente",
+        "viewSyllabus": "Ver el temario"
       },
       "prerequisites": {
-        "heading": "Requisitos previos"
+        "heading": "Requisitos previos",
+        "kicker": "Antes de empezar"
       },
       "syllabus": {
         "heading": "Temario",
@@ -775,21 +777,35 @@
         "minutes": "{minutes} min",
         "durationHours": "{hours}h {minutes}m",
         "durationHoursExact": "{hours}h",
-        "empty": "El temario detallado se publicará muy pronto."
+        "empty": "El temario detallado se publicará muy pronto.",
+        "kicker": "Contenido",
+        "summary": "{blocks, plural, =1 {# bloque} other {# bloques}} · {lessons, plural, =1 {# lección} other {# lecciones}} · ~{hours} h de lectura"
       },
       "instructor": {
-        "heading": "Tu instructor"
+        "heading": "Tu instructor",
+        "kicker": "Sobre Gustavo",
+        "role": "Instructor"
       },
       "faq": {
-        "heading": "Preguntas frecuentes"
+        "heading": "Preguntas frecuentes",
+        "kicker": "Preguntas frecuentes"
       },
       "cta": {
         "start": "Empezar el curso",
-        "soon": "Próximamente"
+        "soon": "Próximamente",
+        "overline": "Empieza hoy",
+        "resumeOverline": "Sigue adelante",
+        "resumeHeading": "Continúa donde lo dejaste",
+        "resumeBody": "Retoma el curso justo en tu próxima lección y sigue avanzando a tu ritmo, sin prisa y sin fechas límite.",
+        "resume": "Continuar el curso"
       },
       "languageNotice": {
         "title": "Las lecciones están en español",
         "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante."
+      },
+      "authorNote": {
+        "kicker": "Nota del autor",
+        "body": "Este curso ha sido elaborado con la ayuda de herramientas de inteligencia artificial, que he utilizado para revisar, corregir y mejorar la redacción de mis apuntes y materiales, acelerando enormemente el proceso de elaboración. El contenido, el enfoque y la estructura están guiados por mí, y cada explicación, párrafo y ecuación ha sido revisado cuidadosamente para garantizar su claridad, coherencia y fiabilidad. Muchas lecciones incluyen además explorables interactivos que refuerzan el aprendizaje. Espero que te resulte útil. Y si en algún momento te atascas o quieres avanzar más rápido, <book>reserva una sesión conmigo</book>: estaré encantado de ayudarte."
       }
     },
     "notify": {

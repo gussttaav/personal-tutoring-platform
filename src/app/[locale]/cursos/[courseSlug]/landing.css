@@ -1,12 +1,98 @@
 /*
- * COURSE-P1-03 — course landing page styles.
+ * COURSE-P1-03 / landing-refinements — course landing page styles.
  *
- * The landing Server Components style themselves inline; this file holds only what an
- * inline style cannot express — the :hover fill on the syllabus lesson rows, which became
- * links in the landing-refinements pass. Segment-scoped: imported by the landing route,
- * never the shared layout. Keyboard focus already gets the global :focus-visible ring
- * (src/app/globals.css).
+ * The landing Server Components style themselves inline; this file holds what an inline
+ * style cannot express: the editorial redesign's shared atoms (the display serif, the
+ * section kicker, the hairline rule), the responsive hero-actions layout (resume card +
+ * secondary button — a row on desktop, stacked on phones), and the :hover fill on the
+ * syllabus lesson rows. Segment-scoped: imported by the landing route, never the shared
+ * layout. Keyboard focus already gets the global :focus-visible ring (src/app/globals.css).
  */
+
+/* Editorial display serif (Newsreader, wired in src/app/[locale]/layout.tsx as --font-serif). */
+.lp-serif {
+  font-family: var(--font-serif, Georgia, "Times New Roman", serif);
+}
+
+/* Section kicker overline — small tracked emerald caps. */
+.lp-kicker {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+/* Section header: kicker + a hairline that runs to the edge. */
+.lp-section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.lp-rule {
+  height: 1px;
+  flex: 1;
+  background: var(--border-variant);
+  opacity: 0.5;
+}
+
+/*
+ * Hero call-to-action row. In the returning state the primary slot holds the wide resume
+ * card; in the first-visit state it holds the "start" button. `align-items: stretch` keeps
+ * the secondary "view syllabus" button flush with the primary's height. Below 560px the
+ * row becomes a full-width stack — a resume card and a button cannot sit side by side.
+ */
+.lp-hero-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.lp-hero-actions__primary {
+  flex: 1 1 340px;
+}
+
+@media (max-width: 560px) {
+  .lp-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lp-hero-actions > * {
+    flex: 1 1 auto;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Prerequisites: heading/intro on the left, the requirement list on the right. Stacks below 640px. */
+.lp-prereq-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 40px 48px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .lp-prereq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Instructor social icon buttons (GitHub / LinkedIn). */
+.lp-social {
+  color: var(--text-muted);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.lp-social:hover {
+  color: var(--green);
+  border-color: var(--green-mid);
+}
 
 .syllabus-lesson {
   border-radius: 6px;
