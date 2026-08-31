@@ -846,6 +846,11 @@
       "translationPending": {
         "title": "Esta lección aún no está traducida",
         "body": "El resto de la página está en español, pero el texto de esta lección está en otro idioma. Tu progreso se guarda igualmente."
+      },
+      "cta": {
+        "heading": "¿Te has atascado? ¿Quieres avanzar más rápido?",
+        "body": "Una sesión 1:1 conmigo para resolver lo que se te resista de esta lección o del curso entero.",
+        "button": "Reservar sesión"
       }
     },
     "quiz": {

@@ -22,6 +22,9 @@
  * dialog shared by the desktop and mobile triggers. The DESKTOP trigger is rendered here,
  * in the `<aside>` above `LessonSidebar`, and the mobile one in `MobileLessonBar`; neither
  * goes inside `LessonSidebar`, which is rendered twice and would duplicate it.
+ *
+ * COURSE-P10-01: `LessonCta` closes the article, after prev/next. See its own header
+ * for why it sits there and why it is a link rather than a dispatched event.
  */
 
 import type { ReactNode } from "react";
@@ -37,6 +40,7 @@ import CourseSearchProvider from "@/features/courses/search/CourseSearchProvider
 import CourseSearchTrigger from "@/features/courses/search/CourseSearchTrigger";
 import LessonComplete from "./LessonComplete";
 import LessonReading from "./LessonReading";
+import LessonCta from "./LessonCta";
 
 interface LessonLayoutProps {
   course:      Course;
@@ -131,6 +135,11 @@ export default async function LessonLayout({
             <LessonComplete lessonSlug={currentSlug} exerciseIds={exerciseIds} />
 
             <LessonNav courseSlug={courseSlug} prev={prev} next={next} locale={locale} />
+
+            {/* COURSE-P10-01: after prev/next, deliberately. Mark-complete → next lesson
+                is the study loop; an offer placed inside it buys attention by interrupting
+                the thing the reader came for. */}
+            <LessonCta locale={locale} />
           </article>
         </div>
 
