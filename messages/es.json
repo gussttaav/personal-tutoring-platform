@@ -776,8 +776,10 @@
       },
       "syllabus": {
         "heading": "Temario",
-        "blockMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · {minutes} min",
+        "blockMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · {duration}",
         "minutes": "{minutes} min",
+        "durationHours": "{hours}h {minutes}m",
+        "durationHoursExact": "{hours}h",
         "empty": "El temario detallado se publicará muy pronto."
       },
       "instructor": {

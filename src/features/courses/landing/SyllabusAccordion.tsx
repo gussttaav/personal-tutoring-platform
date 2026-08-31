@@ -21,6 +21,18 @@ export interface SyllabusBlock {
   totalMinutes: number;
 }
 
+/** Split a block's reading-time total for display. Under an hour it stays in minutes
+ *  ("48 min"); once it reaches 60 it reads better as "2h 48m" than "168 min". The
+ *  presentation layer picks the matching i18n key from `kind` / `minutes === 0`. */
+export function formatBlockDuration(
+  totalMinutes: number,
+):
+  | { kind: "minutes"; minutes: number }
+  | { kind: "hours"; hours: number; minutes: number } {
+  if (totalMinutes < 60) return { kind: "minutes", minutes: totalMinutes };
+  return { kind: "hours", hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 };
+}
+
 /** Group published lessons under their manifest block, in manifest order, dropping
  *  blocks with no published lessons. `lessons` is expected pre-sorted by (block, order),
  *  as `listLessons` returns it. */
@@ -43,6 +55,13 @@ interface SyllabusAccordionProps {
 export default async function SyllabusAccordion({ course, lessons, locale }: SyllabusAccordionProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.syllabus" });
   const groups = groupLessonsByBlock(course, lessons);
+
+  const blockDuration = (totalMinutes: number): string => {
+    const d = formatBlockDuration(totalMinutes);
+    if (d.kind === "minutes") return t("minutes", { minutes: d.minutes });
+    if (d.minutes === 0) return t("durationHoursExact", { hours: d.hours });
+    return t("durationHours", { hours: d.hours, minutes: d.minutes });
+  };
 
   return (
     <section style={{ paddingTop: "48px" }}>
@@ -95,7 +114,7 @@ export default async function SyllabusAccordion({ course, lessons, locale }: Syl
                     {group.block.title}
                   </span>
                   <span style={{ fontSize: "0.8125rem", color: "var(--text-dim)", whiteSpace: "nowrap" }}>
-                    {t("blockMeta", { lessons: group.lessons.length, minutes: group.totalMinutes })}
+                    {t("blockMeta", { lessons: group.lessons.length, duration: blockDuration(group.totalMinutes) })}
                   </span>
                 </span>
               </summary>

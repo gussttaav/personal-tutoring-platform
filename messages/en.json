@@ -776,8 +776,10 @@
       },
       "syllabus": {
         "heading": "Syllabus",
-        "blockMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · {minutes} min",
+        "blockMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · {duration}",
         "minutes": "{minutes} min",
+        "durationHours": "{hours}h {minutes}m",
+        "durationHoursExact": "{hours}h",
         "empty": "The detailed syllabus will be published soon."
       },
       "instructor": {

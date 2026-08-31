@@ -11,7 +11,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { getCourse, listLessons, __setContentRoot, __resetRegistry } from "@/lib/courses/registry";
-import { groupLessonsByBlock } from "@/features/courses/landing/SyllabusAccordion";
+import { formatBlockDuration, groupLessonsByBlock } from "@/features/courses/landing/SyllabusAccordion";
 
 // Three declared blocks (1, 2, 3) so we can leave block 2 all-drafts.
 const MANIFEST = `
@@ -121,5 +121,19 @@ describe("groupLessonsByBlock", () => {
 
     const course = getCourse("dl-nlp", "es")!;
     expect(groupLessonsByBlock(course, listLessons("dl-nlp", "es"))).toEqual([]);
+  });
+});
+
+describe("formatBlockDuration", () => {
+  it("keeps totals under an hour in minutes", () => {
+    expect(formatBlockDuration(0)).toEqual({ kind: "minutes", minutes: 0 });
+    expect(formatBlockDuration(48)).toEqual({ kind: "minutes", minutes: 48 });
+    expect(formatBlockDuration(59)).toEqual({ kind: "minutes", minutes: 59 });
+  });
+
+  it("splits totals of an hour or more into hours + minutes", () => {
+    expect(formatBlockDuration(60)).toEqual({ kind: "hours", hours: 1, minutes: 0 });
+    expect(formatBlockDuration(168)).toEqual({ kind: "hours", hours: 2, minutes: 48 });
+    expect(formatBlockDuration(125)).toEqual({ kind: "hours", hours: 2, minutes: 5 });
   });
 });
