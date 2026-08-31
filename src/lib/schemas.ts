@@ -242,7 +242,6 @@ export const CourseManifestSchema = z.strictObject({
   title:          z.string().min(1),
   tagline:        z.string().min(1),
   level:          z.string().min(1),
-  estimatedHours: z.number().positive(),
   prerequisites:  z.array(z.string().min(1)),
   blocks:         z.array(CourseBlockSchema).min(1),
 });

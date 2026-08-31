@@ -1,7 +1,7 @@
 # COURSE-P6-03 — Course manifest (English).
-# Sibling of course.es.yml, exactly as its header anticipated: `slug`, block `id`s and
-# `estimatedHours` are locale-invariant and MUST match the Spanish manifest; only the
-# prose (title, tagline, level, prerequisites, block titles/summaries) is translated.
+# Sibling of course.es.yml, exactly as its header anticipated: `slug` and block `id`s
+# are locale-invariant and MUST match the Spanish manifest; only the prose (title,
+# tagline, level, prerequisites, block titles/summaries) is translated.
 #
 # The lessons themselves are NOT translated yet — there is no `en/` directory. That is a
 # supported state: `src/lib/courses/catalog-view.ts` resolves the manifest from the
@@ -13,7 +13,6 @@ slug: dl-nlp
 title: "Deep Learning for NLP: from the Perceptron to the Transformer"
 tagline: "Build the architecture behind modern language models from scratch, with full mathematical rigour."
 level: intermediate
-estimatedHours: 40
 prerequisites:
   - "Intermediate Python (functions, classes, basic NumPy)"
   - "Linear algebra: vectors, matrices, matrix multiplication"

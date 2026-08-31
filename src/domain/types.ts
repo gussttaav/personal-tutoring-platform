@@ -342,7 +342,6 @@ export interface Course {
   title:          string;
   tagline:        string;
   level:          string;
-  estimatedHours: number;
   prerequisites:  string[];
   blocks:         CourseBlock[];
 }

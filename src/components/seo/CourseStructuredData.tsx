@@ -34,8 +34,6 @@ export default function CourseStructuredData({
     url,
     inLanguage: locale,
     educationalLevel: course.level,
-    // ISO 8601 duration — estimatedHours is a whole number of hours.
-    timeRequired: `PT${course.estimatedHours}H`,
     coursePrerequisites: course.prerequisites,
     isAccessibleForFree: true,
     provider: {
@@ -47,7 +45,6 @@ export default function CourseStructuredData({
     hasCourseInstance: {
       "@type": "CourseInstance",
       courseMode: "online",
-      courseWorkload: `PT${course.estimatedHours}H`,
       inLanguage: locale,
     },
   };

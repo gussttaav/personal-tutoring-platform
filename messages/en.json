@@ -752,7 +752,6 @@
         "body": "No courses published yet. The first one is on its way — check back soon."
       },
       "card": {
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "blocks": "{count, plural, =1 {# module} other {# modules}}",
         "cta": "View course",
@@ -765,7 +764,6 @@
         "outcomeLabel": "What you'll build",
         "outcome": "A working Transformer, implemented from scratch in NumPy — the architecture behind modern language models.",
         "levelLabel": "Level",
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "start": "Start the course",
         "soon": "Coming soon"

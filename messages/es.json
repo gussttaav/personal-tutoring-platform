@@ -752,7 +752,6 @@
         "body": "Aún no hay cursos publicados. Estoy preparando el primero — vuelve pronto."
       },
       "card": {
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "blocks": "{count, plural, =1 {# módulo} other {# módulos}}",
         "cta": "Ver curso",
@@ -765,7 +764,6 @@
         "outcomeLabel": "Lo que construirás",
         "outcome": "Un Transformer funcional, implementado desde cero en NumPy — la arquitectura que impulsa los modelos de lenguaje modernos.",
         "levelLabel": "Nivel",
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "start": "Empezar el curso",
         "soon": "Próximamente"

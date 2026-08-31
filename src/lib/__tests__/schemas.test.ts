@@ -21,7 +21,6 @@ describe("CourseManifestSchema", () => {
     title: "Curso",
     tagline: "...",
     level: "intermedio",
-    estimatedHours: 40,
     prerequisites: ["Python"],
     blocks: [{ id: 1, title: "Bloque 1", summary: "..." }],
   };
@@ -36,10 +35,6 @@ describe("CourseManifestSchema", () => {
 
   it("rejects an empty blocks array", () => {
     expect(() => CourseManifestSchema.parse({ ...valid, blocks: [] })).toThrow();
-  });
-
-  it("rejects a non-positive estimatedHours", () => {
-    expect(() => CourseManifestSchema.parse({ ...valid, estimatedHours: 0 })).toThrow();
   });
 
   it("rejects an unknown key inside a block (strict, nested)", () => {

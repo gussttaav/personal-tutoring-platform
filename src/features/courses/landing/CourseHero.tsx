@@ -116,8 +116,6 @@ export default async function CourseHero({
         <span>
           {t("levelLabel")}: <strong style={{ color: "var(--text-muted)" }}>{course.level}</strong>
         </span>
-        <span aria-hidden="true">·</span>
-        <span>{t("hours", { hours: course.estimatedHours })}</span>
         {lessonCount > 0 ? (
           <>
             <span aria-hidden="true">·</span>

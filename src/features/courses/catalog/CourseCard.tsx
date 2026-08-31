@@ -2,7 +2,7 @@
  * COURSE-P1-03 — Catalog card.
  *
  * Server Component (zero client JS). Shows a course's headline metadata: title,
- * tagline, level, hours, lesson count and block count. Counts are computed by the
+ * tagline, level, lesson count and block count. Counts are computed by the
  * caller from the PUBLISHED-only registry selectors, so drafts never inflate them.
  * Hover styling is CSS-only (`.course-card` rules live in the catalog page's <style>).
  *
@@ -129,7 +129,6 @@ export default async function CourseCard({
           color: "var(--text-dim)",
         }}
       >
-        <span>{t("hours", { hours: course.estimatedHours })}</span>
         <span>{t("lessons", { count: lessonCount })}</span>
         <span>{t("blocks", { count: blockCount })}</span>
       </div>

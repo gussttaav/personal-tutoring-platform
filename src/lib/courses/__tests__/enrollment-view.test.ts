@@ -116,7 +116,6 @@ slug: dl-nlp
 title: "${title}"
 tagline: "..."
 level: intermedio
-estimatedHours: 40
 prerequisites: []
 blocks:
   - id: 1

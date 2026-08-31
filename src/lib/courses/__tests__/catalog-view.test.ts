@@ -28,7 +28,6 @@ slug: dl-nlp
 title: ${JSON.stringify(title)}
 tagline: "..."
 level: intermedio
-estimatedHours: 40
 prerequisites: []
 blocks:
   - id: 1

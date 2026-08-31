@@ -9,7 +9,6 @@ slug: dl-nlp
 title: "Deep Learning para NLP: del Perceptrón al Transformer"
 tagline: "Construye, desde cero y con rigor matemático, la arquitectura que impulsa los modelos de lenguaje modernos."
 level: intermedio
-estimatedHours: 40
 prerequisites:
   - "Python intermedio (funciones, clases, NumPy básico)"
   - "Álgebra lineal: vectores, matrices, producto matricial"
