@@ -6,6 +6,12 @@
  * syllabus is present in the server-rendered HTML even while collapsed — so crawlers, and
  * visitors with JS disabled, still see every lesson.
  *
+ * Each lesson row links into the reader (`/cursos/<courseSlug>/<lessonSlug>`), so the whole
+ * lesson set is crawlable from the landing page. The href carries no explicit locale: on the
+ * /en landing it resolves to /en/... — always a generated page (`generateStaticParams` in the
+ * lesson route builds one per spine lesson per locale), the real translation when it exists
+ * and a noindex fallback serving the canonical prose until then. Never a 404.
+ *
  * `groupLessonsByBlock` is a PURE function (exported for unit testing). It walks the
  * manifest blocks in order and attaches the PUBLISHED lessons the caller passes in — so a
  * block whose lessons are all drafts (already filtered out by `listLessons`) has zero
@@ -13,6 +19,7 @@
  */
 
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import type { Course, CourseBlock, Lesson } from "@/domain/types";
 
 export interface SyllabusBlock {
@@ -130,18 +137,32 @@ export default async function SyllabusAccordion({ course, lessons, locale }: Syl
                     <li
                       key={lesson.slug}
                       style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: "16px",
                         paddingTop: "8px",
                         borderTop: "1px solid var(--border)",
                         fontSize: "0.9375rem",
                       }}
                     >
-                      <span style={{ color: "var(--text)" }}>{lesson.title}</span>
-                      <span style={{ color: "var(--text-dim)", whiteSpace: "nowrap" }}>
-                        {t("minutes", { minutes: lesson.minutes })}
-                      </span>
+                      <Link
+                        href={`/cursos/${course.slug}/${lesson.slug}`}
+                        className="syllabus-lesson"
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          gap: "16px",
+                          // Negative inline margin + matching padding: the hover fill bleeds
+                          // 8px past the text on each side while the text stays aligned with
+                          // the block summary above.
+                          margin: "0 -8px",
+                          padding: "4px 8px",
+                          color: "inherit",
+                          textDecoration: "none",
+                        }}
+                      >
+                        <span style={{ color: "var(--text)" }}>{lesson.title}</span>
+                        <span style={{ color: "var(--text-dim)", whiteSpace: "nowrap" }}>
+                          {t("minutes", { minutes: lesson.minutes })}
+                        </span>
+                      </Link>
                     </li>
                   ))}
                 </ul>
