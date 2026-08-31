@@ -21,12 +21,19 @@ describe("CourseManifestSchema", () => {
     title: "Curso",
     tagline: "...",
     level: "intermedio",
-    prerequisites: ["Python"],
+    outcome: { label: "Lo que construirás", body: "Un Transformer." },
+    prerequisites: { intro: "Necesitas:", items: ["Python"] },
+    cta: { heading: "¿Listo?", body: "Empieza ya." },
+    faq: [{ q: "¿Cuánto cuesta?", a: "Nada." }],
     blocks: [{ id: 1, title: "Bloque 1", summary: "..." }],
   };
 
   it("accepts a well-formed manifest", () => {
     expect(CourseManifestSchema.parse(valid)).toEqual(valid);
+  });
+
+  it("accepts an empty faq array", () => {
+    expect(CourseManifestSchema.parse({ ...valid, faq: [] }).faq).toEqual([]);
   });
 
   it("rejects an unknown key (strict)", () => {
@@ -44,6 +51,23 @@ describe("CourseManifestSchema", () => {
         blocks: [{ id: 1, title: "B", summary: "...", extra: true }],
       }),
     ).toThrow();
+  });
+
+  it("rejects an unknown key inside outcome/prerequisites/cta (strict, nested)", () => {
+    expect(() =>
+      CourseManifestSchema.parse({ ...valid, outcome: { label: "x", body: "y", extra: true } }),
+    ).toThrow();
+    expect(() =>
+      CourseManifestSchema.parse({ ...valid, prerequisites: { intro: "x", items: [], extra: 1 } }),
+    ).toThrow();
+    expect(() =>
+      CourseManifestSchema.parse({ ...valid, cta: { heading: "x", body: "y", extra: true } }),
+    ).toThrow();
+  });
+
+  it("rejects a prose field flattened to a bare string (shape changed in landing-refinements)", () => {
+    expect(() => CourseManifestSchema.parse({ ...valid, prerequisites: ["Python"] })).toThrow();
+    expect(() => CourseManifestSchema.parse({ ...valid, outcome: "Un Transformer." })).toThrow();
   });
 });
 

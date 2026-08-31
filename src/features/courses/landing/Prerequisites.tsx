@@ -1,23 +1,26 @@
 /*
  * COURSE-P1-03 — Prerequisites.
  *
- * Server Component. Explicit and prominent by design: a mathematically rigorous course
- * must state what it assumes up front, or it produces frustrated students and bad word
+ * Server Component. Explicit and prominent by design: a course that assumes real
+ * background must state it up front, or it produces frustrated students and bad word
  * of mouth. Rendered as section 2 (right after the hero) so it lands within the first
- * screenful. The list comes from the manifest (`course.prerequisites`), never hardcoded.
+ * screenful. Both the framing sentence (`intro`) and the checklist (`items`) come from
+ * the manifest (`course.prerequisites`), never hardcoded — the "this course is
+ * mathematically rigorous" claim is true of dl-nlp, not of every future course.
  */
 
 import { getTranslations } from "next-intl/server";
+import type { CoursePrerequisites } from "@/domain/types";
 
 interface PrerequisitesProps {
-  prerequisites: string[];
+  prerequisites: CoursePrerequisites;
   locale: string;
 }
 
 export default async function Prerequisites({ prerequisites, locale }: PrerequisitesProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.prerequisites" });
 
-  if (prerequisites.length === 0) return null;
+  if (prerequisites.items.length === 0) return null;
 
   return (
     <section style={{ paddingTop: "40px", paddingBottom: "8px" }}>
@@ -41,10 +44,10 @@ export default async function Prerequisites({ prerequisites, locale }: Prerequis
           {t("heading")}
         </h2>
         <p style={{ fontSize: "0.9375rem", color: "var(--text-muted)", margin: "0 0 18px" }}>
-          {t("intro")}
+          {prerequisites.intro}
         </p>
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "12px" }}>
-          {prerequisites.map((item) => (
+          {prerequisites.items.map((item) => (
             <li key={item} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
               <span
                 className="material-symbols-outlined"

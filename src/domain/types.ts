@@ -334,15 +334,47 @@ export interface CourseBlock {
   summary: string;
 }
 
+/** The hero's "what you'll have built" box. `label` too, not just `body`: the
+ *  student does not always *build* something, and may build more than one thing. */
+export interface CourseOutcome {
+  label: string;
+  body:  string;
+}
+
+/** Prerequisites: the one-line framing plus the checklist. `intro` is per-course
+ *  because the claim it makes ("this course is mathematically rigorous") is not. */
+export interface CoursePrerequisites {
+  intro: string;
+  items: string[];
+}
+
+/** The closing call to action. `body` is per-course because one course says "no
+ *  account needed to read" and the next may require a sign-in or subscription. */
+export interface CourseCta {
+  heading: string;
+  body:    string;
+}
+
+/** One frequently-asked question. The list is per-course: cost, time commitment
+ *  and "what do I install" all differ from one course to the next. */
+export interface CourseFaqItem {
+  q: string;
+  a: string;
+}
+
 /** Course-level metadata from `course.<locale>.yml`. `blocks` is ordering +
  *  prose; individual lessons live in the sibling `<locale>/*.mdx` files and are
- *  attached by the registry (not stored in the manifest). */
+ *  attached by the registry (not stored in the manifest). `outcome`/`cta`/`faq`
+ *  are the landing page's conversion copy — per-course prose, never shared. */
 export interface Course {
   slug:           string;
   title:          string;
   tagline:        string;
   level:          string;
-  prerequisites:  string[];
+  outcome:        CourseOutcome;
+  prerequisites:  CoursePrerequisites;
+  cta:            CourseCta;
+  faq:            CourseFaqItem[];
   blocks:         CourseBlock[];
 }
 

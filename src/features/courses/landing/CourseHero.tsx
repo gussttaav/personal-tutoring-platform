@@ -94,10 +94,10 @@ export default async function CourseHero({
             margin: "0 0 8px",
           }}
         >
-          {t("outcomeLabel")}
+          {course.outcome.label}
         </p>
         <p style={{ fontSize: "1.0625rem", lineHeight: 1.55, color: "var(--text)", margin: 0 }}>
-          {t("outcome")}
+          {course.outcome.body}
         </p>
       </div>
 

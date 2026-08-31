@@ -183,10 +183,11 @@ export default async function CourseLandingPage({
             </div>
           </section>
 
-          <CourseFaq locale={locale} />
+          <CourseFaq faq={course.faq} locale={locale} />
 
           <CourseCta
             courseSlug={course.slug}
+            cta={course.cta}
             firstLessonSlug={firstLessonSlug}
             locale={locale}
             contentLocale={contentLocale}

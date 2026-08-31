@@ -25,7 +25,7 @@ is the hedge that keeps a future mobile app from being a rewrite.
 | `src/domain/types.ts` | + `Course`, `CourseBlock`, `Lesson`, `LessonRef` (pure types, no Zod) |
 | `src/lib/schemas.ts` | + `courseManifestSchema`, `lessonFrontmatterSchema` |
 | `src/lib/courses/registry.ts` (new) | Filesystem scan → validate → build + memoize the typed registry |
-| `content/courses/dl-nlp/course.es.yml` (new) | Course manifest: title, tagline, blocks, prerequisites, level, hours |
+| `content/courses/dl-nlp/course.es.yml` (new) | Course manifest: title, tagline, level, blocks, and the landing prose (outcome, prerequisites, cta, faq) |
 | `scripts/lint-content.ts` (new) | Standalone content lint, runnable in CI |
 | `package.json` | + `lint:content` script |
 
@@ -38,15 +38,29 @@ slug: dl-nlp
 title: "Deep Learning para NLP: del Perceptrón al Transformer"
 tagline: "..."
 level: intermedio
-prerequisites:
-  - "Python intermedio (funciones, clases, NumPy básico)"
-  - "Álgebra lineal: vectores, matrices, producto matricial"
-  - "Cálculo: derivadas parciales y regla de la cadena"
+outcome:                       # the hero's "what you'll have built" box (label + body)
+  label: "Lo que construirás"
+  body: "..."
+prerequisites:                # framing sentence + the checklist
+  intro: "..."
+  items:
+    - "Python intermedio (funciones, clases, NumPy básico)"
+cta:                          # closing call to action (heading + body)
+  heading: "..."
+  body: "..."
+faq:                          # per-course; empty array renders no FAQ section
+  - q: "..."
+    a: "..."
 blocks:
   - id: 1
     title: "Fundamentos de NLP"
     summary: "..."
 ```
+
+> The landing conversion copy (`outcome`, `prerequisites.intro`, `cta`, `faq`) lives in the
+> manifest, not `messages/*.json`: it is course-specific prose, and a second course must not
+> inherit dl-nlp's "build a Transformer" pitch. Only shared chrome (section headings, button
+> labels) stays in messages.
 
 **Lesson frontmatter** — per-file:
 
@@ -106,9 +120,10 @@ doesn't match its filename stem.
 
 - **Use `.strict()` on both schemas.** A silently-ignored typo'd key is exactly the failure mode
   this task exists to prevent.
-- Course manifest is **per-locale** (`course.es.yml`), because title, tagline and prerequisites
-  are prose. Block *ids* and lesson *slugs* are locale-invariant — that invariant is what makes
-  English additive. Assert it in the lint once `en/` exists.
+- Course manifest is **per-locale** (`course.es.yml`), because title, tagline, prerequisites and
+  the landing copy (outcome, cta, faq) are prose. Block *ids* and lesson *slugs* are
+  locale-invariant — that invariant is what makes English additive. Assert it in the lint once
+  `en/` exists.
 - The English directory will be empty for months. Every code path must treat that as normal,
   not exceptional.
 - `minutes` is authored, not computed — a reader estimate for a lesson with heavy math is not a

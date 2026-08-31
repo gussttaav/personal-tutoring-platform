@@ -28,7 +28,16 @@ slug: dl-nlp
 title: "Curso"
 tagline: "..."
 level: intermedio
-prerequisites: []
+outcome:
+  label: "Lo que construirás"
+  body: "..."
+prerequisites:
+  intro: "..."
+  items: []
+cta:
+  heading: "..."
+  body: "..."
+faq: []
 blocks:
   - id: 1
     title: "Bloque 1"

@@ -237,12 +237,40 @@ export const CourseBlockSchema = z.strictObject({
   summary: z.string().min(1),
 });
 
+// The landing page's conversion copy is per-course, per-locale prose — the same reason
+// `title`/`tagline` live in the manifest and not in messages/*.json. A second course must
+// not inherit dl-nlp's "build a Transformer" outcome, FAQ or closing pitch, so the copy is
+// authored here and the components read it off the `Course`, not off a shared namespace.
+export const CourseOutcomeSchema = z.strictObject({
+  label: z.string().min(1),
+  body:  z.string().min(1),
+});
+
+export const CoursePrerequisitesSchema = z.strictObject({
+  intro: z.string().min(1),
+  items: z.array(z.string().min(1)),
+});
+
+export const CourseCtaSchema = z.strictObject({
+  heading: z.string().min(1),
+  body:    z.string().min(1),
+});
+
+export const CourseFaqItemSchema = z.strictObject({
+  q: z.string().min(1),
+  a: z.string().min(1),
+});
+
 export const CourseManifestSchema = z.strictObject({
   slug:           z.string().min(1),
   title:          z.string().min(1),
   tagline:        z.string().min(1),
   level:          z.string().min(1),
-  prerequisites:  z.array(z.string().min(1)),
+  outcome:        CourseOutcomeSchema,
+  prerequisites:  CoursePrerequisitesSchema,
+  cta:            CourseCtaSchema,
+  // Empty is allowed — `CourseFaq` renders nothing rather than an empty section.
+  faq:            z.array(CourseFaqItemSchema),
   blocks:         z.array(CourseBlockSchema).min(1),
 });
 

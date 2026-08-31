@@ -2,25 +2,24 @@
  * COURSE-P1-03 — Course FAQ.
  *
  * Server Component on native <details> (zero client JS, answers in the HTML while
- * collapsed). The questions/answers live in the message files (`courses.landing.faq.items`)
- * rather than hardcoded in JSX, because this copy gets edited often — read as a raw array
- * with `t.raw`.
+ * collapsed). The questions/answers come from the manifest (`course.faq`), not the
+ * message files: they are per-course prose — cost, time commitment, "what do I install",
+ * translation status all differ course to course. Only the section `heading` is shared.
+ * An empty list renders nothing at all.
  */
 
 import { getTranslations } from "next-intl/server";
-
-interface FaqItem {
-  q: string;
-  a: string;
-}
+import type { CourseFaqItem } from "@/domain/types";
 
 interface CourseFaqProps {
+  faq: CourseFaqItem[];
   locale: string;
 }
 
-export default async function CourseFaq({ locale }: CourseFaqProps) {
+export default async function CourseFaq({ faq, locale }: CourseFaqProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.faq" });
-  const items = t.raw("items") as FaqItem[];
+
+  if (faq.length === 0) return null;
 
   return (
     <section style={{ paddingTop: "48px" }}>
@@ -38,7 +37,7 @@ export default async function CourseFaq({ locale }: CourseFaqProps) {
       </h2>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {items.map((item) => (
+        {faq.map((item) => (
           <details
             key={item.q}
             style={{

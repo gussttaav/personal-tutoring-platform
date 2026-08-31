@@ -761,16 +761,13 @@
     "landing": {
       "backToCatalog": "All courses",
       "hero": {
-        "outcomeLabel": "What you'll build",
-        "outcome": "A working Transformer, implemented from scratch in NumPy — the architecture behind modern language models.",
         "levelLabel": "Level",
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "start": "Start the course",
         "soon": "Coming soon"
       },
       "prerequisites": {
-        "heading": "Prerequisites",
-        "intro": "This course is mathematically rigorous. Before you start, you'll need:"
+        "heading": "Prerequisites"
       },
       "syllabus": {
         "heading": "Syllabus",
@@ -784,33 +781,9 @@
         "heading": "Your instructor"
       },
       "faq": {
-        "heading": "Frequently asked questions",
-        "items": [
-          {
-            "q": "How much does it cost?",
-            "a": "Nothing. The course is completely free."
-          },
-          {
-            "q": "What do I need to know before starting?",
-            "a": "Intermediate Python, linear algebra (vectors and matrices) and calculus (partial derivatives and the chain rule). They're listed in the prerequisites section."
-          },
-          {
-            "q": "How long will it take?",
-            "a": "Around 40 hours if you do the exercises. Go at your own pace; there are no deadlines."
-          },
-          {
-            "q": "Is it in English?",
-            "a": "Spanish only for now. An English version is planned."
-          },
-          {
-            "q": "What do I need to install?",
-            "a": "Nothing. Everything — the Python code included — runs directly in your browser."
-          }
-        ]
+        "heading": "Frequently asked questions"
       },
       "cta": {
-        "heading": "Ready to build a Transformer?",
-        "body": "Start with the first lesson. You don't need an account to read.",
         "start": "Start the course",
         "soon": "Coming soon"
       },

@@ -1,9 +1,13 @@
 /*
  * COURSE-P1-03 — Closing CTA.
  *
- * Server Component. "Empezar el curso" → the first published lesson. Sign-in is NOT
- * required to read (P4-02). Until P5 publishes a lesson, `firstLessonSlug` is null and the
- * button degrades to a disabled "soon" state instead of linking nowhere.
+ * Server Component. The button label → the first published lesson. Until P5 publishes a
+ * lesson, `firstLessonSlug` is null and the button degrades to a disabled "soon" state
+ * instead of linking nowhere.
+ *
+ * `heading` and `body` come from the manifest (`course.cta`), not the message files —
+ * "no account needed to read" is dl-nlp's pitch, and the next course may ask the reader
+ * to sign in or subscribe. Only the button label ("start"/"soon") is shared copy.
  *
  * COURSE-P6-03: `contentLocale` is the locale the LESSONS live in, which differs from the
  * page locale while a course is translated only at the manifest level. It is passed straight
@@ -14,9 +18,13 @@
 
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import type { Course } from "@/domain/types";
 
 interface CourseCtaProps {
   courseSlug: string;
+  // `Course["cta"]` rather than importing the `CourseCta` domain type — the name is
+  // already taken by this component.
+  cta: Course["cta"];
   firstLessonSlug: string | null;
   locale: string;
   /** Locale the lessons live in. Omit when it always equals `locale`. */
@@ -25,6 +33,7 @@ interface CourseCtaProps {
 
 export default async function CourseCta({
   courseSlug,
+  cta,
   firstLessonSlug,
   locale,
   contentLocale,
@@ -52,10 +61,10 @@ export default async function CourseCta({
             margin: "0 0 12px",
           }}
         >
-          {t("heading")}
+          {cta.heading}
         </h2>
         <p style={{ maxWidth: "520px", margin: "0 auto 24px", fontSize: "1rem", lineHeight: 1.6, color: "var(--text-muted)" }}>
-          {t("body")}
+          {cta.body}
         </p>
 
         {firstLessonSlug ? (
