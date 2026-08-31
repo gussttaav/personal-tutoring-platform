@@ -846,6 +846,11 @@
       "translationPending": {
         "title": "This lesson is not translated yet",
         "body": "The rest of the page is in English, but this lesson's text is Spanish. An English version is planned — your progress is saved either way and carries over."
+      },
+      "cta": {
+        "heading": "Stuck? Want to move faster?",
+        "body": "A 1:1 session with me to work through whatever is blocking you — this lesson or the whole course.",
+        "button": "Book a session"
       }
     },
     "quiz": {

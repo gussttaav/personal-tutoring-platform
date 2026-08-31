@@ -11,6 +11,10 @@
  *   - Color values (--bg → #131315, --green → #4edea3, etc.)
  *   - Section typography (Manrope headlines)
  *   - Skeleton pulse animation retains same timing
+ *
+ * COURSE-P10-01: the `?book=` deep link gained a `smart` case (the in-lesson CTA in
+ * the course reader needs the landing hero's routing from a page where this component
+ * is not mounted), and the effect that consumes it now waits for NextAuth to settle.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -161,9 +165,21 @@ export default function InteractiveShell() {
     return () => window.removeEventListener("book-free-session", handler);
   }, [router.handleSessionClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle ?book= deep-link intent from /area-personal navigation.
-  // Runs once on mount; removes the param from the URL to keep it clean.
+  // Handle ?book= deep-link intent from /area-personal and the course reader.
+  // Removes the param from the URL to keep it clean; re-runs are no-ops because the
+  // param is gone by the time the switch below has fired once.
+  //
+  // COURSE-P10-01: gated on auth having SETTLED, not on mount. NextAuth reports
+  // `loading` on the first client render, so the old `[]` version consumed the param
+  // while `isSignedIn` was still false. The session cases survived that — the gate
+  // parks in `pendingSession` and self-heals when `isSignedIn` flips — but
+  // `handleSmartBook` and `handlePackSchedule` have no such resume: they only set a
+  // gate label, and the gate is suppressed at render once the user turns out to be
+  // signed in, leaving nothing open at all. Only bit on a HARD load; a client-side
+  // push carries an already-resolved SessionProvider from the shared layout.
   useEffect(() => {
+    if (isAuthLoading) return;
+
     const params = new URLSearchParams(window.location.search);
     const book   = params.get("book");
     if (!book) return;
@@ -179,8 +195,11 @@ export default function InteractiveShell() {
       case "pack":       router.handlePackSchedule(); break;
       case "pack5":      router.handlePackBuy(5); break;
       case "pack10":     router.handlePackBuy(10); break;
+      // COURSE-P10-01: the landing hero's own CTA, reachable from another page.
+      // Same handler the "open-smart-book" listener above calls.
+      case "smart":      router.handleSmartBook(); break;
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync restoredSlot (from URL params after OAuth) into pendingSlot.
   // Render-phase "adjust state on input change": restoredSlot flips from null to
