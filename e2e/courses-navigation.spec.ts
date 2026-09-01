@@ -84,8 +84,11 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await page.goto("/cursos");
     // The redesigned notify card has no heading — it's an invitation line + a CTA. Signed out,
     // the copy asks you to sign in and the CTA is sign-in (subscribing requires an account).
-    await expect(page.getByText(d.courses.notify.signInHint)).toBeVisible();
-    await expect(page.getByRole("button", { name: d.courses.notify.signIn })).toBeVisible();
+    // Scope to the card (#notificaciones): signed out, the navbar also carries a "Iniciar
+    // sesión" button, so an unscoped button locator is a strict-mode violation.
+    const notify = page.locator("#notificaciones");
+    await expect(notify.getByText(d.courses.notify.signInHint)).toBeVisible();
+    await expect(notify.getByRole("button", { name: d.courses.notify.signIn })).toBeVisible();
   });
 
   test("the nav marks the CURRENT page, and Mentoría stops looking current", async ({ page }) => {
