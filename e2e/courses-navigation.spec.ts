@@ -38,7 +38,10 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await page.getByRole("link", { name: d.nav.courses, exact: true }).first().click();
 
     await expect(page).toHaveURL(/\/cursos$/);
-    await expect(page.getByRole("heading", { name: d.courses.catalog.heading })).toBeVisible();
+    // catalog.heading carries rich-text <accent> markup (rendered as a green italic span); the
+    // heading's accessible name has no tags, so match the plain text.
+    const catalogHeading = d.courses.catalog.heading.replace(/<[^>]+>/g, "");
+    await expect(page.getByRole("heading", { name: catalogHeading })).toBeVisible();
 
     // The empty state must NOT be what a Spanish visitor sees.
     await expect(page.getByText(d.courses.catalog.empty.title)).toHaveCount(0);
@@ -79,8 +82,9 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     const d = dict.es;
 
     await page.goto("/cursos");
-    await expect(page.getByRole("heading", { name: d.courses.notify.heading })).toBeVisible();
-    // Signed out, the CTA is sign-in — subscribing requires an account.
+    // The redesigned notify card has no heading — it's an invitation line + a CTA. Signed out,
+    // the copy asks you to sign in and the CTA is sign-in (subscribing requires an account).
+    await expect(page.getByText(d.courses.notify.signInHint)).toBeVisible();
     await expect(page.getByRole("button", { name: d.courses.notify.signIn })).toBeVisible();
   });
 
