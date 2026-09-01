@@ -100,8 +100,9 @@ export default async function CourseLandingPage({
       <CourseStructuredData course={course} locale={locale} />
       <Navbar />
       <main style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ maxWidth: 840, margin: "0 auto", padding: "32px 20px 0" }}>
-          {/* Back to catalog */}
+        <div style={{ maxWidth: 840, margin: "0 auto", padding: "96px 20px 0" }}>
+          {/* Back to catalog — 96px top padding clears the fixed 70px navbar so this link
+              (the container's first element) isn't hidden under its blur, matching /cursos. */}
           <Link
             href="/cursos"
             style={{
