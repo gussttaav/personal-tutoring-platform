@@ -11,10 +11,15 @@
  *   - Color values (--bg → #131315, --green → #4edea3, etc.)
  *   - Section typography (Manrope headlines)
  *   - Skeleton pulse animation retains same timing
+ *
+ * COURSE-P10-01: the `?book=` deep link gained a `smart` case (the in-lesson CTA in
+ * the course reader needs the landing hero's routing from a page where this component
+ * is not mounted), and the effect that consumes it now waits for NextAuth to settle.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { takeScrollIntent } from "@/hooks/useSessionsAnchor";
 import { api } from "@/lib/api-client";
 import { useUserSession } from "@/hooks/useUserSession";
 import { useBookingRouter } from "@/hooks/useBookingRouter";
@@ -103,6 +108,25 @@ export default function InteractiveShell() {
     return () => window.removeEventListener("open-pack-booking", handler);
   }, [router.handlePackSchedule]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // COURSE-P6-03: arrive from another page and land on the sessions section.
+  //
+  // "Mentoría" points at a SECTION of this page, so reaching it from /cursos is a navigation
+  // plus a scroll. The scroll intent is carried in sessionStorage rather than as a `#sessions`
+  // fragment — see src/hooks/useSessionsAnchor.ts for why the URL is deliberately left clean.
+  // The intent is consumed INSIDE the timer, not in the effect body, and that ordering is
+  // load-bearing under StrictMode's double-invoke: consuming first meant mount #1 took the
+  // read-once value and its cleanup then cancelled the very scroll it was taken for, leaving
+  // mount #2 with nothing. Scheduling first makes the cancelled pass a no-op.
+  useEffect(() => {
+    // Same 50ms as the handler below: on a client-side transition the section is not laid out
+    // at mount, and scrolling to an element that is not there yet does nothing.
+    const t = setTimeout(() => {
+      const target = takeScrollIntent();
+      if (target) document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
+    }, 50);
+    return () => clearTimeout(t);
+  }, []);
+
   // Allow the Navbar to close booking overlays (logo / Mentoría clicks)
   useEffect(() => {
     const handler = (e: Event) => {
@@ -141,9 +165,21 @@ export default function InteractiveShell() {
     return () => window.removeEventListener("book-free-session", handler);
   }, [router.handleSessionClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle ?book= deep-link intent from /area-personal navigation.
-  // Runs once on mount; removes the param from the URL to keep it clean.
+  // Handle ?book= deep-link intent from /area-personal and the course reader.
+  // Removes the param from the URL to keep it clean; re-runs are no-ops because the
+  // param is gone by the time the switch below has fired once.
+  //
+  // COURSE-P10-01: gated on auth having SETTLED, not on mount. NextAuth reports
+  // `loading` on the first client render, so the old `[]` version consumed the param
+  // while `isSignedIn` was still false. The session cases survived that — the gate
+  // parks in `pendingSession` and self-heals when `isSignedIn` flips — but
+  // `handleSmartBook` and `handlePackSchedule` have no such resume: they only set a
+  // gate label, and the gate is suppressed at render once the user turns out to be
+  // signed in, leaving nothing open at all. Only bit on a HARD load; a client-side
+  // push carries an already-resolved SessionProvider from the shared layout.
   useEffect(() => {
+    if (isAuthLoading) return;
+
     const params = new URLSearchParams(window.location.search);
     const book   = params.get("book");
     if (!book) return;
@@ -159,8 +195,11 @@ export default function InteractiveShell() {
       case "pack":       router.handlePackSchedule(); break;
       case "pack5":      router.handlePackBuy(5); break;
       case "pack10":     router.handlePackBuy(10); break;
+      // COURSE-P10-01: the landing hero's own CTA, reachable from another page.
+      // Same handler the "open-smart-book" listener above calls.
+      case "smart":      router.handleSmartBook(); break;
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isAuthLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync restoredSlot (from URL params after OAuth) into pendingSlot.
   // Render-phase "adjust state on input change": restoredSlot flips from null to

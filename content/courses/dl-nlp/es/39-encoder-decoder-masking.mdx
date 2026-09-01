@@ -1,0 +1,475 @@
+---
+slug: encoder-decoder-masking
+title: "Escribir no es leer: el decoder y su máscara"
+block: 5
+order: 7
+minutes: 28
+summary: "Todo lo que lleva construido el bloque supone la frase entera delante y las T posiciones calculadas a la vez, y hay media arquitectura para la que eso es falso: un modelo que escribe no tiene el resultado, lo va produciendo. Entrenarlo de una sola pasada pone la respuesta al lado de la posición que tiene que adivinarla, y la solución no es un bucle sino un sumando: menos infinito en la puntuación, antes del softmax, para que la exponencial lo borre del numerador y del denominador a la vez. Eso deja cada fila quedándose con su propio principio y volviéndolo a normalizar, así que la primera posición se lleva la unidad entera y ninguna fila deja de sumar 1. Con eso montado, la segunda subcapa del decoder es la atención del bloque anterior sin un solo cambio: consultas de lo que se escribe, claves y valores de lo que se leyó, mapa rectangular y ninguna máscara."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-menos-infinito
+    type: single
+    prompt: 'Para tachar el futuro se le suma $-\infty$ a la puntuación **antes** del *softmax*. ¿Qué tiene de malo dejar el softmax como estaba y poner a cero los pesos $\alpha_{ij}$ que sobran, después?'
+    options:
+      - { id: a, text: 'Que la fila deja de sumar $1$. El softmax ya repartió la unidad entre las $T$ posiciones, así que quitar las de la derecha se lleva la parte que les tocó y lo que sale no es una mezcla, sino una mezcla encogida por un factor distinto en cada fila.' }
+      - { id: b, text: 'Que los pesos no se pueden tocar una vez calculados: el softmax no es invertible, y sin poder deshacerlo no hay manera de recuperar el denominador para volver a normalizar.' }
+      - { id: c, text: 'Nada. Son la misma operación escrita de dos maneras, y de hecho es lo que hacen las implementaciones, porque un $-\infty$ dentro de una exponencial da un aviso de desbordamiento.' }
+      - { id: d, text: 'Que cambia el orden dentro de la fila: al quitar sumandos del denominador, la casilla que era mayor entre las que quedan puede dejar de serlo.' }
+    answer: a
+    explanation: 'La (a). Con $-\infty$ el sumando desaparece del numerador **y** de su término del denominador a la vez, de modo que las casillas que quedan se reparten la unidad entera; poniendo los pesos a cero después, el denominador se quedó como estaba y la fila suma lo que sumara su principio —$0.085$ en la primera fila del ejemplo de la celda, $0.871$ en la tercera—. La (b) inventa un impedimento técnico: modificar un array es trivial, lo que falla es la aritmética. La (c) es falsa en las dos mitades: no son la misma operación, y $\exp(-\infty)$ vale $0$ sin avisar de nada. La (d) confunde dividir con reordenar: todas las casillas que sobreviven se dividen entre el **mismo** número, y dividir una fila entera por una constante positiva no cambia cuál es la mayor.'
+    hint: 'Suma las cuatro casillas de una fila en cada una de las dos versiones.'
+  - id: q-casillas-vivas
+    type: numeric
+    prompt: 'Un decoder trabaja sobre una salida de $T = 6$ tokens. ¿Cuántas casillas de su mapa $\mathbf{A}$ acaban siendo distintas de cero?'
+    answer: 21
+    tolerance: 0
+    unit: casillas
+    explanation: 'Veintiuna. La fila $i$ conserva $i$ casillas —de la $1$ a la $i$—, así que salen $1 + 2 + 3 + 4 + 5 + 6 = 6 \cdot 7 / 2 = 21$ de las $36$, algo más de la mitad. Y hay una segunda cuenta que conviene no confundir con ésta: las $36$ se calculan igual. La máscara tacha después de multiplicar, no en vez de multiplicar, así que el coste sigue siendo el $T^{2}$ de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>; lo que la máscara prohíbe es mirar, no es un ahorro.'
+    hint: 'Cuenta cuántas casillas sobreviven en cada fila y súmalas.'
+  - id: q-tres-atenciones
+    type: multi
+    prompt: 'Un Transformer completo llama tres veces a la atención. Marca lo que es cierto de esas tres llamadas.'
+    options:
+      - { id: a, text: 'La del encoder tiene mapa $T_x \times T_x$ y no lleva máscara: la frase de entrada está entera desde el principio.' }
+      - { id: b, text: 'La primera del decoder tiene mapa $T_y \times T_y$ y lleva la máscara causal.' }
+      - { id: c, text: 'La encoder-decoder tiene mapa $T_y \times T_x$, y no es cuadrado porque sus dos ejes son dos secuencias distintas.' }
+      - { id: d, text: 'La encoder-decoder también va enmascarada: si la posición $4$ de la salida no puede mirar la $5$ de la salida, tampoco puede mirar la $5$ de la entrada.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras. La (d) es la tentadora y confunde dos futuros que no tienen nada que ver: lo que la máscara prohíbe es leer lo que **todavía no se ha escrito**, y la entrada no se está escribiendo —se leyó entera antes de empezar—. La posición $5$ de la fuente existe desde el primer paso del decoder, igual que la $1$, así que ocultarla sería tirar información sin ninguna razón. Fíjate además en que las tres llamadas son la **misma** función con argumentos distintos: cambian quién pone las consultas, quién pone las claves y los valores, y si hay $\mathbf{M}$ o no.'
+    hint: 'Para cada llamada, pregúntate qué secuencia va en las filas y qué secuencia va en las columnas.'
+  - id: q-genera-en-paralelo
+    type: boolean
+    prompt: 'Con la máscara puesta, escribir una traducción de $T_y$ tokens es una sola pasada por el decoder.'
+    answer: false
+    explanation: 'Falso, y separar las dos cosas es medio tema de esta lección. **Entrenar** sí es una pasada: la salida correcta se conoce entera, entra corrida una posición, y la máscara hace que la fila $i$ calcule exactamente lo que habría calculado sin nada a su derecha —así que las $T_y$ filas salen de un producto de matrices y no de $T_y$ esperas—. **Generar** no: la fila $i$ necesita el token $y_{i-1}$, y ese token es la salida de la pasada anterior, que todavía no ha ocurrido. Son $T_y$ pasadas, una por token. Lo que la máscara compra es entrenar en paralelo, no escribir en paralelo.'
+    hint: '¿De dónde sale el token que entra en la fila $i$ cuando no hay una respuesta correcta a la que copiar?'
+  - id: q-fila-uno
+    type: predict-output
+    language: python
+    prompt: 'La rejilla de abajo tiene sus cuatro puntuaciones más altas repartidas por todas partes, y la fila $0$ preferiría con mucho la columna $3$. ¿Qué imprime?'
+    code: |
+      import numpy as np
+
+      E = np.array([[2.0, 1.0, 0.5, 3.0],
+                    [0.0, 2.0, 1.0, 1.0],
+                    [1.0, 0.0, 2.0, 0.5],
+                    [0.5, 1.0, 0.0, 2.0]])
+      M = np.triu(np.full((4, 4), -np.inf), k=1)
+      Z = np.exp(E + M - (E + M).max(axis=1, keepdims=True))
+      A = Z / Z.sum(axis=1, keepdims=True)
+      print(np.round(A[0], 2))
+    answer: "[1. 0. 0. 0.]"
+    explanation: 'La fila $0$ se queda con una sola casilla viva, la suya, y una distribución sobre un solo sitio no tiene elección: vale $1$. Que la puntuación de la columna $3$ fuera $3.0$ —la mayor de toda la rejilla— da igual, porque $\exp(-\infty)$ la borra antes de que el reparto empiece. Es el caso degenerado de la lección y merece verse una vez: la primera posición de un decoder no atiende a nada, se lee a sí misma. Cuidado con leerlo como un fallo de la máscara; es la única respuesta posible cuando no hay nada detrás.'
+    hint: '¿Cuántas casillas de la primera fila sobreviven a la máscara?'
+challenges:
+  - id: ch-atencion-causal
+    prompt: |
+      Escribe `atencion(Q, K, V, causal=False)`, la llamada que sirve para las tres
+      atenciones del artículo. `Q` tiene forma $(n_q, d_k)$, `K` forma $(n_k, d_k)$ y `V`
+      forma $(n_k, d_v)$, y **$n_q$ y $n_k$ no tienen por qué coincidir**: en la atención
+      encoder-decoder las consultas son $T_y$ y las claves son $T_x$.
+
+      Devuelve la pareja `(salida, A)`, en ese orden: la salida de forma $(n_q, d_v)$ y el
+      mapa de pesos de forma $(n_q, n_k)$, normalizado por filas. La puntuación es el
+      producto escalar de cada consulta con cada clave dividido por $\sqrt{d_k}$, con
+      $d_k$ leído de la forma de `Q`.
+
+      Con `causal=True`, la casilla $(i, j)$ con $j > i$ vale $-\infty$ **antes** del
+      softmax. No escribas en los arrays que recibes.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def atencion(Q, K, V, causal=False):
+          # tu código aquí
+          pass
+    tests:
+      - name: "sin mascara, y con el mapa rectangular"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(2)
+          Q, K, V = rng.normal(size=(5, 8)), rng.normal(size=(7, 8)), rng.normal(size=(7, 6))
+          res = atencion(Q, K, V)
+          assert res is not None, 'atencion tiene que devolver (salida, A), no imprimirlas'
+          assert isinstance(res, tuple) and len(res) == 2, 'devuelve la pareja (salida, A), en ese orden'
+          Y, A = np.asarray(res[0]), np.asarray(res[1])
+          assert A.shape == (5, 7), 'una fila por consulta y una columna por clave: aqui el mapa no es cuadrado'
+          assert Y.shape == (5, 6), 'la salida es una mezcla de valores: d_v columnas'
+          assert np.allclose(A.sum(axis=1), 1.0), 'cada consulta reparte una unidad entre las claves'
+          E = Q @ K.T / np.sqrt(8)
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          assert np.allclose(A, Z / Z.sum(axis=1, keepdims=True)), 'divide entre la raiz de d_k, que son las columnas de Q'
+      - name: "con mascara: nada a la derecha de la diagonal, y la fila sigue sumando 1"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(4)
+          X = rng.normal(size=(6, 5))
+          res = atencion(X, X, X, causal=True)
+          assert res is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          A = np.asarray(res[1])
+          assert np.abs(np.triu(A, 1)).max() == 0.0, 'todo lo que esta a la derecha de la diagonal vale cero exactamente'
+          assert np.allclose(A.sum(axis=1), 1.0), 'y la fila sigue sumando 1: la mascara entra ANTES del softmax, no despues'
+          assert np.allclose(A[0], np.eye(6)[0]), 'la primera posicion no tiene nada detras: se lleva la unidad entera'
+      - name: "enmascarar es renormalizar el principio de la fila"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          Q, K, V = rng.normal(size=(6, 4)), rng.normal(size=(6, 4)), rng.normal(size=(6, 3))
+          res, res_causal = atencion(Q, K, V), atencion(Q, K, V, causal=True)
+          assert res is not None and res_causal is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          libre, causal = np.asarray(res[1]), np.asarray(res_causal[1])
+          for i in range(6):
+              principio = libre[i, :i + 1]
+              assert np.allclose(causal[i, :i + 1], principio / principio.sum()), 'la fila enmascarada es el principio de la libre dividido entre lo que ese principio sumaba'
+      - name: "el futuro no se filtra"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(6)
+          X = rng.normal(size=(7, 5))
+          res = atencion(X, X, X, causal=True)
+          assert res is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          antes = np.asarray(res[0])
+          X2 = X.copy()
+          X2[4:] = rng.normal(size=(3, 5))
+          despues = np.asarray(atencion(X2, X2, X2, causal=True)[0])
+          assert np.abs(despues[:4] - antes[:4]).max() < 1e-12, 'reescribir las posiciones 5, 6 y 7 no puede mover lo que sale en las cuatro primeras'
+          assert np.abs(despues[4] - antes[4]).max() > 1e-6, 'y la quinta si tiene que moverse: se ha reescrito ella misma'
+      - name: "no desborda y no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          Q, K, V = rng.normal(size=(5, 4)) * 40, rng.normal(size=(5, 4)) * 40, rng.normal(size=(5, 4))
+          copias = [Q.copy(), K.copy(), V.copy()]
+          res = atencion(Q, K, V, causal=True)
+          assert res is not None, 'atencion tiene que devolver la pareja (salida, A)'
+          assert np.isfinite(np.asarray(res[1])).all(), 'desborda: resta el maximo de cada fila antes de exponenciar'
+          assert np.isfinite(np.asarray(res[0])).all(), 'desborda: resta el maximo de cada fila antes de exponenciar'
+          assert all(np.array_equal(u, v) for u, v in zip([Q, K, V], copias)), 'no escribas en los arrays que recibes: usa np.where, que devuelve una copia'
+    solution: |
+      import numpy as np
+
+
+      def atencion(Q, K, V, causal=False):
+          E = Q @ K.T / np.sqrt(Q.shape[1])           # (n_q, n_k)
+          if causal:
+              futuro = np.triu(np.ones(E.shape, dtype=bool), k=1)
+              E = np.where(futuro, -np.inf, E)        # np.where devuelve una copia
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = Z / Z.sum(axis=1, keepdims=True)
+          return A @ V, A
+    explanation: |
+      Una línea de diferencia con el desafío de <Leccion slug="self-attention">la lección sobre la
+      auto-atención</Leccion>, y la línea va donde va: **entre** la puntuación y el softmax. Puesta
+      después —`A = np.where(futuro, 0.0, A)`— pasa el test de los ceros y falla el de las
+      sumas, que es la razón de que los dos estén en la misma prueba.
+
+      Dos detalles del resto. `np.triu(..., k=1)` con `k=1` deja fuera la diagonal: la
+      posición $i$ **sí** puede mirarse a sí misma, y con `k=0` la primera fila se quedaría
+      sin ninguna casilla y el softmax dividiría entre cero. Y restar el máximo de cada
+      fila sigue siendo seguro con los $-\infty$ dentro, porque la casilla $(i, i)$ nunca
+      está tachada: el máximo de la fila es siempre un número de verdad.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.2.3 es tu tabla de tres llamadas, con el enmascarado escrito como «−∞ en la entrada del softmax»; su §3.1, el decoder con la salida corrida una posición. Por qué −∞ y no un cero después, y el teacher forcing, son de la lección.'
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 7. */}
+
+La suma y el *layer norm* de la lección anterior, sobre los residuales, envuelven lo que se les
+ponga dentro y no preguntan qué es, así que poner una capa encima de otra dejó de ser el problema.
+El que queda no es de profundidad. Todo lo que este bloque ha construido da por hecho que la frase
+está entera delante y que las $T$ posiciones se calculan a la vez, y hay media arquitectura para la
+que eso es falso: un modelo que traduce no tiene la traducción delante, la escribe, un token detrás
+de otro. Y al entrenarlo calculándolo todo de golpe —que es lo que se ganó quitando la
+recurrencia— la respuesta acaba sentada al lado de la posición que tiene que adivinarla.
+
+Míralo en <W>el gato bebe leche</W>, que es lo que el modelo tendría que aprender a escribir. Si
+las cuatro posiciones se calculan a la vez y cada una mira a todas —que es exactamente lo que hace
+la capa de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>—, la posición que debe producir
+<W>bebe</W> está mirando <W>leche</W> mientras la produce. Adivinar con la respuesta delante sale
+muy bien: la pérdida baja a cero durante el entrenamiento. Al generar de verdad no hay nada a la
+derecha, porque todavía no se ha escrito, y el modelo no ha aprendido a hacer otra cosa. Esta
+lección prohíbe esa mirada sin renunciar a calcular las $T$ posiciones a la vez, y de paso monta la
+subcapa que une las dos columnas del artículo.
+
+Vuelve a la rejilla de la auto-atención y enciende la máscara. Es la misma frase, con las mismas
+proyecciones y la misma cuenta; lo único que cambia es que desaparece todo lo que hay a la derecha
+de la diagonal y que las casillas que quedan se reparten entre ellas la unidad que había que
+repartir. Empieza por la primera fila, que es el caso extremo: no tiene a nadie a quien mirar más
+que a sí misma.
+
+<Explorable
+  id="self-attention-heatmap"
+  caption="La misma frase con la máscara puesta: se va media rejilla y ninguna fila deja de sumar 1. La posición 1 se queda con 1.00 sobre sí misma, porque detrás de ella no hay nada."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Enmascarar no es una regla que obedezca el bucle que escribe: es un $-\infty$ sumado a la
+puntuación antes del *softmax*, para que la fila $i$ calcule lo mismo exista o no exista algo
+después de ella.
+</Callout>
+
+## Tachar el futuro dentro del softmax
+
+La máscara es una matriz del tamaño de la rejilla, y sus casillas sólo toman dos valores:
+
+$$
+M_{ij} = \begin{cases} 0 & \text{si } j \leq i, \\ -\infty & \text{si } j > i \end{cases}.
+$$
+
+Con ella, la llamada a la atención cambia en un sumando y en nada más:
+
+$$
+\text{Attention}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}} + \mathbf{M}\right)\mathbf{V},
+$$
+
+con $\mathbf{M} \in \mathbb{R}^{T \times T}$ y el softmax por filas, como siempre. Nada de lo de
+dentro se toca: las tres proyecciones son las mismas, el divisor de <Leccion slug="scaled-dot-product">la lección
+sobre el producto interno escalado</Leccion> es el mismo, y las cabezas de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion> son las mismas —cada
+una recibe la misma $\mathbf{M}$—.
+
+Por qué $-\infty$ y no otra cosa se ve escribiendo el peso entero:
+
+$$
+\alpha_{ij} = \frac{\exp\left(e_{ij} + M_{ij}\right)}{\sum_{m=1}^{T}\exp\left(e_{im} + M_{im}\right)},
+$$
+
+donde $e_{ij}$ es la puntuación ya dividida por $\sqrt{d_k}$. Como $\exp(-\infty) = 0$, una casilla
+tachada desaparece del numerador **y** de su término del denominador, las dos cosas a la vez. Eso es
+lo que hace que no sobre nada: la unidad que el softmax reparte se la reparten enteramente las
+casillas que quedan.
+
+Las dos alternativas que se le ocurren a cualquiera fallan justo ahí. Poner un $0$ en la
+*puntuación* no tacha nada: $\exp(0) = 1$ es un peso perfectamente normal, y en la celda de más
+abajo la fila $0$ acaba dándole al futuro el $0.525$ de su peso. Y calcular el softmax como
+siempre y poner a cero los *pesos* después deja el denominador como estaba, así que la fila suma lo
+que sumara su principio —$0.085$, $0.291$, $0.871$— y lo que sale ya no es una mezcla sino una
+mezcla encogida, con un factor distinto en cada fila.
+
+### Enmascarar es renormalizar el principio de la fila
+
+Hay una manera de leer la máscara que la deja en su sitio, y sale de la fórmula de arriba en dos
+pasos. Para $j \leq i$ el sumando $M_{ij}$ vale $0$, de modo que el numerador es el de siempre y lo
+único que cambia es el denominador, que se queda con los términos hasta $i$. Divide arriba y abajo
+por la suma completa $\sum_{m=1}^{T}\exp(e_{im})$ y aparecen los pesos sin máscara:
+
+$$
+\alpha^{\text{causal}}_{ij} = \frac{\exp\left(e_{ij}\right)}{\sum_{m \leq i}\exp\left(e_{im}\right)} = \frac{\alpha_{ij}}{\sum_{m \leq i}\alpha_{im}}, \qquad j \leq i.
+$$
+
+Es decir: coge la fila que <Leccion slug="self-attention">la auto-atención</Leccion> calculaba, tira la parte de la derecha y divide lo que queda
+entre lo que sumaba. De ahí salen tres cosas, y ninguna necesita otra cuenta. El orden dentro de lo que sobrevive
+**no cambia**, porque todas esas casillas se dividen entre el mismo número: la máscara no altera
+preferencias, retira candidatos. La fila $1$ se queda con un solo candidato y por tanto con
+$\alpha_{11} = 1$, la sepa el modelo o no. Y la máscara no es una segunda operación al lado del
+softmax, es el mismo softmax sobre menos casillas.
+
+### Una pasada en lugar de T
+
+Falta decir qué entra en el decoder, porque hasta ahora hemos hablado de lo que no puede mirar y no
+de lo que tiene delante. Lo que entra es la salida correcta **corrida una posición**: en la fila
+$i$ va el token $y_{i-1}$, el que el modelo debería haber escrito en el paso anterior, y en la fila
+$1$ va <W>\<GO></W>, el símbolo de arranque, porque antes de la primera no hay ninguna. Así la fila
+$i$ tiene delante $y_{<i}$ y tiene que producir $y_i$, que es precisamente la distribución que el
+bloque anterior escribía
+
+$$
+P\left(y_i \mid y_{<i}, x_{1:T_x}\right),
+$$
+
+una por fila. Eso es el *teacher forcing* de <Leccion slug="seq2seq">la lección sobre seq2seq</Leccion>, sin ningún
+cambio en la idea: se le da al modelo el token verdadero en lugar del que él escribió. Lo que cambia
+es el precio. Allí las $T_y$ filas salían de $T_y$ pasos de una recurrencia; aquí salen de un
+producto de matrices, y la máscara es lo que hace que esa barra vertical diga la verdad —sin ella,
+la fila $i$ estaría condicionando también con $y_{i}$, $y_{i+1}$ y todo lo demás—.
+
+Y ahora las dos concesiones, que van juntas. La máscara hace paralelo el **entrenamiento**, no la
+generación: al escribir de verdad no hay ninguna salida correcta que correr una posición, la fila
+$i$ necesita el token que produjo la pasada anterior, y son $T_y$ pasadas, una por token. Lo otro es
+que el triángulo no ahorra ni una multiplicación: las $T^{2}$ puntuaciones se calculan enteras y
+después se tachan más de la mitad. La máscara es una prohibición, no una optimización.
+
+## La subcapa que mira a la otra columna
+
+El decoder lleva tres subcapas donde el encoder lleva dos, y la de en medio es la única caja de todo
+el artículo que junta las dos columnas. Es la atención del bloque anterior, entera, con las tres
+listas leídas de dos sitios distintos:
+
+$$
+\mathbf{Q} = \mathbf{X}^{\text{dec}}\mathbf{W}^Q, \qquad \mathbf{K} = \mathbf{X}^{\text{enc}}\mathbf{W}^K, \qquad \mathbf{V} = \mathbf{X}^{\text{enc}}\mathbf{W}^V,
+$$
+
+donde $\mathbf{X}^{\text{dec}} \in \mathbb{R}^{T_y \times d_{\text{model}}}$ es lo que se lleva
+escrito y $\mathbf{X}^{\text{enc}} \in \mathbb{R}^{T_x \times d_{\text{model}}}$ es lo que el
+encoder dejó leído. Los superíndices de $\mathbf{X}$ dicen **de qué columna** viene la matriz; los
+de $\mathbf{W}$ siguen diciendo qué papel proyecta cada una, como desde <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>. Ninguno de los
+dos cuenta capas.
+
+La forma del mapa cae sola y es la que delata de dónde viene esta subcapa:
+
+$$
+\mathbf{A} \in \mathbb{R}^{T_y \times T_x},
+$$
+
+rectangular, una fila por posición de la salida y una columna por posición de la entrada. Es la
+rejilla del bloque anterior, la de <Leccion slug="luong">la lección sobre la atención multiplicativa</Leccion>, con los mismos dos
+ejes y la misma fila sumando $1$. Lo que ha cambiado desde entonces son tres cosas y ninguna es la
+operación: la puntuación es el producto interno escalado en lugar del modelo de alineación, hay $h$
+cabezas en paralelo en lugar de una, y la consulta ya no es el estado de una red recurrente sino una
+fila de una matriz que existe entera.
+
+Aquí no hay máscara, y merece la pena decir por qué, porque suena raro después de la sección
+anterior. Lo que se prohíbe es leer lo que **todavía no se ha escrito**, y la entrada no se está
+escribiendo: se leyó entera antes de empezar. La posición $T_x$ de la fuente está disponible desde
+el primer token de la salida igual que la posición $1$. (Las implementaciones de verdad sí ponen
+otra máscara aquí, la del *padding*, para que las posiciones de relleno de un *batch* no cuenten;
+es el mismo mecanismo aplicado a otro problema y queda fuera de esta lección.)
+
+Con esto, las tres llamadas a la atención del artículo se pueden poner en una tabla, y son las
+tres cajas que se encendían en el diagrama de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la
+recurrencia</Leccion>:
+
+| Llamada | Consultas | Claves y valores | Forma de $\mathbf{A}$ | ¿Máscara? |
+|---|---|---|---|---|
+| auto-atención del encoder | $\mathbf{X}^{\text{enc}}$ | $\mathbf{X}^{\text{enc}}$ | $T_x \times T_x$ | no |
+| auto-atención enmascarada | $\mathbf{X}^{\text{dec}}$ | $\mathbf{X}^{\text{dec}}$ | $T_y \times T_y$ | sí, causal |
+| atención encoder-decoder | $\mathbf{X}^{\text{dec}}$ | $\mathbf{X}^{\text{enc}}$ | $T_y \times T_x$ | no |
+
+Una sola función, tres juegos de argumentos. Y las tres subcapas del decoder van envueltas en la
+línea de la lección anterior, sin ninguna excepción: se suma lo que entró y se normaliza el
+resultado, tres veces.
+
+## Las dos atenciones en NumPy
+
+La primera celda es la máscara sola, sobre una rejilla de puntuaciones cuyos números he puesto yo a
+mano para que las cuentas se puedan seguir a ojo. Mira tres cosas: la fila $0$, la columna de las
+sumas, y qué pasa con las dos maneras de equivocarse.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+E = np.array([[1.0, 2.0, 0.5, 3.0],          # puntuaciones ya divididas por raiz de d_k
+              [0.5, 1.5, 2.5, 1.0],
+              [2.0, 0.0, 1.0, 0.5],
+              [1.0, 1.0, 2.0, 1.5]])
+T = len(E)
+futuro = np.triu(np.ones((T, T), dtype=bool), k=1)     # True donde j > i
+
+
+def softmax_filas(S):
+    Z = np.exp(S - S.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+M = np.where(futuro, -np.inf, 0.0)
+con_mascara = softmax_filas(E + M)                     # lo del articulo
+con_un_cero = softmax_filas(np.where(futuro, 0.0, E))  # tachar con un 0 en la PUNTUACION
+pesos_a_cero = np.where(futuro, 0.0, softmax_filas(E))  # tachar los PESOS, ya repartidos
+
+for nombre, A in (("con -inf   ", con_mascara),
+                  ("con un 0   ", con_un_cero),
+                  ("pesos a 0  ", pesos_a_cero)):
+    print(nombre, "fila 0:", np.round(A[0], 3), " sumas:", np.round(A.sum(axis=1), 3))
+
+# Enmascarar es quedarse con el principio de la fila y volver a normalizarlo.
+libre = softmax_filas(E)
+principios = np.where(futuro, 0.0, libre)
+principios = principios / principios.sum(axis=1, keepdims=True)
+print("\\nla mascara es el principio renormalizado:", bool(np.allclose(con_mascara, principios)))
+print("sin mascara, la fila 0 le da al futuro:", round(float(libre[0, 1:].sum()), 3))
+`} />
+
+Las tres primeras líneas son el argumento entero. Con $-\infty$ la fila $0$ sale
+`[1. 0. 0. 0.]` y las cuatro sumas valen $1$. Con un $0$ en la puntuación las sumas también valen
+$1$, y ahí está la trampa: la fila reparte bien, pero reparte entre gente que no debería estar —el
+$0.525$ que se van tres columnas del futuro—. Con los pesos tachados después, las sumas caen a
+$0.085$, $0.291$, $0.871$ y $1$: cuatro filas escaladas de cuatro maneras distintas, que es lo peor
+de los tres resultados aunque sea el que parece más inofensivo.
+
+La segunda celda monta las dos atenciones del decoder y comprueba lo único que la máscara promete.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(8)
+T_x, T_y, d_model, d_k, d_v = 7, 5, 16, 8, 8
+
+X_enc = rng.normal(size=(T_x, d_model))       # lo que el encoder dejo leido
+X_dec = rng.normal(size=(T_y, d_model))       # lo que se lleva escrito
+Wq = rng.normal(size=(d_model, d_k)) * 0.5
+Wk = rng.normal(size=(d_model, d_k)) * 0.5
+Wv = rng.normal(size=(d_model, d_v)) * 0.5
+
+
+def atencion(consulta, contesta, causal=False):
+    Q, K, V = consulta @ Wq, contesta @ Wk, contesta @ Wv
+    E = Q @ K.T / np.sqrt(d_k)
+    if causal:
+        E = np.where(np.triu(np.ones(E.shape, dtype=bool), k=1), -np.inf, E)
+    Z = np.exp(E - E.max(axis=1, keepdims=True))
+    A = Z / Z.sum(axis=1, keepdims=True)
+    return A @ V, A
+
+
+propia, A_propia = atencion(X_dec, X_dec, causal=True)    # auto-atencion enmascarada
+cruzada, A_cruzada = atencion(X_dec, X_enc)               # atencion encoder-decoder
+
+print("enmascarada: A", A_propia.shape, " sumas", np.round(A_propia.sum(axis=1), 3))
+print("cruzada    : A", A_cruzada.shape, " sumas", np.round(A_cruzada.sum(axis=1), 3))
+print("casillas vivas de la enmascarada:", int((A_propia > 0).sum()), "de", A_propia.size)
+
+# Reescribo el final de lo escrito y miro que se mueve de lo de antes.
+otro = X_dec.copy()
+otro[3:] = rng.normal(size=(T_y - 3, d_model))
+salida_otro, _ = atencion(otro, otro, causal=True)
+print("\\ncambio las posiciones 4 y 5; se mueven las tres primeras?",
+      round(float(np.abs(salida_otro[:3] - propia[:3]).max()), 12))
+print("y la cuarta?", round(float(np.abs(salida_otro[3] - propia[3]).max()), 3))
+`} />
+
+Los dos mapas tienen la forma de la tabla —$5 \times 5$ el propio, $5 \times 7$ el cruzado— y las
+diez filas suman $1$. De las $25$ casillas del primero quedan vivas $15$, que es la cuenta
+$T(T+1)/2$. Y las dos últimas líneas son la propiedad por la que existe todo esto: reescribir las
+posiciones $4$ y $5$ del decoder mueve lo que sale en las tres primeras exactamente $0.0$, mientras
+que la cuarta —que es una de las que he reescrito— sí se mueve. Cambia `causal=True` por
+`causal=False` y ejecuta otra vez: ese $0.0$ deja de serlo, y eso es un modelo que ha leído lo que
+todavía no ha escrito.
+
+## Comprueba tu intuición
+
+Cinco preguntas: por qué $-\infty$ y no un cero, cuántas casillas sobreviven, qué lleva máscara y
+qué no, qué se paraleliza de verdad, y qué sale en la primera fila.
+
+<Quiz id="q-por-que-menos-infinito" />
+
+<Quiz id="q-casillas-vivas" />
+
+<Quiz id="q-tres-atenciones" />
+
+<Quiz id="q-genera-en-paralelo" />
+
+<Quiz id="q-fila-uno" />
+
+<CodeChallenge id="ch-atencion-causal" />
+
+---
+
+Ya no queda ninguna caja del dibujo sin una lección detrás, salvo la de arriba del todo, que
+convierte cada fila en una probabilidad por entrada del vocabulario. Lo que no ha aparecido nunca en
+estas siete lecciones son los **números**: cuántos bloques se apilan, cuánto miden, cuántas cabezas
+hay, qué tablas comparten pesos y cuántos parámetros suma todo junto. Cada pieza se ha construido
+con las anchuras que le hacían falta al argumento, y el artículo eligió unas concretas.
+
+Ésa es <Leccion slug="arquitectura-completa">la lección siguiente, sobre la arquitectura completa del artículo</Leccion>: la figura 1 caja
+por caja, con sus tamaños, puesta al lado de lo que llevamos construido. Es la lección que convierte
+*Attention is All You Need* en un texto que puedes abrir y leer de principio a fin, que era la
+promesa con la que empezó el bloque.

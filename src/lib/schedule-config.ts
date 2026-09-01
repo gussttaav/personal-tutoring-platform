@@ -13,14 +13,19 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { scheduleService } from "@/services";
+import { singleFlight, withRetry } from "@/lib/single-flight";
 import type { ScheduleConfig } from "@/domain/types";
 
 export const SCHEDULE_CACHE_TAG = "schedule-config";
 
 const REVALIDATE_SECONDS = 3600;
 
+// BUILD-04: see pricing-display.ts — dedupe the prerender burst, then retry.
+const readSchedule = singleFlight("schedule-config", () =>
+  withRetry(() => scheduleService.getConfig(), "schedule-config"));
+
 export const getScheduleConfig: () => Promise<ScheduleConfig> = unstable_cache(
-  async () => scheduleService.getConfig(),
+  readSchedule,
   ["schedule-config"],
   { revalidate: REVALIDATE_SECONDS, tags: [SCHEDULE_CACHE_TAG] },
 );

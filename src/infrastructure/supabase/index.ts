@@ -10,6 +10,7 @@ import { SupabasePricingRepository }      from "./SupabasePricingRepository";
 import { SupabaseScheduleRepository }     from "./SupabaseScheduleRepository";
 import { SupabaseUserRepository }         from "./SupabaseUserRepository";
 import { SupabaseReviewRepository }       from "./SupabaseReviewRepository";
+import { SupabaseCourseRepository }       from "./SupabaseCourseRepository";
 import { SupabaseGoogleReviewPromptRepository } from "./SupabaseGoogleReviewPromptRepository";
 
 export const supabaseCreditsRepository      = new SupabaseCreditsRepository();
@@ -22,4 +23,5 @@ export const supabasePricingRepository      = new SupabasePricingRepository();
 export const supabaseScheduleRepository     = new SupabaseScheduleRepository();
 export const supabaseUserRepository         = new SupabaseUserRepository();
 export const supabaseReviewRepository       = new SupabaseReviewRepository();
+export const supabaseCourseRepository       = new SupabaseCourseRepository();
 export const supabaseGoogleReviewPromptRepository = new SupabaseGoogleReviewPromptRepository();

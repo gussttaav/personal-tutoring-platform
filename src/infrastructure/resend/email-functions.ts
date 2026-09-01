@@ -7,6 +7,18 @@
  * contained HTML tags could execute arbitrary JavaScript in the recipient's
  * email client (stored XSS).
  *
+ * COURSE-P6-02: sendCourseNewsEmail is the one BULK send in this file — everything else is
+ * transactional. Render and send are split (renderCourseNewsEmail / sendCourseNewsEmail) so
+ * the admin announce route can show a real rendered sample on a dry run without touching
+ * Resend, and so the template is unit-testable. Locale comes from `users.locale`, never a
+ * cookie: a bulk send has no request context, the same rule the Stripe-webhook booking
+ * emails follow.
+ *
+ * COURSE-P6-02b: that one bulk send now covers the three things the opt-in actually promises
+ * — `launch`, `english`, `update` — one bilingual namespace each (ANNOUNCEMENT_NAMESPACE).
+ * `update` is the only kind carrying operator-typed text, and it is a single line rendered
+ * as escaped text, never markup: still not a newsletter.
+ *
  * REFACTOR-R3-P1-01: send() now throws on a non-OK Resend response instead of
  * logging and returning normally, so callers (BookingService.sendWithRetry,
  * PaymentService.writeDeadLetter) can actually retry or record the failure.
@@ -16,6 +28,8 @@
 
 import { getTranslations } from "next-intl/server";
 import { formatDate, formatTime } from "@/lib/formatting";
+import { localeUrl } from "@/lib/hreflang";
+import type { AnnouncementKind } from "@/domain/types";
 import { log } from "@/lib/logger";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
@@ -389,4 +403,135 @@ export async function sendNewBookingNotificationEmail(params: {
       </div></div></body></html>
     `,
   }, params.studentEmail);
+}
+
+// ─── Course announcement (bulk, COURSE-P6-02) ─────────────────────────────────
+
+/** Kind → message namespace. Exported so a test can pin the mapping without rendering
+ *  (the templates cannot be rendered under Jest — `getTranslations` needs Next's config). */
+export const ANNOUNCEMENT_NAMESPACE: Record<AnnouncementKind, string> = {
+  launch:  "emails.courseLaunch",
+  english: "emails.courseEnglish",
+  update:  "emails.courseUpdate",
+};
+
+export interface CourseNewsParams {
+  to:              string;
+  locale:          'es' | 'en';
+  kind:            AnnouncementKind;
+  courseSlug:      string;
+  courseTitle:     string;
+  lessonCount:     number;
+  firstLessonSlug: string | null;
+  /** The single admin-typed "what's new" line. `update` only; ignored by the other kinds.
+   *  This is the one operator-supplied string in the template — escaped like the rest. */
+  whatsNew?:       string;
+}
+
+/**
+ * Every URL the announcement links to. Split out of the template because it is the part with
+ * a rule worth pinning, and unlike the template it can actually be tested — no getTranslations,
+ * so no Next config resolution.
+ *
+ * The rule: ONE locale for every course link, the reader's — except `english`, which is about
+ * the /en tree by definition and points there whatever language it is written in.
+ *
+ * Explicitly NOT the lessons' own `contentLocale`. An untranslated lesson still has a real page
+ * under /en: the reader route resolves per lesson and shows the "not translated yet" notice,
+ * noindex with a canonical back to the Spanish original (src/lib/courses/catalog-view.ts).
+ * Using contentLocale sent an English reader to the unprefixed URL — the same Spanish prose,
+ * but wrapped in a fully Spanish site, and disagreeing with the landing button beside it.
+ */
+export function announcementUrls(params: {
+  kind:            AnnouncementKind;
+  locale:          "es" | "en";
+  courseSlug:      string;
+  firstLessonSlug: string | null;
+}): { landingUrl: string; lessonUrl: string | null; unsubUrl: string } {
+  const linkLocale = params.kind === "english" ? "en" : params.locale;
+
+  return {
+    landingUrl: localeUrl(`/cursos/${params.courseSlug}`, linkLocale),
+    lessonUrl:  params.firstLessonSlug
+      ? localeUrl(`/cursos/${params.courseSlug}/${params.firstLessonSlug}`, linkLocale)
+      : null,
+    // The notify card on the catalog IS the unsubscribe control — no token needed, because
+    // subscribing required a signed-in account in the first place. It stays in the reader's
+    // locale even when the announcement itself points at /en.
+    unsubUrl: `${localeUrl("/cursos", params.locale)}#notificaciones`,
+  };
+}
+
+/**
+ * Renders the announcement without sending it. The admin route calls this for its dry run,
+ * which is the only way to read the real thing before it is irreversible.
+ */
+export async function renderCourseNewsEmail(
+  params: Omit<CourseNewsParams, "to">,
+): Promise<{ subject: string; html: string }> {
+  const t = await getTranslations({
+    locale:    params.locale,
+    namespace: ANNOUNCEMENT_NAMESPACE[params.kind],
+  });
+
+  // Course titles come from a git-versioned manifest, not user input — but this file's rule
+  // is that everything interpolated into HTML is escaped, and a rule with exceptions is not
+  // a rule. (CRIT-04)
+  const safeTitle = escapeHtml(params.courseTitle);
+
+  const { landingUrl, lessonUrl, unsubUrl } = announcementUrls(params);
+
+  // `body1` carries <strong>, so it comes through t.raw() and its placeholders are filled in
+  // by hand — with values that were escaped above. `{lessonCount}` only appears in `launch`.
+  const body1Html = t.raw("body1")
+    .replace("{courseTitle}", safeTitle)
+    .replace("{lessonCount}", String(params.lessonCount));
+
+  const whatsNewHtml = params.kind === "update" && params.whatsNew
+    ? `<div class="note-box">
+         <div class="label">${t("whatsNewLabel")}</div>
+         <p>${escapeHtml(params.whatsNew)}</p>
+       </div>`
+    : "";
+
+  // No first-lesson button on an update: someone already partway through the course does not
+  // want to be sent back to lesson one.
+  const lessonCtaHtml = params.kind !== "update" && lessonUrl
+    ? `<a class="meet-btn" href="${lessonUrl}">${t("cta")}</a>`
+    : "";
+
+  return {
+    subject: t("subject", { courseTitle: params.courseTitle }),
+    html: `
+      <html><head><style>${STYLES}</style></head><body>
+      <div class="wrap"><div class="card">
+        <h1>${t("heading")}</h1>
+        <p>${t("intro")}</p>
+
+        <p>${body1Html}</p>
+        ${whatsNewHtml}
+        <p>${t("body2")}</p>
+
+        <div class="divider"></div>
+
+        ${lessonCtaHtml}
+        <a class="action-btn" href="${landingUrl}">${t("landingCta")}</a>
+
+      </div>
+      <div class="footer">
+        <p style="margin:0 0 6px"><a href="${unsubUrl}">${t("unsubscribe")}</a></p>
+        <p style="margin:0">Gustavo Torres Guerrero ·
+          <a href="${BASE_URL}">gustavoai.dev</a> ·
+          <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>
+        </p>
+      </div></div>
+      </body></html>
+    `,
+  };
+}
+
+export async function sendCourseNewsEmail(params: CourseNewsParams): Promise<void> {
+  const { to, ...rest } = params;
+  const { subject, html } = await renderCourseNewsEmail(rest);
+  await send({ to, subject, html });
 }

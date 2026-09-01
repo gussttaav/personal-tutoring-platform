@@ -1,0 +1,397 @@
+---
+slug: xor-y-capas-ocultas
+title: "XOR: por qué necesitamos capas ocultas"
+block: 2
+order: 3
+minutes: 25
+summary: "Cuatro frases españolas que se distinguen por una negación caen en las esquinas de un cuadrado, con cada clase en una diagonal, y ninguna neurona sola las clasifica: la preactivación es afín y su media sobre las dos clases da el mismo número. Dos neuronas en paralelo y una tercera encima sí, porque la capa oculta cambia las coordenadas."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-no
+    type: single
+    prompt: '¿Cuál de estas afirmaciones demuestra que ninguna neurona sola acierta las cuatro frases?'
+    options:
+      - { id: a, text: 'Que $z$ es afín, y por eso su suma sobre las dos frases positivas y su suma sobre las dos negativas valen las dos $2b$: la primera tendría que ser $\geq 0$ y la segunda $< 0$.' }
+      - { id: b, text: 'Que hay cuatro ejemplos y sólo tres números que elegir, $w_1$, $w_2$ y $b$: faltan grados de libertad.' }
+      - { id: c, text: 'Que el escalón se queda con el signo de $z$ y tira su magnitud, así que la neurona no distingue una frase clara de una dudosa.' }
+      - { id: d, text: 'Que dos coordenadas no dan para más: añadiendo una tercera que valiera $x_1 x_2$, el reparto seguiría sin ser separable.' }
+    answer: a
+    explanation: 'La (a) es la demostración entera, y lo que la cierra es que las dos sumas coinciden: las dos valen $2b$, así que exigirle a una $\geq 0$ y a la otra $< 0$ es exigirle a $b$ dos cosas incompatibles. La (b) no demuestra nada —tres números clasifican bien conjuntos de cien ejemplos todos los días, y lo que decide no es cuántos hay sino dónde están—. La (c) es cierta y no viene al caso: el problema no lo causa el escalón, y por eso la lección comprueba aparte que con cualquier activación creciente el conjunto de las entradas que reciben un sí vuelve a ser un semiplano. Y la (d) es falsa en su segunda mitad: con $x_3 = x_1 x_2$ las dos frases positivas pasan a tener $x_3 = -1$ y las dos negativas $x_3 = +1$, así que $z = -x_3$ las separa. Cambiar las coordenadas funciona; una capa oculta es la forma de que las cambie el propio sistema.'
+  - id: q-activacion
+    type: boolean
+    prompt: 'Cambias el escalón por la sigmoide y lees la salida así: la frase habla bien cuando $\sigma(z) \geq 0.5$. Con esa lectura existe alguna elección de $\mathbf{w}$ y $b$ que acierta las cuatro frases.'
+    answer: false
+    explanation: 'La sigmoide es creciente y cumple $\sigma(0) = 1/2$, de modo que $\sigma(z) \geq 0.5$ equivale a $z \geq 0$: el conjunto de las frases que reciben un sí es el mismo semiplano de antes y la contradicción se repite palabra por palabra. Y no es cuestión de mover el umbral. Para cualquier $\varphi$ creciente y cualquier umbral $\theta$, pedir $\varphi(z) \geq \theta$ es pedir $z \geq \varphi^{-1}(\theta)$, que es otra vez una neurona con el sesgo desplazado.'
+  - id: q-capa-oculta
+    type: numeric
+    prompt: 'Con los pesos que fija la lección, ¿cuánto vale la preactivación de salida $z^{(2)}_1$ para la frase <W>no está bien</W>, es decir para $\mathbf{x} = (1,\, 1)^{\top}$?'
+    answer: -0.5
+    tolerance: 0.01
+    explanation: 'Las dos filas de $\mathbf{W}^{(1)}$ son iguales, así que las dos preactivaciones ocultas salen de $x_1 + x_2 = 2$ y sólo las separa el sesgo: $\mathbf{z}^{(1)} = (3,\, 1)^{\top}$. Las dos son positivas, luego $\mathbf{h}^{(1)} = (1,\, 1)^{\top}$, y la neurona de salida calcula $1 - 1 - 0.5 = -0.5$. El escalón entrega $0$, que es la etiqueta correcta. Fíjate en que <W>está mal</W> obtiene ese mismo $-0.5$ desde un vector oculto distinto, $(0,\, 0)^{\top}$: la capa de salida no necesita saber de qué esquina viene cada frase.'
+  - id: q-representacion
+    type: predict-output
+    prompt: 'Esta es la capa oculta de la lección aplicada a <W>no está mal</W>. ¿Qué imprime?'
+    language: python
+    code: |
+      import numpy as np
+
+      W1 = np.array([[1., 1.],
+                     [1., 1.]])
+      b1 = np.array([1., -1.])
+      x = np.array([1., -1.])
+      print((W1 @ x + b1 >= 0).astype(float))
+    answer: '[1. 0.]'
+    explanation: 'El producto $\mathbf{W}^{(1)}\mathbf{x}$ vale $(0,\, 0)^{\top}$ porque las dos coordenadas de la entrada se cancelan, y al sumar el sesgo queda $\mathbf{z}^{(1)} = (1,\, -1)^{\top}$. La comparación deja `[True False]` y `.astype(float)` lo pasa a ceros y unos. Lo que importa es cuál es ese vector: el mismo que produce <W>está bien</W>, que parte de la esquina opuesta del cuadrado. En las coordenadas de la capa oculta las dos frases positivas son el mismo punto, y ahí está la razón de que una recta ya sirva.'
+    hint: 'El formato cuenta tanto como los valores: `.astype(float)` devuelve flotantes, y NumPy los imprime con el punto —`1.`, no `1`—, entre corchetes y separados por un espacio, sin comas.'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Deep Learning, cap. 6: Deep Feedforward Networks'
+    authors: 'Goodfellow, Bengio y Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/mlp.html'
+    note: 'Su §6.1 hace este mismo XOR con la misma red de dos neuronas ocultas y ReLU en vez del escalón: da los pesos a mano, igual que aquí, y deja entrenarlos para después. Enseña que el modelo lineal falla, pero no lo demuestra en general.'
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 3. */}
+
+Con la lección anterior, sobre funciones de activación y no linealidad, la neurona quedó terminada:
+una suma ponderada, y encima una $\varphi$ curva y con derivada aprovechable —sigmoide, tangente
+hiperbólica o ReLU— en lugar del escalón que ocupaba ese sitio al principio. Terminada, y con un
+límite que ninguna de las tres candidatas toca: la neurona contesta según de qué lado de un
+hiperplano haya caído la entrada. Eso mueve la pregunta de sitio. Ya no es cuál asignar a $\varphi$,
+sino una pregunta sobre los datos: qué repartos de ejemplos caben dentro de un hiperplano, y si hay
+alguno que no cabe en ninguno.
+
+Cuatro frases alcanzan para encontrarlo. Toma <W>está bien</W>, <W>está mal</W>, <W>no está bien</W>
+y <W>no está mal</W>, y clasifícalas: la primera y la cuarta hablan bien, la segunda y la tercera
+hablan mal. Las cuatro se distinguen con dos datos —si aparece <W>no</W>, y si la palabra que valora
+es <W>bien</W> o <W>mal</W>—, de modo que dos coordenadas las describen enteras. Ahora mira qué hace
+<W>no</W>. No aporta un signo propio: le da la vuelta al de la palabra que le sigue. Y un peso es un
+signo fijo.
+
+Esas dos coordenadas caben en un dibujo, que es el de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>: cada frase es un punto del plano, su color es lo que dice, y la neurona busca una recta
+que deje un color a cada lado. El segundo botón del explorable carga exactamente esos cuatro puntos.
+
+<Explorable
+  id="perceptron-boundary"
+  caption="Pulsa «No separable» y deja la recta trabajando: no llega a pararse, y se queda roja y a trazos porque siempre tiene algún punto del lado que no le toca. Arrastra después una de las cuatro esquinas hacia el centro y verás que encuentra sitio y se pone verde. Lo imposible no era el número de puntos, sino dónde estaban."
+/>
+
+Los cuatro puntos son las esquinas de un cuadrado y cada clase ocupa dos esquinas opuestas. Una
+recta parte el plano en dos mitades, y no hay forma de meter dos esquinas opuestas en la misma mitad
+sin llevarse por delante alguna de las otras dos. Eso lo enseña el explorable, y no lo demuestra:
+que un procedimiento no encuentre una recta deja abierto que la recta exista y él no dé con ella.
+Hay que descartarlas todas a la vez.
+
+<Callout type="intuition" title="La idea en una frase">
+Cuando cada clase ocupa una diagonal, ningún hiperplano sirve, y elegir otra activación no cambia
+nada porque la frontera sigue siendo un hiperplano. Lo que sí cambia el problema es meter neuronas
+por delante: la capa que nadie lee desde fuera está ahí para llevar los puntos a unas coordenadas en
+las que una recta sí los separe.
+</Callout>
+
+## Cuatro frases que ningún hiperplano separa
+
+Fijemos las coordenadas. Sea $x_1 = +1$ cuando la frase contiene <W>no</W> y $x_1 = -1$ cuando no lo
+contiene, y sea $x_2 = +1$ cuando la palabra que valora es <W>bien</W> y $x_2 = -1$ cuando es
+<W>mal</W>. La etiqueta $y$ vale $1$ si la frase habla bien y $0$ si habla mal, que son los dos
+valores que entrega el escalón.
+
+| frase | $\mathbf{x}$ | $y$ |
+|---|---|---|
+| <W>está bien</W> | $(-1,\, +1)^{\top}$ | $1$ |
+| <W>está mal</W> | $(-1,\, -1)^{\top}$ | $0$ |
+| <W>no está bien</W> | $(+1,\, +1)^{\top}$ | $0$ |
+| <W>no está mal</W> | $(+1,\, -1)^{\top}$ | $1$ |
+
+La etiqueta vale $1$ exactamente cuando las dos coordenadas difieren. Esa función tiene nombre desde
+mucho antes que las redes: es el **o exclusivo** (*exclusive or*, XOR), y sus dos clases son las dos
+diagonales del cuadrado.
+
+Supongamos que existen $\mathbf{w} \in \mathbb{R}^{2}$ y $b \in \mathbb{R}$ con los que la neurona
+$\text{escalón}\left(\mathbf{w}^{\top}\mathbf{x} + b\right)$ acierta las cuatro. Acertar las dos
+positivas es $z \geq 0$ en las dos, y acertar las dos negativas es $z < 0$ en las dos. Sumemos cada
+pareja por separado, con $z(\mathbf{x}) = w_1 x_1 + w_2 x_2 + b$:
+
+$$
+z(-1, +1) + z(+1, -1) = \left(-w_1 + w_2 + b\right) + \left(w_1 - w_2 + b\right) = 2b,
+$$
+
+y para la otra diagonal, con los mismos pesos,
+
+$$
+z(-1, -1) + z(+1, +1) = \left(-w_1 - w_2 + b\right) + \left(w_1 + w_2 + b\right) = 2b.
+$$
+
+Los pesos se cancelan en las dos, y las dos sumas dan el mismo número. Pero la primera suma dos
+cantidades $\geq 0$, luego $2b \geq 0$; y la segunda suma dos cantidades $< 0$, luego $2b < 0$. Un
+mismo $b$ no puede cumplir las dos, así que la neurona supuesta no existe.
+
+Merece la pena leer esa cancelación en el dibujo, porque dice de dónde sale. Los dos segmentos —el
+que une las dos frases positivas y el que une las dos negativas— tienen el mismo punto medio, el
+origen. Y $z$ es afín, así que su valor en el punto medio de un segmento es la media de sus valores
+en los extremos. El origen tendría que caer del lado positivo por estar entre dos positivas, y del
+negativo por estar entre dos negativas.
+
+<Details summary="La versión general: dos segmentos que se cruzan lo impiden siempre">
+
+Nada de la cuenta anterior depende de que las coordenadas fueran $\pm 1$ ni de que los cuatro puntos
+formaran un cuadrado. Sean $\mathbf{p}_1, \mathbf{p}_2$ dos ejemplos de una clase y
+$\mathbf{n}_1, \mathbf{n}_2$ dos de la otra, y supongamos que el segmento que une los primeros corta
+al que une los segundos en un punto $\mathbf{q}$. Cortarse significa que ese punto se escribe de las
+dos maneras,
+
+$$
+\mathbf{q} = \lambda \mathbf{p}_1 + (1 - \lambda)\, \mathbf{p}_2
+           = \mu \mathbf{n}_1 + (1 - \mu)\, \mathbf{n}_2,
+$$
+
+con $\lambda, \mu \in [0, 1]$. Una función afín reparte esas combinaciones, porque los pesos suman
+$1$ y el sesgo sobrevive intacto:
+
+$$
+z\left(\lambda \mathbf{u} + (1 - \lambda)\mathbf{v}\right)
+= \lambda \left(\mathbf{w}^{\top}\mathbf{u} + b\right) + (1 - \lambda)\left(\mathbf{w}^{\top}\mathbf{v} + b\right)
+= \lambda\, z(\mathbf{u}) + (1 - \lambda)\, z(\mathbf{v}).
+$$
+
+Si la neurona acierta, $z(\mathbf{p}_1)$ y $z(\mathbf{p}_2)$ son $\geq 0$, y entonces $z(\mathbf{q})$
+—una media de los dos con pesos no negativos— también lo es. Por el otro camino,
+$z(\mathbf{n}_1)$ y $z(\mathbf{n}_2)$ son $< 0$ y $z(\mathbf{q})$ tiene que ser $< 0$. El mismo punto
+con dos signos incompatibles.
+
+Con esto, el resultado no cambia si prefieres codificar las frases con $0$ y $1$ en lugar de $-1$ y
+$+1$: los cuatro puntos son entonces las esquinas del cuadrado unidad, los dos segmentos se cruzan
+en $(1/2,\, 1/2)$ y la contradicción aparece igual.
+
+</Details>
+
+### Y ninguna activación lo arregla
+
+La demostración usó el escalón en un sitio concreto: para leer «acierta» como $z \geq 0$ o $z < 0$.
+Es lo único que hay que revisar. Sea $\varphi$ estrictamente creciente —la sigmoide y la tangente
+hiperbólica lo son— y sea $\theta$ el umbral con el que decidas leer su salida como un sí. Al ser
+creciente es invertible en su recorrido, de modo que $\varphi(z) \geq \theta$ equivale a
+$z \geq \varphi^{-1}(\theta)$, y el conjunto de las frases que reciben un sí es
+
+$$
+\left\{\, \mathbf{x} \in \mathbb{R}^{2} \;:\; \mathbf{w}^{\top}\mathbf{x} + b - \varphi^{-1}(\theta) \geq 0 \,\right\},
+$$
+
+que es el semiplano de la misma neurona con el sesgo $b - \varphi^{-1}(\theta)$. La demostración se
+aplica sin tocar una letra.
+
+ReLU no es estrictamente creciente y tampoco escapa. Con $\theta > 0$, pedir
+$\text{ReLU}(z) \geq \theta$ es pedir $z \geq \theta$, otro semiplano; con $\theta \leq 0$ se cumple
+para toda entrada y la neurona contesta que sí a las cuatro frases, incluidas las dos que hablan
+mal. Semiplano o plano entero, y ninguna de las dos cosas parte las diagonales.
+
+## Una capa es varias neuronas a la vez
+
+Lo que falla no es la neurona: es que sólo haya una. Pon dos mirando la misma entrada y una tercera
+mirando lo que entregan esas dos. Quedan tres columnas, y cada una tiene nombre. La **capa de
+entrada** es $\mathbf{x}$ y no calcula nada —se dibuja como una columna de círculos por costumbre,
+pero ahí no hay neuronas—; la **capa oculta** son las dos primeras neuronas, oculta porque su salida
+no es la respuesta final y nadie la lee desde fuera; y la **capa de salida** es la tercera, la que
+contesta.
+
+<Figure
+  src="/courses/dl-nlp/mlp-arquitectura.svg"
+  alt="Tres columnas de círculos unidas por flechas. La primera, con el rótulo capa de entrada, tiene dos círculos de trazo discontinuo etiquetados x1 y x2. La segunda, la capa oculta, tiene dos círculos de trazo verde continuo, y cada uno recibe una flecha de los dos círculos de la entrada. La tercera, la capa de salida, tiene un solo círculo verde que recibe una flecha de cada neurona oculta. El haz de flechas de la izquierda lleva el rótulo W(1), b(1) y el de la derecha W(2), b(2)."
+  caption="Cada flecha es un peso y cada círculo verde es una neurona con su sesgo. Este dibujo es la forma que tendrán todas las redes del bloque: sólo cambian cuántos círculos hay por columna y cuántas columnas hay."
+/>
+
+Con varias neuronas en un nivel, el vector de pesos de cada una pasa a ser una fila. La neurona $j$
+de la capa $l$ guarda sus pesos en la fila $j$ de $\mathbf{W}^{(l)}$ y su sesgo en $b^{(l)}_j$, y lo
+que en <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion> eran los escalares $z$ y $a$ son
+ahora las coordenadas $z^{(l)}_j$ y $h^{(l)}_j$. Es el mismo objeto apilado; por dentro no ha
+cambiado nada. Con $\mathbf{h}^{(0)} = \mathbf{x}$, la capa oculta calcula
+
+$$
+\mathbf{z}^{(1)} = \mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)},
+\qquad
+\mathbf{h}^{(1)} = \varphi\left(\mathbf{z}^{(1)}\right),
+$$
+
+con $\mathbf{W}^{(1)} \in \mathbb{R}^{2 \times 2}$ y $\mathbf{b}^{(1)}, \mathbf{z}^{(1)},
+\mathbf{h}^{(1)} \in \mathbb{R}^{2}$, y con $\varphi$ aplicada coordenada a coordenada. La capa de
+salida hace lo mismo sobre $\mathbf{h}^{(1)}$:
+
+$$
+\mathbf{z}^{(2)} = \mathbf{W}^{(2)}\mathbf{h}^{(1)} + \mathbf{b}^{(2)},
+\qquad
+\hat{y} = \varphi\left(z^{(2)}_1\right),
+$$
+
+con $\mathbf{W}^{(2)} \in \mathbb{R}^{1 \times 2}$ y $\mathbf{b}^{(2)} \in \mathbb{R}^{1}$. Una capa
+de una sola neurona es una matriz de una sola fila, y escribirla así cuesta un par de subíndices
+ahora y ahorra tener dos notaciones después.
+
+### Dos rectas paralelas separan lo que una sola no puede
+
+Estos pesos resuelven las cuatro frases, con el escalón en $\varphi$ en las dos capas:
+
+$$
+\mathbf{W}^{(1)} = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix},
+\quad
+\mathbf{b}^{(1)} = \begin{pmatrix} 1 \\ -1 \end{pmatrix},
+\quad
+\mathbf{W}^{(2)} = \begin{pmatrix} 1 & -1 \end{pmatrix},
+\quad
+\mathbf{b}^{(2)} = \begin{pmatrix} -\tfrac{1}{2} \end{pmatrix}.
+$$
+
+Los he elegido yo a mano, igual que los ocho pesos de la neurona de reseñas de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, porque
+todavía no hay nada en el curso que los busque solo. Y están elegidos para que se lean. Las dos
+filas de $\mathbf{W}^{(1)}$ son idénticas, así que las dos neuronas ocultas miran la misma dirección
+y sólo las separa el sesgo: la primera pregunta si $x_1 + x_2 \geq -1$ y la segunda si
+$x_1 + x_2 \geq 1$. Son dos rectas paralelas, y la clase positiva es la franja que queda entre
+ellas. Una franja es la intersección de dos semiplanos, y decidir esa intersección es lo que hace la
+neurona de salida: $z^{(2)}_1 = h^{(1)}_1 - h^{(1)}_2 - 1/2$ pide un sí a la primera y un no a la
+segunda.
+
+<Figure
+  src="/courses/dl-nlp/xor-franja.svg"
+  alt="El plano de las dos coordenadas. Dos rectas paralelas de pendiente negativa, x1 + x2 = 1 y x1 + x2 = menos 1, dejan entre ellas una franja sombreada en verde que cruza el dibujo de la esquina superior izquierda a la inferior derecha. Los dos puntos verdes, en menos 1 coma 1 y en 1 coma menos 1, caen dentro de la franja; los dos puntos huecos, en menos 1 coma menos 1 y en 1 coma 1, caen fuera, uno a cada lado. Cada región lleva escrito el vector que la capa oculta le asigna: 1 coma 0 en la franja, 0 coma 0 abajo a la izquierda y 1 coma 1 arriba a la derecha."
+  caption="Las dos neuronas ocultas dibujan las dos rectas, y la clase positiva es lo que queda en medio. En cada región está el vector que la capa oculta le asigna: los dos puntos verdes caen en la misma, así que salen de ella con el mismo (1, 0) aunque hayan entrado por esquinas opuestas."
+/>
+
+| frase | $x_1 + x_2$ | $\mathbf{z}^{(1)}$ | $\mathbf{h}^{(1)}$ | $z^{(2)}_1$ | $\hat{y}$ | $y$ |
+|---|---|---|---|---|---|---|
+| <W>está bien</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0.5$ | $1$ | $1$ |
+| <W>está mal</W> | $-2$ | $(-1,\, -3)^{\top}$ | $(0,\, 0)^{\top}$ | $-0.5$ | $0$ | $0$ |
+| <W>no está bien</W> | $2$ | $(3,\, 1)^{\top}$ | $(1,\, 1)^{\top}$ | $-0.5$ | $0$ | $0$ |
+| <W>no está mal</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0.5$ | $1$ | $1$ |
+
+La columna de $\mathbf{h}^{(1)}$ es la que tiene el resultado. Cuatro puntos de entrada han salido
+convertidos en tres —$(0,\, 0)^{\top}$, $(1,\, 0)^{\top}$ y $(1,\, 1)^{\top}$—, y la clase positiva
+es justo el de en medio. En esas coordenadas nuevas ya hay una recta que deja una clase a cada lado,
+y la neurona de salida no hace nada que no supiera hacer una neurona suelta. La capa oculta no ha
+añadido capacidad de decidir: ha cambiado el sitio desde el que se decide.
+
+Ese es el giro que conviene guardar, porque el bloque anterior es entero sobre lo mismo. Allí las
+representaciones las elegía una persona —una dimensión por entrada del vocabulario, después cuentas,
+después vectores densos— y cada elección era una decisión escrita a mano. Una capa oculta es una
+representación más, con una diferencia: sus coordenadas salen de unos pesos, y a unos pesos se les
+puede pedir que se ajusten solos. Una red neuronal con al menos una capa oculta tiene nombre propio,
+**perceptrón multicapa** (*multilayer perceptron*, MLP), y es el que da título a este bloque.
+
+## Todas las rectas de una malla, y después la red
+
+La celda hace dos cosas. Primero prueba a lo bruto una malla de rectas, para ver dónde está el techo
+de aciertos; después monta la red de dos capas con los pesos de arriba y la pasa por las cuatro
+frases. Ejecútala y compara los dos bloques de salida.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+np.random.seed(0)
+
+# --- Las cuatro frases, con sus dos coordenadas y su etiqueta.
+frases = [
+    ("está bien",    (-1.0,  1.0), 1),
+    ("está mal",     (-1.0, -1.0), 0),
+    ("no está bien", ( 1.0,  1.0), 0),
+    ("no está mal",  ( 1.0, -1.0), 1),
+]
+X = np.array([coords for _, coords, _ in frases])     # (4, 2): una fila por frase
+y = np.array([etiqueta for _, _, etiqueta in frases])
+print("X tiene forma", X.shape, " etiquetas:", y)
+print()
+
+# 1. Fuerza bruta: 41 valores por parámetro, todas las combinaciones.
+g = np.linspace(-3.0, 3.0, 41)
+G1, G2, GB = np.meshgrid(g, g, g, indexing="ij")
+rectas = np.stack([G1.ravel(), G2.ravel(), GB.ravel()], axis=1)   # (41^3, 3)
+Z = rectas[:, :2] @ X.T + rectas[:, 2:3]              # una z por recta y por frase
+aciertos = ((Z >= 0).astype(int) == y).sum(axis=1)
+
+print("rectas probadas:      ", len(rectas))
+print("aciertos máximos:     ", aciertos.max(), "de 4")
+print("rectas con 3 aciertos:", int((aciertos == 3).sum()))
+print("rectas con 4 aciertos:", int((aciertos == 4).sum()))
+print()
+
+# 2. La red: dos neuronas ocultas y una de salida, con los pesos de la lección.
+W1 = np.array([[1.0, 1.0],
+               [1.0, 1.0]])
+b1 = np.array([1.0, -1.0])
+W2 = np.array([[1.0, -1.0]])
+b2 = np.array([-0.5])
+
+
+def escalon(z):
+    return (z >= 0).astype(float)
+
+
+print("frase".ljust(14), "z(1)".rjust(12), "h(1)".rjust(9), "z(2)".rjust(6), "  y_hat", " y")
+correctos = 0
+for texto, coords, etiqueta in frases:
+    x = np.array(coords)
+    z1 = W1 @ x + b1
+    h1 = escalon(z1)
+    z2 = W2 @ h1 + b2
+    y_hat = int(escalon(z2)[0])
+    correctos += int(y_hat == etiqueta)
+    print(texto.ljust(14),
+          ("(%+.0f, %+.0f)" % (z1[0], z1[1])).rjust(12),
+          ("(%.0f, %.0f)" % (h1[0], h1[1])).rjust(9),
+          ("%+.1f" % z2[0]).rjust(6),
+          "%6d" % y_hat, "%2d" % etiqueta)
+print()
+print("aciertos:", correctos, "de", len(frases))
+print()
+
+# 3. Las dos frases positivas caen en el mismo punto de la capa oculta.
+h_bien = escalon(W1 @ np.array([-1.0, 1.0]) + b1)
+h_mal = escalon(W1 @ np.array([1.0, -1.0]) + b1)
+print("h(1) de «está bien»   =", h_bien)
+print("h(1) de «no está mal» =", h_mal)
+print("¿el mismo vector?", bool(np.array_equal(h_bien, h_mal)))
+`} />
+
+La malla prueba $41^3 = 68\,921$ rectas, ninguna acierta las cuatro frases y $17\,123$ se quedan en
+tres. Esa cifra tiene un límite que conviene decir: una malla deja fuera todas las rectas que no
+probó, que son casi todas, así que por sí sola no demuestra nada —para eso está la cuenta de más
+arriba, y por eso va antes—. Lo que aporta es el techo. Tres aciertos no es un resultado a medio
+camino que se arregle afinando la búsqueda; es el máximo, y el máximo se toca por todas partes.
+
+La red acierta las cuatro. La tabla de la celda es la misma de arriba, ahora calculada, y en ella
+$z^{(2)}_1$ vale $+0.5$ en las dos frases positivas y $-0.5$ en las dos negativas, con la misma
+holgura por los dos lados. Y la última comprobación imprime lo que hace la
+capa oculta: <W>está bien</W> y <W>no está mal</W>, que ocupan esquinas opuestas del cuadrado de
+entrada, salen las dos como $(1,\, 0)^{\top}$. Empezaron lo más lejos que podían estar y terminaron
+en el mismo sitio.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: qué demuestra la imposibilidad, si la activación tiene algo que ver, una
+preactivación de salida a mano y una salida de NumPy.
+
+<Quiz id="q-por-que-no" />
+
+<Quiz id="q-activacion" />
+
+<Quiz id="q-capa-oculta" />
+
+<Quiz id="q-representacion" />
+
+---
+
+Los cuatro números de $\mathbf{W}^{(1)}$ y los tres sesgos los escribí yo mirando el cuadrado, y esa
+deuda es ya la segunda vez que aparece. Ahora, además, cuesta más de pagar. Con una neurona sola se
+podía al menos mirar cada peso y decir de qué palabra opinaba; los
+pesos de una capa oculta no opinan sobre la respuesta, opinan sobre unas coordenadas intermedias que
+nadie ve, y su acierto o su fallo sólo se nota dos capas más allá. Repartir la responsabilidad entre
+capas es lo que ocupa el resto del bloque.
+
+Antes de eso hay un problema más pequeño y más urgente, y es de escritura. La red de esta lección
+cabe en una tabla porque tiene tres neuronas; con un vocabulario de cincuenta mil entradas y un par
+de cientos de neuronas ocultas, recorrerla neurona a neurona no cabe en ninguna página ni en ningún
+bucle que merezca la pena ejecutar. Hace falta la forma en la que una capa entera es un producto de
+matrices, y un montón de ejemplos entra de una vez por el mismo producto: es <Leccion slug="forward-pass">la siguiente lección, sobre el *forward pass*</Leccion>.

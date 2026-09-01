@@ -1,0 +1,464 @@
+---
+slug: bahdanau
+title: "Atención de Bahdanau (aditiva)"
+block: 4
+order: 4
+minutes: 29
+summary: "La casilla vacía de la lección anterior —la función que puntúa una pareja de estados— se llena con una red diminuta: dos proyecciones que se suman, un tanh que aplasta la suma y un vector que la lee. Aquí se ve por qué el tanh no es adorno (sin él la alineación deja de depender del paso y vuelve a congelarse), se desarrolla por dónde le llega el gradiente —a los estados del encoder por dos rutas, como valor y como puntuado— y sale una derivada que dice que una puntuación sólo se corrige cuando su estado se aparta de la mezcla que esa fila ya construyó."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-tanh
+    type: single
+    prompt: 'Quitas el $\tanh$ y dejas la puntuación en $e_{ij} = \mathbf{v}_a^{\top}\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$. ¿Qué le pasa a la alineación?'
+    options:
+      - { id: a, text: 'Todas las filas salen idénticas. El sumando del decoder no lleva $j$, así que dentro de la fila $i$ es una constante, y sumar una constante a una fila entera no cambia su softmax: $\alpha_{ij}$ deja de depender de $i$.' }
+      - { id: b, text: 'No le pasa nada apreciable: el softmax sigue siendo no lineal, y con eso basta para que cada paso reparta de forma distinta.' }
+      - { id: c, text: 'Los pesos dejan de sumar $1$, porque sin el $\tanh$ las puntuaciones ya no están acotadas y el denominador se queda corto.' }
+      - { id: d, text: 'La puntuación gana expresividad —una saturación menos— y lo único que se pierde es estabilidad numérica cuando los estados son grandes.' }
+    answer: a
+    explanation: 'La (a), y conviene ver qué modelo queda: una alineación aprendida, sí, pero la misma en los $T_y$ pasos, que es la fila congelada de la lección anterior, sobre la idea de atención, mudada del último token a un sitio elegido por el entrenamiento. La (b) confunde dónde hace falta la no linealidad: el softmax es no lineal en la fila entera, pero opera *después* de que la puntuación ya haya separado sus dos argumentos, y lo que se separa ahí no lo vuelve a juntar nadie. La (c) es falsa por construcción: el softmax normaliza lo que le echen, acotado o no. La (d) invierte el papel del $\tanh$, que no está para acotar sino para que la puntuación sea función de la pareja.'
+    hint: 'Escribe el producto $\mathbf{v}_a^{\top}$ contra la suma y mira qué sumando lleva $j$ y cuál no.'
+  - id: q-parametros-de-a
+    type: numeric
+    prompt: 'Un decoder y un encoder de $d_h = 64$ coordenadas, y un modelo de alineación de $d_a = 32$. ¿Cuántos pesos tiene la función $a$?'
+    answer: 4128
+    tolerance: 0
+    unit: pesos
+    explanation: 'Dos matrices de $32 \times 64$ y un vector de $32$: $2 \cdot 32 \cdot 64 + 32 = 4\,128$. Lo que importa de esa cuenta es lo que no aparece en ella. No aparece $T_x$, no aparece $T_y$ y no aparece la pareja: hay **un** juego de pesos, y con él se puntúan las $T_x \cdot T_y$ parejas de la frase y las de todas las demás frases, exactamente como un solo $\mathbf{W}_{hh}$ recorre todas las posiciones en la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion> —una red neuronal recurrente (*recurrent neural network*, RNN)—. Alargar la frase cuesta más cálculo; no cuesta ni un peso más.'
+    hint: 'Cuenta las tres piezas por separado y fíjate en si alguna depende de la longitud de la frase.'
+  - id: q-dos-caminos
+    type: multi
+    prompt: 'Marca las rutas por las que el gradiente de la pérdida llega a $\bar{\mathbf{h}}_j$ **desde el mecanismo de atención**, dejando fuera la que le llega desde $\bar{\mathbf{h}}_{j+1}$ por la recurrencia del encoder.'
+    options:
+      - { id: a, text: 'Como valor: $\bar{\mathbf{h}}_j$ es uno de los sumandos de cada $\mathbf{c}_i$, así que de cada paso le llega $\alpha_{ij}\nabla_{\mathbf{c}_i}\ell$.' }
+      - { id: b, text: 'Como puntuado: $\bar{\mathbf{h}}_j$ entra en las $T_y$ puntuaciones $e_{ij}$, y de ahí en los pesos de esas filas.' }
+      - { id: c, text: 'Desde $\hat{\mathbf{y}}_i$ directamente, sin pasar por $\mathbf{c}_i$: el estado del encoder es una de las entradas del softmax de salida.' }
+      - { id: d, text: 'A través de $\mathbf{W}_{sa}$, la matriz que multiplica a $\bar{\mathbf{h}}_j$ dentro de la puntuación.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b) son las dos, y merece la pena decir por qué son dos y no una: $\bar{\mathbf{h}}_j$ aparece dos veces en la misma fórmula, una como cosa que se mezcla y otra como cosa que se puntúa, así que la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> suma dos términos. La (c) se salta el mecanismo entero: el decoder no ve la entrada, ve $\mathbf{c}_i$, y ése es todo el argumento del bloque desde <Leccion slug="encoder-decoder">su primera lección</Leccion>. La (d) cambia las matrices de sitio: $\mathbf{W}_{sa}$ multiplica al estado del decoder y $\mathbf{W}_{ha}$ al del encoder, que es justo lo que dicen sus subíndices.'
+    hint: 'Escribe $\mathbf{c}_i = \sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ y pregúntate en cuántos sitios de esa línea aparece $\bar{\mathbf{h}}_j$.'
+  - id: q-comparacion
+    type: single
+    prompt: 'La derivada de la pérdida respecto de una puntuación sale $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)$. ¿Qué dice sobre cuándo se corrige una puntuación?'
+    options:
+      - { id: a, text: 'Que sólo se mueve si $\bar{\mathbf{h}}_j$ se aparta de la mezcla que esa misma fila ya construyó, y en la dirección que la pérdida pide. Un estado igual a $\mathbf{c}_i$ no recibe corrección, vaya bien o mal la traducción.' }
+      - { id: b, text: 'Que sube la puntuación del estado de norma más grande, porque es el que más empuja al producto escalar.' }
+      - { id: c, text: 'Que todas las puntuaciones de una fila se mueven en el mismo sentido, ya que comparten el factor $\nabla_{\mathbf{c}_i}\ell$.' }
+      - { id: d, text: 'Que la corrección es la misma en todos los pasos, porque $\bar{\mathbf{h}}_j$ es el mismo vector en todos ellos.' }
+    answer: a
+    explanation: 'La (a). La resta es lo que convierte el aprendizaje en una comparación: no se pregunta si $\bar{\mathbf{h}}_j$ es bueno, sino si es mejor que lo que la fila ya está mezclando, que es la única pregunta con respuesta cuando los pesos tienen que sumar $1$ —subir uno es bajar los demás—. El factor $\alpha_{ij}$ añade la otra mitad y no es inocente: una posición que ya recibe casi nada se corrige poco, así que la alineación tiende a afinar lo que mira antes que a descubrir lo que ignora. La (b) se olvida de la resta y del signo. La (c) es falsa: el factor común está, pero cada término lo proyecta sobre una diferencia distinta, y las que apuntan al otro lado bajan. La (d) confunde el vector con la pareja: $\bar{\mathbf{h}}_j$ no cambia, $\mathbf{c}_i$ y $\alpha_{ij}$ sí.'
+    hint: '¿Qué vale esa derivada si $\bar{\mathbf{h}}_j$ resulta ser exactamente $\mathbf{c}_i$?'
+  - id: q-que-se-precalcula
+    type: single
+    prompt: 'Traduces una frase de $T_x$ tokens en $T_y$ pasos. ¿Cuántas veces hay que calcular cada pieza de la puntuación aditiva?'
+    options:
+      - { id: a, text: '$\mathbf{W}_{ha}\bar{\mathbf{h}}_j$ una vez por posición y $\mathbf{W}_{sa}\mathbf{s}_{i-1}$ una vez por paso —$T_x + T_y$ productos—, pero la suma, el $\tanh$ y $\mathbf{v}_a^{\top}$ hay que repetirlos $T_x \cdot T_y$ veces, uno por pareja.' }
+      - { id: b, text: 'Todo $T_x \cdot T_y$ veces: la puntuación depende de la pareja, así que no hay nada que se pueda reaprovechar entre parejas.' }
+      - { id: c, text: 'Todo $T_x + T_y$ veces: proyectados los dos lados, la puntuación de cada pareja ya está calculada.' }
+      - { id: d, text: '$T_x \cdot T_y$ veces las dos proyecciones, y una sola vez el $\tanh$, que se aplica a la matriz de puntuaciones entera al final.' }
+    answer: a
+    explanation: 'La (a). Las dos proyecciones se sacan del bucle porque cada una depende de un solo índice, y ése es un ahorro real: sin él serían $2 T_x T_y$ productos de matriz por vector en lugar de $T_x + T_y$. Lo que no sale es lo de en medio. El $\tanh$ está entre la suma y el vector de lectura, y una función no lineal aplicada a una suma no se reparte entre sus sumandos, así que la rejilla de $T_x \cdot T_y$ vectores de $d_a$ coordenadas hay que construirla entera. La (b) regala el ahorro; la (c) regala el $\tanh$, que es lo que la (d) intenta mover de sitio —y moverlo al final es precisamente quitarlo de en medio, con el resultado que ya conoces.'
+    hint: '¿Cuál de las tres piezas depende de los dos índices a la vez?'
+challenges:
+  - id: ch-atencion-aditiva
+    prompt: |
+      Escribe `alineacion(S, H, Wsa, Wha, va)`. Recibe los estados del decoder `S`, de forma
+      $(T_y, d_h)$ —la fila $i$ es $\mathbf{s}_{i-1}$, el estado con el que se puntúa el paso
+      $i$—, los del encoder `H`, de forma $(T_x, d_h)$, y los tres pesos del modelo de
+      alineación. Devuelve la matriz $\alpha$ de forma $(T_y, T_x)$, ya normalizada.
+
+      Es la puntuación aditiva de la lección,
+      $e_{ij} = \mathbf{v}_a^{\top}\tanh\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$,
+      seguida de un softmax por filas. No escribas en los arrays que recibes.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def alineacion(S, H, Wsa, Wha, va):
+          # tu código aquí
+          pass
+    tests:
+      - name: "la forma es (T_y, T_x) y cada fila suma 1"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          S, H = rng.normal(size=(5, 4)), rng.normal(size=(7, 4))
+          Wsa, Wha, va = rng.normal(size=(3, 4)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          A = alineacion(S, H, Wsa, Wha, va)
+          assert A is not None, 'alineacion tiene que devolver la matriz, no imprimirla'
+          A = np.asarray(A)
+          assert A.shape == (5, 7), 'una fila por paso de la salida y una columna por posicion de la entrada'
+          assert np.allclose(A.sum(axis=1), 1.0), 'el softmax va por filas: cada paso reparte una unidad entre las posiciones'
+      - name: "coincide con puntuar las parejas una a una"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          S, H = rng.normal(size=(5, 4)), rng.normal(size=(7, 4))
+          Wsa, Wha, va = rng.normal(size=(3, 4)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          E = np.array([[va @ np.tanh(Wsa @ S[i] + Wha @ H[j]) for j in range(7)] for i in range(5)])
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = alineacion(S, H, Wsa, Wha, va)
+          assert A is not None, 'alineacion tiene que devolver la matriz de pesos'
+          assert np.allclose(np.asarray(A), Z / Z.sum(axis=1, keepdims=True)), 'la puntuacion de la pareja (i, j) mezcla S[i] con H[j], y solo con H[j]'
+      - name: "con va = 0 el mapa sale uniforme"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(8)
+          S, H = rng.normal(size=(4, 6)), rng.normal(size=(9, 6))
+          Wsa, Wha = rng.normal(size=(5, 6)), rng.normal(size=(5, 6))
+          A = alineacion(S, H, Wsa, Wha, np.zeros(5))
+          assert A is not None, 'alineacion tiene que devolver la matriz de pesos'
+          assert np.allclose(np.asarray(A), 1 / 9), 'sin vector de lectura todas las puntuaciones valen 0, y un softmax de ceros reparte por igual'
+      - name: "no desborda con puntuaciones grandes"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          S, H = rng.normal(size=(5, 4)), rng.normal(size=(7, 4))
+          Wsa, Wha, va = rng.normal(size=(3, 4)), rng.normal(size=(3, 4)), rng.normal(size=3) * 500
+          A = alineacion(S, H, Wsa, Wha, va)
+          assert A is not None, 'alineacion tiene que devolver la matriz de pesos'
+          assert np.isfinite(np.asarray(A)).all(), 'desborda: resta el maximo de cada fila antes de exponenciar'
+      - name: "no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(12)
+          S, H = rng.normal(size=(5, 4)), rng.normal(size=(7, 4))
+          Wsa, Wha, va = rng.normal(size=(3, 4)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          copias = [S.copy(), H.copy(), va.copy()]
+          alineacion(S, H, Wsa, Wha, va)
+          assert all(np.array_equal(u, v) for u, v in zip([S, H, va], copias)), 'no escribas en los arrays que recibes: E -= E.max(...) sobre una vista los estropea'
+    solution: |
+      import numpy as np
+
+
+      def alineacion(S, H, Wsa, Wha, va):
+          Ps = S @ Wsa.T                          # (T_y, d_a): una proyeccion por paso
+          Ph = H @ Wha.T                          # (T_x, d_a): una por posicion
+          P = Ps[:, None, :] + Ph[None, :, :]     # (T_y, T_x, d_a): la suma, pareja a pareja
+          E = np.tanh(P) @ va                     # (T_y, T_x): la puntuacion
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          return Z / Z.sum(axis=1, keepdims=True)
+    explanation: |
+      Las dos proyecciones se calculan fuera de la rejilla, cada una una sola vez, y el
+      `[:, None, :]` contra `[None, :, :]` es lo que las cruza: NumPy repite la primera a lo
+      largo de las posiciones y la segunda a lo largo de los pasos, y sale el bloque de
+      $(T_y, T_x, d_a)$ que el $\tanh$ aplasta. Sólo entonces entra `va`, que contrae la última
+      dimensión y deja una puntuación por pareja. La resta del máximo es la invariancia al
+      desplazamiento de <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>, usada como allí:
+      cambia lo que se exponencia, no lo que sale.
+reading:
+  - kind: paper
+    title: 'Neural Machine Translation by Jointly Learning to Align and Translate'
+    authors: 'Bahdanau, Cho y Bengio'
+    year: '2015'
+    venue: 'arXiv:1409.0473'
+    lang: en
+    url: 'https://arxiv.org/abs/1409.0473'
+    note: 'La puntuación de esta lección está en su apéndice A.2.2: v_a por el tanh de dos proyecciones sumadas. Allí nota que fijar el contexto al último estado da el encoder-decoder pelado —tu alineación congelada—. Del tanh no dice por qué.'
+---
+
+{/* COURSE-P5-04 — Bloque 4, lección 4. */}
+
+Un modelo con atención necesita, en cada paso de la salida, un peso por cada posición de la
+entrada. La lección anterior, sobre la idea de atención, dejó montado todo lo que rodea a esos
+pesos: salen de un softmax que recorre las posiciones de la fuente, sirven para mezclar los estados
+del encoder en un vector de contexto propio de cada paso, y ese vector entra en la recurrencia del
+decoder con su matriz $\mathbf{W}_{ch}$. Lo que no dejó escrito es lo que los produce. Antes del
+softmax hay una función, $a$, que recibe una pareja —dónde está el decoder y qué hay en una
+posición de la entrada— y devuelve una puntuación, y de ella sólo se pidió que fuese un número y
+que se pudiera derivar. Esta lección la escribe, con la forma que le dio Bahdanau en 2014.
+
+La pregunta es pequeña y concreta. ¿Cuál es la función más simple que se traga dos vectores y
+devuelve un número que signifique «estos dos se corresponden»? Hay una respuesta corta
+—una red diminuta— y hay una restricción que decide su forma, y la restricción enseña más que la
+respuesta. La puntuación tiene que ser función de la **pareja**. Una función que opine por separado
+sobre cada vector y sume las dos opiniones no puntúa una correspondencia: puntúa dos cosas sueltas,
+y más abajo se ve que eso destruye el mecanismo entero.
+
+Vuelve al mapa de la lección anterior y mira tres filas. La de <W>i</W> y la de <W>read</W> se
+llevan casi todo de la misma posición, la de <W>leí</W>, con pesos de $0.74$ y $0.81$. La de
+<W>a</W>, la siguiente, deja esa misma posición en $0.05$. El estado $\bar{\mathbf{h}}_2$ no ha
+cambiado entre esas tres filas —el encoder lo calculó una vez y ahí sigue—, y sin embargo recibe
+dos puntuaciones altas y una baja. Lo único distinto es con qué estado del decoder se le comparaba
+cada vez.
+
+<Explorable
+  id="attention-alignment"
+  caption="Las tres filas del ejemplo son la 2, la 3 y la 4. Los pesos siguen siendo los que puse yo a mano; lo que esta lección añade es de dónde saldrían si nadie los pusiera."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Puntuar una pareja es una red con una capa oculta: proyecta los dos vectores al mismo espacio,
+súmalos ahí, aplasta la suma y léela con un vector.
+</Callout>
+
+## Una red pequeña que puntúa parejas
+
+La puntuación aditiva proyecta los dos estados a un espacio propio, de $d_a$ coordenadas, y los
+suma dentro de él:
+
+$$
+\mathbf{p}_{ij} = \mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j \in \mathbb{R}^{d_a},
+$$
+
+con $\mathbf{W}_{sa}, \mathbf{W}_{ha} \in \mathbb{R}^{d_a \times d_h}$, una por lado. Esa suma es
+la preactivación de una capa oculta, y lo que sigue es lo que ya hace cualquier capa: aplastarla y
+leerla.
+
+$$
+e_{ij} = a\left(\mathbf{s}_{i-1}, \bar{\mathbf{h}}_j\right)
+= \mathbf{v}_a^{\top}\tanh\left(\mathbf{p}_{ij}\right) \in \mathbb{R},
+$$
+
+con $\mathbf{v}_a \in \mathbb{R}^{d_a}$. Es un perceptrón multicapa (*multilayer perceptron*, MLP)
+del bloque 2 en su tamaño mínimo: una capa oculta de $d_a$ unidades con $\tanh$, y una salida
+lineal de una sola neurona sin sesgo. El sesgo sobra porque sumaría el mismo número a toda la
+fila, y una constante por fila no sobrevive al softmax.
+
+Cuenta los pesos: $2 d_a d_h + d_a$. No aparece $T_x$, no aparece $T_y$ y no aparece la pareja.
+Hay un solo juego de pesos y con él se puntúan las $T_x \cdot T_y$ parejas de esta frase y las de
+todas las demás, que es la misma economía de la recurrencia del bloque anterior —un
+$\mathbf{W}_{hh}$ para todas las posiciones— aplicada a una rejilla en vez de a una fila. Nada de
+esto obliga además a que el encoder y el decoder midan lo mismo: las dos matrices tienen $d_a$
+filas cada una, y sus columnas son cosa de cada lado.
+
+### Sin la no linealidad, todos los pasos mirarían al mismo sitio
+
+Quita el $\tanh$ y mira qué queda. El vector de lectura entra en la suma y la reparte:
+
+$$
+e_{ij} = \mathbf{v}_a^{\top}\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{v}_a^{\top}\mathbf{W}_{ha}\bar{\mathbf{h}}_j,
+$$
+
+dos números que se suman y que no se han mirado el uno al otro. El primero no lleva $j$: dentro de
+la fila $i$ es la misma cantidad en las $T_x$ puntuaciones. Y una constante sumada a una fila
+entera no cambia su softmax —es la invariancia al desplazamiento de <Leccion slug="funcion-de-perdida">la lección
+sobre funciones de pérdida</Leccion>, la misma que permite restar el máximo antes de exponenciar—, así que se
+cancela arriba y abajo:
+
+$$
+\alpha_{ij} = \frac{\exp\left(\mathbf{v}_a^{\top}\mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)}{\sum_{k=1}^{T_x} \exp\left(\mathbf{v}_a^{\top}\mathbf{W}_{ha}\bar{\mathbf{h}}_k\right)}.
+$$
+
+El índice $i$ ha desaparecido del lado derecho. Los $T_y$ pasos reciben la misma fila de pesos, y
+con ella el mismo vector de contexto, de modo que el modelo vuelve a ser el resumen fijo de las
+lecciones anteriores: una alineación aprendida, sí, pero congelada, sólo que congelada donde diga
+el entrenamiento en vez de en el último token. El $\tanh$ es lo que impide esa separación. Aplasta
+la suma *antes* de leerla, y una función no lineal de una suma no se deja repartir entre sus
+sumandos, así que la puntuación no puede volver a partirse en una opinión sobre el decoder más otra
+sobre el encoder.
+
+## Por dónde le llega el gradiente
+
+Ahora hay parámetros que entrenar, y la pregunta es si la pérdida los alcanza. La cadena empieza en
+la mezcla, donde $\alpha_{ij}$ multiplica a un vector conocido:
+
+$$
+\frac{\partial \ell}{\partial \alpha_{ij}} = \left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\bar{\mathbf{h}}_j,
+$$
+
+y sigue por el softmax, que reparte cada puntuación entre todos los pesos de su fila.
+
+<Details summary="El paso por el softmax, con sus dos casos">
+
+Con $i$ fijo, $\alpha_{ij}$ depende de las $T_x$ puntuaciones de la fila, así que la derivada
+respecto de una de ellas suma sobre todas. La derivada del softmax tiene dos casos —los mismos de
+<Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>—: cuando el peso y la puntuación son el
+mismo índice vale $\alpha_{ij}\left(1 - \alpha_{ij}\right)$, y cuando no, $-\alpha_{ik}\alpha_{ij}$.
+Separando el término $k = j$ del resto:
+
+$$
+\frac{\partial \ell}{\partial e_{ij}}
+= \alpha_{ij}\frac{\partial \ell}{\partial \alpha_{ij}} - \alpha_{ij}\sum_{k=1}^{T_x} \alpha_{ik}\frac{\partial \ell}{\partial \alpha_{ik}}.
+$$
+
+El sumatorio es $\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\sum_k \alpha_{ik}\bar{\mathbf{h}}_k$,
+y esa suma ponderada es $\mathbf{c}_i$.
+
+</Details>
+
+$$
+\frac{\partial \ell}{\partial e_{ij}} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right).
+$$
+
+Léela despacio, porque dice cómo aprende a mirar. Una puntuación no se corrige según lo bueno que
+sea su estado, sino según cuánto se aparte $\bar{\mathbf{h}}_j$ de la mezcla que esa fila ya
+construyó, y en qué dirección. Un estado que coincida con $\mathbf{c}_i$ no recibe corrección
+ninguna. Tiene sentido que sea una comparación y no una nota: los pesos suman $1$, así que subir
+uno es bajar los demás, y no hay forma de premiar a una posición sin decir a costa de cuál.
+
+De ahí para atrás todo es cadena conocida. La lectura devuelve $\tanh(\mathbf{p}_{ij})$, el $\tanh$
+aporta su derivada $1 - \tanh^{2}$, y cada matriz recoge el producto exterior con el vector que
+multiplicaba:
+
+$$
+\nabla_{\mathbf{v}_a}\ell = \sum_{i,j} \frac{\partial \ell}{\partial e_{ij}}\tanh\left(\mathbf{p}_{ij}\right),
+\qquad
+\nabla_{\mathbf{p}_{ij}}\ell = \frac{\partial \ell}{\partial e_{ij}}\,\mathbf{v}_a \odot \left(1 - \tanh^{2}\left(\mathbf{p}_{ij}\right)\right),
+$$
+
+$$
+\nabla_{\mathbf{W}_{ha}}\ell = \sum_{i,j} \left(\nabla_{\mathbf{p}_{ij}}\ell\right)\bar{\mathbf{h}}_j^{\top},
+\qquad
+\nabla_{\mathbf{W}_{sa}}\ell = \sum_{i,j} \left(\nabla_{\mathbf{p}_{ij}}\ell\right)\mathbf{s}_{i-1}^{\top}.
+$$
+
+Las $T_x \cdot T_y$ parejas suman sobre los mismos tres arrays, que es lo que significa compartir
+pesos.
+
+Y hay una consecuencia que no está en los parámetros. Fíjate en dónde aparece $\bar{\mathbf{h}}_j$:
+en la mezcla, como uno de los sumandos, y en las $T_y$ puntuaciones, como argumento de $a$. Son dos
+sitios, así que el gradiente le llega por dos rutas y hay que sumarlas:
+
+$$
+\nabla_{\bar{\mathbf{h}}_j}\ell = \sum_{i=1}^{T_y} \alpha_{ij}\nabla_{\mathbf{c}_i}\ell + \sum_{i=1}^{T_y} \mathbf{W}_{ha}^{\top}\nabla_{\mathbf{p}_{ij}}\ell.
+$$
+
+A esas dos se les suma la que ya traía el bloque anterior, la que baja desde
+$\bar{\mathbf{h}}_{j+1}$ por la recurrencia del encoder, y ahí está lo interesante: las dos de
+arriba **no** pasan por ella. Van del paso $i$ del decoder a la posición $j$ de la entrada sin
+recorrer el trecho de recurrencia que separa esa posición del final de la frase, así que no
+multiplican por $\mathbf{W}^{\text{enc}}_{hh}$ ni una sola vez y su longitud no crece cuando $j$ se
+aleja. El producto de matrices que <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente
+desvanecido</Leccion> señalaba como causa del problema no aparece en estas dos rutas.
+
+## La puntuación, en NumPy
+
+La primera celda calcula la rejilla entera. Guarda los estados por filas —una fila por paso, una
+fila por posición— y por eso las matrices aparecen transpuestas respecto de las ecuaciones. Mira
+dos cosas: cuánto se parece a un mapa el reparto que sale de unos pesos recién inicializados, y qué
+pasa al pedir la versión sin $\tanh$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T_y, T_x, d_h, d_a = 8, 6, 5, 4
+rng = np.random.default_rng(4)
+S = rng.normal(size=(T_y, d_h)) * 0.6      # fila i: el estado s_{i-1} con el que se puntua el paso i
+H = rng.normal(size=(T_x, d_h)) * 0.6      # fila j: el estado del encoder en la posicion j
+Wsa = rng.normal(size=(d_a, d_h)) * 0.5    # sin entrenar: nadie ha corregido esto todavia
+Wha = rng.normal(size=(d_a, d_h)) * 0.5
+va = rng.normal(size=d_a) * 0.5
+
+
+def softmax_filas(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))     # invariancia al desplazamiento
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+def puntua(S, H, con_tanh=True):
+    Ps = S @ Wsa.T                                   # (T_y, d_a): una proyeccion por paso
+    Ph = H @ Wha.T                                   # (T_x, d_a): una por posicion
+    P = Ps[:, None, :] + Ph[None, :, :]              # (T_y, T_x, d_a): la suma, pareja a pareja
+    return (np.tanh(P) if con_tanh else P) @ va      # (T_y, T_x)
+
+
+alfa = softmax_filas(puntua(S, H))
+assert np.allclose(alfa.sum(axis=1), 1.0), "hay una fila que no suma 1"
+
+print("pesos:", 2 * d_a * d_h + d_a, "  formas:  alfa", alfa.shape)
+print("fila 1:", np.round(alfa[0], 3))
+print("mayor peso de cada fila:", np.round(alfa.max(axis=1), 3), " uniforme:", round(1 / T_x, 3))
+
+lineal = softmax_filas(puntua(S, H, con_tanh=False))
+print()
+print("sin tanh, fila 1:", np.round(lineal[0], 3))
+print("sin tanh, fila 8:", np.round(lineal[7], 3))
+print("sin tanh, todas las filas iguales:", bool(np.allclose(lineal, lineal[0])))
+`} />
+
+El mapa recién inicializado no dice nada: el mayor peso de cada fila ronda $0.18$ cuando el reparto
+uniforme sería $0.167$, así que las ocho filas son prácticamente la media de la frase. La alineación
+interpretable del explorable no viene de la arquitectura, viene del entrenamiento; lo que la
+arquitectura garantiza es que haya por dónde entrenarla. Y las dos últimas líneas son la sección
+anterior comprobada a mano: sin el $\tanh$, la fila $1$ y la fila $8$ salen iguales hasta el último
+decimal.
+
+La segunda celda persigue las dos rutas por separado. Necesita una pérdida y usa la más barata
+posible —una cuyo gradiente respecto de cada $\mathbf{c}_i$ es un vector dado— para que lo único
+que se esté midiendo sea el mecanismo.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita la celda anterior: S, H, Wsa, Wha, va, puntua, softmax_filas.
+# Perdida de juguete: l = suma_i G[i] . c_i, de modo que el gradiente de l respecto
+# de c_i es exactamente G[i], sin derivar el decoder ni la entropia cruzada.
+G = np.random.default_rng(9).normal(size=(T_y, d_h))
+
+
+def mezcla(H):
+    alfa = softmax_filas(puntua(S, H))
+    return alfa @ H, alfa
+
+
+def perdida(H):
+    C, _ = mezcla(H)
+    return float((G * C).sum())
+
+
+C, alfa = mezcla(H)
+valor = alfa.T @ G                                              # ruta 1: como sumando de c_i
+dl_de = alfa * (G @ H.T - (G * C).sum(axis=1, keepdims=True))   # alfa_ij * G_i . (h_j - c_i)
+P = (S @ Wsa.T)[:, None, :] + (H @ Wha.T)[None, :, :]
+D = dl_de[:, :, None] * va * (1 - np.tanh(P) ** 2)              # (T_y, T_x, d_a)
+puntuacion = np.einsum("ijk,kl->jl", D, Wha)                    # ruta 2: como argumento de a
+
+num = np.zeros_like(H)                                          # sondeo numerico, derivada central
+for j in range(T_x):
+    for l in range(d_h):
+        Hmas = H.copy(); Hmas[j, l] += 1e-6
+        Hmenos = H.copy(); Hmenos[j, l] -= 1e-6
+        num[j, l] = (perdida(Hmas) - perdida(Hmenos)) / 2e-6
+
+print("norma de la ruta del valor:        %.4f" % np.linalg.norm(valor))
+print("norma de la ruta de la puntuacion: %.4f" % np.linalg.norm(puntuacion))
+print("error de cada una por separado:    %.1e   %.1e"
+      % (np.abs(valor - num).max(), np.abs(puntuacion - num).max()))
+print("error de las dos sumadas:          %.1e" % np.abs(valor + puntuacion - num).max())
+`} />
+
+La última línea es la comprobación: sumadas, las dos rutas reproducen el gradiente numérico hasta
+el orden de $10^{-10}$, y por separado cada una se equivoca en la primera cifra. Las normas dicen
+algo más, y es honesto mirarlo: con los pesos sin entrenar la ruta del valor es once veces mayor que la de la
+puntuación. Al principio casi todo el gradiente llega por donde llegaría aunque la alineación fuese
+uniforme, y es la ruta pequeña —la que pasa por $a$— la única que puede sacar al mapa de esa
+uniformidad. Cambia la escala de `va` a $2.0$ y ejecuta otra vez: las puntuaciones se separan, los
+pesos se afilan y las dos normas se acercan.
+
+## Comprueba tu intuición
+
+Cinco preguntas: qué se rompe sin el $\tanh$, cuánto pesa la función $a$, por dónde le llega el
+gradiente a un estado del encoder, qué dice la derivada de una puntuación, y qué parte del cálculo
+se puede sacar del bucle.
+
+<Quiz id="q-por-que-tanh" />
+
+<Quiz id="q-parametros-de-a" />
+
+<Quiz id="q-dos-caminos" />
+
+<Quiz id="q-comparacion" />
+
+<Quiz id="q-que-se-precalcula" />
+
+<CodeChallenge id="ch-atencion-aditiva" />
+
+---
+
+Queda una cuenta pendiente de la última pregunta. Las dos proyecciones se sacan del bucle porque
+cada una depende de un solo índice, pero entre la suma y el vector de lectura hay un $\tanh$, y eso
+obliga a construir la rejilla de $T_x \cdot T_y$ vectores de $d_a$ coordenadas de una en una. Una
+frase de sesenta tokens traducida a sesenta pide $3\,600$ de esos vectores, y ninguna de las
+operaciones que los producen es un producto de matrices grande: son sumas y $\tanh$ sobre un bloque
+de tres dimensiones. El hardware que entrena estas redes hace una cosa mucho mejor que las demás, y
+no es ésa.
+
+Hay otra forma de puntuar una pareja que evita el problema entero, y su fórmula cabe en cinco
+símbolos: la atención de Luong, multiplicativa, que es <Leccion slug="luong">la lección siguiente</Leccion>. En vez de proyectar,
+sumar y aplastar, multiplica los dos estados a través de una matriz, con lo que la rejilla completa
+de puntuaciones pasa a ser **un** producto de matrices. La lección compara las dos puntuaciones
+—qué cuesta cada una, qué puede hacer cada una— y ahí empieza a decidirse cómo será el bloque 5.

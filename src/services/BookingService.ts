@@ -16,7 +16,7 @@
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { BookingHistoryPage, SessionType, SingleSessionBookingDetail } from "@/domain/types";
+import type { BookingHistoryPage, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
@@ -55,15 +55,10 @@ export interface CancelByTokenOutput {
   creditsRestored: boolean;
 }
 
-export interface UserBooking {
-  eventId:     string;
-  token:       string;
-  joinToken:   string;
-  sessionType: SessionType;
-  startsAt:    string;
-  endsAt:      string;
-  packSize?:   number;
-}
+// UserBooking now lives in src/domain/types.ts so client components can import it
+// without pulling this module into the browser bundle. Re-exported here because
+// existing callers import it from this service.
+export type { UserBooking } from "@/domain/types";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 

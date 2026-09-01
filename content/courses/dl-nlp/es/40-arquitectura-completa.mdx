@@ -1,0 +1,308 @@
+---
+slug: arquitectura-completa
+title: "Quince cajas, cinco números"
+block: 5
+order: 8
+minutes: 24
+summary: "Descrito, el Transformer está entero desde la lección anterior; construido no, porque ninguna pieza se ha comprometido todavía con un tamaño. El artículo elige cinco números y de ellos sale todo lo demás: las anchuras de las tres proyecciones, la forma de la matriz de salida de multi-head, las filas de la tabla de embeddings y el recuento entero de parámetros. Antes hace falta cerrar la única caja de la figura que no tiene lección detrás, la de arriba del todo, y resulta ser la tabla del bloque 1 leída al revés: la misma matriz que abajo convierte tokens en vectores, arriba convierte un vector en una puntuación por entrada. El artículo la usa en tres sitios y esa decisión se paga en el recuento, donde también se ve que el reparto de los sesenta y tres millones no está donde el dibujo sugiere."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-cinco-numeros
+    type: single
+    prompt: 'Con los cinco números del artículo puestos —$N$, $d_{\text{model}}$, $h$, $d_{\text{ff}}$ y $\lvert V \rvert$—, ¿cuál de estas formas sigue sin quedar determinada?'
+    options:
+      - { id: a, text: 'La de $\mathbf{X}$ a la entrada de un bloque, $T \times d_{\text{model}}$: $T$ es una propiedad del texto, no del modelo, y no es la forma de ningún parámetro.' }
+      - { id: b, text: 'La de $\mathbf{W}^O$, porque el artículo no dice cuántas columnas tiene: sólo se sabe que recibe la concatenación de las $h$ cabezas.' }
+      - { id: c, text: 'La de $\mathbf{E}$, que necesita saber además cuántos documentos tiene el corpus con el que se entrena.' }
+      - { id: d, text: 'La de $\mathbf{W}^Q_i$, que depende de $d_k$, y $d_k$ es un sexto número que la tabla 3 da por separado.' }
+    answer: a
+    explanation: 'La (a), y es lo que conviene guardar del recuento entero: ninguna línea de la cuenta menciona a $T$. Las otras tres sí quedan fijadas. $\mathbf{W}^O$ mide $(h \cdot d_v) \times d_{\text{model}} = 512 \times 512$, porque devolver la anchura del modelo es su trabajo. $\mathbf{E}$ mide $\lvert V \rvert \times d_{\text{model}}$ y el corpus no entra: lo que decide sus filas es el vocabulario, no cuántos textos se leyeron para construirlo. Y $d_k = d_v = d_{\text{model}}/h = 64$ sale del reparto, no de una elección aparte —la tabla 3 lo escribe en una columna propia, pero el número es el cociente de dos que ya están—.'
+    hint: 'Recorre las cuatro formas y pregúntate cuál de ellas cambia al traducir una frase más larga.'
+  - id: q-tabla-compartida
+    type: numeric
+    prompt: 'El artículo usa la misma matriz $\mathbf{E}$ en los tres sitios que la necesitan. Si cada uno tuviera la suya, ¿cuántos parámetros más tendría el modelo base?'
+    answer: 37888000
+    tolerance: 0
+    unit: parámetros
+    explanation: 'Treinta y siete millones ochocientos ochenta y ocho mil: dos copias más de $37\,000 \cdot 512 = 18\,944\,000$. Ponlo al lado del resto y se entiende la decisión: las doce capas del modelo —seis de encoder y seis de decoder— suman $44\,101\,632$, así que no compartir la tabla costaría casi tanto como toda la maquinaria que le da nombre a la arquitectura. Compartirla exige un vocabulario común a los dos idiomas, que es lo que el artículo construye con un BPE (*byte-pair encoding*) entrenado sobre los dos textos a la vez.'
+    hint: 'Cuenta cuántas copias hay ahora y cuántas habría entonces.'
+  - id: q-leer-la-figura
+    type: multi
+    prompt: 'Abres la figura 1 del artículo. Marca lo que vas a encontrarte.'
+    options:
+      - { id: a, text: '<W>Nx</W> junto a un recuadro de trazos quiere decir que lo de dentro se repite $N$ veces, y en el modelo base $N = 6$.' }
+      - { id: b, text: '<W>Add & Norm</W> aparece cinco veces: dos en la columna del encoder y tres en la del decoder, una por subcapa.' }
+      - { id: c, text: 'Una sola flecha cruza de una columna a la otra, y entra en la caja de en medio del decoder.' }
+      - { id: d, text: 'El rótulo <W>Multi-Head Attention</W> aparece tres veces, una por cada llamada a la atención.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras. La (d) falla por un detalle del dibujo que merece mirarse dos veces: llamadas a la atención hay tres, pero rótulos iguales hay dos —la de abajo del decoder lleva <W>Masked Multi-Head Attention</W>, con la palabra de más—. La (a) es la caja que esta lección pone: seis bloques, no seis cabezas. La (b) cuenta las subcapas, dos y tres. Y la (c) es lo que el encoder le entrega al decoder, las claves y los valores, la única línea del dibujo que va de una columna a otra.'
+    hint: 'Cuenta rótulos, no cajas: dos cajas pueden hacer casi lo mismo y llevar nombres distintos.'
+  - id: q-alargar-la-frase
+    type: boolean
+    prompt: 'Pasas de traducir frases de $50$ tokens a traducir textos de $1\,000$. El modelo base necesita más parámetros.'
+    answer: false
+    explanation: 'Falso, y es la propiedad que separa esta arquitectura de la del bloque 3. En el recuento no aparece $T$ por ninguna parte: las proyecciones, el perceptrón por posiciones y los vectores de normalización son los mismos en la posición $3$ y en la $300$, y la codificación posicional es una fórmula y no una tabla —si el artículo hubiera aprendido un vector por posición, ahí sí habría un $T_{\max} \cdot d_{\text{model}}$ que crecería—. Lo que sí crece es el trabajo: la rejilla de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> cuesta $T^{2}$, y con mil tokens eso ya se nota. Más cuentas con los mismos pesos.'
+    hint: '¿Aparece $T$ en la forma de alguna de las matrices del modelo?'
+  - id: q-salida-del-decoder
+    type: predict-output
+    language: python
+    prompt: 'Ésta es la caja de arriba del todo, con la tabla compartida y cuatro posiciones escritas. ¿Qué imprime?'
+    code: |
+      import numpy as np
+
+      # E es la tabla compartida; X_dec sale del ultimo bloque
+      V, d_model, T_y = 37000, 512, 4
+      rng = np.random.default_rng(0)
+      E = rng.normal(size=(V, d_model))
+      X_dec = rng.normal(size=(T_y, d_model))
+
+      O = X_dec @ E.T
+      P = np.exp(O - O.max(axis=1, keepdims=True))
+      P /= P.sum(axis=1, keepdims=True)
+      print(P.shape, np.allclose(P.sum(axis=1), 1.0))
+    answer: "(4, 37000) True"
+    explanation: 'Una fila por posición escrita y una columna por entrada del vocabulario, con cada fila sumando $1$. Las dos mitades dicen lo mismo desde dos sitios: la forma dice que la salida del modelo no es un token sino una distribución por posición, y la suma dice que el reparto es el de siempre, el mismo *softmax* por filas que lleva usándose desde la primera lección del bloque. Fíjate en que la matriz que hace el trabajo es $\mathbf{E}$ transpuesta, sin un solo parámetro nuevo: la tabla que abajo se lee por filas, aquí se lee por columnas.'
+    hint: '¿Qué eje normaliza `axis=1`, y cuántas columnas tiene $\mathbf{X}^{\text{dec}}\mathbf{E}^{\top}$?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.4 comparte la tabla E entre las dos entradas y la salida y la multiplica por √d_model; su tabla 3, fila «base», da tus cinco números. Los 65 millones los reconstruyes tú, y no cuadran al detalle con lo que declara.'
+  - kind: paper
+    title: 'Using the Output Embedding to Improve Language Models'
+    authors: 'Press y Wolf'
+    year: '2017'
+    venue: 'arXiv:1608.05859'
+    lang: en
+    url: 'https://arxiv.org/abs/1608.05859'
+    note: 'El Transformer lo cita para leer E al revés en la salida. Aquí está el porqué: atar la matriz de entrada con la de salida baja la perplejidad y reduce el modelo a menos de la mitad. Es sobre LSTM; la cuenta de parámetros es tuya.'
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 8. */}
+
+Descrito, el Transformer ya está entero. La lección anterior, sobre el encoder, el decoder y las
+máscaras, cerró la última operación que quedaba suelta, y con ella el modelo sabe leer una frase,
+escribir otra y no mirar lo que todavía no ha escrito. Construido no está. Lo que hay escrito son
+letras —$d_k$, $d_{\text{ff}}$, $h$, $N$—, y un programa no reserva memoria para una letra: hasta
+que cada una no valga un número, no hay ni una matriz que crear.
+
+Los números del artículo son cinco, y ponerlos encima del dibujo es lo que cierra el bloque. Cinco y
+no quince: fijados ésos, todas las formas del modelo quedan determinadas —incluidas un par que
+parecen libres y no lo son—, y de ellos sale el recuento entero de parámetros y, con él, el reparto,
+que no está donde el dibujo sugiere. Antes hay que cerrar la caja que ninguna lección construyó, la
+que corona la columna del decoder, y su respuesta viene de mucho más atrás que el resto del bloque:
+es la tabla de *embeddings* de <Leccion slug="embeddings-densos">la lección sobre las representaciones densas</Leccion>, leída
+al revés.
+
+<Explorable
+  id="transformer-architecture"
+  caption="Pincha cualquiera de las quince cajas: el panel dice qué hace y en qué lección se construyó. Sólo una nombra a ésta, y es la de arriba del todo."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Elegir un Transformer es elegir cinco números; cuánto mide cada matriz, cuántas hay y cuántos
+parámetros suman sale de ellos sin ninguna decisión más.
+</Callout>
+
+La figura del artículo está en inglés y este bloque la ha ido construyendo en español, así que lo
+primero es la correspondencia, rótulo por rótulo:
+
+| Rótulo en la figura | Qué caja es | Dónde se construyó |
+|---|---|---|
+| <W>Input Embedding</W>, <W>Output Embedding</W> | la tabla $\mathbf{E}$, la misma en las dos | <Leccion slug="embeddings-densos">la lección sobre las representaciones densas</Leccion> |
+| <W>Outputs (shifted right)</W> | lo ya escrito, corrido una posición | la lección anterior, sobre el decoder y su máscara |
+| <W>Positional Encoding</W> | $\text{PE}$, sumada una sola vez abajo del todo | <Leccion slug="codificacion-posicional">la lección sobre la codificación posicional</Leccion> |
+| <W>Multi-Head Attention</W> (izquierda) | la auto-atención del encoder | <Leccion slug="self-attention">auto-atención</Leccion>, <Leccion slug="scaled-dot-product">producto interno escalado</Leccion> y <Leccion slug="multi-head">cabezas</Leccion> |
+| <W>Masked Multi-Head Attention</W> | la misma, con $\mathbf{M}$ sumada a las puntuaciones | la lección anterior, sobre las máscaras |
+| <W>Multi-Head Attention</W> (centro de la derecha) | la atención encoder-decoder | la lección anterior, sobre la subcapa que junta las dos columnas |
+| <W>Add & Norm</W>, cinco veces | $\text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right)$ | <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> |
+| <W>Feed Forward</W>, dos veces | el perceptrón por posiciones | <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> |
+| <W>Nx</W> | $N$ bloques apilados | esta lección |
+| <W>Linear</W>, <W>Softmax</W> | la proyección al vocabulario | esta lección |
+
+## La caja de arriba lee la tabla del bloque 1 al revés
+
+De lo que sale del último bloque del decoder, la fila $t$ es un vector de $d_{\text{model}}$
+coordenadas, $\mathbf{x}^{\text{dec}}_t$, y lo que hace falta en esa posición es una probabilidad por
+cada entrada del vocabulario. El artículo dibuja dos cajas para ese salto: una matriz que lleva de
+$d_{\text{model}}$ a $\lvert V \rvert$ coordenadas y el reparto de siempre. Esa matriz podría ser
+suya, y no lo es:
+
+$$
+\hat{\mathbf{y}}_t = \text{softmax}\left(\mathbf{E}\,\mathbf{x}^{\text{dec}}_t\right) \in \mathbb{R}^{\lvert V \rvert},
+$$
+
+donde $\mathbf{E} \in \mathbb{R}^{\lvert V \rvert \times d_{\text{model}}}$ es la tabla de
+*embeddings* del bloque 1, la misma que abajo del todo cambia cada token por su vector. La
+coordenada que le toca a la entrada $w$ dentro del *softmax* es
+$\mathbf{e}_w^{\top}\mathbf{x}^{\text{dec}}_t$: el producto escalar entre la fila de esa entrada y
+lo que el decoder lleva calculado. La entrada más probable es la que más apunta en la dirección que
+la posición pide.
+
+Es la tabla leída en la otra dirección. Abajo se entra con una entrada y se sale con su vector;
+aquí se entra con un vector y se sale con una puntuación por entrada. Las $T_y$ posiciones salen a
+la vez del mismo producto, como todo en este bloque:
+
+$$
+\mathbf{X}^{\text{dec}}\mathbf{E}^{\top} \in \mathbb{R}^{T_y \times \lvert V \rvert},
+$$
+
+con el *softmax* por filas. Una fila por posición escrita, una columna por entrada del vocabulario,
+y ni un parámetro nuevo en toda la caja.
+
+### La misma tabla en tres sitios
+
+El artículo va más lejos que eso y usa esa matriz *tres* veces: en el *embedding* de entrada, en
+el de salida y en la proyección al vocabulario. Eso exige un vocabulario común a los dos idiomas, y
+lo tiene: sus $37\,000$ entradas salen de un BPE (*byte-pair encoding*) entrenado sobre los dos
+textos a la vez, la técnica de <Leccion slug="tokenizacion">la lección sobre la tokenización</Leccion>. Una tabla de
+$37\,000 \times 512$ son $18\,944\,000$ parámetros, y lo que se compra compartiéndola es no pagarla
+tres veces.
+
+Queda un factor que <Leccion slug="codificacion-posicional">la lección sobre la codificación posicional</Leccion> dejó fuera. Allí
+la entrada de la primera capa se escribió $\mathbf{x}_t = \mathbf{e}_{w_t} + \text{PE}_t$; el
+artículo multiplica el primer sumando:
+
+$$
+\mathbf{x}_t = \sqrt{d_{\text{model}}}\;\mathbf{e}_{w_t} + \text{PE}_t.
+$$
+
+Con los números delante se ve para qué. Todas las filas de $\text{PE}$ miden lo mismo,
+$\sqrt{256} = 16$ —es la cuenta $\text{PE}_{\text{pos}}^{\top}\text{PE}_{\text{pos}} =
+d_{\text{model}}/2$ de aquella lección—, mientras que una fila de $\mathbf{E}$ recién inicializada,
+con coordenadas pequeñas alrededor de cero, mide alrededor de $1$. Sumados así, el contenido queda
+debajo de la posición; multiplicar por $\sqrt{512} \approx 22.6$ los pone en el mismo orden de
+magnitud. El artículo escribe la multiplicación y no la justifica: ésta es la razón que se le suele
+dar, no una que él dé.
+
+## Cinco números fijan todas las formas
+
+La tabla 3 del artículo tiene una fila por cada modelo que entrenaron. La primera, la que llaman
+<W>base</W>, es la que ha ido apareciendo suelta a lo largo del bloque:
+
+| Número | Valor | Qué fija |
+|---|---|---|
+| $N$ | $6$ | cuántos bloques se apilan en cada columna |
+| $d_{\text{model}}$ | $512$ | la anchura que entra y sale de toda subcapa |
+| $h$ | $8$ | cuántas cabezas tiene cada capa de atención |
+| $d_{\text{ff}}$ | $2\,048$ | la anchura interior del perceptrón por posiciones |
+| $\lvert V \rvert$ | $37\,000$ | cuántas filas tiene $\mathbf{E}$ |
+
+Todo lo demás sale de esos cinco. El reparto de <Leccion slug="multi-head">la lección sobre la atención
+multi-head</Leccion> da $d_k = d_v = d_{\text{model}}/h = 64$, y con él $\mathbf{W}^Q_i$, $\mathbf{W}^K_i$ y
+$\mathbf{W}^V_i$ miden $512 \times 64$ y $\mathbf{W}^O$ mide
+$(h \cdot d_v) \times d_{\text{model}} = 512 \times 512$; el perceptrón por posiciones sube a
+$2\,048$ y vuelve a bajar; cada normalización aporta dos vectores de $512$. Lo que no está en la
+lista tampoco está en ninguna forma: ni $T$, ni el tamaño del *batch*. Esa tabla tiene además dos
+columnas que esta lección no toca, *dropout* y *label smoothing*: son del entrenamiento y no de la
+arquitectura, y quedan fuera del curso.
+
+### Un tercio del modelo es una tabla de búsqueda
+
+Un bloque del encoder pesa $3\,150\,336$ parámetros —la cuenta de <Leccion slug="bloque-transformer">la lección sobre
+los residuales y el *layer norm*</Leccion>, con sus sesgos y sus vectores de normalización dentro—. Uno del
+decoder lleva exactamente una atención y una normalización más:
+
+$$
+3\,150\,336 + 1\,048\,576 + 1\,024 = 4\,199\,936.
+$$
+
+El modelo entero son seis de cada, más la tabla que las dos columnas comparten:
+
+$$
+6 \cdot 3\,150\,336 + 6 \cdot 4\,199\,936 + 37\,000 \cdot 512 = 63\,045\,632.
+$$
+
+Ahí está el reparto que el dibujo esconde. Son $18.9$ millones de encoder, $25.2$ de decoder y
+$18.9$ de tabla: un $30$, un $40$ y un $30$ por ciento. Lo que más pesa de una sola pieza no es
+ninguna de las quince cajas, es la tabla de búsqueda, que ella sola supera a las seis capas del
+encoder juntas —$18\,944\,000$ frente a $18\,902\,016$—. Y de ahí que el artículo la comparta: las
+dos copias que se ahorra suman $37\,888\,000$ parámetros, casi tanto como las doce capas.
+
+Esa cuenta es una reconstrucción a partir de la figura, no la contabilidad del artículo, y conviene
+decir en qué se separan. El artículo declara $65$ millones y aquí salen $63.0$. Los dos que faltan
+caben enteros en dos detalles que la figura no muestra: el tamaño exacto del vocabulario —con
+$41\,000$ entradas la cifra cuadraría— y dónde pone cada implementación sus sesgos. La misma receta
+aplicada a la otra fila de la tabla 3, la que llaman <W>big</W> ($d_{\text{model}} = 1\,024$, $h = 16$,
+$d_{\text{ff}} = 4\,096$), da $214.2$ millones frente a los $213$ declarados.
+
+## El recuento en una función
+
+Toda la sección anterior cabe en ocho líneas de aritmética con números enteros. Mira tres cosas: los
+tres porcentajes, la diferencia entre la tabla y el encoder entero, y qué le pasa al total si cada
+caja tuviera su propia tabla.
+
+<PyCell code={`
+def parametros(N, d_model, h, d_ff, V):
+    d_k = d_v = d_model // h                               # no se eligen: salen de h
+    atencion = 3 * h * d_model * d_k + h * d_v * d_model   # las tres por cabeza, y W^O
+    ffn = 2 * d_model * d_ff + d_ff + d_model              # dos capas y sus dos sesgos
+    norm = 2 * d_model                                     # gamma y beta
+    enc = N * (atencion + ffn + 2 * norm)                  # dos subcapas, dos normalizaciones
+    dec = N * (2 * atencion + ffn + 3 * norm)              # tres y tres
+    return enc, dec, V * d_model                           # la tabla, una para tres cajas
+
+
+enc, dec, tabla = parametros(N=6, d_model=512, h=8, d_ff=2048, V=37000)
+total = enc + dec + tabla
+
+for nombre, valor in (("encoder", enc), ("decoder", dec), ("tabla E", tabla)):
+    print(f"{nombre:>8} {valor:>12,}   {100 * valor / total:5.1f} %")
+print(f"{'total':>8} {total:>12,}")
+
+print("\\nla tabla menos el encoder entero:", tabla - enc)
+print("sin compartirla, dos copias mas :", total + 2 * tabla)
+
+grande = parametros(N=6, d_model=1024, h=16, d_ff=4096, V=37000)
+print("\\nla fila big de la tabla 3      :", sum(grande))
+`} />
+
+Los tres porcentajes salen $30.0$, $40.0$ y $30.0$, y el decoder pesa más que el encoder por lo
+único en lo que se diferencian: una subcapa de atención más, seis veces. La tabla le saca al encoder
+$41\,984$ parámetros, que sobre dieciocho millones es empatar. Y sin compartirla el modelo se iría a
+$100\,933\,632$, de $63$ millones a $101$ por una decisión que no cambia ni una operación del
+dibujo.
+
+La última línea cambia los cinco argumentos por los de la fila <W>big</W> y da $214\,171\,648$.
+Lo que no vas a poder
+cambiar es la longitud del texto, porque $T$ no aparece en ninguna línea de la función: no es que se
+haya quedado fuera de la cuenta, es que no hay ninguna matriz cuya forma dependa de ella.
+
+## Comprueba tu intuición
+
+Cinco preguntas: qué forma no fijan los cinco números, qué costaría no compartir la tabla, qué vas a
+encontrarte al abrir la figura, si un texto más largo pide más parámetros y qué sale por arriba del
+decoder.
+
+<Quiz id="q-cinco-numeros" />
+
+<Quiz id="q-tabla-compartida" />
+
+<Quiz id="q-leer-la-figura" />
+
+<Quiz id="q-alargar-la-frase" />
+
+<Quiz id="q-salida-del-decoder" />
+
+---
+
+Ya no queda nada que describir. Las quince cajas tienen su operación, sus formas y sus números, y
+eso es justo lo que hace falta para escribir el modelo entero y ver qué contesta. Lo que no cabe es
+el tamaño: sesenta y tres millones de parámetros no se mueven dentro de un navegador, así que lo que
+se construye es la arquitectura con anchuras de juguete —las mismas fórmulas, dos capas en lugar de
+seis, dos cabezas en lugar de ocho— y una frase corta que se pueda seguir a ojo.
+
+Eso es <Leccion slug="proyecto-transformer">la lección siguiente, el proyecto</Leccion>: un Transformer desde cero. Casi todas las piezas
+están escritas ya, cada una en el desafío de su lección —el *softmax* por filas, la atención con su
+máscara, el *layer norm*, el perceptrón por posiciones, la codificación posicional—, y lo que queda
+es ensamblarlas y hacer una pasada hacia delante de principio a fin: de una frase de tokens a una
+probabilidad por entrada del vocabulario, con los mapas de atención a la vista por el camino.
+Entrenar de verdad pide una máquina que un navegador no tiene, y eso tiene su sitio más adelante en
+el bloque.

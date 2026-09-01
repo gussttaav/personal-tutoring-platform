@@ -13,13 +13,16 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { useSessionsAnchor } from "@/hooks/useSessionsAnchor";
 import FooterModals from "@/features/landing/FooterModals";
 import ComingSoonModal from "@/components/ComingSoonModal";
 import BrandLogo from "@/components/BrandLogo";
 
 export default function Footer() {
   const t = useTranslations("footer");
-  const [comingSoonModal, setComingSoonModal] = useState<"courses" | "blog" | null>(null);
+  const [comingSoonModal, setComingSoonModal] = useState<"blog" | null>(null);
+  const onSessionsClick = useSessionsAnchor();
 
   return (
     <footer
@@ -122,29 +125,44 @@ export default function Footer() {
               {t("explore")}
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {([t("courses"), t("blog")] as const).map((label, i) => (
-                <button
-                  key={label}
-                  onClick={() => setComingSoonModal(i === 0 ? "courses" : "blog")}
-                  style={{
-                    fontSize:   "13px",
-                    color:      "#86948a",
-                    background: "none",
-                    border:     "none",
-                    padding:    0,
-                    cursor:     "pointer",
-                    fontFamily: "inherit",
-                    textAlign:  "left",
-                    transition: "color 0.15s",
-                  }}
-                  onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
-                  onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
-                >
-                  {label}
-                </button>
-              ))}
-              <a
-                href="#sessions"
+              {/* COURSE-P6-03: Cursos is a real link now; the blog keeps the modal. */}
+              <Link
+                href="/cursos"
+                style={{
+                  fontSize:       "13px",
+                  color:          "#86948a",
+                  textDecoration: "none",
+                  transition:     "color 0.15s",
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
+              >
+                {t("courses")}
+              </Link>
+              <button
+                onClick={() => setComingSoonModal("blog")}
+                style={{
+                  fontSize:   "13px",
+                  color:      "#86948a",
+                  background: "none",
+                  border:     "none",
+                  padding:    0,
+                  cursor:     "pointer",
+                  fontFamily: "inherit",
+                  textAlign:  "left",
+                  transition: "color 0.15s",
+                }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
+              >
+                {t("blog")}
+              </button>
+              {/* COURSE-P6-03: `#sessions` lives in InteractiveShell, which is only on the
+                  landing page — a bare fragment link was dead everywhere else, and the footer
+                  is now rendered on /cursos too. `/#sessions` navigates home first. */}
+              <Link
+                href="/#sessions"
+                onClick={onSessionsClick}
                 style={{
                   fontSize:       "13px",
                   color:          "#86948a",
@@ -155,7 +173,7 @@ export default function Footer() {
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
               >
                 {t("mentoring")}
-              </a>
+              </Link>
             </div>
           </div>
 

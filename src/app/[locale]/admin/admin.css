@@ -944,10 +944,107 @@
   margin-top: 4px;
 }
 
+/* ─── Course announce ────────────────────────────────────────────────── */
+.announce-hint { font-size: 12px; color: var(--text-dim); margin: 0 0 16px; }
+
+.announce-update-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.announce-update-fields .schedule-setting input { min-width: 340px; max-width: 100%; }
+
+.announce-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--warning);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-sm);
+}
+.announce-warn .material-symbols-outlined { font-size: 16px !important; flex-shrink: 0; }
+
+.announce-key { margin: 0; font-size: 12px; color: var(--text-dim); }
+.announce-key code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--green);
+  background: var(--surface-high);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+}
+
+.announce-stats { margin: 20px 0 16px; }
+.announce-split { font-size: 11px; color: var(--text-dim); margin-top: auto; }
+
+.announce-samples {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+.announce-sample {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.announce-sample-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.announce-sample-head strong {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The email template ships its own dark card on its own background, so the frame just needs
+   to not fight it. Inert by design — the iframe has no sandbox permissions. */
+.announce-frame {
+  width: 100%;
+  height: 520px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #0d0f10;
+}
+
+.announce-empty {
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.announce-empty strong { color: var(--text); }
+
+.announce-send {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.announce-send .adjust-reason { min-width: 260px; font-family: var(--font-mono); }
+.announce-send .announce-hint { margin: 8px 0 0; }
+
+.announce-result { margin-top: 14px; font-size: 13px; }
+.announce-result p { margin: 0 0 4px; }
+
 /* ─── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
   .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .two-col { grid-template-columns: 1fr; }
+  .announce-samples { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   .admin-nav-inner { grid-template-columns: 1fr auto; padding: 10px 16px; }

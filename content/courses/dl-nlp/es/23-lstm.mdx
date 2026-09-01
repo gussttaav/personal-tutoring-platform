@@ -1,0 +1,502 @@
+---
+slug: lstm
+title: "LSTM: memoria con compuertas"
+block: 3
+order: 5
+minutes: 30
+summary: "Un segundo estado que avanza sumándose en vez de cruzar una matriz, y tres compuertas que deciden qué se conserva, qué se escribe y qué sale. Cada una llega arreglando un fallo concreto de la versión anterior, y la vía aditiva cambia el producto que mata al gradiente: en lugar de una potencia de la matriz recurrente, un producto de números que la red elige coordenada a coordenada y puede dejar en uno."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-sobrevive
+    type: single
+    prompt: '¿Por qué el estado de celda de una LSTM no condena al gradiente a la potencia exponencial de la lección anterior?'
+    options:
+      - { id: a, text: 'Porque por esa vía el estado avanza con $\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \dots$ y ninguna matriz lo multiplica: a distancia $d$ el factor es un producto de $d$ números de $(0,1)$ que la red calcula coordenada a coordenada, y puede dejarlos en casi $1$.' }
+      - { id: b, text: 'Porque las compuertas usan $\sigma$ en lugar de $\tanh$, y $\sigma$ no se satura.' }
+      - { id: c, text: 'Porque la LSTM tiene cuatro veces más pesos que la RNN vanilla, y con más pesos el gradiente se reparte y no se desvanece.' }
+      - { id: d, text: 'Porque el estado de celda no interviene en la pérdida, así que no hay gradiente que se desvanezca por él.' }
+    answer: a
+    explanation: 'La (a) es la lección entera. Lo que mataba al gradiente no era el número de pasos sino que cada paso lo multiplicara por la misma $\mathbf{W}_{hh}^{\top}$; en la vía aditiva el paso lo multiplica por $f_{t,j}$, un escalar por coordenada, y el producto $\prod_t f_{t,j}$ se queda donde la red quiera dejarlo. La (b) invierte lo que ya viste en el explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>: $\sigma$ se satura, y aquí eso juega a favor —un $\mathbf{f}_t$ saturado en $1$ es una memoria que se conserva—. La (c) confunde tamaño con estructura: cuadruplicar los pesos de una RNN vanilla no cambia en nada el producto de la lección anterior. La (d) es falsa: $\mathbf{c}_t$ alcanza la pérdida a través de $\mathbf{h}_t = \mathbf{o}_t \odot \tanh(\mathbf{c}_t)$, y es precisamente por ahí por donde entra el gradiente que después viaja hacia atrás.'
+    hint: 'Escribe qué multiplica a $\mathbf{c}_{t-1}$ en la recurrencia de la celda, y compáralo con lo que multiplicaba a $\boldsymbol{\delta}_{t+1}$ en la RNN.'
+  - id: q-que-compuerta
+    type: single
+    prompt: 'Una coordenada del estado de celda guarda que el sujeto de la frase era plural. Hay que conservarlo durante toda una oración de relativo, pero sin que gobierne la respuesta de la red en esas posiciones intermedias. ¿Qué hacen las compuertas de esa coordenada mientras dura el relativo?'
+    options:
+      - { id: a, text: '$f_{t}$ cerca de $1$ para que el plural sobreviva, $i_{t}$ cerca de $0$ para que nada lo pise, y $o_{t}$ cerca de $0$ para que el resto de la red no lo vea todavía.' }
+      - { id: b, text: '$f_{t}$ cerca de $0$, porque conservar es no dejar entrar nada nuevo, e $i_{t}$ cerca de $1$ para reescribir el plural en cada paso.' }
+      - { id: c, text: 'Las tres cerca de $1$: si algo hay que conservar, todo tiene que estar abierto.' }
+      - { id: d, text: 'No hace falta ninguna: mientras nadie escriba en esa coordenada, la celda conserva su valor sola.' }
+    answer: a
+    explanation: 'La (a) reparte los tres trabajos entre las tres compuertas, que es para lo que están: $\mathbf{f}_t$ decide qué se conserva, $\mathbf{i}_t$ qué se escribe y $\mathbf{o}_t$ qué sale. La (b) le da la vuelta a la de olvido —$f_{t,j} = 0$ multiplica la coordenada por cero, o sea la borra— y confunde escribir con guardar. La (c) es la que más se parece a una respuesta razonable y falla en la tercera: con $o_{t}$ abierta, el plural entra en $\mathbf{h}_t$ y por tanto en la respuesta de esas posiciones intermedias, que es justo lo que el enunciado pide evitar. La (d) describe la versión aditiva pura, sin compuertas, y por eso mismo no distingue esa coordenada de las que sí hay que ir reescribiendo.'
+  - id: q-parametros
+    type: numeric
+    prompt: 'Una LSTM con un estado de $d_h = 64$ coordenadas sobre *embeddings* de $d_{\text{model}} = 128$. ¿Cuántos pesos suman sus ocho matrices y sus cuatro sesgos?'
+    answer: 49408
+    tolerance: 0
+    explanation: 'Cada una de las cuatro piezas —$\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ y $\tilde{\mathbf{c}}_t$— tiene la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: $64 \cdot 64 = 4\,096$ de su $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ de su $\mathbf{W}_{x\ast}$ y $64$ del sesgo, o sea $12\,352$. Cuatro veces eso da $49\,408$, y ése es el precio de las compuertas: la misma cuenta de allí multiplicada por cuatro. Lo que no cambia es lo que importaba de aquella cuenta —tampoco aquí aparece $T$—, así que la LSTM sigue leyendo cualquier longitud con el mismo juego de pesos.'
+    hint: 'Cuenta primero una sola de las cuatro piezas: es la misma recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>.'
+  - id: q-producto
+    type: predict-output
+    language: python
+    prompt: 'Cuarenta pasos de distancia, y en cada uno el gradiente se multiplica por el mismo número: en la RNN por un factor que fija $\mathbf{W}_{hh}$, en la celda de la LSTM por la compuerta de olvido. ¿Qué imprime?'
+    code: |
+      for factor in [0.6, 0.99]:
+          print(round(factor ** 40, 3))
+    answer: |
+      0.0
+      0.669
+    explanation: 'Con $0.6$ por paso, cuarenta pasos dejan $4 \times 10^{-9}$, que `round(..., 3)` imprime como $0.0$: el desvanecimiento de la lección anterior. Con $0.99$ queda el $66.9\,\%$ de la señal después de cuarenta pasos, y a doscientos todavía el $13\,\%$. La diferencia entre las dos filas no está en la fórmula —las dos son el mismo producto— sino en de dónde sale la base: en la RNN la fija el radio espectral de una matriz compartida por todas las coordenadas y todas las secuencias, y en la LSTM la calcula la red para esta coordenada y este paso.'
+    hint: 'Los dos son el mismo cálculo, $x^{40}$, con dos bases muy parecidas y muy distintas.'
+  - id: q-que-no-arregla
+    type: multi
+    prompt: 'Marca todo lo que la LSTM **no** garantiza.'
+    options:
+      - { id: a, text: 'Que el gradiente no se desvanezca nunca: si la red aprende $f_{t,j}$ alrededor de $0.7$, el producto de esa coordenada se hunde igual, sólo que porque la red lo ha decidido y no porque la arquitectura lo imponga.' }
+      - { id: b, text: 'Que el gradiente no explote: por las compuertas y por las matrices $\mathbf{W}_{h\ast}$ sigue habiendo caminos multiplicativos, así que el recorte del gradiente de la lección anterior se sigue usando.' }
+      - { id: c, text: 'Que la red lea secuencias de cualquier longitud sin truncar ni rellenar.' }
+      - { id: d, text: 'Que los pesos se compartan entre posiciones.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b) son las dos concesiones, y decirlas en voz alta es parte de entender qué se ha comprado: la vía aditiva hace **alcanzable** un factor de $1$ por paso, no obligatorio, y no es el único camino de vuelta que tiene la red. Por eso las LSTM se entrenan con recorte del gradiente igual que las RNN. La (c) y la (d) sí están garantizadas, y no son mérito de las compuertas sino de la recurrencia que la LSTM hereda de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: ninguna de las formas de sus doce piezas menciona $T$, y hay un solo juego de pesos para todas las posiciones.'
+    hint: 'Dos de las cuatro afirmaciones son propiedades de cualquier recurrencia, y las trae la RNN vanilla de serie.'
+challenges:
+  - id: ch-lstm-paso
+    prompt: |
+      Escribe un paso de LSTM: `paso_lstm(h, c, x, P)` recibe el estado oculto y el estado de
+      celda anteriores, el vector del token de turno, y un diccionario `P` con los pesos de las
+      cuatro piezas —`P["f"]`, `P["i"]`, `P["o"]` y `P["c"]`, cada una la tripleta
+      `(Wx, Wh, b)`—. Devuelve la pareja `(h_nuevo, c_nuevo)`, en ese orden.
+
+      Las cuatro se calculan igual, $\mathbf{W}_{x\ast}\mathbf{x}_t + \mathbf{W}_{h\ast}\mathbf{h}_{t-1} + \mathbf{b}_{\ast}$;
+      lo único que cambia es la activación: $\sigma$ para las tres compuertas, $\tanh$ para el
+      candidato. No escribas en los arrays que recibes.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def paso_lstm(h, c, x, P):
+          # tu código aquí
+          pass
+    tests:
+      - name: "devuelve los dos estados, con la anchura del estado"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "fioc"}
+          h, c, x = rng.normal(size=4), rng.normal(size=4), rng.normal(size=3)
+          salida = paso_lstm(h, c, x, P)
+          assert salida is not None, 'paso_lstm tiene que devolver (h_nuevo, c_nuevo), no imprimirlos'
+          h1, c1 = salida
+          assert np.asarray(h1).shape == (4,) and np.asarray(c1).shape == (4,), 'los dos estados tienen d_h coordenadas'
+      - name: "la compuerta de olvido abierta y la de entrada cerrada conservan la celda"
+        code: |
+          import numpy as np
+          sesgos = {"f": 40.0, "i": -40.0, "o": 0.0, "c": 0.0}
+          P = {k: (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, b)) for k, b in sesgos.items()}
+          c = np.array([0.7, -0.2, 1.5, 0.0])
+          h1, c1 = paso_lstm(np.zeros(4), c, np.zeros(3), P)
+          assert np.allclose(c1, c, atol=1e-8), 'con f = 1 e i = 0 la celda tiene que salir intacta: c_t = f (*) c_{t-1} + i (*) candidato'
+      - name: "la compuerta de olvido cerrada borra lo anterior"
+        code: |
+          import numpy as np
+          sesgos = {"f": -40.0, "i": 0.0, "o": 0.0, "c": 0.0}
+          P = {k: (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, b)) for k, b in sesgos.items()}
+          _, a = paso_lstm(np.zeros(4), np.array([0.7, -0.2, 1.5, 0.0]), np.zeros(3), P)
+          _, b = paso_lstm(np.zeros(4), np.array([-3.0, 9.0, 0.1, 2.0]), np.zeros(3), P)
+          assert np.allclose(a, b, atol=1e-8), 'con f = 0 el estado de celda anterior no puede influir en el nuevo'
+      - name: "el estado oculto sale de la celda por la compuerta de salida"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(11)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "fioc"}
+          h, c, x = rng.normal(size=4), rng.normal(size=4), rng.normal(size=3)
+          h1, c1 = paso_lstm(h, c, x, P)
+          Wx, Wh, b = P["o"]
+          o = 1.0 / (1.0 + np.exp(-(Wx @ x + Wh @ h + b)))
+          assert np.allclose(h1, o * np.tanh(c1)), 'h_t = o_t (*) tanh(c_t), y con la celda NUEVA, no con la anterior'
+      - name: "no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "fioc"}
+          h, c, x = rng.normal(size=4), rng.normal(size=4), rng.normal(size=3)
+          copias = [h.copy(), c.copy(), x.copy()]
+          paso_lstm(h, c, x, P)
+          assert all(np.array_equal(u, v) for u, v in zip([h, c, x], copias)), 'no escribas en los arrays que recibes'
+    solution: |
+      import numpy as np
+
+
+      def paso_lstm(h, c, x, P):
+          def entra(k):
+              Wx, Wh, b = P[k]
+              return Wx @ x + Wh @ h + b
+
+          def sigmoide(z):
+              return 1.0 / (1.0 + np.exp(-z))
+
+          f, i, o = sigmoide(entra("f")), sigmoide(entra("i")), sigmoide(entra("o"))
+          c_nuevo = f * c + i * np.tanh(entra("c"))
+          return o * np.tanh(c_nuevo), c_nuevo
+    explanation: |
+      Las cuatro piezas comparten la forma del argumento, así que `entra` la escribe una vez y las
+      cuatro llamadas sólo se diferencian en la clave y en la activación. Lo que la solución tiene
+      que respetar son dos órdenes. El estado de celda se actualiza **antes** que el oculto, porque
+      $\mathbf{h}_t = \mathbf{o}_t \odot \tanh(\mathbf{c}_t)$ lee la celda nueva y no la vieja —usar
+      `c` en esa última línea pasa los tres primeros tests y falla el cuarto—. Y las cuatro piezas se
+      calculan con el $\mathbf{h}_{t-1}$ que entró, no con el que se va a devolver: por eso `entra`
+      cierra sobre `h` y `c_nuevo` se guarda en una variable propia en vez de sobrescribir `c`, que
+      además es lo que mantiene intactos los arrays recibidos.
+reading:
+  - kind: paper
+    title: 'Long Short-Term Memory'
+    authors: 'Hochreiter y Schmidhuber'
+    year: '1997'
+    venue: 'Neural Computation 9(8)'
+    lang: en
+    url: 'https://www.bioinf.jku.at/publications/older/2604.pdf'
+    note: 'El artículo que la introdujo. Trae el estado de celda y el flujo constante de error que lo recorre —tu vía aditiva—, pero sólo con compuertas de entrada y salida: la de olvido la añaden Gers, Schmidhuber y Cummins en 2000.'
+  - kind: blog
+    title: 'Understanding LSTM Networks'
+    authors: 'Christopher Olah'
+    year: '2015'
+    venue: 'colah.github.io'
+    lang: en
+    url: 'https://colah.github.io/posts/2015-08-Understanding-LSTMs/'
+    note: 'Recorre con diagramas las tres compuertas y el estado de celda como «cinta transportadora» —la figura de esta lección—, y de paso presenta la GRU. Dice por qué la vía aditiva ayuda al gradiente; no lo deriva, eso lo has hecho tú.'
+  - kind: paper
+    title: 'LSTM: A Search Space Odyssey'
+    authors: 'Greff, Srivastava, Koutník, Steunebrink y Schmidhuber'
+    year: '2017'
+    venue: 'arXiv:1503.04069'
+    lang: en
+    url: 'https://arxiv.org/abs/1503.04069'
+    note: 'Ocho variantes de la LSTM en 5 400 entrenamientos: lo que de verdad importa es la compuerta de olvido y la activación de salida; acoplar entrada y olvido —lo que hará la GRU— casi no cambia nada. Ninguna variante supera a la estándar.'
+---
+
+{/* COURSE-P5-03 — Bloque 3, lección 5. */}
+
+La lección anterior, sobre el gradiente que se desvanece, dejó el diagnóstico cerrado: lo que hunde o
+dispara la señal de vuelta no es el valor de los pesos sino la forma del camino, y mientras cada paso
+hacia atrás cruce la misma matriz, el resultado será una potencia de la distancia. También dejó
+apuntada la salida —una vía por la que el estado avance sumando— y el nombre de la red que la lleva,
+la LSTM (*long short-term memory*). Nombrarla no es construirla: una memoria que sólo suma tiene un
+defecto tan grave como el que arregla, y es que nunca borra nada. Falta lo difícil, que es quién
+decide, paso a paso, qué se conserva, qué se escribe encima y qué de lo guardado sale a la luz.
+
+Que son tres decisiones y no una se ve en una frase corriente. Toma <W>Las cámaras que el
+ayuntamiento instaló el año pasado en la plaza no funcionan</W>. Para conjugar <W>funcionan</W> hay
+que arrastrar el plural de <W>cámaras</W> doce posiciones, sin que <W>ayuntamiento</W> ni <W>plaza</W>
+—los dos en singular, los dos más cerca— lo pisen por el camino. Arrastrarlo intacto es una cosa;
+meterlo en la memoria cuando aparece <W>cámaras</W> y no en cada palabra que pasa es otra; y tenerlo
+guardado durante esas doce posiciones **sin** que gobierne lo que la red responde en ellas es una
+tercera. La RNN (*recurrent neural network*) vanilla hace las tres con el mismo gesto, porque sólo
+tiene un gesto: reescribir entero $\mathbf{h}_t$ en cada paso. Por eso no puede hacer ninguna bien.
+
+Separar los tres trabajos empieza por separar los dos estados. Junto al $\mathbf{h}_t$ que ya conoces
+aparece un segundo vector, el **estado de celda** $\mathbf{c}_t \in \mathbb{R}^{d_h}$, que es la
+memoria propiamente dicha, y su forma de avanzar es lo único verdaderamente nuevo de esta lección. Todo
+lo demás de la LSTM existe para gobernar ese vector.
+
+<Callout type="intuition" title="La idea en una frase">
+La LSTM parte en dos lo que la RNN tenía junto: una memoria que atraviesa la secuencia sumándose, y
+tres compuertas —números entre $0$ y $1$ que la red calcula en cada paso— que deciden qué de esa
+memoria se conserva, qué se le escribe y qué sale de ella hacia el resto de la red.
+</Callout>
+
+## Tres compuertas, cada una por un fallo de la anterior
+
+Empecemos por la vía aditiva sola y vayamos añadiendo lo que le falte. Llamemos **candidato** al vector
+que el paso $t$ propone guardar, una capa corriente a partir del token y del estado anterior:
+
+$$
+\tilde{\mathbf{c}}_t = \tanh\left(\mathbf{W}_{xc}\mathbf{x}_t + \mathbf{W}_{hc}\mathbf{h}_{t-1} + \mathbf{b}_c\right) \in \mathbb{R}^{d_h},
+$$
+
+y que la memoria lo vaya acumulando: $\mathbf{c}_t = \mathbf{c}_{t-1} + \tilde{\mathbf{c}}_t$. Para
+el gradiente esto es perfecto —la derivada de $\mathbf{c}_t$ respecto de $\mathbf{c}_{t-1}$ es la
+identidad, sin matriz que aplicar $d$ veces—, y para la memoria es inservible por dos motivos. Nunca
+olvida: lo que entró en la coordenada 3 leyendo <W>cámaras</W> sigue ahí trescientos tokens después,
+en un párrafo que habla de otra cosa. Y crece sin freno: cada término vive en $(-1, 1)$ y se suman
+$T$, así que una coordenada puede acabar valiendo $40$, donde el $\tanh$ que la lea está plano —la
+saturación que el explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya te dejó ver—.
+
+Los dos fallos son el mismo: la suma no tiene forma de decir *no*. Dásela con un factor por
+coordenada, entre $0$ y $1$, que la red calcule en cada paso a partir de lo que está leyendo. Ésa es
+la **compuerta de olvido**:
+
+$$
+\mathbf{f}_t = \sigma\left(\mathbf{W}_{xf}\mathbf{x}_t + \mathbf{W}_{hf}\mathbf{h}_{t-1} + \mathbf{b}_f\right) \in (0,1)^{d_h},
+\qquad
+\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \tilde{\mathbf{c}}_t.
+$$
+
+La activación es la sigmoide logística y no la $\tanh$ del candidato, por lo mismo que la capa de
+salida de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: hace falta una fracción de lo que había, y las fracciones van
+de $0$ a $1$. El $\odot$ pide leerse igual de despacio. Multiplicar coordenada a coordenada deja que
+la 3 se conserve entera mientras la 7 se borra en el mismo paso; una matriz mezclaría las dos, y
+mezclar es lo que menos le conviene a una memoria.
+
+Queda el otro lado. Esta versión escribe $\tilde{\mathbf{c}}_t$ en **cada** paso, valga lo que valga
+el token: <W>que</W> y <W>del</W> escriben tanto como <W>cámaras</W>, y lo escrito sólo se deshace
+cerrando $\mathbf{f}_t$, que borra de paso lo que esa coordenada guardara de antes. Poner una
+condición a la escritura pide otro factor igual, la **compuerta de entrada**:
+
+$$
+\mathbf{i}_t = \sigma\left(\mathbf{W}_{xi}\mathbf{x}_t + \mathbf{W}_{hi}\mathbf{h}_{t-1} + \mathbf{b}_i\right),
+\qquad
+\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t.
+$$
+
+Y falta decir qué ve el resto de la red. Si el estado oculto fuera $\mathbf{h}_t = \tanh(\mathbf{c}_t)$
+—toda la memoria, siempre—, el plural de <W>cámaras</W> gobernaría la respuesta en las doce posiciones
+del inciso, cuando lo que hace falta es que espere. Guardar algo *para luego* y no usarlo *ahora* son
+dos cosas distintas, así que hay una tercera compuerta, la **de salida**, y con ella el estado oculto
+es una vista parcial de la memoria:
+
+$$
+\mathbf{o}_t = \sigma\left(\mathbf{W}_{xo}\mathbf{x}_t + \mathbf{W}_{ho}\mathbf{h}_{t-1} + \mathbf{b}_o\right),
+\qquad
+\mathbf{h}_t = \mathbf{o}_t \odot \tanh\left(\mathbf{c}_t\right).
+$$
+
+Ahí está lo que la RNN vanilla no podía hacer: su $\mathbf{h}_t$ tenía dos trabajos a la vez, recordar
+y enseñar; la LSTM los reparte, y $\mathbf{c}_t$ recuerda mientras $\mathbf{h}_t$ enseña.
+
+Con las cuatro piezas juntas —tres compuertas y un candidato— el paso completo queda así, con
+$\mathbf{h}_0 = \mathbf{c}_0 = \mathbf{0}$ por la misma razón que en la RNN:
+
+$$
+\begin{aligned}
+\mathbf{f}_t &= \sigma\left(\mathbf{W}_{xf}\mathbf{x}_t + \mathbf{W}_{hf}\mathbf{h}_{t-1} + \mathbf{b}_f\right), &
+\mathbf{i}_t &= \sigma\left(\mathbf{W}_{xi}\mathbf{x}_t + \mathbf{W}_{hi}\mathbf{h}_{t-1} + \mathbf{b}_i\right), \\
+\mathbf{o}_t &= \sigma\left(\mathbf{W}_{xo}\mathbf{x}_t + \mathbf{W}_{ho}\mathbf{h}_{t-1} + \mathbf{b}_o\right), &
+\tilde{\mathbf{c}}_t &= \tanh\left(\mathbf{W}_{xc}\mathbf{x}_t + \mathbf{W}_{hc}\mathbf{h}_{t-1} + \mathbf{b}_c\right), \\
+\mathbf{c}_t &= \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t, &
+\mathbf{h}_t &= \mathbf{o}_t \odot \tanh\left(\mathbf{c}_t\right)
+\end{aligned}.
+$$
+
+Cuatro líneas idénticas y dos que no. Las de arriba son la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>
+copiada cuatro veces, con $\mathbf{W}_{x\ast} \in \mathbb{R}^{d_h \times d_{\text{model}}}$,
+$\mathbf{W}_{h\ast} \in \mathbb{R}^{d_h \times d_h}$ y $\mathbf{b}_{\ast} \in \mathbb{R}^{d_h}$ en
+todas ellas, y ahí está el precio: la LSTM cuesta
+$4\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$ pesos, cuatro veces la RNN vanilla.
+Lo que no cuesta es longitud —tampoco aquí aparece $T$ en ninguna forma—.
+
+Ya está toda la maquinaria; muévela antes de derivarla. Recorre la secuencia y mira las tres compuertas
+abrirse y cerrarse en cada posición; luego sube el sesgo $\mathbf{b}_f$ de la de olvido y observa la
+última fila, lo que sobrevive de $\mathbf{c}_1$.
+
+<Explorable
+  id="lstm-gates"
+  caption="Sube el sesgo de la compuerta de olvido y ésta se abre hacia 1; recorre la secuencia y fíjate en la última fila, lo que sobrevive de c₁. Con el sesgo alto la memoria se conserva casi entera; con el sesgo bajo se filtra hasta casi nada, con los mismos pesos y la misma frase."
+/>
+
+## Por qué el gradiente sobrevive a la vía aditiva
+
+<Figure
+  src="/courses/dl-nlp/lstm-celda.svg"
+  alt="Un paso de una LSTM. Por arriba lo cruza de lado a lado una línea verde, la del estado de celda, que sólo se encuentra dos círculos por el camino: uno de producto y otro de suma. Debajo, cuatro cajitas rotuladas f, i, c con tilde y o, alimentadas todas por una misma línea de puntos que recoge el estado oculto anterior y el vector del token. Las cajitas f, i y c con tilde suben hasta los dos círculos de la línea de arriba. A la derecha, una rama verde baja de la línea de arriba, pasa por un tanh y se encuentra con la cajita o en un tercer círculo de producto, del que sale la única línea rotulada como estado oculto nuevo. No hay ninguna línea que una el estado oculto anterior con el nuevo."
+  caption="El estado de celda cruza el paso de lado a lado sin multiplicarse por ninguna matriz: sólo una compuerta lo escala y otra le suma. Ésa es la vía por la que el gradiente podrá volver, y el estado oculto cuelga de ella en vez de sustituirla."
+/>
+
+Que la celda «suma» ya se ha dicho tres veces; ahora hay que cobrarlo. Mira la penúltima línea
+coordenada a coordenada, que es donde se ve lo que el $\odot$ significa:
+
+$$
+c_{t,j} = f_{t,j}\,c_{t-1,j} + i_{t,j}\,\tilde{c}_{t,j}.
+$$
+
+La coordenada $j$ de la celda nueva depende de la coordenada $j$ de la vieja y de ninguna otra: por
+esta vía las coordenadas no se mezclan, porque no hay matriz que las mezcle. Derivando, y dejando
+quietas las compuertas —volveré sobre esto—, el camino directo de un paso al anterior vale
+
+$$
+\frac{\partial c_{t,j}}{\partial c_{t-1,j}} = f_{t,j},
+$$
+
+un número, no una matriz. Encadénalo desde el final hasta un paso lejano $k$, igual que la lección
+anterior encadenaba la recurrencia hacia atrás, y lo que llega a la celda de $k$ por esa vía es
+
+$$
+\frac{\partial \ell}{\partial c_{k,j}} = \left(\prod_{t=k+1}^{T} f_{t,j}\right)\frac{\partial \ell}{\partial c_{T,j}} + \left(\text{lo que entra por las compuertas}\right).
+$$
+
+Ponlo al lado del $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ de la lección anterior y cuenta las
+diferencias, que son tres. La base ya no es una propiedad de una matriz compartida por todo, sino un
+número por coordenada y por paso que la red **calcula** a partir de lo que está leyendo. Por esta vía
+tampoco hay máscara del $\tanh$ que muerda en cada paso —ningún $\gamma \le 1$ que sólo pueda empeorar
+las cosas—, porque la celda cruza el paso con un producto y una suma y nada más. Y la tercera remata:
+$f_{t,j} = 1$ es alcanzable y además estable, porque una sigmoide saturada se queda en $1$ con
+pendiente casi nula, así que una coordenada que la red aprenda a mantener abierta multiplica por $1$
+tantas veces como haga falta. El $\rho = 1$ de la RNN era un filo compartido por todas las
+coordenadas; esto es una decisión de cada una.
+
+<Details summary="Ver qué se ha dejado fuera al «dejar quietas las compuertas»">
+$\mathbf{f}_t$, $\mathbf{i}_t$ y $\tilde{\mathbf{c}}_t$ se calculan a partir de $\mathbf{h}_{t-1}$, y
+$\mathbf{h}_{t-1} = \mathbf{o}_{t-1} \odot \tanh(\mathbf{c}_{t-1})$ depende de $\mathbf{c}_{t-1}$. Así
+que la derivada completa suma, al $f_{t,j}$ de arriba, los caminos que pasan por las tres compuertas y
+por el candidato, y todos ellos cruzan una $\mathbf{W}_{h\ast}$ y una máscara de activación: se
+comportan como los de la lección anterior, y se desvanecen igual.
+
+Que se desvanezcan no rompe nada, y ésa es la parte que merece pensarse. Esos caminos ajustan *cómo se
+decide* en cada paso, y una decisión de este paso se toma con lo que hay cerca; el que tiene que
+llegar de lejos es el de la vía aditiva, y ése no cruza ninguna matriz. La LSTM no elimina el producto
+de la lección anterior: lo aparta del camino largo y lo deja en los cortos.
+</Details>
+
+Dos concesiones cierran la cuenta, porque sin ellas esto se lee como una garantía. Si la red aprende
+$f_{t,j}$ alrededor de $0.7$, el producto se hunde igual que antes; la diferencia es que se hunde
+porque la red lo ha decidido y no porque la arquitectura lo imponga. Y la explosión sigue siendo
+posible por los caminos del recuadro de arriba, así que el recorte del gradiente de la lección
+anterior se sigue usando tal cual.
+
+## La LSTM, paso a paso, en NumPy
+
+Dos celdas. La primera transcribe el recuadro de seis líneas y lo ejecuta sobre una secuencia corta;
+la segunda mide lo que sobrevive de un empujón dado al principio de una larga.
+
+Los pesos me los da un generador con semilla fija y no están entrenados, así que las compuertas no
+significan nada todavía. Lo que sí he puesto a mano es el sesgo de la de olvido, y la celda lo corre
+con dos valores distintos: es la forma más corta de ver que $\mathbf{b}_f$ decide cuánto recuerda la
+red *antes* de aprender nada. Mira la última línea de cada bloque.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+d_model, d_h, T = 4, 3, 6
+X = np.random.default_rng(1).normal(size=(T, d_model)) * 0.5
+
+
+def sigmoide(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def pesos(sesgo_olvido):
+    rng = np.random.default_rng(0)                 # los mismos pesos en los dos casos
+    return {k: (rng.normal(size=(d_h, d_model)) * 0.5,
+                rng.normal(size=(d_h, d_h)) * 0.5,
+                np.full(d_h, b))
+            for k, b in [("f", sesgo_olvido), ("i", 0.0), ("o", 0.0), ("c", 0.0)]}
+
+
+def paso(P, h, c, x):
+    def entra(k):
+        Wx, Wh, b = P[k]
+        return Wx @ x + Wh @ h + b
+    f, i, o = sigmoide(entra("f")), sigmoide(entra("i")), sigmoide(entra("o"))
+    c = f * c + i * np.tanh(entra("c"))            # la vía aditiva, en una línea
+    return o * np.tanh(c), c, f, i, o
+
+
+for sesgo in [1.0, 3.0]:
+    P = pesos(sesgo)
+    h, c, olvidos = np.zeros(d_h), np.zeros(d_h), []
+    print("b_f = %.0f" % sesgo)
+    print("  t      f_t              i_t              o_t              c_t")
+    for t, x in enumerate(X, 1):
+        h, c, f, i, o = paso(P, h, c, x)
+        olvidos.append(f)
+        print("  %d  %s %s %s %s" % (t, np.round(f, 2), np.round(i, 2),
+                                     np.round(o, 2), np.round(c, 2)))
+    print("  de c_1 sobrevive en c_6:", np.round(np.prod(olvidos[1:], axis=0), 3))
+`} />
+
+Las tres compuertas viven en $(0,1)$ y ninguna vale lo mismo en dos coordenadas, que es todo lo que la
+fórmula prometía. Compara ahora los dos bloques. Con $\mathbf{b}_f = 1$ la de olvido se mueve
+alrededor de $0.7$ y de $\mathbf{c}_1$ llega a $\mathbf{c}_6$ un $20\,\%$ escaso; con
+$\mathbf{b}_f = 3$ ronda $0.95$ y llega un $78\,\%$, con los mismos pesos y la misma frase. Cinco
+pasos bastan para que un sesgo separe una memoria de un colador, y de ahí la costumbre de inicializar
+$\mathbf{b}_f$ positivo: sale más barato que la red aprenda a olvidar que aprenda a recordar. La
+primera fila de $\mathbf{c}_t$, en cambio, es idéntica en los dos: en $t = 1$ la compuerta multiplica
+$\mathbf{c}_0 = \mathbf{0}$.
+
+La segunda celda mide la vía de vuelta sin derivar nada: mueve el estado del primer paso una
+cantidad diminuta, deja correr treinta y nueve pasos más y compara. Es el sondeo numérico de <Leccion slug="bptt">la lección sobre BPTT (*backpropagation through time*)</Leccion>, aplicado a la distancia en vez
+de a un peso. Las compuertas de este juguete leen sólo el token —he desconectado el estado a mano—
+para medir la vía aditiva y nada más.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, eps = 40, 1e-6
+X = np.random.default_rng(2).normal(size=T) * 0.5   # una coordenada, T pasos
+
+
+def sigmoide(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def rnn(empujon):                                   # h_t = tanh(w h_{t-1} + u x_t)
+    h = 0.0
+    for t, x in enumerate(X):
+        h = np.tanh(0.9 * h + 0.5 * x)
+        if t == 0:
+            h += empujon                            # movemos el estado del paso 1
+    return h
+
+
+def lstm(empujon, b_f):                             # c_t = f_t c_{t-1} + i_t c~_t
+    c = 0.0
+    for t, x in enumerate(X):
+        c = sigmoide(0.5 * x + b_f) * c + sigmoide(0.5 * x) * np.tanh(0.5 * x)
+        if t == 0:
+            c += empujon                            # movemos la celda del paso 1
+    return c
+
+
+print("de un empujon dado en el paso 1, cuanto queda 39 pasos despues:")
+print("  RNN,  w   = 0.9     %.2e" % abs((rnn(eps) - rnn(0.0)) / eps))
+for b_f in [0.0, 3.0, 5.0]:
+    q = abs((lstm(eps, b_f) - lstm(0.0, b_f)) / eps)
+    print("  LSTM, b_f = %.0f       %.2e   (f_t alrededor de %.3f)" % (b_f, q, sigmoide(b_f)))
+`} />
+
+Cuatro números y tres lecturas. De la RNN llega $1.1 \times 10^{-3}$: $0.9^{39} \approx 0.016$
+lo pone la matriz y el resto —un orden de magnitud— la máscara del $\tanh$, ese $\gamma \le 1$ que la
+lección anterior dijo que sólo podía empeorar las cosas. La segunda línea es la LSTM saliendo **peor**
+que la RNN: con $\mathbf{b}_f = 0$ la compuerta ronda $0.5$, el producto cae a $10^{-11}$ y la
+memoria es peor que la que venía a arreglar. La vía aditiva no regala nada, sólo hace alcanzable lo
+que en la RNN no lo era. Las dos últimas líneas son ese «alcanzable»: con la compuerta en $0.95$
+sobrevive el $14\,\%$ y con ella en $0.993$, el $76\,\%$, a la distancia donde la RNN llevaba tres
+ceros tras el punto.
+
+## Comprueba tu intuición
+
+Cinco preguntas: por qué la vía aditiva cambia el producto, qué hace cada compuerta en un caso
+concreto, cuánto cuesta la arquitectura, cómo se ve la diferencia en un número y qué es lo que la
+LSTM sigue sin garantizar.
+
+<Quiz id="q-por-que-sobrevive" />
+
+<Quiz id="q-que-compuerta" />
+
+<Quiz id="q-parametros" />
+
+<Quiz id="q-producto" />
+
+<Quiz id="q-que-no-arregla" />
+
+Y el paso completo escrito por ti, que es la pieza sobre la que se monta todo lo que viene después.
+
+<CodeChallenge id="ch-lstm-paso" />
+
+---
+
+La LSTM resuelve el problema de la lección anterior y cobra un precio que la cuenta de pesos sólo dice
+a medias. Ocho matrices, dos estados que arrastrar y tres compuertas que ajustar: cada pieza llegó
+aquí arreglando un fallo concreto, sí, pero ninguna con una prueba de que hiciera falta. Y de al menos
+una se puede sospechar. La compuerta de entrada decide cuánto se escribe justo cuando la de olvido
+acaba de decidir cuánto se conserva, y las dos preguntas son la misma vista desde los dos lados: si
+vas a guardar lo nuevo, es porque lo viejo te importa menos.
+
+Alguien tiró de ese hilo. Fundir esas dos compuertas en una, borrar la de salida junto con el estado
+de celda entero y quedarse con tres cuartas partes de los pesos —conservando casi todo lo que esta
+lección acaba de comprar— es <Leccion slug="gru">la siguiente lección, sobre la GRU (*gated recurrent unit*): la
+versión simplificada</Leccion>.

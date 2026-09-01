@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 178" width="540" height="267" role="img" aria-label="Un paso de una LSTM, dibujado como una caja. Por arriba la cruza de lado a lado una línea verde: entra etiquetada c sub t menos uno y sale etiquetada c sub t, y por el camino sólo se encuentra dos círculos, uno con un punto dentro y otro con un signo más. Debajo hay cuatro cajitas en fila, etiquetadas f, i, c con tilde y o. De la f sube una flecha de puntos al círculo del punto; de la i y de la c con tilde suben dos flechas al círculo del más. Por debajo de las cuatro cajitas corre una línea de puntos que las alimenta a todas y que recoge, por la izquierda, dos entradas: h sub t menos uno, que llega desde arriba, y x sub t, que llega desde abajo. A la derecha, una línea verde baja desde la línea de arriba, pasa por la palabra tangente hiperbólica y llega a un tercer círculo con un punto, al que también llega una flecha de puntos desde la cajita o; de ese círculo sale hacia la derecha la única línea etiquetada h sub t. No hay ninguna línea que vaya de h sub t menos uno a h sub t.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: none; }
+    .celda { stroke: rgba(134,148,138,0.28); stroke-width: 1.2; fill: none; }
+    /* La vía aditiva va en verde: es la única línea del dibujo que atraviesa el
+       paso entero sin cruzar una matriz, y es todo lo que la figura afirma. */
+    .via { stroke: #4edea3; stroke-width: 1.6; fill: none; }
+    .hilo { stroke: rgba(134,148,138,0.7); stroke-width: 1.2; stroke-dasharray: 2 3; fill: none; }
+    .nombre { font-size: 13px; fill: #bbcabf; text-anchor: middle; }
+    .verde { font-size: 13px; fill: #4edea3; }
+    .op { font-size: 13px; fill: #bbcabf; text-anchor: middle; }
+    .nota { font-size: 11px; fill: #86948a; }
+    .sub { font-size: 9.5px; }
+  </style>
+
+  <defs>
+    <marker id="pv" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
+    <marker id="pg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="rgba(134,148,138,0.7)" />
+    </marker>
+  </defs>
+
+  <!-- El paso: todo lo que ocurre entre una posición y la siguiente. -->
+  <rect class="celda" x="56" y="22" width="272" height="130" rx="6" />
+
+  <!-- La vía aditiva, de lado a lado. -->
+  <text class="verde" x="8" y="44">c<tspan class="sub" dy="3">t-1</tspan></text>
+  <text class="verde" x="352" y="44" text-anchor="end">c<tspan class="sub" dy="3">t</tspan></text>
+  <line class="via" x1="8" y1="52" x2="352" y2="52" marker-end="url(#pv)" />
+  <circle class="via" cx="120" cy="52" r="9" />
+  <circle cx="120" cy="52" r="2.4" fill="#4edea3" />
+  <circle class="via" cx="200" cy="52" r="9" />
+  <text class="op" x="200" y="57" fill="#4edea3">+</text>
+
+  <!-- Las cuatro piezas que se calculan en el paso. -->
+  <rect class="caja" x="104" y="84" width="32" height="22" rx="3" />
+  <text class="nombre" x="120" y="99">f</text>
+  <rect class="caja" x="166" y="84" width="32" height="22" rx="3" />
+  <text class="nombre" x="182" y="99">i</text>
+  <rect class="caja" x="202" y="84" width="32" height="22" rx="3" />
+  <text class="nombre" x="218" y="92">~</text>
+  <text class="nombre" x="218" y="101">c</text>
+  <rect class="caja" x="252" y="84" width="32" height="22" rx="3" />
+  <text class="nombre" x="268" y="99">o</text>
+
+  <!-- Lo que cada una hace sobre la vía. -->
+  <line class="hilo" x1="120" y1="84" x2="120" y2="64" marker-end="url(#pg)" />
+  <line class="hilo" x1="182" y1="84" x2="195" y2="65" marker-end="url(#pg)" />
+  <line class="hilo" x1="218" y1="84" x2="206" y2="65" marker-end="url(#pg)" />
+
+  <!-- El bus de entrada: las cuatro leen lo mismo. -->
+  <line class="hilo" x1="44" y1="138" x2="268" y2="138" />
+  <line class="hilo" x1="120" y1="138" x2="120" y2="108" marker-end="url(#pg)" />
+  <line class="hilo" x1="182" y1="138" x2="182" y2="108" marker-end="url(#pg)" />
+  <line class="hilo" x1="218" y1="138" x2="218" y2="108" marker-end="url(#pg)" />
+  <line class="hilo" x1="268" y1="138" x2="268" y2="108" marker-end="url(#pg)" />
+
+  <text class="nombre" x="8" y="112" text-anchor="start">h<tspan class="sub" dy="3">t-1</tspan></text>
+  <line class="caja" x1="32" y1="120" x2="44" y2="120" />
+  <line class="hilo" x1="44" y1="120" x2="44" y2="138" />
+  <text class="nombre" x="8" y="170" text-anchor="start">x<tspan class="sub" dy="3">t</tspan></text>
+  <line class="caja" x1="32" y1="162" x2="44" y2="162" />
+  <line class="hilo" x1="44" y1="162" x2="44" y2="138" />
+
+  <!-- La salida: lo que el resto de la red llega a ver de la memoria. -->
+  <line class="via" x1="300" y1="52" x2="300" y2="111" marker-end="url(#pv)" />
+  <text class="nota" x="294" y="72" text-anchor="end">tanh</text>
+  <line class="hilo" x1="277" y1="106" x2="292" y2="114" marker-end="url(#pg)" />
+  <circle class="via" cx="300" cy="120" r="9" />
+  <circle cx="300" cy="120" r="2.4" fill="#4edea3" />
+  <text class="nombre" x="352" y="112" text-anchor="end">h<tspan class="sub" dy="3">t</tspan></text>
+  <line class="caja" x1="309" y1="120" x2="352" y2="120" marker-end="url(#pg)" />
+</svg>

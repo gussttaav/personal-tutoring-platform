@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-label="Cinco cajas unidas por flechas. Arriba a la izquierda, 180 reseñas de entrenamiento; arriba a la derecha, 60 reseñas de prueba. De la caja de entrenamiento baja una flecha al vocabulario, de 442 entradas, y del vocabulario baja otra a los pesos, con el rótulo 600 pasos. Del vocabulario sale además una flecha verde que gira a la derecha y sube hasta la caja de prueba, con el rótulo las representa. Por el borde derecho baja una flecha larga desde la caja de prueba hasta la caja del acierto, 53 de 60, con el rótulo sólo al final; a esa misma caja llega una flecha corta desde los pesos.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .ttl { font-size: 14px; fill: #e5e1e4; text-anchor: middle; }
+    .sub { font-size: 13px; fill: #86948a; text-anchor: middle; }
+    .box { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    .edge { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    /* Lo único que las 60 reseñas de prueba reciben del entrenamiento. */
+    .presta { stroke: #4edea3; stroke-width: 2; fill: none; }
+    .rot { font-size: 13px; fill: #86948a; text-anchor: start; }
+    .rotv { font-size: 13px; fill: #4edea3; text-anchor: start; }
+    .rote { font-size: 13px; fill: #86948a; text-anchor: end; }
+  </style>
+
+  <defs>
+    <marker id="gris" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
+    </marker>
+    <marker id="verde" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4edea3" />
+    </marker>
+  </defs>
+
+  <rect class="box" x="10" y="8" width="160" height="46" rx="8" />
+  <text class="ttl" x="90" y="30">180 reseñas</text>
+  <text class="sub" x="90" y="46">de entrenamiento</text>
+
+  <rect class="box" x="190" y="8" width="160" height="46" rx="8" />
+  <text class="ttl" x="270" y="30">60 reseñas</text>
+  <text class="sub" x="270" y="46">de prueba</text>
+
+  <rect class="box" x="10" y="100" width="160" height="46" rx="8" />
+  <text class="ttl" x="90" y="122">vocabulario</text>
+  <text class="sub" x="90" y="138">442 entradas</text>
+
+  <rect class="box" x="10" y="192" width="160" height="46" rx="8" />
+  <text class="ttl" x="90" y="214">pesos</text>
+  <text class="sub" x="90" y="230">y sesgos</text>
+
+  <rect class="box" x="190" y="192" width="160" height="46" rx="8" />
+  <text class="ttl" x="270" y="214">acierto</text>
+  <text class="sub" x="270" y="230">53 de 60</text>
+
+  <path class="edge" d="M 90 54 V 96" marker-end="url(#gris)" />
+  <text class="rot" x="98" y="82">lo define</text>
+
+  <path class="edge" d="M 90 146 V 188" marker-end="url(#gris)" />
+  <text class="rot" x="98" y="174">600 pasos</text>
+
+  <path class="presta" d="M 170 118 H 270 V 58" marker-end="url(#verde)" />
+  <text class="rotv" x="176" y="110">las representa</text>
+
+  <path class="edge" d="M 320 54 V 188" marker-end="url(#gris)" />
+  <text class="rote" x="312" y="152">sólo al final</text>
+
+  <path class="edge" d="M 170 215 H 186" marker-end="url(#gris)" />
+</svg>

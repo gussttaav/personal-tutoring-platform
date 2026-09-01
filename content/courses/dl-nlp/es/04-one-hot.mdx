@@ -1,0 +1,338 @@
+---
+slug: one-hot
+title: "One-hot encoding y la maldición de la dimensionalidad"
+block: 1
+order: 4
+minutes: 22
+summary: "Un eje por entrada del vocabulario es la representación que no afirma nada sobre las palabras. Cumple todo lo que se le pidió, y por eso mismo no deja aprender nada."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-distancia
+    type: numeric
+    prompt: 'Tu vocabulario tiene $\lvert V \rvert = 20\,000$ entradas y representas cada una con su vector one-hot. ¿Cuánto vale la distancia euclídea $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert$ entre las de dos entradas distintas $u$ y $v$?'
+    answer: 1.414
+    tolerance: 0.01
+    explanation: 'Vale $\sqrt{2} \approx 1.414$, y lo notable es lo que *no* aparece en esa respuesta. Los dos vectores se diferencian en exactamente dos posiciones —donde uno tiene su $1$ el otro tiene un $0$, y al revés—, así que la suma de los cuadrados de las diferencias es $1 + 1 = 2$ y la distancia es su raíz. Ni $\lvert V \rvert$ ni qué palabras sean $u$ y $v$ entran en la cuenta: <W>gato</W> está tan lejos de <W>gata</W> como de <W>criptomoneda</W>.'
+  - id: q-que-cumple
+    type: multi
+    prompt: 'Comparas el one-hot con la representación por índices de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>. ¿En qué mejora? Marca todo lo que valga.'
+    options:
+      - { id: a, text: 'No afirma parecidos que nadie quiso afirmar: ninguna entrada del vocabulario queda entre otras dos.' }
+      - { id: b, text: 'Es estable: añadir una entrada al final deja intactas las coordenadas de todas las demás.' }
+      - { id: c, text: 'Al no afirmar parecidos falsos, el modelo generaliza mejor de una palabra a otra.' }
+      - { id: d, text: 'Recupera la totalidad sin ayuda: ya no hace falta la entrada <W>\<UNK></W>.' }
+    answer: [a, b]
+    explanation: 'Las dos mejoras son reales. (a) es la deducción principal: todas las distancias entre pares valen $\sqrt{2}$, así que la geometría no dice nada, que era lo que se pedía. (b) es la observación que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> te dijo que guardaras: allí, añadir <W>agua</W> renumeraba palabras que no tenían nada que ver; aquí solo añade un eje. (c) es la trampa de esta lección y va justo al revés: como no hay parecidos, tampoco hay nada que transferir de <W>gato</W> a <W>gata</W>. Y (d) es falso: la totalidad la sigue dando <W>\<UNK></W>, de <Leccion slug="vocabulario-oov">la lección sobre vocabulario y palabras fuera de vocabulario</Leccion>, porque un eje solo existe para las entradas que ya están en $V$.'
+  - id: q-coste
+    type: single
+    prompt: 'Con $\lvert V \rvert = 50\,000$, ¿cuántos números tendría la tabla que guarda $r$ explícitamente, una fila por entrada del vocabulario?'
+    options:
+      - { id: a, text: '50 000, uno por entrada.' }
+      - { id: b, text: '2 500 millones: $\lvert V \rvert$ filas de $\lvert V \rvert$ columnas.' }
+      - { id: c, text: '15 millones: $\lvert V \rvert \cdot 300$, la dimensión habitual.' }
+      - { id: d, text: 'No se puede saber sin conocer el corpus.' }
+    answer: b
+    explanation: 'La tabla tiene $\lvert V \rvert$ filas y $d$ columnas, y el one-hot fija $d = \lvert V \rvert$: son $\lvert V \rvert^{2} = 2\,500$ millones de números, unos 10 GB con cuatro bytes cada uno. La opción (c) es el coste de una representación densa de 300 dimensiones, que es adonde va el bloque, y sirve de comparación: 15 millones frente a 2 500. Ahora bien, esa tabla es la matriz identidad y nadie la guarda —se guarda el índice y el vector se fabrica al vuelo—, así que el coste que de verdad duele no es este, sino que el vector tenga $\lvert V \rvert$ coordenadas.'
+  - id: q-transferencia
+    type: boolean
+    prompt: 'Un modelo entrenado con vectores one-hot ha visto muchas veces <W>el niño juega</W> y ninguna <W>la niña juega</W>. Lo aprendido sobre <W>niño</W> le ayuda algo con <W>niña</W>, porque las dos palabras se parecen.'
+    answer: false
+    explanation: 'No le ayuda nada, y ese es el resultado de la lección. El parecido tendría que estar en los vectores, y en one-hot no está: $\mathbf{o}_{\text{niño}}$ y $\mathbf{o}_{\text{niña}}$ son ortogonales, exactamente igual que $\mathbf{o}_{\text{niño}}$ y $\mathbf{o}_{\text{criptomoneda}}$. Para el modelo, <W>niña</W> es una entrada del vocabulario que no ha visto en esa posición nunca, y no tiene por dónde empezar. Que las dos palabras se parezcan es cosa tuya; a la representación no se lo dijo nadie.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'A Neural Probabilistic Language Model'
+    authors: 'Bengio, Ducharme, Vincent y Jauvin'
+    year: '2003'
+    venue: 'JMLR 3'
+    lang: en
+    url: 'https://www.jmlr.org/papers/v3/bengio03a.html'
+    note: 'Plantea la maldición de la dimensionalidad para el lenguaje y propone salir de ella con vectores densos: el argumento que acabas de desarrollar. Va más allá y monta un modelo de lenguaje entero, cosa ya del bloque 2.'
+---
+
+{/* COURSE-P5-01 — Bloque 1, lección 4. */}
+
+La lección anterior, sobre vocabulario y frecuencia, dejó el vocabulario completamente definido: 
+una lista cerrada de $\lvert V \rvert$ entradas, construida a partir de las palabras más frecuentes
+y completada con <W>\<UNK></W> para todo lo que queda fuera. Con eso, $r$ ya puede recibir cualquier 
+texto. Solo queda decidir qué vector asignar a cada una de las entradas del vocabulario.
+
+Hay una respuesta inmediata a esa pregunta, y la lección existe porque esa respuesta es *correcta*:
+cumple una por una las exigencias que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> le
+puso a $r$, y aun así no basta. Tiene nombre —*one-hot encoding*— y lo que queda por hacer con ella
+es ponerle precio. Una parte del precio se ve venir, porque los vectores salen enormes, y es
+precisamente la parte que no importa. La otra aparece al preguntar qué puede aprender un modelo que
+recibe entradas así, y esa no la arregla ninguna máquina más grande.
+
+Mira colocadas de las dos maneras las tres palabras con las que aquella lección descartó $d = 1$,
+antes de leer una sola fórmula. Sobre la recta, los
+índices $1$, $2$ y $3$ dejan a <W>gato</W> a distancia $1$ de
+<W>casa</W> y a <W>perro</W> a distancia $2$: hay un medio, y alguien lo ocupa. Con un eje por
+palabra hay tres ejes perpendiculares y cada palabra cae sobre el suyo, en $(1,0,0)$, $(0,1,0)$ y
+$(0,0,1)$. Cuenta cuántos lados distintos tiene el triángulo que forman.
+
+<Figure
+  src="/courses/dl-nlp/one-hot-equidistancia.svg"
+  alt="Arriba, casa, gato y perro sobre una recta con los índices 1, 2 y 3: gato queda a distancia 1 de casa y perro a distancia 2, de modo que gato cae entre las otras dos. Abajo, las mismas tres palabras en un espacio de tres ejes perpendiculares, una sobre cada eje, en los puntos (1,0,0), (0,1,0) y (0,0,1); los tres puntos forman un triángulo equilátero cuyos lados miden raíz de 2."
+  caption="Las mismas tres palabras, dos representaciones. Sobre la recta hay una palabra en medio; con un eje por palabra cada una se va a su propio eje y las tres quedan a la misma distancia entre sí."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Darle a cada palabra su propio eje es la única forma de no afirmar nada sobre ellas, y es también la
+forma de no decir nada. Todas las palabras quedan a la misma distancia unas de otras, así que lo que
+el modelo aprenda sobre una no le sirve para ninguna otra.
+</Callout>
+
+## Un eje para cada entrada del vocabulario
+
+Ordena el vocabulario de una vez por todas y escríbelo como $V = \{w_1, w_2, \dots, w_{\lvert V
+\rvert}\}$. El orden da igual —alfabético, por frecuencia, el que salga— mientras no cambie después;
+es el determinismo que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> exigía. Lo que ese orden aporta es una correspondencia: la
+entrada que ocupa la posición $i$ tendrá reservada la coordenada $i$ del vector, y ninguna otra
+entrada la usará. Posiciones del vocabulario y coordenadas del vector son, de aquí en adelante, la
+misma lista de números de $1$ a $\lvert V \rvert$.
+
+Queda precisar de qué está hecha esa lista, porque el resto de la lección lo da por sabido. Las
+entradas de $V$ son *tokens*, y qué sean depende de la tokenización que fijó <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion>: palabras
+enteras con un tokenizador de palabras, trozos de palabra con uno de subpalabras. Nada de lo que
+sigue cambia por eso, y los ejemplos usan palabras enteras porque se leen mejor.
+
+La representación **one-hot** asigna a la entrada $w_i$ el vector de $\lvert V \rvert$ coordenadas
+que vale $1$ en la posición $i$ y $0$ en todas las demás. Coordenada a coordenada, escribiendo
+$(\mathbf{o}_w)_j$ para la $j$-ésima coordenada del vector de la entrada $w$:
+
+$$
+\mathbf{o}_{w_i} \in \{0,1\}^{\lvert V \rvert},
+\qquad
+(\mathbf{o}_{w_i})_j =
+\begin{cases}
+1 & \text{si } j = i \\
+0 & \text{si } j \neq i
+\end{cases}.
+$$
+
+Es una $r$ como la que pedía <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>, con la dimensión fijada por el propio vocabulario:
+$r(w) = \mathbf{o}_w$ y $d = \lvert V \rvert$. Un texto de $T$ tokens se convierte entonces en una
+matriz $\mathbf{X} \in \mathbb{R}^{T \times \lvert V \rvert}$, una fila por posición.
+
+Ahora la propiedad por la que se elige. Toma dos entradas distintas del vocabulario, $u$ en la
+posición $i$ y $v$ en la posición $j$, con $i \neq j$. Su producto escalar recorre las coordenadas
+$k$ y en cada una encuentra un cero:
+
+$$
+\mathbf{o}_u^{\top} \mathbf{o}_v = \sum_{k=1}^{\lvert V \rvert} (\mathbf{o}_u)_k \, (\mathbf{o}_v)_k = 0,
+$$
+
+porque el único término que podría no anularse exigiría $k = i$ y $k = j$ a la vez. Los vectores son
+ortogonales, dos a dos, todos.
+
+Y la distancia entre ellos sale de la misma cuenta. La escribimos con doble barra: $\lVert \mathbf{x}
+\rVert$ es la longitud euclídea de $\mathbf{x}$, la raíz de la suma de sus coordenadas al cuadrado.
+La resta $\mathbf{o}_u - \mathbf{o}_v$ vale $+1$ en la posición $i$, $-1$ en la $j$ y $0$ en el resto,
+de modo que
+
+$$
+\lVert \mathbf{o}_u - \mathbf{o}_v \rVert^{2} = \sum_{k=1}^{\lvert V \rvert} \big( (\mathbf{o}_u)_k - (\mathbf{o}_v)_k \big)^{2} = 1^{2} + (-1)^{2} = 2,
+$$
+
+y por tanto $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert = \sqrt{2}$, sean cuales sean $u$ y $v$, y sea
+cual sea el tamaño del vocabulario. Ahí está lo que se buscaba, escrito en una línea: **todos los
+pares de palabras están exactamente a la misma distancia.** Ninguna queda entre otras dos, y nada de
+lo que la representación dice del idioma se puede leer mal, porque no dice nada. La geometría
+inventada de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> ha desaparecido.
+
+<Details summary="Por qué las dimensiones son |V| y no |V| − 1">
+Aquella lección terminaba con una cuenta: $n$ puntos mutuamente equidistantes necesitan $n - 1$
+dimensiones. El mínimo son entonces $\lvert V \rvert - 1$ dimensiones —el triángulo de arriba, con
+tres palabras, cabe en un plano— y el one-hot gasta una más. No es un despiste, y la diferencia se ve
+mirando dónde viven estos vectores.
+
+Todos ellos cumplen la misma ecuación, porque cada uno tiene un solo $1$:
+
+$$
+\sum_{j=1}^{\lvert V \rvert} (\mathbf{o}_w)_j = 1.
+$$
+
+Eso es un hiperplano de $\mathbb{R}^{\lvert V \rvert}$, y un hiperplano tiene una dimensión menos que
+el espacio que lo contiene: los $\lvert V \rvert$ vértices viven, de hecho, en $\lvert V \rvert - 1$
+dimensiones, que es el mínimo. Lo que compras con la dimensión sobrante es que las coordenadas sean
+legibles. Dentro del hiperplano serían combinaciones sin significado propio; en
+$\mathbb{R}^{\lvert V \rvert}$, la coordenada $j$ responde a «¿es esta la palabra $w_j$?», y por eso
+representar una palabra es mirar una posición en lugar de calcular nada.
+</Details>
+
+### Lo que cuesta no afirmar nada
+
+El precio ya estaba escrito en la lección anterior, solo faltaba sustituir. Guardar $r$ como una
+tabla, una fila por entrada del vocabulario y $d$ columnas, cuesta $\lvert V \rvert \cdot d$ números;
+con $d = \lvert V \rvert$ eso es
+
+$$
+\lvert V \rvert^{2} \quad \text{números}.
+$$
+
+Con el vocabulario de subpalabras de <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion>, entre 30 000 y 50 000
+entradas, son entre 900 y 2 500 millones de números: unos 10 GB con cuatro bytes cada uno. Y crece al
+cuadrado: duplicar el vocabulario cuadruplica la tabla.
+
+Esa cifra pide una corrección inmediata, porque nadie paga esos 10 GB. La tabla del one-hot es la
+matriz identidad, y una matriz identidad no contiene información: está determinada por su tamaño. Se
+guarda el índice $i$ de cada entrada —un entero— y el vector se fabrica cuando hace falta, o ni
+siquiera se fabrica. El coste de almacenar la representación desaparece.
+
+Lo que no desaparece es la dimensión. El vector que el sistema recibe tiene $\lvert V \rvert$
+coordenadas y solo una es distinta de cero, así que la parte del vector que lleva información, con
+50 000 entradas, es
+
+$$
+\frac{\text{coordenadas no nulas}}{\text{coordenadas del vector}}
+= \frac{1}{\lvert V \rvert} = \frac{1}{50\,000} = 0.00002 = 0.002\ \%.
+$$
+
+Antes de seguir, un apunte a favor. <Leccion slug="texto-como-numeros">La lección sobre el problema de representar el lenguaje</Leccion> te pidió que guardaras una observación: allí, añadir
+<W>agua</W> al vocabulario renumeraba palabras que no tenían nada que ver con ella y dejaba
+inservible cualquier modelo entrenado antes. El one-hot no tiene ese defecto. Añade una entrada al final y cada vector antiguo conserva sus coordenadas; solo le crece un
+cero. Es la **estabilidad** que faltaba. Es real, aunque en la práctica $V$ se congela una sola vez
+—para eso está <W>\<UNK></W>— y la ocasión casi no llega.
+
+### Por qué la ortogonalidad impide aprender
+
+Queda la cuenta que da título a la lección, y no es la de la memoria. Un sistema que lee una ventana
+de $n$ tokens seguidos recibe los $n$ vectores uno detrás de otro, $n \lvert V \rvert$ coordenadas
+en total. ¿Cuántas entradas distintas puede recibir? Cada una de las $n$ posiciones admite cualquiera
+de las $\lvert V \rvert$ entradas del vocabulario, con independencia de las demás, así que
+
+$$
+\lvert V \rvert^{n}.
+$$
+
+Pon números de los pequeños: $\lvert V \rvert = 30\,000$ y una ventana de $n = 5$ tokens, un cuarto
+de la frase de veinte tokens de <Leccion slug="vocabulario-oov">la lección sobre vocabulario y frecuencia</Leccion>. Son $30\,000^{5} \approx 2.4 \times 10^{22}$ entradas posibles. Un corpus
+enorme tiene del orden de $T = 10^{10}$ tokens, y por tanto como mucho $10^{10}$ ventanas distintas,
+de modo que el modelo llega a ver
+
+$$
+\frac{10^{10}}{2.4 \times 10^{22}} \approx 4 \times 10^{-13}
+$$
+
+del espacio de entradas. Cuatro diezmillonésimas de millonésima. Y no hay corpus que arregle eso: el
+exponente está en $n$, así que mirar un token más de contexto multiplica el espacio por
+$30\,000$ mientras el corpus sigue donde estaba. Esta es la **maldición de la dimensionalidad**: el
+número de configuraciones distintas crece exponencialmente con la dimensión de la entrada, y
+cualquier cantidad de datos cubre una fracción que tiende a cero.
+
+Dicho así suena a condena general, y no lo es. Los modelos trabajan con entradas de dimensión enorme
+y aprenden de todos modos, porque en esas entradas hay vecindad: dos fotografías que difieren en un
+píxel son parecidas, lo aprendido sobre una vale para la otra, y por eso una fracción minúscula del
+espacio alcanza. Ese es el argumento que salva a cualquier representación de dimensión alta, y es el
+que el one-hot no puede usar. La equidistancia desarrollada arriba dice, con otras palabras, que aquí no
+hay vecinos: la ventana <W>el niño juega en la plaza</W> y la ventana <W>la niña juega en la
+plaza</W> están a la misma distancia entre sí que de cualquier otra.
+
+De modo que la virtud es el defecto, y es la misma propiedad vista dos veces. Pedimos una
+representación que no afirmara parecidos falsos y salió una que no afirma parecidos, punto. Cada una
+de esas $2.4 \times 10^{22}$ entradas hay que aprenderla por separado, porque ninguna se parece a
+ninguna, y solo se van a ver $10^{10}$.
+
+## La matriz one-hot en NumPy, y lo que pesaría
+
+La celda construye el one-hot de un vocabulario diminuto en español y comprueba sobre él las tres
+afirmaciones de arriba: que los vectores son ortogonales, que todas las distancias valen $\sqrt{2}$ y
+qué fracción de cada vector es distinta de cero. Después hace las cuentas de tamaño **sin reservar
+memoria**, que es la única forma de hacerlas: una tabla de 50 000 por 50 000 no cabe en el navegador,
+y ese es parte del resultado.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+V = ["<UNK>", "de", "la", "niño", "niña", "escuela", "programación", "río"]
+n = len(V)
+
+O = np.eye(n, dtype=int)          # fila i = vector one-hot de V[i]
+print("|V| =", n, " ->  O tiene forma", O.shape)
+print(O)
+print()
+
+# Ortogonalidad: el producto de la matriz por su traspuesta es la identidad,
+# es decir, todo producto escalar entre vectores distintos vale 0.
+print("O @ O.T == identidad:", np.array_equal(O @ O.T, np.eye(n, dtype=int)))
+
+# Todas las distancias entre pares valen lo mismo, y ese mismo es raíz de 2.
+distancias = set()
+for i in range(n):
+    for j in range(i + 1, n):
+        distancias.add(round(float(np.linalg.norm(O[i] - O[j])), 6))
+print("distancias distintas entre pares:", distancias, " |  raiz(2) =", round(float(np.sqrt(2)), 6))
+print("no nulos por vector:", int((O[3] != 0).sum()), "de", n,
+      "->", round(100 / n, 3), "%")
+print()
+
+# La tabla explícita: |V| x |V| números. Calculada, NO reservada.
+print(" |V|        números        GB (4 bytes)   % no nulo")
+for tam in [8, 1000, 30000, 50000]:
+    numeros = tam * tam
+    gb = numeros * 4 / 1024**3
+    print(str(tam).rjust(6), str(numeros).rjust(15), ("%.2f" % gb).rjust(13),
+          ("%.5f" % (100 / tam)).rjust(11))
+print()
+
+# El espacio de entradas de una ventana de n tokens, contra un corpus grande.
+T = 10**10                        # tokens de un corpus enorme
+tam = 30000
+for ventana in [1, 2, 3, 5]:
+    posibles = tam ** ventana
+    cubierta = min(T, posibles) / posibles
+    print("n =", ventana, "->", ("%.1e" % posibles).rjust(8),
+          "ventanas posibles  |  fracción que cubre el corpus:", "%.1e" % cubierta)
+`} />
+
+Las tres comprobaciones salen exactas y una conviene mirarla dos veces: el conjunto de distancias
+entre pares tiene **un solo elemento**. No es que se parezcan, es que no hay más de un valor. Con
+ocho palabras se ve de un vistazo; con 50 000 sigue siendo el problema.
+
+La tabla de tamaños tiene una fila que sorprende y otra que no. La que no: 50 000 entradas piden
+9.31 GB, y por eso nadie guarda esta tabla. La que sí: la columna de la derecha, el porcentaje de
+coordenadas no nulas, que ya con 30 000 entradas es 0.003 %. Y las últimas líneas son la maldición de
+la dimensionalidad en cuatro renglones: con una o dos palabras de contexto el corpus cubre el espacio
+entero, con tres cubre ya solo el 0.04 %, y con cinco la fracción se escribe con doce ceros detrás del
+punto. El salto ocurre entre la segunda palabra de contexto y la tercera, no en el infinito.
+
+Una prueba de treinta segundos. Cambia `V` por un vocabulario de dos palabras y vuelve a ejecutar: la
+distancia entre pares sigue valiendo $\sqrt{2}$, exactamente igual que con ocho. Ahí ves que
+$\lvert V \rvert$ no entra en esa cuenta.
+
+## Comprueba tu intuición
+
+Cuatro preguntas sobre lo que acabas de obtener: cuánto mide la distancia entre dos palabras, qué
+arregla el one-hot respecto de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>, qué cuesta la tabla y qué pasa con dos palabras que se
+parecen.
+
+<Quiz id="q-distancia" />
+
+<Quiz id="q-que-cumple" />
+
+<Quiz id="q-coste" />
+
+<Quiz id="q-transferencia" />
+
+---
+
+El one-hot cumple las tres exigencias, es estable, y su geometría no afirma nada falso sobre el
+idioma. También es un callejón sin salida, y por el mismo motivo por el que cumple: una
+representación que no relaciona ninguna palabra con ninguna otra obliga a aprenderlo todo por
+separado, y no hay corpus para eso. Para salir hacen falta dos cosas a la vez, y son las dos que
+faltan aquí: muchas menos coordenadas que $\lvert V \rvert$, y coordenadas que signifiquen algo, de
+modo que dos palabras parecidas acaben cerca.
+
+La segunda es la difícil y ocupa el resto del bloque. Pero antes hay un cambio de pregunta que sale
+casi gratis desde aquí, y conviene hacerlo ahora, con los vectores one-hot todavía a la vista. Hasta ahora
+$r$ representa *una* palabra, y lo que un sistema suele necesitar es el vector de un documento
+entero: una reseña, un correo, una noticia. La forma más directa de obtenerlo es sumar los vectores
+one-hot de todos sus tokens, $\sum_{t=1}^{T} \mathbf{o}_{w_t}$, donde $t$ recorre las $T$ posiciones
+del documento y no las entradas del vocabulario. Cada coordenada pasa entonces a contar cuántas
+veces sale su palabra. Eso ya no es un vector de ceros y unos, y ya no es tan mudo: la
+coordenada de <W>gol</W> distingue una crónica deportiva de una receta. Sigue teniendo $\lvert V
+\rvert$ dimensiones y sigue sin saber en qué orden iban las palabras. Es la bolsa de palabras, y con
+la corrección que la hace útil —TF-IDF— es <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras y TF-IDF</Leccion>.

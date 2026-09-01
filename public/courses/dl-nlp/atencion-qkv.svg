@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 200" width="540" height="300" role="img" aria-label="Los tres papeles de una llamada de atención: consulta, clave y valor.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: none; }
+    /* Verde: lo que este bloque ya tenía —la consulta, la mezcla y su salida—. */
+    .cbox { stroke: #4edea3; stroke-width: 1.6; fill: rgba(78,222,163,0.16); }
+    .franja { stroke: rgba(134,148,138,0.55); stroke-width: 1.2; fill: rgba(134,148,138,0.10); }
+    .flujo { stroke: rgba(134,148,138,0.7); stroke-width: 1.3; fill: none; }
+    .via { stroke: #4edea3; stroke-width: 1.7; fill: none; }
+    /* El grosor de cada hilo de bajada es su peso, como en el mapa de alineación. */
+    .hilo1 { stroke: #4edea3; stroke-width: 1; fill: none; opacity: 0.5; }
+    .hilo2 { stroke: #4edea3; stroke-width: 2.8; fill: none; opacity: 0.95; }
+    .hilo3 { stroke: #4edea3; stroke-width: 1.5; fill: none; opacity: 0.65; }
+    .est { font-size: 11px; fill: #bbcabf; text-anchor: middle; }
+    .cc { font-size: 15px; fill: #4edea3; text-anchor: middle; }
+    .carril { font-size: 10.5px; fill: #86948a; }
+    .nota { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+    .lazo { font-size: 10.5px; fill: #4edea3; }
+    .peso { font-size: 10.5px; fill: #4edea3; text-anchor: middle; }
+    .sub { font-size: 8px; }
+  </style>
+
+  <defs>
+    <marker id="qv" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
+    <marker id="qg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6.5" markerHeight="6.5" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="rgba(134,148,138,0.7)" />
+    </marker>
+  </defs>
+
+  <!-- Arriba: la consulta entra en la comparación, que devuelve los pesos. -->
+  <rect class="cbox" x="6" y="10" width="58" height="28" rx="5" />
+  <text class="cc" x="35" y="29">q<tspan class="sub" dy="3">i</tspan></text>
+  <line class="via" x1="64" y1="24" x2="76" y2="24" marker-end="url(#qv)" />
+  <rect class="franja" x="80" y="10" width="272" height="28" rx="5" />
+  <text class="est" x="216" y="29">a(q<tspan class="sub" dy="3">i</tspan><tspan class="sub" dy="-3">,</tspan> k<tspan class="sub" dy="3">j</tspan><tspan class="sub" dy="-3">)</tspan> y softmax sobre las posiciones</text>
+
+  <!-- Las claves suben a la comparación. -->
+  <text class="carril" x="6" y="63">claves</text>
+  <line class="flujo" x1="120" y1="74" x2="120" y2="42" marker-end="url(#qg)" />
+  <line class="flujo" x1="200" y1="74" x2="200" y2="42" marker-end="url(#qg)" />
+  <line class="flujo" x1="280" y1="74" x2="280" y2="42" marker-end="url(#qg)" />
+
+  <!-- En medio: un solo vector por posición, del que salen las dos cosas. -->
+  <rect class="caja" x="96"  y="76" width="48" height="30" rx="5" />
+  <rect class="caja" x="176" y="76" width="48" height="30" rx="5" />
+  <rect class="caja" x="256" y="76" width="48" height="30" rx="5" />
+  <text class="est" x="120" y="95">h&#772;<tspan class="sub" dy="3">1</tspan></text>
+  <text class="est" x="200" y="95">h&#772;<tspan class="sub" dy="3">2</tspan></text>
+  <text class="est" x="280" y="95">h&#772;<tspan class="sub" dy="3">3</tspan></text>
+  <text class="lazo" x="6" y="92">k<tspan class="sub" dy="3">j</tspan><tspan dy="-3"> = </tspan>v<tspan class="sub" dy="3">j</tspan></text>
+  <text class="lazo" x="6" y="107">un solo vector</text>
+
+  <!-- Los valores bajan a la mezcla, con el grosor de su peso. -->
+  <text class="carril" x="6" y="131">valores</text>
+  <line class="hilo1" x1="120" y1="108" x2="184" y2="148" marker-end="url(#qv)" />
+  <line class="hilo2" x1="200" y1="108" x2="200" y2="148" marker-end="url(#qv)" />
+  <line class="hilo3" x1="280" y1="108" x2="216" y2="148" marker-end="url(#qv)" />
+  <text class="peso" x="140" y="136">&#945;<tspan class="sub" dy="3">i1</tspan></text>
+  <text class="peso" x="214" y="130">&#945;<tspan class="sub" dy="3">i2</tspan></text>
+  <text class="peso" x="262" y="136">&#945;<tspan class="sub" dy="3">i3</tspan></text>
+
+  <!-- La salida tiene el tamaño de un valor, no el de la consulta. -->
+  <rect class="cbox" x="174" y="150" width="52" height="28" rx="5" />
+  <text class="cc" x="200" y="169">c<tspan class="sub" dy="3">i</tspan></text>
+  <text class="nota" x="200" y="192">d<tspan class="sub" dy="2">v</tspan> números</text>
+</svg>

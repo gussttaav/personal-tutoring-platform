@@ -1,0 +1,328 @@
+---
+slug: la-idea-de-atencion
+title: "La idea de atención: mirar hacia atrás"
+block: 4
+order: 3
+minutes: 24
+summary: "El encoder calcula un estado por token y la arquitectura usa uno solo. Dárselos todos al decoder choca con un problema de forma —los estados son tantos como tokens, y el decoder tiene un tamaño fijo—, y la salida es mezclarlos: un vector de contexto propio para cada paso de la salida, suma ponderada de todos los estados, con pesos que suman uno y cambian de paso a paso. Aquí se define la mezcla, se ve que el resumen fijo de las dos lecciones anteriores es esa misma mezcla con los pesos congelados, y se dice de dónde salen los pesos —de una puntuación por pareja, normalizada con un softmax sobre las posiciones de la entrada— sin decir todavía quién calcula esa puntuación."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-eje-del-softmax
+    type: single
+    prompt: 'En $\alpha_{ij} = \exp(e_{ij}) / \sum_k \exp(e_{ik})$, ¿sobre qué recorre $k$ el denominador?'
+    options:
+      - { id: a, text: 'Sobre las posiciones de la entrada. Con el paso $i$ fijo, el denominador suma las $T_x$ puntuaciones de esa fila, de modo que la fila suma $1$ y reparte una unidad de atención entre los tokens de la fuente.' }
+      - { id: b, text: 'Sobre las entradas del vocabulario de salida $V_y$, igual que el softmax que produce $\hat{\mathbf{y}}_i$.' }
+      - { id: c, text: 'Sobre los pasos de la salida, de manera que sea cada columna la que suma $1$: así cada token de la entrada reparte su atención entre los pasos que lo necesitan.' }
+      - { id: d, text: 'Sobre las dos cosas a la vez: lo que suma $1$ es la matriz entera.' }
+    answer: a
+    explanation: 'La (a). El índice $j$ y el índice $k$ recorren lo mismo —las posiciones de la fuente— y el paso $i$ se queda quieto, así que lo que se normaliza es una fila. La (b) es la trampa que hay que ver venir: todos los softmax del curso hasta ahora repartían sobre un vocabulario, y este no. Los dos conviven en la misma red y en el mismo paso, sobre ejes distintos: $\hat{\mathbf{y}}_i$ reparte sobre $V_y$ y decide qué escribir, $\alpha_{i\cdot}$ reparte sobre las posiciones de la entrada y decide qué mirar. La (c) describe algo que no ocurre: en la alineación del explorable, <W>leí</W> alimenta dos pasos a la vez y su columna suma $1.77$, no $1$; nada obliga a que un token de la entrada se use una sola vez, y menos mal, porque el español mete el pronombre dentro del verbo. La (d) sumaría $T_y$, una unidad por paso.'
+    hint: 'Con $i$ fijo, ¿qué se está moviendo dentro del sumatorio?'
+  - id: q-alineacion-congelada
+    type: single
+    prompt: 'Fijas $\alpha_{ij} = 1$ cuando $j = T_x$ y $\alpha_{ij} = 0$ en todo lo demás, igual en todos los pasos $i$. ¿Qué modelo te queda?'
+    options:
+      - { id: a, text: 'El encoder-decoder de <Leccion slug="encoder-decoder">su lección</Leccion>, exactamente: la mezcla se queda en $\mathbf{c}_i = \bar{\mathbf{h}}_{T_x}$, que es el vector de contexto de siempre, el mismo en cada paso.' }
+      - { id: b, text: 'Un modelo que no puede escribir nada, porque todos los pesos menos uno valen cero y la mezcla se anula.' }
+      - { id: c, text: 'Un modelo que sólo sabe traducir frases de un token, que es lo único que cabe en un peso que no se reparte.' }
+      - { id: d, text: 'Un modelo equivalente al de esta lección pero más rápido, porque se ahorra el cálculo de los pesos.' }
+    answer: a
+    explanation: 'La (a), y es la lectura que conviene llevarse: esos pesos son una alineación legal —no negativos, suman $1$—, así que la arquitectura de las dos lecciones anteriores no es un mecanismo distinto del de hoy, es este mismo con los pesos congelados y ciegos a $i$. La (b) confunde «cero» con «nada»: la mezcla vale $\bar{\mathbf{h}}_{T_x}$, un vector perfectamente normal. La (c) no se sigue de ninguna ecuación; ese modelo traduce frases de cualquier longitud, sólo que mal cuando se alargan, que es lo que midió la lección anterior sobre el cuello de botella. La (d) acierta en el coste y falla en lo importante: se ahorra $T_x \cdot T_y$ puntuaciones, y a cambio pierde justo lo que las paga.'
+    hint: 'Escribe la suma $\sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ con esos pesos y mira qué sobrevive.'
+  - id: q-por-que-no-argmax
+    type: single
+    prompt: 'En vez de mezclar, el paso $i$ podría quedarse con el estado mejor puntuado: $\mathbf{c}_i = \bar{\mathbf{h}}_{j^{\star}}$ con $j^{\star} = \arg\max_j e_{ij}$. ¿Qué se rompe?'
+    options:
+      - { id: a, text: 'El entrenamiento. $\arg\max$ devuelve una posición, y mover un poco los parámetros de $a$ no la mueve —hasta que salta de golpe—, así que la derivada de $\mathbf{c}_i$ respecto de esos parámetros vale cero donde existe. Nada empujaría nunca a $a$ hacia puntuaciones mejores.' }
+      - { id: b, text: 'La forma. $\bar{\mathbf{h}}_{j^{\star}}$ tiene $d_h$ coordenadas y el decoder espera un vector más largo, porque el contexto tiene que resumir toda la entrada.' }
+      - { id: c, text: 'La condición de que los pesos sumen $1$: quedarse con un estado equivale a poner un peso mayor que uno en él.' }
+      - { id: d, text: 'El coste. Buscar el máximo entre $T_x$ puntuaciones sale más caro que sumar $T_x$ vectores, y en frases largas eso se nota.' }
+    answer: a
+    explanation: 'La (a). El softmax no está ahí por elegancia: está porque convierte unas puntuaciones en una mezcla *derivable*, y sólo así la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> llega desde la pérdida hasta los parámetros que producen $e_{ij}$. Con un máximo duro la señal se corta ahí. La (b) se inventa una forma: $\bar{\mathbf{h}}_{j^{\star}}$ mide $d_h$ y la mezcla también, que es precisamente lo que hace que las dos quepan en el mismo sitio. La (c) es falsa: quedarse con un estado es poner un peso de $1$ en él y $0$ en el resto, y eso suma $1$ —de hecho es el caso extremo que esta lección llama elección dura—. La (d) invierte los costes y, aunque no lo hiciera, el problema no es el precio.'
+    hint: '¿Cuánto cambia un índice entero cuando mueves un peso una millonésima?'
+  - id: q-cuantas-puntuaciones
+    type: numeric
+    prompt: 'Traduces <W>ayer leí un libro muy bueno</W> —seis tokens— y el decoder escribe siete palabras más el símbolo de fin de secuencia, <W>\<EOS></W>: ocho pasos. ¿Cuántas puntuaciones $e_{ij}$ calcula el mecanismo para esa sola frase?'
+    answer: 48
+    tolerance: 0
+    unit: puntuaciones
+    explanation: 'Una por cada pareja de paso y posición, es decir $T_x \cdot T_y = 6 \cdot 8 = 48$. Ese producto es el precio de la idea y conviene tenerlo delante: el resumen fijo calculaba cero puntuaciones y por eso se ahogaba, mientras que aquí el coste del mecanismo crece con el producto de las dos longitudes, no con su suma. En una frase de sesenta tokens traducida a sesenta son $3\,600$ puntuaciones, y cada una pasa por la función $a$.'
+    hint: '¿Cuántos pesos tiene una fila, y cuántas filas hay?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Neural Machine Translation by Jointly Learning to Align and Translate'
+    authors: 'Bahdanau, Cho y Bengio'
+    year: '2015'
+    venue: 'arXiv:1409.0473'
+    lang: en
+    url: 'https://arxiv.org/abs/1409.0473'
+    note: 'El paper que descongeló los pesos. Su §3.1 es el mecanismo de esta lección, ecs. (5)-(6): un contexto por paso, suma de los estados del encoder con pesos de un softmax sobre las posiciones. La función que puntúa llega después.'
+  - kind: blog
+    title: 'Visualizing A Neural Machine Translation Model (Mechanics of Seq2seq Models With Attention)'
+    authors: 'Jay Alammar'
+    year: '2018'
+    venue: 'jalammar.github.io'
+    lang: en
+    url: 'https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/'
+    note: 'El mapa de alineación que esta lección dibuja a mano, aquí animado: de qué posición de la entrada tira cada palabra al escribirse. Se queda en la imagen, sin gradiente ni función de puntuación.'
+---
+
+{/* COURSE-P5-04 — Bloque 4, lección 3. */}
+
+«Que el decoder mire la entrada entera» suena a solución y todavía no es una arquitectura. La
+lección anterior, sobre el cuello de botella del vector de contexto, midió lo que cuesta resumir y
+dejó a mano el material desaprovechado: los $T_x$ estados que el encoder calcula y nadie vuelve a
+tocar. Falta todo lo demás. ¿Qué recibe exactamente el decoder en el paso $i$, quién lo construye y
+con qué material?
+
+Antes de la primera pregunta hay un obstáculo de forma, y es el que decide la respuesta. Los estados
+del encoder son tantos como tokens tenga la frase: seis para una, treinta para otra. El decoder, en
+cambio, tiene un tamaño decidido antes de ver ninguna —sus matrices de pesos tienen un número fijo de
+columnas—, de modo que ponerle los estados en fila y multiplicarlos por una matriz choca contra el
+mismo muro que <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el perceptrón multicapa falla en
+secuencias</Leccion>: una entrada cuya longitud cambia no cabe en una matriz cuya forma no cambia. Leerlos
+todos tendrá que significar otra cosa. Tendrá que significar combinarlos en un solo vector del
+tamaño que el decoder ya esperaba, y entonces lo único que queda por decidir es cuánto de cada uno.
+
+Cuánto de cada uno, y no cuál. La diferencia es lo que hace que la idea funcione: si el paso $i$
+tuviera que señalar *un* estado, elegir sería una decisión discreta, y ya veremos que eso tiene un
+precio que no se puede pagar. Repartir, en cambio, se hace con números. El paso que escribe
+<W>book</W> vierte casi todo de <W>libro</W> y unas gotas del resto; el que escribe <W>very</W>
+vierte de <W>muy</W>. Cada paso se lleva su propia mezcla, y a ese reparto —una cantidad por
+posición de la entrada, distinta en cada paso de la salida— es a lo que llamamos **atención**.
+
+El explorable trae la pareja de <Leccion slug="encoder-decoder">la lección sobre la arquitectura encoder-decoder</Leccion>,
+con una fila por paso de la salida. Recórrelas y mira dos sitios. <W>i</W> y <W>read</W> tiran del
+mismo token, <W>leí</W>, porque el español lleva el pronombre dentro del verbo y el inglés lo escribe
+aparte. Y <W>book</W>, en el paso 7, vuelve a <W>libro</W> —que está en la posición 4— después de
+que los pasos 5 y 6 hayan estado en <W>muy</W> y <W>bueno</W>: las líneas se cruzan, que es la
+reordenación que el resumen fijo tenía que aguantar de memoria. Después pulsa «resumen fijo».
+
+<Explorable
+  id="attention-alignment"
+  caption="Los pesos los he puesto yo a mano para el curso; lo que importa es su forma. Con «resumen fijo» sólo se enciende la última columna y las barras de abajo dejan de moverse: ocho pasos, un solo vector."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Cada paso de la salida se fabrica su propio vector de contexto como una suma ponderada de todos los
+estados del encoder, y lo único que distingue un paso de otro son los pesos de esa suma.
+</Callout>
+
+## Un contexto distinto en cada paso
+
+Fijemos lo que recibe el paso $i$. Son $T_x$ números, uno por posición de la entrada, y los llamamos
+$\alpha_{i1}, \dots, \alpha_{iT_x}$. Con ellos el contexto de ese paso es
+
+$$
+\mathbf{c}_i = \sum_{j=1}^{T_x} \alpha_{ij}\,\bar{\mathbf{h}}_j \in \mathbb{R}^{d_h},
+\qquad
+\alpha_{ij} \geq 0,
+\qquad
+\sum_{j=1}^{T_x} \alpha_{ij} = 1.
+$$
+
+Mira las dos formas, porque la gracia está en que no coinciden. La lista de pesos mide $T_x$: crece
+con la entrada, un peso más por cada token nuevo, y ahí es donde entra la información que antes no
+cabía. El resultado mide $d_h$ pase lo que pase, que es exactamente lo que le permite ocupar el sitio
+del vector de contexto de siempre sin tocar el resto del decoder. La entrada creció; el hueco no.
+
+Las dos condiciones sobre los pesos convierten esa suma en una **mezcla**, y merece la pena ver qué
+prohíben. Como ningún peso es negativo y todos suman uno, cada coordenada de $\mathbf{c}_i$ queda
+entre la menor y la mayor de esa misma coordenada entre los $\bar{\mathbf{h}}_j$: la mezcla reparte
+lo que hay, no inventa valores nuevos ni amplifica ninguno. Los dos extremos de lo que puede hacer se
+escriben solos. Si un peso vale $1$ y el resto $0$, entonces $\mathbf{c}_i = \bar{\mathbf{h}}_{j}$ y
+la mezcla se ha convertido en una elección dura de un estado. Si todos valen $1/T_x$, entonces
+$\mathbf{c}_i$ es la media de la frase entera, que mira todo y no distingue nada. Entre esos dos
+casos vive el mecanismo.
+
+### El resumen fijo era una alineación congelada
+
+Hay un tercer juego de pesos que ya conoces, aunque nunca se escribió como tal. Toma
+$\alpha_{ij} = 1$ cuando $j = T_x$ y $\alpha_{ij} = 0$ en el resto, para todos los pasos por igual:
+
+$$
+\mathbf{c}_i = \sum_{j=1}^{T_x} \alpha_{ij}\,\bar{\mathbf{h}}_j = \bar{\mathbf{h}}_{T_x} = \mathbf{c}.
+$$
+
+Eso es el encoder-decoder de las dos lecciones anteriores, entero, sin quitar ni añadir nada. Y es
+una alineación perfectamente legal: los pesos no son negativos y suman uno. De modo que la atención
+no sustituye a aquella arquitectura ni compite con ella —la contiene—: lo que hace es descongelar
+unos pesos que estaban puestos a mano, en el último token, y que no dependían de $i$. El cuello de
+botella no venía de que $d_h$ fuera pequeño. Venía de que esa fila no se podía mover.
+
+### El contexto entra como una entrada más del decoder
+
+<Figure
+  src="/courses/dl-nlp/atencion-contexto.svg"
+  alt="Arriba, tres celdas del encoder etiquetadas h con barra sub uno, sub dos y sub T equis, enlazadas de izquierda a derecha, cada una recibiendo por arriba un token de la entrada, x sub uno, x sub dos, x sub T equis. De la parte de abajo de las tres celdas salen tres hilos verdes de grosor distinto, etiquetados alfa sub i uno, alfa sub i dos y alfa sub i T equis; el del medio es el más grueso. Los tres convergen en una caja verde etiquetada c sub i, con la nota «d sub h números» debajo. De esa caja sale una flecha verde horizontal hacia la derecha que entra en una celda del decoder etiquetada s sub i. Esa celda recibe además, por arriba, el estado anterior s sub i menos uno, y por abajo el token anterior, y con circunflejo sub i menos uno; por la derecha saca y con circunflejo sub i."
+  caption="Los tres hilos salen de todas las celdas del encoder, no sólo de la última, y su grosor es su peso. La arquitectura anterior es este mismo dibujo con un solo hilo, siempre el de la derecha."
+/>
+
+El contexto llega a la recurrencia del decoder como un sumando más, con su propia matriz de pesos
+$\mathbf{W}_{ch} \in \mathbb{R}^{d_h \times d_h}$:
+
+$$
+\mathbf{s}_i = \tanh\left(\mathbf{W}^{\text{dec}}_{xh}\mathbf{o}_{y_{i-1}} + \mathbf{W}^{\text{dec}}_{hh}\mathbf{s}_{i-1} + \mathbf{W}_{ch}\mathbf{c}_i + \mathbf{b}^{\text{dec}}_h\right),
+$$
+
+y el estado de partida cambia de sitio. En <Leccion slug="encoder-decoder">la lección sobre la arquitectura encoder-decoder</Leccion> el decoder arrancaba en
+$\mathbf{s}_0 = \mathbf{c}$, porque había un $\mathbf{c}$ y sólo uno; ahora no lo hay, así que
+tomamos $\mathbf{s}_0 = \mathbf{0}$, como la recurrencia del bloque anterior. Es una elección, no una
+necesidad —lo habitual es arrancar de una proyección aprendida de $\bar{\mathbf{h}}_{T_x}$—, y no
+cambia nada de lo que sigue.
+
+Con eso, la línea incómoda de <Leccion slug="encoder-decoder">la lección sobre la arquitectura encoder-decoder</Leccion> queda reescrita:
+
+$$
+P\left(y_i \mid y_{<i},\, \mathbf{c}\right)
+\quad\longrightarrow\quad
+P\left(y_i \mid y_{<i},\, \mathbf{c}_i\right).
+$$
+
+El cambio parece un subíndice y es un cambio de condicionante. Aquella igualdad afirmaba que todo lo
+que la entrada tuviera que decir sobre *cualquier* posición de la salida cabía en $d_h$ números
+fijados de una vez; esta afirma algo mucho más flojo, que para *cada* posición hay una mezcla de los
+estados que sirve. Y como $\mathbf{c}_i$ se construye a partir de los $T_x$ estados, el paso $i$ está
+condicionando otra vez sobre la fuente completa. La suposición no ha desaparecido, se ha vuelto
+barata.
+
+## De dónde salen los pesos
+
+Queda la pregunta que lo sostiene todo: quién decide los $\alpha_{ij}$. No pueden estar fijados de
+antemano —eso es justo lo que se acaba de descongelar— ni pueden depender sólo de $j$, porque
+entonces todos los pasos mirarían al mismo sitio. Tienen que depender de la pareja: de dónde está el
+decoder y qué hay en la posición $j$. Así que primero se puntúa cada pareja,
+
+$$
+e_{ij} = a\left(\mathbf{s}_{i-1},\, \bar{\mathbf{h}}_j\right),
+$$
+
+donde $a$ es una función que devuelve un número —lo compatibles que son ese estado del decoder y ese
+estado del encoder— y $\mathbf{s}_{i-1}$ es el estado anterior por una razón de orden, no de gusto:
+calcular $\mathbf{s}_i$ exige tener ya $\mathbf{c}_i$, que exige tener los pesos, que exigen las
+puntuaciones. Lo último que existe cuando hay que puntuar es $\mathbf{s}_{i-1}$.
+
+Las puntuaciones son números sueltos y pueden ser negativos, así que hace falta convertirlas en una
+mezcla. Eso lo hace un softmax, y aquí conviene mirar sobre qué:
+
+$$
+\alpha_{ij} = \frac{\exp(e_{ij})}{\sum_{k=1}^{T_x} \exp(e_{ik})}.
+$$
+
+Sale positivo por la exponencial y suma uno por el denominador, que son las dos condiciones de la
+mezcla, y de propina reparte de forma suave: una puntuación algo mayor se lleva algo más de peso, no
+todo.
+
+<Callout type="warning" title="Este softmax no reparte sobre el vocabulario">
+Todos los softmax del curso hasta ahora repartían probabilidad sobre las entradas de un vocabulario.
+Este reparte sobre las **posiciones de la entrada**: el índice del denominador recorre $k = 1, \dots,
+T_x$, con el paso $i$ quieto. Los dos conviven en el mismo paso del decoder y sobre ejes distintos —
+$\hat{\mathbf{y}}_i$ decide qué escribir, $\alpha_{i\cdot}$ decide qué mirar—, y confundirlos es la
+forma más rápida de leer mal cualquier implementación de esto.
+</Callout>
+
+Dos consecuencias, y la primera es una factura. Hay una puntuación por cada pareja de paso y
+posición, así que traducir una frase cuesta $T_x \cdot T_y$ evaluaciones de $a$: el precio crece con
+el *producto* de las dos longitudes. El resumen fijo no pagaba ninguna, y eso es precisamente lo que
+lo ahogaba; conviene saber desde el principio que la mirada hacia atrás no sale gratis.
+
+La segunda explica el softmax en lugar de algo más directo. Lo natural sería quedarse con el estado
+mejor puntuado, $\arg\max_j e_{ij}$, y ahorrarse la suma entera. Pero eso devuelve una posición, y
+una posición es un entero: mueve los parámetros de $a$ una millonésima y el índice no se inmuta,
+hasta que un día salta. La derivada de $\mathbf{c}_i$ respecto de esos parámetros vale cero donde
+existe, de modo que la pérdida no tendría por dónde enseñarle a $a$ a puntuar mejor. Con el softmax,
+$\mathbf{c}_i$ depende de las puntuaciones de forma continua, y la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> atraviesa los pesos igual que atraviesa cualquier otra
+cosa. Elegir suave es lo que hace que elegir se pueda aprender.
+
+Falta la función $a$ y no se define aquí. Lo que esta lección necesita de ella es sólo que devuelva
+un número y que sea derivable; qué forma tiene, cuántos parámetros lleva y cómo se entrenan es el
+asunto de la lección siguiente.
+
+## El contexto por pasos, en NumPy
+
+La celda toma la alineación del explorable —mis números, otra vez— y un estado por token de la
+entrada, y hace tres cosas. Comprueba lo único que no se ve mirando el mapa, que cada fila sume uno.
+Construye los ocho contextos de golpe, porque la mezcla de todas las filas a la vez es un producto de
+matrices. Y repite la cuenta con la alineación congelada, para poder comparar.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# La alineación del explorable: fila = paso de la salida, columna = posición de la entrada.
+FUENTE = ["ayer", "leí", "un", "libro", "muy", "bueno"]
+SALIDA = ["yesterday", "i", "read", "a", "very", "good", "book", "<EOS>"]
+alfa = np.array([[0.86, 0.06, 0.03, 0.02, 0.02, 0.01],     # yesterday
+                 [0.09, 0.74, 0.05, 0.07, 0.03, 0.02],     # i      <- de "leí"
+                 [0.04, 0.81, 0.04, 0.06, 0.03, 0.02],     # read   <- de "leí" otra vez
+                 [0.02, 0.05, 0.72, 0.15, 0.03, 0.03],     # a
+                 [0.02, 0.03, 0.04, 0.06, 0.79, 0.06],     # very
+                 [0.02, 0.02, 0.03, 0.05, 0.10, 0.78],     # good
+                 [0.02, 0.03, 0.06, 0.76, 0.05, 0.08],     # book   <- vuelve a "libro"
+                 [0.02, 0.03, 0.03, 0.12, 0.07, 0.73]])    # <EOS>
+# Un estado por token de la entrada: d_h = 5 coordenadas en (-1, 1), como un tanh.
+H = np.array([[ 0.82, -0.31,  0.10,  0.45, -0.62], [-0.55,  0.71,  0.28, -0.14,  0.36],
+              [ 0.12,  0.44, -0.77,  0.21,  0.08], [ 0.39, -0.68,  0.52,  0.77, -0.11],
+              [-0.24,  0.15,  0.63, -0.58,  0.49], [ 0.66,  0.29, -0.35,  0.18,  0.74]])
+T_y, T_x = alfa.shape
+
+# Lo que el mapa no deja ver, y sin lo cual esto no seria una mezcla:
+assert np.allclose(alfa.sum(axis=1), 1.0), "hay una fila que no suma 1"
+
+C = alfa @ H                                     # c_i = sum_j alfa_ij * h_j, los T_y a la vez
+fijo = np.zeros_like(alfa); fijo[:, -1] = 1.0    # el resumen fijo, escrito como alineacion
+C_fijo = fijo @ H
+
+print("paso  escribe      tira sobre todo de   peso   distancia al resumen fijo")
+for i in range(T_y):
+    j = int(alfa[i].argmax())
+    print("  %d   %-11s  %-18s  %.2f   %.2f"
+          % (i + 1, SALIDA[i], FUENTE[j], alfa[i, j], np.linalg.norm(C[i] - C_fijo[i])))
+
+print()
+print("contextos distintos:  con atencion %d de %d,  con el resumen fijo %d de %d"
+      % (len(np.unique(C.round(9), axis=0)), T_y,
+         len(np.unique(C_fijo.round(9), axis=0)), T_y))
+print("y ese unico es el estado de '%s':" % FUENTE[-1], np.allclose(C_fijo[0], H[-1]))
+`} />
+
+La columna del medio es el mapa leído en voz alta, y las dos últimas líneas son el hallazgo: con la
+alineación de arriba los ocho pasos reciben ocho vectores distintos, y con la congelada reciben el
+mismo ocho veces —el estado del último token de la entrada—. La última columna dice cuánto se estaba
+perdiendo cada paso, y ahí hay algo que mirar despacio, porque no se pierde lo mismo en todos. Los
+dos valores pequeños, $0.25$ y $0.32$, son los de <W>good</W> y <W>\<EOS></W>, que son los dos únicos
+pasos que tiran de <W>bueno</W> —justo el token que el resumen fijo llevaba dentro—; los de
+<W>yesterday</W> y <W>book</W> pasan de $1.35$. El resumen fijo no era igual de malo en todas partes:
+acertaba donde la frase termina y fallaba en todo lo demás, que es por dónde se rompía en la lección
+anterior. Cambia un peso de la matriz `alfa` y ejecuta otra vez: la `assert` se queja antes de que
+puedas mirar nada, que es justo su trabajo.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: sobre qué normaliza el softmax, qué modelo sale al congelar la alineación, por qué
+mezclar en vez de elegir, y cuánto cuesta.
+
+<Quiz id="q-eje-del-softmax" />
+
+<Quiz id="q-alineacion-congelada" />
+
+<Quiz id="q-por-que-no-argmax" />
+
+<Quiz id="q-cuantas-puntuaciones" />
+
+---
+
+El mecanismo está completo salvo por una pieza, y es la que decide todo lo demás. Los pesos de esta
+lección no los ha calculado nadie: los escribí yo en una matriz, eligiéndolos para que el mapa
+enseñara una reordenación y un token compartido. Un modelo de verdad no tiene a nadie que se los
+escriba. Tiene que puntuar cada pareja $(\mathbf{s}_{i-1}, \bar{\mathbf{h}}_j)$ por su cuenta, con
+una función que empieza sabiendo tan poco como el resto de la red y que aprende al mismo tiempo que
+ella.
+
+Esa función es $a$, y <Leccion slug="bahdanau">la lección siguiente, sobre la atención de Bahdanau</Leccion>, es la que la escribe: le
+da sus propios parámetros —una capa pequeña, con su matriz y su vector—, la mete en el mismo descenso
+de gradiente que ya entrena al encoder y al decoder, y desarrolla por dónde le llega el gradiente,
+que resulta venir por dos caminos a la vez. Que haya más de una forma razonable de puntuar una
+pareja, y que la elección entre ellas termine decidiendo cómo es el bloque 5, ocupa el resto de este.

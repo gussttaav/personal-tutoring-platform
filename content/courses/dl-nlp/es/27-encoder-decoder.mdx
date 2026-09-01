@@ -1,0 +1,414 @@
+---
+slug: encoder-decoder
+title: "La arquitectura encoder-decoder"
+block: 4
+order: 1
+minutes: 26
+summary: "La arquitectura de dos redes de la lección anterior, llevada a una tarea de verdad: traducir. Aparecen dos vocabularios en lugar de uno, un token de fin de secuencia que el propio modelo predice para decidir dónde termina su salida, y la lectura que sostiene el resto del bloque: el decoder no devuelve una traducción, define una probabilidad sobre todas —un producto de distribuciones, una por paso— y generar es recorrer ese producto de forma voraz. Un traductor de juguete de español a inglés, entrenado en el navegador, escribe frases de longitud distinta a la entrada y con el adjetivo cambiado de sitio."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-eos
+    type: single
+    prompt: 'El modelo de la lección anterior generaba con un bucle de longitud fija: escribía tantos tokens como tenía la entrada. ¿Por qué ese bucle no sirve para traducir?'
+    options:
+      - { id: a, text: 'Porque la longitud de la traducción no es función de la longitud de la entrada —puede ser mayor, menor o igual— y nada la conoce antes de escribirla. El final tiene que ser algo que el modelo predice: una entrada más de $V_y$, <W>\<EOS></W>, que sale del mismo softmax que las demás.' }
+      - { id: b, text: 'Porque traducir siempre alarga la frase, así que el bucle tendría que escribir exactamente un token más que la entrada.' }
+      - { id: c, text: 'Porque el decoder no sabe cuántos tokens leyó el encoder: esa información no viaja dentro de $\mathbf{c}$.' }
+      - { id: d, text: 'Porque la longitud la fija el vocabulario de salida: una frase no puede tener más tokens que entradas tiene $V_y$.' }
+    answer: a
+    explanation: 'La (a) es el argumento entero, y de ahí sale <W>\<EOS></W>. La (b) es la trampa buena: en el idioma de juguete de esta lección la salida sí mide siempre uno más que la entrada, porque su gramática lo obliga; leer de ahí una regla la rompe la primera frase real, donde el inglés tan pronto alarga como acorta. La (c) confunde el problema: el número de tokens leídos cabe de sobra en $\mathbf{c}$, y aunque cupiera entero no diría cuántos hay que escribir. La (d) no describe nada: $\lvert V_y \rvert$ cuenta entradas distintas, no posiciones de una frase.'
+    hint: 'Antes de escribir una traducción, ¿hay algo que sepa cuántos tokens va a tener?'
+  - id: q-factorizacion
+    type: single
+    prompt: '¿Cuál de estas expresiones es la que define el decoder?'
+    options:
+      - { id: a, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$ — un factor por posición, y cada factor mira lo ya escrito y el resumen de la entrada.' }
+      - { id: b, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid \mathbf{c})$ — un factor por posición, cada uno independiente de lo ya escrito.' }
+      - { id: c, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \sum_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$ — la suma de las probabilidades de cada posición.' }
+      - { id: d, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \max_i P(y_i \mid y_{<i}, \mathbf{c})$ — la probabilidad de la frase es la de su token más seguro.' }
+    answer: a
+    explanation: 'La (a) es la regla de la cadena de la probabilidad aplicada a la secuencia, con la sustitución que hace esta arquitectura: cada paso condiciona sobre el prefijo $y_{<i}$ —que viaja dentro de $\mathbf{s}_{i-1}$— y sobre $\mathbf{c}$, nunca sobre la entrada directamente. La (b) borra el prefijo, y con él la única razón de que el decoder sea recurrente: si cada posición fuese independiente de las anteriores, nada impediría escribir el mismo token cinco veces. La (c) suma probabilidades de cosas que no son alternativas entre sí; el resultado se pasa de $1$ en cuanto la frase tiene tres tokens. La (d) es un máximo, no una probabilidad conjunta.'
+    hint: '¿Qué ve el decoder en el paso $i$? Dos cosas: lo que ya ha escrito y el resumen.'
+  - id: q-voraz-no-optimo
+    type: boolean
+    prompt: 'Tomar en cada paso el token más probable produce siempre la secuencia más probable.'
+    answer: false
+    explanation: 'Falso, y el contraejemplo cabe en dos pasos. Si el primer paso reparte $0.6$ y $0.4$, la decodificación voraz se queda con el $0.6$; pero si esa rama continúa como mucho con $0.5$ y la otra con $0.9$, los caminos valen $0.6 \cdot 0.5 = 0.30$ y $0.4 \cdot 0.9 = 0.36$, y el que gana es el que la voraz descartó en el primer paso. El máximo de un producto no es el producto de los máximos: una decisión mala al principio se paga después, y el algoritmo voraz nunca vuelve a mirarla. Buscar de verdad entre todos los caminos cuesta $\lvert V_y \rvert^{T_y}$ y no se hace; existen búsquedas intermedias —la habitual es el *beam search*— que este curso no cubre.'
+    hint: 'Escribe dos caminos de dos pasos y multiplica.'
+  - id: q-aprende-a-parar
+    type: single
+    prompt: 'El decoder acaba escribiendo <W>\<EOS></W> en la posición correcta, ni antes ni después. ¿De dónde sale esa habilidad?'
+    options:
+      - { id: a, text: 'De la pérdida: <W>\<EOS></W> va al final de cada traducción del entrenamiento, así que esa última posición aporta su propio término de entropía cruzada y el descenso empuja hacia arriba la probabilidad de <W>\<EOS></W> justo ahí, y hacia abajo en las posiciones anteriores.' }
+      - { id: b, text: 'Del bucle de generación, que corta a los `max_len` tokens.' }
+      - { id: c, text: 'De un umbral: cuando la probabilidad del token más probable baja de cierto valor, el decoder se detiene.' }
+      - { id: d, text: 'Del encoder, que guarda en $\mathbf{c}$ la longitud que tendrá la salida.' }
+    answer: a
+    explanation: 'La (a): <W>\<EOS></W> es una entrada de $V_y$ como <W>book</W> o <W>red</W>, y se aprende igual que ellas, con la misma entropía cruzada de <Leccion slug="seq2seq">la lección sobre modelos de secuencia a secuencia</Leccion>. Predecir el fin es predecir un token más. La (b) describe la red de seguridad del código, no lo aprendido: si el modelo nunca escribiera <W>\<EOS></W>, `max_len` evitaría un bucle infinito y la salida sería igualmente basura. La (c) inventa un mecanismo que no está en ninguna ecuación de la lección. La (d) es tentadora porque $\mathbf{c}$ sí condiciona todo lo que el decoder escribe, pero ahí no hay ningún número marcado como «longitud»: la longitud es una consecuencia de dónde gana <W>\<EOS></W>.'
+    hint: '¿Qué posiciones aportan un término a la pérdida, y qué símbolo ocupa la última?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation'
+    authors: 'Cho, van Merriënboer, Gulcehre, Bahdanau y otros'
+    year: '2014'
+    venue: 'arXiv:1406.1078'
+    lang: en
+    url: 'https://arxiv.org/abs/1406.1078'
+    note: 'Su §2 escribe la factorización que sostiene el bloque: P(y|x) como producto de P(y_i | lo ya escrito, c), con c el último estado del encoder y el símbolo de fin. Su decoder realimenta c en cada paso; el tuyo solo arranca con ella.'
+  - kind: libro
+    title: 'Speech and Language Processing, cap. 13: Machine Translation'
+    authors: 'Jurafsky y Martin'
+    year: '3.ª ed., borrador libre'
+    venue: 'stanford.edu'
+    lang: en
+    url: 'https://web.stanford.edu/~jurafsky/slp3/13.pdf'
+    note: 'Su §13.4 es la decodificación voraz y el beam search que esta lección nombra y no desarrolla; también trae el teacher forcing y la entropía cruzada. Aviso: el capítulo ya lo cuenta sobre un transformer, no sobre una RNN.'
+---
+
+{/* COURSE-P5-04 — Bloque 4, lección 1. */}
+
+Este bloque empieza con la arquitectura ya montada. La lección anterior, sobre modelos de secuencia a
+secuencia, encadenó dos redes —una que lee la entrada y la resume en un vector, otra que escribe la
+salida a partir de ese resumen— y las entrenó de punta a punta sobre una tarea de juguete. Lo que
+este bloque va a mirar con lupa es el punto donde las dos se tocan. Pero antes hay que cambiar de
+tarea, porque aquel juguete le perdonaba tres cosas a la arquitectura y traducir no le perdona
+ninguna.
+
+Mira una frase y su traducción: <W>ayer leí un libro muy bueno</W> se convierte en <W>yesterday i
+read a very good book</W>. Entran seis tokens y salen siete, y el que sobra es <W>i</W>, un pronombre
+que en la entrada no aparece por ningún lado —el español lo lleva dentro de la conjugación del verbo
+y el inglés tiene que escribirlo aparte—. <W>muy bueno</W>, que en español va detrás del sustantivo,
+en inglés se le adelanta. Y esta no es «la» traducción, sólo una: <W>yesterday i read a really good
+book</W> sirve igual. Longitud distinta, orden distinto y respuesta no única. Son tres cosas.
+
+Las tres tienen la misma forma: la tarea de juguete respondía por el modelo preguntas que en una
+tarea real tiene que contestar él.
+
+La primera es el vocabulario. Cuando la salida se escribe con los mismos símbolos que la entrada hay
+un solo vocabulario, y cada una de sus entradas sirve igual para leer que para escribir. Traducir
+necesita dos, de idiomas distintos y de tamaños distintos: el <W>libro</W> que entra y el
+<W>book</W> que sale no son la misma entrada de la misma tabla, y el decoder no tiene que producir
+jamás una palabra española.
+
+La segunda es la longitud, y es la que más cuesta. Un bucle que escribe tantos tokens como tenía la
+entrada funciona mientras la tarea garantice que entrada y salida miden lo mismo; en cuanto no lo
+garantiza, la longitud de la salida deja de ser un dato y pasa a ser una incógnita. Tiene que salir
+de algún sitio, y el único sitio disponible es el propio modelo: el vocabulario de salida gana un
+token que significa «he terminado», y escribirlo es lo que detiene la generación.
+
+La tercera cambia lo que hay que leer en la salida del decoder. Si una frase admite varias
+traducciones aceptables, señalar un token no es la respuesta honesta; repartir probabilidad entre
+todos sí lo es. Y el decoder ya hacía eso —de cada estado cuelga una distribución, no un token—, así
+que lo que cambia no es la red sino qué significa lo que produce: en cada paso, una columna de
+probabilidades sobre el vocabulario de salida, y la frase escrita es un camino a través de esas
+columnas.
+
+<Figure
+  src="/courses/dl-nlp/decodificacion-voraz.svg"
+  alt="Cinco columnas, una por paso del decoder, cada una con tres tokens candidatos y una barra proporcional a su probabilidad. En la primera columna gana i con 0.94, por delante de read y sell. En la segunda gana sell con 0.88, por delante de read y new. En la tercera gana new con 0.71, seguida de cars con 0.21 y red con 0.08: es la columna menos decidida de las cinco. En la cuarta gana cars con 0.85, por delante de books y new. En la quinta gana el simbolo de fin, EOS, con 0.96. Debajo de todas, el producto de las cinco probabilidades ganadoras: 0.94 por 0.88 por 0.71 por 0.85 por 0.96 igual a 0.48."
+  caption="Traduciendo «vendo coches nuevos». La longitud de la salida no la fija el bucle: la fija la columna en la que gana «<EOS>». Las probabilidades las he puesto yo a mano para el dibujo."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+El decoder no devuelve una traducción: define una probabilidad sobre todas las traducciones posibles,
+como un producto de distribuciones —una por paso—, y generar consiste en recorrer ese producto hasta
+que el propio modelo escribe el símbolo de fin.
+</Callout>
+
+## Dos vocabularios y una salida que se detiene sola
+
+Fijemos los dos vocabularios: $V_x$ para la entrada y $V_y$ para la salida. La entrada es una
+secuencia de tokens $x_{1:T_x}$, cada $x_j$ una entrada de $V_x$; la salida es otra,
+$y_{1:T_y}$, sobre $V_y$, y las dos longitudes son independientes. El *encoder* no cambia nada
+respecto de la lección anterior: lee la entrada de principio a fin con la recurrencia de siempre y
+entrega su último estado,
+
+$$
+\bar{\mathbf{h}}_j = \tanh\left(\mathbf{W}^{\text{enc}}_{xh}\mathbf{o}_{x_j} + \mathbf{W}^{\text{enc}}_{hh}\bar{\mathbf{h}}_{j-1} + \mathbf{b}^{\text{enc}}_h\right),
+\qquad
+\mathbf{c} = \bar{\mathbf{h}}_{T_x} \in \mathbb{R}^{d_h},
+$$
+
+donde $\mathbf{o}_{x_j} \in \{0,1\}^{\lvert V_x \rvert}$ es el *one-hot* del token $j$-ésimo y
+$\mathbf{W}^{\text{enc}}_{xh} \in \mathbb{R}^{d_h \times \lvert V_x \rvert}$ tiene una columna por
+cada entrada de $V_x$. El *decoder* tampoco cambia de recurrencia, y arranca donde el encoder
+terminó, $\mathbf{s}_0 = \mathbf{c}$. Lo que cambia es su salida, que ahora vive en el otro idioma:
+
+$$
+\hat{\mathbf{y}}_i = \text{softmax}\left(\mathbf{W}_{hy}\mathbf{s}_i + \mathbf{b}_y\right) \in \mathbb{R}^{\lvert V_y \rvert},
+$$
+
+con $\mathbf{W}_{hy} \in \mathbb{R}^{\lvert V_y \rvert \times d_h}$: una fila por cada entrada de
+$V_y$, y es la única forma del modelo que sabe cuántas entradas tiene el idioma de llegada. Nada
+obliga a que $\lvert V_x \rvert$ y $\lvert V_y \rvert$ se parezcan.
+
+### Dónde vive el final de la frase
+
+Ahora el token que faltaba. A $V_y$ —y sólo a $V_y$— le añadimos una entrada más,
+<W>\<EOS></W>, el símbolo de fin de secuencia, y toda traducción del entrenamiento termina en ella:
+si la salida correcta tiene $n$ tokens, la secuencia de entrenamiento tiene $T_y = n + 1$ y
+el último es $y_{T_y} = \texttt{<EOS>}$. La pérdida es la de <Leccion slug="seq2seq">la lección sobre
+modelos de secuencia a secuencia</Leccion>, sin tocar una línea,
+
+$$
+\ell = \frac{1}{T_y}\sum_{i=1}^{T_y} -\log \hat{y}_{i,\,y_i},
+$$
+
+y ese detalle de contabilidad es todo el mecanismo: como la última posición está dentro del sumatorio,
+aporta su propio término, y el descenso de gradiente empuja hacia arriba la probabilidad de
+<W>\<EOS></W> exactamente ahí —y, por el mismo camino, hacia abajo en las posiciones anteriores, donde
+el token correcto es otro—. Aprender a parar es aprender a predecir un token más.
+
+La consecuencia es la que hacía falta: $T_y$ ya no es un dato que reciba el bucle, sino algo que
+sale del modelo. Al generar, el modelo escribe token a token y para cuando el elegido es
+<W>\<EOS></W>. En el código habrá además un tope, `max_len`, para que un modelo mal entrenado no escriba
+indefinidamente; es una red de seguridad de la implementación, no parte del modelo, y conviene no
+confundir las dos cosas.
+
+## El decoder define una distribución sobre traducciones
+
+Podemos escribir cualquier distribución sobre secuencias, sin suponer nada de nada, como un producto
+de distribuciones sobre un token cada una. Es la regla de la cadena de la probabilidad, aplicada
+posición a posición:
+
+$$
+P\left(y_{1:T_y} \mid x_{1:T_x}\right) = \prod_{i=1}^{T_y} P\left(y_i \mid y_{<i},\, x_{1:T_x}\right),
+$$
+
+donde $y_{<i}$ es el prefijo $y_1, \dots, y_{i-1}$, lo ya escrito antes del paso $i$. Hasta aquí no
+hay arquitectura ninguna: la igualdad vale para cualquier modo de asignar probabilidades a
+secuencias. La arquitectura entra al decir *qué mira* cada factor, y lo que dice el encoder-decoder
+es esto:
+
+$$
+P\left(y_i \mid y_{<i},\, x_{1:T_x}\right) = P\left(y_i \mid y_{<i},\, \mathbf{c}\right).
+$$
+
+Léela despacio, porque el bloque entero vive de ella. A la izquierda, el paso $i$ podría mirar la
+entrada completa; a la derecha, mira un vector. Cada uno de los dos condicionantes de la derecha está
+en un sitio concreto del modelo: $\mathbf{c}$ es el estado inicial $\mathbf{s}_0$, y el prefijo
+$y_{<i}$ entra realimentado token a token, de modo que ambos llegan al paso $i$ resumidos en
+$\mathbf{s}_{i-1}$. Y las probabilidades del factor son las coordenadas que ya calculamos:
+$P(y_i = k \mid y_{<i}, \mathbf{c}) = \hat{y}_{i,k}$.
+
+<Callout type="warning" title="Una igualdad que es una suposición">
+La primera ecuación de esta sección es una identidad matemática; la segunda no. La segunda afirma que
+todo lo que la entrada tiene que decir sobre cualquier posición de la salida cabe en $\mathbf{c}$,
+midan la entrada tres tokens o treinta.
+</Callout>
+
+### Generar es recorrer el producto
+
+Escribir una traducción es elegir un camino por esas columnas. El camino más barato de todos es
+tomar en cada paso la coordenada mayor,
+
+$$
+y_i = \arg\max_{k \in V_y} \hat{y}_{i,k},
+$$
+
+realimentar el token elegido y seguir hasta <W>\<EOS></W>. Es la decodificación voraz, la misma de
+<Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>, y cuesta un paso por
+token de salida.
+
+La concesión es que ese camino no es, en general, el más probable. Nada garantiza que el producto de
+los máximos sea el máximo de los productos: un token que gana su columna por poco puede dejar al
+decoder en un estado desde el que todo lo que sigue es malo, y la decodificación voraz no vuelve
+nunca sobre esa decisión. Buscar de verdad el mejor camino obligaría a puntuar
+$\lvert V_y \rvert^{T_y}$ frases, y eso no lo hace nadie; entre lo voraz y lo exhaustivo hay
+búsquedas intermedias —la habitual es el *beam search*— que este curso no cubre.
+
+<Details summary="Ver un caso donde lo voraz pierde">
+Dos tokens posibles en el primer paso, con probabilidades $0.6$ y $0.4$ —los números me los invento
+yo, sólo hacen falta cuatro—. La decodificación voraz se queda con el $0.6$. Supón que desde esa rama
+la mejor continuación vale $0.5$, y que desde la otra vale $0.9$. Entonces los dos caminos completos
+valen
+
+$$
+0.6 \cdot 0.5 = 0.30
+\qquad\text{y}\qquad
+0.4 \cdot 0.9 = 0.36,
+$$
+
+y el mejor es el que la voraz descartó en el primer paso, cuando todavía no podía saber lo que venía
+después. Con más pasos el efecto se acumula, y por eso los sistemas de traducción reales no decodifican
+así.
+</Details>
+
+## Un traductor de juguete en NumPy
+
+Vamos a entrenar un traductor diminuto: un idioma de juguete con seis palabras en español y otro con
+siete en inglés. De juguete a propósito —la traducción automática de verdad no cabe en el
+navegador—, pero con las tres cosas que esta lección ha puesto sobre la mesa: dos vocabularios
+distintos, una salida cuya longitud decide el modelo, y una reordenación que obliga a esperar. Las
+frases españolas son verbo + sustantivo + adjetivo opcional, y su traducción mete un <W>i</W> al
+principio y adelanta el adjetivo al sustantivo. Ejecuta la celda y mira las parejas.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Idioma de juguete. Dos vocabularios distintos: uno para leer, otro para escribir.
+VX = ["leo", "vendo", "libros", "coches", "rojos", "nuevos"]            # V_x, la entrada
+VY = ["i", "read", "sell", "red", "new", "books", "cars", "<EOS>"]      # V_y, la salida
+TRAD = {"leo": "read", "vendo": "sell", "libros": "books",
+        "coches": "cars", "rojos": "red", "nuevos": "new"}
+EOS = VY.index("<EOS>")            # el fin de secuencia es una entrada mas de V_y
+GO = len(VY)                       # arranque: solo entra al decoder, nunca se predice
+nx, ny = len(VX), len(VY)
+
+datos = np.random.default_rng(0)   # semilla fija: veras estas frases
+
+
+def frase():                       # una frase espanola y su traduccion, en indices
+    es = [VX[datos.integers(0, 2)], VX[datos.integers(2, 4)]]  # verbo + sustantivo
+    if datos.random() < 0.67:
+        es.append(VX[datos.integers(4, 6)])                    # ... + adjetivo, a veces
+    en = ["i", TRAD[es[0]]] + [TRAD[w] for w in es[2:]] + [TRAD[es[1]]]   # el adjetivo se adelanta
+    return [VX.index(w) for w in es], [VY.index(w) for w in en] + [EOS]
+
+
+print("frase                  traduccion + <EOS>              T_x  T_y")
+for _ in range(5):
+    x, y = frase()
+    print("  %-20s %-30s %3d %4d" % (
+        " ".join(VX[i] for i in x), " ".join(VY[i] for i in y),
+        len(x), len(y)))
+`} />
+
+Compara las dos columnas de la derecha. La traducción lleva una palabra más que la frase —ese
+<W>i</W> que el español no escribe— y la secuencia que el decoder tiene que producir lleva una más
+todavía, porque <W>\<EOS></W> ocupa una posición como cualquier otro token y también hay que
+predecirlo: $T_y = T_x + 2$. Doce frases posibles en total, así que este modelo no va a aprender
+español —va a aprender esas doce—; lo que está a prueba es el mecanismo, no el traductor.
+
+La celda siguiente monta las dos redes y entrena. La función `paso` es la de la lección anterior
+línea por línea: encoder hacia delante, decoder hacia delante con *teacher forcing*, vuelta del
+decoder y, colgada del gradiente en $\mathbf{c}$, vuelta del encoder. Lo único que cambia son los dos
+vocabularios —`nx` columnas a la entrada, `ny` filas a la salida— y el <W>\<EOS></W> que `frase` ya
+dejó puesto al final de cada objetivo.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita la celda anterior: VX, VY, EOS, GO, nx, ny, frase.
+d_h, eta, theta, iters = 64, 0.30, 5.0, 1200
+ini = np.random.default_rng(1); sc = 0.1                      # generador propio: no depende de frase
+Wxh_e = ini.normal(size=(d_h, nx)) * sc; Whh_e = ini.normal(size=(d_h, d_h)) * sc; bh_e = np.zeros(d_h)
+Wxh_d = ini.normal(size=(d_h, ny + 1)) * sc; Whh_d = ini.normal(size=(d_h, d_h)) * sc; bh_d = np.zeros(d_h)
+Why = ini.normal(size=(ny, d_h)) * sc; by = np.zeros(ny)      # ny filas: una por entrada de V_y
+pesos = [Wxh_e, Whh_e, bh_e, Wxh_d, Whh_d, bh_d, Why, by]
+
+
+def paso(x, y):                                        # x sobre V_x; y sobre V_y, con <EOS> al final
+    Lx, Ly = len(x), len(y)
+    He = np.zeros((d_h, Lx)); h = np.zeros(d_h)        # --- encoder: lee y resume ---
+    for j in range(Lx):
+        h = np.tanh(Wxh_e[:, x[j]] + Whh_e @ h + bh_e); He[:, j] = h
+    c = h                                              # vector de contexto: el ultimo estado
+    ent = np.concatenate(([GO], y[:-1]))               # teacher forcing: GO, y1, ..., y_{Ty-1}
+    S = np.zeros((d_h, Ly)); P = np.zeros((ny, Ly)); s = c.copy(); loss = 0.0
+    for i in range(Ly):                                # --- decoder: escribe desde c ---
+        s = np.tanh(Wxh_d[:, ent[i]] + Whh_d @ s + bh_d); S[:, i] = s
+        o = Why @ s + by; o -= o.max(); p = np.exp(o); p /= p.sum(); P[:, i] = p
+        loss -= np.log(p[y[i]] + 1e-12)
+    gWhy = np.zeros_like(Why); gby = np.zeros_like(by)  # --- vuelta del decoder ---
+    gWxh_d = np.zeros_like(Wxh_d); gWhh_d = np.zeros_like(Whh_d); gbh_d = np.zeros_like(bh_d)
+    ds = np.zeros(d_h)
+    for i in reversed(range(Ly)):
+        dO = P[:, i].copy(); dO[y[i]] -= 1.0
+        gWhy += np.outer(dO, S[:, i]); gby += dO
+        dp = (1 - S[:, i] ** 2) * (Why.T @ dO + ds)
+        s_ant = S[:, i - 1] if i > 0 else c
+        gWhh_d += np.outer(dp, s_ant); gWxh_d[:, ent[i]] += dp; gbh_d += dp
+        ds = Whh_d.T @ dp
+    gWxh_e = np.zeros_like(Wxh_e); gWhh_e = np.zeros_like(Whh_e); gbh_e = np.zeros_like(bh_e)
+    dh = ds                                            # unico enlace: el gradiente en c
+    for j in reversed(range(Lx)):                      # --- vuelta del encoder ---
+        dp = (1 - He[:, j] ** 2) * dh
+        h_ant = He[:, j - 1] if j > 0 else np.zeros(d_h)
+        gWhh_e += np.outer(dp, h_ant); gWxh_e[:, x[j]] += dp; gbh_e += dp
+        dh = Whh_e.T @ dp
+    return loss / Ly, [g / Ly for g in (gWxh_e, gWhh_e, gbh_e, gWxh_d, gWhh_d, gbh_d, gWhy, gby)]
+
+
+suave = None
+for it in range(iters):
+    x, y = frase()
+    loss, grads = paso(x, y)
+    for g in grads:
+        nrm = np.linalg.norm(g)
+        if nrm > theta: g *= theta / nrm               # recorte del gradiente, bloque anterior
+    for Pm, g in zip(pesos, grads):
+        Pm -= eta * g
+    suave = loss if suave is None else 0.99 * suave + 0.01 * loss
+    if it % 300 == 0 or it == iters - 1:
+        print("iter %4d   perdida/token %.3f" % (it, suave))
+`} />
+
+La pérdida arranca cerca de $\ln 8 \approx 2.08$ —repartir la probabilidad por igual entre las ocho
+entradas de $V_y$, contando <W>\<EOS></W>— y baja hasta rozar el cero. Ahora la parte que importa:
+generar. El bucle de abajo no recibe la longitud de la salida por ningún sitio; escribe, mira si lo
+escrito es <W>\<EOS></W> y, si lo es, para. `max_len` está sólo por seguridad.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita las celdas anteriores: los pesos entrenados, VX, VY, TRAD, EOS, GO.
+def traduce(x, max_len=8):                             # nadie le dice cuantos tokens escribir
+    h = np.zeros(d_h)
+    for j in range(len(x)):                            # el encoder lee la frase entera
+        h = np.tanh(Wxh_e[:, x[j]] + Whh_e @ h + bh_e)
+    s = h; ix = GO; out = []
+    for _ in range(max_len):
+        s = np.tanh(Wxh_d[:, ix] + Whh_d @ s + bh_d)
+        ix = int((Why @ s + by).argmax())              # el mas probable: decodificacion voraz
+        if ix == EOS:                                  # el modelo dice que ha terminado
+            break
+        out.append(ix)
+    return out
+
+
+ejemplos = [["leo", "libros"], ["vendo", "coches"], ["leo", "coches", "rojos"],
+            ["vendo", "libros", "nuevos"], ["vendo", "libros"], ["leo", "coches", "nuevos"]]
+print("frase                  traduccion              entra  sale")
+for es in ejemplos:
+    got = traduce([VX.index(w) for w in es])
+    quiero = ["i", TRAD[es[0]]] + [TRAD[w] for w in es[2:]] + [TRAD[es[1]]]
+    print("  %-20s %-24s %3d %5d   %s" % (
+        " ".join(es), " ".join(VY[i] for i in got), len(es), len(got),
+        "OK" if [VY[i] for i in got] == quiero else "X"))
+`} />
+
+Dos cosas en esa tabla. La columna de longitudes: entran dos o tres tokens y salen tres o cuatro,
+uno más siempre, y ese número lo ha decidido el modelo al colocar <W>\<EOS></W> —no hay ningún
+`range(len(x))` en el bucle—. Y el orden: cuando la frase lleva adjetivo, el modelo lo escribe
+*antes* que el sustantivo, aunque lo leyó después. Para hacerlo tuvo que retener el sustantivo
+mientras escribía el adjetivo, y todo lo que tenía para retenerlo era $\mathbf{c}$.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: por qué hace falta un token de fin, qué distribución define exactamente el decoder,
+si la decodificación voraz es óptima, y de dónde sale la habilidad de parar en el sitio.
+
+<Quiz id="q-por-que-eos" />
+
+<Quiz id="q-factorizacion" />
+
+<Quiz id="q-voraz-no-optimo" />
+
+<Quiz id="q-aprende-a-parar" />
+
+---
+
+La arquitectura ya está dicha con precisión, y esa precisión deja a la vista una línea incómoda:
+$P(y_i \mid y_{<i}, x_{1:T_x}) = P(y_i \mid y_{<i}, \mathbf{c})$. La igualdad no es un teorema, es
+una decisión de diseño, y afirma algo fuerte —que $d_h$ números bastan para todo lo que la entrada
+tenga que aportar a cualquier posición de la salida—. En un juguete de tres tokens nadie lo notaría.
+La pregunta es qué le pasa a esa afirmación cuando la entrada es una frase de verdad.
+
+Esa pregunta tiene una respuesta que se puede medir, y es <Leccion slug="el-cuello-de-botella">la lección siguiente, sobre el cuello de
+botella del vector de contexto</Leccion>. Allí la entrada se va alargando mientras se mira qué le ocurre a la
+salida, hasta ver dónde deja de aguantar la igualdad de arriba y por qué el sitio donde se rompe no
+depende de cuánto se entrene.

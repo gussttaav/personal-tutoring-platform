@@ -1,0 +1,541 @@
+---
+slug: proyecto-transformer
+title: "Proyecto: un Transformer desde cero"
+block: 5
+order: 9
+minutes: 30
+summary: "El artículo entero, montado y ejecutado: un vocabulario de doce entradas compartido por los dos idiomas, dos bloques por columna, dos cabezas y una frase de cinco tokens que sale por arriba convertida en seis distribuciones. Las seis funciones que hacen el trabajo son los desafíos de las lecciones anteriores sin tocar una letra, y lo que las une es que todo lo de en medio recibe T por d_model y devuelve T por d_model. Nadie ha entrenado estos pesos, así que la traducción que propone no significa nada; lo que sí se puede comprobar con pesos cualesquiera son tres cosas, y la segunda es la que este montaje añade: que ninguna posición del decoder ve lo que todavía no se ha escrito exige la máscara en cada uno de los bloques, no en el primero, y quitar una sola se mide."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-demuestra
+    type: multi
+    prompt: 'El modelo corre entero con pesos que nadie ha entrenado y devuelve su matriz de probabilidades. Marca lo que ese resultado demuestra.'
+    options:
+      - { id: a, text: 'Que la cadena de formas encaja de un extremo al otro: cinco enteros por la fuente y seis por el decoder acaban en una matriz $6 \times 12$, una fila por posición escrita y una columna por entrada del vocabulario.' }
+      - { id: b, text: 'Que lo que sale de cada posición es una distribución: las seis filas suman $1$.' }
+      - { id: c, text: 'Que ninguna posición del decoder lee lo que va después: reescribir el final de lo que entra deja las filas anteriores exactamente donde estaban.' }
+      - { id: d, text: 'Que las subcapas están en el orden del artículo: si el perceptrón por posiciones fuera antes de la atención, las formas ya no encajarían.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras, y son justo las que no dependen de que los pesos valgan algo. La (d) es la trampa, y falla por lo que esta lección tiene de tesis: las formas encajarían igual. Toda subcapa recibe $T \times d_{\text{model}}$ y devuelve $T \times d_{\text{model}}$, así que barajar el orden da un modelo distinto y perfectamente ejecutable —peor, pero ejecutable—, y ninguna forma se quejaría. Lo que las formas verifican es que el montaje es coherente, no que sea el del artículo; y desde luego no que la traducción sea buena, que con estos pesos es lo primero que salga.'
+    hint: 'Pregúntate cuáles de las cuatro seguirían siendo ciertas con otros pesos cualesquiera, y cuál habla de una decisión que las formas no ven.'
+  - id: q-mascara-por-bloque
+    type: boolean
+    prompt: 'El decoder de esta lección apila dos bloques. Con enmascarar la auto-atención del primero, el modelo entero ya es autorregresivo: lo que sale en la posición $3$ no puede depender de lo que entra en la $5$.'
+    answer: false
+    explanation: 'Falso, y la última celda lo mide: enmascarando sólo el primer bloque, reescribir las dos últimas posiciones de lo que entra al decoder mueve las cuatro primeras filas de la salida $0.0768$, cuando con las dos máscaras puestas se mueven $0$ exacto. La cadena tiene la fuerza de su eslabón más débil: la auto-atención del segundo bloque mezclaría en su fila $3$ la fila $5$ de lo que le entregó el primero, y esa fila $5$ sí sabe lo que había en la posición $5$. Todo lo que venga por encima hereda la mezcla. Por eso el artículo enmascara la primera subcapa de **cada** uno de sus seis bloques y no la del de abajo.'
+    hint: '¿Qué recibe la auto-atención del segundo bloque, y de dónde salió cada una de sus filas?'
+  - id: q-parametros-atencion
+    type: numeric
+    prompt: 'El modelo de juguete tiene $d_{\text{model}} = 32$ y $h = 2$ cabezas. ¿Cuántos parámetros guarda una de sus capas de atención multi-head, con sus cuatro matrices y sin sesgos?'
+    answer: 4096
+    tolerance: 0
+    unit: parámetros
+    explanation: 'Cuatro mil noventa y seis, que es $4d_{\text{model}}^{2}$, y la cuenta vale por lo que **no** aparece en ella: $h$. Cada cabeza proyecta a $d_k = d_v = d_{\text{model}}/h = 16$, así que las tres proyecciones suman $3 \cdot h \cdot d_{\text{model}} \cdot d_k = 3d_{\text{model}}^{2}$ salga el número de cabezas que salga —el reparto de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>— y $\mathbf{W}^O$ mide $(h \cdot d_v) \times d_{\text{model}} = 32 \times 32$. Con las anchuras del artículo, $d_{\text{model}} = 512$ y $h = 8$, la misma cuenta da $1\,048\,576$, que es lo que la lección anterior sumaba doce veces.'
+    hint: 'Escribe las cuatro matrices con sus formas y suma. ¿Cuántas columnas tienen entre todas las cabezas?'
+challenges:
+  - id: ch-genera-voraz
+    prompt: |
+      Una llamada al modelo entrega las $T_y$ distribuciones a la vez porque tiene delante la
+      salida correcta. Generar no funciona así: cada token se elige con lo que hay escrito hasta
+      ese momento y vuelve a entrar.
+
+      Escribe `genera(paso, go, eos, max_pasos)`. `paso(entrada)` es el modelo hecho función: recibe
+      la lista de tokens que entra al decoder —la primera vez, `[go]`— y devuelve las
+      probabilidades de la posición **siguiente**, un array de forma $(\lvert V \rvert,)$. No la
+      escribes tú, te la dan.
+
+      En cada vuelta elige la entrada más probable —decodificación voraz, la de <Leccion slug="encoder-decoder">la lección
+      sobre el encoder y el decoder</Leccion>—, apúntala y realiméntala. Para al elegir
+      `eos`, que sí va en el resultado, o al llevar `max_pasos` tokens, lo que ocurra antes.
+      Devuelve la lista de los tokens elegidos, sin `go`.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def genera(paso, go, eos, max_pasos):
+          # tu código aquí
+          pass
+    tests:
+      - name: "para al elegir <EOS>, y lo devuelve"
+        code: |
+          import numpy as np
+          def guion(script, n_v):
+              llamadas = []
+              def paso(entrada):
+                  llamadas.append(list(entrada))
+                  p = np.full(n_v, 0.01)
+                  p[script[len(llamadas) - 1]] = 5.0
+                  return p / p.sum()
+              return paso, llamadas
+          paso, llamadas = guion([4, 7, 1], 12)
+          res = genera(paso, 0, 1, 10)
+          assert res is not None, 'genera tiene que devolver la lista de tokens, no imprimirla'
+          assert list(res) == [4, 7, 1], 'el <EOS> elegido va dentro del resultado, y despues de el no se elige nada mas'
+          assert len(llamadas) == 3, 'una llamada a paso por token elegido: ni una mas despues del <EOS>'
+      - name: "sin <EOS> a la vista, para en max_pasos"
+        code: |
+          import numpy as np
+          def guion(script, n_v):
+              llamadas = []
+              def paso(entrada):
+                  llamadas.append(list(entrada))
+                  p = np.full(n_v, 0.01)
+                  p[script[len(llamadas) - 1]] = 5.0
+                  return p / p.sum()
+              return paso, llamadas
+          paso, llamadas = guion([2, 3, 4, 5, 6, 7, 8], 12)
+          res = genera(paso, 0, 1, 4)
+          assert res is not None, 'genera tiene que devolver la lista de tokens'
+          assert list(res) == [2, 3, 4, 5], 'max_pasos es un tope de tokens generados, y sin <EOS> es el unico freno'
+          assert len(llamadas) == 4, 'ni una llamada de mas: el tope cuenta pasadas, no tokens de entrada'
+      - name: "arranca con <GO> solo y realimenta lo que elige"
+        code: |
+          import numpy as np
+          def guion(script, n_v):
+              llamadas = []
+              def paso(entrada):
+                  llamadas.append(list(entrada))
+                  p = np.full(n_v, 0.01)
+                  p[script[len(llamadas) - 1]] = 5.0
+                  return p / p.sum()
+              return paso, llamadas
+          paso, llamadas = guion([9, 5, 3, 1], 12)
+          crudo = genera(paso, 0, 1, 10)
+          assert crudo is not None, 'genera tiene que devolver la lista de tokens, no imprimirla'
+          res = [int(t) for t in crudo]
+          assert len(llamadas) > 0, 'genera tiene que llamar a paso: es el modelo, y sin el no hay que elegir'
+          assert llamadas[0] == [0], 'en la primera pasada al decoder solo entra <GO>'
+          for k in range(1, len(llamadas)):
+              assert llamadas[k] == [0] + res[:k], 'la pasada k recibe <GO> y todo lo elegido hasta ese momento: generar es realimentar'
+      - name: "elige la mas probable, no la primera ni la ultima"
+        code: |
+          import numpy as np
+          def paso_fijo(entrada):
+              p = np.zeros(6)
+              p[0], p[3], p[5] = 0.3, 0.5, 0.2
+              return p
+          res = genera(paso_fijo, 0, 1, 3)
+          assert res is not None, 'genera tiene que devolver la lista de tokens'
+          assert list(res) == [3, 3, 3], 'de cada distribucion sale su entrada mas probable, que aqui no es ni la 0 ni la 5'
+    solution: |
+      import numpy as np
+
+
+      def genera(paso, go, eos, max_pasos):
+          entrada, salida = [go], []
+          while len(salida) < max_pasos:
+              siguiente = int(np.argmax(paso(entrada)))
+              salida.append(siguiente)
+              if siguiente == eos:
+                  break
+              entrada = entrada + [siguiente]   # lo elegido vuelve a entrar
+          return salida
+    explanation: |
+      El bucle tiene dos listas y no una, y ahí está casi todo: `entrada` es lo que ve el decoder
+      —arranca en `[go]` y crece por el final— y `salida` es lo que se ha escrito, que es lo mismo
+      corrido una posición y sin `go`. Es el desplazamiento de <Leccion slug="encoder-decoder-masking">su lección</Leccion>
+      construyéndose paso a paso en lugar de venir dado.
+
+      Las dos condiciones de parada no son intercambiables. El `break` va **después** de apuntar
+      el token, porque el `<EOS>` es una decisión del modelo y forma parte de lo que escribió; el
+      tope de `max_pasos` está para que un modelo que nunca lo elija no deje el bucle corriendo,
+      que con pesos sin entrenar es el caso normal. Y `entrada + [siguiente]` construye una lista
+      nueva en vez de escribir en la que ya se pasó: así lo que `paso` recibió en una vuelta no
+      cambia por detrás en la siguiente.
+reading:
+  - kind: blog
+    title: 'The Annotated Transformer'
+    authors: 'Huang, Subramanian y otros; orig. Sasha Rush'
+    year: '2022'
+    venue: 'nlp.seas.harvard.edu'
+    lang: en
+    url: 'https://nlp.seas.harvard.edu/annotated-transformer/'
+    note: 'El mismo montaje que haces aquí, en PyTorch y línea a línea junto al texto del artículo: las mismas piezas y, encima, el bucle de entrenamiento que tu celda no puede correr. Entrena una traducción de juguete en una GPU.'
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 9. */}
+
+Ocho lecciones han desmontado *Attention is All You Need* pieza a pieza y en ninguna ha llegado a
+ejecutarse nada. La anterior, sobre los cinco números que fijan todas las formas del modelo, era la
+última que quedaba por poner: con ella el Transformer está entero sobre el papel y sigue sin existir
+como programa. La distancia entre las dos cosas es corta —unas sesenta líneas de NumPy— y conviene
+recorrerla una vez.
+
+Lo que salga por arriba no significará nada, y vale más decirlo antes de ejecutar que después: los
+pesos son los que devuelve el generador de números aleatorios y nadie los ha corregido jamás. Con
+<W>me gusta la casa roja</W> a la entrada, este modelo propondrá lo primero que le salga, y
+ajustarlo para que deje de hacerlo queda fuera de esta lección. Aun así hay tres cosas comprobables
+con pesos cualesquiera, y son exactamente las que dicen si la arquitectura está bien montada: que
+las formas encajan de un extremo al otro, que ninguna posición del decoder ve lo que todavía no se
+ha escrito, y que el recuento de parámetros es el de la lección anterior con otros números dentro.
+
+Montar quince cajas suena peor de lo que es, y la razón cabe en una frase: salvo en los dos
+extremos, todo lo que hay dentro recibe una matriz de $T$ filas y $d_{\text{model}}$ columnas y
+devuelve otra de la misma forma. La atención multi-head baja a $d_v$ por cabeza y $\mathbf{W}^O$ la
+sube de vuelta; el perceptrón por posiciones sube a $d_{\text{ff}}$ y $\mathbf{W}_2$ la baja; el
+*layer norm* no toca ninguna forma. No es una casualidad afortunada: la conexión residual de
+<Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> lo **exige**, porque suma casilla a casilla lo que entró con lo que salió, y
+dos matrices de formas distintas no se suman.
+
+De modo que el programa entero cambia de forma dos veces, y las dos están en los extremos: abajo,
+donde una lista de enteros se convierte en vectores, y arriba, donde cada vector se convierte en una
+probabilidad por entrada del vocabulario. Entre medias no hay nada que ajustar.
+
+| Etapa | Forma |
+|---|---|
+| los tokens de la fuente | $5$ enteros |
+| $\mathbf{X}^{\text{enc}}$, tras la tabla y $\text{PE}$ | $5 \times 32$ |
+| tras cada uno de los $N$ bloques del encoder | $5 \times 32$ |
+| los tokens que entran al decoder | $6$ enteros |
+| $\mathbf{X}^{\text{dec}}$, tras la tabla y $\text{PE}$ | $6 \times 32$ |
+| tras cada uno de los $N$ bloques del decoder | $6 \times 32$ |
+| $\hat{\mathbf{Y}}$, tras la tabla leída al revés | $6 \times 12$ |
+
+<Callout type="intuition" title="La idea en una frase">
+Un Transformer es una «tubería» de forma constante: los dos extremos traducen —enteros a vectores
+abajo, vectores a probabilidades arriba— y todo lo de en medio recibe $T \times d_{\text{model}}$ y
+devuelve $T \times d_{\text{model}}$. Apilar $N$ bloques no es una decisión de arquitectura, es un
+bucle.
+</Callout>
+
+## Todo lo de en medio conserva la forma
+
+El modelo de esta lección es el del artículo con las anchuras divididas por dieciséis: $N = 2$
+bloques por columna, $d_{\text{model}} = 32$, $h = 2$ cabezas —y por tanto $d_k = d_v = 16$—,
+$d_{\text{ff}} = 128$, y un vocabulario de $\lvert V \rvert = 12$ entradas compartido por los dos
+idiomas, como en el artículo. La frase es <W>me gusta la casa roja</W>, cinco tokens, y su
+traducción <W>i like the red house</W>, cinco más <W>\<EOS></W>, el símbolo de fin de secuencia:
+$T_x = 5$ y $T_y = 6$.
+
+Por abajo entra la caja de <Leccion slug="codificacion-posicional">la lección sobre la codificación posicional</Leccion>, con el
+factor que la lección anterior le añadió:
+
+$$
+\mathbf{x}_t = \sqrt{d_{\text{model}}}\;\mathbf{e}_{w_t} + \text{PE}_t,
+$$
+
+la misma operación en las dos columnas, con la misma tabla $\mathbf{E}$. Apiladas por filas dan
+$\mathbf{X}^{\text{enc}} \in \mathbb{R}^{5 \times 32}$ y
+$\mathbf{X}^{\text{dec}} \in \mathbb{R}^{6 \times 32}$. A partir de ahí sólo hay una línea, la de
+<Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion>:
+
+$$
+\text{LayerNorm}\left(\mathbf{X} + \text{Sublayer}(\mathbf{X})\right),
+$$
+
+aplicada cinco veces con cinco cosas distintas en el hueco. Ésa es toda la arquitectura:
+
+| Columna | Subcapa | Qué va en el hueco | Su mapa |
+|---|---|---|---|
+| encoder | 1 | $\text{MultiHead}$, con las tres listas leídas de $\mathbf{X}^{\text{enc}}$ | $5 \times 5$ |
+| encoder | 2 | el perceptrón por posiciones | — |
+| decoder | 1 | $\text{MultiHead}$ sobre $\mathbf{X}^{\text{dec}}$, con $\mathbf{M}$ sumada a las puntuaciones | $6 \times 6$ |
+| decoder | 2 | consultas de $\mathbf{X}^{\text{dec}}$, claves y valores de $\mathbf{X}^{\text{enc}}$ | $6 \times 5$ |
+| decoder | 3 | el perceptrón por posiciones | — |
+
+$\text{FFN}$ es como el artículo llama al perceptrón por posiciones: el mismo objeto con otro
+nombre. Y por arriba sale la tabla leída al revés, que es la caja que cerró la lección anterior:
+
+$$
+\hat{\mathbf{Y}} = \text{softmax}\left(\mathbf{X}^{\text{dec}}\mathbf{E}^{\top}\right) \in \mathbb{R}^{6 \times 12},
+$$
+
+con el *softmax* por filas. Ninguna de esas líneas cambia el número de columnas de lo que recibe, y
+de ahí sale la propiedad que hace corto el programa: $N$ no aparece en ninguna forma, sólo en
+cuántas veces da la vuelta un bucle. Poner seis bloques en lugar de dos no toca una sola matriz.
+
+## Por qué la máscara va en todos los bloques y no sólo en el primero
+
+<Leccion slug="encoder-decoder-masking">La lección sobre el encoder, el decoder y las máscaras</Leccion> dejó demostrado que una
+llamada enmascarada respeta el pasado: en su fila $t$ no entra ninguna columna a la derecha de $t$.
+Lo que hace falta al montar el modelo es otra cosa, y es lo único que este ensamblaje añade a lo ya
+escrito: que la propiedad **sobreviva a apilar**. Entre lo que entra al decoder y lo que sale hay
+seis subcapas, tres por bloque, y sólo dos llevan máscara.
+
+Llamemos *respetar el pasado* a esto: la fila $t$ de lo que sale depende únicamente de las filas $1$
+a $t$ de lo que entró. Tres observaciones bastan.
+
+La primera es que las cajas que trabajan fila a fila lo respetan sin hacer nada. El perceptrón por
+posiciones aplica los mismos pesos a cada fila por separado, el *layer norm* normaliza cada fila con
+su propia media y su propia desviación típica, y la suma residual suma la fila $t$ con la fila $t$.
+Es la cuenta de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion>: de las quince cajas
+del dibujo, sólo las tres de atención miran a otra posición.
+
+La segunda es que la auto-atención enmascarada lo respeta por construcción, que es de lo que
+trataba $\mathbf{M}$: su fila $t$ de pesos vale cero de la columna $t+1$ en adelante, así que lo que
+sale en $t$ mezcla valores de filas que no pasan de $t$. Y la tercera es que la
+atención encoder-decoder lo respeta por un motivo distinto, y conviene separarlo: sus claves y sus
+valores no son del decoder, son del encoder. Mezcla las cinco posiciones de la fuente enteras —y
+debe hacerlo, la fuente está leída desde el principio—; de la salida sólo usa la consulta de su
+propia fila.
+
+Respetar el pasado se conserva al componer, y con eso está hecho: con $\mathbf{Z} = f(\mathbf{X})$,
+la fila $t$ de $g(\mathbf{Z})$ depende sólo de las filas $\leq t$ de $\mathbf{Z}$, y cada una de
+ésas sólo de las filas $\leq t$ de $\mathbf{X}$. Encadena las seis subcapas y sale la propiedad
+entera:
+
+$$
+\hat{\mathbf{y}}_t = f\left(x_{1:T_x},\; y_{<t}\right),
+$$
+
+que es la barra vertical de $P\left(y_t \mid y_{<t}, x_{1:T_x}\right)$ diciendo la verdad.
+
+La cadena tiene la fuerza de su eslabón más débil, y ahí está el motivo de que el artículo ponga
+máscara en la primera subcapa de **cada** uno de sus seis bloques. Quítasela al segundo bloque de
+este modelo y su auto-atención mezclará, en la fila $3$, la fila $6$ de lo que le entregó el
+primero; todo lo que venga por encima hereda la mezcla, y la barra vertical pasa a ser mentira. La
+última celda lo mide con números.
+
+## El modelo entero en cuatro celdas
+
+Cuatro celdas, en este orden: la frase y su entrada, las piezas, el modelo, y lo que se puede
+comprobar sin haber entrenado nada. Cada una necesita las anteriores, así que ejecútalas seguidas.
+
+La primera fija el vocabulario compartido, convierte las dos frases en índices y construye lo que
+entra por abajo en las dos columnas. Mira la tercera línea que imprime: lo que entra al decoder no
+es la traducción, es la traducción corrida una posición, con <W>\<GO></W> —el símbolo de arranque—
+en la primera y sin el <W>\<EOS></W> del final.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+V = ["<GO>", "<EOS>", "me", "gusta", "la", "casa", "roja",
+     "i", "like", "the", "red", "house"]        # un vocabulario para los dos idiomas
+ix = {w: i for i, w in enumerate(V)}
+n_v, d_model, h, d_ff, N = len(V), 32, 2, 128, 2
+
+x = [ix[w] for w in "me gusta la casa roja".split()]
+y = [ix[w] for w in "i like the red house".split()] + [ix["<EOS>"]]
+ent_dec = [ix["<GO>"]] + y[:-1]                 # la salida, corrida una posicion
+
+rng = np.random.default_rng(0)
+E = rng.normal(size=(n_v, d_model)) / np.sqrt(d_model)   # la tabla, la misma en los tres sitios
+
+
+def codificacion_posicional(T, d):
+    i = np.arange(d // 2)
+    omega = 1.0 / (10000 ** (2 * i / d))
+    PE = np.zeros((T, d))
+    PE[:, 0::2] = np.sin(np.arange(T)[:, None] * omega)
+    PE[:, 1::2] = np.cos(np.arange(T)[:, None] * omega)
+    return PE
+
+
+def entrada(tokens):                            # la caja de abajo del todo, las dos veces
+    return np.sqrt(d_model) * E[tokens] + codificacion_posicional(len(tokens), d_model)
+
+
+X_enc, X_dec = entrada(x), entrada(ent_dec)
+print("fuente  :", [V[i] for i in x], "->", X_enc.shape)
+print("etiqueta:", [V[i] for i in y])
+print("al decoder:", [V[i] for i in ent_dec], "->", X_dec.shape)
+`} />
+
+La segunda no trae nada nuevo, y ése es el hallazgo: son seis funciones y las seis son el cuerpo de
+un desafío que ya resolviste. `softmax_filas` viene de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>;
+`atencion` es el de <Leccion slug="encoder-decoder-masking">la lección sobre las máscaras</Leccion>, con su máscara opcional; `multi_head` reparte las columnas entre
+las cabezas como el de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>; `layer_norm` y `subcapa` son los de <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion>. Lo único
+escrito para hoy es `ffn`, que son dos líneas.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita la celda anterior: d_model, h, d_ff.
+d_k = d_v = d_model // h                        # no se eligen: salen de h
+
+
+def softmax_filas(S):
+    Z = np.exp(S - S.max(axis=1, keepdims=True))
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+def atencion(Q, K, Val, causal=False):
+    S = Q @ K.T / np.sqrt(Q.shape[1])
+    if causal:
+        S = np.where(np.triu(np.ones(S.shape, dtype=bool), k=1), -np.inf, S)
+    A = softmax_filas(S)
+    return A @ Val, A
+
+
+def multi_head(Xq, Xkv, p, causal=False):       # Xq trae las consultas; Xkv, claves y valores
+    salidas, mapas = [], []
+    for i in range(h):
+        col = slice(i * d_k, (i + 1) * d_k)     # el bloque de columnas de la cabeza i
+        s, A = atencion(Xq @ p["Wq"][:, col], Xkv @ p["Wk"][:, col],
+                        Xkv @ p["Wv"][:, col], causal)
+        salidas.append(s)
+        mapas.append(A)
+    return np.concatenate(salidas, axis=1) @ p["Wo"], np.stack(mapas)
+
+
+def layer_norm(X, gamma, beta, eps=1e-5):
+    mu, s = X.mean(axis=1, keepdims=True), X.std(axis=1, keepdims=True)
+    return gamma * (X - mu) / np.sqrt(s**2 + eps) + beta
+
+
+def subcapa(X, salida, norma):                  # sumar lo que entro y normalizar la suma
+    return layer_norm(X + salida, *norma)
+
+
+def ffn(X, p):                                  # el perceptron por posiciones
+    return np.maximum(0.0, X @ p["W1"] + p["b1"]) @ p["W2"] + p["b2"]
+
+
+print("definidas:", [f.__name__ for f in (softmax_filas, atencion, multi_head,
+                                          layer_norm, subcapa, ffn)])
+`} />
+
+La tercera saca los pesos del generador y encadena las subcapas en el orden de la tabla de arriba.
+`mascaras` es un interruptor por bloque y viene puesto en los dos; la última celda lo usará. De lo
+que imprime, mira la forma de la salida, que las seis filas suman $1$, y la pérdida por posición al
+lado de $\ln 12$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita las dos celdas anteriores.
+def pesos_atencion(r):                          # las cuatro matrices, sin sesgos
+    return {n: r.normal(size=(d_model, d_model)) / np.sqrt(d_model)
+            for n in ("Wq", "Wk", "Wv", "Wo")}
+
+
+def pesos_bloque(r, cruzada):
+    p = {"propia": pesos_atencion(r),
+         "W1": r.normal(size=(d_model, d_ff)) / np.sqrt(d_model), "b1": np.zeros(d_ff),
+         "W2": r.normal(size=(d_ff, d_model)) / np.sqrt(d_ff), "b2": np.zeros(d_model),
+         "normas": [(np.ones(d_model), np.zeros(d_model)) for _ in range(3 if cruzada else 2)]}
+    if cruzada:
+        p["cruzada"] = pesos_atencion(r)        # la subcapa que junta las dos columnas
+    return p
+
+
+encoder = [pesos_bloque(rng, False) for _ in range(N)]
+decoder = [pesos_bloque(rng, True) for _ in range(N)]
+
+
+def modelo(X_enc, X_dec, mascaras=(True, True)):
+    mapas = {}
+    for n, p in enumerate(encoder):
+        s, A = multi_head(X_enc, X_enc, p["propia"])
+        X_enc = subcapa(X_enc, s, p["normas"][0])
+        X_enc = subcapa(X_enc, ffn(X_enc, p), p["normas"][1])
+        mapas["enc %d" % n] = A
+    for n, p in enumerate(decoder):
+        s, A = multi_head(X_dec, X_dec, p["propia"], causal=mascaras[n])
+        X_dec = subcapa(X_dec, s, p["normas"][0])
+        s, C = multi_head(X_dec, X_enc, p["cruzada"])
+        X_dec = subcapa(X_dec, s, p["normas"][1])
+        X_dec = subcapa(X_dec, ffn(X_dec, p), p["normas"][2])
+        mapas["dec %d" % n], mapas["cruz %d" % n] = A, C
+    return softmax_filas(X_dec @ E.T), mapas    # la tabla, leida al reves
+
+
+P, mapas = modelo(X_enc, X_dec)
+print("salida:", P.shape, " una fila por posicion escrita, una columna por entrada")
+print("cada fila suma 1:", bool(np.allclose(P.sum(axis=1), 1.0)))
+print("perdida por posicion:", round(float(-np.log(P[np.arange(len(y)), y]).mean()), 3),
+      "   ln |V| =", round(float(np.log(n_v)), 3))
+`} />
+
+La pérdida sale $3.292$ y $\ln 12 = 2.485$. Un modelo recién inicializado no está en el reparto
+uniforme: está peor. Repartir por igual es lo mejor que puede hacer quien no sabe nada, y éste ni
+siquiera reparte por igual —reparte desigual y sin motivo, y paga la diferencia—. Entrenar
+consistiría, para empezar, en bajar hasta esa línea; cruzarla es lo que se parecería a traducir.
+
+La cuarta comprueba lo comprobable: los seis mapas con su forma, la primera fila de la salida, y la
+tabla que mide la sección anterior —el mismo modelo con la máscara puesta en los dos bloques, en
+uno, en el otro y en ninguno, mirando cuánto se mueven las cuatro primeras filas de la salida al
+reescribir el final de lo que entra—.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Necesita las tres celdas anteriores.
+for nombre, A in mapas.items():
+    print("%-7s %-11s filas que suman 1: %s" % (nombre, A.shape,
+                                                bool(np.allclose(A.sum(axis=2), 1.0))))
+
+print("\\nfila 1 de la salida:", np.round(P[0], 3))
+print("lo mas probable en cada posicion:", [V[i] for i in P.argmax(axis=1)])
+
+otro = list(ent_dec)
+otro[4:] = [ix["casa"], ix["me"]]               # reescribo las posiciones 5 y 6
+X_otro = entrada(otro)
+
+print("\\nmascara en...      se mueven las cuatro primeras filas")
+for etiqueta, m in (("los dos bloques", (True, True)), ("solo el primero", (True, False)),
+                    ("solo el segundo", (False, True)), ("ninguno        ", (False, False))):
+    antes, _ = modelo(X_enc, X_dec, m)
+    ahora, _ = modelo(X_enc, X_otro, m)
+    print("  %s     %s" % (etiqueta, round(float(np.abs(ahora[:4] - antes[:4]).max()), 4)))
+
+
+def arrays(p):                                  # todos los pesos de un bloque, uno a uno
+    for v in p.values():
+        if isinstance(v, dict):
+            yield from v.values()
+        elif isinstance(v, list):
+            yield from (a for par in v for a in par)
+        else:
+            yield v
+
+
+total = E.size + sum(a.size for p in encoder + decoder for a in arrays(p))
+print("\\nparametros:", total, " frente a los 63045632 del modelo base")
+`} />
+
+Los mapas cuadran con la tabla: dos por capa de atención —una por cabeza—, $5 \times 5$ los del
+encoder, $6 \times 6$ los enmascarados y $6 \times 5$ los cruzados, el único rectangular del modelo,
+y lo es porque las dos frases no miden lo mismo. En las seis posiciones lo más probable es la misma
+entrada, <W>the</W>, con un $0.589$ en la primera: no es que sepa inglés, es la fila de $\mathbf{E}$
+que más apunta en la dirección que le sale al decoder, decidida por el mismo generador que puso los
+pesos.
+
+La tabla de las máscaras es la afirmación de la sección anterior con números. Sólo la primera fila
+da $0$, y da $0$ exacto; enmascarar un bloque y no el otro deja $0.0768$ o $0.1651$ según cuál se
+quite, y no enmascarar ninguno, $0.194$. Un número pequeño no vale: o la fila anterior no se mueve,
+o el modelo ha leído lo que todavía no había escrito.
+
+Y los $59\,008$ parámetros son la fórmula de la lección anterior con otros cinco números dentro
+—$12\,576$ por bloque de encoder, $16\,736$ por bloque de decoder y la tabla compartida—:
+
+$$
+2 \cdot 12\,576 + 2 \cdot 16\,736 + 12 \cdot 32 = 59\,008.
+$$
+
+El modelo base del artículo tiene mil sesenta y ocho veces más pesos que éste y ni una caja más.
+
+## Comprueba tu intuición
+
+Tres preguntas: qué demuestra un *forward pass* con pesos sin entrenar, si la máscara del primer
+bloque le alcanza al decoder entero, y cuántos parámetros guarda una capa de atención.
+
+<Quiz id="q-que-demuestra" />
+
+<Quiz id="q-mascara-por-bloque" />
+
+<Quiz id="q-parametros-atencion" />
+
+Queda una cosa que este modelo no ha hecho ni puede hacer de una pasada. Las seis filas salen a la
+vez porque la salida correcta está sobre la mesa —el *teacher forcing* que <Leccion slug="encoder-decoder-masking">su lección</Leccion> puso al lado de la máscara—, y al escribir de verdad no la hay: el decoder arranca con
+<W>\<GO></W> solo, elige un token, lo realimenta y vuelve a llamarse. Ese bucle es el desafío, escrito
+contra una función `paso` que hace de modelo.
+
+<CodeChallenge id="ch-genera-voraz" />
+
+---
+
+Lo que has montado es el modelo del artículo, y eso incluye una decisión que en 2017 no se discutía:
+dos columnas, porque la tarea era traducir. La fuente entera por un lado, lo escrito por el otro, y
+una subcapa que las junta. Nada de lo que has escrito obliga a esa forma —las dos columnas comparten
+la tubería, las piezas y hasta la tabla—, y en cuanto la tarea deja de ser traducir, la pregunta de
+cuántas columnas hacen falta se abre.
+
+Las dos respuestas que se dieron son <Leccion slug="bert-y-gpt">la lección siguiente, sobre BERT y GPT</Leccion>: una se quedó
+con la columna de la izquierda y con ninguna máscara, la otra con la de la derecha y con todas, y
+las dos dejaron de traducir para entrenarse contra textos que no tienen traducción al lado. La
+aritmética que las mueve es la que acabas de escribir, sin una operación nueva; lo que cambia es qué
+se les pide predecir.

@@ -1,0 +1,283 @@
+---
+slug: gradiente-desvanecido
+title: "El gradiente que se desvanece"
+block: 3
+order: 4
+minutes: 28
+summary: "Multiplicar por la misma matriz recurrente en cada paso vuelve el gradiente exponencial en la distancia: el radio espectral de W_hh decide si se desvanece o explota, la saturación del tanh solo agrava lo primero, y el recorte del gradiente frena la explosión pero no rescata lo desvanecido —que es lo que obligará a cambiar de arquitectura—."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-lo-desvanece
+    type: single
+    prompt: '¿Qué hace que el gradiente de una RNN se desvanezca o explote al retroceder por una secuencia larga?'
+    options:
+      - { id: a, text: 'Que la vuelta multiplica por la misma matriz $\mathbf{W}_{hh}$ una vez por paso, así que a distancia $d$ el error queda multiplicado por un número elevado a $d$ —del orden de $\rho^{d}$, con $\rho$ el radio espectral de $\mathbf{W}_{hh}$—: exponencial en la distancia.' }
+      - { id: b, text: 'Que el gradiente de $\mathbf{W}_{hh}$ es una suma de $T$ términos, y sumar tantos hace crecer o encoger el resultado sin control.' }
+      - { id: c, text: 'Que un documento largo tiene más tokens, y cada token añade su propio gradiente, que se acumula sobre los anteriores.' }
+      - { id: d, text: 'Que el estado oculto $\mathbf{h}_t$ tiene una anchura fija $d_h$ y en una secuencia larga no cabe toda la información.' }
+    answer: a
+    explanation: 'La (a) es la lección: un peso compartido se alcanza por un camino por posición, y recorrer $d$ pasos multiplica por la misma matriz $d$ veces, lo que da una potencia —exponencial en la distancia, con la base fijada por el radio espectral—. La (b) confunde dos cosas distintas: la suma de $T$ términos de la lección anterior, sobre BPTT, fija cuántos sumandos tiene el gradiente y su forma, no su explosión; lo que crece o mengua es el producto que vive *dentro* de cada $\boldsymbol{\delta}_t$, no la suma que los junta. La (c) es la misma confusión vestida de otra forma. La (d) describe un límite real de capacidad, pero no es un problema del gradiente: una RNN con $d_h$ pequeño recuerda poco aunque el gradiente fluya perfecto.'
+    hint: '¿La suma sobre el tiempo de la lección anterior, o algo que ocurre dentro de cada término de esa suma?'
+  - id: q-clipping-que-arregla
+    type: single
+    prompt: 'El recorte del gradiente reescala $\mathbf{g} \leftarrow \mathbf{g}\cdot\min\!\left(1,\ \theta/\lVert\mathbf{g}\rVert\right)$ cuando su norma pasa de un umbral $\theta$. ¿Qué problema resuelve y cuál no?'
+    options:
+      - { id: a, text: 'Frena la explosión —le pone un techo a la norma— pero no hace nada por el desvanecimiento: un gradiente que ya llegó encogido a casi cero se multiplica por $1$ y sigue en casi cero.' }
+      - { id: b, text: 'Resuelve los dos: al fijar la norma en $\theta$, el gradiente ni crece ni se encoge.' }
+      - { id: c, text: 'Resuelve el desvanecimiento, porque agranda los gradientes pequeños hasta $\theta$.' }
+      - { id: d, text: 'Ninguno de los dos: el recorte solo cambia la dirección del gradiente, no su tamaño.' }
+    answer: a
+    explanation: 'La (a) es correcta. El $\min$ con $1$ dice que el factor nunca pasa de $1$: sobre un gradiente que se ha disparado actúa —lo devuelve a $\theta$—, pero sobre uno diminuto vale $1$ y lo deja igual, porque $\theta/\lVert\mathbf{g}\rVert$ es enorme y el $\min$ lo corta a $1$. La (b) y la (c) creen que el recorte agranda; no puede, el $\min$ lo impide. La (d) lo lee al revés: reescalar por un número positivo cambia el tamaño y conserva la dirección, que es justo lo que hace útil al recorte. Por eso el desvanecimiento necesita otra cosa, y esa otra cosa es la lección siguiente.'
+  - id: q-decae-numerico
+    type: predict-output
+    language: python
+    prompt: 'El caso de una sola coordenada: $\mathbf{W}_{hh}$ es un número $w$, y a distancia $d$ el error se ha multiplicado por $w^{d}$. ¿Qué imprime?'
+    code: |
+      w = 0.5
+      for d in [0, 4, 8]:
+          print(round(w ** d, 4))
+    answer: |
+      1.0
+      0.0625
+      0.0039
+    explanation: 'A distancia $0$ no se ha multiplicado nada, así que $w^{0} = 1$. Después, cada cuatro pasos el error se multiplica por $0.5^{4} = 0.0625$: a $d = 4$ vale eso, y a $d = 8$ vale $0.5^{8} = 0.00390625$, que `round(..., 4)` deja en $0.0039$. Ocho pasos y el error ya está por debajo del $0.4\,\%$ de su tamaño; a cuarenta sería $9 \times 10^{-13}$. Ese desplome es el desvanecimiento, y $0.5$ ni siquiera es un valor extremo.'
+    hint: '$w^{0} = 1$. Y cada paso vuelve a multiplicar por $0.5$.'
+  - id: q-mascara-tanh
+    type: single
+    prompt: 'La máscara $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$ que aparece en cada paso de la vuelta es la pendiente del $\tanh$. ¿Puede rescatar un gradiente que se desvanece?'
+    options:
+      - { id: a, text: 'No: sus valores caen entre $0$ y $1$, así que solo encoge, nunca agranda —y donde el estado se satura, como en las bandas rojas del explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>, se acerca a $0$ y lo apaga del todo—.' }
+      - { id: b, text: 'Sí: cuando el gradiente se desvanece, la máscara sube por encima de $1$ para compensar la pérdida.' }
+      - { id: c, text: 'Sí, si el estado no está saturado: entonces la máscara vale $1$ y devuelve el gradiente a su tamaño original.' }
+    answer: a
+    explanation: 'La (a) es correcta: $\tanh^{\prime} = 1 - \tanh^{2}$ vive en $(0, 1]$, así que la máscara es siempre un factor $\le 1$ —atenúa o, en el mejor caso, no toca; jamás amplifica—, y en la saturación que ya viste en el explorador de activaciones se va a $0$. La (b) inventa un comportamiento que la fórmula prohíbe. La (c) confunde «no encoger más» con «restaurar»: con la máscara en $1$ el paso no añade su propio encogimiento, pero el de $\mathbf{W}_{hh}$ sigue ahí. La máscara solo puede empeorar el desvanecimiento, nunca curarlo.'
+  - id: q-que-cuesta
+    type: single
+    prompt: '¿Qué pierde una RNN cuando el gradiente que conecta el final de la secuencia con el principio se ha desvanecido?'
+    options:
+      - { id: a, text: 'La capacidad de aprender dependencias largas: si la señal del final no vuelve hasta las primeras posiciones, la red no descubre que algo del principio importaba para la salida —justo la memoria a distancia por la que se eligió una RNN—.' }
+      - { id: b, text: 'La capacidad de leer secuencias de cualquier longitud, porque el gradiente desvanecido obliga a truncarlas a un tamaño fijo.' }
+      - { id: c, text: 'La respuesta $\hat{y}$, que se vuelve $0$ cuando el gradiente es pequeño.' }
+      - { id: d, text: 'Nada de peso: el desvanecimiento solo hace el entrenamiento más lento, pero la red acaba aprendiendo lo mismo.' }
+    answer: a
+    explanation: 'La (a) es el coste, y es el que importa: sin señal que vuelva hasta las primeras posiciones, la red no puede atar una causa temprana a un efecto tardío, y pierde exactamente la memoria a distancia que motivó pasar del MLP a la RNN. La (b) confunde el desvanecimiento con el truncamiento, que era el problema de la red de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el MLP falla con secuencias</Leccion>, no de esta. La (c) mezcla el gradiente con la salida: $\hat{y}$ se calcula en la ida y no depende del tamaño del gradiente. La (d) es la mentira cómoda: no es que aprenda lo mismo más despacio, es que la dependencia larga se vuelve, en la práctica, inaprendible.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'On the difficulty of training Recurrent Neural Networks'
+    authors: 'Pascanu, Mikolov y Bengio'
+    year: '2013'
+    venue: 'arXiv:1211.5063'
+    lang: en
+    url: 'https://arxiv.org/abs/1211.5063'
+    note: 'De aquí salen las dos piezas de la lección: el radio espectral de W_hh como frontera entre desvanecerse y explotar, y el recorte que limita la norma del gradiente a un umbral θ. Lo justifica con más aparato; las compuertas no las toca.'
+  - kind: libro
+    title: 'Gradient Flow in Recurrent Nets: the Difficulty of Learning Long-Term Dependencies'
+    authors: 'Hochreiter, Bengio, Frasconi y Schmidhuber'
+    year: '2001'
+    venue: 'A Field Guide to Dynamical Recurrent Networks'
+    lang: en
+    url: 'https://ml.jku.at/publications/older/ch7.pdf'
+    note: 'Su §2 demuestra lo que aquí ves en una gráfica: el error que retrocede por la secuencia decae o crece de forma exponencial en el número de pasos. Reúne las pruebas de 1991 y 1994; se queda en el diagnóstico, sin proponer arreglo.'
+---
+
+{/* COURSE-P5-03 — Bloque 3, lección 4. */}
+
+La lección anterior, sobre *backpropagation through time* (BPTT), cerró con un gradiente exacto y un
+cabo suelto. Exacto porque el sondeo numérico lo confirmó casilla por casilla; suelto porque la forma
+de calcularlo repite un mismo gesto sin que nadie mirara sus consecuencias: para arrastrar el error de
+una posición a la de más atrás hay que multiplicarlo por la matriz recurrente $\mathbf{W}_{hh}$, y en
+una secuencia de cuarenta tokens ese producto se repite casi cuarenta veces. Esta lección mide qué le
+hace al gradiente repetir la misma multiplicación tantas veces seguidas, y encuentra que todo se decide
+en un único número asociado a $\mathbf{W}_{hh}$.
+
+Y no es una curiosidad numérica: en juego está la única razón para preferir una RNN a la red del
+principio del bloque. Toma una reseña que arranca con <W>Dudo que a alguien le sirva</W> y, treinta
+palabras más tarde, cierra con su valoración. Ese <W>Dudo</W> inicial invierte el signo de todo lo que
+viene después, pero la red solo puede aprender esa conexión si el gradiente calculado en la última
+palabra consigue volver hasta la primera. Si por el camino se apaga, la red jamás registrará que el
+principio importaba, y la memoria que la definía se quedará, en la práctica, en memoria de lo reciente.
+
+Antes de mirar la matriz entera, quítale coordenadas hasta que quede una sola. Con $d_h = 1$ el estado
+es un número, $\mathbf{W}_{hh}$ es un número $w$, y arrastrar el error un paso hacia atrás es
+multiplicarlo por $w$. Repetir el paso $d$ veces lo multiplica por $w^{d}$.
+
+Y $w^{d}$ no tiene término medio. Si $\lvert w \rvert < 1$ se hunde: con $w = 0.5$, cuarenta pasos
+dejan el error en $0.5^{40} \approx 9 \times 10^{-13}$, doce órdenes de magnitud por debajo de donde
+salió. Si $\lvert w \rvert > 1$ se dispara: $1.5^{40} \approx 1.1 \times 10^{7}$. Solo
+$\lvert w \rvert = 1$ mantiene el error en su tamaño, y es un filo de un solo punto —basta desviarse un
+pelo para caer a un lado o al otro—. Con más de una coordenada, ese papel de $w$ lo hereda una propiedad
+de la matriz; el explorable la llama radio espectral, y la formalización la define enseguida. Deslízala a
+un lado y a otro de $1$ y verás las dos mitades del fenómeno: por debajo, la curva se desploma; por
+encima, se va por arriba.
+
+<Explorable
+  id="vanishing-gradient"
+  caption="El gradiente, en órdenes de magnitud, según cuántos pasos tenga que retroceder. Por debajo de un radio espectral de 1 se desvanece; por encima, explota; y cuanto más larga es la secuencia, más extremo el resultado —la recta se inclina, nunca se dobla—."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+El error que retrocede por la secuencia se multiplica por la misma matriz en cada paso, y repetir una
+multiplicación solo sabe hacer dos cosas: hundir el resultado hacia cero o dispararlo. Cuál de las dos,
+y a qué velocidad, lo fija una sola propiedad de $\mathbf{W}_{hh}$, y el efecto es exponencial en la
+distancia.
+</Callout>
+
+## El producto que conecta dos posiciones
+
+Volvamos a la recurrencia hacia atrás de la lección anterior y sigámosla más de un paso. Allí, el error
+de un paso salía del siguiente con dos gestos —transportar y enmascarar—:
+
+$$
+\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right).
+$$
+
+El $\odot$ con la pendiente del $\tanh$ es multiplicar por una matriz diagonal
+—$\text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)$, con esas pendientes en la
+diagonal y ceros fuera—, así que un paso de la vuelta multiplica $\boldsymbol{\delta}_{t+1}$ por dos
+matrices: primero $\mathbf{W}_{hh}^{\top}$, luego esa diagonal. Encadena la recurrencia desde el último
+paso hasta uno lejano $k$ y las dos se repiten, una pareja por posición:
+
+$$
+\boldsymbol{\delta}_k = \left(\prod_{t=k}^{T-1} \text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)\mathbf{W}_{hh}^{\top}\right)\boldsymbol{\delta}_T \in \mathbb{R}^{d_h}.
+$$
+
+El producto tiene $T - k$ parejas, una por cada paso entre $k$ y $T$ —la **distancia** que el error
+recorre—. Y dentro de cada pareja, la misma $\mathbf{W}_{hh}^{\top}$ que en todas las demás: esto no es
+una capa distinta por posición, como lo eran los bloques $\mathbf{W}^{(1)}_t$ de la primera capa
+concatenada de <Leccion slug="por-que-falla-el-mlp">la lección sobre por qué el MLP falla con secuencias</Leccion>, sino una sola matriz elevada, en la práctica, a la potencia
+de la distancia. Ese es el gesto que la lección anterior repetía sin mirarlo.
+
+## Por qué decae o explota
+
+Un producto de matrices es difícil de mirar; su tamaño, no. Toma normas a los dos lados y usa que la
+norma de un producto no supera el producto de las normas:
+
+$$
+\lVert \boldsymbol{\delta}_k \rVert \le \lVert \boldsymbol{\delta}_T \rVert \prod_{t=k}^{T-1} \left\lVert \text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)\right\rVert \left\lVert \mathbf{W}_{hh}^{\top}\right\rVert.
+$$
+
+Los dos factores de cada pareja tienen un techo. El de la diagonal es la pendiente del $\tanh$, que
+nunca pasa de $1$ y en cuanto el estado se satura se acerca a $0$ —son las bandas rojas que el
+explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya te
+dejó ver—; llámalo $\gamma \le 1$. El de $\mathbf{W}_{hh}^{\top}$ es el único hecho nuevo que necesitas
+aquí: una matriz estira la longitud de un vector como mucho por su **mayor valor singular**
+$\sigma_{\max}$, así que multiplicar por ella $d$ veces la estira, a lo sumo, por $\sigma_{\max}^{d}$.
+Junta las dos cotas sobre las $T - k$ parejas:
+
+$$
+\lVert \boldsymbol{\delta}_k \rVert \le \left(\gamma\,\sigma_{\max}\right)^{T-k}\lVert \boldsymbol{\delta}_T \rVert.
+$$
+
+Ahí está el exponente. El error que llega a la posición $k$ es, como mucho, el del final multiplicado
+por un número elevado a la distancia. Si ese número es menor que $1$, el gradiente se desvanece —cae en
+picado, y sin remedio, porque $\gamma \le 1$ solo puede empujarlo más abajo, nunca rescatarlo—. Si es
+mayor que $1$, explota.
+
+Cuál de los dos lados te toca lo decide una propiedad de $\mathbf{W}_{hh}$: su **radio espectral**
+$\rho(\mathbf{W}_{hh})$ —el mayor de los módulos de sus valores propios—, que marca el ritmo del
+producto a la larga. Por debajo de $1$ el gradiente se hunde, por encima se dispara, y entre las dos
+cosas no hay más que ese filo. No necesitas calcular valores propios en esta lección; lo único que hace
+falta es saber que ese número existe, que gobierna el exponente y que es el que el explorable te dejó
+mover.
+
+<Details summary="Ver por qué el ritmo lo marca el radio espectral y no el valor singular">
+La cota $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ es un techo, y suele sobrar: un vector concreto rara
+vez se estira el máximo posible en cada paso, y $\sigma_{\max}$ puede ser bastante mayor que $\rho$. Lo
+que sí se cumple a la larga es que $\left\lVert \left(\mathbf{W}_{hh}^{\top}\right)^{d}\right\rVert^{1/d}$
+tiende al radio espectral $\rho(\mathbf{W}_{hh})$ cuando $d$ crece. Por eso $\rho < 1$ garantiza el
+desvanecimiento y $\rho > 1$ la explosión, aunque para una distancia corta la cota con $\sigma_{\max}$
+vaya por delante del ritmo real.
+</Details>
+
+## Verlo y domarlo en NumPy
+
+Dos celdas. La primera reduce todo al caso de una coordenada y mira el exponente crudo; la segunda ataca
+la mitad del problema que sí tiene un parche barato.
+
+El caso escalar no es un juguete: es la fórmula de arriba con $d_h = 1$, donde $\sigma_{\max}$, $\rho$ y
+$\lvert w \rvert$ son el mismo número. Ejecútala y lee la fila del medio —$w = 1$— contra las otras dos.
+
+<PyCell code={`
+# W_hh de una sola coordenada es un numero w. Arrastrar el error d pasos hacia
+# atras lo multiplica por w**d. La mascara del tanh (pendiente <= 1) solo lo
+# encoge mas, asi que w = 1 ya es el caso mas favorable.
+print(" w     d=10        d=20        d=40")
+for w in [0.5, 1.0, 1.5]:
+    print("%.1f   %9.2e   %9.2e   %9.2e" % (w, w ** 10, w ** 20, w ** 40))
+`} />
+
+La primera fila se hunde, la última se dispara y la del medio no se mueve, tal como decía la intuición.
+Con $w = 0.5$ el error llega a los cuarenta pasos convertido en $9 \times 10^{-13}$ de lo que era, y
+ningún descenso de gradiente aprende de una señal tan pequeña. Y esto es el mejor caso: la máscara del
+$\tanh$, en cuanto el estado se satura, lo empuja todavía más abajo.
+
+La explosión, en cambio, tiene una respuesta directa. Si el problema es que la norma del gradiente crece
+sin freno, ponle un techo: fija un umbral $\theta$ y, cuando $\lVert \mathbf{g} \rVert$ lo pase, reescala
+el gradiente para devolverlo justo a ese tamaño. Es el **recorte del gradiente** (*gradient clipping*):
+
+$$
+\mathbf{g} \leftarrow \mathbf{g}\cdot\min\!\left(1,\ \frac{\theta}{\lVert \mathbf{g} \rVert}\right).
+$$
+
+El $\min$ con $1$ es la clave: si el gradiente ya es pequeño, el factor vale $1$ y no lo toca; solo
+actúa sobre el que se ha pasado, y lo hace multiplicándolo por un número positivo, que cambia su
+longitud pero no su dirección. Compruébalo.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(1)
+theta = 5.0                                    # el techo que le ponemos a la norma
+
+
+def recorta(g):
+    n = np.linalg.norm(g)
+    return g * min(1.0, theta / n), n          # factor <= 1: encoge o deja igual, no gira
+
+
+for nombre, g in [("normal   ", rng.normal(size=100) * 0.3),
+                  ("explotado", rng.normal(size=100) * 3.0)]:
+    g_rec, n = recorta(g)
+    coseno = float(g @ g_rec) / (n * np.linalg.norm(g_rec))
+    print("%s  ||g|| = %6.2f  ->  ||recortado|| = %.2f   (coseno con g: %.4f)"
+          % (nombre, n, np.linalg.norm(g_rec), coseno))
+`} />
+
+El gradiente normal pasa intacto; el explotado, con norma casi $30$, sale recortado a $5.00$ exacto, y
+el coseno con el original es $1$ —misma dirección, otro tamaño—. El recorte salva el entrenamiento
+cuando el gradiente explota y no cuesta casi nada. Lo que no hace —y conviene decirlo en voz alta— es
+nada por el desvanecimiento: un gradiente que ya llegó valiendo $10^{-13}$ tiene norma minúscula, el
+$\min$ vale $1$, y se queda como estaba.
+
+## Comprueba tu intuición
+
+Cinco preguntas: qué desvanece o explota el gradiente, qué arregla el recorte y qué no, cómo se ve el
+exponente en un número, si la máscara del $\tanh$ puede salvar la situación y qué se pierde cuando no.
+
+<Quiz id="q-que-lo-desvanece" />
+
+<Quiz id="q-clipping-que-arregla" />
+
+<Quiz id="q-decae-numerico" />
+
+<Quiz id="q-mascara-tanh" />
+
+<Quiz id="q-que-cuesta" />
+
+---
+
+El recorte le pone un techo a la explosión, pero deja el otro lado del problema donde estaba. Un
+gradiente que se ha multiplicado camino a cero no se recupera multiplicándolo por $1$, y ninguna
+elección de $\mathbf{W}_{hh}$ arregla las dos cosas a la vez: bajar su radio espectral para no explotar
+es justo lo que garantiza el desvanecimiento. El problema no está en los pesos, sino en el camino
+—cualquier ruta que multiplique por la misma matriz en cada paso acaba en uno de los dos extremos—.
+
+La salida es cambiar el camino. Hace falta una vía por la que el estado avance de un paso al siguiente
+**sumando**, en lugar de volver a pasar por $\mathbf{W}_{hh}$: sobre una suma el gradiente fluye sin
+multiplicarse una vez por posición, y así ni se hunde ni se dispara. Esa vía aditiva es el estado de
+celda de la LSTM (*long short-term memory*), y construirla —una compuerta cada vez, cada una arreglando
+un fallo concreto de la RNN vanilla— es <Leccion slug="lstm">la siguiente lección, sobre la LSTM: memoria con
+compuertas</Leccion>.

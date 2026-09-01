@@ -6,6 +6,7 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { pricingService } from "@/services";
+import { singleFlight, withRetry } from "@/lib/single-flight";
 import type { ProductKey } from "@/domain/types";
 
 /** Static hours-per-pack, used to derive the per-hour rate. */
@@ -46,8 +47,14 @@ export function formatPrice(cents: number, currency: string, locale = "es"): str
 // panel read pricingService directly — never this cache — so they are always fresh.
 export const PRICING_CACHE_TAG = "pricing-all";
 const REVALIDATE_SECONDS = 3600;
+// BUILD-04: the prerender fires one identical read per concurrent page, and a
+// PGRST303 rejection on any one of them aborts the whole export. singleFlight
+// collapses that burst into one request; withRetry covers the residual.
+const readPrices = singleFlight("pricing-all", () =>
+  withRetry(() => pricingService.getAll(), "pricing-all"));
+
 const getRawPrices = unstable_cache(
-  async () => pricingService.getAll(),
+  readPrices,
   ["pricing-all"],
   { revalidate: REVALIDATE_SECONDS, tags: [PRICING_CACHE_TAG] },
 );

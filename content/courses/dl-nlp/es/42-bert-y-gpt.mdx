@@ -1,0 +1,276 @@
+---
+slug: bert-y-gpt
+title: "BERT y GPT: una columna cada uno"
+block: 5
+order: 10
+minutes: 20
+summary: "El modelo de la lección anterior sabe correr y para aprender pide lo más caro que hay: pares de frases con su traducción, escritos uno a uno a mano. Texto suelto, en cambio, sobra. Las dos familias que salieron del artículo en 2018 contestan a esa escasez quitando una columna, moviendo la máscara y cambiando qué se les pide predecir, y ninguna de las tres cosas es una operación nueva. Por el camino pagan una deuda del bloque 1: la firma de la representación deja de recibir una entrada del vocabulario y pasa a recibir la frase, que es lo único que puede darle a banco dos vectores. La celda lo mide en la misma posición de dos frases, y de los tres números que imprime, dos valen 1 por construcción."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-cambia
+    type: multi
+    prompt: 'BERT y GPT salen los dos de la figura 1 de *Attention is All You Need*. Marca lo que cada uno cambió respecto de ella.'
+    options:
+      - { id: a, text: 'Cuál de las dos columnas se queda, y con ella cuántas subcapas tiene un bloque: sin encoder no hay atención encoder-decoder que poner.' }
+      - { id: b, text: 'Dónde va la máscara: en todas las auto-atenciones del modelo o en ninguna.' }
+      - { id: c, text: 'Qué se le pide predecir, y con ello qué texto sirve de conjunto de entrenamiento.' }
+      - { id: d, text: 'La fórmula de la atención: uno de los dos cambió el divisor $\sqrt{d_k}$ para poder mirar en las dos direcciones.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras, y la (d) es la que conviene descartar despacio, porque es la tentación de esta lección entera. El divisor sale de lo grande que se hace un producto interno de $d_k$ coordenadas —la cuenta de <Leccion slug="scaled-dot-product">la lección sobre el producto interno escalado (*scaled dot-product*)</Leccion>— y esa cuenta no sabe nada de máscaras ni de columnas: sale igual mirando a la derecha que sin mirar. La atención es la misma operación en los dos modelos, letra por letra. Lo que cambia son las tres primeras, y la (a) sale de la (c): quien se queda sin encoder se queda sin nada a lo que dirigir las claves y los valores de la subcapa de en medio.'
+    hint: '¿Cuál de las cuatro habla de una fórmula, y de dónde salía esa fórmula?'
+  - id: q-encoder-siguiente
+    type: boolean
+    prompt: 'Un encoder sin máscara entrenado con la pérdida $-\log P\left(w_t \mid w_{<t}\right)$ aprendería un modelo de lenguaje que además mira a la derecha: lo mejor de los dos mundos.'
+    answer: false
+    explanation: 'Falso, y es la razón de que exista el modelado de lenguaje enmascarado. Sin máscara, la auto-atención de la primera subcapa ya mezcla en su fila $t$ la fila $t+1$, así que lo que sale en la posición $t$ contiene $w_{t+1}$ —y todo lo que se apile encima lo hereda, por el mismo argumento de composición que la lección anterior usó al revés para demostrar que la máscara sobrevive a apilar bloques—. Pedirle entonces que prediga $w_{t+1}$ es pedirle que copie: la pérdida baja a cero, la barra vertical condiciona sobre su propia respuesta y de la frase no ha aprendido nada. La pérdida pequeña no mide aquí lo que parece medir.'
+    hint: 'Escribe qué lleva dentro el vector de la posición $t$ cuando no hay máscara, y compáralo con lo que se le pide predecir.'
+  - id: q-banco-dos-vectores
+    type: single
+    prompt: '<W>el banco cerró a las dos</W> y <W>el banco estaba mojado</W>. ¿Cuál de las tres firmas le da a <W>banco</W> dos vectores distintos en la posición que ocupa?'
+    options:
+      - { id: a, text: 'Sólo $r(w_{1:T},\, t)$. A las otras dos les llega lo mismo en las dos frases: a la tabla porque la frase no le entra, y a la causal porque las dos frases comparten el prefijo <W>el banco</W>.' }
+      - { id: b, text: 'Las dos contextuales, $r(w_{1:t})$ y $r(w_{1:T},\, t)$: en cuanto la frase es argumento, dos frases distintas dan dos vectores distintos.' }
+      - { id: c, text: 'Las tres, en cuanto los pesos estén entrenados: con $\mathbf{E}$ bien ajustada, <W>banco</W> acaba teniendo una fila por sentido.' }
+      - { id: d, text: 'Ninguna en esa posición, porque la codificación posicional es la misma en las dos frases y domina la suma.' }
+    answer: a
+    explanation: 'La (a), y la celda lo mide: los dos primeros cosenos valen $1$ y valen $1$ exacto. La (b) acierta el principio y falla el final: $r(w_{1:t})$ recibe el prefijo, no la frase, y estas dos frases tienen el mismo prefijo hasta la posición de <W>banco</W>, así que un modelo causal reparte un vector por prefijo y no uno por frase. En una posición posterior sí los separaría. La (c) confunde ajustar los números con cambiar el argumento —es el desenlace del bloque 1—, y la (d) se arregla sola mirando la primera línea que imprime la celda: a la entrada los dos vectores son el mismo array, $\text{PE}$ incluida, y aun así los de salida se separan.'
+    hint: 'Escribe qué recibe cada una de las tres firmas cuando la posición es la de <W>banco</W>, y mira cuáles de esas tres cosas cambian entre las dos frases.'
+  - id: q-texto-suelto
+    type: multi
+    prompt: 'Tienes un archivo de novelas en español y nada más: ni traducciones, ni etiquetas, ni preguntas. Marca lo que puedes preentrenar con él.'
+    options:
+      - { id: a, text: 'Un GPT, prediciendo cada token a partir de lo anterior: cada novela trae tantos ejemplos como tokens tiene, y ya están escritos.' }
+      - { id: b, text: 'Un BERT, tapando posiciones y pidiendo las tapadas: la respuesta está en el propio texto, borrada de la entrada.' }
+      - { id: c, text: 'El Transformer de dos columnas de la lección anterior, dándole las novelas por las dos entradas: aprendería a llevar el español al español, que es un caso particular de traducir.' }
+      - { id: d, text: 'Un clasificador de reseñas, pidiéndole la etiqueta de cada novela.' }
+    answer: [a, b]
+    explanation: 'Las dos primeras, que es la razón entera de que estas dos familias crecieran y el seq2seq de <Leccion slug="encoder-decoder">la lección sobre el encoder y el decoder</Leccion> no: la etiqueta la pone el texto. La (d) falla por lo que dice el enunciado —no hay etiquetas, y ninguna arquitectura las inventa—. La (c) es la interesante, porque correr correría: lo que aprendería es a copiar. El encoder lee la frase entera, incluido el token que el decoder tiene que escribir a continuación, y la subcapa de en medio se lo pasa; es la fuga de la segunda pregunta entrando por la otra columna. Un modelo que copia tiene la pérdida en el suelo y no ha mirado el español.'
+    hint: 'Para cada una, pregúntate de dónde saldría la respuesta correcta de cada ejemplo. Si sale del propio texto, sirve; si tiene que escribirla alguien, no.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Improving Language Understanding by Generative Pre-Training'
+    authors: 'Radford, Narasimhan, Salimans y Sutskever'
+    year: '2018'
+    venue: 'OpenAI'
+    lang: en
+    url: 'https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf'
+    note: 'El GPT de la lección: un decoder de doce bloques con máscara en todas las auto-atenciones, preentrenado a predecir el token siguiente y luego afinado por tarea. Buena parte del artículo va del afinado, que es la lección siguiente.'
+  - kind: paper
+    title: 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding'
+    authors: 'Devlin, Chang, Lee y Toutanova'
+    year: '2019'
+    venue: 'arXiv:1810.04805'
+    lang: en
+    url: 'https://arxiv.org/abs/1810.04805'
+    note: 'Su tarea #1, el lenguaje enmascarado, es tu argumento: sin máscara el modelo «se ve a sí mismo» y predecir lo siguiente sería copiar; tapando el 15 % y pidiéndolo, no. Su segunda tarea, la de pares de frases, queda fuera.'
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 10. */}
+
+El Transformer de la lección anterior —el proyecto, montado y ejecutado de principio a fin— sabe
+hacer una cosa y ninguna más: correr. Sus pesos siguen siendo los que devolvió el generador de
+números aleatorios, y corregirlos pide un conjunto de entrenamiento. El que esa arquitectura pide
+es de los caros: pares de frases, cada una con su traducción, escritos uno a uno por alguien que
+sabe los dos idiomas. Texto suelto, en cambio, sobra —hay muchísimo más del que
+nadie va a leer nunca—. La pregunta de hoy es qué se le puede enseñar a un modelo con un texto y nada más.
+
+Hay una segunda deuda que vence hoy, y es mucho más vieja. El bloque 1 se despidió —<Leccion slug="glove-y-limites">su última lección,
+sobre GloVe y los límites de los embeddings estáticos</Leccion>— con una entrada del vocabulario que no cabía
+en su propia maquinaria: <W>banco</W> tiene una fila de $\mathbf{E}$ y
+tiene una sola, de modo que <W>el banco cerró a las dos</W> y <W>el banco estaba mojado</W> se
+llevan el mismo vector y ninguna de las dos frases tiene manera de pedir otro. Las dos deudas
+resultan ser la misma, y ésa es la tesis de hoy: lo que hace falta para aprender de texto suelto es
+exactamente lo que le da a <W>banco</W> dos vectores.
+
+Pregúntate de qué depende el vector que un modelo le asigna a la posición de <W>banco</W>. En el
+bloque 1 la respuesta cabía en una palabra: de <W>banco</W>. La tabla se consulta con la entrada y
+devuelve su fila, y la frase alrededor podría no existir. Un Transformer contesta distinto, porque
+su auto-atención mezcla filas: lo que sale en una posición depende de las posiciones que esa
+posición pudo mirar.
+
+Y cuáles pudo mirar lo decide una sola cosa, la máscara de <Leccion slug="encoder-decoder-masking">la lección sobre el
+encoder, el decoder y las máscaras</Leccion>. Con ella puesta, la posición de <W>banco</W> ve <W>el banco</W>
+y se acaba ahí; sin ella ve la frase entera, <W>cerró a las dos</W> incluido. No es un detalle
+interno del decoder: es el interruptor que decide cuánto del texto llega a cada posición, y las dos
+posiciones de ese interruptor son los dos modelos de esta lección.
+
+## De qué depende el vector de una posición
+
+<Leccion slug="texto-como-numeros">La lección sobre el problema de representar el lenguaje</Leccion> escribió la
+representación como una función:
+
+$$
+r : V \to \mathbb{R}^{d_{\text{model}}},
+$$
+
+una entrada del vocabulario dentro, un vector fuera. Lo que esa firma no admite es la frase, y sin
+la frase nada distingue las dos apariciones de <W>banco</W>. Cambiar los números de $\mathbf{E}$ no
+toca el problema; hay que cambiar el argumento.
+
+Un modelo causal lo cambia por lo escrito hasta esa posición. Llamando $V^{*}$ a las secuencias
+finitas de tokens —la estrella de <Leccion slug="tokenizacion">la lección sobre la tokenización</Leccion>—:
+
+$$
+r : V^{*} \to \mathbb{R}^{d_{\text{model}}},
+$$
+
+y el vector de la posición $t$ es $r(w_{1:t})$. Fíjate en que no hace falta pasarle $t$ aparte: la
+posición es el último índice del prefijo. Un modelo bidireccional lo cambia por la frase entera, y
+entonces sí hace falta decir de qué posición se habla:
+
+$$
+r : V^{*} \times \mathbb{N} \to \mathbb{R}^{d_{\text{model}}},
+$$
+
+con el vector de la posición $t$ igual a $r(w_{1:T},\, t)$. Las dos últimas firmas son las de una
+**representación contextual**: el mismo vocabulario, la misma tabla debajo, y un argumento que ya
+no es una entrada.
+
+Las tres salen de la misma aritmética y lo único que las separa es la máscara. La segunda tiene
+además una consecuencia que conviene ver antes de las cuentas: $r(w_{1:t})$ depende del prefijo y de
+nada más, así que dos frases que empiezan igual reciben el mismo vector en esa posición. <W>el
+banco cerró a las dos</W> y <W>el banco estaba mojado</W> comparten <W>el banco</W>, de modo que un
+modelo causal le da a <W>banco</W> un vector por prefijo, no uno por frase. La deuda del bloque 1,
+en esa posición, la paga la tercera firma y sólo ella.
+
+## Dos maneras de quitar una columna
+
+**GPT** (*Generative Pre-trained Transformer*) se queda con la columna derecha. Le sobra una
+subcapa —la atención encoder-decoder no tiene a quién mirar cuando no hay encoder—, así que sus
+bloques llevan dos, igual que los del encoder, con la diferencia de que la auto-atención lleva
+máscara en todos ellos, que es lo que la lección anterior midió. Lo que se le pide predecir es el
+token siguiente, y la fórmula no es nueva: es la del modelo de lenguaje de caracteres de
+<Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>, con tokens donde había caracteres y el Transformer donde estaba la RNN
+(*recurrent neural network*),
+
+$$
+\ell = \frac{1}{T}\sum_{t=1}^{T} -\log P\left(w_t \mid w_{<t}\right).
+$$
+
+Eso es lo que contesta a la pregunta de arriba: cualquier texto sirve de conjunto de entrenamiento,
+y uno de $T$ tokens trae $T$ ejemplos ya hechos, con su etiqueta puesta por el propio texto. Nadie
+tiene que escribir nada más.
+
+**BERT** (*Bidirectional Encoder Representations from Transformers*) se queda con la izquierda y le
+quita la máscara, y ahí esa fórmula deja de servir. Desarrollémoslo, porque es la única cuenta de
+la lección. La lección anterior demostró que respetar el pasado se conserva al componer subcapas, y
+que por eso la barra vertical de $P\left(w_t \mid w_{<t}\right)$ dice la verdad. Quita la máscara y
+el argumento se cae por donde entró: la auto-atención de la primera subcapa ya mezcla en su fila
+$t$ la fila $t+1$, así que lo que sale en la posición $t$ contiene $w_{t+1}$. Pedirle que prediga
+$w_{t+1}$ es pedirle que copie. La pérdida se va al suelo, la barra vertical condiciona sobre su
+propia respuesta y de la frase no ha aprendido nada.
+
+De ahí sale el **modelado de lenguaje enmascarado** (*masked language modelling*, MLM): tapa una
+parte de las posiciones con <W>[MASK]</W> —la marca que tapa una posición— y pide justo las
+tapadas. Con $\tilde{w}_{1:T}$ la frase ya tapada, cada posición escondida aporta
+
+$$
+-\log P\left(w_t \mid \tilde{w}_{1:T}\right),
+$$
+
+y $\ell$ es la media de ese número sobre las tapadas. La respuesta ya no está en la entrada porque
+se ha borrado de la entrada, que es la diferencia entera. Y trae su precio: BERT cobra la fórmula
+de GPT sólo en las posiciones que tapó —un 15 % de ellas, en el artículo original—, mientras que
+GPT la cobra en las $T$.
+
+Lo que las dos familias comparten viene después, y es lo que las hizo importar. Primero el
+**preentrenamiento**: muchas vueltas contra texto crudo, sin tarea ninguna a la vista, hasta que la
+representación contextual valga algo. Después, la tarea de quien lo use. Lo que vino luego —modelos
+mucho mayores, otras maneras de codificar la posición, atenciones más baratas para textos largos—
+cambió los detalles de las quince cajas y no la aritmética que escribiste en la lección anterior.
+
+## Banco, en dos frases
+
+La celda pone las dos frases una al lado de otra, con <W>banco</W> en la misma posición en las dos,
+y las mete por una llamada de auto-atención con un interruptor para la máscara. Compara los dos
+vectores de esa posición con la similitud coseno de <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de
+palabras</Leccion>. Son tres números, y dos de ellos valen $1$ por construcción, no por
+suerte.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+f1 = "el banco cerró a las dos".split()
+f2 = "el banco estaba mojado".split()
+V = sorted(set(f1 + f2))
+ix = {w: i for i, w in enumerate(V)}
+d, t = 32, 1                                    # <banco> ocupa la posicion 1 en las dos
+
+rng = np.random.default_rng(0)
+E = rng.normal(size=(len(V), d)) / np.sqrt(d)
+Wq, Wk, Wv = [rng.normal(size=(d, d)) / np.sqrt(d) for _ in range(3)]
+
+
+def entrada(frase):                             # la tabla mas la codificacion posicional
+    i = np.arange(d // 2)
+    pos = np.arange(len(frase))[:, None]
+    PE = np.zeros((len(frase), d))
+    PE[:, 0::2] = np.sin(pos / 10000 ** (2 * i / d))
+    PE[:, 1::2] = np.cos(pos / 10000 ** (2 * i / d))
+    return np.sqrt(d) * E[[ix[w] for w in frase]] + PE
+
+
+def auto_atencion(X, causal):
+    S = (X @ Wq) @ (X @ Wk).T / np.sqrt(d)
+    if causal:
+        S = np.where(np.triu(np.ones(S.shape, dtype=bool), k=1), -np.inf, S)
+    A = np.exp(S - S.max(axis=1, keepdims=True))
+    A = A / A.sum(axis=1, keepdims=True)
+    return A @ (X @ Wv)
+
+
+def cos(u, v):
+    return float(u @ v / (np.linalg.norm(u) * np.linalg.norm(v)))
+
+
+X1, X2 = entrada(f1), entrada(f2)
+print("el mismo array a la entrada:", bool(np.allclose(X1[t], X2[t])))
+print("coseno a la entrada : %.6f" % cos(X1[t], X2[t]))
+print("coseno con mascara  : %.6f" % cos(auto_atencion(X1, True)[t], auto_atencion(X2, True)[t]))
+print("coseno sin mascara  : %.6f" % cos(auto_atencion(X1, False)[t], auto_atencion(X2, False)[t]))
+`} />
+
+Los dos primeros salen $1$ y salen exactos, cada uno por su motivo. A la entrada las dos filas son
+el mismo array: la misma fila de $\mathbf{E}$, la misma posición y por tanto la misma fila de
+$\text{PE}$ sumada encima. Con máscara, la fila $1$ de los pesos de atención sólo tiene peso en las
+columnas $0$ y $1$, y esas dos filas de $\mathbf{X}$ son idénticas en las dos frases, así que las
+puntuaciones son idénticas y lo que sale también. El tercero baja a $0.550005$, y ése es el que
+hacía falta: quitada la máscara, <W>cerró a las dos</W> y <W>estaba mojado</W> entran en la mezcla y el
+vector de <W>banco</W> deja de ser el mismo.
+
+Con pesos que nadie ha entrenado, *cuánto* se separan esos dos vectores no significa nada —lo
+decidió el generador—. Lo que es de la arquitectura y no del generador es que **puedan** separarse:
+la firma admite la frase, así que la frase alcanza al resultado. Que los separe bien —el banco del
+dinero lejos del banco del parque— es lo que el preentrenamiento tiene que conseguir, y no hay
+número en esta celda que lo demuestre.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: qué cambiaron los dos respecto de la figura del artículo, por qué un encoder sin
+máscara no puede entrenarse contra el token siguiente, cuál de las tres firmas le da a <W>banco</W>
+dos vectores, y qué se puede preentrenar con un texto suelto.
+
+<Quiz id="q-que-cambia" />
+
+<Quiz id="q-encoder-siguiente" />
+
+<Quiz id="q-banco-dos-vectores" />
+
+<Quiz id="q-texto-suelto" />
+
+---
+
+Ninguno de los dos sirve, recién preentrenado, para lo que tú quieras. Lo que sale de esa primera
+fase es una representación contextual buena y ninguna tarea: BERT no clasifica reseñas y GPT no
+contesta preguntas, porque nadie les ha dicho todavía qué es una reseña ni qué es una pregunta. Lo
+que falta es la segunda mitad de la receta, y es la mitad corta —unas pocas vueltas sobre unos
+pocos miles de ejemplos etiquetados, partiendo de los pesos del preentrenamiento en lugar del
+generador de números aleatorios.
+
+Eso es el *fine-tuning*, y es <Leccion slug="fine-tuning-colab">la lección siguiente, la última</Leccion>: hacerlo de verdad, sobre un
+modelo preentrenado de verdad. No corre en el navegador, y la lección empieza diciendo por qué —los
+pesos que hay que mover no caben donde han cabido las celdas de este curso—. Se hace en un cuaderno
+de Colab, con la máquina que hace falta al otro lado.

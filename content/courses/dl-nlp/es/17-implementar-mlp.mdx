@@ -1,0 +1,575 @@
+---
+slug: implementar-mlp
+title: "Implementar un MLP desde cero"
+block: 2
+order: 9
+minutes: 30
+summary: "Las cuatro piezas del entrenamiento están desarrolladas y ninguna celda las ha ejecutado seguidas. Montarlas cuesta apilar la vuelta por filas —con el 1/B que trae la media—, y tomar la decisión que ninguna fórmula toma: de dónde parten los pesos. Todos iguales se quedan iguales para siempre, y por eso la inicialización es al azar."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-simetria
+    type: single
+    prompt: 'La red de la lección arranca con los cuatro pesos de $\mathbf{W}^{(2)}$ y los ocho de $\mathbf{W}^{(1)}$ puestos a cero, y mil pasos después sigue exactamente igual. ¿Por qué?'
+    options:
+      - { id: a, text: 'Porque todo lo que llega a la primera capa lleva un factor $\mathbf{W}^{(2)}$, que vale cero, así que su gradiente es nulo; y aunque no lo fuera, dos neuronas con los mismos pesos de entrada y el mismo peso de salida reciben el mismo gradiente y siguen siendo la misma neurona después del paso.' }
+      - { id: b, text: 'Porque $\tanh(0) = 0$ y la tangente hiperbólica no tiene derivada en el origen, de modo que la regla de la cadena no llega a aplicarse.' }
+      - { id: c, text: 'Porque el cero es un mínimo de la pérdida y el descenso se para en los mínimos: la red ya ha convergido, y lo que falla es la tasa de aprendizaje.' }
+      - { id: d, text: 'Porque los números son demasiado pequeños para la precisión de la coma flotante. Multiplicar todos los pesos por cien al empezar lo arregla.' }
+    answer: a
+    explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona —y una neurona sola no separa estas cuatro frases, que es lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>—. La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0.01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
+  - id: q-gradiente-batch
+    type: predict-output
+    prompt: 'Así calcula la celda el gradiente de una capa a partir del error del batch. ¿Qué imprime?'
+    language: python
+    code: |
+      import numpy as np
+
+      D = np.array([[1., -1.], [2., 0.]])
+      H = np.array([[1., 0., 2.], [0., 1., 1.]])
+      print((D.T @ H).shape, (D.T @ H / len(H))[0])
+    answer: '(2, 3) [0.5 1.  2. ]'
+    explanation: 'Las formas mandan: `D` es $(B, d_l) = (2, 2)$ y `H` es $(B, d_{l-1}) = (2, 3)$, así que `D.T @ H` es $(d_l, d_{l-1}) = (2, 3)$ —la forma de $\mathbf{W}^{(l)}$, que es la comprobación más barata que hay—. La fila $0$ suma los dos ejemplos con el error de la primera neurona como peso: $1 \cdot (1, 0, 2) + 2 \cdot (0, 1, 1) = (1, 2, 4)$, y el $1/B$ la deja en $(0.5,\ 1,\ 2)$. Ese producto de matrices es la suma sobre los $B$ ejemplos: no hay ningún bucle que escribir porque el índice que se recorre y desaparece es justo el del batch.'
+    hint: 'El formato cuenta tanto como los valores. La forma se imprime como tupla, y NumPy alinea las tres casillas al ancho de la más larga, `0.5`, de modo que el $1$ y el $2$ salen como `1.` y `2.` con un espacio de relleno detrás.'
+  - id: q-parar
+    type: multi
+    prompt: 'Marca todo lo que sea cierto sobre las curvas de pérdida que imprimen la segunda y la tercera celda.'
+    options:
+      - { id: a, text: 'Una curva plana no distingue por sí sola una red que ya ha terminado de una que avanza demasiado despacio: con la escala $0.01$ la pérdida no se mueve en mil pasos, y con cien mil pasos la red llega a las cuatro frases.' }
+      - { id: b, text: 'El $0.6931$ de las dos primeras filas de la tabla es $\log 2$, que es lo que vale la pérdida cuando la red contesta $0.5$ a los cuatro ejemplos.' }
+      - { id: c, text: 'En la fila del paso $25$ los aciertos ya son cuatro de cuatro, y la pérdida sigue bajando dos mil pasos después, así que contar aciertos no sirve para decidir cuándo parar.' }
+      - { id: d, text: 'Como la pérdida baja en todos los pasos que imprime la segunda celda, está garantizado que bajó también en los pasos intermedios que no se imprimen.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras son lo que hay que leer en esas dos salidas. La (a) es la razón de que «se ha estancado» no sea una observación, sino una hipótesis. La (b) es el punto de partida de cualquier red que conteste lo mismo a todo, el mismo $\log 2$ que apareció en <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion>. La (c) es el motivo de que la pérdida y no los aciertos sea lo que se mira: con cuatro ejemplos los aciertos sólo tienen cinco valores posibles y se agotan enseguida. La falsa es la (d), y su defecto es de método más que de aritmética: ocho filas de una curva de dos mil pasos no dicen nada de los mil novecientos noventa y dos pasos que no enseñan, y <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion> ya mostró trayectorias que suben y bajan alternando. Aquí bajó en todos, pero eso hay que comprobarlo, no deducirlo.'
+challenges:
+  - id: ch-entrena
+    prompt: |
+      Escribe el bucle entero para la red de esta lección: $d_0$ entradas, una capa oculta de
+      $d_1$ neuronas con $\tanh$ y una salida con sigmoide, sobre un batch de $B$ ejemplos.
+
+      - `gradientes(X, Y, W1, b1, W2, b2)` devuelve los cuatro gradientes de $\mathcal{L}$ en
+        el orden `(gW1, gb1, gW2, gb2)`, cada uno con la forma del parámetro que deriva.
+      - `entrena(X, Y, W1, b1, W2, b2, eta, pasos)` da `pasos` pasos de descenso y devuelve
+        `(curva, W1, b1, W2, b2)`, donde `curva` tiene `pasos + 1` pérdidas: una antes de
+        cada paso y una al final.
+
+      `entrena` no puede escribir en las matrices que recibe.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def gradientes(X, Y, W1, b1, W2, b2):
+          # tu código aquí
+          pass
+
+
+      def entrena(X, Y, W1, b1, W2, b2, eta, pasos):
+          # tu código aquí
+          pass
+    tests:
+      - name: "cada gradiente tiene la forma de su parámetro"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(1)
+          X, Y = rng.normal(size=(5, 3)), np.array([[1.], [0.], [1.], [0.], [1.]])
+          W1, b1, W2, b2 = rng.normal(size=(4, 3)), np.zeros(4), rng.normal(size=(1, 4)), np.zeros(1)
+          g = gradientes(X, Y, W1, b1, W2, b2)
+          assert g is not None and len(g) == 4, 'devuelve los cuatro: gW1, gb1, gW2, gb2'
+          assert [a.shape for a in g] == [(4, 3), (4,), (1, 4), (1,)], 'la forma de cada gradiente es la del parametro que deriva'
+      - name: "el gradiente del batch es la media, no la suma"
+        code: |
+          import numpy as np
+          X = np.array([[1., 0.], [1., 0.], [1., 0.], [1., 0.]])
+          Y = np.array([[1.], [1.], [1.], [1.]])
+          W1, b1 = np.zeros((2, 2)), np.zeros(2)
+          W2, b2 = np.array([[1., 1.]]), np.zeros(1)
+          g = gradientes(X, Y, W1, b1, W2, b2)
+          assert g is not None, 'gradientes no devuelve nada'
+          assert np.allclose(g[3], [-0.5]), 'con cuatro ejemplos identicos el gradiente del sesgo es el de uno solo: falta dividir entre B'
+      - name: "coincide con el sondeo numérico"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(2)
+          X, Y = rng.normal(size=(6, 3)), rng.integers(0, 2, size=(6, 1)).astype(float)
+          P = [rng.normal(size=(4, 3)), rng.normal(size=4), rng.normal(size=(1, 4)), rng.normal(size=1)]
+          def L(W1, b1, W2, b2):
+              H = np.tanh(X @ W1.T + b1)
+              p = np.clip(1 / (1 + np.exp(-(H @ W2.T + b2))), 1e-12, 1 - 1e-12)
+              return -np.mean(Y * np.log(p) + (1 - Y) * np.log(1 - p))
+          g = gradientes(*[X, Y] + P)
+          assert g is not None, 'gradientes no devuelve nada'
+          peor = 0.
+          for P_i, g_i in zip(P, g):
+              for k in np.ndindex(P_i.shape):
+                  v = P_i[k]
+                  P_i[k] = v + 1e-6
+                  d = L(*P)
+                  P_i[k] = v - 1e-6
+                  d -= L(*P)
+                  P_i[k] = v
+                  peor = max(peor, abs(d / 2e-6 - g_i[k]))
+          assert peor < 1e-6, 'los gradientes no coinciden con el sondeo: revisa la transpuesta y la derivada de tanh'
+      - name: "entrena no escribe en lo que recibe"
+        code: |
+          import numpy as np
+          X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+          Y = np.array([[1.], [0.], [0.], [1.]])
+          rng = np.random.default_rng(0)
+          W1, b1, W2, b2 = rng.normal(size=(4, 2)), np.zeros(4), rng.normal(size=(1, 4)), np.zeros(1)
+          copia = W1.copy()
+          r = entrena(X, Y, W1, b1, W2, b2, 0.5, 50)
+          assert r is not None, 'entrena no devuelve nada'
+          assert np.allclose(W1, copia), 'W1 -= ... escribe en la matriz de quien te llama; trabaja sobre una copia'
+      - name: "las cuatro frases de XOR, con la red de la lección"
+        code: |
+          import numpy as np
+          X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+          Y = np.array([[1.], [0.], [0.], [1.]])
+          rng = np.random.default_rng(0)
+          W1, b1, W2, b2 = rng.normal(size=(4, 2)), np.zeros(4), rng.normal(size=(1, 4)), np.zeros(1)
+          r = entrena(X, Y, W1, b1, W2, b2, 0.5, 2000)
+          assert r is not None and len(r) == 5, 'devuelve (curva, W1, b1, W2, b2)'
+          curva, W1, b1, W2, b2 = r
+          assert len(curva) == 2001, 'una perdida antes de cada paso y una al final: pasos + 1'
+          assert abs(curva[0] - 0.7260) < 1e-3, 'la primera perdida se mide ANTES del primer paso'
+          assert curva[-1] < 0.01, 'dos mil pasos tienen que dejar la perdida por debajo de 0.01'
+          Y_hat = 1 / (1 + np.exp(-(np.tanh(X @ W1.T + b1) @ W2.T + b2)))
+          assert int(((Y_hat >= 0.5) == (Y == 1.)).sum()) == 4, 'la red entrenada tiene que acertar las cuatro frases'
+    solution: |
+      import numpy as np
+
+
+      def gradientes(X, Y, W1, b1, W2, b2):
+          B = len(X)
+          H1 = np.tanh(X @ W1.T + b1)
+          Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+          D2 = Y_hat - Y
+          D1 = (D2 @ W2) * (1.0 - H1 ** 2)
+          return (D1.T @ X) / B, D1.sum(0) / B, (D2.T @ H1) / B, D2.sum(0) / B
+
+
+      def entrena(X, Y, W1, b1, W2, b2, eta, pasos):
+          W1, b1, W2, b2 = W1.copy(), b1.copy(), W2.copy(), b2.copy()
+          curva = []
+          for t in range(pasos + 1):
+              H1 = np.tanh(X @ W1.T + b1)
+              Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+              p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)
+              curva.append(-np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p)))
+              if t == pasos:
+                  break
+              gW1, gb1, gW2, gb2 = gradientes(X, Y, W1, b1, W2, b2)
+              W1 -= eta * gW1
+              b1 -= eta * gb1
+              W2 -= eta * gW2
+              b2 -= eta * gb2
+          return curva, W1, b1, W2, b2
+    explanation: |
+      `gradientes` es la vuelta de la lección escrita tal cual, y las dos decisiones están en
+      la penúltima línea. `D2 @ W2` no lleva transpuesta —la lleva la ida, `X @ W1.T`— porque
+      aquí los ejemplos ya van por filas a los dos lados del producto; y el factor
+      `(1.0 - H1 ** 2)` es la derivada de $\tanh$ escrita sobre la activación en lugar de
+      sobre la preactivación, que es lo que permite no guardar $\mathbf{Z}^{(1)}$.
+
+      El `/ B` aparece cuatro veces y es lo único que separa este gradiente del de la lección
+      anterior. Sin él, todo funciona: la dirección del paso es la misma y las pruebas de forma
+      pasan. Lo que cambia es la escala, que queda multiplicada por $B$, así que la tasa de
+      aprendizaje que servía con cuatro ejemplos divergiría con mil. La segunda prueba lo
+      aísla poniendo cuatro ejemplos idénticos: su gradiente tiene que ser el de uno solo.
+
+      En `entrena`, las dos líneas que deciden son la primera y el `break`. El `.copy()` es lo
+      que hace que `W1 -= eta * gW1` no escriba en la matriz de quien llama: `-=` en NumPy
+      modifica el array en su sitio, y eso es lo que quieres dentro del bucle y no fuera. Y la
+      pérdida se mide **antes** de actualizar, de modo que `curva[0]` es la red sin entrenar y
+      `curva[-1]` la red final: por eso hay `pasos + 1` valores y no `pasos`.
+reading:
+  - kind: paper
+    title: 'Understanding the difficulty of training deep feedforward neural networks'
+    authors: 'Glorot y Bengio'
+    year: '2010'
+    venue: 'AISTATS 2010'
+    lang: en
+    url: 'https://proceedings.mlr.press/v9/glorot10a.html'
+    note: 'El artículo al que remite la lección al aplazar «qué escala» al bloque 3: fija la escala de inicialización a partir de la anchura de cada capa para que la señal ni sature ni se apague. La simetría no la trata; eso ya lo hace la lección.'
+  - kind: interactivo
+    title: 'A Neural Network Playground'
+    authors: 'Smilkov y Carter'
+    venue: 'playground.tensorflow.org'
+    lang: en
+    url: 'https://playground.tensorflow.org/'
+    note: 'El bucle que acabas de escribir, con mandos: mueve la tasa de aprendizaje, las capas, las neuronas y la activación, y mira caer la pérdida. Trabaja sobre puntos en el plano, no sobre texto, y trae regularización ajena al curso.'
+---
+
+{/* COURSE-P5-02 — Bloque 2, lección 9. */}
+
+*Backpropagation* entrega el gradiente de una red entera con una sola pasada hacia atrás, y la
+lección anterior lo derivó sin saltarse un paso. Lo que produjo fue una lista de números en
+pantalla. Un gradiente impreso no mueve ningún peso: es una indicación —por dónde se baja, y cuánto
+le toca a cada parámetro— y alguien tiene que ejecutarla, mil veces seguidas, para que una red
+pase de contestar cualquier cosa a contestar bien. Ese bucle no está escrito en ninguna celda del
+curso. Sus cuatro piezas sí, repartidas en cuatro lecciones de este bloque, y juntarlas paga además
+una deuda abierta desde el principio: los ocho pesos de la neurona de reseñas y los siete que
+separan las frases de XOR (*exclusive or*, o exclusivo) los escribí yo, mirando los datos.
+
+El sitio donde comprobarlo está elegido desde entonces. <Leccion slug="xor-y-capas-ocultas">La lección sobre XOR y las capas ocultas</Leccion> demostró que ninguna recta deja <W>está bien</W> y <W>no está mal</W> a un lado
+y las otras dos frases al otro, y resolvió después las cuatro con una capa oculta cuyos siete
+números elegí a mano. Si el bucle funciona, la red tiene que dar con unos pesos que acierten las
+cuatro —no necesariamente los míos— partiendo de números que no significan nada. Y si no funciona
+se nota enseguida: con cuatro ejemplos y dos coordenadas no hay dónde esconder un fallo.
+
+Las cuatro piezas no están sueltas. Están en un orden, y el orden se cierra sobre sí mismo.
+
+<Figure
+  src="/courses/dl-nlp/bucle-entrenamiento.svg"
+  alt="Cuatro cajas colocadas en las esquinas de un rectángulo y unidas por flechas que giran en el sentido de las agujas del reloj. Arriba a la izquierda, forward pass; arriba a la derecha, pérdida; abajo a la derecha, gradiente; abajo a la izquierda, actualización de los pesos. Las tres primeras flechas son grises; la cuarta, la que sube desde la actualización hasta el forward pass y cierra el círculo, es verde y lleva escrito al lado y otra vez."
+  caption="Entrenar no añade ninguna operación nueva: añade una vuelta. Cada caja se derivó en su lección y ninguna cambia aquí, y lo único que esta lección escribe por primera vez es la flecha que devuelve el control al principio."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Entrenar es repetir cuatro cosas que ya sabes hacer. Lo único que hay que decidir de nuevo es de
+dónde salen los pesos la primera vez, y ahí la respuesta cómoda —todos iguales— deja la red
+congelada para siempre.
+</Callout>
+
+## Del ejemplo al batch: la vuelta, apilada por filas
+
+La lección anterior derivó la vuelta para un ejemplo, con vectores columna. La ida ya está escrita
+para un batch entero desde <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>: un ejemplo por
+fila en $\mathbf{X} \in \mathbb{R}^{B \times d_0}$, y de ahí
+$\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ capa a capa. Falta el mismo trato para la vuelta,
+y son dos cambios: uno de forma y otro de tamaño.
+
+El de forma es apilar. Llamemos $\boldsymbol{\Delta}^{(l)} \in \mathbb{R}^{B \times d_l}$ al
+**error del batch** en la capa $l$: su fila $i$ es el $\boldsymbol{\delta}^{(l)}$ del ejemplo $i$,
+tumbado, igual que la fila $i$ de $\mathbf{H}^{(l)}$ es su activación tumbada. Mayúscula para el
+batch y minúscula para el ejemplo, que es el convenio del bloque. La capa de salida entra igual que
+antes, ahora con $B$ filas a la vez:
+
+$$
+\boldsymbol{\Delta}^{(L)} = \hat{\mathbf{Y}} - \mathbf{Y} \in \mathbb{R}^{B \times d_L}.
+$$
+
+Y la recurrencia se transpone entera. Tomemos la de la lección anterior para el ejemplo $i$,
+$\boldsymbol{\delta}^{(l)}_i = \left(\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}_i\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(l)}_i\right)$,
+y transpongámosla. Transponer un producto le da la vuelta al orden de sus factores, y el producto
+de Hadamard opera coordenada a coordenada, de modo que no se entera:
+
+$$
+\left(\boldsymbol{\delta}^{(l)}_i\right)^{\top} = \left(\left(\boldsymbol{\delta}^{(l+1)}_i\right)^{\top}\mathbf{W}^{(l+1)}\right) \odot \left(\varphi^{\prime}\left(\mathbf{z}^{(l)}_i\right)\right)^{\top},
+$$
+
+que es la fila $i$ de lo que buscamos, escrita con las filas $i$ de $\boldsymbol{\Delta}^{(l+1)}$ y
+de $\mathbf{Z}^{(l)}$. Apilar las $B$ deja
+
+$$
+\boldsymbol{\Delta}^{(l)} = \left(\boldsymbol{\Delta}^{(l+1)}\mathbf{W}^{(l+1)}\right) \odot \varphi^{\prime}\left(\mathbf{Z}^{(l)}\right),
+$$
+
+donde lo que hay que mirar es lo que ha desaparecido: la transpuesta. No es un descuido ni una
+convención distinta. La ida *ganó* una transpuesta al pasar a filas —$\mathbf{W}^{(l)}\mathbf{h}$ se
+convirtió en $\mathbf{H}\left(\mathbf{W}^{(l)}\right)^{\top}$— y la vuelta la *pierde* por el mismo
+motivo, porque partía de una matriz que ya estaba transpuesta. Las dos veces es el mismo producto
+leído con los ejemplos en filas.
+
+El cambio de tamaño es el $1/B$, y viene de la definición de la pérdida. $\mathcal{L}$ es la media
+de las $\ell$ de los $B$ ejemplos, y derivar una media es promediar las derivadas, así que el
+gradiente del batch es la media de los $B$ gradientes que daría la lección anterior de uno en uno.
+Esa media es otro producto de matrices:
+
+$$
+\nabla_{\mathbf{W}^{(l)}}\mathcal{L}
+= \frac{1}{B}\sum_{i=1}^{B}\boldsymbol{\delta}^{(l)}_i\left(\mathbf{h}^{(l-1)}_i\right)^{\top}
+= \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{H}^{(l-1)} \in \mathbb{R}^{d_l \times d_{l-1}},
+\qquad
+\nabla_{\mathbf{b}^{(l)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{1}_B,
+$$
+
+con $\mathbf{1}_B \in \mathbb{R}^{B}$ el vector de unos de <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>. La suma sobre ejemplos que
+la lección anterior escribía a mano es exactamente el índice que el producto de matrices recorre y
+descarta: por eso el resultado tiene la forma de $\mathbf{W}^{(l)}$ y no se acuerda de $B$.
+
+Con eso, la regla del descenso de <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion> no cambia ni una letra:
+$\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t)$, aplicada a cada matriz y a
+cada vector de sesgos por separado. La concesión, dicha en voz alta: cada paso mira entero el
+**conjunto de entrenamiento** —los ejemplos con etiqueta de los que dispone la red, aquí las cuatro
+frases—, igual que hacía aquella lección con las diez reseñas. Partirlo en trozos y dar un paso por
+trozo hace falta cuando es grande, y éste tiene cuatro filas.
+
+Ya está escrito, entonces, todo lo que necesita la red de las cuatro frases: el perceptrón
+multicapa (*multilayer perceptron*, MLP) más pequeño con el que probarlo, con dos entradas, cuatro
+neuronas ocultas con $\tanh$ y una de salida con sigmoide, o sea $L = 2$ y
+$d_0, d_1, d_2 = 2, 4, 1$. Su ida ocupa una línea por capa,
+
+$$
+\mathbf{H}^{(1)} = \tanh\left(\mathbf{X}\left(\mathbf{W}^{(1)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(1)}\right)^{\top}\right) \in \mathbb{R}^{4 \times 4},
+\qquad
+\hat{\mathbf{Y}} = \sigma\left(\mathbf{H}^{(1)}\left(\mathbf{W}^{(2)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(2)}\right)^{\top}\right) \in \mathbb{R}^{4 \times 1},
+$$
+
+con $\mathbf{X} \in \mathbb{R}^{4 \times 2}$ y $B = 4$, y su vuelta son las tres fórmulas de arriba
+con $L = 2$. Doce pesos y cinco sesgos: diecisiete números que hay que poner en algún sitio antes
+de dar el primer paso.
+
+### Cuatro neuronas iguales son una sola neurona
+
+Poner esos diecisiete números es la decisión que ninguna fórmula anterior toma, y la
+respuesta cómoda —todos a cero— falla. Sigue las cuentas con esa misma red y con los diecisiete
+nulos. Entonces $\mathbf{Z}^{(1)} = \mathbf{0}$, y como $\tanh(0) = 0$ también
+$\mathbf{H}^{(1)} = \mathbf{0}$; de ahí $\hat{\mathbf{Y}} = \sigma(\mathbf{0})$, que es $1/2$ para
+las cuatro frases. Mete eso en los dos gradientes de arriba:
+
+$$
+\nabla_{\mathbf{W}^{(2)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(2)}\right)^{\top}\mathbf{H}^{(1)} = \mathbf{0},
+\qquad
+\boldsymbol{\Delta}^{(1)} = \left(\boldsymbol{\Delta}^{(2)}\mathbf{W}^{(2)}\right) \odot \varphi^{\prime}\left(\mathbf{Z}^{(1)}\right) = \mathbf{0},
+$$
+
+el primero porque $\mathbf{H}^{(1)}$ es nula y el segundo porque $\mathbf{W}^{(2)}$ lo es. Con
+$\boldsymbol{\Delta}^{(1)} = \mathbf{0}$ los dos gradientes de la primera capa también se anulan, de
+modo que el paso deja la red donde estaba y el siguiente encuentra el mismo punto de partida. La
+capa oculta no se moverá jamás.
+
+Y el cero no es el problema, sino un caso particular de algo más ancho. Toma dos neuronas ocultas
+$j$ y $k$ que empiecen con los mismos pesos de entrada, el mismo sesgo y el mismo peso de salida.
+Lo primero les da la misma preactivación y la misma activación, $z^{(1)}_j = z^{(1)}_k$ y
+$h^{(1)}_j = h^{(1)}_k$; lo último hace que reciban el mismo error,
+$\delta^{(1)}_j = \delta^{(1)}_k$; y con el mismo error y la misma activación sus tres gradientes
+coinciden:
+
+$$
+\left(\nabla_{\mathbf{W}^{(1)}}\mathcal{L}\right)_{jm} = \left(\nabla_{\mathbf{W}^{(1)}}\mathcal{L}\right)_{km} \;\; \text{para todo } m,
+\qquad
+\nabla_{b^{(1)}_j}\mathcal{L} = \nabla_{b^{(1)}_k}\mathcal{L},
+\qquad
+\nabla_{\mathbf{W}^{(2)}_{1j}}\mathcal{L} = \nabla_{\mathbf{W}^{(2)}_{1k}}\mathcal{L}.
+$$
+
+Restar cantidades iguales a cantidades iguales conserva la igualdad, así que las dos neuronas salen
+del paso tan idénticas como entraron. Y del siguiente. Cuatro copias de una misma neurona
+calculan lo que calcula una, por muchos pasos que den: la capa oculta tiene la anchura de una
+neurona por más que $d_1$ diga cuatro. Y una neurona sola no separa estas cuatro frases, que es
+justo lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>.
+
+Nada del algoritmo rompe esa igualdad, porque todo lo que hace es determinista: tiene que venir de
+fuera, y la fuente más barata de «distintos» es una tirada al azar. Elegir esos diecisiete números
+de partida es la **inicialización**, el único punto del entrenamiento donde interviene el azar. Su
+papel no es el que parece: no aporta ninguna información sobre las frases, sólo separa unas
+neuronas de otras para que el gradiente pueda empujarlas por caminos distintos. Cuánto valgan
+también importa —unos pesos diminutos se parecen demasiado al caso de arriba—, y la tercera celda
+lo mide. Qué escala elegir en general depende de la profundidad de la red, y aparece en el bloque
+3, sobre redes recurrentes, cuando el problema pase de ser un inconveniente a ser el tema.
+
+## El bucle en NumPy, y la pérdida cayendo
+
+La primera celda es la red con las fórmulas de arriba puestas en NumPy: la ida, la pérdida y la
+vuelta, sin bucle todavía. Ejecútala y mira la columna de formas y la última línea.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Las cuatro frases de XOR: x1 vale +1 si aparece «no» y x2 vale +1 si la
+# palabra que valora es «bien». La etiqueta vale 1 si la frase habla bien.
+X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+Y = np.array([[1.], [0.], [0.], [1.]])
+B, d0, d1, d2 = 4, 2, 4, 1
+
+rng = np.random.default_rng(0)                   # semilla fija: verás estos números
+W1, b1 = rng.normal(size=(d1, d0)), np.zeros(d1)
+W2, b2 = rng.normal(size=(d2, d1)), np.zeros(d2)
+
+
+def forward(X, W1, b1, W2, b2):
+    H1 = np.tanh(X @ W1.T + b1)                  # (B, d1)
+    return H1, 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+
+
+def perdida(Y_hat, Y):
+    p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)       # el logaritmo no admite el cero
+    return -np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p))
+
+
+def backward(X, Y, H1, Y_hat, W2):
+    D2 = Y_hat - Y                               # (B, d2): la salida entra sin factor
+    D1 = (D2 @ W2) * (1.0 - H1 ** 2)             # transporta y enmascara: (B, d1)
+    return (D1.T @ X) / B, D1.sum(0) / B, (D2.T @ H1) / B, D2.sum(0) / B
+
+
+H1, Y_hat = forward(X, W1, b1, W2, b2)
+gW1, gb1, gW2, gb2 = backward(X, Y, H1, Y_hat, W2)
+for nombre, A in [("X", X), ("H(1)", H1), ("Ŷ", Y_hat),
+                  ("∇W(1)", gW1), ("∇b(1)", gb1), ("∇W(2)", gW2)]:
+    print("%-6s %s" % (nombre, A.shape))
+print("pérdida inicial: %.4f" % perdida(Y_hat, Y))
+
+# El 1/B a la vista: el gradiente del batch es la media de los cuatro de uno en uno.
+uno_a_uno = np.zeros((d1, d0))
+for i in range(B):
+    d2_i = Y_hat[i] - Y[i]
+    d1_i = (W2.T @ d2_i) * (1.0 - H1[i] ** 2)    # el mismo δ, en columna
+    uno_a_uno += np.outer(d1_i, X[i]) / B
+print("\\n∇W(1) del batch =", np.round(gW1, 4).tolist())
+print("diferencia con la media de los cuatro productos exteriores: %.1e"
+      % np.abs(uno_a_uno - gW1).max())
+`} />
+
+En la columna de formas está el reparto entero: el $4$ de los ejemplos aparece en $\mathbf{X}$, en
+$\mathbf{H}^{(1)}$ y en $\hat{\mathbf{Y}}$, y en ninguno de los tres gradientes, que salen con la
+forma de sus parámetros. La última línea comprueba el $1/B$ y da cero: los cuatro productos
+exteriores de la lección anterior, promediados a mano, son casilla por casilla el producto de
+matrices de arriba.
+
+La segunda celda mete eso en un bucle y lo repite dos mil veces, con $\eta = 0.5$. Ejecútala y
+mira caer la pérdida.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+frases = ["está bien", "está mal", "no está bien", "no está mal"]
+X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+Y = np.array([[1.], [0.], [0.], [1.]])
+B, eta, pasos = 4, 0.5, 2000
+
+rng = np.random.default_rng(0)                   # la misma red de la celda anterior
+W1, b1 = rng.normal(size=(4, 2)), np.zeros(4)
+W2, b2 = rng.normal(size=(1, 4)), np.zeros(1)
+
+for t in range(pasos + 1):
+    H1 = np.tanh(X @ W1.T + b1)                              # ida
+    Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+    if t in (0, 25, 50, 100, 200, 500, 1000, 2000):
+        p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)
+        print("paso %4d   pérdida %.4f   aciertos %d de 4"
+              % (t, -np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p)),
+                 int(((Y_hat >= 0.5) == (Y == 1.0)).sum())))
+    if t == pasos:
+        break
+    D2 = Y_hat - Y                                           # vuelta
+    D1 = (D2 @ W2) * (1.0 - H1 ** 2)
+    W1 -= eta * (D1.T @ X) / B                               # y descenso
+    b1 -= eta * D1.sum(0) / B
+    W2 -= eta * (D2.T @ H1) / B
+    b2 -= eta * D2.sum(0) / B
+
+print()
+print("neurona     w1     w2   sesgo   peso de salida")
+for j in range(4):
+    print("   %d      %+5.2f  %+5.2f   %+5.2f       %+5.2f"
+          % (j + 1, W1[j, 0], W1[j, 1], b1[j], W2[0, j]))
+print()
+aporta = W2[0] * H1                              # lo que pone cada neurona en z(2)
+for frase, a in zip(frases, aporta):
+    print("%-13s  neuronas 2 y 4: %+5.2f    neuronas 1 y 3: %+5.2f"
+          % (frase, a[1] + a[3], a[0] + a[2]))
+`} />
+
+La pérdida sale de $0.7260$ y llega a $0.0011$, y los cuatro aciertos aparecen antes del paso
+$25$. La deuda está pagada: nadie le ha dicho a la red que <W>no</W> invierte el signo de lo que
+sigue, y los pesos que ha encontrado no son los que escribí en <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>.
+
+Son mejores que eso: son los mismos, redescubiertos. Mira las neuronas $2$ y $4$. Sus pesos apuntan
+casi en la misma dirección —$(1.83,\ 1.77)$ y $(1.79,\ 1.85)$, las dos casi
+$x_1 + x_2$—, sus sesgos son opuestos —$-1.80$ y $+1.80$— y sus pesos de salida también
+—$-3.98$ y $+3.93$—. Eso es la franja de <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>: dos rectas paralelas y una resta entre
+las dos. La última tabla lo confirma: esa pareja aporta $+7.5$ a las dos frases positivas y
+$+0.2$ a las otras dos. Y la pareja $1$ y $3$ hace lo mismo sobre la otra diagonal con el signo
+cambiado, restando $6.7$ justo donde la primera se calla.
+
+Falta decir cuándo parar, y es la decisión más floja de las tres. Aquí paro en un número redondo de
+pasos porque la curva se ha aplanado; podría haber parado cuando la pérdida dejara de bajar una
+milésima, o cuando la norma del gradiente bajara de un umbral, y las tres son reglas de andar por
+casa. Los aciertos no sirven para decidirlo: en la fila del paso $25$ ya son cuatro y ahí se
+quedan, mientras la pérdida sigue bajando un factor de trescientos. Y las tres reglas comparten un
+límite que ninguna puede arreglar, porque las tres miran sólo estas cuatro frases.
+
+La tercera celda vuelve al principio del bucle y cambia una sola cosa: de dónde salen los pesos.
+Seis escalas con la misma semilla, y debajo cuatro neuronas idénticas de verdad.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+Y = np.array([[1.], [0.], [0.], [1.]])
+B, eta, pasos = 4, 0.5, 1000
+
+
+def entrena(escala, iguales=False):
+    rng = np.random.default_rng(0)               # la misma semilla en todas
+    W1, W2 = rng.normal(size=(4, 2)) * escala, rng.normal(size=(1, 4)) * escala
+    if iguales:                                  # cuatro copias de una misma neurona
+        W1, W2 = np.repeat(W1[:1], 4, axis=0), np.full((1, 4), W2[0, 0])
+    b1, b2 = np.zeros(4), np.zeros(1)
+    curva = []
+    for t in range(pasos + 1):
+        H1 = np.tanh(X @ W1.T + b1)
+        Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+        p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)
+        curva.append(-np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p)))
+        if t == pasos:
+            break
+        D2 = Y_hat - Y
+        D1 = (D2 @ W2) * (1.0 - H1 ** 2)
+        W1 -= eta * (D1.T @ X) / B
+        b1 -= eta * D1.sum(0) / B
+        W2 -= eta * (D2.T @ H1) / B
+        b2 -= eta * D2.sum(0) / B
+    return curva, int(((Y_hat >= 0.5) == (Y == 1.0)).sum()), W1
+
+
+print("%7s %8s %8s %8s %9s  %s"
+      % ("escala", "paso 0", "paso 50", "paso 200", "paso 1000", "aciertos"))
+for escala in [0.0, 0.01, 0.1, 0.5, 1.0, 10.0]:
+    curva, aciertos, _ = entrena(escala)
+    print("%7.2f %8.4f %8.4f %8.4f %9.4f  %d de 4"
+          % (escala, curva[0], curva[50], curva[200], curva[1000], aciertos))
+
+# Y la simetría sin ceros: cuatro copias de una misma neurona, con pesos normales.
+curva, aciertos, W1 = entrena(1.0, iguales=True)
+print()
+print("cuatro neuronas idénticas: pérdida %.4f -> %.4f, %d de 4"
+      % (curva[0], curva[-1], aciertos))
+print("W(1) tras 1000 pasos:", np.round(W1, 4).tolist())
+print("¿las cuatro filas siguen siendo la misma?", bool(np.allclose(W1, W1[0])))
+`} />
+
+Las dos primeras filas de la tabla no se mueven de $0.6931$, que es $\log 2$: la red contesta
+$0.5$ a las cuatro frases al empezar y sigue contestando lo mismo mil pasos después. La segunda
+de las dos es la que enseña algo, porque su escala es $0.01$ y no cero: las cuatro neuronas sí son
+distintas. Lo que pasa es que cada capa recibe un gradiente multiplicado por la escala de la otra,
+y con dos factores pequeños todo avanza cientos de veces más despacio: esa red
+no está atascada, llega a las cuatro frases hacia el paso cien mil. Al otro extremo, la escala $10$
+arranca en $4.73$ —confiadamente equivocada— y se recupera: con dos capas eso sale barato, y con
+profundidad deja de salirlo.
+
+Las tres últimas líneas son la simetría sin ceros de por medio. Las cuatro neuronas empiezan con
+pesos normales, sólo que iguales entre sí, y mil pasos después siguen siendo la misma fila repetida
+cuatro veces. La pérdida ha bajado de $0.7240$ a $0.6931$, que es exactamente lo que consigue
+una red que contesta lo mismo a todo: cuatro neuronas trabajando como una, y una no puede.
+
+## Comprueba tu intuición
+
+Tres preguntas —por qué el cero congela la red, un gradiente de batch en NumPy y qué se puede leer
+en una curva de pérdida— y un desafío que es el bucle entero.
+
+<Quiz id="q-simetria" />
+
+<Quiz id="q-gradiente-batch" />
+
+<Quiz id="q-parar" />
+
+<CodeChallenge id="ch-entrena" />
+
+---
+
+La red acierta las cuatro frases que ha visto, y no hay una quinta. Eso no es un defecto del
+entrenamiento: es que aquí acertar y aprender son indistinguibles, porque con cuatro ejemplos
+memorizar la respuesta y entender la regla producen los mismos números. Nada de lo que imprime este
+bucle dice qué haría la red con <W>no está tan bien</W>, y el bucle no tiene forma de enterarse.
+
+Queda además una deuda que la de los pesos ha dejado a la vista. Las dos coordenadas de entrada las
+inventé yo: «¿aparece <W>no</W>?» y «¿la palabra que valora es <W>bien</W> o <W>mal</W>?» son dos
+preguntas que alguien tuvo que formular después de leer las cuatro frases, y un texto cualquiera no
+llega en dos números. Llegaba, eso sí, en la bolsa de palabras del bloque anterior. Montar este
+mismo bucle sobre unos cientos de reseñas representadas así, medir por primera vez sobre reseñas
+que la red no ha visto y ver qué queda del acierto es <Leccion slug="proyecto-sentimiento">la siguiente lección, el proyecto de clasificación de sentimiento</Leccion>.

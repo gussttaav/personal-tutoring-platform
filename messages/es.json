@@ -32,7 +32,14 @@
       "taglinePart1": "Supera temas difíciles",
       "taglinePart2": "con guía experta y directa.",
       "subheading": "Clases individuales. Sin videos, sin prompts, sin perder el tiempo.",
-      "skills": ["Java", "Python", "C", "Algorítmica", "Deep Learning", "Estadística"],
+      "skills": [
+        "Java",
+        "Python",
+        "C",
+        "Algorítmica",
+        "Deep Learning",
+        "Estadística"
+      ],
       "cta": {
         "book": "Reservar sesión ahora",
         "availability": "Ver disponibilidad"
@@ -147,30 +154,42 @@
       "welcomeBack": "Bienvenido de vuelta,",
       "loadError": "No se pudieron cargar tus sesiones.",
       "retry": "Reintentar",
-      "emptyTitle": "¿Listo para empezar?",
-      "emptySubtitle": "Reserva tu primera sesión y da el primer paso hacia tus objetivos.",
-      "bookSession": "Reservar una sesión",
-      "packTitle": "¡Tienes clases disponibles!",
-      "packCTAPrefix": "Tienes",
-      "packCTAPending": "{count, plural, one {# clase pendiente} other {# clases pendientes}}",
-      "packCTASuffix": "en tu pack. ¿Cuándo quieres practicar?",
-      "bookNextClass": "Reservar mi próxima clase"
+      "tabs": {
+        "upcoming": "Próximas",
+        "history": "Historial",
+        "courses": "Mis cursos"
+      }
     },
     "bookPanel": {
       "title": "Reservar una sesión",
+      "subtitle": "Elige el formato que mejor se adapte a lo que necesitas.",
       "usePackCredit": "Usar crédito del pack",
       "packCredits": "{count, plural, one {# clase disponible} other {# clases disponibles}}",
       "singleSessionsLabel": "Sesiones individuales",
       "packsLabel": "Packs de continuidad",
       "sessions": {
-        "free15min": { "label": "Encuentro Inicial", "sub": "15 min · Presentación", "price": "Gratis" },
-        "session1h":  { "label": "Sesión de 1 hora",  "sub": "60 min · Individual"   },
-        "session2h":  { "label": "Sesión de 2 horas", "sub": "120 min · Individual"  }
+        "free15min": {
+          "label": "Encuentro Inicial",
+          "sub": "15 min · Presentación",
+          "price": "Gratis"
+        },
+        "session1h": {
+          "label": "Sesión de 1 hora",
+          "sub": "60 min · Individual"
+        },
+        "session2h": {
+          "label": "Sesión de 2 horas",
+          "sub": "120 min · Individual"
+        }
       },
       "packs": {
         "sub": "Ahorra {amount} · {pct}% dto.",
-        "pack5":  { "label": "Pack Esencial 5h"   },
-        "pack10": { "label": "Pack Intensivo 10h" }
+        "pack5": {
+          "label": "Pack Esencial 5h"
+        },
+        "pack10": {
+          "label": "Pack Intensivo 10h"
+        }
       }
     },
     "nextSession": {
@@ -179,11 +198,10 @@
         "free15min": "Encuentro inicial · 15 min",
         "session1h": "Sesión individual · 1h",
         "session2h": "Sesión individual · 2h",
-        "pack":      "Clase de pack"
+        "pack": "Clase de pack"
       },
       "zoomLabel": "Aula virtual Zoom",
       "joinButton": "Entrar al aula virtual",
-      "sessionEnded": "Sesión finalizada",
       "reschedule": "Reprogramar",
       "cancelConfirmTitle": "¿Cancelar esta sesión?",
       "cancelConfirmBody": "Esta acción no se puede deshacer. Si es de pack, el crédito se devolverá automáticamente.",
@@ -196,29 +214,68 @@
       "active": "Activo",
       "usedCredits": "{count, plural, one {# clase utilizada} other {# clases utilizadas}}",
       "remainingLabel": "Clases restantes",
-      "usedShort": "{count, plural, one {# usada} other {# usadas}}",
       "ctaPrefix": "Tienes",
       "ctaAvailable": "{count, plural, one {# clase disponible} other {# clases disponibles}}",
       "ctaSuffix": "en tu pack. ¡Reserva tu próxima sesión!",
-      "bookButton": "Reservar sesión del pack"
+      "bookButton": "Reservar sesión del pack",
+      "validUntil": "válido hasta el {date}"
     },
-    "calendar": {
-      "blockShort2h": "2h",
-      "blockShort15": "15 min",
-      "blockShort1h": "1h",
-      "blockFree": "15 min. Gratis",
-      "block1h": "1h Individual",
-      "block2h": "2h Individual",
-      "blockPack10": "1h Pack10h",
-      "blockPack5": "1h Pack5h",
-      "fullFree": "Encuentro inicial · 15 min",
-      "fullSession1h": "Sesión individual · 1 hora",
-      "fullSession2h": "Sesión individual · 2 horas",
-      "fullPack10": "Clase de pack (10h)",
-      "fullPack5": "Clase de pack (5h)",
-      "fallback": "Sesión",
-      "legendSession": "Sesión individual",
-      "legendPack": "Pack / Inicial"
+    "courses": {
+      "lessonsDone": "{done} de {total} lecciones",
+      "percent": "{percent}%",
+      "continueCta": "Continuar",
+      "startCta": "Empezar",
+      "completedBadge": "Completado",
+      "completedNote": "Has terminado el curso. ¿Lo llevamos a la práctica?",
+      "bookSessionCta": "Reservar sesión 1:1",
+      "emptyTitle": "Aprende a tu ritmo",
+      "emptyBody": "Cursos interactivos con código que se ejecuta en el navegador y ejercicios que se corrigen solos.",
+      "emptyCta": "Ver cursos"
+    },
+    "upcoming": {
+      "join": "Entrar al aula",
+      "reschedule": "Reprogramar",
+      "chipFree": "Gratis",
+      "chipPack": "Pack",
+      "zoomShort": "Zoom",
+      "emptyTitle": "¿Listo para empezar?",
+      "emptyBody": "Aún no tienes clases reservadas. Reserva tu primera sesión y da el primer paso hacia tus objetivos.",
+      "emptyCta": "Reservar una sesión"
+    },
+    "history": {
+      "statCompleted": "Completadas",
+      "statAvgRating": "Media que diste",
+      "statHours": "Tiempo con Gustavo",
+      "hoursValue": "{hours} h",
+      "noRatings": "—",
+      "pillReview": "Reseñar",
+      "pillCancelled": "Cancelada",
+      "payCredit": "1 crédito del pack",
+      "payCreditRefunded": "crédito devuelto",
+      "payCard": "{amount} · tarjeta",
+      "payFree": "Gratis",
+      "end": "Fin del historial",
+      "emptyTitle": "Todavía sin historial",
+      "emptyBody": "Cuando completes tu primera clase aparecerá aquí, con tus valoraciones y detalles.",
+      "loadError": "No se pudo cargar tu historial.",
+      "modal": {
+        "title": "Clase pasada",
+        "badgeCompleted": "Completada",
+        "badgeCancelled": "Cancelada",
+        "rowDate": "Fecha",
+        "rowTime": "Horario",
+        "rowPayment": "Pago",
+        "yourNote": "Tu nota para Gustavo",
+        "withTutor": "con Gustavo",
+        "reviewNudgeTitle": "Aún no has valorado esta clase",
+        "reviewNudgeBody": "Tu opinión ayuda a Gustavo a mejorar.",
+        "rateLabel": "Tu valoración",
+        "starLabel": "{count, plural, one {# estrella} other {# estrellas}}",
+        "commentPlaceholder": "¿Algo que quieras añadir? (opcional)",
+        "submitComment": "Enviar comentario",
+        "thanks": "¡Gracias por tu valoración!",
+        "bookSame": "Reservar otra igual"
+      }
     }
   },
   "booking": {
@@ -254,9 +311,18 @@
       "sessionName": "Sesión Estratégica",
       "sessionDuration": "60 minutos",
       "sessions": {
-        "free15min": { "label": "Encuentro inicial",  "duration": "15 minutos" },
-        "session1h":  { "label": "Sesión de 1 hora",  "duration": "60 minutos" },
-        "session2h":  { "label": "Sesión de 2 horas", "duration": "2 horas"    }
+        "free15min": {
+          "label": "Encuentro inicial",
+          "duration": "15 minutos"
+        },
+        "session1h": {
+          "label": "Sesión de 1 hora",
+          "duration": "60 minutos"
+        },
+        "session2h": {
+          "label": "Sesión de 2 horas",
+          "duration": "2 horas"
+        }
       }
     },
     "singleSession": {
@@ -557,12 +623,6 @@
     "unknownError": "Error desconocido"
   },
   "comingSoon": {
-    "courses": {
-      "badge": "CURSOS",
-      "headline": "Formación en profundidad",
-      "subline": "Cursos estructurados sobre IA y desarrollo. Próximamente.",
-      "ctaLabel": "Suscribirse a Cursos"
-    },
     "blog": {
       "badge": "BLOG",
       "headline": "Artículos y recursos",
@@ -580,11 +640,26 @@
   },
   "postClassReview": {
     "ratings": [
-      { "label": "Lo siento mucho",       "placeholder": "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar." },
-      { "label": "No fue lo que esperaba","placeholder": "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar." },
-      { "label": "Estuvo bien",            "placeholder": "¿Hay algo concreto que podría hacer diferente la próxima vez?" },
-      { "label": "Muy buena clase",        "placeholder": "¿Qué te resultó más útil de la clase de hoy?" },
-      { "label": "¡Excelente!",            "placeholder": "¿Qué destacarías? Si das tu permiso, podría publicarse en mi perfil." }
+      {
+        "label": "Lo siento mucho",
+        "placeholder": "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar."
+      },
+      {
+        "label": "No fue lo que esperaba",
+        "placeholder": "¿Qué podría haber sido mejor? Tu opinión me ayuda a mejorar."
+      },
+      {
+        "label": "Estuvo bien",
+        "placeholder": "¿Hay algo concreto que podría hacer diferente la próxima vez?"
+      },
+      {
+        "label": "Muy buena clase",
+        "placeholder": "¿Qué te resultó más útil de la clase de hoy?"
+      },
+      {
+        "label": "¡Excelente!",
+        "placeholder": "¿Qué destacarías? Si das tu permiso, podría publicarse en mi perfil."
+      }
     ],
     "tapToRate": "Toca una carita para valorar",
     "private": "La valoración es privada",
@@ -667,6 +742,228 @@
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
     }
   },
+  "courses": {
+    "catalog": {
+      "overline": "Cursos",
+      "heading": "Aprende construyendo, <accent>no memorizando</accent>",
+      "subtitle": "Aprende construyendo: teoría con rigor matemático, código que se ejecuta en el navegador y ejercicios que se corrigen de forma automática.",
+      "empty": {
+        "title": "Próximamente",
+        "body": "Aún no hay cursos publicados. Estoy preparando el primero — vuelve pronto."
+      },
+      "card": {
+        "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
+        "blocks": "{count, plural, =1 {# módulo} other {# módulos}}",
+        "cta": "Ver curso",
+        "contentLanguage": "Lecciones en español"
+      }
+    },
+    "landing": {
+      "backToCatalog": "Todos los cursos",
+      "hero": {
+        "levelLabel": "Nivel",
+        "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
+        "start": "Empezar el curso",
+        "soon": "Próximamente",
+        "viewSyllabus": "Ver el temario"
+      },
+      "prerequisites": {
+        "heading": "Requisitos previos",
+        "kicker": "Antes de empezar"
+      },
+      "syllabus": {
+        "heading": "Temario",
+        "blockMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · {duration}",
+        "minutes": "{minutes} min",
+        "durationHours": "{hours}h {minutes}m",
+        "durationHoursExact": "{hours}h",
+        "empty": "El temario detallado se publicará muy pronto.",
+        "kicker": "Contenido",
+        "summary": "{blocks, plural, =1 {# bloque} other {# bloques}} · {lessons, plural, =1 {# lección} other {# lecciones}} · ~{hours} h de lectura"
+      },
+      "instructor": {
+        "heading": "Tu instructor",
+        "kicker": "Sobre Gustavo",
+        "role": "Instructor"
+      },
+      "faq": {
+        "heading": "Preguntas frecuentes",
+        "kicker": "Preguntas frecuentes"
+      },
+      "cta": {
+        "start": "Empezar el curso",
+        "soon": "Próximamente",
+        "overline": "Empieza hoy",
+        "resumeOverline": "Sigue adelante",
+        "resumeHeading": "Continúa donde lo dejaste",
+        "resumeBody": "Retoma el curso justo en tu próxima lección y sigue avanzando a tu ritmo, sin prisa y sin fechas límite.",
+        "resume": "Continuar el curso"
+      },
+      "languageNotice": {
+        "title": "Las lecciones están en español",
+        "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante."
+      },
+      "authorNote": {
+        "kicker": "Nota del autor",
+        "body": "Este curso ha sido elaborado con la ayuda de herramientas de inteligencia artificial, que he utilizado para revisar, corregir y mejorar la redacción de mis apuntes y materiales, acelerando enormemente el proceso de elaboración. El contenido, el enfoque y la estructura están guiados por mí, y cada explicación, párrafo y ecuación ha sido revisado cuidadosamente para garantizar su claridad, coherencia y fiabilidad. Muchas lecciones incluyen además explorables interactivos que refuerzan el aprendizaje. Espero que te resulte útil. Y si en algún momento te atascas o quieres avanzar más rápido, <book>reserva una sesión conmigo</book>: estaré encantado de ayudarte."
+      }
+    },
+    "notify": {
+      "body": "Envíame una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "cta": "Notifícame",
+      "signIn": "Iniciar sesión",
+      "signInHint": "Inicia sesión para recibir una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "subscribed": "Te notificaré cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "unsubscribe": "No recibir notificaciones",
+      "error": "Algo ha fallado. Inténtalo de nuevo.",
+      "retry": "Reintentar"
+    },
+    "reader": {
+      "contentsLabel": "Contenido del curso",
+      "backToCourseAria": "Volver al curso: {course}",
+      "progressLabel": "{done} de {total} lecciones completadas",
+      "onThisPage": "En esta página",
+      "lessonNav": "Navegación entre lecciones",
+      "previous": "Anterior",
+      "next": "Siguiente",
+      "readingTime": "{minutes} min de lectura",
+      "refKicker": "Bloque {block} · Lección {order}",
+      "refAhead": "Más adelante",
+      "openNav": "Abrir el contenido del curso",
+      "closeNav": "Cerrar el contenido del curso",
+      "translationPending": {
+        "title": "Esta lección aún no está traducida",
+        "body": "El resto de la página está en español, pero el texto de esta lección está en otro idioma. Tu progreso se guarda igualmente."
+      },
+      "cta": {
+        "heading": "¿Te has atascado? ¿Quieres avanzar más rápido?",
+        "body": "Una sesión 1:1 conmigo para resolver lo que se te resista de esta lección o del curso entero.",
+        "button": "Reservar sesión"
+      }
+    },
+    "quiz": {
+      "submit": "Comprobar",
+      "retry": "Intentar de nuevo",
+      "showHint": "Ver pista",
+      "correct": "Correcto",
+      "incorrect": "Incorrecto",
+      "explanationLabel": "Explicación",
+      "multiNotice": "Marca todas las opciones correctas. Se corrige todo o nada: no hay puntuación parcial.",
+      "true": "Verdadero",
+      "false": "Falso",
+      "numericPlaceholder": "Tu respuesta",
+      "toleranceNote": "Se acepta un margen de ±{tolerance}.",
+      "predictPrompt": "¿Qué imprime este código?",
+      "outputPlaceholder": "Escribe la salida exacta",
+      "attempt": "{count, plural, =1 {# intento} other {# intentos}}",
+      "yourAnswer": "Tu respuesta",
+      "history": {
+        "answeredOn": "Respondida el {date}",
+        "solved": "Ya la resolviste correctamente el {date}",
+        "attempted": "Ya la intentaste el {date}"
+      }
+    },
+    "challenge": {
+      "run": "Comprobar",
+      "running": "Comprobando…",
+      "stop": "Detener",
+      "reset": "Reiniciar",
+      "expand": "Ver las {count} líneas",
+      "collapse": "Contraer",
+      "editorLabel": "Tu solución en Python",
+      "firstRunNote": "La primera comprobación descarga el intérprete de Python (~15 MB); después queda en la caché del navegador.",
+      "keyboardNote": "Este desafío se resuelve mejor con un teclado físico: en el móvil puedes leerlo y volver luego.",
+      "stage": {
+        "runtime": "Descargando el intérprete de Python…",
+        "packages": "Cargando paquetes…",
+        "preamble": "Preparando el entorno…",
+        "ready": "Ejecutando las pruebas…"
+      },
+      "outputLabel": "Salida de tu código",
+      "score": "{passed} de {total} pruebas superadas",
+      "allPassed": "¡Todas las pruebas pasan!",
+      "assertionFailed": "La comprobación no se cumple.",
+      "notRunNote": "No llegó a ejecutarse.",
+      "tracebackLabel": "Ver la traza completa",
+      "studentErrorTitle": "Tu código no llegó a ejecutarse",
+      "status": {
+        "pass": "Prueba superada",
+        "fail": "Prueba fallida",
+        "error": "Error al ejecutar la prueba",
+        "notRun": "Prueba no ejecutada"
+      },
+      "showSolution": "Ver la solución",
+      "solutionLabel": "Solución de referencia",
+      "explanationLabel": "Explicación",
+      "lockedNote": "{count, plural, =1 {La solución se desbloquea tras # intento más.} other {La solución se desbloquea tras # intentos más.}}",
+      "attempt": "{count, plural, =1 {# intento} other {# intentos}}",
+      "timeoutRun": "La comprobación superó los {seconds} s y se detuvo. Suele significar que tu código tiene un bucle infinito.",
+      "timeoutLoad": "La descarga del intérprete tardó demasiado. Comprueba tu conexión y vuelve a intentarlo.",
+      "stopped": "Comprobación detenida. No cuenta como intento.",
+      "crashed": "El intérprete se cerró inesperadamente: {error}",
+      "history": {
+        "solved": "Resuelto · {passed}/{total} pruebas · {date}",
+        "attempted": "Lo intentaste {count, plural, =1 {# vez} other {# veces}} · {date}"
+      }
+    },
+    "progress": {
+      "markComplete": "Marcar como completada",
+      "completed": "Lección completada",
+      "prompt": "¿Terminaste esta lección? Márcala para seguir tu progreso.",
+      "resume": "Continuar donde lo dejaste",
+      "lessonsDone": "{done} de {total} lecciones completadas",
+      "exercisesDone": "Ejercicios: {done} de {total} resueltos",
+      "saveAttempts": "Tus respuestas no se están guardando.",
+      "saveAttemptsCta": "Inicia sesión para guardarlas"
+    },
+    "reading": {
+      "title": "Para profundizar",
+      "lede": "De dónde sale lo de esta lección, y dónde seguir si quieres más. Nada de aquí hace falta para continuar el curso.",
+      "count": "{count, plural, one {# fuente} other {# fuentes}}",
+      "kindCount": {
+        "paper": "{count, plural, one {# paper} other {# papers}}",
+        "libro": "{count, plural, one {# libro} other {# libros}}",
+        "blog": "{count, plural, one {# artículo} other {# artículos}}",
+        "video": "{count, plural, one {# vídeo} other {# vídeos}}",
+        "interactivo": "{count, plural, one {# interactivo} other {# interactivos}}"
+      },
+      "kind": {
+        "paper": "paper",
+        "libro": "libro",
+        "blog": "artículo",
+        "video": "vídeo",
+        "interactivo": "interactivo"
+      },
+      "lang": {
+        "es": "En español",
+        "en": "En inglés"
+      }
+    },
+    "search": {
+      "trigger": "Buscar en el curso",
+      "triggerAria": "Buscar en el contenido del curso",
+      "dialogTitle": "Buscar en el curso",
+      "placeholder": "Busca en las {count} lecciones…",
+      "clear": "Borrar la búsqueda",
+      "close": "Cerrar la búsqueda",
+      "resultsLabel": "Resultados de la búsqueda",
+      "resultCount": "{count, plural, =0 {Sin resultados} =1 {# lección} other {# lecciones}}",
+      "moreSections": "{count, plural, =1 {+# coincidencia más} other {+# coincidencias más}}",
+      "introSection": "Introducción",
+      "tipsHeading": "Prueba con",
+      "scopeNote": "Se busca en el texto de las lecciones, sus títulos y sus apartados. No incluye el código ni las fórmulas.",
+      "loading": "Preparando la búsqueda…",
+      "minChars": "Escribe al menos dos letras.",
+      "emptyTitle": "Sin resultados para «{query}»",
+      "emptyBody": "Prueba con menos palabras o con un término más general. La búsqueda no cubre el código ni las fórmulas.",
+      "errorTitle": "No se pudo cargar la búsqueda",
+      "errorBody": "Vuelve a intentarlo en un momento.",
+      "errorRetry": "Reintentar",
+      "hintNavigate": "navegar",
+      "hintOpen": "abrir",
+      "hintClose": "cerrar"
+    }
+  },
   "meta": {
     "areaPersonal": {
       "title": "Área Personal — Gustavo Torres",
@@ -683,6 +980,10 @@
     "terminos": {
       "title": "Términos de servicio — Gustavo Torres",
       "description": "Términos de servicio de gustavoai.dev. Condiciones de uso, pagos, cancelaciones y responsabilidad."
+    },
+    "cursos": {
+      "title": "Cursos interactivos — Gustavo Torres",
+      "description": "Cursos gratuitos e interactivos de programación, matemáticas e IA. Aprende construyendo, con código que se ejecuta en el navegador."
     }
   },
   "pages": {
@@ -832,6 +1133,36 @@
       "labelSession": "Sesión cancelada",
       "creditsRestoredMsg": "✓ Tu crédito ha sido devuelto automáticamente a tu pack. Puedes reservar otra clase desde <a href=\"{baseUrl}\" style=\"color:#3ddc84\">gustavoai.dev</a>.",
       "refundMsg": "Si pagaste por esta sesión individualmente, Gustavo tramitará el reembolso en 1–3 días hábiles."
+    },
+    "courseLaunch": {
+      "subject": "Ya está publicado: {courseTitle}",
+      "heading": "El curso ya está publicado",
+      "intro": "Pediste que te avisara de los cursos nuevos en gustavoai.dev. Este es ese correo — el primero.",
+      "body1": "<strong>{courseTitle}</strong> ya está online y es gratuito. {lessonCount} lecciones que construyen un Transformer desde cero, desde cómo el texto se convierte en números hasta una implementación que escribes tú.",
+      "body2": "No hay nada que instalar: el código Python se ejecuta en tu navegador.",
+      "cta": "Empezar la primera lección",
+      "landingCta": "Ver el programa completo",
+      "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
+    },
+    "courseEnglish": {
+      "subject": "Ya está en inglés: {courseTitle}",
+      "heading": "La versión en inglés ya está disponible",
+      "intro": "Pediste que te avisara de las novedades de los cursos de gustavoai.dev. Esta es una de ellas.",
+      "body1": "<strong>{courseTitle}</strong> ya se puede leer entero en inglés. Es el mismo curso — las mismas lecciones, el mismo código — traducido.",
+      "body2": "La versión en español sigue donde estaba, así que no tienes que cambiar de idioma si no quieres.",
+      "cta": "Empezar en inglés",
+      "landingCta": "Ver el curso en inglés",
+      "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
+    },
+    "courseUpdate": {
+      "subject": "Novedades en {courseTitle}",
+      "heading": "He actualizado el curso",
+      "intro": "Pediste que te avisara cuando actualizara a fondo un curso. Esta es una de esas veces.",
+      "body1": "He revisado <strong>{courseTitle}</strong>. Esto es lo que ha cambiado:",
+      "whatsNewLabel": "Novedades",
+      "body2": "Si ya lo habías empezado, tu progreso sigue guardado donde lo dejaste.",
+      "landingCta": "Ver el curso",
+      "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
     }
   }
 }

@@ -15,4 +15,12 @@ export interface IAuditRepository {
    * array if no entries exist for the email.
    */
   list(email: string, limit?: number): Promise<AuditEntry[]>;
+
+  /**
+   * COURSE-P6-02: emails already recorded under `action` with a matching
+   * `details.announcementKey`. One query, so a bulk send can skip what it already
+   * delivered without asking per recipient — which is what makes a partial send
+   * retryable rather than a double-send.
+   */
+  listNotifiedEmails(action: string, announcementKey: string): Promise<Set<string>>;
 }

@@ -1,0 +1,57 @@
+# COURSE-P1-02 — Course manifest (Spanish).
+# Per-locale by design: title, tagline, prerequisites, the FAQ and the closing
+# CTA are prose. Block *ids* and lesson *slugs* are locale-invariant — that invariant is
+# what makes English purely additive later (a sibling course.en.yml + en/ dir, no route or
+# slug changes). Validated by CourseManifestSchema in src/lib/schemas.ts (z.strictObject: a
+# typo'd key fails the build). Read at build time only — never a DB call.
+#
+# The landing-page conversion copy (prerequisites.intro / cta / faq) lives here,
+# not in messages/*.json, precisely because it is course-specific: a second course must not
+# inherit dl-nlp's "build a Transformer" pitch.
+
+slug: dl-nlp
+title: "Deep Learning para NLP: del Perceptrón al Transformer"
+tagline: "Construye, desde cero y con rigor matemático, la arquitectura que impulsa los modelos de lenguaje modernos."
+level: intermedio
+# Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
+# Purely presentational; a course may omit it or pick another design.
+heroMotif: attention-matrix
+prerequisites:
+  intro: "Este curso tiene rigor matemático. Antes de empezar, necesitas:"
+  items:
+    - title: "Python intermedio"
+      detail: "Funciones, clases, NumPy básico."
+    - title: "Álgebra lineal"
+      detail: "Vectores, matrices, producto matricial."
+    - title: "Cálculo"
+      detail: "Derivadas parciales y regla de la cadena."
+cta:
+  heading: "¿Listo para construir un Transformer?"
+  body: "Empieza por la primera lección. No necesitas cuenta para leer."
+faq:
+  - q: "¿Cuánto cuesta?"
+    a: "Nada. El curso es completamente gratuito."
+  - q: "¿Qué necesito saber antes de empezar?"
+    a: "Python intermedio, álgebra lineal (vectores y matrices) y cálculo (derivadas parciales y regla de la cadena). Están detallados en la sección de requisitos previos."
+  - q: "¿Cuánto tiempo me llevará?"
+    a: "Alrededor de 40 horas si haces los ejercicios. Vas a tu ritmo; no hay fechas límite."
+  - q: "¿Está en inglés?"
+    a: "De momento solo en español. La versión en inglés está planificada."
+  - q: "¿Qué necesito instalar?"
+    a: "Nada. Todo — el código en Python incluido — se ejecuta directamente en el navegador."
+blocks:
+  - id: 1
+    title: "Fundamentos de NLP"
+    summary: "Tokenización, vocabularios y las primeras representaciones vectoriales del texto."
+  - id: 2
+    title: "El Perceptrón Multicapa"
+    summary: "Del perceptrón a una red multicapa entrenada con descenso de gradiente y backpropagation."
+  - id: 3
+    title: "Redes Neuronales Recurrentes"
+    summary: "Secuencias, memoria y el problema del gradiente que se desvanece."
+  - id: 4
+    title: "El Puente hacia la Atención"
+    summary: "El cuello de botella del contexto y la alineación que lo resuelve."
+  - id: 5
+    title: "El Transformer"
+    summary: "Auto-atención, múltiples cabezas y codificación posicional."

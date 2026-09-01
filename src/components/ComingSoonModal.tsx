@@ -1,34 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+/*
+ * COURSE-P6-03 — blog only.
+ *
+ * This modal existed because the Navbar/Footer had a "Cursos" entry with no courses page
+ * behind it: clicking a menu item had to show SOMETHING. There is a courses page now
+ * (/cursos, both locales), so the courses branch is gone and those links navigate. The
+ * blog has no page yet, so it keeps the modal — and keeps the `blog` subscription with it.
+ *
+ * The subscribe state machine that used to live inline here now lives in
+ * `useSubscription`, shared with the courses notify card. Behaviour is unchanged.
+ */
+
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useHydrated } from "@/hooks/useClientValue";
-import { useSession, signIn } from "next-auth/react";
-import { signInWithPopup } from "@/lib/auth-popup";
-
-type SubscribeState = "idle" | "loading" | "subscribed" | "error";
+import { useSubscription } from "@/hooks/useSubscription";
 
 interface ComingSoonModalProps {
-  type:    "courses" | "blog";
+  type:    "blog";
   onClose: () => void;
 }
 
-const CONTENT_ICONS = { courses: "school", blog: "article" } as const;
-
 export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps) {
   const t = useTranslations("comingSoon");
-  const { data: session, status, update } = useSession();
 
-  const content = type === "courses"
-    ? { badge: t("courses.badge"), icon: CONTENT_ICONS[type], headline: t("courses.headline"), subline: t("courses.subline"), ctaLabel: t("courses.ctaLabel") }
-    : { badge: t("blog.badge"),    icon: CONTENT_ICONS[type], headline: t("blog.headline"),    subline: t("blog.subline"),    ctaLabel: t("blog.ctaLabel")    };
+  const content = {
+    badge:    t("blog.badge"),
+    icon:     "article",
+    headline: t("blog.headline"),
+    subline:  t("blog.subline"),
+    ctaLabel: t("blog.ctaLabel"),
+  };
   // Portal requires the DOM — true only after client hydration.
   const mounted = useHydrated();
-  const [subscribeState, setSubscribeState] = useState<SubscribeState>("idle");
-
-  const isLoaded   = status !== "loading";
-  const isSignedIn = !!session?.user?.email;
+  const { state, busy, isSignedIn, toggle, reset } = useSubscription(type);
 
   // Scroll lock + Escape key
   useEffect(() => {
@@ -40,50 +47,6 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);
-
-  // Render-phase trigger: once the user is signed in, kick off a one-time
-  // subscription-status check by flipping to loading. The effect below performs
-  // the GET. Using a dedicated flag (rather than `subscribeState === "loading"`)
-  // keeps the subscribe POST's own loading state from re-triggering the GET.
-  const [statusCheckStarted, setStatusCheckStarted] = useState(false);
-  if (isSignedIn && !statusCheckStarted) {
-    setStatusCheckStarted(true);
-    setSubscribeState("loading");
-  }
-
-  // Fetch existing subscription status once, after sign-in.
-  useEffect(() => {
-    if (!statusCheckStarted) return;
-    let cancelled = false;
-    fetch(`/api/subscribe?type=${type}`)
-      .then(r => r.json())
-      .then(data => { if (!cancelled) setSubscribeState(data.subscribed ? "subscribed" : "idle"); })
-      .catch(() => { if (!cancelled) setSubscribeState("idle"); });
-    return () => { cancelled = true; };
-  }, [statusCheckStarted, type]);
-
-  async function handleSubscribeClick() {
-    if (!isSignedIn) {
-      const result = await signInWithPopup("/");
-      if (result.blocked) { signIn("google"); return; }
-      if (result.success) await update();
-      return;
-    }
-
-    setSubscribeState("loading");
-    try {
-      const res = await fetch("/api/subscribe", {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ type }),
-      });
-      setSubscribeState(res.ok || res.status === 409 ? "subscribed" : "error");
-    } catch {
-      setSubscribeState("error");
-    }
-  }
-
-  const showSpinner = subscribeState === "loading" || (!isLoaded && isSignedIn);
 
   const modal = (
     <>
@@ -212,7 +175,7 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
           <hr style={{ borderColor: "rgba(255,255,255,0.06)", margin: "0 0 20px" }} />
 
           {/* Subscription section */}
-          {subscribeState === "subscribed" ? (
+          {state === "subscribed" ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
                 <div style={{
@@ -254,14 +217,14 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                 {t("close")}
               </button>
             </>
-          ) : subscribeState === "error" ? (
+          ) : state === "error" ? (
             <>
               <p style={{ margin: "0 0 10px", fontSize: "13px", color: "#ffb4ab" }}>
                 {t("subscribeError")}
               </p>
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
-                  onClick={() => { setSubscribeState("idle"); handleSubscribeClick(); }}
+                  onClick={() => { reset(); toggle(); }}
                   style={{
                     flex:         1,
                     padding:      "12px",
@@ -306,18 +269,18 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                 {isSignedIn ? t("loggedInPrompt") : t("loggedOutPrompt")}
               </p>
               <button
-                onClick={handleSubscribeClick}
-                disabled={showSpinner}
+                onClick={toggle}
+                disabled={busy}
                 style={{
                   width:         "100%",
                   padding:       "13px 24px",
                   borderRadius:  "12px",
                   border:        "none",
-                  background:    showSpinner ? "rgba(78,222,163,0.4)" : "#4edea3",
+                  background:    busy ? "rgba(78,222,163,0.4)" : "#4edea3",
                   color:         "#131315",
                   fontSize:      "14px",
                   fontWeight:    700,
-                  cursor:        showSpinner ? "not-allowed" : "pointer",
+                  cursor:        busy ? "not-allowed" : "pointer",
                   fontFamily:    "var(--font-headline, Manrope), sans-serif",
                   display:       "flex",
                   alignItems:    "center",
@@ -325,12 +288,12 @@ export default function ComingSoonModal({ type, onClose }: ComingSoonModalProps)
                   gap:           "8px",
                   marginBottom:  "10px",
                   transition:    "background 0.15s",
-                  pointerEvents: showSpinner ? "none" : "auto",
+                  pointerEvents: busy ? "none" : "auto",
                 }}
-                onMouseEnter={e => { if (!showSpinner) (e.currentTarget as HTMLElement).style.background = "#10b981"; }}
-                onMouseLeave={e => { if (!showSpinner) (e.currentTarget as HTMLElement).style.background = "#4edea3"; }}
+                onMouseEnter={e => { if (!busy) (e.currentTarget as HTMLElement).style.background = "#10b981"; }}
+                onMouseLeave={e => { if (!busy) (e.currentTarget as HTMLElement).style.background = "#4edea3"; }}
               >
-                {showSpinner ? (
+                {busy ? (
                   <span style={{
                     width:          "18px",
                     height:         "18px",

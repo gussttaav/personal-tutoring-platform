@@ -1,0 +1,478 @@
+---
+slug: codificacion-posicional
+title: "Cada posición, un puñado de relojes"
+block: 5
+order: 5
+minutes: 29
+summary: "La capa de atención está terminada y sigue leyendo la frase como un montón de vectores sin orden, así que lo que hay que arreglar es la entrada: cada fila tiene que llegar sabiendo dónde estaba. Meter el número de la posición rompe la escala, dividirlo entre la longitud de la frase hace que la misma coordenada signifique cosas distintas en textos distintos, y aprender un vector por posición deja la 7 y la 8 sin relación ninguna. Los senos y cosenos del artículo resuelven las tres: acotados por construcción, con una longitud de onda por pareja de coordenadas, y con una propiedad que se demuestra en tres líneas —moverse k posiciones es girar un ángulo fijo dentro de cada pareja, con la misma matriz en toda la frase, y el producto escalar entre dos posiciones sólo depende de la distancia que las separa."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-no-el-numero
+    type: single
+    prompt: '¿Qué rompe escribir el número de la posición —$0$, $1$, $2$, …— en una coordenada de $\mathbf{x}_t$?'
+    options:
+      - { id: a, text: 'Que esa coordenada no tiene techo. En la posición $300$ vale $300$ mientras el resto del vector se mueve entre $-1$ y $1$, así que domina cualquier producto escalar en el que entre y la puntuación deja de decir nada sobre el significado.' }
+      - { id: b, text: 'Que es un número entero, y las capas de la red necesitan entradas continuas para poder derivar la pérdida respecto de ellas.' }
+      - { id: c, text: 'Que dos posiciones distintas acabarían con la misma codificación en cuanto la frase pasa de $d_{\text{model}}$ tokens, porque no hay coordenadas para tantas.' }
+      - { id: d, text: 'Que la atención tendría que dejar de ser invariante al orden, y eso obligaría a cambiar la fórmula de la capa además de la entrada.' }
+    answer: a
+    explanation: 'La (a), y es una cuestión de escala, no de principio. La codificación entra en $\mathbf{x}_t$ sumada al *embedding*, y de ahí sale proyectada a consultas y claves: una coordenada que crece con la posición se lleva la puntuación entera en cuanto la frase es larga, que es justo lo que $\sqrt{d_k}$ costó una lección entera evitar. La (b) es falsa por partida doble: el número entero es perfectamente derivable como entrada y nadie deriva la pérdida respecto de la posición, que no es un parámetro. La (c) confunde una coordenada con todas: el número de la posición ocupa una sola coordenada y distingue infinitas posiciones. La (d) da la vuelta al asunto —lo que se quiere es exactamente que la capa deje de ser ciega al orden— y además la fórmula de la capa no cambia: cambia lo que se le da.'
+    hint: '¿Entre qué valores se mueve el resto del vector, y entre cuáles el número de la posición?'
+  - id: q-de-que-depende-m
+    type: single
+    prompt: 'La matriz $\mathbf{M}_k$ cumple $\text{PE}_{\text{pos}+k} = \mathbf{M}_k\text{PE}_{\text{pos}}$. ¿De qué depende?'
+    options:
+      - { id: a, text: 'De $k$ y de las frecuencias $\omega_i$, es decir de $d_{\text{model}}$. De $\text{pos}$ no depende, y eso es exactamente lo que la hace útil: es la misma matriz al principio y al final de la frase.' }
+      - { id: b, text: 'De $k$ y de $\text{pos}$, porque el ángulo que hay que girar es $\omega_i\left(\text{pos} + k\right)$ y ahí está la posición de partida.' }
+      - { id: c, text: 'De $k$ y de los pesos de la capa, porque el desplazamiento se aplica después de proyectar con $\mathbf{W}^Q$ y $\mathbf{W}^K$.' }
+      - { id: d, text: 'De nada: se aprende durante el entrenamiento, como una proyección más.' }
+    answer: a
+    explanation: 'La (a). En el bloque de la pareja $i$ sólo aparecen $\cos(\omega_i k)$ y $\sin(\omega_i k)$, y $\text{pos}$ se ha ido en el desarrollo: las fórmulas de la suma de ángulos dejan la posición de partida dentro del vector al que se aplica la matriz, no dentro de la matriz. La (b) señala el sitio correcto —el ángulo final es $\omega_i(\text{pos}+k)$— y se queda a un paso: ese ángulo se parte en dos y sólo la mitad que vale $\omega_i k$ acaba en los coeficientes. La (c) mezcla dos cosas que no se tocan: $\mathbf{M}_k$ es una propiedad de la codificación y existe antes de que haya ninguna capa. La (d) confunde esta codificación con la alternativa que la lección descarta, la tabla de un vector aprendido por posición, donde efectivamente no hay ninguna $\mathbf{M}_k$ que valga.'
+    hint: 'Escribe el bloque $2 \times 2$ de la pareja $i$ y busca dónde ha quedado $\text{pos}$.'
+  - id: q-consigo-misma
+    type: numeric
+    prompt: 'Con $d_{\text{model}} = 512$, ¿cuánto vale $\text{PE}_{\text{pos}}^{\top}\text{PE}_{\text{pos}}$?'
+    answer: 256
+    tolerance: 0
+    explanation: 'Doscientos cincuenta y seis, que es $d_{\text{model}}/2$, y sale sin calcular ningún seno: cada pareja aporta $\sin^{2}(\omega_i\text{pos}) + \cos^{2}(\omega_i\text{pos}) = 1$, y hay $512/2 = 256$ parejas. Dos cosas que conviene llevarse de ahí. La primera es que el número no depende de $\text{pos}$: todas las filas de $\text{PE}$ miden lo mismo, $\sqrt{256} = 16$, que es el caso $k = 0$ de la fórmula general $\sum_i \cos(\omega_i k)$. La segunda es que ese es el máximo: para cualquier otro $k$ los cosenos ya no valen todos $1$, así que ninguna posición puntúa contra otra tanto como contra sí misma.'
+    hint: '¿Cuánto suman el seno y el coseno al cuadrado de un mismo ángulo, y cuántas parejas hay?'
+  - id: q-solo-senos
+    type: multi
+    prompt: 'Te quedas sólo con los senos: una coordenada por pareja, sin su coseno. Marca lo que sigue siendo cierto.'
+    options:
+      - { id: a, text: 'Los valores siguen entre $-1$ y $1$, así que la escala aguanta igual de bien una frase de diez tokens que una de mil.' }
+      - { id: b, text: 'Cada pareja conserva su longitud de onda, así que unas coordenadas siguen cambiando entre posiciones vecinas y otras siguen casi planas a lo largo del texto.' }
+      - { id: c, text: 'Desplazarse $k$ posiciones sigue siendo la misma operación lineal en toda la frase.' }
+      - { id: d, text: 'El producto escalar entre dos posiciones separadas por $k$ sigue valiendo lo mismo caigan donde caigan.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b): lo que sobrevive es todo lo que dependía sólo de que las funciones estén acotadas y de que las frecuencias formen una escalera. Lo que se pierde son las otras dos, y por la misma razón. $\sin(\omega(\text{pos}+k)) = \sin(\omega\text{pos})\cos(\omega k) + \cos(\omega\text{pos})\sin(\omega k)$ necesita el coseno de la posición de partida para escribirse, y sin esa coordenada no hay forma de obtener la nueva a partir de la vieja con coeficientes que no miren a $\text{pos}$ —así que la (c) es falsa—. La (d) se cae por lo mismo: el producto escalar salía $\sum_i\cos(\omega_i k)$ porque cada pareja aportaba $\sin\sin + \cos\cos$, que es el coseno de la diferencia; con la mitad de los términos queda $\sum_i \sin(\omega_i\text{pos})\sin(\omega_i(\text{pos}+k))$, y ahí $\text{pos}$ se queda dentro. El seno y el coseno no son dos copias de lo mismo: son las dos coordenadas de un punto que gira, y hacen falta las dos para poder girarlo.'
+    hint: 'Escribe la fórmula de la suma de ángulos para el seno y mira qué necesita del lado derecho.'
+  - id: q-sumar-o-concatenar
+    type: boolean
+    prompt: 'Sumar la codificación al *embedding*, en vez de concatenarla, garantiza que el modelo pueda volver a separar significado y posición.'
+    answer: false
+    explanation: 'Falso, y la concesión conviene tenerla clara. Concatenar mantendría las dos cosas en coordenadas distintas por construcción, y cuesta esas coordenadas: reservar $64$ de las $512$ para la posición deja $448$ para todo lo demás. Sumar no cuesta ninguna, y a cambio no garantiza nada: las dos señales comparten las mismas coordenadas y nada obliga a que ocupen direcciones separadas. Lo que sí hay a favor es que $\mathbf{W}^Q$ y $\mathbf{W}^K$ se aprenden, así que una cabeza puede quedarse con las direcciones donde pesa más la posición y otra con las demás; y que la codificación tiene estructura propia —una escalera de frecuencias que un *embedding* entrenado no tiene por qué imitar—, lo que hace la separación plausible sin hacerla cierta.'
+    hint: '¿Qué te dan por construcción las coordenadas separadas, y qué te obliga a nada la suma?'
+challenges:
+  - id: ch-codificacion-posicional
+    prompt: |
+      Escribe las dos piezas de la lección.
+
+      `codificacion_posicional(T, d_model)` devuelve $\text{PE}$ de forma $(T, d_{\text{model}})$,
+      con la fila $\text{pos}$ llevando $\sin(\text{pos} \cdot \omega_i)$ en las coordenadas pares
+      y $\cos(\text{pos} \cdot \omega_i)$ en las impares, donde
+      $\omega_i = 1/10\,000^{2i/d_{\text{model}}}$ y la pareja $i$ ocupa las coordenadas $2i$
+      y $2i+1$.
+
+      `desplazamiento(k, d_model)` devuelve $\mathbf{M}_k$ de forma
+      $(d_{\text{model}}, d_{\text{model}})$: ceros salvo un bloque $2 \times 2$ por pareja,
+      $\begin{bmatrix}\cos(\omega_i k) & \sin(\omega_i k) \\ -\sin(\omega_i k) & \cos(\omega_i k)\end{bmatrix}$,
+      colocado en las filas y columnas $2i$ y $2i+1$.
+
+      Las dos tienen que encajar: $\mathbf{M}_k$ aplicada a la fila $\text{pos}$ da la fila
+      $\text{pos}+k$, en toda la frase. Supón $d_{\text{model}}$ par.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def codificacion_posicional(T, d_model):
+          # tu código aquí
+          pass
+
+
+      def desplazamiento(k, d_model):
+          # tu código aquí
+          pass
+    tests:
+      - name: "la forma, el rango y la primera fila"
+        code: |
+          import numpy as np
+          PE = codificacion_posicional(20, 16)
+          assert PE is not None, 'codificacion_posicional tiene que devolver la matriz, no imprimirla'
+          PE = np.asarray(PE)
+          assert PE.shape == (20, 16), 'una fila por posicion y una columna por coordenada'
+          assert np.abs(PE).max() <= 1.0, 'seno y coseno no se salen de [-1, 1]: revisa que no sumas la posicion'
+          esperada = np.array([0.0, 1.0] * 8)
+          assert np.allclose(PE[0], esperada), 'en la posicion 0 todos los angulos valen 0: senos a 0, cosenos a 1'
+      - name: "coincide con la formula del articulo"
+        code: |
+          import numpy as np
+          T, d = 24, 32
+          i = np.arange(d // 2)
+          omega = 1.0 / (10000 ** (2 * i / d))
+          ref = np.zeros((T, d))
+          ref[:, 0::2] = np.sin(np.arange(T)[:, None] * omega)
+          ref[:, 1::2] = np.cos(np.arange(T)[:, None] * omega)
+          PE = codificacion_posicional(T, d)
+          assert PE is not None, 'codificacion_posicional tiene que devolver la matriz, no imprimirla'
+          PE = np.asarray(PE)
+          assert np.allclose(PE, ref), 'la pareja i son las coordenadas 2i y 2i+1, y su frecuencia es 1/10000**(2i/d_model)'
+          assert np.allclose(PE[:, 0], np.sin(np.arange(T))), 'la pareja 0 gira a 1 radian por posicion: 10000**0 = 1'
+      - name: "M es diagonal por bloques y cada bloque es un giro"
+        code: |
+          import numpy as np
+          d, k = 12, 3
+          M = desplazamiento(k, d)
+          assert M is not None, 'desplazamiento tiene que devolver la matriz M_k, no imprimirla'
+          M = np.asarray(M)
+          assert M.shape == (d, d), 'M_k va de d_model coordenadas a d_model coordenadas'
+          i = np.arange(d // 2)
+          omega = 1.0 / (10000 ** (2 * i / d))
+          for j in range(d // 2):
+              c, s = np.cos(k * omega[j]), np.sin(k * omega[j])
+              bloque = M[2 * j:2 * j + 2, 2 * j:2 * j + 2]
+              assert np.allclose(bloque, [[c, s], [-s, c]]), 'el bloque de la pareja j gira el angulo omega_j * k'
+          fuera = M.copy()
+          for j in range(d // 2):
+              fuera[2 * j:2 * j + 2, 2 * j:2 * j + 2] = 0.0
+          assert np.allclose(fuera, 0.0), 'fuera de los bloques 2x2 todo es cero: las parejas no se mezclan'
+      - name: "la misma M lleva cualquier fila k posiciones mas alla"
+        code: |
+          import numpy as np
+          T, d, k = 30, 16, 4
+          PE, M = codificacion_posicional(T + k, d), desplazamiento(k, d)
+          assert PE is not None, 'codificacion_posicional tiene que devolver la matriz, no imprimirla'
+          assert M is not None, 'desplazamiento tiene que devolver la matriz M_k, no imprimirla'
+          PE, M = np.asarray(PE), np.asarray(M)
+          movidas = PE[:T] @ M.T
+          assert np.abs(movidas - PE[k:T + k]).max() < 1e-10, 'M_k aplicada a la fila pos tiene que dar la fila pos+k, y la misma M en todas'
+          assert np.allclose(np.asarray(desplazamiento(0, d)), np.eye(d)), 'con k = 0 no hay giro: M_0 es la identidad'
+      - name: "el producto escalar solo mira la distancia"
+        code: |
+          import numpy as np
+          T, d, k = 40, 32, 5
+          PE = codificacion_posicional(T, d)
+          assert PE is not None, 'codificacion_posicional tiene que devolver la matriz, no imprimirla'
+          PE = np.asarray(PE)
+          productos = [float(PE[p] @ PE[p + k]) for p in range(T - k)]
+          assert max(productos) - min(productos) < 1e-10, 'dos posiciones a distancia k puntuan lo mismo caigan donde caigan'
+          assert abs(productos[0] - 11.777382878638058) < 1e-6, 'ese valor es la suma de los cosenos de omega_i * k'
+          assert abs(float(PE[7] @ PE[7]) - d / 2) < 1e-10, 'una posicion consigo misma da d_model/2: sen^2 + cos^2 por pareja'
+    solution: |
+      import numpy as np
+
+
+      def frecuencias(d_model):
+          i = np.arange(d_model // 2)
+          return 1.0 / (10000 ** (2 * i / d_model))
+
+
+      def codificacion_posicional(T, d_model):
+          omega = frecuencias(d_model)
+          pos = np.arange(T)[:, None]              # (T, 1) contra (d_model/2,) -> (T, d_model/2)
+          PE = np.zeros((T, d_model))
+          PE[:, 0::2] = np.sin(pos * omega)
+          PE[:, 1::2] = np.cos(pos * omega)
+          return PE
+
+
+      def desplazamiento(k, d_model):
+          omega = frecuencias(d_model)
+          c, s = np.cos(k * omega), np.sin(k * omega)
+          M = np.zeros((d_model, d_model))
+          M[0::2, 0::2] = np.diag(c)
+          M[0::2, 1::2] = np.diag(s)
+          M[1::2, 0::2] = np.diag(-s)
+          M[1::2, 1::2] = np.diag(c)
+          return M
+    explanation: |
+      Las dos funciones salen del mismo vector de frecuencias, y por eso conviene sacarlo
+      aparte: $\omega$ tiene $d_{\text{model}}/2$ entradas, una por pareja, y las rodajas
+      `[:, 0::2]` y `[:, 1::2]` reparten esas parejas en columnas alternas sin que haya
+      que escribir un solo bucle. El producto `pos * omega`, con `pos` de forma $(T, 1)$,
+      es la tabla entera de ángulos de una vez.
+
+      Los dos errores que comprueban los tests son los mismos que se cometen leyendo el
+      artículo deprisa. El primero es poner las parejas en bloques —las $d/2$ primeras
+      coordenadas todas senos, las $d/2$ últimas todos cosenos—: cada seno tiene que
+      quedar **al lado** de su coseno para que el bloque $2 \times 2$ de $\mathbf{M}_k$
+      los alcance a los dos. El segundo es el signo: la matriz que sirve es la del giro
+      con $-\sin$ en la fila de abajo, y con el signo cambiado sale una $\mathbf{M}_{-k}$
+      perfectamente válida que lleva las filas en la dirección contraria. Fíjate también
+      en la forma en que se aplica: $\mathbf{M}_k$ multiplica un vector columna, y las
+      filas de $\text{PE}$ están tumbadas, así que en NumPy es `PE @ M.T`.
+reading:
+  - kind: paper
+    title: 'Attention Is All You Need'
+    authors: 'Vaswani, Shazeer, Parmar y otros'
+    year: '2017'
+    venue: 'arXiv:1706.03762'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03762'
+    note: 'Su §3.5 define los senos y cosenos y afirma —sin probarlo— que desplazarse k posiciones es una función lineal de PE_pos. Esa prueba, la matriz M_k, es el centro de esta lección; el artículo solo dice que existe.'
+  - kind: blog
+    title: 'Transformer Architecture: The Positional Encoding'
+    authors: 'Amirhossein Kazemnejad'
+    year: '2019'
+    venue: 'kazemnejad.com'
+    lang: en
+    url: 'https://kazemnejad.com/blog/transformer_architecture_positional_encoding/'
+    note: 'Hace la cuenta que el artículo se salta: monta la matriz de giro M_k pareja a pareja y comprueba que no depende de la posición, tu misma demostración. Estira algo más el tema hacia la distancia relativa entre posiciones.'
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 5. */}
+
+Queda una casilla por rellenar y no está en la capa, sino en lo que se le entrega. La atención
+multi-head cerró todo lo demás —$h$ maneras de mirar la frase, concatenadas y proyectadas de vuelta
+al precio de una—, y dejó dicho que ninguna cantidad de cabezas consigue que $\mathbf{X}$ tenga una
+fila primera y una última: eso hay que escribirlo en cada fila antes de que la capa la lea. De qué
+se escribe ahí trata esta lección.
+
+Las respuestas fáciles fallan de tres maneras, y conviene mirarlas porque entre las tres describen
+lo que hace falta. Escribir el número de la posición en una
+coordenada rompe la escala: en la posición $300$ esa coordenada vale $300$ mientras el resto del
+vector se mueve entre $-1$ y $1$, y se lleva por delante cualquier producto escalar en el que entre.
+Dividirlo entre la longitud de la frase, $\text{pos}/T$, arregla la escala y estropea otra cosa: el
+$0.5$ de una frase de ocho tokens señalaría el cuarto token y el de un texto de trescientos señalaría
+el ciento cincuenta, y sería la misma coordenada con el mismo valor. Y aprender un vector por
+posición, una tabla como la de los *embeddings*, funciona —hay modelos que lo hacen— a cambio de que
+la tabla tenga exactamente tantas filas como posiciones se hayan entrenado, y de que la posición $7$
+y la $8$ sean dos filas sin ninguna relación entre ellas: nada dice que sean vecinas.
+
+Ese último defecto es el que apunta a lo que se quiere de verdad. Piensa en un cuentakilómetros: la
+rueda de la derecha gira deprisa y distingue perfectamente dos posiciones seguidas, pero se repite
+cada diez; la de la izquierda casi no se mueve, así que no distingue vecinas, pero sí el principio
+del recorrido del final. Ninguna rueda sola sirve y todas juntas dan un número que no se repite —y
+donde, además, dos lecturas separadas por la misma cantidad se parecen igual en cualquier tramo,
+porque cada rueda ha avanzado lo mismo—. Los senos y cosenos son esa idea sin escalones: una pareja
+de coordenadas por «rueda», cada pareja girando a su propia velocidad.
+
+<Explorable
+  id="positional-encoding"
+  caption="Las columnas de la izquierda parpadean cada pocas posiciones y las de la derecha son una franja plana: son la misma función a velocidades que se van dividiendo. Mueve la posición y mira el número de abajo, el que puntúan entre sí dos posiciones separadas por k: no se mueve en toda la frase."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Cada posición se escribe como un puñado de relojes girando a velocidades distintas, y avanzar $k$
+posiciones es girarlos todos un ángulo fijo —el mismo giro al principio de la frase que al final—.
+</Callout>
+
+## Una escalera de longitudes de onda
+
+El artículo define la codificación posicional entrada por entrada, con $\text{pos}$ como índice de
+la posición —es el $t$ del resto del curso, escrito con la letra del artículo— y con $\text{PE}$ de
+*positional encoding*:
+
+$$
+\begin{aligned}
+\text{PE}_{(\text{pos},\,2i)} &= \sin\left(\frac{\text{pos}}{10\,000^{2i/d_{\text{model}}}}\right), \\[4pt]
+\text{PE}_{(\text{pos},\,2i+1)} &= \cos\left(\frac{\text{pos}}{10\,000^{2i/d_{\text{model}}}}\right)
+\end{aligned}
+$$
+
+para $i = 0, 1, \dots, d_{\text{model}}/2 - 1$. Léelo despacio, porque la estructura está en los
+índices: las coordenadas van **por parejas**, la pareja $i$ ocupa las coordenadas $2i$ y $2i+1$, y
+las dos comparten el mismo argumento. Llamemos $\omega_i$ a ese divisor invertido, que es lo que la
+pareja gira por cada posición que se avanza:
+
+$$
+\omega_i = \frac{1}{10\,000^{2i/d_{\text{model}}}}, \qquad \frac{2\pi}{\omega_i} = 2\pi \cdot 10\,000^{2i/d_{\text{model}}}.
+$$
+
+A la derecha está la longitud de onda: cuántas posiciones tarda esa pareja en volver al mismo sitio.
+La pareja $0$ tiene $\omega_0 = 1$ y vuelve cada $2\pi \approx 6.28$ posiciones; la última se queda
+justo por debajo de $10\,000 \cdot 2\pi$, unas $63\,000$ posiciones, que sobre cualquier texto es
+una franja que apenas se mueve. Entre las dos, las longitudes de onda crecen multiplicándose siempre por el mismo
+factor: son una progresión geométrica, y eso es la escalera que el explorable dibuja de izquierda a
+derecha.
+
+Lo que sale de ahí es una matriz $\text{PE} \in \mathbb{R}^{T \times d_{\text{model}}}$ cuya fila
+$\text{pos}$ es $\text{PE}_{\text{pos}}^{\top}$, exactamente la forma de la $\mathbf{X}$ de las tres
+lecciones anteriores. Y se junta con ella sumando:
+
+$$
+\mathbf{x}_t = \mathbf{e}_{w_t} + \text{PE}_t.
+$$
+
+Fíjate en que la primera pega ha desaparecido sola: seno y coseno viven en $[-1, 1]$ pase lo que
+pase con $T$, así que la codificación de la posición $3$ y la de la posición $3\,000$ son del mismo
+tamaño. La segunda también, y por una razón distinta: $T$ no aparece en ninguna parte de la
+fórmula, de modo que la posición $5$ se codifica igual en una frase corta que en un texto largo.
+
+Sumar en lugar de concatenar es una decisión, y merece decirse en voz alta lo que cuesta.
+Concatenar mantendría separadas por construcción las coordenadas del significado y las de la
+posición, y se pagaría en anchura: reservar $64$ de las $512$ para la posición deja $448$ para todo
+lo demás. Sumando no se paga anchura ninguna, y a cambio las dos señales comparten las mismas
+coordenadas y nada garantiza que se puedan volver a separar. Lo que hay a favor es que $\mathbf{W}^Q$
+y $\mathbf{W}^K$ se aprenden y pueden quedarse con unas direcciones y no con otras, y que la
+codificación tiene una estructura muy suya que un embedding entrenado no tiene por qué imitar.
+Plausible, entonces; no demostrado.
+
+### Desplazarse una distancia fija es girar un ángulo fijo
+
+De las tres pegas del principio queda la tercera, que era la que de verdad pedía algo: que dos
+posiciones vecinas se parezcan, y que se parezcan igual estén donde estén. Aquí se puede demostrar,
+y ocupa tres líneas.
+
+Fija un desplazamiento $k$ y quédate con una sola pareja. Las fórmulas de la suma de ángulos dicen
+qué le pasa a esa pareja al avanzar $k$ posiciones:
+
+$$
+\begin{aligned}
+\sin\left(\omega_i(\text{pos}+k)\right) &= \cos(\omega_i k)\,\sin(\omega_i \text{pos}) + \sin(\omega_i k)\,\cos(\omega_i \text{pos}), \\[2pt]
+\cos\left(\omega_i(\text{pos}+k)\right) &= -\sin(\omega_i k)\,\sin(\omega_i \text{pos}) + \cos(\omega_i k)\,\cos(\omega_i \text{pos})
+\end{aligned}
+$$
+
+—y las he escrito con los factores en ese orden a propósito, porque así las dos líneas son ya un
+producto de matrices. Las coordenadas nuevas son una combinación de las dos viejas, y los
+coeficientes de esa combinación son cuatro números que sólo miran a $\omega_i$ y a $k$:
+
+$$
+\begin{bmatrix}\text{PE}_{(\text{pos}+k,\,2i)} \\[2pt] \text{PE}_{(\text{pos}+k,\,2i+1)}\end{bmatrix}
+=
+\begin{bmatrix}\cos(\omega_i k) & \sin(\omega_i k) \\[2pt] -\sin(\omega_i k) & \cos(\omega_i k)\end{bmatrix}
+\begin{bmatrix}\text{PE}_{(\text{pos},\,2i)} \\[2pt] \text{PE}_{(\text{pos},\,2i+1)}\end{bmatrix}.
+$$
+
+Mira lo que **no** está en esa matriz: $\text{pos}$. La posición de partida se ha quedado entera
+dentro del vector de la derecha, y el desarrollo la ha dejado ahí. Como cada pareja se transforma
+sin tocar a las demás, apilar las $d_{\text{model}}/2$ matrices de $2 \times 2$ a lo largo de la
+diagonal da una sola matriz para el vector entero:
+
+$$
+\text{PE}_{\text{pos}+k} = \mathbf{M}_k\,\text{PE}_{\text{pos}}, \qquad \mathbf{M}_k \in \mathbb{R}^{d_{\text{model}} \times d_{\text{model}}}.
+$$
+
+Esa es la propiedad, y conviene leer bien lo que dice: hay **una** matriz por cada distancia $k$, y
+esa matriz vale para todas las posiciones de la frase. Avanzar tres posiciones es aplicar
+$\mathbf{M}_3$, se avance desde la primera palabra o desde la última. Cada bloque es además un giro
+—sus dos columnas son perpendiculares y de longitud $1$—, así que $\mathbf{M}_k$ no estira ni encoge
+nada: todas las filas de $\text{PE}$ miden lo mismo.
+
+### Lo que de todo esto puede ver una puntuación
+
+$\mathbf{M}_k$ es una propiedad de la codificación, y la capa de atención no mira matrices: mira
+productos escalares. Merece la pena hacer uno y ver qué queda. Con $\cos(A - B) = \cos A \cos B +
+\sin A \sin B$ aplicado pareja a pareja:
+
+$$
+\text{PE}_{\text{pos}}^{\top}\text{PE}_{\text{pos}+k} = \sum_{i} \left[\sin(\omega_i \text{pos})\sin\left(\omega_i(\text{pos}+k)\right) + \cos(\omega_i \text{pos})\cos\left(\omega_i(\text{pos}+k)\right)\right] = \sum_{i=0}^{d_{\text{model}}/2 - 1} \cos(\omega_i k).
+$$
+
+$\text{pos}$ ha vuelto a desaparecer. Dos posiciones separadas por $k$ puntúan entre ellas el mismo
+número al principio de la frase y en la mitad, y ese número sólo depende de la distancia. Con
+$k = 0$ cada término vale $1$ y la suma da $d_{\text{model}}/2$, que es lo máximo: ninguna posición
+puntúa contra otra tanto como contra sí misma.
+
+Y ahora la concesión, porque esto es menos de lo que parece. La capa no calcula
+$\text{PE}_{\text{pos}}^{\top}\text{PE}_{\text{pos}+k}$: calcula $\mathbf{q}^{\top}\mathbf{k}$ con
+las dos proyectadas desde $\mathbf{e}_{w_t} + \text{PE}_t$, así que al desarrollar el producto salen
+cuatro términos y sólo uno de ellos es puramente posicional. Lo que la forma sinusoidal garantiza es
+que ese término existe y que depende sólo de la distancia; una cabeza que quiera aprender «el
+determinante que tengo justo delante» —el <W>la</W> de <W>la casa amarilla</W>— tiene con qué
+construirlo, porque la señal de «una posición atrás» es la misma en toda la frase. Si lo construye o
+no lo decide el entrenamiento, y no esta lección.
+
+## La escalera en NumPy
+
+La primera celda monta $\text{PE}$ con dos rodajas y sin un solo bucle, y después imprime la
+longitud de onda de unas cuantas parejas.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model = 24, 32
+i = np.arange(d_model // 2)                  # una pareja de coordenadas por cada i
+omega = 1.0 / (10000 ** (2 * i / d_model))
+pos = np.arange(T)[:, None]                  # (T, 1) contra (d_model/2,)
+
+PE = np.zeros((T, d_model))
+PE[:, 0::2] = np.sin(pos * omega)            # coordenadas pares: el seno
+PE[:, 1::2] = np.cos(pos * omega)            # impares: el coseno de ese mismo angulo
+
+print("PE", PE.shape, " valores entre", round(PE.min(), 3), "y", round(PE.max(), 3))
+print("fila 0 :", np.round(PE[0, :8], 3))
+print("fila 1 :", np.round(PE[1, :8], 3))
+print("fila 12:", np.round(PE[12, :8], 3))
+
+print("\\npareja   omega      longitud de onda")
+for j in (0, 1, 2, 8, 15):
+    print(f"{j:6d}   {omega[j]:.6f}   {2 * np.pi / omega[j]:14.1f}")
+
+norma = np.linalg.norm(PE, axis=1)
+print("\\ntodas las filas miden lo mismo:",
+      bool(np.allclose(norma, np.sqrt(d_model / 2))), "->", round(float(norma[0]), 3))
+`} />
+
+La fila $0$ sale $(0, 1, 0, 1, \dots)$, que es lo que tiene que salir: en la posición $0$ todos los
+ángulos valen $0$. Las tres primeras filas de la tabla son la escalera: la pareja $0$ vuelve cada
+$6.3$ posiciones, la $1$ cada $11.2$, la $2$ cada $19.9$ —cada una $1.78$ veces la anterior— y la
+$15$, la última de este $d_{\text{model}}$, cada $35\,332.9$, que sobre $24$ posiciones es una
+recta. La última línea es la observación del final de la sección anterior comprobada: todas las
+filas miden $4$, que es $\sqrt{32/2}$.
+
+La segunda celda comprueba las dos propiedades, que es donde está el contenido de la lección.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, d_model, k = 24, 32, 3
+i = np.arange(d_model // 2)
+omega = 1.0 / (10000 ** (2 * i / d_model))
+pos = np.arange(T + k)[:, None]
+PE = np.zeros((T + k, d_model))
+PE[:, 0::2] = np.sin(pos * omega)
+PE[:, 1::2] = np.cos(pos * omega)
+
+c, s = np.cos(k * omega), np.sin(k * omega)  # los cuatro numeros de cada bloque
+M = np.zeros((d_model, d_model))
+M[0::2, 0::2] = np.diag(c)
+M[0::2, 1::2] = np.diag(s)
+M[1::2, 0::2] = np.diag(-s)
+M[1::2, 1::2] = np.diag(c)
+
+movidas = PE[:T] @ M.T                       # M por columna == fila por M traspuesta
+print("una sola M mueve las", T, "filas a la vez; error maximo",
+      f"{np.abs(movidas - PE[k:T + k]).max():.2e}")
+
+print("\\nPE_pos . PE_pos+k, desde cuatro posiciones distintas:")
+print(" ", np.round([float(PE[p] @ PE[p + k]) for p in (0, 5, 11, 19)], 6))
+print("  suma de cosenos:", round(float(np.cos(k * omega).sum()), 6))
+
+print("\\ny como cambia con la distancia:")
+for kk in (0, 1, 2, 3, 8, 20):
+    print(f"  k = {kk:2d} -> {np.cos(kk * omega).sum():7.3f}")
+`} />
+
+La primera línea es $\mathbf{M}_k$ movida a través de las veinticuatro posiciones de una vez, y el
+error máximo se queda en el orden de $10^{-15}$: la misma matriz, todas las filas. La segunda es la
+otra propiedad —cuatro posiciones de partida y cuatro veces $12.272398$, que es exactamente la suma
+de cosenos— y la tabla del final dice cómo se comporta esa cantidad al alejarse: $16$ contra sí
+misma, $15.314$ a un paso, $12.272$ a tres, y luego baja despacio y sin ser monótona, porque es una
+suma de cosenos y no una distancia.
+
+## Comprueba tu intuición
+
+Cinco preguntas: por qué no vale el número de la posición, de qué depende $\mathbf{M}_k$, cuánto
+puntúa una posición contra sí misma, qué se rompe al quitar los cosenos, y qué garantiza sumar en
+vez de concatenar.
+
+<Quiz id="q-por-que-no-el-numero" />
+
+<Quiz id="q-de-que-depende-m" />
+
+<Quiz id="q-consigo-misma" />
+
+<Quiz id="q-solo-senos" />
+
+<Quiz id="q-sumar-o-concatenar" />
+
+<CodeChallenge id="ch-codificacion-posicional" />
+
+---
+
+Con esto la entrada está completa: cada fila de $\mathbf{X}$ trae lo que dice el token y dónde
+estaba, y la capa de atención de las cuatro lecciones anteriores ya se puede calcular entera sobre
+ella. Lo que queda es apilarla, que es lo que convierte una capa en un modelo. Y ahí aparece algo
+que esta lección deja pendiente sin decirlo: la posición se suma **una vez**, abajo del todo, y
+tiene que llegar viva hasta la última capa.
+
+Lo que el artículo dibuja alrededor de la atención —una conexión que se salta la capa entera, una
+normalización, un perceptrón por posiciones— parece fontanería alrededor de lo importante y no lo
+es. Es lo que decide si una señal metida abajo sigue ahí arriba, y el bloque 3 ya midió por qué al
+seguir un gradiente a lo largo de una cadena de productos y verlo desvanecerse. Eso es <Leccion slug="bloque-transformer">la lección
+siguiente, sobre el bloque completo con residuales y *layer norm*</Leccion>.

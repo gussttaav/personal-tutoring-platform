@@ -1,0 +1,279 @@
+/*
+ * COURSE-P1-03 / landing-refinements — course catalog (/cursos) styles.
+ *
+ * The catalog Server Components style their static bits inline; this file holds what an inline
+ * style cannot: the responsive grid, and the card's CSS-only hover (a lift + a green bloom drawn
+ * with ::before, the corner motif reacting) plus the resume block the client island fills in.
+ * It replaces the old inline <style> that fought the card's inline styles with `!important`.
+ * The editorial atoms (.lp-serif / .lp-kicker / .lp-rule) come from the shared
+ * `features/courses/course-editorial.css`, imported alongside this file by the catalog route.
+ *
+ * Palette is the site's own: --green / --green-mid / --green-dim over the dark surfaces. Movement
+ * is gated behind prefers-reduced-motion at the foot of the file.
+ */
+
+.courses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 22px;
+}
+
+/*
+ * The card is a plain container (not one big <Link>) so the "Continuar" action can coexist with
+ * "Ver curso". `overflow: hidden` clips the corner motif; `isolation` gives ::before a local
+ * stacking context so the bloom sits behind the content (z-index: -1) but in front of the card
+ * background.
+ */
+.course-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  background: var(--surface-low);
+  border: 1px solid var(--border-variant);
+  border-radius: 20px;
+  transition:
+    transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 260ms ease,
+    box-shadow 260ms ease;
+}
+
+/* Soft green bloom from the top-right corner, faded in on hover. */
+.course-card::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: radial-gradient(120% 85% at 85% -10%, var(--green-dim), transparent 55%);
+  opacity: 0;
+  transition: opacity 260ms ease;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* `:focus-within` gives keyboard users the same lift when a link inside the card is focused. */
+.course-card:hover,
+.course-card:focus-within {
+  transform: translateY(-4px);
+  border-color: var(--green-mid);
+  box-shadow:
+    0 20px 42px -18px rgba(78, 222, 163, 0.38),
+    0 0 0 1px var(--green-mid);
+}
+
+.course-card:hover::before,
+.course-card:focus-within::before {
+  opacity: 1;
+}
+
+/*
+ * "Ver curso" is a stretched link: its ::after covers the whole card (positioned against
+ * `.course-card`, the nearest positioned ancestor), so a click anywhere on the card opens the
+ * landing page — the whole-card affordance the old single-<Link> card had. It sits ABOVE the
+ * static content (z-index 1); the one control that must beat it, "Continuar", sits above that.
+ */
+.card-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Corner motif — faint at rest, brighter and drifting on hover. */
+.course-card__motif {
+  position: absolute;
+  top: -12px;
+  right: -14px;
+  line-height: 0;
+  opacity: 0.06;
+  pointer-events: none;
+  transition:
+    opacity 260ms ease,
+    transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.course-card:hover .course-card__motif,
+.course-card:focus-within .course-card__motif {
+  opacity: 0.16;
+  transform: translate(3px, -3px) scale(1.05);
+}
+
+.course-card__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.course-card__badge {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 100px;
+  padding: 4px 12px;
+}
+
+/* Level — emerald, filled; matches the landing's meta emphasis. */
+.course-card__badge--level {
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid var(--green-mid);
+}
+
+/* Content-language notice — quiet outline, shown only when lessons are in another locale. */
+.course-card__badge--lang {
+  color: var(--text-dim);
+  border: 1px solid var(--border-variant);
+}
+
+.course-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.course-card__title {
+  font-size: 1.4rem;
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0;
+}
+
+/* The part of the title after the first ": " — mirrors the landing hero. */
+.course-card__title .accent {
+  font-style: italic;
+  color: var(--green);
+}
+
+.course-card__tagline {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.course-card__meta {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.course-card__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border-variant);
+}
+
+/* Resume block — filled in by the client island only when the reader has progress. */
+.course-card__resume {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.course-card__resume-label {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.course-card__bar {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.course-card__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+/*
+ * "Continuar" — the emphasized next step, a filled pill so it clearly leads even beside the
+ * "Ver curso" link. `align-self: flex-start` keeps it hugging its label inside the column-flex
+ * resume block (the progress bar above it stays full width). z-index beats the stretched cover.
+ */
+.course-card__continue {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid var(--green-mid);
+  border-radius: 100px;
+  padding: 7px 15px;
+  text-decoration: none;
+  position: relative;
+  z-index: 2;
+  margin-top: 2px;
+}
+
+/* "Ver curso" — the standing card CTA and the whole-card cover link. */
+.course-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green);
+  text-decoration: none;
+}
+
+.course-card__cta .arrow,
+.course-card__continue .arrow {
+  transition: transform 200ms ease;
+}
+
+.course-card:hover .course-card__cta .arrow,
+.course-card:focus-within .course-card__cta .arrow,
+.course-card:hover .course-card__continue .arrow,
+.course-card:focus-within .course-card__continue .arrow {
+  transform: translateX(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .course-card,
+  .course-card__motif,
+  .course-card__cta .arrow,
+  .course-card__continue .arrow {
+    transition: none;
+  }
+
+  .course-card:hover,
+  .course-card:focus-within {
+    transform: none;
+  }
+
+  .course-card:hover .course-card__motif,
+  .course-card:focus-within .course-card__motif {
+    transform: none;
+  }
+
+  .course-card:hover .course-card__cta .arrow,
+  .course-card:focus-within .course-card__cta .arrow,
+  .course-card:hover .course-card__continue .arrow,
+  .course-card:focus-within .course-card__continue .arrow {
+    transform: none;
+  }
+}

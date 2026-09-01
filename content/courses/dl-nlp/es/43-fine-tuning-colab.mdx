@@ -1,0 +1,232 @@
+---
+slug: fine-tuning-colab
+title: "Fine-tuning en la práctica"
+block: 5
+order: 11
+minutes: 18
+summary: "La lección anterior afirmó que los pesos de un modelo preentrenado no caben en el navegador, y lo dejó sin número. Aquí está el número: doce bloques de 768, un vocabulario de 31 002 entradas y unos 110 millones de parámetros que, con sus gradientes y lo que el optimizador guarda al lado, pasan de 1.5 GB antes de la primera activación. De ahí sale que esta lección no tenga celdas, sino un cuaderno de Colab que se ejecuta fuera del navegador. Lo que corre allí es el bucle del bloque 2 sin una línea nueva: la misma actualización, la misma entropía cruzada y una capa de salida de 1 538 números; lo único que ha cambiado es de dónde parte theta y cuánto se le deja moverse."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-por-que-no-navegador
+    type: multi
+    prompt: 'Todas las celdas de este curso han corrido en el navegador y ésta no. Marca lo que de verdad lo impide.'
+    options:
+      - { id: a, text: 'No hay PyTorch compilado para ese intérprete: al navegador llegan `numpy` y unas cuantas bibliotecas más, y sin la biblioteca no hay pesos preentrenados que cargar.' }
+      - { id: b, text: 'Los pesos, sus gradientes y lo que el optimizador guarda por parámetro pasan de $1.5$ GB, y eso es antes de guardar una sola activación.' }
+      - { id: c, text: 'Una pasada de entrenamiento son del orden de $10^{14}$ multiplicaciones, y la celda se corta a los diez segundos.' }
+      - { id: d, text: 'La auto-atención de $T$ posiciones cuesta $T^{2}d_{\text{model}}$, y un coste cuadrático no se puede calcular sin GPU.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras, cada una por su cuenta: cualquiera de ellas sola ya bastaría. La (d) es la que hay que descartar despacio, porque el término cuadrático es el que más suena y aquí es el que menos pesa. Con $T = 128$ y $d_{\text{model}} = 768$ ese coste vale $128^{2} \cdot 768 \approx 1.3 \times 10^{7}$ por auto-atención, mientras que un solo bloque aplica sus $7\,077\,888$ parámetros a cada una de las $128$ posiciones, que son $\approx 9 \times 10^{8}$: el término cuadrático anda por el uno por ciento del total. Lo caro no es que la atención sea cuadrática en $T$, es que hay $110$ millones de parámetros multiplicando a cada token. Y «no se puede calcular sin GPU» no es una propiedad de ninguna fórmula: la GPU hace lo mismo, sólo que muchas operaciones a la vez.'
+    hint: 'Tres de las cuatro son cuentas de esta lección. Para la cuarta, pon $T = 128$ y compárala con lo que cuesta un bloque entero.'
+  - id: q-tasa-aprendizaje
+    type: single
+    prompt: 'El cuaderno usa $\eta = 2 \times 10^{-5}$, unas cincuenta veces menos que el $10^{-3}$ con el que entrenaste el MLP (*multilayer perceptron*) del bloque 2. ¿Qué pasa si lo dejas en $10^{-3}$?'
+    options:
+      - { id: a, text: 'Las primeras actualizaciones mueven $\theta$ tan lejos de donde lo dejó el preentrenamiento que lo tiran, y a partir de ahí estás ajustando $110$ millones de parámetros contra unos pocos miles de reseñas.' }
+      - { id: b, text: 'Nada malo: $\eta$ sólo decide cuántas vueltas hacen falta, así que con $10^{-3}$ llegas antes al mismo sitio.' }
+      - { id: c, text: 'Que el descenso diverge, y ése es el único riesgo: con $\eta$ grande la pérdida crece en cada paso, como en <Leccion slug="descenso-gradiente">la lección sobre el descenso de gradiente</Leccion>.' }
+      - { id: d, text: 'Que la capa de salida se entrena y la pila de debajo no se entera, porque el gradiente llega desvanecido después de doce bloques.' }
+    answer: a
+    explanation: 'La (a), y lo que la separa de la (c) es que el daño llega mucho antes que la divergencia. <Leccion slug="descenso-gradiente">La lección sobre el descenso de gradiente</Leccion> sacó de $w_t = (1-2\eta)^{t}w_0$ la condición exacta bajo la que la pérdida crece, y aquí no hace falta llegar ahí: mover $\theta$ a un sitio cualquiera lejos del preentrenamiento ya destruye lo que costó semanas, aunque cada paso baje la pérdida del conjunto de entrenamiento. La (b) confunde la tasa de aprendizaje con la impaciencia. La (d) invoca el gradiente desvanecido del bloque 3 en la única arquitectura que lo tiene resuelto: los residuales de <Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> existen precisamente para que el gradiente llegue entero a doce bloques de profundidad.'
+    hint: '¿De qué sirve haber empezado en un buen sitio si el primer paso te saca de él?'
+  - id: q-que-aporta-preentrenar
+    type: multi
+    prompt: '<Leccion slug="proyecto-sentimiento">La lección del proyecto de sentimiento</Leccion> ajustó un clasificador de reseñas desde el generador de números aleatorios y acertó el 88.3 % de las 60 que no había leído. Marca lo que el preentrenamiento pone hoy sobre la mesa y aquel proyecto no tenía.'
+    options:
+      - { id: a, text: 'Una representación cuyo argumento es la frase entera: lo que sale en una posición depende de las demás, así que un <W>no</W> delante cambia el vector de lo que viene detrás.' }
+      - { id: b, text: 'Ciento diez millones de números ya colocados, de modo que las tres vueltas de hoy sólo tienen que moverlos un poco y ajustar los $1\,538$ de la capa de salida.' }
+      - { id: c, text: 'Un vocabulario de subpalabras que viene con el modelo y reparte en trozos las entradas que aquel proyecto habría mandado a <W>\<UNK></W>.' }
+      - { id: d, text: 'Más reseñas etiquetadas: el preentrenamiento las fabrica a partir del texto crudo, y por eso hoy hay miles donde antes había 180.' }
+    answer: [a, b, c]
+    explanation: 'Las tres primeras. La (a) es la deuda que la lección anterior saldó y la razón de que las cuatro reseñas con un <W>no</W> dejen de ser un caso perdido: la bolsa de palabras de aquel proyecto no recibía el orden, y una pila de auto-atenciones sí. La (d) es la tentación, y falla en el verbo: el preentrenamiento fabrica sus propios ejemplos a partir del texto —ésa es toda la gracia de la lección anterior—, pero ninguno de ellos dice si una reseña habla bien o mal de una película. Esa etiqueta sigue teniendo que escribirla alguien, y por eso el conjunto de hoy son unos miles y no unos millones.'
+    hint: 'Para la última, pregúntate qué etiqueta produce tapar una posición y pedir la tapada, y si esa etiqueta se parece en algo a «esta reseña es positiva».'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Spanish Pre-trained BERT Model and Evaluation Data'
+    authors: 'Cañete, Chaperon, Fuentes y otros'
+    year: '2020'
+    venue: 'PML4DC @ ICLR 2020'
+    lang: en
+    url: 'https://arxiv.org/abs/2308.02976'
+    note: 'El modelo que afinas en el cuaderno: un BERT de 12 bloques y 768 de ancho entrenado sobre unos 3.000 millones de palabras en español, con su batería de tareas. De aquí salen los 110 millones de parámetros que no caben en el navegador.'
+  - kind: paper
+    title: 'Universal Language Model Fine-tuning for Text Classification'
+    authors: 'Howard y Ruder'
+    year: '2018'
+    venue: 'arXiv:1801.06146'
+    lang: en
+    url: 'https://arxiv.org/abs/1801.06146'
+    note: 'El porqué de la tasa minúscula del cuaderno: un paso grande sobre pesos preentrenados los borra. Trae recetas —descongelar por capas, una tasa por capa— que el cuaderno no usa; el principio de no perder lo que costó semanas, sí.'
+---
+
+{/* COURSE-P5-05 — Bloque 5, lección 11. */}
+
+La lección anterior, sobre BERT (*Bidirectional Encoder Representations from Transformers*) y
+GPT (*Generative Pre-trained Transformer*), dejó dos pilas entrenadas contra texto crudo y todavía
+sin oficio: representan bien el español y no sirven para nada concreto. Al despedirse hizo además
+una afirmación sin números —que mover esos pesos no cabe donde han cabido las celdas de este
+curso—. Una afirmación sin números es de las pocas cosas que este curso no se ha permitido.
+
+¿Cuántos números hay que mover, entonces? La pregunta tiene respuesta exacta, y de ella salen las
+otras dos: cuánta memoria ocupan mientras se mueven y cuánto tarda una vuelta. De las tres sale la
+misma conclusión, y por eso esta lección no tiene celdas. Lo que tiene es un cuaderno, y hay que ir
+a ejecutarlo fuera.
+
+Antes de las cuentas, mira qué es exactamente lo que se reaprovecha. <Leccion slug="proyecto-sentimiento">La lección del
+proyecto de sentimiento</Leccion> ajustó un clasificador de reseñas de cine desde el generador de números
+aleatorios: 180 reseñas para entrenar, 60 guardadas, un 88.3 % de acierto sobre esas 60 y siete
+fallos, cuatro de ellos con un <W>no</W> que la bolsa de palabras no sabía dónde colocar. No lo
+sabía porque a la bolsa de palabras nunca le llegó el orden.
+
+El *fine-tuning* hace esa misma tarea y cambia una sola cosa de sitio: debajo del clasificador ya
+no hay una bolsa de palabras, sino doce bloques que alguien ha entrenado durante semanas contra
+miles de millones de palabras en español. Lo que esa pila devuelve en cada posición depende de la
+frase entera, así que el <W>no</W> llega. Y lo que tú pones encima es diminuto, que es la parte que
+conviene contar despacio.
+
+## Ciento diez millones de números
+
+El modelo del cuaderno es BETO, el BERT que la Universidad de Chile entrenó en español. Por dentro
+es el encoder del artículo con sus cinco números puestos: $N = 12$ bloques, $d_{\text{model}} = 768$,
+$h = 12$ cabezas, $d_{\text{ff}} = 3072$ y un vocabulario de $\lvert V \rvert = 31\,002$ entradas.
+Con eso, la cuenta de parámetros es la de <Leccion slug="arquitectura-completa">la lección sobre las quince cajas del
+artículo</Leccion>, evaluada:
+
+$$
+N\left(4 d_{\text{model}}^{2} + 2\,d_{\text{model}}d_{\text{ff}}\right) = 12 \cdot 7\,077\,888 = 84\,934\,656,
+$$
+
+que son las cuatro proyecciones de cada atención y las dos capas de cada perceptrón por posiciones,
+doce veces. Falta la tabla de embeddings, que en un vocabulario de este tamaño no es un detalle:
+
+$$
+\lvert V \rvert \cdot d_{\text{model}} = 31\,002 \cdot 768 = 23\,809\,536.
+$$
+
+Sumadas dan $108\,744\,192$, y con los sesgos, las dos normalizaciones de cada bloque y la tabla de
+posiciones se queda en unos $110$ millones. Guardado cada número en cuatro bytes, eso es
+
+$$
+\left(110 \times 10^{6}\right) \cdot 4 \approx 4.4 \times 10^{8} \quad \text{bytes},
+$$
+
+unos 440 MB sólo para los pesos. Entrenar pide dos cosas más al lado. Backpropagation —<Leccion slug="backpropagation">su lección</Leccion>—
+produce un gradiente por parámetro, que es otra copia entera; y el optimizador que
+usan estas bibliotecas guarda además dos números por parámetro, un promedio del gradiente y otro de
+su cuadrado, que es una mejora del descenso de gradiente de <Leccion slug="descenso-gradiente">su lección</Leccion> y queda fuera de este curso.
+Cuatro copias de $440$ MB pasan de $1.7$ GB, y todavía no se ha guardado ni una activación.
+
+Son tres cosas las que dejan esto fuera del navegador, y cada una por su cuenta ya sobraría. La
+primera es la más seca: no existe PyTorch compilado para el intérprete que corre en la pestaña, así
+que no hay manera de cargar unos pesos preentrenados aunque cupieran. La segunda es ese $1.7$ GB
+dentro de una pestaña. Y la tercera es el reloj. Una reseña truncada a $T_{\max} = 128$ posiciones
+cuesta, sólo hacia delante, del orden de $2 \cdot \left(110 \times 10^{6}\right) \cdot 128 \approx
+2.8 \times 10^{10}$ multiplicaciones, y la pasada hacia atrás cuesta aproximadamente el doble, así
+que tres vueltas sobre $3\,000$ reseñas son
+
+$$
+3 \cdot 3\,000 \cdot \left(8 \times 10^{10}\right) \approx 7 \times 10^{14}.
+$$
+
+Una GPU (*graphics processing unit*) de las gratuitas hace del orden de $10^{13}$ de esas
+operaciones por segundo, y por eso el cuaderno tarda minutos. Un hilo de WebAssembly sin GPU hace
+del orden de $10^{8}$: la misma cuenta se mide en semanas. Las celdas de este curso se cortan a los
+diez segundos.
+
+## Lo único que cambia es de dónde parte el descenso
+
+Con las cuentas hechas, lo que queda es notablemente pequeño. El bucle que corre en el cuaderno es
+el de <Leccion slug="descenso-gradiente">la lección sobre el descenso de gradiente</Leccion>, letra por letra:
+
+$$
+\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t).
+$$
+
+Lo que cambia es $\theta_0$. En todo el curso ha salido del generador de números aleatorios; aquí
+sale del preentrenamiento, y esa sustitución es el *fine-tuning* entero. Nada más de esa línea se
+toca.
+
+Encima de la pila hace falta algo que diga si una reseña habla bien o mal, porque lo que sale por
+arriba son $T$ filas de $d_{\text{model}}$ números y ninguna de ellas es una respuesta. El
+clasificador toma la fila de la primera posición —la que BERT reserva para eso— y le pone una capa
+de salida de dos unidades, entrenada con la entropía cruzada de <Leccion slug="funcion-de-perdida">la lección sobre las funciones de pérdida</Leccion>:
+
+$$
+2 \cdot d_{\text{model}} + 2 = 2 \cdot 768 + 2 = 1\,538
+$$
+
+números nuevos, contra los $110$ millones que ya estaban puestos. Esos $1\,538$ sí salen del
+generador, y son los únicos.
+
+Queda la tasa de aprendizaje, y es la decisión con más consecuencias del cuaderno. El bloque 2
+entrenaba con $\eta$ del orden de $10^{-3}$; aquí se usa $2 \times 10^{-5}$, unas cincuenta veces
+menos. El motivo no es la divergencia que <Leccion slug="descenso-gradiente">esa lección</Leccion> derivó para $\eta$ grande, sino
+algo que ocurre mucho antes: $\theta_0$ está ya en un sitio que costó semanas de máquina, y un paso
+del tamaño que hace falta cuando se parte del ruido saca a $\theta$ de ese sitio en las primeras
+actualizaciones. Con la pérdida bajando, además, porque ajustar $110$ millones de parámetros a unos
+miles de reseñas es facilísimo si se permite mover los parámetros lo suficiente. Lo que se pierde
+por el camino no aparece en esa pérdida. El paso pequeño es lo que convierte el preentrenamiento en
+un punto de partida en vez de en un recuerdo.
+
+## El cuaderno, y qué mirar mientras corre
+
+<ColabLink notebook="github/gussttaav/ai-notebooks/blob/6008b8faa9f82287259373997e4f762008e09336/notebooks/fine-tuning-beto.ipynb">
+Abrir el cuaderno en Colab
+</ColabLink>
+
+Lo primero, antes de ejecutar nada: en el menú de Colab, entorno de ejecución con GPU. La primera
+celda dice cuál te ha tocado, y si no hay ninguna lo dice también —el cuaderno corre igual sobre
+CPU, con la última cuenta de arriba de por medio—. Las versiones de las bibliotecas están fijadas a
+propósito: unos pesos preentrenados y una versión concreta de `transformers` son las dos mitades de
+un resultado reproducible, y dejar la segunda al aire es la manera más silenciosa de que el cuaderno
+deje de funcionar dentro de un año.
+
+Después, cinco cosas, en este orden. El tokenizador viene **con** el modelo y no lo eliges tú: es un
+tokenizador de subpalabras como los de <Leccion slug="tokenizacion">la lección sobre la tokenización</Leccion>, y sus entradas son exactamente las
+filas de la tabla de embeddings preentrenada, así que cambiarlo dejaría esas filas sin dueño. Las
+reseñas se parten en $D_{\text{ent}}$ y $D_{\text{prueba}}$, como en el proyecto del bloque 2, y se
+truncan a $T_{\max} = 128$ posiciones. Se dan tres vueltas. Se imprime $\mathcal{L}$ después de cada
+una, y $\text{acierto}(D_{\text{prueba}})$ al final. Y la última celda te deja escribir tus propias
+frases y ver qué contesta.
+
+Los dos números que importan son ésos, y lo que hay que mirar no es cuánto valen sino cuánto ha
+hecho falta para conseguirlos: tres vueltas, unos miles de ejemplos y unos minutos de GPU. Compáralo
+con lo que costó el 88.3 % del bloque 2 y con lo que costaron las semanas de preentrenamiento que
+hay debajo.
+
+Y una concesión, dicha en voz alta porque es la primera del curso de este tamaño. En el cuaderno,
+`loss.backward()` calcula el gradiente de todo el modelo en una línea. Eso es exactamente la
+recurrencia que derivaste en <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion> y programaste en <Leccion slug="implementar-mlp">la de implementar el MLP</Leccion>, corriendo sobre un
+grafo que la biblioteca ha construido sola mientras hacía el forward pass. Es la única pieza de este
+cuaderno que hace algo que tú no has escrito, y ahora sabes qué es lo que hace.
+
+## Comprueba tu intuición
+
+Tres preguntas: por qué esto no cabe en el navegador, qué pasa si no bajas la tasa de aprendizaje y
+qué es exactamente lo que aporta haber preentrenado.
+
+<Quiz id="q-por-que-no-navegador" />
+
+<Quiz id="q-tasa-aprendizaje" />
+
+<Quiz id="q-que-aporta-preentrenar" />
+
+---
+
+Con eso se cierra el curso. La entrada del vocabulario que en el bloque 1 tenía una fila y una sola
+tiene ahora un vector por frase, y entre aquella tabla y este cuaderno no hay más que lo que has
+escrito tú: una neurona, una pila de capas, una recurrencia, dos compuertas, una atención y quince
+cajas. El modelo que acabas de ajustar no lleva dentro ni una operación que no hayas derivado antes
+en una lección y ejecutado después en una celda.
+
+Lo que queda es leer. *Attention is All You Need* es un artículo corto y ahora se lee caja por caja
+—<Leccion slug="arquitectura-completa">la lección sobre las quince cajas</Leccion> las puso todas sobre su figura 1—, y detrás de él hay una literatura
+que se dedica a cambiarle piezas: otras maneras de codificar la posición, atenciones que calculan lo
+mismo moviendo menos memoria, bloques donde cada token activa sólo una parte del perceptrón,
+variantes para contextos de cientos de miles de posiciones. Ninguna de ellas es una arquitectura
+nueva. Todas son ediciones sobre la aritmética que montaste en <Leccion slug="proyecto-transformer">el proyecto del Transformer</Leccion>, y ése es
+el sitio donde este curso te deja: no delante de un modelo que funciona, sino delante de un artículo
+que puedes discutir.
