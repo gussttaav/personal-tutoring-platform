@@ -744,15 +744,14 @@
   },
   "courses": {
     "catalog": {
-      "overline": "Learn",
-      "heading": "Interactive courses",
-      "subtitle": "Learn by building: rigorous theory, code that runs in your browser and exercises that grade themselves.",
+      "overline": "Courses",
+      "heading": "Learn by building, <accent>not memorizing</accent>",
+      "subtitle": "Learn by building: rigorous mathematical theory, code that runs in the browser, and automatically graded exercises.",
       "empty": {
         "title": "Coming soon",
         "body": "No courses published yet. The first one is on its way — check back soon."
       },
       "card": {
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "blocks": "{count, plural, =1 {# module} other {# modules}}",
         "cta": "View course",
@@ -762,71 +761,60 @@
     "landing": {
       "backToCatalog": "All courses",
       "hero": {
-        "outcomeLabel": "What you'll build",
-        "outcome": "A working Transformer, implemented from scratch in NumPy — the architecture behind modern language models.",
         "levelLabel": "Level",
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "start": "Start the course",
-        "soon": "Coming soon"
+        "soon": "Coming soon",
+        "viewSyllabus": "View the syllabus"
       },
       "prerequisites": {
         "heading": "Prerequisites",
-        "intro": "This course is mathematically rigorous. Before you start, you'll need:"
+        "kicker": "Before you start"
       },
       "syllabus": {
         "heading": "Syllabus",
-        "blockMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · {minutes} min",
+        "blockMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · {duration}",
         "minutes": "{minutes} min",
-        "empty": "The detailed syllabus will be published soon."
+        "durationHours": "{hours}h {minutes}m",
+        "durationHoursExact": "{hours}h",
+        "empty": "The detailed syllabus will be published soon.",
+        "kicker": "Content",
+        "summary": "{blocks, plural, =1 {# block} other {# blocks}} · {lessons, plural, =1 {# lesson} other {# lessons}} · ~{hours}h reading"
       },
       "instructor": {
-        "heading": "Your instructor"
+        "heading": "Your instructor",
+        "kicker": "About Gustavo",
+        "role": "Instructor"
       },
       "faq": {
         "heading": "Frequently asked questions",
-        "items": [
-          {
-            "q": "How much does it cost?",
-            "a": "Nothing. The course is completely free."
-          },
-          {
-            "q": "What do I need to know before starting?",
-            "a": "Intermediate Python, linear algebra (vectors and matrices) and calculus (partial derivatives and the chain rule). They're listed in the prerequisites section."
-          },
-          {
-            "q": "How long will it take?",
-            "a": "Around 40 hours if you do the exercises. Go at your own pace; there are no deadlines."
-          },
-          {
-            "q": "Is it in English?",
-            "a": "Spanish only for now. An English version is planned."
-          },
-          {
-            "q": "What do I need to install?",
-            "a": "Nothing. Everything — the Python code included — runs directly in your browser."
-          }
-        ]
+        "kicker": "Frequently asked questions"
       },
       "cta": {
-        "heading": "Ready to build a Transformer?",
-        "body": "Start with the first lesson. You don't need an account to read.",
         "start": "Start the course",
-        "soon": "Coming soon"
+        "soon": "Coming soon",
+        "overline": "Start today",
+        "resumeOverline": "Keep going",
+        "resumeHeading": "Pick up where you left off",
+        "resumeBody": "Jump back into your next lesson and keep going at your own pace — no rush, no deadlines.",
+        "resume": "Continue the course"
       },
       "languageNotice": {
         "title": "The lessons are in Spanish",
         "body": "This course has not been translated yet. The lessons, exercises and quizzes are written in Spanish — everything else on this page is in English. An English version is planned."
+      },
+      "authorNote": {
+        "kicker": "Author's note",
+        "body": "This course was built with the help of AI tools, which I used to review, correct and polish the writing of my notes and materials, greatly speeding up the process. The content, the approach and the structure are guided by me, and every explanation, paragraph and equation has been carefully reviewed to ensure its clarity, coherence and reliability. Many lessons also include interactive explorables that reinforce the learning. I hope you find it useful. And if you ever get stuck or want to move faster, <book>book a session with me</book>: I'll be glad to help."
       }
     },
     "notify": {
-      "heading": "Get notified",
-      "body": "One email when a new course goes live, or when an existing one gets a major update — including when this course is translated into English.",
+      "body": "Get notified when I publish a new course or update one you've started",
       "cta": "Notify me",
-      "signIn": "Continue with Google",
-      "signInHint": "Sign in so I know where to write.",
-      "subscribed": "You're on the list. I'll email you.",
-      "unsubscribe": "Stop these emails",
+      "signIn": "Sign in",
+      "signInHint": "Sign in to get notified when I publish a new course or update one you've started",
+      "subscribed": "I'll let you know when I publish a new course or update one you've started",
+      "unsubscribe": "Stop notifications",
       "error": "Something went wrong. Try again.",
       "retry": "Retry"
     },

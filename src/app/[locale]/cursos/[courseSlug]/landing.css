@@ -1,0 +1,82 @@
+/*
+ * COURSE-P1-03 / landing-refinements — course landing page styles.
+ *
+ * The landing Server Components style themselves inline; this file holds what an inline
+ * style cannot express and is landing-only: the responsive hero-actions layout (resume card +
+ * secondary button — a row on desktop, stacked on phones), the prerequisites grid, the social
+ * icon buttons, and the :hover fill on the syllabus lesson rows. The editorial atoms it used to
+ * hold (.lp-serif / .lp-kicker / .lp-section-head / .lp-rule) now live in the shared
+ * `features/courses/course-editorial.css`, since the catalog renders in the same voice.
+ * Segment-scoped: imported by the landing route, never the shared layout. Keyboard focus already
+ * gets the global :focus-visible ring (src/app/globals.css).
+ */
+
+/*
+ * Hero call-to-action row. In the returning state the primary slot holds the wide resume
+ * card; in the first-visit state it holds the "start" button. `align-items: stretch` keeps
+ * the secondary "view syllabus" button flush with the primary's height. Below 560px the
+ * row becomes a full-width stack — a resume card and a button cannot sit side by side.
+ */
+.lp-hero-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.lp-hero-actions__primary {
+  flex: 1 1 340px;
+}
+
+@media (max-width: 560px) {
+  .lp-hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .lp-hero-actions > * {
+    flex: 1 1 auto;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Prerequisites: heading/intro on the left, the requirement list on the right. Stacks below 640px. */
+.lp-prereq-grid {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 40px 48px;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .lp-prereq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Instructor social icon buttons (GitHub / LinkedIn). */
+.lp-social {
+  color: var(--text-muted);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.lp-social:hover {
+  color: var(--green);
+  border-color: var(--green-mid);
+}
+
+.syllabus-lesson {
+  border-radius: 6px;
+  transition: background-color 150ms ease;
+}
+
+.syllabus-lesson:hover {
+  background: var(--surface-high);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .syllabus-lesson {
+    transition: none;
+  }
+}

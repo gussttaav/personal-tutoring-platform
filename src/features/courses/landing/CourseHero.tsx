@@ -1,31 +1,28 @@
 /*
- * COURSE-P1-03 — Course landing hero.
+ * COURSE-P1-03 / landing-refinements — Course landing hero.
  *
- * Server Component. Leads with the course title/tagline and, above all, WHAT YOU
- * WILL HAVE BUILT by the end — the single strongest conversion signal. `firstLessonSlug`
- * is null until P5 publishes a lesson; the primary CTA degrades to a disabled "soon"
- * state rather than linking nowhere.
+ * Server Component. Leads with the course title/tagline. The old "what you'll build" box was
+ * removed in the editorial redesign — the tagline already carries that promise — and the
+ * per-course `outcome` field is gone with it. The title is set in the display serif, with the
+ * part after the first colon in italic (an editorial accent that degrades to plain text for a
+ * title without a colon). A per-course decorative `heroMotif` (manifest-selected) sits faintly
+ * behind it; `HeroMotif` renders nothing when the field is absent.
  *
- * COURSE-P6-03: `contentLocale` is the locale the LESSONS live in, which differs from the
- * page locale while a course is translated only at the manifest level. It is passed straight
- * to next-intl's <Link locale=…>, which emits the EXPLICIT prefix (`/es/cursos/...`) even
- * though `as-needed` makes the Spanish URL unprefixed. That prefix is load-bearing, not
- * noise: locale detection is pathname → NEXT_LOCALE cookie → default (see src/middleware.ts),
- * so an unprefixed `/cursos/...` clicked by a reader whose cookie says `en` would be sent to
- * `/en/cursos/...` and 404. The prefixed URL flips the cookie to `es` and redirects to the
- * canonical unprefixed one — which is also correct, because following this link means the
- * reader is now reading the Spanish site.
+ * The call to action is the client `CourseHeroActions`: it shows the RESUME card for a reader
+ * with progress and the START button otherwise (or "soon" until the first lesson ships) — see
+ * that file for why the decision is client-side and why "replace" beats "coexist".
  *
- * Layout note: the meta row is deliberately its own block so a progress bar can
- * slot in beneath it without a redesign. COURSE-P4-02 fills that slot with `CourseProgressResume`
- * — a client leaf, because this page is static and readable signed-out, so progress is
- * fetched after hydration. It renders nothing for a visitor with nothing to resume.
+ * COURSE-P6-03: `contentLocale` is the locale the LESSONS live in, which differs from the page
+ * locale while a course is translated only at the manifest level. It is threaded into every
+ * lesson href (via next-intl's <Link locale=…>) so the link crosses locales deliberately rather
+ * than 404ing under /en — the prefixed URL flips the NEXT_LOCALE cookie and lands on the correct
+ * canonical page. (See git history of this file for the full routing rationale.)
  */
 
 import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import type { Course } from "@/domain/types";
-import CourseProgressResume from "./CourseProgressResume";
+import CourseHeroActions from "./CourseHeroActions";
+import HeroMotif from "@/features/courses/HeroMotif";
 
 interface CourseHeroProps {
   course: Course;
@@ -45,132 +42,90 @@ export default async function CourseHero({
 }: CourseHeroProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.hero" });
 
+  // Editorial accent: everything after the first ": " is set in italic on its own line.
+  // A title without a colon renders whole, in roman — `titleTail` is empty and no <br> shows.
+  const [titleHead, ...titleRest] = course.title.split(": ");
+  const titleTail = titleRest.join(": ");
+
   return (
-    <section style={{ paddingTop: "48px", paddingBottom: "8px" }}>
-      <h1
-        style={{
-          fontFamily: "var(--font-headline, Manrope), sans-serif",
-          fontSize: "clamp(2rem, 5vw, 3.25rem)",
-          fontWeight: 800,
-          letterSpacing: "-0.02em",
-          lineHeight: 1.1,
-          color: "var(--text)",
-          margin: 0,
-        }}
-      >
-        {course.title}
-      </h1>
-
-      <p
-        style={{
-          marginTop: "16px",
-          maxWidth: "680px",
-          fontSize: "clamp(1rem, 2.2vw, 1.25rem)",
-          lineHeight: 1.6,
-          color: "var(--text-muted)",
-        }}
-      >
-        {course.tagline}
-      </p>
-
-      {/* What you'll build — the conversion lever */}
+    <section style={{ position: "relative", paddingTop: "48px", paddingBottom: "8px" }}>
+      {/* Decorative, manifest-selected motif — faint, behind the title, no meaning. */}
       <div
         style={{
-          marginTop: "28px",
-          maxWidth: "680px",
-          padding: "20px 24px",
-          background: "var(--green-dim)",
-          border: "1px solid var(--green-mid)",
-          borderRadius: "var(--radius)",
+          position: "absolute",
+          top: "20px",
+          right: "0",
+          pointerEvents: "none",
         }}
       >
-        <p
+        <HeroMotif kind={course.heroMotif} size={360} opacity={0.08} />
+      </div>
+
+      <div style={{ position: "relative", maxWidth: "680px" }}>
+        <h1
+          className="lp-serif"
           style={{
-            fontSize: "11px",
-            fontWeight: 700,
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "var(--green)",
-            margin: "0 0 8px",
+            fontSize: "clamp(2.25rem, 5.5vw, 3.75rem)",
+            fontWeight: 500,
+            letterSpacing: "-0.02em",
+            lineHeight: 1.05,
+            color: "var(--text)",
+            margin: 0,
           }}
         >
-          {t("outcomeLabel")}
+          {titleHead}
+          {titleTail ? ":" : ""}
+          {titleTail ? (
+            <>
+              <br />
+              <span style={{ fontStyle: "italic", color: "var(--green)" }}>{titleTail}</span>
+            </>
+          ) : null}
+        </h1>
+
+        <p
+          style={{
+            marginTop: "24px",
+            maxWidth: "600px",
+            fontSize: "clamp(1.0625rem, 2.2vw, 1.25rem)",
+            lineHeight: 1.6,
+            color: "var(--text-muted)",
+          }}
+        >
+          {course.tagline}
         </p>
-        <p style={{ fontSize: "1.0625rem", lineHeight: 1.55, color: "var(--text)", margin: 0 }}>
-          {t("outcome")}
-        </p>
-      </div>
 
-      {/* Meta row — the progress bar slots in directly below it. */}
-      <div
-        style={{
-          marginTop: "24px",
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          gap: "12px",
-          fontSize: "0.875rem",
-          color: "var(--text-dim)",
-        }}
-      >
-        <span>
-          {t("levelLabel")}: <strong style={{ color: "var(--text-muted)" }}>{course.level}</strong>
-        </span>
-        <span aria-hidden="true">·</span>
-        <span>{t("hours", { hours: course.estimatedHours })}</span>
-        {lessonCount > 0 ? (
-          <>
-            <span aria-hidden="true">·</span>
-            <span>{t("lessons", { count: lessonCount })}</span>
-          </>
-        ) : null}
-      </div>
-
-      <CourseProgressResume courseSlug={course.slug} contentLocale={contentLocale} />
-
-      <div style={{ marginTop: "28px" }}>
-        {firstLessonSlug ? (
-          <Link
-            href={`/cursos/${course.slug}/${firstLessonSlug}`}
-            locale={contentLocale}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "14px 28px",
-              background: "linear-gradient(135deg, #4edea3, #10b981)",
-              color: "#003824",
-              borderRadius: "10px",
-              fontFamily: "var(--font-headline, Manrope), sans-serif",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-              textDecoration: "none",
-              boxShadow: "0 8px 32px rgba(78,222,163,0.25)",
-            }}
-          >
-            {t("start")}
-            <span className="material-symbols-outlined" style={{ fontSize: "1.25rem" }} aria-hidden="true">
-              arrow_forward
-            </span>
-          </Link>
-        ) : (
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "14px 28px",
-              borderRadius: "10px",
-              border: "1px solid var(--border-variant)",
-              color: "var(--text-dim)",
-              fontFamily: "var(--font-headline, Manrope), sans-serif",
-              fontWeight: 700,
-              fontSize: "0.95rem",
-            }}
-          >
-            {t("soon")}
+        {/* Meta row */}
+        <div
+          style={{
+            marginTop: "26px",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            gap: "12px",
+            fontFamily: "var(--font-headline, Manrope), sans-serif",
+            fontSize: "0.8125rem",
+            fontWeight: 600,
+            color: "var(--text-dim)",
+          }}
+        >
+          <span>
+            {t("levelLabel")}:{" "}
+            <strong style={{ color: "var(--text-muted)", fontWeight: 600 }}>{course.level}</strong>
           </span>
-        )}
+          {lessonCount > 0 ? (
+            <>
+              <span aria-hidden="true" style={{ width: "4px", height: "4px", borderRadius: "50%", background: "var(--border-variant)" }} />
+              <span>{t("lessons", { count: lessonCount })}</span>
+            </>
+          ) : null}
+        </div>
+
+        <CourseHeroActions
+          courseSlug={course.slug}
+          firstLessonSlug={firstLessonSlug}
+          contentLocale={contentLocale}
+        />
       </div>
     </section>
   );

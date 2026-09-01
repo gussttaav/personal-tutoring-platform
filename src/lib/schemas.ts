@@ -237,14 +237,42 @@ export const CourseBlockSchema = z.strictObject({
   summary: z.string().min(1),
 });
 
+// The landing page's conversion copy is per-course, per-locale prose — the same reason
+// `title`/`tagline` live in the manifest and not in messages/*.json. A second course must
+// not inherit dl-nlp's "build a Transformer" FAQ or closing pitch, so the copy is authored
+// here and the components read it off the `Course`, not off a shared namespace.
+export const CoursePrerequisiteItemSchema = z.strictObject({
+  title:  z.string().min(1),
+  detail: z.string().min(1).optional(),
+});
+
+export const CoursePrerequisitesSchema = z.strictObject({
+  intro: z.string().min(1),
+  items: z.array(CoursePrerequisiteItemSchema),
+});
+
+export const CourseCtaSchema = z.strictObject({
+  heading: z.string().min(1),
+  body:    z.string().min(1),
+});
+
+export const CourseFaqItemSchema = z.strictObject({
+  q: z.string().min(1),
+  a: z.string().min(1),
+});
+
 export const CourseManifestSchema = z.strictObject({
   slug:           z.string().min(1),
   title:          z.string().min(1),
   tagline:        z.string().min(1),
   level:          z.string().min(1),
-  estimatedHours: z.number().positive(),
-  prerequisites:  z.array(z.string().min(1)),
+  prerequisites:  CoursePrerequisitesSchema,
+  cta:            CourseCtaSchema,
+  // Empty is allowed — `CourseFaq` renders nothing rather than an empty section.
+  faq:            z.array(CourseFaqItemSchema),
   blocks:         z.array(CourseBlockSchema).min(1),
+  // Optional decorative hero motif; extend the enum (and `HeroMotif`) per new design.
+  heroMotif:      z.enum(["attention-matrix"]).optional(),
 });
 
 export type CourseManifestInput = z.infer<typeof CourseManifestSchema>;

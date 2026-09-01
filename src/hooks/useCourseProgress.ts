@@ -7,8 +7,15 @@
  *
  * How the hook learns whether progress is tracked at all: the API answers a
  * signed-out request with `204 No Content`, so an empty body means "not signed in,
- * don't render progress UI" — no `useSession()`, one round trip, and nothing red in
- * an anonymous reader's console.
+ * don't render progress UI" — one round trip, and nothing red in an anonymous reader's
+ * console.
+ *
+ * It DOES read `useSession()`, but only to make the fetch re-run when the visitor signs in
+ * without a page reload — e.g. the notify card's popup sign-in (`useSubscription`). Without
+ * that, a card that fetched `204` while signed out would stay "untracked" and never show the
+ * resume/progress UI the now-signed-in reader has earned. The signed-in email is a fetch dep,
+ * not a gate: the request still fires immediately on mount (the cookie, not the client session,
+ * is what the server reads), so a normal signed-in page load resolves in one round trip.
  *
  * Plain fetch rather than `@/lib/api-client`, whose `request<T>` calls `res.json()`
  * unconditionally and would throw on exactly that 204.
@@ -25,6 +32,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import type {
   CourseProgressDetail,
   ExerciseAttemptHistory,
@@ -81,6 +89,10 @@ function postJson(url: string, body: unknown): Promise<Response> {
 }
 
 export function useCourseProgress({ courseSlug, lessonSlug }: Options): CourseProgress {
+  const { data: session } = useSession();
+  // Re-fetch trigger, not a gate (see the file header): changes when the visitor signs in/out,
+  // so an in-page sign-in re-runs the effect below instead of leaving a stale 204 snapshot.
+  const signedInEmail = session?.user?.email ?? null;
   const [snapshot, setSnapshot] = useState<ProgressSnapshot>(LOADING_SNAPSHOT);
 
   // One `seen` write per lesson, not per render. A ref (not state) because React
@@ -123,7 +135,7 @@ export function useCourseProgress({ courseSlug, lessonSlug }: Options): CoursePr
     return () => {
       cancelled = true;
     };
-  }, [courseSlug, lessonSlug, seenKey]);
+  }, [courseSlug, lessonSlug, seenKey, signedInEmail]);
 
   const markCompleted = useCallback(
     (slug: string) => {

@@ -334,17 +334,54 @@ export interface CourseBlock {
   summary: string;
 }
 
+/** One prerequisite: a short requirement `title` and an optional `detail` elaboration.
+ *  The landing renders them as a bold line + a muted subtitle. */
+export interface CoursePrerequisiteItem {
+  title:   string;
+  detail?: string;
+}
+
+/** Prerequisites: the one-line framing plus the checklist. `intro` is per-course
+ *  because the claim it makes ("this course is mathematically rigorous") is not. */
+export interface CoursePrerequisites {
+  intro: string;
+  items: CoursePrerequisiteItem[];
+}
+
+/** The closing call to action. `body` is per-course because one course says "no
+ *  account needed to read" and the next may require a sign-in or subscription. */
+export interface CourseCta {
+  heading: string;
+  body:    string;
+}
+
+/** One frequently-asked question. The list is per-course: cost, time commitment
+ *  and "what do I install" all differ from one course to the next. */
+export interface CourseFaqItem {
+  q: string;
+  a: string;
+}
+
+/** Which decorative hero motif the landing page renders behind the title. Per-course
+ *  by design — the attention-matrix suits an NLP/Transformer course; the next course
+ *  picks its own (or none). Add a case to `HeroMotif` when a new key lands here. */
+export type CourseHeroMotif = "attention-matrix";
+
 /** Course-level metadata from `course.<locale>.yml`. `blocks` is ordering +
  *  prose; individual lessons live in the sibling `<locale>/*.mdx` files and are
- *  attached by the registry (not stored in the manifest). */
+ *  attached by the registry (not stored in the manifest). `cta`/`faq` are the
+ *  landing page's conversion copy — per-course prose, never shared. */
 export interface Course {
   slug:           string;
   title:          string;
   tagline:        string;
   level:          string;
-  estimatedHours: number;
-  prerequisites:  string[];
+  prerequisites:  CoursePrerequisites;
+  cta:            CourseCta;
+  faq:            CourseFaqItem[];
   blocks:         CourseBlock[];
+  /** Optional decorative hero motif selected in the manifest; omitted = no motif. */
+  heroMotif?:     CourseHeroMotif;
 }
 
 /** One lesson's metadata (frontmatter), never its prose. `slug` is unique within

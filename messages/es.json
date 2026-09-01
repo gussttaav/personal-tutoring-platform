@@ -744,15 +744,14 @@
   },
   "courses": {
     "catalog": {
-      "overline": "Formación",
-      "heading": "Cursos interactivos",
-      "subtitle": "Aprende construyendo: teoría con rigor, código que se ejecuta en el navegador y ejercicios que se corrigen solos.",
+      "overline": "Cursos",
+      "heading": "Aprende construyendo, <accent>no memorizando</accent>",
+      "subtitle": "Aprende construyendo: teoría con rigor matemático, código que se ejecuta en el navegador y ejercicios que se corrigen de forma automática.",
       "empty": {
         "title": "Próximamente",
         "body": "Aún no hay cursos publicados. Estoy preparando el primero — vuelve pronto."
       },
       "card": {
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "blocks": "{count, plural, =1 {# módulo} other {# módulos}}",
         "cta": "Ver curso",
@@ -762,71 +761,60 @@
     "landing": {
       "backToCatalog": "Todos los cursos",
       "hero": {
-        "outcomeLabel": "Lo que construirás",
-        "outcome": "Un Transformer funcional, implementado desde cero en NumPy — la arquitectura que impulsa los modelos de lenguaje modernos.",
         "levelLabel": "Nivel",
-        "hours": "{hours} h",
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "start": "Empezar el curso",
-        "soon": "Próximamente"
+        "soon": "Próximamente",
+        "viewSyllabus": "Ver el temario"
       },
       "prerequisites": {
         "heading": "Requisitos previos",
-        "intro": "Este curso tiene rigor matemático. Antes de empezar, necesitas:"
+        "kicker": "Antes de empezar"
       },
       "syllabus": {
         "heading": "Temario",
-        "blockMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · {minutes} min",
+        "blockMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · {duration}",
         "minutes": "{minutes} min",
-        "empty": "El temario detallado se publicará muy pronto."
+        "durationHours": "{hours}h {minutes}m",
+        "durationHoursExact": "{hours}h",
+        "empty": "El temario detallado se publicará muy pronto.",
+        "kicker": "Contenido",
+        "summary": "{blocks, plural, =1 {# bloque} other {# bloques}} · {lessons, plural, =1 {# lección} other {# lecciones}} · ~{hours} h de lectura"
       },
       "instructor": {
-        "heading": "Tu instructor"
+        "heading": "Tu instructor",
+        "kicker": "Sobre Gustavo",
+        "role": "Instructor"
       },
       "faq": {
         "heading": "Preguntas frecuentes",
-        "items": [
-          {
-            "q": "¿Cuánto cuesta?",
-            "a": "Nada. El curso es completamente gratuito."
-          },
-          {
-            "q": "¿Qué necesito saber antes de empezar?",
-            "a": "Python intermedio, álgebra lineal (vectores y matrices) y cálculo (derivadas parciales y regla de la cadena). Están detallados en la sección de requisitos previos."
-          },
-          {
-            "q": "¿Cuánto tiempo me llevará?",
-            "a": "Alrededor de 40 horas si haces los ejercicios. Vas a tu ritmo; no hay fechas límite."
-          },
-          {
-            "q": "¿Está en inglés?",
-            "a": "De momento solo en español. La versión en inglés está planificada."
-          },
-          {
-            "q": "¿Qué necesito instalar?",
-            "a": "Nada. Todo — el código en Python incluido — se ejecuta directamente en el navegador."
-          }
-        ]
+        "kicker": "Preguntas frecuentes"
       },
       "cta": {
-        "heading": "¿Listo para construir un Transformer?",
-        "body": "Empieza por la primera lección. No necesitas cuenta para leer.",
         "start": "Empezar el curso",
-        "soon": "Próximamente"
+        "soon": "Próximamente",
+        "overline": "Empieza hoy",
+        "resumeOverline": "Sigue adelante",
+        "resumeHeading": "Continúa donde lo dejaste",
+        "resumeBody": "Retoma el curso justo en tu próxima lección y sigue avanzando a tu ritmo, sin prisa y sin fechas límite.",
+        "resume": "Continuar el curso"
       },
       "languageNotice": {
         "title": "Las lecciones están en español",
         "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante."
+      },
+      "authorNote": {
+        "kicker": "Nota del autor",
+        "body": "Este curso ha sido elaborado con la ayuda de herramientas de inteligencia artificial, que he utilizado para revisar, corregir y mejorar la redacción de mis apuntes y materiales, acelerando enormemente el proceso de elaboración. El contenido, el enfoque y la estructura están guiados por mí, y cada explicación, párrafo y ecuación ha sido revisado cuidadosamente para garantizar su claridad, coherencia y fiabilidad. Muchas lecciones incluyen además explorables interactivos que refuerzan el aprendizaje. Espero que te resulte útil. Y si en algún momento te atascas o quieres avanzar más rápido, <book>reserva una sesión conmigo</book>: estaré encantado de ayudarte."
       }
     },
     "notify": {
-      "heading": "Recibe un aviso",
-      "body": "Un correo cuando publique un curso nuevo, o cuando actualice a fondo uno existente. Nada más.",
-      "cta": "Avísame",
-      "signIn": "Continuar con Google",
-      "signInHint": "Inicia sesión para que sepa a dónde escribirte.",
-      "subscribed": "Estás apuntado. Te aviso por correo.",
-      "unsubscribe": "Dejar de recibirlos",
+      "body": "Envíame una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "cta": "Notifícame",
+      "signIn": "Iniciar sesión",
+      "signInHint": "Inicia sesión para recibir una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "subscribed": "Te notificaré cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "unsubscribe": "No recibir notificaciones",
       "error": "Algo ha fallado. Inténtalo de nuevo.",
       "retry": "Reintentar"
     },

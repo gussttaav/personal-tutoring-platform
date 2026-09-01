@@ -45,7 +45,7 @@ hreflang honest.
 ### English content
 
 `content/courses/dl-nlp/course.en.yml` — the sibling manifest `course.es.yml`'s header always
-anticipated. Prose only; `slug`, block `id`s and `estimatedHours` are locale-invariant and match.
+anticipated. Prose only; `slug` and block `id`s are locale-invariant and match.
 The landing chrome (hero, prerequisites, syllabus headings, FAQ, instructor) was already
 translated in `messages/en.json` — only the manifest was missing.
 

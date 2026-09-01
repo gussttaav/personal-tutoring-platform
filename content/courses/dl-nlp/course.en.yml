@@ -1,7 +1,7 @@
 # COURSE-P6-03 — Course manifest (English).
-# Sibling of course.es.yml, exactly as its header anticipated: `slug`, block `id`s and
-# `estimatedHours` are locale-invariant and MUST match the Spanish manifest; only the
-# prose (title, tagline, level, prerequisites, block titles/summaries) is translated.
+# Sibling of course.es.yml, exactly as its header anticipated: `slug` and block `id`s
+# are locale-invariant and MUST match the Spanish manifest; only the prose (title,
+# tagline, level, prerequisites, cta, faq, block titles/summaries) is translated.
 #
 # The lessons themselves are NOT translated yet — there is no `en/` directory. That is a
 # supported state: `src/lib/courses/catalog-view.ts` resolves the manifest from the
@@ -13,11 +13,30 @@ slug: dl-nlp
 title: "Deep Learning for NLP: from the Perceptron to the Transformer"
 tagline: "Build the architecture behind modern language models from scratch, with full mathematical rigour."
 level: intermediate
-estimatedHours: 40
+# Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
+# Purely presentational; a course may omit it or pick another design.
+heroMotif: attention-matrix
 prerequisites:
-  - "Intermediate Python (functions, classes, basic NumPy)"
-  - "Linear algebra: vectors, matrices, matrix multiplication"
-  - "Calculus: partial derivatives and the chain rule"
+  intro: "This course is mathematically rigorous. Before you start, you'll need:"
+  items:
+    - title: "Intermediate Python"
+      detail: "Functions, classes, basic NumPy."
+    - title: "Linear algebra"
+      detail: "Vectors, matrices, matrix multiplication."
+    - title: "Calculus"
+      detail: "Partial derivatives and the chain rule."
+cta:
+  heading: "Ready to build a Transformer?"
+  body: "Start with the first lesson. You don't need an account to read."
+faq:
+  - q: "How much does it cost?"
+    a: "Nothing. The course is completely free."
+  - q: "What do I need to know before starting?"
+    a: "Intermediate Python, linear algebra (vectors and matrices) and calculus (partial derivatives and the chain rule). They're listed in the prerequisites section."
+  - q: "How long will it take?"
+    a: "Around 40 hours if you do the exercises. Go at your own pace; there are no deadlines."
+  - q: "What do I need to install?"
+    a: "Nothing. Everything — the Python code included — runs directly in your browser."
 blocks:
   - id: 1
     title: "NLP Fundamentals"

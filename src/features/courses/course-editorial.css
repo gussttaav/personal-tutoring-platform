@@ -1,0 +1,40 @@
+/*
+ * COURSE landing-refinements — shared editorial atoms.
+ *
+ * The display serif, the section kicker, and the hairline rule that define the course
+ * pages' editorial voice. Extracted from the landing route's `landing.css` so BOTH the
+ * landing (`/cursos/[courseSlug]`) and the catalog (`/cursos`) can render in the same
+ * vocabulary. Import from each route's page; keep route-specific rules in their own files
+ * (landing.css, catalog/catalog.css). Keyboard focus uses the global :focus-visible ring
+ * (src/app/globals.css).
+ */
+
+/* Editorial display serif (Newsreader, wired in src/app/[locale]/layout.tsx as --font-serif). */
+.lp-serif {
+  font-family: var(--font-serif, Georgia, "Times New Roman", serif);
+}
+
+/* Section kicker overline — small tracked emerald caps. */
+.lp-kicker {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+/* Section header: kicker + a hairline that runs to the edge. */
+.lp-section-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.lp-rule {
+  height: 1px;
+  flex: 1;
+  background: var(--border-variant);
+  opacity: 0.5;
+}

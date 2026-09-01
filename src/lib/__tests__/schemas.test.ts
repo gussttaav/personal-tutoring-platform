@@ -21,13 +21,18 @@ describe("CourseManifestSchema", () => {
     title: "Curso",
     tagline: "...",
     level: "intermedio",
-    estimatedHours: 40,
-    prerequisites: ["Python"],
+    prerequisites: { intro: "Necesitas:", items: [{ title: "Python", detail: "básico" }] },
+    cta: { heading: "¿Listo?", body: "Empieza ya." },
+    faq: [{ q: "¿Cuánto cuesta?", a: "Nada." }],
     blocks: [{ id: 1, title: "Bloque 1", summary: "..." }],
   };
 
   it("accepts a well-formed manifest", () => {
     expect(CourseManifestSchema.parse(valid)).toEqual(valid);
+  });
+
+  it("accepts an empty faq array", () => {
+    expect(CourseManifestSchema.parse({ ...valid, faq: [] }).faq).toEqual([]);
   });
 
   it("rejects an unknown key (strict)", () => {
@@ -38,10 +43,6 @@ describe("CourseManifestSchema", () => {
     expect(() => CourseManifestSchema.parse({ ...valid, blocks: [] })).toThrow();
   });
 
-  it("rejects a non-positive estimatedHours", () => {
-    expect(() => CourseManifestSchema.parse({ ...valid, estimatedHours: 0 })).toThrow();
-  });
-
   it("rejects an unknown key inside a block (strict, nested)", () => {
     expect(() =>
       CourseManifestSchema.parse({
@@ -49,6 +50,34 @@ describe("CourseManifestSchema", () => {
         blocks: [{ id: 1, title: "B", summary: "...", extra: true }],
       }),
     ).toThrow();
+  });
+
+  it("rejects an unknown key inside prerequisites/cta (strict, nested)", () => {
+    expect(() =>
+      CourseManifestSchema.parse({ ...valid, prerequisites: { intro: "x", items: [], extra: 1 } }),
+    ).toThrow();
+    expect(() =>
+      CourseManifestSchema.parse({
+        ...valid,
+        prerequisites: { intro: "x", items: [{ title: "y", extra: true }] },
+      }),
+    ).toThrow();
+    expect(() =>
+      CourseManifestSchema.parse({ ...valid, cta: { heading: "x", body: "y", extra: true } }),
+    ).toThrow();
+  });
+
+  it("accepts an optional heroMotif and rejects an unknown one", () => {
+    expect(
+      CourseManifestSchema.parse({ ...valid, heroMotif: "attention-matrix" }).heroMotif,
+    ).toBe("attention-matrix");
+    expect(CourseManifestSchema.parse(valid).heroMotif).toBeUndefined();
+    expect(() => CourseManifestSchema.parse({ ...valid, heroMotif: "spirals" })).toThrow();
+  });
+
+  it("rejects a prose field flattened to a bare string (shape changed in landing-refinements)", () => {
+    expect(() => CourseManifestSchema.parse({ ...valid, prerequisites: ["Python"] })).toThrow();
+    expect(() => CourseManifestSchema.parse({ ...valid, cta: "Empieza ya." })).toThrow();
   });
 });
 

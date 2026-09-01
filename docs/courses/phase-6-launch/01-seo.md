@@ -60,7 +60,7 @@ exists. Drafts and gated content must be absent. Keep the existing three static 
 **JSON-LD.**
 
 - Course landing → `Course`: name, description, provider (reuse the existing `Person`/
-  organisation identity), `inLanguage`, `educationalLevel`, `timeRequired`,
+  organisation identity), `inLanguage`, `educationalLevel`,
   `coursePrerequisites`, `isAccessibleForFree: true`, and `hasCourseInstance`.
 - Lesson → `LearningResource`: name, description, `isPartOf` the course, `timeRequired`,
   `learningResourceType`, `inLanguage`.
