@@ -1,13 +1,16 @@
 /*
- * COURSE landing-refinements — decorative hero motif.
+ * COURSE landing-refinements — decorative course motif.
  *
- * Purely presentational SVG rendered (faintly) behind the hero title, selected per course
- * by the manifest's `heroMotif` field (see CourseHeroMotif in src/domain/types.ts).
- * `attention-matrix` evokes a self-attention heatmap — apt for an NLP/Transformer course;
- * a future course picks its own key or omits the field entirely. `aria-hidden`: it carries
- * no meaning. An absent or unknown key renders nothing, so a motif-less course costs zero.
+ * Purely presentational SVG selected per course by the manifest's `heroMotif` field (see
+ * CourseHeroMotif in src/domain/types.ts). `attention-matrix` evokes a self-attention heatmap —
+ * apt for an NLP/Transformer course; a future course picks its own key or omits the field
+ * entirely. `aria-hidden`: it carries no meaning. An absent or unknown key renders nothing, so a
+ * motif-less course costs zero.
  *
- * The caller positions and fades this; here it is just the raw grid at its natural size.
+ * Shared: the landing hero renders it large and faint behind the title; the catalog card renders
+ * it small in the corner (and animates its opacity on hover). `size`/`opacity` parameterize those
+ * two uses — the caller still positions it. Lives in `features/courses/` (not `landing/`) because
+ * both surfaces import it.
  */
 
 import type { CourseHeroMotif } from "@/domain/types";
@@ -30,14 +33,25 @@ const GAP = 3;
 const PITCH = CELL + GAP;
 const SIZE = 8 * CELL + 7 * GAP; // 141
 
-export default function HeroMotif({ kind }: { kind?: CourseHeroMotif }) {
+export default function HeroMotif({
+  kind,
+  size = 360,
+  opacity = 1,
+}: {
+  kind?: CourseHeroMotif;
+  /** Rendered width/height in px. Landing hero uses 360; the catalog card ~150. */
+  size?: number;
+  /** SVG opacity. The landing hero bakes its fade here; the card leaves it 1 and fades via CSS. */
+  opacity?: number;
+}) {
   if (kind !== "attention-matrix") return null;
 
   return (
     <svg
       viewBox={`0 0 ${SIZE} ${SIZE}`}
-      width="360"
-      height="360"
+      width={size}
+      height={size}
+      opacity={opacity}
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >

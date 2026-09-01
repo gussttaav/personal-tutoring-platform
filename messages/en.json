@@ -744,9 +744,9 @@
   },
   "courses": {
     "catalog": {
-      "overline": "Learn",
-      "heading": "Interactive courses",
-      "subtitle": "Learn by building: rigorous theory, code that runs in your browser and exercises that grade themselves.",
+      "overline": "Courses",
+      "heading": "Learn by building, <accent>not memorizing</accent>",
+      "subtitle": "Learn by building: rigorous mathematical theory, code that runs in the browser, and automatically graded exercises.",
       "empty": {
         "title": "Coming soon",
         "body": "No courses published yet. The first one is on its way — check back soon."
@@ -809,13 +809,12 @@
       }
     },
     "notify": {
-      "heading": "Get notified",
-      "body": "One email when a new course goes live, or when an existing one gets a major update — including when this course is translated into English.",
+      "body": "Get notified when I publish a new course or update one you've started",
       "cta": "Notify me",
-      "signIn": "Continue with Google",
-      "signInHint": "Sign in so I know where to write.",
-      "subscribed": "You're on the list. I'll email you.",
-      "unsubscribe": "Stop these emails",
+      "signIn": "Sign in",
+      "signInHint": "Sign in to get notified when I publish a new course or update one you've started",
+      "subscribed": "I'll let you know when I publish a new course or update one you've started",
+      "unsubscribe": "Stop notifications",
       "error": "Something went wrong. Try again.",
       "retry": "Retry"
     },

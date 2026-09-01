@@ -19,6 +19,7 @@
  * sitemap/JSON-LD land in P6-01. Only the blog keeps the ComingSoonModal (P6-03).
  */
 
+import "@/features/courses/course-editorial.css";
 import "./landing.css";
 
 import type { Metadata } from "next";

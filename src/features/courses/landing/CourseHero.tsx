@@ -22,7 +22,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Course } from "@/domain/types";
 import CourseHeroActions from "./CourseHeroActions";
-import HeroMotif from "./HeroMotif";
+import HeroMotif from "@/features/courses/HeroMotif";
 
 interface CourseHeroProps {
   course: Course;
@@ -55,11 +55,10 @@ export default async function CourseHero({
           position: "absolute",
           top: "20px",
           right: "0",
-          opacity: 0.08,
           pointerEvents: "none",
         }}
       >
-        <HeroMotif kind={course.heroMotif} />
+        <HeroMotif kind={course.heroMotif} size={360} opacity={0.08} />
       </div>
 
       <div style={{ position: "relative", maxWidth: "680px" }}>

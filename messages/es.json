@@ -744,9 +744,9 @@
   },
   "courses": {
     "catalog": {
-      "overline": "Formación",
-      "heading": "Cursos interactivos",
-      "subtitle": "Aprende construyendo: teoría con rigor, código que se ejecuta en el navegador y ejercicios que se corrigen solos.",
+      "overline": "Cursos",
+      "heading": "Aprende construyendo, <accent>no memorizando</accent>",
+      "subtitle": "Aprende construyendo: teoría con rigor matemático, código que se ejecuta en el navegador y ejercicios que se corrigen de forma automática.",
       "empty": {
         "title": "Próximamente",
         "body": "Aún no hay cursos publicados. Estoy preparando el primero — vuelve pronto."
@@ -809,13 +809,12 @@
       }
     },
     "notify": {
-      "heading": "Recibe un aviso",
-      "body": "Un correo cuando publique un curso nuevo, o cuando actualice a fondo uno existente. Nada más.",
-      "cta": "Avísame",
-      "signIn": "Continuar con Google",
-      "signInHint": "Inicia sesión para que sepa a dónde escribirte.",
-      "subscribed": "Estás apuntado. Te aviso por correo.",
-      "unsubscribe": "Dejar de recibirlos",
+      "body": "Envíame una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "cta": "Notifícame",
+      "signIn": "Iniciar sesión",
+      "signInHint": "Inicia sesión para recibir una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "subscribed": "Te notificaré cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "unsubscribe": "No recibir notificaciones",
       "error": "Algo ha fallado. Inténtalo de nuevo.",
       "retry": "Reintentar"
     },

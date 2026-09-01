@@ -13,6 +13,9 @@
  * Navbar/Footer link here now; only the blog keeps the ComingSoonModal.
  */
 
+import "@/features/courses/course-editorial.css";
+import "@/features/courses/catalog/catalog.css";
+
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
@@ -56,6 +59,7 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
     blockCount:  new Set(lessons.map((l) => l.block)).size,
   }));
 
+
   return (
     <>
       <Navbar />
@@ -64,37 +68,35 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
           style={{
             maxWidth: 1100,
             margin: "0 auto",
-            padding: "48px 20px 80px",
+            // Top padding clears the fixed 70px navbar so the kicker (the header's first element)
+            // isn't hidden under its blur — the old 48px left the overline tucked behind it.
+            padding: "96px 20px 80px",
           }}
         >
-          {/* Header */}
-          <header style={{ marginBottom: "48px" }}>
-            <p
-              style={{
-                fontSize: "11px",
-                fontWeight: 600,
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--green)",
-                margin: "0 0 12px",
-              }}
-            >
-              {t("overline")}
-            </p>
+          {/* Header — kicker + hairline rule + serif display, matching the landing section heads. */}
+          <header style={{ marginBottom: "44px" }}>
+            <div className="lp-section-head">
+              <span className="lp-kicker">{t("overline")}</span>
+              <span className="lp-rule" />
+            </div>
             <h1
+              className="lp-serif"
               style={{
-                fontFamily: "var(--font-headline, Manrope), sans-serif",
-                fontSize: "clamp(2rem, 5vw, 3rem)",
-                fontWeight: 800,
+                fontSize: "clamp(2rem, 5vw, 3.25rem)",
+                fontWeight: 500,
                 letterSpacing: "-0.02em",
-                lineHeight: 1.1,
+                lineHeight: 1.08,
                 color: "var(--text)",
-                margin: "0 0 16px",
+                margin: "0 0 18px",
               }}
             >
-              {t("heading")}
+              {t.rich("heading", {
+                accent: (chunks) => (
+                  <span style={{ fontStyle: "italic", color: "var(--green)" }}>{chunks}</span>
+                ),
+              })}
             </h1>
-            <p style={{ maxWidth: "620px", fontSize: "1.0625rem", lineHeight: 1.6, color: "var(--text-muted)", margin: 0 }}>
+            <p style={{ maxWidth: "600px", fontSize: "1.0625rem", lineHeight: 1.6, color: "var(--text-muted)", margin: 0 }}>
               {t("subtitle")}
             </p>
           </header>
@@ -104,16 +106,17 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
               style={{
                 padding: "48px 32px",
                 textAlign: "center",
-                background: "var(--surface-container)",
+                background: "var(--surface-low)",
                 border: "1px solid var(--border-variant)",
-                borderRadius: "16px",
+                borderRadius: "20px",
               }}
             >
               <h2
+                className="lp-serif"
                 style={{
-                  fontFamily: "var(--font-headline, Manrope), sans-serif",
-                  fontSize: "1.5rem",
-                  fontWeight: 700,
+                  fontSize: "1.75rem",
+                  fontWeight: 500,
+                  letterSpacing: "-0.01em",
                   color: "var(--text)",
                   margin: "0 0 10px",
                 }}
@@ -142,18 +145,6 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
           {/* COURSE-P6-02 — opt-in for new courses and major updates. */}
           <CourseNotifyCard />
         </div>
-
-        <style>{`
-          .courses-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 24px;
-          }
-          .course-card:hover {
-            border-color: var(--green-mid) !important;
-            transform: translateY(-2px);
-          }
-        `}</style>
       </main>
       <Footer />
     </>

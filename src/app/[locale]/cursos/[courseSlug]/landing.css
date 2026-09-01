@@ -2,42 +2,14 @@
  * COURSE-P1-03 / landing-refinements — course landing page styles.
  *
  * The landing Server Components style themselves inline; this file holds what an inline
- * style cannot express: the editorial redesign's shared atoms (the display serif, the
- * section kicker, the hairline rule), the responsive hero-actions layout (resume card +
- * secondary button — a row on desktop, stacked on phones), and the :hover fill on the
- * syllabus lesson rows. Segment-scoped: imported by the landing route, never the shared
- * layout. Keyboard focus already gets the global :focus-visible ring (src/app/globals.css).
+ * style cannot express and is landing-only: the responsive hero-actions layout (resume card +
+ * secondary button — a row on desktop, stacked on phones), the prerequisites grid, the social
+ * icon buttons, and the :hover fill on the syllabus lesson rows. The editorial atoms it used to
+ * hold (.lp-serif / .lp-kicker / .lp-section-head / .lp-rule) now live in the shared
+ * `features/courses/course-editorial.css`, since the catalog renders in the same voice.
+ * Segment-scoped: imported by the landing route, never the shared layout. Keyboard focus already
+ * gets the global :focus-visible ring (src/app/globals.css).
  */
-
-/* Editorial display serif (Newsreader, wired in src/app/[locale]/layout.tsx as --font-serif). */
-.lp-serif {
-  font-family: var(--font-serif, Georgia, "Times New Roman", serif);
-}
-
-/* Section kicker overline — small tracked emerald caps. */
-.lp-kicker {
-  font-family: var(--font-headline, Manrope), sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--green);
-}
-
-/* Section header: kicker + a hairline that runs to the edge. */
-.lp-section-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 22px;
-}
-
-.lp-rule {
-  height: 1px;
-  flex: 1;
-  background: var(--border-variant);
-  opacity: 0.5;
-}
 
 /*
  * Hero call-to-action row. In the returning state the primary slot holds the wide resume
