@@ -18,10 +18,21 @@
  * stop, the arrow keys walk the boxes in drawing order (encoder bottom-to-top, then
  * decoder), and a pointer can hit any box directly. All geometry comes from the maths
  * module — this file draws what it is given and computes nothing. Local state only.
+ *
+ * COURSE-P11-02 — the fifteen box labels, their descriptions and the lesson reference
+ * are translated by COMPONENT ID (`boxes.<id>.label` / `.description`) and by BLOCK+LESSON
+ * (`topics.b5l4`), because both are stable keys the maths module already owns. A label is
+ * ONE message holding its line break, not one message per line: an empty second line is a
+ * blank message value, which `i18n-parity.test.ts` bans as a missing key in disguise. The module keeps its Spanish strings: they are what the layout test measures
+ * against `MAX_LABEL_CHARS`, and the corpora test pins the Spanish messages to them so
+ * the two cannot drift. `lessonReference` is reproduced here as `reference` for the same
+ * reason — the sentence it builds («la lección 4 de este bloque, sobre …») has a shape
+ * that changes with the language, so it is a message, not a template literal.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import {
@@ -33,9 +44,9 @@ import {
   centreY,
   crossAttentionPath,
   flowArrows,
-  lessonReference,
   residualPath,
   type ArchComponent,
+  type LessonRef,
 } from "../math/transformer-architecture";
 import { WidgetButton } from "../primitives/WidgetButton";
 
@@ -43,8 +54,26 @@ const DEFAULT_ID = "atencion-encoder";
 const ARROW = "url(#ta-arrow)";
 
 export default function TransformerArchitecture() {
+  const t = useTranslations("courses.widgets.transformer-architecture");
   const [selectedId, setSelectedId] = useState(DEFAULT_ID);
   const [marking, setMarking] = useState(false);
+
+  /** A box's label, as the one or two lines the SVG draws (it does not wrap text). */
+  const labelOf = (id: string): string[] => t(`boxes.${id}.label`).split("\n");
+
+  /* How the course's prose names a lesson: never a bare ordinal (AUTHORING.md §2), and
+     «del bloque anterior» rather than «del bloque 4» when it is the preceding one. */
+  const reference = (ref: LessonRef): string =>
+    t("lessonRef", {
+      lesson: ref.lesson,
+      where:
+        ref.block === 5
+          ? t("whereThisBlock")
+          : ref.block === 4
+            ? t("wherePreviousBlock")
+            : t("whereBlock", { block: ref.block }),
+      topic: t(`topics.b${ref.block}l${ref.lesson}`),
+    });
 
   const index = TRANSFORMER_COMPONENTS.findIndex((c) => c.id === selectedId);
   const selected = TRANSFORMER_COMPONENTS[index] ?? TRANSFORMER_COMPONENTS[0];
@@ -64,7 +93,7 @@ export default function TransformerArchitecture() {
     <div
       tabIndex={0}
       role="group"
-      aria-label="Arquitectura del Transformer; usa las flechas para recorrer las cajas del diagrama"
+      aria-label={t("groupAria")}
       onKeyDown={(e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowLeft") {
           e.preventDefault();
@@ -88,14 +117,14 @@ export default function TransformerArchitecture() {
           aria-pressed={marking}
           onClick={() => setMarking((m) => !m)}
         >
-          Marcar lo que mezcla posiciones
+          {t("markButton")}
         </WidgetButton>
       </div>
 
       <svg
         viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}
         role="img"
-        aria-label={`Diagrama del Transformer: a la izquierda el encoder, con embedding de entrada, codificacion posicional, auto-atencion multi-head, un perceptron por posiciones y dos cajas de suma y layer norm, repetido N veces; a la derecha el decoder, con auto-atencion enmascarada, atencion encoder-decoder que recibe las claves y los valores del encoder, un perceptron por posiciones, tres cajas de suma y layer norm, y una proyeccion lineal con softmax al final. De las quince cajas, solo las tres de atencion mezclan posiciones. Caja seleccionada: ${selected.label.join(" ")}.`}
+        aria-label={t("diagramAria", { selected: labelOf(selected.id).join(" ") })}
         style={{ display: "block", width: "100%", height: "auto", maxWidth: 460, margin: "0 auto" }}
       >
         <defs>
@@ -181,6 +210,7 @@ export default function TransformerArchitecture() {
           <ComponentBox
             key={c.id}
             component={c}
+            label={labelOf(c.id)}
             selected={c.id === selected.id}
             marking={marking}
             onPick={() => setSelectedId(c.id)}
@@ -189,10 +219,10 @@ export default function TransformerArchitecture() {
 
         {/* What goes in at the bottom of each column. */}
         <text x={centreX(TRANSFORMER_COMPONENTS[0].box)} y={522} textAnchor="middle" fontSize={10} fill="var(--text-dim)">
-          la frase de entrada
+          {t("inputSentence")}
         </text>
         <text x={centreX(TRANSFORMER_COMPONENTS[6].box)} y={522} textAnchor="middle" fontSize={10} fill="var(--text-dim)">
-          lo ya escrito
+          {t("alreadyWritten")}
         </text>
       </svg>
 
@@ -206,7 +236,7 @@ export default function TransformerArchitecture() {
         }}
       >
         <p style={{ margin: 0, fontSize: "0.9rem", fontWeight: 600, color: "var(--text)" }}>
-          {selected.label.join(" ")}{" "}
+          {labelOf(selected.id).join(" ")}{" "}
           <span
             style={{
               fontWeight: 500,
@@ -214,7 +244,7 @@ export default function TransformerArchitecture() {
               color: selected.mixesPositions ? "var(--green)" : "var(--text-dim)",
             }}
           >
-            · {selected.mixesPositions ? "mezcla posiciones" : "una posición cada vez"}
+            · {selected.mixesPositions ? t("mixes") : t("onePosition")}
           </span>
         </p>
         <p
@@ -225,7 +255,7 @@ export default function TransformerArchitecture() {
             lineHeight: 1.6,
           }}
         >
-          {selected.description}
+          {t(`boxes.${selected.id}.description`)}
         </p>
         <p
           style={{
@@ -235,10 +265,10 @@ export default function TransformerArchitecture() {
             lineHeight: 1.6,
           }}
         >
-          Se construye en {lessonReference(selected.lesson)}.
-          {selected.alsoLessons.length > 0 ? (
-            <> Por dentro lleva {selected.alsoLessons.map((r) => lessonReference(r)).join(", y ")}.</>
-          ) : null}
+          {t("builtIn", { ref: reference(selected.lesson) })}
+          {selected.alsoLessons.length > 0
+            ? t("alsoIn", { refs: selected.alsoLessons.map(reference).join(t("refJoin")) })
+            : null}
         </p>
       </div>
     </div>
@@ -247,16 +277,19 @@ export default function TransformerArchitecture() {
 
 function ComponentBox({
   component,
+  label,
   selected,
   marking,
   onPick,
 }: {
   component: ArchComponent;
+  /** Already-translated label lines — the SVG does not wrap text, so one <text> each. */
+  label: string[];
   selected: boolean;
   marking: boolean;
   onPick: () => void;
 }) {
-  const { box, label, mixesPositions } = component;
+  const { box, mixesPositions } = component;
   // While marking, the three attention boxes take the accent and the rest step back —
   // that contrast IS lesson 1's claim, so it outranks the selection highlight.
   const lit = marking && mixesPositions;

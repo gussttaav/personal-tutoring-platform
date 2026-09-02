@@ -19,11 +19,19 @@
  * The vectors and the rules are lesson 2's and they are mine, set by hand for the course
  * — and so is d_k = 1 per head, which is what makes a head readable and is NOT what a
  * real layer uses. The footnote says both.
+ *
+ * COURSE-P11-02 — the copy is `courses.widgets.multi-head-view`. The four heads ARE the
+ * four rules of `math/self-attention`, so their names are translated by INDEX
+ * (`heads.0.short`, `heads.0.name`, …) and the corpora test pins the Spanish values to
+ * `HEADS`, which is what keeps the two from drifting apart. The presets stay Spanish for
+ * the same reason `self-attention-heatmap`'s do — see SPANISH_BOUND_CORPORA in
+ * ../corpora.ts.
  */
 
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { rowSums } from "../math/attention-alignment";
 import {
@@ -51,10 +59,16 @@ const shade = (w: number) =>
 const fmt2 = (v: number) => v.toFixed(2);
 const short = (token: string) => (token.length > 6 ? `${token.slice(0, 5)}·` : token);
 
+/** The bold wrapper the panel's intro puts around the selected token. */
+const BOLD_TOKEN = (chunks: ReactNode) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>;
+
 /** `H` is the single-head view: the same four rules through one softmax. */
 const SINGLE = H;
 
 export default function MultiHeadView() {
+  // `t` is the token count in this file, so the translator is `tr`.
+  const tr = useTranslations("courses.widgets.multi-head-view");
+  const tc = useTranslations("courses.widgets.common");
   const [text, setText] = useState<string>(MH_PRESETS[3]);
   // «concordancia de número», the head whose map has something to say in most rows.
   const [view, setView] = useState(1);
@@ -85,19 +99,19 @@ export default function MultiHeadView() {
   /** Where one map sends the selected row's weight, ties and silences included. */
   const verdict = (weights: number[][]) => {
     const r = weights[step];
-    if (isFlatRow(r)) return "reparte por igual entre todas — esta regla no dice nada de esta posición";
+    if (isFlatRow(r)) return tr("verdictFlat");
     const { weight, tied } = rowPeak(r);
     const names = tied.map((j) => tokens[j]).join(", ");
     return tied.length > 1
-      ? `empate entre ${names}, a ${fmt2(weight)} cada una`
-      : `${names}, con ${fmt2(weight)}`;
+      ? tr("verdictTie", { names, weight: fmt2(weight) })
+      : tr("verdictPeak", { names, weight: fmt2(weight) });
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem", width: "100%" }}>
       <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
         <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-          Escribe una frase (se queda en los primeros {MAX_TOKENS} tokens)
+          {tr("inputLabel", { max: MAX_TOKENS })}
         </span>
         <input
           type="text"
@@ -127,7 +141,7 @@ export default function MultiHeadView() {
 
       <div
         role="group"
-        aria-label="Qué mapa se dibuja"
+        aria-label={tr("headsAria")}
         style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}
       >
         {HEADS.map((head, r) => (
@@ -137,7 +151,7 @@ export default function MultiHeadView() {
             aria-pressed={view === r}
             onClick={() => setView(r)}
           >
-            {r + 1}. {head.short}
+            {r + 1}. {tr(`heads.${r}.short`)}
           </WidgetButton>
         ))}
         <WidgetButton
@@ -145,20 +159,18 @@ export default function MultiHeadView() {
           aria-pressed={view === SINGLE}
           onClick={() => setView(SINGLE)}
         >
-          una sola cabeza
+          {tr("singleHead")}
         </WidgetButton>
       </div>
 
       <p style={{ fontSize: "0.72rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
         {view === SINGLE
-          ? "Las cuatro reglas sumadas antes de un único softmax: una fila por posición y nada más."
-          : `Cabeza ${view + 1} de ${H}: ${HEADS[view].name}.`}
+          ? tr("singleHeadNote")
+          : tr("headNote", { n: view + 1, total: H, name: tr(`heads.${view}.name`) })}
       </p>
 
       {t === 0 ? (
-        <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0 }}>
-          Escribe algo y aparecerán las rejillas.
-        </p>
+        <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0 }}>{tr("empty")}</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <div style={{ minWidth: gridWidth(CELL_MIN), maxWidth: gridWidth(CELL_MAX) }}>
@@ -178,12 +190,12 @@ export default function MultiHeadView() {
                   {short(token)}
                 </span>
               ))}
-              <span style={{ textAlign: "center" }}>suma</span>
+              <span style={{ textAlign: "center" }}>{tc("sum")}</span>
             </div>
 
             <div
               role="group"
-              aria-label="Elige una posición para compararla en todas las cabezas"
+              aria-label={tr("rowsAria")}
               style={{ display: "flex", flexDirection: "column", gap: GAP }}
             >
               {tokens.map((token, i) => {
@@ -295,8 +307,11 @@ export default function MultiHeadView() {
           }}
         >
           <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", margin: 0 }}>
-            A qué tira la posición {step + 1},{" "}
-            <strong style={{ color: "var(--text)" }}>{tokens[step]}</strong>, en cada mapa:
+            {tr.rich("panelIntro", {
+              pos: step + 1,
+              token: tokens[step],
+              tok: BOLD_TOKEN,
+            })}
           </p>
           {heads.map((head, r) => (
             <p
@@ -309,7 +324,7 @@ export default function MultiHeadView() {
               }}
             >
               <strong style={{ color: r === view ? "var(--green)" : "var(--text-muted)" }}>
-                {r + 1}. {head.short}
+                {r + 1}. {tr(`heads.${r}.short`)}
               </strong>{" "}
               → {verdict(head.weights)}
             </p>
@@ -327,7 +342,7 @@ export default function MultiHeadView() {
             <strong
               style={{ color: view === SINGLE ? "var(--green)" : "var(--text-muted)" }}
             >
-              una sola cabeza
+              {tr("singleHead")}
             </strong>{" "}
             → {verdict(single.weights)}
           </p>
@@ -335,14 +350,9 @@ export default function MultiHeadView() {
       ) : null}
 
       <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-        Las {H} cabezas son las {H} reglas del léxico ({LEXICON_WORDS.length} palabras) de la lección
-        anterior, una por cabeza, y las he escrito yo a mano para el curso. Por eso aquí cada cabeza
-        compara en {D_K_HEAD} coordenada: es lo que hace legible una regla, no lo que usa una capa de
-        verdad, que reparte entre sus cabezas la anchura del modelo.
-        {unknown.length > 0
-          ? ` Fuera del léxico: ${unknown.join(", ")} — su vector sale de un hash de sus letras, así que esa fila no dice nada.`
-          : ""}
-        {truncated ? ` La frase se ha cortado en ${MAX_TOKENS} tokens.` : ""}
+        {tr("footnote", { h: H, lexicon: LEXICON_WORDS.length, dk: D_K_HEAD })}
+        {unknown.length > 0 ? tr("footnoteUnknown", { words: unknown.join(", ") }) : ""}
+        {truncated ? tr("footnoteTruncated", { max: MAX_TOKENS }) : ""}
       </p>
     </div>
   );

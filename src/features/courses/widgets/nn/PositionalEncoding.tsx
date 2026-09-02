@@ -23,10 +23,15 @@
  * those are distributions and never go negative. Same reasoning as `Heatmap` — a
  * continuous field cannot come from the discrete CSS tokens — and everything around it
  * (labels, borders, the panel) still reads the tokens.
+ *
+ * COURSE-P11-02 — the copy is `courses.widgets.positional-encoding`. Nothing here has a
+ * corpus: the field is the paper's formula, so the only locale-dependent thing besides
+ * the words is the thousands grouping, which stays the course's narrow space in both.
  */
 
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import {
@@ -66,14 +71,21 @@ function shade(v: number): string {
 
 const fmt = (v: number, places = 2) => v.toFixed(places);
 
-/** Thousands take a space in this course's prose, not the Spanish locale's full stop. */
-const grouped = (v: number) => Math.round(v).toLocaleString("es-ES").replace(/\./g, "\u202f");
-
-/** Wavelengths run from 6.28 to 35 000, so the short ones keep their decimals. */
-const positions = (cycle: number) =>
-  cycle < 100 ? `${fmt(cycle, 2)} posiciones` : `${grouped(cycle)} posiciones`;
-
 export default function PositionalEncoding() {
+  const t = useTranslations("courses.widgets.positional-encoding");
+  const locale = useLocale();
+
+  /* Thousands take a narrow space in this course's prose — not the Spanish locale's full
+     stop and not the English comma, so both group separators are replaced by it. */
+  const grouped = (v: number) =>
+    Math.round(v)
+      .toLocaleString(locale === "es" ? "es-ES" : "en-US")
+      .replace(/[.,]/g, "\u202f");
+
+  /** Wavelengths run from 6.28 to 35 000, so the short ones keep their decimals. */
+  const positions = (cycle: number) =>
+    t("positionsUnit", { count: cycle < 100 ? fmt(cycle, 2) : grouped(cycle) });
+
   const [pos, setPos] = useState(4);
   const [col, setCol] = useState(0);
   const [k, setK] = useState(3);
@@ -92,7 +104,7 @@ export default function PositionalEncoding() {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem", width: "100%" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         <Slider
-          label="posición en la frase"
+          label={t("position")}
           value={pos}
           min={0}
           max={T - 1}
@@ -101,16 +113,16 @@ export default function PositionalEncoding() {
           format={(v) => `${v}`}
         />
         <Slider
-          label="coordenada de d_model"
+          label={t("coordinate")}
           value={col}
           min={0}
           max={D - 1}
           step={1}
           onChange={setCol}
-          format={(v) => `${v} — ${isSine(v) ? "seno" : "coseno"} del par ${pairOf(v)}`}
+          format={(v) => t("coordinateValue", { v, fn: isSine(v) ? "sine" : "cosine", pair: pairOf(v) })}
         />
         <Slider
-          label="desplazamiento k"
+          label={t("shift")}
           value={k}
           min={1}
           max={MAX_SHIFT}
@@ -122,10 +134,10 @@ export default function PositionalEncoding() {
 
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
         <WidgetButton onClick={() => setCol(0)} active={col === 0}>
-          el par más rápido
+          {t("fastestPair")}
         </WidgetButton>
         <WidgetButton onClick={() => setCol(D - 2)} active={col === D - 2}>
-          el par más lento
+          {t("slowestPair")}
         </WidgetButton>
         <WidgetButton
           onClick={() => {
@@ -134,7 +146,7 @@ export default function PositionalEncoding() {
             setK(3);
           }}
         >
-          reiniciar
+          {t("restart")}
         </WidgetButton>
       </div>
 
@@ -143,7 +155,7 @@ export default function PositionalEncoding() {
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           width="100%"
           role="img"
-          aria-label={`Codificación posicional: ${T} posiciones en filas por ${D} coordenadas en columnas. Las columnas de la izquierda oscilan cada pocas posiciones y las de la derecha son casi constantes.`}
+          aria-label={t("mapAria", { rows: T, cols: D })}
           style={{ display: "block", minWidth: WIDTH, maxWidth: 560 }}
         >
           {[0, 8, 16, 24, D - 2].map((c) => (
@@ -235,19 +247,29 @@ export default function PositionalEncoding() {
         }}
       >
         <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.5 }}>
-          La coordenada <strong style={{ color: "var(--text)" }}>{col}</strong> es el{" "}
-          {isSine(col) ? "seno" : "coseno"} del par {pair}, que gira a{" "}
-          <strong style={{ color: "var(--text)" }}>{fmt(angularFrequency(pair, D), 4)}</strong>{" "}
-          radianes por posición: vuelve al mismo sitio cada {positions(cycle)}.
+          {t.rich("coordinateLine", {
+            col,
+            fn: isSine(col) ? "sine" : "cosine",
+            pair,
+            rate: fmt(angularFrequency(pair, D), 4),
+            cycle: positions(cycle),
+            c: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+            r: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+          })}
         </p>
         <p style={{ fontSize: "0.78rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.5 }}>
-          En la posición <strong style={{ color: "var(--text)" }}>{pos}</strong> esa coordenada vale{" "}
-          <strong style={{ color: "var(--green)" }}>{fmt(pe[pos][col], 3)}</strong>, y {k}{" "}
-          posiciones más allá vale{" "}
-          <strong style={{ color: "var(--green)" }}>{fmt(pe[pos + k][col], 3)}</strong>
+          {t.rich("valueLine", {
+            pos,
+            here: fmt(pe[pos][col], 3),
+            k,
+            there: fmt(pe[pos + k][col], 3),
+            p: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+            a: (chunks) => <strong style={{ color: "var(--green)" }}>{chunks}</strong>,
+            b: (chunks) => <strong style={{ color: "var(--green)" }}>{chunks}</strong>,
+          })}
           {fmt(pe[pos + k][col], 3) === fmt(pe[pos][col], 3)
-            ? " —el mismo número: esta pareja gira tan despacio que no separa las dos posiciones—."
-            : "."}
+            ? t("valueLineSame")
+            : t("valueLineEnd")}
         </p>
         <p
           style={{
@@ -259,30 +281,28 @@ export default function PositionalEncoding() {
             lineHeight: 1.6,
           }}
         >
-          Lo que dos posiciones a distancia {k} puntúan entre ellas:
+          {t("dotHeading", { k })}
           <br />
           <span style={{ fontVariantNumeric: "tabular-nums" }}>
-            desde {pos} → <strong style={{ color: "var(--green)" }}>{fmt(dot(pe[pos], pe[pos + k]), 3)}</strong>
+            {t("dotFrom", { pos })}
+            <strong style={{ color: "var(--green)" }}>{fmt(dot(pe[pos], pe[pos + k]), 3)}</strong>
             {elsewhere.map((p) => (
               <span key={p}>
-                {" · "}desde {p} →{" "}
+                {" · "}
+                {t("dotElsewhere", { pos: p })}
                 <strong style={{ color: "var(--green)" }}>{fmt(dot(pe[p], pe[p + k]), 3)}</strong>
               </span>
             ))}
           </span>
           <br />
           <span style={{ color: "var(--text-dim)" }}>
-            Mueve la posición y ese número no se mueve: vale {fmt(together, 3)} en toda la frase.
-            Cambia k y cambia.
+            {t("dotNote", { value: fmt(together, 3) })}
           </span>
         </p>
       </div>
 
       <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-        {T} posiciones y {D} de las coordenadas, que es lo que cabe en una pantalla; un modelo del
-        artículo tiene 512. Aquí no hay nada puesto a mano: son la fórmula del artículo y su
-        constante {grouped(BASE)}, y los colores dicen el signo —verde positivo, azul negativo,
-        oscuro cerca de cero—.
+        {t("footnote", { rows: T, cols: D, base: grouped(BASE) })}
       </p>
     </div>
   );

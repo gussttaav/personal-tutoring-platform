@@ -20,10 +20,17 @@
  * The plot text is deliberately large (12px) with a halo in the plot's own background
  * colour: below that, labels over a dot are unreadable on a phone, and this widget is
  * the first thing a Block 1 student is asked to look at.
+ *
+ * COURSE-P11-02 — the copy is `courses.widgets.embedding-projection`. The WORDS are not
+ * copy: they are the committed projection of ~200 Spanish words this widget plots, and
+ * `rey − hombre + mujer` is an analogy defined over entries of that file, so it stays as
+ * it is in both locales and goes into the messages as a parameter. An English scatter
+ * needs an English embedding sample first — see SPANISH_BOUND_CORPORA in ../corpora.ts.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { scaleLinear } from "d3-scale";
 
@@ -83,6 +90,7 @@ function categoryColor(cat: string | undefined): string {
 }
 
 export default function EmbeddingProjection() {
+  const t = useTranslations("courses.widgets.embedding-projection");
   const [data, setData] = useState<EmbeddingPoint[]>([]);
   const [status, setStatus] = useState<Status>("loading");
   const [selected, setSelected] = useState("abuelo");
@@ -123,10 +131,10 @@ export default function EmbeddingProjection() {
   );
 
   if (status === "loading") {
-    return <p style={{ color: "var(--text-dim)", fontSize: "0.9rem" }}>Cargando embeddings…</p>;
+    return <p style={{ color: "var(--text-dim)", fontSize: "0.9rem" }}>{t("loading")}</p>;
   }
   if (status === "error" || !scales) {
-    return <p style={{ color: "var(--error)", fontSize: "0.9rem" }}>No se pudieron cargar los embeddings.</p>;
+    return <p style={{ color: "var(--error)", fontSize: "0.9rem" }}>{t("loadError")}</p>;
   }
 
   const { sx, sy } = scales;
@@ -188,7 +196,7 @@ export default function EmbeddingProjection() {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", alignItems: "center" }}>
         <label style={{ fontSize: "0.85rem", color: "var(--text-muted)", display: "flex", gap: "0.4rem", alignItems: "center" }}>
-          Palabra
+          {t("wordLabel")}
           <select
             value={selected}
             onChange={(e) => pick(e.target.value)}
@@ -212,7 +220,7 @@ export default function EmbeddingProjection() {
           active={showAnalogy}
           onClick={() => setMode((m) => (m === "analogia" ? "vecinos" : "analogia"))}
         >
-          Analogía rey − hombre + mujer
+          {t("analogyButton", { a: ANALOGY.a, b: ANALOGY.b, c: ANALOGY.c })}
         </WidgetButton>
       </div>
 
@@ -223,8 +231,16 @@ export default function EmbeddingProjection() {
         role="img"
         aria-label={
           showAnalogy
-            ? `Proyección 2D de palabras mostrando la analogía rey menos hombre más mujer, que cae sobre ${answer ?? "ninguna palabra"}`
-            : `Proyección 2D de palabras; seleccionada: ${selected}, con sus vecinos ${neighbours.map((n) => n.word).join(", ")}`
+            ? t("analogyAria", {
+                a: ANALOGY.a,
+                b: ANALOGY.b,
+                c: ANALOGY.c,
+                answer: answer ?? t("noAnswer"),
+              })
+            : t("neighboursAria", {
+                word: selected,
+                neighbours: neighbours.map((n) => n.word).join(", "),
+              })
         }
         style={{ display: "block", maxWidth: "100%", background: "var(--surface-lowest)", borderRadius: "var(--radius)" }}
       >
@@ -330,18 +346,29 @@ export default function EmbeddingProjection() {
       </svg>
 
       <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.5 }}>
-        {showAnalogy ? (
-          <>
-            Las dos flechas son el mismo vector: <strong style={{ color: "var(--text-muted)", fontWeight: 600 }}>rey − hombre</strong>, aplicado
-            sobre <em>mujer</em>, cae sobre <strong style={{ color: "var(--green)", fontWeight: 600 }}>{answer}</strong>. El círculo marca dónde
-            cae la suma; la palabra más cercana es la respuesta. Vista ampliada sobre esas cuatro palabras.
-          </>
-        ) : (
-          <>
-            Vecinos de <strong style={{ color: "var(--text-muted)", fontWeight: 600 }}>{selected}</strong>:{" "}
-            {neighbours.map((n) => n.word).join(", ")}
-          </>
-        )}
+        {showAnalogy
+          ? t.rich("analogyNote", {
+              a: ANALOGY.a,
+              b: ANALOGY.b,
+              c: ANALOGY.c,
+              // `answer` is undefined only if the analogy resolves to nothing, which the
+              // dataset test rules out; "" keeps that degenerate case rendering as it did.
+              answer: answer ?? "",
+              term: (chunks) => (
+                <strong style={{ color: "var(--text-muted)", fontWeight: 600 }}>{chunks}</strong>
+              ),
+              word: (chunks) => <em>{chunks}</em>,
+              hit: (chunks) => (
+                <strong style={{ color: "var(--green)", fontWeight: 600 }}>{chunks}</strong>
+              ),
+            })
+          : t.rich("neighboursNote", {
+              word: selected,
+              neighbours: neighbours.map((n) => n.word).join(", "),
+              term: (chunks) => (
+                <strong style={{ color: "var(--text-muted)", fontWeight: 600 }}>{chunks}</strong>
+              ),
+            })}
       </p>
     </div>
   );

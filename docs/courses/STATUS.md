@@ -1828,7 +1828,7 @@ first; see the [phase README](phase-11-translation/README.md).
 |------|-----|--------|-------|----|
 | [00 Triage: classify 43 lessons](phase-11-translation/00-triage.md) | `COURSE-P11-00` | ⬜ | _tbd_ | |
 | [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ✅ | _tbd_ | local |
-| [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ⬜ | _tbd_ | |
+| [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ✅ | _tbd_ | local |
 | [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ⬜ | _tbd_ | |
 | [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ⬜ | _tbd_ | |
 | [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ⬜ | _tbd_ | |
@@ -1875,6 +1875,58 @@ prerenders all three links with their hover cards, each kicker reading `Block 1 
 Spanish`, the in-bridge one plain text. The fixture was deleted — `en/` ships empty, per the
 task's Out of scope. (The dev-server lesson route 404s locally on a clean tree too; that is
 pre-existing and unrelated.)
+
+### P11-02 notes
+
+**21 components, not 15.** The task's heuristic scan undercounted. Every widget under
+`widgets/` carried strings, plus `WidgetFrame` (its Reset button) and `WidgetErrorBoundary`.
+All now read `courses.widgets.*`; shared chrome (Reset, previous/next, the step counter,
+«suma») is `courses.widgets.common`. 257 keys per locale, key-for-key.
+
+**Zero Spanish-side change, with one deliberate exception.** Every Spanish message value is
+the previous literal verbatim, checked in the browser against the previous behaviour for the
+tokenizer, bag-of-words, activation (comma decimals), self-attention, positional (`10 000`
+narrow-space grouping) and transformer widgets. The exception is `WidgetErrorBoundary`, whose
+fallback sentence was **hardcoded English** and so read as English to a Spanish reader; it is
+now translated in both locales. It renders only when a widget throws.
+
+**Two English corpora, both verified in the rendered widget:**
+
+- `tokenizer-playground` — «The naïve teacher tests tokenisation in English.» `naïve` carries
+  the NFC point, `tokenisation` is the long word BPE breaks up (`to ##ke ##n ##is ##a ##t ##i
+  ##on`), and the three columns read 8 / 48 / 32 against the Spanish 7 / 39 / 29.
+- `bag-of-words` — two documents leaning on `the` (4 each, 8 in the corpus) and sharing `of`
+  and `and` at 2, every content word at 1. Same shape as the Spanish pair, same reading.
+
+Both properties are asserted in `widgets/__tests__/corpora.test.ts` by running the same pure
+functions the widget runs, so a later "nicer" sentence that breaks the demonstration fails.
+
+**Three corpora could NOT be moved, and that is a data gap, not a decision.** Recorded with
+the reason in `SPANISH_BOUND_CORPORA` (corpora.ts): `self-attention-heatmap` and
+`multi-head-view` score their presets against the hand-built **Spanish lexicon** in
+`math/self-attention.ts` — an English sentence falls outside it and every row comes from a
+hash of its letters, so the map would look right and mean nothing; `embedding-projection`
+plots a committed projection of ~200 Spanish words. Each needs a new asset plus a pedagogical
+decision, which belongs to the lesson that embeds it (Blocks 1 and 5), not to a translation
+task. `attention-alignment` is listed too, as genuinely locale-invariant: it is an ES→EN
+translation pair, which is Block 4's subject.
+
+**The maths modules were not touched**, per the task's test plan — `math/__tests__/` passes
+untouched. That leaves the Spanish label/description strings in
+`math/transformer-architecture.ts` and the head names in `math/multi-head.ts` duplicated in
+`messages/es.json`, because the layout and rule tests measure the module while the components
+render the messages. The duplication is **pinned by the corpora test**: a change to either
+side without the other fails. `lessonReference()` stays exported and tested but is no longer
+called by the component — the sentence it builds has a shape that changes with the language,
+so it is a message.
+
+**Number formatting followed the strings.** `0,25` vs `0.25` and the thousands grouping are
+locale-dependent presentation, and an English column showing Spanish decimals would have been
+the same defect one layer down. Handled with a locale-picked separator so the Spanish output
+is byte-identical.
+
+`Explorable`'s unknown-id marker is the one untranslated string, deliberately: it is behind
+`NODE_ENV !== "production"` and is a developer diagnostic.
 
 **Exit criteria**
 - [ ] 43 published lessons under `en/`; `fullyTranslated` true for `en`

@@ -8,10 +8,15 @@
  * COURSE-P5-02 — Labels rewritten in the course's notation. Block 2 lesson 8 prints
  * these same numbers, so the diagram may not carry a second naming scheme; see the
  * header of math/backprop.ts for the internal-vs-displayed split.
+ *
+ * COURSE-P11-02 — the two aria-labels and the step controls now come from `messages`.
+ * The node labels and the chain-rule panel do not: `x₁`, `h(1)₂`, `∂ℓ/∂ŷ` and the rest
+ * are notation from math/backprop.ts, and notation is the same in both locales.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { runBackprop, BACKPROP_PRESET, type TraceStep } from "../math/backprop";
@@ -75,6 +80,8 @@ function highlight(step: TraceStep): { nodes: Set<string>; edges: Set<string> } 
 const fmt = (n: number) => (Object.is(n, -0) ? "0.000" : n.toFixed(3));
 
 export default function BackpropTrace() {
+  const t = useTranslations("courses.widgets.backprop-trace");
+  const tc = useTranslations("courses.widgets.common");
   const { forward, steps } = useMemo(() => runBackprop(BACKPROP_PRESET.params, BACKPROP_PRESET.x), []);
   const [i, setI] = useState(0);
 
@@ -88,7 +95,7 @@ export default function BackpropTrace() {
       style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%", outlineOffset: 3 }}
       tabIndex={0}
       role="group"
-      aria-label="Traza de retropropagación; usa las flechas para avanzar y retroceder"
+      aria-label={t("groupAria")}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") {
           e.preventDefault();
@@ -106,7 +113,7 @@ export default function BackpropTrace() {
         Scaling with the width instead makes the labels grow with the container;
         maxWidth stops it ballooning past the measure of the prose.
       */}
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Diagrama de la red 2-2-1" style={{ display: "block", width: "100%", height: "auto", maxWidth: 560, margin: "0 auto" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t("diagramAria")} style={{ display: "block", width: "100%", height: "auto", maxWidth: 560, margin: "0 auto" }}>
         {EDGES.map((e) => {
           const a = NODES[e.from];
           const b = NODES[e.to];
@@ -153,14 +160,14 @@ export default function BackpropTrace() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         <WidgetButton onClick={() => go(-1)} disabled={i === 0}>
-          ◀ anterior
+          {tc("previous")}
         </WidgetButton>
         <WidgetButton onClick={() => go(1)} disabled={i === steps.length - 1}>
-          siguiente ▶
+          {tc("next")}
         </WidgetButton>
-        <WidgetButton onClick={() => setI(0)}>Reset</WidgetButton>
+        <WidgetButton onClick={() => setI(0)}>{tc("reset")}</WidgetButton>
         <span style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>
-          paso {i + 1}/{steps.length}
+          {tc("stepOf", { current: i + 1, total: steps.length })}
         </span>
       </div>
     </div>

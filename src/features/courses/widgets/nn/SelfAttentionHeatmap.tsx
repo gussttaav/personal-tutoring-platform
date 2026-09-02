@@ -30,11 +30,19 @@
  * component says so under the map rather than letting the reader assume otherwise. A
  * token outside the lexicon is marked with a dot and named in that same line: its vector
  * comes from a hash of its own letters, so its row means nothing.
+ *
+ * COURSE-P11-02 — the copy is `courses.widgets.self-attention-heatmap`. The PRESETS stay
+ * Spanish in both locales, and that is a limit, not a decision: they are scored against
+ * the hand-built Spanish lexicon above, so an English sentence would fall outside it and
+ * every row would come from a hash. See SPANISH_BOUND_CORPORA in ../corpora.ts — an
+ * English preset needs an English lexicon first, which is a pedagogical decision for the
+ * lesson that embeds this, not a translation.
  */
 
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 
 import { rowSums, topSource } from "../math/attention-alignment";
 import {
@@ -61,10 +69,16 @@ const shade = (w: number) =>
 
 const fmt2 = (v: number) => v.toFixed(2);
 
+/** The bold wrapper the panel sentences put around a token. */
+const BOLD_TOKEN = (chunks: ReactNode) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>;
+
 /** Column headings are tokens, and a long one would push the grid wider than a phone. */
 const short = (token: string) => (token.length > 6 ? `${token.slice(0, 5)}·` : token);
 
 export default function SelfAttentionHeatmap() {
+  // `t` is the token count in this file, so the translator is `tr`.
+  const tr = useTranslations("courses.widgets.self-attention-heatmap");
+  const tc = useTranslations("courses.widgets.common");
   const [text, setText] = useState<string>(PRESETS[0]);
   const [project, setProject] = useState(true);
   const [causal, setCausal] = useState(false);
@@ -97,7 +111,7 @@ export default function SelfAttentionHeatmap() {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem", width: "100%" }}>
       <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem" }}>
         <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-          Escribe una frase (se queda en los primeros {MAX_TOKENS} tokens)
+          {tr("inputLabel", { max: MAX_TOKENS })}
         </span>
         <input
           type="text"
@@ -127,26 +141,24 @@ export default function SelfAttentionHeatmap() {
 
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
         <WidgetButton active={project} aria-pressed={project} onClick={() => setProject(true)}>
-          Con proyecciones
+          {tr("withProjections")}
         </WidgetButton>
         <WidgetButton active={!project} aria-pressed={!project} onClick={() => setProject(false)}>
-          Sin proyectar
+          {tr("withoutProjections")}
         </WidgetButton>
       </div>
 
       <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
         <WidgetButton active={!causal} aria-pressed={!causal} onClick={() => setCausal(false)}>
-          Sin máscara
+          {tr("withoutMask")}
         </WidgetButton>
         <WidgetButton active={causal} aria-pressed={causal} onClick={() => setCausal(true)}>
-          Con máscara causal
+          {tr("withMask")}
         </WidgetButton>
       </div>
 
       {t === 0 ? (
-        <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0 }}>
-          Escribe algo y aparecerá la rejilla.
-        </p>
+        <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0 }}>{tr("empty")}</p>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <div style={{ minWidth: gridWidth(CELL_MIN), maxWidth: gridWidth(CELL_MAX) }}>
@@ -167,12 +179,12 @@ export default function SelfAttentionHeatmap() {
                   {short(token)}
                 </span>
               ))}
-              <span style={{ textAlign: "center" }}>suma</span>
+              <span style={{ textAlign: "center" }}>{tc("sum")}</span>
             </div>
 
             <div
               role="group"
-              aria-label="Mapa de auto-atención: elige una posición para ver de qué otras tira"
+              aria-label={tr("mapAria")}
               style={{ display: "flex", flexDirection: "column", gap: GAP }}
             >
               {tokens.map((token, i) => {
@@ -291,60 +303,58 @@ export default function SelfAttentionHeatmap() {
           }}
         >
           <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-            {causal ? (
-              <>
-                {step === 0 ? (
-                  <>
-                    Con la máscara, la posición 1 no tiene nada detrás:{" "}
-                    <strong style={{ color: "var(--text)" }}>{tokens[0]}</strong> se lleva{" "}
-                    {fmt2(weights[0][0])} sobre sí misma y {t - 1}{" "}
-                    {t - 1 === 1 ? "casilla queda tachada" : "casillas quedan tachadas"} a su
-                    derecha. La fila suma {fmt2(sums[0])} igual que las demás: lo que se tacha se
-                    reparte entre lo que queda, porque la máscara entra antes del softmax.
-                  </>
-                ) : (
-                  <>
-                    Con la máscara, la posición {step + 1},{" "}
-                    <strong style={{ color: "var(--text)" }}>{tokens[step]}</strong>, sólo puede
-                    mirar de la 1 a la {step + 1}. Su peso más alto —{fmt2(peak.weight)}— va a{" "}
-                    <strong style={{ color: "var(--text)" }}>{tokens[peak.index]}</strong>, y la
-                    fila sigue sumando {fmt2(sums[step])} con {t - 1 - step}{" "}
-                    {t - 1 - step === 1 ? "casilla tachada" : "casillas tachadas"}.
-                  </>
-                )}
-              </>
-            ) : project ? (
-              <>
-                La posición {step + 1},{" "}
-                <strong style={{ color: "var(--text)" }}>{tokens[step]}</strong>, le da su peso más
-                alto —{fmt2(peak.weight)}— a{" "}
-                <strong style={{ color: "var(--text)" }}>{tokens[peak.index]}</strong>, y{" "}
-                {fmt2(weights[step][step])} a sí misma. La fila entera suma {fmt2(sums[step])}.
-              </>
-            ) : (
-              <>
-                Sin proyectar, la posición {step + 1},{" "}
-                <strong style={{ color: "var(--text)" }}>{tokens[step]}</strong>, se queda con su
-                propio peso más alto: {fmt2(weights[step][step])} sobre sí misma, contra{" "}
-                {fmt2(Math.max(...weights[step].filter((_, j) => j !== step)))} del mejor de los
-                demás. Y pasa en las {t} filas a la vez: la diagonal gana siempre. Una capa así
-                devuelve lo que le entró con un tinte de lo demás, y no tiene un solo parámetro con
-                el que decidir otra cosa.
-              </>
-            )}
+            {causal
+              ? step === 0
+                ? tr.rich("causalFirst", {
+                    token: tokens[0],
+                    self: fmt2(weights[0][0]),
+                    blanked: t - 1,
+                    sum: fmt2(sums[0]),
+                    tok: BOLD_TOKEN,
+                  })
+                : tr.rich("causalOther", {
+                    pos: step + 1,
+                    token: tokens[step],
+                    peak: fmt2(peak.weight),
+                    target: tokens[peak.index],
+                    sum: fmt2(sums[step]),
+                    blanked: t - 1 - step,
+                    tok: BOLD_TOKEN,
+                    tgt: BOLD_TOKEN,
+                  })
+              : project
+                ? tr.rich("projected", {
+                    pos: step + 1,
+                    token: tokens[step],
+                    peak: fmt2(peak.weight),
+                    target: tokens[peak.index],
+                    self: fmt2(weights[step][step]),
+                    sum: fmt2(sums[step]),
+                    tok: BOLD_TOKEN,
+                    tgt: BOLD_TOKEN,
+                  })
+                : tr.rich("unprojected", {
+                    pos: step + 1,
+                    token: tokens[step],
+                    self: fmt2(weights[step][step]),
+                    best: fmt2(Math.max(...weights[step].filter((_, j) => j !== step))),
+                    rows: t,
+                    tok: BOLD_TOKEN,
+                  })}
           </p>
         </div>
       ) : null}
 
       <p style={{ fontSize: "0.7rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-        Los vectores ({D_MODEL} coordenadas, {LEXICON_WORDS.length} palabras en el léxico) y las
-        proyecciones —{D_K} coordenadas para comparar, {D_V} para mezclar— los he puesto yo a mano
-        para el curso; ningún modelo entrenado hay aquí dentro.
-        {causal ? " Las casillas de trazo discontinuo son las que la máscara tacha." : ""}
-        {unknown.length > 0
-          ? ` Fuera del léxico: ${unknown.join(", ")} — su vector sale de un hash de sus letras, así que esa fila no dice nada.`
-          : ""}
-        {truncated ? ` La frase se ha cortado en ${MAX_TOKENS} tokens.` : ""}
+        {tr("footnote", {
+          dModel: D_MODEL,
+          lexicon: LEXICON_WORDS.length,
+          dk: D_K,
+          dv: D_V,
+        })}
+        {causal ? tr("footnoteMask") : ""}
+        {unknown.length > 0 ? tr("footnoteUnknown", { words: unknown.join(", ") }) : ""}
+        {truncated ? tr("footnoteTruncated", { max: MAX_TOKENS }) : ""}
       </p>
     </div>
   );

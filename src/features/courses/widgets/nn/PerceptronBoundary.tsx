@@ -16,10 +16,16 @@
  *     and what they encode, since the label alone no longer says it. The note hides
  *     as soon as a point is dragged, because then they are not XOR any more.
  * Lesson 3 (xor-y-capas-ocultas) reuses the same widget for the full argument.
+ *
+ * COURSE-P11-02 — the copy moved to `courses.widgets.perceptron-boundary`, the rule
+ * above with it: the English strings name the neuron and the line too, never «perceptron»
+ * or «epoch». `PRESETS`/`PRESET_LABELS` keep their keys (they are state), and the label
+ * lookup is what changed.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useRef, useState } from "react";
 import { scaleLinear } from "d3-scale";
 
@@ -42,10 +48,16 @@ const STEP = 0.15; // keyboard nudge
 const PRESETS = { Separable: SEPARABLE_PRESET, XOR: XOR_PRESET } as const;
 type PresetName = keyof typeof PRESETS;
 
-/** Buttons say what the reader can see, not the name of the function behind it. */
-const PRESET_LABELS: Record<PresetName, string> = { Separable: "Separable", XOR: "No separable" };
+/** Buttons say what the reader can see, not the name of the function behind it — so the
+ *  preset's own key never reaches the screen; this maps it to the message that does. */
+const PRESET_LABEL_KEYS: Record<PresetName, string> = {
+  Separable: "presetSeparable",
+  XOR: "presetXor",
+};
 
 export default function PerceptronBoundary() {
+  const t = useTranslations("courses.widgets.perceptron-boundary");
+  const tc = useTranslations("courses.widgets.common");
   const [presetName, setPresetName] = useState<PresetName>("Separable");
   const [points, setPoints] = useState<LabeledPoint[]>(() => SEPARABLE_PRESET.map((p) => ({ ...p, point: [...p.point] })));
   const [dragging, setDragging] = useState<number | null>(null);
@@ -85,10 +97,10 @@ export default function PerceptronBoundary() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         {(Object.keys(PRESETS) as PresetName[]).map((n) => (
           <WidgetButton key={n} active={n === presetName} onClick={() => loadPreset(n)}>
-            {PRESET_LABELS[n]}
+            {t(PRESET_LABEL_KEYS[n])}
           </WidgetButton>
         ))}
-        <WidgetButton onClick={() => loadPreset(presetName)}>Reset</WidgetButton>
+        <WidgetButton onClick={() => loadPreset(presetName)}>{tc("reset")}</WidgetButton>
       </div>
 
       <svg
@@ -97,7 +109,7 @@ export default function PerceptronBoundary() {
         width="100%"
         height={SIZE}
         role="img"
-        aria-label="Puntos en 2D y la frontera de decisión de la neurona"
+        aria-label={t("plotAria")}
         style={{ display: "block", maxWidth: SIZE, background: "var(--surface-lowest)", borderRadius: "var(--radius)", touchAction: "none" }}
         onPointerMove={(e) => {
           if (dragging !== null) movePoint(dragging, toData(e.clientX, e.clientY));
@@ -135,7 +147,10 @@ export default function PerceptronBoundary() {
               strokeWidth={1.5}
               tabIndex={0}
               role="button"
-              aria-label={`Punto ${i + 1}, clase ${p.label === 1 ? "positiva" : "negativa"}`}
+              aria-label={t("pointAria", {
+                n: i + 1,
+                klass: p.label === 1 ? "positive" : "negative",
+              })}
               style={{ cursor: "grab", outlineOffset: 2 }}
               onPointerDown={(e) => {
                 (e.target as SVGCircleElement).setPointerCapture(e.pointerId);
@@ -160,18 +175,12 @@ export default function PerceptronBoundary() {
       </svg>
 
       <p style={{ fontSize: "0.85rem", margin: 0, color: converged ? "var(--green)" : "var(--error)", fontWeight: 600 }}>
-        {converged
-          ? "Separable — la neurona encuentra una recta que no comete ningún error."
-          : "No separable — ninguna recta deja cada color de un lado, y la neurona no deja de corregirse."}
+        {converged ? t("separable") : t("notSeparable")}
       </p>
 
       {showXorNote && (
         <p style={{ fontSize: "0.85rem", margin: 0, color: "var(--text-muted)", lineHeight: 1.55 }}>
-          Estos cuatro puntos son la función <strong>XOR</strong>, el «o exclusivo»: cada coordenada
-          vale −1 o +1, y la clase es la verde cuando las dos <strong>difieren</strong> —arriba a la
-          izquierda y abajo a la derecha— y la otra cuando coinciden. Cada clase ocupa dos esquinas
-          opuestas, y por eso ninguna recta puede dejar una a cada lado. Arrastra un punto y la recta
-          vuelve a encontrar sitio.
+          {t.rich("xorNote", { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
       )}
     </div>

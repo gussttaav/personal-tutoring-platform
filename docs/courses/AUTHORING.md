@@ -1218,6 +1218,41 @@ Building a widget is three files plus its wiring, and the maths is the part that
   keyboard-operable (a native `<Slider>`, arrow-key stepping), and it reads every colour from the CSS
   tokens (`var(--green)`, `var(--text)`, …) so it themes with the page. It imports the maths; it does
   not recompute it inline.
+- **`messages/es.json` + `messages/en.json`** — every string the widget shows, under
+  `courses.widgets.<widget-id>`. See the rule below; this is not optional and it is not a later pass.
+
+**A widget never hardcodes a user-visible string.** Labels, hints, button text, panel prose, empty
+states and — the ones that get missed, because nothing renders them — **`aria-label`s** all go
+through `useTranslations("courses.widgets.<widget-id>")`, keyed by the widget id an author writes in
+`<Explorable id="…" />`, never by the component's filename. Shared chrome (Reset, previous/next, the
+step counter, «suma») lives in `courses.widgets.common`. The two message files stay key-for-key
+identical; `widgets/__tests__/corpora.test.ts` fails if they drift.
+
+Three things are **not** strings and stay where they are:
+
+- **Notation.** `d_h`, `ρ`, `Wₕₕ`, `x₀`, `T`, `k`, `q`, `d_model`, `σ`, `tanh`, `ReLU`, `K, V`, `× N`
+  read the same in both languages. Only the words around a symbol translate, which is why the
+  messages that mix the two use rich-text tags (`<sub></sub>`, `<exp></exp>`) rather than being cut
+  into fragments — word order moves between languages and fragments cannot.
+- **Terminology.** `escalón` → *step*, `sigmoide` → *sigmoid*, `Radio espectral` → *spectral radius*,
+  `Ancho del estado` → *state width*, `tasa de aprendizaje` → *learning rate*. Take the English from
+  [NOTATION.md](NOTATION.md) where it names it; if it does not, add it there rather than deciding
+  twice.
+- **State values.** A preset key, a field name, a widget id: `<Explorable id="tokenizer-playground" />`
+  is a registry key, locale-invariant like a lesson slug. When a state key happens to be a Spanish
+  word (`FIELDS.Cañón`), keep the key and map it to a message key beside it — do not rename the state.
+
+**A default corpus is not copy.** The sentence a widget opens with is a teaching instrument: the
+tokeniser's default is chosen so the three columns visibly disagree, the bag-of-words pair so the
+corpus row is topped by the words that say least. Translate one literally and the widget still runs,
+still looks right, and stops demonstrating what the prose says it demonstrates. So corpora live in
+[`widgets/corpora.ts`](../../src/features/courses/widgets/corpora.ts), one entry per widget id, with
+the **teaching property written down next to it** and asserted in the corpora test. Choosing a new
+locale's corpus belongs to whoever writes the lesson that embeds the widget, and it is verified by
+looking at the rendered widget — a corpus that fails the property is the wrong corpus, however well
+the sentence reads. A corpus bound to a Spanish data asset (the self-attention lexicon, the embedding
+sample) cannot be translated at all until that asset exists; those are listed, with the reason, in
+`SPANISH_BOUND_CORPORA`.
 
 The one thing that legitimately stays separate is the div between a widget and a **figure of the same
 object**: they survive together only with separate jobs (§7 above). `lstm-gates` shows the gates

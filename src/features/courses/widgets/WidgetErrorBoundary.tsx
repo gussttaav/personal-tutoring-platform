@@ -4,23 +4,31 @@
  * React error boundaries must be class components (no hook equivalent). A widget
  * that throws during render is caught here and replaced with a small, contained
  * message styled from the error design tokens — the surrounding prose is untouched.
+ *
+ * COURSE-P11-02 — the fallback sentence was hardcoded English, which a Spanish reader
+ * would have seen too. It is now `courses.widgets.common.error`, translated in both
+ * locales. A class component cannot call `useTranslations`, so the message arrives as
+ * a render prop from the function wrapper below — which is what `Explorable` renders.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
   /** Widget id, surfaced in the fallback so a failure is traceable in a lesson. */
   widgetId: string;
+  /** Already-translated fallback sentence; supplied by `WidgetErrorBoundary`. */
+  message: string;
 }
 
 interface State {
   hasError: boolean;
 }
 
-export class WidgetErrorBoundary extends Component<Props, State> {
+class WidgetErrorBoundaryInner extends Component<Props, State> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(): State {
@@ -50,12 +58,19 @@ export class WidgetErrorBoundary extends Component<Props, State> {
           }}
         >
           <span aria-hidden>⚠️</span>
-          <span>
-            This interactive widget (<code>{this.props.widgetId}</code>) failed to load.
-          </span>
+          <span>{this.props.message}</span>
         </div>
       );
     }
     return this.props.children;
   }
+}
+
+export function WidgetErrorBoundary({ children, widgetId }: Omit<Props, "message">) {
+  const t = useTranslations("courses.widgets.common");
+  return (
+    <WidgetErrorBoundaryInner widgetId={widgetId} message={t("error", { id: widgetId })}>
+      {children}
+    </WidgetErrorBoundaryInner>
+  );
 }
