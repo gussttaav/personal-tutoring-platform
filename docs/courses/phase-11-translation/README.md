@@ -85,6 +85,32 @@ attention blocks demonstrate on Spanish agreement (`las llaves del coche **está
 Spanish–English alignment pair (`leí` ↔ `read`). Blocks 3–5 are still mostly transposable, but
 "Blocks 3–5 are free" is wrong and P11-00 exists to replace that guess with a count.
 
+### The count — P11-00's result
+
+| Block | Lessons | Transpose | Adapt | Rewrite |
+|---|---|---|---|---|
+| [1 — NLP Fundamentals](04-block-1.md) | 8 | 0 | 7 | **1** (1.2) |
+| [2 — The MLP](05-block-2.md) | 10 | 2 | 7 | **1** (2.8) |
+| [3 — RNNs](06-block-3.md) | 8 | 3 | 5 | 0 |
+| [4 — The Bridge to Attention](07-block-4.md) | 6 | 3 | 3 / 2 | 0 / **1** (4.3) |
+| [5 — The Transformer](08-block-5.md) | 11 | 6 / 5 | 5 / 6 | 0 |
+| **Phase** | **43** | **14** / 13 | **27** | **2** / 3 |
+
+Two rows carry a slash because **Block 4's direction decision is still open** — see "The direction
+decision — make it once, in 4.1" in [07-block-4.md](07-block-4.md). Under **Option A**
+(keep Spanish→English, reframed) the phase is 14 transpose · 27 adapt · 2 rewrite; under
+**Option B** (switch to a pair the reader can read) 4.3 becomes a rewrite and 5.9 an adapt,
+giving 13 · 27 · 3. Nothing else in the phase moves either way.
+
+Three corrections the count makes to the guess above:
+
+- **Block 1 has no transposable lesson at all**, and 1.8 is the phase's most expensive adapt.
+- **Blocks 3 and 5 hold no rewrite.** Block 5 in particular moves no quiz answer anywhere across
+  11 lessons, and carries **zero** `<Leccion ancla="">` across 102 slug-only refs.
+- **The adapt cost is concentrated outside the lesson files.** The self-attention sentence
+  (5.2/5.4/5.7) and the sentiment corpus (2.3/2.9/2.10) live in widgets and fixtures, so P11-02
+  gates three Block 5 lessons and Block 2's 2.10 gates Block 5's 5.11.
+
 The worked case, and the reason the class exists at all — `es/02-tokenizacion.mdx` carries four
 quiz questions, and **three of them are about Spanish**: whether `ñ` written as `n` + combining
 tilde yields two tokens without NFC normalisation; whether a subword tokeniser can represent
