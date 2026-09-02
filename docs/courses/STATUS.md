@@ -1942,7 +1942,8 @@ is byte-identical.
 
 ### P11-03 notes
 
-`AUTHORING.en.md` is **299 lines** against the task's 300-line ceiling, and the ceiling is the
+`AUTHORING.en.md` is **at the task's 300-line ceiling** (299 when P11-03 landed; B1.1 added §3's
+collation rule and paid for it by cutting three restatements), and the ceiling is the
 right check: everything it does not say is `AUTHORING.md` still governing. Its §8 names the parts
 most likely to be re-decided by an author who has only the delta open — the six-step structure, the
 two-reader test, §2's assumption rule, all of NOTATION.md, the display-equation punctuation — so

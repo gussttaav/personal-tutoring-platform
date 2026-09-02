@@ -48,17 +48,14 @@ unmarked everywhere after. Genuinely foreign loanwords keep the italics (*a prio
 
 **`"…"` carries a warning `«…»` did not need.** In Spanish the angular quotes could only mean the
 loose sense, because nothing else used them. English double quotes already mean *quotation*, so the
-mark arrives with two jobs — the exact failure this section exists to prevent. The rule is
-therefore stricter than the Spanish one it replaces:
+mark arrives with two jobs — the failure this section exists to prevent — and the rule is stricter:
 
 > **The loose sense is the only use of quotation marks in a lesson.** Quoted speech and quoted
 > output belong in `<W>` or in a code fence.
 
-The `<W>` boundary is unchanged and still worth stating twice: "unit" is the ordinary word *unit*
-used loosely before the lesson pins it down; <W>cat</W> is the string c-a-t as an object on the
-page. Both are "a word being pointed at", which is why they take different marks. The plain-text
-prop exception carries over — `caption`, `alt` and `summary` are strings, so a string the lesson
-talks about is written `"tokenisation"` there.
+The `<W>` boundary is [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)'s,
+unchanged. Its plain-text prop exception carries over: `caption`, `alt` and `summary` are strings, so
+a string the lesson talks about is written `"tokenisation"` there.
 
 ### Typography
 
@@ -99,8 +96,7 @@ that mattered:
 
 **Never the agentless passive** for either of the first two. Not *NFC normalisation should be
 applied*, not *the student must run the cell*, not *the reader will observe that*. English reaches
-for it as easily as Spanish reaches for the impersonal, and it is the same pane of glass between
-the student and the thing they are doing.
+for it as easily as Spanish reaches for the impersonal, and it is the same pane of glass.
 
 The two banned families — **condescension** and **padding** — are unchanged as rules and already
 have their English word lists in code (`src/lib/courses/validate-voice.ts`, COURSE-P11-01), fired
@@ -121,6 +117,11 @@ the possessive `'s`, irregular plurals, `naïve` and `café` for the NFC case, *
 a subword tokeniser does to a long word. The widgets' default corpora already commit to some of
 these (`src/features/courses/widgets/corpora.ts`, COURSE-P11-02) — a lesson's prose must describe
 the corpus the English widget actually shows.
+
+**An example resting on alphabetical order is re-derived, never translated.** Collation belongs to
+the language: a sorted vocabulary re-sorts, and the claim the sort existed to make can come out
+*true* in English — destroying the argument rather than merely reordering it. Re-derive until the
+claim is absurd again, and check any asset with the old order set into it.
 
 ## 4. §2 — capitalisation of blocks and lessons
 
