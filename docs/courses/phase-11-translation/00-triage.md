@@ -1,6 +1,6 @@
 # P11-00 — Triage: classify 43 lessons
 
-**Tag:** `COURSE-P11-00` · **Size:** S · **Status:** not started
+**Tag:** `COURSE-P11-00` · **Size:** S · **Status:** ✅
 
 ## TL;DR
 
@@ -69,11 +69,11 @@ recount the numeric answer."*
 
 ## Acceptance criteria
 
-- [ ] All 43 published lessons classed, in the five block task mds
-- [ ] Every lesson classed **rewrite** or **adapt** carries its artifact list with line refs
-- [ ] Every lesson classed **rewrite** carries its one-line replacement note
-- [ ] Per-block and phase totals recorded, so the content tasks can be sized
-- [ ] The fixture (`00-pipeline-fixture.mdx`, `draft: true`) is explicitly **excluded** — it is a
+- [x] All 43 published lessons classed, in the five block task mds
+- [x] Every lesson classed **rewrite** or **adapt** carries its artifact list with line refs
+- [x] Every lesson classed **rewrite** carries its one-line replacement note
+- [x] Per-block and phase totals recorded, so the content tasks can be sized
+- [x] The fixture (`00-pipeline-fixture.mdx`, `draft: true`) is explicitly **excluded** — it is a
       pipeline fixture, not a lesson, and it is not translated
 
 ## Test plan
