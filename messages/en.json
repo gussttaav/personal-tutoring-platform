@@ -745,7 +745,7 @@
   "courses": {
     "catalog": {
       "overline": "Courses",
-      "heading": "Learn by building, <accent>not memorizing</accent>",
+      "heading": "Learn by building, <accent>not memorising</accent>",
       "subtitle": "Learn by building: rigorous mathematical theory, code that runs in the browser, and automatically graded exercises.",
       "empty": {
         "title": "Coming soon",

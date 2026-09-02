@@ -1829,7 +1829,7 @@ first; see the [phase README](phase-11-translation/README.md).
 | [00 Triage: classify 43 lessons](phase-11-translation/00-triage.md) | `COURSE-P11-00` | ⬜ | _tbd_ | |
 | [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ✅ | _tbd_ | local |
 | [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ✅ | _tbd_ | local |
-| [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ⬜ | _tbd_ | |
+| [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ✅ | _tbd_ | local |
 | [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ⬜ | _tbd_ | |
 | [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ⬜ | _tbd_ | |
 | [06 Block 3 — RNNs (8)](phase-11-translation/06-block-3.md) | `COURSE-P11-06` | ⬜ | _tbd_ | |
@@ -1927,6 +1927,41 @@ is byte-identical.
 
 `Explorable`'s unknown-id marker is the one untranslated string, deliberately: it is behind
 `NODE_ENV !== "production"` and is a developer diagnostic.
+
+### P11-03 notes
+
+`AUTHORING.en.md` is **299 lines** against the task's 300-line ceiling, and the ceiling is the
+right check: everything it does not say is `AUTHORING.md` still governing. Its §8 names the parts
+most likely to be re-decided by an author who has only the delta open — the six-step structure, the
+two-reader test, §2's assumption rule, all of NOTATION.md, the display-equation punctuation — so
+the temptation to copy them in has an answer on the page. `NOTATION.md` is untouched, which was the
+point; `AUTHORING.md` gained four lines at the top pointing at the delta.
+
+Two additions beyond the four areas the task named, both because leaving them out would have left
+a Spanish rule silently governing English prose:
+
+- **The §5 typography block.** It bans the spaced em dash as "the English convention" and requires
+  `¿`/`¡` and a space for thousands. Transposed literally into English it is wrong four times, so
+  the delta replaces the bullets and keeps only the display-equation punctuation rule below them.
+- **§5's second constant, «Spanish examples throughout», inverts.** The delta says so and points at
+  the P11-02 corpora, because an English lesson describing the Spanish default corpus is the
+  failure P11-02 existed to prevent, one layer up.
+
+The glossary carries all ~55 rows of the Spanish terminology table, plus a short section on the
+four distinctions that **change shape** rather than translating — `derive`/`differentiate` swap
+jobs (English has a dedicated calculus verb, so `derivation` is free for the argument); `sample` is
+banned as a noun while `to sample` is the verb, which costs more attention in English than in
+Spanish; and two Spanish arguments dissolve entirely (*scaled dot-product* is the paper's own name,
+and query/key/value owe no gloss when the letters are already English). `accuracy`/*precision* goes
+the other way and gets sharper.
+
+**Two live en-GB drifts found and fixed**, outside this task's three files but inside the decision
+it records: `course.en.yml`'s Block 1 summary said "Tokenization" (the widget module is
+`tokenisation.ts` and the widget string is "Sentence to tokenise"), and `courses.catalog.heading`
+in `messages/en.json` said "not memorizing". A full scan of every English message value and of the
+manifest found no others — `packSize` and the `minimize`/`unauthorized` **keys** are identifiers
+and stay as they are, which is §7's own exception. Spanish is untouched; both are single-word
+value edits, so the i18n key-parity test is unaffected.
 
 **Exit criteria**
 - [ ] 43 published lessons under `en/`; `fullyTranslated` true for `en`

@@ -3,6 +3,11 @@
 **Tag:** `COURSE-P5-00` · Companion to [NOTATION.md](NOTATION.md) · Template:
 [`content/courses/dl-nlp/_template.mdx`](../../content/courses/dl-nlp/_template.mdx)
 
+**Writing an English lesson?** This file still governs (`COURSE-P11-03`), and
+[AUTHORING.en.md](AUTHORING.en.md) replaces the four parts of it that are about Spanish: two of the
+five marks, person and mood, §2's lowercase *bloque 2*, and the terminology table. Read this file
+first, then the delta — never the delta alone.
+
 Phase 5 is ~40 lessons. Anything left undecided here gets re-decided 40 times, differently each
 time, and the course ends up reading like a pile of tutorials written by several people. This file
 is the contract. Read it once, then work from the template and the checklist at the bottom.

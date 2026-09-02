@@ -40,7 +40,7 @@ faq:
 blocks:
   - id: 1
     title: "NLP Fundamentals"
-    summary: "Tokenization, vocabularies and the first vector representations of text."
+    summary: "Tokenisation, vocabularies and the first vector representations of text."
   - id: 2
     title: "The Multilayer Perceptron"
     summary: "From the perceptron to a multilayer network trained with gradient descent and backpropagation."
