@@ -341,7 +341,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 
 ## Lesson progress
 
-- [ ] 1.1 `texto-como-numeros`
+- [x] 1.1 `texto-como-numeros`
 - [ ] 1.2 `tokenizacion`
 - [ ] 1.3 `vocabulario-oov`
 - [ ] 1.4 `one-hot`
@@ -381,6 +381,28 @@ corpus is a design problem rather than a translation:
 - **1.7** — keep one word that appears in exactly one sentence mould, so the "it learned the mould,
   not the word" paragraph still has a subject.
 - **1.8** — `bank`: finance against river. The river word-set must avoid the token `bank` itself.
+
+## Decisions fixed by a translated lesson
+
+Reuse these verbatim; they are settled, not open.
+
+**From 1.1** (`en/01-texto-como-numeros.mdx`):
+
+- **The alphabetical triple is `apple` (1), `cat` (2), `dog` (3).** Not `house`/`cat`/`dog`. A direct
+  translation of `casa`/`gato`/`perro` sorts to `cat, dog, house`, and the lesson's claim — "X is more
+  like Y than like Z" — then comes out **true**, which destroys the argument instead of merely
+  reordering it. `apple`/`cat`/`dog` keeps the Spanish shape (one unrelated noun sorting first, then
+  the two animals) and keeps the claim absurd. **1.4's `one-hot-equidistancia.svg` must show these
+  three words in this order**, and 1.4's `q-que-cumple` quotes the renumbering below.
+- **The worked sentence is `the cat drinks milk`** over $V = \{cat, drinks, milk, the\}$ → indices
+  1–4, giving the sequence **(4, 1, 2, 3)**, three pairs tied at distance 1 (`cat`/`drinks`,
+  `drinks`/`milk`, `milk`/`the`), and `drinks` at the midpoint of `cat` (1) and `milk` (3). The added
+  word is **`bird`**, which moves all four; `water` moves none. 1.6 inherits this sentence.
+- **The bridge hands off `unhappiness`** — one unit, or three (`un`, `happi`, `ness`), or **eleven**
+  letters. This replaces `dámelo`, and **1.2's opening must pick it up**, not the Spanish example. It
+  agrees with the worked case above.
+- **`criptomoneda` → `cryptocurrency`** as the OOV word; **`gato`/`gatos` → `cat`/`cats`** as the
+  subword pair.
 
 ## Acceptance criteria
 
