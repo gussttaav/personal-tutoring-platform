@@ -829,6 +829,7 @@
       "readingTime": "{minutes} min read",
       "refKicker": "Block {block} · Lesson {order}",
       "refAhead": "Coming up",
+      "refFallback": "In Spanish",
       "openNav": "Open course contents",
       "closeNav": "Close course contents",
       "translationPending": {

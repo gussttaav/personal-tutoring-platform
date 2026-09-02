@@ -1827,7 +1827,7 @@ first; see the [phase README](phase-11-translation/README.md).
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [00 Triage: classify 43 lessons](phase-11-translation/00-triage.md) | `COURSE-P11-00` | ⬜ | _tbd_ | |
-| [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ⬜ | _tbd_ | |
+| [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ✅ | _tbd_ | local |
 | [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ⬜ | _tbd_ | |
 | [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ⬜ | _tbd_ | |
 | [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ⬜ | _tbd_ | |
@@ -1839,6 +1839,42 @@ first; see the [phase README](phase-11-translation/README.md).
 **Landing order:** P11-00 first (cheap, everything keys off it). Then P11-01 → P11-02 → P11-03
 before any content. Then blocks in order; lessons within a block in order, because the bridges
 interlock in English.
+
+### P11-01 notes
+
+Both bugs fixed with the same two-step resolution — the reference's own locale tree, then the
+canonical one — in `validate-crosslinks.ts` (`resolveCrosslinkTarget`) and in `Leccion.tsx`
+(`resolveTarget`). The two must stay in agreement: the lint would otherwise pass what the page
+degrades. `validate-crosslinks.ts` is still Node-clean — the canonical directory name is a
+parameter defaulting to `"es"`, not an `@/i18n/routing` import.
+
+Consequences worth carrying into the block tasks:
+
+- **Translating lesson X invalidates every anchored reference to X** from an already-translated
+  lesson: X now renders English heading ids. The lint turns that into a fatal unresolved anchor,
+  so a translation PR can fail on a file it never touched. There is a test for it.
+- **A fallback target is marked in the hover card** (`courses.reader.refFallback`, «En español» /
+  "In Spanish"), the same way the ahead-of-the-reader case is marked. A card showing Spanish text
+  inside an English page without saying so is the mistake the reader route's `noindex` and the
+  catalog's "in Spanish" notice already refuse to make.
+- **A lesson drafted in `en/` but published in `es/`** resolves to the published Spanish version,
+  decided explicitly in both halves.
+- **The fallback runs one way only.** A Spanish lesson citing an English-only slug is a typo.
+
+The English voice families are selected by the lesson's locale directory (`lessonLocale`), warn-
+never-fail as before. Two deliberate narrowings against the task md's word list: `it is important
+to` and `it is worth noting` are verb-constrained (`…to note|remember|mention|stress|point out`,
+`…worth noting|mentioning|pointing out|remembering`) exactly as their Spanish counterparts are —
+unconstrained they fire on the prose the rule exists to protect. `just` is left wide, as the task
+directs. A locale with no families declared is checked against nothing rather than against
+Spanish patterns; adding a locale means adding its families.
+
+Verified by hand with a throwaway `en/02-tokenizacion.mdx` carrying one backward, one backward-
+anchored, one forward and one in-bridge reference: `lint:content` passes, the production build
+prerenders all three links with their hover cards, each kicker reading `Block 1 · Lesson N · In
+Spanish`, the in-bridge one plain text. The fixture was deleted — `en/` ships empty, per the
+task's Out of scope. (The dev-server lesson route 404s locally on a clean tree too; that is
+pre-existing and unrelated.)
 
 **Exit criteria**
 - [ ] 43 published lessons under `en/`; `fullyTranslated` true for `en`
