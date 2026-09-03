@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4 done)
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4, 1.5 done)
 
 ## TL;DR
 
@@ -345,7 +345,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 - [x] 1.2 `tokenizacion`
 - [x] 1.3 `vocabulario-oov`
 - [x] 1.4 `one-hot`
-- [ ] 1.5 `bolsa-de-palabras`
+- [x] 1.5 `bolsa-de-palabras`
 - [ ] 1.6 `embeddings-densos`
 - [ ] 1.7 `word2vec`
 - [ ] 1.8 `glove-y-limites`
@@ -444,6 +444,26 @@ Reuse these verbatim; they are settled, not open.
 - **The bag-of-words punchline word is `goal`** — the closing paragraph names `<W>goal</W>` as the
   content word that tells a match report from a recipe, in place of `<W>gol</W>`. 1.5's widget row
   and cell corpus already use match report / recipe, so this hands 1.5 the same anchor.
+
+**From 1.5** (`en/05-bolsa-de-palabras.mdx`):
+
+- **The `bag-of-words` widget reading is re-pitched for one article, not translated.** English has one
+  definite article, so both amber (per-document) maxima land on the *same* word `<W>the</W>` at `4` —
+  not two different articles (`el`, `la`) — and the corpus row reads `<W>the</W>` `8`, then `<W>of</W>`
+  and `<W>and</W>` at `2`. The "four times the weight of a word that says nothing" reading survives on
+  `the` alone. Content words `<W>keeper</W>`/`<W>penalty</W>` (match report) and `<W>flour</W>`/`<W>butter</W>`
+  (recipe) sit at `1`.
+- **The cell corpus is lesson-local, and its raw-count head had to be engineered function-word-only.**
+  Six English documents (football / cooking / programming). Because English lacks Spanish's six
+  naturally-frequent function words, a sixth (`<W>a</W>`, count `6`) is added so no content word
+  (peak `4`: `goal`, `oven`, `list`, `dough`) reaches the printed top-6. **Verified in Pyodide, never
+  CPython** — their `argsort` tie-breaks differ, and CPython alone put a content word in the top-6.
+  `goal` (1.4's anchor) is the football content word; nothing in the corpus is reused downstream —
+  `by_words` (from 1.2) remains the only carried-over cell object. Regenerated numbers: `idf` `1.10`
+  (`goal`/`oven`/`list`) and `1.79` (`referee`); same-topic cosines `0.19`/`0.26`/`0.32` against
+  `0.00`–`0.03`; the doubled document at distance `7.432`.
+- **The bridge hands `car` / `automobile` / `flour` to 1.6** (from `coche` / `automóvil` / `harina`) as
+  the "similar yet orthogonal" set, matching 1.6's planned `E`-swap — 1.6's opening picks these up.
 
 ## Acceptance criteria
 
