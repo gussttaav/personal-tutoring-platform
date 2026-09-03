@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 420" width="380" height="420" role="img" aria-label="Above, apple, cat and dog on a line with indices 1, 2 and 3: cat is at distance 1 from apple and dog is at distance 2, so cat lies between the other two. Below, the same three words in a space with three perpendicular axes, one on each axis, at the points (1,0,0), (0,1,0) and (0,0,1); the three points form an equilateral triangle whose sides measure root 2.">
+  <style>
+    .ax  { stroke: #86948a; stroke-width: 1.2; fill: none; }
+    .msr { stroke: #86948a; stroke-width: 1.1; fill: none; }
+    .dot { fill: #86948a; }
+    .tri { stroke: #4edea3; stroke-width: 2.2; fill: rgba(78,222,163,0.10); stroke-linejoin: round; }
+    .vtx { fill: #4edea3; }
+    text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+    .ttl { font-size: 13px; fill: #86948a; }
+    .wrd { font-size: 14px; font-style: italic; }
+    .crd { font-size: 12.5px; fill: #86948a; }
+    .num { font-size: 13px; fill: #86948a; }
+    .cap { font-size: 13px; text-anchor: middle; }
+    /* The radical sign is DRAWN, not written: U+221A is missing from some
+       UI fonts, and the label would show as an empty box. */
+    .rad path { stroke: #4edea3; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .rad text { font-size: 13px; fill: #4edea3; }
+  </style>
+
+  <!-- ── Panel A · the line from Lesson 1 ─────────────────────────────────── -->
+
+  <text class="ttl" x="20" y="24">one index per word · d = 1</text>
+
+  <line class="msr" x1="90" y1="46" x2="290" y2="46" />
+  <line class="msr" x1="90" y1="42" x2="90" y2="50" />
+  <line class="msr" x1="290" y1="42" x2="290" y2="50" />
+  <text class="num" x="190" y="38" text-anchor="middle">2</text>
+
+  <line class="msr" x1="90" y1="68" x2="190" y2="68" />
+  <line class="msr" x1="90" y1="64" x2="90" y2="72" />
+  <line class="msr" x1="190" y1="64" x2="190" y2="72" />
+  <text class="num" x="140" y="60" text-anchor="middle">1</text>
+
+  <line class="ax" x1="30" y1="92" x2="350" y2="92" />
+  <circle class="dot" cx="90" cy="92" r="5.5" />
+  <circle class="dot" cx="190" cy="92" r="5.5" />
+  <circle class="dot" cx="290" cy="92" r="5.5" />
+
+  <text class="wrd" x="90" y="114" text-anchor="middle">apple</text>
+  <text class="wrd" x="190" y="114" text-anchor="middle">cat</text>
+  <text class="wrd" x="290" y="114" text-anchor="middle">dog</text>
+
+  <text class="cap" x="190" y="140">cat lies between apple and dog</text>
+
+  <!-- ── Panel B · the three axes ─────────────────────────────────────────
+       Isometric view along the diagonal (1,1,1): the three axes project at
+       120° from each other, so the triangle comes out equilateral ON SCREEN
+       and not only in space. Origin (190,315), unit length 80. ──────────── -->
+
+  <text class="ttl" x="20" y="176">one axis per word · d = |V| = 3</text>
+
+  <line class="ax" x1="190" y1="315" x2="190" y2="209" />
+  <line class="ax" x1="190" y1="315" x2="98.5" y2="368" />
+  <line class="ax" x1="190" y1="315" x2="281.5" y2="368" />
+  <circle class="dot" cx="190" cy="315" r="3" />
+
+  <polygon class="tri" points="190,235 120.7,355 259.3,355" />
+  <circle class="vtx" cx="190" cy="235" r="5.5" />
+  <circle class="vtx" cx="120.7" cy="355" r="5.5" />
+  <circle class="vtx" cx="259.3" cy="355" r="5.5" />
+
+  <text class="wrd" x="206" y="230" text-anchor="start">cat</text>
+  <text class="crd" x="206" y="245" text-anchor="start">(0, 1, 0)</text>
+  <text class="wrd" x="105" y="382" text-anchor="end">apple</text>
+  <text class="crd" x="105" y="397" text-anchor="end">(1, 0, 0)</text>
+  <text class="wrd" x="275" y="382" text-anchor="start">dog</text>
+  <text class="crd" x="275" y="397" text-anchor="start">(0, 0, 1)</text>
+
+  <g class="rad" transform="translate(118,295)">
+    <path d="M 0,-3 L 3.5,1 L 7,-11 L 19,-11" />
+    <text x="9.5" y="0">2</text>
+  </g>
+  <g class="rad" transform="translate(236,295)">
+    <path d="M 0,-3 L 3.5,1 L 7,-11 L 19,-11" />
+    <text x="9.5" y="0">2</text>
+  </g>
+  <g class="rad" transform="translate(176,375)">
+    <path d="M 0,-3 L 3.5,1 L 7,-11 L 19,-11" />
+    <text x="9.5" y="0">2</text>
+  </g>
+
+  <text class="cap" x="190" y="412">none lies between the other two</text>
+</svg>

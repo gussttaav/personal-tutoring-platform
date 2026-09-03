@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3 done)
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4 done)
 
 ## TL;DR
 
@@ -344,7 +344,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 - [x] 1.1 `texto-como-numeros`
 - [x] 1.2 `tokenizacion`
 - [x] 1.3 `vocabulario-oov`
-- [ ] 1.4 `one-hot`
+- [x] 1.4 `one-hot`
 - [ ] 1.5 `bolsa-de-palabras`
 - [ ] 1.6 `embeddings-densos`
 - [ ] 1.7 `word2vec`
@@ -431,6 +431,19 @@ Reuse these verbatim; they are settled, not open.
   gets `one-hot-equidistancia.en.svg`** the same way. (Now settled in `AUTHORING.en.md` §7.)
 - **The 18-sentence cell corpus is lesson-local** — each Block 1 cell designs its own — so nothing in
   it is reused verbatim downstream. `by_words` (from 1.2) is the only carried-over cell object.
+
+**From 1.4** (`en/04-one-hot.mdx`):
+
+- **`one-hot-equidistancia.en.svg` exists**, drawn with `apple`, `cat`, `dog` in 1.1's re-sorted
+  English alphabetical order — the figure's Panel A places `apple` (1), `cat` (2), `dog` (3) on the
+  line so `cat` still lies between the other two, and Panel B keeps the triangle equilateral.
+- **The equidistance sentence pair is `the boy plays in the square` / `the girl plays in the
+  square`** — the English stand-in for `el niño juega en la plaza` / `la niña juega en la plaza`,
+  used both in the prose (the "no neighbours" argument) and in `q-transferencia` (the `boy`/`girl`
+  pair replaces `niño`/`niña`, and the answer stays false).
+- **The bag-of-words punchline word is `goal`** — the closing paragraph names `<W>goal</W>` as the
+  content word that tells a match report from a recipe, in place of `<W>gol</W>`. 1.5's widget row
+  and cell corpus already use match report / recipe, so this hands 1.5 the same anchor.
 
 ## Acceptance criteria
 
