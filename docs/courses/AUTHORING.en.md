@@ -270,10 +270,27 @@ rigour", the widget maths modules are `tokenisation.ts` and `optimisation.ts`, c
 words this course actually writes: *tokenisation*, *optimisation*, *normalise*, *initialisation*,
 *visualiser*, *behaviour*, *rigour*, *modelling* and *labelled* with their double `l`, *occurrence*.
 
-**The exception, and it is the usual one: identifiers keep their source spelling.** `normalize.ts`
-is a filename, `initialize` is a Python method, `tokenizer-playground` is a widget id, and
-`np.random.normal` is what NumPy calls it. Code is quoted, not translated — which includes every
-identifier in a `<PyCell>`, every widget `id`, and every slug.
+**The exception, and it is the usual one: names the course does not own keep their source spelling.**
+`normalize.ts` is a filename, `initialize` is a Python method, `np.random.normal` is what NumPy calls
+it, and `tokenizer-playground` is a widget id — none of them takes an `-ise` or an English gloss.
+These are quoted, not translated: every library or API name, every filename, every widget `id`, and
+every slug.
+
+**A `<PyCell>`'s own code is not one of those names — it is the lesson talking, so it is written in
+English like the prose.** Its local identifiers, comments and `print` strings are translated
+(`por_palabras` → `by_words`, `normaliza` → `normalise`, `# la puntuación…` → `# punctuation…`,
+`"caracteres"` → `"characters"`), and being the course's own vocabulary they take en-GB spelling like
+everything else. The forcing argument is the output: a student reads what the cell prints, so the
+print strings *must* be English, and a cell whose functions are Spanish while its output is English
+reads as half-translated — the exact "translated course" tell §3 exists to kill. *Settled by
+`en/02-tokenizacion.mdx` (COURSE-P11-04).*
+
+**The same line runs through the `reading` block.** Only `note` is prose, but the bibliographic
+fields render *verbatim*, so any editorial Spanish left in them is translated the way the prose is:
+`Sennrich, Haddow y Birch` → `…and Birch`, `cap. 2` → `ch. 2`, `3.ª ed., borrador libre` → `3rd ed.,
+free draft`. What stays fixed is the source's *identity* — surnames, the work's own title, `venue`,
+`url` and `lang` (an English source is `en` in both locales) — and `kind`, an enum the reader
+localises on its own. "Translate only the note" means keep the source, not keep the Spanish.
 
 ## 8. What this delta does not replace
 

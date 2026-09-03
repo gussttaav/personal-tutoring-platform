@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** not started
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2 done)
 
 ## TL;DR
 
@@ -342,7 +342,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 ## Lesson progress
 
 - [x] 1.1 `texto-como-numeros`
-- [ ] 1.2 `tokenizacion`
+- [x] 1.2 `tokenizacion`
 - [ ] 1.3 `vocabulario-oov`
 - [ ] 1.4 `one-hot`
 - [ ] 1.5 `bolsa-de-palabras`
@@ -403,6 +403,25 @@ Reuse these verbatim; they are settled, not open.
   agrees with the worked case above.
 - **`criptomoneda` → `cryptocurrency`** as the OOV word; **`gato`/`gatos` → `cat`/`cats`** as the
   subword pair.
+
+**From 1.2** (`en/02-tokenizacion.mdx`):
+
+- **The character/word tokeniser cell is `normalise` (the NFC wrapper), `by_chars`, `by_words`** — the
+  English identifiers for `normaliza`/`por_caracteres`/`por_palabras`. **1.3 reuses `by_words`
+  verbatim**: the Spanish rule that 1.3's `por_palabras` must equal 1.2's carries straight over. Only
+  the functions transfer; each cell still designs its own corpus.
+- **`naïve` (the `ï` — one code point in NFC) is the block's NFC example**, not `ñ`, chosen to match the
+  `tokenizer-playground` English corpus `The naïve teacher tests tokenisation in English.`, whose long
+  word `tokenisation` is the one the widget splits into subwords.
+- **The "unit smaller than a word" example is `unhappiness` = `un`/`happi`/`ness`** (handed over by
+  1.1's bridge), and the clitic/contraction demo is `Don't` → `Don`/`'`/`t` with the possessive `'s`
+  torn off — these replace `dámelo` and `del`/`al`.
+- **`q-longitud`'s answer moved to `20`** for `The naïve boy plays.` (tolerance still `0`) — the
+  block's one moved answer, as predicted.
+- **The code-cell language rule and the reading-field rule are now settled in `AUTHORING.en.md` §7**
+  (translate a `<PyCell>`'s own identifiers, comments and `print` strings, and any editorial Spanish in
+  `reading` fields; keep library/API names, widget ids, slugs and the source's identity). Later
+  lessons follow it without re-deciding.
 
 ## Acceptance criteria
 
