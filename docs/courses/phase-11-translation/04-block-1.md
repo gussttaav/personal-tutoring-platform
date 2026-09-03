@@ -428,8 +428,7 @@ Reuse these verbatim; they are settled, not open.
 - **A figure asset with source text set into it gets an English sibling `<name>.en.svg`** in the same
   `public/courses/dl-nlp/` directory, and the lesson's `<Figure src>` points at that. 1.3 was the
   block's first `<Figure>` and created `suma-armonica.en.svg`; **1.4's `one-hot-equidistancia.svg`
-  gets `one-hot-equidistancia.en.svg`** the same way. (Proposed as an `AUTHORING.en.md` §7 addition;
-  not yet applied there.)
+  gets `one-hot-equidistancia.en.svg`** the same way. (Now settled in `AUTHORING.en.md` §7.)
 - **The 18-sentence cell corpus is lesson-local** — each Block 1 cell designs its own — so nothing in
   it is reused verbatim downstream. `by_words` (from 1.2) is the only carried-over cell object.
 

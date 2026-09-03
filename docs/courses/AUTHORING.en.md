@@ -292,6 +292,16 @@ free draft`. What stays fixed is the source's *identity* — surnames, the work'
 `url` and `lang` (an English source is `en` in both locales) — and `kind`, an enum the reader
 localises on its own. "Translate only the note" means keep the source, not keep the Spanish.
 
+**A `<Figure>` whose asset has source text set into it gets an English sibling, `<name>.en.svg`.**
+The SVG's `alt`, `caption` and any label baked into the drawing are the lesson talking, translated
+like the prose — but the file itself is a static asset that `src` names by path, with no locale
+resolution behind it (`src/lib/courses/mdx-components.tsx` passes `src` straight to an `<img>`). So
+the English lesson cannot point at the Spanish file without inheriting its Spanish labels. Copy it to
+`<name>.en.svg` beside the original in `public/courses/dl-nlp/`, translate the text set into it and
+the `aria-label`, and point `src` at the sibling; the Spanish file keeps its name and its Spanish.
+Figures are not widgets, so P11-02 does not own them and the redraw is the translating lesson's.
+*Settled by `en/03-vocabulario-oov.mdx` (COURSE-P11-04): `suma-armonica.svg` → `suma-armonica.en.svg`.*
+
 ## 8. What this delta does not replace
 
 Named explicitly, because these are the parts most likely to be re-decided by an author who has the
