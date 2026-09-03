@@ -38,6 +38,7 @@ import {
 } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 
+import { useClientValue } from "@/hooks/useClientValue";
 import type { ChallengeResult, CodeChallenge, TestResult } from "@/domain/types";
 import { WidgetButton } from "@/features/courses/widgets/primitives/WidgetButton";
 import { useExerciseHistory } from "@/features/courses/reader/attempt-history";
@@ -54,6 +55,7 @@ import {
 } from "./challenge-state";
 import { applyAutoClose, applyBackspacePair, applyEnter, applyTab } from "./editing";
 import { EDITOR_MAX_HEIGHT, isCapped } from "./editor-metrics";
+import { hasLoadedInterpreterBefore, markInterpreterLoaded } from "./interpreter-cache";
 
 /** P4-02's wiring point, twinned with `QuizAttemptContext`: provide a handler and
  *  every graded run on the page reports to it. Both take an `AssessmentResult`. */
@@ -128,6 +130,9 @@ export function CodeChallengeCard({
   const [stdout, setStdout] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  // `false` on the server and the first client render, then the real per-browser value —
+  // see interpreter-cache.ts. Shared with every `<PyCell>` and challenge on the site.
+  const interpreterCached = useClientValue(hasLoadedInterpreterBefore, false);
 
   const textarea = useRef<HTMLTextAreaElement>(null);
   const pendingSelection = useRef<[number, number] | null>(null);
@@ -141,7 +146,7 @@ export function CodeChallengeCard({
   const capped = isCapped(value);
 
   const STAGE_LABEL: Record<LoadStage, string> = {
-    runtime:  t("stage.runtime"),
+    runtime:  interpreterCached ? t("stage.runtimeCached") : t("stage.runtime"),
     packages: t("stage.packages"),
     preamble: t("stage.preamble"),
     ready:    t("stage.ready"),
@@ -190,7 +195,11 @@ export function CodeChallengeCard({
       {
         onLoading: (stage, pct, detail) => {
           setProgress({ stage, pct, detail });
-          if (stage === "ready") setStatus("running");
+          if (stage === "ready") {
+            setStatus("running");
+            // The assets are in the HTTP cache now — later lessons load, not download.
+            markInterpreterLoaded();
+          }
         },
         // stdout carries the harness protocol AND the student's prints; stderr is
         // theirs alone. Kept apart so an interleaved stderr write can never split a
@@ -403,7 +412,9 @@ export function CodeChallengeCard({
       </div>
 
       <p style={{ margin: "0.5rem 0 0", fontSize: "0.78rem", color: "var(--text-dim)" }}>
-        {state.attempts === 0 && !busy ? `${t("firstRunNote")} ` : ""}
+        {state.attempts === 0 && !busy
+          ? `${interpreterCached ? t("firstRunNoteCached") : t("firstRunNote")} `
+          : ""}
         {t("keyboardNote")}
       </p>
 

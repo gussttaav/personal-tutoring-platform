@@ -873,9 +873,11 @@
       "collapse": "Contraer",
       "editorLabel": "Tu solución en Python",
       "firstRunNote": "La primera comprobación descarga el intérprete de Python (~15 MB); después queda en la caché del navegador.",
+      "firstRunNoteCached": "El intérprete de Python ya está en la caché del navegador; la primera comprobación solo tarda un momento en reactivarlo.",
       "keyboardNote": "Este desafío se resuelve mejor con un teclado físico: en el móvil puedes leerlo y volver luego.",
       "stage": {
         "runtime": "Descargando el intérprete de Python…",
+        "runtimeCached": "Cargando el intérprete de Python desde la caché…",
         "packages": "Cargando paquetes…",
         "preamble": "Preparando el entorno…",
         "ready": "Ejecutando las pruebas…"
@@ -906,6 +908,31 @@
         "solved": "Resuelto · {passed}/{total} pruebas · {date}",
         "attempted": "Lo intentaste {count, plural, =1 {# vez} other {# veces}} · {date}"
       }
+    },
+    "code": {
+      "run": "Ejecutar",
+      "running": "Ejecutando…",
+      "stop": "Detener",
+      "reset": "Reiniciar",
+      "expand": "Ver las {count} líneas",
+      "collapse": "Contraer",
+      "editorLabel": "Código Python editable",
+      "editLabel": "Editar el código de esta celda",
+      "firstRunNote": "La primera ejecución descarga el intérprete de Python (~15 MB). Después queda en la caché del navegador y se reutiliza en todas las lecciones.",
+      "firstRunNoteCached": "El intérprete de Python ya está en la caché del navegador; la primera ejecución en esta lección solo tarda un momento en reactivarlo.",
+      "stage": {
+        "runtime": "Descargando el intérprete de Python…",
+        "runtimeCached": "Cargando el intérprete de Python desde la caché…",
+        "packages": "Cargando paquetes…",
+        "preamble": "Preparando el entorno…",
+        "ready": "Ejecutando…"
+      },
+      "droppedLines": "Se ocultaron las primeras {count} líneas; solo se muestran las últimas.",
+      "plotAlt": "Gráfica {number} generada por el código",
+      "timeoutRun": "La ejecución superó los {seconds} s y se detuvo. El intérprete se reinició, así que se perdió el estado de las celdas anteriores: vuelve a ejecutarlas si tu código dependía de ellas.",
+      "timeoutLoad": "La descarga del intérprete tardó demasiado. Comprueba tu conexión y vuelve a intentarlo.",
+      "stopped": "Ejecución detenida. El intérprete se reinició, así que se perdió el estado de las celdas anteriores.",
+      "crashed": "El intérprete se cerró inesperadamente: {error}"
     },
     "progress": {
       "markComplete": "Marcar como completada",
