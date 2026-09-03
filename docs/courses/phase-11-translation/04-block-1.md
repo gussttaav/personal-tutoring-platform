@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2 done)
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3 done)
 
 ## TL;DR
 
@@ -343,7 +343,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 
 - [x] 1.1 `texto-como-numeros`
 - [x] 1.2 `tokenizacion`
-- [ ] 1.3 `vocabulario-oov`
+- [x] 1.3 `vocabulario-oov`
 - [ ] 1.4 `one-hot`
 - [ ] 1.5 `bolsa-de-palabras`
 - [ ] 1.6 `embeddings-densos`
@@ -422,6 +422,16 @@ Reuse these verbatim; they are settled, not open.
   (translate a `<PyCell>`'s own identifiers, comments and `print` strings, and any editorial Spanish in
   `reading` fields; keep library/API names, widget ids, slugs and the source's identity). Later
   lessons follow it without re-deciding.
+
+**From 1.3** (`en/03-vocabulario-oov.mdx`):
+
+- **A figure asset with source text set into it gets an English sibling `<name>.en.svg`** in the same
+  `public/courses/dl-nlp/` directory, and the lesson's `<Figure src>` points at that. 1.3 was the
+  block's first `<Figure>` and created `suma-armonica.en.svg`; **1.4's `one-hot-equidistancia.svg`
+  gets `one-hot-equidistancia.en.svg`** the same way. (Proposed as an `AUTHORING.en.md` §7 addition;
+  not yet applied there.)
+- **The 18-sentence cell corpus is lesson-local** — each Block 1 cell designs its own — so nothing in
+  it is reused verbatim downstream. `by_words` (from 1.2) is the only carried-over cell object.
 
 ## Acceptance criteria
 
