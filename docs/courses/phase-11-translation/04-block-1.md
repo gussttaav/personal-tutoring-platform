@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4, 1.5, 1.6 done)
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7 done)
 
 ## TL;DR
 
@@ -347,7 +347,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 - [x] 1.4 `one-hot`
 - [x] 1.5 `bolsa-de-palabras`
 - [x] 1.6 `embeddings-densos`
-- [ ] 1.7 `word2vec`
+- [x] 1.7 `word2vec`
 - [ ] 1.8 `glove-y-limites`
 
 ## The worked case — 1.2
@@ -498,6 +498,24 @@ Reuse these verbatim; they are settled, not open.
 - **The `boy` / `girl` window pair and `the cat drinks milk` carry over verbatim** from 1.4 and 1.1
   respectively, and `cold` / `hot` is the "same context, opposite meaning" pair. No answer moved (the
   hand-written `E` keeps every quoted number: `0.99`, `0.97`, `-0.48`, `0.02`, `0.30`).
+
+**From 1.7** (`en/07-word2vec.mdx`):
+
+- **Nothing carries over to 1.8.** The template corpus is lesson-local (animals / foods / places /
+  drinks over `the {a} eats/drinks … in the {l}` and the single `the girl sees the {a} …` mould);
+  `|V|` came out **20**, not 21, because `el`/`la` both collapse to `the`. Regenerated numbers, all
+  re-run in Pyodide: before-training `dog` → `kitchen` `0.5`; after four passes `dog` → `cat`/`mouse`/
+  `horse` all ≥ `0.96`, `meat` → the other foods, `yard` → the other places; with `n_neg = 0` the loss
+  falls to `0.019` and `dog` sits at `0.99` from `the`. No answer moved (`q-pares` is abstract, `60`).
+- **The single-mould word is `girl`, and it lands *among the animals*** (`dog` `0.84`, `cat` `0.82`),
+  not beside its frame words the way Spanish `niña` stuck to `la`/`ve` — because `the` is now
+  universal, `girl`'s only distinctive slot is the subject of `sees`, which the animals share. The
+  "it learned the mould, not the word" paragraph was rewritten onto that result. This is the number
+  the row predicted would move; it moved further than a value shift, and the reader should judge the
+  replacement.
+- **`embedding-projection` scatter and the `king − man + woman → queen` analogy are reused, not
+  fixed here** — both settled by 1.6; 1.7's third `reading` note restores the analogy to the source
+  form. 1.8's second use of the scatter still stands.
 
 ## Acceptance criteria
 
