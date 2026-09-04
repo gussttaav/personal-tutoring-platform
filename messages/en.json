@@ -304,7 +304,7 @@
         "item2": "your bookings and your entire class history",
         "item3": "your course progress and answers",
         "item4": "your payment records",
-        "imminent": "In addition, {count, plural, one {# class starting in less than 2 hours will be cancelled} other {# classes starting in less than 2 hours will be cancelled}} with no refund.",
+        "imminent": "In addition, {count, plural, one {# class starting in less than {hours} hours will be cancelled} other {# classes starting in less than {hours} hours will be cancelled}} with no refund.",
         "typeEmail": "Type {email} to confirm",
         "placeholder": "you@email.com",
         "submit": "Delete my account",
@@ -370,7 +370,7 @@
       "goToPersonalArea": "Go to my personal area",
       "backToHome": "Back to home",
       "helpEmailFailed": "Need help? Write to contacto@gustavoai.dev",
-      "helpGeneral": "You can reschedule or cancel at no cost up to 2 hours before the class",
+      "helpGeneral": "You can reschedule or cancel at no cost up to {hours} hours before the class",
       "errorEyebrow": "Something went wrong",
       "errorTitle": "We couldn't complete your booking",
       "errorSlotAvailable": "The slot is still available, you can try again.",
@@ -416,7 +416,7 @@
       "modeSubtitle": "From a free initial meeting to intensive work sessions.",
       "continuityPacks": "Continuity packs",
       "packsSubtitle": "More hours, better price.",
-      "packsDescription": "Book at your own pace for 6 months and save compared to individual sessions.",
+      "packsDescription": "Book at your own pace for {days} days and save compared to individual sessions.",
       "sessions": {
         "free15min": {
           "badge": "Free",
@@ -447,7 +447,7 @@
       "benefits": {
         "sessions": "{hours} one-hour sessions",
         "flexible": "Flexible booking — you decide when",
-        "validity": "Valid for 180 days"
+        "validity": "Valid for {days} days"
       }
     },
     "sidebar": {
@@ -1088,7 +1088,7 @@
       "creditsSyncedAnon": "We've synced your credits.",
       "creditsLabel": "{credits, plural, one {# class} other {# classes}}",
       "creditsAvailableNote": "{credits, plural, one {available to book} other {available to book}}",
-      "validityNote": "Valid for 6 months",
+      "validityNote": "Valid for {days} days",
       "bookMyClasses": "Book my classes",
       "receiptSent": "We've sent you the receipt by email",
       "timeoutEyebrow": "Taking a bit longer",
@@ -1150,7 +1150,7 @@
       "joinBtn": "Join session →",
       "labelNote": "Session goal",
       "addToCal": "📅 Add to Google Calendar",
-      "cancelPolicy": "You can cancel or reschedule up to <strong>2 hours before</strong> the session at no cost.",
+      "cancelPolicy": "You can cancel or reschedule up to <strong>{hours} hours before</strong> the session at no cost.",
       "cancelBtn": "Cancel booking",
       "rescheduleBtn": "Reschedule",
       "tzNoteMadrid": "(Madrid time)",

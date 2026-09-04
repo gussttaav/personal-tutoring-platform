@@ -304,7 +304,7 @@
         "item2": "tus reservas y todo tu historial de clases",
         "item3": "tu progreso y tus respuestas en los cursos",
         "item4": "tus registros de pago",
-        "imminent": "Además, {count, plural, one {# clase que empieza en menos de 2 horas será cancelada} other {# clases que empiezan en menos de 2 horas serán canceladas}} sin derecho a reembolso.",
+        "imminent": "Además, {count, plural, one {# clase que empieza en menos de {hours} horas será cancelada} other {# clases que empiezan en menos de {hours} horas serán canceladas}} sin derecho a reembolso.",
         "typeEmail": "Escribe {email} para confirmar",
         "placeholder": "tu@email.com",
         "submit": "Eliminar mi cuenta",
@@ -370,7 +370,7 @@
       "goToPersonalArea": "Ir a mi área personal",
       "backToHome": "Volver al inicio",
       "helpEmailFailed": "¿Necesitas ayuda? Escribe a contacto@gustavoai.dev",
-      "helpGeneral": "Puedes reprogramar o cancelar sin coste hasta 2 horas antes de la clase",
+      "helpGeneral": "Puedes reprogramar o cancelar sin coste hasta {hours} horas antes de la clase",
       "errorEyebrow": "Algo salió mal",
       "errorTitle": "No pudimos completar tu reserva",
       "errorSlotAvailable": "El horario sigue disponible, puedes intentarlo de nuevo",
@@ -416,7 +416,7 @@
       "modeSubtitle": "Desde una exploración inicial gratuita hasta sesiones de trabajo intensivo.",
       "continuityPacks": "Packs de continuidad",
       "packsSubtitle": "Más horas, mejor precio.",
-      "packsDescription": "Reserva a tu ritmo durante 6 meses y ahorra respecto a las sesiones sueltas.",
+      "packsDescription": "Reserva a tu ritmo durante {days} días y ahorra respecto a las sesiones sueltas.",
       "sessions": {
         "free15min": {
           "badge": "Gratis",
@@ -447,7 +447,7 @@
       "benefits": {
         "sessions": "{hours} sesiones de 1 hora",
         "flexible": "Reserva flexible — tú decides cuándo",
-        "validity": "Vigencia de 180 días"
+        "validity": "Vigencia de {days} días"
       }
     },
     "sidebar": {
@@ -1088,7 +1088,7 @@
       "creditsSyncedAnon": "Hemos sincronizado tus créditos.",
       "creditsLabel": "{credits, plural, one {# clase} other {# clases}}",
       "creditsAvailableNote": "{credits, plural, one {disponible para reservar} other {disponibles para reservar}}",
-      "validityNote": "Válidas 6 meses",
+      "validityNote": "Válidas {days} días",
       "bookMyClasses": "Reservar mis clases",
       "receiptSent": "Te hemos enviado el recibo por email",
       "timeoutEyebrow": "Tardando un poco más",
@@ -1150,7 +1150,7 @@
       "joinBtn": "Unirse a la sesión →",
       "labelNote": "Motivo de la sesión",
       "addToCal": "📅 Añadir a Google Calendar",
-      "cancelPolicy": "Si necesitas cancelar o reprogramar, puedes hacerlo hasta <strong>2 horas antes</strong> sin ningún coste.",
+      "cancelPolicy": "Si necesitas cancelar o reprogramar, puedes hacerlo hasta <strong>{hours} horas antes</strong> sin ningún coste.",
       "cancelBtn": "Cancelar reserva",
       "rescheduleBtn": "Reprogramar",
       "tzNoteMadrid": "(hora de Madrid)",

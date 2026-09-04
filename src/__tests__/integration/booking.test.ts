@@ -34,6 +34,7 @@ const creditParams = {
   amount:          5,
   packLabel:       "Pack 5 clases",
   stripeSessionId: "pi_test_001",
+  expiresAt:       new Date(Date.now() + 180 * 24 * 60 * 60_000).toISOString(),
 };
 
 describe("Booking flow — pack session success", () => {

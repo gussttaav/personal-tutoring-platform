@@ -43,7 +43,13 @@ function formatEuros(cents: number): string {
   return `€${Number.isInteger(euros) ? euros : euros.toFixed(2).replace(".", ",")}`;
 }
 
-export function PricingForm({ prices }: { prices: PriceRecord[] }) {
+export function PricingForm({
+  prices,
+  packValidityDays,
+}: {
+  prices: PriceRecord[];
+  packValidityDays: number;
+}) {
   const byKey = new Map(prices.map((p) => [p.productKey, p]));
 
   const [amounts, setAmounts] = useState<Record<ProductKey, string>>(() => {
@@ -55,9 +61,10 @@ export function PricingForm({ prices }: { prices: PriceRecord[] }) {
     return init;
   });
 
-  const [reason, setReason]   = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [validity, setValidity] = useState(String(packValidityDays));
+  const [reason, setReason]     = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState<string | null>(null);
 
   // Live-derived pack original = current 1h price × hours (cents), or null.
   const session1hCents = inputToCents(amounts.session1h);
@@ -78,7 +85,7 @@ export function PricingForm({ prices }: { prices: PriceRecord[] }) {
       return;
     }
 
-    const updates: { productKey: ProductKey; amountCents: number; reason: string }[] = [];
+    const updates: { productKey: ProductKey; amountCents: number }[] = [];
 
     for (const key of PRODUCT_ORDER) {
       const rec = byKey.get(key);
@@ -90,11 +97,19 @@ export function PricingForm({ prices }: { prices: PriceRecord[] }) {
         return;
       }
       if (amountCents !== rec.amountCents) {
-        updates.push({ productKey: key, amountCents, reason: reason.trim() });
+        updates.push({ productKey: key, amountCents });
       }
     }
 
-    if (updates.length === 0) {
+    // Pack validity — only sent when it changed (avoids a spurious audit entry).
+    const validityDays = parseInt(validity, 10);
+    if (!Number.isInteger(validityDays) || validityDays < 1 || validityDays > 3650) {
+      setError("La validez del pack debe ser un número de días entre 1 y 3650.");
+      return;
+    }
+    const validityChanged = validityDays !== packValidityDays;
+
+    if (updates.length === 0 && !validityChanged) {
       setError("No hay cambios que guardar.");
       return;
     }
@@ -104,7 +119,11 @@ export function PricingForm({ prices }: { prices: PriceRecord[] }) {
       const res = await fetch("/api/admin/pricing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify({
+          prices: updates,
+          ...(validityChanged ? { packValidityDays: validityDays } : {}),
+          reason: reason.trim(),
+        }),
       });
       if (res.ok) {
         window.location.reload();
@@ -159,6 +178,20 @@ export function PricingForm({ prices }: { prices: PriceRecord[] }) {
           })}
         </tbody>
       </table>
+
+      <div className="schedule-settings">
+        <label className="schedule-setting">
+          <span>Validez del pack (días)</span>
+          <input
+            type="number"
+            min="1"
+            max="3650"
+            step="1"
+            value={validity}
+            onChange={(e) => setValidity(e.target.value)}
+          />
+        </label>
+      </div>
 
       <div className="adjust-form-row">
         <input

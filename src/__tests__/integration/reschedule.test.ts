@@ -22,6 +22,7 @@ const creditParams = {
   amount:          5,
   packLabel:       "Pack 5 clases",
   stripeSessionId: "pi_reschedule_001",
+  expiresAt:       new Date(Date.now() + 180 * 24 * 60 * 60_000).toISOString(),
 };
 
 const packInput = (startH = 6, endH = 7) => ({

@@ -11,6 +11,8 @@ export interface ConfirmationEmailParams {
   studentTz:    string | null;
   sessionType:  string;
   locale:       'es' | 'en';
+  /** Cancellation window (hours) shown in the email's cancel policy line. */
+  cancelHours:  number;
 }
 
 export interface NewBookingNotificationParams {

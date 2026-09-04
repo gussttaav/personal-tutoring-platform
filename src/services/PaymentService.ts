@@ -368,11 +368,18 @@ export class PaymentService {
       throw new PermanentWebhookError(`Missing pack_size in metadata for ${intentId}`);
     }
 
+    // Resolve the pack's redeemability deadline from the admin-editable
+    // pack-validity setting (pricing_settings.pack_validity_days) and freeze it on
+    // this pack at purchase time. Changing the setting only affects future packs.
+    const validityDays = await this.pricing.getPackValidityDays();
+    const expiresAt    = new Date(Date.now() + validityDays * 24 * 60 * 60_000).toISOString();
+
     await this.credits.addCredits({
       email, name, amount: packSize,
       packLabel: `Pack ${packSize} clases`, stripeSessionId: intentId,
+      expiresAt,
     });
-    log("info", "Pack credits written", { service: "payment", email, packSize });
+    log("info", "Pack credits written", { service: "payment", email, packSize, validityDays });
 
     // PAYMENTS-AUDIT-01: intentId is the credit_packs.stripe_payment_id, which is
     // exactly the key the history/admin surfaces join `payments` on.

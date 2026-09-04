@@ -10,7 +10,7 @@ import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { log } from "@/lib/logger";
 import { AdjustCreditsSchema } from "@/lib/schemas";
-import { creditService } from "@/services";
+import { creditService, pricingService } from "@/services";
 import { supabaseAuditRepository } from "@/infrastructure/supabase";
 import {
   fetchStudent,
@@ -72,12 +72,16 @@ export async function POST(req: NextRequest, { params }: Params) {
   const { amount, reason } = parsed.data;
 
   if (amount > 0) {
+    // Manually-granted credits get the same validity window as purchased packs.
+    const validityDays = await pricingService.getPackValidityDays();
+    const expiresAt    = new Date(Date.now() + validityDays * 24 * 60 * 60_000).toISOString();
     await creditService.addCredits({
       email,
       name: "",
       amount,
       packLabel: `Ajuste manual: ${reason}`,
       stripeSessionId: `manual-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      expiresAt,
     });
   } else if (amount < 0) {
     for (let i = 0; i < Math.abs(amount); i++) {

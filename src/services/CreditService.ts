@@ -24,6 +24,9 @@ export class CreditService {
     amount:          number;
     packLabel:       string;
     stripeSessionId: string;
+    /** ISO 8601 redeemability deadline, resolved by the caller from the
+     *  admin-editable pack-validity setting. */
+    expiresAt:       string;
   }): Promise<void> {
     await this.credits.addCredits({
       email:           params.email,
@@ -31,6 +34,7 @@ export class CreditService {
       creditsToAdd:    params.amount,
       packLabel:       params.packLabel,
       stripeSessionId: params.stripeSessionId,
+      expiresAt:       params.expiresAt,
     });
 
     await this.audit.append(params.email, {

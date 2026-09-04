@@ -25,6 +25,7 @@ describe("ScheduleService", () => {
 
       expect(config.timezone).toBe("Europe/Madrid");
       expect(config.minNoticeHours).toBe(5);
+      expect(config.cancelMinNoticeHours).toBe(2);
       expect(config.bookingWindowWeeks).toBe(BOOKING_WINDOW_WEEKS);
       // Monday has the morning + afternoon split shift.
       expect(config.weeklyHours[1]).toEqual([
@@ -95,15 +96,17 @@ describe("ScheduleService", () => {
           1: [{ startMinute: 600, endMinute: 720 }],
           0: [], 2: [], 3: [], 4: [], 5: [], 6: [],
         },
-        timezone:       "Europe/London",
-        minNoticeHours: 12,
-        by:             "admin@test.com",
-        reason:         "new summer schedule",
+        timezone:             "Europe/London",
+        minNoticeHours:       12,
+        cancelMinNoticeHours: 3,
+        by:                   "admin@test.com",
+        reason:               "new summer schedule",
       });
 
       const config = await service.getConfig();
       expect(config.timezone).toBe("Europe/London");
       expect(config.minNoticeHours).toBe(12);
+      expect(config.cancelMinNoticeHours).toBe(3);
       expect(config.weeklyHours[1]).toEqual([{ startMinute: 600, endMinute: 720 }]);
       expect(config.weeklyHours[2]).toEqual([]);
     });
@@ -112,19 +115,21 @@ describe("ScheduleService", () => {
       const { service, audit } = makeService();
       await service.updateConfig({
         weeklyHours: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
-        timezone:       "Europe/Madrid",
-        minNoticeHours: 8,
-        by:             "admin@test.com",
-        reason:         "closing for holidays",
+        timezone:             "Europe/Madrid",
+        minNoticeHours:       8,
+        cancelMinNoticeHours: 4,
+        by:                   "admin@test.com",
+        reason:               "closing for holidays",
       });
 
       const entries = audit.getAll("admin@test.com");
       expect(entries).toHaveLength(1);
       expect(entries[0]).toMatchObject({
-        action:         "admin_update_schedule",
-        timezone:       "Europe/Madrid",
-        minNoticeHours: 8,
-        reason:         "closing for holidays",
+        action:               "admin_update_schedule",
+        timezone:             "Europe/Madrid",
+        minNoticeHours:       8,
+        cancelMinNoticeHours: 4,
+        reason:               "closing for holidays",
       });
     });
   });

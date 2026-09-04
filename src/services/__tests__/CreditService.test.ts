@@ -79,17 +79,20 @@ describe("CreditService.addCredits", () => {
     credits.addCredits.mockResolvedValue(undefined);
 
     const service = new CreditService(credits, audit);
+    const expiresAt = new Date(Date.now() + 180 * 24 * 60 * 60_000).toISOString();
     await service.addCredits({
       email:           "s@b.com",
       name:            "Student",
       amount:          5,
       packLabel:       "Pack 5 clases",
       stripeSessionId: "cs_test_123",
+      expiresAt,
     });
 
     expect(credits.addCredits).toHaveBeenCalledWith(expect.objectContaining({
       email:        "s@b.com",
       creditsToAdd: 5,
+      expiresAt,
     }));
     expect(audit.append).toHaveBeenCalledWith("s@b.com", expect.objectContaining({
       action: "purchase", creditsAdded: 5,

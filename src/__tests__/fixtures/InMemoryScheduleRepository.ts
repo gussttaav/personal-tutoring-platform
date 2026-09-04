@@ -18,10 +18,11 @@ function seedWeekly(): WeeklyHours {
 export class InMemoryScheduleRepository implements IScheduleRepository {
   private weekly: WeeklyHours = seedWeekly();
   private settings: ScheduleSettings = {
-    timezone:       "Europe/Madrid",
-    minNoticeHours: 5,
-    updatedAt:      new Date().toISOString(),
-    updatedBy:      null,
+    timezone:             "Europe/Madrid",
+    minNoticeHours:       5,
+    cancelMinNoticeHours: 2,
+    updatedAt:            new Date().toISOString(),
+    updatedBy:            null,
   };
 
   async getWeeklyHours(): Promise<WeeklyHours> {
@@ -45,12 +46,13 @@ export class InMemoryScheduleRepository implements IScheduleRepository {
     this.weekly = next;
   }
 
-  async updateSettings(settings: { timezone: string; minNoticeHours: number; updatedBy: string }): Promise<void> {
+  async updateSettings(settings: { timezone: string; minNoticeHours: number; cancelMinNoticeHours: number; updatedBy: string }): Promise<void> {
     this.settings = {
-      timezone:       settings.timezone,
-      minNoticeHours: settings.minNoticeHours,
-      updatedAt:      new Date().toISOString(),
-      updatedBy:      settings.updatedBy,
+      timezone:             settings.timezone,
+      minNoticeHours:       settings.minNoticeHours,
+      cancelMinNoticeHours: settings.cancelMinNoticeHours,
+      updatedAt:            new Date().toISOString(),
+      updatedBy:            settings.updatedBy,
     };
   }
 }
