@@ -53,6 +53,12 @@ mark arrives with two jobs — the failure this section exists to prevent — an
 > **The loose sense is the only use of quotation marks in a lesson.** Quoted speech and quoted
 > output belong in `<W>` or in a code fence.
 
+A cited line or aphorism is a third thing, and it takes neither mark: not quotation marks (loose sense
+only) and not italics (which already has its two jobs above, and in Spanish only marked the line as
+foreign — a reason that disappears in English). Set it plain, delimited by spaced em-dashes, with the
+attribution in the sentence: `it is almost always cited in Firth's line — you shall know a word by
+the company it keeps — and`. *Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04).*
+
 The `<W>` boundary is [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)'s,
 unchanged. Its plain-text prop exception carries over: `caption`, `alt` and `summary` are strings, so
 a string the lesson talks about is written `"tokenisation"` there.
@@ -301,6 +307,22 @@ the English lesson cannot point at the Spanish file without inheriting its Spani
 the `aria-label`, and point `src` at the sibling; the Spanish file keeps its name and its Spanish.
 Figures are not widgets, so P11-02 does not own them and the redraw is the translating lesson's.
 *Settled by `en/03-vocabulario-oov.mdx` (COURSE-P11-04): `suma-armonica.svg` → `suma-armonica.en.svg`.*
+
+**A widget whose default data is a locale-bound committed asset gets an English sibling asset, and the
+widget picks it per locale.** A few widgets read a *data file*, not just strings — `embedding-projection`
+plots a committed 2D projection of ~200 words. P11-02 can move a widget's strings but not this data, so
+it lists such widgets in `SPANISH_BOUND_CORPORA` (`src/features/courses/widgets/corpora.ts`) and leaves
+the English asset to the lesson that embeds it. Build an English sibling beside the original in
+`public/courses/dl-nlp/` (e.g. `embeddings-sample.en.json`), make the widget locale-aware — a per-locale
+source file, default selection and any analogy words — and guard its teaching property in the widget's
+data test. The Spanish asset keeps its name and its data, and the widget is removed from
+`SPANISH_BOUND_CORPORA` once its English data exists. This is the same rule as the figure sibling above,
+one layer up: the asset, not just the label, is the lesson talking. Where the Spanish asset is a
+word list on a projection, the cheapest faithful English version is a **1:1 translation onto the same
+coordinates** — same layout, same density, same analogy geometry — not a fresh, sparser layout.
+*Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04): `embeddings-sample.en.json`, the Spanish
+218-word list translated 1:1 onto its coordinates, with the `king − man + woman → queen` analogy;
+reused by 1.8.*
 
 ## 8. What this delta does not replace
 

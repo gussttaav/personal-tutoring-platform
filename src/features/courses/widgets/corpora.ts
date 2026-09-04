@@ -104,10 +104,8 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "of its own letters and the map says nothing. Needs an English lexicon first.",
   "multi-head-view":
     "Same lexicon as self-attention-heatmap, and the four heads ARE its four rules.",
-  "embedding-projection":
-    "The scatter is a committed projection of ~200 Spanish words " +
-    "(public/courses/dl-nlp/embeddings-sample.json), and the analogy is defined over " +
-    "entries of that file. Needs an English embedding sample first.",
+  // embedding-projection was here until COURSE-P11-04: it now has an English scatter,
+  // public/courses/dl-nlp/embeddings-sample.en.json, picked per locale by the widget.
   "attention-alignment":
     "Not locale-sensitive at all, listed here so the review is complete: the corpus is " +
     "a Spanish→English translation pair, which is what Block 4 is about. It reads the " +

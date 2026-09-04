@@ -22,15 +22,21 @@
  * the first thing a Block 1 student is asked to look at.
  *
  * COURSE-P11-02 — the copy is `courses.widgets.embedding-projection`. The WORDS are not
- * copy: they are the committed projection of ~200 Spanish words this widget plots, and
- * `rey − hombre + mujer` is an analogy defined over entries of that file, so it stays as
- * it is in both locales and goes into the messages as a parameter. An English scatter
- * needs an English embedding sample first — see SPANISH_BOUND_CORPORA in ../corpora.ts.
+ * copy: they are the committed projection this widget plots, and the analogy is defined
+ * over entries of that file, so both the dataset and the analogy words are picked per
+ * locale (see DATASETS below) and the words go into the messages as parameters.
+ *
+ * COURSE-P11-04 — English scatter added: `embeddings-sample.en.json`, the Spanish 218-word list
+ * translated 1:1 onto the SAME coordinates, so the two maps share their layout, density and
+ * clusters; the `king − man + woman → queen` analogy is `rey − hombre + mujer` at the same points.
+ * Clusters and the analogy are asserted in math/__tests__/embeddings-data.test.ts. The widget is
+ * locale-aware (DATASETS), and en defaults to `grandfather` — the mirror of es's `abuelo` default —
+ * because `king` would surface the `pelo`/`hair` outlier that sits by the royalty cluster.
  */
 
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { scaleLinear } from "d3-scale";
 
@@ -38,13 +44,24 @@ import { analogy, nearestNeighbours, findWord, type EmbeddingPoint } from "../ma
 import { estimateTextWidth, layoutLabels, type LabelAnchor } from "../math/label-layout";
 import { WidgetButton } from "../primitives/WidgetButton";
 
-const SRC = "/courses/dl-nlp/embeddings-sample.json";
 const W = 520;
 const H = 340;
 const M = 16;
 const FONT = 12;
-/** The analogy the dataset is built to satisfy (see math/__tests__/embeddings-data.test.ts). */
-const ANALOGY = { a: "rey", b: "hombre", c: "mujer" } as const;
+/** Dataset + headline analogy per locale. The words are entries of the committed JSON, not
+ *  copy (see the header note); each locale's analogy is asserted in the data test. */
+const DATASETS = {
+  es: {
+    src: "/courses/dl-nlp/embeddings-sample.json",
+    initial: "abuelo",
+    analogy: { a: "rey", b: "hombre", c: "mujer" },
+  },
+  en: {
+    src: "/courses/dl-nlp/embeddings-sample.en.json",
+    initial: "grandfather",
+    analogy: { a: "king", b: "man", c: "woman" },
+  },
+} as const;
 /* The four analogy words span ~58×27px of a 520×340 plot, so at full extent the
    parallelogram is a smudge in the middle of the cloud — which is exactly the figure the
    student is being asked to read. Analogy mode therefore zooms into it, keeping the rest
@@ -91,14 +108,17 @@ function categoryColor(cat: string | undefined): string {
 
 export default function EmbeddingProjection() {
   const t = useTranslations("courses.widgets.embedding-projection");
+  const locale = useLocale();
+  const ds = DATASETS[locale as keyof typeof DATASETS] ?? DATASETS.es;
+  const ANALOGY = ds.analogy;
   const [data, setData] = useState<EmbeddingPoint[]>([]);
   const [status, setStatus] = useState<Status>("loading");
-  const [selected, setSelected] = useState("abuelo");
+  const [selected, setSelected] = useState<string>(ds.initial);
   const [mode, setMode] = useState<Mode>("vecinos");
 
   useEffect(() => {
     const ctrl = new AbortController();
-    fetch(SRC, { signal: ctrl.signal })
+    fetch(ds.src, { signal: ctrl.signal })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((json: { words: EmbeddingPoint[] }) => {
         setData(json.words);
@@ -108,7 +128,7 @@ export default function EmbeddingProjection() {
         if (!(err instanceof DOMException && err.name === "AbortError")) setStatus("error");
       });
     return () => ctrl.abort();
-  }, []);
+  }, [ds.src]);
 
   const scales = useMemo(() => {
     if (data.length === 0) return null;

@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4, 1.5 done)
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4, 1.5, 1.6 done)
 
 ## TL;DR
 
@@ -346,7 +346,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 - [x] 1.3 `vocabulario-oov`
 - [x] 1.4 `one-hot`
 - [x] 1.5 `bolsa-de-palabras`
-- [ ] 1.6 `embeddings-densos`
+- [x] 1.6 `embeddings-densos`
 - [ ] 1.7 `word2vec`
 - [ ] 1.8 `glove-y-limites`
 
@@ -463,7 +463,41 @@ Reuse these verbatim; they are settled, not open.
   (`goal`/`oven`/`list`) and `1.79` (`referee`); same-topic cosines `0.19`/`0.26`/`0.32` against
   `0.00`–`0.03`; the doubled document at distance `7.432`.
 - **The bridge hands `car` / `automobile` / `flour` to 1.6** (from `coche` / `automóvil` / `harina`) as
-  the "similar yet orthogonal" set, matching 1.6's planned `E`-swap — 1.6's opening picks these up.
+  the "similar yet orthogonal" set, matching 1.6's planned `E`-swap — 1.6 picks these up **in the cell**,
+  not the opening (see the "From 1.6" note on the synonym pair).
+
+**From 1.6** (`en/06-embeddings-densos.mdx`):
+
+- **The `embedding-projection` widget now has an English scatter, and the embedding lesson owns it.**
+  P11-02 could move this widget's *strings* but not its *data* — a committed 218-word Spanish
+  projection — so it left it in `SPANISH_BOUND_CORPORA`, assigning the English asset to "the lesson
+  that embeds it." 1.6 built `public/courses/dl-nlp/embeddings-sample.en.json` — the Spanish 218-word
+  list translated **1:1 onto the same coordinates**, so the two maps share their layout, density and
+  clusters (`rey`→`king`, `reina`→`queen`, etc. at identical points) — and made
+  `EmbeddingProjection.tsx` locale-aware: a `DATASETS` map picks the source file, the default word and
+  the analogy words per locale. `en` defaults to `grandfather` (the mirror of `es`'s `abuelo` default),
+  because `king` would surface the `pelo`/`hair` outlier the Spanish layout parks by the royalty
+  cluster. The Spanish file and its `rey − hombre + mujer` analogy are untouched, and
+  `embedding-projection` was removed from `SPANISH_BOUND_CORPORA`. **1.8 reuses this same scatter** (its
+  second `embedding-projection` use and the analogy button), so any point 1.8 names must be a word that
+  exists in it. Now settled in `AUTHORING.en.md` §7.
+- **The headline analogy is `king − man + woman → queen`** — the back-translation to the source,
+  placed as a clean parallelogram and asserted, with the three named clusters, in
+  `src/features/courses/widgets/math/__tests__/embeddings-data.test.ts`.
+- **The three named points are `car` → vehicles, `apple` → fruit, `cat` → animals** — the English
+  stand-ins for `coche` / `manzana` / `gato`, each with a same-cluster neighbour list.
+- **The opening synonym pair is `superb` / `magnificent`** (from `estupenda` / `magnífica`), used in
+  the opening and again in the concession. It is deliberately **not** `car` / `automobile`: 1.5's
+  bridge already spent that pair, so the two-reader rule ("not the same example") keeps the opening's
+  pair distinct, and `car` / `automobile` / `flour` land in the `<PyCell>` instead, where they do new
+  work.
+- **The Firth cloze is `wine` / `juice` (fit) against `hammer` / `Monday` (don't)**, over the frames
+  `she poured a glass of ___`, `a bottle of ___ on the table`, `the ___ was cold` — the English of
+  `vino` / `zumo` / `martillo` / `lunes`. Firth's line stops being a foreign quotation; its
+  typography (plain, spaced em-dashes, no quotes, no italics) is now settled in `AUTHORING.en.md` §1.
+- **The `boy` / `girl` window pair and `the cat drinks milk` carry over verbatim** from 1.4 and 1.1
+  respectively, and `cold` / `hot` is the "same context, opposite meaning" pair. No answer moved (the
+  hand-written `E` keeps every quoted number: `0.99`, `0.97`, `-0.48`, `0.02`, `0.30`).
 
 ## Acceptance criteria
 

@@ -1923,6 +1923,12 @@ decision, which belongs to the lesson that embeds it (Blocks 1 and 5), not to a 
 task. `attention-alignment` is listed too, as genuinely locale-invariant: it is an ES→EN
 translation pair, which is Block 4's subject.
 
+**Update (COURSE-P11-04):** `embedding-projection`'s English scatter was built by
+`en/06-embeddings-densos.mdx` — `public/courses/dl-nlp/embeddings-sample.en.json`, the Spanish
+218-word list translated 1:1 onto the same coordinates, picked per locale by a now-locale-aware
+`EmbeddingProjection.tsx` — so it is no longer in `SPANISH_BOUND_CORPORA`. `self-attention-heatmap`
+and `multi-head-view` (Block 5) remain, still awaiting an English lexicon.
+
 **The maths modules were not touched**, per the task's test plan — `math/__tests__/` passes
 untouched. That leaves the Spanish label/description strings in
 `math/transformer-architecture.ts` and the head names in `math/multi-head.ts` duplicated in
