@@ -1,4 +1,8 @@
-import type { IUserRepository } from "@/domain/repositories/IUserRepository";
+// ACCOUNT-DELETE-01: deleteAccount() delegates to the delete_user_account stored
+// procedure (supabase/migrations/0017_delete_user_account.sql) so the FK-safe walk
+// across the 13 user-linked tables commits atomically.
+import type { AccountDeletionCounts, IUserRepository } from "@/domain/repositories/IUserRepository";
+import { UserNotFoundError } from "@/domain/errors";
 import { supabase } from "./client";
 
 export class SupabaseUserRepository implements IUserRepository {
@@ -67,5 +71,18 @@ export class SupabaseUserRepository implements IUserRepository {
       .update({ locale })
       .eq("email", email.toLowerCase().trim());
     if (error) throw error;
+  }
+
+  async deleteAccount(email: string): Promise<AccountDeletionCounts> {
+    const normalized = email.toLowerCase().trim();
+
+    const { data, error } = await supabase.rpc("delete_user_account", { p_email: normalized });
+    if (error) throw error;
+
+    const result = (data ?? {}) as { found?: boolean } & AccountDeletionCounts;
+    if (!result.found) throw new UserNotFoundError();
+
+    const { found: _found, ...counts } = result;
+    return counts as AccountDeletionCounts;
   }
 }

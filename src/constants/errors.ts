@@ -31,6 +31,11 @@ export const ERROR_CODE_I18N_KEY: Record<string, string> = {
   CANCEL_TOKEN_CONSUMED:     "errors.domain.cancelTokenConsumed",
   INVALID_GOOGLE_TOKEN:      "errors.domain.invalidGoogleToken",
   EMAIL_NOT_VERIFIED:        "errors.domain.emailNotVerified",
+  // ACCOUNT-DELETE-01
+  DELETION_BLOCKED_ACTIVE_PACK:          "errors.domain.deletionBlockedActivePack",
+  DELETION_BLOCKED_CANCELLABLE_BOOKINGS: "errors.domain.deletionBlockedCancellableBookings",
+  DELETION_NOT_CONFIRMED:                "errors.domain.deletionNotConfirmed",
+  USER_NOT_FOUND:                        "errors.domain.userNotFound",
 };
 
 /** Converts a SCREAMING_SNAKE_CASE error code to camelCase for i18n key lookup. */

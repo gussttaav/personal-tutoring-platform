@@ -17,10 +17,12 @@
  */
 
 import { useRef, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useUserSession } from "@/hooks/useUserSession";
 import BookSessionsPanel from "./BookSessionsPanel";
 import CoursesTab from "./CoursesTab";
+import DangerZone from "./DangerZone";
 import HistoryTab from "./HistoryTab";
 import NextClassHero from "./NextClassHero";
 import PackBanner from "./PackBanner";
@@ -41,6 +43,10 @@ export default function PersonalArea() {
   const t      = useTranslations("areaPersonal.main");
   const locale = useLocale();
   const { packSession, isAuthLoading } = useUserSession();
+  // ACCOUNT-DELETE-01: the deletion confirmation is typed against this address, and
+  // packSession is null for a student who never bought a pack — so read the identity
+  // from the session itself.
+  const { data: session } = useSession();
 
   const {
     bookingsState,
@@ -172,6 +178,13 @@ export default function PersonalArea() {
           <BookSessionsPanel hasActivePack={hasActivePack} packSession={packSession} />
         </aside>
       </div>
+
+      {session?.user?.email && (
+        <DangerZone
+          email={session.user.email}
+          onGoToUpcoming={() => setActive("upcoming")}
+        />
+      )}
     </div>
   );
 }

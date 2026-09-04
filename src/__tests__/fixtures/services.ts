@@ -10,6 +10,7 @@ import { SessionService }      from "@/services/SessionService";
 import { SubscriptionService } from "@/services/SubscriptionService";
 import { UserService }         from "@/services/UserService";
 import { CourseService }       from "@/services/CourseService";
+import { AccountService }      from "@/services/AccountService";
 import type { ICreditsRepository }      from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository }        from "@/domain/repositories/IAuditRepository";
 import type { IBookingRepository }      from "@/domain/repositories/IBookingRepository";
@@ -196,4 +197,30 @@ export function buildTestSessionService(
     overrides.zoom       ?? new FakeZoomClient(),
     overrides.tutorEmail ?? "tutor@test.com",
   );
+}
+
+// ─── AccountService builder ───────────────────────────────────────────────────
+// ACCOUNT-DELETE-01: returns the collaborators too, so a test can seed bookings
+// and credits and then assert on the eligibility gate.
+
+export interface AccountServiceDeps {
+  userRepo: IUserRepository;
+  bookings: BookingService;
+  credits:  CreditService;
+  calendar: ICalendarClient;
+}
+
+export function buildTestAccountService(
+  overrides: Partial<AccountServiceDeps> = {},
+): { service: AccountService; userRepo: InMemoryUserRepository; calendar: FakeCalendarClient } {
+  const userRepo = (overrides.userRepo as InMemoryUserRepository) ?? new InMemoryUserRepository();
+  const calendar = (overrides.calendar as FakeCalendarClient)     ?? new FakeCalendarClient();
+
+  const service = new AccountService(
+    userRepo,
+    overrides.bookings ?? buildTestBookingService({ users: userRepo, calendar }),
+    overrides.credits  ?? buildTestCreditService(),
+    calendar,
+  );
+  return { service, userRepo, calendar };
 }

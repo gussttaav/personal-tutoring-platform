@@ -111,6 +111,7 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
   setRole:     jest.fn().mockResolvedValue(undefined),
   getLocale:   jest.fn().mockResolvedValue(null),
   setLocale:   jest.fn().mockResolvedValue(undefined),
+  deleteAccount: jest.fn().mockResolvedValue({}),
 });
 
 // Stub ScheduleService — BookingService only calls getConfig(). Default min

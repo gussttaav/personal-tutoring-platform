@@ -276,6 +276,40 @@
         "thanks": "¡Gracias por tu valoración!",
         "bookSame": "Reservar otra igual"
       }
+    },
+    "dangerZone": {
+      "title": "Eliminar cuenta",
+      "intro": "Borra tu cuenta y todos tus datos de forma permanente.",
+      "trigger": "Eliminar mi cuenta",
+      "close": "Cerrar",
+      "loadError": "No se pudo comprobar el estado de tu cuenta.",
+      "retry": "Reintentar",
+      "deleting": "Eliminando tu cuenta…",
+      "blockedBookings": {
+        "title": "Primero cancela tus clases",
+        "body": "Tienes {count, plural, one {# clase reservada} other {# clases reservadas}} que todavía puedes cancelar. Cancélalas antes de eliminar la cuenta para que cualquier reembolso siga la política de cancelación habitual.",
+        "packNote": "Si alguna es una clase de pack, al cancelarla el crédito vuelve a tu pack y tendrás que escribir a Gustavo para poder eliminar la cuenta.",
+        "action": "Ver mis clases"
+      },
+      "blockedPack": {
+        "title": "Te quedan clases por usar",
+        "body": "Tienes {count, plural, one {# clase sin usar} other {# clases sin usar}} en un pack activo. Para eliminar tu cuenta, escribe a Gustavo y te reembolsará las clases restantes según la política de cancelación.",
+        "action": "Escribir a Gustavo",
+        "terms": "Ver la política de cancelación"
+      },
+      "confirm": {
+        "title": "Esta acción no se puede deshacer",
+        "body": "Se borrarán de forma permanente y sin posibilidad de recuperación:",
+        "item1": "tu cuenta y tus datos personales",
+        "item2": "tus reservas y todo tu historial de clases",
+        "item3": "tu progreso y tus respuestas en los cursos",
+        "item4": "tus registros de pago",
+        "imminent": "Además, {count, plural, one {# clase que empieza en menos de 2 horas será cancelada} other {# clases que empiezan en menos de 2 horas serán canceladas}} sin derecho a reembolso.",
+        "typeEmail": "Escribe {email} para confirmar",
+        "placeholder": "tu@email.com",
+        "submit": "Eliminar mi cuenta",
+        "cancel": "Cancelar"
+      }
     }
   },
   "booking": {
@@ -736,7 +770,11 @@
       "outsideCancelWindow": "El plazo para cancelar ha finalizado.",
       "cancelTokenConsumed": "Este enlace de cancelación ya ha sido usado.",
       "invalidGoogleToken": "No pudimos verificar tu inicio de sesión de Google. Inténtalo de nuevo.",
-      "emailNotVerified": "Tu correo de Google no está verificado."
+      "emailNotVerified": "Tu correo de Google no está verificado.",
+      "deletionBlockedActivePack": "No puedes eliminar tu cuenta mientras te queden clases sin usar en un pack activo. Escribe a contacto@gustavoai.dev para solicitar el reembolso.",
+      "deletionBlockedCancellableBookings": "No puedes eliminar tu cuenta mientras tengas clases reservadas que aún puedes cancelar. Cancélalas primero.",
+      "deletionNotConfirmed": "La confirmación no coincide con el email de tu cuenta.",
+      "userNotFound": "No encontramos tu cuenta."
     },
     "validation": {
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
