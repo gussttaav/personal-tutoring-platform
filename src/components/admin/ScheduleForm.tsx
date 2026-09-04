@@ -63,6 +63,7 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
   const [week, setWeek]                 = useState<WeekState>(() => initState(config));
   const [timezone, setTimezone]         = useState(config.timezone);
   const [minNotice, setMinNotice]       = useState(String(config.minNoticeHours));
+  const [cancelNotice, setCancelNotice] = useState(String(config.cancelMinNoticeHours));
   const [reason, setReason]             = useState("");
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState<string | null>(null);
@@ -133,6 +134,12 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
       return;
     }
 
+    const cancel = parseInt(cancelNotice, 10);
+    if (!Number.isInteger(cancel) || cancel < 0 || cancel > 168) {
+      setError("El plazo de cancelación debe ser un número de horas entre 0 y 168.");
+      return;
+    }
+
     const validated = validate();
     if (!validated) return;
 
@@ -142,10 +149,11 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          weeklyHours:    validated.weeklyHours,
+          weeklyHours:          validated.weeklyHours,
           timezone,
-          minNoticeHours: notice,
-          reason:         reason.trim(),
+          minNoticeHours:       notice,
+          cancelMinNoticeHours: cancel,
+          reason:               reason.trim(),
         }),
       });
       if (res.ok) {
@@ -249,6 +257,17 @@ export function ScheduleForm({ config }: { config: ScheduleConfig }) {
             step="1"
             value={minNotice}
             onChange={(e) => setMinNotice(e.target.value)}
+          />
+        </label>
+        <label className="schedule-setting">
+          <span>Plazo de cancelación (horas)</span>
+          <input
+            type="number"
+            min="0"
+            max="168"
+            step="1"
+            value={cancelNotice}
+            onChange={(e) => setCancelNotice(e.target.value)}
           />
         </label>
         <label className="schedule-setting">

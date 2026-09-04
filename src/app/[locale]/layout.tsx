@@ -7,7 +7,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
 import { PricesProvider } from "@/components/pricing/PricesProvider";
-import { getDisplayPrices } from "@/lib/pricing-display";
+import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
 import { ScheduleProvider } from "@/components/booking/ScheduleProvider";
 import { getScheduleConfig } from "@/lib/schedule-config";
 import { routing } from "@/i18n/routing";
@@ -131,8 +131,9 @@ export default async function RootLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const messages = await getMessages();
-  const prices   = await getDisplayPrices(locale);
-  const schedule = await getScheduleConfig();
+  const prices           = await getDisplayPrices(locale);
+  const packValidityDays = await getPackValidityDays();
+  const schedule         = await getScheduleConfig();
 
   return (
     <html lang={locale} data-scroll-behavior="smooth" className={`dark ${manrope.variable} ${inter.variable} ${newsreader.variable} ${materialSymbols.variable}`}>
@@ -141,7 +142,7 @@ export default async function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          <PricesProvider value={prices}>
+          <PricesProvider value={prices} packValidityDays={packValidityDays}>
             <ScheduleProvider value={schedule}>
               <AuthProvider>{children}</AuthProvider>
             </ScheduleProvider>

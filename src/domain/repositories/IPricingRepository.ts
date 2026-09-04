@@ -1,4 +1,4 @@
-import type { PriceRecord, ProductKey } from "../types";
+import type { PriceRecord, PricingSettings, ProductKey } from "../types";
 
 export interface IPricingRepository {
   /** Returns all price rows (the 4 products). */
@@ -7,4 +7,8 @@ export interface IPricingRepository {
   get(key: ProductKey): Promise<PriceRecord | null>;
   /** Updates a product's charge amount. */
   update(key: ProductKey, amountCents: number, updatedBy: string): Promise<void>;
+  /** Returns the singleton pricing settings (pack validity, …). */
+  getSettings(): Promise<PricingSettings>;
+  /** Updates the singleton pricing settings. */
+  updateSettings(settings: { packValidityDays: number; updatedBy: string }): Promise<void>;
 }

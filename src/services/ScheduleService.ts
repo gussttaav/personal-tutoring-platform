@@ -90,24 +90,26 @@ export class ScheduleService {
     ]);
     return {
       weeklyHours,
-      timezone:           settings.timezone,
-      minNoticeHours:     settings.minNoticeHours,
-      bookingWindowWeeks: BOOKING_WINDOW_WEEKS,
+      timezone:             settings.timezone,
+      minNoticeHours:       settings.minNoticeHours,
+      cancelMinNoticeHours: settings.cancelMinNoticeHours,
+      bookingWindowWeeks:   BOOKING_WINDOW_WEEKS,
     };
   }
 
   /** Admin update: replaces working hours, updates settings, writes an audit entry. */
   async updateConfig(params: {
-    weeklyHours:    WeeklyHours;
-    timezone:       string;
-    minNoticeHours: number;
-    by:             string;
-    reason:         string;
+    weeklyHours:          WeeklyHours;
+    timezone:             string;
+    minNoticeHours:       number;
+    cancelMinNoticeHours: number;
+    by:                   string;
+    reason:               string;
   }): Promise<void> {
-    const { weeklyHours, timezone, minNoticeHours, by, reason } = params;
+    const { weeklyHours, timezone, minNoticeHours, cancelMinNoticeHours, by, reason } = params;
 
     await this.repo.replaceWeeklyHours(weeklyHours);
-    await this.repo.updateSettings({ timezone, minNoticeHours, updatedBy: by });
+    await this.repo.updateSettings({ timezone, minNoticeHours, cancelMinNoticeHours, updatedBy: by });
 
     // Bump only after the writes land, so a concurrent read can't cache the old
     // config under the new version. Best-effort: if the bump fails the config is
@@ -126,9 +128,10 @@ export class ScheduleService {
       action:         "admin_update_schedule",
       timezone,
       minNoticeHours,
+      cancelMinNoticeHours,
       reason,
     });
 
-    log("info", "Schedule updated", { service: "ScheduleService", timezone, minNoticeHours, by });
+    log("info", "Schedule updated", { service: "ScheduleService", timezone, minNoticeHours, cancelMinNoticeHours, by });
   }
 }

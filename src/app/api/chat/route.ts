@@ -13,7 +13,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { buildChatSystemPrompt } from "@/constants/chat-prompt";
-import { getDisplayPrices } from "@/lib/pricing-display";
+import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
+import { getScheduleConfig } from "@/lib/schedule-config";
 import { chatRatelimit, chatRatelimitAnon, chatRatelimitAnonDaily } from "@/lib/ratelimit";
 import { chatService } from "@/services";
 import { getClientIp } from "@/lib/ip-utils";
@@ -108,14 +109,20 @@ async function postHandler(req: NextRequest) {
     typeof sessionId === "string" && sessionId.length === 36 ? sessionId : null;
 
   try {
-    // Inject live prices so the assistant never quotes outdated amounts
-    // (getDisplayPrices is cached, so this isn't a per-request DB hit).
-    const prices = await getDisplayPrices();
+    // Inject live prices + policy figures so the assistant never quotes outdated
+    // values (all three reads are cached, so this isn't a per-request DB hit).
+    const [prices, packValidityDays, schedule] = await Promise.all([
+      getDisplayPrices(),
+      getPackValidityDays(),
+      getScheduleConfig(),
+    ]);
     const systemPrompt = buildChatSystemPrompt({
       session1h: prices.session1h.priceCents,
       session2h: prices.session2h.priceCents,
       pack5:     prices.pack5.priceCents,
       pack10:    prices.pack10.priceCents,
+      packValidityDays,
+      cancelHours: schedule.cancelMinNoticeHours,
     });
 
     const { reply, sessionId: newSessionId } = await chatService.ask({

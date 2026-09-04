@@ -43,6 +43,19 @@ export interface PublicPricing {
   currency: string;
   sessions: PublicSessionPrice[];
   packs:    PublicPackPrice[];
+  /** How many days a purchased pack stays redeemable (admin-editable). */
+  packValidityDays: number;
+}
+
+// ─── Pricing settings (admin-editable commerce policy, singleton) ─────────────
+// Pricing-adjacent values that don't fit the per-product `pricing` table. Stored
+// in the `pricing_settings` singleton (migration 0020) and edited at /admin/pricing.
+
+export interface PricingSettings {
+  /** Pack redeemability window in days. Applied at purchase time (write-once). */
+  packValidityDays: number;
+  updatedAt:        string;
+  updatedBy:        string | null;
 }
 
 // ─── Payments (audit rows in the `payments` table) ────────────────────────────
@@ -183,6 +196,12 @@ export interface ScheduleConfig {
   weeklyHours:        WeeklyHours;
   timezone:           string;
   minNoticeHours:     number;
+  /**
+   * How close (in whole hours) to a class's start it may still be cancelled or
+   * rescheduled. Distinct from minNoticeHours (booking advance-notice). The
+   * cancel/reschedule guards convert this to milliseconds.
+   */
+  cancelMinNoticeHours: number;
   /** How many weeks ahead bookings are allowed. Static for now (not editable). */
   bookingWindowWeeks: number;
 }

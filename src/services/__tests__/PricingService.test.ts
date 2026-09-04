@@ -44,6 +44,12 @@ describe("PricingService", () => {
       ]);
     });
 
+    it("includes the seeded pack validity (days)", async () => {
+      const { service } = makeService();
+      const { packValidityDays } = await service.getPublicPricing();
+      expect(packValidityDays).toBe(180);
+    });
+
     it("derives pack per-class rate, original (1h × hours) and savings", async () => {
       const { service } = makeService();
       const { packs } = await service.getPublicPricing();
@@ -102,6 +108,30 @@ describe("PricingService", () => {
         productKey:  "session2h",
         amountCents: 3500,
         reason:      "rate increase",
+      });
+    });
+  });
+
+  describe("updatePackValidityDays", () => {
+    it("persists the new value and reflects it in getPackValidityDays + getPublicPricing", async () => {
+      const { service } = makeService();
+      await service.updatePackValidityDays({ days: 90, by: "admin@test.com", reason: "shorter promo" });
+
+      await expect(service.getPackValidityDays()).resolves.toBe(90);
+      const { packValidityDays } = await service.getPublicPricing();
+      expect(packValidityDays).toBe(90);
+    });
+
+    it("writes an audit entry attributed to the admin email", async () => {
+      const { service, audit } = makeService();
+      await service.updatePackValidityDays({ days: 365, by: "admin@test.com", reason: "annual packs" });
+
+      const entries = audit.getAll("admin@test.com");
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toMatchObject({
+        action:           "admin_update_pack_validity",
+        packValidityDays: 365,
+        reason:           "annual packs",
       });
     });
   });

@@ -6,6 +6,17 @@
 // clases (75 €) ... 75 − 16"). These are deliberately STATIC and decoupled from
 // the admin-editable `pricing` table — they're explanatory legal prose, not live
 // prices. If you change a price in /admin/pricing, review these examples by hand.
+//
+// The pack-validity days and the cancellation window ARE dynamic: they come from
+// the admin-editable settings (pricing_settings.pack_validity_days and
+// booking_settings.cancel_min_notice_hours) so the stated policy always matches
+// what the app enforces. Callers pass them in as PolicyNumbers.
+
+/** The admin-editable policy figures the terms/cancellation prose interpolates. */
+export interface PolicyNumbers {
+  packValidityDays: number;
+  cancelHours:      number;
+}
 
 // ── Spanish content ────────────────────────────────────────────────────────────
 
@@ -50,7 +61,7 @@ function PrivacidadContentEs() {
   );
 }
 
-function TerminosContentEs() {
+function TerminosContentEs({ packValidityDays, cancelHours }: PolicyNumbers) {
   return (
     <>
       <p>Al reservar una sesión o adquirir un pack en este sitio, aceptas las condiciones que se describen a continuación.</p>
@@ -62,16 +73,16 @@ function TerminosContentEs() {
       <p>Los pagos se procesan de forma segura a través de <strong>Stripe</strong>, integrado directamente en la plataforma. No se almacenan datos de tarjeta. Se aceptan Visa, Mastercard y American Express. Al realizar un pago aceptas también los <a href="https://stripe.com/es/legal" target="_blank" rel="noopener noreferrer">términos de Stripe</a>.</p>
 
       <h3>Packs de clases</h3>
-      <p>Los packs son de uso personal e intransferibles. La validez es de <strong>6 meses</strong> desde la fecha de compra. Los créditos no utilizados al vencimiento caducan sin derecho a reembolso.</p>
+      <p>Los packs son de uso personal e intransferibles. La validez es de <strong>{packValidityDays} días</strong> desde la fecha de compra. Los créditos no utilizados al vencimiento caducan sin derecho a reembolso.</p>
 
       <h3>Cancelaciones y reembolsos</h3>
-      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong>. Para las clases de pack, el crédito se devuelve automáticamente. Para sesiones individuales pagadas, el reembolso está sujeto a la comisión de procesamiento que Stripe cobra por devolver un cargo (generalmente 0,25 € + entre el 1,5 % y el 1,9 % del importe; el resto se reembolsa en 1–3 días hábiles). Las cancelaciones con menos de 2 horas de antelación o las no presentaciones sin aviso no dan derecho a reembolso.</p>
+      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>{cancelHours} horas de antelación</strong>. Para las clases de pack, el crédito se devuelve automáticamente. Para sesiones individuales pagadas, el reembolso está sujeto a la comisión de procesamiento que Stripe cobra por devolver un cargo (generalmente 0,25 € + entre el 1,5 % y el 1,9 % del importe; el resto se reembolsa en 1–3 días hábiles). Las cancelaciones con menos de {cancelHours} horas de antelación o las no presentaciones sin aviso no dan derecho a reembolso.</p>
       <p>Para solicitar el reembolso de un pack, si no se ha consumido ninguna clase se aplicará únicamente la comisión de Stripe. Si ya se han consumido clases, cada una se descontará al precio unitario de una sesión individual antes de calcular el reembolso, y se aplicará también la comisión de Stripe sobre el importe restante.</p>
 
       <h3>Eliminación de la cuenta</h3>
       <p>Puedes eliminar tu cuenta en cualquier momento desde tu área personal. El borrado es <strong>permanente e irreversible</strong>: se eliminan tu cuenta, tus reservas, tu historial, tus créditos y tu progreso en los cursos, sin posibilidad de recuperarlos.</p>
       <p>Para proteger las clases que ya has pagado, la eliminación <strong>no está disponible</strong> mientras te queden créditos sin usar en un pack activo o clases reservadas que aún puedas cancelar tú mismo. Si quieres cerrar tu cuenta teniendo créditos pendientes, escribe a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>: se te reembolsarán las clases restantes según la política de cancelación descrita más arriba.</p>
-      <p>Las clases que empiecen dentro del plazo de cancelación de 2 horas en el momento de eliminar la cuenta se cancelarán <strong>sin derecho a reembolso</strong>.</p>
+      <p>Las clases que empiecen dentro del plazo de cancelación de {cancelHours} horas en el momento de eliminar la cuenta se cancelarán <strong>sin derecho a reembolso</strong>.</p>
 
       <h3>Responsabilidad</h3>
       <p>Las clases están orientadas a la formación y apoyo académico. No se garantizan resultados académicos específicos ni se asume responsabilidad por el uso que el alumno haga de los contenidos aprendidos.</p>
@@ -88,22 +99,22 @@ function TerminosContentEs() {
   );
 }
 
-function CancelacionContentEs() {
+function CancelacionContentEs({ packValidityDays, cancelHours }: PolicyNumbers) {
   return (
     <>
-      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong>.</p>
+      <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>{cancelHours} horas de antelación</strong>.</p>
 
       <h3>Clases de pack</h3>
       <p>Si cancelas con suficiente antelación, el crédito se devuelve automáticamente a tu pack y queda disponible para reservar otra clase. Los créditos no caducan de forma anticipada por cancelar — simplemente vuelven a tu saldo.</p>
 
       <h3>Sesiones individuales pagadas</h3>
-      <p>Si cancelas con al menos 2 horas de antelación, el reembolso se tramita en un plazo de 1–3 días hábiles. Ten en cuenta que <strong>Stripe cobra una comisión por devolver un cargo</strong> (generalmente 0,25 € + entre el 1,5 % y el 1,9 % del importe); el importe restante se devuelve íntegramente. Si la cancelación se hace con menos de 2 horas de antelación o no se avisa de la no presentación, no se realizará reembolso.</p>
+      <p>Si cancelas con al menos {cancelHours} horas de antelación, el reembolso se tramita en un plazo de 1–3 días hábiles. Ten en cuenta que <strong>Stripe cobra una comisión por devolver un cargo</strong> (generalmente 0,25 € + entre el 1,5 % y el 1,9 % del importe); el importe restante se devuelve íntegramente. Si la cancelación se hace con menos de {cancelHours} horas de antelación o no se avisa de la no presentación, no se realizará reembolso.</p>
 
       <h3>Reembolso de packs</h3>
       <p>Puedes solicitar el reembolso de un pack no vencido. Si no has consumido ninguna clase, se aplica únicamente la comisión de Stripe sobre el importe total. Si ya has consumido alguna clase, cada una se descuenta al precio de una sesión individual antes de calcular el reembolso, y se aplica la comisión de Stripe sobre el importe restante. Por ejemplo: pack de 5 clases (75 €) con 1 clase consumida → reembolso = 75 − 16 − comisión Stripe.</p>
 
       <h3>Validez de los packs</h3>
-      <p>Los packs tienen una validez de <strong>6 meses</strong> desde la fecha de compra. Los créditos no consumidos dentro de ese plazo caducan. Las cancelaciones dentro del período de validez siempre devuelven el crédito.</p>
+      <p>Los packs tienen una validez de <strong>{packValidityDays} días</strong> desde la fecha de compra. Los créditos no consumidos dentro de ese plazo caducan. Las cancelaciones dentro del período de validez siempre devuelven el crédito.</p>
 
       <h3>Encuentro inicial gratuito</h3>
       <p>El encuentro de 15 minutos es gratuito y se puede cancelar o reprogramar sin límite de tiempo previo.</p>
@@ -160,7 +171,7 @@ function PrivacidadContentEn() {
   );
 }
 
-function TerminosContentEn() {
+function TerminosContentEn({ packValidityDays, cancelHours }: PolicyNumbers) {
   return (
     <>
       <p>By booking a session or purchasing a pack on this site, you agree to the terms described below.</p>
@@ -172,16 +183,16 @@ function TerminosContentEn() {
       <p>Payments are processed securely through <strong>Stripe</strong>, integrated directly into the platform. No card details are stored. Visa, Mastercard and American Express are accepted. By making a payment you also accept <a href="https://stripe.com/legal" target="_blank" rel="noopener noreferrer">Stripe&apos;s terms</a>.</p>
 
       <h3>Class packs</h3>
-      <p>Packs are for personal use and are non-transferable. They are valid for <strong>6 months</strong> from the date of purchase. Unused credits expire at the end of the validity period without the right to a refund.</p>
+      <p>Packs are for personal use and are non-transferable. They are valid for <strong>{packValidityDays} days</strong> from the date of purchase. Unused credits expire at the end of the validity period without the right to a refund.</p>
 
       <h3>Cancellations and refunds</h3>
-      <p>You may cancel or reschedule any class with at least <strong>2 hours&apos; notice</strong>. For pack classes, the credit is returned automatically. For paid individual sessions, the refund is subject to the processing fee Stripe charges for reversing a charge (typically €0.25 + between 1.5% and 1.9% of the amount; the remainder is refunded within 1–3 business days). Cancellations with less than 2 hours&apos; notice or no-shows without prior notification are not eligible for a refund.</p>
+      <p>You may cancel or reschedule any class with at least <strong>{cancelHours} hours&apos; notice</strong>. For pack classes, the credit is returned automatically. For paid individual sessions, the refund is subject to the processing fee Stripe charges for reversing a charge (typically €0.25 + between 1.5% and 1.9% of the amount; the remainder is refunded within 1–3 business days). Cancellations with less than {cancelHours} hours&apos; notice or no-shows without prior notification are not eligible for a refund.</p>
       <p>To request a refund for a pack, if no classes have been used, only the Stripe processing fee applies. If classes have already been used, each one will be deducted at the unit price of an individual session before calculating the refund, and the Stripe fee will also be applied to the remaining amount.</p>
 
       <h3>Account deletion</h3>
       <p>You may delete your account at any time from your personal area. Deletion is <strong>permanent and irreversible</strong>: your account, bookings, history, credits and course progress are erased with no way to recover them.</p>
       <p>To protect classes you have already paid for, deletion is <strong>not available</strong> while you hold unused credits in an active pack or booked classes you can still cancel yourself. If you want to close your account while credits remain, write to <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>: the remaining classes will be refunded according to the cancellation policy described above.</p>
-      <p>Any class starting within the 2-hour cancellation window at the moment you delete your account is cancelled <strong>with no right to a refund</strong>.</p>
+      <p>Any class starting within the {cancelHours}-hour cancellation window at the moment you delete your account is cancelled <strong>with no right to a refund</strong>.</p>
 
       <h3>Liability</h3>
       <p>Sessions are intended for educational support. No specific academic results are guaranteed, and no responsibility is assumed for the use the student makes of the content learned.</p>
@@ -198,22 +209,22 @@ function TerminosContentEn() {
   );
 }
 
-function CancelacionContentEn() {
+function CancelacionContentEn({ packValidityDays, cancelHours }: PolicyNumbers) {
   return (
     <>
-      <p>You may cancel or reschedule any class with at least <strong>2 hours&apos; notice</strong>.</p>
+      <p>You may cancel or reschedule any class with at least <strong>{cancelHours} hours&apos; notice</strong>.</p>
 
       <h3>Pack classes</h3>
       <p>If you cancel with sufficient notice, the credit is automatically returned to your pack and becomes available to book another class. Credits do not expire early due to cancellation — they simply return to your balance.</p>
 
       <h3>Paid individual sessions</h3>
-      <p>If you cancel with at least 2 hours&apos; notice, the refund is processed within 1–3 business days. Please note that <strong>Stripe charges a fee for reversing a charge</strong> (typically €0.25 + between 1.5% and 1.9% of the amount); the remaining amount is refunded in full. Cancellations with less than 2 hours&apos; notice or no-shows without prior notification will not be refunded.</p>
+      <p>If you cancel with at least {cancelHours} hours&apos; notice, the refund is processed within 1–3 business days. Please note that <strong>Stripe charges a fee for reversing a charge</strong> (typically €0.25 + between 1.5% and 1.9% of the amount); the remaining amount is refunded in full. Cancellations with less than {cancelHours} hours&apos; notice or no-shows without prior notification will not be refunded.</p>
 
       <h3>Pack refunds</h3>
       <p>You may request a refund for an unexpired pack. If no classes have been used, only the Stripe processing fee applies to the total amount. If you have already used some classes, each one is deducted at the price of an individual session before calculating the refund, and the Stripe fee is applied to the remaining amount. Example: 5-class pack (€75) with 1 class used → refund = 75 − 16 − Stripe fee.</p>
 
       <h3>Pack validity</h3>
-      <p>Packs are valid for <strong>6 months</strong> from the date of purchase. Unused credits within that period expire. Cancellations within the validity period always return the credit.</p>
+      <p>Packs are valid for <strong>{packValidityDays} days</strong> from the date of purchase. Unused credits within that period expire. Cancellations within the validity period always return the credit.</p>
 
       <h3>Free initial meeting</h3>
       <p>The 15-minute initial meeting is free and can be cancelled or rescheduled with no time limit.</p>
@@ -233,10 +244,12 @@ export function PrivacidadContent({ locale }: { locale?: string }) {
   return locale === "en" ? <PrivacidadContentEn /> : <PrivacidadContentEs />;
 }
 
-export function TerminosContent({ locale }: { locale?: string }) {
-  return locale === "en" ? <TerminosContentEn /> : <TerminosContentEs />;
+export function TerminosContent({ locale, packValidityDays, cancelHours }: { locale?: string } & PolicyNumbers) {
+  const nums = { packValidityDays, cancelHours };
+  return locale === "en" ? <TerminosContentEn {...nums} /> : <TerminosContentEs {...nums} />;
 }
 
-export function CancelacionContent({ locale }: { locale?: string }) {
-  return locale === "en" ? <CancelacionContentEn /> : <CancelacionContentEs />;
+export function CancelacionContent({ locale, packValidityDays, cancelHours }: { locale?: string } & PolicyNumbers) {
+  const nums = { packValidityDays, cancelHours };
+  return locale === "en" ? <CancelacionContentEn {...nums} /> : <CancelacionContentEs {...nums} />;
 }

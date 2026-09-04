@@ -27,6 +27,10 @@ export interface ICreditsRepository {
    * Adds credits to the user's account. Idempotent by stripeSessionId —
    * calling twice with the same ID is a no-op. Safe to retry on webhook
    * redelivery without double-crediting.
+   *
+   * `expiresAt` (ISO 8601) is the pack's redeemability deadline, computed by the
+   * caller from the admin-editable pack-validity setting and frozen per pack at
+   * purchase time (write-once).
    */
   addCredits(params: {
     email:           string;
@@ -34,6 +38,7 @@ export interface ICreditsRepository {
     creditsToAdd:    number;
     packLabel:       string;
     stripeSessionId: string;
+    expiresAt:       string;
   }): Promise<void>;
 
   /**

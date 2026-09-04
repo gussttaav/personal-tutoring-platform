@@ -21,6 +21,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { api, ApiError } from "@/lib/api-client";
 import { errorCodeToKey } from "@/constants/errors";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 import type { DeletionEligibility } from "@/domain/types";
 
 const CONTACT_EMAIL = "contacto@gustavoai.dev";
@@ -37,6 +38,7 @@ type Status = "closed" | "loading" | "ready" | "loadError" | "deleting";
 export default function DangerZone({ email, onGoToUpcoming }: DangerZoneProps) {
   const t       = useTranslations("areaPersonal.dangerZone");
   const tErrors = useTranslations("errors");
+  const schedule = useScheduleConfig();
 
   const [status,      setStatus]      = useState<Status>("closed");
   const [eligibility, setEligibility] = useState<DeletionEligibility | null>(null);
@@ -167,7 +169,7 @@ export default function DangerZone({ email, onGoToUpcoming }: DangerZoneProps) {
               </ul>
               {eligibility.imminentBookings > 0 && (
                 <p className="pa-danger__warn">
-                  {t("confirm.imminent", { count: eligibility.imminentBookings })}
+                  {t("confirm.imminent", { count: eligibility.imminentBookings, hours: schedule.cancelMinNoticeHours })}
                 </p>
               )}
 

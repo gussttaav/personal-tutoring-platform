@@ -9,10 +9,11 @@ interface WorkingHoursRow {
 }
 
 interface BookingSettingsRow {
-  timezone:         string;
-  min_notice_hours: number;
-  updated_at:       string;
-  updated_by:       string | null;
+  timezone:                string;
+  min_notice_hours:        number;
+  cancel_min_notice_hours: number;
+  updated_at:              string;
+  updated_by:              string | null;
 }
 
 /** Empty WeeklyHours with every day-of-week key present. */
@@ -42,7 +43,7 @@ export class SupabaseScheduleRepository implements IScheduleRepository {
   async getSettings(): Promise<ScheduleSettings> {
     const { data, error } = await supabase
       .from("booking_settings")
-      .select("timezone, min_notice_hours, updated_at, updated_by")
+      .select("timezone, min_notice_hours, cancel_min_notice_hours, updated_at, updated_by")
       .eq("id", 1)
       .maybeSingle();
     if (error) throw error;
@@ -50,10 +51,11 @@ export class SupabaseScheduleRepository implements IScheduleRepository {
 
     const row = data as BookingSettingsRow;
     return {
-      timezone:       row.timezone,
-      minNoticeHours: row.min_notice_hours,
-      updatedAt:      row.updated_at,
-      updatedBy:      row.updated_by,
+      timezone:             row.timezone,
+      minNoticeHours:       row.min_notice_hours,
+      cancelMinNoticeHours: row.cancel_min_notice_hours,
+      updatedAt:            row.updated_at,
+      updatedBy:            row.updated_by,
     };
   }
 
@@ -81,14 +83,15 @@ export class SupabaseScheduleRepository implements IScheduleRepository {
     }
   }
 
-  async updateSettings(settings: { timezone: string; minNoticeHours: number; updatedBy: string }): Promise<void> {
+  async updateSettings(settings: { timezone: string; minNoticeHours: number; cancelMinNoticeHours: number; updatedBy: string }): Promise<void> {
     const { error } = await supabase
       .from("booking_settings")
       .update({
-        timezone:         settings.timezone,
-        min_notice_hours: settings.minNoticeHours,
-        updated_at:       new Date().toISOString(),
-        updated_by:       settings.updatedBy,
+        timezone:                settings.timezone,
+        min_notice_hours:        settings.minNoticeHours,
+        cancel_min_notice_hours: settings.cancelMinNoticeHours,
+        updated_at:              new Date().toISOString(),
+        updated_by:              settings.updatedBy,
       })
       .eq("id", 1);
     if (error) throw error;

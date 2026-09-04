@@ -8,7 +8,7 @@ jest.mock("@/lib/availability-cache", () => ({
 }));
 
 import { AccountService } from "../AccountService";
-import { BookingService, CANCEL_WINDOW_MS } from "../BookingService";
+import { BookingService } from "../BookingService";
 import { CreditService } from "../CreditService";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
@@ -22,6 +22,10 @@ import {
 
 const EMAIL = "student@example.com";
 const HOUR  = 60 * 60_000;
+// The cancellation window is now admin-editable; BookingService.getCancelWindowMs()
+// resolves it. This suite mocks that to the default (2h) — the value AccountService
+// partitions against.
+const CANCEL_WINDOW_MS = 2 * HOUR;
 
 /** A confirmed booking starting `offsetMs` from now. Negative = in the past. */
 function booking(offsetMs: number, sessionType: SessionType = "session1h"): UserBooking {
@@ -56,7 +60,8 @@ function make(opts: { bookings?: UserBooking[]; credits?: number } = {}) {
     : null;
 
   const bookings = {
-    listForUser: jest.fn().mockResolvedValue(opts.bookings ?? []),
+    listForUser:       jest.fn().mockResolvedValue(opts.bookings ?? []),
+    getCancelWindowMs: jest.fn().mockResolvedValue(CANCEL_WINDOW_MS),
   } as unknown as BookingService;
 
   const credits = {

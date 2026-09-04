@@ -66,17 +66,33 @@ export const AdjustCreditsSchema = z.object({
 
 export type AdjustCreditsInput = z.infer<typeof AdjustCreditsSchema>;
 
-// Admin price update — amount in cents + reason for audit. The pack "original"
-// strikethrough is derived (1h price × hours), so it isn't an input here.
+// Admin price update — amount in cents. The pack "original" strikethrough is
+// derived (1h price × hours), so it isn't an input here.
 export const UpdatePriceSchema = z.object({
   productKey:  z.enum(["session1h", "session2h", "pack5", "pack10"]),
   amountCents: z.number().int().positive(),
-  reason:      z.string().min(1).max(500),
 });
 
-export const UpdatePricesSchema = z.array(UpdatePriceSchema).min(1).max(4);
+// Admin pricing save (POST /api/admin/pricing): any subset of the 4 prices, plus
+// the optional pack-validity setting (days), under one shared reason for the audit
+// trail. At least one change must be present. Prices and pack validity now share a
+// single form + request so the admin edits pricing in one place (pricing_settings
+// does not fit the per-product `pricing` table — see migration 0020).
+export const UpdatePricingSchema = z
+  .object({
+    prices:           z.array(UpdatePriceSchema).max(4).optional(),
+    // 1..3650 days (10y cap). Absent means "pack validity unchanged".
+    packValidityDays: z.number().int().min(1).max(3650).optional(),
+    reason:           z.string().min(1).max(500),
+  })
+  .superRefine((val, ctx) => {
+    if ((val.prices?.length ?? 0) === 0 && val.packValidityDays === undefined) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "no changes to save", path: [] });
+    }
+  });
 
-export type UpdatePriceInput = z.infer<typeof UpdatePriceSchema>;
+export type UpdatePriceInput   = z.infer<typeof UpdatePriceSchema>;
+export type UpdatePricingInput = z.infer<typeof UpdatePricingSchema>;
 
 // Admin schedule update — working hours per day + min advance notice + timezone.
 // weeklyHours is keyed by day-of-week "0".."6" (0=Sun..6=Sat); an empty/absent
@@ -95,9 +111,11 @@ export const UpdateScheduleSchema = z
       z.enum(["0", "1", "2", "3", "4", "5", "6"]),
       z.array(TimeBlockSchema).max(6),
     ),
-    timezone:       z.enum(SUPPORTED_TIMEZONES),
-    minNoticeHours: z.number().int().min(0).max(168),
-    reason:         z.string().min(1).max(500),
+    timezone:             z.enum(SUPPORTED_TIMEZONES),
+    minNoticeHours:       z.number().int().min(0).max(168),
+    // Cancellation window (hours before start). Distinct from minNoticeHours.
+    cancelMinNoticeHours: z.number().int().min(0).max(168),
+    reason:               z.string().min(1).max(500),
   })
   .superRefine((val, ctx) => {
     for (const [dow, blocks] of Object.entries(val.weeklyHours)) {

@@ -366,6 +366,7 @@ export type Database = {
       }
       booking_settings: {
         Row: {
+          cancel_min_notice_hours: number
           id: number
           min_notice_hours: number
           timezone: string
@@ -373,6 +374,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          cancel_min_notice_hours?: number
           id?: number
           min_notice_hours?: number
           timezone?: string
@@ -380,6 +382,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          cancel_min_notice_hours?: number
           id?: number
           min_notice_hours?: number
           timezone?: string
@@ -428,6 +431,27 @@ export type Database = {
           amount_cents?: number
           currency?: string
           product_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      pricing_settings: {
+        Row: {
+          id: number
+          pack_validity_days: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: number
+          pack_validity_days?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          pack_validity_days?: number
           updated_at?: string
           updated_by?: string | null
         }
