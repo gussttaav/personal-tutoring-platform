@@ -16,7 +16,7 @@
  * definition had { ok: true; remaining: number } which was incorrect.
  */
 
-import type { BookResponse, CreditsResponse, PaymentIntentResponse } from "@/domain/types";
+import type { BookResponse, CreditsResponse, DeletionEligibility, PaymentIntentResponse } from "@/domain/types";
 import type { BookInput, CheckoutInput } from "@/lib/schemas";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -71,6 +71,26 @@ export const api = {
       request<{ ok: true }>("/api/locale", {
         method: "POST",
         body:   JSON.stringify({ locale }),
+      }),
+  },
+
+  // ACCOUNT-DELETE-01
+  account: {
+    /**
+     * GET /api/account — may this account be deleted, and if not, why?
+     * Advisory: the DELETE re-checks server-side.
+     */
+    eligibility: () => request<DeletionEligibility>("/api/account"),
+
+    /**
+     * DELETE /api/account — IRREVERSIBLE. `confirmEmail` must be the signed-in
+     * user's own address. On success the caller must sign out immediately: the
+     * session cookie outlives the account and would recreate an empty user row.
+     */
+    delete: (confirmEmail: string) =>
+      request<{ ok: true }>("/api/account", {
+        method: "DELETE",
+        body:   JSON.stringify({ confirmEmail }),
       }),
   },
 

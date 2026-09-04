@@ -31,7 +31,7 @@ export default async function PrivacidadPage({
   setRequestLocale(locale);
   const tModal = await getTranslations({ locale, namespace: "footerModals" });
   return (
-    <PolicyPage title={tModal("privacy")} lastUpdated="Junio 2025">
+    <PolicyPage title={tModal("privacy")} lastUpdated={locale === "en" ? "September 2026" : "Septiembre 2026"}>
       <PrivacidadContent locale={locale} />
     </PolicyPage>
   );

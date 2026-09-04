@@ -276,6 +276,40 @@
         "thanks": "Thanks for your rating!",
         "bookSame": "Book another like this"
       }
+    },
+    "dangerZone": {
+      "title": "Delete account",
+      "intro": "Permanently delete your account and all of your data.",
+      "trigger": "Delete my account",
+      "close": "Close",
+      "loadError": "We could not check your account status.",
+      "retry": "Retry",
+      "deleting": "Deleting your account…",
+      "blockedBookings": {
+        "title": "Cancel your classes first",
+        "body": "You have {count, plural, one {# booked class} other {# booked classes}} you can still cancel. Cancel them before deleting your account so any refund follows the usual cancellation policy.",
+        "packNote": "If any of them is a pack class, cancelling it returns the credit to your pack, and you will then need to write to Gustavo to delete your account.",
+        "action": "View my classes"
+      },
+      "blockedPack": {
+        "title": "You still have unused classes",
+        "body": "You have {count, plural, one {# unused class} other {# unused classes}} in an active pack. To delete your account, write to Gustavo and he will refund the remaining classes according to the cancellation policy.",
+        "action": "Write to Gustavo",
+        "terms": "Read the cancellation policy"
+      },
+      "confirm": {
+        "title": "This cannot be undone",
+        "body": "The following will be permanently deleted, with no way to recover it:",
+        "item1": "your account and personal details",
+        "item2": "your bookings and your entire class history",
+        "item3": "your course progress and answers",
+        "item4": "your payment records",
+        "imminent": "In addition, {count, plural, one {# class starting in less than 2 hours will be cancelled} other {# classes starting in less than 2 hours will be cancelled}} with no refund.",
+        "typeEmail": "Type {email} to confirm",
+        "placeholder": "you@email.com",
+        "submit": "Delete my account",
+        "cancel": "Cancel"
+      }
     }
   },
   "booking": {
@@ -736,7 +770,11 @@
       "outsideCancelWindow": "The cancellation window has closed.",
       "cancelTokenConsumed": "This cancellation link has already been used.",
       "invalidGoogleToken": "We couldn't verify your Google sign-in. Please try again.",
-      "emailNotVerified": "Your Google email is not verified."
+      "emailNotVerified": "Your Google email is not verified.",
+      "deletionBlockedActivePack": "You cannot delete your account while you have unused classes in an active pack. Write to contacto@gustavoai.dev to request a refund.",
+      "deletionBlockedCancellableBookings": "You cannot delete your account while you have booked classes you can still cancel. Cancel them first.",
+      "deletionNotConfirmed": "The confirmation does not match your account email.",
+      "userNotFound": "We could not find your account."
     },
     "validation": {
       "invalidRequest": "The submitted data is not valid. Check the form and try again."

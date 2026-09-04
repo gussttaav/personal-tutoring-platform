@@ -1,5 +1,6 @@
 // TEST-01: In-memory implementation of IUserRepository for integration tests.
-import type { IUserRepository } from "@/domain/repositories/IUserRepository";
+import type { AccountDeletionCounts, IUserRepository } from "@/domain/repositories/IUserRepository";
+import { UserNotFoundError } from "@/domain/errors";
 import { randomUUID } from "crypto";
 
 type UserRecord = {
@@ -61,5 +62,13 @@ export class InMemoryUserRepository implements IUserRepository {
       this.users.set(normalized, user);
     }
     user.locale = locale;
+  }
+
+  // ACCOUNT-DELETE-01: the real implementation erases 13 tables via a stored
+  // procedure; here there is only the user map, so the counts are the users row.
+  async deleteAccount(email: string): Promise<AccountDeletionCounts> {
+    const normalized = email.toLowerCase().trim();
+    if (!this.users.delete(normalized)) throw new UserNotFoundError();
+    return { users: 1 };
   }
 }

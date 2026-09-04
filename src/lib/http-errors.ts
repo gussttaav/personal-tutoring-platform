@@ -21,6 +21,12 @@ const HTTP_STATUS_MAP: Record<string, number> = {
   INVALID_CURSOR:             400, // BOOKING-HISTORY-01
   INVALID_GOOGLE_TOKEN:       401, // MOBILE-AUTH-01
   EMAIL_NOT_VERIFIED:         403, // MOBILE-AUTH-01
+  // ACCOUNT-DELETE-01: the two block codes are 409 for the same reason as
+  // SLOT_UNAVAILABLE -- the request is well-formed, the account state conflicts.
+  DELETION_BLOCKED_ACTIVE_PACK:         409,
+  DELETION_BLOCKED_CANCELLABLE_BOOKINGS: 409,
+  DELETION_NOT_CONFIRMED:                400,
+  USER_NOT_FOUND:                        404,
 };
 
 export function mapDomainErrorToResponse(

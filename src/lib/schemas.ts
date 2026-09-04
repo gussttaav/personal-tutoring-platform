@@ -578,3 +578,13 @@ export const CourseAttemptSchema = z.object({
 });
 
 export type CourseAttemptInput = z.infer<typeof CourseAttemptSchema>;
+
+// ACCOUNT-DELETE-01: body of DELETE /api/account. The caller echoes back its own
+// address; the service compares it to the session identity. On an irreversible
+// endpoint this is what separates a deliberate request from a stray one — the
+// value is never used as identity, only as confirmation.
+export const AccountDeletionSchema = z.object({
+  confirmEmail: z.string().email(),
+});
+
+export type AccountDeletionInput = z.infer<typeof AccountDeletionSchema>;
