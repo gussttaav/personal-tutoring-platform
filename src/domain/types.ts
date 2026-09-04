@@ -717,3 +717,23 @@ export interface EnrolledCourseView {
    *  for an English reader rather than disappearing from the panel. */
   contentLocale:    string;
 }
+
+// ACCOUNT-DELETE-01: result of the account-deletion gate. Lives here rather than in
+// AccountService for the same reason UserBooking does — the personal-area client
+// component reads it, and this module carries no service dependencies.
+export type DeletionBlockReason = "ACTIVE_PACK_CREDITS" | "CANCELLABLE_BOOKINGS";
+
+export interface DeletionEligibility {
+  eligible: boolean;
+  reason:   DeletionBlockReason | null;
+  /** Redeemable credits across non-expired packs. Non-zero always blocks. */
+  packCredits: number;
+  /** Upcoming classes the student can still cancel himself (outside the window). */
+  cancellableBookings: number;
+  /**
+   * Upcoming classes INSIDE the cancellation window. These do not block — the
+   * student cannot act on them — but they are erased on deletion with no refund,
+   * so the confirmation UI must name them.
+   */
+  imminentBookings: number;
+}

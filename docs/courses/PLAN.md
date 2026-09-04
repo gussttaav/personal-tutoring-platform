@@ -22,7 +22,7 @@ These were settled before planning; every task below assumes them.
 | Content storage | **MDX files in git**, not the DB | Versioned, diffable, reviewable in PRs — which matters for a course where derivations *will* be corrected. The DB holds user state only. |
 | Rendering | **Static generation** (`generateStaticParams`) | Math (KaTeX) and highlighting (Shiki) resolve at build time. A lesson costs **zero function invocations** to serve — this is what keeps the whole thing inside Vercel Hobby regardless of traffic. |
 | Python | **Pyodide in a Web Worker** (client-side) | Zero server cost. PyTorch does not run in Pyodide; NumPy does — which aligns exactly with a from-scratch course. Block 5's fine-tuning goes to Colab links. |
-| Language | **Spanish first**, English additive later | Slugs are identical across locales, so English is a pure content addition — no new routes, no redirects, no slug migration. |
+| Language | **Spanish first**, English additive later | Slugs are identical across locales, so English is a pure content addition — no new routes, no redirects, no slug migration. **Phase 11 executes this**; P6-03b made it incremental (per-lesson resolution against the Spanish spine), so the tree can be translated one lesson at a time. |
 | Mobile app | **Out of scope, hedged** | The MDX body is web-only. Lesson *metadata* stays in a queryable registry so a future `GET /api/courses` + webview deep-link is additive, not a rewrite. |
 | Access | **Free, sign-in required for progress** | The course is a funnel into the existing 1:1 booking business. Paid is a later config change (new `ProductKey` + existing PaymentIntent flow), not a rewrite. |
 
@@ -49,6 +49,9 @@ These were settled before planning; every task below assumes them.
 | 6 | **[Launch](phase-6-launch/README.md)** | 3 | SEO/JSON-LD/sitemap/hreflang, bilingual catalog + link swap, notification opt-in. |
 | 7 | **[Cross-links](phase-7-crosslinks/README.md)** | 2 | `<Leccion>` + bridge-aware linking, crosslink lint, the 43-lesson content pass. |
 | 8 | **[Further reading](phase-8-further-reading/README.md)** | 2 | `reading` frontmatter, the collapsed «Para profundizar» block, the 43-lesson content pass. |
+| 9 | **[Search](phase-9-search/README.md)** | 1 | Per-locale build-time index, ranking, the search palette. |
+| 10 | **Conversion** | 1 | In-lesson booking CTA (`COURSE-P10-01`). Shipped without phase docs — see below. |
+| 11 | **[Translation](phase-11-translation/README.md)** | 9 | The English lesson tree: triage, the three prerequisites, five block content passes. |
 
 ### The walking skeleton
 
@@ -154,4 +157,7 @@ Block 5's final project cannot run in Pyodide (no PyTorch). That is by design, n
   loop. Revisit past ~5× this corpus; the reasoning and the numbers are in the phase README.
 - **Mobile app course delivery.** Hedged via the registry; not built.
 - **`/admin/cursos` analytics.** Worth doing eventually (per-lesson drop-off tells you which lesson is too hard); `lesson_progress` is shaped to answer it. Spanish-only per the admin convention. Not this cycle.
-- **English content.** The pipeline supports it; no English lesson is written here.
+- **English content.** ~~The pipeline supports it; no English lesson is written here.~~
+  **Superseded by [Phase 11](phase-11-translation/README.md)**, which writes the English tree.
+  The risk row above ("English translation doubles the work") is where this cycle's mitigation is
+  recorded; Phase 11 is where it is spent.

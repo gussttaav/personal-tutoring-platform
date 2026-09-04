@@ -715,7 +715,7 @@ export type Database = {
         Returns: boolean
       }
       decrement_credit: { Args: { p_user_id: string }; Returns: Json }
-      delete_user_by_email: { Args: { p_email: string }; Returns: undefined }
+      delete_user_account: { Args: { p_email: string }; Returns: Json }
       release_slot_lock: { Args: { p_start_iso: string }; Returns: undefined }
       restore_credit: { Args: { p_user_id: string }; Returns: Json }
     }

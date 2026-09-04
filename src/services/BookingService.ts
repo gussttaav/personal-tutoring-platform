@@ -76,7 +76,11 @@ const SESSION_LABELS_EN: Record<SessionType, string> = {
   pack:      "Pack class",
 };
 
-const CANCEL_WINDOW_MS = 2 * 60 * 60_000; // 2 hours
+// ACCOUNT-DELETE-01: exported so AccountService applies the SAME window when deciding
+// whether an upcoming class is still cancellable by the student. Kept here rather than
+// in booking_settings: this is a hardcoded product rule, unlike the admin-editable
+// min_notice_hours that governs booking.
+export const CANCEL_WINDOW_MS = 2 * 60 * 60_000; // 2 hours
 
 type Compensation = { description: string; run: () => Promise<void> };
 

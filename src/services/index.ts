@@ -11,6 +11,7 @@ import { UserService }          from "./UserService";
 import { ReviewService }        from "./ReviewService";
 import { MobileAuthService }    from "./MobileAuthService";
 import { CourseService }        from "./CourseService";
+import { AccountService }       from "./AccountService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -83,6 +84,16 @@ export const courseService = new CourseService(
   supabaseCourseRepository,
   registryCourseCatalog,
   userService,
+);
+
+// ACCOUNT-DELETE-01: self-service account deletion. Takes BookingService and
+// CreditService (not their repositories) so the eligibility gate reuses exactly the
+// upcoming-bookings and credit-balance reads the rest of the app is built on.
+export const accountService = new AccountService(
+  supabaseUserRepository,
+  bookingService,
+  creditService,
+  new CalendarClient(),
 );
 
 export const reviewService = new ReviewService(

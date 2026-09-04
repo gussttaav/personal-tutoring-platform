@@ -37,7 +37,9 @@ function PrivacidadContentEs() {
       </ul>
 
       <h3>Tus derechos</h3>
-      <p>Puedes solicitar la eliminación de tus datos en cualquier momento escribiendo a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
+      <p>Puedes <strong>eliminar tu cuenta y todos tus datos</strong> tú mismo desde tu <strong>área personal</strong>, en la sección «Eliminar cuenta». El borrado es <strong>inmediato y no se puede deshacer</strong>: se eliminan de forma permanente tu cuenta y tus datos personales, tus reservas y todo tu historial de clases, tu saldo de créditos, tu progreso en los cursos y tus registros de pago. No se conserva ninguna copia ni existe un período de gracia para recuperarlos.</p>
+      <p>Para proteger las clases que ya has pagado, esa opción no está disponible mientras te queden créditos sin usar en un pack activo o clases reservadas que todavía puedes cancelar tú mismo. En esos casos la propia página te indica qué hacer: cancelar esas clases, o escribir a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> para gestionar el reembolso antes de cerrar la cuenta.</p>
+      <p>Stripe conserva sus propios registros de las transacciones para cumplir con sus obligaciones legales y fiscales, aunque la copia local se elimine. Para cualquier otra solicitud sobre tus datos —acceso, rectificación o eliminación— escribe a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
 
       <h3>Cookies</h3>
       <p>Solo se usan cookies estrictamente necesarias para la autenticación (NextAuth). Sin cookies de seguimiento ni publicidad.</p>
@@ -65,6 +67,11 @@ function TerminosContentEs() {
       <h3>Cancelaciones y reembolsos</h3>
       <p>Puedes cancelar o reprogramar cualquier clase con al menos <strong>2 horas de antelación</strong>. Para las clases de pack, el crédito se devuelve automáticamente. Para sesiones individuales pagadas, el reembolso está sujeto a la comisión de procesamiento que Stripe cobra por devolver un cargo (generalmente 0,25 € + entre el 1,5 % y el 1,9 % del importe; el resto se reembolsa en 1–3 días hábiles). Las cancelaciones con menos de 2 horas de antelación o las no presentaciones sin aviso no dan derecho a reembolso.</p>
       <p>Para solicitar el reembolso de un pack, si no se ha consumido ninguna clase se aplicará únicamente la comisión de Stripe. Si ya se han consumido clases, cada una se descontará al precio unitario de una sesión individual antes de calcular el reembolso, y se aplicará también la comisión de Stripe sobre el importe restante.</p>
+
+      <h3>Eliminación de la cuenta</h3>
+      <p>Puedes eliminar tu cuenta en cualquier momento desde tu área personal. El borrado es <strong>permanente e irreversible</strong>: se eliminan tu cuenta, tus reservas, tu historial, tus créditos y tu progreso en los cursos, sin posibilidad de recuperarlos.</p>
+      <p>Para proteger las clases que ya has pagado, la eliminación <strong>no está disponible</strong> mientras te queden créditos sin usar en un pack activo o clases reservadas que aún puedas cancelar tú mismo. Si quieres cerrar tu cuenta teniendo créditos pendientes, escribe a <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>: se te reembolsarán las clases restantes según la política de cancelación descrita más arriba.</p>
+      <p>Las clases que empiecen dentro del plazo de cancelación de 2 horas en el momento de eliminar la cuenta se cancelarán <strong>sin derecho a reembolso</strong>.</p>
 
       <h3>Responsabilidad</h3>
       <p>Las clases están orientadas a la formación y apoyo académico. No se garantizan resultados académicos específicos ni se asume responsabilidad por el uso que el alumno haga de los contenidos aprendidos.</p>
@@ -140,7 +147,9 @@ function PrivacidadContentEn() {
       </ul>
 
       <h3>Your rights</h3>
-      <p>You may request deletion of your data at any time by writing to <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
+      <p>You can <strong>delete your account and all of your data</strong> yourself from your <strong>personal area</strong>, under &quot;Delete account&quot;. Deletion is <strong>immediate and cannot be undone</strong>: your account and personal details, your bookings and entire class history, your credit balance, your course progress and your payment records are permanently erased. No copy is kept and there is no grace period in which to recover them.</p>
+      <p>To protect classes you have already paid for, that option is not available while you hold unused credits in an active pack or booked classes you can still cancel yourself. In those cases the page tells you what to do: cancel those classes, or write to <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> to arrange a refund before closing the account.</p>
+      <p>Stripe keeps its own records of transactions to meet its legal and tax obligations, even though the local copy is deleted. For any other request about your data — access, rectification or erasure — write to <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>.</p>
 
       <h3>Cookies</h3>
       <p>Only strictly necessary cookies are used for authentication (NextAuth). No tracking or advertising cookies.</p>
@@ -168,6 +177,11 @@ function TerminosContentEn() {
       <h3>Cancellations and refunds</h3>
       <p>You may cancel or reschedule any class with at least <strong>2 hours&apos; notice</strong>. For pack classes, the credit is returned automatically. For paid individual sessions, the refund is subject to the processing fee Stripe charges for reversing a charge (typically €0.25 + between 1.5% and 1.9% of the amount; the remainder is refunded within 1–3 business days). Cancellations with less than 2 hours&apos; notice or no-shows without prior notification are not eligible for a refund.</p>
       <p>To request a refund for a pack, if no classes have been used, only the Stripe processing fee applies. If classes have already been used, each one will be deducted at the unit price of an individual session before calculating the refund, and the Stripe fee will also be applied to the remaining amount.</p>
+
+      <h3>Account deletion</h3>
+      <p>You may delete your account at any time from your personal area. Deletion is <strong>permanent and irreversible</strong>: your account, bookings, history, credits and course progress are erased with no way to recover them.</p>
+      <p>To protect classes you have already paid for, deletion is <strong>not available</strong> while you hold unused credits in an active pack or booked classes you can still cancel yourself. If you want to close your account while credits remain, write to <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>: the remaining classes will be refunded according to the cancellation policy described above.</p>
+      <p>Any class starting within the 2-hour cancellation window at the moment you delete your account is cancelled <strong>with no right to a refund</strong>.</p>
 
       <h3>Liability</h3>
       <p>Sessions are intended for educational support. No specific academic results are guaranteed, and no responsibility is assumed for the use the student makes of the content learned.</p>

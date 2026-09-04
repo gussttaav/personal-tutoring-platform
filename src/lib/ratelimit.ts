@@ -162,3 +162,14 @@ export const courseProgressRatelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(120, "1 m"),
   prefix:  "rl:courses",
 });
+
+// ACCOUNT-DELETE-01: account-deletion preflight + delete, keyed by the
+// AUTHENTICATED EMAIL for the same reason as courseProgressRatelimit above. The
+// budget covers a realistic loop — open the danger zone, get told to cancel two
+// classes, cancel them, re-check — while capping a scripted flood against an
+// irreversible endpoint.
+export const accountDeletionRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(10, "1 h"),
+  prefix:  "rl:accdel",
+});

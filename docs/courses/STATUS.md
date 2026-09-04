@@ -1802,3 +1802,69 @@ that decision and the measurements behind it.
   syllabus accordion is the better way to browse lessons you have not read. The removal also
   collapsed `search()` from `PreparedIndex[]` to a single index, deleting the cross-course ranking,
   the per-result course label and two message keys — dead generality, not headroom.
+
+---
+
+## Phase 10 — Conversion
+
+**Retro-documented.** `COURSE-P10-01` (in-lesson booking CTA) shipped on `course/p10-lesson-cta`
+(commit `4757ef1`) without a `docs/courses/phase-10-*` directory or a row here. Recorded now so the
+tag namespace is not silently occupied; the design rationale lives in the commit message.
+
+| Task | Tag | Status | Owner | PR |
+|------|-----|--------|-------|----|
+| In-lesson booking CTA (`LessonCta`, `?book=smart`) | `COURSE-P10-01` | ✅ | _tbd_ | #76 |
+
+---
+
+## Phase 11 — English translation
+
+Write `content/courses/dl-nlp/en/`: 43 lessons, one PR each. Routing shipped in P6-03b — the
+Spanish tree is the spine and resolution is per lesson, so the course can be translated one
+lesson at a time with no broken intermediate state. Three Spanish-only prerequisites must land
+first; see the [phase README](phase-11-translation/README.md).
+
+| Task | Tag | Status | Owner | PR |
+|------|-----|--------|-------|----|
+| [00 Triage: classify 43 lessons](phase-11-translation/00-triage.md) | `COURSE-P11-00` | ✅ | _tbd_ | local |
+| [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ⬜ | _tbd_ | |
+| [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ⬜ | _tbd_ | |
+| [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ⬜ | _tbd_ | |
+| [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ⬜ | _tbd_ | |
+| [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ⬜ | _tbd_ | |
+| [06 Block 3 — RNNs (8)](phase-11-translation/06-block-3.md) | `COURSE-P11-06` | ⬜ | _tbd_ | |
+| [07 Block 4 — The Bridge to Attention (6)](phase-11-translation/07-block-4.md) | `COURSE-P11-07` | ⬜ | _tbd_ | |
+| [08 Block 5 — The Transformer (11)](phase-11-translation/08-block-5.md) | `COURSE-P11-08` | ⬜ | _tbd_ | |
+
+**Landing order:** P11-00 first (cheap, everything keys off it). Then P11-01 → P11-02 → P11-03
+before any content. Then blocks in order; lessons within a block in order, because the bridges
+interlock in English.
+
+**COURSE-P11-00** — **Done. All 43 lessons classed, five block mds filled.** The phase is
+**14 transpose · 27 adapt · 2 rewrite** under Block 4's Option A, or **13 · 27 · 3** under Option
+B; the per-block table is in the [phase README](phase-11-translation/README.md). Three results
+worth carrying: Block 1 has **no** transposable lesson and only two rewrites exist in the whole
+phase (1.2, 2.8); Blocks 3 and 5 hold none, and Block 5 moves no quiz answer across 11 lessons;
+and the adapt cost sits mostly **outside** the lesson files, so P11-02 gates 5.2/5.4/5.7,
+Block 1's 1.8 gates 5.10, and Block 2's 2.10 gates 5.11.
+
+**Open after P11-00** — **Block 4's direction decision is not made.** P11-00 inventoried both
+options and deliberately left the call to P11-07; it fixes whether 4.3 and 5.9 are adapts or
+rewrites, and nothing else in the phase moves either way.
+
+**Exit criteria**
+- [ ] 43 published lessons under `en/`; `fullyTranslated` true for `en`
+- [ ] Every `/en` lesson route indexable with reciprocal hreflang; no fallback `noindex` remains
+- [ ] A partially translated tree passes `pnpm lint:content` at every intermediate commit
+- [ ] No English lesson renders a Spanish widget label or default corpus
+- [ ] English voice families fire on English prose; Spanish families still fire on Spanish
+- [ ] Every English `<PyCell>` / `<CodeChallenge>` run in the browser; quoted numbers verified
+- [ ] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
+
+**Open, carried from Phase 8**
+- `reading:` is populated in 41 of 44 Spanish files, but **P8-02's five block checkboxes are still
+  unticked** in this file. Any Spanish `reading` revised after its English counterpart is written
+  leaves the two silently out of sync. Confirm a block's `reading` is final before translating it.
+
+**Known gaps this phase does not close**
+- `docs/courses/notebooks/` stays Spanish (B5.11 links it). Own task, own verification story.

@@ -9,6 +9,7 @@ const mockRepo = (): jest.Mocked<IUserRepository> => ({
   setRole:      jest.fn(),
   getLocale:    jest.fn(),
   setLocale:    jest.fn(),
+  deleteAccount: jest.fn(),
 });
 
 describe("UserService.ensureUser", () => {

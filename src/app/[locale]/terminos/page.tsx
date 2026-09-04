@@ -30,7 +30,7 @@ export default async function TerminosPage({
   setRequestLocale(locale);
   const tModal = await getTranslations({ locale, namespace: "footerModals" });
   return (
-    <PolicyPage title={tModal("terms")} lastUpdated="Junio 2025">
+    <PolicyPage title={tModal("terms")} lastUpdated={locale === "en" ? "September 2026" : "Septiembre 2026"}>
       <TerminosContent locale={locale} />
     </PolicyPage>
   );

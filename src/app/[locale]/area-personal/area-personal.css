@@ -1127,6 +1127,93 @@
 }
 .pa-rate__done .material-symbols-outlined { font-size: 17px; }
 
+/* ─── ACCOUNT-DELETE-01: danger zone ────────────────────────────────────────── */
+
+/* Deliberately quiet while closed and set apart from the grid above: this is the
+   one irreversible action on the page and should not compete with booking a class. */
+.pa-danger {
+  margin-top: 28px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-low);
+  padding: 20px 24px;
+}
+.pa-danger--open { border-color: var(--pa-error-border); }
+.pa-danger__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pa-danger__head h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+.pa-danger__head p {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin: 0;
+}
+.pa-danger__body {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.pa-danger__body b {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.pa-danger__body p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+.pa-danger__note { color: var(--text-dim); font-size: 12.5px; }
+.pa-danger__list {
+  margin: 0 0 14px;
+  padding-left: 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.pa-danger__list li { margin-bottom: 4px; }
+.pa-danger__warn {
+  background: var(--error-bg);
+  border: 1px solid var(--pa-error-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--error) !important;
+  font-size: 12.5px;
+}
+.pa-danger__label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.pa-danger__input {
+  width: 100%;
+  max-width: 340px;
+  font-family: var(--font-body), Inter, sans-serif;
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--surface-lowest);
+  border: 1px solid var(--border-variant);
+  border-radius: 10px;
+  padding: 11px 14px;
+  margin-bottom: 14px;
+}
+.pa-danger__input:focus {
+  outline: none;
+  border-color: var(--pa-error-border);
+}
+.pa-danger__row { display: flex; gap: 8px; flex-wrap: wrap; }
+
 /* ─── Responsive ────────────────────────────────────────────────────────────── */
 
 @media (max-width: 960px) {
@@ -1147,6 +1234,9 @@
   .pa-aitem__cta { width: 100%; margin-top: 4px; }
   .pa-aitem__cta .pa-iconbtn { flex: 1; }
   .pa-hstats { grid-template-columns: 1fr; }
+  .pa-danger__head { flex-direction: column; align-items: stretch; }
+  .pa-danger__row { flex-direction: column; }
+  .pa-danger__row .pa-btn { width: 100%; }
   /* Narrow tabs drop the ICON, never the label: the icon is aria-hidden, so hiding
      the text instead would leave each tab's accessible name as the raw Material
      Symbols ligature ("history") rather than "Historial". */
