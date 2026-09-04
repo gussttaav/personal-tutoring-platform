@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import type { PackSize } from "@/domain/types";
 import { PACK_CONFIG } from "@/constants";
-import { useProductPrice } from "@/components/pricing/PricesProvider";
+import { useProductPrice, usePackValidityDays } from "@/components/pricing/PricesProvider";
 
 interface PackCardProps {
   size: PackSize;
@@ -30,13 +30,14 @@ export default function PackCard({
   // Live prices: amount/original/savings/hourly all come from the pricing table.
   const price        = useProductPrice(size === 5 ? "pack5" : "pack10");
   const sessionPrice = useProductPrice("session1h").price;
+  const validityDays = usePackValidityDays();
   const hasCredits = !creditsLoading && activeCredits !== null && activeCredits > 0;
   const isPrimary = recommended || hasCredits;
 
   const benefits = [
     t("benefits.sessions", { hours: cfg.hours }),
     t("benefits.flexible"),
-    t("benefits.validity"),
+    t("benefits.validity", { days: validityDays }),
   ];
 
   return (

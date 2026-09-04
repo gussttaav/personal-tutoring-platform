@@ -76,12 +76,6 @@ const SESSION_LABELS_EN: Record<SessionType, string> = {
   pack:      "Pack class",
 };
 
-// ACCOUNT-DELETE-01: exported so AccountService applies the SAME window when deciding
-// whether an upcoming class is still cancellable by the student. Kept here rather than
-// in booking_settings: this is a hardcoded product rule, unlike the admin-editable
-// min_notice_hours that governs booking.
-export const CANCEL_WINDOW_MS = 2 * 60 * 60_000; // 2 hours
-
 type Compensation = { description: string; run: () => Promise<void> };
 
 // ─── Service ──────────────────────────────────────────────────────────────────
@@ -97,6 +91,17 @@ export class BookingService {
     private readonly users:      IUserRepository,
     private readonly schedule:   ScheduleService,
   ) {}
+
+  // ACCOUNT-DELETE-01 / configurable-policy-params: the cancellation+reschedule
+  // window, now admin-editable (booking_settings.cancel_min_notice_hours) rather
+  // than a hardcoded constant. Single source of truth: the two guards below and
+  // AccountService's deletion-eligibility gate all read it from here so they can
+  // never disagree about what "still cancellable" means. The schedule config is
+  // cached (Redis version cache + ISR), so this is not a fresh DB round-trip.
+  async getCancelWindowMs(): Promise<number> {
+    const config = await this.schedule.getConfig();
+    return config.cancelMinNoticeHours * 60 * 60_000;
+  }
 
   async createBooking(input: CreateBookingInput): Promise<CreateBookingOutput> {
     // 1. Min-notice guard — schedule config is the source of truth.
@@ -144,9 +149,12 @@ export class BookingService {
             "INVALID_RESCHEDULE_TOKEN",
           );
         }
-        if (new Date(oldRecord.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
+        // Reuse the config already fetched above (no second read). cancelMinNoticeHours
+        // governs both cancellation and rescheduling.
+        const cancelWindowMs = config.cancelMinNoticeHours * 60 * 60_000;
+        if (new Date(oldRecord.startsAt) <= new Date(Date.now() + cancelWindowMs)) {
           throw new DomainError(
-            "Reschedule window has closed (less than 2 hours before session).",
+            `Reschedule window has closed (less than ${config.cancelMinNoticeHours}h before session).`,
             "OUTSIDE_RESCHEDULE_WINDOW",
           );
         }
@@ -296,6 +304,7 @@ export class BookingService {
             studentTz:    input.timezone ?? null,
             sessionType:  input.sessionType,
             locale:       studentLocale,
+            cancelHours:  config.cancelMinNoticeHours,
           }),
           "confirmation email",
         ),
@@ -345,10 +354,11 @@ export class BookingService {
       );
     }
 
-    // 2. 2-hour window check
-    if (new Date(record.startsAt) <= new Date(Date.now() + CANCEL_WINDOW_MS)) {
+    // 2. Cancellation-window check — admin-editable (cancel_min_notice_hours).
+    const cancelWindowMs = await this.getCancelWindowMs();
+    if (new Date(record.startsAt) <= new Date(Date.now() + cancelWindowMs)) {
       throw new DomainError(
-        "Cancellation window has closed (less than 2 hours before session).",
+        "Cancellation window has closed (too close to the session start).",
         "OUTSIDE_CANCEL_WINDOW",
       );
     }

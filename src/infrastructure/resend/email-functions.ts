@@ -165,6 +165,7 @@ export async function sendConfirmationEmail(params: {
   studentTz: string | null;
   sessionType: string;
   locale: 'es' | 'en';
+  cancelHours: number;
 }): Promise<void> {
   const t = await getTranslations({ locale: params.locale, namespace: "emails.confirmation" });
 
@@ -230,7 +231,7 @@ export async function sendConfirmationEmail(params: {
 
         <div class="divider"></div>
 
-        <p style="font-size:13px">${t.raw("cancelPolicy")}</p>
+        <p style="font-size:13px">${t.raw("cancelPolicy").replace("{hours}", String(params.cancelHours))}</p>
         <a class="action-btn" href="${cancelUrl}">${t("cancelBtn")}</a>
         <a class="action-btn" href="${reschedUrl}">${t("rescheduleBtn")}</a>
 

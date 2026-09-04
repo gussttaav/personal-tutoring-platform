@@ -22,11 +22,13 @@ import {
   MiniIcon,
 } from "@/components/ui";
 import { useSSECredits } from "@/hooks/useSSECredits";
+import { usePackValidityDays } from "@/components/pricing/PricesProvider";
 
 function SuccessContent() {
   const params = useSearchParams();
   const router = useRouter();
   const t      = useTranslations("pages.pagoExitoso");
+  const validityDays = usePackValidityDays();
 
   const paymentIntentId = params.get("payment_intent_id");
 
@@ -160,7 +162,7 @@ function SuccessContent() {
                 border: `1px solid ${COLORS.border}`, whiteSpace: "nowrap",
               }}
             >
-              {t("validityNote")}
+              {t("validityNote", { days: validityDays })}
             </div>
           </div>
         </InfoBox>

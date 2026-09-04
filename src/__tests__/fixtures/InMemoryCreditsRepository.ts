@@ -34,6 +34,7 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
     creditsToAdd:    number;
     packLabel:       string;
     stripeSessionId: string;
+    expiresAt:       string;
   }): Promise<void> {
     // Idempotent by stripeSessionId
     if (this.usedIds.has(params.stripeSessionId)) return;
@@ -46,6 +47,7 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
     if (existing) {
       existing.credits        += params.creditsToAdd;
       existing.packLabel       = params.packLabel;
+      existing.expiresAt       = params.expiresAt;
       existing.lastUpdated     = now;
       existing.stripeSessionId = params.stripeSessionId;
     } else {
@@ -55,7 +57,7 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
         credits:         params.creditsToAdd,
         packLabel:       params.packLabel,
         packSize:        params.creditsToAdd as number,
-        expiresAt:       new Date(Date.now() + 365 * 24 * 60 * 60_000).toISOString(),
+        expiresAt:       params.expiresAt,
         lastUpdated:     now,
         stripeSessionId: params.stripeSessionId,
       });

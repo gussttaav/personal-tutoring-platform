@@ -115,13 +115,16 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
 });
 
 // Stub ScheduleService — BookingService only calls getConfig(). Default min
-// notice = 5h (matches the old hardcoded SCHEDULE) so existing timing holds.
-const mockSchedule = (): ScheduleService =>
+// notice = 5h (matches the old hardcoded SCHEDULE) so existing timing holds, and
+// cancelMinNoticeHours = 2h (the old hardcoded CANCEL_WINDOW_MS) so the
+// cancel/reschedule window tests still hold.
+const mockSchedule = (overrides: { cancelMinNoticeHours?: number } = {}): ScheduleService =>
   ({
     getConfig: jest.fn().mockResolvedValue({
       weeklyHours: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
       timezone: "Europe/Madrid",
       minNoticeHours: 5,
+      cancelMinNoticeHours: overrides.cancelMinNoticeHours ?? 2,
       bookingWindowWeeks: 8,
     }),
     updateConfig: jest.fn().mockResolvedValue(undefined),
@@ -449,6 +452,20 @@ describe("BookingService.cancelByToken", () => {
       baseCancelRecord({ startsAt: hoursFromNow(1) }) // 1h away — outside window
     );
     const service = makeService({ bookings });
+
+    await expect(service.cancelByToken("tkn")).rejects.toMatchObject({
+      code: "OUTSIDE_CANCEL_WINDOW",
+    });
+  });
+
+  it("honors the admin-configured cancellation window (not the old hardcoded 2h)", async () => {
+    // With a 6h window, a class 5h away is now INSIDE the window (uncancellable),
+    // even though under the old hardcoded 2h it would have been cancellable.
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings, schedule: mockSchedule({ cancelMinNoticeHours: 6 }) });
 
     await expect(service.cancelByToken("tkn")).rejects.toMatchObject({
       code: "OUTSIDE_CANCEL_WINDOW",

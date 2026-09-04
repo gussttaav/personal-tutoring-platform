@@ -33,7 +33,8 @@ export class PricingService {
    * 1h×hours strikethrough/savings); never exposes admin metadata.
    */
   async getPublicPricing(): Promise<PublicPricing> {
-    const byKey = new Map((await this.pricing.list()).map((r) => [r.productKey, r]));
+    const [rows, settings] = await Promise.all([this.pricing.list(), this.pricing.getSettings()]);
+    const byKey = new Map(rows.map((r) => [r.productKey, r]));
 
     const require = (key: ProductKey): PriceRecord => {
       const r = byKey.get(key);
@@ -76,7 +77,18 @@ export class PricingService {
       };
     });
 
-    return { currency: session1h.currency, sessions, packs };
+    return {
+      currency: session1h.currency,
+      sessions,
+      packs,
+      packValidityDays: settings.packValidityDays,
+    };
+  }
+
+  /** How many days a purchased pack stays redeemable. Read by the purchase path
+   *  (PaymentService) to stamp each pack's expiry, and surfaced to clients. */
+  async getPackValidityDays(): Promise<number> {
+    return (await this.pricing.getSettings()).packValidityDays;
   }
 
   /**
@@ -110,5 +122,23 @@ export class PricingService {
     });
 
     log("info", "Pricing updated", { service: "PricingService", productKey: key, amountCents, by });
+  }
+
+  async updatePackValidityDays(params: {
+    days:   number;
+    by:     string;
+    reason: string;
+  }): Promise<void> {
+    const { days, by, reason } = params;
+
+    await this.pricing.updateSettings({ packValidityDays: days, updatedBy: by });
+
+    await this.audit.append(by, {
+      action:           "admin_update_pack_validity",
+      packValidityDays: days,
+      reason,
+    });
+
+    log("info", "Pack validity updated", { service: "PricingService", packValidityDays: days, by });
   }
 }

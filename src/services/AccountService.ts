@@ -13,7 +13,7 @@
 import type { AccountDeletionCounts, IUserRepository } from "@/domain/repositories/IUserRepository";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { DeletionBlockReason, DeletionEligibility, UserBooking } from "@/domain/types";
-import { BookingService, CANCEL_WINDOW_MS } from "./BookingService";
+import { BookingService } from "./BookingService";
 import { CreditService } from "./CreditService";
 import {
   AccountDeletionBlockedByBookingsError,
@@ -128,16 +128,18 @@ export class AccountService {
   private async partitionUpcoming(
     email: string,
   ): Promise<{ cancellable: UserBooking[]; imminent: UserBooking[] }> {
-    const now      = Date.now();
+    const now = Date.now();
+    // Read the (admin-editable) cancellation window from BookingService — the SAME
+    // source the cancel endpoint enforces, so eligibility can never disagree with
+    // what a real cancel would allow. One cached read per call.
+    const cancelWindowMs = await this.bookings.getCancelWindowMs();
     const upcoming = (await this.bookings.listForUser(email))
       .filter(b => new Date(b.endsAt).getTime() > now);
 
     const cancellable: UserBooking[] = [];
     const imminent:    UserBooking[] = [];
     for (const booking of upcoming) {
-      // Same test cancelByToken enforces, so eligibility can never disagree with
-      // what the cancel endpoint would actually allow.
-      if (new Date(booking.startsAt).getTime() > now + CANCEL_WINDOW_MS) cancellable.push(booking);
+      if (new Date(booking.startsAt).getTime() > now + cancelWindowMs) cancellable.push(booking);
       else imminent.push(booking);
     }
     return { cancellable, imminent };

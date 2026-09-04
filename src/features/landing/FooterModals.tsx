@@ -18,6 +18,8 @@ import {
   TerminosContent,
   PrivacidadContent,
 } from "@/components/policy/PolicyContent";
+import { usePackValidityDays } from "@/components/pricing/PricesProvider";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 
 type ModalKey = "cancelacion" | "terminos" | "privacidad" | null;
 
@@ -39,6 +41,8 @@ const LINK_STYLE: React.CSSProperties = {
 export default function FooterModals() {
   const t      = useTranslations("footerModals");
   const locale = useLocale();
+  const packValidityDays = usePackValidityDays();
+  const cancelHours      = useScheduleConfig().cancelMinNoticeHours;
   const [open, setOpen] = useState<ModalKey>(null);
 
   function close() {
@@ -186,8 +190,8 @@ export default function FooterModals() {
                 flex: 1,
               }}
             >
-              {open === "cancelacion" && <CancelacionContent locale={locale} />}
-              {open === "terminos" && <TerminosContent locale={locale} />}
+              {open === "cancelacion" && <CancelacionContent locale={locale} packValidityDays={packValidityDays} cancelHours={cancelHours} />}
+              {open === "terminos" && <TerminosContent locale={locale} packValidityDays={packValidityDays} cancelHours={cancelHours} />}
               {open === "privacidad" && <PrivacidadContent locale={locale} />}
             </div>
           </div>

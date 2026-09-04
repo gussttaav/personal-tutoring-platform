@@ -3,15 +3,8 @@
 // across all active (non-expired) packs ordered by expires_at ASC (FIFO).
 import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
-import { PACK_VALIDITY_MONTHS } from "@/constants";
 import { paymentChannelName } from "@/lib/realtime-channel";
 import { supabase } from "./client";
-
-function addMonths(date: Date, months: number): Date {
-  const d = new Date(date);
-  d.setMonth(d.getMonth() + months);
-  return d;
-}
 
 export class SupabaseCreditsRepository implements ICreditsRepository {
   async getCredits(email: string): Promise<CreditResult | null> {
@@ -51,17 +44,17 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
     creditsToAdd:    number;
     packLabel:       string;
     stripeSessionId: string;
+    expiresAt:       string;
   }): Promise<void> {
     const userId   = await this.upsertUser(params.email, params.name);
     const packSize = this.parsePackSize(params.packLabel, params.creditsToAdd);
-    const expiresAt = addMonths(new Date(), PACK_VALIDITY_MONTHS).toISOString();
 
     const { error } = await supabase.from("credit_packs").insert({
       user_id:           userId,
       pack_size:         packSize,
       credits_remaining: params.creditsToAdd,
       stripe_payment_id: params.stripeSessionId,
-      expires_at:        expiresAt,
+      expires_at:        params.expiresAt,
     });
 
     // 23505 = unique_violation — stripe_payment_id already exists, idempotent

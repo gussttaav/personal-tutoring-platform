@@ -8,7 +8,12 @@ import { PricingForm } from "@/components/admin/PricingForm";
 import { pricingService } from "@/services";
 
 export default async function PricingPage() {
-  const prices = await pricingService.getAll();
+  // Admin surfaces read the service directly (never the ISR cache), so the form
+  // always shows the current values.
+  const [prices, packValidityDays] = await Promise.all([
+    pricingService.getAll(),
+    pricingService.getPackValidityDays(),
+  ]);
 
   return (
     <div className="page-stack">
@@ -19,7 +24,7 @@ export default async function PricingPage() {
       />
 
       <Card>
-        <PricingForm prices={prices} />
+        <PricingForm prices={prices} packValidityDays={packValidityDays} />
       </Card>
     </div>
   );

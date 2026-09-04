@@ -31,7 +31,7 @@ import SingleSessionBooking from "@/components/SingleSessionBooking";
 import AvailabilityModal from "@/components/AvailabilityModal";
 import Chat from "@/components/Chat";
 import { PACK_SIZES, PACK_CONFIG } from "@/constants";
-import { usePrices } from "@/components/pricing/PricesProvider";
+import { usePrices, usePackValidityDays } from "@/components/pricing/PricesProvider";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
 import type { PackSize } from "@/domain/types";
@@ -74,6 +74,7 @@ function PackCardSkeleton() {
 export default function InteractiveShell() {
   const t = useTranslations("booking.shell");
   const prices = usePrices();
+  const packValidityDays = usePackValidityDays();
   const { googleUser, isSignedIn, isAuthLoading, packSession, creditsLoading, updateCredits, hasBookings } =
     useUserSession();
 
@@ -481,7 +482,7 @@ export default function InteractiveShell() {
           {t("packsSubtitle")}
         </h2>
         <p style={{ fontSize: "14px", color: "#86948a", marginBottom: "32px" }}>
-          {t("packsDescription")}
+          {t("packsDescription", { days: packValidityDays })}
         </p>
 
         {isAuthLoading ? (

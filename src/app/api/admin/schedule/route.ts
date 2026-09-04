@@ -63,10 +63,11 @@ export async function POST(req: NextRequest) {
 
   await scheduleService.updateConfig({
     weeklyHours,
-    timezone:       parsed.data.timezone,
-    minNoticeHours: parsed.data.minNoticeHours,
-    by:             session.user.email,
-    reason:         parsed.data.reason,
+    timezone:             parsed.data.timezone,
+    minNoticeHours:       parsed.data.minNoticeHours,
+    cancelMinNoticeHours: parsed.data.cancelMinNoticeHours,
+    by:                   session.user.email,
+    reason:               parsed.data.reason,
   });
 
   // The schedule changed. Invalidate the ISR schedule cache by tag so the

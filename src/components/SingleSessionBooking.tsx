@@ -392,7 +392,7 @@ export default function SingleSessionBooking({
                   {t("helpEmailFailed")}
                 </a>
               ) : (
-                t("helpGeneral")
+                t("helpGeneral", { hours: schedule.cancelMinNoticeHours })
               )}
             </Helper>
           </FeedbackCard>

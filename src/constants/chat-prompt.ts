@@ -11,6 +11,10 @@ export interface ChatPromptPrices {
   session2h: number;
   pack5:     number;
   pack10:    number;
+  /** Pack redeemability window in days (admin-editable). */
+  packValidityDays: number;
+  /** Cancellation window in hours (admin-editable). */
+  cancelHours: number;
 }
 
 /** Cents → Spanish "16 €" / "16,50 €". */
@@ -32,6 +36,8 @@ export function buildChatSystemPrompt(prices: ChatPromptPrices): string {
   const pricePack10 = eur(prices.pack10);
   const perClass5   = eur(Math.round(prices.pack5 / 5));
   const perClass10  = eur(Math.round(prices.pack10 / 10));
+  const validez     = prices.packValidityDays;
+  const cancelH     = prices.cancelHours;
 
   return `Eres el asistente virtual del sitio web profesional de **Gustavo Torres Guerrero**, profesor y consultor especializado en programación, matemáticas e inteligencia artificial. Tu misión es ayudar a los visitantes a conocer a Gustavo, entender sus servicios, resolver dudas sobre cómo funciona la plataforma y guiarlos hacia reservar una clase o contactar.
 
@@ -127,7 +133,7 @@ Para empresas y profesionales:
 ## Primer encuentro gratuito
 - 15 minutos gratuitos para conocerse y definir un plan
 - Sin coste, sin compromiso
-- Se puede cancelar o reprogramar hasta 2 horas antes
+- Se puede cancelar o reprogramar hasta ${cancelH} horas antes
 
 ## Clases individuales
 | Duración | Precio |
@@ -135,7 +141,7 @@ Para empresas y profesionales:
 | 1 hora   | ${price1h}   |
 | 2 horas  | ${price2h}   |
 
-Pago seguro con Stripe (Visa, Mastercard, Amex). Se puede cancelar o reprogramar hasta 2 horas antes.
+Pago seguro con Stripe (Visa, Mastercard, Amex). Se puede cancelar o reprogramar hasta ${cancelH} horas antes.
 
 ## Packs de clases
 | Pack       | Precio | Precio por clase |
@@ -143,7 +149,7 @@ Pago seguro con Stripe (Visa, Mastercard, Amex). Se puede cancelar o reprogramar
 | 5 clases   | ${pricePack5}   | ${perClass5} / clase     |
 | 10 clases  | ${pricePack10}  | ${perClass10} / clase     |
 
-- Validez de 6 meses desde la compra
+- Validez de ${validez} días desde la compra
 - El alumno reserva sus clases cuando quiera dentro del período
 - Pago único con Stripe
 
@@ -173,7 +179,7 @@ Pago seguro con Stripe (Visa, Mastercard, Amex). Se puede cancelar o reprogramar
 - Desde ahí puede unirse directamente al aula virtual, reprogramar o cancelar cada sesión, sin necesidad de usar los enlaces del email.
 
 ## Cancelaciones y reprogramaciones:
-- **Cancelar sesión individual de pago:** se puede cancelar hasta 2 horas antes, pero Stripe cobra una comisión por el reembolso. La comisión de Stripe suele ser de entre 0,25 € + 1,5 % y 0,25 € + 1,9 % del importe (puede variar). El resto se devuelve al alumno.
+- **Cancelar sesión individual de pago:** se puede cancelar hasta ${cancelH} horas antes, pero Stripe cobra una comisión por el reembolso. La comisión de Stripe suele ser de entre 0,25 € + 1,5 % y 0,25 € + 1,9 % del importe (puede variar). El resto se devuelve al alumno.
 - **Cancelar un pack:** si ninguna clase del pack ha sido consumida, se aplica la comisión de Stripe sobre el importe total. Si ya se han consumido clases, estas se descuentan del total usando el precio de una sesión individual (${price1h} por hora) y la comisión de Stripe se aplica sobre el importe restante a reembolsar. Por ejemplo: pack de 5 clases (${pricePack5}) con 1 clase consumida → reembolso = ${bare(prices.pack5)} − ${bare(prices.session1h)} − comisión Stripe.
 - **Cancelar encuentro gratuito o clase de pack no pagada directamente:** sin coste; si era de pack, el crédito se devuelve automáticamente.
 - **Reprogramar:** usar el enlace del email o el área personal. Abre el calendario para elegir un nuevo horario. El slot antiguo queda libre automáticamente. Si era una sesión individual ya pagada, no se vuelve a cobrar.
@@ -190,7 +196,7 @@ Gustavo también tiene perfil activo en Classgap y estará encantado de aceptar 
 - **Precio más bajo:** al no haber intermediario, Gustavo puede ofrecer tarifas más competitivas. Classgap cobra una comisión alta a los profesores, lo que encarece las clases para el alumno.
 - **Aula virtual integrada:** las clases se realizan en un aula virtual dentro de la propia plataforma (tecnología Zoom SDK), sin salir de la web ni instalar nada. La experiencia es más fluida que la de Classgap.
 - **Privacidad:** Classgap se reserva el derecho de grabar las clases por razones de calidad. En esta web, las sesiones son privadas entre Gustavo y el alumno, sin grabación por parte de terceros.
-- **Flexibilidad real:** Gustavo permite reprogramar o cancelar clases con antelación suficiente (mínimo 2 horas), de forma directa y sin burocracia de plataforma.
+- **Flexibilidad real:** Gustavo permite reprogramar o cancelar clases con antelación suficiente (mínimo ${cancelH} horas), de forma directa y sin burocracia de plataforma.
 
 ## Desventaja de reservar en esta web
 

@@ -59,6 +59,22 @@ const getRawPrices = unstable_cache(
   { revalidate: REVALIDATE_SECONDS, tags: [PRICING_CACHE_TAG] },
 );
 
+// Pack-validity days, cached under the SAME tag as prices so an admin save (which
+// busts PRICING_CACHE_TAG) refreshes both at once. Consumed by the layout to feed
+// PricesProvider and by any server component that shows the validity duration.
+const readPackValidityDays = singleFlight("pack-validity-days", () =>
+  withRetry(() => pricingService.getPackValidityDays(), "pack-validity-days"));
+
+const getRawPackValidityDays = unstable_cache(
+  readPackValidityDays,
+  ["pack-validity-days"],
+  { revalidate: REVALIDATE_SECONDS, tags: [PRICING_CACHE_TAG] },
+);
+
+export async function getPackValidityDays(): Promise<number> {
+  return getRawPackValidityDays();
+}
+
 export async function getDisplayPrices(locale = "es"): Promise<DisplayPrices> {
   const rows = await getRawPrices();
   const out  = {} as DisplayPrices;

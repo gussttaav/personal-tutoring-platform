@@ -9,6 +9,9 @@ describeDb("SupabaseCreditsRepository", () => {
   const repo      = new SupabaseCreditsRepository();
   const testEmail = `test-credits-${Date.now()}@example.com`;
   let   userId    = "";
+  // Pack expiry is now supplied by the caller (from the admin-editable validity
+  // setting) rather than computed in the repo. 180 days keeps every pack active.
+  const futureExpiry = new Date(Date.now() + 180 * 24 * 60 * 60_000).toISOString();
 
   afterAll(async () => {
     if (userId) {
@@ -29,6 +32,7 @@ describeDb("SupabaseCreditsRepository", () => {
       creditsToAdd:    5,
       packLabel:       "Pack 5",
       stripeSessionId: `pi_test_creds_${Date.now()}`,
+      expiresAt:       futureExpiry,
     });
 
     const result = await repo.getCredits(testEmail);
@@ -46,11 +50,11 @@ describeDb("SupabaseCreditsRepository", () => {
     const stripeSessionId = `pi_idem_${Date.now()}`;
     await repo.addCredits({
       email: testEmail, name: "Test User", creditsToAdd: 5,
-      packLabel: "Pack 5", stripeSessionId,
+      packLabel: "Pack 5", stripeSessionId, expiresAt: futureExpiry,
     });
     await repo.addCredits({
       email: testEmail, name: "Test User", creditsToAdd: 5,
-      packLabel: "Pack 5", stripeSessionId,
+      packLabel: "Pack 5", stripeSessionId, expiresAt: futureExpiry,
     });
 
     const result = await repo.getCredits(testEmail);
@@ -74,6 +78,7 @@ describeDb("SupabaseCreditsRepository", () => {
     await repo.addCredits({
       email, name: "Concurrent", creditsToAdd: 1,
       packLabel: "Pack 5", stripeSessionId: `pi_concurrent_${Date.now()}`,
+      expiresAt: futureExpiry,
     });
 
     const results = await Promise.all(

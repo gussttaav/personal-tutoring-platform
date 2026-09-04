@@ -59,8 +59,9 @@ export const PACK_CONFIG = {
   },
 } as const;
 
-/** Pack validity period in months */
-export const PACK_VALIDITY_MONTHS = 6;
+// Pack validity is admin-editable — pricing_settings.pack_validity_days, read via
+// PricingService.getPackValidityDays() and applied at purchase time. (Was the
+// hardcoded PACK_VALIDITY_MONTHS = 6 constant.)
 
 // Google Business review link, surfaced in the post-class review flow.
 export const GOOGLE_REVIEW_URL = "https://g.page/r/CeUEcIsZXTyiEBM/review";

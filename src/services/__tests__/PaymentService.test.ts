@@ -186,6 +186,13 @@ describe("PaymentService.processWebhookEvent — pack", () => {
       amount:          5,
       stripeSessionId: "pi_pack_123",
     }));
+
+    // The pack's expiry reflects the configured validity (default 180 days) —
+    // stamped from PricingService, not a hardcoded constant.
+    const { expiresAt } = (credits.addCredits as jest.Mock).mock.calls[0]![0];
+    const daysOut = (new Date(expiresAt).getTime() - Date.now()) / (24 * 60 * 60_000);
+    expect(daysOut).toBeGreaterThan(179);
+    expect(daysOut).toBeLessThanOrEqual(180);
   });
 
   // PAYMENTS-AUDIT-01

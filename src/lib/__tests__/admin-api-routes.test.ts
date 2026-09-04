@@ -18,6 +18,7 @@ jest.mock("@/services", () => ({
     addCredits: (...args: unknown[]) => mockAddCredits(args),
     useCredit:  (email: string) => mockUseCredit(email),
   },
+  pricingService: { getPackValidityDays: jest.fn().mockResolvedValue(180) },
   paymentService: { listFailedBookings: jest.fn().mockResolvedValue([]) },
 }));
 

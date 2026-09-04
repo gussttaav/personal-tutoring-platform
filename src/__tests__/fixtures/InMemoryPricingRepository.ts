@@ -1,6 +1,6 @@
 // In-memory implementation of IPricingRepository for tests.
 import type { IPricingRepository } from "@/domain/repositories/IPricingRepository";
-import type { PriceRecord, ProductKey } from "@/domain/types";
+import type { PriceRecord, PricingSettings, ProductKey } from "@/domain/types";
 
 const DEFAULTS: Record<ProductKey, number> = {
   session1h: 1600,
@@ -11,6 +11,11 @@ const DEFAULTS: Record<ProductKey, number> = {
 
 export class InMemoryPricingRepository implements IPricingRepository {
   private store = new Map<ProductKey, PriceRecord>();
+  private settings: PricingSettings = {
+    packValidityDays: 180,
+    updatedAt:        new Date().toISOString(),
+    updatedBy:        null,
+  };
 
   constructor() {
     for (const key of Object.keys(DEFAULTS) as ProductKey[]) {
@@ -40,5 +45,17 @@ export class InMemoryPricingRepository implements IPricingRepository {
       updatedAt:  new Date().toISOString(),
       updatedBy,
     });
+  }
+
+  async getSettings(): Promise<PricingSettings> {
+    return { ...this.settings };
+  }
+
+  async updateSettings(settings: { packValidityDays: number; updatedBy: string }): Promise<void> {
+    this.settings = {
+      packValidityDays: settings.packValidityDays,
+      updatedAt:        new Date().toISOString(),
+      updatedBy:        settings.updatedBy,
+    };
   }
 }

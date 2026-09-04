@@ -42,6 +42,7 @@ const TEST_CONFIG: ScheduleConfig = {
   },
   timezone: "Europe/Madrid",
   minNoticeHours: 5,
+  cancelMinNoticeHours: 2,
   bookingWindowWeeks: 8,
 };
 
