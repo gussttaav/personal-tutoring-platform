@@ -1830,7 +1830,7 @@ first; see the [phase README](phase-11-translation/README.md).
 | [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ✅ | _tbd_ | local |
 | [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ✅ | _tbd_ | local |
 | [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ✅ | _tbd_ | local |
-| [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ⬜ | _tbd_ | |
+| [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ✅ | _tbd_ | local |
 | [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ⬜ | _tbd_ | |
 | [06 Block 3 — RNNs (8)](phase-11-translation/06-block-3.md) | `COURSE-P11-06` | ⬜ | _tbd_ | |
 | [07 Block 4 — The Bridge to Attention (6)](phase-11-translation/07-block-4.md) | `COURSE-P11-07` | ⬜ | _tbd_ | |

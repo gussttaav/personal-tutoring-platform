@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** in progress (1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7 done)
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** ✅ complete (1.1–1.8 done)
 
 ## TL;DR
 
@@ -348,7 +348,7 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 - [x] 1.5 `bolsa-de-palabras`
 - [x] 1.6 `embeddings-densos`
 - [x] 1.7 `word2vec`
-- [ ] 1.8 `glove-y-limites`
+- [x] 1.8 `glove-y-limites`
 
 ## The worked case — 1.2
 
@@ -517,19 +517,40 @@ Reuse these verbatim; they are settled, not open.
   fixed here** — both settled by 1.6; 1.7's third `reading` note restores the analogy to the source
   form. 1.8's second use of the scatter still stands.
 
+**From 1.8** (`en/08-glove-y-limites.mdx`) — the block's last lesson, so nothing downstream reuses
+these; recorded for completeness:
+
+- **`bank`: finance against river, and the token `bank` stays out of the river set.** The `<PyCell>`
+  word lists are `finance = money, mortgage, payroll, savings, loan` and `river = reed, willow, heron,
+  boat, pebble`. The two sense-templates mirror the Spanish token-for-token (finance sentences 8
+  tokens, river 9), so `T = 680` holds; `|V|` came out **27** and the table **384** non-zero cells of
+  `729`, over `3,840` window pairs. The four `bank` example sentences are `I drew the money from the
+  bank` / `I sat on the river bank` (body) and `the bank closed at two` / `the bank was wet` (bridge).
+- **The ice/steam table is the GloVe paper's own Table 1**, back-translated to source: `solid` / `gas`
+  / `water` / `fashion` with `ice` and `steam`, so `q-razon` (`10`) and the prose figures restore to
+  the literature rather than being re-derived.
+- **No answer moved** (`10 / a / [a,b,c] / a`). Regenerated numbers, all re-run in Pyodide: ratios
+  `client 3.00`, `girl 0.33`, `bank`/`at` `1.00`; loss `0.51 → 0.01`; neighbours `mortgage → money,
+  payroll, savings` and `willow → reed, boat, heron`, all `1.00`; `bank`'s row `8 8 8 8` = `8 8 0 0` +
+  `0 0 8 8`; cosines `0.00` (content) / `0.59` (with function words) / `0.71` (shared row to each);
+  and `d_model = 8` drops the loss **to a seventh** (Spanish said a sixth — the English fit converges
+  a touch better).
+- **`embedding-projection` (second use) and the `king − man + woman → queen` analogy are reused**,
+  settled by 1.6; the `king - man + woman ≈ queen` reading note restores to source, mirroring 1.7's.
+
 ## Acceptance criteria
 
-- [ ] Every lesson in the block exists under `content/courses/dl-nlp/en/`, `draft: false`
-- [ ] `slug`, `block`, `order`, and every widget / quiz / challenge id match the Spanish lesson
-- [ ] Every `<PyCell>` and `<CodeChallenge>` has been **run in the browser**, and every number the
+- [x] Every lesson in the block exists under `content/courses/dl-nlp/en/`, `draft: false`
+- [x] `slug`, `block`, `order`, and every widget / quiz / challenge id match the Spanish lesson
+- [x] Every `<PyCell>` and `<CodeChallenge>` has been **run in the browser**, and every number the
       prose quotes matches what Pyodide printed
-- [ ] Every `<Leccion>` resolves; every `ancla` points at an English heading where the target is
+- [x] Every `<Leccion>` resolves; every `ancla` points at an English heading where the target is
       translated, and at the Spanish one where it is not
-- [ ] `reading` carries the same sources with translated `note`s; `lang` values unchanged
-- [ ] The two-reader test passes against the **English** neighbours
-- [ ] English versions of `suma-armonica.svg` (1.3) and `one-hot-equidistancia.svg` (1.4) exist,
+- [x] `reading` carries the same sources with translated `note`s; `lang` values unchanged
+- [x] The two-reader test passes against the **English** neighbours
+- [x] English versions of `suma-armonica.svg` (1.3) and `one-hot-equidistancia.svg` (1.4) exist,
       and 1.4's shows the three words in 1.1's English alphabetical order
-- [ ] `pnpm lint:content` clean (budget warnings advisory); `pnpm build` green
+- [x] `pnpm lint:content` clean (budget warnings advisory); `pnpm build` green
 
 ## Test plan
 
