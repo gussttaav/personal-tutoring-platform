@@ -11,6 +11,16 @@
 // the admin-editable settings (pricing_settings.pack_validity_days and
 // booking_settings.cancel_min_notice_hours) so the stated policy always matches
 // what the app enforces. Callers pass them in as PolicyNumbers.
+//
+// ACCOUNT-DELETE-WEB-01: EliminarCuentaContent is the public, no-login page Google
+// Play's Data Deletion requirement points at. It must stay accurate to the real
+// gate in AccountService.getDeletionEligibility (reasons ACTIVE_PACK_CREDITS /
+// CANCELLABLE_BOOKINGS) and to deleteAccount's imminent-booking Calendar teardown —
+// don't drift from those without updating this copy too. Its "2 hours" is the
+// separate, hardcoded CANCEL_WINDOW_MS (account-deletion imminent-booking gate),
+// not the admin-editable cancelHours below — see the CLAUDE.md gotcha.
+
+import { Link } from "@/i18n/navigation";
 
 /** The admin-editable policy figures the terms/cancellation prose interpolates. */
 export interface PolicyNumbers {
@@ -128,6 +138,77 @@ function CancelacionContentEs({ packValidityDays, cancelHours }: PolicyNumbers) 
   );
 }
 
+function EliminarCuentaContentEs() {
+  return (
+    <>
+      <p>
+        Esta página explica cómo eliminar tu cuenta y tus datos en <strong>gustavoai.dev</strong>,
+        la plataforma web y app móvil de <strong>Gustavo Torres Guerrero</strong> para clases
+        particulares y consultoría online.
+      </p>
+
+      <div
+        style={{
+          padding: "16px 20px",
+          margin: "20px 0",
+          borderRadius: 10,
+          border: "1px solid var(--border)",
+          background: "rgba(78,222,163,0.06)",
+        }}
+      >
+        <p style={{ margin: "0 0 8px" }}>
+          <strong>Cómo eliminarla:</strong>
+        </p>
+        <p style={{ margin: "0 0 4px" }}>
+          En la web: inicia sesión y ve a tu{" "}
+          <Link href="/area-personal">Área personal</Link>, sección «Eliminar cuenta».
+        </p>
+        <p style={{ margin: 0 }}>
+          En la app: pestaña <strong>Perfil</strong> → <strong>Ajustes</strong> →{" "}
+          <strong>Eliminar cuenta</strong>.
+        </p>
+      </div>
+
+      <h3>Qué se elimina</h3>
+      <p>Al confirmar, se borran de forma permanente y en una sola operación:</p>
+      <ul>
+        <li>tu cuenta y tus datos personales</li>
+        <li>tus reservas y todo tu historial de clases</li>
+        <li>tu saldo de créditos y tus packs</li>
+        <li>tu progreso y tus respuestas en los cursos</li>
+        <li>tus registros de pago</li>
+      </ul>
+      <p>
+        El borrado es <strong>inmediato e irreversible</strong>: no se guarda ninguna copia ni
+        existe un período de gracia para recuperar los datos. Si tienes alguna clase que empieza
+        dentro de las próximas 2 horas, su evento en Google Calendar también se cancela en el
+        mismo proceso, sin derecho a reembolso.
+      </p>
+
+      <h3>Cuándo no está disponible todavía</h3>
+      <p>Para proteger las clases que ya has pagado, la eliminación se bloquea mientras:</p>
+      <ul>
+        <li>
+          <strong>te queden créditos sin usar en un pack activo</strong> — escribe a{" "}
+          <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> y se te reembolsará
+          lo que quede según la política de cancelación.
+        </li>
+        <li>
+          <strong>tengas clases reservadas que aún puedes cancelar tú mismo</strong> — cancélalas
+          primero desde tu área personal o con el enlace del email de confirmación.
+        </li>
+      </ul>
+
+      <h3>Si no puedes iniciar sesión</h3>
+      <p>
+        Si has perdido el acceso a tu cuenta de Google u otro medio para iniciar sesión, escribe a{" "}
+        <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> indicando el email
+        asociado a tu cuenta y se gestionará la eliminación por ti.
+      </p>
+    </>
+  );
+}
+
 // ── English content ────────────────────────────────────────────────────────────
 
 function PrivacidadContentEn() {
@@ -209,6 +290,77 @@ function TerminosContentEn({ packValidityDays, cancelHours }: PolicyNumbers) {
   );
 }
 
+function EliminarCuentaContentEn() {
+  return (
+    <>
+      <p>
+        This page explains how to delete your account and data on <strong>gustavoai.dev</strong>,
+        the web platform and mobile app of <strong>Gustavo Torres Guerrero</strong> for private
+        tutoring and online consulting.
+      </p>
+
+      <div
+        style={{
+          padding: "16px 20px",
+          margin: "20px 0",
+          borderRadius: 10,
+          border: "1px solid var(--border)",
+          background: "rgba(78,222,163,0.06)",
+        }}
+      >
+        <p style={{ margin: "0 0 8px" }}>
+          <strong>How to delete it:</strong>
+        </p>
+        <p style={{ margin: "0 0 4px" }}>
+          On the web: sign in and go to your{" "}
+          <Link href="/area-personal">Personal Area</Link>, under &quot;Delete account&quot;.
+        </p>
+        <p style={{ margin: 0 }}>
+          In the app: <strong>Profile</strong> tab → <strong>Settings</strong> →{" "}
+          <strong>Delete Account</strong>.
+        </p>
+      </div>
+
+      <h3>What gets deleted</h3>
+      <p>On confirmation, the following are permanently erased in a single operation:</p>
+      <ul>
+        <li>your account and personal details</li>
+        <li>your bookings and entire class history</li>
+        <li>your credit balance and packs</li>
+        <li>your course progress and answers</li>
+        <li>your payment records</li>
+      </ul>
+      <p>
+        Deletion is <strong>immediate and irreversible</strong>: no copy is kept and there is no
+        grace period to recover the data. If you have any class starting within the next 2 hours,
+        its Google Calendar event is also cancelled as part of the same process, with no right to
+        a refund.
+      </p>
+
+      <h3>When it isn&apos;t available yet</h3>
+      <p>To protect classes you have already paid for, deletion is blocked while:</p>
+      <ul>
+        <li>
+          <strong>you hold unused credits in an active pack</strong> — write to{" "}
+          <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> and the remaining
+          balance will be refunded according to the cancellation policy.
+        </li>
+        <li>
+          <strong>you have booked classes you can still cancel yourself</strong> — cancel them
+          first from your personal area or with the link in your confirmation email.
+        </li>
+      </ul>
+
+      <h3>Can&apos;t sign in?</h3>
+      <p>
+        If you have lost access to your Google account or another way to sign in, write to{" "}
+        <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a> with the email address
+        associated with your account, and the deletion will be handled for you.
+      </p>
+    </>
+  );
+}
+
 function CancelacionContentEn({ packValidityDays, cancelHours }: PolicyNumbers) {
   return (
     <>
@@ -252,4 +404,8 @@ export function TerminosContent({ locale, packValidityDays, cancelHours }: { loc
 export function CancelacionContent({ locale, packValidityDays, cancelHours }: { locale?: string } & PolicyNumbers) {
   const nums = { packValidityDays, cancelHours };
   return locale === "en" ? <CancelacionContentEn {...nums} /> : <CancelacionContentEs {...nums} />;
+}
+
+export function EliminarCuentaContent({ locale }: { locale?: string }) {
+  return locale === "en" ? <EliminarCuentaContentEn /> : <EliminarCuentaContentEs />;
 }
