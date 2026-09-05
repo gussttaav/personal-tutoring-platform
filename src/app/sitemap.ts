@@ -34,7 +34,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
 
   // ─── Static marketing/legal routes — both locales always exist ──────────────
-  const staticRoutes = ["", "/privacidad", "/terminos"];
+  const staticRoutes = ["", "/privacidad", "/terminos", "/eliminar-cuenta"];
   const staticEntries = staticRoutes.flatMap((route) => {
     const languages = {
       es: `${base}${route}`,
