@@ -1,6 +1,6 @@
 # P11-04 — Block 1: NLP Fundamentals
 
-**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** not started
+**Tag:** `COURSE-P11-04` · **Size:** L · **Status:** ✅ complete (1.1–1.8 done)
 
 ## TL;DR
 
@@ -341,14 +341,14 @@ example, and 1.6 inherits 1.1's `el gato bebe leche` — translate strictly in o
 
 ## Lesson progress
 
-- [ ] 1.1 `texto-como-numeros`
-- [ ] 1.2 `tokenizacion`
-- [ ] 1.3 `vocabulario-oov`
-- [ ] 1.4 `one-hot`
-- [ ] 1.5 `bolsa-de-palabras`
-- [ ] 1.6 `embeddings-densos`
-- [ ] 1.7 `word2vec`
-- [ ] 1.8 `glove-y-limites`
+- [x] 1.1 `texto-como-numeros`
+- [x] 1.2 `tokenizacion`
+- [x] 1.3 `vocabulario-oov`
+- [x] 1.4 `one-hot`
+- [x] 1.5 `bolsa-de-palabras`
+- [x] 1.6 `embeddings-densos`
+- [x] 1.7 `word2vec`
+- [x] 1.8 `glove-y-limites`
 
 ## The worked case — 1.2
 
@@ -382,19 +382,175 @@ corpus is a design problem rather than a translation:
   not the word" paragraph still has a subject.
 - **1.8** — `bank`: finance against river. The river word-set must avoid the token `bank` itself.
 
+## Decisions fixed by a translated lesson
+
+Reuse these verbatim; they are settled, not open.
+
+**From 1.1** (`en/01-texto-como-numeros.mdx`):
+
+- **The alphabetical triple is `apple` (1), `cat` (2), `dog` (3).** Not `house`/`cat`/`dog`. A direct
+  translation of `casa`/`gato`/`perro` sorts to `cat, dog, house`, and the lesson's claim — "X is more
+  like Y than like Z" — then comes out **true**, which destroys the argument instead of merely
+  reordering it. `apple`/`cat`/`dog` keeps the Spanish shape (one unrelated noun sorting first, then
+  the two animals) and keeps the claim absurd. **1.4's `one-hot-equidistancia.svg` must show these
+  three words in this order**, and 1.4's `q-que-cumple` quotes the renumbering below.
+- **The worked sentence is `the cat drinks milk`** over $V = \{cat, drinks, milk, the\}$ → indices
+  1–4, giving the sequence **(4, 1, 2, 3)**, three pairs tied at distance 1 (`cat`/`drinks`,
+  `drinks`/`milk`, `milk`/`the`), and `drinks` at the midpoint of `cat` (1) and `milk` (3). The added
+  word is **`bird`**, which moves all four; `water` moves none. 1.6 inherits this sentence.
+- **The bridge hands off `unhappiness`** — one unit, or three (`un`, `happi`, `ness`), or **eleven**
+  letters. This replaces `dámelo`, and **1.2's opening must pick it up**, not the Spanish example. It
+  agrees with the worked case above.
+- **`criptomoneda` → `cryptocurrency`** as the OOV word; **`gato`/`gatos` → `cat`/`cats`** as the
+  subword pair.
+
+**From 1.2** (`en/02-tokenizacion.mdx`):
+
+- **The character/word tokeniser cell is `normalise` (the NFC wrapper), `by_chars`, `by_words`** — the
+  English identifiers for `normaliza`/`por_caracteres`/`por_palabras`. **1.3 reuses `by_words`
+  verbatim**: the Spanish rule that 1.3's `por_palabras` must equal 1.2's carries straight over. Only
+  the functions transfer; each cell still designs its own corpus.
+- **`naïve` (the `ï` — one code point in NFC) is the block's NFC example**, not `ñ`, chosen to match the
+  `tokenizer-playground` English corpus `The naïve teacher tests tokenisation in English.`, whose long
+  word `tokenisation` is the one the widget splits into subwords.
+- **The "unit smaller than a word" example is `unhappiness` = `un`/`happi`/`ness`** (handed over by
+  1.1's bridge), and the clitic/contraction demo is `Don't` → `Don`/`'`/`t` with the possessive `'s`
+  torn off — these replace `dámelo` and `del`/`al`.
+- **`q-longitud`'s answer moved to `20`** for `The naïve boy plays.` (tolerance still `0`) — the
+  block's one moved answer, as predicted.
+- **The code-cell language rule and the reading-field rule are now settled in `AUTHORING.en.md` §7**
+  (translate a `<PyCell>`'s own identifiers, comments and `print` strings, and any editorial Spanish in
+  `reading` fields; keep library/API names, widget ids, slugs and the source's identity). Later
+  lessons follow it without re-deciding.
+
+**From 1.3** (`en/03-vocabulario-oov.mdx`):
+
+- **A figure asset with source text set into it gets an English sibling `<name>.en.svg`** in the same
+  `public/courses/dl-nlp/` directory, and the lesson's `<Figure src>` points at that. 1.3 was the
+  block's first `<Figure>` and created `suma-armonica.en.svg`; **1.4's `one-hot-equidistancia.svg`
+  gets `one-hot-equidistancia.en.svg`** the same way. (Now settled in `AUTHORING.en.md` §7.)
+- **The 18-sentence cell corpus is lesson-local** — each Block 1 cell designs its own — so nothing in
+  it is reused verbatim downstream. `by_words` (from 1.2) is the only carried-over cell object.
+
+**From 1.4** (`en/04-one-hot.mdx`):
+
+- **`one-hot-equidistancia.en.svg` exists**, drawn with `apple`, `cat`, `dog` in 1.1's re-sorted
+  English alphabetical order — the figure's Panel A places `apple` (1), `cat` (2), `dog` (3) on the
+  line so `cat` still lies between the other two, and Panel B keeps the triangle equilateral.
+- **The equidistance sentence pair is `the boy plays in the square` / `the girl plays in the
+  square`** — the English stand-in for `el niño juega en la plaza` / `la niña juega en la plaza`,
+  used both in the prose (the "no neighbours" argument) and in `q-transferencia` (the `boy`/`girl`
+  pair replaces `niño`/`niña`, and the answer stays false).
+- **The bag-of-words punchline word is `goal`** — the closing paragraph names `<W>goal</W>` as the
+  content word that tells a match report from a recipe, in place of `<W>gol</W>`. 1.5's widget row
+  and cell corpus already use match report / recipe, so this hands 1.5 the same anchor.
+
+**From 1.5** (`en/05-bolsa-de-palabras.mdx`):
+
+- **The `bag-of-words` widget reading is re-pitched for one article, not translated.** English has one
+  definite article, so both amber (per-document) maxima land on the *same* word `<W>the</W>` at `4` —
+  not two different articles (`el`, `la`) — and the corpus row reads `<W>the</W>` `8`, then `<W>of</W>`
+  and `<W>and</W>` at `2`. The "four times the weight of a word that says nothing" reading survives on
+  `the` alone. Content words `<W>keeper</W>`/`<W>penalty</W>` (match report) and `<W>flour</W>`/`<W>butter</W>`
+  (recipe) sit at `1`.
+- **The cell corpus is lesson-local, and its raw-count head had to be engineered function-word-only.**
+  Six English documents (football / cooking / programming). Because English lacks Spanish's six
+  naturally-frequent function words, a sixth (`<W>a</W>`, count `6`) is added so no content word
+  (peak `4`: `goal`, `oven`, `list`, `dough`) reaches the printed top-6. **Verified in Pyodide, never
+  CPython** — their `argsort` tie-breaks differ, and CPython alone put a content word in the top-6.
+  `goal` (1.4's anchor) is the football content word; nothing in the corpus is reused downstream —
+  `by_words` (from 1.2) remains the only carried-over cell object. Regenerated numbers: `idf` `1.10`
+  (`goal`/`oven`/`list`) and `1.79` (`referee`); same-topic cosines `0.19`/`0.26`/`0.32` against
+  `0.00`–`0.03`; the doubled document at distance `7.432`.
+- **The bridge hands `car` / `automobile` / `flour` to 1.6** (from `coche` / `automóvil` / `harina`) as
+  the "similar yet orthogonal" set, matching 1.6's planned `E`-swap — 1.6 picks these up **in the cell**,
+  not the opening (see the "From 1.6" note on the synonym pair).
+
+**From 1.6** (`en/06-embeddings-densos.mdx`):
+
+- **The `embedding-projection` widget now has an English scatter, and the embedding lesson owns it.**
+  P11-02 could move this widget's *strings* but not its *data* — a committed 218-word Spanish
+  projection — so it left it in `SPANISH_BOUND_CORPORA`, assigning the English asset to "the lesson
+  that embeds it." 1.6 built `public/courses/dl-nlp/embeddings-sample.en.json` — the Spanish 218-word
+  list translated **1:1 onto the same coordinates**, so the two maps share their layout, density and
+  clusters (`rey`→`king`, `reina`→`queen`, etc. at identical points) — and made
+  `EmbeddingProjection.tsx` locale-aware: a `DATASETS` map picks the source file, the default word and
+  the analogy words per locale. `en` defaults to `grandfather` (the mirror of `es`'s `abuelo` default),
+  because `king` would surface the `pelo`/`hair` outlier the Spanish layout parks by the royalty
+  cluster. The Spanish file and its `rey − hombre + mujer` analogy are untouched, and
+  `embedding-projection` was removed from `SPANISH_BOUND_CORPORA`. **1.8 reuses this same scatter** (its
+  second `embedding-projection` use and the analogy button), so any point 1.8 names must be a word that
+  exists in it. Now settled in `AUTHORING.en.md` §7.
+- **The headline analogy is `king − man + woman → queen`** — the back-translation to the source,
+  placed as a clean parallelogram and asserted, with the three named clusters, in
+  `src/features/courses/widgets/math/__tests__/embeddings-data.test.ts`.
+- **The three named points are `car` → vehicles, `apple` → fruit, `cat` → animals** — the English
+  stand-ins for `coche` / `manzana` / `gato`, each with a same-cluster neighbour list.
+- **The opening synonym pair is `superb` / `magnificent`** (from `estupenda` / `magnífica`), used in
+  the opening and again in the concession. It is deliberately **not** `car` / `automobile`: 1.5's
+  bridge already spent that pair, so the two-reader rule ("not the same example") keeps the opening's
+  pair distinct, and `car` / `automobile` / `flour` land in the `<PyCell>` instead, where they do new
+  work.
+- **The Firth cloze is `wine` / `juice` (fit) against `hammer` / `Monday` (don't)**, over the frames
+  `she poured a glass of ___`, `a bottle of ___ on the table`, `the ___ was cold` — the English of
+  `vino` / `zumo` / `martillo` / `lunes`. Firth's line stops being a foreign quotation; its
+  typography (plain, spaced em-dashes, no quotes, no italics) is now settled in `AUTHORING.en.md` §1.
+- **The `boy` / `girl` window pair and `the cat drinks milk` carry over verbatim** from 1.4 and 1.1
+  respectively, and `cold` / `hot` is the "same context, opposite meaning" pair. No answer moved (the
+  hand-written `E` keeps every quoted number: `0.99`, `0.97`, `-0.48`, `0.02`, `0.30`).
+
+**From 1.7** (`en/07-word2vec.mdx`):
+
+- **Nothing carries over to 1.8.** The template corpus is lesson-local (animals / foods / places /
+  drinks over `the {a} eats/drinks … in the {l}` and the single `the girl sees the {a} …` mould);
+  `|V|` came out **20**, not 21, because `el`/`la` both collapse to `the`. Regenerated numbers, all
+  re-run in Pyodide: before-training `dog` → `kitchen` `0.5`; after four passes `dog` → `cat`/`mouse`/
+  `horse` all ≥ `0.96`, `meat` → the other foods, `yard` → the other places; with `n_neg = 0` the loss
+  falls to `0.019` and `dog` sits at `0.99` from `the`. No answer moved (`q-pares` is abstract, `60`).
+- **The single-mould word is `girl`, and it lands *among the animals*** (`dog` `0.84`, `cat` `0.82`),
+  not beside its frame words the way Spanish `niña` stuck to `la`/`ve` — because `the` is now
+  universal, `girl`'s only distinctive slot is the subject of `sees`, which the animals share. The
+  "it learned the mould, not the word" paragraph was rewritten onto that result. This is the number
+  the row predicted would move; it moved further than a value shift, and the reader should judge the
+  replacement.
+- **`embedding-projection` scatter and the `king − man + woman → queen` analogy are reused, not
+  fixed here** — both settled by 1.6; 1.7's third `reading` note restores the analogy to the source
+  form. 1.8's second use of the scatter still stands.
+
+**From 1.8** (`en/08-glove-y-limites.mdx`) — the block's last lesson, so nothing downstream reuses
+these; recorded for completeness:
+
+- **`bank`: finance against river, and the token `bank` stays out of the river set.** The `<PyCell>`
+  word lists are `finance = money, mortgage, payroll, savings, loan` and `river = reed, willow, heron,
+  boat, pebble`. The two sense-templates mirror the Spanish token-for-token (finance sentences 8
+  tokens, river 9), so `T = 680` holds; `|V|` came out **27** and the table **384** non-zero cells of
+  `729`, over `3,840` window pairs. The four `bank` example sentences are `I drew the money from the
+  bank` / `I sat on the river bank` (body) and `the bank closed at two` / `the bank was wet` (bridge).
+- **The ice/steam table is the GloVe paper's own Table 1**, back-translated to source: `solid` / `gas`
+  / `water` / `fashion` with `ice` and `steam`, so `q-razon` (`10`) and the prose figures restore to
+  the literature rather than being re-derived.
+- **No answer moved** (`10 / a / [a,b,c] / a`). Regenerated numbers, all re-run in Pyodide: ratios
+  `client 3.00`, `girl 0.33`, `bank`/`at` `1.00`; loss `0.51 → 0.01`; neighbours `mortgage → money,
+  payroll, savings` and `willow → reed, boat, heron`, all `1.00`; `bank`'s row `8 8 8 8` = `8 8 0 0` +
+  `0 0 8 8`; cosines `0.00` (content) / `0.59` (with function words) / `0.71` (shared row to each);
+  and `d_model = 8` drops the loss **to a seventh** (Spanish said a sixth — the English fit converges
+  a touch better).
+- **`embedding-projection` (second use) and the `king − man + woman → queen` analogy are reused**,
+  settled by 1.6; the `king - man + woman ≈ queen` reading note restores to source, mirroring 1.7's.
+
 ## Acceptance criteria
 
-- [ ] Every lesson in the block exists under `content/courses/dl-nlp/en/`, `draft: false`
-- [ ] `slug`, `block`, `order`, and every widget / quiz / challenge id match the Spanish lesson
-- [ ] Every `<PyCell>` and `<CodeChallenge>` has been **run in the browser**, and every number the
+- [x] Every lesson in the block exists under `content/courses/dl-nlp/en/`, `draft: false`
+- [x] `slug`, `block`, `order`, and every widget / quiz / challenge id match the Spanish lesson
+- [x] Every `<PyCell>` and `<CodeChallenge>` has been **run in the browser**, and every number the
       prose quotes matches what Pyodide printed
-- [ ] Every `<Leccion>` resolves; every `ancla` points at an English heading where the target is
+- [x] Every `<Leccion>` resolves; every `ancla` points at an English heading where the target is
       translated, and at the Spanish one where it is not
-- [ ] `reading` carries the same sources with translated `note`s; `lang` values unchanged
-- [ ] The two-reader test passes against the **English** neighbours
-- [ ] English versions of `suma-armonica.svg` (1.3) and `one-hot-equidistancia.svg` (1.4) exist,
+- [x] `reading` carries the same sources with translated `note`s; `lang` values unchanged
+- [x] The two-reader test passes against the **English** neighbours
+- [x] English versions of `suma-armonica.svg` (1.3) and `one-hot-equidistancia.svg` (1.4) exist,
       and 1.4's shows the three words in 1.1's English alphabetical order
-- [ ] `pnpm lint:content` clean (budget warnings advisory); `pnpm build` green
+- [x] `pnpm lint:content` clean (budget warnings advisory); `pnpm build` green
 
 ## Test plan
 

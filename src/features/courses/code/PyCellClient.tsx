@@ -22,13 +22,16 @@
  * caret lands at the START of the code rather than the end. Without either, clicking
  * into — or running — a long cell yanks the box to its last line.
  *
- * All copy is hardcoded Spanish, matching the rest of the widget layer (P2-01/02).
+ * COURSE-P11-02 — every user-visible string here goes through `t("courses.code.*")`,
+ * the same path `CodeChallengeCard` uses, so an English lesson renders an English cell.
  */
 
 "use client";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
+import { useClientValue } from "@/hooks/useClientValue";
 import { WidgetButton } from "@/features/courses/widgets/primitives/WidgetButton";
 // Type-only — erased at build, so nothing under `lib/courses/pyodide/` reaches the
 // lesson's first-load chunk. The runtime arrives through the `await import()` in
@@ -38,6 +41,7 @@ import type { LoadStage, RunResult } from "@/lib/courses/pyodide/client";
 import { CodeOutput, type CellPlot } from "./CodeOutput";
 import { applyAutoClose, applyBackspacePair, applyEnter, applyTab } from "./editing";
 import { EDITOR_MAX_HEIGHT, isCapped } from "./editor-metrics";
+import { hasLoadedInterpreterBefore, markInterpreterLoaded } from "./interpreter-cache";
 import { appendChunk, EMPTY_OUTPUT, type OutputBufferState } from "./output";
 
 export interface PyCellClientProps {
@@ -52,13 +56,6 @@ export interface PyCellClientProps {
 type Status = "idle" | "loading" | "running";
 
 const mono = 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace';
-
-const STAGE_LABEL: Record<LoadStage, string> = {
-  runtime: "Descargando el intérprete de Python…",
-  packages: "Cargando paquetes…",
-  preamble: "Preparando el entorno…",
-  ready: "Ejecutando…",
-};
 
 /** Shared box metrics, so swapping <pre> ⇄ <textarea> doesn't move anything. */
 const editorBox = {
@@ -75,6 +72,7 @@ const editorBox = {
 } as const;
 
 export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientProps) {
+  const t = useTranslations("courses.code");
   const [value, setValue] = useState(code);
   const [editing, setEditing] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
@@ -87,6 +85,10 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
   const [notice, setNotice] = useState<string | null>(null);
   const [hasRun, setHasRun] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  // `false` during SSR and the first client render, then the real per-browser value —
+  // so a returning reader's cell swaps from the cold-load copy to the "from cache"
+  // wording once, without a hydration mismatch. Shared across every cell and challenge.
+  const interpreterCached = useClientValue(hasLoadedInterpreterBefore, false);
 
   const editorId = useId();
   const textarea = useRef<HTMLTextAreaElement>(null);
@@ -100,6 +102,13 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
   const busy = status !== "idle";
   const showHighlighted = !editing && !dirty && highlightedHtml.length > 0;
   const capped = isCapped(value);
+
+  const STAGE_LABEL: Record<LoadStage, string> = {
+    runtime: interpreterCached ? t("stage.runtimeCached") : t("stage.runtime"),
+    packages: t("stage.packages"),
+    preamble: t("stage.preamble"),
+    ready: t("stage.ready"),
+  };
 
   const rememberScroll = useCallback((event: React.UIEvent<HTMLElement>) => {
     scrollOffset.current = event.currentTarget.scrollTop;
@@ -158,7 +167,12 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
     const result: RunResult = await client.run(value, packages, {
       onLoading: (stage, pct, detail) => {
         setProgress({ stage, pct, detail });
-        if (stage === "ready") setStatus("running");
+        if (stage === "ready") {
+          setStatus("running");
+          // Runtime + preamble + packages are all up: the assets are in the HTTP cache
+          // now, so every later lesson's first run is a cache read, not a download.
+          markInterpreterLoaded();
+        }
       },
       onOutput: (stream, text) => setOutput((prev) => appendChunk(prev, stream, text)),
       onPlot: (plot) => setPlots((prev) => prev.concat(plot)),
@@ -177,23 +191,18 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
       case "timeout":
         setNotice(
           result.phase === "run"
-            ? `La ejecución superó los ${Math.round(result.ms / 1000)} s y se detuvo. El intérprete ` +
-              "se reinició, así que se perdió el estado de las celdas anteriores: vuelve a " +
-              "ejecutarlas si tu código dependía de ellas."
-            : "La descarga del intérprete tardó demasiado. Comprueba tu conexión y vuelve a intentarlo.",
+            ? t("timeoutRun", { seconds: Math.round(result.ms / 1000) })
+            : t("timeoutLoad"),
         );
         break;
       case "stopped":
-        setNotice(
-          "Ejecución detenida. El intérprete se reinició, así que se perdió el estado de las " +
-            "celdas anteriores.",
-        );
+        setNotice(t("stopped"));
         break;
       case "crashed":
-        setNotice(`El intérprete se cerró inesperadamente: ${result.error}`);
+        setNotice(t("crashed", { error: result.error }));
         break;
     }
-  }, [value, packages]);
+  }, [value, packages, t]);
 
   const handleReset = useCallback(() => {
     setValue(code);
@@ -243,7 +252,7 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
           className="pycell-editor"
           role="button"
           tabIndex={0}
-          aria-label="Editar el código de esta celda"
+          aria-label={t("editLabel")}
           onClick={() => setEditing(true)}
           onFocus={() => setEditing(true)}
           onScroll={rememberScroll}
@@ -276,7 +285,7 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
-          aria-label="Código Python editable"
+          aria-label={t("editorLabel")}
           rows={lineCount}
           onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
@@ -308,11 +317,11 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
         }}
       >
         <WidgetButton onClick={handleRun} disabled={busy} style={{ minWidth: "5.5rem" }}>
-          {busy ? "Ejecutando…" : "Ejecutar"}
+          {busy ? t("running") : t("run")}
         </WidgetButton>
-        {busy ? <WidgetButton onClick={() => stop.current?.()}>Detener</WidgetButton> : null}
+        {busy ? <WidgetButton onClick={() => stop.current?.()}>{t("stop")}</WidgetButton> : null}
         <WidgetButton onClick={handleReset} disabled={busy || (!dirty && !hasRun)}>
-          Reiniciar
+          {t("reset")}
         </WidgetButton>
         {/* Only when something is actually hidden — and it doubles as the affordance
             that the box is capped, which the scrollbar alone cannot be: on macOS the
@@ -323,7 +332,7 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
             aria-expanded={expanded}
             aria-controls={editorId}
           >
-            {expanded ? "Contraer" : `Ver las ${lineCount} líneas`}
+            {expanded ? t("collapse") : t("expand", { count: lineCount })}
           </WidgetButton>
         ) : null}
         {packages.length > 0 ? (
@@ -335,12 +344,13 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
 
       {!hasRun && !busy ? (
         <p style={{ margin: "0.5rem 0 0", fontSize: "0.78rem", color: "var(--text-dim)" }}>
-          La primera ejecución descarga el intérprete de Python (~15 MB). Después queda en la caché
-          del navegador.
+          {interpreterCached ? t("firstRunNoteCached") : t("firstRunNote")}
         </p>
       ) : null}
 
-      {progress ? <LoadProgress stage={progress.stage} pct={progress.pct} detail={progress.detail} /> : null}
+      {progress ? (
+        <LoadProgress label={STAGE_LABEL[progress.stage]} pct={progress.pct} detail={progress.detail} />
+      ) : null}
 
       <CodeOutput
         output={output}
@@ -355,10 +365,12 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
 
 /**
  * Named stages, not a bare spinner. Pyodide gives no byte-level progress without
- * hand-rolling the wasm fetch, but "Descargando el intérprete…" at 15% still tells
- * the student something is happening — a spinner on a 15 MB download reads as broken.
+ * hand-rolling the wasm fetch, but "Downloading the Python interpreter…" at 15% still
+ * tells the student something is happening — a spinner on a 15 MB download reads as
+ * broken. `label` is the already-resolved `STAGE_LABEL` entry so this stays a pure
+ * presentational component with no `useTranslations` of its own.
  */
-function LoadProgress({ stage, pct, detail }: { stage: LoadStage; pct: number; detail?: string }) {
+function LoadProgress({ label, pct, detail }: { label: string; pct: number; detail?: string }) {
   return (
     <div style={{ marginTop: "0.6rem" }}>
       <div
@@ -366,7 +378,7 @@ function LoadProgress({ stage, pct, detail }: { stage: LoadStage; pct: number; d
         aria-valuenow={pct}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-label={STAGE_LABEL[stage]}
+        aria-label={label}
         style={{
           height: 4,
           borderRadius: 999,
@@ -384,7 +396,7 @@ function LoadProgress({ stage, pct, detail }: { stage: LoadStage; pct: number; d
         />
       </div>
       <p style={{ margin: "0.35rem 0 0", fontSize: "0.78rem", color: "var(--text-dim)" }}>
-        {STAGE_LABEL[stage]}
+        {label}
         {detail ? ` ${detail}` : ""}
       </p>
     </div>

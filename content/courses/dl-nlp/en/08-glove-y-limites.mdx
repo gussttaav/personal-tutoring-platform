@@ -1,0 +1,499 @@
+---
+slug: glove-y-limites
+title: "GloVe and the limits of static embeddings"
+block: 1
+order: 8
+minutes: 25
+summary: "The co-occurrences were already counted before anything was trained, and their ratios are what tell one entry from another. Demanding that vector differences reproduce those ratios gives GloVe's equation; and the block's two techniques end up sharing the same ceiling: one row per vocabulary entry, whatever the sentence says."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-razon
+    type: numeric
+    prompt: 'In a corpus, the entry <W>ice</W> has $X_{\textit{ice}} = 2\,000\,000$ co-occurrences in all, of which $1\,800$ are with <W>solid</W>. The entry <W>steam</W> has $X_{\textit{steam}} = 1\,000\,000$ in all and $90$ with <W>solid</W>. What is the ratio $P(\textit{solid} \mid \textit{ice}) \,/\, P(\textit{solid} \mid \textit{steam})$?'
+    answer: 10
+    tolerance: 0.01
+    explanation: 'The two probabilities are $1\,800 / 2\,000\,000 = 9 \times 10^{-4}$ and $90 / 1\,000\,000 = 9 \times 10^{-5}$, and their ratio is $10$. Notice what the totals do: <W>ice</W> appears twice as often as <W>steam</W> in the corpus, and that difference cancels when you divide by $X_i$ before comparing. The two bare probabilities are tiny and say nothing by themselves; what carries the information is that one is ten times the other.'
+  - id: q-objetivo
+    type: single
+    prompt: 'What quantity does GloVe''s loss fit, cell by cell?'
+    options:
+      - { id: a, text: 'The logarithm of the pair''s co-occurrence count, $\log X_{ik}$, with a weighting that depends on the count itself.' }
+      - { id: b, text: 'The ratio $P(k \mid i) / P(k \mid j)$, one equation per triple of entries.' }
+      - { id: c, text: 'The raw count $X_{ik}$, with no logarithm: the logarithm comes later, when the vectors are normalised.' }
+      - { id: d, text: 'The probability $P(c \mid w)$ of the context given the centre, like the skip-gram, but computed over the table instead of over windows.' }
+    answer: a
+    explanation: 'The ratio (b) is where the transformation starts, and it is exactly what this transformation gets out of the way: absorbing $\log X_i$ into the bias $b_i$ turns a condition on triples $(i, j, k)$ into one equation per *pair*, and that drops the number of equations from $\lvert V \rvert^{3}$ to $\lvert V \rvert^{2}$ — of which only the nonzero ones are used. (c) reverses the order: the logarithm is there from the moment logarithms are taken in $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, and without it the equality would not be linear in the vectors. (d) is the previous lesson; GloVe computes no conditional probability during the fit.'
+  - id: q-peso
+    type: multi
+    prompt: 'About the sum $\mathcal{L} = \sum g(X_{ik})(\dots)^2$, tick everything that is true.'
+    options:
+      - { id: a, text: 'The cells with $X_{ik} = 0$ are left out of the sum, and they are most of the table.' }
+      - { id: b, text: '$g$ grows with the count, so a pair seen once weighs less than one seen a thousand times.' }
+      - { id: c, text: '$g$ is bounded by $1$, so the most frequent pairs do not carry off the whole fit.' }
+      - { id: d, text: 'Removing $g$ would leave the sum with $\lvert V \rvert^{2}$ summands, so it is $g$ that makes the fit cheap.' }
+    answer: [a, b, c]
+    explanation: 'The first three are the three decisions on that line, and each fixes something different: (a) avoids $\log 0$ — and in passing is what makes the fit cheap — (b) takes weight off the cells that are almost noise, and (c) takes it off the function words of <Leccion slug="bolsa-de-palabras">the lesson on the bag of words</Leccion>, which would otherwise decide on their own where all the vectors go. (d) credits the saving to the wrong thing: what leaves out the $\lvert V \rvert^{2}$ empty cells is the sum''s condition $X_{ik} > 0$, not the weighting. $g$ is $0$ at $x = 0$, yes, but a zero-weight summand would still cost the computation of $\log 0$.'
+  - id: q-banco
+    type: single
+    prompt: 'The vector of <W>bank</W> mixes the money sense and the river sense. Which of these changes fixes it?'
+    options:
+      - { id: a, text: 'None of the other three: as long as the representation''s argument is the vocabulary entry, <W>bank</W> has one row and that row is a compromise.' }
+      - { id: b, text: 'A much larger corpus: with far more occurrences of each sense, the fit would end up separating them.' }
+      - { id: c, text: 'More coordinates: with $d_{\text{model}} = 1\,000$ there is room to spare to fit both senses into the same vector.' }
+      - { id: d, text: 'A wider window, catching enough context around each occurrence to tell them apart.' }
+    answer: a
+    explanation: 'The problem is not in the data nor in the capacity, but in the shape of the function. (b) makes it worse if anything: more corpus means more occurrences of the two senses added into the same row of the table. (c) confuses having room with having somewhere to put it; the cell run above shows this when $d_{\text{model}}$ is raised, which fits the same table better without changing a single neighbour. And (d) is the subtlest: a wide window does tell the two occurrences apart while the counting is happening, but the count accumulates onto the type <W>bank</W>, and there which occurrence it came from is lost. For the vector to depend on the sentence, the sentence has to be an argument of the representation.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'GloVe: Global Vectors for Word Representation'
+    authors: 'Pennington, Socher and Manning'
+    year: '2014'
+    venue: 'EMNLP 2014'
+    lang: en
+    url: 'https://aclanthology.org/D14-1162/'
+    note: 'The GloVe paper. The ice/steam table and the weighting''s values — x_max = 100 and exponent 3/4 — that the lesson uses come from here. That 3/4 is the same as negative sampling''s and, as there, it was chosen by trying.'
+  - kind: interactivo
+    title: 'Word2Vec Explorer'
+    authors: 'Daniel Guetta'
+    venue: 'daniel.guetta.com'
+    lang: en
+    url: 'https://daniel.guetta.com/word2vec'
+    note: 'The analogy you work through here — king - man + woman ≈ queen — over real vectors, not the lesson''s hand-drawn map. They are word2vec''s, not GloVe''s, but of the same family, and with the same limit: one word, one vector.'
+---
+
+{/* COURSE-P5-01 — Block 1, Lesson 8. */}
+
+The previous lesson, on Word2Vec, ended by pointing at a table it never wrote down, and said the
+corpus carries it for free. That table is where GloVe (*global vectors*), published in 2014, begins —
+and it does not arrive with the one thing that matters decided: what to ask of it. A raw count on its
+own says little. <W>bank</W> sits beside <W>the</W> a great many times, and nothing follows from that.
+
+What tells one entry from another is not who it appears with, but in what proportion. That proportion
+sets the whole shape of the objective, and it settles, in passing, something the block has been
+showing for two lessons without charging for it: what happens when you press the button on the map
+from <Leccion slug="embeddings-densos">the lesson on dense representations</Leccion>.
+
+<Explorable
+  id="embedding-projection"
+  caption="Press the analogy button. The two arrows are the same displacement applied at two different places; the circle marks where the sum lands, before you ask what word is there."
+/>
+
+Subtract <W>man</W> from <W>king</W> and add the result to <W>woman</W>, and you land on <W>queen</W>.
+What the picture claims is not that <W>king</W> and <W>queen</W> are close — that neighbourhood was
+already there in that lesson — but something stronger: that the *difference* between two vectors means
+something in itself and reappears intact in another pair. The warning is the same as then: I placed
+the coordinates by hand, so the map shows the shape of the claim, not its proof.
+
+That the differences mean something cannot be an accident: if subtracting vectors gives something
+sensible, the objective must have asked them to reproduce something that already works by subtraction.
+Subtraction cancels what is shared and leaves what separates; in the counts, the operation that does
+that is division. Take <W>ice</W> and <W>steam</W> and, instead of looking at what each appears with,
+divide one frequency by the other, entry by entry. These are the figures the authors of GloVe
+published over a corpus of 6 billion tokens:
+
+| $k$ | $P(k \mid \textit{ice})$ | $P(k \mid \textit{steam})$ | ratio |
+|---|---|---|---|
+| <W>solid</W> | $1.9 \times 10^{-4}$ | $2.2 \times 10^{-5}$ | $8.9$ |
+| <W>gas</W> | $6.6 \times 10^{-5}$ | $7.8 \times 10^{-4}$ | $0.085$ |
+| <W>water</W> | $3.0 \times 10^{-3}$ | $2.2 \times 10^{-3}$ | $1.36$ |
+| <W>fashion</W> | $1.7 \times 10^{-5}$ | $1.8 \times 10^{-5}$ | $0.96$ |
+
+The bare probabilities confuse frequent with characteristic: <W>water</W> appears with <W>ice</W> more
+than <W>solid</W> does. The ratio does not: it measures the contrast with <W>steam</W>, not the
+frequency. It is far more than $1$ when $k$ belongs to the world of the first, far less when it belongs
+to the second's, and it sticks to $1$ when it does not tell them apart: <W>fashion</W>, which appears
+with neither, and <W>water</W>, which appears with both alike. The base frequency cancels in the
+division.
+
+<Callout type="intuition" title="The idea in one sentence">
+The counts say who each entry appears with; their ratios say what separates it from the rest, and that
+is where the information is. GloVe comes from demanding that vector differences reproduce those ratios.
+</Callout>
+
+## What the co-occurrence ratios ask of the vectors
+
+Write $X_{ik}$ for the cell of the co-occurrence table: the count of entry $k$ inside the window of
+entry $i$, with the same $m$ as the previous lesson. It is symmetric and has $\lvert V \rvert^{2}$
+cells. Write too $\mathbf{e}_i$ and $\mathbf{u}_k$ for $\mathbf{e}_{w_i}$ and $\mathbf{u}_{w_k}$, the
+centre and context vectors of that lesson.
+
+Summing a whole row gives the total number of $i$'s neighbours, and with it the probability that,
+looking at a window centred on $i$, $k$ appears:
+
+$$
+X_i = \sum_{k} X_{ik}, \qquad P(k \mid i) = \frac{X_{ik}}{X_i}.
+$$
+
+The table of <W>ice</W> and <W>steam</W> pointed at the ratio between two of these probabilities.
+Asking the vectors for it is written with an $F$ still to be decided:
+
+$$
+F\!\left(\mathbf{e}_i,\, \mathbf{e}_j,\, \mathbf{u}_k\right) = \frac{P(k \mid i)}{P(k \mid j)}.
+$$
+
+Two decisions leave it almost fixed. What separates $i$ from $j$ on the right is a quotient, and on
+the left what the function receives of the two is their difference $\mathbf{e}_i - \mathbf{e}_j$, the
+one from the map above. And to turn that, together with $\mathbf{u}_k$, into a single number there is
+the dot product from <Leccion slug="bolsa-de-palabras">the lesson on the bag of words</Leccion>. With
+the two, $F$ is a function of one real variable:
+
+$$
+F\!\left(\mathbf{u}_k^{\top}\left(\mathbf{e}_i - \mathbf{e}_j\right)\right) = \frac{P(k \mid i)}{P(k \mid j)}.
+$$
+
+What remains is an $F$ that turns a subtraction in its argument into a division in its value, and that
+property determines it: the exponential.
+
+<Details summary="Why the exponential is the only way out">
+
+We want a continuous function $F : \mathbb{R} \to (0, \infty)$ with $F(a - b) = F(a) / F(b)$ for any
+$a$ and $b$. With $a = b$ this gives $F(0) = 1$; with $a = x + y$ and $b = y$, the condition
+rearranges into
+
+$$
+F(x + y) = F(x)\,F(y),
+$$
+
+Cauchy's functional equation in its multiplicative form, whose only continuous, not identically zero
+solutions are $F(x) = e^{cx}$. The constant is absorbed into the scale of the vectors — if $e^{cx}$
+serves for some $\mathbf{e}_i$, then $e^{x}$ serves for $c\,\mathbf{e}_i$ — so taking $c = 1$ loses
+nothing.
+
+</Details>
+
+With $F = \exp$ the equality holds as soon as each probability is matched with its exponential,
+
+$$
+\exp\!\left(\mathbf{u}_k^{\top}\mathbf{e}_i\right) = P(k \mid i),
+$$
+
+because the quotient on the right becomes the quotient of two exponentials. Taking logarithms,
+$\mathbf{u}_k^{\top}\mathbf{e}_i = \log P(k \mid i)$, and subtracting that equality for $i$ and for $j$
+brings out what the intuition promised:
+
+$$
+\mathbf{u}_k^{\top}\left(\mathbf{e}_i - \mathbf{e}_j\right) = \log \frac{P(k \mid i)}{P(k \mid j)}.
+$$
+
+The difference of two vectors, projected onto a third, is the logarithm of the table's ratio. That is
+where directions start to mean something: the analogy on the map is this line read backwards.
+
+It remains to put it in a form that can be fitted. Substituting $P(k \mid i) = X_{ik} / X_i$,
+
+$$
+\mathbf{u}_k^{\top}\mathbf{e}_i = \log X_{ik} - \log X_i,
+$$
+
+and that $\log X_i$ has a cheap fix: it does not depend on $k$, so it is a constant for each entry
+$i$. Give it a name, $b_i$, and move it to the other side. With that the equality stops being
+symmetric — $X_{ik} = X_{ki}$, but the left side no longer is — so a second scalar $\tilde{b}_k$ for
+the entry playing the context role restores it:
+
+$$
+\mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k = \log X_{ik}.
+$$
+
+That is two more real numbers per entry, one in each role, and what is gained is not cosmetic: the
+starting condition spoke of triples $(i, j, k)$ and this one, of a pair. One equation per cell of the
+table.
+
+### The weighting that stops the most frequent pairs deciding for everyone
+
+That system has no exact solution: it is $\lvert V \rvert^{2}$ equations — 2.5 billion with the
+block's vocabulary of 50,000 entries — against some 30 million unknowns. So we ask for what is
+possible, in the least-squares sense, and first two things have to be fixed.
+
+The first is that most of the table is zeros — any two given entries never once share a window — and
+$\log 0$ does not exist. The empty cells are left out, which is also what makes the fit cheap: you pay
+for the pairs seen and not for $\lvert V \rvert^{2}$.
+
+The second is that the cells are not worth the same. One with $X_{ik} = 1$ is almost noise, and one
+with $X_{ik} = 10^{6}$ — two function words from <Leccion slug="bolsa-de-palabras">the lesson on the
+bag of words</Leccion> — should not decide on its own where the vectors go. The fix is a weighting
+that depends on the count itself:
+
+$$
+g(x) = \begin{cases}
+  \left(x / x_{\max}\right)^{\alpha} & \text{if } x < x_{\max} \\
+  1 & \text{if } x \geq x_{\max}
+\end{cases}.
+$$
+
+It grows while the count is small, so a pair seen once weighs little, and it flattens from $x_{\max}$
+on, so the most frequent ones do not drag the fit. The paper takes $x_{\max} = 100$ and $\alpha = 3/4$,
+the same exponent as the previous lesson's negative sampling and found the same way: by trying.
+GloVe's loss is then
+
+$$
+\mathcal{L} = \sum_{i,\, k \;:\; X_{ik} > 0} g(X_{ik}) \left(\mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k - \log X_{ik}\right)^{2},
+$$
+
+with parameters $\theta = (\mathbf{E}, \mathbf{U}, b, \tilde{b})$ and nothing else. Minimising it is
+gradient descent, and each step needs the gradient of $\mathcal{L}$.
+
+<Details summary="The gradient of the loss used at each step">
+
+The weighting $g(X_{ik})$ and the target $\log X_{ik}$ come from the co-occurrence table: in the
+derivative they are constants. Writing $r_{ik}$ for the cell's error,
+
+$$
+\ell_{ik} = g(X_{ik})\,r_{ik}^{2}, \qquad r_{ik} = \mathbf{u}_k^{\top}\mathbf{e}_i + b_i + \tilde{b}_k - \log X_{ik},
+$$
+
+the chain rule on the square leaves $2r_{ik}$ multiplying four immediate derivatives:
+
+$$
+\frac{\partial \ell_{ik}}{\partial \mathbf{e}_i} = 2\,g(X_{ik})\,r_{ik}\,\mathbf{u}_k, \qquad
+\frac{\partial \ell_{ik}}{\partial \mathbf{u}_k} = 2\,g(X_{ik})\,r_{ik}\,\mathbf{e}_i, \qquad
+\frac{\partial \ell_{ik}}{\partial b_i} = \frac{\partial \ell_{ik}}{\partial \tilde{b}_k} = 2\,g(X_{ik})\,r_{ik}.
+$$
+
+The four share a coefficient, and each vector receives the other. A cell already explained, with
+$r_{ik} \approx 0$, moves nothing.
+
+</Details>
+
+The difference from the previous lesson is not where it seems: both fit a function of
+$\mathbf{u}^{\top}\mathbf{e}$ to a co-occurrence statistic, and what changes is when the counting
+happens. Word2Vec counts while it learns; GloVe counts first and then fits without opening the corpus
+again.
+
+## One vector, a single one, for ever
+
+The block now has two ways of filling $\mathbf{E}$, and they share a trait neither of them mentions.
+Look at the subject of that sum: $i$ runs over the vocabulary entries. There is one row of
+$\mathbf{E}$ per entry, and only one.
+
+<W>bank</W> is a vocabulary entry. In an English corpus it appears in <W>I drew the money from the
+bank</W> and in <W>I sat on the river bank</W>, and the co-occurrence table does not separate the two:
+it piles the neighbours of one and of the other into the same row. Nothing in $X_{ik}$ remembers which
+occurrence each count came from, because the counts are made over the type, and the type is the same
+string. The fit is left with a compromise, and the loss says which: the row that minimises it explains
+the *sum* of the two profiles, which resembles neither.
+
+This is not a defect of GloVe. Word2Vec has it for the same reason, and the one-hot of
+<Leccion slug="one-hot">the lesson on the curse of dimensionality</Leccion> and the TF-IDF
+(*term frequency–inverse document frequency*) of <Leccion slug="bolsa-de-palabras">the lesson on the
+bag of words</Leccion> had it before. And it does not come alone:
+<Leccion slug="embeddings-densos">the lesson on dense representations</Leccion> noted another limit of
+the same family — that <W>cold</W> and <W>hot</W> appear in almost identical contexts, so the
+distributional hypothesis places them close and the representation has nothing to tell them apart with.
+The third is the usual one: an entry that was not in the corpus has no row, and it has to be handed
+<W>\<UNK></W>'s, as in <Leccion slug="vocabulario-oov">the lesson on out-of-vocabulary (OOV)
+words</Leccion>.
+
+The three are the same fact written three ways, and it is there at the start of the block:
+<Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion> asked
+for a function
+
+$$
+r : V \to \mathbb{R}^{d},
+$$
+
+and discussed slowly what it had to satisfy. What binds here is none of those conditions: it is the
+domain. If the argument of $r$ is a vocabulary entry, its value cannot depend on the sentence it
+appears in, because the sentence does not enter the function. That is what **static** means.
+
+## Counting the pairs and fitting GloVe in NumPy
+
+The cell counts and fits. The corpus is 680 tokens of templates, with <W>bank</W> planted in two
+worlds; I have left $d_{\text{model}} = 3$ deliberately: with more coordinates the table fits almost
+exactly and the loss is not seen to work. The learning rate decays to almost zero, as in the previous
+lesson. Run it and look at three things: the column of ratios, the neighbours from the fit, and the
+three rows at the end.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# --- A toy corpus where <bank> appears in both of its senses.
+finance = ["money", "mortgage", "payroll", "savings", "loan"]
+river = ["reed", "willow", "heron", "boat", "pebble"]
+
+
+def write(bank_f, bank_r):
+    sentences = []
+    for f in finance:
+        for v in ["deposited", "withdrew", "checked"]:
+            sentences.append(f"the client {v} her {f} at the {bank_f}")
+        for f2 in finance:
+            if f2 != f:
+                sentences.append(f"the {bank_f} recorded her {f} and her {f2}")
+        sentences.append(f"the girl deposited her {f} at the {bank_f}")
+    for p in river:
+        for v in ["rested", "waited", "read"]:
+            sentences.append(f"the girl {v} beside the {p} at the {bank_r}")
+        for p2 in river:
+            if p2 != p:
+                sentences.append(f"the {bank_r} lay between the {p} and the {p2}")
+        sentences.append(f"the client rested beside the {p} at the {bank_r}")
+    return [s.split() for s in sentences]
+
+
+# X_ik: how many times k falls in a window of m tokens around i. ONE pass.
+def cooccurrences(docs, m=4):
+    V = sorted({w for d in docs for w in d})
+    pos = {w: i for i, w in enumerate(V)}
+    X = np.zeros((len(V), len(V)))
+    for d in docs:
+        ids = [pos[w] for w in d]
+        for t, i in enumerate(ids):
+            for j in range(max(0, t - m), min(len(ids), t + m + 1)):
+                if j != t:
+                    X[i, ids[j]] += 1.0
+    return V, pos, X
+
+
+docs = write("bank", "bank")
+V, pos, X = cooccurrences(docs)
+T = sum(len(d) for d in docs)
+print("T =", T, "tokens |", len(V), "entries |", int((X > 0).sum()), "nonzero cells of", X.size)
+print()
+
+# The ratio from the derivation, measured here: P(k|i) = X_ik / X_i.
+X_i = X.sum(axis=1)
+print("k          P(k|mortgage)  P(k|willow)     ratio")
+for k in ["client", "girl", "bank", "at"]:
+    a = X[pos["mortgage"], pos[k]] / X_i[pos["mortgage"]]
+    b = X[pos["willow"], pos[k]] / X_i[pos["willow"]]
+    print("  ", k.ljust(9), ("%.4f" % a).rjust(9), ("%.4f" % b).rjust(14), ("%.2f" % (a / b)).rjust(9))
+print()
+
+d_model, x_max, alpha, eta0, epochs = 3, 10.0, 0.75, 0.1, 30
+
+
+def fit(X, seed=3):
+    """Minimise sum g(X_ik) (u_k . e_i + b_i + b_k - log X_ik)^2 over the NONZERO cells."""
+    r = np.random.default_rng(seed)
+    n = len(X)
+    row, col = np.nonzero(X)
+    g = np.minimum((X[row, col] / x_max) ** alpha, 1.0)
+    target = np.log(X[row, col])
+
+    E = 0.1 * r.standard_normal((n, d_model))
+    U = 0.1 * r.standard_normal((n, d_model))
+    bE, bU = np.zeros(n), np.zeros(n)
+
+    n_steps = epochs * len(row)
+    step = 0
+    for epoch in range(1, epochs + 1):
+        loss = 0.0
+        for idx in r.permutation(len(row)):
+            i, k = row[idx], col[idx]
+            eta = eta0 * max(1e-4, 1.0 - step / n_steps)   # decays to almost zero
+            step += 1
+
+            e, u = E[i].copy(), U[k]
+            error = e @ u + bE[i] + bU[k] - target[idx]
+            loss += g[idx] * error ** 2
+
+            # The gradient derived above: 2 g(X_ik) times the error, each vector receives the other.
+            coef = 2.0 * g[idx] * error
+            E[i] -= eta * coef * u
+            U[k] -= eta * coef * e
+            bE[i] -= eta * coef
+            bU[k] -= eta * coef
+        if epoch in (1, 10, 20, epochs):
+            print("   epoch", str(epoch).rjust(2), " mean loss per cell",
+                  round(float(loss / len(row)), 4))
+    return E + U        # the implementations keep the sum of the two tables
+
+
+W = fit(X)
+N = W / np.linalg.norm(W, axis=1, keepdims=True)
+S = N @ N.T
+
+# Neighbours among content words: in 680 tokens the function words fall in every window.
+content = finance + river + ["client", "girl", "bank"]
+
+
+def neighbours(w, k=3):
+    i = pos[w]
+    order = sorted((pos[c] for c in content if c != w), key=lambda j: -S[i, j])
+    return [(V[j], round(float(S[i, j]), 2)) for j in order[:k]]
+
+
+print()
+for w in ["mortgage", "willow"]:
+    print("neighbours of", w.ljust(10), neighbours(w))
+print()
+
+# --- The row GloVe has to explain, against the two that make it up.
+V2, pos2, X2 = cooccurrences(write("bank_money", "bank_river"))
+sample = ["money", "mortgage", "reed", "willow"]
+print("row of X".ljust(18) + "".join(w.rjust(10) for w in sample))
+print("bank".ljust(18) + "".join(str(int(X[pos["bank"], pos[w]])).rjust(10) for w in sample))
+for w in ["bank_money", "bank_river"]:
+    print(("  " + w).ljust(18) + "".join(str(int(X2[pos2[w], pos2[c]])).rjust(10) for c in sample))
+print()
+
+
+def cosine(u, v):
+    return float(u @ v / (np.linalg.norm(u) * np.linalg.norm(v)))
+
+
+def row(X, pos, w, columns):
+    return np.array([X[pos[w], pos[c]] for c in columns])
+
+
+cols = finance + river
+b = row(X, pos, "bank", cols)
+u = row(X2, pos2, "bank_money", cols)
+v = row(X2, pos2, "bank_river", cols)
+print("bank's row is the sum of the two:", np.array_equal(b, u + v))
+print("cosine between the two senses           ", round(cosine(u, v), 2))
+print("cosine of the shared row with each      ", round(cosine(b, u), 2), round(cosine(b, v), 2))
+common = [w for w in V if w in pos2]
+print("the same, counting the function words too",
+      round(cosine(row(X2, pos2, "bank_money", common), row(X2, pos2, "bank_river", common)), 2))
+`} />
+
+The table takes 384 non-zero cells, against the 3,840 pairs the window generates over the same text.
+And its ratios reproduce the <W>ice</W>/<W>steam</W> pattern: <W>client</W> is $3.00$ in favour of
+<W>mortgage</W>, <W>girl</W> is $0.33$, and <W>bank</W> and <W>at</W> come out $1.00$ exactly because
+they appear alike with both.
+
+The fit falls from $0.51$ to $0.01$ per cell and the neighbours are the ones they have to be:
+<W>money</W>, <W>payroll</W> and <W>savings</W> for <W>mortgage</W>; <W>reed</W>, <W>boat</W> and
+<W>heron</W> for <W>willow</W>. Those round $1.00$s are the price of the templates: within each group
+the entries fill identical slots, and so do their rows.
+
+The last three rows are the lesson's subject: <W>bank</W>'s row is $8$ at <W>money</W>, at
+<W>mortgage</W>, at <W>reed</W> and at <W>willow</W>, and, with the senses split, it is cell by cell
+the sum of two rows with nothing in common: between them the cosine is $0.00$ over the content words,
+and $0.59$ counting the function words, the only thing they share. The shared row stays $0.71$ from
+each, halfway between, and it is that one GloVe explains with a single vector.
+
+Raise `d_model` to $8$ and run again: the loss per cell falls to a seventh and the neighbours are the
+same. More coordinates fit the same table better; they do not draw out of it what it does not have.
+
+## Test your intuition
+
+Four questions: what a ratio is worth, what gets fitted, what the weighting and the sum's condition
+do, and what it would take for <W>bank</W> to have two vectors.
+
+<Quiz id="q-razon" />
+
+<Quiz id="q-objetivo" />
+
+<Quiz id="q-peso" />
+
+<Quiz id="q-banco" />
+
+---
+
+The block closes its commission this way: there is an $r$ that turns text into vectors, two procedures
+for its numbers, and a geometry where resemblance means something. What is left unsolved is the word
+in the title. Each entry leaves here with one vector, a single one, so <W>the bank closed at two</W>
+and <W>the bank was wet</W> receive the same row of $\mathbf{E}$, and neither sentence has any way to
+ask for another. That the representation should depend on the context is the thread running through
+what comes next, and it is charged for at the end, in Block 5, on the Transformer.
+
+First, what is going to consume those vectors has to be built, and it does not exist yet.
+<Leccion slug="texto-como-numeros">The lesson on the problem of representing language</Leccion> assumed
+a function that takes a vector and returns an answer, and left it that what it is like inside was the
+next block's business. Block 2, on the multilayer perceptron, starts there: its
+<Leccion slug="la-neurona">lesson on the artificial neuron</Leccion> defines the smallest piece that
+does that work — it takes a vector, weights it and returns a number — and the assumption ends.

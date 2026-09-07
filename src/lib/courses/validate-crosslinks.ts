@@ -19,9 +19,20 @@
  * plain text on purpose. It is an advisory warning instead (phase 2 of the lint),
  * because the author probably meant it to be a link one day.
  *
- * Scope is one `<course>/<locale>` directory at a time, which is also the whole story
- * on locales: a reference and its target always live in the same content tree, so a
- * heading id never has to cross languages.
+ * COURSE-P11-01 — locales stopped being all-or-nothing. `en/` gets written one lesson at
+ * a time, so every reference in the first English lesson points at a target that exists
+ * only in `es/`. Scope is still one `<course>/<locale>` directory at a time, but a slug
+ * now resolves against THAT tree and then the canonical one — the same two-step
+ * `listLessonViews` (./catalog-view.ts) already applies, and that function is the
+ * authority on what the reader is actually served.
+ *
+ * The ANCHOR follows the target into whichever tree it resolved in, because an `ancla` is
+ * a `github-slugger` id derived from HEADING TEXT and the two languages produce different
+ * ids for the same section. One consequence is worth stating out loud: translating lesson
+ * X invalidates every anchored reference to X from an already-translated lesson, because
+ * X now renders English heading ids where it rendered Spanish ones. The lint turns that
+ * into a fatal unresolved anchor the next time it runs — which is the point, and which
+ * means a translation PR can fail on a file it never touched.
  *
  * Node-clean like its siblings: no registry import (that would pull in the locale
  * cache), no `next/*`. The pure helpers are unit-tested without touching the disk.
@@ -41,6 +52,12 @@ const LECCION_TAG = /<Leccion\b([^>]*?)\/?>/g;
 const SLUG_ATTR = /\bslug\s*=\s*["']([^"']*)["']/;
 const ANCLA_ATTR = /\bancla\s*=\s*["']([^"']*)["']/;
 const FENCE = /^\s*(`{3,}|~{3,})/;
+
+/** The canonical locale's directory name — `routing.defaultLocale`, hardcoded on purpose.
+ *  This module is Node-clean (see the file-top comment) and importing `@/i18n/routing`
+ *  would drag next-intl into `scripts/lint-content.ts` for one string. Every public entry
+ *  point takes it as an overridable parameter. */
+const CANONICAL_LOCALE = "es";
 
 export interface LeccionRef {
   /** The slug as written, or `null` when the tag has no `slug` attribute. */
@@ -95,17 +112,50 @@ export function findLecciones(source: string): LeccionRef[] {
 }
 
 /**
+ * COURSE-P11-01 — the version of a target the reader will actually be served: the
+ * referring lesson's own locale tree when the target is published there, the canonical
+ * tree otherwise. `null` when the slug is in neither. A separate function rather than a
+ * cleverer index, because `buildCrosslinkIndex` means one directory and should keep
+ * meaning exactly that.
+ *
+ * Drafts are the one case the two trees can disagree about, so it is decided here: a
+ * lesson that is `draft: true` in `en/` but published in `es/` renders from the Spanish
+ * tree, so the Spanish version is what an anchor has to match. A draft in both resolves
+ * to the draft — the reference is plain text either way, and the phase-2 pass says so.
+ */
+export function resolveCrosslinkTarget(
+  slug: string,
+  index: CrosslinkIndex,
+  canonical?: CrosslinkIndex,
+): CrosslinkTarget | null {
+  const own = index.get(slug);
+  // `canonical === index` is the canonical tree validating itself: one lookup, not two.
+  const fallback = canonical === index ? undefined : canonical?.get(slug);
+
+  if (own && !own.draft) return own;
+  if (fallback && !fallback.draft) return fallback;
+  return own ?? fallback ?? null;
+}
+
+/**
  * Return a human-readable problem string for each unresolvable reference. Empty array =
  * every reference resolves. Pure — no filesystem — so it is trivially unit-testable.
+ *
+ * `canonical` is the fallback tree (COURSE-P11-01); omit it for a tree that IS the
+ * canonical one, or for a course that exists in one locale only.
  */
-export function crosslinkProblems(refs: LeccionRef[], index: CrosslinkIndex): string[] {
+export function crosslinkProblems(
+  refs: LeccionRef[],
+  index: CrosslinkIndex,
+  canonical?: CrosslinkIndex,
+): string[] {
   const problems: string[] = [];
   for (const ref of refs) {
     if (ref.slug === null) {
       problems.push("<Leccion> is missing a slug attribute");
       continue;
     }
-    const target = index.get(ref.slug);
+    const target = resolveCrosslinkTarget(ref.slug, index, canonical);
     if (!target) {
       problems.push(`unknown lesson slug "${ref.slug}"`);
       continue;
@@ -119,12 +169,17 @@ export function crosslinkProblems(refs: LeccionRef[], index: CrosslinkIndex): st
 
 /**
  * Advisory: a reference whose target is a draft renders as plain text, which is the
- * designed behaviour but rarely what the author had in mind.
+ * designed behaviour but rarely what the author had in mind. A target that is a draft
+ * here but published in the canonical tree is NOT one of those — it links.
  */
-export function crosslinkWarnings(refs: LeccionRef[], index: CrosslinkIndex): string[] {
+export function crosslinkWarnings(
+  refs: LeccionRef[],
+  index: CrosslinkIndex,
+  canonical?: CrosslinkIndex,
+): string[] {
   const warnings: string[] = [];
   for (const ref of refs) {
-    if (ref.slug && index.get(ref.slug)?.draft) {
+    if (ref.slug && resolveCrosslinkTarget(ref.slug, index, canonical)?.draft) {
       warnings.push(
         `crosslinks — "${ref.slug}" is a draft lesson; the reference renders as plain text`,
       );
@@ -159,16 +214,48 @@ function byDirectory(contentRoot: string): Map<string, string[]> {
   return dirs;
 }
 
+/** Every lesson directory under `contentRoot`, with its files and its built index. */
+function indexedDirectories(
+  contentRoot: string,
+): Map<string, { filePaths: string[]; index: CrosslinkIndex }> {
+  const out = new Map<string, { filePaths: string[]; index: CrosslinkIndex }>();
+  for (const [dir, filePaths] of byDirectory(contentRoot)) {
+    out.set(dir, { filePaths, index: buildCrosslinkIndex(filePaths) });
+  }
+  return out;
+}
+
+/**
+ * COURSE-P11-01 — the canonical sibling of `<course>/<locale>` is `<course>/<canonical>`,
+ * derived from the path rather than looked up, which keeps this module off the registry.
+ * `undefined` for the canonical tree itself and for a course that has no canonical tree.
+ */
+function canonicalIndexFor(
+  dir: string,
+  dirs: Map<string, { index: CrosslinkIndex }>,
+  canonicalLocale: string,
+): CrosslinkIndex | undefined {
+  if (path.basename(dir) === canonicalLocale) return undefined;
+  return dirs.get(path.join(path.dirname(dir), canonicalLocale))?.index;
+}
+
 /**
  * Validate every `<Leccion>` in every lesson under `contentRoot`, throwing on the first
  * offending file (message: `${filePath}: <problem>`). No content → no-op.
+ *
+ * A slug resolves if the target exists in the lesson's own locale tree OR in
+ * `canonicalLocale`'s — which is what a partially translated `en/` needs to pass.
  */
-export function validateCrosslinks(contentRoot: string = DEFAULT_CONTENT_ROOT): void {
-  for (const filePaths of byDirectory(contentRoot).values()) {
-    const index = buildCrosslinkIndex(filePaths);
+export function validateCrosslinks(
+  contentRoot: string = DEFAULT_CONTENT_ROOT,
+  canonicalLocale: string = CANONICAL_LOCALE,
+): void {
+  const dirs = indexedDirectories(contentRoot);
+  for (const [dir, { filePaths, index }] of dirs) {
+    const canonical = canonicalIndexFor(dir, dirs, canonicalLocale);
     for (const filePath of filePaths) {
       const source = fs.readFileSync(filePath, "utf8");
-      const problems = crosslinkProblems(findLecciones(source), index);
+      const problems = crosslinkProblems(findLecciones(source), index, canonical);
       if (problems.length > 0) {
         throw new Error(`${filePath}: ${problems[0]}`);
       }
@@ -186,14 +273,16 @@ export function validateCrosslinks(contentRoot: string = DEFAULT_CONTENT_ROOT): 
  */
 export function collectCrosslinkWarnings(
   contentRoot: string = DEFAULT_CONTENT_ROOT,
+  canonicalLocale: string = CANONICAL_LOCALE,
 ): Map<string, string[]> {
   const out = new Map<string, string[]>();
-  for (const filePaths of byDirectory(contentRoot).values()) {
-    const index = buildCrosslinkIndex(filePaths);
+  const dirs = indexedDirectories(contentRoot);
+  for (const [dir, { filePaths, index }] of dirs) {
+    const canonical = canonicalIndexFor(dir, dirs, canonicalLocale);
     for (const filePath of filePaths) {
       const source = fs.readFileSync(filePath, "utf8");
       if (matter(source).data.draft === true) continue;
-      const warnings = crosslinkWarnings(findLecciones(source), index);
+      const warnings = crosslinkWarnings(findLecciones(source), index, canonical);
       if (warnings.length > 0) out.set(filePath, warnings);
     }
   }

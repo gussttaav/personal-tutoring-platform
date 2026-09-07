@@ -1,6 +1,6 @@
 # P11-03 — `AUTHORING.en.md`: the English delta
 
-**Tag:** `COURSE-P11-03` · **Size:** S · **Status:** not started
+**Tag:** `COURSE-P11-03` · **Size:** S · **Status:** done
 
 ## TL;DR
 
@@ -104,15 +104,15 @@ a filename, `initialize` is a Python method — code is quoted, not translated.
 
 ## Acceptance criteria
 
-- [ ] `AUTHORING.en.md` exists and states, at the top, that `AUTHORING.md` governs except where
+- [x] `AUTHORING.en.md` exists and states, at the top, that `AUTHORING.md` governs except where
       the delta replaces it, section by section
-- [ ] All four Spanish-dependent areas are replaced: the two marks, person/mood, §2
+- [x] All four Spanish-dependent areas are replaced: the two marks, person/mood, §2
       capitalisation, terminology
-- [ ] en-GB is stated once, with the identifier exception
-- [ ] The glossary covers every term in the Spanish terminology section, preserving its
+- [x] en-GB is stated once, with the identifier exception
+- [x] The glossary covers every term in the Spanish terminology section, preserving its
       distinctions
-- [ ] `AUTHORING.md` points at the delta; `NOTATION.md` is untouched
-- [ ] The delta is **under 300 lines**. If it is longer, it has started forking.
+- [x] `AUTHORING.md` points at the delta; `NOTATION.md` is untouched
+- [x] The delta is **under 300 lines**. If it is longer, it has started forking.
 
 ## Test plan
 

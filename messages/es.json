@@ -867,6 +867,7 @@
       "readingTime": "{minutes} min de lectura",
       "refKicker": "Bloque {block} · Lección {order}",
       "refAhead": "Más adelante",
+      "refFallback": "En español",
       "openNav": "Abrir el contenido del curso",
       "closeNav": "Cerrar el contenido del curso",
       "translationPending": {
@@ -910,9 +911,11 @@
       "collapse": "Contraer",
       "editorLabel": "Tu solución en Python",
       "firstRunNote": "La primera comprobación descarga el intérprete de Python (~15 MB); después queda en la caché del navegador.",
+      "firstRunNoteCached": "El intérprete de Python ya está en la caché del navegador; la primera comprobación solo tarda un momento en reactivarlo.",
       "keyboardNote": "Este desafío se resuelve mejor con un teclado físico: en el móvil puedes leerlo y volver luego.",
       "stage": {
         "runtime": "Descargando el intérprete de Python…",
+        "runtimeCached": "Cargando el intérprete de Python desde la caché…",
         "packages": "Cargando paquetes…",
         "preamble": "Preparando el entorno…",
         "ready": "Ejecutando las pruebas…"
@@ -943,6 +946,31 @@
         "solved": "Resuelto · {passed}/{total} pruebas · {date}",
         "attempted": "Lo intentaste {count, plural, =1 {# vez} other {# veces}} · {date}"
       }
+    },
+    "code": {
+      "run": "Ejecutar",
+      "running": "Ejecutando…",
+      "stop": "Detener",
+      "reset": "Reiniciar",
+      "expand": "Ver las {count} líneas",
+      "collapse": "Contraer",
+      "editorLabel": "Código Python editable",
+      "editLabel": "Editar el código de esta celda",
+      "firstRunNote": "La primera ejecución descarga el intérprete de Python (~15 MB). Después queda en la caché del navegador y se reutiliza en todas las lecciones.",
+      "firstRunNoteCached": "El intérprete de Python ya está en la caché del navegador; la primera ejecución en esta lección solo tarda un momento en reactivarlo.",
+      "stage": {
+        "runtime": "Descargando el intérprete de Python…",
+        "runtimeCached": "Cargando el intérprete de Python desde la caché…",
+        "packages": "Cargando paquetes…",
+        "preamble": "Preparando el entorno…",
+        "ready": "Ejecutando…"
+      },
+      "droppedLines": "Se ocultaron las primeras {count} líneas; solo se muestran las últimas.",
+      "plotAlt": "Gráfica {number} generada por el código",
+      "timeoutRun": "La ejecución superó los {seconds} s y se detuvo. El intérprete se reinició, así que se perdió el estado de las celdas anteriores: vuelve a ejecutarlas si tu código dependía de ellas.",
+      "timeoutLoad": "La descarga del intérprete tardó demasiado. Comprueba tu conexión y vuelve a intentarlo.",
+      "stopped": "Ejecución detenida. El intérprete se reinició, así que se perdió el estado de las celdas anteriores.",
+      "crashed": "El intérprete se cerró inesperadamente: {error}"
     },
     "progress": {
       "markComplete": "Marcar como completada",
@@ -1000,6 +1028,340 @@
       "hintNavigate": "navegar",
       "hintOpen": "abrir",
       "hintClose": "cerrar"
+    },
+    "widgets": {
+      "common": {
+        "reset": "Reset",
+        "previous": "◀ anterior",
+        "next": "siguiente ▶",
+        "stepBack": "◀ paso",
+        "stepForward": "paso ▶",
+        "stepOf": "paso {current}/{total}",
+        "animate": "Animar",
+        "pause": "Pausa",
+        "sum": "suma",
+        "error": "Este widget interactivo ({id}) no se ha podido cargar."
+      },
+      "sigmoid-explorer": {
+        "weight": "Peso (w)",
+        "bias": "Sesgo (b)",
+        "plotAria": "Curva de la sigmoide con peso {w} y sesgo {b}"
+      },
+      "tokenizer-playground": {
+        "inputAria": "Frase para tokenizar",
+        "words": {
+          "title": "Palabras",
+          "hint": "Divide por espacios y puntuación."
+        },
+        "chars": {
+          "title": "Caracteres",
+          "hint": "Cada símbolo, incluidos los espacios (␣)."
+        },
+        "subwords": {
+          "title": "Subpalabras",
+          "hint": "## marca continuación de palabra."
+        }
+      },
+      "bag-of-words": {
+        "documentLabel": "Documento {n}",
+        "vocabSize": "Vocabulario del corpus: <count></count> entradas, una por columna.",
+        "tableCaption": "Matriz de la bolsa de palabras: una fila por token, con su vector one-hot, una fila con la suma de cada documento y una última fila con la suma del corpus entero.",
+        "tokenHeader": "token",
+        "documentSum": "suma doc. {n}",
+        "corpusTotal": "todo el corpus",
+        "explainer": "Cada fila verde es el one-hot de un token: un único <one></one>, en la columna de su entrada. La fila ámbar los suma, y esa suma es el vector del documento; la última fila suma los dos documentos, que es otra cosa. Cambia dos palabras de sitio: las filas se reordenan y las sumas no se mueven.",
+        "truncated": " Solo se muestran los primeros {max} tokens de cada documento."
+      },
+      "embedding-projection": {
+        "loading": "Cargando embeddings…",
+        "loadError": "No se pudieron cargar los embeddings.",
+        "wordLabel": "Palabra",
+        "analogyButton": "Analogía {a} − {b} + {c}",
+        "noAnswer": "ninguna palabra",
+        "analogyAria": "Proyección 2D de palabras mostrando la analogía {a} menos {b} más {c}, que cae sobre {answer}",
+        "neighboursAria": "Proyección 2D de palabras; seleccionada: {word}, con sus vecinos {neighbours}",
+        "analogyNote": "Las dos flechas son el mismo vector: <term>{a} − {b}</term>, aplicado sobre <word>{c}</word>, cae sobre <hit>{answer}</hit>. El círculo marca dónde cae la suma; la palabra más cercana es la respuesta. Vista ampliada sobre esas cuatro palabras.",
+        "neighboursNote": "Vecinos de <term>{word}</term>: {neighbours}"
+      },
+      "activation-explorer": {
+        "names": {
+          "sigma": "σ",
+          "tanh": "tanh",
+          "relu": "ReLU",
+          "gelu": "GELU",
+          "step": "escalón"
+        },
+        "derivative": "derivada f′",
+        "plotAria": "Activación {name} y su derivada, con regiones de saturación sombreadas",
+        "note": "Zonas rojas: la derivada ≈ 0 (saturación) — ahí el gradiente casi no fluye."
+      },
+      "perceptron-boundary": {
+        "presetSeparable": "Separable",
+        "presetXor": "No separable",
+        "plotAria": "Puntos en 2D y la frontera de decisión de la neurona",
+        "pointAria": "Punto {n}, clase {klass, select, positive {positiva} other {negativa}}",
+        "separable": "Separable — la neurona encuentra una recta que no comete ningún error.",
+        "notSeparable": "No separable — ninguna recta deja cada color de un lado, y la neurona no deja de corregirse.",
+        "xorNote": "Estos cuatro puntos son la función <b>XOR</b>, el «o exclusivo»: cada coordenada vale −1 o +1, y la clase es la verde cuando las dos <b>difieren</b> —arriba a la izquierda y abajo a la derecha— y la otra cuando coinciden. Cada clase ocupa dos esquinas opuestas, y por eso ninguna recta puede dejar una a cada lado. Arrastra un punto y la recta vuelve a encontrar sitio."
+      },
+      "gradient-descent-2d": {
+        "fieldConvex": "Convexo",
+        "fieldRavine": "Cañón",
+        "learningRate": "Tasa de aprendizaje (η)",
+        "plotAria": "Descenso de gradiente sobre un campo {field}",
+        "stepAndLoss": "paso {step}/{total} · pérdida {loss}",
+        "diverged": "Diverge — la tasa de aprendizaje es demasiado alta; la trayectoria se sale del gráfico."
+      },
+      "loss-landscape": {
+        "startX": "Inicio x₀",
+        "learningRate": "Tasa de aprendizaje (η)",
+        "plotAria": "Superficie de pérdida con dos mínimos y la trayectoria del descenso",
+        "basinLeft": "izquierda (−1, 0)",
+        "basinRight": "derecha (+1, 0)",
+        "verdict": "Cae en el mínimo de la <b>{basin}</b> — el punto de partida decide la cuenca."
+      },
+      "backprop-trace": {
+        "groupAria": "Traza de retropropagación; usa las flechas para avanzar y retroceder",
+        "diagramAria": "Diagrama de la red 2-2-1"
+      },
+      "rnn-unrolled": {
+        "direction": "Dirección:",
+        "forward": "Adelante ▶",
+        "backward": "◀ Atrás (BPTT)",
+        "groupAria": "RNN desplegada; usa las flechas para avanzar y retroceder por los pasos",
+        "diagramAria": "RNN desplegada con {steps} pasos, en modo {mode, select, forward {hacia adelante} other {hacia atrás}}",
+        "sequenceNote": "Los xₜ son una secuencia de ejemplo fija: un vector inventado por cada token.",
+        "fixedParams": "Pesos y sesgo, los mismos en cada paso:",
+        "whhAria": "Matriz de pesos recurrentes W_hh",
+        "wxhAria": "Matriz de pesos de entrada W_xh",
+        "bhAria": "Vector de sesgo b_h",
+        "stepTitle": "Paso t = {t}",
+        "forwardEnters": "entra el estado <hprev></hprev> = {hPrev} y el token <xt></xt> = {xValue}",
+        "forwardPreactivation": "su suma es la preactivación <pt></pt> = {pValue}",
+        "forwardFirstStep": "En t = 1 la aportación recurrente W<sub>hh</sub>·h<sub>0</sub> es 0: el primer estado sale sólo del token.",
+        "backwardSeed": "transporte (semilla desde ℓ): (ŷ − y)·W<sub>hy</sub>ᵀ = {value}",
+        "backwardTransport": "transporte: W<sub>hh</sub>ᵀ·δ<sub>{next}</sub> = {value}",
+        "backwardMask": "máscara ⊙ (1 − h<sub>{t}</sub>²) = {mask}",
+        "backwardContribution": "aporte",
+        "backwardZeroMatrix": "— es la matriz cero, porque h<sub>0</sub> = 0.",
+        "accumulator": "Acumulador:",
+        "contributionOf": "aporte del paso t = {t}",
+        "contributionAria": "Aporte del paso {t} a ∇W_{matrix}",
+        "accumulatedLabel": "acumulado (forma {rows}×{cols})",
+        "accumulatedAria": "∇W_{matrix} acumulado tras {summed} de {total} términos",
+        "termsSummed": "términos sumados:",
+        "termsUnchanged": " — el último no cambió nada (h₀ = 0).",
+        "sequenceLength": "Longitud de la secuencia (T)",
+        "stepAndDirection": "paso {current}/{total} · t = {t} ({mode, select, forward {adelante} other {atrás}})"
+      },
+      "vanishing-gradient": {
+        "spectralRadius": "Radio espectral ρ de Wₕₕ",
+        "plotAria": "Magnitud del gradiente en órdenes de magnitud (log decimal) frente a la distancia en pasos, para un radio espectral de {rho}. A {steps} pasos el gradiente {verb, select, vanishes {se desvanece} explodes {explota} other {se mantiene}}.",
+        "note": "Eje vertical: órdenes de magnitud (log₁₀); el 0 es el tamaño de partida. A {steps} pasos de distancia, el gradiente {verb, select, vanishes {se desvanece} explodes {explota} other {se mantiene}}: ‖·‖ pasa a ≈ 10<exp>{exponent}</exp> veces lo que valía."
+      },
+      "lstm-gates": {
+        "forgetBias": "Sesgo de la compuerta de olvido, b_f",
+        "groupAria": "LSTM con compuertas; usa las flechas para avanzar y retroceder por los pasos",
+        "position": "posición t = {t} / {total}",
+        "forgetLabel": "fₜ · olvido",
+        "forgetHint": "qué conserva",
+        "forgetAria": "Compuerta de olvido en t={t}",
+        "inputLabel": "iₜ · entrada",
+        "inputHint": "qué escribe",
+        "inputAria": "Compuerta de entrada en t={t}",
+        "outputLabel": "oₜ · salida",
+        "outputHint": "qué deja ver",
+        "outputAria": "Compuerta de salida en t={t}",
+        "candidateLabel": "c̃ₜ · candidato",
+        "candidateHint": "(−1 … 1)",
+        "candidateAria": "Candidato en t={t}",
+        "cellLabel": "cₜ · celda",
+        "cellHint": "fₜ⊙cₜ₋₁ + iₜ⊙c̃ₜ",
+        "cellAria": "Estado de celda en t={t}",
+        "survivalLabel": "de c₁ sobrevive",
+        "survivalHint": "∏ fₛ, s=2…{t}",
+        "survivalAria": "Fracción de c₁ que sobrevive en t={t}",
+        "summary": "Con b_f = {bf}, de lo que se escribió en c₁ llega al final de la secuencia entre <lo>{min}</lo> y <hi>{max}</hi> —sin una matriz de por medio: sólo el producto de las compuertas de olvido, que la red elige coordenada a coordenada—."
+      },
+      "context-bottleneck": {
+        "stateWidth": "Ancho del estado, d_h",
+        "coordinates": "{v} coordenadas",
+        "levelsLabel": "Niveles distinguibles por coordenada, q",
+        "levels": "{v} niveles",
+        "powerLabel": "10 elevado a {exponent}",
+        "plotAria": "Dos rectas frente a la longitud de la entrada, en ordenes de magnitud. La capacidad del vector de contexto es horizontal en {codes} mensajes distintos, con {dh} coordenadas de {q} niveles. El numero de frases de entrada sube 4.5 ordenes por token y cruza la capacidad en {crossing} tokens.",
+        "legend": "Eje vertical: órdenes de magnitud (log₁₀) de un recuento. <cap>▬</cap> mensajes que caben en c · <dem>▬</dem> frases de entrada distintas de esa longitud, sobre un vocabulario de {vocab} entradas.",
+        "readout": "En {dh} coordenadas de {q} niveles caben <codes></codes> mensajes distintos, y eso alcanza para las frases de hasta <upto>{crossing} tokens</upto>. A partir de ahí sobran frases: a los {past} tokens ningún decoder —ni el mejor posible, entrenado sin límite— devuelve exactas más que una fracción <ceiling></ceiling> de ellas."
+      },
+      "attention-alignment": {
+        "attention": "Atención",
+        "fixedSummary": "Resumen fijo",
+        "mapAria": "Mapa de alineación: elige un paso de la salida para ver de qué parte de la entrada tira",
+        "attentionNote": "El paso {step} escribe <tgt>{target}</tgt> y tira sobre todo de <src>{source}</src>, con un peso de {weight}. Cambia de paso: la fila se mueve, y su suma sigue valiendo {sum}.",
+        "frozenNote": "Con el resumen fijo, el paso {step} recibe el estado de <src>{source}</src> con peso {weight} — y también lo reciben los otros {others} pasos. Recorre las filas y mira las barras de abajo: no se mueven.",
+        "contextAria": "Las {d} coordenadas del vector de contexto del paso {step}: {values}.",
+        "contextNote": "{d} coordenadas, las mismas que tenía el resumen"
+      },
+      "self-attention-heatmap": {
+        "inputLabel": "Escribe una frase (se queda en los primeros {max} tokens)",
+        "withProjections": "Con proyecciones",
+        "withoutProjections": "Sin proyectar",
+        "withoutMask": "Sin máscara",
+        "withMask": "Con máscara causal",
+        "mapAria": "Mapa de auto-atención: elige una posición para ver de qué otras tira",
+        "empty": "Escribe algo y aparecerá la rejilla.",
+        "causalFirst": "Con la máscara, la posición 1 no tiene nada detrás: <tok>{token}</tok> se lleva {self} sobre sí misma y {blanked} {blanked, plural, one {casilla queda tachada} other {casillas quedan tachadas}} a su derecha. La fila suma {sum} igual que las demás: lo que se tacha se reparte entre lo que queda, porque la máscara entra antes del softmax.",
+        "causalOther": "Con la máscara, la posición {pos}, <tok>{token}</tok>, sólo puede mirar de la 1 a la {pos}. Su peso más alto —{peak}— va a <tgt>{target}</tgt>, y la fila sigue sumando {sum} con {blanked} {blanked, plural, one {casilla tachada} other {casillas tachadas}}.",
+        "projected": "La posición {pos}, <tok>{token}</tok>, le da su peso más alto —{peak}— a <tgt>{target}</tgt>, y {self} a sí misma. La fila entera suma {sum}.",
+        "unprojected": "Sin proyectar, la posición {pos}, <tok>{token}</tok>, se queda con su propio peso más alto: {self} sobre sí misma, contra {best} del mejor de los demás. Y pasa en las {rows} filas a la vez: la diagonal gana siempre. Una capa así devuelve lo que le entró con un tinte de lo demás, y no tiene un solo parámetro con el que decidir otra cosa.",
+        "footnote": "Los vectores ({dModel} coordenadas, {lexicon} palabras en el léxico) y las proyecciones —{dk} coordenadas para comparar, {dv} para mezclar— los he puesto yo a mano para el curso; ningún modelo entrenado hay aquí dentro.",
+        "footnoteMask": " Las casillas de trazo discontinuo son las que la máscara tacha.",
+        "footnoteUnknown": " Fuera del léxico: {words} — su vector sale de un hash de sus letras, así que esa fila no dice nada.",
+        "footnoteTruncated": " La frase se ha cortado en {max} tokens."
+      },
+      "multi-head-view": {
+        "inputLabel": "Escribe una frase (se queda en los primeros {max} tokens)",
+        "headsAria": "Qué mapa se dibuja",
+        "rowsAria": "Elige una posición para compararla en todas las cabezas",
+        "singleHead": "una sola cabeza",
+        "heads": {
+          "0": {
+            "short": "verbo → sustantivo",
+            "name": "un verbo busca sustantivos"
+          },
+          "1": {
+            "short": "concordancia",
+            "name": "concordancia de número"
+          },
+          "2": {
+            "short": "sustantivo → det./mod.",
+            "name": "un sustantivo mira su determinante y sus modificadores"
+          },
+          "3": {
+            "short": "det./mod. → sustantivo",
+            "name": "un determinante o un modificador mira los sustantivos"
+          }
+        },
+        "singleHeadNote": "Las cuatro reglas sumadas antes de un único softmax: una fila por posición y nada más.",
+        "headNote": "Cabeza {n} de {total}: {name}.",
+        "empty": "Escribe algo y aparecerán las rejillas.",
+        "verdictFlat": "reparte por igual entre todas — esta regla no dice nada de esta posición",
+        "verdictTie": "empate entre {names}, a {weight} cada una",
+        "verdictPeak": "{names}, con {weight}",
+        "panelIntro": "A qué tira la posición {pos}, <tok>{token}</tok>, en cada mapa:",
+        "footnote": "Las {h} cabezas son las {h} reglas del léxico ({lexicon} palabras) de la lección anterior, una por cabeza, y las he escrito yo a mano para el curso. Por eso aquí cada cabeza compara en {dk} coordenada: es lo que hace legible una regla, no lo que usa una capa de verdad, que reparte entre sus cabezas la anchura del modelo.",
+        "footnoteUnknown": " Fuera del léxico: {words} — su vector sale de un hash de sus letras, así que esa fila no dice nada.",
+        "footnoteTruncated": " La frase se ha cortado en {max} tokens."
+      },
+      "positional-encoding": {
+        "position": "posición en la frase",
+        "coordinate": "coordenada de d_model",
+        "coordinateValue": "{v} — {fn, select, sine {seno} other {coseno}} del par {pair}",
+        "shift": "desplazamiento k",
+        "fastestPair": "el par más rápido",
+        "slowestPair": "el par más lento",
+        "restart": "reiniciar",
+        "mapAria": "Codificación posicional: {rows} posiciones en filas por {cols} coordenadas en columnas. Las columnas de la izquierda oscilan cada pocas posiciones y las de la derecha son casi constantes.",
+        "positionsUnit": "{count} posiciones",
+        "coordinateLine": "La coordenada <c>{col}</c> es el {fn, select, sine {seno} other {coseno}} del par {pair}, que gira a <r>{rate}</r> radianes por posición: vuelve al mismo sitio cada {cycle}.",
+        "valueLine": "En la posición <p>{pos}</p> esa coordenada vale <a>{here}</a>, y {k} posiciones más allá vale <b>{there}</b>",
+        "valueLineSame": " —el mismo número: esta pareja gira tan despacio que no separa las dos posiciones—.",
+        "valueLineEnd": ".",
+        "dotHeading": "Lo que dos posiciones a distancia {k} puntúan entre ellas:",
+        "dotFrom": "desde {pos} → ",
+        "dotElsewhere": "desde {pos} → ",
+        "dotNote": "Mueve la posición y ese número no se mueve: vale {value} en toda la frase. Cambia k y cambia.",
+        "footnote": "{rows} posiciones y {cols} de las coordenadas, que es lo que cabe en una pantalla; un modelo del artículo tiene 512. Aquí no hay nada puesto a mano: son la fórmula del artículo y su constante {base}, y los colores dicen el signo —verde positivo, azul negativo, oscuro cerca de cero—."
+      },
+      "transformer-architecture": {
+        "groupAria": "Arquitectura del Transformer; usa las flechas para recorrer las cajas del diagrama",
+        "markButton": "Marcar lo que mezcla posiciones",
+        "diagramAria": "Diagrama del Transformer: a la izquierda el encoder, con embedding de entrada, codificacion posicional, auto-atencion multi-head, un perceptron por posiciones y dos cajas de suma y layer norm, repetido N veces; a la derecha el decoder, con auto-atencion enmascarada, atencion encoder-decoder que recibe las claves y los valores del encoder, un perceptron por posiciones, tres cajas de suma y layer norm, y una proyeccion lineal con softmax al final. De las quince cajas, solo las tres de atencion mezclan posiciones. Caja seleccionada: {selected}.",
+        "inputSentence": "la frase de entrada",
+        "alreadyWritten": "lo ya escrito",
+        "mixes": "mezcla posiciones",
+        "onePosition": "una posición cada vez",
+        "builtIn": "Se construye en {ref}.",
+        "alsoIn": " Por dentro lleva {refs}.",
+        "lessonRef": "la lección {lesson} {where}, sobre {topic}",
+        "whereThisBlock": "de este bloque",
+        "wherePreviousBlock": "del bloque anterior",
+        "whereBlock": "del bloque {block}",
+        "topics": {
+          "b1l6": "las representaciones densas",
+          "b4l6": "la consulta, la clave y el valor",
+          "b5l2": "la auto-atención",
+          "b5l3": "el scaled dot-product",
+          "b5l4": "la atención multi-head",
+          "b5l5": "la codificación posicional",
+          "b5l6": "los residuales y el layer norm",
+          "b5l7": "el encoder, el decoder y las máscaras",
+          "b5l8": "la arquitectura completa del artículo"
+        },
+        "boxes": {
+          "embedding-entrada": {
+            "label": "Embedding\nde entrada",
+            "description": "Cada token de la frase de entrada se cambia por su vector. Una fila por posición, y la misma tabla para todas."
+          },
+          "pe-encoder": {
+            "label": "Codificación\nposicional",
+            "description": "Se le suma a cada fila algo que depende de en qué posición está. Sin esto, nada de lo que hay encima sabría el orden."
+          },
+          "atencion-encoder": {
+            "label": "Auto-atención\nmulti-head",
+            "description": "Cada posición pregunta a todas las demás y se lleva una mezcla de lo que hay en ellas. Es la única caja de esta columna que mira más allá de su propia fila."
+          },
+          "suma-norm-enc-1": {
+            "label": "Suma y layer norm",
+            "description": "Suma lo que entró en la subcapa a lo que salió de ella y normaliza el resultado. Cada fila se normaliza con sus propias coordenadas, sin mirar a las demás."
+          },
+          "ffn-encoder": {
+            "label": "Perceptrón\npor posiciones",
+            "description": "El perceptrón multicapa del bloque 2, de dos capas, aplicado a cada fila por separado y con los mismos pesos en todas."
+          },
+          "suma-norm-enc-2": {
+            "label": "Suma y layer norm",
+            "description": "La segunda de la capa. Lo que sale de aquí es lo que la siguiente capa del encoder recibe, y lo que el decoder lee al final."
+          },
+          "embedding-salida": {
+            "label": "Embedding\nde salida",
+            "description": "Lo mismo para lo ya escrito, corrido una posición: en el sitio de cada token entra el anterior, nunca él mismo."
+          },
+          "pe-decoder": {
+            "label": "Codificación\nposicional",
+            "description": "La misma suma que en la otra columna, con la misma fórmula: la posición 3 recibe lo que recibe la posición 3 de la entrada."
+          },
+          "atencion-enmascarada": {
+            "label": "Auto-atención\nenmascarada",
+            "description": "Auto-atención con las posiciones futuras tachadas: al escribir la palabra 4 se puede mirar de la 1 a la 4, y ni una más."
+          },
+          "suma-norm-dec-1": {
+            "label": "Suma y layer norm",
+            "description": "La misma operación que en el encoder, y hay tres en esta columna porque hay tres subcapas."
+          },
+          "atencion-cruzada": {
+            "label": "Atención\nencoder-decoder",
+            "description": "La atención del bloque anterior, entera: las consultas salen de lo que se está escribiendo, y las claves y los valores, de lo que el encoder leyó."
+          },
+          "suma-norm-dec-2": {
+            "label": "Suma y layer norm",
+            "description": "La segunda de las tres, la que cierra la subcapa que mira al encoder."
+          },
+          "ffn-decoder": {
+            "label": "Perceptrón\npor posiciones",
+            "description": "El mismo perceptrón por posiciones que en la otra columna, con sus propios pesos."
+          },
+          "suma-norm-dec-3": {
+            "label": "Suma y layer norm",
+            "description": "La tercera y última de la capa del decoder."
+          },
+          "salida-lineal": {
+            "label": "Proyección lineal\ny softmax",
+            "description": "De las coordenadas de cada fila a una probabilidad por entrada del vocabulario. La misma proyección en todas las posiciones."
+          }
+        },
+        "refJoin": ", y "
+      }
     }
   },
   "meta": {

@@ -1,6 +1,6 @@
 # P11-01 — Cross-locale references, and an English voice lint
 
-**Tag:** `COURSE-P11-01` · **Size:** M · **Status:** not started
+**Tag:** `COURSE-P11-01` · **Size:** M · **Status:** done
 
 ## TL;DR
 
@@ -123,16 +123,16 @@ for `\b`.
 
 ## Acceptance criteria
 
-- [ ] A tree with one English lesson referencing 40 Spanish-only targets passes `lint:content`
-- [ ] An unresolved slug — absent from **both** trees — still fails, naming the file
-- [ ] An `ancla` is validated against the target's resolved tree; a stale anchor still fails
-- [ ] Translating a target flips its inbound anchors to the English ids, and the lint says so
-- [ ] `<Leccion>` on an English page links a Spanish-fallback target and renders its hover card
-- [ ] The card marks a fallback target's language; the copy exists in `messages/{es,en}.json`
-- [ ] English condescension and padding families warn on English prose
-- [ ] Spanish families still warn on Spanish prose; no cross-firing in either direction
-- [ ] `validate-crosslinks.ts` still imports no `next/*` and no registry
-- [ ] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
+- [x] A tree with one English lesson referencing 40 Spanish-only targets passes `lint:content`
+- [x] An unresolved slug — absent from **both** trees — still fails, naming the file
+- [x] An `ancla` is validated against the target's resolved tree; a stale anchor still fails
+- [x] Translating a target flips its inbound anchors to the English ids, and the lint says so
+- [x] `<Leccion>` on an English page links a Spanish-fallback target and renders its hover card
+- [x] The card marks a fallback target's language; the copy exists in `messages/{es,en}.json`
+- [x] English condescension and padding families warn on English prose
+- [x] Spanish families still warn on Spanish prose; no cross-firing in either direction
+- [x] `validate-crosslinks.ts` still imports no `next/*` and no registry
+- [x] `pnpm lint` + `pnpm lint:content` + `pnpm test` + `pnpm build` + `pnpm check:bundle` green
 
 ## Test plan
 

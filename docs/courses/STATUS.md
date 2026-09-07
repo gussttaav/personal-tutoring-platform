@@ -1865,10 +1865,10 @@ first; see the [phase README](phase-11-translation/README.md).
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [00 Triage: classify 43 lessons](phase-11-translation/00-triage.md) | `COURSE-P11-00` | ✅ | _tbd_ | local |
-| [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ⬜ | _tbd_ | |
-| [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ⬜ | _tbd_ | |
-| [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ⬜ | _tbd_ | |
-| [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ⬜ | _tbd_ | |
+| [01 Cross-locale references + English voice lint](phase-11-translation/01-locale-crosslinks-and-voice.md) | `COURSE-P11-01` | ✅ | _tbd_ | local |
+| [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ✅ | _tbd_ | local |
+| [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ✅ | _tbd_ | local |
+| [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ✅ | _tbd_ | local |
 | [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ⬜ | _tbd_ | |
 | [06 Block 3 — RNNs (8)](phase-11-translation/06-block-3.md) | `COURSE-P11-06` | ⬜ | _tbd_ | |
 | [07 Block 4 — The Bridge to Attention (6)](phase-11-translation/07-block-4.md) | `COURSE-P11-07` | ⬜ | _tbd_ | |
@@ -1889,6 +1889,136 @@ Block 1's 1.8 gates 5.10, and Block 2's 2.10 gates 5.11.
 **Open after P11-00** — **Block 4's direction decision is not made.** P11-00 inventoried both
 options and deliberately left the call to P11-07; it fixes whether 4.3 and 5.9 are adapts or
 rewrites, and nothing else in the phase moves either way.
+
+### P11-01 notes
+
+Both bugs fixed with the same two-step resolution — the reference's own locale tree, then the
+canonical one — in `validate-crosslinks.ts` (`resolveCrosslinkTarget`) and in `Leccion.tsx`
+(`resolveTarget`). The two must stay in agreement: the lint would otherwise pass what the page
+degrades. `validate-crosslinks.ts` is still Node-clean — the canonical directory name is a
+parameter defaulting to `"es"`, not an `@/i18n/routing` import.
+
+Consequences worth carrying into the block tasks:
+
+- **Translating lesson X invalidates every anchored reference to X** from an already-translated
+  lesson: X now renders English heading ids. The lint turns that into a fatal unresolved anchor,
+  so a translation PR can fail on a file it never touched. There is a test for it.
+- **A fallback target is marked in the hover card** (`courses.reader.refFallback`, «En español» /
+  "In Spanish"), the same way the ahead-of-the-reader case is marked. A card showing Spanish text
+  inside an English page without saying so is the mistake the reader route's `noindex` and the
+  catalog's "in Spanish" notice already refuse to make.
+- **A lesson drafted in `en/` but published in `es/`** resolves to the published Spanish version,
+  decided explicitly in both halves.
+- **The fallback runs one way only.** A Spanish lesson citing an English-only slug is a typo.
+
+The English voice families are selected by the lesson's locale directory (`lessonLocale`), warn-
+never-fail as before. Two deliberate narrowings against the task md's word list: `it is important
+to` and `it is worth noting` are verb-constrained (`…to note|remember|mention|stress|point out`,
+`…worth noting|mentioning|pointing out|remembering`) exactly as their Spanish counterparts are —
+unconstrained they fire on the prose the rule exists to protect. `just` is left wide, as the task
+directs. A locale with no families declared is checked against nothing rather than against
+Spanish patterns; adding a locale means adding its families.
+
+Verified by hand with a throwaway `en/02-tokenizacion.mdx` carrying one backward, one backward-
+anchored, one forward and one in-bridge reference: `lint:content` passes, the production build
+prerenders all three links with their hover cards, each kicker reading `Block 1 · Lesson N · In
+Spanish`, the in-bridge one plain text. The fixture was deleted — `en/` ships empty, per the
+task's Out of scope. (The dev-server lesson route 404s locally on a clean tree too; that is
+pre-existing and unrelated.)
+
+### P11-02 notes
+
+**21 components, not 15.** The task's heuristic scan undercounted. Every widget under
+`widgets/` carried strings, plus `WidgetFrame` (its Reset button) and `WidgetErrorBoundary`.
+All now read `courses.widgets.*`; shared chrome (Reset, previous/next, the step counter,
+«suma») is `courses.widgets.common`. 257 keys per locale, key-for-key.
+
+**Zero Spanish-side change, with one deliberate exception.** Every Spanish message value is
+the previous literal verbatim, checked in the browser against the previous behaviour for the
+tokenizer, bag-of-words, activation (comma decimals), self-attention, positional (`10 000`
+narrow-space grouping) and transformer widgets. The exception is `WidgetErrorBoundary`, whose
+fallback sentence was **hardcoded English** and so read as English to a Spanish reader; it is
+now translated in both locales. It renders only when a widget throws.
+
+**Two English corpora, both verified in the rendered widget:**
+
+- `tokenizer-playground` — «The naïve teacher tests tokenisation in English.» `naïve` carries
+  the NFC point, `tokenisation` is the long word BPE breaks up (`to ##ke ##n ##is ##a ##t ##i
+  ##on`), and the three columns read 8 / 48 / 32 against the Spanish 7 / 39 / 29.
+- `bag-of-words` — two documents leaning on `the` (4 each, 8 in the corpus) and sharing `of`
+  and `and` at 2, every content word at 1. Same shape as the Spanish pair, same reading.
+
+Both properties are asserted in `widgets/__tests__/corpora.test.ts` by running the same pure
+functions the widget runs, so a later "nicer" sentence that breaks the demonstration fails.
+
+**Three corpora could NOT be moved, and that is a data gap, not a decision.** Recorded with
+the reason in `SPANISH_BOUND_CORPORA` (corpora.ts): `self-attention-heatmap` and
+`multi-head-view` score their presets against the hand-built **Spanish lexicon** in
+`math/self-attention.ts` — an English sentence falls outside it and every row comes from a
+hash of its letters, so the map would look right and mean nothing; `embedding-projection`
+plots a committed projection of ~200 Spanish words. Each needs a new asset plus a pedagogical
+decision, which belongs to the lesson that embeds it (Blocks 1 and 5), not to a translation
+task. `attention-alignment` is listed too, as genuinely locale-invariant: it is an ES→EN
+translation pair, which is Block 4's subject.
+
+**Update (COURSE-P11-04):** `embedding-projection`'s English scatter was built by
+`en/06-embeddings-densos.mdx` — `public/courses/dl-nlp/embeddings-sample.en.json`, the Spanish
+218-word list translated 1:1 onto the same coordinates, picked per locale by a now-locale-aware
+`EmbeddingProjection.tsx` — so it is no longer in `SPANISH_BOUND_CORPORA`. `self-attention-heatmap`
+and `multi-head-view` (Block 5) remain, still awaiting an English lexicon.
+
+**The maths modules were not touched**, per the task's test plan — `math/__tests__/` passes
+untouched. That leaves the Spanish label/description strings in
+`math/transformer-architecture.ts` and the head names in `math/multi-head.ts` duplicated in
+`messages/es.json`, because the layout and rule tests measure the module while the components
+render the messages. The duplication is **pinned by the corpora test**: a change to either
+side without the other fails. `lessonReference()` stays exported and tested but is no longer
+called by the component — the sentence it builds has a shape that changes with the language,
+so it is a message.
+
+**Number formatting followed the strings.** `0,25` vs `0.25` and the thousands grouping are
+locale-dependent presentation, and an English column showing Spanish decimals would have been
+the same defect one layer down. Handled with a locale-picked separator so the Spanish output
+is byte-identical.
+
+`Explorable`'s unknown-id marker is the one untranslated string, deliberately: it is behind
+`NODE_ENV !== "production"` and is a developer diagnostic.
+
+### P11-03 notes
+
+`AUTHORING.en.md` is **at the task's 300-line ceiling** (299 when P11-03 landed; B1.1 added §3's
+collation rule and paid for it by cutting three restatements), and the ceiling is the
+right check: everything it does not say is `AUTHORING.md` still governing. Its §8 names the parts
+most likely to be re-decided by an author who has only the delta open — the six-step structure, the
+two-reader test, §2's assumption rule, all of NOTATION.md, the display-equation punctuation — so
+the temptation to copy them in has an answer on the page. `NOTATION.md` is untouched, which was the
+point; `AUTHORING.md` gained four lines at the top pointing at the delta.
+
+Two additions beyond the four areas the task named, both because leaving them out would have left
+a Spanish rule silently governing English prose:
+
+- **The §5 typography block.** It bans the spaced em dash as "the English convention" and requires
+  `¿`/`¡` and a space for thousands. Transposed literally into English it is wrong four times, so
+  the delta replaces the bullets and keeps only the display-equation punctuation rule below them.
+- **§5's second constant, «Spanish examples throughout», inverts.** The delta says so and points at
+  the P11-02 corpora, because an English lesson describing the Spanish default corpus is the
+  failure P11-02 existed to prevent, one layer up.
+
+The glossary carries all ~55 rows of the Spanish terminology table, plus a short section on the
+four distinctions that **change shape** rather than translating — `derive`/`differentiate` swap
+jobs (English has a dedicated calculus verb, so `derivation` is free for the argument); `sample` is
+banned as a noun while `to sample` is the verb, which costs more attention in English than in
+Spanish; and two Spanish arguments dissolve entirely (*scaled dot-product* is the paper's own name,
+and query/key/value owe no gloss when the letters are already English). `accuracy`/*precision* goes
+the other way and gets sharper.
+
+**Two live en-GB drifts found and fixed**, outside this task's three files but inside the decision
+it records: `course.en.yml`'s Block 1 summary said "Tokenization" (the widget module is
+`tokenisation.ts` and the widget string is "Sentence to tokenise"), and `courses.catalog.heading`
+in `messages/en.json` said "not memorizing". A full scan of every English message value and of the
+manifest found no others — `packSize` and the `minimize`/`unauthorized` **keys** are identifiers
+and stay as they are, which is §7's own exception. Spanish is untouched; both are single-word
+value edits, so the i18n key-parity test is unaffected.
 
 **Exit criteria**
 - [ ] 43 published lessons under `en/`; `fullyTranslated` true for `en`

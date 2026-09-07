@@ -8,6 +8,7 @@
  * COURSE-P5-00 — + a second, NON-FATAL phase: per-lesson counts, budget and notation.
  * COURSE-P5-00 — + the voice pass (banned-word families) and the bridge's `---`.
  * COURSE-P5-00 — + display maths that ends a sentence without punctuating it.
+ * COURSE-P11-01 — + the voice pass runs the families of the lesson's own locale.
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the
@@ -57,7 +58,7 @@ import { validatePyCellFlags } from "@/lib/courses/validate-pycells";
 import { validateQuizRefs } from "@/lib/courses/validate-quizzes";
 import { validateReading } from "@/lib/courses/validate-reading";
 import { structureWarnings } from "@/lib/courses/validate-structure";
-import { voiceWarnings } from "@/lib/courses/validate-voice";
+import { lessonLocale, voiceWarnings } from "@/lib/courses/validate-voice";
 
 // ─── Phase 1 — correctness. Fatal. ────────────────────────────────────────────
 
@@ -106,7 +107,9 @@ for (const filePath of files) {
     ...structureWarnings(source),
     ...notationWarnings(source),
     ...mathPunctuationWarnings(source),
-    ...voiceWarnings(source),
+    // COURSE-P11-01: the voice families are per locale — an English lesson checked
+    // against the Spanish list is a lesson checked against nothing.
+    ...voiceWarnings(source, lessonLocale(filePath)),
     ...(crosslinkNotes.get(filePath) ?? []),
   ];
   if (warnings.length > 0) warned += 1;

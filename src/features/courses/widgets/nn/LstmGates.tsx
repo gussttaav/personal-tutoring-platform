@@ -14,10 +14,16 @@
  * All numbers come from math/lstm (unit-tested against exact saturation cases and the
  * preset reference values the prose quotes). Local state only; keyboard-operable
  * (arrows step, the slider is a native range).
+ *
+ * COURSE-P11-02 — every label, hint and aria-label is `courses.widgets.lstm-gates`. The
+ * gate symbols (fₜ, iₜ, oₜ, c̃ₜ, cₜ) and the two formula hints are notation and read the
+ * same in both locales; the words beside them do not. The b_f readout follows the
+ * locale's decimal separator.
  */
 
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import {
@@ -37,7 +43,6 @@ const BF_MAX = 4;
 const BF_STEP = 0.5;
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
-const comma = (v: number) => v.toFixed(1).replace(".", ",");
 const num = (v: number) => (Object.is(v, -0) ? "0.00" : v.toFixed(2));
 
 /**
@@ -155,6 +160,12 @@ function Row({
 }
 
 export default function LstmGates() {
+  // `t` is the timestep in this file, so the translator is `tr`.
+  const tr = useTranslations("courses.widgets.lstm-gates");
+  const tc = useTranslations("courses.widgets.common");
+  const locale = useLocale();
+  // Spanish writes 1,5; English writes 1.5.
+  const decimal = (v: number) => v.toFixed(1).replace(".", locale === "es" ? "," : ".");
   const [bf, setBf] = useState(DEFAULT_FORGET_BIAS);
   const [i, setI] = useState(0); // step index into steps[0..T-1]
 
@@ -169,7 +180,7 @@ export default function LstmGates() {
     <div
       tabIndex={0}
       role="group"
-      aria-label="LSTM con compuertas; usa las flechas para avanzar y retroceder por los pasos"
+      aria-label={tr("groupAria")}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") {
           e.preventDefault();
@@ -182,26 +193,26 @@ export default function LstmGates() {
       style={{ display: "flex", flexDirection: "column", gap: "0.85rem", width: "100%", outlineOffset: 3 }}
     >
       <Slider
-        label="Sesgo de la compuerta de olvido, b_f"
+        label={tr("forgetBias")}
         value={bf}
         min={BF_MIN}
         max={BF_MAX}
         step={BF_STEP}
         onChange={(v) => setBf(v)}
-        format={comma}
+        format={decimal}
       />
 
       {/* Step controls */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         <WidgetButton onClick={() => go(-1)} disabled={i === 0}>
-          ◀ anterior
+          {tc("previous")}
         </WidgetButton>
         <WidgetButton onClick={() => go(1)} disabled={i === T - 1}>
-          siguiente ▶
+          {tc("next")}
         </WidgetButton>
-        <WidgetButton onClick={() => setI(0)}>Reset</WidgetButton>
+        <WidgetButton onClick={() => setI(0)}>{tc("reset")}</WidgetButton>
         <span style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>
-          posición t = {t} / {T}
+          {tr("position", { t, total: T })}
         </span>
       </div>
 
@@ -218,20 +229,20 @@ export default function LstmGates() {
           background: "var(--surface-container)",
         }}
       >
-        <Row label={<>fₜ · olvido</>} hint="qué conserva">
-          <Bars values={step.f} ariaLabel={`Compuerta de olvido en t=${t}`} />
+        <Row label={tr("forgetLabel")} hint={tr("forgetHint")}>
+          <Bars values={step.f} ariaLabel={tr("forgetAria", { t })} />
         </Row>
-        <Row label={<>iₜ · entrada</>} hint="qué escribe">
-          <Bars values={step.i} ariaLabel={`Compuerta de entrada en t=${t}`} />
+        <Row label={tr("inputLabel")} hint={tr("inputHint")}>
+          <Bars values={step.i} ariaLabel={tr("inputAria", { t })} />
         </Row>
-        <Row label={<>oₜ · salida</>} hint="qué deja ver">
-          <Bars values={step.o} ariaLabel={`Compuerta de salida en t=${t}`} />
+        <Row label={tr("outputLabel")} hint={tr("outputHint")}>
+          <Bars values={step.o} ariaLabel={tr("outputAria", { t })} />
         </Row>
-        <Row label={<>c̃ₜ · candidato</>} hint="(−1 … 1)">
-          <Bars values={step.cand} signed ariaLabel={`Candidato en t=${t}`} />
+        <Row label={tr("candidateLabel")} hint={tr("candidateHint")}>
+          <Bars values={step.cand} signed ariaLabel={tr("candidateAria", { t })} />
         </Row>
-        <Row label={<>cₜ · celda</>} hint="fₜ⊙cₜ₋₁ + iₜ⊙c̃ₜ">
-          <Bars values={step.c} signed ariaLabel={`Estado de celda en t=${t}`} />
+        <Row label={tr("cellLabel")} hint={tr("cellHint")}>
+          <Bars values={step.c} signed ariaLabel={tr("cellAria", { t })} />
         </Row>
       </div>
 
@@ -247,15 +258,17 @@ export default function LstmGates() {
           background: "var(--surface-lowest)",
         }}
       >
-        <Row label={<>de c₁ sobrevive</>} hint={`∏ fₛ, s=2…${t}`}>
-          <Bars values={step.survival} ariaLabel={`Fracción de c₁ que sobrevive en t=${t}`} />
+        <Row label={tr("survivalLabel")} hint={tr("survivalHint", { t })}>
+          <Bars values={step.survival} ariaLabel={tr("survivalAria", { t })} />
         </Row>
         <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", margin: 0 }}>
-          Con b_f = {comma(bf)}, de lo que se escribió en c₁ llega al final de la secuencia
-          entre <strong style={{ color: "var(--text)" }}>{pct(Math.min(...survEnd))}</strong> y{" "}
-          <strong style={{ color: "var(--text)" }}>{pct(Math.max(...survEnd))}</strong> —sin una
-          matriz de por medio: sólo el producto de las compuertas de olvido, que la red elige
-          coordenada a coordenada—.
+          {tr.rich("summary", {
+            bf: decimal(bf),
+            min: pct(Math.min(...survEnd)),
+            max: pct(Math.max(...survEnd)),
+            lo: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+            hi: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+          })}
         </p>
       </div>
     </div>

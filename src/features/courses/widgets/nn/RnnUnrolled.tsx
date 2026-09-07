@@ -20,10 +20,16 @@
  * `Explorable` passes only `id` + `caption`, so the widget self-contains both modes
  * and defaults to FORWARD; each lesson's caption points the student at its mode. All
  * numbers come from math/rnn (verified against finite differences). Local state only.
+ *
+ * COURSE-P11-02 — the prose in the panels comes from `courses.widgets.rnn-unrolled`.
+ * The symbols do not: h, x, W_hh, W_xh, b_h, δ, ∇ and the subscripts are notation and
+ * stay as they are in both locales, so the messages that carry them use rich-text tags
+ * for the symbol and translate only the words around it.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { runRnn, RNN_PRESET } from "../math/rnn";
@@ -121,6 +127,9 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
   const initialMode: Mode = props.direction === "backward" ? "backward" : "forward";
   const locked = props.lockDirection === true;
 
+  const t = useTranslations("courses.widgets.rnn-unrolled");
+  const tc = useTranslations("courses.widgets.common");
+
   const [mode, setMode] = useState<Mode>(initialMode);
   const [T, setTState] = useState(5);
   const [i, setI] = useState(0); // step index into the current mode's ordered steps
@@ -153,7 +162,7 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
       style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%", outlineOffset: 3 }}
       tabIndex={0}
       role="group"
-      aria-label="RNN desplegada; usa las flechas para avanzar y retroceder por los pasos"
+      aria-label={t("groupAria")}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") {
           e.preventDefault();
@@ -167,12 +176,12 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
       {/* Mode toggle — hidden when the lesson locks the direction */}
       {!locked && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
-          <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Dirección:</span>
+          <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>{t("direction")}</span>
           <WidgetButton role="switch" active={mode === "forward"} onClick={() => changeMode("forward")}>
-            Adelante ▶
+            {t("forward")}
           </WidgetButton>
           <WidgetButton role="switch" active={mode === "backward"} onClick={() => changeMode("backward")}>
-            ◀ Atrás (BPTT)
+            {t("backward")}
           </WidgetButton>
         </div>
       )}
@@ -182,7 +191,7 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
       <svg
         viewBox={`0 0 ${mode === "backward" ? lossCx(T) + LOSS_R + 12 : boxCx(T) + BOX_W / 2 + 16} ${VB_H}`}
         role="img"
-        aria-label={`RNN desplegada con ${T} pasos, en modo ${mode === "forward" ? "hacia adelante" : "hacia atrás"}`}
+        aria-label={t("diagramAria", { steps: T, mode })}
         style={{ display: "block", width: "100%", height: "auto", maxWidth: 640, margin: "0 auto" }}
       >
         <defs>
@@ -307,33 +316,31 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
 
       {/* The sequence is a fixed, invented example — one vector per token. */}
       <div style={{ fontSize: "0.78rem", color: "var(--text-dim)", textAlign: "center", marginTop: "-0.15rem" }}>
-        Los xₜ son una secuencia de ejemplo fija: un vector inventado por cada token.
+        {t("sequenceNote")}
       </div>
 
       {/* Fixed parameters (forward mode) — the same W_hh, W_xh, b_h reused at every step */}
       {mode === "forward" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", padding: "0.7rem 0.85rem", borderRadius: "var(--radius)", border: "1px solid var(--border-variant)", background: "var(--surface-container)" }}>
-          <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>
-            Pesos y sesgo, los mismos en cada paso:
-          </span>
+          <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>{t("fixedParams")}</span>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.9rem", alignItems: "flex-start" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "center" }}>
               <span style={{ fontSize: "0.75rem", color: "var(--text)" }}>
                 W<sub>hh</sub> ({DH}×{DH})
               </span>
-              <MatrixGrid m={WHH} cellSize={40} ariaLabel="Matriz de pesos recurrentes W_hh" />
+              <MatrixGrid m={WHH} cellSize={40} ariaLabel={t("whhAria")} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "center" }}>
               <span style={{ fontSize: "0.75rem", color: "var(--text)" }}>
                 W<sub>xh</sub> ({DH}×{D_MODEL})
               </span>
-              <MatrixGrid m={WXH} cellSize={40} ariaLabel="Matriz de pesos de entrada W_xh" />
+              <MatrixGrid m={WXH} cellSize={40} ariaLabel={t("wxhAria")} />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "center" }}>
               <span style={{ fontSize: "0.75rem", color: "var(--text)" }}>
                 b<sub>h</sub> ({DH}×1)
               </span>
-              <MatrixGrid m={BH.map((v) => [v])} cellSize={40} ariaLabel="Vector de sesgo b_h" />
+              <MatrixGrid m={BH.map((v) => [v])} cellSize={40} ariaLabel={t("bhAria")} />
             </div>
           </div>
         </div>
@@ -347,10 +354,23 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
         {mode === "forward" ? (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.85rem" }}>
             <div style={{ fontWeight: 700, color: "var(--green)" }}>
-              Paso t = {activeT}: h<sub>{activeT}</sub> = tanh( W<sub>hh</sub>·h<sub>{activeT - 1}</sub> + W<sub>xh</sub>·x<sub>{activeT}</sub> + b<sub>h</sub> )
+              {t("stepTitle", { t: activeT })}: h<sub>{activeT}</sub> = tanh( W<sub>hh</sub>·h<sub>{activeT - 1}</sub> + W<sub>xh</sub>·x<sub>{activeT}</sub> + b<sub>h</sub> )
             </div>
             <div style={{ color: "var(--text-dim)" }}>
-              entra el estado h<sub>{activeT - 1}</sub> = {vec(fStep.hPrev)} y el token x<sub>{activeT}</sub> = {vec(fStep.x)}
+              {t.rich("forwardEnters", {
+                hprev: () => (
+                  <>
+                    h<sub>{activeT - 1}</sub>
+                  </>
+                ),
+                xt: () => (
+                  <>
+                    x<sub>{activeT}</sub>
+                  </>
+                ),
+                hPrev: vec(fStep.hPrev),
+                xValue: vec(fStep.x),
+              })}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem", color: "var(--text)" }}>
               <span>W<sub>hh</sub>·h<sub>{activeT - 1}</sub> = {vec(fStep.recurrent)}</span>
@@ -358,34 +378,54 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
               <span>b<sub>h</sub> = {vec(BH)}</span>
             </div>
             <div style={{ color: "var(--text)" }}>
-              su suma es la preactivación p<sub>{activeT}</sub> = {vec(fStep.p)}
+              {t.rich("forwardPreactivation", {
+                pt: () => (
+                  <>
+                    p<sub>{activeT}</sub>
+                  </>
+                ),
+                pValue: vec(fStep.p),
+              })}
             </div>
             <div style={{ color: "var(--text)" }}>
               h<sub>{activeT}</sub> = tanh(p<sub>{activeT}</sub>) = <strong>{vec(fStep.h)}</strong>
             </div>
             {activeT === 1 && (
               <div style={{ color: "var(--text-dim)", fontSize: "0.8rem" }}>
-                En t = 1 la aportación recurrente W<sub>hh</sub>·h<sub>0</sub> es 0: el primer estado sale sólo del token.
+                {t.rich("forwardFirstStep", { sub: (chunks) => <sub>{chunks}</sub> })}
               </div>
             )}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: "0.85rem" }}>
-            <div style={{ fontWeight: 700, color: "var(--green)" }}>Paso t = {activeT}</div>
+            <div style={{ fontWeight: 700, color: "var(--green)" }}>{t("stepTitle", { t: activeT })}</div>
             <div style={{ color: "var(--text-dim)" }}>
-              {activeT === T ? (
-                <>transporte (semilla desde ℓ): (ŷ − y)·W<sub>hy</sub>ᵀ = {vec(bStep.transport)}</>
-              ) : (
-                <>transporte: W<sub>hh</sub>ᵀ·δ<sub>{activeT + 1}</sub> = {vec(bStep.transport)}</>
-              )}
+              {activeT === T
+                ? t.rich("backwardSeed", {
+                    sub: (chunks) => <sub>{chunks}</sub>,
+                    value: vec(bStep.transport),
+                  })
+                : t.rich("backwardTransport", {
+                    sub: (chunks) => <sub>{chunks}</sub>,
+                    next: activeT + 1,
+                    value: vec(bStep.transport),
+                  })}
             </div>
             <div style={{ color: "var(--text-dim)" }}>
-              máscara ⊙ (1 − h<sub>{activeT}</sub>²) = {vec(bStep.mask)} &nbsp;→&nbsp; <span style={{ color: "var(--text)" }}>δ<sub>{activeT}</sub> = <strong>{vec(bStep.delta)}</strong></span>
+              {t.rich("backwardMask", {
+                sub: (chunks) => <sub>{chunks}</sub>,
+                t: activeT,
+                mask: vec(bStep.mask),
+              })}
+              &nbsp;→&nbsp; <span style={{ color: "var(--text)" }}>δ<sub>{activeT}</sub> = <strong>{vec(bStep.delta)}</strong></span>
             </div>
             <div style={{ color: "var(--text)" }}>
-              aporte {accum === "Whh" ? <>δ<sub>{activeT}</sub>·h<sub>{activeT - 1}</sub>ᵀ</> : <>δ<sub>{activeT}</sub>·x<sub>{activeT}</sub>ᵀ</>} → ∇W<sub>{accum === "Whh" ? "hh" : "xh"}</sub>
+              {t("backwardContribution")} {accum === "Whh" ? <>δ<sub>{activeT}</sub>·h<sub>{activeT - 1}</sub>ᵀ</> : <>δ<sub>{activeT}</sub>·x<sub>{activeT}</sub>ᵀ</>} → ∇W<sub>{accum === "Whh" ? "hh" : "xh"}</sub>
               {accum === "Whh" && activeT === 1 && (
-                <span style={{ color: "var(--text-dim)" }}> &nbsp;— es la matriz cero, porque h<sub>0</sub> = 0.</span>
+                <span style={{ color: "var(--text-dim)" }}>
+                  {" "}
+                  &nbsp;{t.rich("backwardZeroMatrix", { sub: (chunks) => <sub>{chunks}</sub> })}
+                </span>
               )}
             </div>
           </div>
@@ -396,7 +436,7 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
       {mode === "backward" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", padding: "0.7rem 0.85rem", borderRadius: "var(--radius)", border: "1px solid var(--border-variant)", background: "var(--surface-container)" }}>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
-            <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>Acumulador:</span>
+            <span style={{ fontSize: "0.8rem", color: "var(--text-dim)" }}>{t("accumulator")}</span>
             <WidgetButton role="switch" active={accum === "Whh"} onClick={() => setAccum("Whh")}>
               ∇W_hh
             </WidgetButton>
@@ -408,12 +448,12 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.9rem", alignItems: "center" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "center" }}>
               <span style={{ fontSize: "0.72rem", color: "var(--text-dim)" }}>
-                aporte del paso t = {activeT}
+                {t("contributionOf", { t: activeT })}
               </span>
               <MatrixGrid
                 m={accum === "Whh" ? bStep.whhTerm : bStep.wxhTerm}
                 faded
-                ariaLabel={`Aporte del paso ${activeT} a ∇W_${accum === "Whh" ? "hh" : "xh"}`}
+                ariaLabel={t("contributionAria", { t: activeT, matrix: accum === "Whh" ? "hh" : "xh" })}
               />
             </div>
 
@@ -423,19 +463,24 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
 
             <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "center" }}>
               <span style={{ fontSize: "0.72rem", color: "var(--text)" }}>
-                ∇W<sub>{accum === "Whh" ? "hh" : "xh"}</sub> acumulado (forma {DH}×{accum === "Whh" ? DH : D_MODEL})
+                ∇W<sub>{accum === "Whh" ? "hh" : "xh"}</sub>{" "}
+                {t("accumulatedLabel", { rows: DH, cols: accum === "Whh" ? DH : D_MODEL })}
               </span>
               <MatrixGrid
                 m={accum === "Whh" ? bStep.runWhh : bStep.runWxh}
-                ariaLabel={`∇W_${accum === "Whh" ? "hh" : "xh"} acumulado tras ${bStep.termsSummed} de ${T} términos`}
+                ariaLabel={t("accumulatedAria", {
+                  matrix: accum === "Whh" ? "hh" : "xh",
+                  summed: bStep.termsSummed,
+                  total: T,
+                })}
               />
             </div>
           </div>
 
           <div style={{ fontSize: "0.82rem", color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
-            términos sumados: <strong>{bStep.termsSummed}</strong> / {T}
+            {t("termsSummed")} <strong>{bStep.termsSummed}</strong> / {T}
             {accum === "Whh" && activeT === 1 && (
-              <span style={{ color: "var(--text-dim)" }}> — el último no cambió nada (h₀ = 0).</span>
+              <span style={{ color: "var(--text-dim)" }}>{t("termsUnchanged")}</span>
             )}
           </div>
         </div>
@@ -443,7 +488,7 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
 
       {/* T slider — the key move: more terms, same d_h×d_h shape */}
       <Slider
-        label="Longitud de la secuencia (T)"
+        label={t("sequenceLength")}
         value={T}
         min={T_MIN}
         max={T_MAX}
@@ -455,14 +500,14 @@ export default function RnnUnrolled(props: Record<string, unknown>) {
       {/* Step controls */}
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         <WidgetButton onClick={() => go(-1)} disabled={i === 0}>
-          ◀ anterior
+          {tc("previous")}
         </WidgetButton>
         <WidgetButton onClick={() => go(1)} disabled={i === T - 1}>
-          siguiente ▶
+          {tc("next")}
         </WidgetButton>
-        <WidgetButton onClick={() => setI(0)}>Reset</WidgetButton>
+        <WidgetButton onClick={() => setI(0)}>{tc("reset")}</WidgetButton>
         <span style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>
-          paso {i + 1}/{T} · {mode === "forward" ? "t = " + activeT + " (adelante)" : "t = " + activeT + " (atrás)"}
+          {t("stepAndDirection", { current: i + 1, total: T, t: activeT, mode })}
         </span>
       </div>
     </div>

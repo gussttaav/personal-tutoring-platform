@@ -11,10 +11,17 @@
  * explosion to 10⁺¹² in the same frame, and its tick labels run to twelve digits. On
  * a log axis the value IS the order of magnitude the prose quotes, and the zero line
  * is the size the gradient started at.
+ *
+ * COURSE-P11-02 — the slider label and the two readouts are
+ * `courses.widgets.vanishing-gradient`; the verb the sentence turns on
+ * (vanishes / explodes / holds) is an ICU `select`, not three concatenated strings, so a
+ * language that inflects the rest of the sentence around it can. ρ, W and log₁₀ are
+ * notation and do not move. The decimal separator follows the locale.
  */
 
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { gradientMagnitudes, MAX_TANH_PRIME } from "../math/vanishing-gradient";
@@ -27,9 +34,11 @@ const RHO_MAX = 2.0;
 const RHO_STEP = 0.05;
 const DEFAULT_RHO = 0.6; // arranca desvaneciéndose, que es el fenómeno de la lección
 
-const comma = (v: number) => v.toFixed(2).replace(".", ",");
-
 export default function VanishingGradient() {
+  const t = useTranslations("courses.widgets.vanishing-gradient");
+  const locale = useLocale();
+  // Spanish writes 0,60; English writes 0.60. Same number, same two decimals.
+  const decimal = (v: number) => v.toFixed(2).replace(".", locale === "es" ? "," : ".");
   const [rho, setRho] = useState(DEFAULT_RHO);
 
   const { points, yDomain, ordersAtEnd } = useMemo(() => {
@@ -46,31 +55,35 @@ export default function VanishingGradient() {
   }, [rho]);
 
   const e = Math.round(ordersAtEnd);
-  const verb = e < 0 ? "se desvanece" : e > 0 ? "explota" : "se mantiene";
+  const verb = e < 0 ? "vanishes" : e > 0 ? "explodes" : "holds";
   const expStr = e < 0 ? `−${Math.abs(e)}` : e > 0 ? `+${e}` : "0";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", width: "100%" }}>
       <Slider
-        label="Radio espectral ρ de Wₕₕ"
+        label={t("spectralRadius")}
         value={rho}
         min={RHO_MIN}
         max={RHO_MAX}
         step={RHO_STEP}
         onChange={setRho}
-        format={comma}
+        format={decimal}
       />
 
       <Plot2D
         series={[{ points }]}
         xDomain={[0, MAX_DISTANCE]}
         yDomain={yDomain}
-        ariaLabel={`Magnitud del gradiente en órdenes de magnitud (log decimal) frente a la distancia en pasos, para un radio espectral de ${comma(rho)}. A ${MAX_DISTANCE} pasos el gradiente ${verb}.`}
+        ariaLabel={t("plotAria", { rho: decimal(rho), steps: MAX_DISTANCE, verb })}
       />
 
       <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", margin: 0 }}>
-        Eje vertical: órdenes de magnitud (log₁₀); el 0 es el tamaño de partida. A {MAX_DISTANCE} pasos
-        de distancia, el gradiente {verb}: ‖·‖ pasa a ≈ 10<sup>{expStr}</sup> veces lo que valía.
+        {t.rich("note", {
+          steps: MAX_DISTANCE,
+          verb,
+          exponent: expStr,
+          exp: (chunks) => <sup>{chunks}</sup>,
+        })}
       </p>
     </div>
   );

@@ -14,12 +14,13 @@
  * wheel), and are drawn with the P2-01 `Plot2D` primitive, so they match every other
  * figure in the course instead of looking like a screenshot from a different site.
  *
- * Copy is hardcoded Spanish, consistent with the rest of the widget layer.
+ * COURSE-P11-02 — copy goes through `t("courses.code.*")`, shared with `PyCellClient`.
  */
 
 "use client";
 
 import dynamic from "next/dynamic";
+import { useTranslations } from "next-intl";
 
 import type { Plot2DProps } from "@/features/courses/widgets/primitives/Plot2D";
 
@@ -53,13 +54,14 @@ const mono =
   'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace';
 
 export function CodeOutput({ output, plots, error, notice, running }: CodeOutputProps) {
+  const t = useTranslations("courses.code");
   const hasOutput = output.lines.length > 0;
   const hasAnything = hasOutput || plots.length > 0 || error !== null || notice !== null;
 
   if (!hasAnything) {
     return running ? (
       <p style={{ margin: "0.75rem 0 0", fontSize: "0.85rem", color: "var(--text-dim)" }}>
-        Ejecutando…
+        {t("running")}
       </p>
     ) : null;
   }
@@ -85,7 +87,7 @@ export function CodeOutput({ output, plots, error, notice, running }: CodeOutput
 
       {output.dropped > 0 ? (
         <p style={{ margin: 0, fontSize: "0.78rem", color: "var(--text-dim)" }}>
-          Se ocultaron las primeras {output.dropped} líneas; solo se muestran las últimas.
+          {t("droppedLines", { count: output.dropped })}
         </p>
       ) : null}
 
@@ -124,7 +126,7 @@ export function CodeOutput({ output, plots, error, notice, running }: CodeOutput
             series={[{ points: plot.xs.map((x, i) => [x, plot.ys[i]] as [number, number]) }]}
             xDomain={domainOf(plot.xs)}
             yDomain={domainOf(plot.ys)}
-            ariaLabel={plot.label ?? `Gráfica ${index + 1} generada por el código`}
+            ariaLabel={plot.label ?? t("plotAlt", { number: index + 1 })}
           />
           {plot.label ? (
             <figcaption

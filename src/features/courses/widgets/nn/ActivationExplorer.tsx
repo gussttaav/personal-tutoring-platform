@@ -3,10 +3,16 @@
  * and SHADE the saturation regions where the derivative ≈ 0. Seeing saturation is
  * the whole point — it sets up vanishing gradients in Block 3. Pure activations from
  * math/activations (all derivative-checked vs finite differences). Local state only.
+ *
+ * COURSE-P11-02 — the labels come from `courses.widgets.activation-explorer`. The keys
+ * of `ACTS` stay put: they are state values, not copy. `LABEL_KEYS` maps each one to its
+ * message key, which is what lets `escalón` become «step» in English while σ, tanh, ReLU
+ * and GELU stay the notation they are in both locales.
  */
 
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { scaleLinear } from "d3-scale";
 import { line as d3line } from "d3-shape";
@@ -53,6 +59,16 @@ const ACTS = {
 
 type ActName = keyof typeof ACTS;
 
+/** State value → message key. The four differentiable names are notation and read the
+ *  same in both locales; only the step has a word to translate. */
+const LABEL_KEYS: Record<ActName, string> = {
+  "σ": "sigma",
+  "tanh": "tanh",
+  "ReLU": "relu",
+  "GELU": "gelu",
+  "escalón": "step",
+};
+
 const X_MIN = -5;
 const X_MAX = 5;
 const SAMPLES = 200;
@@ -62,6 +78,8 @@ const H = 280;
 const MARGIN = { top: 12, right: 12, bottom: 24, left: 34 };
 
 export default function ActivationExplorer() {
+  const t = useTranslations("courses.widgets.activation-explorer");
+  const locale = useLocale();
   const [name, setName] = useState<ActName>("σ");
   const [showDeriv, setShowDeriv] = useState(true);
 
@@ -120,10 +138,12 @@ export default function ActivationExplorer() {
    * activation, so ReLU runs to 5 while σ stops at 1 and tanh dips to −1. Without the
    * numbers, two activations look like the same curve at the same size and the reader
    * cannot see that σ' peaks at 0,25 where tanh' peaks at 1 — which is the comparison
-   * the lesson is asking them to make. Spanish decimal comma, as in the prose.
+   * the lesson is asking them to make. Spanish decimal comma, as in the prose; the
+   * English column keeps the point (COURSE-P11-02).
    */
   const fmtY = sy.tickFormat(5);
-  const yLabel = (t: number) => fmtY(t).replace(".", ",");
+  const decimal = locale === "es" ? "," : ".";
+  const yLabel = (tick: number) => fmtY(tick).replace(".", decimal);
 
   const path = d3line<[number, number]>()
     // Breaking the path is what keeps the jump from being drawn as a near-vertical
@@ -138,12 +158,12 @@ export default function ActivationExplorer() {
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         {(Object.keys(ACTS) as ActName[]).map((a) => (
           <WidgetButton key={a} active={a === name} onClick={() => setName(a)}>
-            {a}
+            {t(`names.${LABEL_KEYS[a]}`)}
           </WidgetButton>
         ))}
         <span style={{ width: 12 }} />
         <WidgetButton active={showDeriv} onClick={() => setShowDeriv((v) => !v)}>
-          derivada f′
+          {t("derivative")}
         </WidgetButton>
       </div>
 
@@ -152,7 +172,7 @@ export default function ActivationExplorer() {
         width="100%"
         height={H}
         role="img"
-        aria-label={`Activación ${name} y su derivada, con regiones de saturación sombreadas`}
+        aria-label={t("plotAria", { name: t(`names.${LABEL_KEYS[name]}`) })}
         style={{ display: "block", maxWidth: "100%" }}
       >
         <g transform={`translate(${MARGIN.left},${MARGIN.top})`}>
@@ -180,26 +200,24 @@ export default function ActivationExplorer() {
           )}
 
           {/* Ticks. The left spine anchors the y labels, which would otherwise float. */}
-          {sx.ticks(5).map((t) => (
-            <text key={`x${t}`} x={sx(t)} y={innerH + 16} textAnchor="middle" fontSize={10} fill="var(--text-dim)">
-              {t}
+          {sx.ticks(5).map((tick) => (
+            <text key={`x${tick}`} x={sx(tick)} y={innerH + 16} textAnchor="middle" fontSize={10} fill="var(--text-dim)">
+              {tick}
             </text>
           ))}
           <line x1={0} x2={0} y1={0} y2={innerH} stroke="var(--border-variant)" strokeWidth={1} />
-          {sy.ticks(5).map((t) => (
-            <g key={`y${t}`}>
-              <line x1={-4} x2={0} y1={sy(t)} y2={sy(t)} stroke="var(--border-variant)" strokeWidth={1} />
-              <text x={-7} y={sy(t) + 3.5} textAnchor="end" fontSize={10} fill="var(--text-dim)">
-                {yLabel(t)}
+          {sy.ticks(5).map((tick) => (
+            <g key={`y${tick}`}>
+              <line x1={-4} x2={0} y1={sy(tick)} y2={sy(tick)} stroke="var(--border-variant)" strokeWidth={1} />
+              <text x={-7} y={sy(tick) + 3.5} textAnchor="end" fontSize={10} fill="var(--text-dim)">
+                {yLabel(tick)}
               </text>
             </g>
           ))}
         </g>
       </svg>
 
-      <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", margin: 0 }}>
-        Zonas rojas: la derivada ≈ 0 (saturación) — ahí el gradiente casi no fluye.
-      </p>
+      <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", margin: 0 }}>{t("note")}</p>
     </div>
   );
 }

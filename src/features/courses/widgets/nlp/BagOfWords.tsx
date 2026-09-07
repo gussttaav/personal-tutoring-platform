@@ -19,28 +19,23 @@
  * All arithmetic is in ../math/bag-of-words (pure, tested). Local state only.
  * The table scrolls inside its own box: |V| columns is unbounded-ish and the page body
  * must never scroll sideways on a phone.
+ *
+ * COURSE-P11-02 — every string here is now `courses.widgets.bag-of-words`, and the TWO
+ * DEFAULT DOCUMENTS moved to ../corpora.ts. They are the argument, not the copy: each
+ * one is dominated by a single function word repeated four times while every content
+ * word occurs once, which is what puts function words at the top of the corpus row and
+ * makes the TF-IDF observation visible. The English pair is chosen against that same
+ * property — see corpora.ts, where the property is written down.
  */
 
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
+import { widgetCorpus } from "../corpora";
 import { buildBagOfWords, MAX_TOKENS_PER_DOC } from "../math/bag-of-words";
 import { WidgetButton } from "../primitives/WidgetButton";
-
-/*
- * Two documents on unrelated topics, each dominated by ONE article repeated four times,
- * and sharing `el`, `de` and `y` between them. That makes both readings visible at once:
- * per document the biggest coordinate is the entry that says least about it (el=4, la=4
- * against 1 for every content word), and in the corpus row the top four are el=5, la=4,
- * de=2, y=2 — every content word still at 1. Both fit the token cap with room to spare.
- */
-const DEFAULTS = [
-  "el portero paró el balón de penalti y el equipo ganó el partido",
-  "la receta lleva la harina y la mantequilla de la abuela en el horno",
-];
-
-const LABELS = ["Documento 1", "Documento 2"];
 
 const CELL = 26; // px — one matrix cell, wide enough for a two-digit count
 const LABEL_COL = 104; // px — the sticky left column holding the token
@@ -130,31 +125,42 @@ function RowLabel({ children, tone }: { children: React.ReactNode; tone: "token"
 }
 
 export default function BagOfWords() {
-  const [texts, setTexts] = useState<string[]>(DEFAULTS);
+  const t = useTranslations("courses.widgets.bag-of-words");
+  const tc = useTranslations("courses.widgets.common");
+  const locale = useLocale();
+  const defaults = widgetCorpus("bag-of-words", locale);
+
+  const [texts, setTexts] = useState<string[]>(() => [...defaults]);
   const model = useMemo(() => buildBagOfWords(texts), [texts]);
   const { vocab, documents, total } = model;
 
   const setText = (i: number, next: string) =>
-    setTexts((prev) => prev.map((t, j) => (j === i ? next : t)));
+    setTexts((prev) => prev.map((text, j) => (j === i ? next : text)));
 
   const truncated = documents.some((d) => d.truncated);
-  const isDefault = texts.every((t, i) => t === DEFAULTS[i]);
+  const isDefault = texts.every((text, i) => text === defaults[i]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem", width: "100%" }}>
       <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
         {texts.map((text, i) => (
-          <DocumentInput key={i} label={LABELS[i]} value={text} onChange={(v) => setText(i, v)} />
+          <DocumentInput
+            key={i}
+            label={t("documentLabel", { n: i + 1 })}
+            value={text}
+            onChange={(v) => setText(i, v)}
+          />
         ))}
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.6rem" }}>
         <span style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>
-          Vocabulario del corpus: <strong style={{ color: "var(--text)" }}>{vocab.length}</strong>{" "}
-          entradas, una por columna.
+          {t.rich("vocabSize", {
+            count: () => <strong style={{ color: "var(--text)" }}>{vocab.length}</strong>,
+          })}
         </span>
-        <WidgetButton onClick={() => setTexts(DEFAULTS)} disabled={isDefault}>
-          Reset
+        <WidgetButton onClick={() => setTexts([...defaults])} disabled={isDefault}>
+          {tc("reset")}
         </WidgetButton>
       </div>
 
@@ -175,10 +181,7 @@ export default function BagOfWords() {
             fontVariantNumeric: "tabular-nums",
           }}
         >
-          <caption className="sr-only">
-            Matriz de la bolsa de palabras: una fila por token, con su vector one-hot, una fila con
-            la suma de cada documento y una última fila con la suma del corpus entero.
-          </caption>
+          <caption className="sr-only">{t("tableCaption")}</caption>
           <thead>
             <tr>
               {/* The corner: sticky on BOTH axes, so it has to sit above the row
@@ -201,7 +204,7 @@ export default function BagOfWords() {
                   verticalAlign: "bottom",
                 }}
               >
-                token
+                {t("tokenHeader")}
               </th>
               {vocab.map((entry, i) => (
                 <th
@@ -264,7 +267,7 @@ export default function BagOfWords() {
                   {/* Sticky on the span, not the cell: the row spans the full width, so
                       without this the label scrolls out of sight to the left. */}
                   <span style={{ position: "sticky", left: 0, display: "inline-block", padding: "0 0.5rem" }}>
-                    {LABELS[d]}
+                    {t("documentLabel", { n: d + 1 })}
                   </span>
                 </th>
               </tr>
@@ -279,7 +282,7 @@ export default function BagOfWords() {
               ))}
 
               <tr>
-                <RowLabel tone="sum">suma doc. {d + 1}</RowLabel>
+                <RowLabel tone="sum">{t("documentSum", { n: d + 1 })}</RowLabel>
                 {doc.sum.map((v, i) => (
                   <Cell key={i} value={v} tone="sum" />
                 ))}
@@ -311,7 +314,7 @@ export default function BagOfWords() {
                   whiteSpace: "nowrap",
                 }}
               >
-                todo el corpus
+                {t("corpusTotal")}
               </th>
               {total.map((v, i) => (
                 <td
@@ -340,11 +343,8 @@ export default function BagOfWords() {
       </div>
 
       <p style={{ margin: 0, fontSize: "0.75rem", color: "var(--text-dim)", lineHeight: 1.5 }}>
-        Cada fila verde es el one-hot de un token: un único <strong>1</strong>, en la columna de su
-        entrada. La fila ámbar los suma, y esa suma es el vector del documento; la última fila suma
-        los dos documentos, que es otra cosa. Cambia dos palabras de sitio: las filas se reordenan y
-        las sumas no se mueven.
-        {truncated ? ` Solo se muestran los primeros ${MAX_TOKENS_PER_DOC} tokens de cada documento.` : ""}
+        {t.rich("explainer", { one: () => <strong>1</strong> })}
+        {truncated ? t("truncated", { max: MAX_TOKENS_PER_DOC }) : ""}
       </p>
     </div>
   );

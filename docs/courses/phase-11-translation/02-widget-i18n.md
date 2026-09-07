@@ -1,6 +1,6 @@
 # P11-02 — Widget strings and per-locale corpora
 
-**Tag:** `COURSE-P11-02` · **Size:** M · **Status:** not started
+**Tag:** `COURSE-P11-02` · **Size:** M · **Status:** done
 
 ## TL;DR
 

@@ -12,10 +12,15 @@
  * COURSE-P5-02 — control labels and aria-label in Spanish. AUTHORING.md §5 fixes `peso`
  * and `sesgo` as Spanish outright, and every sibling widget already names its controls
  * and describes its plot that way; this one predates the table.
+ *
+ * COURSE-P11-02 — those labels now come from `courses.widgets.sigmoid-explorer`; the
+ * Spanish values are the same words §5 fixed, and `weight` / `bias` are their English
+ * terms. The symbols (w, b) are notation and do not move between locales.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { sigmoid } from "../math/activations";
@@ -36,6 +41,7 @@ function curve(w: number, b: number): [number, number][] {
 }
 
 export default function SigmoidExplorer() {
+  const t = useTranslations("courses.widgets.sigmoid-explorer");
   const [w, setW] = useState(1);
   const [b, setB] = useState(0);
 
@@ -47,11 +53,14 @@ export default function SigmoidExplorer() {
         series={series}
         xDomain={[X_MIN, X_MAX]}
         yDomain={[0, 1]}
-        ariaLabel={`Curva de la sigmoide con peso ${w} y sesgo ${b}`}
+        // Numbers go in as strings on purpose: an ICU number argument would be
+        // formatted for the locale (`2,5` in Spanish), and this label reproduces the
+        // value the slider shows, not a localised rendering of it.
+        ariaLabel={t("plotAria", { w: String(w), b: String(b) })}
       />
       <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", maxWidth: 420 }}>
         <Slider
-          label="Peso (w)"
+          label={t("weight")}
           value={w}
           min={-5}
           max={5}
@@ -60,7 +69,7 @@ export default function SigmoidExplorer() {
           format={(v) => v.toFixed(1)}
         />
         <Slider
-          label="Sesgo (b)"
+          label={t("bias")}
           value={b}
           min={-5}
           max={5}
