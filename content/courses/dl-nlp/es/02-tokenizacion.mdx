@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: 'El texto llega con la <W>ñ</W> escrita como dos puntos de código: una <W>n</W> seguida de una tilde combinante. Sin normalizar antes a la forma NFC, un tokenizador de caracteres produce dos tokens donde debería haber uno.'
     answer: true
-    explanation: 'Unicode admite dos escrituras de la misma letra, y la descompuesta es literalmente una secuencia de dos puntos de código. Un tokenizador de caracteres corta por puntos de código, así que produce <W>n</W> y la tilde por separado —y <W>niño</W> pasa a tener cinco tokens en lugar de cuatro, con un vocabulario que ahora contiene una tilde suelta. La normalización a NFC no es una manía de limpieza: es lo que hace que dos textos idénticos en pantalla lo sean también para el tokenizador.'
+    explanation: 'Unicode admite dos escrituras de la misma letra, y la descompuesta es literalmente una secuencia de dos puntos de código. Un tokenizador de caracteres corta por puntos de código, así que produce <W>n</W> y la tilde por separado, y <W>niño</W> pasa a tener cinco tokens en lugar de cuatro, con un vocabulario que ahora contiene una tilde suelta. La normalización a NFC no es una manía de limpieza: es lo que hace que dos textos idénticos en pantalla lo sean también para el tokenizador.'
   - id: q-longitud
     type: numeric
     prompt: '¿Cuántos tokens produce un tokenizador de caracteres sobre la frase <W>El niño juega.</W>? Cuenta también los espacios y el punto final.'
@@ -57,7 +57,7 @@ reading:
     venue: 'stanford.edu'
     lang: en
     url: 'https://web.stanford.edu/~jurafsky/slp3/2.pdf'
-    note: 'El capítulo de referencia sobre tokenización y normalización: los mismos objetos de esta lección —Unicode, NFC, BPE— con más ejemplos y menos desarrollo. El libro entero es gratis.'
+    note: 'El capítulo de referencia sobre tokenización y normalización: los mismos objetos de esta lección (Unicode, NFC, BPE) con más ejemplos y menos desarrollo. El libro entero es gratis.'
   - kind: interactivo
     title: 'Tokenizer Playground'
     authors: 'Taubyte'
@@ -72,8 +72,8 @@ reading:
 La lección anterior, dedicada al problema de representar el lenguaje, terminó con una cuestión
 pendiente: allí escribimos el vocabulario $V$ como si sus elementos vinieran dados. No vienen dados.
 Esa lista hay que construirla, y construirla obliga a decidir antes dónde termina una unidad de
-texto y dónde empieza la siguiente —una decisión que nadie toma por ti y que el idioma no trae
-resuelta—. A eso se le llama tokenización, y a cada unidad resultante, un *token*.
+texto y dónde empieza la siguiente (una decisión que nadie toma por ti y que el idioma no trae
+resuelta). A eso se le llama tokenización, y a cada unidad resultante, un *token*.
 
 Tokenizar es elegir dónde cortar, y hay tres respuestas naturales. Cortar por palabras, que es como
 lees tú. Cortar por caracteres, que es como está escrito el fichero. O cortar por trozos de palabra,
@@ -102,7 +102,7 @@ Ese conjunto tiene una trampa que conviene desactivar antes de contar nada. Unic
 escrituras para la misma letra acentuada: la <W>ñ</W> puede ser un único carácter, o una <W>n</W>
 seguida de una tilde que se dibuja encima de la anterior. En la pantalla se ven igual; para $\Sigma$
 son cosas distintas, y una de las dos ocupa dos posiciones en lugar de una. Por eso el texto se
-**normaliza** antes de tokenizar, a la forma en que cada letra acentuada es un solo carácter —la
+**normaliza** antes de tokenizar, a la forma en que cada letra acentuada es un solo carácter, la
 forma de normalización C (*Normalization Form C*, NFC). Sin ese paso, dos textos idénticos a la
 vista producen tokenizaciones distintas, y el vocabulario acaba conteniendo tildes sueltas.
 
@@ -144,7 +144,7 @@ Ahora el compromiso, que se deriva de contar caracteres. Toma un corpus con $C$ 
 total sumando todos sus documentos, y aplícale una tokenización $\tau$, que lo parte en $T$ tokens
 $u_1, \dots, u_T$. Denotaremos por $\lvert u \rvert$ la longitud,
 en caracteres, del token $u$. Los tokens son trozos del propio texto, así que si $\tau$ conserva
-todos los caracteres —la condición de reconstrucción sin convenios— sus longitudes suman el texto
+todos los caracteres (la condición de reconstrucción sin convenios), sus longitudes suman el texto
 entero:
 
 $$
@@ -195,8 +195,8 @@ caracteres se satura: los símbolos distintos del español son unas decenas, y c
 de texto ya han aparecido casi todos, de modo que leer un millón de páginas más no añade
 prácticamente ninguno. El de palabras no se satura nunca, y el español lo empeora.
 
-Un verbo regular tiene del orden de cincuenta formas conjugadas —<W>canto</W>, <W>cantas</W>,
-<W>cantaba</W>, <W>cantaríamos</W>, <W>cantasen</W>— y cada una es una entrada distinta de $V$ que no
+Un verbo regular tiene del orden de cincuenta formas conjugadas (<W>canto</W>, <W>cantas</W>,
+<W>cantaba</W>, <W>cantaríamos</W>, <W>cantasen</W>), y cada una es una entrada distinta de $V$ que no
 comparte nada con las demás: el vocabulario de palabras no sabe que están emparentadas, porque su
 única noción de identidad es la igualdad de cadenas. Añade los clíticos pegados (<W>cántalo</W>,
 <W>cántamelo</W>), el género y el número (<W>niño</W>, <W>niña</W>, <W>niños</W>, <W>niñas</W>), la
@@ -213,8 +213,8 @@ frecuencia y palabras fuera de vocabulario</Leccion>.
 
 La solución a este compromiso es la fila central de la tabla, la de las subpalabras, y su celda de
 $\lvert V \rvert$ dice en qué consiste: *elegido de antemano*. En lugar de dejar que el tamaño del
-vocabulario sea una consecuencia de la tokenización, se fija por adelantado —por ejemplo, 30 000
-tokens— y se deja que un algoritmo decida qué unidades lo compondrán. El más extendido es el *byte-pair encoding* (BPE): empieza tratando cada
+vocabulario sea una consecuencia de la tokenización, se fija por adelantado (por ejemplo, 30 000
+tokens) y se deja que un algoritmo decida qué unidades lo compondrán. El más extendido es el *byte-pair encoding* (BPE): empieza tratando cada
 carácter como una unidad y va fusionando repetidamente el par de unidades adyacentes más frecuente
 del corpus, hasta llegar al tamaño fijado. Las secuencias frecuentes acaban fusionadas en una sola
 pieza y las raras se quedan partidas en trozos que sí son frecuentes. Por
@@ -289,7 +289,7 @@ Con caracteres, $T \cdot \bar{\ell}$ da $C$ exactamente. Con palabras se queda p
 diferencia son los espacios: el tokenizador los tiró, así que ya no se puede reconstruir el texto a
 partir de los tokens. Es la condición de reconstrucción rota a cambio de una comodidad, y por eso
 los tokenizadores de subpalabras marcan de algún modo dónde estaban los espacios. El <W>##</W> que ves
-en el explorable marca que el trozo continúa la palabra anterior —la ausencia de espacio—, y con eso
+en el explorable marca que el trozo continúa la palabra anterior (la ausencia de espacio), y con eso
 el espacio se reconstruye.
 
 La penúltima línea muestra el corte sobre una frase con clíticos y contracciones: <W>Dámelo</W> sale

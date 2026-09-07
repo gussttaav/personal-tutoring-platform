@@ -488,11 +488,14 @@ Three consequences that are easy to get wrong:
 
 Spanish typography, since this is Spanish prose and half of it differs from English:
 
-- **La raya `—` is glued to the text it encloses, with the space outside**: `el traductor —numerar
-  las palabras por orden alfabético, por ejemplo— produce números válidos`. A single raya
-  introducing a final clause glues the same way: `…y la tilde por separado —y <W>niño</W> pasa a
-  tener seis tokens`. Never ` — ` spaced on both sides, which is the English convention; never `-`
-  (guion) or `–` (semirraya) in its place.
+- **No raya (`—`) in prose.** A parenthetical incise goes in parentheses: `el traductor (numerar
+  las palabras por orden alfabético, por ejemplo) produce números válidos`. A lighter, two- or
+  three-word aside takes a pair of commas. A clause that explains or introduces what comes before
+  it takes a colon: `no es el problema OOV: <W>agua</W> sí acaba teniendo índice`. Two full
+  sentences are written as two sentences. Never `—` (raya), never ` — ` spaced on both sides
+  (the English convention), never `-` (guion) or `–` (semirraya) standing in for any of them. The
+  semirraya `–` stays only for numeric ranges (`30 000–50 000`) and compound terms
+  (`term frequency–inverse document frequency`), where it is not punctuation.
 - **Opening `¿` and `¡` always.** Their absence is the single clearest tell of prose drafted in
   English.
 - **Numbers in prose take the decimal point and a space for thousands**: `1.5`, `30 000`. Inside
@@ -1362,7 +1365,8 @@ Copy this into the PR description.
       *basta con*…) or the padding family (*cabe destacar*, *como podemos ver*…)
 - [ ] **The five marks do their own jobs**: bold defines, italics emphasises or marks an anglicism,
       `<W>` mentions, `«…»` loosens, backticks are Python
-- [ ] Spanish typography: raya glued (`—así—`), opening `¿` and `¡`, decimal point in prose
+- [ ] Spanish typography: no raya (`—`) — asides in `(…)`, a comma pair, or a colon; opening `¿`
+      and `¡`; decimal point in prose
 - [ ] **Every display equation punctuated as part of its sentence** — the mark inside the fence:
       `.` when the sentence ends there, `,` when the next clause takes a pause, nothing when the
       sentence runs through it. Read each equation aloud with the line after it

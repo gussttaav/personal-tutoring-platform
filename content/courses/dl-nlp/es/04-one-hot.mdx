@@ -14,7 +14,7 @@ quiz:
     prompt: 'Tu vocabulario tiene $\lvert V \rvert = 20\,000$ entradas y representas cada una con su vector one-hot. ¿Cuánto vale la distancia euclídea $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert$ entre las de dos entradas distintas $u$ y $v$?'
     answer: 1.414
     tolerance: 0.01
-    explanation: 'Vale $\sqrt{2} \approx 1.414$, y lo notable es lo que *no* aparece en esa respuesta. Los dos vectores se diferencian en exactamente dos posiciones —donde uno tiene su $1$ el otro tiene un $0$, y al revés—, así que la suma de los cuadrados de las diferencias es $1 + 1 = 2$ y la distancia es su raíz. Ni $\lvert V \rvert$ ni qué palabras sean $u$ y $v$ entran en la cuenta: <W>gato</W> está tan lejos de <W>gata</W> como de <W>criptomoneda</W>.'
+    explanation: 'Vale $\sqrt{2} \approx 1.414$, y lo notable es lo que *no* aparece en esa respuesta. Los dos vectores se diferencian en exactamente dos posiciones (donde uno tiene su $1$ el otro tiene un $0$, y al revés), así que la suma de los cuadrados de las diferencias es $1 + 1 = 2$ y la distancia es su raíz. Ni $\lvert V \rvert$ ni qué palabras sean $u$ y $v$ entran en la cuenta: <W>gato</W> está tan lejos de <W>gata</W> como de <W>criptomoneda</W>.'
   - id: q-que-cumple
     type: multi
     prompt: 'Comparas el one-hot con la representación por índices de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>. ¿En qué mejora? Marca todo lo que valga.'
@@ -34,7 +34,7 @@ quiz:
       - { id: c, text: '15 millones: $\lvert V \rvert \cdot 300$, la dimensión habitual.' }
       - { id: d, text: 'No se puede saber sin conocer el corpus.' }
     answer: b
-    explanation: 'La tabla tiene $\lvert V \rvert$ filas y $d$ columnas, y el one-hot fija $d = \lvert V \rvert$: son $\lvert V \rvert^{2} = 2\,500$ millones de números, unos 10 GB con cuatro bytes cada uno. La opción (c) es el coste de una representación densa de 300 dimensiones, que es adonde va el bloque, y sirve de comparación: 15 millones frente a 2 500. Ahora bien, esa tabla es la matriz identidad y nadie la guarda —se guarda el índice y el vector se fabrica al vuelo—, así que el coste que de verdad duele no es este, sino que el vector tenga $\lvert V \rvert$ coordenadas.'
+    explanation: 'La tabla tiene $\lvert V \rvert$ filas y $d$ columnas, y el one-hot fija $d = \lvert V \rvert$: son $\lvert V \rvert^{2} = 2\,500$ millones de números, unos 10 GB con cuatro bytes cada uno. La opción (c) es el coste de una representación densa de 300 dimensiones, que es adonde va el bloque, y sirve de comparación: 15 millones frente a 2 500. Ahora bien, esa tabla es la matriz identidad y nadie la guarda (se guarda el índice y el vector se fabrica al vuelo), así que el coste que de verdad duele no es este, sino que el vector tenga $\lvert V \rvert$ coordenadas.'
   - id: q-transferencia
     type: boolean
     prompt: 'Un modelo entrenado con vectores one-hot ha visto muchas veces <W>el niño juega</W> y ninguna <W>la niña juega</W>. Lo aprendido sobre <W>niño</W> le ayuda algo con <W>niña</W>, porque las dos palabras se parecen.'
@@ -61,7 +61,7 @@ texto. Solo queda decidir qué vector asignar a cada una de las entradas del voc
 
 Hay una respuesta inmediata a esa pregunta, y la lección existe porque esa respuesta es *correcta*:
 cumple una por una las exigencias que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> le
-puso a $r$, y aun así no basta. Tiene nombre —*one-hot encoding*— y lo que queda por hacer con ella
+puso a $r$, y aun así no basta. Tiene nombre (*one-hot encoding*), y lo que queda por hacer con ella
 es ponerle precio. Una parte del precio se ve venir, porque los vectores salen enormes, y es
 precisamente la parte que no importa. La otra aparece al preguntar qué puede aprender un modelo que
 recibe entradas así, y esa no la arregla ninguna máquina más grande.
@@ -88,7 +88,7 @@ el modelo aprenda sobre una no le sirve para ninguna otra.
 ## Un eje para cada entrada del vocabulario
 
 Ordena el vocabulario de una vez por todas y escríbelo como $V = \{w_1, w_2, \dots, w_{\lvert V
-\rvert}\}$. El orden da igual —alfabético, por frecuencia, el que salga— mientras no cambie después;
+\rvert}\}$. El orden da igual (alfabético, por frecuencia, el que salga) mientras no cambie después;
 es el determinismo que <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> exigía. Lo que ese orden aporta es una correspondencia: la
 entrada que ocupa la posición $i$ tendrá reservada la coordenada $i$ del vector, y ninguna otra
 entrada la usará. Posiciones del vocabulario y coordenadas del vector son, de aquí en adelante, la
@@ -145,8 +145,8 @@ inventada de <Leccion slug="texto-como-numeros">la lección sobre el problema de
 
 <Details summary="Por qué las dimensiones son |V| y no |V| − 1">
 Aquella lección terminaba con una cuenta: $n$ puntos mutuamente equidistantes necesitan $n - 1$
-dimensiones. El mínimo son entonces $\lvert V \rvert - 1$ dimensiones —el triángulo de arriba, con
-tres palabras, cabe en un plano— y el one-hot gasta una más. No es un despiste, y la diferencia se ve
+dimensiones. El mínimo son entonces $\lvert V \rvert - 1$ dimensiones (el triángulo de arriba, con
+tres palabras, cabe en un plano), y el one-hot gasta una más. No es un despiste, y la diferencia se ve
 mirando dónde viven estos vectores.
 
 Todos ellos cumplen la misma ecuación, porque cada uno tiene un solo $1$:
@@ -179,7 +179,7 @@ cuadrado: duplicar el vocabulario cuadruplica la tabla.
 
 Esa cifra pide una corrección inmediata, porque nadie paga esos 10 GB. La tabla del one-hot es la
 matriz identidad, y una matriz identidad no contiene información: está determinada por su tamaño. Se
-guarda el índice $i$ de cada entrada —un entero— y el vector se fabrica cuando hace falta, o ni
+guarda el índice $i$ de cada entrada (un entero), y el vector se fabrica cuando hace falta, o ni
 siquiera se fabrica. El coste de almacenar la representación desaparece.
 
 Lo que no desaparece es la dimensión. El vector que el sistema recibe tiene $\lvert V \rvert$
@@ -195,7 +195,7 @@ Antes de seguir, un apunte a favor. <Leccion slug="texto-como-numeros">La lecci�
 <W>agua</W> al vocabulario renumeraba palabras que no tenían nada que ver con ella y dejaba
 inservible cualquier modelo entrenado antes. El one-hot no tiene ese defecto. Añade una entrada al final y cada vector antiguo conserva sus coordenadas; solo le crece un
 cero. Es la **estabilidad** que faltaba. Es real, aunque en la práctica $V$ se congela una sola vez
-—para eso está <W>\<UNK></W>— y la ocasión casi no llega.
+(para eso está <W>\<UNK></W>), y la ocasión casi no llega.
 
 ### Por qué la ortogonalidad impide aprender
 
@@ -335,4 +335,4 @@ del documento y no las entradas del vocabulario. Cada coordenada pasa entonces a
 veces sale su palabra. Eso ya no es un vector de ceros y unos, y ya no es tan mudo: la
 coordenada de <W>gol</W> distingue una crónica deportiva de una receta. Sigue teniendo $\lvert V
 \rvert$ dimensiones y sigue sin saber en qué orden iban las palabras. Es la bolsa de palabras, y con
-la corrección que la hace útil —TF-IDF— es <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras y TF-IDF</Leccion>.
+la corrección que la hace útil (TF-IDF) es <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras y TF-IDF</Leccion>.

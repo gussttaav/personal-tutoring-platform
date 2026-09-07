@@ -13,7 +13,7 @@ quiz:
     type: boolean
     prompt: 'Con un mismo vocabulario, <W>el perro muerde al niño</W> y <W>el niño muerde al perro</W> reciben vectores de bolsa de palabras distintos.'
     answer: false
-    explanation: 'Reciben el mismo vector, y el nombre de la representación lo anuncia. Los dos textos tienen los mismos tokens con las mismas ocurrencias, y la suma $\sum_{t} \mathbf{o}_{w_t}$ no depende del orden en que se sumen sus términos: cada coordenada acaba contando lo mismo. Lo que cuesta es concreto: quién muerde a quién es exactamente la información que se pierde, y ninguna tarea que dependa de ella —traducir, responder preguntas, decidir si una reseña que dice <W>no está mal</W> habla bien o mal— se puede resolver sobre este vector. Recuperar el orden es lo que ocupa el bloque 3, sobre redes recurrentes, y después el bloque 5, sobre el Transformer.'
+    explanation: 'Reciben el mismo vector, y el nombre de la representación lo anuncia. Los dos textos tienen los mismos tokens con las mismas ocurrencias, y la suma $\sum_{t} \mathbf{o}_{w_t}$ no depende del orden en que se sumen sus términos: cada coordenada acaba contando lo mismo. Lo que cuesta es concreto: quién muerde a quién es exactamente la información que se pierde, y ninguna tarea que dependa de ella (traducir, responder preguntas, decidir si una reseña que dice <W>no está mal</W> habla bien o mal) se puede resolver sobre este vector. Recuperar el orden es lo que ocupa el bloque 3, sobre redes recurrentes, y después el bloque 5, sobre el Transformer.'
   - id: q-idf-cero
     type: numeric
     prompt: 'Un corpus tiene $N = 1\,000$ documentos y la entrada <W>de</W> aparece en todos ellos. En un documento donde <W>de</W> sale 57 veces, ¿cuánto vale $\text{tfidf}(\textit{de}, d)$?'
@@ -75,8 +75,8 @@ token, y la fila ámbar los suma: el vector del documento.
 />
 
 Busca el número mayor de cada fila ámbar. Los dos valen $4$ y los dos son artículos: <W>el</W> en
-la crónica, <W>la</W> en la receta. Lo que dice de qué va cada texto —<W>portero</W>, <W>balón</W>,
-<W>harina</W>, <W>mantequilla</W>— vale $1$: cuatro veces menos que la entrada que no dice nada.
+la crónica, <W>la</W> en la receta. Lo que dice de qué va cada texto (<W>portero</W>, <W>balón</W>,
+<W>harina</W>, <W>mantequilla</W>) vale $1$: cuatro veces menos que la entrada que no dice nada.
 
 La última fila suma los dos documentos, y es otra cuenta: no cuánto sale una entrada aquí, sino
 cuánto sale en el corpus. La encabezan <W>el</W> con $5$, <W>la</W> con $4$, <W>de</W> y <W>y</W>
@@ -117,7 +117,7 @@ porque $(\mathbf{o}_{w_t})_i$ vale $1$ cuando el token de la posición $t$ es $w
 
 Ese recuento tiene nombre propio: la **frecuencia de término** $\text{tf}(w_i, d)$, el número de
 veces que la entrada $w_i$ aparece en $d$. Con él cambia qué significa la letra $t$: en
-$\text{tf}(t, d)$ y de aquí en adelante, $t$ es un *término* —una entrada de $V$—, no una posición.
+$\text{tf}(t, d)$ y de aquí en adelante, $t$ es un *término* (una entrada de $V$), no una posición.
 Es la única letra que esta lección usa para dos cosas.
 
 Antes de seguir, lo que se acaba de perder. La suma no depende del orden de sus términos, así que
@@ -156,7 +156,7 @@ $$
 p(t) = \frac{\text{df}(t)}{N}.
 $$
 
-Si $p(t) = 1$ —el término sale en todos— enterarte de que está en este no te ha dicho nada, y la
+Si $p(t) = 1$ (el término sale en todos), enterarte de que está en este no te ha dicho nada, y la
 medida tiene que valer $0$. Y si dos términos aparecen de forma independiente, saber que están los
 dos debería aportar la suma de lo que aporta cada uno, mientras que la probabilidad de que estén
 los dos es el producto de las dos probabilidades. Una medida que convierta productos en sumas y que
@@ -206,7 +206,7 @@ distintos sobre el mismo corpus.
 ### Comparar dos documentos: la similitud coseno
 
 Un vector por documento sirve para algo cuando dos de ellos se pueden comparar, y la comparación
-inmediata —la distancia euclídea de la lección anterior— falla aquí por el defecto de la longitud.
+inmediata (la distancia euclídea de la lección anterior) falla aquí por el defecto de la longitud.
 Toma un documento $d_1$ y pégalo consigo mismo para formar $d_2$, con lo que
 $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. La distancia entre los dos vale
 
@@ -241,7 +241,7 @@ comparten ninguna entrada con peso positivo.
 ## La bolsa de palabras y TF-IDF en NumPy
 
 La celda construye la matriz de conteos de un corpus de seis documentos en español sobre tres temas
-—fútbol, cocina y programación—, la pesa con TF-IDF y compara los documentos con el coseno.
+(fútbol, cocina y programación), la pesa con TF-IDF y compara los documentos con el coseno.
 Tokeniza con el mismo `por_palabras` de las lecciones anteriores, que trata la puntuación como un
 token propio. Ejecútala y mira tres cosas: qué entradas encabezan los conteos crudos, cuáles
 encabezan los pesos, y la matriz de similitudes, donde los tres pares del mismo tema tienen que
@@ -344,8 +344,8 @@ print("d1 contra d1 repetido  ->  distancia:",
 Los conteos crudos encabezan por <W>.</W>, <W>la</W>, <W>el</W>, <W>de</W>, <W>y</W> y <W>El</W>:
 la tabla de la motivación medida sobre un corpus, y ninguna dice nada del tema.
 
-Los pesos le dan la vuelta. Las entradas de los seis documentos —<W>.</W>, <W>de</W>, <W>la</W>,
-<W>y</W>— tienen $\text{idf}$ exactamente $0$ y desaparecen, mientras que <W>gol</W>, <W>horno</W>
+Los pesos le dan la vuelta. Las entradas de los seis documentos (<W>.</W>, <W>de</W>, <W>la</W>,
+<W>y</W>) tienen $\text{idf}$ exactamente $0$ y desaparecen, mientras que <W>gol</W>, <W>horno</W>
 y <W>lista</W> valen $1.10$ y <W>árbitro</W>, que sale una vez, $1.79$. Las de más peso de cada documento pasan a ser <W>delantero</W> y <W>gol</W>,
 <W>masa</W> y <W>horno</W>, <W>función</W> y <W>bucle</W>: el tema del texto, sin que nadie le
 haya dicho al programa qué es un tema.
@@ -383,8 +383,8 @@ representación de las entradas: el vector sigue teniendo $\lvert V \rvert$ coor
 casi todo ceros y sus coordenadas siguen siendo independientes, de modo que <W>coche</W> y
 <W>automóvil</W> son tan perpendiculares entre sí como <W>coche</W> y <W>harina</W>. La consecuencia
 se lee en las similitudes que acabas de calcular: dos documentos que hablan de lo mismo con
-distintas palabras no comparten ninguna entrada con peso positivo, y su coseno es exactamente $0$
-—el mismo número que si hablaran de cosas opuestas. La equidistancia sigue intacta un nivel más
+distintas palabras no comparten ninguna entrada con peso positivo, y su coseno es exactamente $0$,
+el mismo número que si hablaran de cosas opuestas. La equidistancia sigue intacta un nivel más
 abajo, y lo que has aprendido a comparar son documentos, no entradas del vocabulario. Para que dos
 entradas parecidas queden cerca hay que abandonar la idea de que cada una tenga su propio eje y
 dejar que compartan coordenadas, muchas menos que $\lvert V \rvert$ y ninguna asignada a nadie. Eso
