@@ -21,7 +21,7 @@ quiz:
     explanation: "Una red es una función entre espacios vectoriales reales: su entrada tiene que vivir en $\\mathbb{R}^d$. Un símbolo del vocabulario no es un vector, así que dárselo no produce un cálculo erróneo: produce uno que no está definido. Nada tiene que ver con la memoria, el idioma ni los caracteres."
   - id: q-indice-alfabetico
     type: single
-    prompt: "Numerar el vocabulario por orden alfabético —<W>casa</W> → 1, <W>gato</W> → 2, <W>perro</W> → 3— es una representación válida, porque asigna a cada palabra un número de forma determinista."
+    prompt: "Numerar el vocabulario por orden alfabético (<W>casa</W> → 1, <W>gato</W> → 2, <W>perro</W> → 3) es una representación válida, porque asigna a cada palabra un número de forma determinista."
     options:
       - { id: a, text: "Verdadero" }
       - { id: b, text: "Falso" }
@@ -60,7 +60,7 @@ Representar texto no es codificarlo: es elegir una geometría para el significad
 </Callout>
 
 Esto es lo que hace que el problema sea interesante y no un trámite. Un traductor cualquiera
-—numerar las palabras por orden alfabético, por ejemplo— produce números perfectamente válidos,
+(numerar las palabras por orden alfabético, por ejemplo) produce números perfectamente válidos,
 pero destruye cualquier noción de significado.
 
 {/* ── 3. FORMALIZACIÓN — con título, por contenido ── */}
@@ -83,7 +83,7 @@ f : \mathbb{R}^d \to \mathbb{R}^k,
 $$
 
 donde $d$ es la dimensión del espacio de entrada y $k$ la del espacio de salida. Qué ocurre entre la
-entrada y la salida —las capas, los pesos, el entrenamiento— es el tema del siguiente bloque; aquí solo
+entrada y la salida (las capas, los pesos, el entrenamiento) es el tema del siguiente bloque; aquí solo
 importa que la red necesita recibir vectores de $\mathbb{R}^d$.
 
 El problema aparece de inmediato: el texto es una secuencia de símbolos, lo que $f$ pide es un vector de
@@ -95,8 +95,8 @@ r : V \to \mathbb{R}^d,
 $$
 
 y con ella cada palabra de la secuencia se vuelve un vector, de modo que el texto entero se
-convierte en una matriz de números, una fila por posición y $d$ columnas —los vectores de este
-curso son columnas, así que al apilarlos cada uno se escribe tumbado, como fila—:
+convierte en una matriz de números, una fila por posición y $d$ columnas (los vectores de este
+curso son columnas, así que al apilarlos cada uno se escribe tumbado, como fila):
 
 $$
 \mathbf{X} =
@@ -178,7 +178,7 @@ más cerca de otra que del resto. Es decir, que todas las distancias entre pares
 
 En $\mathbb{R}$ eso es imposible ya con tres palabras. Si $a < b < c$, entonces
 $\lvert a - c \rvert > \lvert a - b \rvert$: siempre hay una que queda en medio. En el plano sí se
-puede —un triángulo equilátero— pero solo con tres. Cuatro puntos equidistantes exigen salir al
+puede, con un triángulo equilátero, pero solo con tres. Cuatro puntos equidistantes exigen salir al
 espacio, y en general $n$ puntos mutuamente equidistantes necesitan $n - 1$ dimensiones.
 </Details>
 
@@ -194,8 +194,8 @@ como los mira la red:
 
 1. Según los números, ¿qué dos palabras de la frase se parecen más? Compara $\lvert 2 - 3 \rvert,
    \lvert 3 - 1 \rvert$ y las demás distancias, y no busques una sola ganadora: hay tres parejas
-   empatadas a distancia $1$ —<W>bebe</W> y <W>el</W>, <W>el</W> y <W>gato</W>, <W>gato</W> y
-   <W>leche</W>—, y no has contado mal. ¿Coincide ese empate con lo que tú sabes de esas palabras?
+   empatadas a distancia $1$ (<W>bebe</W> y <W>el</W>, <W>el</W> y <W>gato</W>, <W>gato</W> y
+   <W>leche</W>), y no has contado mal. ¿Coincide ese empate con lo que tú sabes de esas palabras?
 2. ¿Qué palabra cae en el punto medio entre <W>el</W> $(2)$ y <W>leche</W> $(4)$? ¿Significa algo esa
    pregunta fuera de los números?
 3. Añade <W>agua</W> al vocabulario. Reordena alfabéticamente y reasigna los índices. ¿Cuántas de las
@@ -204,7 +204,7 @@ como los mira la red:
 La tercera es la más incómoda: una palabra nueva reescribe la representación de palabras que no
 tienen nada que ver con ella. Un modelo entrenado con la $V$ anterior queda inservible. Fíjate en
 que es un defecto distinto de los dos anteriores: no es la geometría inventada, y tampoco es el
-problema OOV — <W>agua</W> sí acaba teniendo índice, el vocabulario crece sin dificultad. Lo que falla
+problema OOV. Aquí <W>agua</W> sí acaba teniendo índice, el vocabulario crece sin dificultad. Lo que falla
 es que la representación no es **estable**: depende de todo $V$ a la vez, así que tocar una entrada
 mueve todas las demás. Guarda esa observación, porque es la que hará que en <Leccion slug="one-hot">la lección del one-hot</Leccion>, el salto a un espacio mucho más grande parezca razonable a pesar de su coste.
 

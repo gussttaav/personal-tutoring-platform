@@ -1510,6 +1510,44 @@ number-dense course.
 - `pnpm lint:content` and `pnpm build` both green after the rewrite.
 - Not yet committed to a branch/PR (**local**).
 
+**COURSE-P5-00 — the raya removed from prose, Block 1 Spanish** (2026-09-07). User-requested: drop
+the em dash (`—`, U+2014) from the course, rolled out one block at a time, starting with Block 1 in
+Spanish (`es/01`–`es/08`). The raya was the course's parenthetical-incise mark because AUTHORING.md
+§5 mandated it; the guide is reversed in the same change so Block 1 does not read as a violation.
+
+- **AUTHORING.md §5's typography bullet now forbids the raya** and prescribes what replaces it: a
+  parenthetical incise goes in `(…)`, a light two- or three-word aside in a comma pair, an
+  explaining/introducing clause after a colon, two full sentences as two sentences. `–` (semirraya)
+  stays only for numeric ranges and compound terms, where it is not punctuation. Pre-merge
+  checklist item updated to match. `AUTHORING.en.md` (English keeps the spaced em dash) is not on
+  this branch and is untouched.
+- **`_template.mdx`**: demonstration-prose rayas converted the same way, and the visible `TODO —`
+  placeholders became `TODO:`. The `{/* ── … ── */}` step dividers and the display-equation
+  comment keep their em dashes — non-rendered, out of scope.
+- **The 8 lessons, one match at a time**, not a blind replace. ~70 sites across prose and
+  student-facing frontmatter (quiz prompts / options / explanations, `reading[].note`). The default
+  was parentheses; a colon where the raya introduced rather than enclosed (`no un fallo: la lección
+  anterior ya avisó…`), three sentence splits where both halves were full sentences, a comma where a
+  short apposition read better than brackets. `<W>`, `«…»`, `*…*` and `$…$` inside an incise were
+  carried through untouched. Where a closing raya had been carrying the pause before a following
+  `y` / `pero` / subordinate clause, a comma was added after the new `)` — the course's own style
+  (`(*out-of-vocabulary*, OOV), y le dedicamos…` in `01`).
+- **Scope held tight**: `{/* … */}` MDX comments (the `── N. PASO ──` dividers, the
+  `COURSE-P5-01 —` headers) left as they were; en dashes left as they were (7 in Block 1: numeric
+  ranges and «term frequency–inverse document frequency»); `00-pipeline-fixture.mdx` untouched (its
+  dashes may be deliberate rendering-regression coverage). Blocks 2–5 and the `en/` tree are later
+  passes; no lint check for the em dash is added yet, since it would flood the advisory report with
+  the unconverted blocks.
+- **Word-neutral, as expected** — `countWords` counts letter/digit tokens, so `—x` and `(x` weigh
+  the same. Block 1 lands at 1,558 / 1,830 / 1,966 / 1,944 / 1,966 / 1,949 / 1,981 / 1,930 words
+  (was 1,556 / 1,830 / 1,966 / 1,944 / 1,966 / 1,949 / 1,981 / 1,930); no lesson crosses the 2,000
+  soft warn or comes near the 3,000 ceiling.
+- `src/lib/courses/validate-voice.ts`'s header still lists "whether a raya encloses an incise" as a
+  deliberately-unchecked review question; left as-is while Blocks 2–5 still contain rayas.
+- `pnpm lint:content` and `pnpm build` both green.
+- On branch `course/block-1-es-remove-em-dashes`; awaits the user's push (no git credentials in this
+  shell).
+
 **COURSE-P7-01** — Closed per doc. The component, the bridge pre-pass, the sixth lint pass, the
 budget exemption, the styles, the fixture coverage and the authoring rule all landed. Deviations
 and notes:

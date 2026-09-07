@@ -39,7 +39,7 @@ quiz:
     type: boolean
     prompt: 'Tu vocabulario deja fuera el 2 % de los tokens de un texto nuevo. Entonces solo el 2 % de las frases de ese texto contiene alguna palabra desconocida.'
     answer: false
-    explanation: 'La tasa se mide por token y la pregunta es por frase. Si las frases tienen unos 20 tokens y tratas las apariciones como independientes, la probabilidad de que una frase se salve es $0.98^{20} \approx 0.67$, así que una de cada tres frases contiene al menos una palabra desconocida. La independencia es una aproximación —las palabras raras van juntas, en los mismos párrafos técnicos— pero el orden de magnitud aguanta: una tasa del 2 % por token no es un 2 % de daño, es un tercio de las frases tocadas.'
+    explanation: 'La tasa se mide por token y la pregunta es por frase. Si las frases tienen unos 20 tokens y tratas las apariciones como independientes, la probabilidad de que una frase se salve es $0.98^{20} \approx 0.67$, así que una de cada tres frases contiene al menos una palabra desconocida. La independencia es una aproximación (las palabras raras van juntas, en los mismos párrafos técnicos), pero el orden de magnitud aguanta: una tasa del 2 % por token no es un 2 % de daño, es un tercio de las frases tocadas.'
 challenges: []
 reading:
   - kind: libro
@@ -69,7 +69,7 @@ otra mitad, la que determina cuántos acabarán fuera del vocabulario, es con qu
 Esa distribución de frecuencias decide qué tokens merece la pena conservar, cuáles es razonable dejar
 fuera y, en consecuencia, cada cuánto se encontrará el modelo con palabras fuera de vocabulario
 (*out-of-vocabulary*, OOV). Tiene además una forma muy poco igualitaria, y es la misma en cualquier
-corpus y en cualquier idioma. Esa forma —no el tamaño del corpus, no la lengua— es la que fija
+corpus y en cualquier idioma. Esa forma (no el tamaño del corpus, no la lengua) es la que fija
 cuánto texto llegas a cubrir con un vocabulario que quepa en memoria.
 
 Cuenta los tokens de cualquier texto en español y aparece siempre la misma escena. En la cabeza, un
@@ -113,8 +113,8 @@ f_i \approx \frac{a}{i},
 $$
 
 con $a$ una constante que depende del corpus. El segundo tipo sale la mitad de veces que el primero,
-el décimo una décima parte. Es una aproximación, no un teorema —falla en las primeras posiciones y en la
-cola— pero responde la pregunta que importa: cuánto texto compras con cada tipo que añadas.
+el décimo una décima parte. Es una aproximación, no un teorema (falla en las primeras posiciones y en la
+cola), pero responde la pregunta que importa: cuánto texto compras con cada tipo que añadas.
 
 Llamemos **cobertura** de los $k$ tipos más frecuentes, y la escribiremos $\text{cob}(k)$, a la
 fracción de ocurrencias del corpus que esos $k$ tipos explican:
@@ -146,8 +146,8 @@ La función $1/x$ es decreciente, así que el rectángulo de base $1$ y altura $
   caption="El mismo rectángulo, de altura 1/i, cabe bajo la curva en el intervalo de la izquierda y la desborda en el de la derecha. Cada mitad del dibujo es una de las dos desigualdades."
 />
 
-Suma la segunda desigualdad sobre todos los $i$ y la primera desde $i = 2$ —el término $i = 1$ vale
-$1$ y se saca aparte— y los rectángulos quedan atrapados:
+Suma la segunda desigualdad sobre todos los $i$ y la primera desde $i = 2$ (el término $i = 1$ vale
+$1$ y se saca aparte), y los rectángulos quedan atrapados:
 
 $$
 \int_{1}^{k+1} \frac{dx}{x} \;\leq\; \sum_{i=1}^{k} \frac{1}{i} \;\leq\; 1 + \int_{1}^{k} \frac{dx}{x}.
@@ -173,7 +173,7 @@ $M^{0.99} \approx 89\,000$. Los últimos nueve puntos de cobertura casi triplica
 ### Qué cuesta cortar el vocabulario
 
 El vocabulario es entonces una decisión con dos precios enfrentados. Elegir $V$ como los
-$k$ tipos más frecuentes —o, desde otro ángulo, exigir una frecuencia mínima $f_i \geq m$— es elegir
+$k$ tipos más frecuentes (o, desde otro ángulo, exigir una frecuencia mínima $f_i \geq m$) es elegir
 dónde se para el intercambio.
 
 El precio de subir $k$ lo pone <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>: la
@@ -192,7 +192,7 @@ El precio de bajar $k$ es el texto que queda al otro lado del corte, la fracció
 $1 - \text{cob}(k)$ de las ocurrencias. Medida así parece pequeña, y ese es el problema: la misma
 decisión, medida sobre tipos, deja fuera a la mayoría del idioma. Con $M = 100\,000$ y $k = 31\,600$
 pierdes el 10 % de las ocurrencias y el 68 % de los tipos. Y no son un 68 %
-cualquiera: los tipos que caen son los de la cola —nombres propios, tecnicismos, palabras nuevas—,
+cualquiera: los tipos que caen son los de la cola (nombres propios, tecnicismos, palabras nuevas),
 aquello que hace que una frase diga algo en lugar de otra cosa. Un corte que suena barato en tokens
 está tirando justo la parte informativa.
 
@@ -375,7 +375,7 @@ queda en un esqueleto que ya no dice nada.
 
 Una prueba de treinta segundos. Cambia `V = set(frec)` por
 `V = {w for w, _ in frec.most_common(50)}` y ejecuta otra vez: <W>En</W> con mayúscula pasa a
-desconocida mientras <W>en</W> sigue dentro. Es un tipo distinto, no un fallo —la lección anterior ya
+desconocida mientras <W>en</W> sigue dentro. Es un tipo distinto, no un fallo: la lección anterior ya
 avisó de que cortar no es limpiar, y el precio se paga aquí, en el recuento.
 
 ## Comprueba tu intuición
