@@ -1,0 +1,292 @@
+---
+slug: bolsa-de-palabras
+title: "Bag of words and TF-IDF"
+block: 1
+order: 5
+minutes: 24
+summary: "Summing the one-hot vectors of a document gives a count vector where the function words rule. Weighting each coordinate by how rare the entry is in the rest of the corpus fixes that, and the logarithm that does it is no trick: it comes from measuring information."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-orden
+    type: boolean
+    prompt: 'With the same vocabulary, <W>the dog bites the boy</W> and <W>the boy bites the dog</W> get different bag-of-words vectors.'
+    answer: false
+    explanation: 'They get the same vector, and the name of the representation says so. The two texts have the same tokens with the same occurrences, and the sum $\sum_{t} \mathbf{o}_{w_t}$ does not depend on the order its terms are added in: each coordinate ends up counting the same. What that costs is concrete: who bites whom is exactly the information that is lost, and no task that depends on it (translating, answering questions, deciding whether a review that says <W>not bad</W> speaks well or badly) can be solved on this vector. Recovering the order is what Block 3, on recurrent networks, takes up, and then Block 5, on the Transformer.'
+  - id: q-idf-cero
+    type: numeric
+    prompt: 'A corpus has $N = 1\,000$ documents and the entry <W>the</W> appears in all of them. In a document where <W>the</W> occurs 57 times, what is $\text{tfidf}(\textit{the}, d)$?'
+    answer: 0
+    tolerance: 0
+    explanation: 'It is zero. Its document frequency is $\text{df}(\textit{the}) = 1\,000 = N$, so $\text{idf}(\textit{the}) = \log(1\,000/1\,000) = \log 1 = 0$, and the weight is $57 \cdot 0 = 0$. Notice that the 57 occurrences do not enter the result: however many times it appears, a term that is in every document tells none of them apart. That is the property that lets TF-IDF do without a hand-written stop-word list; the corpus says which words they are and the weight cancels them on its own.'
+  - id: q-por-que-log
+    type: single
+    prompt: 'Why does $\text{idf}(t) = \log\frac{N}{\text{df}(t)}$ carry a logarithm, instead of using the ratio $N/\text{df}(t)$ as it is?'
+    options:
+      - { id: a, text: 'Because the weight measures the information gained by knowing that $t$ is in the document, and that quantity is $-\log p$: the only form that is zero when the term appears in every document and that makes two independent terms add their contributions.' }
+      - { id: b, text: 'Because the logarithm avoids dividing by zero when a term appears in no document of the corpus.' }
+      - { id: c, text: 'Because the logarithm keeps $\text{idf}(t)$ bounded between $0$ and $1$, so the weight does not blow up.' }
+      - { id: d, text: 'Because without it the cosine similarity would change order when the base of the logarithm changed.' }
+    answer: a
+    explanation: 'The logarithm is inferred, not added afterwards. The other three describe real but different things. (b) is the $1 + \text{df}(t)$ in the denominator, a separate convention that is in this lesson''s drop-down and has nothing to do with the logarithm. (c) is false: $\text{idf}(t)$ goes up to $\log N$, which with a million documents is around $13.8$. And (d) is exactly backwards: changing the base multiplies every $\text{idf}$ by the same constant, and the cosine does not notice.'
+  - id: q-coseno
+    type: multi
+    prompt: 'You paste a document onto itself. You call $d_1$ the original and $d_2$ the result, measured against the same corpus, so that $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. What is true? Tick all that apply.'
+    options:
+      - { id: a, text: 'The Euclidean distance between the two vectors is $\lVert \mathbf{x}_{d_1} \rVert$, which is not zero.' }
+      - { id: b, text: '$\cos(\mathbf{x}_{d_1}, \mathbf{x}_{d_2}) = 1$.' }
+      - { id: c, text: 'The cosine similarity doubles too.' }
+      - { id: d, text: 'The Euclidean distance measures the length of the document here, which is not what the document is about.' }
+    answer: [a, b, d]
+    explanation: 'The difference is $2\mathbf{x}_{d_1} - \mathbf{x}_{d_1} = \mathbf{x}_{d_1}$, so the distance is its norm (a) and grows with the document (d), even though the two texts say exactly the same thing. The cosine does not move (b), because $2\mathbf{x}_{d_1}$ points in the same direction and the factor $2$ cancels between the numerator and the norm in the denominator. (c) is false twice over: the cosine never exceeds $1$, and here it was already $1$.'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Introduction to Information Retrieval, ch. 6: Scoring, Term Weighting and the Vector Space Model'
+    authors: 'Manning, Raghavan and Schütze'
+    year: '2008'
+    venue: 'nlp.stanford.edu'
+    lang: en
+    url: 'https://nlp.stanford.edu/IR-book/pdf/06vect.pdf'
+    note: "TF-IDF, the vector space model and the cosine in their canonical form, §6.2–6.3; the variants in this lesson's drop-down are its §6.4. Written to rank documents against a query, not for the meaning of words."
+---
+
+{/* COURSE-P5-01 — Block 1, Lesson 5. */}
+
+The previous lesson, on one-hot encoding and the curse of dimensionality, ended by summing the one-hot vectors of a document into a single vector of counts, one number per entry. Each summand asserted nothing on its own; their sum is a count, and a count does assert something. What it asserts is where this lesson begins.
+
+And what it asserts, at first, is wrong. <Leccion slug="vocabulario-oov">The lesson on vocabulary and frequency</Leccion> measured how occurrences are shared out: a few entries take most of any text. They are <W>the</W>, <W>of</W>, <W>and</W>, <W>to</W>, and they turn up in any text, whatever it is about. So the largest coordinates of a document's vector belong to those entries, not to what the document is about.
+
+Look at it in two short documents, a match report and a recipe. Each green row is the one-hot of a token, and the amber row sums them: the document vector.
+
+<Explorable
+  id="bag-of-words"
+  caption="Both documents are editable. Swap two words around and watch which rows move and which don't."
+/>
+
+Look for the largest number in each amber row. Both are $4$, and both times it is the same word: the article <W>the</W>, topping the match report and the recipe alike. What actually says what each text is about (<W>keeper</W>, <W>penalty</W>, <W>flour</W>, <W>butter</W>) sits at $1$: a quarter of the weight of the word that says nothing.
+
+The last row sums the two documents, and it is a different count: not how often an entry appears here, but how often it appears across the corpus. It is topped by <W>the</W> with $8$, and then by <W>of</W> and <W>and</W> with $2$; nothing else reaches $2$. Write two unrelated documents of your own and that row will still be headed by the article and the prepositions.
+
+A measure that got it right would look at both at once: how many times the entry appears *in this document* and in how many documents it appears *across the whole corpus*.
+
+<Callout type="intuition" title="The idea in one sentence">
+An entry characterises a document when it appears a lot in this one and little in the rest. They are two different measures: one raises the weight of the coordinate and the other lowers it, so that what is abundant everywhere ends up weighing little.
+</Callout>
+
+## The document vector, and what it leaves behind
+
+Fix the vocabulary $V = \{w_1, \dots, w_{\lvert V \rvert}\}$ with the order of the previous lesson, and take the corpus $D$, a collection of $N = \lvert D \rvert$ documents. A document $d$ is a sequence of $T_d$ tokens $w_1, \dots, w_{T_d}$, where $T_d$ counts occurrences and not types, in the sense of <Leccion slug="vocabulario-oov">the lesson on vocabulary and frequency</Leccion>.
+
+The **bag of words** of $d$ is the sum of the one-hot vectors of its tokens:
+
+$$
+\mathbf{x}_d = \sum_{t=1}^{T_d} \mathbf{o}_{w_t} \in \mathbb{R}^{\lvert V \rvert}.
+$$
+
+The index $t$ here runs over the $T_d$ positions of the document, and the whole corpus becomes a matrix of shape $N \times \lvert V \rvert$, one row per document.
+
+Each coordinate of the vector says how many times a term of the vocabulary appears:
+
+$$
+(\mathbf{x}_d)_i = \sum_{t=1}^{T_d} (\mathbf{o}_{w_t})_i = \lvert\{\, t \le T_d \;:\; w_t = w_i \,\}\rvert,
+$$
+
+because $(\mathbf{o}_{w_t})_i$ is $1$ when the token at position $t$ is $w_i$, and $0$ in any other case.
+
+That count has a name of its own: the **term frequency** $\text{tf}(w_i, d)$, the number of times the entry $w_i$ appears in $d$. With it the letter $t$ changes meaning: in $\text{tf}(t, d)$ and from here on, $t$ is a *term* (an entry of $V$), not a position. It is the only letter this lesson uses for two things.
+
+Before going on, note what has been lost. The sum does not depend on the order of its terms, so two documents with the same tokens in a different order get the same vector. <W>the dog bites the boy</W> and <W>the boy bites the dog</W> are indistinguishable. The concession is enormous and the name owns it: it is a bag, not a sequence, and all that is left inside is how many there are of each. Recovering the order is the business of Block 3, on recurrent networks, and of Block 5, on the Transformer.
+
+### Why raw counts don't say what a document is about
+
+The two defects of the table above can now be named separately. The first is **length**: a long document has more occurrences of everything, so its coordinates grow together, and pasting a text onto itself doubles them without changing a word of what it says.
+
+The second is **ubiquity**, and it shows when you look at the whole corpus as the $N \times \lvert V \rvert$ matrix formed by the bags of words. The column of <W>the</W> is high in every row, because the most frequent entries appear in every document, and a column that is high everywhere separates no row from any other.
+
+The column of <W>oven</W> does the opposite: it is $1$ in the recipes and $0$ elsewhere, it discriminates perfectly, and that $1$ lies buried under the counts of the others. What needs correcting is not how much an entry appears, but in how many distinct documents it appears.
+
+## From frequency to weight: TF-IDF
+
+The fix is to multiply each coordinate by a factor that depends on how many documents the entry appears in. Call the **document frequency** $\text{df}(t)$ the number of documents that contain at least one occurrence of the term $t$, so that $1 \le \text{df}(t) \le N$.
+
+Which factor, then? The honest way to reach it is to ask how much information is gained by knowing that $t$ is in this document. Pick a document at random from the $N$, all equally likely; the probability that it contains $t$ is
+
+$$
+p(t) = \frac{\text{df}(t)}{N}.
+$$
+
+If $p(t) = 1$ (the term appears in every document), learning that it is in this one has told you nothing, and the measure has to be $0$. And if two terms appear independently, knowing that both are present should contribute the sum of what each contributes, while the probability that both are present is the product of the two probabilities. A measure that turns products into sums and vanishes at $p = 1$ is a logarithm with its sign flipped, and that quantity is the self-information of the event. Out of it comes the **inverse document frequency**:
+
+$$
+\text{idf}(t) = -\log p(t) = \log \frac{N}{\text{df}(t)}.
+$$
+
+That it is the *only* measure with those two properties is a theorem of information theory that this lesson does not prove; what it does establish is that the logarithm is not chosen for convenience, but because additivity demands it.
+
+The full weight, *term frequency–inverse document frequency* (TF-IDF), is the product of the two measures intuition asked for:
+
+$$
+\text{tfidf}(t, d) = \text{tf}(t, d) \cdot \log \frac{N}{\text{df}(t)},
+$$
+
+and the document vector comes to hold $\text{tfidf}(w_i, d)$ in its coordinate $i$, with the same shape as before. The two extremes read straight off the formula. If $\text{df}(t) = N$, the logarithm is $\log 1 = 0$ and the coordinate cancels entirely, however many times the term appears: ubiquity is corrected with no hand-written stop-word lists, and it is the corpus that decides which words they are. If the term appears in a single document, $\text{idf}(t) = \log N$, the largest possible.
+
+The base of the logarithm need not be fixed: changing it multiplies every $\text{idf}$ by the same constant, the vectors rescale alike and no comparison changes its result. Here it is the natural logarithm, which is what `numpy` does by default.
+
+<Details summary="The variants you'll see in any implementation">
+What is above is the raw form. Real libraries apply three adjustments, reasonable conventions and not consequences of anything:
+
+- **Sublinear frequency**, $1 + \log \text{tf}(t, d)$ instead of $\text{tf}(t, d)$. The tenth occurrence of <W>oven</W> in a recipe informs less than the second.
+- **Denominator smoothing**, $\log\frac{N}{1 + \text{df}(t)}$, for terms that arrive with their $\text{idf}$ already computed and have $\text{df}(t) = 0$: the <W>\<UNK></W> problem from <Leccion slug="vocabulario-oov">the lesson on out-of-vocabulary words</Leccion>, seen from the arithmetic.
+- **Normalisation**, dividing each row by its Euclidean norm, which attacks length instead of leaving it to the cosine.
+
+None of them changes the idea and all of them change the numbers: two implementations of TF-IDF give different results on the same corpus.
+</Details>
+
+### Comparing two documents: cosine similarity
+
+One vector per document is worth something when two of them can be compared, and the immediate comparison (the Euclidean distance of the previous lesson) fails here through the length defect. Take a document $d_1$ and paste it onto itself to form $d_2$, so that $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. The distance between the two is
+
+$$
+\lVert \mathbf{x}_{d_2} - \mathbf{x}_{d_1} \rVert = \lVert \mathbf{x}_{d_1} \rVert,
+$$
+
+which is as large as the document itself, when the two texts say exactly the same thing. The distance is measuring how much text there is, and that is not what any document is about.
+
+What does tell the two cases apart is direction. Two documents that spread their weight over the same entries point the same way even if one is ten times as long, and that is what the cosine of the angle between them measures. For two non-zero vectors $\mathbf{u}$ and $\mathbf{v}$, the **cosine similarity** is their dot product divided by the product of their norms:
+
+$$
+\cos(\mathbf{u}, \mathbf{v}) = \frac{\mathbf{u}^{\top} \mathbf{v}}{\lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert}.
+$$
+
+The property asked of it checks out in one line. Multiply one of the two by a number $\alpha > 0$: the numerator is multiplied by $\alpha$, the norm in the denominator too, and
+
+$$
+\cos(\alpha \mathbf{u}, \mathbf{v}) = \frac{\alpha \, \mathbf{u}^{\top} \mathbf{v}}{\alpha \lVert \mathbf{u} \rVert \, \lVert \mathbf{v} \rVert} = \cos(\mathbf{u}, \mathbf{v}).
+$$
+
+So the document pasted onto itself has similarity $1$ with the original: the right answer. And since TF-IDF weights are never negative, neither is the dot product, and the similarity lives in $[0, 1]$: it is $1$ when the two vectors point alike and $0$ when they share no entry with positive weight.
+
+## Bag of words and TF-IDF in NumPy
+
+The cell builds the count matrix of a corpus of six English documents on three topics (football, cooking and programming), weights it with TF-IDF and compares the documents with the cosine. It tokenises with the same `by_words` as the previous lessons, which treats punctuation as a token of its own. Run it and look at three things: which entries head the raw counts, which head the weights, and the similarity matrix, where the three same-topic pairs have to separate from the rest.
+
+<PyCell packages={["numpy"]} code={`
+import unicodedata
+from collections import Counter
+
+import numpy as np
+
+D = [
+    "The striker scored a goal from a free kick, and the crowd rose to its feet. "
+    "The second goal by the striker came in the final minute of the match.",
+    "The referee ruled out the header goal and the crowd whistled from the back of the stands. "
+    "The striker protested, but the goal did not count on the board.",
+    "Preheat the oven and bake the dough of the tart for twenty minutes. "
+    "The dough comes out of the oven when the sugar browns.",
+    "A good tart needs a dough of flour and sugar, and bakes in the oven at two hundred degrees. "
+    "Let the dough rest before going into the oven.",
+    "The function walks the list of integers and returns a sum. "
+    "If the list is empty, the function returns zero.",
+    "The loop walks a list and accumulates the integers of the list in a counter. "
+    "The function returns the counter when the loop ends.",
+]
+N = len(D)
+
+def normalise(text):
+    return unicodedata.normalize("NFC", text)
+
+def by_words(text):
+    tokens, current = [], ""
+    for c in normalise(text):
+        if c.isalnum():
+            current = current + c
+            continue
+        if current:
+            tokens.append(current)
+            current = ""
+        if not c.isspace():
+            tokens.append(c)          # punctuation is a token of its own
+    if current:
+        tokens.append(current)
+    return tokens
+
+docs = [by_words(text) for text in D]
+V = sorted({t for tokens in docs for t in tokens})
+
+# x_d: one coordinate per vocabulary entry, holding its occurrences in d.
+X = np.array([[Counter(tokens)[w] for w in V] for tokens in docs], dtype=float)
+print("N =", N, "documents  |  each x_d has", len(V), "coordinates")
+print()
+
+# Before weighting anything: the six largest coordinates of the whole corpus.
+total = X.sum(axis=0)
+print("raw counts, the 6 top entries from most to least")
+for i in np.argsort(-total)[:6]:
+    print("  ", V[i].ljust(10), int(total[i]))
+print()
+
+df = (X > 0).sum(axis=0)          # df(t): in how many documents t appears
+idf = np.log(N / df)              # idf(t) = log(N / df(t))
+weights = X * idf                 # tfidf(t, d), of shape (N, |V|)
+
+print("df   idf     entry")
+for w in ["the", "of", "and", "The", "goal", "oven", "list", "referee"]:
+    i = V.index(w)
+    print(str(int(df[i])).rjust(2), ("%.3f" % idf[i]).rjust(7), "  ", w)
+print()
+print("idf = 0 (appear in all", N, "documents):",
+      [V[i] for i in range(len(V)) if idf[i] == 0])
+print()
+
+print("the three heaviest entries in each document")
+for j in range(N):
+    order = np.argsort(-weights[j])[:3]
+    line = "  ".join(V[i] + " " + ("%.2f" % weights[j, i]) for i in order)
+    print(" d" + str(j + 1), " ", line)
+print()
+
+def cosine(u, v):
+    return float(u @ v / (np.linalg.norm(u) * np.linalg.norm(v)))
+
+print("cosine similarity between documents")
+print("     " + "".join(("d" + str(j + 1)).rjust(7) for j in range(N)))
+for i in range(N):
+    row = "".join(("%.2f" % cosine(weights[i], weights[j])).rjust(7) for j in range(N))
+    print(("d" + str(i + 1)).rjust(4), row)
+print()
+
+# The same document pasted onto itself: every coordinate doubles.
+doubled = weights[0] * 2
+print("d1 against d1 repeated  ->  distance:",
+      round(float(np.linalg.norm(weights[0] - doubled)), 3),
+      " |  cosine:", round(cosine(weights[0], doubled), 3))
+`} />
+
+The raw counts are topped by <W>the</W>, <W>.</W>, <W>The</W>, <W>and</W>, <W>of</W> and <W>a</W>: the article in both its forms, since the tokeniser cuts without lower-casing, and otherwise function words and the full stop. It is the table from the motivation measured over a corpus, and not one of them says anything about the topic.
+
+The weights turn it over. The entries in all six documents (<W>.</W>, <W>and</W>, <W>of</W>, <W>the</W>) have $\text{idf}$ exactly $0$ and vanish, while <W>goal</W>, <W>oven</W> and <W>list</W> are worth $1.10$ and <W>referee</W>, which appears once, $1.79$. The heaviest entries in each document become <W>striker</W> and <W>goal</W>, <W>dough</W> and <W>oven</W>, <W>loop</W> and <W>counter</W>: the topic of the text, without anyone having told the program what a topic is.
+
+The similarities confirm it wholesale. The same-topic pairs are $0.19$, $0.26$ and $0.32$, and the other twelve stay between $0.00$ and $0.03$. The toy corpus exaggerates the separation, but the order is that of a real one. And the last line closes the cosine argument: between a document and its doubled copy, the Euclidean distance is $7.432$ and the cosine exactly $1$.
+
+A thirty-second test. Add a seventh football document and run it again: the $\text{idf}$ of <W>goal</W> drops, because it now appears in three documents out of seven. The weight of an entry is not its own, it belongs to the corpus where it is measured.
+
+## Test your intuition
+
+Four questions on what you now have: what the bag loses, what happens to an entry that is in every document, where the logarithm comes from and what each way of comparing measures.
+
+<Quiz id="q-orden" />
+
+<Quiz id="q-idf-cero" />
+
+<Quiz id="q-por-que-log" />
+
+<Quiz id="q-coseno" />
+
+---
+
+TF-IDF solves the problem the lesson began with: a document's vector gives more weight to what is particular to that document, and the comparison between two of them works, without training anything or fitting a single parameter. It is still in production fifty years on, and rightly so.
+
+What it does not fix is anything the previous lesson left open, because it does not touch the representation of the entries: the vector still has $\lvert V \rvert$ coordinates, is still almost all zeros, and its coordinates are still independent, so that <W>car</W> and <W>automobile</W> are as perpendicular to each other as <W>car</W> and <W>flour</W>. You can read the consequence off the similarities you computed above: two documents that talk about the same thing with different words share no entry with positive weight, and their cosine is exactly $0$, the same number as if they talked about opposite things. The equidistance is still intact one level down, and what you have learned to compare is documents, not vocabulary entries. For two similar entries to end up close, you have to abandon the idea that each has its own axis and let them share coordinates, many fewer than $\lvert V \rvert$ and none assigned to anyone. That is an embedding, and <Leccion slug="embeddings-densos">the lesson on dense representations</Leccion> is where it is built.

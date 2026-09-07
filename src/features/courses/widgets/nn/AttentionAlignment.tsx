@@ -18,10 +18,15 @@
  * convex combination of states, never bigger than the biggest of them) is the one thing
  * a reader cannot check by eye. The numbers all come from math/attention-alignment,
  * which is unit-tested against the exact one-hot/uniform/frozen cases. Local state only.
+ *
+ * COURSE-P11-02 — the copy is `courses.widgets.attention-alignment`. The CORPUS stays
+ * where it is: it is a Spanish→English translation pair, which is the subject of Block 4
+ * and reads the same way to either audience — see SPANISH_BOUND_CORPORA in ../corpora.ts.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
 import {
@@ -73,6 +78,8 @@ const shade = (w: number) =>
 const fmt2 = (v: number) => v.toFixed(2);
 
 export default function AttentionAlignment() {
+  const t = useTranslations("courses.widgets.attention-alignment");
+  const tc = useTranslations("courses.widgets.common");
   const [mode, setMode] = useState<Mode>("atencion");
   const [step, setStep] = useState(6); // «book», the row where the lines cross
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -100,14 +107,14 @@ export default function AttentionAlignment() {
           aria-pressed={mode === "atencion"}
           onClick={() => setMode("atencion")}
         >
-          Atención
+          {t("attention")}
         </WidgetButton>
         <WidgetButton
           active={mode === "fijo"}
           aria-pressed={mode === "fijo"}
           onClick={() => setMode("fijo")}
         >
-          Resumen fijo
+          {t("fixedSummary")}
         </WidgetButton>
       </div>
 
@@ -132,12 +139,12 @@ export default function AttentionAlignment() {
                 {token}
               </span>
             ))}
-            <span style={{ textAlign: "center" }}>suma</span>
+            <span style={{ textAlign: "center" }}>{tc("sum")}</span>
           </div>
 
           <div
             role="group"
-            aria-label="Mapa de alineación: elige un paso de la salida para ver de qué parte de la entrada tira"
+            aria-label={t("mapAria")}
             style={{ display: "flex", flexDirection: "column", gap: 2 }}
           >
             {ALIGNMENT_TARGET.map((token, i) => {
@@ -238,23 +245,23 @@ export default function AttentionAlignment() {
         }}
       >
         <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-          {mode === "atencion" ? (
-            <>
-              El paso {step + 1} escribe{" "}
-              <strong style={{ color: "var(--text)" }}>{ALIGNMENT_TARGET[step]}</strong> y tira
-              sobre todo de{" "}
-              <strong style={{ color: "var(--text)" }}>{ALIGNMENT_SOURCE[peak.index]}</strong>, con
-              un peso de {fmt2(peak.weight)}. Cambia de paso: la fila se mueve, y su suma sigue
-              valiendo {fmt2(sums[step])}.
-            </>
-          ) : (
-            <>
-              Con el resumen fijo, el paso {step + 1} recibe el estado de{" "}
-              <strong style={{ color: "var(--text)" }}>{ALIGNMENT_SOURCE[T_X - 1]}</strong> con peso{" "}
-              {fmt2(peak.weight)} — y también lo reciben los otros {T_Y - 1} pasos. Recorre las
-              filas y mira las barras de abajo: no se mueven.
-            </>
-          )}
+          {mode === "atencion"
+            ? t.rich("attentionNote", {
+                step: step + 1,
+                target: ALIGNMENT_TARGET[step],
+                source: ALIGNMENT_SOURCE[peak.index],
+                weight: fmt2(peak.weight),
+                sum: fmt2(sums[step]),
+                tgt: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+                src: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+              })
+            : t.rich("frozenNote", {
+                step: step + 1,
+                source: ALIGNMENT_SOURCE[T_X - 1],
+                weight: fmt2(peak.weight),
+                others: T_Y - 1,
+                src: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+              })}
         </p>
       </div>
     </div>
@@ -265,6 +272,7 @@ export default function AttentionAlignment() {
  *  builds, and under «resumen fijo» it is the same drawing for every row — which is the
  *  whole comparison. */
 function ContextStrip({ step, context }: { step: number; context: number[] }) {
+  const t = useTranslations("courses.widgets.attention-alignment");
   const W = 236;
   const H = 54;
   const mid = H / 2;
@@ -281,9 +289,11 @@ function ContextStrip({ step, context }: { step: number; context: number[] }) {
         width={W}
         height={H}
         role="img"
-        aria-label={`Las ${D_H} coordenadas del vector de contexto del paso ${step + 1}: ${context
-          .map((v) => fmt2(v))
-          .join(", ")}.`}
+        aria-label={t("contextAria", {
+          d: D_H,
+          step: step + 1,
+          values: context.map((v) => fmt2(v)).join(", "),
+        })}
         style={{ maxWidth: "100%" }}
       >
         <line x1={0} y1={mid} x2={W} y2={mid} stroke="var(--border-variant)" strokeWidth={1} />
@@ -304,7 +314,7 @@ function ContextStrip({ step, context }: { step: number; context: number[] }) {
         })}
       </svg>
       <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>
-        {D_H} coordenadas, las mismas que tenía el resumen
+        {t("contextNote", { d: D_H })}
       </span>
     </div>
   );

@@ -8,10 +8,14 @@
  * COURSE-P5-02 — control labels in Spanish. AUTHORING.md §5 fixes the concept as
  * `tasa de aprendizaje`, and an English slider label sitting next to "Inicio x₀" was
  * drift, not a decision. The lesson still gives the English once, in prose.
+ *
+ * COURSE-P11-02 — those labels are now `courses.widgets.loss-landscape`, so the English
+ * column gets the term deliberately rather than by drift.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -30,6 +34,8 @@ const MINIMA: [number, number][] = [
 ];
 
 export default function LossLandscape() {
+  const t = useTranslations("courses.widgets.loss-landscape");
+  const tc = useTranslations("courses.widgets.common");
   const field = DOUBLE_WELL;
   const [startX, setStartX] = useState(-1.6);
   const [lr, setLr] = useState(0.06);
@@ -62,7 +68,7 @@ export default function LossLandscape() {
   const visible = path.slice(0, step + 1);
   const current = visible[visible.length - 1];
   const finalX = path[path.length - 1][0];
-  const basin = finalX < 0 ? "izquierda (−1, 0)" : "derecha (+1, 0)";
+  const basin = finalX < 0 ? t("basinLeft") : t("basinRight");
 
   const reset = () => {
     setStep(0);
@@ -76,7 +82,7 @@ export default function LossLandscape() {
         xDomain={field.xDomain}
         yDomain={field.yDomain}
         levels={levels}
-        ariaLabel="Superficie de pérdida con dos mínimos y la trayectoria del descenso"
+        ariaLabel={t("plotAria")}
         renderOverlay={(sx, sy) => (
           <g>
             {MINIMA.map(([mx, my], i) => (
@@ -93,15 +99,15 @@ export default function LossLandscape() {
         )}
       />
 
-      <Slider label="Inicio x₀" value={startX} min={-1.9} max={1.9} step={0.1} onChange={(v) => { setStartX(v); reset(); }} format={(v) => v.toFixed(1)} />
-      <Slider label="Tasa de aprendizaje (η)" value={lr} min={0.01} max={0.2} step={0.005} onChange={(v) => { setLr(v); reset(); }} format={(v) => v.toFixed(3)} />
+      <Slider label={t("startX")} value={startX} min={-1.9} max={1.9} step={0.1} onChange={(v) => { setStartX(v); reset(); }} format={(v) => v.toFixed(1)} />
+      <Slider label={t("learningRate")} value={lr} min={0.01} max={0.2} step={0.005} onChange={(v) => { setLr(v); reset(); }} format={(v) => v.toFixed(3)} />
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         <WidgetButton onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
-          ◀ paso
+          {tc("stepBack")}
         </WidgetButton>
         <WidgetButton onClick={() => setStep((s) => Math.min(STEPS, s + 1))} disabled={step >= STEPS}>
-          paso ▶
+          {tc("stepForward")}
         </WidgetButton>
         {!reduced && (
           <WidgetButton
@@ -115,18 +121,20 @@ export default function LossLandscape() {
               }
             }}
           >
-            {animating ? "Pausa" : "Animar"}
+            {animating ? tc("pause") : tc("animate")}
           </WidgetButton>
         )}
-        <WidgetButton onClick={reset}>Reset</WidgetButton>
+        <WidgetButton onClick={reset}>{tc("reset")}</WidgetButton>
         <span style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>
-          paso {step}/{STEPS}
+          {tc("stepOf", { current: step, total: STEPS })}
         </span>
       </div>
 
       <p style={{ fontSize: "0.85rem", margin: 0, color: "var(--text-muted)" }}>
-        Cae en el mínimo de la <strong style={{ color: "var(--green)" }}>{basin}</strong> — el punto de
-        partida decide la cuenca.
+        {t.rich("verdict", {
+          basin,
+          b: (chunks) => <strong style={{ color: "var(--green)" }}>{chunks}</strong>,
+        })}
       </p>
     </div>
   );

@@ -15,10 +15,16 @@
  * The y axis is in ORDERS OF MAGNITUDE because both counts are astronomical; all of it
  * comes from math/context-bottleneck, unit-tested against exact power-of-two cases and
  * the reference values this readout and the lesson's prose quote. Local state only.
+ *
+ * COURSE-P11-02 — the copy is `courses.widgets.context-bottleneck`. `d_h`, `q`, `c`,
+ * `log₁₀` and the powers of ten are notation and stay; the words around them, the two
+ * slider readouts and the spoken form of a power («10 elevado a 231» / «10 to the 231»,
+ * which is what a screen reader gets instead of a superscript) all translate.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { bottleneckCurves, codeOrders, log10Ceiling } from "../math/context-bottleneck";
@@ -39,9 +45,9 @@ const Q_MIN = 2;
 const Q_MAX = 32;
 const DEFAULT_Q = 8;
 
-/** 231.19 → «10 elevado a 231», la única precisión que un número así admite. */
+/** 231.19 → 231, la única precisión que un número así admite. The spoken form («10
+ *  elevado a 231») is the `powerLabel` message — see the component. */
 const exponent = (orders: number) => Math.round(orders);
-const powerLabel = (orders: number) => `10 elevado a ${exponent(orders)}`;
 
 function Power({ orders }: { orders: number }) {
   const e = exponent(orders);
@@ -53,6 +59,7 @@ function Power({ orders }: { orders: number }) {
 }
 
 export default function ContextBottleneck() {
+  const t = useTranslations("courses.widgets.context-bottleneck");
   const [dh, setDh] = useState(DEFAULT_DH);
   const [q, setQ] = useState(DEFAULT_Q);
 
@@ -68,22 +75,22 @@ export default function ContextBottleneck() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem", width: "100%" }}>
       <Slider
-        label="Ancho del estado, d_h"
+        label={t("stateWidth")}
         value={dh}
         min={DH_MIN}
         max={DH_MAX}
         step={DH_STEP}
         onChange={setDh}
-        format={(v) => `${v} coordenadas`}
+        format={(v) => t("coordinates", { v })}
       />
       <Slider
-        label="Niveles distinguibles por coordenada, q"
+        label={t("levelsLabel")}
         value={q}
         min={Q_MIN}
         max={Q_MAX}
         step={1}
         onChange={setQ}
-        format={(v) => `${v} niveles`}
+        format={(v) => t("levels", { v })}
       />
 
       <Plot2D
@@ -102,14 +109,20 @@ export default function ContextBottleneck() {
         ]}
         xDomain={[0, MAX_LENGTH]}
         yDomain={yDomain}
-        ariaLabel={`Dos rectas frente a la longitud de la entrada, en ordenes de magnitud. La capacidad del vector de contexto es horizontal en ${powerLabel(codes)} mensajes distintos, con ${dh} coordenadas de ${q} niveles. El numero de frases de entrada sube 4.5 ordenes por token y cruza la capacidad en ${crossing} tokens.`}
+        ariaLabel={t("plotAria", {
+          codes: t("powerLabel", { exponent: exponent(codes) }),
+          dh,
+          q,
+          crossing,
+        })}
       />
 
       <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.55 }}>
-        Eje vertical: órdenes de magnitud (log₁₀) de un recuento.{" "}
-        <span style={{ color: "var(--green)" }}>▬</span> mensajes que caben en c ·{" "}
-        <span style={{ color: "var(--warning)" }}>▬</span> frases de entrada distintas de esa
-        longitud, sobre un vocabulario de {VOCAB_LABEL} entradas.
+        {t.rich("legend", {
+          vocab: VOCAB_LABEL,
+          cap: (chunks) => <span style={{ color: "var(--green)" }}>{chunks}</span>,
+          dem: (chunks) => <span style={{ color: "var(--warning)" }}>{chunks}</span>,
+        })}
       </p>
 
       <div
@@ -122,12 +135,15 @@ export default function ContextBottleneck() {
         }}
       >
         <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-          En {dh} coordenadas de {q} niveles caben <Power orders={codes} /> mensajes distintos, y eso
-          alcanza para las frases de hasta{" "}
-          <strong style={{ color: "var(--text)" }}>{crossing} tokens</strong>. A partir de ahí sobran
-          frases: a los {crossing + PAST_CROSSING} tokens ningún decoder —ni el mejor posible,
-          entrenado sin límite— devuelve exactas más que una fracción <Power orders={ceilingPast} />{" "}
-          de ellas.
+          {t.rich("readout", {
+            dh,
+            q,
+            crossing,
+            past: crossing + PAST_CROSSING,
+            codes: () => <Power orders={codes} />,
+            ceiling: () => <Power orders={ceilingPast} />,
+            upto: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+          })}
         </p>
       </div>
     </div>

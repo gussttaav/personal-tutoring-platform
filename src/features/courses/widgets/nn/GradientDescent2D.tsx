@@ -8,10 +8,15 @@
  * COURSE-P5-02 — control labels in Spanish. AUTHORING.md §5 fixes the concept as
  * `tasa de aprendizaje`, which the divergence message below already said while the
  * slider twelve lines up said "Learning rate": one component, one concept, two words.
+ *
+ * COURSE-P11-02 — same concept, now one message: `courses.widgets.gradient-descent-2d`.
+ * The `FIELDS` keys stay Spanish because they are the state value, and `FIELD_LABEL_KEYS`
+ * is what the buttons and the plot description read instead.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 
 import { useReducedMotion } from "@/hooks/useReducedMotion";
@@ -30,10 +35,18 @@ const FIELDS: Record<string, { field: Field2D; start: Point; label: string }> = 
 };
 type FieldName = keyof typeof FIELDS;
 
+/** State value → message key; the keys of `FIELDS` never reach the screen. */
+const FIELD_LABEL_KEYS: Record<FieldName, string> = {
+  Convexo: "fieldConvex",
+  "Cañón": "fieldRavine",
+};
+
 const outside = (p: Point, f: Field2D) =>
   p[0] < f.xDomain[0] || p[0] > f.xDomain[1] || p[1] < f.yDomain[0] || p[1] > f.yDomain[1];
 
 export default function GradientDescent2D() {
+  const t = useTranslations("courses.widgets.gradient-descent-2d");
+  const tc = useTranslations("courses.widgets.common");
   const [fieldName, setFieldName] = useState<FieldName>("Cañón");
   const [lr, setLr] = useState(0.05);
   const [step, setStep] = useState(0);
@@ -89,7 +102,7 @@ export default function GradientDescent2D() {
               reset();
             }}
           >
-            {n}
+            {t(FIELD_LABEL_KEYS[n])}
           </WidgetButton>
         ))}
       </div>
@@ -99,7 +112,7 @@ export default function GradientDescent2D() {
         xDomain={field.xDomain}
         yDomain={field.yDomain}
         levels={levels}
-        ariaLabel={`Descenso de gradiente sobre un campo ${fieldName}`}
+        ariaLabel={t("plotAria", { field: t(FIELD_LABEL_KEYS[fieldName]) })}
         renderOverlay={(sx, sy) => (
           <g>
             <path
@@ -121,7 +134,7 @@ export default function GradientDescent2D() {
       />
 
       <Slider
-        label="Tasa de aprendizaje (η)"
+        label={t("learningRate")}
         value={lr}
         min={0.01}
         max={0.3}
@@ -135,10 +148,10 @@ export default function GradientDescent2D() {
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", alignItems: "center" }}>
         <WidgetButton onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
-          ◀ paso
+          {tc("stepBack")}
         </WidgetButton>
         <WidgetButton onClick={() => setStep((s) => Math.min(maxStep, s + 1))} disabled={step >= maxStep}>
-          paso ▶
+          {tc("stepForward")}
         </WidgetButton>
         {!reduced && (
           <WidgetButton
@@ -152,18 +165,18 @@ export default function GradientDescent2D() {
               }
             }}
           >
-            {animating ? "Pausa" : "Animar"}
+            {animating ? tc("pause") : tc("animate")}
           </WidgetButton>
         )}
-        <WidgetButton onClick={reset}>Reset</WidgetButton>
+        <WidgetButton onClick={reset}>{tc("reset")}</WidgetButton>
         <span style={{ fontSize: "0.8rem", color: "var(--text-dim)", fontVariantNumeric: "tabular-nums" }}>
-          paso {step}/{maxStep} · pérdida {loss.toFixed(3)}
+          {t("stepAndLoss", { step, total: maxStep, loss: loss.toFixed(3) })}
         </span>
       </div>
 
       {diverged && (
         <p style={{ fontSize: "0.85rem", margin: 0, color: "var(--error)", fontWeight: 600 }}>
-          Diverge — la tasa de aprendizaje es demasiado alta; la trayectoria se sale del gráfico.
+          {t("diverged")}
         </p>
       )}
     </div>

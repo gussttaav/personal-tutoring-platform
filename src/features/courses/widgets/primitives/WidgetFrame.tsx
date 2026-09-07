@@ -19,10 +19,16 @@
  * (mirrors mdx-components.tsx), an optional caption, and an optional reset control.
  * SVG text is unreadable below ~320px, so the body has a `minWidth` and scrolls
  * horizontally rather than shrinking labels.
+ *
+ * COURSE-P11-02 — the Reset control reads its label from `courses.widgets.common`
+ * like every other string in this tree. `title` and `caption` stay props: they are
+ * authored per `<Explorable>` in the lesson, so they arrive already in the lesson's
+ * language and have nothing to look up.
  */
 
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { CSSProperties, ReactNode } from "react";
 
 export interface WidgetFrameProps {
@@ -55,6 +61,8 @@ export function WidgetFrame({
   minWidth = 320,
   title,
 }: WidgetFrameProps) {
+  const t = useTranslations("courses.widgets.common");
+
   return (
     <div
       style={{
@@ -94,7 +102,7 @@ export function WidgetFrame({
                 color: "var(--text-muted)",
               }}
             >
-              Reset
+              {t("reset")}
             </button>
           ) : null}
         </div>

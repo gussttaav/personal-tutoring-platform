@@ -3,6 +3,11 @@
 **Tag:** `COURSE-P5-00` · Companion to [NOTATION.md](NOTATION.md) · Template:
 [`content/courses/dl-nlp/_template.mdx`](../../content/courses/dl-nlp/_template.mdx)
 
+**Writing an English lesson?** This file still governs (`COURSE-P11-03`), and
+[AUTHORING.en.md](AUTHORING.en.md) replaces the four parts of it that are about Spanish: two of the
+five marks, person and mood, §2's lowercase *bloque 2*, and the terminology table. Read this file
+first, then the delta — never the delta alone.
+
 Phase 5 is ~40 lessons. Anything left undecided here gets re-decided 40 times, differently each
 time, and the course ends up reading like a pile of tutorials written by several people. This file
 is the contract. Read it once, then work from the template and the checklist at the bottom.
@@ -488,11 +493,14 @@ Three consequences that are easy to get wrong:
 
 Spanish typography, since this is Spanish prose and half of it differs from English:
 
-- **La raya `—` is glued to the text it encloses, with the space outside**: `el traductor —numerar
-  las palabras por orden alfabético, por ejemplo— produce números válidos`. A single raya
-  introducing a final clause glues the same way: `…y la tilde por separado —y <W>niño</W> pasa a
-  tener seis tokens`. Never ` — ` spaced on both sides, which is the English convention; never `-`
-  (guion) or `–` (semirraya) in its place.
+- **No raya (`—`) in prose.** A parenthetical incise goes in parentheses: `el traductor (numerar
+  las palabras por orden alfabético, por ejemplo) produce números válidos`. A lighter, two- or
+  three-word aside takes a pair of commas. A clause that explains or introduces what comes before
+  it takes a colon: `no es el problema OOV: <W>agua</W> sí acaba teniendo índice`. Two full
+  sentences are written as two sentences. Never `—` (raya), never ` — ` spaced on both sides
+  (the English convention), never `-` (guion) or `–` (semirraya) standing in for any of them. The
+  semirraya `–` stays only for numeric ranges (`30 000–50 000`) and compound terms
+  (`term frequency–inverse document frequency`), where it is not punctuation.
 - **Opening `¿` and `¡` always.** Their absence is the single clearest tell of prose drafted in
   English.
 - **Numbers in prose take the decimal point and a space for thousands**: `1.5`, `30 000`. Inside
@@ -1218,6 +1226,41 @@ Building a widget is three files plus its wiring, and the maths is the part that
   keyboard-operable (a native `<Slider>`, arrow-key stepping), and it reads every colour from the CSS
   tokens (`var(--green)`, `var(--text)`, …) so it themes with the page. It imports the maths; it does
   not recompute it inline.
+- **`messages/es.json` + `messages/en.json`** — every string the widget shows, under
+  `courses.widgets.<widget-id>`. See the rule below; this is not optional and it is not a later pass.
+
+**A widget never hardcodes a user-visible string.** Labels, hints, button text, panel prose, empty
+states and — the ones that get missed, because nothing renders them — **`aria-label`s** all go
+through `useTranslations("courses.widgets.<widget-id>")`, keyed by the widget id an author writes in
+`<Explorable id="…" />`, never by the component's filename. Shared chrome (Reset, previous/next, the
+step counter, «suma») lives in `courses.widgets.common`. The two message files stay key-for-key
+identical; `widgets/__tests__/corpora.test.ts` fails if they drift.
+
+Three things are **not** strings and stay where they are:
+
+- **Notation.** `d_h`, `ρ`, `Wₕₕ`, `x₀`, `T`, `k`, `q`, `d_model`, `σ`, `tanh`, `ReLU`, `K, V`, `× N`
+  read the same in both languages. Only the words around a symbol translate, which is why the
+  messages that mix the two use rich-text tags (`<sub></sub>`, `<exp></exp>`) rather than being cut
+  into fragments — word order moves between languages and fragments cannot.
+- **Terminology.** `escalón` → *step*, `sigmoide` → *sigmoid*, `Radio espectral` → *spectral radius*,
+  `Ancho del estado` → *state width*, `tasa de aprendizaje` → *learning rate*. Take the English from
+  [NOTATION.md](NOTATION.md) where it names it; if it does not, add it there rather than deciding
+  twice.
+- **State values.** A preset key, a field name, a widget id: `<Explorable id="tokenizer-playground" />`
+  is a registry key, locale-invariant like a lesson slug. When a state key happens to be a Spanish
+  word (`FIELDS.Cañón`), keep the key and map it to a message key beside it — do not rename the state.
+
+**A default corpus is not copy.** The sentence a widget opens with is a teaching instrument: the
+tokeniser's default is chosen so the three columns visibly disagree, the bag-of-words pair so the
+corpus row is topped by the words that say least. Translate one literally and the widget still runs,
+still looks right, and stops demonstrating what the prose says it demonstrates. So corpora live in
+[`widgets/corpora.ts`](../../src/features/courses/widgets/corpora.ts), one entry per widget id, with
+the **teaching property written down next to it** and asserted in the corpora test. Choosing a new
+locale's corpus belongs to whoever writes the lesson that embeds the widget, and it is verified by
+looking at the rendered widget — a corpus that fails the property is the wrong corpus, however well
+the sentence reads. A corpus bound to a Spanish data asset (the self-attention lexicon, the embedding
+sample) cannot be translated at all until that asset exists; those are listed, with the reason, in
+`SPANISH_BOUND_CORPORA`.
 
 The one thing that legitimately stays separate is the div between a widget and a **figure of the same
 object**: they survive together only with separate jobs (§7 above). `lstm-gates` shows the gates
@@ -1362,7 +1405,8 @@ Copy this into the PR description.
       *basta con*…) or the padding family (*cabe destacar*, *como podemos ver*…)
 - [ ] **The five marks do their own jobs**: bold defines, italics emphasises or marks an anglicism,
       `<W>` mentions, `«…»` loosens, backticks are Python
-- [ ] Spanish typography: raya glued (`—así—`), opening `¿` and `¡`, decimal point in prose
+- [ ] Spanish typography: no raya (`—`) — asides in `(…)`, a comma pair, or a colon; opening `¿`
+      and `¡`; decimal point in prose
 - [ ] **Every display equation punctuated as part of its sentence** — the mark inside the fence:
       `.` when the sentence ends there, `,` when the next clause takes a pause, nothing when the
       sentence runs through it. Read each equation aloud with the line after it

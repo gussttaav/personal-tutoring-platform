@@ -14,6 +14,11 @@
  *
  * An unknown id can't reach production: `scripts/lint-content.ts` fails the build on it.
  * In dev we still render a visible marker to make an authoring typo obvious.
+ *
+ * COURSE-P11-02 — that marker is the one string in this tree that is NOT translated, and
+ * deliberately so: it is behind `NODE_ENV !== "production"`, so no reader in either
+ * locale can ever see it. It is a developer diagnostic, addressed to whoever wrote the
+ * typo, and it names the two files they have to edit.
  */
 
 "use client";

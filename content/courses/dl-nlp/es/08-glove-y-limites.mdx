@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'El conteo crudo $X_{ik}$, sin logaritmo: el logaritmo aparece después, al normalizar los vectores.' }
       - { id: d, text: 'La probabilidad $P(c \mid w)$ del contexto dado el centro, igual que el skip-gram, pero calculada sobre la tabla en vez de sobre ventanas.' }
     answer: a
-    explanation: 'La razón (b) es de dónde sale la transformación, y es justo lo que esta transformación consigue quitar de en medio: absorber $\log X_i$ en el sesgo $b_i$ convierte una condición sobre ternas $(i, j, k)$ en una ecuación por **par**, y eso baja el número de ecuaciones de $\lvert V \rvert^{3}$ a $\lvert V \rvert^{2}$ —de las cuales solo se usan las no nulas. (c) invierte el orden: el logaritmo está ahí desde que se toman logaritmos en $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, y sin él la igualdad no sería lineal en los vectores. (d) es la lección anterior; GloVe no calcula ninguna probabilidad condicionada durante el ajuste.'
+    explanation: 'La razón (b) es de dónde sale la transformación, y es justo lo que esta transformación consigue quitar de en medio: absorber $\log X_i$ en el sesgo $b_i$ convierte una condición sobre ternas $(i, j, k)$ en una ecuación por **par**, y eso baja el número de ecuaciones de $\lvert V \rvert^{3}$ a $\lvert V \rvert^{2}$, de las cuales solo se usan las no nulas. (c) invierte el orden: el logaritmo está ahí desde que se toman logaritmos en $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, y sin él la igualdad no sería lineal en los vectores. (d) es la lección anterior; GloVe no calcula ninguna probabilidad condicionada durante el ajuste.'
   - id: q-peso
     type: multi
     prompt: 'Sobre la suma $\mathcal{L} = \sum g(X_{ik})(\dots)^2$, marca todo lo que sea cierto.'
@@ -34,7 +34,7 @@ quiz:
       - { id: c, text: '$g$ está acotada por $1$, de modo que los pares frecuentísimos no se llevan el ajuste entero.' }
       - { id: d, text: 'Quitar $g$ dejaría la suma con $\lvert V \rvert^{2}$ sumandos, así que es $g$ lo que hace barato el ajuste.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras son las tres decisiones de esa línea, y cada una arregla algo distinto: (a) evita $\log 0$ —y de paso es lo que abarata el ajuste—, (b) quita peso a las celdas que son casi ruido y (c) se lo quita a las palabras vacías de <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras</Leccion>, que si no decidirían solas dónde van todos los vectores. (d) atribuye el ahorro a quien no es: lo que deja fuera las $\lvert V \rvert^{2}$ celdas vacías es la condición $X_{ik} > 0$ del sumatorio, no el peso. $g$ vale $0$ en $x = 0$, sí, pero un sumando de peso cero seguiría costando calcular $\log 0$.'
+    explanation: 'Las tres primeras son las tres decisiones de esa línea, y cada una arregla algo distinto: (a) evita $\log 0$ (y de paso es lo que abarata el ajuste), (b) quita peso a las celdas que son casi ruido y (c) se lo quita a las palabras vacías de <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras</Leccion>, que si no decidirían solas dónde van todos los vectores. (d) atribuye el ahorro a quien no es: lo que deja fuera las $\lvert V \rvert^{2}$ celdas vacías es la condición $X_{ik} > 0$ del sumatorio, no el peso. $g$ vale $0$ en $x = 0$, sí, pero un sumando de peso cero seguiría costando calcular $\log 0$.'
   - id: q-banco
     type: single
     prompt: 'El vector de <W>banco</W> mezcla el sentido del dinero y el del parque. ¿Cuál de estos cambios lo arregla?'
@@ -54,14 +54,14 @@ reading:
     venue: 'EMNLP 2014'
     lang: en
     url: 'https://aclanthology.org/D14-1162/'
-    note: 'El artículo de GloVe. De aquí salen la tabla de «hielo» y «vapor» y los valores del peso —x_máx = 100 y exponente 3/4— que usa la lección. Ese 3/4 es el mismo del muestreo negativo y, como allí, se eligió probando.'
+    note: 'El artículo de GloVe. De aquí salen la tabla de «hielo» y «vapor» y los valores del peso (x_máx = 100 y exponente 3/4) que usa la lección. Ese 3/4 es el mismo del muestreo negativo y, como allí, se eligió probando.'
   - kind: interactivo
     title: 'Word2Vec Explorer'
     authors: 'Daniel Guetta'
     venue: 'daniel.guetta.com'
     lang: en
     url: 'https://daniel.guetta.com/word2vec'
-    note: 'La analogía que aquí desarrollas —rey - hombre + mujer ≈ reina— sobre vectores reales, no el mapa dibujado a mano de la lección. Son de word2vec, no de GloVe, pero de la misma familia, y con su mismo límite: una palabra, un vector.'
+    note: 'La analogía que aquí desarrollas (rey - hombre + mujer ≈ reina) sobre vectores reales, no el mapa dibujado a mano de la lección. Son de word2vec, no de GloVe, pero de la misma familia, y con su mismo límite: una palabra, un vector.'
 ---
 
 {/* COURSE-P5-01 — Bloque 1, lección 8. */}
@@ -82,8 +82,8 @@ representaciones densas</Leccion>.
 />
 
 Restar <W>hombre</W> a <W>rey</W> y sumar el resultado a <W>mujer</W> cae sobre <W>reina</W>. Lo que
-afirma el dibujo no es que <W>rey</W> y <W>reina</W> estén cerca —esa vecindad ya la daba aquella
-lección—, sino algo más fuerte: que la *diferencia* entre dos vectores significa por sí misma y
+afirma el dibujo no es que <W>rey</W> y <W>reina</W> estén cerca (esa vecindad ya la daba aquella
+lección), sino algo más fuerte: que la *diferencia* entre dos vectores significa por sí misma y
 reaparece intacta en otro par. La advertencia es la de entonces: las coordenadas las he puesto yo a mano,
 así que el mapa enseña la forma de la afirmación, no su prueba.
 
@@ -156,8 +156,8 @@ F(x + y) = F(x)\,F(y),
 $$
 
 la ecuación funcional de Cauchy en su forma multiplicativa, cuyas únicas soluciones continuas y no
-idénticamente nulas son $F(x) = e^{cx}$. La constante se absorbe en la escala de los vectores —si
-$e^{cx}$ sirve para unos $\mathbf{e}_i$, $e^{x}$ sirve para $c\,\mathbf{e}_i$—, así que tomar $c = 1$
+idénticamente nulas son $F(x) = e^{cx}$. La constante se absorbe en la escala de los vectores (si
+$e^{cx}$ sirve para unos $\mathbf{e}_i$, $e^{x}$ sirve para $c\,\mathbf{e}_i$), así que tomar $c = 1$
 no pierde nada.
 
 </Details>
@@ -187,7 +187,7 @@ $$
 
 y ese $\log X_i$ tiene arreglo barato: no depende de $k$, así que es una constante por cada entrada
 $i$. Se le da nombre, $b_i$, y se pasa al otro lado. Con eso la igualdad deja de ser simétrica
-—$X_{ik} = X_{ki}$, pero el lado izquierdo ya no—, así que un segundo escalar $\tilde{b}_k$ para la
+($X_{ik} = X_{ki}$, pero el lado izquierdo ya no), así que un segundo escalar $\tilde{b}_k$ para la
 entrada que hace de contexto la devuelve:
 
 $$
@@ -199,16 +199,16 @@ de partida hablaba de ternas $(i, j, k)$ y esta, de un par. Una ecuación por ca
 
 ### El peso que impide que los pares más frecuentes decidan por todos
 
-Ese sistema no tiene solución exacta: son $\lvert V \rvert^{2}$ ecuaciones —2 500 millones con el
-vocabulario de 50 000 entradas del bloque— contra unos 30 millones de incógnitas. Se pide entonces lo
+Ese sistema no tiene solución exacta: son $\lvert V \rvert^{2}$ ecuaciones (2 500 millones con el
+vocabulario de 50 000 entradas del bloque) contra unos 30 millones de incógnitas. Se pide entonces lo
 posible, en el sentido de los mínimos cuadrados, y antes hay que arreglar dos cosas.
 
-La primera es que la mayor parte de la tabla son ceros —dos entradas cualesquiera no coinciden jamás
-en una ventana— y $\log 0$ no existe. Las vacías se dejan fuera, que es además lo que abarata el
+La primera es que la mayor parte de la tabla son ceros (dos entradas cualesquiera no coinciden jamás
+en una ventana), y $\log 0$ no existe. Las vacías se dejan fuera, que es además lo que abarata el
 ajuste: se paga por los pares vistos y no por $\lvert V \rvert^{2}$.
 
 La segunda es que las celdas no valen lo mismo. Una con $X_{ik} = 1$ es casi ruido, y una con
-$X_{ik} = 10^{6}$ —dos palabras vacías de <Leccion slug="bolsa-de-palabras">la lección de la bolsa de palabras</Leccion>— no debería decidir
+$X_{ik} = 10^{6}$ (dos palabras vacías de <Leccion slug="bolsa-de-palabras">la lección de la bolsa de palabras</Leccion>) no debería decidir
 sola dónde van los vectores. El arreglo es un peso que dependa del propio conteo:
 
 $$
@@ -486,4 +486,4 @@ lo que viene y se cobra al final, en el bloque 5, sobre el Transformer.
 Antes hay que construir lo que va a consumir esos vectores, y todavía no existe. <Leccion slug="texto-como-numeros">La lección sobre el problema de representar el lenguaje</Leccion> supuso una función que recibe un vector y devuelve una respuesta, y dejó dicho que cómo es por
 dentro era asunto del bloque siguiente. El bloque 2, sobre el perceptrón multicapa,
 empieza por ahí: su <Leccion slug="la-neurona">lección sobre la neurona artificial</Leccion> define la pieza más pequeña que hace ese
-trabajo —recibe un vector, lo pondera y devuelve un número— y la suposición se acaba.
+trabajo (recibe un vector, lo pondera y devuelve un número), y la suposición se acaba.

@@ -1,0 +1,232 @@
+---
+slug: texto-como-numeros
+title: "The problem of representing language"
+block: 1
+order: 1
+minutes: 8
+summary: "A network operates only on real numbers. Text does not. This is the precise statement of the problem the whole block lives on."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-por-que-no-texto
+    type: single
+    prompt: "What is the underlying reason a network cannot be handed the string <W>hello</W> directly?"
+    options:
+      - { id: a, text: "Because strings take up too much memory." }
+      - { id: b, text: "Because a network is only defined over vectors of real numbers." }
+      - { id: c, text: "Because English spelling is irregular and the network was trained on another language." }
+      - { id: d, text: "Because networks process one character at a time and <W>hello</W> is a word." }
+    answer: b
+    explanation: "A network is a function between real vector spaces: its input has to live in $\\mathbb{R}^d$. A symbol from the vocabulary is not a vector, so handing it over does not produce a wrong computation: it produces one that is not defined at all. Memory, the language and the characters have nothing to do with it."
+  - id: q-indice-alfabetico
+    type: single
+    prompt: "Numbering the vocabulary in alphabetical order (<W>apple</W> → 1, <W>cat</W> → 2, <W>dog</W> → 3) is a valid representation, because it assigns every word a number deterministically."
+    options:
+      - { id: a, text: "True" }
+      - { id: b, text: "False" }
+    answer: b
+    explanation: "It is deterministic, yes. But putting the words on the real line makes them inherit its geometry, and that geometry asserts things nobody meant to assert: that <W>apple</W> is more like <W>cat</W> than like <W>dog</W>, and that <W>cat</W> sits exactly halfway between the other two. The alphabet is an order invented for looking things up in a dictionary; it knows nothing about meaning."
+  - id: q-propiedades-de-r
+    type: multi
+    prompt: "Which properties does a representation function $r$ have to satisfy in order to feed a network? Tick all the correct ones."
+    options:
+      - { id: a, text: "Being defined for any word that might arrive, including the ones you never saw when you built it." }
+      - { id: b, text: "Always returning vectors of the same dimension $d$." }
+      - { id: c, text: "Being injective: two distinct words never share a vector." }
+      - { id: d, text: "Being deterministic: the same word always produces the same vector." }
+    answer: [a, b, d]
+    explanation: "Totality (a), fixed dimension (b) and determinism (d) are the three demands. Injectivity (c) is *not*: you will give it up on purpose more than once, rare words will share a single vector, and subwords will make <W>cat</W> and <W>cats</W> share almost everything. Losing some information is often what makes a model generalise."
+challenges: []
+reading: []
+---
+
+{/* ── 1. MOTIVATION — no heading ── */}
+
+A neural network cannot be handed the word <W>hello</W>. At bottom, a neural network is a mathematical function that operates on vectors of real numbers. Its computations assume that the inputs belong to a space where notions like "distance", "direction" and "closeness" are well defined, and text, on its own, does not live in a space like that. Between <W>apple</W> and <W>cat</W> there is no intermediate point, no direction that leads from one word to the other, no step halfway between the two.
+
+And yet language models work. That is the challenge in one line: to close the gap between a text and a function over real numbers. Solving it is what this block is for, because the decisions taken here shape everything that comes afterwards: tokenisation, the vocabulary, embeddings and, in the end, the architecture of the model itself.
+
+{/* ── 2. INTUITION — no heading ── */}
+
+So you need a translator: a function that turns text into real vectors, placed *before* the network, so that the network only ever sees numerical representations. The uncomfortable part is that this translator is not neutral. The moment you put words into a numerical space, that space starts making claims about them: which are close, which are far, which lie halfway between. You cannot avoid making those claims. You can only choose to make them on purpose or by accident.
+
+<Callout type="intuition" title="The idea in one sentence">
+Representing text is not encoding it: it is choosing a geometry for meaning. The question is not whether that geometry expresses relations, but whether it expresses the right ones.
+</Callout>
+
+This is what makes the problem interesting rather than a formality. Take any translator you like: numbering the words alphabetically, say. It produces perfectly valid numbers, and it destroys every notion of meaning.
+
+{/* ── 3. FORMALISATION — heading, by content ── */}
+
+## What exactly you have to hand a network
+
+Fix the vocabulary, the set of units the model recognises, and call it $V$. For now "unit" means
+"word"; <Leccion slug="tokenizacion">the lesson on tokenisation</Leccion> will show that this decision is more delicate than it
+looks. A text is then a finite sequence of elements of $V$:
+
+$$
+s = (w_1, w_2, \dots, w_T), \qquad w_t \in V, \quad T \in \mathbb{N}.
+$$
+
+A network, by contrast, is a function between spaces of real numbers. We can write down its type
+without yet knowing anything about what it does inside: it takes a vector of a fixed size and returns
+another,
+
+$$
+f : \mathbb{R}^d \to \mathbb{R}^k,
+$$
+
+where $d$ is the dimension of the input space and $k$ that of the output space. What happens between
+input and output (the layers, the weights, the training) is the subject of the next block. Here, all
+that matters is that the network has to be handed vectors from $\mathbb{R}^d$.
+
+The problem shows up at once: a text is a sequence of symbols, and what $f$ asks for is a vector
+in $\mathbb{R}^d$. Nothing turns an element of $V$ into an element of $\mathbb{R}^d$ on its own. You
+need a function to close that gap:
+
+$$
+r : V \to \mathbb{R}^d,
+$$
+
+and with it every word of the sequence becomes a vector, so the whole text turns into a matrix of
+numbers, one row per position and $d$ columns. The vectors in this course are columns, so stacking
+them lays each one on its side, as a row:
+
+$$
+\mathbf{X} =
+\begin{pmatrix}
+r(w_1) \\
+r(w_2) \\
+\vdots \\
+r(w_T)
+\end{pmatrix}
+\in \mathbb{R}^{T \times d}.
+$$
+
+This whole block is about how to build $r$. Before proposing one, settle what you are going to demand
+of it. Three things.
+
+**Totality.** $r$ has to be defined for any word that arrives in production, not only for the ones
+you saw when you built it. The day somebody writes <W>cryptocurrency</W> and that word was not in $V$,
+the function still has to return something. This is the demand that sounds bureaucratic and turns out
+to be the most expensive of the three: it is the problem of words outside the vocabulary
+(*out-of-vocabulary*, OOV), and further on it gets <Leccion slug="vocabulario-oov">a whole lesson of its own, on the OOV problem</Leccion>.
+
+**Fixed dimension.** $r(w) \in \mathbb{R}^d$, with the same $d$ for every $w$. The network is designed
+to expect vectors of a definite size; a representation that sometimes returned a vector of five
+numbers and sometimes of nine would not fit through the front door.
+
+**Determinism.** The same word always produces the same vector. If $r$ changed between two runs, what
+the model learned would stop matching what it receives.
+
+<Callout type="note" title="What is NOT demanded">
+$r$ does not have to be injective. It is tempting to ask that two distinct words never share a
+vector, but you will give that up on purpose more than once: in <Leccion slug="vocabulario-oov">the lesson on the OOV problem</Leccion>, every rare
+word will share a single vector, and subword representations will make <W>cat</W> and <W>cats</W>
+share almost everything. Losing some information is often what makes a model generalise.
+</Callout>
+
+### The representation that looks like it works and doesn't
+
+With those three conditions on the table, the shortest proposal is to sort the vocabulary and keep
+the index. With $V = \{\textit{apple}, \textit{cat}, \textit{dog}\}$ in alphabetical order:
+
+$$
+r_{\text{ord}}(\textit{apple}) = 1, \qquad r_{\text{ord}}(\textit{cat}) = 2, \qquad r_{\text{ord}}(\textit{dog}) = 3.
+$$
+
+Suppose for a moment that $V$ is closed, that no new word will ever arrive. With that concession, and
+only with it, $r_{\text{ord}}$ is total; it also has fixed dimension $d = 1$ and is deterministic. The
+concession is a big one: the moment somebody writes <W>cryptocurrency</W>, $r_{\text{ord}}$ has no
+index to return, and that is exactly the fault line <Leccion slug="vocabulario-oov">the lesson on the OOV problem</Leccion> runs along. We park it
+here on purpose, because what we want to see is what happens *even when* the three conditions hold.
+And what happens is that the representation is bad anyway, because satisfying them was never all it
+took. Putting the words into $\mathbb{R}$ makes them inherit its structure, and that structure asserts
+things:
+
+$$
+\lvert\, r_{\text{ord}}(\textit{apple}) - r_{\text{ord}}(\textit{cat}) \,\rvert = 1 \;<\; \lvert\, r_{\text{ord}}(\textit{apple}) - r_{\text{ord}}(\textit{dog}) \,\rvert = 2.
+$$
+
+In words: <W>apple</W> is more like <W>cat</W> than like <W>dog</W>. It also says that <W>cat</W> lies
+between the other two, and that the exact midpoint of the road from <W>apple</W> to <W>dog</W> is
+<W>cat</W>. You made none of those three claims. They come out of the alphabet, which is an order
+invented for looking things up in a dictionary and knows nothing about meaning.
+
+What matters is not that the claims are false, but that the network has no way of knowing they
+are. All it receives are the numbers; to the network, an invented geometry looks exactly like a true
+one, and it cannot tell them apart. You have handed it false information dressed up as good
+information.
+
+And the flaw is not specific to this representation. You could rescale the indices by
+dividing by $\lvert V \rvert$, and nothing would change: dividing by a constant preserves the order
+and preserves the ratios between distances, so <W>cat</W> would still lie between <W>apple</W> and
+<W>dog</W>. Any $r$ with $d = 1$ carries the same underlying problem, because $\mathbb{R}$ is
+totally ordered and words are not. Getting out of it means going up in dimension, and that is the
+argument that leads to <Leccion slug="one-hot">the lesson on one-hot encoding</Leccion>.
+
+<Details summary="How many dimensions it takes not to lie">
+Ask for the least you possibly can: that the representation assert *nothing*, that no word sit closer
+to one word than to any other. In other words, that every pairwise distance be equal.
+
+In $\mathbb{R}$ that is already impossible with three words. If $a < b < c$, then
+$\lvert a - c \rvert > \lvert a - b \rvert$: there is always one that ends up in the middle. In the
+plane it can be done, with an equilateral triangle, but only with three. Four equidistant points
+force you out into space, and in general $n$ mutually equidistant points need $n - 1$ dimensions.
+</Details>
+
+{/* ── 4. CONCRETE — by hand, heading by content ── */}
+
+## Check it yourself, on one sentence
+
+Take the sentence <W>the cat drinks milk</W> and the alphabetically ordered vocabulary
+$V = \{\textit{cat}, \textit{drinks}, \textit{milk}, \textit{the}\}$, with indices $1$ to $4$. The
+sentence becomes the sequence $(4, 1, 2, 3)$, and with $d = 1$ the matrix $\mathbf{X}$ from the
+previous section has shape $4 \times 1$. Now answer three questions looking *only* at those numbers,
+the way the network looks at them:
+
+1. By the numbers, which two words of the sentence are most alike? Compare $\lvert 1 - 2 \rvert,
+   \lvert 2 - 3 \rvert$ and the rest of the distances, and do not look for a single winner: three
+   pairs are tied at distance $1$ (<W>cat</W> and <W>drinks</W>, <W>drinks</W> and <W>milk</W>,
+   <W>milk</W> and <W>the</W>), and you have not miscounted. Does that tie match what you know about
+   those words?
+2. Which word falls at the midpoint between <W>cat</W> $(1)$ and <W>milk</W> $(3)$? Does that question
+   mean anything outside the numbers?
+3. Add <W>bird</W> to the vocabulary. Sort alphabetically again and reassign the indices. How many of
+   the original words change number, even though the sentence has not changed at all?
+
+The third is the most uncomfortable: a new word rewrites the representation of words that have
+nothing to do with it, and a model trained on the earlier $V$ is left useless. Notice that this is a
+different flaw from the other two. It is not the invented geometry, and it is not the OOV problem
+either: <W>bird</W> does end up with an index, and the vocabulary grows without difficulty. What
+fails is that the representation is not **stable**: it depends on the whole of $V$ at once, so
+touching one entry moves every other. Hold on to that observation. In <Leccion slug="one-hot">the lesson on one-hot encoding</Leccion> it is
+what makes the jump to a far larger space look reasonable despite the cost.
+
+{/* ── 5. VERIFICATION — heading ── */}
+
+## Test your intuition
+
+Three questions about what we have now set out: why the network is not handed text, what happens to a
+vocabulary numbered by order, and what exactly we ask of the function $r$.
+
+<Quiz id="q-por-que-no-texto" />
+
+<Quiz id="q-indice-alfabetico" />
+
+<Quiz id="q-propiedades-de-r" />
+
+{/* ── 6. BRIDGE — no heading, preceded by its rule and nothing else ── */}
+
+---
+
+The problem the rest of the block lives on is now stated: we need a function $r : V \to \mathbb{R}^d$
+that is total, of fixed dimension and deterministic, and that, on top of all that, carries a geometry
+which does not accidentally assert false things about words. We already know that $d = 1$ will not do.
+
+But there is an earlier question we have been treating as settled every time we write $V$ as though
+it were obvious: before deciding which vector belongs to <W>unhappiness</W>, you have to decide
+whether <W>unhappiness</W> is one unit of the vocabulary, or three (<W>un</W>, <W>happi</W>,
+<W>ness</W>), or eleven letters. That decision fixes the size of $V$, defines what it means for a word
+to be "new" and, in the end, bounds what the model can learn. That is <Leccion slug="tokenizacion">the next lesson, on tokenisation</Leccion>.

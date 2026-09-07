@@ -1,0 +1,323 @@
+---
+slug: vocabulario-oov
+title: "Vocabulary, frequency and the OOV problem"
+block: 1
+order: 3
+minutes: 20
+summary: "The words of a corpus are not shared out evenly: a few take most of it and most appear only once. Out of that shape come the size of the vocabulary, what it costs to trim, and the token that gathers up everything left outside."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-corte-unk
+    type: numeric
+    prompt: 'A corpus of 36 tokens has 8 types, with these frequencies: <W>the</W> 12, <W>of</W> 9, <W>boy</W> 5, <W>school</W> 4, <W>programming</W> 2, <W>river</W> 2, <W>cryptocurrency</W> 1, <W>grammar</W> 1. You cut the vocabulary at $k = 4$. How many of the 36 occurrences end up turned into <W>\<UNK></W>?'
+    answer: 6
+    tolerance: 0
+    explanation: 'The four most frequent types sum to $12 + 9 + 5 + 4 = 30$ occurrences, so the remaining $36 - 30 = 6$ pass to <W>\<UNK></W>. Look at what that implies: with $k = 4$ you keep half the types and cover 83% of the tokens, $\text{cob}(4) = 30/36$. That asymmetry is what makes an aggressive cut look cheap when you measure it over tokens, and it is also why that measure misleads: the six tokens you lose are <W>programming</W>, <W>river</W>, <W>cryptocurrency</W> and <W>grammar</W>, not <W>the</W> and <W>of</W>.'
+  - id: q-zipf-cobertura
+    type: single
+    prompt: 'A corpus has $M = 100\,000$ types and their frequencies follow $f_i \approx a/i$. You want a vocabulary that covers 90% of the occurrences. How many types do you need, roughly?'
+    options:
+      - { id: a, text: 'About 300.' }
+      - { id: b, text: 'About 3,000.' }
+      - { id: c, text: 'About 31,000, which is $M^{0.9}$.' }
+      - { id: d, text: 'About 90,000: covering 90% of the occurrences demands 90% of the types.' }
+    answer: c
+    explanation: 'From $\text{cob}(k) \approx \ln k / \ln M$ comes $k \approx M^{p}$, and $100\,000^{0.9} \approx 31\,600$. Option (a) answers a different question: $M^{0.5} \approx 316$ types cover *half* the corpus, which is the figure that makes coverage look cheap. And (d) confuses coverage with proportion of types, which is exactly what the distribution forbids: types and occurrences are not shared out alike. Keep the order of magnitude: half comes out at 316 types, 90% at 31,600 and 99% at 89,000.'
+  - id: q-unk-consecuencias
+    type: multi
+    prompt: 'You send everything that fell outside $V$ to <W>\<UNK></W>. What is true of the result? Tick all that apply.'
+    options:
+      - { id: a, text: 'The representation is defined again for any word that arrives.' }
+      - { id: b, text: 'Two distinct unknown words become the same object for the model.' }
+      - { id: c, text: '$\lvert V \rvert$ grows with every new word that shows up in production.' }
+      - { id: d, text: 'You give up $r$ being injective, something the lesson on the problem of representing language had already left out of its demands.' }
+    answer: [a, b, d]
+    explanation: 'You recover totality (a), which was the first of the three demands from <Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion>. You pay for it with (b) and (d): <W>cryptocurrency</W> and <W>librarian</W> get the same vector, and that is the injectivity that lesson announced you would spend. (c) is false and worth seeing why: <W>\<UNK></W> adds *one* entry, once. The vocabulary is fixed forever, and that is exactly why this fix works.'
+  - id: q-tasa-oov-frases
+    type: boolean
+    prompt: 'Your vocabulary leaves out 2% of the tokens of a new text. So only 2% of the sentences in that text contain some unknown word.'
+    answer: false
+    explanation: 'The rate is measured per token and the question is per sentence. If sentences run about 20 tokens and you treat the appearances as independent, the probability that a sentence is spared is $0.98^{20} \approx 0.67$, so one in three sentences contains at least one unknown word. Independence is an approximation (rare words travel together, in the same technical paragraphs), but the order of magnitude holds: a 2% rate per token is not 2% damage, it is a third of the sentences touched.'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Introduction to Information Retrieval, ch. 5: Index Compression'
+    authors: 'Manning, Raghavan and Schütze'
+    year: '2008'
+    venue: 'nlp.stanford.edu'
+    lang: en
+    url: 'https://nlp.stanford.edu/IR-book/pdf/05comp.pdf'
+    note: "Zipf's law and Heaps' law measured on a real corpus, in its §5.1. The rest of the chapter is about compressing search indexes and doesn't concern you; that section is where the shape of the frequencies you derive here comes from."
+  - kind: interactivo
+    title: 'Frequency Distribution Calculator'
+    authors: 'frequencydistributioncalculator.com'
+    venue: 'web'
+    lang: en
+    url: 'https://frequencydistributioncalculator.com/'
+    note: 'Paste a text and it gives you the frequency distribution by position, the Zipf fit, and the types that appear a single time, which here you count by hand. It also brings in Shannon entropy, which this lesson does not use.'
+---
+
+{/* ── 1. MOTIVATION — no heading ── */}
+
+The previous lesson, on tokenisation, left $V$ a finite list, and a finite list has a hole in it: sooner or later a token arrives that the list does not hold. That lesson named the hole; this one measures it. And measuring it means counting: not only which tokens a corpus contains, but how unevenly it uses them, because that is what decides how many arrivals fall through the hole.
+
+That frequency distribution decides which tokens are worth keeping, which are reasonable to leave out, and so how often the model will meet a word outside its vocabulary, one that is *out-of-vocabulary* (OOV). The distribution has a strikingly unequal shape, and it is the same shape in every corpus and every language. That shape, not the size of the corpus and not the language, is what fixes how much text you can cover with a vocabulary that fits in memory.
+
+{/* ── 2. INTUITION — no heading ── */}
+
+Count the tokens of any English text and the same scene appears every time. At the head, a handful of pieces that never stop coming: <W>the</W>, <W>and</W>, <W>to</W>, <W>in</W>, and the punctuation. In the tail, a crowd that appears once in the whole text and never returns: <W>librarian</W>, <W>cryptocurrency</W>, <W>monastery</W>. In the toy corpus you will work with in this lesson (228 tokens in all), the most frequent appears 30 times, and 72 of the 107 distinct strings appear exactly once.
+
+It is a single observation, and it pulls in two opposite directions. The frequent strings are so few that keeping all of them costs almost nothing; the rare ones are so many that keeping all of them is impossible. And the uncomfortable part is that almost everything you care about in a sentence lives in the tail: the proper nouns, the technical terms, the words coined last month.
+
+<Callout type="intuition" title="The idea in one sentence">
+A few strings take most of the text, and almost every distinct one appears a single time. Any vocabulary that fits in memory leaves out a great many of them, but only a small fraction of the text. That asymmetry is what makes a finite vocabulary viable and, at the same time, what makes it lie.
+</Callout>
+
+{/* ── 3. FORMALISATION — heading, by content ── */}
+
+## The shape of a corpus's frequencies
+
+Counting forces apart two things that have gone together until now. Apply $\tau$ to a corpus and you get a sequence of $T$ tokens; each one is an **occurrence**, and repetitions count every time. Group them by equal strings and you get $M$ **types**: the distinct strings, counted once each. In <W>the school of the square</W> there are five tokens and four types, because <W>the</W> appears twice. Always $M \leq T$, and in a real corpus $M$ is very much smaller.
+
+Now order the types from most to least frequent and write $f_i$ for the frequency of the one in position $i$, so that $f_1 \geq f_2 \geq \dots \geq f_M$. By construction, the frequencies sum to the whole corpus:
+
+$$
+\sum_{i=1}^{M} f_i = T.
+$$
+
+That ordering reveals an empirical regularity that shows up in every language measured, Zipf's law: the frequency of a type is roughly inverse to its position,
+
+$$
+f_i \approx \frac{a}{i},
+$$
+
+with $a$ a constant that depends on the corpus. The second type appears half as often as the first, the tenth a tenth as often. It is an approximation, not a theorem (it fails in the first few positions and in the tail), but it answers the question that matters: how much text you buy with each type you add.
+
+Call the **coverage** of the $k$ most frequent types, written $\text{cob}(k)$, the fraction of the corpus's occurrences that those $k$ types account for:
+
+$$
+\text{cob}(k) = \frac{1}{T}\sum_{i=1}^{k} f_i.
+$$
+
+Substituting Zipf's approximation, both the numerator and $T$ become sums of $1/i$:
+
+$$
+\text{cob}(k) \approx \frac{a\sum_{i=1}^{k} 1/i}{a\sum_{i=1}^{M} 1/i} = \frac{\sum_{i=1}^{k} 1/i}{\sum_{i=1}^{M} 1/i}.
+$$
+
+The constant $a$ cancels, and those sums are partial sums of the harmonic series, which grow like a logarithm: $\sum_{i=1}^{k} 1/i \approx \ln k + \gamma$, with $\gamma \approx 0.577$. Therefore
+
+$$
+\text{cob}(k) \approx \frac{\ln k + \gamma}{\ln M + \gamma}.
+$$
+
+<Details summary="Why the sum of 1/i grows like a logarithm">
+The function $1/x$ is decreasing, so the rectangle of base $1$ and height $1/i$ lies below the area under the curve between $i-1$ and $i$, and above the area between $i$ and $i+1$.
+
+<Figure
+  src="/courses/dl-nlp/suma-armonica.en.svg"
+  alt="The curve 1/x. Over the interval from i-1 to i, a rectangle of height 1/i lies below the curve; over the interval from i to i+1, a rectangle of the same height lies above it."
+  caption="The same rectangle, of height 1/i, fits under the curve in the left interval and overshoots it in the right. Each half of the drawing is one of the two inequalities."
+/>
+
+Sum the second inequality over all $i$ and the first from $i = 2$ (the $i = 1$ term is worth $1$ and is taken out separately), and the rectangles are trapped:
+
+$$
+\int_{1}^{k+1} \frac{dx}{x} \;\leq\; \sum_{i=1}^{k} \frac{1}{i} \;\leq\; 1 + \int_{1}^{k} \frac{dx}{x}.
+$$
+
+The two ends are worth $\ln(k+1)$ and $1 + \ln k$, so the sum is $\ln k$ plus something that stays between $0$ and $1$. That "something" converges, and its limit is the Euler-Mascheroni constant $\gamma \approx 0.577$. What the lesson uses is the part that grows: the logarithm.
+</Details>
+
+And here is the result that decides the size of the vocabulary. Ask for a coverage $p$ and solve for $k$. Since $\ln M$ is around $11.5$ for a corpus with a hundred thousand types, $\gamma$ is negligible beside it and the equation $\ln k \approx p \ln M$ leaves
+
+$$
+k \approx M^{p}.
+$$
+
+That exponent decides everything: coverage is not paid in proportion, it is paid in powers. With $M = 100\,000$ types, covering half the corpus costs $M^{0.5} \approx 316$ types, 90% costs $M^{0.9} \approx 31\,600$, and 99%, $M^{0.99} \approx 89\,000$. The last nine points of coverage almost triple the vocabulary.
+
+### What it costs to cut the vocabulary
+
+The vocabulary is then a decision with two opposed prices. Choosing $V$ as the $k$ most frequent types (or, from another angle, demanding a minimum frequency $f_i \geq m$) is choosing where the trade stops.
+
+The price of raising $k$ is set by <Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion>: the representation is a function $r : V \to \mathbb{R}^{d}$, and a function like that is stored as a table with one row per vocabulary entry and $d$ columns. That is
+
+$$
+\lvert V \rvert \cdot d \quad \text{numbers}.
+$$
+
+With $d = 300$, a vocabulary of 30,000 types is nine million numbers; one of 100,000, thirty million. The table grows with $\lvert V \rvert$ and nothing compresses it: each entry is independent of the others.
+
+The price of lowering $k$ is the text that falls on the far side of the cut, the fraction $1 - \text{cob}(k)$ of the occurrences. Measured that way it looks small, and that is the problem: the same decision, measured over types, leaves out most of the language. With $M = 100\,000$ and $k = 31\,600$ you lose 10% of the occurrences and 68% of the types. And it is not a random 68%: the types that fall are the tail ones (proper nouns, technical terms, new words), the very thing that makes a sentence say one thing rather than another. A cut that sounds cheap in tokens is throwing away exactly the informative part.
+
+### The token that gathers what falls outside
+
+That leaves the third question: what to do when, already in production, a word arrives that was left outside. The standard fix is to add one more entry to the vocabulary, one that corresponds to no particular word and absorbs them all, written <W>\<UNK></W>, for *unknown*:
+
+$$
+V' = V \cup \{\texttt{<UNK>}\},
+$$
+
+and, before representing anything, each word passes through a filter that leaves it untouched or replaces it:
+
+$$
+\tilde{w} =
+\begin{cases}
+w & \text{if } w \in V \\
+\texttt{<UNK>} & \text{otherwise}
+\end{cases}.
+$$
+
+With that, $r(\tilde{w})$ is defined for any word that arrives. That was **totality**, the first of the three demands from that lesson on the problem of representing language, and it is the one this fix recovers. What you pay is injectivity: <W>cryptocurrency</W> and <W>librarian</W> become the same object. That lesson already warned that you would give it up on purpose, and this is the place it happens for the first time.
+
+Now to name what it costs. The fraction of text that ends up in that entry is the **OOV rate**, and it is measured in the two directions this lesson has been keeping apart. Take a new text, $w_1, \dots, w_{T'}$, and call $U$ the set of its types, so that $\lvert U \rvert = M'$; the prime marks what is measured on that text and not on the original corpus. Then
+
+$$
+\text{oov}_{\text{tok}} = \frac{\lvert\{\, t \le T' \;:\; w_t \notin V \,\}\rvert}{T'},
+\qquad
+\text{oov}_{\text{type}} = \frac{\lvert\{\, w \in U \;:\; w \notin V \,\}\rvert}{M'}.
+$$
+
+On the left there are *positions*: if <W>cryptocurrency</W> appears ten times, it contributes ten. On the right there are *distinct strings*, and that same word contributes one. They measure the same decision and give very different numbers. In a real corpus, a reasonable vocabulary leaves an OOV rate over tokens of 2% or 3%, and one over types of 30% or 40%. The first is the one that gets quoted, because it is the one that reassures. It is also the one that misleads, and in two ways.
+
+One is arithmetic. The rate is measured per token, but text is read by sentences, and a sentence is spared only if *all* its tokens are in $V$. With twenty tokens per sentence and a 2% OOV rate, that happens with probability $0.98^{20} \approx 0.67$: one in three sentences contains some word the model cannot read. The other way is that the tokens that fall are not arbitrary ones, but the tail ones, the ones carrying what the sentence says. A 2% loss of tokens is not a 2% loss of meaning.
+
+<Details summary="What if I grow the corpus until there are no new words left?">
+It does not work, and the reason has a regularity of its own, Heaps' law: the number of types grows with the number of tokens as a power, with $c$ a constant of the corpus,
+
+$$
+M \approx c \cdot T^{\beta}, \qquad \beta \approx 0.5 \text{–} 0.6.
+$$
+
+Since $\beta < 1$, the growth slows: doubling the corpus multiplies the types by $2^{\beta} \approx 1.4$, not by two. But it never stops. There are always new types, and the fraction of those appearing a single time stays high for however many millions of tokens you read.
+
+Compare it with the character vocabulary of the previous lesson, which does saturate within a couple of pages: the alphabet is closed and the language is not. Out-of-vocabulary words are not a defect of your corpus: they are a property of any corpus.
+</Details>
+
+{/* ── 4. IMPLEMENTATION — heading ── */}
+
+## Counting types, tokens and coverage in Python
+
+The cell tokenises a short English corpus with the same `by_words` as the previous lesson, counts types and occurrences, walks the coverage, and ends by applying a cut to five sentences the corpus did not contain. Run it and look at three things: what fraction of the types appears a single time, how $\text{cob}(k)$ climbs at first and then jams, and the two OOV rates, which do not resemble each other.
+
+<PyCell code={`
+import unicodedata
+from collections import Counter
+
+CORPUS = " ".join([
+    "The boy teaches programming in the neighbourhood school.",
+    "The girl learns programming in the classroom every morning.",
+    "The school opens at eight, when the street is still empty.",
+    "The teacher explains that a language changes with the passing years.",
+    "The children play in the square until the sun goes down.",
+    "A girl asks why the sea is blue, and the teacher says nothing.",
+    "The book talks about the river, the sea and the falling rain.",
+    "To learn a language is to learn to cut the world into words.",
+    "In the square there is a tree that the children call the giant.",
+    "The girl who learns programming explains the exercise to her brother.",
+    "The teacher leaves the book on the table and walks out.",
+    "Every summer the children ride their bikes down to the river.",
+    "The afternoon rain leaves the square empty and the school silent.",
+    "Nobody in the neighbourhood remembers what the street was called before.",
+    "The boy writes a new word in his notebook and underlines it.",
+    "The language of the school is not the language of the square.",
+    "The families walk to the river and then to the sea, as every summer.",
+    "Teaching is not the same as learning, though they happen together.",
+])
+
+def normalise(text):
+    return unicodedata.normalize("NFC", text)
+
+def by_words(text):
+    tokens, current = [], ""
+    for c in normalise(text):
+        if c.isalnum():
+            current = current + c
+            continue
+        if current:
+            tokens.append(current)
+            current = ""
+        if not c.isspace():
+            tokens.append(c)          # punctuation is a token of its own
+    if current:
+        tokens.append(current)
+    return tokens
+
+tokens = by_words(CORPUS)
+freq = Counter(tokens)
+T, M = len(tokens), len(freq)
+hapax = sum(1 for f in freq.values() if f == 1)
+
+print("T =", T, "tokens  |  M =", M, "types")
+print("types appearing ONCE:", hapax, "of", M,
+      "->", round(100 * hapax / M), "% of types")
+print()
+
+cumulative = 0
+print("  i  type             f_i   cob(i)")
+for i, (w, f) in enumerate(freq.most_common(8), start=1):
+    cumulative = cumulative + f
+    print(str(i).rjust(3), w.ljust(16), str(f).rjust(3),
+          (str(round(100 * cumulative / T, 1)) + " %").rjust(8))
+print()
+
+for k in [8, 25, 50, 100, M]:
+    covered = sum(f for _, f in freq.most_common(k))
+    print("k =", str(k).rjust(3), "-> cob(k) =",
+          (str(round(100 * covered / T, 1)) + " %").rjust(7))
+print()
+
+# Five sentences the corpus did NOT contain, with two vocabularies:
+# one cut to the 50 most frequent types, one with no cut at all.
+NEW_SENTENCES = [
+    "The boy programs a cryptocurrency in the neighbourhood school.",
+    "The teacher will explain the unstressed pronouns to the students tomorrow.",
+    "In the neighbourhood square it rains and the children go back home.",
+    "The librarian catalogued the manuscripts of the monastery.",
+    "The girl from the river reads a book about grammar.",
+]
+new_tokens = [t for sentence in NEW_SENTENCES for t in by_words(sentence)]
+
+for cutoff in [50, M]:
+    V = {w for w, _ in freq.most_common(cutoff)}
+    outside = [t for t in new_tokens if t not in V]
+    print("|V| =", str(cutoff).rjust(3),
+          "-> OOV over tokens:", (str(round(100 * len(outside) / len(new_tokens))) + " %").rjust(5),
+          "|  over types:", (str(round(100 * len(set(outside)) / len(set(new_tokens)))) + " %").rjust(5))
+print()
+
+V = set(freq)                          # no cut: everything the corpus contained
+for sentence in NEW_SENTENCES:
+    print(" ".join(w if w in V else "<UNK>" for w in by_words(sentence)))
+`} />
+
+Coverage climbs fast and then jams, which is the logarithmic shape seen in numbers: the first eight types cover more than a third of the corpus, and it takes fifty to reach three quarters. The tail is long and cheap to throw away, measured in occurrences.
+
+Look carefully at the last two parts. The rate over types beats the rate over tokens in both vocabularies, exactly as the theory says, and the toy corpus exaggerates both: with 228 tokens, even the untrimmed vocabulary leaves out a third of what arrives, while a real one would bring the rate over tokens down to 2% or 3%. What does not change with size is which words fall. In the rewritten sentences the articles and prepositions still stand, and <W>cryptocurrency</W>, <W>librarian</W>, <W>manuscripts</W> and <W>monastery</W> disappear: the fourth sentence is reduced to a skeleton that no longer says anything.
+
+A thirty-second test. Change `V = set(freq)` to `V = {w for w, _ in freq.most_common(50)}` and run again: <W>In</W> with a capital becomes unknown while <W>in</W> stays in. It is a different type, not a bug: the previous lesson already warned that cutting is not cleaning, and the price is paid here, in the count.
+
+{/* ── 5. VERIFICATION — heading ── */}
+
+## Test your intuition
+
+Four questions on what you now have: what a cut costs, what coverage costs, what the unknown token recovers and what it spends, and what a small OOV rate really means.
+
+<Quiz id="q-corte-unk" />
+
+<Quiz id="q-zipf-cobertura" />
+
+<Quiz id="q-unk-consecuencias" />
+
+<Quiz id="q-tasa-oov-frases" />
+
+{/* ── 6. BRIDGE — no heading, preceded by its rule and nothing else ── */}
+
+---
+
+The vocabulary is now a closed list: $k$ types chosen by frequency, plus one entry at the end that gathers everything else. That list, the $V'$ from above, we call $V$ from here on, with <W>\<UNK></W> as one more entry. With it, $r$ is once again defined on any text, which was the starting condition. But of $r$ we know only what it receives and what it returns. We still have to decide which concrete vector each of those $\lvert V \rvert$ entries gets, and <Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion> already said what will not do: with $d = 1$ the order of the real line invents likenesses between words that have none.
+
+The most direct way out is to choose no likeness at all. If no vocabulary entry should sit closer to one than to the rest, give each its own axis: one dimension per entry, a one in its position and zeros elsewhere. That representation exists, it is called one-hot encoding, and it asserts nothing about the language, which is exactly what we asked of it. This lesson has now written its bill: $\lvert V \rvert$ runs to tens of thousands, and that is the dimension those vectors would have. <Leccion slug="one-hot">The lesson on one-hot encoding and the curse of dimensionality</Leccion> looks at that bill up close.

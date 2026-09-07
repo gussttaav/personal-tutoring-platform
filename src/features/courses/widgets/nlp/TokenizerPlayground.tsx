@@ -3,16 +3,24 @@
  * side (words / characters / subwords), so "tokenisation is a choice" is concrete in
  * five seconds. All tokenisation is pure (math/tokenisation.ts, NFC-normalised so
  * Spanish accents and ñ stay intact). Local state only; the textarea is the input.
+ *
+ * COURSE-P11-02 — column titles, hints and the textarea's aria-label are now
+ * `courses.widgets.tokenizer-playground`, and the DEFAULT SENTENCE moved to
+ * ../corpora.ts. That sentence is a teaching instrument, not copy: the Spanish one is
+ * chosen so `niño` lands the NFC point and `programación` splits into subwords, and the
+ * English one is chosen against the same property rather than translated from it. See
+ * the reasoning next to it in corpora.ts.
  */
 
 "use client";
 
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
+import { widgetCorpus } from "../corpora";
 import { tokenizeWords, tokenizeChars, tokenizeSubwords, CONTINUATION } from "../math/tokenisation";
 import { WidgetButton } from "../primitives/WidgetButton";
 
-const DEFAULT_TEXT = "El niño enseña programación en español.";
 const VISIBLE_SPACE = "␣"; // ␣, so spaces are visible as character tokens
 
 interface Column {
@@ -66,22 +74,26 @@ function TokenColumn({ title, tokens, hint }: Column) {
 }
 
 export default function TokenizerPlayground() {
-  const [text, setText] = useState(DEFAULT_TEXT);
+  const t = useTranslations("courses.widgets.tokenizer-playground");
+  const tc = useTranslations("courses.widgets.common");
+  const locale = useLocale();
+  const defaultText = widgetCorpus("tokenizer-playground", locale);
+  const [text, setText] = useState(defaultText);
 
   const columns = useMemo<Column[]>(
     () => [
-      { title: "Palabras", tokens: tokenizeWords(text), hint: "Divide por espacios y puntuación." },
-      { title: "Caracteres", tokens: tokenizeChars(text), hint: "Cada símbolo, incluidos los espacios (␣)." },
-      { title: "Subpalabras", tokens: tokenizeSubwords(text), hint: "## marca continuación de palabra." },
+      { title: t("words.title"), tokens: tokenizeWords(text), hint: t("words.hint") },
+      { title: t("chars.title"), tokens: tokenizeChars(text), hint: t("chars.hint") },
+      { title: t("subwords.title"), tokens: tokenizeSubwords(text), hint: t("subwords.hint") },
     ],
-    [text],
+    [text, t],
   );
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem", width: "100%" }}>
       <div style={{ display: "flex", gap: "0.5rem", alignItems: "flex-start" }}>
         <textarea
-          aria-label="Frase para tokenizar"
+          aria-label={t("inputAria")}
           value={text}
           rows={1}
           onChange={(e) => setText(e.target.value)}
@@ -97,7 +109,7 @@ export default function TokenizerPlayground() {
             lineHeight: 1.4,
           }}
         />
-        <WidgetButton onClick={() => setText(DEFAULT_TEXT)}>Reset</WidgetButton>
+        <WidgetButton onClick={() => setText(defaultText)}>{tc("reset")}</WidgetButton>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "1.25rem" }}>

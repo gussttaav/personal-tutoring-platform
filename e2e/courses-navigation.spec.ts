@@ -5,11 +5,17 @@
  *
  * Two flows, and the second is the one worth having:
  *   1. es: navbar Cursos → catalog → landing → first lesson.
- *   2. en: navbar Courses → English catalog (card badged "lessons in Spanish") →
- *      English landing → the SPANISH lesson. That last hop crosses locales through a
- *      `/es`-prefixed URL the middleware rewrites; it is the step most likely to break
- *      silently into a 404, and the least likely to be noticed by a Spanish-speaking
- *      maintainer.
+ *   2. en: navbar Courses → English catalog → English landing → the first lesson, now in
+ *      English (Block 1 is translated). The card no longer wears the "lessons in Spanish"
+ *      badge and the landing drops the language notice, exactly as the per-lesson resolution
+ *      in catalog-view.ts promises: "when en/ lessons land, all of this stops firing on its own."
+ *
+ * The cross-locale fallback — an `/en` URL that still serves Spanish prose — has NOT gone away;
+ * it just moved down the syllabus to whatever lesson is still untranslated (`UNTRANSLATED_LESSON`,
+ * derived from the content tree below). The two SEO-critical invariants ride on it: the language
+ * switcher must reach that page instead of 404ing, and the page must never advertise itself as
+ * English. Both are pinned against that lesson, so they keep testing a genuine fallback — the step
+ * most likely to break silently, and the least likely to be noticed by a Spanish-speaking maintainer.
  *
  * Also pins the thing this task could most easily have broken by accident: Blog still
  * opens the ComingSoonModal, from the navbar AND the footer.
@@ -25,10 +31,48 @@
  * production build these are all far quicker; don't trim them to what a prod run gets away with.
  */
 
+import { readdirSync, readFileSync } from "fs";
+import { join } from "path";
 import { test, expect } from "@playwright/test";
 import { dict } from "./helpers/dict";
 
-const FIRST_LESSON_PATH = "/cursos/dl-nlp/texto-como-numeros";
+const COURSE_SLUG = "dl-nlp";
+const COURSE_DIR = join(process.cwd(), "content/courses", COURSE_SLUG);
+const FIRST_LESSON_PATH = `/cursos/${COURSE_SLUG}/texto-como-numeros`;
+
+/** Published lesson slugs for one locale, in spine (filename) order. A regex over the two
+ *  scalars we need is enough — no reason to pull a YAML parser into the e2e helpers. Drafts
+ *  (e.g. `00-pipeline-fixture`) are excluded to match the published-only registry selectors. */
+function publishedSlugs(locale: "es" | "en"): string[] {
+  return readdirSync(join(COURSE_DIR, locale))
+    .filter((f) => f.endsWith(".mdx"))
+    .sort()
+    .map((file) => {
+      const src = readFileSync(join(COURSE_DIR, locale, file), "utf-8");
+      const slug = src.match(/^slug:\s*(.+)$/m)?.[1].trim()
+        ?? file.replace(/^\d+-/, "").replace(/\.mdx$/, "");
+      const draft = /^draft:\s*true\s*$/m.test(src);
+      return { slug, draft };
+    })
+    .filter((m) => !m.draft)
+    .map((m) => m.slug);
+}
+
+/**
+ * The first published Spanish lesson with no English translation — the slug whose `/en` page is
+ * still a Spanish-prose fallback. Derived from the content tree so the fallback invariants below
+ * keep testing a genuinely untranslated lesson as translation advances block by block, instead of
+ * silently going green against a lesson that has since been translated (which is exactly how this
+ * spec broke when Block 1 landed in English). Currently the first lesson of Block 2, `la-neurona`.
+ */
+const translatedEn = new Set(publishedSlugs("en"));
+const UNTRANSLATED_LESSON = publishedSlugs("es").find((slug) => !translatedEn.has(slug));
+if (!UNTRANSLATED_LESSON) {
+  throw new Error(
+    `courses-navigation.spec: every ${COURSE_SLUG} lesson is translated — the fallback tests need `
+      + "a still-untranslated lesson. Retire them, or point them at another course.",
+  );
+}
 
 test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => {
   test("es: navbar Cursos → catalog → landing → first lesson", async ({ page }) => {
@@ -54,28 +98,33 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page.locator("html")).toHaveAttribute("lang", "es");
   });
 
-  test("en: English card and landing, linking into the Spanish reader", async ({ page }) => {
+  test("en: English card and landing lead into the English reader", async ({ page }) => {
     const d = dict.en;
 
     await page.goto("/en");
     await page.getByRole("link", { name: d.nav.courses, exact: true }).first().click();
     await expect(page).toHaveURL(/\/en\/cursos$/);
 
-    // The English course card exists and is honest about the lesson language.
+    // Block 1 is translated, so the first lesson resolves in English — the card drops the
+    // "lessons in Spanish" badge (it is keyed off the FIRST lesson's language), and the catalog
+    // is not the empty state.
     await expect(page.getByRole("link", { name: /Deep Learning for NLP/ })).toBeVisible();
-    await expect(page.getByText(d.courses.catalog.card.contentLanguage)).toBeVisible();
+    await expect(page.getByText(d.courses.catalog.card.contentLanguage)).toHaveCount(0);
     await expect(page.getByText(d.courses.catalog.empty.title)).toHaveCount(0);
 
     await page.getByRole("link", { name: /Deep Learning for NLP/ }).click();
     await expect(page).toHaveURL(/\/en\/cursos\/dl-nlp$/, { timeout: 30_000 });
+    // First lesson in English ⇒ the landing shows no content-language notice.
     await expect(
       page.getByRole("heading", { name: d.courses.landing.languageNotice.title }),
-    ).toBeVisible();
+    ).toHaveCount(0);
 
-    // The cross-locale hop: an English reader must land on the Spanish lesson, not a 404.
+    // Start → the English reader for the first lesson: an `/en`-prefixed URL serving real
+    // English prose, so no translation-pending notice.
     await page.getByRole("link", { name: d.courses.landing.hero.start }).first().click();
-    await expect(page).toHaveURL(new RegExp(`${FIRST_LESSON_PATH}$`), { timeout: 30_000 });
-    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+    await expect(page).toHaveURL(/\/en\/cursos\/dl-nlp\/texto-como-numeros$/, { timeout: 30_000 });
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByText(d.courses.reader.translationPending.title)).toHaveCount(0);
   });
 
   test("the notify opt-in is offered on the catalog", async ({ page }) => {
@@ -204,16 +253,21 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page.getByRole("link", { name: d.nav.blog, exact: true })).toHaveCount(0);
   });
 
-  test("the language switcher on a lesson does not 404", async ({ page }) => {
+  test("the language switcher on an untranslated lesson does not 404", async ({ page }) => {
     // Locale detection is pathname → NEXT_LOCALE cookie → default (src/middleware.ts), so
     // while /en had no lesson pages this was a guaranteed 404 — and so was every Spanish
     // lesson URL in the sitemap for anyone holding an `en` cookie from a previous visit.
-    await page.goto(FIRST_LESSON_PATH);
+    // Pinned against a still-untranslated lesson: on a translated one the switch simply lands
+    // on real English prose, and the fallback's 404 risk goes untested.
+    await page.goto(`/cursos/${COURSE_SLUG}/${UNTRANSLATED_LESSON}`);
     await expect(page.locator("html")).toHaveAttribute("lang", "es");
 
     await page.getByRole("button", { name: "EN", exact: true }).click();
 
-    await expect(page).toHaveURL(/\/en\/cursos\/dl-nlp\/texto-como-numeros$/, { timeout: 30_000 });
+    await expect(page).toHaveURL(
+      new RegExp(`/en/cursos/${COURSE_SLUG}/${UNTRANSLATED_LESSON}$`),
+      { timeout: 30_000 },
+    );
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.locator("h1")).toBeVisible();
     // English chrome, Spanish prose, and a notice that says so rather than leaving the
@@ -227,7 +281,7 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     // The whole reason the fallback page is safe: it must not tell a crawler that Spanish
     // prose is English. If this ever regresses, the site starts advertising duplicate
     // content under a language it does not serve.
-    const res = await page.goto("/en/cursos/dl-nlp/texto-como-numeros");
+    const res = await page.goto(`/en/cursos/${COURSE_SLUG}/${UNTRANSLATED_LESSON}`);
     expect(res?.status()).toBe(200);
 
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
@@ -242,11 +296,12 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page.locator('link[rel="alternate"][hreflang]')).toHaveCount(0);
     await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(0);
 
-    // The Spanish original stays indexable and advertises no `en` alternate. Clear cookies
-    // first: the goto above set NEXT_LOCALE=en, and an unprefixed URL under that cookie is
-    // redirected to /en by the middleware — correct behaviour, but not what is under test.
+    // The Spanish original stays indexable and — while it is untranslated — advertises no `en`
+    // alternate (an alternate to the noindex fallback would be a contradictory signal). Clear
+    // cookies first: the goto above set NEXT_LOCALE=en, and an unprefixed URL under that cookie
+    // is redirected to /en by the middleware — correct behaviour, but not what is under test.
     await page.context().clearCookies();
-    await page.goto(FIRST_LESSON_PATH);
+    await page.goto(`/cursos/${COURSE_SLUG}/${UNTRANSLATED_LESSON}`);
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /^index/);
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveCount(0);
   });
