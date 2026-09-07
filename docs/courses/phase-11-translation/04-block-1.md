@@ -492,9 +492,10 @@ Reuse these verbatim; they are settled, not open.
   pair distinct, and `car` / `automobile` / `flour` land in the `<PyCell>` instead, where they do new
   work.
 - **The Firth cloze is `wine` / `juice` (fit) against `hammer` / `Monday` (don't)**, over the frames
-  `she poured a glass of ___`, `a bottle of ___ on the table`, `the ___ was cold` — the English of
+  `she poured a glass of ___`, `a bottle of ___ on the table`, `the ___ was cold`, the English of
   `vino` / `zumo` / `martillo` / `lunes`. Firth's line stops being a foreign quotation; its
-  typography (plain, spaced em-dashes, no quotes, no italics) is now settled in `AUTHORING.en.md` §1.
+  typography (plain, introduced by a colon, no quotes, no italics, no em dash) is settled in
+  `AUTHORING.en.md` §1.
 - **The `boy` / `girl` window pair and `the cat drinks milk` carry over verbatim** from 1.4 and 1.1
   respectively, and `cold` / `hot` is the "same context, opposite meaning" pair. No answer moved (the
   hand-written `E` keeps every quoted number: `0.99`, `0.97`, `-0.48`, `0.02`, `0.30`).

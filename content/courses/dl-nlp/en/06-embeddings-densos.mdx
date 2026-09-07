@@ -4,7 +4,7 @@ title: "Dense representations: the core idea"
 block: 1
 order: 6
 minutes: 21
-summary: "Giving each vocabulary entry a few real coordinates, all shared and none reserved, breaks the one-hot's equidistance and leaves the representation's table as a matrix that does fit. The 15 million numbers that fill it are written by no one by hand: the distributional hypothesis says where they come from."
+summary: "Giving each vocabulary entry a few real coordinates, all shared and none reserved, breaks the one-hot's equidistance and leaves the representation's table as a matrix that does fit. The 15 million numbers that fill it are not written by hand: the distributional hypothesis says where they come from."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -18,12 +18,12 @@ quiz:
       - { id: c, text: 'Another vector of $\lvert V \rvert$ coordinates with a single one, the same as $\mathbf{o}_{w_i}$.' }
       - { id: d, text: 'A combination of all the rows of $\mathbf{E}$ that matches no particular row.' }
     answer: a
-    explanation: 'Coordinate $j$ of the result is $\sum_k (\mathbf{o}_{w_i})_k \mathbf{E}_{kj}$, and of that sum only the summand $k = i$ survives, where the one-hot is $1$: out comes $\mathbf{E}_{ij}$, that is, the whole of row $i$. Option (d) describes the operation well — it is a combination of all the rows — and goes wrong at the end: the weights are $\lvert V \rvert - 1$ zeros and one one, so the combination *is* a row. The practical consequence is that no one builds the 50,000-coordinate vector to multiply it; you read the row and that is that. That the operation is still a matrix product matters all the same, because it is how the embedding connects to whatever comes next.'
+    explanation: 'Coordinate $j$ of the result is $\sum_k (\mathbf{o}_{w_i})_k \mathbf{E}_{kj}$, and of that sum only the summand $k = i$ survives, where the one-hot is $1$: out comes $\mathbf{E}_{ij}$, that is, the whole of row $i$. Option (d) describes the operation well (it is a combination of all the rows) and goes wrong at the end: the weights are $\lvert V \rvert - 1$ zeros and one one, so the combination *is* a row. The practical consequence is that no one builds the 50,000-coordinate vector to multiply it; you read the row and that is that. That the operation is still a matrix product still matters, because it is how the embedding connects to whatever comes next.'
   - id: q-que-compra
     type: multi
     prompt: 'You swap one-hot for dense vectors of $d_{\text{model}} = 300$ over a vocabulary of $\lvert V \rvert = 50\,000$ entries. What is gained? Tick all that apply.'
     options:
-      - { id: a, text: 'Two entries can end up close, so that what is learned about one has a way of serving the other.' }
+      - { id: a, text: 'Two entries can end up close, so that what is learned about one can serve the other.' }
       - { id: b, text: 'The table goes from $\lvert V \rvert^{2}$ to $\lvert V \rvert \cdot d_{\text{model}}$ numbers, and the vector stops being almost all zeros.' }
       - { id: c, text: 'The coordinates come to mean something by the mere fact of being few and all filled.' }
       - { id: d, text: 'There is no longer any need to fix the vocabulary in advance, because no coordinate is assigned to an entry.' }
@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: 'Between two TF-IDF vectors the cosine similarity lived in $[0, 1]$. Between two dense vectors it can come out negative.'
     answer: true
-    explanation: 'It can, and it is the only change the formula brings when it moves object. TF-IDF weights are products of a count by a non-negative logarithm, so no coordinate dropped below zero and neither did the dot product. The coordinates of a dense vector are arbitrary reals, so the dot product can be negative and the cosine runs over the whole of $[-1, 1]$: zero stops being the minimum and comes to mean "no relation", with the negative values pointing in opposite directions. In this lesson''s cell, <W>car</W> and <W>flour</W> give $-0.48$.'
+    explanation: 'It can, and it is the only thing that changes in the formula when it moves to a different object. TF-IDF weights are products of a count by a non-negative logarithm, so no coordinate dropped below zero and neither did the dot product. The coordinates of a dense vector are arbitrary reals, so the dot product can be negative and the cosine runs over the whole of $[-1, 1]$: zero stops being the minimum and comes to mean "no relation", with the negative values pointing in opposite directions. In this lesson''s cell, <W>car</W> and <W>flour</W> give $-0.48$.'
   - id: q-distribucional
     type: single
     prompt: 'What exactly does the distributional hypothesis claim?'
@@ -41,9 +41,9 @@ quiz:
       - { id: a, text: 'That two entries surrounded by the same entries tend to mean similar things, so that the resemblance can be measured by counting company.' }
       - { id: b, text: 'That two entries that appear in the same sentence mean the same thing.' }
       - { id: c, text: 'That two synonyms appear together, in the same document, far more often than you would expect.' }
-      - { id: d, text: 'That each coordinate of $\mathbf{e}_w$ corresponds to a feature of the meaning — gender, number, whether it is a living thing — and that is why the vectors can be read.' }
+      - { id: d, text: 'That each coordinate of $\mathbf{e}_w$ corresponds to a feature of the meaning (gender, number, whether it is a living thing), and that is why the vectors can be read.' }
     answer: a
-    explanation: 'The hypothesis is about the *contexts* of an entry, not its sentence-mates nor its coordinates. (b) is too strong and false at once: <W>the cat drinks milk</W> puts four entries in the same sentence that do not mean the same thing. (c) runs against the data: two synonyms are rarely used in the same sentence, precisely because one does the other''s work; what they share are the blanks they fit into. (d) is the reading the hand-written numbers of the cell above invite, and it does not survive a trained embedding: no coordinate has a name, and the meaning is in the direction of the whole vector.'
+    explanation: 'The hypothesis is about the *contexts* of an entry, not the words that share its sentence, and not its coordinates. (b) is too strong and false at once: <W>the cat drinks milk</W> puts four entries in the same sentence that do not mean the same thing. (c) runs against the data: two synonyms are rarely used in the same sentence, precisely because one does the other''s work; what they share are the blanks they fit into. (d) is the reading invited by the hand-written numbers in the cell above, and it does not survive a trained embedding: no coordinate has a name, and the meaning is in the direction of the whole vector.'
 challenges: []
 reading:
   - kind: libro
@@ -60,15 +60,15 @@ reading:
 
 An embedding is, for now, a name. The previous lesson, on bag of words and TF-IDF
 (*term frequency–inverse document frequency*), used up what an axis reserved for each vocabulary
-entry can do — count, weight, compare documents — and set out the way through: instead of an axis
+entry can do (count, weight, compare documents) and set out the way through: instead of an axis
 per entry, a few coordinates, far fewer than $\lvert V \rvert$, in which *every* entry has a value.
 What that lesson did not say is what object this is, how it is stored, what it has to do with the
 one-hot it replaces, and where its numbers come from.
 
 The subword vocabulary from <Leccion slug="tokenizacion">the lesson on tokenisation</Leccion> has
 $\lvert V \rvert = 50\,000$ entries. The other figure is how many coordinates to give each one: 300,
-a common value that no theory fixes — you choose it by trying, and in use they run from a few dozen
-to a few thousand — so nothing that follows depends on it being exactly 300. With one axis per
+a common value that no theory fixes (you choose it by trying, and in use they run from a few dozen
+to a few thousand), so nothing that follows depends on it being exactly 300. With one axis per
 entry, what a model learns about <W>superb</W> is of no use when it meets <W>magnificent</W>: two
 different axes, and that is the end of the story. The moment the two share coordinates that stops
 being true, and it stops being true for all 50,000 entries at once. The price is the numbers in the
@@ -85,7 +85,7 @@ Before the definition, a map. Each point is a word placed by its two coordinates
 Two warnings, because the map promises more than it can give. I placed its coordinates by hand for
 the course: they come from no trained model. And a real embedding has hundreds of dimensions; what
 survives being flattened down to two is the neighbourhood, which is what to look at here. The
-analogy button shows something stronger — that directions mean something too — and this lesson does
+analogy button shows something stronger, that directions mean something too, and this lesson does
 not charge for it: that takes up the rest of the block.
 
 <Callout type="intuition" title="The idea in one sentence">
@@ -106,8 +106,8 @@ $$
 
 The one-hot vector was **sparse**: $\lvert V \rvert$ coordinates of which only one is nonzero. This
 one is **dense**: few coordinates and all of them filled. The change of name marks a change of idea.
-In one-hot, coordinate $j$ answered a question that made sense — is this the entry that occupies
-position $j$ of the vocabulary? — and so a single coordinate was enough to identify the entry. Here
+In one-hot, coordinate $j$ answered a question that made sense (is this the entry that occupies
+position $j$ of the vocabulary?), and so a single coordinate was enough to identify the entry. Here
 no coordinate answers anything we can put into words on its own: what places the entry is
 $\mathbf{e}_w$ as a whole, its $d_{\text{model}}$ coordinates at once.
 
@@ -139,7 +139,7 @@ $$
 $$
 
 The one-hot does not disappear, then: it becomes the index a row is read with. In practice no one
-builds the 50,000 coordinates to multiply them — you write `E[i]` — and even so the operation being
+builds the 50,000 coordinates to multiply them (you write `E[i]`), and even so the operation being
 performed is a matrix product. A whole text inherits the computation: that lesson turned $T$ tokens
 into $\mathbf{X} \in \mathbb{R}^{T \times \lvert V \rvert}$, one one-hot row per position, and
 multiplying by $\mathbf{E}$ gives
@@ -188,15 +188,15 @@ what it is depends on the numbers in $\mathbf{E}$: the equidistance is broken, a
 the condition for everything else.
 
 With that, the argument that lesson could not use becomes available: high-dimensional
-representations are saved because they have a neighbourhood — two photographs that differ in one
-pixel are alike — and one-hot could not appeal to that because in it there are no neighbours. With
+representations are saved because they have a neighbourhood (two photographs that differ in one
+pixel are alike), and one-hot could not appeal to that because in it there are no neighbours. With
 dense vectors there are: if $\mathbf{e}_{\textit{boy}}$ and $\mathbf{e}_{\textit{girl}}$ point in
 almost the same direction, the window <W>the girl plays in the square</W> stops being unknown
 territory for a model that has only seen <W>the boy plays in the square</W>. Why a similar entry
 produces a similar output is the business of Block 2, on the multilayer perceptron; what is needed
-here is that the representation should allow the resemblance.
+here is that the representation make the resemblance possible.
 
-And here the concession, which is large. Nothing above says the coordinates of $\mathbf{E}$ mean
+And here is the concession, and it is a large one. Nothing above says the coordinates of $\mathbf{E}$ mean
 anything: fill the matrix with random numbers and you will have dense 300-dimensional vectors, with
 the wrong neighbours. Density makes it *possible* for <W>superb</W> and <W>magnificent</W> to end up
 close; it does not bring them close. What brings them close is the numbers, and no one has set them
@@ -205,23 +205,23 @@ yet.
 ## The hypothesis the numbers come from
 
 They are 15 million and there is no human way to write them: fixing the 300 coordinates of a single
-entry by hand is already dubious — what is the third coordinate of <W>flour</W> worth? — and there
+entry by hand is already dubious (what is the third coordinate of <W>flour</W> worth?), and there
 are 50,000 entries. An automatic procedure has to set them from text, and for one to exist there
-first has to be a hypothesis about where, in a corpus, the information of meaning lies.
+first has to be a hypothesis about where, in a corpus, the information about meaning lies.
 
 The **distributional hypothesis** is that hypothesis: two entries that appear surrounded by the same
-entries tend to mean similar things. It is almost always cited in Firth's line — you shall know a
-word by the company it keeps — and it can be checked with a couple of blanks. In <W>she poured a glass of ___</W>,
+entries tend to mean similar things. It is almost always cited in Firth's line: you shall know a
+word by the company it keeps. It can be checked with a couple of blanks. In <W>she poured a glass of ___</W>,
 <W>a bottle of ___ on the table</W> and <W>the ___ was cold</W>, <W>wine</W> and <W>juice</W> fit,
 and <W>hammer</W> and <W>Monday</W> do not. No one has said what <W>wine</W> and <W>juice</W> mean;
 what has been looked at is the company they keep.
 
 What the hypothesis buys is a change of question. Asking what an entry *means* gets you nowhere by
 counting; asking what it *appears with* is answered by walking the corpus, without anyone having to
-note it down first — the raw text already carries the answer. Meaning stops being something you
+note it down first: the raw text already carries the answer. Meaning stops being something you
 enter by hand and becomes something you measure.
 
-Look too at what the hypothesis does not say, because the block's limits come from there. It does
+Look, too, at what the hypothesis does not say, because the block's limits come from there. It does
 not say that two entries with the same context are synonyms: <W>cold</W> and <W>hot</W> appear in
 almost identical contexts and mean the opposite, and a representation built this way places them
 close. And it is not a theorem but an empirical bet, worth whatever its results are worth. They turn
@@ -229,9 +229,9 @@ out to be worth a great deal.
 
 ## Dense vectors in NumPy: the lookup, the cosine and the neighbours
 
-The cell builds a matrix $\mathbf{E}$ of eight entries with $d_{\text{model}} = 4$ and checks on it
-what you have just derived. I put its numbers in by hand — with 50,000 entries it would be
-impossible, and that is the open problem — and at this scale they serve to see the mechanics. Run it
+The cell builds a matrix $\mathbf{E}$ of eight entries with $d_{\text{model}} = 4$ and checks what
+the derivation above claims against it. I put its numbers in by hand (with 50,000 entries it would be
+impossible, and that is the open problem), and at this scale they serve to show the mechanics. Run it
 and look at three things: that the product with the one-hot returns the row, what the matrix of
 cosines looks like against the one-hot's, and how many numbers each table takes up.
 
@@ -296,14 +296,14 @@ for size, dm in [(8, 4), (50000, 300)]:
 `} />
 
 The lookup comes out exact: `o @ E` and `E[i]` are the same vector coordinate by coordinate, which
-is what the derivation promised. The matrix of cosines is what there was to see. <W>car</W> with
+is what the derivation promised. The matrix of cosines is the thing to look at. <W>car</W> with
 <W>automobile</W> gives $0.99$ and with <W>truck</W> $0.97$; with <W>flour</W> it gives $-0.48$, a
 negative value that in one-hot could not exist; <W>cat</W> with <W>\<UNK></W> gives $0.02$, which is
 "nothing in common" written in numbers. Below, the same computation on one-hot returns a zero in
 every off-diagonal cell: the "single value" of <Leccion slug="one-hot">the lesson on one-hot
-encoding</Leccion>, now beside a matrix with relief.
+encoding</Leccion>, now next to a matrix that has some relief to it.
 
-A detail with no make-up on it: the second neighbour of <W>cat</W> is <W>automobile</W>, at $0.30$.
+One unvarnished detail: the second neighbour of <W>cat</W> is <W>automobile</W>, at $0.30$.
 It is noise, and it is there because I made the numbers up: with four coordinates and eight entries
 there is no room for more. With 300 coordinates and a corpus behind it, that second neighbour would
 be another animal.
@@ -314,7 +314,7 @@ or the shape of the table. The representation is not in the table, it is in its 
 
 ## Test your intuition
 
-Four questions on what you have just obtained: what the product with the one-hot computes, what
+Four questions on what you now have: what the product with the one-hot computes, what
 density buys, what happens to the cosine when the object changes, and what exactly the distributional
 hypothesis claims.
 
@@ -332,7 +332,7 @@ The object is now defined, and with it half of what the lesson on one-hot encodi
 coordinates instead of 50,000, all carrying information, and a geometry where two entries can lie
 close. The other half is still open: the matrix $\mathbf{E}$ is 15 million numbers, and everything
 you have seen holds equally well for an $\mathbf{E}$ full of noise. The distributional hypothesis
-says where to look — at the company each entry keeps — but looking is not a procedure: from counting
+says where to look, at the company each entry keeps, but looking is not a procedure: from counting
 contexts to fixing 300 coordinates there is a leap no one has made yet.
 
 Taking it is <Leccion slug="word2vec">the lesson on Word2Vec</Leccion>. There, instead of counting

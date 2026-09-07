@@ -13,7 +13,7 @@ quiz:
     type: boolean
     prompt: 'With the same vocabulary, <W>the dog bites the boy</W> and <W>the boy bites the dog</W> get different bag-of-words vectors.'
     answer: false
-    explanation: 'They get the same vector, and the name of the representation says so. The two texts have the same tokens with the same occurrences, and the sum $\sum_{t} \mathbf{o}_{w_t}$ does not depend on the order its terms are added in: each coordinate ends up counting the same. What that costs is concrete: who bites whom is exactly the information that is lost, and no task that depends on it — translating, answering questions, deciding whether a review that says <W>not bad</W> speaks well or badly — can be solved on this vector. Recovering the order is what Block 3, on recurrent networks, takes up, and then Block 5, on the Transformer.'
+    explanation: 'They get the same vector, and the name of the representation says so. The two texts have the same tokens with the same occurrences, and the sum $\sum_{t} \mathbf{o}_{w_t}$ does not depend on the order its terms are added in: each coordinate ends up counting the same. What that costs is concrete: who bites whom is exactly the information that is lost, and no task that depends on it (translating, answering questions, deciding whether a review that says <W>not bad</W> speaks well or badly) can be solved on this vector. Recovering the order is what Block 3, on recurrent networks, takes up, and then Block 5, on the Transformer.'
   - id: q-idf-cero
     type: numeric
     prompt: 'A corpus has $N = 1\,000$ documents and the entry <W>the</W> appears in all of them. In a document where <W>the</W> occurs 57 times, what is $\text{tfidf}(\textit{the}, d)$?'
@@ -56,7 +56,7 @@ reading:
 
 The previous lesson, on one-hot encoding and the curse of dimensionality, ended by summing the one-hot vectors of a document into a single vector of counts, one number per entry. Each summand asserted nothing on its own; their sum is a count, and a count does assert something. What it asserts is where this lesson begins.
 
-And what it asserts, at first, is wrong. <Leccion slug="vocabulario-oov">The lesson on vocabulary and frequency</Leccion> measured how occurrences are shared out: a few entries take most of any text. They are <W>the</W>, <W>of</W>, <W>and</W>, <W>to</W>, and they turn up in any text, whatever it is about. So the largest coordinates of a document belong to those entries, and not to the topic of any of its documents.
+And what it asserts, at first, is wrong. <Leccion slug="vocabulario-oov">The lesson on vocabulary and frequency</Leccion> measured how occurrences are shared out: a few entries take most of any text. They are <W>the</W>, <W>of</W>, <W>and</W>, <W>to</W>, and they turn up in any text, whatever it is about. So the largest coordinates of a document's vector belong to those entries, not to what the document is about.
 
 Look at it in two short documents, a match report and a recipe. Each green row is the one-hot of a token, and the amber row sums them: the document vector.
 
@@ -65,7 +65,7 @@ Look at it in two short documents, a match report and a recipe. Each green row i
   caption="Both documents are editable. Swap two words around and watch which rows move and which don't."
 />
 
-Look for the largest number in each amber row. Both are $4$, and both times it is the same word — the article <W>the</W>, topping the match report and the recipe alike. What actually says what each text is about — <W>keeper</W>, <W>penalty</W>, <W>flour</W>, <W>butter</W> — sits at $1$: a quarter of the weight of the word that says nothing.
+Look for the largest number in each amber row. Both are $4$, and both times it is the same word: the article <W>the</W>, topping the match report and the recipe alike. What actually says what each text is about (<W>keeper</W>, <W>penalty</W>, <W>flour</W>, <W>butter</W>) sits at $1$: a quarter of the weight of the word that says nothing.
 
 The last row sums the two documents, and it is a different count: not how often an entry appears here, but how often it appears across the corpus. It is topped by <W>the</W> with $8$, and then by <W>of</W> and <W>and</W> with $2$; nothing else reaches $2$. Write two unrelated documents of your own and that row will still be headed by the article and the prepositions.
 
@@ -95,9 +95,9 @@ $$
 
 because $(\mathbf{o}_{w_t})_i$ is $1$ when the token at position $t$ is $w_i$, and $0$ in any other case.
 
-That count has a name of its own: the **term frequency** $\text{tf}(w_i, d)$, the number of times the entry $w_i$ appears in $d$. With it the letter $t$ changes meaning: in $\text{tf}(t, d)$ and from here on, $t$ is a *term* — an entry of $V$ — not a position. It is the only letter this lesson uses for two things.
+That count has a name of its own: the **term frequency** $\text{tf}(w_i, d)$, the number of times the entry $w_i$ appears in $d$. With it the letter $t$ changes meaning: in $\text{tf}(t, d)$ and from here on, $t$ is a *term* (an entry of $V$), not a position. It is the only letter this lesson uses for two things.
 
-Before going on, what has just been lost. The sum does not depend on the order of its terms, so two documents with the same tokens in a different order get the same vector. <W>the dog bites the boy</W> and <W>the boy bites the dog</W> are indistinguishable. The concession is enormous and the name owns it: it is a bag, not a sequence, and all that is left inside is how many there are of each. Recovering the order is the business of Block 3, on recurrent networks, and of Block 5, on the Transformer.
+Before going on, note what has been lost. The sum does not depend on the order of its terms, so two documents with the same tokens in a different order get the same vector. <W>the dog bites the boy</W> and <W>the boy bites the dog</W> are indistinguishable. The concession is enormous and the name owns it: it is a bag, not a sequence, and all that is left inside is how many there are of each. Recovering the order is the business of Block 3, on recurrent networks, and of Block 5, on the Transformer.
 
 ### Why raw counts don't say what a document is about
 
@@ -111,13 +111,13 @@ The column of <W>oven</W> does the opposite: it is $1$ in the recipes and $0$ el
 
 The fix is to multiply each coordinate by a factor that depends on how many documents the entry appears in. Call the **document frequency** $\text{df}(t)$ the number of documents that contain at least one occurrence of the term $t$, so that $1 \le \text{df}(t) \le N$.
 
-It remains to decide which factor, and the honest way to reach it is to ask how much information is gained by knowing that $t$ is in this document. Pick a document at random from the $N$, all equally likely; the probability that it contains $t$ is
+Which factor, then? The honest way to reach it is to ask how much information is gained by knowing that $t$ is in this document. Pick a document at random from the $N$, all equally likely; the probability that it contains $t$ is
 
 $$
 p(t) = \frac{\text{df}(t)}{N}.
 $$
 
-If $p(t) = 1$ — the term appears in every document — learning that it is in this one has told you nothing, and the measure has to be $0$. And if two terms appear independently, knowing that both are present should contribute the sum of what each contributes, while the probability that both are present is the product of the two probabilities. A measure that turns products into sums and vanishes at $p = 1$ is a logarithm with its sign flipped, and that quantity is the self-information of the event. Out of it comes the **inverse document frequency**:
+If $p(t) = 1$ (the term appears in every document), learning that it is in this one has told you nothing, and the measure has to be $0$. And if two terms appear independently, knowing that both are present should contribute the sum of what each contributes, while the probability that both are present is the product of the two probabilities. A measure that turns products into sums and vanishes at $p = 1$ is a logarithm with its sign flipped, and that quantity is the self-information of the event. Out of it comes the **inverse document frequency**:
 
 $$
 \text{idf}(t) = -\log p(t) = \log \frac{N}{\text{df}(t)}.
@@ -147,13 +147,13 @@ None of them changes the idea and all of them change the numbers: two implementa
 
 ### Comparing two documents: cosine similarity
 
-One vector per document is worth something when two of them can be compared, and the immediate comparison — the Euclidean distance of the previous lesson — fails here through the length defect. Take a document $d_1$ and paste it onto itself to form $d_2$, so that $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. The distance between the two is
+One vector per document is worth something when two of them can be compared, and the immediate comparison (the Euclidean distance of the previous lesson) fails here through the length defect. Take a document $d_1$ and paste it onto itself to form $d_2$, so that $\mathbf{x}_{d_2} = 2\,\mathbf{x}_{d_1}$. The distance between the two is
 
 $$
 \lVert \mathbf{x}_{d_2} - \mathbf{x}_{d_1} \rVert = \lVert \mathbf{x}_{d_1} \rVert,
 $$
 
-which is as large as the document itself, when the two texts say exactly the same thing. The distance is measuring how much text there is, and no document is about that.
+which is as large as the document itself, when the two texts say exactly the same thing. The distance is measuring how much text there is, and that is not what any document is about.
 
 What does tell the two cases apart is direction. Two documents that spread their weight over the same entries point the same way even if one is ten times as long, and that is what the cosine of the angle between them measures. For two non-zero vectors $\mathbf{u}$ and $\mathbf{v}$, the **cosine similarity** is their dot product divided by the product of their norms:
 
@@ -171,7 +171,7 @@ So the document pasted onto itself has similarity $1$ with the original: the rig
 
 ## Bag of words and TF-IDF in NumPy
 
-The cell builds the count matrix of a corpus of six English documents on three topics — football, cooking and programming — weights it with TF-IDF and compares the documents with the cosine. It tokenises with the same `by_words` as the previous lessons, which treats punctuation as a token of its own. Run it and look at three things: which entries head the raw counts, which head the weights, and the similarity matrix, where the three same-topic pairs have to separate from the rest.
+The cell builds the count matrix of a corpus of six English documents on three topics (football, cooking and programming), weights it with TF-IDF and compares the documents with the cosine. It tokenises with the same `by_words` as the previous lessons, which treats punctuation as a token of its own. Run it and look at three things: which entries head the raw counts, which head the weights, and the similarity matrix, where the three same-topic pairs have to separate from the rest.
 
 <PyCell packages={["numpy"]} code={`
 import unicodedata
@@ -265,9 +265,9 @@ print("d1 against d1 repeated  ->  distance:",
       " |  cosine:", round(cosine(weights[0], doubled), 3))
 `} />
 
-The raw counts are topped by <W>the</W>, <W>.</W>, <W>The</W>, <W>and</W>, <W>of</W> and <W>a</W> — the article in both its forms, since the tokeniser cuts without lower-casing, and otherwise function words and the full stop. It is the table from the motivation measured over a corpus, and not one of them says a thing about the topic.
+The raw counts are topped by <W>the</W>, <W>.</W>, <W>The</W>, <W>and</W>, <W>of</W> and <W>a</W>: the article in both its forms, since the tokeniser cuts without lower-casing, and otherwise function words and the full stop. It is the table from the motivation measured over a corpus, and not one of them says anything about the topic.
 
-The weights turn it over. The entries in all six documents — <W>.</W>, <W>and</W>, <W>of</W>, <W>the</W> — have $\text{idf}$ exactly $0$ and vanish, while <W>goal</W>, <W>oven</W> and <W>list</W> are worth $1.10$ and <W>referee</W>, which appears once, $1.79$. The heaviest entries in each document become <W>striker</W> and <W>goal</W>, <W>dough</W> and <W>oven</W>, <W>loop</W> and <W>counter</W>: the topic of the text, without anyone having told the program what a topic is.
+The weights turn it over. The entries in all six documents (<W>.</W>, <W>and</W>, <W>of</W>, <W>the</W>) have $\text{idf}$ exactly $0$ and vanish, while <W>goal</W>, <W>oven</W> and <W>list</W> are worth $1.10$ and <W>referee</W>, which appears once, $1.79$. The heaviest entries in each document become <W>striker</W> and <W>goal</W>, <W>dough</W> and <W>oven</W>, <W>loop</W> and <W>counter</W>: the topic of the text, without anyone having told the program what a topic is.
 
 The similarities confirm it wholesale. The same-topic pairs are $0.19$, $0.26$ and $0.32$, and the other twelve stay between $0.00$ and $0.03$. The toy corpus exaggerates the separation, but the order is that of a real one. And the last line closes the cosine argument: between a document and its doubled copy, the Euclidean distance is $7.432$ and the cosine exactly $1$.
 
@@ -275,7 +275,7 @@ A thirty-second test. Add a seventh football document and run it again: the $\te
 
 ## Test your intuition
 
-Four questions on what you have just obtained: what the bag loses, what happens to an entry that is in every document, where the logarithm comes from and what each way of comparing measures.
+Four questions on what you now have: what the bag loses, what happens to an entry that is in every document, where the logarithm comes from and what each way of comparing measures.
 
 <Quiz id="q-orden" />
 
@@ -287,6 +287,6 @@ Four questions on what you have just obtained: what the bag loses, what happens 
 
 ---
 
-TF-IDF solves the problem the lesson began with: a document's vector gives more weight to what that document has of its own, and the comparison between two of them works, without training anything or fitting a single parameter. It is still in production fifty years on, and rightly so.
+TF-IDF solves the problem the lesson began with: a document's vector gives more weight to what is particular to that document, and the comparison between two of them works, without training anything or fitting a single parameter. It is still in production fifty years on, and rightly so.
 
-What it does not fix is anything the previous lesson left open, because it does not touch the representation of the entries: the vector still has $\lvert V \rvert$ coordinates, is still almost all zeros, and its coordinates are still independent, so that <W>car</W> and <W>automobile</W> are as perpendicular to each other as <W>car</W> and <W>flour</W>. The consequence reads off the similarities you have just computed: two documents that talk about the same thing with different words share no entry with positive weight, and their cosine is exactly $0$ — the same number as if they talked about opposite things. The equidistance is still intact one level down, and what you have learned to compare is documents, not vocabulary entries. For two similar entries to end up close, you have to abandon the idea that each has its own axis and let them share coordinates, many fewer than $\lvert V \rvert$ and none assigned to anyone. That is an embedding, and <Leccion slug="embeddings-densos">the lesson on dense representations</Leccion> is where it is built.
+What it does not fix is anything the previous lesson left open, because it does not touch the representation of the entries: the vector still has $\lvert V \rvert$ coordinates, is still almost all zeros, and its coordinates are still independent, so that <W>car</W> and <W>automobile</W> are as perpendicular to each other as <W>car</W> and <W>flour</W>. You can read the consequence off the similarities you computed above: two documents that talk about the same thing with different words share no entry with positive weight, and their cosine is exactly $0$, the same number as if they talked about opposite things. The equidistance is still intact one level down, and what you have learned to compare is documents, not vocabulary entries. For two similar entries to end up close, you have to abandon the idea that each has its own axis and let them share coordinates, many fewer than $\lvert V \rvert$ and none assigned to anyone. That is an embedding, and <Leccion slug="embeddings-densos">the lesson on dense representations</Leccion> is where it is built.

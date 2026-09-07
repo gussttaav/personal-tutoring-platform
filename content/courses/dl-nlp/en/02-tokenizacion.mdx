@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: "Both drop: fewer distinct symbols, and fewer tokens too." }
       - { id: d, text: "Neither changes; only how the tokens are printed changes." }
     answer: a
-    explanation: "The corpus has $C$ characters and $T\\bar{\\ell} = C$. Going to characters drops the mean length to $\\bar{\\ell} = 1$, so $T = C$: the sequence stretches by exactly as much as the unit shrinks. And the vocabulary collapses to the alphabet, a few dozen symbols, because there's no longer an entry to keep for every form of every word. The two effects are one effect seen from its two ends."
+    explanation: "The corpus has $C$ characters and $T\\bar{\\ell} = C$. Going to characters drops the mean length to $\\bar{\\ell} = 1$, so $T = C$: the sequence stretches by exactly as much as the unit shrinks. And the vocabulary collapses to the alphabet, a few dozen symbols, because there is no longer an entry to keep for every form of every word. The two effects are really one, seen from either end."
   - id: q-subpalabras-damelo
     type: multi
     prompt: "The word <W>unhappiness</W> doesn't appear in the corpus you built $V$ from. But <W>un</W>, <W>happi</W> and <W>ness</W> do. Which tokenisers can represent it without treating it as an unknown unit? Tick all that apply."
@@ -33,7 +33,7 @@ quiz:
     type: boolean
     prompt: "The text arrives with the <W>ï</W> in <W>naïve</W> written as two code points: an <W>i</W> followed by a combining diaeresis. Without normalising to NFC first, a character tokeniser produces two tokens where there should be one."
     answer: true
-    explanation: "Unicode allows two spellings of the same letter, and the decomposed one is literally a sequence of two code points. A character tokeniser cuts by code point, so it produces <W>i</W> and the diaeresis separately — and <W>naïve</W> comes out with six tokens instead of five, its vocabulary now holding a stray diacritic. Normalising to NFC isn't housekeeping: it's what makes two texts that are identical on screen identical to the tokeniser too."
+    explanation: "Unicode allows two spellings of the same letter, and the decomposed one is literally a sequence of two code points. A character tokeniser cuts by code point, so it produces <W>i</W> and the diaeresis separately, and <W>naïve</W> comes out with six tokens instead of five, its vocabulary now holding a stray diacritic. Normalising to NFC isn't housekeeping: it's what makes two texts that are identical on screen identical to the tokeniser too."
   - id: q-longitud
     type: numeric
     prompt: "How many tokens does a character tokeniser produce on the sentence <W>The naïve boy plays.</W>? Count the spaces and the final full stop too."
@@ -57,7 +57,7 @@ reading:
     venue: "stanford.edu"
     lang: en
     url: "https://web.stanford.edu/~jurafsky/slp3/2.pdf"
-    note: "The reference chapter on tokenisation and normalisation: the same objects as this lesson — Unicode, NFC, BPE — with more examples and less derivation. The whole book is free."
+    note: "The reference chapter on tokenisation and normalisation: the same objects as this lesson (Unicode, NFC, BPE) with more examples and less derivation. The whole book is free."
   - kind: interactivo
     title: "Tokenizer Playground"
     authors: "Taubyte"
@@ -69,15 +69,15 @@ reading:
 
 {/* ── 1. MOTIVATION — no heading ── */}
 
-The previous lesson, on the problem of representing language, ended with a loose thread: there we wrote the vocabulary $V$ as if its elements came ready-made. They don't. That list has to be built, and building it forces an earlier decision — where one unit of text ends and the next begins, a decision nobody makes for you and that the language doesn't come with settled. That is called tokenisation, and each unit it produces is a **token**.
+The previous lesson, on the problem of representing language, ended with a loose thread: there we wrote the vocabulary $V$ as if its elements came ready-made. They don't. That list has to be built, and building it forces an earlier decision: where one unit of text ends and the next begins. Nobody makes that decision for you, and the language does not come with it settled. This is called tokenisation, and each unit it produces is a **token**.
 
-Tokenising is choosing where to cut, and there are three natural answers. Cut by words, which is how you read. Cut by characters, which is how the file is stored. Or cut by word-pieces, by **subwords**: a middle path that can look unintuitive at first, but that most modern language models use today. The explorable below cuts one sentence all three ways and puts, beside each cut, how many tokens it takes to write that same text. Write a sentence of your own and compare those three numbers.
+Tokenising is choosing where to cut, and there are three natural answers. Cut by words, which is how you read. Cut by characters, which is how the file is stored. Or cut by word-pieces, by **subwords**: a middle path that can look unintuitive at first but that most modern language models use today. The explorable below cuts one sentence all three ways and shows, next to each cut, how many tokens that same text takes. Write a sentence of your own and compare the three numbers.
 
 {/* ── 2. INTUITION — no heading ── */}
 
 <Explorable id="tokenizer-playground" caption='The same sentence, three cuts. See how many tokens each one produces, and what happens to a long word like "tokenisation".' />
 
-Each cut produces a different vocabulary and sequences of very different lengths. That's the thing to hold on to before going on: there is no true tokenisation waiting to be discovered.
+Each cut produces a different vocabulary, and sequences of very different lengths. Hold on to that before going on: there is no true tokenisation waiting to be discovered.
 
 <Callout type="intuition" title="The idea in one sentence">
 Tokenisation doesn't discover the units of a text: it chooses them. That choice always balances two costs: the size of the vocabulary and the number of tokens it takes to represent a text.
@@ -87,11 +87,11 @@ Tokenisation doesn't discover the units of a text: it chooses them. That choice 
 
 ## The trade-off between vocabulary size and sequence length
 
-Fix the alphabet $\Sigma$ first: the set of characters that can appear. For English that's the letters, the digits, the punctuation and the space — and the accented letters that ride in on borrowed words like <W>naïve</W> and <W>café</W>.
+Fix the alphabet $\Sigma$ first: the set of characters that can appear. For English that is the letters, the digits, the punctuation and the space, plus the accented letters that ride in on borrowed words like <W>naïve</W> and <W>café</W>.
 
-That set has a trap worth disarming before counting anything. Unicode allows two spellings for the same accented letter: the <W>ï</W> in <W>naïve</W> can be a single character, or an <W>i</W> followed by a diaeresis drawn over the one before it. On screen they look the same; to $\Sigma$ they are different things, and one of the two takes two positions instead of one. So the text is **normalised** before tokenising, to the form in which each accented letter is a single character — its *Normalization Form C* (NFC). Without that step, two texts identical to the eye produce different tokenisations, and the vocabulary ends up holding stray diacritics.
+That set has a trap worth disarming before counting anything. Unicode allows two spellings for the same accented letter: the <W>ï</W> in <W>naïve</W> can be a single character, or an <W>i</W> followed by a diaeresis drawn over the one before it. On screen they look the same; to $\Sigma$ they are different things, and one of the two takes two positions instead of one. So the text is **normalised** before tokenising, to the form in which each accented letter is a single character: its *Normalization Form C* (NFC). Without that step, two texts identical to the eye produce different tokenisations, and the vocabulary ends up holding stray diacritics.
 
-A text isn't one character but a run of them, and to talk about all the strings that can be written over a set of symbols there is a standard notation we'll use from here on. It's written with an asterisk: $\Sigma^{*}$ is the set of all finite strings made of characters from $\Sigma$, the empty string included. <W>naïve</W>, <W>tokenisation</W> and <W>The naïve boy plays.</W> are all elements of $\Sigma^{*}$; the asterisk says nothing about length, only that it is finite. When the empty string gets in the way we write $\Sigma^{+}$, which is the same thing without it. And the asterisk works for any set, not only the alphabet: $V^{*}$ is the finite sequences of tokens from $V$.
+A text isn't one character but a run of them, and to talk about all the strings that can be written over a set of symbols there is a standard notation, which we will use from here on. It is written with an asterisk: $\Sigma^{*}$ is the set of all finite strings made of characters from $\Sigma$, the empty string included. <W>naïve</W>, <W>tokenisation</W> and <W>The naïve boy plays.</W> are all elements of $\Sigma^{*}$; the asterisk says nothing about length, only that it is finite. When the empty string gets in the way we write $\Sigma^{+}$, which is the same thing without it. And the asterisk works for any set, not only the alphabet: $V^{*}$ is the set of finite sequences of tokens from $V$.
 
 With that, a text is an element of $\Sigma^{*}$ and a tokeniser is a function that turns it into a sequence of vocabulary elements:
 
@@ -101,17 +101,17 @@ $$
 
 Each token is therefore a non-empty string of characters, and the vocabulary $V$ is not declared by hand: $\tau$ induces it by running over a **corpus**, the collection of texts gathered in advance to build it.
 
-From that comes something the rest of the block takes for granted. Each **entry** of $V$ is a token, and what it is depends on $\tau$: with a word tokeniser the entries are whole words, and with a subword one they are word-pieces, so that <W>unhappiness</W> can take up three. A vocabulary entry is therefore not the same thing as a word.
+From that comes something the rest of the block takes for granted. Each **entry** of $V$ is a token, and what it is depends on $\tau$: with a word tokeniser the entries are whole words, and with a subword one they are word-pieces, so that <W>unhappiness</W> can span three. A vocabulary entry is therefore not the same thing as a word.
 
-We ask two things of $\tau$. **Determinism**, for the same reason as the previous lesson, on representing language: if $\tau$ cut differently today than yesterday, what the model learned would stop matching what it receives. And **reconstruction**: concatenating the tokens has to give back the original text, save whatever convention was adopted for the spaces. That is what separates cutting from cleaning. A tokeniser that also lowercases everything, or strips the accents, no longer divides the text — it alters it: after that <W>résumé</W> and <W>resume</W> are the same unit, and the distinction was lost before the model ever saw it. Everything $\tau$ discards, the model will never see again.
+We ask two things of $\tau$. **Determinism**, for the same reason as in the previous lesson, on representing language: if $\tau$ cut differently today than yesterday, what the model learned would stop matching what it receives. And **reconstruction**: concatenating the tokens has to give back the original text, save whatever convention was adopted for the spaces. That is what separates cutting from cleaning. A tokeniser that also lowercases everything, or strips the accents, no longer divides the text but alters it: after that <W>résumé</W> and <W>resume</W> are the same unit, and the distinction was lost before the model ever saw it. Everything $\tau$ discards, the model will never see again.
 
-Now the trade-off itself, which falls out of counting characters. Take a corpus with $C$ characters in all, summed over its documents, and apply a tokenisation $\tau$ that breaks it into $T$ tokens $u_1, \dots, u_T$. Write $\lvert u \rvert$ for the length, in characters, of the token $u$. The tokens are pieces of the text itself, so if $\tau$ keeps every character — the reconstruction condition with no conventions — their lengths sum to the whole text:
+Now the trade-off itself, which falls out of counting characters. Take a corpus with $C$ characters in all, summed over its documents, and apply a tokenisation $\tau$ that breaks it into $T$ tokens $u_1, \dots, u_T$. Write $\lvert u \rvert$ for the length, in characters, of the token $u$. The tokens are pieces of the text itself, so if $\tau$ keeps every character (the reconstruction condition with no conventions), their lengths sum to the whole text:
 
 $$
 \sum_{i=1}^{T} \lvert u_i \rvert = C.
 $$
 
-If it discards the spaces, the sum falls a little short of $C$, and you'll see that in the cell.
+If it discards the spaces, the sum falls a little short of $C$, and you will see that in the cell.
 
 Write $\bar{\ell}$ for the mean length of a token:
 
@@ -119,7 +119,7 @@ $$
 \bar{\ell} = \frac{1}{T}\sum_{i=1}^{T} \lvert u_i \rvert.
 $$
 
-The sum there is the one we just set equal to $C$, so
+The sum there is the one we set equal to $C$ a moment ago, so
 
 $$
 \bar{\ell} = \frac{C}{T}, \qquad \text{or, what is the same,} \qquad T = \frac{C}{\bar{\ell}}.
@@ -133,7 +133,7 @@ $$
 \lvert \Sigma \rvert^{\ell}.
 $$
 
-That is, the pool of candidates for the vocabulary grows exponentially with the length of the units. The language uses only a small fraction of those combinations — the vast majority of five-letter strings are not English words — but the tendency is the same: the longer the chosen units, the larger the space the vocabulary is drawn from, and so the larger it tends to be.
+That is, the pool of candidates for the vocabulary grows exponentially with the length of the units. The language uses only a small fraction of those combinations (the vast majority of five-letter strings are not English words), but the tendency is the same: the longer the chosen units, the larger the space the vocabulary is drawn from, and so the larger it tends to be.
 
 | $\tau$ | $\bar{\ell}$ | $T$ | typical $\lvert V \rvert$ |
 |---|---|---|---|
@@ -142,22 +142,22 @@ That is, the pool of candidates for the vocabulary grows exponentially with the 
 | words | $\approx 5$ | $\approx C/5$ | hundreds of thousands, and growing |
 
 <Details summary="Why the word vocabulary is not only large, but unbounded">
-In that table the word vocabulary is not only the largest; it is the one that never stops growing, and that is the difference that matters. The character vocabulary saturates: the distinct symbols of English number a few dozen, and a couple of pages of text bring out almost all of them, so a million more pages add practically none. The word vocabulary never saturates, and English keeps it growing without ever leaning on inflection to do so.
+In that table, the word vocabulary is not only the largest; it is the one that never stops growing, and that is the difference that matters. The character vocabulary saturates: the distinct symbols of English number a few dozen, and a couple of pages of text bring out almost all of them, so a million more pages add practically none. The word vocabulary never saturates, and English keeps it growing without ever leaning on inflection to do so.
 
-English inflects lightly — <W>cat</W>, <W>cats</W>; <W>walk</W>, <W>walks</W>, <W>walked</W>, <W>walking</W> — four or five forms, where a heavily inflected language runs to dozens per verb. What grows the vocabulary without bound is elsewhere. Compounds form freely and close up into single tokens — <W>database</W>, <W>firewall</W>, <W>smartphone</W> — and two nouns can make a new one tomorrow. Proper nouns are an open set by definition: every person, place, product and brand is another entry, and new ones are minted daily. And the language coins words outright — <W>cryptocurrency</W> did not exist a generation ago — alongside the numbers, hashtags, URLs and misspellings that no dictionary ever held. Each one is a distinct entry of $V$ that shares nothing with the others, because the word vocabulary's only notion of identity is string equality: it has no idea that <W>cat</W> and <W>cats</W> are related. The list grows with every new document you read.
+English inflects lightly. Take <W>cat</W>, <W>cats</W>; or <W>walk</W>, <W>walks</W>, <W>walked</W>, <W>walking</W>: four or five forms, where a heavily inflected language runs to dozens per verb. What grows the vocabulary without bound is elsewhere. Compounds form freely and close up into single tokens (<W>database</W>, <W>firewall</W>, <W>smartphone</W>), and two nouns can make a new one tomorrow. Proper nouns are an open set by definition: every person, place, product and brand is another entry, and new ones are minted daily. And the language coins words outright (<W>cryptocurrency</W> did not exist a generation ago), alongside the numbers, hashtags, URLs and misspellings that no dictionary ever held. Each one is a distinct entry of $V$ that shares nothing with the others, because the word vocabulary's only notion of identity is string equality: it has no idea that <W>cat</W> and <W>cats</W> are related. The list grows with every new document you read.
 
 That endless growth is what turns the question of what to do with a word that is not in $V$ from a rare case into the normal one, and it is the subject of <Leccion slug="vocabulario-oov">a later lesson, on vocabulary, frequency and *out-of-vocabulary* words</Leccion>.
 </Details>
 
 ### Fixing the vocabulary and letting the algorithm choose the units
 
-The answer to this trade-off is the middle row of the table, the subwords, and its $\lvert V \rvert$ cell says what it amounts to: *chosen in advance*. Instead of letting the vocabulary size fall out of the tokenisation, you fix it ahead of time — say, 30,000 tokens — and let an algorithm decide which units will fill it. The most widespread is *byte-pair encoding* (BPE): it starts by treating each character as a unit and repeatedly merges the most frequent adjacent pair in the corpus, until it reaches the fixed size. Frequent sequences end up fused into a single piece, and rare ones stay split into pieces that are themselves frequent. That is why a word the algorithm never saw still has a representation: it is written with known pieces. The details of BPE are out of scope here; the explorable above shows its result, which is what's needed.
+The answer to this trade-off is the middle row of the table, the subwords, and its $\lvert V \rvert$ cell says what it amounts to: *chosen in advance*. Instead of letting the vocabulary size fall out of the tokenisation, you fix it ahead of time (say, 30,000 tokens) and let an algorithm decide which units will fill it. The most widespread is *byte-pair encoding* (BPE): it starts by treating each character as a unit and repeatedly merges the most frequent adjacent pair in the corpus, until it reaches the fixed size. Frequent sequences end up fused into a single piece, and rare ones stay split into pieces that are themselves frequent. That is why a word the algorithm never saw still has a representation: it is written with known pieces. The details of BPE are out of scope here; the explorable above shows its result, which is what matters here.
 
 {/* ── 4. IMPLEMENTATION — heading ── */}
 
 ## Two tokenisers in Python, over the same corpus
 
-The identity $T = C/\bar{\ell}$ is worth seeing as numbers rather than algebra. The cell tokenises a short English corpus both extreme ways — by words and by characters — and for each prints $T$, the vocabulary size and the mean length. Look at three things: that $T \cdot \bar{\ell}$ reproduces $C$, that the vocabulary sizes run opposite to $T$, and the last two lines. Run it as it stands, then swap the corpus for a text of your own.
+The identity $T = C/\bar{\ell}$ is worth seeing as numbers rather than algebra. The cell tokenises a short English corpus both extreme ways, by words and by characters, and for each prints $T$, the vocabulary size and the mean length. Look at three things: that $T \cdot \bar{\ell}$ reproduces $C$, that the vocabulary sizes run opposite to $T$, and the last two lines. Run it as it stands, then swap the corpus for a text of your own.
 
 <PyCell code={`
 import unicodedata
@@ -214,15 +214,15 @@ new = by_words("The boy programs a cryptocurrency")
 print("outside V:", [t for t in new if t not in V])
 `} />
 
-With characters, $T \cdot \bar{\ell}$ gives $C$ exactly. With words it falls short, and the difference is the spaces: the tokeniser threw them away, so the text can no longer be reconstructed from the tokens. That is the reconstruction condition broken for the sake of convenience, and it is why subword tokenisers mark somehow where the spaces were. The <W>##</W> you see in the explorable marks that a piece continues the word before it — the absence of a space — and with that the space is recovered.
+With characters, $T \cdot \bar{\ell}$ gives $C$ exactly. With words it falls short, and the difference is the spaces: the tokeniser threw them away, so the text can no longer be reconstructed from the tokens. That is the reconstruction condition broken for the sake of convenience, and it is why subword tokenisers mark, in one way or another, where the spaces were. The <W>##</W> you see in the explorable marks that a piece continues the word before it (the absence of a space), and with that the space is recovered.
 
-The second-to-last line cuts a sentence full of contractions and possessives: <W>Don't</W> comes out as three tokens — <W>Don</W>, an apostrophe, <W>t</W> — and the possessive <W>'s</W> is torn off <W>teacher</W> the same way. The tokeniser cuts at every character that is not a letter; it has no notion that an apostrophe can bind a contraction or a possessive, and it does not need one, as long as it always cuts the same way. The last line is more uncomfortable: of the five tokens of a new and perfectly ordinary sentence, three are not in $V$.
+The second-to-last line cuts a sentence full of contractions and possessives: <W>Don't</W> comes out as three tokens (<W>Don</W>, an apostrophe, <W>t</W>), and the possessive <W>'s</W> is torn off <W>teacher</W> the same way. The tokeniser cuts at every character that is not a letter; it has no notion that an apostrophe can bind a contraction or a possessive, and it does not need one, as long as it always cuts the same way. The last line is more uncomfortable: of the five tokens of a new and perfectly ordinary sentence, three are not in $V$.
 
 {/* ── 5. VERIFICATION — heading ── */}
 
 ## Test your intuition
 
-Four questions on what you've just seen: the trade-off between vocabulary and length, what cutting below the word buys you, the trap Unicode keeps in store for a character tokeniser, and one count by hand.
+Four questions on what you have seen: the trade-off between vocabulary and length, what cutting below the word buys you, the trap Unicode has in store for a character tokeniser, and one count by hand.
 
 <Quiz id="q-espectro" />
 
@@ -236,6 +236,6 @@ Four questions on what you've just seen: the trade-off between vocabulary and le
 
 ---
 
-With the tokenisation settled, the vocabulary stops being an abstraction and becomes a concrete list of tokens. That list is always finite, because it is built from a corpus somebody gathered at some point. And here the demand for totality from <Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion> comes back: $r$ had to be defined for any word that arrives. The last line of the cell shows the hole with nothing to soften it — <W>cryptocurrency</W> is not in $V$, and on it $r$ is worth nothing, because it is not even defined.
+With the tokenisation settled, the vocabulary stops being an abstraction and becomes a concrete list of tokens. That list is always finite, because it is built from a corpus somebody gathered at some point. And here the demand for totality from <Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion> comes back: $r$ had to be defined for any word that arrives. The last line of the cell shows the hole with nothing to soften it: <W>cryptocurrency</W> is not in $V$, and on it $r$ is worth nothing, because it is not even defined.
 
-That leaves three linked questions, and they are the three of the next lesson. How many distinct tokens really appear in a corpus, and how often — the answer has a very characteristic shape that decides everything else. Which of them make it into $V$: keeping them all is expensive, because each needs its own representation $r(w)$, but every token you leave out is text the model can no longer read. And what to do when one of the ones left out arrives. That is <Leccion slug="vocabulario-oov">the lesson on vocabulary, frequency and the problem of out-of-vocabulary words (OOV)</Leccion>.
+That leaves three linked questions, and they are the three of the next lesson. How many distinct tokens really appear in a corpus, and how often? The answer has a very characteristic shape that decides everything else. Which of them make it into $V$: keeping them all is expensive, because each needs its own representation $r(w)$, but every token you leave out is text the model can no longer read. And what to do when one of the tokens left out arrives. That is <Leccion slug="vocabulario-oov">the lesson on vocabulary, frequency and the problem of out-of-vocabulary words (OOV)</Leccion>.

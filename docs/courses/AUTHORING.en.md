@@ -48,16 +48,16 @@ unmarked everywhere after. Genuinely foreign loanwords keep the italics (*a prio
 
 **`"…"` carries a warning `«…»` did not need.** In Spanish the angular quotes could only mean the
 loose sense, because nothing else used them. English double quotes already mean *quotation*, so the
-mark arrives with two jobs — the failure this section exists to prevent — and the rule is stricter:
+mark arrives with two jobs (the failure this section exists to prevent) and the rule is stricter:
 
 > **The loose sense is the only use of quotation marks in a lesson.** Quoted speech and quoted
 > output belong in `<W>` or in a code fence.
 
 A cited line or aphorism is a third thing, and it takes neither mark: not quotation marks (loose sense
 only) and not italics (which already has its two jobs above, and in Spanish only marked the line as
-foreign — a reason that disappears in English). Set it plain, delimited by spaced em-dashes, with the
-attribution in the sentence: `it is almost always cited in Firth's line — you shall know a word by
-the company it keeps — and`. *Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04).*
+foreign, a reason that disappears in English). Set it plain, introduced by a colon and closed by a
+full stop, with the attribution in the lead-in: `it is almost always cited in Firth's line: you shall
+know a word by the company it keeps.` *Settled by `en/06-embeddings-densos.mdx` (COURSE-P11-04).*
 
 The `<W>` boundary is [NOTATION.md §6](NOTATION.md#6-object-language--words-the-lesson-talks-about)'s,
 unchanged. Its plain-text prop exception carries over: `caption`, `alt` and `summary` are strings, so
@@ -68,17 +68,20 @@ a string the lesson talks about is written `"tokenisation"` there.
 The Spanish typography bullets in §5 are replaced wholesale; the display-equation rule below them
 is not (see §8).
 
-- **The em dash is spaced on both sides** — `the translator — numbering the words alphabetically,
-  say — produces valid numbers` — which is the convention `AUTHORING.md` explicitly forbids in
-  Spanish, and the whole reason this bullet exists. Never the glued Spanish raya, never `-`, never
-  `–`.
+- **No em dash (`—`) in prose.** A parenthetical aside goes in parentheses: `the translator
+  (numbering the words alphabetically, say) produces valid numbers`. A lighter, two- or three-word
+  aside takes a pair of commas. A clause that explains or introduces what precedes it takes a colon.
+  Two full sentences are written as two sentences. Never `—`, never ` — ` spaced on both sides, never
+  `-` or `–` standing in for it. The en dash `–` stays only for numeric ranges (`30,000–50,000`) and
+  compound terms (`term frequency–inverse document frequency`), where it is not punctuation. Same
+  rule as `AUTHORING.md`'s for Spanish.
 - **No opening `¿` or `¡`.** Their presence is the tell that a paragraph was transposed by hand and
   not reread.
 - **Thousands take the comma in prose**: `30,000`, `1,200 words`. A number the prose *reports*
-  stays inside `$…$` under [NOTATION.md](NOTATION.md) and keeps its `\,` there — `$29\,312$` — and
+  stays inside `$…$` under [NOTATION.md](NOTATION.md) and keeps its `\,` there (`$29\,312$`), and
   the two differing is not an inconsistency: one is English prose, the other is typeset maths.
 - **The decimal point is unchanged**, in prose and in maths alike.
-- **Punctuation sits outside the quotation marks** unless it belongs to the quoted matter — which,
+- **Punctuation sits outside the quotation marks** unless it belongs to the quoted matter, which,
   under the rule above, it never does.
 
 ## 2. §5 — person and mood

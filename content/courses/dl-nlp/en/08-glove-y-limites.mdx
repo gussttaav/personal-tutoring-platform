@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'The raw count $X_{ik}$, with no logarithm: the logarithm comes later, when the vectors are normalised.' }
       - { id: d, text: 'The probability $P(c \mid w)$ of the context given the centre, like the skip-gram, but computed over the table instead of over windows.' }
     answer: a
-    explanation: 'The ratio (b) is where the transformation starts, and it is exactly what this transformation gets out of the way: absorbing $\log X_i$ into the bias $b_i$ turns a condition on triples $(i, j, k)$ into one equation per *pair*, and that drops the number of equations from $\lvert V \rvert^{3}$ to $\lvert V \rvert^{2}$ — of which only the nonzero ones are used. (c) reverses the order: the logarithm is there from the moment logarithms are taken in $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, and without it the equality would not be linear in the vectors. (d) is the previous lesson; GloVe computes no conditional probability during the fit.'
+    explanation: 'The ratio (b) is where the transformation starts, and it is exactly what this transformation gets out of the way: absorbing $\log X_i$ into the bias $b_i$ turns a condition on triples $(i, j, k)$ into one equation per *pair*, and that drops the number of equations from $\lvert V \rvert^{3}$ to $\lvert V \rvert^{2}$, of which only the nonzero ones are used. (c) reverses the order: the logarithm is there from the moment logarithms are taken in $\exp(\mathbf{u}_k^{\top}\mathbf{e}_i) = P(k \mid i)$, and without it the equality would not be linear in the vectors. (d) is the previous lesson; GloVe computes no conditional probability during the fit.'
   - id: q-peso
     type: multi
     prompt: 'About the sum $\mathcal{L} = \sum g(X_{ik})(\dots)^2$, tick everything that is true.'
@@ -34,7 +34,7 @@ quiz:
       - { id: c, text: '$g$ is bounded by $1$, so the most frequent pairs do not carry off the whole fit.' }
       - { id: d, text: 'Removing $g$ would leave the sum with $\lvert V \rvert^{2}$ summands, so it is $g$ that makes the fit cheap.' }
     answer: [a, b, c]
-    explanation: 'The first three are the three decisions on that line, and each fixes something different: (a) avoids $\log 0$ — and in passing is what makes the fit cheap — (b) takes weight off the cells that are almost noise, and (c) takes it off the function words of <Leccion slug="bolsa-de-palabras">the lesson on the bag of words</Leccion>, which would otherwise decide on their own where all the vectors go. (d) credits the saving to the wrong thing: what leaves out the $\lvert V \rvert^{2}$ empty cells is the sum''s condition $X_{ik} > 0$, not the weighting. $g$ is $0$ at $x = 0$, yes, but a zero-weight summand would still cost the computation of $\log 0$.'
+    explanation: 'The first three are the three decisions on that line, and each fixes something different: (a) avoids $\log 0$ (and in passing is what makes the fit cheap), (b) takes weight off the cells that are almost noise, and (c) takes it off the function words of <Leccion slug="bolsa-de-palabras">the lesson on the bag of words</Leccion>, which would otherwise decide on their own where all the vectors go. (d) credits the saving to the wrong thing: what leaves out the $\lvert V \rvert^{2}$ empty cells is the sum''s condition $X_{ik} > 0$, not the weighting. $g$ is $0$ at $x = 0$, yes, but a zero-weight summand would still cost the computation of $\log 0$.'
   - id: q-banco
     type: single
     prompt: 'The vector of <W>bank</W> mixes the money sense and the river sense. Which of these changes fixes it?'
@@ -54,21 +54,21 @@ reading:
     venue: 'EMNLP 2014'
     lang: en
     url: 'https://aclanthology.org/D14-1162/'
-    note: 'The GloVe paper. The ice/steam table and the weighting''s values — x_max = 100 and exponent 3/4 — that the lesson uses come from here. That 3/4 is the same as negative sampling''s and, as there, it was chosen by trying.'
+    note: 'The GloVe paper. The ice/steam table and the weighting''s values (x_max = 100 and exponent 3/4) that the lesson uses come from here. That 3/4 is the same as negative sampling''s and, as there, it was chosen by trying.'
   - kind: interactivo
     title: 'Word2Vec Explorer'
     authors: 'Daniel Guetta'
     venue: 'daniel.guetta.com'
     lang: en
     url: 'https://daniel.guetta.com/word2vec'
-    note: 'The analogy you work through here — king - man + woman ≈ queen — over real vectors, not the lesson''s hand-drawn map. They are word2vec''s, not GloVe''s, but of the same family, and with the same limit: one word, one vector.'
+    note: "The analogy you work through here (king - man + woman ≈ queen) over real vectors, not the lesson's hand-drawn map. They are word2vec's, not GloVe's, but of the same family, and with the same limit: one word, one vector."
 ---
 
 {/* COURSE-P5-01 — Block 1, Lesson 8. */}
 
 The previous lesson, on Word2Vec, ended by pointing at a table it never wrote down, and said the
-corpus carries it for free. That table is where GloVe (*global vectors*), published in 2014, begins —
-and it does not arrive with the one thing that matters decided: what to ask of it. A raw count on its
+corpus carries it for free. That table is where GloVe (*global vectors*), published in 2014, begins.
+And it does not arrive with the one thing that matters decided: what to ask of it. A raw count on its
 own says little. <W>bank</W> sits beside <W>the</W> a great many times, and nothing follows from that.
 
 What tells one entry from another is not who it appears with, but in what proportion. That proportion
@@ -82,8 +82,8 @@ from <Leccion slug="embeddings-densos">the lesson on dense representations</Lecc
 />
 
 Subtract <W>man</W> from <W>king</W> and add the result to <W>woman</W>, and you land on <W>queen</W>.
-What the picture claims is not that <W>king</W> and <W>queen</W> are close — that neighbourhood was
-already there in that lesson — but something stronger: that the *difference* between two vectors means
+What the picture claims is not that <W>king</W> and <W>queen</W> are close (that neighbourhood was
+already there in that lesson) but something stronger: that the *difference* between two vectors means
 something in itself and reappears intact in another pair. The warning is the same as then: I placed
 the coordinates by hand, so the map shows the shape of the claim, not its proof.
 
@@ -103,7 +103,7 @@ published over a corpus of 6 billion tokens:
 
 The bare probabilities confuse frequent with characteristic: <W>water</W> appears with <W>ice</W> more
 than <W>solid</W> does. The ratio does not: it measures the contrast with <W>steam</W>, not the
-frequency. It is far more than $1$ when $k$ belongs to the world of the first, far less when it belongs
+frequency. It is far more than $1$ when $k$ belongs to the first's world, far less when it belongs
 to the second's, and it sticks to $1$ when it does not tell them apart: <W>fashion</W>, which appears
 with neither, and <W>water</W>, which appears with both alike. The base frequency cancels in the
 division.
@@ -117,7 +117,7 @@ is where the information is. GloVe comes from demanding that vector differences 
 
 Write $X_{ik}$ for the cell of the co-occurrence table: the count of entry $k$ inside the window of
 entry $i$, with the same $m$ as the previous lesson. It is symmetric and has $\lvert V \rvert^{2}$
-cells. Write too $\mathbf{e}_i$ and $\mathbf{u}_k$ for $\mathbf{e}_{w_i}$ and $\mathbf{u}_{w_k}$, the
+cells. Write also $\mathbf{e}_i$ and $\mathbf{u}_k$ for $\mathbf{e}_{w_i}$ and $\mathbf{u}_{w_k}$, the
 centre and context vectors of that lesson.
 
 Summing a whole row gives the total number of $i$'s neighbours, and with it the probability that,
@@ -135,7 +135,7 @@ F\!\left(\mathbf{e}_i,\, \mathbf{e}_j,\, \mathbf{u}_k\right) = \frac{P(k \mid i)
 $$
 
 Two decisions leave it almost fixed. What separates $i$ from $j$ on the right is a quotient, and on
-the left what the function receives of the two is their difference $\mathbf{e}_i - \mathbf{e}_j$, the
+the left what the function sees of the two is their difference $\mathbf{e}_i - \mathbf{e}_j$, the
 one from the map above. And to turn that, together with $\mathbf{u}_k$, into a single number there is
 the dot product from <Leccion slug="bolsa-de-palabras">the lesson on the bag of words</Leccion>. With
 the two, $F$ is a function of one real variable:
@@ -158,8 +158,8 @@ F(x + y) = F(x)\,F(y),
 $$
 
 Cauchy's functional equation in its multiplicative form, whose only continuous, not identically zero
-solutions are $F(x) = e^{cx}$. The constant is absorbed into the scale of the vectors — if $e^{cx}$
-serves for some $\mathbf{e}_i$, then $e^{x}$ serves for $c\,\mathbf{e}_i$ — so taking $c = 1$ loses
+solutions are $F(x) = e^{cx}$. The constant is absorbed into the scale of the vectors (if $e^{cx}$
+serves for some $\mathbf{e}_i$, then $e^{x}$ serves for $c\,\mathbf{e}_i$), so taking $c = 1$ loses
 nothing.
 
 </Details>
@@ -181,7 +181,7 @@ $$
 The difference of two vectors, projected onto a third, is the logarithm of the table's ratio. That is
 where directions start to mean something: the analogy on the map is this line read backwards.
 
-It remains to put it in a form that can be fitted. Substituting $P(k \mid i) = X_{ik} / X_i$,
+One step is left: putting it in a form that can be fitted. Substituting $P(k \mid i) = X_{ik} / X_i$,
 
 $$
 \mathbf{u}_k^{\top}\mathbf{e}_i = \log X_{ik} - \log X_i,
@@ -189,7 +189,7 @@ $$
 
 and that $\log X_i$ has a cheap fix: it does not depend on $k$, so it is a constant for each entry
 $i$. Give it a name, $b_i$, and move it to the other side. With that the equality stops being
-symmetric — $X_{ik} = X_{ki}$, but the left side no longer is — so a second scalar $\tilde{b}_k$ for
+symmetric ($X_{ik} = X_{ki}$, but the left side no longer is), so a second scalar $\tilde{b}_k$ for
 the entry playing the context role restores it:
 
 $$
@@ -202,17 +202,17 @@ table.
 
 ### The weighting that stops the most frequent pairs deciding for everyone
 
-That system has no exact solution: it is $\lvert V \rvert^{2}$ equations — 2.5 billion with the
-block's vocabulary of 50,000 entries — against some 30 million unknowns. So we ask for what is
+That system has no exact solution: it is $\lvert V \rvert^{2}$ equations (2.5 billion with the
+block's vocabulary of 50,000 entries) against some 30 million unknowns. So we ask for what is
 possible, in the least-squares sense, and first two things have to be fixed.
 
-The first is that most of the table is zeros — any two given entries never once share a window — and
+The first is that most of the table is zeros (any two given entries never once share a window), and
 $\log 0$ does not exist. The empty cells are left out, which is also what makes the fit cheap: you pay
 for the pairs seen and not for $\lvert V \rvert^{2}$.
 
 The second is that the cells are not worth the same. One with $X_{ik} = 1$ is almost noise, and one
-with $X_{ik} = 10^{6}$ — two function words from <Leccion slug="bolsa-de-palabras">the lesson on the
-bag of words</Leccion> — should not decide on its own where the vectors go. The fix is a weighting
+with $X_{ik} = 10^{6}$ (two function words from <Leccion slug="bolsa-de-palabras">the lesson on the
+bag of words</Leccion>) should not decide on its own where the vectors go. The fix is a weighting
 that depends on the count itself:
 
 $$
@@ -279,7 +279,7 @@ This is not a defect of GloVe. Word2Vec has it for the same reason, and the one-
 (*term frequency–inverse document frequency*) of <Leccion slug="bolsa-de-palabras">the lesson on the
 bag of words</Leccion> had it before. And it does not come alone:
 <Leccion slug="embeddings-densos">the lesson on dense representations</Leccion> noted another limit of
-the same family — that <W>cold</W> and <W>hot</W> appear in almost identical contexts, so the
+the same family: that <W>cold</W> and <W>hot</W> appear in almost identical contexts, so the
 distributional hypothesis places them close and the representation has nothing to tell them apart with.
 The third is the usual one: an entry that was not in the corpus has no row, and it has to be handed
 <W>\<UNK></W>'s, as in <Leccion slug="vocabulario-oov">the lesson on out-of-vocabulary (OOV)
@@ -293,17 +293,17 @@ $$
 r : V \to \mathbb{R}^{d},
 $$
 
-and discussed slowly what it had to satisfy. What binds here is none of those conditions: it is the
-domain. If the argument of $r$ is a vocabulary entry, its value cannot depend on the sentence it
+and worked slowly through what it had to satisfy. What binds here is none of those conditions: it is
+the domain. If the argument of $r$ is a vocabulary entry, its value cannot depend on the sentence it
 appears in, because the sentence does not enter the function. That is what **static** means.
 
 ## Counting the pairs and fitting GloVe in NumPy
 
 The cell counts and fits. The corpus is 680 tokens of templates, with <W>bank</W> planted in two
 worlds; I have left $d_{\text{model}} = 3$ deliberately: with more coordinates the table fits almost
-exactly and the loss is not seen to work. The learning rate decays to almost zero, as in the previous
-lesson. Run it and look at three things: the column of ratios, the neighbours from the fit, and the
-three rows at the end.
+exactly and you cannot see the loss doing its work. The learning rate decays to almost zero, as in
+the previous lesson. Run it and look at three things: the column of ratios, the neighbours from the
+fit, and the three rows at the end.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -455,7 +455,7 @@ And its ratios reproduce the <W>ice</W>/<W>steam</W> pattern: <W>client</W> is $
 <W>mortgage</W>, <W>girl</W> is $0.33$, and <W>bank</W> and <W>at</W> come out $1.00$ exactly because
 they appear alike with both.
 
-The fit falls from $0.51$ to $0.01$ per cell and the neighbours are the ones they have to be:
+The fit falls from $0.51$ to $0.01$ per cell and the neighbours are the ones they should be:
 <W>money</W>, <W>payroll</W> and <W>savings</W> for <W>mortgage</W>; <W>reed</W>, <W>boat</W> and
 <W>heron</W> for <W>willow</W>. Those round $1.00$s are the price of the templates: within each group
 the entries fill identical slots, and so do their rows.
@@ -493,7 +493,7 @@ what comes next, and it is charged for at the end, in Block 5, on the Transforme
 
 First, what is going to consume those vectors has to be built, and it does not exist yet.
 <Leccion slug="texto-como-numeros">The lesson on the problem of representing language</Leccion> assumed
-a function that takes a vector and returns an answer, and left it that what it is like inside was the
-next block's business. Block 2, on the multilayer perceptron, starts there: its
+a function that takes a vector and returns an answer, and left what it looks like inside to the next
+block. Block 2, on the multilayer perceptron, starts there: its
 <Leccion slug="la-neurona">lesson on the artificial neuron</Leccion> defines the smallest piece that
-does that work — it takes a vector, weights it and returns a number — and the assumption ends.
+does that work (it takes a vector, weights it and returns a number), and the assumption ends.
