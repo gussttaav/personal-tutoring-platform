@@ -1548,6 +1548,15 @@ Spanish (`es/01`–`es/08`). The raya was the course's parenthetical-incise mark
 - On branch `course/block-1-es-remove-em-dashes`; awaits the user's push (no git credentials in this
   shell).
 
+**COURSE-P5-00 — raya removed from prose, Block 2 Spanish** (started 2026-09-08, branch
+`course/block-2-review-and-translate`). Continues the Block 1 note above, one lesson per commit.
+Convention unchanged: parenthetical incises → `(…)`; a comma follows the new `)` only when the next
+clause has its own subject; a raya in rendered `<PyCell>` output is reworded (no clean bracket form);
+`{/* … */}` comments stay out of scope. Per lesson: `pnpm lint:content` green, word-neutral. Awaits
+the user's push.
+
+- `es/09-la-neurona.mdx` — 11 sites (2 quiz explanations, 8 prose, 1 `print()` arg).
+
 **COURSE-P7-01** — Closed per doc. The component, the bridge pre-pass, the sixth lint pass, the
 budget exemption, the styles, the fixture coverage and the authoring rule all landed. Deviations
 and notes:
