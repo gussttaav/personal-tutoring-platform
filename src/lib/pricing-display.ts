@@ -45,8 +45,18 @@ export function formatPrice(cents: number, currency: string, locale = "es"): str
 // long safety net for out-of-band DB changes — keeping it long avoids needless
 // ISR-cache rewrites on every page hit. The CHARGE (PaymentService) and the admin
 // panel read pricingService directly — never this cache — so they are always fresh.
+//
+// PERF-11: this value is NOT local to pricing. `[locale]/layout.tsx` awaits these
+// caches on every render, and Next.js stamps the LOWEST revalidate touched during a
+// render onto the whole route — so this number was the ISR window for all 108
+// prerendered routes, including the ~88 course lessons whose render re-runs the full
+// compileMDX + KaTeX + Shiki pipeline (200 ms–1 s of Active CPU each). At 3600 s that
+// meant the entire tree went stale hourly and any crawler walking the sitemap paid for
+// a full re-render. 30 days makes regeneration effectively deploy-only; admin edits
+// still propagate instantly through the tag, which is the real freshness mechanism.
+// Raising this back to a short window will re-bill the whole course tree.
 export const PRICING_CACHE_TAG = "pricing-all";
-const REVALIDATE_SECONDS = 3600;
+const REVALIDATE_SECONDS = 2_592_000; // 30 days — see PERF-11 above
 // BUILD-04: the prerender fires one identical read per concurrent page, and a
 // PGRST303 rejection on any one of them aborts the whole export. singleFlight
 // collapses that burst into one request; withRetry covers the residual.
