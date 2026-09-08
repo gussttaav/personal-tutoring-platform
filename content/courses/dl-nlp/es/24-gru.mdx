@@ -266,8 +266,8 @@ $$
 \mathbf{z}_t &= \sigma\left(\mathbf{W}_{xz}\mathbf{x}_t + \mathbf{W}_{hz}\mathbf{h}_{t-1} + \mathbf{b}_z\right), &
 \mathbf{r}_t &= \sigma\left(\mathbf{W}_{xr}\mathbf{x}_t + \mathbf{W}_{hr}\mathbf{h}_{t-1} + \mathbf{b}_r\right), \\
 \tilde{\mathbf{h}}_t &= \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\left(\mathbf{r}_t \odot \mathbf{h}_{t-1}\right) + \mathbf{b}_h\right), &
-\mathbf{h}_t &= (1 - \mathbf{z}_t) \odot \mathbf{h}_{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t
-\end{aligned}.
+\mathbf{h}_t &= (1 - \mathbf{z}_t) \odot \mathbf{h}_{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t.
+\end{aligned}
 $$
 
 Tres piezas —dos compuertas y un candidato—, cada una con la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: seis matrices y tres sesgos, $3\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$

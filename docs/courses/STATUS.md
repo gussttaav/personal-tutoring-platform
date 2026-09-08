@@ -1557,6 +1557,30 @@ the user's push.
 
 - `es/09-la-neurona.mdx` — 11 sites (2 quiz explanations, 8 prose, 1 `print()` arg).
 
+**COURSE-P5-00 — the mark on a multi-line `aligned` derivation** (2026-09-08, branch
+`course/block-2-review-and-translate`). User-reported while reviewing Block 2 lesson 2: the
+"display maths is punctuated" pass (2026-08-05 above) required the sentence's mark on the closing
+line — `\end{aligned}.` — but KaTeX floats a mark appended to `\end{aligned}` against the block's
+vertical centre, so on a two-row derivation it hangs in space to the right. `\end{cases}.` keeps that
+placement (a `cases` last row is one branch, not the whole result); an `aligned`-family block is one
+continued derivation whose last ROW ends the sentence.
+
+- **`validate-math-punctuation.ts`** — new `ALIGNMENT_CLOSE` regex (`aligned`, `gathered`, `split`,
+  `align`, `alignat`, `flalign`). When the closing line matches it, the pass checks the row above it
+  for the mark instead. A block still written `\end{aligned}.` keeps passing — the trailing mark
+  takes it off that path onto the plain last-line check. `+3` unit tests (18 total).
+- **AUTHORING §5 and §8** reworded: "inside the fence, where exactly depends on the environment",
+  with both example placements. §10's checklist line ("the mark inside the fence") was already
+  generic and stands.
+- **Retrofit:** `es/13-funcion-de-perdida.mdx`, `es/23-lstm.mdx`, `es/24-gru.mdx` — the only three
+  `\end{aligned}.` blocks in the course; the period moved onto the last row. `es/10`'s own block was
+  already in the new form (that is the block the user was reviewing). All four re-checked through
+  KaTeX with `strict: "error"`.
+- **`00-pipeline-fixture.mdx`** keeps its two permanent warnings (unchanged scope decision); the
+  `aligned` one now points the author at the last row rather than at `\end{aligned}`.
+- `pnpm lint:content`, `pnpm jest src/lib/courses` (451), `tsc`, `pnpm lint` all green. Awaits the
+  user's push.
+
 **COURSE-P7-01** — Closed per doc. The component, the bridge pre-pass, the sixth lint pass, the
 budget exemption, the styles, the fixture coverage and the authoring rule all landed. Deviations
 and notes:
