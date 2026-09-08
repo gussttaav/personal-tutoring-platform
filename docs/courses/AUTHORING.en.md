@@ -132,6 +132,11 @@ the language: a sorted vocabulary re-sorts, and the claim the sort existed to ma
 *true* in English — destroying the argument rather than merely reordering it. Re-derive until the
 claim is absurd again, and check any asset with the old order set into it.
 
+**A summary that names its examples' language drops the adjective.** A Spanish `summary` opening
+«cuatro frases españolas» becomes "four phrases", never "four English phrases": in the target locale
+the language label is the same translated-material tell as tokenising the wrong language, so §3 cuts
+it rather than carrying it across. *Settled by `en/11-xor-y-capas-ocultas.mdx` (COURSE-P11-05).*
+
 ## 4. §2 — capitalisation of blocks and lessons
 
 The rule that is not in §5. `AUTHORING.md` §2 keeps *el bloque 2* and *la lección 3* lowercase
