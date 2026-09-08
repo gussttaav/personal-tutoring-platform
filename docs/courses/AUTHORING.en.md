@@ -190,6 +190,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | the paper's own names | one-hot encoding, multi-head, layer norm, fine-tuning, softmax, encoder, decoder, forward pass | |
 | the backward pass algorithm | backpropagation | backprop, back-propagation |
 | the network's parts | layer, weight, bias | |
+| the threshold activation | step; the symbol stays $\text{escalón}$ (NOTATION.md §5) | escalón as an English prose word |
 | what training minimises, and how | loss, gradient, gradient descent | cost, error surface |
 | $\eta$ | learning rate | step size |
 | the two objectives | cross-entropy, likelihood | log loss |

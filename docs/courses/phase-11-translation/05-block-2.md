@@ -170,9 +170,34 @@ Identifiers travel with all of it (`resenas` → `reviews`, `frases` → `phrase
 `entropia_cruzada` → `cross_entropy`, `caminos` → `paths`, `aciertos` → `correct`). Renaming an
 identifier changes nothing NumPy computes — that is not where the risk is.
 
+## The English corpus, fixed by 2.1 — reuse verbatim
+
+Chosen in `en/09-la-neurona.mdx` and verified in Pyodide to reproduce
+$z = (2, -2, 2, -2, 2, -1, -2, 1, 0, 2)$. 2.4/2.6 recompute from it and 2.2/2.5/2.7/2.8
+transcribe it by hand; do not re-invent it.
+
+- `V = ["bad", "boring", "fun", "good", "movie", "recommend", "slow", "the"]`
+  (English-alphabetical), with `w = [-1, -1, 1, 1, 0, 1, -1, 0]` re-permuted from the
+  Spanish onto that order. The six opinion words map 1:1 (bad/boring/fun/good/recommend/slow);
+  `movie` and `the` carry weight 0.
+- The ten reviews, in order (label in parens):
+  1. `the movie is fun and i recommend it` (1)
+  2. `the movie is slow and boring` (0)
+  3. `good movie i recommend it` (1)
+  4. `bad movie very slow` (0)
+  5. `fun and good` (1)
+  6. `the movie is bad` (0)
+  7. `boring and slow` (0)
+  8. `i recommend it` (1)
+  9. `good movie but slow` (0) — the $z = 0$ miss (step ties it positive; label negative)
+  10. `fun and i recommend it` (1)
+- Review 1's bag of words is `(0,0,1,0,1,1,0,1)`: `the` occurs **once**, so 2.8's
+  `q-leer-un-gradiente` rewrite must key on a word that occurs twice, exactly as the
+  replacement note above anticipates.
+
 ## Lesson progress
 
-- [ ] 2.1 `la-neurona`
+- [x] 2.1 `la-neurona`
 - [ ] 2.2 `funciones-activacion`
 - [ ] 2.3 `xor-y-capas-ocultas`
 - [ ] 2.4 `forward-pass`
