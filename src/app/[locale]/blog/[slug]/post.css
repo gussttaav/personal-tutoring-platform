@@ -1,0 +1,360 @@
+/*
+ * BLOG-01 — blog post reader (/blog/[slug]) styles.
+ *
+ * Two jobs. The chrome around the article (back link, title, dateline, prev/next) is
+ * the first; the second, and the bigger one, is the PROSE.
+ *
+ * Why the prose rules are this exhaustive: `globals.css` opens with `@tailwind base`,
+ * and Preflight flattens almost everything markdown emits — headings lose their size
+ * AND weight, `ol`/`ul` lose markers and indent, `a` loses colour and underline,
+ * `blockquote` loses its margin, `hr` collapses. The course reader restores those in
+ * two places (inline styles in `mdx-components.tsx` for headings/pre/tables, CSS in
+ * `lesson.css` for the rest); a post is compiled with NO component map, so every one of
+ * them has to be restored here. This file is the blog's whole typographic contract.
+ *
+ * It deliberately does not import or extend `lesson.css`: that file is bound to the
+ * reader's sidebar/quiz/challenge furniture, none of which exists here, and
+ * route-scoped CSS duplication is the existing idiom (landing.css and lesson.css
+ * already share nothing).
+ *
+ * NB, per _styles/katex.css: do NOT add `scrollbar-width` to the scrollbar rules — in
+ * Chromium it disables the ::-webkit- pseudo-elements and reverts to the grey default.
+ */
+
+/* Height of the fixed global Navbar, for anchor jump-targets. */
+.post-content {
+  --nav-h: 72px;
+}
+
+/* ── Chrome ─────────────────────────────────────────────────────────────── */
+
+.post-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.post-back:hover {
+  color: var(--green);
+}
+
+.post-header {
+  margin: 26px 0 34px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--border-variant);
+}
+
+.post-title {
+  font-size: clamp(1.9rem, 4.5vw, 2.85rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+.post-dateline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.post-dateline__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border-variant);
+}
+
+/* ── Prose ──────────────────────────────────────────────────────────────── */
+
+/*
+ * No `max-width` here, deliberately. The route's container IS the reading column (840px,
+ * 800px inside its padding), so a second cap on the prose only made it 28px narrower than
+ * the back link, title and dateline around it — one left edge for the chrome and another,
+ * 14px in, for the paragraphs. The measure is defined in exactly one place: the page.
+ */
+.post-content {
+  min-width: 0;
+  font-size: 1.0625rem;          /* ~17px reading size, larger than marketing pages */
+  line-height: 1.75;
+  color: var(--text-muted);
+  overflow-wrap: break-word;     /* long inline tokens (incl. inline math) wrap, not overflow */
+}
+
+.post-content p {
+  margin: 1.25rem 0;
+}
+
+.post-content .katex-display {
+  margin: 1.75rem 0;
+}
+
+/* Headings. Preflight reset these to `font-size: inherit; font-weight: inherit`, so
+   both properties are restored explicitly — at prose size, size alone does not read as
+   a heading. h4 is sized but stays quiet; a post that needs a fourth level needs an
+   editor, not a style. */
+.post-content h2 {
+  margin: 2.5rem 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.post-content h3 {
+  margin: 2rem 0 0.6rem;
+  font-size: 1.175rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.post-content h4 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+/* Anchor jump-targets must clear the fixed navbar or a heading lands behind it. */
+.post-content :is(h2, h3, h4) {
+  scroll-margin-top: calc(var(--nav-h) + 16px);
+}
+
+/* Lists — markers and indent, both flattened by Preflight. Unlike the lesson reader
+   there is no `:not([style])` guard: a post has no component lists to protect. */
+.post-content :is(ol, ul) {
+  margin: 1.25rem 0;
+  padding-left: 1.75rem;
+}
+
+.post-content ol {
+  list-style: decimal;
+}
+
+.post-content ul {
+  list-style: disc;
+}
+
+/* Distinct markers per level, so a sublist reads as one. */
+.post-content ol ol {
+  list-style: lower-alpha;
+}
+
+.post-content ul ul {
+  list-style: circle;
+}
+
+.post-content li {
+  margin: 0.5rem 0;
+}
+
+/* The marker takes the body colour rather than the muted prose colour: a number dimmer
+   than the text it numbers reads as decoration instead of structure. */
+.post-content li::marker {
+  color: var(--text);
+}
+
+/* A blank line between items makes the list "loose", and remark then wraps each item's
+   text in a `<p>` — which would inherit the paragraph margins above and push the items a
+   full paragraph apart. `li` owns the inter-item spacing; its paragraphs don't. */
+.post-content li > p {
+  margin: 0.35rem 0;
+}
+
+.post-content li > p:first-child {
+  margin-top: 0;
+}
+
+.post-content li > p:last-child {
+  margin-bottom: 0;
+}
+
+/* A sublist belongs to its item — paragraph-sized air would detach it. */
+.post-content li > :is(ol, ul) {
+  margin: 0.5rem 0;
+}
+
+/* Links. Preflight resets `a` to `color: inherit; text-decoration: inherit`, which
+   makes a markdown link indistinguishable from body text. */
+.post-content :is(p, li, blockquote, td, th) a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.post-content :is(p, li, blockquote, td, th) a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.post-content blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--border-variant);
+  color: var(--text-dim);
+}
+
+.post-content blockquote > p:first-child {
+  margin-top: 0;
+}
+
+.post-content blockquote > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Fenced code blocks. rehype-pretty-code emits `<pre><code>` with Shiki's inline
+   colours already applied; the surface, padding and overflow containment are ours, so a
+   long line scrolls inside the block instead of widening the page. */
+.post-content pre {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-lowest);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+/* Inline code only. The `:not(pre) >` guard matters: a background and border on the
+   fenced-block `<code>` would double up on the `pre` styling above. */
+.post-content :not(pre) > code {
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-lowest);
+  font-size: 0.9em;
+}
+
+/* Tables can be wider than the column. There is no wrapper element to scroll (no
+   component map), so the table scrolls in its own right. */
+.post-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.post-content th {
+  padding: 0.5rem 0.85rem;
+  border-bottom: 2px solid var(--border-variant);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.post-content td {
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.post-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+/* `hr` is another Preflight casualty (`height: 0; border-top-width: 1px` in the
+   inherited colour), so every property is set rather than adjusted. */
+.post-content hr {
+  width: 4rem;
+  height: 0;
+  margin: 3.5rem auto 2.5rem;
+  border: 0;
+  border-top: 1px solid var(--border-variant);
+}
+
+/* Thin scrollbars for the boxes that scroll, matching the 6px KaTeX bar that
+   _styles/katex.css already styles. */
+.post-content pre::-webkit-scrollbar,
+.post-content table::-webkit-scrollbar {
+  height: 6px;
+}
+
+.post-content pre::-webkit-scrollbar-track,
+.post-content table::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.post-content pre::-webkit-scrollbar-thumb,
+.post-content table::-webkit-scrollbar-thumb {
+  background: var(--border-variant);
+  border-radius: 10px;
+}
+
+.post-content pre::-webkit-scrollbar-thumb:hover,
+.post-content table::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+}
+
+/* ── Prev / next ────────────────────────────────────────────────────────── */
+
+.post-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  margin-top: 56px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border-variant);
+}
+
+.post-nav__link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 300px;
+  text-decoration: none;
+}
+
+.post-nav__link--end {
+  text-align: right;
+  margin-left: auto;
+}
+
+.post-nav__kicker {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.post-nav__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  transition: color 160ms ease;
+}
+
+.post-nav__link:hover .post-nav__title {
+  color: var(--green);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-back,
+  .post-nav__title {
+    transition: none;
+  }
+}

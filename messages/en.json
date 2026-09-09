@@ -656,22 +656,6 @@
     "error": "An error occurred. Please try again.",
     "unknownError": "Unknown error"
   },
-  "comingSoon": {
-    "blog": {
-      "badge": "BLOG",
-      "headline": "Articles & resources",
-      "subline": "Guides, tutorials and reflections on AI. Coming soon.",
-      "ctaLabel": "Subscribe to Blog"
-    },
-    "close": "Close",
-    "subscribed": "You're in! We'll notify you when it's available.",
-    "subscribeError": "Something went wrong when subscribing.",
-    "retry": "Retry",
-    "cancel": "Cancel",
-    "loggedInPrompt": "Get notified when new content is published.",
-    "loggedOutPrompt": "Sign in with Google to get notified when content is published.",
-    "continueGoogle": "Continue with Google"
-  },
   "postClassReview": {
     "ratings": [
       {
@@ -778,6 +762,40 @@
     },
     "validation": {
       "invalidRequest": "The submitted data is not valid. Check the form and try again."
+    }
+  },
+  "blog": {
+    "index": {
+      "overline": "Blog",
+      "heading": "What I explain in lessons, <accent>written down</accent>",
+      "subtitle": "Articles on programming, mathematics and AI. One concept per article, with the hard part included rather than tucked out of sight.",
+      "empty": {
+        "title": "No articles yet",
+        "body": "I'm writing the first one. If you'd like to hear about it when it lands, there's a button just below."
+      }
+    },
+    "card": {
+      "readingTime": "{minutes} min read",
+      "cta": "Read the article"
+    },
+    "post": {
+      "backToIndex": "Back to the blog",
+      "published": "Published {date}",
+      "updated": "Updated {date}",
+      "readingTime": "{minutes} min read",
+      "moreLabel": "More articles",
+      "older": "Previous article",
+      "newer": "Next article"
+    },
+    "notify": {
+      "body": "Notify me when a new article goes up",
+      "cta": "Notify me",
+      "signIn": "Sign in",
+      "signInHint": "Sign in to be notified when a new article goes up",
+      "subscribed": "I'll notify you when a new article goes up",
+      "unsubscribe": "Stop notifications",
+      "error": "Something went wrong. Please try again.",
+      "retry": "Retry"
     }
   },
   "courses": {
@@ -1389,6 +1407,10 @@
     "cursos": {
       "title": "Interactive courses — Gustavo Torres",
       "description": "Free, interactive courses on programming, mathematics and AI. Learn by building, with code that runs in your browser."
+    },
+    "blog": {
+      "title": "Blog — Gustavo Torres",
+      "description": "Articles on programming, mathematics and AI: one concept per article, with the mathematics included and code you can actually run."
     }
   },
   "pages": {

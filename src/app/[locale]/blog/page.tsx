@@ -1,29 +1,27 @@
 /*
- * COURSE-P1-03 — Course catalog (/cursos).
+ * BLOG-01 — Blog index (/blog).
  *
- * Statically generated. Counts come from PUBLISHED-only registry selectors, so drafts never
- * inflate them, and the honest empty state renders rather than a blank page when a locale
- * has nothing at all.
+ * Statically generated for both locales. The list comes from the PUBLISHED-only registry
+ * selector, so drafts never appear, and the honest empty state renders rather than a
+ * blank page when a locale has nothing yet.
  *
- * COURSE-P6-03: the card list is sourced from `listCatalogEntries`, not `listCourses`. The
- * difference is the English catalog: `listCourses("en")` is empty until the LESSONS are
- * translated, which would show "coming soon" to an English visitor while a finished course
- * sits one directory away. `listCatalogEntries` pairs the English manifest with the Spanish
- * lessons and reports which locale those lessons came from, so the card can say so.
- * Navbar/Footer link here now; BLOG-01 gave the blog a real page too, so the
- * ComingSoonModal is gone entirely.
+ * Route-scoped CSS is imported HERE, not in the shared layout, so it only loads on this
+ * route — the same rule the course routes follow. The `.lp-*` editorial atoms come from
+ * the courses feature because they are the site's shared editorial vocabulary (the
+ * display serif, the kicker, the hairline rule), not course-specific styling.
  */
 
 import "@/features/courses/course-editorial.css";
-import "@/features/courses/catalog/catalog.css";
+import "./blog.css";
 
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import CourseCard from "@/features/courses/catalog/CourseCard";
-import CourseNotifyCard from "@/features/courses/CourseNotifyCard";
-import { catalogLocales, listCatalogEntries } from "@/lib/courses/catalog-view";
+import PostCard from "@/features/blog/PostCard";
+import BlogNotifyCard from "@/features/blog/BlogNotifyCard";
+import { listPosts } from "@/lib/blog/registry";
+import { blogLocales } from "@/lib/blog/locales";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates } from "@/lib/hreflang";
 
@@ -37,29 +35,23 @@ export async function generateMetadata({
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "meta.cursos" });
+  const t = await getTranslations({ locale, namespace: "meta.blog" });
   return {
     title: t("title"),
     description: t("description"),
     robots: { index: true, follow: true },
-    // COURSE-P6-03: advertise only the locales whose catalog actually has a course. This
-    // used to be `localizedAlternates` (always both), which disagreed with sitemap.ts.
-    alternates: availableLocaleAlternates("/cursos", locale, catalogLocales()),
+    // Advertise only the locales whose index actually has a post, so the sitemap and
+    // this page's alternates cannot disagree (the COURSE-P6-03 rule).
+    alternates: availableLocaleAlternates("/blog", locale, blogLocales()),
   };
 }
 
-export default async function CursosPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  const t = await getTranslations({ locale, namespace: "courses.catalog" });
+  const t = await getTranslations({ locale, namespace: "blog.index" });
 
-  const cards = listCatalogEntries(locale).map(({ course, contentLocale, lessons }) => ({
-    course,
-    contentLocale,
-    lessonCount: lessons.length,
-    blockCount:  new Set(lessons.map((l) => l.block)).size,
-  }));
-
+  const posts = listPosts(locale);
 
   return (
     <>
@@ -67,14 +59,20 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
       <main style={{ position: "relative", zIndex: 1 }}>
         <div
           style={{
-            maxWidth: 1100,
+            // 840 is the READING measure, the same as the post page, and the whole page
+            // is that one column. The course catalog's 1100 is wrong here: its cards are an
+            // auto-fill grid that genuinely fills the width, whereas a post list is a single
+            // column. Capping the children at 760 inside a 1100 container (as this did) left
+            // every element aligned to the left of a container centred on something wider,
+            // so the page read as shifted rather than centred.
+            maxWidth: 840,
             margin: "0 auto",
-            // Top padding clears the fixed 70px navbar so the kicker (the header's first element)
-            // isn't hidden under its blur — the old 48px left the overline tucked behind it.
+            // Top padding clears the fixed 70px navbar so the kicker (the header's first
+            // element) isn't hidden under its blur — same figure as the course catalog.
             padding: "96px 20px 80px",
           }}
         >
-          {/* Header — kicker + hairline rule + serif display, matching the landing section heads. */}
+          {/* Header — kicker + hairline rule + serif display, matching the course pages. */}
           <header style={{ marginBottom: "44px" }}>
             <div className="lp-section-head">
               <span className="lp-kicker">{t("overline")}</span>
@@ -102,7 +100,7 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
             </p>
           </header>
 
-          {cards.length === 0 ? (
+          {posts.length === 0 ? (
             <div
               style={{
                 padding: "48px 32px",
@@ -129,22 +127,16 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
               </p>
             </div>
           ) : (
-            <div className="courses-grid">
-              {cards.map(({ course, contentLocale, lessonCount, blockCount }) => (
-                <CourseCard
-                  key={course.slug}
-                  course={course}
-                  lessonCount={lessonCount}
-                  blockCount={blockCount}
-                  locale={locale}
-                  contentLocale={contentLocale}
-                />
+            <div className="blog-list">
+              {posts.map((post) => (
+                <PostCard key={post.slug} post={post} locale={locale} />
               ))}
             </div>
           )}
 
-          {/* COURSE-P6-02 — opt-in for new courses and major updates. */}
-          <CourseNotifyCard />
+          {/* Opt-in for new posts — the value the ComingSoonModal used to carry, on a
+              page that now has something to read first. */}
+          <BlogNotifyCard />
         </div>
       </main>
       <Footer />

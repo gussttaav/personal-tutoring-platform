@@ -11,6 +11,10 @@ import path from "node:path";
 
 import sitemap from "@/app/sitemap";
 import { __setContentRoot, __resetRegistry } from "@/lib/courses/registry";
+import {
+  __resetBlogRegistry,
+  __setBlogContentRoot,
+} from "@/lib/blog/registry";
 
 const MANIFEST = `
 slug: dl-nlp
@@ -72,7 +76,10 @@ function makeTree(withEnManifest = false): string {
   return root;
 }
 
-afterEach(() => __resetRegistry());
+afterEach(() => {
+  __resetRegistry();
+  __resetBlogRegistry();
+});
 
 describe("sitemap course routes", () => {
   it("includes /cursos, the course landing and the published lesson — draft excluded", () => {
@@ -133,5 +140,96 @@ describe("sitemap with a manifest-translated course", () => {
     const languages = lesson.alternates!.languages as Record<string, string>;
     expect(languages).not.toHaveProperty("en");
     expect(languages["x-default"]).toBe(languages.es);
+  });
+});
+
+// BLOG-01 — the blog block of the sitemap, same rules as the course block: published
+// only, and a locale is listed only where the content actually exists.
+//
+// These point the BLOG registry at a fixture and leave the course one on the real tree
+// (and vice versa in the describes above). That is safe because every assertion here
+// matches by URL suffix rather than counting entries, so the other feature's real
+// content cannot make a case pass or fail.
+
+function blogFile(fm: { slug: string; date: string; draft?: boolean }): string {
+  const full = {
+    slug:    fm.slug,
+    title:   `Artículo ${fm.slug}`,
+    date:    fm.date,
+    minutes: 5,
+    summary: "Resumen.",
+    draft:   fm.draft ?? false,
+    tags:    [] as string[],
+  };
+  const yaml = Object.entries(full)
+    .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
+    .join("\n");
+  return `---\n${yaml}\n---\n\nCuerpo.\n`;
+}
+
+/** Temp blog root: one published + one draft Spanish post. `bilingual` adds the English
+ *  sibling of the published one — the state where a post exists in both locales. */
+function makeBlogTree(bilingual = false): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "sitemap-blog-"));
+  const esDir = path.join(root, "es");
+  fs.mkdirSync(esDir, { recursive: true });
+  fs.writeFileSync(path.join(esDir, "hola.mdx"), blogFile({ slug: "hola", date: "2026-01-10" }));
+  fs.writeFileSync(
+    path.join(esDir, "borrador.mdx"),
+    blogFile({ slug: "borrador", date: "2026-02-01", draft: true }),
+  );
+  if (bilingual) {
+    const enDir = path.join(root, "en");
+    fs.mkdirSync(enDir, { recursive: true });
+    fs.writeFileSync(path.join(enDir, "hola.mdx"), blogFile({ slug: "hola", date: "2026-01-10" }));
+  }
+  return root;
+}
+
+describe("sitemap blog routes", () => {
+  it("includes /blog and the published post — draft excluded", () => {
+    __setBlogContentRoot(makeBlogTree());
+    const urls = sitemap().map((e) => e.url);
+
+    expect(urls.some((u) => u.endsWith("/blog"))).toBe(true);
+    expect(urls.some((u) => u.endsWith("/blog/hola"))).toBe(true);
+
+    expect(urls.some((u) => u.includes("/blog/borrador"))).toBe(false);
+  });
+
+  it("advertises no /en blog URL while English content is absent", () => {
+    __setBlogContentRoot(makeBlogTree());
+    const entries = sitemap();
+
+    expect(entries.some((e) => e.url.includes("/en/blog"))).toBe(false);
+
+    const post = entries.find((e) => e.url.endsWith("/blog/hola"))!;
+    const languages = post.alternates!.languages as Record<string, string>;
+    expect(languages).not.toHaveProperty("en");
+    expect(languages["x-default"]).toBe(languages.es);
+    expect(languages["x-default"]).not.toContain("/en/");
+  });
+
+  it("lists both locales, paired by hreflang, once the post is translated", () => {
+    __setBlogContentRoot(makeBlogTree(true));
+    const entries = sitemap();
+    const urls = entries.map((e) => e.url);
+
+    expect(urls.some((u) => u.endsWith("/en/blog"))).toBe(true);
+    expect(urls.some((u) => u.endsWith("/en/blog/hola"))).toBe(true);
+
+    const post = entries.find((e) => e.url.endsWith("/en/blog/hola"))!;
+    const languages = post.alternates!.languages as Record<string, string>;
+    expect(languages.es).toMatch(/\/blog\/hola$/);
+    expect(languages.en).toMatch(/\/en\/blog\/hola$/);
+    // SEO-05: x-default is English whenever English exists.
+    expect(languages["x-default"]).toBe(languages.en);
+  });
+
+  it("stamps lastModified from the post's own date", () => {
+    __setBlogContentRoot(makeBlogTree());
+    const post = sitemap().find((e) => e.url.endsWith("/blog/hola"))!;
+
+    expect(post.lastModified).toBe("2026-01-10");
   });
 });

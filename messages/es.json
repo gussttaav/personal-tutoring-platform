@@ -656,22 +656,6 @@
     "error": "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
     "unknownError": "Error desconocido"
   },
-  "comingSoon": {
-    "blog": {
-      "badge": "BLOG",
-      "headline": "Artículos y recursos",
-      "subline": "Guías, tutoriales y reflexiones sobre IA. Próximamente.",
-      "ctaLabel": "Suscribirse al Blog"
-    },
-    "close": "Cerrar",
-    "subscribed": "¡Apuntado! Te avisaremos cuando esté disponible.",
-    "subscribeError": "Algo fue mal al suscribirte.",
-    "retry": "Reintentar",
-    "cancel": "Cancelar",
-    "loggedInPrompt": "Recibe un aviso cuando publique nuevo contenido.",
-    "loggedOutPrompt": "Inicia sesión con Google para recibir un aviso al publicar.",
-    "continueGoogle": "Continuar con Google"
-  },
   "postClassReview": {
     "ratings": [
       {
@@ -778,6 +762,40 @@
     },
     "validation": {
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
+    }
+  },
+  "blog": {
+    "index": {
+      "overline": "Blog",
+      "heading": "Lo que explico en clase, <accent>por escrito</accent>",
+      "subtitle": "Artículos sobre programación, matemáticas e IA. Un concepto por artículo, con la parte difícil incluida en lugar de escondida.",
+      "empty": {
+        "title": "Todavía no hay artículos",
+        "body": "Estoy escribiendo el primero. Si quieres que te avise cuando se publique, tienes el botón aquí abajo."
+      }
+    },
+    "card": {
+      "readingTime": "{minutes} min de lectura",
+      "cta": "Leer el artículo"
+    },
+    "post": {
+      "backToIndex": "Volver al blog",
+      "published": "Publicado el {date}",
+      "updated": "Actualizado el {date}",
+      "readingTime": "{minutes} min de lectura",
+      "moreLabel": "Más artículos",
+      "older": "Artículo anterior",
+      "newer": "Artículo siguiente"
+    },
+    "notify": {
+      "body": "Envíame una notificación cuando publique un artículo nuevo",
+      "cta": "Notifícame",
+      "signIn": "Iniciar sesión",
+      "signInHint": "Inicia sesión para recibir una notificación cuando publique un artículo nuevo",
+      "subscribed": "Te notificaré cuando publique un artículo nuevo",
+      "unsubscribe": "No recibir notificaciones",
+      "error": "Algo ha fallado. Inténtalo de nuevo.",
+      "retry": "Reintentar"
     }
   },
   "courses": {
@@ -1389,6 +1407,10 @@
     "cursos": {
       "title": "Cursos interactivos — Gustavo Torres",
       "description": "Cursos gratuitos e interactivos de programación, matemáticas e IA. Aprende construyendo, con código que se ejecuta en el navegador."
+    },
+    "blog": {
+      "title": "Blog — Gustavo Torres",
+      "description": "Artículos sobre programación, matemáticas e IA: un concepto por artículo, con la parte matemática incluida y código que se puede ejecutar."
     }
   },
   "pages": {

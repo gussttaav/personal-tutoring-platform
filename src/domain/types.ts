@@ -447,6 +447,38 @@ export interface LessonRef {
   title: string;
 }
 
+// ─── Blog ─────────────────────────────────────────────────────────────────────
+// BLOG-01: the blog registry (src/lib/blog/registry.ts) builds these from
+// git-versioned MDX at BUILD time, exactly like the course registry above and for
+// the same reason: prose is never queried, metadata always is. `Post` is the
+// metadata half; the MDX body is web-only and deliberately not modelled here.
+// These are PURE types (see the file header); Zod lives in src/lib/schemas.ts.
+
+/** One post's frontmatter, never its prose. `slug` is unique within a locale and
+ *  locale-invariant, so `/blog/x` and `/en/blog/x` are the same post in two
+ *  languages and hreflang can pair them by slug alone. `minutes` is authored
+ *  rather than derived — the number the card promises is an editorial call. */
+export interface Post {
+  slug:     string;
+  title:    string;
+  /** `YYYY-MM-DD`. The ordering key: the index and the sitemap sort by it. */
+  date:     string;
+  /** `YYYY-MM-DD`. Absent until a post is materially revised. */
+  updated?: string;
+  minutes:  number;
+  summary:  string;
+  draft:    boolean;
+  /** Required, may be empty. No tag pages yet — the field exists so posts are
+   *  authored with their subject stated, not retrofitted when tag pages land. */
+  tags:     string[];
+}
+
+/** A minimal post pointer used for prev/next navigation. */
+export interface PostRef {
+  slug:  string;
+  title: string;
+}
+
 // ─── Course quizzes ───────────────────────────────────────────────────────────
 // COURSE-P3-01: self-assessment questions authored in lesson frontmatter and
 // placed in the prose with `<Quiz id="…" />`. Graded CLIENT-side by the pure

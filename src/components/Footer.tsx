@@ -11,17 +11,14 @@
  * the FooterModals wrapper (unchanged from original).
  */
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useSessionsAnchor } from "@/hooks/useSessionsAnchor";
 import FooterModals from "@/features/landing/FooterModals";
-import ComingSoonModal from "@/components/ComingSoonModal";
 import BrandLogo from "@/components/BrandLogo";
 
 export default function Footer() {
   const t = useTranslations("footer");
-  const [comingSoonModal, setComingSoonModal] = useState<"blog" | null>(null);
   const onSessionsClick = useSessionsAnchor();
 
   return (
@@ -125,7 +122,9 @@ export default function Footer() {
               {t("explore")}
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {/* COURSE-P6-03: Cursos is a real link now; the blog keeps the modal. */}
+              {/* BLOG-01: Cursos and Blog are both real links now. Blog used to be a
+                  <button> opening a ComingSoonModal, which meant the same label behaved
+                  like a link in one column and a dialog trigger in another. */}
               <Link
                 href="/cursos"
                 style={{
@@ -139,24 +138,19 @@ export default function Footer() {
               >
                 {t("courses")}
               </Link>
-              <button
-                onClick={() => setComingSoonModal("blog")}
+              <Link
+                href="/blog"
                 style={{
-                  fontSize:   "13px",
-                  color:      "#86948a",
-                  background: "none",
-                  border:     "none",
-                  padding:    0,
-                  cursor:     "pointer",
-                  fontFamily: "inherit",
-                  textAlign:  "left",
-                  transition: "color 0.15s",
+                  fontSize:       "13px",
+                  color:          "#86948a",
+                  textDecoration: "none",
+                  transition:     "color 0.15s",
                 }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
               >
                 {t("blog")}
-              </button>
+              </Link>
               {/* COURSE-P6-03: `#sessions` lives in InteractiveShell, which is only on the
                   landing page — a bare fragment link was dead everywhere else, and the footer
                   is now rendered on /cursos too. `/#sessions` navigates home first. */}
@@ -361,12 +355,6 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      {comingSoonModal && (
-        <ComingSoonModal
-          type={comingSoonModal}
-          onClose={() => setComingSoonModal(null)}
-        />
-      )}
     </footer>
   );
 }

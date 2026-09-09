@@ -17,8 +17,9 @@
  * English. Both are pinned against that lesson, so they keep testing a genuine fallback — the step
  * most likely to break silently, and the least likely to be noticed by a Spanish-speaking maintainer.
  *
- * Also pins the thing this task could most easily have broken by accident: Blog still
- * opens the ComingSoonModal, from the navbar AND the footer.
+ * BLOG-01: the Blog test that used to live here pinned the ComingSoonModal. The blog has a
+ * real page now, so it pins what the Cursos flow pins — the chrome goes somewhere — from the
+ * navbar AND the footer. The modal is gone; nothing in the app renders one any more.
  *
  * Signed out throughout — reading requires no account (P4-02), and the notify card's
  * signed-out state is all that is asserted here (its signed-in toggle needs OAuth).
@@ -306,20 +307,49 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveCount(0);
   });
 
-  test("Blog still opens the ComingSoonModal, from the navbar and the footer", async ({ page }) => {
+  test("Blog is a real destination, from the navbar and the footer", async ({ page }) => {
+    // Both chrome surfaces used to open a modal; the footer's was not even a link. The
+    // pair is tested together because the failure this replaces was exactly the two
+    // disagreeing about what the same label does.
     const d = dict.es;
 
     await page.goto("/cursos");
 
     await page.getByRole("link", { name: d.nav.blog, exact: true }).first().click();
-    const modal = page.getByRole("dialog");
-    await expect(modal).toBeVisible();
-    await expect(modal).toContainText(d.comingSoon.blog.headline);
+    await expect(page).toHaveURL(/\/blog$/, { timeout: 30_000 });
+    await expect(
+      page.getByRole("heading", {
+        name: d.blog.index.heading.replace(/<[^>]+>/g, ""),
+        level: 1,
+      }),
+    ).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(modal).toHaveCount(0);
+    // No dialog anywhere: the ComingSoonModal was deleted with this route.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
-    await page.locator("footer").getByRole("button", { name: d.footer.blog, exact: true }).click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    // The index lists the post, and the card reaches the article itself.
+    const card = page.getByRole("link", { name: new RegExp(d.blog.card.cta) }).first();
+    await expect(card).toBeVisible();
+    await card.click();
+    await expect(page).toHaveURL(/\/blog\/[a-z0-9-]+$/, { timeout: 30_000 });
+    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
+
+    // The footer's Blog is a LINK now, not a button, and lands in the same place.
+    await page.locator("footer").getByRole("link", { name: d.footer.blog, exact: true }).click();
+    await expect(page).toHaveURL(/\/blog$/, { timeout: 30_000 });
+  });
+
+  test("the nav marks Blog as the current page, like every other item", async ({ page }) => {
+    // Blog used to be the one nav item with no `match` route — it opened a modal and was
+    // never anywhere, so the "current item is green and underlined" rule could not apply
+    // to it. With a real page it is marked by the same rule as Cursos and Mentoría.
+    await page.goto("/blog", { timeout: 30_000 });
+
+    const nav = page.locator("nav").first();
+    await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
+    await expect(
+      nav.getByRole("link", { name: dict.es.nav.blog, exact: true }).first(),
+    ).toHaveAttribute("aria-current", "page");
   });
 });

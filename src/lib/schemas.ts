@@ -538,6 +538,63 @@ export const LessonFrontmatterSchema = z.strictObject({
 
 export type LessonFrontmatterInput = z.infer<typeof LessonFrontmatterSchema>;
 
+// ─── Blog — post frontmatter ──────────────────────────────────────────────────
+// BLOG-01: same discipline as the lesson schema above — `z.strictObject`, so a
+// typo'd key fails `pnpm lint:content` rather than being silently ignored, and
+// fields that could be inferred by omission are required instead.
+
+/**
+ * `YYYY-MM-DD`, and a date that actually exists. The regex alone accepts
+ * "2026-02-31"; the round-trip through `Date` is what rejects it. Kept as a plain
+ * string (not `z.coerce.date()`) because the frontmatter value is what the sitemap
+ * and JSON-LD emit, and a `Date` would drag timezone semantics into a calendar day.
+ */
+const IsoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "must be a YYYY-MM-DD date")
+  .refine(
+    (v) => {
+      // The NaN guard is load-bearing: zod runs every check and collects the issues, so
+      // this refinement still sees input the regex above already rejected. Without it a
+      // date like "01-01-2026" throws "Invalid time value" out of `toISOString`, and the
+      // registry's "which file?" error is replaced by a stack trace.
+      const d = new Date(`${v}T00:00:00Z`);
+      return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(v);
+    },
+    { message: "is not a real calendar date" },
+  );
+
+export const PostFrontmatterSchema = z.strictObject({
+  slug:    z.string().min(1),
+  title:   z.string().min(1),
+  // The ordering key. The blog has no `order` field on purpose: a numeric filename
+  // prefix or an explicit order would be a second source of truth that can disagree.
+  date:    IsoDate,
+  // Only present once a post has been materially revised; drives JSON-LD
+  // `dateModified` and the "updated" line under the title.
+  updated: IsoDate.optional(),
+  minutes: z.number().int().positive(),
+  summary: z.string().min(1),
+  draft:   z.boolean(),
+  // Required like the lesson schema's `quiz`/`reading`: a post with nothing to tag
+  // writes `tags: []` and says so, rather than defaulting to "none" by omission.
+  tags:    z.array(z.string().min(1)).superRefine((tags, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, tag] of tags.entries()) {
+      if (seen.has(tag)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate tag "${tag}"`,
+          path:    [i],
+        });
+      }
+      seen.add(tag);
+    }
+  }),
+});
+
+export type PostFrontmatterInput = z.infer<typeof PostFrontmatterSchema>;
+
 // ─── Courses — request payloads ───────────────────────────────────────────────
 // COURSE-P4-02: unlike the build-time content schemas above, these validate HTTP
 // request bodies, so they use plain `z.object` (an unknown key from an older client

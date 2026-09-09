@@ -16,7 +16,8 @@
  * than 404ing under /en. When `en/` lessons land, all of this stops firing on its own.
  *
  * Reading requires no sign-in (P4-02); no progress UI here (P4). hreflang correction and
- * sitemap/JSON-LD land in P6-01. Only the blog keeps the ComingSoonModal (P6-03).
+ * sitemap/JSON-LD land in P6-01. (The blog kept the ComingSoonModal until BLOG-01
+ * replaced it with a real /blog; there is no ComingSoonModal any more.)
  */
 
 import "@/features/courses/course-editorial.css";
