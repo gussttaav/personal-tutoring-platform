@@ -23,10 +23,13 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleStructuredData from "@/components/seo/ArticleStructuredData";
+import OnThisPage from "@/features/blog/OnThisPage";
 import PostReading from "@/features/blog/PostReading";
+import PostToc from "@/features/blog/PostToc";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates, localeUrl } from "@/lib/hreflang";
+import { extractHeadings } from "@/lib/courses/headings";
 import { getPost, listPosts, postNeighbours } from "@/lib/blog/registry";
 import { postLocales } from "@/lib/blog/locales";
 import { getPostSource } from "@/lib/blog/post-source";
@@ -93,6 +96,7 @@ export default async function BlogPostPage({
   const t = await getTranslations({ locale, namespace: "blog.post" });
   const format = await getFormatter({ locale });
   const { content } = await renderPost(source);
+  const headings = extractHeadings(source);
   const { newer, older } = postNeighbours(post.slug, locale);
 
   // `post.date` is a calendar day, which `new Date()` reads as UTC midnight. Without an
@@ -110,53 +114,64 @@ export default async function BlogPostPage({
       <ArticleStructuredData post={post} locale={locale} />
       <Navbar />
       <main style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ maxWidth: 840, margin: "0 auto", padding: "96px 20px 80px" }}>
-          <Link href="/blog" className="post-back">
-            <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }} aria-hidden="true">
-              arrow_back
-            </span>
-            {t("backToIndex")}
-          </Link>
+        <div className="post-shell">
+          <div className="post-main">
+            <Link href="/blog" className="post-back">
+              <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }} aria-hidden="true">
+                arrow_back
+              </span>
+              {t("backToIndex")}
+            </Link>
 
-          <header className="post-header">
-            <h1 className="post-title lp-serif">{post.title}</h1>
-            <p className="post-dateline">
-              <time dateTime={post.date}>{t("published", { date: day(post.date) })}</time>
-              <span className="post-dateline__dot" aria-hidden="true" />
-              <span>{t("readingTime", { minutes: post.minutes })}</span>
-              {post.updated ? (
-                <>
-                  <span className="post-dateline__dot" aria-hidden="true" />
-                  <time dateTime={post.updated}>{t("updated", { date: day(post.updated) })}</time>
-                </>
-              ) : null}
-            </p>
-          </header>
+            <header className="post-header">
+              <h1 className="post-title lp-serif">{post.title}</h1>
+              <p className="post-dateline">
+                <time dateTime={post.date}>{t("published", { date: day(post.date) })}</time>
+                <span className="post-dateline__dot" aria-hidden="true" />
+                <span>{t("readingTime", { minutes: post.minutes })}</span>
+                {post.updated ? (
+                  <>
+                    <span className="post-dateline__dot" aria-hidden="true" />
+                    <time dateTime={post.updated}>{t("updated", { date: day(post.updated) })}</time>
+                  </>
+                ) : null}
+              </p>
+            </header>
 
-          <article className="post-content">{content}</article>
+            {/* Mobile / tablet outline (reveal-on-scroll-up); the rail below replaces
+                it ≥1280px. */}
+            <PostToc headings={headings} />
 
-          {/* BLOG-02: outside the article, so the last paragraph of the post stays the
-              last thing the reader reads. Renders nothing when `reading` is empty. */}
-          <PostReading reading={post.reading} locale={locale} />
+            <article className="post-content">{content}</article>
 
-          {newer || older ? (
-            <nav className="post-nav" aria-label={t("moreLabel")}>
-              {older ? (
-                <Link href={`/blog/${older.slug}`} className="post-nav__link">
-                  <span className="post-nav__kicker">{t("older")}</span>
-                  <span className="post-nav__title">{older.title}</span>
-                </Link>
-              ) : (
-                <span />
-              )}
-              {newer ? (
-                <Link href={`/blog/${newer.slug}`} className="post-nav__link post-nav__link--end">
-                  <span className="post-nav__kicker">{t("newer")}</span>
-                  <span className="post-nav__title">{newer.title}</span>
-                </Link>
-              ) : null}
-            </nav>
-          ) : null}
+            {/* BLOG-02: outside the article, so the last paragraph of the post stays the
+                last thing the reader reads. Renders nothing when `reading` is empty. */}
+            <PostReading reading={post.reading} locale={locale} />
+
+            {newer || older ? (
+              <nav className="post-nav" aria-label={t("moreLabel")}>
+                {older ? (
+                  <Link href={`/blog/${older.slug}`} className="post-nav__link">
+                    <span className="post-nav__kicker">{t("older")}</span>
+                    <span className="post-nav__title">{older.title}</span>
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                {newer ? (
+                  <Link href={`/blog/${newer.slug}`} className="post-nav__link post-nav__link--end">
+                    <span className="post-nav__kicker">{t("newer")}</span>
+                    <span className="post-nav__title">{newer.title}</span>
+                  </Link>
+                ) : null}
+              </nav>
+            ) : null}
+          </div>
+
+          {/* Desktop right rail; post.css hides it below 1280px. */}
+          <aside className="post-onthispage">
+            <OnThisPage headings={headings} />
+          </aside>
         </div>
       </main>
       <Footer />

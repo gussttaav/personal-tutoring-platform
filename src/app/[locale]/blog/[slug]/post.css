@@ -26,6 +26,164 @@
   --nav-h: 72px;
 }
 
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Mobile-first, mirroring the lesson reader (lesson.css): the base is the single
+ * 840px reading column the post has always been — this block just moves the measure
+ * off the inline `style` the page used to carry. The ≥1280px media query then turns
+ * the shell into a two-track grid and reveals the sticky "On this page" rail
+ * (OnThisPage.tsx). Below that width the rail is absent and PostToc's <details>
+ * disclosure at the top of the article stands in for it.
+ */
+.post-shell {
+  --nav-h: 72px;                 /* keep in sync with the Navbar height */
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 96px 20px 80px;
+}
+
+.post-main {
+  min-width: 0;                  /* let wide children (pre, table) scroll, not widen the column */
+}
+
+.post-onthispage {
+  display: none;                 /* revealed at ≥1280px */
+}
+
+/*
+ * The sticky rail needs the VIEWPORT as its scroll container. The global
+ * `body { overflow-x: hidden }` (globals.css) turns body into a scroll container
+ * instead, which silently breaks `position: sticky` for its descendants.
+ * `overflow-x: clip` stops the same horizontal scroll WITHOUT establishing a scroll
+ * container. Scoped to this route so the rest of the site keeps the global rule.
+ */
+body:has(.post-shell) {
+  overflow-x: clip;
+}
+
+@media (min-width: 1280px) {
+  /* Only widen into the two-track grid when there is actually a rail to show:
+     OnThisPage renders a <nav> only when the post has headings, so a heading-less
+     post keeps the plain single 840px column instead of a lopsided empty track. */
+  .post-shell:has(.post-onthispage nav) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 240px;
+    gap: 48px;
+    max-width: 1128px;           /* 840 (content) + 48 (gap) + 240 (rail) */
+    align-items: start;          /* so the sticky rail has room to move */
+  }
+
+  .post-onthispage:has(nav) {
+    display: block;
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+    max-height: calc(100vh - var(--nav-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* The rail replaces the disclosure at this width. */
+  .post-toc {
+    display: none;
+  }
+}
+
+/* ── "On this page" disclosure (mobile / tablet) ────────────────────────── */
+
+/*
+ * PostToc.tsx. Parked in flow at the top of the article, then `position: sticky` once
+ * scrolled past — PostToc's scroll listener slides it out on scroll-down and back in on
+ * scroll-up (transform + inline transition). Hidden ≥1280px, where the rail takes over.
+ *
+ * z-index sits it over the article text; the fixed navbar is a sibling of <main> so its
+ * own z-50 already wins. `background` must stay opaque — content scrolls under it while
+ * it is pinned.
+ */
+
+.post-toc {
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 20;
+  margin: 0 0 1.5rem;
+  border: 1px solid var(--border-variant);
+  border-radius: var(--radius);
+  background: var(--surface-container);
+}
+
+.post-toc-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  /* Drop the native disclosure triangle; the chevron replaces it. */
+  list-style: none;
+}
+.post-toc-summary::-webkit-details-marker { display: none; }
+.post-toc-summary::marker { content: ""; }
+.post-toc-summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.post-toc-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+  transition: transform 150ms ease, color 150ms ease;
+}
+.post-toc:not([open]) .post-toc-chevron { transform: rotate(-90deg); }
+.post-toc-summary:hover .post-toc-chevron { color: var(--green); }
+
+.post-toc-kicker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 150ms ease;
+}
+.post-toc-summary:hover .post-toc-kicker { color: var(--text); }
+
+.post-toc-list {
+  margin: 0;
+  padding: 4px 0 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  /* When pinned near the top, a long outline must scroll inside the bar rather than
+     run off the bottom of the screen. */
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.post-toc-list a {
+  display: block;
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text-dim);
+  text-decoration: none;
+}
+.post-toc-list a:hover {
+  color: var(--text);
+}
+/* h3 entries indent under their h2. */
+.post-toc-list li[data-depth="3"] a {
+  padding-left: 30px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-toc-chevron,
+  .post-toc-kicker {
+    transition: none;
+  }
+}
+
 /* ── Chrome ─────────────────────────────────────────────────────────────── */
 
 .post-back {

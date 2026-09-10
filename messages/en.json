@@ -785,7 +785,8 @@
       "readingTime": "{minutes} min read",
       "moreLabel": "More articles",
       "older": "Previous article",
-      "newer": "Next article"
+      "newer": "Next article",
+      "onThisPage": "On this page"
     },
     "reading": {
       "title": "Going deeper",

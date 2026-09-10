@@ -785,7 +785,8 @@
       "readingTime": "{minutes} min de lectura",
       "moreLabel": "Más artículos",
       "older": "Artículo anterior",
-      "newer": "Artículo siguiente"
+      "newer": "Artículo siguiente",
+      "onThisPage": "En esta página"
     },
     "reading": {
       "title": "Para profundizar",
