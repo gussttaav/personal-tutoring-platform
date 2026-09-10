@@ -787,6 +787,29 @@
       "older": "Artículo anterior",
       "newer": "Artículo siguiente"
     },
+    "reading": {
+      "title": "Para profundizar",
+      "lede": "De dónde sale lo que cuenta el artículo, y dónde seguir si quieres más. Nada de aquí hace falta para entenderlo.",
+      "count": "{count, plural, one {# fuente} other {# fuentes}}",
+      "kindCount": {
+        "paper": "{count, plural, one {# paper} other {# papers}}",
+        "libro": "{count, plural, one {# libro} other {# libros}}",
+        "blog": "{count, plural, one {# artículo} other {# artículos}}",
+        "video": "{count, plural, one {# vídeo} other {# vídeos}}",
+        "interactivo": "{count, plural, one {# interactivo} other {# interactivos}}"
+      },
+      "kind": {
+        "paper": "paper",
+        "libro": "libro",
+        "blog": "artículo",
+        "video": "vídeo",
+        "interactivo": "interactivo"
+      },
+      "lang": {
+        "es": "En español",
+        "en": "En inglés"
+      }
+    },
     "notify": {
       "body": "Envíame una notificación cuando publique un artículo nuevo",
       "cta": "Notifícame",

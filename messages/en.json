@@ -787,6 +787,29 @@
       "older": "Previous article",
       "newer": "Next article"
     },
+    "reading": {
+      "title": "Going deeper",
+      "lede": "Where the article's material comes from, and where to go next if you want more. None of it is needed to follow the piece.",
+      "count": "{count, plural, one {# source} other {# sources}}",
+      "kindCount": {
+        "paper": "{count, plural, one {# paper} other {# papers}}",
+        "libro": "{count, plural, one {# book} other {# books}}",
+        "blog": "{count, plural, one {# article} other {# articles}}",
+        "video": "{count, plural, one {# video} other {# videos}}",
+        "interactivo": "{count, plural, one {# interactive} other {# interactives}}"
+      },
+      "kind": {
+        "paper": "paper",
+        "libro": "book",
+        "blog": "article",
+        "video": "video",
+        "interactivo": "interactive"
+      },
+      "lang": {
+        "es": "In Spanish",
+        "en": "In English"
+      }
+    },
     "notify": {
       "body": "Notify me when a new article goes up",
       "cta": "Notify me",

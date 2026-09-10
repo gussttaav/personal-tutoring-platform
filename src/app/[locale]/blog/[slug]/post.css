@@ -231,6 +231,20 @@
   background: var(--surface-lowest);
   font-size: 0.9375rem;
   line-height: 1.6;
+
+  /* BLOG-02 — a code block scrolls past 20 visible lines instead of growing without
+     limit, the same cap and the same reasoning as the course's code editors
+     (EDITOR_MAX_LINES, src/features/courses/code/editor-metrics.ts): past that, a
+     listing stops being something the reader reads and becomes a wall between two
+     paragraphs. Applies to fenced OUTPUT blocks too — they are `pre` as well, and a
+     long run of printed lines walls the page off exactly the same way.
+
+     Written as a calc against `em` and the box's own padding rather than a pixel
+     value, so it stays 20 lines if the font-size or line-height above ever change.
+     The `min(…, 70vh)` only bites on phones and short windows, where 512px would fill
+     the viewport with one code block. */
+  max-height: min(calc(20 * 1.6em + 2rem), 70vh);
+  overflow-y: auto;
 }
 
 /* Inline code only. The `:not(pre) >` guard matters: a background and border on the
@@ -273,6 +287,40 @@
   border-radius: var(--radius);
 }
 
+/* BLOG-02 — figures. A post has no component map (see src/lib/blog/mdx.ts), so a
+   figure is written as plain `<figure><img/><figcaption>` in the MDX and styled here,
+   mirroring what `Figure` does for a lesson (src/lib/courses/mdx-components.tsx:221).
+   The auto margins are load-bearing: Preflight sets `img { display: block }`, and
+   `text-align` does not centre a block-level child, so without them the figure renders
+   flush left. Same Preflight damage as COURSE-P5-01.
+
+   The `:not()` is NOT defensive styling — it is required. `rehype-pretty-code` wraps
+   EVERY code block in `<figure data-rehype-pretty-code-figure>`, so a bare
+   `.post-content figure { text-align: center }` centres every line of every code
+   block. Anything added to the figure rules below has to keep clearing that. */
+.post-content figure:not([data-rehype-pretty-code-figure]) {
+  margin: 2rem 0 2.5rem;
+  text-align: center;
+}
+
+.post-content figure:not([data-rehype-pretty-code-figure]) img {
+  display: block;
+  margin: 0 auto;
+}
+
+.post-content figcaption {
+  margin-top: 0.65rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+/* Second line of defence for the same collision: code is left-aligned whatever any
+   ancestor says. Cheap, and it survives a future rule that reaches `pre` some other way. */
+.post-content pre {
+  text-align: left;
+}
+
 /* `hr` is another Preflight casualty (`height: 0; border-top-width: 1px` in the
    inherited colour), so every property is set rather than adjusted. */
 .post-content hr {
@@ -304,6 +352,164 @@
 .post-content pre::-webkit-scrollbar-thumb:hover,
 .post-content table::-webkit-scrollbar-thumb:hover {
   background: var(--green);
+}
+
+/* ── Further reading (BLOG-02) ──────────────────────────────────────────── */
+
+/* The blog's version of the lesson's "Para profundizar" block, and a deliberate copy
+   rather than a shared stylesheet: the course rules live in lesson.css, which this
+   route does not load, and their `.lesson-content`-prefixed selectors exist to beat
+   prose rules this block never sits inside. `PostReading` renders as a SIBLING of
+   `.post-content`, so the specificity hacks the lesson needs are not repeated here.
+
+   Collapsed by default, same trade as COURSE-P8-01: the fold hides the `note`, and the
+   count plus the per-kind breakdown in the summary is what pays for hiding it. */
+
+.post-reading {
+  margin: 3rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.post-reading-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  cursor: pointer;
+  /* Drop the native disclosure triangle; the chevron replaces it. */
+  list-style: none;
+}
+.post-reading-summary::-webkit-details-marker { display: none; }
+.post-reading-summary::marker { content: ""; }
+.post-reading-summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.post-reading-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+  transition: transform 150ms ease, color 150ms ease;
+}
+.post-reading:not([open]) .post-reading-chevron { transform: rotate(-90deg); }
+.post-reading-summary:hover .post-reading-chevron { color: var(--green); }
+
+.post-reading-kicker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 150ms ease;
+}
+.post-reading-summary:hover .post-reading-kicker { color: var(--text); }
+
+/* Closed, this line is the whole advertisement for what is behind the fold. */
+.post-reading-count {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* Under ~480px the kicker plus the breakdown wraps the summary to three lines, which
+   makes the closed block taller than what it hides. The count survives. */
+@media (max-width: 480px) {
+  .post-reading-breakdown { display: none; }
+}
+
+.post-reading-body { padding-bottom: 6px; }
+
+.post-reading-lede {
+  margin: 0 0 18px;
+  max-width: 54ch;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.post-reading-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-reading-item {
+  padding: 16px 18px;
+  border: 1px solid var(--border-variant);
+  border-radius: var(--radius);
+  background: var(--surface-container);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.post-reading-item:hover {
+  border-color: var(--green);
+  background: var(--surface-high);
+}
+
+.post-reading-title {
+  display: inline-block;
+  margin-bottom: 4px;
+  color: var(--green);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+}
+.post-reading-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
+}
+.post-reading-title:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.post-reading-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.post-reading-kind {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* The one kind that is not reading at all — a thing the reader operates. */
+.post-reading-kind[data-kind="interactivo"] { color: var(--green); }
+
+.post-reading-lang {
+  padding: 1px 5px;
+  border: 1px solid var(--border-variant);
+  border-radius: 3px;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+}
+
+.post-reading-note {
+  margin: 5px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-reading-chevron,
+  .post-reading-item,
+  .post-reading-kicker {
+    transition: none;
+  }
 }
 
 /* ── Prev / next ────────────────────────────────────────────────────────── */

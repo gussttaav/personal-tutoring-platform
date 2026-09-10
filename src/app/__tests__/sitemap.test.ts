@@ -159,6 +159,7 @@ function blogFile(fm: { slug: string; date: string; draft?: boolean }): string {
     minutes: 5,
     summary: "Resumen.",
     draft:   fm.draft ?? false,
+    reading: [] as unknown[],
     tags:    [] as string[],
   };
   const yaml = Object.entries(full)

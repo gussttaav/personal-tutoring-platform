@@ -5,6 +5,7 @@ date: "2026-01-01"
 minutes: 5
 summary: "Una frase que dice qué se lleva el lector. Se usa en la tarjeta del índice, en la meta description y en el JSON-LD, así que tiene que funcionar fuera de contexto."
 draft: true
+reading: []
 tags: []
 ---
 
@@ -20,7 +21,14 @@ tags: []
     - `slug` es invariante entre idiomas: es/<slug>.mdx y en/<slug>.mdx son el mismo
       artículo en dos idiomas, y así los empareja el hreflang
     - `date` es YYYY-MM-DD y es la única clave de orden del blog
-    - `tags` es obligatorio aunque esté vacío
+    - `tags` y `reading` son obligatorios aunque estén vacíos
+
+  BLOG-02 — `reading` es la bibliografía del artículo, y se renderiza plegada al pie
+  con el mismo formato que el bloque «Para profundizar» de las lecciones. Cada entrada
+  lleva `kind` (paper | libro | blog | video | interactivo), `title`, `authors`,
+  `venue`, `lang` (es | en), `url` (https) y una `note` de una línea diciendo qué gana
+  quien la abra; `year` es opcional. Máximo diez. Los enlaces del cuerpo van sobre el
+  nombre de la técnica, no sobre el nombre de los autores: la ficha completa vive aquí.
 
   El cuerpo empieza con prosa, nunca con un `#`: el h1 lo pone la página a partir
   del `title`. Disponible en el cuerpo: GFM (tablas, listas), matemáticas con

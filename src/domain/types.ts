@@ -468,6 +468,9 @@ export interface Post {
   minutes:  number;
   summary:  string;
   draft:    boolean;
+  /** BLOG-02 — further reading, rendered collapsed at the foot of the post by
+   *  `PostReading`. Required, may be empty; capped at `READING_MAX_POST`. */
+  reading:  ReadingItem[];
   /** Required, may be empty. No tag pages yet — the field exists so posts are
    *  authored with their subject stated, not retrofitted when tag pages land. */
   tags:     string[];

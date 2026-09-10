@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 411 247" width="411" height="247" role="img"
+ aria-label="La palabra «programación» partida en caracteres en la fila de arriba y, debajo, una fila por cada fusión de la lista aprendida que le afecta. La fusión 2 pega p con r, la 5 añade la o, la 9 pega la n final con la marca de fin de palabra, y de la 11 a la 15 el trozo crece hasta «programa». La palabra acaba escrita con cinco piezas: programa, c, i, ó y n con la marca de fin.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .pc { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; text-anchor: middle; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.on { stroke: #4edea3; fill: rgba(78,222,163,0.10); }
+  .pc.on { fill: #4edea3; }
+  .n { font-size: 10.5px; fill: #86948a; text-anchor: end; }
+  .pr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; fill: #86948a; }
+</style>
+<rect class="bx" x="100.0" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="109.5" y="31">p</text>
+<rect class="bx" x="122.0" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="131.4" y="31">r</text>
+<rect class="bx" x="143.9" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="153.4" y="31">o</text>
+<rect class="bx" x="165.8" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="175.3" y="31">g</text>
+<rect class="bx" x="187.8" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="197.3" y="31">r</text>
+<rect class="bx" x="209.7" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="219.2" y="31">a</text>
+<rect class="bx" x="231.7" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="241.2" y="31">m</text>
+<rect class="bx" x="253.6" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="263.1" y="31">a</text>
+<rect class="bx" x="275.6" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="285.1" y="31">c</text>
+<rect class="bx" x="297.5" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="307.0" y="31">i</text>
+<rect class="bx" x="319.5" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="329.0" y="31">ó</text>
+<rect class="bx" x="341.4" y="16" width="18.9" height="21" rx="3"/>
+<text class="pc" x="350.9" y="31">n</text>
+<rect class="bx" x="363.4" y="16" width="39.8" height="21" rx="3"/>
+<text class="pc" x="383.3" y="31">&lt;/w&gt;</text>
+<text class="n" x="24" y="56">2</text>
+<text class="pr" x="32" y="56">p+r</text>
+<rect class="bx on" x="100.0" y="41" width="25.9" height="21" rx="3"/>
+<text class="pc on" x="113.0" y="56">pr</text>
+<rect class="bx" x="128.9" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="138.4" y="56">o</text>
+<rect class="bx" x="150.8" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="160.3" y="56">g</text>
+<rect class="bx" x="172.8" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="182.3" y="56">r</text>
+<rect class="bx" x="194.7" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="204.2" y="56">a</text>
+<rect class="bx" x="216.7" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="226.2" y="56">m</text>
+<rect class="bx" x="238.6" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="248.1" y="56">a</text>
+<rect class="bx" x="260.6" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="270.1" y="56">c</text>
+<rect class="bx" x="282.5" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="292.0" y="56">i</text>
+<rect class="bx" x="304.5" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="314.0" y="56">ó</text>
+<rect class="bx" x="326.4" y="41" width="18.9" height="21" rx="3"/>
+<text class="pc" x="335.9" y="56">n</text>
+<rect class="bx" x="348.4" y="41" width="39.8" height="21" rx="3"/>
+<text class="pc" x="368.3" y="56">&lt;/w&gt;</text>
+<text class="n" x="24" y="81">5</text>
+<text class="pr" x="32" y="81">pr+o</text>
+<rect class="bx on" x="100.0" y="66" width="32.9" height="21" rx="3"/>
+<text class="pc on" x="116.4" y="81">pro</text>
+<rect class="bx" x="135.8" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="145.3" y="81">g</text>
+<rect class="bx" x="157.8" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="167.3" y="81">r</text>
+<rect class="bx" x="179.7" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="189.2" y="81">a</text>
+<rect class="bx" x="201.7" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="211.2" y="81">m</text>
+<rect class="bx" x="223.6" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="233.1" y="81">a</text>
+<rect class="bx" x="245.6" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="255.1" y="81">c</text>
+<rect class="bx" x="267.5" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="277.0" y="81">i</text>
+<rect class="bx" x="289.5" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="299.0" y="81">ó</text>
+<rect class="bx" x="311.4" y="66" width="18.9" height="21" rx="3"/>
+<text class="pc" x="320.9" y="81">n</text>
+<rect class="bx" x="333.4" y="66" width="39.8" height="21" rx="3"/>
+<text class="pc" x="353.3" y="81">&lt;/w&gt;</text>
+<text class="n" x="24" y="106">9</text>
+<text class="pr" x="32" y="106">n+&lt;/w&gt;</text>
+<rect class="bx" x="100.0" y="91" width="32.9" height="21" rx="3"/>
+<text class="pc" x="116.4" y="106">pro</text>
+<rect class="bx" x="135.8" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="145.3" y="106">g</text>
+<rect class="bx" x="157.8" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="167.3" y="106">r</text>
+<rect class="bx" x="179.7" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="189.2" y="106">a</text>
+<rect class="bx" x="201.7" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="211.2" y="106">m</text>
+<rect class="bx" x="223.6" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="233.1" y="106">a</text>
+<rect class="bx" x="245.6" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="255.1" y="106">c</text>
+<rect class="bx" x="267.5" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="277.0" y="106">i</text>
+<rect class="bx" x="289.5" y="91" width="18.9" height="21" rx="3"/>
+<text class="pc" x="299.0" y="106">ó</text>
+<rect class="bx on" x="311.4" y="91" width="46.8" height="21" rx="3"/>
+<text class="pc on" x="334.8" y="106">n&lt;/w&gt;</text>
+<text class="n" x="24" y="131">11</text>
+<text class="pr" x="32" y="131">pro+g</text>
+<rect class="bx on" x="100.0" y="116" width="39.8" height="21" rx="3"/>
+<text class="pc on" x="119.9" y="131">prog</text>
+<rect class="bx" x="142.8" y="116" width="18.9" height="21" rx="3"/>
+<text class="pc" x="152.3" y="131">r</text>
+<rect class="bx" x="164.8" y="116" width="18.9" height="21" rx="3"/>
+<text class="pc" x="174.2" y="131">a</text>
+<rect class="bx" x="186.7" y="116" width="18.9" height="21" rx="3"/>
+<text class="pc" x="196.2" y="131">m</text>
+<rect class="bx" x="208.6" y="116" width="18.9" height="21" rx="3"/>
+<text class="pc" x="218.1" y="131">a</text>
+<rect class="bx" x="230.6" y="116" width="18.9" height="21" rx="3"/>
+<text class="pc" x="240.1" y="131">c</text>
+<rect class="bx" x="252.5" y="116" width="18.9" height="21" rx="3"/>
+<text class="pc" x="262.0" y="131">i</text>
+<rect class="bx" x="274.5" y="116" width="18.9" height="21" rx="3"/>
+<text class="pc" x="284.0" y="131">ó</text>
+<rect class="bx" x="296.4" y="116" width="46.8" height="21" rx="3"/>
+<text class="pc" x="319.8" y="131">n&lt;/w&gt;</text>
+<text class="n" x="24" y="156">12</text>
+<text class="pr" x="32" y="156">prog+r</text>
+<rect class="bx on" x="100.0" y="141" width="46.8" height="21" rx="3"/>
+<text class="pc on" x="123.4" y="156">progr</text>
+<rect class="bx" x="149.8" y="141" width="18.9" height="21" rx="3"/>
+<text class="pc" x="159.2" y="156">a</text>
+<rect class="bx" x="171.7" y="141" width="18.9" height="21" rx="3"/>
+<text class="pc" x="181.2" y="156">m</text>
+<rect class="bx" x="193.6" y="141" width="18.9" height="21" rx="3"/>
+<text class="pc" x="203.1" y="156">a</text>
+<rect class="bx" x="215.6" y="141" width="18.9" height="21" rx="3"/>
+<text class="pc" x="225.1" y="156">c</text>
+<rect class="bx" x="237.5" y="141" width="18.9" height="21" rx="3"/>
+<text class="pc" x="247.0" y="156">i</text>
+<rect class="bx" x="259.5" y="141" width="18.9" height="21" rx="3"/>
+<text class="pc" x="269.0" y="156">ó</text>
+<rect class="bx" x="281.4" y="141" width="46.8" height="21" rx="3"/>
+<text class="pc" x="304.8" y="156">n&lt;/w&gt;</text>
+<text class="n" x="24" y="181">13</text>
+<text class="pr" x="32" y="181">progr+a</text>
+<rect class="bx on" x="100.0" y="166" width="53.7" height="21" rx="3"/>
+<text class="pc on" x="126.8" y="181">progra</text>
+<rect class="bx" x="156.7" y="166" width="18.9" height="21" rx="3"/>
+<text class="pc" x="166.2" y="181">m</text>
+<rect class="bx" x="178.6" y="166" width="18.9" height="21" rx="3"/>
+<text class="pc" x="188.1" y="181">a</text>
+<rect class="bx" x="200.6" y="166" width="18.9" height="21" rx="3"/>
+<text class="pc" x="210.1" y="181">c</text>
+<rect class="bx" x="222.5" y="166" width="18.9" height="21" rx="3"/>
+<text class="pc" x="232.0" y="181">i</text>
+<rect class="bx" x="244.5" y="166" width="18.9" height="21" rx="3"/>
+<text class="pc" x="254.0" y="181">ó</text>
+<rect class="bx" x="266.4" y="166" width="46.8" height="21" rx="3"/>
+<text class="pc" x="289.8" y="181">n&lt;/w&gt;</text>
+<text class="n" x="24" y="206">14</text>
+<text class="pr" x="32" y="206">progra+m</text>
+<rect class="bx on" x="100.0" y="191" width="60.6" height="21" rx="3"/>
+<text class="pc on" x="130.3" y="206">program</text>
+<rect class="bx" x="163.7" y="191" width="18.9" height="21" rx="3"/>
+<text class="pc" x="173.1" y="206">a</text>
+<rect class="bx" x="185.6" y="191" width="18.9" height="21" rx="3"/>
+<text class="pc" x="195.1" y="206">c</text>
+<rect class="bx" x="207.5" y="191" width="18.9" height="21" rx="3"/>
+<text class="pc" x="217.0" y="206">i</text>
+<rect class="bx" x="229.5" y="191" width="18.9" height="21" rx="3"/>
+<text class="pc" x="239.0" y="206">ó</text>
+<rect class="bx" x="251.4" y="191" width="46.8" height="21" rx="3"/>
+<text class="pc" x="274.8" y="206">n&lt;/w&gt;</text>
+<text class="n" x="24" y="231">15</text>
+<text class="pr" x="32" y="231">program+a</text>
+<rect class="bx on" x="100.0" y="216" width="67.6" height="21" rx="3"/>
+<text class="pc on" x="133.8" y="231">programa</text>
+<rect class="bx" x="170.6" y="216" width="18.9" height="21" rx="3"/>
+<text class="pc" x="180.1" y="231">c</text>
+<rect class="bx" x="192.5" y="216" width="18.9" height="21" rx="3"/>
+<text class="pc" x="202.0" y="231">i</text>
+<rect class="bx" x="214.5" y="216" width="18.9" height="21" rx="3"/>
+<text class="pc" x="224.0" y="231">ó</text>
+<rect class="bx" x="236.4" y="216" width="46.8" height="21" rx="3"/>
+<text class="pc" x="259.8" y="231">n&lt;/w&gt;</text>
+</svg>

@@ -9,6 +9,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
+import { READING_MAX_POST } from "@/lib/schemas";
 import {
   __resetBlogRegistry,
   __setBlogContentRoot,
@@ -26,6 +27,7 @@ interface Frontmatter {
   minutes?: number;
   tags?: string[];
   updated?: string;
+  reading?: unknown[];
 }
 
 function postFile(fm: Frontmatter): string {
@@ -37,6 +39,7 @@ function postFile(fm: Frontmatter): string {
     minutes: fm.minutes ?? 5,
     summary: "Resumen.",
     draft:   fm.draft ?? false,
+    reading: fm.reading ?? [],
     tags:    fm.tags ?? [],
   };
   const yaml = Object.entries(full)
@@ -44,6 +47,18 @@ function postFile(fm: Frontmatter): string {
     .join("\n");
   return `---\n${yaml}\n---\n\nCuerpo.\n`;
 }
+
+/** One well-formed `reading` entry, spread by the BLOG-02 cases below. */
+const READING_ENTRY = {
+  kind:    "paper",
+  title:   "Neural Machine Translation of Rare Words with Subword Units",
+  authors: "Sennrich, Haddow y Birch",
+  year:    "2016",
+  venue:   "arXiv:1508.07909",
+  lang:    "en",
+  url:     "https://arxiv.org/abs/1508.07909",
+  note:    "El artículo que saca BPE de la compresión y lo pone a tokenizar.",
+};
 
 /** Temp content root. Each entry is `[locale, filename, frontmatter]` so a test can
  *  write a file whose NAME disagrees with its slug — the orphan case. */
@@ -157,6 +172,7 @@ describe("buildRegistry validation", () => {
         "minutos: 5",
         'summary: "Resumen."',
         "draft: false",
+        "reading: []",
         "tags: []",
         "---",
         "",
@@ -182,6 +198,47 @@ describe("buildRegistry validation", () => {
 
   it("treats a missing content root as empty rather than throwing", () => {
     expect(buildRegistry(path.join(os.tmpdir(), "blog-registry-does-not-exist"), "es").size).toBe(0);
+  });
+
+  // BLOG-02 — `reading`, the post's bibliography. Validated here rather than at render
+  // time: `PostReading` receives whatever the frontmatter said, so a malformed entry
+  // has to fail the build, not ship a card with an empty author line.
+  it("carries a valid reading entry through to the post", () => {
+    const root = makeTree([
+      ["es", "post.mdx", { slug: "post", date: "2026-01-01", reading: [READING_ENTRY] }],
+    ]);
+
+    const post = buildRegistry(root, "es").get("post");
+    expect(post?.reading).toHaveLength(1);
+    expect(post?.reading[0]).toMatchObject({ kind: "paper", lang: "en" });
+  });
+
+  it("rejects a reading url that is not https, which would be mixed content", () => {
+    const root = makeTree([
+      [
+        "es",
+        "post.mdx",
+        {
+          slug:    "post",
+          date:    "2026-01-01",
+          reading: [{ ...READING_ENTRY, url: "http://arxiv.org/abs/1508.07909" }],
+        },
+      ],
+    ]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/url must start with https/);
+  });
+
+  it("rejects more reading entries than the post cap allows", () => {
+    const tooMany = Array.from({ length: READING_MAX_POST + 1 }, (_, i) => ({
+      ...READING_ENTRY,
+      url: `https://example.com/${i}`,
+    }));
+    const root = makeTree([
+      ["es", "post.mdx", { slug: "post", date: "2026-01-01", reading: tooMany }],
+    ]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/invalid frontmatter/);
   });
 });
 

@@ -38,6 +38,7 @@ import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 import type { CodeChallenge as CodeChallengeData, QuizQuestion } from "@/domain/types";
 import { Explorable } from "@/features/courses/widgets/Explorable";
 import { CodeChallenge } from "@/features/courses/code/CodeChallenge";
+import { EDITOR_MAX_LINES } from "@/features/courses/code/editor-metrics";
 import { PyCell } from "@/features/courses/code/PyCell";
 import { Quiz } from "@/features/courses/quiz/Quiz";
 import { W } from "@/lib/courses/word";
@@ -50,6 +51,14 @@ type MDXComponents = NonNullable<MDXRemoteProps["components"]>;
 
 // rehype-pretty-code emits <pre><code>…; contain its overflow so a long line
 // scrolls inside the block rather than widening the page.
+//
+// BLOG-02: and so does a long LISTING. `PyCell`'s editor and `CodeOutput` have been
+// capped since COURSE-P2-03, but a static fenced block was not, so a 60-line listing
+// rendered as a wall between two paragraphs — the same failure editor-metrics.ts
+// describes, in the one code box that had escaped it. `EDITOR_MAX_LINES` is imported
+// rather than re-typed so "how many lines before it scrolls" stays one number; the
+// height is derived HERE because this box inherits the prose line-height (1.75) while
+// the editors set their own (1.6), and `em` resolves against each box's own font.
 function Pre(props: ComponentPropsWithoutRef<"pre">) {
   return (
     <pre
@@ -61,6 +70,10 @@ function Pre(props: ComponentPropsWithoutRef<"pre">) {
         borderRadius: "var(--radius)",
         border: "1px solid var(--border)",
         background: "var(--surface-lowest)",
+        // 1.75em per line + the 1rem padding top and bottom. `min(…, 70vh)` only
+        // bites on short windows, where the absolute value would fill the viewport.
+        maxHeight: `min(calc(${EDITOR_MAX_LINES} * 1.75em + 2rem), 70vh)`,
+        overflowY: "auto",
         ...props.style,
       }}
     />

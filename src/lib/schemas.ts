@@ -448,6 +448,13 @@ export const READING_KINDS = ["paper", "libro", "blog", "video", "interactivo"] 
 /** The curation cap. A reading list nobody finishes is a link dump with margins. */
 export const READING_MAX = 5;
 
+/** BLOG-02 — the same cap for a post, set higher for a different object. A lesson is
+ *  one topic inside a course that carries the rest; a long-form article walks a whole
+ *  history through six or seven sections, each with its own primary source, and five
+ *  entries would force it to drop sources it actually leans on. Still a cap, because
+ *  the argument against a link dump does not change. */
+export const READING_MAX_POST = 10;
+
 /** One line. The note says what the STUDENT gets, not what the source is about. */
 export const READING_NOTE_MAX = 240;
 
@@ -576,6 +583,23 @@ export const PostFrontmatterSchema = z.strictObject({
   minutes: z.number().int().positive(),
   summary: z.string().min(1),
   draft:   z.boolean(),
+  // BLOG-02: the post's further-reading block, same shape and same discipline as the
+  // lesson's (`ReadingItemSchema`), rendered collapsed at the foot of the article by
+  // `PostReading`. Required and possibly empty, like `tags` below: a post with nothing
+  // to cite writes `reading: []` and says so.
+  reading: z.array(ReadingItemSchema).max(READING_MAX_POST).superRefine((items, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, item] of items.entries()) {
+      if (seen.has(item.url)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate reading url "${item.url}"`,
+          path:    [i, "url"],
+        });
+      }
+      seen.add(item.url);
+    }
+  }),
   // Required like the lesson schema's `quiz`/`reading`: a post with nothing to tag
   // writes `tags: []` and says so, rather than defaulting to "none" by omission.
   tags:    z.array(z.string().min(1)).superRefine((tags, ctx) => {

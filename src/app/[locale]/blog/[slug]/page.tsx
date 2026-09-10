@@ -23,6 +23,7 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleStructuredData from "@/components/seo/ArticleStructuredData";
+import PostReading from "@/features/blog/PostReading";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates, localeUrl } from "@/lib/hreflang";
@@ -133,6 +134,10 @@ export default async function BlogPostPage({
           </header>
 
           <article className="post-content">{content}</article>
+
+          {/* BLOG-02: outside the article, so the last paragraph of the post stays the
+              last thing the reader reads. Renders nothing when `reading` is empty. */}
+          <PostReading reading={post.reading} locale={locale} />
 
           {newer || older ? (
             <nav className="post-nav" aria-label={t("moreLabel")}>
