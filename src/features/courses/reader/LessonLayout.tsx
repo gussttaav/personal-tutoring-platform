@@ -38,6 +38,7 @@ import LessonNav from "./LessonNav";
 import MobileLessonBar from "./MobileLessonBar";
 import CourseProgressProvider from "./CourseProgressProvider";
 import CourseSearchProvider from "@/features/courses/search/CourseSearchProvider";
+import CodeCopyButtons from "@/features/content/CodeCopyButtons";
 import LessonComplete from "./LessonComplete";
 import LessonReading from "./LessonReading";
 import LessonCta from "./LessonCta";
@@ -121,6 +122,11 @@ export default async function LessonLayout({
             </header>
 
             {children}
+
+            {/* COURSE-P12: hover-reveal copy buttons on the body's fenced code blocks.
+                Mounted as a direct child of `.lesson-content` so it scopes its search to
+                the lesson body and never reaches the reading/footer chrome below. */}
+            <CodeCopyButtons />
 
             {/* COURSE-P8-01: between the body and mark-complete. The bridge stays the
                 lesson's last prose; this joins the footer chrome below it. */}

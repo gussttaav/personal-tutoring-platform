@@ -23,6 +23,7 @@ import { getFormatter, getTranslations, setRequestLocale } from "next-intl/serve
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleStructuredData from "@/components/seo/ArticleStructuredData";
+import CodeCopyButtons from "@/features/content/CodeCopyButtons";
 import OnThisPage from "@/features/blog/OnThisPage";
 import PostReading from "@/features/blog/PostReading";
 import PostToc from "@/features/blog/PostToc";
@@ -142,7 +143,12 @@ export default async function BlogPostPage({
                 it ≥1280px. */}
             <PostToc headings={headings} />
 
-            <article className="post-content">{content}</article>
+            <article className="post-content">
+              {content}
+              {/* BLOG-03: hover-reveal copy buttons on fenced code blocks. Mounted as a
+                  direct child so it scopes its search to this article's figures. */}
+              <CodeCopyButtons />
+            </article>
 
             {/* BLOG-02: outside the article, so the last paragraph of the post stays the
                 last thing the reader reads. Renders nothing when `reading` is empty. */}

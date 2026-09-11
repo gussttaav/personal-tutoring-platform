@@ -764,6 +764,10 @@
       "invalidRequest": "The submitted data is not valid. Check the form and try again."
     }
   },
+  "code": {
+    "copy": "Copy code",
+    "copied": "Copied!"
+  },
   "blog": {
     "index": {
       "overline": "Blog",

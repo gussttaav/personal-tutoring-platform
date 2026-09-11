@@ -764,6 +764,10 @@
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
     }
   },
+  "code": {
+    "copy": "Copiar código",
+    "copied": "¡Copiado!"
+  },
   "blog": {
     "index": {
       "overline": "Blog",
