@@ -12,6 +12,9 @@ does not already know which lesson they want.
 
 1. [01-course-search.md](01-course-search.md) — `COURSE-P9-01` (L) — the build-time index, the
    matching engine, and the command palette in the lesson reader
+2. [02-sidebar-inline-search.md](02-sidebar-inline-search.md) — `COURSE-P9-02` (M) — desktop
+   search moves inline into the sidebar and its results survive a result click; the dialog
+   becomes the mobile surface
 
 ## The design, and what was rejected
 

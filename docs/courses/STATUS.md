@@ -1797,12 +1797,13 @@ that decision and the measurements behind it.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Index + engine + palette](phase-9-search/01-course-search.md) | `COURSE-P9-01` | ✅ | _tbd_ | local |
+| [02 Inline sidebar search](phase-9-search/02-sidebar-inline-search.md) | `COURSE-P9-02` | ✅ | _tbd_ | local |
 
 **Exit criteria**
 - [x] The index route prerenders (`●` in the build route table) for every course × locale; zero
       serverless invocations, `immutable` headers preserved into `prerender-manifest.json`
-- [x] Search is reachable from the lesson reader — desktop sidebar and mobile bar — scoped to the
-      course being read, with nothing hardcoded to `dl-nlp`
+- [x] Search is reachable from the lesson reader — an inline field in the desktop sidebar, the
+      dialog from the mobile bar — scoped to the course being read, with nothing hardcoded to `dl-nlp`
 - [x] Results group by lesson with up to three section snippets, query highlighted, each deep-linked
       to a `#heading` that lands on the rendered heading
 - [x] Accent-, case- and separator-insensitive (`atencion`→`atención`, `self attention`→`self-attention`);
@@ -1840,6 +1841,34 @@ that decision and the measurements behind it.
   syllabus accordion is the better way to browse lessons you have not read. The removal also
   collapsed `search()` from `PreparedIndex[]` to a single index, deleting the cross-course ranking,
   the per-result course label and two message keys — dead generality, not headroom.
+- **P9-02 — desktop search is inline now.** The sidebar's button-that-looked-like-a-field became a
+  real field under the back link; typing swaps the block list for the results in the rail, × or
+  Escape swaps it back, and the results **survive a result click** — the whole reader remounts per
+  lesson, so the query lives in a module-level store (the index-cache pattern) and the index hook
+  gained a resolved-value cache so the remount starts `ready` instead of flashing "Preparando…".
+  The list is hidden, not unmounted (`<details>` toggles survive). Results are plain next-intl
+  links, not the dialog's combobox. Mobile is unchanged: the icon button still opens the dialog,
+  now its only trigger. No new message keys. Verified live in the Browser pane at 1400×900 by DOM
+  reads and computed styles (the pane stopped compositing after the first client-side navigation):
+  24px rhythm around the field, index fetched on first focus only, list hidden-but-attached while
+  27 rows show, `aria-current` group in green, results and query intact after clicking a section
+  row (`#tres-papeles-tres-argumentos` landed at `scrollY 1566`), ×/Escape restoring the list with
+  only the current block open, min-chars and empty states, Tab order field → × → first result.
+  **Gotchas found here:** the pane's `key` action sends no `keypress`, so a form's implicit
+  submission never fires — Enter is handled on keydown like the dialog, not left to the form; and a
+  hidden pane defers focus events, which exposed that gating the index fetch on focus alone leaves
+  a typed query spinning — it is now gated on focus *or* a non-empty query. Review caught a matched
+  heading rendering as three flex columns in the 280px rail (`HighlightedText` is a fragment inside
+  a flex row); wrapped in `.cs-breadcrumb-text`, in the dialog too. Review also retired the dialog's
+  "Try" chips and fixed the language notice: it fired on *any* Spanish lesson, so with 8/43
+  translated it was permanent and false — now `content-language.ts` picks the notice (none
+  translated), a per-result "· In Spanish" kicker tag (partly), or nothing (all), verified on `/en`
+  with translated and untranslated results side by side.
+  `pnpm lint`, `tsc`, `pnpm test:unit` (1,582 across 124 suites), `pnpm build` green;
+  **`pnpm check:bundle` is red on HEAD already** — P11-02's `"gt:pyodide-loaded"` localStorage key
+  in `interpreter-cache.ts` trips the `pyodide` marker on the lesson route (a literal, not the
+  runtime, which is still lazy). Pre-existing and untouched here; the guard needs the narrower
+  marker its own header describes.
 
 ---
 

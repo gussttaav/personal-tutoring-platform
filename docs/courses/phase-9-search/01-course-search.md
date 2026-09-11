@@ -108,6 +108,10 @@ the course you are inside.
 **Triggers are NOT in `LessonSidebar`.** Desktop lives in `LessonLayout`'s `<aside>`, mobile in
 `MobileLessonBar` — one apiece. This is what keeps the sidebar a zero-client-JS Server Component
 and avoids duplicate DOM ids and duplicate listeners.
+*Superseded for desktop by [P9-02](02-sidebar-inline-search.md):* the inline field is mounted by
+`LessonSidebar`'s desktop variant only, so it still exists once — the duplication this rule guarded
+against is unchanged; the zero-client-JS clause had already been retired by P4-02's progress leaves.
+The mobile icon trigger stays in `MobileLessonBar`.
 
 **Scroll lock is ref-counted.** With search as a second overlay, `MobileLessonBar`'s direct
 `document.body.style.overflow` was a bug in waiting: open the drawer, open search from inside it,
@@ -116,7 +120,8 @@ close search, and the page unlocks with the drawer still up.
 **Result anchors are raw `<a>`, so `getPathname` adds the locale prefix explicitly.** A next-intl
 `<Link>` inside `role="option"` would nest interactive content and break the combobox model; but a
 raw anchor gets no prefix, which silently dropped `/en` from every copied or middle-clicked result
-while keyboard navigation still worked. Caught in the browser, not by a test.
+while keyboard navigation still worked. Caught in the browser, not by a test. (Dialog only — the
+P9-02 sidebar rows are not options and use `<Link>` directly.)
 
 ## Acceptance criteria
 

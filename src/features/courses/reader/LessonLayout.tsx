@@ -18,10 +18,11 @@
  * instances, the mobile bar and the MDX body, and every one of them has a progress
  * leaf inside it. The page itself stays untouched and therefore stays static.
  *
- * COURSE-P9-01: `CourseSearchProvider` mounts here for the same reason — it owns one
- * dialog shared by the desktop and mobile triggers. The DESKTOP trigger is rendered here,
- * in the `<aside>` above `LessonSidebar`, and the mobile one in `MobileLessonBar`; neither
- * goes inside `LessonSidebar`, which is rendered twice and would duplicate it.
+ * COURSE-P9-01: `CourseSearchProvider` mounts here for the same reason — one index, one
+ * dialog. COURSE-P9-02: the dialog is now reached only from the icon trigger in
+ * `MobileLessonBar`; desktop search is the inline `SidebarSearch` field, which
+ * `LessonSidebar` mounts for its desktop variant only (so it exists once, although the
+ * sidebar is rendered twice).
  *
  * COURSE-P10-01: `LessonCta` closes the article, after prev/next. See its own header
  * for why it sits there and why it is a link rather than a dispatched event.
@@ -37,7 +38,6 @@ import LessonNav from "./LessonNav";
 import MobileLessonBar from "./MobileLessonBar";
 import CourseProgressProvider from "./CourseProgressProvider";
 import CourseSearchProvider from "@/features/courses/search/CourseSearchProvider";
-import CourseSearchTrigger from "@/features/courses/search/CourseSearchTrigger";
 import LessonComplete from "./LessonComplete";
 import LessonReading from "./LessonReading";
 import LessonCta from "./LessonCta";
@@ -96,12 +96,6 @@ export default async function LessonLayout({
 
       <div className="lesson-shell">
         <aside className="lesson-sidebar-desktop">
-          {/* 16px here + the sidebar nav's own 8px top padding = a 24px gap, matching the
-              24px the back-link already leaves beneath itself. At 0 the search field sat
-              almost flush against the course title. */}
-          <div style={{ padding: "8px 4px 16px" }}>
-            <CourseSearchTrigger />
-          </div>
           <LessonSidebar {...sidebarProps} variant="desktop" />
         </aside>
 

@@ -1,14 +1,17 @@
 /**
  * e2e/courses-search.spec.ts
  *
- * COURSE-P9-01: cross-lesson search.
+ * COURSE-P9-01 / COURSE-P9-02: cross-lesson search.
  *
- * Three things here that unit tests structurally cannot reach — `pnpm test:unit` runs in the
- * `node` environment with no jsdom, so the engine is covered by pure-module tests and everything
- * below the component boundary is only ever exercised here:
+ * Things here that unit tests structurally cannot reach — `pnpm test:unit` runs in the `node`
+ * environment with no jsdom, so the engine is covered by pure-module tests and everything below
+ * the component boundary is only ever exercised here:
  *
- *   1. The palette actually opens, matches, and highlights.
- *   2. Keyboard navigation lands on the right lesson AND the right section anchor.
+ *   1. The desktop sidebar field matches, highlights, replaces the lesson list, and — the P9-02
+ *      contract — keeps its results across a result click until the reader clears them.
+ *   2. The mobile dialog still opens from the bar's icon button, navigates by keyboard, and
+ *      releases the scroll lock. The dialog is unreachable at a desktop viewport since P9-02, so
+ *      those cases run under a phone-sized viewport.
  *   3. The index is genuinely served — the "prerender silently became dynamic, 404 in production"
  *      failure that no unit test and no lint can see. CI does not run `pnpm build`, so this
  *      request assertion is the only automated check on it.
@@ -26,14 +29,14 @@ import { dict } from "./helpers/dict";
 const LESSON_PATH = "/cursos/dl-nlp/self-attention";
 
 /*
- * The bar variant. There are deliberately TWO triggers in the DOM — this one in the desktop
- * sidebar and an icon button in the mobile bar — with CSS hiding whichever the viewport does not
- * use. `.first()` picks the mobile one and then waits forever for a `display:none` element.
+ * The desktop rail. The drawer holds a second copy of the lesson list (no field), and CSS hides
+ * whichever the viewport does not use — scoping every locator to the aside keeps `.first()`
+ * from picking a `display:none` twin and waiting forever.
  */
-const DESKTOP_TRIGGER = "button.cs-trigger:not(.cs-trigger--icon)";
+const SIDEBAR = "aside.lesson-sidebar-desktop";
 
-test.describe("COURSE-P9-01: cross-lesson search", () => {
-  test("the search index is served as JSON", async ({ request }) => {
+test.describe("COURSE-P9-01: the search index", () => {
+  test("is served as JSON", async ({ request }) => {
     const res = await request.get("/api/courses/search-index/dl-nlp/es", { timeout: 30_000 });
     expect(res.status()).toBe(200);
     expect(res.headers()["content-type"]).toContain("application/json");
@@ -46,42 +49,60 @@ test.describe("COURSE-P9-01: cross-lesson search", () => {
     expect(index.lessons.length).toBeGreaterThan(30);
     expect(index.chunks.length).toBeGreaterThan(200);
   });
+});
 
-  test("es: open from the sidebar, match with an unaccented query, open a result by keyboard", async ({ page }) => {
+test.describe("COURSE-P9-02: inline search in the desktop sidebar", () => {
+  test("es: typing replaces the lesson list, a click keeps the results, × brings the list back", async ({ page }) => {
     const d = dict.es;
 
     await page.goto(LESSON_PATH, { timeout: 30_000 });
 
-    // The desktop trigger; the mobile one carries the same label but is display:none here.
-    await page.locator(DESKTOP_TRIGGER).click();
+    const sidebar = page.locator(SIDEBAR);
+    const input = sidebar.getByRole("searchbox");
+    const lessonRows = sidebar.locator("[data-lesson-slug]");
+    const options = sidebar.locator(".cs-option");
 
-    const input = page.getByRole("combobox");
-    await expect(input).toBeFocused();
+    await expect(lessonRows.first()).toBeVisible();
 
     // Unaccented input must find accented prose — the folding contract.
     await input.fill("atencion");
 
-    const options = page.getByRole("option");
     await expect(options.first()).toBeVisible({ timeout: 30_000 });
     // The query is highlighted, and the whole word is marked, not the matched prefix only.
-    await expect(page.locator(".cs-option mark").first()).toContainText(/atenci/i);
+    await expect(sidebar.locator(".cs-option mark").first()).toContainText(/atenci/i);
+    // The list is hidden, not gone: progress selectors elsewhere rely on it staying attached.
+    await expect(lessonRows.first()).toBeHidden();
+    await expect(lessonRows.first()).toBeAttached();
 
-    await input.press("ArrowDown");
-    await input.press("Enter");
+    // Open a result from a DIFFERENT lesson so the navigation is observable.
+    const other = sidebar.locator('.cs-option:not([href*="/self-attention"])').first();
+    const href = (await other.getAttribute("href")) ?? "";
+    expect(href).toMatch(/^\/cursos\/dl-nlp\//);
+    await other.click();
 
-    await expect(page).toHaveURL(/\/cursos\/dl-nlp\/[^/]+/, { timeout: 30_000 });
-    // The dialog closes and the page is scrollable again (the ref-counted lock released).
-    await expect(page.locator(".cs-panel")).toHaveCount(0);
-    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+    await expect(page).toHaveURL(new RegExp(href.split("#")[0].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), {
+      timeout: 30_000,
+    });
+
+    // The whole reader remounts on navigation; the field re-reads its query from the store.
+    await expect(input).toHaveValue("atencion");
+    await expect(options.first()).toBeVisible({ timeout: 30_000 });
+    await expect(lessonRows.first()).toBeHidden();
+    // The lesson now being read is marked inside the results.
+    await expect(sidebar.locator('.cs-grouplink[aria-current="page"]')).toHaveCount(1);
+
+    await sidebar.getByRole("button", { name: d.courses.search.clear }).click();
+    await expect(input).toHaveValue("");
+    await expect(options).toHaveCount(0);
+    await expect(lessonRows.first()).toBeVisible();
   });
 
   test("es: a section result deep-links to a heading that exists on the page", async ({ page }) => {
     await page.goto(LESSON_PATH, { timeout: 30_000 });
-    await page.locator(DESKTOP_TRIGGER).click();
-    await page.getByRole("combobox").fill("codificacion posicional");
+    await page.locator(SIDEBAR).getByRole("searchbox").fill("codificacion posicional");
 
     // Only the rows that carry a section anchor; the "Introducción" row has none.
-    const anchored = page.locator('.cs-option[href*="#"]');
+    const anchored = page.locator(`${SIDEBAR} .cs-option[href*="#"]`);
     await expect(anchored.first()).toBeVisible({ timeout: 30_000 });
 
     const href = await anchored.first().getAttribute("href");
@@ -102,26 +123,99 @@ test.describe("COURSE-P9-01: cross-lesson search", () => {
       .toBe(true);
   });
 
-  test("en: results keep the /en prefix and the page says the lessons are in Spanish", async ({ page }) => {
+  test("es: Enter opens the first result; Escape clears the field", async ({ page }) => {
+    await page.goto(LESSON_PATH, { timeout: 30_000 });
+
+    const sidebar = page.locator(SIDEBAR);
+    const input = sidebar.getByRole("searchbox");
+    await input.fill("softmax");
+
+    const first = sidebar.locator(".cs-option").first();
+    await expect(first).toBeVisible({ timeout: 30_000 });
+    const href = (await first.getAttribute("href")) ?? "";
+
+    await input.press("Enter");
+    await expect(page).toHaveURL(new RegExp(href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), {
+      timeout: 30_000,
+    });
+
+    // Results survived the navigation; Escape is the keyboard route back to the list.
+    await expect(input).toHaveValue("softmax");
+    await input.press("Escape");
+    await expect(input).toHaveValue("");
+    await expect(sidebar.locator(".cs-option")).toHaveCount(0);
+    await expect(sidebar.locator("[data-lesson-slug]").first()).toBeVisible();
+  });
+
+  test("en: results keep the /en prefix and are honest about which lessons are still Spanish", async ({ page, request }) => {
     const d = dict.en;
 
+    // The expectation is derived from the served index, not hardcoded: Phase 11 translates
+    // lessons one at a time, and this must hold whether none, some or all have landed.
+    const index = (await (await request.get("/api/courses/search-index/dl-nlp/en", { timeout: 30_000 })).json()) as {
+      lessons: { slug: string; contentLocale: string }[];
+    };
+    const fallback = new Set(index.lessons.filter((l) => l.contentLocale !== "en").map((l) => l.slug));
+    const state = fallback.size === 0 ? "native" : fallback.size === index.lessons.length ? "fallback" : "partial";
+
     await page.goto(`/en${LESSON_PATH}`, { timeout: 30_000 });
-    await page.locator(DESKTOP_TRIGGER).click();
-    await page.getByRole("combobox").fill("atencion");
+    const sidebar = page.locator(SIDEBAR);
+    await sidebar.getByRole("searchbox").fill("atencion");
 
-    await expect(page.getByRole("option").first()).toBeVisible({ timeout: 30_000 });
-    // COURSE-P6-03b: honest about the fallback rather than quietly serving Spanish under /en.
-    await expect(page.locator(".cs-notice")).toContainText(d.courses.landing.languageNotice.title);
+    const groups = sidebar.locator(".cs-group");
+    await expect(groups.first()).toBeVisible({ timeout: 30_000 });
 
-    // Raw <a> options get no next-intl treatment, so the prefix is added explicitly. Dropping
-    // it breaks copy-link and middle-click while keyboard navigation still looks fine.
-    const href = await page.getByRole("option").first().getAttribute("href");
+    // next-intl <Link> rows — the prefix is its job, and this is the assertion that it did it.
+    const href = await sidebar.locator(".cs-option").first().getAttribute("href");
     expect(href).toMatch(/^\/en\/cursos\//);
+
+    // COURSE-P6-03b / P9-02: one notice while nothing is translated, a per-result tag while
+    // some lessons are, nothing once all are. Never the notice AND tags.
+    const notice = sidebar.locator(".cs-notice");
+    if (state === "fallback") {
+      await expect(notice).toContainText(d.courses.landing.languageNotice.title);
+    } else {
+      await expect(notice).toHaveCount(0);
+    }
+    for (const group of await groups.all()) {
+      const slug = ((await group.locator(".cs-grouplink").getAttribute("href")) ?? "").split("/").pop() ?? "";
+      const tagged = ((await group.locator(".cs-kicker").textContent()) ?? "").includes(d.courses.reader.refFallback);
+      expect(tagged, `tag on ${slug}`).toBe(state === "partial" && fallback.has(slug));
+    }
+  });
+});
+
+/*
+ * The dialog is mobile-only since P9-02: its trigger is the icon button in the sticky bar,
+ * `display:none` from 768px up. A phone-sized viewport is the only way to reach it.
+ */
+test.describe("COURSE-P9-01: the mobile search dialog", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("opens from the bar, matches, and opens a result by keyboard", async ({ page }) => {
+    await page.goto(LESSON_PATH, { timeout: 30_000 });
+    await page.locator("button.cs-trigger--icon").click();
+
+    const input = page.getByRole("combobox");
+    await expect(input).toBeFocused();
+    await input.fill("atencion");
+
+    const options = page.getByRole("option");
+    await expect(options.first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator(".cs-option mark").first()).toContainText(/atenci/i);
+
+    await input.press("ArrowDown");
+    await input.press("Enter");
+
+    await expect(page).toHaveURL(/\/cursos\/dl-nlp\/[^/]+/, { timeout: 30_000 });
+    // The dialog closes and the page is scrollable again (the ref-counted lock released).
+    await expect(page.locator(".cs-panel")).toHaveCount(0);
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
   });
 
   test("Escape closes the dialog", async ({ page }) => {
     await page.goto(LESSON_PATH, { timeout: 30_000 });
-    await page.locator(DESKTOP_TRIGGER).click();
+    await page.locator("button.cs-trigger--icon").click();
     await expect(page.locator(".cs-panel")).toBeVisible({ timeout: 30_000 });
 
     await page.keyboard.press("Escape");

@@ -1058,7 +1058,6 @@
       "resultCount": "{count, plural, =0 {Sin resultados} =1 {# lección} other {# lecciones}}",
       "moreSections": "{count, plural, =1 {+# coincidencia más} other {+# coincidencias más}}",
       "introSection": "Introducción",
-      "tipsHeading": "Prueba con",
       "scopeNote": "Se busca en el texto de las lecciones, sus títulos y sus apartados. No incluye el código ni las fórmulas.",
       "loading": "Preparando la búsqueda…",
       "minChars": "Escribe al menos dos letras.",
