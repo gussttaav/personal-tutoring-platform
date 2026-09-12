@@ -195,13 +195,26 @@ transcribe it by hand; do not re-invent it.
   `q-leer-un-gradiente` rewrite must key on a word that occurs twice, exactly as the
   replacement note above anticipates.
 
+## Decisions fixed by later lessons — reuse as they stand
+
+- **Loss subscripts stay `\text{MSE}` / `\text{EC}`** (fixed by 2.5, `en/13-funcion-de-perdida.mdx`).
+  NOTATION.md is locale-invariant, so $\mathcal{L}_{\text{EC}}$ and $\ell_{\text{EC}}$ are not
+  re-abbreviated in English, the same way `\text{escalón}` survives in 2.1–2.3. Cell **print labels**
+  are English strings and say `CE` / `|dCE/dz|`, the way 2.2's print row says `step` under the
+  `escalón` symbol. Any later lesson that names the cross-entropy candidate in maths writes
+  `\text{EC}`; in a `print` it writes `CE`.
+- **Figures with Spanish set into the asset get an `.en.svg` sibling** and the lesson points `src` at
+  it: `mlp-arquitectura.en.svg`, `xor-franja.en.svg` (2.3), `perdida-correccion.en.svg` (2.5, decimal
+  comma `0,5` → `0.5`). Still owed by their lessons: `descenso-pasos.svg` (2.6),
+  `bucle-entrenamiento.svg` (2.9), `reparto-resenas.svg` (2.10).
+
 ## Lesson progress
 
 - [x] 2.1 `la-neurona`
-- [ ] 2.2 `funciones-activacion`
-- [ ] 2.3 `xor-y-capas-ocultas`
-- [ ] 2.4 `forward-pass`
-- [ ] 2.5 `funcion-de-perdida`
+- [x] 2.2 `funciones-activacion`
+- [x] 2.3 `xor-y-capas-ocultas`
+- [x] 2.4 `forward-pass`
+- [x] 2.5 `funcion-de-perdida`
 - [ ] 2.6 `descenso-gradiente`
 - [ ] 2.7 `regla-de-la-cadena`
 - [ ] 2.8 `backpropagation`
