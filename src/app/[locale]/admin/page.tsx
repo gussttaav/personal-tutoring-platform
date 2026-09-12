@@ -1,8 +1,12 @@
 /**
  * ADMIN-01: Admin dashboard — operational summary.
+ * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
  */
 
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { isAdmin } from "@/lib/admin";
 import {
   countUpcomingBookings,
   countStudentsWithLowCredits,
@@ -16,6 +20,8 @@ import { PageHeader, StatCard, Card, StatusBadge, Empty } from "@/components/adm
 import { fmtShort, relativeTime, initials } from "@/components/admin/format";
 
 export default async function AdminDashboard() {
+  if (!isAdmin(await auth())) redirect("/");
+
   const [upcomingCount, lowCreditCount, failedCount, revenueCents, bookings, lowCreditStudents, failed] =
     await Promise.all([
       countUpcomingBookings(),

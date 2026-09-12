@@ -1,14 +1,20 @@
 /**
  * ADMIN-01: Failed bookings (dead-letter) UI.
  * Uses paymentService.listFailedBookings() and the existing retry API (REL-03).
+ * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
  */
 
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { isAdmin } from "@/lib/admin";
 import { paymentService } from "@/services";
 import { RetryButton } from "@/components/admin/RetryButton";
 import { PageHeader, Card, Empty } from "@/components/admin/ui";
 import { fmtDateTime, relativeTime } from "@/components/admin/format";
 
 export default async function FailedBookingsPage() {
+  if (!isAdmin(await auth())) redirect("/");
+
   const entries = await paymentService.listFailedBookings();
 
   return (

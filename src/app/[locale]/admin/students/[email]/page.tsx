@@ -1,9 +1,12 @@
 /**
  * ADMIN-01: Student detail page — credit packs, bookings, audit log, and credit adjustment.
+ * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
  */
 
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { isAdmin } from "@/lib/admin";
 import { fetchStudent, fetchCreditPacks, fetchStudentBookings, fetchAuditLog } from "../../_data";
 import { AdjustCreditsForm } from "@/components/admin/AdjustCreditsForm";
 import { Card, StatusBadge, Empty } from "@/components/admin/ui";
@@ -15,6 +18,8 @@ interface StudentDetailPageProps {
 }
 
 export default async function StudentDetailPage({ params }: StudentDetailPageProps) {
+  if (!isAdmin(await auth())) redirect("/");
+
   const { email: rawEmail } = await params;
   const email = decodeURIComponent(rawEmail);
 
