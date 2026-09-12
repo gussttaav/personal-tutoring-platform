@@ -768,6 +768,35 @@
     "copy": "Copy code",
     "copied": "Copied!"
   },
+  "content": {
+    "feedback": {
+      "regionLabel": "Feedback on this content",
+      "question": "Was this helpful?",
+      "up": "Yes, it was helpful",
+      "down": "No, it could be better",
+      "thanks": "Thanks for your feedback!",
+      "commentPrompt": "What could be better?",
+      "commentPlaceholder": "Tell me what was missing or unclear (optional)",
+      "commentSend": "Send",
+      "commentSkip": "Skip",
+      "commentSent": "Thanks, I'll take it into account.",
+      "share": "Share",
+      "shareCopied": "Link copied",
+      "report": "Report an error",
+      "reportPrompt": "What's wrong?",
+      "reportPlaceholder": "Describe the error: a typo, a broken link, code that doesn't run…",
+      "reportEmailLabel": "Your email (optional, in case I need to ask you something)",
+      "reportEmailInvalid": "That email doesn't look valid.",
+      "reportAsUser": "I'll reply to {email} if needed.",
+      "reportSend": "Send report",
+      "reportCancel": "Cancel",
+      "reportSent": "Received. Thanks for letting me know.",
+      "reportTooShort": "Write at least {min} characters.",
+      "charCount": "{count}/{max}",
+      "error": "Something went wrong. Try again.",
+      "rateLimited": "Too many requests. Wait a moment."
+    }
+  },
   "blog": {
     "index": {
       "overline": "Blog",

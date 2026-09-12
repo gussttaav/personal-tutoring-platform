@@ -768,6 +768,35 @@
     "copy": "Copiar código",
     "copied": "¡Copiado!"
   },
+  "content": {
+    "feedback": {
+      "regionLabel": "Opinión sobre este contenido",
+      "question": "¿Te ha sido útil?",
+      "up": "Sí, me ha sido útil",
+      "down": "No, podría mejorar",
+      "thanks": "¡Gracias por tu opinión!",
+      "commentPrompt": "¿Qué podría mejorar?",
+      "commentPlaceholder": "Cuéntame qué te ha faltado o qué no ha quedado claro (opcional)",
+      "commentSend": "Enviar",
+      "commentSkip": "Omitir",
+      "commentSent": "Gracias, lo tendré en cuenta.",
+      "share": "Compartir",
+      "shareCopied": "Enlace copiado",
+      "report": "Reportar un error",
+      "reportPrompt": "¿Qué está mal?",
+      "reportPlaceholder": "Describe el error: una errata, un enlace roto, código que no funciona…",
+      "reportEmailLabel": "Tu email (opcional, por si necesito preguntarte algo)",
+      "reportEmailInvalid": "Ese email no parece válido.",
+      "reportAsUser": "Te contestaré a {email} si hace falta.",
+      "reportSend": "Enviar reporte",
+      "reportCancel": "Cancelar",
+      "reportSent": "Recibido. Gracias por avisar.",
+      "reportTooShort": "Escribe al menos {min} caracteres.",
+      "charCount": "{count}/{max}",
+      "error": "Algo ha fallado. Inténtalo de nuevo.",
+      "rateLimited": "Demasiadas peticiones. Espera un momento."
+    }
+  },
   "blog": {
     "index": {
       "overline": "Blog",

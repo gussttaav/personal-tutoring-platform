@@ -17,7 +17,7 @@
  */
 
 import type { BookResponse, CreditsResponse, DeletionEligibility, PaymentIntentResponse } from "@/domain/types";
-import type { BookInput, CheckoutInput } from "@/lib/schemas";
+import type { BookInput, CheckoutInput, ContentReportInput, ContentVoteInput } from "@/lib/schemas";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res  = await fetch(url, {
@@ -91,6 +91,24 @@ export const api = {
       request<{ ok: true }>("/api/account", {
         method: "DELETE",
         body:   JSON.stringify({ confirmEmail }),
+      }),
+  },
+
+  // CONTENT-FEEDBACK-01: reader feedback on lessons and posts. Both routes always
+  // answer JSON (never 204), so the shared `request` helper is safe here.
+  content: {
+    /** POST /api/content/vote — upserts this browser's/account's 👍/👎 (+ comment). */
+    vote: (body: ContentVoteInput) =>
+      request<{ ok: true }>("/api/content/vote", {
+        method: "POST",
+        body:   JSON.stringify(body),
+      }),
+
+    /** POST /api/content/report — files an error report on the page. */
+    report: (body: ContentReportInput) =>
+      request<{ ok: true }>("/api/content/report", {
+        method: "POST",
+        body:   JSON.stringify(body),
       }),
   },
 

@@ -5,4 +5,5 @@ export type {
   NewBookingNotificationParams,
   CancellationConfirmationParams,
   CancellationNotificationParams,
+  ContentReportNotificationParams,
 } from "./IEmailClient";

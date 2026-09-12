@@ -26,6 +26,11 @@
  *
  * COURSE-P10-01: `LessonCta` closes the article, after prev/next. See its own header
  * for why it sits there and why it is a link rather than a dispatched event.
+ *
+ * CONTENT-FEEDBACK-01: `ContentFeedback` (👍/👎 · share · report) sits right after the
+ * body, before "Para profundizar" — the first thing after the last paragraph is the
+ * question about it. It is keyed by `contentLocale`, the locale of the prose actually
+ * served, so a fallback lesson read from /en/ is judged (and shared) as Spanish.
  */
 
 import type { ReactNode } from "react";
@@ -39,6 +44,10 @@ import MobileLessonBar from "./MobileLessonBar";
 import CourseProgressProvider from "./CourseProgressProvider";
 import CourseSearchProvider from "@/features/courses/search/CourseSearchProvider";
 import CodeCopyButtons from "@/features/content/CodeCopyButtons";
+import ContentFeedback from "@/features/content/ContentFeedback";
+import { lessonContentKey } from "@/lib/content/content-key";
+import { localeUrl } from "@/lib/hreflang";
+import type { ContentLocale } from "@/domain/types";
 import LessonComplete from "./LessonComplete";
 import LessonReading from "./LessonReading";
 import LessonCta from "./LessonCta";
@@ -59,6 +68,9 @@ interface LessonLayoutProps {
   prev:        LessonRef | null;
   next:        LessonRef | null;
   locale:      string;
+  /** CONTENT-FEEDBACK-01: locale of the prose actually served (`view.contentLocale`),
+   *  which differs from `locale` on an untranslated fallback lesson. */
+  contentLocale: string;
   /** COURSE-P9-01: content hash of the search index, for the client's `?v=` cache buster. */
   searchVersion: string;
   children:    ReactNode; // rendered MDX body
@@ -77,6 +89,7 @@ export default async function LessonLayout({
   prev,
   next,
   locale,
+  contentLocale,
   searchVersion,
   children,
 }: LessonLayoutProps) {
@@ -127,6 +140,14 @@ export default async function LessonLayout({
                 Mounted as a direct child of `.lesson-content` so it scopes its search to
                 the lesson body and never reaches the reading/footer chrome below. */}
             <CodeCopyButtons />
+
+            <ContentFeedback
+              contentType="lesson"
+              contentKey={lessonContentKey(courseSlug, currentSlug)}
+              locale={contentLocale as ContentLocale}
+              shareUrl={localeUrl(`/cursos/${courseSlug}/${currentSlug}`, contentLocale)}
+              shareTitle={title}
+            />
 
             {/* COURSE-P8-01: between the body and mark-complete. The bridge stays the
                 lesson's last prose; this joins the footer chrome below it. */}

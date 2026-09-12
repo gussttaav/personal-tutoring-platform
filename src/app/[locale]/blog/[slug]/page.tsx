@@ -24,6 +24,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ArticleStructuredData from "@/components/seo/ArticleStructuredData";
 import CodeCopyButtons from "@/features/content/CodeCopyButtons";
+import ContentFeedback from "@/features/content/ContentFeedback";
 import OnThisPage from "@/features/blog/OnThisPage";
 import PostReading from "@/features/blog/PostReading";
 import PostToc from "@/features/blog/PostToc";
@@ -35,6 +36,7 @@ import { getPost, listPosts, postNeighbours } from "@/lib/blog/registry";
 import { postLocales } from "@/lib/blog/locales";
 import { getPostSource } from "@/lib/blog/post-source";
 import { renderPost } from "@/lib/blog/mdx";
+import type { ContentLocale } from "@/domain/types";
 
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) =>
@@ -149,6 +151,16 @@ export default async function BlogPostPage({
                   direct child so it scopes its search to this article's figures. */}
               <CodeCopyButtons />
             </article>
+
+            {/* CONTENT-FEEDBACK-01: 👍/👎 · share · report, right after the article — the
+                first thing after the last paragraph is the question about it. */}
+            <ContentFeedback
+              contentType="post"
+              contentKey={post.slug}
+              locale={locale as ContentLocale}
+              shareUrl={localeUrl(`/blog/${post.slug}`, locale)}
+              shareTitle={post.title}
+            />
 
             {/* BLOG-02: outside the article, so the last paragraph of the post stays the
                 last thing the reader reads. Renders nothing when `reading` is empty. */}

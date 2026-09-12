@@ -791,3 +791,77 @@ export interface DeletionEligibility {
    */
   imminentBookings: number;
 }
+
+// ─── Content feedback ─────────────────────────────────────────────────────────
+// CONTENT-FEEDBACK-01: the 👍/👎 + comment and "report an error" rows that every
+// lesson and post carries in its footer. Content is identified by (type, key) —
+// `lesson` with "<courseSlug>/<lessonSlug>", `post` with "<postSlug>" — never by
+// a table id: lessons and posts live in git (see the Blog note above). The pure
+// key helpers live in src/lib/content/content-key.ts.
+
+export type ContentType   = "lesson" | "post";
+/** The locale of the PROSE the reader judged — for an untranslated lesson served
+ *  to an English reader this is "es", not the URL prefix. */
+export type ContentLocale = "es" | "en";
+export type VoteValue     = 1 | -1;
+export type ContentReportStatus = "open" | "resolved";
+
+export interface ContentRef {
+  contentType: ContentType;
+  contentKey:  string;
+}
+
+/** One stored vote, raw — the admin aggregate is computed from these in-process. */
+export interface ContentVoteRow {
+  contentType: ContentType;
+  contentKey:  string;
+  locale:      ContentLocale;
+  vote:        VoteValue;
+  comment:     string | null;
+  updatedAt:   string;
+}
+
+export interface ContentVoteAggregate {
+  contentType: ContentType;
+  contentKey:  string;
+  up:          number;
+  down:        number;
+  /** Rows carrying a non-empty comment (only 👎 asks for one). */
+  comments:    number;
+  lastVoteAt:  string;
+}
+
+export interface ContentVoteComment {
+  id:          string;
+  contentType: ContentType;
+  contentKey:  string;
+  locale:      ContentLocale;
+  vote:        VoteValue;
+  comment:     string;
+  updatedAt:   string;
+}
+
+export interface ContentReport {
+  id:            string;
+  contentType:   ContentType;
+  contentKey:    string;
+  locale:        ContentLocale;
+  /** Derived server-side from the content ref, never client-sent. */
+  pageUrl:       string;
+  message:       string;
+  /** Session email when signed in, else whatever the anonymous reporter typed. */
+  reporterEmail: string | null;
+  userId:        string | null;
+  userAgent:     string | null;
+  status:        ContentReportStatus;
+  createdAt:     string;
+  resolvedAt:    string | null;
+}
+
+/** What /admin/feedback renders. Aggregates carry the resolved title + URL when
+ *  the content still exists (null for a key whose page has since been unpublished). */
+export interface ContentFeedbackOverview {
+  aggregates: (ContentVoteAggregate & { title: string | null; pageUrl: string | null })[];
+  comments:   ContentVoteComment[];
+  reports:    ContentReport[];
+}

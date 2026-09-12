@@ -362,6 +362,50 @@ export async function sendDeadLetterNotificationEmail(params: {
   }, params.studentEmail);
 }
 
+// ─── Content error report notification (Gustavo) ─────────────────────────────
+// CONTENT-FEEDBACK-01: a reader pressed "Reportar un error" on a lesson or post.
+// Admin-facing, so Spanish and outside next-intl, like the dead-letter mail above.
+
+export async function sendContentReportNotificationEmail(params: {
+  reportId:      string;
+  contentType:   "lesson" | "post";
+  contentKey:    string;
+  locale:        "es" | "en";
+  pageUrl:       string;
+  message:       string;
+  reporterEmail: string | null;
+}): Promise<void> {
+  const notifyEmail = process.env.NOTIFY_EMAIL;
+  if (!notifyEmail) return;
+
+  // ── Escape all reader-controlled values ──────────────────────────────────
+  const safeKey     = escapeHtml(params.contentKey);
+  const safeMessage = escapeHtml(params.message).replace(/\n/g, "<br>");
+  const safeEmail   = params.reporterEmail ? escapeHtml(params.reporterEmail) : "anónimo";
+  const safeUrl     = escapeHtml(params.pageUrl);
+  const kind        = params.contentType === "lesson" ? "Lección" : "Artículo";
+  const adminUrl    = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev"}/admin/feedback`;
+
+  await send({
+    to: notifyEmail,
+    subject: `🐞 Reporte de error — ${params.contentKey}`,
+    html: `
+      <html><head><style>${STYLES}</style></head><body>
+      <div class="wrap"><div class="card">
+        <h1>Reporte de error</h1>
+        <p>Un lector ha reportado un error en ${kind.toLowerCase()} <strong>${safeKey}</strong> (${params.locale}).</p>
+        <div class="label">${kind}</div>
+        <div class="value"><a href="${safeUrl}" style="color:#e8e9ea">${safeUrl}</a></div>
+        <div class="label">Reportado por</div>
+        <div class="value">${safeEmail}</div>
+        <div class="label">Mensaje</div>
+        <div class="note-box"><p>${safeMessage}</p></div>
+        <a class="action-btn" href="${adminUrl}">Ver en el panel</a>
+      </div></div></body></html>
+    `,
+  }, params.reporterEmail ?? undefined);
+}
+
 // ─── New booking notification (Gustavo) ───────────────────────────────────────
 
 export async function sendNewBookingNotificationEmail(params: {

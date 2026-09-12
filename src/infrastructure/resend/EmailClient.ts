@@ -7,6 +7,7 @@ import type {
   NewBookingNotificationParams,
   CancellationConfirmationParams,
   CancellationNotificationParams,
+  ContentReportNotificationParams,
 } from "./IEmailClient";
 
 export class EmailClient implements IEmailClient {
@@ -24,5 +25,10 @@ export class EmailClient implements IEmailClient {
 
   sendCancellationNotification(params: CancellationNotificationParams): Promise<void> {
     return emailLib.sendCancellationNotificationEmail(params);
+  }
+
+  // CONTENT-FEEDBACK-01
+  sendContentReportNotification(params: ContentReportNotificationParams): Promise<void> {
+    return emailLib.sendContentReportNotificationEmail(params);
   }
 }

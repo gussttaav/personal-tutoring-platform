@@ -12,6 +12,7 @@ import { ReviewService }        from "./ReviewService";
 import { MobileAuthService }    from "./MobileAuthService";
 import { CourseService }        from "./CourseService";
 import { AccountService }       from "./AccountService";
+import { ContentFeedbackService } from "./ContentFeedbackService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -25,8 +26,10 @@ import {
   supabaseReviewRepository,
   supabaseCourseRepository,
   supabaseGoogleReviewPromptRepository,
+  supabaseContentFeedbackRepository,
 } from "@/infrastructure/supabase";
 import { registryCourseCatalog } from "@/lib/courses/catalog";
+import { registryContentCatalog } from "@/lib/content/catalog";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
@@ -101,4 +104,14 @@ export const reviewService = new ReviewService(
   supabaseGoogleReviewPromptRepository,
   supabaseBookingRepository,
   userService,
+);
+
+// CONTENT-FEEDBACK-01: 👍/👎 + error reports on lessons and posts. The content
+// catalog plays the role registryCourseCatalog plays for CourseService — the
+// "is this page published" read, injected so the service stays free of I/O.
+export const contentFeedbackService = new ContentFeedbackService(
+  supabaseContentFeedbackRepository,
+  registryContentCatalog,
+  userService,
+  new EmailClient(),
 );

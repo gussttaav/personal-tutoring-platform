@@ -191,6 +191,7 @@ export default async function LessonPage({
         prev={prev}
         next={next}
         locale={locale}
+        contentLocale={view.contentLocale}
         searchVersion={searchIndexVersion(courseSlug, locale)}
       >
         {isFallback && <TranslationPendingNotice locale={locale} />}

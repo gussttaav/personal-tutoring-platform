@@ -11,6 +11,9 @@
  * The hover-reveal, positioning and copied-state styling live in `code-copy.css`, keyed
  * on a `.code-copy-host` ancestor (or the `[data-rehype-pretty-code-figure]` wrapper),
  * so a host only has to mark itself and drop the button inside.
+ *
+ * CONTENT-FEEDBACK-01: the clipboard write itself (API + legacy fallback) moved to
+ * `./clipboard.ts` so the share button can reuse it without duplicating the fallback.
  */
 
 "use client";
@@ -19,6 +22,7 @@ import "./code-copy.css";
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { copyToClipboard } from "./clipboard";
 
 export function CopyButton({ getText }: { getText: () => string }) {
   const t = useTranslations("code");
@@ -30,14 +34,8 @@ export function CopyButton({ getText }: { getText: () => string }) {
   useEffect(() => () => clearTimeout(timer.current), []);
 
   async function copy() {
-    const text = getText();
-    try {
-      await navigator.clipboard.writeText(text);
-    } catch {
-      // Clipboard API unavailable (older browser / non-secure context). Fall back to
-      // the legacy path; if that also fails, leave the button silent rather than throw.
-      if (!legacyCopy(text)) return;
-    }
+    // Both clipboard paths failed: leave the button silent rather than throw.
+    if (!(await copyToClipboard(getText()))) return;
     setCopied(true);
     clearTimeout(timer.current);
     timer.current = setTimeout(() => setCopied(false), 2000);
@@ -58,24 +56,6 @@ export function CopyButton({ getText }: { getText: () => string }) {
       </span>
     </button>
   );
-}
-
-/** Last-resort copy for contexts without the async Clipboard API. Returns success. */
-function legacyCopy(text: string): boolean {
-  try {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.setAttribute("readonly", "");
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    const ok = document.execCommand("copy");
-    document.body.removeChild(ta);
-    return ok;
-  } catch {
-    return false;
-  }
 }
 
 function CopyIcon() {

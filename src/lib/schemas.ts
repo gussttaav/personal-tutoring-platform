@@ -17,6 +17,7 @@
 
 import { z } from "zod";
 import { SUPPORTED_TIMEZONES } from "@/lib/timezones";
+import { CONTENT_KEY_MAX, CONTENT_KEY_RE, CONTENT_TYPES, parseContentKey } from "@/lib/content/content-key";
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
@@ -687,3 +688,56 @@ export const AccountDeletionSchema = z.object({
 });
 
 export type AccountDeletionInput = z.infer<typeof AccountDeletionSchema>;
+
+// ─── Content feedback ─────────────────────────────────────────────────────────
+// CONTENT-FEEDBACK-01: bodies of POST /api/content/vote and /api/content/report,
+// plus the admin PATCH that flips a report's status. The key regex is the one
+// exported by src/lib/content/content-key.ts so the schema and the parser can
+// never disagree about what a key looks like. `locale` is the locale of the PROSE
+// the reader judged, which the page passes down — not something read from the URL.
+
+export const ContentRefSchema = z.object({
+  contentType: z.enum(CONTENT_TYPES),
+  contentKey:  z.string().min(1).max(CONTENT_KEY_MAX).regex(CONTENT_KEY_RE),
+  locale:      z.enum(["es", "en"]),
+});
+
+/** The regex admits one or two segments for either type; this pins the count to
+ *  the type (a lesson is "course/lesson", a post a single slug). Applied to the
+ *  two final schemas, not the base, so `.extend()` never has to carry a refinement. */
+const keyMatchesType = { message: "contentKey does not match contentType" };
+const hasWellFormedKey = (v: { contentType: (typeof CONTENT_TYPES)[number]; contentKey: string }) =>
+  parseContentKey(v.contentType, v.contentKey) !== null;
+
+/** Longest 👎 comment (CHECK in 0021_content_feedback.sql). */
+export const CONTENT_COMMENT_MAX = 1000;
+/** Bounds of an error report's message (CHECK in 0021_content_feedback.sql). */
+export const CONTENT_REPORT_MIN  = 10;
+export const CONTENT_REPORT_MAX  = 2000;
+
+export const ContentVoteSchema = ContentRefSchema.extend({
+  /** The browser's random id (src/features/content/feedback-storage.ts); only
+   *  used as the dedupe key for anonymous votes, so it carries no privilege. */
+  clientId: z.uuid(),
+  vote:     z.union([z.literal(1), z.literal(-1)]),
+  // `.trim()` first so a comment of only whitespace collapses to "", which the
+  // service stores as null (= no comment).
+  comment:  z.string().trim().max(CONTENT_COMMENT_MAX).optional(),
+}).refine(hasWellFormedKey, keyMatchesType);
+
+export type ContentVoteInput = z.infer<typeof ContentVoteSchema>;
+
+export const ContentReportSchema = ContentRefSchema.extend({
+  // `.trim()` before `.min()` so whitespace padding can't satisfy the minimum.
+  message: z.string().trim().min(CONTENT_REPORT_MIN).max(CONTENT_REPORT_MAX),
+  /** Anonymous reporters only — ignored when a session is present. */
+  email:   z.email().max(254).optional(),
+}).refine(hasWellFormedKey, keyMatchesType);
+
+export type ContentReportInput = z.infer<typeof ContentReportSchema>;
+
+export const ReportStatusSchema = z.object({
+  status: z.enum(["open", "resolved"]),
+});
+
+export type ReportStatusInput = z.infer<typeof ReportStatusSchema>;
