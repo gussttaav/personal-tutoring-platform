@@ -35,22 +35,6 @@ quiz:
       - { id: d, text: 'With $\eta$ small enough, the descent reaches the lowest minimum of the surface from any starting point.' }
     answer: [a, b, c]
     explanation: 'The three true ones are the three things the lesson establishes, and none of them is a promise of finding the best place. (a) is what the two-basin explorable shows. (b) is the first-order approximation, with the squared norm guaranteeing that what is subtracted is not negative. (c) is the count $\eta < 1/a$ applied to each coordinate: $a = 1$ in one and $a = 20$ in the other, and the more demanding one rules. The false one is (d), and it fails exactly where (a) fails: lowering $\eta$ shortens the steps, it does not change the basin you are in. A tiny $\eta$ from a bad starting point arrives slowly at the same bad bottom.'
-  - id: q-actualiza
-    type: predict-output
-    prompt: 'One step of descent on a two-input neuron, with the weights starting at zero and no bias. What does it print?'
-    language: python
-    code: |
-      import numpy as np
-
-      X = np.array([[1., 0.], [0., 2.]])
-      y = np.array([1., 0.])
-      w = np.zeros(2)
-
-      y_hat = 1.0 / (1.0 + np.exp(-(X @ w)))
-      w = w - 1.0 * (X.T @ (y_hat - y)) / len(y)
-      print(np.round(w, 3).tolist())
-    answer: '[0.25, -0.5]'
-    explanation: 'With $\mathbf{w} = \mathbf{0}$ the two pre-activations are zero and the sigmoid answers $0.5$ to both examples, so the error $\hat{\mathbf{Y}} - \mathbf{Y}$ is $(-0.5,\ 0.5)^{\top}$. The first example asks to raise its pre-activation and the second to lower it, and since each touches a different coordinate, the two weights come out with opposite signs. The magnitude is the interesting part: the second moves twice as much as the first even though both errors measure $0.5$, because its coordinate is $2$ and the gradient is $(\hat{y} - y)\,\mathbf{x}$. An input that appears twice pulls twice as hard.'
 challenges: []
 reading:
   - kind: libro
@@ -404,16 +388,13 @@ ten examples, a neuron cannot tell an opinion from a coincidence.
 
 ## Test your intuition
 
-Four questions: a descent by hand, why the step goes in that direction, what the method guarantees and
-what it does not, and an update in NumPy.
+Three questions: a descent by hand, why the step goes in that direction, and what the method guarantees and what it does not.
 
 <Quiz id="q-paso-a-mano" />
 
 <Quiz id="q-por-que-menos" />
 
 <Quiz id="q-gradiente-cero" />
-
-<Quiz id="q-actualiza" />
 
 ---
 

@@ -35,22 +35,6 @@ quiz:
       - { id: d, text: 'Con $\eta$ lo bastante pequeña, el descenso llega al mínimo más bajo de la superficie desde cualquier punto de partida.' }
     answer: [a, b, c]
     explanation: 'Las tres ciertas son las tres cosas que la lección establece, y ninguna de ellas es una promesa de encontrar el mejor sitio. La (a) es lo que muestra el explorable de las dos cuencas. La (b) es la aproximación de primer orden, con la norma al cuadrado garantizando que lo que se resta no es negativo. La (c) es la cuenta $\eta < 1/a$ aplicada a cada coordenada: $a = 1$ en una y $a = 20$ en la otra, y manda la más exigente. La falsa es la (d), y falla justo por donde falla la (a): bajar $\eta$ acorta los pasos, no cambia la cuenca en la que estás. Un $\eta$ diminuto desde un punto de partida malo llega despacio al mismo fondo malo.'
-  - id: q-actualiza
-    type: predict-output
-    prompt: 'Un paso de descenso sobre una neurona de dos entradas, con los pesos empezando en cero y sin sesgo. ¿Qué imprime?'
-    language: python
-    code: |
-      import numpy as np
-
-      X = np.array([[1., 0.], [0., 2.]])
-      y = np.array([1., 0.])
-      w = np.zeros(2)
-
-      y_hat = 1.0 / (1.0 + np.exp(-(X @ w)))
-      w = w - 1.0 * (X.T @ (y_hat - y)) / len(y)
-      print(np.round(w, 3).tolist())
-    answer: '[0.25, -0.5]'
-    explanation: 'Con $\mathbf{w} = \mathbf{0}$ las dos preactivaciones valen cero y la sigmoide contesta $0.5$ a los dos ejemplos, así que el error $\hat{\mathbf{Y}} - \mathbf{Y}$ vale $(-0.5,\ 0.5)^{\top}$. El primer ejemplo pide subir su preactivación y el segundo bajarla, y como cada uno toca una coordenada distinta, los dos pesos salen con signos opuestos. La magnitud es lo interesante: el segundo se mueve el doble que el primero pese a que los dos errores miden $0.5$, porque su coordenada vale $2$ y el gradiente es $(\hat{y} - y)\,\mathbf{x}$. Una entrada que aparece dos veces tira el doble.'
 challenges: []
 reading:
   - kind: libro
@@ -407,16 +391,13 @@ idioma. Con diez ejemplos, una neurona no distingue una opinión de una coincide
 
 ## Comprueba tu intuición
 
-Cuatro preguntas: un descenso a mano, por qué el paso va en esa dirección, qué garantiza el método y
-qué no, y una actualización en NumPy.
+Tres preguntas: un descenso a mano, por qué el paso va en esa dirección y qué garantiza el método y qué no.
 
 <Quiz id="q-paso-a-mano" />
 
 <Quiz id="q-por-que-menos" />
 
 <Quiz id="q-gradiente-cero" />
-
-<Quiz id="q-actualiza" />
 
 ---
 
