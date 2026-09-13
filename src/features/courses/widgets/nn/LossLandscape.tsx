@@ -11,6 +11,11 @@
  *
  * COURSE-P11-02 — those labels are now `courses.widgets.loss-landscape`, so the English
  * column gets the term deliberately rather than by drift.
+ *
+ * COURSE-P5-00 — start x₀ = 0 sits exactly on the ridge: grad_x(0, y) = 4·0·(0²−1) is
+ * bit-exact zero, so x never moves and the path settles at the saddle (0, 0), not a basin.
+ * `finalX < 0 ? left : right` used to call that a fall into the right basin (0 < 0 is
+ * false). Now checked against a threshold first and reported as a saddle.
  */
 
 "use client";
@@ -68,6 +73,7 @@ export default function LossLandscape() {
   const visible = path.slice(0, step + 1);
   const current = visible[visible.length - 1];
   const finalX = path[path.length - 1][0];
+  const atSaddle = Math.abs(finalX) < 1e-6;
   const basin = finalX < 0 ? t("basinLeft") : t("basinRight");
 
   const reset = () => {
@@ -131,10 +137,14 @@ export default function LossLandscape() {
       </div>
 
       <p style={{ fontSize: "0.85rem", margin: 0, color: "var(--text-muted)" }}>
-        {t.rich("verdict", {
-          basin,
-          b: (chunks) => <strong style={{ color: "var(--green)" }}>{chunks}</strong>,
-        })}
+        {atSaddle
+          ? t.rich("verdictSaddle", {
+              b: (chunks) => <strong style={{ color: "var(--green)" }}>{chunks}</strong>,
+            })
+          : t.rich("verdict", {
+              basin,
+              b: (chunks) => <strong style={{ color: "var(--green)" }}>{chunks}</strong>,
+            })}
       </p>
     </div>
   );

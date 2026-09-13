@@ -1581,6 +1581,92 @@ continued derivation whose last ROW ends the sentence.
 - `pnpm lint:content`, `pnpm jest src/lib/courses` (451), `tsc`, `pnpm lint` all green. Awaits the
   user's push.
 
+**COURSE-P5-00 — the `loss-landscape` ridge is a saddle, and the widget lied about it**
+(2026-09-13, branch `course/block-2-review-and-translate`). User-reported while reviewing Block 2
+lesson 6 (`descenso-gradiente`): starting the explorable exactly at $x_0 = 0$ never falls into
+either basin — it's a saddle point — and neither the lesson nor the explorable's caption said so.
+
+- **The widget itself was wrong, not just silent.** `DOUBLE_WELL.grad(0, y) = [4·0·(0²−1), 2y]` is
+  bit-exact zero in the $x$ coordinate, so `gradientDescentPath` never moves off the ridge and $x$
+  settles at the saddle $(0, 0)$. `LossLandscape.tsx`'s verdict was `finalX < 0 ? basinLeft :
+  basinRight`, and `0 < 0` is `false` — so it reported "falls into the right basin" for a point
+  that never left the ridge. Reachable through the UI, not just in theory: the start-x slider
+  (`min=-1.9, step=0.1`) lands on exactly `0` at its 19th tick.
+- **Fix.** `finalX` is now checked against a `1e-6` threshold first (`atSaddle`); when true the
+  component renders a new `verdictSaddle` string instead of picking a basin. New key added to both
+  `messages/es.json` and `messages/en.json` (key-parity kept).
+- **Caught a second bug while verifying in the browser, unrelated to the fix itself: `.claude/launch.json`'s
+  only config runs `pnpm start`, so the preview was serving yesterday's production build and
+  silently ignoring every edit.** Confirmed by fetching the served chunk and grepping it for the
+  new code — absent even after a full server restart. `pnpm build` before re-launching the preview
+  made the fix observable; not a repo change, just a note for the next person who edits a widget
+  and sees no effect in the Browser pane.
+- **Content.** The explorable's caption gained a clause naming the exact-center exception; the
+  paragraph right after the explorable gained one sentence tying it to the lesson's own theme
+  (gradient zero ≠ minimum, already the point of `q-gradiente-cero`). Word count 1954 → 1991,
+  inside the 2000 ceiling. `en/14-descenso-gradiente.mdx` does not exist yet (Block 2 English
+  translation hasn't reached lesson 6), so only the Spanish source needed the prose fix; the
+  translation task will carry the corrected caption over when it lands.
+- **Second user-reported gap, same pass.** The `<Callout type="intuition" title="La idea en una
+  frase">` right after read "da un paso a favor de [la pendiente]" — true of any local descent
+  method, not the thing that makes it *gradient* descent. The distinguishing move, proved two
+  paragraphs later by Cauchy-Schwarz, is that the step goes in the direction that lowers the loss
+  *most*, not merely downhill. Reworded to "da un paso en la dirección que más baja la pérdida" —
+  states the fact plainly, ahead of the formal argument, without borrowing its vocabulary. Word
+  count 1991 → 1995.
+- **Third user-reported gap, same pass: the "concesión" paragraph on the batch.** It said the batch
+  is all ten reviews and left it there — no name for the choice, and the one follow-up clause
+  ("partirlo en trozos... cuando los conjuntos son grandes") reads as a strict small-data/big-data
+  switch, which overstates it: mini-batch is the practical default even when the full batch would
+  fit, because many cheap noisy steps usually beat few exact expensive ones in wall-clock time, not
+  only because huge datasets don't fit in memory. Rewritten to name **batch gradient descent**,
+  **descenso de gradiente estocástico** (*SGD*, $B=1$) and **mini-batch** ($1 < B < N$) against the
+  $B$ notation this lesson already uses, correct the dataset-size framing, and — user's second ask —
+  define **época** for the first time in the course: a full pass over the $N$ training examples,
+  coinciding with a step here because $B = N$, diverging into $N/B$ steps per epoch once $B < N$.
+  Reuses $N$ as "dataset size" exactly as `NOTATION.md`'s own §-notes already anticipated for Block 2
+  (it names Block 2's "two splits" as the case) — first real usage of that convention. Word count
+  1995 → 2228: over the 2000 target, inside the 3000 ceiling, by the user's explicit call.
+  **Not done: `época` already appears unexplained in two earlier lessons' code** (`07-word2vec.mdx`,
+  `08-glove-y-limites.mdx`, both just the variable `epoca` / printed "época N", no prose gloss) —
+  a forward reference to this lesson's definition wasn't added, since retrofitting earlier lessons
+  is a separate decision outside what was asked here. Flagged for the user.
+- **Fourth ask, same pass: the raya pass reaches Block 2 lesson 6.** User-requested, explicitly
+  against AUTHORING.md §5 rather than a reported defect — this lesson was the one being reviewed
+  when Block 2's raya removal (started 2026-09-08, `es/09`–`es/13` already done per the entries
+  above) reached it. 22 em-dash sites converted one match at a time, same defaults as the Block 1 /
+  Block 2 passes: parentheses for the incise, a colon where the raya introduced a short list rather
+  than enclosing one (`arreglos con nombre propio —*momentum*, Adam—` → `arreglos con nombre
+  propio: *momentum*, Adam. Quedan fuera de este curso.`, split into two sentences since the colon
+  left a dangling `y`). **The comma after the closing `)` is not a rule, checked against
+  `13-funcion-de-perdida.mdx`'s own conversions before trusting the first instinct**: same-subject
+  compound predicates there get a comma in some spots (`… (…), y dejan en último lugar …`) and not
+  in others right next to it (`… (…) y evita que np.exp desborde`), and a subject change gets none
+  at least once (`axis=1 es «por filas» (…) y keepdims=True es …`). It is a per-sentence rhythm call,
+  same as the rest of the pass — three of this lesson's own first-pass commas got walked back after
+  checking against that precedent (`respuesta local (…) y, llevada al límite,`; `una sola cosa (…) y
+  con eso decide`; `Llamemos θ (…) y L(θ)`, all tight same-verb or same-subject constructions where
+  the comma read as clutter, not rhythm). The file-top `{/* COURSE-P5-02 — … */}` comment kept its
+  raya, same carve-out as every other lesson's header. Two of the 22 sites were rayas this
+  session had itself just introduced two turns ago (the mini-batch/época paragraphs) — same fix,
+  same pass.
+- **Caught two more while sweeping the rendered page, not just the source file: the `loss-landscape`
+  and `gradient-descent-2d` widgets' i18n strings.** `messages/es.json`'s `verdict` ("Cae en el
+  mínimo de la {basin} — el punto de partida decide la cuenca.") and `diverged` ("Diverge — la tasa
+  de aprendizaje es demasiado alta…") both carried a raya that never shows up grepping the `.mdx`,
+  because it lives in student-facing UI copy, not lesson prose. Split `verdict` into two sentences,
+  gave `diverged` a colon (it introduces the reason). `messages/en.json` is untouched — English keeps
+  the spaced em dash by design, same as every other lesson's English column. Confirmed via
+  `article.innerText.match(/—/g)` on the rendered page: `0` after the fix, versus a live positive
+  hit on `verdict`'s raya before it (the source-only grep had already read `0` and was wrong).
+  Word count word-neutral as expected (`countWords` treats `—x` and `(x` the same): 2228 → 2227.
+- Verified in the browser (`pnpm start`, post-rebuild each time): `x₀ = -0.1` → left basin,
+  `x₀ = 0.1` → right basin, `x₀ = 0` → saddle message, callout text updated, new batch/época prose
+  renders with correct bold/italic/KaTeX, zero rayas left on the rendered article — all confirmed
+  against the live DOM. `pnpm lint:content`, `pnpm jest src/features/courses/widgets src/lib/courses`
+  (718), `tsc --noEmit`, `pnpm lint`, `pnpm build` all green.
+- Not yet committed (local); awaits the user's review.
+
 **COURSE-P7-01** — Closed per doc. The component, the bridge pre-pass, the sixth lint pass, the
 budget exemption, the styles, the fixture coverage and the authoring rule all landed. Deviations
 and notes:

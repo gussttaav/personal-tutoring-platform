@@ -14,7 +14,7 @@ quiz:
     prompt: 'El descenso corre sobre $\mathcal{L}(w) = w^{2}$ partiendo de $w_0 = 8$, con $\eta = 0.25$. ¿Cuánto vale $w_3$?'
     answer: 1
     tolerance: 0.01
-    explanation: 'Cada paso multiplica $w$ por $1 - 2\eta = 0.5$, así que $w_3 = 0.5^{3} \cdot 8 = 1$, y la trayectoria es $8 \to 4 \to 2 \to 1$. Mira los dos vecinos de ese $\eta$, porque son los que enseñan la forma de la condición: con $\eta = 0.5$ el factor vale $0$ y $w_1$ cae clavado en el mínimo, y con $\eta = 0.75$ vale $-0.5$, de modo que la trayectoria alterna de signo —$8 \to -4 \to 2 \to -1$— y converge exactamente igual de rápido. Lo que decide no es el signo del factor, es su magnitud.'
+    explanation: 'Cada paso multiplica $w$ por $1 - 2\eta = 0.5$, así que $w_3 = 0.5^{3} \cdot 8 = 1$, y la trayectoria es $8 \to 4 \to 2 \to 1$. Mira los dos vecinos de ese $\eta$, porque son los que enseñan la forma de la condición: con $\eta = 0.5$ el factor vale $0$ y $w_1$ cae clavado en el mínimo, y con $\eta = 0.75$ vale $-0.5$, de modo que la trayectoria alterna de signo ($8 \to -4 \to 2 \to -1$), y converge exactamente igual de rápido. Lo que decide no es el signo del factor, es su magnitud.'
   - id: q-por-que-menos
     type: single
     prompt: 'De todas las direcciones en las que se pueden mover los parámetros, ¿por qué el paso va en la de $-\nabla_{\theta}\mathcal{L}$?'
@@ -60,7 +60,7 @@ reading:
     venue: 'deeplearningbook.org'
     lang: en
     url: 'https://www.deeplearningbook.org/contents/numerical.html'
-    note: 'Su §4.3 explica por qué el paso va en contra del gradiente (la derivada direccional) y cómo la curvatura —el número de condición del hessiano— fija el paso más largo que no diverge: el x² + 20y² de la lección dicho en general.'
+    note: 'Su §4.3 explica por qué el paso va en contra del gradiente (la derivada direccional) y cómo la curvatura (el número de condición del hessiano) fija el paso más largo que no diverge: el x² + 20y² de la lección dicho en general.'
   - kind: paper
     title: 'An overview of gradient descent optimization algorithms'
     authors: 'Sebastian Ruder'
@@ -83,7 +83,7 @@ número real.
 Hay, en cambio, una pregunta mucho más pequeña que sí se contesta. Coge uno solo de esos $41$
 parámetros, súbelo una centésima, deja los otros $40$ quietos y vuelve a evaluar la pérdida: si ha
 subido, ese parámetro iba en la dirección equivocada, y si ha bajado, iba bien. Es una respuesta
-local —no dice dónde está el mínimo, dice hacia dónde queda el suelo desde aquí— y, llevada al
+local (no dice dónde está el mínimo, dice hacia dónde queda el suelo desde aquí) y, llevada al
 límite, tiene nombre desde el siglo XVII: es la derivada parcial de la pérdida respecto de ese
 parámetro. Sondear los $41$ cuesta $41$ evaluaciones. Derivar los da sin sondear ninguno, y para una
 neurona la cuenta cabe en una línea; conseguirla con capas ocultas de por medio ocupa el resto del
@@ -96,22 +96,24 @@ que quepa en un plano y tenga dos fondos en vez de uno.
 
 <Explorable
   id="loss-landscape"
-  caption="Mueve el punto de partida a un lado y a otro de la cresta central: la trayectoria termina siempre en el fondo que le queda debajo, y ninguna cruza al otro. La segunda barra es la tasa de aprendizaje, que fija cuánto avanza en cada paso; déjala quieta de momento."
+  caption="Mueve el punto de partida a un lado y a otro de la cresta central: la trayectoria termina siempre en el fondo que le queda debajo, y ninguna cruza al otro. Arráncalo justo en el centro y no pasa ninguna de las dos cosas: el punto se queda clavado en la cresta, en un punto de silla, sin caer a ningún lado. La segunda barra es la tasa de aprendizaje, que fija cuánto avanza en cada paso; déjala quieta de momento."
 />
 
 El descenso no compara los dos valles, porque no los ve. Desde donde está tiene acceso a una sola
-cosa —cuánto cambia la pérdida al moverse un poco en cada dirección— y con eso decide el paso
-siguiente.
+cosa (cuánto cambia la pérdida al moverse un poco en cada dirección) y con eso decide el paso
+siguiente. Justo en la cresta esa pendiente no apunta a ningún lado: la derivada vale cero sin que
+el sitio sea un fondo, un punto de silla, y ahí el descenso se queda quieto en vez de bajar.
 
 <Callout type="intuition" title="La idea en una frase">
-El descenso no busca el mínimo: lee la pendiente donde está y da un paso a favor de ella. Que
-repetirlo acabe en un fondo es una consecuencia; que sea el más hondo no lo garantiza nadie.
+El descenso no busca el mínimo: lee la pendiente donde está y da un paso en la dirección que más
+baja la pérdida. Que repetirlo acabe en un fondo es una consecuencia; que sea el más hondo no lo
+garantiza nadie.
 </Callout>
 
 ## El gradiente apunta cuesta arriba, y por eso se resta
 
-Llamemos $\theta$ a todos los parámetros de la red a la vez —los pesos y los sesgos de todas las
-capas, apilados en un solo vector de $P$ coordenadas— y $\mathcal{L}(\theta)$ a la pérdida sobre el
+Llamemos $\theta$ a todos los parámetros de la red a la vez (los pesos y los sesgos de todas las
+capas, apilados en un solo vector de $P$ coordenadas) y $\mathcal{L}(\theta)$ a la pérdida sobre el
 batch. El **gradiente** es el vector que reúne una derivada parcial por parámetro,
 $\nabla_{\theta}\mathcal{L} \in \mathbb{R}^{P}$. Cada una de sus coordenadas dice a qué ritmo cambia
 la pérdida cuando se mueve un parámetro y los demás se quedan quietos: lo que medía el sondeo de una
@@ -150,8 +152,8 @@ $$
 \theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t),
 $$
 
-donde el subíndice cuenta pasos —$\theta_5$ son los parámetros después de cinco pasos, no la quinta
-coordenada de nada— y $\eta > 0$ es la **tasa de aprendizaje** (*learning rate*, que es como la vas
+donde el subíndice cuenta pasos ($\theta_5$ son los parámetros después de cinco pasos, no la quinta
+coordenada de nada), y $\eta > 0$ es la **tasa de aprendizaje** (*learning rate*, que es como la vas
 a encontrar escrita en cualquier librería), el único número de la fórmula que eliges tú. Eso es el
 **descenso de gradiente**, y no tiene más piezas.
 
@@ -169,8 +171,24 @@ el paso baja. Y toda la deuda está en el signo de esa ecuación, que es un $\ap
 del plano tangente, no de la pérdida, y sólo vale «cerca». Cuánto es cerca lo decide $\eta$.
 
 Una concesión, dicha en voz alta: el batch de esta lección son las diez reseñas enteras, así que
-cada paso mira todos los ejemplos antes de mover nada. Partirlo en trozos y dar un paso por trozo
-hace falta cuando los conjuntos son grandes, y el del curso tiene diez ejemplos.
+cada paso mira todos los ejemplos antes de mover nada. Tiene nombre, **batch gradient descent**, y
+no es la única forma de fijar $B$. En el otro extremo, el **descenso de gradiente estocástico**
+(*stochastic gradient descent*, SGD) pone $B = 1$: cada paso mira un solo ejemplo y cuesta casi
+nada, pero el gradiente que usa ya no es el exacto de la lección, es una estimación ruidosa de él,
+calculada sobre un dato en vez de sobre los diez. El **mini-batch** queda en medio, con $B$ entre
+esos dos extremos (unas decenas o cientos de ejemplos, típicamente), y es la opción que domina en
+la práctica. No es sólo que un conjunto de millones no quepa en memoria de una vez: incluso cuando
+cabría entero, muchos pasos baratos y algo ruidosos suelen entrenar más rápido, en tiempo de reloj,
+que pocos pasos exactos y caros. El tamaño del conjunto empuja hacia el mini-batch, pero no es la
+única razón para elegirlo, ni el batch completo es sólo cosa de conjuntos pequeños: se usa aquí
+porque son diez ejemplos y hace la cuenta más fácil de seguir a mano, no porque diez sea la frontera
+de nada.
+
+Y variar $B$ obliga a una palabra que hasta ahora sobraba: una **época** es una pasada completa por
+los $N$ ejemplos de entrenamiento. Con $B = N$, que es el caso de esta lección, paso y época son la
+misma cosa (cada paso ya recorre el conjunto entero), y por eso hasta ahora ha bastado con «paso».
+En cuanto $B < N$ dejan de coincidir: hacen falta $N / B$ pasos para completar una época, y
+entrenar de verdad significa repetir varias, no una sola.
 
 ### Un paso demasiado largo sube la pérdida
 
@@ -220,12 +238,12 @@ $\eta < 1$ para la primera y $\eta < 1/20 = 0.05$ para la segunda, y manda la se
   caption="Sube la tasa de aprendizaje del cañón de cinco en cinco milésimas y mira dónde se rompe: hasta 0.045 la trayectoria desciende, en 0.05 rebota entre las dos paredes sin acercarse al fondo y por encima se escapa del gráfico. El aviso rojo salta cuando la trayectoria abandona el dibujo, no cuando empieza a ir mal."
 />
 
-Con $\eta = 0.05$ —el valor con el que arranca— el factor de la coordenada empinada vale $-1$
+Con $\eta = 0.05$ (el valor con el que arranca) el factor de la coordenada empinada vale $-1$
 exacto, y la trayectoria hace en dos dimensiones lo que la cuarta fila de la tabla hace en una:
-alternar sin avanzar. El cuenco del primer botón es **convexo** —un solo fondo, así que baje quien
-baje llega al mismo sitio— y aguanta el deslizador entero: su dirección más empinada sólo pide
+alternar sin avanzar. El cuenco del primer botón es **convexo** (un solo fondo, así que baje quien
+baje llega al mismo sitio), y aguanta el deslizador entero: su dirección más empinada sólo pide
 $\eta < 1/3$. Que un mismo paso sirva para una dirección y no para la otra tiene arreglos con nombre
-propio —*momentum*, Adam—, y quedan fuera de este curso.
+propio: *momentum*, Adam. Quedan fuera de este curso.
 
 ## Con una sola capa, el gradiente sale de una línea
 
