@@ -124,9 +124,12 @@ D_{\mathbf{u}}\mathcal{L}(\theta) = \left(\nabla_{\theta}\mathcal{L}\right)^{\to
 $$
 
 which is bounded. The Cauchy-Schwarz inequality gives
-$\left\lvert \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u} \right\rvert \leq \lVert
-\nabla_{\theta}\mathcal{L} \rVert \, \lVert \mathbf{u} \rVert = \lVert \nabla_{\theta}\mathcal{L}
-\rVert$, with equality only when $\mathbf{u}$ is parallel to the gradient. Of all directions, then, the
+
+$$
+\left\lvert \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u} \right\rvert \leq \lVert \nabla_{\theta}\mathcal{L} \rVert \, \lVert \mathbf{u} \rVert = \lVert \nabla_{\theta}\mathcal{L} \rVert,
+$$
+
+with equality only when $\mathbf{u}$ is parallel to the gradient. Of all directions, then, the
 gradient's is the one that raises the loss most and the opposite one lowers it most. No other lowers it
 more per unit of step.
 
@@ -143,7 +146,11 @@ you choose. That is **gradient descent**, and it has no more pieces.
 
 That repeating it lowers the loss is seen in the first-order approximation. Near $\theta_t$ the loss
 resembles its tangent plane,
-$\mathcal{L}(\theta_t + \Delta) \approx \mathcal{L}(\theta_t) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta$,
+
+$$
+\mathcal{L}(\theta_t + \Delta) \approx \mathcal{L}(\theta_t) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta,
+$$
+
 and the descent step is precisely $\Delta = -\eta\,\nabla_{\theta}\mathcal{L}$, so
 
 $$
@@ -253,8 +260,13 @@ $$
 \frac{\partial \ell}{\partial b} = \hat{y} - y,
 $$
 
-which in vector form is $\nabla_{\mathbf{w}}\,\ell = \left(\hat{y} - y\right)\mathbf{x}$. That formula
-says two things and it is worth separating them. The error $\hat{y} - y$ is a single number that
+which in vector form is
+
+$$
+\nabla_{\mathbf{w}}\,\ell = \left(\hat{y} - y\right)\mathbf{x}.
+$$
+
+That formula says two things and it is worth separating them. The error $\hat{y} - y$ is a single number that
 multiplies every coordinate alike: it fixes how much is corrected. And $\mathbf{x}$ decides the
 sharing-out: a vocabulary entry that does not appear in the review has $x_j = 0$ and its weight does not
 move a thousandth, and one that appears twice pulls twice as hard. The neuron only learns about what it
@@ -270,8 +282,11 @@ $$
 
 where the second form is the first written as a product: with $d_L = 1$ the predictions and the labels
 are columns of $B$ numbers, $\mathbf{X}^{\top}$ has shape $d_0 \times B$, and the result is the column of
-$d_0$ coordinates that is needed. The bias comes out of the same sum without the $\mathbf{x}_i$: it is
-$\partial \mathcal{L} / \partial b = \frac{1}{B}\sum_i \left(\hat{y}_i - y_i\right)$.
+$d_0$ coordinates that is needed. The bias comes out of the same sum without the $\mathbf{x}_i$:
+
+$$
+\frac{\partial \mathcal{L}}{\partial b} = \frac{1}{B}\sum_i \left(\hat{y}_i - y_i\right).
+$$
 
 All this has cost two derivatives because $z$ depends on $\mathbf{w}$ directly: between a weight and the
 loss there is a sum and a sigmoid, and nothing more.

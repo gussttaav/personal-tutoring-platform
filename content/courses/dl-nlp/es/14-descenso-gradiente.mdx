@@ -123,9 +123,12 @@ D_{\mathbf{u}}\mathcal{L}(\theta) = \left(\nabla_{\theta}\mathcal{L}\right)^{\to
 $$
 
 que está acotado. La desigualdad de Cauchy-Schwarz da
-$\left\lvert \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u} \right\rvert \leq \lVert
-\nabla_{\theta}\mathcal{L} \rVert \, \lVert \mathbf{u} \rVert = \lVert \nabla_{\theta}\mathcal{L}
-\rVert$, con igualdad únicamente cuando $\mathbf{u}$ es paralela al gradiente. De todas las
+
+$$
+\left\lvert \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u} \right\rvert \leq \lVert \nabla_{\theta}\mathcal{L} \rVert \, \lVert \mathbf{u} \rVert = \lVert \nabla_{\theta}\mathcal{L} \rVert,
+$$
+
+con igualdad únicamente cuando $\mathbf{u}$ es paralela al gradiente. De todas las
 direcciones, entonces, la del gradiente es la que más sube la pérdida y la contraria la que más la
 baja. Ninguna otra baja más por unidad de paso.
 
@@ -143,7 +146,11 @@ a encontrar escrita en cualquier librería), el único número de la fórmula qu
 
 Que repetirlo baje la pérdida se ve en la aproximación de primer orden. Cerca de $\theta_t$ la
 pérdida se parece a su plano tangente,
-$\mathcal{L}(\theta_t + \Delta) \approx \mathcal{L}(\theta_t) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta$,
+
+$$
+\mathcal{L}(\theta_t + \Delta) \approx \mathcal{L}(\theta_t) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta,
+$$
+
 y el paso del descenso es precisamente $\Delta = -\eta\,\nabla_{\theta}\mathcal{L}$, así que
 
 $$
@@ -255,8 +262,13 @@ $$
 \frac{\partial \ell}{\partial b} = \hat{y} - y,
 $$
 
-que en forma vectorial es $\nabla_{\mathbf{w}}\,\ell = \left(\hat{y} - y\right)\mathbf{x}$. Esa
-fórmula dice dos cosas y conviene separarlas. El error $\hat{y} - y$ es un único número que
+que en forma vectorial es
+
+$$
+\nabla_{\mathbf{w}}\,\ell = \left(\hat{y} - y\right)\mathbf{x}.
+$$
+
+Esa fórmula dice dos cosas y conviene separarlas. El error $\hat{y} - y$ es un único número que
 multiplica a todas las coordenadas por igual: fija cuánto se corrige. Y $\mathbf{x}$ decide el
 reparto: una entrada del vocabulario que no aparece en la reseña tiene $x_j = 0$ y su peso no se
 mueve ni una milésima, y una que aparece dos veces tira el doble. La neurona sólo aprende sobre lo
@@ -273,8 +285,11 @@ $$
 donde la segunda forma es la primera escrita como producto: con $d_L = 1$ las predicciones y las
 etiquetas son columnas de $B$ números, $\mathbf{X}^{\top}$ tiene forma $d_0 \times B$, y el
 resultado es la columna de $d_0$ coordenadas que hace falta. El sesgo sale de la misma suma sin el
-$\mathbf{x}_i$: es
-$\partial \mathcal{L} / \partial b = \frac{1}{B}\sum_i \left(\hat{y}_i - y_i\right)$.
+$\mathbf{x}_i$:
+
+$$
+\frac{\partial \mathcal{L}}{\partial b} = \frac{1}{B}\sum_i \left(\hat{y}_i - y_i\right).
+$$
 
 Todo esto ha costado dos derivadas porque $z$ depende de $\mathbf{w}$ directamente: entre un peso y
 la pérdida hay una suma y una sigmoide, y nada más.
