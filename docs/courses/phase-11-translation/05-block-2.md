@@ -205,8 +205,20 @@ transcribe it by hand; do not re-invent it.
   `\text{EC}`; in a `print` it writes `CE`.
 - **Figures with Spanish set into the asset get an `.en.svg` sibling** and the lesson points `src` at
   it: `mlp-arquitectura.en.svg`, `xor-franja.en.svg` (2.3), `perdida-correccion.en.svg` (2.5, decimal
-  comma `0,5` → `0.5`). Still owed by their lessons: `descenso-pasos.svg` (2.6),
-  `bucle-entrenamiento.svg` (2.9), `reparto-resenas.svg` (2.10).
+  comma `0,5` → `0.5`), `descenso-pasos.en.svg` (2.6, decimal commas `0,10`/`0,40`/`1,05` → points).
+  Still owed by their lessons: `bucle-entrenamiento.svg` (2.9), `reparto-resenas.svg` (2.10).
+- **The "an input that appears twice pulls twice as hard" sentence** (fixed by 2.6,
+  `en/14-descenso-gradiente.mdx`): the Spanish «una entrada que aparece dos veces tira el doble» renders
+  as *an input that appears twice pulls twice as hard* in `q-actualiza`'s explanation, and as *one that
+  appears twice pulls twice as hard* in prose. 2.8's `q-leer-un-gradiente` rewrite ties its answer back
+  to this sentence («aparece dos veces / se corrige el doble»), so it must reuse this wording.
+- **2.6's closing weight argument is re-derived, not translated** (`en/14-descenso-gradiente.mdx`). The
+  Spanish opposite-sign accident (`película` −2.238 vs `la` +1.221) does not survive the fixed English
+  corpus: both meaningless words come out **negative** (Pyodide: `movie` −1.493, `the` −0.832), because
+  `movie` falls in 4 negative / 2 positive reviews and `the` in 2 negative / 1 positive. The paragraph
+  keeps the pedagogy (a neuron can't tell an opinion from a coincidence) on the numbers the corpus
+  actually gives. Regenerated training numbers: `0.6931` → `0.0913` (step 25) → `0.0131` (step 200),
+  hand-set `0.2208`; largest weight `recommend` +3.911, smallest `slow` −3.428.
 
 ## Lesson progress
 
@@ -215,7 +227,7 @@ transcribe it by hand; do not re-invent it.
 - [x] 2.3 `xor-y-capas-ocultas`
 - [x] 2.4 `forward-pass`
 - [x] 2.5 `funcion-de-perdida`
-- [ ] 2.6 `descenso-gradiente`
+- [x] 2.6 `descenso-gradiente`
 - [ ] 2.7 `regla-de-la-cadena`
 - [ ] 2.8 `backpropagation`
 - [ ] 2.9 `implementar-mlp`
