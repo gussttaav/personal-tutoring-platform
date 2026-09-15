@@ -821,6 +821,14 @@
       "newer": "Artículo siguiente",
       "onThisPage": "En esta página"
     },
+    "archive": {
+      "label": "Artículos del blog",
+      "allArticles": "Todos los artículos",
+      "minutes": "{minutes} min",
+      "count": "{count, plural, one {# artículo} other {# artículos}}",
+      "openDrawer": "Abrir la lista de artículos",
+      "closeDrawer": "Cerrar la lista de artículos"
+    },
     "reading": {
       "title": "Para profundizar",
       "lede": "De dónde sale lo que cuenta el artículo, y dónde seguir si quieres más. Nada de aquí hace falta para entenderlo.",

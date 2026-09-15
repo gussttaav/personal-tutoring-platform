@@ -31,10 +31,14 @@
 /*
  * Mobile-first, mirroring the lesson reader (lesson.css): the base is the single
  * 840px reading column the post has always been — this block just moves the measure
- * off the inline `style` the page used to carry. The ≥1280px media query then turns
- * the shell into a two-track grid and reveals the sticky "On this page" rail
- * (OnThisPage.tsx). Below that width the rail is absent and PostToc's <details>
- * disclosure at the top of the article stands in for it.
+ * off the inline `style` the page used to carry. Three tiers above it:
+ *
+ *   <1024px   single column; the archive is PostArchiveMobile's floating button +
+ *             drawer, and PostToc's <details> disclosure stands in for the rail.
+ *   ≥1024px   two tracks: the sticky archive pane (PostArchive.tsx, BLOG-05) on the
+ *             left, then the 840px column.
+ *   ≥1280px   three tracks: the sticky "On this page" rail (OnThisPage.tsx) joins on
+ *             the right — only when the post has headings to list.
  */
 .post-shell {
   --nav-h: 72px;                 /* keep in sync with the Navbar height */
@@ -51,6 +55,10 @@
   display: none;                 /* revealed at ≥1280px */
 }
 
+.post-archive {
+  display: none;                 /* revealed at ≥1024px (BLOG-05) */
+}
+
 /*
  * The sticky rail needs the VIEWPORT as its scroll container. The global
  * `body { overflow-x: hidden }` (globals.css) turns body into a scroll container
@@ -62,16 +70,42 @@ body:has(.post-shell) {
   overflow-x: clip;
 }
 
-@media (min-width: 1280px) {
-  /* Only widen into the two-track grid when there is actually a rail to show:
-     OnThisPage renders a <nav> only when the post has headings, so a heading-less
-     post keeps the plain single 840px column instead of a lopsided empty track. */
-  .post-shell:has(.post-onthispage nav) {
+@media (min-width: 1024px) {
+  /* BLOG-05: two tracks, archive + content. Unconditional — unlike the rail below,
+     the pane always has something to list (at least the post being read). */
+  .post-shell {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 240px;
+    grid-template-columns: 260px minmax(0, 1fr);
     gap: 48px;
-    max-width: 1128px;           /* 840 (content) + 48 (gap) + 240 (rail) */
-    align-items: start;          /* so the sticky rail has room to move */
+    max-width: 1148px;           /* 260 (archive) + 48 (gap) + 840 (content) */
+    align-items: start;          /* so the sticky pane has room to move */
+  }
+
+  .post-archive {
+    display: block;
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+    max-height: calc(100vh - var(--nav-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* `.post-back` and `.post-header` also change here — those overrides sit beside
+     their base rules in the Chrome section, which come later in the cascade. */
+
+  /* The pane replaces the floating button + drawer (both, even mid-open on a resize). */
+  .post-archive-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  /* Only add the third track when there is actually a rail to show: OnThisPage
+     renders a <nav> only when the post has headings, so a heading-less post keeps the
+     two-track layout from the ≥1024px rule instead of a lopsided empty track. */
+  .post-shell:has(.post-onthispage nav) {
+    grid-template-columns: 260px minmax(0, 1fr) 240px;
+    max-width: 1436px;           /* 260 + 48 + 840 (content) + 48 + 240 (rail) */
   }
 
   .post-onthispage:has(nav) {
@@ -184,6 +218,251 @@ body:has(.post-shell) {
   }
 }
 
+/* ── Archive (BLOG-05) ─────────────────────────────────────────────────── */
+
+/*
+ * PostArchive.tsx — every published post, newest first, year → month accordion. Lives
+ * in the sticky left pane at ≥1024px and inside PostArchiveMobile's drawer below. The
+ * open/close slide itself is inline (grid-template-rows, reduced-motion aware through
+ * useReducedMotion), exactly as in OnThisPage; everything that needs :hover, an
+ * attribute selector, a focus ring, a line clamp or a media query is here.
+ */
+
+.post-archive-nav {
+  font-size: 0.8125rem;
+}
+.post-archive-nav--sidebar {
+  padding: 8px 0 32px;
+}
+.post-archive-nav--drawer {
+  padding: 0;
+}
+
+.post-archive-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 20px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.post-archive-back:hover {
+  color: var(--green);
+}
+
+.post-archive-years,
+.post-archive-months,
+.post-archive-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Year and month rows are real <button aria-expanded>s. Preflight already strips the
+   UA background and border; the rest is reset here so they read as list rows. */
+.post-archive-year,
+.post-archive-month {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 4px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 150ms ease;
+}
+.post-archive-year {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.post-archive-month {
+  padding-left: 12px;
+  font-weight: 600;
+}
+.post-archive-year:hover,
+.post-archive-month:hover {
+  color: var(--text);
+}
+/* Inset ring: the pane is a scroll container (overflow-y: auto), and a ring drawn
+   outside a row flush with its edge would be clipped. */
+.post-archive-year:focus-visible,
+.post-archive-month:focus-visible,
+.post-archive-link:focus-visible {
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.post-archive-chevron {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  color: var(--text-dim);
+}
+
+.post-archive-count {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-container);
+  font-size: 0.68rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+/* Continuous rail through a month's entries (the OnThisPage / SidebarLessonList
+   idiom): dim segments, the current post's green. "You are here" is the rail plus
+   brighter, heavier text — never a filled pill. */
+.post-archive-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 12px;
+  padding: 6px 8px 6px 14px;
+  border-left: 2px solid var(--border-variant);
+  color: var(--text-muted);
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 150ms ease;
+}
+.post-archive-link:hover {
+  color: var(--text);
+}
+.post-archive-link[aria-current="page"] {
+  border-left-color: var(--green);
+  color: var(--text);
+}
+.post-archive-link[aria-current="page"] .post-archive-title {
+  font-weight: 600;
+}
+
+.post-archive-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.post-archive-meta {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+/*
+ * PostArchiveMobile.tsx — the floating button + drawer, <1024px. Rendered as a
+ * SIBLING of <main>: main is `position: relative; z-index: 1` (a stacking context),
+ * so a fixed overlay inside it could never rise above the z-50 navbar. Order in the
+ * root context: main (1, holding .post-toc at 20) < button (40) < navbar (50) <
+ * backdrop (60) < drawer (61).
+ */
+.post-archive-fab {
+  position: fixed;
+  right: 20px;                   /* the shell's own gutter */
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--green-on);
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(78, 222, 163, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.post-archive-fab .material-symbols-outlined {
+  font-size: 1.6rem;
+}
+.post-archive-fab:hover {
+  transform: scale(1.06);
+}
+/* Scroll-down hides it (the chat FAB's --hero-overlap recipe). Declared AFTER :hover
+   so the hidden transform wins while the pointer is still over it. */
+.post-archive-fab--hidden {
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+}
+
+.post-archive-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: post-archive-fade 0.16s ease-out;
+}
+
+.post-archive-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 61;
+  width: min(320px, 85vw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 16px calc(32px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.4);
+  /* Mount-only: the drawer unmounts on close, so there is no exit animation. */
+  animation: post-archive-slide-in 0.22s ease-out;
+}
+
+/*
+ * The shared `lockBodyScroll()` sets `body { overflow: hidden }`, which locks the
+ * viewport only while the root's own overflow is `visible` — and globals.css sets
+ * `html { overflow-y: scroll }`, so on this site the page keeps scrolling behind an
+ * open overlay (verified: a wheel over the backdrop moved the article). The drawer
+ * element exists only while open, so gating the root on it locks and unlocks in step
+ * with the lock, without touching the shared helper. On a phone there is no classic
+ * scrollbar, so nothing shifts.
+ */
+html:has(.post-archive-drawer) {
+  overflow: hidden;
+}
+
+@keyframes post-archive-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes post-archive-slide-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-archive-back,
+  .post-archive-year,
+  .post-archive-month,
+  .post-archive-link,
+  .post-archive-fab {
+    transition: none;
+  }
+  .post-archive-backdrop,
+  .post-archive-drawer {
+    animation: none;
+  }
+}
+
 /* ── Chrome ─────────────────────────────────────────────────────────────── */
 
 .post-back {
@@ -206,6 +485,18 @@ body:has(.post-shell) {
   margin: 26px 0 34px;
   padding-bottom: 26px;
   border-bottom: 1px solid var(--border-variant);
+}
+
+/* BLOG-05: the archive pane's header IS the way back to /blog at ≥1024px; the
+   in-content link would repeat it a column away. The header's top margin was the air
+   under that link. Declared here, after the base rules, so the override wins. */
+@media (min-width: 1024px) {
+  .post-back {
+    display: none;
+  }
+  .post-header {
+    margin-top: 0;
+  }
 }
 
 .post-title {

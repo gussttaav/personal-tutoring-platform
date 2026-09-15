@@ -11,6 +11,13 @@
  * Metadata: `availableLocaleAlternates` emits only the locales the post exists in, so a
  * URL that would 404 is never advertised. Both locales exist for every post today; the
  * moment one ships in Spanish only, this keeps telling the truth without a change here.
+ *
+ * BLOG-05: the archive pane. Every published post, year → month, as the sticky left
+ * track at ≥1024px (`PostArchive`) and as a floating button + drawer below
+ * (`PostArchiveMobile`). The mobile island is a SIBLING of <main>, not a child: <main>
+ * is a stacking context (z-index: 1) and the fixed Navbar is z-50 beside it, so a
+ * drawer inside <main> could never cover the navbar. Both islands get the same slim
+ * projection of the post list — never the summaries or reading lists.
  */
 
 import "../_styles/katex.css";
@@ -26,8 +33,11 @@ import ArticleStructuredData from "@/components/seo/ArticleStructuredData";
 import CodeCopyButtons from "@/features/content/CodeCopyButtons";
 import ContentFeedback from "@/features/content/ContentFeedback";
 import OnThisPage from "@/features/blog/OnThisPage";
+import PostArchive from "@/features/blog/PostArchive";
+import PostArchiveMobile from "@/features/blog/PostArchiveMobile";
 import PostReading from "@/features/blog/PostReading";
 import PostToc from "@/features/blog/PostToc";
+import { toArchiveEntries } from "@/features/blog/archive-tree";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates, localeUrl } from "@/lib/hreflang";
@@ -101,6 +111,7 @@ export default async function BlogPostPage({
   const { content } = await renderPost(source);
   const headings = extractHeadings(source);
   const { newer, older } = postNeighbours(post.slug, locale);
+  const entries = toArchiveEntries(listPosts(locale));
 
   // `post.date` is a calendar day, which `new Date()` reads as UTC midnight. Without an
   // explicit UTC timeZone it renders as the PREVIOUS day west of Greenwich.
@@ -118,7 +129,13 @@ export default async function BlogPostPage({
       <Navbar />
       <main style={{ position: "relative", zIndex: 1 }}>
         <div className="post-shell">
+          {/* BLOG-05: desktop left pane; post.css hides it below 1024px. */}
+          <aside className="post-archive">
+            <PostArchive key={post.slug} entries={entries} currentSlug={post.slug} variant="sidebar" />
+          </aside>
+
           <div className="post-main">
+            {/* Hidden at ≥1024px, where the archive pane's header link replaces it. */}
             <Link href="/blog" className="post-back">
               <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }} aria-hidden="true">
                 arrow_back
@@ -192,6 +209,10 @@ export default async function BlogPostPage({
           </aside>
         </div>
       </main>
+
+      {/* BLOG-05: floating button + drawer, outside <main> on purpose (see header). */}
+      <PostArchiveMobile key={post.slug} entries={entries} currentSlug={post.slug} />
+
       <Footer />
     </>
   );
