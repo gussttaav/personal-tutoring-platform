@@ -16,13 +16,13 @@ See [README.md](README.md) for the design review and the Pagefind decision.
 
 Three existing facts shaped the whole thing:
 
-- [`catalog-view.ts`](../../src/lib/courses/catalog-view.ts) resolves the lesson spine **per lesson**
+- [`catalog-view.ts`](../../../../src/lib/courses/catalog-view.ts) resolves the lesson spine **per lesson**
   across locales. The `en` index must therefore be built from `view.contentLocale`, i.e. the exact
   prose the `/en` reader renders — which today is Spanish. Indexing anything else would return
   results linking to pages that do not contain the match.
-- [`headings.ts`](../../src/lib/courses/headings.ts) already produces `rehype-slug`-identical ids.
+- [`headings.ts`](../../../../src/lib/courses/headings.ts) already produces `rehype-slug`-identical ids.
   Section chunks consume them rather than re-slugging, so `#id` deep links land.
-- [`LessonSidebar.tsx`](../../src/features/courses/reader/LessonSidebar.tsx) is a Server Component
+- [`LessonSidebar.tsx`](../../../../src/features/courses/reader/LessonSidebar.tsx) is a Server Component
   **rendered twice** (desktop aside + mobile drawer). Nothing stateful can go inside it.
 
 ## Files affected

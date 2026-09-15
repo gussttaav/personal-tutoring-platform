@@ -4,7 +4,7 @@
  * Everything the quiz card *does* — select, toggle, reveal the hint, submit, retry —
  * lives here rather than in the component, for the same reason `code/editing.ts` and
  * `landing/SyllabusAccordion`'s grouper do: this repo tests behaviour in the node
- * environment (no jsdom, no RTL — see the P2-02 note in docs/courses/STATUS.md), so
+ * environment (no jsdom, no RTL — see the P2-02 note in docs/courses/dl-nlp/STATUS.md), so
  * logic worth asserting must be reachable without rendering.
  *
  * Rules encoded here:

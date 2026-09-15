@@ -487,7 +487,7 @@ export interface PostRef {
 // placed in the prose with `<Quiz id="…" />`. Graded CLIENT-side by the pure
 // `gradeQuestion` (src/lib/courses/quiz/grade.ts) for instant feedback — a
 // deliberate choice for a free course, not an oversight: see the note in
-// docs/courses/phase-3-assessment/01-quiz-engine.md before "fixing" it.
+// docs/courses/dl-nlp/phase-3-assessment/01-quiz-engine.md before "fixing" it.
 //
 // `prompt`, `options[].text`, `explanation` and `hint` may contain LaTeX; they
 // are rendered through the same build-time KaTeX path as the prose.

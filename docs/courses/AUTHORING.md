@@ -327,7 +327,8 @@ deliberately outside the budget forever — the rendering fixture is the only cu
 
 ## 4. Notation
 
-See [NOTATION.md](NOTATION.md), and add to it before using a symbol it does not cover. Five of its
+See [NOTATION.md](NOTATION.md) and your course's symbol tables (`docs/courses/<slug>/NOTATION.md`), and add
+to the latter before using a symbol neither covers. Five of its
 rules are checked mechanically by the lint (warnings, not failures). The short version:
 
 - Scalars italic $x$, vectors $\mathbf{x}$, matrices $\mathbf{W}$ — always `\mathbf`.
@@ -508,7 +509,7 @@ Spanish typography, since this is Spanish prose and half of it differs from Engl
   NOTATION.md says. A number the prose is *reporting* needs no escaping to make that true: `$0.500$`
   de acierto, una columna que se mueve `$2.4$` unidades, `$29\,312$` pesos, are typeset exactly like
   a bare expression. Thousands still take `\,` inside `$…$` the way prose takes a space. **Changed
-  from the decimal comma on 2026-08-16** — see the P5-00 deviation in STATUS.md for why (a sentence
+  from the decimal comma on 2026-08-16** — see the P5-00 deviation in `dl-nlp/STATUS.md` for why (a sentence
   reading four numbers in a row, `de 1,0 a 1,1, a 1,2, a 1,3`, is unreadable as a list before it is
   read as four decimals) and for the note that every lesson through Block 3 was rewritten the same
   day, so there is no mixed-convention period to account for. The old rule needed a carve-out
@@ -683,7 +684,7 @@ not vaguer than *accuracy*, it is a **different metric** (the fraction of the pr
 were right), so a reader who has met both elsewhere would read the wrong quantity. `exactitud` is
 free of that collision and rejected only because two Spanish words for one number is the drift this
 section exists to stop. Note the shape of the pair: `tasa de acierto` is the quantity,
-$\text{acierto}(D)$ is its symbol ([NOTATION.md](NOTATION.md#block-2--el-perceptrón-multicapa)), and
+$\text{acierto}(D)$ is its symbol ([NOTATION.md](dl-nlp/NOTATION.md#block-2--el-perceptrón-multicapa)), and
 `acertar` is what the network does to one review.
 
 `ocurrencia` is the **same** concept as `token`, licensed for one job: the counting noun when the two
@@ -910,7 +911,7 @@ and `valor esperado` are the terms a statistics course would use, and a lesson m
 refused for a sharper reason — the lesson computes the bracket **as** an average over $2^{d_k}$ sign
 patterns before generalising it, so the two words would name the same operation at two moments of the
 same page and read as two operations. One word, both times. The symbol and the ban on $\sigma$ are
-[NOTATION.md](NOTATION.md#block-5--el-transformer)'s business, argued there.
+[NOTATION.md](dl-nlp/NOTATION.md#block-5--el-transformer)'s business, argued there.
 
 `longitud de onda` arrives in Block 5 lesson 5, on codificación posicional, and the row exists
 because the lesson quotes that number a dozen times: this coordinate comes back round every $6.28$

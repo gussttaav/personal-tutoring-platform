@@ -17,8 +17,8 @@ Two facts about the reader decided the shape of this:
 - **Everything under `[lessonSlug]/page.tsx` is remounted on every lesson navigation.** There is
   no `layout.tsx` under `cursos/`; `LessonLayout`, both providers and the sidebar are per-page.
   The only state that survives a result click is module-level — which is already how
-  [`useSearchIndex.ts`](../../src/features/courses/search/useSearchIndex.ts) caches the index.
-- **Desktop vs mobile is CSS at 768px, not JS.** [`LessonSidebar.tsx`](../../src/features/courses/reader/LessonSidebar.tsx)
+  [`useSearchIndex.ts`](../../../../src/features/courses/search/useSearchIndex.ts) caches the index.
+- **Desktop vs mobile is CSS at 768px, not JS.** [`LessonSidebar.tsx`](../../../../src/features/courses/reader/LessonSidebar.tsx)
   is a Server Component rendered twice (desktop aside + drawer) with `display:none` hiding one.
   P9-01 kept the triggers out of it for that reason; the field now goes in, gated on
   `variant === "desktop"`, which is what keeps exactly one field in the DOM.

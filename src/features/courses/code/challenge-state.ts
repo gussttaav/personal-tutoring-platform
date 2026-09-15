@@ -2,7 +2,7 @@
  * COURSE-P3-02 — The code challenge as a pure state machine.
  *
  * Same reasoning as `quiz/state.ts`: this repo tests behaviour in the node
- * environment (no jsdom, no RTL — see the P2-02 note in docs/courses/STATUS.md), so
+ * environment (no jsdom, no RTL — see the P2-02 note in docs/courses/dl-nlp/STATUS.md), so
  * anything worth asserting has to be reachable without rendering. The card owns the
  * editor text, the run status and the streamed output; everything about the
  * ASSESSMENT — attempts, failures, solved, when the solution unlocks — lives here.

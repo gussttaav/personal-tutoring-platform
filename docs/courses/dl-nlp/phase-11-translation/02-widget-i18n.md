@@ -144,5 +144,5 @@ Symbols inside labels (`d_h`, `ρ`, `Wₕₕ`, `x₀`, `T`, `k`, `q`, `d_model`)
 
 - Any English lesson content.
 - Restructuring the widget registry, or the `Explorable` boundary. Only strings and corpora move.
-- The `docs/courses/notebooks/` Colab notebooks — see the phase README.
+- The `docs/courses/dl-nlp/notebooks/` Colab notebooks — see the phase README.
 - Spanish corpora changes of any kind.

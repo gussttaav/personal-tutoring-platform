@@ -3,7 +3,7 @@
  *
  * The card's behaviour is asserted here rather than by rendering it: this repo runs
  * every unit test in the node environment with no jsdom and no RTL (see the P2-02
- * note in docs/courses/STATUS.md), so the logic worth testing was factored into a
+ * note in docs/courses/dl-nlp/STATUS.md), so the logic worth testing was factored into a
  * pure reducer. What a render test would check — "answering produces a result of the
  * right shape", "retry resets the input but not the attempt count" — is checked here.
  */

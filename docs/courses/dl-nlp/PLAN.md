@@ -2,11 +2,14 @@
 
 **Feature:** interactive, mathematically rigorous online courses on gustavoai.dev
 **First course:** *Deep Learning para NLP: del Perceptrón al Transformer* (slug `dl-nlp`)
+**Second course:** *Modelos de Lenguaje: del Transformer al Agente* (slug `llm-agents`) — planned separately in [`../llm-agents/PLAN.md`](../llm-agents/PLAN.md); the shared contract (`docs/courses/AUTHORING.md`, `NOTATION.md`) governs both — see [`docs/courses/README.md`](../README.md)
 **Planning date:** 2026-07-24
 **Tag convention:** `COURSE-PN-NN` in code comments. One task = one PR.
 
-This is a **feature plan**, not a refactor cycle — it lives in `docs/courses/`, not
-`docs/refactor/`. It follows the same document conventions (PLAN / STATUS / phase READMEs /
+This is a **feature plan**, not a refactor cycle — it lives in `docs/courses/dl-nlp/`, not
+`docs/refactor/`. (It moved from `docs/courses/` on 2026-09-15 when the second course arrived; the
+platform phases below — pipeline, registry, reader, widgets, quizzes, persistence, search — were
+built inside this course's plan and stay here as its history.) It follows the same document conventions (PLAN / STATUS / phase READMEs /
 per-task files) because they work.
 
 ---

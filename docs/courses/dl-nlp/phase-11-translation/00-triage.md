@@ -22,7 +22,7 @@ It is deliberately the cheapest task in the phase. One read-through, one table.
 
 | File | Change |
 |---|---|
-| `docs/courses/phase-11-translation/04-block-1.md` … `08-block-5.md` | fill the **Classification** table |
+| `docs/courses/dl-nlp/phase-11-translation/04-block-1.md` … `08-block-5.md` | fill the **Classification** table |
 
 Nothing else. This task writes no code and creates no lesson.
 

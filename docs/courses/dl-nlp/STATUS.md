@@ -1875,7 +1875,7 @@ that decision and the measurements behind it.
 ## Phase 10 — Conversion
 
 **Retro-documented.** `COURSE-P10-01` (in-lesson booking CTA) shipped on `course/p10-lesson-cta`
-(commit `4757ef1`) without a `docs/courses/phase-10-*` directory or a row here. Recorded now so the
+(commit `4757ef1`) without a `docs/courses/dl-nlp/phase-10-*` directory or a row here. Recorded now so the
 tag namespace is not silently occupied; the design rationale lives in the commit message.
 
 | Task | Tag | Status | Owner | PR |
@@ -2064,4 +2064,4 @@ value edits, so the i18n key-parity test is unaffected.
   leaves the two silently out of sync. Confirm a block's `reading` is final before translating it.
 
 **Known gaps this phase does not close**
-- `docs/courses/notebooks/` stays Spanish (B5.11 links it). Own task, own verification story.
+- `docs/courses/dl-nlp/notebooks/` stays Spanish (B5.11 links it). Own task, own verification story.

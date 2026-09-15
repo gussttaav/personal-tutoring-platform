@@ -20,7 +20,7 @@ the other 42 lessons resolve, per COURSE-P6-03b, to the Spanish spine.
 
 ### Bug 1 — the lint is fatal on a partial tree
 
-[`validate-crosslinks.ts`](../../../src/lib/courses/validate-crosslinks.ts) groups files
+[`validate-crosslinks.ts`](../../../../src/lib/courses/validate-crosslinks.ts) groups files
 `byDirectory` and calls `buildCrosslinkIndex(filePaths)` on that directory alone. For `en/` with
 one lesson in it, the index has one entry. `crosslinkProblems` then reports every other slug as
 unresolved and `validateCrosslinks` **throws on the first one**. `pnpm lint:content` exits 1;
@@ -31,7 +31,7 @@ is fixed.
 
 ### Bug 2 — every reference degrades to plain text, silently
 
-[`Leccion.tsx`](../../../src/lib/courses/Leccion.tsx) resolves through `getLesson(slug, contentLocale)`,
+[`Leccion.tsx`](../../../../src/lib/courses/Leccion.tsx) resolves through `getLesson(slug, contentLocale)`,
 where `contentLocale` is the locale of the *current* lesson's prose. Its own comment explains why
 that field exists:
 
@@ -101,7 +101,7 @@ same mistake in miniature. Mark it — the same way the ahead-of-the-reader case
 
 ### 4. English voice families
 
-[`validate-voice.ts`](../../../src/lib/courses/validate-voice.ts) bans two families —
+[`validate-voice.ts`](../../../../src/lib/courses/validate-voice.ts) bans two families —
 condescension (*obviamente*, *simplemente*, *basta con*) and padding (*cabe destacar*, *como
 podemos ver*). Both lists are Spanish, and `collectMdxFiles` recurses the whole content root, so
 English lessons pass the gate having been checked against nothing.

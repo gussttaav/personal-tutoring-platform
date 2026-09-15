@@ -15,7 +15,7 @@ The course derives rather than cites, on purpose. The gap that leaves: a student
 lesson 7 and wants Mikolov's actual paper has nowhere to go, and nothing in the course shows it
 knows the literature. See [README.md](README.md) for the design review and what was rejected.
 
-The one structural constraint: [`LessonLayout.tsx`](../../src/features/courses/reader/LessonLayout.tsx)
+The one structural constraint: [`LessonLayout.tsx`](../../../../src/features/courses/reader/LessonLayout.tsx)
 already renders `LessonComplete` and `LessonNav` after the MDX body, so the bridge is the last
 *prose* but not the last thing on the page. The block joins that footer cluster rather than
 breaking a clean ending.

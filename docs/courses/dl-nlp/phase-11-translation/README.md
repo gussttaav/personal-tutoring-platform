@@ -189,5 +189,5 @@ block. This is a review question, not a lint: see "Out of scope".
 - **A third locale.** Nothing here is dl-nlp-specific or es→en-specific, but generalising before
   the second locale exists is speculation.
 - **Translating the admin panel.** Spanish by convention (`CLAUDE.md`), unchanged.
-- **Re-recording the notebooks** under `docs/courses/notebooks/`. They are linked from B5.11's
+- **Re-recording the notebooks** under `docs/courses/dl-nlp/notebooks/`. They are linked from B5.11's
   Colab hand-off; translating them is its own task with its own verification story.

@@ -425,7 +425,7 @@ good translation.
 ## 5.11 and the notebooks
 
 The fine-tuning lesson hands off to Colab because PyTorch does not run in Pyodide — by design,
-per `PLAN.md`. The notebooks under `docs/courses/notebooks/` are Spanish and are **out of scope**
+per `PLAN.md`. The notebooks under `docs/courses/dl-nlp/notebooks/` are Spanish and are **out of scope**
 for this phase: translating them is its own task with its own verification story (they have to be
 executed end-to-end on Colab, which nothing in `lint:content` or `pnpm build` can check).
 
