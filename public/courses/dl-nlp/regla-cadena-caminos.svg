@@ -1,48 +1,83 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 190" width="360" height="190" role="img" aria-label="Cinco círculos unidos por flechas. A la izquierda, uno solo etiquetado w. En el centro, una columna de tres, etiquetados u sub 1 arriba, u sub 2 en medio y u sub 3 abajo; cada uno recibe una flecha del círculo de la izquierda. A la derecha, uno solo etiquetado L caligráfica, que recibe una flecha de cada uno de los tres del centro. El recorrido de arriba, el que va de w a u sub 1 y de u sub 1 a L, está trazado en verde y más grueso que los demás, y sus dos flechas llevan escrito, respectivamente, la derivada parcial de u sub 1 respecto de w y la derivada parcial de L respecto de u sub 1. Los otros dos recorridos, los que pasan por u sub 2 y por u sub 3, están en gris.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 245" width="360" height="245" role="img" aria-label="La red del ejemplo, en cuatro columnas de círculos unidas por líneas. A la izquierda, la capa de entrada, abreviada con x1 arriba, unos puntos suspensivos verticales, x3 en el medio, más puntos suspensivos y x8 al final. En el centro, la capa oculta, abreviada con h1 arriba, puntos suspensivos y h4 al final. A la derecha, tres neuronas de salida y-gorro sub 1, y-gorro sub 2 e y-gorro sub 3, y al final un círculo con la ele caligráfica de la pérdida, al que llegan las tres salidas. Cada neurona dibujada se une con todas las de la capa siguiente. Un recorrido está trazado en verde y más grueso: sale de x3, entra en h1, de h1 pasa a y-gorro sub 1 y de ahí a la pérdida. Sus tres flechas verdes llevan escritas, de izquierda a derecha, la derivada parcial de z superíndice uno sub 1 respecto del peso W superíndice uno sub uno tres; la de z superíndice dos sub 1 respecto de z superíndice uno sub 1; y la de la pérdida respecto de z superíndice dos sub 1. El resto de las uniones están atenuadas y en gris, sin punta de flecha.">
   <style>
     text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .hdr { font-size: 11px; fill: #86948a; text-anchor: middle; }
     .lbl { font-size: 15px; fill: #e5e1e4; text-anchor: middle; }
-    .fac { font-size: 12.5px; fill: #4edea3; text-anchor: middle; }
+    .dots { font-size: 17px; fill: #86948a; text-anchor: middle; }
+    .fac { font-size: 12px; fill: #4edea3; text-anchor: middle; }
     .nodo { stroke: #86948a; stroke-width: 1.6; fill: none; }
-    .edge { stroke: #86948a; stroke-width: 1.2; fill: none; }
-    /* Un solo recorrido va resaltado: enseña qué es UN camino. Que haya tres, y que
-       se sumen, lo dice el pie de la figura — dibujar los tres en verde no diría
-       ninguna de las dos cosas. */
-    .via { stroke: #4edea3; stroke-width: 2.2; fill: none; }
-    .nodo-via { stroke: #4edea3; stroke-width: 2.2; fill: none; }
+    /* Las uniones que no forman parte del camino resaltado van atenuadas y sin punta:
+       están para enseñar que la red está conectada, no para seguirlas una a una. */
+    .edge { stroke: #86948a; stroke-width: 1.1; fill: none; opacity: 0.32; }
+    /* La entrada no calcula: trazo discontinuo, como en la figura de la arquitectura. */
+    .input { stroke: #86948a; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+    /* Un solo camino resaltado: enseña qué es UN camino y que lleva un factor por
+       flecha. Que la derivada sea la SUMA de los tres que salen de h1 lo dice el pie. */
+    .via { stroke: #4edea3; stroke-width: 2.4; fill: none; }
+    .nodo-via { stroke: #4edea3; stroke-width: 2.4; fill: none; }
   </style>
 
   <defs>
-    <marker id="p-gris" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
-    </marker>
     <marker id="p-verde" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M 0 0 L 10 5 L 0 10 z" fill="#4edea3" />
     </marker>
   </defs>
 
-  <!-- Los dos caminos que no se resaltan, primero, para que el verde quede encima. -->
-  <line class="edge" x1="64" y1="95" x2="145" y2="95" marker-end="url(#p-gris)" />
-  <line class="edge" x1="62.2" y1="103.7" x2="147" y2="140.1" marker-end="url(#p-gris)" />
-  <line class="edge" x1="192" y1="95" x2="285" y2="95" marker-end="url(#p-gris)" />
-  <line class="edge" x1="190.5" y1="142" x2="286.7" y2="104.1" marker-end="url(#p-gris)" />
+  <text class="hdr" x="34" y="20">8 entradas</text>
+  <text class="hdr" x="160" y="20">4 ocultas</text>
+  <text class="hdr" x="272" y="20">3 salidas</text>
 
-  <!-- El camino resaltado: w → u1 → L, sus dos tramos y sus dos factores. -->
-  <line class="via" x1="62.2" y1="86.3" x2="147" y2="49.9" marker-end="url(#p-verde)" />
-  <line class="via" x1="190.5" y1="48" x2="286.7" y2="85.9" marker-end="url(#p-verde)" />
-  <text class="fac" x="98" y="56">∂u<tspan font-size="9" dy="3">1</tspan><tspan dy="-3">/∂w</tspan></text>
-  <text class="fac" x="250" y="56">∂ℒ/∂u<tspan font-size="9" dy="3">1</tspan></text>
+  <!-- Uniones atenuadas y sin punta, primero, para que el verde quede por encima. -->
+  <line class="edge" x1="48.6" y1="59.3" x2="139.5" y2="79.4" />
+  <line class="edge" x1="44.7" y1="66.5" x2="145.0" y2="165.3" />
+  <line class="edge" x1="48.0" y1="137.3" x2="140.4" y2="172.5" />
+  <line class="edge" x1="44.7" y1="197.5" x2="145.0" y2="98.7" />
+  <line class="edge" x1="48.6" y1="204.7" x2="139.5" y2="184.6" />
+  <line class="edge" x1="178.8" y1="93.4" x2="254.1" y2="131.1" />
+  <line class="edge" x1="174.1" y1="99.6" x2="258.6" y2="193.2" />
+  <line class="edge" x1="175.1" y1="165.4" x2="257.6" y2="85.9" />
+  <line class="edge" x1="179.8" y1="172.9" x2="253.2" y2="146.7" />
+  <line class="edge" x1="180.4" y1="185.1" x2="252.6" y2="203.1" />
+  <line class="edge" x1="292.0" y1="140.0" x2="319.0" y2="140.0" />
+  <line class="edge" x1="285.7" y1="193.4" x2="324.3" y2="152.4" />
 
-  <circle class="nodo" cx="42" cy="95" r="22" />
-  <text class="lbl" x="42" y="100">w</text>
+  <!-- El camino resaltado: W(1)_13 entra por h1, h1 va a ŷ1, ŷ1 a la pérdida. -->
+  <line class="via" x1="48.0" y1="126.7" x2="137.1" y2="92.7" marker-end="url(#p-verde)" />
+  <line class="via" x1="180.9" y1="81.8" x2="248.6" y2="74.5" marker-end="url(#p-verde)" />
+  <line class="via" x1="285.7" y1="86.6" x2="322.0" y2="125.1" marker-end="url(#p-verde)" />
 
-  <circle class="nodo-via" cx="170" cy="40" r="22" />
-  <circle class="nodo" cx="170" cy="95" r="22" />
-  <circle class="nodo" cx="170" cy="150" r="22" />
-  <text class="lbl" x="170" y="45">u<tspan font-size="10" dy="4">1</tspan></text>
-  <text class="lbl" x="170" y="100">u<tspan font-size="10" dy="4">2</tspan></text>
-  <text class="lbl" x="170" y="155">u<tspan font-size="10" dy="4">3</tspan></text>
+  <!-- Un factor por flecha del camino verde. Se multiplican y dan el término de ŷ1;
+       la derivada que se busca es la suma de los tres términos. -->
+  <text class="fac" x="84" y="89">∂z<tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">1</tspan><tspan dy="-4">/∂W</tspan><tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">13</tspan></text>
+  <text class="fac" x="215" y="61">∂z<tspan font-size="9" dy="-5">(2)</tspan><tspan font-size="9" dy="9">1</tspan><tspan dy="-4">/∂z</tspan><tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">1</tspan></text>
+  <text class="fac" x="324" y="90">∂ℒ/∂z<tspan font-size="9" dy="-5">(2)</tspan><tspan font-size="9" dy="9">1</tspan></text>
 
-  <circle class="nodo" cx="310" cy="95" r="22" />
-  <text class="lbl" x="310" y="101">ℒ</text>
+  <!-- Capa de entrada: no calcula, va en discontinuo. Ocho entradas, abreviadas. -->
+  <circle class="input" cx="34" cy="56" r="15" />
+  <circle class="input" cx="34" cy="132" r="15" />
+  <circle class="input" cx="34" cy="208" r="15" />
+  <text class="lbl" x="34" y="61">x<tspan font-size="10" dy="4">1</tspan></text>
+  <text class="lbl" x="34" y="137">x<tspan font-size="10" dy="4">3</tspan></text>
+  <text class="lbl" x="34" y="213">x<tspan font-size="10" dy="4">8</tspan></text>
+  <text class="dots" x="34" y="100">⋮</text>
+  <text class="dots" x="34" y="176">⋮</text>
+
+  <!-- Capa oculta: cuatro neuronas, abreviadas a h1 y h4; h1 resaltada. -->
+  <circle class="nodo-via" cx="160" cy="84" r="21" />
+  <circle class="nodo" cx="160" cy="180" r="21" />
+  <text class="lbl" x="160" y="88">h<tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">1</tspan></text>
+  <text class="lbl" x="160" y="184">h<tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">4</tspan></text>
+  <text class="dots" x="160" y="137">⋮</text>
+
+  <!-- Capa de salida: tres neuronas, ŷ1 resaltada. -->
+  <circle class="nodo-via" cx="272" cy="72" r="20" />
+  <circle class="nodo" cx="272" cy="140" r="20" />
+  <circle class="nodo" cx="272" cy="208" r="20" />
+  <text class="lbl" x="272" y="77">ŷ<tspan font-size="10" dy="4">1</tspan></text>
+  <text class="lbl" x="272" y="145">ŷ<tspan font-size="10" dy="4">2</tspan></text>
+  <text class="lbl" x="272" y="213">ŷ<tspan font-size="10" dy="4">3</tspan></text>
+
+  <!-- La pérdida. -->
+  <circle class="nodo" cx="336" cy="140" r="17" />
+  <text class="lbl" x="336" y="146">ℒ</text>
 </svg>
