@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'Porque la pérdida ya era una suma sobre las clases, y esa suma se hereda al derivar.' }
       - { id: d, text: 'Porque multiplicar $m$ números menores que $1$ llevaría la derivada a cero, y sumar es el convenio que lo evita.' }
     answer: a
-    explanation: 'La (a) es la derivación del desplegable: la suma no se elige, ya está dentro de la definición de derivada, que es la de una aproximación lineal. La (b) dice exactamente lo contrario de lo que pasa —los caminos comparten $t$, que es de donde salen todos—, y si de verdad no compartieran nada no habría ninguna cuenta que hacer. La (c) confunde la forma de la pérdida con la regla: la suma sobre caminos aparece igual con una pérdida de un solo término, como la de una neurona con una salida. Y la (d) inventa un motivo numérico para un teorema; lo que sí es cierto es que multiplicar factores pequeños *dentro* de un camino hunde la derivada, y eso tiene nombre y bloque propio —el 3, sobre redes recurrentes—, pero no decide nada sobre esta suma.'
+    explanation: 'La (a) es la derivación del desplegable: la suma no se elige, ya está dentro de la definición de derivada, que es la de una aproximación lineal. La (b) dice exactamente lo contrario de lo que pasa (los caminos comparten $t$, que es de donde salen todos), y si de verdad no compartieran nada no habría ninguna cuenta que hacer. La (c) confunde la forma de la pérdida con la regla: la suma sobre caminos aparece igual con una pérdida de un solo término, como la de una neurona con una salida. Y la (d) inventa un motivo numérico para un teorema; lo que sí es cierto es que multiplicar factores pequeños *dentro* de un camino hunde la derivada, y eso tiene nombre y bloque propio (el 3, sobre redes recurrentes), pero no decide nada sobre esta suma.'
   - id: q-formas-jacobiana
     type: multi
     prompt: 'Marca todo lo que sea cierto sobre las jacobianas de esta lección.'
@@ -35,19 +35,6 @@ quiz:
       - { id: d, text: 'Si las dos jacobianas de una composición son cuadradas y del mismo tamaño, da igual en qué orden se multipliquen.' }
     answer: [a, b, c]
     explanation: 'Las tres primeras son las tres cosas que la sección de la jacobiana establece, y las tres se leen en la forma. La (a) es la definición, con el índice de salida primero. La (b) es de donde sale la transpuesta que aparece en todos los gradientes del bloque. La (c) es la cuenta de la diagonal, y lo que ahorra no es sólo tiempo: también las $m^{2} - m$ casillas nulas que nadie tendría que guardar. La falsa es la (d), porque el producto de matrices no es conmutativo, y el caso cuadrado es el peligroso precisamente por eso: cuando las formas no encajan, NumPy protesta y te enteras; cuando encajan, el producto existe, sale un número por cada casilla y ninguno de ellos es la derivada que buscabas.'
-  - id: q-diag-hadamard
-    type: predict-output
-    prompt: 'Las dos maneras de multiplicar por una jacobiana diagonal, una al lado de la otra. ¿Qué imprime?'
-    language: python
-    code: |
-      import numpy as np
-
-      v = np.array([1., 0., 1.])
-      g = np.array([-0.5, 2., 4.])
-      print(np.diag(v).shape, (np.diag(v) @ g).tolist(), (v * g).tolist())
-    answer: '(3, 3) [-0.5, 0.0, 4.0] [-0.5, 0.0, 4.0]'
-    explanation: 'Las dos listas son iguales, que es lo que dice la igualdad $\text{diag}(\mathbf{v})\,\mathbf{g} = \mathbf{v} \odot \mathbf{g}$, y la forma dice lo que cuesta la primera: nueve casillas para guardar tres números, seis de ellas nulas. Mira además la coordenada de en medio, que sale $0$ por los dos caminos: un $\varphi^{\prime}$ que vale cero corta todos los caminos que pasan por esa coordenada, y con ReLU eso no es un caso extremo sino la mitad del eje.'
-    hint: 'El formato importa tanto como los valores. `.tolist()` devuelve listas de Python, así que se imprimen con corchetes y comas, y con los flotantes escritos como `0.0` y no como `0.`; la forma es una tupla.'
   - id: q-orden-jacobianas
     type: single
     prompt: 'En la red de esta lección, $\mathbf{x} \in \mathbb{R}^{8}$ produce $\mathbf{h}^{(1)} \in \mathbb{R}^{4}$ y ésta produce $\mathbf{z}^{(2)} \in \mathbb{R}^{3}$. ¿Qué forma tiene $\partial\mathbf{z}^{(2)} / \partial\mathbf{x}$, y de qué producto sale?'
@@ -57,7 +44,7 @@ quiz:
       - { id: c, text: '$3 \times 8$, pero del producto en el otro orden, $\dfrac{\partial\mathbf{h}^{(1)}}{\partial\mathbf{x}}\dfrac{\partial\mathbf{z}^{(2)}}{\partial\mathbf{h}^{(1)}}$, que es el orden en el que la red calcula.' }
       - { id: d, text: 'No tiene una sola forma: hay cuatro caminos de $\mathbf{x}$ a $\mathbf{z}^{(2)}$, uno por neurona oculta, y cada uno da su propia jacobiana.' }
     answer: a
-    explanation: 'La (a) es la regla y su cuenta de formas: la anchura compartida, $d_1 = 4$, es la única dimensión que desaparece del resultado, igual que en <Leccion slug="forward-pass">el *forward pass*</Leccion>. La (b) invierte el convenio: la salida va por filas, y es eso lo que hace que la jacobiana de una pérdida sea una fila. La (c) es la trampa que importa, porque su primera mitad es correcta: la red calcula hacia adelante y las jacobianas se multiplican hacia atrás, y aquí el orden equivocado ni siquiera existe —una $4 \times 8$ por una $3 \times 4$ no es un producto legal—, que es la suerte que tienes. Y la (d) confunde un camino con un resultado: los cuatro caminos que van de $x_j$ a $z^{(2)}_i$ son los cuatro sumandos de una sola casilla, no cuatro respuestas distintas.'
+    explanation: 'La (a) es la regla y su cuenta de formas: la anchura compartida, $d_1 = 4$, es la única dimensión que desaparece del resultado, igual que en <Leccion slug="forward-pass">el *forward pass*</Leccion>. La (b) invierte el convenio: la salida va por filas, y es eso lo que hace que la jacobiana de una pérdida sea una fila. La (c) es la trampa que importa, porque su primera mitad es correcta: la red calcula hacia adelante y las jacobianas se multiplican hacia atrás, y aquí el orden equivocado ni siquiera existe: una $4 \times 8$ por una $3 \times 4$ no es un producto legal, que es la suerte que tienes. Y la (d) confunde un camino con un resultado: los cuatro caminos que van de $x_j$ a $z^{(2)}_i$ son los cuatro sumandos de una sola casilla, no cuatro respuestas distintas.'
 challenges:
   - id: ch-cadena-vectorial
     prompt: |
@@ -68,7 +55,7 @@ challenges:
         centradas: la columna $j$ es $\left(f(\mathbf{x} + h\mathbf{e}_j) - f(\mathbf{x} - h\mathbf{e}_j)\right)/2h$
         con $h = 10^{-6}$.
       - `gradiente_entrada(jacobianas, g)` recibe una lista de jacobianas **en el orden de ida**
-        —la primera es la de la primera función— y el gradiente en la salida, y devuelve el
+        (la primera es la de la primera función) y el gradiente en la salida, y devuelve el
         gradiente en la entrada. Es un vector, no una matriz.
 
       `jacobiana` no puede escribir en la `x` que recibe.
@@ -149,7 +136,7 @@ challenges:
       caza la primera prueba.
 
       `gradiente_entrada` cabe en tres líneas y todas las decisiones están en `reversed`. Las
-      jacobianas llegan en el orden en que se calcularon —ida— y se aplican en el contrario, cada
+      jacobianas llegan en el orden en que se calcularon (ida) y se aplican en el contrario, cada
       una transpuesta, porque transponer un producto le da la vuelta al orden de los factores.
       Fíjate en lo que **no** hace: no multiplica ninguna matriz por otra matriz. En cada vuelta
       `g` sigue siendo un vector, así que lo más caro que ocurre es una matriz por un vector.
@@ -166,7 +153,7 @@ reading:
     venue: 'arXiv:1802.01528'
     lang: en
     url: 'https://arxiv.org/abs/1802.01528'
-    note: 'La regla de la cadena vectorial y la jacobiana enteras, con el caso de la activación coordenada a coordenada —jacobiana diagonal— que la lección usa. No pide más que cálculo de una variable, y es más mecánico que conceptual.'
+    note: 'La regla de la cadena vectorial y la jacobiana enteras, con el caso de la activación coordenada a coordenada, jacobiana diagonal, que la lección usa. No pide más que cálculo de una variable, y es más mecánico que conceptual.'
   - kind: blog
     title: 'Calculus on Computational Graphs: Backpropagation'
     authors: 'Christopher Olah'
@@ -188,7 +175,7 @@ el paso sabe qué hacer con el gradiente, y para una red con capas ocultas todav
 calcularlo. Esta lección es esa pieza, y es sólo cálculo.
 
 Mira dónde se complica, porque no es donde parece. Toma la red de las reseñas con tres respuestas en
-lugar de dos —positiva, negativa y neutra, las clases con las que <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> llegó al *softmax*—: ocho entradas, cuatro neuronas ocultas y tres de salida.
+lugar de dos (positiva, negativa y neutra, las clases con las que <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> llegó al *softmax*): ocho entradas, cuatro neuronas ocultas y tres de salida.
 Elige un peso cualquiera de la primera capa, pongamos el que la primera neurona oculta le da a
 <W>divertida</W>, y muévelo una milésima. Su neurona cambia de valor: hasta ahí, la cuenta de
 siempre. Lo que viene después no lo es, porque esa neurona alimenta a las tres de salida, las tres
@@ -203,12 +190,12 @@ Lo que hay que contar no son las neuronas: son los recorridos que van de un peso
   caption="Un camino va de un peso hasta la pérdida y lleva un factor por flecha. El peso que la neurona oculta h₁ le da a la entrada x₃ entra por h₁, y desde h₁ se abren tres caminos, uno por neurona de salida. Aquí sólo se resalta el que pasa por ŷ₁; la derivada que se busca no es ese camino, es lo que suman los tres."
 />
 
-De las tres respuestas que caben —quedarse con el que más pesa, promediarlos, sumarlos— sólo una es
+De las tres respuestas que caben (quedarse con el que más pesa, promediarlos, sumarlos) sólo una es
 cierta, y conviene saber por qué antes de usarla.
 
 <Callout type="intuition" title="La idea en una frase">
 La derivada no elige camino: recorre todos los caminos que hay y se queda con lo que suman. Todo lo demás de
-esta lección es contabilidad —qué se multiplica dentro de un camino, y cómo se apilan los caminos
+esta lección es contabilidad: qué se multiplica dentro de un camino, y cómo se apilan los caminos
 para no escribirlos uno a uno.
 </Callout>
 
@@ -222,8 +209,8 @@ $$
 \frac{d\mathcal{L}}{dt} = \sum_{k=1}^{m} \frac{\partial \mathcal{L}}{\partial u_k}\,\frac{\partial u_k}{\partial t},
 $$
 
-un sumando por cada variable intermedia. Cada sumando tiene la forma de la regla de siempre —cuánto
-responde $\mathcal{L}$ a $u_k$, por cuánto responde $u_k$ a $t$—, y lo nuevo es que hay $m$ y que se
+un sumando por cada variable intermedia. Cada sumando tiene la forma de la regla de siempre (cuánto
+responde $\mathcal{L}$ a $u_k$, por cuánto responde $u_k$ a $t$), y lo nuevo es que hay $m$ y que se
 suman. Dentro de un camino se multiplica; entre caminos se suma.
 
 Esa suma no es un convenio, y de dónde sale es lo único de la lección que no es contabilidad. Que
@@ -251,15 +238,15 @@ $$
 $$
 
 Sustituye la primera en la segunda, divide todo entre $\Delta t$ y haz tender $\Delta t$ a cero. Los
-dos restos se van —el segundo porque $\lVert \Delta \mathbf{u} \rVert$ es del orden de $\Delta t$— y
+dos restos se van (el segundo porque $\lVert \Delta \mathbf{u} \rVert$ es del orden de $\Delta t$) y
 lo que queda es la fórmula de arriba. La suma estaba en la segunda ecuación desde el principio:
 entró con la definición de derivada, no con la regla de la cadena.
 
 </Details>
 
 Vuelve ahora a la red con eso en la mano. El peso que movías, el que la primera neurona oculta le da
-a <W>divertida</W>, es $\mathbf{W}^{(1)}_{13}$ —fila $1$, la de esa neurona; columna $3$, la de esa
-entrada del vocabulario—, y las variables intermedias son las tres preactivaciones de la capa de
+a <W>divertida</W>, es $\mathbf{W}^{(1)}_{13}$ (fila $1$, la de esa neurona; columna $3$, la de esa
+entrada del vocabulario), y las variables intermedias son las tres preactivaciones de la capa de
 salida, $z^{(2)}_1$, $z^{(2)}_2$ y $z^{(2)}_3$. Por el camino hay dos escalones más, así que cada
 sumando tiene cuatro factores:
 
@@ -293,8 +280,8 @@ $$
 \left[\frac{\partial \mathbf{u}}{\partial \mathbf{x}}\right]_{ij} = \frac{\partial u_i}{\partial x_j},
 $$
 
-con una fila por coordenada de salida y una columna por coordenada de entrada. Ese orden —la salida
-primero— es el del curso entero, y de él salen las dos cosas que este bloque hace con una jacobiana.
+con una fila por coordenada de salida y una columna por coordenada de entrada. Ese orden, la salida
+primero, es el del curso entero, y de él salen las dos cosas que este bloque hace con una jacobiana.
 
 La primera es que componer vuelve a ser multiplicar. Si $\mathbf{x} \in \mathbb{R}^{n}$ produce
 $\mathbf{u} \in \mathbb{R}^{m}$ y ésta produce $\mathbf{v} \in \mathbb{R}^{p}$, entonces
@@ -326,8 +313,8 @@ en su caso $m = 1$ y su jacobiana es una matriz de una fila,
 $\partial\mathcal{L}/\partial\mathbf{x} \in \mathbb{R}^{1 \times n}$. Los gradientes de este curso
 son columnas, como todos sus vectores, así que uno es la transpuesta del otro,
 $\nabla_{\mathbf{x}}\mathcal{L} = \left(\partial\mathcal{L}/\partial\mathbf{x}\right)^{\top}$.
-Transponiendo la composición de arriba —y recordando que transponer un producto le da la vuelta al
-orden de los factores—,
+Transponiendo la composición de arriba (y recordando que transponer un producto le da la vuelta al
+orden de los factores),
 
 $$
 \nabla_{\mathbf{x}}\mathcal{L} = \left(\frac{\partial \mathbf{u}}{\partial \mathbf{x}}\right)^{\top} \nabla_{\mathbf{u}}\mathcal{L},
@@ -375,10 +362,28 @@ arranca la cadena.
 ## Un peso, tres caminos y tres maneras de medirlos
 
 La celda mete la reseña <W>la película es divertida y la recomiendo</W> en la red de ocho entradas,
-cuatro neuronas ocultas y tres salidas, y calcula la misma derivada de tres maneras: un
-sondeo numérico, la suma de los tres caminos y el producto de las jacobianas. Los pesos los he
-puesto yo a mano, así que verás estos números y no otros. Ejecútala y compara las tres cifras, y
-después mira la cuarta.
+cuatro neuronas ocultas y tres salidas, y calcula $\partial\mathcal{L}/\partial\mathbf{W}^{(1)}_{13}$
+(el mismo peso de la sección anterior) de tres maneras: un sondeo numérico, la suma de los tres
+caminos y el producto de las jacobianas. Los pesos los he puesto yo a mano, así que verás estos
+números y no otros. Ejecútala y compara las tres cifras, y después mira la cuarta.
+
+Vuelve a la fórmula de la sección anterior, pero con los cuatro factores apilados en sus objetos: el
+símbolo de suma desaparece dentro del producto de matrices.
+
+$$
+\frac{\partial \mathcal{L}}{\partial \mathbf{W}^{(1)}_{13}}
+= \underbrace{(\hat{\mathbf{y}} - \mathbf{y})^{\top}}_{(1,\ 3)}\;
+\underbrace{\mathbf{W}^{(2)}}_{(3,\ 4)}\;
+\underbrace{\text{diag}\!\left(\varphi^{\prime}(\mathbf{z}^{(1)})\right)}_{(4,\ 4)}\;
+\underbrace{x_3\,\mathbf{e}_1}_{(4,\ 1)}.
+$$
+
+La diagonal aparece escrita entera (no como el producto de Hadamard barato de la sección anterior)
+porque aquí el objetivo es mostrar la jacobiana tal cual, no ahorrar cuentas; $\mathbf{e}_1 \in
+\mathbb{R}^{4}$ vale $1$ en la neurona oculta $1$ y $0$ en las otras tres, la única que
+$\mathbf{W}^{(1)}_{13}$ mueve. Lo que sí ahorra es el orden: evaluado de izquierda a derecha (fila
+por matriz, tres veces) nunca aparece nada mayor que una fila de cuatro números; es la observación
+que la sección de la transpuesta dejó aparcada, aplicada aquí. Es el paso 3 de la celda.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -433,8 +438,8 @@ nada de la red, sólo evalúa la pérdida con el peso movido una cienmilésima a
 dé lo mismo que la cadena es la comprobación que conviene tener a mano cuando una derivada escrita a
 mano no cuadre.
 
-La cuarta cifra es la que enseña de qué va la lección. Olvidar un camino —el tercero, el que pasa
-por la neurona de salida de la clase neutra— deja la derivada en $-0.13342693$, casi el doble de
+La cuarta cifra es la que enseña de qué va la lección. Olvidar un camino (el tercero, el que pasa
+por la neurona de salida de la clase neutra) deja la derivada en $-0.13342693$, casi el doble de
 lo que vale. Y mira los tres sumandos, porque el error no es de tamaño: los dos primeros son
 negativos y el tercero es **positivo**. Ese camino tiraba en contra, y quitarlo no recorta la
 corrección, la agranda. Un camino olvidado no da una derivada aproximada: da la derivada de otra
@@ -446,16 +451,14 @@ $-1$, está apagada para esta reseña, y su casilla de la diagonal corta lo que 
 
 ## Comprueba tu intuición
 
-Cinco preguntas —una suma de caminos a mano, por qué se suman, las formas de una jacobiana, la
-diagonal en NumPy y el orden del producto— y un desafío que es la regla de la cadena entera.
+Cuatro preguntas (una suma de caminos a mano, por qué se suman, las formas de una jacobiana, y el orden del producto)
+y un desafío que es la regla de la cadena entera.
 
 <Quiz id="q-suma-caminos" />
 
 <Quiz id="q-por-que-suma" />
 
 <Quiz id="q-formas-jacobiana" />
-
-<Quiz id="q-diag-hadamard" />
 
 <Quiz id="q-orden-jacobianas" />
 
@@ -473,7 +476,7 @@ más rápido del mundo tampoco tiene tiempo para eso.
 
 El desperdicio salta a la vista en cuanto se nombra: esos recorridos comparten casi todo, y lo
 compartido se recalcula una vez por parámetro. Lo que hace falta es darle la vuelta al
-sentido de la marcha —calcular una sola vez, empezando por la última capa, cuánto le debe la pérdida
+sentido de la marcha: calcular una sola vez, empezando por la última capa, cuánto le debe la pérdida
 a cada preactivación de la red, y dejar que cada peso lea su derivada de una cantidad que ya está
-ahí—. Ese procedimiento tiene nombre propio, se deriva capa por capa y con los índices a la vista, y
+ahí. Ese procedimiento tiene nombre propio, se deriva capa por capa y con los índices a la vista, y
 es <Leccion slug="backpropagation">la siguiente lección, sobre *backpropagation*</Leccion>.
