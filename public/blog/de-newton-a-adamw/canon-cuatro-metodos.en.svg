@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 726 470" width="726" height="470" role="img"
+ aria-label="Four contour maps of the same stretched ravine, one per method, every trajectory starting at the top left with twenty steps drawn. Gradient descent, top left: zigzag between the two walls, 35 steps. Momentum, top right: each bounce shorter than the last and faster progress toward the centre, 14 steps. RMSProp, bottom left: a smooth curve down the diagonal and then along the axis, no bouncing, 31 steps. Adam, bottom right: a straight forty-five-degree diagonal to the axis and then along it, every step the same length, 36 steps.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 11.5px; font-weight: 600; }
+  .sub { font-size: 10px; fill: #86948a; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ct { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .tr { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .pt { stroke: none; }
+  .st { fill: none; stroke-width: 1.6; }
+</style>
+<text class="lbl" x="20" y="22">Gradient descent</text>
+<text class="sub" x="20" y="34">η = 0.045 · 35 steps</text>
+<clipPath id="c20_40"><rect x="20" y="40" width="330" height="165"/></clipPath>
+<g clip-path="url(#c20_40)">
+<ellipse class="ct" cx="185.0" cy="122.5" rx="27.5" ry="6.1"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="55.0" ry="12.3"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="82.5" ry="18.4"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="110.0" ry="24.6"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="137.5" ry="30.7"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="165.0" ry="36.9"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="220.0" ry="49.2"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="275.0" ry="61.5"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="330.0" ry="73.8"/>
+</g>
+<rect x="20" y="40" width="330" height="165" fill="none" stroke="#2a2a2c"/>
+<line class="ax" x1="185.0" y1="40" x2="185.0" y2="205" stroke-dasharray="2 3"/>
+<line class="ax" x1="20" y1="122.5" x2="350" y2="122.5" stroke-dasharray="2 3"/>
+<polyline class="tr" stroke="#4edea3" points="42.0,56.5 54.9,175.3 66.6,80.3 77.2,156.3 86.9,95.5 95.8,144.1 103.8,105.2 111.1,136.3 117.8,111.4 123.8,131.4 129.3,115.4 134.3,128.2 138.9,118.0 143.0,126.1 146.8,119.6 150.2,124.8 153.4,120.6 156.2,124.0 158.8,121.3 161.2,123.5 163.3,121.7"/>
+<circle class="pt" fill="#4edea3" cx="54.9" cy="175.3" r="2"/>
+<circle class="pt" fill="#4edea3" cx="66.6" cy="80.3" r="2"/>
+<circle class="pt" fill="#4edea3" cx="77.2" cy="156.3" r="2"/>
+<circle class="pt" fill="#4edea3" cx="86.9" cy="95.5" r="2"/>
+<circle class="pt" fill="#4edea3" cx="95.8" cy="144.1" r="2"/>
+<circle class="pt" fill="#4edea3" cx="103.8" cy="105.2" r="2"/>
+<circle class="pt" fill="#4edea3" cx="111.1" cy="136.3" r="2"/>
+<circle class="pt" fill="#4edea3" cx="117.8" cy="111.4" r="2"/>
+<circle class="pt" fill="#4edea3" cx="123.8" cy="131.4" r="2"/>
+<circle class="pt" fill="#4edea3" cx="129.3" cy="115.4" r="2"/>
+<circle class="pt" fill="#4edea3" cx="134.3" cy="128.2" r="2"/>
+<circle class="pt" fill="#4edea3" cx="138.9" cy="118.0" r="2"/>
+<circle class="pt" fill="#4edea3" cx="143.0" cy="126.1" r="2"/>
+<circle class="pt" fill="#4edea3" cx="146.8" cy="119.6" r="2"/>
+<circle class="pt" fill="#4edea3" cx="150.2" cy="124.8" r="2"/>
+<circle class="pt" fill="#4edea3" cx="153.4" cy="120.6" r="2"/>
+<circle class="pt" fill="#4edea3" cx="156.2" cy="124.0" r="2"/>
+<circle class="pt" fill="#4edea3" cx="158.8" cy="121.3" r="2"/>
+<circle class="pt" fill="#4edea3" cx="161.2" cy="123.5" r="2"/>
+<circle class="pt" fill="#4edea3" cx="163.3" cy="121.7" r="2"/>
+<circle class="st" stroke="#4edea3" cx="42.0" cy="56.5" r="3.2"/>
+<text class="lbl" x="386" y="22">Momentum</text>
+<text class="sub" x="386" y="34">η = 0.045, β = 0.5 · 14 steps</text>
+<clipPath id="c386_40"><rect x="386" y="40" width="330" height="165"/></clipPath>
+<g clip-path="url(#c386_40)">
+<ellipse class="ct" cx="551.0" cy="122.5" rx="27.5" ry="6.1"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="55.0" ry="12.3"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="82.5" ry="18.4"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="110.0" ry="24.6"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="137.5" ry="30.7"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="165.0" ry="36.9"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="220.0" ry="49.2"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="275.0" ry="61.5"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="330.0" ry="73.8"/>
+</g>
+<rect x="386" y="40" width="330" height="165" fill="none" stroke="#2a2a2c"/>
+<line class="ax" x1="551.0" y1="40" x2="551.0" y2="205" stroke-dasharray="2 3"/>
+<line class="ax" x1="386" y1="122.5" x2="716" y2="122.5" stroke-dasharray="2 3"/>
+<polyline class="tr" stroke="#e8a24c" points="408.0,56.5 420.9,175.3 439.0,139.7 458.2,91.0 476.1,123.4 491.8,138.0 505.0,117.4 515.7,116.3 524.3,126.9 530.9,124.3 536.1,119.8 540.0,122.4 542.9,123.9 545.1,122.1 546.8,121.9 548.0,122.9 548.8,122.7 549.5,122.3 549.9,122.5 550.2,122.6 550.5,122.5"/>
+<circle class="pt" fill="#e8a24c" cx="420.9" cy="175.3" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="439.0" cy="139.7" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="458.2" cy="91.0" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="476.1" cy="123.4" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="491.8" cy="138.0" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="505.0" cy="117.4" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="515.7" cy="116.3" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="524.3" cy="126.9" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="530.9" cy="124.3" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="536.1" cy="119.8" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="540.0" cy="122.4" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="542.9" cy="123.9" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="545.1" cy="122.1" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="546.8" cy="121.9" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="548.0" cy="122.9" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="548.8" cy="122.7" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="549.5" cy="122.3" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="549.9" cy="122.5" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="550.2" cy="122.6" r="2"/>
+<circle class="pt" fill="#e8a24c" cx="550.5" cy="122.5" r="2"/>
+<circle class="st" stroke="#e8a24c" cx="408.0" cy="56.5" r="3.2"/>
+<text class="lbl" x="20" y="237">RMSProp</text>
+<text class="sub" x="20" y="249">η = 0.1, β₂ = 0.9 · 31 steps</text>
+<clipPath id="c20_255"><rect x="20" y="255" width="330" height="165"/></clipPath>
+<g clip-path="url(#c20_255)">
+<ellipse class="ct" cx="185.0" cy="337.5" rx="27.5" ry="6.1"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="55.0" ry="12.3"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="82.5" ry="18.4"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="110.0" ry="24.6"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="137.5" ry="30.7"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="165.0" ry="36.9"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="220.0" ry="49.2"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="275.0" ry="61.5"/>
+<ellipse class="ct" cx="185.0" cy="337.5" rx="330.0" ry="73.8"/>
+</g>
+<rect x="20" y="255" width="330" height="165" fill="none" stroke="#2a2a2c"/>
+<line class="ax" x1="185.0" y1="255" x2="185.0" y2="420" stroke-dasharray="2 3"/>
+<line class="ax" x1="20" y1="337.5" x2="350" y2="337.5" stroke-dasharray="2 3"/>
+<polyline class="tr" stroke="#6fb1e8" points="42.0,271.5 59.4,288.9 71.2,299.6 80.7,307.4 88.8,313.5 95.9,318.5 102.4,322.5 108.4,325.8 113.9,328.4 119.1,330.6 123.9,332.3 128.5,333.7 132.8,334.7 136.9,335.5 140.8,336.1 144.4,336.6 147.9,336.9 151.2,337.1 154.3,337.3 157.2,337.4 160.0,337.4"/>
+<circle class="pt" fill="#6fb1e8" cx="59.4" cy="288.9" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="71.2" cy="299.6" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="80.7" cy="307.4" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="88.8" cy="313.5" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="95.9" cy="318.5" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="102.4" cy="322.5" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="108.4" cy="325.8" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="113.9" cy="328.4" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="119.1" cy="330.6" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="123.9" cy="332.3" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="128.5" cy="333.7" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="132.8" cy="334.7" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="136.9" cy="335.5" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="140.8" cy="336.1" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="144.4" cy="336.6" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="147.9" cy="336.9" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="151.2" cy="337.1" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="154.3" cy="337.3" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="157.2" cy="337.4" r="2"/>
+<circle class="pt" fill="#6fb1e8" cx="160.0" cy="337.4" r="2"/>
+<circle class="st" stroke="#6fb1e8" cx="42.0" cy="271.5" r="3.2"/>
+<text class="lbl" x="386" y="237">Adam</text>
+<text class="sub" x="386" y="249">η = 0.1, β₁ = 0.9, β₂ = 0.999 · 36 steps</text>
+<clipPath id="c386_255"><rect x="386" y="255" width="330" height="165"/></clipPath>
+<g clip-path="url(#c386_255)">
+<ellipse class="ct" cx="551.0" cy="337.5" rx="27.5" ry="6.1"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="55.0" ry="12.3"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="82.5" ry="18.4"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="110.0" ry="24.6"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="137.5" ry="30.7"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="165.0" ry="36.9"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="220.0" ry="49.2"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="275.0" ry="61.5"/>
+<ellipse class="ct" cx="551.0" cy="337.5" rx="330.0" ry="73.8"/>
+</g>
+<rect x="386" y="255" width="330" height="165" fill="none" stroke="#2a2a2c"/>
+<line class="ax" x1="551.0" y1="255" x2="551.0" y2="420" stroke-dasharray="2 3"/>
+<line class="ax" x1="386" y1="337.5" x2="716" y2="337.5" stroke-dasharray="2 3"/>
+<polyline class="tr" stroke="#e87ab8" points="408.0,271.5 413.5,277.0 419.0,282.5 424.5,287.9 429.9,293.3 435.4,298.7 440.8,303.9 446.2,309.0 451.5,314.0 456.8,318.9 462.1,323.5 467.2,327.9 472.4,332.0 477.4,335.8 482.3,339.3 487.2,342.4 492.0,345.1 496.6,347.4 501.2,349.3 505.6,350.8 509.9,351.9"/>
+<circle class="pt" fill="#e87ab8" cx="413.5" cy="277.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="419.0" cy="282.5" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="424.5" cy="287.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="429.9" cy="293.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="435.4" cy="298.7" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="440.8" cy="303.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="446.2" cy="309.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="451.5" cy="314.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="456.8" cy="318.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="462.1" cy="323.5" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="467.2" cy="327.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="472.4" cy="332.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="477.4" cy="335.8" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="482.3" cy="339.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="487.2" cy="342.4" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="492.0" cy="345.1" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="496.6" cy="347.4" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="501.2" cy="349.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="505.6" cy="350.8" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="509.9" cy="351.9" r="2"/>
+<circle class="st" stroke="#e87ab8" cx="408.0" cy="271.5" r="3.2"/>
+</svg>

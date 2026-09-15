@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Repomix
 .repomixignore
+
+# Python bytecode cache (scripts/figures/*)
+__pycache__/

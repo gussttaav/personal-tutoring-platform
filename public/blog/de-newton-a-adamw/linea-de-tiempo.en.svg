@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 726 150" width="726" height="150" role="img"
+ aria-label="Timeline, not to scale, with twelve milestones: 1847 Cauchy, gradient descent; 1951 Robbins and Monro, stochastic; 1964 Polyak, momentum; 1983 Nesterov, accelerated momentum; 2011 AdaGrad, one rate per parameter; 2012 RMSProp, moving average; 2014 Adam, both ideas; 2017 AdamW, decoupled decay; 2018 Shampoo, matrix preconditioner; 2024 Muon, orthogonalise the step; 2025 Kimi K2, one trillion parameters on Muon; 2026 DeepSeek-V4, Muon at 1.6 trillion. Eight of the twelve fall in the last fifteen years.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 11.5px; font-weight: 600; }
+  .sub { font-size: 10px; fill: #86948a; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ct { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .tr { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .pt { stroke: none; }
+  .st { fill: none; stroke-width: 1.6; }
+</style>
+<line x1="64" y1="78" x2="670" y2="78" stroke="#86948a" stroke-width="1.2"/>
+<path d="M91.5 78 l4 -6 l-8 12 l4 -6" fill="none" stroke="#1d1d1f" stroke-width="1.2"/>
+<path d="M91.5 78 l4 -6 l-8 12 l4 -6" fill="none" stroke="#86948a" stroke-width="1.2"/>
+<path d="M256.8 78 l4 -6 l-8 12 l4 -6" fill="none" stroke="#1d1d1f" stroke-width="1.2"/>
+<path d="M256.8 78 l4 -6 l-8 12 l4 -6" fill="none" stroke="#86948a" stroke-width="1.2"/>
+<circle cx="64.0" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="64.0" y1="73" x2="64.0" y2="58" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="64.0" y="44" text-anchor="middle" fill="#bbcabf">1847</text>
+<text class="sub" x="64.0" y="56" text-anchor="middle" style="fill:#bbcabf">Cauchy</text>
+<text class="sub" x="64.0" y="67" text-anchor="middle">gradient descent</text>
+<circle cx="119.1" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="119.1" y1="83" x2="119.1" y2="90" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="119.1" y="100" text-anchor="middle" fill="#bbcabf">1951</text>
+<text class="sub" x="119.1" y="112" text-anchor="middle" style="fill:#bbcabf">Robbins & Monro</text>
+<text class="sub" x="119.1" y="123" text-anchor="middle">stochastic</text>
+<circle cx="174.2" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="174.2" y1="73" x2="174.2" y2="58" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="174.2" y="44" text-anchor="middle" fill="#bbcabf">1964</text>
+<text class="sub" x="174.2" y="56" text-anchor="middle" style="fill:#bbcabf">Polyak</text>
+<text class="sub" x="174.2" y="67" text-anchor="middle">momentum</text>
+<circle cx="229.3" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="229.3" y1="83" x2="229.3" y2="90" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="229.3" y="100" text-anchor="middle" fill="#bbcabf">1983</text>
+<text class="sub" x="229.3" y="112" text-anchor="middle" style="fill:#bbcabf">Nesterov</text>
+<text class="sub" x="229.3" y="123" text-anchor="middle">accelerated momentum</text>
+<circle cx="284.4" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="284.4" y1="73" x2="284.4" y2="58" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="284.4" y="44" text-anchor="middle" fill="#bbcabf">2011</text>
+<text class="sub" x="284.4" y="56" text-anchor="middle" style="fill:#bbcabf">AdaGrad</text>
+<text class="sub" x="284.4" y="67" text-anchor="middle">one rate per parameter</text>
+<circle cx="339.5" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="339.5" y1="83" x2="339.5" y2="90" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="339.5" y="100" text-anchor="middle" fill="#bbcabf">2012</text>
+<text class="sub" x="339.5" y="112" text-anchor="middle" style="fill:#bbcabf">RMSProp</text>
+<text class="sub" x="339.5" y="123" text-anchor="middle">moving average</text>
+<circle cx="394.5" cy="78" r="3.5" fill="#4edea3"/>
+<line x1="394.5" y1="73" x2="394.5" y2="58" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="394.5" y="44" text-anchor="middle" fill="#4edea3">2014</text>
+<text class="sub" x="394.5" y="56" text-anchor="middle" style="fill:#bbcabf">Adam</text>
+<text class="sub" x="394.5" y="67" text-anchor="middle">both ideas</text>
+<circle cx="449.6" cy="78" r="3.5" fill="#4edea3"/>
+<line x1="449.6" y1="83" x2="449.6" y2="90" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="449.6" y="100" text-anchor="middle" fill="#4edea3">2017</text>
+<text class="sub" x="449.6" y="112" text-anchor="middle" style="fill:#bbcabf">AdamW</text>
+<text class="sub" x="449.6" y="123" text-anchor="middle">decoupled decay</text>
+<circle cx="504.7" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="504.7" y1="73" x2="504.7" y2="58" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="504.7" y="44" text-anchor="middle" fill="#bbcabf">2018</text>
+<text class="sub" x="504.7" y="56" text-anchor="middle" style="fill:#bbcabf">Shampoo</text>
+<text class="sub" x="504.7" y="67" text-anchor="middle">matrix preconditioner</text>
+<circle cx="559.8" cy="78" r="3.5" fill="#4edea3"/>
+<line x1="559.8" y1="83" x2="559.8" y2="90" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="559.8" y="100" text-anchor="middle" fill="#4edea3">2024</text>
+<text class="sub" x="559.8" y="112" text-anchor="middle" style="fill:#bbcabf">Muon</text>
+<text class="sub" x="559.8" y="123" text-anchor="middle">orthogonalise the step</text>
+<circle cx="614.9" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="614.9" y1="73" x2="614.9" y2="58" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="614.9" y="44" text-anchor="middle" fill="#bbcabf">2025</text>
+<text class="sub" x="614.9" y="56" text-anchor="middle" style="fill:#bbcabf">Kimi K2</text>
+<text class="sub" x="614.9" y="67" text-anchor="middle">1T parameters on Muon</text>
+<circle cx="670.0" cy="78" r="3.5" fill="#bbcabf"/>
+<line x1="670.0" y1="83" x2="670.0" y2="90" stroke="#2a2a2c" stroke-width="1"/>
+<text class="lbl" x="670.0" y="100" text-anchor="middle" fill="#bbcabf">2026</text>
+<text class="sub" x="670.0" y="112" text-anchor="middle" style="fill:#bbcabf">DeepSeek-V4</text>
+<text class="sub" x="670.0" y="123" text-anchor="middle">Muon, 1.6T</text>
+</svg>
