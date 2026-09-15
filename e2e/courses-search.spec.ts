@@ -59,7 +59,11 @@ test.describe("COURSE-P9-02: inline search in the desktop sidebar", () => {
 
     const sidebar = page.locator(SIDEBAR);
     const input = sidebar.getByRole("searchbox");
-    const lessonRows = sidebar.locator("[data-lesson-slug]");
+    // Scope to the OPEN block. LessonSidebar renders each block as <details open={containsCurrent}>,
+    // so only the current lesson's block is expanded — the first row overall (Block 1's) sits in a
+    // collapsed <details> and is hidden whatever search is doing. The open block's rows track the
+    // list wrapper's `hidden={active}` toggle, which is the state these assertions are really about.
+    const lessonRows = sidebar.locator("details[open] [data-lesson-slug]");
     const options = sidebar.locator(".cs-option");
 
     await expect(lessonRows.first()).toBeVisible();
@@ -135,7 +139,10 @@ test.describe("COURSE-P9-02: inline search in the desktop sidebar", () => {
     const href = (await first.getAttribute("href")) ?? "";
 
     await input.press("Enter");
-    await expect(page).toHaveURL(new RegExp(href.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), {
+    // The href carries a literal accent in its section id (e.g. "…#más-de-dos-clases-softmax"); the
+    // browser stores the location percent-encoded ("…#m%C3%A1s-…"), so match the encoded form.
+    // encodeURI keeps the path separators and the # and encodes only the non-ASCII bytes.
+    await expect(page).toHaveURL(new RegExp(encodeURI(href).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), {
       timeout: 30_000,
     });
 
@@ -144,7 +151,8 @@ test.describe("COURSE-P9-02: inline search in the desktop sidebar", () => {
     await input.press("Escape");
     await expect(input).toHaveValue("");
     await expect(sidebar.locator(".cs-option")).toHaveCount(0);
-    await expect(sidebar.locator("[data-lesson-slug]").first()).toBeVisible();
+    // Open-block scoping again: the first row overall lives in a collapsed <details>.
+    await expect(sidebar.locator("details[open] [data-lesson-slug]").first()).toBeVisible();
   });
 
   test("en: results keep the /en prefix and are honest about which lessons are still Spanish", async ({ page, request }) => {

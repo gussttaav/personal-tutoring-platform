@@ -251,7 +251,12 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
     // The panel must close behind a plain navigation — it only ever closed on the modal and
     // anchor branches, so a real link left it open over the page it had just navigated to.
-    await expect(page.getByRole("link", { name: d.nav.blog, exact: true })).toHaveCount(0);
+    // `mobileOpen` gates both the panel's rendering and the hamburger's aria-expanded, so a
+    // collapsed hamburger IS the panel being gone. A page-wide "Blog" link count no longer
+    // isolates the panel: the footer carries its own Blog link now (BLOG-05), visible here.
+    await expect(
+      page.getByRole("button", { name: /men[uú]/i }).first(),
+    ).toHaveAttribute("aria-expanded", "false");
   });
 
   test("the language switcher on an untranslated lesson does not 404", async ({ page }) => {
