@@ -163,7 +163,7 @@ def fig_mismo_eta(es):
 # ---------------------------------------------------------------- figure 4: timeline (not to scale)
 def fig_linea_tiempo(es):
     ev = [("1847", "Cauchy", "descenso de gradiente" if es else "gradient descent"),
-          ("1951", "Robbins y Monro" if es else "Robbins & Monro", "estocástico" if es else "stochastic"),
+          ("1951", "Robbins y Monro" if es else "Robbins and Monro", "estocástico" if es else "stochastic"),
           ("1964", "Polyak", "momentum"),
           ("1983", "Nesterov", "momentum acelerado" if es else "accelerated momentum"),
           ("2011", "AdaGrad", "una tasa por parámetro" if es else "one rate per parameter"),

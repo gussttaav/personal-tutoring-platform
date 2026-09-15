@@ -23,7 +23,7 @@
 <circle cx="119.1" cy="78" r="3.5" fill="#bbcabf"/>
 <line x1="119.1" y1="83" x2="119.1" y2="90" stroke="#2a2a2c" stroke-width="1"/>
 <text class="lbl" x="119.1" y="100" text-anchor="middle" fill="#bbcabf">1951</text>
-<text class="sub" x="119.1" y="112" text-anchor="middle" style="fill:#bbcabf">Robbins & Monro</text>
+<text class="sub" x="119.1" y="112" text-anchor="middle" style="fill:#bbcabf">Robbins and Monro</text>
 <text class="sub" x="119.1" y="123" text-anchor="middle">stochastic</text>
 <circle cx="174.2" cy="78" r="3.5" fill="#bbcabf"/>
 <line x1="174.2" y1="73" x2="174.2" y2="58" stroke="#2a2a2c" stroke-width="1"/>
