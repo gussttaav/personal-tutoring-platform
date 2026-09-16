@@ -32,6 +32,17 @@
  * MARKED in the card (`refFallback`), for the reason the reader route marks a fallback
  * page `noindex` and the catalog says «these lessons are in Spanish»: showing the other
  * language without saying so is the one option that is not honest.
+ *
+ * COURSE-C2-P0-02 — `curso="…"` points the same reference at ANOTHER course, and the
+ * position rule above does not apply to it. Within a course, whether a reference links
+ * follows from where the target sits relative to the reader; another course has no
+ * position — it is a finished, published object the reader either did or did not take.
+ * So a cross-course reference is a link wherever it sits, including the bridge (where
+ * `LessonNav` is not going to link a lesson of another course), plain text only when the
+ * target is a draft, and its card names the course the link leaves for — the manifest
+ * title on a line of its own above BLOQUE n · LECCIÓN m — so the reader is told before
+ * the click. Resolution is the same two-step, run in that course's trees. `curso` naming
+ * the CURRENT course is the same as no `curso` (the lint warns about the attribute).
  */
 
 import type { ReactNode } from "react";
@@ -41,7 +52,7 @@ import type { Lesson } from "@/domain/types";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
-import { getLesson } from "./registry";
+import { getCourse, getLesson } from "./registry";
 
 const CANONICAL_LOCALE = routing.defaultLocale;
 
@@ -68,6 +79,12 @@ export interface LeccionCtx {
 }
 
 export interface LeccionProps {
+  /**
+   * COURSE-C2-P0-02 — another course's slug: the target resolves THERE, and it is
+   * always a link when published (see the file-top comment). Naming the current course
+   * is the same as omitting it. Validated by `validate-crosslinks.ts`.
+   */
+  curso?: string;
   slug?: string;
   /** A heading id in the target lesson. Validated by `validate-crosslinks.ts`. */
   ancla?: string;
@@ -128,8 +145,19 @@ export function isAhead(current: Position, target: Position): boolean {
  * over instead.
  */
 export function makeLeccion(ctx: LeccionCtx) {
-  return async function Leccion({ slug, ancla, bridge = false, children }: LeccionProps) {
-    const resolved = slug ? resolveTarget(ctx.courseSlug, slug, ctx.contentLocale) : null;
+  return async function Leccion({
+    curso,
+    slug,
+    ancla,
+    bridge = false,
+    children,
+  }: LeccionProps) {
+    // COURSE-C2-P0-02: `curso` naming another course moves the lookup there. Naming the
+    // CURRENT course collapses to a within-course reference — the lint flags the redundant
+    // attribute, and the card must not announce a departure that is not one.
+    const crossCourse = curso !== undefined && curso !== ctx.courseSlug;
+    const courseSlug = crossCourse ? curso : ctx.courseSlug;
+    const resolved = slug ? resolveTarget(courseSlug, slug, ctx.contentLocale) : null;
 
     if (!resolved) {
       // Can't reach production: `pnpm lint:content` fails on an unresolved slug. In dev
@@ -137,7 +165,8 @@ export function makeLeccion(ctx: LeccionCtx) {
       if (process.env.NODE_ENV !== "production") {
         return (
           <span style={{ color: "var(--error)" }}>
-            &lt;Leccion slug=&quot;{slug ?? ""}&quot;&gt; no resuelve a ninguna lección
+            &lt;Leccion {curso ? `curso="${curso}" ` : ""}slug=&quot;{slug ?? ""}&quot;&gt; no
+            resuelve a ninguna lección
           </span>
         );
       }
@@ -146,7 +175,10 @@ export function makeLeccion(ctx: LeccionCtx) {
 
     const target = resolved.lesson;
     const label = children ?? target.title;
-    const ahead = isAhead(ctx.current, target);
+    // COURSE-C2-P0-02: another course has no position relative to the reader, so a
+    // cross-course reference is never «ahead» — which is also what lets it link from
+    // inside the bridge, where `LessonNav` will not be linking it.
+    const ahead = !crossCourse && isAhead(ctx.current, target);
     // The target came from the other tree: its title and summary below are in that
     // language, and the card has to say so rather than let the reader discover it.
     const fallback = resolved.locale !== ctx.locale;
@@ -156,7 +188,13 @@ export function makeLeccion(ctx: LeccionCtx) {
     if (target.draft || (ahead && bridge)) return <>{label}</>;
 
     const t = await getTranslations({ locale: ctx.locale, namespace: "courses.reader" });
-    const href = `/cursos/${ctx.courseSlug}/${target.slug}${ancla ? `#${ancla}` : ""}`;
+    const href = `/cursos/${courseSlug}/${target.slug}${ancla ? `#${ancla}` : ""}`;
+    // COURSE-C2-P0-02: the card names the course the link leaves for. The manifest title
+    // is chrome, like the kicker, so it follows the REQUEST locale; the tree the target
+    // came from is the fallback, and it has a manifest because the lesson resolved there.
+    const course = crossCourse
+      ? (getCourse(courseSlug, ctx.locale) ?? getCourse(courseSlug, resolved.locale))
+      : null;
 
     return (
       <span className="lesson-ref-wrap" data-ahead={ahead || undefined}>
@@ -166,6 +204,7 @@ export function makeLeccion(ctx: LeccionCtx) {
         {/* aria-hidden: the card repeats what the link already says, and reading five
             lines of summary on focus is worse than not reading them. */}
         <span className="lesson-ref-card" aria-hidden="true">
+          {course ? <span className="lesson-ref-course">{course.title}</span> : null}
           <span className="lesson-ref-kicker">
             {ahead ? `${t("refAhead")} · ` : ""}
             {t("refKicker", { block: target.block, order: target.order })}

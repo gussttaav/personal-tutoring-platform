@@ -4,6 +4,7 @@
  *                (lists, links, blockquotes, inline code).
  * COURSE-P5-00 — + `hr`, the bridge's mark.
  * COURSE-P7-01 — + `.lesson-ref*`, the cross-lesson reference and its hover card.
+ * COURSE-C2-P0-02 — + `.lesson-ref-course`, the course line of a cross-course card.
  *
  * Imported ONLY from the lesson segment's page.tsx (alongside katex.css), never the
  * shared layout, so none of this loads on non-lesson routes.
@@ -349,11 +350,16 @@ body:has(.lesson-shell) {
     visibility: visible;
   }
 
+  .lesson-ref-course,
   .lesson-ref-kicker,
   .lesson-ref-title {
     display: block;
   }
 
+  /* COURSE-C2-P0-02 — `.lesson-ref-course` is the course a cross-course reference leaves
+     for: a kicker line of its own above BLOQUE n · LECCIÓN m, same face as the kicker,
+     present only when `<Leccion curso="…">` names another course. */
+  .lesson-ref-course,
   .lesson-ref-kicker {
     margin-bottom: 4px;
     color: var(--text-dim);

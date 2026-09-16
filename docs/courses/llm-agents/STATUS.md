@@ -14,7 +14,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Manifests + «soon» landing](phase-0-second-course/01-manifest-and-landing.md) | `COURSE-C2-P0-01` | ✅ | _tbd_ | local |
-| [02 Cross-course `<Leccion curso=…>`](phase-0-second-course/02-cross-course-references.md) | `COURSE-C2-P0-02` | ⬜ | _tbd_ | |
+| [02 Cross-course `<Leccion curso=…>`](phase-0-second-course/02-cross-course-references.md) | `COURSE-C2-P0-02` | ✅ | _tbd_ | local |
 | [03 The mini-GPT checkpoint + train script](phase-0-second-course/03-course-model-assets.md) | `COURSE-C2-P0-03` | ⬜ | _tbd_ | |
 | [04 Authoring contract for a systems course](phase-0-second-course/04-authoring-contract.md) | `COURSE-C2-P0-04` | ✅ | _tbd_ | local |
 | [05 `<RepoLink>` + companion repository](phase-0-second-course/05-terminal-lessons.md) | `COURSE-C2-P0-05` | ⬜ | _tbd_ | |
@@ -22,7 +22,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 **Exit criteria**
 - [x] `/cursos/llm-agents` and `/en/cursos/llm-agents` render the «soon» landing, `noindex`,
       absent from the catalog and the sitemap _(P0-01)_
-- [ ] `<Leccion curso="dl-nlp" …>` links with the course named in its card; a bad slug fails the lint
+- [x] `<Leccion curso="dl-nlp" …>` links with the course named in its card; a bad slug fails the lint _(P0-02)_
 - [ ] The checkpoint loads and generates in one Pyodide cell on a phone under the cap, and the
       train script reproduces it from the seed
 - [x] Shared AUTHORING §1 step 3 rewritten; `llm-agents/AUTHORING.md` + `NOTATION.md` deltas
@@ -105,6 +105,47 @@ the `catalog-view` unit case landed. Deviations from the task doc:
   fixed it; the production build never had the problem. Expect the same on any machine that
   last ran `next dev` before this directory existed.
 - Committed on `course/llm-agents-plan`, no PR yet (**local**).
+
+**COURSE-C2-P0-02** — Closed (2026-09-16). `Leccion.tsx` + `curso?` prop (resolves in that course
+with the same two-step; never «ahead», so it links from inside the bridge too; draft → plain text;
+the card gains a `.lesson-ref-course` line with the manifest title); `validate-crosslinks.ts` parses
+`curso`, re-keys the directory indexes `course → locale → index` for the lookup while the checking
+pass stays per-directory, and adds two fatal cases (unknown course, slug not in that course — both
+naming the referring file) + the advisory «names this very course; drop the attribute». Tests in
+`leccion.test.ts` (11 new), `validate-crosslinks.test.ts` (18 new), `bridge.test.ts` (1),
+`searchable-text.test.ts` (1). AUTHORING §2/§7 already carried the four rules and the tag (P0-04);
+nothing to add there. Deviations from the task doc:
+- **The course title is a line of its own above `BLOQUE n · LECCIÓN m`**, per «Files affected» and
+  AUTHORING §2 («on a line of its own»), not the single `DEEP LEARNING PARA NLP · BLOQUE 5 · LECCIÓN 9`
+  line «The change» sketches — the two conflicted; three lines of kicker text at 0.7rem with letter
+  spacing would wrap inside the 26rem card anyway. That needed one CSS hunk in `lesson.css`
+  (`.lesson-ref-course` joins the two kicker selector lists — not in Files affected, no new rule).
+- **The title follows the REQUEST locale** (`getCourse(curso, ctx.locale)`), falling back to the tree
+  the target resolved in: it is chrome like the kicker, so a reader on `/en` sees «Deep Learning for
+  NLP» even when the lesson fell back to Spanish and the kicker says «In Spanish».
+- **No `courses.reader.leccion.otherCourse` key.** The task made it conditional («if the card needs a
+  word»); the title alone says the link leaves the course, and «from the previous course» would only
+  be true in the `dl-nlp → llm-agents` direction. Message files untouched.
+- **The component is now rendered in Jest** (`renderToStaticMarkup`, with `next-intl/server`
+  mocked to read the real message files and `@/i18n/navigation`'s `Link` as a bare `<a>`), against the
+  task's «pure helpers only» precedent in `leccion.test.ts`: the deliverable is the card markup, and
+  no pure helper captures it. Only the cross-course describe goes through it. The test's `makeTree`
+  helper grew an `addCourse` so two courses share one root; the `findLecciones` expectations gained
+  the new `curso: null` field (a shape change, not a behaviour change).
+- **Fixture:** one `curso="dl-nlp"` reference in `00-pipeline-fixture.mdx`, which is the only
+  `curso` a lesson in `content/` can write today — the «names this very course» case. It renders as a
+  normal forward reference (asserted byte-identical to the attribute-less markup in the unit test) and
+  does NOT warn in `pnpm lint:content`, because phase 2 skips draft files by design; the warning is
+  unit-tested on a published file instead. `lint:content` warning set before/after: identical
+  (28 lessons, exit 0).
+- **`indexedDirectories` records a `(course, locale)` place** only for the `<root>/<course>/<locale>`
+  shape (`readLessons`' layout); a deeper directory keeps its per-directory check and is neither a
+  `curso=` target nor a scope. `canonicalIndexFor` left as it was (path-derived) — same answer.
+- **Not verified in the browser:** the fixture is `draft: true` and 404s on the route, and no
+  second course has a published lesson to hover. Per the task's Test plan the manual pass waits for
+  P1-01 lesson 1. Verified instead: `pnpm test` (140 suites, 1773), `pnpm lint` (0 errors, the 8
+  pre-existing warnings), `pnpm lint:content` exit 0, `pnpm build` — see the summary.
+- No commit — **local**.
 
 **COURSE-C2-P0-04** — Closed (2026-09-16). Shared `AUTHORING.md` §1 steps 3–4 rewritten verbatim
 from the task (the only hunk inside §1, diff-checked); §2 prerequisites → «the manifest of the

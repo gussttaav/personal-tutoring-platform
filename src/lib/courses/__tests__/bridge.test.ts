@@ -73,6 +73,18 @@ describe("markBridgeReferences", () => {
     expect(out).toContain('<Leccion bridge slug="x" />');
   });
 
+  it("marks a cross-course reference like any other — the component decides to ignore it", () => {
+    // COURSE-C2-P0-02: the pre-pass rewrites the tag string and knows nothing about
+    // `curso`; the attribute rides through, and `<Leccion>` (which always links across
+    // courses) is the one that disregards `bridge` for a cross-course target.
+    const ref = '<Leccion curso="dl-nlp" slug="proyecto-transformer">la función</Leccion>';
+    const out = markBridgeReferences(lesson("Cuerpo.", `Cierre: ${ref}.`));
+
+    expect(out).toContain(
+      '<Leccion bridge curso="dl-nlp" slug="proyecto-transformer">la función</Leccion>',
+    );
+  });
+
   it("copes with a source that has no frontmatter at all", () => {
     const out = markBridgeReferences(`Arriba: ${REF}.\n\n---\n\nAbajo: ${REF}.\n`);
 

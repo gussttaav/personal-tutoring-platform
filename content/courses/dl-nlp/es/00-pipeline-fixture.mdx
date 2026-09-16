@@ -373,6 +373,20 @@ Sin etiqueta, el enlace toma el título del destino: <Leccion slug="tokenizacion
 Y a una lección en borrador —este mismo fixture— que se renderiza como texto plano, sin
 enlace: <Leccion slug="pipeline-fixture">el fixture del pipeline</Leccion>.
 
+{/* COURSE-C2-P0-02 — La forma entre cursos: `curso` nombra otro curso y el destino se
+    resuelve allí, siempre como enlace y con el título del curso en la tarjeta. Aquí no
+    puede montarse de verdad, porque no hay un segundo curso con lecciones publicadas que
+    nombrar: la única referencia posible nombra a este mismo curso, y ese es el caso en
+    que el atributo sobra. El componente lo trata como una referencia normal (sin línea
+    de curso en la tarjeta) y `pnpm lint:content` lo avisa en una lección publicada; en
+    este fixture no, porque la fase 2 del lint salta los borradores. El caso real lo
+    cubren las pruebas de `leccion.test.ts` y `validate-crosslinks.test.ts` con dos cursos
+    ficticios. */}
+
+Con `curso` apuntando a este mismo curso, el atributo sobra y la referencia se comporta
+como cualquier otra: <Leccion curso="dl-nlp" slug="tokenizacion">la tokenización</Leccion>
+enlaza hacia adelante, con su tarjeta marcada «Más adelante» y sin nombrar el curso.
+
 {/* COURSE-P5-00 — La raya del puente. Es un elemento RENDERIZADO desde que las
     lecciones cierran con ella (AUTHORING.md §1), así que se comprueba aquí como
     todo lo demás: `lesson.css` la convierte en una raya corta y centrada, no en un

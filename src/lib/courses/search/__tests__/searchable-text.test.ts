@@ -16,6 +16,14 @@ describe("searchableText", () => {
     expect(searchableText('Ver <Leccion slug="x" /> antes.')).toBe("Ver antes.");
   });
 
+  it("is attribute-agnostic: a cross-course <Leccion curso=…> keeps its label too", () => {
+    // COURSE-C2-P0-02: the strip chain never reads `slug`, so `curso` changes nothing —
+    // asserted rather than assumed, because this is text the reader sees.
+    expect(searchableText('Ver <Leccion curso="dl-nlp" slug="y">la función del Transformer</Leccion> antes.'))
+      .toBe("Ver la función del Transformer antes.");
+    expect(searchableText('Ver <Leccion curso="dl-nlp" slug="y" /> antes.')).toBe("Ver antes.");
+  });
+
   it("keeps <W> children and reattaches the punctuation after them", () => {
     expect(searchableText("Toma <W>el gato</W>, y luego <W>bebe</W>.")).toBe("Toma el gato, y luego bebe.");
   });
