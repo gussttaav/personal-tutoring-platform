@@ -164,10 +164,20 @@ convention: the maths is in columns, and code that is row-major says so where it
 | $h$ | number of attention heads |
 | $L$ | number of layers |
 | $V$ | the vocabulary (a set); $\lvert V \rvert$ its size |
+| $\pi_\theta$ | the policy — the model as a distribution over responses, $\pi_\theta(y \mid x)$ |
+| $\pi_{\text{ref}}$ | the reference policy a KL term measures against |
+| $r_\phi$ | the reward model |
+| $\beta$ | the KL coefficient — how far $\pi_\theta$ may move from $\pi_{\text{ref}}$ |
 
 $L$ is the layer **count**; the loss is $\mathcal{L}$. They look alike on purpose in most
 textbooks and it is a genuine trap — when a lesson uses both in one equation, it names them in
 prose immediately after.
+
+The last four rows were reserved by `COURSE-C2-P0-04` for the second course's Block 2, and the
+reservation runs platform-wide from that date: no course reuses them for anything else. One
+shipped use predates it — `dl-nlp` Block 1 lesson 3 writes $\beta$ for Heaps' law exponent, named
+in [that course's table](dl-nlp/NOTATION.md#block-1--fundamentos-de-nlp). It stays, because the two
+courses never share a page, and it is the last time $\beta$ means anything but the KL coefficient.
 
 ## 5. Per-course symbols
 
@@ -176,7 +186,10 @@ The symbol tables are **per course**, one block section each, in the course's ow
 
 - [`dl-nlp/NOTATION.md`](dl-nlp/NOTATION.md) — Fundamentos de NLP · El Perceptrón Multicapa ·
   Redes Neuronales Recurrentes · El Puente hacia la Atención · El Transformer
-- `llm-agents/NOTATION.md` — seeded by `COURSE-C2-P0-04`, filled block by block
+- [`llm-agents/NOTATION.md`](llm-agents/NOTATION.md) — Del Transformer al modelo de lenguaje ·
+  De predecir texto a seguir instrucciones · Hablar con el modelo es programar · El puente: de
+  texto a acciones · Un agente de programación en la terminal — seeded by `COURSE-C2-P0-04`,
+  filled block by block
 
 They extend this file; they never contradict it. A symbol reserved in §4 keeps its meaning in
 every course, and a course that needs a *different* $\beta$ or $\sigma$ picks another letter. A

@@ -10,6 +10,7 @@
  * COURSE-P5-00 — + display maths that ends a sentence without punctuating it.
  * COURSE-P11-01 — + the voice pass runs the families of the lesson's own locale.
  * BLOG-01     — + validate every blog post's frontmatter under `content/blog/`.
+ * COURSE-C2-P0-04 — + the longest fenced code block joins the budget report (advisory).
  *
  * Validates every course manifest + lesson frontmatter under `content/courses/`
  * against the Zod schemas, via the registry's `validateAllContent`, then scans the

@@ -15,13 +15,16 @@ docs/courses/
 ├── NOTATION.md          typography, indices, shapes, reserved symbols, object language, lint rules
 ├── dl-nlp/              Deep Learning para NLP: del Perceptrón al Transformer
 │   ├── PLAN.md · STATUS.md
+│   ├── AUTHORING.md     its delta: the three prerequisites and the terminology table
 │   ├── NOTATION.md      its per-block symbol tables (the course-specific half of the contract)
 │   ├── phase-1 … phase-11
 │   └── notebooks/       its Colab notebooks
 └── llm-agents/          Modelos de Lenguaje: del Transformer al Agente
     ├── PLAN.md · STATUS.md
+    ├── AUTHORING.md     its delta: the two shapes of a lesson, the terminal form, its terms
+    ├── NOTATION.md      its per-block symbol tables, seeded (COURSE-C2-P0-04)
     ├── phase-0 … phase-2
-    └── (NOTATION.md · AUTHORING.md delta · notebooks/ — created by its Phase 0/1)
+    └── (notebooks/ — created by its Phase 1)
 ```
 
 ## Which file governs

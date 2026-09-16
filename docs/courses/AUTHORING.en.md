@@ -23,6 +23,15 @@ in it are, and one of them is not in §5 where you would look for it:
 Everything else applies verbatim; §8 below says so explicitly for the parts most likely to be
 re-litigated.
 
+**Since `COURSE-C2-P0-04` the delta mechanism has three members**: this language delta, and one
+*course* delta per course — [`dl-nlp/AUTHORING.md`](dl-nlp/AUTHORING.md),
+[`llm-agents/AUTHORING.md`](llm-agents/AUTHORING.md). They compose in the order
+[README.md](README.md#which-file-governs) gives: the shared file, then the course's delta, then
+this one, each replacing only what it names. The Spanish terminology table that §6 below carries
+into English now lives in `dl-nlp`'s delta rather than in the shared file, so §6 is that course's
+English glossary; a second course's glossary is written beside its own delta when its lessons are
+translated, and until then nothing here is about it.
+
 ---
 
 ## 1. §5 — the five marks

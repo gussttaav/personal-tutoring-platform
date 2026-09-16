@@ -1,5 +1,6 @@
 /*
  * COURSE-P5-00 — Per-lesson budget: counting, and the warnings that come off it.
+ * COURSE-C2-P0-04 — + `longestFence`: the longest fenced code block, measured like a cell.
  *
  * Phase 5 is ~40 lessons. The failure this exists to prevent is not a bad lesson, it
  * is DRIFT: lesson 3 at 1,400 words and lesson 27 at 4,000, so the course reads as a
@@ -74,6 +75,12 @@ export interface LessonCounts {
    *  Separate from `codeCells` on purpose: three short cells and one 142-line cell
    *  are both "1–3 cells", and only one of them is a lesson the student can read. */
   longestCodeCell: number;
+  /** COURSE-C2-P0-04: lines in the LONGEST fenced code block (```…``` or ~~~…~~~), fence
+   *  lines excluded. Fences are dropped from `words` and were never measured, so a
+   *  course whose implementation step is fenced code the student runs in a terminal
+   *  (llm-agents Block 5) could ship a 140-line wall that triggered nothing. Same
+   *  thresholds and advice as `longestCodeCell`; the fence is the terminal lesson's cell. */
+  longestFence: number;
   /** Questions declared in the frontmatter `quiz` array. */
   quizQuestions: number;
   /** Challenges declared in the frontmatter `challenges` array. */
@@ -127,6 +134,11 @@ const AXES: Axis[] = [
   // ceiling the student is scrolling a window through a program, which is not reading.
   { key: "longestCodeCell",  label: "longest code cell (lines)", min: 0, max: 45, ceiling: 90, warnUnder: false,
     ceilingAdvice: "split this cell" },
+  // COURSE-C2-P0-04 — the same two screenfuls for a fenced block. A fence renders as a
+  // static `<pre>`, not the editor, but a student reading 90 lines of Python they are
+  // about to type is scrolling a wall either way.
+  { key: "longestFence",     label: "longest fenced code block (lines)", min: 0, max: 45, ceiling: 90, warnUnder: false,
+    ceilingAdvice: "split this block" },
   { key: "quizQuestions",    label: "quiz questions",    min: 3,    max: 5,    ceiling: 8,    warnUnder: true  },
   { key: "challenges",       label: "code challenges",   min: 0,    max: 1,    ceiling: 2,    warnUnder: false },
   // `max`/`ceiling` are READING_MAX: the schema rejects a sixth entry outright, so this
@@ -255,6 +267,38 @@ export function countLongestCodeCell(body: string): number {
   return longest;
 }
 
+/**
+ * COURSE-C2-P0-04 — Lines in the tallest fenced code block, 0 if there are none. The
+ * fence lines themselves are not counted; blank interior lines are, as in a cell. Same
+ * opener/closer matching as `withoutFences`, so a fence inside a fence is content, not a
+ * closer. Language-agnostic on purpose: an expected-output transcript in a ```text block
+ * is as much a wall as the ```python above it. An unclosed fence runs to the end of the
+ * file, which is a warning being loud about a lesson that is already broken.
+ */
+export function countLongestFence(body: string): number {
+  let fence: string | null = null;
+  let current = 0;
+  let longest = 0;
+  for (const line of body.split("\n")) {
+    const fenceMatch = line.match(/^\s*(`{3,}|~{3,})/);
+    if (fenceMatch) {
+      const marker = fenceMatch[1][0].repeat(3);
+      if (fence === null) {
+        fence = marker;
+        current = 0;
+      } else if (marker === fence) {
+        fence = null;
+        longest = Math.max(longest, current);
+      } else {
+        current += 1;
+      }
+      continue;
+    }
+    if (fence !== null) current += 1;
+  }
+  return Math.max(longest, fence === null ? 0 : current);
+}
+
 /** Measure one lesson source on every budget axis. Pure — no filesystem. */
 export function lessonCounts(source: string): LessonCounts {
   const { data, content } = matter(source);
@@ -279,6 +323,7 @@ export function lessonCounts(source: string): LessonCounts {
     // `code={`…`}` literal routinely contains backticks-free Python that survives it
     // fine — but the fence-stripping this axis needs is done inside the counter.
     longestCodeCell: countLongestCodeCell(content),
+    longestFence: countLongestFence(content),
     quizQuestions,
     challenges,
     reading,
@@ -303,6 +348,7 @@ export function formatCounts(c: LessonCounts): string {
     `${c.displayEquations} eq`,
     `${c.widgets} widgets`,
     `${c.codeCells} cells (max ${c.longestCodeCell} lines)`,
+    `longest fence ${c.longestFence} lines`,
     `${c.quizQuestions} quiz`,
     `${c.challenges} challenges`,
     `${c.reading} reading`,

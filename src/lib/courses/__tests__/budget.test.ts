@@ -1,5 +1,6 @@
 /*
  * COURSE-P5-00 — Tests for the per-lesson budget.
+ * COURSE-C2-P0-04 — + `countLongestFence` and its advisory axis.
  *
  * The counting is the part worth testing hard. A word count that includes LaTeX and
  * code reports every maths-heavy lesson as over budget, which trains authors to ignore
@@ -11,6 +12,7 @@ import {
   budgetWarnings,
   countDisplayEquations,
   countLongestCodeCell,
+  countLongestFence,
   countWords,
   isBudgetExempt,
   lessonCounts,
@@ -21,6 +23,12 @@ import {
 function cell(n: number, packages = ""): string {
   const code = Array.from({ length: n }, (_, i) => `print(${i})`).join("\n");
   return `<PyCell ${packages}code={\`\n${code}\n\`} />`;
+}
+
+/** A fenced code block whose body is exactly `n` lines. */
+function fence(n: number, lang = "python", marker = "```"): string {
+  const code = Array.from({ length: n }, (_, i) => `print(${i})`).join("\n");
+  return `${marker}${lang}\n${code}\n${marker}`;
 }
 
 /** A lesson source with `n` prose words in its body, plus whatever else is asked for. */
@@ -190,6 +198,39 @@ describe("countLongestCodeCell", () => {
   });
 });
 
+describe("countLongestFence", () => {
+  it("is 0 when the lesson has no fenced block", () => {
+    expect(countLongestFence("Solo prosa, una celda " + cell(30) + " y $a^2$.")).toBe(0);
+  });
+
+  it("counts the lines between the fences, not the fences themselves", () => {
+    expect(countLongestFence(fence(12))).toBe(12);
+  });
+
+  it("counts blank lines inside the block — they occupy the box like code does", () => {
+    expect(countLongestFence("```bash\na=1\n\n\nb=2\n```")).toBe(4);
+  });
+
+  it("reports the LONGEST block, not the last or the total", () => {
+    const body = [fence(8), "Prosa entre los dos bloques.", fence(30, "bash"), fence(5, "text")].join("\n\n");
+    expect(countLongestFence(body)).toBe(30);
+  });
+
+  it("is language-agnostic — an expected-output transcript is a wall too", () => {
+    expect(countLongestFence(fence(50, "text"))).toBe(50);
+    expect(countLongestFence(fence(7, ""))).toBe(7);
+  });
+
+  it("treats a backtick fence inside a tilde fence as content, like withoutFences does", () => {
+    const body = ["~~~mdx", "```python", "print(1)", "```", "~~~"].join("\n");
+    expect(countLongestFence(body)).toBe(3);
+  });
+
+  it("runs an unclosed fence to the end of the file", () => {
+    expect(countLongestFence("```python\na = 1\nb = 2\n")).toBe(3);
+  });
+});
+
 describe("lessonCounts", () => {
   it("reads the interactive counts off the body and the frontmatter", () => {
     const source = lesson({
@@ -201,6 +242,7 @@ describe("lessonCounts", () => {
         '<Explorable id="tokenizer-playground" />',
         "<PyCell code={`print(1)`} />",
         "$$\na = b\n$$",
+        fence(6, "bash"),
       ].join("\n\n"),
     });
     const counts = lessonCounts(source);
@@ -211,6 +253,7 @@ describe("lessonCounts", () => {
       widgets: 1,
       codeCells: 1,
       longestCodeCell: 1,
+      longestFence: 6,
       quizQuestions: 4,
       challenges: 1,
     });
@@ -312,6 +355,23 @@ describe("budgetWarnings", () => {
 
   it("stays quiet about a lesson with no code cell at all", () => {
     expect(budgetWarnings({ ...inBudget, codeCells: 0, longestCodeCell: 0 })).toEqual([]);
+  });
+
+  // COURSE-C2-P0-04 — the fenced-block axis: advisory, same bands as a cell.
+  it("warns about one over-long fenced block — a terminal lesson's cell", () => {
+    const warnings = budgetWarnings({ ...inBudget, codeCells: 0, longestCodeCell: 0, longestFence: 60 });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/longest fenced code block \(lines\): 60 — over budget/);
+  });
+
+  it("says to split the BLOCK, not the lesson, past that ceiling", () => {
+    const warnings = budgetWarnings({ ...inBudget, longestFence: 142 });
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toMatch(/past the hard ceiling of 90; split this block/);
+  });
+
+  it("stays quiet about a lesson with no fenced block — most of them", () => {
+    expect(budgetWarnings({ ...inBudget, longestFence: 0 })).toEqual([]);
   });
 
   it("flags a declared `minutes` the content does not support", () => {
