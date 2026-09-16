@@ -1,0 +1,96 @@
+---
+slug: pipeline-fixture
+title: "Fixture del modelo del curso (no publicar)"
+block: 1
+order: 0
+minutes: 1
+summary: "Fixture de regresión del checkpoint del mini-GPT: carga, genera y sigue entrenando en una celda. Nunca se publica."
+draft: false
+hasCode: true
+hasQuiz: false
+quiz: []
+challenges: []
+reading: []
+---
+
+{/* COURSE-C2-P0-03 — Fixture permanente del curso llm-agents, en borrador para siempre
+    (`draft: true`): el registro lo ordena el primero (`order: 0`) y la ruta lo excluye,
+    igual que `dl-nlp/es/00-pipeline-fixture.mdx`. Existe para comprobar EN EL NAVEGADOR
+    las dos celdas de la lista de aceptación de P0-03 sobre los ficheros reales de
+    public/courses/llm-agents/: que el checkpoint carga y genera dentro de RUN_TIMEOUT_MS,
+    y que sigue entrenando 200 pasos con la pérdida bajando, también dentro del tope.
+    Para verlo en local: pon `draft: false`, abre /cursos/llm-agents/pipeline-fixture,
+    ejecuta las celdas en orden y VUELVE A PONER `draft: true` antes de commitear. */}
+
+{/* content-budget: ignore — es una superficie de comprobación, no una lección. */}
+
+## El modelo carga y genera
+
+Tres ficheros por `open_url`: el tokenizador, el modelo y sus pesos. Los tiempos que imprime
+son los que el README de `scripts/courses/llm-agents/` registra.
+
+<PyCell packages={["numpy"]} code={`
+import json, time
+import numpy as np
+from pyodide.http import open_url
+
+t0 = time.time()
+exec(open_url("/courses/llm-agents/bpe.py").read())
+exec(open_url("/courses/llm-agents/minigpt.py").read())
+fusiones = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+modelo = MiniGPT.cargar(open_url("/courses/llm-agents/minigpt.json").read())
+print("cargado en %.2f s: %d parametros, |V| = %d, T_ctx = %d"
+      % (time.time() - t0, modelo.n_parametros(), modelo.cfg["n_v"], modelo.cfg["T_ctx"]))
+
+prompt = codificar("La Nela", fusiones)
+t0 = time.time()
+voraz = modelo.generar(prompt, 32, temperatura=0)
+print("voraz    (%.2f s): %r" % (time.time() - t0, decodificar(voraz, fusiones)))
+t0 = time.time()
+nucleo = modelo.generar(prompt, 32, temperatura=1.0, top_p=0.9, rng=np.random.default_rng(0))
+print("top-p .9 (%.2f s): %r" % (time.time() - t0, decodificar(nucleo, fusiones)))
+
+X = np.array([codificar("Se puso el sol. Tras el breve crepúsculo vino tranquila y oscura la noche, en cuyo negro seno murieron poco a poco los últimos rumores de la tierra", fusiones)[:64]])
+t0 = time.time()
+for _ in range(10):
+    modelo.adelante(X)
+print("una ida sobre %d tokens: %.0f ms" % (X.shape[1], (time.time() - t0) / 10 * 1000))
+`} />
+
+## El modelo sigue entrenando
+
+Sobre la cola del corpus, que el checkpoint no vio (el último 10 % es validación en el
+script): 200 pasos de Adam sobre ventanas de 16 tokens, y la pérdida sobre ocho ventanas
+fijas cada 50 pasos. Pyodide no trae BLAS (~1 GFLOP/s), así que el coste es proporcional a
+los tokens por paso; 16 es lo que deja margen a un teléfono.
+
+<PyCell packages={["numpy"]} code={`
+import time
+import numpy as np
+from pyodide.http import open_url
+
+# Necesita la celda anterior: modelo, fusiones, codificar, quitar_cabecera, ventanas, Adam.
+t0 = time.time()
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+ids = np.array(codificar(texto[-6000:], fusiones))      # la cola del corpus: el checkpoint no la vio
+print("codificado en %.2f s: %d tokens" % (time.time() - t0, len(ids)))
+
+Xe, Ye = ventanas(ids, 8, 16, np.random.default_rng(1))  # ocho ventanas fijas, para medir
+medir = lambda: modelo.perdida(Xe, Ye)[0]
+opt = Adam(modelo.p)
+rng = np.random.default_rng(0)
+t0 = time.time()
+print("paso   0   perdida %.3f" % medir())
+for paso in range(1, 201):
+    X, Y = ventanas(ids, 1, 16, rng)                     # una ventana de 16 tokens por paso
+    L, g = modelo.perdida(X, Y)
+    opt.paso(modelo.p, g, 5e-4 * min(1.0, paso / 50))    # calentamiento: Adam arranca de cero
+    if paso % 50 == 0:
+        print("paso %3d   perdida %.3f" % (paso, medir()))
+print("200 pasos en %.1f s" % (time.time() - t0))
+`} />
+
+---
+
+Si las dos celdas terminan dentro del tope, el checkpoint sirve: las lecciones 1·3 a 1·6 se
+escriben contra estos ficheros y contra los números del README.

@@ -95,6 +95,10 @@ export type CorpusWidgetId = keyof typeof WIDGET_CORPORA;
  * task: their corpus is bound to a Spanish data asset, and an English sentence would
  * render a map that means nothing rather than a map that reads oddly. Each one needs a
  * new asset and a pedagogical decision, which belongs to the lesson that embeds it.
+ *
+ * COURSE-C2-P0-03: a key with a `/` in it is not a widget id but a course asset under
+ * `public/` — the same kind of Spanish-bound data, consumed by `<PyCell>`s and by the
+ * widgets that read it, rather than by one widget's default corpus.
  */
 export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
   "self-attention-heatmap":
@@ -110,6 +114,15 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "Not locale-sensitive at all, listed here so the review is complete: the corpus is " +
     "a Spanish→English translation pair, which is what Block 4 is about. It reads the " +
     "same way to either audience.",
+  // COURSE-C2-P0-03 — the llm-agents mini-GPT is trained on this Spanish corpus, and
+  // its checkpoint (minigpt.json) and merge table (bpe-merges.json) are functions of it.
+  "courses/llm-agents/corpus.txt":
+    "Marianela (Galdós, public domain), the corpus the llm-agents Block 1 mini-GPT is " +
+    "trained on. Every text the checkpoint generates, every merge in bpe-merges.json and " +
+    "every number the Block 1–3 lessons quote is a function of it. The English course " +
+    "needs an English corpus AND its own checkpoint, re-trained by " +
+    "scripts/courses/llm-agents/train-minigpt.py (corpus path and output directory are " +
+    "its parameters) — plus new lesson prose, since the quoted samples change with it.",
 };
 
 /**

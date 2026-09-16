@@ -97,7 +97,13 @@ describe("widget corpora — selection", () => {
 
   it("names real widgets in SPANISH_BOUND_CORPORA, and none that has a corpus here", () => {
     for (const [id, reason] of Object.entries(SPANISH_BOUND_CORPORA)) {
-      expect(WIDGET_IDS).toContain(id);
+      // COURSE-C2-P0-03: a `/` key is a course asset under public/, not a widget id —
+      // it has to exist on disk, exactly as a widget id has to exist in WIDGET_IDS.
+      if (id.includes("/")) {
+        expect(fs.existsSync(path.join(process.cwd(), "public", id))).toBe(true);
+      } else {
+        expect(WIDGET_IDS).toContain(id);
+      }
       expect(ids).not.toContain(id);
       expect(reason.length).toBeGreaterThan(40);
     }
