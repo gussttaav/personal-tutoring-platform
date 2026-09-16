@@ -951,6 +951,9 @@
       "refKicker": "Block {block} · Lesson {order}",
       "refAhead": "Coming up",
       "refFallback": "In Spanish",
+      "repoLink": {
+        "kicker": "Checkpoint"
+      },
       "openNav": "Open course contents",
       "closeNav": "Close course contents",
       "translationPending": {

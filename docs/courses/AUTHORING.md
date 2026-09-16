@@ -855,9 +855,12 @@ in one constant; no lesson ever carries the repository's name. Three rules:
 - **A lesson links two tags**: the *previous* one where its implementation step starts («parte de
   aquí») and its *own* where that step ends («si te has perdido, este es el estado al final de esta
   lección»).
-- **It looks like a link out of the course**, as `<ColabLink>` does — not like a `<Leccion>`,
-  which stays inside. No «download zip» alternative: a student who cannot `git clone` cannot do the
-  block, and the course's prerequisites say so.
+- **It looks like a link out of the course**, as `<ColabLink>` does — the same pill, with a small
+  «Punto de control» kicker (`courses.reader.repoLink.kicker`, in the reader's locale) so the reader
+  knows it is a snapshot and not the live repository — not like a `<Leccion>`, which stays inside.
+  The children are the label; omit them (`<RepoLink tag="b5-l3" path="herramientas/editar.py" />`)
+  and the tag and path stand in. No «download zip» alternative: a student who cannot `git clone`
+  cannot do the block, and the course's prerequisites say so.
 
 ### Widget ids
 

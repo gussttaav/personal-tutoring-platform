@@ -5,6 +5,7 @@
  * COURSE-P5-00 — + `h3`, which Tailwind Preflight had been flattening to body text.
  * COURSE-P5-00 — + `W`, the object-language mark (defined in ./word.tsx).
  * COURSE-P7-01 — + `Leccion`, the cross-lesson reference (defined in ./Leccion.tsx).
+ * COURSE-C2-P0-05 — + `RepoLink`, the link to a tagged checkpoint of a companion repository.
  *
  * Passed to `compileMDX` (see src/lib/courses/mdx.ts). Four groups:
  *   1. Element overrides that keep wide content (code, tables, images) from
@@ -24,17 +25,23 @@
  *   6. `Leccion` — a cross-lesson reference. Same problem as 5 and the same answer:
  *      it needs to know WHICH lesson it is being compiled into before it can tell a
  *      backward reference from a forward one, so it is bound there too.
+ *   7. `RepoLink` — a link OUT of the course to a tagged snapshot of the companion
+ *      repository, the terminal-lesson analogue of `ColabLink`. Its only piece of
+ *      non-prose data is the request locale (the «checkpoint» kicker is chrome, like
+ *      `Leccion`'s card), so it is bound in the same place, from `ctx.locale`.
  *
  * Everything else is a Server Component — `<Details>` uses the native
  * <details>/<summary> element — so lessons ship no client JS for any of it.
  * Styling reuses the global CSS variables from src/app/globals.css.
  */
 
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ComponentPropsWithoutRef, CSSProperties, ReactNode } from "react";
+import { getTranslations } from "next-intl/server";
 // Component-map type via the direct dep; `mdx/types` is a non-hoisted transitive
 // under pnpm that TS can't resolve from here.
 import type { MDXRemoteProps } from "next-mdx-remote/rsc";
 
+import { LLM_AGENTS_REPO_BASE } from "@/constants/courses";
 import type { CodeChallenge as CodeChallengeData, QuizQuestion } from "@/domain/types";
 import { Explorable } from "@/features/courses/widgets/Explorable";
 import { CodeChallenge } from "@/features/courses/code/CodeChallenge";
@@ -276,33 +283,106 @@ function Details({ summary, children }: { summary: string; children: ReactNode }
   );
 }
 
+// The pill a link OUT of the course wears — `ColabLink` and `RepoLink` share it so the
+// two kinds of "leave the page to do the work elsewhere" look like the same thing, and
+// unlike a `<Leccion>`, which stays inside the course (COURSE-C2-P0-05).
+const outLinkStyle: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.5rem",
+  margin: "1rem 0",
+  padding: "0.5rem 1rem",
+  borderRadius: "var(--radius)",
+  border: "1px solid var(--green-mid)",
+  background: "var(--green-dim)",
+  color: "var(--green)",
+  fontWeight: 600,
+  textDecoration: "none",
+};
+
 // Block 5's escape hatch to GPU work. `notebook` is a Colab URL (or a Colab
 // notebook path such as "github/user/repo/blob/main/nb.ipynb").
 function ColabLink({ notebook, children }: { notebook: string; children?: ReactNode }) {
   const href = notebook.startsWith("http") ? notebook : `https://colab.research.google.com/${notebook}`;
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "0.5rem",
-        margin: "1rem 0",
-        padding: "0.5rem 1rem",
-        borderRadius: "var(--radius)",
-        border: "1px solid var(--green-mid)",
-        background: "var(--green-dim)",
-        color: "var(--green)",
-        fontWeight: 600,
-        textDecoration: "none",
-      }}
-    >
+    <a href={href} target="_blank" rel="noopener noreferrer" style={outLinkStyle}>
       <span aria-hidden>▶</span>
       {children ?? "Google Colab"}
     </a>
   );
+}
+
+/*
+ * COURSE-C2-P0-05 — `<RepoLink tag="…" path?="…">`, the terminal-lesson analogue of
+ * `ColabLink`. A Block 5 lesson of `llm-agents` shows its code in fenced blocks and the
+ * student types it into a repository on their own machine; what makes that a lesson
+ * rather than a blog post is a checkpoint they can clone at every step. The link points
+ * at a TAG of the companion repository (`b5-l1` … `b5-l9`, cut from the reviewed lesson
+ * at its PR review — the lesson text is the source of truth, the tag is the copy), never
+ * at a branch: `main` moves, a tag does not, which is the Colab notebook's "pin a
+ * revision" rule carried over. `path` points inside the snapshot.
+ *
+ * The repository's URL is `LLM_AGENTS_REPO_BASE` and nothing else: an author writes a
+ * tag and, at most, a path, so no lesson ever carries the repository's name.
+ *
+ * The small «punto de control» kicker says it is a snapshot, not the live repository.
+ * It is chrome, so it follows the request locale — which is why the component is bound
+ * per lesson from `ctx.locale` in `lessonMdxComponents`, like `Leccion`, rather than
+ * living in the static map beside `ColabLink`. Server-rendered, no JS.
+ */
+export interface RepoLinkProps {
+  /** A checkpoint tag of the companion repository, e.g. `b5-l3`. */
+  tag: string;
+  /** A file or directory inside the snapshot, e.g. `herramientas/editar.py`. */
+  path?: string;
+  /** The label. Omitted, the tag (and the path, when given) stands in. */
+  children?: ReactNode;
+}
+
+/** The href `<RepoLink>` renders — kept separate so the test can assert it directly. */
+export function repoLinkHref(tag: string, path?: string): string {
+  return `${LLM_AGENTS_REPO_BASE}/tree/${tag}${path ? `/${path}` : ""}`;
+}
+
+export function makeRepoLink(locale: string) {
+  return async function RepoLink({ tag, path, children }: RepoLinkProps) {
+    const t = await getTranslations({ locale, namespace: "courses.reader.repoLink" });
+    return (
+      <a href={repoLinkHref(tag, path)} target="_blank" rel="noopener noreferrer" style={outLinkStyle}>
+        {/* A git tag, drawn rather than typed: the U+2387 branch glyph falls back to
+            tofu on enough phones that a text icon (what `ColabLink`'s ▶ is) would be the
+            one part of the pill that does not render everywhere. */}
+        <svg
+          aria-hidden
+          width="14"
+          height="14"
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M2 2h6l6 6-6 6-6-6V2z" />
+          <circle cx="5.5" cy="5.5" r="1" fill="currentColor" stroke="none" />
+        </svg>
+        {/* Uppercase is presentation, as in `.lesson-ref-kicker`; the key stays
+            sentence case and translatable. */}
+        <span
+          style={{
+            fontSize: "0.7rem",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+            fontWeight: 500,
+            opacity: 0.85,
+          }}
+        >
+          {t("kicker")}
+        </span>
+        <span>{children ?? (path ? `${tag} · ${path}` : tag)}</span>
+      </a>
+    );
+  };
 }
 
 export const mdxComponents: MDXComponents = {
@@ -327,6 +407,8 @@ export const mdxComponents: MDXComponents = {
  * COURSE-P3-02 — + `CodeChallenge`, bound the same way.
  * COURSE-P7-01 — + `Leccion`, and `ctx` forwarded to the two components above, whose
  *                frontmatter copy may reference other lessons as well.
+ * COURSE-C2-P0-05 — + `RepoLink`, bound to `ctx.locale` for its kicker (see the
+ *                component's comment for why it is not in the static map).
  *
  * `<Quiz id="…" />` carries only an id; the question itself lives in the lesson's
  * frontmatter. A React Server Component has no context to reach it through and the
@@ -334,8 +416,8 @@ export const mdxComponents: MDXComponents = {
  * per compiled lesson, by `renderLesson` (./mdx.ts).
  *
  * `ctx` is optional so a caller that only wants the prose components (a test, a
- * preview) still gets a working map; without it `<Leccion>` is simply undefined,
- * which MDX reports as a build error rather than swallowing.
+ * preview) still gets a working map; without it `<Leccion>` and `<RepoLink>` are simply
+ * undefined, which MDX reports as a build error rather than swallowing.
  */
 export function lessonMdxComponents(
   quiz: QuizQuestion[],
@@ -348,6 +430,6 @@ export function lessonMdxComponents(
     CodeChallenge: ({ id }: { id: string }) => (
       <CodeChallenge id={id} challenges={challenges} ctx={ctx} />
     ),
-    ...(ctx ? { Leccion: makeLeccion(ctx) } : {}),
+    ...(ctx ? { Leccion: makeLeccion(ctx), RepoLink: makeRepoLink(ctx.locale) } : {}),
   };
 }

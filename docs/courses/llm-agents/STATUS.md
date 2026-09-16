@@ -17,7 +17,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | [02 Cross-course `<Leccion curso=…>`](phase-0-second-course/02-cross-course-references.md) | `COURSE-C2-P0-02` | ✅ | _tbd_ | local |
 | [03 The mini-GPT checkpoint + train script](phase-0-second-course/03-course-model-assets.md) | `COURSE-C2-P0-03` | ✅ | _tbd_ | local |
 | [04 Authoring contract for a systems course](phase-0-second-course/04-authoring-contract.md) | `COURSE-C2-P0-04` | ✅ | _tbd_ | local |
-| [05 `<RepoLink>` + companion repository](phase-0-second-course/05-terminal-lessons.md) | `COURSE-C2-P0-05` | ⬜ | _tbd_ | |
+| [05 `<RepoLink>` + companion repository](phase-0-second-course/05-terminal-lessons.md) | `COURSE-C2-P0-05` | ✅ | _tbd_ | local |
 
 **Exit criteria**
 - [x] `/cursos/llm-agents` and `/en/cursos/llm-agents` render the «soon» landing, `noindex`,
@@ -28,7 +28,8 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
       reproduces it from the seed byte-for-byte _(P0-03)_
 - [x] Shared AUTHORING §1 step 3 rewritten; `llm-agents/AUTHORING.md` + `NOTATION.md` deltas
       seeded _(P0-04)_
-- [ ] `<RepoLink>` renders; the companion repository exists, empty
+- [x] `<RepoLink>` renders; the companion repository exists, empty
+      ([gussttaav/agente-minimo](https://github.com/gussttaav/agente-minimo), README / LICENSE / `.gitignore`, no tags) _(P0-05)_
 - [ ] `pnpm lint` + `pnpm test` + `pnpm lint:content` + `pnpm build` green; `courses-*` e2e green
 
 ## Phase 1 — Content
@@ -255,3 +256,50 @@ Deviations from the task doc:
   derivation.
 - Verified: `pnpm lint:content` exit 0 before and after; `tsc --noEmit`, `eslint` on the touched
   TS, `jest src/lib/courses` (32 suites, 465 tests) green. No commit — **local**.
+
+**COURSE-C2-P0-05** — Closed (2026-09-16). `src/constants/courses.ts` (new) holds
+`LLM_AGENTS_REPO_BASE`; `mdx-components.tsx` gains `makeRepoLink(locale)` + the exported
+`repoLinkHref(tag, path?)` → `${base}/tree/${tag}[/${path}]`, `target="_blank"`,
+`rel="noopener noreferrer"`, the `ColabLink` pill and a «Punto de control» / «Checkpoint» kicker
+(`courses.reader.repoLink.kicker`, both message files); `mdx.test.ts` +6 (map entry, both href
+forms, the rendered `<a>`, the kicker in each locale); one `<RepoLink>` of each form in the
+`llm-agents` fixture; AUTHORING §7 verified against the build. The companion repository is
+**[`gussttaav/agente-minimo`](https://github.com/gussttaav/agente-minimo)**: public, MIT
+(detected by GitHub), `README.md` (what it is, the `b5-l1`…`b5-l9` scheme with the lesson table,
+the two-tags-per-lesson rule, the clone command, a **TODO** versions table for P1-05, the layout
+commitments, «vacío de código, a propósito»), `LICENSE`, `.gitignore`; one commit, zero tags, no
+code. Deviations from the task doc:
+- **`RepoLink` is bound per lesson, not in the static map.** Its kicker is chrome in the request
+  locale, and every course Server Component in the repo takes `locale` explicitly
+  (`getTranslations({ locale, namespace })`, no implicit request-context form anywhere), so it is
+  closed over `ctx.locale` in `lessonMdxComponents` exactly like `Leccion` — a map built without
+  `ctx` has no `RepoLink` (asserted), which MDX reports rather than guessing a language. The task's
+  «in the component map» is read as the per-lesson map; `renderLesson` is only ever called with a
+  ctx (page.tsx).
+- **`ColabLink`'s inline style became the shared `outLinkStyle` const** used by both pills: the
+  one touch of adjacent code, so «same styling as `ColabLink`» is one object rather than a copy
+  that drifts. `ColabLink`'s markup is byte-identical.
+- **Icon is a 14px inline SVG tag** (server-rendered, no JS), not a text glyph like `ColabLink`'s
+  `▶`: the U+2387 branch glyph is tofu on enough phones. Default label when children are omitted:
+  the tag, or `tag · path` with a path.
+- **AUTHORING §7 gained one sentence** in the «looks like a link out of the course» rule (the
+  kicker + the default label); the table row and the three rules P0-04 wrote matched the build
+  as-is.
+- **The fixture had been committed `draft: false` by P0-03** — against its own header comment
+  («VUELVE A PONER `draft: true` antes de commitear») and the P0-03 entry above, which says it was
+  reverted — so `/cursos/llm-agents/pipeline-fixture` was being generated and the «lesson-less»
+  landing had a lesson. Restored to `draft: true` in the same edit that adds the `<RepoLink>`s;
+  the build's route list confirms the fixture is absent and both landings are still «soon».
+- **Browser check** (fixture temporarily `draft: false` on `pnpm dev`, `.next/dev` cleared first
+  per the P0-01 gotcha, reverted after): both pills render — hrefs
+  `…/agente-minimo/tree/b5-l1` and `…/tree/b5-l1/README.md`, `_blank` + `noopener noreferrer`,
+  `inline-flex`, `--green-dim` / `--green-mid` / `--green`, uppercase kicker, SVG present — and
+  the kicker reads «Punto de control» on `/cursos/…` and «Checkpoint» on `/en/cursos/…` while the
+  prose stays Spanish (chrome follows the request locale, as with `Leccion`'s card).
+- **The `b5-l1` links 404 until P1-05 cuts the tag** — said in the fixture's comment; what the
+  fixture covers is the component, not the destination.
+- Verified: `tsc --noEmit`; `pnpm lint` (0 errors, the 8 pre-existing warnings); `pnpm lint:content`
+  (28 lessons with warnings before and after, fixture budget-exempt); `pnpm test` (141 suites,
+  1787 tests); `pnpm build` green. e2e not run (the local suite dies in global-setup on an
+  unregistered API key; nothing course-visible changed for a published lesson). No commit —
+  **local**.

@@ -951,6 +951,9 @@
       "refKicker": "Bloque {block} · Lección {order}",
       "refAhead": "Más adelante",
       "refFallback": "En español",
+      "repoLink": {
+        "kicker": "Punto de control"
+      },
       "openNav": "Abrir el contenido del curso",
       "closeNav": "Cerrar el contenido del curso",
       "translationPending": {

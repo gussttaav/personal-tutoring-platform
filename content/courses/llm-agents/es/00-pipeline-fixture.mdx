@@ -5,7 +5,7 @@ block: 1
 order: 0
 minutes: 1
 summary: "Fixture de regresión del checkpoint del mini-GPT: carga, genera y sigue entrenando en una celda. Nunca se publica."
-draft: false
+draft: true
 hasCode: true
 hasQuiz: false
 quiz: []
@@ -89,6 +89,21 @@ for paso in range(1, 201):
         print("paso %3d   perdida %.3f" % (paso, medir()))
 print("200 pasos en %.1f s" % (time.time() - t0))
 `} />
+
+## El enlace a un punto de control
+
+{/* COURSE-C2-P0-05 — `<RepoLink>` cubierto por el mismo fixture que cubre las celdas: las
+    dos formas del enlace (etiqueta sola; etiqueta + ruta), con y sin etiqueta propia. La
+    etiqueta `b5-l1` no existe hasta que P1-05 la corte de la lección 32 revisada, así que el
+    destino responde 404 hasta entonces; lo que se comprueba aquí es el componente. */}
+
+Al principio del paso de implementación, la etiqueta anterior:
+
+<RepoLink tag="b5-l1">Parte de aquí</RepoLink>
+
+Al final, la propia, apuntando dentro del repositorio:
+
+<RepoLink tag="b5-l1" path="README.md" />
 
 ---
 
