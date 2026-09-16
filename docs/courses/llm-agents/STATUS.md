@@ -36,7 +36,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ⬜ | _tbd_ | |
+| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (1/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
@@ -303,3 +303,31 @@ code. Deviations from the task doc:
   1787 tests); `pnpm build` green. e2e not run (the local suite dies in global-setup on an
   unregistered API key; nothing course-visible changed for a published lesson). No commit —
   **local**.
+
+**COURSE-C2-P1-01** — In progress (started 2026-09-16). Lesson 1 `una-sola-columna` authored on the
+shared branch, code-free as the block md asks (the worked example is the loss of a four-token window
+by hand: three softmaxes over a four-entry vocabulary, $\mathcal{L} = \tfrac{4}{3}\ln 2$, and the
+joint $1/16$ from the other side). 1 995 words, 5 display equations, 4 quiz, 2 readings (Bengio 2003,
+Shannon 1951 on archive.org — IEEE Xplore is paywalled), no widget. Decisions recorded for the
+reviewer of the block:
+- **Forward references to lessons 2 and 3 are prose**, not `<Leccion>`: the lint fails on a slug with
+  no file, comments included. The two sites carry an MDX comment naming the slugs; lessons 2 and 3
+  convert them when they land. The rule is now in the shared AUTHORING §2.
+- **The pickup quotes the first course's closing bridge verbatim** («delante de un artículo que
+  puedes discutir»), inside «…» and introduced as a quotation, order reversed — the block md directs
+  lesson 1 to open on that phrase; strictly, §1's «different words» rule frowns on a surviving
+  sentence.
+- **Notation and terms added before use:** `x_t` (not the first course's `w_t`), the stacked
+  logits $\mathbf{Z}$, the input-named $\mathbf{z}_t(\cdot)$, and the «first token given, index
+  shifted» convention in `NOTATION.md`; `logits`, `regla de la cadena` and `ventana (de
+  entrenamiento)` — with its collision against `ventana (de contexto)` named — in the delta's §4.
+- **`draft: false` on purpose while the block is authored**, against the block's PUBLICATION line: the
+  author is using the published route for testing. Flip it back to `true` before any push that must
+  not publish the lesson, and remember the fixture precedent (P0-05 found it committed the wrong
+  way round). With it published the course card, sitemap entry and search index appear on their own.
+- **The bridge quotes the vocabulary size** ($512$ entradas) one lesson before lesson 2 explains
+  where it comes from.
+- Verified: `pnpm lint:content` (no warnings on the lesson), `jest src/lib/courses` (33 suites, 511
+  tests), `pnpm build` green; in the browser with the route published: 0 KaTeX errors, all four
+  quiz questions right and wrong (numeric also at the tolerance edge), eight cross-course cards, no
+  horizontal page scroll at 360 px (the three wide equations and the table scroll in their own boxes).

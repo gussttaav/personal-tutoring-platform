@@ -56,7 +56,7 @@ Authored one at a time via `/course-lesson`, on the shared branch, reviewed befo
 task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granular progress lives
 here; STATUS stays phase-level.
 
-- [ ] 1. `una-sola-columna`
+- [x] 1. `una-sola-columna`
 - [ ] 2. `bpe-de-verdad`
 - [ ] 3. `entrenar-un-mini-gpt`
 - [ ] 4. `muestreo`

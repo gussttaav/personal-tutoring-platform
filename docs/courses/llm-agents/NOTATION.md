@@ -33,6 +33,26 @@ this file gets shorter as it goes down.
 | $\text{PPL}$ | perplexity — $\exp$ of the mean per-token cross-entropy |
 | $N$, $D$, $C$ | parameters, training tokens, compute — Kaplan's letters |
 | $\alpha_N$, $\alpha_D$ | the scaling exponents: how the loss falls with $N$ and with $D$ |
+| $x_t \in V$ | the token at position $t$ — the first course's $w_t$; $x_{1:T}$, $x_{<t}$, $x_{\le t}$ are the runs, as there, and $x_{<1}$ is the empty sequence (Block 1 lesson 1) |
+| $\mathbf{Z} \in \mathbb{R}^{T \times \lvert V \rvert}$ | the logits stacked — row $t$ is $\mathbf{z}_t^{\top}$, one row per position read, one column per entry |
+| $\mathbf{z}_t(x_{\le t})$ | the logits of position $t$ **with the input named**: what the network was given. Used to state that the mask makes $\mathbf{z}_t(x_{1:T}) = \mathbf{z}_t(x_{\le t})$ (Block 1 lesson 1) |
+
+**$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
+language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
+sequence and no translator, so it takes $x$, which is what every paper the student will read
+writes. Block 1 lesson 1 says so in one clause, and no later lesson writes $w_t$. The runs keep the
+first course's spelling — a range subscript, never a bold letter — for the reason its Block 4 table
+gives.
+
+**The first token is given, and the index is shifted.** The mini-GPT has no `<GO>`: a training
+window is $T + 1$ tokens of the corpus, the network reads $x_{1:T}$, row $t$ of $\mathbf{Z}$ is
+computed from $x_{\le t}$ and predicts $x_{t+1}$, and what the network models of a window is
+$p_\theta(x_{2:T+1} \mid x_1)$ — $T$ factors, not $T + 1$, and a loss that is the mean over $T$ rows.
+That is the table's $p_\theta(x_{t+1} \mid x_{\le t})$ read literally, and it is the shift Block 1
+lesson 1 fixes with its four-token table; every Block 1 lesson that writes the loss writes it with
+that shift, and the lesson that first writes the product $\prod_t p_\theta(x_t \mid x_{<t})$ — the
+chain rule, indexed on the *predicted* position — says in a clause that the factor of position $t$
+comes out of row $t - 1$.
 
 **Four letters the first course spent elsewhere**, and the lesson that first writes each says so
 in one clause, because this course's reader has just come from that one: $\tau$ was the tokeniser

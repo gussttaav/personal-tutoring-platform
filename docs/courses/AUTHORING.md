@@ -288,6 +288,18 @@ ever sees:
 > ✅ eso lo construye <Leccion …>el forward pass</Leccion> · de aquí a <Leccion …>…</Leccion>
 > ❌ como vimos en <Leccion …>el forward pass</Leccion>  ← the target is ahead
 
+**A forward reference to a lesson whose file does not exist yet is prose** (`COURSE-C2-P1-01`).
+The slug is checked against the files on disk, drafts included, so a `<Leccion>` pointing at a
+lesson nobody has authored is a hard lint failure — and it fails inside an MDX comment too, because
+the passes read the source with regular expressions (§8). A block is written one lesson at a time,
+so the bridge of lesson $n$ nearly always names lesson $n+1$ before its file exists. Write the
+reference as plain prose that names the topic («la lección siguiente, sobre BPE de verdad»), mark
+the site with an MDX comment that spells the slug **without** the `<Leccion` tag text, and convert
+it in the PR that adds the target — that PR's checklist row is «every earlier lesson that named
+this one in prose now links it». The first course did the same (its bridges carried «la lección 11»
+until P7-02 converted them); the difference now is that the ordinal is banned, so the prose names
+the topic.
+
 **Blocks keep their numbers.** There is no `<Bloque>`: a block is a section of the syllabus, not a
 page to link to. In Spanish prose both are common nouns and stay **lowercase** mid-sentence: *el
 bloque 2*, *la lección 3* — never *el Bloque 2*. Capitalise only at the start of a sentence or in a

@@ -193,6 +193,9 @@ this work.
 | the same loop with a fresh messages list, given a task, returning a summary the parent sees | `subagente` | *subagent*, agente hijo, hilo, *worker* |
 | the message format the harness and the model agree on — the Messages format with its content blocks; MCP for tools | `protocolo` | *API* as a synonym (the API is the endpoint the protocol is spoken to; changing the URL changes neither); formato; estándar |
 | the text the harness sends the model as its own voice, and the repository's | *prompt*, `prompt de sistema` · `fichero de proyecto` | *system prompt*; instrucción (that is what the model receives from the user); indicación; the file's name in prose (`<W>AGENTE.md</W>` is a mention, not the term) |
+| the pre-softmax output vector of one position, $\mathbf{z}_t$ — what the softmax turns into $p_\theta$ | `logits` (Block 1 lesson 1) | *preactivación de salida* as the term — it is the first course's word for the same object, and the lesson that first writes `logits` names it once, at the collision; puntuaciones; *scores*; *activaciones* |
+| the identity $p(x_{1:T}) = \prod_t p(x_t \mid x_{<t})$ | `regla de la cadena` (de la probabilidad) (Block 1 lesson 1) | *factorización autorregresiva* as the term (`autorregresivo` stays as the adjective for the model, as the first course used it); descomposición. The lesson that writes it names the first course's chain rule of derivatives in the same clause, once — same name, nothing else shared |
+| a slice of $T + 1$ consecutive tokens of the corpus the model trains on — `ventanas()` in `minigpt.py` | `ventana` (de entrenamiento) (Block 1 lesson 1) | fragmento, tramo, trozo, *chunk*, secuencia (that is any $x_{1:T}$) — and see the collision note below |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,
@@ -216,6 +219,14 @@ the operation on the messages list, with its invariants (what is kept verbatim, 
 may never drop). A lesson that called the operation «resumir la conversación» would leave the
 invariants with nothing to attach to. `truncar` is the first course's word for cutting a text at
 $T_{\max}$ and keeping nothing of the tail, which is precisely what compaction does not do.
+
+`ventana` is spent twice, and the two rows name each other. Block 1's `ventana` is a slice of
+the corpus the model trains on, $T + 1$ tokens long — the word the checkpoint's own code uses, so
+the prose and `ventanas()` agree — while the `ventana (de contexto)` row above is $T_{\text{ctx}}$,
+the most tokens one *call* may hold. They are different sizes of the same shape, which is why the
+word fits both and why they can be confused. Tolerated on the shared rule: the two meet on one page
+first in the KV-cache lesson, which says which is which in a clause, and every Block 4–5 lesson
+means the context one and says «de contexto» the first time.
 
 *harness* and *sandbox* are English by the shared line — nobody who does this work says «arnés»
 or «caja de arena» — and both take the italics on first use. *prompt* is English for the same
