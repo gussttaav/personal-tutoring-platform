@@ -6,14 +6,14 @@
 # the landing renders in its «soon» state, the catalog and the sitemap omit it, and the route
 # marks it noindex. The card appears by itself with the first published lesson — never add
 # the course to the catalog by hand.
-#
-# No `heroMotif`: the only enum member (`attention-matrix`) is deliberately NLP-specific and
-# a second motif is a design task. The hero renders without one, which it already supports.
 
 slug: llm-agents
 title: "Modelos de Lenguaje: del Transformer al Agente"
 tagline: "Construye, desde cero y en tu propia máquina, un modelo de lenguaje moderno y el agente de programación que lo convierte en herramienta."
 level: avanzado
+# Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
+# Purely presentational; `agent-loop` is this course's own — the loop around the model.
+heroMotif: agent-loop
 prerequisites:
   intro: "Este curso continúa el de Deep Learning para NLP. Antes de empezar, necesitas:"
   items:

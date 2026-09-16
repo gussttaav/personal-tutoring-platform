@@ -382,9 +382,10 @@ export interface CourseFaqItem {
 }
 
 /** Which decorative hero motif the landing page renders behind the title. Per-course
- *  by design — the attention-matrix suits an NLP/Transformer course; the next course
- *  picks its own (or none). Add a case to `HeroMotif` when a new key lands here. */
-export type CourseHeroMotif = "attention-matrix";
+ *  by design — the attention-matrix suits an NLP/Transformer course, the agent-loop the
+ *  LLM-agents course (COURSE-C2-P0-01); the next course picks its own (or none). Add a
+ *  tile layout to `HeroMotif` when a new key lands here. */
+export type CourseHeroMotif = "attention-matrix" | "agent-loop";
 
 /** Course-level metadata from `course.<locale>.yml`. `blocks` is ordering +
  *  prose; individual lessons live in the sibling `<locale>/*.mdx` files and are

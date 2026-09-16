@@ -71,6 +71,10 @@ describe("CourseManifestSchema", () => {
     expect(
       CourseManifestSchema.parse({ ...valid, heroMotif: "attention-matrix" }).heroMotif,
     ).toBe("attention-matrix");
+    // COURSE-C2-P0-01: the second course's motif.
+    expect(
+      CourseManifestSchema.parse({ ...valid, heroMotif: "agent-loop" }).heroMotif,
+    ).toBe("agent-loop");
     expect(CourseManifestSchema.parse(valid).heroMotif).toBeUndefined();
     expect(() => CourseManifestSchema.parse({ ...valid, heroMotif: "spirals" })).toThrow();
   });

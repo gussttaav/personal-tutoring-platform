@@ -14,6 +14,9 @@ slug: llm-agents
 title: "Language Models: from the Transformer to the Agent"
 tagline: "Build, from scratch and on your own machine, a modern language model and the coding agent that turns it into a tool."
 level: advanced
+# Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
+# Purely presentational; `agent-loop` is this course's own — the loop around the model.
+heroMotif: agent-loop
 prerequisites:
   intro: "This course continues on from Deep Learning for NLP. Before you start, you'll need:"
   items:

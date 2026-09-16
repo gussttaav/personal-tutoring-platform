@@ -77,8 +77,11 @@ the `catalog-view` unit case landed. Deviations from the task doc:
   precedent: the question answers itself on the English page, and `ContentLanguageNotice`
   already says which language the lessons are in once they exist. The other seven entries are
   translated one-for-one; block titles use Title Case like dl-nlp's English twin.
-- **`heroMotif` omitted**, as the task allows; the hero renders without a motif (verified: no
-  SVG in the hero). The optional second-motif row (schema/types/HeroMotif) was not touched.
+- **The optional second `heroMotif` landed as `agent-loop`** (follow-up commit): the same
+  8×8 tile grid as `attention-matrix` — a ring of 20 tiles whose opacity ramps clockwise
+  (the loop in motion) around a 2×2 core with a brighter diagonal (the model), inside a faint
+  frame. `HeroMotif` now renders any motif from a `Tile[]`; `attention-matrix` output is
+  unchanged. Enum extended in `CourseHeroMotif` + `CourseManifestSchema`; both manifests set it.
 - **JSON-LD verified by inspection, not by the Rich Results test:** the prerendered
   `<script type="application/ld+json">` on both lesson-less landings parses, carries the same
   twelve keys as dl-nlp's (which already validates) with no empty value, and has no

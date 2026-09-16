@@ -291,7 +291,7 @@ export const CourseManifestSchema = z.strictObject({
   faq:            z.array(CourseFaqItemSchema),
   blocks:         z.array(CourseBlockSchema).min(1),
   // Optional decorative hero motif; extend the enum (and `HeroMotif`) per new design.
-  heroMotif:      z.enum(["attention-matrix"]).optional(),
+  heroMotif:      z.enum(["attention-matrix", "agent-loop"]).optional(),
 });
 
 export type CourseManifestInput = z.infer<typeof CourseManifestSchema>;
