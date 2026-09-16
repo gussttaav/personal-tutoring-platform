@@ -1,7 +1,7 @@
 # Course 2 (`llm-agents`) — Status
 
 **Planned:** 2026-09-15
-**Started:** —
+**Started:** 2026-09-16
 **Legend:** ⬜ not started · 🔄 in progress · ⛔ blocked · ✅ done · 🚫 won't do
 
 Update this file when starting, completing, or blocking a task. Block rows in Phase 1 flip to ✅
@@ -13,15 +13,15 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Manifests + «soon» landing](phase-0-second-course/01-manifest-and-landing.md) | `COURSE-C2-P0-01` | ⬜ | _tbd_ | |
+| [01 Manifests + «soon» landing](phase-0-second-course/01-manifest-and-landing.md) | `COURSE-C2-P0-01` | ✅ | _tbd_ | local |
 | [02 Cross-course `<Leccion curso=…>`](phase-0-second-course/02-cross-course-references.md) | `COURSE-C2-P0-02` | ⬜ | _tbd_ | |
 | [03 The mini-GPT checkpoint + train script](phase-0-second-course/03-course-model-assets.md) | `COURSE-C2-P0-03` | ⬜ | _tbd_ | |
 | [04 Authoring contract for a systems course](phase-0-second-course/04-authoring-contract.md) | `COURSE-C2-P0-04` | ⬜ | _tbd_ | |
 | [05 `<RepoLink>` + companion repository](phase-0-second-course/05-terminal-lessons.md) | `COURSE-C2-P0-05` | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] `/cursos/llm-agents` and `/en/cursos/llm-agents` render the «soon» landing, `noindex`,
-      absent from the catalog and the sitemap
+- [x] `/cursos/llm-agents` and `/en/cursos/llm-agents` render the «soon» landing, `noindex`,
+      absent from the catalog and the sitemap _(P0-01)_
 - [ ] `<Leccion curso="dl-nlp" …>` links with the course named in its card; a bad slug fails the lint
 - [ ] The checkpoint loads and generates in one Pyodide cell on a phone under the cap, and the
       train script reproduces it from the seed
@@ -58,3 +58,47 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 **Exit criteria**
 - [ ] `dl-nlp`'s last bridge and landing point at `llm-agents`; `/cursos` in prerequisite order
 - [ ] `launch:llm-agents` sent once, both locales, after a dry run
+
+---
+
+## Deviations
+
+**COURSE-C2-P0-01** — Closed. Both manifests, the `noindex` fix on the lesson-less landing and
+the `catalog-view` unit case landed. Deviations from the task doc:
+- **The empty syllabus does NOT list the five block titles.** The acceptance line asks for an
+  "empty syllabus with the five block titles", but `SyllabusAccordion` (P1-03) omits every
+  block with zero published lessons by design ("never rendered empty-but-present") and shows
+  the `courses.landing.syllabus.empty` line instead — so today both landings read "El temario
+  detallado se publicará muy pronto." / "The detailed syllabus will be published soon." The
+  component is not in the task's Files-affected list, so it was left alone; listing the blocks
+  before any lesson exists would be a landing-component change on both courses, a separate
+  decision.
+- **The English manifest drops the "¿Está en inglés?" FAQ**, following dl-nlp's `course.en.yml`
+  precedent: the question answers itself on the English page, and `ContentLanguageNotice`
+  already says which language the lessons are in once they exist. The other seven entries are
+  translated one-for-one; block titles use Title Case like dl-nlp's English twin.
+- **`heroMotif` omitted**, as the task allows; the hero renders without a motif (verified: no
+  SVG in the hero). The optional second-motif row (schema/types/HeroMotif) was not touched.
+- **JSON-LD verified by inspection, not by the Rich Results test:** the prerendered
+  `<script type="application/ld+json">` on both lesson-less landings parses, carries the same
+  twelve keys as dl-nlp's (which already validates) with no empty value, and has no
+  lesson-dependent field at all (`CourseStructuredData` never emits `hasPart`), so nothing
+  changed there.
+- **`robots` predicate:** `getCatalogEntry(slug, locale) !== null`, exactly the selector the
+  catalog and the sitemap use — `available` (from `courseLocales`) is empty in the same case,
+  so the page also carries no hreflang alternates, only its own canonical (the same
+  noindex + canonical pairing the untranslated lesson route uses). Prerendered output checked:
+  `noindex, follow` on `/cursos/llm-agents` and `/en/cursos/llm-agents`; dl-nlp's two landings
+  still `index, follow`; `sitemap.xml` has zero `llm-agents` entries; `/cursos` and `/en/cursos`
+  render one card each. The `/api/courses/search-index/llm-agents/{es,en}` params are
+  generated and answer `{"error":"not_found"}` — pre-existing behaviour for any lesson-less
+  manifest.
+- **e2e:** `courses-navigation` (7) and `courses-search` (9) pass against the production build;
+  the 3 signed-in `courses-progress` tests fail on `loginAs → 404` because the local `pnpm start`
+  server has no `E2E_MODE=true` (the test-auth route is env-gated) — environmental, unrelated.
+- **Dev gotcha:** a `pnpm dev` started against the pre-existing Turbopack persistent cache
+  (`.next/dev/cache/turbopack/`) answered 404 on `/cursos/llm-agents` even with both manifests on
+  disk (the warm route ran with a registry that predated them). `rm -rf .next/dev` and restart
+  fixed it; the production build never had the problem. Expect the same on any machine that
+  last ran `next dev` before this directory existed.
+- Committed on `course/llm-agents-plan`, no PR yet (**local**).

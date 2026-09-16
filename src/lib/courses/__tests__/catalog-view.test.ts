@@ -11,7 +11,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-import { __resetRegistry, __setContentRoot } from "@/lib/courses/registry";
+import { __resetRegistry, __setContentRoot, getCourse } from "@/lib/courses/registry";
 import {
   catalogLocales,
   courseLocales,
@@ -153,6 +153,24 @@ describe("course with no published lessons in any locale", () => {
     expect(getCatalogEntry("dl-nlp", "es")).toBeNull();
     expect(getCatalogEntry("dl-nlp", "en")).toBeNull();
     expect(listCatalogEntries("es")).toEqual([]);
+    expect(catalogLocales()).toEqual([]);
+  });
+
+  // COURSE-C2-P0-01 — a manifest with NO lesson directory at all: the state a second course
+  // is in from its first PR until its first `draft: false` lesson. The landing route still
+  // resolves the course (it renders the "soon" page and marks it noindex on this very
+  // predicate); the catalog, sitemap and hreflang set all omit it.
+  it("manifest without lessons: listCatalogEntries omits it, getCourse still resolves", () => {
+    __setContentRoot(makeTree({ manifests: { es: "Curso", en: "Course" } }));
+
+    expect(getCourse("dl-nlp", "es")?.title).toBe("Curso");
+    expect(getCourse("dl-nlp", "en")?.title).toBe("Course");
+
+    expect(getCatalogEntry("dl-nlp", "es")).toBeNull();
+    expect(getCatalogEntry("dl-nlp", "en")).toBeNull();
+    expect(listCatalogEntries("es")).toEqual([]);
+    expect(listCatalogEntries("en")).toEqual([]);
+    expect(courseLocales("dl-nlp")).toEqual([]);
     expect(catalogLocales()).toEqual([]);
   });
 });

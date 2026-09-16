@@ -18,6 +18,11 @@
  * Reading requires no sign-in (P4-02); no progress UI here (P4). hreflang correction and
  * sitemap/JSON-LD land in P6-01. (The blog kept the ComingSoonModal until BLOG-01
  * replaced it with a real /blog; there is no ComingSoonModal any more.)
+ *
+ * COURSE-C2-P0-01: the lesson-less "soon" landing is `noindex`. It was `index: true` whenever
+ * the manifest resolved — but a page the catalog and the sitemap refuse to list should not
+ * invite the crawler either. The predicate is `getCatalogEntry` being null, the same one
+ * those two use, so the page flips to `index` by itself with the first published lesson.
  */
 
 import "@/features/courses/course-editorial.css";
@@ -64,10 +69,13 @@ export async function generateMetadata({
   // That is a manifest AND lessons resolvable from somewhere — the same predicate the
   // catalog and the sitemap use, so all three agree on which URLs exist.
   const available = courseLocales(course.slug);
+  // COURSE-C2-P0-01: no published lesson in any locale → the "soon" landing renders but is
+  // absent from the catalog and the sitemap, so it must not be indexed either.
+  const listed = getCatalogEntry(course.slug, locale) !== null;
   return {
     title: `${course.title} — Gustavo Torres`,
     description: course.tagline,
-    robots: { index: true, follow: true },
+    robots: { index: listed, follow: true },
     alternates: availableLocaleAlternates(`/cursos/${course.slug}`, locale, available),
   };
 }
