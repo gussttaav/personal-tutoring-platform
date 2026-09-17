@@ -67,7 +67,7 @@ Settled on the canvas; not re-opened during implementation:
 | Phase | Purpose | Tasks |
 |-------|---------|-------|
 | [0 — Route split](phase-0-route-split/README.md) | `/mentoria` exists, the menu has Inicio, every deep link and test points at the right page. Nothing visual changes on `/` yet. | 2 |
-| [1 — Home](phase-1-home/README.md) | `/` becomes the new home, section by section, and ends fully static. | 5 |
+| [1 — Home](phase-1-home/README.md) | `/` becomes the new home, section by section, and ends fully static — with the booking overlays mounted (amendment below). | 6 |
 | [2 — Mentoría](phase-2-mentoria/README.md) | `/mentoria` gets its header, «Cómo funciona», testimonials and the app section; becomes indexable. | 4 |
 | [3 — QA](phase-3-qa/README.md) | Message-key parity, the e2e suite on staging, build and performance checks. | 2 |
 | [4 — Cleanup](phase-4-cleanup/README.md) | The design reference, this plan and the local command leave the working tree. | 1 |
@@ -84,6 +84,22 @@ retargets the deep links to it while `/` still renders the old landing. Phase 1 
 from the top down — hero first, the old sections still below — and P1-04 removes the booking
 shell from `/` last. At no point is a booking entry point dead, and at no point are two
 indexable pages identical.
+
+## Amendments
+
+- **2026-09-17 — the booking screens open in place on the home.** The plan as written sent the
+  home's «Reservar sesión ahora» and «Ver disponibilidad» to `/mentoria?book=…`, where the
+  shell would open the right surface. Implemented (P1-01), it reads as a detour: the visitor
+  sees Mentoría paint and then the calendar or the wizard appear over it. The decision now: the
+  calendar opens on `/`, a slot pick continues into the booking confirmation on `/`, «Reservar
+  sesión ahora» opens the right screen directly on `/`; the OAuth round-trip is unchanged and
+  still lands on `/mentoria` with the booking open. Mechanism: `InteractiveShell` is split into
+  `BookingProvider` + `BookingOverlays` (mounted on both pages, overlays dynamically imported)
+  and the Mentoría-only sessions/packs sections; the reschedule reader stays inside Mentoría's
+  `Suspense` boundary so `/` keeps its static-route target. Locked decision «No booking shell on
+  the home» (`design/NOTES.md`) is reworded to «no sessions/packs sections on the home». New
+  task P1-06; P1-01 and P1-04 amended; P3-02's home spec rewritten. The deep-link rules (P0-02)
+  do not change: cross-page intents still travel as `/mentoria?book=…`, never `/?book=`.
 
 ## Risks
 

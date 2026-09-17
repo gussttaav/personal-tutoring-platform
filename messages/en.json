@@ -141,6 +141,14 @@
       }
     }
   },
+  "home": {
+    "hero": {
+      "headline1": "Programming, mathematics and AI,",
+      "headline2": "with the hard part included.",
+      "subheading": "One-to-one classes with direct guidance, free courses that run in the browser, and a blog with one concept per article.",
+      "freeNote": "The first 15-minute meeting is free: we go over your case and set a work plan."
+    }
+  },
   "auth": {
     "signin": {
       "redirecting": "Redirecting to Google…"

@@ -1,10 +1,12 @@
-// REDESIGN-P0-01: `mentoria/page.tsx` is a verbatim copy of this composition — temporary, until
-// P1-04 rewrites `/` as the static home and the duplicate stops being one.
+// REDESIGN-P0-01: `mentoria/page.tsx` was a verbatim copy of this composition when the cycle
+// started — temporary, until P1-04 rewrites `/` as the static home and the duplicate stops being
+// one. REDESIGN-P1-01: the hero is `HomeHero` (features/home) here; `HeroSection` still serves
+// /mentoria.
 
 import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Spinner } from "@/components/ui";
-import HeroSection from "@/features/landing/HeroSection";
+import HomeHero from "@/features/home/HomeHero";
 import BiographySection from "@/features/landing/BiographySection";
 import SpecializationsSection from "@/features/landing/SpecializationsSection";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
@@ -13,6 +15,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StructuredData from "@/components/seo/StructuredData";
 import { localizedAlternates } from "@/lib/hreflang";
+import "@/features/home/home.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -46,7 +49,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             zIndex: 1,
           }}
         >
-          <HeroSection />
+          <HomeHero locale={locale} />
           <BiographySection />
           <SpecializationsSection />
 

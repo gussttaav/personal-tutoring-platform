@@ -21,6 +21,10 @@
  * its header leads into. `close-booking-overlay` stays (the logo click still closes an
  * open booking) but no longer carries a `scrollTo`. `id="sessions"` is kept: harmless,
  * and a footer link may target it again later.
+ *
+ * REDESIGN-P1-01: the `?book=` deep link gained an `availability` case — the home hero's
+ * «Ver disponibilidad» is a link into /mentoria now, not the `open-availability-modal`
+ * event (which only this component hears, and only on this page).
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -179,6 +183,10 @@ export default function InteractiveShell() {
       // COURSE-P10-01: the landing hero's own CTA, reachable from another page.
       // Same handler the "open-smart-book" listener above calls.
       case "smart":      router.handleSmartBook(); break;
+      // REDESIGN-P1-01: the home hero's «Ver disponibilidad», reachable from /. Same state
+      // the "open-availability-modal" listener above sets.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- consumes the URL param once, after auth settles; not a derived-state cascade.
+      case "availability": setShowAvailabilityModal(true); break;
     }
   }, [isAuthLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 

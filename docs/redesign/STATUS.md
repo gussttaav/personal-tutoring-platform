@@ -27,18 +27,24 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Hero + stats](phase-1-home/01-hero.md) | `REDESIGN-P1-01` | ⬜ | _tbd_ | |
+| [01 Hero + stats](phase-1-home/01-hero.md) | `REDESIGN-P1-01` | ✅ (amended) | Claude | local |
 | [02 Bio + compact areas](phase-1-home/02-bio-and-areas.md) | `REDESIGN-P1-02` | ⬜ | _tbd_ | |
 | [03 Courses + latest posts](phase-1-home/03-courses-and-posts.md) | `REDESIGN-P1-03` | ⬜ | _tbd_ | |
 | [04 App showcase + closing band + static home](phase-1-home/04-app-closing-and-static.md) | `REDESIGN-P1-04` | ⬜ | _tbd_ | |
 | [05 Home metadata](phase-1-home/05-home-metadata.md) | `REDESIGN-P1-05` | ⬜ | _tbd_ | |
+| [06 Booking overlays on both pages](phase-1-home/06-booking-overlays.md) | `REDESIGN-P1-06` | ⬜ | _tbd_ | |
+
+Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04 → 05.
 
 **Exit criteria**
 - [ ] `/` renders the six home sections in order at 390, 834 and 1440 as `design/home.html`
-- [ ] `/` has no `InteractiveShell`, no Suspense boundary, and `pnpm build` lists `/[locale]` as
-      a static route (○)
-- [ ] «Reservar sesión ahora» on `/` opens the smart booking on `/mentoria`; «Ver
-      disponibilidad» opens the availability window there
+- [ ] `/` has no `InteractiveShell` (sections), no Suspense boundary, exactly one
+      `<BookingOverlays />`, and `pnpm build` lists `/[locale]` as a static route (○) whose First
+      Load JS excludes the calendar / wizard / pack-booking chunks
+- [ ] «Reservar sesión ahora» on `/` opens the smart-book surface on `/`; «Ver disponibilidad»
+      opens the calendar on `/` and a slot pick continues into the booking with the slot
+      pre-selected — no navigation; an OAuth round-trip started on `/` lands on `/mentoria` with
+      the booking open, as today (amended 2026-09-17)
 - [ ] The chat assistant opens from the footer and the closing band on `/`
 - [ ] `messages/es.json` and `messages/en.json` have identical key trees
 
@@ -141,3 +147,62 @@ _Deviations, regressions and decisions taken during implementation go here, date
   shouldn't have. The staging-only manual checks (OAuth resume on `/mentoria`, the real
   confirmation-email link, `/pago-exitoso` → `/mentoria`) are unverified pending a staging
   deploy — flagging for whoever runs P3-02.
+- **2026-09-17 (P1-01)** — One structural choice the task md leaves open: the hero renders **one**
+  `<Image>` node, not the mock's two (`.hero-photo-sm` inside the copy + `.hero-photo` beside it).
+  `.home-hero-photo` is a grid item with `order: -1` below 1024 (so it sits above the copy, as the
+  mock's small photo does) and the frame wrapper switches from the 128px glow box to the 4/5
+  offset frame at 1024 via `home.css`. Two nodes would have meant two downloads and two preloads
+  of the LCP image (Chrome fetches `display:none` `<img>`s); one node is what the task's
+  `sizes="(max-width: 1023px) 128px, 340px"` describes anyway. Measured against
+  `design/home.html` in the Browser pane: every hero rect (photo, identity, h1, subheading, CTA
+  row and both buttons, free note, stats) has the same x/y/w/h at 390 and 834, and the same at
+  1440 bar a 4px x-offset from the app's always-on scrollbar gutter (`html{overflow-y:scroll}`).
+  The old hero's click-to-zoom on the photo is not carried over (the mock has none, and the hero
+  is a Server Component now); it survives on `/mentoria` until P2-01. The `availability` case in
+  `InteractiveShell`'s `?book=` switch needed a justified
+  `eslint-disable-next-line react-hooks/set-state-in-effect` (the other cases call router
+  handlers the compiler lint doesn't trace; same convention as `AvailabilityModal.tsx:189`).
+  Signed-out click-through verified in the Browser pane (`book=smart` → SignInGate on
+  `/mentoria`, `book=availability` → the weekly availability window); the signed-in path is not
+  browser-verified here (no local session — memory: no local admin session) but is the same
+  `handleSmartBook()` / `setShowAvailabilityModal(true)` the Mentoría buttons call, so it has the
+  coverage those already have. `pnpm lint` (0 errors; the 8 warnings pre-date this task),
+  `pnpm test` (142 suites, 1791 tests), the message-key parity one-liner (`[] []`) and
+  `pnpm build` green.
+- **2026-09-17 (plan amendment — booking in place on the home).** Decision taken after P1-01
+  shipped: the home's CTAs must not detour through `/mentoria`. Wanted: «Ver disponibilidad»
+  opens the calendar on `/`; a slot pick goes straight to the booking confirmation (free 15 min
+  for a first-timer); «Reservar sesión ahora» opens the right booking screen directly; the
+  unauthenticated flow stays as it is (SignInGate → Google → `/mentoria` with the booking open),
+  even when the gate was opened on `/`. Chosen mechanism (option A of the two discussed; the
+  dedicated-route option B was rejected as re-opening P0-02's deep-link inventory for no gain):
+  split `InteractiveShell` into `BookingProvider` + `BookingOverlays` (mounted on both pages,
+  overlays `next/dynamic`-loaded so the home's First Load JS stays clean) and the Mentoría-only
+  sections; `RescheduleBridge` keeps `useSearchParams` inside Mentoría's `Suspense` boundary so
+  the static-route target for `/` survives. Consequences accepted: signed-in visitors on `/`
+  trigger the credits fetch on mount (`useUserSession`); `src/app/[locale]/page.tsx` will import
+  `BookingOverlays` from `features/booking/`; the CLAUDE.md gotcha at `:96` changes in P1-06;
+  P3-02's home spec covers the in-place flows. What does NOT change: every `/mentoria?book=…`,
+  `?reschedule=…`, `?intent=…` deep link and callbackUrl (P0-02), «never link to `/?book=`».
+  Docs touched: `PLAN.md` («Amendments», phase table 5 → 6), `design/NOTES.md` (locked decision
+  reworded), `phase-1-home/README.md` (task 6, landing order, exit criteria), `01-hero.md`
+  (amended: buttons + events, `HomeHeroCtas`), `04-app-closing-and-static.md` (depends on P1-06;
+  `<BookingOverlays />` stays; the band's CTA dispatches `open-smart-book`), new
+  `06-booking-overlays.md`, `phase-3-qa/02-e2e-and-perf.md` (home spec, Lighthouse note), this
+  file.
+- **2026-09-17 (P1-01, CTA amendment landed)** — `HomeHeroCtas.tsx` (client island of two
+  `<button>`s dispatching `open-smart-book` / `open-availability-modal`) replaces the two
+  `<Link href="/mentoria?book=…">`; `HomeHero` stays a Server Component and keeps
+  `#hero-cta-row`; `home.css` gains `justify-content: center`, `cursor: pointer` and the primary's
+  `border: 0` so the buttons render as the links did. The `availability` `?book=` case stays in
+  the shell for deep links. Verified in the Browser pane on `/en`, signed out: «Check
+  availability» opens the calendar on `/en` (URL unchanged); a slot pick + Confirm opens the
+  «Sign in to continue — to book the selected time» gate on `/en`; «Book a session now» opens
+  the plain gate on `/en`; at 390 both buttons stack full-width and the FAB stays hidden while
+  the row is in its zone. The gate's callbackUrl is `useBookingRouter.ts:294-298`, untouched
+  (`/mentoria?intent=smart-book&slotStart=…`), so the post-OAuth landing is today's. Not
+  browser-verified: the signed-in in-place open (no local session) — it is the same
+  `handleSmartBook()` path the Mentoría hero exercises. Observed in passing, pre-existing and not
+  touched: the calendar's slot buttons are labelled «Hora disponible» on `/en` too
+  (`AvailabilityModal` / `WeeklyCalendar` aria-label not localised). `pnpm lint` (0 errors, 8
+  pre-existing warnings), `pnpm test` (142 / 1791), `pnpm build` green.

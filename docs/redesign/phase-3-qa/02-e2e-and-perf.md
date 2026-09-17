@@ -27,7 +27,7 @@ record what is a known flake; write the numbers into STATUS so the cycle has a b
 
 | File | Change |
 |------|--------|
-| `e2e/**` | Only what a real regression requires; no new specs unless a home-page flow lacks one — then ONE `home.spec.ts` covering: nav order, hero CTA → `/mentoria` with the smart booking open, footer assistant link opens the chat, the two course cards and two post cards present |
+| `e2e/**` | Only what a real regression requires; no new specs unless a home-page flow lacks one — then ONE `home.spec.ts` covering: nav order, «Ver disponibilidad» opens the calendar on `/` and a slot pick reaches the sign-in gate (signed out) or the free-15 confirmation (signed in, first-timer) without leaving `/`, «Reservar sesión ahora» opens the smart-book surface on `/`, the OAuth callbackUrl of a gate opened on `/` points at `/mentoria?intent=…`, footer assistant link opens the chat, the two course cards and two post cards present (amended 2026-09-17) |
 | `docs/redesign/STATUS.md` | «Cross-phase notes»: the e2e run summary (pass / flake re-run / fixed), the route table lines for `/[locale]` and `/[locale]/mentoria`, Lighthouse mobile scores before and after for both pages |
 
 ## The change
@@ -36,9 +36,10 @@ A verification task, with one allowed addition (the home spec) because the home 
 no coverage otherwise and its CTAs are the new bridge into the booking.
 
 Lighthouse: mobile preset, three runs each, median; `/` should improve on Performance (no
-booking shell, no client-side bailout, no calendar bundle) — if it does not, look at the app
-showcase's CSS and the course/blog card CSS imports before anything else. `/mentoria` should
-match the old `/` within noise.
+sessions/packs sections, no client-side bailout, the calendar / wizard / pack-booking chunks
+dynamically imported and absent from First Load JS — P1-06) — if it does not, first confirm
+those chunks are really off the route's First Load JS, then look at the app showcase's CSS and
+the course/blog card CSS imports. `/mentoria` should match the old `/` within noise.
 
 ## Acceptance criteria
 

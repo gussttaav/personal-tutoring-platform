@@ -27,7 +27,9 @@ current components already use it (`SpecializationsSection`, the cards' arrows).
 - **Menu:** Inicio · Cursos · Mentoría · Blog. Inicio is current on `/`, Mentoría on
   `/mentoria`. One emphasis rule (green + 2px underline), unchanged.
 - **Home order:** hero + stats → bio + compact areas → courses → latest posts → app → closing
-  band. No prices on the home. No booking shell on the home: it becomes fully static.
+  band. No prices on the home. No sessions/packs sections on the home: it becomes fully static.
+  *(Reworded 2026-09-17, `PLAN.md` «Amendments»: the booking overlays — calendar, sign-in gate,
+  booking screens — ARE mounted on the home, dynamically loaded, so the CTAs open in place.)*
 - **Mentoría order:** header → «Cómo funciona» (4 steps) → Áreas de Especialización (the
   current bento, unchanged, including DAM/DAW and the assistant strip) → testimonials →
   sessions → packs → app. The weekly calendar keeps appearing where it does today (after

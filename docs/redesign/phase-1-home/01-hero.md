@@ -1,13 +1,21 @@
 # P1-01 — Hero + stats
 
-**Tag:** `REDESIGN-P1-01` · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
-**Depends on:** P0-02 (the CTAs link into `/mentoria` with intents)
+**Tag:** `REDESIGN-P1-01` · **Effort:** M · **Owner:** Claude · **Status:** ✅ (amended)
+**Depends on:** P0-02 (the deep links point at `/mentoria`)
+
+> **Amended 2026-09-17.** The CTAs are no longer links into `/mentoria?book=…`: they are the
+> same buttons Mentoría's hero has, dispatching `open-smart-book` / `open-availability-modal`,
+> so the calendar and the booking open *in place* on `/` (see `STATUS.md` «Cross-phase notes»
+> and `PLAN.md` «Amendments»). Until P1-04 the shell is still mounted on `/` and hears them;
+> P1-06 makes that survive P1-04. Struck-through text below is the original spec, kept for the
+> record.
 
 ## TL;DR
 
 Replace `HeroSection` on `/` with the home hero from `design/home.html`: identity line and
-credential, the two-line headline with the gradient second line, the subheading, the two CTAs as
-links into `/mentoria`, the free-meeting note, and the photo in the offset frame on the right
+credential, the two-line headline with the gradient second line, the subheading, the two CTAs
+(~~links into `/mentoria`~~ buttons dispatching the shell's events), the free-meeting note, and
+the photo in the offset frame on the right
 from 1024px up (the small glow-box photo above the text below that). The four stats keep
 `StatCard` — extracted from `HeroSection` into its own file so P2-01 can delete `HeroSection`.
 
@@ -41,20 +49,27 @@ from 1024px up (the small glow-box photo above the text below that). The four st
 | File | Change |
 |------|--------|
 | `src/features/landing/StatCard.tsx` | **New.** `StatCard` + `StatCardProps` moved verbatim from `HeroSection.tsx:1-182`; `HeroSection` imports it (no behaviour change there) |
-| `src/features/home/HomeHero.tsx` | **New**, server component. Identity + credential (`landing.hero.credential`), headline (`home.hero.headline1` / `headline2`), subheading (`home.hero.subheading`), CTA row (`id="hero-cta-row"`, `className="hero-cta-row"`), free note (`home.hero.freeNote`), photo (`next/image` `/avatar.png`, `sizes="(max-width: 1023px) 128px, 340px"`, `priority`), and `<HomeStats />` |
+| `src/features/home/HomeHero.tsx` | **New**, server component. Identity + credential (`landing.hero.credential`), headline (`home.hero.headline1` / `headline2`), subheading (`home.hero.subheading`), CTA row (`id="hero-cta-row"`, `className="hero-cta-row"`, rendered by `HomeHeroCtas`), free note (`home.hero.freeNote`), photo (`next/image` `/avatar.png`, `sizes="(max-width: 1023px) 128px, 340px"`, `priority`), and `<HomeStats />` |
+| `src/features/home/HomeHeroCtas.tsx` | **New** (amendment), client. The two `<button>`s — `landing.hero.cta.book` → `open-smart-book`, `landing.hero.cta.availability` → `open-availability-modal` — verbatim the dispatches of `HeroSection.tsx:462-521`, styled by the `.home-hero-cta*` classes |
 | `src/features/home/HomeStats.tsx` | **New**, client. The `statCards` array from `HeroSection.tsx:203-240` and the stats grid `:524-535`, rendering `StatCard` |
 | `src/features/home/home.css` | **New.** The hero's responsive rules from the design (`.home-hero-grid`, `.home-hero-copy`, photo visibility at 1024, `.home-stats`), imported by `page.tsx`. Inline styles for everything single-valued, as the existing sections do |
-| `src/features/booking/InteractiveShell.tsx` | `+ case "availability": setShowAvailabilityModal(true); break;` in the `?book=` switch, with a `REDESIGN-P1-01` note |
+| `src/features/booking/InteractiveShell.tsx` | `+ case "availability": setShowAvailabilityModal(true); break;` in the `?book=` switch, with a `REDESIGN-P1-01` note — kept by the amendment as a deep-link case (nothing on the home links to it any more) |
 | `src/app/[locale]/page.tsx` | `HeroSection` → `HomeHero`; `import "@/features/home/home.css"` |
 | `messages/es.json`, `messages/en.json` | `home.hero.{headline1, headline2, subheading, freeNote}` — key-for-key. ES from the mock; EN: «Programming, mathematics and AI,» / «with the hard part included.» / «One-to-one classes with direct guidance, free courses that run in the browser, and a blog with one concept per article.» / «The first 15-minute meeting is free: we go over your case and set a work plan.» |
 
 ## The change
 
-**Links, not events.** The old CTAs dispatched window events because the shell was on the same
+~~**Links, not events.** The old CTAs dispatched window events because the shell was on the same
 page. On the home there is no shell: «Reservar sesión ahora» is `<Link href="/mentoria?book=smart"
 rel="nofollow">` (the pattern `LessonCta` established: the deep link is the bridge, `nofollow`
 because a `?book=` URL is a crawl signal worth not sending), «Ver disponibilidad» is `<Link
-href="/mentoria?book=availability" rel="nofollow">`. The shell gains the one missing case.
+href="/mentoria?book=availability" rel="nofollow">`. The shell gains the one missing case.~~
+
+**Events, like Mentoría (amendment).** The booking screens open in place on `/`: the CTAs are
+buttons in a small client island (`HomeHeroCtas`) dispatching exactly what `HeroSection`'s
+dispatch. The shell on `/` hears them today; after P1-04, `BookingOverlays` (P1-06) does. No
+`?book=` link leaves the home, which also removes the crawl-signal concern the `nofollow` was
+for. The `availability` deep-link case stays in the shell for external callers.
 
 **The photo frame moves up.** The design puts the bio's offset-frame photo in the hero and
 drops the bio's photo column; the hero renders the frame with the values from
@@ -74,9 +89,13 @@ in their own file. `HeroSection` keeps working for `/mentoria` until P2-01 delet
       CTAs, 2×2 stats), 834 (same, CTAs in a row) and 1440 (two columns, framed photo, 4 stats)
 - [ ] The headline's second line uses the gradient clip with the descender fix
       (`paddingBottom: 0.15em; marginBottom: -0.15em`, as `HeroSection.tsx:392-393`)
-- [ ] «Reservar sesión ahora» navigates to `/mentoria` and opens the smart booking;
+- [x] ~~«Reservar sesión ahora» navigates to `/mentoria` and opens the smart booking;
       «Ver disponibilidad» opens the availability window there — both work signed out and
-      signed in
+      signed in~~ (amendment) «Reservar sesión ahora» opens the smart-book surface on `/`
+      (SignInGate signed out; the wizard / pack booking signed in); «Ver disponibilidad» opens
+      the calendar on `/`, and a slot pick continues into the same surface with the slot
+      pre-selected — no navigation; after an OAuth round-trip the user lands on `/mentoria`
+      with the booking open, as today
 - [ ] The chat FAB still moves out of the CTAs' way while `#hero-cta-row` is on screen
 - [ ] Each stat opens its popover, closes on outside click and Escape, links out — unchanged
 - [ ] `HeroSection` on `/mentoria` renders as before (it now imports `StatCard`)
@@ -92,7 +111,8 @@ pnpm build
 node -e "const a=require('./messages/es.json'),b=require('./messages/en.json');const k=(o,p='')=>Object.entries(o).flatMap(([x,v])=>typeof v==='object'&&!Array.isArray(v)?k(v,p+x+'.'):[p+x]);const A=new Set(k(a)),B=new Set(k(b));console.log([...A].filter(x=>!B.has(x)),[...B].filter(x=>!A.has(x)))"
 ```
 
-Browser pane: `/` and `/en` at the three widths; click both CTAs; open a stat.
+Browser pane: `/` and `/en` at the three widths; click both CTAs (the calendar and the gate
+open on `/`, the URL does not change); pick a slot and read the gate's callbackUrl; open a stat.
 
 ## Gotchas
 
@@ -104,6 +124,9 @@ Browser pane: `/` and `/en` at the three widths; click both CTAs; open a stat.
   `course-editorial.css` here — P1-03 does, for the section heads.
 - `landing.hero.cta.book` / `cta.availability` are reused for the button labels; do not
   duplicate them under `home.*`.
+- (amendment) `HomeHeroCtas` is the hero's second client island (after `HomeStats`); both are
+  leaves, the hero's HTML around them stays static. Buttons, not `<Link onClick>`: Mentoría's
+  hero uses buttons and there is no no-JS path anywhere in the booking.
 
 ## Out of scope
 

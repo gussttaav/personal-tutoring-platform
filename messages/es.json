@@ -141,6 +141,14 @@
       }
     }
   },
+  "home": {
+    "hero": {
+      "headline1": "Programación, matemáticas e IA,",
+      "headline2": "con la parte difícil incluida.",
+      "subheading": "Clases individuales con guía directa, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo.",
+      "freeNote": "El encuentro inicial de 15 minutos es gratis: comentamos tu caso y definimos un plan de trabajo."
+    }
+  },
   "auth": {
     "signin": {
       "redirecting": "Redirigiendo a Google…"

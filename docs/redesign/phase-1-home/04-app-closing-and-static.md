@@ -1,13 +1,20 @@
 # P1-04 — App showcase + closing band + static home
 
 **Tag:** `REDESIGN-P1-04` · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
-**Depends on:** P1-03, and P0-02 (nothing may still need the shell on `/`)
+**Depends on:** P1-03, P1-06 (the overlays must exist on their own before the shell leaves
+`/`), and P0-02
+
+> **Amended 2026-09-17** (see `STATUS.md` «Cross-phase notes»): the shell still leaves `/`, but
+> `<BookingOverlays />` (P1-06) takes its place, so the home keeps the booking screens in place.
+> The closing band's primary CTA dispatches `open-smart-book` like the hero's, instead of linking
+> to `/mentoria?book=smart`.
 
 ## TL;DR
 
 The last two bands of the home — the mobile-app showcase and the closing booking band — and the
-composition change that finishes the page: `InteractiveShell` and its `Suspense` boundary leave
-`/`, the chat FAB is mounted on its own, and `/` becomes a fully static route. The app showcase
+composition change that finishes the page: `InteractiveShell` (the sessions/packs sections) and
+its `Suspense` boundary leave `/`, `<BookingOverlays />` stays (mounted alone), the chat FAB is
+mounted on its own, and `/` becomes a fully static route. The app showcase
 and the closing band are shared components (`src/components/`) because `/mentoria` mounts them
 too (P2-03).
 
@@ -39,10 +46,10 @@ too (P2-03).
 |------|--------|
 | `src/components/AppShowcase.tsx` | **New**, server. Left: the phone mock as markup (all `.ap-*` markup from the design, sample data as literals inside the component — it is a picture, not content); right: `app.soon` pill, `app.heading`, `app.lead`, three benefits (`app.benefits.{join, book, credits}.{title, body}`), the two store buttons. Store buttons render as `<a>` only when `NEXT_PUBLIC_APP_STORE_URL` / `NEXT_PUBLIC_PLAY_STORE_URL` are set; otherwise as `<span aria-disabled>` with the bracketed placeholder label (`app.stores.appStore` = «[App Store]» …), so the placeholder is visible on purpose |
 | `src/components/app-showcase.css` | **New.** Every `.app*`, `.phone`, `.ap-*`, `.store*` rule from the design |
-| `src/components/ClosingCta.tsx` | **New**, server. The band: `heading`, `body`, primary `<Link href="/mentoria?book=smart" rel="nofollow">` (`landing.hero.cta.book`), ghost button that dispatches `open-chat` (`footer.askAssistant`) — the ghost button is the one client island (`ClosingCtaChatButton`) |
+| `src/components/ClosingCta.tsx` | **New**, server. The band: `heading`, `body`, primary button dispatching `open-smart-book` (`landing.hero.cta.book`) and ghost button dispatching `open-chat` (`footer.askAssistant`) — the two buttons are one client island (`ClosingCtaButtons`). ~~primary `<Link href="/mentoria?book=smart" rel="nofollow">`~~ (amendment: the overlays are on both pages, so the band opens the booking in place like the hero) |
 | `src/components/HomeChat.tsx` | **New**, client, one line: `export default function HomeChat() { return <Chat />; }` — or mount `<Chat />` directly if it needs no wrapper; the point is that `Chat` is on `/` without `InteractiveShell` |
 | `src/features/home/home.css` | `+ .home-closing` spacing only; the band's own rules live in `ClosingCta` inline |
-| `src/app/[locale]/page.tsx` | Remove `Suspense`, `Spinner`, `InteractiveShell` and their comment; mount `AppShowcase`, `ClosingCta`, `HomeChat`; `import "@/components/app-showcase.css"`; add the `REDESIGN-P1-04` header comment stating that `/` is static and the shell lives on `/mentoria` |
+| `src/app/[locale]/page.tsx` | Remove `Suspense`, `Spinner`, `InteractiveShell` and their comment; keep `<BookingOverlays />` (from P1-06) mounted alone, with no children; mount `AppShowcase`, `ClosingCta`, `HomeChat`; `import "@/components/app-showcase.css"`; add the `REDESIGN-P1-04` header comment stating that `/` is static, the booking overlays are mounted on both pages and the sessions/packs sections live on `/mentoria` |
 | `messages/es.json`, `messages/en.json` | `app.{soon, heading, lead, benefits.join.title, benefits.join.body, benefits.book.title, benefits.book.body, benefits.credits.title, benefits.credits.body, stores.downloadOn, stores.availableOn, stores.appStore, stores.playStore}`, `home.closing.{heading, body}` — key-for-key; ES from the mock («Tus clases, también desde el móvil», «Cuéntame qué quieres aprender», …) |
 | `.env.example` (if present) | `+ NEXT_PUBLIC_APP_STORE_URL=`, `+ NEXT_PUBLIC_PLAY_STORE_URL=` with a comment |
 
@@ -65,9 +72,12 @@ listening to `open-chat`; the shell merely rendered it. On `/` it is mounted by 
 `/mentoria` the shell keeps rendering it (unchanged) — mounting it twice on the same page would
 show two FABs, so the page must mount it only where the shell is absent.
 
-**Static home.** With the shell gone, nothing on `/` calls `useSearchParams`, so the
-`Suspense` boundary and the spinner go. `pnpm build` must list `/[locale]` as ○. The `fadeUp`
-keyframes `<style>` block in `page.tsx` stays (the sections use the animation).
+**Static home.** With the sections gone, nothing on `/` calls `useSearchParams` (the reschedule
+reader stays inside Mentoría's boundary via `RescheduleBridge`, P1-06), so the `Suspense`
+boundary and the spinner go. `pnpm build` must list `/[locale]` as ○ — with `BookingOverlays`
+mounted: it is a client island whose overlays are dynamically imported and state-gated, so the
+prerender contains none of them. The `fadeUp` keyframes `<style>` block in `page.tsx` stays
+(the sections use the animation).
 
 ## Acceptance criteria
 
@@ -77,11 +87,15 @@ keyframes `<style>` block in `page.tsx` stays (the sections use the animation).
       card, two rows, dashed «Reservar otra clase», tab bar with Inicio active
 - [ ] Store buttons are disabled placeholders with «[App Store]» / «[Google Play]» when the env
       vars are unset; real links when set (verify with a local `.env.local`)
-- [ ] «Reservar sesión ahora» in the band → `/mentoria?book=smart`; «Pregunta al asistente IA»
-      in the band and in the footer open the chat on `/`
+- [ ] «Reservar sesión ahora» in the band opens the smart-book surface on `/` (no navigation);
+      «Pregunta al asistente IA» in the band and in the footer open the chat on `/`
+- [ ] After removing the shell, the hero's and the band's CTAs still open the calendar / the
+      booking on `/` (heard by `BookingOverlays`); the Navbar pack button and logo click still
+      work on `/`
 - [ ] Exactly one chat FAB on `/` and exactly one on `/mentoria`
-- [ ] `src/app/[locale]/page.tsx` has no `Suspense`, no `InteractiveShell`; `pnpm build` lists
-      `/[locale]` as ○ Static
+- [ ] `src/app/[locale]/page.tsx` has no `Suspense`, no `InteractiveShell`, exactly one
+      `<BookingOverlays />`; `pnpm build` lists `/[locale]` as ○ Static and its First Load JS
+      excludes the calendar / wizard / pack-booking chunks (P1-06's criterion, re-checked here)
 - [ ] Both message files carry the new keys
 - [ ] `pnpm lint`, `pnpm test`, `pnpm build` green
 
