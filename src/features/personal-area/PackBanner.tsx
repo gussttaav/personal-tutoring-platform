@@ -84,7 +84,7 @@ export default function PackBanner({ packSession }: { packSession: UserSession }
         <button
           type="button"
           className="pa-btn pa-btn--primary"
-          onClick={() => router.push("/?book=pack")}
+          onClick={() => router.push("/mentoria?book=pack")}
         >
           <span className="material-symbols-outlined" aria-hidden="true">calendar_add_on</span>
           {t("bookButton")}

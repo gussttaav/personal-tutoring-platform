@@ -11,9 +11,9 @@
  * interrupting the thing the reader came for. It also renders for a signed-out
  * reader, unlike `LessonComplete`, which returns null when progress is untracked.
  *
- * `/?book=smart` rather than a dispatched event: `open-smart-book` — what the landing
+ * `/mentoria?book=smart` rather than a dispatched event: `open-smart-book` — what the
  * hero fires — has exactly one listener, inside `InteractiveShell`, which is mounted
- * only on the landing page. Firing it here would be a silent no-op, the same failure
+ * only on `/mentoria`. Firing it here would be a silent no-op, the same failure
  * `#sessions` had from /cursos (see Footer.tsx). The `?book=` deep link is the
  * established bridge from another page, and `book=smart` routes through the very same
  * `handleSmartBook()` the hero button calls.
@@ -21,8 +21,8 @@
  * `locale`, never `contentLocale`: an English reader on a Spanish-fallback lesson gets
  * English chrome. See Leccion.tsx for the same distinction spelled out.
  *
- * `rel="nofollow"`: `/` is already canonical, but 43 indexed lesson pages all pointing
- * at `/?book=smart` is a crawl signal worth not sending.
+ * `rel="nofollow"`: `/mentoria` is already canonical, but 43 indexed lesson pages all
+ * pointing at `/mentoria?book=smart` is a crawl signal worth not sending.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -43,7 +43,7 @@ export default async function LessonCta({ locale }: LessonCtaProps) {
         <p className="lesson-cta-body">{t("body")}</p>
       </div>
 
-      <Link href="/?book=smart" rel="nofollow" className="lesson-cta-button">
+      <Link href="/mentoria?book=smart" rel="nofollow" className="lesson-cta-button">
         <span className="material-symbols-outlined" aria-hidden="true" style={{ fontSize: "1.2rem" }}>
           calendar_add_on
         </span>

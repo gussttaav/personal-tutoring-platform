@@ -13,15 +13,15 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 `/mentoria` route + menu](phase-0-route-split/01-mentoria-route-and-menu.md) | `REDESIGN-P0-01` | ✅ | Claude | local |
-| [02 Deep links, emails and e2e retarget](phase-0-route-split/02-deep-links.md) | `REDESIGN-P0-02` | ⬜ | _tbd_ | |
+| [02 Deep links, emails and e2e retarget](phase-0-route-split/02-deep-links.md) | `REDESIGN-P0-02` | ✅ | Claude | local |
 
 **Exit criteria**
 - [x] `/mentoria` and `/en/mentoria` render today's landing, `noindex`, absent from the sitemap
 - [x] Menu reads Inicio · Cursos · Mentoría · Blog on desktop and in the mobile panel; Inicio is
       current on `/`, Mentoría on `/mentoria`; `useSessionsAnchor.ts` no longer exists
-- [ ] No `/#sessions`, `/?book=`, `/?reschedule=` or `/?action=` literal remains in `src/`,
+- [x] No `/#sessions`, `/?book=`, `/?reschedule=` or `/?action=` literal remains in `src/`,
       `e2e/` or the email templates; the booking e2e specs drive `/mentoria`
-- [ ] `pnpm lint` + `pnpm test` + `pnpm build` green
+- [x] `pnpm lint` + `pnpm test` + `pnpm build` green
 
 ## Phase 1 — Home
 
@@ -114,3 +114,30 @@ _Deviations, regressions and decisions taken during implementation go here, date
   Browser pane (hamburger + 4-item panel at 390 and 834, desktop row with no hamburger at 1440, no
   horizontal overflow at any width); `pnpm lint` clean and
   `courses-navigation -g "mobile: the panel"` passes against the dev server.
+- **2026-09-17 (P0-02)** — Mechanical retarget, one gap in the task's own inventory: its
+  `grep -rn '/?reschedule='` audit should have caught `src/hooks/useRescheduleIntent.ts:76-78`
+  (the OAuth `callbackUrl` the reschedule flow builds when an unauthenticated user opens a
+  `/?reschedule=` email link) but the file wasn't in the "Files affected" table. Retargeted it to
+  `/mentoria?reschedule=…` too — otherwise the acceptance criterion's grep (`'"/?\|`/?\|/#sessions'`)
+  would still fail. `SignInGate`'s default `callbackUrl` now reads `usePathname()` from
+  `@/i18n/navigation` (locale-agnostic, matching the other `/mentoria?…` literals) per the task's
+  judgement call. `email-functions.ts`'s reschedule-URL building was pulled into an exported
+  `rescheduleUrl()` (same pattern as the existing `announcementUrls()`) so it's unit-testable —
+  `sendConfirmationEmail` itself can't render under Jest (memory: email templates untestable in
+  Jest) — and a new `src/infrastructure/resend/__tests__/reschedule-url.test.ts` asserts the
+  `/mentoria?reschedule=…&token=…` shape for all four session types.
+  `pnpm lint` / `pnpm test` (142 suites, 1791 tests) / `pnpm build` all green. E2E: ran the five
+  named specs locally against the test DB (`.env.e2e.local` + `stripe listen`) instead of staging
+  (no staging URL available in this environment) — `booking-free`, `reschedule`, all four `chat`
+  tests, and `booking-single [en]` passed outright; `booking-pack [en]` failed once on a
+  personal-area timing race then passed on retry (matches the documented e2e-flakiness pattern,
+  unrelated to this task — the pack credit had already been debited on the first run, proving the
+  `/mentoria` booking path itself worked). `booking-single [es]` and `booking-pack [es]` — the
+  only locale that pays live through Stripe — could not complete: the local Stripe CLI's test API
+  key expired 2026-09-16 (one day before this run), so `stripe listen` never authenticated and no
+  webhook reached `/api/stripe/webhook`. Not a regression from this change: confirmed by loading
+  `/mentoria` directly in the Browser pane, which renders the "Comprar pack" buttons with live
+  prices exactly as `booking-pack [es]`'s first failure (missing "Comprar pack" button) says it
+  shouldn't have. The staging-only manual checks (OAuth resume on `/mentoria`, the real
+  confirmation-email link, `/pago-exitoso` → `/mentoria`) are unverified pending a staging
+  deploy — flagging for whoever runs P3-02.

@@ -42,7 +42,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
 
       {/* Pack credit shortcut — only when the student has credits to spend */}
       {hasActivePack && packSession && (
-        <button type="button" className="pa-creditcta" onClick={() => router.push("/?book=pack")}>
+        <button type="button" className="pa-creditcta" onClick={() => router.push("/mentoria?book=pack")}>
           <span className="pa-ic">
             <span className="material-symbols-outlined" aria-hidden="true">redeem</span>
           </span>
@@ -65,7 +65,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
             // free15min is free (kept in i18n); paid sessions read the live price.
             price={key === "free15min" ? t("sessions.free15min.price") : prices[key].price}
             isFree={key === "free15min"}
-            onClick={() => router.push(`/?book=${key}`)}
+            onClick={() => router.push(`/mentoria?book=${key}`)}
           />
         ))}
       </div>
@@ -85,7 +85,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
               label={t(`packs.${key}.label` as Parameters<typeof t>[0])}
               sub={sub}
               price={p.price}
-              onClick={() => router.push(`/?book=${key}`)}
+              onClick={() => router.push(`/mentoria?book=${key}`)}
             />
           );
         })}

@@ -82,7 +82,7 @@ export default function NextClassHero({ booking, onCancelled }: NextClassHeroPro
             <button
               type="button"
               className="pa-btn pa-btn--ghost"
-              onClick={() => router.push(`/?reschedule=${booking.sessionType}&token=${booking.token}`)}
+              onClick={() => router.push(`/mentoria?reschedule=${booking.sessionType}&token=${booking.token}`)}
             >
               <span className="material-symbols-outlined" aria-hidden="true">event_repeat</span>
               {tUp("reschedule")}

@@ -36,7 +36,7 @@ export default function UpcomingTab({ bookings, onCancelled }: UpcomingTabProps)
         <button
           type="button"
           className="pa-btn pa-btn--primary pa-btn--lg"
-          onClick={() => router.push("/?book=free15min")}
+          onClick={() => router.push("/mentoria?book=free15min")}
         >
           <span className="material-symbols-outlined" aria-hidden="true">calendar_add_on</span>
           {t("emptyCta")}
@@ -116,7 +116,7 @@ function UpcomingItem({ booking, onCancelled }: { booking: UserBooking; onCancel
               className="pa-iconbtn"
               title={t("reschedule")}
               aria-label={t("reschedule")}
-              onClick={() => router.push(`/?reschedule=${booking.sessionType}&token=${booking.token}`)}
+              onClick={() => router.push(`/mentoria?reschedule=${booking.sessionType}&token=${booking.token}`)}
             >
               <span className="material-symbols-outlined" aria-hidden="true">event_repeat</span>
             </button>

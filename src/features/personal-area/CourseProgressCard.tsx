@@ -77,7 +77,7 @@ export default function CourseProgressCard({ view }: CourseProgressCardProps) {
       {isCompleted ? (
         <>
           <p className="pa-course__note">{t("completedNote")}</p>
-          <Link href="/?book=session1h" className="pa-btn pa-btn--primary pa-course__cta">
+          <Link href="/mentoria?book=session1h" className="pa-btn pa-btn--primary pa-course__cta">
             <span
               className="material-symbols-outlined"
               aria-hidden="true"

@@ -85,12 +85,12 @@ function SuccessContent() {
 
   /**
    * After a successful pack purchase the user wants to book their first class
-   * immediately. We redirect to /?action=schedule-pack so InteractiveShell
+   * immediately. We redirect to /mentoria?action=schedule-pack so InteractiveShell
    * can read that param on mount and open the pack booking view automatically,
    * without the user having to find and click "Reservar mis clases" manually.
    */
   function handleScheduleClasses() {
-    router.push("/?action=schedule-pack");
+    router.push("/mentoria?action=schedule-pack");
   }
 
   // ── Connecting — activating credits ──

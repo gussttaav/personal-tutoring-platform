@@ -8,7 +8,7 @@
  * a canned response — no real API calls are made.
  *
  * What is tested:
- *   - Chat widget renders on the homepage
+ *   - Chat widget renders on /mentoria
  *   - Suggestion buttons are visible and clickable
  *   - A mocked response is rendered in the chat thread (including markdown)
  *   - The UI does not crash when the chat endpoint returns an error
@@ -31,8 +31,8 @@ test.describe("AI chat widget (mocked API)", () => {
     });
   });
 
-  test("chat widget is visible on the homepage", async ({ page }) => {
-    await page.goto("/");
+  test("chat widget is visible on /mentoria", async ({ page }) => {
+    await page.goto("/mentoria");
 
     // The chat input is always rendered inside the chat panel.
     await expect(page.getByRole("textbox", { name: /escribe tu mensaje/i })).toBeVisible({
@@ -41,7 +41,7 @@ test.describe("AI chat widget (mocked API)", () => {
   });
 
   test("suggestion buttons are rendered", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/mentoria");
 
     // The Chat component renders suggestion chip buttons (.chat-suggestion) on first load.
     // Scope to the .chat-suggestion class to avoid matching pack booking buttons
@@ -51,7 +51,7 @@ test.describe("AI chat widget (mocked API)", () => {
   });
 
   test("clicking a suggestion shows the mocked response", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/mentoria");
 
     // Open the chat panel via the FAB — the panel needs pointer-events: all for
     // the suggestion click to register (closed panel has pointer-events: none).
@@ -69,7 +69,7 @@ test.describe("AI chat widget (mocked API)", () => {
   });
 
   test("chat renders markdown in responses", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/mentoria");
 
     // Open the chat panel via the FAB — needed for pointer-events: all
     await page.getByRole("button", { name: /abrir asistente/i }).click();

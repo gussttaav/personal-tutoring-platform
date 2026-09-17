@@ -6,7 +6,7 @@
  * Flow:
  *   1. Authenticated user creates a free booking via API to get a cancelToken
  *      (the cancelToken doubles as the reschedule token)
- *   2. Navigates to /?reschedule=free15min&token=<cancelToken>
+ *   2. Navigates to /mentoria?reschedule=free15min&token=<cancelToken>
  *      (this is the URL format injected by confirmation email links)
  *   3. The useRescheduleIntent hook fires, activating the reschedule flow
  *   4. The weekly calendar opens; user picks a new slot:
@@ -58,7 +58,7 @@ test.describe("Reschedule existing booking", () => {
 
     // Navigate with reschedule URL params — these are what the email link uses.
     // The hook reads ?reschedule=free15min&token=<cancelToken> and opens the picker.
-    await page.goto(`/?reschedule=free15min&token=${encodeURIComponent(cancelToken)}`);
+    await page.goto(`/mentoria?reschedule=free15min&token=${encodeURIComponent(cancelToken)}`);
 
     // The reschedule calendar opens — navigate to next week so the already-booked
     // slot (tomorrow) is in a different week and more future slots are visible.
@@ -77,7 +77,7 @@ test.describe("Reschedule existing booking", () => {
     await expect(confirmBtn).toBeVisible({ timeout: 10_000 });
     await confirmBtn.click();
 
-    // Rescheduled free sessions show success inline — the URL stays at "/".
+    // Rescheduled free sessions show success inline — the URL stays at "/mentoria".
     // SingleSessionBooking renders phase="success" with a "Volver al inicio" button.
     await expect(
       page.getByRole("button", { name: /volver al inicio/i }),

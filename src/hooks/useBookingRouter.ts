@@ -14,10 +14,10 @@
  * When an unauthenticated user clicks a session or pack action the hook
  * encodes their intent in the callbackUrl that is passed to Google OAuth:
  *
- *   Session click  → callbackUrl = /?intent=<sessionType>
- *   Pack buy       → callbackUrl = /?intent=buy-pack&packSize=<size>
- *   Pack schedule  → callbackUrl = /?action=schedule-pack
- *   Smart book     → callbackUrl = /?intent=smart-book[&slot…]
+ *   Session click  → callbackUrl = /mentoria?intent=<sessionType>
+ *   Pack buy       → callbackUrl = /mentoria?intent=buy-pack&packSize=<size>
+ *   Pack schedule  → callbackUrl = /mentoria?action=schedule-pack
+ *   Smart book     → callbackUrl = /mentoria?intent=smart-book[&slot…]
  *
  * After OAuth, Next.js renders the page with those params in the URL.
  * The hook reads them in a useEffect that is GATED ON isSignedIn === true,
@@ -250,7 +250,7 @@ export function useBookingRouter(
     if (!isSignedIn) {
       setPendingSession(type);
       setSignInGateLabel(SESSION_SIGNIN_LABELS[type]);
-      setSignInCallbackUrl(`/?intent=${encodeURIComponent(type)}`);
+      setSignInCallbackUrl(`/mentoria?intent=${encodeURIComponent(type)}`);
       return;
     }
     setActiveSession(type);
@@ -259,7 +259,7 @@ export function useBookingRouter(
   function handlePackBuy(size: PackSize) {
     if (!isSignedIn) {
       setSignInGateLabel("actions.buyPack");
-      setSignInCallbackUrl(`/?intent=buy-pack&packSize=${size}`);
+      setSignInCallbackUrl(`/mentoria?intent=buy-pack&packSize=${size}`);
       setSelectedPack(size);
       return;
     }
@@ -269,7 +269,7 @@ export function useBookingRouter(
   function handlePackSchedule() {
     if (!isSignedIn) {
       setSignInGateLabel("actions.schedulePackClass");
-      setSignInCallbackUrl("/?action=schedule-pack");
+      setSignInCallbackUrl("/mentoria?action=schedule-pack");
       return;
     }
     setShowPackBooking(true);
@@ -295,7 +295,7 @@ export function useBookingRouter(
       const params = new URLSearchParams({ intent: "smart-book" });
       if (slot) encodeSlotParams(params, slot);
       setSignInGateLabel(slot ? "actions.bookChosenTime" : "actions.bookSession");
-      setSignInCallbackUrl(`/?${params.toString()}`);
+      setSignInCallbackUrl(`/mentoria?${params.toString()}`);
       return;
     }
 

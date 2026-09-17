@@ -329,7 +329,7 @@ export default function PastClassModal({ entry, onClose, onReviewed }: PastClass
           <button
             type="button"
             className="pa-btn pa-btn--primary pa-btn--lg pa-btn--block"
-            onClick={() => router.push(`/?book=${entry.sessionType}`)}
+            onClick={() => router.push(`/mentoria?book=${entry.sessionType}`)}
           >
             <span className="material-symbols-outlined" aria-hidden="true">event_repeat</span>
             {t("bookSame")}
