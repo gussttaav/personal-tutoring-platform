@@ -1,7 +1,7 @@
 # Home + Mentoría redesign — Status
 
 **Planned:** 2026-09-17
-**Started:** _tbd_
+**Started:** 2026-09-17
 **Legend:** ⬜ not started · 🔄 in progress · ⛔ blocked · ✅ done · 🚫 won't do
 
 Update this file when starting, completing, or blocking a task.
@@ -12,12 +12,12 @@ Update this file when starting, completing, or blocking a task.
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 `/mentoria` route + menu](phase-0-route-split/01-mentoria-route-and-menu.md) | `REDESIGN-P0-01` | ⬜ | _tbd_ | |
+| [01 `/mentoria` route + menu](phase-0-route-split/01-mentoria-route-and-menu.md) | `REDESIGN-P0-01` | ✅ | Claude | local |
 | [02 Deep links, emails and e2e retarget](phase-0-route-split/02-deep-links.md) | `REDESIGN-P0-02` | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] `/mentoria` and `/en/mentoria` render today's landing, `noindex`, absent from the sitemap
-- [ ] Menu reads Inicio · Cursos · Mentoría · Blog on desktop and in the mobile panel; Inicio is
+- [x] `/mentoria` and `/en/mentoria` render today's landing, `noindex`, absent from the sitemap
+- [x] Menu reads Inicio · Cursos · Mentoría · Blog on desktop and in the mobile panel; Inicio is
       current on `/`, Mentoría on `/mentoria`; `useSessionsAnchor.ts` no longer exists
 - [ ] No `/#sessions`, `/?book=`, `/?reschedule=` or `/?action=` literal remains in `src/`,
       `e2e/` or the email templates; the booking e2e specs drive `/mentoria`
@@ -92,3 +92,15 @@ Update this file when starting, completing, or blocking a task.
 ## Cross-phase notes
 
 _Deviations, regressions and decisions taken during implementation go here, dated._
+
+- **2026-09-17 (P0-01)** — No deviations from the task md. `e2e/courses-navigation.spec.ts` was
+  run locally against the dev server with `E2E_BASE_URL=http://localhost:3000` (global-setup
+  skips the DB in that mode): the rewritten current-page and «Mentoría is a real destination»
+  tests pass, and so does the rest of the spec except `en: English card and landing lead into
+  the English reader`, which fails **before this task**: the `llm-agents` course (COURSE-C2) has
+  no `en/` lessons yet, so its catalog card wears the «Lessons in Spanish» badge and the spec's
+  page-wide `toHaveCount(0)` no longer holds. Not P0-01's to fix — flagging for P3-02 (or the
+  course cycle). Also observed, not a deviation: between 640 and 1024px the navbar shows neither
+  the desktop links nor the hamburger (pre-existing `hidden lg:flex` / `sm:hidden`), and
+  `design/home.html` reproduces the same breakpoints, so at 834 the menu items are unreachable in
+  both the mock and the app.

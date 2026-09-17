@@ -5,12 +5,16 @@
  *
  * - Desktop: brand + nav links (lg+) + auth dropdown with pack credits + locale pill
  * - Mobile:  brand + hamburger → full-width panel with icons, unified bottom strip
+ *
+ * REDESIGN-P0-01: four items — Inicio · Cursos · Mentoría · Blog. «Mentoría» is a page
+ * (`/mentoria`) now, not an anchor into `/`, so the `/#sessions` interception and the
+ * `useSessionsAnchor` hook behind it are gone: reaching the mentoring offer is a navigation
+ * like any other. «Inicio» takes the `match: "/"` slot Mentoría used to hold.
  */
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { useSessionsAnchor } from "@/hooks/useSessionsAnchor";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useUserSession } from "@/hooks/useUserSession";
@@ -32,18 +36,18 @@ export default function Navbar() {
   // prefix already stripped, so "/en/cursos" and "/cursos" both read as "/cursos" — one match
   // rule for both locales.
   const pathname = usePathname();
-  const onSessionsClick = useSessionsAnchor();
 
-  // `match` is the route that makes an item CURRENT. Mentoría's is "/" because the landing
-  // page IS the mentoring offering — `#sessions` is a section of it, not a page of its own.
+  // `match` is the route that makes an item CURRENT. "/" is the exact-match case (see
+  // `isActive`); every other route is a prefix match, so a lesson is still "inside" Cursos.
   //
   // BLOG-01: Blog now has one too. It used to have none — it opened a ComingSoonModal and
   // was never anywhere — so it was the one item the rule below could not apply to. With a
-  // real page behind it, all three items are marked by the same rule.
+  // real page behind it, every item is marked by the same rule.
   const NAV_LINKS = [
-    { label: t("courses"),   href: "/cursos",    match: "/cursos", icon: "menu_book" },
-    { label: t("mentoring"), href: "/#sessions", match: "/",       icon: "group"     },
-    { label: t("blog"),      href: "/blog",      match: "/blog",   icon: "edit_note" },
+    { label: t("home"),      href: "/",          match: "/",         icon: "home"      },
+    { label: t("courses"),   href: "/cursos",    match: "/cursos",   icon: "menu_book" },
+    { label: t("mentoring"), href: "/mentoria",  match: "/mentoria", icon: "group"     },
+    { label: t("blog"),      href: "/blog",      match: "/blog",     icon: "edit_note" },
   ];
 
   // ONE visual rule: the current item is green and underlined, and nothing else is emphasised.
@@ -52,8 +56,7 @@ export default function Navbar() {
   // while the current page was marked in white — and two rules meant the two items could never
   // render alike: clicking Cursos gave you white + underline, clicking Mentoría gave you green
   // and no underline, for what a reader experiences as the same act. Colour now means exactly
-  // one thing. The landing page looks as it always did (Mentoría green) because there it IS
-  // the current item; the difference is that it stops claiming to be one anywhere else.
+  // one thing: the item whose page you are on.
   const isActive = (match?: string) =>
     match === "/"
       ? pathname === "/"
@@ -81,18 +84,10 @@ export default function Navbar() {
     window.dispatchEvent(new CustomEvent("close-booking-overlay"));
   };
 
-  const handleNavLinkClick = (e: React.MouseEvent, href: string) => {
-    // COURSE-P6-03: every branch closes the mobile panel, including the plain-navigation
-    // one that "Cursos" and "Blog" take — otherwise the panel stays open over the page it
-    // just client-side navigated to.
+  const handleNavLinkClick = () => {
+    // COURSE-P6-03: every nav item is a plain navigation and every one closes the mobile
+    // panel — otherwise the panel stays open over the page it just client-side navigated to.
     setMobileOpen(false);
-
-    // "Mentoría" is a section of the landing page, not a page. One shared handler so it
-    // behaves identically from here and from the Footer — see useSessionsAnchor.
-    if (href === "/#sessions") {
-      onSessionsClick(e);
-      return;
-    }
   };
 
   // ── Shared mobile nav-item style helpers ────────────────────────────────────
@@ -148,7 +143,7 @@ export default function Navbar() {
                     paddingBottom: "2px",
                     borderBottom: active ? "2px solid #4edea3" : "2px solid transparent",
                   }}
-                  onClick={(e) => handleNavLinkClick(e, href)}
+                  onClick={handleNavLinkClick}
                   onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
                   onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = restColor; }}
                 >
@@ -396,7 +391,7 @@ export default function Navbar() {
                       key={label}
                       href={href}
                       aria-current={active ? "page" : undefined}
-                      onClick={(e) => handleNavLinkClick(e, href)}
+                      onClick={handleNavLinkClick}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                       style={{
                         ...mobileNavItemBase,
@@ -449,7 +444,7 @@ export default function Navbar() {
                       key={label}
                       href={href}
                       aria-current={active ? "page" : undefined}
-                      onClick={(e) => handleNavLinkClick(e, href)}
+                      onClick={handleNavLinkClick}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                       style={{
                         ...mobileNavItemBase,

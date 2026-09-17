@@ -1,5 +1,13 @@
-// REDESIGN-P0-01: `mentoria/page.tsx` is a verbatim copy of this composition — temporary, until
-// P1-04 rewrites `/` as the static home and the duplicate stops being one.
+/*
+ * REDESIGN-P0-01 — /mentoria: the tutoring landing gets its own route.
+ *
+ * A COPY of `src/app/[locale]/page.tsx` as it stood when the redesign cycle started, not a
+ * shared component: Phase 1 rewrites `/` section by section and Phase 2 rewrites this page
+ * section by section, so a shared `LandingComposition` would be deleted two PRs later. The
+ * duplication is temporary (P1-04 removes it from `/`) and `noindex` is what makes it
+ * acceptable meanwhile — P2-04 lifts it, gives the page its own metadata keys and lists it in
+ * the sitemap. `landing.meta` is reused for now.
+ */
 
 import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
@@ -12,15 +20,25 @@ import InteractiveShell from "@/features/booking/InteractiveShell";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StructuredData from "@/components/seo/StructuredData";
+import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
+
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "landing.meta" });
-  return { title: t("title"), description: t("description"), alternates: localizedAlternates("", locale) };
+  return {
+    title: t("title"),
+    description: t("description"),
+    robots: { index: false, follow: true },
+    alternates: localizedAlternates("/mentoria", locale),
+  };
 }
 
-export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function MentoriaPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
 

@@ -1,6 +1,6 @@
 # P0-01 — `/mentoria` route + menu
 
-**Tag:** `REDESIGN-P0-01` · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REDESIGN-P0-01` · **Effort:** M · **Owner:** Claude · **Status:** ✅
 **Depends on:** nothing
 
 ## TL;DR
@@ -80,17 +80,17 @@ have no subject any more.
 
 ## Acceptance criteria
 
-- [ ] `/mentoria` and `/en/mentoria` render the full landing (hero with stats, bio, areas,
+- [x] `/mentoria` and `/en/mentoria` render the full landing (hero with stats, bio, areas,
       sessions, packs); a session card click opens the same flow as on `/`
-- [ ] `<meta name="robots" content="noindex, follow">` (or equivalent) is in `/mentoria`'s head;
+- [x] `<meta name="robots" content="noindex, follow">` (or equivalent) is in `/mentoria`'s head;
       `/mentoria` is not in `sitemap.xml`
-- [ ] Desktop navbar and both mobile panels list Inicio · Cursos · Mentoría · Blog; `nav.home`
+- [x] Desktop navbar and both mobile panels list Inicio · Cursos · Mentoría · Blog; `nav.home`
       exists in both message files
-- [ ] On `/`: Inicio has `aria-current="page"`; on `/mentoria`: Mentoría; on `/cursos`: Cursos
+- [x] On `/`: Inicio has `aria-current="page"`; on `/mentoria`: Mentoría; on `/cursos`: Cursos
       only
-- [ ] Footer «Mentoría» is a plain link to `/mentoria` (respects `/en`)
-- [ ] `src/hooks/useSessionsAnchor.ts` is gone; `grep -rn "SESSIONS_ANCHOR\|takeScrollIntent\|gt:scroll-intent" src` is empty
-- [ ] `pnpm lint`, `pnpm test`, `pnpm build` green; the `courses-navigation` spec updated as
+- [x] Footer «Mentoría» is a plain link to `/mentoria` (respects `/en`)
+- [x] `src/hooks/useSessionsAnchor.ts` is gone; `grep -rn "SESSIONS_ANCHOR\|takeScrollIntent\|gt:scroll-intent" src` is empty
+- [x] `pnpm lint`, `pnpm test`, `pnpm build` green; the `courses-navigation` spec updated as
       above passes against staging (or is visibly consistent with the DOM if e2e cannot run
       locally)
 

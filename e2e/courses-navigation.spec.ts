@@ -21,6 +21,12 @@
  * real page now, so it pins what the Cursos flow pins — the chrome goes somewhere — from the
  * navbar AND the footer. The modal is gone; nothing in the app renders one any more.
  *
+ * REDESIGN-P0-01: «Mentoría» is a page too (`/mentoria`), and «Inicio» joined the menu. The
+ * two tests that pinned the `#sessions` scroll — navigate home, land on the section, keep the
+ * URL clean, survive navbar → Back → footer — are gone with the mechanism they guarded; what
+ * is left to pin is what Blog pins: the label goes to the same page from the navbar and the
+ * footer. The current-page test marks Inicio on `/` and Mentoría on `/mentoria`.
+ *
  * Signed out throughout — reading requires no account (P4-02), and the notify card's
  * signed-out state is all that is asserted here (its signed-in toggle needs OAuth).
  *
@@ -141,25 +147,39 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(notify.getByRole("button", { name: d.courses.notify.signIn })).toBeVisible();
   });
 
-  test("the nav marks the CURRENT page, and Mentoría stops looking current", async ({ page }) => {
+  test("the nav marks the CURRENT page — Inicio on /, Mentoría on /mentoria, Cursos on /cursos", async ({ page }) => {
     const d = dict.es;
     const nav = page.locator("nav").first();
 
-    // ONE rule, so both items render alike. On the landing page Mentoría is the current item —
-    // `#sessions` is a section of that page, not a page of its own — and it is marked exactly
-    // the way Cursos is marked on /cursos. Never both at once.
+    // ONE rule, so every item renders alike. On the home Inicio is the current item; on
+    // /mentoria it is Mentoría, marked exactly the way Cursos is marked on /cursos. Never two
+    // at once — the exact-match rule for "/" is what keeps Inicio dark everywhere else.
     await page.goto("/");
-    await expect(nav.getByRole("link", { name: d.nav.mentoring, exact: true })).toHaveAttribute(
+    await expect(nav.getByRole("link", { name: d.nav.home, exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
     await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
 
-    // On a courses route, Cursos is current — and Mentoría must NOT be, which is the whole
-    // point: its accent is a call to action, and leaving it lit here pointed the reader at
-    // the wrong item.
+    await page.goto("/mentoria");
+    await expect(nav.getByRole("link", { name: d.nav.mentoring, exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.getByRole("link", { name: d.nav.home, exact: true })).not.toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
+
+    // On a courses route, Cursos is current — and neither Inicio nor Mentoría is, which is the
+    // whole point: an accent left lit here points the reader at the wrong item.
     await page.goto("/cursos");
     await expect(nav.getByRole("link", { name: d.nav.courses, exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.getByRole("link", { name: d.nav.home, exact: true })).not.toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -169,17 +189,16 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     );
     await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
 
-    // The two items are marked IDENTICALLY — the complaint that started this was that they
+    // The items are marked IDENTICALLY — the complaint that started this was that they
     // were not. Same colour, same underline, whichever one you are on.
     const markedHere = await nav.locator("[aria-current='page']").evaluate(
       (el) => getComputedStyle(el).color + "|" + getComputedStyle(el).borderBottomColor,
     );
-    await page.goto("/");
-    const markedHome = await nav.locator("[aria-current='page']").evaluate(
+    await page.goto("/mentoria");
+    const markedMentoria = await nav.locator("[aria-current='page']").evaluate(
       (el) => getComputedStyle(el).color + "|" + getComputedStyle(el).borderBottomColor,
     );
-    expect(markedHere).toBe(markedHome);
-    await page.goto("/cursos");
+    expect(markedHere).toBe(markedMentoria);
 
     // A lesson is still "inside" Cursos.
     await page.goto(FIRST_LESSON_PATH);
@@ -189,52 +208,23 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     );
   });
 
-  test("Mentoría reaches the sessions section from a courses page, with a clean URL", async ({ page }) => {
+  test("Mentoría is a real destination, from the navbar and the footer", async ({ page }) => {
     const d = dict.es;
 
-    // `#sessions` lives in InteractiveShell, which is landing-page only. As a bare fragment
-    // link this click used to preventDefault and fire an event nobody was listening for — it
-    // did nothing at all, silently. It must now navigate home AND land on the section.
-    //
-    // The URL must come out clean: the scroll intent travels in sessionStorage, not as a
-    // `#sessions` fragment, so the same act produces the same URL from anywhere. Asserting
-    // the absence of the fragment is the point — an earlier attempt stripped it after the
-    // fact with history.replaceState and reproducibly corrupted the URL to `/#sessions#sessions`.
+    // `/mentoria` renders the tutoring landing. Both chrome surfaces used to carry `/#sessions`
+    // plus a scroll-intent handler so the click worked from /cursos; now they are plain links
+    // and land on the page — with a clean URL, since there is no fragment to strip any more.
     await page.goto("/cursos");
     await page.locator("nav").first()
       .getByRole("link", { name: d.nav.mentoring, exact: true }).click();
+    await expect(page).toHaveURL(/\/mentoria$/, { timeout: 30_000 });
+    await expect(page.locator("#sessions")).toBeAttached({ timeout: 15_000 });
 
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-    await expect(page).not.toHaveURL(/#sessions/);
-    await expect(page.locator("#sessions")).toBeInViewport({ timeout: 15_000 });
-
-    // Same from the footer, which carries the same link and renders on /cursos too.
     await page.goto("/cursos");
     await page.locator("footer")
       .getByRole("link", { name: d.footer.mentoring, exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-    await expect(page).not.toHaveURL(/#sessions/);
-    await expect(page.locator("#sessions")).toBeInViewport({ timeout: 15_000 });
-  });
-
-  test("navbar → Back → footer keeps the URL clean (the replaceState corruption)", async ({ page }) => {
-    const d = dict.es;
-
-    // This exact sequence produced `/#sessions#sessions` when the fragment was stripped with
-    // history.replaceState behind the App Router. Pinned because the failure needed three
-    // steps to appear and looked fine in every one-step check.
-    await page.goto("/cursos");
-    await page.locator("nav").first()
-      .getByRole("link", { name: d.nav.mentoring, exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-
-    await page.goBack();
-    await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
-
-    await page.locator("footer")
-      .getByRole("link", { name: d.footer.mentoring, exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-    await expect(page).not.toHaveURL(/#sessions/);
+    await expect(page).toHaveURL(/\/mentoria$/, { timeout: 30_000 });
+    await expect(page.locator("#sessions")).toBeAttached({ timeout: 15_000 });
   });
 
   test("mobile: the panel marks the current page and closes on navigation", async ({ page }) => {

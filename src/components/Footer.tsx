@@ -9,17 +9,20 @@
  * FooterModals (policy modals) are still used — they're client components that
  * the user can trigger; we just pass the modal open state down from here via
  * the FooterModals wrapper (unchanged from original).
+ *
+ * REDESIGN-P0-01: «Mentoría» is a plain link to `/mentoria`, like Cursos and Blog. It used
+ * to be `/#sessions` + the `useSessionsAnchor` handler (COURSE-P6-03), because the
+ * mentoring offer was a section of `/` that had to be reached from other pages; it is a
+ * page now, so the handler and the hook are gone.
  */
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { useSessionsAnchor } from "@/hooks/useSessionsAnchor";
 import FooterModals from "@/features/landing/FooterModals";
 import BrandLogo from "@/components/BrandLogo";
 
 export default function Footer() {
   const t = useTranslations("footer");
-  const onSessionsClick = useSessionsAnchor();
 
   return (
     <footer
@@ -151,12 +154,8 @@ export default function Footer() {
               >
                 {t("blog")}
               </Link>
-              {/* COURSE-P6-03: `#sessions` lives in InteractiveShell, which is only on the
-                  landing page — a bare fragment link was dead everywhere else, and the footer
-                  is now rendered on /cursos too. `/#sessions` navigates home first. */}
               <Link
-                href="/#sessions"
-                onClick={onSessionsClick}
+                href="/mentoria"
                 style={{
                   fontSize:       "13px",
                   color:          "#86948a",

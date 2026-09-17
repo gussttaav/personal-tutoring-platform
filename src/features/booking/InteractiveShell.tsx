@@ -15,11 +15,16 @@
  * COURSE-P10-01: the `?book=` deep link gained a `smart` case (the in-lesson CTA in
  * the course reader needs the landing hero's routing from a page where this component
  * is not mounted), and the effect that consumes it now waits for NextAuth to settle.
+ *
+ * REDESIGN-P0-01: the `#sessions` scroll-intent machinery (COURSE-P6-03) is gone with
+ * `useSessionsAnchor` — «Mentoría» is the `/mentoria` page now, and this shell is what
+ * its header leads into. `close-booking-overlay` stays (the logo click still closes an
+ * open booking) but no longer carries a `scrollTo`. `id="sessions"` is kept: harmless,
+ * and a footer link may target it again later.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { takeScrollIntent } from "@/hooks/useSessionsAnchor";
 import { api } from "@/lib/api-client";
 import { useUserSession } from "@/hooks/useUserSession";
 import { useBookingRouter } from "@/hooks/useBookingRouter";
@@ -109,36 +114,11 @@ export default function InteractiveShell() {
     return () => window.removeEventListener("open-pack-booking", handler);
   }, [router.handlePackSchedule]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // COURSE-P6-03: arrive from another page and land on the sessions section.
-  //
-  // "Mentoría" points at a SECTION of this page, so reaching it from /cursos is a navigation
-  // plus a scroll. The scroll intent is carried in sessionStorage rather than as a `#sessions`
-  // fragment — see src/hooks/useSessionsAnchor.ts for why the URL is deliberately left clean.
-  // The intent is consumed INSIDE the timer, not in the effect body, and that ordering is
-  // load-bearing under StrictMode's double-invoke: consuming first meant mount #1 took the
-  // read-once value and its cleanup then cancelled the very scroll it was taken for, leaving
-  // mount #2 with nothing. Scheduling first makes the cancelled pass a no-op.
+  // Allow the Navbar to close booking overlays (logo click)
   useEffect(() => {
-    // Same 50ms as the handler below: on a client-side transition the section is not laid out
-    // at mount, and scrolling to an element that is not there yet does nothing.
-    const t = setTimeout(() => {
-      const target = takeScrollIntent();
-      if (target) document.querySelector(target)?.scrollIntoView({ behavior: "smooth" });
-    }, 50);
-    return () => clearTimeout(t);
-  }, []);
-
-  // Allow the Navbar to close booking overlays (logo / Mentoría clicks)
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const { scrollTo } = ((e as CustomEvent).detail ?? {}) as { scrollTo?: string };
+    const handler = () => {
       router.closePackBooking();
       router.closeSession();
-      if (scrollTo) {
-        setTimeout(() => {
-          document.querySelector(scrollTo)?.scrollIntoView({ behavior: "smooth" });
-        }, 50);
-      }
     };
     window.addEventListener("close-booking-overlay", handler);
     return () => window.removeEventListener("close-booking-overlay", handler);
