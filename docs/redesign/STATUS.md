@@ -104,3 +104,13 @@ _Deviations, regressions and decisions taken during implementation go here, date
   the desktop links nor the hamburger (pre-existing `hidden lg:flex` / `sm:hidden`), and
   `design/home.html` reproduces the same breakpoints, so at 834 the menu items are unreachable in
   both the mock and the app.
+- **2026-09-17 (NAV-BP-01)** — Fixed the 640–1024px gap flagged above: the hamburger button and
+  mobile panel in `Navbar.tsx` moved from `sm:hidden` to `lg:hidden` so they now cover every width
+  below the desktop link row, which only appears at `lg:flex`. The auth block and locale pill stay
+  `hidden sm:flex`, so 640–1023px shows them in the bar beside the hamburger as well as inside the
+  panel — an accepted duplicate, not a refactor of the panel. Same `sm` → `lg` swap applied to
+  `.burger` in `design/home.html` and `design/mentoria.html` (both are static mocks with no
+  JS-driven panel, so no separate panel rule existed to change). Verified at 390/834/1440 in the
+  Browser pane (hamburger + 4-item panel at 390 and 834, desktop row with no hamburger at 1440, no
+  horizontal overflow at any width); `pnpm lint` clean and
+  `courses-navigation -g "mobile: the panel"` passes against the dev server.

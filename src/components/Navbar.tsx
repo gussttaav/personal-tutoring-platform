@@ -10,6 +10,10 @@
  * (`/mentoria`) now, not an anchor into `/`, so the `/#sessions` interception and the
  * `useSessionsAnchor` hook behind it are gone: reaching the mentoring offer is a navigation
  * like any other. «Inicio» takes the `match: "/"` slot Mentoría used to hold.
+ *
+ * NAV-BP-01: the hamburger/panel breakpoint is `lg`, not `sm` — the desktop link row only
+ * appears at `lg:flex` (≥1024), so `sm:hidden` (<640) left 640–1023 (tablets) with no way to
+ * reach the nav links at all.
  */
 
 import { useState } from "react";
@@ -288,7 +292,7 @@ export default function Navbar() {
 
           {/* ── Hamburger button (mobile) ── */}
           <button
-            className="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
+            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
             style={{ background: mobileOpen ? "rgba(78,222,163,0.08)" : "transparent", border: "none", cursor: "pointer", color: "#e5e1e4" }}
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
@@ -304,7 +308,7 @@ export default function Navbar() {
       {/* ── Mobile panel ── */}
       {mobileOpen && (
         <div
-          className="sm:hidden"
+          className="lg:hidden"
           style={{
             background: "rgba(19,19,21,0.97)",
             backdropFilter: "blur(20px)",
