@@ -147,6 +147,18 @@
       "headline2": "con la parte difícil incluida.",
       "subheading": "Clases individuales con guía directa, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo.",
       "freeNote": "El encuentro inicial de 15 minutos es gratis: comentamos tu caso y definimos un plan de trabajo."
+    },
+    "bio": {
+      "para": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria. Tras varios años como desarrollador de software y cinco en la investigación y la docencia universitaria, trabajo de forma independiente desde hace más de siete años acompañando a estudiantes y profesionales: desde el refuerzo académico y el aprendizaje desde cero hasta la preparación de entrevistas técnicas y el desarrollo de proyectos reales.",
+      "howLink": "Cómo funcionan las clases"
+    },
+    "areas": {
+      "programming": "Estructuras de datos, algoritmos, concurrencia y patrones de diseño. Python, Java, C/C++, Haskell.",
+      "backend": "APIs REST y microservicios, SQL y NoSQL, despliegue en la nube, Docker y Git.",
+      "math": "Cálculo, álgebra lineal, métodos numéricos, matemática discreta y autómatas.",
+      "ai": "Machine Learning, Deep Learning, LLMs y programación multiagente, con base matemática.",
+      "data": "Probabilidad, estadística aplicada, minería de datos, big data y series temporales.",
+      "cycles": "Refuerzo en los módulos técnicos más complejos y mentoría para proyectos finales."
     }
   },
   "auth": {

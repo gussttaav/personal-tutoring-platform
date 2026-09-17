@@ -143,3 +143,67 @@
   .home-hero-cta--primary { transition: none; }
   .home-hero-cta--primary:hover { transform: none; }
 }
+
+/*
+ * REDESIGN-P1-02 — bio + compact areas band. `HomeBio` / `HomeAreas` inline everything
+ * single-valued, as the hero does; this holds the grid, the two-column area grid, and the hovers
+ * an inline style can't express. Values are `docs/redesign/design/home.html`'s `.bio-grid` /
+ * `.exp-grid` / `.exp` / `.social`.
+ */
+.home-bio-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 44px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .home-bio-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 64px;
+  }
+}
+
+/*
+ * The base look lives here, not inline on the `<a>`s: an inline style always beats an external
+ * stylesheet rule regardless of specificity, so `color` / `border` had to move here for
+ * `:hover` (below) to ever have a chance to apply.
+ */
+.home-social a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.10);
+  border-radius: 7px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+.home-social a:hover { border-color: rgba(78, 222, 163, 0.35); color: #4edea3; }
+
+.home-bio-link { color: #4edea3; transition: color 0.2s; }
+.home-bio-link:hover { color: #10b981; }
+
+/* Areas: one column below 640, two from 640; 12px gaps (the bento's cards use 16px) */
+.home-areas-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .home-areas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.home-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #201f22;
+  border: 1px solid rgba(60, 74, 66, 0.15);
+  border-radius: 14px;
+  transition: border-color 0.2s;
+}
+.home-area:hover { border-color: rgba(78, 222, 163, 0.3); }

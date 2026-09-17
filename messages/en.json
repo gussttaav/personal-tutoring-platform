@@ -147,6 +147,18 @@
       "headline2": "with the hard part included.",
       "subheading": "One-to-one classes with direct guidance, free courses that run in the browser, and a blog with one concept per article.",
       "freeNote": "The first 15-minute meeting is free: we go over your case and set a work plan."
+    },
+    "bio": {
+      "para": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer and five in university research and teaching, I've worked independently for over seven years, helping students and professionals: from academic support and learning from scratch to technical interview preparation and real-world project development.",
+      "howLink": "How classes work"
+    },
+    "areas": {
+      "programming": "Data structures, algorithms, concurrency and design patterns. Python, Java, C/C++, Haskell.",
+      "backend": "REST APIs and microservices, SQL and NoSQL, cloud deployment, Docker and Git.",
+      "math": "Calculus, linear algebra, numerical methods, discrete mathematics and automata.",
+      "ai": "Machine Learning, Deep Learning, LLMs and multi-agent programming, with a mathematical foundation.",
+      "data": "Probability, applied statistics, data mining, big data and time series.",
+      "cycles": "Support in the most demanding technical modules and mentoring for final projects."
     }
   },
   "auth": {

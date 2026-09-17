@@ -1,14 +1,16 @@
 // REDESIGN-P0-01: `mentoria/page.tsx` was a verbatim copy of this composition when the cycle
 // started — temporary, until P1-04 rewrites `/` as the static home and the duplicate stops being
 // one. REDESIGN-P1-01: the hero is `HomeHero` (features/home) here; `HeroSection` still serves
-// /mentoria.
+// /mentoria. REDESIGN-P1-02: `BiographySection` + `SpecializationsSection` are replaced by the
+// compact `HomeBio` + `HomeAreas` pair, wrapped in one two-column `<section>`; both landing
+// components still serve /mentoria unchanged.
 
 import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Spinner } from "@/components/ui";
 import HomeHero from "@/features/home/HomeHero";
-import BiographySection from "@/features/landing/BiographySection";
-import SpecializationsSection from "@/features/landing/SpecializationsSection";
+import HomeBio from "@/features/home/HomeBio";
+import HomeAreas from "@/features/home/HomeAreas";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
 import Navbar from "@/components/Navbar";
@@ -50,8 +52,19 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           }}
         >
           <HomeHero locale={locale} />
-          <BiographySection />
-          <SpecializationsSection />
+
+          <section
+            className="home-bio-grid"
+            style={{
+              padding: "72px 0",
+              borderTop: "1px solid rgba(255,255,255,0.05)",
+              borderBottom: "1px solid rgba(255,255,255,0.05)",
+              animation: "fadeUp 0.7s ease both 0.15s",
+            }}
+          >
+            <HomeBio locale={locale} />
+            <HomeAreas locale={locale} />
+          </section>
 
           <Suspense
             fallback={

@@ -28,7 +28,7 @@ Update this file when starting, completing, or blocking a task.
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Hero + stats](phase-1-home/01-hero.md) | `REDESIGN-P1-01` | ✅ (amended) | Claude | local |
-| [02 Bio + compact areas](phase-1-home/02-bio-and-areas.md) | `REDESIGN-P1-02` | ⬜ | _tbd_ | |
+| [02 Bio + compact areas](phase-1-home/02-bio-and-areas.md) | `REDESIGN-P1-02` | ✅ | Claude | local |
 | [03 Courses + latest posts](phase-1-home/03-courses-and-posts.md) | `REDESIGN-P1-03` | ⬜ | _tbd_ | |
 | [04 App showcase + closing band + static home](phase-1-home/04-app-closing-and-static.md) | `REDESIGN-P1-04` | ⬜ | _tbd_ | |
 | [05 Home metadata](phase-1-home/05-home-metadata.md) | `REDESIGN-P1-05` | ⬜ | _tbd_ | |
@@ -206,3 +206,34 @@ _Deviations, regressions and decisions taken during implementation go here, date
   touched: the calendar's slot buttons are labelled «Hora disponible» on `/en` too
   (`AvailabilityModal` / `WeeklyCalendar` aria-label not localised). `pnpm lint` (0 errors, 8
   pre-existing warnings), `pnpm test` (142 / 1791), `pnpm build` green.
+- **2026-09-17 (P1-02)** — One real bug caught and fixed during implementation, not a deviation
+  from the task md: the first pass gave the social-link `<a>`s and the «Cómo funcionan las
+  clases» link their base `color`/`border` as inline styles (mirroring `BiographySection.tsx`'s
+  pattern) while moving only the `:hover` rule into `home.css`, per the task's instruction. An
+  inline style always wins over an external stylesheet rule regardless of selector specificity or
+  `:hover`, so the hover would never have visually applied. Fixed by moving the base `color` /
+  `border` for `.home-social a` and `.home-bio-link` into `home.css` too (matching `.home-area`,
+  which was already class-only and unaffected) — same pattern `.home-hero-cta` already used in
+  P1-01. Caught by inspecting the loaded stylesheet + `getComputedStyle` in the Browser pane
+  rather than by eye. Verified: grid geometry at 390/834/1440 via `getBoundingClientRect` /
+  `getComputedStyle` against `design/home.html`'s values (5fr/7fr at 1024 with 64px gap, one
+  column with 44px gap below, `.home-areas-grid` 12px gaps and 1→2 columns at 640, no horizontal
+  overflow at 390); content and both locales via `get_page_text` (`/` and `/es`, bio paragraph
+  and all six one-liners match the mock verbatim); the Material Symbols ligatures (`code`, `dns`,
+  …) appear as text nodes, confirming the icon font renders rather than inline SVG; the how-link
+  resolves to `/en/mentoria#como-funciona` and actually navigates there; `/mentoria` still renders
+  the unabridged `BiographySection` (both paragraphs) and `SpecializationsSection` (tags + DAM/DAW
+  CTA) untouched. **Not verified**: the `:hover` pixel colors themselves — this session's Browser
+  pane reported itself "hidden" throughout (the desktop app wasn't showing it to the user), and in
+  that state `computer.hover` + `getComputedStyle` consistently returned the base (non-hover)
+  values even though `element.matches(':hover')` correctly returned `true`, and screenshots taken
+  after a scroll returned stale, pre-scroll frames — i.e. the compositor wasn't producing live
+  frames for a hidden pane, not a rule-matching problem (memory: headless CSS verification). The
+  CSS itself is confirmed correct by construction (single `.home-social a:hover` /
+  `.home-bio-link:hover` rule each, specificity strictly greater than their un-pseudo base rule,
+  no inline override left) — the same guarantee P1-01's `.home-hero-cta--primary:hover` relies on
+  — but a live pixel check is left for whoever next has the pane visible. Ran the test commands
+  from a second `pnpm start` on port 3101 (port 3000 held by another chat's dev server in this
+  same working directory); `pnpm lint` (0 errors, the same 8 pre-existing warnings), `pnpm test`
+  (142 suites, 1791 tests), the message-key parity check (`[] []`) and `pnpm build` all green,
+  `/[locale]` still ● (static).
