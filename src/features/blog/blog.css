@@ -1,10 +1,12 @@
 /*
- * BLOG-01 — blog index (/blog) styles.
+ * BLOG-01 — blog card + index styles.
  *
- * The index Server Components style their static bits inline; this file holds what an
- * inline style cannot: the responsive list and the card's CSS-only hover. The editorial
- * atoms (.lp-serif / .lp-kicker / .lp-rule) come from the shared
- * `features/courses/course-editorial.css`, imported alongside this file by the route.
+ * Feature-scoped (like `features/courses/catalog/catalog.css`), not route-scoped: `PostCard`
+ * renders on both `/blog` (BLOG-01) and the home's latest-posts band (REDESIGN-P1-03), so each
+ * route imports this file directly rather than one importing the other's route folder. This
+ * file holds what an inline style cannot: the responsive list/grid and the card's CSS-only
+ * hover. The editorial atoms (.lp-serif / .lp-kicker / .lp-rule) come from the shared
+ * `features/courses/course-editorial.css`, imported alongside this file by each route.
  *
  * Palette is the site's own: --green / --green-mid / --green-dim over the dark surfaces.
  * Movement is gated behind prefers-reduced-motion at the foot of the file.

@@ -29,7 +29,7 @@ Update this file when starting, completing, or blocking a task.
 |------|-----|--------|-------|----|
 | [01 Hero + stats](phase-1-home/01-hero.md) | `REDESIGN-P1-01` | ✅ (amended) | Claude | local |
 | [02 Bio + compact areas](phase-1-home/02-bio-and-areas.md) | `REDESIGN-P1-02` | ✅ | Claude | local |
-| [03 Courses + latest posts](phase-1-home/03-courses-and-posts.md) | `REDESIGN-P1-03` | ⬜ | _tbd_ | |
+| [03 Courses + latest posts](phase-1-home/03-courses-and-posts.md) | `REDESIGN-P1-03` | ✅ | Claude | local |
 | [04 App showcase + closing band + static home](phase-1-home/04-app-closing-and-static.md) | `REDESIGN-P1-04` | ⬜ | _tbd_ | |
 | [05 Home metadata](phase-1-home/05-home-metadata.md) | `REDESIGN-P1-05` | ⬜ | _tbd_ | |
 | [06 Booking overlays on both pages](phase-1-home/06-booking-overlays.md) | `REDESIGN-P1-06` | ⬜ | _tbd_ | |
@@ -237,3 +237,34 @@ _Deviations, regressions and decisions taken during implementation go here, date
   same working directory); `pnpm lint` (0 errors, the same 8 pre-existing warnings), `pnpm test`
   (142 suites, 1791 tests), the message-key parity check (`[] []`) and `pnpm build` all green,
   `/[locale]` still ● (static).
+- **2026-09-17 (P1-03)** — One deviation from the task's own "Files affected" table, both
+  options of which the task explicitly allowed: `blog.css` moved from
+  `src/app/[locale]/blog/` to `src/features/blog/` (not just imported cross-route), because
+  `PostCard` now renders on two routes and the moved file mirrors `catalog.css`'s existing
+  placement next to `CourseCard` — the Gotchas section's own reasoning. Only the import paths
+  and the file's top comment changed; no rule inside `blog.css` was touched, so `/blog` is
+  pixel-identical. Everything else matches the task md as written: `HomeCourses` / `HomePosts`
+  reuse `CourseCard` / `PostCard` and the catalog/blog selectors verbatim (`listCatalogEntries`,
+  `listPosts(locale).slice(0, 2)`), `home.css` gained exactly the four classes named in the
+  task, and the three new keys (`home.courses.seeAll`, `home.blog.heading`, `home.blog.seeAll`)
+  landed in both message files (parity script: `only in es: []`, `only in en: []`). Verified in
+  the Browser pane at 390/834/1440 against `design/home.html` in both locales: kicker + hairline
+  + serif heading + accent italic, title-row flips from column (390) to row (834, 1440) at the
+  768 breakpoint, course grid is 43 lecciones · 5 módulos / 1 lección · 1 módulo (matching
+  `/cursos` exactly), post grid shows the two newest posts in the same order as `/blog`, no
+  horizontal overflow at 390 (`scrollWidth === clientWidth`). `/en` shows the English catalog
+  card text and the "Lessons in Spanish" badge on the untranslated `llm-agents` course, same as
+  `/en/cursos`. `Ver todos los cursos` → `/cursos`, `Ver todos los artículos` → `/blog`, both
+  locale-prefixed correctly on `/en` (`/en/cursos`, `/en/blog`); the course card's whole-card
+  cover link resolves to `/cursos/dl-nlp`; both post cards resolve to their real slugs
+  (`/blog/de-newton-a-adamw`, `/blog/evolucion-del-tokenizador`). Card hover itself was not
+  re-verified pixel-by-pixel — `.course-card` / `.post-card` are untouched classes already
+  covered by `/cursos` and `/blog`, and only the grid wrapper around them is new (memory:
+  headless CSS verification — synthetic `mouseover` events don't trigger real `:hover`, and this
+  pane reported itself hidden throughout, same as P1-02). "Continuar" for a reader with progress
+  is unverified locally (memory: no local admin session — the task md itself says to check this
+  on staging). Ran a second `pnpm start` on port 3202 (3000 held by another chat's dev server,
+  3101 already held by a leftover `pnpm start`), via a temporary `.claude/launch.json` entry
+  reverted before finishing. `pnpm lint` (0 errors, the same 8 pre-existing warnings),
+  `pnpm lint:content` (pre-existing content warnings only, exit 0), `pnpm test` (142 suites,
+  1791 tests), the message-key parity check, and `pnpm build` all green.

@@ -159,6 +159,13 @@
       "ai": "Machine Learning, Deep Learning, LLMs and multi-agent programming, with a mathematical foundation.",
       "data": "Probability, applied statistics, data mining, big data and time series.",
       "cycles": "Support in the most demanding technical modules and mentoring for final projects."
+    },
+    "courses": {
+      "seeAll": "See all courses"
+    },
+    "blog": {
+      "heading": "It looks simple in class, <accent>here I go deeper</accent>",
+      "seeAll": "See all articles"
     }
   },
   "auth": {

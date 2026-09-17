@@ -3,7 +3,9 @@
 // one. REDESIGN-P1-01: the hero is `HomeHero` (features/home) here; `HeroSection` still serves
 // /mentoria. REDESIGN-P1-02: `BiographySection` + `SpecializationsSection` are replaced by the
 // compact `HomeBio` + `HomeAreas` pair, wrapped in one two-column `<section>`; both landing
-// components still serve /mentoria unchanged.
+// components still serve /mentoria unchanged. REDESIGN-P1-03: `HomeCourses` + `HomePosts` add
+// the courses and latest-posts bands, reusing `CourseCard` / `PostCard` and their catalog/blog
+// selectors as-is.
 
 import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
@@ -11,12 +13,17 @@ import { Spinner } from "@/components/ui";
 import HomeHero from "@/features/home/HomeHero";
 import HomeBio from "@/features/home/HomeBio";
 import HomeAreas from "@/features/home/HomeAreas";
+import HomeCourses from "@/features/home/HomeCourses";
+import HomePosts from "@/features/home/HomePosts";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StructuredData from "@/components/seo/StructuredData";
 import { localizedAlternates } from "@/lib/hreflang";
+import "@/features/courses/course-editorial.css";
+import "@/features/courses/catalog/catalog.css";
+import "@/features/blog/blog.css";
 import "@/features/home/home.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
@@ -65,6 +72,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <HomeBio locale={locale} />
             <HomeAreas locale={locale} />
           </section>
+
+          <HomeCourses locale={locale} />
+          <HomePosts locale={locale} />
 
           <Suspense
             fallback={

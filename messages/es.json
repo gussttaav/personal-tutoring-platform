@@ -159,6 +159,13 @@
       "ai": "Machine Learning, Deep Learning, LLMs y programación multiagente, con base matemática.",
       "data": "Probabilidad, estadística aplicada, minería de datos, big data y series temporales.",
       "cycles": "Refuerzo en los módulos técnicos más complejos y mentoría para proyectos finales."
+    },
+    "courses": {
+      "seeAll": "Ver todos los cursos"
+    },
+    "blog": {
+      "heading": "En clase parece simple, <accent>aquí profundizo</accent>",
+      "seeAll": "Ver todos los artículos"
     }
   },
   "auth": {

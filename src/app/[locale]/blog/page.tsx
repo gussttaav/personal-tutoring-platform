@@ -5,14 +5,16 @@
  * selector, so drafts never appear, and the honest empty state renders rather than a
  * blank page when a locale has nothing yet.
  *
- * Route-scoped CSS is imported HERE, not in the shared layout, so it only loads on this
- * route — the same rule the course routes follow. The `.lp-*` editorial atoms come from
- * the courses feature because they are the site's shared editorial vocabulary (the
- * display serif, the kicker, the hairline rule), not course-specific styling.
+ * CSS is imported HERE, not in the shared layout, so it only loads on routes that render
+ * a post card. `blog.css` moved to `features/blog/` in REDESIGN-P1-03 once the home's
+ * latest-posts band started importing it too — same reasoning as `catalog.css`'s
+ * placement next to `CourseCard`. The `.lp-*` editorial atoms come from the courses
+ * feature because they are the site's shared editorial vocabulary (the display serif,
+ * the kicker, the hairline rule), not course-specific styling.
  */
 
 import "@/features/courses/course-editorial.css";
-import "./blog.css";
+import "@/features/blog/blog.css";
 
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
