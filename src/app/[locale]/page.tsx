@@ -14,6 +14,9 @@
 // child is `HomeChat`, the chat FAB, which the sections rendered until now — see that file for
 // why it sits inside the provider). `AppShowcase` and `ClosingCta` are shared components
 // (src/components/) because /mentoria mounts them too (P2-03).
+// REDESIGN-P1-05: `generateMetadata` reads `home.meta.*` (its own title/description, no
+// longer `landing.meta`) and `StructuredData` takes `variant="home"`, which drops the
+// `Service` JSON-LD — it belongs on /mentoria, the page that sells it.
 
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import HomeHero from "@/features/home/HomeHero";
@@ -38,8 +41,28 @@ import "@/components/app-showcase.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "landing.meta" });
-  return { title: t("title"), description: t("description"), alternates: localizedAlternates("", locale) };
+  const t = await getTranslations({ locale, namespace: "home.meta" });
+  const title = t("title");
+  const description = t("description");
+  // REDESIGN-P1-05: `openGraph` is not deep-merged with the layout's — copy
+  // its shared fields and override title/description so the share card
+  // matches the tab instead of silently inheriting `meta.root`.
+  const ogImage = locale === "en" ? "/og-en.png" : "/og.png";
+  return {
+    title,
+    description,
+    alternates: localizedAlternates("", locale),
+    openGraph: {
+      type: "website",
+      siteName: "gustavoai.dev",
+      title,
+      description,
+      url: locale === "en" ? "/en" : "/",
+      locale: locale === "en" ? "en_US" : "es_ES",
+      alternateLocale: locale === "en" ? "es_ES" : "en_US",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+    },
+  };
 }
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
@@ -50,7 +73,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     <>
       {/* SEO-04: JSON-LD (Person + Service) — server-rendered so it ships in the
           prerendered HTML. */}
-      <StructuredData locale={locale} />
+      <StructuredData locale={locale} variant="home" />
       <Navbar />
 
       <main style={{ position: "relative", zIndex: 1 }}>

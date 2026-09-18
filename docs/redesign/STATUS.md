@@ -31,7 +31,7 @@ Update this file when starting, completing, or blocking a task.
 | [02 Bio + compact areas](phase-1-home/02-bio-and-areas.md) | `REDESIGN-P1-02` | ✅ | Claude | local |
 | [03 Courses + latest posts](phase-1-home/03-courses-and-posts.md) | `REDESIGN-P1-03` | ✅ | Claude | local |
 | [04 App showcase + closing band + static home](phase-1-home/04-app-closing-and-static.md) | `REDESIGN-P1-04` | ✅ | Claude | local |
-| [05 Home metadata](phase-1-home/05-home-metadata.md) | `REDESIGN-P1-05` | ⬜ | _tbd_ | |
+| [05 Home metadata](phase-1-home/05-home-metadata.md) | `REDESIGN-P1-05` | ✅ | Claude | local |
 | [06 Booking overlays on both pages](phase-1-home/06-booking-overlays.md) | `REDESIGN-P1-06` | ✅ | Claude | local |
 
 Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04 → 05.
@@ -459,3 +459,19 @@ _Deviations, regressions and decisions taken during implementation go here, date
   the dev server (`E2E_BASE_URL`, DB-free): 9/10, the `en:` catalog test being the documented
   pre-existing red, and `es: navbar Cursos → …` failing once on the run's cold first compile and
   passing on re-run (memory: e2e flakiness).
+- **2026-09-18 (P1-05)** — One necessary touch outside the task's own "Files affected" table:
+  `src/app/[locale]/mentoria/page.tsx`'s `<StructuredData locale={locale} />` call now passes
+  `variant="mentoria"` too, since `variant` became a required prop of the component this task
+  rewrote — leaving that call as-is would not have compiled. This wires up the `Service` JSON-LD
+  on `/mentoria` *now* rather than at P2-04: `StructuredData.tsx` already implements the
+  `meta.mentoria.*` → `landing.meta.*` fallback the task md describes (`t.has()`, next-intl
+  v4.13 has it), so there was no reason to leave `/mentoria` without a `Service` in the interim.
+  `/mentoria`'s `generateMetadata` (its `<title>`/`<meta description>`) is untouched — still
+  `landing.meta`, still P2-04's job. Verified via `pnpm build` + `pnpm start` + curl: `/` emits
+  `@graph: [Person]` only (es and en); `/mentoria` emits `@graph: [{Person stub by @id},
+  Service]` with `name`/`description` falling back to `landing.meta.*` as expected, `url`
+  `.../mentoria` (`localeUrl`), `provider` referencing `#person`. `og.png`/`og-en.png` checked by
+  eye — both are the finished, real image (credential + stats), not the placeholder a stale
+  memory note claimed; no OG-image work needed. `pnpm lint` (0 errors, the same 8 pre-existing
+  warnings), `pnpm test` (142 suites, 1791 tests), `pnpm build` green. No `StructuredData` unit
+  test existed to update (none under `src/components/seo/__tests__/`).

@@ -142,6 +142,10 @@
     }
   },
   "home": {
+    "meta": {
+      "title": "Gustavo Torres — Programming, math and AI: lessons, courses and a blog",
+      "description": "One-on-one programming, math and AI lessons, free courses that run in your browser, and a blog with one concept per article."
+    },
     "hero": {
       "headline1": "Programming, mathematics and AI,",
       "headline2": "with the hard part included.",
@@ -1512,8 +1516,8 @@
       "description": "Manage your booked sessions, pack classes and book new sessions."
     },
     "root": {
-      "title": "Gustavo Torres — Programming, Math & AI Tutoring",
-      "description": "Programming, math and AI lessons with Gustavo Torres."
+      "title": "Gustavo Torres — Programming, math and AI: lessons, courses and a blog",
+      "description": "One-on-one programming, math and AI lessons, free courses that run in your browser, and a blog with one concept per article."
     },
     "privacidad": {
       "title": "Privacy policy — Gustavo Torres",

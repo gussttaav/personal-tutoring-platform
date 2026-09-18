@@ -12,6 +12,10 @@
  * screens, mounted on both pages) wraps `InteractiveShell` (the sessions/packs sections, this
  * page only). The `Suspense` boundary moved INSIDE the provider: the overlays don't read search
  * params, `RescheduleBridge` (mounted by the sections) does.
+ *
+ * REDESIGN-P1-05: `StructuredData` now takes `variant="mentoria"` — home dropped the `Service`
+ * JSON-LD, so this page emits it (`meta.mentoria.*` lands in P2-04; until then it falls back to
+ * `landing.meta.*`, which this page's own metadata still reads too).
  */
 
 import { Suspense } from "react";
@@ -57,7 +61,7 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
     <>
       {/* SEO-04: JSON-LD (Person + Service) — server-rendered, outside the
           Suspense boundary so it ships in the prerendered HTML. */}
-      <StructuredData locale={locale} />
+      <StructuredData locale={locale} variant="mentoria" />
       <Navbar />
 
       <main style={{ position: "relative", zIndex: 1 }}>

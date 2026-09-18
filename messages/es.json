@@ -142,6 +142,10 @@
     }
   },
   "home": {
+    "meta": {
+      "title": "Gustavo Torres — Programación, matemáticas e IA: clases, cursos y blog",
+      "description": "Clases particulares de programación, matemáticas e IA, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo."
+    },
     "hero": {
       "headline1": "Programación, matemáticas e IA,",
       "headline2": "con la parte difícil incluida.",
@@ -1512,8 +1516,8 @@
       "description": "Gestiona tus sesiones reservadas, clases de pack y reserva nuevas sesiones."
     },
     "root": {
-      "title": "Gustavo Torres - Tutorías de programación, matemáticas e IA",
-      "description": "Clases de programación, matemáticas e IA con Gustavo Torres."
+      "title": "Gustavo Torres — Programación, matemáticas e IA: clases, cursos y blog",
+      "description": "Clases particulares de programación, matemáticas e IA, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo."
     },
     "privacidad": {
       "title": "Política de privacidad — Gustavo Torres",
