@@ -5,7 +5,10 @@
 // compact `HomeBio` + `HomeAreas` pair, wrapped in one two-column `<section>`; both landing
 // components still serve /mentoria unchanged. REDESIGN-P1-03: `HomeCourses` + `HomePosts` add
 // the courses and latest-posts bands, reusing `CourseCard` / `PostCard` and their catalog/blog
-// selectors as-is.
+// selectors as-is. REDESIGN-P1-06: `BookingOverlays` (the booking provider + screens, mounted on
+// both pages) wraps the shell, so the hero's CTAs open the calendar / booking in place on `/`;
+// the shell itself is now only the sessions/packs sections and still sits here until P1-04
+// replaces the whole block with `<BookingOverlays />` alone.
 
 import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
@@ -17,6 +20,7 @@ import HomeCourses from "@/features/home/HomeCourses";
 import HomePosts from "@/features/home/HomePosts";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
+import BookingOverlays from "@/features/booking/BookingOverlays";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StructuredData from "@/components/seo/StructuredData";
@@ -36,11 +40,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Only InteractiveShell needs the Suspense boundary: it uses useSearchParams()
-  // (via useRescheduleIntent), which forces a client-side-rendering bailout. Keeping
-  // the boundary scoped to it lets Navbar, the landing sections, and Footer render on
-  // the server — so the content (incl. the Footer privacy/terms links) is in the
-  // static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
+  // Only InteractiveShell needs the Suspense boundary: it mounts RescheduleBridge, which
+  // uses useSearchParams() (via useRescheduleIntent) and forces a client-side-rendering
+  // bailout. Keeping the boundary scoped to it lets Navbar, the landing sections, and
+  // Footer render on the server — so the content (incl. the Footer privacy/terms links) is
+  // in the static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
   return (
     <>
       {/* SEO-04: JSON-LD (Person + Service) — server-rendered, outside the
@@ -76,18 +80,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <HomeCourses locale={locale} />
           <HomePosts locale={locale} />
 
-          <Suspense
-            fallback={
-              <div
-                className="flex items-center justify-center"
-                style={{ minHeight: "60vh", position: "relative", zIndex: 1 }}
-              >
-                <Spinner />
-              </div>
-            }
-          >
-            <InteractiveShell />
-          </Suspense>
+          <BookingOverlays>
+            <Suspense
+              fallback={
+                <div
+                  className="flex items-center justify-center"
+                  style={{ minHeight: "60vh", position: "relative", zIndex: 1 }}
+                >
+                  <Spinner />
+                </div>
+              }
+            >
+              <InteractiveShell />
+            </Suspense>
+          </BookingOverlays>
 
           {/*
             <div

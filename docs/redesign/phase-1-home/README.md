@@ -40,8 +40,8 @@ namespace in both message files; existing keys are reused where the design reuse
       `features/booking/` only `BookingOverlays`; `pnpm build` prints `/[locale]` as ○ (static)
 - [ ] «Reservar sesión ahora» opens the smart-book surface on `/` and «Ver disponibilidad» the
       calendar on `/` (a slot pick continues into the booking with the slot pre-selected), with
-      no navigation; an OAuth round-trip started on `/` lands on `/mentoria` with the booking
-      open, as today
+      no navigation; after the Google popup a booking started on `/` continues on `/` (the
+      popup-blocked full-redirect fallback still lands on `/mentoria`)
 - [ ] Footer «Pregunta al asistente IA» and the closing band's link open the chat on `/`
 - [ ] Every `home.*` key exists in both message files; the diff of the two key trees is empty
 - [ ] `pnpm lint` + `pnpm test` + `pnpm build` green

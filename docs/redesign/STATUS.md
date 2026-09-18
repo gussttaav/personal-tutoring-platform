@@ -32,7 +32,7 @@ Update this file when starting, completing, or blocking a task.
 | [03 Courses + latest posts](phase-1-home/03-courses-and-posts.md) | `REDESIGN-P1-03` | ✅ | Claude | local |
 | [04 App showcase + closing band + static home](phase-1-home/04-app-closing-and-static.md) | `REDESIGN-P1-04` | ⬜ | _tbd_ | |
 | [05 Home metadata](phase-1-home/05-home-metadata.md) | `REDESIGN-P1-05` | ⬜ | _tbd_ | |
-| [06 Booking overlays on both pages](phase-1-home/06-booking-overlays.md) | `REDESIGN-P1-06` | ⬜ | _tbd_ | |
+| [06 Booking overlays on both pages](phase-1-home/06-booking-overlays.md) | `REDESIGN-P1-06` | ✅ | Claude | local |
 
 Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04 → 05.
 
@@ -43,8 +43,9 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
       Load JS excludes the calendar / wizard / pack-booking chunks
 - [ ] «Reservar sesión ahora» on `/` opens the smart-book surface on `/`; «Ver disponibilidad»
       opens the calendar on `/` and a slot pick continues into the booking with the slot
-      pre-selected — no navigation; an OAuth round-trip started on `/` lands on `/mentoria` with
-      the booking open, as today (amended 2026-09-17)
+      pre-selected — no navigation; after the Google popup a booking started on `/` continues
+      on `/` (amended 2026-09-17, twice: in place for signed-in visitors, then also after sign-in;
+      only the popup-blocked full-redirect fallback still lands on `/mentoria`)
 - [ ] The chat assistant opens from the footer and the closing band on `/`
 - [ ] `messages/es.json` and `messages/en.json` have identical key trees
 
@@ -268,3 +269,125 @@ _Deviations, regressions and decisions taken during implementation go here, date
   reverted before finishing. `pnpm lint` (0 errors, the same 8 pre-existing warnings),
   `pnpm lint:content` (pre-existing content warnings only, exit 0), `pnpm test` (142 suites,
   1791 tests), the message-key parity check, and `pnpm build` all green.
+- **2026-09-17 (P1-06)** — The split is the task md's, block for block: `BookingProvider.tsx`
+  (hooks, the five atoms, the five listeners, the `?book=` consumer, the `restoredSlot` sync, the
+  buy-pack reveal effect, `handleAvailabilitySlotSelected`, `packStudentInfo`), `BookingOverlays.tsx`
+  (the three overlay renders, the four heavy overlays through `next/dynamic` `ssr: false`,
+  `SignInGate` static), `RescheduleBridge.tsx` (`useRescheduleIntent` + the two wiring effects +
+  the `rescheduleGate` publish), and the sections-only `InteractiveShell`. A whitespace-insensitive
+  diff of each moved block against the old shell shows exactly the three reschedule-gate lines the
+  task names and nothing else. Two small departures from the md's letter, both flagged here: (1)
+  the sections don't `return null` under an open overlay — they render `<RescheduleBridge />` at a
+  fixed position and gate the sections on `overlayOpen` (the overlays' own conditions), so the
+  bridge stays mounted while a booking screen is up and `useRescheduleIntent`'s state isn't thrown
+  away and re-read on every close; the DOM under an overlay is the same (no `#sessions`, no pack
+  buttons — verified). (2) `react-hooks/immutability` refused `packCheckoutInFlight.current = …`
+  once the ref arrives through context (the compiler lint only recognises a ref of unknown
+  provenance by name), so the two consumers alias it at the destructure —
+  `packCheckoutInFlight: packCheckoutInFlightRef` — per the rule's own hint; the context key keeps
+  the task's name. Also: the `loading` component is a `Spinner` inside a fixed, centred,
+  translucent layer (not a bare inline `Spinner`), so the OAuth-return first paint reads as an
+  overlay loading rather than a spinner in the page flow. Build: Next 16 no longer prints
+  per-route First Load JS, so it was measured by summing the entry chunks each page's
+  `page_client-reference-manifest.js` lists — `/[locale]` **487.0 kB → 393.7 kB**, `/mentoria`
+  499.1 → 405.8 kB; the `booking.availabilityModal` / `singleSession` / `weeklyCalendar` /
+  `wizardProgress` / `modeView` / `payment.form` string markers are gone from both pages' entry
+  chunks (only `booking.shell` / `signInGate` / `packCard` remain), and the Network panel shows
+  the overlay chunks (`0wa7cgg…`, 47 kB, + 5 small ones) fetched on the first «Ver
+  disponibilidad» click, three more (wizard + calendar) on the first signed-in «Reservar sesión
+  ahora». `/[locale]` is still ● (SSG) — the ○ target is P1-04's once the `Suspense` boundary
+  leaves `/`. Browser pane on `pnpm start` (temporary `.env.production.local` with
+  `AUTH_TRUST_HOST=true`, removed afterwards), signed out at 1440 and 390: on `/` «Ver
+  disponibilidad» opens the calendar in place (URL `/`), slot + Confirmar → the «hora elegida»
+  gate with callbackUrl `/mentoria?intent=smart-book&slotStart=…&slotEnd=…&slotLabel=…&slotDateLabel=…&slotTz=Europe/Madrid`;
+  «Reservar sesión ahora» → `/mentoria?intent=smart-book`; `open-pack-booking` →
+  `/mentoria?action=schedule-pack`; `book-free-session` → `/mentoria?intent=free15min`;
+  `close-booking-overlay` a harmless no-op; no horizontal overflow at 390. On `/mentoria`:
+  `?book=availability` and `?book=smart` consumed and stripped; `?reschedule=free15min&token=…` →
+  the «reprogramar» gate with that exact callbackUrl, params stripped, and the gate stays closed
+  after Cancelar (i.e. `rescheduleGate.clear()` fires with the router's close); the
+  Specializations free CTA, the 1h card, the pack card and the hero CTA give
+  `intent=free15min` / `intent=session1h` / `intent=buy-pack&packSize=5` / `intent=smart-book`.
+  Signed in (a hand-minted `authjs.session-token` for a fresh test email — memory: no local admin
+  session; signed out again via `/api/auth/signout` afterwards): «Reservar sesión ahora» on `/`
+  opens the free-15 wizard in place (fixed overlay, «Inicio» still current, URL `/`), the logo
+  event closes it and the sections return; «Ver disponibilidad» → slot → Confirmar lands directly
+  on the review step («viernes, 18 de septiembre · 09:00–09:15 · sesión gratuita») on `/`. The
+  booking was **not** confirmed — that writes a real booking, calendar event, Zoom session and
+  email against the env's accounts — so «complete a free-15 booking from a slot picked on `/`» is
+  verified up to the confirm button only. On `/mentoria` signed in, a session card unmounts the
+  sessions + packs (0 pack buttons behind the wizard) and both return on close; exactly one «Open
+  assistant» FAB on each page; `/en` opens the English calendar in place. `pnpm lint` (0 errors,
+  the same 8 pre-existing warnings), `pnpm test` (142 suites, 1791 tests), `pnpm build` green;
+  `npx tsc --noEmit` reports one error in `src/lib/courses/__tests__/mdx.test.ts` (`RepoLink`
+  not on `MDXComponents`) that is present on HEAD before this task. E2E, locally against the test
+  DB: `booking-free reschedule chat booking-single booking-pack` → 9/10 on the first run — both
+  `[es]` paid specs passed this time even though `stripe listen` still refuses the expired CLI key
+  — and the one failure, `booking-free` (test #1 of the run), timed out at its 15 s wait for the
+  session cards while the fresh `pnpm dev` was still cold-compiling `/mentoria` (its screenshot
+  shows the «Compiling…» badge and an un-hydrated hero); re-run alone it passes (37 s), so 10/10.
+  No message keys added (no new UI copy in this task).
+- **2026-09-17 (P1-06 follow-up — «Cambiar tipo de sesión» from `/`)** — Review of the first
+  pass caught that the wizard's «Cambiar tipo de sesión» button, opened in place on `/`, just
+  closed the wizard onto a page with no session types to change to. `SingleSessionBooking` now
+  takes an optional `onChangeSessionType` (defaults to `onBack`) wired only to that button;
+  `BookingOverlays` sends it to `/mentoria` via `@/i18n/navigation`'s `useRouter` when
+  `usePathname() !== "/mentoria"`, and closes in place otherwise (the cards are right under the
+  wizard there; a same-URL push would only scroll them away). `onBack` is untouched and keeps
+  serving the success screen's «Volver al inicio» — an in-place close, which on `/` literally is
+  the home, and which `booking-free` / `reschedule` assert on. Tried and rejected:
+  `/mentoria#sessions`. The hash never lands because the sections render client-side inside
+  Mentoría's `Suspense` boundary (the `useSearchParams` bailout), after Next has applied the hash
+  on navigation — the very gap the deleted `useSessionsAnchor` used to paper over, and locked
+  decision 2 says not to adapt it. So the visitor lands at the top of `/mentoria`, which after
+  P2-01 carries the booking CTAs in its header. Verified on the dev server (signed in with the
+  minted test session, signed out after): from `/en`, «Change session type» → `/en/mentoria`
+  with the three cards and «Mentoring» current; on `/en/mentoria` → closes in place, URL
+  unchanged, no hard navigation. `pnpm lint` (0 errors) and `pnpm test` (142 / 1791) green; the
+  wizard e2e specs were not re-run for this follow-up — a `pnpm dev` not started by this session
+  holds port 3000 without `E2E_MODE`, and Playwright's own webServer can't bind it — the change is
+  an optional prop with an `?? onBack` fallback on a button no spec clicks. Also raised in the same
+  review and **not** changed: after Google sign-in from a gate opened on `/`, the booking reopens
+  on `/mentoria` — that is the amendment's own wording («the OAuth round-trip is unchanged»)
+  and this task's «Out of scope»; resuming in place on `/` instead would touch
+  `useBookingRouter` (park the smart-book / pack intents like `pendingSession`) and
+  `GoogleSignInButton` (skip the callbackUrl push when the intent can resume in place), so it is
+  a plan change to decide, not a P1-06 fix.
+- **2026-09-17 (P1-06 follow-up — sign-in from `/` continues on `/`; second amendment)** —
+  Decided in review and recorded in `PLAN.md` («Amendments», second entry): after the Google
+  popup the booking resumes in place, on the page where the gate opened, as it already did for
+  signed-in visitors. Code: `useBookingRouter` parks the two intents that had no in-memory
+  resume — `handleSmartBook` writes `pendingSmartBook = { slot }` (the same ref the URL-restore
+  path already resumes through once `hasBookings` settles, so the slot picked in the calendar
+  rides along and pre-fills the wizard) and `handlePackSchedule` sets a new `pendingPackSchedule`
+  atom consumed in the sign-in flip block; that block now clears the gate label/callbackUrl on
+  every flip to signed-in, and `handleSignInGateClose` drops both parked intents so a cancelled
+  gate can't pop the wizard after a later Navbar sign-in. `GoogleSignInButton` gains
+  `resumeInPlace` (skip the `router.push(callbackUrl)` after a successful popup);
+  `SignInGate` passes it. The `/mentoria?intent=…` / `?action=…` / `?reschedule=…` callbackUrls
+  are byte-identical to P0-02's — they are the popup-blocked full-redirect fallback, the only
+  path that still lands on `/mentoria`. Side effect, for the better: on `/mentoria` the old
+  push re-added `?intent=` / `?reschedule=…&token=…` to the URL after a popup sign-in; now the
+  URL stays clean. **A real hydration race, found and fixed while verifying:** in dev,
+  `/mentoria`'s sections are server-rendered inside their `Suspense` boundary with the session
+  still «loading» (skeletons); with `BookingProvider` now OUTSIDE that boundary, the session
+  settling and the credits fetch push new context values into the still-dehydrated sections and
+  React hydrates them as cards against skeleton HTML — «Hydration failed because the server
+  rendered HTML didn't match the client», recoverable (React re-renders, the cards appear) but a
+  red dev overlay. Reproduced under Playwright with the sign-in → sign-out → reload sequence: 0/2
+  runs on HEAD, 2/3 on the split (plain reloads never trip it on either). Fix:
+  `InteractiveShell` gates its skeletons on `useHydrated()` (the codebase's own
+  `useSyncExternalStore` helper) so the first client render always matches the server; 4/4 runs
+  clean after. Production is unaffected either way — there the boundary is client-rendered
+  (`useSearchParams` bailout) and nothing is hydrated. Verified under Playwright against the dev
+  server, driving the real gate and simulating exactly what the popup does (the opener only ever
+  sees a session cookie + the `AUTH_COMPLETE` message): on `/` «Reservar sesión ahora» →
+  free-15 wizard in place, URL `/`; calendar slot → review step with «viernes, 18 de septiembre
+  · 09:00–09:15» on `/`; `open-pack-booking` → pack booking in place. On `/mentoria`: 1h card
+  → 1h wizard, pack «Comprar» → «Pack 5 clases» modal, `?reschedule=session1h&token=…` → 1h
+  wizard with the params stripped, `book-free-session` → free-15 wizard — all in place, URL
+  clean, no page errors. Negative: gate → Cancelar → Navbar sign-in → signed in, no wizard.
+  Not verified: the popup-blocked fallback (a real full redirect through Google) — code path
+  unchanged from P0-02. `pnpm lint` (0 errors), `pnpm test` (142 / 1791), `pnpm build` green
+  (`/[locale]` still ●). The booking e2e specs (`loginAs` cookie, no gate) don't cover the popup
+  path and weren't re-run here for the same port-3000 reason as the previous follow-up.

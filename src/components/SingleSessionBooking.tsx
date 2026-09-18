@@ -10,6 +10,11 @@
  *   - WizardProgress (3-step indicator)
  *   - lg:grid-cols-12 with BookingSidebar (col-span-3) + calendar (col-span-9)
  *   - Calendar container with actions bar at bottom
+ *
+ * REDESIGN-P1-06: the wizard can now open on `/` (via `BookingOverlays`), where closing it
+ * leaves no session types to change to. «Cambiar tipo de sesión» therefore takes its own
+ * optional `onChangeSessionType` (the caller sends it to `/mentoria#sessions`); `onBack` keeps
+ * serving the success screen's «Volver al inicio», which must stay an in-place close.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -56,6 +61,8 @@ interface SingleSessionBookingProps {
   userEmail:        string;
   rescheduleToken?: string | null;
   onBack:           () => void;
+  /** «Cambiar tipo de sesión» in the picking step. Defaults to `onBack`. */
+  onChangeSessionType?: () => void;
   /** Pre-selected slot from AvailabilityModal. free15min pre-selects into
    *  "review"; session1h verifies 1h availability first (review if bookable,
    *  else picking with a notice); session2h starts in "picking". */
@@ -157,6 +164,7 @@ export default function SingleSessionBooking({
   userEmail,
   rescheduleToken,
   onBack,
+  onChangeSessionType,
   initialSlot,
 }: SingleSessionBookingProps) {
   const t       = useTranslations("booking.singleSession");
@@ -983,7 +991,7 @@ export default function SingleSessionBooking({
               style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "#1c1b1d" }}
             >
               <button
-                onClick={onBack}
+                onClick={onChangeSessionType ?? onBack}
                 className="flex items-center gap-2 font-semibold transition-colors group"
                 style={{ color: "#bbcabf", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}

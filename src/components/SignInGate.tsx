@@ -11,7 +11,10 @@ interface SignInGateProps {
    *  follows the active locale. */
   actionLabel: string;
   /** If provided, Google OAuth will redirect back to this URL instead of the
-   *  current page. Used to preserve reschedule params across the OAuth round-trip. */
+   *  current page. Used to preserve reschedule params across the OAuth round-trip.
+   *  REDESIGN-P1-06: only reached when the popup is blocked — the normal popup sign-in
+   *  resumes the parked booking intent in place (`resumeInPlace` below), on whichever
+   *  page this gate opened, so a booking started on `/` continues on `/`. */
   callbackUrl?: string;
   onClose: () => void;
 }
@@ -77,7 +80,7 @@ export default function SignInGate({ actionLabel, callbackUrl, onClose }: SignIn
           })}
         </p>
 
-        <GoogleSignInButton callbackUrl={callbackUrl ?? pathname} label={t("continueGoogle")} />
+        <GoogleSignInButton callbackUrl={callbackUrl ?? pathname} label={t("continueGoogle")} resumeInPlace />
 
         {/* Cancel */}
         <button

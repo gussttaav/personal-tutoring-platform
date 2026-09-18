@@ -101,9 +101,12 @@ P1-04 removes the sections + `Suspense` and mounts `<BookingOverlays />` alone: 
 **What visitors see on `/` after P1-04.** Signed out: «Reservar sesión ahora» → SignInGate in
 place (callbackUrl `/mentoria?intent=smart-book`); «Ver disponibilidad» → the calendar in place,
 slot pick → SignInGate with the slot encoded (`/mentoria?intent=smart-book&slotStart=…`); after
-Google, `/mentoria` opens the booking with the slot restored — today's flow, untouched. Signed
-in: the smart-book surface opens directly on `/` (free 15 min for a first-timer, 1h otherwise,
-the pack booking with credits); a slot pick pre-fills it. Closing returns to `/`.
+Google, ~~`/mentoria` opens the booking with the slot restored — today's flow, untouched~~
+(amended 2026-09-17, `PLAN.md` second amendment) the booking opens in place on `/` with the
+slot restored — the popup never reloads the page, the router parks the intent and resumes it on
+the sign-in flip; the callbackUrl is only followed when the popup is blocked. Signed in: the
+smart-book surface opens directly on `/` (free 15 min for a first-timer, 1h otherwise, the pack
+booking with credits); a slot pick pre-fills it. Closing returns to `/`.
 
 ## Acceptance criteria
 
@@ -113,8 +116,10 @@ the pack booking with credits); a slot pick pre-fills it. Closing returns to `/`
       `/`; a slot pick opens the free-15 confirmation (signed in, first-timer) or the SignInGate
       with the slot in the callbackUrl (signed out); «Reservar sesión ahora» opens the smart-book
       surface on `/` — no navigation in the signed-in case
-- [ ] After Google sign-in from a gate opened on `/`, the user lands on `/mentoria` with the
-      intended booking open and the slot (if any) pre-selected — the same as today
+- [ ] ~~After Google sign-in from a gate opened on `/`, the user lands on `/mentoria` with the
+      intended booking open and the slot (if any) pre-selected — the same as today~~ (amended)
+      After the Google popup from a gate opened on `/`, the intended booking opens on `/` with
+      the slot (if any) pre-selected; the popup-blocked fallback still lands on `/mentoria`
 - [ ] Navbar «Reservar con pack» (`open-pack-booking`) and the logo click
       (`close-booking-overlay`) work on both pages; `SpecializationsSection`'s
       `book-free-session` works on `/mentoria`
@@ -168,7 +173,8 @@ free-15 booking from a slot picked on `/`.
 ## Out of scope
 
 - Removing the shell from `/` and the static-route check (P1-04).
-- Any change to `useBookingRouter`, `useUserSession`, `useRescheduleIntent`, the callbackUrls,
-  or the e2e specs' targets.
-- Returning to `/` (instead of `/mentoria`) after an OAuth round-trip started on `/`.
+- Any change to `useUserSession`, `useRescheduleIntent`, the callbackUrls, or the e2e specs'
+  targets. ~~`useBookingRouter`~~ (amended: it parks the smart-book and pack-schedule intents).
+- ~~Returning to `/` (instead of `/mentoria`) after an OAuth round-trip started on `/`.~~
+  (amended 2026-09-17: in scope — the popup sign-in resumes in place.)
 - New tests for the router (none exist today; the e2e suite is its coverage).

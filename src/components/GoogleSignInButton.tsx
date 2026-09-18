@@ -9,12 +9,17 @@ interface GoogleSignInButtonProps {
   callbackUrl?: string;
   label?: string;
   fullWidth?: boolean;
+  /** REDESIGN-P1-06: after a successful POPUP sign-in, stay on this page instead of pushing
+   *  `callbackUrl` — the caller has parked the user's intent in memory and resumes it on the
+   *  session flip. `callbackUrl` is still used by the popup-blocked full-redirect fallback. */
+  resumeInPlace?: boolean;
 }
 
 export default function GoogleSignInButton({
   callbackUrl = "/",
   label = "Continuar con Google",
   fullWidth = true,
+  resumeInPlace = false,
 }: GoogleSignInButtonProps) {
   const { update } = useSession();
   const router = useRouter();
@@ -32,6 +37,7 @@ export default function GoogleSignInButton({
       }
       if (result.success) {
         await update();
+        if (resumeInPlace) return; // the parked intent continues here
         if (callbackUrl !== "/") {
           router.push(callbackUrl);
         }

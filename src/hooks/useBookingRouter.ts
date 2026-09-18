@@ -33,6 +33,16 @@
  * For the smart-book intent the consumer additionally waits for hasBookings
  * to settle (transition from null → boolean) so the routing decision has
  * both pack-credits and booking-history data available.
+ *
+ * REDESIGN-P1-06 (amended 2026-09-17): the URL round-trip above is now the FALLBACK, taken
+ * only when the sign-in popup is blocked and `GoogleSignInButton` falls back to a full-page
+ * redirect. The normal path is the popup: the page never reloads, so every signed-out intent
+ * is parked in memory here — `pendingSession` (session cards), `selectedPack` (pack buy),
+ * `pendingSmartBook` (the heroes' CTA + the availability calendar, slot included) and
+ * `pendingPackSchedule` (Navbar «Reservar con pack») — and resumes on the `isSignedIn` flip,
+ * on whichever page the gate opened. That is what lets a booking started on `/` continue on
+ * `/`, exactly as it does for a visitor who was already signed in. The callbackUrls keep
+ * pointing at `/mentoria` (P0-02) because a hard redirect needs a page that consumes them.
  */
 
 import { useState, useEffect, useRef } from "react";
@@ -120,6 +130,8 @@ export function useBookingRouter(
   const [pendingSession,    setPendingSession]    = useState<SingleSessionType | null>(null);
   const [rescheduleToken,   setRescheduleToken]   = useState<string | null>(null);
   const [restoredSlot,      setRestoredSlot]      = useState<SelectedSlot | null>(null);
+  // REDESIGN-P1-06: «Reservar con pack» clicked while signed out — resumes on the sign-in flip.
+  const [pendingPackSchedule, setPendingPackSchedule] = useState(false);
 
   // Prevents double-consuming intent params if the effect fires more than once
   const intentConsumed = useRef(false);
@@ -138,8 +150,9 @@ export function useBookingRouter(
     if (!isSignedIn) return;
 
     // Resume a previously-parked smart-book intent once hasBookings resolves.
-    // Only used by the OAuth-restore path; the in-page smart-book caller
-    // already has the slot wired through InteractiveShell's pendingSlot.
+    // Parked by the OAuth-restore path, by the signed-in caller while credits are
+    // still loading, and (REDESIGN-P1-06) by the signed-out caller, whose slot rides
+    // here because the provider's pendingSlot is only set for signed-in picks.
     if (pendingSmartBook.current) {
       if (hasBookings === null) return;
       const { slot } = pendingSmartBook.current;
@@ -233,14 +246,23 @@ export function useBookingRouter(
   // ── Auto-open after in-page sign-in (SignInGate overlay, no page reload) ──
   // Render-phase "adjust state on input change": fires when isSignedIn flips to
   // true (pendingSession is only ever set while signed out, then consumed here).
+  // REDESIGN-P1-06: the gate is cleared on every flip to signed-in — it only means
+  // something while signed out, and each parked intent resumes on its own (here,
+  // in the consumer effect for smart-book, or through `selectedPack` for a pack buy).
   const [prevSignedIn, setPrevSignedIn] = useState(isSignedIn);
   if (isSignedIn !== prevSignedIn) {
     setPrevSignedIn(isSignedIn);
-    if (isSignedIn && pendingSession && !activeSession) {
-      setActiveSession(pendingSession);
-      setPendingSession(null);
+    if (isSignedIn) {
       setSignInGateLabel("");
       setSignInCallbackUrl(undefined);
+      if (pendingSession && !activeSession) {
+        setActiveSession(pendingSession);
+        setPendingSession(null);
+      }
+      if (pendingPackSchedule) {
+        setShowPackBooking(true);
+        setPendingPackSchedule(false);
+      }
     }
   }
 
@@ -268,6 +290,7 @@ export function useBookingRouter(
 
   function handlePackSchedule() {
     if (!isSignedIn) {
+      setPendingPackSchedule(true);
       setSignInGateLabel("actions.schedulePackClass");
       setSignInCallbackUrl("/mentoria?action=schedule-pack");
       return;
@@ -292,6 +315,9 @@ export function useBookingRouter(
     const slot = opts?.slot;
 
     if (!isSignedIn) {
+      // Parked for the popup sign-in (resumes in place); the callbackUrl below is the
+      // full-redirect fallback and carries the same intent + slot.
+      pendingSmartBook.current = { slot: slot ?? null };
       const params = new URLSearchParams({ intent: "smart-book" });
       if (slot) encodeSlotParams(params, slot);
       setSignInGateLabel(slot ? "actions.bookChosenTime" : "actions.bookSession");
@@ -312,6 +338,8 @@ export function useBookingRouter(
 
   function handleSignInGateClose() {
     setPendingSession(null);
+    setPendingPackSchedule(false);
+    pendingSmartBook.current = null;
     setSignInGateLabel("");
     setSignInCallbackUrl(undefined);
     setSelectedPack(null);

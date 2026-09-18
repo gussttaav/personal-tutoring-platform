@@ -94,8 +94,8 @@ in their own file. `HeroSection` keeps working for `/mentoria` until P2-01 delet
       signed in~~ (amendment) «Reservar sesión ahora» opens the smart-book surface on `/`
       (SignInGate signed out; the wizard / pack booking signed in); «Ver disponibilidad» opens
       the calendar on `/`, and a slot pick continues into the same surface with the slot
-      pre-selected — no navigation; after an OAuth round-trip the user lands on `/mentoria`
-      with the booking open, as today
+      pre-selected — no navigation; after the Google popup the booking continues on `/`
+      (second amendment, see `PLAN.md`)
 - [ ] The chat FAB still moves out of the CTAs' way while `#hero-cta-row` is on screen
 - [ ] Each stat opens its popover, closes on outside click and Escape, links out — unchanged
 - [ ] `HeroSection` on `/mentoria` renders as before (it now imports `StatCard`)

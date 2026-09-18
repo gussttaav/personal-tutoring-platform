@@ -100,6 +100,18 @@ indexable pages identical.
   the home» (`design/NOTES.md`) is reworded to «no sessions/packs sections on the home». New
   task P1-06; P1-01 and P1-04 amended; P3-02's home spec rewritten. The deep-link rules (P0-02)
   do not change: cross-page intents still travel as `/mentoria?book=…`, never `/?book=`.
+- **2026-09-17 — sign-in from `/` continues on `/`.** The amendment above kept the OAuth
+  round-trip landing on `/mentoria`; reviewed on the built P1-06 it read as the same detour the
+  amendment had just removed for signed-in visitors. Decision: after the Google popup the
+  booking resumes in place, on the page where the gate opened, exactly as for a visitor who was
+  already signed in. Mechanism: the popup never reloads the page, so `useBookingRouter` parks
+  every signed-out intent in memory (`pendingSession` and `selectedPack` already did; smart-book
+  with its slot and the pack-schedule join them) and resumes it on the `isSignedIn` flip;
+  `SignInGate` tells `GoogleSignInButton` not to push the callbackUrl after a successful popup.
+  The `/mentoria?intent=…` / `?action=…` / `?reschedule=…` callbackUrls stay exactly as P0-02
+  left them: they are the fallback for a blocked popup (full-page redirect), the one path that
+  still lands on `/mentoria`. Implemented inside P1-06; P1-01's, P1-06's and the phase README's
+  criteria reworded.
 
 ## Risks
 

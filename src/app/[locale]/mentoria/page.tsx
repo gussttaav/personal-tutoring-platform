@@ -7,6 +7,11 @@
  * duplication is temporary (P1-04 removes it from `/`) and `noindex` is what makes it
  * acceptable meanwhile — P2-04 lifts it, gives the page its own metadata keys and lists it in
  * the sitemap. `landing.meta` is reused for now.
+ *
+ * REDESIGN-P1-06: the booking shell is split — `BookingOverlays` (provider + the booking
+ * screens, mounted on both pages) wraps `InteractiveShell` (the sessions/packs sections, this
+ * page only). The `Suspense` boundary moved INSIDE the provider: the overlays don't read search
+ * params, `RescheduleBridge` (mounted by the sections) does.
  */
 
 import { Suspense } from "react";
@@ -17,6 +22,7 @@ import BiographySection from "@/features/landing/BiographySection";
 import SpecializationsSection from "@/features/landing/SpecializationsSection";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
+import BookingOverlays from "@/features/booking/BookingOverlays";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StructuredData from "@/components/seo/StructuredData";
@@ -42,11 +48,11 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Only InteractiveShell needs the Suspense boundary: it uses useSearchParams()
-  // (via useRescheduleIntent), which forces a client-side-rendering bailout. Keeping
-  // the boundary scoped to it lets Navbar, the landing sections, and Footer render on
-  // the server — so the content (incl. the Footer privacy/terms links) is in the
-  // static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
+  // Only InteractiveShell needs the Suspense boundary: it mounts RescheduleBridge, which
+  // uses useSearchParams() (via useRescheduleIntent) and forces a client-side-rendering
+  // bailout. Keeping the boundary scoped to it lets Navbar, the landing sections, and
+  // Footer render on the server — so the content (incl. the Footer privacy/terms links) is
+  // in the static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
   return (
     <>
       {/* SEO-04: JSON-LD (Person + Service) — server-rendered, outside the
@@ -68,18 +74,20 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
           <BiographySection />
           <SpecializationsSection />
 
-          <Suspense
-            fallback={
-              <div
-                className="flex items-center justify-center"
-                style={{ minHeight: "60vh", position: "relative", zIndex: 1 }}
-              >
-                <Spinner />
-              </div>
-            }
-          >
-            <InteractiveShell />
-          </Suspense>
+          <BookingOverlays>
+            <Suspense
+              fallback={
+                <div
+                  className="flex items-center justify-center"
+                  style={{ minHeight: "60vh", position: "relative", zIndex: 1 }}
+                >
+                  <Spinner />
+                </div>
+              }
+            >
+              <InteractiveShell />
+            </Suspense>
+          </BookingOverlays>
 
           {/*
             <div
