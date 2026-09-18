@@ -5,22 +5,27 @@
 // compact `HomeBio` + `HomeAreas` pair, wrapped in one two-column `<section>`; both landing
 // components still serve /mentoria unchanged. REDESIGN-P1-03: `HomeCourses` + `HomePosts` add
 // the courses and latest-posts bands, reusing `CourseCard` / `PostCard` and their catalog/blog
-// selectors as-is. REDESIGN-P1-06: `BookingOverlays` (the booking provider + screens, mounted on
-// both pages) wraps the shell, so the hero's CTAs open the calendar / booking in place on `/`;
-// the shell itself is now only the sessions/packs sections and still sits here until P1-04
-// replaces the whole block with `<BookingOverlays />` alone.
+// selectors as-is. REDESIGN-P1-06: `BookingOverlays` (the booking provider + screens) is mounted
+// on both pages, so the hero's CTAs open the calendar / booking in place on `/`.
+// REDESIGN-P1-04: `/` is the finished, fully STATIC home — hero → bio + areas → courses → posts
+// → app showcase → closing band. The sessions/packs sections (`InteractiveShell`) and their
+// `Suspense` boundary (the `useSearchParams` bailout, via `RescheduleBridge`) live on /mentoria
+// only; nothing here reads search params. The booking overlays stay mounted, alone (their one
+// child is `HomeChat`, the chat FAB, which the sections rendered until now — see that file for
+// why it sits inside the provider). `AppShowcase` and `ClosingCta` are shared components
+// (src/components/) because /mentoria mounts them too (P2-03).
 
-import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
-import { Spinner } from "@/components/ui";
 import HomeHero from "@/features/home/HomeHero";
 import HomeBio from "@/features/home/HomeBio";
 import HomeAreas from "@/features/home/HomeAreas";
 import HomeCourses from "@/features/home/HomeCourses";
 import HomePosts from "@/features/home/HomePosts";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
-import InteractiveShell from "@/features/booking/InteractiveShell";
 import BookingOverlays from "@/features/booking/BookingOverlays";
+import AppShowcase from "@/components/AppShowcase";
+import ClosingCta from "@/components/ClosingCta";
+import HomeChat from "@/components/HomeChat";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import StructuredData from "@/components/seo/StructuredData";
@@ -29,6 +34,7 @@ import "@/features/courses/course-editorial.css";
 import "@/features/courses/catalog/catalog.css";
 import "@/features/blog/blog.css";
 import "@/features/home/home.css";
+import "@/components/app-showcase.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -40,15 +46,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   setRequestLocale(locale);
 
-  // Only InteractiveShell needs the Suspense boundary: it mounts RescheduleBridge, which
-  // uses useSearchParams() (via useRescheduleIntent) and forces a client-side-rendering
-  // bailout. Keeping the boundary scoped to it lets Navbar, the landing sections, and
-  // Footer render on the server — so the content (incl. the Footer privacy/terms links) is
-  // in the static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
   return (
     <>
-      {/* SEO-04: JSON-LD (Person + Service) — server-rendered, outside the
-          Suspense boundary so it ships in the prerendered HTML. */}
+      {/* SEO-04: JSON-LD (Person + Service) — server-rendered so it ships in the
+          prerendered HTML. */}
       <StructuredData locale={locale} />
       <Navbar />
 
@@ -60,6 +61,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             margin: "0 auto",
             position: "relative",
             zIndex: 1,
+            // The home ends on the closing band and the footer's own 80px margin is the gap
+            // (design `.column` has no bottom padding); `.landing-column`'s 80px stays for /mentoria.
+            paddingBottom: 0,
           }}
         >
           <HomeHero locale={locale} />
@@ -79,20 +83,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
           <HomeCourses locale={locale} />
           <HomePosts locale={locale} />
+          <AppShowcase locale={locale} />
+
+          <section className="home-closing">
+            <ClosingCta locale={locale} />
+          </section>
 
           <BookingOverlays>
-            <Suspense
-              fallback={
-                <div
-                  className="flex items-center justify-center"
-                  style={{ minHeight: "60vh", position: "relative", zIndex: 1 }}
-                >
-                  <Spinner />
-                </div>
-              }
-            >
-              <InteractiveShell />
-            </Suspense>
+            <HomeChat />
           </BookingOverlays>
 
           {/*

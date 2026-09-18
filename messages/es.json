@@ -166,6 +166,35 @@
     "blog": {
       "heading": "En clase parece simple, <accent>aquí profundizo</accent>",
       "seeAll": "Ver todos los artículos"
+    },
+    "closing": {
+      "heading": "Cuéntame qué quieres aprender",
+      "body": "El encuentro inicial de 15 minutos es gratis. Comentamos tu caso, vemos si puedo ayudarte y definimos un plan de trabajo."
+    }
+  },
+  "app": {
+    "soon": "App móvil · Próximamente",
+    "heading": "Tus clases, también desde el móvil",
+    "lead": "Las mismas sesiones, los mismos packs y la misma disponibilidad, en una app para entrar a clase y reservar desde donde estés.",
+    "benefits": {
+      "join": {
+        "title": "Entra a la clase desde la app",
+        "body": "Tu próxima sesión, en primer plano, con el aula lista cuando llega la hora."
+      },
+      "book": {
+        "title": "Reserva en dos toques",
+        "body": "Los huecos libres de la semana, con tus créditos ya aplicados al confirmar."
+      },
+      "credits": {
+        "title": "Tus créditos, siempre a la vista",
+        "body": "Cuántos te quedan, cuándo caducan y qué clases tienes por delante."
+      }
+    },
+    "stores": {
+      "downloadOn": "Descárgala en",
+      "availableOn": "Disponible en",
+      "appStore": "[App Store]",
+      "playStore": "[Google Play]"
     }
   },
   "auth": {

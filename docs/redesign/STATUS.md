@@ -30,7 +30,7 @@ Update this file when starting, completing, or blocking a task.
 | [01 Hero + stats](phase-1-home/01-hero.md) | `REDESIGN-P1-01` | ✅ (amended) | Claude | local |
 | [02 Bio + compact areas](phase-1-home/02-bio-and-areas.md) | `REDESIGN-P1-02` | ✅ | Claude | local |
 | [03 Courses + latest posts](phase-1-home/03-courses-and-posts.md) | `REDESIGN-P1-03` | ✅ | Claude | local |
-| [04 App showcase + closing band + static home](phase-1-home/04-app-closing-and-static.md) | `REDESIGN-P1-04` | ⬜ | _tbd_ | |
+| [04 App showcase + closing band + static home](phase-1-home/04-app-closing-and-static.md) | `REDESIGN-P1-04` | ✅ | Claude | local |
 | [05 Home metadata](phase-1-home/05-home-metadata.md) | `REDESIGN-P1-05` | ⬜ | _tbd_ | |
 | [06 Booking overlays on both pages](phase-1-home/06-booking-overlays.md) | `REDESIGN-P1-06` | ✅ | Claude | local |
 
@@ -391,3 +391,71 @@ _Deviations, regressions and decisions taken during implementation go here, date
   unchanged from P0-02. `pnpm lint` (0 errors), `pnpm test` (142 / 1791), `pnpm build` green
   (`/[locale]` still ●). The booking e2e specs (`loginAs` cookie, no gate) don't cover the popup
   path and weren't re-run here for the same port-3000 reason as the previous follow-up.
+- **2026-09-18 (P1-04)** — Three departures from the task md's letter, each flagged here.
+  (1) `<BookingOverlays />` is not mounted childless: its one child on `/` is `HomeChat`, a
+  client wrapper that renders `<Chat />` unless a booking screen is up (the `overlayOpen`
+  condition of `InteractiveShell`, verbatim, read through `useBooking()`). The md's premise
+  («the shell merely rendered it») misses that the shell also UNMOUNTED the FAB while it
+  returned an overlay — still what `/mentoria` does — so a bare page-level `<Chat />` would have
+  floated its z-index-1000 FAB over the wizard / pack booking (z-index 40) opened in place on
+  `/`, over the wizard's own «Confirmar» at 390. The md's own «or mount `<Chat />` directly if it
+  needs no wrapper» is the clause exercised; it needs one. `BookingOverlays`' trailing
+  doc-comment updated to match (one line). (2) `pnpm build` prints `/[locale]` as **●**, not ○
+  — and it always will: in Next 16's legend ○ is «Static» for routes WITHOUT dynamic params and
+  ● is «SSG, prerendered as static HTML» for a `[param]` route with `generateStaticParams`
+  (`/es` and `/en` are listed under it, 30d revalidate). It was ● before P1-06 too (P1-02's and
+  P1-06's notes), i.e. the `Suspense` boundary never made the route dynamic; the ○ in the md,
+  the phase README and the Phase 1 exit criterion is unreachable as written and should be read
+  as ●. What the criterion means is verified instead: `.next/server/app/es.html` carries the
+  whole home (app showcase, phone mock, closing band, both store placeholders, the FAB) and no
+  `Suspense` fallback / spinner / `#sessions`; the `/[locale]` entry chunks (P1-06's
+  manifest-sum method) total **379.4 kB** (393.7 after P1-06) with the `availabilityModal` /
+  `singleSession` / `weeklyCalendar` / `wizardProgress` / `modeView` / `payment.form` markers
+  absent and `packCard` gone too; `/mentoria` 406.9 kB, unchanged. (3) The band-to-footer gap:
+  the mock's `.column` has no bottom padding, so the footer's own 80px margin is the gap, but the
+  app's global `.landing-column` adds 80px more (pre-existing; `/mentoria` shares it) — measured
+  160 vs 80. Zeroed as an inline `paddingBottom: 0` on the home's column in `page.tsx` rather
+  than touching the global rule or hiding a negative margin in `.home-closing` (which is the
+  md's `padding: 8px 0 0` and nothing else); P2 will meet the same 160 on `/mentoria`.
+  Smaller choices: `app-showcase.css` keeps the design's `.app-grid` / `.app-copy` / `.app-phone`
+  / `.ap-*` names and prefixes the generic ones (`.app` → `.app-showcase`, `.soon` →
+  `.app-soon`, `.benefit` → `.app-benefit`, `.store` → `.app-store`, `.phone` →
+  `.app-phone-frame`) — it is a global stylesheet. The closing band's responsive/hover rules
+  (the 640 flip of the button row, the 639px padding, the two `:hover`s) are a `<style>` block
+  inside `ClosingCta` (the `page.tsx` keyframes / `AvailabilityModal` precedent), so the band
+  carries its rules onto `/mentoria` without a page import; its primary's hover is the hero's
+  (`scale(1.02)` + shadow, P1-01), the same button on the same page, where the mock has colour
+  only. Benefit icons are Material Symbols (`videocam`, `calendar_month`, `credit_card`) like
+  the sibling `HomeAreas` boxes; the phone's icons are the mock's inline SVGs (it is a picture).
+  Store links: when the env vars are set the `<a>` keeps the bracketed label — dropping the
+  brackets is a copy change for whoever ships the app. **`.env.example` is gitignored and
+  untracked in this repo** (`.gitignore:28`), so the two vars were added to the local file only;
+  nothing to commit there. No new tests: no service logic changed (`HomeChat` / the islands are
+  presentational, and the repo has no component-test setup).
+  Verified with Playwright against the dev server, not the pane (memory: headless CSS
+  verification). Geometry: 36 rects per width (section, grid, phone + 13 of its parts, copy,
+  pill, heading, lead, benefits, stores, band, h2, p, actions, both buttons) against
+  `design/home.html` at 390 / 834 / 1440 — every x/y/w/h identical, bar text-run widths in
+  Manrope (pill +12, band primary +8, ghost +10, heading −11 at 1440): the mock loads Manrope
+  from the Google Fonts CSS API and the app self-hosts next/font's copy, and P1-01's hero
+  primary shows the identical 244 → 252 in the same run, so it is the font file, not the CSS;
+  computed styles (family, size, weight, letter-spacing, padding, radius, border, gradient,
+  grid columns / gap, flex direction) equal on both sides; no horizontal overflow. Behaviour,
+  signed out, 1440 and 390: band «Reservar sesión ahora» → the «Identifícate para continuar»
+  gate on `/` (URL unchanged); band and footer «Pregunta al asistente IA» → `.chat-panel--open`;
+  hero «Ver disponibilidad» → the calendar dialog in place with the FAB `display: none`; hero
+  «Reservar sesión ahora» → gate; `open-pack-booking` (Navbar) → gate; `close-booking-overlay`
+  (logo) → no-op with nothing open, no errors; exactly one `.chat-fab` on `/` and on
+  `/mentoria`; `/en` renders the English `app.*` / `home.closing.*` copy. Signed in (a minted
+  `authjs.session-token` for `redesign-p1-04-test@example.com` against the test project the dev
+  and e2e envs share; signed out after): band → free-15 wizard in place on `/`, **0 FABs while
+  it is up**, `close-booking-overlay` closes it and the FAB returns; hero → same; «Cambiar tipo
+  de sesión» → `/mentoria` (P1-06 follow-up, untouched). Store toggle: a temporary
+  `.env.development.local` with both URLs + dev restart → both buttons are
+  `<a target="_blank" rel="noopener noreferrer">`; file removed, placeholders back.
+  `pnpm lint` (0 errors, the same 8 pre-existing warnings), `pnpm test` (142 suites, 1791
+  tests), message-key parity (`only in es: []`, `only in en: []`), `pnpm build` green;
+  `npx tsc --noEmit` only the pre-existing `mdx.test.ts` error. E2E `courses-navigation` against
+  the dev server (`E2E_BASE_URL`, DB-free): 9/10, the `en:` catalog test being the documented
+  pre-existing red, and `es: navbar Cursos → …` failing once on the run's cold first compile and
+  passing on re-run (memory: e2e flakiness).

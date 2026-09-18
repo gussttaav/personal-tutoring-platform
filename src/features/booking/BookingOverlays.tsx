@@ -243,8 +243,9 @@ function Overlays() {
 // ─── Public component ──────────────────────────────────────────────────────────
 
 /**
- * `<BookingOverlays>` alone on `/` (P1-04); `<BookingOverlays><InteractiveShell /></BookingOverlays>`
- * on `/mentoria`. One per page.
+ * `<BookingOverlays><HomeChat /></BookingOverlays>` on `/` (P1-04: the chat FAB is its only
+ * child there, gated on the overlays like the sections are);
+ * `<BookingOverlays><InteractiveShell /></BookingOverlays>` on `/mentoria`. One per page.
  */
 export default function BookingOverlays({ children }: { children?: ReactNode }) {
   return (

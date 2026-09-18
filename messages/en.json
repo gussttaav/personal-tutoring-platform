@@ -166,6 +166,35 @@
     "blog": {
       "heading": "It looks simple in class, <accent>here I go deeper</accent>",
       "seeAll": "See all articles"
+    },
+    "closing": {
+      "heading": "Tell me what you want to learn",
+      "body": "The first 15-minute meeting is free. We go over your case, see whether I can help you and set a work plan."
+    }
+  },
+  "app": {
+    "soon": "Mobile app · Coming soon",
+    "heading": "Your classes, on your phone too",
+    "lead": "The same sessions, the same packs and the same availability, in an app to join class and book from wherever you are.",
+    "benefits": {
+      "join": {
+        "title": "Join the class from the app",
+        "body": "Your next session, front and centre, with the room ready when it's time."
+      },
+      "book": {
+        "title": "Book in two taps",
+        "body": "The week's free slots, with your credits already applied when you confirm."
+      },
+      "credits": {
+        "title": "Your credits, always in view",
+        "body": "How many you have left, when they expire and which classes are coming up."
+      }
+    },
+    "stores": {
+      "downloadOn": "Download on",
+      "availableOn": "Available on",
+      "appStore": "[App Store]",
+      "playStore": "[Google Play]"
     }
   },
   "auth": {

@@ -262,3 +262,10 @@
 @media (min-width: 768px) {
   .home-posts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 }
+
+/*
+ * REDESIGN-P1-04 — the closing band's place on the home: `docs/redesign/design/home.html`'s
+ * `<section style="padding: 8px 0 0">` around `.cta-band`. Spacing only — the band's own rules
+ * travel with `ClosingCta` (src/components/), and the app showcase's with `app-showcase.css`.
+ */
+.home-closing { padding: 8px 0 0; }
