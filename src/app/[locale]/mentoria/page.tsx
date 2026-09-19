@@ -4,9 +4,7 @@
  * A COPY of `src/app/[locale]/page.tsx` as it stood when the redesign cycle started, not a
  * shared component: Phase 1 rewrites `/` section by section and Phase 2 rewrites this page
  * section by section, so a shared `LandingComposition` would be deleted two PRs later. The
- * duplication is temporary (P1-04 removes it from `/`) and `noindex` is what makes it
- * acceptable meanwhile — P2-04 lifts it, gives the page its own metadata keys and lists it in
- * the sitemap. `landing.meta` is reused for now.
+ * duplication is temporary (P1-04 removes it from `/`).
  *
  * REDESIGN-P1-06: the booking shell is split — `BookingOverlays` (provider + the booking
  * screens, mounted on both pages) wraps `InteractiveShell` (the sessions/packs sections, this
@@ -14,8 +12,7 @@
  * params, `RescheduleBridge` (mounted by the sections) does.
  *
  * REDESIGN-P1-05: `StructuredData` now takes `variant="mentoria"` — home dropped the `Service`
- * JSON-LD, so this page emits it (`meta.mentoria.*` lands in P2-04; until then it falls back to
- * `landing.meta.*`, which this page's own metadata still reads too).
+ * JSON-LD, so this page emits it.
  *
  * REDESIGN-P2-01: `HeroSection` + `BiographySection` (both deleted) → `MentoriaHeader` (the
  * inner-page header of Cursos/Blog plus the two booking CTAs and the free-meeting note) +
@@ -29,6 +26,11 @@
  *
  * REDESIGN-P2-03: `AppShowcase` (shared with `/`, P1-04) mounted as the page's last band,
  * after the packs — the page ends here, no closing band on Mentoría.
+ *
+ * REDESIGN-P2-04: the page gets its own metadata (`meta.mentoria.*`, replacing the borrowed
+ * `landing` meta namespace), drops the `noindex` P0-01 put on it, and is listed in the sitemap
+ * (`src/app/sitemap.ts`). `StructuredData`'s `mentoria` variant reads `meta.mentoria.*` directly
+ * now (the P1-05 fallback is gone).
  */
 
 import "@/features/courses/course-editorial.css";
@@ -59,12 +61,27 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  const t = await getTranslations({ locale, namespace: "landing.meta" });
+  const t = await getTranslations({ locale, namespace: "meta.mentoria" });
+  const title = t("title");
+  const description = t("description");
+  // REDESIGN-P2-04: `openGraph` is not deep-merged with the layout's — copy its
+  // shared fields and override title/description, like the home's (P1-05).
+  const ogImage = locale === "en" ? "/og-en.png" : "/og.png";
   return {
-    title: t("title"),
-    description: t("description"),
-    robots: { index: false, follow: true },
+    title,
+    description,
+    robots: { index: true, follow: true },
     alternates: localizedAlternates("/mentoria", locale),
+    openGraph: {
+      type: "website",
+      siteName: "gustavoai.dev",
+      title,
+      description,
+      url: locale === "en" ? "/en/mentoria" : "/mentoria",
+      locale: locale === "en" ? "en_US" : "es_ES",
+      alternateLocale: locale === "en" ? "es_ES" : "en_US",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: title }],
+    },
   };
 }
 

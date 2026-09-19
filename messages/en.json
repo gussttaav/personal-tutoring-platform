@@ -22,10 +22,6 @@
     "user": "User"
   },
   "landing": {
-    "meta": {
-      "title": "Gustavo Torres — Programming, Math & AI Tutoring",
-      "description": "Programming, math and AI lessons with Gustavo Torres."
-    },
     "hero": {
       "credential": "MSc. Mathematics & Computer Science",
       "cta": {
@@ -1564,6 +1560,10 @@
     "blog": {
       "title": "Blog — Gustavo Torres",
       "description": "Articles on programming, mathematics and AI: one concept per article, with the mathematics included and code you can actually run."
+    },
+    "mentoria": {
+      "title": "Programming, Math & AI Tutoring — Gustavo Torres",
+      "description": "One-on-one lessons over Zoom: single sessions and packs, a free 15-minute first meeting. Programming, mathematics and artificial intelligence."
     }
   },
   "pages": {

@@ -56,14 +56,14 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 | [01 Header + «Cómo funciona»](phase-2-mentoria/01-header-and-how-it-works.md) | `REDESIGN-P2-01` | ✅ | Claude | local |
 | [02 Testimonials](phase-2-mentoria/02-testimonials.md) | `REDESIGN-P2-02` | ✅ | Claude | local |
 | [03 App section on Mentoría](phase-2-mentoria/03-app-section.md) | `REDESIGN-P2-03` | ✅ | Claude | local |
-| [04 Mentoría metadata + indexability](phase-2-mentoria/04-mentoria-metadata.md) | `REDESIGN-P2-04` | ⬜ | _tbd_ | |
+| [04 Mentoría metadata + indexability](phase-2-mentoria/04-mentoria-metadata.md) | `REDESIGN-P2-04` | ✅ | Claude | local |
 
 **Exit criteria**
 - [ ] `/mentoria` renders header → cómo funciona → áreas → valoraciones → sesiones → packs → app
       at the three widths as `design/mentoria.html`
 - [ ] `HeroSection.tsx` and `BiographySection.tsx` are gone; their surviving pieces live in
       `features/home/`
-- [ ] `/mentoria` is indexable, in the sitemap with both locales, carries the `Service` JSON-LD;
+- [x] `/mentoria` is indexable, in the sitemap with both locales, carries the `Service` JSON-LD;
       `/` carries the `Person`
 - [ ] Booking, pack purchase, reschedule and the availability window work on `/mentoria`
       exactly as they did on `/`
@@ -72,11 +72,11 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Message-key parity check](phase-3-qa/01-message-parity.md) | `REDESIGN-P3-01` | ⬜ | _tbd_ | |
+| [01 Message-key parity check](phase-3-qa/01-message-parity.md) | `REDESIGN-P3-01` | ✅ | Claude | local |
 | [02 E2E on staging, build and performance](phase-3-qa/02-e2e-and-perf.md) | `REDESIGN-P3-02` | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] `pnpm check:messages` exists, passes, and runs in CI
+- [x] `pnpm check:messages` exists, passes, and runs in CI
 - [ ] The full e2e suite passes against staging (flakes re-run, no regression)
 - [ ] Lighthouse on `/` and `/mentoria` (mobile) has no regression against the pre-cycle landing
 
@@ -99,6 +99,19 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 ## Cross-phase notes
 
 _Deviations, regressions and decisions taken during implementation go here, dated._
+
+- **2026-09-19 (P3-01)** — No deviations from the task md, one implementation choice: the
+  diffing logic lives in `src/lib/messages/check-messages.ts` (pure functions, unit tested)
+  rather than inline in `scripts/check-messages.ts`, following the existing
+  `lint-content.ts` → `src/lib/courses/validate-*.ts` split — Jest's `testMatch` only covers
+  `src/**/*.test.ts`, so a test under `scripts/__tests__/` would not have run under
+  `pnpm test`. The ICU placeholder scan only captures an identifier opening a brace pair at
+  nesting depth 0, so a `{var, select, ...}` construct's own translated branch keywords
+  (e.g. es `positive {positiva}` vs en `positive {positive}`) aren't misread as mismatched
+  placeholders — confirmed against the real message files, which produce zero warnings
+  today. `pnpm check:messages` exits 0 on the current files; manually verified (then
+  reverted) that a stray key, a leaf-type mismatch, and a placeholder-only difference each
+  produce the exit code and message the acceptance criteria expect.
 
 - **2026-09-17 (P0-01)** — No deviations from the task md. `e2e/courses-navigation.spec.ts` was
   run locally against the dev server with `E2E_BASE_URL=http://localhost:3000` (global-setup
@@ -546,4 +559,24 @@ _Deviations, regressions and decisions taken during implementation go here, date
   sits in the identical position relative to `BookingOverlays` — screenshotted the sign-in gate
   over the app band at 390 to confirm (opaque `rgba(9,9,11,0.72)` + blur, nothing legible behind
   it). `pnpm lint` (0 errors, same 8 pre-existing warnings), `pnpm test` (143 suites, 1795 tests),
+  `pnpm build` green (`/[locale]/mentoria` ● for es and en).
+- **2026-09-19 (P2-04)** — No deviations from the task md's own change, but two comment-only
+  touches outside its "Files affected" table, both needed to satisfy its own AC grep
+  (`grep -rn "landing.meta" src messages e2e` empty): the P1-05-era comments in
+  `src/app/[locale]/page.tsx:17-19` and `src/components/seo/StructuredData.tsx` that named the
+  literal string `landing.meta` in prose were reworded (no rule or behavior changed, just the
+  wording, since the key no longer exists to reference). `messages/{es,en}.json`'s EN copy for
+  `meta.mentoria.*` isn't dictated verbatim by the task md ("EN equivalent") — written to match
+  the ES original's structure and the existing `home.meta.*` EN phrasing style. `/mentoria`'s
+  `generateMetadata` now explicitly sets `robots: { index: true, follow: true }` (the task's own
+  wording), even though the root layout already defaults to that and the home's `generateMetadata`
+  doesn't repeat it — kept explicit here since this is the page P0-01 had set to `noindex`.
+  Verified via `pnpm build` + `pnpm start` + curl (test plan as written): `/mentoria` and
+  `/en/mentoria` render their own `<title>`/description, `content="index, follow"`, and are listed
+  in `sitemap.xml` with `es`/`en`/`x-default` (→ `/en/mentoria`) alternates; `/mentoria`'s JSON-LD
+  is `[Person(@id ref), Service]` with `url` ending in `/mentoria` and `name`/`description` from
+  `meta.mentoria.*`; `/`'s JSON-LD is `[Person]` only; `robots.txt` has no `/mentoria` disallow
+  rule (none was needed). No sitemap unit test update needed — `src/app/__tests__/sitemap.test.ts`
+  has no assertion over the static-route list, so `/mentoria`'s addition needed no test change.
+  `pnpm lint` (0 errors, same 8 pre-existing warnings), `pnpm test` (143 suites, 1795 tests),
   `pnpm build` green (`/[locale]/mentoria` ● for es and en).

@@ -20,6 +20,10 @@
  * the old Mentoría hero's `subtitle` line; that hero is deleted and the JSON-LD
  * was its only remaining reader, so the key moved to where the value now
  * belongs (the home, which carries the Person).
+ *
+ * REDESIGN-P2-04: the `mentoria` variant reads `meta.mentoria.*` directly — the
+ * page has its own metadata keys now, so the fallback to the old `landing` meta
+ * namespace is gone.
  */
 
 import { getTranslations } from "next-intl/server";
@@ -72,14 +76,10 @@ export default async function StructuredData({
     );
   }
 
-  // variant === "mentoria": `meta.mentoria.*` lands in REDESIGN-P2-04; until
-  // then this falls back to `landing.meta.*`.
-  const tMeta = await getTranslations({ locale, namespace: "meta" });
-  const tLanding = await getTranslations({ locale, namespace: "landing" });
-  const name = tMeta.has("mentoria.title") ? tMeta("mentoria.title") : tLanding("meta.title");
-  const description = tMeta.has("mentoria.description")
-    ? tMeta("mentoria.description")
-    : tLanding("meta.description");
+  // variant === "mentoria"
+  const t = await getTranslations({ locale, namespace: "meta.mentoria" });
+  const name = t("title");
+  const description = t("description");
   const url = localeUrl("/mentoria", locale);
 
   const json = {

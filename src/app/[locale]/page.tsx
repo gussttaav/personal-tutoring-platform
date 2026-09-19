@@ -14,9 +14,9 @@
 // child is `HomeChat`, the chat FAB, which the sections rendered until now — see that file for
 // why it sits inside the provider). `AppShowcase` and `ClosingCta` are shared components
 // (src/components/) because /mentoria mounts them too (P2-03).
-// REDESIGN-P1-05: `generateMetadata` reads `home.meta.*` (its own title/description, no
-// longer `landing.meta`) and `StructuredData` takes `variant="home"`, which drops the
-// `Service` JSON-LD — it belongs on /mentoria, the page that sells it.
+// REDESIGN-P1-05: `generateMetadata` reads `home.meta.*`, its own title/description, and
+// `StructuredData` takes `variant="home"`, which drops the `Service` JSON-LD — it belongs
+// on /mentoria, the page that sells it.
 
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import HomeHero from "@/features/home/HomeHero";

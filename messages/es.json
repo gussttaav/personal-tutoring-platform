@@ -22,10 +22,6 @@
     "user": "Usuario"
   },
   "landing": {
-    "meta": {
-      "title": "Gustavo Torres — Tutorías de programación, matemáticas e IA",
-      "description": "Clases de programación, matemáticas e IA con Gustavo Torres."
-    },
     "hero": {
       "credential": "MSc. Matemáticas y Computación",
       "cta": {
@@ -1564,6 +1560,10 @@
     "blog": {
       "title": "Blog — Gustavo Torres",
       "description": "Artículos sobre programación, matemáticas e IA: un concepto por artículo, con la parte matemática incluida y código que se puede ejecutar."
+    },
+    "mentoria": {
+      "title": "Mentoría en programación, matemáticas e IA — Gustavo Torres",
+      "description": "Clases particulares uno a uno por Zoom: sesiones sueltas y packs, encuentro inicial gratuito de 15 minutos. Programación, matemáticas e inteligencia artificial."
     }
   },
   "pages": {
