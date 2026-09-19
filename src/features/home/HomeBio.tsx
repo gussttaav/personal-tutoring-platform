@@ -1,7 +1,7 @@
 /*
  * REDESIGN-P1-02 — the home (/) bio: overline, headline, one paragraph (the mock's merge of
- * `landing.bio.para1` + `para2` into `home.bio.para`; those two stay in use on `/mentoria` until
- * P2-01 removes the bio there), the three social links and the «Cómo funcionan las clases» link
+ * the old bio's two paragraphs into `home.bio.para`; P2-01 removed the bio from `/mentoria` and
+ * the second paragraph's key with it), the three social links and the «Cómo funcionan las clases» link
  * into `/mentoria#como-funciona`. `docs/redesign/design/home.html` `.bio-grid`'s left column is
  * the reference; the photo column moved to `HomeHero` in P1-01 and is not rendered here.
  *

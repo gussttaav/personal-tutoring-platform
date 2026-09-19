@@ -15,6 +15,11 @@
  * Person by `@id` and adds the `Service` (the tutoring offer, which belongs
  * on the page that sells it). Both `@id`s (`#person`, `#service`) are kept
  * stable across variants so the graph stays linkable.
+ *
+ * REDESIGN-P2-01: `jobTitle` reads `home.hero.jobTitle`. The value used to be
+ * the old Mentoría hero's `subtitle` line; that hero is deleted and the JSON-LD
+ * was its only remaining reader, so the key moved to where the value now
+ * belongs (the home, which carries the Person).
  */
 
 import { getTranslations } from "next-intl/server";
@@ -30,15 +35,14 @@ export default async function StructuredData({
   variant: "home" | "mentoria";
 }) {
   if (variant === "home") {
-    const t = await getTranslations({ locale, namespace: "landing" });
+    const t = await getTranslations({ locale, namespace: "home.hero" });
     const url = locale === "en" ? `${BASE}/en` : BASE;
 
     const person = {
       "@type": "Person",
       "@id": `${BASE}/#person`,
       name: "Gustavo Torres",
-      // REDESIGN-P2-01 moves this to `home.hero.jobTitle` once the hero owns it.
-      jobTitle: t("hero.subtitle"),
+      jobTitle: t("jobTitle"),
       url,
       image: `${BASE}/avatar.png`,
       knowsAbout: [

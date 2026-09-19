@@ -27,20 +27,7 @@
       "description": "Clases de programación, matemáticas e IA con Gustavo Torres."
     },
     "hero": {
-      "zoomTitle": "Clic para ampliar",
       "credential": "MSc. Matemáticas y Computación",
-      "subtitle": "Profesor de Programación, Matemáticas e IA",
-      "taglinePart1": "Supera temas difíciles",
-      "taglinePart2": "con guía experta y directa.",
-      "subheading": "Clases individuales. Sin videos, sin prompts, sin perder el tiempo.",
-      "skills": [
-        "Java",
-        "Python",
-        "C",
-        "Algorítmica",
-        "Deep Learning",
-        "Estadística"
-      ],
       "cta": {
         "book": "Reservar sesión ahora",
         "availability": "Ver disponibilidad"
@@ -78,7 +65,6 @@
       "overline": "Sobre Gustavo",
       "headline": "Forjado entre código y ecuaciones",
       "para1": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria. Tras varios años como desarrollador de software, me dediqué durante cinco años a la investigación y la docencia en el ámbito universitario, antes de pasar a trabajar de forma independiente combinando enseñanza y consultoría.",
-      "para2": "Desde hace más de siete años, acompaño a estudiantes y profesionales a potenciar sus habilidades en programación, matemáticas e inteligencia artificial. Mi apoyo abarca desde el refuerzo académico y el aprendizaje desde cero, hasta la preparación de entrevistas técnicas y el desarrollo de proyectos reales.",
       "github": "GitHub",
       "linkedin": "LinkedIn",
       "email": "contacto@gustavoai.dev"
@@ -150,7 +136,8 @@
       "headline1": "Programación, matemáticas e IA,",
       "headline2": "con la parte difícil incluida.",
       "subheading": "Clases individuales con guía directa, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo.",
-      "freeNote": "El encuentro inicial de 15 minutos es gratis: comentamos tu caso y definimos un plan de trabajo."
+      "freeNote": "El encuentro inicial de 15 minutos es gratis: comentamos tu caso y definimos un plan de trabajo.",
+      "jobTitle": "Profesor de Programación, Matemáticas e IA"
     },
     "bio": {
       "para": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria. Tras varios años como desarrollador de software y cinco en la investigación y la docencia universitaria, trabajo de forma independiente desde hace más de siete años acompañando a estudiantes y profesionales: desde el refuerzo académico y el aprendizaje desde cero hasta la preparación de entrevistas técnicas y el desarrollo de proyectos reales.",
@@ -174,6 +161,37 @@
     "closing": {
       "heading": "Cuéntame qué quieres aprender",
       "body": "El encuentro inicial de 15 minutos es gratis. Comentamos tu caso, vemos si puedo ayudarte y definimos un plan de trabajo."
+    }
+  },
+  "mentoria": {
+    "header": {
+      "kicker": "Mentoría",
+      "title": "Supera temas difíciles, <accent>con guía experta y directa</accent>",
+      "lead": "Clases individuales según tus necesidades: empezar desde cero, reforzar conceptos clave, profundizar en temas avanzados, prepararte para un examen o entrevista.",
+      "freeNote": "El encuentro inicial de 15 minutos es gratis y no compromete a nada."
+    },
+    "how": {
+      "kicker": "Cómo funciona",
+      "heading": "De la primera duda a la clase",
+      "subtitle": "Cuatro pasos. Ninguno te ata a nada hasta que decides reservar.",
+      "steps": {
+        "initial": {
+          "title": "Encuentro inicial",
+          "body": "Quince minutos, gratis. Me cuentas qué necesitas y salimos con un plan de trabajo, reserves después o no."
+        },
+        "slot": {
+          "title": "Eliges día y hora",
+          "body": "Ves los huecos libres en el calendario y reservas el que te encaje. Recibes la confirmación por correo y el evento en tu calendario."
+        },
+        "zoom": {
+          "title": "La clase con Zoom en la app",
+          "body": "Sala privada uno a uno que se abre desde la propia web. Compartimos pantalla y código, con un chat para pegar enlaces y errores."
+        },
+        "changes": {
+          "title": "Si surge algo",
+          "body": "Puedes cancelar o mover la clase hasta {hours, plural, one {# hora} other {# horas}} antes. Lo gestionas automáticamente desde la web o tu móvil."
+        }
+      }
     }
   },
   "app": {

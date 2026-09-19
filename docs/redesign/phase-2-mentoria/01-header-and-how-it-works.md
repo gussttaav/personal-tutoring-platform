@@ -1,6 +1,6 @@
 # P2-01 — Header + «Cómo funciona»
 
-**Tag:** `REDESIGN-P2-01` · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REDESIGN-P2-01` · **Effort:** M · **Owner:** Claude · **Status:** ✅
 **Depends on:** P0-02, P1-01, P1-02
 
 ## TL;DR

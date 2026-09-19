@@ -16,13 +16,23 @@
  * REDESIGN-P1-05: `StructuredData` now takes `variant="mentoria"` — home dropped the `Service`
  * JSON-LD, so this page emits it (`meta.mentoria.*` lands in P2-04; until then it falls back to
  * `landing.meta.*`, which this page's own metadata still reads too).
+ *
+ * REDESIGN-P2-01: `HeroSection` + `BiographySection` (both deleted) → `MentoriaHeader` (the
+ * inner-page header of Cursos/Blog plus the two booking CTAs and the free-meeting note) +
+ * `HowItWorks` (the four «Cómo funciona» step cards). The fourth step quotes the cancellation
+ * window, read ONCE here from `getScheduleConfig()` (ISR-cached; never called from a component)
+ * and passed down as a number. `course-editorial.css` supplies the shared header chrome
+ * (`.lp-section-head` / `.lp-kicker` / `.lp-rule` / `.lp-serif`), `mentoria.css` the rest.
  */
+
+import "@/features/courses/course-editorial.css";
+import "@/features/mentoria/mentoria.css";
 
 import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Spinner } from "@/components/ui";
-import HeroSection from "@/features/landing/HeroSection";
-import BiographySection from "@/features/landing/BiographySection";
+import MentoriaHeader from "@/features/mentoria/MentoriaHeader";
+import HowItWorks from "@/features/mentoria/HowItWorks";
 import SpecializationsSection from "@/features/landing/SpecializationsSection";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
@@ -32,6 +42,7 @@ import Footer from "@/components/Footer";
 import StructuredData from "@/components/seo/StructuredData";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
+import { getScheduleConfig } from "@/lib/schedule-config";
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -51,6 +62,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function MentoriaPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const { cancelMinNoticeHours } = await getScheduleConfig();
 
   // Only InteractiveShell needs the Suspense boundary: it mounts RescheduleBridge, which
   // uses useSearchParams() (via useRescheduleIntent) and forces a client-side-rendering
@@ -74,8 +86,8 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
             zIndex: 1,
           }}
         >
-          <HeroSection />
-          <BiographySection />
+          <MentoriaHeader locale={locale} />
+          <HowItWorks locale={locale} cancelMinNoticeHours={cancelMinNoticeHours} />
           <SpecializationsSection />
 
           <BookingOverlays>

@@ -53,7 +53,7 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Header + «Cómo funciona»](phase-2-mentoria/01-header-and-how-it-works.md) | `REDESIGN-P2-01` | ⬜ | _tbd_ | |
+| [01 Header + «Cómo funciona»](phase-2-mentoria/01-header-and-how-it-works.md) | `REDESIGN-P2-01` | ✅ | Claude | local |
 | [02 Testimonials](phase-2-mentoria/02-testimonials.md) | `REDESIGN-P2-02` | ⬜ | _tbd_ | |
 | [03 App section on Mentoría](phase-2-mentoria/03-app-section.md) | `REDESIGN-P2-03` | ⬜ | _tbd_ | |
 | [04 Mentoría metadata + indexability](phase-2-mentoria/04-mentoria-metadata.md) | `REDESIGN-P2-04` | ⬜ | _tbd_ | |
@@ -475,3 +475,52 @@ _Deviations, regressions and decisions taken during implementation go here, date
   memory note claimed; no OG-image work needed. `pnpm lint` (0 errors, the same 8 pre-existing
   warnings), `pnpm test` (142 suites, 1791 tests), `pnpm build` green. No `StructuredData` unit
   test existed to update (none under `src/components/seo/__tests__/`).
+- **2026-09-19 (P2-01)** — One deviation from the task md's key inventory, flagged rather than
+  followed: `landing.bio.para1` is **kept**, not deleted. The md says nothing reads the two bio
+  paragraphs after this task, but the course landing's instructor block
+  (`src/app/[locale]/cursos/[courseSlug]/page.tsx:257`, `tBio("para1")`) still renders it —
+  deleting it would have blanked every course page's bio with a missing-key error. `para2` had no
+  reader and is gone; the AC grep (`landing.hero.subtitle\|taglinePart\|landing.bio.para` over
+  `src messages`) is empty. Two comment-only touches outside the "Files affected" table, both to
+  keep that grep honest: `HomeBio.tsx`'s header no longer names `para1`/`para2` as keys that "stay
+  in use on `/mentoria`", and the `StructuredData.tsx` note refers to the old hero's subtitle line
+  without the literal key. Everything else is the md's, block for block: `MentoriaHeader` (server)
+  + `MentoriaCtas` (the client island, a separate file as `HomeHeroCtas` is — a `"use client"`
+  island can't share a Server Component's module) + `HowItWorks` (server, `id="como-funciona"`,
+  `{hours}` as a prop from the page's single `getScheduleConfig()` read) + `mentoria.css`. Two
+  additions to the CSS list the md names, both needed: `.mt-cta` / `.mt-cta--primary` /
+  `.mt-cta--secondary` (the buttons need a stylesheet; they repeat `home.css`'s `.home-hero-cta*`
+  values verbatim — the `ClosingCta` precedent of each feature owning its button rules — rather
+  than importing the home's stylesheet into `/mentoria`), and `scroll-margin-top: 88px` on
+  `.mt-sec` so `/mentoria#como-funciona` lands with the kicker below the fixed navbar
+  (`SyllabusAccordion`'s `#temario` value; without it the anchor tucks the section head under the
+  bar — memory: fixed navbar top clearance). The header and the steps keep the page's `fadeUp`
+  entrance at the old hero's / bio's delays (0 / 0.15s), as `HomeHero` kept the hero's. Step
+  bodies use ICU plural in BOTH locales (`hora/horas`, `hour/hours`), not only the English.
+  `home.hero.jobTitle` carries the old `landing.hero.subtitle` value; `StructuredData`'s `home`
+  branch reads it. Message parity: `only in es: []`, `only in en: []`.
+  Verified with Playwright against `pnpm start` on port 3303 (the pane is unreliable for
+  compositing — memory: headless CSS verification), 22 rects per width (header, kicker, rule, h1,
+  accent, lead, CTA row, both buttons, free note, section, kicker/h2/subtitle, grid, step 1 and
+  its three children, step 4, divider, the specs section) against `design/mentoria.html` at
+  390 / 834 / 1440: every x/y/w/h identical, bar the Manrope text-run widths P1-04 already
+  documented (kicker +5, primary +8, secondary +1 — the mock loads Google Fonts' Manrope, the app
+  self-hosts next/font's) and `SpecializationsSection`'s own height below 1024 (+56 / +46, the
+  real bento vs the mock's, untouched and out of scope; identical at 1440). Computed styles
+  (family — Newsreader on the h1, italic green accent — size, weight, tracking, leading, colour,
+  paddings, grid columns 1 / 2 / 4, gap, radius) equal on both sides; no horizontal overflow.
+  Behaviour, signed out at 1440 and 390: «Reservar sesión ahora» → the «Identifícate para
+  continuar» gate in place, URL `/mentoria` unchanged; «Ver disponibilidad» → the availability
+  dialog (12 slot buttons) in place, FAB `display: none` under it; `#como-funciona` → section top
+  at 88px in the viewport (navbar 70px); FAB gets `chat-fab--hero-overlap` at 390×560 while the
+  CTA row's bottom (497) is inside the FAB zone (448) and loses it 120px down; exactly one
+  `.chat-fab`; no page errors. `/en/mentoria` renders the English kicker, title, lead, CTAs, note
+  and four steps (step 04 «up to 2 hours before»). Not verified: a `cancel_min_notice_hours`
+  change on `/admin/schedule` (no local admin session — memory) — the value is the same
+  `getScheduleConfig().cancelMinNoticeHours` `/terminos` already renders through the same tag
+  revalidation; the signed-in in-place open (same `open-smart-book` path P1-06 covered).
+  `pnpm lint` (0 errors, the same 8 pre-existing warnings), `pnpm test` (142 suites, 1791 tests),
+  `pnpm build` green (`/[locale]/mentoria` ● for es and en; the prerendered HTML carries the
+  header, `#hero-cta-row`, `#como-funciona`, four `.mt-step`s and no remnant of the old hero).
+  E2E not re-run: no spec reads the hero's copy or the deleted keys (grep over `e2e/`), and the
+  booking specs drive the session cards, not the header.

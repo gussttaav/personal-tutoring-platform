@@ -27,20 +27,7 @@
       "description": "Programming, math and AI lessons with Gustavo Torres."
     },
     "hero": {
-      "zoomTitle": "Click to zoom",
       "credential": "MSc. Mathematics & Computer Science",
-      "subtitle": "Programming, Math & AI Teacher",
-      "taglinePart1": "Master difficult topics",
-      "taglinePart2": "with expert guidance.",
-      "subheading": "One-on-one classes. No videos, no prompts, no wasted time.",
-      "skills": [
-        "Java",
-        "Python",
-        "C",
-        "Algorithms",
-        "Deep Learning",
-        "Statistics"
-      ],
       "cta": {
         "book": "Book a session now",
         "availability": "Check availability"
@@ -78,7 +65,6 @@
       "overline": "About Gustavo",
       "headline": "Forged between code and equations",
       "para1": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer, I spent five years in research and university teaching before working independently, combining education and consulting.",
-      "para2": "For over seven years I have been helping students and professionals strengthen their skills in programming, mathematics and artificial intelligence — from academic support and learning from scratch to technical interview preparation and real-world project development.",
       "github": "GitHub",
       "linkedin": "LinkedIn",
       "email": "contacto@gustavoai.dev"
@@ -150,7 +136,8 @@
       "headline1": "Programming, mathematics and AI,",
       "headline2": "with the hard part included.",
       "subheading": "One-to-one classes with direct guidance, free courses that run in the browser, and a blog with one concept per article.",
-      "freeNote": "The first 15-minute meeting is free: we go over your case and set a work plan."
+      "freeNote": "The first 15-minute meeting is free: we go over your case and set a work plan.",
+      "jobTitle": "Programming, Math & AI Teacher"
     },
     "bio": {
       "para": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer and five in university research and teaching, I've worked independently for over seven years, helping students and professionals: from academic support and learning from scratch to technical interview preparation and real-world project development.",
@@ -174,6 +161,37 @@
     "closing": {
       "heading": "Tell me what you want to learn",
       "body": "The first 15-minute meeting is free. We go over your case, see whether I can help you and set a work plan."
+    }
+  },
+  "mentoria": {
+    "header": {
+      "kicker": "Mentoring",
+      "title": "Master difficult topics, <accent>with expert, direct guidance</accent>",
+      "lead": "One-to-one classes tailored to your needs: starting from scratch, reinforcing key concepts, going deeper into advanced topics, preparing for an exam or an interview.",
+      "freeNote": "The first 15-minute meeting is free and commits you to nothing."
+    },
+    "how": {
+      "kicker": "How it works",
+      "heading": "From the first question to the class",
+      "subtitle": "Four steps. None of them ties you to anything until you decide to book.",
+      "steps": {
+        "initial": {
+          "title": "First meeting",
+          "body": "Fifteen minutes, free. You tell me what you need and we leave with a work plan, whether you book afterwards or not."
+        },
+        "slot": {
+          "title": "Pick a day and time",
+          "body": "You see the free slots in the calendar and book the one that suits you. You get the confirmation by email and the event in your calendar."
+        },
+        "zoom": {
+          "title": "The class, with Zoom in the app",
+          "body": "A private one-to-one room that opens from the website itself. We share screen and code, with a chat for pasting links and errors."
+        },
+        "changes": {
+          "title": "If something comes up",
+          "body": "You can cancel or move the class up to {hours, plural, one {# hour} other {# hours}} before. You manage it automatically from the web or your phone."
+        }
+      }
     }
   },
   "app": {
