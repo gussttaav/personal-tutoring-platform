@@ -37,6 +37,9 @@ jobs:
       - name: Lint content
         run: pnpm lint:content
 
+      - name: Check messages
+        run: pnpm check:messages
+
       - name: Unit tests
         run: pnpm test:unit
         env:

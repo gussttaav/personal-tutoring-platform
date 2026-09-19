@@ -69,7 +69,7 @@ Locale has two sources, by design: the `NEXT_LOCALE` cookie drives **rendering**
 
 **The rule for any UI/email text change:**
 - Never hardcode customer-facing strings in components. Add a key to **both** `messages/es.json` **and** `messages/en.json` (identical key structure, translated values) and render it with `t()` from `useTranslations(...)` (client) or `getTranslations(...)` (server).
-- The two files must stay **key-for-key in sync.** Nothing enforces this automatically yet — a key present in only one file fails silently at runtime for that locale. Always edit both.
+- The two files must stay **key-for-key in sync.** `pnpm check:messages` enforces it (CI) — a key present in only one file fails silently at runtime for that locale. Always edit both.
 - Domain/validation errors carry **codes**, not localized strings; the presentation layer translates them (`src/constants/errors.ts` → `errors.{http,domain,validation}.*`). Add new error copy under those namespaces, not inline.
 - Admin panel text may stay Spanish (hardcoded is acceptable there).
 - New public page? Add `generateMetadata` with `localizedAlternates(route, locale)` from `src/lib/hreflang.ts`, list it in `src/app/sitemap.ts`, and leave auth/transactional pages out (they're disallowed in `src/app/robots.ts`).
