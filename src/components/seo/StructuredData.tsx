@@ -24,6 +24,7 @@
 
 import { getTranslations } from "next-intl/server";
 import { localeUrl } from "@/lib/hreflang";
+import { CLASSGAP_PROFILE_URL } from "@/constants";
 
 const BASE = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
 
@@ -57,7 +58,7 @@ export default async function StructuredData({
       ],
       sameAs: [
         "https://www.linkedin.com/in/gustavo-torres-guerrero",
-        "https://www.classgap.com/es/tutor/gustavo-torres-guerrero",
+        CLASSGAP_PROFILE_URL,
       ],
     };
 

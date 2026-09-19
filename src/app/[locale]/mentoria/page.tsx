@@ -23,6 +23,9 @@
  * window, read ONCE here from `getScheduleConfig()` (ISR-cached; never called from a component)
  * and passed down as a number. `course-editorial.css` supplies the shared header chrome
  * (`.lp-section-head` / `.lp-kicker` / `.lp-rule` / `.lp-serif`), `mentoria.css` the rest.
+ *
+ * REDESIGN-P2-02: `Testimonials` (the «Valoraciones» band) mounted after
+ * `SpecializationsSection`, before the booking overlays/sessions block.
  */
 
 import "@/features/courses/course-editorial.css";
@@ -33,6 +36,7 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import { Spinner } from "@/components/ui";
 import MentoriaHeader from "@/features/mentoria/MentoriaHeader";
 import HowItWorks from "@/features/mentoria/HowItWorks";
+import Testimonials from "@/features/mentoria/Testimonials";
 import SpecializationsSection from "@/features/landing/SpecializationsSection";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
@@ -89,6 +93,7 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
           <MentoriaHeader locale={locale} />
           <HowItWorks locale={locale} cancelMinNoticeHours={cancelMinNoticeHours} />
           <SpecializationsSection />
+          <Testimonials locale={locale} />
 
           <BookingOverlays>
             <Suspense

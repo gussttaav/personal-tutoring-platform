@@ -192,6 +192,13 @@
           "body": "You can cancel or move the class up to {hours, plural, one {# hour} other {# hours}} before. You manage it automatically from the web or your phone."
         }
       }
+    },
+    "testimonials": {
+      "kicker": "Reviews",
+      "heading": "What my students say",
+      "subtitle": "What people who have taken the classes say.",
+      "student": "Student",
+      "classgap": "See the 150+ verified reviews on Classgap"
     }
   },
   "app": {

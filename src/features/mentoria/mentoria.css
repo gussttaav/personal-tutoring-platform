@@ -162,3 +162,90 @@
   .mt-cta--primary { transition: none; }
   .mt-cta--primary:hover { transform: none; }
 }
+
+/*
+ * REDESIGN-P2-02 — Valoraciones: 1 column, 3 from 768 (`docs/redesign/design/mentoria.html`
+ * `.quotes-grid` / `.quote`, prefixed `mt-`). The avatar circle repeats `Navbar.tsx`'s
+ * no-picture avatar values.
+ */
+.mt-quotes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+@media (min-width: 768px) {
+  .mt-quotes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.mt-quote {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px 28px 24px;
+  background: #201f22;
+  border: 1px solid rgba(60, 74, 66, 0.15);
+  border-radius: 16px;
+  transition: border-color 0.2s;
+}
+.mt-quote:hover { border-color: rgba(78, 222, 163, 0.3); }
+.mt-quote-mark {
+  font-family: var(--font-serif, Georgia, "Times New Roman", serif);
+  font-size: 3.25rem;
+  line-height: 0.6;
+  color: #4edea3;
+  opacity: 0.45;
+  height: 1.4rem;
+}
+.mt-quote p {
+  flex: 1;
+  font-family: var(--font-serif, Georgia, "Times New Roman", serif);
+  font-size: 1.0625rem;
+  line-height: 1.55;
+  color: #bbcabf;
+  text-wrap: pretty;
+}
+.mt-quote-who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mt-quote-av {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(78, 222, 163, 0.12);
+  border: 1px solid rgba(78, 222, 163, 0.2);
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #4edea3;
+  letter-spacing: 0.04em;
+}
+.mt-quote-name {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #e5e1e4;
+  line-height: 1.2;
+}
+.mt-quote-ctx {
+  font-size: 12px;
+  color: #86948a;
+  margin-top: 2px;
+}
+.mt-quotes-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 22px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4edea3;
+}

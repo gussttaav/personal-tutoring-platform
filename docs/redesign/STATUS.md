@@ -54,7 +54,7 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Header + «Cómo funciona»](phase-2-mentoria/01-header-and-how-it-works.md) | `REDESIGN-P2-01` | ✅ | Claude | local |
-| [02 Testimonials](phase-2-mentoria/02-testimonials.md) | `REDESIGN-P2-02` | ⬜ | _tbd_ | |
+| [02 Testimonials](phase-2-mentoria/02-testimonials.md) | `REDESIGN-P2-02` | ✅ | Claude | local |
 | [03 App section on Mentoría](phase-2-mentoria/03-app-section.md) | `REDESIGN-P2-03` | ⬜ | _tbd_ | |
 | [04 Mentoría metadata + indexability](phase-2-mentoria/04-mentoria-metadata.md) | `REDESIGN-P2-04` | ⬜ | _tbd_ | |
 
@@ -524,3 +524,13 @@ _Deviations, regressions and decisions taken during implementation go here, date
   header, `#hero-cta-row`, `#como-funciona`, four `.mt-step`s and no remnant of the old hero).
   E2E not re-run: no spec reads the hero's copy or the deleted keys (grep over `e2e/`), and the
   booking specs drive the session cards, not the header.
+- **2026-09-19 (P2-02)** — No deviations from the task md. `pickTestimonials(locale)` lives in
+  `src/constants/testimonials.ts` (not a separate file) since it's pure data logic with no React
+  dependency — tested in `src/features/mentoria/__tests__/testimonials.test.ts`. Verified against
+  `design/mentoria.html` at 390/834/1440 via Playwright (project's cached chromium,
+  `/home/gustavo/.cache/ms-playwright`, launched directly — no Browser pane available this
+  session): 1 column below 768, 3 columns from 768, Sergi/Alberto/Pablo on `/mentoria`,
+  Jeremy/Sergi/Alberto on `/en/mentoria` with no quote translated, the Classgap link resolving to
+  the same URL on both, `#valoraciones` sitting between `#como-funciona`'s bento and `#sessions`.
+  `pnpm lint` (0 errors, same 8 pre-existing warnings), `pnpm test` (143 suites, 1795 tests),
+  `pnpm build` green (`/[locale]/mentoria` ● for es and en).

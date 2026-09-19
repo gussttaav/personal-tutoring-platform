@@ -192,6 +192,13 @@
           "body": "Puedes cancelar o mover la clase hasta {hours, plural, one {# hora} other {# horas}} antes. Lo gestionas automáticamente desde la web o tu móvil."
         }
       }
+    },
+    "testimonials": {
+      "kicker": "Valoraciones",
+      "heading": "Qué opinan mis estudiantes",
+      "subtitle": "Lo que cuentan quienes ya han pasado por las clases.",
+      "student": "Estudiante",
+      "classgap": "Ver las 150+ valoraciones verificadas en Classgap"
     }
   },
   "app": {
