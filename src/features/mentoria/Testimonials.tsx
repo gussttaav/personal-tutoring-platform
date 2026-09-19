@@ -41,7 +41,8 @@ export default async function Testimonials({ locale }: TestimonialsProps) {
               <span className="mt-quote-mark" aria-hidden="true">&ldquo;</span>
               <p>{item.quote}</p>
               <div className="mt-quote-who">
-                <span className="mt-quote-av">{item.initials}</span>
+                {/* REDESIGN-P3-02: decorative — the name right after it is the accessible text. */}
+                <span className="mt-quote-av" aria-hidden="true">{item.initials}</span>
                 <div>
                   <div className="mt-quote-name">{item.name}</div>
                   <div className="mt-quote-ctx">{item.context ?? t("student")}</div>

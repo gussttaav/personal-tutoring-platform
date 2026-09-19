@@ -73,12 +73,15 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Message-key parity check](phase-3-qa/01-message-parity.md) | `REDESIGN-P3-01` | ✅ | Claude | local |
-| [02 E2E on staging, build and performance](phase-3-qa/02-e2e-and-perf.md) | `REDESIGN-P3-02` | ⬜ | _tbd_ | |
+| [02 E2E on staging, build and performance](phase-3-qa/02-e2e-and-perf.md) | `REDESIGN-P3-02` | ✅ | Claude | local |
 
 **Exit criteria**
 - [x] `pnpm check:messages` exists, passes, and runs in CI
-- [ ] The full e2e suite passes against staging (flakes re-run, no regression)
-- [ ] Lighthouse on `/` and `/mentoria` (mobile) has no regression against the pre-cycle landing
+- [ ] The full e2e suite passes against staging (flakes re-run, no regression) — **passes locally
+      against the test DB (44/44 across the runs, see the P3-02 note); the staging run itself
+      waits for a `staging` deploy of this branch (the preview still serves the pre-redesign
+      `e42afc6`, `/mentoria` → 404), and `e2e.yml` fires it on that deploy**
+- [x] Lighthouse on `/` and `/mentoria` (mobile) has no regression against the pre-cycle landing
 
 ## Phase 4 — Cleanup
 
@@ -99,6 +102,95 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 ## Cross-phase notes
 
 _Deviations, regressions and decisions taken during implementation go here, dated._
+
+- **2026-09-19 (P3-02)** — A verification task; what it found, what it changed, and the numbers.
+  **Environment.** No staging deploy of this branch exists (the latest Preview deployment,
+  `personal-web-booking-r9rp3h2zb-…vercel.app`, is `e42afc6` = the `staging` branch before P0-01:
+  `/` is the old landing, `/mentoria` is a 404), and pushing to `staging` is not this task's call,
+  so the suite ran **locally against the test DB** as P0-02 / P1-06 did (`.env.e2e.local`,
+  Playwright's own `pnpm dev`, `supabase db push` + truncate + calendar wipe in global-setup). The
+  Stripe CLI key is still the expired one (`stripe listen` 401s), yet both `[es]` paid specs passed
+  again, as in P1-06. When the branch reaches `staging`, `e2e.yml` runs the same suite there
+  automatically — the three staging-only manual checks P0-02 listed (OAuth resume, the real
+  confirmation-email link, `/pago-exitoso` → `/mentoria`) stay open until then.
+  **E2E.** First full run: **41/44 in 10.4 min**. The three reds: (1) `courses-navigation` «es:
+  navbar Cursos → …» — `toHaveURL(/cursos)` at the 5 s default while a fresh `pnpm dev` compiled
+  `/cursos` (measured 6.5 s cold; the spec's own header promises 30 s per course hop but its first
+  two hops never got it); (2) `courses-navigation` «en: English card …» — the red P0-01 flagged
+  for this task: a page-wide `toHaveCount(0)` on the «Lessons in Spanish» badge, which the
+  Spanish-only `llm-agents` card (COURSE-C2) wears by design; (3) the new `home.spec.ts` signed-in
+  slot test — my assertion, not the app: it pinned the «Gratis» pill, which is `lg:hidden` at the
+  suite's 1280 px viewport (the review step had been reached; the free note is what `lg+` shows).
+  Fixed (3) to assert whichever free marker the viewport renders → `home.spec.ts` **7/7**. (1) and
+  (2) failed again on a second cold run and passed against a warmed server, so per the phase
+  README («fails twice = fix, not skip») both were fixed **in the spec**: the two catalog hops now
+  carry the header's 30 s, and the badge check is scoped to the `dl-nlp` card (the invariant the
+  comment describes). Third run, `courses-navigation` on a fresh cold server: **10/10**. Net across
+  runs: 44/44, no product regression. The `#sessions` gotcha: the spec only asserts the section is
+  attached on `/mentoria` (no `/#sessions` anchor) — in the spirit of P0-01, left alone.
+  **`home.spec.ts`** (7 tests, signed-out ones DB-free): menu order + Inicio current; «Ver
+  disponibilidad» → next week → «Hora disponible» → «Confirmar» → the «reservar la hora elegida»
+  gate on `/` with callbackUrl `/mentoria?intent=smart-book&slotStart=…`; «Reservar sesión ahora» →
+  the «reservar una sesión» gate on `/` with callbackUrl exactly `/mentoria?intent=smart-book`;
+  signed in first-timer (`resetTestState` + `loginAs`): the same slot pick lands on the free-15
+  review step on `/` with 0 `.chat-fab` (P1-04's rule), and «Reservar sesión ahora» opens the
+  wizard's picking step on `/`; footer «Pregunta al asistente IA» → `.chat-panel--open`; course
+  cards = `/cursos`'s count, post cards = `/blog`'s first two hrefs in order. The callbackUrl is
+  read off the popup: `window.open` surfaces as Playwright's `popup`, its `/auth/signin-popup`
+  navigation is fulfilled with an empty document (context-level route) so `signIn()` never runs,
+  and `?callbackUrl` → `?next` is decoded. «Reaches the free-15 confirmation» is read as the review
+  step with the confirm button (the slot threading is what is new); the booking is not confirmed
+  — `booking-free` owns confirm → success on `/mentoria`.
+  **Build.** `pnpm build` green (twice: before and after the one `src/` edit below). Route table:
+  `├ ● /[locale]  30d 1y` (`/es`, `/en`) and `├ ● /[locale]/mentoria  30d 1y` (`/es/mentoria`,
+  `/en/mentoria`) — both SSG; the README's «○» for `/[locale]` is the P1-04 legend note (● is what
+  a `[param]` route with `generateStaticParams` prints). `pnpm check:bundle`: exits 1 on exactly the
+  known false positive (`"pyodide"` = the `gt:pyodide-loaded` key literal in the lesson route's
+  chunk, one occurrence) and nothing else. `pnpm check:messages` passes. The home's entry chunks
+  (P1-06's manifest-sum method) carry none of the `booking.availabilityModal` / `singleSession` /
+  `weeklyCalendar` / `wizardProgress` / `modeView` / `payment.form` markers — only `booking.shell`
+  and `signInGate` — so the overlay chunks are confirmed off `/`'s First Load JS.
+  **Lighthouse** (13.5.0, Chrome 153, mobile emulation + simulated throttling, 3 runs, **median**;
+  before = `main` (`4e4c762`, identical tree to the fork point) built and served locally exactly
+  like the branch; nothing in `docs/seo/` had earlier numbers):
+
+  | Page | Perf (runs) | A11y | BP | SEO | FCP | LCP | TBT | CLS | Script kB |
+  |------|-------------|------|----|-----|-----|-----|-----|-----|-----------|
+  | before — `main` `/` (local) | **40** (35/40/48) | 91 | 73 | 92 | 2.7 s | 26.8 s | 1389 ms | 0 | 703 |
+  | before — staging `/` (live Vercel, pre-redesign) | 44 (36/44/51) | 91 | 77 | 61¹ | 1.5 s | 24.5 s | 1196 ms | 0 | 679 |
+  | after — `/` (local) | **48** (43/48/50) | 91 | 96 | 92 | 2.6 s | 25.6 s | 776 ms | 0 | 397 |
+  | after — `/mentoria` (local) | **48** (48/48/51) | 92 | 96 | 92 | 1.2 s | 24.9 s | 1318 ms | 0 | 486 |
+
+  ¹ the preview deployment is `noindex`, hence SEO 61 there. `/` Performance ≥ the old landing's
+  (+8), Accessibility equal (91), `/mentoria` at the old `/`'s level (48 vs 40/44) — within noise
+  of the pre-cycle page, as the task expected. Best-practices +23 on both: `main`'s landing loaded
+  `js.stripe.com` on first paint (third-party cookies + a `PackCard`-driven long task); neither
+  page does now. Two pre-existing findings worth a follow-up, **not** acted on here (out of scope
+  beyond what the numbers demand): (a) **LCP ≈ 25 s on every page, before and after** — the LCP
+  node is the navbar brand and the simulated critical path is dominated by the self-hosted
+  **Material Symbols variable woff2: 3.9 MB, `display: "block"`, preloaded by `next/font/local` on
+  every route** (`[locale]/layout.tsx`, byte-identical on `main`); subsetting it (or `swap` + no
+  preload) is the single biggest performance lever on the site; (b) the home's FCP is ~2.6 s
+  simulated / 2.3 s observed vs 1.2 / 1.3 s on `/mentoria` and the old landing — main-thread
+  layout on a larger DOM (665 elements vs 309 / 435; first long task 578 ms vs 352 ms under 4×
+  CPU), not the network (6 stylesheets / 28 kB vs 7 / 31 kB on Mentoría) and not the overlay
+  chunks; the old landing's own FCP was noisy (1.1 / 2.7 / 4.5 s), so the gap is real but its
+  size is uncertain.
+  **Axe.** `@axe-core/playwright` is not installed → Lighthouse's Accessibility audits. `/`
+  fails the **same four audits with the same counts** as `main`'s landing — `aria-prohibited-attr`
+  (3: the footer payment badges' `aria-label` on role-less `<span>`s), `color-contrast` (1: the
+  footer's 10 px «Pago seguro» label), `heading-order` (1: the footer's `h4` after the last `h2`
+  — it fired on `main` too, after the packs `h2`), `label-content-name-mismatch` (4: the
+  `StatCard` buttons' `«15+ … — haz clic para más información»` label, moved unchanged from the old
+  hero) — i.e. **no new violation**; `/mentoria` fails only the two footer ones (its last heading
+  before the footer is the app showcase's `h3`, so no skip). The phone mock is `aria-hidden`
+  (`.app-phone-frame`); heading order on both pages is `h1` → `h2` bands → `h3` cards/steps,
+  Lighthouse flags nothing above the footer. **One `src/` edit, inside this task's own AC:** the
+  testimonial initials circle (`Testimonials.tsx`, `.mt-quote-av`) was plain text, so a screen
+  reader got «SG Sergi G.»; it is `aria-hidden="true"` now (P2-02's md only asked that of the quote
+  mark). No message keys touched. Final state: `pnpm lint` (0 errors, the same 8 pre-existing
+  warnings), `npx tsc --noEmit` (only the known `mdx.test.ts` error), `pnpm test` (144 suites,
+  1805 tests), `pnpm build` + `pnpm check:bundle` (known false positive only), `pnpm check:messages`.
 
 - **2026-09-19 (P3-01)** — No deviations from the task md, one implementation choice: the
   diffing logic lives in `src/lib/messages/check-messages.ts` (pure functions, unit tested)

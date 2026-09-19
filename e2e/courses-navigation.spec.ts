@@ -88,7 +88,9 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await page.goto("/");
     await page.getByRole("link", { name: d.nav.courses, exact: true }).first().click();
 
-    await expect(page).toHaveURL(/\/cursos$/);
+    // REDESIGN-P3-02: the catalog is the first course route of the run, so this hop pays its
+    // compile too (6-7 s cold on a fresh `pnpm dev`) — the 30 s rule from the header applies.
+    await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
     // catalog.heading carries rich-text <accent> markup (rendered as a green italic span); the
     // heading's accessible name has no tags, so match the plain text.
     const catalogHeading = d.courses.catalog.heading.replace(/<[^>]+>/g, "");
@@ -110,13 +112,16 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
 
     await page.goto("/en");
     await page.getByRole("link", { name: d.nav.courses, exact: true }).first().click();
-    await expect(page).toHaveURL(/\/en\/cursos$/);
+    await expect(page).toHaveURL(/\/en\/cursos$/, { timeout: 30_000 });
 
     // Block 1 is translated, so the first lesson resolves in English — the card drops the
     // "lessons in Spanish" badge (it is keyed off the FIRST lesson's language), and the catalog
-    // is not the empty state.
-    await expect(page.getByRole("link", { name: /Deep Learning for NLP/ })).toBeVisible();
-    await expect(page.getByText(d.courses.catalog.card.contentLanguage)).toHaveCount(0);
+    // is not the empty state. REDESIGN-P3-02: the badge check is scoped to THIS course's card —
+    // the catalog has a second, Spanish-only course now (`llm-agents`, COURSE-C2) whose card
+    // wears the badge by design, so a page-wide count of zero stopped being the invariant.
+    const dlNlpCard = page.locator(".course-card").filter({ hasText: /Deep Learning for NLP/ });
+    await expect(dlNlpCard.getByRole("link", { name: /Deep Learning for NLP/ })).toBeVisible();
+    await expect(dlNlpCard.getByText(d.courses.catalog.card.contentLanguage)).toHaveCount(0);
     await expect(page.getByText(d.courses.catalog.empty.title)).toHaveCount(0);
 
     await page.getByRole("link", { name: /Deep Learning for NLP/ }).click();
