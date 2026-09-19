@@ -55,7 +55,7 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 |------|-----|--------|-------|----|
 | [01 Header + «Cómo funciona»](phase-2-mentoria/01-header-and-how-it-works.md) | `REDESIGN-P2-01` | ✅ | Claude | local |
 | [02 Testimonials](phase-2-mentoria/02-testimonials.md) | `REDESIGN-P2-02` | ✅ | Claude | local |
-| [03 App section on Mentoría](phase-2-mentoria/03-app-section.md) | `REDESIGN-P2-03` | ⬜ | _tbd_ | |
+| [03 App section on Mentoría](phase-2-mentoria/03-app-section.md) | `REDESIGN-P2-03` | ✅ | Claude | local |
 | [04 Mentoría metadata + indexability](phase-2-mentoria/04-mentoria-metadata.md) | `REDESIGN-P2-04` | ⬜ | _tbd_ | |
 
 **Exit criteria**
@@ -533,4 +533,17 @@ _Deviations, regressions and decisions taken during implementation go here, date
   Jeremy/Sergi/Alberto on `/en/mentoria` with no quote translated, the Classgap link resolving to
   the same URL on both, `#valoraciones` sitting between `#como-funciona`'s bento and `#sessions`.
   `pnpm lint` (0 errors, same 8 pre-existing warnings), `pnpm test` (143 suites, 1795 tests),
+  `pnpm build` green (`/[locale]/mentoria` ● for es and en).
+- **2026-09-19 (P2-03)** — No deviations from the task md. No new copy: `AppShowcase` reuses the
+  `app` message namespace already shipped for `/` (P1-04). Verified against `design/mentoria.html`
+  at 390/1440 via Playwright (project's cached chromium, no Browser pane available this session,
+  against a fresh `pnpm build` + `pnpm start` — the stale dev `next-server` left running from an
+  earlier session was still serving the pre-edit build and had to be restarted): `.app-showcase`
+  sits after `.packs-grid`, before `<footer>`, on both `/mentoria` and `/en/mentoria`; exactly one
+  `.app-showcase` and one chat FAB. Overlay leak check: `.signin-gate-overlay` and the
+  `BookingModeView` wrapper are both `position: fixed; inset: 0` at z-index 50/40 respectively —
+  the same full-viewport pattern already proven not to leak content on `/` where `AppShowcase`
+  sits in the identical position relative to `BookingOverlays` — screenshotted the sign-in gate
+  over the app band at 390 to confirm (opaque `rgba(9,9,11,0.72)` + blur, nothing legible behind
+  it). `pnpm lint` (0 errors, same 8 pre-existing warnings), `pnpm test` (143 suites, 1795 tests),
   `pnpm build` green (`/[locale]/mentoria` ● for es and en).

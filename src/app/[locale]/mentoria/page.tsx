@@ -26,10 +26,14 @@
  *
  * REDESIGN-P2-02: `Testimonials` (the «Valoraciones» band) mounted after
  * `SpecializationsSection`, before the booking overlays/sessions block.
+ *
+ * REDESIGN-P2-03: `AppShowcase` (shared with `/`, P1-04) mounted as the page's last band,
+ * after the packs — the page ends here, no closing band on Mentoría.
  */
 
 import "@/features/courses/course-editorial.css";
 import "@/features/mentoria/mentoria.css";
+import "@/components/app-showcase.css";
 
 import { Suspense } from "react";
 import { setRequestLocale, getTranslations } from "next-intl/server";
@@ -38,6 +42,7 @@ import MentoriaHeader from "@/features/mentoria/MentoriaHeader";
 import HowItWorks from "@/features/mentoria/HowItWorks";
 import Testimonials from "@/features/mentoria/Testimonials";
 import SpecializationsSection from "@/features/landing/SpecializationsSection";
+import AppShowcase from "@/components/AppShowcase";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import InteractiveShell from "@/features/booking/InteractiveShell";
 import BookingOverlays from "@/features/booking/BookingOverlays";
@@ -109,6 +114,9 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
               <InteractiveShell />
             </Suspense>
           </BookingOverlays>
+
+          <div style={{ height: 56 }} />
+          <AppShowcase locale={locale} />
 
           {/*
             <div
