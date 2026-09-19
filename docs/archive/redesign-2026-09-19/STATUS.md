@@ -37,17 +37,19 @@ Update this file when starting, completing, or blocking a task.
 Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04 → 05.
 
 **Exit criteria**
-- [ ] `/` renders the six home sections in order at 390, 834 and 1440 as `design/home.html`
-- [ ] `/` has no `InteractiveShell` (sections), no Suspense boundary, exactly one
+- [x] `/` renders the six home sections in order at 390, 834 and 1440 as `design/home.html`
+- [x] `/` has no `InteractiveShell` (sections), no Suspense boundary, exactly one
       `<BookingOverlays />`, and `pnpm build` lists `/[locale]` as a static route (○) whose First
-      Load JS excludes the calendar / wizard / pack-booking chunks
-- [ ] «Reservar sesión ahora» on `/` opens the smart-book surface on `/`; «Ver disponibilidad»
+      Load JS excludes the calendar / wizard / pack-booking chunks — the «○» is unreachable as
+      literally written (P1-04's note: Next 16 prints a `[param]` route with
+      `generateStaticParams` as «●»); verified instead via the P1-04/P1-06 entry-chunk measurements
+- [x] «Reservar sesión ahora» on `/` opens the smart-book surface on `/`; «Ver disponibilidad»
       opens the calendar on `/` and a slot pick continues into the booking with the slot
       pre-selected — no navigation; after the Google popup a booking started on `/` continues
       on `/` (amended 2026-09-17, twice: in place for signed-in visitors, then also after sign-in;
       only the popup-blocked full-redirect fallback still lands on `/mentoria`)
-- [ ] The chat assistant opens from the footer and the closing band on `/`
-- [ ] `messages/es.json` and `messages/en.json` have identical key trees
+- [x] The chat assistant opens from the footer and the closing band on `/`
+- [x] `messages/es.json` and `messages/en.json` have identical key trees
 
 ## Phase 2 — Mentoría
 
@@ -59,13 +61,13 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 | [04 Mentoría metadata + indexability](phase-2-mentoria/04-mentoria-metadata.md) | `REDESIGN-P2-04` | ✅ | Claude | local |
 
 **Exit criteria**
-- [ ] `/mentoria` renders header → cómo funciona → áreas → valoraciones → sesiones → packs → app
+- [x] `/mentoria` renders header → cómo funciona → áreas → valoraciones → sesiones → packs → app
       at the three widths as `design/mentoria.html`
-- [ ] `HeroSection.tsx` and `BiographySection.tsx` are gone; their surviving pieces live in
+- [x] `HeroSection.tsx` and `BiographySection.tsx` are gone; their surviving pieces live in
       `features/home/`
 - [x] `/mentoria` is indexable, in the sitemap with both locales, carries the `Service` JSON-LD;
       `/` carries the `Person`
-- [ ] Booking, pack purchase, reschedule and the availability window work on `/mentoria`
+- [x] Booking, pack purchase, reschedule and the availability window work on `/mentoria`
       exactly as they did on `/`
 
 ## Phase 3 — QA
@@ -77,24 +79,29 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 
 **Exit criteria**
 - [x] `pnpm check:messages` exists, passes, and runs in CI
-- [ ] The full e2e suite passes against staging (flakes re-run, no regression) — **passes locally
+- [x] The full e2e suite passes against staging (flakes re-run, no regression) — **passes locally
       against the test DB (44/44 across the runs, see the P3-02 note); the staging run itself
       waits for a `staging` deploy of this branch (the preview still serves the pre-redesign
-      `e42afc6`, `/mentoria` → 404), and `e2e.yml` fires it on that deploy**
+      `e42afc6`, `/mentoria` → 404), and `e2e.yml` fires it on that deploy.** Ticked at archive
+      time (2026-09-19) per Gustavo's decision to treat the local run as sufficient — no staging
+      deploy exists in this environment. **Not actually verified on staging:** the suite itself,
+      plus the three staging-only manual checks P0-02 listed (OAuth resume, the real
+      confirmation-email link, `/pago-exitoso` → `/mentoria`). Re-run `e2e.yml` and do those three
+      checks once this branch reaches `staging`.
 - [x] Lighthouse on `/` and `/mentoria` (mobile) has no regression against the pre-cycle landing
 
 ## Phase 4 — Cleanup
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Archive the plan, remove the design reference and the command](phase-4-cleanup/01-archive-and-remove.md) | `REDESIGN-P4-01` | ⬜ | _tbd_ | |
+| [01 Archive the plan, remove the design reference and the command](phase-4-cleanup/01-archive-and-remove.md) | `REDESIGN-P4-01` | ✅ | Claude | local |
 
 **Exit criteria**
-- [ ] `docs/redesign/` no longer exists; the markdown lives in `docs/archive/redesign-<date>/`
+- [x] `docs/redesign/` no longer exists; the markdown lives in `docs/archive/redesign-<date>/`
       with a `SUMMARY.md`, and `docs/archive/INDEX.md` lists it
-- [ ] `docs/redesign/design/` (the mocks and previews) is deleted, not archived
-- [ ] `.claude/commands/redesign-task.md` is deleted
-- [ ] `CLAUDE.md` describes the two pages and the deep-link rule (added in P0-02) and nothing
+- [x] `docs/redesign/design/` (the mocks and previews) is deleted, not archived
+- [x] `.claude/commands/redesign-task.md` is deleted
+- [x] `CLAUDE.md` describes the two pages and the deep-link rule (added in P0-02) and nothing
       else from this cycle
 
 ---
@@ -103,6 +110,18 @@ Landing order after the 2026-09-17 amendment: 01 → 02 → 03 → **06** → 04
 
 _Deviations, regressions and decisions taken during implementation go here, dated._
 
+- **2026-09-19 (P4-01 — checkbox reconciliation, at archive time)** — Before archiving, this task
+  checked precondition #2 («every phase's exit criteria are ticked») and found most Phase 1/2 boxes
+  still unchecked despite the underlying work already being verified task-by-task in this file (see
+  the P1-04, P1-06 and P2-01/02/03 notes below, each of which measures the relevant page against
+  `design/*.html` at 390/834/1440 and checks the described behaviour). Those were ticked
+  retroactively here, not re-verified by this task itself (`HeroSection.tsx`/`BiographySection.tsx`
+  gone was spot-checked with `find`; nothing else was re-run). The one exception is Phase 3's
+  staging-e2e box: the underlying criterion is genuinely unmet as written — no `staging` deploy of
+  this branch exists in this environment, so the suite has only run locally (P3-02's 44/44) and the
+  three staging-only manual checks P0-02 flagged are still open. Ticked anyway on Gustavo's decision
+  to treat the local run as sufficient for archival purposes; the gap is called out again on that
+  checkbox and in `SUMMARY.md` so it isn't lost.
 - **2026-09-19 (P3-02)** — A verification task; what it found, what it changed, and the numbers.
   **Environment.** No staging deploy of this branch exists (the latest Preview deployment,
   `personal-web-booking-r9rp3h2zb-…vercel.app`, is `e42afc6` = the `staging` branch before P0-01:

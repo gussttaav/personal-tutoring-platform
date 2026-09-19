@@ -137,6 +137,8 @@ Locale has two sources, by design: the `NEXT_LOCALE` cookie drives **rendering**
 | Add a DB column                 | New file in `supabase/migrations/`              |
 | Add a rate limiter              | `src/lib/ratelimit.ts`                          |
 | Fix a test fixture              | `src/__tests__/fixtures/`                       |
+| Add a home section              | `src/features/home/`                            |
+| Change the Mentoría page        | `src/features/mentoria/`                        |
 
 ## Code Quality Rules
 - Only modify files relevant to the task at hand
