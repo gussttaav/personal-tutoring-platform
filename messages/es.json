@@ -882,8 +882,8 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "Lo que explico en clase, <accent>por escrito</accent>",
-      "subtitle": "Artículos sobre programación, matemáticas e IA. Un concepto por artículo, con la parte difícil incluida en lugar de escondida.",
+      "heading": "En clase parece simple, <accent>aquí profundizo</accent>",
+      "subtitle": "Artículos sobre programación, matemáticas e IA. No el cómo, sino el por qué.",
       "empty": {
         "title": "Todavía no hay artículos",
         "body": "Estoy escribiendo el primero. Si quieres que te avise cuando se publique, tienes el botón aquí abajo."
@@ -935,7 +935,7 @@
       }
     },
     "notify": {
-      "body": "Envíame una notificación cuando publique un artículo nuevo",
+      "body": "Recibe una notificación cada vez que se publique un nuevo artículo",
       "cta": "Notifícame",
       "signIn": "Iniciar sesión",
       "signInHint": "Inicia sesión para recibir una notificación cuando publique un artículo nuevo",
@@ -1012,7 +1012,7 @@
       }
     },
     "notify": {
-      "body": "Envíame una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "body": "Recibe una notificación cuando se publique un nuevo curso o se actualice alguno que hayas iniciado",
       "cta": "Notifícame",
       "signIn": "Iniciar sesión",
       "signInHint": "Inicia sesión para recibir una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",

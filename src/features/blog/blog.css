@@ -13,16 +13,18 @@
  */
 
 /*
- * A single column, not the courses' auto-fill grid. A course card is a product tile you
- * compare against its siblings; a post is a headline plus a promise, and it reads faster
- * stacked. Readable line length is the ROUTE's job (its container is capped at the same
- * 840 reading measure as a post page), not this list's — an extra cap here only shifted
- * the column off-centre inside a wider container.
+ * Two columns from 768px, matching the width of Cursos/Mentoría (the route's container is
+ * 1100px, `blog/page.tsx`) rather than the single-column 840px reading list this used to be.
+ * Same breakpoint/gap values as the home's latest-posts band (`.home-posts-grid`,
+ * `home.css`), which already runs `PostCard` at this width.
  */
 .blog-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
+}
+@media (min-width: 768px) {
+  .blog-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
 }
 
 /*

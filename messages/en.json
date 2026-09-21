@@ -882,8 +882,8 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "What I explain in lessons, <accent>written down</accent>",
-      "subtitle": "Articles on programming, mathematics and AI. One concept per article, with the hard part included rather than tucked out of sight.",
+      "heading": "It looks simple in class, <accent>here I go deeper</accent>",
+      "subtitle": "Articles on programming, mathematics and AI. Not the how, but the why.",
       "empty": {
         "title": "No articles yet",
         "body": "I'm writing the first one. If you'd like to hear about it when it lands, there's a button just below."
@@ -935,7 +935,7 @@
       }
     },
     "notify": {
-      "body": "Notify me when a new article goes up",
+      "body": "Get notified whenever a new article is published",
       "cta": "Notify me",
       "signIn": "Sign in",
       "signInHint": "Sign in to be notified when a new article goes up",

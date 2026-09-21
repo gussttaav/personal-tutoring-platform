@@ -61,13 +61,11 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
       <main style={{ position: "relative", zIndex: 1 }}>
         <div
           style={{
-            // 840 is the READING measure, the same as the post page, and the whole page
-            // is that one column. The course catalog's 1100 is wrong here: its cards are an
-            // auto-fill grid that genuinely fills the width, whereas a post list is a single
-            // column. Capping the children at 760 inside a 1100 container (as this did) left
-            // every element aligned to the left of a container centred on something wider,
-            // so the page read as shifted rather than centred.
-            maxWidth: 840,
+            // 1100 matches the course catalog, now that `.blog-list` is a 2-column grid
+            // (blog.css) instead of the single 840px reading column: the cards genuinely
+            // fill this width the same way the catalog's do, so the earlier reasoning for
+            // capping this container at the post page's reading measure no longer applies.
+            maxWidth: 1100,
             margin: "0 auto",
             // Top padding clears the fixed 70px navbar so the kicker (the header's first
             // element) isn't hidden under its blur — same figure as the course catalog.
@@ -97,7 +95,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
                 ),
               })}
             </h1>
-            <p style={{ maxWidth: "600px", fontSize: "1.0625rem", lineHeight: 1.6, color: "var(--text-muted)", margin: 0 }}>
+            <p style={{ fontSize: "1.0625rem", lineHeight: 1.6, color: "var(--text-muted)", margin: 0 }}>
               {t("subtitle")}
             </p>
           </header>
