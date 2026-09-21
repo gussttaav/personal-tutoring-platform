@@ -23,11 +23,21 @@
  *
  * Do not render `<Chat />` from here: the sections render it on `/mentoria`, and P1-04 mounts
  * it on `/` separately — one FAB per page.
+ *
+ * The pack booking screen is `BookingModeView` on its own: it renders `BookingLayout`, which is
+ * the whole screen (fixed to the viewport, its own Navbar, the sidebar + calendar, the bottom
+ * «Cambiar tipo de sesión» exit) — exactly like the single-session wizard. It used to be wrapped
+ * in a `position: fixed; inset: 0; z-index: 40` div that drew a sticky top bar (back button,
+ * title, «Pack activo» badge) at y=0 — a relic of the pre-`BookingLayout` screen, which had no
+ * navbar or sidebar. The page Navbar is `fixed z-50` over the whole z-40 overlay, so that bar sat
+ * under the navbar: invisible, and its back button unreachable (`elementFromPoint` returned the
+ * navbar's logo, which closes the overlay AND navigates to `/`). Everything the bar said or did
+ * the layout already covers (sidebar, calendar header, bottom exit), so it is gone rather than
+ * moved; the overlay keeps the z-index 40 contract that `HomeChat` / `InteractiveShell` rely on.
  */
 
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { Spinner } from "@/components/ui";
 import SignInGate from "@/components/SignInGate";
@@ -74,7 +84,6 @@ const PackModal = dynamic(
 // ─── Overlays ──────────────────────────────────────────────────────────────────
 
 function Overlays() {
-  const t = useTranslations("booking.shell");
   const navigation = useRouter();
   const pathname = usePathname();
   const {
@@ -98,90 +107,14 @@ function Overlays() {
   // ── Pack booking overlay ──────────────────────────────────────────────────
   if (router.showPackBooking && packStudentInfo && googleUser?.email) {
     return (
-      <div style={{ position: "fixed", inset: 0, zIndex: 40, display: "flex", flexDirection: "column" }}>
-        {/* Sticky top bar */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "18px 24px",
-            background: "rgba(19,19,21,0.90)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            position: "sticky",
-            top: 0,
-            zIndex: 100,
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <button
-              onClick={router.closePackBooking}
-              aria-label={t("back")}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: "50%",
-                background: "#201f22",
-                border: "1px solid rgba(255,255,255,0.06)",
-                color: "#bbcabf",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "border-color 0.2s, color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.15)";
-                (e.currentTarget as HTMLElement).style.color = "#e5e1e4";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.borderColor = "rgba(255,255,255,0.06)";
-                (e.currentTarget as HTMLElement).style.color = "#bbcabf";
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: "#e5e1e4", fontFamily: "var(--font-headline, Manrope), sans-serif" }}>
-                {t("bookPackClass")}
-              </div>
-              <div style={{ fontSize: 12, color: "#bbcabf" }}>{t("pickSlot")}</div>
-            </div>
-          </div>
-          <span
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 5,
-              padding: "4px 10px",
-              borderRadius: 100,
-              fontSize: 11.5,
-              fontWeight: 600,
-              background: "rgba(99,179,237,0.1)",
-              border: "1px solid rgba(99,179,237,0.25)",
-              color: "#63b3ed",
-            }}
-          >
-            {t("activePack")}
-          </span>
-        </div>
-
-        <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-          <BookingModeViewComponent
-            student={packStudentInfo}
-            rescheduleToken={router.rescheduleToken}
-            onCreditsUpdated={updateCredits}
-            onExit={() => { router.closePackBooking(); setPendingSlot(null); }}
-            hideTopBar
-            packTotal={packSession?.packSize ?? undefined}
-            initialSlot={(pendingSlot ?? router.restoredSlot) ?? undefined}
-          />
-        </div>
-      </div>
+      <BookingModeViewComponent
+        student={packStudentInfo}
+        rescheduleToken={router.rescheduleToken}
+        onCreditsUpdated={updateCredits}
+        onExit={() => { router.closePackBooking(); setPendingSlot(null); }}
+        packTotal={packSession?.packSize ?? undefined}
+        initialSlot={(pendingSlot ?? router.restoredSlot) ?? undefined}
+      />
     );
   }
 

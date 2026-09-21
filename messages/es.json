@@ -489,10 +489,6 @@
       "confirmShort": "Confirmar"
     },
     "shell": {
-      "back": "Volver",
-      "bookPackClass": "Reservar clase del pack",
-      "pickSlot": "Elige un día y hora disponible",
-      "activePack": "Pack activo",
       "individualSessions": "Sesiones individuales",
       "chooseMode": "Elige tu modalidad de sesión",
       "modeSubtitle": "Desde una exploración inicial gratuita hasta sesiones de trabajo intensivo.",

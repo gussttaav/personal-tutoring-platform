@@ -14,6 +14,11 @@
  * All exports preserved with identical signatures:
  *   FullScreenShell, ConfirmPanel, TutorRow, InfoRow, MetaRows,
  *   SESSION_CONFIGS, primaryBtnStyle, secondaryBtnStyle
+ *
+ * `hideTopBar` is gone: it was a no-op since `BookingLayout` (the layout always shows the full
+ * nav), and the sticky pack bar `BookingOverlays` drew above this view for it sat under the page
+ * Navbar, unreachable — see the note in `features/booking/BookingOverlays.tsx`. This view is the
+ * whole pack-booking screen, like the wizard is for single sessions.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -44,7 +49,6 @@ interface BookingModeViewProps {
   rescheduleToken?:  string | null;
   onCreditsUpdated:  (remaining: number) => void;
   onExit:            () => void;
-  hideTopBar?:       boolean;
   packTotal?:        number | null;
   /** Pre-selected 1h slot from AvailabilityModal — opens ConfirmPanel immediately */
   initialSlot?:      SelectedSlot;
@@ -64,7 +68,6 @@ export default function BookingModeView({
   rescheduleToken,
   onCreditsUpdated,
   onExit,
-  // hideTopBar is no longer used — BookingLayout always shows the full nav
   packTotal,
   initialSlot,
 }: BookingModeViewProps) {

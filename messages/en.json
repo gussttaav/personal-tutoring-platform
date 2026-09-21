@@ -489,10 +489,6 @@
       "confirmShort": "Confirm"
     },
     "shell": {
-      "back": "Back",
-      "bookPackClass": "Book a pack class",
-      "pickSlot": "Pick an available day and time",
-      "activePack": "Active pack",
       "individualSessions": "Individual sessions",
       "chooseMode": "Choose your session type",
       "modeSubtitle": "From a free initial meeting to intensive work sessions.",
