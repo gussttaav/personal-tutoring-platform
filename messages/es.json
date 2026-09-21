@@ -129,14 +129,15 @@
       "description": "Clases particulares de programación, matemáticas e IA, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo."
     },
     "hero": {
-      "headline1": "Programación, matemáticas e IA,",
+      "headline1": "Programación, Matemáticas e IA,",
       "headline2": "con la parte difícil incluida.",
-      "subheading": "Clases individuales con guía directa, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo.",
-      "freeNote": "El encuentro inicial de 15 minutos es gratis: comentamos tu caso y definimos un plan de trabajo.",
+      "subheading": "Clases individuales con guía directa, cursos interactivos gratuitos para aprender a tu ritmo, y un blog donde profundizo en diferentes temas.",
+      "freeNote": "Encuentro inicial de 15 minutos gratis.",
       "jobTitle": "Profesor de Programación, Matemáticas e IA"
     },
     "bio": {
-      "para": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria. Tras varios años como desarrollador de software y cinco en la investigación y la docencia universitaria, trabajo de forma independiente desde hace más de siete años acompañando a estudiantes y profesionales: desde el refuerzo académico y el aprendizaje desde cero hasta la preparación de entrevistas técnicas y el desarrollo de proyectos reales.",
+      "para1": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria, España. Tras cuatro años de experiencia como desarrollador de software y cinco años dedicados a la docencia y la investigación universitaria, trabajo como profesional independiente, combinando enseñanza y consultoría.",
+      "para2": "Desde hace más de siete años, ayudo a estudiantes y profesionales a desarrollar sus conocimientos y habilidades en programación, matemáticas e inteligencia artificial. Mi apoyo abarca desde el refuerzo académico y el aprendizaje desde cero, hasta la preparación de entrevistas técnicas y el desarrollo de proyectos reales.",
       "howLink": "Cómo funcionan las clases"
     },
     "areas": {
@@ -151,7 +152,6 @@
       "seeAll": "Ver todos los cursos"
     },
     "blog": {
-      "heading": "En clase parece simple, <accent>aquí profundizo</accent>",
       "seeAll": "Ver todos los artículos"
     },
     "closing": {
@@ -180,8 +180,8 @@
           "body": "Ves los huecos libres en el calendario y reservas el que te encaje. Recibes la confirmación por correo y el evento en tu calendario."
         },
         "zoom": {
-          "title": "La clase con Zoom en la app",
-          "body": "Sala privada uno a uno que se abre desde la propia web. Compartimos pantalla y código, con un chat para pegar enlaces y errores."
+          "title": "Clase con Zoom en la app",
+          "body": "Sala privada que se abre desde la propia web o el móvil. Compartimos pantalla, código y pizarra digital para explicar cada concepto de forma visual."
         },
         "changes": {
           "title": "Si surge algo",

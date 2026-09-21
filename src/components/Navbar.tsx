@@ -169,10 +169,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 cursor-pointer"
                   style={{ paddingLeft: "16px", borderLeft: "1px solid rgba(60,74,66,0.4)" }}
                 >
-                  <div className="hidden sm:block text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1" style={{ color: "#bbcabf" }}>
-                      {t("personalArea")}
-                    </p>
+                  <div className="hidden sm:block">
                     <p className="text-sm font-semibold" style={{ color: "#e5e1e4" }}>
                       {user.name?.split(" ")[0] ?? t("user")}
                     </p>

@@ -32,7 +32,7 @@ export default async function HomeAreas({ locale }: HomeAreasProps) {
     <div>
       <p
         style={{
-          fontSize: "11px",
+          fontSize: "15px",
           fontWeight: 600,
           letterSpacing: "0.1em",
           textTransform: "uppercase",

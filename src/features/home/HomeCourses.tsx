@@ -38,26 +38,6 @@ export default async function HomeCourses({ locale }: HomeCoursesProps) {
       <div className="lp-section-head">
         <span className="lp-kicker">{t("overline")}</span>
         <span className="lp-rule" />
-      </div>
-
-      <div className="home-section-title-row">
-        <h2
-          className="lp-serif"
-          style={{
-            fontSize: "clamp(1.75rem, 3.6vw, 2.5rem)",
-            fontWeight: 500,
-            letterSpacing: "-0.02em",
-            lineHeight: 1.08,
-            color: "var(--text)",
-            margin: 0,
-          }}
-        >
-          {t.rich("heading", {
-            accent: (chunks) => (
-              <span style={{ fontStyle: "italic", color: "var(--green)" }}>{chunks}</span>
-            ),
-          })}
-        </h2>
         <Link href="/cursos" className="home-see-all">
           {tHome("seeAll")}
           <span

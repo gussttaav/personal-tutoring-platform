@@ -87,7 +87,7 @@
  */
 .mt-sec { padding-bottom: 8px; scroll-margin-top: 88px; }
 .mt-sec-k {
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -226,6 +226,14 @@
   font-weight: 700;
   color: #4edea3;
   letter-spacing: 0.04em;
+}
+.mt-quote-av-photo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 1px solid rgba(78, 222, 163, 0.2);
 }
 .mt-quote-name {
   font-family: var(--font-headline, Manrope), sans-serif;

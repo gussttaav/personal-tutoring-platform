@@ -332,25 +332,6 @@ export default function Footer() {
                 <path d="M19 5.6a8 8 0 0 1 0 12.8A8 8 0 0 1 19 5.6z" fill="#FF5F00"/>
               </svg>
             </span>
-            {/* Amex */}
-            <span
-              aria-label="American Express"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "4px 8px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "6px",
-                background: "rgba(255,255,255,0.03)",
-                lineHeight: 1,
-              }}
-            >
-              <svg width="28" height="18" viewBox="0 0 38 24" aria-hidden="true">
-                <rect width="38" height="24" rx="3" fill="#016FD0"/>
-                <text x="4" y="17" fontSize="9" fontWeight="700" fontFamily="Arial,sans-serif" fill="white">AMEX</text>
-              </svg>
-            </span>
           </div>
         </div>
       </div>

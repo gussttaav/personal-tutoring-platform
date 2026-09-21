@@ -14,6 +14,8 @@ export interface Testimonial {
   lang: "es" | "en";
   context?: string;
   quote: string;
+  /** Path under `public/`, e.g. `/testimonials/pablo.webp`. Falls back to the initials avatar when absent. */
+  image?: string;
 }
 
 export const TESTIMONIALS: readonly Testimonial[] = [
@@ -21,6 +23,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: "Sergi Pérez",
     initials: "SP",
     lang: "es",
+    image: "/testimonials/sergi-perez.webp",
     quote:
       "De los mejores profesores que puedes encontrar (he tenido muchos). Experiencia " +
       "fantástica, profesional, cercano y objetivo. Un auténtico crack. Sin duda lo volvería a " +
@@ -30,7 +33,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: "Alberto González",
     initials: "AG",
     lang: "es",
-    context: "Java · interfaces gráficas",
+    image: "/testimonials/alberto-gonzalez.webp",
     quote:
       "Gran profesor, no dudéis en estar con él a la hora de aprender a programar, ya sea en " +
       "Java, como en mi caso con ejercicios avanzados usando interfaces gráficas, o aprender " +
@@ -40,6 +43,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: "Pablo",
     initials: "P",
     lang: "es",
+    image: "/testimonials/pablo.webp",
     quote:
       "Solo puedo decir que me parece un profesor excelente. Muy involucrado, explicaciones " +
       "claras, un conocimiento claro de la materia que imparte y amabilidad que no se puede " +
@@ -49,6 +53,7 @@ export const TESTIMONIALS: readonly Testimonial[] = [
     name: "Jeremy GL",
     initials: "JG",
     lang: "en",
+    image: "/testimonials/jeremy-gl.webp",
     quote:
       "He's a really cool and friendly teacher. He will take the time to explain everything " +
       "well and concise. I almost finished my pack of classes with him, and it is a pleasure to " +

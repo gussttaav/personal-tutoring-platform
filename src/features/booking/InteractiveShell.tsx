@@ -133,7 +133,7 @@ export default function InteractiveShell() {
           <section id="sessions" style={{ animation: "fadeUp 0.6s ease both 0.3s" }}>
             <p
               style={{
-                fontSize: "11px",
+                fontSize: "14px",
                 fontWeight: 600,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
@@ -207,7 +207,7 @@ export default function InteractiveShell() {
           <section style={{ animation: "fadeUp 0.6s ease both 0.5s" }}>
             <p
               style={{
-                fontSize: "11px",
+                fontSize: "14px",
                 fontWeight: 600,
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",

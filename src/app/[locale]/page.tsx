@@ -8,12 +8,12 @@
 // selectors as-is. REDESIGN-P1-06: `BookingOverlays` (the booking provider + screens) is mounted
 // on both pages, so the hero's CTAs open the calendar / booking in place on `/`.
 // REDESIGN-P1-04: `/` is the finished, fully STATIC home — hero → bio + areas → courses → posts
-// → app showcase → closing band. The sessions/packs sections (`InteractiveShell`) and their
-// `Suspense` boundary (the `useSearchParams` bailout, via `RescheduleBridge`) live on /mentoria
-// only; nothing here reads search params. The booking overlays stay mounted, alone (their one
-// child is `HomeChat`, the chat FAB, which the sections rendered until now — see that file for
-// why it sits inside the provider). `AppShowcase` and `ClosingCta` are shared components
-// (src/components/) because /mentoria mounts them too (P2-03).
+// → closing band (the app showcase was later removed from `/`; it still mounts on /mentoria,
+// P2-03). The sessions/packs sections (`InteractiveShell`) and their `Suspense` boundary (the
+// `useSearchParams` bailout, via `RescheduleBridge`) live on /mentoria only; nothing here reads
+// search params. The booking overlays stay mounted, alone (their one child is `HomeChat`, the
+// chat FAB, which the sections rendered until now — see that file for why it sits inside the
+// provider). `ClosingCta` is a shared component (src/components/) because /mentoria mounts it too.
 // REDESIGN-P1-05: `generateMetadata` reads `home.meta.*`, its own title/description, and
 // `StructuredData` takes `variant="home"`, which drops the `Service` JSON-LD — it belongs
 // on /mentoria, the page that sells it.
@@ -26,7 +26,6 @@ import HomeCourses from "@/features/home/HomeCourses";
 import HomePosts from "@/features/home/HomePosts";
 //import ConsultingSection from "@/features/landing/ConsultingSection";
 import BookingOverlays from "@/features/booking/BookingOverlays";
-import AppShowcase from "@/components/AppShowcase";
 import ClosingCta from "@/components/ClosingCta";
 import HomeChat from "@/components/HomeChat";
 import Navbar from "@/components/Navbar";
@@ -37,7 +36,6 @@ import "@/features/courses/course-editorial.css";
 import "@/features/courses/catalog/catalog.css";
 import "@/features/blog/blog.css";
 import "@/features/home/home.css";
-import "@/components/app-showcase.css";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -106,7 +104,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
           <HomeCourses locale={locale} />
           <HomePosts locale={locale} />
-          <AppShowcase locale={locale} />
 
           <section className="home-closing">
             <ClosingCta locale={locale} />

@@ -818,11 +818,19 @@ body:has(.chat-panel--expanded) .chat-fab {
   .packs-layout { grid-template-columns: 1fr 1fr; gap: 48px; }
 }
 
-/* Footer grid — 1 col mobile, 2 col sm, 4 col md+ */
+/* Footer grid — mobile: brand alone (row 1), explore + policies paired (row 2), help alone
+   (row 3), via a 2-col grid with the 1st/4th children spanning both columns; 2 col sm (natural
+   2x2, no span); 4 col md+. */
 .footer-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 32px;
+}
+@media (max-width: 559px) {
+  .footer-grid > :first-child,
+  .footer-grid > :last-child {
+    grid-column: 1 / -1;
+  }
 }
 @media (min-width: 560px) {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }

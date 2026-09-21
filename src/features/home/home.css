@@ -210,27 +210,14 @@
 
 /*
  * REDESIGN-P1-03 — courses + latest posts bands. `HomeCourses` / `HomePosts` inline every
- * single-valued style, as the catalog/blog page headers do; this holds the title row's
- * responsive flip and the two grids — an inline style can't express either. Values are
- * `docs/redesign/design/home.html`'s `.lp-title-row` / `.see-all` / `.courses-grid` /
+ * single-valued style, as the catalog/blog page headers do; this holds the "see all" link and
+ * the two grids — an inline style can't express either. The link rides inside the shared
+ * `.lp-section-head` row (`course-editorial.css`) as a third flex item after the kicker and
+ * `.lp-rule`, which is `flex: 1` and so absorbs the space between them — no home-specific title
+ * row needed. Values are `docs/redesign/design/home.html`'s `.see-all` / `.courses-grid` /
  * `.posts-grid`. The cards themselves (`.course-card…`, `.post-card…`) keep their styles in
  * `catalog.css` / `blog.css`, reused as-is.
  */
-.home-section-title-row {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-bottom: 36px;
-}
-@media (min-width: 768px) {
-  .home-section-title-row {
-    flex-direction: row;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 32px;
-  }
-}
-
 .home-see-all {
   display: inline-flex;
   align-items: center;
@@ -241,7 +228,6 @@
   color: var(--green);
   white-space: nowrap;
   flex-shrink: 0;
-  padding-bottom: 6px;
   text-decoration: none;
 }
 

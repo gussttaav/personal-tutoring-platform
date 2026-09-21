@@ -8,7 +8,9 @@
  * first and takes the top three. Only the section chrome (kicker, heading, subtitle, the
  * Classgap link) is a message key.
  *
- * The initials circle reuses the navbar's no-picture avatar values (`Navbar.tsx`'s
+ * Each testimonial may carry a `image` (a photo under `public/testimonials/`, keyed to the
+ * student's own name); when present it renders as a 36px circle instead of the initials.
+ * Absent a photo, the initials circle reuses the navbar's no-picture avatar values (`Navbar.tsx`'s
  * `rgba(78,222,163,0.12)` fill, `0.2` border, Manrope 700 12px green) — no new visual
  * vocabulary for a student without a photo.
  *
@@ -17,6 +19,7 @@
  */
 
 import { getTranslations } from "next-intl/server";
+import Image from "next/image";
 import { pickTestimonials } from "@/constants/testimonials";
 import { CLASSGAP_PROFILE_URL } from "@/constants";
 
@@ -42,7 +45,18 @@ export default async function Testimonials({ locale }: TestimonialsProps) {
               <p>{item.quote}</p>
               <div className="mt-quote-who">
                 {/* REDESIGN-P3-02: decorative — the name right after it is the accessible text. */}
-                <span className="mt-quote-av" aria-hidden="true">{item.initials}</span>
+                {item.image ? (
+                  <Image
+                    src={item.image}
+                    alt=""
+                    aria-hidden="true"
+                    width={36}
+                    height={36}
+                    className="mt-quote-av-photo"
+                  />
+                ) : (
+                  <span className="mt-quote-av" aria-hidden="true">{item.initials}</span>
+                )}
                 <div>
                   <div className="mt-quote-name">{item.name}</div>
                   <div className="mt-quote-ctx">{item.context ?? t("student")}</div>

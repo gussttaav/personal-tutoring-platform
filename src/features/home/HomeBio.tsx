@@ -1,9 +1,9 @@
 /*
- * REDESIGN-P1-02 — the home (/) bio: overline, headline, one paragraph (the mock's merge of
- * the old bio's two paragraphs into `home.bio.para`; P2-01 removed the bio from `/mentoria` and
- * the second paragraph's key with it), the three social links and the «Cómo funcionan las clases» link
- * into `/mentoria#como-funciona`. `docs/redesign/design/home.html` `.bio-grid`'s left column is
- * the reference; the photo column moved to `HomeHero` in P1-01 and is not rendered here.
+ * REDESIGN-P1-02 — the home (/) bio: overline, two paragraphs (`home.bio.para1`/`para2` — the
+ * headline is dropped here but `landing.bio.headline` stays, shared with the course page's
+ * instructor section), the three social links and the «Cómo funcionan las clases» link into
+ * `/mentoria#como-funciona`. The photo column moved to `HomeHero` in P1-01 and is not rendered
+ * here.
  *
  * Server Component: the social links' hover, done with `onMouseEnter`/`onMouseLeave` in
  * `BiographySection.tsx`, moves to `.home-social a:hover` in `home.css` so this stays static HTML.
@@ -55,7 +55,7 @@ export default async function HomeBio({ locale }: HomeBioProps) {
     <div>
       <p
         style={{
-          fontSize: "11px",
+          fontSize: "15px",
           fontWeight: 600,
           letterSpacing: "0.1em",
           textTransform: "uppercase",
@@ -66,22 +66,12 @@ export default async function HomeBio({ locale }: HomeBioProps) {
         {tBio("overline")}
       </p>
 
-      <h2
-        style={{
-          fontFamily: "var(--font-headline, Manrope), sans-serif",
-          fontSize: "clamp(1.5rem, 4vw, 2.25rem)",
-          fontWeight: 800,
-          letterSpacing: "-0.01em",
-          color: "#e5e1e4",
-          marginBottom: "20px",
-          lineHeight: 1.35,
-        }}
-      >
-        {tBio("headline")}
-      </h2>
+      <p style={{ fontSize: "16px", lineHeight: 1.75, color: "#bbcabf", marginBottom: "16px" }}>
+        {t("para1")}
+      </p>
 
-      <p style={{ fontSize: "15px", lineHeight: 1.75, color: "#bbcabf", marginBottom: "20px" }}>
-        {t("para")}
+      <p style={{ fontSize: "16px", lineHeight: 1.75, color: "#bbcabf", marginBottom: "20px" }}>
+        {t("para2")}
       </p>
 
       <hr style={{ border: "none", borderTop: "0.5px solid rgba(255,255,255,0.07)", margin: "20px 0" }} />

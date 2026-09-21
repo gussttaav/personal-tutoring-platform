@@ -71,7 +71,7 @@
       "cards": {
         "programming": {
           "title": "Programming",
-          "body": "From core paradigms to data structures, algorithms, concurrency and design patterns — with a focus on best practices and leveraging AI without losing your own judgment."
+          "body": "From core paradigms to data structures, algorithms, concurrency and design patterns, with a focus on best practices and leveraging AI without losing your own judgment."
         },
         "backend": {
           "title": "Backend Development",
@@ -129,14 +129,15 @@
       "description": "One-on-one programming, math and AI lessons, free courses that run in your browser, and a blog with one concept per article."
     },
     "hero": {
-      "headline1": "Programming, mathematics and AI,",
+      "headline1": "Programming, Mathematics and AI,",
       "headline2": "with the hard part included.",
-      "subheading": "One-to-one classes with direct guidance, free courses that run in the browser, and a blog with one concept per article.",
-      "freeNote": "The first 15-minute meeting is free: we go over your case and set a work plan.",
+      "subheading": "One-to-one classes with direct guidance, free interactive courses to learn at your pace, and a blog exploring different topics in depth.",
+      "freeNote": "First 15-minute session for free.",
       "jobTitle": "Programming, Math & AI Teacher"
     },
     "bio": {
-      "para": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer and five in university research and teaching, I've worked independently for over seven years, helping students and professionals: from academic support and learning from scratch to technical interview preparation and real-world project development.",
+      "para1": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria, Spain. After four years of experience as a software developer and five years dedicated to university teaching and research, I now work as an independent professional, combining teaching and consulting.",
+      "para2": "For over seven years, I've helped students and professionals build their knowledge and skills in programming, mathematics, and artificial intelligence. My support ranges from academic tutoring and learning from scratch to technical interview preparation and real-world project development.",
       "howLink": "How classes work"
     },
     "areas": {
@@ -151,7 +152,6 @@
       "seeAll": "See all courses"
     },
     "blog": {
-      "heading": "It looks simple in class, <accent>here I go deeper</accent>",
       "seeAll": "See all articles"
     },
     "closing": {
@@ -180,8 +180,8 @@
           "body": "You see the free slots in the calendar and book the one that suits you. You get the confirmation by email and the event in your calendar."
         },
         "zoom": {
-          "title": "The class, with Zoom in the app",
-          "body": "A private one-to-one room that opens from the website itself. We share screen and code, with a chat for pasting links and errors."
+          "title": "Class with Zoom in the app",
+          "body": "Private room accessible directly from the web or mobile. We share screens, code, and a digital whiteboard to explain each concept visually."
         },
         "changes": {
           "title": "If something comes up",
