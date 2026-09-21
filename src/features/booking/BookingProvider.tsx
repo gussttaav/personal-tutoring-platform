@@ -136,7 +136,10 @@ export function BookingProvider({ children }: { children?: ReactNode }) {
     return () => window.removeEventListener("book-free-session", handler);
   }, [router.handleSessionClick]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Handle ?book= deep-link intent from /area-personal and the course reader.
+  // Handle ?book= deep-link intent from another page — today the course reader's `LessonCta`
+  // (`smart`); /area-personal used to be the main producer and now opens the booking in place
+  // (it mounts `BookingOverlays` itself — `features/personal-area/useBookingActions.ts` maps the
+  // same intents to the same handlers as the switch below).
   // Removes the param from the URL to keep it clean; re-runs are no-ops because the
   // param is gone by the time the switch below has fired once.
   //

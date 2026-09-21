@@ -1,11 +1,11 @@
 // COURSE-P4-03 — where "continuar" points.
 //
-// No jsdom / RTL in this repo, so the card's only real decision is exported as a
-// pure function and tested here (the pattern `groupLessonsByBlock` established in
-// features/courses/landing/__tests__/SyllabusAccordion.test.ts).
+// No jsdom / RTL in this repo, so the card's only real decision is a pure function
+// (course-links.ts, beside the card) and tested here (the pattern `groupLessonsByBlock`
+// established in features/courses/landing/__tests__/SyllabusAccordion.test.ts).
 
 import type { EnrolledCourseView } from "@/domain/types";
-import { resumeHref } from "@/features/personal-area/CourseProgressCard";
+import { resumeHref } from "@/features/personal-area/course-links";
 
 const view = (over: Partial<EnrolledCourseView> = {}): EnrolledCourseView => ({
   courseSlug:       "dl-nlp",

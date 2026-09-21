@@ -17,23 +17,24 @@
  *
  * `locale={view.contentLocale}` on the course links: the content may only exist in
  * Spanish, and sending an English reader to a lesson that has no English tree is a
- * 404. The booking link keeps the reader's own locale — the home page has both.
+ * 404.
+ *
+ * The 1:1 CTA is a button, not a link: it opens the 1h calendar in place over this page
+ * (useBookingActions.ts). It was `<Link href="/mentoria?book=session1h">`, which detoured
+ * through Mentoría to reach a screen that is an overlay anyway.
  */
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import type { EnrolledCourseView } from "@/domain/types";
 import type { CourseProgressCardProps } from "./types";
-
-/** Exported for unit tests — this repo has no jsdom, so the logic is tested here. */
-export function resumeHref(view: EnrolledCourseView): string {
-  return view.resumeLessonSlug
-    ? `/cursos/${view.courseSlug}/${view.resumeLessonSlug}`
-    : `/cursos/${view.courseSlug}`;
-}
+// `resumeHref` lives in course-links.ts (pure, unit-tested there): this file now imports the
+// booking context, which Jest's node project cannot load.
+import { resumeHref } from "./course-links";
+import { useBookingActions } from "./useBookingActions";
 
 export default function CourseProgressCard({ view }: CourseProgressCardProps) {
   const t = useTranslations("areaPersonal.courses");
+  const { openBooking } = useBookingActions();
   const isCompleted = view.completedAt !== null;
 
   return (
@@ -77,7 +78,11 @@ export default function CourseProgressCard({ view }: CourseProgressCardProps) {
       {isCompleted ? (
         <>
           <p className="pa-course__note">{t("completedNote")}</p>
-          <Link href="/mentoria?book=session1h" className="pa-btn pa-btn--primary pa-course__cta">
+          <button
+            type="button"
+            className="pa-btn pa-btn--primary pa-course__cta"
+            onClick={() => openBooking("session1h")}
+          >
             <span
               className="material-symbols-outlined"
               aria-hidden="true"
@@ -86,7 +91,7 @@ export default function CourseProgressCard({ view }: CourseProgressCardProps) {
               calendar_add_on
             </span>
             {t("bookSessionCta")}
-          </Link>
+          </button>
         </>
       ) : (
         <Link

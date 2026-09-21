@@ -7,14 +7,17 @@
  * The overline renders `areaPersonal.nextSession.title` in its own <span>, with
  * the relative time as a sibling: e2e/booking-pack.spec.ts matches that string
  * with `exact: true`, so "Próxima clase" must not be concatenated with "· en 1 día".
+ *
+ * «Reprogramar» opens the reschedule in place (useBookingActions.ts), no longer
+ * `router.push("/mentoria?reschedule=…")`.
  */
 
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { formatRelative } from "@/lib/formatting";
 import CancelSessionFlow from "./CancelSessionFlow";
 import { dateTile, sessionTypeKey, timeRange, weekdayName } from "./session-display";
 import type { UserBooking } from "./types";
+import { useBookingActions } from "./useBookingActions";
 
 interface NextClassHeroProps {
   booking:     UserBooking;
@@ -27,7 +30,7 @@ export default function NextClassHero({ booking, onCancelled }: NextClassHeroPro
   const tCommon = useTranslations("common");
   const tModal  = useTranslations("areaPersonal.history.modal");
   const locale  = useLocale() as "es" | "en";
-  const router  = useRouter();
+  const { openReschedule } = useBookingActions();
 
   const { day, month } = dateTile(booking.startsAt, locale);
   const label = t(`sessionLabels.${sessionTypeKey(booking.sessionType)}` as Parameters<typeof t>[0]);
@@ -82,7 +85,7 @@ export default function NextClassHero({ booking, onCancelled }: NextClassHeroPro
             <button
               type="button"
               className="pa-btn pa-btn--ghost"
-              onClick={() => router.push(`/mentoria?reschedule=${booking.sessionType}&token=${booking.token}`)}
+              onClick={() => openReschedule(booking)}
             >
               <span className="material-symbols-outlined" aria-hidden="true">event_repeat</span>
               {tUp("reschedule")}

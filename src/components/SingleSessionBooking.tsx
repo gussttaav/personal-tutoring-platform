@@ -15,6 +15,11 @@
  * leaves no session types to change to. «Cambiar tipo de sesión» therefore takes its own
  * optional `onChangeSessionType` (the caller sends it to `/mentoria#sessions`); `onBack` keeps
  * serving the success screen's «Volver al inicio», which must stay an in-place close.
+ *
+ * It also opens on `/area-personal` now (the personal area mounts `BookingOverlays` too), where
+ * the success screen's «Ir a mi área personal» has nowhere to go: the caller passes
+ * `onGoToPersonalArea` (an in-place close) and the ghost «Volver al inicio» is dropped there,
+ * since the two buttons would do the same thing.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -63,6 +68,9 @@ interface SingleSessionBookingProps {
   onBack:           () => void;
   /** «Cambiar tipo de sesión» in the picking step. Defaults to `onBack`. */
   onChangeSessionType?: () => void;
+  /** The success screen's «Ir a mi área personal». Defaults to navigating there; the
+   *  personal area itself passes an in-place close, which also hides «Volver al inicio». */
+  onGoToPersonalArea?: () => void;
   /** Pre-selected slot from AvailabilityModal. free15min pre-selects into
    *  "review"; session1h verifies 1h availability first (review if bookable,
    *  else picking with a notice); session2h starts in "picking". */
@@ -165,6 +173,7 @@ export default function SingleSessionBooking({
   rescheduleToken,
   onBack,
   onChangeSessionType,
+  onGoToPersonalArea,
   initialSlot,
 }: SingleSessionBookingProps) {
   const t       = useTranslations("booking.singleSession");
@@ -385,13 +394,19 @@ export default function SingleSessionBooking({
             )}
 
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <FbButton variant="primary" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
+              <FbButton
+                variant="primary"
+                onClick={onGoToPersonalArea ?? (() => router.push("/area-personal"))}
+                style={{ width: "100%" }}
+              >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">login</span>
                 {t("goToPersonalArea")}
               </FbButton>
-              <FbButton variant="ghost" onClick={onBack} style={{ width: "100%" }}>
-                {t("backToHome")}
-              </FbButton>
+              {!onGoToPersonalArea && (
+                <FbButton variant="ghost" onClick={onBack} style={{ width: "100%" }}>
+                  {t("backToHome")}
+                </FbButton>
+              )}
             </div>
 
             <Helper>

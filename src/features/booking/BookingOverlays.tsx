@@ -5,8 +5,10 @@
  *
  * REDESIGN-P1-06: `<BookingProvider>` + the three overlay renders that used to live at the top
  * of `InteractiveShell.tsx` (the pack-booking full screen, `SingleSessionBooking`, and the
- * availability modal / sign-in gate / pack modal trio), moved verbatim. Mounted on `/` and on
- * `/mentoria`; on Mentoría the sessions/packs sections (`InteractiveShell`) are its children.
+ * availability modal / sign-in gate / pack modal trio), moved verbatim. Mounted on `/`, on
+ * `/mentoria` and on `/area-personal`; on Mentoría the sessions/packs sections
+ * (`InteractiveShell`) are its children, on the personal area the dashboard is (its CTAs call
+ * the router through `useBooking()` — see `features/personal-area/useBookingActions.ts`).
  *
  * The heavy overlays come in through `next/dynamic` with `ssr: false`: the home is a marketing
  * page and its first-load JS should not carry the weekly calendar, the three-step wizard and
@@ -201,6 +203,14 @@ function Overlays() {
           setPendingSlot(null);
           if (pathname !== "/mentoria") navigation.push("/mentoria");
         }}
+        // The success screen's «Ir a mi área personal» navigates there — except on the personal
+        // area itself, where the page is right under the wizard: closing it is the whole trip
+        // (`PersonalArea` revalidates its list on that close).
+        onGoToPersonalArea={
+          pathname === "/area-personal"
+            ? () => { router.closeSession(); setPendingSlot(null); }
+            : undefined
+        }
         initialSlot={(pendingSlot ?? router.restoredSlot) ?? undefined}
       />
     );
@@ -245,7 +255,8 @@ function Overlays() {
 /**
  * `<BookingOverlays><HomeChat /></BookingOverlays>` on `/` (P1-04: the chat FAB is its only
  * child there, gated on the overlays like the sections are);
- * `<BookingOverlays><InteractiveShell /></BookingOverlays>` on `/mentoria`. One per page.
+ * `<BookingOverlays><InteractiveShell /></BookingOverlays>` on `/mentoria`;
+ * `<BookingOverlays><PersonalArea /></BookingOverlays>` on `/area-personal`. One per page.
  */
 export default function BookingOverlays({ children }: { children?: ReactNode }) {
   return (

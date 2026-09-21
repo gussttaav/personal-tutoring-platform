@@ -11,11 +11,15 @@
  * Dialog mechanics follow src/features/courses/reader/MobileLessonBar.tsx — the
  * repo's most complete dialog: portal, Escape, scroll lock, focus trap and focus
  * restore. (ComingSoonModal has the same shape but no focus handling.)
+ *
+ * «Reservar otra igual» opens the booking in place (useBookingActions.ts) — it used to
+ * `router.push("/mentoria?book=…")`. It closes this dialog first: at z-index 9999 with a
+ * focus trap and a body scroll lock, the dialog would otherwise sit on top of the booking
+ * overlay (z-index 40) and keep the keyboard.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { BookingHistoryEntry } from "@/domain/types";
 import { useHydrated } from "@/hooks/useClientValue";
@@ -24,6 +28,7 @@ import { formatDate, formatRelative } from "@/lib/formatting";
 import { canReview, durationMinutes, paymentLabel } from "./history-stats";
 import { sessionTypeKey, timeRange, viewerTimeZone } from "./session-display";
 import StarRating from "./StarRating";
+import { useBookingActions } from "./useBookingActions";
 
 interface PastClassModalProps {
   entry:    BookingHistoryEntry;
@@ -41,8 +46,8 @@ export default function PastClassModal({ entry, onClose, onReviewed }: PastClass
   const tErrors  = useTranslations("errors");
   const tCommon  = useTranslations("common");
   const locale   = useLocale() as "es" | "en";
-  const router   = useRouter();
   const mounted  = useHydrated();
+  const { openBooking } = useBookingActions();
 
   const cardRef     = useRef<HTMLDivElement>(null);
   const restoreRef  = useRef<HTMLElement | null>(null);
@@ -329,7 +334,7 @@ export default function PastClassModal({ entry, onClose, onReviewed }: PastClass
           <button
             type="button"
             className="pa-btn pa-btn--primary pa-btn--lg pa-btn--block"
-            onClick={() => router.push(`/mentoria?book=${entry.sessionType}`)}
+            onClick={() => { onClose(); openBooking(entry.sessionType); }}
           >
             <span className="material-symbols-outlined" aria-hidden="true">event_repeat</span>
             {t("bookSame")}

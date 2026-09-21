@@ -3,15 +3,16 @@
 /**
  * BookSessionsPanel — the sticky booking sidebar.
  *
- * Logic is unchanged by the redesign (same deep links into the booking flow, same
- * live prices from PricesProvider); only the styling moved from inline objects to
- * area-personal.css.
+ * Every row opens its booking screen in place (useBookingActions.ts) — it used to
+ * `router.push("/mentoria?book=<key>")` and let Mentoría open it. The row keys ARE the
+ * intents: `SESSION_KEYS`/`PACK_KEYS` double as the argument to `openBooking`. Live prices
+ * from PricesProvider; styling in area-personal.css.
  */
 
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { usePrices } from "@/components/pricing/PricesProvider";
 import type { UserSession } from "@/domain/types";
+import { useBookingActions } from "./useBookingActions";
 
 interface BookSessionsPanelProps {
   hasActivePack: boolean;
@@ -32,8 +33,8 @@ const PACK_KEYS = [
 
 export default function BookSessionsPanel({ hasActivePack, packSession }: BookSessionsPanelProps) {
   const t = useTranslations("areaPersonal.bookPanel");
-  const router = useRouter();
   const prices = usePrices();
+  const { openBooking } = useBookingActions();
 
   return (
     <div className="pa-panel">
@@ -42,7 +43,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
 
       {/* Pack credit shortcut — only when the student has credits to spend */}
       {hasActivePack && packSession && (
-        <button type="button" className="pa-creditcta" onClick={() => router.push("/mentoria?book=pack")}>
+        <button type="button" className="pa-creditcta" onClick={() => openBooking("pack")}>
           <span className="pa-ic">
             <span className="material-symbols-outlined" aria-hidden="true">redeem</span>
           </span>
@@ -65,7 +66,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
             // free15min is free (kept in i18n); paid sessions read the live price.
             price={key === "free15min" ? t("sessions.free15min.price") : prices[key].price}
             isFree={key === "free15min"}
-            onClick={() => router.push(`/mentoria?book=${key}`)}
+            onClick={() => openBooking(key)}
           />
         ))}
       </div>
@@ -85,7 +86,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
               label={t(`packs.${key}.label` as Parameters<typeof t>[0])}
               sub={sub}
               price={p.price}
-              onClick={() => router.push(`/mentoria?book=${key}`)}
+              onClick={() => openBooking(key)}
             />
           );
         })}

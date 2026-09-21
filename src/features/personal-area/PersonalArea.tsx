@@ -14,12 +14,20 @@
  *
  * Data comes from usePersonalAreaData — three independent fetches, so a failure in
  * one tab cannot blank the page.
+ *
+ * Rendered inside `BookingOverlays` (area-personal/page.tsx) since the booking CTAs open in
+ * place — see useBookingActions.ts. Two consequences here: the pack session is read from the
+ * booking context, not an own `useUserSession()`, so `updateCredits` after a pack class
+ * booked in the overlay reaches the banner and the sidebar (two hook instances would be two
+ * copies of the credits, and only the overlay's would move); and the upcoming list is
+ * revalidated whenever a booking screen closes over this page, because a class may have
+ * been booked or rescheduled behind it.
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
-import { useUserSession } from "@/hooks/useUserSession";
+import { useBooking } from "@/features/booking/BookingProvider";
 import BookSessionsPanel from "./BookSessionsPanel";
 import CoursesTab from "./CoursesTab";
 import DangerZone from "./DangerZone";
@@ -42,7 +50,7 @@ const TABS: { id: PersonalAreaTab; icon: string }[] = [
 export default function PersonalArea() {
   const t      = useTranslations("areaPersonal.main");
   const locale = useLocale();
-  const { packSession, isAuthLoading } = useUserSession();
+  const { router: booking, packSession, isAuthLoading } = useBooking();
   // ACCOUNT-DELETE-01: the deletion confirmation is typed against this address, and
   // packSession is null for a student who never bought a pack — so read the identity
   // from the session itself.
@@ -54,6 +62,7 @@ export default function PersonalArea() {
     enrollmentsState,
     historyTruncated,
     refreshBookings,
+    revalidateBookings,
     refreshHistory,
     loadMoreHistory,
     patchHistoryEntry,
@@ -61,6 +70,18 @@ export default function PersonalArea() {
 
   const [active, setActive] = useState<PersonalAreaTab>("upcoming");
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // A booking screen is up over this page (the wizard or the pack booking — the router's
+  // state, which `BookingOverlays` renders). On the open → closed edge, refetch the upcoming
+  // list silently: the student may just have booked or rescheduled a class, and the page
+  // underneath was showing the list from before. Not `refreshBookings` — the skeleton would
+  // flash on every close, including the ones where nothing changed.
+  const overlayOpen    = booking.activeSession !== null || booking.showPackBooking;
+  const overlayWasOpen = useRef(false);
+  useEffect(() => {
+    if (overlayWasOpen.current && !overlayOpen) revalidateBookings();
+    overlayWasOpen.current = overlayOpen;
+  }, [overlayOpen, revalidateBookings]);
 
   const hasActivePack = !!packSession && packSession.credits > 0;
 

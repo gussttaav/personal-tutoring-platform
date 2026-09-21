@@ -6,6 +6,11 @@
  *
  * Renders the Navbar + PersonalArea client component which handles all
  * dynamic data fetching (bookings, pack credits) and state rendering.
+ *
+ * PersonalArea sits inside `BookingOverlays` — the same booking shell `/` and `/mentoria`
+ * mount — so its CTAs (book a session, buy a pack, use a credit, reschedule) open the
+ * calendar / pack modal / pack booking in place. They used to `router.push` into
+ * `/mentoria?book=…`, showing Mentoría for a beat before the overlay opened there.
  */
 
 import { redirect } from "next/navigation";
@@ -13,6 +18,7 @@ import { auth } from "@/auth";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BookingOverlays from "@/features/booking/BookingOverlays";
 import PersonalArea from "@/features/personal-area/PersonalArea";
 // Segment-scoped stylesheet for the dashboard, same pattern as admin.css / lesson.css.
 import "./area-personal.css";
@@ -41,7 +47,9 @@ export default async function AreaPersonalPage({ params }: { params: Promise<{ l
     <div className="flex flex-col min-h-screen" style={{ background: "#131315" }}>
       <Navbar />
       <main className="flex-1 pt-16">
-        <PersonalArea />
+        <BookingOverlays>
+          <PersonalArea />
+        </BookingOverlays>
       </main>
       <Footer />
     </div>
