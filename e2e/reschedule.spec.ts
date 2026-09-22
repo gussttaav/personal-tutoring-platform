@@ -12,7 +12,7 @@
  *   4. The weekly calendar opens; user picks a new slot:
  *        - 1st click → focuses the block (fires onSlotFocused)
  *        - "Continuar" click → confirms selection (fires onSlotSelected)
- *   5. Asserts inline success state ("Volver al inicio" button visible)
+ *   5. Asserts inline success state ("Ir a mi área personal" button visible)
  */
 
 import { test, expect } from "@playwright/test";
@@ -78,9 +78,9 @@ test.describe("Reschedule existing booking", () => {
     await confirmBtn.click();
 
     // Rescheduled free sessions show success inline — the URL stays at "/mentoria".
-    // SingleSessionBooking renders phase="success" with a "Volver al inicio" button.
+    // SingleSessionBooking renders phase="success" with a "Ir a mi área personal" button.
     await expect(
-      page.getByRole("button", { name: /volver al inicio/i }),
+      page.getByRole("button", { name: /ir a mi área personal/i }),
     ).toBeVisible({ timeout: 30_000 });
   });
 });
