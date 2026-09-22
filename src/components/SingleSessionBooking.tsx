@@ -18,8 +18,8 @@
  *
  * It also opens on `/area-personal` now (the personal area mounts `BookingOverlays` too), where
  * the success screen's «Ir a mi área personal» has nowhere to go: the caller passes
- * `onGoToPersonalArea` (an in-place close) and the ghost «Volver al inicio» is dropped there,
- * since the two buttons would do the same thing.
+ * `onGoToPersonalArea` (an in-place close). The success screen only ever shows this one
+ * button — there is no «Volver al inicio» option.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -68,8 +68,8 @@ interface SingleSessionBookingProps {
   onBack:           () => void;
   /** «Cambiar tipo de sesión» in the picking step. Defaults to `onBack`. */
   onChangeSessionType?: () => void;
-  /** The success screen's «Ir a mi área personal». Defaults to navigating there; the
-   *  personal area itself passes an in-place close, which also hides «Volver al inicio». */
+  /** The success screen's «Ir a mi área personal» (its only button). Defaults to
+   *  navigating there; the personal area itself passes an in-place close. */
   onGoToPersonalArea?: () => void;
   /** Pre-selected slot from AvailabilityModal. free15min pre-selects into
    *  "review"; session1h verifies 1h availability first (review if bookable,
@@ -402,11 +402,6 @@ export default function SingleSessionBooking({
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">login</span>
                 {t("goToPersonalArea")}
               </FbButton>
-              {!onGoToPersonalArea && (
-                <FbButton variant="ghost" onClick={onBack} style={{ width: "100%" }}>
-                  {t("backToHome")}
-                </FbButton>
-              )}
             </div>
 
             <Helper>

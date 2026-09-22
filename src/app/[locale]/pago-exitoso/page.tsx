@@ -63,13 +63,10 @@ function SuccessContent() {
         </InfoBox>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <FbButton variant="primary" onClick={() => router.push("/")} style={{ width: "100%" }}>
+          <FbButton variant="primary" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
-              home
+              login
             </span>
-            {t("backToHome")}
-          </FbButton>
-          <FbButton variant="ghost" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
             {t("goToPersonalArea")}
           </FbButton>
         </div>
@@ -174,8 +171,8 @@ function SuccessContent() {
               arrow_forward
             </span>
           </FbButton>
-          <FbButton variant="ghost" onClick={() => router.push("/")} style={{ width: "100%" }}>
-            {t("backToHome")}
+          <FbButton variant="ghost" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
+            {t("goToPersonalArea")}
           </FbButton>
         </div>
 

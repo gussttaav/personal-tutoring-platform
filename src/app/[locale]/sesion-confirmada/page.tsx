@@ -228,9 +228,6 @@ function SesionConfirmadaContent() {
           <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">login</span>
           {t("goToPersonalArea")}
         </FbButton>
-        <FbButton variant="ghost" onClick={() => router.push("/")} style={{ width: "100%" }}>
-          {t("backToHome")}
-        </FbButton>
       </div>
     </FeedbackMain>
   );
