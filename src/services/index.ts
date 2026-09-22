@@ -13,6 +13,7 @@ import { MobileAuthService }    from "./MobileAuthService";
 import { CourseService }        from "./CourseService";
 import { AccountService }       from "./AccountService";
 import { ContentFeedbackService } from "./ContentFeedbackService";
+import { LandingService }       from "./LandingService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -98,6 +99,9 @@ export const accountService = new AccountService(
   creditService,
   new CalendarClient(),
 );
+
+// LANDING-01: routes a signed-in visitor to "/" — see LandingService for the ladder.
+export const landingService = new LandingService(bookingService, creditService, courseService);
 
 export const reviewService = new ReviewService(
   supabaseReviewRepository,

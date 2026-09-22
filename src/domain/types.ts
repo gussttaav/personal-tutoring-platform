@@ -706,6 +706,9 @@ export interface CourseProgressSummary {
   percentComplete:    number;
   /** Most recently viewed published lesson, or `null` before the first view. */
   lastSeenLessonSlug: string | null;
+  /** LANDING-01: when that lesson was last viewed (ISO), or `null` before the first
+   *  view — the activity clock `pickCurrentCourse` ranks enrolments by. */
+  lastSeenAt:         string | null;
   /** `null` when the user is not enrolled (progress is still reported as zeroes). */
   enrolledAt:         string | null;
   completedAt:        string | null;
@@ -792,6 +795,13 @@ export interface DeletionEligibility {
    */
   imminentBookings: number;
 }
+
+// LANDING-01: where a signed-in visitor to "/" is sent. Kinds, not hrefs — the
+// `/inicio` page maps kind → locale-aware URL; the domain never learns a route.
+export type LandingDestination =
+  | { kind: "admin" }
+  | { kind: "personal-area" }
+  | { kind: "course"; courseSlug: string };
 
 // ─── Content feedback ─────────────────────────────────────────────────────────
 // CONTENT-FEEDBACK-01: the 👍/👎 + comment and "report an error" rows that every

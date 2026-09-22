@@ -17,6 +17,11 @@
 // REDESIGN-P1-05: `generateMetadata` reads `home.meta.*`, its own title/description, and
 // `StructuredData` takes `variant="home"`, which drops the `Service` JSON-LD — it belongs
 // on /mentoria, the page that sells it.
+// LANDING-01: this static home is what anonymous visitors (and Googlebot) get, and what a
+// signed-in visitor reaches from inside the app («Inicio», the logo). A request that LANDS here
+// with a session cookie (typed URL, bookmark, external link) is rewritten by src/middleware.ts to
+// the dynamic twin at /inicio, which resolves the visitor's real landing; it renders this same
+// page when the cookie is stale.
 
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import HomeHero from "@/features/home/HomeHero";

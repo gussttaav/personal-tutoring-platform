@@ -16,6 +16,9 @@
  *   Unknown slugs are dropped, not rejected. A bookmark to a lesson that was
  *   renamed or unpublished must never 500; the write is skipped and logged. Reads
  *   of an unknown course return a zeroed summary for the same reason.
+ *
+ * LANDING-01: `getCurrentCourse` answers "which course is this reader taking right
+ * now" for the signed-in landing on "/" — see `pickCurrentCourse` for the ranking.
  */
 import type { ICourseRepository } from "@/domain/repositories/ICourseRepository";
 import type { ICourseCatalog } from "@/domain/repositories/ICourseCatalog";
@@ -57,6 +60,7 @@ function summarise(
     completedLessons,
     percentComplete:    totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
     lastSeenLessonSlug: lastSeen?.lessonSlug ?? null,
+    lastSeenAt:         lastSeen?.lastSeenAt ?? null,
     enrolledAt:         enrollment?.enrolledAt  ?? null,
     completedAt:        enrollment?.completedAt ?? null,
   };
@@ -87,6 +91,29 @@ export function summariseAttempts(attempts: QuizAttempt[]): ExerciseAttemptHisto
   }
 
   return [...byId.values()];
+}
+
+/**
+ * LANDING-01 — the course the reader is "currently taking". Pure, like the two above.
+ *
+ * An enrolment is a candidate while `completedAt` is null. Its activity clock is the
+ * newest lesson view, or `enrolledAt` when it has no views yet (a course opened and
+ * never read). The newest clock wins; a tie keeps the first summary, which is the
+ * older enrolment (`listEnrollments` is enrolled_at-ascending), so the pick is
+ * deterministic. Both timestamps are ISO strings (the repositories normalise them),
+ * so the plain `>` comparison `summarise` already relies on is safe here too.
+ * Catalog membership is NOT checked here — the caller filters stale slugs.
+ */
+export function pickCurrentCourse(summaries: readonly CourseProgressSummary[]): string | null {
+  let best: { courseSlug: string; activityAt: string } | null = null;
+
+  for (const summary of summaries) {
+    if (summary.enrolledAt === null || summary.completedAt !== null) continue;
+    const activityAt = summary.lastSeenAt ?? summary.enrolledAt;
+    if (!best || activityAt > best.activityAt) best = { courseSlug: summary.courseSlug, activityAt };
+  }
+
+  return best?.courseSlug ?? null;
 }
 
 export class CourseService {
@@ -262,6 +289,16 @@ export class CourseService {
         enrollment,
       ),
     );
+  }
+
+  /**
+   * LANDING-01: slug of the in-progress course with the newest activity, or `null`.
+   * Enrolments whose course left the registry are skipped (a stale slug, the same
+   * policy as the writes) — a landing must never send a visitor to a 404.
+   */
+  async getCurrentCourse(email: string): Promise<string | null> {
+    const summaries = await this.listEnrollments(email);
+    return pickCurrentCourse(summaries.filter((s) => this.catalog.courseExists(s.courseSlug)));
   }
 
   // ─── Slug guards ────────────────────────────────────────────────────────────

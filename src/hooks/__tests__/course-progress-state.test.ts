@@ -28,6 +28,7 @@ const detail = (over: Partial<CourseProgressDetail> = {}): CourseProgressDetail 
   completedLessons:     2,
   percentComplete:      50,
   lastSeenLessonSlug:   "l2",
+  lastSeenAt:           "2026-07-02T00:00:00.000Z",
   enrolledAt:           "2026-07-01T00:00:00.000Z",
   completedAt:          null,
   completedLessonSlugs: ["l1", "l2"],

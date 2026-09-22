@@ -12,6 +12,7 @@ import { UserService }         from "@/services/UserService";
 import { CourseService }       from "@/services/CourseService";
 import { AccountService }      from "@/services/AccountService";
 import { ContentFeedbackService } from "@/services/ContentFeedbackService";
+import { LandingService }      from "@/services/LandingService";
 import type { ICreditsRepository }      from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository }        from "@/domain/repositories/IAuditRepository";
 import type { IBookingRepository }      from "@/domain/repositories/IBookingRepository";
@@ -256,4 +257,25 @@ export function buildTestAccountService(
     calendar,
   );
   return { service, userRepo, calendar };
+}
+
+// ─── LandingService builder ───────────────────────────────────────────────────
+// LANDING-01: returns the collaborators so a test can book, grant credits or enrol
+// and then assert on the destination ladder end to end.
+
+export interface LandingServiceDeps {
+  bookings: BookingService;
+  credits:  CreditService;
+  courses:  CourseService;
+}
+
+export function buildTestLandingService(
+  overrides: Partial<LandingServiceDeps> = {},
+): { service: LandingService; bookings: BookingService; credits: CreditService; courses: CourseService } {
+  const credits  = overrides.credits  ?? buildTestCreditService();
+  const bookings = overrides.bookings ?? buildTestBookingService({ credits });
+  const courses  = overrides.courses  ?? buildTestCourseService().service;
+
+  const service = new LandingService(bookings, credits, courses);
+  return { service, bookings, credits, courses };
 }
