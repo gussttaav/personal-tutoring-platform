@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 245" width="360" height="245" role="img" aria-label="The example network, in four columns of circles joined by lines. On the left, the input layer, abbreviated with x1 at the top, a vertical ellipsis, x3 in the middle, another ellipsis and x8 at the bottom. In the centre, the hidden layer, abbreviated with h1 at the top, an ellipsis and h4 at the bottom. On the right, three output neurons y-hat sub 1, y-hat sub 2 and y-hat sub 3, and at the end a circle with the calligraphic L of the loss, which the three outputs reach. Every drawn neuron is joined to all those of the next layer. One route is traced in green and thicker: it leaves x3, enters h1, goes from h1 to y-hat sub 1 and from there to the loss. Its three green arrows are labelled, left to right, with the partial derivative of z superscript one sub 1 with respect to the weight W superscript one sub one three; that of z superscript two sub 1 with respect to z superscript one sub 1; and that of the loss with respect to z superscript two sub 1. The remaining connections are dimmed and grey, with no arrowhead.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .hdr { font-size: 11px; fill: #86948a; text-anchor: middle; }
+    .lbl { font-size: 15px; fill: #e5e1e4; text-anchor: middle; }
+    .dots { font-size: 17px; fill: #86948a; text-anchor: middle; }
+    .fac { font-size: 12px; fill: #4edea3; text-anchor: middle; }
+    .nodo { stroke: #86948a; stroke-width: 1.6; fill: none; }
+    /* The connections that are not part of the highlighted path are dimmed and have no
+       arrowhead: they are there to show the network is connected, not to be followed one by one. */
+    .edge { stroke: #86948a; stroke-width: 1.1; fill: none; opacity: 0.32; }
+    /* The input computes nothing: dashed stroke, as in the architecture figure. */
+    .input { stroke: #86948a; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+    /* A single highlighted path: it shows what ONE path is and that it carries one factor per
+       arrow. That the derivative is the SUM of the three leaving h1 is said by the caption. */
+    .via { stroke: #4edea3; stroke-width: 2.4; fill: none; }
+    .nodo-via { stroke: #4edea3; stroke-width: 2.4; fill: none; }
+  </style>
+
+  <defs>
+    <marker id="p-verde" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4edea3" />
+    </marker>
+  </defs>
+
+  <text class="hdr" x="34" y="20">8 inputs</text>
+  <text class="hdr" x="160" y="20">4 hidden</text>
+  <text class="hdr" x="272" y="20">3 outputs</text>
+
+  <!-- Dimmed connections with no arrowhead, drawn first so the green sits on top. -->
+  <line class="edge" x1="48.6" y1="59.3" x2="139.5" y2="79.4" />
+  <line class="edge" x1="44.7" y1="66.5" x2="145.0" y2="165.3" />
+  <line class="edge" x1="48.0" y1="137.3" x2="140.4" y2="172.5" />
+  <line class="edge" x1="44.7" y1="197.5" x2="145.0" y2="98.7" />
+  <line class="edge" x1="48.6" y1="204.7" x2="139.5" y2="184.6" />
+  <line class="edge" x1="178.8" y1="93.4" x2="254.1" y2="131.1" />
+  <line class="edge" x1="174.1" y1="99.6" x2="258.6" y2="193.2" />
+  <line class="edge" x1="175.1" y1="165.4" x2="257.6" y2="85.9" />
+  <line class="edge" x1="179.8" y1="172.9" x2="253.2" y2="146.7" />
+  <line class="edge" x1="180.4" y1="185.1" x2="252.6" y2="203.1" />
+  <line class="edge" x1="292.0" y1="140.0" x2="319.0" y2="140.0" />
+  <line class="edge" x1="285.7" y1="193.4" x2="324.3" y2="152.4" />
+
+  <!-- The highlighted path: W(1)_13 enters through h1, h1 goes to ŷ1, ŷ1 to the loss. -->
+  <line class="via" x1="48.0" y1="126.7" x2="137.1" y2="92.7" marker-end="url(#p-verde)" />
+  <line class="via" x1="180.9" y1="81.8" x2="248.6" y2="74.5" marker-end="url(#p-verde)" />
+  <line class="via" x1="285.7" y1="86.6" x2="322.0" y2="125.1" marker-end="url(#p-verde)" />
+
+  <!-- One factor per arrow of the green path. They multiply and give the ŷ1 term;
+       the derivative we are after is the sum of the three terms. -->
+  <text class="fac" x="84" y="89">∂z<tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">1</tspan><tspan dy="-4">/∂W</tspan><tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">13</tspan></text>
+  <text class="fac" x="215" y="61">∂z<tspan font-size="9" dy="-5">(2)</tspan><tspan font-size="9" dy="9">1</tspan><tspan dy="-4">/∂z</tspan><tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">1</tspan></text>
+  <text class="fac" x="324" y="90">∂ℒ/∂z<tspan font-size="9" dy="-5">(2)</tspan><tspan font-size="9" dy="9">1</tspan></text>
+
+  <!-- Input layer: computes nothing, drawn dashed. Eight inputs, abbreviated. -->
+  <circle class="input" cx="34" cy="56" r="15" />
+  <circle class="input" cx="34" cy="132" r="15" />
+  <circle class="input" cx="34" cy="208" r="15" />
+  <text class="lbl" x="34" y="61">x<tspan font-size="10" dy="4">1</tspan></text>
+  <text class="lbl" x="34" y="137">x<tspan font-size="10" dy="4">3</tspan></text>
+  <text class="lbl" x="34" y="213">x<tspan font-size="10" dy="4">8</tspan></text>
+  <text class="dots" x="34" y="100">⋮</text>
+  <text class="dots" x="34" y="176">⋮</text>
+
+  <!-- Hidden layer: four neurons, abbreviated to h1 and h4; h1 highlighted. -->
+  <circle class="nodo-via" cx="160" cy="84" r="21" />
+  <circle class="nodo" cx="160" cy="180" r="21" />
+  <text class="lbl" x="160" y="88">h<tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">1</tspan></text>
+  <text class="lbl" x="160" y="184">h<tspan font-size="9" dy="-5">(1)</tspan><tspan font-size="9" dy="9">4</tspan></text>
+  <text class="dots" x="160" y="137">⋮</text>
+
+  <!-- Output layer: three neurons, ŷ1 highlighted. -->
+  <circle class="nodo-via" cx="272" cy="72" r="20" />
+  <circle class="nodo" cx="272" cy="140" r="20" />
+  <circle class="nodo" cx="272" cy="208" r="20" />
+  <text class="lbl" x="272" y="77">ŷ<tspan font-size="10" dy="4">1</tspan></text>
+  <text class="lbl" x="272" y="145">ŷ<tspan font-size="10" dy="4">2</tspan></text>
+  <text class="lbl" x="272" y="213">ŷ<tspan font-size="10" dy="4">3</tspan></text>
+
+  <!-- The loss. -->
+  <circle class="nodo" cx="336" cy="140" r="17" />
+  <text class="lbl" x="336" y="146">ℒ</text>
+</svg>

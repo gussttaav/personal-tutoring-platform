@@ -219,7 +219,8 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | a network trained to predict what comes next | language model | |
 | the random draw from the model's own distribution | to sample, sampling | |
 | giving a symbol or variable its value | assign to | put into |
-| a short run in a cell whose result the next paragraph reads | experiment | probe |
+| a short run in a cell whose result the next paragraph reads | experiment | probe — that is the derivative check one row down |
+| moving one parameter a little each way and re-evaluating, to check a derivative against the algebra | probe, numerical probe; to probe | experiment; finite-difference check as a second name |
 | always taking the highest-probability output | greedy decoding | |
 | source to target sequence · the task Block 4 demonstrates on | sequence-to-sequence model, nickname *seq2seq* · machine translation | |
 | the fixed vector the encoder hands the decoder | context vector | thought vector, summary vector |
@@ -272,6 +273,15 @@ owed at all**, because the words and the letters are already the same alphabet.
 table bans most emphatically, and the trap is worse in English: *precision* is a real metric with a
 real definition, sitting one word away from the one this course measures. Never write it for
 accuracy, not even loosely.
+
+**One Spanish row splits in two, because English spends one word where Spanish spends two.**
+`AUTHORING.md` bans `sonda` for a short run in a cell (it is a physical instrument in Spanish) and
+keeps `sondeo` / `sondeo numérico` for something else entirely: moving a parameter a little each
+way and re-evaluating, to check a derivative against the algebra. English has only **probe** for
+both, so the table above says which is which rather than banning the word. The cell-run sense is an
+`experiment`; the derivative check is a `probe`, and it is the course's own instrument from Block 2
+on (the chain rule, backpropagation, BPTT) — the thing worth keeping to hand when a derivative
+written out by hand does not add up. *Settled by `en/15-regla-de-la-cadena.mdx` (COURSE-P11-05).*
 
 **Acronyms** are unchanged: expand every one on **first use, in every lesson**, then use it bare —
 *out-of-vocabulary (OOV)*, *masked language modelling (MLM)*. Per lesson, not per course: lessons

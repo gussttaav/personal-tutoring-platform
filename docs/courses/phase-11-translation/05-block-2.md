@@ -123,7 +123,7 @@ adds six more. P11-02 covers widgets, not `public/courses/dl-nlp/*.svg`.
 | `bucle-entrenamiento.svg` | 2.9 | `pérdida`, `gradiente`, `actualización`, `y otra vez`, `las cuatro cajas ya estaban escritas; la flecha verde no` |
 | `reparto-resenas.svg` | 2.10 | `180 reseñas de entrenamiento`, `60 reseñas de prueba`, `442 entradas`, `600 pasos`, `53 de 60`, `lo define`, `las representa`, `sólo al final` — **four of these are data that regenerate with the corpus** |
 | `forward-shapes.svg` | 2.4 | **None** — symbols only (`X`, `W⁽¹⁾ᵀ`, `Z⁽¹⁾`, `i`, `j`, `d₀ × d₁`) |
-| `regla-cadena-caminos.svg` | 2.7 | **None** — symbols only (`w`, `ℒ`, `∂u₁/∂w`) |
+| `regla-cadena-caminos.svg` | 2.7 | ~~**None** — symbols only~~ **Stale: the figure was redrawn after triage** (`92ed6fb`) and now carries `8 entradas`, `4 ocultas`, `3 salidas` plus a Spanish `aria-label`. Sibling built by 2.7 |
 
 **Five `<Explorable>` ids, none with a corpus.** `perceptron-boundary` (2.1, 2.3),
 `activation-explorer` (2.2), `loss-landscape` and `gradient-descent-2d` (2.6), `backprop-trace`
@@ -191,9 +191,9 @@ transcribe it by hand; do not re-invent it.
   8. `i recommend it` (1)
   9. `good movie but slow` (0) — the $z = 0$ miss (step ties it positive; label negative)
   10. `fun and i recommend it` (1)
-- Review 1's bag of words is `(0,0,1,0,1,1,0,1)`: `the` occurs **once**, so 2.8's
-  `q-leer-un-gradiente` rewrite must key on a word that occurs twice, exactly as the
-  replacement note above anticipates.
+- Review 1's bag of words is `(0,0,1,0,1,1,0,1)`: every count is $0$ or $1$. The replacement note
+  above wanted 2.8 to keep a word occurring **twice**, and on this review no word does, so that
+  hook is not available as written. See the 2.8 bullet under **Decisions fixed by later lessons**.
 
 ## Decisions fixed by later lessons — reuse as they stand
 
@@ -205,13 +205,43 @@ transcribe it by hand; do not re-invent it.
   `\text{EC}`; in a `print` it writes `CE`.
 - **Figures with Spanish set into the asset get an `.en.svg` sibling** and the lesson points `src` at
   it: `mlp-arquitectura.en.svg`, `xor-franja.en.svg` (2.3), `perdida-correccion.en.svg` (2.5, decimal
-  comma `0,5` → `0.5`), `descenso-pasos.en.svg` (2.6, decimal commas `0,10`/`0,40`/`1,05` → points).
-  Still owed by their lessons: `bucle-entrenamiento.svg` (2.9), `reparto-resenas.svg` (2.10).
+  comma `0,5` → `0.5`), `descenso-pasos.en.svg` (2.6, decimal commas `0,10`/`0,40`/`1,05` → points),
+  `regla-cadena-caminos.en.svg` (2.7, column headers + `aria-label`; geometry copied byte for byte,
+  only text and comments translated). Still owed by their lessons: `bucle-entrenamiento.svg` (2.9),
+  `reparto-resenas.svg` (2.10). **Re-check the asset itself before trusting the table above** — the
+  2.7 row said "symbols only" and was true when triage ran, then the figure was redrawn.
 - **The "an input that appears twice pulls twice as hard" sentence** (fixed by 2.6,
   `en/14-descenso-gradiente.mdx`): the Spanish «una entrada que aparece dos veces tira el doble» renders
   as *an input that appears twice pulls twice as hard* in `q-actualiza`'s explanation, and as *one that
   appears twice pulls twice as hard* in prose. 2.8's `q-leer-un-gradiente` rewrite ties its answer back
-  to this sentence («aparece dos veces / se corrige el doble»), so it must reuse this wording.
+  to this sentence («aparece dos veces / se corrige el doble»), so it must reuse this wording — **if it
+  can still tie back at all**, which the 2.8 bullet below says it cannot on the chosen review.
+- **The hand-written `W1` of 2.7 and 2.8 is re-permuted by column, not retyped** (fixed by 2.7,
+  `en/15-regla-de-la-cadena.mdx`). Both lessons hand-write the same $8 \to 4$ matrix, whose **row 0 is
+  2.1's `w`**, so its columns are indexed by the Spanish-alphabetical `V` exactly as `w` was. With the
+  Spanish `W1` left as it stands and the English `x = (0,0,1,0,1,1,0,1)`, $z^{(1)}_1 = 0$ and ReLU
+  switches off the very neuron the lesson studies. The fix is the same permutation 2.1 applied to `w`
+  (`W1_en == W1_es[:, perm]`, verified), which keeps every hand-set weight on its own word and leaves
+  `W2`, `b1` and `b2` untouched. The English matrix, to reuse verbatim in 2.8:
+  ```
+  W1 = [[-1., -1.,  1.,  1., 0.,  1., -1., 0. ],
+        [ 0.,  0., -1.,  0., 1.,  0.,  0., 0.5],
+        [ 0.,  0.,  0., 0.5, 0.5, 0.5, 0., 0.5],
+        [ 1.,  1.,  0., -1., 0.5, -1., 1., 0.5]]
+  ```
+  Regenerated 2.7 numbers (Pyodide): $\mathbf{z}^{(1)} = (2, 0.5, 1, -1.5)$, $\varphi' = (1,1,1,0)$,
+  $\hat{\mathbf{y}} = (0.844, 0.0094, 0.1467)$, $\ell = 0.169644$; the derivative **−0.09208080**,
+  −0.16541038 without the third path (1.80×, "almost double" holds), the three summands
+  −0.156035 / −0.009376 / **+0.073330** (third positive ✓) and $z^{(1)}_4 = -1.5$ (fourth neuron off ✓).
+  Both structural claims survive; the prose quotes $-1.5$ where the Spanish quoted $-1$.
+- **2.8 has no word occurring twice, and the block md's replacement note assumed one.** Review 1's bag
+  of words is `(0,0,1,0,1,1,0,1)`: every count is $0$ or $1$, so `q-leer-un-gradiente` cannot key its
+  answer on $x_k = 2$. Either pick a different review for that cell or hang the item on another hook —
+  2.8's call, left open here deliberately.
+- **A finite-difference derivative check is a *probe*** (fixed by 2.7). `AUTHORING.en.md` §6 now
+  carries the row and the argument: `experiment` is a short run in a cell, `probe` is moving a
+  parameter a little each way to check a derivative, and English spends one word where Spanish spends
+  `experimento` and `sondeo`.
 - **2.6's closing weight argument is re-derived, not translated** (`en/14-descenso-gradiente.mdx`). The
   Spanish opposite-sign accident (`película` −2.238 vs `la` +1.221) does not survive the fixed English
   corpus: both meaningless words come out **negative** (Pyodide: `movie` −1.493, `the` −0.832), because
@@ -228,7 +258,7 @@ transcribe it by hand; do not re-invent it.
 - [x] 2.4 `forward-pass`
 - [x] 2.5 `funcion-de-perdida`
 - [x] 2.6 `descenso-gradiente`
-- [ ] 2.7 `regla-de-la-cadena`
+- [x] 2.7 `regla-de-la-cadena`
 - [ ] 2.8 `backpropagation`
 - [ ] 2.9 `implementar-mlp`
 - [ ] 2.10 `proyecto-sentimiento`
