@@ -296,6 +296,9 @@ export const CourseManifestSchema = z.strictObject({
   blocks:         z.array(CourseBlockSchema).min(1),
   // Optional decorative hero motif; extend the enum (and `HeroMotif`) per new design.
   heroMotif:      z.enum(["attention-matrix", "agent-loop"]).optional(),
+  // COURSE-ACCENT-01: optional catalog-card accent; extend the enum (and the palette in
+  // `src/features/courses/course-accent.ts`) together. Omitted = the site's emerald.
+  accent:         z.enum(["emerald", "cyan", "amber"]).optional(),
 });
 
 export type CourseManifestInput = z.infer<typeof CourseManifestSchema>;

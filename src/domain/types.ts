@@ -390,6 +390,13 @@ export interface CourseFaqItem {
  *  tile layout to `HeroMotif` when a new key lands here. */
 export type CourseHeroMotif = "attention-matrix" | "agent-loop";
 
+/** COURSE-ACCENT-01 — which accent hue the catalog card paints itself in. Per-course by
+ *  design: two courses sharing the site's one emerald were indistinguishable at a glance
+ *  (badge, title tail, CTA, progress bar and hover bloom were all the same green). Omitted =
+ *  the site's emerald, i.e. exactly what shipped before. The palette lives in
+ *  `src/features/courses/course-accent.ts`; add a hue there when a new key lands here. */
+export type CourseAccent = "emerald" | "cyan" | "amber";
+
 /** Course-level metadata from `course.<locale>.yml`. `blocks` is ordering +
  *  prose; individual lessons live in the sibling `<locale>/*.mdx` files and are
  *  attached by the registry (not stored in the manifest). `cta`/`faq` are the
@@ -405,6 +412,8 @@ export interface Course {
   blocks:         CourseBlock[];
   /** Optional decorative hero motif selected in the manifest; omitted = no motif. */
   heroMotif?:     CourseHeroMotif;
+  /** COURSE-ACCENT-01 — catalog-card accent hue; omitted = the site's emerald. */
+  accent?:        CourseAccent;
 }
 
 /** One lesson's metadata (frontmatter), never its prose. `slug` is unique within

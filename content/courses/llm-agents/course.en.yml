@@ -17,6 +17,9 @@ level: advanced
 # Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
 # Purely presentational; `agent-loop` is this course's own — the loop around the model.
 heroMotif: agent-loop
+# Catalog-card accent hue (COURSE-ACCENT-01). Cyan, not emerald: the two catalog cards were
+# indistinguishable at a glance while both painted in the site's one green.
+accent: cyan
 prerequisites:
   intro: "This course continues on from Deep Learning for NLP. Before you start, you'll need:"
   items:

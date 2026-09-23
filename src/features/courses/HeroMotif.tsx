@@ -7,17 +7,22 @@
  * entirely. `aria-hidden`: it carries no meaning. An absent or unknown key renders nothing, so a
  * motif-less course costs zero.
  *
- * Shared: the landing hero renders it large and faint behind the title; the catalog card renders
- * it small in the corner (and animates its opacity on hover). `size`/`opacity` parameterize those
- * two uses — the caller still positions it. Lives in `features/courses/` (not `landing/`) because
- * both surfaces import it.
+ * Shared: the landing hero renders it large and faint behind the title; the catalog card bleeds
+ * it off the top-right corner (and animates its opacity on hover). `size`/`opacity` parameterize
+ * those two uses — the caller still positions it. Lives in `features/courses/` (not `landing/`)
+ * because both surfaces import it.
  *
  * COURSE-C2-P0-01: `agent-loop`, the second course's motif. Every motif is a list of tiles on
- * the same 8×8 grid (same cell, pitch and green), so the two read as one family at 150 px in
+ * the same 8×8 grid (same cell and pitch), so the two read as one family at 232 px in
  * the catalog and at 360 px behind a title; only the tile layout differs. This one is the
  * agent loop: a ring of tiles whose opacity ramps clockwise — the loop in motion, head just
  * short of the top-left corner — around a 2×2 core whose diagonal is brighter (the model at
  * the centre, a nod to the attention matrix it grew from), inside a faint outer frame.
+ *
+ * COURSE-ACCENT-01: the tiles are filled from `--course-accent` with the site's `--green` as
+ * the fallback, set as a CSS property on the <svg> and INHERITED by the rects (the `fill`
+ * presentation attribute does not accept `var()`, the property does). A caller that sets no
+ * such custom property — the landing hero — is unchanged; the catalog card sets it per course.
  */
 
 import type { CourseHeroMotif } from "@/domain/types";
@@ -110,6 +115,7 @@ export default function HeroMotif({
       opacity={opacity}
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
+      style={{ fill: "var(--course-accent, var(--green))" }}
     >
       {tiles.map((tile) => (
         <rect
@@ -119,7 +125,6 @@ export default function HeroMotif({
           width={CELL}
           height={CELL}
           rx={2.5}
-          fill="#4edea3"
           fillOpacity={tile.opacity}
         />
       ))}

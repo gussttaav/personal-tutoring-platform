@@ -79,6 +79,16 @@ describe("CourseManifestSchema", () => {
     expect(() => CourseManifestSchema.parse({ ...valid, heroMotif: "spirals" })).toThrow();
   });
 
+  // COURSE-ACCENT-01: same contract as heroMotif — optional, enum-closed, absent is legal
+  // (the catalog card then falls back to the site's emerald).
+  it("accepts an optional accent and rejects an unknown one", () => {
+    for (const hue of ["emerald", "cyan", "amber"] as const) {
+      expect(CourseManifestSchema.parse({ ...valid, accent: hue }).accent).toBe(hue);
+    }
+    expect(CourseManifestSchema.parse(valid).accent).toBeUndefined();
+    expect(() => CourseManifestSchema.parse({ ...valid, accent: "chartreuse" })).toThrow();
+  });
+
   it("rejects a prose field flattened to a bare string (shape changed in landing-refinements)", () => {
     expect(() => CourseManifestSchema.parse({ ...valid, prerequisites: ["Python"] })).toThrow();
     expect(() => CourseManifestSchema.parse({ ...valid, cta: "Empieza ya." })).toThrow();
