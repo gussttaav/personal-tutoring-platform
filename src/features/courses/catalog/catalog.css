@@ -178,16 +178,31 @@
   background: var(--border-variant);
 }
 
-/* Resume block — filled in by the client island only when the reader has progress. */
+/*
+ * Resume block — filled in by the client island only when the reader has progress. The label +
+ * bar together ARE the "continue" link (no separate full-width pill): the accent color + trailing
+ * arrow on the label mark the row as actionable. z-index beats the card's stretched cover link.
+ */
 .course-card__resume {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  text-decoration: none;
+  position: relative;
+  z-index: 2;
 }
 
 .course-card__resume-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.8125rem;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--green);
+}
+
+.course-card__resume-label .arrow {
+  font-size: 1rem;
 }
 
 .course-card__bar {
@@ -205,30 +220,6 @@
   transition: width 200ms ease;
 }
 
-/*
- * "Continuar" — the emphasized next step, a filled pill so it clearly leads even beside the
- * "Ver curso" link. `align-self: flex-start` keeps it hugging its label inside the column-flex
- * resume block (the progress bar above it stays full width). z-index beats the stretched cover.
- */
-.course-card__continue {
-  display: inline-flex;
-  align-self: flex-start;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-headline, Manrope), sans-serif;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--green);
-  background: var(--green-dim);
-  border: 1px solid var(--green-mid);
-  border-radius: 100px;
-  padding: 7px 15px;
-  text-decoration: none;
-  position: relative;
-  z-index: 2;
-  margin-top: 2px;
-}
-
 /* "Ver curso" — the standing card CTA and the whole-card cover link. */
 .course-card__cta {
   display: inline-flex;
@@ -241,14 +232,14 @@
 }
 
 .course-card__cta .arrow,
-.course-card__continue .arrow {
+.course-card__resume-label .arrow {
   transition: transform 200ms ease;
 }
 
 .course-card:hover .course-card__cta .arrow,
 .course-card:focus-within .course-card__cta .arrow,
-.course-card:hover .course-card__continue .arrow,
-.course-card:focus-within .course-card__continue .arrow {
+.course-card__resume:hover .course-card__resume-label .arrow,
+.course-card__resume:focus-visible .course-card__resume-label .arrow {
   transform: translateX(3px);
 }
 
@@ -256,7 +247,7 @@
   .course-card,
   .course-card__motif,
   .course-card__cta .arrow,
-  .course-card__continue .arrow {
+  .course-card__resume-label .arrow {
     transition: none;
   }
 
@@ -272,8 +263,8 @@
 
   .course-card:hover .course-card__cta .arrow,
   .course-card:focus-within .course-card__cta .arrow,
-  .course-card:hover .course-card__continue .arrow,
-  .course-card:focus-within .course-card__continue .arrow {
+  .course-card__resume:hover .course-card__resume-label .arrow,
+  .course-card__resume:focus-visible .course-card__resume-label .arrow {
     transform: none;
   }
 }

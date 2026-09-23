@@ -11,9 +11,9 @@
  *
  * COEXIST, not replace (unlike the landing hero): the card always shows "Ver curso" → the landing
  * page (server-rendered, the whole-card cover link). This leaf only ADDS, when the reader has
- * progress, a bar + "Continuar donde lo dejaste" that deep-links to their last lesson, skipping the
- * landing. Until progress resolves — and for new/anonymous readers — it renders nothing, so the
- * card is simply "Ver curso".
+ * progress, a progress row (label + bar) that IS itself the deep link to their last lesson,
+ * skipping the landing. Until progress resolves — and for new/anonymous readers — it renders
+ * nothing, so the card is simply "Ver curso".
  *
  * `contentLocale` is the locale the LESSONS live in — passed to <Link locale=…> so a lesson href
  * crosses locales on purpose rather than 404ing under /en. See CourseHeroActions for the rationale.
@@ -42,25 +42,24 @@ export default function CourseCardActions({
   const resuming = p.tracking && p.lastSeenLessonSlug !== null;
   if (!resuming) return null;
 
+  // The progress row IS the "continue" affordance (no separate full-width pill): the label +
+  // bar are wrapped in the resume link itself, distinguished with the accent color + arrow.
   return (
-    <div className="course-card__resume">
+    <Link
+      href={`/cursos/${courseSlug}/${p.lastSeenLessonSlug}`}
+      locale={contentLocale}
+      className="course-card__resume"
+      aria-label={`${tp("resume")} — ${courseTitle}`}
+    >
       <span className="course-card__resume-label">
         {tp("lessonsDone", { done: p.completedLessons, total: p.totalLessons })}
+        <span className="material-symbols-outlined arrow" aria-hidden="true">
+          arrow_forward
+        </span>
       </span>
       <div className="course-card__bar" aria-hidden="true">
         <span style={{ width: `${p.percentComplete}%` }} />
       </div>
-      <Link
-        href={`/cursos/${courseSlug}/${p.lastSeenLessonSlug}`}
-        locale={contentLocale}
-        className="course-card__continue"
-        aria-label={`${tp("resume")} — ${courseTitle}`}
-      >
-        {tp("resume")}
-        <span className="material-symbols-outlined arrow" style={{ fontSize: "1.1rem" }} aria-hidden="true">
-          arrow_forward
-        </span>
-      </Link>
-    </div>
+    </Link>
   );
 }
