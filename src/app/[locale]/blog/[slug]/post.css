@@ -222,10 +222,10 @@ body:has(.post-shell) {
 
 /*
  * PostArchive.tsx — every published post, newest first, year → month accordion. Lives
- * in the sticky left pane at ≥1024px and inside PostArchiveMobile's drawer below. The
- * open/close slide itself is inline (grid-template-rows, reduced-motion aware through
- * useReducedMotion), exactly as in OnThisPage; everything that needs :hover, an
- * attribute selector, a focus ring, a line clamp or a media query is here.
+ * in the sticky left pane at ≥1024px and inside PostArchiveMobile's drawer below. One
+ * flat column, newest first; the component holds no state and no styling of its own,
+ * so everything the list needs — :hover, the current-post attribute selector, focus
+ * rings, the line clamp, the reduced-motion block — is here.
  */
 
 .post-archive-nav {
@@ -254,8 +254,6 @@ body:has(.post-shell) {
   color: var(--green);
 }
 
-.post-archive-years,
-.post-archive-months,
 .post-archive-entries {
   list-style: none;
   margin: 0;
@@ -264,75 +262,14 @@ body:has(.post-shell) {
   flex-direction: column;
 }
 
-/* Year and month rows are real <button aria-expanded>s. Preflight already strips the
-   UA background and border; the rest is reset here so they read as list rows. */
-.post-archive-year,
-.post-archive-month {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 4px;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  text-align: left;
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: color 150ms ease;
-}
-.post-archive-year {
-  font-family: var(--font-headline, Manrope), sans-serif;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-.post-archive-month {
-  padding-left: 12px;
-  font-weight: 600;
-}
-.post-archive-year:hover,
-.post-archive-month:hover {
-  color: var(--text);
-}
-/* Inset ring: the pane is a scroll container (overflow-y: auto), and a ring drawn
-   outside a row flush with its edge would be clipped. */
-.post-archive-year:focus-visible,
-.post-archive-month:focus-visible,
-.post-archive-link:focus-visible {
-  outline-offset: -2px;
-  border-radius: 4px;
-}
-
-.post-archive-chevron {
-  flex-shrink: 0;
-  width: 12px;
-  height: 12px;
-  color: var(--text-dim);
-}
-
-.post-archive-count {
-  margin-left: auto;
-  padding: 1px 7px;
-  border-radius: 999px;
-  background: var(--surface-container);
-  font-size: 0.68rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
-}
-
-/* Continuous rail through a month's entries (the OnThisPage / SidebarLessonList
-   idiom): dim segments, the current post's green. "You are here" is the rail plus
-   brighter, heavier text — never a filled pill. */
+/* Continuous rail down the list (the OnThisPage / SidebarLessonList idiom): dim
+   segments, the current post's green. "You are here" is the rail plus brighter,
+   heavier text — never a filled pill. */
 .post-archive-link {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-left: 12px;
-  padding: 6px 8px 6px 14px;
+  padding: 7px 8px 7px 14px;
   border-left: 2px solid var(--border-variant);
   color: var(--text-muted);
   text-decoration: none;
@@ -348,6 +285,12 @@ body:has(.post-shell) {
 }
 .post-archive-link[aria-current="page"] .post-archive-title {
   font-weight: 600;
+}
+/* Inset ring: the pane is a scroll container (overflow-y: auto), and a ring drawn
+   outside a row flush with its edge would be clipped. */
+.post-archive-link:focus-visible {
+  outline-offset: -2px;
+  border-radius: 4px;
 }
 
 .post-archive-title {
@@ -451,8 +394,6 @@ html:has(.post-archive-drawer) {
 
 @media (prefers-reduced-motion: reduce) {
   .post-archive-back,
-  .post-archive-year,
-  .post-archive-month,
   .post-archive-link,
   .post-archive-fab {
     transition: none;

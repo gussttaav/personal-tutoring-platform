@@ -903,7 +903,6 @@
       "label": "Artículos del blog",
       "allArticles": "Todos los artículos",
       "minutes": "{minutes} min",
-      "count": "{count, plural, one {# artículo} other {# artículos}}",
       "openDrawer": "Abrir la lista de artículos",
       "closeDrawer": "Cerrar la lista de artículos"
     },

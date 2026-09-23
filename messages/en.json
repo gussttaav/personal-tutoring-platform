@@ -903,7 +903,6 @@
       "label": "Blog articles",
       "allArticles": "All articles",
       "minutes": "{minutes} min",
-      "count": "{count, plural, one {# article} other {# articles}}",
       "openDrawer": "Open the article list",
       "closeDrawer": "Close the article list"
     },

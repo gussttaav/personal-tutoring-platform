@@ -12,8 +12,8 @@
  * URL that would 404 is never advertised. Both locales exist for every post today; the
  * moment one ships in Spanish only, this keeps telling the truth without a change here.
  *
- * BLOG-05: the archive pane. Every published post, year → month, as the sticky left
- * track at ≥1024px (`PostArchive`) and as a floating button + drawer below
+ * BLOG-05: the archive pane. Every published post in one column, newest first, as the
+ * sticky left track at ≥1024px (`PostArchive`) and as a floating button + drawer below
  * (`PostArchiveMobile`). The mobile island is a SIBLING of <main>, not a child: <main>
  * is a stacking context (z-index: 1) and the fixed Navbar is z-50 beside it, so a
  * drawer inside <main> could never cover the navbar. Both islands get the same slim
@@ -37,7 +37,7 @@ import PostArchive from "@/features/blog/PostArchive";
 import PostArchiveMobile from "@/features/blog/PostArchiveMobile";
 import PostReading from "@/features/blog/PostReading";
 import PostToc from "@/features/blog/PostToc";
-import { toArchiveEntries } from "@/features/blog/archive-tree";
+import { toArchiveEntries } from "@/features/blog/archive-entries";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates, localeUrl } from "@/lib/hreflang";

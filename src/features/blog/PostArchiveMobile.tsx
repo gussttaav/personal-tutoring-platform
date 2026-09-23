@@ -27,7 +27,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { lockBodyScroll } from "@/hooks/scroll-lock";
 import PostArchive from "./PostArchive";
-import type { ArchiveEntry } from "./archive-tree";
+import type { ArchiveEntry } from "./archive-entries";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
