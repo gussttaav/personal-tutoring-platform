@@ -250,7 +250,7 @@ export default async function CourseLandingPage({
 
           <CourseAuthorNote locale={locale} />
 
-          <CourseFaq faq={course.faq} locale={locale} />
+          <CourseFaq faq={course.faq} locale={locale} courseSlug={course.slug} />
 
           <CourseCta
             courseSlug={course.slug}

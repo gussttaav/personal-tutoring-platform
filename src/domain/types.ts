@@ -375,10 +375,13 @@ export interface CourseCta {
 }
 
 /** One frequently-asked question. The list is per-course: cost, time commitment
- *  and "what do I install" all differ from one course to the next. */
+ *  and "what do I install" all differ from one course to the next. `a` is authored
+ *  prose; `dynamic` marks an answer the landing page computes instead (translation
+ *  coverage changes course to course, so no static string stays true for long). */
 export interface CourseFaqItem {
   q: string;
-  a: string;
+  a?: string;
+  dynamic?: "english-translation-status";
 }
 
 /** Which decorative hero motif the landing page renders behind the title. Per-course

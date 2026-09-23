@@ -38,7 +38,7 @@ faq:
   - q: "¿Hay tantas matemáticas como en el primer curso?"
     a: "Al principio sí y al final no, y es a propósito. Los bloques 1 y 2 derivan; el 3 mezcla; los bloques 4 y 5 son ingeniería: contratos, protocolos y un programa que crece lección a lección. El título va de las matemáticas a los sistemas, y el curso también."
   - q: "¿Está en inglés?"
-    a: "De momento solo en español. La versión en inglés está planificada."
+    dynamic: english-translation-status
   - q: "¿Construyo un Claude Code de verdad?"
     a: "Construyes un agente de programación en la terminal con las mismas piezas: el bucle, las herramientas, el prompt de sistema, la compactación del contexto, los permisos, los subagentes. Mucho más pequeño, y con un modelo local. La última lección apunta la herramienta real al mismo modelo y compara las dos con las mismas tareas."
 blocks:

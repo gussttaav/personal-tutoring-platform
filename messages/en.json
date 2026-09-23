@@ -411,7 +411,6 @@
       "chooseAnotherSlot": "Choose another slot",
       "back": "Back",
       "fallbackDuration": "60 minutes",
-      "meetLabel": "60 minutes · Google Meet",
       "packDeduct": "1 class will be deducted from your pack.",
       "packRemaining": "{n, plural, one {You will have # class remaining.} other {You will have # classes remaining.}}",
       "rescheduleNote": "Free reschedule.",
@@ -467,7 +466,7 @@
       "paymentSecure": "Payment will be completed securely in the next step",
       "sessionReasonLabel": "Session reason",
       "sessionReasonOptional": "(optional)",
-      "sessionReasonPlaceholder": "E.g.: I have questions about recursion in Java, technical interview prep...",
+      "sessionReasonPlaceholder": "E.g., I want to prepare for a Java programming exam...",
       "emailAfterNote": "You can also send the details by email later",
       "summaryTitle": "Summary",
       "timezone": "Timezone",
@@ -984,7 +983,12 @@
       },
       "faq": {
         "heading": "Frequently asked questions",
-        "kicker": "Frequently asked questions"
+        "kicker": "Frequently asked questions",
+        "englishStatus": {
+          "notStarted": "Not yet — an English version is planned.",
+          "inProgress": "Translation in progress: {translated} of {total} lessons are already in English ({percent}%).",
+          "complete": "Yes, the course is fully available in English."
+        }
       },
       "cta": {
         "start": "Start the course",
@@ -1037,7 +1041,7 @@
       },
       "cta": {
         "heading": "Stuck? Want to move faster?",
-        "body": "A 1:1 session with me to work through whatever is blocking you — this lesson or the whole course.",
+        "body": "Book a session with me to work through whatever is blocking you — this lesson or the whole course.",
         "button": "Book a session"
       }
     },
@@ -1567,8 +1571,8 @@
     },
     "sesion": {
       "free": "Free initial meeting · 15 min",
-      "session1h": "Individual session · 1 hour",
-      "session2h": "Individual session · 2 hours",
+      "session1h": "Standard session · 1 hour",
+      "session2h": "Extended session · 2 hours",
       "pack": "Pack class",
       "signIn": "Sign in to access your session.",
       "continueGoogle": "Continue with Google"
@@ -1694,8 +1698,8 @@
       "calDescription": "Session link: {joinUrl}\n\nClass with Gustavo Torres Guerrero — gustavoai.dev",
       "sessionType": {
         "free15min": "Free intro call · 15 min",
-        "session1h": "Individual session · 1 hour",
-        "session2h": "Individual session · 2 hours",
+        "session1h": "Standard session · 1 hour",
+        "session2h": "Extended session · 2 hours",
         "pack": "Pack class"
       }
     },

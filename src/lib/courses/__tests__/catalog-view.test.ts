@@ -16,6 +16,7 @@ import {
   catalogLocales,
   courseLocales,
   getCatalogEntry,
+  getEnglishTranslationCoverage,
   getLessonView,
   lessonViewNeighbours,
   listCatalogEntries,
@@ -255,5 +256,46 @@ describe("partial translation", () => {
     const views = listLessonViews("dl-nlp", "en");
     expect(views.map((v) => v.contentLocale)).toEqual(["en"]);
     expect(getCatalogEntry("dl-nlp", "es")).toBeNull();
+  });
+});
+
+describe("getEnglishTranslationCoverage", () => {
+  it("counts the Spanish spine as the total when there is no English manifest at all", () => {
+    __setContentRoot(makeTree({
+      manifests: { es: "Curso" },
+      lessons:   { es: [{ slug: "uno", order: 1 }, { slug: "dos", order: 2 }] },
+    }));
+
+    expect(getEnglishTranslationCoverage("dl-nlp")).toEqual({
+      translated: 0, total: 2, fullyTranslated: false,
+    });
+  });
+
+  it("reports the translated/total split for a partially translated course", () => {
+    __setContentRoot(makeTree({
+      manifests: { es: "Curso", en: "Course" },
+      lessons: {
+        es: [{ slug: "uno", order: 1 }, { slug: "dos", order: 2 }, { slug: "tres", order: 3 }],
+        en: [{ slug: "dos", order: 2 }],
+      },
+    }));
+
+    expect(getEnglishTranslationCoverage("dl-nlp")).toEqual({
+      translated: 1, total: 3, fullyTranslated: false,
+    });
+  });
+
+  it("reports fullyTranslated once every lesson exists in English", () => {
+    __setContentRoot(makeTree({
+      manifests: { es: "Curso", en: "Course" },
+      lessons: {
+        es: [{ slug: "uno", order: 1 }, { slug: "dos", order: 2 }],
+        en: [{ slug: "uno", order: 1 }, { slug: "dos", order: 2 }],
+      },
+    }));
+
+    expect(getEnglishTranslationCoverage("dl-nlp")).toEqual({
+      translated: 2, total: 2, fullyTranslated: true,
+    });
   });
 });

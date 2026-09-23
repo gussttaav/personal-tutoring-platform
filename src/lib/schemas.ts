@@ -277,7 +277,11 @@ export const CourseCtaSchema = z.strictObject({
 
 export const CourseFaqItemSchema = z.strictObject({
   q: z.string().min(1),
-  a: z.string().min(1),
+  // `a` is authored prose OR omitted when `dynamic` supplies a computed answer instead.
+  a: z.string().min(1).optional(),
+  dynamic: z.enum(["english-translation-status"]).optional(),
+}).refine((item) => item.a !== undefined || item.dynamic !== undefined, {
+  message: "faq item needs either `a` or `dynamic`",
 });
 
 export const CourseManifestSchema = z.strictObject({

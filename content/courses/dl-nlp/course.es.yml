@@ -36,7 +36,7 @@ faq:
   - q: "¿Cuánto tiempo me llevará?"
     a: "Alrededor de 40 horas si haces los ejercicios. Vas a tu ritmo; no hay fechas límite."
   - q: "¿Está en inglés?"
-    a: "De momento solo en español. La versión en inglés está planificada."
+    dynamic: english-translation-status
   - q: "¿Qué necesito instalar?"
     a: "Nada. Todo — el código en Python incluido — se ejecuta directamente en el navegador."
 blocks:

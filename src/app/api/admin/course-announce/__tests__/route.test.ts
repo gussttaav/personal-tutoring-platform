@@ -40,9 +40,11 @@ jest.mock("@/infrastructure/resend/email-functions", () => ({
   sendCourseNewsEmail:   (...a: unknown[]) => mockSend(...a),
 }));
 
-const mockGetCatalogEntry = jest.fn();
+const mockGetCatalogEntry             = jest.fn();
+const mockGetEnglishTranslationCoverage = jest.fn();
 jest.mock("@/lib/courses/catalog-view", () => ({
-  getCatalogEntry: (...a: unknown[]) => mockGetCatalogEntry(...a),
+  getCatalogEntry:                (...a: unknown[]) => mockGetCatalogEntry(...a),
+  getEnglishTranslationCoverage:  (...a: unknown[]) => mockGetEnglishTranslationCoverage(...a),
 }));
 
 import { POST } from "@/app/api/admin/course-announce/route";
@@ -76,9 +78,10 @@ beforeEach(() => {
     course:        { slug: "dl-nlp", title: "Curso" },
     contentLocale: "es",
     lessons:       [{ slug: "intro" }, { slug: "dos" }],
-    // englishCoverage() reads these to report how much of the course actually exists in EN.
-    views:           [{ contentLocale: "es" }, { contentLocale: "es" }],
-    fullyTranslated: false,
+  });
+  // Neither lesson is in English by default — the `english` kind's guard reads this.
+  mockGetEnglishTranslationCoverage.mockReturnValue({
+    translated: 0, total: 2, fullyTranslated: false,
   });
 });
 

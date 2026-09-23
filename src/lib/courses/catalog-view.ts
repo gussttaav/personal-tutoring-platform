@@ -143,3 +143,21 @@ export function catalogLocales(): string[] {
 export function courseLocales(courseSlug: string): string[] {
   return routing.locales.filter((l) => getCatalogEntry(courseSlug, l) !== null);
 }
+
+/** How much of the course exists in English: lessons translated vs. the canonical spine
+ *  total, and whether every one of them is. Shared by the admin "announce the English
+ *  translation" dry-run and the public landing FAQ so the two can never disagree. */
+export function getEnglishTranslationCoverage(
+  courseSlug: string,
+): { translated: number; total: number; fullyTranslated: boolean } {
+  const entry = getCatalogEntry(courseSlug, "en");
+  if (!entry) {
+    const canonical = getCatalogEntry(courseSlug, CANONICAL_LOCALE);
+    return { translated: 0, total: canonical?.lessons.length ?? 0, fullyTranslated: false };
+  }
+  return {
+    translated:      entry.views.filter((v) => v.contentLocale === "en").length,
+    total:           entry.views.length,
+    fullyTranslated: entry.fullyTranslated,
+  };
+}
