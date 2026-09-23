@@ -115,9 +115,9 @@ export default function PersonalArea() {
       <div className="pa-head">
         <div>
           <h1>{t("title")}</h1>
-          {packSession && (
+          {session?.user?.name && (
             <p>
-              {t("welcomeBack")} <b>{packSession.name.split(" ")[0]}</b>
+              {t("welcomeBack")} <b>{session.user.name.split(" ")[0]}</b>
             </p>
           )}
         </div>
