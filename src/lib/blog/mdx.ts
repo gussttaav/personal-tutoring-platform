@@ -12,8 +12,10 @@
  * explorables) into anything that touches it — a large client bundle for a blog post
  * that renders none of them. Six lines of duplication is the cheaper side of that trade.
  *
- * Posts have no component map: a post is prose, and the elements it emits are styled by
- * `post.css` on the reader route.
+ * A post is still mostly prose, styled by `post.css` on the reader route — but BLOG-06
+ * overrides `a`, so every in-body link can be checked against the post's `reading`
+ * bibliography and get a hover card when it matches. That is the one component this
+ * module needs; it is deliberately NOT `lessonMdxComponents`, for the reason above.
  *
  * Frontmatter is only STRIPPED here (via `parseFrontmatter`); typed validation belongs
  * to the registry — do not duplicate it.
@@ -30,6 +32,7 @@ import rehypeKatex from "rehype-katex";
 import rehypePrettyCode from "rehype-pretty-code";
 
 import { SHIKI_THEME } from "@/constants/shiki-theme";
+import { makePostLink, type PostRefCtx } from "./PostRef";
 
 /** unified `PluggableList`, reached through next-mdx-remote's options type. */
 type PluginList = NonNullable<
@@ -66,12 +69,18 @@ export interface RenderedPost {
  * Compile one MDX post source to a server-rendered React element. Runs at build time
  * on static routes. `compileMDX` is imported lazily so this file stays importable in
  * unit tests without pulling the ESM-only compiler.
+ *
+ * BLOG-06: `ctx` is the post's own `reading` list plus the request locale, so the `a`
+ * override can tell a bibliography link from any other and render its card in the
+ * reader's language. Omitted (e.g. a future caller with no bibliography to check
+ * against), links render exactly as `compileMDX` would with no components at all.
  */
-export async function renderPost(source: string): Promise<RenderedPost> {
+export async function renderPost(source: string, ctx?: PostRefCtx): Promise<RenderedPost> {
   const { compileMDX } = await import("next-mdx-remote/rsc");
 
   return compileMDX<PostFrontmatter>({
     source,
+    components: ctx ? { a: makePostLink(ctx) } : undefined,
     options: {
       parseFrontmatter: true,
       // next-mdx-remote v6 defaults `blockJS` to TRUE, which silently strips every JSX

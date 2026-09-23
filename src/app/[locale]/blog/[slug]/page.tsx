@@ -108,7 +108,9 @@ export default async function BlogPostPage({
 
   const t = await getTranslations({ locale, namespace: "blog.post" });
   const format = await getFormatter({ locale });
-  const { content } = await renderPost(source);
+  // BLOG-06: the post's own bibliography, so an in-body link matching a `reading`
+  // entry's url gets a hover card — see src/lib/blog/PostRef.tsx.
+  const { content } = await renderPost(source, { reading: post.reading, locale });
   const headings = extractHeadings(source);
   const { newer, older } = postNeighbours(post.slug, locale);
   const entries = toArchiveEntries(listPosts(locale));

@@ -803,6 +803,126 @@ html:has(.post-archive-drawer) {
   background: var(--green);
 }
 
+/* ── Reference hover card (BLOG-06) ─────────────────────────────────────── */
+
+/* `<a>` overridden by `makePostLink` (src/lib/blog/PostRef.tsx) renders the link and
+   its card as SIBLINGS inside a `.post-ref-wrap`, both inline `<span>`s — a reference
+   lives mid-sentence, inside a `<p>`, where a block-level neighbour would be invalid
+   HTML. The link itself gets no rules of its own: it already matches the prose-link
+   rule above. This whole block is a straight copy of lesson.css's `.lesson-ref-*`
+   rules (COURSE-P7-01) under a `post-ref-*` prefix — see the comment on `reading` in
+   src/lib/schemas.ts for why the prefix has to differ. */
+.post-content :is(p, li, blockquote, td, th):has(.post-ref-wrap) {
+  position: relative;
+}
+
+/* Hidden outright unless the pointer can hover. On a touch screen the first tap must
+   NAVIGATE; a card the reader then has to dismiss is worse than no card at all. */
+.post-ref-card {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .post-ref-card {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 50; /* over the prose, under the navbar (globals.css: 100) */
+    width: max-content;
+    max-width: min(26rem, 100%);
+    margin-inline: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--border-variant);
+    border-radius: var(--radius);
+    background: var(--surface-highest);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 120ms ease;
+  }
+
+  /* Focus counts as hover here: a keyboard reader tabbing through the prose gets the
+     same fields, from the sibling selector the card's DOM order allows. */
+  .post-ref-wrap:hover .post-ref-card,
+  .post-ref:focus-visible + .post-ref-card {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .post-ref-kicker,
+  .post-ref-title,
+  .post-ref-meta {
+    display: block;
+  }
+
+  .post-ref-kicker {
+    margin-bottom: 4px;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .post-ref-title {
+    margin-bottom: 4px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Authors, year and venue — a line the lesson card has no need for, since a lesson
+     names its own author nowhere; a citation is naked without one. */
+  .post-ref-meta {
+    margin-bottom: 4px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+
+  .post-ref-summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+    color: var(--text-dim);
+  }
+}
+
+/* Anchor the card to the hovered LINK where CSS anchor positioning is available
+   (Chromium 125+/131+); see the long note on the equivalent lesson.css rule
+   (COURSE-P7-01) for why the paragraph-anchored rules above are kept as the fallback. */
+@supports (anchor-name: --a) and (anchor-scope: all) {
+  @media (hover: hover) and (pointer: fine) {
+    .post-ref-wrap {
+      anchor-scope: --post-ref;
+    }
+
+    .post-ref {
+      anchor-name: --post-ref;
+    }
+
+    .post-ref-card {
+      position: fixed;
+      position-anchor: --post-ref;
+      inset: auto;
+      margin-inline: 0;
+      bottom: anchor(top);
+      margin-bottom: 8px;
+      justify-self: anchor-center;
+      position-try-fallbacks: flip-block;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-ref-card {
+    transition: none;
+  }
+}
+
 /* ── Further reading (BLOG-02) ──────────────────────────────────────────── */
 
 /* The blog's version of the lesson's "Para profundizar" block, and a deliberate copy
