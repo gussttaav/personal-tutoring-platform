@@ -36,21 +36,6 @@ export default async function CourseAuthorNote({ locale }: { locale: string }) {
           overflow: "hidden",
         }}
       >
-        <span
-          className="lp-serif"
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: "6px",
-            right: "24px",
-            fontSize: "120px",
-            lineHeight: 1,
-            color: "var(--green)",
-            opacity: 0.09,
-          }}
-        >
-          {"”"}
-        </span>
         <p
           className="lp-serif"
           style={{

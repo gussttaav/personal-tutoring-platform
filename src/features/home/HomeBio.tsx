@@ -1,7 +1,6 @@
 /*
- * REDESIGN-P1-02 — the home (/) bio: overline, two paragraphs (`home.bio.para1`/`para2` — the
- * headline is dropped here but `landing.bio.headline` stays, shared with the course page's
- * instructor section), the three social links and the «Cómo funcionan las clases» link into
+ * REDESIGN-P1-02 — the home (/) bio: overline, two paragraphs (`home.bio.para1`/`para2`),
+ * the three social links and the «Cómo funcionan las clases» link into
  * `/mentoria#como-funciona`. The photo column moved to `HomeHero` in P1-01 and is not rendered
  * here.
  *

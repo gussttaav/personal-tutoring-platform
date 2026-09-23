@@ -59,8 +59,7 @@
     },
     "bio": {
       "overline": "About Gustavo",
-      "headline": "Forged between code and equations",
-      "para1": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer, I spent five years in research and university teaching before working independently, combining education and consulting.",
+      "para1": "Holds a B.S. in Computer Science and a Master's in Mathematics and Computing from the University of Cantabria, Spain. Following four years as a software developer and five years in university teaching and research, I have spent over seven years working as an independent consultant and instructor, specializing in programming, mathematics, and artificial intelligence.",
       "github": "GitHub",
       "linkedin": "LinkedIn",
       "email": "contacto@gustavoai.dev"
@@ -278,8 +277,8 @@
       "title": "Next class",
       "sessionLabels": {
         "free15min": "Initial meeting · 15 min",
-        "session1h": "Individual session · 1h",
-        "session2h": "Individual session · 2h",
+        "session1h": "Standard session · 1h",
+        "session2h": "Extended session · 2h",
         "pack": "Pack class"
       },
       "zoomLabel": "Zoom virtual classroom",
@@ -309,9 +308,9 @@
       "startCta": "Start",
       "completedBadge": "Completed",
       "completedNote": "You finished the course. Shall we put it into practice?",
-      "bookSessionCta": "Book a 1:1 session",
+      "bookSessionCta": "Book a session",
       "emptyTitle": "Learn at your own pace",
-      "emptyBody": "Interactive courses with code that runs in the browser and exercises that grade themselves.",
+      "emptyBody": "Interactive courses with browser-executable code and automatically graded exercises.",
       "emptyCta": "Browse courses"
     },
     "upcoming": {
@@ -981,8 +980,7 @@
       },
       "instructor": {
         "heading": "Your instructor",
-        "kicker": "About Gustavo",
-        "role": "Instructor"
+        "kicker": "About Gustavo"
       },
       "faq": {
         "heading": "Frequently asked questions",

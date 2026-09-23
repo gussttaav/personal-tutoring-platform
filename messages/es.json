@@ -59,8 +59,7 @@
     },
     "bio": {
       "overline": "Sobre Gustavo",
-      "headline": "Forjado entre código y ecuaciones",
-      "para1": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria. Tras varios años como desarrollador de software, me dediqué durante cinco años a la investigación y la docencia en el ámbito universitario, antes de pasar a trabajar de forma independiente combinando enseñanza y consultoría.",
+      "para1": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria, España. Tras cuatro años como desarrollador de software y cinco años dedicados a la docencia y la investigación universitaria, desde hace más de siete años trabajo como profesional independiente, combinando enseñanza y consultoría tecnológica en programación, matemáticas e inteligencia artificial.",
       "github": "GitHub",
       "linkedin": "LinkedIn",
       "email": "contacto@gustavoai.dev"
@@ -278,8 +277,8 @@
       "title": "Próxima clase",
       "sessionLabels": {
         "free15min": "Encuentro inicial · 15 min",
-        "session1h": "Sesión individual · 1h",
-        "session2h": "Sesión individual · 2h",
+        "session1h": "Sesión estándar · 1h",
+        "session2h": "Sesión extendida · 2h",
         "pack": "Clase de pack"
       },
       "zoomLabel": "Aula virtual Zoom",
@@ -309,9 +308,9 @@
       "startCta": "Empezar",
       "completedBadge": "Completado",
       "completedNote": "Has terminado el curso. ¿Lo llevamos a la práctica?",
-      "bookSessionCta": "Reservar sesión 1:1",
+      "bookSessionCta": "Reservar sesión",
       "emptyTitle": "Aprende a tu ritmo",
-      "emptyBody": "Cursos interactivos con código que se ejecuta en el navegador y ejercicios que se corrigen solos.",
+      "emptyBody": "Cursos interactivos con código que se ejecuta en el navegador y ejercicios que se corrigen de forma automática.",
       "emptyCta": "Ver cursos"
     },
     "upcoming": {
@@ -981,8 +980,7 @@
       },
       "instructor": {
         "heading": "Tu instructor",
-        "kicker": "Sobre Gustavo",
-        "role": "Instructor"
+        "kicker": "Sobre Gustavo"
       },
       "faq": {
         "heading": "Preguntas frecuentes",

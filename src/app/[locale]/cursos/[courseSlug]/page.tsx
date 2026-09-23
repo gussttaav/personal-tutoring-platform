@@ -230,29 +230,17 @@ export default async function CourseLandingPage({
               </div>
               <div style={{ flex: 1, minWidth: "240px" }}>
                 <h3
-                  className="lp-serif"
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: 500,
-                    letterSpacing: "-0.01em",
-                    color: "var(--text)",
-                    margin: "0 0 6px",
-                  }}
-                >
-                  {tBio("headline")}
-                </h3>
-                <div
                   style={{
                     fontFamily: "var(--font-headline, Manrope), sans-serif",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    letterSpacing: "0.04em",
-                    color: "var(--text-dim)",
-                    marginBottom: "16px",
+                    fontSize: "1.125rem",
+                    fontWeight: 700,
+                    letterSpacing: "-0.01em",
+                    color: "var(--text)",
+                    margin: "0 0 16px",
                   }}
                 >
-                  Gustavo Torres Guerrero · {tLanding("instructor.role")}
-                </div>
+                  Gustavo Torres Guerrero
+                </h3>
                 <p style={{ fontSize: "0.9375rem", lineHeight: 1.75, color: "var(--text-muted)", margin: 0 }}>
                   {tBio("para1")}
                 </p>
