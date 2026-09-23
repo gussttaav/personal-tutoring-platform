@@ -256,11 +256,11 @@
           "price": "Gratis"
         },
         "session1h": {
-          "label": "Sesión de 1 hora",
+          "label": "Sesión estándar",
           "sub": "60 min · Individual"
         },
         "session2h": {
-          "label": "Sesión de 2 horas",
+          "label": "Sesión extendida",
           "sub": "120 min · Individual"
         }
       },
@@ -432,11 +432,11 @@
           "duration": "15 minutos"
         },
         "session1h": {
-          "label": "Sesión de 1 hora",
+          "label": "Sesión estándar",
           "duration": "60 minutos"
         },
         "session2h": {
-          "label": "Sesión de 2 horas",
+          "label": "Sesión extendida",
           "duration": "2 horas"
         }
       }
@@ -504,11 +504,11 @@
         },
         "session1h": {
           "badge": "Más reservada",
-          "name": "Sesión de 1 hora",
+          "name": "Sesión estándar",
           "duration": "60 minutos · Resolución de dudas, proyecto o preparación de examen"
         },
         "session2h": {
-          "name": "Sesión de 2 horas",
+          "name": "Sesión extendida",
           "duration": "120 minutos · Para temas que requieren mayor profundidad"
         }
       }

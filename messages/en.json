@@ -256,11 +256,11 @@
           "price": "Free"
         },
         "session1h": {
-          "label": "1-hour session",
+          "label": "Standard session",
           "sub": "60 min · Individual"
         },
         "session2h": {
-          "label": "2-hour session",
+          "label": "Extended session",
           "sub": "120 min · Individual"
         }
       },
@@ -432,11 +432,11 @@
           "duration": "15 minutes"
         },
         "session1h": {
-          "label": "1-hour session",
+          "label": "Standard session",
           "duration": "60 minutes"
         },
         "session2h": {
-          "label": "2-hour session",
+          "label": "Extended session",
           "duration": "2 hours"
         }
       }
@@ -504,11 +504,11 @@
         },
         "session1h": {
           "badge": "Most booked",
-          "name": "1-hour session",
+          "name": "Standard session",
           "duration": "60 minutes · Doubt resolution, project or exam preparation"
         },
         "session2h": {
-          "name": "2-hour session",
+          "name": "Extended session",
           "duration": "120 minutes · For topics that require greater depth"
         }
       }
