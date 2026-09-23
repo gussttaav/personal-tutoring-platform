@@ -24,6 +24,7 @@ import "../_styles/katex.css";
 import "./post.css";
 
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getFormatter, getTranslations, setRequestLocale } from "next-intl/server";
 
@@ -32,6 +33,8 @@ import Footer from "@/components/Footer";
 import ArticleStructuredData from "@/components/seo/ArticleStructuredData";
 import CodeCopyButtons from "@/features/content/CodeCopyButtons";
 import ContentFeedback from "@/features/content/ContentFeedback";
+import AuthorBio from "@/features/content/AuthorBio";
+import { AUTHOR_AVATAR, AUTHOR_SHORT_NAME } from "@/features/content/author";
 import OnThisPage from "@/features/blog/OnThisPage";
 import PostArchive from "@/features/blog/PostArchive";
 import PostArchiveMobile from "@/features/blog/PostArchiveMobile";
@@ -107,6 +110,7 @@ export default async function BlogPostPage({
   if (!source) notFound();
 
   const t = await getTranslations({ locale, namespace: "blog.post" });
+  const tAuthor = await getTranslations({ locale, namespace: "content.author" });
   const format = await getFormatter({ locale });
   // BLOG-06: the post's own bibliography, so an in-body link matching a `reading`
   // entry's url gets a hover card — see src/lib/blog/PostRef.tsx.
@@ -148,6 +152,21 @@ export default async function BlogPostPage({
             <header className="post-header">
               <h1 className="post-title lp-serif">{post.title}</h1>
               <p className="post-dateline">
+                {/* CONTENT-AUTHOR-01: the byline. A reader who lands here from search or a
+                    shared link decides whether to read BEFORE reaching the footer card, and
+                    until now the only author claim on the page was the invisible Person node
+                    in the JSON-LD. Small enough to ride the dateline as one more fact. */}
+                <span className="post-byline">
+                  <Image
+                    className="post-byline__avatar"
+                    src={AUTHOR_AVATAR}
+                    alt=""
+                    width={24}
+                    height={24}
+                  />
+                  {t("byline", { name: AUTHOR_SHORT_NAME })}
+                </span>
+                <span className="post-dateline__dot" aria-hidden="true" />
                 <time dateTime={post.date}>{t("published", { date: day(post.date) })}</time>
                 <span className="post-dateline__dot" aria-hidden="true" />
                 <span>{t("readingTime", { minutes: post.minutes })}</span>
@@ -184,6 +203,20 @@ export default async function BlogPostPage({
             {/* BLOG-02: outside the article, so the last paragraph of the post stays the
                 last thing the reader reads. Renders nothing when `reading` is empty. */}
             <PostReading reading={post.reading} locale={locale} />
+
+            {/* CONTENT-AUTHOR-01: the full answer to "who wrote this", after the article
+                has been judged and the further reading offered, before the reader is handed
+                the next post. The SAME card the course landing shows — `AuthorBio` renders
+                the card and nothing around it, so the section head above it is this page's,
+                in the quiet uppercase its other footer blocks use rather than the landing's
+                serif display type. Lessons get no card: their footer already ends on
+                LessonCta, which signs itself instead. */}
+            <aside className="post-author" aria-labelledby="post-author-heading">
+              <h2 id="post-author-heading" className="post-author__kicker">
+                {tAuthor("heading")}
+              </h2>
+              <AuthorBio locale={locale} />
+            </aside>
 
             {newer || older ? (
               <nav className="post-nav" aria-label={t("moreLabel")}>

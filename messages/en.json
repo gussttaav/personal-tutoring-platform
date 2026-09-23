@@ -845,6 +845,9 @@
     "copied": "Copied!"
   },
   "content": {
+    "author": {
+      "heading": "About the author"
+    },
     "feedback": {
       "regionLabel": "Feedback on this content",
       "question": "Was this helpful?",
@@ -889,6 +892,7 @@
     },
     "post": {
       "backToIndex": "Back to the blog",
+      "byline": "By {name}",
       "published": "Published {date}",
       "updated": "Updated {date}",
       "readingTime": "{minutes} min read",

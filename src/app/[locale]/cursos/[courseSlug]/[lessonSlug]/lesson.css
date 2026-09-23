@@ -720,11 +720,11 @@ body:has(.lesson-shell) {
    sits under prev/next on all 43 lessons, and at that repetition an ad-sized block
    stops being an offer and starts being furniture the reader edits out. */
 
+/* Stacked, not a two-column row: heading and body run the full measure and the
+   signature + button row closes the card. It was `display: flex` with the button in a
+   second column, centred against the text — which CONTENT-AUTHOR-01's signature threw
+   off, since a taller text block left the button floating beside the body. */
 .lesson-cta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px 24px;
   margin-top: 40px;
   padding: 20px 24px;
   border: 1px solid var(--green-mid);
@@ -732,11 +732,13 @@ body:has(.lesson-shell) {
   background: linear-gradient(135deg, rgba(78, 222, 163, 0.08) 0%, rgba(16, 185, 129, 0.04) 100%);
 }
 
-/* `1 1 260px`: the text keeps the row to itself until the column drops under roughly
-   420px, at which point the button wraps below instead of squeezing to two words. */
-.lesson-cta-text {
-  flex: 1 1 260px;
-  min-width: 0;
+/* The bottom row: signature left, action right. */
+.lesson-cta-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 24px;
+  margin-top: 18px;
 }
 
 /* Both paragraphs override `.lesson-content p { margin: 1.25rem 0 }`, which would
@@ -757,13 +759,47 @@ body:has(.lesson-shell) {
   color: var(--text-muted);
 }
 
+/*
+ * CONTENT-AUTHOR-01 — the signature under the body: portrait + name.
+ *
+ * Nothing else in the reader names the author, so `lesson-cta-body`'s "reserva una sesión
+ * conmigo" had no antecedent. An <span> rather than a <p>, so the prose margin rules never
+ * reach it; `alt=""` on the portrait because the name sits right beside it.
+ *
+ * The 32px portrait is the largest that keeps the foot row the height of the button beside
+ * it — a bigger one makes the signature, not the action, set the row's height.
+ */
+.lesson-content .lesson-cta-sign {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.lesson-content .lesson-cta-sign__avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--green-mid);
+}
+
 /* The landing hero's primary button, unchanged — same gradient, same ink. A reader who
-   has seen the home page should recognise this as the same action. */
+   has seen the home page should recognise this as the same action.
+
+   `margin-left: auto` rather than `justify-content: space-between` on the row: the row
+   wraps at more widths than the viewport alone predicts — the ≥768px layout hands the
+   content column 280px to the sidebar, so a desktop-width WINDOW can still be narrow
+   enough here. `space-between` strands a wrapped button at the left of its own line;
+   an auto margin keeps it on the right edge either way. */
 .lesson-cta-button {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
   padding: 12px 24px;
   border-radius: 10px;
   background: linear-gradient(135deg, #4edea3, #10b981);
@@ -785,8 +821,8 @@ body:has(.lesson-shell) {
   outline-offset: 3px;
 }
 
-/* Under ~420px of column the button has wrapped onto its own line; let it fill that
-   line rather than sit as a small tab against the left edge. */
+/* On a phone the button always has its own line (the signature alone fills the row);
+   let it span that line as a full-width tap target rather than a right-hand tab. */
 @media (max-width: 480px) {
   .lesson-cta-button {
     flex: 1 1 100%;

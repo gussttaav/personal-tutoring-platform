@@ -470,6 +470,71 @@ html:has(.post-archive-drawer) {
   background: var(--border-variant);
 }
 
+/*
+ * CONTENT-AUTHOR-01 — the byline, first item on the dateline row.
+ *
+ * `var(--text-muted)` rather than the row's `--text-dim`: the name is the one fact on
+ * this line a cold reader is actually asking for, so it sits a step brighter than the
+ * dates around it without breaking the row's uppercase metadata voice. The portrait is
+ * `alt=""` in the markup — the name is right beside it, and a second reading of it
+ * would only be noise in a screen reader.
+ */
+.post-byline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+}
+
+.post-byline__avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-variant);
+}
+
+/*
+ * The dateline already wrapped on a phone (the published date alone is most of a
+ * 335px column), and the byline would make it wrap mid-row, leaving its separator dot
+ * dangling at the end of a line. Give the byline the whole row instead and drop the
+ * dot behind it: one clean line of authorship, then the dates, exactly as they were.
+ */
+@media (max-width: 560px) {
+  .post-byline {
+    flex-basis: 100%;
+  }
+
+  .post-byline + .post-dateline__dot {
+    display: none;
+  }
+}
+
+/*
+ * CONTENT-AUTHOR-01 — the section head above the shared `AuthorBio` card.
+ *
+ * The card is page-agnostic and brings no heading of its own, so this is the post's
+ * voice for it: the same rule + quiet uppercase kicker as `.post-reading`, so the block
+ * joins the footer chrome instead of reading as another section of the article. (The
+ * course landing heads the very same card in its numbered serif display type.)
+ *
+ * An <h2> for the document outline, which `OnThisPage` never sees — the rail is built
+ * from the MDX source, not the DOM.
+ */
+.post-author {
+  margin: 3rem 0 0;
+  padding: 1.75rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.post-author .post-author__kicker {
+  margin: 0 0 14px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
 /* ── Prose ──────────────────────────────────────────────────────────────── */
 
 /*

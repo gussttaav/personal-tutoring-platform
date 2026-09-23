@@ -845,6 +845,9 @@
     "copied": "¡Copiado!"
   },
   "content": {
+    "author": {
+      "heading": "Sobre el autor"
+    },
     "feedback": {
       "regionLabel": "Opinión sobre este contenido",
       "question": "¿Te ha sido útil?",
@@ -889,6 +892,7 @@
     },
     "post": {
       "backToIndex": "Volver al blog",
+      "byline": "Por {name}",
       "published": "Publicado el {date}",
       "updated": "Actualizado el {date}",
       "readingTime": "{minutes} min de lectura",

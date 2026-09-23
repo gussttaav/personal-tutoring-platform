@@ -3,9 +3,11 @@
  *
  * The landing Server Components style themselves inline; this file holds what an inline
  * style cannot express and is landing-only: the responsive hero-actions layout (resume card +
- * secondary button — a row on desktop, stacked on phones), the prerequisites grid, the social
- * icon buttons, and the :hover fill on the syllabus lesson rows. The editorial atoms it used to
- * hold (.lp-serif / .lp-kicker / .lp-section-head / .lp-rule) now live in the shared
+ * secondary button — a row on desktop, stacked on phones), the prerequisites grid, and the
+ * :hover fill on the syllabus lesson rows. (CONTENT-AUTHOR-01 moved the instructor
+ * social buttons out with the card itself, into features/content/author-bio.css.)
+ * The editorial atoms it used to hold (.lp-serif / .lp-kicker / .lp-section-head /
+ * .lp-rule) now live in the shared
  * `features/courses/course-editorial.css`, since the catalog renders in the same voice.
  * Segment-scoped: imported by the landing route, never the shared layout. Keyboard focus already
  * gets the global :focus-visible ring (src/app/globals.css).
@@ -53,17 +55,6 @@
   .lp-prereq-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* Instructor social icon buttons (GitHub / LinkedIn). */
-.lp-social {
-  color: var(--text-muted);
-  transition: color 150ms ease, border-color 150ms ease;
-}
-
-.lp-social:hover {
-  color: var(--green);
-  border-color: var(--green-mid);
 }
 
 .syllabus-lesson {
