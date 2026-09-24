@@ -1548,6 +1548,125 @@ Spanish (`es/01`–`es/08`). The raya was the course's parenthetical-incise mark
 - On branch `course/block-1-es-remove-em-dashes`; awaits the user's push (no git credentials in this
   shell).
 
+**COURSE-P5-00 — raya removed from prose, Block 2 Spanish** (started 2026-09-08, branch
+`course/block-2-review-and-translate`). Continues the Block 1 note above, one lesson per commit.
+Convention unchanged: parenthetical incises → `(…)`; a comma follows the new `)` only when the next
+clause has its own subject; a raya in rendered `<PyCell>` output is reworded (no clean bracket form);
+`{/* … */}` comments stay out of scope. Per lesson: `pnpm lint:content` green, word-neutral. Awaits
+the user's push.
+
+- `es/09-la-neurona.mdx` — 11 sites (2 quiz explanations, 8 prose, 1 `print()` arg).
+
+**COURSE-P5-00 — the mark on a multi-line `aligned` derivation** (2026-09-08, branch
+`course/block-2-review-and-translate`). User-reported while reviewing Block 2 lesson 2: the
+"display maths is punctuated" pass (2026-08-05 above) required the sentence's mark on the closing
+line — `\end{aligned}.` — but KaTeX floats a mark appended to `\end{aligned}` against the block's
+vertical centre, so on a two-row derivation it hangs in space to the right. `\end{cases}.` keeps that
+placement (a `cases` last row is one branch, not the whole result); an `aligned`-family block is one
+continued derivation whose last ROW ends the sentence.
+
+- **`validate-math-punctuation.ts`** — new `ALIGNMENT_CLOSE` regex (`aligned`, `gathered`, `split`,
+  `align`, `alignat`, `flalign`). When the closing line matches it, the pass checks the row above it
+  for the mark instead. A block still written `\end{aligned}.` keeps passing — the trailing mark
+  takes it off that path onto the plain last-line check. `+3` unit tests (18 total).
+- **AUTHORING §5 and §8** reworded: "inside the fence, where exactly depends on the environment",
+  with both example placements. §10's checklist line ("the mark inside the fence") was already
+  generic and stands.
+- **Retrofit:** `es/13-funcion-de-perdida.mdx`, `es/23-lstm.mdx`, `es/24-gru.mdx` — the only three
+  `\end{aligned}.` blocks in the course; the period moved onto the last row. `es/10`'s own block was
+  already in the new form (that is the block the user was reviewing). All four re-checked through
+  KaTeX with `strict: "error"`.
+- **`00-pipeline-fixture.mdx`** keeps its two permanent warnings (unchanged scope decision); the
+  `aligned` one now points the author at the last row rather than at `\end{aligned}`.
+- `pnpm lint:content`, `pnpm jest src/lib/courses` (451), `tsc`, `pnpm lint` all green. Awaits the
+  user's push.
+
+**COURSE-P5-00 — the `loss-landscape` ridge is a saddle, and the widget lied about it**
+(2026-09-13, branch `course/block-2-review-and-translate`). User-reported while reviewing Block 2
+lesson 6 (`descenso-gradiente`): starting the explorable exactly at $x_0 = 0$ never falls into
+either basin — it's a saddle point — and neither the lesson nor the explorable's caption said so.
+
+- **The widget itself was wrong, not just silent.** `DOUBLE_WELL.grad(0, y) = [4·0·(0²−1), 2y]` is
+  bit-exact zero in the $x$ coordinate, so `gradientDescentPath` never moves off the ridge and $x$
+  settles at the saddle $(0, 0)$. `LossLandscape.tsx`'s verdict was `finalX < 0 ? basinLeft :
+  basinRight`, and `0 < 0` is `false` — so it reported "falls into the right basin" for a point
+  that never left the ridge. Reachable through the UI, not just in theory: the start-x slider
+  (`min=-1.9, step=0.1`) lands on exactly `0` at its 19th tick.
+- **Fix.** `finalX` is now checked against a `1e-6` threshold first (`atSaddle`); when true the
+  component renders a new `verdictSaddle` string instead of picking a basin. New key added to both
+  `messages/es.json` and `messages/en.json` (key-parity kept).
+- **Caught a second bug while verifying in the browser, unrelated to the fix itself: `.claude/launch.json`'s
+  only config runs `pnpm start`, so the preview was serving yesterday's production build and
+  silently ignoring every edit.** Confirmed by fetching the served chunk and grepping it for the
+  new code — absent even after a full server restart. `pnpm build` before re-launching the preview
+  made the fix observable; not a repo change, just a note for the next person who edits a widget
+  and sees no effect in the Browser pane.
+- **Content.** The explorable's caption gained a clause naming the exact-center exception; the
+  paragraph right after the explorable gained one sentence tying it to the lesson's own theme
+  (gradient zero ≠ minimum, already the point of `q-gradiente-cero`). Word count 1954 → 1991,
+  inside the 2000 ceiling. `en/14-descenso-gradiente.mdx` does not exist yet (Block 2 English
+  translation hasn't reached lesson 6), so only the Spanish source needed the prose fix; the
+  translation task will carry the corrected caption over when it lands.
+- **Second user-reported gap, same pass.** The `<Callout type="intuition" title="La idea en una
+  frase">` right after read "da un paso a favor de [la pendiente]" — true of any local descent
+  method, not the thing that makes it *gradient* descent. The distinguishing move, proved two
+  paragraphs later by Cauchy-Schwarz, is that the step goes in the direction that lowers the loss
+  *most*, not merely downhill. Reworded to "da un paso en la dirección que más baja la pérdida" —
+  states the fact plainly, ahead of the formal argument, without borrowing its vocabulary. Word
+  count 1991 → 1995.
+- **Third user-reported gap, same pass: the "concesión" paragraph on the batch.** It said the batch
+  is all ten reviews and left it there — no name for the choice, and the one follow-up clause
+  ("partirlo en trozos... cuando los conjuntos son grandes") reads as a strict small-data/big-data
+  switch, which overstates it: mini-batch is the practical default even when the full batch would
+  fit, because many cheap noisy steps usually beat few exact expensive ones in wall-clock time, not
+  only because huge datasets don't fit in memory. Rewritten to name **batch gradient descent**,
+  **descenso de gradiente estocástico** (*SGD*, $B=1$) and **mini-batch** ($1 < B < N$) against the
+  $B$ notation this lesson already uses, correct the dataset-size framing, and — user's second ask —
+  define **época** for the first time in the course: a full pass over the $N$ training examples,
+  coinciding with a step here because $B = N$, diverging into $N/B$ steps per epoch once $B < N$.
+  Reuses $N$ as "dataset size" exactly as `NOTATION.md`'s own §-notes already anticipated for Block 2
+  (it names Block 2's "two splits" as the case) — first real usage of that convention. Word count
+  1995 → 2228: over the 2000 target, inside the 3000 ceiling, by the user's explicit call.
+  **Not done: `época` already appears unexplained in two earlier lessons' code** (`07-word2vec.mdx`,
+  `08-glove-y-limites.mdx`, both just the variable `epoca` / printed "época N", no prose gloss) —
+  a forward reference to this lesson's definition wasn't added, since retrofitting earlier lessons
+  is a separate decision outside what was asked here. Flagged for the user.
+- **Fourth ask, same pass: the raya pass reaches Block 2 lesson 6.** User-requested, explicitly
+  against AUTHORING.md §5 rather than a reported defect — this lesson was the one being reviewed
+  when Block 2's raya removal (started 2026-09-08, `es/09`–`es/13` already done per the entries
+  above) reached it. 22 em-dash sites converted one match at a time, same defaults as the Block 1 /
+  Block 2 passes: parentheses for the incise, a colon where the raya introduced a short list rather
+  than enclosing one (`arreglos con nombre propio —*momentum*, Adam—` → `arreglos con nombre
+  propio: *momentum*, Adam. Quedan fuera de este curso.`, split into two sentences since the colon
+  left a dangling `y`). **The comma after the closing `)` is not a rule, checked against
+  `13-funcion-de-perdida.mdx`'s own conversions before trusting the first instinct**: same-subject
+  compound predicates there get a comma in some spots (`… (…), y dejan en último lugar …`) and not
+  in others right next to it (`… (…) y evita que np.exp desborde`), and a subject change gets none
+  at least once (`axis=1 es «por filas» (…) y keepdims=True es …`). It is a per-sentence rhythm call,
+  same as the rest of the pass — three of this lesson's own first-pass commas got walked back after
+  checking against that precedent (`respuesta local (…) y, llevada al límite,`; `una sola cosa (…) y
+  con eso decide`; `Llamemos θ (…) y L(θ)`, all tight same-verb or same-subject constructions where
+  the comma read as clutter, not rhythm). The file-top `{/* COURSE-P5-02 — … */}` comment kept its
+  raya, same carve-out as every other lesson's header. Two of the 22 sites were rayas this
+  session had itself just introduced two turns ago (the mini-batch/época paragraphs) — same fix,
+  same pass.
+- **Caught two more while sweeping the rendered page, not just the source file: the `loss-landscape`
+  and `gradient-descent-2d` widgets' i18n strings.** `messages/es.json`'s `verdict` ("Cae en el
+  mínimo de la {basin} — el punto de partida decide la cuenca.") and `diverged` ("Diverge — la tasa
+  de aprendizaje es demasiado alta…") both carried a raya that never shows up grepping the `.mdx`,
+  because it lives in student-facing UI copy, not lesson prose. Split `verdict` into two sentences,
+  gave `diverged` a colon (it introduces the reason). `messages/en.json` is untouched — English keeps
+  the spaced em dash by design, same as every other lesson's English column. Confirmed via
+  `article.innerText.match(/—/g)` on the rendered page: `0` after the fix, versus a live positive
+  hit on `verdict`'s raya before it (the source-only grep had already read `0` and was wrong).
+  Word count word-neutral as expected (`countWords` treats `—x` and `(x` the same): 2228 → 2227.
+- Verified in the browser (`pnpm start`, post-rebuild each time): `x₀ = -0.1` → left basin,
+  `x₀ = 0.1` → right basin, `x₀ = 0` → saddle message, callout text updated, new batch/época prose
+  renders with correct bold/italic/KaTeX, zero rayas left on the rendered article — all confirmed
+  against the live DOM. `pnpm lint:content`, `pnpm jest src/features/courses/widgets src/lib/courses`
+  (718), `tsc --noEmit`, `pnpm lint`, `pnpm build` all green.
+- Not yet committed (local); awaits the user's review.
+
 **COURSE-P7-01** — Closed per doc. The component, the bridge pre-pass, the sixth lint pass, the
 budget exemption, the styles, the fixture coverage and the authoring rule all landed. Deviations
 and notes:
@@ -1898,7 +2017,7 @@ first; see the [phase README](phase-11-translation/README.md).
 | [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ✅ | _tbd_ | local |
 | [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ✅ | _tbd_ | local |
 | [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ✅ | _tbd_ | local |
-| [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ⬜ | _tbd_ | |
+| [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ✅ | _tbd_ | local |
 | [06 Block 3 — RNNs (8)](phase-11-translation/06-block-3.md) | `COURSE-P11-06` | ⬜ | _tbd_ | |
 | [07 Block 4 — The Bridge to Attention (6)](phase-11-translation/07-block-4.md) | `COURSE-P11-07` | ⬜ | _tbd_ | |
 | [08 Block 5 — The Transformer (11)](phase-11-translation/08-block-5.md) | `COURSE-P11-08` | ⬜ | _tbd_ | |
@@ -2015,12 +2134,21 @@ is byte-identical.
 
 ### P11-03 notes
 
-`AUTHORING.en.md` is **at the task's 300-line ceiling** (299 when P11-03 landed; B1.1 added §3's
-collation rule and paid for it by cutting three restatements), and the ceiling is the
-right check: everything it does not say is `AUTHORING.md` still governing. Its §8 names the parts
-most likely to be re-decided by an author who has only the delta open — the six-step structure, the
-two-reader test, §2's assumption rule, all of NOTATION.md, the display-equation punctuation — so
-the temptation to copy them in has an answer on the page. `NOTATION.md` is untouched, which was the
+`AUTHORING.en.md` landed **at the task's 300-line ceiling** (299 when P11-03 landed; B1.1 added §3's
+collation rule and paid for it by cutting three restatements). **It is now 389 lines and the ceiling
+is broken.** The translating lessons did it, one settled convention at a time, each a rule a later
+lesson needed and could not find in the delta: B1.2's PyCell-code rule, B1.3's figure sibling,
+B1.6's cited line and its widget-sibling asset, B2.3's language-adjective cut in `summary`, B2.7's
+`probe`/`experiment` split, B2.9's traversal-directions glossary row with its SVG re-measuring
+rule, and B2.10's §8 exception for the roman text inside `\text{…}` — the only one of them that
+*replaces* a rule rather than adding one, and the only one that reaches back over lessons already
+merged. Every one was the right call on its own, and the sum is still the file drifting towards the
+fork it exists to prevent. Bringing it back under 300 is **P11-03's and not a block task's**, and
+what has to give is restatement rather than rules. The ceiling itself stays the right check:
+everything the delta does not say is `AUTHORING.md` still governing. Its §8 names the parts most
+likely to be re-decided by an author who has only the delta open — the six-step structure, the
+two-reader test, §2's assumption rule, all of NOTATION.md, the display-equation punctuation — so the
+temptation to copy them in has an answer on the page. `NOTATION.md` is untouched, which was the
 point; `AUTHORING.md` gained four lines at the top pointing at the delta.
 
 Two additions beyond the four areas the task named, both because leaving them out would have left

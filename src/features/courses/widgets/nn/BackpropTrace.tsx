@@ -12,6 +12,11 @@
  * COURSE-P11-02 — the two aria-labels and the step controls now come from `messages`.
  * The node labels and the chain-rule panel do not: `x₁`, `h(1)₂`, `∂ℓ/∂ŷ` and the rest
  * are notation from math/backprop.ts, and notation is the same in both locales.
+ *
+ * COURSE-P5-00 — the trace grew the two `dL_db1_*` steps (see math/backprop.ts), so
+ * `highlight()` matches `b1` alongside `a1`/`z1`. Lesson 2.8 also moved the explorable
+ * out of its intuition slot to below the recurrence, where `δ` and `φ′` are defined;
+ * nothing in this component depends on where the lesson places it.
  */
 
 "use client";
@@ -68,7 +73,9 @@ function highlight(step: TraceStep): { nodes: Set<string>; edges: Set<string> } 
   } else if ((m = id.match(/^dL_dw2_(\d)$/))) {
     edges.add(`w2_${m[1]}`);
     nodes.add(`h${m[1]}`).add("o");
-  } else if ((m = id.match(/^dL_d(?:a1|z1)_(\d)$/))) {
+  } else if ((m = id.match(/^dL_d(?:a1|z1|b1)_(\d)$/))) {
+    // `b1` rides along: a hidden bias belongs to its neuron and to nothing else, so
+    // it lights the same node its δ does, with no edge (a bias has no edge to light).
     nodes.add(`h${m[1]}`);
   } else if (id === "dL_db2" || id.startsWith("dL_dz2") || id === "do_dz2" || id === "dL_do") {
     nodes.add("o").add("L");

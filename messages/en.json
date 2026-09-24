@@ -1286,7 +1286,8 @@
         "plotAria": "Loss surface with two minima and the descent path",
         "basinLeft": "left (−1, 0)",
         "basinRight": "right (+1, 0)",
-        "verdict": "It falls into the minimum on the <b>{basin}</b> — the starting point decides the basin."
+        "verdict": "It falls into the minimum on the <b>{basin}</b> — the starting point decides the basin.",
+        "verdictSaddle": "It stays pinned to the ridge: that's a <b>saddle point</b>, not a minimum, and it doesn't fall to either side."
       },
       "backprop-trace": {
         "groupAria": "Backpropagation trace; use the arrow keys to step forwards and backwards",

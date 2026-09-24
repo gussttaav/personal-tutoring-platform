@@ -14,7 +14,7 @@ quiz:
     prompt: 'Una neurona con pesos $\mathbf{w} = (2,\, -1,\, 3)^{\top}$ y sesgo $b = -6$ recibe la entrada $\mathbf{x} = (1,\, 3,\, 2)^{\top}$. ¿Cuánto vale su preactivación $z$?'
     answer: -1
     tolerance: 0.01
-    explanation: 'Coordenada a coordenada, $2 \cdot 1 = 2$, $(-1) \cdot 3 = -3$ y $3 \cdot 2 = 6$; la suma vale $5$ y el sesgo la baja a $z = -1$. Como $z < 0$, el escalón entrega $a = 0$: la neurona dice que no. Fíjate en lo cerca que se queda de decir lo contrario —con $\lVert \mathbf{w} \rVert = \sqrt{14} \approx 3.74$, el punto cae a $0.27$ de la frontera, y un sesgo de $-5$ lo habría volteado—, y en que $a$ no transmite nada de eso.'
+    explanation: 'Coordenada a coordenada, $2 \cdot 1 = 2$, $(-1) \cdot 3 = -3$ y $3 \cdot 2 = 6$; la suma vale $5$ y el sesgo la baja a $z = -1$. Como $z < 0$, el escalón entrega $a = 0$: la neurona dice que no. Fíjate en lo cerca que se queda de decir lo contrario (con $\lVert \mathbf{w} \rVert = \sqrt{14} \approx 3.74$, el punto cae a $0.27$ de la frontera, y un sesgo de $-5$ lo habría volteado), y en que $a$ no transmite nada de eso.'
   - id: q-sesgo
     type: single
     prompt: '¿Qué pierde una neurona a la que le quitas el sesgo, es decir, con $b = 0$ fijo?'
@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'La capacidad de separar nada, porque sin sesgo la preactivación vale $z = 0$ para toda entrada.' }
       - { id: d, text: 'Una dimensión: con $\mathbf{x} \in \mathbb{R}^{d}$ y $b = 0$ la frontera pasa a tener dimensión $d - 2$.' }
     answer: a
-    explanation: 'Con $b = 0$ el vector nulo cumple $\mathbf{w}^{\top}\mathbf{0} = 0$, así que está en la frontera pase lo que pase con los pesos, y la frontera queda clavada al origen. Sobre las reseñas eso significa que una sin ninguna entrada del vocabulario recibe siempre el mismo veredicto. (b) confunde escalar con desplazar: multiplicar $\mathbf{w}$ por una constante positiva deja la frontera exactamente donde estaba, que es justo lo que enseña la celda al multiplicar por diez. (c) es falso —$z = \mathbf{w}^{\top}\mathbf{x}$ sigue variando con la entrada—, y (d) también: el hiperplano sigue teniendo dimensión $d - 1$, sólo que ahora pasa por un punto concreto.'
+    explanation: 'Con $b = 0$ el vector nulo cumple $\mathbf{w}^{\top}\mathbf{0} = 0$, así que está en la frontera pase lo que pase con los pesos, y la frontera queda clavada al origen. Sobre las reseñas eso significa que una sin ninguna entrada del vocabulario recibe siempre el mismo veredicto. (b) confunde escalar con desplazar: multiplicar $\mathbf{w}$ por una constante positiva deja la frontera exactamente donde estaba, que es justo lo que enseña la celda al multiplicar por diez. (c) es falso ($z = \mathbf{w}^{\top}\mathbf{x}$ sigue variando con la entrada), y (d) también: el hiperplano sigue teniendo dimensión $d - 1$, sólo que ahora pasa por un punto concreto.'
   - id: q-frontera
     type: multi
     prompt: 'Sobre la frontera de decisión $\mathbf{w}^{\top}\mathbf{x} + b = 0$ de una neurona con escalón, marca todo lo que sea cierto.'
@@ -43,8 +43,8 @@ reading: []
 
 Un vector no decide nada por su cuenta. Ocho lecciones de tokenizar, contar y ajustar han dejado el
 texto convertido en coordenadas, y eso resuelve el lado de la entrada: falta el objeto que mira
-esas coordenadas y decide. De ese objeto conoces sólo el tipo —$f : \mathbb{R}^d \to
-\mathbb{R}^k$, escrito en <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>, y aparcado allí mismo—, y un tipo, por sí solo, no computa nada. Esta lección monta la unidad de la que
+esas coordenadas y decide. De ese objeto conoces sólo el tipo ($f : \mathbb{R}^d \to
+\mathbb{R}^k$, escrito en <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion>, y aparcado allí mismo), y un tipo, por sí solo, no computa nada. Esta lección monta la unidad de la que
 $f$ está hecho por dentro, y resulta que una sola ya decide.
 
 Pon un caso encima de la mesa. Diez reseñas de una película, de una línea cada una, y un vocabulario
@@ -55,8 +55,8 @@ si la reseña habla bien o mal de la película. Dos respuestas posibles.
 
 Cada una de esas diez reseñas es un **ejemplo**: un vector que entra, y al lado la respuesta que
 quieres a la salida. Esa respuesta es su **etiqueta**, un número $y$ que aquí vale $1$ si la reseña
-habla bien y $0$ si habla mal. Las diez las ha puesto una persona leyéndolas —no salen de ningún
-cálculo—, y sin ellas no habría forma de decir que una respuesta está equivocada. Entre la entrada y
+habla bien y $0$ si habla mal. Las diez las ha puesto una persona leyéndolas (no salen de ningún
+cálculo), y sin ellas no habría forma de decir que una respuesta está equivocada. Entre la entrada y
 la respuesta, por ahora, no hay nada.
 
 Lo más corto que cabe en medio es una votación. Cada coordenada del vector de la reseña aporta algo a favor
@@ -127,8 +127,8 @@ el que deja la geometría a la vista.
 Merece la pena leer $\mathbf{w}$ despacio cuando la entrada es una bolsa de palabras, porque
 entonces cada coordenada de $\mathbf{x}$ cuenta ocurrencias de una entrada del vocabulario y cada
 peso es la opinión de la neurona sobre esa entrada: un número, positivo o negativo, y uno solo. Como
-$z$ es una suma, esas opiniones se acumulan sin estorbarse —dos apariciones de <W>buena</W> aportan
-el doble que una— y el orden de la reseña no interviene en ningún sitio, porque tampoco intervenía
+$z$ es una suma, esas opiniones se acumulan sin estorbarse (dos apariciones de <W>buena</W> aportan
+el doble que una), y el orden de la reseña no interviene en ningún sitio, porque tampoco intervenía
 en la representación. Lo que la neurona añade sobre aquella bolsa es el veredicto; lo que la bolsa
 traía perdido sigue perdido.
 
@@ -178,7 +178,7 @@ el origen y no puede pasar por otro sitio; en cuanto $b \neq 0$ se despega de é
 respuesta depende sólo de la dirección de $\mathbf{x}$; con él, también de dónde está.
 
 Falta lo que hace que $z$ valga algo más que su signo. La distancia de un punto cualquiera a la
-frontera, con signo —positiva de un lado, negativa del otro—, es
+frontera, con signo (positiva de un lado, negativa del otro), es
 
 $$
 \frac{\mathbf{w}^{\top}\mathbf{x} + b}{\lVert \mathbf{w} \rVert} = \frac{z}{\lVert \mathbf{w} \rVert},
@@ -218,8 +218,8 @@ $$
 ## Una neurona que puntúa reseñas en NumPy
 
 La celda monta el caso del principio: diez reseñas, ocho entradas, la bolsa de palabras de cada una
-y una neurona encima. Los pesos los he puesto yo a mano —$+1$ a las entradas que suman, $-1$ a las
-que restan, $0$ a las que no opinan—, porque en esta lección todavía no hay nada que los elija.
+y una neurona encima. Los pesos los he puesto yo a mano ($+1$ a las entradas que suman, $-1$ a las
+que restan, $0$ a las que no opinan), porque en esta lección todavía no hay nada que los elija.
 Ejecútala y mira tres cosas: la columna de $z$, lo que pasa al multiplicar los pesos por diez, y lo
 que pasa al mover el sesgo medio punto.
 
@@ -251,7 +251,7 @@ for f, (texto, _) in enumerate(resenas):
             X[f, pos[token]] += 1.0
 y = np.array([etiqueta for _, etiqueta in resenas])
 
-print("X tiene forma", X.shape, "— una fila por reseña,", len(V), "columnas")
+print("X tiene forma", X.shape, "con una fila por reseña y", len(V), "columnas")
 print("  ", " ".join(e.rjust(11) for e in V))
 print("x1:", " ".join(str(int(v)).rjust(11) for v in X[0]))
 print()
@@ -304,7 +304,7 @@ frontera; el escalón resuelve el empate hacia arriba y la manda al lado positiv
 negativa.
 
 Los dos experimentos siguientes son el asunto de la lección. Multiplicar $\mathbf{w}$ y $b$ por diez
-multiplica por diez las diez preactivaciones —$2.0$ pasa a $20$, $-1.0$ a $-10$— y no cambia ni
+multiplica por diez las diez preactivaciones ($2.0$ pasa a $20$, $-1.0$ a $-10$) y no cambia ni
 una decisión: la frontera es el conjunto donde $z$ vale cero, y quién vale cero no depende de la
 escala. Mover el sesgo a $-0.5$, en cambio, desliza la frontera medio punto, la reseña que estaba
 justo encima cae del otro lado y los aciertos suben a diez de diez.
@@ -329,8 +329,8 @@ frontera.
 Dos cosas quedan abiertas y no son igual de urgentes. Los ocho pesos de arriba los escribí yo
 mirando las reseñas, y eso no se puede repetir con un vocabulario de cincuenta mil entradas: que la
 neurona los encuentre sola, a partir de ejemplos, ocupa buena parte de lo que queda del bloque. La
-otra está más cerca. La geometría le dio un significado a la magnitud de $z$ —la distancia a la
-frontera, escalada por $\lVert \mathbf{w} \rVert$— y el escalón lo tira entero: a la reseña que cae a
+otra está más cerca. La geometría le dio un significado a la magnitud de $z$ (la distancia a la
+frontera, escalada por $\lVert \mathbf{w} \rVert$), y el escalón lo tira entero: a la reseña que cae a
 $0.816$ y a la que cae rozando la frontera les entrega el mismo $1$.
 
 $\varphi$ se fijó por decreto, y hay muchas más funciones donde elegir. Algunas conservan la

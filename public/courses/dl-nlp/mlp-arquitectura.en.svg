@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" width="360" height="240" role="img" aria-label="Three columns of circles joined by arrows. The first, labelled input layer, has two dashed circles labelled x1 and x2. The second, the hidden layer, has two solid green circles labelled h(1) sub 1 and h(1) sub 2, and each receives an arrow from the two input circles. The third, the output layer, has a single green circle labelled y with a circumflex, which receives an arrow from each hidden neuron. The bundle of arrows on the left is labelled W(1), b(1) and the one on the right W(2), b(2).">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .hdr { font-size: 13px; fill: #86948a; text-anchor: middle; }
+    .lbl { font-size: 15px; fill: #e5e1e4; text-anchor: middle; }
+    .mat { font-size: 13px; fill: #bbcabf; text-anchor: middle; font-weight: 700; }
+    .cap { font-size: 13px; fill: #86948a; text-anchor: middle; }
+    .edge { stroke: #86948a; stroke-width: 1.2; fill: none; }
+    /* The neurons compute and carry a solid green stroke; the input column
+       computes nothing, and so it is dashed and grey. */
+    .neuron { stroke: #4edea3; stroke-width: 2; fill: none; }
+    .input { stroke: #86948a; stroke-width: 1.6; fill: none; stroke-dasharray: 5 4; }
+  </style>
+
+  <defs>
+    <marker id="punta" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
+    </marker>
+  </defs>
+
+  <text class="hdr" x="60" y="32">input layer</text>
+  <text class="hdr" x="180" y="32">hidden layer</text>
+  <text class="hdr" x="300" y="32">output layer</text>
+
+  <text class="mat" x="120" y="66">W<tspan font-size="10" dy="-5">(1)</tspan><tspan dy="5">, b</tspan><tspan font-size="10" dy="-5">(1)</tspan></text>
+  <text class="mat" x="240" y="66">W<tspan font-size="10" dy="-5">(2)</tspan><tspan dy="5">, b</tspan><tspan font-size="10" dy="-5">(2)</tspan></text>
+
+  <!-- Input → hidden layer: the four weights of W(1), one per arrow. The
+       endpoints go from the edge of one circle to the edge of the other (radius 25 + 3 of air). -->
+  <line class="edge" x1="88" y1="100" x2="152" y2="100" marker-end="url(#punta)" />
+  <line class="edge" x1="88" y1="180" x2="152" y2="180" marker-end="url(#punta)" />
+  <line class="edge" x1="83.3" y1="115.5" x2="156.7" y2="164.5" marker-end="url(#punta)" />
+  <line class="edge" x1="83.3" y1="164.5" x2="156.7" y2="115.5" marker-end="url(#punta)" />
+
+  <!-- Hidden layer → output: the two weights of W(2). -->
+  <line class="edge" x1="206.6" y1="108.9" x2="273.4" y2="131.1" marker-end="url(#punta)" />
+  <line class="edge" x1="206.6" y1="171.1" x2="273.4" y2="148.9" marker-end="url(#punta)" />
+
+  <circle class="input" cx="60" cy="100" r="25" />
+  <circle class="input" cx="60" cy="180" r="25" />
+  <text class="lbl" x="60" y="105">x<tspan font-size="10" dy="4">1</tspan></text>
+  <text class="lbl" x="60" y="185">x<tspan font-size="10" dy="4">2</tspan></text>
+
+  <circle class="neuron" cx="180" cy="100" r="25" />
+  <circle class="neuron" cx="180" cy="180" r="25" />
+  <text class="lbl" x="180" y="105">h<tspan font-size="10" dy="-5">(1)</tspan><tspan font-size="10" dy="9">1</tspan></text>
+  <text class="lbl" x="180" y="185">h<tspan font-size="10" dy="-5">(1)</tspan><tspan font-size="10" dy="9">2</tspan></text>
+
+  <circle class="neuron" cx="300" cy="140" r="25" />
+  <text class="lbl" x="300" y="146">ŷ</text>
+
+  <text class="cap" x="180" y="228">the first column computes nothing: it is the input</text>
+</svg>

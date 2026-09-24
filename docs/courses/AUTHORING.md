@@ -580,8 +580,8 @@ Spanish typography, since this is Spanish prose and half of it differs from Engl
 - **Quotes are `«…»`.** Never `"…"`.
 - **A display equation is part of its sentence and carries that sentence's punctuation.** A `$$…$$`
   block is not a picture dropped between two paragraphs — it is a clause, and it is read aloud as
-  one. The mark is the **last character inside the fence** (§8 says where exactly), and which mark
-  it is depends on what follows:
+  one. The mark goes **inside the fence** (§8 says exactly where — it depends on the environment),
+  and which mark it is depends on what follows:
 
   | The sentence… | Mark | From our lessons |
   |---|---|---|
@@ -967,13 +967,13 @@ These cost real time the first time. Read them before writing, not after.
   The lint's equation count follows the same rule, so a lesson that looks equation-heavy but reports
   `0 eq` has its fences inline.
 
-- **The sentence's punctuation goes INSIDE the fence** (§5), as the last character of the last line
-  — never after the closing `$$`, never on a line of its own, where markdown would start a
-  paragraph with a stray full stop. Two placements follow from that and are worth writing down
-  because both look wrong until you see them rendered:
+- **The sentence's punctuation goes INSIDE the fence** (§5) — never after the closing `$$`, never on
+  a line of its own, where markdown would start a paragraph with a stray full stop. Where exactly
+  inside depends on the environment, and each placement looks wrong until you see it rendered:
 
   ```mdx
-  \end{cases}.                          ← after the environment, not inside its last row
+  \end{cases}.                                ← cases and matrices: appended to the closer, not inside its last row
+  = \sigma(z)\left(1 - \sigma(z)\right),      ← aligned & kin: on the last row — a mark on \end{aligned} floats against the block's centre
   \lvert V \rvert^{2} \quad \text{números}.   ← outside \text{…}, not \text{números.}
   ```
 

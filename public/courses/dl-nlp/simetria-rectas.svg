@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 212" width="360" height="212" role="img" aria-label="Dos veces el mismo plano, con las cuatro frases en las esquinas de un cuadrado: los dos puntos verdes en menos 1 coma 1 y en 1 coma menos 1, y los dos huecos en menos 1 coma menos 1 y en 1 coma 1. En el recuadro de la izquierda, titulado cuatro filas distintas, cuatro rectas verdes cruzan el cuadrado en cuatro direcciones y se cortan entre ellas. En el de la derecha, titulado cuatro filas iguales, hay una sola recta, más gruesa y marcada por cuatro, que parte el cuadrado en dos mitades; la mitad de la derecha está sombreada en verde y lleva escrito sí, la de la izquierda lleva escrito no, y cada una de las dos mitades se queda con un punto verde y un punto hueco.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .caja { stroke: rgba(134,148,138,0.30); stroke-width: 1; fill: none; }
+    .eje { stroke: #86948a; stroke-width: 1; fill: none; opacity: 0.55; }
+    .recta { stroke: #4edea3; stroke-width: 1.8; fill: none; }
+    .gruesa { stroke-width: 3.6; }
+    .mitad { fill: rgba(78,222,163,0.10); }
+    .tit { font-size: 13px; fill: #bbcabf; text-anchor: middle; }
+    .sub { font-size: 12.5px; fill: #86948a; text-anchor: middle; }
+    .lado { font-size: 12.5px; fill: #86948a; text-anchor: middle; }
+    .mult { font-size: 12.5px; fill: #4edea3; text-anchor: middle; }
+    /* Mismo código de color que xor-franja.svg: la clase positiva rellena de
+       verde y la otra hueca, para que el lector no tenga que traducir entre
+       las dos figuras. */
+    .pos { fill: #4edea3; stroke: #e5e1e4; stroke-width: 1.4; }
+    .neg { fill: #353437; stroke: #e5e1e4; stroke-width: 1.4; }
+  </style>
+
+  <text class="tit" x="91" y="20">cuatro filas distintas</text>
+  <text class="sub" x="91" y="37">cuatro rectas</text>
+  <text class="tit" x="269" y="20">cuatro filas iguales</text>
+  <text class="sub" x="269" y="37">una recta</text>
+
+  <rect class="caja" x="16" y="50" width="150" height="150" />
+  <line class="eje" x1="16" y1="125" x2="166" y2="125" />
+  <line class="eje" x1="91" y1="200" x2="91" y2="50" />
+  <line class="recta" x1="123.2" y1="200" x2="70.7" y2="50" />
+  <line class="recta" x1="16" y1="100.7" x2="166" y2="153.2" />
+  <line class="recta" x1="166" y1="79.6" x2="45.6" y2="200" />
+  <line class="recta" x1="166" y1="148.7" x2="42.6" y2="50" />
+  <circle class="pos" cx="51.5" cy="85.5" r="5" />
+  <circle class="neg" cx="51.5" cy="164.5" r="5" />
+  <circle class="neg" cx="130.5" cy="85.5" r="5" />
+  <circle class="pos" cx="130.5" cy="164.5" r="5" />
+
+  <polygon class="mitad" points="301.2,200 344,200 344,50 248.7,50" />
+  <rect class="caja" x="194" y="50" width="150" height="150" />
+  <line class="eje" x1="194" y1="125" x2="344" y2="125" />
+  <line class="eje" x1="269" y1="200" x2="269" y2="50" />
+  <line class="recta gruesa" x1="301.2" y1="200" x2="248.7" y2="50" />
+  <circle class="pos" cx="229.5" cy="85.5" r="5" />
+  <circle class="neg" cx="229.5" cy="164.5" r="5" />
+  <circle class="neg" cx="308.5" cy="85.5" r="5" />
+  <circle class="pos" cx="308.5" cy="164.5" r="5" />
+  <text class="mult" x="309.3" y="188.9">×4</text>
+  <text class="lado" x="211.8" y="68.9">no</text>
+  <text class="lado" x="326.2" y="68.9">sí</text>
+</svg>

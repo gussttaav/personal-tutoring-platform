@@ -14,7 +14,7 @@ quiz:
     prompt: 'A corpus of 36 tokens has 8 types, with these frequencies: <W>the</W> 12, <W>of</W> 9, <W>boy</W> 5, <W>school</W> 4, <W>programming</W> 2, <W>river</W> 2, <W>cryptocurrency</W> 1, <W>grammar</W> 1. You cut the vocabulary at $k = 4$. How many of the 36 occurrences end up turned into <W>\<UNK></W>?'
     answer: 6
     tolerance: 0
-    explanation: 'The four most frequent types sum to $12 + 9 + 5 + 4 = 30$ occurrences, so the remaining $36 - 30 = 6$ pass to <W>\<UNK></W>. Look at what that implies: with $k = 4$ you keep half the types and cover 83% of the tokens, $\text{cob}(4) = 30/36$. That asymmetry is what makes an aggressive cut look cheap when you measure it over tokens, and it is also why that measure misleads: the six tokens you lose are <W>programming</W>, <W>river</W>, <W>cryptocurrency</W> and <W>grammar</W>, not <W>the</W> and <W>of</W>.'
+    explanation: 'The four most frequent types sum to $12 + 9 + 5 + 4 = 30$ occurrences, so the remaining $36 - 30 = 6$ pass to <W>\<UNK></W>. Look at what that implies: with $k = 4$ you keep half the types and cover 83% of the tokens, $\text{coverage}(4) = 30/36$. That asymmetry is what makes an aggressive cut look cheap when you measure it over tokens, and it is also why that measure misleads: the six tokens you lose are <W>programming</W>, <W>river</W>, <W>cryptocurrency</W> and <W>grammar</W>, not <W>the</W> and <W>of</W>.'
   - id: q-zipf-cobertura
     type: single
     prompt: 'A corpus has $M = 100\,000$ types and their frequencies follow $f_i \approx a/i$. You want a vocabulary that covers 90% of the occurrences. How many types do you need, roughly?'
@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'About 31,000, which is $M^{0.9}$.' }
       - { id: d, text: 'About 90,000: covering 90% of the occurrences demands 90% of the types.' }
     answer: c
-    explanation: 'From $\text{cob}(k) \approx \ln k / \ln M$ comes $k \approx M^{p}$, and $100\,000^{0.9} \approx 31\,600$. Option (a) answers a different question: $M^{0.5} \approx 316$ types cover *half* the corpus, which is the figure that makes coverage look cheap. And (d) confuses coverage with proportion of types, which is exactly what the distribution forbids: types and occurrences are not shared out alike. Keep the order of magnitude: half comes out at 316 types, 90% at 31,600 and 99% at 89,000.'
+    explanation: 'From $\text{coverage}(k) \approx \ln k / \ln M$ comes $k \approx M^{p}$, and $100\,000^{0.9} \approx 31\,600$. Option (a) answers a different question: $M^{0.5} \approx 316$ types cover *half* the corpus, which is the figure that makes coverage look cheap. And (d) confuses coverage with proportion of types, which is exactly what the distribution forbids: types and occurrences are not shared out alike. Keep the order of magnitude: half comes out at 316 types, 90% at 31,600 and 99% at 89,000.'
   - id: q-unk-consecuencias
     type: multi
     prompt: 'You send everything that fell outside $V$ to <W>\<UNK></W>. What is true of the result? Tick all that apply.'
@@ -95,22 +95,22 @@ $$
 
 with $a$ a constant that depends on the corpus. The second type appears half as often as the first, the tenth a tenth as often. It is an approximation, not a theorem (it fails in the first few positions and in the tail), but it answers the question that matters: how much text you buy with each type you add.
 
-Call the **coverage** of the $k$ most frequent types, written $\text{cob}(k)$, the fraction of the corpus's occurrences that those $k$ types account for:
+Call the **coverage** of the $k$ most frequent types the fraction of the corpus's occurrences that those $k$ types account for:
 
 $$
-\text{cob}(k) = \frac{1}{T}\sum_{i=1}^{k} f_i.
+\text{coverage}(k) = \frac{1}{T}\sum_{i=1}^{k} f_i.
 $$
 
 Substituting Zipf's approximation, both the numerator and $T$ become sums of $1/i$:
 
 $$
-\text{cob}(k) \approx \frac{a\sum_{i=1}^{k} 1/i}{a\sum_{i=1}^{M} 1/i} = \frac{\sum_{i=1}^{k} 1/i}{\sum_{i=1}^{M} 1/i}.
+\text{coverage}(k) \approx \frac{a\sum_{i=1}^{k} 1/i}{a\sum_{i=1}^{M} 1/i} = \frac{\sum_{i=1}^{k} 1/i}{\sum_{i=1}^{M} 1/i}.
 $$
 
 The constant $a$ cancels, and those sums are partial sums of the harmonic series, which grow like a logarithm: $\sum_{i=1}^{k} 1/i \approx \ln k + \gamma$, with $\gamma \approx 0.577$. Therefore
 
 $$
-\text{cob}(k) \approx \frac{\ln k + \gamma}{\ln M + \gamma}.
+\text{coverage}(k) \approx \frac{\ln k + \gamma}{\ln M + \gamma}.
 $$
 
 <Details summary="Why the sum of 1/i grows like a logarithm">
@@ -151,7 +151,7 @@ $$
 
 With $d = 300$, a vocabulary of 30,000 types is nine million numbers; one of 100,000, thirty million. The table grows with $\lvert V \rvert$ and nothing compresses it: each entry is independent of the others.
 
-The price of lowering $k$ is the text that falls on the far side of the cut, the fraction $1 - \text{cob}(k)$ of the occurrences. Measured that way it looks small, and that is the problem: the same decision, measured over types, leaves out most of the language. With $M = 100\,000$ and $k = 31\,600$ you lose 10% of the occurrences and 68% of the types. And it is not a random 68%: the types that fall are the tail ones (proper nouns, technical terms, new words), the very thing that makes a sentence say one thing rather than another. A cut that sounds cheap in tokens is throwing away exactly the informative part.
+The price of lowering $k$ is the text that falls on the far side of the cut, the fraction $1 - \text{coverage}(k)$ of the occurrences. Measured that way it looks small, and that is the problem: the same decision, measured over types, leaves out most of the language. With $M = 100\,000$ and $k = 31\,600$ you lose 10% of the occurrences and 68% of the types. And it is not a random 68%: the types that fall are the tail ones (proper nouns, technical terms, new words), the very thing that makes a sentence say one thing rather than another. A cut that sounds cheap in tokens is throwing away exactly the informative part.
 
 ### The token that gathers what falls outside
 
@@ -201,7 +201,7 @@ Compare it with the character vocabulary of the previous lesson, which does satu
 
 ## Counting types, tokens and coverage in Python
 
-The cell tokenises a short English corpus with the same `by_words` as the previous lesson, counts types and occurrences, walks the coverage, and ends by applying a cut to five sentences the corpus did not contain. Run it and look at three things: what fraction of the types appears a single time, how $\text{cob}(k)$ climbs at first and then jams, and the two OOV rates, which do not resemble each other.
+The cell tokenises a short English corpus with the same `by_words` as the previous lesson, counts types and occurrences, walks the coverage, and ends by applying a cut to five sentences the corpus did not contain. Run it and look at three things: what fraction of the types appears a single time, how $\text{coverage}(k)$ climbs at first and then jams, and the two OOV rates, which do not resemble each other.
 
 <PyCell code={`
 import unicodedata
@@ -257,16 +257,16 @@ print("types appearing ONCE:", hapax, "of", M,
 print()
 
 cumulative = 0
-print("  i  type             f_i   cob(i)")
+print("  i  type             f_i  coverage(i)")
 for i, (w, f) in enumerate(freq.most_common(8), start=1):
     cumulative = cumulative + f
     print(str(i).rjust(3), w.ljust(16), str(f).rjust(3),
-          (str(round(100 * cumulative / T, 1)) + " %").rjust(8))
+          (str(round(100 * cumulative / T, 1)) + " %").rjust(11))
 print()
 
 for k in [8, 25, 50, 100, M]:
     covered = sum(f for _, f in freq.most_common(k))
-    print("k =", str(k).rjust(3), "-> cob(k) =",
+    print("k =", str(k).rjust(3), "-> coverage(k) =",
           (str(round(100 * covered / T, 1)) + " %").rjust(7))
 print()
 

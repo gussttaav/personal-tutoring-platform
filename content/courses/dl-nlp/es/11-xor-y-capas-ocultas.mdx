@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Que el escalón se queda con el signo de $z$ y tira su magnitud, así que la neurona no distingue una frase clara de una dudosa.' }
       - { id: d, text: 'Que dos coordenadas no dan para más: añadiendo una tercera que valiera $x_1 x_2$, el reparto seguiría sin ser separable.' }
     answer: a
-    explanation: 'La (a) es la demostración entera, y lo que la cierra es que las dos sumas coinciden: las dos valen $2b$, así que exigirle a una $\geq 0$ y a la otra $< 0$ es exigirle a $b$ dos cosas incompatibles. La (b) no demuestra nada —tres números clasifican bien conjuntos de cien ejemplos todos los días, y lo que decide no es cuántos hay sino dónde están—. La (c) es cierta y no viene al caso: el problema no lo causa el escalón, y por eso la lección comprueba aparte que con cualquier activación creciente el conjunto de las entradas que reciben un sí vuelve a ser un semiplano. Y la (d) es falsa en su segunda mitad: con $x_3 = x_1 x_2$ las dos frases positivas pasan a tener $x_3 = -1$ y las dos negativas $x_3 = +1$, así que $z = -x_3$ las separa. Cambiar las coordenadas funciona; una capa oculta es la forma de que las cambie el propio sistema.'
+    explanation: 'La (a) es la demostración entera, y lo que la cierra es que las dos sumas coinciden: las dos valen $2b$, así que exigirle a una $\geq 0$ y a la otra $< 0$ es exigirle a $b$ dos cosas incompatibles. La (b) no demuestra nada (tres números clasifican bien conjuntos de cien ejemplos todos los días, y lo que decide no es cuántos hay sino dónde están). La (c) es cierta y no viene al caso: el problema no lo causa el escalón, y por eso la lección comprueba aparte que con cualquier activación creciente el conjunto de las entradas que reciben un sí vuelve a ser un semiplano. Y la (d) es falsa en su segunda mitad: con $x_3 = x_1 x_2$ las dos frases positivas pasan a tener $x_3 = -1$ y las dos negativas $x_3 = +1$, así que $z = -x_3$ las separa. Cambiar las coordenadas funciona; una capa oculta es la forma de que las cambie el propio sistema.'
   - id: q-activacion
     type: boolean
     prompt: 'Cambias el escalón por la sigmoide y lees la salida así: la frase habla bien cuando $\sigma(z) \geq 0.5$. Con esa lectura existe alguna elección de $\mathbf{w}$ y $b$ que acierta las cuatro frases.'
@@ -30,21 +30,6 @@ quiz:
     answer: -0.5
     tolerance: 0.01
     explanation: 'Las dos filas de $\mathbf{W}^{(1)}$ son iguales, así que las dos preactivaciones ocultas salen de $x_1 + x_2 = 2$ y sólo las separa el sesgo: $\mathbf{z}^{(1)} = (3,\, 1)^{\top}$. Las dos son positivas, luego $\mathbf{h}^{(1)} = (1,\, 1)^{\top}$, y la neurona de salida calcula $1 - 1 - 0.5 = -0.5$. El escalón entrega $0$, que es la etiqueta correcta. Fíjate en que <W>está mal</W> obtiene ese mismo $-0.5$ desde un vector oculto distinto, $(0,\, 0)^{\top}$: la capa de salida no necesita saber de qué esquina viene cada frase.'
-  - id: q-representacion
-    type: predict-output
-    prompt: 'Esta es la capa oculta de la lección aplicada a <W>no está mal</W>. ¿Qué imprime?'
-    language: python
-    code: |
-      import numpy as np
-
-      W1 = np.array([[1., 1.],
-                     [1., 1.]])
-      b1 = np.array([1., -1.])
-      x = np.array([1., -1.])
-      print((W1 @ x + b1 >= 0).astype(float))
-    answer: '[1. 0.]'
-    explanation: 'El producto $\mathbf{W}^{(1)}\mathbf{x}$ vale $(0,\, 0)^{\top}$ porque las dos coordenadas de la entrada se cancelan, y al sumar el sesgo queda $\mathbf{z}^{(1)} = (1,\, -1)^{\top}$. La comparación deja `[True False]` y `.astype(float)` lo pasa a ceros y unos. Lo que importa es cuál es ese vector: el mismo que produce <W>está bien</W>, que parte de la esquina opuesta del cuadrado. En las coordenadas de la capa oculta las dos frases positivas son el mismo punto, y ahí está la razón de que una recta ya sirva.'
-    hint: 'El formato cuenta tanto como los valores: `.astype(float)` devuelve flotantes, y NumPy los imprime con el punto —`1.`, no `1`—, entre corchetes y separados por un espacio, sin comas.'
 challenges: []
 reading:
   - kind: libro
@@ -60,8 +45,8 @@ reading:
 {/* COURSE-P5-02 — Bloque 2, lección 3. */}
 
 Con la lección anterior, sobre funciones de activación y no linealidad, la neurona quedó terminada:
-una suma ponderada, y encima una $\varphi$ curva y con derivada aprovechable —sigmoide, tangente
-hiperbólica o ReLU— en lugar del escalón que ocupaba ese sitio al principio. Terminada, y con un
+una suma ponderada, y encima una $\varphi$ curva y con derivada aprovechable (sigmoide, tangente
+hiperbólica o ReLU) en lugar del escalón que ocupaba ese sitio al principio. Terminada, y con un
 límite que ninguna de las tres candidatas toca: la neurona contesta según de qué lado de un
 hiperplano haya caído la entrada. Eso mueve la pregunta de sitio. Ya no es cuál asignar a $\varphi$,
 sino una pregunta sobre los datos: qué repartos de ejemplos caben dentro de un hiperplano, y si hay
@@ -69,8 +54,8 @@ alguno que no cabe en ninguno.
 
 Cuatro frases alcanzan para encontrarlo. Toma <W>está bien</W>, <W>está mal</W>, <W>no está bien</W>
 y <W>no está mal</W>, y clasifícalas: la primera y la cuarta hablan bien, la segunda y la tercera
-hablan mal. Las cuatro se distinguen con dos datos —si aparece <W>no</W>, y si la palabra que valora
-es <W>bien</W> o <W>mal</W>—, de modo que dos coordenadas las describen enteras. Ahora mira qué hace
+hablan mal. Las cuatro se distinguen con dos datos (si aparece <W>no</W>, y si la palabra que valora
+es <W>bien</W> o <W>mal</W>), de modo que dos coordenadas las describen enteras. Ahora mira qué hace
 <W>no</W>. No aporta un signo propio: le da la vuelta al de la palabra que le sigue. Y un peso es un
 signo fijo.
 
@@ -89,10 +74,10 @@ que un procedimiento no encuentre una recta deja abierto que la recta exista y �
 Hay que descartarlas todas a la vez.
 
 <Callout type="intuition" title="La idea en una frase">
-Cuando cada clase ocupa una diagonal, ningún hiperplano sirve, y elegir otra activación no cambia
-nada porque la frontera sigue siendo un hiperplano. Lo que sí cambia el problema es meter neuronas
-por delante: la capa que nadie lee desde fuera está ahí para llevar los puntos a unas coordenadas en
-las que una recta sí los separe.
+Cuando cada clase ocupa una diagonal, ningún hiperplano sirve, y cambiar el escalón por otra de las
+activaciones vistas no lo arregla, porque la frontera sigue siendo un hiperplano. Lo que sí cambia el
+problema es meter neuronas por delante: la capa oculta que definiremos más adelante está ahí para
+llevar los puntos a unas coordenadas en las que una recta sí los separe.
 </Callout>
 
 ## Cuatro frases que ningún hiperplano separa
@@ -132,8 +117,8 @@ Los pesos se cancelan en las dos, y las dos sumas dan el mismo número. Pero la 
 cantidades $\geq 0$, luego $2b \geq 0$; y la segunda suma dos cantidades $< 0$, luego $2b < 0$. Un
 mismo $b$ no puede cumplir las dos, así que la neurona supuesta no existe.
 
-Merece la pena leer esa cancelación en el dibujo, porque dice de dónde sale. Los dos segmentos —el
-que une las dos frases positivas y el que une las dos negativas— tienen el mismo punto medio, el
+Merece la pena leer esa cancelación en el dibujo, porque dice de dónde sale. Los dos segmentos (el
+que une las dos frases positivas y el que une las dos negativas) tienen el mismo punto medio, el
 origen. Y $z$ es afín, así que su valor en el punto medio de un segmento es la media de sus valores
 en los extremos. El origen tendría que caer del lado positivo por estar entre dos positivas, y del
 negativo por estar entre dos negativas.
@@ -155,13 +140,15 @@ con $\lambda, \mu \in [0, 1]$. Una función afín reparte esas combinaciones, po
 $1$ y el sesgo sobrevive intacto:
 
 $$
+\begin{aligned}
 z\left(\lambda \mathbf{u} + (1 - \lambda)\mathbf{v}\right)
-= \lambda \left(\mathbf{w}^{\top}\mathbf{u} + b\right) + (1 - \lambda)\left(\mathbf{w}^{\top}\mathbf{v} + b\right)
-= \lambda\, z(\mathbf{u}) + (1 - \lambda)\, z(\mathbf{v}).
+&= \lambda \left(\mathbf{w}^{\top}\mathbf{u} + b\right) + (1 - \lambda)\left(\mathbf{w}^{\top}\mathbf{v} + b\right) \\[2pt]
+&= \lambda\, z(\mathbf{u}) + (1 - \lambda)\, z(\mathbf{v}).
+\end{aligned}
 $$
 
 Si la neurona acierta, $z(\mathbf{p}_1)$ y $z(\mathbf{p}_2)$ son $\geq 0$, y entonces $z(\mathbf{q})$
-—una media de los dos con pesos no negativos— también lo es. Por el otro camino,
+(una media de los dos con pesos no negativos) también lo es. Por el otro camino,
 $z(\mathbf{n}_1)$ y $z(\mathbf{n}_2)$ son $< 0$ y $z(\mathbf{q})$ tiene que ser $< 0$. El mismo punto
 con dos signos incompatibles.
 
@@ -174,8 +161,8 @@ en $(1/2,\, 1/2)$ y la contradicción aparece igual.
 ### Y ninguna activación lo arregla
 
 La demostración usó el escalón en un sitio concreto: para leer «acierta» como $z \geq 0$ o $z < 0$.
-Es lo único que hay que revisar. Sea $\varphi$ estrictamente creciente —la sigmoide y la tangente
-hiperbólica lo son— y sea $\theta$ el umbral con el que decidas leer su salida como un sí. Al ser
+Es lo único que hay que revisar. Sea $\varphi$ estrictamente creciente (la sigmoide y la tangente
+hiperbólica lo son), y sea $\theta$ el umbral con el que decidas leer su salida como un sí. Al ser
 creciente es invertible en su recorrido, de modo que $\varphi(z) \geq \theta$ equivale a
 $z \geq \varphi^{-1}(\theta)$, y el conjunto de las frases que reciben un sí es
 
@@ -195,8 +182,8 @@ mal. Semiplano o plano entero, y ninguna de las dos cosas parte las diagonales.
 
 Lo que falla no es la neurona: es que sólo haya una. Pon dos mirando la misma entrada y una tercera
 mirando lo que entregan esas dos. Quedan tres columnas, y cada una tiene nombre. La **capa de
-entrada** es $\mathbf{x}$ y no calcula nada —se dibuja como una columna de círculos por costumbre,
-pero ahí no hay neuronas—; la **capa oculta** son las dos primeras neuronas, oculta porque su salida
+entrada** es $\mathbf{x}$ y no calcula nada (se dibuja como una columna de círculos por costumbre,
+pero ahí no hay neuronas); la **capa oculta** son las dos primeras neuronas, oculta porque su salida
 no es la respuesta final y nadie la lee desde fuera; y la **capa de salida** es la tercera, la que
 contesta.
 
@@ -213,7 +200,7 @@ ahora las coordenadas $z^{(l)}_j$ y $h^{(l)}_j$. Es el mismo objeto apilado; por
 cambiado nada. Con $\mathbf{h}^{(0)} = \mathbf{x}$, la capa oculta calcula
 
 $$
-\mathbf{z}^{(1)} = \mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)},
+\mathbf{z}^{(1)} = \mathbf{W}^{(1)}\mathbf{h}^{(0)} + \mathbf{b}^{(1)},
 \qquad
 \mathbf{h}^{(1)} = \varphi\left(\mathbf{z}^{(1)}\right),
 $$
@@ -269,14 +256,14 @@ segunda.
 | <W>no está mal</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0.5$ | $1$ | $1$ |
 
 La columna de $\mathbf{h}^{(1)}$ es la que tiene el resultado. Cuatro puntos de entrada han salido
-convertidos en tres —$(0,\, 0)^{\top}$, $(1,\, 0)^{\top}$ y $(1,\, 1)^{\top}$—, y la clase positiva
+convertidos en tres: $(0,\, 0)^{\top}$, $(1,\, 0)^{\top}$ y $(1,\, 1)^{\top}$, y la clase positiva
 es justo el de en medio. En esas coordenadas nuevas ya hay una recta que deja una clase a cada lado,
 y la neurona de salida no hace nada que no supiera hacer una neurona suelta. La capa oculta no ha
 añadido capacidad de decidir: ha cambiado el sitio desde el que se decide.
 
 Ese es el giro que conviene guardar, porque el bloque anterior es entero sobre lo mismo. Allí las
-representaciones las elegía una persona —una dimensión por entrada del vocabulario, después cuentas,
-después vectores densos— y cada elección era una decisión escrita a mano. Una capa oculta es una
+representaciones las elegía una persona (una dimensión por entrada del vocabulario, después cuentas,
+después vectores densos), y cada elección era una decisión escrita a mano. Una capa oculta es una
 representación más, con una diferencia: sus coordenadas salen de unos pesos, y a unos pesos se les
 puede pedir que se ajusten solos. Una red neuronal con al menos una capa oculta tiene nombre propio,
 **perceptrón multicapa** (*multilayer perceptron*, MLP), y es el que da título a este bloque.
@@ -357,8 +344,8 @@ print("¿el mismo vector?", bool(np.array_equal(h_bien, h_mal)))
 
 La malla prueba $41^3 = 68\,921$ rectas, ninguna acierta las cuatro frases y $17\,123$ se quedan en
 tres. Esa cifra tiene un límite que conviene decir: una malla deja fuera todas las rectas que no
-probó, que son casi todas, así que por sí sola no demuestra nada —para eso está la cuenta de más
-arriba, y por eso va antes—. Lo que aporta es el techo. Tres aciertos no es un resultado a medio
+probó, que son casi todas, así que por sí sola no demuestra nada (para eso está la cuenta de más
+arriba, y por eso va antes). Lo que aporta es el techo. Tres aciertos no es un resultado a medio
 camino que se arregle afinando la búsqueda; es el máximo, y el máximo se toca por todas partes.
 
 La red acierta las cuatro. La tabla de la celda es la misma de arriba, ahora calculada, y en ella
@@ -370,16 +357,14 @@ en el mismo sitio.
 
 ## Comprueba tu intuición
 
-Cuatro preguntas: qué demuestra la imposibilidad, si la activación tiene algo que ver, una
-preactivación de salida a mano y una salida de NumPy.
+Tres preguntas: qué demuestra la imposibilidad, si la activación tiene algo que ver y una
+preactivación de salida a mano.
 
 <Quiz id="q-por-que-no" />
 
 <Quiz id="q-activacion" />
 
 <Quiz id="q-capa-oculta" />
-
-<Quiz id="q-representacion" />
 
 ---
 

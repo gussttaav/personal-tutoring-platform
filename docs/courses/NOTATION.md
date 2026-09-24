@@ -13,6 +13,12 @@ mechanically — see [the machine-checked rules](#the-machine-checked-rules) at 
 
 **If a lesson needs a symbol that is not here, add it here first.** That is the whole mechanism.
 
+**This file governs both locales, with one exception**, argued in
+[AUTHORING.en.md §8](AUTHORING.en.md): where the roman text inside a `\text{…}` spells a Spanish
+word, an English lesson writes the English one — $\text{step}$, $\text{coverage}$,
+$\text{accuracy}$, $\text{CE}$, $D_{\text{train}}$. Every symbol, shape, meaning and argument
+below is unchanged, and so is every argument this file makes for *rejecting* a spelling.
+
 ---
 
 ## 1. Typography

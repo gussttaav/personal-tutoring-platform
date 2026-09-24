@@ -1278,7 +1278,7 @@
         "learningRate": "Tasa de aprendizaje (η)",
         "plotAria": "Descenso de gradiente sobre un campo {field}",
         "stepAndLoss": "paso {step}/{total} · pérdida {loss}",
-        "diverged": "Diverge — la tasa de aprendizaje es demasiado alta; la trayectoria se sale del gráfico."
+        "diverged": "Diverge: la tasa de aprendizaje es demasiado alta; la trayectoria se sale del gráfico."
       },
       "loss-landscape": {
         "startX": "Inicio x₀",
@@ -1286,7 +1286,8 @@
         "plotAria": "Superficie de pérdida con dos mínimos y la trayectoria del descenso",
         "basinLeft": "izquierda (−1, 0)",
         "basinRight": "derecha (+1, 0)",
-        "verdict": "Cae en el mínimo de la <b>{basin}</b> — el punto de partida decide la cuenca."
+        "verdict": "Cae en el mínimo de la <b>{basin}</b>. El punto de partida decide la cuenca.",
+        "verdictSaddle": "Se queda clavado en la cresta: es un <b>punto de silla</b>, no un mínimo, y no cae a ningún lado."
       },
       "backprop-trace": {
         "groupAria": "Traza de retropropagación; usa las flechas para avanzar y retroceder",

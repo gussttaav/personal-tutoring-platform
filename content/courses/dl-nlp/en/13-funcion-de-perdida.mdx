@@ -1,0 +1,492 @@
+---
+slug: funcion-de-perdida
+title: "Loss functions: MSE and cross-entropy"
+block: 2
+order: 5
+minutes: 30
+summary: "A loss sums up in one number how badly the network is doing, and between two candidates its derivative decides. Mean squared error hands over its smallest correction exactly where the network is wrong with the most confidence; cross-entropy, which comes from reading the output as a probability, leaves that derivative at the difference between what was predicted and the label."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-ec-a-mano
+    type: numeric
+    prompt: 'A network with a sigmoid on its output assigns $\hat{y} = 0.2$ to a review whose label is $y = 1$. What is the cross-entropy of that example?'
+    answer: 1.609
+    tolerance: 0.01
+    explanation: 'With $y = 1$ the second summand vanishes and what is left is $-\log \hat{y} = -\log 0.2 = 1.609$. Compare it with what mean squared error would say of the same example, $(0.2 - 1)^{2} = 0.64$: a number smaller than $1$, and bounded by $1$ whatever happens, while cross-entropy grows without a ceiling as $\hat{y}$ approaches zero. And look at the correction, which is what decides: $\partial \ell / \partial z = \hat{y} - y = -0.8$ with cross-entropy, against $2(\hat{y} - y)\,\hat{y}(1 - \hat{y}) = -0.256$ with MSE.'
+  - id: q-mse-clasificar
+    type: single
+    prompt: 'What happens to mean squared error when the output of the network is a sigmoid and the label is $0$ or $1$?'
+    options:
+      - { id: a, text: 'Its derivative with respect to $z$ drags along the factor $\hat{y}(1 - \hat{y})$, which approaches zero exactly when the network is wrong with the most confidence: the worst error produces the smallest correction.' }
+      - { id: b, text: 'It can give a number greater than $1$, and a bounded loss is essential for comparing different networks.' }
+      - { id: c, text: 'It does not tell apart being wrong by a little from being wrong completely, because it squares, and the square erases that difference.' }
+      - { id: d, text: 'It only works with two classes: with three or more it is no longer defined, and that is why cross-entropy is needed.' }
+    answer: a
+    explanation: '(a) is the lesson''s calculation: $\partial \ell / \partial z = 2(\hat{y} - y)\,\hat{y}(1 - \hat{y})$, and at $z = -6$ with $y = 1$ that is $0.0049$ against the $0.9975$ of cross-entropy. The defect is not in what MSE measures, it is in what it hands over when differentiated. (b) has it backwards: MSE with outputs in $(0,1)$ and labels in $\{0, 1\}$ never goes above $1$, and it is cross-entropy that is unbounded. (c) describes exactly the opposite of what the square does, which amplifies large errors instead of erasing them. And (d) is false: MSE is perfectly well defined with more classes (it is still a sum of squares); what happens is that there it fails for the same reason it fails here.'
+  - id: q-gradiente-limpio
+    type: multi
+    prompt: 'Tick everything that is true about this lesson''s result $\dfrac{\partial \ell}{\partial z} = \hat{y} - y$.'
+    options:
+      - { id: a, text: 'It comes from the $\hat{y}(1 - \hat{y})$ that differentiating the sigmoid contributes being exactly the one that sat in the denominator from differentiating the logarithm, and the two cancel.' }
+      - { id: b, text: 'With softmax and several classes it holds coordinate by coordinate: the correction of the output layer is $\hat{\mathbf{y}} - \mathbf{y}$.' }
+      - { id: c, text: 'Its magnitude never reaches $1$, but it gets as close as it needs to as the network is wrong with more confidence.' }
+      - { id: d, text: 'Since the formula does not mention $\varphi$, the sigmoid of the output layer can be removed without the correction changing.' }
+    answer: [a, b, c]
+    explanation: 'The first three are the result and its two readings. (a) is the cancellation, and it is the only reason the formula comes out so short. (b) is the generalisation from the softmax derivation, with $\mathbf{y}$ encoded one-hot. (c) comes from $\hat{y} \in (0,1)$ and $y \in \{0, 1\}$: the difference lives in $(-1, 1)$ and does not reach the endpoints, but it gets to $0.9975$ at $z = -6$. The false one is (d), and it is wrong exactly the other way round: the formula does not mention $\varphi$ because the sigmoid has already been used and has cancelled. Remove it and the cancellation does not happen, because the denominator of the logarithm is left without its partner.'
+  - id: q-softmax
+    type: single
+    prompt: '`softmax(z)` and `softmax(z + 100)` return exactly the same thing. Why, and what is gained by subtracting the maximum of each row before exponentiating?'
+    options:
+      - { id: a, text: 'Because adding a constant multiplies numerator and denominator by the same $e^{100}$, which cancels. Subtracting the maximum uses that freedom so that the largest exponent is $e^{0} = 1$, so that nothing overflows and the result does not change.' }
+      - { id: b, text: 'Because the softmax normalises at the end, and any shift is lost in that normalisation even though the numerators do change in relative value.' }
+      - { id: c, text: 'Because subtracting the maximum is what makes the outputs sum to $1$; without that step the denominator is not enough to normalise them.' }
+      - { id: d, text: 'Because the shift changes the result by less than $10^{-12}$, and at that scale the two values are indistinguishable in floating point.' }
+    answer: a
+    explanation: '(a) says both halves: the invariance is algebraic ($e^{z_k + c}/\sum_m e^{z_m + c} = e^{c}e^{z_k} / (e^{c}\sum_m e^{z_m})$) and subtracting the maximum is that same invariance used on purpose, because `np.exp(1000)` overflows to infinity and the quotient comes out `nan`. (b) contradicts itself: if the numerators changed in relative value, the result would change. (c) confuses the two roles: normalising is what the denominator does, and it does it with or without the shift. And (d) turns into an approximation something that is an exact equality.'
+challenges:
+  - id: ch-entropia-cruzada
+    prompt: |
+      Write the output layer of a network with several classes, over a whole batch and without
+      Python loops:
+
+      - `softmax(Z)` receives `Z` of shape $(B,\, d_L)$ and returns the probabilities row by row.
+        Each row has to sum to $1$, and the function has to survive large pre-activations:
+        `np.exp(1000)` overflows.
+      - `cross_entropy(Y_hat, Y)` returns the mean over the batch of $-\sum_k y_k \log \hat{y}_k$,
+        with `Y` encoded one-hot. A $\hat{y}_k$ equal to zero cannot return `inf`.
+
+      Neither of the two may write into the arrays it receives.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def softmax(Z):
+          # your code here
+          pass
+
+
+      def cross_entropy(Y_hat, Y):
+          # your code here
+          pass
+    tests:
+      - name: "each row sums to 1 and keeps the shape"
+        code: |
+          import numpy as np
+          P = softmax(np.array([[1., 2., 3.], [0., 0., 0.]]))
+          assert P is not None and P.shape == (2, 3), 'one row per example and one column per class: the shape of Z'
+          assert np.allclose(P.sum(axis=1), [1., 1.]), 'sum by rows (axis=1), not over the whole matrix'
+      - name: "the order of the classes is respected"
+        code: |
+          import numpy as np
+          P = softmax(np.array([[1., 2., 3.]]))
+          assert P is not None and np.allclose(P, [[0.09003057, 0.24472847, 0.66524096]]), 'the exponential preserves the order: the largest pre-activation takes the largest probability'
+      - name: "it does not overflow with large pre-activations"
+        code: |
+          import numpy as np
+          P = softmax(np.array([[1000., 1000., 1000.]]))
+          assert P is not None and np.isfinite(P).all(), 'overflows: subtract the maximum of each row before exponentiating'
+          assert np.allclose(P, [[1/3, 1/3, 1/3]]), 'adding a constant to the whole row does not change the softmax'
+      - name: "cross-entropy is the mean over the batch"
+        code: |
+          import numpy as np
+          Y_hat = softmax(np.array([[1., 2., 3.], [1., 1., 1.]]))
+          Y = np.array([[0., 0., 1.], [1., 0., 0.]])
+          L = cross_entropy(Y_hat, Y)
+          assert L is not None and np.isclose(float(L), 0.7531093), 'average over the B examples: the sum of 0.4076 and 1.0986 divided by 2'
+      - name: "a null probability does not return inf"
+        code: |
+          import numpy as np
+          L = cross_entropy(np.array([[1., 0.]]), np.array([[0., 1.]]))
+          assert L is not None and np.isfinite(float(L)), 'clip before the logarithm: np.clip(Y_hat, 1e-12, 1.0)'
+      - name: "it does not write into the arrays it receives"
+        code: |
+          import numpy as np
+          Z = np.array([[1., 2.]])
+          P = softmax(Z)
+          assert P is not None and np.allclose(Z, [[1., 2.]]), 'Z -= Z.max() writes into the array of whoever calls you; return a new one'
+    solution: |
+      import numpy as np
+
+
+      def softmax(Z):
+          E = np.exp(Z - Z.max(axis=1, keepdims=True))
+          return E / E.sum(axis=1, keepdims=True)
+
+
+      def cross_entropy(Y_hat, Y):
+          P = np.clip(Y_hat, 1e-12, 1.0)
+          return float(-np.sum(Y * np.log(P), axis=1).mean())
+    explanation: |
+      The two functions fit in four lines, and the four decisions are all in the `axis` arguments.
+      In `softmax`, `axis=1` is "by rows" (each example is normalised against its own classes and
+      not against everyone else's) and `keepdims=True` is what leaves the shape at $(B, 1)$ so that
+      it subtracts and divides row by row; without it, NumPy gives a shape error, which is the luck
+      you have.
+
+      `Z - Z.max(...)` builds a new array, and that is the last test: `Z -= Z.max(...)` does the
+      same thing arithmetically and also destroys the input of whoever called you. That shift does
+      not change the result (adding a constant to the whole row multiplies top and bottom by the
+      same thing) and stops `np.exp` from overflowing, because the largest exponent becomes
+      $e^{0} = 1$.
+
+      In `cross_entropy`, the clipping is what stops a null $\hat{y}_k$ from taking the mean of the
+      whole batch down with it. Notice that `Y * np.log(P)` runs over the $d_L$ classes and the
+      one-hot cancels all but one: the sum by rows is left at $-\log \hat{y}_c$, the logarithm of
+      the probability the network gave the correct class.
+reading:
+  - kind: libro
+    title: 'Deep Learning, ch. 6: Deep Feedforward Networks'
+    authors: 'Goodfellow, Bengio and Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/mlp.html'
+    note: 'Its §6.2 gets the loss out of the likelihood, which is cross-entropy, and explains why a saturating output does not go with mean squared error, and how the logarithm fixes it. The lesson''s argument, with less algebra.'
+---
+
+{/* COURSE-P5-02 — Block 2, Lesson 5. */}
+
+Measuring is not answering, and answering is all the network knows how to do. The previous lesson,
+on the forward pass in matrix form, closed one half of the route from $\mathbf{X}$ to
+$\hat{\mathbf{Y}}$: a chain of products that crosses the layers without once asking whether what it
+hands back looks anything like what it should. The other half starts here, by fixing a rule that
+compares $\hat{\mathbf{Y}}$ with $\mathbf{Y}$ and sums up in a single number how badly the batch is
+going. That rule is called a loss function, and it has to be chosen.
+
+There are plenty of rules that would serve, and the choice carries weight. Take <W>fun and i recommend it</W>,
+which speaks well of the movie: its label is $y = 1$, and the network answers with a number between
+$0$ and $1$ that is larger the more it leans towards that class. Suppose it hands back $0.002$. It
+fails, because it should have given something right up against $1$, and it fails with all the
+confidence in the world, because it could not have sat any closer to $0$. This lesson compares two
+candidates, mean squared error and cross-entropy, and the two agree that the loss is high there:
+that is not where they differ. What separates them is how much that loss changes when a weight
+changes, and on an example like this the first of the two, which is the one anyone would think of,
+barely flinches.
+
+Before writing any formula, look at the shape of that difference. What is drawn is not the two
+losses but the **correction** each one hands over: its derivative with respect to the pre-activation
+$z$ of the output neuron, which is where the weights pull from (how much the loss moves for each
+unit that $z$ moves). In green, cross-entropy; in grey, mean squared error (MSE). With the label at
+$1$, the network gets it right towards the right of the drawing and gets it wrong towards the left.
+
+<Figure
+  src="/courses/dl-nlp/perdida-correccion.en.svg"
+  alt="A graph with the pre-activation z from minus 6 to 6 on the horizontal axis and the correction, from 0 to 1, on the vertical one. The cross-entropy curve, in green, enters through the top-left corner right up against 1, descends crossing the centre at 0.5 and ends right up against 0 on the right: it decreases without stopping. The MSE curve, in grey, enters through the bottom-left corner right up against 0, rises to a maximum of 0.30 shortly before the centre and falls back to 0 on the right: it is a hump with both tails on the floor."
+  caption="The two tails of the MSE have the same value and mean the opposite: the one on the right is a network that gets it right and needs no correction, and the one on the left is a network that fails with confidence and does not receive one either. Cross-entropy only goes quiet at one end."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+A loss is not chosen for what it measures, it is chosen for what it hands over when differentiated.
+</Callout>
+
+## From predictions to a single number
+
+The network hands over $\hat{\mathbf{Y}} \in \mathbb{R}^{B \times d_L}$, and the examples bring their
+labels in an array of the same shape, $\mathbf{Y} \in \mathbb{R}^{B \times d_L}$, row for row. A
+**loss** sums that pair up in one number, and it is built on two levels: a function $\ell$ that
+judges *one* example by comparing its prediction with its label, and the mean of the $B$ that result,
+
+$$
+\mathcal{L} = \frac{1}{B} \sum_{i=1}^{B} \ell\left(\hat{\mathbf{y}}_i, \mathbf{y}_i\right),
+$$
+
+where $\hat{\mathbf{y}}_i, \mathbf{y}_i \in \mathbb{R}^{d_L}$ are the prediction and the label of
+example $i$: rows $i$ of $\hat{\mathbf{Y}}$ and of $\mathbf{Y}$, written as columns. It is the mean
+and not the sum so that $\mathcal{L}$ does not grow with $B$. The two symbols share a name throughout
+the lesson (MSE, cross-entropy): $\ell$ and $\mathcal{L}$ are the same criterion, one per example and
+the other averaged over the batch.
+
+There are three demands on $\ell$, and they do not weigh the same: that it return a number, that it
+fall as the prediction approaches the label, and that it have a derivative with respect to every
+parameter, because the method that corrects the weights is made of those derivatives (<Leccion slug="descenso-gradiente">the next lesson, on gradient descent</Leccion>). Almost anything meets the first two; the third is the one that rules
+candidates out, and it is the same criterion by which <Leccion slug="funciones-activacion">the lesson on activation functions and non-linearity</Leccion> chose $\varphi$: there the step was ruled out for having a null derivative, not for
+measuring badly.
+
+The first of the two measures the distance squared. **Mean squared error** is
+
+$$
+\mathcal{L}_{\text{MSE}} = \frac{1}{B} \sum_{i=1}^{B} \left\lVert \hat{\mathbf{y}}_i - \mathbf{y}_i \right\rVert^{2},
+\qquad
+\ell_{\text{MSE}}(\hat{y}, y) = (\hat{y} - y)^{2},
+$$
+
+with the subscript naming which of the candidates it is, and with the second form written for
+$d_L = 1$, the review network, where $\hat{y}$ and $y$ are scalars: they no longer carry the bold of
+$\hat{\mathbf{y}}_i$ and $\mathbf{y}_i$, because with a single output the vector is down to a single
+number. The square does two things: it removes the sign, so that overshooting and falling short cost
+the same, and it punishes large errors more than proportionally, because missing by $0.8$ costs
+sixteen times what missing by $0.2$ does, not four.
+
+That is the right criterion when the network predicts a quantity: if the job is to guess how many
+stars its author gave it, the difference $\hat{y} - y$ is stars and its square measures what is
+wanted. Differentiating gives
+$\partial \ell_{\text{MSE}} / \partial \hat{y} = 2(\hat{y} - y)$, the first good property of this
+loss: the correction is proportional to the error. About that factor of $2$ there is a convention I
+do not adopt (many people put a $\tfrac{1}{2}$ in front so that it cancels when differentiating),
+and it changes nothing measurable: multiplying every correction by a constant is absorbed into the
+size of the step (how far the weights move in each update), which is what the next lesson adjusts.
+
+### Why it switches off exactly when it is most needed
+
+Classifying is not predicting a quantity, and there the arithmetic changes. The label is $0$ or $1$,
+the output comes out of a sigmoid, $\hat{y} = \sigma(z)$, and the derivative that is needed is not
+the one with respect to $\hat{y}$ but the one with respect to $z$, which is what the weights control.
+Chaining, and with $\sigma'(z) = \sigma(z)\left(1 - \sigma(z)\right)$ from <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion>:
+
+$$
+\frac{\partial \ell_{\text{MSE}}}{\partial z}
+= \frac{\partial \ell_{\text{MSE}}}{\partial \hat{y}} \cdot \frac{d\hat{y}}{dz}
+= 2\left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right).
+$$
+
+Look at the product of the last two factors: it is the derivative of the sigmoid, and <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion> already said
+where it switches off: when $\hat{y}$ approaches $0$ or $1$, that is, when the network is sure. The
+saturation that was a defect of the activation there reappears here, multiplying the correction. With
+$y = 1$ and $z = -6$ (the network says no, with conviction, and is wrong) the first factor is almost
+$-2$, but $\hat{y}\left(1 - \hat{y}\right)$ is $0.0025$, and the product stays at $0.0049$. The
+worst error in the batch asks for the smallest correction in the batch.
+
+It is not a rare case picked by hand: it is the entire left half of the grey curve above. And no
+adjustment of the size of the step fixes a loss that confuses its two tails, because it scales both
+of them alike.
+
+## Cross-entropy, reading the output as a probability
+
+The fix is not to patch the formula but to change what the network is supposed to be saying. Up to
+here $\hat{y}$ was a number between $0$ and $1$; take it now as the probability the network gives the
+positive class, $\hat{y} = P(y = 1 \mid \mathbf{x})$. With that, the probability it assigns to the
+label the example came with is written once for both cases,
+
+$$
+P(y \mid \mathbf{x}) = \hat{y}^{\,y}\left(1 - \hat{y}\right)^{1-y},
+$$
+
+because with $y = 1$ the second factor is $1$ and what is left is $\hat{y}$, and with $y = 0$ it is
+the first that disappears. Assuming the $B$ examples are independent, the probability of observing the
+whole set is the product of the $B$, and that quantity, as a function of the parameters, is called
+the **likelihood**. It has to be made large. Multiplying $B$ numbers smaller than one drives the
+product to zero very fast, so we take logarithms (which preserve the order, so the maximum does not
+move), flip the sign to have something to minimise, and divide by $B$. Out comes **cross-entropy**:
+
+$$
+\mathcal{L}_{\text{CE}} = -\frac{1}{B} \sum_{i=1}^{B} \left[\, y_i \log \hat{y}_i + \left(1 - y_i\right)\log\left(1 - \hat{y}_i\right) \right].
+$$
+
+Read it example by example. One with $y_i = 1$ contributes $-\log \hat{y}_i$: it is $0$ if the
+network gives it probability $1$ and grows without a ceiling as that probability falls towards zero,
+and one with $y_i = 0$ looks at $1 - \hat{y}_i$. That there is no ceiling is the underlying
+difference from MSE, which never went above $1$.
+
+Now the derivative, which is what decides. We start from the loss of a single example,
+
+$$
+\ell_{\text{CE}} = -y\log\hat{y} - (1-y)\log(1-\hat{y}),
+$$
+
+differentiate it with respect to $\hat{y}$, put the two terms over a common denominator and chain
+with the sigmoid:
+
+$$
+\begin{aligned}
+\frac{\partial \ell_{\text{CE}}}{\partial \hat{y}}
+&= -\frac{y}{\hat{y}} + \frac{1 - y}{1 - \hat{y}}
+ = \frac{-y\left(1 - \hat{y}\right) + \hat{y}\left(1 - y\right)}{\hat{y}\left(1 - \hat{y}\right)}
+ = \frac{\hat{y} - y}{\hat{y}\left(1 - \hat{y}\right)}, \\[4pt]
+\frac{\partial \ell_{\text{CE}}}{\partial z}
+&= \frac{\partial \ell_{\text{CE}}}{\partial \hat{y}} \cdot \frac{d\hat{y}}{dz}
+ = \frac{\hat{y} - y}{\hat{y}\left(1 - \hat{y}\right)} \cdot \hat{y}\left(1 - \hat{y}\right)
+ = \hat{y} - y.
+\end{aligned}
+$$
+
+On the first line the numerator simplifies because the two products $y\hat{y}$ cancel. On the
+second, the denominator is exactly the $\hat{y}(1 - \hat{y})$ the sigmoid contributes when chaining,
+and the two go away.
+
+The correction is the difference between what the network said and what it should have said. Nothing
+more. On the example from before it is $-0.9975$ instead of the $0.0049$ of MSE. The saturation has
+not disappeared, the sigmoid still has it; what happens is that the loss carries in its derivative
+the exact inverse factor that undoes it, and that is why the final formula does not mention $\varphi$.
+
+That is why it is called a **loss** and not an error: mean squared error does measure something in
+the units of the label, but cross-entropy measures nothing of the kind (it is a logarithm of a
+probability), and it is still the better of the two. What decides is not what they measure, but what
+they hand over when differentiated.
+
+### More than two classes: softmax
+
+With three answers instead of two (positive, negative and neutral) the output layer has $d_L = 3$
+neurons and the sigmoid is no longer any use: it squashes each coordinate on its own, and three numbers
+in $(0,1)$ do not form a distribution. The function that does is the softmax, the same one from <Leccion slug="word2vec">the lesson on Word2Vec</Leccion>, which shared probability out among the entries of the
+vocabulary:
+
+$$
+\hat{y}_k = \frac{e^{z_k}}{\sum_{m=1}^{d_L} e^{z_m}}, \qquad k = 1, \dots, d_L,
+$$
+
+positive for being an exponential and summing to $1$ because of the denominator. The label is
+written one-hot, $\mathbf{y} \in \{0,1\}^{d_L}$ with a single $1$ at the position of the correct
+class $c$, exactly as <Leccion slug="one-hot">the lesson on one-hot encoding</Leccion> encoded a vocabulary entry. The loss is
+the one from before, written for $d_L$ classes:
+
+$$
+\ell = -\sum_{k=1}^{d_L} y_k \log \hat{y}_k = -\log \hat{y}_c,
+$$
+
+where the second equality comes from the one-hot cancelling every summand but one. Only the
+probability the network gave the true class counts; what it shares out among the others matters
+because the denominator ties them all together.
+
+<Details summary="The derivative, with the two kinds of index that have to be told apart">
+
+We differentiate $\ell = -\log \hat{y}_c$ with respect to each $z_j$. The softmax mixes every
+coordinate into each one (moving $z_j$ moves the denominator, and with it the $d_L$ probabilities),
+so two computations are needed, according to whether $j$ is the correct class or not. Let's call
+$S = \sum_{m} e^{z_m}$, with $\partial S / \partial z_j = e^{z_j}$.
+
+When $j = c$, the numerator also depends on $z_j$, and it is the derivative of a quotient:
+
+$$
+\frac{\partial \hat{y}_c}{\partial z_c}
+= \frac{e^{z_c} S - e^{z_c} e^{z_c}}{S^{2}}
+= \frac{e^{z_c}}{S}\left(1 - \frac{e^{z_c}}{S}\right)
+= \hat{y}_c\left(1 - \hat{y}_c\right).
+$$
+
+When $j \neq c$, the numerator $e^{z_c}$ does not depend on $z_j$ and only the denominator moves:
+
+$$
+\frac{\partial \hat{y}_c}{\partial z_j}
+= e^{z_c} \cdot \left(-\frac{1}{S^{2}}\right) e^{z_j}
+= -\frac{e^{z_c}}{S}\cdot\frac{e^{z_j}}{S}
+= -\hat{y}_c\,\hat{y}_j.
+$$
+
+With $\partial \ell / \partial \hat{y}_c = -1/\hat{y}_c$, the chain rule gives the two cases:
+
+$$
+\frac{\partial \ell}{\partial z_c} = -\frac{1}{\hat{y}_c}\,\hat{y}_c\left(1 - \hat{y}_c\right) = \hat{y}_c - 1,
+\qquad
+\frac{\partial \ell}{\partial z_j} = -\frac{1}{\hat{y}_c}\left(-\hat{y}_c\,\hat{y}_j\right) = \hat{y}_j \quad (j \neq c),
+$$
+
+and the two are the same expression, because $y_c = 1$ and $y_j = 0$. Coordinate by coordinate:
+
+$$
+\nabla_{\mathbf{z}}\,\ell = \hat{\mathbf{y}} - \mathbf{y}.
+$$
+
+With $d_L = 2$ this reproduces the binary case: the short formula of the previous section was not an
+accident of having a single output.
+
+</Details>
+
+The two derivations arrive at the same place, and that is why they are worth doing once: from here
+to <Leccion slug="backpropagation">the lesson on backpropagation</Leccion>, the output layer is not differentiated again, it goes in
+as $\hat{\mathbf{y}} - \mathbf{y}$ and that is that. The softmax is here because the rest of the
+course predicts over whole vocabularies, where the classes number in the tens of thousands.
+
+## The two losses over the ten reviews
+
+The cell evaluates the two candidates over the usual ten reviews, with the pre-activations of the
+neuron with hand-set weights from <Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion>. Nothing is
+random. Run it and look at three things: what order each column puts them in, where each correction
+switches off, and what happens with a logarithm of zero.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# --- The usual ten reviews, with their labels and their pre-activations.
+y = np.array([1., 0., 1., 0., 1., 0., 0., 1., 0., 1.])
+z = np.array([2., -2., 2., -2., 2., -1., -2., 1., 0., 2.])
+sigmoid = lambda z: 1.0 / (1.0 + np.exp(-z))
+
+
+def mse(y_hat, y):
+    return float(np.mean((y_hat - y) ** 2))
+
+
+def cross_entropy(y_hat, y):
+    p = np.clip(y_hat, 1e-12, 1.0 - 1e-12)          # without this, one 0 takes the whole mean with it
+    return float(-np.mean(y * np.log(p) + (1.0 - y) * np.log(1.0 - p)))
+
+
+# 1. Three networks: the hand-set-weight one, the same without conviction, and one that answers 0.5 to everything.
+confident = sigmoid(z)
+lukewarm = 0.5 + (confident - 0.5) * 0.1
+
+print("%-25s %8s %8s %8s" % ("", "correct", "MSE", "CE"))
+for name, p in [("hand-set-weight neuron", confident),
+                ("the same, no conviction", lukewarm),
+                ("answers 0.5 to everything", np.full(10, 0.5))]:
+    correct = int(((p >= 0.5) == (y == 1.0)).sum())
+    print("%-25s %8d %8.4f %8.4f" % (name, correct, mse(p, y), cross_entropy(p, y)))
+print()
+
+# 2. The correction of each loss, for an example whose label is 1.
+print("%6s %6s %11s %11s %9s" % ("z", "ŷ", "|dMSE/dz|", "|dCE/dz|", "ratio"))
+for zz in [-6.0, -3.0, 0.0, 3.0, 6.0]:
+    s = sigmoid(zz)
+    d_mse = abs(2.0 * (s - 1.0) * s * (1.0 - s))
+    d_ce = abs(s - 1.0)
+    print("%6.1f %6.3f %11.6f %11.6f %9.1f" % (zz, s, d_mse, d_ce, d_ce / d_mse))
+print()
+
+# 3. The logarithm of zero, and what covering it up costs.
+p = np.array([0.9, 0.0, 0.5])
+clipped = np.clip(p, 1e-12, 1.0)
+with np.errstate(divide="ignore"):
+    print("without clipping:", -np.log(p), " mean:", float(-np.mean(np.log(p))))
+print("clipping:        ", np.round(-np.log(clipped), 2),
+      " mean:", round(float(-np.mean(np.log(clipped))), 2))
+`} />
+
+The first table justifies the lesson. The count of correct answers ties the first two at nine out of
+ten: it does not tell apart saying $0.881$ from saying $0.538$, because both fall on the same side.
+The two losses separate them ($0.049$ against $0.220$ for the confident one, $0.220$ against
+$0.633$ for the lukewarm one), and leave in last place the one that answers $0.5$ to everything, with
+$0.250$ and $0.693$, which is $\log 2$. They order alike. What they do not do alike is correct.
+
+That is the second table. At $z = -6$, with the label at $1$, cross-entropy hands over $0.9975$ and
+MSE $0.0049$: a ratio of $202.7$. At $z = 0$, with the network holding no opinion, it is $2$. The
+advantage grows towards the extremes, and one of them is where the network is wrong. The last row
+repeats the $202.7$ with the network getting it right, and there both corrections are minuscule
+because they should be.
+
+The third experiment shows the detail that breaks an implementation. $-\log 0$ is infinite, and one
+example the network gives probability zero to is enough for the mean of the whole batch to be
+infinite and stop saying anything. Clipping at $10^{-12}$ avoids it at a price I say out loud: nobody
+measured that $27.63$.
+
+## Test your intuition
+
+Four questions (a cross-entropy by hand, MSE when classifying, the clean correction and the maximum
+of the softmax) and a challenge with the output layer.
+
+<Quiz id="q-ec-a-mano" />
+
+<Quiz id="q-mse-clasificar" />
+
+<Quiz id="q-gradiente-limpio" />
+
+<Quiz id="q-softmax" />
+
+<CodeChallenge id="ch-entropia-cruzada" />
+
+---
+
+There is now a number that says how badly the network is doing, and in the whole lesson not a single
+weight has moved. The three networks arrived with their numbers already set, the loss has ordered
+them, which is what was asked of it, and none of them has improved for having been measured.
+
+Training is making that number small, and the only thing that can be touched to get there is the
+weights: changing them changes $\hat{\mathbf{Y}}$, and with it $\mathcal{L}$. Of that movement, the
+derivative gives the direction (if $\hat{y} - y$ is positive, raising $z$ raises the loss, so it has
+to be lowered) and does not give the distance: it describes the slope at the point where you are and
+stops holding as soon as you move. So the weights are not corrected in one go but in steps, and the
+size of each step is a decision: too short never arrives, too long overshoots. How it is chosen,
+what happens when it is chosen badly and why repeating it ends up finding the minimum without seeing
+it, is <Leccion slug="descenso-gradiente">the next lesson, on gradient descent</Leccion>.

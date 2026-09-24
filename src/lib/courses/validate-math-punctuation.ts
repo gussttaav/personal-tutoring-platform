@@ -5,8 +5,9 @@
  * sentence around it, and it carries that sentence's punctuation — a period when the
  * sentence ends there, a comma when the next clause would take a pause in prose,
  * nothing when the sentence runs straight through it. The mark is the LAST CHARACTER
- * INSIDE the fence. See docs/courses/AUTHORING.md §5 (typography) and §8 (where the
- * mark goes relative to `\end{cases}` and `\text{…}`).
+ * INSIDE the fence — appended to `\end{cases}` and the matrix closers, but ending the
+ * last ROW of an `aligned`-family derivation. See docs/courses/AUTHORING.md §5
+ * (typography) and §8 (the exact placement, and `\text{…}`).
  *
  * Block 1 shipped five lessons and 39 display blocks with no punctuation at all, so
  * this drifts by default rather than by accident. Four more blocks are coming.
@@ -41,6 +42,13 @@ const TERMINAL = /[.,;:]$/;
  *  `$` or `*` is a component, heading, table, list, code, maths or a bold lead-in, and
  *  none of those tells us whether the sentence ended. */
 const NEW_SENTENCE = /^[\p{Lu}¿¡]/u;
+
+/** The close of an `aligned`-family environment: one continued derivation whose last
+ *  ROW carries the sentence's mark, because a mark appended to `\end{aligned}` on the
+ *  line below floats against the block's vertical centre in KaTeX. `cases`, `array` and
+ *  the matrix envs are deliberately absent — their last row is one branch or one entry,
+ *  so the mark belongs on the `\end{…}` line itself. */
+const ALIGNMENT_CLOSE = /^\\end\{(aligned|gathered|split|align|alignat|flalign)\*?\}$/;
 
 interface BodyLine {
   text: string;
@@ -116,11 +124,18 @@ export function mathPunctuationWarnings(source: string): string[] {
       .map((l) => l.text.trim())
       .filter((text) => text !== "");
     const last = equation[equation.length - 1] ?? "";
+    // An `aligned`-family block is one continued derivation, so the sentence's mark ends
+    // its last ROW (`… = \sigma(z)\left(1 - \sigma(z)\right),`), not the `\end{aligned}`
+    // line below it. A block still in the older `\end{aligned}.` form keeps passing: the
+    // trailing mark takes it off the ALIGNMENT_CLOSE path onto the plain last-line check.
+    // Every non-alignment environment carries the mark on its last line as written.
+    const row = ALIGNMENT_CLOSE.test(last) ? (equation[equation.length - 2] ?? "") : last;
+    const marked = TERMINAL.test(row);
     const next = lines.slice(i + 1).find((l) => l.text.trim() !== "");
 
-    if (last !== "" && !TERMINAL.test(last) && next !== undefined && NEW_SENTENCE.test(next.text.trim())) {
+    if (last !== "" && !marked && next !== undefined && NEW_SENTENCE.test(next.text.trim())) {
       warnings.push(
-        `math punctuation — the display block on line ${lines[open].line} ends «${tail(last)}» and ` +
+        `math punctuation — the display block on line ${lines[open].line} ends «${tail(row)}» and ` +
           `line ${next.line} starts a new sentence; display math carries the sentence's punctuation ` +
           "(AUTHORING §5), so it needs the mark inside the fence",
       );
