@@ -218,11 +218,6 @@ calcular. Detrás de las nueve hay tres números, uno por preactivación de la r
 tres, cada una de las nueve derivadas es un producto de dos factores, y ninguno de los dos hay que
 ir a buscarlo lejos.
 
-<Explorable
-  id="backprop-trace"
-  caption="Recorre los catorce pasos con las flechas y vigila un número: δ(2)₁, el error de la neurona de salida, que se calcula en el tercer paso y vuelve como primer factor en los cinco siguientes. Ese es todo el ahorro. Compara además el cuarto paso con el quinto: dos pesos distintos, el mismo primer factor, y lo único que cambia es lo que cada uno tenía delante."
-/>
-
 <Callout type="intuition" title="La idea en una frase">
 Hacia atrás no viaja una derivada por peso: viaja un número por neurona. Cada peso consigue el suyo
 multiplicando el número de su neurona por lo que esa neurona tenía delante.
@@ -290,9 +285,9 @@ $$
 $$
 
 Nada de lo que sigue depende de que sea ésa. Cambia la pérdida o la activación de salida y ese
-vector cambia; el resto del algoritmo no se entera, porque sólo lo recibe. La red del explorable de
-arriba es el ejemplo: tiene una sigmoide en la salida y la pérdida
-$\tfrac{1}{2}\left(\hat{y} - y\right)^{2}$ —el $\tfrac{1}{2}$ es la convención que <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> dijo no adoptar, y aquí está puesto para que los números salgan cortos—, con lo que su capa de salida
+vector cambia; el resto del algoritmo no se entera, porque sólo lo recibe. La red pequeña del
+principio es el ejemplo, y éste es el sitio de decir lo que todavía no se había dicho de ella: lleva
+una sigmoide en las dos capas y la pérdida $\tfrac{1}{2}\left(\hat{y} - y\right)^{2}$ (el $\tfrac{1}{2}$ es la convención que <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> dijo no adoptar, y aquí está puesto para que los números salgan cortos), con lo que su capa de salida
 entra con $\delta^{(2)}_1 = \left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right)$ y no con
 $\hat{y} - y$: el factor de más es la sigmoide, que aquí no se cancela con nada. Todo lo demás es
 idéntico.
@@ -410,8 +405,17 @@ usado; una que va a entrenar, no, y esa memoria crece con la profundidad y con e
 
 ## Del explorable a una red con dos capas ocultas
 
-La primera celda es la red del explorable con sus mismos pesos, para que puedas comparar cifra a
-cifra. Ejecútala y ve leyendo la salida contra los pasos de arriba: los tres errores primero, los
+Ya no queda un símbolo sin definir, así que aquí está el algoritmo entero recorrido despacio sobre la
+red pequeña del principio: los dieciséis pasos que van de la pérdida a las nueve derivadas, uno por
+uno y con sus números.
+
+<Explorable
+  id="backprop-trace"
+  caption="La red del principio, con x = (1, 0.5), y = 1, sigmoide en las dos capas y la pérdida ½(ŷ − y)². Recorre los dieciséis pasos con las flechas y vigila un número: δ(2)₁, el error de la neurona de salida, que se calcula en el tercer paso y reaparece como primer factor en cinco de los seis siguientes. Ese es todo el ahorro. Compara además el cuarto paso con el quinto: dos pesos distintos, el mismo primer factor, y lo único que cambia es lo que cada uno tenía delante."
+/>
+
+La primera celda es esa misma red con sus mismos pesos, para que puedas comparar cifra a cifra.
+Ejecútala y ve leyendo la salida contra los pasos del explorable: los tres errores primero, los
 nueve gradientes después. La última línea sondea los nueve parámetros de uno en uno, que es la
 comprobación de la lección anterior aplicada aquí.
 

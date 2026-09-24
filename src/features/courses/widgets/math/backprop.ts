@@ -25,6 +25,12 @@
  * `runBackprop` returns the forward values, all parameter gradients, AND an ordered
  * list of chain-rule steps (each factor with its numeric value and their product),
  * which the widget steps through term by term, in either direction.
+ *
+ * COURSE-P5-00 — THE TRACE OWES THE STUDENT ALL NINE PARAMETER DERIVATIVES. Lesson 2.8 opens by
+ * counting this network's parameters ("nueve parámetros, así que hay nueve derivadas
+ * que calcular") and then hands the counting over to the widget, so a step list that
+ * stops at the four `W(1)` entries leaves a reader who counts along two short. The
+ * two `dL_db1_*` steps exist for that reason; `trace integrity` asserts the nine.
  */
 
 import { sigmoid } from "./activations";
@@ -195,6 +201,14 @@ export function runBackprop(params: MlpParams, x: number[]): BackpropResult {
         ],
         value: g,
       });
+    });
+  });
+  db1.forEach((g, j) => {
+    steps.push({
+      id: `dL_db1_${j}`,
+      target: `∂ℓ/∂b(1)${SUB[j]}`,
+      factors: [{ label: `δ(1)${SUB[j]}`, value: delta1[j] }],
+      value: g,
     });
   });
 

@@ -456,8 +456,11 @@ Line refs are into the `es/` file named in each heading.
   **12 Spanish assertion messages** (96–152), Spanish `prompt` and `explanation` (167–185);
   identifiers `errores`, `gradientes`, `deltas`, `peor`, `paso`. Every asserted value is numeric and
   seeded with `default_rng(0)`; nothing here moves.
-- **`<Explorable>` `backprop-trace`** (221–224): Spanish caption naming the fourteen steps and
-  $\delta^{(2)}_1$. Widget has **no corpus** — one `aria-label`. P11-02.
+- **`<Explorable>` `backprop-trace`** (409–412, after the recurrence is derived): Spanish caption
+  naming the **sixteen** steps, the preset's `x`/`y`/activation/loss and $\delta^{(2)}_1$, plus the
+  three-line lead-in above it (405–407). Widget has **no corpus** — one `aria-label`. P11-02.
+  (The review pass moved it out of the intuition slot at 221 and added the two
+  $\partial\ell/\partial b^{(1)}_j$ steps, which is why the count is no longer fourteen.)
 - **`<Leccion ancla="">`: 0** (9 refs — joint densest). **`reading`:** 2 (186–202), both `lang: en`,
   Spanish notes. **`<W>`: 1** — <W>la</W>, inside the rewritten quiz item.
 
