@@ -1,0 +1,586 @@
+---
+slug: implementar-mlp
+title: "Implementing an MLP from scratch"
+block: 2
+order: 9
+minutes: 30
+summary: "The four pieces of training are all derived and no cell has run them one after another. Assembling them costs stacking the backward pass by rows (with the 1/B the mean brings) and taking the decision no formula takes: where the weights start from. All of them equal stay equal for ever, and that is why initialisation is random."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-simetria
+    type: single
+    prompt: 'The network in this lesson starts with the four weights of $\mathbf{W}^{(2)}$ and the eight of $\mathbf{W}^{(1)}$ set to zero, and a thousand steps later it is exactly the same. Why?'
+    options:
+      - { id: a, text: 'Because everything that reaches the first layer carries a factor $\mathbf{W}^{(2)}$, which is zero, so its gradient is null; and even if it were not, two neurons with the same input weights and the same output weight receive the same gradient and are still the same neuron after the step.' }
+      - { id: b, text: 'Because $\tanh(0) = 0$ and the hyperbolic tangent has no derivative at the origin, so the chain rule never gets as far as being applied.' }
+      - { id: c, text: 'Because zero is a minimum of the loss and descent stops at minima: the network has already converged, and what is at fault is the learning rate.' }
+      - { id: d, text: 'Because the numbers are too small for floating-point precision. Multiplying every weight by a hundred at the start fixes it.' }
+    answer: a
+    explanation: '(a) has the two halves of the argument, and the second is the one that matters: the problem is not the zero, it is the equality. Four identical neurons compute a single function and no count separates them, so the hidden layer has the width of one neuron (and one neuron on its own does not separate these four phrases, which is what <Leccion slug="xor-y-capas-ocultas">the lesson on XOR and hidden layers</Leccion> proved). (b) is false from the start: $\tanh$ is differentiable everywhere and at the origin its derivative is $1$, which is its maximum. (c) confuses a null gradient with a minimum; it is a saddle point, and the third cell shows that starting somewhere else with the same learning rate is enough. And (d) goes exactly against what the table shows: the scale $0.01$ does not move either, and not because of floating point but because each layer receives a gradient multiplied by the other one''s scale.'
+  - id: q-parar
+    type: multi
+    prompt: 'Tick everything that is true about the loss curves the second and third cells print.'
+    options:
+      - { id: a, text: 'A flat curve does not on its own tell a network that has finished from one that is advancing too slowly: with the scale $0.01$ the loss does not move in a thousand steps, and with a hundred thousand steps the network reaches the four phrases.' }
+      - { id: b, text: 'The $0.6931$ of the first two rows of the table is $\log 2$, which is what the loss is worth when the network answers $0.5$ to the four examples.' }
+      - { id: c, text: 'In the row for step $25$ the correct answers are already four out of four, and the loss goes on falling two thousand steps later, so counting correct answers is no use for deciding when to stop.' }
+      - { id: d, text: 'Since the loss falls at every step the second cell prints, it is guaranteed that it fell as well at the intermediate steps that are not printed.' }
+    answer: [a, b, c]
+    explanation: 'The first three are what there is to read in those two outputs. (a) is the reason why "it has stalled" is not an observation but a hypothesis. (b) is the starting point of any network that answers the same thing to everything, the same $\log 2$ that appeared in <Leccion slug="descenso-gradiente">the lesson on gradient descent</Leccion>. (c) is why it is the loss and not the correct answers that gets looked at: with four examples the correct answers have only five possible values and are used up at once. The false one is (d), and its defect is one of method rather than of arithmetic: eight rows of a two-thousand-step curve say nothing about the one thousand nine hundred and ninety-two steps they do not show, and <Leccion slug="descenso-gradiente">the lesson on gradient descent</Leccion> already showed trajectories that rise and fall by turns. Here it fell at every step, but that has to be checked, not deduced.'
+challenges:
+  - id: ch-entrena
+    prompt: |
+      Write the whole loop for this lesson's network: $d_0$ inputs, a hidden layer of $d_1$
+      neurons with $\tanh$ and one output with the sigmoid, over a batch of $B$ examples.
+
+      - `gradients(X, Y, W1, b1, W2, b2)` returns the four gradients of $\mathcal{L}$ in the
+        order `(gW1, gb1, gW2, gb2)`, each one with the shape of the parameter it
+        differentiates.
+      - `train(X, Y, W1, b1, W2, b2, eta, steps)` takes `steps` steps of descent and returns
+        `(curve, W1, b1, W2, b2)`, where `curve` holds `steps + 1` losses: one before each
+        step and one at the end.
+
+      `train` may not write into the matrices it receives.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def gradients(X, Y, W1, b1, W2, b2):
+          # your code here
+          pass
+
+
+      def train(X, Y, W1, b1, W2, b2, eta, steps):
+          # your code here
+          pass
+    tests:
+      - name: "each gradient has the shape of its parameter"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(1)
+          X, Y = rng.normal(size=(5, 3)), np.array([[1.], [0.], [1.], [0.], [1.]])
+          W1, b1, W2, b2 = rng.normal(size=(4, 3)), np.zeros(4), rng.normal(size=(1, 4)), np.zeros(1)
+          g = gradients(X, Y, W1, b1, W2, b2)
+          assert g is not None and len(g) == 4, 'return the four of them: gW1, gb1, gW2, gb2'
+          assert [a.shape for a in g] == [(4, 3), (4,), (1, 4), (1,)], 'the shape of each gradient is that of the parameter it differentiates'
+      - name: "the batch gradient is the mean, not the sum"
+        code: |
+          import numpy as np
+          X = np.array([[1., 0.], [1., 0.], [1., 0.], [1., 0.]])
+          Y = np.array([[1.], [1.], [1.], [1.]])
+          W1, b1 = np.zeros((2, 2)), np.zeros(2)
+          W2, b2 = np.array([[1., 1.]]), np.zeros(1)
+          g = gradients(X, Y, W1, b1, W2, b2)
+          assert g is not None, 'gradients returns nothing'
+          assert np.allclose(g[3], [-0.5]), 'with four identical examples the bias gradient is the one of a single example: the division by B is missing'
+      - name: "it agrees with the numerical probe"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(2)
+          X, Y = rng.normal(size=(6, 3)), rng.integers(0, 2, size=(6, 1)).astype(float)
+          P = [rng.normal(size=(4, 3)), rng.normal(size=4), rng.normal(size=(1, 4)), rng.normal(size=1)]
+          def L(W1, b1, W2, b2):
+              H = np.tanh(X @ W1.T + b1)
+              p = np.clip(1 / (1 + np.exp(-(H @ W2.T + b2))), 1e-12, 1 - 1e-12)
+              return -np.mean(Y * np.log(p) + (1 - Y) * np.log(1 - p))
+          g = gradients(*[X, Y] + P)
+          assert g is not None, 'gradients returns nothing'
+          worst = 0.
+          for P_i, g_i in zip(P, g):
+              for k in np.ndindex(P_i.shape):
+                  v = P_i[k]
+                  P_i[k] = v + 1e-6
+                  d = L(*P)
+                  P_i[k] = v - 1e-6
+                  d -= L(*P)
+                  P_i[k] = v
+                  worst = max(worst, abs(d / 2e-6 - g_i[k]))
+          assert worst < 1e-6, 'the gradients do not agree with the probe: check the transpose and the derivative of tanh'
+      - name: "train does not write into what it receives"
+        code: |
+          import numpy as np
+          X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+          Y = np.array([[1.], [0.], [0.], [1.]])
+          rng = np.random.default_rng(0)
+          W1, b1, W2, b2 = rng.normal(size=(4, 2)), np.zeros(4), rng.normal(size=(1, 4)), np.zeros(1)
+          original = W1.copy()
+          r = train(X, Y, W1, b1, W2, b2, 0.5, 50)
+          assert r is not None, 'train returns nothing'
+          assert np.allclose(W1, original), 'W1 -= ... writes into the matrix of whoever called you; work on a copy'
+      - name: "the four XOR phrases, with the lesson's network"
+        code: |
+          import numpy as np
+          X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+          Y = np.array([[1.], [0.], [0.], [1.]])
+          rng = np.random.default_rng(0)
+          W1, b1, W2, b2 = rng.normal(size=(4, 2)), np.zeros(4), rng.normal(size=(1, 4)), np.zeros(1)
+          r = train(X, Y, W1, b1, W2, b2, 0.5, 2000)
+          assert r is not None and len(r) == 5, 'return (curve, W1, b1, W2, b2)'
+          curve, W1, b1, W2, b2 = r
+          assert len(curve) == 2001, 'one loss before each step and one at the end: steps + 1'
+          assert abs(curve[0] - 0.7260) < 1e-3, 'the first loss is measured BEFORE the first step'
+          assert curve[-1] < 0.01, 'two thousand steps have to leave the loss below 0.01'
+          Y_hat = 1 / (1 + np.exp(-(np.tanh(X @ W1.T + b1) @ W2.T + b2)))
+          assert int(((Y_hat >= 0.5) == (Y == 1.)).sum()) == 4, 'the trained network has to get the four phrases right'
+    solution: |
+      import numpy as np
+
+
+      def gradients(X, Y, W1, b1, W2, b2):
+          B = len(X)
+          H1 = np.tanh(X @ W1.T + b1)
+          Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+          D2 = Y_hat - Y
+          D1 = (D2 @ W2) * (1.0 - H1 ** 2)
+          return (D1.T @ X) / B, D1.sum(0) / B, (D2.T @ H1) / B, D2.sum(0) / B
+
+
+      def train(X, Y, W1, b1, W2, b2, eta, steps):
+          W1, b1, W2, b2 = W1.copy(), b1.copy(), W2.copy(), b2.copy()
+          curve = []
+          for t in range(steps + 1):
+              H1 = np.tanh(X @ W1.T + b1)
+              Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+              p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)
+              curve.append(-np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p)))
+              if t == steps:
+                  break
+              gW1, gb1, gW2, gb2 = gradients(X, Y, W1, b1, W2, b2)
+              W1 -= eta * gW1
+              b1 -= eta * gb1
+              W2 -= eta * gW2
+              b2 -= eta * gb2
+          return curve, W1, b1, W2, b2
+    explanation: |
+      `gradients` is the lesson's backward pass written out as it stands, and the two
+      decisions are in the second-to-last line. `D2 @ W2` carries no transpose (the forward
+      pass carries it, in `X @ W1.T`) because here the examples already go by rows on both
+      sides of the product; and the factor `(1.0 - H1 ** 2)` is the derivative of $\tanh$
+      written over the activation instead of over the pre-activation, which is what makes
+      it possible not to keep $\mathbf{Z}^{(1)}$.
+
+      The `/ B` appears four times and it is the only thing separating this gradient from
+      the previous lesson's. Without it everything works: the direction of the step is the
+      same and the shape tests pass. What changes is the scale, which comes out multiplied
+      by $B$, so the learning rate that served with four examples would diverge with a
+      thousand. The second test isolates it by putting in four identical examples: their
+      gradient has to be the one of a single example.
+
+      In `train`, the two lines that decide are the first and the `break`. The `.copy()` is
+      what stops `W1 -= eta * gW1` writing into the caller's matrix: `-=` in NumPy modifies
+      the array in place, and that is what you want inside the loop and not outside. And
+      the loss is measured *before* updating, so that `curve[0]` is the untrained network
+      and `curve[-1]` the final one: that is why there are `steps + 1` values and not
+      `steps`.
+reading:
+  - kind: paper
+    title: 'Understanding the difficulty of training deep feedforward neural networks'
+    authors: 'Glorot and Bengio'
+    year: '2010'
+    venue: 'AISTATS 2010'
+    lang: en
+    url: 'https://proceedings.mlr.press/v9/glorot10a.html'
+    note: 'The paper the lesson points at when it defers "which scale" to Block 3: it fixes the initialisation scale from the width of each layer so the signal neither saturates nor dies out. It does not treat symmetry; the lesson already does.'
+  - kind: interactivo
+    title: 'A Neural Network Playground'
+    authors: 'Smilkov and Carter'
+    venue: 'playground.tensorflow.org'
+    lang: en
+    url: 'https://playground.tensorflow.org/'
+    note: 'The loop you have just written, with knobs: move the learning rate, the layers, the neurons and the activation, and watch the loss fall. It works on points in the plane, not on text, and brings in regularisation outside this course.'
+---
+
+{/* COURSE-P5-02 — Block 2, Lesson 9. */}
+
+Backpropagation hands over the gradient of a whole network in a single backward pass, and the
+previous lesson derived it without skipping a step. What it produced was a list of numbers on a
+screen. A printed gradient moves no weight: it is an instruction (which way is down, and how much
+of it falls to each parameter) and somebody has to carry it out, a thousand times over, for a
+network to go from answering anything at all to answering well. That loop is not written in any
+cell of the course. Its four pieces are, spread over four lessons of this block, and putting them
+together also settles a debt open since the beginning: the eight weights of the review neuron and
+the seven that separate the XOR (exclusive or) phrases were written by me, looking at the data.
+
+The place to check it has been chosen since then. <Leccion slug="xor-y-capas-ocultas">The lesson on XOR and hidden layers</Leccion> proved that no line leaves <W>it's good</W> and <W>not bad</W> on one
+side and the other two phrases on the other, and then solved all four with a hidden layer whose
+seven numbers I picked by hand. If the loop works, the network has to find weights that get the
+four right (not necessarily mine) starting from numbers that mean nothing. And if it does not work
+you notice at once: with four examples and two coordinates there is nowhere to hide a fault.
+
+The four pieces are not loose. They are in an order, and the order closes on itself.
+
+<Figure
+  src="/courses/dl-nlp/bucle-entrenamiento.en.svg"
+  alt="Four boxes placed at the corners of a rectangle and joined by arrows that turn clockwise. Top left, forward pass; top right, loss; bottom right, gradient; bottom left, weight update. The first three arrows are grey; the fourth, the one that goes up from the update to the forward pass and closes the circle, is green and has the words and again written beside it."
+  caption="Training adds no new operation: it adds a loop. Each box was derived in its own lesson and none of them changes here, and the only thing this lesson writes for the first time is the arrow that hands control back to the beginning."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+Training is repeating four things you already know how to do. The only thing left to decide is
+where the weights come from the first time, and there the comfortable answer (all of them equal)
+leaves the network frozen for ever.
+</Callout>
+
+## From the example to the batch: the backward pass, stacked by rows
+
+The previous lesson derived the backward pass for one example, with column vectors. The forward
+pass has been written for a whole batch since <Leccion slug="forward-pass">the lesson on the forward pass</Leccion>: one example per row in
+$\mathbf{X} \in \mathbb{R}^{B \times d_0}$, and from there
+$\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ layer by layer. The same treatment is missing for
+the backward pass, and it is two changes: one of shape and one of size.
+
+The one of shape is stacking. Let us call $\boldsymbol{\Delta}^{(l)} \in \mathbb{R}^{B \times d_l}$
+the **batch error** at layer $l$: its row $i$ is the $\boldsymbol{\delta}^{(l)}$ of example $i$,
+laid on its side, just as row $i$ of $\mathbf{H}^{(l)}$ is its activation laid on its side. Capital
+for the batch and lower case for the example, which is the block's convention. The output layer
+enters just as before, now with $B$ rows at a time:
+
+$$
+\boldsymbol{\Delta}^{(L)} = \hat{\mathbf{Y}} - \mathbf{Y} \in \mathbb{R}^{B \times d_L}.
+$$
+
+And the recurrence transposes whole. Take the previous lesson's, for example $i$,
+$\boldsymbol{\delta}^{(l)}_i = \left(\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}_i\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(l)}_i\right)$,
+and transpose it. Transposing a product reverses the order of its factors, and the Hadamard
+product operates coordinate by coordinate, so it does not notice:
+
+$$
+\left(\boldsymbol{\delta}^{(l)}_i\right)^{\top} = \left(\left(\boldsymbol{\delta}^{(l+1)}_i\right)^{\top}\mathbf{W}^{(l+1)}\right) \odot \left(\varphi^{\prime}\left(\mathbf{z}^{(l)}_i\right)\right)^{\top},
+$$
+
+which is row $i$ of what we are after, written with rows $i$ of $\boldsymbol{\Delta}^{(l+1)}$ and of
+$\mathbf{Z}^{(l)}$. Stacking the $B$ of them leaves
+
+$$
+\boldsymbol{\Delta}^{(l)} = \left(\boldsymbol{\Delta}^{(l+1)}\mathbf{W}^{(l+1)}\right) \odot \varphi^{\prime}\left(\mathbf{Z}^{(l)}\right),
+$$
+
+where what to look at is what has disappeared: the transpose. It is neither an oversight nor a
+different convention. The forward pass *gained* a transpose on moving to rows
+($\mathbf{W}^{(l)}\mathbf{h}$ became $\mathbf{H}\left(\mathbf{W}^{(l)}\right)^{\top}$) and the
+backward pass *loses* it for the same reason, because it started from a matrix that was already
+transposed. Both times it is the same product read with the examples in rows.
+
+The change of size is the $1/B$, and it comes from the definition of the loss. $\mathcal{L}$ is the
+mean of the $\ell$ of the $B$ examples, and differentiating a mean is taking the mean of the
+derivatives, so the gradient of the batch is the mean of the $B$ gradients the previous lesson
+would give one at a time. That mean is another matrix product:
+
+$$
+\nabla_{\mathbf{W}^{(l)}}\mathcal{L}
+= \frac{1}{B}\sum_{i=1}^{B}\boldsymbol{\delta}^{(l)}_i\left(\mathbf{h}^{(l-1)}_i\right)^{\top}
+= \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{H}^{(l-1)} \in \mathbb{R}^{d_l \times d_{l-1}},
+\qquad
+\nabla_{\mathbf{b}^{(l)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(l)}\right)^{\top}\mathbf{1}_B,
+$$
+
+with $\mathbf{1}_B \in \mathbb{R}^{B}$ the vector of ones from <Leccion slug="forward-pass">the lesson on the forward pass</Leccion>. The sum over examples that the
+previous lesson wrote out by hand is exactly the index the matrix product runs over and discards:
+that is why the result has the shape of $\mathbf{W}^{(l)}$ and does not remember $B$.
+
+With that, the descent rule from <Leccion slug="descenso-gradiente">the lesson on gradient descent</Leccion> does not change a letter:
+$\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t)$, applied to each matrix and
+each bias vector separately. The concession, said out loud: every step looks at the whole
+**training set** (the labelled examples the network has, here the four phrases), just as that
+lesson did with the ten reviews. Splitting it into pieces and taking one step per piece is needed
+when it is large, and this one has four rows.
+
+Everything the four-phrase network needs is written down, then: the smallest multilayer perceptron
+(MLP) to try it on, with two inputs, four hidden neurons with $\tanh$ and one output neuron with
+the sigmoid, that is $L = 2$ and $d_0, d_1, d_2 = 2, 4, 1$. Its forward pass takes one line per
+layer,
+
+$$
+\mathbf{H}^{(1)} = \tanh\left(\mathbf{X}\left(\mathbf{W}^{(1)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(1)}\right)^{\top}\right) \in \mathbb{R}^{4 \times 4},
+\qquad
+\hat{\mathbf{Y}} = \sigma\left(\mathbf{H}^{(1)}\left(\mathbf{W}^{(2)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(2)}\right)^{\top}\right) \in \mathbb{R}^{4 \times 1},
+$$
+
+with $\mathbf{X} \in \mathbb{R}^{4 \times 2}$ and $B = 4$, and its backward pass is the three
+formulas above with $L = 2$. Twelve weights and five biases: seventeen numbers that have to be put
+somewhere before the first step is taken.
+
+### Four identical neurons are a single neuron
+
+Putting those seventeen numbers in is the decision no earlier formula takes, and the comfortable
+answer (all of them zero) fails. Follow the arithmetic through with that same network and the
+seventeen zeros. Then $\mathbf{Z}^{(1)} = \mathbf{0}$, and since $\tanh(0) = 0$ also
+$\mathbf{H}^{(1)} = \mathbf{0}$; from there $\hat{\mathbf{Y}} = \sigma(\mathbf{0})$, which is $1/2$
+for the four phrases. Put that into the two gradients above:
+
+$$
+\nabla_{\mathbf{W}^{(2)}}\mathcal{L} = \frac{1}{B}\left(\boldsymbol{\Delta}^{(2)}\right)^{\top}\mathbf{H}^{(1)} = \mathbf{0},
+\qquad
+\boldsymbol{\Delta}^{(1)} = \left(\boldsymbol{\Delta}^{(2)}\mathbf{W}^{(2)}\right) \odot \varphi^{\prime}\left(\mathbf{Z}^{(1)}\right) = \mathbf{0},
+$$
+
+the first because $\mathbf{H}^{(1)}$ is null and the second because $\mathbf{W}^{(2)}$ is. With
+$\boldsymbol{\Delta}^{(1)} = \mathbf{0}$ the two gradients of the first layer vanish as well, so
+the step leaves the network where it was and the next one finds the same starting point. The hidden
+layer will never move.
+
+And the zero is not the problem, but a particular case of something wider. Take two hidden neurons
+$j$ and $k$ that start with the same input weights, the same bias and the same output weight. The
+first gives them the same pre-activation and the same activation,
+$z^{(1)}_j = z^{(1)}_k$ and $h^{(1)}_j = h^{(1)}_k$; the last makes them receive the same error,
+$\delta^{(1)}_j = \delta^{(1)}_k$; and with the same error and the same activation their three
+gradients coincide:
+
+$$
+\left(\nabla_{\mathbf{W}^{(1)}}\mathcal{L}\right)_{jm} = \left(\nabla_{\mathbf{W}^{(1)}}\mathcal{L}\right)_{km} \;\; \text{for all } m,
+\qquad
+\nabla_{b^{(1)}_j}\mathcal{L} = \nabla_{b^{(1)}_k}\mathcal{L},
+\qquad
+\nabla_{\mathbf{W}^{(2)}_{1j}}\mathcal{L} = \nabla_{\mathbf{W}^{(2)}_{1k}}\mathcal{L}.
+$$
+
+Subtracting equal quantities from equal quantities preserves the equality, so the two neurons come
+out of the step as identical as they went in. And out of the next one.
+
+<Figure
+  src="/courses/dl-nlp/simetria-rectas.en.svg"
+  alt="The same plane twice, with the four phrases at the corners of a square: the two green dots at minus 1 comma 1 and at 1 comma minus 1, and the two hollow ones at minus 1 comma minus 1 and at 1 comma 1. In the panel on the left, titled four different rows, four green lines cross the square in four directions and cut across one another. In the one on the right, titled four identical rows, there is a single line, thicker and marked times four, which splits the square into two halves; the right-hand half is shaded green and has yes written on it, the left-hand one has no, and each of the two halves keeps one green dot and one hollow dot."
+  caption="A hidden neuron is a line of the plane, and a layer of four neurons is four lines. With the four rows identical the four lines are the same one, and no line on its own leaves the two green phrases on one side and the other two on the other."
+/>
+
+That single line is the one from <Leccion slug="xor-y-capas-ocultas">the lesson on XOR and hidden layers</Leccion>, which proved that none of them works: the
+hidden layer has the width of one neuron however much $d_1$ says four.
+
+Seen from the seventeen numbers and not from the plane, the equality is a trap in the shape of a
+subspace. A configuration with the four neurons identical has five actual numbers dressed up as
+seventeen: one row of $\mathbf{W}^{(1)}$, one bias, one weight of $\mathbf{W}^{(2)}$ and $b^{(2)}$.
+All of them together form a five-dimensional subspace inside the seventeen, and the gradient always
+comes out tangent to it.
+
+<Figure
+  src="/courses/dl-nlp/simetria-silla.en.svg"
+  alt="A contour map of a loss, stretched out horizontally. Through the centre, from side to side, runs a horizontal line labelled four identical rows; on it, seven dots come in from the right and bunch closer together until they stop at the centre, which is marked with a circle and labelled saddle point. Just above and just below that centre are two elongated green patches, each with a green dot in the middle labelled minimum, and two short arrows leave the centre upwards and downwards, perpendicular to the line, one towards each patch. Neither of the two arrows points along the line. The left edge has, written vertically, the rows come apart."
+  caption="The contours are those of a toy loss I drew myself so that the shape can be seen. The gradient has no vertical component on the line of identical rows, so the descent travels the whole of it and stops at the saddle point, with its ways out pointing exactly where it cannot go."
+/>
+
+Nothing in the algorithm breaks that equality, because everything it does is deterministic: it has
+to come from outside, and the cheapest source of "different" is a random draw. Choosing those
+seventeen starting numbers is the **initialisation**, the one point of training where chance comes
+in. Its role is not the one it looks like: it contributes no information at all about the phrases,
+it only separates some neurons from others so that the gradient can push them down different paths.
+How much they are worth matters too (tiny weights look too much like the case above), and the third
+cell measures it. Which scale to choose in general depends on the depth of the network, and it
+turns up in Block 3, on recurrent networks, when the problem stops being an inconvenience and
+becomes the subject.
+
+## The loop in NumPy, and the loss falling
+
+The first cell is the network with the formulas above put into NumPy: the forward pass, the loss
+and the backward pass, with no loop yet. Run it and look at the column of shapes and the last line.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# The four XOR phrases: x1 is +1 if "not" appears and x2 is +1 if the
+# evaluative word is "good". The label is 1 if the phrase speaks well.
+X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+Y = np.array([[1.], [0.], [0.], [1.]])
+B, d0, d1, d2 = 4, 2, 4, 1
+
+rng = np.random.default_rng(0)                   # fixed seed: you will see these numbers
+W1, b1 = rng.normal(size=(d1, d0)), np.zeros(d1)
+W2, b2 = rng.normal(size=(d2, d1)), np.zeros(d2)
+
+
+def forward(X, W1, b1, W2, b2):
+    H1 = np.tanh(X @ W1.T + b1)                  # (B, d1)
+    return H1, 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+
+
+def loss(Y_hat, Y):
+    p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)       # the logarithm does not take zero
+    return -np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p))
+
+
+def backward(X, Y, H1, Y_hat, W2):
+    D2 = Y_hat - Y                               # (B, d2): the output enters with no factor
+    D1 = (D2 @ W2) * (1.0 - H1 ** 2)             # transport and mask: (B, d1)
+    return (D1.T @ X) / B, D1.sum(0) / B, (D2.T @ H1) / B, D2.sum(0) / B
+
+
+H1, Y_hat = forward(X, W1, b1, W2, b2)
+gW1, gb1, gW2, gb2 = backward(X, Y, H1, Y_hat, W2)
+for name, A in [("X", X), ("H(1)", H1), ("Ŷ", Y_hat),
+                ("∇W(1)", gW1), ("∇b(1)", gb1), ("∇W(2)", gW2)]:
+    print("%-6s %s" % (name, A.shape))
+print("initial loss: %.4f" % loss(Y_hat, Y))
+
+# The 1/B in plain sight: the batch gradient is the mean of the four one at a time.
+one_at_a_time = np.zeros((d1, d0))
+for i in range(B):
+    d2_i = Y_hat[i] - Y[i]
+    d1_i = (W2.T @ d2_i) * (1.0 - H1[i] ** 2)    # the same δ, as a column
+    one_at_a_time += np.outer(d1_i, X[i]) / B
+print("\\n∇W(1) of the batch =", np.round(gW1, 4).tolist())
+print("difference from the mean of the four outer products: %.1e"
+      % np.abs(one_at_a_time - gW1).max())
+`} />
+
+The column of shapes holds the whole division of labour: the $4$ of the examples appears in
+$\mathbf{X}$, in $\mathbf{H}^{(1)}$ and in $\hat{\mathbf{Y}}$, and in none of the three gradients,
+which come out with the shape of their parameters. The last line checks the $1/B$ and gives zero:
+the four outer products of the previous lesson, their mean taken by hand, are entry by entry the
+matrix product above.
+
+The second cell puts that into a loop and repeats it two thousand times, with $\eta = 0.5$. Run it
+and watch the loss fall.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+phrases = ["it's good", "it's bad", "not good", "not bad"]
+X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+Y = np.array([[1.], [0.], [0.], [1.]])
+B, eta, steps = 4, 0.5, 2000
+
+rng = np.random.default_rng(0)                   # the same network as the previous cell
+W1, b1 = rng.normal(size=(4, 2)), np.zeros(4)
+W2, b2 = rng.normal(size=(1, 4)), np.zeros(1)
+
+for t in range(steps + 1):
+    H1 = np.tanh(X @ W1.T + b1)                              # forward pass
+    Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+    if t in (0, 25, 50, 100, 200, 500, 1000, 2000):
+        p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)
+        print("step %4d   loss %.4f   correct %d of 4"
+              % (t, -np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p)),
+                 int(((Y_hat >= 0.5) == (Y == 1.0)).sum())))
+    if t == steps:
+        break
+    D2 = Y_hat - Y                                           # backward pass
+    D1 = (D2 @ W2) * (1.0 - H1 ** 2)
+    W1 -= eta * (D1.T @ X) / B                               # and descent
+    b1 -= eta * D1.sum(0) / B
+    W2 -= eta * (D2.T @ H1) / B
+    b2 -= eta * D2.sum(0) / B
+
+print()
+print("neuron      w1     w2    bias   output weight")
+for j in range(4):
+    print("   %d      %+5.2f  %+5.2f   %+5.2f       %+5.2f"
+          % (j + 1, W1[j, 0], W1[j, 1], b1[j], W2[0, j]))
+print()
+contribution = W2[0] * H1                        # what each neuron puts into z(2)
+for phrase, a in zip(phrases, contribution):
+    print("%-9s  neurons 2 and 4: %+5.2f    neurons 1 and 3: %+5.2f"
+          % (phrase, a[1] + a[3], a[0] + a[2]))
+`} />
+
+The loss starts at $0.7260$ and reaches $0.0011$, and the four correct answers appear before step
+$25$. The debt is paid: nobody has told the network that <W>not</W> reverses the sign of what
+follows, and the weights it has found are not the ones I wrote in <Leccion slug="xor-y-capas-ocultas">the lesson on XOR and hidden layers</Leccion>.
+
+They are better than that: they are the same ones, rediscovered. Look at neurons $2$ and $4$. Their
+weights point in almost the same direction ($(1.83,\ 1.77)$ and $(1.79,\ 1.85)$, both of them
+almost $x_1 + x_2$), their biases are opposite ($-1.80$ and $+1.80$) and so are their output
+weights ($-3.98$ and $+3.93$). That is the strip from <Leccion slug="xor-y-capas-ocultas">the lesson on XOR and hidden layers</Leccion>: two parallel lines and a
+subtraction between them. The last table confirms it: that pair contributes $+7.5$ to the two
+positive phrases and $+0.2$ to the other two. And the pair $1$ and $3$ does the same on the other
+diagonal with the sign flipped, subtracting $6.7$ just where the first one keeps quiet.
+
+What is left is saying when to stop, and it is the flimsiest of the three decisions. Here I stop at
+a round number of steps because the curve has flattened; I could have stopped when the loss stopped
+falling by a thousandth, or when the norm of the gradient fell below a threshold, and all three are
+rules of thumb. The correct answers are no use for deciding it: in the row for step $25$ there are
+already four of them and there they stay, while the loss goes on falling by a factor of three
+hundred. And the three rules share a limit that none of them can fix, because all three look only
+at these four phrases.
+
+The third cell goes back to the start of the loop and changes one thing only: where the weights
+come from. Six scales with the same seed, and below them four genuinely identical neurons.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+X = np.array([[-1., 1.], [-1., -1.], [1., 1.], [1., -1.]])
+Y = np.array([[1.], [0.], [0.], [1.]])
+B, eta, steps = 4, 0.5, 1000
+
+
+def train(scale, identical=False):
+    rng = np.random.default_rng(0)               # the same seed in all of them
+    W1, W2 = rng.normal(size=(4, 2)) * scale, rng.normal(size=(1, 4)) * scale
+    if identical:                                # four copies of one and the same neuron
+        W1, W2 = np.repeat(W1[:1], 4, axis=0), np.full((1, 4), W2[0, 0])
+    b1, b2 = np.zeros(4), np.zeros(1)
+    curve = []
+    for t in range(steps + 1):
+        H1 = np.tanh(X @ W1.T + b1)
+        Y_hat = 1.0 / (1.0 + np.exp(-(H1 @ W2.T + b2)))
+        p = np.clip(Y_hat, 1e-12, 1.0 - 1e-12)
+        curve.append(-np.mean(Y * np.log(p) + (1.0 - Y) * np.log(1.0 - p)))
+        if t == steps:
+            break
+        D2 = Y_hat - Y
+        D1 = (D2 @ W2) * (1.0 - H1 ** 2)
+        W1 -= eta * (D1.T @ X) / B
+        b1 -= eta * D1.sum(0) / B
+        W2 -= eta * (D2.T @ H1) / B
+        b2 -= eta * D2.sum(0) / B
+    return curve, int(((Y_hat >= 0.5) == (Y == 1.0)).sum()), W1
+
+
+print("%7s %8s %8s %8s %9s  %s"
+      % ("scale", "step 0", "step 50", "step 200", "step 1000", "correct"))
+for scale in [0.0, 0.01, 0.1, 0.5, 1.0, 10.0]:
+    curve, correct, _ = train(scale)
+    print("%7.2f %8.4f %8.4f %8.4f %9.4f  %d of 4"
+          % (scale, curve[0], curve[50], curve[200], curve[1000], correct))
+
+# And symmetry with no zeros: four copies of one neuron, with normal weights.
+curve, correct, W1 = train(1.0, identical=True)
+print()
+print("four identical neurons: loss %.4f -> %.4f, %d of 4"
+      % (curve[0], curve[-1], correct))
+print("W(1) after 1000 steps:", np.round(W1, 4).tolist())
+print("are the four rows still the same one?", bool(np.allclose(W1, W1[0])))
+`} />
+
+The first two rows of the table do not move from $0.6931$, which is $\log 2$: the network answers
+$0.5$ to the four phrases at the start and goes on answering the same thing a thousand steps later.
+The second of the two is the one that teaches something, because its scale is $0.01$ and not zero:
+the four neurons really are different. What happens is that each layer receives a gradient
+multiplied by the other one's scale, and with two small factors everything advances hundreds of
+times more slowly: that network is not stuck, it reaches the four phrases around step one hundred
+thousand. At the other end, the scale $10$ starts at $4.73$ (confidently wrong) and recovers: with
+two layers that comes cheap, and with depth it stops coming cheap.
+
+The last three lines are the symmetry with no zeros in the middle. The four neurons start with
+normal weights, only equal to one another, and a thousand steps later they are still the same row
+repeated four times. The loss has fallen from $0.7240$ to $0.6931$, which is exactly what a network
+that answers the same thing to everything achieves: four neurons working as one, and one cannot.
+
+## Test your intuition
+
+Two questions (why zero freezes the network and what can be read off a loss curve) and a challenge
+that is the whole loop.
+
+<Quiz id="q-simetria" />
+
+<Quiz id="q-parar" />
+
+<CodeChallenge id="ch-entrena" />
+
+---
+
+The network gets the four phrases it has seen right, and there is no fifth. That is not a defect of
+the training: it is that here getting it right and learning are indistinguishable, because with
+four examples memorising the answer and understanding the rule produce the same numbers. Nothing
+this loop prints says what the network would do with <W>not that good</W>, and the loop has no way
+of finding out.
+
+There is also a debt that the one about the weights has left in plain sight. I invented the two
+input coordinates myself: whether <W>not</W> appears, and whether the evaluative word is
+<W>good</W> or <W>bad</W>, are two questions somebody had to formulate after reading the four
+phrases, and an arbitrary text does not arrive in two numbers. It did arrive, though, in the bag of
+words of the previous block. Mounting this same loop on a few hundred reviews represented that way,
+measuring for the first time on reviews the network has not seen and seeing what is left of the
+accuracy is <Leccion slug="proyecto-sentimiento">the next lesson, the sentiment classification project</Leccion>.
