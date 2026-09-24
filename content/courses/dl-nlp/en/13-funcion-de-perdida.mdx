@@ -272,7 +272,7 @@ product to zero very fast, so we take logarithms (which preserve the order, so t
 move), flip the sign to have something to minimise, and divide by $B$. Out comes **cross-entropy**:
 
 $$
-\mathcal{L}_{\text{EC}} = -\frac{1}{B} \sum_{i=1}^{B} \left[\, y_i \log \hat{y}_i + \left(1 - y_i\right)\log\left(1 - \hat{y}_i\right) \right].
+\mathcal{L}_{\text{CE}} = -\frac{1}{B} \sum_{i=1}^{B} \left[\, y_i \log \hat{y}_i + \left(1 - y_i\right)\log\left(1 - \hat{y}_i\right) \right].
 $$
 
 Read it example by example. One with $y_i = 1$ contributes $-\log \hat{y}_i$: it is $0$ if the
@@ -283,7 +283,7 @@ difference from MSE, which never went above $1$.
 Now the derivative, which is what decides. We start from the loss of a single example,
 
 $$
-\ell_{\text{EC}} = -y\log\hat{y} - (1-y)\log(1-\hat{y}),
+\ell_{\text{CE}} = -y\log\hat{y} - (1-y)\log(1-\hat{y}),
 $$
 
 differentiate it with respect to $\hat{y}$, put the two terms over a common denominator and chain
@@ -291,12 +291,12 @@ with the sigmoid:
 
 $$
 \begin{aligned}
-\frac{\partial \ell_{\text{EC}}}{\partial \hat{y}}
+\frac{\partial \ell_{\text{CE}}}{\partial \hat{y}}
 &= -\frac{y}{\hat{y}} + \frac{1 - y}{1 - \hat{y}}
  = \frac{-y\left(1 - \hat{y}\right) + \hat{y}\left(1 - y\right)}{\hat{y}\left(1 - \hat{y}\right)}
  = \frac{\hat{y} - y}{\hat{y}\left(1 - \hat{y}\right)}, \\[4pt]
-\frac{\partial \ell_{\text{EC}}}{\partial z}
-&= \frac{\partial \ell_{\text{EC}}}{\partial \hat{y}} \cdot \frac{d\hat{y}}{dz}
+\frac{\partial \ell_{\text{CE}}}{\partial z}
+&= \frac{\partial \ell_{\text{CE}}}{\partial \hat{y}} \cdot \frac{d\hat{y}}{dz}
  = \frac{\hat{y} - y}{\hat{y}\left(1 - \hat{y}\right)} \cdot \hat{y}\left(1 - \hat{y}\right)
  = \hat{y} - y.
 \end{aligned}

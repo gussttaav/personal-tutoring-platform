@@ -1,7 +1,7 @@
 # AUTHORING.en.md — the English delta
 
 **Tag:** `COURSE-P11-03` · Delta on [AUTHORING.md](AUTHORING.md) · Notation:
-[NOTATION.md](NOTATION.md), unchanged
+[NOTATION.md](NOTATION.md), unchanged but for the words inside `\text{…}` (§8)
 
 **[AUTHORING.md](AUTHORING.md) governs an English lesson exactly as it governs a Spanish one,
 except where this file replaces it, section by section.** Read that file first; this one is useless
@@ -196,7 +196,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | the backward pass algorithm | backpropagation | backprop, back-propagation |
 | the two directions of a traversal, as nouns | forward pass, backward pass | the way in / the way back; the forward / the backward on its own |
 | the network's parts | layer, weight, bias | |
-| the threshold activation | step; the symbol stays $\text{escalón}$ (NOTATION.md §5) | escalón as an English prose word |
+| the threshold activation | step, and the symbol is $\text{step}$ (see §8) | $\text{escalón}$ in an English lesson |
 | what training minimises, and how | loss, gradient, gradient descent | cost, error surface |
 | $\eta$ | learning rate | step size |
 | the two objectives | cross-entropy, likelihood | log loss |
@@ -366,9 +366,19 @@ delta open and not the main file. All of them apply to an English lesson unchang
   Spanish opening will usually fail the first test, because the Spanish bridge it was written
   against is not the English one the reader just finished.
 - **What a lesson may assume** (§2), including that forward references are signposted out loud.
-- **All of [NOTATION.md](NOTATION.md).** Notation is locale-invariant by design, and its one
-  prose-facing part — §6, `<W>` — applies word for word. A symbol that needs adding is added there,
-  in the one file, for both locales.
+- **All of [NOTATION.md](NOTATION.md), except the words inside `\text{…}`.** Its one prose-facing
+  part — §6, `<W>` — applies word for word, and a symbol that needs adding is still added there, in
+  the one file, for both locales. What does **not** carry across is roman text that spells a Spanish
+  word the glossary above already gives an English one for. An English lesson writes $\text{step}$,
+  $\text{coverage}(k)$, $\text{accuracy}(D)$, $\mathcal{L}_{\text{CE}}$ and $D_{\text{train}}$ /
+  $D_{\text{test}}$ against the Spanish $\text{escalón}$, $\text{cob}(k)$, $\text{acierto}(D)$,
+  $\mathcal{L}_{\text{EC}}$ and $D_{\text{ent}}$ / $D_{\text{prueba}}$. Symbol, shape, meaning and
+  arguments are unchanged; what it buys is that the maths finally matches the labels the lesson's own
+  `print` calls already used (`step`, `CE`, `X_train`). NOTATION.md's reasons for **rejecting** a
+  spelling survive translation and still bind: coverage is $\text{coverage}(k)$ and never
+  $\text{cov}(k)$, which is the covariance.
+  *Settled by `en/18-proyecto-sentimiento.mdx` (COURSE-P11-05), applied back over `en/03`,
+  `en/09`–`en/11` and `en/13`.*
 - **The display-equation punctuation rule** (§5): the equation is part of its sentence and carries
   that sentence's mark as the last character inside the fence.
 - **Bold for the term being defined, never for emphasis** — that is italics' job.
