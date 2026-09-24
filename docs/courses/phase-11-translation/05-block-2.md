@@ -220,6 +220,12 @@ transcribe it by hand; do not re-invent it.
   only text and comments translated). Still owed by their lessons: `bucle-entrenamiento.svg`,
   `simetria-rectas.svg` and `simetria-silla.svg` (2.9), `reparto-resenas.svg` (2.10). **Re-check the asset itself before trusting the table above** — the
   2.7 row said "symbols only" and was true when triage ran, then the figure was redrawn.
+  **2.9's three siblings are done** (`bucle-entrenamiento.en.svg`, `simetria-rectas.en.svg`,
+  `simetria-silla.en.svg`); `reparto-resenas.en.svg` is still 2.10's. And the English text has to be
+  **re-measured against the `viewBox`, not just translated** (fixed by 2.9,
+  `en/17-implementar-mlp.mdx`): the geometry is copied byte for byte, so nothing can move aside for a
+  longer label, and `bucle-entrenamiento`'s caption came out 374px wide in a 360px `viewBox` against
+  the Spanish 328px. Re-worded to fit, and `AUTHORING.en.md` §7 now carries the rule.
 - **The "an input that appears twice pulls twice as hard" sentence** (fixed by 2.6,
   `en/14-descenso-gradiente.mdx`): the Spanish «una entrada que aparece dos veces tira el doble» renders
   as *an input that appears twice pulls twice as hard* in `q-actualiza`'s explanation, and as *one that
@@ -273,16 +279,17 @@ transcribe it by hand; do not re-invent it.
   so the same object had two names. `en orden de ida` is **in forward order**. **2.9 and 2.10 need this
   too** — es/17 has `la ida` ×2 and `la vuelta` ×7, es/18 `la vuelta` ×3. `AUTHORING.en.md` §6 glosses
   *forward pass* but not its opposite (its one neighbouring row names the **algorithm**,
-  backpropagation, not the pass), so the convention currently rests on this bullet. **Proposed, not
-  applied** — one glossary row, for whoever next edits that file:
+  backpropagation, not the pass), so the convention rested on this bullet until 2.9. **Applied by 2.9**
+  (`COURSE-P11-05`), as one glossary row under the backpropagation row:
 
   | Concept | Use | Never |
   |---|---|---|
   | the two directions of a traversal, as nouns | forward pass, backward pass | the way in / the way back; the forward / the backward on its own |
 
-  Held back because `AUTHORING.en.md` is already **368 lines against P11-03's 300-line ceiling**, so
-  the row is a judgement call about that budget rather than about the English, and it is not 2.8's
-  to make.
+  2.8 held it back because `AUTHORING.en.md` was already **368 lines against P11-03's 300-line
+  ceiling**, which made the row a judgement call about that budget rather than about the English.
+  The call went to the row: a convention two more lessons need outweighs the ceiling, and the file
+  now stands at **378 lines**. Closing that gap is P11-03's, not a block task's.
 - **A finite-difference derivative check is a *probe*** (fixed by 2.7). `AUTHORING.en.md` §6 now
   carries the row and the argument: `experiment` is a short run in a cell, `probe` is moving a
   parameter a little each way to check a derivative, and English spends one word where Spanish spends

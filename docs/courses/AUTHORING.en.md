@@ -194,6 +194,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | the mechanism, and its self- form | attention, self-attention | |
 | the paper's own names | one-hot encoding, multi-head, layer norm, fine-tuning, softmax, encoder, decoder, forward pass | |
 | the backward pass algorithm | backpropagation | backprop, back-propagation |
+| the two directions of a traversal, as nouns | forward pass, backward pass | the way in / the way back; the forward / the backward on its own |
 | the network's parts | layer, weight, bias | |
 | the threshold activation | step; the symbol stays $\text{escalón}$ (NOTATION.md §5) | escalón as an English prose word |
 | what training minimises, and how | loss, gradient, gradient descent | cost, error surface |
@@ -326,6 +327,15 @@ the English lesson cannot point at the Spanish file without inheriting its Spani
 the `aria-label`, and point `src` at the sibling; the Spanish file keeps its name and its Spanish.
 Figures are not widgets, so P11-02 does not own them and the redraw is the translating lesson's.
 *Settled by `en/03-vocabulario-oov.mdx` (COURSE-P11-04): `suma-armonica.svg` → `suma-armonica.en.svg`.*
+
+**And re-measure every string you put into the sibling.** The geometry is copied byte for byte, so
+nothing in the drawing can move aside for a longer label, and English is not reliably shorter than
+Spanish: a caption that fitted the original can overrun the `viewBox` and be clipped, silently and
+only at the edge. Check each `<text>` against it in the browser (`getBBox()` on the element, against
+`svg.viewBox.baseVal`) and re-word until it fits. The words are the only thing left that can give,
+so a faithful translation that does not fit is not the one that ships.
+*Settled by `en/17-implementar-mlp.mdx` (COURSE-P11-05): `bucle-entrenamiento`'s caption came out
+374px wide in a 360px `viewBox`, against the Spanish 328px.*
 
 **A widget whose default data is a locale-bound committed asset gets an English sibling asset, and the
 widget picks it per locale.** A few widgets read a *data file*, not just strings — `embedding-projection`
