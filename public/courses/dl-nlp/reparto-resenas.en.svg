@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-label="Five boxes joined by arrows. Top left, 180 reviews for training; top right, 60 reviews for testing. From the training box an arrow goes down to the vocabulary, of 436 entries, and from the vocabulary another goes down to the weights, labelled 600 steps. From the vocabulary a green arrow also leaves, turns right and rises to the test box, labelled represents. Down the right-hand edge a long arrow goes from the test box to the accuracy box, 52 of 60, labelled only at the end; a short arrow reaches that same box from the weights.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .ttl { font-size: 14px; fill: #e5e1e4; text-anchor: middle; }
+    .sub { font-size: 13px; fill: #86948a; text-anchor: middle; }
+    .box { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    .edge { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    /* The only thing the 60 test reviews receive from the training. */
+    .presta { stroke: #4edea3; stroke-width: 2; fill: none; }
+    .rot { font-size: 13px; fill: #86948a; text-anchor: start; }
+    .rotv { font-size: 13px; fill: #4edea3; text-anchor: start; }
+    .rote { font-size: 13px; fill: #86948a; text-anchor: end; }
+  </style>
+
+  <defs>
+    <marker id="gris" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
+    </marker>
+    <marker id="verde" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4edea3" />
+    </marker>
+  </defs>
+
+  <rect class="box" x="10" y="8" width="160" height="46" rx="8" />
+  <text class="ttl" x="90" y="30">180 reviews</text>
+  <text class="sub" x="90" y="46">for training</text>
+
+  <rect class="box" x="190" y="8" width="160" height="46" rx="8" />
+  <text class="ttl" x="270" y="30">60 reviews</text>
+  <text class="sub" x="270" y="46">for testing</text>
+
+  <rect class="box" x="10" y="100" width="160" height="46" rx="8" />
+  <text class="ttl" x="90" y="122">vocabulary</text>
+  <text class="sub" x="90" y="138">436 entries</text>
+
+  <rect class="box" x="10" y="192" width="160" height="46" rx="8" />
+  <text class="ttl" x="90" y="214">weights</text>
+  <text class="sub" x="90" y="230">and biases</text>
+
+  <rect class="box" x="190" y="192" width="160" height="46" rx="8" />
+  <text class="ttl" x="270" y="214">accuracy</text>
+  <text class="sub" x="270" y="230">52 of 60</text>
+
+  <path class="edge" d="M 90 54 V 96" marker-end="url(#gris)" />
+  <text class="rot" x="98" y="82">defines it</text>
+
+  <path class="edge" d="M 90 146 V 188" marker-end="url(#gris)" />
+  <text class="rot" x="98" y="174">600 steps</text>
+
+  <path class="presta" d="M 170 118 H 270 V 58" marker-end="url(#verde)" />
+  <text class="rotv" x="176" y="110">represents</text>
+
+  <path class="edge" d="M 320 54 V 188" marker-end="url(#gris)" />
+  <text class="rote" x="312" y="152">only at the end</text>
+
+  <path class="edge" d="M 170 215 H 186" marker-end="url(#gris)" />
+</svg>
