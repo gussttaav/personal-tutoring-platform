@@ -242,10 +242,45 @@ transcribe it by hand; do not re-invent it.
   −0.16541038 without the third path (1.80×, "almost double" holds), the three summands
   −0.156035 / −0.009376 / **+0.073330** (third positive ✓) and $z^{(1)}_4 = -1.5$ (fourth neuron off ✓).
   Both structural claims survive; the prose quotes $-1.5$ where the Spanish quoted $-1$.
-- **2.8 has no word occurring twice, and the block md's replacement note assumed one.** Review 1's bag
-  of words is `(0,0,1,0,1,1,0,1)`: every count is $0$ or $1$, so `q-leer-un-gradiente` cannot key its
-  answer on $x_k = 2$. Either pick a different review for that cell or hang the item on another hook —
-  2.8's call, left open here deliberately.
+- **2.8 has no word occurring twice, so `q-leer-un-gradiente` hangs on the zero instead** (fixed by 2.8,
+  `en/16-backpropagation.mdx`). Review 1's bag of words is `(0,0,1,0,1,1,0,1)`: every count is $0$ or
+  $1$, so the item cannot key its answer on $x_k = 2$. Swapping in another review was rejected — 2.8's
+  second cell is 2.7's network with one more hidden layer, and the lesson says so, so the review has to
+  be the same one. The item therefore **keeps the Spanish indices $(2, 4)$** and moves the hook: entry 4
+  is <W>good</W>, absent from the review, so $\delta^{(1)}_2 \cdot x_4 = -0.725931 \cdot 0 = 0$ and the
+  **answer is $0$**, tolerance unchanged. The non-zero $\delta^{(1)}_2$ quoted in the prompt is now the
+  distractor, which the Spanish item did not have. The explanation still ties back to 2.6's sentence,
+  as its **limiting case** (en/14 states both halves: an entry with $x_j = 0$ does not move, one that
+  appears twice pulls twice as hard), and lands the lesson's own two-kinds-of-zero point.
+  Regenerated 2.8 numbers (Pyodide), for anyone re-reading the prose: $\mathbf{z}^{(1)} = (2, 0.5, 1, -1.5)$,
+  $\mathbf{z}^{(2)} = (1, -1.25, 1)$, $\boldsymbol{\delta}^{(1)} = (0.475931, -0.725931, -0.725931, 0)$,
+  $\ell = 1.294377$. **Both structural claims survive**: exactly two switched-off neurons (the Spanish
+  quoted $-1$ and $-1$, the English $-1.5$ and $-1.25$), and $\nabla_{\mathbf{W}^{(2)}}\ell$ keeps its
+  null row and null column. $63$ parameters, $126$ probe passes and the $10^{-10}$ agreement hold.
+  `W2`, `W3`, `b1`, `b2` are untouched; only `W1` takes 2.7's column permutation.
+- **A quiz option is named bare: `(a) is …`, never `The (a) is …`** (fixed by 2.8,
+  `en/16-backpropagation.mdx`). Spanish explanations open with «La (a) es…», and the article carries
+  across as a calque nobody notices. Fourteen of the sixteen English lessons already use the bare form
+  (80 instances), including 2.5, 2.6 and 2.7; the strays are `en/11` (3) and `en/12` (6), from before
+  the convention settled, and they are **not** this block's to fix. The false option in a `multi` takes
+  the settled sentence from 2.5 and 2.7: *The false one is (d), and it is …*. **2.9 and 2.10 need this**
+  — es/17 and es/18 carry 54 and 46 of the Spanish form between their explanations.
+- **«la ida» / «la vuelta» are the *forward pass* and the *backward pass*, not "the way in / the way
+  back"** (fixed by 2.8, `en/16-backpropagation.mdx`). The literal rendering is both un-idiomatic and a
+  one-term-per-concept breach: 2.8's draft carried it 13 times while also saying *forward pass* 7 times,
+  so the same object had two names. `en orden de ida` is **in forward order**. **2.9 and 2.10 need this
+  too** — es/17 has `la ida` ×2 and `la vuelta` ×7, es/18 `la vuelta` ×3. `AUTHORING.en.md` §6 glosses
+  *forward pass* but not its opposite (its one neighbouring row names the **algorithm**,
+  backpropagation, not the pass), so the convention currently rests on this bullet. **Proposed, not
+  applied** — one glossary row, for whoever next edits that file:
+
+  | Concept | Use | Never |
+  |---|---|---|
+  | the two directions of a traversal, as nouns | forward pass, backward pass | the way in / the way back; the forward / the backward on its own |
+
+  Held back because `AUTHORING.en.md` is already **368 lines against P11-03's 300-line ceiling**, so
+  the row is a judgement call about that budget rather than about the English, and it is not 2.8's
+  to make.
 - **A finite-difference derivative check is a *probe*** (fixed by 2.7). `AUTHORING.en.md` §6 now
   carries the row and the argument: `experiment` is a short run in a cell, `probe` is moving a
   parameter a little each way to check a derivative, and English spends one word where Spanish spends
@@ -267,7 +302,7 @@ transcribe it by hand; do not re-invent it.
 - [x] 2.5 `funcion-de-perdida`
 - [x] 2.6 `descenso-gradiente`
 - [x] 2.7 `regla-de-la-cadena`
-- [ ] 2.8 `backpropagation`
+- [x] 2.8 `backpropagation`
 - [ ] 2.9 `implementar-mlp`
 - [ ] 2.10 `proyecto-sentimiento`
 
