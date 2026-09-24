@@ -1988,7 +1988,7 @@ first; see the [phase README](phase-11-translation/README.md).
 | [02 Widget strings + per-locale corpora](phase-11-translation/02-widget-i18n.md) | `COURSE-P11-02` | ✅ | _tbd_ | local |
 | [03 `AUTHORING.en.md` delta](phase-11-translation/03-authoring-en.md) | `COURSE-P11-03` | ✅ | _tbd_ | local |
 | [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ✅ | _tbd_ | local |
-| [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ⬜ | _tbd_ | |
+| [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ✅ | _tbd_ | local |
 | [06 Block 3 — RNNs (8)](phase-11-translation/06-block-3.md) | `COURSE-P11-06` | ⬜ | _tbd_ | |
 | [07 Block 4 — The Bridge to Attention (6)](phase-11-translation/07-block-4.md) | `COURSE-P11-07` | ⬜ | _tbd_ | |
 | [08 Block 5 — The Transformer (11)](phase-11-translation/08-block-5.md) | `COURSE-P11-08` | ⬜ | _tbd_ | |
@@ -2106,12 +2106,14 @@ is byte-identical.
 ### P11-03 notes
 
 `AUTHORING.en.md` landed **at the task's 300-line ceiling** (299 when P11-03 landed; B1.1 added §3's
-collation rule and paid for it by cutting three restatements). **It is now 378 lines and the ceiling
+collation rule and paid for it by cutting three restatements). **It is now 389 lines and the ceiling
 is broken.** The translating lessons did it, one settled convention at a time, each a rule a later
 lesson needed and could not find in the delta: B1.2's PyCell-code rule, B1.3's figure sibling,
 B1.6's cited line and its widget-sibling asset, B2.3's language-adjective cut in `summary`, B2.7's
-`probe`/`experiment` split, and B2.9's traversal-directions glossary row with its SVG re-measuring
-rule. Every one was the right call on its own, and the sum is still the file drifting towards the
+`probe`/`experiment` split, B2.9's traversal-directions glossary row with its SVG re-measuring
+rule, and B2.10's §8 exception for the roman text inside `\text{…}` — the only one of them that
+*replaces* a rule rather than adding one, and the only one that reaches back over lessons already
+merged. Every one was the right call on its own, and the sum is still the file drifting towards the
 fork it exists to prevent. Bringing it back under 300 is **P11-03's and not a block task's**, and
 what has to give is restatement rather than rules. The ceiling itself stays the right check:
 everything the delta does not say is `AUTHORING.md` still governing. Its §8 names the parts most

@@ -1,6 +1,6 @@
 # P11-05 — Block 2: The Multilayer Perceptron
 
-**Tag:** `COURSE-P11-05` · **Size:** L · **Status:** in progress (2.1–2.9 done, 2.10 open)
+**Tag:** `COURSE-P11-05` · **Size:** L · **Status:** ✅ done (2.1–2.10, reviewed)
 
 ## TL;DR
 
@@ -207,21 +207,23 @@ transcribe it by hand; do not re-invent it.
 
 ## Decisions fixed by later lessons — reuse as they stand
 
-- **Loss subscripts stay `\text{MSE}` / `\text{EC}`** (fixed by 2.5, `en/13-funcion-de-perdida.mdx`).
-  NOTATION.md is locale-invariant, so $\mathcal{L}_{\text{EC}}$ and $\ell_{\text{EC}}$ are not
-  re-abbreviated in English, the same way `\text{escalón}` survives in 2.1–2.3. Cell **print labels**
-  are English strings and say `CE` / `|dCE/dz|`, the way 2.2's print row says `step` under the
-  `escalón` symbol. Any later lesson that names the cross-entropy candidate in maths writes
-  `\text{EC}`; in a `print` it writes `CE`.
+- ~~**Loss subscripts stay `\text{MSE}` / `\text{EC}`**~~ (fixed by 2.5,
+  `en/13-funcion-de-perdida.mdx`) — **reversed by 2.10; see the `\text{…}` bullet at the end of this
+  section.** The argument was that NOTATION.md is locale-invariant, so $\mathcal{L}_{\text{EC}}$
+  would not be re-abbreviated in English, the same way `\text{escalón}` survived in 2.1–2.3, while
+  cell **print labels** said `CE` / `|dCE/dz|`. What the rule did not survive is its own
+  observation: the split it describes, maths in Spanish and prints in English, is the defect and not
+  the convention. English now writes $\mathcal{L}_{\text{CE}}$ and the print labels are unchanged,
+  which is what the row was reaching for. The half that **does** survive is the practice of reading
+  the print label and the symbol together: that is how the mismatch was found.
 - **Figures with Spanish set into the asset get an `.en.svg` sibling** and the lesson points `src` at
   it: `mlp-arquitectura.en.svg`, `xor-franja.en.svg` (2.3), `perdida-correccion.en.svg` (2.5, decimal
   comma `0,5` → `0.5`), `descenso-pasos.en.svg` (2.6, decimal commas `0,10`/`0,40`/`1,05` → points),
   `regla-cadena-caminos.en.svg` (2.7, column headers + `aria-label`; geometry copied byte for byte,
-  only text and comments translated). Still owed by their lessons: `bucle-entrenamiento.svg`,
-  `simetria-rectas.svg` and `simetria-silla.svg` (2.9), `reparto-resenas.svg` (2.10). **Re-check the asset itself before trusting the table above** — the
-  2.7 row said "symbols only" and was true when triage ran, then the figure was redrawn.
-  **2.9's three siblings are done** (`bucle-entrenamiento.en.svg`, `simetria-rectas.en.svg`,
-  `simetria-silla.en.svg`); `reparto-resenas.en.svg` is still 2.10's. And the English text has to be
+  only text and comments translated). **All nine are now done**, the last being
+  `reparto-resenas.en.svg` (2.10), whose four data labels regenerated with the English corpus.
+  **Re-check the asset itself before trusting the table above** — the
+  2.7 row said "symbols only" and was true when triage ran, then the figure was redrawn. And the English text has to be
   **re-measured against the `viewBox`, not just translated** (fixed by 2.9,
   `en/17-implementar-mlp.mdx`): the geometry is copied byte for byte, so nothing can move aside for a
   longer label, and `bucle-entrenamiento`'s caption came out 374px wide in a 360px `viewBox` against
@@ -308,8 +310,43 @@ transcribe it by hand; do not re-invent it.
   literal** so the `%+5.2f` columns still land under their titles: 2.9's neuron table needed
   `"neurona     w1     w2   sesgo   peso de salida"` → `"neuron      w1     w2    bias   output weight"`,
   which is not the translation of the header but the translation shifted onto the old column stops.
-  Check it against what Pyodide actually prints, not against the source. **2.10 needs this most** —
-  it is the lesson with Spanish prints throughout all three cells.
+  Check it against what Pyodide actually prints, not against the source. **2.10 needed this most**
+  and it held: all three of its cells were re-padded and read back off the browser.
+
+The last four were fixed by 2.10, and because 2.10 closes the block they are owed to **Block 3 and
+after**, not to a later lesson here.
+
+- **The roman text inside `\text{…}` is prose and translates** (fixed by 2.10,
+  `en/18-proyecto-sentimiento.mdx`; now `AUTHORING.en.md` §8, with a pointer from `NOTATION.md`).
+  This **reverses** what 2.5 recorded above, and it was 2.10 that made the old rule untenable rather
+  than merely awkward: the lesson writes $D_{\text{ent}}$ beside a cell whose identifiers are
+  `X_train` and `X_test`, and says *accuracy* in prose two words before writing
+  $\text{acierto}(D)$ in the formula. One concept, two names, on one page. So the exception is
+  drawn at the word and nowhere else: symbol, shape, meaning and arguments stay locale-invariant,
+  and an English lesson writes $\text{step}$, $\text{coverage}(k)$, $\text{accuracy}(D)$,
+  $\mathcal{L}_{\text{CE}}$ and $D_{\text{train}}$ / $D_{\text{test}}$. **Back-applied in the
+  same review** over `en/03` (7 sites), `en/09`–`en/11` (4) and `en/13` (5), so no English lesson
+  is left on the old side. Two things survive the change and bind Block 3: NOTATION.md's arguments
+  for *rejecting* a spelling (coverage is never $\text{cov}(k)$, which is the covariance), and the
+  sentences that were carrying the translation, which lose a clause rather than keeping a redundant
+  one (`en/09`'s «the step, written $\text{escalón}$» is now just «the step»).
+- **A data file a `<PyCell>` reads gets an `.en.json` sibling, generated and not translated**
+  (fixed by 2.10). `AUTHORING.en.md` §7 already covered a *widget's* bound asset; this is the cell's,
+  and the rule that matters is the order of work: build the file to a written list of teaching
+  properties, run it, then write the prose from what it prints. 2.10's four properties were the
+  negation skew (`not` at 5 positive against 20 negative), test-set OOV, a word-order pair with an
+  identical bag, and a review sharing no entry at all. A review-by-review translation of the Spanish
+  corpus would have kept the prose and lost all four.
+- **A claim the cells do not print still has to be run in the browser, in chunks.** `RUN_TIMEOUT_MS`
+  is **10 s** (`src/lib/courses/pyodide/protocol.ts`) and a timeout **terminates the worker**, so the
+  namespace from the earlier cells goes with it. 2.10's prose asserts three things no cell prints
+  (scale $1.0$, 20 000 steps, eight seeds), and two of them are `q-brecha`'s premise. They were run
+  by checkpointing weights into globals and stepping 2 400 at a time, ~8 s a chunk. Do not settle for
+  the CPython answer: the cap is a reason to split the run, not a reason to skip it.
+- **Block 3 inherits two regenerated figures.** `es/19-por-que-falla-el-mlp.mdx` quotes this
+  lesson's `88.3 %` (line 61) and `5\,329` (line 207). The English corpus gives **86.7 %** and
+  **$5\,257$** ($\lvert V \rvert = 436$, so $436 \times 12 + 25$). P11-06 picks those up; the
+  Spanish lesson is correct as it stands and is not to be touched.
 
 ## Lesson progress
 
@@ -322,7 +359,7 @@ transcribe it by hand; do not re-invent it.
 - [x] 2.7 `regla-de-la-cadena`
 - [x] 2.8 `backpropagation`
 - [x] 2.9 `implementar-mlp`
-- [ ] 2.10 `proyecto-sentimiento`
+- [x] 2.10 `proyecto-sentimiento`
 
 ## Artifact inventory
 
@@ -603,15 +640,15 @@ Line refs are into the `es/` file named in each heading.
 
 ## Acceptance criteria
 
-- [ ] Every lesson in the block exists under `content/courses/dl-nlp/en/`, `draft: false`
-- [ ] `slug`, `block`, `order`, and every widget / quiz / challenge id match the Spanish lesson
-- [ ] Every `<PyCell>` and `<CodeChallenge>` has been **run in the browser**, and every number the
+- [x] Every lesson in the block exists under `content/courses/dl-nlp/en/`, `draft: false`
+- [x] `slug`, `block`, `order`, and every widget / quiz / challenge id match the Spanish lesson
+- [x] Every `<PyCell>` and `<CodeChallenge>` has been **run in the browser**, and every number the
       prose quotes matches what Pyodide printed
-- [ ] Every `<Leccion>` resolves. (No `ancla` in this block — 63 slug-only refs — so the anchor
+- [x] Every `<Leccion>` resolves. (No `ancla` in this block — 63 slug-only refs — so the anchor
       criterion is vacuous here, and the block adds no anchor debt for later blocks.)
-- [ ] `reading` carries the same sources with translated `note`s; `lang` values unchanged
-- [ ] The two-reader test passes against the **English** neighbours
-- [ ] `pnpm lint:content` clean (budget warnings advisory); `pnpm build` green
+- [x] `reading` carries the same sources with translated `note`s; `lang` values unchanged
+- [x] The two-reader test passes against the **English** neighbours
+- [x] `pnpm lint:content` clean (budget warnings advisory); `pnpm build` green
 
 ## Test plan
 
@@ -635,9 +672,11 @@ Line refs are into the `es/` file named in each heading.
   found **no** `ancla` inside Block 2, so the risk here is entirely inbound from other blocks.)
 - **The bridge is a contract.** The closing after `---` is what the next lesson's opening picks
   up. Translate in order; never skip a lesson and come back.
-- **Six SVG assets need redrawing and no P11 task owns them** — see the table above. Two of them
-  (`descenso-pasos.svg`, `perdida-correccion.svg`) also carry Spanish decimal commas, and
-  `reparto-resenas.svg` carries data that regenerates with 2.10's corpus.
+- **Nine SVG assets needed redrawing and no P11 task owned them.** All nine shipped with their
+  lessons; see the table above. Two of them (`descenso-pasos.svg`, `perdida-correccion.svg`)
+  carried Spanish decimal commas, and `reparto-resenas.svg` carried four numbers that regenerated
+  with 2.10's corpus. **Later blocks should expect the same and budget for it**, because no P11
+  task has picked the assets up since.
 - **Under-budget word warnings are expected** on transposed lessons — see `AUTHORING.en.md`.
 
 ## Out of scope
