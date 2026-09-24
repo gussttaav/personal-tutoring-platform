@@ -15,12 +15,12 @@ file, which is the block's single most expensive artifact.
 Filled by [P11-00](00-triage.md) — read against the ten `es/` lessons carrying `block: 2`, in
 `order`. File names and frontmatter agree throughout (`es/09` … `es/18` → 2.1 … 2.10).
 
-**Exactly one lesson in Block 2 is a rewrite, and the planning pass did not name it.** Of the 40
+**Exactly one lesson in Block 2 is a rewrite, and the planning pass did not name it.** Of the 33
 quiz items, **one answer moves**: 2.8's `numeric` **−0.98704**, which is $\delta^{(1)}_2 \cdot x_4$
 where $x_4 = 2$ is the count of <W>la</W> in a Spanish review. Every other item survives, including
-the four that look linguistic (2.3's hidden-layer preactivation, 2.3's `predict-output`, 2.10's OOV
-fraction, 2.10's generalisation-gap item), because their answers are fixed by hand-set weights,
-by the ±1 coordinates, or by numbers the prompt supplies itself.
+the three that look linguistic (2.3's hidden-layer preactivation, 2.10's OOV fraction, 2.10's
+generalisation-gap item), because their answers are fixed by hand-set weights, by the ±1
+coordinates, or by numbers the prompt supplies itself.
 
 | # | Slug | Class | Spanish-dependent artifacts |
 |---|---|---|---|
@@ -35,9 +35,17 @@ by the ±1 coordinates, or by numbers the prompt supplies itself.
 | 2.9 | `implementar-mlp` | **adapt** | Confirmed as adapt, but **far cheaper than the row claimed** — the three cells run on 2.3's ±1 matrix, not on any corpus, so nothing they print moves. See the correction below |
 | 2.10 | `proyecto-sentimiento` | **adapt** | The block's most expensive lesson by a wide margin. A **new 240-review corpus file** (`public/courses/dl-nlp/resenas-cine.json`), and with it 442, 1 299, 7.1, 1.6 %, 432, 36/8.3 %, 35, 5 329, 0.883, 0.0482→0.0037, the seven named failures, `no` at 5 vs 24, `0.0014` and `0.4537` |
 
-**Totals: 2 transpose · 7 adapt · 1 rewrite.** Ten lessons, 40 quiz items, 6 `<CodeChallenge>`,
+**Totals: 2 transpose · 7 adapt · 1 rewrite.** Ten lessons, 33 quiz items, 6 `<CodeChallenge>`,
 17 `<PyCell>`, 5 distinct `<Explorable>` ids, 8 `<Figure>`, 13 `reading` entries,
-**0 `<Leccion ancla="">`** (62 slug-only refs), 63 `<W>`.
+**0 `<Leccion ancla="">`** (61 slug-only refs), 61 `<W>`.
+
+**Counts re-measured 2026-09-24, and the quiz total moved by seven.** Triage counted 40 quiz items;
+the Spanish lessons now carry **33**, because the review passes that ran after triage dropped one
+item from each of 2.2–2.8 — and every one of the seven was a **`predict-output`**. Of Block 2's
+eight items of that type only 2.9's `q-gradiente-batch` survives, so a row below that leans on a
+`predict-output` is describing an item that is no longer there. The ids struck through in the
+inventory are the seven. The other artifact counts held; the two that also moved are 2.3's `<W>`
+(25 → 23) and 2.8's refs (9 → 8).
 
 ### The one-line replacement note (2.8, the block's only rewrite)
 
@@ -293,10 +301,10 @@ Line refs are into the `es/` file named in each heading.
 
 ### 2.2 `funciones-activacion` — `es/10-funciones-activacion.mdx` — transpose
 
-- **Quiz (4, all language-free).** `q-derivada-sigmoide` `numeric` **0.09** (12–17);
+- **Quiz (3, all language-free).** `q-derivada-sigmoide` `numeric` **0.09** (12–17);
   `q-identidad` `single` a (18–27); `q-saturacion` `multi` [a,b,c] (28–37);
-  `q-relu-numpy` `predict-output` **`[0. 0. 1.]`** (38–49), a NumPy repr whose `hint` is about
-  formatting. **No item touches Spanish.**
+  ~~`q-relu-numpy` `predict-output` **`[0. 0. 1.]`** (38–49), a NumPy repr whose `hint` is about
+  formatting~~ — **dropped by the review pass**. **No item touches Spanish.**
 - **`<PyCell>`** (355–441): identifiers `escalon`, `sigmoide`, `d_sigmoide`, `d_tanh`, `cadena`,
   `identidad`, `lejos`, `defecto`, `cero`, `z_resenas`; Spanish comments (360, 387, 399, 407, 436)
   and print labels (390–440, including the `escalón:` row header).
@@ -312,13 +320,13 @@ Line refs are into the `es/` file named in each heading.
 
 ### 2.3 `xor-y-capas-ocultas` — `es/11-xor-y-capas-ocultas.mdx` — adapt
 
-- **Quiz (4, no answer moves).** `q-por-que-no` `single` a (12–21): the $2b$ contradiction, algebra.
+- **Quiz (3, no answer moves).** `q-por-que-no` `single` a (12–21): the $2b$ contradiction, algebra.
   `q-activacion` `boolean` **false** (22–26): monotone activations, algebra. `q-capa-oculta`
   `numeric` **−0.5** (27–32): computed from the hand-set weights at $\mathbf{x} = (1,1)$, so the
   answer survives any phrase set that keeps the coordinate convention; **the prompt and explanation
-  name three of the four phrases** (29, 32). `q-representacion` `predict-output` **`[1. 0.]`**
+  name three of the four phrases** (29, 32). ~~`q-representacion` `predict-output` **`[1. 0.]`**
   (33–47): `W1`, `b1` and `x` are literals in the snippet; the prompt and explanation name two
-  phrases (35, 46).
+  phrases (35, 46)~~ — **dropped by the review pass**.
 - **The four phrases, in four places.** Prose introduction (70–75), the coordinate definition
   (100–103), the `x`/`y` table (105–110), the `z^{(1)}`/`h^{(1)}`/`z^{(2)}` table (264–269) and the
   cell's label list (296–301). The `x₁` convention is "+1 when <W>no</W> is present"; `x₂` is "+1
@@ -337,13 +345,14 @@ Line refs are into the `es/` file named in each heading.
 - **`<Explorable>` `perceptron-boundary`** (80–83): Spanish caption, the second one in the block for
   this id. No corpus.
 - **`<Leccion ancla="">`: 0** (4 refs). **`reading`:** 1 (49–57), `lang: en`, Spanish note.
-  **`<W>`: 25 — the densest in the block**, and 22 of them are the four phrases.
+  **`<W>`: 23 — the densest in the block**, and 22 of them are the four phrases.
 
 ### 2.4 `forward-pass` — `es/12-forward-pass.mdx` — adapt
 
-- **Quiz (4, no answer moves).** `q-parametros` `numeric` **38786** (12–17), arithmetic.
-  `q-transpuesta` `single` a (18–27), algebra. `q-broadcast` `predict-output`
-  **`(3, 2) [4.5 3.5]`** (28–42), literals in the snippet. `q-cadena` `multi` [a,b,c] (43–52).
+- **Quiz (3, no answer moves).** `q-parametros` `numeric` **38786** (12–17), arithmetic.
+  `q-transpuesta` `single` a (18–27), algebra. ~~`q-broadcast` `predict-output`
+  **`(3, 2) [4.5 3.5]`** (28–42), literals in the snippet~~ — **dropped by the review pass**.
+  `q-cadena` `multi` [a,b,c] (43–52).
 - **`<PyCell>` ×2.** The first (319–365) is `np.random.seed(0)` over pure shapes — `−0.761`,
   `3.221`, `0.221` and the timing ratio (367–378) are language-free and hold. The second
   (384–427) **re-declares 2.1's corpus** (390–401) and its `V` (403), then hits it with
@@ -363,10 +372,10 @@ Line refs are into the `es/` file named in each heading.
 
 ### 2.5 `funcion-de-perdida` — `es/13-funcion-de-perdida.mdx` — transpose
 
-- **Quiz (5, all language-free).** `q-ec-a-mano` `numeric` **1.609** (12–17);
+- **Quiz (4, all language-free).** `q-ec-a-mano` `numeric` **1.609** (12–17);
   `q-mse-clasificar` `single` a (18–27); `q-gradiente-limpio` `multi` [a,b,c] (28–37);
-  `q-log-cero` `predict-output` **`[ 0.11 27.63  0.69]`** (38–49), literals in the snippet;
-  `q-softmax` `single` a (50–59). **No item touches Spanish.**
+  ~~`q-log-cero` `predict-output` **`[ 0.11 27.63  0.69]`** (38–49), literals in the snippet~~ —
+  **dropped by the review pass**; `q-softmax` `single` a (50–59). **No item touches Spanish.**
 - **`<PyCell>`** (395–441): **no corpus** — the labels `y` and the preactivations `z` are literals
   (399–400), the latter copied from 2.1. Identifiers `mse`, `entropia_cruzada`, `sigmoide`,
   `convencida`, `tibia`, `recortada`, `aciertos`, `nombre`; three row labels in Spanish (418–420)
@@ -380,15 +389,17 @@ Line refs are into the `es/` file named in each heading.
 - **`<Figure>` `perdida-correccion.svg`** (184–188): Spanish `alt`/`caption`, and **the asset carries
   `corrección`, `entropía cruzada` and a Spanish strapline — plus `0,5` written with a decimal
   comma.** Redraw.
-- **`<Leccion ancla="">`: 0** (9 refs — joint densest in the block). **`reading`:** 1 (150–158),
+- **`<Leccion ancla="">`: 0** (9 refs — second only to 2.9). **`reading`:** 1 (150–158),
   `lang: en`, Spanish note. **`<W>`: 1** — <W>divertida y la recomiendo</W> (169), a corpus review;
   it carries a hypothetical $\hat{y} = 0.002$, not a computed number, so it translates with 2.1.
 
 ### 2.6 `descenso-gradiente` — `es/14-descenso-gradiente.mdx` — adapt
 
-- **Quiz (4, no answer moves).** `q-paso-a-mano` `numeric` **1** (12–17), the parabola.
+- **Quiz (3, no answer moves).** `q-paso-a-mano` `numeric` **1** (12–17), the parabola.
   `q-por-que-menos` `single` a (18–27), Cauchy–Schwarz. `q-gradiente-cero` `multi` [a,b,c] (28–37).
-  `q-actualiza` `predict-output` **`[0.25, -0.5]`** (38–53), literals in the snippet.
+  ~~`q-actualiza` `predict-output` **`[0.25, -0.5]`** (38–53), literals in the snippet~~ —
+  **dropped by the review pass** (`3e60794`), which is why 2.6's settled wording now lives in
+  prose only.
 - **`<PyCell>` ×2.** The first (285–314) is the one-parameter parabola: `0.32768`, `0.04`, `2.59`
   (316–320) are language-free and hold. The second (328–374) **re-declares 2.1's corpus** (332–343)
   and `V` (345), trains from `w = 0`, and hardcodes 2.1's hand-written `w` for comparison (368).
@@ -410,9 +421,10 @@ Line refs are into the `es/` file named in each heading.
 
 ### 2.7 `regla-de-la-cadena` — `es/15-regla-de-la-cadena.mdx` — adapt
 
-- **Quiz (5, no answer moves).** `q-suma-caminos` `numeric` **14** (12–17), abstract $u_1, u_2, t$.
+- **Quiz (4, no answer moves).** `q-suma-caminos` `numeric` **14** (12–17), abstract $u_1, u_2, t$.
   `q-por-que-suma` `single` a (18–27). `q-formas-jacobiana` `multi` [a,b,c] (28–37).
-  `q-diag-hadamard` `predict-output` **`(3, 3) [-0.5, 0.0, 4.0] [-0.5, 0.0, 4.0]`** (38–50).
+  ~~`q-diag-hadamard` `predict-output` **`(3, 3) [-0.5, 0.0, 4.0] [-0.5, 0.0, 4.0]`** (38–50)~~ —
+  **dropped by the review pass**.
   `q-orden-jacobianas` `single` a (51–60) — names the $8 \to 4 \to 3$ widths, which are structural.
 - **`<PyCell>`** (383–429): `x = np.array([0., 0., 1., 2., 0., 0., 1., 1.])` (387) is **2.1's
   corpus in disguise** — the bag of words of `la película es divertida y la recomiendo`, with the
@@ -435,9 +447,10 @@ Line refs are into the `es/` file named in each heading.
 
 ### 2.8 `backpropagation` — `es/16-backpropagation.mdx` — **rewrite**
 
-- **Quiz (5, one answer moves).** `q-que-se-reutiliza` `single` a (18–27), `q-formas-backward`
-  `multi` [a,b,c] (28–37), `q-mascara` `predict-output` **`[ 0.5 -0.   0.  -1.5]`** (38–50) and
-  `q-tirar-el-forward` `single` a (51–60) are all language-free and transpose.
+- **Quiz (4, one answer moves).** `q-que-se-reutiliza` `single` a (18–27), `q-formas-backward`
+  `multi` [a,b,c] (28–37) and `q-tirar-el-forward` `single` a (51–60) are all language-free and
+  transpose. ~~`q-mascara` `predict-output` **`[ 0.5 -0.   0.  -1.5]`** (38–50)~~ was **dropped by
+  the review pass** (`ffeaeb6`); the lesson now says «Cuatro preguntas», not five.
   **`q-leer-un-gradiente` `numeric` −0.98704, `tolerance: 0.001` (12–17) is the rewrite.** The
   prompt quotes $\boldsymbol{\delta}^{(1)} = (0.323559, -0.493520, -0.493520, 0)$ **and**
   $\mathbf{x} = (0,0,1,2,0,0,1,1)$ in full; the answer is $\delta^{(1)}_2 \cdot x_4$; and the
@@ -461,7 +474,7 @@ Line refs are into the `es/` file named in each heading.
   three-line lead-in above it (405–407). Widget has **no corpus** — one `aria-label`. P11-02.
   (The review pass moved it out of the intuition slot at 221 and added the two
   $\partial\ell/\partial b^{(1)}_j$ steps, which is why the count is no longer fourteen.)
-- **`<Leccion ancla="">`: 0** (9 refs — joint densest). **`reading`:** 2 (186–202), both `lang: en`,
+- **`<Leccion ancla="">`: 0** (8 refs). **`reading`:** 2 (186–202), both `lang: en`,
   Spanish notes. **`<W>`: 1** — <W>la</W>, inside the rewritten quiz item.
 
 ### 2.9 `implementar-mlp` — `es/17-implementar-mlp.mdx` — adapt
