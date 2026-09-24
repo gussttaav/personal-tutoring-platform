@@ -19,19 +19,6 @@ quiz:
       - { id: d, text: 'Porque los números son demasiado pequeños para la precisión de la coma flotante. Multiplicar todos los pesos por cien al empezar lo arregla.' }
     answer: a
     explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona —y una neurona sola no separa estas cuatro frases, que es lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>—. La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0.01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
-  - id: q-gradiente-batch
-    type: predict-output
-    prompt: 'Así calcula la celda el gradiente de una capa a partir del error del batch. ¿Qué imprime?'
-    language: python
-    code: |
-      import numpy as np
-
-      D = np.array([[1., -1.], [2., 0.]])
-      H = np.array([[1., 0., 2.], [0., 1., 1.]])
-      print((D.T @ H).shape, (D.T @ H / len(H))[0])
-    answer: '(2, 3) [0.5 1.  2. ]'
-    explanation: 'Las formas mandan: `D` es $(B, d_l) = (2, 2)$ y `H` es $(B, d_{l-1}) = (2, 3)$, así que `D.T @ H` es $(d_l, d_{l-1}) = (2, 3)$ —la forma de $\mathbf{W}^{(l)}$, que es la comprobación más barata que hay—. La fila $0$ suma los dos ejemplos con el error de la primera neurona como peso: $1 \cdot (1, 0, 2) + 2 \cdot (0, 1, 1) = (1, 2, 4)$, y el $1/B$ la deja en $(0.5,\ 1,\ 2)$. Ese producto de matrices es la suma sobre los $B$ ejemplos: no hay ningún bucle que escribir porque el índice que se recorre y desaparece es justo el del batch.'
-    hint: 'El formato cuenta tanto como los valores. La forma se imprime como tupla, y NumPy alinea las tres casillas al ancho de la más larga, `0.5`, de modo que el $1$ y el $2$ salen como `1.` y `2.` con un espacio de relleno detrás.'
   - id: q-parar
     type: multi
     prompt: 'Marca todo lo que sea cierto sobre las curvas de pérdida que imprimen la segunda y la tercera celda.'
@@ -347,10 +334,28 @@ $$
 $$
 
 Restar cantidades iguales a cantidades iguales conserva la igualdad, así que las dos neuronas salen
-del paso tan idénticas como entraron. Y del siguiente. Cuatro copias de una misma neurona
-calculan lo que calcula una, por muchos pasos que den: la capa oculta tiene la anchura de una
-neurona por más que $d_1$ diga cuatro. Y una neurona sola no separa estas cuatro frases, que es
-justo lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>.
+del paso tan idénticas como entraron. Y del siguiente.
+
+<Figure
+  src="/courses/dl-nlp/simetria-rectas.svg"
+  alt="Dos veces el mismo plano, con las cuatro frases en las esquinas de un cuadrado: los dos puntos verdes en menos 1 coma 1 y en 1 coma menos 1, y los dos huecos en menos 1 coma menos 1 y en 1 coma 1. En el recuadro de la izquierda, titulado cuatro filas distintas, cuatro rectas verdes cruzan el cuadrado en cuatro direcciones y se cortan entre ellas. En el de la derecha, titulado cuatro filas iguales, hay una sola recta, más gruesa y marcada por cuatro, que parte el cuadrado en dos mitades; la mitad de la derecha está sombreada en verde y lleva escrito sí, la de la izquierda lleva escrito no, y cada una de las dos mitades se queda con un punto verde y un punto hueco."
+  caption="Una neurona oculta es una recta del plano, y una capa de cuatro neuronas son cuatro rectas. Con las cuatro filas iguales las cuatro rectas son la misma, y ninguna recta sola deja las dos frases verdes a un lado y las otras dos al otro."
+/>
+
+Esa recta única es la de <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>, que demostró que ninguna sirve: la capa
+oculta tiene la anchura de una neurona por más que $d_1$ diga cuatro.
+
+Mirada desde los diecisiete números y no desde el plano, la igualdad es una trampa con forma de
+subespacio. Una configuración con las cuatro neuronas iguales tiene cinco números de verdad
+disfrazados de diecisiete: una fila de $\mathbf{W}^{(1)}$, un sesgo, un peso de
+$\mathbf{W}^{(2)}$ y $b^{(2)}$. Todas ellas juntas forman un subespacio de cinco dimensiones
+dentro de las diecisiete, y el gradiente sale siempre tangente a él.
+
+<Figure
+  src="/courses/dl-nlp/simetria-silla.svg"
+  alt="Un mapa de curvas de nivel de una pérdida, alargado en horizontal. Por el centro, de lado a lado, pasa una recta horizontal rotulada las cuatro filas iguales; sobre ella, siete puntos que vienen de la derecha y se van juntando hasta pararse en el centro, marcado con un círculo y rotulado punto de silla. Justo encima y justo debajo de ese centro hay dos manchas verdes alargadas, cada una con un punto verde en medio rotulado mínimo, y dos flechas cortas salen del centro hacia arriba y hacia abajo, perpendiculares a la recta, una hacia cada mancha. Ninguna de las dos flechas apunta a lo largo de la recta. El borde izquierdo lleva escrito, en vertical, las filas se separan."
+  caption="Las curvas de nivel son las de una pérdida de juguete que he dibujado yo para que se vea la forma. El gradiente no tiene componente vertical sobre la recta de las filas iguales, así que el descenso la recorre entera y se para en el punto de silla, con las salidas apuntando justo hacia donde no puede ir."
+/>
 
 Nada del algoritmo rompe esa igualdad, porque todo lo que hace es determinista: tiene que venir de
 fuera, y la fuente más barata de «distintos» es una tirada al azar. Elegir esos diecisiete números
@@ -549,12 +554,10 @@ una red que contesta lo mismo a todo: cuatro neuronas trabajando como una, y una
 
 ## Comprueba tu intuición
 
-Tres preguntas —por qué el cero congela la red, un gradiente de batch en NumPy y qué se puede leer
-en una curva de pérdida— y un desafío que es el bucle entero.
+Dos preguntas, por qué el cero congela la red y qué se puede leer en una curva de pérdida, y un
+desafío que es el bucle entero.
 
 <Quiz id="q-simetria" />
-
-<Quiz id="q-gradiente-batch" />
 
 <Quiz id="q-parar" />
 

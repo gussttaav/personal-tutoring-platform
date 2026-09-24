@@ -35,17 +35,17 @@ coordinates, or by numbers the prompt supplies itself.
 | 2.9 | `implementar-mlp` | **adapt** | Confirmed as adapt, but **far cheaper than the row claimed** — the three cells run on 2.3's ±1 matrix, not on any corpus, so nothing they print moves. See the correction below |
 | 2.10 | `proyecto-sentimiento` | **adapt** | The block's most expensive lesson by a wide margin. A **new 240-review corpus file** (`public/courses/dl-nlp/resenas-cine.json`), and with it 442, 1 299, 7.1, 1.6 %, 432, 36/8.3 %, 35, 5 329, 0.883, 0.0482→0.0037, the seven named failures, `no` at 5 vs 24, `0.0014` and `0.4537` |
 
-**Totals: 2 transpose · 7 adapt · 1 rewrite.** Ten lessons, 33 quiz items, 6 `<CodeChallenge>`,
-17 `<PyCell>`, 5 distinct `<Explorable>` ids, 8 `<Figure>`, 13 `reading` entries,
+**Totals: 2 transpose · 7 adapt · 1 rewrite.** Ten lessons, 32 quiz items, 6 `<CodeChallenge>`,
+17 `<PyCell>`, 5 distinct `<Explorable>` ids, 10 `<Figure>`, 13 `reading` entries,
 **0 `<Leccion ancla="">`** (61 slug-only refs), 61 `<W>`.
 
-**Counts re-measured 2026-09-24, and the quiz total moved by seven.** Triage counted 40 quiz items;
-the Spanish lessons now carry **33**, because the review passes that ran after triage dropped one
-item from each of 2.2–2.8 — and every one of the seven was a **`predict-output`**. Of Block 2's
-eight items of that type only 2.9's `q-gradiente-batch` survives, so a row below that leans on a
-`predict-output` is describing an item that is no longer there. The ids struck through in the
-inventory are the seven. The other artifact counts held; the two that also moved are 2.3's `<W>`
-(25 → 23) and 2.8's refs (9 → 8).
+**Counts re-measured 2026-09-24, and the quiz total moved by eight.** Triage counted 40 quiz items;
+the Spanish lessons now carry **32**, because the review passes that ran after triage dropped one
+item from each of 2.2–2.9 — and every one of the eight was a **`predict-output`**. **Block 2 no
+longer contains a single item of that type**, so a row below that leans on a `predict-output` is
+describing an item that is no longer there. The ids struck through in the inventory are the eight.
+The other artifact counts held; the three that also moved are 2.3's `<W>` (25 → 23), 2.8's refs
+(9 → 8) and 2.9's `<Figure>` (1 → 3, which is what takes the block from 8 to 10).
 
 ### The one-line replacement note (2.8, the block's only rewrite)
 
@@ -118,9 +118,9 @@ from that same $\mathbf{x}$ by the cell at 485–540. A natural English review �
 I recommend it* — puts `the` at **one**, and the answer moves. **The prompt quotes both
 $\boldsymbol{\delta}^{(1)}$ and $\mathbf{x}$ in full, so nothing here can be left standing.**
 
-**Eight `<Figure>` assets, seven with Spanish set into the SVG, and no P11 task owns them.**
+**Ten `<Figure>` assets, nine with Spanish set into the SVG, and no P11 task owns them.**
 Block 1 already flagged this gap for `suma-armonica.svg` and `one-hot-equidistancia.svg`; Block 2
-adds six more. P11-02 covers widgets, not `public/courses/dl-nlp/*.svg`.
+adds nine more. P11-02 covers widgets, not `public/courses/dl-nlp/*.svg`.
 
 | Asset | Lesson | Text inside the file |
 |---|---|---|
@@ -129,6 +129,8 @@ adds six more. P11-02 covers widgets, not `public/courses/dl-nlp/*.svg`.
 | `perdida-correccion.svg` | 2.5 | `corrección`, `entropía cruzada`, `a la izquierda la red falla, y falla con seguridad` — **and `0,5` with a Spanish decimal comma** |
 | `descenso-pasos.svg` | 2.6 | `pérdida`, `peso`, `lento`, `llega`, `sube` — **and `η = 0,10` / `0,40` / `1,05`, decimal commas** |
 | `bucle-entrenamiento.svg` | 2.9 | `pérdida`, `gradiente`, `actualización`, `y otra vez`, `las cuatro cajas ya estaban escritas; la flecha verde no` |
+| `simetria-rectas.svg` | 2.9 | `cuatro filas distintas`, `cuatro rectas`, `cuatro filas iguales`, `una recta`, `no`, `sí` plus a Spanish `aria-label`. **Added after triage** |
+| `simetria-silla.svg` | 2.9 | `las cuatro filas iguales`, `punto de silla`, `mínimo` ×2, `las filas se separan` plus a Spanish `aria-label`. **Added after triage**; the contours are generated geometry, so copy the paths byte for byte and translate only the text |
 | `reparto-resenas.svg` | 2.10 | `180 reseñas de entrenamiento`, `60 reseñas de prueba`, `442 entradas`, `600 pasos`, `53 de 60`, `lo define`, `las representa`, `sólo al final` — **four of these are data that regenerate with the corpus** |
 | `forward-shapes.svg` | 2.4 | **None** — symbols only (`X`, `W⁽¹⁾ᵀ`, `Z⁽¹⁾`, `i`, `j`, `d₀ × d₁`) |
 | `regla-cadena-caminos.svg` | 2.7 | ~~**None** — symbols only~~ **Stale: the figure was redrawn after triage** (`92ed6fb`) and now carries `8 entradas`, `4 ocultas`, `3 salidas` plus a Spanish `aria-label`. Sibling built by 2.7 |
@@ -215,8 +217,8 @@ transcribe it by hand; do not re-invent it.
   it: `mlp-arquitectura.en.svg`, `xor-franja.en.svg` (2.3), `perdida-correccion.en.svg` (2.5, decimal
   comma `0,5` → `0.5`), `descenso-pasos.en.svg` (2.6, decimal commas `0,10`/`0,40`/`1,05` → points),
   `regla-cadena-caminos.en.svg` (2.7, column headers + `aria-label`; geometry copied byte for byte,
-  only text and comments translated). Still owed by their lessons: `bucle-entrenamiento.svg` (2.9),
-  `reparto-resenas.svg` (2.10). **Re-check the asset itself before trusting the table above** — the
+  only text and comments translated). Still owed by their lessons: `bucle-entrenamiento.svg`,
+  `simetria-rectas.svg` and `simetria-silla.svg` (2.9), `reparto-resenas.svg` (2.10). **Re-check the asset itself before trusting the table above** — the
   2.7 row said "symbols only" and was true when triage ran, then the figure was redrawn.
 - **The "an input that appears twice pulls twice as hard" sentence** (fixed by 2.6,
   `en/14-descenso-gradiente.mdx`): the Spanish «una entrada que aparece dos veces tira el doble» renders
@@ -514,28 +516,35 @@ Line refs are into the `es/` file named in each heading.
 
 ### 2.9 `implementar-mlp` — `es/17-implementar-mlp.mdx` — adapt
 
-- **Quiz (3, no answer moves).** `q-simetria` `single` a (12–21): symmetry breaking; the explanation
-  names the four phrases only through 2.3's conclusion. `q-gradiente-batch` `predict-output`
-  **`(2, 3) [0.5 1.  2. ]`** (22–34): literals in the snippet. `q-parar` `multi` [a,b,c] (35–44):
-  quotes `0.6931`, step 25 and the plateau — **all seed-driven, so all stable.**
-- **`<PyCell>` ×3, none carrying a corpus.** First (369–415), second (426–465), third (489–534). `X`
-  is the ±1 matrix in all three; `frases` (429) is a **label list** consumed by `%-13s`; the
-  coordinate convention appears once as a Spanish comment (372–373). Identifiers `frases`,
+- **Quiz (2, no answer moves).** `q-simetria` `single` a (12–21): symmetry breaking; the explanation
+  names the four phrases only through 2.3's conclusion. ~~`q-gradiente-batch` `predict-output`~~
+  **dropped after triage**, and with it the block's last item of that type. `q-parar` `multi`
+  [a,b,c] (22–31): quotes `0.6931`, step 25 and the plateau — **all seed-driven, so all stable.**
+  The lesson now sits at 2 items, under the 3–5 budget band; `lint:content` says so and does not
+  fail. Adding a third is a content decision, not a translation one: **do not invent one here.**
+- **`<PyCell>` ×3, none carrying a corpus.** First (374–420), second (431–470), third (494–539). `X`
+  is the ±1 matrix in all three; `frases` (434) is a **label list** consumed by `%-13s`; the
+  coordinate convention appears once as a Spanish comment (377–378). Identifiers `frases`,
   `perdida`, `forward`, `backward`, `entrena`, `escala`, `iguales`, `curva`, `aciertos`, `aporta`,
-  `uno_a_uno`; Spanish prints (401–464, 520–533).
-- **Printed output quoted in prose — stable, re-run to confirm only** (467–484, 536–548): `0.7260`,
+  `uno_a_uno`; Spanish prints (408–468, 525–538).
+- **Printed output quoted in prose — stable, re-run to confirm only** (472–489, 541–553): `0.7260`,
   `0.0011`, `(1.83, 1.77)`, `(1.79, 1.85)`, `−1.80`/`+1.80`, `−3.98`/`+3.93`, `+7.5`, `+0.2`,
   `6.7`, `0.6931`, `4.73`, `0.7240`. **None of these is a function of the phrase text.**
-- **`<CodeChallenge>` `ch-entrena`** (45–186): 2 starter comments (64, 69), 5 test `name`s, 13
-  Spanish assertion messages (79–139), Spanish `prompt` and `explanation` (169–186); identifiers
+- **`<CodeChallenge>` `ch-entrena`** (32–173): 2 starter comments (51, 56), 5 test `name`s, 13
+  Spanish assertion messages (66–126), Spanish `prompt` (34–44) and `explanation` (156–173); identifiers
   `gradientes`, `entrena`, `curva`, `copia`, `perdida`. Its last test hardcodes
   `abs(curva[0] - 0.7260) < 1e-3` — **seed-driven, holds.**
-- **`<Figure>` `bucle-entrenamiento.svg`** (224–228): Spanish `alt`/`caption`, and the asset carries
-  `pérdida`, `gradiente`, `actualización`, `y otra vez` plus a Spanish strapline. Redraw.
-- **`<Leccion ancla="">`: 0** (11 refs — the most in the block). **`reading`:** 2 (187–202), both
-  `lang: en`, Spanish notes. **`<W>`: 7** — the four phrases in the opening (216) and the closing
-  (568, 571), including <W>no está tan bien</W>, a **fifth** phrase that must extend the chosen
-  English set with a hedge the four do not cover.
+- **`<Figure>` ×3, all three with Spanish inside the asset.** `bucle-entrenamiento.svg` (211–215):
+  Spanish `alt`/`caption`, and the asset carries `pérdida`, `gradiente`, `actualización`,
+  `y otra vez` plus a Spanish strapline. Redraw. `simetria-rectas.svg` (339–343) and
+  `simetria-silla.svg` (354–358) were **added after triage**, both with Spanish `alt`/`caption` and
+  Spanish set into the SVG (see the asset table above). Their geometry is generated, so the sibling
+  copies the paths byte for byte and translates text and comments only — the same rule
+  `regla-cadena-caminos.en.svg` followed in 2.7.
+- **`<Leccion ancla="">`: 0** (11 refs — the most in the block). **`reading`:** 2 (174–189), both
+  `lang: en`, Spanish notes. **`<W>`: 7** — the four phrases in the opening (203), <W>no</W> alone
+  at 473, and the closing (571, 574), including <W>no está tan bien</W>, a **fifth** phrase that
+  must extend the chosen English set with a hedge the four do not cover.
 
 ### 2.10 `proyecto-sentimiento` — `es/18-proyecto-sentimiento.mdx` — adapt
 
