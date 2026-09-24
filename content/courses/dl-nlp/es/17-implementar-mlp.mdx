@@ -4,7 +4,7 @@ title: "Implementar un MLP desde cero"
 block: 2
 order: 9
 minutes: 30
-summary: "Las cuatro piezas del entrenamiento están desarrolladas y ninguna celda las ha ejecutado seguidas. Montarlas cuesta apilar la vuelta por filas —con el 1/B que trae la media—, y tomar la decisión que ninguna fórmula toma: de dónde parten los pesos. Todos iguales se quedan iguales para siempre, y por eso la inicialización es al azar."
+summary: "Las cuatro piezas del entrenamiento están desarrolladas y ninguna celda las ha ejecutado seguidas. Montarlas cuesta apilar la vuelta por filas (con el 1/B que trae la media), y tomar la decisión que ninguna fórmula toma: de dónde parten los pesos. Todos iguales se quedan iguales para siempre, y por eso la inicialización es al azar."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Porque el cero es un mínimo de la pérdida y el descenso se para en los mínimos: la red ya ha convergido, y lo que falla es la tasa de aprendizaje.' }
       - { id: d, text: 'Porque los números son demasiado pequeños para la precisión de la coma flotante. Multiplicar todos los pesos por cien al empezar lo arregla.' }
     answer: a
-    explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona —y una neurona sola no separa estas cuatro frases, que es lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>—. La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0.01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
+    explanation: 'La (a) tiene las dos mitades del argumento, y la segunda es la que importa: el problema no es el cero, es la igualdad. Cuatro neuronas idénticas calculan una sola función y ninguna cuenta las separa, así que la capa oculta tiene la anchura de una neurona (y una neurona sola no separa estas cuatro frases, que es lo que demostró <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>). La (b) es falsa de entrada: $\tanh$ es derivable en todas partes y en el origen su derivada vale $1$, que es el máximo. La (c) confunde un gradiente nulo con un mínimo; es un punto de silla, y la tercera celda enseña que basta empezar en otro sitio con la misma tasa de aprendizaje. Y la (d) va justo al revés de lo que muestra la tabla: la escala $0.01$ tampoco se mueve, y no por la coma flotante sino porque cada capa recibe un gradiente multiplicado por la escala de la otra.'
   - id: q-parar
     type: multi
     prompt: 'Marca todo lo que sea cierto sobre las curvas de pérdida que imprimen la segunda y la tercera celda.'
@@ -155,7 +155,7 @@ challenges:
           return curva, W1, b1, W2, b2
     explanation: |
       `gradientes` es la vuelta de la lección escrita tal cual, y las dos decisiones están en
-      la penúltima línea. `D2 @ W2` no lleva transpuesta —la lleva la ida, `X @ W1.T`— porque
+      la penúltima línea. `D2 @ W2` no lleva transpuesta (la lleva la ida, `X @ W1.T`) porque
       aquí los ejemplos ya van por filas a los dos lados del producto; y el factor
       `(1.0 - H1 ** 2)` es la derivada de $\tanh$ escrita sobre la activación en lugar de
       sobre la preactivación, que es lo que permite no guardar $\mathbf{Z}^{(1)}$.
@@ -193,8 +193,8 @@ reading:
 
 *Backpropagation* entrega el gradiente de una red entera con una sola pasada hacia atrás, y la
 lección anterior lo derivó sin saltarse un paso. Lo que produjo fue una lista de números en
-pantalla. Un gradiente impreso no mueve ningún peso: es una indicación —por dónde se baja, y cuánto
-le toca a cada parámetro— y alguien tiene que ejecutarla, mil veces seguidas, para que una red
+pantalla. Un gradiente impreso no mueve ningún peso: es una indicación (por dónde se baja, y cuánto
+le toca a cada parámetro) y alguien tiene que ejecutarla, mil veces seguidas, para que una red
 pase de contestar cualquier cosa a contestar bien. Ese bucle no está escrito en ninguna celda del
 curso. Sus cuatro piezas sí, repartidas en cuatro lecciones de este bloque, y juntarlas paga además
 una deuda abierta desde el principio: los ocho pesos de la neurona de reseñas y los siete que
@@ -203,7 +203,7 @@ separan las frases de XOR (*exclusive or*, o exclusivo) los escribí yo, mirando
 El sitio donde comprobarlo está elegido desde entonces. <Leccion slug="xor-y-capas-ocultas">La lección sobre XOR y las capas ocultas</Leccion> demostró que ninguna recta deja <W>está bien</W> y <W>no está mal</W> a un lado
 y las otras dos frases al otro, y resolvió después las cuatro con una capa oculta cuyos siete
 números elegí a mano. Si el bucle funciona, la red tiene que dar con unos pesos que acierten las
-cuatro —no necesariamente los míos— partiendo de números que no significan nada. Y si no funciona
+cuatro (no necesariamente los míos) partiendo de números que no significan nada. Y si no funciona
 se nota enseguida: con cuatro ejemplos y dos coordenadas no hay dónde esconder un fallo.
 
 Las cuatro piezas no están sueltas. Están en un orden, y el orden se cierra sobre sí mismo.
@@ -216,7 +216,7 @@ Las cuatro piezas no están sueltas. Están en un orden, y el orden se cierra so
 
 <Callout type="intuition" title="La idea en una frase">
 Entrenar es repetir cuatro cosas que ya sabes hacer. Lo único que hay que decidir de nuevo es de
-dónde salen los pesos la primera vez, y ahí la respuesta cómoda —todos iguales— deja la red
+dónde salen los pesos la primera vez, y ahí la respuesta cómoda (todos iguales) deja la red
 congelada para siempre.
 </Callout>
 
@@ -255,8 +255,8 @@ $$
 $$
 
 donde lo que hay que mirar es lo que ha desaparecido: la transpuesta. No es un descuido ni una
-convención distinta. La ida *ganó* una transpuesta al pasar a filas —$\mathbf{W}^{(l)}\mathbf{h}$ se
-convirtió en $\mathbf{H}\left(\mathbf{W}^{(l)}\right)^{\top}$— y la vuelta la *pierde* por el mismo
+convención distinta. La ida *ganó* una transpuesta al pasar a filas ($\mathbf{W}^{(l)}\mathbf{h}$ se
+convirtió en $\mathbf{H}\left(\mathbf{W}^{(l)}\right)^{\top}$) y la vuelta la *pierde* por el mismo
 motivo, porque partía de una matriz que ya estaba transpuesta. Las dos veces es el mismo producto
 leído con los ejemplos en filas.
 
@@ -280,8 +280,8 @@ descarta: por eso el resultado tiene la forma de $\mathbf{W}^{(l)}$ y no se acue
 Con eso, la regla del descenso de <Leccion slug="descenso-gradiente">la lección sobre descenso de gradiente</Leccion> no cambia ni una letra:
 $\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t)$, aplicada a cada matriz y a
 cada vector de sesgos por separado. La concesión, dicha en voz alta: cada paso mira entero el
-**conjunto de entrenamiento** —los ejemplos con etiqueta de los que dispone la red, aquí las cuatro
-frases—, igual que hacía aquella lección con las diez reseñas. Partirlo en trozos y dar un paso por
+**conjunto de entrenamiento** (los ejemplos con etiqueta de los que dispone la red, aquí las cuatro
+frases), igual que hacía aquella lección con las diez reseñas. Partirlo en trozos y dar un paso por
 trozo hace falta cuando es grande, y éste tiene cuatro filas.
 
 Ya está escrito, entonces, todo lo que necesita la red de las cuatro frases: el perceptrón
@@ -302,7 +302,7 @@ de dar el primer paso.
 ### Cuatro neuronas iguales son una sola neurona
 
 Poner esos diecisiete números es la decisión que ninguna fórmula anterior toma, y la
-respuesta cómoda —todos a cero— falla. Sigue las cuentas con esa misma red y con los diecisiete
+respuesta cómoda (todos a cero) falla. Sigue las cuentas con esa misma red y con los diecisiete
 nulos. Entonces $\mathbf{Z}^{(1)} = \mathbf{0}$, y como $\tanh(0) = 0$ también
 $\mathbf{H}^{(1)} = \mathbf{0}$; de ahí $\hat{\mathbf{Y}} = \sigma(\mathbf{0})$, que es $1/2$ para
 las cuatro frases. Mete eso en los dos gradientes de arriba:
@@ -362,7 +362,7 @@ fuera, y la fuente más barata de «distintos» es una tirada al azar. Elegir es
 de partida es la **inicialización**, el único punto del entrenamiento donde interviene el azar. Su
 papel no es el que parece: no aporta ninguna información sobre las frases, sólo separa unas
 neuronas de otras para que el gradiente pueda empujarlas por caminos distintos. Cuánto valgan
-también importa —unos pesos diminutos se parecen demasiado al caso de arriba—, y la tercera celda
+también importa (unos pesos diminutos se parecen demasiado al caso de arriba), y la tercera celda
 lo mide. Qué escala elegir en general depende de la profundidad de la red, y aparece en el bloque
 3, sobre redes recurrentes, cuando el problema pase de ser un inconveniente a ser el tema.
 
@@ -474,9 +474,9 @@ $25$. La deuda está pagada: nadie le ha dicho a la red que <W>no</W> invierte e
 sigue, y los pesos que ha encontrado no son los que escribí en <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>.
 
 Son mejores que eso: son los mismos, redescubiertos. Mira las neuronas $2$ y $4$. Sus pesos apuntan
-casi en la misma dirección —$(1.83,\ 1.77)$ y $(1.79,\ 1.85)$, las dos casi
-$x_1 + x_2$—, sus sesgos son opuestos —$-1.80$ y $+1.80$— y sus pesos de salida también
-—$-3.98$ y $+3.93$—. Eso es la franja de <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>: dos rectas paralelas y una resta entre
+casi en la misma dirección ($(1.83,\ 1.77)$ y $(1.79,\ 1.85)$, las dos casi
+$x_1 + x_2$), sus sesgos son opuestos ($-1.80$ y $+1.80$) y sus pesos de salida también
+($-3.98$ y $+3.93$). Eso es la franja de <Leccion slug="xor-y-capas-ocultas">la lección sobre XOR y las capas ocultas</Leccion>: dos rectas paralelas y una resta entre
 las dos. La última tabla lo confirma: esa pareja aporta $+7.5$ a las dos frases positivas y
 $+0.2$ a las otras dos. Y la pareja $1$ y $3$ hace lo mismo sobre la otra diagonal con el signo
 cambiado, restando $6.7$ justo donde la primera se calla.
@@ -544,7 +544,7 @@ de las dos es la que enseña algo, porque su escala es $0.01$ y no cero: las cua
 distintas. Lo que pasa es que cada capa recibe un gradiente multiplicado por la escala de la otra,
 y con dos factores pequeños todo avanza cientos de veces más despacio: esa red
 no está atascada, llega a las cuatro frases hacia el paso cien mil. Al otro extremo, la escala $10$
-arranca en $4.73$ —confiadamente equivocada— y se recupera: con dos capas eso sale barato, y con
+arranca en $4.73$ (confiadamente equivocada) y se recupera: con dos capas eso sale barato, y con
 profundidad deja de salirlo.
 
 Las tres últimas líneas son la simetría sin ceros de por medio. Las cuatro neuronas empiezan con
