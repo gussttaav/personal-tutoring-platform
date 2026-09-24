@@ -2105,12 +2105,19 @@ is byte-identical.
 
 ### P11-03 notes
 
-`AUTHORING.en.md` is **at the task's 300-line ceiling** (299 when P11-03 landed; B1.1 added §3's
-collation rule and paid for it by cutting three restatements), and the ceiling is the
-right check: everything it does not say is `AUTHORING.md` still governing. Its §8 names the parts
-most likely to be re-decided by an author who has only the delta open — the six-step structure, the
-two-reader test, §2's assumption rule, all of NOTATION.md, the display-equation punctuation — so
-the temptation to copy them in has an answer on the page. `NOTATION.md` is untouched, which was the
+`AUTHORING.en.md` landed **at the task's 300-line ceiling** (299 when P11-03 landed; B1.1 added §3's
+collation rule and paid for it by cutting three restatements). **It is now 378 lines and the ceiling
+is broken.** The translating lessons did it, one settled convention at a time, each a rule a later
+lesson needed and could not find in the delta: B1.2's PyCell-code rule, B1.3's figure sibling,
+B1.6's cited line and its widget-sibling asset, B2.3's language-adjective cut in `summary`, B2.7's
+`probe`/`experiment` split, and B2.9's traversal-directions glossary row with its SVG re-measuring
+rule. Every one was the right call on its own, and the sum is still the file drifting towards the
+fork it exists to prevent. Bringing it back under 300 is **P11-03's and not a block task's**, and
+what has to give is restatement rather than rules. The ceiling itself stays the right check:
+everything the delta does not say is `AUTHORING.md` still governing. Its §8 names the parts most
+likely to be re-decided by an author who has only the delta open — the six-step structure, the
+two-reader test, §2's assumption rule, all of NOTATION.md, the display-equation punctuation — so the
+temptation to copy them in has an answer on the page. `NOTATION.md` is untouched, which was the
 point; `AUTHORING.md` gained four lines at the top pointing at the delta.
 
 Two additions beyond the four areas the task named, both because leaving them out would have left

@@ -1,6 +1,6 @@
 # P11-05 — Block 2: The Multilayer Perceptron
 
-**Tag:** `COURSE-P11-05` · **Size:** L · **Status:** not started
+**Tag:** `COURSE-P11-05` · **Size:** L · **Status:** in progress (2.1–2.9 done, 2.10 open)
 
 ## TL;DR
 
@@ -301,6 +301,15 @@ transcribe it by hand; do not re-invent it.
   keeps the pedagogy (a neuron can't tell an opinion from a coincidence) on the numbers the corpus
   actually gives. Regenerated training numbers: `0.6931` → `0.0913` (step 25) → `0.0131` (step 200),
   hand-set `0.2208`; largest weight `recommend` +3.911, smallest `slow` −3.428.
+- **Print column widths are re-padded, not carried across** (fixed by 2.9,
+  `en/17-implementar-mlp.mdx`). English label strings are shorter than the Spanish they replace, and
+  a `%-13s` sized for <W>no está bien</W> leaves a four-space gutter in front of every English row.
+  Re-size the field to the longest English string (2.9: `%-13s` → `%-9s`) **and re-pad the header
+  literal** so the `%+5.2f` columns still land under their titles: 2.9's neuron table needed
+  `"neurona     w1     w2   sesgo   peso de salida"` → `"neuron      w1     w2    bias   output weight"`,
+  which is not the translation of the header but the translation shifted onto the old column stops.
+  Check it against what Pyodide actually prints, not against the source. **2.10 needs this most** —
+  it is the lesson with Spanish prints throughout all three cells.
 
 ## Lesson progress
 
@@ -312,7 +321,7 @@ transcribe it by hand; do not re-invent it.
 - [x] 2.6 `descenso-gradiente`
 - [x] 2.7 `regla-de-la-cadena`
 - [x] 2.8 `backpropagation`
-- [ ] 2.9 `implementar-mlp`
+- [x] 2.9 `implementar-mlp`
 - [ ] 2.10 `proyecto-sentimiento`
 
 ## Artifact inventory
