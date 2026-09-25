@@ -10,7 +10,7 @@
  */
 
 import { useTranslations } from "next-intl";
-import { usePrices } from "@/components/pricing/PricesProvider";
+import { usePrices, usePricesSyncing } from "@/components/pricing/PricesProvider";
 import type { UserSession } from "@/domain/types";
 import { useBookingActions } from "./useBookingActions";
 
@@ -34,6 +34,11 @@ const PACK_KEYS = [
 export default function BookSessionsPanel({ hasActivePack, packSession }: BookSessionsPanelProps) {
   const t = useTranslations("areaPersonal.bookPanel");
   const prices = usePrices();
+  // PRICING-STUDENT-01: a signed-in student's own prices may still be in flight.
+  // There is no skeleton treatment in this panel (and the skeletonPulse keyframe
+  // lives in InteractiveShell, which /area-personal never mounts), so the price
+  // is held invisible-but-space-reserving: no public-price flash, no layout shift.
+  const pricesSyncing = usePricesSyncing();
   const { openBooking } = useBookingActions();
 
   return (
@@ -66,6 +71,7 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
             // free15min is free (kept in i18n); paid sessions read the live price.
             price={key === "free15min" ? t("sessions.free15min.price") : prices[key].price}
             isFree={key === "free15min"}
+            loading={key !== "free15min" && pricesSyncing}
             onClick={() => openBooking(key)}
           />
         ))}
@@ -86,6 +92,8 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
               label={t(`packs.${key}.label` as Parameters<typeof t>[0])}
               sub={sub}
               price={p.price}
+              loading={pricesSyncing}
+              subIsPriceDerived
               onClick={() => openBooking(key)}
             />
           );
@@ -96,15 +104,21 @@ export default function BookSessionsPanel({ hasActivePack, packSession }: BookSe
 }
 
 function SessionRow({
-  icon, label, sub, price, isFree = false, onClick,
+  icon, label, sub, price, isFree = false, loading = false, subIsPriceDerived = false, onClick,
 }: {
   icon:    string;
   label:   string;
   sub:     string;
   price:   string;
   isFree?: boolean;
+  /** PRICING-STUDENT-01: hold the price invisible while this student's own is resolving. */
+  loading?: boolean;
+  /** True when `sub` is computed from the price (the packs' savings copy), so it
+   *  has to be held back with the price rather than flashing the public figure. */
+  subIsPriceDerived?: boolean;
   onClick: () => void;
 }) {
+  const hidden = { visibility: "hidden" } as const;
   return (
     <button type="button" className="pa-srow" onClick={onClick}>
       <span className="pa-srow__ic">
@@ -112,9 +126,16 @@ function SessionRow({
       </span>
       <span className="pa-srow__tx">
         <b>{label}</b>
-        {sub && <small>{sub}</small>}
+        {sub && (
+          <small style={loading && subIsPriceDerived ? hidden : undefined}>{sub}</small>
+        )}
       </span>
-      <span className={`pa-srow__price${isFree ? " pa-free" : ""}`}>{price}</span>
+      <span
+        className={`pa-srow__price${isFree ? " pa-free" : ""}`}
+        style={loading ? hidden : undefined}
+      >
+        {price}
+      </span>
     </button>
   );
 }

@@ -44,7 +44,7 @@ import { api } from "@/lib/api-client";
 import { useHydrated } from "@/hooks/useClientValue";
 import Chat from "@/components/Chat";
 import { PACK_SIZES, PACK_CONFIG } from "@/constants";
-import { usePrices, usePackValidityDays } from "@/components/pricing/PricesProvider";
+import { usePrices, usePackValidityDays, usePricesSyncing } from "@/components/pricing/PricesProvider";
 import SessionCard from "./SessionCard";
 import PackCard from "./PackCard";
 import RescheduleBridge from "./RescheduleBridge";
@@ -89,6 +89,8 @@ export default function InteractiveShell() {
   const t = useTranslations("booking.shell");
   const prices = usePrices();
   const packValidityDays = usePackValidityDays();
+  // PRICING-STUDENT-01: a signed-in student's own prices may still be in flight.
+  const pricesSyncing = usePricesSyncing();
   const {
     router,
     googleUser,
@@ -110,7 +112,10 @@ export default function InteractiveShell() {
   // hydration keeps both sides identical; the cards appear one render later. No-op in
   // production, where the boundary is client-rendered (the useSearchParams bailout).
   const hydrated = useHydrated();
-  const showSkeletons = isAuthLoading || !hydrated;
+  // PRICING-STUDENT-01: `pricesSyncing` extends the same gate so a student on a
+  // private price never sees the public one flash first. Always false when signed
+  // out, so anonymous visitors and Googlebot are unaffected.
+  const showSkeletons = isAuthLoading || !hydrated || pricesSyncing;
 
   // The pack booking overlay / the single session booking overlay — `BookingOverlays` renders
   // them under these exact conditions; while either is up the sections are unmounted.

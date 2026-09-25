@@ -95,6 +95,25 @@ export const UpdatePricingSchema = z
 export type UpdatePriceInput   = z.infer<typeof UpdatePriceSchema>;
 export type UpdatePricingInput = z.infer<typeof UpdatePricingSchema>;
 
+// PRICING-STUDENT-01: per-student price override save
+// (POST /api/admin/students/[email]/pricing). Only the changed rows are sent.
+//
+// A null amountCents means "clear this override" — the row is DELETEd so the
+// student returns to the public price, including any later change to it. That is
+// why this cannot reuse UpdatePriceSchema, whose amountCents is positive-only.
+export const StudentPriceSchema = z.object({
+  productKey:  z.enum(["session1h", "session2h", "pack5", "pack10"]),
+  amountCents: z.number().int().positive().nullable(),
+});
+
+export const UpdateStudentPricingSchema = z.object({
+  prices: z.array(StudentPriceSchema).min(1).max(4),
+  reason: z.string().min(1).max(500),
+});
+
+export type StudentPriceInput          = z.infer<typeof StudentPriceSchema>;
+export type UpdateStudentPricingInput  = z.infer<typeof UpdateStudentPricingSchema>;
+
 // Admin schedule update — working hours per day + min advance notice + timezone.
 // weeklyHours is keyed by day-of-week "0".."6" (0=Sun..6=Sat); an empty/absent
 // array means a non-working day. The server is the source of truth and re-checks

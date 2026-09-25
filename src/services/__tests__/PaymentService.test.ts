@@ -970,3 +970,101 @@ describe("REFACTOR-P1-05: idempotency keys", () => {
     expect(a.paymentIntentId).not.toBe(b.paymentIntentId);
   });
 });
+
+// ─── PRICING-STUDENT-01 ───────────────────────────────────────────────────────
+
+describe("per-student pricing at checkout", () => {
+  /**
+   * The charge is the part that must be right: whatever the client displays, the
+   * amount handed to Stripe has to come from this student's resolved price. The
+   * service is given a pricing repo the test can seed, and a userService that
+   * resolves the email to an id (the real one does this via `users`).
+   */
+  function makeServiceWithSeedablePricing(userId: string | null) {
+    const pricingRepo = new InMemoryPricingRepository();
+    const pricing     = new PricingService(pricingRepo, new InMemoryAuditRepository());
+    const stripe      = mockStripe();
+    (stripe.createPaymentIntent as jest.Mock).mockResolvedValue({
+      id: "pi_student", client_secret: "pi_student_secret",
+    });
+    const userSvc = {
+      ensureUser:  jest.fn().mockResolvedValue(userId ?? TEST_USER_ID),
+      findByEmail: jest.fn().mockResolvedValue(userId ? { id: userId } : null),
+    };
+    const service = new PaymentService(
+      stripe,
+      mockCredits() as unknown as CreditService,
+      mockBookings() as unknown as BookingService,
+      mockPaymentRepo(),
+      userSvc as unknown as UserService,
+      pricing,
+      makeSchedule(),
+    );
+    return { service, stripe, pricingRepo };
+  }
+
+  it("charges the student's override for a pack, not the public price", async () => {
+    const { service, stripe, pricingRepo } = makeServiceWithSeedablePricing("user-1");
+    await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+
+    await service.createPackCheckout({ email: "ana@test.com", name: "Ana", packSize: 10 });
+
+    expect(stripe.createPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 9000, currency: "eur" }),
+      expect.anything(),
+    );
+  });
+
+  it("charges the student's override for a single session", async () => {
+    const { service, stripe, pricingRepo } = makeServiceWithSeedablePricing("user-1");
+    await pricingRepo.upsertForUser("user-1", "session1h", 1000, "admin@test.com");
+
+    await service.createSingleSessionCheckout({
+      email: "ana@test.com", name: "Ana", duration: "1h",
+      startIso: "2026-06-01T10:00:00.000Z", endIso: "2026-06-01T11:00:00.000Z",
+    });
+
+    expect(stripe.createPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 1000 }),
+      expect.anything(),
+    );
+  });
+
+  it("charges the public price for a product the student has no override for", async () => {
+    const { service, stripe, pricingRepo } = makeServiceWithSeedablePricing("user-1");
+    // Overrides pack10 only; the 2h session must stay at the seeded 3000.
+    await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+
+    await service.createSingleSessionCheckout({
+      email: "ana@test.com", name: "Ana", duration: "2h",
+      startIso: "2026-06-01T10:00:00.000Z", endIso: "2026-06-01T12:00:00.000Z",
+    });
+
+    expect(stripe.createPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 3000 }),
+      expect.anything(),
+    );
+  });
+
+  it("charges the public price to a student with no overrides", async () => {
+    const { service, stripe } = makeServiceWithSeedablePricing("user-2");
+
+    await service.createPackCheckout({ email: "bob@test.com", name: "Bob", packSize: 10 });
+
+    expect(stripe.createPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 14000 }),
+      expect.anything(),
+    );
+  });
+
+  it("charges the public price when the email has no users row yet", async () => {
+    const { service, stripe } = makeServiceWithSeedablePricing(null);
+
+    await service.createPackCheckout({ email: "ghost@test.com", name: "Ghost", packSize: 5 });
+
+    expect(stripe.createPaymentIntent).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 7500 }),
+      expect.anything(),
+    );
+  });
+});

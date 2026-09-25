@@ -16,7 +16,7 @@ import { buildChatSystemPrompt } from "@/constants/chat-prompt";
 import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
 import { getScheduleConfig } from "@/lib/schedule-config";
 import { chatRatelimit, chatRatelimitAnon, chatRatelimitAnonDaily } from "@/lib/ratelimit";
-import { chatService } from "@/services";
+import { chatService, pricingService, userService } from "@/services";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
@@ -116,11 +116,35 @@ async function postHandler(req: NextRequest) {
       getPackValidityDays(),
       getScheduleConfig(),
     ]);
-    const systemPrompt = buildChatSystemPrompt({
+
+    // PRICING-STUDENT-01: an authenticated student may pay a private price. Quote
+    // theirs, or the assistant would contradict the prices on the page they are
+    // looking at. Costs one uncached read, and only when signed in; anonymous
+    // visitors keep the cached global figures above.
+    let priceCents = {
       session1h: prices.session1h.priceCents,
       session2h: prices.session2h.priceCents,
       pack5:     prices.pack5.priceCents,
       pack10:    prices.pack10.priceCents,
+    };
+    if (isAuthenticated) {
+      const user = await userService.findByEmail(session.user!.email!);
+      if (user && (await pricingService.hasUserOverrides(user.id))) {
+        const own = await pricingService.getPublicPricing(user.id);
+        const byKey = new Map(
+          [...own.sessions, ...own.packs].map((r) => [r.productKey, r.amountCents]),
+        );
+        priceCents = {
+          session1h: byKey.get("session1h") ?? priceCents.session1h,
+          session2h: byKey.get("session2h") ?? priceCents.session2h,
+          pack5:     byKey.get("pack5")     ?? priceCents.pack5,
+          pack10:    byKey.get("pack10")    ?? priceCents.pack10,
+        };
+      }
+    }
+
+    const systemPrompt = buildChatSystemPrompt({
+      ...priceCents,
       packValidityDays,
       cancelHours: schedule.cancelMinNoticeHours,
     });

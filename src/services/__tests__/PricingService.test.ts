@@ -20,8 +20,54 @@ describe("PricingService", () => {
 
     it("throws when the product is not configured", async () => {
       const { service, pricingRepo } = makeService();
-      jest.spyOn(pricingRepo, "get").mockResolvedValueOnce(null);
+      // PRICING-STUDENT-01: getAmount resolves through list() now (one merge point
+      // shared with the display read), so the empty case is mocked there.
+      jest.spyOn(pricingRepo, "list").mockResolvedValueOnce([]);
       await expect(service.getAmount("pack5")).rejects.toThrow("No price configured for product pack5");
+    });
+
+    // ─── PRICING-STUDENT-01 ───────────────────────────────────────────────────
+
+    it("returns a student's override instead of the public price", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+      await expect(service.getAmount("pack10", "user-1")).resolves.toEqual({
+        amount: 9000, currency: "eur",
+      });
+    });
+
+    it("falls back to the public price for products the student has no override for", async () => {
+      const { service, pricingRepo } = makeService();
+      // Only pack10 is overridden — the sparse-merge case.
+      await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+      await expect(service.getAmount("session1h", "user-1")).resolves.toEqual({
+        amount: 1600, currency: "eur",
+      });
+    });
+
+    it("leaves other students on the public price", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+      await expect(service.getAmount("pack10", "user-2")).resolves.toEqual({
+        amount: 14000, currency: "eur",
+      });
+    });
+
+    it("returns public prices with no userId and with a userId that has no overrides", async () => {
+      const { service } = makeService();
+      await expect(service.getAmount("pack10")).resolves.toEqual({ amount: 14000, currency: "eur" });
+      await expect(service.getAmount("pack10", "user-nobody")).resolves.toEqual({
+        amount: 14000, currency: "eur",
+      });
+    });
+
+    it("returns the public price again once the override is cleared", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+      await pricingRepo.deleteForUser("user-1", "pack10");
+      await expect(service.getAmount("pack10", "user-1")).resolves.toEqual({
+        amount: 14000, currency: "eur",
+      });
     });
   });
 
@@ -82,6 +128,46 @@ describe("PricingService", () => {
       jest.spyOn(pricingRepo, "list").mockResolvedValueOnce([]);
       await expect(service.getPublicPricing()).rejects.toThrow("No price configured for product session1h");
     });
+
+    // ─── PRICING-STUDENT-01 ───────────────────────────────────────────────────
+
+    it("recomputes the pack per-class rate and savings from a student's override", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "pack10", 10000, "admin@test.com");
+
+      const { packs } = await service.getPublicPricing("user-1");
+      const pack10 = packs.find((p) => p.productKey === "pack10")!;
+      // 10000/10 = 1000 per class; original still 1600×10 = 16000 (no 1h override)
+      // → saves 6000, 38%.
+      expect(pack10).toEqual({
+        productKey: "pack10", amountCents: 10000, currency: "eur", hours: 10,
+        perClassCents: 1000, originalAmountCents: 16000, savingsCents: 6000, savingsPct: 38,
+      });
+    });
+
+    it("measures the strikethrough against the student's OWN 1h price when they have one", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "session1h", 1000, "admin@test.com");
+
+      const { packs, sessions } = await service.getPublicPricing("user-1");
+      expect(sessions[0]).toEqual({ productKey: "session1h", amountCents: 1000, currency: "eur" });
+
+      // pack5 stays public at 7500, but the original is now 1000×5 = 5000, which is
+      // BELOW the pack price — so the pack no longer beats singles for this student
+      // and all three savings fields must be null rather than negative.
+      const pack5 = packs.find((p) => p.productKey === "pack5")!;
+      expect(pack5.originalAmountCents).toBeNull();
+      expect(pack5.savingsCents).toBeNull();
+      expect(pack5.savingsPct).toBeNull();
+    });
+
+    it("leaves the public DTO untouched for a student with no overrides", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "pack10", 10000, "admin@test.com");
+      await expect(service.getPublicPricing("user-2")).resolves.toEqual(
+        await service.getPublicPricing(),
+      );
+    });
   });
 
   describe("updatePrice", () => {
@@ -133,6 +219,104 @@ describe("PricingService", () => {
         packValidityDays: 365,
         reason:           "annual packs",
       });
+    });
+  });
+
+  // ─── PRICING-STUDENT-01 ─────────────────────────────────────────────────────
+
+  describe("setUserOverrides", () => {
+    it("upserts numeric amounts and reflects them in getAmount", async () => {
+      const { service } = makeService();
+      await service.setUserOverrides({
+        userId: "user-1",
+        email:  "ana@test.com",
+        prices: [
+          { key: "session1h", amountCents: 1000 },
+          { key: "pack10",    amountCents: 9000 },
+        ],
+        by:     "admin@test.com",
+        reason: "beca parcial",
+      });
+
+      await expect(service.getAmount("session1h", "user-1")).resolves.toEqual({
+        amount: 1000, currency: "eur",
+      });
+      await expect(service.getAmount("pack10", "user-1")).resolves.toEqual({
+        amount: 9000, currency: "eur",
+      });
+      // Untouched products stay public.
+      await expect(service.getAmount("session2h", "user-1")).resolves.toEqual({
+        amount: 3000, currency: "eur",
+      });
+    });
+
+    it("deletes the row on a null amount rather than freezing the public price", async () => {
+      const { service, pricingRepo } = makeService();
+      await service.setUserOverrides({
+        userId: "user-1", email: "ana@test.com",
+        prices: [{ key: "pack10", amountCents: 9000 }],
+        by: "admin@test.com", reason: "beca",
+      });
+      await service.setUserOverrides({
+        userId: "user-1", email: "ana@test.com",
+        prices: [{ key: "pack10", amountCents: null }],
+        by: "admin@test.com", reason: "beca terminada",
+      });
+
+      expect(await pricingRepo.listForUser("user-1")).toEqual([]);
+      // And a LATER change to the public price now reaches this student — which is
+      // the whole point of deleting rather than copying the default in.
+      await pricingRepo.update("pack10", 15000, "admin@test.com");
+      await expect(service.getAmount("pack10", "user-1")).resolves.toEqual({
+        amount: 15000, currency: "eur",
+      });
+    });
+
+    it("writes ONE audit entry keyed on the student's email, attributed to the admin", async () => {
+      const { service, audit } = makeService();
+      await service.setUserOverrides({
+        userId: "user-1",
+        email:  "ana@test.com",
+        prices: [
+          { key: "session1h", amountCents: 1000 },
+          { key: "pack5",     amountCents: null },
+        ],
+        by:     "admin@test.com",
+        reason: "beca parcial",
+      });
+
+      // Keyed on the STUDENT, unlike updatePrice which has no student to key on.
+      expect(audit.getAll("admin@test.com")).toHaveLength(0);
+      const entries = audit.getAll("ana@test.com");
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).toMatchObject({
+        action: "admin_set_student_pricing",
+        reason: "beca parcial",
+        by:     "admin@test.com",
+      });
+      // Flat string, so the admin audit renderer's String(v) shows something useful.
+      expect(entries[0].prices).toBe("session1h=1000, pack5=cleared");
+    });
+  });
+
+  describe("getUserOverrides / hasUserOverrides", () => {
+    it("reports no overrides for an untouched student", async () => {
+      const { service } = makeService();
+      await expect(service.getUserOverrides("user-1")).resolves.toEqual([]);
+      await expect(service.hasUserOverrides("user-1")).resolves.toBe(false);
+    });
+
+    it("returns only that student's rows, sparsely", async () => {
+      const { service, pricingRepo } = makeService();
+      await pricingRepo.upsertForUser("user-1", "pack10", 9000, "admin@test.com");
+      await pricingRepo.upsertForUser("user-2", "session1h", 1200, "admin@test.com");
+
+      const own = await service.getUserOverrides("user-1");
+      expect(own).toHaveLength(1);
+      expect(own[0]).toMatchObject({ productKey: "pack10", amountCents: 9000 });
+      await expect(service.hasUserOverrides("user-1")).resolves.toBe(true);
+      await expect(service.hasUserOverrides("user-2")).resolves.toBe(true);
+      await expect(service.hasUserOverrides("user-3")).resolves.toBe(false);
     });
   });
 });

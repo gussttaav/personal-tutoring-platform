@@ -8,6 +8,13 @@
 // REFACTOR-P2-03: Gemini context caching. The system prompt is uploaded once
 // and referenced by ID on subsequent requests, cutting input token cost to ~10%
 // for the cached portion. Falls back to inline system_instruction if caching fails.
+//
+// PRICING-STUDENT-01: that cache is a single process-level slot, and it used to be
+// safe because every request built the SAME prompt from the global public prices.
+// Now the prompt can carry one student's private price, so the slot records which
+// prompt it holds and any other prompt falls back to an inline system_instruction.
+// Without that check, the first student to chat in a 5-minute window would have
+// their private price answered to everyone else, including anonymous visitors.
 
 import type { GeminiMessage } from "./IGeminiClient";
 import { log } from "@/lib/logger";
@@ -28,15 +35,24 @@ interface GeminiRequest {
 }
 
 // Process-level cache state. Survives warm invocations; each cold start starts fresh.
-let cachedSystemPrompt: { name: string; expiresAt: number } | null = null;
+// `prompt` is the exact text this slot was uploaded with — see PRICING-STUDENT-01 above.
+let cachedSystemPrompt: { name: string; expiresAt: number; prompt: string } | null = null;
 
 async function getOrCreateSystemPromptCache(
   systemPrompt: string,
   apiKey: string,
 ): Promise<string> {
-  if (cachedSystemPrompt && cachedSystemPrompt.expiresAt > Date.now() + 60_000) {
-    return cachedSystemPrompt.name;
+  const live = cachedSystemPrompt && cachedSystemPrompt.expiresAt > Date.now() + 60_000;
+
+  if (live && cachedSystemPrompt!.prompt === systemPrompt) {
+    return cachedSystemPrompt!.name;
   }
+
+  // A different prompt while the slot is still live: answer inline rather than
+  // reusing someone else's cached instruction OR evicting the slot. The common
+  // (public-price) prompt keeps the cache; per-student prompts pay full input
+  // tokens, which is the right trade for a handful of students.
+  if (live) return "";
 
   const res = await fetch(CACHED_CONTENTS_URL, {
     method: "POST",
@@ -63,7 +79,11 @@ async function getOrCreateSystemPromptCache(
   }
 
   const data = await res.json() as { name: string };
-  cachedSystemPrompt = { name: data.name, expiresAt: Date.now() + CACHE_TTL_SEC * 1000 };
+  cachedSystemPrompt = {
+    name:      data.name,
+    expiresAt: Date.now() + CACHE_TTL_SEC * 1000,
+    prompt:    systemPrompt,
+  };
   log("info", "Gemini system prompt cached", { service: "chat", cacheName: data.name });
   return data.name;
 }

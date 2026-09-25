@@ -16,7 +16,7 @@
  * definition had { ok: true; remaining: number } which was incorrect.
  */
 
-import type { BookResponse, CreditsResponse, DeletionEligibility, PaymentIntentResponse } from "@/domain/types";
+import type { BookResponse, CreditsResponse, DeletionEligibility, PaymentIntentResponse, PublicPricing } from "@/domain/types";
 import type { BookInput, CheckoutInput, ContentReportInput, ContentVoteInput } from "@/lib/schemas";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -46,6 +46,17 @@ export class ApiError extends Error {
 export const api = {
   credits: {
     get: () => request<CreditsResponse>("/api/credits"),
+  },
+
+  pricing: {
+    /**
+     * GET /api/pricing — the signed-in student's prices.
+     *
+     * PRICING-STUDENT-01: identical to the public prices unless this student has
+     * an override, in which case `hasCustomPricing` is true and the amounts are
+     * theirs. Identity comes from the session; there is nothing to pass.
+     */
+    get: () => request<PublicPricing & { hasCustomPricing: boolean }>("/api/pricing"),
   },
 
   book: {
