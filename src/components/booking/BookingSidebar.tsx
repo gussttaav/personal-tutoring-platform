@@ -16,6 +16,7 @@
  */
 
 import { useTranslations } from "next-intl";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 
 interface BookingSidebarProps {
   mode:           "pack" | "single";
@@ -38,7 +39,8 @@ export default function BookingSidebar({
   isReschedule  = false,
   userTz,
 }: BookingSidebarProps) {
-  const t = useTranslations("booking.sidebar");
+  const t        = useTranslations("booking.sidebar");
+  const schedule = useScheduleConfig();
 
   const progressPct =
     packTotal > 0 ? Math.min(100, (packRemaining / packTotal) * 100) : 0;
@@ -239,7 +241,7 @@ export default function BookingSidebar({
               className="leading-relaxed"
               style={{ fontSize: "11px", color: "#bbcabf" }}
             >
-              {t("cancelNote")}
+              {t("cancelNote", { hours: schedule.cancelMinNoticeHours })}
             </p>
           </div>
         )}

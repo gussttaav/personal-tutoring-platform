@@ -535,7 +535,7 @@
       "packRemaining": "{packRemaining} / {packTotal}h rest.",
       "packDeductNote": "Esta sesión se descontará de tu pack activo.",
       "rescheduleNote": "Estás modificando una reserva existente. Esta acción no consume créditos.",
-      "cancelNote": "Las cancelaciones deben realizarse con al menos 24h de antelación para recuperar el crédito.",
+      "cancelNote": "Las cancelaciones deben realizarse con al menos {hours}h de antelación para recuperar el crédito.",
       "zoomApp": "Zoom (en la app)",
       "realtimeSlots": "Horarios en tiempo real",
       "securePayment": "Pago seguro con Stripe"
@@ -594,7 +594,7 @@
     "form": {
       "secure": "Transacción segura",
       "protectedByStripe": "Protegido por Stripe",
-      "cancellation24h": "Cancelación 24h",
+      "cancellation24h": "Cancelación {hours}h",
       "loading": "Cargando formulario de pago...",
       "processing": "Procesando...",
       "pay": "Pagar {amount}",
