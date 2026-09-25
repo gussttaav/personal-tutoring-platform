@@ -145,3 +145,51 @@ describe("LANDING-01: the home is rewritten to /inicio for a session cookie", ()
     expect(rewrite(res).pathname).toBe("/es/inicio");
   });
 });
+
+/**
+ * PRICING-STUDENT-01: a path segment that merely CONTAINS a dot is not a file.
+ *
+ * `isUiPath` used `\.[^/]+$` to spot static assets, which classified
+ * /admin/students/foo%40gmail.com as a file because it ends in ".com". The
+ * request then skipped intlMiddleware, never got a locale prefix, and 404'd —
+ * the page lives under `[locale]`. Every student was unreachable from the admin
+ * panel, which is where the per-student pricing card lives.
+ *
+ * These pin both directions: emails get locale routing, real assets still bypass.
+ */
+describe("static-file detection vs dotted path segments", () => {
+  /** A locale-routed response carries next-intl's rewrite/redirect; a bypassed
+   *  one is a bare NextResponse.next() with no such header. */
+  function wentThroughIntl(res: Response) {
+    return (
+      res.headers.get("x-middleware-rewrite") !== null ||
+      res.headers.get("location") !== null
+    );
+  }
+
+  it.each([
+    "/admin/students/gtorresguerrero85%40gmail.com",
+    "/admin/students/someone%40example.co.uk",
+    "/admin/students/a%40b.es",
+    "/admin/students/a%40b.dev",
+  ])("locale-routes the admin student page for %s", (path) => {
+    expect(wentThroughIntl(middleware(request(path)))).toBe(true);
+  });
+
+  it.each([
+    "/site.webmanifest",
+    "/favicon.ico",
+    "/avatar.png",
+    "/og.png",
+    "/favicon.svg",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/courses/diagram.webp",
+  ])("lets the real static asset %s bypass locale routing", (path) => {
+    expect(wentThroughIntl(middleware(request(path)))).toBe(false);
+  });
+
+  it("still traces bypassed asset requests with a request id", () => {
+    expect(middleware(request("/avatar.png")).headers.get("x-request-id")).toMatch(/^req_/);
+  });
+});

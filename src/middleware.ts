@@ -55,6 +55,16 @@ const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"
  *  here and not typed into the address bar. */
 const LANDING_MARKER = "x-landing-rewrite";
 
+/** Extensions that mean "a real file", so the request must bypass intlMiddleware.
+ *  An allowlist, not "anything after a dot": admin deep-links carry a student's
+ *  email in the path (/admin/students/foo%40gmail.com), and a bare `\.[^/]+$`
+ *  classified the `.com` as a file extension — the request then skipped locale
+ *  routing and 404'd, because the page lives under `[locale]`. Covers every
+ *  extension currently in /public plus the usual media/font types; `.xml`/`.txt`
+ *  keep the bypass so /sitemap.xml and /robots.txt behave exactly as before. */
+const STATIC_FILE =
+  /\.(?:ico|json|png|py|svg|txt|webmanifest|webp|jpe?g|gif|avif|mp4|webm|pdf|xml|css|js|map|woff2?|ttf|eot)$/i;
+
 /** LANDING-01: an in-app navigation (link, reload, RSC fetch) is `same-origin`;
  *  everything else — typed URL, bookmark, external link, no header — is a landing. */
 function isLanding(req: NextRequest): boolean {
@@ -88,7 +98,7 @@ export function middleware(req: NextRequest) {
   const isUiPath =
     !pathname.startsWith("/api") &&
     !pathname.startsWith("/monitoring") &&
-    !/\.[^/]+$/.test(pathname);
+    !STATIC_FILE.test(pathname);
 
   if (isUiPath) {
     // Inject the request ID onto the incoming request headers so server
