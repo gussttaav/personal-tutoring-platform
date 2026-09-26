@@ -4,7 +4,7 @@ title: "The chain rule, in earnest"
 block: 2
 order: 7
 minutes: 30
-summary: "A hidden layer makes one and the same weight reach the loss by several paths at once, and the one-variable chain rule does not cover that case. Within a path the derivatives multiply; across paths they add. Stacking those sums gives the Jacobian, and with it differentiating a composition is a matrix product again."
+summary: "A hidden layer makes one and the same weight reach the loss by several paths at once, and the one-variable chain rule cannot cover that case. Within a path the derivatives multiply; across paths they add. Stacking those sums gives the Jacobian, and with it, differentiating a composition turns back into a matrix product."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -14,7 +14,7 @@ quiz:
     prompt: 'A loss $\mathcal{L} = u_1^{2} + 3u_2$ depends on a single variable $t$ through $u_1 = 2t$ and $u_2 = t^{2}$. What is $d\mathcal{L}/dt$ at $t = 1$?'
     answer: 14
     tolerance: 0
-    explanation: 'There are two paths and each contributes the product of its two derivatives. The one through $u_1$ gives $\dfrac{\partial\mathcal{L}}{\partial u_1}\dfrac{du_1}{dt} = 2u_1 \cdot 2 = 8$ at $t = 1$, and the one through $u_2$ gives $3 \cdot 2t = 6$. The sum is $14$. The two numbers that come out of forgetting a path are exactly $8$ and $6$, and neither of them warns of anything: they are perfectly reasonable derivatives of something that is not this loss. Check it by substituting before differentiating, which here you can: $\mathcal{L}(t) = 4t^{2} + 3t^{2} = 7t^{2}$, whose derivative is $14t$. In a network that substitution is not available, and that is why the rule is needed.'
+    explanation: 'There are two paths, and each one contributes the product of its two derivatives. The one through $u_1$ gives $\dfrac{\partial\mathcal{L}}{\partial u_1}\dfrac{du_1}{dt} = 2u_1 \cdot 2 = 8$ at $t = 1$, and the one through $u_2$ gives $3 \cdot 2t = 6$. The sum is $14$. The two numbers you get from forgetting a path are exactly $8$ and $6$, and neither one warns you of anything: they are both perfectly reasonable derivatives of something that is not this loss. Check it by substituting before differentiating, which you can do here: $\mathcal{L}(t) = 4t^{2} + 3t^{2} = 7t^{2}$, whose derivative is $14t$. In a network that substitution is not available, which is exactly why the rule is needed.'
   - id: q-por-que-suma
     type: single
     prompt: 'The contributions of the paths add up. Why do they add, rather than multiply or keep the largest?'
@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'Because the loss was already a sum over the classes, and that sum is inherited on differentiating.' }
       - { id: d, text: 'Because multiplying $m$ numbers smaller than $1$ would drive the derivative to zero, and adding is the convention that avoids it.' }
     answer: a
-    explanation: '(a) is the derivation in the drop-down: the sum is not chosen, it is already inside the definition of the derivative, which is that of a linear approximation. (b) says exactly the opposite of what happens (the paths share $t$, which is where they all come from), and if they really shared nothing there would be no calculation to do. (c) confuses the form of the loss with the rule: the sum over paths appears all the same with a single-term loss, like that of a neuron with one output. And (d) invents a numerical motive for a theorem; what is true is that multiplying small factors *within* a path sinks the derivative, and that has a name and a block of its own (Block 3, on recurrent networks), but it decides nothing about this sum.'
+    explanation: '(a) is the derivation in the drop-down: the sum is not a choice, it is already built into the definition of the derivative, which is exactly that of a linear approximation. (b) claims the opposite of what actually happens (the paths all share $t$, which is precisely where they come from), and if they truly shared nothing there would be no calculation left to do. (c) confuses the shape of the loss with the rule itself: the sum over paths shows up all the same with a single-term loss, like that of a neuron with one output. And (d) invents a numerical motive for a theorem; multiplying small factors *within* a path really does sink the derivative, and that has a name and a whole block of its own (Block 3, on recurrent networks), but it has nothing to do with this particular sum.'
   - id: q-formas-jacobiana
     type: multi
     prompt: 'Tick everything that is true about the Jacobians of this lesson.'
@@ -34,7 +34,7 @@ quiz:
       - { id: c, text: 'A $\varphi$ applied coordinate by coordinate has a diagonal Jacobian, so multiplying by it costs $m$ products and not $m^{2}$.' }
       - { id: d, text: 'If the two Jacobians of a composition are square and of the same size, it makes no difference in which order they are multiplied.' }
     answer: [a, b, c]
-    explanation: 'The first three are the three things the Jacobian section establishes, and all three are read off the shape. (a) is the definition, with the output index first. (b) is where the transpose that appears in every gradient of the block comes from. (c) is the diagonal count, and what it saves is not only time: also the $m^{2} - m$ zero entries nobody would have to store. The false one is (d), because the matrix product is not commutative, and the square case is the dangerous one precisely for that reason: when the shapes do not fit, NumPy complains and you find out; when they fit, the product exists, a number comes out in every entry and none of them is the derivative you were after.'
+    explanation: 'The first three are exactly the three things the Jacobian section establishes, and every one of them can be read straight off the shape. (a) is the definition, with the output index first. (b) is where the transpose that shows up in every gradient of this block comes from. (c) is the diagonal count, and what it saves is not only time: also the $m^{2} - m$ zero entries nobody would otherwise have to store. (d) is the false one, because the matrix product is never commutative, and the square case is the dangerous one for exactly that reason: when the shapes do not fit, NumPy complains and you find out immediately; when they do fit, the product exists, a number lands in every entry, and none of them is the derivative you were actually after.'
   - id: q-orden-jacobianas
     type: single
     prompt: 'In this lesson''s network, $\mathbf{x} \in \mathbb{R}^{8}$ produces $\mathbf{h}^{(1)} \in \mathbb{R}^{4}$ and this in turn produces $\mathbf{z}^{(2)} \in \mathbb{R}^{3}$. What shape does $\partial\mathbf{z}^{(2)} / \partial\mathbf{x}$ have, and which product does it come from?'
@@ -44,16 +44,17 @@ quiz:
       - { id: c, text: '$3 \times 8$, but from the product in the other order, $\dfrac{\partial\mathbf{h}^{(1)}}{\partial\mathbf{x}}\dfrac{\partial\mathbf{z}^{(2)}}{\partial\mathbf{h}^{(1)}}$, which is the order in which the network computes.' }
       - { id: d, text: 'It does not have a single shape: there are four paths from $\mathbf{x}$ to $\mathbf{z}^{(2)}$, one per hidden neuron, and each gives its own Jacobian.' }
     answer: a
-    explanation: '(a) is the rule and its shape count: the shared width, $d_1 = 4$, is the only dimension that disappears from the result, exactly as in <Leccion slug="forward-pass">the forward pass</Leccion>. (b) inverts the convention: the output goes by rows, and that is what makes the Jacobian of a loss a row. (c) is the trap that matters, because its first half is correct: the network computes forwards and the Jacobians multiply backwards, and here the wrong order does not even exist: a $4 \times 8$ by a $3 \times 4$ is not a legal product, which is a stroke of luck. And (d) confuses a path with a result: the four paths from $x_j$ to $z^{(2)}_i$ are the four summands of a single entry, not four different answers.'
+    explanation: '(a) is the rule together with its shape count: the shared width, $d_1 = 4$, is the only dimension that disappears from the result, exactly as it did in <Leccion slug="forward-pass">the forward pass</Leccion>. (b) inverts the convention: the output goes by rows, and that is exactly what makes the Jacobian of a loss a row. (c) is the trap worth noticing, because its first half is actually correct: the network computes forwards while the Jacobians multiply backwards, and here the wrong order does not even exist as a valid product: a $4 \times 8$ by a $3 \times 4$ is not legal, which is a stroke of luck. And (d) confuses a path with a result: the four paths from $x_j$ to $z^{(2)}_i$ are the four summands that make up a single entry, not four separate answers.'
 challenges:
   - id: ch-cadena-vectorial
     prompt: |
       Write the chain rule in its vector form, with no network in the way:
 
-      - `jacobian(f, x)` receives a function from $\mathbb{R}^{n}$ to $\mathbb{R}^{m}$ and a point, and
-        returns its Jacobian at that point, of shape $(m,\, n)$, computed with central
-        differences: column $j$ is $\left(f(\mathbf{x} + h\mathbf{e}_j) - f(\mathbf{x} - h\mathbf{e}_j)\right)/2h$
-        with $h = 10^{-6}$.
+      - `jacobian(f, x)` receives a function from $\mathbb{R}^{n}$ to $\mathbb{R}^{m}$ and a
+        point, and returns its Jacobian at that point, of shape $(m,\, n)$, computed with
+        central differences: column $j$ is
+        $\left(f(\mathbf{x} + h\mathbf{e}_j) - f(\mathbf{x} - h\mathbf{e}_j)\right)/2h$ with
+        $h = 10^{-6}$.
       - `input_gradient(jacobians, g)` receives a list of Jacobians **in forward order** (the
         first is that of the first function) and the gradient at the output, and returns the
         gradient at the input. It is a vector, not a matrix.
@@ -128,24 +129,24 @@ challenges:
               g = J.T @ g
           return g
     explanation: |
-      `jacobian` builds the matrix by **columns** and not by rows, and it is no whim: column $j$
-      is what happens to *all* the outputs when input $j$ moves, which is exactly what a finite
-      difference can measure in one go. A row would ask to move one output, and outputs are not
-      moved, they are looked at. `np.stack(columns, axis=1)` stacks those $n$ columns into an
-      $(m, n)$ matrix; with `axis=0` the transpose would come out, which is the mistake the first
-      test catches.
+      `jacobian` builds the matrix by **columns** rather than by rows, and that is no accident:
+      column $j$ is what happens to *every* output when input $j$ moves, which is exactly what a
+      finite difference can measure in a single pass. A row would ask you to move one output, and
+      outputs are not moved, they are only looked at. `np.stack(columns, axis=1)` stacks those $n$
+      columns into an $(m, n)$ matrix; with `axis=0` you would get the transpose instead, which is
+      the mistake the first test catches.
 
-      `input_gradient` fits in three lines and every decision is in `reversed`. The Jacobians
-      arrive in the order they were computed (forwards) and are applied in the opposite one, each
-      of them transposed, because transposing a product reverses the order of the factors. Notice
-      what it does **not** do: it never multiplies a matrix by another matrix. On every turn `g`
-      is still a vector, so the most expensive thing that happens is a matrix times a vector.
+      `input_gradient` fits in three lines, and every decision lives inside `reversed`. The
+      Jacobians arrive in the order they were computed (forwards) and get applied in the opposite
+      order, each one transposed, because transposing a product reverses the order of its factors.
+      Notice what it never does: it never multiplies a matrix by another matrix. At every turn `g`
+      stays a vector, so the most expensive thing that ever happens is a matrix times a vector.
 
-      The last test is the one that says all this is good for something. Differentiating the
-      whole composition in one go is only possible here because `f2(f1(v))` can be written and
-      evaluated; in a network with hidden layers that function exists but nobody differentiates
-      it by hand, and what is left is precisely this: the Jacobians of each piece, multiplied in
-      order.
+      The last test is the one that shows all of this is actually good for something.
+      Differentiating the whole composition in one go only works here because `f2(f1(v))` can be
+      written down and evaluated directly; in a network with hidden layers that function exists,
+      but nobody differentiates it by hand, and what is left is exactly this: the Jacobians of each
+      piece, multiplied in order.
 reading:
   - kind: paper
     title: 'The Matrix Calculus You Need For Deep Learning'
@@ -154,7 +155,7 @@ reading:
     venue: 'arXiv:1802.01528'
     lang: en
     url: 'https://arxiv.org/abs/1802.01528'
-    note: 'The vector chain rule and the Jacobian in full, with the case the lesson uses: a coordinate-wise activation, hence a diagonal Jacobian. Asks for no more than one-variable calculus, and it is more mechanical than conceptual.'
+    note: 'The vector chain rule and the Jacobian worked out in full, including the case this lesson uses: a coordinate-wise activation, hence a diagonal Jacobian. Needs no more than one-variable calculus, and is more mechanical than conceptual.'
   - kind: blog
     title: 'Calculus on Computational Graphs: Backpropagation'
     authors: 'Christopher Olah'
@@ -162,94 +163,99 @@ reading:
     venue: 'colah.github.io'
     lang: en
     url: 'https://colah.github.io/posts/2015-08-Backprop/'
-    note: 'Reads the sum over paths as a computational graph and names what the lesson sets aside: multiplying matrices together or carrying a vector backwards are forward and reverse mode, and reverse mode is what makes the way back cheap.'
+    note: 'Reads the sum over paths as a computational graph and names what this lesson leaves aside: forward mode versus reverse mode, and why reverse mode is what makes the way back cheap.'
 ---
 
 {/* COURSE-P5-02 — Block 2, Lesson 7. */}
 
-Of the three prerequisites the course starts from, one is the chain rule, and up to here the course
-has differentiated with the version everyone learns first: two one-variable functions chained, two
-derivatives multiplied. That version produced the two calculations the block has needed, the
-correction of the output layer and the gradient of a lone neuron. The previous lesson, on gradient
-descent, left training solved except for one piece: the step knows what to do with the gradient, and
-for a network with hidden layers there is still no way to compute it. This lesson is that piece, and
-it is only calculus.
+Of the three prerequisites this course starts from, one is the chain rule, and up to now the course
+has differentiated using the version everyone learns first: two one-variable functions chained,
+their two derivatives multiplied. That version produced both calculations this block has needed so
+far, the correction of the output layer and the gradient of a lone neuron. The previous lesson, on
+gradient descent, left training solved except for one piece: the step knows exactly what to do with
+the gradient, but for a network with hidden layers there is still no way to actually compute one.
+This lesson is that missing piece, and it turns out to be pure calculus.
 
-Look at where it gets complicated, because it is not where it seems. Take the review network with
-three answers instead of two (positive, negative and neutral, the classes with which <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> arrived at the softmax): eight inputs, four hidden neurons and three
-output ones. Pick any weight of the first layer, say the one the first hidden neuron gives
-<W>fun</W>, and move it a thousandth. Its neuron changes value: so far, the usual calculation. What
-comes next is not, because that neuron feeds the three output neurons, all three enter the loss, and
-all three have moved. One number touched, three effects that come out through different places and
-meet at the end. In the one-variable rule there is nowhere to put that.
+Look closely at where things actually get complicated, because it is not where it seems. Take the
+review network with three answers instead of two (positive, negative and neutral, the classes
+<Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> used to arrive at the
+softmax): eight inputs, four hidden neurons, three outputs. Pick any weight in the first layer, say
+the one the first hidden neuron gives <W>fun</W>, and nudge it by a thousandth. Its neuron's value
+changes: so far, the usual calculation. What comes next is not usual at all, because that neuron
+feeds all three output neurons, all three feed into the loss, and all three have now moved. One
+number touched, three effects rippling out through different routes and meeting back up at the end.
+The one-variable rule has nowhere to put that.
 
-What has to be counted is not the neurons: it is the paths from a weight to the loss.
+What needs counting is not the neurons, it is the paths running from a weight all the way to the
+loss.
 
 <Figure
   src="/courses/dl-nlp/regla-cadena-caminos.en.svg"
   alt="The example network, in four columns of circles joined by lines. On the left, the input layer, abbreviated: x sub 1 at the top, a vertical ellipsis, x sub 3 in the middle, another ellipsis and x sub 8 at the bottom. In the centre, the hidden layer, abbreviated: h(1) sub 1 at the top, an ellipsis and h(1) sub 4 at the bottom. On the right, three output neurons, y-hat sub 1, y-hat sub 2 and y-hat sub 3, and at the end the calligraphic loss L, which the three outputs reach. Every drawn neuron is joined to all those of the next layer. One route is highlighted in green and thicker: it leaves x sub 3, enters h(1) sub 1, goes from there to y-hat sub 1 and from y-hat sub 1 to the loss. Its three green arrows carry the factors partial of z(1) sub 1 with respect to W(1) sub 1,3; partial of z(2) sub 1 with respect to z(1) sub 1; and partial of the loss with respect to z(2) sub 1. The remaining connections are dimmed and grey, with no arrowhead."
-  caption="A path runs from a weight to the loss and carries one factor per arrow. The weight that hidden neuron h₁ gives input x₃ enters through h₁, and from h₁ three paths open up, one per output neuron. Only the one through ŷ₁ is highlighted here; the derivative we are after is not that path, it is what the three add up to."
+  caption="A path runs from a weight to the loss and carries one factor per arrow. The weight that hidden neuron h₁ gives input x₃ enters through h₁, and from h₁ three paths branch out, one per output neuron. Only the one through ŷ₁ is highlighted here; the derivative you are after is not any single path, it is what all three add up to."
 />
 
-Of the three answers that fit (keep the heaviest, average them, add them up) only one is right, and
-it is worth knowing why before using it.
+Of the three plausible answers (keep the heaviest path, average them, or add them all up), only one
+is actually right, and it is worth understanding why before you use it.
 
 <Callout type="intuition" title="The idea in one sentence">
-The derivative does not choose a path: it runs along every path there is and keeps what they add up
-to. Everything else in this lesson is bookkeeping: what multiplies within a path, and how paths are
-stacked so that nobody writes them out one by one.
+The derivative does not pick a path: it runs along every path there is and keeps whatever they add
+up to. Everything else in this lesson is bookkeeping: what multiplies within a path, and how paths
+get stacked so nobody has to write them out one by one.
 </Callout>
 
 ## When one variable arrives by several paths
 
-Let's take the network out of the way. Let $\mathcal{L}$ be a function of $m$ variables
-$u_1, \dots, u_m$, and let each of them be, in turn, a function of one and the same variable $t$.
-Then $\mathcal{L}$ depends on $t$ even though it does not mention it, and its derivative is
+Set the network aside for a moment. Let $\mathcal{L}$ be a function of $m$ variables
+$u_1, \dots, u_m$, and let each of them, in turn, be a function of one and the same variable $t$.
+Then $\mathcal{L}$ depends on $t$ even without ever mentioning it, and its derivative is
 
 $$
 \frac{d\mathcal{L}}{dt} = \sum_{k=1}^{m} \frac{\partial \mathcal{L}}{\partial u_k}\,\frac{\partial u_k}{\partial t},
 $$
 
-one summand per intermediate variable. Each summand has the shape of the usual rule (how much
-$\mathcal{L}$ responds to $u_k$, times how much $u_k$ responds to $t$), and what is new is that there
-are $m$ of them and that they add. Within a path you multiply; across paths you add.
+one summand per intermediate variable. Each summand has the shape of the familiar rule (how much
+$\mathcal{L}$ responds to $u_k$, times how much $u_k$ responds to $t$), and what's new is that there
+are $m$ of them, and that they add. Within a path you multiply; across paths you add.
 
-That sum is not a convention, and where it comes from is the only thing in the lesson that is not
-bookkeeping. That $\mathcal{L}$ is differentiable at a point means that near it it resembles a
-linear function of the displacements $\Delta u_1, \dots, \Delta u_m$, and a linear function of $m$
-numbers is a sum of $m$ terms, one per number. The paths do not compete: each contributes its share,
-and the shares add because the approximation they come from was already a sum.
+That sum is not a convention, and where it actually comes from is the one thing in this lesson that
+isn't bookkeeping. $\mathcal{L}$ being differentiable at a point means that, close to it, the
+function looks like a linear function of the displacements $\Delta u_1, \dots, \Delta u_m$, and a
+linear function of $m$ numbers is a sum of $m$ terms, one per number. The paths aren't competing
+with each other: each contributes its own share, and the shares add because the approximation they
+come from was already a sum to begin with.
 
 <Details summary="The derivation, with the displacement written out">
 
-Move $t$ by a small amount $\Delta t$. Each intermediate variable moves with it, and being
-differentiable with respect to $t$,
+Move $t$ by a small amount $\Delta t$. Every intermediate variable moves along with it, and since
+each is differentiable with respect to $t$,
 
 $$
 \Delta u_k = \frac{\partial u_k}{\partial t}\,\Delta t + o(\Delta t),
 $$
 
-where $o(\Delta t)$ collects what is left over and which, divided by $\Delta t$, tends to zero. The
-differentiability of $\mathcal{L}$ at the point $(u_1, \dots, u_m)$ says the same thing one level up:
-the increment of $\mathcal{L}$ is linear in the $m$ displacements, plus a remainder negligible
-against the size of the total displacement,
+where $o(\Delta t)$ collects whatever is left over, a remainder that, divided by $\Delta t$, tends
+to zero. The differentiability of $\mathcal{L}$ at the point $(u_1, \dots, u_m)$ says the same thing
+one level up: the increment of $\mathcal{L}$ is linear in the $m$ displacements, plus a remainder
+that's negligible next to the size of the total displacement,
 
 $$
 \Delta\mathcal{L} = \sum_{k=1}^{m} \frac{\partial \mathcal{L}}{\partial u_k}\,\Delta u_k + o\!\left(\lVert \Delta \mathbf{u} \rVert\right).
 $$
 
-Substitute the first into the second, divide everything by $\Delta t$ and let $\Delta t$ tend to
-zero. The two remainders go away (the second because $\lVert \Delta \mathbf{u} \rVert$ is of the
-order of $\Delta t$) and what is left is the formula above. The sum was in the second equation from
-the start: it came in with the definition of the derivative, not with the chain rule.
+Substitute the first equation into the second, divide everything by $\Delta t$, and let $\Delta t$
+tend to zero. Both remainders vanish (the second because $\lVert \Delta \mathbf{u} \rVert$ is on the
+order of $\Delta t$), leaving exactly the formula above. The sum was already there in the second
+equation from the start: it arrived with the definition of the derivative itself, not with the chain
+rule.
 
 </Details>
 
-Now go back to the network with that in hand. The weight you were moving, the one the first hidden
-neuron gives <W>fun</W>, is $\mathbf{W}^{(1)}_{13}$ (row $1$, that neuron's; column $3$, that
-vocabulary entry's), and the intermediate variables are the three pre-activations of the output
-layer, $z^{(2)}_1$, $z^{(2)}_2$ and $z^{(2)}_3$. There are two more links along the way, so each
-summand has four factors:
+Now bring that back to the network. The weight you were moving, the one the first hidden neuron
+gives <W>fun</W>, is $\mathbf{W}^{(1)}_{13}$ (row $1$, that neuron's; column $3$, that vocabulary
+entry's), and the intermediate variables are the three pre-activations of the output layer,
+$z^{(2)}_1$, $z^{(2)}_2$ and $z^{(2)}_3$. There are two more links along the way, so each summand
+carries four factors:
 
 $$
 \frac{\partial \mathcal{L}}{\partial \mathbf{W}^{(1)}_{13}}
@@ -260,16 +266,19 @@ $$
 \underbrace{\frac{\partial z^{(1)}_1}{\partial \mathbf{W}^{(1)}_{13}}}_{x_3}.
 $$
 
-None of the four is new. The first is the result with which <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> closed the output layer by putting softmax and cross-entropy together. The second
-comes from $z^{(2)}_k$ being a sum in which $h^{(1)}_1$ appears once, multiplied by its weight. The
-third is the derivative of the activation, tabulated for the three candidates in <Leccion slug="funciones-activacion">the lesson on activation functions and non-linearity</Leccion>. And the fourth is the previous lesson's: the
-pre-activation is linear in its weights, so the derivative with respect to one of them is the input
-that goes with it. The only thing missing was knowing that the three paths add.
+None of these four is new. The first is the result <Leccion slug="funcion-de-perdida">the lesson on
+loss functions</Leccion> closed the output layer with, by pairing softmax and cross-entropy
+together. The second comes from $z^{(2)}_k$ being a sum in which $h^{(1)}_1$ appears exactly once,
+multiplied by its weight. The third is the derivative of the activation, tabulated for all three
+candidates back in <Leccion slug="funciones-activacion">the lesson on activation functions and
+non-linearity</Leccion>. And the fourth belongs to the previous lesson: the pre-activation is linear
+in its weights, so the derivative with respect to any one of them is the input that
+multiplies it. The only genuinely new fact was that the three paths add.
 
 ## The object that replaces the derivative
 
-That formula serves one weight. The network has $51$, and fifty-one sums with indices are not an
-answer: we need to go up a level.
+That formula handles one weight. The network has $51$, and fifty-one separate sums full of indices
+are not really an answer, this needs to go up a level.
 
 Let $\mathbf{u} : \mathbb{R}^{n} \to \mathbb{R}^{m}$. Its derivative at a point is the **Jacobian**,
 the matrix that gathers every partial derivative of every output with respect to every input,
@@ -280,97 +289,104 @@ $$
 \left[\frac{\partial \mathbf{u}}{\partial \mathbf{x}}\right]_{ij} = \frac{\partial u_i}{\partial x_j},
 $$
 
-with one row per output coordinate and one column per input coordinate. That order, the output
-first, is the whole course's, and from it come the two things this block does with a Jacobian.
+with one row per output coordinate and one column per input coordinate. That ordering, output
+first, belongs to the whole course, and from it fall out the two things this block does with a
+Jacobian.
 
-The first is that composing is multiplying again. If $\mathbf{x} \in \mathbb{R}^{n}$ produces
-$\mathbf{u} \in \mathbb{R}^{m}$ and this in turn produces $\mathbf{v} \in \mathbb{R}^{p}$, then
+The first is that composing turns back into multiplying. If $\mathbf{x} \in \mathbb{R}^{n}$
+produces $\mathbf{u} \in \mathbb{R}^{m}$ and this in turn produces $\mathbf{v} \in \mathbb{R}^{p}$,
+then
 
 $$
 \frac{\partial \mathbf{v}}{\partial \mathbf{x}} = \frac{\partial \mathbf{v}}{\partial \mathbf{u}}\,\frac{\partial \mathbf{u}}{\partial \mathbf{x}},
 $$
 
-a product of a $p \times m$ matrix by an $m \times n$ one that delivers the $p \times n$ that is
-needed. The dimension that is run over and disappears is $m$, that of the intermediate variables,
-exactly as in <Leccion slug="forward-pass">the forward pass</Leccion> the width shared by two layers disappeared.
+a product of a $p \times m$ matrix by an $m \times n$ one that delivers exactly the $p \times n$
+matrix you need. The dimension that gets summed over and disappears is $m$, the intermediate
+variables, exactly the way the width shared by two layers disappeared in
+<Leccion slug="forward-pass">the forward pass</Leccion>.
 
-And that product is not a new object, it is the previous one stacked. Expand the entry $(i, j)$ with
-the definition of the matrix product:
+And that product isn't some new object, it's the previous one stacked up. Expand entry $(i, j)$
+using the definition of the matrix product:
 
 $$
 \left[\frac{\partial \mathbf{v}}{\partial \mathbf{x}}\right]_{ij} = \sum_{k=1}^{m} \frac{\partial v_i}{\partial u_k}\,\frac{\partial u_k}{\partial x_j},
 $$
 
-which is the sum over paths from the previous section, written for output $i$ and input $j$: the $m$
-routes from $x_j$ to $v_i$, one per intermediate variable you can pass through. The sum over paths
-and the matrix product are the same calculation, and the second one the computer does without
-anyone writing an index.
+which is exactly the sum over paths from the previous section, written for output $i$ and input
+$j$: the $m$ routes from $x_j$ to $v_i$, one per intermediate variable you could pass through. The
+sum over paths and the matrix product are the same calculation, and the computer performs the
+second one without anyone ever writing an index.
 
 ### The loss is a scalar, and that is where the transpose comes from
 
-The second thing comes from looking at the end of the chain. $\mathcal{L}$ delivers a single number,
-so in its case $m = 1$ and its Jacobian is a one-row matrix,
-$\partial\mathcal{L}/\partial\mathbf{x} \in \mathbb{R}^{1 \times n}$. The gradients of this course
-are columns, like all its vectors, so one is the transpose of the other,
+The second thing comes from looking at the far end of the chain. $\mathcal{L}$ returns a single
+number, so in its case $m = 1$ and its Jacobian is a one-row matrix,
+$\partial\mathcal{L}/\partial\mathbf{x} \in \mathbb{R}^{1 \times n}$. The gradients in this course
+are columns, like every vector in it, so one is the transpose of the other,
 $\nabla_{\mathbf{x}}\mathcal{L} = \left(\partial\mathcal{L}/\partial\mathbf{x}\right)^{\top}$.
-Transposing the composition above (and remembering that transposing a product reverses the order of
-the factors),
+Transpose the composition above (remembering that transposing a product reverses the order of its
+factors):
 
 $$
 \nabla_{\mathbf{x}}\mathcal{L} = \left(\frac{\partial \mathbf{u}}{\partial \mathbf{x}}\right)^{\top} \nabla_{\mathbf{u}}\mathcal{L},
 $$
 
-an $n \times m$ matrix by a vector of $m$ coordinates that returns the vector of $n$ that was
-wanted. That is the shape of everything left in the block: a gradient comes in on the right, leaves
-converted into the gradient of the layer before, and the transposed Jacobian is what does the
-conversion.
+an $n \times m$ matrix times a vector of $m$ coordinates, which returns exactly the vector of $n$
+you wanted. That's the shape of everything left in this block: a gradient comes in on the right,
+leaves converted into the gradient of the previous layer, and the transposed Jacobian is what
+performs that conversion.
 
-Keep hold of an observation that is not used here. A chain of Jacobians can be evaluated by first
-multiplying the matrices among themselves, or by carrying the output's gradient backwards through
-one transpose after another. They give the same, because the matrix product is associative; they do
-not cost the same, because the first multiplies matrices by matrices and the second only matrices by
-vectors.
+Hold on to one observation this lesson doesn't actually use. A chain of Jacobians can be evaluated
+either by multiplying the matrices among themselves first, or by carrying the output's gradient
+backwards through one transpose after another. Both give the same answer, since the matrix product
+is associative, but they don't cost the same: the first multiplies matrices by matrices, and the
+second only ever multiplies matrices by vectors.
 
 ### A coordinate-wise activation has a diagonal Jacobian
 
-One concrete Jacobian is missing, the activation's, and it comes out far cheaper than its size
-suggests. With $\mathbf{h} = \varphi(\mathbf{z})$ applied coordinate by coordinate, each output looks
-at a single input: $h_i$ depends on $z_i$ and on nothing else, so $\partial h_i / \partial z_j = 0$
-as soon as $i \neq j$. Of the $m \times m$ matrix the diagonal survives:
+One concrete Jacobian is still missing, the activation's, and it comes out far cheaper than its
+size would suggest. With $\mathbf{h} = \varphi(\mathbf{z})$ applied coordinate by coordinate, each
+output looks at exactly one input: $h_i$ depends on $z_i$ and on nothing else, so
+$\partial h_i / \partial z_j = 0$ the moment $i \neq j$. Of the whole $m \times m$ matrix, only the
+diagonal survives:
 
 $$
 \frac{\partial \mathbf{h}}{\partial \mathbf{z}} = \text{diag}\left(\varphi^{\prime}(\mathbf{z})\right) \in \mathbb{R}^{m \times m},
 $$
 
-where $\text{diag}(\mathbf{v})$ is the square matrix carrying $\mathbf{v}$ on its diagonal and zeros
-everywhere else. Multiplying by it is multiplying coordinate by coordinate, which is written with a
-symbol of its own, the **Hadamard product**:
+where $\text{diag}(\mathbf{v})$ is the square matrix carrying $\mathbf{v}$ on its diagonal and
+zeros everywhere else. Multiplying by it amounts to multiplying coordinate by coordinate, which has
+its own symbol, the **Hadamard product**:
 
 $$
 \text{diag}(\mathbf{v})\,\mathbf{g} = \mathbf{v} \odot \mathbf{g}.
 $$
 
-From there on nobody builds the matrix: it is $m$ products instead of $m^{2}$, and $m$ numbers
-stored instead of $m^{2}$ of which $m^{2} - m$ are zeros. With ReLU (rectified linear unit) the
-diagonal is $0$ or $1$ and it is a mask: a hidden neuron with a negative pre-activation puts a zero
-in its entry, and that zero cuts every path that went through it. It is the dying ReLU of <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion>, seen from the other side.
+From here on, nobody actually builds the matrix: it's $m$ products instead of $m^{2}$, and $m$
+numbers stored instead of $m^{2}$, of which $m^{2} - m$ would be zeros anyway. With ReLU (rectified
+linear unit), the diagonal is $0$ or $1$ and acts as a mask: a hidden neuron with a negative
+pre-activation gets a zero in its entry, and that zero cuts off every path running through it. This
+is the dying ReLU from <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion>,
+seen from the other side.
 
-The softmax is the exception, and it has to be said: it mixes every coordinate, so its Jacobian has
-not a single zero. It is not needed here, because <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> already differentiated it together with
-cross-entropy, and out of the two together came $\hat{\mathbf{y}} - \mathbf{y}$, the gradient the
-chain starts from.
+Softmax is the exception, and it's worth flagging: it mixes every coordinate together, so its
+Jacobian has not a single zero anywhere in it. It isn't needed here, because
+<Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> already differentiated it
+together with cross-entropy, and out of that pairing came $\hat{\mathbf{y}} - \mathbf{y}$, the
+gradient this whole chain starts from.
 
 ## One weight, three paths and three ways of measuring them
 
-The cell puts the review <W>the movie is fun and i recommend it</W> into the network of eight
+The cell feeds the review <W>the movie is fun and i recommend it</W> into the network of eight
 inputs, four hidden neurons and three outputs, and computes
-$\partial\mathcal{L}/\partial\mathbf{W}^{(1)}_{13}$ (the same weight as in the previous section) in
-three ways: a numerical probe, the sum of the three paths and the product of the Jacobians. I set
-the weights by hand, so you will see these numbers and no others. Run it and compare the three
-figures, and then look at the fourth.
+$\partial\mathcal{L}/\partial\mathbf{W}^{(1)}_{13}$ (the same weight as in the previous section)
+three different ways: a numerical probe, the sum of the three paths, and the product of the
+Jacobians. I set the weights by hand, so you'll see these exact numbers and no others. Run it,
+compare the three figures, and then look at the fourth.
 
-Go back to the previous section's formula, but with the four factors stacked into their objects: the
-summation sign disappears inside the matrix product.
+Go back to the previous section's formula, but with the four factors stacked into their proper
+objects: the summation sign disappears inside the matrix product.
 
 $$
 \frac{\partial \mathcal{L}}{\partial \mathbf{W}^{(1)}_{13}}
@@ -380,12 +396,13 @@ $$
 \underbrace{x_3\,\mathbf{e}_1}_{(4,\ 1)}.
 $$
 
-The diagonal is written out in full (not as the previous section's cheap Hadamard product) because
-here the aim is to show the Jacobian as it is, not to save arithmetic; $\mathbf{e}_1 \in
-\mathbb{R}^{4}$ is $1$ at hidden neuron $1$ and $0$ at the other three, the only one that
-$\mathbf{W}^{(1)}_{13}$ moves. What does save is the order: evaluated from left to right (row times
-matrix, three times) nothing larger than a row of four numbers ever appears; it is the observation
-the transpose section set aside, applied here. It is step 3 of the cell.
+The diagonal is written out in full here (not as the previous section's cheap Hadamard product)
+because the goal is to show the Jacobian exactly as it is, not to save on arithmetic;
+$\mathbf{e}_1 \in \mathbb{R}^{4}$ is $1$ at hidden neuron $1$ and $0$ at the other three, the only
+one that $\mathbf{W}^{(1)}_{13}$ actually moves. What does save effort is the order: evaluated left
+to right (row times matrix, three times over), nothing larger than a row of four numbers ever
+appears, which is the observation from the transpose section put into practice. That's step 3 of
+the cell below.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -435,27 +452,28 @@ print("shapes   (1, 3) x", W2.shape, "x", np.diag(d_relu).shape, "x", J_w.shape)
 print("product of Jacobians   %+.8f" % J[0, 0])
 `} />
 
-All three agree at $-0.09208080$, and the probe is the one with the least right to: it knows nothing
-about the network, it only evaluates the loss with the weight moved a hundred-thousandth up and a
-hundred-thousandth down. That it gives the same as the chain is the check worth keeping to hand when
-a derivative written by hand does not add up.
+All three agree at $-0.09208080$, and the probe is the one with the least right to: it knows
+nothing about the network's structure at all, it only evaluates the loss with the weight nudged a
+hundred-thousandth up and a hundred-thousandth down. That it matches the chain result exactly is the
+check worth keeping handy for whenever a hand-written derivative refuses to add up.
 
-The fourth figure is the one that teaches what the lesson is about. Forgetting a path (the third,
-the one through the output neuron of the neutral class) leaves the derivative at $-0.16541038$,
-almost double what it is worth. And look at the three summands, because the error is not one of
-size: the first two are negative and the third is **positive**. That path was pulling the other way,
-and removing it does not trim the correction, it enlarges it. A forgotten path does not give an
-approximate derivative: it gives the derivative of another function.
+The fourth figure is the one that teaches what this lesson is really about. Forgetting a path (the
+third one, through the output neuron for the neutral class) leaves the derivative at
+$-0.16541038$, almost double what it should be. And look closely at the three summands, because the
+error isn't one of size: the first two are negative and the third is **positive**. That path was
+pulling the other way, so removing it doesn't trim the correction down, it inflates it instead. A
+forgotten path doesn't give you an approximate derivative, it gives you the derivative of an
+entirely different function.
 
-The last line prints the shapes of the chain, $(1, 3) \times (3, 4) \times (4, 4) \times (4, 1)$.
-And in the $\varphi^{\prime}$ row there is a zero: the fourth hidden neuron has its pre-activation
-at $-1.5$, it is switched off for this review, and its entry on the diagonal cuts whatever went
-through it.
+The last line prints the shapes in the chain, $(1, 3) \times (3, 4) \times (4, 4) \times (4, 1)$.
+And in the $\varphi^{\prime}$ row there's a zero: the fourth hidden neuron has its pre-activation at
+$-1.5$, it's switched off for this particular review, and its entry on the diagonal cuts off
+whatever tried to pass through it.
 
 ## Test your intuition
 
-Four questions (a sum of paths by hand, why they add, the shapes of a Jacobian, and the order of the
-product) and a challenge that is the whole chain rule.
+Four questions (a sum of paths worked out by hand, why they add, the shapes of a Jacobian, and the
+order of the product), plus a challenge that is the entire chain rule.
 
 <Quiz id="q-suma-caminos" />
 
@@ -469,16 +487,18 @@ product) and a challenge that is the whole chain rule.
 
 ---
 
-Everything needed to differentiate any network is now here, and put like this it is no use. The cell
-has computed the derivative of **one** weight, and to get it, it has walked the whole chain: the
-error of the output layer, the second layer's matrix, the diagonal of the activation. The weight next
-to it needs that same walk with a single different factor at the end, and so do the other forty-nine
-of this network. With a vocabulary of twenty thousand entries and a hundred and twenty-eight hidden
-neurons that is upwards of two and a half million walks, identical except for the last step, and not
-even the fastest computer in the world has time for that.
+Everything needed to differentiate any network is now on the table, and laid out like this it's
+useless in practice. The cell computed the derivative of **one** weight, and to get it, it walked
+the entire chain: the error at the output layer, the second layer's matrix, the diagonal of the
+activation. The very next weight needs that same walk repeated, with only a single different factor
+at the end, and so do the other forty-nine weights in this network. With a vocabulary of twenty
+thousand entries and a hundred and twenty-eight hidden neurons, that's upwards of two and a half
+million walks, identical except for the last step, and not even the fastest computer in the world
+has time to spare for that.
 
-The waste is plain as soon as it is named: those walks share almost everything, and what is shared
-is recomputed once per parameter. What is needed is to reverse the direction of travel: compute
-once, starting from the last layer, how much the loss owes each pre-activation of the network, and
-let each weight read its derivative off a quantity that is already there. That procedure has a name
-of its own, it is derived layer by layer and with the indices in view, and it is <Leccion slug="backpropagation">the next lesson, on backpropagation</Leccion>.
+The waste becomes obvious the moment you name it: those walks share almost everything, and whatever
+is shared gets recomputed once per parameter anyway. What's actually needed is to reverse the
+direction of travel: compute once, starting from the last layer, how much the loss owes every
+pre-activation in the network, and let each weight read its derivative off a quantity that's
+already sitting there. That procedure has a name of its own, gets derived layer by layer with every
+index in view, and is <Leccion slug="backpropagation">the next lesson, on backpropagation</Leccion>.

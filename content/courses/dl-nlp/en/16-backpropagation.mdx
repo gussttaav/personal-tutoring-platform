@@ -4,7 +4,7 @@ title: "Backpropagation: the full derivation"
 block: 2
 order: 8
 minutes: 35
-summary: "Differentiating weight by weight forces a run over the network once per parameter, and those runs share almost everything. Backpropagation instead computes a single number per pre-activation (that neuron's error), in one pass from the end to the beginning, and lets each weight read its derivative as the product of that error by what it had in front of it."
+summary: "Differentiating weight by weight forces a run over the network once per parameter, and those runs share almost everything. Backpropagation instead computes a single number per pre-activation (that neuron's error), in one pass from the end back to the beginning, and lets each weight read its own derivative as the product of that error with whatever it had in front of it."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -14,7 +14,7 @@ quiz:
     prompt: 'In the network of the second cell, the backward pass leaves $\boldsymbol{\delta}^{(1)} = (0.475931,\; -0.725931,\; -0.725931,\; 0)^{\top}$, and that review''s input is $\mathbf{x} = (0, 0, 1, 0, 1, 1, 0, 1)^{\top}$. What is $\partial \ell / \partial \mathbf{W}^{(1)}_{24}$, the derivative of the weight the second hidden neuron gives the fourth vocabulary entry?'
     answer: 0
     tolerance: 0.001
-    explanation: 'It is a multiplication, and that is the result of the lesson: $\delta^{(1)}_2 \cdot x_4 = -0.725931 \cdot 0 = 0$. Nothing has to be walked, because the walk is already done and its result is that $-0.725931$. And there is the trap: the error of that neuron is large and the derivative comes out zero all the same. Look at where the $0$ comes from: the fourth vocabulary entry is <W>good</W>, which does not occur in the review, so that weight does not move a thousandth. It is the limiting case of the sharing-out <Leccion slug="descenso-gradiente">the lesson on gradient descent</Leccion> found with a single neuron, where an input that appears twice pulls twice as hard: one that does not appear pulls nothing at all. Four of the eight entries are absent from this review, so half of every row of $\nabla_{\mathbf{W}^{(1)}}\ell$ is zero. And the fourth row is null for the other reason, $\delta^{(1)}_4 = 0$: that neuron is switched off and none of its eight weights moves. The same two zeros the cell prints in $\nabla_{\mathbf{W}^{(2)}}\ell$, one as a column and one as a row.'
+    explanation: 'It is a plain multiplication, and that is exactly the result this lesson establishes: $\delta^{(1)}_2 \cdot x_4 = -0.725931 \cdot 0 = 0$. Nothing needs walking, because the walk is already done and its result is that $-0.725931$. And there is the trap: that neuron''s error is large, yet the derivative still comes out zero. Trace where the $0$ comes from: the fourth vocabulary entry is <W>good</W>, which never occurs in the review, so that weight does not move a thousandth. It is the limiting case of the sharing-out <Leccion slug="descenso-gradiente">the lesson on gradient descent</Leccion> found with a single neuron, where an input appearing twice pulls twice as hard: one that never appears pulls nothing at all. Four of the eight entries are absent from this review, so half of every row of $\nabla_{\mathbf{W}^{(1)}}\ell$ is zero. The fourth row is null for a different reason, $\delta^{(1)}_4 = 0$: that neuron is switched off, so none of its eight weights moves. The cell prints these same two zeros in $\nabla_{\mathbf{W}^{(2)}}\ell$, one as a column and one as a row.'
   - id: q-que-se-reutiliza
     type: single
     prompt: 'Backpropagation uses no rule of differentiation the previous lesson did not already have. What is it, then, that it saves?'
@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'That it replaces the exact derivatives with finite differences, which cost one evaluation instead of a symbolic differentiation.' }
       - { id: d, text: 'That it multiplies the Jacobians of every layer together before applying them, and a single matrix product comes out cheaper than many matrix-by-vector products.' }
     answer: a
-    explanation: '(a) is the whole algorithm: one number per pre-activation, and everything else read off it. (b) confuses a property of this review with the method (how many neurons are switched off depends on the example that comes in, and with a sigmoid there is not a single zero, but the saving is the same). (c) goes exactly the other way: the numerical probe is the expensive route, the one that costs two passes per parameter, and it is what backpropagation comes to replace. And (d) picks the wrong association of the product, which is the observation the previous lesson stored away without using: multiplying matrix by matrix is dearer than carrying a vector backwards, and here not a single intermediate matrix is built.'
+    explanation: '(a) is the whole algorithm in one line: one number per pre-activation, and everything else read off it. (b) confuses a property of this particular review with the method itself (how many neurons switch off depends entirely on the example that comes in, and with a sigmoid there is not a single zero, yet the saving is exactly the same). (c) has it backwards: the numerical probe is the expensive route, the one that costs two passes per parameter, and it is precisely what backpropagation exists to replace. And (d) picks the wrong association for the product, the very observation the previous lesson stored away without using: multiplying matrix by matrix costs more than carrying a vector backwards, and here not one intermediate matrix ever gets built.'
   - id: q-formas-backward
     type: multi
     prompt: 'Mark everything that is true of the backward pass through a layer $l$, with $\mathbf{W}^{(l)} \in \mathbb{R}^{d_l \times d_{l-1}}$.'
@@ -34,7 +34,7 @@ quiz:
       - { id: c, text: 'The error is transported with $\left(\mathbf{W}^{(l+1)}\right)^{\top}$, of shape $d_l \times d_{l+1}$: the same weights as the forward pass, read by columns.' }
       - { id: d, text: 'Since each $\boldsymbol{\delta}^{(l)}$ is computed from $\boldsymbol{\delta}^{(l+1)}$, they all have to be kept until the end so they can be multiplied together.' }
     answer: [a, b, c]
-    explanation: 'The first three are the section''s three shapes. (a) is the outer product, and the shapes agreeing is the first thing to look at when a derivative written out by hand does not come out. (b) follows from the pre-activation depending on the bias with derivative $1$. (c) is the transport, and it is worth reading twice: the matrix of the forward pass and the matrix of the backward pass are the same one, with no parameter of its own. The false one is (d), and it is wrong in both halves: no $\boldsymbol{\delta}$ is ever multiplied by another $\boldsymbol{\delta}$, and each one can be thrown away as soon as its layer has read its two gradients off it. What does have to be kept until the backward pass is the forward one (the $\mathbf{h}^{(l-1)}$ and the $\mathbf{z}^{(l)}$), which is another thing entirely.'
+    explanation: 'The first three are this section''s three shapes. (a) is the outer product, and its shape matching is the first thing worth checking whenever a hand-derived gradient refuses to come out right. (b) follows from the pre-activation depending on the bias with derivative $1$. (c) is the transport, and it rewards a second read: the matrix from the forward pass and the matrix from the backward pass are the very same one, with no parameter of its own. (d) is the false one, wrong on both counts: no $\boldsymbol{\delta}$ is ever multiplied by another $\boldsymbol{\delta}$, and each one can be discarded the moment its layer has read its two gradients off it. What actually has to be kept until the backward pass is the forward one''s output (the $\mathbf{h}^{(l-1)}$ and the $\mathbf{z}^{(l)}$), which is an entirely different matter.'
   - id: q-tirar-el-forward
     type: single
     prompt: 'A network runs out of memory while training, and someone proposes freeing each $\mathbf{h}^{(l)}$ as soon as layer $l+1$ has consumed it. What happens?'
@@ -44,7 +44,7 @@ quiz:
       - { id: c, text: 'That the gradients come out with the right value and the sign flipped, because the activation''s factor is missing.' }
       - { id: d, text: 'That it fails at the output layer alone; the rest rebuild $\mathbf{h}^{(l-1)}$ out of their own $\boldsymbol{\delta}^{(l)}$.' }
     answer: a
-    explanation: '(a) is the concession the section says out loud: predicting lets you throw each layer away as soon as it is used, and training does not. (b) stops halfway, and that is why it is the trap: it is true that the matrices are not freed, but the recurrence also asks for $\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)$, and the outer product asks for $\mathbf{h}^{(l-1)}$. (c) invents a failure of sign where what there is is a missing piece of data. And (d) has it backwards: nothing is rebuilt out of $\boldsymbol{\delta}^{(l)}$, because the error is what comes down and the activation is what went up. What is genuinely done is to keep $\mathbf{z}^{(l)}$ and recompute $\mathbf{h}^{(l)} = \varphi\left(\mathbf{z}^{(l)}\right)$ on the backward pass: that trades memory for arithmetic, and it is a trade, not a free saving.'
+    explanation: '(a) is exactly the concession this section names out loud: predicting lets you throw each layer away the moment it is used, but training cannot. (b) stops halfway, which is what makes it a trap: the matrices really are never freed, but the recurrence also needs $\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)$, and the outer product needs $\mathbf{h}^{(l-1)}$. (c) invents a sign error where the real problem is missing data. And (d) has the direction backwards: nothing gets rebuilt out of $\boldsymbol{\delta}^{(l)}$, since the error travels down while the activation travelled up. What some implementations genuinely do instead is keep $\mathbf{z}^{(l)}$ and recompute $\mathbf{h}^{(l)} = \varphi\left(\mathbf{z}^{(l)}\right)$ during the backward pass: that trades memory for arithmetic, and it is a trade, never a free saving.'
 challenges:
   - id: ch-backprop
     prompt: |
@@ -60,7 +60,7 @@ challenges:
         where `hs[l]` is what goes into layer $l+1$ and `hs[0]` is $\mathbf{x}$. It
         returns the list of the $\nabla_{\mathbf{W}^{(l)}}\ell$, one per layer.
 
-      Neither of the two may write into the lists or the arrays it receives.
+      Neither function may write into the lists or the arrays it receives.
     packages: [numpy]
     starter: |
       import numpy as np
@@ -153,25 +153,25 @@ challenges:
       def gradients(deltas, hs):
           return [np.outer(deltas[l], hs[l]) for l in range(len(deltas))]
     explanation: |
-      `errors` fits in five lines and every decision is inside the `range`. It runs from
-      `len(Ws) - 2` to `0` in steps of $-1$ because layer $l$ needs the
-      $\boldsymbol{\delta}$ of layer $l+1$, which exists only if it has been computed
-      already: the order is not a preference, it is the one direction in which the
-      recurrence is defined. Walking it the right way round gives `None` on the first turn.
+      `errors` fits in five lines, and every decision sits inside the `range`. It runs from
+      `len(Ws) - 2` down to `0` in steps of $-1$ because layer $l$ needs the
+      $\boldsymbol{\delta}$ of layer $l+1$, which only exists once it has already been
+      computed: the order is not a preference, it is the one direction the recurrence is
+      even defined in. Walk it the wrong way and you get `None` on the very first turn.
 
-      The transpose is the other thing to get right. `Ws[l + 1].T @ deltas[l + 1]` takes
-      the forward pass's matrix and reads it by columns, because entry $(i, j)$ says how
-      much neuron $j$ below weighs in neuron $i$ above, and here the sharing-out goes the
-      other way. Without the `.T` the product does not even exist unless the two layers
-      have the same width, and that is the dangerous case: it exists, it gives numbers,
-      and none of them is the derivative you were after.
+      The transpose is the other thing worth getting right. `Ws[l + 1].T @ deltas[l + 1]`
+      takes the forward pass's matrix and reads it by columns, because entry $(i, j)$ says
+      how much neuron $j$ below weighs in neuron $i$ above, and here the sharing-out runs
+      the other way. Without the `.T`, the product does not even exist unless the two
+      layers share the same width, and that is the dangerous case: the product exists, it
+      returns numbers, and none of them is the derivative you were after.
 
-      `gradients` is one line because there is nothing to decide. `np.outer(delta, h)` is
-      exactly $\boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$, with the
+      `gradients` is one line because there is nothing left to decide. `np.outer(delta, h)`
+      is exactly $\boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$, with the
       shape $(d_l,\, d_{l-1})$ the third test checks; `delta @ h` would have given a single
-      number, and `np.outer(h, delta)` the transpose. Notice what neither of the two
-      functions does: it builds not one intermediate matrix. The dearest thing that happens
-      in the whole backward pass is a matrix by a vector, once per layer.
+      number, and `np.outer(h, delta)` the transpose. Notice what neither function ever
+      does: build a single intermediate matrix. The most expensive thing that happens
+      anywhere in the backward pass is a matrix times a vector, once per layer.
 reading:
   - kind: paper
     title: 'Learning representations by back-propagating errors'
@@ -180,7 +180,7 @@ reading:
     venue: 'Nature 323'
     lang: en
     url: 'https://www.cs.toronto.edu/~hinton/absps/naturebp.pdf'
-    note: 'The four pages that put backpropagation on the map. They carry the same recurrence with the same error per neuron, and the point this block keeps brushing against: hidden neurons end up representing features nobody set.'
+    note: 'The four pages that put backpropagation on the map. They carry the same recurrence with the same error per neuron, and the point this block keeps circling back to: hidden neurons end up representing features nobody set by hand.'
   - kind: libro
     title: 'Deep Learning, ch. 6: Deep Feedforward Networks'
     authors: 'Goodfellow, Bengio and Courville'
@@ -188,60 +188,62 @@ reading:
     venue: 'deeplearningbook.org'
     lang: en
     url: 'https://www.deeplearningbook.org/contents/mlp.html'
-    note: 'Its §6.5 takes backpropagation out of the fixed-layer network and puts it on any computation graph at all, which is what a library''s automatic differentiation does: the same chain rule, walked over the graph instead of by hand.'
+    note: 'Its §6.5 lifts backpropagation out of the fixed-layer network and onto any computation graph at all, which is what a library''s automatic differentiation actually does: the same chain rule, walked over the graph instead of by hand.'
 ---
 
 {/* COURSE-P5-02 — Block 2, Lesson 8. */}
 
 Everything backpropagation does, it does with the chain rule, and the chain rule is already
-differentiated. The previous lesson left it in its vector form (Jacobians that multiply together, a
-gradient that comes in at one end and leaves converted into the one of the layer before) and with
-it the reason why, as it stands, it cannot be run: applying it parameter by parameter costs a
-complete run over the network for every number there is to adjust. What is missing is not new
-mathematics. It is an order.
+differentiated. The previous lesson left it in its vector form (Jacobians multiplying together, a
+gradient coming in at one end and leaving converted into that of the layer before) and, with it, the
+reason why, as it stands, it can't actually be run: applying it parameter by parameter costs a
+complete run over the network for every single number there is to adjust. What's missing isn't new
+mathematics. It's an order of operations.
 
-And the order shows better small than large. Take the smallest network that still has a hidden
-layer: two inputs, two hidden neurons and one output. It has nine parameters (four input weights,
-two hidden biases, two output weights and one bias), so there are nine derivatives to compute.
-Behind the nine there are three numbers, one per pre-activation of the network. With those three
-computed, each of the nine derivatives is a product of two factors, and neither of the two has to be
-fetched from far away.
+And that order is easier to see on a small network than a large one. Take the smallest network
+that still has a hidden layer: two inputs, two hidden neurons, one output. It has nine parameters
+(four input weights, two hidden biases, two output weights and one bias), so nine derivatives need
+computing. Behind those nine sit three numbers, one per pre-activation in the network. Once those
+three are known, each of the nine derivatives is a product of two factors, and neither factor
+has to be fetched from far away.
 
 <Callout type="intuition" title="The idea in one sentence">
-What travels backwards is not one derivative per weight: it is one number per neuron. Each weight
-gets its own by multiplying its neuron's number by what that neuron had in front of it.
+What travels backwards isn't one derivative per weight, it's one number per neuron. Each weight then
+gets its own derivative by multiplying its neuron's number by whatever that neuron had in front of
+it.
 </Callout>
 
 ## One number per pre-activation, and the derivatives that hang off it
 
-Let's fix a layer $l$ and a single example. Differentiating with respect to a weight is settled
-already; what has to be decided is with respect to what it pays to differentiate *first*, and the
-answer is the pre-activation. Let's call the **error** of layer $l$ the gradient of that example's
-loss with respect to $\mathbf{z}^{(l)}$, and write $\boldsymbol{\delta}^{(l)}$ for it:
+Fix a layer $l$ and a single example. Differentiating with respect to a weight is already settled;
+what needs deciding is with respect to what it pays off to differentiate *first*, and the answer is
+the pre-activation. Call the **error** of layer $l$ the gradient of that example's loss with respect
+to $\mathbf{z}^{(l)}$, and write $\boldsymbol{\delta}^{(l)}$ for it:
 
 $$
 \boldsymbol{\delta}^{(l)} = \nabla_{\mathbf{z}^{(l)}}\,\ell \in \mathbb{R}^{d_l},
 $$
 
-one coordinate per neuron of the layer, and a column, which is the transpose of the one-row Jacobian
-with which the previous lesson wrote the gradient of a scalar. It is $\ell$ and not $\mathcal{L}$:
-the loss of *one* example, as everywhere in the block since <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion>.
+one coordinate per neuron in the layer, and a column, the transpose of the one-row Jacobian the
+previous lesson used to write the gradient of a scalar. It's $\ell$ and not $\mathcal{L}$: the loss
+of *one* example, as everywhere in this block since <Leccion slug="funcion-de-perdida">the lesson
+on loss functions</Leccion>.
 
-With that vector in hand, the parameters of layer $l$ come out with no walk at all. Its
-pre-activation is:
+With that vector in hand, the parameters of layer $l$ come out without any walking at all. Its
+pre-activation is
 
 $$
 \mathbf{z}^{(l)} = \mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)},
 $$
 
-and coordinate by coordinate:
+or, coordinate by coordinate,
 
 $$
 z^{(l)}_i = \sum_k \mathbf{W}^{(l)}_{ik} h^{(l-1)}_k + b^{(l)}_i.
 $$
 
-Look at where a particular weight appears: $\mathbf{W}^{(l)}_{jk}$ is in a single one of the $d_l$
-coordinates, the $j$-th, so only one summand of the previous lesson's sum over paths survives:
+Look at where any particular weight shows up: $\mathbf{W}^{(l)}_{jk}$ appears in exactly one of the
+$d_l$ coordinates, the $j$-th, so only one summand of the previous lesson's sum over paths survives:
 
 $$
 \frac{\partial \ell}{\partial \mathbf{W}^{(l)}_{jk}}
@@ -251,9 +253,9 @@ $$
 \frac{\partial \ell}{\partial b^{(l)}_j} = \delta^{(l)}_j,
 $$
 
-because $\partial z^{(l)}_i / \partial \mathbf{W}^{(l)}_{jk}$ is $h^{(l-1)}_k$ when $i = j$ and zero
-in the other $d_l - 1$ cases, and the derivative with respect to the bias is the same computation
-with a $1$ in place of an activation. Stacked, the $d_l \times d_{l-1}$ entries are an outer product:
+because $\partial z^{(l)}_i / \partial \mathbf{W}^{(l)}_{jk}$ equals $h^{(l-1)}_k$ when $i = j$ and
+zero in the other $d_l - 1$ cases, and the bias derivative is the same computation with a $1$ in
+place of an activation. Stacked, the $d_l \times d_{l-1}$ entries form an outer product:
 
 $$
 \nabla_{\mathbf{W}^{(l)}}\,\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top} \in \mathbb{R}^{d_l \times d_{l-1}},
@@ -261,55 +263,61 @@ $$
 \nabla_{\mathbf{b}^{(l)}}\,\ell = \boldsymbol{\delta}^{(l)}.
 $$
 
-A column of $d_l$ by a row of $d_{l-1}$, which is exactly the shape of $\mathbf{W}^{(l)}$, and that
-agreement is the cheapest check there is: if the outer product does not come out with the shape of
-the matrix it differentiates, something is transposed.
+A column of $d_l$ by a row of $d_{l-1}$, exactly the shape of $\mathbf{W}^{(l)}$, and that match is
+the cheapest check there is: if an outer product doesn't come out with the shape of the matrix it's
+differentiating, something along the way got transposed.
 
-Now count what has happened, because it is the whole argument. Layer $l$ has
-$d_l \cdot d_{l-1} + d_l$ parameters, and its derivatives all come out of $d_l + d_{l-1}$ numbers:
-the coordinates of $\boldsymbol{\delta}^{(l)}$ and those of $\mathbf{h}^{(l-1)}$, which the forward
-pass has computed already. In the first layer of the previous lesson's network that is thirty-six
-derivatives read off twelve numbers. One question is left, and it takes up the rest of the lesson:
-where $\boldsymbol{\delta}^{(l)}$ comes from.
+Now count what happened here, because it's the whole argument. Layer $l$ has
+$d_l \cdot d_{l-1} + d_l$ parameters, and every one of its derivatives comes out of only
+$d_l + d_{l-1}$ numbers: the coordinates of $\boldsymbol{\delta}^{(l)}$ and those of
+$\mathbf{h}^{(l-1)}$, which the forward pass has already computed. In the first layer of the
+previous lesson's network, that's thirty-six derivatives read off twelve numbers. One question
+remains, and it takes up the rest of this lesson: where does $\boldsymbol{\delta}^{(l)}$ actually
+come from?
 
 ## Where that number comes from: the backward recurrence
 
-The value of $\boldsymbol{\delta}^{(l)}$ comes from the layer next door. The error of a layer is
-computed out of the error of the one after it, and that is why the journey runs from the end to the
-beginning.
+The value of $\boldsymbol{\delta}^{(l)}$ comes from the layer next door. A layer's error is computed
+out of the error of the layer after it, which is exactly why the journey runs from the end back to
+the beginning.
 
-Start at the end, where there is nothing to do. The last layer delivers $\mathbf{z}^{(L)}$, softmax
-turns it into $\hat{\mathbf{y}}$ and cross-entropy compares it with the label; <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> differentiated that whole pair, and out of the two together came
+Start at the end, where there's nothing left to do. The last layer delivers $\mathbf{z}^{(L)}$,
+softmax turns it into $\hat{\mathbf{y}}$, and cross-entropy compares that with the label;
+<Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> already differentiated
+that entire pair, and out of the two together came
 
 $$
 \boldsymbol{\delta}^{(L)} = \hat{\mathbf{y}} - \mathbf{y}.
 $$
 
-Nothing that follows depends on it being that one. Change the loss or the output activation and that
-vector changes; the rest of the algorithm never finds out, because it only receives it. The small
-network from the opening is the example, and this is the place to say what had not yet been said
-about it: it carries a sigmoid in both layers and the loss $\tfrac{1}{2}\left(\hat{y} - y\right)^{2}$ (the $\tfrac{1}{2}$ is the convention <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> said it would not adopt, and it is here so the numbers come out short), so its output layer
-enters with $\delta^{(2)}_1 = \left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right)$ and not with
-$\hat{y} - y$: the extra factor is the sigmoid, which here cancels against nothing. Everything else
-is identical.
+Nothing that follows depends on it being that particular vector. Change the loss or the output
+activation and that vector changes; the rest of the algorithm never even finds out, since it only
+ever receives it. The small network from the opening is the running example, and this is the place
+to say what hasn't been said about it yet: it carries a sigmoid in both layers and the loss
+$\tfrac{1}{2}\left(\hat{y} - y\right)^{2}$ (the $\tfrac{1}{2}$ is the convention
+<Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> chose not to adopt, kept
+here only so the numbers come out short), so its output layer enters with
+$\delta^{(2)}_1 = \left(\hat{y} - y\right)\hat{y}\left(1 - \hat{y}\right)$ rather than
+$\hat{y} - y$: the extra factor is the sigmoid, which here has nothing to cancel against. Everything
+else stays identical.
 
-Now the backward step. Let $l < L$. The pre-activation of the next layer is built out of this one's
-in two movements:
+Now for the backward step. Let $l < L$. The pre-activation of the next layer is built out of this
+one's in two moves:
 
 $$
 \mathbf{z}^{(l+1)} = \mathbf{W}^{(l+1)}\varphi\left(\mathbf{z}^{(l)}\right) + \mathbf{b}^{(l+1)},
 $$
 
-and the previous lesson has the Jacobian of both: that of an affine map is its own matrix, and that
-of a $\varphi$ applied coordinate by coordinate is diagonal. Composing them,
+and the previous lesson already has the Jacobian of both pieces: an affine map's Jacobian is its own
+matrix, and a $\varphi$ applied coordinate by coordinate has a diagonal one. Compose them,
 
 $$
 \frac{\partial \mathbf{z}^{(l+1)}}{\partial \mathbf{z}^{(l)}} = \mathbf{W}^{(l+1)}\,\text{diag}\left(\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)\right) \in \mathbb{R}^{d_{l+1} \times d_l},
 $$
 
-and that same lesson said what to do with a Jacobian when what is being propagated is the gradient
-of a scalar: transpose it, and multiply the gradient in from the right. Since $\text{diag}$ is
-symmetric and transposing a product reverses the order of the factors,
+and that same lesson said exactly what to do with a Jacobian when what's being propagated is the
+gradient of a scalar: transpose it, and multiply the gradient in from the right. Since
+$\text{diag}$ is symmetric and transposing a product reverses the order of its factors,
 
 $$
 \boldsymbol{\delta}^{(l)}
@@ -317,61 +325,63 @@ $$
 = \text{diag}\left(\varphi^{\prime}\left(\mathbf{z}^{(l)}\right)\right)\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)},
 $$
 
-which, written with the Hadamard product so that the diagonal is never built, is the form that
-reaches the code:
+which, rewritten with the Hadamard product so the diagonal is never actually built, is the form that
+reaches real code:
 
 $$
 \boldsymbol{\delta}^{(l)} = \left(\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}\right) \odot \varphi^{\prime}\left(\mathbf{z}^{(l)}\right).
 $$
 
-Read it in two movements, because they do two different things. The first,
+Read it as two separate moves, because they do two different jobs. The first,
 $\left(\mathbf{W}^{(l+1)}\right)^{\top}\boldsymbol{\delta}^{(l+1)}$, **transports**: it shares the
-error of the $d_{l+1}$ neurons above out among the $d_l$ below, each according to the weight with
-which it fed them on the forward pass. They are the same weights, with no new parameter. The second
-**masks**: it multiplies what reaches each neuron by that neuron's own slope. With ReLU (rectified
-linear unit) that slope is $0$ or $1$, so a neuron with a negative pre-activation receives a zero
-and cuts off there everything that was coming from above.
+error from the $d_{l+1}$ neurons above out among the $d_l$ below, each according to the weight it
+used to feed them on the forward pass. Same weights, no new parameter anywhere. The second **masks**:
+it multiplies whatever reaches each neuron by that neuron's own slope. With ReLU (rectified linear
+unit), that slope is $0$ or $1$, so a neuron with a negative pre-activation receives a zero and cuts
+off everything that was coming down from above.
 
 <Details summary="The same recurrence, index by index">
 
-With no matrices in the way. Coordinate $j$ of $\boldsymbol{\delta}^{(l)}$ is the derivative of
-$\ell$ with respect to $z^{(l)}_j$, and $z^{(l)}_j$ reaches the loss through the $d_{l+1}$
-pre-activations of the next layer: it is the previous lesson's sum over paths, with $d_{l+1}$ paths.
+With no matrices in the way this time. Coordinate $j$ of $\boldsymbol{\delta}^{(l)}$ is the
+derivative of $\ell$ with respect to $z^{(l)}_j$, and $z^{(l)}_j$ reaches the loss through the
+$d_{l+1}$ pre-activations of the next layer: it's the previous lesson's sum over paths, with
+$d_{l+1}$ paths this time.
 
 $$
 \delta^{(l)}_j = \sum_{i=1}^{d_{l+1}} \frac{\partial \ell}{\partial z^{(l+1)}_i}\,\frac{\partial z^{(l+1)}_i}{\partial z^{(l)}_j} = \sum_{i=1}^{d_{l+1}} \delta^{(l+1)}_i\,\frac{\partial z^{(l+1)}_i}{\partial z^{(l)}_j},
 $$
 
-where the second equality does nothing but name the first factor. The second comes out of writing
-the next layer with its indices:
+where the second equality only names the first factor. The second factor comes from writing out the
+next layer with its indices:
 
 $$
 z^{(l+1)}_i = \sum_{k=1}^{d_l} \mathbf{W}^{(l+1)}_{ik}\,\varphi\left(z^{(l)}_k\right) + b^{(l+1)}_i.
 $$
 
-Differentiating with respect to $z^{(l)}_j$, a single summand of that sum survives, the one with
-$k = j$, and the activation contributes its derivative:
+Differentiate with respect to $z^{(l)}_j$, and a single summand of that sum survives, the one with
+$k = j$, with the activation contributing its own derivative:
 
 $$
 \frac{\partial z^{(l+1)}_i}{\partial z^{(l)}_j} = \mathbf{W}^{(l+1)}_{ij}\,\varphi^{\prime}\left(z^{(l)}_j\right).
 $$
 
-That last factor does not depend on $i$, so it comes outside the sum:
+That last factor doesn't depend on $i$, so it moves outside the sum:
 
 $$
 \delta^{(l)}_j = \left(\sum_{i=1}^{d_{l+1}} \mathbf{W}^{(l+1)}_{ij}\,\delta^{(l+1)}_i\right)\varphi^{\prime}\left(z^{(l)}_j\right).
 $$
 
-And the formula above is written. The sum runs along column $j$ of $\mathbf{W}^{(l+1)}$, which is
-row $j$ of its transpose, that is, coordinate $j$ of the transport; the factor outside is coordinate
-$j$ of the masking. The two forms say the same thing, and all the one with the matrices has on top
-is that the computer runs it without a single index being written.
+Which is exactly the formula written above. The sum runs down column $j$ of $\mathbf{W}^{(l+1)}$,
+which is row $j$ of its transpose, that is, coordinate $j$ of the transport; the factor sitting
+outside is coordinate $j$ of the masking. Both forms say the same thing, and all the matrix version
+adds is that the computer runs it without a single index ever being written by hand.
 
 </Details>
 
 ### The whole algorithm, written out for two hidden layers
 
-With $L = 3$ it fits whole and with no ellipses. Forwards, which is <Leccion slug="forward-pass">the lesson on the forward pass</Leccion>:
+With $L = 3$ it fits whole, with no ellipses needed. Forwards, which is
+<Leccion slug="forward-pass">the lesson on the forward pass</Leccion>:
 
 $$
 \mathbf{h}^{(0)} = \mathbf{x},
@@ -384,8 +394,8 @@ $$
 \hat{\mathbf{y}} = \text{softmax}\left(\mathbf{z}^{(3)}\right),
 $$
 
-keeping the $\mathbf{h}^{(l-1)}$ and the $\mathbf{z}^{(l)}$ along the way. Backwards, from the end to
-the beginning:
+keeping the $\mathbf{h}^{(l-1)}$ and the $\mathbf{z}^{(l)}$ along the way. Backwards, from the end
+back to the beginning:
 
 $$
 \begin{aligned}
@@ -395,7 +405,7 @@ $$
 \end{aligned}
 $$
 
-and out of those three vectors come the six gradients:
+and out of those three vectors come all six gradients:
 
 $$
 \nabla_{\mathbf{W}^{(l)}}\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top},
@@ -405,35 +415,37 @@ $$
 l = 1, 2, 3.
 $$
 
-That is backpropagation, complete. Three errors, six gradients, and there is not one step more.
+That's backpropagation, complete. Three errors, six gradients, and not one step more than that.
 
-What it costs is read off the shapes. The backward pass does one product of matrix by vector at
-each layer, with the same matrices as the forward one: the same order of operations, once only,
-whatever $L$ is. Probing the parameters one at a time costs two forward passes per parameter, and
-nothing bounds the number of parameters. In the network of the code cell below that is $63$
-parameters, $126$ passes against one; with the twenty-thousand-entry vocabulary of <Leccion slug="forward-pass">the lesson on the forward pass</Leccion> the proportion does not change
-shape, only size.
+What it costs can be read straight off the shapes. The backward pass does one matrix-by-vector
+product at each layer, using the same matrices as the forward one: the same order of operations,
+done once, no matter what $L$ is. Probing the parameters one at a time costs two forward passes per
+parameter, and nothing bounds how many parameters there might be. In the network from the code cell
+below that's $63$ parameters, $126$ passes against a single one; with the twenty-thousand-entry
+vocabulary from <Leccion slug="forward-pass">the lesson on the forward pass</Leccion>, the ratio
+never changes shape, only size.
 
-There is a price and it is worth saying, because it is not time. The backward pass needs the
-$\mathbf{h}^{(l-1)}$ and the $\mathbf{z}^{(l)}$ of every layer, so they have to be kept while the
-forward computation runs. A network that only predicts can throw each layer away as soon as it has
-used it; one that is going to train cannot, and that memory grows with depth and with the batch.
+There is a price, and it's worth naming, because it isn't time. The backward pass needs the
+$\mathbf{h}^{(l-1)}$ and the $\mathbf{z}^{(l)}$ of every layer, so all of them have to stay in memory
+while the forward computation runs. A network that only predicts can throw each layer away the
+moment it's used; one that's about to train cannot, and that memory grows with both depth and batch
+size.
 
 ## From the explorable to a network with two hidden layers
 
-There is no symbol left undefined now, so here is the whole algorithm walked slowly over the small
-network from the opening: the sixteen steps that go from the loss to the nine derivatives, one by
-one and with their numbers.
+Every symbol is now defined, so here's the whole algorithm walked through slowly on the small
+network from the opening: the sixteen steps that run from the loss to the nine derivatives, one by
+one, with their actual numbers.
 
 <Explorable
   id="backprop-trace"
-  caption="The network from the opening, with x = (1, 0.5), y = 1, a sigmoid in both layers and the loss ½(ŷ − y)². Step through the sixteen steps with the arrows and keep an eye on one number: δ(2)₁, the error of the output neuron, which is computed at the third step and comes back as the first factor in five of the six that follow. That is the whole saving. Compare the fourth step with the fifth as well: two different weights, the same first factor, and the only thing that changes is what each one had in front of it."
+  caption="The network from the opening, with x = (1, 0.5), y = 1, a sigmoid in both layers and the loss ½(ŷ − y)². Step through the sixteen steps with the arrows and keep an eye on one number: δ(2)₁, the error of the output neuron, computed at the third step and reused as the first factor in five of the six steps that follow. That is the whole saving. Compare the fourth step with the fifth too: two different weights, the same first factor, and the only thing that changes is what each one had in front of it."
 />
 
-The first cell is that same network with those same weights, so you can compare figure by figure.
-Run it and read the output against the explorable's steps: the three errors first, the nine
-gradients after. The last line probes the nine parameters one at a time, which is the previous
-lesson's check applied here.
+The first cell is that same network with those same weights, so you can compare the two figure by
+figure. Run it and read the output against the explorable's steps: the three errors first, then the
+nine gradients. The last line probes all nine parameters one at a time, the previous lesson's check
+applied here.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -485,20 +497,21 @@ for name, P in [("W1", W1), ("b1", b1), ("W2", W2), ("b2", b2)]:
 print("nine parameters, largest difference against the probe: %.1e" % worst)
 `} />
 
-The numbers are the explorable's to three figures, and so are the names, so you can read the two in
-parallel. The third line shows the two movements separately. The transport leaves $\partial \ell / \partial \mathbf{h}^{(1)} = (-0.079,\ 0.068)$:
-a single error, $-0.113$, shared out between the two hidden neurons according to their weights $0.7$
-and $-0.6$, which is why the second coordinate comes out with the sign flipped. The masking is the
-$(0.238,\ 0.222)$ beside it, which is the derivative of the sigmoid at each pre-activation.
+The numbers match the explorable's to three figures, and so do the names, so you can read the two
+side by side. The third line shows the two moves separately. The transport leaves
+$\partial \ell / \partial \mathbf{h}^{(1)} = (-0.079,\ 0.068)$: a single error, $-0.113$, shared
+between the two hidden neurons according to their weights $0.7$ and $-0.6$, which is why the second
+coordinate flips sign. The masking is the $(0.238,\ 0.222)$ right beside it, the derivative of the
+sigmoid at each pre-activation.
 
-And look at $\nabla_{\mathbf{W}^{(1)}}\ell$, which is $(-0.019,\ -0.009)$ on top and
-$(0.015,\ 0.008)$ below. Its first column is $\boldsymbol{\delta}^{(1)}$ as it stands, because
-$x_1 = 1$; the second is $\boldsymbol{\delta}^{(1)}$ halved, because $x_2 = 0.5$. That is an outer
-product seen close up, and it is the reason nine derivatives fit into three numbers and two inputs.
+Now look at $\nabla_{\mathbf{W}^{(1)}}\ell$, which reads $(-0.019,\ -0.009)$ on top and
+$(0.015,\ 0.008)$ below. Its first column is $\boldsymbol{\delta}^{(1)}$ untouched, since $x_1 = 1$;
+the second is $\boldsymbol{\delta}^{(1)}$ halved, since $x_2 = 0.5$. That's an outer product seen up
+close, and it's the whole reason nine derivatives collapse into three numbers and two inputs.
 
-The second cell is the reviews network with one more hidden layer, which is where the recurrence
-applies twice instead of once: eight inputs, four hidden neurons, three, and three outputs with
-softmax. I chose the weights so the pre-activations would come out round. Run it and look at two
+The second cell is the reviews network with one extra hidden layer, where the recurrence applies
+twice instead of once: eight inputs, four hidden neurons, three more, and three outputs with
+softmax. I chose the weights so the pre-activations would come out round. Run it and watch for two
 things: where zeros appear, and the last two lines.
 
 <PyCell packages={["numpy"]} code={`
@@ -558,25 +571,25 @@ print("63 parameters, largest difference against the probe: %.1e" % worst)
 print("forward passes spent on the probe: %d.  By backpropagation: 1." % calls)
 `} />
 
-The zeros are ReLU at work, and there are two. The fourth neuron of the first hidden layer has
-$z^{(1)}_4 = -1.5$ and the second of the second has $z^{(2)}_2 = -1.25$: both are switched off for
-this review and both assign a zero to their $\boldsymbol{\delta}$. That zero shows up twice in
-$\nabla_{\mathbf{W}^{(2)}}\ell$, and for different reasons. Its second row is null because
-$\delta^{(2)}_2 = 0$, that is, none of that neuron's four weights is corrected; its fourth column is
-null because $h^{(1)}_4 = 0$, that is, the input those weights read contributes nothing. Row and
-column are the two halves of the outer product, and each one vanishes on its own account.
+The zeros are ReLU at work, and there are two of them. The fourth neuron of the first hidden layer
+has $z^{(1)}_4 = -1.5$, and the second neuron of the second layer has $z^{(2)}_2 = -1.25$: both are
+switched off for this review, and both assign a zero to their $\boldsymbol{\delta}$. That zero shows
+up twice in $\nabla_{\mathbf{W}^{(2)}}\ell$, and for two different reasons. Its second row is null
+because $\delta^{(2)}_2 = 0$, meaning none of that neuron's four weights gets corrected; its fourth
+column is null because $h^{(1)}_4 = 0$, meaning the input those weights read contributes nothing at
+all. Row and column are the two halves of the outer product, and each vanishes for its own reason.
 
-The last two lines are the lesson. The $63$ gradients agree with the probe to $10^{-10}$, which is
-the probe's error and not the algorithm's. And getting them by probing has cost $126$ forward passes
-against the single one backpropagation makes. That in a toy network, with three layers and eight
-inputs: the factor is the number of parameters multiplied by two, so it grows with every weight
-added and never stops growing.
+The last two lines are really the whole lesson. The $63$ gradients agree with the probe to
+$10^{-10}$, which is the probe's own error and not the algorithm's. And getting them by probing cost
+$126$ forward passes against the single one backpropagation needs. That's in a toy network, with
+three layers and eight inputs: the ratio is the number of parameters times two, so it only grows as
+weights get added, and it never stops growing.
 
 ## Test your intuition
 
-Four questions (a gradient read off an error, what exactly it is that gets reused, the shapes of
-the backward pass, and what happens if the forward one is thrown away) and a challenge that is the
-whole algorithm.
+Four questions (a gradient read off an error, what exactly gets reused, the shapes of the backward
+pass, and what happens if the forward one is thrown away), plus a challenge that is the whole
+algorithm.
 
 <Quiz id="q-leer-un-gradiente" />
 
@@ -590,14 +603,17 @@ whole algorithm.
 
 ---
 
-The algorithm is complete and it has trained nothing. The two cells compute the gradient of one
-example with weights I put in, print it, and end there: nobody has subtracted anything and nobody
-has started again. What is missing to close the circle has been written down since <Leccion slug="descenso-gradiente">the lesson on gradient descent</Leccion> ($\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}$),
-waiting for exactly the gradient this lesson has now produced.
+The algorithm is complete, and it hasn't trained anything yet. The two cells compute the gradient of
+one example with weights I supplied, print it, and stop there: nobody has subtracted anything, and
+nobody has started over. What's missing to close the circle has already been written down, back in
+<Leccion slug="descenso-gradiente">the lesson on gradient descent</Leccion>
+($\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}$), waiting for exactly the gradient this
+lesson has now produced.
 
-Putting the two halves together calls for three decisions neither of the two lessons has taken. The
-examples come in $B$ at a time, so the errors stop being columns and $\mathcal{L}$ goes back to
-being the mean of the $\ell$. The weights have to start somewhere, and the obvious place, all of
-them at zero, fails for a reason that is read off the formula for $\boldsymbol{\delta}$ you have
-derived above. And when to stop has to be decided. Taking the three, mounting them on a multilayer
-perceptron (MLP) written from scratch and watching the loss fall is <Leccion slug="implementar-mlp">the next lesson, on implementing an MLP</Leccion>.
+Putting the two halves together calls for three decisions neither lesson has made yet. Examples
+arrive $B$ at a time, so the errors stop being columns and $\mathcal{L}$ goes back to being the mean
+of the $\ell$. The weights have to start somewhere, and the obvious choice, all of them at zero,
+fails for a reason you can read straight off the formula for $\boldsymbol{\delta}$ derived above.
+And when to stop has to be decided too. Making those three calls, mounting them on a multilayer
+perceptron (MLP) written from scratch, and watching the loss actually fall, is
+<Leccion slug="implementar-mlp">the next lesson, on implementing an MLP</Leccion>.

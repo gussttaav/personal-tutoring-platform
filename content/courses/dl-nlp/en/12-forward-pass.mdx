@@ -4,7 +4,7 @@ title: "The forward pass in matrix form"
 block: 2
 order: 4
 minutes: 30
-summary: "A whole layer fits in one matrix product, and a whole batch fits in that same product with one row per example. That is where the transpose comes from (examples stack as rows and an example is a column), and chaining those products from the input to the output gives the forward pass, whose cost in parameters does not depend on how many examples go through at once."
+summary: "A whole layer collapses into one matrix product, and a whole batch fits into that same product with one row per example. That is where the transpose comes from (examples stack as rows, but an example itself is a column), and chaining those products from input to output gives you the forward pass, whose parameter cost never depends on how many examples go through at once."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -14,7 +14,7 @@ quiz:
     prompt: 'A network receives vectors of $300$ coordinates, has a hidden layer of $128$ neurons and an output layer of $2$. How many numbers does it store in total, between weights and biases?'
     answer: 38786
     tolerance: 0
-    explanation: 'The hidden layer contributes $\mathbf{W}^{(1)} \in \mathbb{R}^{128 \times 300}$ and $\mathbf{b}^{(1)} \in \mathbb{R}^{128}$, that is $128 \cdot 300 + 128 = 38\,528$ numbers; the output one contributes $2 \cdot 128 + 2 = 258$. In total, $38\,786$. Look at where the weight of the count sits: $\mathbf{W}^{(1)}$ alone takes $99\%$ of it, because the weights grow with the product of two widths and the biases only with one. And look at what appears nowhere: $B$. The network takes up the same whether you pass it one example or a thousand at once.'
+    explanation: 'The hidden layer contributes $\mathbf{W}^{(1)} \in \mathbb{R}^{128 \times 300}$ and $\mathbf{b}^{(1)} \in \mathbb{R}^{128}$, that is, $128 \cdot 300 + 128 = 38\,528$ numbers; the output layer contributes $2 \cdot 128 + 2 = 258$ more. Total: $38\,786$. Notice where almost all of that weight sits: $\mathbf{W}^{(1)}$ alone accounts for $99\%$ of it, because weights grow with the product of two widths while biases only grow with one. And notice what never shows up at all: $B$. The network takes up exactly the same space whether you feed it one example or a thousand at once.'
   - id: q-transpuesta
     type: single
     prompt: 'For a single example, the layer is $\mathbf{W}^{(l)}\mathbf{h}^{(l-1)}$; for a whole batch it is $\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top}$. Where does that transpose come from?'
@@ -24,7 +24,7 @@ quiz:
       - { id: c, text: 'From $\mathbf{W}^{(l)}$ not usually being square. When $d_l = d_{l-1}$ the transpose can be dropped and the result does not change.' }
       - { id: d, text: 'From having to sum over the $B$ examples, and the transpose being what makes that index disappear from the result.' }
     answer: a
-    explanation: 'The (a) is the whole justification in one sentence: $\left(\mathbf{W}\mathbf{h}\right)^{\top} = \mathbf{h}^{\top}\mathbf{W}^{\top}$, and stacking those rows for $i = 1, \dots, B$ is exactly the product on the left. The (b) confuses performance with algebra: the order in memory decides how long a product takes, not which product it is. The (c) is false even when the shapes match, because $\mathbf{W}$ and $\mathbf{W}^{\top}$ are different matrices unless the matrix is symmetric: without transposing, each neuron would read a column that does not contain its weights. And the (d) inverts what happens: $B$ does not disappear (it survives as the number of rows of $\mathbf{Z}^{(l)}$), and the dimension that does disappear is $d_{l-1}$, the only one the two factors share.'
+    explanation: '(a) is the whole justification in one line: $\left(\mathbf{W}\mathbf{h}\right)^{\top} = \mathbf{h}^{\top}\mathbf{W}^{\top}$, and stacking those rows for $i = 1, \dots, B$ gives you exactly the product on the left. (b) confuses performance with algebra: memory layout decides how long a product takes, not which product it actually is. (c) is false even when the shapes happen to match, because $\mathbf{W}$ and $\mathbf{W}^{\top}$ are different matrices unless the matrix is symmetric: without transposing, each neuron would read a column that does not even contain its own weights. And (d) has it backwards: $B$ does not disappear at all (it survives as the number of rows of $\mathbf{Z}^{(l)}$); the dimension that actually disappears is $d_{l-1}$, the only one the two factors share.'
   - id: q-cadena
     type: multi
     prompt: 'A network of $L$ layers chains $\mathbf{H}^{(l)} = \varphi\left(\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}\right)$ starting from $\mathbf{H}^{(0)} = \mathbf{X}$. Tick everything that is true.'
@@ -34,21 +34,21 @@ quiz:
       - { id: c, text: 'The layers are necessarily computed in order, because $\mathbf{H}^{(l)}$ needs $\mathbf{H}^{(l-1)}$ already computed.' }
       - { id: d, text: 'If you remove the $L$ activations, the chain can no longer be shortened: a matrix product followed by another is not a matrix product again.' }
     answer: [a, b, c]
-    explanation: 'The first three are the three things the matrix form fixes. The (a) is the condition that chains the layers, and it is the only one there is: once the width $d_{l-1}$ is chosen, the next matrix has to have those columns. The (b) is what makes the same code work for one example and for a thousand. The (c) is the reason this is a walk and not a set of independent computations. The false one is the (d), and it is answered by <Leccion slug="funciones-activacion">the lesson on activation functions and non-linearity</Leccion>: without $\varphi$ the chain contracts into $\mathbf{X}\left(\mathbf{W}^{(L)}\cdots\mathbf{W}^{(1)}\right)^{\top}$ plus a bias, which is a single layer. Matrix products compose the same way affine functions do, and that is exactly the problem $\varphi$ exists to break.'
+    explanation: 'The first three are exactly the three things the matrix form guarantees. (a) is the condition that chains the layers together, and it is the only one there is: once the width $d_{l-1}$ is fixed, the next matrix has to have that many columns. (b) is what lets the same code run on one example or a thousand. (c) is the reason this is a genuine sequence and not a set of independent computations. (d) is the false one, and <Leccion slug="funciones-activacion">the lesson on activation functions and non-linearity</Leccion> already answered it: without $\varphi$, the chain collapses into $\mathbf{X}\left(\mathbf{W}^{(L)}\cdots\mathbf{W}^{(1)}\right)^{\top}$ plus a bias, which is a single layer. Matrix products compose the same way affine functions do, and that is exactly the problem $\varphi$ exists to break.'
 challenges:
   - id: ch-forward
     prompt: |
-      Write the forward pass in its matrix form, for a whole batch and without running over the
-      examples one by one:
+      Write the forward pass in its matrix form: for a whole batch at once, without looping over
+      the examples one by one.
 
       - `layer(H, W, b)` returns the pre-activation of a layer. `H` has shape
         $(B,\, d_{\text{in}})$, `W` has shape $(d_{\text{out}},\, d_{\text{in}})$ (one row per
-        neuron) and `b` has shape $(d_{\text{out}},)$; the output has shape
+        neuron), and `b` has shape $(d_{\text{out}},)$; the output has shape
         $(B,\, d_{\text{out}})$.
-      - `forward(X, layers, phi)` chains a list of pairs `(W, b)` from `X`, applying `phi` to the
-        output of each layer.
+      - `forward(X, layers, phi)` chains a list of `(W, b)` pairs starting from `X`, applying
+        `phi` to the output of each layer.
 
-      Neither of the two may write into the arrays it receives.
+      Neither function may write into the arrays it receives.
     packages: [numpy]
     starter: |
       import numpy as np
@@ -114,64 +114,66 @@ challenges:
               H = phi(layer(H, W, b))
           return H
     explanation: |
-      `H @ W.T + b` is the lesson's formula put into code, and the first three tests check its
-      three decisions: the shape of the output, the orientation of `W` and the spreading of the
-      bias. The transpose is there because `H` stores one example per row and `W` stores one neuron
-      per row; without it, `H @ W` does not even exist when the two widths do not match, which is
-      the luck you have.
+      `H @ W.T + b` is this lesson's formula translated straight into code, and the first three
+      tests check its three key decisions: the shape of the output, the orientation of `W`, and
+      how the bias gets spread across rows. The transpose is there because `H` stores one example
+      per row while `W` stores one neuron per row; without it, `H @ W` does not even exist once
+      the two widths fail to match, which is the lucky case.
 
-      In `forward`, the variable `H` is the one that keeps changing from layer to layer, and that is
-      why the loop runs over the layers and not the examples: the whole batch travels inside `H`.
-      Notice that `phi` is applied in the last layer too. It is a choice, not a law (there are
-      networks that leave the output without an activation), but it has to be explicit: a `phi` that
-      is applied sometimes and not others is a bug waiting for someone to change the number of
-      layers.
+      In `forward`, the variable `H` is the one that keeps changing from layer to layer, which is
+      why the loop runs over the layers and not over the examples: the whole batch travels
+      together inside `H`. Notice that `phi` gets applied to the last layer too. That is a choice,
+      not a rule (some networks leave the output layer without an activation), but it has to stay
+      explicit either way: a `phi` that gets applied sometimes and skipped other times is a bug
+      waiting for someone to change the number of layers.
 reading: []
 ---
 
 {/* COURSE-P5-02 — Block 2, Lesson 4. */}
 
-The previous lesson, on XOR and hidden layers, left the network complete and unwritten. Complete
-because no piece is missing: neurons grouped into layers, each with its weights and its bias, and a
-$\varphi$ between them that stops stacking them from collapsing back into a single neuron. Unwritten
-because there each pre-activation was computed on its own, and a collection of loose sums is not a
-formula: you cannot do algebra on it and you cannot program it as one thing. The walk that goes from
-the input to the output has a name, the **forward pass**, and a form it is always written in. This
-lesson is that form.
+The previous lesson, on XOR and hidden layers, left the network complete but unwritten. Complete,
+because no piece is missing: neurons grouped into layers, each with its own weights and bias, and a
+$\varphi$ sitting between them that stops the stack from collapsing back into a single neuron.
+Unwritten, because every pre-activation there was computed on its own, and a pile of loose sums
+isn't a formula: you can't do algebra with it, and you can't program it as a single thing. The walk
+from input to output has a name, the **forward pass**, and one fixed form it's always written in.
+This lesson is that form.
 
-Put numbers on it before writing it. Take the ten reviews from <Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion>, with that vocabulary of eight entries. What goes into the network is not
-the review but its bag of words: a vector of eight coordinates, one per vocabulary entry, with the
-number of times that entry appears in the review. That is all the network is going to read. Put on
-top a hidden layer of four neurons: each one looks at those eight coordinates and returns a number,
-so the ten reviews give $10 \cdot 4 = 40$ hidden pre-activations, each of them a sum of eight
-products plus a bias. One at a time they are forty computations, or two nested loops if you would
-rather the computer did them. The forty fit in a single matrix product, and the next layer comes out
-of another one the same. What has to be pinned down is what multiplies what, and where the ten
-reviews go in. Because they are going to go in together: a group of examples that go through the
-network at once is a **batch**, and this lesson's has ten.
+Put some real numbers on it before writing anything down. Take the ten reviews from
+<Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion>, with that same
+eight-entry vocabulary. What goes into the network isn't the review itself but its bag of words: a
+vector of eight coordinates, one per vocabulary entry, holding how many times that entry shows up
+in the review. That's all the network ever gets to read. Add a hidden layer of four neurons on top:
+each one looks at those eight coordinates and returns a number, so the ten reviews together produce
+$10 \cdot 4 = 40$ hidden pre-activations, each one a sum of eight products plus a bias. Taken one at
+a time, that's forty separate computations, or two nested loops if you'd rather let the computer
+grind through them. All forty fit into a single matrix product instead, and the next layer comes
+out of another product of the same kind. What needs pinning down is what multiplies what, and where
+the ten reviews actually go in. Because they're going in together: a group of examples running
+through the network at once is called a **batch**, and this lesson's batch has ten.
 
-That product is not an abbreviation of the two loops: it is the same computation with the accounting
-tucked into the shapes of the arrays. Look at where each number ends up.
+That product isn't shorthand for the two loops: it's the exact same computation, with all the
+bookkeeping folded into the shapes of the arrays. Look at where each number actually ends up.
 
 <Figure
   src="/courses/dl-nlp/forward-shapes.svg"
   alt="Three rectangles in a row, separated by a multiplication sign and an equals sign. The first, labelled X, is divided into six rows and carries below it the shape B by d zero; its third row is shaded green and marked on the left with the letter i. The second, labelled W one transpose, is divided into four columns and carries below it the shape d zero by d one; its second column is shaded green and marked below with the letter j. The third, labelled Z one, has the six rows of the first and the four columns of the second, and carries below it the shape B by d one; of it only the entry where the third row and the second column cross is shaded. The d zero appears in green in the first two shapes and does not appear in the third."
-  caption="The dimension the two factors share is the only one that disappears from the result. Each entry on the right is a neuron giving its opinion on an example, and putting in one more example adds a row on the left and another on the right without touching the weights."
+  caption="The dimension the two factors share is the only one that vanishes from the result. Each entry on the right is one neuron's opinion of one example, and adding one more example adds a row on the left and another on the right, without touching a single weight."
 />
 
 <Callout type="intuition" title="The idea in one sentence">
-A layer is not a loop over its neurons, and a batch is not a loop over its examples: both are indices
-of a matrix product, and the product runs over them without anyone writing them out. What has to be
-watched is not the loops, it is the shapes.
+A layer isn't a loop over its neurons, and a batch isn't a loop over its examples: both are indices
+inside a matrix product, and the product runs over them without anyone ever writing out a loop.
+What actually needs watching isn't the loops, it's the shapes.
 </Callout>
 
 ## A whole layer in a single product
 
-Let's fix any layer and call its width $d_l$, the number of neurons it has. Layer $l$ receives
-$d_{l-1}$ numbers and hands back $d_l$, so its weights are a matrix
+Fix any layer and call its width $d_l$, the number of neurons it holds. Layer $l$ receives
+$d_{l-1}$ numbers and hands back $d_l$, so its weights form a matrix
 $\mathbf{W}^{(l)} \in \mathbb{R}^{d_l \times d_{l-1}}$ and its biases a vector
-$\mathbf{b}^{(l)} \in \mathbb{R}^{d_l}$, one per neuron. With a single example going in, the previous
-lesson already wrote the result:
+$\mathbf{b}^{(l)} \in \mathbb{R}^{d_l}$, one per neuron. For a single example, the previous lesson
+already wrote out the result:
 
 $$
 \mathbf{z}^{(l)} = \mathbf{W}^{(l)}\mathbf{h}^{(l-1)} + \mathbf{b}^{(l)},
@@ -179,40 +181,41 @@ $$
 \mathbf{h}^{(l)} = \varphi\left(\mathbf{z}^{(l)}\right),
 $$
 
-with $\mathbf{h}^{(l-1)} \in \mathbb{R}^{d_{l-1}}$, with $\mathbf{z}^{(l)}, \mathbf{h}^{(l)} \in
-\mathbb{R}^{d_l}$ and with $\varphi$ applied coordinate by coordinate. The vectors are columns, like
-all of them in the course, and that is why the product is written in that order.
+with $\mathbf{h}^{(l-1)} \in \mathbb{R}^{d_{l-1}}$, $\mathbf{z}^{(l)}, \mathbf{h}^{(l)} \in
+\mathbb{R}^{d_l}$, and $\varphi$ applied coordinate by coordinate. The vectors are columns, as they
+are everywhere in this course, which is why the product is written in that order.
 
-Each layer leans on the one before, so the chain needs a beginning. The first layer has none in
-front of it: what it receives is the example as it stands, and the convention is to count the input
-as a layer $0$ that computes nothing, $\mathbf{h}^{(0)} = \mathbf{x}$. That makes $d_0$ the dimension
-of the input and not the width of any layer of neurons. With the reviews above, $\mathbf{h}^{(0)}$ is
-the eight counts of the bag of words and $d_0 = 8$.
+Each layer leans on the one before it, so the chain needs somewhere to start. The first layer has
+nothing in front of it: what it receives is the raw example, and the convention is to count the
+input as layer $0$, one that computes nothing at all, $\mathbf{h}^{(0)} = \mathbf{x}$. That makes
+$d_0$ the dimension of the input, not the width of any actual layer of neurons. For the reviews
+above, $\mathbf{h}^{(0)}$ is the eight counts of the bag of words, and $d_0 = 8$.
 
-What is worth seeing is that inside that product there is nothing new. Expand the $j$-th coordinate:
+What's worth seeing is that there's nothing new hiding inside that product. Expand the $j$-th
+coordinate:
 
 $$
 z^{(l)}_j = \sum_{k=1}^{d_{l-1}} \mathbf{W}^{(l)}_{jk}\, h^{(l-1)}_k + b^{(l)}_j.
 $$
 
-That sum is the neuron from <Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion>, with row $j$ of $\mathbf{W}^{(l)}$ as the weight vector. The matrix product adds no operation:
-it groups the $d_l$ sums that were already there, and its only contribution is that now they do not
-have to be written out. The count of what it costs comes from there too, $d_l \cdot d_{l-1}$ products
-per example, and that figure grows with the size of the layer even though the number of lines stays
-at one.
+That sum is exactly the neuron from <Leccion slug="la-neurona">the lesson on the artificial
+neuron</Leccion>, with row $j$ of $\mathbf{W}^{(l)}$ playing the role of the weight vector. The
+matrix product doesn't add any new operation: it groups together the $d_l$ sums that were already
+there, and all it really contributes is that you never have to write them out one by one. The cost
+also comes from there: $d_l \cdot d_{l-1}$ products per example, a figure that grows with the size
+of the layer even though the line of code writing it stays exactly one.
 
 ### The batch enters from the left, and that is where the transpose comes from
 
-Now the examples. Let's call the batch size $B$ and store the $B$ examples in a matrix
-$\mathbf{X} \in \mathbb{R}^{B \times d_0}$, with one example in each row. That order, the batch
-first, is the one of the whole course and the one NumPy uses. With the same arrangement for what
-comes out of each layer, $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$, row $i$ of
-$\mathbf{H}^{(l-1)}$ is example $i$ laid down: it is $\left(\mathbf{h}^{(l-1)}_i\right)^{\top}$, with
-its transpose, because the vector is a column and the row of a matrix is not.
+Now bring in the examples. Call the batch size $B$, and store the $B$ examples in a matrix
+$\mathbf{X} \in \mathbb{R}^{B \times d_0}$, one example per row. That ordering, batch first, is the
+one this whole course uses, and it's the one NumPy uses too. With the same layout for whatever comes
+out of each layer, $\mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$, row $i$ of $\mathbf{H}^{(l-1)}$
+is example $i$ laid flat: it's $\left(\mathbf{h}^{(l-1)}_i\right)^{\top}$, transposed, because the
+vector itself is a column and a matrix row is not.
 
-That transpose is the one that propagates, and everything else comes out with it. Transpose the
-equation above for example $i$, remembering that transposing a product reverses the order of the
-factors:
+That transpose is the one that propagates through everything else. Transpose the equation above for
+example $i$, remembering that transposing a product reverses the order of its factors:
 
 $$
 \left(\mathbf{z}^{(l)}_i\right)^{\top}
@@ -220,9 +223,9 @@ $$
 = \left(\mathbf{h}^{(l-1)}_i\right)^{\top}\left(\mathbf{W}^{(l)}\right)^{\top} + \left(\mathbf{b}^{(l)}\right)^{\top},
 $$
 
-which is an equality between rows: on the left, row $i$ of $\mathbf{Z}^{(l)}$; on the right, row $i$
-of $\mathbf{H}^{(l-1)}$ multiplied by the same matrix as the rest. Stacking the $B$ rows is then a
-single product:
+which is an equality between two rows: on the left, row $i$ of $\mathbf{Z}^{(l)}$; on the right, row
+$i$ of $\mathbf{H}^{(l-1)}$ multiplied by that same matrix everyone else uses. Stacking all $B$ rows
+turns into a single product:
 
 $$
 \mathbf{Z}^{(l)} = \mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top},
@@ -230,19 +233,20 @@ $$
 \mathbf{H}^{(l)} = \varphi\left(\mathbf{Z}^{(l)}\right),
 $$
 
-with $\mathbf{Z}^{(l)}, \mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ and with
-$\mathbf{1}_B \in \mathbb{R}^{B}$ the vector of ones. That last factor deserves a sentence, because
-it is the only thing in the formula that is not in the code. $\mathbf{Z}^{(l)}$ has $B$ rows and
-$\mathbf{b}^{(l)}$ has $d_l$ coordinates: adding them is not an operation between matrices, so what
-is written is the product $\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}$, the same row of biases
-repeated $B$ times. NumPy does that repetition on its own when you write `+ b`, without building the
-matrix, and that is why it is worth having seen once what it is doing underneath.
+with $\mathbf{Z}^{(l)}, \mathbf{H}^{(l)} \in \mathbb{R}^{B \times d_l}$ and $\mathbf{1}_B \in
+\mathbb{R}^{B}$ the vector of ones. That last factor deserves its own sentence, since it's the one
+thing in the formula that never shows up in the code. $\mathbf{Z}^{(l)}$ has $B$ rows and
+$\mathbf{b}^{(l)}$ has $d_l$ coordinates: adding the two directly isn't even a valid operation
+between matrices, so what's really written is the product
+$\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}$, the same row of biases repeated $B$ times over.
+NumPy does that repetition automatically when you write `+ b`, without ever building the matrix,
+which is exactly why it's worth seeing once what's actually happening underneath.
 
 <Details summary="The check, entry by entry">
 
-That the product contains the same sums as before is seen by looking at any one entry. The $(k, j)$
-entry of $\left(\mathbf{W}^{(l)}\right)^{\top}$ is the $(j, k)$ entry of $\mathbf{W}^{(l)}$, so by the
-definition of the matrix product
+You can see the product holds the same sums as before by checking any single entry. The $(k, j)$
+entry of $\left(\mathbf{W}^{(l)}\right)^{\top}$ is the $(j, k)$ entry of $\mathbf{W}^{(l)}$, so by
+the definition of the matrix product
 
 $$
 \left[\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top}\right]_{ij}
@@ -255,18 +259,19 @@ $$
 \left[\mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}\right]_{ij} = 1 \cdot b^{(l)}_j = b^{(l)}_j,
 $$
 
-the same number for every row $i$, which is what "one bias per neuron" means. Adding the two, the
-$(i, j)$ entry of $\mathbf{Z}^{(l)}$ is the pre-activation of neuron $j$ for example $i$: the sum from
-the previous section, term by term. The index $k$ is the one that is run over and disappears; $i$ and
-$j$ are the ones that survive, and they are the two dimensions of the result.
+the same number no matter which row $i$ you pick, which is exactly what "one bias per neuron"
+means. Add the two together, and the $(i, j)$ entry of $\mathbf{Z}^{(l)}$ is the pre-activation of
+neuron $j$ for example $i$: the same sum from the previous section, term by term. The index $k$ is
+the one that gets summed over and vanishes; $i$ and $j$ are the ones that survive, and they're the
+two dimensions of the result.
 
 </Details>
 
 ## From input to output, one layer after another
 
-With one layer solved, the network is the repetition. Let $L$ be the number of layers (the output one
-included) and let $d_0, d_1, \dots, d_L$ be the widths of the chain, starting from the input one. The
-forward pass is this recurrence:
+With one layer solved, the network amounts to repeating it. Let $L$ be the number of layers
+(including the output one), and let $d_0, d_1, \dots, d_L$ be the widths of the chain, starting from
+the input. The forward pass is this recurrence:
 
 $$
 \mathbf{H}^{(0)} = \mathbf{X},
@@ -275,33 +280,34 @@ $$
 \quad \text{for } l = 1, \dots, L,
 $$
 
-and what comes out of the last layer is the network's prediction for the $B$ examples at once,
-$\hat{\mathbf{Y}} = \mathbf{H}^{(L)} \in \mathbb{R}^{B \times d_L}$. That chain is everything a
-multilayer perceptron (MLP) computes: there are no more steps, and the ones later in the block will
-not add any, they will only change the numbers inside the matrices.
+and whatever comes out of the last layer is the network's prediction for all $B$ examples at once,
+$\hat{\mathbf{Y}} = \mathbf{H}^{(L)} \in \mathbb{R}^{B \times d_L}$. That chain is the entirety of
+what a multilayer perceptron (MLP) computes: there are no further steps, and nothing later in this
+block adds any either. What changes from here on is only the numbers sitting inside the matrices.
 
-Two things are read directly off the shapes. The first is the only condition that has to be respected
-when designing a network: $\mathbf{H}^{(l-1)}$ has $d_{l-1}$ columns and $\mathbf{W}^{(l)}$ does too,
-and if the two widths do not match the product does not exist. The intermediate widths you choose
-yourself; $d_0$ is given to you by the representation of the input and $d_L$ by how many answers you
-want. The second is that $B$ appears in no weight matrix. How many examples go through at once is a
-decision of whoever runs the network, not a property of the network, and from there comes the count
-of what it takes up:
+Two things follow directly from the shapes. The first is the only condition you actually have to
+respect when designing a network: $\mathbf{H}^{(l-1)}$ has $d_{l-1}$ columns, and $\mathbf{W}^{(l)}$
+needs to match, or the product does not exist at all. The intermediate widths are yours to choose;
+$d_0$ comes from however the input is represented, and $d_L$ from how many answers you want out.
+The second is that $B$ never appears in a single weight matrix. How many examples run through at
+once is a decision made by whoever runs the network, not a property of the network itself, and
+that's where the parameter count comes from:
 
 $$
 \sum_{l=1}^{L}\left(d_l \cdot d_{l-1} + d_l\right).
 $$
 
-For the review network below, with $d_0 = 8$, $d_1 = 4$ and $d_2 = 1$, that is $41$ numbers. Swap the
-vocabulary for one of $20\,000$ entries and the hidden layer for one of $128$ neurons, and it is
-$2\,560\,257$: almost all in $\mathbf{W}^{(1)}$, none as a function of $B$.
+For the review network below, with $d_0 = 8$, $d_1 = 4$ and $d_2 = 1$, that works out to $41$
+numbers. Swap in a vocabulary of $20\,000$ entries and a hidden layer of $128$ neurons instead, and
+the count jumps to $2\,560\,257$: almost all of it sitting in $\mathbf{W}^{(1)}$, none of it
+depending on $B$.
 
 ## The loop, the product and the review network in NumPy
 
-The first cell puts the two versions face to face over a layer of thirty-two neurons: the double loop
-that follows from the definition, and the product. Run it and look at three things: whether they give
-the same result, how long each one takes, and what happens when the product is written without
-transposing.
+The first cell puts the two versions head to head on a layer of thirty-two neurons: the double loop
+that follows directly from the definition, and the matrix product. Run it and check three things:
+whether the two agree, how long each one actually takes, and what happens when the product is
+written without transposing.
 
 <PyCell packages={["numpy"]} code={`
 import time
@@ -351,21 +357,23 @@ print("Z - X @ W.T, row 0:    ", np.round((Z - no_bias)[0, :3], 3))
 print("Z - X @ W.T, row 127:  ", np.round((Z - no_bias)[-1, :3], 3))
 `} />
 
-The two versions give the same numbers: the largest difference the cell prints is $0$. Getting them
-does not cost the same: the product takes between one and two orders of magnitude less, and the exact
-factor depends on the machine and the browser. Where that
-factor comes from does not depend on either. It is not that the product does fewer operations (it does
-exactly the same), but that the $4\,096$ turns of the loop are taken by Python one at a time, while the
-product takes them inside a compiled routine without going back through the interpreter.
+The two versions produce the same numbers: the largest difference the cell prints out is $0$. But
+getting there doesn't cost the same at all: the product runs between one and two orders of
+magnitude faster, and the exact factor depends on the machine and the browser you're using. Where
+that speed-up comes from doesn't depend on either one, though. It's not that the product performs
+fewer operations (it does exactly the same number), but that Python works through the $4\,096$
+turns of the loop one at a time, while the product runs them inside a compiled routine that never
+goes back through the interpreter.
 
-The last two experiments are the two shape traps. `X @ W` does not exist, and NumPy says so by naming
-the two dimensions that do not fit; and the difference between $\mathbf{Z}$ and the product without a
-bias is the same triple $-0.761$, $3.221$, $0.221$ in row $0$ and in row $127$, which is
-$\mathbf{1}_B\mathbf{b}^{\top}$ made visible.
+The last two experiments are the two classic shape traps. `X @ W` doesn't exist, and NumPy tells you
+so by naming the exact two dimensions that fail to line up; and the difference between $\mathbf{Z}$
+and the product without a bias comes out to the same triple, $-0.761$, $3.221$, $0.221$, in both row
+$0$ and row $127$, which is $\mathbf{1}_B\mathbf{b}^{\top}$ made visible.
 
-The second cell builds the whole network over the ten reviews: eight entries, four hidden neurons with
-ReLU (rectified linear unit) and one output with a sigmoid, so that what it hands back is a number
-between $0$ and $1$. Run it and keep the column of shapes and the last line.
+The second cell builds the whole network over the ten reviews: eight vocabulary entries, four
+hidden neurons with ReLU (rectified linear unit), and one output neuron with a sigmoid, so what it
+hands back is a number between $0$ and $1$. Run it and pay attention to the column of shapes, and
+to the last line.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -412,21 +420,21 @@ print()
 print("correct:", int(((Y[:, 0] >= 0.5) == (labels == 1)).sum()), "of 10")
 `} />
 
-Five lines of code for the whole network, and the reason is in the column of shapes: the $10$ of the
-first dimension never appears again anywhere and reaches the end intact, while the second dimension
-keeps changing $8 \to 4 \to 1$ at the rhythm of the widths. The network has the $41$ parameters of the
-count above.
+Five lines of code for the entire network, and the reason is right there in the column of shapes:
+the $10$ in the first dimension never gets touched anywhere and arrives at the end fully intact,
+while the second dimension keeps changing, $8 \to 4 \to 1$, in step with the widths. The network
+carries exactly the $41$ parameters the count above predicted.
 
-And now the last line, the one that matters. Five correct out of ten. All ten outputs are below $0.5$
-(the largest is $0.485$, for <W>i recommend it</W>), so the network answers no to all ten reviews, and
-gets right exactly the five that were negative. It is the score of someone who reads nothing and always
-says no. The weights came out of `np.random.randn`, and there is no reason for them to have been
-anything else.
+And now the last line, the one that actually matters. Five correct out of ten. Every single output
+sits below $0.5$ (the highest is $0.485$, for <W>i recommend it</W>), so the network answers no to
+all ten reviews and happens to get the five negative ones right. That's the score of someone who
+reads nothing at all and always says no. The weights came straight out of `np.random.randn`, and
+there was never any reason to expect otherwise.
 
 ## Test your intuition
 
-Three questions (how many numbers a network stores, where the transpose comes from, and what the chain
-fixes) and a challenge that is the whole forward pass.
+Three questions (how many numbers a network actually stores, where the transpose comes from, and
+what the chain guarantees), plus a challenge that's the entire forward pass.
 
 <Quiz id="q-parametros" />
 
@@ -438,17 +446,20 @@ fixes) and a challenge that is the whole forward pass.
 
 ---
 
-The network now knows how to answer, to one example or to a thousand, and what it has answered is
-useless. Those two things fit together because the forward pass contains no notion of correctness: it
-is a chain of products that turns $\mathbf{X}$ into $\hat{\mathbf{Y}}$ and that would have run exactly
-the same with the good weights, if anyone knew which they are. To correct them you have to start by
-measuring them, and measuring is not counting correct answers. The count on the last line is worth the
-same with an output of $0.499$ as with one of $0.036$, and it does not move when a weight changes a
-little: it does not tell apart getting it wrong by a hair from getting it wrong completely, which is
-exactly the only thing that serves to decide which way to move a weight.
+The network can now answer, whether you feed it one example or a thousand, and what it answers is
+worthless. Those two facts fit together perfectly, because the forward pass carries no notion of
+correctness at all: it's a chain of products that turns $\mathbf{X}$ into $\hat{\mathbf{Y}}$, and it
+would run exactly the same way with the right weights, if anyone actually knew what they were.
+Correcting the weights means measuring them first, and measuring isn't the same as counting correct
+answers. The tally on the last line scores exactly the same whether the output is $0.499$ or
+$0.036$, and it doesn't budge when a weight shifts slightly: it can't tell apart being wrong by a
+hair from being wrong completely, and that distinction is the only thing that could actually tell
+you which way to move a weight.
 
-What is needed is a number that does tell them apart. A single one for the whole batch, that grows when
-$\hat{\mathbf{Y}}$ moves away from the labels, that falls when it moves closer, and that changes
-continuously so that it has a derivative. How that number is built, why the first candidate anyone
-thinks of (squaring the difference) is the right one for some tasks and a bad idea for classifying, and
-what is used in its place, is <Leccion slug="funcion-de-perdida">the next lesson, on loss functions</Leccion>: mean squared error and cross-entropy.
+What's needed is a number that can tell them apart. A single number for the whole batch, one that
+grows as $\hat{\mathbf{Y}}$ drifts away from the labels, falls as it moves closer, and changes
+continuously enough to actually have a derivative. How that number gets built, why the first
+candidate most people reach for (squaring the difference) is the right call for some tasks and a
+bad idea for classification, and what takes its place instead, is
+<Leccion slug="funcion-de-perdida">the next lesson, on loss functions</Leccion>: mean squared error
+and cross-entropy.
