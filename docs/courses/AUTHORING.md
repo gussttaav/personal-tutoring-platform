@@ -259,6 +259,20 @@ prose uses are all the same number. (They were 0..4 until P5-00. The schemas in
 outright, so the old numbering cannot come back through content; a stray "bloque 0" in *prose* is
 still just a leftover, and still yours to fix.)
 
+**Each block declares how many lessons it will have** (`COURSE-BUILD-01`) — `lessons:` beside its
+`title` and `summary`, taken from the block's task md. It is the only thing in the repo that knows
+whether the course is finished: a block is done when it has published that many lessons, and the
+course is done when every block is. Until then the catalog card wears «En construcción» and says
+«2 de 5 módulos», and the landing syllabus lists the blocks you have not written yet, with their
+titles, their summaries and their sizes, under «N lecciones · próximamente». So the number is read
+by a student the day you write it, not the day the block ships — get it from the plan rather than
+guessing, and update it in the same commit if the plan changes. It is locale-invariant, like `id`:
+mirror it into `course.en.yml`, though only the Spanish manifest's copy is ever read.
+
+A block may end up with more lessons than it planned; that is fine and still counts as complete.
+A block that omits `lessons:` counts as complete as soon as it has one — which is why `dl-nlp`,
+written before this key existed, needs no change.
+
 **A lesson is never referred to by its number** (`COURSE-P7-01`). Write a
 [`<Leccion>`](#7-components) and let the build resolve it:
 

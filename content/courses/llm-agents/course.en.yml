@@ -45,19 +45,26 @@ faq:
     a: "At the start yes, at the end no, and that is on purpose. Blocks 1 and 2 derive; block 3 mixes; blocks 4 and 5 are engineering: contracts, protocols and a program that grows lesson by lesson. The title goes from the maths to the systems, and so does the course."
   - q: "Do I build a real Claude Code?"
     a: "You build a coding agent in the terminal with the same pieces: the loop, the tools, the system prompt, context compaction, permissions, subagents. Much smaller, and with a local model. The last lesson points the real tool at the same model and compares the two on the same tasks."
+# COURSE-BUILD-01: `lessons` is the PLANNED lesson count, mirrored from course.es.yml — it is
+# locale-invariant, and the canonical (Spanish) manifest is the one that owns it.
 blocks:
   - id: 1
     title: "From the Transformer to the Language Model"
     summary: "A single column, real BPE, a mini-GPT trained in NumPy, how to sample from it and what each token costs."
+    lessons: 9
   - id: 2
     title: "From Predicting Text to Following Instructions"
     summary: "Supervised fine-tuning, the reward model, RLHF and the full derivation of DPO."
+    lessons: 8
   - id: 3
     title: "Talking to the Model Is Programming"
     summary: "The prompt as a specification, chain of thought, structured output, retrieval and how to evaluate."
+    lessons: 7
   - id: 4
     title: "The Bridge: from Text to Actions"
     summary: "Calling tools, the loop, errors as observations, permissions and memory."
+    lessons: 7
   - id: 5
     title: "A Coding Agent in the Terminal"
     summary: "The loop with a real local model, file tools, compaction, sandbox, subagents and a benchmark."
+    lessons: 9

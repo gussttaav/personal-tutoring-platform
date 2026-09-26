@@ -273,6 +273,12 @@ export const CourseBlockSchema = z.strictObject({
   id:      z.number().int().positive(),
   title:   z.string().min(1),
   summary: z.string().min(1),
+  // COURSE-BUILD-01: how many lessons this block will have when it is finished. Optional —
+  // a block without it is complete as soon as it has one published lesson, which is exactly
+  // how a finished course (dl-nlp) behaved before this key existed. Declaring it is what lets
+  // the landing page say «9 lecciones · próximamente» for a block nobody has written yet, and
+  // what makes "is the Spanish course done?" a decidable question. See ./courses/course-build.ts.
+  lessons: z.number().int().positive().optional(),
 });
 
 // The landing page's conversion copy is per-course, per-locale prose — the same reason

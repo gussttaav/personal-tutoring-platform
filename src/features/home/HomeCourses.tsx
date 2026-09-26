@@ -1,11 +1,12 @@
 /*
  * REDESIGN-P1-03 — home (/) courses band.
  *
- * Server Component. Reuses `CourseCard` untouched and the exact prop-building the catalog
- * page (`cursos/page.tsx`) already does — same `listCatalogEntries(locale)` selector, same
- * lesson/block-count derivation — so the home can never disagree with `/cursos` (the
- * `COURSE-P6-03` rule: one selector, one truth). Only the two-column grid around the cards
- * is new (`.home-courses-grid`, `src/features/home/home.css`).
+ * Server Component. Reuses `CourseCard` untouched and the same `listCatalogEntries(locale)`
+ * selector the catalog page (`cursos/page.tsx`) uses, so the home can never disagree with
+ * `/cursos` (the `COURSE-P6-03` rule: one selector, one truth). COURSE-BUILD-01 made that
+ * literal: the counts and status the card needs are fields on the entry now, so both pages hand
+ * the entry over instead of each deriving its own props. Only the two-column grid around the
+ * cards is new (`.home-courses-grid`, `src/features/home/home.css`).
  *
  * `listCatalogEntries` is published-only, so a locale can be empty; renders nothing rather
  * than a section head over an empty grid.
@@ -24,12 +25,7 @@ export default async function HomeCourses({ locale }: HomeCoursesProps) {
   const t = await getTranslations({ locale, namespace: "courses.catalog" });
   const tHome = await getTranslations({ locale, namespace: "home.courses" });
 
-  const cards = listCatalogEntries(locale).map(({ course, contentLocale, lessons }) => ({
-    course,
-    contentLocale,
-    lessonCount: lessons.length,
-    blockCount:  new Set(lessons.map((l) => l.block)).size,
-  }));
+  const cards = listCatalogEntries(locale);
 
   if (cards.length === 0) return null;
 
@@ -51,14 +47,16 @@ export default async function HomeCourses({ locale }: HomeCoursesProps) {
       </div>
 
       <div className="home-courses-grid">
-        {cards.map(({ course, contentLocale, lessonCount, blockCount }) => (
+        {cards.map((entry) => (
           <CourseCard
-            key={course.slug}
-            course={course}
-            lessonCount={lessonCount}
-            blockCount={blockCount}
+            key={entry.course.slug}
+            course={entry.course}
+            lessonCount={entry.lessons.length}
+            build={entry.build}
             locale={locale}
-            contentLocale={contentLocale}
+            contentLocale={entry.contentLocale}
+            fullyTranslated={entry.fullyTranslated}
+            translatedCount={entry.translatedCount}
           />
         ))}
       </div>

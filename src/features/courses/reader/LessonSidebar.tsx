@@ -31,7 +31,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Course, Lesson } from "@/domain/types";
-import { groupLessonsByBlock } from "@/features/courses/landing/SyllabusAccordion";
+import { courseBuildStatus } from "@/lib/courses/course-build";
 import SidebarSearch from "@/features/courses/search/SidebarSearch";
 import SidebarProgressBar from "./SidebarProgressBar";
 import SidebarLessonList from "./SidebarLessonList";
@@ -54,7 +54,11 @@ export default async function LessonSidebar({
   variant = "desktop",
 }: LessonSidebarProps) {
   const t = await getTranslations({ locale, namespace: "courses.reader" });
-  const groups = groupLessonsByBlock(course, lessons);
+  // COURSE-BUILD-01: the grouping moved to `course-build.ts` and no longer drops blocks with
+  // no published lessons — the LANDING page now advertises the unwritten ones. The sidebar does
+  // not want that: this is navigation, and a block you cannot navigate into is noise in it. So
+  // the filter that used to live inside the grouper lives here, as the sidebar's own decision.
+  const groups = courseBuildStatus(course.blocks, lessons).blocks.filter((g) => g.lessons.length > 0);
 
   const contents = (
     <>

@@ -44,19 +44,30 @@ faq:
     dynamic: english-translation-status
   - q: "¿Construyo un Claude Code de verdad?"
     a: "Construyes un agente de programación en la terminal con las mismas piezas: el bucle, las herramientas, el prompt de sistema, la compactación del contexto, los permisos, los subagentes. Mucho más pequeño, y con un modelo local. La última lección apunta la herramienta real al mismo modelo y compara las dos con las mismas tareas."
+# COURSE-BUILD-01: `lessons` is the PLANNED lesson count — how many lessons the block has when
+# it is finished. Locale-invariant like `id` (the canonical Spanish manifest owns it), and the
+# reference for "is this course done?": the Spanish version is finished when every block has
+# published at least its planned count. Until then the catalog card and the landing say so, and
+# an unwritten block still shows its title, its summary and its size. Keep it in sync with
+# docs/courses/llm-agents/phase-1-content/.
 blocks:
   - id: 1
     title: "Del Transformer al modelo de lenguaje"
     summary: "Una sola columna, BPE de verdad, un mini-GPT entrenado en NumPy, cómo se muestrea de él y cuánto cuesta cada token."
+    lessons: 9
   - id: 2
     title: "De predecir texto a seguir instrucciones"
     summary: "Ajuste supervisado, modelo de recompensa, RLHF y la derivación completa de DPO."
+    lessons: 8
   - id: 3
     title: "Hablar con el modelo es programar"
     summary: "El prompt como especificación, la cadena de pensamiento, la salida estructurada, la recuperación y cómo evaluar."
+    lessons: 7
   - id: 4
     title: "El puente: de texto a acciones"
     summary: "Llamar herramientas, el bucle, los errores como observaciones, los permisos y la memoria."
+    lessons: 7
   - id: 5
     title: "Un agente de programación en la terminal"
     summary: "El bucle con un modelo local real, herramientas de ficheros, compactación, sandbox, subagentes y un benchmark."
+    lessons: 9

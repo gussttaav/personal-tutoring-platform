@@ -25,14 +25,24 @@
  * each lesson independently uses the requested locale's version when there is one. A course
  * can therefore be translated one lesson at a time with no broken intermediate state.
  *
+ * COURSE-BUILD-01: the entry also carries the course's AUTHORING progress (`build`) and how
+ * much of it exists in the request locale (`translatedCount`). Two independent axes, computed
+ * in one place so the card, the landing notices, the syllabus and the FAQ can never disagree
+ * about them: `build` is a question about the CANONICAL course (is the Spanish original
+ * finished?), `translatedCount` about this locale (how far has the translation got?). The
+ * planned lesson counts `build` measures against are read from the CANONICAL manifest even
+ * when the prose comes from another one — a block's size is locale-invariant, exactly like its
+ * `id`, so the `en` manifest must not be able to disagree with the `es` one about it.
+ *
  * What is NOT resolved here is which lesson URLs are INDEXABLE. A fallback page is real (it
  * must not 404) but it is Spanish prose under an /en URL, so the route marks it `noindex`
  * with a canonical pointing at the Spanish original, and the sitemap keeps using the
  * published-only per-locale selectors. Never advertise a locale you cannot actually serve.
  */
 
-import type { Course, Lesson, LessonRef } from "@/domain/types";
+import type { Course, CourseBlock, Lesson, LessonRef } from "@/domain/types";
 import { routing } from "@/i18n/routing";
+import { courseBuildStatus, type CourseBuildStatus } from "./course-build";
 import { getCourse, listCourseManifests, listLessons } from "./registry";
 
 const CANONICAL_LOCALE = routing.defaultLocale;
@@ -55,6 +65,12 @@ export interface CatalogEntry {
   views:         LessonView[];
   /** True when every lesson exists in the requested locale. Drives the "in Spanish" badge. */
   fullyTranslated: boolean;
+  /** COURSE-BUILD-01 — lessons that exist in the REQUESTED locale; `lessons.length` when
+   *  `fullyTranslated`, 0 when nothing is translated. The partial case is the interesting one:
+   *  it is what lets a notice say "18 of 43" instead of claiming one thing or the other. */
+  translatedCount: number;
+  /** COURSE-BUILD-01 — authoring progress of the canonical course, block by block. */
+  build:           CourseBuildStatus;
 }
 
 /**
@@ -109,6 +125,38 @@ export function lessonViewNeighbours(
   };
 }
 
+/** COURSE-BUILD-01 — the requested locale's blocks (translated prose) carrying the CANONICAL
+ *  manifest's planned lesson counts. A block's planned size is locale-invariant like its `id`,
+ *  so one manifest owns it and a translation cannot drift from it. */
+function blocksWithCanonicalPlan(course: Course, locale: string): CourseBlock[] {
+  if (locale === CANONICAL_LOCALE) return course.blocks;
+  const canonical = getCourse(course.slug, CANONICAL_LOCALE);
+  // No canonical manifest at all (an English-only course) — this locale's plan is the plan.
+  if (!canonical) return course.blocks;
+  const plan = new Map(canonical.blocks.map((b) => [b.id, b.lessons]));
+  return course.blocks.map((b) => ({ ...b, lessons: plan.get(b.id) }));
+}
+
+/**
+ * COURSE-BUILD-01 — the course's authoring progress in `locale`, or `null` for a course with no
+ * manifest there.
+ *
+ * Unlike `getCatalogEntry` this survives a course with NO published lessons: that is the
+ * lesson-less «soon» landing, and listing the blocks it will have is most of the point of that
+ * page. The block prose is the requested locale's, the plan and the published counts are the
+ * canonical course's (`listLessonViews` returns the canonical spine, and `block` is
+ * locale-invariant, so counting off it needs no second scan).
+ */
+export function getCourseBuild(courseSlug: string, locale: string): CourseBuildStatus | null {
+  const course = getCourse(courseSlug, locale);
+  if (!course) return null;
+  const views = listLessonViews(courseSlug, locale);
+  return courseBuildStatus(
+    blocksWithCanonicalPlan(course, locale),
+    views.map((v) => v.lesson),
+  );
+}
+
 /** The catalog/landing entry for one course in one locale, or `null` when the course has no
  *  manifest in that locale or no published lessons in any locale. */
 export function getCatalogEntry(courseSlug: string, locale: string): CatalogEntry | null {
@@ -118,12 +166,19 @@ export function getCatalogEntry(courseSlug: string, locale: string): CatalogEntr
   const views = listLessonViews(courseSlug, locale);
   if (views.length === 0) return null;
 
+  const translatedCount = views.filter((v) => v.contentLocale === locale).length;
+
   return {
     course,
     contentLocale:   views[0].contentLocale,
     lessons:         views.map((v) => v.lesson),
     views,
-    fullyTranslated: views.every((v) => v.contentLocale === locale),
+    fullyTranslated: translatedCount === views.length,
+    translatedCount,
+    build:           courseBuildStatus(
+      blocksWithCanonicalPlan(course, locale),
+      views.map((v) => v.lesson),
+    ),
   };
 }
 
@@ -156,7 +211,7 @@ export function getEnglishTranslationCoverage(
     return { translated: 0, total: canonical?.lessons.length ?? 0, fullyTranslated: false };
   }
   return {
-    translated:      entry.views.filter((v) => v.contentLocale === "en").length,
+    translated:      entry.translatedCount,
     total:           entry.views.length,
     fullyTranslated: entry.fullyTranslated,
   };

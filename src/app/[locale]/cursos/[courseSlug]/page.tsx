@@ -19,6 +19,15 @@
  * sitemap/JSON-LD land in P6-01. (The blog kept the ComingSoonModal until BLOG-01
  * replaced it with a real /blog; there is no ComingSoonModal any more.)
  *
+ * COURSE-BUILD-01: the page also states how finished the course is. `build` (from
+ * `getCourseBuild`, which unlike `getCatalogEntry` survives a course with no lessons at all)
+ * drives `CourseBuildNotice` and lets `SyllabusAccordion` list the blocks nobody has written
+ * yet — so the lesson-less "soon" landing finally shows the five block titles its manifest has
+ * always carried. `ContentLanguageNotice` moved off `contentLocale` (the FIRST lesson's locale)
+ * onto `fullyTranslated`: with block 1 translated and blocks 2-5 not, the old test said the
+ * course was in English. Two independent axes, never conflated — `build` is about the Spanish
+ * original, `translatedCount` about this locale.
+ *
  * COURSE-C2-P0-01: the lesson-less "soon" landing is `noindex`. It was `index: true` whenever
  * the manifest resolved — but a page the catalog and the sitemap refuse to list should not
  * invite the crawler either. The predicate is `getCatalogEntry` being null, the same one
@@ -38,12 +47,13 @@ import CourseHero from "@/features/courses/landing/CourseHero";
 import Prerequisites from "@/features/courses/landing/Prerequisites";
 import SyllabusAccordion from "@/features/courses/landing/SyllabusAccordion";
 import CourseFaq from "@/features/courses/landing/CourseFaq";
+import CourseBuildNotice from "@/features/courses/landing/CourseBuildNotice";
 import CourseCta from "@/features/courses/landing/CourseCta";
 import CourseAuthorNote from "@/features/courses/landing/CourseAuthorNote";
 import AuthorBio from "@/features/content/AuthorBio";
 import ContentLanguageNotice from "@/features/courses/landing/ContentLanguageNotice";
 import { getCourse, listCourseManifests } from "@/lib/courses/registry";
-import { courseLocales, getCatalogEntry } from "@/lib/courses/catalog-view";
+import { courseLocales, getCatalogEntry, getCourseBuild } from "@/lib/courses/catalog-view";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates } from "@/lib/hreflang";
 import CourseStructuredData from "@/components/seo/CourseStructuredData";
@@ -98,7 +108,10 @@ export default async function CourseLandingPage({
   const lessons         = entry?.lessons ?? [];
   const contentLocale   = entry?.contentLocale ?? locale;
   const firstLessonSlug = lessons[0]?.slug ?? null;
-  const translated      = contentLocale === locale;
+  // COURSE-BUILD-01: `!` is safe — `getCourseBuild` returns null only for a course with no
+  // manifest in this locale, and `getCourse` above already sent that case to notFound().
+  const build           = getCourseBuild(courseSlug, locale)!;
+  const fullyTranslated = entry?.fullyTranslated ?? true;
 
   const tLanding = await getTranslations({ locale, namespace: "courses.landing" });
 
@@ -136,11 +149,23 @@ export default async function CourseLandingPage({
             contentLocale={contentLocale}
           />
 
-          {!translated && <ContentLanguageNotice locale={locale} />}
+          {/* COURSE-BUILD-01: the course's own progress first, then the translation's. The
+              notify opt-in appears once — see CourseBuildNotice's `withNotify`. */}
+          {!build.complete && (
+            <CourseBuildNotice build={build} locale={locale} withNotify={fullyTranslated} />
+          )}
+
+          {!fullyTranslated && (
+            <ContentLanguageNotice
+              locale={locale}
+              translatedCount={entry?.translatedCount ?? 0}
+              total={lessons.length}
+            />
+          )}
 
           <Prerequisites prerequisites={course.prerequisites} locale={locale} />
 
-          <SyllabusAccordion course={course} lessons={lessons} locale={locale} />
+          <SyllabusAccordion course={course} build={build} locale={locale} />
 
           {/* Instructor. CONTENT-AUTHOR-01: the card moved out to the shared
               `AuthorBio` (features/content) so the blog post wears the very same one.

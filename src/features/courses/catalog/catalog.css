@@ -161,6 +161,27 @@
   border: 1px solid var(--border-variant);
 }
 
+/* COURSE-BUILD-01 — «en construcción». Louder than the language badge (it changes what the
+   course IS, not what language it is in) and quieter than the level badge, which owns the
+   accent: a filled neutral chip with a small pulse-free dot. Deliberately not red/amber —
+   nothing is wrong, the course is simply still growing. */
+.course-card__badge--build {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  background: var(--surface-container);
+  border: 1px solid var(--border-variant);
+}
+
+.course-card__badge--build::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--card-accent);
+}
+
 .course-card__body {
   display: flex;
   flex-direction: column;

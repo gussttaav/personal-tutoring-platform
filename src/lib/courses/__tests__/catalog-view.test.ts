@@ -6,6 +6,11 @@
 //
 // The case that matters is the middle one: a course whose MANIFEST is translated but whose
 // LESSONS are not. That is the whole state this module exists to represent.
+//
+// COURSE-BUILD-01 adds the other axis: `translatedCount` (how much of this locale exists) and
+// `build` (how much of the CANONICAL course exists). The load-bearing case there is the planned
+// lesson count, which is locale-invariant and must be read off the canonical manifest even when
+// the prose comes from another one.
 
 import fs from "node:fs";
 import os from "node:os";
@@ -16,6 +21,7 @@ import {
   catalogLocales,
   courseLocales,
   getCatalogEntry,
+  getCourseBuild,
   getEnglishTranslationCoverage,
   getLessonView,
   lessonViewNeighbours,
@@ -23,7 +29,14 @@ import {
   listLessonViews,
 } from "@/lib/courses/catalog-view";
 
-function manifest(title: string): string {
+/** One block, no declared plan — what every case that does not care about the plan uses. */
+const DEFAULT_BLOCKS = `blocks:
+  - id: 1
+    title: "Bloque 1"
+    summary: "..."
+`;
+
+function manifest(title: string, blocks: string = DEFAULT_BLOCKS): string {
   return `
 slug: dl-nlp
 title: ${JSON.stringify(title)}
@@ -36,39 +49,44 @@ cta:
   heading: "..."
   body: "..."
 faq: []
-blocks:
-  - id: 1
-    title: "Bloque 1"
-    summary: "..."
-`;
+${blocks}`;
 }
 
-function lessonFile(slug: string, order: number, draft = false): string {
+function lessonFile(slug: string, order: number, draft = false, block = 1): string {
   const fm = {
-    slug, title: `Lección ${slug}`, block: 1, order, minutes: 10,
+    slug, title: `Lección ${slug}`, block, order, minutes: 10,
     summary: "...", draft, hasCode: false, hasQuiz: false, quiz: [], challenges: [], reading: [],
   };
   const yaml = Object.entries(fm).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("\n");
   return `---\n${yaml}\n---\n\nCuerpo.\n`;
 }
 
-/** Content root with a `dl-nlp` course: manifests per locale, lesson dirs per locale. */
+/** Content root with a `dl-nlp` course: manifests per locale, lesson dirs per locale.
+ *  `blocks` overrides a locale's block YAML — needed to give the two manifests DIFFERENT
+ *  planned lesson counts and pin which one wins. */
 function makeTree(opts: {
   manifests: Record<string, string>;
-  lessons?:  Record<string, { slug: string; order: number; draft?: boolean }[]>;
+  blocks?:   Record<string, string>;
+  lessons?:  Record<string, { slug: string; order: number; draft?: boolean; block?: number }[]>;
 }): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "catalog-view-"));
   const courseDir = path.join(root, "dl-nlp");
   fs.mkdirSync(courseDir, { recursive: true });
 
   for (const [locale, title] of Object.entries(opts.manifests)) {
-    fs.writeFileSync(path.join(courseDir, `course.${locale}.yml`), manifest(title));
+    fs.writeFileSync(
+      path.join(courseDir, `course.${locale}.yml`),
+      manifest(title, opts.blocks?.[locale]),
+    );
   }
   for (const [locale, lessons] of Object.entries(opts.lessons ?? {})) {
     const dir = path.join(courseDir, locale);
     fs.mkdirSync(dir, { recursive: true });
     for (const l of lessons) {
-      fs.writeFileSync(path.join(dir, `0${l.order}-${l.slug}.mdx`), lessonFile(l.slug, l.order, l.draft));
+      fs.writeFileSync(
+        path.join(dir, `0${l.order}-${l.slug}.mdx`),
+        lessonFile(l.slug, l.order, l.draft, l.block),
+      );
     }
   }
   return root;
@@ -209,6 +227,27 @@ describe("partial translation", () => {
     expect(en.fullyTranslated).toBe(false);
     // The hero links at the FIRST lesson, which is still Spanish.
     expect(en.contentLocale).toBe("es");
+    // COURSE-BUILD-01: "how far did it get" — the number the notice quotes. Note this case is
+    // exactly the one the old `contentLocale`-keyed badge got right and the NEXT one got wrong.
+    expect(en.translatedCount).toBe(1);
+  });
+
+  it("counts the translated lessons even when the FIRST one is among them", () => {
+    // The trap the language notice used to fall into: lesson 1 translated, lesson 2 not, so
+    // `contentLocale` is "en" and the page looked fully English. `fullyTranslated` is the honest
+    // answer, and `translatedCount` says how far off it is.
+    __setContentRoot(makeTree({
+      manifests: { es: "Curso", en: "Course" },
+      lessons: {
+        es: [{ slug: "uno", order: 1 }, { slug: "dos", order: 2 }, { slug: "tres", order: 3 }],
+        en: [{ slug: "uno", order: 1 }],
+      },
+    }));
+
+    const en = getCatalogEntry("dl-nlp", "en")!;
+    expect(en.contentLocale).toBe("en");
+    expect(en.fullyTranslated).toBe(false);
+    expect(en.translatedCount).toBe(1);
   });
 
   it("flips to fully translated once every lesson exists in the locale", () => {
@@ -223,6 +262,7 @@ describe("partial translation", () => {
     const en = getCatalogEntry("dl-nlp", "en")!;
     expect(en.fullyTranslated).toBe(true);
     expect(en.contentLocale).toBe("en");
+    expect(en.translatedCount).toBe(2);
   });
 
   it("walks prev/next along the spine, so a reader is never stranded", () => {
@@ -256,6 +296,120 @@ describe("partial translation", () => {
     const views = listLessonViews("dl-nlp", "en");
     expect(views.map((v) => v.contentLocale)).toEqual(["en"]);
     expect(getCatalogEntry("dl-nlp", "es")).toBeNull();
+  });
+});
+
+describe("COURSE-BUILD-01 — authoring progress", () => {
+  /** Two blocks, each with a declared plan. The English manifest deliberately DISAGREES about
+   *  block 1's size, so we can pin which manifest owns that number. */
+  const ES_BLOCKS = `blocks:
+  - id: 1
+    title: "Bloque 1"
+    summary: "Resumen 1"
+    lessons: 3
+  - id: 2
+    title: "Bloque 2"
+    summary: "Resumen 2"
+    lessons: 2
+`;
+  const EN_BLOCKS = `blocks:
+  - id: 1
+    title: "Block 1"
+    summary: "Summary 1"
+    lessons: 9
+  - id: 2
+    title: "Block 2"
+    summary: "Summary 2"
+    lessons: 2
+`;
+
+  function buildTree() {
+    return makeTree({
+      manifests: { es: "Curso", en: "Course" },
+      blocks:    { es: ES_BLOCKS, en: EN_BLOCKS },
+      // Block 1 half written, block 2 not started — a course being written in public.
+      lessons: {
+        es: [{ slug: "uno", order: 1, block: 1 }, { slug: "dos", order: 2, block: 1 }],
+      },
+    });
+  }
+
+  it("carries the manifest's blocks and their progress on the catalog entry", () => {
+    __setContentRoot(buildTree());
+
+    const build = getCatalogEntry("dl-nlp", "es")!.build;
+
+    expect(build.blocks.map((b) => b.block.id)).toEqual([1, 2]);
+    expect(build.blocks.map((b) => b.state)).toEqual(["partial", "upcoming"]);
+    expect(build.publishedBlocks).toBe(1);
+    expect(build.totalBlocks).toBe(2);
+    expect(build.publishedLessons).toBe(2);
+    expect(build.plannedLessons).toBe(5);
+    expect(build.complete).toBe(false);
+  });
+
+  it("takes the planned counts from the CANONICAL manifest and the prose from the requested one", () => {
+    __setContentRoot(buildTree());
+
+    const en = getCatalogEntry("dl-nlp", "en")!.build;
+
+    // English titles…
+    expect(en.blocks.map((b) => b.block.title)).toEqual(["Block 1", "Block 2"]);
+    // …and Spanish plans. A block's size is locale-invariant, like its id: the `en` manifest
+    // says 9 here, and it does not get to. Otherwise "is the course finished?" would have a
+    // different answer per locale, which is not a thing it can have.
+    expect(en.blocks.map((b) => b.planned)).toEqual([3, 2]);
+    expect(en.plannedLessons).toBe(5);
+    // The published counts are the canonical spine's, so both locales agree on progress.
+    expect(en.publishedLessons).toBe(2);
+    expect(en.blocks.map((b) => b.state)).toEqual(["partial", "upcoming"]);
+  });
+
+  it("reports a finished course as complete, with no plan declared anywhere", () => {
+    // dl-nlp's own shape: manifests that predate `lessons:` entirely.
+    __setContentRoot(makeTree({
+      manifests: { es: "Curso" },
+      lessons: { es: [{ slug: "uno", order: 1 }] },
+    }));
+
+    const build = getCatalogEntry("dl-nlp", "es")!.build;
+    expect(build.complete).toBe(true);
+    expect(build.plannedLessons).toBeNull();
+    expect(build.publishedBlocks).toBe(build.totalBlocks);
+  });
+
+  describe("getCourseBuild", () => {
+    it("still answers for a course with NO published lessons — the «soon» landing", () => {
+      // `getCatalogEntry` is null here by design (nothing to put on a card), but the landing
+      // page renders, and listing the blocks it WILL have is most of the point of that page.
+      __setContentRoot(makeTree({
+        manifests: { es: "Curso", en: "Course" },
+        blocks:    { es: ES_BLOCKS, en: EN_BLOCKS },
+      }));
+
+      expect(getCatalogEntry("dl-nlp", "es")).toBeNull();
+
+      const build = getCourseBuild("dl-nlp", "es")!;
+      expect(build.blocks.map((b) => b.block.title)).toEqual(["Bloque 1", "Bloque 2"]);
+      expect(build.blocks.every((b) => b.state === "upcoming")).toBe(true);
+      expect(build.plannedLessons).toBe(5);
+      expect(build.complete).toBe(false);
+
+      // And in English, with the canonical plan.
+      const en = getCourseBuild("dl-nlp", "en")!;
+      expect(en.blocks.map((b) => b.block.title)).toEqual(["Block 1", "Block 2"]);
+      expect(en.blocks.map((b) => b.planned)).toEqual([3, 2]);
+    });
+
+    it("is null for a locale with no manifest", () => {
+      __setContentRoot(makeTree({
+        manifests: { es: "Curso" },
+        lessons: { es: [{ slug: "uno", order: 1 }] },
+      }));
+
+      expect(getCourseBuild("dl-nlp", "en")).toBeNull();
+      expect(getCourseBuild("nope", "es")).toBeNull();
+    });
   });
 });
 

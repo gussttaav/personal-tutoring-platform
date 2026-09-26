@@ -99,8 +99,10 @@ sense — it is the one search query that lands here, in both languages.
 ## Acceptance criteria
 
 - [ ] `pnpm lint:content` validates both manifests (a typo'd key fails)
-- [ ] `/cursos/llm-agents` renders hero, prerequisites, empty syllabus with the five block titles,
+- [x] `/cursos/llm-agents` renders hero, prerequisites, empty syllabus with the five block titles,
       FAQ and the «soon» CTA state; `/en/cursos/llm-agents` the same in English
+      — the five block titles landed later, in `COURSE-BUILD-01`; see the P0-01 deviations in
+      [STATUS.md](../STATUS.md)
 - [ ] `/cursos` and `/en/cursos` still show **one** card (`dl-nlp`); `sitemap.xml` unchanged
 - [ ] The lesson-less landing carries `<meta name="robots" content="noindex, follow">`; the
       moment a lesson is published, it flips to `index` with no further change

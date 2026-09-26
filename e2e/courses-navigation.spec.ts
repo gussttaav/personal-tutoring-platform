@@ -6,9 +6,20 @@
  * Two flows, and the second is the one worth having:
  *   1. es: navbar Cursos → catalog → landing → first lesson.
  *   2. en: navbar Courses → English catalog → English landing → the first lesson, now in
- *      English (Block 1 is translated). The card no longer wears the "lessons in Spanish"
- *      badge and the landing drops the language notice, exactly as the per-lesson resolution
- *      in catalog-view.ts promises: "when en/ lessons land, all of this stops firing on its own."
+ *      English (Block 1 is translated).
+ *
+ * COURSE-BUILD-01 sharpened flow 2. Both surfaces used to be keyed off the FIRST lesson's
+ * language, so the moment Block 1 landed in English the card dropped its badge and the landing
+ * dropped its notice — while 25 of dl-nlp's 43 lessons were still Spanish. They now report the
+ * PARTIAL state, and that is what this pins: not the "in Spanish" copy (which would be a lie in
+ * the other direction) but the "partly in Spanish" copy, with the full-Spanish copy asserted
+ * absent. The per-lesson promise in catalog-view.ts still holds — "when en/ lessons land, all of
+ * this stops firing on its own" — it just now stops firing lesson by lesson rather than at the
+ * first one.
+ *
+ * The third test covers the other axis: a course still being WRITTEN (`llm-agents`, one published
+ * lesson of a planned 40) has to advertise the four blocks nobody has written yet, because before
+ * COURSE-BUILD-01 the card said "1 módulo" and the landing showed a one-block syllabus.
  *
  * The cross-locale fallback — an `/en` URL that still serves Spanish prose — has NOT gone away;
  * it just moved down the syllabus to whatever lesson is still untranslated (`UNTRANSLATED_LESSON`,
@@ -81,6 +92,38 @@ if (!UNTRANSLATED_LESSON) {
   );
 }
 
+/*
+ * COURSE-BUILD-01 — the course being written in public. Derived from the content tree for the
+ * same reason `UNTRANSLATED_LESSON` is: the numbers move as blocks get published, and a test
+ * that hard-codes them goes quietly green against a stale expectation.
+ */
+const IN_PROGRESS_SLUG = "llm-agents";
+
+/** A manifest's block titles, in order. The block list is the tail of the file and its titles
+ *  are the only four-space-indented `title:` scalars in it — a regex is enough here too. */
+function blockTitles(slug: string, locale: "es" | "en"): string[] {
+  const src = readFileSync(
+    join(process.cwd(), "content/courses", slug, `course.${locale}.yml`),
+    "utf-8",
+  );
+  const blocks = src.slice(src.indexOf("\nblocks:"));
+  return [...blocks.matchAll(/^ {4}title: "(.+)"$/gm)].map((m) => m[1]);
+}
+
+/** How many blocks have at least one PUBLISHED lesson — i.e. how many syllabus rows are
+ *  expandable `<details>`. The rest render as plain «próximamente» rows. */
+function startedBlocks(slug: string, locale: "es" | "en"): number {
+  const dir = join(process.cwd(), "content/courses", slug, locale);
+  const blocks = new Set<string>();
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".mdx") && !f.startsWith("_"))) {
+    const src = readFileSync(join(dir, file), "utf-8");
+    if (/^draft:\s*true\s*$/m.test(src)) continue;
+    const block = src.match(/^block:\s*(\d+)$/m)?.[1];
+    if (block) blocks.add(block);
+  }
+  return blocks.size;
+}
+
 test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => {
   test("es: navbar Cursos → catalog → landing → first lesson", async ({ page }) => {
     const d = dict.es;
@@ -114,22 +157,28 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await page.getByRole("link", { name: d.nav.courses, exact: true }).first().click();
     await expect(page).toHaveURL(/\/en\/cursos$/, { timeout: 30_000 });
 
-    // Block 1 is translated, so the first lesson resolves in English — the card drops the
-    // "lessons in Spanish" badge (it is keyed off the FIRST lesson's language), and the catalog
-    // is not the empty state. REDESIGN-P3-02: the badge check is scoped to THIS course's card —
-    // the catalog has a second, Spanish-only course now (`llm-agents`, COURSE-C2) whose card
-    // wears the badge by design, so a page-wide count of zero stopped being the invariant.
+    // Block 1 is translated and later blocks are not, so the card says PARTLY in Spanish — not
+    // "lessons in Spanish" (which was true before any translation) and not nothing (which is what
+    // it used to say, because the badge was keyed off the FIRST lesson's language alone).
+    // REDESIGN-P3-02: scoped to THIS course's card — the catalog has a second, Spanish-only
+    // course (`llm-agents`, COURSE-C2) whose card wears the full badge by design, so a page-wide
+    // count stopped being the invariant.
     const dlNlpCard = page.locator(".course-card").filter({ hasText: /Deep Learning for NLP/ });
     await expect(dlNlpCard.getByRole("link", { name: /Deep Learning for NLP/ })).toBeVisible();
     await expect(dlNlpCard.getByText(d.courses.catalog.card.contentLanguage)).toHaveCount(0);
+    await expect(dlNlpCard.getByText(d.courses.catalog.card.contentLanguagePartial)).toBeVisible();
     await expect(page.getByText(d.courses.catalog.empty.title)).toHaveCount(0);
 
     await page.getByRole("link", { name: /Deep Learning for NLP/ }).click();
     await expect(page).toHaveURL(/\/en\/cursos\/dl-nlp$/, { timeout: 30_000 });
-    // First lesson in English ⇒ the landing shows no content-language notice.
+    // Some lessons in English, some not ⇒ the landing says the translation is in progress, and
+    // never the blanket "the lessons are in Spanish".
     await expect(
       page.getByRole("heading", { name: d.courses.landing.languageNotice.title }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: d.courses.landing.languageNotice.titlePartial }),
+    ).toBeVisible();
 
     // Start → the English reader for the first lesson: an `/en`-prefixed URL serving real
     // English prose, so no translation-pending notice.
@@ -137,6 +186,40 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page).toHaveURL(/\/en\/cursos\/dl-nlp\/texto-como-numeros$/, { timeout: 30_000 });
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.getByText(d.courses.reader.translationPending.title)).toHaveCount(0);
+  });
+
+  test("COURSE-BUILD-01: a course still being written shows every block and says so", async ({ page }) => {
+    const d = dict.es;
+    const titles  = blockTitles(IN_PROGRESS_SLUG, "es");
+    const started = startedBlocks(IN_PROGRESS_SLUG, "es");
+
+    // When `llm-agents` is finished this stops being an in-progress course and the assertions
+    // below stop describing it: point them at whatever course is being written then, or retire
+    // them. A silent pass is the one outcome worth ruling out.
+    expect(started).toBeLessThan(titles.length);
+
+    await page.goto("/cursos");
+    await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
+    const card = page.locator(".course-card").filter({ hasText: /Modelos de Lenguaje/ });
+    await expect(card.getByText(d.courses.catalog.card.inProgress)).toBeVisible();
+
+    await page.goto(`/cursos/${IN_PROGRESS_SLUG}`);
+    await expect(page).toHaveURL(new RegExp(`/cursos/${IN_PROGRESS_SLUG}$`), { timeout: 30_000 });
+
+    // Says out loud that it is unfinished…
+    await expect(
+      page.getByRole("heading", { name: d.courses.landing.buildNotice.title }),
+    ).toBeVisible();
+
+    // …and the syllabus names EVERY block, written or not. This is the regression: the blocks
+    // with no published lesson used to be dropped, so the manifest's titles never reached the
+    // page and the reader saw a one-block course.
+    const syllabus = page.locator("#temario");
+    for (const title of titles) {
+      await expect(syllabus.getByText(title, { exact: true })).toBeVisible();
+    }
+    // The written ones expand into lesson links; the rest are plain rows with nothing to open.
+    await expect(syllabus.locator("details")).toHaveCount(started);
   });
 
   test("the notify opt-in is offered on the catalog", async ({ page }) => {

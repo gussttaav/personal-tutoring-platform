@@ -955,7 +955,10 @@
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "blocks": "{count, plural, =1 {# módulo} other {# módulos}}",
         "cta": "Ver curso",
-        "contentLanguage": "Lecciones en español"
+        "contentLanguage": "Lecciones en español",
+        "contentLanguagePartial": "Parcialmente en español",
+        "inProgress": "En construcción",
+        "blocksOf": "{published} de {total} módulos"
       }
     },
     "landing": {
@@ -979,7 +982,11 @@
         "durationHoursExact": "{hours}h",
         "empty": "El temario detallado se publicará muy pronto.",
         "kicker": "Contenido",
-        "summary": "{blocks, plural, =1 {# bloque} other {# bloques}} · {lessons, plural, =1 {# lección} other {# lecciones}} · ~{hours} h de lectura"
+        "summary": "{blocks, plural, =1 {# bloque} other {# bloques}} · {lessons, plural, =1 {# lección} other {# lecciones}} · ~{hours} h de lectura",
+        "summaryInProgress": "{publishedBlocks} de {totalBlocks} bloques · {lessons, plural, =1 {# lección publicada} other {# lecciones publicadas}}",
+        "blockMetaPartial": "{published} de {planned} lecciones · {duration}",
+        "upcoming": "Próximamente",
+        "upcomingMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · próximamente"
       },
       "instructor": {
         "heading": "Tu instructor",
@@ -1005,7 +1012,14 @@
       },
       "languageNotice": {
         "title": "Las lecciones están en español",
-        "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante."
+        "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante.",
+        "titlePartial": "Traducción en curso",
+        "bodyPartial": "{translated} de {total} lecciones ya están traducidas; las demás se muestran todavía en su idioma original. Puedes leerlas tal cual — tu progreso cuenta igual."
+      },
+      "buildNotice": {
+        "title": "Curso en construcción",
+        "body": "Estoy escribiendo este curso y publico cada lección en cuanto está lista: {lessons, plural, =1 {# lección} other {# lecciones}} en {publishedBlocks} de {totalBlocks} bloques. El temario de abajo muestra el curso entero, así que ya puedes ver lo que viene.",
+        "bodyPlanned": "Estoy escribiendo este curso y publico cada lección en cuanto está lista: {published} de las {planned} previstas, en {publishedBlocks} de {totalBlocks} bloques. El temario de abajo muestra el curso entero, así que ya puedes ver lo que viene."
       },
       "authorNote": {
         "kicker": "Nota del autor",

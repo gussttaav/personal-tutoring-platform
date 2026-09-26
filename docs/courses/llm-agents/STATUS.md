@@ -67,14 +67,16 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 **COURSE-C2-P0-01** — Closed. Both manifests, the `noindex` fix on the lesson-less landing and
 the `catalog-view` unit case landed. Deviations from the task doc:
-- **The empty syllabus does NOT list the five block titles.** The acceptance line asks for an
+- **The empty syllabus does NOT list the five block titles.** ~~The acceptance line asks for an
   "empty syllabus with the five block titles", but `SyllabusAccordion` (P1-03) omits every
   block with zero published lessons by design ("never rendered empty-but-present") and shows
-  the `courses.landing.syllabus.empty` line instead — so today both landings read "El temario
-  detallado se publicará muy pronto." / "The detailed syllabus will be published soon." The
-  component is not in the task's Files-affected list, so it was left alone; listing the blocks
-  before any lesson exists would be a landing-component change on both courses, a separate
-  decision.
+  the `courses.landing.syllabus.empty` line instead.~~ **Resolved by `COURSE-BUILD-01`**
+  (2026-09-26): the omit-empty-blocks rule is reversed, the grouping moved to
+  `src/lib/courses/course-build.ts`, and every manifest block now renders — the written ones as
+  expandable `<details>`, the rest as «N lecciones · próximamente» rows. It was indeed a
+  landing-component change on both courses and it was indeed a separate decision; it also
+  needed the thing this task could not have supplied, a per-block `lessons:` plan, without
+  which an unwritten block can say its name but not its size. `dl-nlp`'s landing is unchanged.
 - **The English manifest drops the "¿Está en inglés?" FAQ**, following dl-nlp's `course.en.yml`
   precedent: the question answers itself on the English page, and `ContentLanguageNotice`
   already says which language the lessons are in once they exist. The other seven entries are

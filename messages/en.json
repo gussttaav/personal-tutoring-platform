@@ -955,7 +955,10 @@
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "blocks": "{count, plural, =1 {# module} other {# modules}}",
         "cta": "View course",
-        "contentLanguage": "Lessons in Spanish"
+        "contentLanguage": "Lessons in Spanish",
+        "contentLanguagePartial": "Partly in Spanish",
+        "inProgress": "In progress",
+        "blocksOf": "{published} of {total} modules"
       }
     },
     "landing": {
@@ -979,7 +982,11 @@
         "durationHoursExact": "{hours}h",
         "empty": "The detailed syllabus will be published soon.",
         "kicker": "Content",
-        "summary": "{blocks, plural, =1 {# block} other {# blocks}} · {lessons, plural, =1 {# lesson} other {# lessons}} · ~{hours}h reading"
+        "summary": "{blocks, plural, =1 {# block} other {# blocks}} · {lessons, plural, =1 {# lesson} other {# lessons}} · ~{hours}h reading",
+        "summaryInProgress": "{publishedBlocks} of {totalBlocks} blocks · {lessons, plural, =1 {# lesson} other {# lessons}} published",
+        "blockMetaPartial": "{published} of {planned} lessons · {duration}",
+        "upcoming": "Coming soon",
+        "upcomingMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · coming soon"
       },
       "instructor": {
         "heading": "Your instructor",
@@ -1005,7 +1012,14 @@
       },
       "languageNotice": {
         "title": "The lessons are in Spanish",
-        "body": "This course has not been translated yet. The lessons, exercises and quizzes are written in Spanish — everything else on this page is in English. An English version is planned."
+        "body": "This course has not been translated yet. The lessons, exercises and quizzes are written in Spanish — everything else on this page is in English. An English version is planned.",
+        "titlePartial": "Translation in progress",
+        "bodyPartial": "{translated} of {total} lessons are already in English; the rest are still in Spanish. You can read those as they are — your progress counts either way."
+      },
+      "buildNotice": {
+        "title": "This course is being written",
+        "body": "I publish each lesson as soon as it is ready: {lessons, plural, =1 {# lesson} other {# lessons}} across {publishedBlocks} of {totalBlocks} blocks. The syllabus below shows the whole course, so you can already see what is coming.",
+        "bodyPlanned": "I publish each lesson as soon as it is ready: {published} of the {planned} planned, across {publishedBlocks} of {totalBlocks} blocks. The syllabus below shows the whole course, so you can already see what is coming."
       },
       "authorNote": {
         "kicker": "Author's note",

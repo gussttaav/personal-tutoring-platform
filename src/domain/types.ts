@@ -351,6 +351,11 @@ export interface CourseBlock {
   id:      number;
   title:   string;
   summary: string;
+  /** COURSE-BUILD-01 — planned lesson count: how many lessons this block has when finished.
+   *  Locale-invariant like `id`, so the canonical manifest owns it (see
+   *  `src/lib/courses/catalog-view.ts`). Omitted means "no plan declared", and a block with
+   *  no plan counts as complete once it has a published lesson. */
+  lessons?: number;
 }
 
 /** One prerequisite: a short requirement `title` and an optional `detail` elaboration.
