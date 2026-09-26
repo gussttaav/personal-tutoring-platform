@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 242" width="750" height="242" role="img"
+ aria-label="Trace of agentic RAG on the ticket 4812 question, in three turns. Turn 1: it thinks it needs the customer's plan and the charge date; searches 4812 in the tickets; finds Ferretería Ortega, Team plan, annual charge on 14 August, refund requested on 2 September. Turn 2: now it knows the plan it can search for the deadline; searches refund window Team plan annual in the documentation, with the word Team taken from the previous result; finds the Team plan terms, 30 days from the charge, and also the FAQ saying as a rule 14. Turn 3: the plan's own rule wins; 14 August plus 30 days is 13 September and 2 September is inside; no search, and it answers yes, they can ask until 13 September, citing the ticket and section 7.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 3 3; marker-end: url(#ax); }
+  .nb { fill: #1d1d1f; stroke: #ffb4ab; stroke-width: 1.2; }
+  .nt { font-size: 10.5px; font-weight: 700; fill: #ffb4ab; text-anchor: middle; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="28.0" y="12.0">THINKS</text>
+<text class="hd" x="262.0" y="12.0">SEARCHES</text>
+<text class="hd" x="486.0" y="12.0">FINDS</text>
+<text class="lb" x="6.0" y="58.0" style="text-anchor:start">1</text>
+<rect class="bx g" x="28.0" y="22.0" width="220.0" height="62.0" rx="6"/>
+<text class="tx" x="38.0" y="41.0">I need the customer's plan</text>
+<text class="tx" x="38.0" y="55.0">and the charge date.</text>
+<rect class="bx " x="262.0" y="22.0" width="210.0" height="62.0" rx="6"/>
+<text class="tx d" x="272.0" y="40.0">tickets ←</text>
+<text class="mo" x="272.0" y="56.0">“4812”</text>
+<path class="ar" d="M248.0,53.0 L260.0,53.0"/>
+<path class="ar" d="M472.0,53.0 L484.0,53.0"/>
+<rect class="bx " x="486.0" y="22.0" width="262.0" height="62.0" rx="6"/>
+<text class="tx" x="496.0" y="41.0">Ferretería Ortega · <tspan class="m">Team</tspan> plan</text>
+<text class="tx" x="496.0" y="55.0">annual charge: 14 August</text>
+<text class="tx" x="496.0" y="69.0">asks for a refund: 2 September</text>
+<text class="lb" x="6.0" y="136.0" style="text-anchor:start">2</text>
+<rect class="bx g" x="28.0" y="100.0" width="220.0" height="62.0" rx="6"/>
+<text class="tx" x="38.0" y="119.0">Now I know the plan, I can</text>
+<text class="tx" x="38.0" y="133.0">search for its deadline.</text>
+<rect class="bx " x="262.0" y="100.0" width="210.0" height="62.0" rx="6"/>
+<text class="tx d" x="272.0" y="118.0">documentation ←</text>
+<text class="mo" x="272.0" y="134.0">“refund window</text>
+<text class="mo" x="272.0" y="148.0"><tspan class="m">Team</tspan> plan, annual”</text>
+<path class="ar" d="M248.0,131.0 L260.0,131.0"/>
+<path class="ar" d="M472.0,131.0 L484.0,131.0"/>
+<rect class="bx " x="486.0" y="100.0" width="262.0" height="62.0" rx="6"/>
+<text class="tx" x="496.0" y="119.0">Team plan terms, §7:</text>
+<text class="tx" x="496.0" y="133.0">30 days from the charge</text>
+<text class="tx" x="496.0" y="147.0">(and the FAQ: “as a rule, 14”)</text>
+<text class="lb" x="6.0" y="214.0" style="text-anchor:start">3</text>
+<rect class="bx g" x="28.0" y="178.0" width="220.0" height="62.0" rx="6"/>
+<text class="tx" x="38.0" y="197.0">The plan's own rule wins.</text>
+<text class="tx" x="38.0" y="211.0">14 Aug + 30 days = 13 Sep;</text>
+<text class="tx" x="38.0" y="225.0">2 September is inside.</text>
+<text class="tx d" x="367.0" y="202.0" style="text-anchor:middle">no search</text>
+<path class="ar m" d="M248.0,209.0 L484.0,209.0"/>
+<rect class="bx m" x="486.0" y="178.0" width="262.0" height="62.0" rx="6"/>
+<text class="tx m" x="496.0" y="197.0">Yes: they can ask until</text>
+<text class="tx m" x="496.0" y="211.0">13 September. Cites ticket</text>
+<text class="tx m" x="496.0" y="225.0">4812 and §7.</text>
+<path class="ar m" d="M708.0,84.0 L708.0,92.0 L372.0,92.0 L372.0,98.0"/>
+</svg>

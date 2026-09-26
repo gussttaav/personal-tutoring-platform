@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 758 246" width="758" height="246" role="img"
+ aria-label="Diagrama del RAG ingenuo en dos carriles. Arriba, indexar, una vez y por adelantado: documentos, trocear en fragmentos, embeber cada fragmento en un vector y guardar vectores y texto en un índice. Abajo, preguntar, en cada consulta: la pregunta tal cual llega, embeberla con el mismo modelo, buscar en el índice los k fragmentos más cercanos, montar un prompt con la pregunta y los fragmentos, y el modelo responde y cita. Los dos pasos de embeber están en la misma columna.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 3 3; marker-end: url(#ax); }
+  .nb { fill: #1d1d1f; stroke: #ffb4ab; stroke-width: 1.2; }
+  .nt { font-size: 10.5px; font-weight: 700; fill: #ffb4ab; text-anchor: middle; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="0.0" y="14.0">INDEXAR · UNA VEZ, POR ADELANTADO</text>
+<text class="hd" x="0.0" y="120.0">PREGUNTAR · EN CADA CONSULTA</text>
+<rect class="bx " x="0.0" y="26.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="59.0" y="47.0">Documentos</text>
+<text class="sb" x="59.0" y="61.0">wiki, PDF, incidencias</text>
+<rect class="bx " x="128.0" y="26.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="187.0" y="47.0">Trocear</text>
+<text class="sb" x="187.0" y="61.0">en fragmentos</text>
+<path class="ar" d="M118.0,49.0 L126.0,49.0"/>
+<rect class="bx " x="256.0" y="26.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="315.0" y="47.0">Embeber</text>
+<text class="sb" x="315.0" y="61.0">un vector cada uno</text>
+<path class="ar" d="M246.0,49.0 L254.0,49.0"/>
+<rect class="bx " x="384.0" y="26.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="443.0" y="47.0">Índice</text>
+<text class="sb" x="443.0" y="61.0">vectores + texto</text>
+<path class="ar" d="M374.0,49.0 L382.0,49.0"/>
+<rect class="bx " x="0.0" y="150.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="59.0" y="171.0">Pregunta</text>
+<text class="sb" x="59.0" y="185.0">tal cual llega</text>
+<path class="ar" d="M118.0,173.0 L254.0,173.0"/>
+<rect class="bx " x="256.0" y="150.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="315.0" y="171.0">Embeber</text>
+<text class="sb" x="315.0" y="185.0">el mismo modelo</text>
+<rect class="bx " x="384.0" y="150.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="443.0" y="171.0">Buscar</text>
+<text class="sb" x="443.0" y="185.0">los k más cercanos</text>
+<rect class="bx " x="512.0" y="150.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="571.0" y="171.0">Prompt</text>
+<text class="sb" x="571.0" y="185.0">con los fragmentos</text>
+<rect class="bx " x="640.0" y="150.0" width="118.0" height="46.0" rx="6"/>
+<text class="lb" x="699.0" y="171.0">Modelo</text>
+<text class="sb" x="699.0" y="185.0">responde y cita</text>
+<path class="ar" d="M374.0,173.0 L382.0,173.0"/>
+<path class="ar" d="M502.0,173.0 L510.0,173.0"/>
+<path class="ar" d="M630.0,173.0 L638.0,173.0"/>
+<path class="ar" d="M443.0,72.0 L443.0,148.0"/>
+<path class="ar" d="M59.0,196.0 L59.0,218.0 L571.0,218.0 L571.0,198.0" stroke-dasharray="3 3"/>
+<text class="sb" x="315.0" y="213.0">la pregunta también va al prompt</text>
+<path class="ar" d="M699.0,196.0 L699.0,224.0"/>
+<text class="sb" x="699.0" y="238.0">respuesta</text>
+</svg>

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 244" width="750" height="244" role="img"
+ aria-label="A two-by-two grid. Horizontal axis: who decides the search, the code or the model. Vertical axis: what it finds, dense or hybrid search. Naive RAG, code and dense: misses the ticket, cites the general rule and will not commit. Hybrid RAG, code and hybrid: finds the ticket but not its plan's rule, and answers no, confident and wrong. Agent with dense search, model and dense: would look up the plan's rule but may miss the ticket by its number. Agentic hybrid RAG, model and hybrid: ticket by number, rule by plan, and answers yes, until 13 September.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 3 3; marker-end: url(#ax); }
+  .nb { fill: #1d1d1f; stroke: #ffb4ab; stroke-width: 1.2; }
+  .nt { font-size: 10.5px; font-weight: 700; fill: #ffb4ab; text-anchor: middle; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="417.0" y="12.0" style="text-anchor:middle">WHO DECIDES THE SEARCH</text>
+<text class="sb" x="254.0" y="31.0">the code</text>
+<text class="sb" x="580.0" y="31.0">the model</text>
+<text class="sb" x="84.0" y="92.0" style="text-anchor:end">hybrid</text>
+<text class="sb" x="84.0" y="198.0" style="text-anchor:end">dense</text>
+<text class="hd" transform="translate(14,141.0) rotate(-90)" text-anchor="middle">WHAT IT FINDS</text>
+<rect class="bx w" x="96.0" y="40.0" width="316.0" height="96.0" rx="6"/>
+<text class="lb w" x="110.0" y="64.0" style="text-anchor:start">Hybrid RAG</text>
+<text class="tx" x="110.0" y="86.0">Finds the ticket, not its plan's rule.</text>
+<text class="tx" x="110.0" y="101.0">Answers “no”, confident</text>
+<text class="tx" x="110.0" y="116.0">and wrong.</text>
+<rect class="bx m" x="422.0" y="40.0" width="316.0" height="96.0" rx="6"/>
+<text class="lb m" x="436.0" y="64.0" style="text-anchor:start">Agentic hybrid RAG</text>
+<text class="tx" x="436.0" y="86.0">Ticket by number, rule by plan.</text>
+<text class="tx" x="436.0" y="101.0">“Yes, until 13 September.”</text>
+<rect class="bx g" x="96.0" y="146.0" width="316.0" height="96.0" rx="6"/>
+<text class="lb" x="110.0" y="170.0" style="text-anchor:start">Naive RAG</text>
+<text class="tx d" x="110.0" y="192.0">Misses the ticket. Cites the general</text>
+<text class="tx d" x="110.0" y="207.0">rule and will not commit.</text>
+<rect class="bx g" x="422.0" y="146.0" width="316.0" height="96.0" rx="6"/>
+<text class="lb" x="436.0" y="170.0" style="text-anchor:start">Agent with dense search</text>
+<text class="tx d" x="436.0" y="192.0">Would look up the plan's rule, but</text>
+<text class="tx d" x="436.0" y="207.0">may miss the ticket by its number.</text>
+</svg>
