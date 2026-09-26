@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 242" width="750" height="242" role="img"
- aria-label="Trace of agentic RAG on the ticket 4812 question, in three turns. Turn 1: it thinks it needs the customer's plan and the charge date; searches 4812 in the tickets; finds Ferretería Ortega, Team plan, annual charge on 14 August, refund requested on 2 September. Turn 2: now it knows the plan it can search for the deadline; searches refund window Team plan annual in the documentation, with the word Team taken from the previous result; finds the Team plan terms, 30 days from the charge, and also the FAQ saying as a rule 14. Turn 3: the plan's own rule wins; 14 August plus 30 days is 13 September and 2 September is inside; no search, and it answers yes, they can ask until 13 September, citing the ticket and section 7.">
+ aria-label="Trace of agentic RAG on the ticket 4812 question, in three turns. Turn 1: it thinks it needs the customer's plan and the charge date; searches 4812 in the tickets; finds Ortega Hardware, Team plan, annual charge on 14 August, refund requested on 2 September. Turn 2: now it knows the plan it can search for the deadline; searches refund window Team plan annual in the documentation, with the word Team taken from the previous result; finds the Team plan terms, 30 days from the charge, and also the FAQ saying as a rule 14. Turn 3: the plan's own rule wins; 14 August plus 30 days is 13 September and 2 September is inside; no search, and it answers yes, they can ask until 13 September, citing the ticket and section 7.">
 <style>
   text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
   .bx { fill: none; stroke: #86948a; stroke-width: 1; }
@@ -36,7 +36,7 @@
 <path class="ar" d="M248.0,53.0 L260.0,53.0"/>
 <path class="ar" d="M472.0,53.0 L484.0,53.0"/>
 <rect class="bx " x="486.0" y="22.0" width="262.0" height="62.0" rx="6"/>
-<text class="tx" x="496.0" y="41.0">Ferretería Ortega · <tspan class="m">Team</tspan> plan</text>
+<text class="tx" x="496.0" y="41.0">Ortega Hardware · <tspan class="m">Team</tspan> plan</text>
 <text class="tx" x="496.0" y="55.0">annual charge: 14 August</text>
 <text class="tx" x="496.0" y="69.0">asks for a refund: 2 September</text>
 <text class="lb" x="6.0" y="136.0" style="text-anchor:start">2</text>

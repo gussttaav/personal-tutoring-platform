@@ -1,0 +1,693 @@
+---
+slug: de-rag-a-rag-agentico
+title: "From RAG to agentic RAG: who decides what to search for"
+date: "2026-09-26"
+minutes: 24
+summary: "An assistant with a search engine answers \"no\", with two citations, and gets it wrong. Why naive RAG fails, what hybrid search fixes and what it can't, and how agentic RAG hands four decisions from the code to the model: whether to search, for what, where, and when to stop."
+draft: false
+reading:
+  - kind: paper
+    title: "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+    authors: "Patrick Lewis, Ethan Perez, Aleksandra Piktus and others"
+    year: "2020"
+    venue: "NeurIPS 2020"
+    lang: en
+    url: "https://arxiv.org/abs/2005.11401"
+    note: "The paper that coined the name. Section 2 shows what industry did NOT adopt: retriever and generator trained together, with the documents frozen only because re-indexing 21 million passages per step was unaffordable."
+  - kind: paper
+    title: "The Probabilistic Relevance Framework: BM25 and Beyond"
+    authors: "Stephen Robertson and Hugo Zaragoza"
+    year: "2009"
+    venue: "Foundations and Trends in Information Retrieval"
+    lang: en
+    url: "https://www.staff.city.ac.uk/~sbrp622/papers/foundations_bm25_review.pdf"
+    note: "BM25 explained by one of its authors. Chapter 3 derives where term-frequency saturation and length normalisation come from, the two corrections this article sums up in a sentence."
+  - kind: paper
+    title: "Reciprocal Rank Fusion outperforms Condorcet and individual Rank Learning Methods"
+    authors: "Gordon Cormack, Charles Clarke and Stefan Büttcher"
+    year: "2009"
+    venue: "SIGIR 2009"
+    lang: en
+    url: "https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf"
+    note: "Two pages. The whole RRF formula fits on one line, and the paper says why the constant is 60: they fixed it in a pilot experiment and never touched it again."
+  - kind: paper
+    title: "Lost in the Middle: How Language Models Use Long Contexts"
+    authors: "Nelson Liu, Kevin Lin, John Hewitt and others"
+    year: "2023"
+    venue: "TACL"
+    lang: en
+    url: "https://arxiv.org/abs/2307.03172"
+    note: "The U-shaped curve: models use what sits at the start and end of the context well, and what sits in the middle badly. Figure 1 is enough to see why putting more chunks in the prompt isn't free."
+  - kind: paper
+    title: "Precise Zero-Shot Dense Retrieval without Relevance Labels"
+    authors: "Luyu Gao, Xueguang Ma, Jimmy Lin and Jamie Callan"
+    year: "2022"
+    venue: "ACL 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2212.10496"
+    note: "HyDE: search with an invented answer instead of the question. Figure 1 tells the whole idea with one example."
+  - kind: paper
+    title: "ReAct: Synergizing Reasoning and Acting in Language Models"
+    authors: "Shunyu Yao, Jeffrey Zhao, Dian Yu and others"
+    year: "2022"
+    venue: "ICLR 2023"
+    lang: en
+    url: "https://arxiv.org/abs/2210.03629"
+    note: "The think, act, observe loop, with full traces on HotpotQA in which the model searches Wikipedia, lands on the wrong page and corrects itself. Two or three traces teach more than the rest of the paper."
+  - kind: paper
+    title: "Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection"
+    authors: "Akari Asai, Zeqiu Wu, Yizhong Wang, Avirup Sil and Hannaneh Hajishirzi"
+    year: "2023"
+    venue: "ICLR 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2310.11511"
+    note: "A model trained to decide when to search and to judge what it finds, with special tokens inside the text it generates. Table 1 lists the four token types and what each value means."
+  - kind: paper
+    title: "Corrective Retrieval Augmented Generation"
+    authors: "Shi-Qi Yan, Jia-Chen Gu, Yun Zhu and Zhen-Hua Ling"
+    year: "2024"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2401.15884"
+    note: "CRAG: an evaluator behind the retriever that decides whether what came back is useful, useless or unclear, and acts on it. Figure 2 is the full diagram."
+  - kind: blog
+    title: "Introducing Contextual Retrieval"
+    authors: "Anthropic"
+    year: "2024"
+    venue: "anthropic.com"
+    lang: en
+    url: "https://www.anthropic.com/news/contextual-retrieval"
+    note: "Contextual chunks, hybrid search and a reranker, measured separately and together. The most useful part is seeing how much each piece adds, and the prompt that writes each chunk's context."
+  - kind: paper
+    title: "Retrieval-Augmented Generation for Large Language Models: A Survey"
+    authors: "Yunfan Gao, Yun Xiong, Xinyu Gao and others"
+    year: "2023"
+    venue: "arXiv"
+    lang: en
+    url: "https://arxiv.org/abs/2312.10997"
+    note: "The survey that popularised the split into naive, advanced and modular RAG. Useful as a map of techniques; Figure 3 compares the three architectures."
+tags: ["rag", "llm", "agentes"]
+---
+
+{/*
+  BLOG-07 — From RAG to agentic RAG: who decides what to search for. English translation
+  of content/blog/es/de-rag-a-rag-agentico.mdx.
+
+  Thesis: the evolution of RAG is not a ladder but TWO AXES. One is what the search finds
+  (lexical + dense, fusion, reranker, contextual chunks: "hybrid RAG"); the other is who
+  decides the search, and it moves from the code to the model (whether to search, for
+  what, where, and when to stop: naive to agentic). The opening figure (quien-decide)
+  shows the second axis; the closing one (dos-ejes) puts both together.
+
+  The running example is INVENTED and the text says so. Names adapted for English
+  readers: the company keeps its name, Albarán (a proper noun here), and the customer is
+  Ortega Hardware (Ferretería Ortega in Spanish); the plan is the Team plan. Dates and
+  numbers are unchanged: annual charge on 14 August, refund requested on 2 September,
+  general FAQ rule of 14 days, Team plan terms of 30 days, deadline 13 September.
+
+  Conceptual on purpose: diagrams and two pseudocode listings, nothing measured on the
+  example. The positions in dos-busquedas' two input lists are illustrative; the fused
+  order is not: it is RRF with c = 60 applied to those lists, computed by the generator.
+  Cited numbers come from the sources (Lost in the Middle; Contextual Retrieval), and none
+  of them depends on the locale.
+
+  FIGURES. All eight have English siblings (*.en.svg), written by the same run of
+  scripts/figures/de-rag-a-rag-agentico/make_svgs.py that writes the Spanish files. Every
+  text element of the English files was measured against its box and the viewBox. If a
+  figure is regenerated, BOTH locales come out of the same command.
+*/}
+
+A company that makes invoicing software, call it Albarán, has an internal assistant for its support
+team. Someone on the team asks it:
+
+> Is the customer on ticket 4812 entitled to a refund?
+
+And the assistant answers, with two citations:
+
+> No. The annual charge was made on 14 August and the refund window is 14 days from the charge, so
+> it closed on 28 August. *[Ticket 4812] [Refunds FAQ]*
+
+Both citations exist, and both say what the answer says they say. Ticket 4812 belongs to Ortega
+Hardware, which paid its annual renewal on 14 August and asked for a refund on 2 September. The FAQ
+says, word for word, that "as a rule, refunds can be requested within 14 days of the charge". And
+the answer is wrong. Ortega Hardware is on the Team plan, and the terms of that plan, in another
+document in the same index, give annual subscriptions 30 days. The window closes on 13 September;
+the request came in eleven days before that.
+
+The case is invented, but there's nothing unusual about it. Nobody wrote bad code. The assistant
+searches the company's documents before answering, which is what the RAG pattern
+(*Retrieval-Augmented Generation*) proposes, and its search is good: it found the right ticket by
+its number, which many don't manage. Something else failed. To find the rule that applies, it had to
+search for "Team plan", and the word "Team" isn't in the question: it's inside the ticket, that is,
+inside the result of the first search. A system that searches once, with the question as it
+arrives, can't write that second query. Someone has to read the first result and decide what to
+search for next.
+
+The story of RAG since 2020 is usually told as a ladder: naive RAG, advanced RAG, hybrid RAG,
+agentic RAG, each rung better than the last. The ladder mixes two things. One is the quality of the
+search: what it finds when you give it a query. The other is control: who decides whether to
+search, what to search for, where, and when enough searching has been done. Hybrid RAG improves the
+first, agentic RAG changes the second, and Albarán's assistant shows that one doesn't replace the
+other: it had the best search in this whole article, and with it gave the most convincing and most
+wrong answer.
+
+The control axis, at a glance:
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/quien-decide.en.svg"
+    alt="A table with four rows and three columns. The rows are the four decisions behind a search: whether to search, what to search for, where, and when to stop. In naive RAG the code fixes all four: always search, the question verbatim, one index, stop after one search. In advanced RAG the model makes one, what to search for, because it rewrites the query. In agentic RAG the model makes all four: it searches when it needs to, searches for what is missing, picks the source and stops once it has the answer."
+    width="740"
+    height="236"
+  />
+  <figcaption>
+    In naive RAG, all four decisions are written into the code before the first question arrives.
+    Each generation hands some of them to the model. The order of the columns is logical, not
+    chronological: ReAct, the basis of the agentic one, was published two months before HyDE, one of
+    the advanced techniques.
+  </figcaption>
+</figure>
+
+## What the model doesn't know, and three ways to give it
+
+A language model knows what it learned in training, and it knows it in a particular way: spread
+across its weights, with no record of where anything came from. That has three consequences no
+improvement to the model fixes. It knows nothing after the date its data was frozen. It knows
+nothing that wasn't public: ticket 4812 was never on the internet. And it can't say where what it
+says comes from, because it doesn't come from anywhere in particular: a citation written from memory
+is one more generated sentence, as plausible and as impossible to check as the rest.
+
+There are three places to put the knowledge it lacks.
+
+| | In the weights (fine-tuning) | All in the context | In an index (RAG) |
+|---|---|---|---|
+| Updating a document | retrain | edit the text | re-index that document |
+| Cost of each question | unchanged | proportional to the whole corpus | proportional to what is retrieved |
+| Can cite the source | no | yes | yes |
+| Deleting a fact | no reliable way | remove it from the text | remove it from the index |
+
+**The weights** are the wrong place for facts. Fine-tuning is good at teaching ways of doing
+things: a tone, a format, a domain's vocabulary. For specific facts it's expensive, slow and opaque.
+Every policy change calls for retraining, there's no way to check exactly what it learned, and if a
+customer asks for their data to be deleted, there is no operation that takes it out of a set of
+weights.
+
+**The context** is the option that million-token windows have made serious, and it deserves more
+than a quick dismissal. If the corpus fits whole and changes little, pasting it into every request
+with the provider's prompt caching turned on can come out cheaper and more reliable than any index,
+because there's no search to fail. It stops working on three fronts. Cost and latency grow with
+everything you paste, on every question, whether you need it or not. A company's documents don't
+fit: a year of support tickets won't go into any window. And having the fact in the context doesn't
+guarantee the model uses it. [*Lost in the Middle*](https://arxiv.org/abs/2307.03172) measured in
+2023 that accuracy drops when the relevant information sits in the middle of the context rather
+than at the start or the end, and in its experiment with questions over twenty documents,
+GPT-3.5-Turbo did worse with the right document in the middle than with no documents at all.
+
+**The index** is the middle ground. The documents are cut into pieces ahead of time and, on each
+question, the few relevant pieces are found and only those are pasted in. Each question pays for
+what it retrieves, not for everything there is; knowledge is updated by re-indexing a document,
+without touching the model; and the answer can cite the exact piece it comes from. The price is that
+there's now a search in the middle, and a search can fail. Everything that follows comes from there.
+
+## The original pattern
+
+The name comes from a 2020 paper,
+[*Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks*](https://arxiv.org/abs/2005.11401),
+and what it proposed was more ambitious than what's called RAG today. It put two pieces together.
+The first was a dense retriever, [DPR](https://arxiv.org/abs/2004.04906), which turns the question
+and each passage into a vector, with one encoder for each, and finds the passages whose vector lies
+closest to the question's. The passages were 21 million chunks of Wikipedia. The second piece was a
+generator, BART: a 400-million-parameter language model published by Facebook in 2019. In RAG, it
+read the question together with the retrieved passages and wrote the answer. And the paper trained
+the two pieces together: the error in the final answer was propagated back to the question encoder,
+so the retriever learned to fetch what the generator found useful. It only kept the document
+encoder fixed, and for a practical reason: if it changed, all 21 million passages would have to be
+re-encoded at every training step.
+
+What industry adopted was the name and the shape, not the training. The RAG that gets built today
+pairs an embedding model from one provider with a language model from another, which have never met,
+and joins them with a prompt. It's worth keeping in mind, because it explains a good share of the
+failures in the next section: the retriever doesn't know what the generator needs. It looks for
+what resembles the question and trusts that that's what's needed.
+
+That version has two lanes:
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/pipeline-base.en.svg"
+    alt="Diagram of naive RAG in two lanes. Top, indexing, once and ahead of time: documents, chunk into fragments, embed each fragment into a vector and store vectors and text in an index. Bottom, asking, on every query: the question as it arrives, embed it with the same model, search the index for the k nearest fragments, build a prompt with the question and the fragments, and the model answers and cites. The two embed steps sit in the same column."
+    width="758"
+    height="246"
+  />
+  <figcaption>
+    Naive RAG. Top, what's done once; bottom, what's done on every question. The two "Embed" boxes
+    share a column because they have to be the same model: a question and a chunk can only be
+    compared if they live in the same space. The gap between "Question" and "Embed" isn't an
+    oversight; it gets filled later on.
+  </figcaption>
+</figure>
+
+**Indexing** is work done ahead of time. The documents are cut into chunks of a few hundred words,
+usually with some overlap between one and the next; each chunk goes through an embedding model that
+turns it into a vector, and the vectors are stored in an index alongside the text they come from.
+What an embedding is, and why closeness between vectors reflects closeness in meaning, is the
+subject of [this lesson in the NLP course](/en/cursos/dl-nlp/embeddings-densos); here it's taken as
+known. Chunk size is the first decision with consequences: a large chunk dilutes its vector, which
+ends up standing for the average of several ideas, and a small one loses the context that gave it
+its meaning.
+
+**Asking** is the path walked every time. The question goes through the same embedding model, the
+index returns the $k$ chunks whose vectors are closest (by cosine similarity, almost always) and a
+prompt puts the question together with those chunks and an instruction along the lines of "answer
+using only these chunks, cite which one each claim comes from and, if the answer isn't there, say
+so". The model generates the answer.
+
+Written as code, the question's path fits in two lines:
+
+```python
+def answer(question, index, k=4):
+    chunks = index.search(embed(question), k)
+    return model(prompt(question, chunks))
+```
+
+Look at what those two lines decide without asking anyone. It always searches, even if the question
+is "thanks". It searches for the question exactly as the user wrote it. It searches a single index.
+And it searches once: the $k$ chunks that come back are all the model will ever see. Those are the
+four rows of the table at the start, and here they're written as constants.
+
+## Where naive RAG breaks
+
+If Albarán's question goes through those two lines, the index returns the refunds FAQ first, which
+looks a great deal like a question about refunds, and then two tickets from other customers who
+also want their money back, 4821 and 4182. Ticket 4812 comes fourth, below the cut. The model,
+being honest, gives the only answer it can: that the general window is 14 days and that it can't
+find the details of ticket 4812. It isn't a wrong answer. It isn't an answer either.
+
+That's one of the failures. In practice there are six, and each one happens in a different place in
+the drawing:
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/pipeline-fallos.en.svg"
+    alt="The same naive RAG diagram with six marks where it fails. 1, at the question: the question does not look like its answer. 2, at search: codes, numbers and names. 3, at chunking: the cut splits the answer. 4, also at search: the term needed to search is inside a result. 5, at the model: it finds the passage and does not use it. 6, at the start of the query lane: it always searches, and always answers."
+    width="758"
+    height="303"
+  />
+  <figcaption>
+    The six failures of naive RAG, each where it happens. Two land on "Search", but they aren't the
+    same: 2 is about aim, 4 is about having only one shot.
+  </figcaption>
+</figure>
+
+1. **The question doesn't look like its answer.** A question is short and interrogative; the chunk
+   that answers it is long, declarative and uses the document's vocabulary. "Do I get my money back
+   if I cancel?" and "Annual subscriptions may be refunded in full within the period…" are about the
+   same thing, but their vectors needn't be close: the embedding model measures resemblance, and a
+   question resembles other questions more than it resembles its answer.
+2. **Codes, numbers and proper names.** An embedding summarises meaning, and a ticket number has no
+   meaning to summarise: it's a few tokens among hundreds, and to the model 4812, 4821 and 4182 are
+   nearly the same. Among tickets that all say "the customer is asking for a refund", the order is
+   decided by the other words. The same goes for product references, error codes, versions and
+   surnames: what the user types exactly, the search returns approximately.
+3. **The cut splits the answer.** Chunking knows nothing about structure. If the table of refund
+   windows starts at the end of one chunk and its rows fall into the next, the chunk with "30 days"
+   no longer says which plan it refers to, and neither chunk answers the question on its own.
+4. **The term needed for the search is inside a result.** This is Albarán's failure. The question
+   says "4812"; the rule that answers it says "Team plan"; what connects the two is inside the
+   ticket. No single search, however good, can write a query with a word it hasn't read yet. The
+   literature calls these *multi-hop* questions.
+5. **It finds it and doesn't use it.** The right chunk reaches the prompt, but fifth out of eight,
+   or next to another that says something similar with more confidence, and the model follows the
+   other one. It's the effect *Lost in the Middle* measured, plus a problem no retriever solves: two
+   documents that contradict each other, like an FAQ that says "as a rule, 14 days" and terms that
+   say "30 days" for a specific plan.
+6. **It always searches, and always answers.** The code searches on a "thanks" and on "summarise
+   what we've been talking about". And at the other extreme, when what the search returns has
+   nothing to do with the question, the prompt hands those chunks over anyway, and a model that's
+   been asked to answer with them tends to answer with them.
+
+Each failure has a fix, and they don't all live in the same place:
+
+| Failure | What fixes it | Where it's covered |
+|---|---|---|
+| 1. The question doesn't look like its answer | rewriting the query, HyDE | [Fixing the question](#fixing-the-question-before-searching) |
+| 2. Codes, numbers and names | lexical search alongside dense | [The other axis](#the-other-axis-what-the-search-finds) |
+| 3. The cut splits the answer | contextual chunks | [The other axis](#the-other-axis-what-the-search-finds) |
+| 4. Multiple hops | searching inside a loop | [Agentic RAG](#agentic-rag-the-model-decides-when-and-what-to-search) |
+| 5. It finds it and doesn't use it | reranking, fewer and better chunks, judging what's retrieved | [The other axis](#the-other-axis-what-the-search-finds) and [Judging what comes back](#judging-what-comes-back) |
+| 6. It always searches | letting the model decide whether to search | [Agentic RAG](#agentic-rag-the-model-decides-when-and-what-to-search) |
+
+## The other axis: what the search finds
+
+Two of the six failures, 2 and 3, are about aim: the search doesn't bring back something that
+exists. They're fixed without handing any decision to the model, by improving the retriever, and
+the main fix is much older than RAG.
+
+Before embeddings, searching meant counting words. Lexical search, whose standard-bearer is
+[BM25](https://www.staff.city.ac.uk/~sbrp622/papers/foundations_bm25_review.pdf) (from the
+mid-nineties, and still Elasticsearch's default algorithm), scores a document by the query terms it
+contains, with three corrections: a rare word weighs more than a common one (finding "4812" says
+far more than finding "customer"), repeating a word adds less each time, and a long document doesn't
+win for having more words alone. It knows nothing about meaning: to BM25, "refund" and "money back"
+are unrelated. But what dense search does badly, BM25 does well by construction: if the document
+contains "4812" and so does the query, it finds it.
+
+The two searches fail on different questions, and that's what makes combining them useful. The
+problem is how. Their scores can't be added: cosine similarity lives between −1 and 1, and BM25's
+score has no ceiling and depends on the corpus. The usual solution ignores the scores and looks at
+the positions instead. Reciprocal rank fusion ([RRF](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf),
+from 2009) gives each document the sum, over every list it appears in, of
+
+$$
+\frac{1}{c + \text{rank}},
+$$
+
+with $c = 60$. (The original paper calls it $k$; here it would share a name with the $k$ in $k$
+chunks, and the two have nothing to do with each other.) The constant flattens the differences:
+being first in a list is worth $1/61$ and being fourth is worth $1/64$, so a document ranked well in
+both lists beats one that's first in one list and absent from the other. RRF rewards agreement.
+
+With Albarán's question:
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/dos-busquedas.en.svg"
+    alt="The question Is the customer on ticket 4812 entitled to a refund, searched two ways. Lexical search, BM25, returns ticket 4812, ticket 4182, the refunds FAQ and ticket 4821, in that order. Dense search returns the FAQ, 4821, 4182 and 4812 fourth. Reciprocal rank fusion with c equal to 60 orders them: FAQ, ticket 4812, 4182 and 4821; the top three go to the prompt. Below, the Team plan terms, which give 30 days, appear in neither list because the question never says Team."
+    width="750"
+    height="308"
+  />
+  <figcaption>
+    BM25 puts ticket 4812 first because it's the only document that contains "4812"; dense search
+    leaves it fourth. Fusion lifts it to second and gets it above the cut. The Team plan terms appear
+    in neither list.
+  </figcaption>
+</figure>
+
+This is the retriever from the start of the article. It fixes failure 2: the right ticket reaches
+the prompt. And the model, which now has the charge date and a 14-day rule, does the arithmetic and
+answers "no", with two citations. Improving the search has turned an honest non-answer into a wrong
+answer that's sure of itself: the model now has enough material to sound convincing, and it's still
+missing the one fact that matters.
+
+Around the fusion there are two more pieces that almost every serious system ends up using.
+
+**Reranking.** The embedding model encodes the question and each chunk separately, which is why
+it's fast: the chunks are encoded once, at indexing time. A reranker (almost always a
+*cross-encoder*) reads the question and the chunk together, as a single text, and scores how well
+one answers the other. It's far more accurate and far slower, so it's used in two stages: hybrid
+search brings back fifty or a hundred cheap candidates and the reranker picks the five that reach
+the prompt. Fewer chunks, and better ones, also go after failure 5.
+
+**Contextual chunks.** For failure 3, the most effective idea of recent years is to write, before
+indexing, one or two sentences that place each chunk within its document ("This chunk belongs to the
+Team plan terms, section 7, refunds") and paste them in front, for the embedding and for BM25 alike.
+Anthropic published it in 2024 as
+[*Contextual Retrieval*](https://www.anthropic.com/news/contextual-retrieval), with numbers: in their
+tests, the share of searches that failed to bring back the needed chunk among the top twenty fell
+from 5.7% to 2.9% with context in both searches, and to 1.9% with a reranker added.
+
+All of this is worth an article of its own, with numbers measured on Spanish text. What matters for
+this one is what it doesn't do: none of these techniques changes who decides. A hybrid search with
+context and a reranker still searches every time, once, with the question as it came. It's the same
+two-lane diagram with a better retriever inside.
+
+## Fixing the question before searching
+
+The first step along the control axis is a small one: letting the model touch the query before it
+goes out to the index. The rest of the pipeline stays the same. It's what the
+[2023 survey](https://arxiv.org/abs/2312.10997) that named the stages called advanced RAG, and it
+groups several techniques with the same shape.
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/pipeline-reescritura.en.svg"
+    alt="The same naive RAG diagram with one new box in the query lane, between the question and embed, marked as the model's decision: rewrite, which produces a standalone query. A note says it sees the question, never the results. The rest of the pipeline is unchanged."
+    width="758"
+    height="246"
+  />
+  <figcaption>
+    The gap in the query lane, filled. It's the first decision to move from the code to the model,
+    and the model makes it blind: it sees the question, never the results.
+  </figcaption>
+</figure>
+
+**Rewriting.** In a conversation, most questions can't be searched as they stand. After talking
+about ticket 4812, "what about the one the same shop opened yesterday?" contains nothing an index can
+find. A step beforehand in which the model reads the conversation and writes a standalone query
+("Ortega Hardware tickets opened on 25 September") is probably the highest-return improvement in the
+whole article, and one of the most overlooked.
+
+**HyDE.** Against failure 1, [HyDE](https://arxiv.org/abs/2212.10496) (*Hypothetical Document
+Embeddings*), published at the end of 2022 by researchers at Carnegie Mellon and the University of
+Waterloo, turns the problem around, and the name gives it away: if a question doesn't look like its
+answer, have the model first write an invented answer, a hypothetical document, and search with
+that. Answers look like answers. Whatever the invented answer claims doesn't matter, even if it's
+false, because nobody reads it: its only job is to land, in embedding space, near the chunks that
+say things in that form.
+
+**Multiple queries.** The model writes three or four phrasings of the same question, each one is
+searched, and the lists are merged with RRF, the same fusion as in the previous section.
+
+**Decomposition.** A compound question is split into sub-questions and each one is searched. And
+here the limit of this whole family shows up. With Albarán's question, the natural decomposition is
+"which plan is the customer on ticket 4812 on?" and "what's the refund window for that plan?". The
+second can't be searched: "that plan" isn't a query. To write it properly you have to know the plan
+is Team, and that's known after the first search, not before. All of this preparation happens
+blind, before a single result has been seen. As soon as one query depends on what another returned,
+rewriting isn't enough: the model has to be consulted again *after* searching, and that's no longer
+a straight line. It's a loop.
+
+## Agentic RAG: the model decides when and what to search
+
+The change is one of shape. Instead of a pipeline in which the search happens at a fixed point, the
+model works in a loop and search is a tool it can call. It reads what it has, decides whether
+anything is missing and, if something is, writes the query and chooses where to send it. The result
+comes back into its context as an observation, and the model decides again. When it judges it has
+what it needs, it answers.
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/bucle-agente.en.svg"
+    alt="Diagram of the agentic RAG loop. The question goes into the model, which reads everything so far. If something is missing, it calls search with a query it writes and a source it picks among tickets, with lexical search, documentation, with hybrid search, and the web. The chunks come back into context as an observation and the model decides again. When it has what it needs, it answers with citations or says it does not know. The code only sets the budget, six turns."
+    width="750"
+    height="262"
+  />
+  <figcaption>
+    The pipeline turned into a loop. What's green, the model decides on every turn; all the code has
+    left is to set a limit.
+  </figcaption>
+</figure>
+
+The idea has a date. [ReAct](https://arxiv.org/abs/2210.03629) (from *Reasoning* and *Acting*) is a
+prompting method published in October 2022 by researchers at Princeton and Google. It doesn't need
+any training: with a few examples in the prompt, the model learns to alternate reasoning steps with
+actions. In the paper, the actions were calls to the Wikipedia API (search for a page, look up a
+string within it, finish), and the goal was to answer the multi-hop questions of
+[HotpotQA](https://arxiv.org/abs/1809.09600), a set of 113,000 questions published in 2018 and built
+so that each answer requires combining facts from two different Wikipedia articles. A couple of
+months later, [IRCoT](https://arxiv.org/abs/2212.10509) (*Interleaving Retrieval with
+Chain-of-Thought*), another training-free method, from Stony Brook University and the Allen
+Institute for AI, did the same without calling it an agent: each step of the chain of reasoning
+served as the query for the next search. What has changed since then isn't the idea but the models,
+which are now trained specifically to call tools; with that, the loop has stopped being a fragile
+experiment and become the normal way to build an assistant. It's the same loop as any agent's, and
+the [course on language models and agents](/en/cursos/llm-agents) builds it piece by piece. What
+matters here is what changes when the tool is a search engine.
+
+Written as code, next to the two lines from before:
+
+```python
+def answer(question, sources, max_steps=6):
+    context = [question]
+    for _ in range(max_steps):
+        step = model(context, tools=sources)
+        if step.is_answer:
+            return step.text
+        results = sources[step.source].search(step.query)
+        context.append((step, results))
+    return model(context, tools=None).text
+```
+
+The four constants of the naive version have become decisions the model makes on every turn.
+Whether to search: it can answer on the first turn without calling anything. What to search for:
+`step.query` is written by the model, after it has read everything before it. Where: `step.source`
+chooses between different indexes. When to stop: when it decides to answer. The code has one
+decision left, the step budget, and the last line says what happens when it runs out: the model is
+asked to answer with what it has, without tools this time.
+
+With Albarán's question, the run goes like this:
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/traza-4812.en.svg"
+    alt="Trace of agentic RAG on the ticket 4812 question, in three turns. Turn 1: it thinks it needs the customer's plan and the charge date; searches 4812 in the tickets; finds Ortega Hardware, Team plan, annual charge on 14 August, refund requested on 2 September. Turn 2: now it knows the plan it can search for the deadline; searches refund window Team plan annual in the documentation, with the word Team taken from the previous result; finds the Team plan terms, 30 days from the charge, and also the FAQ saying as a rule 14. Turn 3: the plan's own rule wins; 14 August plus 30 days is 13 September and 2 September is inside; no search, and it answers yes, they can ask until 13 September, citing the ticket and section 7."
+    width="750"
+    height="242"
+  />
+  <figcaption>
+    Three turns. The word the second search needed, "Team", comes out of the first search's result.
+    On the third turn it doesn't search: it has both facts and does the arithmetic.
+  </figcaption>
+</figure>
+
+The second turn is the one no pipeline could take. "Refund window, Team plan, annual" is a query
+nobody could write before reading the ticket. The trace has two more details that matter. The first
+is that each source is searched with the tool that suits it: tickets by number, with lexical search;
+the documentation with hybrid search. The axis from the previous section doesn't go away: it moves
+inside each tool. The second is that the search on the second turn also brings back the FAQ, with
+its "as a rule, 14 days", and the model has to decide which of the two rules wins.
+
+### Judging what comes back
+
+That last point, which is failure 5 and half of failure 6, has its own line of work, older than
+agents becoming the norm. [Self-RAG](https://arxiv.org/abs/2310.11511) (*Self-Reflective RAG*), from
+2023, is a training method, and also the models that came out of it: researchers at the University
+of Washington, the Allen Institute for AI and IBM fine-tuned Llama 2, at 7 and 13 billion
+parameters, to emit, alongside the text, special reflection tokens: whether it needed to search at
+that point, whether each retrieved chunk was relevant, whether what it had written so far was
+supported by it, and whether the answer was useful. [CRAG](https://arxiv.org/abs/2401.15884)
+(*Corrective RAG*), from 2024, doesn't touch the model that generates: it's a piece added to any RAG
+pipeline, proposed by researchers at the University of Science and Technology of China, UCLA and
+Google DeepMind. It consists of a lightweight evaluator (a 770-million-parameter T5, fine-tuned for
+the job) placed behind the retriever, which grades what comes back as correct, incorrect or
+ambiguous. If it's incorrect, it throws it away and goes to search the web; if it's correct, it
+trims it before handing it to the generator and keeps only the sentences that matter.
+
+Both are agentic RAG in pieces: decisions the code used to make, made by a model, but at fixed
+points and with components trained for each one. In a current system, with a general-purpose model
+that uses tools, the same decisions are asked for in the system prompt ("before answering, check
+that every chunk you cite is about the case in question; if two sources contradict each other, say
+which one you're applying and why; if you can't find the answer, say so") and the model makes them
+inside the loop. That's what happens on the third turn of the trace: the specific plan's rule wins
+over the general one, and the answer says so.
+
+## What it costs to hand over the wheel
+
+None of this comes free, and the price is high enough that agentic RAG shouldn't be the default.
+
+**Latency.** Each turn is a call to the model plus a search. Three turns are at least three times
+the wait of one, and the model generates reasoning text on each. For a support question answered in
+ten seconds it doesn't matter; for autocomplete or a voice assistant, it does.
+
+**Tokens.** The context grows on every turn: the question, each query and each batch of chunks pile
+up, and each call pays for everything before it. A six-turn trace with five chunks per search moves
+tens of thousands of tokens to answer in two sentences.
+
+**Non-determinism.** The same question, asked twice, can take different paths: a different query, a
+different source, one more turn. Debugging stops being a matter of looking at what the index
+returned and becomes reading traces. Without logging every step, a failure can't be reproduced.
+
+**Loops.** A model that can't find what it's looking for tends to look again with other words, and
+again. That's why the step budget isn't optional, and why it's worth detecting repeated queries.
+
+**A new failure.** Giving the model the decision to search also gives it the decision not to. A
+self-assured model can answer from memory a question whose answer was in the index, and that answer
+carries no citation to give it away. Naive RAG, for all its flaws, couldn't make this mistake.
+
+With that in view, the choice depends on the questions, not on fashion:
+
+| If your questions… | Use |
+|---|---|
+| fit whole, with their corpus, in the context, and the corpus changes little | no index: everything in the context, with caching |
+| are answered by one chunk and carry no exact codes or names | naive RAG |
+| include order numbers, references, error codes or names | hybrid search, with or without a reranker |
+| arrive inside a conversation | query rewriting, always |
+| need a fact that only appears in another result, or several sources | agentic RAG |
+| must be answered in under a second | a fixed pipeline, however good the agent |
+
+The practical rule is to start with the cheapest row that works and move up when a specific
+failure, seen on real questions, calls for it. And to know which failure it is, you have to measure.
+
+## How to tell if it works
+
+A RAG system is two systems, and they have to be measured separately, because their fixes have
+nothing in common.
+
+**The search** is measured without the language model. You need a set of real questions (thirty or
+fifty is enough to start), each with the chunks that answer it labelled by hand. With that, the
+main metric is *recall@k*: in what share of questions the needed chunks are among the $k$
+retrieved. If they aren't, no prompt will fix it. Mean reciprocal rank (MRR) adds where they
+appear, which matters because of failure 5. For each question, find the position of the first
+correct chunk and write down its inverse: 1 if it comes first, $1/2$ if second, $1/3$ if third, and
+0 if it doesn't appear. MRR is the mean of those numbers. With three questions whose correct chunk
+comes first, second and not at all, it's $(1 + 1/2 + 0)/3 = 0.5$. The closer to 1, the higher up the
+good chunk lands, which is where the model reads it best. It's the same inverse of the position
+that RRF uses, only here it measures instead of merging.
+
+**The answer** is measured on chunks known to be good, and the questions are different: whether
+every claim is backed by a chunk (faithfulness), whether it answers what was asked (relevance), and
+whether it says "I don't know" when the answer wasn't in what was retrieved. These are usually
+scored by another model acting as judge, in the style [Ragas](https://arxiv.org/abs/2309.15217)
+popularised in 2023, and the judge has to be validated against a hand-checked sample before it can
+be trusted.
+
+**The path** is the third thing to measure in an agentic system: how many turns it takes, whether
+it picks the right source, whether it stops when it should, and whether it answers without searching
+some question that needed a search.
+
+The separation is what makes the diagnosis useful. At Albarán, the naive pipeline failed at the
+search: the ticket wasn't in the top $k$, and recall catches that. The hybrid one failed somewhere
+else: recall for the ticket was perfect and recall for the plan terms was zero. Labelling every
+source each answer needs, not only the first, is what makes a multi-hop problem visible before it
+reaches a customer.
+
+## What comes next
+
+Three things are moving at once.
+
+**Models trained to search.** Self-RAG already trained the decision to search; the next step has
+been to train the whole loop. [Search-R1](https://arxiv.org/abs/2503.09516) is a training method
+published in 2025 by researchers at the University of Illinois, the University of Massachusetts and
+Google. Its name points to DeepSeek-R1, the model that learned to reason through reinforcement
+learning, and it does the same for search: it teaches a model (in the paper, Qwen 2.5 at 3 and 7
+billion parameters) to interleave reasoning with calls to a search engine, and rewards nothing but
+a correct final answer. The deep research products that several labs have launched since late 2024,
+which chain dozens of searches before writing a report, are the industrial version of the same idea.
+The better the model learns to search, the less behaviour has to be written into the prompt.
+
+**Search as one more tool.** Protocols like MCP (*Model Context Protocol*, published by Anthropic at
+the end of 2024) turn an index into a tool any agent can use without custom code. RAG stops being an
+architecture and becomes one tool among others, next to the one that queries a database or reads a
+file, and the agent decides which to use. At Albarán, the ticket tool might not be an index at all:
+a query to the support database by ticket number is more reliable than any search.
+
+**Long context and search, together.** Million-token windows haven't killed RAG, but they change its
+shape: with more room, fewer and larger chunks are retrieved, or whole documents, and failure 3
+loses weight. The question has gone from "search, or put everything in?" to "how much to put in
+after searching?".
+
+## What to take away
+
+If you take away one thing, let it be this: **the evolution of RAG isn't a ladder, it's two axes.**
+One is what the search finds, and it's improved with lexical search alongside dense, fusion,
+rerankers and contextual chunks. The other is who decides the search, and it has been moving from
+the code to the model: first the query, then whether to search, where, and when to stop. A multi-hop
+question only comes out right with both.
+
+<figure>
+  <img
+    src="/blog/de-rag-a-rag-agentico/dos-ejes.en.svg"
+    alt="A two-by-two grid. Horizontal axis: who decides the search, the code or the model. Vertical axis: what it finds, dense or hybrid search. Naive RAG, code and dense: misses the ticket, cites the general rule and will not commit. Hybrid RAG, code and hybrid: finds the ticket but not its plan's rule, and answers no, confident and wrong. Agent with dense search, model and dense: would look up the plan's rule but may miss the ticket by its number. Agentic hybrid RAG, model and hybrid: ticket by number, rule by plan, and answers yes, until 13 September."
+    width="750"
+    height="244"
+  />
+  <figcaption>
+    Albarán's question in the four possible systems. Improving only the search makes the answer
+    more convincing without making it correct; only the system with both axes gets it right.
+  </figcaption>
+</figure>
+
+And if you take away three more, let them be practical.
+
+**Measure the search before touching the prompt.** Thirty real questions with their sources
+labelled (all of them, not only the first) tell you whether the problem is finding or using what was
+found. Without that, every change is a bet.
+
+**If your users type codes, numbers or names, add lexical search.** It's the cheapest improvement
+in this whole article: BM25 is available in almost every search engine and in many databases, and
+RRF is ten lines.
+
+**Hand the wheel to the model when the question calls for it, not before.** Agentic RAG pays for
+itself when the query you need depends on something you only learn after searching. If your
+questions are answered by one chunk, an agent charges you latency, tokens and traces to make a
+decision the code was already making well.

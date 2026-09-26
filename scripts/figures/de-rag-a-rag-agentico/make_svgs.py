@@ -287,7 +287,7 @@ def fig_dos_busquedas(es):
     D = {
         True: {"4812": ("Incidencia 4812", "Ferretería Ortega"), "4821": ("Incidencia 4821", "otro cliente"),
                "4182": ("Incidencia 4182", "otro cliente"), "faq": ("FAQ de reembolsos", "«por lo general, 14 días»")},
-        False: {"4812": ("Ticket 4812", "Ferretería Ortega"), "4821": ("Ticket 4821", "another customer"),
+        False: {"4812": ("Ticket 4812", "Ortega Hardware"), "4821": ("Ticket 4821", "another customer"),
                 "4182": ("Ticket 4182", "another customer"), "faq": ("Refunds FAQ", "“as a rule, 14 days”")},
     }[es]
     L = {
@@ -443,7 +443,7 @@ def fig_traza(es):
                     t=[
                         (["I need the customer's plan", "and the charge date."],
                          ("tickets", [[("“4812”", "")]]),
-                         [[("Ferretería Ortega · ", ""), ("Team", "m"), (" plan", "")],
+                         [[("Ortega Hardware · ", ""), ("Team", "m"), (" plan", "")],
                           "annual charge: 14 August", "asks for a refund: 2 September"]),
                         (["Now I know the plan, I can", "search for its deadline."],
                          ("documentation", [[("“refund window", "")], [("Team", "m"), (" plan, annual”", "")]]),
@@ -455,7 +455,7 @@ def fig_traza(es):
                     nosearch="no search", answer="ANSWERS",
                     aria="Trace of agentic RAG on the ticket 4812 question, in three turns. Turn 1: it thinks it "
                          "needs the customer's plan and the charge date; searches 4812 in the tickets; finds "
-                         "Ferretería Ortega, Team plan, annual charge on 14 August, refund requested on 2 "
+                         "Ortega Hardware, Team plan, annual charge on 14 August, refund requested on 2 "
                          "September. Turn 2: now it knows the plan it can search for the deadline; searches "
                          "refund window Team plan annual in the documentation, with the word Team taken from "
                          "the previous result; finds the Team plan terms, 30 days from the charge, and also the "

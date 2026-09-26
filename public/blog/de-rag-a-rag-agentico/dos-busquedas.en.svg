@@ -31,7 +31,7 @@
 <text class="lb" x="6.0" y="85.0" style="text-anchor:start">1</text>
 <rect class="bx m" x="22.0" y="62.0" width="200.0" height="38.0" rx="6"/>
 <text class="tx m" x="32.0" y="78.0">Ticket 4812</text>
-<text class="tx d" x="32.0" y="92.0">Ferretería Ortega</text>
+<text class="tx d" x="32.0" y="92.0">Ortega Hardware</text>
 <text class="lb" x="6.0" y="131.0" style="text-anchor:start">2</text>
 <rect class="bx g" x="22.0" y="108.0" width="200.0" height="38.0" rx="6"/>
 <text class="tx" x="32.0" y="124.0">Ticket 4182</text>
@@ -59,7 +59,7 @@
 <text class="lb" x="250.0" y="223.0" style="text-anchor:start">4</text>
 <rect class="bx m" x="266.0" y="200.0" width="200.0" height="38.0" rx="6"/>
 <text class="tx m" x="276.0" y="216.0">Ticket 4812</text>
-<text class="tx d" x="276.0" y="230.0">Ferretería Ortega</text>
+<text class="tx d" x="276.0" y="230.0">Ortega Hardware</text>
 <text class="lb" x="494.0" y="85.0" style="text-anchor:start">1</text>
 <rect class="bx w" x="510.0" y="62.0" width="200.0" height="38.0" rx="6"/>
 <text class="tx w" x="520.0" y="78.0">Refunds FAQ</text>
@@ -68,7 +68,7 @@
 <text class="lb" x="494.0" y="131.0" style="text-anchor:start">2</text>
 <rect class="bx m" x="510.0" y="108.0" width="200.0" height="38.0" rx="6"/>
 <text class="tx m" x="520.0" y="124.0">Ticket 4812</text>
-<text class="tx d" x="520.0" y="138.0">Ferretería Ortega</text>
+<text class="tx d" x="520.0" y="138.0">Ortega Hardware</text>
 <text class="tx d" x="702.0" y="131.0" style="text-anchor:end">#1 + #4</text>
 <text class="lb" x="494.0" y="177.0" style="text-anchor:start">3</text>
 <rect class="bx g" x="510.0" y="154.0" width="200.0" height="38.0" rx="6"/>
