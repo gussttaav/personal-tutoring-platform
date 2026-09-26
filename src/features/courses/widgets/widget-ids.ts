@@ -42,6 +42,8 @@ export const WIDGET_IDS = [
   "multi-head-view",
   // COURSE-P5-05 — Block 5 lesson 5 (codificación posicional).
   "positional-encoding",
+  // COURSE-C2-P1-01 — llm-agents Block 1 lesson 2 (BPE de verdad).
+  "bpe-merges",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

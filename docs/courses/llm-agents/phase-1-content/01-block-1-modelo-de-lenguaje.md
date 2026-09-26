@@ -57,7 +57,7 @@ task's STATUS.md row flips to ✅ **only when every box below is ticked.** Granu
 here; STATUS stays phase-level.
 
 - [x] 1. `una-sola-columna`
-- [ ] 2. `bpe-de-verdad`
+- [x] 2. `bpe-de-verdad`
 - [ ] 3. `entrenar-un-mini-gpt`
 - [ ] 4. `muestreo`
 - [ ] 5. `kv-cache`

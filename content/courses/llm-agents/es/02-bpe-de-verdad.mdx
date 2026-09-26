@@ -1,0 +1,502 @@
+---
+slug: bpe-de-verdad
+title: "BPE de verdad: fusionar, no solo partir"
+block: 1
+order: 2
+minutes: 30
+summary: "El tokenizador del mini-GPT, escrito desde cero. BPE parte de los 256 bytes con los que se escribe cualquier texto y repite una sola operación: contar los pares de tokens vecinos y fusionar el más frecuente. Esta lección deriva lo que eso garantiza (ningún texto se queda sin tokens, y decodificar devuelve el original byte a byte) y lo que cuesta (cada fusión es una entrada más del vocabulario y ahorra menos tokens que la anterior), y lo comprueba entrenando sobre Marianela las mismas fusiones que usa el modelo."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-bytes-de-ano
+    type: predict-output
+    language: python
+    prompt: 'Un tokenizador que parte de bytes ve esto antes de la primera fusión. ¿Qué imprime?'
+    code: |
+      palabra = "año"
+      print(len(palabra), len(palabra.encode("utf-8")), list("ñ".encode("utf-8")))
+    answer: '3 4 [195, 177]'
+    explanation: 'Tres caracteres y cuatro bytes: UTF-8 escribe la <W>ñ</W> con dos, $195$ y $177$ (<W>C3</W> y <W>B1</W> en hexadecimal, como los dibuja el explorable), y la <W>a</W> y la <W>o</W> con uno cada una. Sin fusiones, <W>año</W> son cuatro tokens, y dos de ellos no son un carácter por separado. En el corpus del mini-GPT, la fusión 71 es la que los une.'
+    hint: '`len` de una cadena cuenta caracteres; `len` de lo que devuelve `encode` cuenta bytes.'
+  - id: q-que-antes-que-qu
+    type: single
+    prompt: 'En la lista del mini-GPT, <W>que</W> es la fusión 16 y <W>qu</W> la 65, aunque en español la <W>q</W> siempre va seguida de <W>u</W>. ¿Por qué llega antes el trozo más largo?'
+    options:
+      - { id: a, text: 'Porque la fusión 9 ya había creado <W>ue</W>: desde entonces, en cada <W>que</W> del corpus la vecina de la <W>q</W> es el token <W>ue</W> y no una <W>u</W> suelta, y al par (<W>q</W>, <W>u</W>) sólo le quedan las apariciones de <W>qui</W>, <W>quí</W> y compañía.' }
+      - { id: b, text: 'Porque BPE prefiere los tokens largos: entre dos pares igual de frecuentes, fusiona el que produce el trozo más largo.' }
+      - { id: c, text: 'Porque <W>que</W> es una palabra del español y <W>qu</W> no, y el algoritmo guarda antes lo que es palabra.' }
+      - { id: d, text: 'Porque en el texto <W>que</W> aparece más veces que <W>qu</W>, y las frecuencias se cuentan sobre el texto original.' }
+    answer: a
+    explanation: 'La (a). El algoritmo cuenta pares de tokens tal como están *en ese momento*, y cada fusión cambia qué pares existen. Tras la 9, cada <W>que</W> deja de aportar al par (<W>q</W>, <W>u</W>) y aporta al par (<W>q</W>, <W>ue</W>), que gana la 16 con $f = 2\,232$. La (d) es la trampa: en el texto, <W>qu</W> sale *al menos* tantas veces como <W>que</W>, porque cada <W>que</W> contiene una. La (b) y la (c) le atribuyen preferencias que no tiene: desempata por el par de ids menor y no sabe qué es una palabra.'
+    hint: 'Mira la lista de la primera celda: ¿qué fusión crea <W>ue</W>, y qué le pasa entonces al par (<W>q</W>, <W>u</W>)?'
+  - id: q-lo-que-garantiza
+    type: multi
+    prompt: 'Marca lo que es cierto de BPE a nivel de byte tal como lo define esta lección.'
+    options:
+      - { id: a, text: 'Cada fusión añade exactamente una entrada al vocabulario: tras $m$ fusiones, $\lvert V_m \rvert = 256 + m$.' }
+      - { id: b, text: 'Si $a_i \neq b_i$, la fusión $i$ le quita al corpus exactamente $f(a_i, b_i)$ tokens.' }
+      - { id: c, text: 'La frecuencia del par elegido nunca crece de una fusión a la siguiente.' }
+      - { id: d, text: 'Una palabra que no aparece en el corpus de entrenamiento se codifica como <W>\<UNK></W>.' }
+      - { id: e, text: 'Para codificar un texto nuevo, se fusionan primero los pares más frecuentes de ese texto.' }
+    answer: [a, b, c]
+    explanation: 'La (a), la (b) y la (c), y la (c) es la que se deriva: antes de la fusión $i$ ningún par supera al elegido, y después ninguno puede ganar apariciones salvo los que contienen $u_i$, que no pasan de $f(a_i, b_i)$. La (d) no puede ocurrir: los 256 bytes están en el vocabulario y todo texto es una secuencia de bytes, así que una palabra nueva sale, en el peor caso, en tantos tokens como bytes tiene. La (e) confunde codificar con entrenar: al codificar, las fusiones se aplican en el orden en que se aprendieron, y si decidieran las frecuencias del texto nuevo, la misma palabra se cortaría distinto en cada documento.'
+    hint: 'Para la (b), piensa qué pasa con <W>...</W> y el par (<W>.</W>, <W>.</W>), y por qué el enunciado excluye ese caso.'
+  - id: q-bytes-en-el-contexto
+    type: numeric
+    prompt: 'El mini-GPT lee como mucho $T_{\text{ctx}} = 64$ tokens a la vez, y sobre su corpus un token lleva de media $\bar{\ell} = 2.16$ bytes. ¿Cuántos bytes de texto caben, de media, en esos 64 tokens? Redondea al entero.'
+    answer: 138
+    tolerance: 2
+    unit: bytes
+    explanation: '$64 \cdot 2.16 \approx 138$ bytes: una o dos frases de *Marianela*. Sin fusiones, $\bar{\ell} = 1$ y el modelo vería 64 bytes, menos de la mitad. Es el otro lado del compromiso: cada fusión cuesta una fila más en la tabla de *embeddings*, pero alarga el texto que el modelo ve de una vez sin tocar $T_{\text{ctx}}$.'
+    hint: 'Es la igualdad $\bar{\ell} = n/T$ despejada para $n$, con $T = 64$.'
+challenges:
+  - id: ch-codificar
+    prompt: |
+      Escribe `codificar(texto, fusiones)`, la mitad del tokenizador que la segunda celda cargó
+      hecha. Corta `texto` en *pre-tokens* con `PATRON`; convierte cada uno en sus bytes UTF-8;
+      y, dentro de cada pre-token, mientras algún par de vecinos esté en `fusiones`, fusiona el
+      que aparezca **antes en la lista** (la fusión `i`, contando desde cero, crea el token
+      `256 + i`). Devuelve los ids de todos los pre-tokens, uno detrás de otro.
+
+      `PATRON`, `pares` y `fusionar` ya están escritos: son los de la primera celda.
+    starter: |
+      import re
+
+      PATRON = re.compile(r" ?[^\W\d_]+| ?\d+| ?(?:[^\w\s]|_)+|\s+(?!\S)|\s+")
+
+
+      def pares(ids):
+          return zip(ids, ids[1:])
+
+
+      def fusionar(ids, par, nuevo):
+          salida, i = [], 0
+          while i < len(ids):
+              if i + 1 < len(ids) and (ids[i], ids[i + 1]) == par:
+                  salida.append(nuevo)
+                  i += 2
+              else:
+                  salida.append(ids[i])
+                  i += 1
+          return salida
+
+
+      def codificar(texto, fusiones):
+          # tu código aquí
+          pass
+    tests:
+      - name: "sin fusiones, un token por byte"
+        code: |
+          assert codificar("año", []) == [97, 195, 177, 111], 'sin fusiones cada byte es un token, y la ñ son dos: 195 y 177'
+      - name: "la fusión i crea el token 256 + i"
+        code: |
+          assert codificar("año", [(195, 177)]) == [97, 256, 111], 'la fusión 0 une (195, 177) en el token 256'
+      - name: "una fusión puede usar el token de otra"
+        code: |
+          assert codificar("año", [(195, 177), (97, 256)]) == [257, 111], 'tras crear el 256 (la ñ), el par (97, 256) existe y la fusión 1 lo une en el 257: repite mientras quede algún par de la lista'
+      - name: "manda el orden de la lista, no el texto"
+        code: |
+          F = [(97, 98), (98, 99)]
+          assert codificar("abc", F) == [256, 99], 'en «abc» están los dos pares; gana (97, 98), que se aprendió antes'
+          assert codificar("abcbc", F) == [256, 99, 257], 'en «abcbc» el par (98, 99) sale dos veces y (97, 98) una, pero (97, 98) va antes en la lista y se fusiona primero: la frecuencia en el texto nuevo no cuenta'
+      - name: "ninguna fusión cruza de un pre-token a otro"
+        code: |
+          assert codificar("no es", [(111, 32)]) == [110, 111, 32, 101, 115], 'la «o» de «no» y el espacio de « es» están en pre-tokens distintos: el par (111, 32) no existe dentro de ninguno. Codifica pre-token a pre-token'
+      - name: "coincide con el tokenizador del mini-GPT"
+        code: |
+          import json
+          from pyodide.http import open_url
+          F = [tuple(p) for p in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+          ids = codificar("El señor dijo que la canción era pequeña.", F)
+          assert ids == [69, 108, 470, 343, 353, 278, 280, 263, 277, 386, 507, 510, 271, 326, 97, 46], 'con las 256 fusiones del mini-GPT la frase son 16 tokens, « señor» uno solo; salen %s' % (len(ids) if ids else ids)
+    solution: |
+      import re
+
+      PATRON = re.compile(r" ?[^\W\d_]+| ?\d+| ?(?:[^\w\s]|_)+|\s+(?!\S)|\s+")
+
+
+      def pares(ids):
+          return zip(ids, ids[1:])
+
+
+      def fusionar(ids, par, nuevo):
+          salida, i = [], 0
+          while i < len(ids):
+              if i + 1 < len(ids) and (ids[i], ids[i + 1]) == par:
+                  salida.append(nuevo)
+                  i += 2
+              else:
+                  salida.append(ids[i])
+                  i += 1
+          return salida
+
+
+      def codificar(texto, fusiones):
+          rango = {par: i for i, par in enumerate(fusiones)}   # par -> su posición en la lista
+          salida = []
+          for w in PATRON.findall(texto):
+              ids = list(w.encode("utf-8"))
+              while len(ids) > 1:
+                  par = min(pares(ids), key=lambda p: rango.get(p, len(rango)))
+                  if par not in rango:                         # ningún par de la lista: listo
+                      break
+                  ids = fusionar(ids, par, 256 + rango[par])
+              salida.extend(ids)
+          return salida
+    explanation: |
+      Dos decisiones hacen el trabajo. La primera es recorrer `PATRON.findall(texto)` y no los
+      bytes del texto entero: así ninguna fusión puede juntar el final de un pre-token con el
+      principio del siguiente, que es la regla con la que se entrenaron. La segunda es elegir,
+      entre los pares presentes, el de menor posición en la lista (`rango`) y no el más frecuente
+      en el texto: `min` con `rango.get(p, len(rango))` da a los pares que no están en la lista
+      un rango mayor que cualquiera, y si el mínimo es uno de ellos no queda nada que fusionar.
+      El <W>bpe.py</W> del curso es esto mismo con una caché por pre-token, porque *Marianela*
+      repite mucho las mismas palabras.
+reading:
+  - kind: paper
+    title: 'Neural Machine Translation of Rare Words with Subword Units'
+    authors: 'Sennrich, Haddow y Birch'
+    year: '2016'
+    venue: 'ACL 2016'
+    lang: en
+    url: 'https://aclanthology.org/P16-1162/'
+    note: 'El artículo que convirtió BPE, un algoritmo de compresión de 1994, en un tokenizador. Su algoritmo 1 es el entrenamiento de esta lección en unas líneas de Python, sobre caracteres en lugar de bytes.'
+  - kind: paper
+    title: 'Language Models are Unsupervised Multitask Learners'
+    authors: 'Radford, Wu, Child, Luan, Amodei y Sutskever'
+    year: '2019'
+    venue: 'Informe técnico de OpenAI (GPT-2)'
+    lang: en
+    url: 'https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf'
+    note: 'Su sección 2.2 explica por qué BPE sobre bytes y no sobre caracteres Unicode, y por qué impedir fusiones que mezclen letras con signos: el origen de los pre-tokens del mini-GPT.'
+  - kind: video
+    title: "Let's build the GPT Tokenizer"
+    authors: 'Andrej Karpathy'
+    year: '2024'
+    venue: 'YouTube'
+    lang: en
+    url: 'https://www.youtube.com/watch?v=zduSFxRajkE'
+    note: 'Dos horas escribiendo un BPE a nivel de byte desde cero, con la expresión regular de GPT-2 y un repaso de lo que sale mal alrededor de los tokens. El recorrido de esta lección, más largo.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 2. */}
+
+Cuántos tokens tiene una frase, y qué es cada uno, no lo decide la red: lo decide el
+tokenizador, antes de que la red vea nada. El curso anterior explicó en
+<Leccion curso="dl-nlp" slug="tokenizacion">su lección sobre tokenización</Leccion> por qué los
+modelos de verdad cortan por debajo de la palabra, y <Leccion slug="una-sola-columna">la lección
+sobre el modelo de lenguaje causal</Leccion> escribió la probabilidad de un texto como un producto
+con un factor por *token*, contado con palabras enteras porque cabían en una hoja de papel. Ninguna
+de las dos construyó el tokenizador.
+
+Esta lección lo construye, y es el que usa el mini-GPT de este bloque. Tiene que elegir unos
+cientos de trozos entre todas las cadenas posibles del español sin que nadie le diga qué es una
+sílaba o un sufijo, y el procedimiento que lo consigue cabe en una línea: cuenta los pares de
+vecinos, fusiona el más frecuente, repite. Se llama *byte-pair encoding* (BPE), y de esa línea
+salen tres cosas que la lección deja demostradas. Ningún texto se queda sin tokens, ni siquiera
+uno escrito en otro alfabeto. Cada fusión cambia una entrada más del vocabulario por menos tokens
+en cada texto, y cada vez a peor precio. Y lo que el algoritmo encuentra no son las unidades de la
+lengua, sino las del corpus.
+
+Empieza por abajo del todo. Un texto guardado en un fichero no está hecho de letras sino de
+**bytes**, números entre 0 y 255, y la codificación que usa casi todo el mundo, UTF-8 (*Unicode
+Transformation Format*, 8 bits), escribe cada carácter con entre uno y cuatro. Una letra sin tilde
+ocupa uno; la <W>ñ</W>, dos, el 195 y el 177; un emoji, cuatro. Tomar los 256 bytes como
+vocabulario de partida resuelve de golpe lo que el curso anterior arreglaba con <W>\<UNK></W>:
+cualquier texto, en cualquier idioma, es una secuencia de bytes, así que ninguno se queda fuera. El
+precio es la longitud. Con un token por byte, <W>El señor dijo que la canción era pequeña.</W> son
+44 tokens, y dos de ellos son una <W>ñ</W> partida por la mitad.
+
+BPE compra longitud con vocabulario. Recorre el corpus y cuenta cuántas veces aparece cada par de
+tokens vecinos; convierte el más frecuente en un token nuevo, sustituye por él todas sus
+apariciones y el vocabulario gana una entrada. Después vuelve a contar, porque los pares han
+cambiado, y repite tantas veces como entradas quieras. Antes de nada corta el texto en
+*pre-tokens*: una palabra con el espacio que la precede, un número, un tramo de signos. Ninguna
+fusión cruza de un pre-token al siguiente, y por eso los tokens del mini-GPT empiezan a menudo por
+espacio (<W> de</W>, <W> que</W>) y ninguno junta el final de una palabra con el principio de otra.
+
+El explorable lo hace delante de ti sobre un corpus de tres frases, lo bastante corto para leerlo
+entero y comprobar las cuentas: el recuadro del centro enseña, antes de cada paso, los tres pares
+más frecuentes, con su $f$. Avanza fusión a fusión y mira tres cosas. La primera fusión junta los
+dos bytes de la <W>ñ</W>, que sale diez veces y es el par más frecuente de todos. En la 17 el
+corpus ya tiene <W>ción</W>, y nadie se lo ha enseñado. Y la frase de abajo, que el corpus no
+contiene, baja de 42 bytes a 22 tokens, con <W>pequeña</W> y <W>enseñó</W> cortadas en trozos que
+el corpus sí tenía. Después escribe una frase tuya.
+
+<Explorable id="bpe-merges" caption="Tres frases y 31 fusiones. Cada paso fusiona el par más frecuente del corpus; la frase de abajo se codifica con las fusiones aprendidas hasta ese paso." />
+
+Fíjate en lo que el algoritmo no sabe. No sabe qué es una letra: la <W>ñ</W> sale entera porque sus
+dos bytes siempre van juntos, no porque formen un carácter, y en la lista del mini-GPT hay tres
+tokens que cortan un carácter por la mitad. Tampoco sabe qué es un sufijo: <W>ción</W> aparece porque
+esas letras vienen juntas a menudo, y en ese orden. Todo lo que encuentra lo encuentra contando.
+
+<Callout type="intuition" title="La idea en una frase">
+BPE parte de los 256 bytes, con los que se escribe cualquier texto, y cambia vocabulario por
+longitud: cada fusión convierte en un solo token el par de vecinos más frecuente del corpus. Lo
+que sale es una compresión de ese corpus, no un análisis de la lengua.
+</Callout>
+
+## Contar pares y fusionar el más frecuente
+
+Fijemos el corpus como una secuencia de tokens $x_1, \dots, x_T$, cortada en pre-tokens, y
+empecemos con $V_0 = \{0, \dots, 255\}$: cada token es un byte, y $T$ es la longitud del corpus en
+bytes, que llamaremos $n$. La **frecuencia** de un par de tokens $(a, b)$ es cuántas veces aparece
+$a$ seguido de $b$ dentro de un mismo pre-token:
+
+$$
+f(a, b) = \left\lvert \{\, t \;:\; x_t = a,\; x_{t+1} = b,\; \text{ambos en el mismo pre-token} \,\} \right\rvert.
+$$
+
+La **fusión** $i$ elige el par más frecuente,
+
+$$
+(a_i, b_i) = \arg\max_{(a,\, b)} f(a, b),
+$$
+
+con los empates resueltos a favor del par de ids menores: una regla arbitraria, pero fija, que hace
+que dos ejecuciones den el mismo vocabulario. Crea una entrada nueva, $u_i$, cuyos bytes son los de
+$a_i$ seguidos de los de $b_i$, y sustituye cada aparición del par por ella, de izquierda a derecha
+y sin solaparse. El vocabulario crece de uno en uno:
+
+$$
+V_i = V_{i-1} \cup \{u_i\}, \qquad \lvert V_m \rvert = 256 + m.
+$$
+
+(En el código, $u_i$ es el primer número libre, $255 + i$: el código cuenta las fusiones desde
+cero y lo escribe `256 + i`. Y no la escribimos $a_i b_i$ porque dos símbolos juntos se leen como un
+producto.) Lo que queda tras $m$
+fusiones es la lista ordenada de las fusiones, y esa lista es el tokenizador entero: el del
+mini-GPT son 256 fusiones, guardadas en <W>bpe-merges.json</W>, así que su vocabulario tiene
+$256 + 256 = 512$ entradas.
+
+**Codificar** un texto nuevo es aplicar esa lista, no volver a contar:
+
+```text
+codificar(texto, fusiones):
+    para cada pre-token w de texto:
+        ids ← los bytes de w
+        mientras algún par de vecinos de ids esté en fusiones:
+            fusiona, en todo ids, el par que aparezca antes en la lista
+        añade ids a la salida
+```
+
+Las frecuencias del texto nuevo no intervienen. Si lo hicieran, la misma palabra se cortaría de
+una manera en un documento y de otra en el siguiente, y el modelo, que aprendió a leer los cortes
+del corpus, recibiría otros. **Decodificar** es lo contrario: concatenar los bytes de cada token y
+leerlos como UTF-8.
+
+Con eso el tokenizador cumple las dos exigencias que el curso anterior le hacía (determinismo y
+reconstrucción) y la totalidad que allí costaba un <W>\<UNK></W>. Es determinista, porque la lista
+y la regla de desempate fijan cada corte. Es reversible, porque los pre-tokens cubren el
+texto sin dejarse ningún carácter y una fusión sólo concatena bytes: decodificar lo codificado
+devuelve el texto byte a byte. Y es total, porque todo texto es una
+secuencia de $V_0 \subseteq V_m$: en el peor caso, cada byte es su propio token.
+
+### Lo que compra cada fusión, y a qué precio
+
+Llamemos $T_i$ a la longitud del corpus en tokens después de $i$ fusiones (el subíndice cuenta
+fusiones, no posiciones), con $T_0 = n$. Cada aparición del par elegido son dos tokens que pasan a
+ser uno, así que, si $a_i \neq b_i$,
+
+$$
+T_i = T_{i-1} - f(a_i, b_i).
+$$
+
+Con $a_i = b_i$ las apariciones pueden solaparse (en <W>...</W> hay dos pares (<W>.</W>,
+<W>.</W>) y sólo cabe una fusión) y el ahorro se queda por debajo de $f$. Salvo en ese caso, BPE
+es un compresor voraz: en cada paso elige el token nuevo que más acorta el corpus en ese momento.
+
+Y cada fusión compra menos que la anterior. Antes de la fusión $i$, ningún par superaba a
+$(a_i, b_i)$: por eso lo eligió. Después, un par que no contiene $u_i$ sólo puede haber perdido
+apariciones, porque fusionar borra vecindades entre tokens viejos y no crea ninguna. Un par que sí
+contiene $u_i$ aparece como mucho tantas veces como $u_i$, que son como mucho $f(a_i, b_i)$. En
+los dos casos, el máximo no sube:
+
+$$
+f(a_{i+1}, b_{i+1}) \le f(a_i, b_i).
+$$
+
+Es la forma exacta del compromiso entre vocabulario y longitud que planteaba el curso anterior.
+Con palabras, el vocabulario crecía sin techo a medida que crecía el corpus, como mostraba la ley
+de Heaps en <Leccion curso="dl-nlp" slug="vocabulario-oov">la lección sobre el vocabulario y las
+palabras fuera de él</Leccion>. Con BPE, $\lvert V \rvert$ se elige, y lo que se paga por elegirlo
+pequeño es longitud. La $\bar{\ell}$ de aquel curso vuelve, medida en bytes:
+
+$$
+\bar{\ell} = \frac{1}{T}\sum_{t=1}^{T} \lvert x_t \rvert = \frac{n}{T},
+$$
+
+donde $\lvert x_t \rvert$ son los bytes del token. Sin fusiones, $\bar{\ell} = 1$; cada fusión la
+sube, y cada vez menos.
+
+Lo que cuesta cada entrada se paga dentro de la red. La tabla que convierte un token en vector
+tiene una fila por entrada,
+
+$$
+\lvert V \rvert \cdot d_{\text{model}} = 512 \cdot 64 = 32\,768 \quad \text{números},
+$$
+
+casi la cuarta parte de los $136\,448$ parámetros del mini-GPT, y la misma tabla, leída al revés,
+es la que da sus logits. Lo que compra es alcance. El mini-GPT lee como mucho $T_{\text{ctx}} = 64$
+tokens de una vez (el máximo que admite, no la $T$ de un texto concreto), y cuánto texto son esos
+64 tokens lo decide $\bar{\ell}$.
+
+## Tu BPE, contra el del mini-GPT
+
+Esta lección no llama todavía al mini-GPT: trabaja con su tokenizador, el <W>bpe.py</W> que las
+celdas del bloque cargan, y la primera celda lo escribe. Su `entrenar` hace lo de arriba con un
+atajo: cuenta los pares una sola vez y, tras cada fusión, recuenta sólo los pre-tokens donde estaba
+el par (los guarda `donde`), porque en los demás no ha cambiado nada. Salen las mismas fusiones,
+varias veces más deprisa, y eso es lo que permite entrenar 64 sobre los $302\,566$ bytes de
+*Marianela*, la novela de Galdós que hace de corpus del bloque, en lo que dura una celda. Ejecútala:
+imprime algunas fusiones con su $f$, y la última línea compara tus 64 con las 64 primeras del
+mini-GPT.
+
+<PyCell code={`
+import re, json, time
+from collections import Counter, defaultdict
+from pyodide.http import open_url
+
+# Pre-tokens: una palabra con su espacio delante, un número, un tramo de signos, blancos.
+PATRON = re.compile(r" ?[^\\W\\d_]+| ?\\d+| ?(?:[^\\w\\s]|_)+|\\s+(?!\\S)|\\s+")
+
+def pares(ids):
+    return zip(ids, ids[1:])
+
+def fusionar(ids, par, nuevo):
+    salida, i = [], 0
+    while i < len(ids):
+        if i + 1 < len(ids) and (ids[i], ids[i + 1]) == par:
+            salida.append(nuevo)
+            i += 2
+        else:
+            salida.append(ids[i])
+            i += 1
+    return salida
+
+def entrenar(texto, m, veces=None):
+    palabras = Counter(PATRON.findall(texto))             # pre-token -> cuántas veces sale
+    trozos = {w: list(w.encode("utf-8")) for w in palabras}
+    f, donde = Counter(), defaultdict(set)                 # f(a, b), y en qué pre-tokens está
+    for w, n in palabras.items():
+        for par in pares(trozos[w]):
+            f[par] += n
+            donde[par].add(w)
+    fusiones = []
+    for i in range(m):
+        mejor = max(f, key=lambda p: (f[p], -p[0], -p[1]), default=None)   # empate: el menor
+        if mejor is None or f[mejor] <= 0:
+            break
+        fusiones.append(mejor)
+        if veces is not None:
+            veces.append(f[mejor])
+        for w in donde.pop(mejor):                         # sólo cambia donde estaba el par
+            n, viejo = palabras[w], trozos[w]
+            trozos[w] = fusionar(viejo, mejor, 256 + i)
+            for par in pares(viejo):
+                f[par] -= n
+            for par in pares(trozos[w]):
+                f[par] += n
+                donde[par].add(w)
+        del f[mejor]
+    return fusiones
+
+texto = open_url("/courses/llm-agents/corpus.txt").read().split("\\n", 1)[1].lstrip()
+veces, t0 = [], time.time()
+fusiones = entrenar(texto, 64, veces)
+print("64 fusiones sobre %d bytes en %.1f s" % (len(texto.encode("utf-8")), time.time() - t0))
+vocab = {b: bytes([b]) for b in range(256)}
+for i, (a, b) in enumerate(fusiones):
+    vocab[256 + i] = vocab[a] + vocab[b]
+for i in [0, 1, 2, 3, 4, 15, 17, 19, 31, 63]:
+    a, b = fusiones[i]
+    print("%2d  %r + %r -> %r   f = %d" % (i + 1, vocab[a], vocab[b], vocab[256 + i], veces[i]))
+print("¿f baja o se queda igual en las 64?", all(x >= y for x, y in zip(veces, veces[1:])))
+mini = [tuple(p) for p in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+print("¿las 64 primeras del mini-GPT, en el mismo orden?", fusiones == mini[:64])
+`} />
+
+Las primeras fusiones son un espacio con la letra que lo sigue (<W> d</W>, <W> e</W>, <W> l</W>),
+porque el espacio es el carácter más frecuente del corpus y va pegado al principio de cada palabra;
+la quinta ya es <W> de</W>, la palabra que más se repite. La 18
+es la <W>í</W>, que la celda imprime como sus dos bytes, `b'\xc3\xad'`, y la 32 es la raya de los
+diálogos, que ocupa tres. $f$ no sube ni una vez, de $4\,652$ a $628$, como pide la desigualdad de
+arriba, y la celda lo comprueba en las 64. La 20, (<W>.</W>, <W>.</W>), es la única de las 64 con $a_i = b_i$, y por
+tanto la única en la que el corpus puede encoger menos que $f$. Y la última línea dice que tu código
+produce las fusiones del modelo: las mismas, en el mismo orden.
+
+La segunda celda carga <W>bpe.py</W> tal cual, con las 256 fusiones del mini-GPT, codifica tres
+frases y comprueba en cada una que decodificar devuelve el texto exacto. Después mide el corpus
+entero con 0, 64 y las 256 fusiones.
+
+<PyCell code={`
+import json
+from pyodide.http import open_url
+
+exec(open_url("/courses/llm-agents/bpe.py").read())   # tu entrenar, y codificar / decodificar
+F = [tuple(p) for p in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+V = vocabulario(F)
+
+def ver(frase):
+    ids = codificar(frase, F)
+    assert decodificar(ids, F) == frase                # vuelve entera, byte a byte
+    print(len(frase.encode("utf-8")), "bytes ->", len(ids), "tokens:",
+          [V[i].decode("utf-8", "replace") for i in ids])
+
+ver("El señor dijo que la canción era pequeña.")
+ver(" criptomoneda")
+ver("¿Qué? 🙂")
+print("ñ =", list("ñ".encode("utf-8")), "-> fusión", F.index((195, 177)) + 1)
+
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+n = len(texto.encode("utf-8"))
+for m in [0, 64, 256]:
+    T = len(codificar(texto, F[:m]))
+    print("m = %3d   |V| = %d   T = %6d   l = %.2f bytes por token" % (m, 256 + m, T, n / T))
+`} />
+
+En la primera frase, <W> señor</W> es un solo token; la <W>ñ</W> de <W>pequeña</W> es otro (la
+fusión 71, que la celda localiza) y <W>ción</W> va entera. <W>criptomoneda</W>, que en el curso
+anterior acababa en <W>\<UNK></W>, sale en ocho trozos. La tercera frase enseña qué hace BPE con lo
+que no tiene fusionado: el emoji son sus cuatro bytes, cuatro tokens que por separado no son texto y se
+imprimen como <W>�</W>, y a la <W>¿</W> del principio le pasa lo mismo, porque el mini-GPT sólo
+aprendió a fusionarla con un espacio o una raya delante. Aun así, `ver` no ha protestado:
+decodificar lo devolvió todo.
+
+Y la tabla es el compromiso, medido. Las 64 primeras fusiones le quitan al corpus
+$112\,726$ tokens; las 192 siguientes, el triple de fusiones, sólo $50\,075$. $\bar{\ell}$ pasa de
+1.00 a 1.59 con las primeras y, a duras penas, a 2.16 con el resto.
+
+## Comprueba tu intuición
+
+Cuatro preguntas y un reto: los bytes de la <W>ñ</W>, por qué <W>que</W> llega antes que
+<W>qu</W>, qué garantiza el algoritmo y cuánto texto le cabe al mini-GPT de una vez. El reto te
+pide escribir `codificar`.
+
+<Quiz id="q-bytes-de-ano" />
+
+<Quiz id="q-que-antes-que-qu" />
+
+<Quiz id="q-lo-que-garantiza" />
+
+<Quiz id="q-bytes-en-el-contexto" />
+
+<CodeChallenge id="ch-codificar" />
+
+---
+
+El tokenizador está terminado y no volverá a cambiar en todo el curso: cada texto que le llegue al
+mini-GPT pasará antes por estas 256 fusiones. El corpus del bloque es ya una secuencia de
+$139\,765$ ids entre 0 y 511, y la pérdida de <Leccion slug="una-sola-columna">la lección sobre el
+modelo de lenguaje causal</Leccion> tiene por fin sus números de verdad. Le falta lo principal: la
+red que apuesta, y unos pesos que apuesten bien.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 3
+    (slug entrenar-un-mini-gpt), envolver «la lección siguiente, sobre entrenar un mini-GPT en
+    NumPy» en su Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de
+    un comentario. */}
+
+Esa red es la lección siguiente, sobre entrenar un mini-GPT en NumPy: cortar esa secuencia en
+ventanas, agruparlas en *batches*, cargar los pesos del mini-GPT y seguir entrenándolo delante de
+ti, con la pérdida bajando paso a paso sobre texto que el modelo no ha visto.

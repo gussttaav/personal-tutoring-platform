@@ -1544,6 +1544,22 @@
           }
         },
         "refJoin": ", and "
+      },
+      "bpe-merges": {
+        "groupAria": "BPE trained step by step; use the arrow keys to add or remove merges",
+        "corpus": "Corpus",
+        "corpusStats": "{bytes} bytes → {tokens} tokens · <bar>ℓ</bar> = {lbar} bytes per token",
+        "noMerges": "No merges: every byte is a token",
+        "stepLabel": "Merge {k} of {total}",
+        "vocab": "|V| = 256 + {k} = {size}",
+        "freq": "f = {f}",
+        "next": "The next one chooses from:",
+        "exhausted": "No pair occurs twice any more: training stops here.",
+        "sentence": "A sentence the corpus does not contain",
+        "sentenceAria": "Sentence encoded with the merges learned so far",
+        "sentenceStats": "{bytes} bytes → {tokens} tokens",
+        "byteHint": "A box with hex digits is a stray byte: a piece of a character, not merged yet.",
+        "slider": "Merges"
       }
     }
   },

@@ -36,7 +36,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (1/9) | _tbd_ | local |
+| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (2/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
@@ -333,3 +333,48 @@ reviewer of the block:
   tests), `pnpm build` green; in the browser with the route published: 0 KaTeX errors, all four
   quiz questions right and wrong (numeric also at the tolerance edge), eight cross-course cards, no
   horizontal page scroll at 360 px (the three wide equations and the table scroll in their own boxes).
+
+Lesson 2 `bpe-de-verdad` authored on the shared branch (2026-09-26), with the `bpe-merges` widget
+built first in the same change. 1 909 words, 7 display equations, 1 widget, 2 cells, 4 quiz, 1
+challenge (`ch-codificar`), 3 readings (Sennrich 2016 on the ACL Anthology, the GPT-2 report, Karpathy's
+tokenizer video; all three URLs checked). Runs on the mini-GPT's tokenizer, not the model, and says so
+before the first cell. Decisions recorded for the reviewer of the block:
+- **The widget trains on its own corpus, not Marianela.** Three Spanish sentences (English ones for
+  `/en`, chosen against the same property) in `corpora.ts`, small enough to read whole so every
+  count on screen can be checked: merge 1 is `C3`+`B1` → `ñ` (f = 10), merge 5 `ó`, merge 17
+  `ción`, the unseen sentence 42 bytes → 22 tokens. The real merges are the cells' job. `math/
+  bpe-merges.ts` is a TS port of `bpe.py`; its test rebuilds `bpe-merges.json` merge for merge from
+  `corpus.txt` and pins every number the prose quotes. `bpe-vocab.ts` was not reused: it is a
+  hand-written list of character merges with no training, and nothing in it fits a byte vocabulary.
+- **`bpe.py` changed twice, outputs unchanged** (`bpe-merges.json` and the corpus encoding
+  identical, verified). `entrenar` now recounts only the pre-tokens where the merged pair was — the
+  same merges several times faster, which is what fits 64 merges in one cell — with the parameter
+  renamed `k` → `m` (NOTATION: $k$ is top-$k$'s) and an optional `veces` list for the frequencies;
+  matched against the old version on the full 256 merges and 307 fuzzed strings. And a **bug fix**:
+  `PATRON` dropped `_` (it is `\w` but neither a letter nor a digit, so no alternative matched), so
+  `decodificar(codificar("a_b"))` returned `"ab"`, which would have made the lesson's reversibility
+  claim false. Round trip now exact on 2 000 random strings. The corpus has no `_`.
+- **Cell 1 is 61 lines** (advisory warning; target 45, ceiling 90): the whole `entrenar` plus its run
+  on the corpus. Kept as one cell because the block spec says two, and the second cell execs
+  `bpe.py` so each cell stays self-contained.
+- **Timing, measured on a loaded desktop (load average ≈ 10), not on a phone:** cell 1 trains 64
+  merges in 3.8 s, cell 2 ≈ 4 s warm. Both under `RUN_TIMEOUT_MS`; a phone at 2–3× an idle laptop
+  should still fit, but that is an estimate.
+- **Fusiones are numbered from 1 in prose** («la fusión 71 es la ñ») and from 0 in code (`256 + i`);
+  the lesson states the mapping once. File names in prose are `<W>` mentions, per the delta's
+  `AGENTE.md` row. Neither is in the shared contract yet.
+- **Terms and symbols added before use:** `byte`, `fusión`/`fusionar`, *pre-token*,
+  `codificar`/`decodificar` in the delta's §4; $n$, $\lvert u \rvert$, $\bar{\ell} = n/T$, $f(a, b)$,
+  $(a_i, b_i)$ with $u_i$, $V_i$ and $m$, $T_i$ in `NOTATION.md`, with a note on the three letters
+  avoided ($C$, $k$, and $a_i b_i$ as a concatenation).
+- **Lesson 1's two prose references to this lesson** are now `<Leccion slug="bpe-de-verdad">` (the
+  body one links; the bridge one renders as plain text, as §7 says); its comment keeps only lesson 3.
+  This lesson's bridge names lesson 3 in prose, with the same kind of comment.
+- `draft: false`, like lesson 1 and for the same reason.
+- Verified: `pnpm lint:content` (only the cell-length warning), `jest src/features/courses/widgets
+  src/lib/courses` (58 suites, 824 tests), `check:messages`, `pnpm build` green; in the browser both
+  cells run in Pyodide with output identical to CPython, the challenge scores the starter 0/6, a
+  version that ignores pre-tokens 5/6 and the solution 6/6 (the last test loads the real merges with
+  `open_url`), all four quiz questions right and wrong, 0 KaTeX errors, the widget's numbers match
+  the prose at steps 1, 5, 17 and 31, and no horizontal page scroll at 360 px (Playwright; the
+  Browser pane does not composite here).

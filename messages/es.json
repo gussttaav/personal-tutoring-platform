@@ -1544,6 +1544,22 @@
           }
         },
         "refJoin": ", y "
+      },
+      "bpe-merges": {
+        "groupAria": "BPE entrenado paso a paso; usa las flechas para añadir o quitar fusiones",
+        "corpus": "Corpus",
+        "corpusStats": "{bytes} bytes → {tokens} tokens · <bar>ℓ</bar> = {lbar} bytes por token",
+        "noMerges": "Sin fusiones: cada byte es un token",
+        "stepLabel": "Fusión {k} de {total}",
+        "vocab": "|V| = 256 + {k} = {size}",
+        "freq": "f = {f}",
+        "next": "La siguiente elige entre:",
+        "exhausted": "Ningún par aparece ya dos veces: el entrenamiento se detiene aquí.",
+        "sentence": "Una frase que el corpus no contiene",
+        "sentenceAria": "Frase que se codifica con las fusiones aprendidas hasta ahora",
+        "sentenceStats": "{bytes} bytes → {tokens} tokens",
+        "byteHint": "Un recuadro con cifras es un byte suelto: un trozo de carácter, todavía sin fusionar.",
+        "slider": "Fusiones"
       }
     }
   },

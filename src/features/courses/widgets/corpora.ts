@@ -36,6 +36,7 @@ export interface WidgetCorpus<T> {
 export const WIDGET_CORPORA: {
   readonly "tokenizer-playground": WidgetCorpus<string>;
   readonly "bag-of-words": WidgetCorpus<readonly string[]>;
+  readonly "bpe-merges": WidgetCorpus<{ readonly corpus: string; readonly sentence: string }>;
 } = {
   /*
    * Three tokenisers, three visibly different answers. The Spanish default earns that
@@ -84,6 +85,46 @@ export const WIDGET_CORPORA: {
         "the keeper saved the penalty of the season and the team won",
         "the recipe needs the flour and the butter of the grandmother",
       ],
+    },
+  },
+
+  /*
+   * COURSE-C2-P1-01 — `bpe-merges` (llm-agents Block 1 lesson 2). A corpus small enough
+   * to read whole, and a sentence the corpus does not contain. The lesson quotes what
+   * happens on the Spanish pair, so the numbers are frozen and asserted in
+   * corpora.test.ts: 180 bytes and 31 merges that repeat; merge 1 is `C3`+`B1` → `ñ`
+   * (f = 10, ñ being the most frequent pair of all, which is what ten ñ with varied
+   * neighbours buys); merge 5 is `ó`, because the `-ó` verbs give `C3 B3` more
+   * occurrences than any pair that would split it; merge 17 closes `ci` + `ón` → `ción`.
+   * The sentence goes from 42 bytes to 22 tokens, and its unseen words (`pequeña`,
+   * `enseñó`, `cuna`) end cut into pieces the corpus taught.
+   *
+   * English, against the same property rather than translated: merge 1 is `C3`+`A9` →
+   * `é` (café, José, fiancé…), `tion` is built by merge 4, and the sentence's `naïve`
+   * carries a letter the corpus never had, which stays two bytes to the end — the case
+   * the Spanish sentence does not show, and byte-level BPE's whole answer to OOV.
+   */
+  "bpe-merges": {
+    property:
+      "Merge 1 fuses the two UTF-8 bytes of one accented letter into a single token; a " +
+      "suffix (-ción / -tion) is built by later merges; the sentence contains words the " +
+      "corpus does not, which end cut into learned pieces, and drops to fewer tokens than " +
+      "bytes.",
+    byLocale: {
+      es: {
+        corpus:
+          "El año pasado, la niña y el niño cantaron una canción en la montaña. Cada " +
+          "mañana, el señor enseña una lección. La niña sueña con otra canción; el niño " +
+          "bailó y cantó.",
+        sentence: "La pequeña enseñó una canción de cuna.",
+      },
+      en: {
+        corpus:
+          "José runs a café by the station. At the café, the fiancé orders an entrée and " +
+          "José mentions the nation's tradition. The café's résumé: one station, one " +
+          "question.",
+        sentence: "The naïve fiancée asked José a question at the station.",
+      },
     },
   },
 };

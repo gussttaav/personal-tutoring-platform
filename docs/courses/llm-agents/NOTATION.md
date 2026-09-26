@@ -36,6 +36,13 @@ this file gets shorter as it goes down.
 | $x_t \in V$ | the token at position $t$ — the first course's $w_t$; $x_{1:T}$, $x_{<t}$, $x_{\le t}$ are the runs, as there, and $x_{<1}$ is the empty sequence (Block 1 lesson 1) |
 | $\mathbf{Z} \in \mathbb{R}^{T \times \lvert V \rvert}$ | the logits stacked — row $t$ is $\mathbf{z}_t^{\top}$, one row per position read, one column per entry |
 | $\mathbf{z}_t(x_{\le t})$ | the logits of position $t$ **with the input named**: what the network was given. Used to state that the mask makes $\mathbf{z}_t(x_{1:T}) = \mathbf{z}_t(x_{\le t})$ (Block 1 lesson 1) |
+| $n$ | a text's length in **bytes** (Block 1 lesson 2) — what the first course called $C$ in characters; lesson 6's bits per byte divides by it |
+| $\lvert u \rvert$ | the length of token $u$ in bytes (Block 1 lesson 2), the first course's $\lvert u \rvert$ with bytes for characters |
+| $\bar{\ell} = n / T$ | the mean bytes per token (Block 1 lesson 2) — the first course's $\bar{\ell} = C/T$, measured in bytes |
+| $f(a, b)$ | the frequency of the pair $(a, b)$: how many times token $a$ is immediately followed by token $b$ inside one pre-token, under the corpus's current segmentation (Block 1 lesson 2). The first course's $f_i$ was a type's frequency: same letter, same idea, one level down |
+| $(a_i, b_i)$, $u_i$ | fusión $i$: the pair it glues and the vocabulary entry it creates, whose bytes are those of $a_i$ followed by those of $b_i$ (Block 1 lesson 2) |
+| $V_i$, $m$ | the vocabulary after $i$ fusiones, $V_0$ being the 256 bytes; $m$ the number of fusiones, so $\lvert V_m \rvert = 256 + m$ (Block 1 lesson 2) |
+| $T_i$ | the corpus's length in tokens after $i$ fusiones, $T_0 = n$ (Block 1 lesson 2) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -61,6 +68,15 @@ $C$ were the document count, the corpus and its length in characters, and are Ka
 tokens and compute. None of the four shares a page with its old reading — this course's tokeniser
 is a fixed BPE from Block 1 lesson 2 on and never needs a letter — so the collision is across
 courses, not within a lesson, and one clause settles it.
+
+**The tokeniser's letters avoid the block's later ones** (`COURSE-C2-P1-01`). Block 1 lesson 2
+needs a byte count, a merge count and a pair frequency, and three obvious letters are spoken for:
+$C$ is Kaplan's compute from lesson 7, so a text's bytes are $n$, not the first course's $C$; $k$ is
+top-$k$'s from lesson 4, so the merge count is $m$ (and `bpe.py`'s parameter was renamed `k` →
+`m` in the same task, so the code and the page agree); and a new token is **named**, $u_i$, rather
+than written $a_i b_i$, because juxtaposition is multiplication (shared §3) and a concatenation of
+byte strings is not a product. $T_i$ carries a *merge* index in its subscript, not a position; the
+lesson says so where it first writes it, and $T_i$ never shares an equation with $x_t$.
 
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson

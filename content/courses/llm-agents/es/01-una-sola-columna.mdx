@@ -217,7 +217,8 @@ Esta lección no lleva celda a propósito: el modelo que cumple todo lo de arrib
 de este bloque, lo cargas y lo entrenas más adelante, en la lección sobre entrenar un mini-GPT.
 Aquí el modelo es una hoja de papel: los logits me los he inventado yo, elegidos para que $e^{z}$
 salga entero. Los tokens son palabras, para que quepan en una hoja; el vocabulario del mini-GPT no
-está hecho de palabras, y de eso trata la lección siguiente.
+está hecho de palabras, y de eso trata <Leccion slug="bpe-de-verdad">la lección siguiente, sobre
+BPE</Leccion>.
 
 Toma la ventana <W>la casa es blanca</W> y el vocabulario de sus cuatro palabras, en orden
 alfabético: $V = \{\textit{blanca}, \textit{casa}, \textit{es}, \textit{la}\}$. El primer token se
@@ -281,13 +282,13 @@ las subpalabras lo arreglan partiendo lo que no conocen en trozos que sí. Lo qu
 hizo, y lo dijo, fue construir uno: su explorable mostraba el resultado de BPE, y de dónde salía
 cada corte quedó fuera.
 
-{/* Referencias adelantadas en prosa hasta que existan los ficheros: al aterrizar la lección 2
-    (slug bpe-de-verdad) y la 3 (slug entrenar-un-mini-gpt), envolver «la lección siguiente, sobre
-    BPE de verdad» y «la lección sobre entrenar un mini-GPT» en su Leccion slug=…; el lint falla
-    con un slug que no resuelve, también dentro de un comentario. */}
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 3
+    (slug entrenar-un-mini-gpt), envolver «la lección sobre entrenar un mini-GPT» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario.
+    La lección 2 (bpe-de-verdad) ya existe y está enlazada. */}
 
-Ese procedimiento es la lección siguiente, sobre BPE de verdad: no partir una palabra en trozos que
-ya existen, sino fusionar, sobre un corpus en español, los pares más frecuentes hasta el tamaño
+Ese procedimiento es <Leccion slug="bpe-de-verdad">la lección siguiente, sobre BPE de
+verdad</Leccion>: no partir una palabra en trozos que ya existen, sino fusionar, sobre un corpus en español, los pares más frecuentes hasta el tamaño
 que se quiera, y ver qué le hace eso a la <W>ñ</W>, a <W>qu</W> y a
 <W>ción</W>. Con el vocabulario en la mano, lo que queda del bloque es cargar el modelo, seguir
 entrenándolo, muestrear de él y medirlo, y todo eso es aritmética sobre la fórmula de hoy.
