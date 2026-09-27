@@ -36,7 +36,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (2/9) | _tbd_ | local |
+| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (3/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
@@ -378,3 +378,53 @@ before the first cell. Decisions recorded for the reviewer of the block:
   `open_url`), all four quiz questions right and wrong, 0 KaTeX errors, the widget's numbers match
   the prose at steps 1, 5, 17 and 31, and no horizontal page scroll at 360 px (Playwright; the
   Browser pane does not composite here).
+
+Lesson 3 `entrenar-un-mini-gpt` authored on the shared branch (2026-09-27). 2 013 words (13 over the
+advisory target), 8 display equations, no widget (the block md assigns none), one new figure
+(`public/courses/llm-agents/minigpt-entrenamiento.svg`), 3 cells (longest 27 lines), 4 quiz, 1
+challenge (`ch-adamw`), 3 readings (the site's own AdamW post as the first internal `kind: blog`,
+Loshchilov & Hutter, the GPT-3 paper's appendix B). Runs on the mini-GPT and says so before the
+first cell. Decisions recorded for the reviewer of the block:
+- **The derivation is the batch, the rest is stated.** Unbiasedness of $\nabla\hat{\mathcal{L}}$ and
+  $\mathbb{E}\lVert\hat{\mathbf{g}} - \mathbf{g}\rVert^2 = \tfrac{1}{B}\,\mathbb{E}\lVert\nabla\mathcal{L}_i - \mathbf{g}\rVert^2$
+  are derived (cross terms vanish, a `scaled-dot-product` callback); AdamW, the global-norm
+  recorte, warm-up and cosine decay are stated with one-line reasons, as the block md asks. Cell 2
+  measures the $1/B$: $B \cdot$ruido stays in 540–620 for $B = 1, 4, 16$ (8 batches of $T = 8$).
+- **Continued training is 200 steps behind a time guard**, not the README's 100: the cell stops
+  itself at 8 s and prints the step, so a slow phone gets a partial run instead of a killed worker.
+  200 steps take 4.6 s in the desktop Browser pane on a production build. Phone not measured.
+- **What falls is the loss on the pages it trains on, and the lesson says so.** Measured while
+  designing the cell: with one 16-token window per step, continuing on part of the reserved 10 %
+  makes the loss on the rest of it *worse* (3.90 → 3.96–4.15 in 100 steps). The cell trains on the
+  last 3 000 reserved tokens and probes eight fixed windows of those same pages (3.473 → 3.104,
+  bumpy), and the prose signposts the perplexity lesson. Lesson 2's bridge («la pérdida bajando
+  … sobre texto que el modelo no ha visto») is true only in that sense.
+- **Warm-up is shown by an invitation, not a fourth cell**: `eta_max, S_cal = 3e-3, 1` jumps the
+  loss 3.47 → 4.89 in 25 steps; with `S_cal = 50` the jump moves to step 75 (4.35). Both quoted
+  from Pyodide runs of the modified cell. The resume rate ($5 \cdot 10^{-4}$) is chosen as roughly
+  where the checkpoint's own schedule left it ($4 \cdot 10^{-4}$ at step 1 750).
+- **The checkpoint was trained with $\lambda = 0$** (`minigpt.py`'s `Adam` has no decay); the
+  lesson says so in the first person and the challenge writes the W. Its four tests separate the
+  solution from a coupled-L2 version (fails 2), one without bias correction (fails 3) and one that
+  decays after the update (fails 1).
+- **The figure comes from an exact replay** of `train-minigpt.py`'s loop with per-step logging
+  (scratch script, not committed): held-out loss 3.2037 at step 1 750, the README's number.
+- **Terms and symbols added before use:** `paso` (de entrenamiento), *batch*, *checkpoint* (not
+  «punto de control», which is a `<RepoLink>`), `media móvil`, `recorte`, `calendario`,
+  `calentamiento`, `decaimiento de pesos` in the delta's §4; $\mathcal{L}_i$,
+  $\mathcal{L}_{\text{corpus}}$, $\hat{\mathcal{L}}$, $\mathbf{g}$/$\hat{\mathbf{g}}$/$\hat{\mathbf{g}}_s$,
+  $s$/$S$/$\theta_s$, $\mathbf{m}_s$/$\mathbf{v}_s$, $\rho_1$/$\rho_2$, $\varepsilon$, $\lambda$,
+  $\eta_s$/$\eta_{\max}$/$S_{\text{cal}}$ in `NOTATION.md`, with a note: Adam's rates are
+  $\rho_1, \rho_2$ because the shared §4 reserves $\beta$; the step is $s$ because $t$ is the
+  position; the hat means «from a batch» only.
+- **Lessons 1 and 2 now link this lesson** (`<Leccion slug="entrenar-un-mini-gpt">`), their
+  placeholder comments removed. This lesson's forward references to lessons 4 (`muestreo`, the
+  bridge) and 6 (`perplejidad`, the body) are prose with the same kind of comment.
+- **The blog URL 404s on production today**: the blog has not left `staging`. It returns 200 on
+  the latest staging preview, so the path is right; it resolves when `staging` ships.
+- Verified: `pnpm lint:content` (only the words warning), `jest src/lib/courses` (34 suites, 532
+  tests), `pnpm build` green; the three cells under Node Pyodide 0.29.3 and in the Browser pane on
+  `pnpm start` with identical output; the challenge in the browser (starter 0/4, solution 4/4,
+  empty `NameError`); all four quiz questions right and wrong (numeric at the tolerance edge);
+  0 KaTeX errors; no horizontal page scroll at 360 px (Playwright screenshots; the pane does not
+  composite here).

@@ -1,0 +1,535 @@
+---
+slug: entrenar-un-mini-gpt
+title: "Entrenar un mini-GPT en NumPy"
+block: 1
+order: 3
+minutes: 30
+summary: "El checkpoint del bloque es el resultado de 2 000 pasos de un bucle que esta lección escribe entero. Cada paso sigue la pérdida media de unas pocas ventanas del corpus sacadas al azar, y la lección deriva por qué eso apunta, de media, adonde apuntaría el corpus entero, y cuánto ruido cuesta ahorrarse el resto. El paso es AdamW, con una tasa de aprendizaje que se calienta y luego decae. Con todo ello el mini-GPT sigue entrenando en el navegador, sobre las últimas páginas de Marianela, que no había visto."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-forma-del-batch
+    type: predict-output
+    language: python
+    prompt: 'Con `ids` un array largo de ids, como el corpus de la primera celda, y `ventanas` la de <W>minigpt.py</W>, ¿qué imprime esto?'
+    code: |
+      X, Y = ventanas(ids, 4, 16, np.random.default_rng(0))
+      print(X.shape, Y.shape, (X[:, 1:] == Y[:, :-1]).all())
+    answer: '(4, 16) (4, 16) True'
+    explanation: 'Cuatro ventanas, una por fila, de dieciséis tokens: `X` e `Y` tienen la misma forma, $B \times T$. Y la columna $t + 1$ de `X` es la columna $t$ de `Y`, porque `Y` es la misma ventana corrida una posición: lo que la fila $t$ de los logits tiene que acertar es el token que `X` lee en la siguiente. `ventanas` saca $T + 1$ tokens seguidos y los parte en dos trozos solapados.'
+    hint: 'Mira qué devuelve `ventanas` en <W>minigpt.py</W>: `W[:, :-1], W[:, 1:]`.'
+  - id: q-ruido-y-coste
+    type: single
+    prompt: 'Pasas de $B = 8$ a $B = 32$ ventanas por paso, con la misma $T$. ¿Qué les pasa al tamaño típico del error del gradiente, $\sqrt{\mathbb{E}\left[\lVert \hat{\mathbf{g}} - \mathbf{g} \rVert^{2}\right]}$, y al coste de cada paso?'
+    options:
+      - { id: a, text: 'El error se divide entre 2 y el coste se multiplica por 4.' }
+      - { id: b, text: 'El error se divide entre 4 y el coste se multiplica por 4.' }
+      - { id: c, text: 'El error se divide entre 2 y el coste se multiplica por 2.' }
+      - { id: d, text: 'El error no cambia: $\hat{\mathbf{g}}$ ya no tenía sesgo, y un batch más grande sólo encarece el paso.' }
+    answer: a
+    explanation: 'La (a). La media del cuadrado del error es la de una ventana dividida entre $B$: con cuatro veces más ventanas, cuatro veces menos. El tamaño típico es su raíz, así que baja a la mitad, mientras que el paso hace la ida y la vuelta de $B \cdot T$ tokens y cuesta cuatro veces más. La (b) olvida la raíz: lo que baja cuatro veces es la media del cuadrado, no el tamaño. La (d) confunde las dos propiedades: no tener sesgo dice adónde apunta $\hat{\mathbf{g}}$ de media, no cuánto se aleja de ahí en cada paso.'
+    hint: 'La fórmula de la sección da la media del cuadrado de la distancia. ¿Qué le pasa a su raíz?'
+  - id: q-veces-cada-token
+    type: numeric
+    prompt: 'El checkpoint dio $S = 2\,000$ pasos con batches de $B = 32$ ventanas de $T = 64$ tokens, sobre los $125\,789$ tokens de entrenamiento. ¿Cuántas veces, de media, le tocó predecir cada token? Redondea a un decimal.'
+    answer: 32.6
+    tolerance: 0.3
+    explanation: 'Cada paso hace $32 \cdot 64 = 2\,048$ predicciones, una por fila de los logits de cada ventana, y $2\,000$ pasos hacen $4\,096\,000$: repartidas entre $125\,789$ tokens, unas $32.6$ por token. El checkpoint ha leído cada frase de la parte de entrenamiento más de treinta veces, y por eso el último 10 % del corpus se aparta y no se entrena nunca: una pérdida medida sobre texto leído treinta veces no dice cuánto sabe el modelo de lo que no ha leído. En la figura se ve: desde el paso 1 000, la pérdida de cada batch sigue bajando y la del texto reservado casi no se mueve.'
+    hint: 'Cada paso predice $B \cdot T$ tokens. Multiplica por los pasos y divide entre los tokens del corpus.'
+  - id: q-primer-paso-de-adam
+    type: single
+    prompt: 'Cargas el checkpoint, creas un `Adam` nuevo y das un solo paso con $\eta = 3 \cdot 10^{-3}$, sin calentamiento. ¿Qué le pasa a un parámetro cuyo gradiente, en ese paso, no es cero?'
+    options:
+      - { id: a, text: 'Se mueve casi exactamente $3 \cdot 10^{-3}$, en sentido contrario a su gradiente, sea éste grande o pequeño.' }
+      - { id: b, text: 'Se mueve $3 \cdot 10^{-3}$ veces su gradiente, como en el descenso de gradiente del curso anterior.' }
+      - { id: c, text: 'No se mueve: $\mathbf{m}$ y $\mathbf{v}$ empiezan en cero, así que el primer paso vale cero.' }
+      - { id: d, text: 'Se mueve más cuanto más grande es su gradiente, y los de gradiente pequeño se quedan casi quietos por culpa de $\varepsilon$.' }
+    answer: a
+    explanation: 'La (a). En el primer paso, $\mathbf{m}_1 / (1 - \rho_1)$ es el gradiente y $\mathbf{v}_1 / (1 - \rho_2)$ su cuadrado, así que el cociente vale el signo del gradiente y cada coordenada se mueve $\eta$ entero. La (c) olvida la división entre $1 - \rho^{s}$, que existe justo para eso, y la (d) sólo vale para gradientes del tamaño de $\varepsilon = 10^{-8}$. Por eso reanudar sin calentamiento es brusco: el checkpoint guarda $\theta$ pero no $\mathbf{m}$ ni $\mathbf{v}$, y el primer paso mueve cada peso lo mismo, en la dirección de un único gradiente lleno de ruido. La tercera celda lo enseña si le quitas el calentamiento: en 25 pasos, la pérdida sube de $3.47$ a $4.89$.'
+    hint: '¿Cuánto valen $\mathbf{m}_1 / (1 - \rho_1)$ y $\mathbf{v}_1 / (1 - \rho_2)$, si $\mathbf{m}_0 = \mathbf{v}_0 = \mathbf{0}$?'
+challenges:
+  - id: ch-adamw
+    prompt: |
+      Escribe el método `paso` de `AdamW`: un paso de la fórmula de la sección, coordenada a
+      coordenada, sobre un diccionario de pesos como `modelo.p`. En cada llamada suma uno a
+      `self.s`, actualiza las dos medias móviles de cada peso, `self.m[k]` y `self.v[k]`, con
+      su gradiente `g[k]`, y resta a `p[k]`, en su sitio, lo que dice la fórmula: con la `eta`
+      de esa llamada y el decaimiento `self.lam` *fuera* del cociente. Con `lam = 0` tiene
+      que dar lo mismo que el `Adam` de <W>minigpt.py</W>.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      class AdamW:
+          """AdamW sobre un diccionario de pesos {nombre: array}, como el Adam de minigpt.py."""
+
+          def __init__(self, p, eta=1e-3, rho1=0.9, rho2=0.999, eps=1e-8, lam=0.0):
+              self.eta, self.rho1, self.rho2, self.eps, self.lam = eta, rho1, rho2, eps, lam
+              self.s = 0                                           # pasos dados
+              self.m = {k: np.zeros_like(v) for k, v in p.items()}
+              self.v = {k: np.zeros_like(v) for k, v in p.items()}
+
+          def paso(self, p, g, eta=None):
+              """Un paso: actualiza cada p[k], en su sitio, con el gradiente g[k]."""
+              eta = self.eta if eta is None else eta
+              # tu código aquí
+    tests:
+      - name: "el primer paso mueve cada peso eta, contra su gradiente"
+        code: |
+          import numpy as np
+          p = {"w": np.array([1.0, -2.0, 3.0])}
+          opt = AdamW(p, eta=0.1)
+          opt.paso(p, {"w": np.array([0.5, -40.0, 0.01])})
+          assert np.allclose(p["w"], [0.9, -1.9, 2.9], atol=1e-6), 'en el primer paso, m/(1 - rho1) vale g y v/(1 - rho2) vale g², así que el cociente es el signo de g: cada peso se mueve eta entero, sea su gradiente 0.01 o 40. Sale %s; ¿has dividido entre 1 - rho**s, con s el número de paso?' % p["w"]
+      - name: "con gradiente cero, sólo decae"
+        code: |
+          import numpy as np
+          p = {"w": np.array([1.0, -2.0])}
+          opt = AdamW(p, eta=0.1, lam=0.5)
+          opt.paso(p, {"w": np.zeros(2)})
+          assert np.allclose(p["w"], [0.95, -1.9]), 'con g = 0 las dos medias se quedan en cero y el cociente vale 0: sólo queda el decaimiento, y theta pasa a theta·(1 - eta·lam) = [0.95, -1.9]. Sale %s' % p["w"]
+      - name: "el decaimiento va fuera del cociente"
+        code: |
+          import numpy as np
+
+
+          def adamw(w, gs, etas, lam, rho1=0.9, rho2=0.999, eps=1e-8):
+              m = v = 0.0
+              for s, (g, eta) in enumerate(zip(gs, etas), start=1):
+                  m = rho1 * m + (1 - rho1) * g
+                  v = rho2 * v + (1 - rho2) * g ** 2
+                  w = w - eta * ((m / (1 - rho1 ** s)) / (np.sqrt(v / (1 - rho2 ** s)) + eps) + lam * w)
+              return w
+
+
+          rng = np.random.default_rng(0)
+          w0 = rng.normal(size=5)
+          gs = [rng.normal(size=5) * 10.0 ** rng.integers(-3, 2, size=5) for _ in range(6)]
+          etas = [0.01, 0.02, 0.03, 0.03, 0.02, 0.01]
+          p = {"w": w0.copy()}
+          opt = AdamW(p, lam=0.1)
+          for g, eta in zip(gs, etas):
+              opt.paso(p, {"w": g.copy()}, eta)
+          assert np.allclose(p["w"], adamw(w0, gs, etas, 0.1), rtol=1e-9, atol=1e-12), 'seis pasos con lam = 0.1 no dan AdamW. Si sumas lam·theta al gradiente, el decaimiento pasa por las medias y por la división entre la raíz de v: eso es la regularización L2, que con Adam es otro algoritmo. En AdamW va fuera del cociente, multiplicado sólo por eta, y con el theta de antes del paso'
+      - name: "con lam = 0 es el Adam del mini-GPT"
+        code: |
+          import numpy as np
+          from pyodide.http import open_url
+
+          exec(open_url("/courses/llm-agents/minigpt.py").read())
+          rng = np.random.default_rng(1)
+          p1 = {"E": rng.normal(size=(4, 3)), "b": rng.normal(size=3)}
+          p2 = {k: v.copy() for k, v in p1.items()}
+          a, b = Adam(p1), AdamW(p2)
+          for s in range(1, 8):
+              g = {k: rng.normal(size=v.shape) for k, v in p1.items()}
+              a.paso(p1, {k: v.copy() for k, v in g.items()}, 1e-3 * s)
+              b.paso(p2, {k: v.copy() for k, v in g.items()}, 1e-3 * s)
+          assert all(np.allclose(p1[k], p2[k], rtol=1e-10, atol=1e-14) for k in p1), 'con lam = 0, siete pasos con una eta distinta en cada uno no dan lo mismo que el Adam de minigpt.py: revisa las dos medias (rho1 con g, rho2 con g al cuadrado), la corrección con el número de paso y que uses la eta de cada llamada'
+    solution: |
+      import numpy as np
+
+
+      class AdamW:
+          """AdamW sobre un diccionario de pesos {nombre: array}, como el Adam de minigpt.py."""
+
+          def __init__(self, p, eta=1e-3, rho1=0.9, rho2=0.999, eps=1e-8, lam=0.0):
+              self.eta, self.rho1, self.rho2, self.eps, self.lam = eta, rho1, rho2, eps, lam
+              self.s = 0                                           # pasos dados
+              self.m = {k: np.zeros_like(v) for k, v in p.items()}
+              self.v = {k: np.zeros_like(v) for k, v in p.items()}
+
+          def paso(self, p, g, eta=None):
+              """Un paso: actualiza cada p[k], en su sitio, con el gradiente g[k]."""
+              eta = self.eta if eta is None else eta
+              self.s += 1
+              for k in p:
+                  self.m[k] = self.rho1 * self.m[k] + (1 - self.rho1) * g[k]
+                  self.v[k] = self.rho2 * self.v[k] + (1 - self.rho2) * g[k] ** 2
+                  m = self.m[k] / (1 - self.rho1 ** self.s)       # corregidas: el arranque en cero
+                  v = self.v[k] / (1 - self.rho2 ** self.s)
+                  p[k] -= eta * (m / (np.sqrt(v) + self.eps) + self.lam * p[k])
+    explanation: |
+      Cuatro líneas por peso, y dos de ellas deciden el reto. La división entre `1 - rho ** s`,
+      con el contador `self.s` que sube en cada llamada, es la que hace que el primer paso
+      mida `eta` entero: sin ella, el cociente de ese paso vale $0.1 / \sqrt{0.001} \approx 3.2$
+      veces el signo, y todo el arranque se mueve de más. Y `self.lam * p[k]` se suma *después*
+      de la división, dentro del paréntesis que multiplica `eta`, con el `p[k]` de antes del
+      paso: la resta en su sitio evalúa la derecha entera antes de escribir. Sumado a `g[k]`
+      sería la regularización L2, que es lo que el tercer test distingue.
+reading:
+  - kind: blog
+    title: 'Por qué AdamW para entrenar modelos de lenguaje, y qué está cambiando'
+    authors: 'Gustavo Torres'
+    year: '2026'
+    venue: 'gustavoai.dev'
+    lang: es
+    url: 'https://gustavoai.dev/blog/de-newton-a-adamw'
+    note: 'El artículo de este sitio que deriva lo que la lección enuncia: de dónde salen las dos medias de Adam, por qué la W va fuera del cociente y qué justifica el calentamiento y el descenso de la tasa.'
+  - kind: paper
+    title: 'Decoupled Weight Decay Regularization'
+    authors: 'Loshchilov y Hutter'
+    year: '2019'
+    venue: 'ICLR 2019 · arXiv:1711.05101'
+    lang: en
+    url: 'https://arxiv.org/abs/1711.05101'
+    note: 'El artículo de la W: por qué, con Adam, sumar el decaimiento al gradiente no es lo mismo que aplicarlo fuera. Su algoritmo 2 pone las dos versiones una al lado de la otra, y la segunda es el reto de esta lección.'
+  - kind: paper
+    title: 'Language Models are Few-Shot Learners'
+    authors: 'Brown et al.'
+    year: '2020'
+    venue: 'arXiv:2005.14165'
+    lang: en
+    url: 'https://arxiv.org/abs/2005.14165'
+    note: 'El artículo de GPT-3. Su apéndice B es la receta de esta lección a escala: AdamW, recorte a norma 1, calentamiento lineal y coseno hasta el 10 % de la tasa, para un modelo de 175 000 millones de parámetros.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 3. Corre sobre el mini-GPT: el checkpoint de P0-03. */}
+
+Un mini-GPT recién inicializado reparte su apuesta casi por igual entre las 512 entradas del
+vocabulario, y la pérdida de <Leccion slug="una-sola-columna">la lección sobre el modelo de
+lenguaje causal</Leccion> le cobra por eso $\ln 512 \approx 6.24$ en cada posición. El que cargan
+las celdas de este bloque paga $3.2$ sobre páginas que nunca vio. Los dos leen los ids del
+tokenizador de <Leccion slug="bpe-de-verdad">la lección sobre BPE</Leccion> y son la misma red, con
+$136\,448$ números cada uno. Lo único que los separa es el valor de esos números.
+
+Entre uno y otro hay $2\,000$ pasos de entrenamiento, y esta lección escribe el bucle que los dio. Es el
+del curso anterior (la pérdida, su gradiente, un paso en contra, repetir) con tres cambios, los
+mismos que llevan todos los modelos grandes. Cada paso mira unas pocas ventanas sacadas al azar, no
+el corpus entero. El gradiente no va tal cual al paso: pasa antes por AdamW.
+Y $\eta$ sube al principio y baja al final. El primero lo derivamos; los otros dos quedan
+enunciados, con sus razones.
+
+El primero es una cuestión de coste. La parte del corpus con la que se entrenó el *checkpoint*
+tiene $125\,789$ tokens, y una ventana de $65$ tokens puede empezar en casi cualquiera de ellos:
+unas $125\,700$ ventanas solapadas. El gradiente exacto de su pérdida media exige la ida y la
+vuelta de todas, unos ocho millones de tokens: en el navegador,
+a algo menos de un milisegundo por token, casi dos horas por paso. Un paso del checkpoint miraba
+$32$ ventanas de $64$ tokens sacadas al azar, casi cuatro mil veces menos.
+
+Es una encuesta: no le preguntas a todo el país sino a mil personas al azar, y la
+respuesta sale con ruido pero sin sesgo, con un ruido que baja al crecer la muestra, aunque
+despacio. La primera sección demuestra las tres cosas.
+
+El segundo cambio lo anunció el curso anterior sin llegar a hacerlo. En
+<Leccion curso="dl-nlp" slug="descenso-gradiente">su lección sobre el descenso de gradiente</Leccion>,
+una sola $\eta$ no podía servir a la vez para una dirección empinada y otra casi plana, y los
+arreglos, *momentum* y Adam, quedaron fuera. En un *batch* del mini-GPT hay coordenadas del
+gradiente miles de veces más pequeñas que otras. AdamW le da a cada parámetro su propia escala, de
+modo que ninguno se mueve mucho más que $\eta$ por paso, sea cual sea el tamaño de su gradiente.
+
+El tercero, la $\eta$ que sube y baja, se ve en el entrenamiento del checkpoint.
+
+<Figure
+  src="/courses/llm-agents/minigpt-entrenamiento.svg"
+  alt="Dos gráficas apiladas que comparten el eje horizontal, los 2 000 pasos del entrenamiento del checkpoint. Arriba, la tasa de aprendizaje: sube en línea recta desde cero hasta 0.003 en el paso 200 y después baja en una curva suave, media onda de coseno, hasta 0.0003 en el paso 2 000. Abajo, dos pérdidas. La de cada batch, en gris, arranca en 6.23, cae deprisa hasta 4 hacia el paso 200 y sigue bajando cada vez más despacio hasta 2.5. La del texto reservado, en verde, medida cada 250 pasos, baja con ella al principio, se separa por encima hacia el paso 750 y se queda casi plana en 3.2 desde el paso 1 500. Una línea vertical discontinua en el paso 1 750 marca el checkpoint, el punto verde más bajo."
+  caption="Los 2 000 pasos del checkpoint. La tasa sube en línea recta durante 200 pasos y baja en coseno hasta la décima parte, y casi toda la pérdida se gana mientras está alta. El checkpoint es el paso 1 750, el de menor pérdida sobre el texto reservado, que desde el 1 500 apenas se mueve."
+/>
+
+<Callout type="intuition" title="La idea en una frase">
+Entrenar es repetir un paso: unas pocas ventanas al azar, cuyo gradiente apunta con ruido adonde
+apunta el del corpus entero, y un movimiento de AdamW, que da a cada parámetro su propia escala, a
+una tasa que sube y luego baja.
+</Callout>
+
+## Un batch al azar apunta, de media, adonde apunta el corpus
+
+Fijemos la parte de entrenamiento del corpus y llamemos $\mathcal{L}_i(\theta)$ a la pérdida de la
+lección sobre el modelo causal en la ventana de $T + 1$ tokens que empieza en la posición $i$: la
+media de sus $T$ valores de $-\log p_\theta$. La pérdida que entrenar quiere bajar es la media de
+todas,
+
+$$
+\mathcal{L}_{\text{corpus}}(\theta) = \mathbb{E}_i\left[\mathcal{L}_i(\theta)\right],
+$$
+
+donde $i$ se elige al azar, con la misma probabilidad para cada posición en la que cabe una
+ventana, y $\mathbb{E}$ es la media sobre ese azar.
+
+Un batch de tamaño $B$ son $B$ posiciones $i_1, \dots, i_B$ sacadas así, cada una por su cuenta,
+y su pérdida es la media de las suyas:
+
+$$
+\hat{\mathcal{L}}(\theta) = \frac{1}{B}\sum_{j=1}^{B}\mathcal{L}_{i_j}(\theta).
+$$
+
+En el código, `ventanas(ids, B, T, rng)` devuelve `X` e `Y`, dos matrices de ids de forma
+$B \times T$, la segunda corrida una posición, y la red devuelve logits de forma
+$B \times T \times \lvert V \rvert$. El gradiente de $\hat{\mathcal{L}}$ es el de siempre, el softmax menos el *one-hot* en cada fila y después la vuelta de
+<Leccion curso="dl-nlp" slug="backpropagation">la lección sobre backpropagation</Leccion>, y
+`perdida` devuelve las dos cosas, con los gradientes en un diccionario de las mismas claves y formas
+que los pesos.
+
+Dos propiedades hacen que $\hat{\mathcal{L}}$ sirva. La primera es que no tiene sesgo. Cada $i_j$
+sale del mismo sorteo que $i$, así que la media de $\mathcal{L}_{i_j}(\theta)$ es
+$\mathcal{L}_{\text{corpus}}(\theta)$ para cada $j$, y la media de $B$ números con esa media tiene
+esa media. El gradiente es lineal y atraviesa la media igual que atraviesa una suma:
+
+$$
+\mathbb{E}\left[\nabla_\theta \hat{\mathcal{L}}(\theta)\right] = \nabla_\theta \mathcal{L}_{\text{corpus}}(\theta).
+$$
+
+Llamemos $\mathbf{g}$ al lado derecho, el gradiente que costaría dos horas, y $\hat{\mathbf{g}}$ al
+de dentro de la media, el del batch: dos vectores con una coordenada por parámetro. Un paso con
+$\hat{\mathbf{g}}$ va, de media, adonde iría un paso con $\mathbf{g}$.
+
+La segunda es que su ruido baja como $1/B$. Lo que $\hat{\mathbf{g}}$ se aleja de $\mathbf{g}$,
+medido como la media del cuadrado de la distancia, es
+
+$$
+\mathbb{E}\left[\lVert \hat{\mathbf{g}} - \mathbf{g} \rVert^{2}\right] = \frac{1}{B}\,\mathbb{E}\left[\lVert \nabla_\theta \mathcal{L}_i - \mathbf{g} \rVert^{2}\right],
+$$
+
+el ruido de una sola ventana dividido entre $B$.
+
+<Details summary="Ver de dónde sale la división entre B">
+$\hat{\mathbf{g}} - \mathbf{g}$ es la media de las $B$ desviaciones
+$\nabla_\theta \mathcal{L}_{i_j} - \mathbf{g}$, y el cuadrado de su norma es
+
+$$
+\lVert \hat{\mathbf{g}} - \mathbf{g} \rVert^{2} = \frac{1}{B^{2}}\sum_{j=1}^{B}\sum_{k=1}^{B}\left(\nabla_\theta \mathcal{L}_{i_j} - \mathbf{g}\right)^{\top}\left(\nabla_\theta \mathcal{L}_{i_k} - \mathbf{g}\right).
+$$
+
+Toma la media término a término. Si $j \neq k$, las dos posiciones se sortearon por separado, así
+que la media del producto es el producto de las medias, y cada una de ellas vale
+$\mathbb{E}\left[\nabla_\theta \mathcal{L}_i\right] - \mathbf{g} = \mathbf{0}$. Los $B^{2} - B$
+términos cruzados se anulan, que es la misma cuenta con la que
+<Leccion curso="dl-nlp" slug="scaled-dot-product">la lección sobre el producto interno escalado</Leccion>
+sumaba productos independientes. Quedan los $B$ términos con $j = k$, cada uno de media
+$\mathbb{E}\left[\lVert \nabla_\theta \mathcal{L}_i - \mathbf{g} \rVert^{2}\right]$, divididos entre
+$B^{2}$.
+</Details>
+
+El precio está en la raíz. El tamaño típico del error baja como $1/\sqrt{B}$ y el coste del paso
+crece como $B$: la mitad de ruido cuesta cuatro veces más tokens. Y las ventanas se sacan al azar, no
+en orden como en <Leccion curso="dl-nlp" slug="proyecto-char-lm">el modelo de lenguaje de
+caracteres</Leccion>, porque las dos cuentas necesitan que cada $i_j$ salga del mismo sorteo que
+$i$. En orden, el gradiente de cada paso sería el de una página de la novela, y el modelo iría
+detrás del argumento.
+
+## Un paso de AdamW, a la tasa que toca
+
+Numeremos los pasos $s = 1, 2, \dots, S$ y llamemos $\theta_s$ a los parámetros después del paso
+$s$ (el curso anterior escribía $\theta_t$, pero aquí $t$ ya es la posición dentro de la ventana).
+El paso $s$ saca un batch, calcula su gradiente $\hat{\mathbf{g}}_s$ y hace con él tres cosas, en
+este orden.
+
+Primero, el recorte de <Leccion curso="dl-nlp" slug="gradiente-desvanecido">la lección sobre el
+gradiente que se desvanece</Leccion>: si $\lVert \hat{\mathbf{g}}_s \rVert > 1$, lo dividimos entre
+su norma. Aquí la norma es la de las $136\,448$ coordenadas juntas y no la de cada grupo de pesos,
+así que el recorte encoge el paso sin torcer su dirección.
+
+Después, AdamW. Guarda dos **medias móviles**, una del gradiente y otra de su cuadrado coordenada
+a coordenada, que empiezan en cero y en cada paso le dan un peso $1 - \rho$ al gradiente nuevo y
+$\rho$ a lo que ya llevaban:
+
+$$
+\mathbf{m}_s = \rho_1\,\mathbf{m}_{s-1} + (1 - \rho_1)\,\hat{\mathbf{g}}_s, \qquad \mathbf{v}_s = \rho_2\,\mathbf{v}_{s-1} + (1 - \rho_2)\,\hat{\mathbf{g}}_s \odot \hat{\mathbf{g}}_s,
+$$
+
+con $\mathbf{m}_0 = \mathbf{v}_0 = \mathbf{0}$. (El artículo de Adam y <W>minigpt.py</W> llaman
+$\beta_1$ y $\beta_2$, `beta1` y `beta2`, a lo que aquí es $\rho_1$ y $\rho_2$: la $\beta$ queda
+reservada para el bloque 2.) Con ellas mueve los parámetros, coordenada a coordenada:
+
+$$
+\theta_s = \theta_{s-1} - \eta_s\left(\frac{\mathbf{m}_s / (1 - \rho_1^{s})}{\sqrt{\mathbf{v}_s / (1 - \rho_2^{s})} + \varepsilon} + \lambda\,\theta_{s-1}\right).
+$$
+
+El mini-GPT usa $\rho_1 = 0.9$, $\rho_2 = 0.999$ y $\varepsilon = 10^{-8}$, que sólo evita dividir
+entre cero. Y $\lambda = 0$: he entrenado el checkpoint sin decaimiento de pesos, así que su
+`Adam` es AdamW con la W apagada. Escribirla es el reto de esta lección.
+
+La fórmula queda enunciada (el artículo sobre AdamW de «Para profundizar», al pie, la deriva),
+pero tres cosas se leen en ella. La división entre $1 - \rho^{s}$ deshace el arranque en cero: en
+el primer paso, $\mathbf{m}_1 / (1 - \rho_1)$ es $\hat{\mathbf{g}}_1$ y $\mathbf{v}_1 / (1 - \rho_2)$
+es su cuadrado, así que el cociente vale el signo del gradiente, coordenada a coordenada. El primer
+paso mueve $\eta_1$ entero cada parámetro cuyo gradiente no sea cero, sea éste de $10^{-4}$ o de
+$10$.
+
+Después, el cociente compara la media reciente del gradiente con la raíz de la media reciente de su
+cuadrado. Si el gradiente insiste en un signo, las dos se parecen y el cociente ronda $\pm 1$; si
+su signo es ruido, se acerca a $0$. Cada parámetro se mueve, como mucho, del orden de $\eta_s$ por
+paso: la $\eta$ única del curso anterior, con una escala propia para cada coordenada.
+
+Y $\lambda\,\theta_{s-1}$ va fuera del cociente: cada peso se encoge la misma fracción,
+$\eta_s \lambda$, tenga la historia de gradientes que tenga. Eso es el **decaimiento de pesos**
+desacoplado, la W (*weight decay*) que Loshchilov y Hutter le añadieron a Adam. Sumado a
+$\hat{\mathbf{g}}_s$, pasaría por la división y encogería menos a los pesos que más se mueven.
+
+Queda $\eta_s$. El checkpoint la saca de un **calendario** de dos tramos, un **calentamiento**
+(*warm-up*) lineal durante $S_{\text{cal}}$ pasos y un descenso en coseno hasta la décima parte,
+
+$$
+\eta_s = \eta_{\max} \cdot \min\left(1, \frac{s}{S_{\text{cal}}}\right) \cdot \left(0.1 + 0.9 \cdot \frac{1 + \cos(\pi s / S)}{2}\right),
+$$
+
+con $\eta_{\max} = 3 \cdot 10^{-3}$, $S_{\text{cal}} = 200$ y $S = 2\,000$: la curva de arriba de la
+figura.
+
+El calentamiento sale de la primera lectura de la fórmula. Mientras $\mathbf{m}_s$ y
+$\mathbf{v}_s$ llevan uno o dos gradientes, cada parámetro da un paso de casi $\eta_s$ en la
+dirección del signo de un gradiente lleno de ruido: $136\,448$ pasos a ciegas del mismo tamaño, que
+sólo son pequeños si $\eta_s$ lo es.
+
+El descenso sale de la primera sección. Cerca del final, con la pérdida casi plana, $\mathbf{g}$ es
+pequeño pero el ruido del batch no se va, y el gradiente de cada paso es casi todo ruido. Con $\eta$
+fija, el modelo tiembla alrededor del mínimo a una distancia que crece con $\eta$; bajarla al final
+lo deja asentarse.
+
+## El mini-GPT, entrenado delante de ti
+
+Las tres celdas corren sobre el mini-GPT: <W>minigpt.py</W>, el fichero de NumPy que produjo el
+checkpoint, y <W>minigpt.json</W>, sus pesos. Es la columna del
+<Leccion curso="dl-nlp" slug="proyecto-transformer">proyecto del Transformer</Leccion> en pequeño
+(dos bloques, cuatro cabezas, $d_{\text{model}} = 64$) más `perdida`, que hace la ida, la pérdida y
+la vuelta, y `Adam`.
+
+La primera carga el tokenizador, el modelo y el corpus, aparta el último 10 %, el texto reservado
+que el checkpoint no vio nunca, y saca un batch de cuatro ventanas de ocho tokens para que veas las
+formas. Después mide sobre él el checkpoint y la misma red con los pesos del paso 0.
+
+<PyCell packages={["numpy"]} code={`
+import json
+import numpy as np
+from pyodide.http import open_url
+
+exec(open_url("/courses/llm-agents/bpe.py").read())        # codificar, vocabulario, quitar_cabecera
+exec(open_url("/courses/llm-agents/minigpt.py").read())    # MiniGPT, ventanas, Adam
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+V = vocabulario(F)
+ids = np.array(codificar(quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read()), F))
+n_val = len(ids) // 10                                     # el último 10 %: el checkpoint no lo vio
+entren, val = ids[:-n_val], ids[-n_val:]
+print(len(entren), "tokens de entrenamiento y", len(val), "reservados")
+
+X, Y = ventanas(entren, 4, 8, np.random.default_rng(0))   # B = 4 ventanas de T = 8 tokens, y uno más
+print("X", X.shape, "  Y", Y.shape)
+print("X[0] =", [V[i].decode("utf-8", "replace") for i in X[0]])
+print("Y[0] =", [V[i].decode("utf-8", "replace") for i in Y[0]])
+
+pesos = open_url("/courses/llm-agents/minigpt.json").read()
+modelo = MiniGPT.cargar(pesos)
+nuevo = MiniGPT(semilla=0)                                 # la misma red, con los pesos del paso 0
+Xv, Yv = ventanas(val, 8, 64, np.random.default_rng(1))    # ocho ventanas del texto reservado
+print("%d parámetros   ln 512 = %.3f" % (modelo.n_parametros(), np.log(512)))
+print("pérdida sin entrenar:   %.3f" % nuevo.perdida(Xv, Yv)[0])
+print("pérdida del checkpoint: %.3f" % modelo.perdida(Xv, Yv)[0])
+`} />
+
+La primera fila de `X` es <W>Anduvieron b</W> en ocho tokens, y la de `Y`, la misma corrida uno,
+acaba en <W>re</W>. La red sin entrenar paga $6.235$, casi $\ln 512 = 6.238$: con pesos de tamaño
+$0.02$ los logits salen casi iguales y el softmax reparte por igual. El checkpoint paga $3.180$.
+Entre los dos números están los $2\,000$ pasos de la figura.
+
+La segunda pone a prueba el $1/B$. Para $B = 1$, $4$ y $16$ ventanas de ocho tokens, saca ocho
+batches independientes y mide cuánto se alejan sus gradientes de la media de los ocho: una
+estimación de $\mathbb{E}\left[\lVert \hat{\mathbf{g}} - \mathbf{g} \rVert^{2}\right]$. Si la
+sección tiene razón, $B$ por el ruido no cambia.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: modelo, entren, ventanas.
+def gradiente(B, rng, T=8):
+    """El gradiente de la pérdida de un batch de B ventanas: sus 136 448 números, en fila."""
+    X, Y = ventanas(entren, B, T, rng)
+    _, g = modelo.perdida(X, Y)
+    return np.concatenate([v.ravel() for v in g.values()])
+
+rng = np.random.default_rng(2)
+for B in [1, 4, 16]:
+    G = np.array([gradiente(B, rng) for _ in range(8)])    # ocho batches independientes, uno por fila
+    # estima E||g_batch - g||^2; ddof=1 porque la media también sale de estos ocho
+    ruido = G.var(axis=0, ddof=1).sum()
+    print("B = %2d   ruido %6.1f   B · ruido %6.1f" % (B, ruido, B * ruido))
+`} />
+
+El ruido cae de $540$ a $155$ y a $38$, catorce veces menos con dieciséis veces más ventanas, y
+$B$ por el ruido se queda entre $540$ y $620$. Las estimaciones tienen su propio ruido; cambia la
+semilla y la constante sigue ahí.
+
+La tercera sigue entrenando, sobre una copia del checkpoint y con un `Adam` nuevo: el checkpoint
+guarda $\theta$ pero no $\mathbf{m}$ ni $\mathbf{v}$, así que el calentamiento vuelve a hacer falta.
+Entrena sobre los últimos $3\,000$ tokens del texto reservado, las últimas páginas de *Marianela*,
+con una sola ventana de $16$ tokens por paso: el batch más ruidoso, pero el que cabe en el
+navegador. El calendario es el del checkpoint en pequeño, con $\eta_{\max} = 5 \cdot 10^{-4}$, más o
+menos donde el suyo lo dejó ($4 \cdot 10^{-4}$ en el paso 1 750). En un dispositivo lento, la celda
+se detiene antes de que el navegador la corte, y dice dónde.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la primera celda: pesos, val, ventanas, MiniGPT, Adam.
+import time
+
+eta_max, S_cal, S = 5e-4, 50, 200
+
+def tasa(s):
+    """El calendario del checkpoint en pequeño: calentamiento lineal y coseno hasta la décima parte."""
+    return eta_max * min(1, s / S_cal) * (0.1 + 0.9 * (1 + np.cos(np.pi * s / S)) / 2)
+
+alumno = MiniGPT.cargar(pesos)                             # una copia: el checkpoint no se toca
+opt = Adam(alumno.p)                                       # m y v en cero: el checkpoint no los guarda
+cola = val[-3000:]                                         # las últimas páginas, que no vio nunca
+Xp, Yp = ventanas(cola, 8, 16, np.random.default_rng(1))   # ocho ventanas fijas de esas páginas
+rng, t0 = np.random.default_rng(0), time.time()
+print("paso   0   pérdida %.3f" % alumno.perdida(Xp, Yp)[0])
+for s in range(1, S + 1):
+    X, Y = ventanas(cola, 1, 16, rng)                      # B = 1: lo que cabe en el navegador
+    _, g = alumno.perdida(X, Y)
+    norma = np.sqrt(sum((v ** 2).sum() for v in g.values()))
+    if norma > 1:                                          # el recorte, sobre las 136 448 a la vez
+        g = {k: v / norma for k, v in g.items()}
+    opt.paso(alumno.p, g, tasa(s))
+    if s % 25 == 0:
+        print("paso %3d   pérdida %.3f   eta %.1e" % (s, alumno.perdida(Xp, Yp)[0], tasa(s)))
+    if time.time() - t0 > 8:                               # el navegador corta a los 10 s
+        print("tiempo agotado en el paso", s)
+        break
+`} />
+
+La pérdida sobre esas páginas baja de $3.473$ a $3.104$, pero no en cada medida: sube en el paso
+50, y otra vez en el 100 y el 125. Con una ventana por paso, cada $\hat{\mathbf{g}}_s$ es casi todo
+ruido y el modelo avanza dando tumbos. Y lo que baja es la pérdida sobre las páginas con las que
+entrena: si eso es aprender español o aprenderse esas páginas lo mide la lección sobre perplejidad,
+más adelante en el bloque.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 6
+    (slug perplejidad), envolver «la lección sobre perplejidad» en su Leccion slug=…; el lint
+    falla con un slug que no resuelve, también dentro de un comentario. */}
+
+Ahora quítale el calentamiento: pon `eta_max, S_cal, S = 3e-3, 1, 200`, la tasa máxima del
+checkpoint sin calentar, y vuelve a ejecutarla. En 25 pasos la pérdida salta de $3.47$ a $4.89$,
+porque el primer paso mueve cada parámetro $3 \cdot 10^{-3}$ en la dirección de un solo gradiente
+lleno de ruido. Con `S_cal = 50` el salto se retrasa, no desaparece: llega hacia el paso 75, a
+$4.35$, justo después de que la tasa toque su máximo. El calentamiento protege el arranque y nada
+más. El checkpoint salió del final de su calendario, con la tasa en la décima parte, y reanudarlo a
+la máxima lo saca de donde estaba.
+
+## Comprueba tu intuición
+
+Cuatro preguntas sobre el batch y el primer paso de Adam, y un reto: escribir AdamW.
+
+<Quiz id="q-forma-del-batch" />
+
+<Quiz id="q-ruido-y-coste" />
+
+<Quiz id="q-veces-cada-token" />
+
+<Quiz id="q-primer-paso-de-adam" />
+
+<CodeChallenge id="ch-adamw" />
+
+---
+
+El mini-GPT ya se entrena, y lo que sale de él es lo mismo que salía en la tabla a mano de
+<Leccion slug="una-sola-columna">la lección sobre el modelo de lenguaje causal</Leccion>: en cada
+posición, una distribución sobre las 512 entradas. La pérdida sólo le pregunta cuánto apostó por el
+token que de verdad venía; nunca le pide que elija uno. Para escribir texto hay que elegir, token a
+token, y el modelo no dice cómo.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 4
+    (slug muestreo), envolver «la lección siguiente, sobre el muestreo» en su Leccion slug=…;
+    el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+Ése es el asunto de la lección siguiente, sobre el muestreo: quedarse siempre con la entrada más
+probable, que en el mini-GPT acaba repitiendo <W>no, no, no</W>, o sortear entre las posibles con
+una temperatura, un top-k o un top-p, y qué parte de la distribución tira cada uno.

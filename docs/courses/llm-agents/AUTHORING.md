@@ -200,6 +200,14 @@ this work.
 | one step of BPE training — every occurrence of the most frequent pair of neighbouring tokens replaced by a new token — and the entry it leaves in the merge list | `fusión`, `fusionar` (Block 1 lesson 2) | *merge*; unión, combinación; regla (an entry of the list is «una fusión») |
 | a chunk the text is cut into before BPE: a word with its leading space, a number, a run of signs, a run of whitespace — no fusión crosses one | *pre-token* (Block 1 lesson 2) | palabra (a pre-token can be <W>...</W> or a line break), fragmento, trozo |
 | text → token ids with a fixed merge list, and back | `codificar`, `decodificar` (Block 1 lesson 2) — the names of the two functions in `bpe.py` | *encode* / *decode*; tokenizar for the direction (the first course's `tokenización` is the whole choice of where to cut, not one of its two directions) |
+| one update of $\theta$: a batch, its gradient, and the optimizer's step | `paso` (de entrenamiento) (Block 1 lesson 3) — the first course's word in its descent lesson, and `Adam.paso` in `minigpt.py` | iteración, actualización, *step*. `paso` in backticks is the first course's model-as-function, a Python name; the `turno` row keeps the prose word out of the loop |
+| the $B$ windows one step draws at random and follows the mean loss of | *batch* (Block 1 lesson 3), as in the first course | lote (the code comments say it; the prose does not), minilote, *mini-batch* |
+| the saved weights a lesson loads: `minigpt.json` | *checkpoint* (Block 1 lesson 3) | punto de control (that is a `<RepoLink>` tag of the companion repository, Block 5), pesos guardados as a term, instantánea |
+| a mean updated every step that weighs recent terms more: Adam's $\mathbf{m}_s$ and $\mathbf{v}_s$ | `media móvil` (Block 1 lesson 3) | promedio móvil, *moving average*, EMA; bare `media`, which is the first course's $\mathbb{E}$ and this is not an expectation |
+| scaling the gradient down to norm 1 when it exceeds it | `recorte` (del gradiente) (Block 1 lesson 3), the first course's word | *clipping*; truncar (the first course's cutting of a text) |
+| $\eta$ as a function of the step | `calendario` (de la tasa de aprendizaje) (Block 1 lesson 3) | *schedule*, programa, planificación |
+| its opening stretch, where $\eta$ rises from near zero | `calentamiento` (Block 1 lesson 3), with *warm-up* given once per lesson | *warm-up* as the term, precalentamiento, arranque |
+| shrinking every weight by $\eta\lambda$ of itself each step, outside Adam's quotient | `decaimiento de pesos` (Block 1 lesson 3); the W of AdamW is named once as its English initial | *weight decay* in prose; regularización L2 (the coupled version, which under Adam is a different algorithm) |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,

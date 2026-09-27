@@ -58,7 +58,7 @@ here; STATUS stays phase-level.
 
 - [x] 1. `una-sola-columna`
 - [x] 2. `bpe-de-verdad`
-- [ ] 3. `entrenar-un-mini-gpt`
+- [x] 3. `entrenar-un-mini-gpt`
 - [ ] 4. `muestreo`
 - [ ] 5. `kv-cache`
 - [ ] 6. `perplejidad`

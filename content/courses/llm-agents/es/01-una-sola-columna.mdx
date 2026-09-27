@@ -214,7 +214,8 @@ la probabilidad que el modelo le da a la ventana, y que entrenar es subirla.
 ## La cuenta a mano, con cuatro tokens
 
 Esta lección no lleva celda a propósito: el modelo que cumple todo lo de arriba, el mini-GPT
-de este bloque, lo cargas y lo entrenas más adelante, en la lección sobre entrenar un mini-GPT.
+de este bloque, lo cargas y lo entrenas más adelante, en
+<Leccion slug="entrenar-un-mini-gpt">la lección sobre entrenar un mini-GPT</Leccion>.
 Aquí el modelo es una hoja de papel: los logits me los he inventado yo, elegidos para que $e^{z}$
 salga entero. Los tokens son palabras, para que quepan en una hoja; el vocabulario del mini-GPT no
 está hecho de palabras, y de eso trata <Leccion slug="bpe-de-verdad">la lección siguiente, sobre
@@ -281,11 +282,6 @@ mano: las eligió un procedimiento. El curso anterior dijo por qué tenía que s
 las subpalabras lo arreglan partiendo lo que no conocen en trozos que sí. Lo que aquel curso no
 hizo, y lo dijo, fue construir uno: su explorable mostraba el resultado de BPE, y de dónde salía
 cada corte quedó fuera.
-
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 3
-    (slug entrenar-un-mini-gpt), envolver «la lección sobre entrenar un mini-GPT» en su
-    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario.
-    La lección 2 (bpe-de-verdad) ya existe y está enlazada. */}
 
 Ese procedimiento es <Leccion slug="bpe-de-verdad">la lección siguiente, sobre BPE de
 verdad</Leccion>: no partir una palabra en trozos que ya existen, sino fusionar, sobre un corpus en español, los pares más frecuentes hasta el tamaño

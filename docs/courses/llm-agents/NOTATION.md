@@ -43,6 +43,16 @@ this file gets shorter as it goes down.
 | $(a_i, b_i)$, $u_i$ | fusión $i$: the pair it glues and the vocabulary entry it creates, whose bytes are those of $a_i$ followed by those of $b_i$ (Block 1 lesson 2) |
 | $V_i$, $m$ | the vocabulary after $i$ fusiones, $V_0$ being the 256 bytes; $m$ the number of fusiones, so $\lvert V_m \rvert = 256 + m$ (Block 1 lesson 2) |
 | $T_i$ | the corpus's length in tokens after $i$ fusiones, $T_0 = n$ (Block 1 lesson 2) |
+| $\mathcal{L}_i(\theta)$ | lesson 1's loss on the training window that starts at position $i$ of the corpus (Block 1 lesson 3) |
+| $\mathcal{L}_{\text{corpus}}(\theta)$ | $\mathbb{E}_i\left[\mathcal{L}_i(\theta)\right]$, $i$ uniform over the starts where a window fits: what training lowers (Block 1 lesson 3) |
+| $i_1, \dots, i_B$ · $\hat{\mathcal{L}}(\theta)$ | the starts of one *batch*, drawn independently like $i$ · its loss, the mean of their $\mathcal{L}_{i_j}$ (Block 1 lesson 3) |
+| $\mathbf{g}$ · $\hat{\mathbf{g}}$ · $\hat{\mathbf{g}}_s$ | $\nabla_\theta\mathcal{L}_{\text{corpus}}$ · $\nabla_\theta\hat{\mathcal{L}}$ · the latter at step $s$, after the recorte: vectors with one coordinate per parameter (Block 1 lesson 3) |
+| $s$, $S$ · $\theta_s$ | the training step and how many there are · the parameters after $s$ steps (Block 1 lesson 3) |
+| $\mathbf{m}_s$, $\mathbf{v}_s$ | Adam's two medias móviles: of $\hat{\mathbf{g}}_s$ and of $\hat{\mathbf{g}}_s \odot \hat{\mathbf{g}}_s$, both $\mathbf{0}$ at $s = 0$ (Block 1 lesson 3) |
+| $\rho_1$, $\rho_2$ | their rates (Block 1 lesson 3) |
+| $\varepsilon$ | the guard in Adam's denominator (Block 1 lesson 3) |
+| $\lambda$ | the decaimiento de pesos coefficient, AdamW's (Block 1 lesson 3) |
+| $\eta_s$ · $\eta_{\max}$ · $S_{\text{cal}}$ | the learning rate at step $s$ · its peak · the steps of calentamiento (Block 1 lesson 3) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -77,6 +87,24 @@ top-$k$'s from lesson 4, so the merge count is $m$ (and `bpe.py`'s parameter was
 than written $a_i b_i$, because juxtaposition is multiplication (shared §3) and a concatenation of
 byte strings is not a product. $T_i$ carries a *merge* index in its subscript, not a position; the
 lesson says so where it first writes it, and $T_i$ never shares an equation with $x_t$.
+
+**Training has its own letters, and three of them dodge a reservation** (`COURSE-C2-P1-01`,
+Block 1 lesson 3). Adam's two rates are **$\rho_1$, $\rho_2$, never $\beta_1$, $\beta_2$**: the shared
+§4 reserves $\beta$ platform-wide for the KL coefficient, and this course's Block 2 writes it. The
+Adam paper and `minigpt.py` (`beta1`, `beta2`) say $\beta$, so the lesson says in one clause that
+they name the same two numbers; $\rho_1$, $\rho_2$ is the spelling of Goodfellow, Bengio and
+Courville's *Deep Learning* (algorithm 8.7), so the choice has a textbook behind it. The first
+course's $\rho(\mathbf{W}_{hh})$, a spectral radius, is a function of a matrix in one Block 3 lesson
+there, and never meets these. **The step is $s$, not the first course's $t$**, which wrote
+$\theta_t$ in its descent lesson: here $t$ is the position inside the window and both sit in one
+equation, so the lesson that first writes $\theta_s$ says why in a clause. **The hat means
+"estimated from a batch"** — $\hat{\mathcal{L}}$, $\hat{\mathbf{g}}$ — and nothing else, so Adam's
+bias-corrected averages are written out, $\mathbf{m}_s / (1 - \rho_1^{s})$, instead of the paper's
+$\hat{\mathbf{m}}_s$. $\mathbf{m}_s$ and $\mathbf{v}_s$ keep the paper's letters because
+`Adam` stores `self.m` and `self.v`: bold and step-indexed, they are not lesson 2's italic $m$ (a
+fusión count), and $\mathbf{v}_s$ is not a value vector, whose home is the rows of $\mathbf{V}$.
+$\varepsilon$ is the first course's LayerNorm guard: the same letter doing the same job, a constant
+that keeps a denominator away from zero.
 
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson
