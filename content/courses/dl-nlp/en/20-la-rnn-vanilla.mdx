@@ -1,0 +1,482 @@
+---
+slug: la-rnn-vanilla
+title: "The vanilla RNN"
+block: 3
+order: 2
+minutes: 28
+summary: "A single matrix applied at every position, and a state that travels from one step to the next. With that, none of the weights' shapes mentions the length of the text: the same network reads two tokens or forty without padding or truncating anything, what it learned reading position 2 works as it stands at position 8, and two sentences with the same tokens in a different order stop being the same input."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-parametros
+    type: numeric
+    prompt: 'An RNN with a state of $d_h = 64$ coordinates over embeddings of $d_{\text{model}} = 128$. How many weights do $\mathbf{W}_{hh}$, $\mathbf{W}_{xh}$ and $\mathbf{b}_h$ hold between them?'
+    answer: 12352
+    tolerance: 0
+    explanation: 'The three pieces separately: $\mathbf{W}_{hh}$ is $64 \times 64$ and holds $64 \cdot 64 = 4\,096$; $\mathbf{W}_{xh}$ is $64 \times 128$ and holds $64 \cdot 128 = 8\,192$; and $\mathbf{b}_h$ adds $64$. Total $12\,352$. What''s worth looking at isn''t the figure but the question: it didn''t say how long the documents were, and it didn''t need to. The previous lesson''s concatenated first layer, with those same dimensions and $T_{\max} = 30$, asks for $64 \cdot 30 \cdot 128 = 245\,760$ weights, and that count really is left half-done until someone fixes $T_{\max}$.'
+    hint: 'Count the three pieces separately, and notice which of them depends on the length of the text.'
+  - id: q-compartir
+    type: single
+    prompt: 'In the training set, <W>script</W> never appears beyond the fourth position. A test document arrives with it in the ninth, and the RNN handles it sensibly instead of ignoring it. Why?'
+    options:
+      - { id: a, text: 'Because there is a single $\mathbf{W}_{xh}$ for the whole sequence: the weights that read the vector of <W>script</W> at position 9 are exactly the ones that were adjusted when it appeared in the first four.' }
+      - { id: b, text: 'Because $\mathbf{h}_t$ accumulates all the previous positions, and that accumulation makes position 9 resemble position 1.' }
+      - { id: c, text: 'Because the recurrence has a good many more weights than the concatenated first layer, and with more weights it generalises better.' }
+      - { id: d, text: 'Because with $T_{\max}$ gone there is no more padding, so position 9 stops receiving the zero vector.' }
+    answer: a
+    explanation: '(a) is the definition of sharing the weights, and it''s all you need to answer. (b) is the hardest answer to rule out because it''s half true: the state does accumulate what came before, but that is memory, not transfer. An architecture with a different $\mathbf{W}_{xh}$ per position could have the same accumulated state and still never have adjusted the ninth position''s matrix. (c) runs against the arithmetic: with $d_h = 128$ and $d_{\text{model}} = 100$ the recurrence holds $29\,312$ weights against the $384\,000$ of concatenation with $T_{\max} = 30$, which is fewer, not more. And (d) mixes up two things: removing the padding stops positions being wasted, not the weights of one position serving at another.'
+  - id: q-recurrencia
+    type: multi
+    prompt: 'Tick everything that is true of the recurrence $\mathbf{h}_t = \tanh\left(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h\right)$ with $\mathbf{h}_0 = \mathbf{0}$.'
+    options:
+      - { id: a, text: 'The same function reads a 5-token document and a 40-token one without truncating or padding, because none of the shapes of $\mathbf{W}_{hh}$, $\mathbf{W}_{xh}$ and $\mathbf{b}_h$ mentions the length.' }
+      - { id: b, text: '$\mathbf{h}_T$ depends on all $T$ positions of the sequence, not only on the last one.' }
+      - { id: c, text: 'There is a different $\mathbf{W}_{hh}$ per position, just as concatenation had a block $\mathbf{W}^{(1)}_t$ per position.' }
+      - { id: d, text: 'Since the weights are the same at every position, two sequences with the same tokens in a different order end in the same $\mathbf{h}_T$.' }
+    answer: [a, b]
+    explanation: '(a) comes from reading the shapes: $d_h \times d_h$, $d_h \times d_{\text{model}}$ and $d_h$, and $T$ appears in none of them. (b) comes from replacing $\mathbf{h}_{t-1}$ with its definition all the way down to $\mathbf{h}_0$: every token ends up inside the nesting. (c) is exactly the opposite of what the formula says (a subscript $t$ on $\mathbf{W}^{(1)}_t$ marks a position and there are $T_{\max}$ matrices; the subscripts of $\mathbf{W}_{hh}$ mark a role and there is only one), and confusing them is reading the recurrence as though it were an MLP. (d) is the trap, because its first half is true and the conclusion doesn''t follow: the second cell reads <W>the film is not boring, it is fun</W> and <W>the film is not fun, it is boring</W>, and the final states are $(-0.828,\ -0.077,\ -0.810)$ and $(-0.715,\ 0.167,\ -0.671)$. The order isn''t in the weights; it''s in how many times each token crosses $\mathbf{W}_{hh}$.'
+challenges:
+  - id: ch-rnn-forward
+    prompt: |
+      Write this lesson's forward pass, for a sequence of any length.
+
+      - `step(h, x, Whh, Wxh, bh)` returns the next state from the previous one and the
+        vector of the current token.
+      - `forward(X, Whh, Wxh, bh)` receives `X` of shape $(T, d_{\text{model}})$, with one row
+        per position, and returns the $T$ states stacked, of shape $(T, d_h)$, starting from
+        $\mathbf{h}_0 = \mathbf{0}$.
+
+      Neither of them may write into the arrays it receives.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def step(h, x, Whh, Wxh, bh):
+          # your code here
+          pass
+
+
+      def forward(X, Whh, Wxh, bh):
+          # your code here
+          pass
+    tests:
+      - name: "one state per position, as wide as the state"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          Whh, Wxh, bh = rng.normal(size=(3, 3)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          X = rng.normal(size=(5, 4))
+          H = forward(X, Whh, Wxh, bh)
+          assert H is not None, 'forward has to return the states, not print them'
+          assert np.asarray(H).shape == (5, 3), 'return (T, d_h): one row per position, d_h columns'
+      - name: "the first state comes from h_0 = 0"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          Whh, Wxh, bh = rng.normal(size=(3, 3)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          X = rng.normal(size=(5, 4))
+          H = np.asarray(forward(X, Whh, Wxh, bh))
+          assert np.allclose(H[0], np.tanh(Wxh @ X[0] + bh)), 'with h_0 = 0 the first step has no Whh term'
+          assert np.allclose(step(np.zeros(3), X[0], Whh, Wxh, bh), H[0]), 'step and forward have to give the same first state'
+      - name: "the same weights at two different lengths"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          Whh, Wxh, bh = rng.normal(size=(3, 3)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          X = rng.normal(size=(6, 4))
+          H3 = np.asarray(forward(X[:3], Whh, Wxh, bh))
+          H6 = np.asarray(forward(X, Whh, Wxh, bh))
+          assert H3.shape == (3, 3) and H6.shape == (6, 3), 'the same function accepts any T, without padding or truncating'
+          assert np.allclose(H6[:3], H3), 'adding positions at the end cannot change the earlier states'
+      - name: "the order changes the final state"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          Whh, Wxh, bh = rng.normal(size=(3, 3)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          X = rng.normal(size=(4, 4))
+          H = np.asarray(forward(X, Whh, Wxh, bh))
+          Hr = np.asarray(forward(X[::-1], Whh, Wxh, bh))
+          assert not np.allclose(Hr[-1], H[-1]), 'the final state depends on the order, not only on which tokens there are'
+      - name: "doesn't write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          Whh, Wxh, bh = rng.normal(size=(3, 3)), rng.normal(size=(3, 4)), rng.normal(size=3)
+          X = rng.normal(size=(5, 4))
+          copies = [X.copy(), Whh.copy(), Wxh.copy(), bh.copy()]
+          forward(X, Whh, Wxh, bh)
+          assert all(np.array_equal(a, b) for a, b in zip([X, Whh, Wxh, bh], copies)), "don't write into the arrays you receive"
+    solution: |
+      import numpy as np
+
+
+      def step(h, x, Whh, Wxh, bh):
+          return np.tanh(Whh @ h + Wxh @ x + bh)
+
+
+      def forward(X, Whh, Wxh, bh):
+          h = np.zeros(Whh.shape[0])
+          states = []
+          for x in X:
+              h = step(h, x, Whh, Wxh, bh)
+              states.append(h)
+          return np.stack(states)
+    explanation: |
+      `step` is the recurrence transcribed, and `forward` is a loop that calls it once per row
+      of `X`. Three details do the work. The state starts at `np.zeros(Whh.shape[0])`, which
+      is $\mathbf{h}_0 = \mathbf{0}$ and, along the way, takes $d_h$ from the matrix itself
+      instead of asking for it as an argument. The loop walks through `X` without looking at how
+      long it is, and that's where the variable length lives: there's no `T` written anywhere in
+      the code. And `states.append(h)` stores the array `np.tanh` has just created (never one
+      that will be overwritten later), so stacking them at the end gives the $T$ states and not
+      $T$ copies of the last one.
+reading:
+  - kind: paper
+    title: 'Finding Structure in Time'
+    authors: 'Jeffrey L. Elman'
+    year: '1990'
+    venue: 'Cognitive Science 14'
+    lang: en
+    url: 'https://gwern.net/doc/ai/nn/rnn/1990-elman.pdf'
+    note: 'It introduced the simple recurrent network you build here: a state fed back in as context, and this same recurrence. Its opening sets out the previous lesson''s problem; then it builds this network. From 1990, and it still reads well.'
+---
+
+{/* COURSE-P5-03 — Block 3, Lesson 2. COURSE-P11-06 — English translation. */}
+
+The previous lesson, on why the multilayer perceptron (MLP) fails on sequences, left two defects
+measured: what a long text loses to truncation, and what the network works out at one position and
+can't use at another. They share one cause, and it lies neither in the size of the network nor in
+how it's trained. It lies in the input: that network didn't read a sequence, it received a
+vector. What follows is the fix, and it comes with a property nobody expects of a fix: the network
+that applies it is smaller than the one that fails.
+
+It's called a **recurrent neural network** (RNN), and in its original form (the one everyone calls
+*vanilla*) it fits in two matrices and a loop. What's hard about it isn't how it works, which takes
+two lines, but why something so short achieves what the big network couldn't. The whole answer is
+in one thing it gives up: this network doesn't look at the sentence, it walks through it.
+
+Walk through it yourself before going on. In the explorable below, each advance applies the same
+step to one more position: the two matrices are always the same, and only the state coming in from
+the left changes. It's also how you'll find it drawn in any book that covers it.
+
+<Explorable
+  id="rnn-unrolled"
+  direction="forward"
+  lockDirection
+  caption="Step forward one position at a time: check that Whh and Wxh are the same at every step, and that the only thing that changes from one position to the next is the state coming in from the left."
+/>
+
+That sequence invites one reading, and it's false: the boxes are not different layers. They're the
+same function drawn once per position, the way you'd draw the iterations of a `for` loop, which is
+why the labels repeat instead of being numbered. A network with one layer per position would have a
+set of weights for each; this one has a single set, however long the sequence.
+
+<Callout type="intuition" title="The idea in one sentence">
+An RNN is a loop: the same step, applied at each position, carrying along a vector that summarises
+what has been read so far. The weights don't know which position they're at: the state is the only
+thing that tells step 8 from step 2.
+</Callout>
+
+## A state rewritten at every position
+
+Each position contributes the vector of its vocabulary entry, $\mathbf{x}_t = \mathbf{e}_{w_t} \in
+\mathbb{R}^{d_{\text{model}}}$, the row of $\mathbf{E}$ that belongs to it, just as in the previous
+lesson. What's new is the other vector, the one the network passes to itself from one step to the
+next: the **hidden state** $\mathbf{h}_t \in \mathbb{R}^{d_h}$, where $d_h$ is chosen when the
+network is built and is the only thing that decides how much fits in that memory. Let's also fix
+$\mathbf{h}_0 = \mathbf{0}$, because before the first token has been read there's nothing to
+remember.
+
+With that, a step is an ordinary layer that takes two inputs instead of one:
+
+$$
+\mathbf{h}_t = \tanh\left(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h\right),
+$$
+
+with $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ reading the previous state,
+$\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$ reading the current token, and
+$\mathbf{b}_h \in \mathbb{R}^{d_h}$. The hyperbolic tangent takes the place of $\varphi$ from <Leccion slug="funciones-activacion">the
+lesson on activation functions</Leccion>, and any of the three seen there could take it: the formula
+is written the same with each. What separates them here is something no layer in the previous block
+did, which is that the output comes back in. $\mathbf{h}_t$ is the input to step $t + 1$, which in
+turn feeds step $t + 2$, so whatever the activation does to the state is repeated once per token.
+
+That rules out ReLU first, because on the right it has no ceiling. Look at it in a single
+coordinate, with a recurrent weight of $2$ and inputs that don't counteract it: ReLU lets the whole
+state through, each iteration doubles it, and twenty iterations multiply it by more than a million.
+And that happens in the forward pass, before a single gradient has been computed. The hyperbolic
+tangent keeps every coordinate in $(-1, 1)$ at $t = 1$ just as at $t = 300$, because its ceiling
+doesn't depend on what goes into it. There are RNNs with ReLU, but they need $\mathbf{W}_{hh}$
+initialised carefully so that at the start it stretches nothing; the $\tanh$ asks for no such care.
+
+The sigmoid is bounded too, and it loses to the $\tanh$ on the two differences that lesson pointed
+out. The first is the centre. With the sigmoid, every coordinate of the state would be positive and
+could say how much, but never which way; and the $\mathbf{h}_0 = \mathbf{0}$ the reading starts
+from, which for the $\tanh$ is the centre of its range, would be for the sigmoid an edge it never
+reaches. The second is the slope, which at the origin is $1$ for the $\tanh$ and $0.25$ for the
+sigmoid. When the time comes to train this network, the error will travel from the last position to
+the first and cross that slope once per step: with the sigmoid, that factor would divide it by at
+least four at every one. That's why I write it by name rather than leaving $\varphi$: it's the one
+the recurrence carries throughout the block.
+
+Step $t = 1$ seems to call for a rule of its own, and it doesn't. With $\mathbf{h}_0 = \mathbf{0}$
+the first term disappears by itself:
+
+$$
+\mathbf{h}_1 = \tanh\left(\mathbf{W}_{hh}\mathbf{0} + \mathbf{W}_{xh}\mathbf{x}_1 + \mathbf{b}_h\right) = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_1 + \mathbf{b}_h\right).
+$$
+
+<Details summary="See the whole sequence inside the last state">
+Replace $\mathbf{h}_{t-1}$ with its own definition, starting from the one above:
+
+$$
+\mathbf{h}_2 = \tanh\left(\mathbf{W}_{hh}\tanh\left(\mathbf{W}_{xh}\mathbf{x}_1 + \mathbf{b}_h\right) + \mathbf{W}_{xh}\mathbf{x}_2 + \mathbf{b}_h\right),
+$$
+
+and once more, which brings the pattern into view:
+
+$$
+\mathbf{h}_3 = \tanh\left(\mathbf{W}_{hh}\tanh\left(\mathbf{W}_{hh}\tanh\left(\mathbf{W}_{xh}\mathbf{x}_1 + \mathbf{b}_h\right) + \mathbf{W}_{xh}\mathbf{x}_2 + \mathbf{b}_h\right) + \mathbf{W}_{xh}\mathbf{x}_3 + \mathbf{b}_h\right).
+$$
+
+Each new position wraps everything before it in one more $\tanh$ and one more $\mathbf{W}_{hh}$,
+without anything falling out along the way: $\mathbf{x}_1$ is still in there when $t$ is $3$, and
+would still be at $t = 300$.
+</Details>
+
+That nesting answers the question of where the order is kept. It isn't in the weights (they're the
+same at all three positions) but in *how many times* each token has passed through the matrix
+$\mathbf{W}_{hh}$ before reaching the end: in $\mathbf{h}_3$, the vector $\mathbf{x}_1$ has crossed
+it twice, $\mathbf{x}_2$ once and $\mathbf{x}_3$ not at all. Swap two tokens and you change that
+count.
+
+What's left is to get an answer out, and there are $T$ states to get it from. A verdict per document
+takes the last one, $\mathbf{h}_T$, because it's the only one that has read the whole text: the
+nesting above puts every token inside it, while any earlier $\mathbf{h}_t$ hasn't seen what comes
+after $t$. The answer comes out of one more layer, placed on top of it:
+
+$$
+\hat{\mathbf{y}} = \sigma\left(\mathbf{W}_{hy}\mathbf{h}_T + \mathbf{b}_y\right),
+$$
+
+with $\mathbf{W}_{hy}$ of shape $1 \times d_h$ (one row per output, and here there is one output)
+and $\mathbf{b}_y$ of one coordinate. The activation is a different one, and not by oversight:
+$\sigma$ is the logistic sigmoid and not the loop's $\tanh$, because what the network delivers is a
+probability and the $\tanh$ returns numbers between $-1$ and $1$. It's the output layer of the
+previous block's review classifier without a single change; what's different is where its input
+comes from. That's why the drawing above leaves it out, and so does the count further down: the
+recurrence is the loop's two matrices, and this third one is a borrowed layer you already know how
+to build.
+
+Now go back over the shapes of those two matrices and check what appears in neither: $T$.
+$\mathbf{W}_{hh}$ is $d_h \times d_h$, $\mathbf{W}_{xh}$ is $d_h \times d_{\text{model}}$, and
+neither of them knows how many times it will be used. That leaves the two operations the fixed
+length imposed with nothing to do: there's no $T_{\max}$ to truncate at, and no leftover positions
+to fill with the zero vector (the previous lesson's padding), because there are no extra positions.
+There are exactly the ones the document brings.
+
+Underneath that there's a change of unit worth seeing. In the concatenated MLP, one input to the
+network was a *document*: the first layer had as many columns as the whole document took up. Here
+one input to the network is a *token*, because $\mathbf{W}_{xh}$ has $d_{\text{model}}$ columns and
+not one more, and at each step the network sees nothing besides the vector of that position and the
+state it brings with it. The length of the text hasn't disappeared from the system: it has moved
+from the shapes to the number of iterations of the loop. And that move is what changes everything,
+because a shape is fixed when the network is built and isn't touched again (that's what forced the
+truncation), whereas the number of iterations is decided by each document as it arrives.
+
+## One matrix for every position
+
+Add up what the recurrence's three pieces take:
+
+$$
+\underbrace{d_h \cdot d_h}_{\mathbf{W}_{hh}} \;+\; \underbrace{d_h \cdot d_{\text{model}}}_{\mathbf{W}_{xh}} \;+\; \underbrace{d_h}_{\mathbf{b}_h} \quad \text{weights}.
+$$
+
+Set it beside the previous lesson's, $d_1 \cdot T_{\max} \cdot d_{\text{model}}$. What's worth
+looking at isn't which one comes out smaller (that's a consequence) but which letters appear in
+each: $T_{\max}$ was in that one, and it isn't in this one. Reading documents ten times longer
+doesn't add a single weight.
+
+And the saving is the least of it. What changes is what each weight is for. In concatenation, the
+piece of the first layer that read position 2 and the one that read position 8 were two different
+matrices, adjusted with different examples, and the second stayed as it came out of initialisation
+if the corpus never brought anything interesting that far along. In the recurrence there is *one*
+$\mathbf{W}_{xh}$, and the vectors of every position of every document pass through it. Whatever it
+learns to do with the vector of <W>script</W> it applies wherever <W>script</W> is, because it has
+no way of knowing where that is.
+
+Sharing the weights is what makes an RNN an RNN. Take it away (a different matrix per position) and
+what's left is the concatenated MLP under another name.
+
+The flip side comes with the gradient, and it's worth stating here even though this lesson doesn't
+resolve it. $\mathbf{W}_{hh}$ doesn't take part once in computing $\mathbf{h}_T$: it takes part $T$
+times, as the nesting above shows. So the loss depends on that matrix along $T$ different paths, and
+its gradient will have to collect them all.
+
+## Running the recurrence on two sentences of different length
+
+Twelve vocabulary entries (this cell uses eight; the last four are for the next one), embeddings of
+$d_{\text{model}} = 4$ and a state of $d_h = 3$ coordinates. I take the weights from a generator
+with a fixed seed, and they're untrained: what to look at in this cell isn't which values come out
+but how many times each matrix is used. `step` is the recurrence transcribed line for line, and
+`read` applies it to a sentence, printing the state at each position.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+V = ["the", "it", "actress", "film", "script", "saves", "sinks", "and",
+     "is", "not", "boring", "fun"]
+d_model, d_h = 4, 3
+rng = np.random.default_rng(0)
+
+E = rng.normal(size=(len(V), d_model)) * 0.5     # (12, 4): one row per entry
+Wxh = rng.normal(size=(d_h, d_model)) * 0.5      # (3, 4): reads the current token
+Whh = rng.normal(size=(d_h, d_h)) * 0.5          # (3, 3): reads the previous state
+bh = np.zeros(d_h)
+
+
+def step(h, x):
+    return np.tanh(Whh @ h + Wxh @ x + bh)       # the same weights at every position
+
+
+def read(sentence):
+    h, states = np.zeros(d_h), []                # h_0 = 0, before reading anything
+    print('"%s"' % sentence)
+    for t, word in enumerate(sentence.split(), 1):
+        h = step(h, E[V.index(word)])
+        states.append(h)
+        print("   h_%-2d  %s" % (t, np.round(h, 3)))
+    return states
+
+
+short = read("the script sinks the film")
+long = read("the actress saves the film and the script sinks it")
+
+print("\\nshapes:  Whh %s   Wxh %s   bh %s   (none mentions T)" % (
+    Whh.shape, Wxh.shape, bh.shape))
+print('"the script" read at positions 1-2 and at 7-8:')
+print("   %s   %s" % (np.round(short[0], 3), np.round(short[1], 3)))
+print("   %s   %s" % (np.round(long[6], 3), np.round(long[7], 3)))
+`} />
+
+Count the rows: five for the first sentence, ten for the second, and the same `Whh` and `Wxh` in
+all fifteen. There's no version of the network for short texts and another for long ones, and
+nothing has had to be truncated or padded: the loop runs as many iterations as the sentence asks
+for.
+
+The last two lines are the previous lesson answered. <W>the script</W> occupies positions 1 and 2
+of the first sentence and 7 and 8 of the second, and the states it produces are almost the same:
+$(-0.602,\ -0.098,\ -0.527)$ against $(-0.632,\ -0.026,\ -0.540)$. Almost, not exactly, and both
+halves matter. They're alike because the weights that read those two tokens are the same weights,
+wherever the tokens are; in the concatenated MLP there was no reason for them to be alike, and the
+previous lesson measured that they weren't alike at all. And they differ because the state they
+brought with them wasn't the same, which is exactly the order information the bag of words had
+nowhere to keep.
+
+You can isolate that difference, and the previous block left the case ready for it: the two
+sentences that closed <Leccion slug="proyecto-sentimiento">the sentiment project</Leccion>. They
+have the same tokens, with the same repetitions, and they say opposite things.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+V = ["the", "it", "actress", "film", "script", "saves", "sinks", "and",
+     "is", "not", "boring", "fun"]
+d_model, d_h = 4, 3
+rng = np.random.default_rng(0)                   # the same network as the previous cell
+E = rng.normal(size=(len(V), d_model)) * 0.5
+Wxh = rng.normal(size=(d_h, d_model)) * 0.5
+Whh = rng.normal(size=(d_h, d_h)) * 0.5
+bh = np.zeros(d_h)
+
+
+def tokens(sentence):
+    return sentence.replace(",", " ").split()    # drop the comma, as that project did
+
+
+def states(sentence):
+    h, hs = np.zeros(d_h), []
+    for word in tokens(sentence):
+        h = np.tanh(Whh @ h + Wxh @ E[V.index(word)] + bh)
+        hs.append(h)
+    return hs
+
+
+def bag(sentence):
+    v = np.zeros(len(V), dtype=int)
+    for word in tokens(sentence):
+        v[V.index(word)] += 1
+    return v
+
+
+a = "the film is not boring, it is fun"
+b = "the film is not fun, it is boring"
+print('a  "%s"\\nb  "%s"' % (a, b))
+print("\\nbag of a  %s\\nbag of b  %s\\n" % (bag(a), bag(b)))
+for t, (pa, ha, pb, hb) in enumerate(zip(tokens(a), states(a), tokens(b), states(b)), 1):
+    print("h_%d  %-10s %-24s %-10s %s" % (t, pa, np.round(ha, 3), pb, np.round(hb, 3)))
+
+print("\\n           T_max=30      T_max=300")
+concat = [128 * t * 100 for t in (30, 300)]      # d1 · T_max · d_model
+recurr = [128 * 128 + 128 * 100 + 128] * 2       # d_h² + d_h · d_model + d_h
+print("concat.    %-13d %d" % tuple(concat))
+print("recurr.    %-13d %d" % tuple(recurr))
+`} />
+
+The bag of words returns the same vector for both sentences, coordinate by coordinate, because it
+adds and addition has no order. That's the input that project's classifier received, and it's why
+it gave both of them $0.0002$.
+
+The states tell the reading step by step, and the table splits in two. The first four rows match
+digit for digit, because up to there both sentences say the same thing, <W>the film is not</W>, and
+the network has nothing to tell apart yet. At the fifth they part: it's the position where
+<W>is not</W> lands on <W>boring</W> in one sentence and on <W>fun</W> in the other. That project
+concluded that the coordinate of <W>not</W> recorded how many times it appeared, but not what it
+landed on. Here the <W>not</W> travels inside the state that reaches position 5, and the network
+reads the adjective with it in front.
+
+The final states end up at $(-0.828,\ -0.077,\ -0.810)$ and $(-0.715,\ 0.167,\ -0.671)$. With
+untrained weights, how far apart they are means nothing yet, and neither of them means "positive"
+yet. What the result does guarantee is that the output layer will receive two different vectors,
+which is the condition without which no training could give them different probabilities. With the
+bag, that condition had already failed before anything started. The recurrence has kept the good
+part of both representations the block has been comparing: it tells order apart, like
+concatenation, and it shares its weights, like the bag.
+
+The last two lines put the price in numbers, with the previous lesson's dimensions:
+$d_{\text{model}} = 100$ and a layer (or a state) of $128$ coordinates. Going from reading sentences
+to reading paragraphs multiplies the concatenated MLP's first layer by ten and leaves the recurrence
+exactly where it was, at $29\,312$ weights. The $3\,810\,688$ the MLP adds all start at their
+initialisation, and training has to adjust them with the same corpus as before.
+
+## Test your intuition
+
+Three questions: how many weights the recurrence asks for, why a position that training never saw
+stops being a problem, and what the formula does and doesn't say.
+
+<Quiz id="q-parametros" />
+
+<Quiz id="q-compartir" />
+
+<Quiz id="q-recurrencia" />
+
+And a whole recurrence written by you, which is the one you'll differentiate in the next lesson.
+
+<CodeChallenge id="ch-rnn-forward" />
+
+---
+
+The network can read now, and it can't learn yet. Everything above is the forward pass: weights set
+by a generator, not a single gradient, not one descent step. And the gradient is where sharing the
+weights stops coming free. In a network from the previous block each matrix appeared once on the
+path from the input to the loss, and that's what made its gradient a single product;
+$\mathbf{W}_{hh}$ appears $T$ times.
+
+What to do with those $T$ paths (add them up, and walk the whole sequence backwards to get them) is
+<Leccion slug="bptt">the next lesson, on backpropagation through time (BPTT)</Leccion>. It's the
+previous block's chain rule without any variation, applied to a graph that instead of being $L$
+layers tall is $T$ steps long, and out of it comes the full calculation of
+$\nabla_{\mathbf{W}_{hh}}\mathcal{L}$, $\nabla_{\mathbf{W}_{xh}}\mathcal{L}$ and
+$\nabla_{\mathbf{b}_h}\mathcal{L}$.

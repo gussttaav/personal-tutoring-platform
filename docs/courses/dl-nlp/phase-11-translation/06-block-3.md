@@ -1,6 +1,6 @@
 # P11-06 — Block 3: Recurrent Neural Networks
 
-**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1 done)
+**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.2 done)
 
 ## TL;DR
 
@@ -129,7 +129,7 @@ Line refs are into the `es/` file named in each heading.
   hold. **But «casi los mismos» does not hold for free:** it is a property of the draw, and with
   that list in that order and `default_rng(0)`, `the script` at 7–8 is *not* close to 1–2
   (measured in CPython). Reorder `V` or change the seed until it is, verify in
-  Pyodide, and keep the two cells' `V` identical.
+  Pyodide, and keep the two cells' `V` identical. *Resolved by reordering `V`; see "From 3.2" below.*
 
 #### 3.3 `bptt` — `es/21-bptt.mdx` — transpose
 
@@ -288,7 +288,7 @@ English 3.2 takes `en/18`'s pair and its `0.0002` (see the English notes under 3
 ## Lesson progress
 
 - [x] 3.1 `por-que-falla-el-mlp`
-- [ ] 3.2 `la-rnn-vanilla`
+- [x] 3.2 `la-rnn-vanilla`
 - [ ] 3.3 `bptt`
 - [ ] 3.4 `gradiente-desvanecido`
 - [ ] 3.5 `lstm`
@@ -327,6 +327,30 @@ Reuse these verbatim; they are settled, not open.
   introduction (p. 367, before §10.1); and «con la misma capa oculta» compared the Block 2 classifier
   (12 hidden neurons) with this lesson's 128-neuron example as if they shared a layer, now «con una
   sola capa oculta». The English says the same in both places.
+
+**From 3.2** (`en/20-la-rnn-vanilla.mdx`):
+
+- **3.2's `V` is `["the", "it", "actress", "film", "script", "saves", "sinks", "and", "is", "not",
+  "boring", "fun"]`**, in both cells. It mirrors the Spanish list slot for slot (article/pronoun,
+  the three nouns, the two verbs, the conjunction, then the four entries only cell 2 uses). The order
+  the English notes above proposed (`the actress film script saves sinks and it` + `not is boring
+  fun`) was measured and rejected: `the script` at 7–8 lands up to $0.23$ from 1–2, which is not
+  "almost the same". This order gives $0.072$ against the Spanish $0.067$.
+- **Cell 1's sentences are <W>the script sinks the film</W> / <W>the actress saves the film and the
+  script sinks it</W>**, opening on 3.1's pair. Printed in Pyodide and quoted:
+  $(-0.602,\ -0.098,\ -0.527)$ / $(-0.632,\ -0.026,\ -0.540)$.
+- **Cell 2 reads en/18's pair** and quotes its `0.0002`. It is 8 tokens, so the table has 8 rows and
+  the final states are `h_8`: $(-0.828,\ -0.077,\ -0.810)$ / $(-0.715,\ 0.167,\ -0.671)$, in the prose
+  and in `q-recurrencia`'s explanation.
+- **Code names:** `paso` → `step`, `lee` → `read`, `frase` → `sentence`, `palabra` → `word`,
+  `estados` → `states`, `bolsa` → `bag`, `corta`/`larga` → `short`/`long`, `copias` → `copies`,
+  `# tu código aquí` → `# your code here`. `step` names the recurrence step from here on, so 3.5/3.6's
+  `paso_lstm` / `paso_gru` become `lstm_step` / `gru_step`. Block 2's step activation never shares a
+  lesson with it.
+- **A print that quotes a sentence uses `"%s"`**, not `«%s»` (now in `AUTHORING.en.md` §7). 3.7 has
+  three of these.
+- **`es/20` bolds two words for emphasis** (**cuántas veces**, **una**), against `AUTHORING.md` §5.
+  The English uses italics; the Spanish is left for its own fix.
 
 ## Two things to watch
 

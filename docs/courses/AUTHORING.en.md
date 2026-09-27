@@ -318,7 +318,9 @@ English like the prose.** Its local identifiers, comments and `print` strings ar
 everything else. The forcing argument is the output: a student reads what the cell prints, so the
 print strings *must* be English, and a cell whose functions are Spanish while its output is English
 reads as half-translated — the exact "translated course" tell §3 exists to kill. *Settled by
-`en/02-tokenizacion.mdx` (COURSE-P11-04).*
+`en/02-tokenizacion.mdx` (COURSE-P11-04).* A print that quotes a sentence swaps `«%s»` for `"%s"`:
+angle quotes are Spanish typography, and §1's rule on `"…"` binds the prose, not what a cell
+prints. *Settled by `en/20-la-rnn-vanilla.mdx` (COURSE-P11-06).*
 
 **The same line runs through the `reading` block.** Only `note` is prose, but the bibliographic
 fields render *verbatim*, so any editorial Spanish left in them is translated the way the prose is:
