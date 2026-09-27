@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 242" width="750" height="242" role="img"
+ aria-label="Traza del RAG agéntico con la pregunta de la incidencia 4812, en tres vueltas. Vuelta 1: piensa que necesita el plan del cliente y la fecha del cobro; busca 4812 en las incidencias; encuentra Ferretería Ortega, plan Equipo, cobro anual el 14 de agosto, reembolso pedido el 2 de septiembre. Vuelta 2: con el plan ya puede buscar su plazo; busca plazo de reembolso plan Equipo anual en la documentación, con la palabra Equipo sacada del resultado anterior; encuentra las condiciones del plan Equipo, 30 días desde el cobro, y también la FAQ que dice por lo general 14. Vuelta 3: la regla del plan manda; 14 de agosto más 30 días es el 13 de septiembre y el 2 de septiembre cae dentro; no busca y responde que sí, que puede pedirlo hasta el 13 de septiembre, citando la incidencia y la sección 7.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 3 3; marker-end: url(#ax); }
+  .nb { fill: #1d1d1f; stroke: #ffb4ab; stroke-width: 1.2; }
+  .nt { font-size: 10.5px; font-weight: 700; fill: #ffb4ab; text-anchor: middle; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<text class="hd" x="28.0" y="12.0">PIENSA</text>
+<text class="hd" x="262.0" y="12.0">BUSCA</text>
+<text class="hd" x="486.0" y="12.0">ENCUENTRA</text>
+<text class="lb" x="6.0" y="58.0" style="text-anchor:start">1</text>
+<rect class="bx g" x="28.0" y="22.0" width="220.0" height="62.0" rx="6"/>
+<text class="tx" x="38.0" y="41.0">Necesito el plan del cliente</text>
+<text class="tx" x="38.0" y="55.0">y la fecha del cobro.</text>
+<rect class="bx " x="262.0" y="22.0" width="210.0" height="62.0" rx="6"/>
+<text class="tx d" x="272.0" y="40.0">incidencias ←</text>
+<text class="mo" x="272.0" y="56.0">«4812»</text>
+<path class="ar" d="M248.0,53.0 L260.0,53.0"/>
+<path class="ar" d="M472.0,53.0 L484.0,53.0"/>
+<rect class="bx " x="486.0" y="22.0" width="262.0" height="62.0" rx="6"/>
+<text class="tx" x="496.0" y="41.0">Ferretería Ortega · plan <tspan class="m">Equipo</tspan></text>
+<text class="tx" x="496.0" y="55.0">cobro anual: 14 de agosto</text>
+<text class="tx" x="496.0" y="69.0">pide el reembolso: 2 de septiembre</text>
+<text class="lb" x="6.0" y="136.0" style="text-anchor:start">2</text>
+<rect class="bx g" x="28.0" y="100.0" width="220.0" height="62.0" rx="6"/>
+<text class="tx" x="38.0" y="119.0">Con el plan ya puedo</text>
+<text class="tx" x="38.0" y="133.0">buscar su plazo.</text>
+<rect class="bx " x="262.0" y="100.0" width="210.0" height="62.0" rx="6"/>
+<text class="tx d" x="272.0" y="118.0">documentación ←</text>
+<text class="mo" x="272.0" y="134.0">«plazo de reembolso</text>
+<text class="mo" x="272.0" y="148.0">plan <tspan class="m">Equipo</tspan>, anual»</text>
+<path class="ar" d="M248.0,131.0 L260.0,131.0"/>
+<path class="ar" d="M472.0,131.0 L484.0,131.0"/>
+<rect class="bx " x="486.0" y="100.0" width="262.0" height="62.0" rx="6"/>
+<text class="tx" x="496.0" y="119.0">Condiciones del plan Equipo, §7:</text>
+<text class="tx" x="496.0" y="133.0">30 días desde el cobro</text>
+<text class="tx" x="496.0" y="147.0">(y la FAQ: «por lo general, 14»)</text>
+<text class="lb" x="6.0" y="214.0" style="text-anchor:start">3</text>
+<rect class="bx g" x="28.0" y="178.0" width="220.0" height="62.0" rx="6"/>
+<text class="tx" x="38.0" y="197.0">La regla del plan manda.</text>
+<text class="tx" x="38.0" y="211.0">14 ago + 30 días = 13 sep;</text>
+<text class="tx" x="38.0" y="225.0">el 2 de septiembre cae dentro.</text>
+<text class="tx d" x="367.0" y="202.0" style="text-anchor:middle">no busca</text>
+<path class="ar m" d="M248.0,209.0 L484.0,209.0"/>
+<rect class="bx m" x="486.0" y="178.0" width="262.0" height="62.0" rx="6"/>
+<text class="tx m" x="496.0" y="197.0">Sí: puede pedirlo hasta el</text>
+<text class="tx m" x="496.0" y="211.0">13 de septiembre. Cita la</text>
+<text class="tx m" x="496.0" y="225.0">incidencia 4812 y §7.</text>
+<path class="ar m" d="M708.0,84.0 L708.0,92.0 L372.0,92.0 L372.0,98.0"/>
+</svg>

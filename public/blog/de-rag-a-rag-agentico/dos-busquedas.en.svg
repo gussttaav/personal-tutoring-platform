@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 308" width="750" height="308" role="img"
+ aria-label="The question “Is the customer on ticket 4812 entitled to a refund?” searched two ways. Lexical search, BM25, returns ticket 4812, ticket 4182, the refunds FAQ and ticket 4821, in that order. Dense search returns the FAQ, 4821, 4182 and 4812 fourth. Reciprocal rank fusion with c equal to 60 orders them: FAQ, ticket 4812, 4182 and 4821; the top three go to the prompt. Below, the Team plan terms, which give 30 days, appear in neither list because the question never says Team.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 3 3; marker-end: url(#ax); }
+  .nb { fill: #1d1d1f; stroke: #ffb4ab; stroke-width: 1.2; }
+  .nt { font-size: 10.5px; font-weight: 700; fill: #ffb4ab; text-anchor: middle; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx g" x="0.0" y="0.0" width="748.0" height="30.0" rx="6"/>
+<text class="tx" x="374.0" y="19.5" style="text-anchor:middle">“Is the customer on ticket 4812 entitled to a refund?”</text>
+<text class="hd" x="0.0" y="52.0">LEXICAL · BM25</text>
+<text class="hd" x="244.0" y="52.0">DENSE · EMBEDDINGS</text>
+<text class="hd" x="488.0" y="52.0">FUSION · RRF, c = 60</text>
+<text class="lb" x="6.0" y="85.0" style="text-anchor:start">1</text>
+<rect class="bx m" x="22.0" y="62.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx m" x="32.0" y="78.0">Ticket 4812</text>
+<text class="tx d" x="32.0" y="92.0">Ortega Hardware</text>
+<text class="lb" x="6.0" y="131.0" style="text-anchor:start">2</text>
+<rect class="bx g" x="22.0" y="108.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx" x="32.0" y="124.0">Ticket 4182</text>
+<text class="tx d" x="32.0" y="138.0">another customer</text>
+<text class="lb" x="6.0" y="177.0" style="text-anchor:start">3</text>
+<rect class="bx w" x="22.0" y="154.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx w" x="32.0" y="170.0">Refunds FAQ</text>
+<text class="tx d" x="32.0" y="184.0">“as a rule, 14 days”</text>
+<text class="lb" x="6.0" y="223.0" style="text-anchor:start">4</text>
+<rect class="bx g" x="22.0" y="200.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx" x="32.0" y="216.0">Ticket 4821</text>
+<text class="tx d" x="32.0" y="230.0">another customer</text>
+<text class="lb" x="250.0" y="85.0" style="text-anchor:start">1</text>
+<rect class="bx w" x="266.0" y="62.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx w" x="276.0" y="78.0">Refunds FAQ</text>
+<text class="tx d" x="276.0" y="92.0">“as a rule, 14 days”</text>
+<text class="lb" x="250.0" y="131.0" style="text-anchor:start">2</text>
+<rect class="bx g" x="266.0" y="108.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx" x="276.0" y="124.0">Ticket 4821</text>
+<text class="tx d" x="276.0" y="138.0">another customer</text>
+<text class="lb" x="250.0" y="177.0" style="text-anchor:start">3</text>
+<rect class="bx g" x="266.0" y="154.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx" x="276.0" y="170.0">Ticket 4182</text>
+<text class="tx d" x="276.0" y="184.0">another customer</text>
+<text class="lb" x="250.0" y="223.0" style="text-anchor:start">4</text>
+<rect class="bx m" x="266.0" y="200.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx m" x="276.0" y="216.0">Ticket 4812</text>
+<text class="tx d" x="276.0" y="230.0">Ortega Hardware</text>
+<text class="lb" x="494.0" y="85.0" style="text-anchor:start">1</text>
+<rect class="bx w" x="510.0" y="62.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx w" x="520.0" y="78.0">Refunds FAQ</text>
+<text class="tx d" x="520.0" y="92.0">“as a rule, 14 days”</text>
+<text class="tx d" x="702.0" y="85.0" style="text-anchor:end">#3 + #1</text>
+<text class="lb" x="494.0" y="131.0" style="text-anchor:start">2</text>
+<rect class="bx m" x="510.0" y="108.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx m" x="520.0" y="124.0">Ticket 4812</text>
+<text class="tx d" x="520.0" y="138.0">Ortega Hardware</text>
+<text class="tx d" x="702.0" y="131.0" style="text-anchor:end">#1 + #4</text>
+<text class="lb" x="494.0" y="177.0" style="text-anchor:start">3</text>
+<rect class="bx g" x="510.0" y="154.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx" x="520.0" y="170.0">Ticket 4182</text>
+<text class="tx d" x="520.0" y="184.0">another customer</text>
+<text class="tx d" x="702.0" y="177.0" style="text-anchor:end">#2 + #3</text>
+<text class="lb" x="494.0" y="223.0" style="text-anchor:start">4</text>
+<rect class="bx g" x="510.0" y="200.0" width="200.0" height="38.0" rx="6"/>
+<text class="tx" x="520.0" y="216.0">Ticket 4821</text>
+<text class="tx d" x="520.0" y="230.0">another customer</text>
+<text class="tx d" x="702.0" y="223.0" style="text-anchor:end">#4 + #2</text>
+<line x1="488" y1="196.0" x2="710" y2="196.0" stroke="#4edea3" stroke-dasharray="4 3"/>
+<path d="M718.0,62.0 h5 V192.0 h-5" fill="none" stroke="#4edea3"/>
+<text class="tx m" transform="translate(732.0,129.0) rotate(90)" style="text-anchor:middle">top-3 to the prompt</text>
+<rect class="bx x" x="0.0" y="266.0" width="748.0" height="40.0" rx="6"/>
+<text class="tx x" x="374.0" y="283.0" style="text-anchor:middle">Team plan terms, §7: “30 days”</text>
+<text class="tx d" x="374.0" y="298.0" style="text-anchor:middle">in neither list: the question never says “Team”</text>
+</svg>

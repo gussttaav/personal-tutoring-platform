@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 236" width="740" height="236" role="img"
+ aria-label="Tabla de cuatro filas y tres columnas. Las filas son las cuatro decisiones de una búsqueda: si busca, qué busca, dónde busca y cuándo para. En el RAG ingenuo las cuatro las fija el código: busca siempre, la pregunta tal cual, en un índice y tras una búsqueda. En el RAG avanzado el modelo decide una, qué busca, porque reescribe la consulta. En el RAG agéntico el modelo decide las cuatro: busca si le hace falta, busca lo que le falta, elige la fuente y para cuando tiene la respuesta.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 3 3; marker-end: url(#ax); }
+  .nb { fill: #1d1d1f; stroke: #ffb4ab; stroke-width: 1.2; }
+  .nt { font-size: 10.5px; font-weight: 700; fill: #ffb4ab; text-anchor: middle; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx g" x="150.0" y="4.0" width="14.0" height="14.0" rx="3"/>
+<text class="tx d" x="170.0" y="15.0">lo fija el código</text>
+<rect class="bx m" x="330.0" y="4.0" width="14.0" height="14.0" rx="3"/>
+<text class="tx d" x="350.0" y="15.0">lo decide el modelo</text>
+<text class="hd" x="245.0" y="46.0" style="text-anchor:middle">RAG INGENUO</text>
+<text class="hd" x="445.0" y="46.0" style="text-anchor:middle">RAG AVANZADO</text>
+<text class="hd" x="645.0" y="46.0" style="text-anchor:middle">RAG AGÉNTICO</text>
+<text class="lb" x="0.0" y="81.0" style="text-anchor:start">¿Busca?</text>
+<rect class="bx g" x="150.0" y="58.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx d" x="245.0" y="81.0" style="text-anchor:middle">siempre</text>
+<rect class="bx g" x="350.0" y="58.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx d" x="445.0" y="81.0" style="text-anchor:middle">siempre</text>
+<rect class="bx m" x="550.0" y="58.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx m" x="645.0" y="81.0" style="text-anchor:middle">si le hace falta</text>
+<text class="lb" x="0.0" y="127.0" style="text-anchor:start">¿Qué busca?</text>
+<rect class="bx g" x="150.0" y="104.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx d" x="245.0" y="127.0" style="text-anchor:middle">la pregunta, tal cual</text>
+<rect class="bx m" x="350.0" y="104.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx m" x="445.0" y="127.0" style="text-anchor:middle">una reescritura</text>
+<rect class="bx m" x="550.0" y="104.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx m" x="645.0" y="127.0" style="text-anchor:middle">lo que le falta</text>
+<text class="lb" x="0.0" y="173.0" style="text-anchor:start">¿Dónde busca?</text>
+<rect class="bx g" x="150.0" y="150.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx d" x="245.0" y="173.0" style="text-anchor:middle">en un índice</text>
+<rect class="bx g" x="350.0" y="150.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx d" x="445.0" y="173.0" style="text-anchor:middle">en un índice</text>
+<rect class="bx m" x="550.0" y="150.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx m" x="645.0" y="173.0" style="text-anchor:middle">elige la fuente</text>
+<text class="lb" x="0.0" y="219.0" style="text-anchor:start">¿Cuándo para?</text>
+<rect class="bx g" x="150.0" y="196.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx d" x="245.0" y="219.0" style="text-anchor:middle">tras una búsqueda</text>
+<rect class="bx g" x="350.0" y="196.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx d" x="445.0" y="219.0" style="text-anchor:middle">tras una búsqueda</text>
+<rect class="bx m" x="550.0" y="196.0" width="190.0" height="38.0" rx="6"/>
+<text class="tx m" x="645.0" y="219.0" style="text-anchor:middle">cuando tiene la respuesta</text>
+</svg>
