@@ -50,7 +50,7 @@ reading:
     venue: 'deeplearningbook.org'
     lang: en
     url: 'https://www.deeplearningbook.org/contents/rnn.html'
-    note: 'Su §10.1 es el argumento de esta lección: con pesos propios por posición, una red no generaliza a longitudes nuevas ni traslada lo aprendido de una posición a otra. Lo cierra con el mismo ejemplo, una palabra que cambia de sitio.'
+    note: 'Su introducción, antes del §10.1, es el argumento de esta lección: con pesos propios por posición, una red no generaliza a longitudes nuevas ni traslada lo aprendido de una posición a otra. Lo ilustra igual: una palabra que se mueve.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 1. */}
@@ -203,7 +203,7 @@ $$
 
 Pon números de un tamaño corriente: *embeddings* de $d_{\text{model}} = 100$, una capa oculta de
 $d_1 = 128$ neuronas y $T_{\max} = 30$ posiciones dan $384\,000$ pesos en la primera capa. El
-clasificador de reseñas de la lección anterior, con la misma capa oculta sobre una bolsa de palabras,
+clasificador de reseñas de la lección anterior, con una sola capa oculta sobre una bolsa de palabras,
 tenía $5\,329$ parámetros en total. Y leer párrafos en vez de frases, $T_{\max} = 300$, sube la cifra
 a $3\,840\,000$.
 
