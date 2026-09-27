@@ -3,7 +3,7 @@ slug: la-rnn-vanilla
 title: "La RNN vanilla"
 block: 3
 order: 2
-minutes: 26
+minutes: 28
 summary: "Una sola matriz aplicada en todas las posiciones y un estado que viaja de un paso al siguiente. Con eso, ninguna de las formas de los pesos menciona la longitud del texto: la misma red lee dos tokens o cuarenta sin rellenar ni recortar nada, lo aprendido leyendo la posición 2 sirve tal cual en la 8, y dos frases con los mismos tokens en distinto orden dejan de ser la misma entrada."
 draft: false
 hasCode: true
@@ -25,7 +25,7 @@ quiz:
       - { id: c, text: 'Porque la recurrencia tiene bastantes más pesos que la primera capa concatenada, y con más pesos generaliza mejor.' }
       - { id: d, text: 'Porque al desaparecer el $T_{\max}$ ya no hay relleno, así que la posición 9 deja de recibir el vector nulo.' }
     answer: a
-    explanation: 'La (a) es la definición de compartir los pesos, y es lo único que hace falta para contestar. La (b) es la respuesta que más cuesta descartar porque es cierta a medias: el estado sí acumula lo anterior, pero eso es la memoria y no la transferencia —una arquitectura con una $\mathbf{W}_{xh}$ distinta por posición podría tener el mismo estado acumulado y seguir sin haber ajustado nunca la matriz de la novena—. La (c) va al revés de la cuenta: con $d_h = 128$ y $d_{\text{model}} = 100$ la recurrencia guarda $29\,312$ pesos frente a los $384\,000$ de la concatenación con $T_{\max} = 30$, y son menos, no más. Y la (d) mezcla dos cosas: quitar el relleno arregla que no se malgasten posiciones, no que los pesos de una posición sirvan en otra.'
+    explanation: 'La (a) es la definición de compartir los pesos, y es lo único que hace falta para contestar. La (b) es la respuesta que más cuesta descartar porque es cierta a medias: el estado sí acumula lo anterior, pero eso es la memoria y no la transferencia. Una arquitectura con una $\mathbf{W}_{xh}$ distinta por posición podría tener el mismo estado acumulado y seguir sin haber ajustado nunca la matriz de la novena. La (c) va al revés de la cuenta: con $d_h = 128$ y $d_{\text{model}} = 100$ la recurrencia guarda $29\,312$ pesos frente a los $384\,000$ de la concatenación con $T_{\max} = 30$, y son menos, no más. Y la (d) mezcla dos cosas: quitar el relleno arregla que no se malgasten posiciones, no que los pesos de una posición sirvan en otra.'
   - id: q-recurrencia
     type: multi
     prompt: 'Marca todo lo que sea cierto de la recurrencia $\mathbf{h}_t = \tanh\left(\mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h\right)$ con $\mathbf{h}_0 = \mathbf{0}$.'
@@ -35,28 +35,7 @@ quiz:
       - { id: c, text: 'Hay una $\mathbf{W}_{hh}$ distinta por posición, igual que la concatenación tenía un bloque $\mathbf{W}^{(1)}_t$ por posición.' }
       - { id: d, text: 'Como los pesos son los mismos en todas las posiciones, dos secuencias con los mismos tokens en distinto orden acaban en el mismo $\mathbf{h}_T$.' }
     answer: [a, b]
-    explanation: 'La (a) sale de leer las formas: $d_h \times d_h$, $d_h \times d_{\text{model}}$ y $d_h$, y en ninguna aparece $T$. La (b) sale de sustituir $\mathbf{h}_{t-1}$ por su definición hasta llegar a $\mathbf{h}_0$: cada token queda dentro del anidamiento. La (c) es exactamente lo contrario de lo que dice la fórmula —un subíndice $t$ en $\mathbf{W}^{(1)}_t$ señala una posición y hay $T_{\max}$ matrices; los subíndices de $\mathbf{W}_{hh}$ señalan un papel y hay una sola—, y confundirlas es leer la recurrencia como si fuera un MLP. La (d) es la trampa, porque su primera mitad es verdad y la conclusión no se sigue: la segunda celda pone las dos frases una debajo de otra y los estados finales son $(0.117,\ 0.087,\ 0.171)$ y $(-0.141,\ 0.701,\ -0.632)$. El orden no está en los pesos, está en cuántas veces cruza $\mathbf{W}_{hh}$ cada token.'
-  - id: q-memoria
-    type: predict-output
-    prompt: 'La misma recurrencia, con $\mathbf{W}_{hh}$ puesta a cero a mano. ¿Qué imprime?'
-    language: python
-    code: |
-      import numpy as np
-
-      Whh, Wxh, bh = np.zeros((2, 2)), np.eye(2), np.zeros(2)
-
-      def final(xs):
-          h = np.zeros(2)
-          for x in xs:
-              h = np.tanh(Whh @ h + Wxh @ x + bh)
-          return h
-
-      a, b = np.array([1., 0.]), np.array([0., 1.])
-      print(np.allclose(final([a, b]), final([b, b])),
-            np.allclose(final([a, b]), final([b, a])))
-    answer: 'True False'
-    explanation: 'Con $\mathbf{W}_{hh} = \mathbf{0}$ el término del estado anterior se anula en todos los pasos y la recurrencia se queda en $\mathbf{h}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{b}_h\right)$: el estado final depende del último token y de nada más. Por eso <W>ab</W> y <W>bb</W> terminan en el mismo sitio —las dos acaban en $\mathbf{b}$— y <W>ab</W> y <W>ba</W> no. Esa es la prueba de dónde vive la memoria: $\mathbf{W}_{xh}$ mira el presente y $\mathbf{W}_{hh}$ es lo único que trae el pasado, así que anularla deja una red que aplica la misma función a cada token por separado y se olvida de todo entre uno y el siguiente.'
-    hint: 'Escribe el paso con $\mathbf{W}_{hh} = \mathbf{0}$ y mira de qué queda dependiendo $\mathbf{h}_t$. Después fíjate en cuál es el último vector de cada una de las tres listas.'
+    explanation: 'La (a) sale de leer las formas: $d_h \times d_h$, $d_h \times d_{\text{model}}$ y $d_h$, y en ninguna aparece $T$. La (b) sale de sustituir $\mathbf{h}_{t-1}$ por su definición hasta llegar a $\mathbf{h}_0$: cada token queda dentro del anidamiento. La (c) es exactamente lo contrario de lo que dice la fórmula (un subíndice $t$ en $\mathbf{W}^{(1)}_t$ señala una posición y hay $T_{\max}$ matrices; los subíndices de $\mathbf{W}_{hh}$ señalan un papel y hay una sola), y confundirlas es leer la recurrencia como si fuera un MLP. La (d) es la trampa, porque su primera mitad es verdad y la conclusión no se sigue: la segunda celda lee <W>la película no es aburrida, es divertida</W> y <W>la película no es divertida, es aburrida</W>, y los estados finales son $(-0.751,\ 0.011,\ -0.932)$ y $(-0.678,\ 0.239,\ -0.859)$. El orden no está en los pesos, está en cuántas veces cruza $\mathbf{W}_{hh}$ cada token.'
 challenges:
   - id: ch-rnn-forward
     prompt: |
@@ -64,8 +43,8 @@ challenges:
 
       - `paso(h, x, Whh, Wxh, bh)` devuelve el estado siguiente a partir del anterior y del
         vector del token de turno.
-      - `forward(X, Whh, Wxh, bh)` recibe `X` de forma $(T, d_{\text{model}})$ —una fila por
-        posición— y devuelve los $T$ estados apilados, de forma $(T, d_h)$, partiendo de
+      - `forward(X, Whh, Wxh, bh)` recibe `X` de forma $(T, d_{\text{model}})$, con una fila por
+        posición, y devuelve los $T$ estados apilados, de forma $(T, d_h)$, partiendo de
         $\mathbf{h}_0 = \mathbf{0}$.
 
       Ninguna de las dos puede escribir en los arrays que recibe.
@@ -150,7 +129,7 @@ challenges:
       es $\mathbf{h}_0 = \mathbf{0}$ y de paso saca $d_h$ de la propia matriz en vez de pedirlo
       como argumento. El bucle recorre `X` sin mirar cuánto mide, y ahí está la longitud variable:
       no hay ningún `T` escrito en el código. Y `estados.append(h)` guarda el array que `np.tanh`
-      acaba de crear —nunca uno que se vaya a sobrescribir después—, así que apilarlos al final da
+      acaba de crear (nunca uno que se vaya a sobrescribir después), así que apilarlos al final da
       los $T$ estados y no $T$ copias del último.
 reading:
   - kind: paper
@@ -172,8 +151,8 @@ en el tamaño de la red ni en cómo se la entrena. Está en la entrada: aquella 
 secuencia, recibía un vector. Lo que sigue es la corrección, y llega con una propiedad que de una
 corrección no se espera: la red que la aplica es más pequeña que la que falla.
 
-Se llama **red neuronal recurrente** (*recurrent neural network*, RNN), y en su forma original —la
-que todo el mundo llama *vanilla*— cabe en dos matrices y un bucle. Lo difícil de ella no es cómo
+Se llama **red neuronal recurrente** (*recurrent neural network*, RNN), y en su forma original (la
+que todo el mundo llama *vanilla*) cabe en dos matrices y un bucle. Lo difícil de ella no es cómo
 funciona, que son dos líneas, sino por qué algo tan corto consigue lo que la red grande no conseguía.
 La respuesta está entera en una renuncia: esta red no mira la frase, la recorre.
 
@@ -195,7 +174,7 @@ de pesos por cada una; ésta tiene uno solo, valga la secuencia lo que valga.
 
 <Callout type="intuition" title="La idea en una frase">
 Una RNN es un bucle: el mismo paso, aplicado a cada posición, arrastrando consigo un vector que
-resume lo leído hasta ahí. Los pesos no saben en qué posición están —el estado es lo único que
+resume lo leído hasta ahí. Los pesos no saben en qué posición están: el estado es lo único que
 distingue el paso 8 del paso 2.
 </Callout>
 
@@ -217,8 +196,28 @@ $$
 con $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$ leyendo el estado anterior,
 $\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times d_{\text{model}}}$ leyendo el token de turno y
 $\mathbf{b}_h \in \mathbb{R}^{d_h}$. La tangente hiperbólica ocupa el hueco $\varphi$ de <Leccion slug="funciones-activacion">la lección
-sobre funciones de activación</Leccion>; ahí caben las tres que se vieron allí, y la
-escribo con su nombre porque es la que la recurrencia lleva en todo el bloque.
+sobre funciones de activación</Leccion>, y en ese hueco caben las tres que se vieron allí: la fórmula
+se escribe igual con cualquiera. Lo que las separa aquí es algo que ninguna capa del bloque anterior
+hacía, y es que la salida vuelve a entrar. $\mathbf{h}_t$ es la entrada del paso $t + 1$, que a su
+vez alimenta el $t + 2$, así que lo que la activación haga con el estado se repite una vez por token.
+
+Eso descarta primero a ReLU, porque a la derecha no tiene techo. Míralo en una sola coordenada, con
+un peso recurrente de $2$ y entradas que no lo contrarresten: ReLU deja pasar el estado entero, cada
+vuelta lo duplica, y veinte vueltas lo multiplican por más de un millón. Y eso ocurre en la pasada
+hacia adelante, sin haber calculado todavía un solo gradiente. La tangente hiperbólica deja cada
+coordenada en $(-1, 1)$ tanto en $t = 1$ como en $t = 300$, porque su techo no depende de lo que le
+entre. Hay RNN con ReLU, pero exigen inicializar $\mathbf{W}_{hh}$ con cuidado para que al principio
+no estire nada; la $\tanh$ no pide ese cuidado.
+
+La sigmoide también está acotada, y pierde frente a la $\tanh$ por las dos diferencias que aquella
+lección señaló. La primera es el centro. Con la sigmoide, cada coordenada del estado sería positiva y
+podría decir cuánto, pero nunca hacia qué lado; y el $\mathbf{h}_0 = \mathbf{0}$ con el que arranca
+la lectura, que para la $\tanh$ es el centro de su recorrido, para la sigmoide sería un borde al que
+no llega nunca. La segunda es la pendiente, que en el origen vale $1$ en la $\tanh$ y $0.25$ en la
+sigmoide. Cuando haya que entrenar esta red, el error viajará de la última posición a la primera y
+cruzará esa pendiente una vez por paso: con la sigmoide, ese factor lo dividiría como mínimo por
+cuatro en cada uno. Por eso la escribo con su nombre en vez de dejar $\varphi$: es la que la
+recurrencia lleva en todo el bloque.
 
 El paso $t = 1$ parece pedir una regla aparte, y no la pide. Con $\mathbf{h}_0 = \mathbf{0}$ el
 primer término desaparece solo:
@@ -245,19 +244,22 @@ que se caiga nada por el camino: $\mathbf{x}_1$ sigue ahí dentro cuando $t$ val
 $t = 300$.
 </Details>
 
-Ese anidamiento contesta la pregunta de dónde queda guardado el orden. No está en los pesos —son los
-mismos en las tres posiciones— sino en **cuántas veces** ha atravesado cada token la matriz
+Ese anidamiento contesta la pregunta de dónde queda guardado el orden. No está en los pesos (son los
+mismos en las tres posiciones) sino en **cuántas veces** ha atravesado cada token la matriz
 $\mathbf{W}_{hh}$ antes de llegar al final: en $\mathbf{h}_3$, el vector $\mathbf{x}_1$ la ha cruzado
 dos veces, $\mathbf{x}_2$ una y $\mathbf{x}_3$ ninguna. Cambia dos tokens de sitio y cambias esa
 cuenta.
 
-Queda sacar una respuesta del estado. Para un veredicto por documento, se lee del último:
+Queda sacar una respuesta, y hay $T$ estados de donde sacarla. Para un veredicto por documento se usa
+el último, $\mathbf{h}_T$, porque es el único que ha leído el texto entero: el anidamiento de arriba
+mete todos los tokens dentro de él, mientras que cualquier $\mathbf{h}_t$ anterior no ha visto lo que
+viene después de $t$. La respuesta sale de una capa más, puesta encima de él:
 
 $$
 \hat{\mathbf{y}} = \sigma\left(\mathbf{W}_{hy}\mathbf{h}_T + \mathbf{b}_y\right),
 $$
 
-con $\mathbf{W}_{hy}$ de forma $1 \times d_h$ —una fila por salida, y aquí la salida es una— y
+con $\mathbf{W}_{hy}$ de forma $1 \times d_h$ (una fila por salida, y aquí la salida es una) y
 $\mathbf{b}_y$ de una coordenada. La activación es otra, y no por descuido: $\sigma$ es la sigmoide
 logística y no la $\tanh$ del bucle, porque lo que la red entrega es una probabilidad y la $\tanh$
 devuelve números entre $-1$ y $1$. Es la capa de salida del clasificador de reseñas del bloque
@@ -269,7 +271,7 @@ Repasa ahora las formas de esas dos matrices y comprueba qué no aparece en ning
 $\mathbf{W}_{hh}$ mide $d_h \times d_h$, $\mathbf{W}_{xh}$ mide $d_h \times d_{\text{model}}$, y
 ninguna de las dos sabe cuántas veces se la va a usar. Eso deja sin objeto las dos operaciones que la
 longitud fija imponía: no hay un $T_{\max}$ por el que truncar, y no hay posiciones sobrantes que
-rellenar con el vector nulo —el *padding* de la lección anterior—, porque no hay posiciones de más.
+rellenar con el vector nulo (el *padding* de la lección anterior), porque no hay posiciones de más.
 Hay exactamente las que trae el documento.
 
 Debajo de eso hay un cambio de unidad que conviene ver. En el MLP concatenado, una entrada de la red
@@ -278,7 +280,7 @@ entrada de la red es un *token*, porque $\mathbf{W}_{xh}$ tiene $d_{\text{model}
 más, y en cada paso la red no ve nada aparte del vector de esa posición y del estado que trae. La
 longitud del texto no ha desaparecido del sistema: se ha mudado de las formas al número de vueltas
 del bucle. Y esa mudanza es la que lo cambia todo, porque una forma queda fija al construir la red y
-ya no se toca —eso es lo que obligaba a truncar—, mientras que el número de vueltas lo decide cada
+ya no se toca (eso es lo que obligaba a truncar), mientras que el número de vueltas lo decide cada
 documento al llegar.
 
 ## Una sola matriz para todas las posiciones
@@ -290,7 +292,7 @@ $$
 $$
 
 Ponla al lado de la de la lección anterior, $d_1 \cdot T_{\max} \cdot d_{\text{model}}$. Lo que hay
-que mirar no es cuál sale más pequeña —eso es una consecuencia— sino qué letras aparecen en cada una:
+que mirar no es cuál sale más pequeña (eso es una consecuencia) sino qué letras aparecen en cada una:
 allí estaba $T_{\max}$ y aquí no está. Leer documentos diez veces más largos no añade un peso.
 
 Y el ahorro es lo de menos. Lo que cambia es a qué se dedica cada peso. En la concatenación, el trozo
@@ -301,8 +303,8 @@ la atraviesan los vectores de todas las posiciones de todos los documentos. Lo q
 con el vector de <W>guion</W> lo aplica esté <W>guion</W> donde esté, porque no tiene forma de saber
 dónde está.
 
-Compartir los pesos es lo que hace que una RNN sea una RNN. Quítalo —una matriz distinta por
-posición— y lo que queda es el MLP concatenado con otro nombre.
+Compartir los pesos es lo que hace que una RNN sea una RNN. Quítalo (una matriz distinta por
+posición) y lo que queda es el MLP concatenado con otro nombre.
 
 El reverso viene con el gradiente, y conviene enunciarlo aquí aunque esta lección no lo resuelva.
 $\mathbf{W}_{hh}$ no interviene una vez en el cálculo de $\mathbf{h}_T$: interviene $T$ veces, como
@@ -311,8 +313,8 @@ y su gradiente tendrá que recogerlos todos.
 
 ## Ejecutando la recurrencia sobre dos frases de distinta longitud
 
-Ocho entradas de vocabulario, *embeddings* de $d_{\text{model}} = 4$ y un estado de $d_h = 3$
-coordenadas. Los pesos me los da un generador con semilla fija y no están entrenados: lo que hay que
+Doce entradas de vocabulario (esta celda usa ocho; las cuatro últimas son para la siguiente),
+*embeddings* de $d_{\text{model}} = 4$ y un estado de $d_h = 3$ coordenadas. Los pesos me los da un generador con semilla fija y no están entrenados: lo que hay que
 mirar en esta celda no es qué valores salen, sino cuántas veces se usa cada matriz. `paso` es la
 recurrencia transcrita línea por línea, y `lee` la aplica a una frase imprimiendo el estado en cada
 posición.
@@ -320,11 +322,12 @@ posición.
 <PyCell packages={["numpy"]} code={`
 import numpy as np
 
-V = ["la", "el", "actriz", "película", "guion", "salva", "hunde", "y"]
+V = ["la", "el", "actriz", "película", "guion", "salva", "hunde", "y",
+     "no", "es", "aburrida", "divertida"]
 d_model, d_h = 4, 3
 rng = np.random.default_rng(0)
 
-E = rng.normal(size=(len(V), d_model)) * 0.5     # (8, 4): una fila por entrada
+E = rng.normal(size=(len(V), d_model)) * 0.5     # (12, 4): una fila por entrada
 Wxh = rng.normal(size=(d_h, d_model)) * 0.5      # (3, 4): lee el token de turno
 Whh = rng.normal(size=(d_h, d_h)) * 0.5          # (3, 3): lee el estado anterior
 bh = np.zeros(d_h)
@@ -347,7 +350,7 @@ def lee(frase):
 corta = lee("el guion hunde la película")
 larga = lee("la actriz salva la película y el guion la hunde")
 
-print("\\nformas:  Whh %s   Wxh %s   bh %s   —ninguna menciona T" % (
+print("\\nformas:  Whh %s   Wxh %s   bh %s   (ninguna menciona T)" % (
     Whh.shape, Wxh.shape, bh.shape))
 print("«el guion» leído en las posiciones 1-2 y en las 7-8:")
 print("   %s   %s" % (np.round(corta[0], 3), np.round(corta[1], 3)))
@@ -356,23 +359,25 @@ print("   %s   %s" % (np.round(larga[6], 3), np.round(larga[7], 3)))
 
 Cuenta las filas: cinco para la primera frase, diez para la segunda, y las mismas `Whh` y `Wxh` en
 las quince. No hay una versión de la red para textos cortos y otra para largos, y no ha hecho falta
-recortar ni rellenar nada —el bucle da las vueltas que le pida la frase—.
+recortar ni rellenar nada: el bucle da las vueltas que le pida la frase.
 
 Las dos últimas líneas son la lección anterior contestada. <W>el guion</W> ocupa las posiciones 1 y 2
 de la primera frase y las 7 y 8 de la segunda, y los estados que produce son casi los mismos:
-$(0.509,\ 0.947,\ 0.072)$ frente a $(0.481,\ 0.935,\ 0.024)$. Casi, no exactamente, y las
+$(-0.686,\ 0.010,\ -0.744)$ frente a $(-0.715,\ 0.077,\ -0.745)$. Casi, no exactamente, y las
 dos mitades cuentan. Se parecen porque los pesos que leen esos dos tokens son los mismos pesos, estén
 donde estén; en el MLP concatenado no había ninguna razón para que se parecieran, y la lección
 anterior midió que no se parecían en absoluto. Y difieren porque el estado que traían de antes no era
 el mismo, que es justo la información de orden que la bolsa de palabras no tenía dónde guardar.
 
-Esa diferencia se puede aislar. Toma dos frases con exactamente los mismos tokens y cámbialos de
-sitio.
+Esa diferencia se puede aislar, y el bloque anterior dejó preparado el caso para hacerlo: las dos
+frases con las que cerró <Leccion slug="proyecto-sentimiento">el proyecto de sentimiento</Leccion>.
+Tienen los mismos tokens, con las mismas repeticiones, y dicen lo contrario.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
 
-V = ["la", "el", "actriz", "película", "guion", "salva", "hunde", "y"]
+V = ["la", "el", "actriz", "película", "guion", "salva", "hunde", "y",
+     "no", "es", "aburrida", "divertida"]
 d_model, d_h = 4, 3
 rng = np.random.default_rng(0)                   # la misma red de la celda anterior
 E = rng.normal(size=(len(V), d_model)) * 0.5
@@ -381,24 +386,31 @@ Whh = rng.normal(size=(d_h, d_h)) * 0.5
 bh = np.zeros(d_h)
 
 
-def estado_final(frase):
-    h = np.zeros(d_h)
-    for palabra in frase.split():
+def tokens(frase):
+    return frase.replace(",", " ").split()       # fuera la coma, como en aquel proyecto
+
+
+def estados(frase):
+    h, hs = np.zeros(d_h), []
+    for palabra in tokens(frase):
         h = np.tanh(Whh @ h + Wxh @ E[V.index(palabra)] + bh)
-    return h
+        hs.append(h)
+    return hs
 
 
 def bolsa(frase):
     v = np.zeros(len(V), dtype=int)
-    for palabra in frase.split():
+    for palabra in tokens(frase):
         v[V.index(palabra)] += 1
     return v
 
 
-for frase in ["la actriz salva la película", "la película salva la actriz"]:
-    print("«%s»" % frase)
-    print("   h_T    %s" % np.round(estado_final(frase), 3))
-    print("   bolsa  %s" % bolsa(frase))
+a = "la película no es aburrida, es divertida"
+b = "la película no es divertida, es aburrida"
+print("a  «%s»\\nb  «%s»" % (a, b))
+print("\\nbolsa de a  %s\\nbolsa de b  %s\\n" % (bolsa(a), bolsa(b)))
+for t, (pa, ha, pb, hb) in enumerate(zip(tokens(a), estados(a), tokens(b), estados(b)), 1):
+    print("h_%d  %-10s %-24s %-10s %s" % (t, pa, np.round(ha, 3), pb, np.round(hb, 3)))
 
 print("\\n           T_max=30      T_max=300")
 concat = [128 * t * 100 for t in (30, 300)]      # d1 · T_max · d_model
@@ -408,30 +420,40 @@ print("recurr.    %-13d %d" % tuple(recurr))
 `} />
 
 La bolsa de palabras devuelve el mismo vector para las dos frases, casilla por casilla, porque suma y
-la suma no tiene orden. El estado final no: $(0.117,\ 0.087,\ 0.171)$ contra
-$(-0.141,\ 0.701,\ -0.632)$, y no es una diferencia de matiz, porque cambian los tres signos.
-La recurrencia se ha quedado con lo bueno de las dos representaciones que el bloque lleva comparando:
-distingue el orden, como la concatenación, y comparte los pesos, como la bolsa.
+la suma no tiene orden. Es la entrada que recibía el clasificador de aquel proyecto, y por eso les dio
+$0.0014$ a las dos.
+
+Los estados cuentan la lectura paso a paso, y la tabla se parte en dos. Las cuatro primeras filas
+coinciden cifra por cifra, porque hasta ahí las dos frases dicen lo mismo, <W>la película no es</W>,
+y la red todavía no tiene nada que distinguir. En la quinta se separan: es la posición en la que
+<W>no es</W> cae sobre <W>aburrida</W> en una frase y sobre <W>divertida</W> en la otra. Aquel
+proyecto concluyó que la coordenada de <W>no</W> decía cuántas veces salía, pero no sobre qué caía. Aquí
+el <W>no</W> va dentro del estado que llega a la posición 5, y el adjetivo se lee con él delante.
+
+Los estados finales quedan en $(-0.751,\ 0.011,\ -0.932)$ y $(-0.678,\ 0.239,\ -0.859)$. Con los
+pesos sin entrenar, cuánto se separen no significa nada todavía, y ninguno de los dos quiere decir aún
+«positiva». Lo que sí asegura es que la capa de salida recibirá dos vectores distintos, que es la
+condición sin la cual ningún entrenamiento podría darles probabilidades distintas. Con la bolsa esa
+condición ya fallaba antes de empezar. La recurrencia se ha quedado con lo bueno de las dos
+representaciones que el bloque lleva comparando: distingue el orden, como la concatenación, y
+comparte los pesos, como la bolsa.
 
 Las dos últimas líneas ponen el precio en números, con las dimensiones de la lección anterior:
-$d_{\text{model}} = 100$ y una capa —o un estado— de $128$ coordenadas. Pasar de leer frases a leer
+$d_{\text{model}} = 100$ y una capa (o un estado) de $128$ coordenadas. Pasar de leer frases a leer
 párrafos multiplica por diez la primera capa del MLP concatenado y deja la recurrencia exactamente
 donde estaba, en $29\,312$ pesos. Los $3\,810\,688$ que el MLP añade empiezan todos en su
 inicialización, y hay que ajustarlos con el mismo corpus de antes.
 
 ## Comprueba tu intuición
 
-Cuatro preguntas: cuántos pesos pide la recurrencia, por qué una posición que el entrenamiento nunca
-vio deja de ser un problema, qué dice y qué no dice la fórmula, y qué pasa si se anula la matriz que
-transporta el estado.
+Tres preguntas: cuántos pesos pide la recurrencia, por qué una posición que el entrenamiento nunca
+vio deja de ser un problema, qué dice y qué no dice la fórmula.
 
 <Quiz id="q-parametros" />
 
 <Quiz id="q-compartir" />
 
 <Quiz id="q-recurrencia" />
-
-<Quiz id="q-memoria" />
 
 Y una recurrencia entera escrita por ti, que es la que vas a derivar en la lección siguiente.
 
@@ -445,8 +467,8 @@ los pesos deja de salir gratis. En una red del bloque anterior cada matriz apare
 camino de la entrada a la pérdida, y eso es lo que hacía que su gradiente fuera un solo producto;
 $\mathbf{W}_{hh}$ aparece $T$ veces.
 
-Qué hacer con esos $T$ caminos —sumarlos, y recorrer la secuencia entera hacia atrás para
-obtenerlos— es <Leccion slug="bptt">la siguiente lección, sobre *backpropagation* a través del tiempo
+Qué hacer con esos $T$ caminos (sumarlos, y recorrer la secuencia entera hacia atrás para
+obtenerlos) es <Leccion slug="bptt">la siguiente lección, sobre *backpropagation* a través del tiempo
 (*backpropagation through time*, BPTT)</Leccion>. Es la regla de la cadena del bloque anterior sin ninguna
 variación, aplicada a un grafo que en vez de tener $L$ capas de altura tiene $T$ pasos de largo, y de
 ahí sale la cuenta completa de $\nabla_{\mathbf{W}_{hh}}\mathcal{L}$,
