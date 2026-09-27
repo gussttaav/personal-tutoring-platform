@@ -526,10 +526,6 @@ posición, una distribución sobre las 512 entradas. La pérdida sólo le pregun
 token que de verdad venía; nunca le pide que elija uno. Para escribir texto hay que elegir, token a
 token, y el modelo no dice cómo.
 
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 4
-    (slug muestreo), envolver «la lección siguiente, sobre el muestreo» en su Leccion slug=…;
-    el lint falla con un slug que no resuelve, también dentro de un comentario. */}
-
-Ése es el asunto de la lección siguiente, sobre el muestreo: quedarse siempre con la entrada más
+Ése es el asunto de <Leccion slug="muestreo">la lección siguiente, sobre el muestreo</Leccion>: quedarse siempre con la entrada más
 probable, que en el mini-GPT acaba repitiendo <W>no, no, no</W>, o sortear entre las posibles con
 una temperatura, un top-k o un top-p, y qué parte de la distribución tira cada uno.

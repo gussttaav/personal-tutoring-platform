@@ -1560,6 +1560,35 @@
         "sentenceStats": "{bytes} bytes → {tokens} tokens",
         "byteHint": "Un recuadro con cifras es un byte suelto: un trozo de carácter, todavía sin fusionar.",
         "slider": "Fusiones"
+      },
+      "sampling-explorer": {
+        "groupAria": "Distribución del token siguiente del mini-GPT bajo temperatura, top-k y top-p",
+        "context": "Contexto",
+        "presetOpenAria": "Contexto «{context}»: el modelo duda entre muchas entradas",
+        "presetPeakedAria": "Contexto «{context}»: el modelo casi ha decidido",
+        "mass": "Se conserva el {kept} % de la masa · se tira el {cut} %",
+        "greedySummary": "τ = 0, generación voraz: no hay sorteo, sale siempre «{token}».",
+        "drawSummary": "{n, plural, =1 {Una sola entrada: no hay sorteo.} other {Se sortea entre # entradas.}}",
+        "rowAria": "«{token}»: {before} % tras la temperatura, {after} % tras el corte",
+        "rowCutAria": "«{token}»: {before} % tras la temperatura, tirada por el corte",
+        "percent": "{value} %",
+        "cut": "tirada",
+        "cutRest": "tiradas",
+        "rest": "otras {n}",
+        "restAria": "Las otras {n} entradas: {before} % tras la temperatura, {after} % tras el corte",
+        "legendBefore": "tras la temperatura",
+        "legendAfter": "al sortear, tras el corte",
+        "legendCut": "tirado por el corte",
+        "temperature": "Temperatura τ",
+        "greedyValue": "0 · voraz",
+        "cutLabel": "Corte",
+        "modes": {
+          "none": "sin corte",
+          "topK": "top-k",
+          "topP": "top-p"
+        },
+        "kSlider": "k · entradas que se conservan",
+        "pSlider": "p · masa que alcanza el núcleo"
       }
     }
   },

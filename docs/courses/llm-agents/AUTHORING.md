@@ -208,6 +208,15 @@ this work.
 | $\eta$ as a function of the step | `calendario` (de la tasa de aprendizaje) (Block 1 lesson 3) | *schedule*, programa, planificación |
 | its opening stretch, where $\eta$ rises from near zero | `calentamiento` (Block 1 lesson 3), with *warm-up* given once per lesson | *warm-up* as the term, precalentamiento, arranque |
 | shrinking every weight by $\eta\lambda$ of itself each step, outside Adam's quotient | `decaimiento de pesos` (Block 1 lesson 3); the W of AdamW is named once as its English initial | *weight decay* in prose; regularización L2 (the coupled version, which under Adam is a different algorithm) |
+| drawing the next entry at random, each with the probability a distribution gives it | `muestrear`, `muestreo` (Block 1 lesson 4); one draw is a `sorteo`, `sortear` | *sampling*, samplear, extraer; `elegir` alone (the voraz also chooses) |
+| taking the most probable entry at every position | `generación voraz` (Block 1 lesson 4), with *greedy decoding* given once | decodificación voraz (`decodificar` is ids → text, Block 1 lesson 2's), búsqueda voraz, `argmax` as a noun in prose |
+| the most probable entry at one position | `favorita` (Block 1 lesson 1) | la ganadora, el máximo, top-1 |
+| keeping a prefix of the entries in order of probability (the $k$ first, or the núcleo) and zeroing the rest | `corte`, `cortar` (Block 1 lesson 4); top-k and top-p keep their English names, as the papers and every library do | recorte (the gradient's, Block 1 lesson 3), truncar (the first course's cutting of a text at $T_{\max}$), poda, filtrado |
+| the set top-p keeps | `núcleo` (Block 1 lesson 4), with *nucleus sampling* given once | conjunto top-p |
+| dividing what a corte keeps by its sum, so that it adds up to 1 again | `renormalizar` (Block 1 lesson 4) | normalizar de nuevo, reescalar |
+| the sum of the probabilities of a set of entries | `masa` (Block 1 lesson 4) | peso (that is the network's), probabilidad acumulada as the noun |
+| the many entries outside what a corte keeps: each improbable, together not | `cola` (Block 1 lesson 4) | *tail*; resto, fine in passing and never as the term |
+| a stretch of generated text that repeats with a fixed period: a cycle of the voraz's deterministic map | `ciclo` (Block 1 lesson 4) | *loop*; `bucle` (that is code: the training loop, `generar`'s loop, Block 4's agent loop); repetición as the term |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,

@@ -155,6 +155,14 @@ export const SPANISH_BOUND_CORPORA: Readonly<Record<string, string>> = {
     "Not locale-sensitive at all, listed here so the review is complete: the corpus is " +
     "a Spanish→English translation pair, which is what Block 4 is about. It reads the " +
     "same way to either audience.",
+  // COURSE-C2-P1-01 — llm-agents Block 1 lesson 4.
+  "sampling-explorer":
+    "Its two logit vectors (math/sampling-presets.ts) are the mini-GPT checkpoint's own " +
+    "output on two Spanish contexts, «La Nela» and «La Nela bajó la cabe», and the lesson " +
+    "quotes them. An English context means the English checkpoint, then re-running " +
+    "scripts/courses/llm-agents/sampling-presets.py on a pair chosen for the same " +
+    "property: one context where the model hesitates between dozens of entries, one where " +
+    "a single entry holds nearly all the mass.",
   // COURSE-C2-P0-03 — the llm-agents mini-GPT is trained on this Spanish corpus, and
   // its checkpoint (minigpt.json) and merge table (bpe-merges.json) are functions of it.
   "courses/llm-agents/corpus.txt":

@@ -53,6 +53,13 @@ this file gets shorter as it goes down.
 | $\varepsilon$ | the guard in Adam's denominator (Block 1 lesson 3) |
 | $\lambda$ | the decaimiento de pesos coefficient, AdamW's (Block 1 lesson 3) |
 | $\eta_s$ · $\eta_{\max}$ · $S_{\text{cal}}$ | the learning rate at step $s$ · its peak · the steps of calentamiento (Block 1 lesson 3) |
+| $\mathbf{z}$, $z_v$ | the logits of the position being generated, and the one of entry $v$: lesson 1's $\mathbf{z}_t$ with $t$ dropped where only that position is in play (Block 1 lesson 4) |
+| $\mathbf{q}$, $q_v$ | $\text{softmax}(\mathbf{z}/\tau)$, the distribution the sampler draws from before any corte, and its entry for $v \in V$ (Block 1 lesson 4) |
+| $v^{\star}$ | the favorita, $\arg\max_v z_v$ (Block 1 lesson 4) |
+| $q_{(i)}$ | the $i$-th largest entry of $\mathbf{q}$: a parenthesised subscript is a rank, a bare one an entry (Block 1 lesson 4) |
+| $M_j$ | the masa of the $j$ most probable entries, $\sum_{i=1}^{j} q_{(i)}$ (Block 1 lesson 4) |
+| $k_p$ | the size of the núcleo: the smallest $j$ with $M_j \ge p$ (Block 1 lesson 4) |
+| $\tilde{\mathbf{q}}$, $\tilde{q}_v$ | $\mathbf{q}$ after a corte, renormalised: what the sorteo draws from (Block 1 lesson 4) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -105,6 +112,19 @@ $\hat{\mathbf{m}}_s$. $\mathbf{m}_s$ and $\mathbf{v}_s$ keep the paper's letters
 fusión count), and $\mathbf{v}_s$ is not a value vector, whose home is the rows of $\mathbf{V}$.
 $\varepsilon$ is the first course's LayerNorm guard: the same letter doing the same job, a constant
 that keeps a denominator away from zero.
+
+**Sampling has its own letters, and $p$ alone is a number** (`COURSE-C2-P1-01`, Block 1 lesson
+4). The table's $p$ is top-p's threshold, a scalar in $(0, 1]$; the model's distribution always
+carries its subscript, $p_\theta$, and the lesson that first writes both says so in a clause. The
+distribution the sampler draws from is **$\mathbf{q}$, not $p_\theta$**, because away from
+$\tau = 1$ it is not the model's: it is a distribution made from the model's logits, and that
+difference is half the lesson. The tilde means «after a corte, renormalised», and nothing else —
+the hat stays «estimated from a batch». A **parenthesised subscript is a rank**, $q_{(1)} \ge
+q_{(2)} \ge \dots$, the order-statistics convention; the shared §2's parenthesised *superscript*
+is the layer, a bare subscript is an entry ($q_v$) or a position, and nothing else in the course
+writes a parenthesised subscript. $M_j$ is free to take: Block 4's `M` lives in pseudocode only
+and never enters `$…$`. And top-p is written as top-k with a $k$ the position chooses, $k_p$,
+because that is the claim the lesson makes about it.
 
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson

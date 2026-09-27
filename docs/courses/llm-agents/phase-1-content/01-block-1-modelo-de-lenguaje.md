@@ -59,7 +59,7 @@ here; STATUS stays phase-level.
 - [x] 1. `una-sola-columna`
 - [x] 2. `bpe-de-verdad`
 - [x] 3. `entrenar-un-mini-gpt`
-- [ ] 4. `muestreo`
+- [x] 4. `muestreo`
 - [ ] 5. `kv-cache`
 - [ ] 6. `perplejidad`
 - [ ] 7. `leyes-de-escala`
@@ -77,8 +77,12 @@ here; STATUS stays phase-level.
   `reading` entry — `kind: blog`, the first internal one); warm-up and decay stated, not derived
 - Temperature: $\text{softmax}(\mathbf{z}/\tau)$, with the limits $\tau \to 0$ (argmax) and
   $\tau \to \infty$ (uniform) **derived**; top-k and top-p as truncation + renormalisation; **why
-  greedy repeats** — a high-probability loop is a fixed point of argmax — is an argument, not a
-  remark (Holtzman)
+  greedy repeats** — a loop the argmax continues is a fixed point of argmax, whatever its
+  probability — is an argument, not a remark (Holtzman). The loop is high-probability only
+  relative to real text: on the checkpoint each step is a ~0.3 bet (the model is far from sure),
+  yet the cycle costs 1.26 nats per token against the novel's 3.2. Holtzman's self-reinforcement,
+  the bet rising with each repeat, is weak here (0.18 → 0.31, then flat) and the argument does not
+  rest on it
 - KV cache: per-step cost $O(t\,d)$ with the cache vs. $O(t^2 d)$ without; totals over $T$
   steps $O(T^2 d)$ vs. $O(T^3 d)$ — **derived**, and the memory $2 L T d$ floats per sequence,
   which is the number Block 3's context lesson and Block 5's compaction lesson both quote

@@ -44,6 +44,8 @@ export const WIDGET_IDS = [
   "positional-encoding",
   // COURSE-C2-P1-01 — llm-agents Block 1 lesson 2 (BPE de verdad).
   "bpe-merges",
+  // COURSE-C2-P1-01 — llm-agents Block 1 lesson 4 (muestreo: temperatura, top-k y top-p).
+  "sampling-explorer",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

@@ -62,4 +62,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   }),
   // COURSE-C2-P1-01 — llm-agents Block 1 lesson 2 (BPE de verdad).
   "bpe-merges": dynamic(() => import("./nlp/BpeMerges"), { ssr: false }),
+  // COURSE-C2-P1-01 — llm-agents Block 1 lesson 4 (muestreo: temperatura, top-k y top-p).
+  "sampling-explorer": dynamic(() => import("./nlp/SamplingExplorer"), { ssr: false }),
 };

@@ -1560,6 +1560,35 @@
         "sentenceStats": "{bytes} bytes → {tokens} tokens",
         "byteHint": "A box with hex digits is a stray byte: a piece of a character, not merged yet.",
         "slider": "Merges"
+      },
+      "sampling-explorer": {
+        "groupAria": "Next-token distribution of the mini-GPT under temperature, top-k and top-p",
+        "context": "Context",
+        "presetOpenAria": "Context “{context}”: the model hesitates between many entries",
+        "presetPeakedAria": "Context “{context}”: the model has all but decided",
+        "mass": "{kept}% of the mass kept · {cut}% cut",
+        "greedySummary": "τ = 0, greedy generation: no draw, always “{token}”.",
+        "drawSummary": "{n, plural, =1 {A single entry: no draw.} other {The draw is between # entries.}}",
+        "rowAria": "“{token}”: {before}% after temperature, {after}% after the cut",
+        "rowCutAria": "“{token}”: {before}% after temperature, dropped by the cut",
+        "percent": "{value}%",
+        "cut": "cut",
+        "cutRest": "cut",
+        "rest": "other {n}",
+        "restAria": "The other {n} entries: {before}% after temperature, {after}% after the cut",
+        "legendBefore": "after temperature",
+        "legendAfter": "when drawing, after the cut",
+        "legendCut": "dropped by the cut",
+        "temperature": "Temperature τ",
+        "greedyValue": "0 · greedy",
+        "cutLabel": "Cut-off",
+        "modes": {
+          "none": "no cut",
+          "topK": "top-k",
+          "topP": "top-p"
+        },
+        "kSlider": "k · entries kept",
+        "pSlider": "p · mass the nucleus reaches"
       }
     }
   },
