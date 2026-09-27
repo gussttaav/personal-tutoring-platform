@@ -217,6 +217,8 @@ this work.
 | the sum of the probabilities of a set of entries | `masa` (Block 1 lesson 4) | peso (that is the network's), probabilidad acumulada as the noun |
 | the many entries outside what a corte keeps: each improbable, together not | `cola` (Block 1 lesson 4) | *tail*; resto, fine in passing and never as the term |
 | a stretch of generated text that repeats with a fixed period: a cycle of the voraz's deterministic map | `ciclo` (Block 1 lesson 4) | *loop*; `bucle` (that is code: the training loop, `generar`'s loop, Block 4's agent loop); repetición as the term |
+| the keys and values of every layer for the positions already read, kept between tokens so that each new token computes only its own row | `caché` (de claves y valores) (Block 1 lesson 5), with *KV cache* given once | memoria (the machine's), búfer, almacén. The `cache` that `adelante` returns in `minigpt.py` is what the backward pass needs: a Python name the prose never borrows |
+| the one pass over the prompt that fills the caché before the first token is sampled | *prefill* (Block 1 lesson 5), English, italic on first use per lesson | precarga, prellenado, llenado as the noun (`llenar` is the cell's function, and the verb is free) |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,

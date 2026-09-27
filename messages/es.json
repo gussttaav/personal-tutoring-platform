@@ -1589,6 +1589,30 @@
         },
         "kSlider": "k · entradas que se conservan",
         "pSlider": "p · masa que alcanza el núcleo"
+      },
+      "kv-cache": {
+        "groupAria": "El mini-GPT genera una ventana de contexto entera, token a token, con la caché de claves y valores o sin ella",
+        "modeLabel": "Cada token",
+        "modes": {
+          "cached": "con caché",
+          "recompute": "sin caché"
+        },
+        "cacheTitle": "La caché: una columna por posición, una fila por matriz guardada",
+        "cacheRowAria": "{row}: {read, plural, =0 {nada leído de la caché} =1 {una columna leída de la caché} other {# columnas leídas de la caché}} y {computed, plural, =1 {una calculada} other {# calculadas}} para este token",
+        "legendComputed": "calculada para este token",
+        "legendRead": "leída de la caché",
+        "legendEmpty": "todavía no existe",
+        "costTitle": "Multiplicaciones de cada posición (el eje llega a {max})",
+        "costAria": "Multiplicaciones de las posiciones 1 a {total}: con caché, casi planas; sin caché, en rampa. Marcada, la posición {t}.",
+        "legendWith": "con caché: c(t)",
+        "legendWithout": "sin caché: t · c(t)",
+        "position": "Posición t = {t} de {total}. La caché guarda {t, plural, =1 {una clave y un valor} other {# claves y # valores}} por capa: {numbers} números.",
+        "withCache": "Con caché: una fila nueva, {mults} multiplicaciones.",
+        "withoutCache": "Sin caché: {t, plural, =1 {una fila, {mults} multiplicaciones: lo mismo.} other {las # filas otra vez, {mults} multiplicaciones: # veces más.}}",
+        "totals": "Hasta aquí, sumadas: {with} con caché y {without} sin ella.",
+        "slider": "Posición t",
+        "back": "◀ token",
+        "forward": "token ▶"
       }
     }
   },

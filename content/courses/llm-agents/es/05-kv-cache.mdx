@@ -1,0 +1,495 @@
+---
+slug: kv-cache
+title: "La caché de claves y valores: cuánto cuesta cada token"
+block: 1
+order: 5
+minutes: 30
+summary: "Para escribir cada token, el mini-GPT volvía a pasar el texto entero por la red. La lección demuestra que las claves y los valores de las posiciones ya leídas no cambian, los guarda en una caché y cuenta lo que cuesta cada token con ella y sin ella: sin ella, exactamente t veces más; con ella, una memoria que crece con el texto y que en un modelo grande llega a ocupar más que sus pesos. Todo medido sobre el mini-GPT, y contra el reloj."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-sirve
+    type: single
+    prompt: 'Cuando el texto crece un token por la derecha, las claves y los valores de las posiciones anteriores no cambian, y por eso se pueden guardar. ¿Qué lo garantiza?'
+    options:
+      - { id: a, text: 'La máscara causal: la fila $i$ de la entrada de cada capa depende sólo de $x_{\le i}$, y la clave y el valor de la posición $i$ salen de esa fila.' }
+      - { id: b, text: 'Que los pesos no cambian mientras el modelo genera.' }
+      - { id: c, text: 'Que las claves y los valores se calculan con los *embeddings*, antes de la primera capa.' }
+      - { id: d, text: 'El softmax: repartir la atención entre una clave más no altera las claves que ya había.' }
+    answer: a
+    explanation: 'La (a). La clave y el valor de la posición $i$ son su fila, normalizada y multiplicada por una matriz, y con la máscara esa fila no ve nada a su derecha, en ninguna capa. La (b) hace falta y no basta: un encoder sin máscara, como el de BERT, tiene los pesos igual de fijos, y en él cada fila mira también a la derecha, así que un token más cambia las claves de todas las capas por encima de la primera. La (c) sólo vale en la primera capa; en la segunda, la fila de entrada es la salida de la primera, que ya mezcló posiciones. La (d) habla de los pesos de atención de la posición nueva, que se calculan cada vez: lo que se guarda son claves y valores.'
+    hint: '¿De qué depende la fila $i$ de la entrada de la segunda capa?'
+  - id: q-que-crece
+    type: multi
+    prompt: 'Con la caché, el mini-GPT pasa de escribir el token de la posición $t = 10$ al de la $t = 60$. Marca lo que crece.'
+    options:
+      - { id: a, text: 'La memoria que ocupa la caché.' }
+      - { id: b, text: 'Las multiplicaciones de la atención del token nuevo.' }
+      - { id: c, text: 'Las multiplicaciones del token nuevo en las matrices: las proyecciones, el perceptrón por posiciones y la capa de salida.' }
+      - { id: d, text: 'Cuántas filas atraviesan la red para ese token.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). La caché guarda una clave y un valor por posición y por capa, $2Lt \cdot d_{\text{model}}$ números, y la consulta nueva se compara con las $t$ claves y mezcla los $t$ valores: $2Lt \cdot d_{\text{model}}$ multiplicaciones, las dos cosas en línea recta con $t$. Las matrices no: el token es una fila, en la posición que sea, y le cuesta $c_{\text{fila}}$. Por eso en el mini-GPT, donde la atención es poca cosa al lado de sus matrices, $c(t)$ crece sólo un 12 % de la posición 1 a la 64. La (d) es justo lo que la caché cambió: una fila, siempre.'
+    hint: 'Separa lo que se hace una vez por token de lo que se hace una vez por cada posición guardada.'
+  - id: q-memoria
+    type: numeric
+    prompt: 'Un modelo de $L = 32$ capas y $d_{\text{model}} = 4\,096$ guarda su caché a 2 bytes por número. ¿Cuántos GiB ocupa la caché de una sola conversación de $8\,192$ tokens? (1 GiB son $2^{30}$ bytes.)'
+    answer: 4
+    tolerance: 0.05
+    unit: GiB
+    explanation: '$4$ GiB. Son $2LT \cdot d_{\text{model}} = 2 \cdot 32 \cdot 8\,192 \cdot 4\,096 = 2^{31}$ números, a 2 bytes cada uno, $2^{32}$ bytes. El doble que con los $4\,096$ tokens de la lección, porque la caché crece en línea recta con el texto. Y es por conversación: ocho a la vez en la misma máquina son $32$ GiB, más del doble de lo que ocupan los pesos del modelo.'
+    hint: 'Una clave y un valor de $d_{\text{model}}$ números por token y por capa.'
+  - id: q-ventana-llena
+    type: single
+    prompt: 'El texto del mini-GPT llega a 64 tokens, su $T_{\text{ctx}}$, y quieres el 65 sin tirar la caché. ¿Qué pasa?'
+    options:
+      - { id: a, text: 'La caché deja de valer entera: para leer los 64 últimos, cada token baja una posición, su fila recibe otro vector de posición y cambian todas sus claves y valores. Hay que recalcular desde cero, o parar.' }
+      - { id: b, text: 'Se tira la fila más vieja de cada capa y se sigue: las demás siguen valiendo.' }
+      - { id: c, text: 'Nada: la caché no tiene más límite que la memoria de la máquina.' }
+      - { id: d, text: 'Sigue valiendo, porque la máscara garantiza que la clave de una posición no depende de lo que venga después.' }
+    answer: a
+    explanation: 'La (a). En el mini-GPT la posición está dentro de la fila: a cada token se le suma el vector de su posición, de una tabla de 64 filas aprendidas. Cuando la ventana corre, el token que estaba en la posición 2 pasa a la 1, y su fila, y con ella sus claves y sus valores en todas las capas, son otros. La (b) valdría si la posición no entrara en la fila, y aquí entra. La (c) olvida que no hay fila 65 en la tabla: es el `IndexError` de la primera celda. La (d) aplica la garantía buena al caso equivocado: la máscara protege a una posición de lo que viene *después*, y aquí cambia lo de *antes*.'
+    hint: '¿Qué le pasa a la posición del token que ahora está en la posición 2?'
+  - id: q-prompt-deprisa
+    type: single
+    prompt: 'En la segunda celda, la red saca las 64 filas de una pasada a cerca de un milisegundo cada una, y una fila sola, con la caché, le cuesta varios. ¿Por qué el prompt se lee mucho más deprisa, por token, de lo que se escribe la respuesta?'
+    options:
+      - { id: a, text: 'Cada pasada tiene un coste fijo que no depende de cuántas filas lleve. Los tokens del prompt ya existen y entran juntos, y lo reparten; los de la respuesta salen de uno en uno, porque cada uno necesita el anterior ya sorteado, y lo pagan enteros.' }
+      - { id: b, text: 'Porque las filas del prompt no necesitan atención: todavía no hay nada guardado en la caché.' }
+      - { id: c, text: 'Porque leer de la caché es lento, y el prompt no la lee.' }
+      - { id: d, text: 'Porque el prompt tiene menos multiplicaciones por fila: no pasa por la capa de salida.' }
+    answer: a
+    explanation: 'La (a). En el navegador, el coste fijo es lanzar decenas de operaciones de NumPy, cada una con su parte fija; en una tarjeta gráfica es sobre todo traer los pesos de la memoria. En los dos casos una pasada de 64 filas cuesta mucho menos que 64 pasadas de una, y la respuesta no puede ir en bloque: el token $t + 1$ no existe hasta que se ha sorteado con los logits del $t$. La (b) es falsa: cada fila del prompt atiende a las anteriores, con la máscara. La (c) confunde el efecto: leer la caché son $2Lt \cdot d_{\text{model}}$ multiplicaciones, poca cosa en el mini-GPT. La (d) también: `adelante` calcula los logits de todas las filas.'
+    hint: '¿Puede el token $t + 1$ de la respuesta entrar en la red a la vez que el $t$?'
+challenges:
+  - id: ch-atiende
+    prompt: |
+      Escribe `atiende(q, k, v, K, V)`: la atención de un token nuevo en una capa con caché.
+      `q`, `k` y `v` son la consulta, la clave y el valor de la posición nueva, uno por
+      cabeza: forma `(h, d_k)`. `K` y `V` son la caché de la capa, `(h, t, d_k)`, con las
+      `t` posiciones anteriores (puede que ninguna). Añade `k` y `v` al final de la caché y
+      devuelve `(o, K, V)`: la salida de cada cabeza en la posición nueva, `(h, d_k)`, y la
+      caché con `t + 1` filas por cabeza.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def atiende(q, k, v, K, V):
+          """Un token nuevo contra la caché de una capa. q, k, v: (h, d_k). K, V: (h, t, d_k)."""
+          # tu código aquí
+    tests:
+      - name: "con la caché vacía, sale el valor"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(0)
+          q, k, v = rng.normal(size=(3, 2, 4))
+          try:
+              r = atiende(q, k, v, np.zeros((2, 0, 4)), np.zeros((2, 0, 4)))
+          except ValueError as e:
+              raise AssertionError('con la caché vacía, atiende falla (%s). Si atiendes antes de añadir la clave y el valor nuevos, el softmax se hace sobre cero puntuaciones: añádelos primero, porque la posición nueva también se atiende a sí misma' % e)
+          assert r is not None, 'atiende no devuelve nada: falta el return'
+          o, K, V = r
+          assert K.shape == (2, 1, 4) and V.shape == (2, 1, 4), 'con la caché vacía, tras el token nuevo cada cabeza guarda una fila: forma (2, 1, 4). Sale %s' % (K.shape,)
+          assert np.allclose(o, v), 'con una sola posición, la atención le da todo el peso a ella, y la salida es su valor. ¿Has añadido la clave y el valor nuevos ANTES de atender?'
+      - name: "la caché crece por el final"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(1)
+          q, k, v = rng.normal(size=(3, 2, 4))
+          K, V = rng.normal(size=(2, 2, 5, 4))
+          o, K2, V2 = atiende(q, k, v, K.copy(), V.copy())
+          assert K2.shape == (2, 6, 4), 'con 5 posiciones guardadas y una nueva, cada cabeza tiene 6 filas: forma (2, 6, 4). Sale %s' % (K2.shape,)
+          assert np.array_equal(K2[:, :-1], K) and np.array_equal(K2[:, -1], k), 'la clave nueva va al final de cada cabeza, y las guardadas no se tocan'
+          assert np.array_equal(V2[:, :-1], V) and np.array_equal(V2[:, -1], v), 'el valor nuevo va al final de cada cabeza, y los guardados no se tocan'
+      - name: "fila a fila, es la atención con máscara"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(2)
+          h, T, d_k = 3, 7, 4
+          Q, Kt, Vt = rng.normal(size=(3, h, T, d_k))
+          S = Q @ Kt.transpose(0, 2, 1) / np.sqrt(d_k)
+          S = np.where(np.tril(np.ones((T, T), dtype=bool)), S, -np.inf)
+          A = np.exp(S - S.max(axis=-1, keepdims=True))
+          O = (A / A.sum(axis=-1, keepdims=True)) @ Vt
+          K, V = np.zeros((h, 0, d_k)), np.zeros((h, 0, d_k))
+          for t in range(T):
+              o, K, V = atiende(Q[:, t], Kt[:, t], Vt[:, t], K, V)
+              assert np.allclose(o, O[:, t], atol=1e-12), 'en la posición %d la salida no es la fila %d de la atención con máscara. Revisa la división entre la raíz de d_k, que el softmax vaya sobre las posiciones (el último eje de las puntuaciones) y que cada cabeza use sólo sus claves' % (t + 1, t + 1)
+      - name: "no desborda con puntuaciones grandes"
+        code: |
+          import numpy as np
+          o, K, V = atiende(np.array([[100.0, 0.0]]), np.array([[30.0, 0.0]]), np.array([[0.0, 1.0]]),
+                            np.zeros((1, 1, 2)), np.array([[[1.0, 0.0]]]))
+          assert np.all(np.isfinite(o)), 'sale nan o inf: la puntuación de la clave nueva es 3000/raíz(2), y e elevado a eso desborda. Resta el máximo de cada fila antes de exponenciar'
+          assert np.allclose(o, [[0.0, 1.0]]), 'la clave nueva se lleva todo el peso, y la salida es su valor, [0, 1]. Sale %s' % o
+    solution: |
+      import numpy as np
+
+
+      def atiende(q, k, v, K, V):
+          """Un token nuevo contra la caché de una capa. q, k, v: (h, d_k). K, V: (h, t, d_k)."""
+          K = np.concatenate([K, k[:, None, :]], axis=1)             # (h, t + 1, d_k): la nueva, al final
+          V = np.concatenate([V, v[:, None, :]], axis=1)
+          s = (K @ q[:, :, None])[:, :, 0] / np.sqrt(q.shape[-1])    # (h, t + 1): todo es pasado
+          a = np.exp(s - s.max(axis=-1, keepdims=True))              # restar el máximo: no desborda
+          a /= a.sum(axis=-1, keepdims=True)
+          return (a[:, None, :] @ V)[:, 0, :], K, V                  # (h, d_k): los valores, mezclados
+    explanation: |
+      Seis líneas, y lo que no aparece en ellas es la máscara: en la caché sólo hay pasado y la
+      posición nueva, así que la consulta puede mirarlo todo. El orden sí importa: la clave y el
+      valor nuevos entran en la caché *antes* de atender, porque la posición se atiende también
+      a sí misma, y sin ellos la primera llamada haría un softmax sobre cero puntuaciones. El
+      tercer test es la afirmación de la lección: recorrer la secuencia con la caché reproduce,
+      fila a fila, la atención con máscara calculada de golpe. Es la atención de `avanzar`, en
+      la primera celda, sacada de la red.
+reading:
+  - kind: paper
+    title: 'Fast Transformer Decoding: One Write-Head is All You Need'
+    authors: 'Noam Shazeer'
+    year: '2019'
+    venue: 'arXiv:1911.02150'
+    lang: en
+    url: 'https://arxiv.org/abs/1911.02150'
+    note: 'Las cuentas de esta lección para generar con caché, en pocas páginas, y la primera idea para encogerla: que todas las cabezas compartan una sola clave y un solo valor.'
+  - kind: paper
+    title: 'GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints'
+    authors: 'Ainslie, Lee-Thorp, de Jong, Zemlyanskiy, Lebrón y Sanghai'
+    year: '2023'
+    venue: 'EMNLP 2023 · arXiv:2305.13245'
+    lang: en
+    url: 'https://arxiv.org/abs/2305.13245'
+    note: 'El término medio que usan muchos modelos abiertos: grupos de cabezas que comparten claves y valores. Divide la caché de esta lección por el tamaño del grupo, y pierde poco.'
+  - kind: paper
+    title: 'Efficiently Scaling Transformer Inference'
+    authors: 'Pope, Douglas, Chowdhery, Devlin, Bradbury, Levskaya, Heek, Xiao, Agrawal y Dean'
+    year: '2022'
+    venue: 'MLSys 2023 · arXiv:2211.05102'
+    lang: en
+    url: 'https://arxiv.org/abs/2211.05102'
+    note: 'Lo que la segunda celda sólo asoma, a escala de un centro de datos: por qué leer el prompt va limitado por las multiplicaciones y generar por la memoria, y cuánto ocupa la caché.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 5. Corre sobre el mini-GPT: el checkpoint de P0-03. */}
+
+Sesenta y dos tokens tras <W>La Nela</W>, lo que le cabe al mini-GPT en su ventana, le cuestan
+unas dos mil filas de cálculo. Cada token sale de un sorteo, como estableció
+<Leccion slug="muestreo">la lección sobre el muestreo</Leccion>, y cada sorteo necesita una pasada
+del texto entero por la red, de la que sólo se aprovecha la última fila. De esas dos mil filas se
+usan 62; las demás ya se habían calculado antes, idénticas.
+
+Esta lección pone números a ese derroche y a su remedio. ¿Cuánto más caro sale un token si todo se
+rehace? La respuesta es exacta y no depende del modelo: $t$ veces, en la posición $t$. ¿Y qué cuesta
+no rehacerlo? Memoria, que crece con cada token y que, en un modelo grande con un texto largo, llega
+a ocupar más que el propio modelo. Ese número decide cuánto contexto cabe en una máquina.
+
+Cada posición de una capa de atención produce tres vectores, como en el curso anterior: una
+consulta, con la que busca; una clave, con la que la encuentran las posiciones que vienen detrás; y
+un valor, lo que les entrega cuando la eligen. La consulta sólo le sirve a su propia posición, y una
+vez. La clave y el valor los usan todas las posiciones posteriores, y siempre son los mismos: salen
+de la fila de su posición, y la máscara hace que esa fila no vea nada de lo que hay a su derecha.
+Un token más al final no les cambia una cifra.
+
+Así que se guardan. En el explorable, el mini-GPT llena su ventana; debajo del texto está lo
+guardado, una columna por posición y una fila por matriz (claves y valores de sus dos capas), y
+debajo, las multiplicaciones de cada token. Haz tres cosas. Con caché, avanza token a token o pulsa
+Animar: cada token calcula su columna y lee las demás, y la barra verde casi no se mueve. Cambia a
+sin caché: cada token recalcula todas las columnas, y las barras grises forman una rampa. Y lleva
+$t$ hasta 64: sin caché, ese token cuesta 64 veces más; sumados, los 64 tokens cuestan 33 veces más.
+
+<Explorable id="kv-cache" caption="El mini-GPT escribe 64 tokens tras «La Nela». Con la caché, cada token calcula la columna de su posición y lee las anteriores; sin ella, las recalcula todas. Las barras son las multiplicaciones de cada token, de las dos maneras." />
+
+<Callout type="intuition" title="La idea en una frase">
+Las claves y los valores de una posición no cambian cuando el texto crece por la derecha. Guardados,
+cada token calcula sólo su fila; sin guardarlos, el token $t$ cuesta $t$ veces más. El precio es
+memoria, que crece con el texto.
+</Callout>
+
+## Las claves y los valores de una posición no cambian
+
+Fijemos una capa (uno de los $L = 2$ bloques del mini-GPT, que su código llama capas) y una de sus
+cabezas. Tras leer $t$ posiciones, la cabeza ha calculado las matrices $\mathbf{Q}$, $\mathbf{K}$ y
+$\mathbf{V}$ de <Leccion curso="dl-nlp" slug="scaled-dot-product">la lección del curso anterior
+sobre el producto interno escalado</Leccion>, de forma $t \times d_k$, con
+filas $\mathbf{q}_i^{\top}$, $\mathbf{k}_i^{\top}$ y $\mathbf{v}_i^{\top}$. (Esta $\mathbf{q}_t$, con
+su posición, es la consulta de siempre, no la distribución $\mathbf{q}$ del muestreo.) La máscara
+pone $-\infty$ en las puntuaciones de la fila $t$ contra las columnas $j > t$, y no hay ninguna: la
+posición $t$ es la última. La fila $t$ de la salida es, entonces,
+
+$$
+\mathbf{o}_t^{\top} = \text{softmax}\left(\frac{\mathbf{q}_t^{\top}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V},
+$$
+
+sin máscara: la posición nueva mira a todas las anteriores y a sí misma. Pide su consulta y las $t$
+filas de $\mathbf{K}$ y de $\mathbf{V}$. La consulta y la última fila de cada matriz salen de la fila
+$t$ de la entrada de la capa. Las otras $t - 1$ son el asunto.
+
+<Leccion slug="una-sola-columna">La lección sobre el modelo de lenguaje causal</Leccion> citó del
+curso anterior que, con la máscara, la fila $i$ de lo que sale de una capa depende sólo de las
+filas $1$ a $i$ de lo que entró, y que eso sobrevive a apilar capas. En la entrada de cada capa,
+por tanto, la fila $i$ es función de $x_{\le i}$ y de nada más, y $\mathbf{k}_i$ y $\mathbf{v}_i$
+son esa fila, normalizada y multiplicada por una matriz. Con el argumento diciendo qué texto se le
+dio a la red, como allí,
+
+$$
+\mathbf{k}_i(x_{1:t}) = \mathbf{k}_i(x_{\le i}), \qquad \mathbf{v}_i(x_{1:t}) = \mathbf{v}_i(x_{\le i}) \qquad \text{para todo } i \le t.
+$$
+
+La clave y el valor de la posición $i$ se calcularon cuando $i$ era la última, y son los mismos,
+cifra a cifra, en cualquier texto que sólo crezca por la derecha.
+
+Guardarlos es la **caché de claves y valores** (*key–value cache*, o *KV cache*): $\mathcal{K}^{(l)}$
+y $\mathcal{V}^{(l)}$, las $h$ matrices $\mathbf{K}$ y $\mathbf{V}$ de la capa $l$, que tras $t$
+posiciones tienen $t \times d_k$ números cada una, $t \times d_{\text{model}}$ entre las $h$. Con
+ella, el token de la posición $t$ son cuatro cosas:
+
+1. la fila $t$ de la entrada: el *embedding* del token más el vector de su posición;
+2. en cada capa, $\mathbf{q}_t$, $\mathbf{k}_t$ y $\mathbf{v}_t$ a partir de esa fila, y
+   $\mathbf{k}_t^{\top}$, $\mathbf{v}_t^{\top}$ al final de la caché de cada cabeza;
+3. la ecuación de arriba, con la caché entera como $\mathbf{K}$ y $\mathbf{V}$, y el resto de la
+   capa (juntar las cabezas, el perceptrón por posiciones) sobre esa sola fila;
+4. al salir de la última capa, los logits $\mathbf{z}_t$, con los que se sortea el token $t + 1$.
+
+Lo que sale son los logits de `adelante` sobre el texto entero. No aproximadamente: los mismos.
+
+El prompt no se sortea. Sus tokens ya existen, y por la misma máscara sus filas se calculan todas
+de una pasada, como en el entrenamiento, dejando la caché con una fila por token del prompt. Esa
+primera pasada se llama *prefill*; después viene un token cada vez.
+
+### La caché vale mientras nadie cambie de posición
+
+La fila $i$ lleva dentro su posición. El mini-GPT suma a cada *embedding* un vector aprendido por
+posición, de una tabla con $T_{\text{ctx}} = 64$ filas: la opción que
+<Leccion curso="dl-nlp" slug="codificacion-posicional">la lección sobre la codificación
+posicional</Leccion> mencionó y apartó, porque la tabla sólo sabe de las posiciones que se
+entrenaron. Mientras el texto crece por la derecha, cada token conserva la suya y todo lo guardado
+vale.
+
+En el token 64 se llena la ventana de contexto, lo más que la red puede leer de una vez. (No es la
+ventana de entrenamiento de <Leccion slug="entrenar-un-mini-gpt">la lección sobre el
+entrenamiento</Leccion>, el trozo de 65 tokens del corpus del que la red aprendía.) Para escribir el 65, `generar` suelta el primer token y cada uno baja una posición. Su fila
+cambia, con ella cambian sus claves y sus valores en todas las capas, y la caché entera deja de
+valer. Con la caché, $T$, las posiciones que el texto tiene, no pasa de $T_{\text{ctx}}$. Qué hacer
+con un texto que no cabe es un problema que el curso retoma más adelante.
+
+## Lo que cuesta un token, con caché y sin ella
+
+Contemos multiplicaciones, como el curso anterior contó el precio de la atención en
+<Leccion curso="dl-nlp" slug="adios-recurrencia">su lección sobre el adiós a la recurrencia</Leccion>:
+multiplicar una matriz por un vector cuesta una multiplicación por casilla de la matriz. Lo demás
+(normalizar, el softmax, la ReLU) cuesta poco por número y queda fuera.
+
+Una fila que atraviesa la red pasa, en cada capa, por las tres proyecciones de consulta, clave y
+valor, por la matriz que junta las cabezas y por las dos del perceptrón por posiciones; al final,
+por la capa de salida. Llamemos $c_{\text{fila}}$ a lo que cuesta:
+
+$$
+c_{\text{fila}} = L\left(4d_{\text{model}}^{2} + 2d_{\text{model}} \cdot d_{\text{ff}}\right) + d_{\text{model}} \cdot \lvert V \rvert.
+$$
+
+Es una multiplicación por cada peso de una matriz. En el mini-GPT,
+$2\left(4 \cdot 64^{2} + 2 \cdot 64 \cdot 256\right) + 64 \cdot 512 = 131\,072$: todos sus
+$136\,448$ parámetros menos los que nunca multiplican una fila (la tabla de posiciones, que se
+consulta, los sesgos y los de las normalizaciones).
+
+A eso se suma la atención. La consulta de una posición contra $t$ claves son $t$ productos escalares
+de $d_k$ términos, y mezclar $t$ valores, otras $t \cdot d_k$ multiplicaciones; entre las $h$
+cabezas, $2t \cdot d_{\text{model}}$ por capa. Con la caché, el token de la posición $t$ es una fila
+por la red más esa atención en cada capa:
+
+$$
+c(t) = c_{\text{fila}} + 2Lt \cdot d_{\text{model}}.
+$$
+
+Sin caché es `adelante` sobre las $t$ filas: $t$ filas por las matrices y, en cada cabeza, la
+rejilla entera de $t \times t$ puntuaciones y su mezcla, que el código calcula completa y enmascara
+después,
+
+$$
+t\,c_{\text{fila}} + 2Lt^{2} \cdot d_{\text{model}} = t\,c(t),
+$$
+
+exactamente $t$ veces más, en cada posición y para cualquier modelo. Las dos partes se multiplican
+por $t$: las matrices, porque se rehacen $t$ filas; la atención, porque se rehacen $t$ filas de
+puntuaciones.
+
+Sumemos sobre los $T$ tokens de un texto, con $\sum_t t = T(T+1)/2$ y
+$\sum_t t^{2} = T(T+1)(2T+1)/6$:
+
+$$
+\begin{aligned}
+\text{con caché:} \quad \sum_{t=1}^{T} c(t) &= T\,c_{\text{fila}} + LT(T+1) \cdot d_{\text{model}}, \\
+\text{sin caché:} \quad \sum_{t=1}^{T} t\,c(t) &= \tfrac{1}{2}T(T+1)\,c_{\text{fila}} + \tfrac{1}{3}LT(T+1)(2T+1) \cdot d_{\text{model}}.
+\end{aligned}
+$$
+
+La atención crece como $T^{2}$ con la caché y como $T^{3}$ sin ella, y las matrices como $T$ y como
+$T^{2}$: lo que los artículos escriben $O(T^{2}d)$ frente a $O(T^{3}d)$. Con la ventana del mini-GPT
+llena, $T = 64$, son $8\,921\,088$ multiplicaciones frente a $295\,526\,400$, 33 veces menos.
+
+Qué parte pesa más depende del modelo. La atención de un token iguala a sus matrices cuando
+$2Lt \cdot d_{\text{model}} = c_{\text{fila}}$, que en el mini-GPT es $t = 512$, ocho veces su
+$T_{\text{ctx}}$. Por eso, con la caché, su coste por token es casi plano ($c(64)$ es un 12 % más
+que $c(1)$). En un modelo grande, con textos de
+decenas de miles de tokens, la atención sí manda.
+
+### Lo que se paga a cambio: memoria
+
+La caché guarda, por cada posición y cada capa, una clave y un valor de $d_{\text{model}}$ números
+entre todas las cabezas. Un texto de $T$ tokens ocupa
+
+$$
+2LT \cdot d_{\text{model}} \quad \text{números}.
+$$
+
+El mini-GPT con la ventana llena guarda $2 \cdot 2 \cdot 64 \cdot 64 = 16\,384$, 128 KiB a 8 bytes
+por número. Un modelo abierto de unos 7 000 millones de parámetros, con $L = 32$ y
+$d_{\text{model}} = 4\,096$, guarda $262\,144$ números por token: con 4 096 tokens a 2 bytes por
+número, 2 GiB, y con 32 768, 16 GiB, más que sus propios pesos, unos 13 GiB. Y eso, por cada
+conversación abierta a la vez. Muchos modelos actuales la reducen haciendo que varias cabezas
+compartan claves y valores, una variante que queda fuera del curso.
+
+## La caché, escrita sobre el mini-GPT
+
+Las dos celdas corren sobre el mini-GPT, el *checkpoint* del bloque, sin entrenar nada. La primera
+escribe dos funciones. `llenar(ids)` es el *prefill*: pasa el prompt por `adelante` una vez y se
+queda con las claves y los valores que la ida ya calcula y guarda para la vuelta del entrenamiento. `avanzar(x, cache)` es la lista de cuatro cosas de arriba para un
+token. Con las dos llena la ventana tras <W>La Nela</W>, sorteando con top-p, y después compara los
+logits de ocho posiciones con los que da `adelante` sobre el texto entero.
+
+<PyCell packages={["numpy"]} code={`
+import json
+import numpy as np
+from pyodide.http import open_url
+
+exec(open_url("/courses/llm-agents/bpe.py").read())        # codificar, decodificar
+exec(open_url("/courses/llm-agents/minigpt.py").read())    # MiniGPT, softmax, layer_norm, muestrear
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+modelo = MiniGPT.cargar(open_url("/courses/llm-agents/minigpt.json").read())
+p, L, h, d = modelo.p, modelo.cfg["n_capas"], modelo.cfg["h"], modelo.cfg["d_model"]
+d_k = d // h
+
+def llenar(ids):
+    """El prompt, de una pasada: los logits de su última posición y la caché de cada capa."""
+    Z, (_, capas, _, _) = modelo.adelante(np.array([ids]))
+    cache = [(K[0], V[0]) for (_, _, _, K, V, _, _), _ in capas]    # (h, t, d_k) cada una
+    return Z[0, -1], cache
+
+def avanzar(x, cache):
+    """Los logits tras el token x, que ocupa la posición siguiente a la caché; la caché crece."""
+    t = cache[0][0].shape[1]                                  # posiciones ya guardadas
+    H = p["E"][x] + p["P"][t]                                 # (d,): la fila nueva, sola
+    for l in range(L):
+        Hn, _ = layer_norm(H, p[f"{l}.ln1_g"], p[f"{l}.ln1_b"])
+        q, k, v = (u.reshape(h, 1, d_k) for u in np.split(Hn @ p[f"{l}.Wqkv"], 3))
+        K = np.concatenate([cache[l][0], k], axis=1)          # (h, t + 1, d_k)
+        V = np.concatenate([cache[l][1], v], axis=1)
+        cache[l] = (K, V)
+        a = softmax(q @ K.transpose(0, 2, 1) / np.sqrt(d_k))  # (h, 1, t + 1): todo es pasado
+        H = H + (a @ V).reshape(d) @ p[f"{l}.Wo"]             # las cabezas, juntas
+        H = H + modelo.ffn(H[None, None], l)[0][0, 0]
+    return layer_norm(H, p["lnf_g"], p["lnf_b"])[0] @ p["E"].T
+
+rng = np.random.default_rng(0)
+ids = codificar("La Nela", F)
+z, cache = llenar(ids)
+logits = [z]                                                  # logits[j]: los de la posición j + 2
+while len(ids) < 64:                                          # hasta llenar la ventana
+    ids.append(muestrear(z, 1.0, None, 0.9, rng))
+    z = avanzar(ids[-1], cache)
+    logits.append(z)
+
+print(repr(decodificar(ids, F)))
+dif = max(np.abs(logits[t - 2] - modelo.adelante(np.array([ids[:t]]))[0][0, -1]).max() for t in range(8, 65, 8))
+print("mayor diferencia con adelante sobre el texto entero, en 8 posiciones: %.1e" % dif)
+print("caché de la capa 1:", cache[0][0].shape, " números entre las dos capas:", sum(K.size + V.size for K, V in cache))
+`} />
+
+El texto es el del explorable, y los logits de las dos maneras difieren en $4 \times 10^{-15}$: son
+las mismas sumas hechas en otro orden, y ningún sorteo cambia por ese redondeo. La caché de la
+primera capa acaba con forma `(4, 64, 16)`, $h \times T \times d_k$, y entre las dos capas guarda los
+$16\,384$ números de la cuenta de arriba.
+
+Ahora cambia el 64 del `while` por 65. `avanzar` falla en la posición 65 con un `IndexError`: la
+tabla de posiciones, `P`, tiene 64 filas y no hay una más. Es la sección sobre las posiciones, en
+forma de error.
+
+La segunda pone la cuenta al lado del reloj en cinco posiciones: las multiplicaciones de $c(t)$ y
+de $t\,c(t)$, y lo que tarda el token de las dos maneras. La última línea mira la posición 64 fila a
+fila.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: modelo, ids, cache, avanzar, L, d, np.
+import time
+
+c_fila = L * (4 * d * d + 2 * d * modelo.cfg["d_ff"]) + d * modelo.cfg["n_v"]
+
+def c(t):
+    """Multiplicaciones del token de la posición t con la caché."""
+    return c_fila + 2 * L * t * d
+
+def ms(f, veces=5):
+    """La mediana de varias medidas de f(), en milisegundos: un cronómetro así tiembla."""
+    f()                                                       # la primera, de calentamiento
+    medidas = []
+    for _ in range(veces):
+        t0 = time.perf_counter()
+        f()
+        medidas.append(1000 * (time.perf_counter() - t0))
+    return np.median(medidas)
+
+miles = lambda n: format(n, ",").replace(",", " ")
+print("  t   multiplicaciones: con caché   sin caché   |   medido: con caché   sin caché")
+for t in [8, 16, 32, 48, 64]:
+    antes = [(K[:, :t - 1], V[:, :t - 1]) for K, V in cache]  # la caché con t - 1 posiciones
+    con = ms(lambda: avanzar(ids[t - 1], list(antes)))
+    sin = ms(lambda: modelo.adelante(np.array([ids[:t]])))
+    print("%3d %29s %11s   | %16.1f ms %8.1f ms" % (t, miles(c(t)), miles(t * c(t)), con, sin))
+print("en t = 64: %.2f ms por fila en la pasada de 64, %.2f ms la fila sola" % (sin / 64, con))
+`} />
+
+Tus milisegundos serán otros; la forma, no. Sin caché, el tiempo sube en rampa, de unos 12 ms en la
+posición 8 a unos 65 en la 64, como $t\,c(t)$. Con ella se queda entre 5 y 9 ms en cualquier
+posición, como $c(t)$, que en ese tramo sólo crece un 12 %. Pero en la posición 64 la cuenta dice
+64 veces y el reloj, unas diez.
+
+Lo que falta es un coste que la cuenta no ve. Cada pasada por la red lanza decenas de operaciones de
+NumPy, y cada una paga una parte fija, sea del tamaño que sea. Una fila sola la paga entera; 64
+filas en una pasada la reparten, y por eso salen a 1 ms por fila y la fila sola a unos 6. No es cosa
+del navegador. En una tarjeta gráfica (*graphics processing unit*, GPU), la parte fija es sobre
+todo traer de la memoria todos los pesos del modelo, que sirven igual para una fila que para cien.
+Por eso un modelo lee el prompt, cientos de filas por pasada, mucho más deprisa de lo que escribe la
+respuesta, que va de fila en fila: cada token necesita el anterior ya sorteado.
+
+## Comprueba tu intuición
+
+Cinco preguntas y un reto: la atención de un token contra la caché, fuera de la red.
+
+<Quiz id="q-por-que-sirve" />
+
+<Quiz id="q-que-crece" />
+
+<Quiz id="q-memoria" />
+
+<Quiz id="q-ventana-llena" />
+
+<Quiz id="q-prompt-deprisa" />
+
+<CodeChallenge id="ch-atiende" />
+
+---
+
+El mini-GPT escribe ahora a una fila por token, y esta lección dice cuánto cuesta cada una. Lo que
+ninguna de sus cuentas dice es si lo que escribe vale algo. En la primera celda, <W>estrelas</W>, que
+no existe, y <W>personas</W>, que sí, salen igual de baratos, y la caché hace que los dos lleguen
+antes.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 6
+    (slug perplejidad), envolver «la lección siguiente, sobre la perplejidad» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+Hasta aquí, los veredictos sobre el mini-GPT han sido dos: una pérdida de $3.2$ por token en páginas
+de *Marianela* que no vio, y un recuento de palabras que existen en la novela. ¿Es mucho $3.2$? ¿Frente
+a qué, si el mismo modelo con otro tokenizador daría otro número? Convertir esa pérdida en una medida
+que se pueda comparar, y ponerle delante el modelo más pobre posible como vara de medir, es la lección
+siguiente, sobre la perplejidad.

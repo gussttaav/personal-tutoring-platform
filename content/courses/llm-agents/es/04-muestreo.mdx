@@ -466,12 +466,9 @@ Pero mira lo que hace `generar` por cada token. Llama a `adelante` con el texto 
 tokens, se queda con la última fila de logits y tira las demás; en la posición siguiente vuelve a
 pasar los mismos tokens, más uno.
 
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 5
-    (slug kv-cache), envolver «la lección siguiente, sobre la caché de claves y valores» en su
-    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
-
 La máscara de <Leccion slug="una-sola-columna">la lección sobre el modelo de lenguaje
 causal</Leccion> garantiza que, en cada capa, las claves y los valores de esas posiciones no han
 cambiado: la fila $t$ sólo depende de lo que hay a su izquierda, y ahí no se ha movido nada. Ese
 trabajo se repite en cada token y crece con el texto. Guardarlo en lugar de rehacerlo, y contar
-cuánto cuesta entonces cada token, es la lección siguiente, sobre la caché de claves y valores.
+cuánto cuesta entonces cada token, es <Leccion slug="kv-cache">la lección siguiente, sobre la caché
+de claves y valores</Leccion>.

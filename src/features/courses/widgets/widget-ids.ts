@@ -46,6 +46,8 @@ export const WIDGET_IDS = [
   "bpe-merges",
   // COURSE-C2-P1-01 — llm-agents Block 1 lesson 4 (muestreo: temperatura, top-k y top-p).
   "sampling-explorer",
+  // COURSE-C2-P1-01 — llm-agents Block 1 lesson 5 (la caché de claves y valores).
+  "kv-cache",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

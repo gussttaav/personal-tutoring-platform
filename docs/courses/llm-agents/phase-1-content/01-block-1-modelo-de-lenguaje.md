@@ -60,7 +60,7 @@ here; STATUS stays phase-level.
 - [x] 2. `bpe-de-verdad`
 - [x] 3. `entrenar-un-mini-gpt`
 - [x] 4. `muestreo`
-- [ ] 5. `kv-cache`
+- [x] 5. `kv-cache`
 - [ ] 6. `perplejidad`
 - [ ] 7. `leyes-de-escala`
 - [ ] 8. `aprendizaje-en-contexto`
@@ -130,6 +130,16 @@ here; STATUS stays phase-level.
   most important; resist making it a widget showcase.
 - `kv-cache` and `sampling-explorer` are the two widgets most likely to grow. Cap them at the
   budget; the derivation carries the lesson.
+- **The mini-GPT's cache cannot slide.** Its positions are a learned table `P` of
+  $T_{\text{ctx}} = 64$ rows, so once `generar` slides the window every token changes position and
+  every cached key and value is stale; a cached step at position 65 is `IndexError` on `P[64]`.
+  Any lesson that generates with the cache stops at $T_{\text{ctx}}$ (or refills from scratch), and
+  says why. Lesson 5 shows it in cell 1.
+- **In Pyodide the clock does not follow the multiplication count.** Each pass pays a fixed cost
+  of a few milliseconds (dozens of small NumPy ops) whatever its size, so one cached row costs
+  ~6 ms while 64 rows in one pass cost ~1 ms each: at position 64 the cache saves ~10×, not the
+  counted 64×. Quote counts as exact and timings as approximate, and never derive a ratio from the
+  clock. The same fixed cost is why a cell's cached step barely changes with $t$.
 
 ## Out of scope
 

@@ -60,6 +60,10 @@ this file gets shorter as it goes down.
 | $M_j$ | the masa of the $j$ most probable entries, $\sum_{i=1}^{j} q_{(i)}$ (Block 1 lesson 4) |
 | $k_p$ | the size of the núcleo: the smallest $j$ with $M_j \ge p$ (Block 1 lesson 4) |
 | $\tilde{\mathbf{q}}$, $\tilde{q}_v$ | $\mathbf{q}$ after a corte, renormalised: what the sorteo draws from (Block 1 lesson 4) |
+| $\mathbf{q}_t$, $\mathbf{k}_t$, $\mathbf{v}_t \in \mathbb{R}^{d_k}$ | the query, key and value of position $t$ in one head of one layer: the first course's, row $t$ of its $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$. With the input named, as $\mathbf{z}_t(\cdot)$ is: $\mathbf{k}_i(x_{1:t}) = \mathbf{k}_i(x_{\le i})$ (Block 1 lesson 5) |
+| $\mathbf{K}$, $\mathbf{V} \in \mathbb{R}^{t \times d_k}$ | one head's share of the caché after $t$ positions — row $i$ is $\mathbf{k}_i^{\top}$, $\mathbf{v}_i^{\top}$ — the first course's two matrices, kept from one token to the next (Block 1 lesson 5) |
+| $c_{\text{fila}}$ | the multiplications that take one row through every matrix of the network, $L\left(4d_{\text{model}}^{2} + 2d_{\text{model}} \cdot d_{\text{ff}}\right) + d_{\text{model}} \cdot \lvert V \rvert$: one per weight of a matrix (Block 1 lesson 5) |
+| $c(t)$ | the multiplications of the token at position $t$ with the caché, $c_{\text{fila}} + 2Lt \cdot d_{\text{model}}$; without it, exactly $t\,c(t)$ (Block 1 lesson 5) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -126,6 +130,18 @@ writes a parenthesised subscript. $M_j$ is free to take: Block 4's `M` lives in 
 and never enters `$…$`. And top-p is written as top-k with a $k$ the position chooses, $k_p$,
 because that is the claim the lesson makes about it.
 
+**The query carries its position; the sampler's $\mathbf{q}$ never does** (`COURSE-C2-P1-01`,
+Block 1 lesson 5). Lesson 4 spent a bare $\mathbf{q}$ on the distribution the sampler draws from,
+with entries $q_v$ indexed by $v \in V$; the KV-cache lesson needs the first course's attention
+query back, and writes it $\mathbf{q}_t$, always with the position, beside $\mathbf{k}_t$ and
+$\mathbf{v}_t$. The two never share an equation, and the lesson says in a clause which one it
+means. $\mathbf{K}$ and $\mathbf{V}$ are the first course's per-head matrices, and bold
+$\mathbf{V}$ is the value matrix beside italic $V$, the vocabulary, as it was there;
+$\mathcal{K}^{(l)}$ and $\mathcal{V}^{(l)}$ are the $h$ of them in layer $l$. Costs are counted in
+**multiplications of matrix products**, the first course's unit («una multiplicación por
+casilla»), which drops the layer norms, the softmax and the ReLU; lowercase italic $c$ is a cost
+and meets nothing — the first course's bold $\mathbf{c}$ was a context vector.
+
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson
 and the compaction widget both need the two on one page and say which is which the first time.
@@ -170,8 +186,9 @@ in `dl-nlp`'s table, and the two never share a page.
 | $\text{acierto}$ | accuracy on an evaluation set, $\text{acierto}(D)$, as the first course wrote it |
 
 **The $\mathbf{q}$ collision, resolved by context and said once.** $\mathbf{q}$ is the attention
-query throughout the first course and in Block 1 here — the KV cache is the cache of what
-$\mathbf{q}$ is scored against. Retrieval's query is the same word for the same role, a vector
+query throughout the first course. In Block 1 here it always carries its position, $\mathbf{q}_t$
+— the KV cache is the cache of what $\mathbf{q}_t$ is scored against — because Block 1 lesson 4
+spent the bare $\mathbf{q}$ on the sampler's distribution (see the Block 1 note). Retrieval's query is the same word for the same role, a vector
 scored against a set of others, which is why the letter is kept rather than dodged. The lesson
 that introduces retrieval says once, in one clause, that this $\mathbf{q}$ is the retriever's
 query and not an attention head's, and the two never share an equation — the move the shared §3

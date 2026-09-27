@@ -1589,6 +1589,30 @@
         },
         "kSlider": "k · entries kept",
         "pSlider": "p · mass the nucleus reaches"
+      },
+      "kv-cache": {
+        "groupAria": "The mini-GPT generates a whole context window, token by token, with the key–value cache or without it",
+        "modeLabel": "Each token",
+        "modes": {
+          "cached": "with cache",
+          "recompute": "no cache"
+        },
+        "cacheTitle": "The cache: one column per position, one row per stored matrix",
+        "cacheRowAria": "{row}: {read, plural, =0 {nothing read from the cache} =1 {one column read from the cache} other {# columns read from the cache}} and {computed, plural, =1 {one computed} other {# computed}} for this token",
+        "legendComputed": "computed for this token",
+        "legendRead": "read from the cache",
+        "legendEmpty": "not there yet",
+        "costTitle": "Multiplications at each position (the axis tops out at {max})",
+        "costAria": "Multiplications at positions 1 to {total}: nearly flat with the cache, a ramp without it. Marked: position {t}.",
+        "legendWith": "with cache: c(t)",
+        "legendWithout": "no cache: t · c(t)",
+        "position": "Position t = {t} of {total}. The cache holds {t, plural, =1 {one key and one value} other {# keys and # values}} per layer: {numbers} numbers.",
+        "withCache": "With the cache: one new row, {mults} multiplications.",
+        "withoutCache": "Without it: {t, plural, =1 {one row, {mults} multiplications: the same.} other {all # rows again, {mults} multiplications: # times as many.}}",
+        "totals": "Summed so far: {with} with the cache, {without} without it.",
+        "slider": "Position t",
+        "back": "◀ token",
+        "forward": "token ▶"
       }
     }
   },
