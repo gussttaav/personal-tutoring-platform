@@ -23,7 +23,7 @@ Mathematics: **high**. This is the block that has to earn the title's first half
 | Id | Lesson | Purpose |
 |---|---|---|
 | `bpe-merges` | 2 | A Spanish sentence + a corpus; step through merges and watch the token boundaries move and the count drop. Reuses `math/bpe-vocab.ts` where it fits; the merge *training* is new |
-| `sampling-explorer` | 4 | One fixed logit vector (a real one from the checkpoint, frozen) → the distribution under $\tau$, top-k, top-p; the discarded mass shown, not implied. `math/sampling.ts`, shared with `logit-mask` (Block 3) |
+| `sampling-explorer` | 4 | Two fixed logit vectors (real ones from the checkpoint, frozen: a context where the model hesitates, «La Nela», and one where it has all but decided, «La Nela bajó la cabe») → the distribution under $\tau$, top-k, top-p; the discarded mass shown, not implied. Two, because top-k's defect only shows across shapes: $k = 10$ drops half the mass of the first and keeps nine junk entries in the second. `math/sampling.ts`, shared with `logit-mask` (Block 3) |
 | `kv-cache` | 5 | Generate token by token; the cache grows, the per-step cost is drawn with and without it; toggle to see recomputation |
 | `scaling-laws` | 7 | Loss vs. $N$, $D$, $C$ on log–log axes from Kaplan's and Chinchilla's fitted forms; a compute budget slider that shows the optimal $(N, D)$ split; the checkpoint's own point plotted |
 
@@ -112,8 +112,9 @@ here; STATUS stays phase-level.
 ## Test plan
 
 - Read every lesson on a phone. Run every cell in a production build, on a phone.
-- The `sampling-explorer`'s frozen logit vector is *from the checkpoint*, asserted in
-  `math/__tests__/sampling.test.ts` against a value the lesson prints.
+- The `sampling-explorer`'s two frozen logit vectors are *from the checkpoint*
+  (`scripts/courses/llm-agents/sampling-presets.py`), asserted in
+  `math/__tests__/sampling.test.ts` against the values the lesson's first cell prints.
 - Someone who finished `dl-nlp` reads lessons 1–3 and reports where the callbacks assume too much.
 
 ## Notes / gotchas
