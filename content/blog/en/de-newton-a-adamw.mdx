@@ -607,12 +607,16 @@ $\mathbf{m}$ and $\mathbf{v}$, the size of the model.
 
 The reading that explains why it works on almost everything is in the quotient. $\hat{\mathbf{m}}_t$
 estimates the mean of the gradient and $\sqrt{\hat{\mathbf{v}}_t}$ estimates the root of the mean of
-its square, and the first never exceeds the second in absolute value. The quotient lies, coordinate
-by coordinate, between $-1$ and $1$: near $\pm 1$ where the gradient insists on a sign, near $0$
-where its mean is noise. No parameter moves more than $\eta$ per step, whatever the scale of its
-gradient. That is why $\eta$ can be chosen in units of the parameter, why the same $10^{-4}$ works
-for models that have nothing in common, and why a rate of $3 \cdot 10^{-4}$ means something
-concrete: no weight changes by more than three ten-thousandths per step.
+its square; for those exact means, the first never exceeds the second in absolute value (variance
+can't be negative), so the quotient lies, coordinate by coordinate, between $-1$ and $1$: near
+$\pm 1$ where the gradient insists on a sign, near $0$ where its mean is noise. Adam's moving
+averages only approach that ideal, and the resulting step is almost always on the order of $\eta$,
+whatever the scale of the gradient; the exception is a gradient that sits at zero for many steps
+and then fires, where $\hat{\mathbf{v}}_t$ lags behind and the quotient can exceed $1$ (Kingma and
+Ba bound the step at $\eta \cdot \frac{1-\beta_1}{\sqrt{1-\beta_2}}$, about $3.16\,\eta$ at the
+default values). That is why $\eta$ can be chosen in units of the parameter, why the same $10^{-4}$
+works for models that have nothing in common, and why a rate of $3 \cdot 10^{-4}$ means, almost
+always, that no weight changes by more than three ten-thousandths per step.
 
 <figure>
   <img
@@ -847,9 +851,9 @@ training something small and calm, the original $0.999$ for $\beta_2$ is reasona
 spikes, you know which number to look at first.
 
 **The learning rate is still the number.** In Adam it comes in units of the parameter, so
-$3 \cdot 10^{-4}$ means no weight moves more than that per step, and that meaning doesn't depend on
-the model. Before trying another optimiser, sweep $\eta$: a good part of the gains announced in
-recent years were explained by an AdamW whose rate nobody had swept.
+$3 \cdot 10^{-4}$ means that, almost always, no weight moves more than that per step, and that
+meaning doesn't depend on the model. Before trying another optimiser, sweep $\eta$: a good part of
+the gains announced in recent years were explained by an AdamW whose rate nobody had swept.
 
 **If you're fine-tuning a model that isn't yours, the optimiser's memory decides whether it fits.**
 $\mathbf{m}$ and $\mathbf{v}$ take twice the room of the weights, and every answer you've seen to

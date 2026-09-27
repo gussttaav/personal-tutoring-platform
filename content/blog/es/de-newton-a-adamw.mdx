@@ -609,12 +609,17 @@ $\mathbf{m}$ y $\mathbf{v}$, del tamaño del modelo.
 
 La lectura que explica por qué funciona en casi todo está en el cociente. $\hat{\mathbf{m}}_t$
 estima la media del gradiente y $\sqrt{\hat{\mathbf{v}}_t}$ estima la raíz de la media de su
-cuadrado, y la primera nunca supera a la segunda en valor absoluto. El cociente vale, coordenada a
-coordenada, entre $-1$ y $1$: cerca de $\pm 1$ donde el gradiente insiste en un signo, cerca de
-$0$ donde su media es ruido. Ningún parámetro se mueve más de $\eta$ por paso, sea cual sea la
-escala de su gradiente. Por eso $\eta$ se puede elegir en unidades del parámetro, por eso la misma
-$10^{-4}$ sirve para modelos que no se parecen en nada, y por eso una tasa de $3 \cdot 10^{-4}$
-significa una cosa concreta: ningún peso cambia más de tres diezmilésimas por paso.
+cuadrado; para esas medias exactas, la primera nunca supera a la segunda en valor absoluto (la
+varianza no es negativa), así que el cociente vale, coordenada a coordenada, entre $-1$ y $1$:
+cerca de $\pm 1$ donde el gradiente insiste en un signo, cerca de $0$ donde su media es ruido. Las
+medias móviles de Adam solo se acercan a ese ideal, y el paso resultante es casi siempre del orden
+de $\eta$, sea cual sea la escala del gradiente; la excepción es un gradiente que pasa muchos pasos
+en cero y luego se activa, donde $\hat{\mathbf{v}}_t$ va rezagada y el cociente puede superar $1$
+(Kingma y Ba acotan el paso en $\eta \cdot \frac{1-\beta_1}{\sqrt{1-\beta_2}}$, unos $3{,}16\,\eta$
+con los valores por defecto). Por eso $\eta$ se puede elegir en unidades del parámetro, por eso la
+misma $10^{-4}$ sirve para modelos que no se parecen en nada, y por eso una tasa de
+$3 \cdot 10^{-4}$ significa, casi siempre, que ningún peso cambia más de tres diezmilésimas por
+paso.
 
 <figure>
   <img
@@ -853,9 +858,10 @@ W aplicaba al revés. Si entrenas algo pequeño y tranquilo, el $0{,}999$ origin
 razonable; si ves picos, ya sabes qué número mirar primero.
 
 **La tasa de aprendizaje sigue siendo el número.** En Adam va en unidades del parámetro, así que
-$3 \cdot 10^{-4}$ significa que ningún peso se mueve más de eso por paso, y ese significado no
-depende del modelo. Antes de probar otro optimizador, barre $\eta$: buena parte de las mejoras
-anunciadas en los últimos años se explicaban con un AdamW al que nadie había barrido la suya.
+$3 \cdot 10^{-4}$ significa que, casi siempre, ningún peso se mueve más de eso por paso, y ese
+significado no depende del modelo. Antes de probar otro optimizador, barre $\eta$: buena parte de
+las mejoras anunciadas en los últimos años se explicaban con un AdamW al que nadie había barrido la
+suya.
 
 **Si ajustas un modelo que no es tuyo, la memoria del optimizador decide si cabe.** $\mathbf{m}$ y
 $\mathbf{v}$ ocupan el doble que los pesos, y cada respuesta que has visto a eso, LoRA, Adam en 8
