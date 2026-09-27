@@ -14,7 +14,7 @@ Filled by [P11-00](00-triage.md) — read against the eight `es/` lessons select
 `block: 3` frontmatter, in `order`. Note the two files whose name and frontmatter disagree:
 **`es/26-seq2seq.mdx` is 3.8**, and `es/33-adios-recurrencia.mdx` is Block 5, not this block.
 
-**No lesson in Block 3 is a rewrite.** Not one of the 34 quiz items has an answer that moves in
+**No lesson in Block 3 is a rewrite.** Not one of the 33 quiz items has an answer that moves in
 English — the block argues in mathematics, and the four items that look linguistic (3.1's `no`
 marker, 3.5's plural agreement, 3.7's character count, 3.8's reversal) all keep their answer.
 What the block does carry is five corpora and examples that have to be *chosen* rather than
@@ -23,7 +23,7 @@ translated, and one of them is a file outside the lesson tree.
 | # | Slug | Class | Spanish-dependent artifacts |
 |---|---|---|---|
 | 3.1 | `por-que-falla-el-mlp` | **adapt** | The 8-word `V` in the cell; the 4-token / 2-token phrase pair whose counts the prose quotes; the word-order pair; `no` ×10 as the marker word — **also baked into `concatenacion-bloques.svg`**. Recap quotes Block 2's `88.3 %` and `5 329` |
-| 3.2 | `la-rnn-vanilla` | **adapt** | Its own 8-word `V` (not 3.1's), read through `V.index(palabra)` — the printed states move unless the English list is index-for-index; two of them are quoted **inside a quiz explanation**. `guion` ×5 |
+| 3.2 | `la-rnn-vanilla` | **adapt** | Its own 12-word `V` (not 3.1's), shared by both cells and read through `V.index(palabra)` — every printed state moves with the list; two final states are quoted **inside a quiz explanation**. The second cell reads **Block 2's closing pair** (`la película no es aburrida, es divertida` and its swap) and quotes Block 2's `0.0014`, so it inherits P11-05's English pair and figure. `guion` ×5 |
 | 3.3 | `bptt` | **transpose** | None. Prose, code identifiers and 12 assertion messages only; every number is seed-driven. Densest crosslinking in the block (21 `<Leccion>`) |
 | 3.4 | `gradiente-desvanecido` | **transpose** | One illustrative sentence (`Dudo que a alguien le sirva`) that translates directly, no count attached. `vanishing-gradient` confirmed numeric, no corpus |
 | 3.5 | `lstm` | **adapt** | The twelve-position agreement sentence, and **"doce posiciones" quoted three times** — the English distance must be recounted. The gate quiz item survives: its answer is a gate configuration |
@@ -78,27 +78,58 @@ Line refs are into the `es/` file named in each heading.
 
 #### 3.2 `la-rnn-vanilla` — `es/20-la-rnn-vanilla.mdx` — adapt
 
-- **Quiz (4, no answer moves).** `q-parametros` `numeric` 12352 (12–18). `q-compartir` `single` a
-  (19–28), `<W>guion</W>` in prompt and option (a). `q-recurrencia` `multi` [a,b] (29–38) — **its
-  explanation quotes `(0.117, 0.087, 0.171)` and `(-0.141, 0.701, -0.632)`**, printed by the second
-  cell, so the item is downstream of the vocabulary choice. `q-memoria` `predict-output`
-  `'True False'` (39–59) — the code is `np.eye(2)` vectors and the explanation's `ab`/`bb`/`ba` are
-  letters; language-free.
-- **`<PyCell>` ×2** (320–355, 372–408). `V` = 8 Spanish words (323, 375), read through
-  `V.index(palabra)` — **the printed states are a function of each word's slot**, so the English
-  list must keep one distinct entry per slot (`la` and `el` both becoming `the` would collapse two
-  and move every number). Identifiers `paso`, `lee`, `frase`, `palabra`, `estados`, `corta`,
-  `larga`, `estado_final`, `bolsa`, `concat`, `recurr`; Spanish prints (339, 350–354, 399–407).
-- **Printed output quoted in prose:** `(0.509, 0.947, 0.072)` / `(0.481, 0.935, 0.024)` (363), the
-  two final states (411–412), `29 312` / `3 810 688` (419–420, arithmetic, stable).
-- **`<CodeChallenge>` `ch-rnn-forward`** (61–154): 2 `# tu código aquí` (78, 83), 5 test `name`s,
-  8 Spanish assertion messages (93–131), Spanish `prompt` (62–71), `solution` (`paso`, `estados`)
-  and `explanation` (147–154). Tests are numeric; nothing moves.
-- **`<Explorable>` `rnn-unrolled`** (184–189), `direction="forward"`: Spanish caption. Widget has
+- **Quiz (3, no answer moves).** `q-parametros` `numeric` 12352 (12–18). `q-compartir` `single` a
+  (19–28), `<W>guion</W>` in prompt and option (a); the `29 312` / `384 000` in its explanation are
+  arithmetic. `q-recurrencia` `multi` [a,b] (29–38) — **its explanation names the second cell's
+  two sentences in `<W>` and quotes their final states `(-0.751, 0.011, -0.932)` and
+  `(-0.678, 0.239, -0.859)`**, so the item is downstream of both the pair and the vocabulary.
+  (`q-memoria` has been removed from the Spanish lesson; nothing to translate.)
+- **`<PyCell>` ×2** (322–358, 376–420), **sharing one 12-word `V`** (325–326, 379–380): cell 1's
+  eight words (`la el actriz película guion salva hunde y`) followed by the four only cell 2 uses
+  (`no es aburrida divertida`). Both cells draw `E` first from `default_rng(0)`, with `len(V)` rows,
+  so **the list's length and order move every printed state** in both cells, and the two cells
+  must keep an identical `V` («la misma red de la celda anterior», 382). Identifiers `paso`, `lee`,
+  `frase`, `palabra`, `estados`, `corta`, `larga`, `tokens`, `bolsa`, `concat`, `recurr`;
+  Spanish comments in both cells, Spanish prints (342–357, 410–419).
+- **Cell 2 reads Block 2's closing pair** (408–409): `la película no es aburrida, es divertida` /
+  `la película no es divertida, es aburrida`, the pair `es/18-proyecto-sentimiento.mdx` ends on,
+  linked from the lead-in (373). `tokens()` drops the comma. It prints both bags and a
+  side-by-side table of the states, one row per position.
+- **Printed output quoted in prose:** cell 1's `el guion` states `(-0.686, 0.010, -0.744)` /
+  `(-0.715, 0.077, -0.745)` (366); cell 2's two final states (433, and `q-recurrencia` at 38);
+  `29 312` / `3 810 688` (444, arithmetic, stable). **Quoted from Block 2, not printed here:
+  `0.0014`** (424), the probability `es/18` gave both sentences.
+- **Claims that depend on where tokens fall**, to re-check against the English run: `V` has 12
+  entries and cell 1 uses 8 (316); cell 1's sentences are 5 and 10 tokens (360), with `el guion`
+  at positions 1–2 and 7–8 (355, 364) and its states there «casi los mismos» (364–370); the pair
+  shares a 4-token prefix, so rows 1–4 coincide and the table splits at row 5 (426–431).
+- **`<CodeChallenge>` `ch-rnn-forward`** (40–133): 2 `# tu código aquí` (57, 62), 5 test `name`s,
+  8 Spanish assertion messages (72–110), Spanish `prompt` (41–50), `solution` (`paso`, `estados`)
+  and `explanation` (126–133). Tests are numeric; nothing moves.
+- **`<Explorable>` `rnn-unrolled`** (163–168), `direction="forward"`: Spanish caption. Widget has
   **no corpus** — `RnnUnrolled.tsx` is symbolic, with Spanish only in its `aria-label` (185) and
   step readout (465). P11-02.
-- **`<Leccion ancla="">`: 0** (2 refs). **`reading`:** 1 (156–163), `lang: en`, Spanish note.
-- **`<W>`: 9** — `guion` ×4, `el guion`, `ab` ×2, `bb`, `ba`.
+- **`<Leccion ancla="">`: 0** (3 refs: `funciones-activacion`, `proyecto-sentimiento`, `bptt`).
+  **`reading`:** 1 (134–142), `lang: en`, Spanish note.
+- **`<W>`: 13** — `guion` ×4, `el guion`, `no` ×2, `no es`, `la película no es`, `aburrida`,
+  `divertida`, and the two full sentences (38).
+
+**English notes for 3.2.**
+
+- **The pair and the figure come from P11-05**, not from a fresh translation: `en/18` ends on
+  `the film is not boring, it is fun` / `the film is not fun, it is boring` (en/18:340–341) and
+  quotes `0.0002` for both (en/18:359). The English 424 quotes `0.0002`, not `0.0014`.
+- **The English pair is 8 tokens, not 7** (`es` → `it is`), so the table has 8 rows and the final
+  states are `h_8`. The shared prefix is still 4 tokens (`the film is not`), so the row-5 split and
+  «la posición 5» hold as written.
+- **A 12-word English `V` falls out naturally** if cell 1 becomes `the script sinks the film` /
+  `the actress saves the film and the script sinks it`: `the actress film script saves sinks and it`
+  (8, used by cell 1) + `not is boring fun` (4, only cell 2), because `it` covers both the pronoun
+  `la` in cell 1 and the pair's `it is`. The 5 / 10 token counts and `the script` at 1–2 and 7–8
+  hold. **But «casi los mismos» does not hold for free:** it is a property of the draw, and with
+  that list in that order and `default_rng(0)`, `the script` at 7–8 is *not* close to 1–2
+  (measured in CPython). Reorder `V` or change the seed until it is, verify in
+  Pyodide, and keep the two cells' `V` identical.
 
 #### 3.3 `bptt` — `es/21-bptt.mdx` — transpose
 
@@ -235,14 +266,14 @@ Line refs are into the `es/` file named in each heading.
 | **Transpose** | **3** | 3.3, 3.4, 3.6 |
 | **Adapt** | **5** | 3.1, 3.2, 3.5, 3.7, 3.8 |
 | **Rewrite** | **0** | no quiz answer in the block moves |
-| Quiz items | 34 | 16 `single`, 7 `multi`, 6 `numeric`, 4 `predict-output`, 1 `boolean` — **0 answers move** |
+| Quiz items | 33 | 16 `single`, 7 `multi`, 6 `numeric`, 3 `predict-output`, 1 `boolean` — **0 answers move** |
 | `<PyCell>` | 14 | all re-run; only 3.7's 3 are **regenerated** |
 | `<CodeChallenge>` | 4 | 3.2, 3.3, 3.5, 3.6 — 32 Spanish assertion messages, 19 test `name`s, 5 `# tu código aquí` |
 | `<Explorable>` | 5 uses / 3 ids | `rnn-unrolled` ×2, `lstm-gates` ×2, `vanishing-gradient` ×1 — **none carries a corpus**; captions here, widget strings in P11-02 |
 | `<Figure>` | 3 | only `concatenacion-bloques.svg` (3.1) has Spanish set into the asset |
-| `<Leccion ancla="">` | **0** | 90 slug-only refs, so no anchor is re-derived anywhere in this block |
+| `<Leccion ancla="">` | **0** | 91 slug-only refs, so no anchor is re-derived anywhere in this block |
 | `reading` | 14 | **all `lang: en`** — no Spanish-language source in the block; 14 Spanish `note`s to translate |
-| `<W>` | 55 | over 6 lessons; 3.3 and 3.6 have none. 3.1 (14), 3.7 (12), 3.5 (11) hold most |
+| `<W>` | 59 | over 6 lessons; 3.3 and 3.6 have none. 3.1 (14), 3.2 (13), 3.7 (12), 3.5 (11) hold most |
 
 **Sizing read.** Three lessons are prose-only work. Four adapts cost one example or one word list
 each, with the numbers they feed. 3.7 is the block: a new corpus asset, a retrain, and every
@@ -250,7 +281,9 @@ quoted figure and sample regenerated — treat it as its own PR-sized job, not a
 
 **Cross-block dependency.** 3.1's recap quotes `88.3 %` and `5 329` from `es/18-proyecto-sentimiento.mdx`,
 which P11-05 classes **adapt**. P11-05 lands before this task, so 3.1 quotes whatever the English
-Block 2 prints — check it rather than transcribing these.
+Block 2 prints — check it rather than transcribing these. **3.2 depends on the same lesson**: its
+second cell reads Block 2's closing pair and quotes the `0.0014` both sentences got there, so the
+English 3.2 takes `en/18`'s pair and its `0.0002` (see the English notes under 3.2).
 
 ## Lesson progress
 
@@ -270,15 +303,17 @@ Reuse these verbatim; they are settled, not open.
 **From 3.1** (`en/19-por-que-falla-el-mlp.mdx`):
 
 - **The word-order pair is <W>the actress saves the film</W> / <W>the film saves the actress</W>**
-  (`q-bolsa-mejor`'s explanation). **3.2 reuses it**: its second cell reads
+  (`q-bolsa-mejor`'s explanation). **3.2 reuses it**: its first cell reads
   `la actriz salva la película y el guion la hunde`, so its English sentence should open on this
-  pair. Note for 3.2's `V`: the pair spends `the` twice, and 3.2 needs one distinct entry per slot
-  (`la` and `el` cannot both become `the` — see the 3.2 row above).
+  pair. (3.2's second cell used to read this pair too; it now reads Block 2's closing pair instead.)
+  Note for 3.2's `V`: `la` and `el` both become `the`, so the English list is not index-for-index
+  with the Spanish one and every printed state moves; see the English notes under 3.2.
 - **The marker word is `not`**, in the cell, all ten `<W>` mentions and the figure. 3.2's `guion` is
   a different word and is not fixed by this.
 - **3.1's cell vocabulary is `["the", "film", "is", "very", "good", "long", "fun", "not"]`**, `NOT = 7`.
-  It is 3.1's alone: **3.2's `V` is a different list** (`la el actriz película guion salva hunde y`),
-  which this block md's classification row used to call "the same 8-word `V`". Nothing in 3.1
+  It is 3.1's alone: **3.2's `V` is a different list** (`la el actriz película guion salva hunde y
+  no es aburrida divertida`), which this block md's classification row used to call "the same
+  8-word `V`". Nothing in 3.1
   constrains it. The cell never prints the list, so the English output is byte-identical to the
   Spanish (verified in the browser: `1.000 / 0.500`, `1.000 / 1.000`, `0.0014`, `≈ 2.4` and
   `0.000000`).
