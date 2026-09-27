@@ -1,6 +1,6 @@
 # P11-06 — Block 3: Recurrent Neural Networks
 
-**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** not started
+**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1 done)
 
 ## TL;DR
 
@@ -23,7 +23,7 @@ translated, and one of them is a file outside the lesson tree.
 | # | Slug | Class | Spanish-dependent artifacts |
 |---|---|---|---|
 | 3.1 | `por-que-falla-el-mlp` | **adapt** | The 8-word `V` in the cell; the 4-token / 2-token phrase pair whose counts the prose quotes; the word-order pair; `no` ×10 as the marker word — **also baked into `concatenacion-bloques.svg`**. Recap quotes Block 2's `88.3 %` and `5 329` |
-| 3.2 | `la-rnn-vanilla` | **adapt** | The same 8-word `V`, read through `V.index(palabra)` — the printed states move unless the English list is index-for-index; two of them are quoted **inside a quiz explanation**. `guion` ×5 |
+| 3.2 | `la-rnn-vanilla` | **adapt** | Its own 8-word `V` (not 3.1's), read through `V.index(palabra)` — the printed states move unless the English list is index-for-index; two of them are quoted **inside a quiz explanation**. `guion` ×5 |
 | 3.3 | `bptt` | **transpose** | None. Prose, code identifiers and 12 assertion messages only; every number is seed-driven. Densest crosslinking in the block (21 `<Leccion>`) |
 | 3.4 | `gradiente-desvanecido` | **transpose** | One illustrative sentence (`Dudo que a alguien le sirva`) that translates directly, no count attached. `vanishing-gradient` confirmed numeric, no corpus |
 | 3.5 | `lstm` | **adapt** | The twelve-position agreement sentence, and **"doce posiciones" quoted three times** — the English distance must be recounted. The gate quiz item survives: its answer is a gate configuration |
@@ -254,7 +254,7 @@ Block 2 prints — check it rather than transcribing these.
 
 ## Lesson progress
 
-- [ ] 3.1 `por-que-falla-el-mlp`
+- [x] 3.1 `por-que-falla-el-mlp`
 - [ ] 3.2 `la-rnn-vanilla`
 - [ ] 3.3 `bptt`
 - [ ] 3.4 `gradiente-desvanecido`
@@ -262,6 +262,36 @@ Block 2 prints — check it rather than transcribing these.
 - [ ] 3.6 `gru`
 - [ ] 3.7 `proyecto-char-lm`
 - [ ] 3.8 `seq2seq`
+
+## Decisions fixed by a translated lesson
+
+Reuse these verbatim; they are settled, not open.
+
+**From 3.1** (`en/19-por-que-falla-el-mlp.mdx`):
+
+- **The word-order pair is <W>the actress saves the film</W> / <W>the film saves the actress</W>**
+  (`q-bolsa-mejor`'s explanation). **3.2 reuses it**: its second cell reads
+  `la actriz salva la película y el guion la hunde`, so its English sentence should open on this
+  pair. Note for 3.2's `V`: the pair spends `the` twice, and 3.2 needs one distinct entry per slot
+  (`la` and `el` cannot both become `the` — see the 3.2 row above).
+- **The marker word is `not`**, in the cell, all ten `<W>` mentions and the figure. 3.2's `guion` is
+  a different word and is not fixed by this.
+- **3.1's cell vocabulary is `["the", "film", "is", "very", "good", "long", "fun", "not"]`**, `NOT = 7`.
+  It is 3.1's alone: **3.2's `V` is a different list** (`la el actriz película guion salva hunde y`),
+  which this block md's classification row used to call "the same 8-word `V`". Nothing in 3.1
+  constrains it. The cell never prints the list, so the English output is byte-identical to the
+  Spanish (verified in the browser: `1.000 / 0.500`, `1.000 / 1.000`, `0.0014`, `≈ 2.4` and
+  `0.000000`).
+- **The 4-token / 2-token phrases are <W>the cinematography is superb</W> / <W>weak script</W>.**
+- **The recap quotes the English Block 2 figures, `86.7%` and `5,257`**, not the Spanish `88.3 %` and
+  `5 329`, as the cross-block dependency below requires.
+- **`concatenacion-bloques.en.svg`** carries `"not"` above positions 3 and 5 (measured: x 144–174 in
+  a 134–184 segment), with its `aria-label` and comments translated.
+- **Two Spanish errors found and fixed in `es/19`** (their own commit): the `reading` note placed the
+  argument in the Deep Learning book's §10.1, but it and the Nepal example are in the chapter's
+  introduction (p. 367, before §10.1); and «con la misma capa oculta» compared the Block 2 classifier
+  (12 hidden neurons) with this lesson's 128-neuron example as if they shared a layer, now «con una
+  sola capa oculta». The English says the same in both places.
 
 ## Two things to watch
 

@@ -1,0 +1,338 @@
+---
+slug: por-que-falla-el-mlp
+title: "Why the MLP fails on sequences"
+block: 3
+order: 1
+minutes: 23
+summary: "Lining up the tokens' vectors puts order inside the input, and charges two things for it: a fixed length that has to be truncated or padded, and a first layer split into as many blocks as there are positions, each one adjusted only by what lands in its own. A network that learns \"not\" in the first four positions scores 0.500 when \"not\" turns up in the fifth."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-pesos
+    type: numeric
+    prompt: 'A concatenated MLP with $T_{\max} = 40$ positions, embeddings of $d_{\text{model}} = 128$ and a hidden layer of $d_1 = 64$ neurons. How many weights does $\mathbf{W}^{(1)}$ have?'
+    answer: 327680
+    tolerance: 0
+    explanation: 'The input measures $d_0 = T_{\max} \cdot d_{\text{model}} = 40 \cdot 128 = 5\,120$ coordinates, and the layer has one row per neuron, so $\mathbf{W}^{(1)}$ has shape $64 \times 5\,120$ and holds $64 \cdot 5\,120 = 327\,680$ weights. The interesting part is the second count: raising $T_{\max}$ to $80$ to read texts twice as long leaves the matrix at $655\,360$ weights, and the $327\,680$ new ones start at their initialisation without anything learned in the first forty blocks reaching them.'
+    hint: 'First count how many coordinates the concatenated input has.'
+  - id: q-por-que-falla
+    type: single
+    prompt: 'The cell trains with <W>not</W> in the first four positions and tests with <W>not</W> in the last two. Test accuracy stays at $0.500$, and neither more steps, nor more hidden neurons, nor a different learning rate moves it. Why?'
+    options:
+      - { id: a, text: 'Because $\nabla_{\mathbf{W}^{(1)}_t}\ell = \boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ is zero in the <W>not</W> column of blocks 5 and 6 for every training example, so those columns end exactly where they started.' }
+      - { id: b, text: 'Because 600 examples are too few for the 768 weights of the first layer, and the network runs out of data to pin them down with.' }
+      - { id: c, text: 'Because the hyperbolic tangent saturates on one-hot inputs, so the gradient dies out before it reaches the first layer.' }
+      - { id: d, text: 'Because the test set is unbalanced, and half of its examples don''t carry the label they should.' }
+    answer: a
+    explanation: '(a) is what the last part of the cell prints: the <W>not</W> column moves about $2.4$ units in blocks 1 to 4 and exactly $0.000000$ in blocks 5 and 6. It isn''t that it moves a little. The gradient that would move it is the zero vector on every example, and no optimisation method corrects a weight with a zero. (b) runs against the data (training accuracy is $1.000$, so there is plenty of data for what the network does learn); so does (c), because that saturation would stop blocks 1 to 4 being learned, and they are learned; and (d) is false by construction: the cell gives the label $1$ to the even-indexed examples, a hundred and fifty of three hundred.'
+  - id: q-longitud-fija
+    type: multi
+    prompt: 'Tick everything that is true of an MLP that receives the concatenation of $T_{\max}$ positions.'
+    options:
+      - { id: a, text: 'Padding a position with the zero vector makes the gradient of that position''s block exactly zero on that example.' }
+      - { id: b, text: 'Truncating at $T_{\max}$ loses text according to where it falls and not according to how rare it is, so the same type can disappear from one document and survive in another.' }
+      - { id: c, text: 'Raising $T_{\max}$ from $30$ to $60$ doubles the weights of the first layer, and doubles the examples each block is adjusted with as well.' }
+      - { id: d, text: 'Two documents with the same tokens in a different order receive the same input.' }
+    answer: [a, b]
+    explanation: '(a) follows from the formula without any arithmetic: $\boldsymbol{\delta}^{(1)}\mathbf{0}^{\top}$ is the zero matrix, whatever the layer''s error happens to be. (b) is the difference from Block 1''s OOV problem: there it was the rare types that fell away, here it is whatever comes after position $T_{\max}$, and that has nothing to do with frequency. (c) is the lesson''s trap: the corpus has the examples it has, so doubling the positions shares the same examples out among twice as many blocks (the weights double, the experience per block halves). And (d) is false, and it is worth being clear about it: concatenation does tell order apart. That was the defect this block set out to correct, and it is corrected; what this lesson measures is the price.'
+  - id: q-bolsa-mejor
+    type: boolean
+    prompt: 'In the cell''s experiment, the bag of words passes the shifted test and concatenation doesn''t. Does that entitle you to conclude that the bag of words is the better of the two representations?'
+    answer: false
+    explanation: 'No, and both halves of the answer matter. The bag wins there because the task invented for the cell (does <W>not</W> appear anywhere?) has no use for order at all, and because its eight coordinates are the same whichever position you look at: one column per entry, adjusted with every occurrence. That is exactly what concatenation lacks. But the bag gives the same vector to <W>the actress saves the film</W> and to <W>the film saves the actress</W>, which is the reason this block exists. What the experiment does entitle you to say is narrower and more useful: sharing the weights across positions is what makes something learned at one position serve at the others, and concatenation lost that when it gained order.'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Deep Learning, ch. 10: Sequence Modeling: Recurrent and Recursive Nets'
+    authors: 'Goodfellow, Bengio and Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/rnn.html'
+    note: 'The chapter opening, before §10.1, is this lesson''s argument: with its own weights per position, a network can''t generalise to new lengths or carry what it learned at one position to another. It ends on the same example, a word that moves.'
+---
+
+{/* COURSE-P5-03 — Block 3, Lesson 1. COURSE-P11-06 — English translation. */}
+
+An input layer is as wide as it was built to be; a text is as long as it happens to be. The previous
+block, on the multilayer perceptron (MLP), ended up running into that tension without ever quite
+putting it into words. Its review classifier was right about $86.7\%$ of the reviews it hadn't read,
+and what held it back was the input rather than the network, because the order of the tokens never
+made it through the door. Fixing that means changing the input, and changing the input means going back
+to $\mathbf{W}^{(1)}$, which has had $d_0$ columns since the instant it was built.
+
+The fix that occurs to anyone is to put the tokens in a row. Each one brings its vector (the
+embedding from <Leccion slug="embeddings-densos">the lesson on dense representations</Leccion>), and
+gluing those vectors one after another leaves the order written into the place each one occupies:
+position becomes a coordinate, and no sum wipes it out. The fix lasts until the second text.
+<W>the cinematography is superb</W> brings four vectors and <W>weak script</W> brings two, so they
+produce inputs of two different widths, and a layer that multiplies by $\mathbf{W}^{(1)}$ accepts
+exactly one.
+
+There's a second consequence, and that one doesn't show until you draw it.
+
+<Figure
+  src="/courses/dl-nlp/concatenacion-bloques.en.svg"
+  alt='Above, a horizontal bar labelled x on its left and divided into six equal segments numbered one to six, one per position in the sequence. The third and fifth segments are shaded green and carry the label "not" above them. Below, a wide rectangle labelled W one, as wide as the bar and divided into six blocks of columns that line up with the segments above and are numbered the same way, one to six; of those blocks only the third and the fifth are shaded. Two dotted green lines run down from the third segment to the third block and from the fifth to the fifth. Under the rectangle, its shape: d one by T max times d model.'
+  caption="The same vocabulary entry in two positions doesn't touch the same weights: in one case the third block multiplies it and in the other the fifth, and those two blocks are adjusted separately."
+/>
+
+The rest of the lesson is that figure written out in symbols, and then measured with NumPy.
+
+<Callout type="intuition" title="The idea in one sentence">
+Concatenating puts order inside the input and charges for it: each position takes its own slice of
+the first layer. What the network learns about a vocabulary entry in position 3 isn't available in
+position 5, because those are different weights, adjusted with different examples.
+</Callout>
+
+## A sequence that doesn't fit a fixed-size input
+
+The tokeniser turns a document into a sequence of tokens $w_1, \dots, w_T$. That length $T$ belongs
+to that document: the next one will bring another. Each position contributes the vector of its
+vocabulary entry, $\mathbf{x}_t = \mathbf{e}_{w_t} \in \mathbb{R}^{d_{\text{model}}}$, the row of
+$\mathbf{E}$ that belongs to it. Stacking them into a single column means writing
+
+$$
+\mathbf{x} = \left[\mathbf{x}_1 ; \mathbf{x}_2 ; \dots ; \mathbf{x}_T\right] \in \mathbb{R}^{T \cdot d_{\text{model}}},
+$$
+
+where the semicolons stack downwards: what comes out is a vector of $T \cdot d_{\text{model}}$
+numbers, not a matrix with $T$ rows. The order is inside, intact, and reading it is a matter of
+looking at the right stretch. The two ways of writing the letter live side by side on purpose, and
+they're worth pinning down here: $\mathbf{x}$ without a subscript is the input for the whole
+example, as throughout the previous block, and $\mathbf{x}_t$ is the piece that position $t$
+contributes.
+
+Facing it is a layer that won't negotiate. $\mathbf{W}^{(1)} \in \mathbb{R}^{d_1 \times d_0}$ has
+$d_0$ columns; that number is chosen when the network is built, and it knows nothing about the
+document that's going to come in. With $\mathbf{x}$ measuring $T \cdot d_{\text{model}}$ and $T$
+changing from one text to the next, the product $\mathbf{W}^{(1)}\mathbf{x}$ is defined for
+documents of one length and undefined for all the others. It isn't a problem of rounding or of
+training: the multiplication doesn't exist.
+
+The only way out that doesn't change the architecture is to fix a number of positions $T_{\max}$
+and make every document measure that:
+
+$$
+\mathbf{x}_t = \begin{cases}
+\mathbf{e}_{w_t} & \text{if } t \leq T,\\
+\mathbf{0} & \text{if } T < t \leq T_{\max},
+\end{cases}
+$$
+
+keeping the first $T_{\max}$ positions when $T > T_{\max}$. Filling what's left over with the zero
+vector is called **padding**; cutting at $T_{\max}$ is **truncation**. With the two together,
+$d_0 = T_{\max} \cdot d_{\text{model}}$ for every document, and the network can be built.
+
+The two halves of that arrangement cost different things, and both need saying out loud. Truncation
+loses the whole end of any long document, and loses it *by position*. It's nothing like the
+out-of-vocabulary (OOV) problem from <Leccion slug="vocabulario-oov">the lesson on the
+vocabulary</Leccion>, where what fell away were the rare types, which is why little was lost. Here
+the most frequent entry in the corpus can be the one to go, if it happens to sit at position
+$T_{\max} + 1$. And padding pays at the other end: with $T_{\max}$ set wherever the longest document
+reaches, a document of average length enters the network with more than half of its vector at zero.
+
+## Each position learns on its own
+
+Cut $\mathbf{W}^{(1)}$ where the input is already cut. Its $d_0 = T_{\max} \cdot d_{\text{model}}$
+columns fall into $T_{\max}$ consecutive blocks of $d_{\text{model}}$ columns each,
+$\mathbf{W}^{(1)} = \left[\mathbf{W}^{(1)}_1 \mid \dots \mid \mathbf{W}^{(1)}_{T_{\max}}\right]$ with
+$\mathbf{W}^{(1)}_t \in \mathbb{R}^{d_1 \times d_{\text{model}}}$ (that subscript is a position in
+the sequence, not a coordinate), and the product splits along with it:
+
+$$
+\mathbf{z}^{(1)} = \mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)} = \sum_{t=1}^{T_{\max}} \mathbf{W}^{(1)}_t\,\mathbf{x}_t + \mathbf{b}^{(1)}.
+$$
+
+Nothing has happened there yet: it's the same product as ever, grouped by stretches instead of by
+single columns. What does happen shows up when you differentiate.
+
+<Leccion slug="backpropagation">The lesson on backpropagation</Leccion> leaves the gradient of a
+layer in one line, $\nabla_{\mathbf{W}^{(l)}}\ell = \boldsymbol{\delta}^{(l)}\left(\mathbf{h}^{(l-1)}\right)^{\top}$,
+and for the first layer $\mathbf{h}^{(0)} = \mathbf{x}$, so
+
+$$
+\nabla_{\mathbf{W}^{(1)}}\ell = \boldsymbol{\delta}^{(1)}\,\mathbf{x}^{\top} \in \mathbb{R}^{d_1 \times d_0}.
+$$
+
+That outer product splits by columns exactly where $\mathbf{W}^{(1)}$ was split, and the piece that
+falls to each block is
+
+$$
+\nabla_{\mathbf{W}^{(1)}_t}\ell = \boldsymbol{\delta}^{(1)}\,\mathbf{x}_t^{\top} \in \mathbb{R}^{d_1 \times d_{\text{model}}}.
+$$
+
+<Details summary="The split by columns, step by step">
+The outer product is defined coordinate by coordinate: entry $(i, j)$ of
+$\boldsymbol{\delta}^{(1)}\mathbf{x}^{\top}$ is $\delta^{(1)}_i \cdot x_j$, with $i$ running over the
+$d_1$ neurons and $j$ over the $d_0$ columns.
+
+Column $j$ belongs to block $t$ when $(t-1) \cdot d_{\text{model}} < j \leq t \cdot d_{\text{model}}$,
+and within that block it is column $j - (t-1) \cdot d_{\text{model}}$. Since concatenation defines
+$x_j$ as coordinate $j - (t-1) \cdot d_{\text{model}}$ of $\mathbf{x}_t$, the submatrix formed by
+those $d_{\text{model}}$ columns holds the number $\delta^{(1)}_i \cdot x_{t,k}$ at entry $(i, k)$,
+which is, entry by entry, $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$.
+
+The split works because the two things being split are split at the same places: the columns of
+$\mathbf{W}^{(1)}$ and the coordinates of $\mathbf{x}$. And nothing else enters the calculation:
+$\boldsymbol{\delta}^{(1)}$ goes whole to every block, so the only thing that tells one block's
+gradient from another's is which vector of the sequence multiplies it.
+</Details>
+
+Read that slowly, because it's the result of the lesson. The gradient of block $t$ depends on
+$\mathbf{x}_t$ and on no other part of the input. If that position was padded, $\mathbf{x}_t =
+\mathbf{0}$, the block receives the zero matrix: that example teaches it nothing, neither a little
+nor a lot. And if the input arrives one-hot, $\mathbf{x}_t = \mathbf{o}_{w_t}$ has a single one, so
+$\boldsymbol{\delta}^{(1)}\mathbf{o}_{w_t}^{\top}$ is zero except in one column: inside block $t$,
+the only column that moves is the one belonging to the vocabulary entry that occupied that position.
+
+Put the two sentences together and out comes the claim this section is named after. The column that
+represents an entry inside block $t$ is adjusted *only* with the examples in which that entry
+appeared at position $t$. An entry that never reached position 5 in the training set leaves the
+corresponding columns of block 5 exactly as they came out of initialisation, however many steps the
+descent takes; and whatever the network has worked out about that same entry at position 3 is
+stored in other weights, which position 5 has no access to.
+
+### What it costs in weights
+
+$\mathbf{W}^{(1)}$ has shape $d_1 \times d_0$, so it holds $d_1 \cdot d_0$ weights, and with the
+input concatenated that comes to
+
+$$
+d_1 \cdot T_{\max} \cdot d_{\text{model}} \quad \text{weights}.
+$$
+
+Put in numbers of an ordinary size: embeddings of $d_{\text{model}} = 100$, a hidden layer of
+$d_1 = 128$ neurons and $T_{\max} = 30$ positions give $384\,000$ weights in the first layer. The
+previous lesson's review classifier, one hidden layer over a bag of words, had $5\,257$ parameters
+in total. And reading paragraphs instead of sentences, $T_{\max} = 300$, takes the figure up to
+$3\,840\,000$.
+
+That growth isn't the problem; it's the symptom. What lies underneath is that the $3\,456\,000$
+weights added in going from $30$ positions to $300$ are *new* weights, which start at their
+initialisation and receive nothing of what was learned in the first thirty blocks. The corpus,
+meanwhile, still has the examples it had: more positions means the same examples spread across more
+blocks, which is to say less experience per parameter right when there are more parameters.
+
+## Measuring it with NumPy
+
+A small experiment puts it in numbers. I made the sequences up for the course: six positions, eight
+vocabulary entries, and the label is $1$ when <W>not</W> appears among them. The difference lies in
+where it appears (in training, only in the first four positions; in the test, only in the last two),
+and that is the only difference between the two sets.
+
+The cell trains the same network twice on the same data: once on the concatenation of the six
+positions and once on their bag of words, which is the same eight coordinates summed. The loop is
+the one from <Leccion slug="implementar-mlp">the lesson on implementing an MLP</Leccion>, without a
+line changed. Read its output in three stretches: what concatenation does, what the bag of words
+does with that same data, and what has happened to each block of $\mathbf{W}^{(1)}$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+V = ["the", "film", "is", "very", "good", "long", "fun", "not"]
+NOT, T = 7, 6                                 # "not" is the last entry; six positions
+rng = np.random.default_rng(0)
+
+
+def corpus(n, positions):
+    S = rng.integers(0, NOT, size=(n, T))     # filler, drawn from the first seven
+    y = np.zeros((n, 1))
+    y[::2] = 1.0                              # exactly half carry "not"...
+    for i in np.nonzero(y[:, 0])[0]:
+        S[i, rng.choice(positions)] = NOT     # ...and only where they're told
+    U = np.eye(len(V))[S]                     # (n, 6, 8): one one-hot per position
+    return U.reshape(n, T * len(V)), U.sum(1), y   # concatenate them, or sum them
+
+
+C_train, B_train, Y_train = corpus(600, [0, 1, 2, 3])   # "not" in positions 1-4
+C_test, B_test, Y_test = corpus(300, [4, 5])            # in the test, only in 5-6
+
+
+def train(X_train, X_test, steps=1500, eta=0.5, d1=16):
+    r = np.random.default_rng(1)
+    W1, b1 = r.normal(size=(d1, X_train.shape[1])) * 0.1, np.zeros(d1)
+    W2, b2 = r.normal(size=(1, d1)) * 0.1, np.zeros(1)
+    W1_init = W1.copy()
+
+    def output(X):
+        H = np.tanh(X @ W1.T + b1)
+        return H, 1.0 / (1.0 + np.exp(-(H @ W2.T + b2)))
+
+    def accuracy(X, Y):
+        return float(((output(X)[1] >= 0.5) == (Y == 1.0)).mean())
+
+    for _ in range(steps):                    # the previous block's loop, untouched
+        H, P = output(X_train)
+        D2 = P - Y_train
+        D1 = (D2 @ W2) * (1.0 - H ** 2)
+        W1 -= eta * (D1.T @ X_train) / len(X_train)
+        b1 -= eta * D1.sum(0) / len(X_train)
+        W2 -= eta * (D2.T @ H) / len(X_train)
+        b2 -= eta * D2.sum(0) / len(X_train)
+    return (accuracy(X_train, Y_train), accuracy(X_test, Y_test),
+            W1 - W1_init, output(X_test)[1])
+
+
+acc_train, acc_test, moved, P_test = train(C_train, C_test)
+print("concatenation   training %.3f   test %.3f" % (acc_train, acc_test))
+print("bag of words    training %.3f   test %.3f" % train(B_train, B_test)[:2])
+print('mean ŷ of the 150 test examples carrying "not": %.4f' % P_test[Y_test == 1.0].mean())
+
+print('\\nhow far the "not" column has moved in each block:')
+for t in range(T):
+    print("   position %d:  %.6f" % (t + 1, np.linalg.norm(moved[:, t * len(V) + NOT])))
+`} />
+
+The first line is the failure: $1.000$ on what it has seen and $0.500$ on what it hasn't. That
+$0.500$ isn't a coin toss. It gets all hundred and fifty of the test sequences that *don't* carry
+<W>not</W> right, and all hundred and fifty of the ones that do carry it wrong, because to its eyes
+they're identical to the first lot. The third line says how far that goes: the mean $\hat{y}$ of the
+hundred and fifty positives is $0.0014$. It isn't wavering between the two answers; it's certain,
+and wrong.
+
+The second line is the uncomfortable one. The bag of words (the representation this block came to
+replace, the one that can't tell one order from another) scores $1.000$ on the shifted test. Its
+advantage is exactly what the other one lacks: it has *one* coordinate for <W>not</W>, which
+collects the occurrences from all six positions at once, so a weight adjusted with what happened at
+position 2 works as it stands when <W>not</W> turns up at position 5. Concatenation gained order and
+lost that.
+
+The last output is the formula, verified. The <W>not</W> column has moved about $2.4$ units in
+blocks 1 to 4, and $0.000000$ in blocks 5 and 6 (exactly zero, not a zero that was rounded), because
+its gradient $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ was the zero matrix on all six hundred
+examples and at all fifteen hundred steps. Change the initialisation and the figure for the first
+four blocks changes; the last two still give zero, and test accuracy still gives $0.500$.
+
+## Test your intuition
+
+Four questions: how many weights concatenation asks for, why the new position is invisible, what
+padding and truncation cost, and what can and can't be concluded from the bag of words winning this
+test.
+
+<Quiz id="q-pesos" />
+
+<Quiz id="q-por-que-falla" />
+
+<Quiz id="q-longitud-fija" />
+
+<Quiz id="q-bolsa-mejor" />
+
+---
+
+The two things this lesson has measured are the same thing. The fixed length forces truncation and
+padding because the first layer has one block per position and not one more; and what's learned at
+one position doesn't reach the others because each block is adjusted with its own. Both come from
+having put the whole sequence in front of the network at once, as though it were a point in
+$\mathbb{R}^{d_0}$ with a great many coordinates, and neither can be fixed from inside that idea:
+not with more neurons, not with more steps, and not with a larger $T_{\max}$, which makes both
+worse.
+
+What's needed is a network in which position 5 multiplies by *the same* weights as position 3, so
+that adjusting them with one occurrence leaves them adjusted for all of them. That forces two things
+at once: reading the sequence one position at a time instead of all in one go, and keeping what has
+already been read somewhere (because if the matrix is the same at every position, the order can't be
+stored in it). That's <Leccion slug="la-rnn-vanilla">the next lesson, on the simplest recurrent
+neural network (RNN) there is</Leccion>: a single matrix applied $T$ times, a state that passes from
+one step to the next, and an input that no longer has to measure the same in every document.
