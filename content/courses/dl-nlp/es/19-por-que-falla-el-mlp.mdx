@@ -25,7 +25,7 @@ quiz:
       - { id: c, text: 'Que la tangente hiperbólica se satura con entradas one-hot, de modo que el gradiente se apaga antes de llegar a la primera capa.' }
       - { id: d, text: 'Que el conjunto de prueba está desequilibrado y la mitad de sus ejemplos no tiene la etiqueta que le corresponde.' }
     answer: a
-    explanation: 'La (a) es lo que imprime la última parte de la celda: la columna de <W>no</W> se mueve unas $2.4$ unidades en los bloques 1 a 4 y exactamente $0.000000$ en los bloques 5 y 6. No es que se mueva poco, es que el gradiente que la mueve es el vector nulo en todos los ejemplos, y ningún método de optimización corrige un peso con un cero. La (b) va contra el dato —el acierto de entrenamiento es $1.000$, así que datos hay de sobra para lo que la red sí aprende—; la (c) también, porque esa saturación impediría aprender los bloques 1 a 4 y esos se aprenden; y la (d) es falsa por construcción: la celda asigna la etiqueta $1$ a los ejemplos de índice par, ciento cincuenta de trescientos.'
+    explanation: 'La (a) es lo que imprime la última parte de la celda: la columna de <W>no</W> se mueve unas $2.4$ unidades en los bloques 1 a 4 y exactamente $0.000000$ en los bloques 5 y 6. No es que se mueva poco, es que el gradiente que la mueve es el vector nulo en todos los ejemplos, y ningún método de optimización corrige un peso con un cero. La (b) va contra el dato (el acierto de entrenamiento es $1.000$, así que datos hay de sobra para lo que la red sí aprende); la (c) también, porque esa saturación impediría aprender los bloques 1 a 4 y esos se aprenden; y la (d) es falsa por construcción: la celda asigna la etiqueta $1$ a los ejemplos de índice par, ciento cincuenta de trescientos.'
   - id: q-longitud-fija
     type: multi
     prompt: 'Marca todo lo que sea cierto de un MLP que recibe la concatenación de $T_{\max}$ posiciones.'
@@ -35,12 +35,12 @@ quiz:
       - { id: c, text: 'Subir $T_{\max}$ de $30$ a $60$ dobla los pesos de la primera capa y dobla también los ejemplos con los que se ajusta cada bloque.' }
       - { id: d, text: 'Dos documentos con los mismos tokens en distinto orden reciben la misma entrada.' }
     answer: [a, b]
-    explanation: 'La (a) sale de la fórmula sin hacer ninguna cuenta: $\boldsymbol{\delta}^{(1)}\mathbf{0}^{\top}$ es la matriz nula, valga lo que valga el error de la capa. La (b) es la diferencia con el problema OOV del bloque 1: allí caían los tipos raros, aquí cae lo que esté después de la posición $T_{\max}$, y eso no tiene nada que ver con la frecuencia. La (c) es la trampa de la lección: el corpus tiene los ejemplos que tiene, así que doblar las posiciones reparte los mismos ejemplos entre el doble de bloques —los pesos se doblan, la experiencia por bloque se parte—. Y la (d) es falsa, y conviene tenerlo claro: concatenar sí distingue el orden. Ése era el defecto que veníamos a corregir, y queda corregido; lo que esta lección mide es el precio.'
+    explanation: 'La (a) sale de la fórmula sin hacer ninguna cuenta: $\boldsymbol{\delta}^{(1)}\mathbf{0}^{\top}$ es la matriz nula, valga lo que valga el error de la capa. La (b) es la diferencia con el problema OOV del bloque 1: allí caían los tipos raros, aquí cae lo que esté después de la posición $T_{\max}$, y eso no tiene nada que ver con la frecuencia. La (c) es la trampa de la lección: el corpus tiene los ejemplos que tiene, así que doblar las posiciones reparte los mismos ejemplos entre el doble de bloques (los pesos se doblan, la experiencia por bloque se parte). Y la (d) es falsa, y conviene tenerlo claro: concatenar sí distingue el orden. Ése era el defecto que veníamos a corregir, y queda corregido; lo que esta lección mide es el precio.'
   - id: q-bolsa-mejor
     type: boolean
     prompt: 'En el experimento de la celda, la bolsa de palabras acierta el examen desplazado y la concatenación no. ¿Autoriza eso a concluir que la bolsa de palabras es la mejor de las dos representaciones?'
     answer: false
-    explanation: 'No, y las dos mitades importan. La bolsa gana ahí porque la tarea inventada para la celda —¿aparece <W>no</W> en algún sitio?— no necesita el orden para nada, y porque sus ocho coordenadas son las mismas se mire la posición que se mire: una sola columna por entrada, ajustada con todas las ocurrencias. Eso es exactamente lo que le falta a la concatenación. Pero la bolsa le da el mismo vector a <W>la actriz salva la película</W> y a <W>la película salva la actriz</W>, que es la razón por la que este bloque existe. Lo que el experimento sí autoriza a decir es más preciso y más útil: compartir los pesos entre posiciones es lo que hace que lo aprendido en una sirva en las demás, y la concatenación lo perdió al ganar el orden.'
+    explanation: 'No, y las dos mitades importan. La bolsa gana ahí porque la tarea inventada para la celda (¿aparece <W>no</W> en algún sitio?) no necesita el orden para nada, y porque sus ocho coordenadas son las mismas se mire la posición que se mire: una sola columna por entrada, ajustada con todas las ocurrencias. Eso es exactamente lo que le falta a la concatenación. Pero la bolsa le da el mismo vector a <W>la actriz salva la película</W> y a <W>la película salva la actriz</W>, que es la razón por la que este bloque existe. Lo que el experimento sí autoriza a decir es más preciso y más útil: compartir los pesos entre posiciones es lo que hace que lo aprendido en una sirva en las demás, y la concatenación lo perdió al ganar el orden.'
 challenges: []
 reading:
   - kind: libro
@@ -63,8 +63,8 @@ orden de los tokens no llegaba a cruzar la puerta. Corregirlo obliga a cambiar l
 la entrada obliga a volver sobre $\mathbf{W}^{(1)}$, que tiene $d_0$ columnas desde el instante en
 que se construye.
 
-La reparación que se le ocurre a cualquiera es ponerlos en fila. Cada token trae su vector —el
-*embedding* de <Leccion slug="embeddings-densos">la lección sobre representaciones densas</Leccion>—, y pegar esos vectores uno
+La reparación que se le ocurre a cualquiera es ponerlos en fila. Cada token trae su vector (el
+*embedding* de <Leccion slug="embeddings-densos">la lección sobre representaciones densas</Leccion>), y pegar esos vectores uno
 detrás de otro deja el orden escrito en el sitio que ocupa cada uno: la posición pasa a ser una
 coordenada, y ninguna suma la borra. La reparación aguanta hasta el segundo texto. <W>la fotografía
 es magnífica</W> trae cuatro vectores y <W>guion flojo</W> trae dos, de modo que producen entradas de
@@ -109,7 +109,7 @@ entrar. Con $\mathbf{x}$ midiendo $T \cdot d_{\text{model}}$ y con $T$ cambiando
 producto $\mathbf{W}^{(1)}\mathbf{x}$ está definido para los documentos de una longitud y no lo está
 para los demás. No es un problema de precisión ni de ajuste: es que la multiplicación no existe.
 
-La salida —la única disponible sin cambiar de arquitectura— es fijar un número de posiciones
+La salida (la única disponible sin cambiar de arquitectura) es fijar un número de posiciones
 $T_{\max}$ y obligar a todos los documentos a medir eso:
 
 $$
@@ -135,8 +135,8 @@ documento de longitud media entra en la red con más de la mitad de su vector a 
 Corta $\mathbf{W}^{(1)}$ por donde ya está cortada la entrada. Sus $d_0 = T_{\max} \cdot d_{\text{model}}$
 columnas se reparten en $T_{\max}$ bloques consecutivos de $d_{\text{model}}$ columnas cada uno,
 $\mathbf{W}^{(1)} = \left[\mathbf{W}^{(1)}_1 \mid \dots \mid \mathbf{W}^{(1)}_{T_{\max}}\right]$ con
-$\mathbf{W}^{(1)}_t \in \mathbb{R}^{d_1 \times d_{\text{model}}}$ —ese subíndice es una posición de
-la secuencia, no una coordenada—, y el producto se parte con ella:
+$\mathbf{W}^{(1)}_t \in \mathbb{R}^{d_1 \times d_{\text{model}}}$ (ese subíndice es una posición de
+la secuencia, no una coordenada), y el producto se parte con ella:
 
 $$
 \mathbf{z}^{(1)} = \mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)} = \sum_{t=1}^{T_{\max}} \mathbf{W}^{(1)}_t\,\mathbf{x}_t + \mathbf{b}^{(1)}.
@@ -169,7 +169,7 @@ La columna $j$ pertenece al bloque $t$ cuando $(t-1) \cdot d_{\text{model}} < j 
 y dentro de ese bloque ocupa la posición $j - (t-1) \cdot d_{\text{model}}$. Como la concatenación define
 $x_j$ como la coordenada $j - (t-1) \cdot d_{\text{model}}$ de $\mathbf{x}_t$, la submatriz formada por
 esas $d_{\text{model}}$ columnas tiene en su casilla $(i, k)$ el número $\delta^{(1)}_i \cdot x_{t,k}$
-—que es, casilla por casilla, $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$—.
+(que es, casilla por casilla, $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$).
 
 El corte funciona porque las dos cosas que se están cortando están cortadas por el mismo sitio: las
 columnas de $\mathbf{W}^{(1)}$ y las coordenadas de $\mathbf{x}$. Y nada más entra en la cuenta:
@@ -217,8 +217,8 @@ entre más bloques, es decir, menos experiencia por parámetro justo cuando hay 
 
 Un experimento pequeño lo pone en números. Las secuencias me las he inventado para el curso: seis
 posiciones, ocho entradas de vocabulario, y la etiqueta vale $1$ cuando aparece <W>no</W> entre
-ellas. La diferencia está en dónde aparece —en el entrenamiento, sólo en las cuatro primeras
-posiciones; en el examen, sólo en las dos últimas—, y esa es la única diferencia entre los dos
+ellas. La diferencia está en dónde aparece (en el entrenamiento, sólo en las cuatro primeras
+posiciones; en el examen, sólo en las dos últimas), y esa es la única diferencia entre los dos
 conjuntos.
 
 Con los mismos datos se entrena dos veces la misma red: una sobre la concatenación de las seis
@@ -290,15 +290,15 @@ ojos son idénticas a las primeras. La tercera línea dice hasta qué punto: el 
 ciento cincuenta positivas es $0.0014$. No está dudando entre las dos respuestas; está segura y
 equivocada.
 
-La segunda línea es la incómoda. La bolsa de palabras —la representación que este bloque ha venido a
-sustituir, la que no distingue un orden de otro— acierta el $1.000$ en el examen desplazado.
+La segunda línea es la incómoda. La bolsa de palabras (la representación que este bloque ha venido a
+sustituir, la que no distingue un orden de otro) acierta el $1.000$ en el examen desplazado.
 Su ventaja es exactamente lo que le falta a la otra: tiene *una* coordenada para <W>no</W>, que
 recoge las ocurrencias de las seis posiciones a la vez, así que un peso ajustado con lo que pasó en
 la posición 2 sirve tal cual cuando <W>no</W> aparece en la 5. Concatenar ganó el orden y perdió eso.
 
 La última salida es la fórmula, verificada. La columna de <W>no</W> se ha movido unas $2.4$
-unidades en los bloques 1 a 4, y $0.000000$ en los bloques 5 y 6 —cero exacto, no cero
-redondeado—, porque su gradiente $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ fue la matriz nula en
+unidades en los bloques 1 a 4, y $0.000000$ en los bloques 5 y 6 (cero exacto, no cero
+redondeado), porque su gradiente $\boldsymbol{\delta}^{(1)}\mathbf{x}_t^{\top}$ fue la matriz nula en
 los seiscientos ejemplos y en los mil quinientos pasos. Cambia la inicialización y la cifra de los
 cuatro primeros bloques cambia; los dos últimos siguen dando cero, y el acierto de prueba sigue
 dando $0.500$.
@@ -329,8 +329,8 @@ pasos, ni con un $T_{\max}$ mayor, que empeora las dos.
 Lo que hace falta es una red en la que la posición 5 multiplique por *los mismos* pesos que la
 posición 3, de manera que ajustarlos con una ocurrencia los deje ajustados para todas. Eso obliga a
 dos cosas a la vez: leer la secuencia una posición cada vez en lugar de toda de golpe, y guardar en
-algún sitio lo ya leído —porque si la matriz es la misma en todas las posiciones, el orden no puede
-estar guardado en ella—. Eso es <Leccion slug="la-rnn-vanilla">la siguiente lección, sobre la red neuronal recurrente
+algún sitio lo ya leído (porque si la matriz es la misma en todas las posiciones, el orden no puede
+estar guardado en ella). Eso es <Leccion slug="la-rnn-vanilla">la siguiente lección, sobre la red neuronal recurrente
 (*recurrent neural network*, RNN) más simple que hay</Leccion>: una sola matriz aplicada $T$ veces, un estado
 que pasa de un paso al siguiente, y una entrada que ya no tiene que medir lo mismo en todos los
 documentos.
