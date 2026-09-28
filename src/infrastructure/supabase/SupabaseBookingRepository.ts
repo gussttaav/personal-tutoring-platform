@@ -9,6 +9,9 @@
 // hasAnyBooking's user lookups, hasBookingForPayment (now a count: a rescheduled paid
 // class leaves two rows per PaymentIntent, which .maybeSingle() errors on) and
 // findByStripePaymentId throw on a read error instead of answering "absent".
+// REFACTOR-R4-P1-03: reinstateBooking — a reschedule's claim compensation, restoring the
+// original row with its original (recomputed) tokens; findByCancelToken also returns
+// credit_pack_id and stripe_payment_id so a reschedule can carry them over.
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
@@ -73,7 +76,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, user_id")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id")
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .maybeSingle();
@@ -112,6 +115,8 @@ export class SupabaseBookingRepository implements IBookingRepository {
       endsAt:      booking.ends_at,
       used:        false,
       packSize,
+      creditPackId:    booking.credit_pack_id    ?? undefined,
+      stripePaymentId: booking.stripe_payment_id ?? undefined,
     };
   }
 
@@ -159,6 +164,29 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .select("id")
       .maybeSingle();
 
+    if (error) throw error;
+    return data !== null;
+  }
+
+  // REFACTOR-R4-P1-03: undo a reschedule's claim. The tokens are recomputed exactly as
+  // createBooking signed them, so the links in the original confirmation email work again.
+  async reinstateBooking(record: BookingRecord): Promise<boolean> {
+    const startsAt      = new Date(record.startsAt).toISOString(); // TIMESTAMPTZ gotcha
+    const cancelPayload = `${record.eventId}:${record.email}:${startsAt}`;
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({
+        status:       "confirmed",
+        cancel_token: signToken(cancelPayload),
+        join_token:   signToken(`join:${cancelPayload}`),
+      })
+      .eq("calendar_event_id", record.eventId)
+      .eq("status", "cancelled")
+      .select("id")
+      .maybeSingle();
+
+    if (error?.code === "23P01") return false; // exclusion_violation: the slot was re-taken
     if (error) throw error;
     return data !== null;
   }

@@ -5,6 +5,8 @@
 // REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap.
 // REFACTOR-R4-P1-02: listByUser, hasAnyBooking, hasBookingForPayment and findByStripePaymentId
 // throw on a read error; `false` / `null` / `[]` means KNOWN absent.
+// REFACTOR-R4-P1-03: reinstateBooking (a reschedule's claim compensation); findByCancelToken
+// returns creditPackId + stripePaymentId so a reschedule carries them to the new booking.
 import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
 
 export interface IBookingRepository {
@@ -20,6 +22,8 @@ export interface IBookingRepository {
   /**
    * Looks up a booking by its cancel token. Returns null if the token is not
    * found, has expired, or has already been consumed by a prior cancellation.
+   * REFACTOR-R4-P1-03: the record carries `creditPackId` and `stripePaymentId` when the
+   * row has them, so a reschedule can move the pack link / payment to the new booking.
    */
   findByCancelToken(token: string): Promise<BookingRecord | null>;
 
@@ -42,6 +46,15 @@ export interface IBookingRepository {
    * must treat false as "cancellation already in progress — do nothing".
    */
   consumeCancelToken(token: string): Promise<boolean>;
+
+  /**
+   * REFACTOR-R4-P1-03: undo a reschedule's claim. Flips the row identified by `eventId`
+   * from 'cancelled' back to 'confirmed' and restores its ORIGINAL cancel/join tokens
+   * (they are HMACs of eventId:email:startsAt, so they can be recomputed). Returns false
+   * if the row is not in 'cancelled' — or if the exclusion constraint now rejects it
+   * because another booking took the slot in the meantime.
+   */
+  reinstateBooking(record: BookingRecord): Promise<boolean>;
 
   /**
    * Returns all active (non-cancelled, future) bookings for a user, ordered by

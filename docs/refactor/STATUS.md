@@ -17,14 +17,14 @@ Landing order: P1-02 → P1-01 → P1-03 → P1-04.
 |------|-----|-----|--------|-------|----|
 | [02 Idempotency + eligibility reads fail closed](phase-1-correctness/02-idempotency-reads-fail-closed.md) | `REFACTOR-R4-P1-02` | 🟠 | ✅ | Claude | local (`claude/idempotency-reads-fail-closed-da990f`) — see Deviations; build + e2e not run |
 | [01 Server-side slot validation + `/api/book` rate limit](phase-1-correctness/01-server-side-slot-validation.md) | `REFACTOR-R4-P1-01` | 🔴 | ✅ (trimmed) | Claude | local (`refactorization`) — Calendar checks dropped at Gustavo's request, see Deviations; e2e pending |
-| [03 Reschedule keeps the original booking until the new one commits](phase-1-correctness/03-reschedule-keeps-original.md) | `REFACTOR-R4-P1-03` | 🟠 | ⬜ | _tbd_ | |
+| [03 Reschedule keeps the original booking until the new one commits](phase-1-correctness/03-reschedule-keeps-original.md) | `REFACTOR-R4-P1-03` | 🟠 | ✅ | Claude | local (`claude/reschedule-keeps-original-f9db78`) — teardown moved after the emails, see Deviations; build + e2e not run |
 | [04 Atomic cancel, credit back to the originating pack](phase-1-correctness/04-atomic-cancel-restore-pack.md) | `REFACTOR-R4-P1-04` | 🟡 | ⬜ | _tbd_ | |
 
 **Exit criteria**
 - [x] `POST /api/book` with an off-hours start ~~, a busy slot,~~ or `endIso − startIso` ≠ the session type's length → 4xx, no calendar event, no credit spent _(P1-01; service + integration + route tests. "Busy slot" dropped with the trimmed scope)_
 - [x] Paid checkout for a mismatched duration → 4xx before any PaymentIntent exists; the webhook books `startIso + duration`, never the metadata `end_iso` _(P1-01; service + integration + route tests)_
 - [x] Forced Supabase error in any idempotency read during a duplicate webhook → 500 (Stripe retries), no refund, no second booking _(P1-02; mocked-client repository test + in-memory PaymentService tests)_
-- [ ] Forced failure after the reschedule's old-token claim → the original booking is `confirmed` again with a working cancel link
+- [x] Forced failure after the reschedule's old-token claim → the original booking is `confirmed` again with a working cancel link _(P1-03; service (mock) + integration (in-memory: calendar, booking insert, Zoom session insert) + DB-gated `reinstateBooking` tests; e2e not run)_
 - [ ] Cancelling a pack class returns the credit to `bookings.credit_pack_id`'s pack in the same transaction; `creditsRestored` is false whenever nothing was restored
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build` green; `pnpm test:e2e` booking/cancel/reschedule specs green (re-run once for known flakes)
 
@@ -146,9 +146,52 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   Playwright would have reused (testing the wrong code). The reschedule/cancellation specs were
   changed (seed from `/api/availability`, fail instead of skip) but are unverified.
 
+- **P1-03 — teardown runs after step 9 (emails), not at the task's "8b".** Step 9 starts with
+  `users.getLocale()`, a DB read that can throw and trigger compensation. Had the original
+  already been torn down, the reinstate would bring back a `confirmed` row whose calendar
+  event, Zoom session and pending termination were gone. After step 9 nothing can throw
+  (`sendWithRetry` swallows), so the teardown is now step 10, right before `return`.
+- **P1-03 — fixture fix: `InMemoryBookingRepository.findByStripePaymentId`** returned `null` on
+  the first *cancelled* row carrying the PaymentIntent instead of skipping it (the Supabase impl
+  filters `status = 'confirmed'`). With a rescheduled paid class the cancelled original comes
+  first, so the fake hid the new booking; it now `continue`s.
+- **P1-03 — fixture additions.** `InMemoryBookingRepository` remembers each consumed token pair
+  per eventId (standing in for the recomputed HMACs), so `reinstateBooking` restores the
+  ORIGINAL tokens; `createBookingShouldFail` simulates the insert failing. It does not model the
+  exclusion constraint: the reinstate-returns-`false` path is covered by the mock-based service
+  test and the DB-gated repository test (a second confirmed booking on the freed slot → `23P01`).
+  The Zoom-session-insert failure in the integration suite uses `jest.spyOn` on the in-memory
+  session repo rather than a new flag.
+- **P1-03 — `BookingService.test.ts` now mocks `@/lib/logger`** (file-wide) to assert the
+  "manual intervention" error log on a failed reinstate.
+- **P1-03 — tests beyond the plan.** Mock suite: the new booking is cancelled *before* the
+  reinstate (reverse compensation order — needed for an overlapping original to come back);
+  teardown calls come after the Zoom session insert; a failing teardown step does not fail the
+  reschedule; a claim that never happened (`RESCHEDULE_TOKEN_CONSUMED`) reinstates nothing; a
+  failed pack reschedule touches no credits. DB-gated: `reinstateBooking` on a non-cancelled row
+  → `false`; `findByCancelToken` returns `stripePaymentId`. (`creditPackId` is not DB-tested — it
+  needs a `credit_packs` row for the FK; the in-memory integration test covers the transfer.)
+- **P1-03 — legacy pack bookings.** A pack class booked before BOOKING-PACKLINK-01 has a null
+  `credit_pack_id`; rescheduling it now carries the null over (the old restore + decrement
+  re-linked it to whichever pack `decrement_credit` picked). Only affects display of `packSize`
+  for such rows, and only if any are still upcoming.
+- **P1-03 — checks.** `pnpm test` 157/157 suites, 2052 tests (DB-gated suites ran against the test
+  DB: `SupabaseBookingRepository.test.ts` 19/19, none skipped). `pnpm lint` 0 errors (8
+  pre-existing warnings, none in touched files). `tsc --noEmit`: only the pre-existing
+  `mdx.test.ts` (`RepoLink`) error. `pnpm build` NOT run.
+- **P1-03 — `pnpm test:e2e` NOT run.** `:3000` is held by the main checkout's dev server, and
+  `.env.e2e.local` points at the SAME Supabase project and Google calendar as `.env.local` —
+  `resetTestState` truncates every table there and clears the calendar's future events, i.e.
+  the data that dev server is using. Left for Gustavo to run once `:3000` is free
+  (`reschedule.spec.ts`, plus `cancellation.spec.ts` and the booking specs for the phase exit).
+
 ## Known regressions introduced
 
 - **P1-02 — cancelling a pack class during a Supabase read error now answers 500 after the
   cancel token is consumed** (`restoreCredit`'s user lookup throws instead of silently reporting
   "no pack"). Expected per the task's gotchas: the booking is cancelled either way, and the old
   behaviour lost the credit without telling anyone. Closes with **P1-04** (atomic cancel).
+- **P1-03 — a rescheduled paid class shows its price twice in booking history.** The cancelled
+  original and the new booking now share the PaymentIntent, and `deriveAmount`
+  (`booking-history.ts`) resolves it for both rows regardless of status. Accepted in the task's
+  gotchas (pack reschedules already behaved like this); deduplication is out of scope.

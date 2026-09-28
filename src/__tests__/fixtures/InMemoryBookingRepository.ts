@@ -2,6 +2,9 @@
 // REFACTOR-R4-P1-01: hasActiveFreeSession.
 // REFACTOR-R4-P1-02: per-read `*ShouldFail` flags (FakeCalendarClient style) simulate a
 // DB read error, so tests can assert the callers fail closed.
+// REFACTOR-R4-P1-03: reinstateBooking. Consumed tokens are remembered per eventId, standing in
+// for the Supabase impl recomputing its deterministic HMACs; `createBookingShouldFail`
+// simulates the insert failing (e.g. the exclusion constraint).
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type {
   BookingHistoryEntry,
@@ -24,10 +27,14 @@ export class InMemoryBookingRepository implements IBookingRepository {
   // REFACTOR-R4-P1-02
   listByUserShouldFail           = false;
   hasBookingForPaymentShouldFail = false;
+  // REFACTOR-R4-P1-03
+  createBookingShouldFail        = false;
+  private consumedTokens       = new Map<string, { cancelToken: string; joinToken: string }>(); // eventId → original tokens
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
   ): Promise<{ cancelToken: string; joinToken: string }> {
+    if (this.createBookingShouldFail) throw new Error("InMemoryBookingRepository: simulated insert failure");
     const cancelToken = randomUUID();
     const joinToken   = randomUUID();
     const full: BookingRecord = { ...record, used: false };
@@ -58,7 +65,22 @@ export class InMemoryBookingRepository implements IBookingRepository {
     const entry = this.cancelTokens.get(token);
     if (!entry) return false;
     this.cancelTokens.delete(token);
+    this.consumedTokens.set(entry.record.eventId, { cancelToken: token, joinToken: entry.joinToken });
     this.statuses.set(entry.record.eventId, "cancelled");
+    return true;
+  }
+
+  // REFACTOR-R4-P1-03: mirrors the Supabase impl — only a 'cancelled' row comes back, and
+  // it comes back with its ORIGINAL tokens. (No overlap model: the exclusion-constraint
+  // `false` is covered by the mock-based service tests and the DB-gated repository test.)
+  async reinstateBooking(record: BookingRecord): Promise<boolean> {
+    if ((this.statuses.get(record.eventId) ?? "confirmed") !== "cancelled") return false;
+    const tokens = this.consumedTokens.get(record.eventId);
+    const stored = this.bookings.get(record.eventId);
+    if (!tokens || !stored) return false;
+    this.consumedTokens.delete(record.eventId);
+    this.cancelTokens.set(tokens.cancelToken, { joinToken: tokens.joinToken, record: stored });
+    this.statuses.set(record.eventId, "confirmed");
     return true;
   }
 
@@ -174,13 +196,15 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   // SINGLE-SESSION-CONFIRM-01: confirmed-only detail finder (mirrors the status='confirmed'
-  // scope of the Supabase impl — a cancelled row never matches).
+  // scope of the Supabase impl — a cancelled row never matches). REFACTOR-R4-P1-03: a
+  // cancelled row is skipped, not an answer — a rescheduled paid class leaves the cancelled
+  // original and the confirmed new booking sharing the PaymentIntent.
   async findByStripePaymentId(
     stripePaymentId: string,
   ): Promise<SingleSessionBookingDetail | null> {
     for (const [eventId, record] of this.bookings) {
       if (record.stripePaymentId !== stripePaymentId) continue;
-      if ((this.statuses.get(eventId) ?? "confirmed") !== "confirmed") return null;
+      if ((this.statuses.get(eventId) ?? "confirmed") !== "confirmed") continue;
       const joinToken = this.findJoinTokenForEvent(eventId);
       if (!joinToken) return null;
       return {

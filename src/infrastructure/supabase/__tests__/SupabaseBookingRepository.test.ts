@@ -1,6 +1,8 @@
 // DB-02: Integration tests for SupabaseBookingRepository.
 // REFACTOR-R4-P1-01: hasActiveFreeSession.
 // REFACTOR-R4-P1-02: hasBookingForPayment with two rows (one cancelled) for one PaymentIntent.
+// REFACTOR-R4-P1-03: reinstateBooking (original tokens back; false on a re-taken slot) and
+// findByCancelToken returning stripePaymentId.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
@@ -184,6 +186,62 @@ describeDb("SupabaseBookingRepository", () => {
     expect(await repo.hasBookingForPayment(`${stripePaymentId}_none`)).toBe(false);
 
     await cleanup(original.email);
+  });
+
+  // REFACTOR-R4-P1-03: a reschedule's claim compensation.
+  it("reinstateBooking brings a consumed booking back with its ORIGINAL tokens", async () => {
+    const record = baseRecord();
+    const { cancelToken, joinToken } = await repo.createBooking(record);
+    const claimed = await repo.findByCancelToken(cancelToken);
+    expect(claimed).not.toBeNull();
+
+    await repo.consumeCancelToken(cancelToken);
+    expect(await repo.findByCancelToken(cancelToken)).toBeNull();
+
+    // `claimed.startsAt` is the normalized toISOString() form — the token recomputes exactly.
+    expect(await repo.reinstateBooking(claimed!)).toBe(true);
+    expect(await repo.findByCancelToken(cancelToken)).toMatchObject({ eventId: record.eventId });
+    expect(await repo.findByJoinToken(joinToken)).toMatchObject({ eventId: record.eventId });
+    expect((await repo.findByEventId(record.eventId))?.status).toBe("confirmed");
+
+    await cleanup(record.email);
+  });
+
+  it("reinstateBooking returns false for a booking that is not cancelled", async () => {
+    const record = baseRecord();
+    const { cancelToken } = await repo.createBooking(record);
+    const found = await repo.findByCancelToken(cancelToken);
+
+    expect(await repo.reinstateBooking(found!)).toBe(false);
+
+    await cleanup(record.email);
+  });
+
+  it("reinstateBooking returns false when another confirmed booking took the slot", async () => {
+    const original = baseRecord();
+    const { cancelToken } = await repo.createBooking(original);
+    const claimed = await repo.findByCancelToken(cancelToken);
+    await repo.consumeCancelToken(cancelToken);
+
+    // Someone else books the freed slot; bookings_no_overlap now rejects the reinstate (23P01).
+    const taker = { ...baseRecord(), startsAt: original.startsAt, endsAt: original.endsAt };
+    await repo.createBooking(taker);
+
+    expect(await repo.reinstateBooking(claimed!)).toBe(false);
+    expect((await repo.findByEventId(original.eventId))?.status).toBe("cancelled");
+
+    await cleanup(original.email);
+    await cleanup(taker.email);
+  });
+
+  it("findByCancelToken returns the booking's stripePaymentId", async () => {
+    const stripePaymentId = `pi_test_${Date.now()}_${recordSeq}_fct`;
+    const record = { ...baseRecord(), stripePaymentId };
+    const { cancelToken } = await repo.createBooking(record);
+
+    expect(await repo.findByCancelToken(cancelToken)).toMatchObject({ stripePaymentId });
+
+    await cleanup(record.email);
   });
 
   it("acquireSlotLock returns true then false for same slot", async () => {

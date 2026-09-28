@@ -22,11 +22,18 @@
 //
 // REFACTOR-R4-P1-02: hasBookingForPayment — status-agnostic delegate backing the
 // PaymentService webhook's "already fulfilled" gate.
+//
+// REFACTOR-R4-P1-03: a reschedule CLAIMS the original booking first (so the exclusion
+// constraint lets an overlapping new slot in) but tears it down only AFTER the new
+// booking commits. Until then the claim has a real compensation: reinstate the row with
+// its original tokens, so a failed reschedule leaves the student their class and a
+// working link to retry with. A pack reschedule moves the original's credit (pack link)
+// to the new booking instead of restore + decrement; a paid one carries its PaymentIntent.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { BookingHistoryPage, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
+import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
@@ -203,9 +210,11 @@ export class BookingService {
     };
 
     try {
-      // 3. Reschedule flow
+      // 3. Reschedule flow — CLAIM the original booking. REFACTOR-R4-P1-03: nothing of
+      //    it is deleted here; that waits for the new booking to commit (step 10).
+      let oldRecord: BookingRecord | null = null;
       if (input.rescheduleToken) {
-        const oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
+        oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
 
         if (!oldRecord) {
           throw new DomainError(
@@ -237,32 +246,30 @@ export class BookingService {
           );
         }
 
-        // Reschedule rollback is partial by design — see task doc §Notable design decisions.
+        // REFACTOR-R4-P1-03: the claim's compensation. The original's calendar event, Zoom
+        // session and pending termination are all still there, so flipping the row back
+        // (original tokens included) is a complete undo. It can fail if another booking
+        // took the slot meanwhile — compensate() then logs it for manual intervention.
+        const claimed = oldRecord;
         compensations.push({
-          description: "restore old cancel token",
-          run: async () => { /* partial: reschedule rollback is best-effort only */ },
+          description: `reinstate original booking ${claimed.eventId}`,
+          run: async () => {
+            if (!(await this.bookings.reinstateBooking(claimed))) {
+              throw new Error("original booking could not be reinstated (slot re-taken?)");
+            }
+          },
         });
-
-        try { await this.calendar.deleteEvent(oldRecord.eventId); } catch {}
-        try { await this.sessions.deleteByEventId(oldRecord.eventId); } catch {}
-        // Drop the old eventId's pending_terminations row so the cleanup cron
-        // doesn't later see an orphan and mark the (now-cancelled) booking no_show.
-        try { await this.bookings.deletePendingTermination(oldRecord.eventId); } catch (err) {
-          log("warn", "Could not delete pending_terminations row on reschedule", {
-            service: "BookingService", eventId: oldRecord.eventId, error: String(err),
-          });
-        }
-        await invalidateAvailability(oldRecord.startsAt.slice(0, 10)).catch(() => {});
-
-        if (oldRecord.sessionType === "pack") {
-          await this.credits.restoreCredit(input.email);
-        }
       }
 
       // 4. Credit decrement for pack sessions
       let packSizeForToken: number | undefined;
       let creditPackId: string | undefined;
-      if (input.sessionType === "pack") {
+      if (input.sessionType === "pack" && oldRecord) {
+        // REFACTOR-R4-P1-03: a pack RESCHEDULE moves the original's credit to the new
+        // booking — no decrement, no restore, balance unchanged.
+        packSizeForToken = oldRecord.packSize;
+        creditPackId     = oldRecord.creditPackId;
+      } else if (input.sessionType === "pack") {
         // REFACTOR-P3-03: useCredit now returns the decremented pack's size, so
         // we no longer need a separate getBalance roundtrip.
         // BOOKING-PACKLINK-01: it also returns the pack id, which we persist on the
@@ -300,6 +307,9 @@ export class BookingService {
 
       // 6. Booking record — moved BEFORE QStash so the booking row exists if QStash
       //    scheduling fails; P1-04's fallback cron can then find and terminate it.
+      //    REFACTOR-R4-P1-03: a rescheduled paid class keeps its PaymentIntent (the
+      //    request carries none), so history and the mobile poll find the new booking.
+      const stripePaymentId = input.stripePaymentId ?? oldRecord?.stripePaymentId;
       const { cancelToken, joinToken } = await this.bookings.createBooking({
         eventId:     calResult.eventId,
         email:       input.email,
@@ -309,7 +319,7 @@ export class BookingService {
         endsAt:      input.endIso,
         ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
         ...(creditPackId        !== undefined ? { creditPackId:    creditPackId        } : {}),
-        ...(input.stripePaymentId             ? { stripePaymentId: input.stripePaymentId } : {}),
+        ...(stripePaymentId                   ? { stripePaymentId                      } : {}),
       });
       compensations.push({
         description: `cancel booking ${cancelToken.slice(0, 8)}…`,
@@ -385,6 +395,13 @@ export class BookingService {
           "notification email",
         ),
       ]);
+
+      // 10. REFACTOR-R4-P1-03: tear the original down only now — the new booking and its
+      //     Zoom session exist and nothing below can throw, so the claim's compensation
+      //     can no longer run against an original that is half gone.
+      if (oldRecord) {
+        await this.teardownRescheduledOriginal(oldRecord);
+      }
 
       return {
         eventId:         calResult.eventId,
@@ -564,6 +581,28 @@ export class BookingService {
   // Thin delegate — see IBookingRepository.hasBookingForPayment.
   async hasBookingForPayment(paymentIntentId: string): Promise<boolean> {
     return this.bookings.hasBookingForPayment(paymentIntentId);
+  }
+
+  // REFACTOR-R4-P1-03: best-effort by design — once the new booking exists we never roll
+  // it back because the old event could not be deleted; a stray calendar event is the
+  // lesser failure. Logs, never throws. The pending_terminations row goes so the cleanup
+  // cron doesn't later see an orphan and mark the (now-cancelled) booking no_show.
+  private async teardownRescheduledOriginal(old: BookingRecord): Promise<void> {
+    const steps: [string, () => Promise<void>][] = [
+      ["calendar event",      () => this.calendar.deleteEvent(old.eventId)],
+      ["zoom session",        () => this.sessions.deleteByEventId(old.eventId)],
+      ["pending termination", () => this.bookings.deletePendingTermination(old.eventId)],
+    ];
+    for (const [what, run] of steps) {
+      try {
+        await run();
+      } catch (err) {
+        log("warn", `Reschedule: could not delete original ${what}`, {
+          service: "BookingService", eventId: old.eventId, error: String(err),
+        });
+      }
+    }
+    await invalidateAvailability(old.startsAt.slice(0, 10)).catch(() => {});
   }
 
   private async sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {

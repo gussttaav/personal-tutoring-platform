@@ -2,6 +2,9 @@
 // REFACTOR-R4-P1-01: inputs are aligned, correctly-sized slots (fixtures/slots) on an
 // all-day schedule, since createBooking now validates the window; checkSlot + the
 // free-call cap have their own suites below.
+// REFACTOR-R4-P1-03: the logger is mocked so the reschedule suite can assert that a
+// failed claim compensation is logged for manual intervention.
+jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
@@ -26,6 +29,7 @@ import {
 } from "@/domain/errors";
 import type { BookingRecord, WeeklyHours } from "@/domain/types";
 import { alignedSlot, allDaySchedule } from "@/__tests__/fixtures/slots";
+import { log } from "@/lib/logger";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
@@ -34,6 +38,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   findByCancelToken:          jest.fn().mockResolvedValue(null),
   findByJoinToken:            jest.fn().mockResolvedValue(null),
   consumeCancelToken:         jest.fn().mockResolvedValue(true),
+  reinstateBooking:           jest.fn().mockResolvedValue(true),
   listByUser:                 jest.fn().mockResolvedValue([]),
   listHistoryByUser:          jest.fn().mockResolvedValue({ entries: [], nextCursor: null }),
   hasAnyBooking:              jest.fn().mockResolvedValue(false),
@@ -449,6 +454,190 @@ describe("BookingService.createBooking (reschedule)", () => {
     const notifyCall  = email.sendNewBookingNotification.mock.calls[0]?.[0];
     expect(confirmCall?.sessionLabel).toBe("Pack class");
     expect(notifyCall?.sessionLabel).toBe("Clase de pack");
+  });
+});
+
+// ─── REFACTOR-R4-P1-03: reschedule keeps the original until the new one commits ──
+
+describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one commits", () => {
+  const oldPack = () => baseCancelRecord({
+    eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5),
+    packSize: 10, creditPackId: "pack-orig",
+  });
+
+  /** Asserts nothing of the original was deleted — its event, Zoom session and pending termination. */
+  const expectOriginalUntouched = (
+    calendar: jest.Mocked<ICalendarClient>,
+    sessions: jest.Mocked<ISessionRepository>,
+    bookings: jest.Mocked<IBookingRepository>,
+  ) => {
+    expect(calendar.deleteEvent).not.toHaveBeenCalledWith("old-evt");
+    expect(sessions.deleteByEventId).not.toHaveBeenCalledWith("old-evt");
+    expect(bookings.deletePendingTermination).not.toHaveBeenCalledWith("old-evt");
+  };
+
+  it("a calendar failure after the claim reinstates the original and deletes none of it", async () => {
+    const bookings = mockBookings();
+    const original = oldPack();
+    bookings.findByCancelToken.mockResolvedValue(original);
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("Calendar down");
+
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
+    expect(bookings.reinstateBooking).toHaveBeenCalledWith(original);
+    expectOriginalUntouched(calendar, sessions, bookings);
+  });
+
+  it("a booking-insert failure (e.g. the exclusion constraint) reinstates the original; the new event is deleted", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    bookings.createBooking.mockRejectedValue(Object.assign(new Error("conflicting key value"), { code: "23P01" }));
+    const calendar = mockCalendar();
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("conflicting key value");
+
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+    expect(bookings.reinstateBooking).toHaveBeenCalledTimes(1);
+    expectOriginalUntouched(calendar, sessions, bookings);
+  });
+
+  it("a Zoom-session insert failure cancels the new booking, then reinstates the original", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const calendar = mockCalendar();
+    const sessions = mockSessions();
+    sessions.createSession.mockRejectedValue(new Error("zoom_sessions insert failed"));
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("zoom_sessions insert failed");
+
+    // The new booking is cancelled BEFORE the reinstate (compensations run in reverse),
+    // so an overlapping original can come back without tripping the exclusion constraint.
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("ctkn");
+    const cancelNew = bookings.consumeCancelToken.mock.invocationCallOrder[1]!;
+    expect(cancelNew).toBeLessThan(bookings.reinstateBooking.mock.invocationCallOrder[0]!);
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+    expectOriginalUntouched(calendar, sessions, bookings);
+  });
+
+  it("tears the original down only after the new booking and its Zoom session exist", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const calendar = mockCalendar();
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    const zoomCreated = sessions.createSession.mock.invocationCallOrder[0]!;
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("old-evt");
+    expect(calendar.deleteEvent.mock.invocationCallOrder[0]!).toBeGreaterThan(zoomCreated);
+    expect(sessions.deleteByEventId.mock.invocationCallOrder[0]!).toBeGreaterThan(zoomCreated);
+    expect(bookings.deletePendingTermination.mock.invocationCallOrder[0]!).toBeGreaterThan(zoomCreated);
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+  });
+
+  it("a failed teardown step does not fail the reschedule (best-effort, logged)", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const calendar = mockCalendar();
+    calendar.deleteEvent.mockRejectedValue(new Error("Calendar delete failed"));
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .resolves.toMatchObject({ eventId: "evt1" });
+
+    // The remaining steps still ran, and the new booking was not rolled back.
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("old-evt");
+    expect(bookings.deletePendingTermination).toHaveBeenCalledWith("old-evt");
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalledWith("ctkn");
+  });
+
+  it("a rejection before the claim has nothing to reinstate", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    bookings.consumeCancelToken.mockResolvedValue(false); // a concurrent reschedule won
+    const service  = makeService({ bookings });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toMatchObject({ code: "RESCHEDULE_TOKEN_CONSUMED" });
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+  });
+
+  it("a pack reschedule moves the original's credit: no decrement, no restore", async () => {
+    const bookings    = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const creditsRepo = mockCreditsRepo();
+    const service     = makeService({ bookings, credits: makeCreditService(creditsRepo) });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ creditPackId: "pack-orig", packSize: 10 }),
+    );
+  });
+
+  it("a failed pack reschedule does not touch credits either", async () => {
+    const bookings    = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const service     = makeService({ bookings, calendar, credits: makeCreditService(creditsRepo) });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" })).rejects.toThrow();
+
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
+  });
+
+  it("a paid reschedule carries the original's PaymentIntent to the new booking", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "session1h", startsAt: hoursFromNow(5), stripePaymentId: "pi_orig",
+    }));
+    const service  = makeService({ bookings });
+
+    await service.createBooking({
+      email: "student@test.com", name: "Student",
+      ...alignedSlot("session1h", 10), sessionType: "session1h", rescheduleToken: "tkn",
+    });
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ stripePaymentId: "pi_orig" }),
+    );
+  });
+
+  it("logs a failed reinstate for manual intervention and still throws the original error", async () => {
+    (log as jest.Mock).mockClear();
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    bookings.reinstateBooking.mockResolvedValue(false); // the slot was re-taken meanwhile
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("Calendar down");
+
+    expect(log).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("manual intervention"),
+      expect.objectContaining({ step: expect.stringContaining("old-evt") }),
+    );
   });
 });
 
