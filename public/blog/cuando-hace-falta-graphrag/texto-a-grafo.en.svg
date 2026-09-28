@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 276" width="750" height="276" role="img"
+ aria-label="Top, the text of ticket 5120, from 25 September: Ortega Hardware Ltd., Team plan; since the upgrade to 3.2, their credit notes export to PDF with the wrong VAT total; if it is not fixed before the quarter closes, they will cancel. A language model reads it and extracts five triples: ticket 5120 opened by Ortega Hardware Ltd.; Ortega Hardware Ltd. has the Team plan; ticket 5120 affects version 3.2; version 3.2 breaks credit notes to PDF; Ortega Hardware Ltd. threatens to cancel. On the right, the graph: ticket 4812, already there, hangs from a node called Ortega Hardware, and 5120 from another node, Ortega Hardware Ltd. Both reach the Team plan, and between them a dashed line asks: the same customer?">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .in { font-size: 10.5px; font-weight: 600; fill: #0e0e10; text-anchor: middle; }
+  .hl { paint-order: stroke; stroke: #131315; stroke-width: 4px; stroke-linejoin: round; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ed { stroke: #3b3b3e; stroke-width: 1.2; }
+  .ed.m { stroke: #4edea3; stroke-width: 1.4; }
+  .ed.x { stroke: #ffb4ab; stroke-dasharray: 3 3; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<rect class="bx g" x="0.0" y="0.0" width="750.0" height="64.0" rx="6"/>
+<text class="hd" x="12.0" y="16.0">TICKET 5120 · 25 SEPTEMBER</text>
+<text class="tx" x="12.0" y="35.0"><tspan class="m">Ortega Hardware Ltd.</tspan> (<tspan class="m">Team plan</tspan>). Since the upgrade to <tspan class="m">3.2</tspan>, their <tspan class="m">credit notes</tspan> export to PDF</text>
+<text class="tx" x="12.0" y="51.0">with the wrong VAT total. If it is not fixed before the quarter closes, they will <tspan class="m">cancel</tspan>.</text>
+<path class="ar" d="M180.0,66.0 L180.0,92.0"/>
+<text class="sb" x="190.0" y="83.0" style="text-anchor:start">a language model reads it and extracts</text>
+<text class="hd" x="0.0" y="110.0">TRIPLES</text>
+<text class="mo" x="0.0" y="132.0">(ticket 5120, opened by, Ortega Hardware Ltd.)</text>
+<text class="mo" x="0.0" y="152.0">(Ortega Hardware Ltd., has, Team plan)</text>
+<text class="mo" x="0.0" y="172.0">(ticket 5120, affects, version 3.2)</text>
+<text class="mo" x="0.0" y="192.0">(version 3.2, breaks, credit notes to PDF)</text>
+<text class="mo" x="0.0" y="212.0">(Ortega Hardware Ltd., threatens, to cancel)</text>
+<text class="hd" x="400.0" y="110.0">THE GRAPH, NEXT TO WHAT WAS THERE</text>
+<line class="ed" x1="500.0" y1="139.0" x2="512.0" y2="139.0"/>
+<line class="ed m" x1="500.0" y1="199.0" x2="512.0" y2="199.0"/>
+<line class="ed" x1="654.0" y1="139.0" x2="672.0" y2="169.0"/>
+<line class="ed m" x1="654.0" y1="199.0" x2="672.0" y2="169.0"/>
+<line class="ed m" x1="450.0" y1="212.0" x2="450.0" y2="246.0"/>
+<line class="ed x" x1="526.0" y1="152.0" x2="526.0" y2="186.0"/>
+<text class="tx x" x="534.0" y="173.0" style="text-anchor:start">the same customer?</text>
+<rect class="bx g" x="400.0" y="126.0" width="100.0" height="26.0" rx="5"/>
+<text class="tx d" x="450.0" y="143.0" style="text-anchor:middle">ticket 4812</text>
+<rect class="bx g" x="512.0" y="126.0" width="142.0" height="26.0" rx="5"/>
+<text class="tx d" x="583.0" y="143.0" style="text-anchor:middle">Ortega Hardware</text>
+<rect class="bx m" x="400.0" y="186.0" width="100.0" height="26.0" rx="5"/>
+<text class="tx m" x="450.0" y="203.0" style="text-anchor:middle">ticket 5120</text>
+<rect class="bx m" x="512.0" y="186.0" width="142.0" height="26.0" rx="5"/>
+<text class="tx m" x="583.0" y="203.0" style="text-anchor:middle">Ortega Hardware Ltd.</text>
+<rect class="bx " x="672.0" y="156.0" width="76.0" height="26.0" rx="5"/>
+<text class="tx" x="710.0" y="173.0" style="text-anchor:middle">Team plan</text>
+<rect class="bx m" x="400.0" y="246.0" width="100.0" height="26.0" rx="5"/>
+<text class="tx m" x="450.0" y="263.0" style="text-anchor:middle">version 3.2</text>
+<rect class="bx g" x="0.0" y="241.0" width="10.0" height="10.0" rx="2"/>
+<text class="tx d" x="15.0" y="250.0" style="text-anchor:start">already there</text>
+<rect class="bx m" x="110.0" y="241.0" width="10.0" height="10.0" rx="2"/>
+<text class="tx d" x="125.0" y="250.0" style="text-anchor:start">new</text>
+</svg>
