@@ -1,6 +1,7 @@
 // TEST-01: Integration tests for the reschedule flow.
 // Verifies that rescheduling atomically replaces a booking and correctly handles
 // credit state for pack vs non-pack sessions.
+// REFACTOR-R4-P1-01: slots come from fixtures/slots (aligned, the right length).
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
@@ -13,8 +14,7 @@ import {
   buildTestCreditService,
   buildTestBookingService,
 } from "../fixtures/services";
-
-const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
+import { alignedSlot } from "../fixtures/slots";
 
 const creditParams = {
   email:           "carol@example.com",
@@ -25,12 +25,17 @@ const creditParams = {
   expiresAt:       new Date(Date.now() + 180 * 24 * 60 * 60_000).toISOString(),
 };
 
-const packInput = (startH = 6, endH = 7) => ({
+const packInput = (hoursAhead = 6) => ({
   email:       "carol@example.com",
   name:        "Carol",
-  startIso:    hoursFromNow(startH),
-  endIso:      hoursFromNow(endH),
+  ...alignedSlot("pack", hoursAhead),
   sessionType: "pack" as const,
+});
+
+const freeInput = (hoursAhead = 6) => ({
+  ...packInput(hoursAhead),
+  ...alignedSlot("free15min", hoursAhead),
+  sessionType: "free15min" as const,
 });
 
 describe("Reschedule flow — pack session", () => {
@@ -41,14 +46,14 @@ describe("Reschedule flow — pack session", () => {
     await credits.addCredits(creditParams);
 
     const service   = buildTestBookingService({ credits, bookings: bookingRepo });
-    const original  = await service.createBooking(packInput(6, 7));
+    const original  = await service.createBooking(packInput(6));
 
     const balanceAfterBooking = await credits.getBalance("carol@example.com");
     expect(balanceAfterBooking?.credits).toBe(4);
 
     // Reschedule to a new slot
     const rescheduled = await service.createBooking({
-      ...packInput(24, 25),
+      ...packInput(24),
       rescheduleToken: original.cancelToken,
     });
 
@@ -73,14 +78,13 @@ describe("Reschedule flow — pack session", () => {
     const bookingRepo = new InMemoryBookingRepository();
     const service     = buildTestBookingService({ credits, bookings: bookingRepo });
 
-    const original = await service.createBooking({ ...packInput(6, 7), sessionType: "free15min" });
+    const original = await service.createBooking(freeInput(6));
 
     const balanceBefore = await credits.getBalance("carol@example.com");
     expect(balanceBefore?.credits).toBe(5); // free sessions don't decrement
 
     await service.createBooking({
-      ...packInput(24, 25),
-      sessionType:     "free15min",
+      ...freeInput(24),
       rescheduleToken: original.cancelToken,
     });
 
@@ -94,7 +98,7 @@ describe("Reschedule flow — error cases", () => {
     const service = buildTestBookingService();
 
     await expect(
-      service.createBooking({ ...packInput(24, 25), rescheduleToken: "bad-token" }),
+      service.createBooking({ ...packInput(24), rescheduleToken: "bad-token" }),
     ).rejects.toMatchObject({ code: "INVALID_RESCHEDULE_TOKEN" });
   });
 
@@ -105,11 +109,11 @@ describe("Reschedule flow — error cases", () => {
 
     const bookingRepo = new InMemoryBookingRepository();
     const service     = buildTestBookingService({ credits, bookings: bookingRepo });
-    const original    = await service.createBooking(packInput(6, 7));
+    const original    = await service.createBooking(packInput(6));
 
     await expect(
       service.createBooking({
-        ...packInput(24, 25),
+        ...packInput(24),
         sessionType:     "session1h", // wrong type
         rescheduleToken: original.cancelToken,
       }),
@@ -123,7 +127,7 @@ describe("Reschedule flow — error cases", () => {
 
     const bookingRepo = new InMemoryBookingRepository();
     const service     = buildTestBookingService({ credits, bookings: bookingRepo });
-    const original    = await service.createBooking(packInput(6, 7));
+    const original    = await service.createBooking(packInput(6));
 
     // Patch the stored record's startsAt to simulate imminent session
     const record = await bookingRepo.findByCancelToken(original.cancelToken);
@@ -132,7 +136,7 @@ describe("Reschedule flow — error cases", () => {
     }
 
     await expect(
-      service.createBooking({ ...packInput(24, 25), rescheduleToken: original.cancelToken }),
+      service.createBooking({ ...packInput(24), rescheduleToken: original.cancelToken }),
     ).rejects.toMatchObject({ code: "OUTSIDE_RESCHEDULE_WINDOW" });
   });
 
@@ -143,14 +147,14 @@ describe("Reschedule flow — error cases", () => {
 
     const bookingRepo = new InMemoryBookingRepository();
     const service     = buildTestBookingService({ credits, bookings: bookingRepo });
-    const original    = await service.createBooking(packInput(6, 7));
+    const original    = await service.createBooking(packInput(6));
 
     // First reschedule succeeds
-    await service.createBooking({ ...packInput(24, 25), rescheduleToken: original.cancelToken });
+    await service.createBooking({ ...packInput(24), rescheduleToken: original.cancelToken });
 
     // Second attempt with the same token is rejected
     await expect(
-      service.createBooking({ ...packInput(36, 37), rescheduleToken: original.cancelToken }),
+      service.createBooking({ ...packInput(36), rescheduleToken: original.cancelToken }),
     ).rejects.toMatchObject({ code: "INVALID_RESCHEDULE_TOKEN" });
   });
 });

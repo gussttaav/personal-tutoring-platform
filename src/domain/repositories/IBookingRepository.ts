@@ -2,6 +2,7 @@
 // ARCH-13: listByUser now returns cancel tokens alongside records; recordRescheduleFailure added.
 // SINGLE-SESSION-CONFIRM-01: findByStripePaymentId detail finder for the polling surface.
 // BOOKING-HISTORY-01: listHistoryByUser — paginated past-bookings read.
+// REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap.
 import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
 
 export interface IBookingRepository {
@@ -71,6 +72,14 @@ export interface IBookingRepository {
    * eligibility.
    */
   hasAnyBooking(email: string): Promise<boolean>;
+
+  /**
+   * REFACTOR-R4-P1-01: true if the user holds a free15min booking that was not
+   * cancelled (confirmed, completed or no_show). Backs the one-free-call-per-user
+   * cap; cancelling the call frees the allowance again. Throws on a DB error — a
+   * failed read must not be taken as "no free call yet".
+   */
+  hasActiveFreeSession(email: string): Promise<boolean>;
 
   /**
    * Looks up a booking by its calendar event id, scoped to the owning user

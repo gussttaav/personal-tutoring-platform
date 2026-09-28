@@ -97,7 +97,7 @@ async reinstateBooking(record: BookingRecord): Promise<boolean> {
 // Until then the claim has a real compensation: reinstate the row with its original tokens.
 let oldRecord: BookingRecord | null = null;
 if (input.rescheduleToken) {
-  oldRecord = /* resolved earlier by P1-01 for ignoreEventId */;
+  oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
   // window + session-type checks (unchanged, :152-166)
   if (!(await this.bookings.consumeCancelToken(input.rescheduleToken))) throw /* RESCHEDULE_TOKEN_CONSUMED */;
   const claimed = oldRecord;
@@ -196,8 +196,9 @@ The `restoreCredit` call at `:193-195` is removed. Pack reschedules no longer to
   (`booking-history.ts:58-80`, status-agnostic). Pack reschedules already behave like this. Accept it
   for now, or skip `cancelled` rows superseded by a reschedule in a follow-up.
 - Depends on P1-02: `hasBookingForPayment` must be count-based before two rows can share a PI.
-- Depends on P1-01: the new slot is validated with `ignoreEventId: oldRecord.eventId`, since the
-  original event now still exists at validation time.
+- ~~Depends on P1-01: the new slot is validated with `ignoreEventId: oldRecord.eventId`~~ — no
+  longer applies: P1-01 was trimmed (2026-09-28) to in-process checks only, with no Calendar read,
+  so the original's still-live event can't collide with the new slot's validation. See STATUS.md.
 
 ## Out of scope
 

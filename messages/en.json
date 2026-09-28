@@ -814,6 +814,8 @@
     "domain": {
       "insufficientCredits": "You don't have enough credits to book this class.",
       "slotUnavailable": "This time slot is no longer available. Please choose another.",
+      "invalidSlot": "That time is not valid for this type of session. Please pick one from the calendar.",
+      "freeSessionAlreadyUsed": "You have already booked your free intro call. To change the time, cancel or reschedule the one you have.",
       "bookingNotFound": "We couldn't find your booking.",
       "tokenExpired": "This link is no longer valid or has expired.",
       "unauthorized": "You don't have permission to perform this action.",

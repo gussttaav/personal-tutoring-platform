@@ -1,4 +1,5 @@
 // DB-02: Integration tests for SupabaseBookingRepository.
+// REFACTOR-R4-P1-01: hasActiveFreeSession.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
@@ -130,6 +131,40 @@ describeDb("SupabaseBookingRepository", () => {
 
     const result = await repo.hasAnyBooking(record.email);
     expect(result).toBe(true);
+
+    await cleanup(record.email);
+  });
+
+  // REFACTOR-R4-P1-01: the free-call cap counts non-cancelled free15min rows only.
+  it("hasActiveFreeSession returns false for unknown user", async () => {
+    const result = await repo.hasActiveFreeSession(`no-one-${Date.now()}@example.com`);
+    expect(result).toBe(false);
+  });
+
+  it("hasActiveFreeSession returns true for a confirmed free15min booking", async () => {
+    const record = { ...baseRecord(), sessionType: "free15min" as const };
+    await repo.createBooking(record);
+
+    expect(await repo.hasActiveFreeSession(record.email)).toBe(true);
+
+    await cleanup(record.email);
+  });
+
+  it("hasActiveFreeSession returns false once the free call is cancelled", async () => {
+    const record = { ...baseRecord(), sessionType: "free15min" as const };
+    const { cancelToken } = await repo.createBooking(record);
+    await repo.consumeCancelToken(cancelToken);
+
+    expect(await repo.hasActiveFreeSession(record.email)).toBe(false);
+
+    await cleanup(record.email);
+  });
+
+  it("hasActiveFreeSession ignores paid bookings", async () => {
+    const record = baseRecord(); // session1h
+    await repo.createBooking(record);
+
+    expect(await repo.hasActiveFreeSession(record.email)).toBe(false);
 
     await cleanup(record.email);
   });

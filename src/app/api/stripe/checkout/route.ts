@@ -8,6 +8,8 @@
  * Applied fixes:
  *   OBS-01: console.* replaced with structured log() calls.
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
+ *   REFACTOR-R4-P1-01: a DomainError (INVALID_SLOT / SLOT_UNAVAILABLE from the slot
+ *     validator) maps to its 4xx via mapDomainErrorToResponse; anything else stays a 500.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -18,6 +20,8 @@ import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
 import { isValidOrigin } from "@/lib/csrf";
 import { paymentService } from "@/services";
+import { DomainError } from "@/domain/errors";
+import { mapDomainErrorToResponse } from "@/lib/http-errors";
 
 export async function POST(req: NextRequest) {
   if (!isValidOrigin(req)) {
@@ -61,6 +65,7 @@ export async function POST(req: NextRequest) {
         });
     return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof DomainError) return mapDomainErrorToResponse(err);
     log("error", "Stripe PaymentIntent creation error", { service: "checkout", email, error: String(err) });
     return NextResponse.json({ error: "Error al crear la sesión de pago" }, { status: 500 });
   }

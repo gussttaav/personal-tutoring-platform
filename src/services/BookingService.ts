@@ -12,6 +12,13 @@
 //
 // REFACTOR-P1-04: pending_terminations is written on every booking; the daily cron at
 // /api/internal/session-cleanup handles actual Zoom session termination.
+//
+// REFACTOR-R4-P1-01: the server decides what is bookable. checkSlot() enforces the
+// session length, the 15-minute grid, min-notice, the booking window and the working
+// blocks — in-process checks only, no network call — and createBooking runs it before
+// any side effect. PaymentService runs it at checkout. Also caps the free 15-minute
+// call at one non-cancelled booking per user. (Trimmed at Gustavo's request: no
+// per-booking Google Calendar read — see docs/refactor/STATUS.md.)
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -22,9 +29,15 @@ import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "./CreditService";
 import { ScheduleService } from "./ScheduleService";
-import { DomainError, SlotUnavailableError } from "@/domain/errors";
+import {
+  DomainError, FreeSessionAlreadyUsedError, InvalidSlotError, SlotUnavailableError,
+} from "@/domain/errors";
 import { log } from "@/lib/logger";
 import { invalidate as invalidateAvailability } from "@/lib/availability-cache";
+import {
+  SESSION_DURATION_MINUTES, SLOT_ALIGNMENT_MINUTES, isWithinBlocks,
+} from "@/lib/booking-config";
+import { toZonedTime } from "date-fns-tz";
 
 // ─── Input / output types ─────────────────────────────────────────────────────
 
@@ -78,6 +91,13 @@ const SESSION_LABELS_EN: Record<SessionType, string> = {
 
 type Compensation = { description: string; run: () => Promise<void> };
 
+/** REFACTOR-R4-P1-01: the window a client asks to book, before the server vouches for it. */
+export interface SlotRequest {
+  startIso:    string;
+  endIso:      string;
+  sessionType: SessionType;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export class BookingService {
@@ -103,18 +123,59 @@ export class BookingService {
     return config.cancelMinNoticeHours * 60 * 60_000;
   }
 
+  // REFACTOR-R4-P1-01: the server decides what is bookable. Returns null when the slot
+  // is bookable, otherwise the error to throw: InvalidSlotError for a window the grid
+  // could never produce (wrong length, off the 15-min grid), SlotUnavailableError for
+  // one it doesn't offer (min-notice, booking window, working blocks). The length check
+  // is what guarantees a booking never outgrows what was paid for: a free call is 15
+  // minutes, a pack credit buys 60. No network call — the schedule config is cached —
+  // and a config read error propagates (fail closed).
+  async checkSlot(slot: SlotRequest): Promise<DomainError | null> {
+    const start = new Date(slot.startIso);
+    const end   = new Date(slot.endIso);
+    const lenMs = SESSION_DURATION_MINUTES[slot.sessionType] * 60_000;
+    if (Number.isNaN(start.getTime()) || end.getTime() - start.getTime() !== lenMs) {
+      return new InvalidSlotError();
+    }
+
+    const config = await this.schedule.getConfig();
+    const zoned  = toZonedTime(start, config.timezone);
+    const minute = zoned.getHours() * 60 + zoned.getMinutes();
+    if (minute % SLOT_ALIGNMENT_MINUTES !== 0 || zoned.getSeconds() !== 0 || zoned.getMilliseconds() !== 0) {
+      return new InvalidSlotError();
+    }
+
+    const now = Date.now();
+    if (start.getTime() < now + config.minNoticeHours * 3_600_000)         return new SlotUnavailableError();
+    if (start.getTime() > now + config.bookingWindowWeeks * 7 * 86_400_000) return new SlotUnavailableError();
+    if (!isWithinBlocks(config.weeklyHours[zoned.getDay()] ?? [], minute, lenMs / 60_000)) {
+      return new SlotUnavailableError();
+    }
+    return null;
+  }
+
+  async assertSlotBookable(slot: SlotRequest): Promise<void> {
+    const err = await this.checkSlot(slot);
+    if (err) throw err;
+  }
+
   async createBooking(input: CreateBookingInput): Promise<CreateBookingOutput> {
-    // 1. Min-notice guard — schedule config is the source of truth.
-    const config      = await this.schedule.getConfig();
-    const startsAt    = new Date(input.startIso);
-    const minBookable = new Date(Date.now() + config.minNoticeHours * 60 * 60_000);
-    if (startsAt < minBookable) throw new SlotUnavailableError();
+    const config = await this.schedule.getConfig(); // timezone + cancel window, below
+
+    // 1. REFACTOR-R4-P1-01: slot validator, then the free-call cap — both before any
+    //    side effect, so a rejection spends no credit and creates no event or row.
+    //    (Min-notice, previously the only guard here, is now part of checkSlot.)
+    //    A reschedule moves the existing free call, so it is exempt from the cap.
+    await this.assertSlotBookable(input);
+    if (input.sessionType === "free15min" && !input.rescheduleToken
+        && await this.bookings.hasActiveFreeSession(input.email)) {
+      throw new FreeSessionAlreadyUsedError();
+    }
 
     // 2. REFACTOR-P1-01: Acquire slot lock. Held until the booking row is committed
     //    (or compensation completes — see REFACTOR-P1-03).
-    const durationMinutes = Math.round(
-      (new Date(input.endIso).getTime() - new Date(input.startIso).getTime()) / 60_000
-    );
+    //    REFACTOR-R4-P1-01: the validator guarantees the window IS the session length.
+    const durationMinutes = SESSION_DURATION_MINUTES[input.sessionType];
     const locked = await this.bookings.acquireSlotLock(input.startIso, durationMinutes);
     if (!locked) {
       throw new SlotUnavailableError();

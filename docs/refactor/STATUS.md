@@ -16,13 +16,13 @@ Landing order: P1-02 → P1-01 → P1-03 → P1-04.
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
 | [02 Idempotency + eligibility reads fail closed](phase-1-correctness/02-idempotency-reads-fail-closed.md) | `REFACTOR-R4-P1-02` | 🟠 | ⬜ | _tbd_ | |
-| [01 Server-side slot validation + `/api/book` rate limit](phase-1-correctness/01-server-side-slot-validation.md) | `REFACTOR-R4-P1-01` | 🔴 | ⬜ | _tbd_ | |
+| [01 Server-side slot validation + `/api/book` rate limit](phase-1-correctness/01-server-side-slot-validation.md) | `REFACTOR-R4-P1-01` | 🔴 | ✅ (trimmed) | Claude | local (`refactorization`) — Calendar checks dropped at Gustavo's request, see Deviations; e2e pending |
 | [03 Reschedule keeps the original booking until the new one commits](phase-1-correctness/03-reschedule-keeps-original.md) | `REFACTOR-R4-P1-03` | 🟠 | ⬜ | _tbd_ | |
 | [04 Atomic cancel, credit back to the originating pack](phase-1-correctness/04-atomic-cancel-restore-pack.md) | `REFACTOR-R4-P1-04` | 🟡 | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] `POST /api/book` with an off-hours start, a busy slot, or `endIso − startIso` ≠ the session type's length → 4xx, no calendar event, no credit spent
-- [ ] Paid checkout for a mismatched duration → 4xx before any PaymentIntent exists; the webhook books `startIso + duration`, never the metadata `end_iso`
+- [x] `POST /api/book` with an off-hours start ~~, a busy slot,~~ or `endIso − startIso` ≠ the session type's length → 4xx, no calendar event, no credit spent _(P1-01; service + integration + route tests. "Busy slot" dropped with the trimmed scope)_
+- [x] Paid checkout for a mismatched duration → 4xx before any PaymentIntent exists; the webhook books `startIso + duration`, never the metadata `end_iso` _(P1-01; service + integration + route tests)_
 - [ ] Forced Supabase error in any idempotency read during a duplicate webhook → 500 (Stripe retries), no refund, no second booking
 - [ ] Forced failure after the reschedule's old-token claim → the original booking is `confirmed` again with a working cancel link
 - [ ] Cancelling a pack class returns the credit to `bookings.credit_pack_id`'s pack in the same transaction; `creditsRestored` is false whenever nothing was restored
@@ -53,12 +53,14 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 |------|-----|-----|--------|-------|----|
 | [01 Payment ledger accuracy](phase-3-payments-admin/01-payment-ledger-accuracy.md) | `REFACTOR-R4-P3-01` | 🟡 | ⬜ | _tbd_ | |
 | [02 Admin students area](phase-3-payments-admin/02-admin-students-area.md) | `REFACTOR-R4-P3-02` | 🟡 | ⬜ | _tbd_ | |
+| [03 Daily audit: upcoming classes >15 min are paid](phase-3-payments-admin/03-booking-payment-audit.md) | `REFACTOR-R4-P3-03` | 🟡 | ⬜ | _tbd_ | — added 2026-09-28; after P1-03 |
 
 **Exit criteria**
 - [ ] A slot-taken refund within the lookback window produces no reconcile mismatch; `stripe` is imported by no route handler
 - [ ] Dead-letter retry of a PaymentIntent writes a `payments` row with the charged amount
 - [ ] A student past #100 by email is findable in `/admin/students`; the low-credit count excludes accounts that never booked or bought
 - [ ] Every admin POST/PATCH route calls `isValidOrigin`; a `−N` adjustment larger than the balance reports what was actually applied
+- [ ] The daily booking-payment audit (P3-03) flags a class whose payment was refunded in Stripe; a clean run emails nothing
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build` green
 
 ## Phase 4 — Cleanup
@@ -79,9 +81,51 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 
 _Record Gustavo's answers to the PLAN.md open questions here (task, decision, date)._
 
+- **P1-01 free-call policy — DEFAULT ASSUMED, awaiting Gustavo's confirmation (2026-09-28).**
+  Implemented as "at most one non-cancelled `free15min` per user" (confirmed, completed and
+  no_show all count; cancelling frees it; a reschedule is exempt). The switch is one guard in
+  `BookingService.createBooking` + `IBookingRepository.hasActiveFreeSession`; "one ever" would
+  swap it for `hasAnyBooking`-style logic, "no cap" would delete the guard.
+
 ## Deviations from plan
 
-_None yet._
+- **P1-01 — TRIMMED at Gustavo's request (2026-09-28): no per-request Google Calendar read.**
+  The first implementation also read the tutor's calendar (`events.list`) on every `/api/book`,
+  on checkout, and twice on a paid confirmation — measured at 470–880 ms per call from a dev
+  machine. Gustavo's position: the API is only called by our own web and mobile apps, which
+  already offer free slots only; a dishonest signed-in caller could still book any *valid* free
+  slot, so the calendar read buys little. What he needs is that **every booking longer than
+  15 minutes is backed by a matching payment** — which the in-process length check guarantees.
+  Shipped scope:
+  - `BookingService.checkSlot` / `assertSlotBookable`: session length (`SESSION_DURATION_MINUTES`),
+    15-min grid in the tutor's timezone, min-notice, booking window, working blocks. No network.
+    Run by `createBooking` (before any side effect) and by checkout (before the PaymentIntent).
+  - Webhook books `start + paid duration`, never the metadata `end_iso`. Its freebusy re-check is
+    the one it already had, now asked for the tutor-timezone day (was `startIso.slice(0, 10)`,
+    UTC) and matched by instant rather than ISO string.
+  - Free-call cap and `/api/book` rate limit kept as specified.
+  - Dropped: `ICalendarClient.listBusy` / `ignoreEventId`, the calendar check at booking and
+    checkout, and the "compare listBusy with the grid on a real week" pre-merge step. P1-03 no
+    longer depends on `ignoreEventId` (its task md is annotated).
+  - Consequence to accept: a free-call or pack booking made through the API is not checked against
+    the tutor's manual calendar events (the apps only offer free slots; the paid webhook still
+    re-checks). Follow-up: **P3-03** (added 2026-09-28), a daily read-only cron auditing that every
+    upcoming booking longer than 15 minutes has a matching, un-refunded payment.
+- **P1-01 — landed before P1-02** (PLAN order is P1-02 → P1-01), at Gustavo's request. No
+  dependency: `hasActiveFreeSession` throws on DB errors by itself.
+- **P1-01 — base branch.** The worktree branched from local `staging` (where `docs/refactor/`
+  lives, `1037a23`), not `main`.
+- **P1-01 — webhook: unparseable `start_iso` → `PermanentWebhookError`.** Deriving the end from a
+  garbage start would otherwise throw a `RangeError` → 500 → 3 days of Stripe retries. The
+  success broadcast also carries the derived end, not the metadata one.
+- **P1-01 — test fixtures.** `buildTestBookingService` now defaults to an all-day schedule
+  (pass `schedule` to test real hours); new `fixtures/slots.ts` (`alignedSlot`, `allDaySchedule`,
+  `slotAtLocal`). Route tests added for `/api/book` (limiter, error codes) and
+  `/api/stripe/checkout` (DomainError → 4xx); DB-gated `hasActiveFreeSession` cases added to
+  `SupabaseBookingRepository.test.ts`.
+- **P1-01 — `pnpm test:e2e` NOT run:** `:3000` was held by the main checkout's dev server, which
+  Playwright would have reused (testing the wrong code). The reschedule/cancellation specs were
+  changed (seed from `/api/availability`, fail instead of skip) but are unverified.
 
 ## Known regressions introduced
 

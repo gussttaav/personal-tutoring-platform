@@ -4,6 +4,7 @@
 // Separate queries are used instead of PostgREST embedded joins to avoid
 // relying on FK-hint syntax that varies across PostgREST versions.
 // BOOKING-HISTORY-01: listHistoryByUser — keyset-paginated past bookings.
+// REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap (fails closed on error).
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
@@ -351,6 +352,31 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .select("id", { head: true, count: "exact" })
       .eq("user_id", user.id)
       .limit(1);
+
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  }
+
+  // REFACTOR-R4-P1-01: any non-cancelled free15min row counts. Both reads throw on
+  // error: answering "no free call yet" on a failed read would lift the cap.
+  async hasActiveFreeSession(email: string): Promise<boolean> {
+    const normalized = email.toLowerCase().trim();
+
+    const { data: user, error: userErr } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", normalized)
+      .maybeSingle();
+
+    if (userErr) throw userErr;
+    if (!user) return false;
+
+    const { count, error } = await supabase
+      .from("bookings")
+      .select("id", { head: true, count: "exact" })
+      .eq("user_id", user.id)
+      .eq("session_type", "free15min")
+      .neq("status", "cancelled");
 
     if (error) throw error;
     return (count ?? 0) > 0;

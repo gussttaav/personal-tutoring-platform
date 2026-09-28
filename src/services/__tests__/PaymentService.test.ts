@@ -1,8 +1,11 @@
 // ARCH-14: Unit tests for PaymentService.
+// REFACTOR-R4-P1-01: checkout runs BookingService.assertSlotBookable (mocked here —
+// the validator itself is covered in BookingService.test.ts), and the webhook books
+// an end derived from the paid duration.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
-import { PermanentWebhookError } from "@/domain/errors";
+import { InvalidSlotError, PermanentWebhookError } from "@/domain/errors";
 import { FakeStripeClient } from "@/__tests__/fixtures/FakeStripeClient";
 import { InMemoryPricingRepository } from "@/__tests__/fixtures/InMemoryPricingRepository";
 import { InMemoryAuditRepository } from "@/__tests__/fixtures/InMemoryAuditRepository";
@@ -89,9 +92,12 @@ const mockCredits = (): MockedCredits => ({
   hasProcessedPayment:       jest.fn().mockResolvedValue(false),
 });
 
-const mockBookings = (): jest.Mocked<Pick<BookingService, "createBooking" | "findByStripePaymentId">> => ({
+type BookingDeps = "createBooking" | "findByStripePaymentId" | "assertSlotBookable";
+
+const mockBookings = (): jest.Mocked<Pick<BookingService, BookingDeps>> => ({
   createBooking:          jest.fn(),
   findByStripePaymentId:  jest.fn().mockResolvedValue(null),
+  assertSlotBookable:     jest.fn().mockResolvedValue(undefined),
 });
 
 const TEST_USER_ID = "user-uuid-test-123";
@@ -105,7 +111,7 @@ function makeService(overrides?: {
   stripe?:       Partial<jest.Mocked<IStripeClient>>;
   paymentRepo?:  Partial<jest.Mocked<IPaymentRepository>>;
   credits?:      Partial<MockedCredits>;
-  bookings?:     Partial<jest.Mocked<Pick<BookingService, "createBooking" | "findByStripePaymentId">>>;
+  bookings?:     Partial<jest.Mocked<Pick<BookingService, BookingDeps>>>;
   userService?:  Partial<jest.Mocked<Pick<UserService, "ensureUser" | "findByEmail">>>;
 }) {
   const stripe      = { ...mockStripe(),       ...overrides?.stripe };
@@ -147,7 +153,12 @@ function fakePackEvent(intentId = "pi_pack_123"): Stripe.Event {
   } as unknown as Stripe.Event;
 }
 
-function fakeSingleEvent(intentId = "pi_single_123", startIso = "2099-12-01T10:00:00.000Z"): Stripe.Event {
+function fakeSingleEvent(
+  intentId = "pi_single_123",
+  startIso = "2099-12-01T10:00:00.000Z",
+  endIso   = "2099-12-01T11:00:00.000Z",
+  duration = "1h",
+): Stripe.Event {
   return {
     id:   "evt_single",
     type: "payment_intent.succeeded",
@@ -160,9 +171,9 @@ function fakeSingleEvent(intentId = "pi_single_123", startIso = "2099-12-01T10:0
           checkout_type:    "single",
           student_email:    "student@test.com",
           student_name:     "Student",
-          session_duration: "1h",
+          session_duration: duration,
           start_iso:        startIso,
-          end_iso:          "2099-12-01T11:00:00.000Z",
+          end_iso:          endIso,
           reschedule_token: "",
         },
       },
@@ -1066,5 +1077,112 @@ describe("per-student pricing at checkout", () => {
       expect.objectContaining({ amount: 7500 }),
       expect.anything(),
     );
+  });
+});
+
+// ─── REFACTOR-R4-P1-01: slot validation on the paid path ──────────────────────
+
+describe("REFACTOR-R4-P1-01: checkout validates the slot before any PaymentIntent", () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  const params = {
+    email: "student@test.com", name: "Student", duration: "1h" as const,
+    startIso: "2099-12-01T10:00:00.000Z", endIso: "2099-12-01T13:00:00.000Z",
+  };
+
+  it("runs the validator with the session type the payment is for", async () => {
+    const { service, bookings, stripe } = makeService();
+    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s" } as Stripe.PaymentIntent);
+
+    await service.createSingleSessionCheckout({ ...params, duration: "2h" });
+
+    expect(bookings.assertSlotBookable).toHaveBeenCalledWith({
+      startIso: params.startIso, endIso: params.endIso, sessionType: "session2h",
+    });
+  });
+
+  it("creates no PaymentIntent when the validator rejects the window", async () => {
+    const { service, bookings, stripe } = makeService();
+    bookings.assertSlotBookable.mockRejectedValue(new InvalidSlotError());
+
+    await expect(service.createSingleSessionCheckout(params)).rejects.toBeInstanceOf(InvalidSlotError);
+    expect(stripe.createPaymentIntent).not.toHaveBeenCalled();
+  });
+});
+
+describe("REFACTOR-R4-P1-01: webhook books the paid duration, not metadata end_iso", () => {
+  const booked = { eventId: "evt_1", joinToken: "j".repeat(64), emailFailed: false };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+  });
+
+  it("books start + 1h for a 1h payment whose metadata claims 3 hours", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(booked);
+
+    await service.processWebhookEvent(
+      fakeSingleEvent("pi_lying", "2099-12-01T10:00:00.000Z", "2099-12-01T13:00:00.000Z"),
+    );
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(expect.objectContaining({
+      startIso: "2099-12-01T10:00:00.000Z", endIso: "2099-12-01T11:00:00.000Z", sessionType: "session1h",
+    }));
+    expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledWith(
+      "pi_lying", expect.objectContaining({ status: "confirmed", endIso: "2099-12-01T11:00:00.000Z" }),
+    );
+  });
+
+  it("books start + 2h for a 2h payment, re-checking 120-minute availability", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(booked);
+
+    await service.processWebhookEvent(
+      fakeSingleEvent("pi_2h", "2099-12-01T10:00:00.000Z", "2099-12-01T11:00:00.000Z", "2h"),
+    );
+
+    expect(mockGetAvailableSlots).toHaveBeenCalledWith("2099-12-01", 120, expect.anything(), 30);
+    expect(bookings.createBooking).toHaveBeenCalledWith(expect.objectContaining({
+      endIso: "2099-12-01T12:00:00.000Z", sessionType: "session2h",
+    }));
+  });
+
+  it("re-checks the tutor-timezone day, not the UTC date", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(booked);
+    // 23:30Z on 1 Dec is 00:30 on 2 Dec in Madrid (CET, UTC+1).
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T23:30:00.000Z" }]);
+
+    await service.processWebhookEvent(
+      fakeSingleEvent("pi_tz", "2099-12-01T23:30:00.000Z", "2099-12-02T00:30:00.000Z"),
+    );
+
+    expect(mockGetAvailableSlots).toHaveBeenCalledWith("2099-12-02", 60, expect.anything(), 30);
+    expect(bookings.createBooking).toHaveBeenCalled();
+  });
+
+  it("matches the free slot by instant, whatever the ISO spelling", async () => {
+    const { service, paymentRepo, bookings, stripe } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue(booked);
+
+    await service.processWebhookEvent(fakeSingleEvent("pi_nomillis", "2099-12-01T10:00:00Z"));
+
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(bookings.createBooking).toHaveBeenCalled();
+  });
+
+  it("throws PermanentWebhookError (no refund, no booking) for an unparseable start_iso", async () => {
+    const { service, paymentRepo, stripe, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+
+    await expect(service.processWebhookEvent(fakeSingleEvent("pi_bad", "not-a-date")))
+      .rejects.toBeInstanceOf(PermanentWebhookError);
+    expect(stripe.createRefund).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
   });
 });

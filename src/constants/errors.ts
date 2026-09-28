@@ -3,6 +3,8 @@
  *
  * UX-03: API errors surface as error codes; the presentation layer translates
  * them via useTranslations('errors.domain.*') or useTranslations('errors.http.*').
+ *
+ * REFACTOR-R4-P1-01: INVALID_SLOT + FREE_SESSION_ALREADY_USED (server-side slot validation).
  */
 
 /**
@@ -14,6 +16,8 @@ export const ERROR_CODE_I18N_KEY: Record<string, string> = {
   INVALID_REQUEST:           "errors.validation.invalidRequest",
   INSUFFICIENT_CREDITS:      "errors.domain.insufficientCredits",
   SLOT_UNAVAILABLE:          "errors.domain.slotUnavailable",
+  INVALID_SLOT:              "errors.domain.invalidSlot",               // REFACTOR-R4-P1-01
+  FREE_SESSION_ALREADY_USED: "errors.domain.freeSessionAlreadyUsed",    // REFACTOR-R4-P1-01
   BOOKING_NOT_FOUND:         "errors.domain.bookingNotFound",
   TOKEN_EXPIRED:             "errors.domain.tokenExpired",
   UNAUTHORIZED:              "errors.domain.unauthorized",

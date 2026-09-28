@@ -1,6 +1,8 @@
 // TEST-01: Integration tests for the booking flow.
 // Uses in-memory repositories and fake clients to exercise real service logic
 // without HTTP or external I/O. Tests state transitions that unit mocks cannot verify.
+// REFACTOR-R4-P1-01: slots come from fixtures/slots (aligned, the right length); the
+// "server-side slot validation" suite checks that a rejected slot has no side effects.
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
@@ -15,17 +17,22 @@ import { FakeEmailClient }           from "../fixtures/FakeEmailClient";
 import {
   buildTestCreditService,
   buildTestBookingService,
+  buildTestScheduleService,
 } from "../fixtures/services";
+import { alignedSlot, slotAtLocal } from "../fixtures/slots";
 
 // Slots must be ≥5 h in the future (minNoticeHours = 5); use +6 to be safe.
-const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
-
-const packInput = () => ({
+const packInput = (hoursAhead = 6) => ({
   email:       "alice@example.com",
   name:        "Alice",
-  startIso:    hoursFromNow(6),
-  endIso:      hoursFromNow(7),
+  ...alignedSlot("pack", hoursAhead),
   sessionType: "pack" as const,
+});
+
+const freeInput = (hoursAhead = 6) => ({
+  ...packInput(hoursAhead),
+  ...alignedSlot("free15min", hoursAhead),
+  sessionType: "free15min" as const,
 });
 
 const creditParams = {
@@ -124,7 +131,7 @@ describe("Booking flow — credit guard", () => {
     const service = buildTestBookingService({ credits, calendar });
 
     await expect(
-      service.createBooking({ ...packInput(), sessionType: "free15min" }),
+      service.createBooking(freeInput()),
     ).rejects.toThrow();
 
     const balance = await credits.getBalance("alice@example.com");
@@ -139,7 +146,7 @@ describe("Booking flow — credit guard", () => {
     const calendar = new FakeCalendarClient();
     const service  = buildTestBookingService({ credits, calendar });
 
-    await service.createBooking({ ...packInput(), sessionType: "free15min" });
+    await service.createBooking(freeInput());
 
     const balance = await credits.getBalance("alice@example.com");
     expect(balance?.credits).toBe(5); // unchanged
@@ -158,7 +165,7 @@ describe("Booking flow — concurrency", () => {
 
     const results = await Promise.allSettled([
       service.createBooking(packInput()),
-      service.createBooking({ ...packInput(), startIso: hoursFromNow(8), endIso: hoursFromNow(9) }),
+      service.createBooking(packInput(8)),
     ]);
 
     const successes = results.filter(r => r.status === "fulfilled");
@@ -167,5 +174,72 @@ describe("Booking flow — concurrency", () => {
     expect(successes).toHaveLength(1);
     expect(failures).toHaveLength(1);
     expect((failures[0] as PromiseRejectedResult).reason).toBeInstanceOf(InsufficientCreditsError);
+  });
+});
+
+describe("REFACTOR-R4-P1-01: server-side slot validation", () => {
+  async function withCredits() {
+    const creditsRepo = new InMemoryCreditsRepository();
+    const credits     = buildTestCreditService({ credits: creditsRepo });
+    await credits.addCredits(creditParams);
+    return credits;
+  }
+
+  it("rejects an off-hours slot on the real schedule — no event, no row, no credit spent", async () => {
+    const credits     = await withCredits();
+    const calendar    = new FakeCalendarClient();
+    const bookingRepo = new InMemoryBookingRepository();
+    const service     = buildTestBookingService({
+      credits, calendar, bookings: bookingRepo, schedule: buildTestScheduleService(), // seeded hours
+    });
+
+    // 03:00 in Madrid, two days out: outside every block of the seeded schedule.
+    await expect(service.createBooking({ ...packInput(), ...slotAtLocal("pack", 2, "03:00") }))
+      .rejects.toMatchObject({ code: "SLOT_UNAVAILABLE" });
+
+    expect(calendar.createdEvents).toHaveLength(0);
+    expect(await bookingRepo.hasAnyBooking("alice@example.com")).toBe(false);
+    expect((await credits.getBalance("alice@example.com"))?.credits).toBe(5);
+  });
+
+  it("rejects a pack class stretched over 4 hours (INVALID_SLOT) — no credit spent", async () => {
+    const credits  = await withCredits();
+    const calendar = new FakeCalendarClient();
+    const service  = buildTestBookingService({ credits, calendar });
+    const input    = packInput();
+
+    await expect(service.createBooking({
+      ...input, endIso: new Date(new Date(input.startIso).getTime() + 4 * 3_600_000).toISOString(),
+    })).rejects.toMatchObject({ code: "INVALID_SLOT" });
+
+    expect(calendar.createdEvents).toHaveLength(0);
+    expect((await credits.getBalance("alice@example.com"))?.credits).toBe(5);
+  });
+});
+
+describe("REFACTOR-R4-P1-01: free-call cap", () => {
+  it("allows one non-cancelled free call; cancelling it frees the allowance", async () => {
+    const bookingRepo = new InMemoryBookingRepository();
+    const service     = buildTestBookingService({ bookings: bookingRepo });
+
+    const first = await service.createBooking(freeInput(6));
+
+    await expect(service.createBooking(freeInput(30)))
+      .rejects.toMatchObject({ code: "FREE_SESSION_ALREADY_USED" });
+
+    await service.cancelByToken(first.cancelToken);
+
+    await expect(service.createBooking(freeInput(30))).resolves.toMatchObject({ eventId: expect.any(String) });
+  });
+
+  it("counts a completed free call against the cap", async () => {
+    const bookingRepo = new InMemoryBookingRepository();
+    const service     = buildTestBookingService({ bookings: bookingRepo });
+
+    const first = await service.createBooking(freeInput(6));
+    await bookingRepo.markCompleted(first.eventId);
+
+    await expect(service.createBooking(freeInput(30)))
+      .rejects.toMatchObject({ code: "FREE_SESSION_ALREADY_USED" });
   });
 });

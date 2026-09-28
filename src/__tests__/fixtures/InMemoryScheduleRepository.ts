@@ -1,5 +1,6 @@
 // In-memory implementation of IScheduleRepository for tests.
 // Seeded to match supabase/migrations/0013_booking_schedule.sql.
+// REFACTOR-R4-P1-01: optional `weekly` override (e.g. allDaySchedule() from ./slots).
 import type { IScheduleRepository, ScheduleSettings } from "@/domain/repositories/IScheduleRepository";
 import type { TimeBlock, WeeklyHours } from "@/domain/types";
 
@@ -16,7 +17,11 @@ function seedWeekly(): WeeklyHours {
 }
 
 export class InMemoryScheduleRepository implements IScheduleRepository {
-  private weekly: WeeklyHours = seedWeekly();
+  private weekly: WeeklyHours;
+
+  constructor(weekly: WeeklyHours = seedWeekly()) {
+    this.weekly = weekly;
+  }
   private settings: ScheduleSettings = {
     timezone:             "Europe/Madrid",
     minNoticeHours:       5,

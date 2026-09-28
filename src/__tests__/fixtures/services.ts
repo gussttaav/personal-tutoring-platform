@@ -28,6 +28,7 @@ import type { ICalendarClient } from "@/infrastructure/google/ICalendarClient";
 import type { IZoomClient }     from "@/infrastructure/zoom/ZoomClient";
 import type { IEmailClient }    from "@/infrastructure/resend/IEmailClient";
 import type { IStripeClient }   from "@/infrastructure/stripe/StripeClient";
+import type { WeeklyHours }     from "@/domain/types";
 
 import { InMemoryCreditsRepository }      from "./InMemoryCreditsRepository";
 import { InMemoryAuditRepository }        from "./InMemoryAuditRepository";
@@ -46,6 +47,7 @@ import { FakeCalendarClient } from "./FakeCalendarClient";
 import { FakeZoomClient }     from "./FakeZoomClient";
 import { FakeEmailClient }    from "./FakeEmailClient";
 import { FakeStripeClient }   from "./FakeStripeClient";
+import { allDaySchedule }     from "./slots";
 
 // ─── CreditService builder ────────────────────────────────────────────────────
 
@@ -76,14 +78,18 @@ export interface BookingServiceDeps {
   schedule:  ScheduleService;
 }
 
-export function buildTestScheduleService(): ScheduleService {
+// REFACTOR-R4-P1-01: `weekly` overrides the seeded working hours (see ./slots).
+export function buildTestScheduleService(weekly?: WeeklyHours): ScheduleService {
   return new ScheduleService(
-    new InMemoryScheduleRepository(),
+    new InMemoryScheduleRepository(weekly),
     new InMemoryAuditRepository(),
     new InMemoryConfigCache(),
   );
 }
 
+// REFACTOR-R4-P1-01: createBooking now validates the slot against the working hours.
+// The default schedule is open all day so tests that aren't ABOUT working hours only
+// need an aligned slot (./slots alignedSlot); pass `schedule` to test the hours.
 export function buildTestBookingService(
   overrides: Partial<BookingServiceDeps> = {},
 ): BookingService {
@@ -95,7 +101,7 @@ export function buildTestBookingService(
     overrides.zoom      ?? new FakeZoomClient(),
     overrides.email     ?? new FakeEmailClient(),
     overrides.users     ?? new InMemoryUserRepository(),
-    overrides.schedule  ?? buildTestScheduleService(),
+    overrides.schedule  ?? buildTestScheduleService(allDaySchedule()),
   );
 }
 

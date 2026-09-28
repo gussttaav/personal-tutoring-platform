@@ -18,6 +18,9 @@
  *
  * REFACTOR-R3-P3-03: Added `paymentChannelRatelimit` — GET
  * /api/payment-confirmation/channel had no limiter at all.
+ *
+ * REFACTOR-R4-P1-01: Added `bookRatelimit` — POST /api/book was the last booking
+ * route with no limiter.
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
@@ -149,6 +152,15 @@ export const paymentChannelRatelimit = new Ratelimit({
   redis:   kv,
   limiter: Ratelimit.slidingWindow(30, "1 m"),
   prefix:  "rl:paychannel",
+});
+
+// REFACTOR-R4-P1-01: /api/book was the last booking route with no limiter, and the
+// costliest one (Calendar insert + Zoom creds + 2 emails per call). Keyed by the
+// AUTHENTICATED EMAIL, like paymentChannelRatelimit above: the route requires a session.
+export const bookRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(10, "1 m"),
+  prefix:  "rl:book",
 });
 
 // COURSE-P4-02: course progress + quiz attempts, keyed by the AUTHENTICATED EMAIL

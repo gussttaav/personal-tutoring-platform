@@ -1,4 +1,7 @@
 // ARCH-13: Unit tests for BookingService.
+// REFACTOR-R4-P1-01: inputs are aligned, correctly-sized slots (fixtures/slots) on an
+// all-day schedule, since createBooking now validates the window; checkSlot + the
+// free-call cap have their own suites below.
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
@@ -17,8 +20,12 @@ import { CreditService } from "../CreditService";
 import { ScheduleService } from "../ScheduleService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
-import { InsufficientCreditsError, DomainError, SlotUnavailableError } from "@/domain/errors";
-import type { BookingRecord } from "@/domain/types";
+import {
+  InsufficientCreditsError, DomainError, SlotUnavailableError,
+  InvalidSlotError, FreeSessionAlreadyUsedError,
+} from "@/domain/errors";
+import type { BookingRecord, WeeklyHours } from "@/domain/types";
+import { alignedSlot, allDaySchedule } from "@/__tests__/fixtures/slots";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
@@ -30,6 +37,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   listByUser:                 jest.fn().mockResolvedValue([]),
   listHistoryByUser:          jest.fn().mockResolvedValue({ entries: [], nextCursor: null }),
   hasAnyBooking:              jest.fn().mockResolvedValue(false),
+  hasActiveFreeSession:       jest.fn().mockResolvedValue(false),
   acquireSlotLock:            jest.fn().mockResolvedValue(true),
   releaseSlotLock:            jest.fn().mockResolvedValue(undefined),
   recordRescheduleFailure:    jest.fn().mockResolvedValue(undefined),
@@ -118,11 +126,14 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
 // Stub ScheduleService — BookingService only calls getConfig(). Default min
 // notice = 5h (matches the old hardcoded SCHEDULE) so existing timing holds, and
 // cancelMinNoticeHours = 2h (the old hardcoded CANCEL_WINDOW_MS) so the
-// cancel/reschedule window tests still hold.
-const mockSchedule = (overrides: { cancelMinNoticeHours?: number } = {}): ScheduleService =>
+// cancel/reschedule window tests still hold. REFACTOR-R4-P1-01: open all day by
+// default, so only the checkSlot suite has to think about working hours.
+const mockSchedule = (
+  overrides: { cancelMinNoticeHours?: number; weeklyHours?: WeeklyHours } = {},
+): ScheduleService =>
   ({
     getConfig: jest.fn().mockResolvedValue({
-      weeklyHours: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
+      weeklyHours: overrides.weeklyHours ?? allDaySchedule(),
       timezone: "Europe/Madrid",
       minNoticeHours: 5,
       cancelMinNoticeHours: overrides.cancelMinNoticeHours ?? 2,
@@ -157,8 +168,15 @@ const hoursFromNow = (h: number) => new Date(Date.now() + h * 60 * 60_000).toISO
 
 const basePackInput = () => ({
   email: "student@test.com", name: "Student",
-  startIso: hoursFromNow(10), endIso: hoursFromNow(11),
+  ...alignedSlot("pack", 10),
   sessionType: "pack" as const,
+});
+
+// REFACTOR-R4-P1-01: a free call is 15 minutes; a pack-sized window is now INVALID_SLOT.
+const baseFreeInput = () => ({
+  email: "student@test.com", name: "Student",
+  ...alignedSlot("free15min", 10),
+  sessionType: "free15min" as const,
 });
 
 const baseCancelRecord = (overrides: Partial<BookingRecord> = {}): BookingRecord => ({
@@ -173,7 +191,7 @@ describe("BookingService.createBooking", () => {
   it("throws SlotUnavailableError when slot is in the past", async () => {
     const service = makeService();
     await expect(
-      service.createBooking({ ...basePackInput(), startIso: hoursFromNow(-1) })
+      service.createBooking({ ...basePackInput(), ...alignedSlot("pack", -1) })
     ).rejects.toThrow(SlotUnavailableError);
   });
 
@@ -184,7 +202,7 @@ describe("BookingService.createBooking", () => {
     const creditsRepo = mockCreditsRepo();
     const service = makeService({ credits: makeCreditService(creditsRepo) });
 
-    await service.createBooking({ ...basePackInput(), sessionType: "free15min" });
+    await service.createBooking(baseFreeInput());
 
     expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
   });
@@ -217,7 +235,7 @@ describe("BookingService.createBooking", () => {
     const bookings = mockBookings();
     const service  = makeService({ bookings });
 
-    await service.createBooking({ ...basePackInput(), sessionType: "free15min" });
+    await service.createBooking(baseFreeInput());
 
     expect(bookings.createBooking).toHaveBeenCalledWith(
       expect.not.objectContaining({ creditPackId: expect.anything() }),
@@ -255,7 +273,7 @@ describe("BookingService.createBooking", () => {
     const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
 
     await expect(
-      service.createBooking({ ...basePackInput(), sessionType: "free15min" })
+      service.createBooking(baseFreeInput())
     ).rejects.toThrow();
 
     expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
@@ -385,7 +403,7 @@ describe("BookingService.createBooking (reschedule)", () => {
 
     await expect(
       service.createBooking({
-        ...basePackInput(), sessionType: "free15min", rescheduleToken: "tkn",
+        ...baseFreeInput(), rescheduleToken: "tkn",
       })
     ).rejects.toThrow("Calendar down");
 
@@ -662,8 +680,7 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
     const service = buildTestBookingService();
     const input = {
       email: "a@example.com", name: "A",
-      startIso: hoursFromNow(10),
-      endIso:   hoursFromNow(11),
+      ...alignedSlot("session1h", 10),
       sessionType: "session1h" as const,
     };
 
@@ -689,8 +706,7 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
 
     const input = {
       email: "a@example.com", name: "A",
-      startIso: hoursFromNow(10),
-      endIso:   hoursFromNow(11),
+      ...alignedSlot("session1h", 10),
       sessionType: "session1h" as const,
     };
 
@@ -778,7 +794,7 @@ describe("REFACTOR-P1-04: pending_terminations write", () => {
     const service     = buildTestBookingService({ bookings: bookingRepo });
     const input = {
       email: "a@example.com", name: "A",
-      startIso: hoursFromNow(10), endIso: hoursFromNow(11),
+      ...alignedSlot("session1h", 10),
       sessionType: "session1h" as const,
     };
 
@@ -931,5 +947,255 @@ describe("BookingService.listHistoryForUser", () => {
 
     await expect(service.listHistoryForUser("a@b.com", { limit: 20, cursor: "bad" }))
       .rejects.toBeInstanceOf(InvalidCursorError);
+  });
+});
+
+// ─── REFACTOR-R4-P1-01: server-side slot validation ──────────────────────────
+
+describe("REFACTOR-R4-P1-01: BookingService.checkSlot", () => {
+  // Fixed clock: Monday 2026-10-05, 08:00 in Madrid (CEST, UTC+2). Min notice is 5h,
+  // so the earliest bookable start is 13:00 Madrid (11:00Z). Slots are literal
+  // instants so the tutor-timezone arithmetic stays visible.
+  const NOW = Date.parse("2026-10-05T06:00:00.000Z");
+  // The seeded Monday (migration 0013): 09:00–13:30 + 15:30–17:30.
+  const MONDAY_SEEDED: WeeklyHours = {
+    0: [], 1: [{ startMinute: 540, endMinute: 810 }, { startMinute: 930, endMinute: 1050 }],
+    2: [], 3: [], 4: [], 5: [], 6: [],
+  };
+  const MONDAY_ALL_DAY: WeeklyHours = {
+    0: [], 1: [{ startMinute: 0, endMinute: 1440 }], 2: [], 3: [], 4: [], 5: [], 6: [],
+  };
+  // 15:30–16:30 Madrid on the seeded Monday: after min-notice, inside the afternoon block.
+  const GOOD = { startIso: "2026-10-05T13:30:00.000Z", endIso: "2026-10-05T14:30:00.000Z", sessionType: "pack" as const };
+
+  let nowSpy: jest.SpyInstance;
+  beforeEach(() => { nowSpy = jest.spyOn(Date, "now").mockReturnValue(NOW); });
+  afterEach(() => { nowSpy.mockRestore(); });
+
+  const seeded = () => ({ service: makeService({ schedule: mockSchedule({ weeklyHours: MONDAY_SEEDED }) }) });
+
+  it("returns null for an aligned, in-hours slot of the right length", async () => {
+    const { service } = seeded();
+    await expect(service.checkSlot(GOOD)).resolves.toBeNull();
+  });
+
+  describe("INVALID_SLOT (a window the grid could never produce)", () => {
+    it.each([
+      ["a free call as a 60-minute window", { ...GOOD, sessionType: "free15min" as const }],
+      ["a pack class as a 30-minute window", { ...GOOD, endIso: "2026-10-05T14:00:00.000Z" }],
+      ["a 1h session as an 8-hour window", { ...GOOD, sessionType: "session1h" as const, endIso: "2026-10-05T21:30:00.000Z" }],
+      ["an end before the start", { ...GOOD, endIso: "2026-10-05T12:30:00.000Z" }],
+      ["an unparseable start", { ...GOOD, startIso: "not-a-date" }],
+    ])("rejects %s", async (_label, slot) => {
+      const { service } = seeded();
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(InvalidSlotError);
+    });
+
+    it("rejects a start off the 15-minute grid in the tutor's timezone", async () => {
+      const { service } = seeded();
+      const slot = { ...GOOD, startIso: "2026-10-05T13:37:00.000Z", endIso: "2026-10-05T14:37:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(InvalidSlotError);
+    });
+
+    it("rejects a start with stray seconds", async () => {
+      const { service } = seeded();
+      const slot = { ...GOOD, startIso: "2026-10-05T13:30:30.000Z", endIso: "2026-10-05T14:30:30.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(InvalidSlotError);
+    });
+  });
+
+  describe("SLOT_UNAVAILABLE (a slot the grid does not offer)", () => {
+    it("rejects a start before the min-notice horizon", async () => {
+      const { service } = seeded();
+      // 12:00–13:00 Madrid: inside the morning block, but only 4h from now.
+      const slot = { ...GOOD, startIso: "2026-10-05T10:00:00.000Z", endIso: "2026-10-05T11:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a start beyond the booking window (8 weeks)", async () => {
+      const service = makeService(); // all-day schedule: only the window can reject
+      // Monday 7 Dec 2026, 11:00 Madrid — 63 days out.
+      const slot = { ...GOOD, startIso: "2026-12-07T10:00:00.000Z", endIso: "2026-12-07T11:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a slot in the gap between two working blocks", async () => {
+      const { service } = seeded();
+      // 14:00–15:00 Madrid: between 13:30 and 15:30.
+      const slot = { ...GOOD, startIso: "2026-10-05T12:00:00.000Z", endIso: "2026-10-05T13:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a slot that starts inside a block but runs past its end", async () => {
+      const { service } = seeded();
+      // 17:00–18:00 Madrid: the afternoon block closes at 17:30.
+      const slot = { ...GOOD, startIso: "2026-10-05T15:00:00.000Z", endIso: "2026-10-05T16:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a slot on a day with no working hours", async () => {
+      const { service } = seeded();
+      // Tuesday 6 Oct, 10:00 Madrid: the MONDAY_SEEDED schedule has nothing on Tuesdays.
+      const slot = { ...GOOD, startIso: "2026-10-06T08:00:00.000Z", endIso: "2026-10-06T09:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+  });
+
+  it("uses the tutor's calendar day, not the UTC date", async () => {
+    const service = makeService({ schedule: mockSchedule({ weeklyHours: MONDAY_ALL_DAY }) });
+    // 00:30 Tuesday in Madrid is still Monday in UTC → closed.
+    const tuesdayMadrid = { ...GOOD, startIso: "2026-10-05T22:30:00.000Z", endIso: "2026-10-05T23:30:00.000Z" };
+    await expect(service.checkSlot(tuesdayMadrid)).resolves.toBeInstanceOf(SlotUnavailableError);
+    // 00:30 Monday 12 Oct in Madrid is still Sunday in UTC → open.
+    const mondayMadrid = { ...GOOD, startIso: "2026-10-11T22:30:00.000Z", endIso: "2026-10-11T23:30:00.000Z" };
+    await expect(service.checkSlot(mondayMadrid)).resolves.toBeNull();
+  });
+
+  it("makes no Calendar call (in-process checks only)", async () => {
+    const calendar = mockCalendar();
+    const service  = makeService({ calendar, schedule: mockSchedule({ weeklyHours: MONDAY_SEEDED }) });
+    await service.checkSlot(GOOD);
+    expect(calendar.getAvailableSlots).not.toHaveBeenCalled();
+  });
+
+  it("fails closed: a schedule-config read error propagates", async () => {
+    const schedule = mockSchedule();
+    (schedule.getConfig as jest.Mock).mockRejectedValue(new Error("config unavailable"));
+    const service = makeService({ schedule });
+    await expect(service.checkSlot(GOOD)).rejects.toThrow("config unavailable");
+  });
+
+  it("assertSlotBookable throws the verdict and resolves on a bookable slot", async () => {
+    const { service } = seeded();
+    await expect(service.assertSlotBookable(GOOD)).resolves.toBeUndefined();
+    await expect(service.assertSlotBookable({ ...GOOD, sessionType: "free15min" }))
+      .rejects.toBeInstanceOf(InvalidSlotError);
+  });
+});
+
+describe("REFACTOR-R4-P1-01: createBooking validates before any side effect", () => {
+  it.each([
+    ["an off-grid start", () => {
+      const s = alignedSlot("pack", 10);
+      const shift = (iso: string) => new Date(new Date(iso).getTime() + 7 * 60_000).toISOString();
+      return { startIso: shift(s.startIso), endIso: shift(s.endIso) };
+    }, InvalidSlotError],
+    ["a window longer than the session", () => {
+      const s = alignedSlot("pack", 10);
+      return { startIso: s.startIso, endIso: new Date(new Date(s.startIso).getTime() + 4 * 3_600_000).toISOString() };
+    }, InvalidSlotError],
+  ])("rejects %s — no lock, no credit, no event, no row", async (_label, window, errorClass) => {
+    const bookings    = mockBookings();
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    const service     = makeService({ bookings, calendar, credits: makeCreditService(creditsRepo) });
+
+    await expect(service.createBooking({ ...basePackInput(), ...window() })).rejects.toBeInstanceOf(errorClass);
+
+    expect(bookings.acquireSlotLock).not.toHaveBeenCalled();
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+  });
+
+  it("rejects an off-hours slot — no lock, no credit, no event, no row", async () => {
+    const bookings    = mockBookings();
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    const closed      = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    const service     = makeService({
+      bookings, calendar, credits: makeCreditService(creditsRepo),
+      schedule: mockSchedule({ weeklyHours: closed }),
+    });
+
+    await expect(service.createBooking(basePackInput())).rejects.toBeInstanceOf(SlotUnavailableError);
+
+    expect(bookings.acquireSlotLock).not.toHaveBeenCalled();
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+  });
+
+  it("rejects a paid-session reschedule stretched past its length", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ sessionType: "session1h", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+    const s       = alignedSlot("session1h", 10);
+
+    await expect(service.createBooking({
+      email: "student@test.com", name: "Student", sessionType: "session1h", rescheduleToken: "tkn",
+      startIso: s.startIso, endIso: new Date(new Date(s.startIso).getTime() + 5 * 3_600_000).toISOString(),
+    })).rejects.toBeInstanceOf(InvalidSlotError);
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+  });
+
+  it("locks the slot for the session type's length", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
+    const input    = {
+      email: "student@test.com", name: "Student",
+      ...alignedSlot("session2h", 10), sessionType: "session2h" as const,
+    };
+
+    await service.createBooking(input);
+
+    expect(bookings.acquireSlotLock).toHaveBeenCalledWith(input.startIso, 120);
+  });
+});
+
+describe("REFACTOR-R4-P1-01: free-call cap", () => {
+  it("rejects a second free call with FREE_SESSION_ALREADY_USED before any side effect", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockResolvedValue(true);
+    const calendar = mockCalendar();
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toBeInstanceOf(FreeSessionAlreadyUsedError);
+
+    expect(bookings.hasActiveFreeSession).toHaveBeenCalledWith("student@test.com");
+    expect(bookings.acquireSlotLock).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+  });
+
+  it("books the first free call", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
+
+    await expect(service.createBooking(baseFreeInput())).resolves.toMatchObject({ eventId: "evt1" });
+    expect(bookings.hasActiveFreeSession).toHaveBeenCalledWith("student@test.com");
+  });
+
+  it("lets a free call be rescheduled (the old one is being replaced, not added to)", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockResolvedValue(true);
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ sessionType: "free15min", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking({ ...baseFreeInput(), rescheduleToken: "tkn" }))
+      .resolves.toMatchObject({ eventId: "evt1" });
+    expect(bookings.hasActiveFreeSession).not.toHaveBeenCalled();
+  });
+
+  it("does not apply to paid or pack classes", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockResolvedValue(true);
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking(basePackInput())).resolves.toMatchObject({ eventId: "evt1" });
+    expect(bookings.hasActiveFreeSession).not.toHaveBeenCalled();
+  });
+
+  it("propagates a failed cap read instead of booking", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockRejectedValue(new Error("db down"));
+    const calendar = mockCalendar();
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toThrow("db down");
+    expect(calendar.createEvent).not.toHaveBeenCalled();
   });
 });

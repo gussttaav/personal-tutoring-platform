@@ -21,6 +21,12 @@
  * REFACTOR-R3-P3-03: `getConfirmationChannelState` absorbs the logic that used to sit
  * in GET /api/payment-confirmation/channel — which built its own `new Stripe(...)`
  * client inline instead of going through IStripeClient.
+ *
+ * REFACTOR-R4-P1-01: checkout validates the slot (BookingService.assertSlotBookable:
+ * length, grid, hours, notice — no network) before any PaymentIntent exists, and the
+ * webhook books an end DERIVED from the paid duration — the metadata `end_iso` is never
+ * booked, so a "1h" payment can no longer yield a longer class. The webhook's freebusy
+ * re-check is unchanged apart from asking for the tutor-timezone day.
  */
 
 import type Stripe from "stripe";
@@ -31,9 +37,11 @@ import type {
 } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
+import { formatInTimeZone } from "date-fns-tz";
 import { log } from "@/lib/logger";
 import { paymentChannelName } from "@/lib/realtime-channel";
 import { PermanentWebhookError } from "@/domain/errors";
+import { SESSION_DURATION_MINUTES } from "@/lib/booking-config";
 import { sendDeadLetterNotificationEmail } from "@/infrastructure/resend/email-functions";
 import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";
@@ -156,12 +164,12 @@ export class PaymentService {
     rescheduleToken?: string;
   }): Promise<CheckoutResult> {
     const { email, name, duration, startIso, endIso, rescheduleToken } = params;
+    // REFACTOR-R4-P1-01: never take money for a slot the server would not book.
+    const sessionType = duration === "1h" ? "session1h" : "session2h";
+    await this.bookings.assertSlotBookable({ startIso, endIso, sessionType });
     // PRICING-STUDENT-01: see createPackCheckout.
     const user = await this.userService.findByEmail(email);
-    const { amount, currency } = await this.pricing.getAmount(
-      duration === "1h" ? "session1h" : "session2h",
-      user?.id,
-    );
+    const { amount, currency } = await this.pricing.getAmount(sessionType, user?.id);
     // REFACTOR-P1-05: startIso in key prevents collision between genuinely
     // different slots for the same user/duration within the same 5-min window.
     const idempotencyKey =
@@ -459,15 +467,27 @@ export class PaymentService {
       return;
     }
 
+    // REFACTOR-R4-P1-01: the booked window is DERIVED from the paid duration — the
+    // metadata end_iso is never booked, so what was paid for is what gets booked.
+    const sessionType     = duration === "2h" ? "session2h" as const : "session1h" as const;
+    const durationMinutes = SESSION_DURATION_MINUTES[sessionType];
+    const startMs         = new Date(startIso).getTime();
+    if (Number.isNaN(startMs)) {
+      log("error", "Unparseable start_iso in webhook metadata", { service: "payment", idempotencyKey });
+      throw new PermanentWebhookError(`Unparseable start_iso in metadata for ${idempotencyKey}`);
+    }
+    const endIsoSafe = new Date(startMs + durationMinutes * 60_000).toISOString();
+
     // Slot re-check — refund if slot was taken in the meantime
-    const slotDate        = startIso.slice(0, 10);
-    const durationMinutes = duration === "2h" ? 120 : 60;
     const scheduleConfig  = await this.schedule.getConfig();
+    // REFACTOR-R4-P1-01: the tutor-timezone day, not the UTC date of startIso.
+    const slotDate        = formatInTimeZone(new Date(startMs), scheduleConfig.timezone, "yyyy-MM-dd");
     // REFACTOR-R3-P1-02: fail CLOSED. A freebusy failure is retryable (webhook 500 →
     // Stripe redelivers), never "assume free": the exclusion constraint doesn't cover
     // the tutor's manual calendar blocks.
     const availableSlots  = await getAvailableSlots(slotDate, durationMinutes, scheduleConfig, 30);
-    const slotStillFree   = availableSlots.some(s => s.start === startIso);
+    // Compare instants, not strings: "…:00Z" and "…:00.000Z" are the same start.
+    const slotStillFree   = availableSlots.some(s => new Date(s.start).getTime() === startMs);
 
     if (!slotStillFree) {
       log("warn", "Slot no longer available — refunding", { service: "payment", email, startIso, idempotencyKey });
@@ -482,8 +502,6 @@ export class PaymentService {
       return;
     }
 
-    const sessionType = duration === "1h" ? "session1h" as const : "session2h" as const;
-
     // Guarantee the user record exists before the booking attempt so the
     // dead-letter entry can reference users.id even if createBooking fails.
     const userId = await this.userService.ensureUser(email, name);
@@ -495,7 +513,7 @@ export class PaymentService {
         email,
         name,
         startIso,
-        endIso,
+        endIso:           endIsoSafe,
         sessionType,
         rescheduleToken:  rescheduleToken ?? undefined,
         stripePaymentId:  paymentIntentId,
@@ -518,7 +536,7 @@ export class PaymentService {
           status:      "confirmed",
           eventId:     booking.eventId,
           startIso,
-          endIso,
+          endIso:      endIsoSafe,
           sessionType,
           joinToken:   booking.joinToken,
           emailFailed: booking.emailFailed,

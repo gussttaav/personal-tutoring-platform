@@ -1,5 +1,6 @@
 // TEST-01: Integration tests for the cancellation flow.
 // Verifies real token lifecycle and credit restoration using in-memory state.
+// REFACTOR-R4-P1-01: slots come from fixtures/slots (aligned, the right length).
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
@@ -12,6 +13,7 @@ import {
   buildTestCreditService,
   buildTestBookingService,
 } from "../fixtures/services";
+import { alignedSlot } from "../fixtures/slots";
 
 const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
 
@@ -27,8 +29,7 @@ const creditParams = {
 const packInput = () => ({
   email:       "bob@example.com",
   name:        "Bob",
-  startIso:    hoursFromNow(6),
-  endIso:      hoursFromNow(7),
+  ...alignedSlot("pack", 6),
   sessionType: "pack" as const,
 });
 
@@ -86,6 +87,7 @@ describe("Cancellation flow — non-pack session", () => {
     const service     = buildTestBookingService({ credits, bookings: bookingRepo });
     const { cancelToken } = await service.createBooking({
       ...packInput(),
+      ...alignedSlot("free15min", 6),
       sessionType: "free15min",
     });
 
@@ -114,11 +116,7 @@ describe("Cancellation flow — error cases", () => {
     const service     = buildTestBookingService({ credits, bookings: bookingRepo });
 
     // Book a slot that starts in only 1 hour — will be within the 2h cancel window
-    const { cancelToken } = await service.createBooking({
-      ...packInput(),
-      startIso: hoursFromNow(6),
-      endIso:   hoursFromNow(7),
-    });
+    const { cancelToken } = await service.createBooking(packInput());
 
     // Now manipulate the stored record's startsAt to simulate a session starting in 1h
     // We do this by directly patching the in-memory repo's internal map via the cancel token

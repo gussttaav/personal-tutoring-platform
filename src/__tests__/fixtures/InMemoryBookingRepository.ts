@@ -1,4 +1,5 @@
 // TEST-01: In-memory implementation of IBookingRepository for integration tests.
+// REFACTOR-R4-P1-01: hasActiveFreeSession.
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type {
   BookingHistoryEntry,
@@ -121,6 +122,16 @@ export class InMemoryBookingRepository implements IBookingRepository {
     const target = email.toLowerCase();
     for (const record of this.bookings.values()) {
       if (record.email.toLowerCase() === target) return true;
+    }
+    return false;
+  }
+
+  // REFACTOR-R4-P1-01: mirrors the Supabase impl — any non-cancelled free15min row.
+  async hasActiveFreeSession(email: string): Promise<boolean> {
+    const target = email.toLowerCase();
+    for (const [eventId, record] of this.bookings) {
+      if (record.email.toLowerCase() !== target || record.sessionType !== "free15min") continue;
+      if ((this.statuses.get(eventId) ?? "confirmed") !== "cancelled") return true;
     }
     return false;
   }

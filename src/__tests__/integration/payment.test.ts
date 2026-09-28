@@ -2,6 +2,9 @@
 // Tests that PaymentService correctly adds credits, creates bookings, and writes
 // dead-letter entries using in-memory state.
 
+// REFACTOR-R4-P1-01: booked windows must now be real slots (aligned, the right length)
+// — createBooking validates them — so single-session tests use fixtures/slots.
+//
 // Mock getAvailableSlots — PaymentService.processSingleSession calls it directly
 // (not injected) for the slot re-check. REFACTOR-R3-P1-02: the re-check now fails
 // CLOSED, so a rejection propagates instead of being swallowed. Each single-session
@@ -36,8 +39,7 @@ import { PaymentService } from "@/services/PaymentService";
 import { PricingService } from "@/services/PricingService";
 import { UserService }    from "@/services/UserService";
 import { getAvailableSlots } from "@/infrastructure/google";
-
-const hoursFromNow = (h: number) => new Date(Date.now() + h * 3_600_000).toISOString();
+import { alignedSlot }       from "../fixtures/slots";
 
 // REFACTOR-R3-P1-02: the slot re-check fails closed, so single-session tests must
 // present the booked slot as still free (getAvailableSlots resolves with it).
@@ -115,8 +117,7 @@ describe("Payment flow — single-session webhook", () => {
   it("creates a booking after a single-session payment_intent.succeeded event", async () => {
     const { service, stripe, calendar, paymentRepo } = makePaymentService();
 
-    const startIso = hoursFromNow(6);
-    const endIso   = hoursFromNow(7);
+    const { startIso, endIso } = alignedSlot("session1h", 6);
     slotFree(startIso);
 
     const event = stripe.buildSingleSessionPaymentEvent({
@@ -148,14 +149,14 @@ describe("Payment flow — single-session webhook", () => {
   it("is idempotent — duplicate webhook does not create a second booking", async () => {
     const { service, stripe, calendar, paymentRepo } = makePaymentService();
 
-    const startIso = hoursFromNow(6);
+    const { startIso, endIso } = alignedSlot("session1h", 6);
     slotFree(startIso);
 
     const event = stripe.buildSingleSessionPaymentEvent({
       email:    "eve@example.com",
       name:     "Eve",
       startIso,
-      endIso:   hoursFromNow(7),
+      endIso,
       duration: "1h",
       intentId: "pi_single_idem_001",
     });
@@ -175,14 +176,14 @@ describe("Payment flow — single-session webhook", () => {
 
     const { service, stripe, paymentRepo, userRepo } = makePaymentService({ calendar });
 
-    const startIso = hoursFromNow(6);
+    const { startIso, endIso } = alignedSlot("session1h", 6);
     slotFree(startIso);
 
     const event = stripe.buildSingleSessionPaymentEvent({
       email:    "frank@example.com",
       name:     "Frank",
       startIso,
-      endIso:   hoursFromNow(7),
+      endIso,
       duration: "1h",
       intentId: "pi_deadletter_001",
     });
@@ -196,5 +197,35 @@ describe("Payment flow — single-session webhook", () => {
     // userId is the ID the UserService assigned to frank@example.com
     const frankUser = await userRepo.findByEmail("frank@example.com");
     expect(failed[0].userId).toBe(frankUser?.id);
+  });
+});
+
+describe("REFACTOR-R4-P1-01: what was paid for is what gets booked", () => {
+  it("books start + 1h for a 1h payment whose metadata claims 3 hours", async () => {
+    const { service, stripe, calendar } = makePaymentService();
+    const { startIso, endIso } = alignedSlot("session1h", 6);
+    slotFree(startIso);
+
+    await service.processWebhookEvent(stripe.buildSingleSessionPaymentEvent({
+      email: "gina@example.com", name: "Gina", startIso,
+      endIso:   new Date(new Date(startIso).getTime() + 3 * 3_600_000).toISOString(), // lies: 3h
+      duration: "1h", intentId: "pi_lying_001",
+    }));
+
+    expect(calendar.createdEvents).toHaveLength(1);
+    expect(calendar.createdEvents[0]).toMatchObject({ startIso, endIso });
+  });
+
+  it("checkout rejects a mismatched window with INVALID_SLOT and never calls Stripe", async () => {
+    const { service, stripe } = makePaymentService();
+    const createIntent = jest.spyOn(stripe, "createPaymentIntent");
+    const { startIso } = alignedSlot("session1h", 6);
+
+    await expect(service.createSingleSessionCheckout({
+      email: "gina@example.com", name: "Gina", duration: "1h",
+      startIso, endIso: new Date(new Date(startIso).getTime() + 3 * 3_600_000).toISOString(),
+    })).rejects.toMatchObject({ code: "INVALID_SLOT" });
+
+    expect(createIntent).not.toHaveBeenCalled();
   });
 });

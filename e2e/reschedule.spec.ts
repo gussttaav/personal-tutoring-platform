@@ -13,11 +13,16 @@
  *        - 1st click → focuses the block (fires onSlotFocused)
  *        - "Continuar" click → confirms selection (fires onSlotSelected)
  *   5. Asserts inline success state ("Ir a mi área personal" button visible)
+ *
+ * REFACTOR-R4-P1-01: the original booking is seeded on the first slot
+ * /api/availability offers (the server rejects off-grid/off-hours windows), and a
+ * failed seed now FAILS the test instead of silently skipping it.
  */
 
 import { test, expect } from "@playwright/test";
 import { loginAs, E2E_USER } from "./fixtures/auth";
 import { resetTestState }    from "./fixtures/cleanup";
+import { firstAvailableSlot } from "./helpers/slots";
 
 test.describe("Reschedule existing booking", () => {
   test.beforeEach(async ({ page }) => {
@@ -26,19 +31,14 @@ test.describe("Reschedule existing booking", () => {
   });
 
   test("student reschedules a free session via the reschedule URL", async ({ page }) => {
-    // Create a free booking to get a cancel/reschedule token
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(11, 0, 0, 0);
-    const start = tomorrow.toISOString();
-
-    const end = new Date(tomorrow);
-    end.setMinutes(end.getMinutes() + 15);
+    // Create a free booking to get a cancel/reschedule token, on a slot the
+    // server actually offers.
+    const slot = await firstAvailableSlot(page.request, 15);
 
     const bookRes = await page.request.post("/api/book", {
       data: {
-        startIso:    start,
-        endIso:      end.toISOString(),
+        startIso:    slot.start,
+        endIso:      slot.end,
         sessionType: "free15min",
         note:        "E2E reschedule test — original booking",
         timezone:    "Europe/Madrid",
@@ -48,10 +48,7 @@ test.describe("Reschedule existing booking", () => {
       },
     });
 
-    if (!bookRes.ok()) {
-      test.skip(true, `Could not create booking for reschedule test: ${bookRes.status()}`);
-      return;
-    }
+    expect(bookRes.ok(), `seed booking failed: ${bookRes.status()} ${await bookRes.text()}`).toBe(true);
 
     const { cancelToken } = await bookRes.json();
     expect(cancelToken).toBeTruthy();
@@ -61,7 +58,7 @@ test.describe("Reschedule existing booking", () => {
     await page.goto(`/mentoria?reschedule=free15min&token=${encodeURIComponent(cancelToken)}`);
 
     // The reschedule calendar opens — navigate to next week so the already-booked
-    // slot (tomorrow) is in a different week and more future slots are visible.
+    // slot (the first one offered) is in a different week and more slots are visible.
     await page.getByRole("button", { name: /semana siguiente/i }).click();
 
     // Wait for slot buttons to load for the new week

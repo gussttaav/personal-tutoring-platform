@@ -36,7 +36,7 @@ comments. Per CLAUDE.md, from cycle 3 on the tag carries the cycle, so this cycl
 
 1. **[Phase 1 — Correctness](phase-1-correctness/README.md)**: booking and money paths (4 tasks)
 2. **[Phase 2 — Performance](phase-2-performance/README.md)**: lambda weight, page weight, render coupling, client fan-out (4 tasks)
-3. **[Phase 3 — Payments & Admin](phase-3-payments-admin/README.md)**: ledger accuracy, admin students area (2 tasks)
+3. **[Phase 3 — Payments & Admin](phase-3-payments-admin/README.md)**: ledger accuracy, admin students area, booking-payment audit (3 tasks; P3-03 added 2026-09-28)
 4. **[Phase 4 — Cleanup](phase-4-cleanup/README.md)**: Stripe idempotency keys, docs (2 tasks)
 
 ## Order & dependencies
@@ -44,7 +44,8 @@ comments. Per CLAUDE.md, from cycle 3 on the tag carries the cycle, so this cycl
 - **Phase 1:** land **P1-02 → P1-01 → P1-03 → P1-04**.
   - P1-02 is small and a prerequisite for P1-03, which makes two bookings share one
     `stripe_payment_id`, and `hasBookingForPayment`'s `.maybeSingle()` must stop erroring on that.
-  - P1-03 needs P1-01's slot validator, specifically its `ignoreEventId` option.
+  - P1-03 needs P1-01's slot validator, specifically its `ignoreEventId` option. _(Obsolete: P1-01
+    was trimmed to in-process checks with no Calendar read — see STATUS.md → Deviations.)_
   - P1-04 rebases on P1-03, which removes the reschedule's `restoreCredit` call.
 - **Phase 2** is independent of Phase 1 and can run in parallel. Inside it, **P2-03 before P2-04**:
   P2-04's pricing half relies on `UserPricingSync` having moved out of the root layout. P2-01 and
@@ -52,6 +53,8 @@ comments. Per CLAUDE.md, from cycle 3 on the tag carries the cycle, so this cycl
 - **Phase 3** after Phase 1.
   - P3-01 touches `PaymentService.reprocessFailedBooking`, next to P1-01/P1-02's webhook changes.
   - P3-02's credit-adjust move uses the `CreditService` restore semantics P1-04 introduces.
+  - P3-03 (added after P1-01 was trimmed) needs P1-03's `stripe_payment_id` carry-over, and shares
+    `IStripeClient` with P3-01.
 - **Phase 4** last. P4-01 touches `StripeClient`, which P3-01 extends. P4-02 describes the
   post-refactor state.
 
