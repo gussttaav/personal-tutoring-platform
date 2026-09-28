@@ -2,6 +2,9 @@
 // REFACTOR-R4-P1-01: checkout runs BookingService.assertSlotBookable (mocked here —
 // the validator itself is covered in BookingService.test.ts), and the webhook books
 // an end derived from the paid duration.
+// REFACTOR-R4-P1-02: the booking-exists gate is BookingService.hasBookingForPayment
+// (status-agnostic), and the webhook's idempotency reads fail closed — see the in-memory
+// suite at the end of this file.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -9,6 +12,9 @@ import { InvalidSlotError, PermanentWebhookError } from "@/domain/errors";
 import { FakeStripeClient } from "@/__tests__/fixtures/FakeStripeClient";
 import { InMemoryPricingRepository } from "@/__tests__/fixtures/InMemoryPricingRepository";
 import { InMemoryAuditRepository } from "@/__tests__/fixtures/InMemoryAuditRepository";
+import { InMemoryBookingRepository } from "@/__tests__/fixtures/InMemoryBookingRepository";
+import { InMemoryPaymentRepository } from "@/__tests__/fixtures/InMemoryPaymentRepository";
+import { buildTestBookingService, buildTestPaymentService } from "@/__tests__/fixtures/services";
 
 // Mock getAvailableSlots before importing PaymentService (direct module import)
 const mockGetAvailableSlots = jest.fn();
@@ -92,11 +98,13 @@ const mockCredits = (): MockedCredits => ({
   hasProcessedPayment:       jest.fn().mockResolvedValue(false),
 });
 
-type BookingDeps = "createBooking" | "findByStripePaymentId" | "assertSlotBookable";
+// REFACTOR-R4-P1-02: hasBookingForPayment backs the webhook's booking-exists gate.
+type BookingDeps = "createBooking" | "findByStripePaymentId" | "hasBookingForPayment" | "assertSlotBookable";
 
 const mockBookings = (): jest.Mocked<Pick<BookingService, BookingDeps>> => ({
   createBooking:          jest.fn(),
   findByStripePaymentId:  jest.fn().mockResolvedValue(null),
+  hasBookingForPayment:   jest.fn().mockResolvedValue(false),
   assertSlotBookable:     jest.fn().mockResolvedValue(undefined),
 });
 
@@ -505,20 +513,13 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
 
   // REFACTOR-R3-P1-03: redelivery after createBooking committed but markProcessed failed.
   // The booking-exists gate heals the marker and stops before the slot re-check, so a
-  // fulfilled booking is never refunded.
-  const confirmedDetail = {
-    eventId:     "evt_1",
-    startIso:    "2099-12-01T10:00:00.000Z",
-    endIso:      "2099-12-01T11:00:00.000Z",
-    sessionType: "session1h" as const,
-    joinToken:   "j".repeat(64),
-  };
-
+  // fulfilled booking is never refunded. REFACTOR-R4-P1-02: the gate is now
+  // hasBookingForPayment (any status), so that is what these tests stub.
   it("heals the marker and skips (no refund, no second booking) when a booking already exists", async () => {
     const { service, paymentRepo, stripe, bookings } = makeService();
     paymentRepo.isProcessed.mockResolvedValue(false);
     paymentRepo.wasRefunded.mockResolvedValue(false);
-    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(confirmedDetail);
+    (bookings.hasBookingForPayment as jest.Mock).mockResolvedValue(true);
 
     await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
 
@@ -531,7 +532,7 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
   it("still resolves when the marker heal-write itself fails", async () => {
     const { service, paymentRepo, stripe, bookings } = makeService();
     paymentRepo.isProcessed.mockResolvedValue(false);
-    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(confirmedDetail);
+    (bookings.hasBookingForPayment as jest.Mock).mockResolvedValue(true);
     paymentRepo.markProcessed.mockRejectedValue(new Error("db down"));
 
     await expect(service.processWebhookEvent(fakeSingleEvent())).resolves.toBeUndefined();
@@ -544,7 +545,7 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
     const { service, paymentRepo, stripe, bookings } = makeService();
     paymentRepo.isProcessed.mockResolvedValue(false);
     paymentRepo.wasRefunded.mockResolvedValue(false);
-    (bookings.findByStripePaymentId as jest.Mock).mockResolvedValue(null);
+    (bookings.hasBookingForPayment as jest.Mock).mockResolvedValue(false);
     mockGetAvailableSlots.mockResolvedValue([]); // slot taken
 
     await service.processWebhookEvent(fakeSingleEvent());
@@ -1184,5 +1185,81 @@ describe("REFACTOR-R4-P1-01: webhook books the paid duration, not metadata end_i
       .rejects.toBeInstanceOf(PermanentWebhookError);
     expect(stripe.createRefund).not.toHaveBeenCalled();
     expect(bookings.createBooking).not.toHaveBeenCalled();
+  });
+});
+
+// ─── REFACTOR-R4-P1-02: webhook idempotency reads fail closed ────────────────
+// Real PaymentService + BookingService over the in-memory repositories and the
+// FakeStripeClient, so "no refund" is read off the refunds Stripe actually recorded.
+
+describe("REFACTOR-R4-P1-02: the webhook fails closed on a read error", () => {
+  const PI = "pi_single_123";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Our own calendar event makes the slot look taken: a read error that fell through
+    // to the re-check would refund a class that exists.
+    mockGetAvailableSlots.mockResolvedValue([]);
+  });
+
+  function build() {
+    const paymentRepo = new InMemoryPaymentRepository();
+    const bookingRepo = new InMemoryBookingRepository();
+    const bookingSvc  = buildTestBookingService({ bookings: bookingRepo });
+    const { service, stripe } = buildTestPaymentService({ paymentRepo, bookings: bookingSvc });
+    const createBooking = jest.spyOn(bookingSvc, "createBooking");
+    return { service, stripe, paymentRepo, bookingRepo, createBooking };
+  }
+
+  it("rejects (no refund, no booking) when isProcessed errors", async () => {
+    const { service, stripe, paymentRepo, createBooking } = build();
+    paymentRepo.isProcessedShouldFail = true;
+
+    await expect(service.processWebhookEvent(fakeSingleEvent(PI))).rejects.toThrow("simulated read failure");
+
+    expect(stripe.refunds).toEqual([]);
+    expect(createBooking).not.toHaveBeenCalled();
+  });
+
+  it("rejects (no refund, no booking) when the booking-exists lookup errors", async () => {
+    const { service, stripe, bookingRepo, createBooking } = build();
+    bookingRepo.hasBookingForPaymentShouldFail = true;
+
+    await expect(service.processWebhookEvent(fakeSingleEvent(PI))).rejects.toThrow("simulated read failure");
+
+    expect(stripe.refunds).toEqual([]);
+    expect(createBooking).not.toHaveBeenCalled();
+  });
+
+  it("rejects (no refund, no booking) when wasRefunded errors", async () => {
+    const { service, stripe, paymentRepo, createBooking } = build();
+    paymentRepo.wasRefundedShouldFail = true;
+
+    await expect(service.processWebhookEvent(fakeSingleEvent(PI))).rejects.toThrow("simulated read failure");
+
+    expect(stripe.refunds).toEqual([]);
+    expect(createBooking).not.toHaveBeenCalled();
+  });
+
+  it("skips a redelivery whose booking was cancelled (marker healed, not re-booked)", async () => {
+    const { service, stripe, paymentRepo, bookingRepo, createBooking } = build();
+    const { cancelToken } = await bookingRepo.createBooking({
+      eventId:         "evt_paid",
+      email:           "student@test.com",
+      name:            "Student",
+      sessionType:     "session1h",
+      startsAt:        "2099-12-01T10:00:00.000Z",
+      endsAt:          "2099-12-01T11:00:00.000Z",
+      stripePaymentId: PI,
+    });
+    await bookingRepo.consumeCancelToken(cancelToken); // the student gave the slot back
+    // The slot is free again — the old confirmed-only gate would have re-booked it.
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+
+    await expect(service.processWebhookEvent(fakeSingleEvent(PI))).resolves.toBeUndefined();
+
+    expect(createBooking).not.toHaveBeenCalled();
+    expect(stripe.refunds).toEqual([]);
+    await expect(paymentRepo.isProcessed(PI)).resolves.toBe(true);
   });
 });

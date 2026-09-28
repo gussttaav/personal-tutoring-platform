@@ -15,7 +15,7 @@ Landing order: P1-02 → P1-01 → P1-03 → P1-04.
 
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
-| [02 Idempotency + eligibility reads fail closed](phase-1-correctness/02-idempotency-reads-fail-closed.md) | `REFACTOR-R4-P1-02` | 🟠 | ⬜ | _tbd_ | |
+| [02 Idempotency + eligibility reads fail closed](phase-1-correctness/02-idempotency-reads-fail-closed.md) | `REFACTOR-R4-P1-02` | 🟠 | ✅ | Claude | local (`claude/idempotency-reads-fail-closed-da990f`) — see Deviations; build + e2e not run |
 | [01 Server-side slot validation + `/api/book` rate limit](phase-1-correctness/01-server-side-slot-validation.md) | `REFACTOR-R4-P1-01` | 🔴 | ✅ (trimmed) | Claude | local (`refactorization`) — Calendar checks dropped at Gustavo's request, see Deviations; e2e pending |
 | [03 Reschedule keeps the original booking until the new one commits](phase-1-correctness/03-reschedule-keeps-original.md) | `REFACTOR-R4-P1-03` | 🟠 | ⬜ | _tbd_ | |
 | [04 Atomic cancel, credit back to the originating pack](phase-1-correctness/04-atomic-cancel-restore-pack.md) | `REFACTOR-R4-P1-04` | 🟡 | ⬜ | _tbd_ | |
@@ -23,7 +23,7 @@ Landing order: P1-02 → P1-01 → P1-03 → P1-04.
 **Exit criteria**
 - [x] `POST /api/book` with an off-hours start ~~, a busy slot,~~ or `endIso − startIso` ≠ the session type's length → 4xx, no calendar event, no credit spent _(P1-01; service + integration + route tests. "Busy slot" dropped with the trimmed scope)_
 - [x] Paid checkout for a mismatched duration → 4xx before any PaymentIntent exists; the webhook books `startIso + duration`, never the metadata `end_iso` _(P1-01; service + integration + route tests)_
-- [ ] Forced Supabase error in any idempotency read during a duplicate webhook → 500 (Stripe retries), no refund, no second booking
+- [x] Forced Supabase error in any idempotency read during a duplicate webhook → 500 (Stripe retries), no refund, no second booking _(P1-02; mocked-client repository test + in-memory PaymentService tests)_
 - [ ] Forced failure after the reschedule's old-token claim → the original booking is `confirmed` again with a working cancel link
 - [ ] Cancelling a pack class returns the credit to `bookings.credit_pack_id`'s pack in the same transaction; `creditsRestored` is false whenever nothing was restored
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build` green; `pnpm test:e2e` booking/cancel/reschedule specs green (re-run once for known flakes)
@@ -123,10 +123,32 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   `slotAtLocal`). Route tests added for `/api/book` (limiter, error codes) and
   `/api/stripe/checkout` (DomainError → 4xx); DB-gated `hasActiveFreeSession` cases added to
   `SupabaseBookingRepository.test.ts`.
+- **P1-02 — base branch / line refs.** Branched after P1-01 landed, so the task md's line refs
+  had drifted (the gate was at `PaymentService.ts:447-460`). No behavioural difference.
+- **P1-02 — existing `PaymentService.test.ts` gate tests re-stubbed.** The hand-rolled
+  `BookingService` mock gained `hasBookingForPayment` (default `false`), and the three
+  `REFACTOR-R3-P1-03` gate tests now stub it instead of `findByStripePaymentId`. Their assertions
+  are unchanged; only the method that says "a booking exists" moved. The `R3-P1-03` file-header
+  comment in `PaymentService.ts` was reworded ("confirmed booking" became any status).
+- **P1-02 — fixture flags are per read, only where a test drives them:** `isProcessedShouldFail`
+  and `wasRefundedShouldFail` (payment), `listByUserShouldFail` and
+  `hasBookingForPaymentShouldFail` (booking), `getCreditsShouldFail` (credits).
+- **P1-02 — tests beyond the plan.** `fail-closed.test.ts` also asserts the "genuinely absent"
+  answer for every read, and covers `decrementCredit` / `restoreCredit` (the other `findUserId`
+  paths). It mocks `@/lib/realtime-channel`, which throws at import without its secret.
+  `AccountService.test.ts` adds a control case: both reads succeed, so the account IS erased.
+  No route-level test for `DELETE /api/account` → 500: `mapDomainErrorToResponse` already maps
+  any non-`DomainError` to 500.
+- **P1-02 — checks.** `pnpm test` 157/157 suites, 2032 tests (DB-gated suites ran against the test
+  DB). `pnpm lint` 0 errors. `tsc --noEmit` shows 1 error, in `src/lib/courses/__tests__/mdx.test.ts`
+  (`RepoLink`), which predates this diff. `pnpm build` and `pnpm test:e2e` were NOT run.
 - **P1-01 — `pnpm test:e2e` NOT run:** `:3000` was held by the main checkout's dev server, which
   Playwright would have reused (testing the wrong code). The reschedule/cancellation specs were
   changed (seed from `/api/availability`, fail instead of skip) but are unverified.
 
 ## Known regressions introduced
 
-_None yet._
+- **P1-02 — cancelling a pack class during a Supabase read error now answers 500 after the
+  cancel token is consumed** (`restoreCredit`'s user lookup throws instead of silently reporting
+  "no pack"). Expected per the task's gotchas: the booking is cancelled either way, and the old
+  behaviour lost the credit without telling anyone. Closes with **P1-04** (atomic cancel).

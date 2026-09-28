@@ -1,5 +1,7 @@
 // ARCH-10: Credits repository interface.
 // ARCH-16: CreditResult moved to domain/types.ts — re-exported here for backward compat.
+// REFACTOR-R4-P1-02: getCredits, decrementCredit, restoreCredit (via the user lookup) and
+// hasProcessedPayment throw on a read error; `null` / `false` means KNOWN absent.
 import type { CreditResult, PackSize } from "../types";
 
 export type { CreditResult };
@@ -20,6 +22,7 @@ export interface ICreditsRepository {
   /**
    * Returns the current credit balance for a user, or null if no record exists.
    * Callers must handle null (user has never purchased a pack).
+   * REFACTOR-R4-P1-02: throws on a read error; `null` means *known absent*.
    */
   getCredits(email: string): Promise<CreditResult | null>;
 
@@ -58,6 +61,7 @@ export interface ICreditsRepository {
    * Returns true if a credit_pack row with this stripeSessionId already exists.
    * Used by the SSE endpoint to detect when the webhook has finished processing
    * a pack payment, without polling Redis.
+   * REFACTOR-R4-P1-02: throws on a read error; `false` means *known absent*.
    */
   hasProcessedPayment(stripeSessionId: string): Promise<boolean>;
 

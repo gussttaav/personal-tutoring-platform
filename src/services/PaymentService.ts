@@ -14,8 +14,8 @@
  * failure now propagates (webhook 500 → Stripe redelivers) instead of assuming the
  * slot is free, so a transient outage can't double-book the tutor's manual calendar.
  *
- * REFACTOR-R3-P1-03: the idempotency gate short-circuits on an existing confirmed
- * booking for the PaymentIntent — so a redelivery after createBooking committed but
+ * REFACTOR-R3-P1-03: the idempotency gate short-circuits on an existing booking
+ * for the PaymentIntent (any status since REFACTOR-R4-P1-02) — so a redelivery after createBooking committed but
  * markProcessed failed heals the marker instead of refunding a fulfilled booking.
  *
  * REFACTOR-R3-P3-03: `getConfirmationChannelState` absorbs the logic that used to sit
@@ -27,6 +27,12 @@
  * webhook books an end DERIVED from the paid duration — the metadata `end_iso` is never
  * booked, so a "1h" payment can no longer yield a longer class. The webhook's freebusy
  * re-check is unchanged apart from asking for the tutor-timezone day.
+ *
+ * REFACTOR-R4-P1-02: the webhook's idempotency reads fail CLOSED — isProcessed,
+ * the booking-exists gate and wasRefunded throw on a DB error (webhook 500 → Stripe
+ * redelivers) instead of reading as "absent" and falling through to a refund. The
+ * booking-exists gate is now status-agnostic (hasBookingForPayment): a cancelled
+ * booking for the PaymentIntent is proof of processing too.
  */
 
 import type Stripe from "stripe";
@@ -447,16 +453,15 @@ export class PaymentService {
     // REFACTOR-R3-P1-03: createBooking and markProcessed are separate writes. If the
     // booking committed but markProcessed failed, Stripe's redelivery must NOT reach the
     // slot re-check (it would see our own calendar event and refund a fulfilled booking).
-    // A confirmed booking for this PI is proof of processing — heal the marker and stop.
-    if (paymentIntentId) {
-      const existing = await this.bookings.findByStripePaymentId(paymentIntentId);
-      if (existing) {
-        await this.paymentRepo.markProcessed(idempotencyKey).catch(() => {});
-        log("info", "Duplicate single-session webhook skipped (booking already exists)", {
-          service: "payment", idempotencyKey,
-        });
-        return;
-      }
+    // A booking for this PI is proof of processing — heal the marker and stop.
+    // REFACTOR-R4-P1-02: status-agnostic. A cancelled booking for this PI is still proof of
+    // processing — re-running would re-book a slot the student already gave back.
+    if (paymentIntentId && await this.bookings.hasBookingForPayment(paymentIntentId)) {
+      await this.paymentRepo.markProcessed(idempotencyKey).catch(() => {});
+      log("info", "Duplicate single-session webhook skipped (booking already exists)", {
+        service: "payment", idempotencyKey,
+      });
+      return;
     }
 
     // SINGLE-SESSION-CONFIRM-01: a prior run already refunded this PaymentIntent for a taken

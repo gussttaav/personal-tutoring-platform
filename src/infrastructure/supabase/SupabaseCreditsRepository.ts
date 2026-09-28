@@ -1,6 +1,9 @@
 // DB-02: Supabase-backed implementation of ICreditsRepository.
 // Credits are stored as per-pack rows in credit_packs; queries aggregate
 // across all active (non-expired) packs ordered by expires_at ASC (FIFO).
+// REFACTOR-R4-P1-02: hasProcessedPayment and findUserId fail CLOSED — a read error
+// throws instead of reading as "not paid" / "no such user" (which getCredits turned
+// into "no credits", and the account-deletion gate into permission to erase).
 import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
 import { paymentChannelName } from "@/lib/realtime-channel";
@@ -96,10 +99,11 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
   }
 
   async hasProcessedPayment(stripeSessionId: string): Promise<boolean> {
-    const { count } = await supabase
+    const { count, error } = await supabase
       .from("credit_packs")
       .select("id", { count: "exact", head: true })
       .eq("stripe_payment_id", stripeSessionId);
+    if (error) throw error;
     return (count ?? 0) > 0;
   }
 
@@ -120,12 +124,14 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
     }
   }
 
+  // REFACTOR-R4-P1-02: null means the user is KNOWN absent; a read error throws.
   private async findUserId(email: string): Promise<string | null> {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("users")
       .select("id")
       .eq("email", email.toLowerCase().trim())
       .maybeSingle();
+    if (error) throw error;
     return data?.id ?? null;
   }
 

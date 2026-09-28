@@ -1,4 +1,6 @@
 // TEST-01: In-memory implementation of ICreditsRepository for integration tests.
+// REFACTOR-R4-P1-02: `getCreditsShouldFail` (FakeCalendarClient style) simulates a DB
+// read error, so tests can assert the account-deletion gate fails closed.
 import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
 
@@ -16,8 +18,11 @@ interface CreditsRecord {
 export class InMemoryCreditsRepository implements ICreditsRepository {
   private store   = new Map<string, CreditsRecord>();
   private usedIds = new Set<string>();
+  // REFACTOR-R4-P1-02
+  getCreditsShouldFail = false;
 
   async getCredits(email: string): Promise<CreditResult | null> {
+    if (this.getCreditsShouldFail) throw new Error("InMemoryCreditsRepository: simulated read failure");
     const rec = this.store.get(email.toLowerCase());
     if (!rec) return null;
     return {

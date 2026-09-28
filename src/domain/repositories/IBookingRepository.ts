@@ -3,6 +3,8 @@
 // SINGLE-SESSION-CONFIRM-01: findByStripePaymentId detail finder for the polling surface.
 // BOOKING-HISTORY-01: listHistoryByUser — paginated past-bookings read.
 // REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap.
+// REFACTOR-R4-P1-02: listByUser, hasAnyBooking, hasBookingForPayment and findByStripePaymentId
+// throw on a read error; `false` / `null` / `[]` means KNOWN absent.
 import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
 
 export interface IBookingRepository {
@@ -45,6 +47,7 @@ export interface IBookingRepository {
    * Returns all active (non-cancelled, future) bookings for a user, ordered by
    * start time ascending. Returns an empty array if the user has no bookings.
    * Each entry includes both tokens alongside the record.
+   * REFACTOR-R4-P1-02: throws on a read error; `[]` means *known absent*.
    */
   listByUser(email: string): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]>;
 
@@ -70,6 +73,7 @@ export interface IBookingRepository {
    * it was later cancelled. Used to gate first-time-user flows (e.g. free
    * trial eligibility) — once a user has booked, cancelling does not restore
    * eligibility.
+   * REFACTOR-R4-P1-02: throws on a read error; `false` means *known absent*.
    */
   hasAnyBooking(email: string): Promise<boolean>;
 
@@ -103,6 +107,9 @@ export interface IBookingRepository {
    * REFACTOR-P4-01: Returns true if a booking row exists for the given Stripe
    * PaymentIntent id. Used by the reconciliation cron to confirm a single-session
    * webhook wrote its downstream booking.
+   * REFACTOR-R4-P1-02: also the webhook's "already fulfilled" gate. Status-agnostic —
+   * true for any number of rows in any status (a rescheduled paid class leaves two).
+   * Throws on a read error; `false` means *known absent*.
    */
   hasBookingForPayment(stripePaymentId: string): Promise<boolean>;
 
@@ -112,6 +119,7 @@ export interface IBookingRepository {
    * Scoped to `status = 'confirmed'` (unlike hasBookingForPayment, which is status-agnostic)
    * so a cancelled/completed/no_show row never reports a stale `confirmed`. Timestamps are
    * normalized via `new Date(...).toISOString()` per the TIMESTAMPTZ gotcha.
+   * REFACTOR-R4-P1-02: throws on a read error; `null` means *known absent*.
    */
   findByStripePaymentId(stripePaymentId: string): Promise<SingleSessionBookingDetail | null>;
 

@@ -1,5 +1,6 @@
 // DB-02: Integration tests for SupabaseBookingRepository.
 // REFACTOR-R4-P1-01: hasActiveFreeSession.
+// REFACTOR-R4-P1-02: hasBookingForPayment with two rows (one cancelled) for one PaymentIntent.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
@@ -167,6 +168,22 @@ describeDb("SupabaseBookingRepository", () => {
     expect(await repo.hasActiveFreeSession(record.email)).toBe(false);
 
     await cleanup(record.email);
+  });
+
+  // REFACTOR-R4-P1-02: a rescheduled paid class leaves the old row (cancelled) and the
+  // new one (confirmed) sharing the PaymentIntent. .maybeSingle() errored on that; the
+  // count answers true — and false for a PaymentIntent with no row at all.
+  it("hasBookingForPayment is true for two bookings (one cancelled) sharing a PaymentIntent", async () => {
+    const stripePaymentId = `pi_test_${Date.now()}_${recordSeq}`;
+    const original        = { ...baseRecord(), stripePaymentId };
+    const { cancelToken } = await repo.createBooking(original);
+    await repo.consumeCancelToken(cancelToken);
+    await repo.createBooking({ ...baseRecord(), email: original.email, stripePaymentId });
+
+    expect(await repo.hasBookingForPayment(stripePaymentId)).toBe(true);
+    expect(await repo.hasBookingForPayment(`${stripePaymentId}_none`)).toBe(false);
+
+    await cleanup(original.email);
   });
 
   it("acquireSlotLock returns true then false for same slot", async () => {

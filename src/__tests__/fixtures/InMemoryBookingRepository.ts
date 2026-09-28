@@ -1,5 +1,7 @@
 // TEST-01: In-memory implementation of IBookingRepository for integration tests.
 // REFACTOR-R4-P1-01: hasActiveFreeSession.
+// REFACTOR-R4-P1-02: per-read `*ShouldFail` flags (FakeCalendarClient style) simulate a
+// DB read error, so tests can assert the callers fail closed.
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type {
   BookingHistoryEntry,
@@ -19,6 +21,9 @@ export class InMemoryBookingRepository implements IBookingRepository {
   private locks                = new Set<string>();
   private pendingTerminations  = new Map<string, { fireAtMs: number; attempts: number; lastError?: string }>();
   private statuses             = new Map<string, string>(); // eventId → status
+  // REFACTOR-R4-P1-02
+  listByUserShouldFail           = false;
+  hasBookingForPaymentShouldFail = false;
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
@@ -58,6 +63,7 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   async listByUser(email: string): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]> {
+    if (this.listByUserShouldFail) throw new Error("InMemoryBookingRepository: simulated read failure");
     const result: { cancelToken: string; joinToken: string; record: BookingRecord }[] = [];
     for (const [token, { joinToken, record }] of this.cancelTokens) {
       if (record.email.toLowerCase() === email.toLowerCase() && !record.used) {
@@ -158,8 +164,9 @@ export class InMemoryBookingRepository implements IBookingRepository {
     };
   }
 
-  // REFACTOR-P4-01
+  // REFACTOR-P4-01. Status-agnostic, like the Supabase impl (a cancelled row still counts).
   async hasBookingForPayment(stripePaymentId: string): Promise<boolean> {
+    if (this.hasBookingForPaymentShouldFail) throw new Error("InMemoryBookingRepository: simulated read failure");
     for (const record of this.bookings.values()) {
       if (record.stripePaymentId === stripePaymentId) return true;
     }

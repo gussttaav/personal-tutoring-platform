@@ -5,6 +5,10 @@
 // relying on FK-hint syntax that varies across PostgREST versions.
 // BOOKING-HISTORY-01: listHistoryByUser — keyset-paginated past bookings.
 // REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap (fails closed on error).
+// REFACTOR-R4-P1-02: the reads that authorize a side effect fail CLOSED — listByUser and
+// hasAnyBooking's user lookups, hasBookingForPayment (now a count: a rescheduled paid
+// class leaves two rows per PaymentIntent, which .maybeSingle() errors on) and
+// findByStripePaymentId throw on a read error instead of answering "absent".
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
@@ -164,12 +168,15 @@ export class SupabaseBookingRepository implements IBookingRepository {
   ): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]> {
     const normalized = email.toLowerCase().trim();
 
-    const { data: user } = await supabase
+    // REFACTOR-R4-P1-02: an error here must not read as "no bookings" — the deletion
+    // gate takes [] as permission to erase the account.
+    const { data: user, error: userErr } = await supabase
       .from("users")
       .select("id")
       .eq("email", normalized)
       .maybeSingle();
 
+    if (userErr) throw userErr;
     if (!user) return [];
 
     const { data, error } = await supabase
@@ -339,12 +346,14 @@ export class SupabaseBookingRepository implements IBookingRepository {
   async hasAnyBooking(email: string): Promise<boolean> {
     const normalized = email.toLowerCase().trim();
 
-    const { data: user } = await supabase
+    // REFACTOR-R4-P1-02: throws on a read error, like the bookings count below.
+    const { data: user, error: userErr } = await supabase
       .from("users")
       .select("id")
       .eq("email", normalized)
       .maybeSingle();
 
+    if (userErr) throw userErr;
     if (!user) return false;
 
     const { count, error } = await supabase
@@ -417,13 +426,16 @@ export class SupabaseBookingRepository implements IBookingRepository {
   }
 
   // REFACTOR-P4-01: reconciliation lookup — true if a booking row exists for this PaymentIntent.
+  // REFACTOR-R4-P1-02: also the webhook's status-agnostic "already fulfilled" gate. A count,
+  // not .maybeSingle(): a rescheduled paid class leaves two rows (old cancelled + new
+  // confirmed) sharing the PaymentIntent, and .maybeSingle() errors on two rows.
   async hasBookingForPayment(stripePaymentId: string): Promise<boolean> {
-    const { data } = await supabase
+    const { count, error } = await supabase
       .from("bookings")
-      .select("id")
-      .eq("stripe_payment_id", stripePaymentId)
-      .maybeSingle();
-    return data !== null;
+      .select("id", { head: true, count: "exact" })
+      .eq("stripe_payment_id", stripePaymentId);
+    if (error) throw error;
+    return (count ?? 0) > 0;
   }
 
   // SINGLE-SESSION-CONFIRM-01: detail finder for the single-session polling surface.
@@ -439,7 +451,10 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .eq("status", "confirmed")
       .maybeSingle();
 
-    if (error || !data || !data.join_token || !data.calendar_event_id) return null;
+    // REFACTOR-R4-P1-02: an error is not "no confirmed booking" — throw, and keep null
+    // for the genuinely absent (or not-yet-joinable) row.
+    if (error) throw error;
+    if (!data || !data.join_token || !data.calendar_event_id) return null;
 
     return {
       eventId:     data.calendar_event_id,

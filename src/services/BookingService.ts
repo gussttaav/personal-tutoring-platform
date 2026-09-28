@@ -19,6 +19,9 @@
 // any side effect. PaymentService runs it at checkout. Also caps the free 15-minute
 // call at one non-cancelled booking per user. (Trimmed at Gustavo's request: no
 // per-booking Google Calendar read — see docs/refactor/STATUS.md.)
+//
+// REFACTOR-R4-P1-02: hasBookingForPayment — status-agnostic delegate backing the
+// PaymentService webhook's "already fulfilled" gate.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -555,6 +558,12 @@ export class BookingService {
   // single-session polling surface. Thin delegate — see IBookingRepository.findByStripePaymentId.
   async findByStripePaymentId(paymentIntentId: string): Promise<SingleSessionBookingDetail | null> {
     return this.bookings.findByStripePaymentId(paymentIntentId);
+  }
+
+  // REFACTOR-R4-P1-02: true if ANY booking (whatever its status) carries this PaymentIntent.
+  // Thin delegate — see IBookingRepository.hasBookingForPayment.
+  async hasBookingForPayment(paymentIntentId: string): Promise<boolean> {
+    return this.bookings.hasBookingForPayment(paymentIntentId);
   }
 
   private async sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {
