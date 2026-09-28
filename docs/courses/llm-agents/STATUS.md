@@ -36,7 +36,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (5/9) | _tbd_ | local |
+| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (6/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
@@ -524,3 +524,54 @@ before the first cell. Decisions recorded for the reviewer of the block:
   numeric at the tolerance edges; no horizontal page scroll at 360 px (Playwright screenshots).
   `tsc` reports one pre-existing error in `src/lib/courses/__tests__/mdx.test.ts` (`RepoLink`),
   unchanged by this lesson.
+
+Lesson 6 `perplejidad` authored on the shared branch (2026-09-28). 2 082 words (82 over the
+advisory target), 5 display equations, no widget (the block md assigns none), 3 cells (longest 29
+lines), 4 quiz, no challenge, 3 readings (Jurafsky & Martin ch. 3, The Pile, Delétang et al. 2024;
+URLs checked). Runs on the mini-GPT and says so before the first cell; cell 1 uses only the
+tokenizer and says that too. Decisions recorded for the reviewer of the block:
+- **The opening is a measured coincidence.** A unigram model over bytes (no merges) pays 3.200
+  nats per token on the reserved text, the mini-GPT's 3.2; the lesson resolves it with bits per
+  byte ($\text{bpb} = \mathcal{L}/(\bar{\ell}\ln 2)$): 4.62 against 2.16. Cell 1 shows the same
+  inversion on one model across tokenizers: the unigram's per-token perplexity rises 24.5 → 81.9 →
+  204.3 with 0, 64 and 256 merges while its bpb falls 4.62 → 4.02 → 3.58.
+- **Three cells, not the block md's two** (table updated). The third keeps lesson 3's body
+  promise («si eso es aprender español o aprenderse esas páginas lo mide la lección sobre
+  perplejidad»): lesson 3's loop, 100 steps on the last 3 000 reserved tokens, measured before and
+  after on those pages (3.595 → 3.240) and on the rest of the reserved text (3.030 → 3.095). The
+  signs hold for all 12 training seeds tried (pages −0.21 to −0.36, rest +0.02 to +0.09), which is
+  what the lesson's «cambia la semilla» invitation claims.
+- **Laplace smoothing is forced by the data**: the reserved text has 10 tokens the training part
+  never has (the digits 1, 2, 6, 7, 8 and the second byte of «Í», from an inscription and the
+  novel's closing date), so without the $+1$ every unigram loss is `inf`. The prose says «una
+  inscripción» and does not say whose.
+- **Held-out vs training is derived**, as a chain of expectations over which text falls in each
+  part:
+  $\mathbb{E}[\mathcal{L}_{\text{corpus}}(\theta_{\text{corpus}})] \le \bar{\mathcal{L}}(\theta^{\star}) \le \mathbb{E}[\mathcal{L}_{\text{res}}(\theta_{\text{corpus}})]$.
+  Three caveats are stated: the checkpoint is not the minimiser; the reserved text is the end of
+  the novel, not a random sample; and it is not clean (it chose the checkpoint among eight
+  candidates, and the BPE merges were counted on the whole novel). That is why the lesson names a
+  third split, **prueba**. The unigram model's optimality among context-free models (Gibbs, via
+  $\log y \le y - 1$) is in a `<Details>`; entropy is not named.
+- **The model's numbers are a sample**: 32 windows of 64 tokens per part (3.182 reserved, 2.556
+  training, gap 0.63; the unigram's gap 0.014). The prose quotes the training script's full-text
+  3.204 beside it.
+- **Terms and symbols added before use:** `texto reservado` (with *prueba* as a third split),
+  `perplejidad`, `nat`/`bit`, `bits por byte`, `modelo de unigramas`, `suavizado de Laplace` in the
+  delta's §4; $\text{bpb}$, $f(v)$, $p_{\text{uni}}$, $\mathcal{L}_{\text{res}}$,
+  $\bar{\mathcal{L}}$, $\theta_{\text{corpus}}$, $\theta^{\star}$ in `NOTATION.md`, with a note: the
+  minimiser is not $\hat{\theta}$ (the hat is «from a batch»), a frequency is $f$ and never $c$
+  (lesson 5's cost), and a context-free model is written $p_\theta(v)$ rather than with a new
+  vector letter.
+- **Lessons 3 and 5 now link this lesson**, their placeholder comments removed. This lesson's bridge
+  names lesson 7 (`leyes-de-escala`) in prose with the usual comment. `draft: false`, as lessons
+  1–5, against the PUBLICATION line.
+- **A grader edge, not a lesson defect:** a numeric answer exactly at the tolerance can fail on one
+  side from floating-point error (9.41 against 9.46 ± 0.05: the difference is
+  0.05000000000000071). `src/lib/courses/quiz/grade.ts` is unchanged; flagged as its own task.
+- Verified: `pnpm lint:content` (only the words warning), `jest src/lib/courses` (34 suites, 532
+  tests), `pnpm build` green (0 KaTeX errors); the three cells under Node Pyodide 0.29.3 and in the
+  Browser pane on `pnpm start` with identical output (≈2.2 s, 1.7 s and 2.7 s warm); both
+  invitations (no $+1$ gives `inf`; other seeds keep the signs); all four quiz questions right and
+  wrong; no horizontal page scroll at 360 px (Playwright; the four wide equations scroll in their
+  own boxes).

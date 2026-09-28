@@ -30,7 +30,7 @@ this file gets shorter as it goes down.
 | $k$, $p$ | the top-$k$ and top-$p$ (nucleus) cut-offs on the sampling distribution |
 | $\mathcal{K}^{(l)}$, $\mathcal{V}^{(l)}$ | the cached keys and values of layer $l$, for every position generated so far |
 | $T_{\text{ctx}}$ | the context length: the most positions one call may hold |
-| $\text{PPL}$ | perplexity — $\exp$ of the mean per-token cross-entropy |
+| $\text{PPL}$ | perplexity — $\exp$ of the mean per-token cross-entropy on a given text, $= p_\theta(x_{2:T+1} \mid x_1)^{-1/T}$ (Block 1 lesson 6) |
 | $N$, $D$, $C$ | parameters, training tokens, compute — Kaplan's letters |
 | $\alpha_N$, $\alpha_D$ | the scaling exponents: how the loss falls with $N$ and with $D$ |
 | $x_t \in V$ | the token at position $t$ — the first course's $w_t$; $x_{1:T}$, $x_{<t}$, $x_{\le t}$ are the runs, as there, and $x_{<1}$ is the empty sequence (Block 1 lesson 1) |
@@ -64,6 +64,12 @@ this file gets shorter as it goes down.
 | $\mathbf{K}$, $\mathbf{V} \in \mathbb{R}^{t \times d_k}$ | one head's share of the caché after $t$ positions — row $i$ is $\mathbf{k}_i^{\top}$, $\mathbf{v}_i^{\top}$ — the first course's two matrices, kept from one token to the next (Block 1 lesson 5) |
 | $c_{\text{fila}}$ | the multiplications that take one row through every matrix of the network, $L\left(4d_{\text{model}}^{2} + 2d_{\text{model}} \cdot d_{\text{ff}}\right) + d_{\text{model}} \cdot \lvert V \rvert$: one per weight of a matrix (Block 1 lesson 5) |
 | $c(t)$ | the multiplications of the token at position $t$ with the caché, $c_{\text{fila}} + 2Lt \cdot d_{\text{model}}$; without it, exactly $t\,c(t)$ (Block 1 lesson 5) |
+| $\text{bpb}$ | bits per byte: $-\log_2 p_\theta(x_{2:T+1} \mid x_1)$ divided by the $n$ bytes of the predicted tokens, $= \mathcal{L}/(\bar{\ell}\ln 2)$ (Block 1 lesson 6) |
+| $f(v)$ | the frequency of entry $v$: how many times it appears in the training part (Block 1 lesson 6) — lesson 2's $f(a, b)$ one level down |
+| $p_{\text{uni}}(v)$ | the modelo de unigramas: $\left(f(v) + 1\right) / \sum_{u}\left(f(u) + 1\right)$, the same at every position (Block 1 lesson 6) |
+| $\mathcal{L}_{\text{res}}(\theta)$ | lesson 1's loss averaged over windows of the texto reservado — lesson 3's $\mathcal{L}_{\text{corpus}}$ on the other part (Block 1 lesson 6) |
+| $\bar{\mathcal{L}}(\theta)$ | the mean loss over all text of the same origin: what both estimate for a $\theta$ fixed in advance (Block 1 lesson 6) |
+| $\theta_{\text{corpus}}$ · $\theta^{\star}$ | the $\theta$ that minimises $\mathcal{L}_{\text{corpus}}$ · the one that minimises $\bar{\mathcal{L}}$ (Block 1 lesson 6) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -141,6 +147,19 @@ $\mathcal{K}^{(l)}$ and $\mathcal{V}^{(l)}$ are the $h$ of them in layer $l$. Co
 **multiplications of matrix products**, the first course's unit («una multiplicación por
 casilla»), which drops the layer norms, the softmax and the ReLU; lowercase italic $c$ is a cost
 and meets nothing — the first course's bold $\mathbf{c}$ was a context vector.
+
+**Measuring has its own letters, and none of them is a hat** (`COURSE-C2-P1-01`, Block 1 lesson
+6). The course's $\log$ is natural and a loss is in **nats**; the lesson that first counts bits
+writes $\log_2$ and says so, and $\text{bpb}$ is roman like $\text{PPL}$. The minimiser of the
+training loss is **$\theta_{\text{corpus}}$, not $\hat{\theta}$**: the hat means «estimated from a
+batch» and nothing else, and the subscript ties it to $\mathcal{L}_{\text{corpus}}$, the loss it
+minimises. The star is the optimum, as in $v^{\star}$ (the argmax of the logits): $\theta^{\star}$
+minimises $\bar{\mathcal{L}}$, and the overline is a mean, as in $\bar{\ell}$ — here over all text of
+the same origin, not over one corpus. A frequency is $f$, as lesson 2's pair frequency was, and never
+$c$, which lesson 5 spent on a cost. $p_{\text{uni}}$ is a distribution and carries its subscript,
+like $p_\theta$; bare $p$ stays top-p's threshold. And a model with no context is written with the
+course's own letter, $p_\theta(v)$, the same at every position, rather than with a fresh vector:
+$\mathbf{q}$ is the sampler's and $\mathbf{r}$ would sit next to the reserved $r_\phi$.
 
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson

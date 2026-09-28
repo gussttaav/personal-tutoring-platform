@@ -36,7 +36,7 @@ Mathematics: **high**. This is the block that has to earn the title's first half
 | 3 | `entrenar-un-mini-gpt` | Entrenar un mini-GPT en NumPy | — | 3 | 4 | 1 |
 | 4 | `muestreo` | Muestreo: temperatura, top-k y top-p | `sampling-explorer` | 2 | 5 | 1 |
 | 5 | `kv-cache` | La caché de claves y valores: cuánto cuesta cada token | `kv-cache` | 2 | 5 | 1 |
-| 6 | `perplejidad` | Perplejidad: medir un modelo de lenguaje | — | 2 | 4 | — |
+| 6 | `perplejidad` | Perplejidad: medir un modelo de lenguaje | — | 3 | 4 | — |
 | 7 | `leyes-de-escala` | Leyes de escala: Kaplan y Chinchilla | `scaling-laws` | 1 | 5 | — |
 | 8 | `aprendizaje-en-contexto` | Aprendizaje en contexto: el prompt como programa | — | 2 | 4 | — |
 | 9 | `proyecto-mini-gpt` | Proyecto: el modelo hecho función | — | 3 | 3 | 1 |
@@ -61,7 +61,7 @@ here; STATUS stays phase-level.
 - [x] 3. `entrenar-un-mini-gpt`
 - [x] 4. `muestreo`
 - [x] 5. `kv-cache`
-- [ ] 6. `perplejidad`
+- [x] 6. `perplejidad`
 - [ ] 7. `leyes-de-escala`
 - [ ] 8. `aprendizaje-en-contexto`
 - [ ] 9. `proyecto-mini-gpt`
