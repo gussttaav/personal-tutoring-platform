@@ -1613,6 +1613,50 @@
         "slider": "Posición t",
         "back": "◀ token",
         "forward": "token ▶"
+      },
+      "scaling-laws": {
+        "groupAria": "Las leyes de escala de Kaplan y de Chinchilla, y el reparto óptimo de un presupuesto de cálculo entre parámetros y tokens",
+        "views": {
+          "laws": "Las leyes",
+          "budget": "Un presupuesto"
+        },
+        "axisLabel": "Frente a",
+        "axes": {
+          "n": "N · parámetros",
+          "d": "D · tokens",
+          "c": "C · cálculo"
+        },
+        "lawsTitle": "Pérdida en nats por token frente a {q}, los dos ejes en escala logarítmica",
+        "lawsAria": "La pérdida frente a {q} en ejes logarítmicos: la ley de Kaplan es una recta; la de Chinchilla se curva hacia un suelo.",
+        "legendKaplan": "Kaplan (2020)",
+        "legendChinchilla": "Chinchilla (2022), reajustado en 2024",
+        "legendExtended": "discontinua: fuera de lo medido",
+        "readKaplan": "Kaplan, con {q} = {x}: pérdida {loss}. Multiplicar {q} por 10 la multiplica por {factor}.",
+        "readChinchilla": "Chinchilla: pérdida {loss}. Multiplicar {q} por 10 la multiplica por {factor}.",
+        "readChinchillaOff": "Chinchilla: por encima de la gráfica, muy lejos de lo que su ajuste midió.",
+        "heightNote": "Dos corpus y dos tokenizadores distintos: compara la forma de las curvas, no su altura.",
+        "slider": {
+          "n": "N, parámetros",
+          "d": "D, tokens de entrenamiento",
+          "c": "C, FLOPs"
+        },
+        "valleyTitle": "Pérdida frente a N con el presupuesto fijo, C = {c} FLOPs, y D = C/6N",
+        "valleyAria": "Con C = {c} FLOPs, la pérdida frente a N forma un valle con el fondo en N* = {n}.",
+        "valleyAxes": "N en escala logarítmica. A la izquierda, modelos pequeños que leen muchos tokens; a la derecha, grandes que leen pocos.",
+        "optimum": "El fondo: N* = {n} parámetros y D* = {d} tokens, {ratio} tokens por parámetro, pérdida {loss}.",
+        "gopherNote": "Con este presupuesto, un modelo del tamaño de Gopher (280 000 millones de parámetros) queda {gap} por encima del fondo; uno del de Chinchilla (70 000 millones) está en él.",
+        "extended": "Fuera de lo que Chinchilla midió, de 6 × 10¹⁸ a 3 × 10²¹ FLOPs: aquí la curva se prolonga, no se mide.",
+        "budgetSlider": "Presupuesto C",
+        "gopherButton": "El presupuesto de Gopher",
+        "frontierTitle": "El fondo del valle para cada presupuesto: N* frente a C, los dos ejes en escala logarítmica",
+        "frontierAria": "N* frente a C es una recta. GPT-3 y Gopher quedan muy por encima; Chinchilla, sobre ella; el mini-GPT, sobre su prolongación, siete órdenes de magnitud más abajo.",
+        "frontierAxes": "La recta, continua donde Chinchilla midió. Los puntos, modelos entrenados, en C = 6ND.",
+        "models": {
+          "miniGpt": "mini-GPT",
+          "gpt3": "GPT-3",
+          "gopher": "Gopher",
+          "chinchilla": "Chinchilla"
+        }
       }
     }
   },

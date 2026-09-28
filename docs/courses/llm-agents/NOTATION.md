@@ -31,8 +31,8 @@ this file gets shorter as it goes down.
 | $\mathcal{K}^{(l)}$, $\mathcal{V}^{(l)}$ | the cached keys and values of layer $l$, for every position generated so far |
 | $T_{\text{ctx}}$ | the context length: the most positions one call may hold |
 | $\text{PPL}$ | perplexity — $\exp$ of the mean per-token cross-entropy on a given text, $= p_\theta(x_{2:T+1} \mid x_1)^{-1/T}$ (Block 1 lesson 6) |
-| $N$, $D$, $C$ | parameters, training tokens, compute — Kaplan's letters |
-| $\alpha_N$, $\alpha_D$ | the scaling exponents: how the loss falls with $N$ and with $D$ |
+| $N$, $D$, $C$ | parameters, training tokens, compute — Kaplan's letters. $N$ counts every parameter, embeddings included, as Chinchilla does (Kaplan's excludes them, and Block 1 lesson 7 says so where it matters); $D$ counts tokens **read**, a token read twice counting twice; $C$ is in FLOPs |
+| $\alpha_N$, $\alpha_D$ | the scaling exponents: how the loss falls with $N$ and with $D$. Kaplan's are of the whole loss (0.076, 0.095), Chinchilla's of what lies above $\mathcal{L}_{\infty}$ (about 0.35): same letters, and Block 1 lesson 7 says which fit a number belongs to |
 | $x_t \in V$ | the token at position $t$ — the first course's $w_t$; $x_{1:T}$, $x_{<t}$, $x_{\le t}$ are the runs, as there, and $x_{<1}$ is the empty sequence (Block 1 lesson 1) |
 | $\mathbf{Z} \in \mathbb{R}^{T \times \lvert V \rvert}$ | the logits stacked — row $t$ is $\mathbf{z}_t^{\top}$, one row per position read, one column per entry |
 | $\mathbf{z}_t(x_{\le t})$ | the logits of position $t$ **with the input named**: what the network was given. Used to state that the mask makes $\mathbf{z}_t(x_{1:T}) = \mathbf{z}_t(x_{\le t})$ (Block 1 lesson 1) |
@@ -70,6 +70,12 @@ this file gets shorter as it goes down.
 | $\mathcal{L}_{\text{res}}(\theta)$ | lesson 1's loss averaged over windows of the texto reservado — lesson 3's $\mathcal{L}_{\text{corpus}}$ on the other part (Block 1 lesson 6) |
 | $\bar{\mathcal{L}}(\theta)$ | the mean loss over all text of the same origin: what both estimate for a $\theta$ fixed in advance (Block 1 lesson 6) |
 | $\theta_{\text{corpus}}$ · $\theta^{\star}$ | the $\theta$ that minimises $\mathcal{L}_{\text{corpus}}$ · the one that minimises $\bar{\mathcal{L}}$ (Block 1 lesson 6) |
+| $\mathcal{L}(N)$, $\mathcal{L}(D)$, $\mathcal{L}(N, D)$ | the loss on unseen text as a function of scale: of the parameters, of the training tokens, of both (Block 1 lesson 7). The papers write $L$, which is the layer count here |
+| $N_c$, $D_c$ | Kaplan's scales in $\mathcal{L}(N) = (N_c/N)^{\alpha_N}$, $\mathcal{L}(D) = (D_c/D)^{\alpha_D}$: constants of the corpus and the tokeniser, not of the model (Block 1 lesson 7) |
+| $\mathcal{L}_{\infty}$ | the irreducible loss, the floor of $\mathcal{L}(N, D)$ as $N, D \to \infty$: Chinchilla's $E$ (Block 1 lesson 7) |
+| $A_N$, $A_D$ | Chinchilla's coefficients in $\mathcal{L}(N, D) = \mathcal{L}_{\infty} + A_N/N^{\alpha_N} + A_D/D^{\alpha_D}$: the paper's $A$ and $B$ (Block 1 lesson 7) |
+| $N^{\star}(C)$, $D^{\star}(C)$ | the reparto óptimo for a budget $C$: the $N$ and $D = C/(6N)$ that minimise $\mathcal{L}(N, D)$. The papers' $N_{\text{opt}}$, $D_{\text{opt}}$ (Block 1 lesson 7) |
+| $G$ | the constant in $N^{\star} = G\,(C/6)^{\alpha_D/(\alpha_N + \alpha_D)}$, Chinchilla's eq. 4 — inside a `<Details>` only (Block 1 lesson 7) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -160,6 +166,21 @@ $c$, which lesson 5 spent on a cost. $p_{\text{uni}}$ is a distribution and carr
 like $p_\theta$; bare $p$ stays top-p's threshold. And a model with no context is written with the
 course's own letter, $p_\theta(v)$, the same at every position, rather than with a fresh vector:
 $\mathbf{q}$ is the sampler's and $\mathbf{r}$ would sit next to the reserved $r_\phi$.
+
+**Scaling has its own letters, and two of the papers' are taken** (`COURSE-C2-P1-01`, Block 1
+lesson 7). Both papers write the loss $L$; here it stays $\mathcal{L}$, because the shared §4
+reserves $L$ for the layer count and lesson 5 wrote $2Lt \cdot d_{\text{model}}$ with it. Chinchilla
+writes $\mathcal{L}(N, D) = E + A/N^{\alpha} + B/D^{\beta}$, and three of those letters are spoken
+for: $B$ is the batch size (shared §4), $\beta$ the KL coefficient (shared §4), and an italic $E$
+would sit beside lessons 3 and 6's $\mathbb{E}$. So the floor is $\mathcal{L}_{\infty}$, the loss
+with $N$ and $D$ infinite, in the family of $\mathcal{L}_{\text{res}}$ and $\mathcal{L}_{\text{corpus}}$;
+the coefficients take the subscript of the quantity they go with, $A_N$ and $A_D$; and the
+exponents are the table's $\alpha_N$, $\alpha_D$, which were always «how the loss falls with $N$ and
+with $D$». The lesson names the paper's letters once, in a clause. The optimum is starred, as
+$v^{\star}$ and $\theta^{\star}$ are, never subscripted $\text{opt}$; and the exponents of $C$ in
+$N^{\star}$ and $D^{\star}$ are written out as fractions of $\alpha_N$ and $\alpha_D$ rather than
+given the papers' $a$ and $b$, which lesson 2 spent on the two tokens of a fusión. $N_c$ and $D_c$
+are Kaplan's alone; Chinchilla's constants are only ever $A_N$, $A_D$, $\mathcal{L}_{\infty}$.
 
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson

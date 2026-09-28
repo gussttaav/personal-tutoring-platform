@@ -315,7 +315,7 @@ compra al mini-GPT $2.1$ nats por token: dividir entre ocho las candidatas.
 Y compara las dos partes. El modelo de unigramas paga casi lo mismo en las dos, $5.294$ y $5.308$:
 con 511 números libres no puede aprenderse el texto de entrenamiento. El mini-GPT paga $2.556$ sobre
 el de entrenamiento, $0.63$ menos que sobre el reservado. Es la cadena de arriba, medida. Leyó cada
-token de esa parte más de treinta veces, y parte de lo que sabe de ella lo sabe de memoria.
+token de esa parte unas veintiocho veces, y parte de lo que sabe de ella lo sabe de memoria.
 
 La tercera responde a lo que quedó pendiente en la lección sobre el entrenamiento. Allí, seguir
 entrenando sobre las últimas páginas de la novela bajaba la pérdida sobre esas mismas páginas. La
@@ -377,11 +377,8 @@ queda $0.6$ por debajo de la reservada porque ha leído su corpus decenas de vec
 parámetros para tan poco texto, o demasiado poco texto para tantos parámetros, y las dos frases no
 piden lo mismo.
 
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 7
-    (slug leyes-de-escala), envolver «la lección siguiente, sobre las leyes de escala» en su
-    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
-
 Cuál de las dos es la buena tiene una respuesta cuantitativa. La pérdida sobre texto no visto baja
 como una potencia del número de parámetros, del de tokens de entrenamiento y del cálculo gastado, y
 con un presupuesto fijo hay un reparto mejor que los demás entre modelo y datos. Medir esas potencias
-y ver dónde cae el mini-GPT respecto a ese reparto es la lección siguiente, sobre las leyes de escala.
+y ver dónde cae el mini-GPT respecto a ese reparto es <Leccion slug="leyes-de-escala">la lección
+siguiente, sobre las leyes de escala</Leccion>.

@@ -36,7 +36,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (6/9) | _tbd_ | local |
+| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (7/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
@@ -575,3 +575,67 @@ tokenizer and says that too. Decisions recorded for the reviewer of the block:
   invitations (no $+1$ gives `inf`; other seeds keep the signs); all four quiz questions right and
   wrong; no horizontal page scroll at 360 px (Playwright; the four wide equations scroll in their
   own boxes).
+
+Lesson 7 `leyes-de-escala` authored on the shared branch (2026-09-28), with the `scaling-laws` widget
+built first in the same change. 2 174 words (advisory over the 2 000 target, like lessons 3–6), 9
+display equations (2 of them inside a `<Details>`), 1 widget, 1 cell (32 lines), 5 quiz, no
+challenge, 5 readings (Kaplan et al. 2020, Hoffmann et al. 2022, Besiroglu et al. 2024, Pearce & Song
+2024, Muennighoff et al. 2023; titles, authors and venues checked on arXiv). It runs on the mini-GPT's
+*numbers* only (N, steps, batch) and says so before the cell; nothing is loaded. Decisions recorded
+for the reviewer of the block:
+- **The regression is on Chinchilla's Table 3**, the paper's own compute-optimal frontier (approach
+  1, nine rows, 400M–10T parameters): `np.polyfit` on the logs gives exponents 0.498 / 0.502 and
+  20.2–21.8 tokens per parameter over nine decades of C. That is the acceptance criterion's
+  «reproduces 20:1», and the tolerance the lesson states is **10 %**. The prose says the rows are a
+  summary of a fit, not nine trainings, and that the exponents adding to 1 checks nothing (OLS is
+  linear and every row has log N + log D = log C − log 6). No raw Chinchilla data is published in a
+  table; Epoch's reconstruction from Figure 4 has no licence, so it is not redistributed.
+- **The derivation is the fixed-budget optimum**: derivative in log N of the two reducible terms →
+  the balance α_N A_N N^−α_N = α_D A_D D^−α_D → N* ∝ C^{α_D/(α_N+α_D)}, D* ∝ C^{α_N/(α_N+α_D)} →
+  D*/N* constant iff α_N = α_D; the full solve (the paper's eq. 4) in a `<Details>`. C ≈ 6ND is
+  derived from lesson 5's c_fila (2 ops per weight forward) and the first course's backprop (two
+  products back per product forward); the attention term (12 % in the mini-GPT's 64-token windows) is
+  named and dropped, with Chinchilla's own «within 10 %» (its Table A4).
+- **The checkpoint's own ratio**: C = 6 · 136 448 · 3 584 000 ≈ 2.93 × 10¹² FLOPs (step 1 750 × 32 ×
+  64 tokens). The Table-3 line extrapolated 6.8 decades down asks ~160 000 parameters and 3.1 M tokens;
+  the checkpoint has 136 448 and read 3.6 M, so **in compute it is optimal**. What it lacks is
+  distinct text: 125 789 tokens read 28.5 times, ~24× short of the distinct tokens Chinchilla's D
+  assumes (its footnote 2). That is the answer to lesson 6's «demasiados parámetros / demasiado poco
+  texto»; Muennighoff et al. (≈4 epochs is nearly as good as new text, then decays) is cited for why
+  28 epochs is not.
+- **Widget: Chinchilla's approach 3 with Besiroglu et al.'s 2024 re-fit** (E 1.8172, A 482.01,
+  B 2085.43, α 0.3478, β 0.3658), not the printed constants (1.69, 406.4, 410.7, 0.34, 0.28), which
+  put the optimum at ~50–90 tokens per parameter and contradict the paper's 20; the test pins both.
+  The re-fit puts the valley's bottom at 72 B for Gopher's budget, so Chinchilla (70 B) sits on it and
+  Gopher 0.019 nats up the wall. Kaplan's three laws are drawn with his constants (N non-embedding,
+  C_min converted from PF-days); Chinchilla's curve beside them, both solid over the measured ranges
+  and dashed beyond. The mini-GPT has **no point on the loss view** (different tokeniser and corpus,
+  lesson 6's point; quiz 5 asks it) and **a point on the frontier**, on the dashed extension. The
+  frontier line is the re-fit's closed form (≈118 000 at the checkpoint's C), the cell's is Table 3's
+  (≈160 000): two fits, 6.8 decades of extrapolation; the widget quotes no number there and the prose
+  quotes the cell's. `math/scaling-laws.test.ts` checks the closed-form optimum against a grid search,
+  the balance at the optimum, and every number the prose and widget quote.
+- **Notation:** the papers' L is ℒ (L is the layer count); Chinchilla's E, A, B, α, β become
+  ℒ∞, A_N, A_D, α_N, α_D (B is the batch size, β reserved, italic E beside 𝔼); the optimum is starred
+  (N*, D*), not subscripted «opt»; the exponents of C are written as fractions, not the papers' a, b
+  (lesson 2's pair). Rows and a note added to `NOTATION.md`; the N, D, C and α rows now say N counts
+  embeddings (Chinchilla) and D counts readings.
+- **Terms added before use:** `ley de potencia`, `ley de escala`, `cálculo` (FLOPs), `presupuesto`,
+  `reparto óptimo`, `valle`/`fondo`, `pérdida irreducible`, `época`, `tokens distintos`.
+- **Lesson 6 touched twice**: its bridge now links this lesson (placeholder comment removed), and its
+  body's «Leyó cada token de esa parte más de treinta veces» is now «unas veintiocho veces» — the
+  checkpoint is step 1 750, so 1 750 · 32 · 64 / 125 789 = 28.5 (30+ is the full 2 000 steps). This
+  lesson's bridge names lesson 8 (`aprendizaje-en-contexto`) in prose with the usual comment.
+  `draft: false`, as lessons 1–6, against the PUBLICATION line.
+- **The widget's charts draw in real pixels**: each measures its box (ResizeObserver) and uses that
+  width as its viewBox, so tick labels are 10.5 px at 320 px and on desktop alike, and x labels thin
+  to every other decade when they would collide. A fixed 480-unit viewBox scaled to 100 % (the
+  `Plot2D` pattern) put them at 6.7 px on a phone.
+- Verified: `pnpm lint:content` (only the words warning), `jest src/lib/courses src/features/courses`
+  (71 suites, 988 tests; `scaling-laws.test.ts` 16), `pnpm check:messages`, eslint on the touched
+  files, `tsc` (only the pre-existing `mdx.test.ts` `RepoLink` error), `pnpm build` green with 0 KaTeX
+  errors in both locales; the cell under Node Pyodide 0.29.3 (0.75 s) and in the Browser pane on
+  `pnpm start` with identical output; both widget views, all three axes and the Gopher preset read
+  back against the prose (0.839 per tenfold everywhere for Kaplan, 0.979 at 10¹¹ for Chinchilla; 72 B
+  bottom, Gopher +0.019); all five quiz questions right and wrong, the numeric one at 3.92/4.08 (pass)
+  and 3.85/4.15 (fail); lesson 6's bridge renders as a link here; no horizontal page scroll at 360 px.

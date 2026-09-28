@@ -225,6 +225,15 @@ this work.
 | $-\log_2$ of a text's probability divided by its bytes | `bits por byte` (Block 1 lesson 6), with *bits per byte* (bpb) given once per lesson | *BPB* in capitals in prose; bits por carácter (UTF-8 characters are not bytes, and the first course's $C$ counted characters); compresión as the term |
 | the model that gives every position the same distribution, the training frequencies plus one | `modelo de unigramas` (Block 1 lesson 6) | *unigram model*, modelo unigrama, modelo de frecuencias as the term, modelo de orden cero |
 | adding one to every frequency before dividing, so no entry gets probability zero | `suavizado de Laplace` (Block 1 lesson 6) | *smoothing*, *add-one*, alisado |
+| a quantity that is a constant times a power of another, $y = a\,x^{-\alpha}$: a straight line on logarithmic axes | `ley de potencia` (Block 1 lesson 7) — the first course's Zipf and Heaps were two, and the lesson says so | *power law*; ley potencial; relación potencial |
+| a ley de potencia of the loss in $N$, $D$ or $C$, and by extension the field that fits them | `ley de escala` (Block 1 lesson 7), with *scaling law* given once | ley de escalado, escalamiento |
+| the floating-point operations one training spends, $C$ | `cálculo` (Block 1 lesson 7), counted in FLOPs, expanded once per lesson as *floating-point operations* | *compute*; cómputo; coste as the term (`c(t)` is lesson 5's multiplications, and a FLOP is half of one multiplication-and-addition); FLOPS in capitals (that is per second) |
+| a $C$ fixed in advance, to be split between parameters and tokens | `presupuesto` (de cálculo) (Block 1 lesson 7) | *budget*; límite, gasto |
+| the $(N, D)$ with the lowest loss for a presupuesto, and the relation between the two across presupuestos | `reparto óptimo` (Block 1 lesson 7), with *compute-optimal* given once; `óptimo` alone for a model that sits on it | Chinchilla-óptimo, reparto de Chinchilla as the term (Chinchilla is one model on it) |
+| the loss against $N$ with $C$ fixed, $D = C/(6N)$, and its minimum | `valle` and its `fondo` (Block 1 lesson 7), with *IsoFLOP* given once as the paper's name | perfil, curva IsoFLOP as the term, mínimo alone for the picture |
+| $\mathcal{L}_{\infty}$: the loss no $N$ and no $D$ go below | `pérdida irreducible` (Block 1 lesson 7); `suelo` is the picture of it, and the lesson says in a clause that the two name one thing | entropía del texto as the term (it is a reading of it, said once), *irreducible loss*, cota |
+| one pass of training over all of the training text | `época` (Block 1 lesson 7), the first course's word (`descenso-gradiente`) | *epoch*; pasada, vuelta |
+| the tokens of the training text each counted once, against $D$, which counts readings | `tokens distintos` (Block 1 lesson 7) | tokens únicos, texto nuevo as the term, *unique tokens* |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,
