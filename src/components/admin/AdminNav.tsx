@@ -16,6 +16,7 @@ const NAV_LINKS = [
   { href: "/admin/pricing", label: "Precios", icon: "sell" },
   { href: "/admin/schedule", label: "Horarios", icon: "schedule" },
   { href: "/admin/course-announce", label: "Anuncios", icon: "campaign" },
+  { href: "/admin/feedback", label: "Feedback", icon: "rate_review" },
 ];
 
 export function AdminNav() {

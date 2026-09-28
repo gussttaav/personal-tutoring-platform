@@ -11,6 +11,8 @@ import { SubscriptionService } from "@/services/SubscriptionService";
 import { UserService }         from "@/services/UserService";
 import { CourseService }       from "@/services/CourseService";
 import { AccountService }      from "@/services/AccountService";
+import { ContentFeedbackService } from "@/services/ContentFeedbackService";
+import { LandingService }      from "@/services/LandingService";
 import type { ICreditsRepository }      from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository }        from "@/domain/repositories/IAuditRepository";
 import type { IBookingRepository }      from "@/domain/repositories/IBookingRepository";
@@ -20,6 +22,8 @@ import type { ISubscriptionRepository } from "@/domain/repositories/ISubscriptio
 import type { IUserRepository }         from "@/domain/repositories/IUserRepository";
 import type { ICourseRepository }       from "@/domain/repositories/ICourseRepository";
 import type { ICourseCatalog }          from "@/domain/repositories/ICourseCatalog";
+import type { IContentCatalog }         from "@/domain/repositories/IContentCatalog";
+import type { IContentFeedbackRepository } from "@/domain/repositories/IContentFeedbackRepository";
 import type { ICalendarClient } from "@/infrastructure/google/ICalendarClient";
 import type { IZoomClient }     from "@/infrastructure/zoom/ZoomClient";
 import type { IEmailClient }    from "@/infrastructure/resend/IEmailClient";
@@ -36,6 +40,8 @@ import { InMemoryScheduleRepository }     from "./InMemoryScheduleRepository";
 import { InMemoryConfigCache }            from "./InMemoryConfigCache";
 import { InMemoryCourseRepository }       from "./InMemoryCourseRepository";
 import { FakeCourseCatalog }              from "./FakeCourseCatalog";
+import { InMemoryContentFeedbackRepository } from "./InMemoryContentFeedbackRepository";
+import { FakeContentCatalog }             from "./FakeContentCatalog";
 import { FakeCalendarClient } from "./FakeCalendarClient";
 import { FakeZoomClient }     from "./FakeZoomClient";
 import { FakeEmailClient }    from "./FakeEmailClient";
@@ -181,6 +187,34 @@ export function buildTestCourseService(
   return { service, courses, userRepo };
 }
 
+// ─── ContentFeedbackService builder ──────────────────────────────────────────
+// CONTENT-FEEDBACK-01: `catalog` declares which pages are published (and in which
+// locales); anything else is dropped by the service exactly like a draft would be.
+
+export interface ContentFeedbackServiceDeps {
+  feedback: IContentFeedbackRepository;
+  catalog:  IContentCatalog;
+  userRepo: IUserRepository;
+  email:    IEmailClient;
+}
+
+export function buildTestContentFeedbackService(
+  overrides: Partial<ContentFeedbackServiceDeps> = {},
+): {
+  service:  ContentFeedbackService;
+  feedback: InMemoryContentFeedbackRepository;
+  userRepo: InMemoryUserRepository;
+  email:    FakeEmailClient;
+} {
+  const feedback = (overrides.feedback as InMemoryContentFeedbackRepository) ?? new InMemoryContentFeedbackRepository();
+  const userRepo = (overrides.userRepo as InMemoryUserRepository) ?? new InMemoryUserRepository();
+  const email    = (overrides.email as FakeEmailClient) ?? new FakeEmailClient();
+  const catalog  = overrides.catalog ?? new FakeContentCatalog([]);
+
+  const service = new ContentFeedbackService(feedback, catalog, new UserService(userRepo), email);
+  return { service, feedback, userRepo, email };
+}
+
 // ─── SessionService builder ───────────────────────────────────────────────────
 
 export interface SessionServiceDeps {
@@ -223,4 +257,25 @@ export function buildTestAccountService(
     calendar,
   );
   return { service, userRepo, calendar };
+}
+
+// ─── LandingService builder ───────────────────────────────────────────────────
+// LANDING-01: returns the collaborators so a test can book, grant credits or enrol
+// and then assert on the destination ladder end to end.
+
+export interface LandingServiceDeps {
+  bookings: BookingService;
+  credits:  CreditService;
+  courses:  CourseService;
+}
+
+export function buildTestLandingService(
+  overrides: Partial<LandingServiceDeps> = {},
+): { service: LandingService; bookings: BookingService; credits: CreditService; courses: CourseService } {
+  const credits  = overrides.credits  ?? buildTestCreditService();
+  const bookings = overrides.bookings ?? buildTestBookingService({ credits });
+  const courses  = overrides.courses  ?? buildTestCourseService().service;
+
+  const service = new LandingService(bookings, credits, courses);
+  return { service, bookings, credits, courses };
 }

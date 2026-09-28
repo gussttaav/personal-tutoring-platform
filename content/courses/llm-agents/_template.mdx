@@ -1,0 +1,380 @@
+---
+slug: TODO-slug-igual-que-el-nombre-del-fichero
+title: "TODO: el título que ve el estudiante"
+block: 1
+order: 1
+minutes: 25
+summary: "TODO: una frase. Aparece en el índice del curso y en los metadatos de la página."
+draft: true        # Lo dice la línea PUBLICATION del task md del bloque: el bloque 1 se
+                   # publica entero de golpe; los bloques 2-5, lección a lección.
+hasCode: true      # `true` porque abajo hay un <PyCell>. Si lo borras, pon `false`.
+                   # BLOQUE 5: SIEMPRE `false`. `hasCode` significa <PyCell>, y en el bloque 5
+                   # el código va en bloques ```python / ```bash que el estudiante ejecuta en
+                   # su terminal; para el pipeline, eso es prosa.
+hasQuiz: true
+quiz:
+  - id: q-TODO
+    type: single
+    prompt: "TODO: el enunciado. Admite **markdown** y $\\LaTeX$."
+    options:
+      - { id: a, text: "TODO" }
+      - { id: b, text: "TODO" }
+    answer: a
+    explanation: "TODO: por qué. Obligatorio: una pregunta sin explicación no enseña nada."
+challenges: []
+# ¿LLEVA LECTURAS? Pregúntatelo AQUÍ, que es donde toca, y no lo dejes en `[]` por
+# omisión (AUTHORING.md §6, «Further reading»). Máximo CINCO, y la `note` —una línea,
+# ≤240 caracteres— dice qué saca EL ESTUDIANTE de ir ahí, no de qué va la fuente.
+# El bloque se renderiza plegado al pie de la lección; el autor no escribe ningún `##`.
+# `[]` es una respuesta legítima y frecuente: si no hay fuente natural, no te la inventes.
+#
+# En este curso el hilo histórico va AQUÍ (GPT-2, Kaplan, InstructGPT, ReAct, SWE-bench…),
+# y aquí es también el ÚNICO sitio de una lección donde cabe un nombre de producto
+# (docs/courses/llm-agents/AUTHORING.md §5).
+#
+# reading:
+#   - kind: paper                 # paper | libro | blog | video | interactivo
+#     title: 'Language Models are Few-Shot Learners'
+#     authors: 'Brown et al.'
+#     year: '2020'                # opcional
+#     venue: 'arXiv:2005.14165'   # si nombra un id de arXiv, tiene que coincidir con la url
+#     lang: en                    # es | en
+#     url: 'https://arxiv.org/abs/2005.14165'   # https, y /abs/ nunca /pdf/
+#     note: 'TODO: una línea: qué se lleva el estudiante si abre esto.'
+#
+# COMPRUEBA EL ENLACE ANTES DE COMMITEAR. El lint valida la forma, no que la url exista.
+reading: []
+---
+
+{/*
+  COURSE-C2-P0-04 — Plantilla de lección del curso `llm-agents`. Cópiala a `es/NN-slug.mdx`
+  y bórralo todo.
+
+  El prefijo `_` mantiene este fichero fuera del registro y de `pnpm lint:content`,
+  así que puede contener TODOs sin romper CI. Un fichero de trabajo se llama igual:
+  `_loquesea.mdx`, o cualquier cosa dentro de `_drafts/`.
+
+  Antes de escribir, en este orden (docs/courses/README.md, «Which file governs»):
+    1. docs/courses/AUTHORING.md y docs/courses/NOTATION.md — el contrato compartido.
+    2. docs/courses/llm-agents/AUTHORING.md y NOTATION.md — los DELTAS de este curso:
+       sustituyen sólo lo que nombran (la forma de los pasos 4 y 5 por bloque, los
+       prerrequisitos, la tabla de términos, los símbolos por bloque).
+    3. El task md del bloque (docs/courses/llm-agents/phase-1-content/0N-…md): su cabecera
+       dice la FORMA del bloque, sobre qué `modelo` corre y la regla de publicación.
+
+  ═══ LAS DOS FORMAS DE UNA LECCIÓN (delta §1) ═════════════════════════════════════════
+  Los seis pasos son los mismos seis, en el mismo orden, en todo el curso. Lo que cambia
+  entre un bloque que DERIVA (1, 2, casi todo el 3) y uno que CONSTRUYE (4, 5) es la
+  forma de los pasos 3, 4 y 5:
+
+                      derivación                    sistemas
+    3. Formalización  las ecuaciones, desarrolladas la INTERFAZ (firma + contrato) o el
+                                                    ALGORITMO en pseudocódigo, con sus
+                                                    INVARIANTES nombrados
+    4. Implementación <PyCell>, NumPy               <PyCell> sobre el modelo guionizado (b4)
+                                                    · código en ```python/```bash + <RepoLink>
+                                                    (b5)
+    5. Verificación   quiz + desafío                quiz + desafío (b4) · quiz + una EJECUCIÓN
+                                                    que el estudiante reproduce, con su salida
+                                                    esperada (b5)
+
+  El paso que se salta cuando nadie mira es el 3: sin ecuación que escribir, se pasa del
+  trazo al código y la lección se vuelve un tutorial. La prueba del paso 3 es la misma
+  siempre: DESPUÉS DE LEERLO, EL LECTOR PODRÍA IMPLEMENTARLO SIN LEER EL PASO 4.
+  `editar(ruta, antiguo, nuevo)` es una firma; «`antiguo` tiene que aparecer exactamente
+  una vez, o la llamada falla y no se escribe nada» es el contrato, y ES la lección.
+
+  ═══ QUÉ MODELO CORRE AQUÍ (delta §2) ═════════════════════════════════════════════════
+  `modelo(mensajes, herramientas) -> respuesta` tiene tres implementaciones: el mini-GPT
+  (bloques 1-3), el modelo guionizado (3-4) y un modelo local en la terminal (5). TODA
+  lección dice en prosa cuál usa, antes de su primera celda (en el bloque 5, en el Callout
+  de apertura). Lo dice la línea «Runs on:» del task md del bloque.
+
+  La regla que más fácil se rompe (AUTHORING.md §2): esta lección sólo puede usar los
+  prerrequisitos del curso y lo enseñado en las lecciones ANTERIORES. Los prerrequisitos
+  incluyen el PRIMER CURSO: un resultado suyo se CITA con <Leccion curso="dl-nlp" slug="…">,
+  nunca se vuelve a derivar; lo que se repite es la conclusión, en una cláusula. Si
+  necesitas un concepto posterior de ESTE curso, o lo dices en voz alta («eso es el bloque
+  4; por ahora basta con…») o el argumento se puede hacer más abajo.
+
+  Un concepto, una palabra, en todo el curso (delta §4, «Terminology»). `modelo`, `harness`
+  y `agente` NO son sinónimos; `llamada` es lo que el modelo PIDE y `observación` lo que
+  RECIBE. Si necesitas un término que no esté en la tabla, añádelo allí ANTES de escribir.
+  Nombres de producto: sólo en `reading`, en la FAQ y en la tabla comparativa de la lección
+  39. Nunca en un título, una definición, un enunciado preciso o una pregunta (delta §5).
+
+  Las cinco marcas, una tarea cada una (AUTHORING.md §5, «The five marks»):
+    **negrita** el término que se DEFINE, ahí donde se define, una vez.
+    *cursiva*   un anglicismo en su primer uso de la lección (*harness*, *sandbox*, *prompt*),
+                o la palabra que le da la vuelta a la frase. Nunca un término español.
+    <W>…</W>    una cadena de la que la lección HABLA (NOTATION.md §6).
+    «…»         una palabra en su sentido corriente, todavía sin precisar.
+    `código`    Python, y sólo Python — y los nombres del protocolo (`tool_use`,
+                `tool_result`), que son identificadores.
+  Y la voz: `tú` para lo que hace el estudiante, `nosotros` sólo para el desarrollo que
+  hacéis juntos en la página (en una lección de sistemas casi no hay). Nunca impersonal
+  («se debe…», «el estudiante debe…»). Prohibidas: «obviamente», «simplemente»,
+  «sencillamente», «basta con», «cabe destacar», «como podemos ver»… `pnpm lint:content`
+  avisa de las dos familias.
+
+  Los seis pasos marcados abajo con comentarios son el contrato, en este orden, siempre.
+  PERO NO SON TÍTULOS: los comentarios se borran al escribir. Un estudiante que lee
+  «## Motivación», «## Intuición», «## Formalización» lección tras lección no está
+  siguiendo una explicación, está viendo rellenarse un formulario. El andamio es para ti.
+
+  Regla: ningún título lleva el nombre de un paso, y la mayoría de los pasos no llevan
+  título. Motivación, intuición y puente son prosa corrida — el principio y el final de
+  la lección. Sólo cambian de modo, y por tanto sólo se titulan, los sitios donde el
+  estudiante deja de leer y hace algo. Y el título dice qué se hace AQUÍ:
+  «## El bucle, con el modelo de verdad», nunca «## Implementación».
+  Dos a cuatro `##` por lección. `pnpm lint:content` avisa si se te cuela un paso.
+*/}
+
+{/* ── SÓLO BLOQUE 5: EL CALLOUT DE APERTURA (delta §1, «Block 5: the terminal form»).
+       Va ANTES de la motivación, en todas las lecciones del bloque, no sólo en la primera:
+       las lecciones se entran desde un buscador. Fija el runner y la etiqueta del modelo
+       con los que se verificó, dice que el código no corre en el navegador y que los
+       `minutes` no cuentan la espera del modelo. Bórralo en los bloques 1-4.
+
+<Callout type="warning" title="Esta lección corre en tu terminal">
+TODO: verificada con TODO-runner TODO-versión y el modelo <W>TODO-etiqueta</W>. El código de
+esta lección no se ejecuta en el navegador: lo escribes en tu repositorio y lo corres contra
+un modelo local. Los minutos de arriba son de lectura y escritura; la espera del modelo va
+aparte.
+</Callout>
+*/}
+
+{/* ── 1. MOTIVACIÓN — sin título. Es el arranque de la lección. ───────────────────
+       SI ESTA NO ES LA PRIMERA LECCIÓN: la PRIMERA FRASE RECOGE EL PUENTE DE LA
+       ANTERIOR antes de plantear su propia pregunta, y la nombra por su tema, no sólo
+       por su número. La primera lección de un BLOQUE recoge la última del bloque
+       anterior: eso es lo que hace que cinco bloques sean un curso. Y la primera lección
+       del CURSO recoge el puente final del curso anterior, por referencia:
+       <Leccion curso="dl-nlp" slug="…">. Un puente que nadie recoge es una promesa que
+       el curso no cumple.
+
+       NO HAY NÚMERO DE PALABRAS, porque el arranque lo leen dos personas distintas: quien
+       viene de terminar la lección anterior y quien vuelve al curso quince días después.
+       Al primero le sobra todo lo que ya sabe; al segundo hay que devolverlo al sitio. Lo
+       que decide no es la longitud sino la FORMA: afirma, no vuelvas a deducir; dilo con
+       otras palabras y en otro orden; y no repitas el ejemplo del puente —si ese ejemplo
+       es el asunto de esta lección, va más abajo, donde haga trabajo nuevo—.
+
+       LA COMPROBACIÓN, con los dos lectores. Lee el final de la lección anterior y este
+       arranque seguidos: nada debería leerse dos veces. Después lee el arranque solo y en
+       frío: quien lleva quince días sin abrir el curso tiene que acabarlo sabiendo dónde
+       está. Fallar lo primero es un resumen; fallar lo segundo es una puerta sin pomo, y
+       es peor.
+
+       PRIMERA LECCIÓN DE LOS BLOQUES 4 Y 5: aquí se dice, en una cláusula, que el bloque no
+       introduce matemáticas nuevas (delta §1, «The density falls…»). ──────────────── */}
+
+TODO: dos párrafos. La pregunta que responde esta lección, y por qué le importa a alguien. En
+una lección de sistemas, a menudo «¿por qué esto no es obvio?». No resumas lo que viene: plantea
+el problema tan bien que el estudiante quiera la respuesta.
+
+TODO: segundo párrafo, ÍNTEGRAMENTE NUEVO. Si puedes, un ejemplo concreto en español que falle de
+forma visible.
+
+{/* ── 2. INTUICIÓN — sin título. Sale de la motivación, no se anuncia. ──────────
+       Derivación: la idea en palabras y dibujos, antes de cualquier símbolo; suele ir
+       un explorable. Sistemas: un TRAZO, turno a turno —qué pasa, antes de nombrar nada—,
+       que es la forma que dan `agent-loop-trace` y `context-window`, y la forma que toma
+       la prosa cuando no hay widget. Sustituye al explorable, no al paso. ─────────── */}
+
+TODO: la idea en palabras y dibujos, **antes de cualquier símbolo**. Aquí suele ir un explorable:
+que el estudiante mueva algo y vea qué cambia antes de leer la fórmula que lo describe.
+
+{/* Ids válidos en src/features/courses/widgets/widget-ids.ts, UNA lista para todos los
+    cursos. Un id que no exista es un error duro del lint. Si el plan del bloque asigna a
+    esta lección un widget que aún no está registrado, se CONSTRUYE en este mismo PR
+    (AUTHORING.md §7), nunca se aplaza. Borra la línea si esta lección no lleva widget. */}
+
+<Explorable id="TODO" caption="TODO: qué debe mirar el estudiante aquí." />
+
+{/* ¿LLEVA FIGURA? Pregúntatelo aquí, que es donde toca, y no lo dejes en «no» por
+    omisión (AUTHORING.md §7, «When a figure earns its place»). Dos casos la piden:
+
+      1. El argumento es una FORMA o una POSICIÓN. Si la prosa se apoya en «entre»,
+         «por debajo», «paralelas», «opuestas», «perpendicular», «la franja», le estás
+         pidiendo al lector que dibuje él el cuadro a partir de una descripción, que es
+         justo lo que peor hace la prosa.
+      2. El objeto tiene un dibujo CONVENCIONAL que el estudiante se va a encontrar en
+         cualquier paper y en cualquier otro curso —la ventana de contexto como barra,
+         el bucle modelo → llamada → observación—.
+
+    Y casi siempre no la lleva: nada de redibujar una ecuación, repetir una tabla ni
+    duplicar el explorable que ya está arriba.
+
+    La figura SUSTITUYE a la prosa que la describiría, no la acompaña. El `caption` dice
+    la conclusión; el `alt` describe el dibujo, y es para quien no puede verlo. Los dos
+    son texto plano: ni markdown ni LaTeX.
+
+    El SVG va en public/courses/llm-agents/, escrito a mano, con los hex del tema puestos
+    a pelo y el fondo transparente. Descoméntalo si la lección lleva figura, y bórralo si
+    no. (Va comentado a propósito: el lint valida los ids de Explorable, PyCell, Quiz y
+    CodeChallenge, pero NO la `src` de una Figure, así que una que se quede aquí olvidada
+    da un 404 en silencio.)
+
+<Figure
+  src="/courses/llm-agents/TODO.svg"
+  alt="TODO: qué se ve en el dibujo, para quien no puede verlo."
+  caption="TODO: qué tiene que concluir el estudiante, no lo que ya está viendo."
+/>
+*/}
+
+<Callout type="intuition" title="La idea en una frase">
+TODO: el resumen que te gustaría que recordara dentro de seis meses.
+</Callout>
+
+{/* ── 3. FORMALIZACIÓN — EL ENUNCIADO PRECISO. Suele llevar título, porque cambia el
+       modo y el estudiante querrá volver aquí. Titúlalo por lo que se formaliza, no
+       «Formalización».
+
+       Derivación: las matemáticas, completas; el desarrollo largo, en <Details>.
+       Sistemas: la INTERFAZ —una firma y el contrato que cumple— o el ALGORITMO, en
+       pseudocódigo que quepa en una pantalla, con sus invariantes nombrados. Lo que este
+       paso NUNCA es: la intuición parafraseada con símbolos, ni una descripción de lo que
+       el código de abajo «básicamente hace».
+
+       Se subdivide POR EL ARGUMENTO, no por la longitud: un título marca una AFIRMACIÓN
+       nueva, no una pantalla nueva. En orden de dependencia: nada bajo un título puede
+       apoyarse en algo que se establece bajo uno posterior. ─────────────────────────── */}
+
+## TODO: qué se define, se desarrolla o se promete aquí
+
+TODO: el enunciado preciso. En una derivación, las matemáticas completas: el desarrollo se
+muestra, no se afirma. Di la forma de cada array la primera vez que aparece.
+
+$$
+p_\theta(x_{t+1} \mid x_{\le t}) = \text{softmax}(\mathbf{z}_t)_{x_{t+1}},
+$$
+
+{/* Las vallas `$$` van en su propia línea. En una sola línea, `$$…$$` se renderiza
+    como matemática EN LÍNEA — y el lint la cuenta así.
+
+    La ecuación forma parte de la frase y lleva su puntuación, como último carácter
+    DENTRO de la valla: punto si la frase termina ahí, coma si lo que sigue pediría una
+    pausa —como este «con …»—, nada si la frase la atraviesa. */}
+
+con $\mathbf{z}_t \in \mathbb{R}^{\lvert V \rvert}$ los logits de la posición $t$.
+
+{/* En una lección de SISTEMAS, en lugar de la ecuación va la interfaz o el algoritmo,
+    en un bloque de código que el estudiante NO ejecuta (pseudocódigo, o una firma con
+    su contrato en prosa debajo):
+
+```python
+def modelo(mensajes, herramientas) -> respuesta: ...
+```
+
+    y a continuación, en prosa, el CONTRATO: qué garantiza en cada turno, qué no puede
+    pasar nunca. Después de leerlo, el lector podría implementarlo sin leer el paso 4. */}
+
+<Details summary="TODO: ver el desarrollo completo">
+TODO: los pasos largos van aquí. Plegados, no ausentes: el estudiante que quiere el detalle lo
+tiene, y el que no, sigue leyendo.
+</Details>
+
+{/* ── 4. IMPLEMENTACIÓN — con título: «deja de leer y ejecuta esto». Di qué se
+       construye. ANTES de la primera celda, una frase dice sobre qué modelo corre (el
+       mini-GPT, el modelo guionizado, un modelo local). Si la lección no lleva código a
+       propósito, es un ejemplo resuelto a mano («## Compruébalo a mano con…»). Lo que no
+       puede es faltar.
+
+       BLOQUES 1-4: un <PyCell> que el estudiante ejecuta en el navegador.
+       BLOQUE 5: código en bloques ```python / ```bash que el estudiante escribe en su
+       repositorio, NUNCA un <PyCell> (y `hasCode: false`). El paso EMPIEZA con un
+       <RepoLink> a la etiqueta de la lección ANTERIOR («parte de aquí») y TERMINA con uno
+       a la suya propia («si te has perdido, este es el estado al final de esta lección»).
+       Nunca `main`. El texto de la lección es la fuente de verdad; la etiqueta se corta
+       de la lección revisada. Y el lint mide el bloque de código más largo como mide una
+       celda: 45 líneas es el objetivo, 90 el techo; pasado el techo, parte el bloque con
+       un párrafo entre las dos mitades. ────────────────────────────────────────────── */}
+
+## TODO: qué construye el estudiante aquí
+
+TODO: una frase que diga sobre qué modelo corre esta celda. Después, NumPy desde cero: una celda
+que el estudiante ejecuta de verdad.
+
+{/* `code` es una PROP, no children: MDX parsearía el cuerpo como markdown y
+    destrozaría la indentación, que en Python es sintaxis. Si añades una celda,
+    `hasCode` pasa a `true` (el lint lo comprueba en ambas direcciones). */}
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# TODO
+print(np.arange(3))
+`} />
+
+{/* ── SÓLO BLOQUE 5: la forma del paso 4 en la terminal. Descoméntalo y borra el
+       <PyCell> de arriba. `tag` es la etiqueta del repositorio compañero (`b5-l1` … `b5-l9`);
+       `path`, opcional, apunta dentro de ella. La URL base vive en una constante: ninguna
+       lección lleva el nombre del repositorio.
+
+Parte de <RepoLink tag="b5-lN-1">el estado al final de la lección anterior</RepoLink>.
+
+```python
+# TODO: el código que el estudiante añade en esta lección, en trozos de ≤45 líneas
+# con prosa entre ellos.
+```
+
+Si te has perdido, <RepoLink tag="b5-lN">este es el estado al final de esta lección</RepoLink>
+(y <RepoLink tag="b5-lN" path="herramientas/editar.py">este</RepoLink>, el fichero que acabas de
+escribir).
+*/}
+
+{/* ── 5. VERIFICACIÓN — con título: «deja de leer y ponte a prueba». Algo como
+       «## Comprueba tu intuición», nunca «## Verificación».
+
+       BLOQUE 5: además del quiz, UNA EJECUCIÓN que el estudiante reproduce —un bloque
+       ```bash que escribe, seguido de la salida esperada— con la transcripción que TÚ
+       obtuviste con el modelo fijado en el Callout, sin retocar: un modelo pequeño que
+       llama a una herramienta con un argumento equivocado es el ejemplo de la lección, no
+       algo que limpiar. No hay <CodeChallenge> en el bloque 5. ───────────────────────── */}
+
+## TODO: invita a comprobar, con las palabras de esta lección
+
+TODO: una o dos frases que enlacen la pregunta con lo que se acaba de explicar.
+
+<Quiz id="q-TODO" />
+
+{/* Y, si hay algo que construir, añade un desafío: decláralo en `challenges:` arriba y
+    colócalo aquí con la etiqueta CodeChallenge y su id. Un desafío necesita un <PyCell>
+    para correr: bloques 1-4.
+
+    OJO: el lint lee el fichero con expresiones regulares, no con un parser de MDX, así
+    que una etiqueta escrita DENTRO de un comentario cuenta igual. No comentes un
+    Quiz, un PyCell ni un CodeChallenge para desactivarlo — bórralo. */}
+
+{/* ── 6. PUENTE — SIN TÍTULO, y esto importa más que en ningún otro paso. Un `##` que
+       diga «Puente» enseña el mecanismo de la peor forma posible. Es el párrafo final
+       de la lección, sin anunciarse.
+
+       Sí lleva una marca, y es la línea de abajo: `---`, una raya centrada y corta. El
+       puente viene DESPUÉS de una sección (normalmente el quiz), así que sin marca se
+       lee como una coletilla de la última pregunta. La raya dice «el argumento se cierra
+       aquí» sin decir qué es lo que se cierra.
+
+       DOS REGLAS. El `---` va precedido de una línea EN BLANCO: pegado al párrafo de
+       arriba, markdown lo lee como un título (setext) y falla en silencio. Y es el único
+       de la lección: `---` está reservado para el puente y no se usa en ningún otro
+       sitio. `pnpm lint:content` comprueba las dos cosas.
+
+       Y DOS LÍMITES. Nombra la lección SIGUIENTE, sólo esa: lo que esté más allá es una
+       indicación («eso ocupa el resto del bloque»), no una promesa con nombre, porque dos
+       lecciones que prometen la misma dejan a la segunda sin puerta que abrir. Y son DOS
+       PÁRRAFOS, como la motivación que refleja; el tercero casi siempre es material que
+       iba por encima del `---`.
+
+       En una lección de SISTEMAS el puente es la necesidad de la capa siguiente: qué se
+       rompe sin ella. ─────────────────────────────────────────────────────────────── */}
+
+---
+
+TODO: **lo más importante de la lección**. Qué queda sin resolver, y qué lección lo resuelve.
+Esto es lo que convierte el curso en un curso y no en un montón de tutoriales sueltos. Termina
+siempre mirando hacia adelante.
+
+TODO: segundo párrafo. Aquí es donde se nombra la lección siguiente, por su tema. Esta es la puerta
+que su primera frase va a recoger: escríbela sabiendo que alguien tiene que atravesarla.

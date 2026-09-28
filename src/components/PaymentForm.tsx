@@ -28,6 +28,7 @@ import type { StripeElementsOptions } from "@stripe/stripe-js";
 import { useTranslations } from "next-intl";
 import { getStripePromise } from "@/lib/stripe-client";
 import { Alert } from "@/components/ui";
+import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 
 // ── Appearance ────────────────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ function CheckoutForm({
   onCancel,
 }: CheckoutFormProps) {
   const t        = useTranslations("payment.form");
+  const schedule = useScheduleConfig();
   const stripe   = useStripe();
   const elements = useElements();
   const [ready,      setReady]      = useState(false);
@@ -240,7 +242,11 @@ function CheckoutForm({
           flexWrap: "wrap",
         }}
       >
-        {[t("secure"), t("protectedByStripe"), t("cancellation24h")].map((label, i) => (
+        {[
+          t("secure"),
+          t("protectedByStripe"),
+          t("cancellation24h", { hours: schedule.cancelMinNoticeHours }),
+        ].map((label, i) => (
           <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#86948a" }}>
             {TRUST_ICONS[i]}
             <span>{label}</span>

@@ -1,0 +1,1141 @@
+/*
+ * BLOG-01 — blog post reader (/blog/[slug]) styles.
+ *
+ * Two jobs. The chrome around the article (back link, title, dateline, prev/next) is
+ * the first; the second, and the bigger one, is the PROSE.
+ *
+ * Why the prose rules are this exhaustive: `globals.css` opens with `@tailwind base`,
+ * and Preflight flattens almost everything markdown emits — headings lose their size
+ * AND weight, `ol`/`ul` lose markers and indent, `a` loses colour and underline,
+ * `blockquote` loses its margin, `hr` collapses. The course reader restores those in
+ * two places (inline styles in `mdx-components.tsx` for headings/pre/tables, CSS in
+ * `lesson.css` for the rest); a post is compiled with NO component map, so every one of
+ * them has to be restored here. This file is the blog's whole typographic contract.
+ *
+ * It deliberately does not import or extend `lesson.css`: that file is bound to the
+ * reader's sidebar/quiz/challenge furniture, none of which exists here, and
+ * route-scoped CSS duplication is the existing idiom (landing.css and lesson.css
+ * already share nothing).
+ *
+ * NB, per _styles/katex.css: do NOT add `scrollbar-width` to the scrollbar rules — in
+ * Chromium it disables the ::-webkit- pseudo-elements and reverts to the grey default.
+ */
+
+/* Height of the fixed global Navbar, for anchor jump-targets. */
+.post-content {
+  --nav-h: 72px;
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+
+/*
+ * Mobile-first, mirroring the lesson reader (lesson.css): the base is the single
+ * 840px reading column the post has always been — this block just moves the measure
+ * off the inline `style` the page used to carry. Three tiers above it:
+ *
+ *   <1024px   single column; the archive is PostArchiveMobile's floating button +
+ *             drawer, and PostToc's <details> disclosure stands in for the rail.
+ *   ≥1024px   two tracks: the sticky archive pane (PostArchive.tsx, BLOG-05) on the
+ *             left, then the 840px column.
+ *   ≥1280px   three tracks: the sticky "On this page" rail (OnThisPage.tsx) joins on
+ *             the right — only when the post has headings to list.
+ */
+.post-shell {
+  --nav-h: 72px;                 /* keep in sync with the Navbar height */
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 96px 20px 80px;
+}
+
+.post-main {
+  min-width: 0;                  /* let wide children (pre, table) scroll, not widen the column */
+}
+
+.post-onthispage {
+  display: none;                 /* revealed at ≥1280px */
+}
+
+.post-archive {
+  display: none;                 /* revealed at ≥1024px (BLOG-05) */
+}
+
+/*
+ * The sticky rail needs the VIEWPORT as its scroll container. The global
+ * `body { overflow-x: hidden }` (globals.css) turns body into a scroll container
+ * instead, which silently breaks `position: sticky` for its descendants.
+ * `overflow-x: clip` stops the same horizontal scroll WITHOUT establishing a scroll
+ * container. Scoped to this route so the rest of the site keeps the global rule.
+ */
+body:has(.post-shell) {
+  overflow-x: clip;
+}
+
+@media (min-width: 1024px) {
+  /* BLOG-05: two tracks, archive + content. Unconditional — unlike the rail below,
+     the pane always has something to list (at least the post being read). */
+  .post-shell {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 48px;
+    max-width: 1148px;           /* 260 (archive) + 48 (gap) + 840 (content) */
+    align-items: start;          /* so the sticky pane has room to move */
+  }
+
+  .post-archive {
+    display: block;
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+    max-height: calc(100vh - var(--nav-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* `.post-back` and `.post-header` also change here — those overrides sit beside
+     their base rules in the Chrome section, which come later in the cascade. */
+
+  /* The pane replaces the floating button + drawer (both, even mid-open on a resize). */
+  .post-archive-mobile {
+    display: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  /* Only add the third track when there is actually a rail to show: OnThisPage
+     renders a <nav> only when the post has headings, so a heading-less post keeps the
+     two-track layout from the ≥1024px rule instead of a lopsided empty track. */
+  .post-shell:has(.post-onthispage nav) {
+    grid-template-columns: 260px minmax(0, 1fr) 240px;
+    max-width: 1436px;           /* 260 + 48 + 840 (content) + 48 + 240 (rail) */
+  }
+
+  .post-onthispage:has(nav) {
+    display: block;
+    position: sticky;
+    top: calc(var(--nav-h) + 24px);
+    max-height: calc(100vh - var(--nav-h) - 48px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  /* The rail replaces the disclosure at this width. */
+  .post-toc {
+    display: none;
+  }
+}
+
+/* ── "On this page" disclosure (mobile / tablet) ────────────────────────── */
+
+/*
+ * PostToc.tsx. Parked in flow at the top of the article, then `position: sticky` once
+ * scrolled past — PostToc's scroll listener slides it out on scroll-down and back in on
+ * scroll-up (transform + inline transition). Hidden ≥1280px, where the rail takes over.
+ *
+ * z-index sits it over the article text; the fixed navbar is a sibling of <main> so its
+ * own z-50 already wins. `background` must stay opaque — content scrolls under it while
+ * it is pinned.
+ */
+
+.post-toc {
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 20;
+  margin: 0 0 1.5rem;
+  border: 1px solid var(--border-variant);
+  border-radius: var(--radius);
+  background: var(--surface-container);
+}
+
+.post-toc-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  /* Drop the native disclosure triangle; the chevron replaces it. */
+  list-style: none;
+}
+.post-toc-summary::-webkit-details-marker { display: none; }
+.post-toc-summary::marker { content: ""; }
+.post-toc-summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.post-toc-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+  transition: transform 150ms ease, color 150ms ease;
+}
+.post-toc:not([open]) .post-toc-chevron { transform: rotate(-90deg); }
+.post-toc-summary:hover .post-toc-chevron { color: var(--green); }
+
+.post-toc-kicker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 150ms ease;
+}
+.post-toc-summary:hover .post-toc-kicker { color: var(--text); }
+
+.post-toc-list {
+  margin: 0;
+  padding: 4px 0 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  /* When pinned near the top, a long outline must scroll inside the bar rather than
+     run off the bottom of the screen. */
+  max-height: 60vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.post-toc-list a {
+  display: block;
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  color: var(--text-dim);
+  text-decoration: none;
+}
+.post-toc-list a:hover {
+  color: var(--text);
+}
+/* h3 entries indent under their h2. */
+.post-toc-list li[data-depth="3"] a {
+  padding-left: 30px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-toc-chevron,
+  .post-toc-kicker {
+    transition: none;
+  }
+}
+
+/* ── Archive (BLOG-05) ─────────────────────────────────────────────────── */
+
+/*
+ * PostArchive.tsx — every published post, newest first, year → month accordion. Lives
+ * in the sticky left pane at ≥1024px and inside PostArchiveMobile's drawer below. One
+ * flat column, newest first; the component holds no state and no styling of its own,
+ * so everything the list needs — :hover, the current-post attribute selector, focus
+ * rings, the line clamp, the reduced-motion block — is here.
+ */
+
+.post-archive-nav {
+  font-size: 0.8125rem;
+}
+.post-archive-nav--sidebar {
+  padding: 8px 0 32px;
+}
+.post-archive-nav--drawer {
+  padding: 0;
+}
+
+.post-archive-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 20px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+.post-archive-back:hover {
+  color: var(--green);
+}
+
+.post-archive-entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Continuous rail down the list (the OnThisPage / SidebarLessonList idiom): dim
+   segments, the current post's green. "You are here" is the rail plus brighter,
+   heavier text — never a filled pill. */
+.post-archive-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 8px 7px 14px;
+  border-left: 2px solid var(--border-variant);
+  color: var(--text-muted);
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 150ms ease;
+}
+.post-archive-link:hover {
+  color: var(--text);
+}
+.post-archive-link[aria-current="page"] {
+  border-left-color: var(--green);
+  color: var(--text);
+}
+.post-archive-link[aria-current="page"] .post-archive-title {
+  font-weight: 600;
+}
+/* Inset ring: the pane is a scroll container (overflow-y: auto), and a ring drawn
+   outside a row flush with its edge would be clipped. */
+.post-archive-link:focus-visible {
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+
+.post-archive-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.post-archive-meta {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+/*
+ * PostArchiveMobile.tsx — the floating button + drawer, <1024px. Rendered as a
+ * SIBLING of <main>: main is `position: relative; z-index: 1` (a stacking context),
+ * so a fixed overlay inside it could never rise above the z-50 navbar. Order in the
+ * root context: main (1, holding .post-toc at 20) < button (40) < navbar (50) <
+ * backdrop (60) < drawer (61).
+ */
+.post-archive-fab {
+  position: fixed;
+  right: 20px;                   /* the shell's own gutter */
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--green-on);
+  cursor: pointer;
+  box-shadow: 0 4px 24px rgba(78, 222, 163, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.post-archive-fab .material-symbols-outlined {
+  font-size: 1.6rem;
+}
+.post-archive-fab:hover {
+  transform: scale(1.06);
+}
+/* Scroll-down hides it (the chat FAB's --hero-overlap recipe). Declared AFTER :hover
+   so the hidden transform wins while the pointer is still over it. */
+.post-archive-fab--hidden {
+  opacity: 0;
+  transform: scale(0.6);
+  pointer-events: none;
+}
+
+.post-archive-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: post-archive-fade 0.16s ease-out;
+}
+
+.post-archive-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 61;
+  width: min(320px, 85vw);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 16px 16px calc(32px + env(safe-area-inset-bottom, 0px));
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: 8px 0 40px rgba(0, 0, 0, 0.4);
+  /* Mount-only: the drawer unmounts on close, so there is no exit animation. */
+  animation: post-archive-slide-in 0.22s ease-out;
+}
+
+/*
+ * The shared `lockBodyScroll()` sets `body { overflow: hidden }`, which locks the
+ * viewport only while the root's own overflow is `visible` — and globals.css sets
+ * `html { overflow-y: scroll }`, so on this site the page keeps scrolling behind an
+ * open overlay (verified: a wheel over the backdrop moved the article). The drawer
+ * element exists only while open, so gating the root on it locks and unlocks in step
+ * with the lock, without touching the shared helper. On a phone there is no classic
+ * scrollbar, so nothing shifts.
+ */
+html:has(.post-archive-drawer) {
+  overflow: hidden;
+}
+
+@keyframes post-archive-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes post-archive-slide-in {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-archive-back,
+  .post-archive-link,
+  .post-archive-fab {
+    transition: none;
+  }
+  .post-archive-backdrop,
+  .post-archive-drawer {
+    animation: none;
+  }
+}
+
+/* ── Chrome ─────────────────────────────────────────────────────────────── */
+
+.post-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.post-back:hover {
+  color: var(--green);
+}
+
+.post-header {
+  margin: 26px 0 34px;
+  padding-bottom: 26px;
+  border-bottom: 1px solid var(--border-variant);
+}
+
+/* BLOG-05: the archive pane's header IS the way back to /blog at ≥1024px; the
+   in-content link would repeat it a column away. The header's top margin was the air
+   under that link. Declared here, after the base rules, so the override wins. */
+@media (min-width: 1024px) {
+  .post-back {
+    display: none;
+  }
+  .post-header {
+    margin-top: 0;
+  }
+}
+
+.post-title {
+  font-size: clamp(1.9rem, 4.5vw, 2.85rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+.post-dateline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.post-dateline__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border-variant);
+}
+
+/*
+ * CONTENT-AUTHOR-01 — the byline, first item on the dateline row.
+ *
+ * `var(--text-muted)` rather than the row's `--text-dim`: the name is the one fact on
+ * this line a cold reader is actually asking for, so it sits a step brighter than the
+ * dates around it without breaking the row's uppercase metadata voice. The portrait is
+ * `alt=""` in the markup — the name is right beside it, and a second reading of it
+ * would only be noise in a screen reader.
+ */
+.post-byline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+}
+
+.post-byline__avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--border-variant);
+}
+
+/*
+ * The dateline already wrapped on a phone (the published date alone is most of a
+ * 335px column), and the byline would make it wrap mid-row, leaving its separator dot
+ * dangling at the end of a line. Give the byline the whole row instead and drop the
+ * dot behind it: one clean line of authorship, then the dates, exactly as they were.
+ */
+@media (max-width: 560px) {
+  .post-byline {
+    flex-basis: 100%;
+  }
+
+  .post-byline + .post-dateline__dot {
+    display: none;
+  }
+}
+
+/*
+ * CONTENT-AUTHOR-01 — the section head above the shared `AuthorBio` card.
+ *
+ * The card is page-agnostic and brings no heading of its own, so this is the post's
+ * voice for it: the same rule + quiet uppercase kicker as `.post-reading`, so the block
+ * joins the footer chrome instead of reading as another section of the article. (The
+ * course landing heads the very same card in its numbered serif display type.)
+ *
+ * An <h2> for the document outline, which `OnThisPage` never sees — the rail is built
+ * from the MDX source, not the DOM.
+ */
+.post-author {
+  margin: 3rem 0 0;
+  padding: 1.75rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.post-author .post-author__kicker {
+  margin: 0 0 14px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ── Prose ──────────────────────────────────────────────────────────────── */
+
+/*
+ * No `max-width` here, deliberately. The route's container IS the reading column (840px,
+ * 800px inside its padding), so a second cap on the prose only made it 28px narrower than
+ * the back link, title and dateline around it — one left edge for the chrome and another,
+ * 14px in, for the paragraphs. The measure is defined in exactly one place: the page.
+ */
+.post-content {
+  min-width: 0;
+  font-size: 1.0625rem;          /* ~17px reading size, larger than marketing pages */
+  line-height: 1.75;
+  color: var(--text-muted);
+  overflow-wrap: break-word;     /* long inline tokens (incl. inline math) wrap, not overflow */
+}
+
+.post-content p {
+  margin: 1.25rem 0;
+}
+
+.post-content .katex-display {
+  margin: 1.75rem 0;
+}
+
+/* Headings. Preflight reset these to `font-size: inherit; font-weight: inherit`, so
+   both properties are restored explicitly — at prose size, size alone does not read as
+   a heading. h4 is sized but stays quiet; a post that needs a fourth level needs an
+   editor, not a style. */
+.post-content h2 {
+  margin: 2.5rem 0 1rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.post-content h3 {
+  margin: 2rem 0 0.6rem;
+  font-size: 1.175rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.post-content h4 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+/* Anchor jump-targets must clear the fixed navbar or a heading lands behind it. */
+.post-content :is(h2, h3, h4) {
+  scroll-margin-top: calc(var(--nav-h) + 16px);
+}
+
+/* Lists — markers and indent, both flattened by Preflight. Unlike the lesson reader
+   there is no `:not([style])` guard: a post has no component lists to protect. */
+.post-content :is(ol, ul) {
+  margin: 1.25rem 0;
+  padding-left: 1.75rem;
+}
+
+.post-content ol {
+  list-style: decimal;
+}
+
+.post-content ul {
+  list-style: disc;
+}
+
+/* Distinct markers per level, so a sublist reads as one. */
+.post-content ol ol {
+  list-style: lower-alpha;
+}
+
+.post-content ul ul {
+  list-style: circle;
+}
+
+.post-content li {
+  margin: 0.5rem 0;
+}
+
+/* The marker takes the body colour rather than the muted prose colour: a number dimmer
+   than the text it numbers reads as decoration instead of structure. */
+.post-content li::marker {
+  color: var(--text);
+}
+
+/* A blank line between items makes the list "loose", and remark then wraps each item's
+   text in a `<p>` — which would inherit the paragraph margins above and push the items a
+   full paragraph apart. `li` owns the inter-item spacing; its paragraphs don't. */
+.post-content li > p {
+  margin: 0.35rem 0;
+}
+
+.post-content li > p:first-child {
+  margin-top: 0;
+}
+
+.post-content li > p:last-child {
+  margin-bottom: 0;
+}
+
+/* A sublist belongs to its item — paragraph-sized air would detach it. */
+.post-content li > :is(ol, ul) {
+  margin: 0.5rem 0;
+}
+
+/* Links. Preflight resets `a` to `color: inherit; text-decoration: inherit`, which
+   makes a markdown link indistinguishable from body text. */
+.post-content :is(p, li, blockquote, td, th) a {
+  color: var(--green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.post-content :is(p, li, blockquote, td, th) a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.post-content blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--border-variant);
+  color: var(--text-dim);
+}
+
+.post-content blockquote > p:first-child {
+  margin-top: 0;
+}
+
+.post-content blockquote > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Fenced code blocks. rehype-pretty-code emits `<pre><code>` with Shiki's inline
+   colours already applied; the surface, padding and overflow containment are ours, so a
+   long line scrolls inside the block instead of widening the page. */
+.post-content pre {
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-lowest);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+
+  /* BLOG-02 — a code block scrolls past 20 visible lines instead of growing without
+     limit, the same cap and the same reasoning as the course's code editors
+     (EDITOR_MAX_LINES, src/features/courses/code/editor-metrics.ts): past that, a
+     listing stops being something the reader reads and becomes a wall between two
+     paragraphs. Applies to fenced OUTPUT blocks too — they are `pre` as well, and a
+     long run of printed lines walls the page off exactly the same way.
+
+     Written as a calc against `em` and the box's own padding rather than a pixel
+     value, so it stays 20 lines if the font-size or line-height above ever change.
+     The `min(…, 70vh)` only bites on phones and short windows, where 512px would fill
+     the viewport with one code block. */
+  max-height: min(calc(20 * 1.6em + 2rem), 70vh);
+  overflow-y: auto;
+}
+
+/* Inline code only. The `:not(pre) >` guard matters: a background and border on the
+   fenced-block `<code>` would double up on the `pre` styling above. */
+.post-content :not(pre) > code {
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--surface-lowest);
+  font-size: 0.9em;
+}
+
+/* Tables can be wider than the column. There is no wrapper element to scroll (no
+   component map), so the table scrolls in its own right. */
+.post-content table {
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.post-content th {
+  padding: 0.5rem 0.85rem;
+  border-bottom: 2px solid var(--border-variant);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.post-content td {
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.post-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+/* BLOG-02 — figures. A post has no component map (see src/lib/blog/mdx.ts), so a
+   figure is written as plain `<figure><img/><figcaption>` in the MDX and styled here,
+   mirroring what `Figure` does for a lesson (src/lib/courses/mdx-components.tsx:221).
+   The auto margins are load-bearing: Preflight sets `img { display: block }`, and
+   `text-align` does not centre a block-level child, so without them the figure renders
+   flush left. Same Preflight damage as COURSE-P5-01.
+
+   The `:not()` is NOT defensive styling — it is required. `rehype-pretty-code` wraps
+   EVERY code block in `<figure data-rehype-pretty-code-figure>`, so a bare
+   `.post-content figure { text-align: center }` centres every line of every code
+   block. Anything added to the figure rules below has to keep clearing that. */
+.post-content figure:not([data-rehype-pretty-code-figure]) {
+  margin: 2rem 0 2.5rem;
+  text-align: center;
+}
+
+.post-content figure:not([data-rehype-pretty-code-figure]) img {
+  display: block;
+  margin: 0 auto;
+}
+
+.post-content figcaption {
+  margin-top: 0.65rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+
+/* Second line of defence for the same collision: code is left-aligned whatever any
+   ancestor says. Cheap, and it survives a future rule that reaches `pre` some other way. */
+.post-content pre {
+  text-align: left;
+}
+
+/* `hr` is another Preflight casualty (`height: 0; border-top-width: 1px` in the
+   inherited colour), so every property is set rather than adjusted. */
+.post-content hr {
+  width: 4rem;
+  height: 0;
+  margin: 3.5rem auto 2.5rem;
+  border: 0;
+  border-top: 1px solid var(--border-variant);
+}
+
+/* Thin scrollbars for the boxes that scroll, matching the 6px KaTeX bar that
+   _styles/katex.css already styles. */
+.post-content pre::-webkit-scrollbar,
+.post-content table::-webkit-scrollbar {
+  height: 6px;
+}
+
+.post-content pre::-webkit-scrollbar-track,
+.post-content table::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.post-content pre::-webkit-scrollbar-thumb,
+.post-content table::-webkit-scrollbar-thumb {
+  background: var(--border-variant);
+  border-radius: 10px;
+}
+
+.post-content pre::-webkit-scrollbar-thumb:hover,
+.post-content table::-webkit-scrollbar-thumb:hover {
+  background: var(--green);
+}
+
+/* ── Reference hover card (BLOG-06) ─────────────────────────────────────── */
+
+/* `<a>` overridden by `makePostLink` (src/lib/blog/PostRef.tsx) renders the link and
+   its card as SIBLINGS inside a `.post-ref-wrap`, both inline `<span>`s — a reference
+   lives mid-sentence, inside a `<p>`, where a block-level neighbour would be invalid
+   HTML. The link itself gets no rules of its own: it already matches the prose-link
+   rule above. This whole block is a straight copy of lesson.css's `.lesson-ref-*`
+   rules (COURSE-P7-01) under a `post-ref-*` prefix — see the comment on `reading` in
+   src/lib/schemas.ts for why the prefix has to differ. */
+.post-content :is(p, li, blockquote, td, th):has(.post-ref-wrap) {
+  position: relative;
+}
+
+/* Hidden outright unless the pointer can hover. On a touch screen the first tap must
+   NAVIGATE; a card the reader then has to dismiss is worse than no card at all. */
+.post-ref-card {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .post-ref-card {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 8px);
+    z-index: 50; /* over the prose, under the navbar (globals.css: 100) */
+    width: max-content;
+    max-width: min(26rem, 100%);
+    margin-inline: auto;
+    padding: 12px 14px;
+    border: 1px solid var(--border-variant);
+    border-radius: var(--radius);
+    background: var(--surface-highest);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 35%);
+    font-size: 0.85rem;
+    line-height: 1.45;
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 120ms ease;
+  }
+
+  /* Focus counts as hover here: a keyboard reader tabbing through the prose gets the
+     same fields, from the sibling selector the card's DOM order allows. */
+  .post-ref-wrap:hover .post-ref-card,
+  .post-ref:focus-visible + .post-ref-card {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .post-ref-kicker,
+  .post-ref-title,
+  .post-ref-meta {
+    display: block;
+  }
+
+  .post-ref-kicker {
+    margin-bottom: 4px;
+    color: var(--text-dim);
+    font-size: 0.7rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .post-ref-title {
+    margin-bottom: 4px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Authors, year and venue — a line the lesson card has no need for, since a lesson
+     names its own author nowhere; a citation is naked without one. */
+  .post-ref-meta {
+    margin-bottom: 4px;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+  }
+
+  .post-ref-summary {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    overflow: hidden;
+    color: var(--text-dim);
+  }
+}
+
+/* Anchor the card to the hovered LINK where CSS anchor positioning is available
+   (Chromium 125+/131+); see the long note on the equivalent lesson.css rule
+   (COURSE-P7-01) for why the paragraph-anchored rules above are kept as the fallback. */
+@supports (anchor-name: --a) and (anchor-scope: all) {
+  @media (hover: hover) and (pointer: fine) {
+    .post-ref-wrap {
+      anchor-scope: --post-ref;
+    }
+
+    .post-ref {
+      anchor-name: --post-ref;
+    }
+
+    .post-ref-card {
+      position: fixed;
+      position-anchor: --post-ref;
+      inset: auto;
+      margin-inline: 0;
+      bottom: anchor(top);
+      margin-bottom: 8px;
+      justify-self: anchor-center;
+      position-try-fallbacks: flip-block;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-ref-card {
+    transition: none;
+  }
+}
+
+/* ── Further reading (BLOG-02) ──────────────────────────────────────────── */
+
+/* The blog's version of the lesson's "Para profundizar" block, and a deliberate copy
+   rather than a shared stylesheet: the course rules live in lesson.css, which this
+   route does not load, and their `.lesson-content`-prefixed selectors exist to beat
+   prose rules this block never sits inside. `PostReading` renders as a SIBLING of
+   `.post-content`, so the specificity hacks the lesson needs are not repeated here.
+
+   Collapsed by default, same trade as COURSE-P8-01: the fold hides the `note`, and the
+   count plus the per-kind breakdown in the summary is what pays for hiding it. */
+
+.post-reading {
+  margin: 3rem 0 0;
+  border-top: 1px solid var(--border);
+}
+
+.post-reading-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  cursor: pointer;
+  /* Drop the native disclosure triangle; the chevron replaces it. */
+  list-style: none;
+}
+.post-reading-summary::-webkit-details-marker { display: none; }
+.post-reading-summary::marker { content: ""; }
+.post-reading-summary:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.post-reading-chevron {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  color: var(--text-dim);
+  transition: transform 150ms ease, color 150ms ease;
+}
+.post-reading:not([open]) .post-reading-chevron { transform: rotate(-90deg); }
+.post-reading-summary:hover .post-reading-chevron { color: var(--green); }
+
+.post-reading-kicker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 150ms ease;
+}
+.post-reading-summary:hover .post-reading-kicker { color: var(--text); }
+
+/* Closed, this line is the whole advertisement for what is behind the fold. */
+.post-reading-count {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+/* Under ~480px the kicker plus the breakdown wraps the summary to three lines, which
+   makes the closed block taller than what it hides. The count survives. */
+@media (max-width: 480px) {
+  .post-reading-breakdown { display: none; }
+}
+
+.post-reading-body { padding-bottom: 6px; }
+
+.post-reading-lede {
+  margin: 0 0 18px;
+  max-width: 54ch;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.post-reading-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-reading-item {
+  padding: 16px 18px;
+  border: 1px solid var(--border-variant);
+  border-radius: var(--radius);
+  background: var(--surface-container);
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+.post-reading-item:hover {
+  border-color: var(--green);
+  background: var(--surface-high);
+}
+
+.post-reading-title {
+  display: inline-block;
+  margin-bottom: 4px;
+  color: var(--green);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-decoration: none;
+}
+.post-reading-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 2px;
+}
+.post-reading-title:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.post-reading-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: baseline;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+}
+
+.post-reading-kind {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* The one kind that is not reading at all — a thing the reader operates. */
+.post-reading-kind[data-kind="interactivo"] { color: var(--green); }
+
+.post-reading-lang {
+  padding: 1px 5px;
+  border: 1px solid var(--border-variant);
+  border-radius: 3px;
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+}
+
+.post-reading-note {
+  margin: 5px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-reading-chevron,
+  .post-reading-item,
+  .post-reading-kicker {
+    transition: none;
+  }
+}
+
+/* ── Prev / next ────────────────────────────────────────────────────────── */
+
+.post-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+  margin-top: 56px;
+  padding-top: 26px;
+  border-top: 1px solid var(--border-variant);
+}
+
+.post-nav__link {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 300px;
+  text-decoration: none;
+}
+
+.post-nav__link--end {
+  text-align: right;
+  margin-left: auto;
+}
+
+.post-nav__kicker {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.post-nav__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  transition: color 160ms ease;
+}
+
+.post-nav__link:hover .post-nav__title {
+  color: var(--green);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-back,
+  .post-nav__title {
+    transition: none;
+  }
+}

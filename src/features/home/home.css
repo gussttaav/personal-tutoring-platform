@@ -1,0 +1,257 @@
+/*
+ * REDESIGN-P1-01 — home (/) hero + stats styles. Later P1 tasks append their sections here.
+ *
+ * `HomeHero` is a Server Component that styles every single-valued thing inline, as the landing
+ * sections do; this file holds only what an inline style cannot express: the hero grid that goes
+ * two-column at 1024 and the copy alignment that flips with it, the ONE photo node that is the
+ * 128px glow box above the text below 1024 and the bio's offset frame beside it above, the CTA
+ * row's width, the two CTAs (a `:hover` cannot be inline), and the 2 → 4 column stats grid.
+ * Values are `docs/redesign/design/home.html`'s (`.hero-*`, `.glow-box`, `.photo-frame`, `.stats`).
+ */
+
+/* ── Hero grid: one column, photo above the copy; 7fr/5fr with the photo beside it from 1024 ── */
+.home-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+}
+.home-hero-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.home-hero-photo {
+  order: -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*
+ * One <Image> serves both layouts (one download, one preload): the frame is a 128px glow box
+ * below 1024 and the 4/5 offset frame (max 340px) above. The halo belongs to the glow box, the
+ * dot / line / offset blocks to the frame — each is shown only in its own layout.
+ */
+.home-hero-frame {
+  position: relative;
+  width: 128px;
+  height: 128px;
+}
+.home-hero-halo {
+  position: absolute;
+  inset: -4px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #4edea3, #10b981);
+  filter: blur(8px);
+  opacity: 0.3;
+}
+.home-hero-frame-deco { display: none; }
+.home-hero-picture {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid rgba(78, 222, 163, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* CTA row: full width (stacked, stretched buttons) below 640, shrink-wrapped row above */
+.home-hero-cta-row { width: 100%; }
+@media (min-width: 640px) {
+  .home-hero-cta-row { width: auto; }
+}
+
+/* The two CTAs (`HomeHeroCtas` buttons): hover lives here, not in an onMouseEnter */
+.home-hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 16px 36px;
+  border-radius: 10px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.home-hero-cta--primary {
+  border: 0;
+  background: linear-gradient(135deg, #4edea3, #10b981);
+  color: #003824;
+  font-weight: 700;
+  box-shadow: 0 8px 32px rgba(78, 222, 163, 0.25);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.home-hero-cta--primary:hover {
+  color: #003824;
+  transform: scale(1.02);
+  box-shadow: 0 12px 40px rgba(78, 222, 163, 0.4);
+}
+.home-hero-cta--secondary {
+  background: #2a2a2c;
+  color: #e5e1e4;
+  font-weight: 600;
+  border: 1px solid rgba(60, 74, 66, 0.5);
+  transition: background 0.2s, border-color 0.2s;
+}
+.home-hero-cta--secondary:hover {
+  color: #e5e1e4;
+  background: #353437;
+  border-color: rgba(60, 74, 66, 0.8);
+}
+
+/* Stats: 2×2 below 1024, one row of four above */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (min-width: 1024px) {
+  .home-hero-grid {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+    gap: 64px;
+  }
+  .home-hero-copy {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .home-hero-photo { order: 0; }
+  .home-hero-frame {
+    width: 100%;
+    max-width: 340px;
+    height: auto;
+    aspect-ratio: 4 / 5;
+  }
+  .home-hero-halo { display: none; }
+  .home-hero-frame-deco { display: block; }
+  .home-hero-picture {
+    border-radius: 14px;
+    border: 0;
+    box-shadow: none;
+  }
+  .home-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-cta--primary { transition: none; }
+  .home-hero-cta--primary:hover { transform: none; }
+}
+
+/*
+ * REDESIGN-P1-02 — bio + compact areas band. `HomeBio` / `HomeAreas` inline everything
+ * single-valued, as the hero does; this holds the grid, the two-column area grid, and the hovers
+ * an inline style can't express. Values are `docs/redesign/design/home.html`'s `.bio-grid` /
+ * `.exp-grid` / `.exp` / `.social`.
+ */
+.home-bio-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 44px;
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .home-bio-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 64px;
+  }
+}
+
+/*
+ * The base look lives here, not inline on the `<a>`s: an inline style always beats an external
+ * stylesheet rule regardless of specificity, so `color` / `border` had to move here for
+ * `:hover` (below) to ever have a chance to apply.
+ */
+.home-social a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.10);
+  border-radius: 7px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+.home-social a:hover { border-color: rgba(78, 222, 163, 0.35); color: #4edea3; }
+
+.home-bio-link { color: #4edea3; transition: color 0.2s; }
+.home-bio-link:hover { color: #10b981; }
+
+/* Areas: one column below 640, two from 640; 12px gaps (the bento's cards use 16px) */
+.home-areas-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+@media (min-width: 640px) {
+  .home-areas-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.home-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #201f22;
+  border: 1px solid rgba(60, 74, 66, 0.15);
+  border-radius: 14px;
+  transition: border-color 0.2s;
+}
+.home-area:hover { border-color: rgba(78, 222, 163, 0.3); }
+
+/*
+ * REDESIGN-P1-03 — courses + latest posts bands. `HomeCourses` / `HomePosts` inline every
+ * single-valued style, as the catalog/blog page headers do; this holds the "see all" link and
+ * the two grids — an inline style can't express either. The link rides inside the shared
+ * `.lp-section-head` row (`course-editorial.css`) as a third flex item after the kicker and
+ * `.lp-rule`, which is `flex: 1` and so absorbs the space between them — no home-specific title
+ * row needed. Values are `docs/redesign/design/home.html`'s `.see-all` / `.courses-grid` /
+ * `.posts-grid`. The cards themselves (`.course-card…`, `.post-card…`) keep their styles in
+ * `catalog.css` / `blog.css`, reused as-is.
+ */
+.home-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--green);
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.home-courses-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+@media (min-width: 768px) {
+  .home-courses-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.home-posts-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+}
+@media (min-width: 768px) {
+  .home-posts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+}
+
+/*
+ * REDESIGN-P1-04 — the closing band's place on the home: `docs/redesign/design/home.html`'s
+ * `<section style="padding: 8px 0 0">` around `.cta-band`. Spacing only — the band's own rules
+ * travel with `ClosingCta` (src/components/), and the app showcase's with `app-showcase.css`.
+ */
+.home-closing { padding: 8px 0 0; }

@@ -5,10 +5,13 @@
  *
  * MOUNTED ONCE PER SURFACE. On the lesson reader that is `LessonLayout`, because it is the
  * only shared parent of both `LessonSidebar` instances and the mobile bar — the same
- * reason `CourseProgressProvider` lives there. `LessonSidebar` is rendered TWICE (desktop
- * aside + drawer) with CSS hiding one, so anything stateful placed inside it would exist
- * twice; the triggers are therefore mounted in `LessonLayout` and `MobileLessonBar`
- * instead, one apiece, and `LessonSidebar` stays a zero-client-JS Server Component.
+ * reason `CourseProgressProvider` lives there.
+ *
+ * COURSE-P9-02: two consumers. The mobile bar's icon trigger opens the dialog hosted here
+ * (`open`/`openSearch`/`closeSearch` are mobile-only now); the desktop `SidebarSearch`
+ * field reads `courseSlug`/`version`/`locale`/`lessonCount` from this context and renders
+ * its results inline. `LessonSidebar` is rendered TWICE (desktop aside + drawer) with CSS
+ * hiding one, so the field is mounted by its desktop variant only.
  *
  * Search is scoped to the ONE course the reader is inside — the only surface that offers
  * it. Nothing here knows the name of any particular course, so a second course gets search

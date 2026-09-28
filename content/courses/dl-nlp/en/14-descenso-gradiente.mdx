@@ -1,0 +1,444 @@
+---
+slug: descenso-gradiente
+title: "Gradient descent"
+block: 2
+order: 6
+minutes: 30
+summary: "The gradient gathers one partial derivative per parameter and points, among all possible directions, at the one that raises the loss the most; subtracting a little of it each time is the entire method. How much \"a little\" turns out to be decides between converging, bouncing and diverging, and the whole sum can be worked out on a parabola."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-paso-a-mano
+    type: numeric
+    prompt: 'The descent runs on $\mathcal{L}(w) = w^{2}$ starting from $w_0 = 8$, with $\eta = 0.25$. What is $w_3$?'
+    answer: 1
+    tolerance: 0.01
+    explanation: 'Each step multiplies $w$ by $1 - 2\eta = 0.5$, so $w_3 = 0.5^{3} \cdot 8 = 1$, and the trajectory runs $8 \to 4 \to 2 \to 1$. Look at that $\eta$''s two neighbours, since they teach you the shape of the condition: with $\eta = 0.5$ the factor is $0$ and $w_1$ drops straight onto the minimum, and with $\eta = 0.75$ it is $-0.5$, so the trajectory alternates in sign ($8 \to -4 \to 2 \to -1$) yet converges exactly as fast. What decides this is not the sign of the factor, it is its magnitude.'
+  - id: q-por-que-menos
+    type: single
+    prompt: 'Of all the directions the parameters could move in, why does the step go in that of $-\nabla_{\theta}\mathcal{L}$?'
+    options:
+      - { id: a, text: 'Because among all directions of length $1$, the directional derivative $\left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u}$ reaches its largest value when $\mathbf{u}$ is parallel to the gradient, so the opposite one is what lowers the loss most per unit of step.' }
+      - { id: b, text: 'Because the gradient points towards the minimum, so subtracting it brings the parameters closer to it.' }
+      - { id: c, text: 'Because it is the only direction in which the loss falls: in all the others it rises or stays the same.' }
+      - { id: d, text: 'Because the loss is never negative, and subtracting a non-negative quantity from it makes it fall.' }
+    answer: a
+    explanation: '(a) is the Cauchy-Schwarz inequality applied to this lesson''s dot product, and the word doing the real work is "directional": the gradient ranks directions by how much the loss changes when you take a small step in each one. (b) is the most common mistake, and the explorable''s ravine refutes it in plain sight: the minimum lies in a straight line from the starting point, yet the trajectory never heads there directly, it zigzags between the two walls instead. Pointing at the steepest climb *right here* is not the same as pointing at the bottom. (c) confuses the best direction with the only one: there is a whole half-circle of directions that go down, and $-\nabla_{\theta}\mathcal{L}$ is the one that goes down fastest. And (d) mixes up the loss with its gradient, two completely different objects: what gets subtracted is not the loss, it is a vector with one coordinate per parameter.'
+  - id: q-gradiente-cero
+    type: multi
+    prompt: 'Tick everything that is true about what gradient descent guarantees and what it does not.'
+    options:
+      - { id: a, text: 'It stops where the gradient is zero, and that point may not be the lowest of the surface: which one is reached is decided by where you started.' }
+      - { id: b, text: 'As long as the gradient is not null and $\eta$ is small, each step lowers the loss, because to first order the fall is $\eta\lVert\nabla_{\theta}\mathcal{L}\rVert^{2}$.' }
+      - { id: c, text: 'On $\mathcal{L} = x^{2} + 20y^{2}$ a single $\eta$ can converge in one coordinate and diverge in the other, because the limit $\eta < 1/a$ is worked out separately in each.' }
+      - { id: d, text: 'With $\eta$ small enough, the descent reaches the lowest minimum of the surface from any starting point.' }
+    answer: [a, b, c]
+    explanation: 'The three true ones are exactly the three things this lesson establishes, and not one of them promises finding the best place. (a) is what the two-basin explorable shows directly. (b) is the first-order approximation, with the squared norm guaranteeing that what gets subtracted is never negative. (c) is the count $\eta < 1/a$ applied separately to each coordinate: $a = 1$ in one and $a = 20$ in the other, and the more demanding one wins out. (d) is the false one, and it fails for exactly the same reason (a) does: lowering $\eta$ only shortens the steps, it never changes which basin you happen to be in. A tiny $\eta$ starting from a bad point still arrives, only more slowly, at that same bad bottom.'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Deep Learning, ch. 4: Numerical Computation'
+    authors: 'Goodfellow, Bengio and Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/numerical.html'
+    note: 'Its §4.3 explains why the step goes against the gradient (the directional derivative) and how curvature (the Hessian''s condition number) sets the longest step that will not diverge: this lesson''s x² + 20y² stated in general.'
+  - kind: paper
+    title: 'An overview of gradient descent optimization algorithms'
+    authors: 'Sebastian Ruder'
+    year: '2016'
+    venue: 'arXiv:1609.04747'
+    lang: en
+    url: 'https://arxiv.org/abs/1609.04747'
+    note: 'Picks up where this lesson leaves off: momentum, Adam and the other methods that let a single learning rate serve every direction, plus splitting the batch into pieces. A review, not a from-scratch derivation.'
+---
+
+{/* COURSE-P5-02 — Block 2, Lesson 6. */}
+
+The training question can now be written out in full, and writing it doesn't solve it. The previous
+lesson, on loss functions, put the last piece in place: a rule that compares what the network
+answers with what it should have answered, and sums it all up in one number. Searching for the
+parameters that make that number smallest is now a well-posed question, and there's still no way to
+answer it by trial and error. The network from <Leccion slug="forward-pass">the lesson on the
+forward pass</Leccion> holds $41$ numbers; with a vocabulary of twenty thousand entries and a hidden
+layer of $128$ neurons, that becomes $2\,560\,257$, and every single one of them is a real number.
+
+There is, though, a much smaller question that does get answered. Take one of those $41$ parameters
+on its own, raise it by a hundredth, leave the other $40$ untouched, and evaluate the loss again: if
+it went up, that parameter was moving the wrong way; if it went down, the right one. It's a local
+answer (it doesn't say where the minimum is, only which way the ground slopes from here), and, taken
+to the limit, it's had a name since the seventeenth century: the partial derivative of the loss with
+respect to that parameter. Probing all $41$ costs $41$ evaluations. Differentiating gives you all of
+them without probing a single one, and for one neuron the whole count fits on a line; getting the
+same result with hidden layers in the way takes up the rest of this block.
+
+Before differentiating anything, look at the terrain itself. Fix every one of a network's
+parameters but two, and the loss becomes a function of those two numbers, which draws as a surface
+full of valleys and hillsides. The one in the explorable below comes from no real network at all: I
+made it up so it fits on a plane and has two bottoms instead of one.
+
+<Explorable
+  id="loss-landscape"
+  caption="Move the starting point from one side of the central ridge to the other: the trajectory always ends in the bottom lying beneath it, and never crosses over to the other one. Start it right in the centre, and neither thing happens: the point stays pinned to the ridge, at a saddle point, without falling to either side. The second bar is the learning rate, which fixes how far it advances at each step; leave it alone for now."
+/>
+
+The descent never compares the two valleys, because it can't see them. From wherever it stands, it
+has access to exactly one thing (how much the loss changes when you move a little in each
+direction), and that's all it uses to decide the next step. Right on the ridge, that slope points
+nowhere useful: the derivative is zero without the spot being a bottom, a saddle point, and there
+the descent stays put instead of moving any further down.
+
+<Callout type="intuition" title="The idea in one sentence">
+The descent doesn't search for the minimum: it reads the slope where it currently stands and takes
+a step in whichever direction lowers the loss the most. That repeating this ends up at a bottom is
+a consequence; that it's the deepest one, nobody guarantees.
+</Callout>
+
+## The gradient points uphill, and that is why it is subtracted
+
+Call $\theta$ all of the network's parameters at once (the weights and biases of every layer,
+stacked into a single vector of $P$ coordinates), and $\mathcal{L}(\theta)$ the loss over the
+batch. The **gradient** is the vector that gathers one partial derivative per parameter,
+$\nabla_{\theta}\mathcal{L} \in \mathbb{R}^{P}$. Each of its coordinates says how fast the loss
+changes when one parameter moves and the rest hold still: exactly what the hundredth-step probe
+measured, only exact this time, and without ever evaluating anything twice. For the neuron from
+<Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion>, with its weights
+$\mathbf{w} \in \mathbb{R}^{d}$ and its bias $b$, that's $d + 1$ numbers:
+
+$$
+\nabla_{\mathbf{w}}\mathcal{L} = \left(\frac{\partial \mathcal{L}}{\partial w_1}, \;\dots, \;\frac{\partial \mathcal{L}}{\partial w_d}\right)^{\top} \in \mathbb{R}^{d},
+\qquad
+\frac{\partial \mathcal{L}}{\partial b} \in \mathbb{R}.
+$$
+
+The first thing worth noticing is that $\nabla_{\theta}\mathcal{L}$ has the exact same shape as
+$\theta$. That's no accident: it's precisely what lets you subtract one from the other.
+
+What's left is to justify why you subtract that particular vector and nothing else. Take any
+direction, a vector $\mathbf{u} \in \mathbb{R}^{P}$ of length $1$, and ask how much the loss changes
+as you move a little in it. That's the directional derivative, which for a function with partial
+derivatives turns out to be a dot product,
+
+$$
+D_{\mathbf{u}}\mathcal{L}(\theta) = \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u},
+$$
+
+and it's bounded. The Cauchy-Schwarz inequality gives
+
+$$
+\left\lvert \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u} \right\rvert \leq \lVert \nabla_{\theta}\mathcal{L} \rVert \, \lVert \mathbf{u} \rVert = \lVert \nabla_{\theta}\mathcal{L} \rVert,
+$$
+
+with equality only when $\mathbf{u}$ is parallel to the gradient. Of every possible direction, then,
+the gradient's own direction raises the loss the most, and the opposite one lowers it the most. No
+other direction lowers it more per unit of step.
+
+From there, the whole rule follows. Starting from some initial parameters $\theta_0$, each step
+subtracts the scaled gradient:
+
+$$
+\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t),
+$$
+
+where the subscript counts steps ($\theta_5$ is the parameters after five steps, not the fifth
+coordinate of anything), and $\eta > 0$ is the **learning rate**, the one number in the whole
+formula that you actually choose. That's **gradient descent**, in its entirety.
+
+That repeating this actually lowers the loss shows up in the first-order approximation. Near
+$\theta_t$, the loss looks much like its own tangent plane,
+
+$$
+\mathcal{L}(\theta_t + \Delta) \approx \mathcal{L}(\theta_t) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta,
+$$
+
+and the descent step is precisely $\Delta = -\eta\,\nabla_{\theta}\mathcal{L}$, so
+
+$$
+\mathcal{L}(\theta_{t+1}) \approx \mathcal{L}(\theta_t) - \eta \left\lVert \nabla_{\theta}\mathcal{L} \right\rVert^{2}.
+$$
+
+What gets subtracted is a squared norm, and so it's never negative: as long as the gradient isn't
+zero, the step goes down. The entire catch sits in that equation's sign, an $\approx$: the equality
+belongs to the tangent plane, not to the loss itself, and it only holds "nearby". How near is
+exactly what $\eta$ decides.
+
+One concession worth saying out loud: this lesson's batch is all ten reviews at once, so every step
+looks at every example before moving anything. That's called **batch gradient descent**, and it's
+far from the only way to fix $B$. At the other extreme, **stochastic gradient descent** (SGD) sets
+$B = 1$: each step looks at a single example and costs almost nothing, but the gradient it uses is
+no longer the exact one from this lesson, it's a noisy estimate of it, computed from one example
+instead of ten. The **mini-batch** sits in between, with $B$ somewhere between those two extremes
+(a few tens or hundreds of examples, typically), and it's the option that wins out in practice. It's
+not only that a set of millions won't fit in memory at once: even when it would fit whole, many
+cheap, somewhat noisy steps tend to train faster in wall-clock time than a few exact, expensive
+ones. The size of the dataset pushes towards the mini-batch, but that's not the only reason to
+choose it, and the full batch isn't only a matter of small datasets either: it's used here because
+there are ten examples and it makes the arithmetic easier to follow by hand, not because ten marks
+any real boundary.
+
+And letting $B$ vary brings in a word that until now was unnecessary: an **epoch** is one complete
+pass through all $N$ training examples. With $B = N$, which is this lesson's case, a step and an
+epoch are the same thing (each step already runs through the whole set), which is why "step" has
+been enough on its own so far. As soon as $B < N$, the two stop matching: it takes $N / B$ steps to
+complete one epoch, and training in earnest means repeating many epochs, not one.
+
+### A step too long raises the loss
+
+To see what $\eta$ actually does, it helps to use a loss whose sum can be worked out in closed
+form, so take the smallest one there is: a single parameter, $\mathcal{L}(w) = w^{2}$, with the
+minimum at $w = 0$ and $\dfrac{d\mathcal{L}}{dw} = 2w$. The rule becomes
+
+$$
+w_{t+1} = w_t - \eta\,2w_t = \left(1 - 2\eta\right)w_t,
+$$
+
+a multiplication by the same constant at every step. Iterating from $w_0$,
+
+$$
+w_t = \left(1 - 2\eta\right)^{t} w_0,
+$$
+
+and a power tends to zero exactly when its base is smaller than $1$ in absolute value. The full
+condition is $\lvert 1 - 2\eta \rvert < 1$, that is, $0 < \eta < 1$, and the factor itself tells you
+what happens in each stretch:
+
+| $\eta$ | $1 - 2\eta$ | what $w_t$ does |
+|---|---|---|
+| $0 < \eta < 1/2$ | between $0$ and $1$ | shrinks without changing sign |
+| $\eta = 1/2$ | $0$ | drops onto the minimum in a single step |
+| $1/2 < \eta < 1$ | between $-1$ and $0$ | alternates sign and shrinks |
+| $\eta = 1$ | $-1$ | alternates between $w_0$ and $-w_0$ forever |
+| $\eta > 1$ | less than $-1$ | alternates and grows: diverges |
+
+<Figure
+  src="/courses/dl-nlp/descenso-pasos.en.svg"
+  alt="Three stacked graphs, all three with the same parabola: the loss on the vertical axis and the weight on the horizontal one, with the minimum in the centre. In all three the first point is in the same place, on the right, where the weight is one. At the top, with learning rate 0.10, the six points descend down the right arm coming closer to the centre by less each time, and the last stays halfway. In the middle, with 0.40, the second point is already almost at the bottom and the third on top of it. At the bottom, with 1.05, the points jump from one arm to the other and each lands higher than the one before: the fifth reaches almost the top edge of the drawing."
+  caption="The two failures are opposites: too short a step always heads downward but never quite arrives, and too long a step crosses over the bottom and lands higher than it started. No step size is correct by nature; the right one depends entirely on how sharply the loss curves."
+/>
+
+That particular $1$ in the limit belongs to this parabola and not to every one of them. With
+$\mathcal{L}(w) = a\,w^{2}$, the derivative becomes $2aw$, the factor becomes $1 - 2\eta a$, and the
+condition becomes $\eta < 1/a$: the more sharply the loss curves, the shorter the step has to be.
+The awkward part is that a real network curves differently in every direction, while $\eta$ stays a
+single number shared by all of them.
+
+The explorable dives straight into that problem, $\mathcal{L} = x^{2} + 20y^{2}$: almost flat along
+$x$ and very steep along $y$. The count above, applied coordinate by coordinate, asks for
+$\eta < 1$ in the first direction and $\eta < 1/20 = 0.05$ in the second, and the second one wins.
+
+<Explorable
+  id="gradient-descent-2d"
+  caption="Raise the ravine's learning rate five thousandths at a time and watch where it breaks: up to 0.045 the trajectory descends, at 0.05 it bounces between the two walls without ever approaching the bottom, and above that it escapes the graph entirely. The red warning fires when the trajectory leaves the drawing, not the moment it starts going wrong."
+/>
+
+With $\eta = 0.05$ (the value it starts at), the factor for the steep coordinate is exactly $-1$,
+and the trajectory does in two dimensions exactly what the fourth row of the table does in one:
+alternate without ever advancing. The first button's bowl is **convex** (a single bottom, so
+whoever descends ends up in the same place), and it survives the whole range of the slider: its
+steepest direction only demands $\eta < 1/3$. The fact that one step size can work for one direction
+and fail for another has fixes with their own names, *momentum*, Adam, and they lie outside this
+course.
+
+## With a single layer, the gradient comes out of a line
+
+What's left is to bring the descent from $\theta$ down to a concrete parameter, and with the
+reviews' neuron the work is already half done. It's a neuron with a sigmoid on the output and
+cross-entropy as the loss, exactly the pair the previous lesson derived: for one example,
+$\partial \ell / \partial z = \hat{y} - y$. The only thing missing is how $z$ depends on each
+weight, and that comes straight from the neuron's own definition,
+$z = \mathbf{w}^{\top}\mathbf{x} + b = \sum_{j=1}^{d} w_j x_j + b$, where each $w_j$ appears exactly
+once, multiplied by $x_j$:
+
+$$
+\frac{\partial z}{\partial w_j} = x_j,
+\qquad
+\frac{\partial z}{\partial b} = 1.
+$$
+
+Chaining the two derivatives together,
+
+$$
+\frac{\partial \ell}{\partial w_j}
+= \frac{\partial \ell}{\partial z} \cdot \frac{\partial z}{\partial w_j}
+= \left(\hat{y} - y\right)x_j,
+\qquad
+\frac{\partial \ell}{\partial b} = \hat{y} - y,
+$$
+
+which in vector form becomes
+
+$$
+\nabla_{\mathbf{w}}\,\ell = \left(\hat{y} - y\right)\mathbf{x}.
+$$
+
+That formula is really saying two separate things, and they're worth pulling apart. The error
+$\hat{y} - y$ is a single number that multiplies every coordinate the same way: it fixes how much
+correction there is to go around. And $\mathbf{x}$ decides how that correction gets shared out: a
+vocabulary entry that never appears in the review has $x_j = 0$ and its weight doesn't budge a
+thousandth, while one that appears twice pulls twice as hard. The neuron only ever learns from what
+it has actually seen.
+
+The batch loss is the mean of the $B$ per-example losses, so its gradient is the mean of the $B$
+individual gradients:
+
+$$
+\nabla_{\mathbf{w}}\mathcal{L} = \frac{1}{B}\sum_{i=1}^{B}\left(\hat{y}_i - y_i\right)\mathbf{x}_i
+= \frac{1}{B}\,\mathbf{X}^{\top}\left(\hat{\mathbf{Y}} - \mathbf{Y}\right),
+$$
+
+where the second form writes the first as a single product: with $d_L = 1$ the predictions and
+labels are columns of $B$ numbers, $\mathbf{X}^{\top}$ has shape $d_0 \times B$, and the result is
+exactly the column of $d_0$ coordinates you need. The bias comes out of that same sum, minus the
+$\mathbf{x}_i$:
+
+$$
+\frac{\partial \mathcal{L}}{\partial b} = \frac{1}{B}\sum_i \left(\hat{y}_i - y_i\right).
+$$
+
+All of this cost only two derivatives, because $z$ depends on $\mathbf{w}$ directly: between a
+weight and the loss there sit a sum and a sigmoid, and nothing else.
+
+## Descent by hand, and a neuron that learns on its own
+
+The first cell is the parabola from above, with no network and no NumPy involved: five steps from
+$w_0 = 1$ at the figure's three rates, alongside the closed form. Run it and compare the two blocks.
+
+<PyCell code={`
+# The smallest loss there is: one parameter and L(w) = w², with dL/dw = 2w.
+def loss(w):
+    return w * w
+
+
+def descend(w0, eta, steps):
+    w = w0
+    trajectory = [w]
+    for _ in range(steps):
+        w = w - eta * 2.0 * w                 # w <- w - eta * dL/dw
+        trajectory.append(w)
+    return trajectory
+
+
+w0 = 1.0
+print("%6s %7s  %s" % ("eta", "factor", "  ".join(("w%d" % t).rjust(9) for t in range(6))))
+for eta in [0.10, 0.40, 1.05]:
+    print("%6.2f %+7.2f  %s"
+          % (eta, 1 - 2 * eta, "  ".join("%9.5f" % w for w in descend(w0, eta, 5))))
+print()
+
+# The closed form gives the same numbers without taking a single step.
+for eta in [0.10, 0.40, 1.05]:
+    loop = descend(w0, eta, 5)
+    closed = [(1 - 2 * eta) ** t * w0 for t in range(6)]
+    identical = all(abs(a - b) < 1e-12 for a, b in zip(loop, closed))
+    print("eta = %.2f   loop and formula match: %-5s   final loss %10.7f"
+          % (eta, identical, loss(loop[-1])))
+`} />
+
+The three rows match the three curves in the figure. With $\eta = 0.10$, the factor is $0.8$ and
+five steps leave $w$ at $0.32768$: it moves in the right direction but slowly. With $0.40$, the
+factor is $0.2$ and within two steps $w$ is already $0.04$. With $1.05$, the factor is $-1.1$, the
+signs alternate, the magnitudes grow, and the final loss is $2.59$: two and a half times what it
+was at the start, after five steps that were supposed to lower it.
+
+The second cell trains for real. The neuron is the same one from <Leccion slug="la-neurona">the
+lesson on the artificial neuron</Leccion>, with the same ten reviews and the same vocabulary, except
+this time its weights start at zero: with $\mathbf{w} = \mathbf{0}$ and $b = 0$, the sigmoid answers
+$0.5$ across all ten, the worst score among the three networks the previous lesson ranked. There
+isn't a single random number anywhere in this cell, so you'll see these exact values and no others.
+Run it and watch the loss fall.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# --- The usual ten reviews, their vocabulary and their labels.
+reviews = [
+    "the movie is fun and i recommend it",
+    "the movie is slow and boring",
+    "good movie i recommend it",
+    "bad movie very slow",
+    "fun and good",
+    "the movie is bad",
+    "boring and slow",
+    "i recommend it",
+    "good movie but slow",
+    "fun and i recommend it",
+]
+y = np.array([1., 0., 1., 0., 1., 0., 0., 1., 0., 1.])
+V = ["bad", "boring", "fun", "good", "movie", "recommend", "slow", "the"]
+X = np.array([[t.split().count(e) for e in V] for t in reviews], dtype=float)
+
+
+def cross_entropy(y_hat):
+    p = np.clip(y_hat, 1e-12, 1.0 - 1e-12)
+    return -np.mean(y * np.log(p) + (1.0 - y) * np.log(1.0 - p))
+
+
+w = np.zeros(len(V))                      # all weights at zero
+b, eta, B = 0.0, 1.0, len(y)              # bias, learning rate, batch size
+
+for step in range(201):
+    y_hat = 1.0 / (1.0 + np.exp(-(X @ w + b)))                   # forward pass
+    if step % 25 == 0:
+        print("step %3d   loss %.4f   correct %2d of 10"
+              % (step, cross_entropy(y_hat), int(((y_hat >= 0.5) == (y == 1.)).sum())))
+    if step == 200:
+        break
+    error = y_hat - y                                            # (B,)
+    w -= eta * (X.T @ error) / B
+    b -= eta * float(error.sum()) / B
+
+by_hand = np.array([-1., -1., 1., 1., 0., 1., -1., 0.])
+print("\\nwith the weights I set by hand:",
+      "%.4f" % cross_entropy(1.0 / (1.0 + np.exp(-(X @ by_hand)))))
+for entry, weight in sorted(zip(V, w), key=lambda pair: -pair[1]):
+    print("  %-11s %+6.3f" % (entry, weight))
+print("  %-11s %+6.3f" % ("(bias)", b))
+`} />
+
+The first line is the starting point: loss $0.6931$, which is $\log 2$, and five correct out of ten,
+the score of any network that gives the same answer to all ten reviews. Twenty-five steps later, the
+loss is down to $0.0913$ and the correct count has reached ten, and by step $200$ it's fallen all
+the way to $0.0131$. Compare that with the $0.2208$ from the eight weights I set by eyeballing the
+reviews: the descent overtakes my version before step $25$ and keeps improving from there. Nobody
+ever told the neuron what any word means.
+
+The final weights confirm it. The largest, $+3.911$, goes to <W>recommend</W>, and the smallest,
+$-3.428$, to <W>slow</W>: entirely on its own, the descent has sorted the opinion words by sign. But
+look at the two that expose the limit of a set of only ten examples. <W>movie</W> ends at $-1.493$
+and <W>the</W> at $-0.832$, and neither one says anything at all about a film. Both come out
+negative for the same reason, and it's a coincidence, not a meaning: <W>movie</W> shows up in four
+negative reviews and two positive ones, <W>the</W> in two negative and one positive, so across these
+ten they read as evidence against. The descent does exactly what it was asked to do, lower the loss
+over these ten reviews rather than over the language itself, and in doing so it hands <W>movie</W> a
+weight against the film heavier than some words carrying a real opinion ever get. With only ten
+examples, a neuron can't tell an opinion apart from a coincidence.
+
+## Test your intuition
+
+Three questions: a descent worked out by hand, why the step heads in that particular direction, and
+what the method guarantees against what it doesn't.
+
+<Quiz id="q-paso-a-mano" />
+
+<Quiz id="q-por-que-menos" />
+
+<Quiz id="q-gradiente-cero" />
+
+---
+
+The method is complete, and the neuron that has now finished learning has exactly one layer. That's not
+an incidental detail of the example, it's the very condition that made the last section possible:
+between a weight and the loss there are two steps, and two chained derivatives close out the count.
+Put a hidden layer in between, and the path branches. A weight in the first layer moves the output
+of its hidden neuron; that output feeds into every neuron of the next layer, and each one
+contributes to the loss in its own way. The descent's rule doesn't change by a single letter. What
+stops being available is the gradient itself, and without it there's nothing left to subtract.
+
+The chain rule used twice already, the one-variable version, doesn't cover that case: it's written
+for a quantity that reaches the next one by a single path. How a composition gets differentiated
+when the intermediate variables are vectors, and what object replaces the derivative once there are
+many inputs and many outputs at once, is <Leccion slug="regla-de-la-cadena">the next lesson, on the
+chain rule</Leccion>. Turning that into a procedure that walks an entire network without repeating a
+single computation takes up the rest of this block.

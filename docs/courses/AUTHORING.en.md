@@ -1,7 +1,7 @@
 # AUTHORING.en.md — the English delta
 
 **Tag:** `COURSE-P11-03` · Delta on [AUTHORING.md](AUTHORING.md) · Notation:
-[NOTATION.md](NOTATION.md), unchanged
+[NOTATION.md](NOTATION.md), unchanged but for the words inside `\text{…}` (§8)
 
 **[AUTHORING.md](AUTHORING.md) governs an English lesson exactly as it governs a Spanish one,
 except where this file replaces it, section by section.** Read that file first; this one is useless
@@ -22,6 +22,15 @@ in it are, and one of them is not in §5 where you would look for it:
 
 Everything else applies verbatim; §8 below says so explicitly for the parts most likely to be
 re-litigated.
+
+**Since `COURSE-C2-P0-04` the delta mechanism has three members**: this language delta, and one
+*course* delta per course — [`dl-nlp/AUTHORING.md`](dl-nlp/AUTHORING.md),
+[`llm-agents/AUTHORING.md`](llm-agents/AUTHORING.md). They compose in the order
+[README.md](README.md#which-file-governs) gives: the shared file, then the course's delta, then
+this one, each replacing only what it names. The Spanish terminology table that §6 below carries
+into English now lives in `dl-nlp`'s delta rather than in the shared file, so §6 is that course's
+English glossary; a second course's glossary is written beside its own delta when its lessons are
+translated, and until then nothing here is about it.
 
 ---
 
@@ -132,6 +141,11 @@ the language: a sorted vocabulary re-sorts, and the claim the sort existed to ma
 *true* in English — destroying the argument rather than merely reordering it. Re-derive until the
 claim is absurd again, and check any asset with the old order set into it.
 
+**A summary that names its examples' language drops the adjective.** A Spanish `summary` opening
+«cuatro frases españolas» becomes "four phrases", never "four English phrases": in the target locale
+the language label is the same translated-material tell as tokenising the wrong language, so §3 cuts
+it rather than carrying it across. *Settled by `en/11-xor-y-capas-ocultas.mdx` (COURSE-P11-05).*
+
 ## 4. §2 — capitalisation of blocks and lessons
 
 The rule that is not in §5. `AUTHORING.md` §2 keeps *el bloque 2* and *la lección 3* lowercase
@@ -189,7 +203,9 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | the mechanism, and its self- form | attention, self-attention | |
 | the paper's own names | one-hot encoding, multi-head, layer norm, fine-tuning, softmax, encoder, decoder, forward pass | |
 | the backward pass algorithm | backpropagation | backprop, back-propagation |
+| the two directions of a traversal, as nouns | forward pass, backward pass | the way in / the way back; the forward / the backward on its own |
 | the network's parts | layer, weight, bias | |
+| the threshold activation | step, and the symbol is $\text{step}$ (see §8) | $\text{escalón}$ in an English lesson |
 | what training minimises, and how | loss, gradient, gradient descent | cost, error surface |
 | $\eta$ | learning rate | step size |
 | the two objectives | cross-entropy, likelihood | log loss |
@@ -213,7 +229,8 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | a network trained to predict what comes next | language model | |
 | the random draw from the model's own distribution | to sample, sampling | |
 | giving a symbol or variable its value | assign to | put into |
-| a short run in a cell whose result the next paragraph reads | experiment | probe |
+| a short run in a cell whose result the next paragraph reads | experiment | probe — that is the derivative check one row down |
+| moving one parameter a little each way and re-evaluating, to check a derivative against the algebra | probe, numerical probe; to probe | experiment; finite-difference check as a second name |
 | always taking the highest-probability output | greedy decoding | |
 | source to target sequence · the task Block 4 demonstrates on | sequence-to-sequence model, nickname *seq2seq* · machine translation | |
 | the fixed vector the encoder hands the decoder | context vector | thought vector, summary vector |
@@ -267,6 +284,15 @@ table bans most emphatically, and the trap is worse in English: *precision* is a
 real definition, sitting one word away from the one this course measures. Never write it for
 accuracy, not even loosely.
 
+**One Spanish row splits in two, because English spends one word where Spanish spends two.**
+`AUTHORING.md` bans `sonda` for a short run in a cell (it is a physical instrument in Spanish) and
+keeps `sondeo` / `sondeo numérico` for something else entirely: moving a parameter a little each
+way and re-evaluating, to check a derivative against the algebra. English has only **probe** for
+both, so the table above says which is which rather than banning the word. The cell-run sense is an
+`experiment`; the derivative check is a `probe`, and it is the course's own instrument from Block 2
+on (the chain rule, backpropagation, BPTT) — the thing worth keeping to hand when a derivative
+written out by hand does not add up. *Settled by `en/15-regla-de-la-cadena.mdx` (COURSE-P11-05).*
+
 **Acronyms** are unchanged: expand every one on **first use, in every lesson**, then use it bare —
 *out-of-vocabulary (OOV)*, *masked language modelling (MLM)*. Per lesson, not per course: lessons
 are entered from search results and from the sidebar, and it costs four words.
@@ -311,6 +337,15 @@ the `aria-label`, and point `src` at the sibling; the Spanish file keeps its nam
 Figures are not widgets, so P11-02 does not own them and the redraw is the translating lesson's.
 *Settled by `en/03-vocabulario-oov.mdx` (COURSE-P11-04): `suma-armonica.svg` → `suma-armonica.en.svg`.*
 
+**And re-measure every string you put into the sibling.** The geometry is copied byte for byte, so
+nothing in the drawing can move aside for a longer label, and English is not reliably shorter than
+Spanish: a caption that fitted the original can overrun the `viewBox` and be clipped, silently and
+only at the edge. Check each `<text>` against it in the browser (`getBBox()` on the element, against
+`svg.viewBox.baseVal`) and re-word until it fits. The words are the only thing left that can give,
+so a faithful translation that does not fit is not the one that ships.
+*Settled by `en/17-implementar-mlp.mdx` (COURSE-P11-05): `bucle-entrenamiento`'s caption came out
+374px wide in a 360px `viewBox`, against the Spanish 328px.*
+
 **A widget whose default data is a locale-bound committed asset gets an English sibling asset, and the
 widget picks it per locale.** A few widgets read a *data file*, not just strings — `embedding-projection`
 plots a committed 2D projection of ~200 words. P11-02 can move a widget's strings but not this data, so
@@ -340,9 +375,19 @@ delta open and not the main file. All of them apply to an English lesson unchang
   Spanish opening will usually fail the first test, because the Spanish bridge it was written
   against is not the English one the reader just finished.
 - **What a lesson may assume** (§2), including that forward references are signposted out loud.
-- **All of [NOTATION.md](NOTATION.md).** Notation is locale-invariant by design, and its one
-  prose-facing part — §6, `<W>` — applies word for word. A symbol that needs adding is added there,
-  in the one file, for both locales.
+- **All of [NOTATION.md](NOTATION.md), except the words inside `\text{…}`.** Its one prose-facing
+  part — §6, `<W>` — applies word for word, and a symbol that needs adding is still added there, in
+  the one file, for both locales. What does **not** carry across is roman text that spells a Spanish
+  word the glossary above already gives an English one for. An English lesson writes $\text{step}$,
+  $\text{coverage}(k)$, $\text{accuracy}(D)$, $\mathcal{L}_{\text{CE}}$ and $D_{\text{train}}$ /
+  $D_{\text{test}}$ against the Spanish $\text{escalón}$, $\text{cob}(k)$, $\text{acierto}(D)$,
+  $\mathcal{L}_{\text{EC}}$ and $D_{\text{ent}}$ / $D_{\text{prueba}}$. Symbol, shape, meaning and
+  arguments are unchanged; what it buys is that the maths finally matches the labels the lesson's own
+  `print` calls already used (`step`, `CE`, `X_train`). NOTATION.md's reasons for **rejecting** a
+  spelling survive translation and still bind: coverage is $\text{coverage}(k)$ and never
+  $\text{cov}(k)$, which is the covariance.
+  *Settled by `en/18-proyecto-sentimiento.mdx` (COURSE-P11-05), applied back over `en/03`,
+  `en/09`–`en/11` and `en/13`.*
 - **The display-equation punctuation rule** (§5): the equation is part of its sentence and carries
   that sentence's mark as the last character inside the fence.
 - **Bold for the term being defined, never for emphasis** — that is italics' job.

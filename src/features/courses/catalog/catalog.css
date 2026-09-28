@@ -2,14 +2,19 @@
  * COURSE-P1-03 / landing-refinements — course catalog (/cursos) styles.
  *
  * The catalog Server Components style their static bits inline; this file holds what an inline
- * style cannot: the responsive grid, and the card's CSS-only hover (a lift + a green bloom drawn
+ * style cannot: the responsive grid, and the card's CSS-only hover (a lift + an accent bloom drawn
  * with ::before, the corner motif reacting) plus the resume block the client island fills in.
  * It replaces the old inline <style> that fought the card's inline styles with `!important`.
  * The editorial atoms (.lp-serif / .lp-kicker / .lp-rule) come from the shared
  * `features/courses/course-editorial.css`, imported alongside this file by the catalog route.
  *
- * Palette is the site's own: --green / --green-mid / --green-dim over the dark surfaces. Movement
- * is gated behind prefers-reduced-motion at the foot of the file.
+ * COURSE-ACCENT-01: the card's chromatic channels no longer name --green directly. They read
+ * --card-accent{,-dim,-mid,-glow}, which resolve from the per-course --course-accent* custom
+ * properties `CourseCard` sets from the manifest (src/features/courses/course-accent.ts) and
+ * fall back to the site's emerald when a course declares no accent — so an accent-less course
+ * renders exactly as it did before. The same fallback reaches the corner motif, whose <svg>
+ * fill reads --course-accent itself. Movement is gated behind prefers-reduced-motion at the
+ * foot of the file.
  */
 
 .courses-grid {
@@ -25,6 +30,12 @@
  * background.
  */
 .course-card {
+  /* One hop, so every rule below is hue-agnostic and an accent-less course keeps the emerald. */
+  --card-accent:      var(--course-accent, var(--green));
+  --card-accent-dim:  var(--course-accent-dim, var(--green-dim));
+  --card-accent-mid:  var(--course-accent-mid, var(--green-mid));
+  --card-accent-glow: var(--course-accent-glow, rgba(78, 222, 163, 0.38));
+
   position: relative;
   overflow: hidden;
   isolation: isolate;
@@ -41,13 +52,13 @@
     box-shadow 260ms ease;
 }
 
-/* Soft green bloom from the top-right corner, faded in on hover. */
+/* Soft accent bloom from the top-right corner, faded in on hover. */
 .course-card::before {
   content: "";
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: radial-gradient(120% 85% at 85% -10%, var(--green-dim), transparent 55%);
+  background: radial-gradient(120% 85% at 85% -10%, var(--card-accent-dim), transparent 55%);
   opacity: 0;
   transition: opacity 260ms ease;
   z-index: -1;
@@ -58,10 +69,10 @@
 .course-card:hover,
 .course-card:focus-within {
   transform: translateY(-4px);
-  border-color: var(--green-mid);
+  border-color: var(--card-accent-mid);
   box-shadow:
-    0 20px 42px -18px rgba(78, 222, 163, 0.38),
-    0 0 0 1px var(--green-mid);
+    0 20px 42px -18px var(--card-accent-glow),
+    0 0 0 1px var(--card-accent-mid);
 }
 
 .course-card:hover::before,
@@ -82,22 +93,42 @@
   z-index: 1;
 }
 
-/* Corner motif — faint at rest, brighter and drifting on hover. */
+/*
+ * Corner motif — bled off the top-right corner, brighter and drifting on hover.
+ *
+ * COURSE-ACCENT-01: this used to ship at 150px / opacity 0.06, which is below the threshold
+ * where a shape can distinguish anything — the one per-course channel the card already had
+ * was invisible. At 0.17 the attention matrix and the agent loop read apart at a glance.
+ * `overflow: hidden` on the card clips the bleed; the tiles top out around 14% effective
+ * alpha, so the title still clears 9:1 where they sit behind it.
+ *
+ * The size is a PERCENTAGE of the card, not the SVG's own 232px: the grid is
+ * `minmax(320px, 1fr)`, so a fixed motif that reads as corner texture on a 478px card covers
+ * more than half a 335px one. 48% holds the same proportion at every card width, and needs no
+ * breakpoint — `HeroMotif`'s `size` is then just the intrinsic size and the aspect ratio.
+ */
 .course-card__motif {
   position: absolute;
-  top: -12px;
-  right: -14px;
+  top: -34px;
+  right: -46px;
+  display: block;
+  width: 48%;
   line-height: 0;
-  opacity: 0.06;
+  opacity: 0.17;
   pointer-events: none;
   transition:
     opacity 260ms ease,
     transform 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
+.course-card__motif svg {
+  width: 100%;
+  height: auto;
+}
+
 .course-card:hover .course-card__motif,
 .course-card:focus-within .course-card__motif {
-  opacity: 0.16;
+  opacity: 0.26;
   transform: translate(3px, -3px) scale(1.05);
 }
 
@@ -117,17 +148,38 @@
   padding: 4px 12px;
 }
 
-/* Level — emerald, filled; matches the landing's meta emphasis. */
+/* Level — the course's accent, filled; matches the landing's meta emphasis. */
 .course-card__badge--level {
-  color: var(--green);
-  background: var(--green-dim);
-  border: 1px solid var(--green-mid);
+  color: var(--card-accent);
+  background: var(--card-accent-dim);
+  border: 1px solid var(--card-accent-mid);
 }
 
 /* Content-language notice — quiet outline, shown only when lessons are in another locale. */
 .course-card__badge--lang {
   color: var(--text-dim);
   border: 1px solid var(--border-variant);
+}
+
+/* COURSE-BUILD-01 — «en construcción». Louder than the language badge (it changes what the
+   course IS, not what language it is in) and quieter than the level badge, which owns the
+   accent: a filled neutral chip with a small pulse-free dot. Deliberately not red/amber —
+   nothing is wrong, the course is simply still growing. */
+.course-card__badge--build {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  background: var(--surface-container);
+  border: 1px solid var(--border-variant);
+}
+
+.course-card__badge--build::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--card-accent);
 }
 
 .course-card__body {
@@ -148,7 +200,7 @@
 /* The part of the title after the first ": " — mirrors the landing hero. */
 .course-card__title .accent {
   font-style: italic;
-  color: var(--green);
+  color: var(--card-accent);
 }
 
 .course-card__tagline {
@@ -178,16 +230,31 @@
   background: var(--border-variant);
 }
 
-/* Resume block — filled in by the client island only when the reader has progress. */
+/*
+ * Resume block — filled in by the client island only when the reader has progress. The label +
+ * bar together ARE the "continue" link (no separate full-width pill): the accent color + trailing
+ * arrow on the label mark the row as actionable. z-index beats the card's stretched cover link.
+ */
 .course-card__resume {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
+  text-decoration: none;
+  position: relative;
+  z-index: 2;
 }
 
 .course-card__resume-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.8125rem;
-  color: var(--text-muted);
+  font-weight: 700;
+  color: var(--card-accent);
+}
+
+.course-card__resume-label .arrow {
+  font-size: 1rem;
 }
 
 .course-card__bar {
@@ -200,33 +267,9 @@
 .course-card__bar > span {
   display: block;
   height: 100%;
-  background: var(--green);
+  background: var(--card-accent);
   border-radius: 999px;
   transition: width 200ms ease;
-}
-
-/*
- * "Continuar" — the emphasized next step, a filled pill so it clearly leads even beside the
- * "Ver curso" link. `align-self: flex-start` keeps it hugging its label inside the column-flex
- * resume block (the progress bar above it stays full width). z-index beats the stretched cover.
- */
-.course-card__continue {
-  display: inline-flex;
-  align-self: flex-start;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-headline, Manrope), sans-serif;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--green);
-  background: var(--green-dim);
-  border: 1px solid var(--green-mid);
-  border-radius: 100px;
-  padding: 7px 15px;
-  text-decoration: none;
-  position: relative;
-  z-index: 2;
-  margin-top: 2px;
 }
 
 /* "Ver curso" — the standing card CTA and the whole-card cover link. */
@@ -236,19 +279,19 @@
   gap: 6px;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--green);
+  color: var(--card-accent);
   text-decoration: none;
 }
 
 .course-card__cta .arrow,
-.course-card__continue .arrow {
+.course-card__resume-label .arrow {
   transition: transform 200ms ease;
 }
 
 .course-card:hover .course-card__cta .arrow,
 .course-card:focus-within .course-card__cta .arrow,
-.course-card:hover .course-card__continue .arrow,
-.course-card:focus-within .course-card__continue .arrow {
+.course-card__resume:hover .course-card__resume-label .arrow,
+.course-card__resume:focus-visible .course-card__resume-label .arrow {
   transform: translateX(3px);
 }
 
@@ -256,7 +299,7 @@
   .course-card,
   .course-card__motif,
   .course-card__cta .arrow,
-  .course-card__continue .arrow {
+  .course-card__resume-label .arrow {
     transition: none;
   }
 
@@ -272,8 +315,8 @@
 
   .course-card:hover .course-card__cta .arrow,
   .course-card:focus-within .course-card__cta .arrow,
-  .course-card:hover .course-card__continue .arrow,
-  .course-card:focus-within .course-card__continue .arrow {
+  .course-card__resume:hover .course-card__resume-label .arrow,
+  .course-card__resume:focus-visible .course-card__resume-label .arrow {
     transform: none;
   }
 }

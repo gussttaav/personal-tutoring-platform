@@ -11,4 +11,15 @@ export interface IPricingRepository {
   getSettings(): Promise<PricingSettings>;
   /** Updates the singleton pricing settings. */
   updateSettings(settings: { packValidityDays: number; updatedBy: string }): Promise<void>;
+
+  // ─── PRICING-STUDENT-01: per-student overrides ──────────────────────────────
+  // Sparse: only overridden products have a row, so an empty array means "this
+  // student pays the public price for everything".
+
+  /** Returns this student's price overrides (0–4 rows). */
+  listForUser(userId: string): Promise<PriceRecord[]>;
+  /** Creates or replaces one override for this student. */
+  upsertForUser(userId: string, key: ProductKey, amountCents: number, updatedBy: string): Promise<void>;
+  /** Removes one override, returning the student to the public price for that product. */
+  deleteForUser(userId: string, key: ProductKey): Promise<void>;
 }

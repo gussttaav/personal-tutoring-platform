@@ -60,4 +60,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "positional-encoding": dynamic(() => import("./nn/PositionalEncoding"), {
     ssr: false,
   }),
+  // COURSE-C2-P1-01 — llm-agents Block 1 lesson 2 (BPE de verdad).
+  "bpe-merges": dynamic(() => import("./nlp/BpeMerges"), { ssr: false }),
 };

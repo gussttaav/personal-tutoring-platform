@@ -1,0 +1,70 @@
+# COURSE-C2-P0-01 — Course manifest (English).
+# Sibling of course.es.yml: `slug` and block `id`s are locale-invariant and MUST match the
+# Spanish manifest; only the prose (title, tagline, level, prerequisites, cta, faq, block
+# titles/summaries) is translated. As with dl-nlp's English twin, the "is it in English?"
+# FAQ entry is dropped here: on the /en landing `ContentLanguageNotice` already says which
+# language the lessons are in, and the question answers itself on an English page.
+#
+# No lessons exist in either locale yet. `src/lib/courses/catalog-view.ts` takes the manifest
+# from the requested locale and the lessons from whichever locale has them, so once `es/`
+# lessons land, /en/cursos/llm-agents renders in English and links into the Spanish reader
+# with an explicit notice — no code change. Until then it is the «soon» landing, noindex.
+
+slug: llm-agents
+title: "Language Models: from the Transformer to the Agent"
+tagline: "Build, from scratch and on your own machine, a modern language model and the coding agent that turns it into a tool."
+level: advanced
+# Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
+# Purely presentational; `agent-loop` is this course's own — the loop around the model.
+heroMotif: agent-loop
+# Catalog-card accent hue (COURSE-ACCENT-01). Cyan, not emerald: the two catalog cards were
+# indistinguishable at a glance while both painted in the site's one green.
+accent: cyan
+prerequisites:
+  intro: "This course continues on from Deep Learning for NLP. Before you start, you'll need:"
+  items:
+    - title: "The previous course, or its equivalent"
+      detail: "A Transformer written from scratch in NumPy. Attention, backpropagation and cross-entropy are not explained again."
+    - title: "Intermediate Python"
+      detail: "Functions, classes, NumPy. In the last block, also files, processes and JSON."
+    - title: "A terminal"
+      detail: "Knowing how to open one, move between directories and run a script. The last block lives in it."
+cta:
+  heading: "Ready to build an agent?"
+  body: "Start with the first lesson. You don't need an account to read, or to install anything until the last block."
+faq:
+  - q: "How much does it cost?"
+    a: "Nothing. The course is free, and the last block runs on a local model on your own computer: no API key and no paid service required."
+  - q: "What do I need to know before starting?"
+    a: "What the previous course, Deep Learning for NLP, teaches: a Transformer built from scratch, backpropagation and cross-entropy. If you bring the same from somewhere else, that works just as well."
+  - q: "How long will it take?"
+    a: "Around 40 hours if you do the exercises and the final project. Go at your own pace; there are no deadlines."
+  - q: "What do I need to install?"
+    a: "Nothing until block 5. The first four blocks run in the browser, Python included. Block 5 builds a terminal program against a language model running on your machine: Ollama and a model of about 5 GB. A computer with 16 GB of RAM and no GPU is enough; with 8 GB there is a smaller model that also works."
+  - q: "Is there as much maths as in the first course?"
+    a: "At the start yes, at the end no, and that is on purpose. Blocks 1 and 2 derive; block 3 mixes; blocks 4 and 5 are engineering: contracts, protocols and a program that grows lesson by lesson. The title goes from the maths to the systems, and so does the course."
+  - q: "Do I build a real Claude Code?"
+    a: "You build a coding agent in the terminal with the same pieces: the loop, the tools, the system prompt, context compaction, permissions, subagents. Much smaller, and with a local model. The last lesson points the real tool at the same model and compares the two on the same tasks."
+# COURSE-BUILD-01: `lessons` is the PLANNED lesson count, mirrored from course.es.yml — it is
+# locale-invariant, and the canonical (Spanish) manifest is the one that owns it.
+blocks:
+  - id: 1
+    title: "From the Transformer to the Language Model"
+    summary: "A single column, real BPE, a mini-GPT trained in NumPy, how to sample from it and what each token costs."
+    lessons: 9
+  - id: 2
+    title: "From Predicting Text to Following Instructions"
+    summary: "Supervised fine-tuning, the reward model, RLHF and the full derivation of DPO."
+    lessons: 8
+  - id: 3
+    title: "Talking to the Model Is Programming"
+    summary: "The prompt as a specification, chain of thought, structured output, retrieval and how to evaluate."
+    lessons: 7
+  - id: 4
+    title: "The Bridge: from Text to Actions"
+    summary: "Calling tools, the loop, errors as observations, permissions and memory."
+    lessons: 7
+  - id: 5
+    title: "A Coding Agent in the Terminal"
+    summary: "The loop with a real local model, file tools, compaction, sandbox, subagents and a benchmark."
+    lessons: 9

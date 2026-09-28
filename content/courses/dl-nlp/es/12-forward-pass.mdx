@@ -4,7 +4,7 @@ title: "El forward pass en forma matricial"
 block: 2
 order: 4
 minutes: 30
-summary: "Una capa entera cabe en un producto de matrices, y un batch entero cabe en ese mismo producto con una fila por ejemplo. De ahí sale la transpuesta —los ejemplos se apilan por filas y un ejemplo es una columna— y de encadenar esos productos de la entrada a la salida sale el forward pass, cuyo coste en parámetros no depende de cuántos ejemplos entren a la vez."
+summary: "Una capa entera cabe en un producto de matrices, y un batch entero cabe en ese mismo producto con una fila por ejemplo. De ahí sale la transpuesta (los ejemplos se apilan por filas y un ejemplo es una columna) y de encadenar esos productos de la entrada a la salida sale el forward pass, cuyo coste en parámetros no depende de cuántos ejemplos entren a la vez."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -24,22 +24,7 @@ quiz:
       - { id: c, text: 'De que $\mathbf{W}^{(l)}$ no suele ser cuadrada. Cuando $d_l = d_{l-1}$ la transpuesta se puede quitar y el resultado no cambia.' }
       - { id: d, text: 'De que hay que sumar sobre los $B$ ejemplos, y la transpuesta es lo que hace desaparecer ese índice del resultado.' }
     answer: a
-    explanation: 'La (a) es la justificación entera en una frase: $\left(\mathbf{W}\mathbf{h}\right)^{\top} = \mathbf{h}^{\top}\mathbf{W}^{\top}$, y apilar esas filas para $i = 1, \dots, B$ es exactamente el producto de la izquierda. La (b) confunde rendimiento con álgebra: el orden en memoria decide lo que tarda un producto, no cuál es. La (c) es falsa aunque las formas cuadren, porque $\mathbf{W}$ y $\mathbf{W}^{\top}$ son matrices distintas salvo que la matriz sea simétrica: sin transponer, cada neurona leería una columna que no contiene sus pesos. Y la (d) invierte lo que pasa: $B$ no desaparece —sobrevive como el número de filas de $\mathbf{Z}^{(l)}$—, y la dimensión que sí desaparece es $d_{l-1}$, la única que comparten los dos factores.'
-  - id: q-broadcast
-    type: predict-output
-    prompt: 'Esta es la capa de la lección sobre un batch de tres ejemplos. ¿Qué imprime?'
-    language: python
-    code: |
-      import numpy as np
-
-      H = np.ones((3, 4))
-      W = np.ones((2, 4))
-      b = np.array([0.5, -0.5])
-      Z = H @ W.T + b
-      print(Z.shape, Z[0])
-    answer: '(3, 2) [4.5 3.5]'
-    explanation: 'El producto `H @ W.T` tiene forma $(3, 2)$ —tres ejemplos, dos neuronas— y todas sus casillas valen $4$, porque cada una suma cuatro unos. Al sumar `b`, que tiene forma $(2,)$, NumPy lo reparte por columnas: $+0.5$ a la de la primera neurona y $-0.5$ a la de la segunda, en las tres filas por igual. Eso es el $\mathbf{1}_B\mathbf{b}^{\top}$ de la lección calculado sin construir la matriz. La regla de formas está trabajando aquí: con un `b` de tres números, $(3,2)$ y $(3,)$ no encajan y NumPy da un error en vez de sumar cualquier cosa.'
-    hint: 'El formato cuenta tanto como los valores: la forma se imprime como una tupla y el array con corchetes, con el punto decimal y separados por un espacio, sin comas.'
+    explanation: 'La (a) es la justificación entera en una frase: $\left(\mathbf{W}\mathbf{h}\right)^{\top} = \mathbf{h}^{\top}\mathbf{W}^{\top}$, y apilar esas filas para $i = 1, \dots, B$ es exactamente el producto de la izquierda. La (b) confunde rendimiento con álgebra: el orden en memoria decide lo que tarda un producto, no cuál es. La (c) es falsa aunque las formas cuadren, porque $\mathbf{W}$ y $\mathbf{W}^{\top}$ son matrices distintas salvo que la matriz sea simétrica: sin transponer, cada neurona leería una columna que no contiene sus pesos. Y la (d) invierte lo que pasa: $B$ no desaparece (sobrevive como el número de filas de $\mathbf{Z}^{(l)}$), y la dimensión que sí desaparece es $d_{l-1}$, la única que comparten los dos factores.'
   - id: q-cadena
     type: multi
     prompt: 'Una red de $L$ capas encadena $\mathbf{H}^{(l)} = \varphi\left(\mathbf{H}^{(l-1)}\left(\mathbf{W}^{(l)}\right)^{\top} + \mathbf{1}_B\left(\mathbf{b}^{(l)}\right)^{\top}\right)$ partiendo de $\mathbf{H}^{(0)} = \mathbf{X}$. Marca todo lo que sea cierto.'
@@ -57,8 +42,8 @@ challenges:
       ejemplos uno a uno:
 
       - `capa(H, W, b)` devuelve la preactivación de una capa. `H` tiene forma
-        $(B,\, d_{\text{in}})$, `W` tiene forma $(d_{\text{out}},\, d_{\text{in}})$ —una fila por
-        neurona— y `b` tiene forma $(d_{\text{out}},)$; la salida tiene forma
+        $(B,\, d_{\text{in}})$, `W` tiene forma $(d_{\text{out}},\, d_{\text{in}})$ (una fila por
+        neurona) y `b` tiene forma $(d_{\text{out}},)$; la salida tiene forma
         $(B,\, d_{\text{out}})$.
       - `forward(X, capas, phi)` encadena una lista de pares `(W, b)` desde `X`, aplicando `phi`
         a la salida de cada capa.
@@ -137,8 +122,8 @@ challenges:
 
       En `forward`, la variable `H` es la que va cambiando de capa en capa, y por eso el bucle
       recorre las capas y no los ejemplos: el batch entero viaja dentro de `H`. Fíjate en que
-      `phi` se aplica también en la última capa. Es una elección, no una ley —hay redes que dejan
-      la salida sin activación—, pero tiene que ser explícita: una `phi` que se aplica a veces sí
+      `phi` se aplica también en la última capa. Es una elección, no una ley (hay redes que dejan
+      la salida sin activación), pero tiene que ser explícita: una `phi` que se aplica a veces sí
       y a veces no es un bug esperando a que alguien cambie el número de capas.
 reading: []
 ---
@@ -150,7 +135,7 @@ Completa porque no le falta ninguna pieza: neuronas agrupadas en capas, cada una
 sesgo, y una $\varphi$ en medio que impide que apilarlas se contraiga en una neurona
 sola. Sin escribir porque allí cada preactivación se calculó por separado, y una colección de
 cuentas sueltas no es una fórmula: no se desarrolla sobre ella y no se programa. El recorrido que va de
-la entrada hasta la salida tiene un nombre —el *forward pass*— y tiene una forma en la que se
+la entrada hasta la salida tiene un nombre (el *forward pass*) y tiene una forma en la que se
 escribe siempre. Esta lección es esa forma.
 
 Ponle números antes de escribirla. Toma las diez reseñas de <Leccion slug="la-neurona">la lección sobre la neurona artificial</Leccion>, con aquel vocabulario de ocho entradas. Lo que entra en la red no es la reseña
@@ -277,8 +262,8 @@ y desaparece; $i$ y $j$ son los que sobreviven, y son las dos dimensiones del re
 
 ## De la entrada a la salida, una capa detrás de otra
 
-Con una capa resuelta, la red es la repetición. Sea $L$ el número de capas —la de salida
-incluida— y sean $d_0, d_1, \dots, d_L$ las anchuras de la cadena, empezando por la de la entrada.
+Con una capa resuelta, la red es la repetición. Sea $L$ el número de capas (la de salida
+incluida) y sean $d_0, d_1, \dots, d_L$ las anchuras de la cadena, empezando por la de la entrada.
 El forward pass es esta recurrencia:
 
 $$
@@ -368,9 +353,9 @@ Las dos versiones coinciden hasta el orden de $10^{-14}$, que es lo que separa a
 sumar los mismos números en coma flotante. Obtenerlas no cuesta lo mismo: el producto tarda entre
 uno y dos órdenes de magnitud menos, y el factor exacto depende de la máquina y del navegador. De
 dónde sale ese factor no depende de ninguno de los dos. No es que el producto haga menos
-operaciones —hace
-exactamente las mismas—, sino que las $4\,096$ vueltas del bucle las da Python una a una, mientras
-el producto las da dentro de una rutina compilada sin volver a pasar por el intérprete.
+operaciones (hace exactamente las mismas), sino que las $4\,096$ vueltas del bucle las da Python
+una a una, mientras el producto las da dentro de una rutina compilada sin volver a pasar por el
+intérprete.
 
 Los dos últimos experimentos son las dos trampas de forma. `X @ W` no existe, y NumPy lo dice nombrando
 las dos dimensiones que no encajan; y la diferencia entre $\mathbf{Z}$ y el producto sin sesgo es
@@ -432,21 +417,19 @@ segunda dimensión va cambiando $8 \to 4 \to 1$ al ritmo de las anchuras. La red
 parámetros de la cuenta de arriba.
 
 Y ahora la última línea, que es la que importa. Cinco aciertos de diez. Las diez salidas están por
-debajo de $0.5$ —la mayor es $0.357$, para <W>divertida y buena</W>—, así que la red contesta
+debajo de $0.5$ (la mayor es $0.357$, para <W>divertida y buena</W>), así que la red contesta
 que no a las diez reseñas, y acierta exactamente las cinco que eran negativas. Es la puntuación de
 quien no lee nada y dice que no siempre. Los pesos salieron de `np.random.randn`, y no hay ninguna
 razón para que fueran otra cosa.
 
 ## Comprueba tu intuición
 
-Cuatro preguntas —cuántos números guarda una red, de dónde sale la transpuesta, qué hace NumPy con
-el sesgo y qué fija la cadena— y un desafío que es el forward pass completo.
+Tres preguntas (cuántos números guarda una red, de dónde sale la transpuesta, y qué fija la cadena)
+y un desafío que es el forward pass completo.
 
 <Quiz id="q-parametros" />
 
 <Quiz id="q-transpuesta" />
-
-<Quiz id="q-broadcast" />
 
 <Quiz id="q-cadena" />
 
@@ -466,5 +449,5 @@ dónde mover un peso.
 Hace falta un número que sí lo distinga. Uno solo para todo el batch, que crezca cuando
 $\hat{\mathbf{Y}}$ se aleja de las etiquetas, que baje cuando se acerca, y que cambie de forma
 continua para que tenga derivada. Cómo se construye ese número, por qué el primer candidato que se
-le ocurre a cualquiera —elevar al cuadrado la diferencia— es el correcto para unas tareas y una
+le ocurre a cualquiera (elevar al cuadrado la diferencia) es el correcto para unas tareas y una
 mala idea para clasificar, y qué se usa en su lugar, es <Leccion slug="funcion-de-perdida">la siguiente lección, sobre funciones de pérdida</Leccion>: el error cuadrático medio y la entropía cruzada.

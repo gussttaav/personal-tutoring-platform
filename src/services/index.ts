@@ -12,6 +12,8 @@ import { ReviewService }        from "./ReviewService";
 import { MobileAuthService }    from "./MobileAuthService";
 import { CourseService }        from "./CourseService";
 import { AccountService }       from "./AccountService";
+import { ContentFeedbackService } from "./ContentFeedbackService";
+import { LandingService }       from "./LandingService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -25,8 +27,10 @@ import {
   supabaseReviewRepository,
   supabaseCourseRepository,
   supabaseGoogleReviewPromptRepository,
+  supabaseContentFeedbackRepository,
 } from "@/infrastructure/supabase";
 import { registryCourseCatalog } from "@/lib/courses/catalog";
+import { registryContentCatalog } from "@/lib/content/catalog";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
@@ -96,9 +100,22 @@ export const accountService = new AccountService(
   new CalendarClient(),
 );
 
+// LANDING-01: routes a signed-in visitor to "/" — see LandingService for the ladder.
+export const landingService = new LandingService(bookingService, creditService, courseService);
+
 export const reviewService = new ReviewService(
   supabaseReviewRepository,
   supabaseGoogleReviewPromptRepository,
   supabaseBookingRepository,
   userService,
+);
+
+// CONTENT-FEEDBACK-01: 👍/👎 + error reports on lessons and posts. The content
+// catalog plays the role registryCourseCatalog plays for CourseService — the
+// "is this page published" read, injected so the service stays free of I/O.
+export const contentFeedbackService = new ContentFeedbackService(
+  supabaseContentFeedbackRepository,
+  registryContentCatalog,
+  userService,
+  new EmailClient(),
 );

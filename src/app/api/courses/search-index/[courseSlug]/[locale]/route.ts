@@ -6,8 +6,8 @@
  * `sitemap.xml` already appear in `.next/server/app/` as `.body` + `.meta` pairs. Verified
  * in `.next/prerender-manifest.json`: a prerendered route handler keeps the headers it
  * sets, which is what lets this ship `immutable`. So the feature costs zero serverless
- * invocations, which is the property the Pagefind note in docs/courses/PLAN.md was really
- * about — see docs/courses/phase-9-search/01-course-search.md for why not Pagefind itself.
+ * invocations, which is the property the Pagefind note in docs/courses/dl-nlp/PLAN.md was really
+ * about — see docs/courses/dl-nlp/phase-9-search/01-course-search.md for why not Pagefind itself.
  *
  * The request object is deliberately UNUSED. Touching it opts the route out of static
  * rendering, silently, and the first sign would be a lambda cold-starting in production.

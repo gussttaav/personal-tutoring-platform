@@ -3,8 +3,14 @@
  *
  * Server Component on native <details> (zero client JS, answers in the HTML while collapsed).
  * The questions/answers come from the manifest (`course.faq`), not the message files: they are
- * per-course prose — cost, time commitment, "what do I install", translation status all differ
- * course to course. Only the section `heading` is shared. An empty list renders nothing at all.
+ * per-course prose — cost, time commitment, "what do I install" all differ course to course.
+ * Only the section `heading` and a `dynamic` item's answer are shared. An empty list renders
+ * nothing at all.
+ *
+ * An item with `dynamic: "english-translation-status"` gets its `a` computed here instead of
+ * read from the manifest — real lesson-translation coverage, not hand-written prose someone has
+ * to keep updated as the English tree fills in. `q` stays manifest-owned either way: whether to
+ * ask the question at all, and where, is still an editorial call per course.
  *
  * Editorial header (section number + hairline rule + serif heading); the number reflects the
  * fixed page order in the landing route.
@@ -12,16 +18,30 @@
 
 import { getTranslations } from "next-intl/server";
 import type { CourseFaqItem } from "@/domain/types";
+import { getEnglishTranslationCoverage } from "@/lib/courses/catalog-view";
 
 interface CourseFaqProps {
   faq: CourseFaqItem[];
   locale: string;
+  courseSlug: string;
 }
 
-export default async function CourseFaq({ faq, locale }: CourseFaqProps) {
+export default async function CourseFaq({ faq, locale, courseSlug }: CourseFaqProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.faq" });
 
   if (faq.length === 0) return null;
+
+  const resolved = faq.map((item) => {
+    if (item.dynamic !== "english-translation-status") {
+      return { q: item.q, a: item.a! };
+    }
+    const { translated, total, fullyTranslated } = getEnglishTranslationCoverage(courseSlug);
+    const a =
+      fullyTranslated  ? t("englishStatus.complete") :
+      translated === 0 ? t("englishStatus.notStarted") :
+      t("englishStatus.inProgress", { translated, total, percent: Math.round((translated / total) * 100) });
+    return { q: item.q, a };
+  });
 
   return (
     <section style={{ paddingTop: "72px" }}>
@@ -44,7 +64,7 @@ export default async function CourseFaq({ faq, locale }: CourseFaqProps) {
       </h2>
 
       <div style={{ borderBottom: "1px solid var(--border-variant)" }}>
-        {faq.map((item) => (
+        {resolved.map((item) => (
           <details key={item.q} style={{ borderTop: "1px solid var(--border-variant)" }}>
             <summary
               style={{

@@ -17,6 +17,7 @@
 
 import { z } from "zod";
 import { SUPPORTED_TIMEZONES } from "@/lib/timezones";
+import { CONTENT_KEY_MAX, CONTENT_KEY_RE, CONTENT_TYPES, parseContentKey } from "@/lib/content/content-key";
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
@@ -93,6 +94,25 @@ export const UpdatePricingSchema = z
 
 export type UpdatePriceInput   = z.infer<typeof UpdatePriceSchema>;
 export type UpdatePricingInput = z.infer<typeof UpdatePricingSchema>;
+
+// PRICING-STUDENT-01: per-student price override save
+// (POST /api/admin/students/[email]/pricing). Only the changed rows are sent.
+//
+// A null amountCents means "clear this override" — the row is DELETEd so the
+// student returns to the public price, including any later change to it. That is
+// why this cannot reuse UpdatePriceSchema, whose amountCents is positive-only.
+export const StudentPriceSchema = z.object({
+  productKey:  z.enum(["session1h", "session2h", "pack5", "pack10"]),
+  amountCents: z.number().int().positive().nullable(),
+});
+
+export const UpdateStudentPricingSchema = z.object({
+  prices: z.array(StudentPriceSchema).min(1).max(4),
+  reason: z.string().min(1).max(500),
+});
+
+export type StudentPriceInput          = z.infer<typeof StudentPriceSchema>;
+export type UpdateStudentPricingInput  = z.infer<typeof UpdateStudentPricingSchema>;
 
 // Admin schedule update — working hours per day + min advance notice + timezone.
 // weeklyHours is keyed by day-of-week "0".."6" (0=Sun..6=Sat); an empty/absent
@@ -253,6 +273,12 @@ export const CourseBlockSchema = z.strictObject({
   id:      z.number().int().positive(),
   title:   z.string().min(1),
   summary: z.string().min(1),
+  // COURSE-BUILD-01: how many lessons this block will have when it is finished. Optional —
+  // a block without it is complete as soon as it has one published lesson, which is exactly
+  // how a finished course (dl-nlp) behaved before this key existed. Declaring it is what lets
+  // the landing page say «9 lecciones · próximamente» for a block nobody has written yet, and
+  // what makes "is the Spanish course done?" a decidable question. See ./courses/course-build.ts.
+  lessons: z.number().int().positive().optional(),
 });
 
 // The landing page's conversion copy is per-course, per-locale prose — the same reason
@@ -276,7 +302,11 @@ export const CourseCtaSchema = z.strictObject({
 
 export const CourseFaqItemSchema = z.strictObject({
   q: z.string().min(1),
-  a: z.string().min(1),
+  // `a` is authored prose OR omitted when `dynamic` supplies a computed answer instead.
+  a: z.string().min(1).optional(),
+  dynamic: z.enum(["english-translation-status"]).optional(),
+}).refine((item) => item.a !== undefined || item.dynamic !== undefined, {
+  message: "faq item needs either `a` or `dynamic`",
 });
 
 export const CourseManifestSchema = z.strictObject({
@@ -290,7 +320,10 @@ export const CourseManifestSchema = z.strictObject({
   faq:            z.array(CourseFaqItemSchema),
   blocks:         z.array(CourseBlockSchema).min(1),
   // Optional decorative hero motif; extend the enum (and `HeroMotif`) per new design.
-  heroMotif:      z.enum(["attention-matrix"]).optional(),
+  heroMotif:      z.enum(["attention-matrix", "agent-loop"]).optional(),
+  // COURSE-ACCENT-01: optional catalog-card accent; extend the enum (and the palette in
+  // `src/features/courses/course-accent.ts`) together. Omitted = the site's emerald.
+  accent:         z.enum(["emerald", "cyan", "amber"]).optional(),
 });
 
 export type CourseManifestInput = z.infer<typeof CourseManifestSchema>;
@@ -448,6 +481,13 @@ export const READING_KINDS = ["paper", "libro", "blog", "video", "interactivo"] 
 /** The curation cap. A reading list nobody finishes is a link dump with margins. */
 export const READING_MAX = 5;
 
+/** BLOG-02 — the same cap for a post, set higher for a different object. A lesson is
+ *  one topic inside a course that carries the rest; a long-form article walks a whole
+ *  history through six or seven sections, each with its own primary source, and five
+ *  entries would force it to drop sources it actually leans on. Still a cap, because
+ *  the argument against a link dump does not change. */
+export const READING_MAX_POST = 10;
+
 /** One line. The note says what the STUDENT gets, not what the source is about. */
 export const READING_NOTE_MAX = 240;
 
@@ -538,6 +578,80 @@ export const LessonFrontmatterSchema = z.strictObject({
 
 export type LessonFrontmatterInput = z.infer<typeof LessonFrontmatterSchema>;
 
+// ─── Blog — post frontmatter ──────────────────────────────────────────────────
+// BLOG-01: same discipline as the lesson schema above — `z.strictObject`, so a
+// typo'd key fails `pnpm lint:content` rather than being silently ignored, and
+// fields that could be inferred by omission are required instead.
+
+/**
+ * `YYYY-MM-DD`, and a date that actually exists. The regex alone accepts
+ * "2026-02-31"; the round-trip through `Date` is what rejects it. Kept as a plain
+ * string (not `z.coerce.date()`) because the frontmatter value is what the sitemap
+ * and JSON-LD emit, and a `Date` would drag timezone semantics into a calendar day.
+ */
+const IsoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "must be a YYYY-MM-DD date")
+  .refine(
+    (v) => {
+      // The NaN guard is load-bearing: zod runs every check and collects the issues, so
+      // this refinement still sees input the regex above already rejected. Without it a
+      // date like "01-01-2026" throws "Invalid time value" out of `toISOString`, and the
+      // registry's "which file?" error is replaced by a stack trace.
+      const d = new Date(`${v}T00:00:00Z`);
+      return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(v);
+    },
+    { message: "is not a real calendar date" },
+  );
+
+export const PostFrontmatterSchema = z.strictObject({
+  slug:    z.string().min(1),
+  title:   z.string().min(1),
+  // The ordering key. The blog has no `order` field on purpose: a numeric filename
+  // prefix or an explicit order would be a second source of truth that can disagree.
+  date:    IsoDate,
+  // Only present once a post has been materially revised; drives JSON-LD
+  // `dateModified` and the "updated" line under the title.
+  updated: IsoDate.optional(),
+  minutes: z.number().int().positive(),
+  summary: z.string().min(1),
+  draft:   z.boolean(),
+  // BLOG-02: the post's further-reading block, same shape and same discipline as the
+  // lesson's (`ReadingItemSchema`), rendered collapsed at the foot of the article by
+  // `PostReading`. Required and possibly empty, like `tags` below: a post with nothing
+  // to cite writes `reading: []` and says so.
+  reading: z.array(ReadingItemSchema).max(READING_MAX_POST).superRefine((items, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, item] of items.entries()) {
+      if (seen.has(item.url)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate reading url "${item.url}"`,
+          path:    [i, "url"],
+        });
+      }
+      seen.add(item.url);
+    }
+  }),
+  // Required like the lesson schema's `quiz`/`reading`: a post with nothing to tag
+  // writes `tags: []` and says so, rather than defaulting to "none" by omission.
+  tags:    z.array(z.string().min(1)).superRefine((tags, ctx) => {
+    const seen = new Set<string>();
+    for (const [i, tag] of tags.entries()) {
+      if (seen.has(tag)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate tag "${tag}"`,
+          path:    [i],
+        });
+      }
+      seen.add(tag);
+    }
+  }),
+});
+
+export type PostFrontmatterInput = z.infer<typeof PostFrontmatterSchema>;
+
 // ─── Courses — request payloads ───────────────────────────────────────────────
 // COURSE-P4-02: unlike the build-time content schemas above, these validate HTTP
 // request bodies, so they use plain `z.object` (an unknown key from an older client
@@ -606,3 +720,56 @@ export const AccountDeletionSchema = z.object({
 });
 
 export type AccountDeletionInput = z.infer<typeof AccountDeletionSchema>;
+
+// ─── Content feedback ─────────────────────────────────────────────────────────
+// CONTENT-FEEDBACK-01: bodies of POST /api/content/vote and /api/content/report,
+// plus the admin PATCH that flips a report's status. The key regex is the one
+// exported by src/lib/content/content-key.ts so the schema and the parser can
+// never disagree about what a key looks like. `locale` is the locale of the PROSE
+// the reader judged, which the page passes down — not something read from the URL.
+
+export const ContentRefSchema = z.object({
+  contentType: z.enum(CONTENT_TYPES),
+  contentKey:  z.string().min(1).max(CONTENT_KEY_MAX).regex(CONTENT_KEY_RE),
+  locale:      z.enum(["es", "en"]),
+});
+
+/** The regex admits one or two segments for either type; this pins the count to
+ *  the type (a lesson is "course/lesson", a post a single slug). Applied to the
+ *  two final schemas, not the base, so `.extend()` never has to carry a refinement. */
+const keyMatchesType = { message: "contentKey does not match contentType" };
+const hasWellFormedKey = (v: { contentType: (typeof CONTENT_TYPES)[number]; contentKey: string }) =>
+  parseContentKey(v.contentType, v.contentKey) !== null;
+
+/** Longest 👎 comment (CHECK in 0021_content_feedback.sql). */
+export const CONTENT_COMMENT_MAX = 1000;
+/** Bounds of an error report's message (CHECK in 0021_content_feedback.sql). */
+export const CONTENT_REPORT_MIN  = 10;
+export const CONTENT_REPORT_MAX  = 2000;
+
+export const ContentVoteSchema = ContentRefSchema.extend({
+  /** The browser's random id (src/features/content/feedback-storage.ts); only
+   *  used as the dedupe key for anonymous votes, so it carries no privilege. */
+  clientId: z.uuid(),
+  vote:     z.union([z.literal(1), z.literal(-1)]),
+  // `.trim()` first so a comment of only whitespace collapses to "", which the
+  // service stores as null (= no comment).
+  comment:  z.string().trim().max(CONTENT_COMMENT_MAX).optional(),
+}).refine(hasWellFormedKey, keyMatchesType);
+
+export type ContentVoteInput = z.infer<typeof ContentVoteSchema>;
+
+export const ContentReportSchema = ContentRefSchema.extend({
+  // `.trim()` before `.min()` so whitespace padding can't satisfy the minimum.
+  message: z.string().trim().min(CONTENT_REPORT_MIN).max(CONTENT_REPORT_MAX),
+  /** Anonymous reporters only — ignored when a session is present. */
+  email:   z.email().max(254).optional(),
+}).refine(hasWellFormedKey, keyMatchesType);
+
+export type ContentReportInput = z.infer<typeof ContentReportSchema>;
+
+export const ReportStatusSchema = z.object({
+  status: z.enum(["open", "resolved"]),
+});
+
+export type ReportStatusInput = z.infer<typeof ReportStatusSchema>;

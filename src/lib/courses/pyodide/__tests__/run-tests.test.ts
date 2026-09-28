@@ -7,7 +7,7 @@
  * syntax error in the student's own code, and a run killed mid-suite.
  *
  * What this CANNOT check is that Python behaves as the wrapper assumes. That was
- * verified live against the real interpreter; see docs/courses/STATUS.md.
+ * verified live against the real interpreter; see docs/courses/dl-nlp/STATUS.md.
  */
 
 import type { ChallengeTest } from "@/domain/types";

@@ -1,29 +1,20 @@
 "use client";
 
 /*
- * COURSE-P9-01 — The button that opens search.
+ * COURSE-P9-01 — The button that opens the search dialog.
  *
- * Two variants because the two places it appears want different things: `bar` is the
- * full-width field-looking control at the top of the desktop sidebar rail and on the
- * landing/catalog pages; `icon` is the 36px button in the mobile sticky bar, matched to
- * the drawer toggle already sitting beside it.
+ * COURSE-P9-02: the mobile bar's 36px icon button is the ONLY trigger left. The desktop
+ * `bar` variant — a full-width field-looking button at the top of the sidebar rail — was
+ * replaced by the inline `SidebarSearch` field, so the dialog is a mobile surface now.
+ * Matched to the drawer toggle sitting beside it in `MobileLessonBar`.
  */
 
 import { useTranslations } from "next-intl";
 import { useCourseSearch } from "./CourseSearchProvider";
 
-interface CourseSearchTriggerProps {
-  variant?: "bar" | "icon";
-  className?: string;
-}
-
-export default function CourseSearchTrigger({
-  variant = "bar",
-  className,
-}: CourseSearchTriggerProps) {
+export default function CourseSearchTrigger() {
   const t = useTranslations("courses.search");
   const { openSearch, open } = useCourseSearch();
-  const label = t("trigger");
 
   return (
     <button
@@ -31,15 +22,10 @@ export default function CourseSearchTrigger({
       onClick={openSearch}
       aria-haspopup="dialog"
       aria-expanded={open}
-      aria-label={variant === "icon" ? label : undefined}
-      className={[
-        "cs-trigger",
-        variant === "icon" ? "cs-trigger--icon" : "",
-        className ?? "",
-      ].filter(Boolean).join(" ")}
+      aria-label={t("trigger")}
+      className="cs-trigger cs-trigger--icon"
     >
       <span className="material-symbols-outlined" aria-hidden="true">search</span>
-      {variant === "bar" ? <span className="cs-trigger-label">{label}</span> : null}
     </button>
   );
 }

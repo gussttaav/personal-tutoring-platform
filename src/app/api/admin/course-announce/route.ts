@@ -43,7 +43,7 @@ import { isAdmin } from "@/lib/admin";
 import { isValidOrigin } from "@/lib/csrf";
 import { log } from "@/lib/logger";
 import { CourseAnnounceSchema } from "@/lib/schemas";
-import { getCatalogEntry } from "@/lib/courses/catalog-view";
+import { getCatalogEntry, getEnglishTranslationCoverage } from "@/lib/courses/catalog-view";
 import { routing } from "@/i18n/routing";
 import { subscriptionService } from "@/services";
 import { supabaseAuditRepository } from "@/infrastructure/supabase";
@@ -87,23 +87,6 @@ function courseFactsFor(courseSlug: string, locale: "es" | "en"): CourseFacts | 
     courseTitle:     entry.course.title,
     lessonCount:     entry.lessons.length,
     firstLessonSlug: entry.lessons[0]?.slug ?? null,
-  };
-}
-
-/** How much of the course actually exists in English. The `english` announcement claims the
- *  translation is available, so the panel shows this before letting anyone say it. */
-function englishCoverage(courseSlug: string): {
-  translated: number; total: number; fullyTranslated: boolean;
-} {
-  const entry = getCatalogEntry(courseSlug, "en");
-  if (!entry) {
-    const canonical = getCatalogEntry(courseSlug, routing.defaultLocale);
-    return { translated: 0, total: canonical?.lessons.length ?? 0, fullyTranslated: false };
-  }
-  return {
-    translated:      entry.views.filter((v) => v.contentLocale === "en").length,
-    total:           entry.views.length,
-    fullyTranslated: entry.fullyTranslated,
   };
 }
 
@@ -162,7 +145,7 @@ export async function POST(req: NextRequest) {
         es: pending.filter((r) => r.locale === "es").length,
         en: pending.filter((r) => r.locale === "en").length,
       },
-      translation: englishCoverage(courseSlug),
+      translation: getEnglishTranslationCoverage(courseSlug),
       samples,
     });
   }

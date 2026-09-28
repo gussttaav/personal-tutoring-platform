@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
 import { COLORS } from "@/constants";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 
@@ -9,14 +10,18 @@ interface SignInGateProps {
    *  the user was trying to do, e.g. "actions.book1h". Resolved here so the copy
    *  follows the active locale. */
   actionLabel: string;
-  /** If provided, Google OAuth will redirect back to this URL instead of "/".
-   *  Used to preserve reschedule params across the OAuth round-trip. */
+  /** If provided, Google OAuth will redirect back to this URL instead of the
+   *  current page. Used to preserve reschedule params across the OAuth round-trip.
+   *  REDESIGN-P1-06: only reached when the popup is blocked — the normal popup sign-in
+   *  resumes the parked booking intent in place (`resumeInPlace` below), on whichever
+   *  page this gate opened, so a booking started on `/` continues on `/`. */
   callbackUrl?: string;
   onClose: () => void;
 }
 
 export default function SignInGate({ actionLabel, callbackUrl, onClose }: SignInGateProps) {
   const t = useTranslations("booking.signInGate");
+  const pathname = usePathname();
   // actionLabel is a translation key (e.g. "actions.book1h"), not literal copy.
   const action = t(actionLabel);
   return (
@@ -75,7 +80,7 @@ export default function SignInGate({ actionLabel, callbackUrl, onClose }: SignIn
           })}
         </p>
 
-        <GoogleSignInButton callbackUrl={callbackUrl ?? "/"} label={t("continueGoogle")} />
+        <GoogleSignInButton callbackUrl={callbackUrl ?? pathname} label={t("continueGoogle")} resumeInPlace />
 
         {/* Cancel */}
         <button

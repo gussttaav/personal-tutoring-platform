@@ -1,0 +1,875 @@
+---
+slug: de-newton-a-adamw
+title: "Por qué AdamW para entrenar modelos de lenguaje, y qué está cambiando"
+date: "2026-09-15"
+minutes: 30
+summary: "Entre todos los métodos de optimización que existen, los modelos de lenguaje se entrenan con el más simple, y con una variante concreta de él: AdamW. Por qué a esa escala la única información que se puede pagar es el gradiente, cómo cada mejora recompra a plazos la curvatura que Newton tenía gratis, y qué ha empezado a cambiar en 2026."
+draft: false
+reading:
+  - kind: paper
+    title: "Cauchy and the Gradient Method"
+    authors: "Claude Lemaréchal"
+    year: "2012"
+    venue: "Documenta Mathematica, Extra Volume ISMP"
+    lang: en
+    url: "https://ems.press/content/book-chapter-files/27368"
+    note: "Cuatro páginas sobre la nota de 1847 en la que Cauchy propone el método, con la traducción del pasaje clave. Se ve que lo inventó para resolver sistemas de ecuaciones, no para minimizar nada, y que la tasa de aprendizaje ya le preocupaba."
+  - kind: paper
+    title: "A Stochastic Approximation Method"
+    authors: "Herbert Robbins y Sutton Monro"
+    year: "1951"
+    venue: "Annals of Mathematical Statistics"
+    lang: en
+    url: "https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-3/A-Stochastic-Approximation-Method/10.1214/aoms/1177729586.full"
+    note: "El teorema que permite entrenar con un gradiente que nunca se calcula entero. Las dos condiciones sobre la tasa (la suma diverge, la suma de cuadrados no) son el origen de todos los calendarios de tasa de aprendizaje."
+  - kind: libro
+    title: "Convex Optimization, cap. 9: Unconstrained minimization"
+    authors: "Stephen Boyd y Lieven Vandenberghe"
+    year: "2004"
+    venue: "stanford.edu"
+    lang: en
+    url: "https://web.stanford.edu/~boyd/cvxbook/"
+    note: "El catálogo de la sección segunda con demostraciones: descenso de gradiente, Newton y por qué el número de condición manda en el primero y no en el segundo. El libro entero es gratis."
+  - kind: libro
+    title: "Deep Learning, cap. 8: Optimization for Training Deep Models"
+    authors: "Goodfellow, Bengio y Courville"
+    year: "2016"
+    venue: "deeplearningbook.org"
+    lang: en
+    url: "https://www.deeplearningbook.org/contents/optimization.html"
+    note: "Los mismos métodos de este artículo, de SGD a Adam, con los algoritmos escritos paso a paso y una discusión de por qué Newton y sus aproximaciones no cuajaron en redes profundas."
+  - kind: paper
+    title: "Adam: A Method for Stochastic Optimization"
+    authors: "Diederik Kingma y Jimmy Ba"
+    year: "2014"
+    venue: "arXiv:1412.6980"
+    lang: en
+    url: "https://arxiv.org/abs/1412.6980"
+    note: "El artículo original. Lo que vale la pena es la sección 2.1, donde derivan la corrección de sesgo y explican el paso como una razón señal-ruido, que es lo que hace que la tasa de aprendizaje no dependa de la escala del gradiente."
+  - kind: paper
+    title: "Decoupled Weight Decay Regularization"
+    authors: "Ilya Loshchilov y Frank Hutter"
+    year: "2017"
+    venue: "arXiv:1711.05101"
+    lang: en
+    url: "https://arxiv.org/abs/1711.05101"
+    note: "La W de AdamW. Dos páginas de álgebra muestran que la regularización L2 y el decaimiento de pesos son la misma cosa en SGD y cosas distintas en Adam, y que la que se usaba era la equivocada."
+  - kind: paper
+    title: "Heavy-Tailed Class Imbalance and Why Adam Outperforms Gradient Descent on Language Models"
+    authors: "Kunstner, Yadav, Milligan, Schmidt y Bietti"
+    year: "2024"
+    venue: "arXiv:2402.19449"
+    lang: en
+    url: "https://arxiv.org/abs/2402.19449"
+    note: "La explicación más limpia de por qué SGD no sirve para entrenar un modelo de lenguaje y Adam sí: las palabras raras, que son casi todas, reciben gradientes minúsculos, y Adam es el que las escala por separado."
+  - kind: blog
+    title: "Muon: An optimizer for hidden layers in neural networks"
+    authors: "Keller Jordan"
+    year: "2024"
+    venue: "kellerjordan.github.io"
+    lang: en
+    url: "https://kellerjordan.github.io/posts/muon/"
+    note: "Donde nace Muon, como entrada de blog y no como artículo. Explica la ortogonalización, por qué se hace con Newton-Schulz en lugar de con una SVD, y por qué sólo se aplica a las matrices de las capas ocultas."
+  - kind: paper
+    title: "Muon is Scalable for LLM Training"
+    authors: "Liu, Su, Li y otros (Moonshot AI)"
+    year: "2025"
+    venue: "arXiv:2502.16982"
+    lang: en
+    url: "https://arxiv.org/abs/2502.16982"
+    note: "Los dos añadidos que llevaron Muon de un experimento de 124 millones de parámetros a un modelo de producción: decaimiento de pesos y el reajuste de la escala del paso para reutilizar los hiperparámetros de AdamW."
+  - kind: paper
+    title: "Fantastic Pretraining Optimizers and Where to Find Them"
+    authors: "Wen, Ahn, Liu y otros"
+    year: "2025"
+    venue: "arXiv:2509.02046"
+    lang: en
+    url: "https://arxiv.org/abs/2509.02046"
+    note: "La comparación honrada: once optimizadores con la tasa de aprendizaje ajustada para cada uno. Las mejoras sobre AdamW existen, son de las matrices y no de los escalares, y se encogen al crecer el modelo."
+tags: ["optimizacion", "deep-learning", "llm"]
+---
+
+{/*
+  BLOG-04 — Por qué AdamW para entrenar modelos de lenguaje, y qué está cambiando.
+
+  Orden LÓGICO, no cronológico: cada método arregla un fallo concreto del anterior
+  (una tasa para todas las direcciones → momentum promedia en el tiempo → RMSProp
+  reescala por coordenada → Adam junta las dos → AdamW arregla el decaimiento que
+  el reescalado había roto → Muon reescala por matriz). La cronología va en una
+  figura al principio para que el lector la tenga delante.
+
+  El artículo NO da por leído el curso ni lo enlaza. Es autocontenido: la sección
+  tercera vuelve a derivar el descenso de gradiente desde cero (gradiente, dirección,
+  parábola, cañón) porque el resto del artículo cuelga de esas tres cuentas.
+
+  Todos los números están medidos o citados, no estimados:
+    - las recetas de la tabla de apertura son las frases literales de cada informe
+      técnico, enlazadas en el cuerpo (GPT-3 apéndice B, OPT §2.3, Llama 2 §2.2,
+      DeepSeek-V3 §4.2, Kimi K2, GLM-5, DeepSeek-V4 §sobre el optimizador). Llama 3
+      dice AdamW pero no publica sus betas, por eso no está en la tabla.
+    - las trayectorias de las figuras de public/blog/de-newton-a-adamw/ salen de
+      ejecutar cada regla de actualización tal y como el artículo la escribe, sobre
+      x² + 20y² desde (−2,6, 1,2), con los hiperparámetros que dice cada etiqueta.
+      El generador es scripts/figures/de-newton-a-adamw/make_svgs.py (Python sin
+      dependencias, escribe el .svg y el .en.svg de cada figura); si se cambia el punto
+      de partida o una tasa, hay que regenerar y volver a leer las etiquetas del cuerpo.
+    - los recuentos de pasos «hasta el fondo» son el primer paso con pérdida < 0,01.
+    - las cuentas de memoria usan P = 4,05·10¹¹ (Llama 3 405B) y 16 384 H100 de 80 GB.
+  La figura parabola-tres-tasas.svg es la misma que public/courses/dl-nlp/descenso-pasos.svg,
+  copiada para que el artículo no dependa de un recurso del curso.
+*/}
+
+Cuatro laboratorios que no comparten datos, arquitectura, hardware ni opinión sobre casi nada
+publicaron entre 2020 y 2024 el mismo párrafo.
+[GPT-3](https://arxiv.org/abs/2005.14165) se entrenó con Adam, $\beta_1 = 0{,}9$,
+$\beta_2 = 0{,}95$ y decaimiento de pesos $0{,}1$.
+[OPT](https://arxiv.org/abs/2205.01068), con AdamW, $0{,}9$, $0{,}95$ y $0{,}1$.
+[Llama 2](https://arxiv.org/abs/2307.09288), con AdamW, $0{,}9$, $0{,}95$ y $0{,}1$.
+[DeepSeek-V3](https://arxiv.org/abs/2412.19437), con AdamW, $0{,}9$, $0{,}95$ y $0{,}1$. La
+regla de actualización cabe en cuatro líneas, se publicó en 2017 como corrección de otra de 2014, y
+los tres números que la acompañan no se han movido en cinco años ni entre continentes.
+
+Y luego, en catorce meses, tres grietas. [Kimi K2](https://arxiv.org/abs/2507.20534), en julio de
+2025, un billón de parámetros entrenados sin AdamW. [GLM-5](https://arxiv.org/abs/2602.15763), en
+febrero de 2026. [DeepSeek-V4](https://arxiv.org/abs/2606.19348), en abril de 2026, con 1,6
+billones de parámetros: el mismo laboratorio que dieciséis meses antes había escrito el párrafo de
+todos. Los tres usan Muon, un optimizador que en diciembre de 2024 era una entrada de blog.
+
+| modelo | año | optimizador | $\beta_1$ | $\beta_2$ | decaimiento |
+|---|---|---|---|---|---|
+| GPT-3 | 2020 | Adam | 0,9 | 0,95 | 0,1 |
+| OPT | 2022 | AdamW | 0,9 | 0,95 | 0,1 |
+| Llama 2 | 2023 | AdamW | 0,9 | 0,95 | 0,1 |
+| DeepSeek-V3 | 2024 | AdamW | 0,9 | 0,95 | 0,1 |
+| Kimi K2 | 2025 | Muon | | | 0,1 |
+| GLM-5 | 2026 | Muon | | | |
+| DeepSeek-V4 | 2026 | Muon | | | |
+
+GPT-3 lo llama Adam y cita el artículo de AdamW para el decaimiento: es el mismo algoritmo. Y los
+tres de abajo no han abandonado AdamW del todo. DeepSeek-V4 lo mantiene para los *embeddings*, la
+capa de salida, los sesgos y las normalizaciones, y usa Muon para todo lo que sea una matriz. Ese
+reparto no es un detalle de implementación: es la idea de Muon, y este artículo termina en ella.
+
+Empieza mucho antes. La optimización matemática lleva dos siglos acumulando métodos, y una parte
+sustancial de ellos es mejor que el descenso de gradiente en casi cualquier criterio que se quiera
+medir: pasos hasta llegar, sensibilidad a los ajustes, garantías. El de Newton, que tiene más de tres siglos,
+resuelve en un solo paso el problema en el que el descenso de gradiente da miles. Nadie entrena con
+Newton. La pregunta de este artículo es por qué, y la respuesta tiene tres partes: por qué a esta
+escala la única información que se puede pagar es el gradiente, cómo cada mejora del descenso
+recompra a plazos algo que Newton tenía gratis, y por qué la última de esas mejoras es la que ha
+movido el trono.
+
+El orden va a ser lógico y no cronológico: cada método arregla un fallo concreto del anterior, y
+ese orden no es el de las fechas. Para tener las fechas delante:
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/linea-de-tiempo.svg"
+    alt="Línea de tiempo, no a escala, con doce hitos: 1847 Cauchy, descenso de gradiente; 1951 Robbins y Monro, estocástico; 1964 Polyak, momentum; 1983 Nesterov, momentum acelerado; 2011 AdaGrad, una tasa por parámetro; 2012 RMSProp, media móvil; 2014 Adam, las dos ideas; 2017 AdamW, decaimiento desacoplado; 2018 Shampoo, precondicionar por matriz; 2024 Muon, ortogonalizar el paso; 2025 Kimi K2, un billón de parámetros con Muon; 2026 DeepSeek-V4, Muon a 1,6 billones. Ocho de los doce caen en los últimos quince años."
+    width="726"
+    height="150"
+  />
+  <figcaption>
+    Ciento sesenta y cuatro años entre el primer hito y el quinto, y quince entre el quinto y el
+    último. La escala no es uniforme; el orden sí.
+  </figcaption>
+</figure>
+
+## Lo que hay que minimizar, y lo que se puede pagar por paso
+
+Llamemos $\theta$ a todos los parámetros del modelo, apilados en un solo vector de $P$ coordenadas,
+y $\mathcal{L}(\theta)$ a la pérdida: un número que mide cuánto se equivoca el modelo con esos
+parámetros, y que entrenar significa hacer pequeño. Para
+[Llama 3 405B](https://arxiv.org/abs/2407.21783), $P$ vale $4{,}05 \cdot 10^{11}$, y la pérdida es
+una media sobre $15{,}6$ billones de tokens:
+
+$$
+\mathcal{L}(\theta) = \frac{1}{N}\sum_{i=1}^{N} \ell_i(\theta),
+$$
+
+donde $\ell_i$ es lo que se equivoca el modelo en el token $i$ y $N$ son esos $15{,}6$ billones.
+Tres cosas de esa definición deciden todo lo que viene después.
+
+La primera es que $\mathcal{L}$ no se puede evaluar. Calcularla exacta es pasar el modelo entero
+por los $N$ tokens una vez, y eso es, con una aproximación razonable, lo que cuesta *todo el
+entrenamiento*: un modelo de lenguaje ve cada token del corpus una vez, o poco más. Evaluar la
+pérdida exacta una sola vez cuesta lo mismo que entrenar. Cualquier método que pida el valor exacto
+de $\mathcal{L}$ en cada paso está descartado antes de empezar.
+
+La segunda es que no hace falta el mínimo. $\mathcal{L}$ no es convexa: tiene muchos valles, y
+ningún método que se pueda ejecutar garantiza encontrar el más hondo. Pero tampoco es lo que se
+pide. Lo que se mide es la pérdida del modelo que se entrega, y un valle que no sea el más hondo
+sirve si es lo bastante hondo. Esa concesión es la que hace posible todo lo demás.
+
+La tercera es el precio de cada tipo de información, y conviene ponerle números. Evaluar
+$\mathcal{L}$ sobre un lote de datos es un *forward pass*. Calcular su gradiente, el vector de $P$
+derivadas parciales que dice hacia dónde queda el suelo desde aquí, cuesta más o menos dos
+*forward* más, por la regla de la cadena aplicada hacia atrás: tres *forward* en total, y un
+vector de $P$ números que ocupa lo mismo que el modelo. Calcular la matriz de segundas derivadas,
+el **hessiano** $H$, que dice cuánto se curva la pérdida en cada dirección, produce $P^{2}$
+números. Para Llama 3 son $1{,}6 \cdot 10^{23}$. Las $16\,384$ GPUs H100 que se usaron para entrenarlo suman
+$1{,}3 \cdot 10^{15}$ bytes de memoria, y guardar ese hessiano en la precisión más baja que se usa
+para entrenar pide $250$ millones de veces esa memoria. Ni siquiera hace falta la matriz entera para
+que salga mal: el producto de $H$ por un solo vector, que dice la curvatura en una sola dirección,
+cuesta aproximadamente lo mismo que un gradiente entero.
+
+Ésa es la asimetría de la que sale todo. Con un gradiente se sabe hacia dónde bajar en las $P$
+direcciones a la vez, y cuesta tres *forward*. Saber cuánto se curva la pérdida en *una* dirección
+cuesta lo mismo, y saberlo en todas no cabe en ningún sitio.
+
+## El catálogo, ordenado por lo que cada método pide
+
+Los métodos de optimización matemática se pueden clasificar en cuatro familias según el tipo de
+información que exigen sobre la función de pérdida a cambio de dar un paso: sólo valores de la
+función, una promesa sobre su forma, sus segundas derivadas o sólo las primeras. Ése es el orden
+que sigue esta sección, y deja para el final la familia con la que se entrena.
+
+**Sin derivadas.** Búsqueda en rejilla, búsqueda aleatoria, el simplex de Nelder-Mead de 1965, los
+algoritmos genéticos, las estrategias evolutivas, la optimización bayesiana. Todos piden lo mismo,
+que es lo mínimo: evaluar $\mathcal{L}$ en los puntos que ellos elijan. No derivan nada, y a cambio
+tienen que descubrir hacia dónde está el suelo comparando valores, y en $P$ dimensiones hay $P$
+direcciones independientes que comparar. Aproximar el gradiente por diferencias finitas cuesta
+$P + 1$ evaluaciones, contra las tres que cuesta calcularlo. Las estrategias evolutivas lo estiman
+más barato, perturbando los parámetros al azar y quedándose con las perturbaciones que bajan la
+pérdida, y [en 2017](https://arxiv.org/abs/1703.03864) enseñaron a andar a un humanoide simulado en diez
+minutos repartiendo el trabajo entre más de mil procesadores. Pero el ruido de esa estimación
+crece con $P$, y $P$ ha crecido cien mil veces desde entonces. Lo que se ahorra en no derivar se paga $P$ veces en
+evaluar.
+
+**Con estructura.** El simplex de Dantzig de 1947 y los métodos de punto interior resuelven
+programas lineales con cientos de miles de variables; la programación cuadrática y la optimización
+convexa entera, con sus subgradientes, sus métodos proximales y sus garantías de que el mínimo
+encontrado es el único, resuelven problemas enormes en segundos. Lo que piden a cambio no es
+información sobre $\mathcal{L}$ sino una promesa sobre su forma: que sea lineal, cuadrática o
+convexa. La pérdida de una red no es ninguna de las tres, y no hay forma de hacérselo creer.
+
+**Segundo orden.** Aquí está el método que resuelve el problema, y conviene ver por qué. Cerca de
+$\theta$ la pérdida se parece a su aproximación de segundo orden, una cuadrática con el gradiente
+como término lineal y el hessiano como curvatura:
+
+$$
+\mathcal{L}(\theta + \Delta) \approx \mathcal{L}(\theta) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta + \tfrac{1}{2}\,\Delta^{\top} H\, \Delta.
+$$
+
+Si esa aproximación fuera exacta, el mejor paso sería el que la minimiza. Derivando respecto de
+$\Delta$ e igualando a cero queda $\nabla_{\theta}\mathcal{L} + H\Delta = 0$, es decir,
+
+$$
+\Delta = -H^{-1}\,\nabla_{\theta}\mathcal{L},
+$$
+
+que es el **método de Newton**. No tiene tasa de aprendizaje: el tamaño del paso lo decide la
+curvatura, y lo decide por separado en cada dirección. Donde la pérdida se curva mucho el paso
+es corto, y donde se curva poco es largo, sin que nadie se lo diga. Newton tiene gratis lo que a
+todo lo demás le va a costar: la curvatura de cada dirección.
+
+Lo que cuesta ya está dicho: $P^{2}$ números para guardar $H$, y del orden de $P^{3}$ operaciones
+para resolver el sistema. Los métodos **cuasi-Newton** nacieron para no pagar eso. BFGS, llamado
+así por sus autores Broyden, Fletcher, Goldfarb y Shanno, es uno de los métodos cuasi-Newton más
+conocidos. En lugar de calcular el hessiano, construye una aproximación de $H^{-1}$ a partir de cómo cambia el
+gradiente entre un paso y el siguiente, que es información que ya tienes. Sigue ocupando $P^{2}$.
+L-BFGS (Limited-memory BFGS), propuesto posteriormente, evita almacenar toda la aproximación al
+hessiano inverso: conserva sólo los últimos $m$ pares de cambios, con $m$ entre cinco y veinte, y
+con ellos reconstruye el producto $H^{-1}\nabla_{\theta}\mathcal{L}$ en $4mP$ operaciones y $2mP$
+de memoria. Eso sí se puede pagar, y durante veinte años fue el método por defecto del aprendizaje
+automático: regresión logística, campos aleatorios condicionales, máquinas de vectores soporte con
+núcleo lineal. [En 2011](https://icml.cc/2011/papers/210_icmlpaper.pdf) se probó en redes profundas
+y en algunos problemas competía con el descenso de gradiente.
+
+Cayó por dos cosas que necesita y que un lote de datos no le puede dar. La primera: el par de
+cambios que usa para actualizar su aproximación, cuánto se movió $\theta$ y cuánto cambió el
+gradiente, sólo tiene sentido si los dos gradientes se calcularon sobre los mismos datos; con lotes
+distintos, la diferencia de gradientes es sobre todo la diferencia entre los lotes, y esa diferencia
+entra en la estimación de $H^{-1}$ como si fuera curvatura. La segunda: para decidir cuánto avanzar
+en la dirección que propone, L-BFGS hace una **búsqueda lineal**, que prueba varios tamaños de paso
+y se queda con uno que baje la pérdida lo bastante, y para saber si la pérdida ha bajado hay que
+poder evaluarla. Las dos cosas piden valores exactos, y la primera sección dejó dicho lo que cuesta
+uno. Los métodos *Hessian-free* [de 2010](https://www.cs.toronto.edu/~jmartens/docs/Deep_HessianFree.pdf)
+intentaron la otra ruta: no guardar $H$ y usar sólo productos $Hv$, cada uno al precio de un
+gradiente, para resolver el sistema de Newton por gradiente conjugado. Salía a decenas o cientos de
+productos por paso. En ese tiempo, el descenso de gradiente da decenas o cientos de pasos.
+
+**Primer orden.** Lo que queda. Un gradiente por paso, tres *forward*, $P$ números de memoria, y
+ninguna promesa sobre la forma de $\mathcal{L}$.
+
+| familia | qué pide por paso | coste por paso | memoria | ¿tolera un gradiente ruidoso? |
+|---|---|---|---|---|
+| sin derivadas | $\sim P$ evaluaciones de $\mathcal{L}$ | $\sim P$ *forward* | $P$ | sí |
+| con estructura | que $\mathcal{L}$ sea lineal, cuadrática o convexa | depende | depende | no aplica |
+| Newton | gradiente, hessiano y resolver un sistema | $\sim P^{3}$ | $P^{2}$ | no |
+| L-BFGS | un gradiente y $m$ pares de cambios | $\sim 4mP$ | $2mP$ | no: secante y búsqueda lineal |
+| primer orden | un gradiente | $3$ *forward* | $P$ | **sí** |
+
+La última columna es la que decide, y merece su propio párrafo, porque la razón por la que el
+descenso de gradiente no sólo sobrevive sino que *basta* está ahí y no en el coste. La pérdida es
+una media de $N$ términos, así que su gradiente es la media de $N$ gradientes, y la media de un
+puñado de ellos elegidos al azar es un estimador insesgado de la media de todos: apunta, en
+promedio, exactamente al mismo sitio, y cuesta lo que cueste el puñado. El hessiano también se
+puede estimar así. Lo que no se puede estimar así es su inversa, que es lo que Newton necesita: la
+inversa de una estimación ruidosa no es una estimación de la inversa, y el ruido en las direcciones
+poco curvadas, que son las que tienen entradas pequeñas en $H$, sale amplificado al invertir. El
+gradiente es la única pieza de información que es a la vez barata y estimable sin sesgo con un
+trozo de los datos.
+
+Todo lo que viene desde aquí se puede leer así: el descenso de gradiente es lo único que se puede
+pagar, y cada una de sus mejoras es una forma de aproximar $H^{-1}$ que sobreviva al ruido. La
+diagonal, en RMSProp y Adam. Un producto de matrices pequeñas, en Shampoo. El espectro de cada
+matriz de pesos, en Muon. Cada una recompra un trozo de lo que Newton tenía gratis, al precio que
+se puede pagar.
+
+## El descenso de gradiente, y el único número que eliges
+
+[En 1847](https://ems.press/content/book-chapter-files/27368), Cauchy
+presentó a la Academia de Ciencias de París una nota de tres páginas para resolver, sin despejar
+nada, los sistemas de ecuaciones que dan la órbita de un astro. La idea cabe en una frase: donde estés,
+mira hacia dónde sube más deprisa la función y muévete un poco en la dirección contraria. Lo que
+lleva un artículo es lo que significa «un poco».
+
+El **gradiente** $\nabla_{\theta}\mathcal{L} \in \mathbb{R}^{P}$ reúne una derivada parcial por
+parámetro: cada coordenada dice a qué ritmo cambia la pérdida cuando se mueve ese parámetro y los
+demás se quedan quietos. Que sea la dirección de subida más rápida no es una definición sino un
+teorema, y sale de una desigualdad. Toma cualquier dirección $\mathbf{u}$ de longitud $1$; cuánto
+cambia la pérdida al avanzar un poco en ella es la derivada direccional, que es un producto
+escalar, $\left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u}$, y por Cauchy-Schwarz ese
+producto está acotado por $\lVert \nabla_{\theta}\mathcal{L} \rVert$, con igualdad sólo cuando
+$\mathbf{u}$ es paralela al gradiente. Ninguna dirección sube más por unidad de paso que la del
+gradiente, luego ninguna baja más que la contraria. De ahí la regla entera:
+
+$$
+\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t),
+$$
+
+donde $t$ cuenta pasos y $\eta > 0$ es la **tasa de aprendizaje**, el único número de la fórmula
+que eliges tú. Que cada paso baje la pérdida se ve con el plano tangente:
+
+$$
+\mathcal{L}(\theta_t + \Delta) \approx \mathcal{L}(\theta_t) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta,
+$$
+
+y con $\Delta = -\eta\,\nabla_{\theta}\mathcal{L}$ la pérdida cae
+$\eta\,\lVert\nabla_{\theta}\mathcal{L}\rVert^{2}$, que no es negativo. Toda la deuda está en el
+$\approx$: vale cerca de $\theta_t$, y cuánto es cerca lo decide $\eta$.
+
+### La cuenta sale entera sobre una parábola
+
+Toma la pérdida más pequeña que existe, un solo parámetro y $\mathcal{L}(w) = w^{2}$, con derivada
+$2w$. La regla queda $w_{t+1} = w_t - 2\eta\,w_t = (1 - 2\eta)\,w_t$: multiplicar por la misma
+constante en cada paso. Iterando desde $w_0$,
+
+$$
+w_t = \left(1 - 2\eta\right)^{t} w_0,
+$$
+
+y una potencia tiende a cero si y sólo si la base mide menos que $1$. La condición es
+$\lvert 1 - 2\eta \rvert < 1$, o sea $0 < \eta < 1$, y el propio factor cuenta lo que pasa en cada
+tramo: entre $0$ y $0{,}5$ el peso se encoge sin cambiar de signo; en $0{,}5$ cae en el mínimo de un
+solo paso; entre $0{,}5$ y $1$ alterna de signo y se encoge; en $1$ alterna para siempre; por
+encima, alterna y crece.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/parabola-tres-tasas.svg"
+    alt="Tres gráficas apiladas, las tres con la misma parábola: la pérdida en el eje vertical y el peso en el horizontal, con el mínimo en el centro. En las tres el primer punto está en el mismo sitio, a la derecha, donde el peso vale uno. Arriba, con tasa de aprendizaje 0,10, los seis puntos bajan por el brazo derecho acercándose al centro cada vez menos, y el último se queda a medio camino. En medio, con 0,40, el segundo punto ya está casi en el fondo y el tercero encima de él. Abajo, con 1,05, los puntos saltan de un brazo al otro y cada uno queda más alto que el anterior: el quinto llega casi al borde superior del dibujo."
+    width="360"
+    height="350"
+  />
+  <figcaption>
+    Los dos fallos son opuestos: el paso corto baja siempre y no termina de llegar, y el paso largo
+    cruza el fondo y sale más arriba de donde entró. No hay un tamaño de paso correcto por
+    naturaleza; hay uno que depende de cuánto se curva la pérdida.
+  </figcaption>
+</figure>
+
+Ese $1$ del límite es de esta parábola. Con $\mathcal{L}(w) = a\,w^{2}$ la derivada es $2aw$, el
+factor pasa a $1 - 2\eta a$ y la condición a $\eta < 1/a$: cuanto más se curva la pérdida, más
+corto tiene que ser el paso. Hasta aquí nada duele, porque $a$ es un número y $\eta$ se elige
+mirándolo.
+
+### Una tasa para dos curvaturas
+
+Duele en cuanto hay dos direcciones que se curvan distinto, y una red tiene $P$.
+La función $\mathcal{L} = x^{2} + 20y^{2}$ es lo mínimo que hace falta para
+verlo: un cañón alargado, casi plano a lo largo de $x$ y muy empinado a lo largo de $y$. La cuenta
+de la parábola, coordenada a coordenada, pide $\eta < 1$ para $x$ y $\eta < 1/20 = 0{,}05$ para
+$y$, y manda la segunda. Los factores por paso son $1 - 2\eta$ en $x$ y $1 - 40\eta$ en $y$.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/canon-dos-tasas.svg"
+    alt="Dos mapas de contorno del mismo cañón, la función x² más veinte y², alargado en horizontal: las elipses son mucho más anchas que altas. En los dos, la trayectoria del descenso de gradiente arranca arriba a la izquierda. A la izquierda, con tasa 0,02, baja al eje horizontal en tres pasos y después avanza hacia el centro en pasos cortos que se acortan; tarda 80 pasos en llegar. A la derecha, con tasa 0,045, cada paso cruza el eje y cae en la pared contraria, un zigzag que se estrecha mientras avanza hacia el centro; tarda 35 pasos."
+    width="726"
+    height="225"
+  />
+  <figcaption>
+    El mismo cañón, el mismo punto de partida. Con $\eta = 0{,}02$ los
+    factores valen $0{,}96$ y $0{,}2$: la coordenada empinada llega al fondo en tres pasos y la
+    plana avanza un $4$ % por paso, y tarda $80$. Con $\eta = 0{,}045$ valen $0{,}91$ y $-0{,}8$:
+    la plana va el doble de rápido, y la empinada cruza el fondo en cada paso y rebota en la pared
+    de enfrente. Llega en $35$, zigzagueando.
+  </figcaption>
+</figure>
+
+Las dos trayectorias son el mismo dilema visto desde cada lado. Una tasa pequeña respeta la
+dirección empinada y desperdicia la plana; una grande aprovecha la plana y rebota en la empinada.
+Ninguna $\eta$ sirve bien a las dos, porque $\eta$ es un solo número y las curvaturas son dos.
+
+Al cociente entre la curvatura mayor y la menor se le llama **número de condición**, $\kappa$, y
+aquí vale $20$. Llamemos $a_{\max}$ a la curvatura en la dirección más empinada y $a_{\min}$ a la de
+la más plana. El número de condición manda en el número de pasos: la mejor $\eta$ posible es del orden de
+$1/a_{\max}$, y con ella la dirección plana se contrae un factor $1 - a_{\min}/a_{\max}$ por paso,
+así que llegar a una precisión dada cuesta un número de pasos proporcional a $\kappa$.
+En una red, calcular ese $\kappa$ no se puede pagar, pero sí hay
+una medida que se repite en todos los modelos que lo han mirado: las direcciones más y menos
+curvadas difieren en varios órdenes de magnitud. En un cañón de $\kappa = 20$ hablamos de unas pocas decenas de pasos.
+Uno cien veces más estrecho, en la sección de Adam, va a costar $3\,619$.
+
+El problema tiene nombre, **mal condicionamiento**, y todo lo que viene después de esta sección es
+una forma de tratarlo. Newton lo trata dividiendo por $H$, y no se puede pagar. Lo demás son
+maneras de aproximar esa división con lo que sí se puede.
+
+## Estocástico: el gradiente que nadie puede calcular entero
+
+Antes de tratar el cañón hay que resolver el otro problema de la primera sección, que es previo:
+el gradiente exacto cuesta lo mismo que el entrenamiento entero, así que nadie lo calcula. Lo que se
+calcula es el gradiente sobre un **lote** (*batch*) de $B$ ejemplos elegidos al azar,
+
+$$
+\hat{\mathbf{g}} = \frac{1}{B}\sum_{i \in \text{lote}} \nabla_{\theta}\,\ell_i(\theta),
+$$
+
+y se resta ése. Es un estimador: su media sobre todos los lotes posibles es exactamente
+$\nabla_{\theta}\mathcal{L}$, porque el gradiente de una media es la media de los gradientes, y su
+varianza se reduce como $1/B$. Cuesta lo que cuesta $B$, no lo que cuesta $N$. Para Kimi K2, cada
+lote son $67$ millones de tokens de un corpus de $15{,}5$ billones: cada paso mira un
+$0{,}0004$ % de los datos y apunta, en promedio, al mismo sitio que si los mirara todos. Con el
+mismo cómputo que un solo paso exacto se dan doscientos mil ruidosos, y el ruido se promedia por el
+camino.
+
+Eso es el **descenso de gradiente estocástico**, SGD, y no es una aproximación del método sino
+[un teorema de 1951](https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-3/A-Stochastic-Approximation-Method/10.1214/aoms/1177729586.full)
+sobre cómo encontrar el cero de una función que sólo se puede observar con ruido. Robbins y Monro
+demostraron que la iteración converge si la tasa decrece de una manera concreta: la suma de todas
+las $\eta_t$ tiene que divergir, para que el método pueda llegar a cualquier distancia, y la suma
+de sus cuadrados tiene que converger, para que el ruido acabe apagándose.
+
+Ese ruido del que hablan Robbins y Monro es, en nuestro caso, la diferencia entre el gradiente que
+calculamos y el que querríamos calcular: el del lote menos el exacto,
+
+$$
+\hat{\mathbf{g}} - \nabla_{\theta}\mathcal{L}.
+$$
+
+Tiene media cero, en promedio apuntamos al sitio correcto, pero no es gratis.
+Cuesta tres cosas, y las tres importan más adelante. La primera es que un paso concreto
+puede subir la pérdida; la garantía de bajada de la sección anterior pasa a ser una garantía en
+promedio. La segunda es que cerca del fondo la trayectoria no se para: tiembla con una amplitud
+proporcional a $\eta$ por el tamaño del ruido, y la única forma de asentarla es bajar $\eta$. Por
+eso ningún modelo se entrena con una tasa constante hasta el final. La tercera es la que cerró la
+puerta de la sección anterior: con un gradiente ruidoso, la búsqueda lineal no sabe si la pérdida
+ha bajado y la condición de la secante mide ruido. Los métodos de segundo orden no perdieron sólo
+por coste; perdieron porque el ruido contamina la estimación de la curvatura, y las garantías de
+convergencia que sobreviven a ese ruido son las de primer orden.
+
+Hay una cosa que el ruido regala, y conviene decirla con cuidado porque se ha exagerado mucho. Un
+punto de silla, donde el gradiente es cero pero la pérdida baja en alguna dirección, es un
+equilibrio inestable: el descenso exacto se queda parado encima, y al ruidoso le basta un empujón
+en cualquier dirección que baje para salir. En alta dimensión, [casi todos los puntos donde el
+gradiente se anula son sillas](https://arxiv.org/abs/1406.2572) y no mínimos, así que esto no es un
+detalle. Pero no es lo que hace que SGD funcione; es lo que hace que no se quede atascado.
+
+Con esto ya está el método que entrena todos los modelos de la tabla: un gradiente ruidoso, restado
+con una tasa que decrece. Lo que falta es hacerlo soportable en un cañón, y ahí empiezan las
+variantes.
+
+## Momentum: recordar el paso anterior
+
+El zigzag del cañón tiene una propiedad que se puede explotar: en la dirección empinada el
+gradiente cambia de signo en cada paso, y en la plana lo mantiene. Un método que promedie los
+gradientes recientes cancela lo primero y acumula lo segundo, sin saber cuál dirección es cuál.
+[Polyak lo propuso en 1964](https://doi.org/10.1016/0041-5553(64)90137-5)
+con una imagen física, una bola pesada que rueda por la superficie y conserva parte de su
+velocidad, y de ahí el nombre:
+
+$$
+\mathbf{v}_{t+1} = \beta\,\mathbf{v}_t + \nabla_{\theta}\mathcal{L}(\theta_t),
+\qquad
+\theta_{t+1} = \theta_t - \eta\,\mathbf{v}_{t+1},
+$$
+
+con $\beta$ entre $0$ y $1$, y casi siempre $0{,}9$. Para simplificar, escribimos
+$\mathbf{g}_{t} = \nabla_{\theta}\mathcal{L}(\theta_t)$. Desplegando la primera línea, $\mathbf{v}_t$ es
+una suma de todos los gradientes anteriores con pesos que decaen geométricamente:
+
+$$
+\mathbf{v}_t = \mathbf{g}_{t-1} + \beta\,\mathbf{g}_{t-2} + \beta^{2}\,\mathbf{g}_{t-3} + \cdots.
+$$
+
+Con eso la cuenta de las dos direcciones sale entera. Si el gradiente vale siempre lo mismo,
+$\mathbf{g}$, la suma tiende a $\mathbf{g}/(1 - \beta)$: con $\beta = 0{,}9$, diez veces el
+gradiente, y el paso efectivo es diez veces $\eta$. Si alterna entre $\mathbf{g}$ y $-\mathbf{g}$,
+la suma tiende a $\mathbf{g}/(1 + \beta)$: poco más de la mitad. La misma regla amplifica por diez
+la dirección en la que el gradiente insiste y reduce a la mitad aquella en la que se contradice.
+El promedio en el tiempo distingue lo que la tasa de aprendizaje no podía distinguir.
+
+Lo que no cambia es que sigue habiendo una sola $\eta$. Momentum no elimina el límite de la
+dirección empinada, lo desplaza: con los parámetros bien elegidos, el número de pasos hasta una
+precisión dada pasa de ser proporcional a $\kappa$ a serlo a $\sqrt{\kappa}$, y los parámetros bien
+elegidos dependen de $\kappa$, que nadie conoce.
+
+Nesterov propuso en 1983 una variante que evalúa el gradiente no donde está la bola sino donde va
+a estar tras el impulso, un paso de anticipación que mejora la garantía teórica, y
+[en 2013](https://proceedings.mlr.press/v28/sutskever13.html) se comprobó que entrenaba mejor redes
+profundas. La diferencia con Polyak en la práctica es pequeña; en la última sección importa, porque
+Muon usa la de Nesterov.
+
+## Una tasa por parámetro: AdaGrad y RMSProp
+
+El otro ataque al cañón no promedia en el tiempo, reescala en el espacio: en lugar de una $\eta$,
+una por parámetro, y que las elija el propio método. La regla es dividir cada coordenada del
+gradiente por una medida de lo grandes que han sido los gradientes de esa coordenada.
+[AdaGrad](https://jmlr.org/papers/v12/duchi11a.html), de 2011, acumula sus cuadrados:
+
+$$
+\mathbf{s}_{t+1} = \mathbf{s}_t + \mathbf{g}_t^{2},
+\qquad
+\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{\mathbf{s}_{t+1}} + \varepsilon}\,\mathbf{g}_t,
+$$
+
+donde el cuadrado, la raíz y la división son coordenada a coordenada, y $\varepsilon$ es un número
+diminuto que evita dividir por cero. Nació para problemas con entradas raras. Piensa en un modelo
+de lenguaje: la fila del *embedding* de una palabra sólo recibe gradiente en los pasos en que la
+palabra aparece, y la mayoría de las palabras aparecen poco. Con una $\eta$ común, las palabras
+frecuentes fijan el límite y las raras apenas se mueven. Con AdaGrad, cada parámetro tiene su
+$\mathbf{s}$: los que reciben gradiente en cada paso lo acumulan deprisa y se frenan, y los que lo
+reciben una vez cada mil pasos siguen dando pasos grandes. Vuelve más adelante, porque ésta es
+buena parte de la razón por la que un modelo de lenguaje no se entrena con SGD puro, sino con métodos
+que adaptan la tasa parámetro a parámetro.
+
+El fallo está a la vista: $\mathbf{s}$ sólo crece, luego la tasa efectiva sólo baja, y en un
+problema no convexo, donde hay que seguir moviéndose después de mucho tiempo, acaba parándose antes
+de llegar.
+[RMSProp](https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf) arregla eso
+cambiando la suma por una media móvil exponencial, que olvida:
+
+$$
+\mathbf{v}_{t+1} = \beta_2\,\mathbf{v}_t + (1 - \beta_2)\,\mathbf{g}_t^{2},
+\qquad
+\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{\mathbf{v}_{t+1}} + \varepsilon}\,\mathbf{g}_t.
+$$
+
+La memoria de esa media es de unos $1/(1 - \beta_2)$ pasos: diez con $\beta_2 = 0{,}9$, mil con
+$0{,}999$. RMSProp nunca se publicó. Es la diapositiva de un curso en línea de Hinton de 2012, y
+durante años se citó así, «Lecture 6.5», porque no había otra cosa que citar.
+
+Lo que hace sobre el cañón, $\mathcal{L} = x^{2} + 20y^{2}$, se ve sin dibujarlo. En la dirección empinada el gradiente vale $40y$;
+en la plana, $2x$. Dividir cada uno por la raíz de su propia media de cuadrados, que es más o menos
+su magnitud, deja en cada coordenada un paso de tamaño $\eta$ con el signo del gradiente, sea cual
+sea su escala: el paso ha dejado de depender de la curvatura. Eso es exactamente una aproximación
+diagonal de $H^{-1}$ con las magnitudes del gradiente como sustituto de la curvatura, y cuesta un
+vector más de memoria. El segundo orden vuelve por la ventana, en forma de diagonal, al precio que
+se puede pagar.
+
+Tiene un defecto de arranque que conviene medir, porque es el que Adam va a corregir. En el primer
+paso $\mathbf{v}_1 = (1 - \beta_2)\,\mathbf{g}_0^{2}$, así que la división deja
+$\eta / \sqrt{1 - \beta_2}$ por coordenada: con $\beta_2 = 0{,}9$ son $3{,}2\,\eta$, y con
+$0{,}999$ son $31{,}6\,\eta$. Sobre el cañón, con $\eta = 0{,}1$ y $\beta_2 = 0{,}999$, el primer
+paso lleva la trayectoria de $(-2{,}6;\ 1{,}2)$ a $(0{,}56;\ -1{,}96)$: cruza el fondo y sale por
+la pared de enfrente, porque la media móvil aún no ha visto nada y subestima el tamaño del
+gradiente treinta veces.
+
+## Adam: las dos ideas juntas
+
+[Adam](https://arxiv.org/abs/1412.6980), de diciembre de 2014, junta las dos: una media móvil del
+gradiente, que es momentum escrito como media, y una media móvil de su cuadrado, que es RMSProp.
+
+$$
+\mathbf{m}_t = \beta_1\,\mathbf{m}_{t-1} + (1 - \beta_1)\,\mathbf{g}_t,
+\qquad
+\mathbf{v}_t = \beta_2\,\mathbf{v}_{t-1} + (1 - \beta_2)\,\mathbf{g}_t^{2}.
+$$
+
+Y corrige el arranque. Desplegando $\mathbf{m}_t$ como antes, es $(1 - \beta_1)$ por la suma de
+los gradientes con pesos $\beta_1^{t-k}$; si todos los gradientes valieran $\mathbf{g}$, la suma
+geométrica da $\mathbf{m}_t = \left(1 - \beta_1^{t}\right)\mathbf{g}$. En el primer paso la media
+vale $(1 - \beta_1)\,\mathbf{g}$, una décima parte del gradiente; en el paso $t$, una fracción
+$1 - \beta_1^{t}$ que sube hacia $1$. Dividir por esa fracción devuelve la escala correcta desde el
+primer paso, y lo mismo para $\mathbf{v}_t$ con $\beta_2$:
+
+$$
+\hat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1 - \beta_1^{t}},
+\qquad
+\hat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1 - \beta_2^{t}},
+\qquad
+\theta_{t+1} = \theta_t - \eta\,\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{v}}_t} + \varepsilon}.
+$$
+
+Con esa corrección el primer paso vale $\eta$ por coordenada, con el signo del gradiente, y no
+$31{,}6\,\eta$. Ésas son las cuatro líneas de la tabla del principio, y dos vectores más de memoria,
+$\mathbf{m}$ y $\mathbf{v}$, del tamaño del modelo.
+
+La lectura que explica por qué funciona en casi todo está en el cociente. $\hat{\mathbf{m}}_t$
+estima la media del gradiente y $\sqrt{\hat{\mathbf{v}}_t}$ estima la raíz de la media de su
+cuadrado; para esas medias exactas, la primera nunca supera a la segunda en valor absoluto (la
+varianza no es negativa), así que el cociente vale, coordenada a coordenada, entre $-1$ y $1$:
+cerca de $\pm 1$ donde el gradiente insiste en un signo, cerca de $0$ donde su media es ruido. Las
+medias móviles de Adam solo se acercan a ese ideal, y el paso resultante es casi siempre del orden
+de $\eta$, sea cual sea la escala del gradiente; la excepción es un gradiente que pasa muchos pasos
+en cero y luego se activa, donde $\hat{\mathbf{v}}_t$ va rezagada y el cociente puede superar $1$
+(Kingma y Ba acotan el paso en $\eta \cdot \frac{1-\beta_1}{\sqrt{1-\beta_2}}$, unos $3{,}16\,\eta$
+con los valores por defecto). Por eso $\eta$ se puede elegir en unidades del parámetro, por eso la
+misma $10^{-4}$ sirve para modelos que no se parecen en nada, y por eso una tasa de
+$3 \cdot 10^{-4}$ significa, casi siempre, que ningún peso cambia más de tres diezmilésimas por
+paso.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/canon-cuatro-metodos.svg"
+    alt="Cuatro mapas de contorno del mismo cañón alargado, uno por método, todos con la trayectoria arrancando arriba a la izquierda y veinte pasos dibujados. Descenso de gradiente, arriba a la izquierda: zigzag entre las dos paredes, 35 pasos. Momentum, arriba a la derecha: los primeros rebotes son más cortos cada vez y la trayectoria avanza más deprisa hacia el centro, 14 pasos. RMSProp, abajo a la izquierda: una curva suave que baja en diagonal y luego sigue el eje, sin rebotar, 31 pasos. Adam, abajo a la derecha: una recta en diagonal a cuarenta y cinco grados hasta el eje y luego a lo largo de él, con todos los pasos de la misma longitud, 36 pasos."
+    width="726"
+    height="470"
+  />
+  <figcaption>
+    Los cuatro métodos sobre el mismo cañón, desde el mismo punto, veinte pasos dibujados y el
+    total hasta el fondo en cada etiqueta. Momentum lleva $\beta = 0{,}5$ y no el $0{,}9$
+    habitual porque el $0{,}9$ está pensado para cañones unas setenta veces más estrechos que
+    éste, y aquí se pasa de frenada en la dirección plana. RMSProp y Adam dan pasos de la misma
+    longitud en las dos coordenadas: la diagonal a $45$ grados es la firma del reescalado.
+  </figcaption>
+</figure>
+
+Mira los pasos hasta el fondo antes de sacar conclusiones: Adam tarda $36$ y el descenso $35$.
+Sobre un cañón de $\kappa = 20$ con la tasa bien elegida, Adam no es más rápido. Su ventaja es
+otra, y para verla hay que cambiar el cañón sin cambiar la tasa.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/misma-tasa-dos-canones.svg"
+    alt="Dos mapas de contorno con la misma trayectoria de Adam encima, treinta pasos en línea recta: diagonal a cuarenta y cinco grados desde arriba a la izquierda hasta el eje horizontal y luego hacia el centro. A la izquierda el cañón es x² más veinte y², con elipses alargadas. A la derecha es x² más dos mil y², cien veces más estrecho: los contornos son casi rayas horizontales y el fondo es una rendija. Los treinta pasos son idénticos en los dos dibujos. Las etiquetas dicen que Adam llega en 36 y 75 pasos con la misma tasa 0,1, y que el descenso de gradiente necesita 35 pasos con tasa 0,045 en el primero y 3619 pasos con tasa 0,00045 en el segundo."
+    width="726"
+    height="225"
+  />
+  <figcaption>
+    A la derecha, el mismo cañón cien veces más estrecho. El descenso de gradiente necesita una
+    tasa cien veces menor para no divergir, y con ella tarda $3\,619$ pasos. Adam da los mismos
+    treinta pasos que a la izquierda, con la misma $\eta = 0{,}1$, y llega en $75$. No ha hecho
+    falta tocar nada.
+  </figcaption>
+</figure>
+
+Eso es lo que compra Adam: no velocidad sobre un problema conocido, sino independencia de la
+curvatura sobre uno desconocido. Una red tiene millones de cañones de anchuras distintas dentro, y
+nadie va a medir ninguno.
+
+## La W: un error de regularización que duró tres años
+
+Casi todos los modelos se entrenan con **decaimiento de pesos**: en cada paso, además de restar el
+gradiente, se encoge cada peso un poco hacia cero, $\theta \leftarrow \theta - \eta\lambda\,\theta$,
+para que ninguno crezca sin control. Con descenso de gradiente eso es idéntico a añadir a la pérdida
+un término $\tfrac{\lambda}{2}\lVert\theta\rVert^{2}$, la **regularización L2**, porque el
+gradiente de ese término es $\lambda\theta$ y restarlo con $\eta$ da la misma fórmula. Dos nombres,
+un algoritmo, y durante décadas nadie tuvo que distinguirlos.
+
+Con Adam dejan de ser lo mismo, y la cuenta lo enseña. Si el decaimiento entra como término de la
+pérdida, entra en $\mathbf{g}$, y de ahí en $\mathbf{m}$ y en $\mathbf{v}$: pasa por la división.
+Para un parámetro con gradientes históricamente grandes, $\sqrt{\hat{\mathbf{v}}}$ es grande y su
+$\lambda\theta$ sale dividido por un número grande: apenas decae. Para uno con gradientes pequeños,
+decae entero. La fuerza de la regularización pasa a depender de la historia del gradiente de cada
+peso, y en el sentido contrario al razonable: los pesos que más se mueven son los que menos se
+frenan.
+
+[Loshchilov y Hutter](https://arxiv.org/abs/1711.05101) lo señalaron en noviembre de 2017 y
+propusieron sacar el decaimiento de la división:
+
+$$
+\theta_{t+1} = \theta_t - \eta\left(\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{v}}_t} + \varepsilon} + \lambda\,\theta_t\right).
+$$
+
+Eso es AdamW, y la W es *weight decay*, desacoplado. La diferencia con la fórmula anterior es dónde
+está $\lambda\theta_t$: fuera del cociente, en lugar de dentro de $\mathbf{g}$. En ese momento
+había [un resultado de ese mismo año](https://arxiv.org/abs/1705.08292) según el cual Adam
+generalizaba peor que SGD con momentum en visión, y buena parte de esa diferencia era esto: Adam
+se estaba regularizando mal. Con el decaimiento desacoplado la distancia se cerró en las tareas
+que probaron. El $0{,}1$ de la tabla del principio es el $\lambda$ de esta fórmula, y va
+multiplicado por $\eta$: con $\eta = 3 \cdot 10^{-4}$, cada peso se encoge tres cienmilésimas por
+paso.
+
+## Por qué AdamW, y por qué con esos números
+
+Hasta aquí la respuesta genérica: Adam junta las dos ideas y AdamW arregla su regularización. La
+pregunta concreta es por qué un *transformer* no se entrena con SGD con momentum, que en visión
+funcionó durante años y guarda un solo vector de estado en lugar de dos, y la respuesta ha tardado
+en llegar.
+
+Está en las palabras raras, que son casi todas. La pérdida de un modelo de lenguaje es una media
+sobre tokens, y los tokens siguen la ley de Zipf: unos pocos aparecen en cada lote y la inmensa
+mayoría, una vez cada muchos miles. Los parámetros que sólo tocan a un token raro, su fila en la
+matriz de *embeddings* y su fila en la capa de salida, reciben gradientes minúsculos en promedio,
+y con SGD un gradiente minúsculo es un paso minúsculo. Esos parámetros no aprenden, y la pérdida
+sobre los tokens raros, que son la mayor parte del vocabulario, no baja.
+[Kunstner y otros](https://arxiv.org/abs/2402.19449) lo midieron en 2024 clase por clase, y es el
+problema de AdaGrad tal cual: una tasa por parámetro es lo que hace que la fila de una palabra rara
+avance tanto por paso como la de una frecuente. A eso se suma que el ruido del gradiente en un
+modelo con atención tiene
+[colas pesadas](https://arxiv.org/abs/1912.03194), lotes ocasionales con gradientes enormes, y
+que la escala de los gradientes difiere en órdenes de magnitud entre los *embeddings*, las matrices
+de atención y las normalizaciones. Son cañones dentro de cañones, y SGD tiene una sola $\eta$
+para todos.
+
+Los números de la tabla responden cada uno a un fallo con nombre.
+
+**$\beta_2 = 0{,}95$ y no el $0{,}999$ del artículo original.** La memoria de $\mathbf{v}$ es de
+$1/(1 - \beta_2)$ pasos: mil con $0{,}999$, veinte con $0{,}95$. Con mil pasos de memoria, cuando
+un lote trae de pronto un gradiente grande en alguna coordenada, $\mathbf{v}$ tarda cientos de pasos
+en enterarse, y mientras tanto $\hat{\mathbf{m}}/\sqrt{\hat{\mathbf{v}}}$ vale mucho más de $1$
+en esa coordenada: un paso enorme, y la pérdida da un salto. Son los picos de pérdida que
+[desvelan a todos los que entrenan a esta escala](https://arxiv.org/abs/2304.09871). Con veinte
+pasos de memoria, $\mathbf{v}$ reacciona antes. GPT-3 puso $0{,}95$ y nadie ha tenido motivo para
+volver.
+
+**Recorte del gradiente a norma $1$.** Antes de que $\mathbf{g}$ entre en $\mathbf{m}$ y
+$\mathbf{v}$, si su norma supera $1$ se reescala a $1$. Es la otra defensa contra las colas pesadas:
+un lote atípico no puede empujar las medias.
+
+**$\varepsilon$.** En el artículo original vale $10^{-8}$; Llama 2 usó $10^{-5}$, y
+[OLMo 2](https://arxiv.org/abs/2501.00656) volvió a $10^{-8}$ porque con $10^{-5}$ los parámetros
+cuyos gradientes son menores que eso, que en un modelo grande son muchos, ven su paso frenado por
+el $\varepsilon$ en lugar de por $\sqrt{\hat{\mathbf{v}}}$. Un número que existe para evitar una
+división por cero acaba decidiendo cuánto aprenden los parámetros más silenciosos.
+
+**Calentamiento.** La corrección de sesgo arregla la media de $\hat{\mathbf{v}}$ en los primeros
+pasos, no su varianza: estimada con tres o cuatro gradientes, $\hat{\mathbf{v}}$ es tan ruidosa que
+el cociente puede dar pasos grandes en direcciones equivocadas.
+[El análisis de RAdam](https://arxiv.org/abs/1908.03265) mostró que subir la tasa linealmente
+desde cero durante los primeros miles de pasos es exactamente una cura para eso. Llama 2 calienta
+$2\,000$ pasos; Llama 3, $8\,000$.
+
+**Calendario.** Después del calentamiento, coseno hasta el $10$ % de la tasa máxima en GPT-3 y en
+Llama, o un tramo constante largo seguido de un enfriamiento en DeepSeek-V3 y Kimi K2, que
+mantienen la tasa fija durante los primeros diez billones de tokens y sólo entonces la bajan.
+[Las dos formas dan resultados equivalentes](https://arxiv.org/abs/2405.18392), y las dos son la
+segunda condición de Robbins y Monro hecha barata: estar en la tasa más alta que aguanta el
+entrenamiento la mayor parte del tiempo, y bajarla al final para asentar el temblor.
+
+Queda la factura. $\mathbf{m}$ y $\mathbf{v}$ son dos vectores del tamaño del modelo, y para
+$405$ mil millones de parámetros en precisión simple ocupan $3{,}2$ TB: cuarenta H100 de $80$ GB
+dedicadas a recordar. Esa factura es donde empieza la última sección.
+
+## Lo que viene después: por matriz, no por coordenada
+
+Adam cuesta dos cosas, memoria y una aproximación diagonal, y lo que se ha propuesto desde
+entonces ataca una de las dos.
+
+**Menos memoria.** [Adafactor](https://arxiv.org/abs/1804.04235), de 2018, no guarda
+$\mathbf{v}$ entero para una matriz de pesos de $m \times n$: guarda las sumas por filas y por
+columnas, $m + n$ números en lugar de $mn$, y reconstruye la matriz como su producto. T5 se entrenó
+así. [Adam en 8 bits](https://arxiv.org/abs/2110.02861) guarda $\mathbf{m}$ y $\mathbf{v}$
+cuantizados. [Lion](https://arxiv.org/abs/2302.06675), de 2023, encontrado por búsqueda automática
+entre programas, se queda sólo con momentum y usa como paso el signo de una mezcla del momentum y
+el gradiente: un vector de estado en lugar de dos, y el signo es el caso extremo del reescalado
+de Adam, en el que todo paso mide exactamente $\eta$.
+
+**Más curvatura.** Aquí está lo que ha cambiado la tabla. Adam trata los $mn$ números de una
+matriz de pesos como $mn$ parámetros sin relación entre sí, y no lo son: la matriz multiplica un
+vector, y su gradiente $\mathbf{G}$ es también una matriz, con filas y columnas que significan
+algo. [Shampoo](https://arxiv.org/abs/1802.09568), también de 2018, precondiciona con dos matrices
+pequeñas en lugar de con una diagonal, una a cada lado:
+
+$$
+\mathbf{L}_t = \mathbf{L}_{t-1} + \mathbf{G}_t\mathbf{G}_t^{\top},
+\qquad
+\mathbf{R}_t = \mathbf{R}_{t-1} + \mathbf{G}_t^{\top}\mathbf{G}_t,
+\qquad
+\mathbf{W}_{t+1} = \mathbf{W}_t - \eta\,\mathbf{L}_t^{-1/4}\,\mathbf{G}_t\,\mathbf{R}_t^{-1/4}.
+$$
+
+$\mathbf{L}$ es de $m \times m$ y $\mathbf{R}$ de $n \times n$: para una matriz cuadrada, el doble
+de memoria que Adam y no el cuadrado, y a cambio una aproximación de $H^{-1}$ que ya no es
+diagonal. Costó seis años hacerla correr a escala, y
+[en 2024 ganó la competición AlgoPerf](https://mlcommons.org/2024/08/mlc-algoperf-benchmark-competition/)
+entrenando un $28$ % más rápido que la referencia, un AdamW con momentum de Nesterov. [SOAP](https://arxiv.org/abs/2409.11321)
+mete Adam dentro de la base que calcula Shampoo.
+
+**Muon** hace algo más radical con la misma premisa. En lugar de precondicionar el gradiente,
+coge la matriz de momentum $\mathbf{M}_t$ de cada matriz de pesos y la sustituye por la matriz
+ortogonal más cercana: si $\mathbf{M}_t = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\top}$ es su
+descomposición en valores singulares, el paso es
+
+$$
+\mathbf{W}_{t+1} = \mathbf{W}_t - \eta\,\mathbf{U}\mathbf{V}^{\top},
+$$
+
+la misma matriz con todos sus valores singulares puestos a $1$. Calcular esa descomposición sería
+caro; [la entrada de blog de diciembre de 2024](https://kellerjordan.github.io/posts/muon/) que
+lo propuso la aproxima con cinco iteraciones de un polinomio en $\mathbf{M}\mathbf{M}^{\top}$,
+sólo productos de matrices, en precisión baja. Compara con lo anterior: Lion normaliza cada número,
+Adam normaliza cada coordenada por su magnitud reciente, y Muon normaliza cada matriz por su
+espectro. Es el mismo reescalado un nivel más arriba. Y el argumento de por qué ayuda es el cañón
+otra vez, dentro de cada matriz: el gradiente de una capa de un *transformer* es casi de rango
+bajo, unas pocas direcciones lo dominan, y ortogonalizarlo da a las direcciones raras el mismo
+tamaño de paso que a las dominantes. [Hay una lectura](https://arxiv.org/abs/2409.20325) que pone
+los tres en la misma fórmula: cada uno es el descenso más empinado bajo una norma distinta, y
+elegir el optimizador es elegir qué significa «un paso de tamaño $\eta$».
+
+Muon sólo existe para matrices. Los *embeddings*, la capa de salida, los sesgos y los pesos de las
+normalizaciones siguen con AdamW en todos los modelos que lo usan, y por eso las tres últimas filas
+de la tabla son, en rigor, Muon y AdamW a la vez. Lo que
+[llevó Muon de un experimento a un modelo de producción](https://arxiv.org/abs/2502.16982) fueron
+dos añadidos de febrero de 2025: decaimiento de pesos, y un reajuste de la escala del paso para
+que la $\eta$ y el $\lambda$ de AdamW valgan sin volver a buscarlos. Con eso, Moonshot entrenó un
+modelo de $16$ mil millones de parámetros con $5{,}7$ billones de tokens y reportó el doble de
+eficiencia de cómputo que AdamW. Cinco meses después, Kimi K2: un billón de parámetros, $15{,}5$
+billones de tokens y, según su informe, ni un solo pico de pérdida. Luego GLM-5 y DeepSeek-V4, que
+lo justifica con dos palabras, convergencia y estabilidad.
+
+**Sin calendario.** La otra línea no toca la dirección del paso sino el resto de la receta.
+[Schedule-Free AdamW](https://arxiv.org/abs/2405.15682) sustituye el calendario de tasa por un
+promedio de los puntos por los que pasa la trayectoria, y ganó la modalidad sin ajuste de
+hiperparámetros de la misma AlgoPerf. Es la única de estas propuestas que quita un número en lugar
+de añadir una idea.
+
+Conviene terminar con la medida honrada.
+[La comparación más cuidadosa hasta la fecha](https://arxiv.org/abs/2509.02046), once
+optimizadores con la tasa de aprendizaje ajustada para cada uno, de $0{,}1$ a $1{,}2$ mil millones
+de parámetros, encontró que las mejoras anunciadas, de $1{,}4$ a $2$ veces, venían en parte de
+comparar con un AdamW mal ajustado; que las mejoras reales existen y son todas de los métodos que
+precondicionan por matriz, Muon, SOAP y sus parientes; y que valen $1{,}4$ veces en el modelo más
+pequeño y $1{,}1$ en el más grande, encogiéndose al crecer el modelo. Un $10$ % del cómputo de un
+entrenamiento de frontera sigue siendo mucho dinero, y la estabilidad que DeepSeek cita no se mide
+en esa tabla. Pero el cuadro es más modesto que los anuncios y más firme que el escepticismo: las
+mejoras son de las matrices, y son las que quedan.
+
+## Qué te llevas
+
+Si te llevas una sola cosa, que sea ésta: **el optimizador de los modelos de lenguaje no se eligió
+por bueno, se eligió por pagable.** Newton tenía la curvatura de cada dirección y la resolvía en un
+paso; a esta escala no cabe en ningún sitio y no sobrevive al ruido. Todo lo que ha pasado desde
+Cauchy es recomprar a plazos lo que Newton tenía gratis: momentum promediando en el tiempo, RMSProp
+reescalando por coordenada, Adam con las dos, AdamW arreglando lo que el reescalado había roto, y
+Muon reescalando por matriz. La regla del descenso de gradiente no ha cambiado ni una letra. Lo que
+cambia, cada vez, es qué se puede pagar por paso.
+
+Y si te llevas tres cosas más, que sean prácticas.
+
+**Los valores por defecto no son arbitrarios, y saber a qué responden te dice cuándo tocarlos.**
+$\beta_2 = 0{,}95$ es contra los picos; el recorte a $1$, contra los lotes atípicos; el
+calentamiento, contra la varianza de $\mathbf{v}$ al arrancar; el decaimiento de la tasa, la
+condición de Robbins y Monro; el $0{,}1$ de decaimiento de pesos, la regularización que Adam sin la
+W aplicaba al revés. Si entrenas algo pequeño y tranquilo, el $0{,}999$ original de $\beta_2$ es
+razonable; si ves picos, ya sabes qué número mirar primero.
+
+**La tasa de aprendizaje sigue siendo el número.** En Adam va en unidades del parámetro, así que
+$3 \cdot 10^{-4}$ significa que, casi siempre, ningún peso se mueve más de eso por paso, y ese
+significado no depende del modelo. Antes de probar otro optimizador, barre $\eta$: buena parte de
+las mejoras anunciadas en los últimos años se explicaban con un AdamW al que nadie había barrido la
+suya.
+
+**Si ajustas un modelo que no es tuyo, la memoria del optimizador decide si cabe.** $\mathbf{m}$ y
+$\mathbf{v}$ ocupan el doble que los pesos, y cada respuesta que has visto a eso, LoRA, Adam en 8
+bits, Adafactor, es una forma de no pagar la factura de la sección de Adam. Y si lo que entrenas
+son matrices, Muon para las matrices y AdamW para el resto es, hoy, lo que hacen tres de los
+modelos más grandes que se han publicado.
+
+Volvamos a la tabla. Cuatro laboratorios escribieron el mismo párrafo porque llegaron al mismo
+precio. Tres lo han reescrito porque encontraron cómo pagar un poco más de lo que Newton tenía
+gratis: no la curvatura de cada coordenada, sino la de cada matriz. El descenso de gradiente sigue
+siendo restar el gradiente. Lo que ha cambiado, otra vez, es qué cabe en un paso.

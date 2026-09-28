@@ -28,6 +28,7 @@ function summary(over: Partial<CourseProgressSummary> = {}): CourseProgressSumma
     completedLessons:   0,
     percentComplete:    0,
     lastSeenLessonSlug: null,
+    lastSeenAt:         null,
     enrolledAt:         "2026-01-01T00:00:00.000Z",
     completedAt:        null,
     ...over,

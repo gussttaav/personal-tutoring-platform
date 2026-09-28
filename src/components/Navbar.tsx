@@ -5,17 +5,24 @@
  *
  * - Desktop: brand + nav links (lg+) + auth dropdown with pack credits + locale pill
  * - Mobile:  brand + hamburger → full-width panel with icons, unified bottom strip
+ *
+ * REDESIGN-P0-01: four items — Inicio · Cursos · Mentoría · Blog. «Mentoría» is a page
+ * (`/mentoria`) now, not an anchor into `/`, so the `/#sessions` interception and the
+ * `useSessionsAnchor` hook behind it are gone: reaching the mentoring offer is a navigation
+ * like any other. «Inicio» takes the `match: "/"` slot Mentoría used to hold.
+ *
+ * NAV-BP-01: the hamburger/panel breakpoint is `lg`, not `sm` — the desktop link row only
+ * appears at `lg:flex` (≥1024), so `sm:hidden` (<640) left 640–1023 (tablets) with no way to
+ * reach the nav links at all.
  */
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
-import { useSessionsAnchor } from "@/hooks/useSessionsAnchor";
 import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useUserSession } from "@/hooks/useUserSession";
 import { signInWithPopup } from "@/lib/auth-popup";
-import ComingSoonModal from "@/components/ComingSoonModal";
 import BrandLogo from "@/components/BrandLogo";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
@@ -27,22 +34,24 @@ export default function Navbar() {
   const t = useTranslations("nav");
   const { data: session, status, update } = useSession();
   const { packSession } = useUserSession();
-  const [mobileOpen,     setMobileOpen]     = useState(false);
-  const [comingSoonModal, setComingSoonModal] = useState<"blog" | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // COURSE-P6-03: `usePathname` from @/i18n/navigation returns the pathname with the locale
   // prefix already stripped, so "/en/cursos" and "/cursos" both read as "/cursos" — one match
   // rule for both locales.
   const pathname = usePathname();
-  const onSessionsClick = useSessionsAnchor();
 
-  // `match` is the route that makes an item CURRENT. Mentoría's is "/" because the landing
-  // page IS the mentoring offering — `#sessions` is a section of it, not a page of its own.
-  // Blog has none: it opens a modal and is never anywhere.
+  // `match` is the route that makes an item CURRENT. "/" is the exact-match case (see
+  // `isActive`); every other route is a prefix match, so a lesson is still "inside" Cursos.
+  //
+  // BLOG-01: Blog now has one too. It used to have none — it opened a ComingSoonModal and
+  // was never anywhere — so it was the one item the rule below could not apply to. With a
+  // real page behind it, every item is marked by the same rule.
   const NAV_LINKS = [
-    { label: t("courses"),   href: "/cursos",    match: "/cursos",               icon: "menu_book" },
-    { label: t("mentoring"), href: "/#sessions", match: "/",                     icon: "group"     },
-    { label: t("blog"),      href: "#",          comingSoon: "blog"    as const, icon: "edit_note" },
+    { label: t("home"),      href: "/",          match: "/",         icon: "home"      },
+    { label: t("courses"),   href: "/cursos",    match: "/cursos",   icon: "menu_book" },
+    { label: t("mentoring"), href: "/mentoria",  match: "/mentoria", icon: "group"     },
+    { label: t("blog"),      href: "/blog",      match: "/blog",     icon: "edit_note" },
   ];
 
   // ONE visual rule: the current item is green and underlined, and nothing else is emphasised.
@@ -51,8 +60,7 @@ export default function Navbar() {
   // while the current page was marked in white — and two rules meant the two items could never
   // render alike: clicking Cursos gave you white + underline, clicking Mentoría gave you green
   // and no underline, for what a reader experiences as the same act. Colour now means exactly
-  // one thing. The landing page looks as it always did (Mentoría green) because there it IS
-  // the current item; the difference is that it stops claiming to be one anywhere else.
+  // one thing: the item whose page you are on.
   const isActive = (match?: string) =>
     match === "/"
       ? pathname === "/"
@@ -80,27 +88,10 @@ export default function Navbar() {
     window.dispatchEvent(new CustomEvent("close-booking-overlay"));
   };
 
-  const handleNavLinkClick = (
-    e: React.MouseEvent,
-    href: string,
-    comingSoon?: "blog",
-  ) => {
-    // COURSE-P6-03: every branch closes the mobile panel, including the plain-navigation
-    // one that "Cursos" now takes — otherwise the panel stays open over the page it just
-    // client-side navigated to.
+  const handleNavLinkClick = () => {
+    // COURSE-P6-03: every nav item is a plain navigation and every one closes the mobile
+    // panel — otherwise the panel stays open over the page it just client-side navigated to.
     setMobileOpen(false);
-
-    if (comingSoon) {
-      e.preventDefault();
-      setComingSoonModal(comingSoon);
-      return;
-    }
-    // "Mentoría" is a section of the landing page, not a page. One shared handler so it
-    // behaves identically from here and from the Footer — see useSessionsAnchor.
-    if (href === "/#sessions") {
-      onSessionsClick(e);
-      return;
-    }
   };
 
   // ── Shared mobile nav-item style helpers ────────────────────────────────────
@@ -142,7 +133,7 @@ export default function Navbar() {
             className="hidden lg:flex items-center gap-8"
             style={{ fontFamily: "var(--font-headline, Manrope), sans-serif", fontWeight: 600 }}
           >
-            {NAV_LINKS.map(({ label, href, comingSoon, match }) => {
+            {NAV_LINKS.map(({ label, href, match }) => {
               const active = isActive(match);
               const restColor = active ? "#4edea3" : "rgba(229,225,228,0.6)";
               return (
@@ -156,7 +147,7 @@ export default function Navbar() {
                     paddingBottom: "2px",
                     borderBottom: active ? "2px solid #4edea3" : "2px solid transparent",
                   }}
-                  onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
+                  onClick={handleNavLinkClick}
                   onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
                   onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = restColor; }}
                 >
@@ -178,10 +169,7 @@ export default function Navbar() {
                   className="flex items-center gap-3 cursor-pointer"
                   style={{ paddingLeft: "16px", borderLeft: "1px solid rgba(60,74,66,0.4)" }}
                 >
-                  <div className="hidden sm:block text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-widest leading-none mb-1" style={{ color: "#bbcabf" }}>
-                      {t("personalArea")}
-                    </p>
+                  <div className="hidden sm:block">
                     <p className="text-sm font-semibold" style={{ color: "#e5e1e4" }}>
                       {user.name?.split(" ")[0] ?? t("user")}
                     </p>
@@ -301,7 +289,7 @@ export default function Navbar() {
 
           {/* ── Hamburger button (mobile) ── */}
           <button
-            className="sm:hidden flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
+            className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg transition-colors"
             style={{ background: mobileOpen ? "rgba(78,222,163,0.08)" : "transparent", border: "none", cursor: "pointer", color: "#e5e1e4" }}
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
@@ -317,7 +305,7 @@ export default function Navbar() {
       {/* ── Mobile panel ── */}
       {mobileOpen && (
         <div
-          className="sm:hidden"
+          className="lg:hidden"
           style={{
             background: "rgba(19,19,21,0.97)",
             backdropFilter: "blur(20px)",
@@ -397,14 +385,14 @@ export default function Navbar() {
 
                 <hr style={{ borderColor: "rgba(255,255,255,0.05)", margin: "4px 0" }} />
 
-                {NAV_LINKS.map(({ label, href, comingSoon, icon, match }) => {
+                {NAV_LINKS.map(({ label, href, icon, match }) => {
                   const active = isActive(match);
                   return (
                     <Link
                       key={label}
                       href={href}
                       aria-current={active ? "page" : undefined}
-                      onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
+                      onClick={handleNavLinkClick}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                       style={{
                         ...mobileNavItemBase,
@@ -450,14 +438,14 @@ export default function Navbar() {
             <>
               {/* Nav links with icons */}
               <nav className="px-2 pt-2">
-                {NAV_LINKS.map(({ label, href, comingSoon, icon, match }) => {
+                {NAV_LINKS.map(({ label, href, icon, match }) => {
                   const active = isActive(match);
                   return (
                     <Link
                       key={label}
                       href={href}
                       aria-current={active ? "page" : undefined}
-                      onClick={(e) => handleNavLinkClick(e, href, comingSoon)}
+                      onClick={handleNavLinkClick}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                       style={{
                         ...mobileNavItemBase,
@@ -511,13 +499,6 @@ export default function Navbar() {
             </>
           )}
         </div>
-      )}
-
-      {comingSoonModal && (
-        <ComingSoonModal
-          type={comingSoonModal}
-          onClose={() => setComingSoonModal(null)}
-        />
       )}
     </nav>
   );

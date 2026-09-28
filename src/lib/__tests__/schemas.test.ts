@@ -71,8 +71,22 @@ describe("CourseManifestSchema", () => {
     expect(
       CourseManifestSchema.parse({ ...valid, heroMotif: "attention-matrix" }).heroMotif,
     ).toBe("attention-matrix");
+    // COURSE-C2-P0-01: the second course's motif.
+    expect(
+      CourseManifestSchema.parse({ ...valid, heroMotif: "agent-loop" }).heroMotif,
+    ).toBe("agent-loop");
     expect(CourseManifestSchema.parse(valid).heroMotif).toBeUndefined();
     expect(() => CourseManifestSchema.parse({ ...valid, heroMotif: "spirals" })).toThrow();
+  });
+
+  // COURSE-ACCENT-01: same contract as heroMotif — optional, enum-closed, absent is legal
+  // (the catalog card then falls back to the site's emerald).
+  it("accepts an optional accent and rejects an unknown one", () => {
+    for (const hue of ["emerald", "cyan", "amber"] as const) {
+      expect(CourseManifestSchema.parse({ ...valid, accent: hue }).accent).toBe(hue);
+    }
+    expect(CourseManifestSchema.parse(valid).accent).toBeUndefined();
+    expect(() => CourseManifestSchema.parse({ ...valid, accent: "chartreuse" })).toThrow();
   });
 
   it("rejects a prose field flattened to a bare string (shape changed in landing-refinements)", () => {

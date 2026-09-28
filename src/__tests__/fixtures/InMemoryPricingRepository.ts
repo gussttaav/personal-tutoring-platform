@@ -11,6 +11,8 @@ const DEFAULTS: Record<ProductKey, number> = {
 
 export class InMemoryPricingRepository implements IPricingRepository {
   private store = new Map<ProductKey, PriceRecord>();
+  // PRICING-STUDENT-01: sparse per-student overrides, keyed `${userId}:${key}`.
+  private overrides = new Map<string, PriceRecord>();
   private settings: PricingSettings = {
     packValidityDays: 180,
     updatedAt:        new Date().toISOString(),
@@ -57,5 +59,32 @@ export class InMemoryPricingRepository implements IPricingRepository {
       updatedAt:        new Date().toISOString(),
       updatedBy:        settings.updatedBy,
     };
+  }
+
+  // ─── PRICING-STUDENT-01: per-student overrides ──────────────────────────────
+
+  async listForUser(userId: string): Promise<PriceRecord[]> {
+    return Array.from(this.overrides.entries())
+      .filter(([k]) => k.startsWith(`${userId}:`))
+      .map(([, v]) => v);
+  }
+
+  async upsertForUser(
+    userId: string,
+    key: ProductKey,
+    amountCents: number,
+    updatedBy: string,
+  ): Promise<void> {
+    this.overrides.set(`${userId}:${key}`, {
+      productKey: key,
+      amountCents,
+      currency:   "eur",
+      updatedAt:  new Date().toISOString(),
+      updatedBy,
+    });
+  }
+
+  async deleteForUser(userId: string, key: ProductKey): Promise<void> {
+    this.overrides.delete(`${userId}:${key}`);
   }
 }

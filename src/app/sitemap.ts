@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { listLessons } from "@/lib/courses/registry";
 import { catalogLocales, courseLocales, listCatalogEntries } from "@/lib/courses/catalog-view";
+import { listPosts } from "@/lib/blog/registry";
+import { blogLocales, postLocales } from "@/lib/blog/locales";
 import { availableLocaleAlternates } from "@/lib/hreflang";
 
 /**
@@ -29,12 +31,17 @@ import { availableLocaleAlternates } from "@/lib/hreflang";
  * sitemap and the pages' `alternates` cannot disagree. The LESSON loop still uses
  * `listLessons(slug, locale)`, so a lesson URL is listed only in the locales its MDX exists
  * in: no `/en/cursos/dl-nlp/<slug>` and no `en` lesson alternate while `en/` is empty.
+ *
+ * BLOG-01: blog routes follow the same registry-driven rule — `/blog` for every locale
+ * whose index has a published post, then each published post in each locale it exists
+ * in. Drafts never appear because `listPosts` is published-only, and a post that exists
+ * in one locale advertises no alternate in the other.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
 
   // ─── Static marketing/legal routes — both locales always exist ──────────────
-  const staticRoutes = ["", "/privacidad", "/terminos", "/eliminar-cuenta"];
+  const staticRoutes = ["", "/mentoria", "/privacidad", "/terminos", "/eliminar-cuenta"];
   const staticEntries = staticRoutes.flatMap((route) => {
     const languages = {
       es: `${base}${route}`,
@@ -88,7 +95,28 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   }
 
-  return [...staticEntries, ...courseEntries];
+  // ─── Blog routes — registry-driven, published + locale-aware ────────────────
+  const blogEntries: MetadataRoute.Sitemap = [];
+
+  // The index `/blog` is listed for every locale that has >= 1 published post.
+  const blogIn = blogLocales();
+  for (const locale of blogIn) {
+    const languages = absolute("/blog", locale, blogIn);
+    blogEntries.push({ url: `${base}${localePrefix(locale)}/blog`, alternates: { languages } });
+  }
+
+  for (const locale of routing.locales) {
+    for (const post of listPosts(locale)) {
+      const postRoute = `/blog/${post.slug}`;
+      blogEntries.push({
+        url: `${base}${localePrefix(locale)}${postRoute}`,
+        lastModified: post.updated ?? post.date,
+        alternates: { languages: absolute(postRoute, locale, postLocales(post.slug)) },
+      });
+    }
+  }
+
+  return [...staticEntries, ...courseEntries, ...blogEntries];
 }
 
 /** URL prefix for a locale under the `as-needed` rule: default is unprefixed. */

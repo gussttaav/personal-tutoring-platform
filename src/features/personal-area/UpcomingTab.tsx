@@ -8,13 +8,16 @@
  * retired weekly calendar's context menu was the only way to act on a booking
  * that was not the soonest one: a student with three sessions booked could not
  * touch the second or third from this page.
+ *
+ * The empty-state CTA and every «Reprogramar» open their booking screen in place
+ * (useBookingActions.ts); they used to `router.push` into `/mentoria?book=` / `?reschedule=`.
  */
 
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import CancelSessionFlow from "./CancelSessionFlow";
 import { dateTile, sessionTypeKey, timeRange, weekdayName } from "./session-display";
 import type { UserBooking } from "./types";
+import { useBookingActions } from "./useBookingActions";
 
 interface UpcomingTabProps {
   bookings:    UserBooking[];
@@ -23,7 +26,7 @@ interface UpcomingTabProps {
 
 export default function UpcomingTab({ bookings, onCancelled }: UpcomingTabProps) {
   const t = useTranslations("areaPersonal.upcoming");
-  const router = useRouter();
+  const { openBooking } = useBookingActions();
 
   if (bookings.length === 0) {
     return (
@@ -36,7 +39,7 @@ export default function UpcomingTab({ bookings, onCancelled }: UpcomingTabProps)
         <button
           type="button"
           className="pa-btn pa-btn--primary pa-btn--lg"
-          onClick={() => router.push("/?book=free15min")}
+          onClick={() => openBooking("free15min")}
         >
           <span className="material-symbols-outlined" aria-hidden="true">calendar_add_on</span>
           {t("emptyCta")}
@@ -61,7 +64,7 @@ function UpcomingItem({ booking, onCancelled }: { booking: UserBooking; onCancel
   const tSession = useTranslations("areaPersonal.nextSession");
   const tCommon  = useTranslations("common");
   const locale   = useLocale() as "es" | "en";
-  const router   = useRouter();
+  const { openReschedule } = useBookingActions();
 
   const { day, month } = dateTile(booking.startsAt, locale);
   const typeKey = sessionTypeKey(booking.sessionType);
@@ -116,7 +119,7 @@ function UpcomingItem({ booking, onCancelled }: { booking: UserBooking; onCancel
               className="pa-iconbtn"
               title={t("reschedule")}
               aria-label={t("reschedule")}
-              onClick={() => router.push(`/?reschedule=${booking.sessionType}&token=${booking.token}`)}
+              onClick={() => openReschedule(booking)}
             >
               <span className="material-symbols-outlined" aria-hidden="true">event_repeat</span>
             </button>

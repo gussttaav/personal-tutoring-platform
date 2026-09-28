@@ -31,6 +31,15 @@ import {
   type CorpusWidgetId,
 } from "@/features/courses/widgets/corpora";
 import { buildBagOfWords, MAX_TOKENS_PER_DOC } from "@/features/courses/widgets/math/bag-of-words";
+import {
+  BPE_WIDGET_MAX_MERGES,
+  BPE_WIDGET_MIN_FREQ,
+  encode,
+  tokenLabel,
+  trainBpe,
+  utf8,
+  vocabulary,
+} from "@/features/courses/widgets/math/bpe-merges";
 import { HEADS } from "@/features/courses/widgets/math/multi-head";
 import {
   MAX_LABEL_CHARS,
@@ -97,7 +106,13 @@ describe("widget corpora — selection", () => {
 
   it("names real widgets in SPANISH_BOUND_CORPORA, and none that has a corpus here", () => {
     for (const [id, reason] of Object.entries(SPANISH_BOUND_CORPORA)) {
-      expect(WIDGET_IDS).toContain(id);
+      // COURSE-C2-P0-03: a `/` key is a course asset under public/, not a widget id —
+      // it has to exist on disk, exactly as a widget id has to exist in WIDGET_IDS.
+      if (id.includes("/")) {
+        expect(fs.existsSync(path.join(process.cwd(), "public", id))).toBe(true);
+      } else {
+        expect(WIDGET_IDS).toContain(id);
+      }
       expect(ids).not.toContain(id);
       expect(reason.length).toBeGreaterThan(40);
     }
@@ -169,6 +184,76 @@ describe("widget corpora — bag-of-words keeps its teaching property", () => {
       expect(Math.max(...total)).toBeGreaterThanOrEqual(4);
     },
   );
+});
+
+describe("widget corpora — bpe-merges keeps its teaching property", () => {
+  const entry = WIDGET_CORPORA["bpe-merges"].byLocale;
+  const run = (locale: string) => {
+    const { corpus, sentence } = entry[locale];
+    const { merges, stop } = trainBpe(corpus, BPE_WIDGET_MAX_MERGES, BPE_WIDGET_MIN_FREQ);
+    const vocab = vocabulary(merges);
+    const spell = (id: number) => tokenLabel(vocab[id]).text;
+    return { corpus, sentence, merges, stop, vocab, spell };
+  };
+
+  it.each(Object.keys(entry))("in %s merge 1 fuses the two bytes of one letter", (locale) => {
+    const { merges, spell } = run(locale);
+    const [a, b] = merges[0].pair;
+    expect(a).toBeGreaterThanOrEqual(0xc2); // a UTF-8 lead byte…
+    expect(b).toBeGreaterThanOrEqual(0x80); // …and its continuation byte
+    expect(b).toBeLessThan(0xc0);
+    expect(tokenLabel([a]).valid).toBe(false);
+    expect(Array.from(spell(merges[0].id))).toHaveLength(1);
+  });
+
+  it.each(Object.keys(entry))("in %s a suffix is built by later merges", (locale) => {
+    const { merges, spell } = run(locale);
+    expect(merges.map((m) => spell(m.id))).toContain(locale === "es" ? "ción" : "tion");
+  });
+
+  it.each(Object.keys(entry))(
+    "in %s the sentence has unseen words, cut into learned pieces, in fewer tokens than bytes",
+    (locale) => {
+      const { corpus, sentence, merges, vocab } = run(locale);
+      const seen = new Set(corpus.split(/[^\p{L}]+/u));
+      const unseen = sentence.split(/[^\p{L}]+/u).filter((w) => w && !seen.has(w));
+      expect(unseen.length).toBeGreaterThan(1);
+      const ids = encode(sentence, merges);
+      expect(ids.length).toBeLessThan(utf8(sentence).length);
+      expect(ids.some((id) => id >= 256 && vocab[id].length > 2)).toBe(true);
+    },
+  );
+
+  it("stops because no pair repeats, not at the cap, in both locales", () => {
+    for (const locale of Object.keys(entry)) {
+      const { merges, stop } = run(locale);
+      expect(stop).toBe("min-freq");
+      expect(merges.length).toBeLessThan(BPE_WIDGET_MAX_MERGES);
+    }
+  });
+
+  // The numbers «BPE de verdad» reads off the Spanish explorable.
+  it("gives the Spanish numbers the lesson quotes", () => {
+    const { corpus, sentence, merges, spell } = run("es");
+    expect(utf8(corpus)).toHaveLength(180);
+    expect(merges).toHaveLength(31);
+    expect(merges[0].freq).toBe(10);
+    expect(spell(merges[0].id)).toBe("ñ");
+    expect(spell(merges[4].id)).toBe("ó");
+    expect(spell(merges[16].id)).toBe("ción");
+    expect(encode(corpus, merges)).toHaveLength(80);
+    expect(utf8(sentence)).toHaveLength(42);
+    expect(encode(sentence, merges)).toHaveLength(22);
+    // At step 0 the sentence's ñ is two byte tokens, C3 and B1.
+    expect(encode(sentence, []).filter((b) => b === 0xc3 || b === 0xb1)).toHaveLength(6);
+  });
+
+  it("keeps the English naïve's ï as two bytes to the end — a letter the corpus lacks", () => {
+    const { sentence, merges } = run("en");
+    const ids = encode(sentence, merges);
+    const i = ids.indexOf(0xc3);
+    expect(ids.slice(i, i + 2)).toEqual([0xc3, 0xaf]);
+  });
 });
 
 describe("widget messages", () => {

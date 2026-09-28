@@ -1,0 +1,1071 @@
+---
+slug: evolucion-del-tokenizador
+title: "La evolución del tokenizador: de las palabras a los bytes"
+date: "2026-09-09"
+minutes: 35
+summary: "«El niño juega en el jardín» costaba doce tokens en 2019 y hoy cuesta siete, los mismos que su traducción inglesa. La historia de por qué: del tokenizador de palabras a BPE, WordPiece, Unigram y el suelo de bytes."
+draft: false
+reading:
+  - kind: paper
+    title: "A New Algorithm for Data Compression"
+    authors: "Philip Gage"
+    year: "1994"
+    venue: "C Users Journal, archivado"
+    lang: en
+    url: "https://web.archive.org/web/20210329111703/http://www.pennelynn.com/Documents/CUJ/HTML/94HTML/19940045.HTM"
+    note: "El origen de BPE, veintidós años antes de que sirviera para tokenizar: cuatro páginas de C sobre comprimir ficheros, sin una sola mención al lenguaje natural. Lo que buscas cabe en la primera página."
+  - kind: paper
+    title: "Addressing the Rare Word Problem in Neural Machine Translation"
+    authors: "Luong, Sutskever, Le, Vinyals y Zaremba"
+    year: "2015"
+    venue: "arXiv:1410.8206"
+    lang: en
+    url: "https://arxiv.org/abs/1410.8206"
+    note: "El estado del arte justo antes de las subpalabras: en lugar de arreglar el tokenizador, se anota de dónde venía cada UNK para copiar la palabra después. Vale la pena leerlo para ver el tamaño del parche."
+  - kind: libro
+    title: "Speech and Language Processing, cap. 2: Regular Expressions, Text Normalization, Edit Distance"
+    authors: "Jurafsky y Martin"
+    year: "3.ª ed., borrador libre"
+    venue: "stanford.edu"
+    lang: en
+    url: "https://web.stanford.edu/~jurafsky/slp3/2.pdf"
+    note: "El capítulo de referencia sobre tokenización: los tokenizadores de reglas, la ley de Heaps, Zipf y BPE, con más ejemplos y menos desarrollo que aquí. El libro entero es gratis."
+  - kind: paper
+    title: "Language Models are Unsupervised Multitask Learners (GPT-2)"
+    authors: "Radford, Wu, Child, Luan, Amodei y Sutskever"
+    year: "2019"
+    venue: "cdn.openai.com"
+    lang: en
+    url: "https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf"
+    note: "El informe que baja el tokenizador al byte. La parte que importa aquí es media página de la sección 2.2, y explica mejor que nadie por qué 256 símbolos de partida resuelven el problema de una vez."
+  - kind: paper
+    title: "Language Model Tokenizers Introduce Unfairness Between Languages"
+    authors: "Petrov, La Malfa, Torr y Bibi"
+    year: "2023"
+    venue: "arXiv:2305.15425"
+    lang: en
+    url: "https://arxiv.org/abs/2305.15425"
+    note: "Mide el impuesto en decenas de idiomas en lugar de en uno, y es donde se ve que lo del español es el caso suave: hay lenguas que pagan quince veces lo que paga el inglés por decir lo mismo."
+  - kind: blog
+    title: "SolidGoldMagikarp (plus, prompt generation)"
+    authors: "Rumbelow y Watkins"
+    year: "2023"
+    venue: "lesswrong.com"
+    lang: en
+    url: "https://www.lesswrong.com/posts/aPeJE8bSo6rAFoLqg/solidgoldmagikarp-plus-prompt-generation"
+    note: "El hallazgo de los tokens fantasma, contado como la investigación que fue. Merece la pena por el método: encontraron los tokens raros midiendo distancias entre filas de la matriz de embeddings."
+  - kind: paper
+    title: "Scaling Laws with Vocabulary: Larger Models Deserve Larger Vocabularies"
+    authors: "Tao, Liu, Kang y otros"
+    year: "2024"
+    venue: "arXiv:2407.13623"
+    lang: en
+    url: "https://arxiv.org/abs/2407.13623"
+    note: "Pone números al compromiso del tamaño de vocabulario: cuántas piezas conviene tener para un modelo dado, en lugar de copiar las del anterior."
+  - kind: paper
+    title: "Subword Regularization: Improving NMT Models with Multiple Subword Candidates"
+    authors: "Taku Kudo"
+    year: "2018"
+    venue: "arXiv:1804.10959"
+    lang: en
+    url: "https://arxiv.org/abs/1804.10959"
+    note: "Donde sale Unigram, y de propina la idea que lo justifica: si el tokenizador da probabilidades, se puede muestrear la segmentación en cada época y usar eso como aumento de datos."
+  - kind: paper
+    title: "SentencePiece: A simple and language independent subword tokenizer"
+    authors: "Kudo y Richardson"
+    year: "2018"
+    venue: "arXiv:1808.06226"
+    lang: en
+    url: "https://arxiv.org/abs/1808.06226"
+    note: "La biblioteca, no el algoritmo. Lo interesante es la decisión de tragar texto crudo con espacios incluidos, que es lo que quitó de en medio los tokenizadores de reglas por idioma."
+  - kind: paper
+    title: "Neural Machine Translation of Rare Words with Subword Units"
+    authors: "Sennrich, Haddow y Birch"
+    year: "2016"
+    venue: "arXiv:1508.07909"
+    lang: en
+    url: "https://arxiv.org/abs/1508.07909"
+    note: "El que saca BPE de la compresión y lo pone a tokenizar. Se lee en una tarde y trae el detalle que este artículo se salta: cómo se comporta un vocabulario compartido entre dos idiomas."
+tags: ["nlp", "tokenizacion", "llm"]
+---
+
+{/*
+  BLOG-02 — La evolución del tokenizador.
+
+  Traducido al inglés en content/blog/en/evolucion-del-tokenizador.mdx, donde los
+  ejemplos SIGUEN siendo españoles: el corte del español es el argumento del artículo,
+  no un ejemplo intercambiable, así que la regla del curso (ejemplos en inglés para la
+  versión inglesa) no aplica aquí.
+
+  El artículo NO da por leído el curso ni lo enlaza: la notación se introduce en la
+  sección que la usa, no antes (los tokens y el vocabulario, al abrir «La era de la
+  palabra»; C, T y la ele media, en «La fuga hacia el carácter», que es donde se
+  cuentan pasos). La bibliografía va en `reading` (frontmatter) y se renderiza plegada
+  al pie; en el cuerpo, el enlace va sobre la técnica o el año, nunca sobre el nombre
+  de los autores.
+
+  Todos los números del artículo están medidos, no estimados:
+    - los recuentos de token salen de tiktoken (gpt2, cl100k_base, o200k_base)
+    - la lista de fusiones y las escaleras de piezas salen de ejecutar el código
+      que el propio artículo muestra, sobre el corpus que el propio artículo muestra
+    - Zipf, Heaps, cobertura y la tasa de OOV salen de TRES libros españoles de
+      Project Gutenberg, enlazados en el cuerpo para que el lector pueda rehacerlo
+      (2000 Quijote, 17073 La Regenta, 24925 Amar es vencer): 746 368 palabras,
+      38 792 tipos, 4 194 315 caracteres, ele media 5,62.
+      Los ebooks marcados «Language: English, Spanish» NO valen: son ediciones
+      anotadas y meten introducción, notas y glosario en inglés dentro del recuento.
+    - los cortes de la tabla comparativa salen de los tokenizadores REALES (tiktoken
+      o200k_base, google-bert/bert-base-multilingual-cased, FacebookAI/xlm-roberta-base),
+      y el Viterbi de la sección reproduce el de XLM-R token a token, comprobado
+    - lo que trae cada fichero de tokenizador está leído de sus tokenizer.json
+    - la tabla de tokens por palabra son siete tokenizadores reales sobre los mismos
+      400 000 caracteres del corpus (72 786 palabras); las regex son las que tiktoken
+      lleva dentro (`_pat_str`), y los bytes de 🙂 y 漢字 son salida literal
+    - el impuesto del español está medido sobre el Quijote entero contra la traducción
+      de Ormsby (Gutenberg 2000 y 996), libro completo, no una muestra
+  Si se toca el corpus, la frase de ejemplo o el código, hay que volver a medir:
+  las figuras de public/blog/evolucion-del-tokenizador/ llevan los mismos números.
+*/}
+
+«El niño juega en el jardín.» Seis palabras y un punto. El tokenizador con el que se entrenó GPT-2
+en 2019 necesitaba doce tokens para escribirla, y a su traducción inglesa, «The boy plays in the
+garden.», le bastaban siete. En 2022, con el tokenizador que usan GPT-3.5 y GPT-4, el español bajó a
+once. En 2024, con el de GPT-4o, bajó a siete: exactamente los mismos que el inglés, y esta vez con
+las palabras enteras.
+
+<figure>
+  <img
+    src="/blog/evolucion-del-tokenizador/tres-generaciones.svg"
+    alt="La frase «El niño juega en el jardín.» cortada por tres tokenizadores sucesivos, junto a su traducción inglesa. Con GPT-2, de 2019 y 50 257 entradas, el español necesita doce tokens y el inglés siete. Con cl100k, de 2022 y 100 277 entradas, el español baja a once y el inglés sigue en siete. Con o200k, de 2024 y 200 019 entradas, los dos necesitan siete y las palabras españolas salen enteras."
+  />
+  <figcaption>
+    La misma frase y su traducción, cortadas por tres generaciones del mismo tokenizador. El punto
+    dentro de una caja marca el espacio que ese token lleva pegado delante. El inglés no se mueve:
+    siete tokens y las mismas siete piezas las tres veces.
+  </figcaption>
+</figure>
+
+El inglés se quedó quieto. Siete tokens en las tres generaciones, y las tres veces cortado por los
+mismos sitios. Lo que se movió fue el español, y no porque nadie lo arreglara: el idioma no entra en
+la ecuación. Lo que cambió fue el tamaño de una lista y quién estaba dentro de ella.
+
+Este artículo va sobre cómo se construye esa lista. Lo recorro en el orden en que ocurrió, porque en
+ese orden se entiende: cómo se cortaba el texto antes de que existiera nada de esto y por qué esa
+forma de cortar dejó de servir, de dónde salió BPE (que es un algoritmo de compresión de 1994 al que
+le cambiaron el trabajo), en qué se diferencian de verdad los tres métodos que se usan hoy, por qué
+debajo de todos ellos acabó habiendo un suelo hecho de bytes, y qué te sigue costando la elección
+cuando el texto que escribes no es inglés.
+
+Ninguna de esas decisiones se tomó pensando en el español.
+
+## La era de la palabra, y por qué terminó
+
+Un modelo de lenguaje no lee texto, lee números. Antes de que intervenga ninguna red, alguien tiene
+que partir la cadena de caracteres en unidades y darle a cada unidad un índice. A esas unidades se
+las llama *tokens*, a la lista cerrada de las que el modelo reconoce se la llama **vocabulario**, y
+al programa que decide dónde cortar, **tokenizador**.
+
+El índice por sí solo no dice nada: que «casa» sea la entrada 412 y «perro» la 413 no las hace
+parecidas, igual que dos números de teléfono consecutivos no son de dos vecinos. Lo que el modelo
+aprende es un vector de $d$ números por cada entrada del vocabulario, su *embedding*, con el mismo
+$d$ para todas: unos cientos en los modelos pequeños, unos miles en los grandes. Apilados, esos
+vectores forman una matriz de $\lvert V \rvert \times d$ que se entrena junto con el resto de la
+red, y al final del modelo hay otra matriz del mismo tamaño en la capa que decide qué token viene
+después.
+
+Por eso el vocabulario se fija antes de entrenar y ya no se toca: cada entrada cuesta dos filas de
+$d$ números, y el número de filas hay que saberlo antes de empezar. Es finito, cerrado y caro. El
+idioma no es ninguna de las tres cosas, y todo lo que viene a continuación sale de ese choque.
+
+Durante décadas, decidir dónde cortar fue escribir reglas. Un tokenizador de los de entonces era
+una lista de casos: corta por los espacios, separa la puntuación final de la palabra pero no el
+punto de «EE. UU.», deja juntas las comillas de apertura y cierre, decide qué hacer con los guiones.
+Los dos más usados en investigación, el de Penn Treebank y el de Moses, eran exactamente eso, y con
+ellos venía la letra pequeña: las reglas son por idioma. El que sabe que «don't» son dos palabras no
+sabe nada de «dámelo», y ninguno de los dos sirve para el chino, que no separa las palabras con
+espacios.
+
+El problema de fondo no eran las reglas, que se pueden escribir. Era el tamaño de la lista que
+producían.
+
+Para verlo con números en lugar de con adjetivos, junté tres libros en español de dominio público,
+todos de Project Gutenberg y todos descargables en texto plano:
+[*Don Quijote*](https://www.gutenberg.org/ebooks/2000), de Cervantes;
+[*La Regenta*](https://www.gutenberg.org/ebooks/17073), de Leopoldo Alas;
+y [*Amar es vencer*](https://www.gutenberg.org/ebooks/24925), de Pauline Caro.
+Son 746 368 palabras en total, contando como palabra cualquier secuencia de símbolos separados por espacio y convirtiéndolo todo a
+minúsculas.
+
+El vocabulario que sale de ahí tiene 38 792 palabras distintas, y su reparto es el de siempre en
+cualquier idioma: la frecuencia de una palabra es inversamente proporcional a su puesto en el
+ranking,
+
+$$
+f(r) \;\propto\; r^{-\alpha},
+$$
+
+con un $\alpha$ que en este corpus vale $1{,}09$. Diez palabras («de», «que», «y», «la», «a»…) se
+llevan una porción enorme del texto, y detrás viene una cola que no se acaba nunca. Cuantifícala: de
+esas 38 792 palabras distintas, **17 536 aparecen exactamente una vez**. Casi la mitad del
+vocabulario existe para ser usada una sola vez en 746 368 palabras.
+
+Eso ya es incómodo, porque cada entrada del vocabulario cuesta una fila de números para
+representarla y otra en la capa de salida, y ahí estás pagando dos filas por una aparición. Pero lo
+grave es lo otro: la lista no deja de crecer. Leyendo la mitad del corpus habías visto 22 643
+palabras distintas; leyendo la otra mitad aparecen 16 149 más. El texto se duplica y el vocabulario
+crece un 71 %.
+
+<figure>
+  <img
+    src="/blog/evolucion-del-tokenizador/vocabulario-no-satura.svg"
+    alt="Gráfica de ejes logarítmicos. El eje horizontal son las palabras leídas de un corpus español, de mil a un millón; el vertical, cuántas unidades distintas han aparecido. La curva de palabras distintas sube sin doblarse, de 278 con mil palabras leídas a 38 792 con 746 368. La de letras distintas es prácticamente plana: 29 al principio y 40 al final."
+  />
+  <figcaption>
+    Las mismas 746 368 palabras contadas de dos maneras, en ejes logarítmicos. Como vocabulario de
+    palabras, la cuenta sube sin doblarse por ninguna parte. Como alfabeto, se planta en las
+    primeras mil palabras y ya no se mueve: las once letras que aparecen después son tildes raras y
+    caracteres de otros idiomas.
+  </figcaption>
+</figure>
+
+Esa curva tiene nombre y forma cerrada. Se la conoce como ley de Heaps, y dice que el vocabulario
+crece como una potencia del texto leído:
+
+$$
+\lvert V \rvert \;\approx\; K\,N^{\beta}.
+$$
+
+Aquí $N$ es cuántas palabras llevas leídas (746 368 al final del corpus), $\lvert V \rvert$ cuántas
+distintas han aparecido hasta ese punto, y $K$ y $\beta$ son dos constantes que se ajustan al
+corpus: $K$ fija la altura de la curva y $\beta$, que es el que importa, su pendiente en los ejes
+logarítmicos de la figura. En cualquier idioma $\beta$ cae entre $0{,}4$ y $0{,}8$; en este corpus
+vale $0{,}73$, con $K = 2{,}4$. Que $\beta$ sea menor que $1$
+significa que cada palabra nueva es un poco más difícil de encontrar que la anterior; que sea mayor
+que $0$ significa que nunca dejarás de encontrarlas. No hay ningún tamaño de corpus a partir del
+cual el vocabulario esté completo, y no lo hay porque el español no es una lista: es una máquina de
+generar palabras, con su conjugación, sus diminutivos y su capacidad de pegarle dos clíticos a un
+imperativo.
+
+Lo que hicieron los sistemas de traducción automática de la primera generación neuronal fue lo único
+que podían hacer: cortar la lista por donde se pudiera pagar. El corte no era estético, era
+aritmético. La capa que decide la siguiente palabra calcula una puntuación por cada entrada del
+vocabulario, lo que cuesta del orden de $\lvert V \rvert \cdot d$ operaciones en cada paso de cada
+frase, con el mismo $d$ de los embeddings. Con $\lvert V \rvert$ en cientos de miles, esa capa sola
+se come el presupuesto. De ahí los vocabularios de 30 000 a 80 000 palabras de aquellos
+sistemas, y de ahí que hubiera
+[trabajos dedicados solo a poder usar un vocabulario más grande](https://arxiv.org/abs/1412.2007).
+
+¿Y las palabras que quedaban fuera? Se sustituían por un símbolo único, `UNK`, y se seguía adelante.
+Mide lo que eso significa en el corpus de arriba: entrena el vocabulario con el 90 % del texto y
+lee el 10 % restante. **El 4,8 % de las palabras que lees no está en el vocabulario**, y no son
+rarezas, es una de cada veinte palabras corrientes. Todas ellas llegan al modelo como el mismo
+símbolo, indistinguibles entre sí: el nombre propio, el tecnicismo y la errata comparten
+representación. Y como en traducción hay que producir texto, `UNK` también salía por el otro lado,
+así que hubo que
+[inventar parches](https://arxiv.org/abs/1410.8206) que anotaran de dónde venía cada `UNK` para
+copiar la palabra original o buscarla en un diccionario después.
+
+Un tokenizador que necesita un sistema de parches para las palabras que no supo representar está
+diciendo, en voz baja, que la unidad elegida es la equivocada.
+
+## La fuga hacia el carácter, y su precio
+
+Si el problema es que las palabras se acaban antes que el idioma, hay una salida obvia: no uses
+palabras. Usa letras. El vocabulario pasa a ser el alfabeto, unas decenas de símbolos, y en la
+figura de arriba es la línea plana: con mil palabras leídas ya has visto casi todas las letras que
+el español usa, y leer un millón más no añade prácticamente ninguna.
+
+Todo lo que dolía se arregla de golpe. No hay `UNK` posible, porque cualquier palabra que llegue se
+escribe con letras que ya están en el vocabulario. La capa de salida deja de ser el cuello de
+botella, porque decidir entre cuarenta símbolos es gratis comparado con decidir entre cincuenta mil.
+Y las palabras emparentadas dejan de ser desconocidas la una para la otra: «niño» y «niña»
+comparten tres de sus cuatro letras, cosa que un vocabulario de palabras no puede ni enunciar. Hubo
+modelos de carácter serios, y funcionaban.
+
+El precio se ve en cuanto cuentas los pasos. Llama $C$ al número de caracteres de un texto, $T$ al
+número de tokens en que lo parte un tokenizador y $\bar{\ell}$ a la longitud media de esos tokens,
+en caracteres. Los tokens son trozos del propio texto, así que sus longitudes suman el texto entero
+y las tres cantidades quedan atadas:
+
+$$
+T = \frac{C}{\bar{\ell}}.
+$$
+
+El texto fija $C$, de modo que $T$ y $\bar{\ell}$ no se mueven por separado: cuanto más cortas las
+piezas, más larga la secuencia, y no hay forma de tener las dos cosas. Cortando por caracteres,
+$\bar{\ell} = 1$ y por tanto $T = C$. En el corpus de arriba eso significa que donde el tokenizador
+de palabras veía 746 368 unidades, el de caracteres ve 4 194 315: casi seis veces más pasos para el
+mismo texto.
+
+Y el coste no se multiplica por seis, sino por bastante más, porque las partes que comparan cada
+posición con todas las demás (la atención, que es de lo que están hechos los modelos actuales)
+crecen como $T^{2}$:
+
+$$
+\frac{T_{\text{car}}^{2}}{T_{\text{pal}}^{2}} \;=\; \bar{\ell}_{\text{pal}}^{2} \;\approx\; 32.
+$$
+
+Treinta y dos veces el trabajo, por el mismo texto y para aprender de paso cómo se deletrea. Hay un
+segundo coste, menos visible y peor: la distancia entre dos palabras relacionadas de una frase se
+multiplica también por seis, así que el modelo tiene que sostener dependencias mucho más largas para
+descubrir lo mismo.
+
+Con las dos salidas obvias descartadas, el compromiso se ve entero:
+
+| corte | $\bar{\ell}$ | $T$ | $\lvert V \rvert$ |
+|---|---|---|---|
+| caracteres | $1$ | $C$ | decenas, y se satura |
+| subpalabras | $3$–$4$ | $\approx C/3{,}5$ | 30 000–200 000, *elegido de antemano* |
+| palabras | $\approx 5{,}6$ | $\approx C/5{,}6$ | decenas de miles, y creciendo |
+
+La fila del medio es la que se impuso, y su celda de la derecha dice en qué consiste: en lugar de
+dejar que el tamaño del vocabulario sea una consecuencia de cómo cortas, se fija por adelantado y se
+deja que un algoritmo decida qué piezas lo componen. Las palabras frecuentes acabarán siendo una
+pieza entera y las raras se escribirán con varias, sin que nadie tenga que decidir cuáles son unas y
+cuáles otras.
+
+Así que la fuga hacia el carácter funcionó y nadie se quedó a vivir allí. La respuesta acabó siendo
+que la unidad no la eligiera nadie.
+
+## BPE: un algoritmo de compresión reutilizado
+
+El algoritmo que acabó resolviendo esto se llama *byte-pair encoding*, BPE de aquí en adelante, y el
+nombre dice exactamente lo que hace: codificar pares de bytes.
+[Se publicó en 1994](https://web.archive.org/web/20210329111703/http://www.pennelynn.com/Documents/CUJ/HTML/94HTML/19940045.HTM)
+en una revista para programadores de C, y lo que quería era comprimir ficheros. Busca el par de
+bytes que más se repite, sustitúyelo en todo el fichero por un byte que no aparezca en él, y repite.
+Cada una de esas sustituciones hay que anotarla para poder deshacerla después, y donde se anotan es
+la **tabla de sustituciones**: una lista de líneas que dicen «el byte 0xFE significa el par AB».
+
+Veintidós años después, [un artículo sobre traducción automática](https://arxiv.org/abs/1508.07909)
+sacó ese algoritmo de la compresión y lo puso a hacer otra cosa. No cambiaron el algoritmo.
+Cambiaron cuándo se para.
+
+La diferencia está en qué haces con esa tabla. Al comprimir es un mal necesario que viaja con el
+fichero, porque sin ella nadie puede recuperar el original. Al tokenizar no se recupera nada: paras
+a las 30 000 sustituciones porque ese es el vocabulario que querías, y **la tabla es el
+tokenizador**. Todo lo que un tokenizador BPE sabe cabe en esa lista ordenada de pares.
+
+### El entrenamiento
+
+El corpus se cuenta primero por palabras, con su frecuencia, y cada palabra se parte en caracteres
+(en caracteres, sí, pese al nombre del algoritmo; los bytes de verdad vuelven más adelante, y no por
+casualidad). Al final de cada palabra se pega una marca de fin, `</w>`, que impide que una pieza
+cruce de una palabra a la siguiente y, sobre todo, deja escrito dónde había un espacio. Eso segundo
+es un requisito, no un adorno: concatenar los tokens tiene que devolver el texto de partida, espacios
+incluidos, porque un tokenizador que pierde información por el camino ya no divide el texto, lo
+altera, y lo que descarta el modelo no volverá a verlo.
+
+Sea $f(w)$ la frecuencia de la palabra $w$ en el corpus y $c_w(a,b)$ el número de veces que las
+piezas $a$ y $b$ aparecen adyacentes dentro de $w$. Sumando sobre todas las palabras, y pesando cada
+una por las veces que sale, queda cuántas veces aparece ese par en el corpus entero:
+
+$$
+n(a,b) \;=\; \sum_{w} f(w)\, c_w(a,b).
+$$
+
+En cada vuelta se fusiona el par con el recuento más alto,
+
+$$
+(a,b)^{\star} \;=\; \operatorname*{arg\,max}_{(a,b)} \; n(a,b),
+$$
+
+y se repite tantas veces como piezas quieras añadir al vocabulario. Eso es todo. No hay gramática,
+no hay morfología y no hay ninguna noción de palabra más allá de la marca de fin.
+
+```python
+from collections import Counter
+
+CORPUS = """
+el niño juega en el jardín la niña juega en el jardín
+el niño aprende programación la niña aprende programación
+la programación se aprende programando y programando se aprende
+el profesor enseña programación la profesora enseña programación
+enseñar no es lo mismo que aprender el niño enseña a la niña
+la niña enseña al niño programación y el niño aprende
+"""
+
+def pares(vocab):
+    """Cuenta cada par de piezas adyacentes, pesado por la frecuencia de la palabra."""
+    cuenta = Counter()
+    for piezas, f in vocab.items():
+        for par in zip(piezas, piezas[1:]):
+            cuenta[par] += f
+    return cuenta
+
+def fusiona(vocab, par):
+    """Sustituye todas las apariciones de `par` por la pieza que resulta de pegarlo."""
+    a, b = par
+    nuevo = {}
+    for piezas, f in vocab.items():
+        salida, i = [], 0
+        while i < len(piezas):
+            if i < len(piezas) - 1 and piezas[i] == a and piezas[i + 1] == b:
+                salida.append(a + b)
+                i += 2
+            else:
+                salida.append(piezas[i])
+                i += 1
+        nuevo[tuple(salida)] = f
+    return nuevo
+
+def entrena(corpus, n_fusiones):
+    # Cada palabra empieza partida en caracteres. `</w>` marca dónde termina.
+    vocab = {tuple(p) + ("</w>",): f for p, f in Counter(corpus.split()).items()}
+    fusiones = []
+    for _ in range(n_fusiones):
+        cuenta = pares(vocab)
+        if not cuenta:
+            break
+        par = max(cuenta.items(), key=lambda kv: kv[1])[0]   # empate: gana el primero visto
+        fusiones.append((par, cuenta[par]))
+        vocab = fusiona(vocab, par)
+    return fusiones
+
+for i, (par, n) in enumerate(entrena(CORPUS, 15), 1):
+    print(f"{i:2}. {par[0]!r} + {par[1]!r} -> {(par[0] + par[1])!r}   (x{n})")
+```
+
+Sobre ese corpus de seis líneas, las quince primeras fusiones son estas. El número entre paréntesis
+de cada línea es $n(a,b)$, el recuento que ganó esa vuelta:
+
+```text
+ 1. 'a' + '</w>' -> 'a</w>'   (x18)
+ 2. 'p' + 'r' -> 'pr'   (x16)
+ 3. 'e' + 'n' -> 'en'   (x13)
+ 4. 'o' + '</w>' -> 'o</w>'   (x10)
+ 5. 'pr' + 'o' -> 'pro'   (x10)
+ 6. 'n' + 'i' -> 'ni'   (x9)
+ 7. 'ni' + 'ñ' -> 'niñ'   (x9)
+ 8. 'l' + '</w>' -> 'l</w>'   (x8)
+ 9. 'n' + '</w>' -> 'n</w>'   (x8)
+10. 'e' + '</w>' -> 'e</w>'   (x8)
+11. 'pro' + 'g' -> 'prog'   (x8)
+12. 'prog' + 'r' -> 'progr'   (x8)
+13. 'progr' + 'a' -> 'progra'   (x8)
+14. 'progra' + 'm' -> 'program'   (x8)
+15. 'program' + 'a' -> 'programa'   (x8)
+```
+
+El corpus lo he generado con IA para que las fusiones se vean, y se nota: seis líneas de español con
+muchos niños y mucha programación. Un corpus real tiene miles de millones de palabras y las primeras
+fusiones son igual de aburridas que estas.
+
+Merece la pena leer esa lista despacio, porque contiene tres cosas que no son obvias.
+
+La primera fusión del corpus es una `a` pegada a un final de palabra. El algoritmo no sabe que en
+español la `a` final marca el femenino en «niña» y «profesora», ni que el infinitivo termina en `r`,
+ni qué es un morfema. Ha contado. Resulta que en español contar y saber gramática se parecen mucho,
+porque las terminaciones son justamente lo que más se repite, y por eso las piezas de BPE se acaban
+pareciendo a morfemas sin que nadie se lo pida.
+
+La segunda es la escalera de la 11 a la 15. La pieza `pro` se come una letra por vuelta hasta llegar
+a `programa`, y cada peldaño es una entrada más del vocabulario. BPE no reconoce la raíz «program»:
+la construye, letra a letra, porque es lo que más se repite en un corpus donde todo el mundo
+programa. Con una raíz frecuente eso es una ganga, porque después «programación», «programando» y
+«programa» comparten la primera pieza. Con una rara es puro desperdicio.
+
+La tercera es que el parecido con la morfología es una coincidencia estadística, y falla en cuanto
+la estadística deja de acompañar. El tokenizador de GPT-4 parte «dámelo» en `d`, `ám`, `elo`, que no
+es la segmentación de nadie: la morfológica sería «dá me lo», con el imperativo y sus dos clíticos.
+Las piezas de BPE se parecen a morfemas cuando los morfemas son frecuentes, y a nada reconocible
+cuando no lo son.
+
+### Codificar es repetir la lista
+
+Con la lista aprendida, tokenizar una palabra nueva es aplicar las fusiones en el orden en que se
+aprendieron. Ni una más, ni en otro orden.
+
+```python
+def codifica(palabra, fusiones):
+    """Aplicar la lista, en orden. Esto es todo lo que hace un tokenizador BPE."""
+    vocab = {tuple(palabra) + ("</w>",): 1}
+    for par, _ in fusiones:
+        vocab = fusiona(vocab, par)
+    return next(iter(vocab))
+```
+
+<figure>
+  <img
+    src="/blog/evolucion-del-tokenizador/bpe-fusiones.svg"
+    alt="La palabra «programación» partida en caracteres en la fila de arriba y, debajo, una fila por cada fusión de la lista aprendida que le afecta. La fusión 2 pega p con r, la 5 añade la o, la 9 pega la n final con la marca de fin de palabra, y de la 11 a la 15 el trozo crece hasta «programa». La palabra acaba escrita con cinco piezas: programa, c, i, ó y n con la marca de fin."
+  />
+  <figcaption>
+    «programación» bajando por la lista de fusiones. A la izquierda, el número de la fusión que
+    dispara cada fila y el par que pega; en verde, la pieza que acaba de formarse. Trece piezas al
+    empezar, cinco al terminar.
+  </figcaption>
+</figure>
+
+Y el resultado, que es lo que el modelo acaba viendo:
+
+```text
+>>> codifica("programación", fusiones)
+('programa', 'c', 'i', 'ó', 'n</w>')
+```
+
+Cinco piezas, y solo la primera significa algo por sí sola. Detrás quedan las letras sueltas de la
+terminación, sin fusionar, porque quince fusiones dan para lo que dan: la lista se quedó sin
+presupuesto antes de llegar a ellas. Sigue entrenando y eso cambia. Con nueve fusiones más, la
+número 24 pega `programació` con `n</w>` y la palabra entera pasa a ser **un solo token**, de cinco
+a uno.
+
+Ahí está, en miniatura, el compromiso del que va todo lo demás. Cada fusión que añades acorta las
+secuencias y cuesta una entrada del vocabulario, con sus dos filas de $d$ números. Nadie escribe la
+regla de dónde parar: se elige un número de fusiones, y el algoritmo decide con él qué palabras del
+idioma caben enteras y cuáles llegan al modelo hechas trozos.
+
+Que el orden mande tiene dos consecuencias que conviene ver juntas. La buena es el **determinismo**,
+que es la otra condición que un tokenizador tiene que cumplir: la misma palabra produce siempre el
+mismo corte, porque la lista no cambia y se recorre siempre igual. Si el corte cambiara de un día
+para otro, lo que el modelo aprendió dejaría de corresponderse con lo que recibe. La incómoda es que la lista es el tokenizador hasta en sus detalles más
+tontos. En mi código, cuando dos pares empatan a frecuencia gana el que se vio primero, y esa línea
+es tan parte del tokenizador como el corpus: dos implementaciones que resuelvan los empates de forma
+distinta, entrenadas sobre el mismo texto, producen vocabularios distintos y cortan distinto para
+siempre.
+
+### La palabra que el corpus no contenía
+
+Queda la pregunta que el tokenizador de palabras no sabía contestar: qué hacer cuando llega una
+palabra que el corpus no contenía. Toma «El niño programa una criptomoneda», una frase corriente, y
+córtala con un tokenizador de palabras entrenado sobre el corpus de arriba: tres de sus cinco
+palabras no están en el vocabulario. «criptomoneda» es la peor de las tres, porque no es una rareza
+ni un nombre propio, es una palabra normal que ese corpus no llegó a contener, y sobre ella un
+tokenizador de palabras no tiene absolutamente nada que ofrecer.
+
+Con la misma lista de quince fusiones, y al lado dos palabras que el corpus sí traía:
+
+```text
+niño           -> niñ o</w>
+enseñar        -> en s e ñ a r </w>
+criptomoneda   -> c r i p t o m o n e d a</w>
+```
+
+No hay `UNK` por ninguna parte. «criptomoneda» no aparecía en el corpus, ninguna de sus fusiones se
+aprendió, y aun así el tokenizador la escribe entera, letra a letra, porque las letras sueltas
+siempre están en el vocabulario. Esa es la propiedad que hizo que BPE se comiera el campo: el
+vocabulario es cerrado y finito, y sin embargo cualquier cadena tiene representación.
+
+Y ahora el precio, que en 2016 no parecía grave y hoy es la mitad del problema. «criptomoneda» ha
+costado doce tokens en lugar de dos o tres. La palabra no se ha perdido, se ha encarecido, y encima
+llega al modelo troceada en piezas que no significan nada por separado. La pregunta ya no es si una
+palabra está en $V$. Es cuánto te cobra el tokenizador por escribirla, y esa pregunta tiene una
+respuesta distinta para cada idioma.
+
+## Tres formas de elegir las piezas
+
+BPE es el que todo el mundo nombra y no es el único que se usa. Hay tres algoritmos en producción, y
+la diferencia entre ellos cabe en una frase: cambia el criterio con el que se decide qué pieza entra
+en el vocabulario. Uno de los tres cambia además la dirección desde la que se llega.
+
+### WordPiece: fusionar lo que se busca, no lo que abunda
+
+WordPiece corre el mismo bucle voraz que BPE, empezando por caracteres y fusionando de a un par por
+vuelta, y cambia solo la puntuación con la que elige el par. Donde BPE se queda con el $n(a,b)$ más
+alto, WordPiece divide ese mismo recuento por lo mucho o poco que cada pieza aparezca por su cuenta:
+
+$$
+\text{score}(a,b) \;=\; \frac{n(a,b)}{n(a)\,n(b)},
+$$
+
+donde $n(a)$ es el número de veces que la pieza $a$ aparece en el corpus, sola o acompañada, y otro
+tanto para $n(b)$.
+
+Tomando logaritmos, la puntuación es $\log n(a,b) - \log n(a) - \log n(b)$, que es la información
+mutua puntual del par salvo una constante que es la misma para todos los pares y por tanto no cambia
+cuál gana. Y esa cantidad mide otra cosa: no cuántas veces aparecen juntos, sino cuántas veces más
+de lo que cabría esperar si cada uno fuera por su lado.
+
+La diferencia se ve en la traza de la sección anterior. La tercera fusión pegaba `e` con `n` porque
+el par salía trece veces, pero `e` y `n` son dos de las letras más frecuentes del español: que
+coincidan mucho no dice nada de ellas. WordPiece divide precisamente por eso, y prefiere pares cuyas
+piezas, por separado, son más raras de lo que su unión sugiere. El vocabulario que sale tiene menos
+relleno y más piezas que corresponden a algo.
+
+Viene de un [artículo de 2012 sobre búsqueda por voz en japonés y
+coreano](https://research.google/pubs/japanese-and-korean-voice-search/), dos idiomas donde ni
+siquiera está claro dónde termina una palabra, y se hizo famoso seis años después por ser el
+tokenizador de [BERT](https://arxiv.org/abs/1810.04805). Marca las continuaciones con `##`: en
+`c ##ript ##omo ##ned ##a`, el `##` dice que esa pieza no empieza palabra, y quitándolo se
+reconstruye el texto.
+
+Hay una segunda diferencia de la que casi nunca se habla. WordPiece **no guarda lista de fusiones**.
+BPE codifica repitiendo la suya en orden; WordPiece, que ya no la tiene, codifica de otra manera: en
+cada posición coge la pieza más larga del vocabulario que encaje ahí y sigue desde donde termine.
+Dos algoritmos de entrenamiento casi idénticos que producen dos codificadores distintos.
+
+### Unigram: empezar por arriba y podar
+
+El tercero invierte la dirección entera. En lugar de crecer desde el alfabeto, arranca con un
+vocabulario enorme de candidatas (todas las subcadenas razonablemente frecuentes del corpus) y va
+quitando las que menos falta hacen, hasta bajar al tamaño fijado.
+
+Decidir cuáles hacen menos falta obliga a medirlo, y medirlo obliga a tener un modelo. Ahí está la
+diferencia de fondo con los otros dos. Una segmentación $\mathbf{x} = (x_1, \dots, x_M)$ de una
+frase tiene probabilidad
+
+$$
+P(\mathbf{x}) \;=\; \prod_{i=1}^{M} p(x_i),
+$$
+
+es decir, cada pieza tiene la suya y se supone que no dependen unas de otras: de ahí lo de
+*unigram*. Con eso, la mejor segmentación de una frase es la de mayor $P(\mathbf{x})$.
+
+Encontrarla es más barato de lo que parece. Una cadena de $n$ caracteres se puede partir en trozos
+contiguos de $2^{n-1}$ maneras, así que enumerarlas queda descartado para cualquier frase real, pero
+no hace falta enumerar nada. Tomando logaritmos, $\log P(\mathbf{x})$ es una suma de términos que no
+se afectan entre sí, y entonces la mejor forma de llegar cortando hasta la posición $j$ depende solo
+de la mejor forma de llegar a cada posición anterior $i$, más la puntuación de la pieza que va de
+$i$ a $j$. Se recorre la frase de izquierda a derecha guardando un número por posición, la mejor
+puntuación acumulada hasta ahí, y al terminar se deshace el camino hacia atrás. Ese recorrido
+tiene nombre: es el **algoritmo de Viterbi**, el mismo que se usa para decodificar modelos ocultos
+de Markov, y cambia el coste de exponencial a $O(n \cdot L)$, con $L$ la longitud de la pieza más
+larga del vocabulario. Es exactamente el código que aparece unos párrafos más abajo, donde $L$ se
+llama `maxlen`.
+
+El entrenamiento, por su parte, pasa a tener algo que optimizar: la verosimilitud del corpus,
+sumando sobre todas las segmentaciones posibles $S(s)$ de cada frase $s$,
+
+$$
+\mathcal{L} \;=\; \sum_{s} \log \!\!\sum_{\mathbf{x} \in S(s)} \prod_{i} p(x_i).
+$$
+
+El algoritmo alterna dos pasos. El primero ajusta las $p(x)$, y tiene una dificultad de huevo y
+gallina: para saber cuánto se usa cada pieza habría que saber por dónde se corta cada frase, y para
+cortar las frases hacen falta las $p(x)$. Se rompe con **esperanza-maximización**
+(*expectation-maximization*, EM), que da vueltas entre las dos mitades: con las $p(x)$ de la vuelta
+anterior calcula cuántas veces se espera que aparezca cada pieza, contando todas las segmentaciones
+posibles pesadas por su probabilidad, y fija las nuevas $p(x)$ proporcionales a esos recuentos
+esperados. El segundo paso calcula, pieza a pieza, cuánto caería $\mathcal{L}$ si esa pieza no
+existiera, y tira las que menos cuestan. Vuelta a empezar, hasta el tamaño fijado.
+
+Sale [de un artículo de 2018](https://arxiv.org/abs/1804.10959) cuyo tema principal es, de hecho,
+otro. Como el modelo da probabilidades, no hay una única segmentación buena sino un ranking de
+ellas, y se puede **muestrear**: la misma frase entra hoy cortada de una manera y mañana de otra,
+lo que funciona como aumento de datos y hace al modelo menos frágil ante un corte raro. Ni BPE ni
+WordPiece pueden hacer eso, porque para ellos solo existe una respuesta.
+
+### El fichero lo dice
+
+Nada de esto hay que creérselo. El tokenizador de cualquier modelo abierto es un fichero que se
+descarga y se abre, y lo que hay dentro delata el algoritmo:
+
+| algoritmo | qué trae el fichero | ejemplo |
+|---|---|---|
+| BPE | vocabulario **y una lista ordenada de fusiones** | GPT-2: 50 257 entradas, 50 000 fusiones |
+| WordPiece | vocabulario suelto, sin fusiones, con el prefijo `##` declarado | BERT: 30 522 entradas |
+| Unigram | vocabulario donde **cada pieza lleva su $\log p(x)$** | XLM-R: 250 002 entradas puntuadas |
+
+La aritmética de la primera fila cuadra sola y merece la pena mirarla: $256 + 50\,000 + 1 = 50\,257$.
+Doscientas cincuenta y seis piezas de partida, cincuenta mil fusiones aprendidas y un token especial
+de fin de texto. De dónde salen esas 256 es justo el asunto de la sección siguiente.
+
+Las puntuaciones de la tercera fila son literales: en el vocabulario de XLM-R, `▁de` vale $-5{,}31$,
+`ción` vale $-9{,}59$ y `▁niño` vale $-13{,}22$, donde `▁` marca que la pieza empieza palabra. Con
+esos números y quince líneas de Python se reproduce el tokenizador entero.
+
+```python
+def segmenta(texto, piezas, maxlen=16):
+    # Viterbi: de todas las formas de partir el texto en piezas del vocabulario,
+    # la que maximiza la suma de log p(x). Coste O(n * maxlen), no exponencial.
+    s = "▁" + texto.replace(" ", "▁")
+    n = len(s)
+    mejor = [-math.inf] * (n + 1)      # mejor log-probabilidad hasta la posición j
+    corte = [0] * (n + 1)              # de dónde venía ese óptimo, para reconstruirlo
+    mejor[0] = 0.0
+    for j in range(1, n + 1):
+        for i in range(max(0, j - maxlen), j):
+            p = piezas.get(s[i:j])     # None si esa subcadena no es una pieza
+            if p is not None and mejor[i] + p > mejor[j]:
+                mejor[j], corte[j] = mejor[i] + p, i
+    salida, j = [], n
+    while j > 0:
+        salida.append(s[corte[j]:j])
+        j = corte[j]
+    return salida[::-1]
+```
+
+Cargando en `piezas` el vocabulario publicado de XLM-R, esta función devuelve exactamente lo mismo
+que el tokenizador oficial, token a token. No se parece al algoritmo: es el algoritmo.
+
+### Los tres sobre las mismas palabras
+
+Con los tres tokenizadores reales delante, cortando las mismas seis palabras españolas:
+
+| palabra | BPE (GPT-4o) | WordPiece (mBERT) | Unigram (XLM-R) |
+|---|---|---|---|
+| niño | `ni` `ño` | `niño` | `▁niño` |
+| jardín | `j` `ard` `ín` | `jardín` | `▁jardí` `n` |
+| enseñar | `ense` `ñar` | `ens` `##eña` `##r` | `▁enseñar` |
+| programación | `program` `ación` | `programación` | `▁programación` |
+| dámelo | `d` `ám` `elo` | `dá` `##mel` `##o` | `▁dám` `elo` |
+| criptomoneda | `cript` `omon` `eda` | `c` `##ript` `##omo` `##ned` `##a` | `▁cripto` `mone` `da` |
+
+La comparación no es limpia y conviene decirlo: los tres vocabularios tienen tamaños muy distintos
+(200 019, 119 547 y 250 002) y se entrenaron sobre corpus distintos, así que lo que se ve no es solo
+el algoritmo. Aun así, dos cosas se leen sin esfuerzo.
+
+Ninguno coincide con otro en ninguna de las palabras que parte en trozos. Y ninguno de los tres da
+con la segmentación que daría un hablante de «dámelo», que es «dá me lo», el imperativo con sus dos
+clíticos: sale `d ám elo`, `dá ##mel ##o` y `▁dám elo`. Tres algoritmos, tres cortes, y los tres a
+la misma distancia de la morfología. Las piezas se parecen a morfemas cuando los morfemas son
+frecuentes, y a nada reconocible cuando no lo son; la sección anterior ya lo avisaba con un solo
+tokenizador, y aquí se ve que no era culpa de aquel.
+
+### SentencePiece no es un cuarto algoritmo
+
+Es la confusión más repetida del tema, y viene de que el nombre aparece en la ficha técnica de media
+docena de modelos. [SentencePiece](https://arxiv.org/abs/1808.06226) es una **implementación**: una
+biblioteca que entrena y aplica BPE o Unigram, no una tercera manera de elegir piezas. Decir que un
+modelo «usa SentencePiece» informa tan poco como decir que un programa «usa gcc».
+
+Lo que sí aportó, y es lo que hizo que se lo llevara todo, es de otro orden. Los tokenizadores
+anteriores daban por hecho que el texto llegaba ya partido en palabras por un programa aparte, con
+sus reglas por idioma, las mismas de la primera sección. SentencePiece se salta ese paso: trata la
+frase como un flujo de caracteres, espacios incluidos, y convierte el espacio en un símbolo más, el
+`▁` de la tabla de arriba. Con eso no hay reglas por idioma que mantener, el japonés y el español
+entran por la misma puerta, y la reconstrucción vuelve a ser exacta sin convenios que recordar: pega
+las piezas, cambia `▁` por espacio y tienes el texto de partida.
+
+Aun así, los tres algoritmos comparten un supuesto que no hemos tocado todavía. Los tres construyen
+sus piezas a partir de caracteres, y qué caracteres existen se decide mirando el corpus. Si mañana
+llega un texto con uno que aquel corpus no tenía (un emoji, un ideograma, una letra de un alfabeto
+que nadie contempló), el vocabulario se queda corto otra vez. Es el mismo agujero de antes, un piso
+más abajo.
+
+
+## El suelo de bytes
+
+Unicode tiene asignados del orden de 150 000 caracteres, repartidos en más de 150 sistemas de
+escritura, y cada año se añaden más. Ningún corpus los contiene todos. Así que el alfabeto con el
+que arranca cualquiera de los tres algoritmos, por grande que sea el corpus, es siempre una lista
+incompleta, y el problema de la primera sección reaparece un piso más abajo: llega un ideograma, un
+emoji inventado el año pasado o una letra de un alfabeto que nadie miró, y el tokenizador no tiene
+con qué escribirlo.
+
+La solución que se impuso, y que llegó [con GPT-2 en 2019](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf),
+es de una simplicidad incómoda: dejar de construir las piezas a partir de caracteres y construirlas
+a partir de **bytes**. Cualquier texto, en cualquier escritura, se guarda en el disco como una
+secuencia de bytes en UTF-8, y un byte solo puede tomar 256 valores. Si el alfabeto de partida son
+esos 256, no existe el texto que no se pueda escribir con el vocabulario. Ninguno. Nunca.
+
+Ahí es donde encaja la aritmética de la sección anterior: $256 + 50\,000 + 1 = 50\,257$. Los 256
+bytes, las 50 000 fusiones aprendidas encima de ellos y un token de fin de texto. El vocabulario de
+GPT-2 **no tiene token de desconocido**, y no por olvido: no hace falta, porque no hay nada que
+pueda quedar fuera. El `UNK` que había obligado a inventar diccionarios de reparche desaparece del
+problema por construcción.
+
+### Lo que cuesta bajar al byte
+
+Que el suelo sean bytes tiene una consecuencia rara: un token puede ser un trozo de carácter. No una
+letra incompleta en sentido figurado, sino una secuencia de bytes que por sí sola no es nada.
+
+```text
+'🙂'   sus bytes UTF-8 son  b'\xf0\x9f\x99\x82'
+  gpt2          2 tokens:  [b'\xf0\x9f', b'\x99\x82']
+  cl100k_base   2 tokens:  [b'\xf0\x9f', b'\x99\x82']
+  o200k_base    1 token:   [b'\xf0\x9f\x99\x82']
+
+'漢字'  sus bytes UTF-8 son  b'\xe6\xbc\xa2\xe5\xad\x97'
+  gpt2          5 tokens:  [b'\xe6', b'\xbc', b'\xa2', b'\xe5\xad', b'\x97']
+  cl100k_base   3 tokens:  [b'\xe6\xbc', b'\xa2', b'\xe5\xad\x97']
+  o200k_base    2 tokens:  [b'\xe6\xbc\xa2', b'\xe5\xad\x97']
+```
+
+Con GPT-2, la carita cuesta dos tokens y ninguno de los dos es un carácter: `b'\xf0\x9f'` es la
+primera mitad de un emoji, y por separado no se puede ni imprimir. Los dos ideogramas cuestan cinco
+tokens, tres de ellos bytes sueltos. El modelo no ve dos caracteres, ve cinco piezas cuya relación
+con lo escrito solo existe si aprende a reconstruirla.
+
+Esa es la moneda con la que se paga la garantía. Nada queda fuera del vocabulario, pero lo que está
+lejos del corpus de entrenamiento entra troceado en pedazos sin significado. Compáralo con la `ñ`,
+que en los tres tokenizadores es un token entero pese a ocupar dos bytes: el español está lo bastante
+representado en el corpus como para que esa fusión se aprendiera. La diferencia entre un carácter
+barato y uno caro no es Unicode, es cuánto salía en el corpus.
+
+### La regex que casi nadie mira
+
+Antes de que BPE toque el texto, hay un paso del que casi nunca se habla y que decide más de lo que
+parece. El texto se parte primero con una expresión regular, y las fusiones nunca pueden cruzar esos
+cortes. La regex, por tanto, no acelera nada: delimita lo que el algoritmo tiene permitido aprender.
+
+El trozo que gobierna los números cambió entre generaciones, y se ve a simple vista:
+
+| tokenizador | los dígitos en la regex | `1234567` | `2026` |
+|---|---|---|---|
+| gpt2 | `' ?\p{N}++'`, rachas de cualquier longitud | `123` `45` `67` | `20` `26` |
+| cl100k, o200k | `'\p{N}{1,3}'`, grupos de tres como mucho | `123` `456` `7` | `202` `6` |
+
+En GPT-2 la regex entregaba `1234567` entero y BPE fusionaba dentro según lo que hubiera visto, con
+lo que los cortes salían donde cayera. Desde cl100k el corte va por delante y es fijo: grupos de
+tres, **de izquierda a derecha**. Mira lo que le hace al año en que escribo esto. `2026` no se parte
+en `20` y `26`, ni se queda entero: sale `202` y `6`. El mismo dígito acaba en un token distinto
+según la longitud del número que lo rodea, y esa decisión, tomada en una expresión regular, es de
+donde salen la mitad de los problemas aritméticos de los modelos de lenguaje.
+
+### Dos caminos hacia el mismo suelo
+
+No todos bajaron al byte por la puerta de GPT-2. SentencePiece, que entrena sobre caracteres, añadió
+una opción llamada `byte_fallback`: el vocabulario sigue siendo de caracteres, y solo cuando aparece
+uno que no está se recurre a escribirlo con sus bytes. La garantía es la misma, la ruta no.
+
+Los dos tokenizadores de Llama enseñan las dos rutas, una en cada versión. El de Llama 2, con 32 000
+piezas, declara `byte_fallback: true`: es un BPE de caracteres con red de seguridad. El de Llama 3,
+con 128 256, lo declara `false`, y no porque hayan quitado la red, sino porque ya no hace falta:
+cambiaron a BPE de bytes, donde el suelo es el propio alfabeto. En dos versiones de la misma familia
+se puede ver la migración entera.
+
+### La carrera del vocabulario
+
+Con el suelo resuelto queda la pregunta de arriba: cuántas piezas. Y aquí los números se movieron
+mucho en pocos años, de las 32 000 de Llama 2 a las 200 019 de GPT-4o.
+
+Lo que se compra subiendo es longitud de secuencia. Lo que se paga son parámetros: el modelo guarda
+la matriz de embeddings y la de salida, $2\lvert V \rvert d$ números en total, y la capa final hace
+del orden de $\lvert V \rvert d$ operaciones **por cada token que genera**. Con $\lvert V \rvert =
+128\,256$ y $d = 4096$, esas dos matrices suman unos 1 050 millones de parámetros, que en un modelo
+de ocho mil millones es más de un octavo del total dedicado a entrar y salir del vocabulario. Subir
+$\lvert V \rvert$ divide el número de pasos y multiplica el coste de cada uno, así que hay un punto
+óptimo y depende del tamaño del modelo; [hay trabajo reciente dedicado justo a
+localizarlo](https://arxiv.org/abs/2407.13623).
+
+Puestos a mirar números, lo interesante es qué compra ese tamaño **para el español**. Aquí están
+siete tokenizadores reales sobre el mismo texto, 400 000 caracteres de literatura española, 72 786
+palabras:
+
+| tokenizador | algoritmo | $\lvert V \rvert$ | tokens por palabra |
+|---|---|---|---|
+| Llama 2 (2023) | BPE + `byte_fallback` | 32 000 | 1,750 |
+| GPT-2 (2019) | BPE de bytes | 50 257 | 2,029 |
+| GPT-3.5 y GPT-4 (2022) | BPE de bytes | 100 277 | 1,653 |
+| BERT multilingüe (2018) | WordPiece | 119 547 | 1,542 |
+| Llama 3 (2024) | BPE de bytes | 128 256 | 1,650 |
+| GPT-4o (2024) | BPE de bytes | 200 019 | 1,460 |
+| XLM-R (2019) | Unigram | 250 002 | 1,519 |
+
+Dentro de una misma familia la tendencia es limpia: los tres tokenizadores de OpenAI bajan el
+español de 2,03 a 1,65 y a 1,46 tokens por palabra según duplican el vocabulario, con rendimientos
+decrecientes claros (la primera duplicación se lleva un 18 %, la segunda un 12 %).
+
+Entre familias, la tabla dice algo distinto y más útil. El tamaño no manda. Llama 2, con 32 000
+piezas, corta el español mejor que GPT-2 con 50 257. Un BERT multilingüe de 2018 lo corta mejor que
+Llama 3 de 2024, teniendo casi el mismo tamaño de vocabulario. Y XLM-R, con 250 002 piezas, el
+vocabulario más grande de la tabla, pierde contra GPT-4o, que tiene cincuenta mil menos.
+
+Lo que decide no es cuántas piezas hay, sino cuántas de ellas se gastaron en tu idioma. XLM-R
+reparte un cuarto de millón de piezas entre cien idiomas; GPT-4o concentra doscientas mil en bastante
+menos. Un vocabulario es un presupuesto, y repartirlo es una decisión de producto que nadie te
+consulta y que tú acabas pagando por token.
+
+
+## Lo que te cuesta la elección
+
+Todo lo anterior es maquinaria. Esta sección es la factura, y su gracia está en que ninguna de las
+cosas que vienen es un misterio: cada una se puede rastrear hasta una decisión concreta que has
+visto tomar en las secciones anteriores.
+
+### El impuesto por escribir en español
+
+Toma el *Quijote* en español y la [traducción inglesa de
+Ormsby](https://www.gutenberg.org/ebooks/996), las dos en Project Gutenberg, y pásale a cada una los
+tres tokenizadores de OpenAI. El original español ocupa 2 105 831 caracteres; la traducción inglesa,
+2 292 068. El texto español es **más corto**.
+
+| tokenizador | tokens en español | tokens en inglés | español / inglés | caracteres por token, es / en |
+|---|---|---|---|---|
+| gpt2 (2019) | 778 102 | 565 416 | 1,38 | 2,71 / 4,05 |
+| cl100k (2022) | 632 915 | 541 068 | 1,17 | 3,33 / 4,24 |
+| o200k (2024) | 558 227 | 536 900 | 1,04 | 3,77 / 4,27 |
+
+Con GPT-2, el libro más corto cuesta un 38 % más. La columna de la derecha dice por qué: el
+tokenizador saca 4,05 caracteres de cada token en inglés y 2,71 en español, de modo que el mismo
+esfuerzo de lectura rinde la mitad. Y esa diferencia no es solo estética, porque los tokens son la
+unidad en la que se cuenta todo lo demás: lo que cabe en la ventana de contexto, lo que tarda una
+respuesta y lo que cuesta la factura de la API. Escribir en español salía, literalmente, más caro.
+
+La última fila es la buena noticia con la que empezaba este artículo: con el tokenizador de GPT-4o
+la razón baja a 1,04, casi paridad. No porque el español haya cambiado, sino porque doblar el
+vocabulario dejó sitio para meter dentro palabras españolas enteras. Y conviene no generalizar de
+aquí a todos los idiomas: el español comparte alfabeto con el inglés y aparece a espuertas en los
+corpus de entrenamiento. Para los idiomas que además cambian de escritura, la diferencia
+[sigue siendo de varios factores](https://arxiv.org/abs/2305.15425), y la sección del suelo de bytes
+explica por qué: cuando un carácter cuesta tres tokens de bytes sueltos, no hay vocabulario que lo
+arregle sin dedicarle espacio.
+
+### Por qué no sabe cuántas erres tiene una palabra
+
+Es el ejemplo que circula por todas partes, y casi siempre se explica mal. La pregunta es cuántas
+erres hay en «strawberry», y el modelo se equivoca. La causa no es que no sepa contar:
+
+```text
+strawberry    ->  str · aw · berry
+ferrocarril   ->  fer · roc · arr · il
+```
+
+El modelo nunca ve la palabra. Ve tres piezas, y ninguna de las tres es una letra. Para responder
+tendría que saber de memoria cómo se deletrea cada pieza, porque la información que necesita se
+destruyó antes de que él existiera, en el momento del corte. En español pasa lo mismo y peor:
+«ferrocarril» tiene cuatro erres repartidas entre cuatro piezas, y una de ellas, `arr`, lleva dos
+dentro. Contar sobre eso es contar sobre algo que no está.
+
+Es la condición de la primera sección vista desde el otro lado. El tokenizador puede conservar el
+texto entero y aun así destruir la estructura del texto, porque conservar y hacer accesible no son
+lo mismo.
+
+### La aritmética, cortada por donde no toca
+
+La regex de la sección anterior parte los dígitos en grupos de tres de izquierda a derecha. Míralo
+sobre números que se parecen mucho:
+
+```text
+1000    ->  100 · 0
+10000   ->  100 · 00
+100000  ->  100 · 000
+1999    ->  199 · 9
+19999   ->  199 · 99
+```
+
+El primer dígito de `1000` está en el mismo token que el segundo y el tercero, y el último va suelto.
+En `10000`, ese mismo `100` inicial ahora va seguido de `00`. Los tokens no se corresponden con
+unidades, decenas y centenas, y no se corresponden de forma distinta según la longitud del número.
+Un modelo que suma tiene que hacerlo sobre piezas cuya posición en el número cambia de un caso a
+otro. Que la aritmética con números largos sea frágil deja de ser un misterio en cuanto ves los
+cortes: no está sumando cifras, está prediciendo trozos.
+
+### El espacio del final del prompt
+
+Este muerde a quien programa contra una API, y es completamente invisible:
+
+```text
+'El niño juega en el'    ->  El · ni · ño · jue · ga · en · el
+'El niño juega en el '   ->  El · ni · ño · jue · ga · en · el · ␣
+```
+
+Un espacio de más al final del prompt añade un token que existe por su cuenta. Y aquí está el
+problema: en todo el texto con el que se entrenó el modelo, el espacio va **pegado a la palabra
+siguiente** (` jardín`, con su espacio delante, es un token). Un espacio suelto al final es una
+situación que el modelo casi no ha visto nunca, así que en lugar de continuar con ` jardín` tiene
+que continuar con algo que empiece sin espacio, que es un reparto de probabilidad completamente
+distinto. Una tecla de más y la calidad cae. Algunas bibliotecas lo arreglan por dentro con lo que
+se llama *token healing*: quitan el último token del prompt y lo vuelven a fusionar con lo que el
+modelo genere. Casi ninguna lo hace por defecto.
+
+### La sangría, y por qué el código se abarató
+
+El mismo mecanismo explica un cambio que sí se notó en su momento. Una línea de Python indentada,
+con GPT-2 y con cl100k:
+
+```text
+'    return x'      gpt2   5 tokens:  ␣ · ␣ · ␣ · ' return' · ' x'
+                    cl100k 3 tokens:  '   ' · ' return' · ' x'
+'        return x'  gpt2   9 tokens
+                    cl100k 3 tokens
+```
+
+GPT-2 gastaba un token por espacio, así que una función con ocho niveles de nada se comía la ventana
+de contexto en sangría. cl100k metió en el vocabulario piezas de varios espacios seguidos y el mismo
+código pasó a costar la mitad o menos. Nadie cambió el modelo: cambiaron qué había en la lista.
+
+### Los tokens fantasma
+
+El más extraño de todos, y el que mejor enseña que el tokenizador es una pieza aparte. En el
+vocabulario de GPT-2 hay entradas como ` SolidGoldMagikarp`, ` petertodd`, ` RandomRedditor` o
+` externalToEVAOnly`, cada una **un solo token**. Son nombres de usuario de Reddit y fragmentos de
+código que aparecían tantísimo en el material con el que se entrenó el tokenizador que se ganaron su
+fusión.
+
+El detalle es que ese material no es el mismo con el que se entrenó el modelo. Cuando esos textos se
+filtraron del corpus de entrenamiento, sus tokens se quedaron en el vocabulario con una fila de
+embedding inicializada al azar y nunca ajustada. Pedirle a GPT-2 que repita uno de ellos
+[producía respuestas absurdas o evasivas](https://www.lesswrong.com/posts/aPeJE8bSo6rAFoLqg/solidgoldmagikarp-plus-prompt-generation),
+porque estaba leyendo un vector que no significaba nada. La mayoría desaparecieron en los
+vocabularios siguientes, aunque no todos: ` davidjl` sigue siendo un token único en el de GPT-4.
+
+Ninguna de estas seis cosas es un error de programación. Todas son la consecuencia de una decisión
+razonable: comprimir bien el corpus que había, cortar los números de forma fija, meter los espacios
+en la palabra siguiente, aprovechar el texto disponible para entrenar el tokenizador. Lo que tienen
+en común es que ninguna se tomó pensando en lo que tú ibas a hacer con el modelo.
+
+
+## Lo que viene después del tokenizador
+
+Después de siete secciones de problemas causados por elegir una unidad, la pregunta se cae de
+madura: por qué no quitar el tokenizador de en medio y dejar que el modelo lea bytes.
+
+Se ha probado, y funciona. [ByT5](https://arxiv.org/abs/2105.13626) es un modelo de 2021 que lee
+bytes crudos y aguanta la comparación con su versión tokenizada, además de ser mucho más robusto
+frente a las erratas, que es justo lo que uno esperaría de algo que ve las letras.
+[CANINE](https://arxiv.org/abs/2103.06874), del mismo año, hace algo parecido comprimiendo la
+secuencia por dentro. Los dos chocan contra la pared de la tercera sección: sin unidades largas la
+secuencia se multiplica por seis y el coste por treinta, y ninguna cantidad de elegancia paga eso.
+
+Lo que ha cambiado en los últimos años es la forma de la pregunta. En lugar de elegir entre una
+unidad grande y una pequeña, la idea es no fijar la unidad: que el modelo lea bytes y decida sobre la
+marcha dónde agruparlos. [MEGABYTE](https://arxiv.org/abs/2305.07185) lo hizo con parches de tamaño
+fijo. El [Byte Latent Transformer](https://arxiv.org/abs/2412.09871), de finales de 2024, lo hace con
+parches de tamaño variable, y su criterio es la mejor idea del asunto: un modelo pequeño estima la
+entropía del siguiente byte, y se abre un parche nuevo donde esa entropía se dispara,
+
+$$
+H(x_t) \;=\; -\!\!\sum_{b \in \text{bytes}} p(b \mid x_{<t}) \log p(b \mid x_{<t}) \;>\; \theta .
+$$
+
+Léelo despacio, porque invierte el planteamiento entero del artículo. BPE gasta piezas donde el
+corpus repetía cosas, hace años y de una vez para siempre. Esto gasta cómputo donde el texto que
+tienes delante es difícil de predecir, ahora. El final de «programación» es previsible y no merece
+un corte; el nombre propio que nunca has visto merece varios. Un tokenizador que se adapta al texto
+en lugar de a un corpus congelado.
+
+Por el otro extremo hay quien empuja en la dirección contraria y le va bien:
+[SuperBPE](https://arxiv.org/abs/2503.13423) mantiene el vocabulario fijo pero deja que las piezas
+crucen los espacios, de modo que expresiones enteras se vuelven un token. Y
+[H-Net](https://arxiv.org/abs/2507.07955) aprende el troceado de punta a punta, dentro de la red,
+sin ningún módulo aparte.
+
+A día de hoy nada de esto es lo normal. Los modelos que usas cuando abres una API llevan dentro un
+BPE de bytes con un vocabulario de entre cien y doscientas mil piezas, entrenado una vez y congelado.
+Lo que tendría que pasar para que eso cambiase es medible: que el sobrecoste de leer secuencias más
+largas baje por debajo de lo que cuesta hoy el vocabulario fijo, contando en ese coste los mil
+millones de parámetros de las dos matrices, el impuesto por idioma y la lista de defectos de la
+sección anterior. Está más cerca que hace tres años. Escribo esto en 2026, y es la parte del
+artículo que peor va a envejecer.
+
+## Qué te llevas
+
+Si te llevas una sola cosa, que sea esta: **el tokenizador es la única parte del sistema que se
+decide antes de que se aprenda nada y no se revisa nunca.** Todo lo demás en un modelo de lenguaje
+se ajusta con los datos. El corte, no. Se fija al principio, con el corpus que hubiera entonces, y
+todo lo que descarta o desordena queda descartado y desordenado para siempre.
+
+Y si te llevas tres cosas más, que sean prácticas.
+
+**Mide tu propio texto antes de elegir modelo.** La tabla de la sección del suelo de bytes está hecha
+con literatura del siglo XVII; tu texto no se parece a eso. Son seis líneas:
+
+```python
+import tiktoken
+
+enc = tiktoken.get_encoding("o200k_base")     # o "cl100k_base", para comparar
+texto = open("lo_que_escribes.txt", encoding="utf8").read()
+tokens, palabras = len(enc.encode(texto)), len(texto.split())
+print(f"{tokens / palabras:.2f} tokens por palabra")
+```
+
+Entre 1,46 y 2,03 tokens por palabra, que es el rango que sale en este artículo para el mismo texto
+español, hay un 40 % de diferencia en lo que cabe en el contexto, en lo que tarda y en lo que
+cuesta. Vale la pena saber en qué punto de ese rango estás antes de firmar nada.
+
+**Trata el prompt como lo que es, una secuencia de tokens.** No dejes un espacio suelto al final. No
+esperes aritmética fiable sobre números largos. No le pidas que cuente letras, porque no las tiene
+delante. Ninguna de esas tres cosas es un fallo del modelo que vaya a arreglarse con una versión
+mejor: son consecuencias del corte, y solo se arreglan cambiando el corte.
+
+**Y si alguna vez entrenas algo tuyo, empieza por ahí.** Un tokenizador entrenado sobre tu propio
+dominio, aunque sea pequeño, corta mejor que uno de propósito general con diez veces más piezas, por
+la misma razón por la que un BERT multilingüe de 2018 corta el español mejor que un Llama 3 de 2024:
+lo que decide no es cuántas piezas hay, sino cuántas se gastaron en lo que tú escribes.
+
+Volvamos al principio. «El niño juega en el jardín.» Costaba doce tokens en 2019 y cuesta siete
+ahora, los mismos que en inglés. Nadie arregló el español. Lo que cambió fue quién entró en una
+lista.
+

@@ -351,6 +351,11 @@ export interface CourseBlock {
   id:      number;
   title:   string;
   summary: string;
+  /** COURSE-BUILD-01 — planned lesson count: how many lessons this block has when finished.
+   *  Locale-invariant like `id`, so the canonical manifest owns it (see
+   *  `src/lib/courses/catalog-view.ts`). Omitted means "no plan declared", and a block with
+   *  no plan counts as complete once it has a published lesson. */
+  lessons?: number;
 }
 
 /** One prerequisite: a short requirement `title` and an optional `detail` elaboration.
@@ -375,16 +380,27 @@ export interface CourseCta {
 }
 
 /** One frequently-asked question. The list is per-course: cost, time commitment
- *  and "what do I install" all differ from one course to the next. */
+ *  and "what do I install" all differ from one course to the next. `a` is authored
+ *  prose; `dynamic` marks an answer the landing page computes instead (translation
+ *  coverage changes course to course, so no static string stays true for long). */
 export interface CourseFaqItem {
   q: string;
-  a: string;
+  a?: string;
+  dynamic?: "english-translation-status";
 }
 
 /** Which decorative hero motif the landing page renders behind the title. Per-course
- *  by design — the attention-matrix suits an NLP/Transformer course; the next course
- *  picks its own (or none). Add a case to `HeroMotif` when a new key lands here. */
-export type CourseHeroMotif = "attention-matrix";
+ *  by design — the attention-matrix suits an NLP/Transformer course, the agent-loop the
+ *  LLM-agents course (COURSE-C2-P0-01); the next course picks its own (or none). Add a
+ *  tile layout to `HeroMotif` when a new key lands here. */
+export type CourseHeroMotif = "attention-matrix" | "agent-loop";
+
+/** COURSE-ACCENT-01 — which accent hue the catalog card paints itself in. Per-course by
+ *  design: two courses sharing the site's one emerald were indistinguishable at a glance
+ *  (badge, title tail, CTA, progress bar and hover bloom were all the same green). Omitted =
+ *  the site's emerald, i.e. exactly what shipped before. The palette lives in
+ *  `src/features/courses/course-accent.ts`; add a hue there when a new key lands here. */
+export type CourseAccent = "emerald" | "cyan" | "amber";
 
 /** Course-level metadata from `course.<locale>.yml`. `blocks` is ordering +
  *  prose; individual lessons live in the sibling `<locale>/*.mdx` files and are
@@ -401,6 +417,8 @@ export interface Course {
   blocks:         CourseBlock[];
   /** Optional decorative hero motif selected in the manifest; omitted = no motif. */
   heroMotif?:     CourseHeroMotif;
+  /** COURSE-ACCENT-01 — catalog-card accent hue; omitted = the site's emerald. */
+  accent?:        CourseAccent;
 }
 
 /** One lesson's metadata (frontmatter), never its prose. `slug` is unique within
@@ -447,12 +465,47 @@ export interface LessonRef {
   title: string;
 }
 
+// ─── Blog ─────────────────────────────────────────────────────────────────────
+// BLOG-01: the blog registry (src/lib/blog/registry.ts) builds these from
+// git-versioned MDX at BUILD time, exactly like the course registry above and for
+// the same reason: prose is never queried, metadata always is. `Post` is the
+// metadata half; the MDX body is web-only and deliberately not modelled here.
+// These are PURE types (see the file header); Zod lives in src/lib/schemas.ts.
+
+/** One post's frontmatter, never its prose. `slug` is unique within a locale and
+ *  locale-invariant, so `/blog/x` and `/en/blog/x` are the same post in two
+ *  languages and hreflang can pair them by slug alone. `minutes` is authored
+ *  rather than derived — the number the card promises is an editorial call. */
+export interface Post {
+  slug:     string;
+  title:    string;
+  /** `YYYY-MM-DD`. The ordering key: the index and the sitemap sort by it. */
+  date:     string;
+  /** `YYYY-MM-DD`. Absent until a post is materially revised. */
+  updated?: string;
+  minutes:  number;
+  summary:  string;
+  draft:    boolean;
+  /** BLOG-02 — further reading, rendered collapsed at the foot of the post by
+   *  `PostReading`. Required, may be empty; capped at `READING_MAX_POST`. */
+  reading:  ReadingItem[];
+  /** Required, may be empty. No tag pages yet — the field exists so posts are
+   *  authored with their subject stated, not retrofitted when tag pages land. */
+  tags:     string[];
+}
+
+/** A minimal post pointer used for prev/next navigation. */
+export interface PostRef {
+  slug:  string;
+  title: string;
+}
+
 // ─── Course quizzes ───────────────────────────────────────────────────────────
 // COURSE-P3-01: self-assessment questions authored in lesson frontmatter and
 // placed in the prose with `<Quiz id="…" />`. Graded CLIENT-side by the pure
 // `gradeQuestion` (src/lib/courses/quiz/grade.ts) for instant feedback — a
 // deliberate choice for a free course, not an oversight: see the note in
-// docs/courses/phase-3-assessment/01-quiz-engine.md before "fixing" it.
+// docs/courses/dl-nlp/phase-3-assessment/01-quiz-engine.md before "fixing" it.
 //
 // `prompt`, `options[].text`, `explanation` and `hint` may contain LaTeX; they
 // are rendered through the same build-time KaTeX path as the prose.
@@ -670,6 +723,9 @@ export interface CourseProgressSummary {
   percentComplete:    number;
   /** Most recently viewed published lesson, or `null` before the first view. */
   lastSeenLessonSlug: string | null;
+  /** LANDING-01: when that lesson was last viewed (ISO), or `null` before the first
+   *  view — the activity clock `pickCurrentCourse` ranks enrolments by. */
+  lastSeenAt:         string | null;
   /** `null` when the user is not enrolled (progress is still reported as zeroes). */
   enrolledAt:         string | null;
   completedAt:        string | null;
@@ -755,4 +811,85 @@ export interface DeletionEligibility {
    * so the confirmation UI must name them.
    */
   imminentBookings: number;
+}
+
+// LANDING-01: where a signed-in visitor to "/" is sent. Kinds, not hrefs — the
+// `/inicio` page maps kind → locale-aware URL; the domain never learns a route.
+export type LandingDestination =
+  | { kind: "admin" }
+  | { kind: "personal-area" }
+  | { kind: "course"; courseSlug: string };
+
+// ─── Content feedback ─────────────────────────────────────────────────────────
+// CONTENT-FEEDBACK-01: the 👍/👎 + comment and "report an error" rows that every
+// lesson and post carries in its footer. Content is identified by (type, key) —
+// `lesson` with "<courseSlug>/<lessonSlug>", `post` with "<postSlug>" — never by
+// a table id: lessons and posts live in git (see the Blog note above). The pure
+// key helpers live in src/lib/content/content-key.ts.
+
+export type ContentType   = "lesson" | "post";
+/** The locale of the PROSE the reader judged — for an untranslated lesson served
+ *  to an English reader this is "es", not the URL prefix. */
+export type ContentLocale = "es" | "en";
+export type VoteValue     = 1 | -1;
+export type ContentReportStatus = "open" | "resolved";
+
+export interface ContentRef {
+  contentType: ContentType;
+  contentKey:  string;
+}
+
+/** One stored vote, raw — the admin aggregate is computed from these in-process. */
+export interface ContentVoteRow {
+  contentType: ContentType;
+  contentKey:  string;
+  locale:      ContentLocale;
+  vote:        VoteValue;
+  comment:     string | null;
+  updatedAt:   string;
+}
+
+export interface ContentVoteAggregate {
+  contentType: ContentType;
+  contentKey:  string;
+  up:          number;
+  down:        number;
+  /** Rows carrying a non-empty comment (only 👎 asks for one). */
+  comments:    number;
+  lastVoteAt:  string;
+}
+
+export interface ContentVoteComment {
+  id:          string;
+  contentType: ContentType;
+  contentKey:  string;
+  locale:      ContentLocale;
+  vote:        VoteValue;
+  comment:     string;
+  updatedAt:   string;
+}
+
+export interface ContentReport {
+  id:            string;
+  contentType:   ContentType;
+  contentKey:    string;
+  locale:        ContentLocale;
+  /** Derived server-side from the content ref, never client-sent. */
+  pageUrl:       string;
+  message:       string;
+  /** Session email when signed in, else whatever the anonymous reporter typed. */
+  reporterEmail: string | null;
+  userId:        string | null;
+  userAgent:     string | null;
+  status:        ContentReportStatus;
+  createdAt:     string;
+  resolvedAt:    string | null;
+}
+
+/** What /admin/feedback renders. Aggregates carry the resolved title + URL when
+ *  the content still exists (null for a key whose page has since been unpublished). */
+export interface ContentFeedbackOverview {
+  aggregates: (ContentVoteAggregate & { title: string | null; pageUrl: string | null })[];
+  comments:   ContentVoteComment[];
+  reports:    ContentReport[];
 }

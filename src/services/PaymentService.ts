@@ -121,7 +121,13 @@ export class PaymentService {
     email: string; name: string; packSize: PackSize;
   }): Promise<CheckoutResult> {
     const { email, name, packSize } = params;
-    const { amount, currency } = await this.pricing.getAmount(packSize === 5 ? "pack5" : "pack10");
+    // PRICING-STUDENT-01: resolve the student so any private price of theirs is
+    // what Stripe is charged. No row (or no override) → the public price.
+    const user = await this.userService.findByEmail(email);
+    const { amount, currency } = await this.pricing.getAmount(
+      packSize === 5 ? "pack5" : "pack10",
+      user?.id,
+    );
     // REFACTOR-P1-05: 5-min window deduplicates double-clicks; deliberate retry
     // after window gets a fresh PI.
     const idempotencyKey = `pack:${email}:${packSize}:${Math.floor(Date.now() / 300_000)}`;
@@ -150,7 +156,12 @@ export class PaymentService {
     rescheduleToken?: string;
   }): Promise<CheckoutResult> {
     const { email, name, duration, startIso, endIso, rescheduleToken } = params;
-    const { amount, currency } = await this.pricing.getAmount(duration === "1h" ? "session1h" : "session2h");
+    // PRICING-STUDENT-01: see createPackCheckout.
+    const user = await this.userService.findByEmail(email);
+    const { amount, currency } = await this.pricing.getAmount(
+      duration === "1h" ? "session1h" : "session2h",
+      user?.id,
+    );
     // REFACTOR-P1-05: startIso in key prevents collision between genuinely
     // different slots for the same user/duration within the same 5-min window.
     const idempotencyKey =

@@ -1,0 +1,290 @@
+---
+slug: una-sola-columna
+title: "Una sola columna: el modelo de lenguaje causal"
+block: 1
+order: 1
+minutes: 20
+summary: "El curso anterior eligió una columna del Transformer, le puso la máscara en todos los bloques y le pidió el token siguiente, posición a posición. Esta lección hace la pregunta que aquél no hizo, qué probabilidad le da ese modelo a un texto entero, y de la respuesta sale todo lo demás: la regla de la cadena convierte esa probabilidad, sin perder nada, en un producto de condicionales; la máscara causal es lo que permite calcular las T de una ventana en una sola pasada; y la pérdida es el logaritmo de ese producto, cambiado de signo y repartido por token. Sin código a propósito: la cuenta se hace a mano sobre una ventana de cuatro palabras, y sale un dieciseisavo por los dos caminos."
+draft: false
+hasCode: false
+hasQuiz: true
+quiz:
+  - id: q-que-compra-la-mascara
+    type: multi
+    prompt: 'Una columna con la máscara causal en todos sus bloques lee una ventana de $T + 1$ tokens. Marca lo que la máscara compra al **entrenar**.'
+    options:
+      - { id: a, text: 'Que la fila $t$ de los logits sea, número a número, la que saldría de pasar sólo $x_{\le t}$: por eso los $T$ factores del producto salen de una única pasada.' }
+      - { id: b, text: 'Que la pérdida se pueda calcular sin conocer la continuación verdadera: la red apuesta y la máscara guarda la respuesta.' }
+      - { id: c, text: 'Que generar texto sea también una sola pasada: las $T$ filas salen a la vez, así que los $T$ tokens también.' }
+      - { id: d, text: 'Que $p_\theta(x_{t+1} \mid x_{\le t})$ signifique lo que dice: sin máscara la fila $t$ ya contendría $x_{t+1}$, y bajar la pérdida sería copiar.' }
+    answer: [a, d]
+    explanation: 'La (a) y la (d), y son las dos caras de una misma propiedad: la fila $t$ no depende de nada a su derecha. Eso es lo que convierte $T$ pasadas en una y lo que hace que cada fila sea una condicional de verdad y no una copia. La (b) invierte el *teacher forcing*: la continuación verdadera es precisamente lo que entra corrida una posición, y sin ella no hay etiqueta contra la que cobrar. La (c) confunde entrenar con generar, que es la concesión que <Leccion curso="dl-nlp" slug="encoder-decoder-masking">la lección sobre las máscaras</Leccion> dejó dicha: al escribir de verdad, la fila $t$ necesita el token que salió de la pasada anterior, y son $T$ pasadas, una por token. La máscara hace paralelo el entrenamiento, no la escritura.'
+    hint: 'Pregúntate, para cada una, si sigue siendo cierta cuando la continuación correcta no está sobre la mesa.'
+  - id: q-fila-t
+    type: single
+    prompt: 'La red lee $x_{1:T}$ y devuelve $\mathbf{Z} \in \mathbb{R}^{T \times \lvert V \rvert}$. ¿Qué hay en su fila $t$?'
+    options:
+      - { id: a, text: 'Los logits de una distribución sobre qué entrada de $V$ ocupa la posición $t + 1$, calculados a partir de $x_{\le t}$ y de nada más.' }
+      - { id: b, text: 'La probabilidad que el modelo le da al token $x_t$, sabido lo que había antes.' }
+      - { id: c, text: 'Los logits de una distribución sobre la posición $t$, calculados a partir de la ventana entera.' }
+      - { id: d, text: 'La fila de la tabla $\mathbf{E}$ que corresponde a $x_t$, después de pasar por los bloques.' }
+    answer: a
+    explanation: 'La (a): la fila $t$ mira hacia delante, y ése es el desplazamiento que más cuesta fijar. La (b) confunde la fila con un número: la fila es un vector de $\lvert V \rvert$ logits, y la probabilidad de $x_t$ es una casilla del softmax de la fila **anterior**, la $t - 1$. La (c) es lo que saldría sin máscara, y entonces la fila contendría su propia respuesta. La (d) describe lo que entra por abajo, no lo que sale por arriba: entre la fila de $\mathbf{E}$ y los logits están todos los bloques, y al final la tabla leída al revés.'
+    hint: 'Escribe qué recibe la fila $t$ y contra qué token se compara al entrenar.'
+  - id: q-cadena-exacta
+    type: boolean
+    prompt: 'Escribir $p_\theta(x_{1:T})$ como el producto de las condicionales $p_\theta(x_t \mid x_{<t})$ es una aproximación: la probabilidad exacta de un texto necesitaría, además del producto, un término que recoja lo que las condicionales no capturan.'
+    answer: false
+    explanation: 'Falso. La regla de la cadena es una identidad que sale de la definición de probabilidad condicionada aplicada $T - 1$ veces: toda distribución sobre textos, sea la que sea, se escribe como ese producto sin perder nada. Lo que sí es una aproximación es cada factor, $p_\theta(x_t \mid x_{<t})$ frente a la probabilidad «de verdad» de que en español venga ese token tras ese prefijo, y ahí es donde están los pesos $\theta$ y donde entrenar tiene algo que hacer. La forma causal no cuesta nada; los números que van dentro, todo.'
+    hint: '¿De dónde sale $p(x_1, x_2) = p(x_1)\,p(x_2 \mid x_1)$, y qué habría que suponer para que fallara?'
+  - id: q-conjunta
+    type: numeric
+    prompt: 'El modelo de la tabla de arriba le dio $1/2$, $1/4$ y $1/2$ a los tres tokens que de verdad venían. ¿Qué probabilidad le da a la ventana entera, $p_\theta(\textit{casa}, \textit{es}, \textit{blanca} \mid \textit{la})$? Escríbela como decimal.'
+    answer: 0.0625
+    tolerance: 0.001
+    explanation: 'Un dieciseisavo, $0.0625$: el producto $\frac{1}{2} \cdot \frac{1}{4} \cdot \frac{1}{2}$. Es el mismo número que da la pérdida desde el otro lado, $\exp(-3\,\mathcal{L}) = \exp(-4\ln 2) = 2^{-4}$, y comprobar que los dos caminos llegan al mismo sitio es la lección entera: la media de los $-\log$ por posición es el logaritmo de la probabilidad del texto, cambiado de signo y repartido entre las posiciones. Un modelo que repartiera por igual le daría $(1/4)^{3} \approx 0.0156$, cuatro veces menos.'
+    hint: 'Multiplica las tres apuestas, o calcula $\exp(-3\,\mathcal{L})$ con la $\mathcal{L}$ de la tabla: tiene que salir lo mismo.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'A Neural Probabilistic Language Model'
+    authors: 'Bengio, Ducharme, Vincent y Jauvin'
+    year: '2003'
+    venue: 'Journal of Machine Learning Research 3'
+    lang: en
+    url: 'https://www.jmlr.org/papers/v3/bengio03a.html'
+    note: 'La primera red entrenada contra la regla de la cadena: su introducción abre con el producto de esta lección y explica por qué una red y no una tabla de recuentos. Con un MLP de ventana fija donde aquí hay un Transformer.'
+  - kind: paper
+    title: 'Prediction and Entropy of Printed English'
+    authors: 'Claude E. Shannon'
+    year: '1951'
+    venue: 'Bell System Technical Journal 30(1)'
+    lang: en
+    url: 'https://archive.org/details/bstj30-1-50'
+    note: 'El juego de tapar con la mano, jugado por personas sobre inglés en 1951, y lo que sale de medirlo: cuánto se puede apostar por la letra siguiente. La idea de esta lección, décadas antes de la primera red que la usó.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 1. Sin código a propósito: es la lección de muestra. */}
+
+El curso anterior se despidió, con sus propias palabras, dejándote «delante de un artículo que
+puedes discutir» y no delante de un modelo que funcione: un Transformer entero en NumPy, y unos
+pesos ajenos afinados una vez en <Leccion curso="dl-nlp" slug="fine-tuning-colab">un cuaderno fuera
+del navegador</Leccion>. Una lección antes había tomado la decisión de la que vive todo lo que
+sigue: de las dos columnas del artículo, <Leccion curso="dl-nlp" slug="bert-y-gpt">GPT se queda con
+la derecha y pone la máscara en todas sus auto-atenciones</Leccion>, y se le pide el token
+siguiente. Ese objeto se llama modelo de lenguaje, y aquel curso lo definió dos veces como una
+pérdida por posición: sobre una RNN de caracteres, y sobre el Transformer.
+
+Hay una pregunta que ninguna de esas dos veces hizo, y esta lección existe para hacerla: ¿qué
+probabilidad le da el modelo a un texto entero? No a la posición siete de un texto: al texto.
+Resulta ser la pregunta que ordena todo lo demás. De su respuesta sale por qué la máscara causal no
+es una restricción que se paga sino la razón de que entrenar quepa en una pasada, qué número exacto
+mide un modelo de lenguaje y, al final del bloque, cómo un modelo entrenado sólo para continuar
+texto acaba haciendo tareas que nadie le enseñó. Hoy toca lo primero.
+
+Tapa con la mano lo que sigue a <W>En un lugar de la</W> y di qué viene. Lo has dicho antes de
+terminar de leer: tras <W>En un lugar de</W> cabían cien cosas; tras <W>En un lugar de la</W>, casi
+sólo <W>Mancha</W>. Un modelo de lenguaje es ese jugador. Lee lo que hay a la izquierda y reparte su
+«apuesta» entre las entradas del vocabulario para la posición siguiente, y el texto, sin que nadie
+lo etiquete, trae escrita la respuesta correcta de cada posición.
+
+Lo que el curso anterior no dijo es que ese juego, jugado posición a posición, **es** una
+probabilidad para el texto entero. La probabilidad de que salga <W>En</W> y luego <W>un</W> es la
+de <W>En</W> por la de <W>un</W> sabiendo que vino <W>En</W>; añade <W>lugar</W> y multiplicas otra
+vez. Multiplica las apuestas en orden y tienes la apuesta del modelo por el texto.
+
+Y la máscara es lo que permite hacer las $T$ apuestas de un texto a la vez. La posición $t$ sólo
+ve lo que hay a su izquierda, así que su apuesta es la misma con el resto del texto a su derecha
+que sin él: puedes poner el texto entero sobre la mesa, con las respuestas a la vista, y leer las
+$T$ apuestas de una sola pasada.
+
+<Callout type="intuition" title="La idea en una frase">
+Un modelo de lenguaje es una distribución sobre textos, y la regla de la cadena la convierte, sin
+perder nada, en una apuesta por el token siguiente en cada posición. La máscara causal permite
+hacer las $T$ apuestas de un texto en una sola pasada, y la pérdida es lo que cada una le cobra al
+modelo por la verdad, en promedio.
+</Callout>
+
+## Una distribución sobre textos, y la cadena que la factoriza
+
+Fijemos el vocabulario $V$ y llamemos $x_t \in V$ al token que ocupa la posición $t$ de un texto:
+$x_{1:T}$ es el texto entero, $x_{<t}$ lo que hay antes de la posición $t$ y $x_{\le t}$ lo mismo
+con esa posición incluida. (El curso anterior escribía $w_t$; aquí es $x_t$, la letra que allí era
+la fuente de un traductor.) Un **modelo de lenguaje** asigna a cada texto de $T$ tokens un número
+$p_\theta(x_{1:T})$, no negativo y tal que, sumado sobre todos los textos de esa longitud, da $1$:
+una distribución sobre las secuencias de $T$ tokens, para cada $T$. El subíndice dice de quién es
+la distribución: de los pesos $\theta$, no del español. Lo que el modelo cree, no lo que es.
+
+No hace falta guardar un número por texto. Con dos tokens, $p(x_1, x_2) = p(x_1)\,p(x_2 \mid x_1)$:
+la probabilidad de que pasen dos cosas es la de la primera por la de la segunda sabida la primera,
+que es la definición de probabilidad condicionada leída al revés. Aplicada $T - 1$ veces,
+
+$$
+p_\theta(x_{1:T}) = \prod_{t=1}^{T} p_\theta(x_t \mid x_{<t}),
+$$
+
+con $x_{<1}$ la secuencia vacía, de modo que el primer factor es $p_\theta(x_1)$ a secas. Es la
+**regla de la cadena** de la probabilidad (comparte nombre con la de las derivadas, y nada más), y
+es una identidad: toda distribución sobre textos se escribe así, sea la que sea. Elegir la forma
+causal no aproxima nada; lo único que hay que aproximar es cada factor, y para eso está la red.
+
+<Details summary="Ver por qué la factorización es exacta, y por qué su recíproco también">
+Para dos posiciones, la probabilidad condicionada se define como
+$p(x_2 \mid x_1) = p(x_1, x_2) / p(x_1)$ cuando $p(x_1) > 0$, así que
+$p(x_1, x_2) = p(x_1)\,p(x_2 \mid x_1)$ es esa definición con el denominador pasado al otro lado.
+Para $T$ posiciones, toma como «primera cosa» el prefijo $x_{1:T-1}$ y como «segunda» el token
+$x_T$: $p(x_{1:T}) = p(x_{1:T-1})\,p(x_T \mid x_{<T})$, y el primer factor es el mismo problema con
+una posición menos. Repetido hasta $p(x_1)$, sale el producto.
+
+El recíproco es lo que hace que la red **sea** un modelo de lenguaje. Si cada factor es una
+distribución sobre $V$, el producto lo es sobre las secuencias de $T$ tokens: al sumar sobre $x_T$
+sólo el último factor depende de él, y suma $1$; repite con $x_{T-1}$, y así hasta que no queda
+ningún factor y la suma vale $1$. Con $T$ softmax cualesquiera, el producto es una distribución
+legítima sobre los textos.
+</Details>
+
+Y ahí entra la red. Entre los tokens y los números está la columna derecha del Transformer tal como
+<Leccion curso="dl-nlp" slug="proyecto-transformer">la montaste en el proyecto del Transformer</Leccion>,
+sin la subcapa que miraba a la otra columna: la tabla, los bloques con su máscara, y la tabla leída
+al revés. Lo que sale por arriba en la posición $t$ es un vector $\mathbf{z}_t \in \mathbb{R}^{\lvert V \rvert}$,
+los **logits** de esa posición: la preactivación de la capa de salida del curso anterior.
+Apilados por filas dan $\mathbf{Z} \in \mathbb{R}^{T \times \lvert V \rvert}$,
+una fila por posición leída y una columna por entrada. El softmax de
+<Leccion curso="dl-nlp" slug="funcion-de-perdida">la lección sobre las funciones de pérdida</Leccion>
+convierte cada fila en la distribución que el producto necesita:
+
+$$
+p_\theta(x_{t+1} \mid x_{\le t}) = \text{softmax}(\mathbf{z}_t)_{x_{t+1}} = \frac{e^{z_{t,\,x_{t+1}}}}{\sum_{v \in V} e^{z_{t,\,v}}}.
+$$
+
+Fíjate en el desplazamiento: la fila $t$ se calcula con
+$x_{\le t}$ y apuesta por $x_{t+1}$, así que el factor de la posición $t$ del producto,
+$p_\theta(x_t \mid x_{<t})$, sale de la fila $t - 1$.
+
+## Todas las condicionales en una sola pasada
+
+Cada factor del producto pide, en principio, una pasada por la red con su propio prefijo:
+$x_{\le 1}$, luego $x_{\le 2}$, y así. Serían $T$ pasadas por texto. Lo que las convierte en una es la máscara, y el argumento es el que el proyecto del
+Transformer dejó demostrado y aquí sólo se cita: con la máscara en cada bloque, la fila $t$ de lo
+que sale depende únicamente de las filas $1$ a $t$ de lo que entró, y eso sobrevive a apilar. Con
+lo que el $\mathbf{z}_t$ calculado sobre el texto entero es, número a número, el que saldría de
+pasar sólo el prefijo:
+
+$$
+\mathbf{z}_t(x_{1:T}) = \mathbf{z}_t(x_{\le t}) \quad \text{para todo } t,
+$$
+
+donde el argumento indica qué se le dio a la red. Una sola pasada sobre $x_{1:T}$ devuelve las $T$
+filas de $\mathbf{Z}$, con los $T$ factores del producto dentro.
+
+Qué texto se le pasa y contra qué se compara es el desplazamiento de
+<Leccion curso="dl-nlp" slug="encoder-decoder-masking">la lección sobre las máscaras</Leccion> sin
+ningún cambio: de una ventana de $T + 1$ tokens del corpus, la red lee los $T$ primeros, y la fila
+$t$ se compara con el token $t + 1$, que es la misma ventana corrida una posición. Eso era el
+*teacher forcing* (el token verdadero en cada posición, no el que el modelo habría escrito), y aquí
+es lo que hace que cada fila sea la condicional que el producto pide y no otra.
+
+Dos cosas más, dichas en voz alta. El primer factor, $p_\theta(x_1)$, no lo calcula ninguna fila,
+porque no hay fila con nada delante. El curso anterior ponía ahí <W>\<GO></W>; el mini-GPT de este
+bloque prescinde de él: el primer token de cada ventana se da y no se predice, y lo que la red
+modela de una ventana es $p_\theta(x_{2:T+1} \mid x_1)$, con $T$ factores y no $T + 1$. Y sin la
+máscara pasa lo que <Leccion curso="dl-nlp" slug="bert-y-gpt">la lección sobre BERT y GPT</Leccion>
+usó para descartar un encoder entrenado contra el token siguiente: la fila $t$ contendría ya
+$x_{t+1}$, y la manera más barata de bajar la pérdida sería copiar. La máscara no es una restricción
+que el modelo paga: es lo que hace que la barra vertical diga la verdad.
+
+### La pérdida: menos el logaritmo del producto, por token
+
+Entrenar es hacer que el modelo apueste fuerte por los textos del corpus: subir
+$p_\theta(x_{2:T+1} \mid x_1)$ sobre sus ventanas. Un producto de $T$ números entre $0$ y $1$ es
+minúsculo e incómodo de derivar; su logaritmo es una suma, y con el signo cambiado, un coste.
+Repartido entre las $T$ apuestas,
+
+$$
+\mathcal{L}(\theta) = -\frac{1}{T}\sum_{t=1}^{T}\log p_\theta(x_{t+1} \mid x_{\le t}) = -\frac{1}{T}\log p_\theta(x_{2:T+1} \mid x_1),
+$$
+
+que es la entropía cruzada del curso anterior con la etiqueta puesta en el token que de verdad
+vino, una por fila, promediada. Cada fila le cobra al modelo $-\log$ de lo que apostó por la
+verdad: nada si lo apostó todo, $\ln \lvert V \rvert$ si repartió por igual, y sin techo si apostó
+casi nada. Es el número que <Leccion curso="dl-nlp" slug="proyecto-char-lm">el modelo de lenguaje
+de caracteres</Leccion> imprimía en cada vuelta; lo nuevo es saber que $\exp(-T\,\mathcal{L})$ es
+la probabilidad que el modelo le da a la ventana, y que entrenar es subirla.
+
+## La cuenta a mano, con cuatro tokens
+
+Esta lección no lleva celda a propósito: el modelo que cumple todo lo de arriba, el mini-GPT
+de este bloque, lo cargas y lo entrenas más adelante, en
+<Leccion slug="entrenar-un-mini-gpt">la lección sobre entrenar un mini-GPT</Leccion>.
+Aquí el modelo es una hoja de papel: los logits me los he inventado yo, elegidos para que $e^{z}$
+salga entero. Los tokens son palabras, para que quepan en una hoja; el vocabulario del mini-GPT no
+está hecho de palabras, y de eso trata <Leccion slug="bpe-de-verdad">la lección siguiente, sobre
+BPE</Leccion>.
+
+Toma la ventana <W>la casa es blanca</W> y el vocabulario de sus cuatro palabras, en orden
+alfabético: $V = \{\textit{blanca}, \textit{casa}, \textit{es}, \textit{la}\}$. El primer token se
+da, así que hay tres apuestas, y en cada fila la red ve el prefijo y nada más:
+
+| $t$ | lo que ve la fila, $x_{\le t}$ | lo que viene, $x_{t+1}$ | $\mathbf{z}_t$, en el orden de $V$ |
+|---|---|---|---|
+| $1$ | <W>la</W> | <W>casa</W> | $(\ln 2,\; \ln 4,\; 0,\; 0)$ |
+| $2$ | <W>la casa</W> | <W>es</W> | $(\ln 4,\; 0,\; \ln 2,\; 0)$ |
+| $3$ | <W>la casa es</W> | <W>blanca</W> | $(\ln 4,\; \ln 2,\; 0,\; 0)$ |
+
+Haz tres cosas con cada fila, mirando sólo sus números:
+
+1. Exponencia los cuatro logits y súmalos. En la fila $1$ sale $(2, 4, 1, 1)$, que suma $8$;
+   comprueba que las otras dos también suman $8$ (elección mía, no casualidad).
+2. Divide la casilla del token que de verdad vino entre esa suma: es $p_\theta(x_{t+1} \mid x_{\le t})$.
+   En la fila $1$, <W>casa</W> es la segunda casilla: $4/8 = 1/2$.
+3. Toma $-\ln$ de ese número: $-\ln(1/2) = \ln 2 \approx 0.693$.
+
+Te tienen que salir $1/2$, $1/4$ y $1/2$, que cuestan $\ln 2$, $2\ln 2$ y $\ln 2$, y la media es
+
+$$
+\mathcal{L} = \frac{\ln 2 + 2\ln 2 + \ln 2}{3} = \frac{4}{3}\ln 2 \approx 0.924,
+$$
+
+frente al $\ln 4 \approx 1.386$ de un modelo que repartiera por igual y al $0$ de uno que lo
+apostara todo a la verdad, siempre. Y ahora por el otro lado: multiplica las tres apuestas.
+$\frac{1}{2} \cdot \frac{1}{4} \cdot \frac{1}{2} = \frac{1}{16}$ es
+$p_\theta(\textit{casa}, \textit{es}, \textit{blanca} \mid \textit{la})$, la probabilidad de la
+ventana dado su primer token, y $\exp\left(-3 \cdot \frac{4}{3}\ln 2\right) = 2^{-4}$
+es el mismo dieciseisavo. La media de los $-\log$ y el producto de las probabilidades son un solo
+número visto desde dos lados.
+
+Mira la fila $2$. El modelo apostó más por <W>blanca</W> que por <W>es</W>: <W>la casa blanca</W>
+es un principio razonable, y su favorita habría fallado. La pérdida no le pregunta eso. Le pregunta
+cuánto apostó por lo que de verdad vino, y como a <W>es</W> le dio $1/4$, le cobra $2\ln 2$: el
+doble que donde acertó con $1/2$, y no un salto de «mal» a «bien». Con $1/8$, el triple. Acertar la
+favorita no aparece en la fórmula, y por eso un modelo puede mejorar mucho sin cambiar ninguna de
+sus favoritas. Y la fila $2$ tendría los mismos logits sin <W>blanca</W> al final de la ventana:
+nunca lo vio. Ésa es la máscara en una frase, y lo que permite escribir tres filas en una tabla en
+lugar de tres pasadas.
+
+## Comprueba tu intuición
+
+Cuatro preguntas sobre la máscara, la fila $t$, la cadena y la ventana de arriba por el otro lado.
+
+<Quiz id="q-que-compra-la-mascara" />
+
+<Quiz id="q-fila-t" />
+
+<Quiz id="q-cadena-exacta" />
+
+<Quiz id="q-conjunta" />
+
+---
+
+Todo lo de esta lección se ha contado con cuatro palabras como tokens. El vocabulario del mini-GPT que este bloque entrena tiene $512$ entradas y ninguna elegida a
+mano: las eligió un procedimiento. El curso anterior dijo por qué tenía que ser así,
+<Leccion curso="dl-nlp" slug="vocabulario-oov">un vocabulario de palabras no es total</Leccion>, y
+las subpalabras lo arreglan partiendo lo que no conocen en trozos que sí. Lo que aquel curso no
+hizo, y lo dijo, fue construir uno: su explorable mostraba el resultado de BPE, y de dónde salía
+cada corte quedó fuera.
+
+Ese procedimiento es <Leccion slug="bpe-de-verdad">la lección siguiente, sobre BPE de
+verdad</Leccion>: no partir una palabra en trozos que ya existen, sino fusionar, sobre un corpus en español, los pares más frecuentes hasta el tamaño
+que se quiera, y ver qué le hace eso a la <W>ñ</W>, a <W>qu</W> y a
+<W>ción</W>. Con el vocabulario en la mano, lo que queda del bloque es cargar el modelo, seguir
+entrenándolo, muestrear de él y medirlo, y todo eso es aritmética sobre la fórmula de hoy.

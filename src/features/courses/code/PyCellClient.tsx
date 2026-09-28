@@ -33,6 +33,8 @@ import { useTranslations } from "next-intl";
 
 import { useClientValue } from "@/hooks/useClientValue";
 import { WidgetButton } from "@/features/courses/widgets/primitives/WidgetButton";
+import { CopyButton } from "@/features/content/CopyButton";
+import { normalizeCopiedCode } from "@/features/content/code-text";
 // Type-only — erased at build, so nothing under `lib/courses/pyodide/` reaches the
 // lesson's first-load chunk. The runtime arrives through the `await import()` in
 // `handleRun` and nowhere else.
@@ -245,67 +247,75 @@ export function PyCellClient({ code, highlightedHtml, packages }: PyCellClientPr
 
   return (
     <div style={{ margin: "1.75rem 0" }}>
-      {showHighlighted ? (
-        <div
-          id={editorId}
-          ref={highlighted}
-          className="pycell-editor"
-          role="button"
-          tabIndex={0}
-          aria-label={t("editLabel")}
-          onClick={() => setEditing(true)}
-          onFocus={() => setEditing(true)}
-          onScroll={rememberScroll}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              setEditing(true);
-            }
-          }}
-          // `white-space: pre` is not cosmetic here: Shiki's inline structure emits
-          // the indentation as plain spaces, and in Python indentation is syntax.
-          style={{
-            ...editorBox,
-            cursor: "text",
-            whiteSpace: "pre",
-            overflowX: "auto",
-            maxWidth: "100%",
-            maxHeight,
-            color: "var(--text)",
-          }}
-          // Build-time Shiki output from PyCell.tsx — never student input.
-          dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-        />
-      ) : (
-        <textarea
-          id={editorId}
-          ref={textarea}
-          className="pycell-editor"
-          value={value}
-          spellCheck={false}
-          autoCapitalize="off"
-          autoCorrect="off"
-          aria-label={t("editorLabel")}
-          rows={lineCount}
-          onChange={(event) => setValue(event.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => setEditing(true)}
-          onBlur={() => setEditing(false)}
-          onScroll={rememberScroll}
-          style={{
-            ...editorBox,
-            display: "block",
-            width: "100%",
-            minHeight: "3rem",
-            maxHeight,
-            resize: "vertical",
-            color: "var(--text)",
-            whiteSpace: "pre",
-            overflowWrap: "normal",
-            overflowX: "auto",
-          }}
-        />
-      )}
+      {/* COURSE-P12: the copy button lives in this host, as a SIBLING of the display —
+          never a child of the highlighted <div>, whose onClick/onFocus enter edit mode
+          and would fire on a click that is meant to copy. It is rendered only while the
+          read-only highlight shows, so it vanishes the moment the cell becomes an editor
+          (the request: copy on hover, gone in editor mode). */}
+      <div className="code-copy-host">
+        {showHighlighted ? (
+          <div
+            id={editorId}
+            ref={highlighted}
+            className="pycell-editor"
+            role="button"
+            tabIndex={0}
+            aria-label={t("editLabel")}
+            onClick={() => setEditing(true)}
+            onFocus={() => setEditing(true)}
+            onScroll={rememberScroll}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setEditing(true);
+              }
+            }}
+            // `white-space: pre` is not cosmetic here: Shiki's inline structure emits
+            // the indentation as plain spaces, and in Python indentation is syntax.
+            style={{
+              ...editorBox,
+              cursor: "text",
+              whiteSpace: "pre",
+              overflowX: "auto",
+              maxWidth: "100%",
+              maxHeight,
+              color: "var(--text)",
+            }}
+            // Build-time Shiki output from PyCell.tsx — never student input.
+            dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+          />
+        ) : (
+          <textarea
+            id={editorId}
+            ref={textarea}
+            className="pycell-editor"
+            value={value}
+            spellCheck={false}
+            autoCapitalize="off"
+            autoCorrect="off"
+            aria-label={t("editorLabel")}
+            rows={lineCount}
+            onChange={(event) => setValue(event.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setEditing(true)}
+            onBlur={() => setEditing(false)}
+            onScroll={rememberScroll}
+            style={{
+              ...editorBox,
+              display: "block",
+              width: "100%",
+              minHeight: "3rem",
+              maxHeight,
+              resize: "vertical",
+              color: "var(--text)",
+              whiteSpace: "pre",
+              overflowWrap: "normal",
+              overflowX: "auto",
+            }}
+          />
+        )}
+        {showHighlighted ? <CopyButton getText={() => normalizeCopiedCode(value)} /> : null}
+      </div>
 
       <div
         style={{

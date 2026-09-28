@@ -4,7 +4,7 @@
  * TEST-02: Pack purchase → book a session → cancel it flow.
  *
  * Flow:
- *   1. Authenticated user lands on the homepage
+ *   1. Authenticated user lands on /mentoria
  *   2. Acquires pack credits (live Stripe payment in one locale; seeded in the
  *      other — see the locale note below)
  *   3. Books a pack session using the credits
@@ -42,7 +42,7 @@ for (const locale of LOCALES) {
       // Acquire pack credits. Only [es] pays live through Stripe (see the
       // locale note at the top of the file); [en] seeds credits directly.
       if (locale === "es") {
-        await page.goto(`${urlBase}/`);
+        await page.goto(`${urlBase}/mentoria`);
 
         // Wait for pack cards, then open the Pack Esencial (first / cheapest) modal.
         const buyPackPattern = new RegExp(d.booking.packCard.buyPack.replace("{price}", "").trim().replace(/[·]/g, "").trim(), "i");
@@ -72,7 +72,7 @@ for (const locale of LOCALES) {
       }
 
       // ── Book a pack session using the credits (live or seeded) ──
-      await page.goto(`${urlBase}/`);
+      await page.goto(`${urlBase}/mentoria`);
       const initialMeetingPattern = new RegExp(d.booking.packCard.bookClass, "i");
       await expect(page.getByRole("button", { name: initialMeetingPattern }).first()).toBeVisible({
         timeout: 15_000,

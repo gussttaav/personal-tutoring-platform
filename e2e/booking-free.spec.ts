@@ -4,11 +4,11 @@
  * TEST-02: Free 15-min session ("Encuentro inicial") booking flow.
  *
  * Flow:
- *   1. Authenticated user lands on the homepage
+ *   1. Authenticated user lands on /mentoria
  *   2. Clicks the "Encuentro inicial" session card
  *   3. Navigates to the next calendar week (current week may be mostly past)
  *   4. Clicks the first available slot (1st click = focus), then "Continuar" (select)
- *   5. Confirms in the review step → asserts inline success ("Volver al inicio" button)
+ *   5. Confirms in the review step → asserts inline success ("Ir a mi área personal" button)
  */
 
 import { test, expect } from "@playwright/test";
@@ -25,7 +25,7 @@ test.describe("Free 15-min session booking", () => {
     // Cold-start dev server + availability fetch + booking orchestration
     // (Calendar/Zoom/email/QStash) regularly exceeds the global 60 s.
     test.setTimeout(120_000);
-    await page.goto("/");
+    await page.goto("/mentoria");
 
     // Wait for the auth state to settle (skeleton cards replaced by real cards)
     await expect(page.getByRole("button", { name: /encuentro inicial/i })).toBeVisible({
@@ -57,9 +57,9 @@ test.describe("Free 15-min session booking", () => {
     await confirmBtn.click();
 
     // Free sessions show success inline — SingleSessionBooking renders the success
-    // state in-place, the URL stays at "/". Assert the "Volver al inicio" button.
+    // state in-place, the URL stays at "/mentoria". Assert the "Ir a mi área personal" button.
     await expect(
-      page.getByRole("button", { name: /volver al inicio/i }),
+      page.getByRole("button", { name: /ir a mi área personal/i }),
     ).toBeVisible({ timeout: 30_000 });
   });
 });

@@ -121,6 +121,23 @@ describe("mathPunctuationWarnings", () => {
     ).toEqual([]);
   });
 
+  it("takes the mark on the last row of an `aligned` derivation, not on `\\end{aligned}`", () => {
+    const aligned = ["\\begin{aligned}", "a &= b + c \\\\", "&= d.", "\\end{aligned}"].join("\n");
+    expect(mathPunctuationWarnings(block(aligned, "Una red, en cambio."))).toEqual([]);
+  });
+
+  it("still accepts the older mark-after-`\\end{aligned}` placement", () => {
+    const aligned = ["\\begin{aligned}", "a &= b + c \\\\", "&= d", "\\end{aligned}."].join("\n");
+    expect(mathPunctuationWarnings(block(aligned, "Una red, en cambio."))).toEqual([]);
+  });
+
+  it("flags an `aligned` derivation unpunctuated on both its last row and its close", () => {
+    const aligned = ["\\begin{aligned}", "a &= b + c \\\\", "&= d", "\\end{aligned}"].join("\n");
+    const [warning] = mathPunctuationWarnings(block(aligned, "Una red, en cambio."));
+    expect(warning).toMatch(/math punctuation/);
+    expect(warning).toMatch(/&= d/); // points at the row, not at \end{aligned}
+  });
+
   it("flags a question opening with ¿ as a new sentence", () => {
     expect(mathPunctuationWarnings(block(EQUATION, "¿Cuántas entradas caben?"))).toHaveLength(1);
   });

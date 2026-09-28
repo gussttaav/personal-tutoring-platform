@@ -17,7 +17,7 @@
 /* Section kicker overline — small tracked emerald caps. */
 .lp-kicker {
   font-family: var(--font-headline, Manrope), sans-serif;
-  font-size: 11px;
+  font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;

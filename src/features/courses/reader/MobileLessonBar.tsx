@@ -208,8 +208,9 @@ export default function MobileLessonBar({ title, children }: MobileLessonBarProp
         </span>
 
         {/* COURSE-P9-01: search sits beside the progress slot, in the persistent bar
-            rather than behind the drawer toggle — it is a primary action on mobile too. */}
-        <CourseSearchTrigger variant="icon" />
+            rather than behind the drawer toggle — it is a primary action on mobile too.
+            COURSE-P9-02: and the only way into the dialog — desktop searches inline. */}
+        <CourseSearchTrigger />
 
         {/* COURSE-P4-02: the slot P1-04 reserved, now filled. The indicator renders
             nothing at all when progress is untracked. */}

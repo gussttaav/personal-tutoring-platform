@@ -8,7 +8,8 @@
  *
  * Styled to the site's own card vocabulary (the ContentLanguageNotice pattern: a surface card
  * with a left emerald rail), so it reads as native chrome rather than a bolted-on section.
- * The "book a session" phrase is a rich-text slot linking to the homepage mentoring anchor.
+ * The "book a session" phrase is a rich-text slot linking to the Mentoría page
+ * (REDESIGN-P0-01: `/mentoria`, formerly the `/#sessions` anchor into the home).
  */
 
 import { getTranslations } from "next-intl/server";
@@ -35,21 +36,6 @@ export default async function CourseAuthorNote({ locale }: { locale: string }) {
           overflow: "hidden",
         }}
       >
-        <span
-          className="lp-serif"
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: "6px",
-            right: "24px",
-            fontSize: "120px",
-            lineHeight: 1,
-            color: "var(--green)",
-            opacity: 0.09,
-          }}
-        >
-          {"”"}
-        </span>
         <p
           className="lp-serif"
           style={{
@@ -63,7 +49,7 @@ export default async function CourseAuthorNote({ locale }: { locale: string }) {
           {t.rich("body", {
             book: (chunks) => (
               <Link
-                href="/#sessions"
+                href="/mentoria"
                 style={{
                   color: "var(--green)",
                   textDecoration: "underline",

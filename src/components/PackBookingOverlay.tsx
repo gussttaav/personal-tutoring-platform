@@ -46,7 +46,6 @@ export default function PackBookingOverlay() {
       rescheduleToken={null}
       onCreditsUpdated={updateCredits}
       onExit={() => setShow(false)}
-      hideTopBar
       packTotal={packSession.packSize}
     />
   );

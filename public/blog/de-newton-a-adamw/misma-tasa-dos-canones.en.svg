@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 726 225" width="726" height="225" role="img"
+ aria-label="Two contour maps with the same Adam trajectory over them, thirty steps in a straight line: a forty-five-degree diagonal from the top left down to the horizontal axis, then toward the centre. On the left the ravine is x² plus twenty y², with stretched ellipses. On the right it is x² plus two thousand y², a hundred times narrower: the contours are nearly horizontal stripes and the floor is a slit. The thirty steps are identical in both drawings. The labels say Adam arrives in 36 and 75 steps at the same rate 0.1, and that gradient descent needs 35 steps at rate 0.045 on the first and 3619 steps at rate 0.00045 on the second.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 11.5px; font-weight: 600; }
+  .sub { font-size: 10px; fill: #86948a; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ct { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .tr { fill: none; stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  .pt { stroke: none; }
+  .st { fill: none; stroke-width: 1.6; }
+</style>
+<text class="lbl" x="20" y="22">x² + 20y²</text>
+<text class="sub" x="20" y="34">Adam, η = 0.1: 36 steps · descent, η = 0.045: 35 steps</text>
+<clipPath id="c20_40"><rect x="20" y="40" width="330" height="165"/></clipPath>
+<g clip-path="url(#c20_40)">
+<ellipse class="ct" cx="185.0" cy="122.5" rx="27.5" ry="6.1"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="55.0" ry="12.3"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="82.5" ry="18.4"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="110.0" ry="24.6"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="137.5" ry="30.7"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="165.0" ry="36.9"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="220.0" ry="49.2"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="275.0" ry="61.5"/>
+<ellipse class="ct" cx="185.0" cy="122.5" rx="330.0" ry="73.8"/>
+</g>
+<rect x="20" y="40" width="330" height="165" fill="none" stroke="#2a2a2c"/>
+<line class="ax" x1="185.0" y1="40" x2="185.0" y2="205" stroke-dasharray="2 3"/>
+<line class="ax" x1="20" y1="122.5" x2="350" y2="122.5" stroke-dasharray="2 3"/>
+<polyline class="tr" stroke="#e87ab8" points="42.0,56.5 47.5,62.0 53.0,67.5 58.5,72.9 63.9,78.3 69.4,83.7 74.8,88.9 80.2,94.0 85.5,99.0 90.8,103.9 96.1,108.5 101.2,112.9 106.4,117.0 111.4,120.8 116.3,124.3 121.2,127.4 126.0,130.1 130.6,132.4 135.2,134.3 139.6,135.8 143.9,136.9 148.1,137.6 152.1,138.0 155.9,138.0 159.6,137.7 163.2,137.1 166.5,136.3 169.7,135.2 172.7,134.0 175.6,132.7 178.2,131.3"/>
+<circle class="pt" fill="#e87ab8" cx="47.5" cy="62.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="53.0" cy="67.5" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="58.5" cy="72.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="63.9" cy="78.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="69.4" cy="83.7" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="74.8" cy="88.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="80.2" cy="94.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="85.5" cy="99.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="90.8" cy="103.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="96.1" cy="108.5" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="101.2" cy="112.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="106.4" cy="117.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="111.4" cy="120.8" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="116.3" cy="124.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="121.2" cy="127.4" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="126.0" cy="130.1" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="130.6" cy="132.4" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="135.2" cy="134.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="139.6" cy="135.8" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="143.9" cy="136.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="148.1" cy="137.6" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="152.1" cy="138.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="155.9" cy="138.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="159.6" cy="137.7" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="163.2" cy="137.1" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="166.5" cy="136.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="169.7" cy="135.2" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="172.7" cy="134.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="175.6" cy="132.7" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="178.2" cy="131.3" r="2"/>
+<circle class="st" stroke="#e87ab8" cx="42.0" cy="56.5" r="3.2"/>
+<text class="lbl" x="386" y="22">x² + 2000y²</text>
+<text class="sub" x="386" y="34">Adam, η = 0.1: 75 steps · descent, η = 0.00045: 3619 steps</text>
+<clipPath id="c386_40"><rect x="386" y="40" width="330" height="165"/></clipPath>
+<g clip-path="url(#c386_40)">
+<ellipse class="ct" cx="551.0" cy="122.5" rx="246.0" ry="5.5"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="614.9" ry="13.8"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="1229.8" ry="27.5"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="1844.8" ry="41.2"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="2459.7" ry="55.0"/>
+<ellipse class="ct" cx="551.0" cy="122.5" rx="3074.6" ry="68.8"/>
+</g>
+<rect x="386" y="40" width="330" height="165" fill="none" stroke="#2a2a2c"/>
+<line class="ax" x1="551.0" y1="40" x2="551.0" y2="205" stroke-dasharray="2 3"/>
+<line class="ax" x1="386" y1="122.5" x2="716" y2="122.5" stroke-dasharray="2 3"/>
+<polyline class="tr" stroke="#e87ab8" points="408.0,56.5 413.5,62.0 419.0,67.5 424.5,72.9 429.9,78.3 435.4,83.7 440.8,88.9 446.2,94.0 451.5,99.0 456.8,103.9 462.1,108.5 467.2,112.9 472.4,117.0 477.4,120.8 482.3,124.3 487.2,127.4 492.0,130.1 496.6,132.4 501.2,134.3 505.6,135.8 509.9,136.9 514.1,137.6 518.1,138.0 521.9,138.0 525.6,137.7 529.2,137.1 532.5,136.3 535.7,135.2 538.7,134.0 541.6,132.7 544.2,131.3"/>
+<circle class="pt" fill="#e87ab8" cx="413.5" cy="62.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="419.0" cy="67.5" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="424.5" cy="72.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="429.9" cy="78.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="435.4" cy="83.7" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="440.8" cy="88.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="446.2" cy="94.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="451.5" cy="99.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="456.8" cy="103.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="462.1" cy="108.5" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="467.2" cy="112.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="472.4" cy="117.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="477.4" cy="120.8" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="482.3" cy="124.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="487.2" cy="127.4" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="492.0" cy="130.1" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="496.6" cy="132.4" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="501.2" cy="134.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="505.6" cy="135.8" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="509.9" cy="136.9" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="514.1" cy="137.6" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="518.1" cy="138.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="521.9" cy="138.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="525.6" cy="137.7" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="529.2" cy="137.1" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="532.5" cy="136.3" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="535.7" cy="135.2" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="538.7" cy="134.0" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="541.6" cy="132.7" r="2"/>
+<circle class="pt" fill="#e87ab8" cx="544.2" cy="131.3" r="2"/>
+<circle class="st" stroke="#e87ab8" cx="408.0" cy="56.5" r="3.2"/>
+</svg>

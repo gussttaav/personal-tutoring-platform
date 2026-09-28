@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 262" width="750" height="262" role="img"
+ aria-label="Diagram of the agentic RAG loop. The question goes into the model, which reads everything so far. If something is missing, it calls search with a query it writes and a source it picks among tickets, with lexical search, documentation, with hybrid search, and the web. The chunks come back into context as an observation and the model decides again. When it has what it needs, it answers with citations or says it does not know. The code only sets the budget, six turns.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.x { stroke: #ffb4ab; stroke-dasharray: 3 3; marker-end: url(#ax); }
+  .nb { fill: #1d1d1f; stroke: #ffb4ab; stroke-width: 1.2; }
+  .nt { font-size: 10.5px; font-weight: 700; fill: #ffb4ab; text-anchor: middle; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="ax" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#ffb4ab"/></marker></defs>
+<rect class="bx " x="0.0" y="98.0" width="104.0" height="44.0" rx="6"/>
+<text class="lb" x="52.0" y="124.0">Question</text>
+<rect class="bx m" x="146.0" y="83.0" width="164.0" height="74.0" rx="6"/>
+<text class="lb m" x="228.0" y="118.0">Model</text>
+<text class="sb" x="228.0" y="132.0">reads everything so far</text>
+<path class="ar" d="M104.0,120.0 L144.0,120.0"/>
+<rect class="bx " x="372.0" y="24.0" width="186.0" height="48.0" rx="6"/>
+<text class="mo" x="465.0" y="44.0" style="text-anchor:middle">search(query, source)</text>
+<text class="sb m" x="465.0" y="61.0">it writes the query</text>
+<rect class="bx g" x="598.0" y="6.0" width="150.0" height="26.0" rx="6"/>
+<text class="tx" x="673.0" y="23.0" style="text-anchor:middle">tickets · lexical</text>
+<rect class="bx g" x="598.0" y="38.0" width="150.0" height="26.0" rx="6"/>
+<text class="tx" x="673.0" y="55.0" style="text-anchor:middle">documentation · hybrid</text>
+<rect class="bx g" x="598.0" y="70.0" width="150.0" height="26.0" rx="6"/>
+<text class="tx" x="673.0" y="87.0" style="text-anchor:middle">web</text>
+<path class="ar" d="M558.0,48.0 L596.0,48.0"/>
+<rect class="bx " x="372.0" y="150.0" width="186.0" height="48.0" rx="6"/>
+<text class="lb" x="465.0" y="172.0">Observation</text>
+<text class="sb" x="465.0" y="186.0">the chunks, into context</text>
+<path class="ar m" d="M250.0,83.0 L250.0,48.0 L370.0,48.0"/>
+<text class="sb m" x="258.0" y="40.0" style="text-anchor:start">something missing</text>
+<path class="ar" d="M673.0,102.0 L673.0,174.0 L560.0,174.0"/>
+<path class="ar" d="M372.0,174.0 L312.0,174.0 L312.0,142.0"/>
+<path class="ar m" d="M200.0,157.0 L200.0,214.0"/>
+<text class="sb m" x="208.0" y="190.0" style="text-anchor:start">has it</text>
+<rect class="bx " x="118.0" y="216.0" width="164.0" height="44.0" rx="6"/>
+<text class="lb" x="200.0" y="236.0">Answer</text>
+<text class="sb" x="200.0" y="250.0">with citations, or “I don't know”</text>
+<text class="sb" x="748.0" y="238.0" style="text-anchor:end">the code only sets the budget: 6 turns</text>
+</svg>

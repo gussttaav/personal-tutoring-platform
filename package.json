@@ -12,6 +12,7 @@
     "lint": "eslint .",
     "lint:content": "tsx scripts/lint-content.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",
+    "check:messages": "tsx scripts/check-messages.ts",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",

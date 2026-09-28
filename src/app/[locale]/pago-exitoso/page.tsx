@@ -63,13 +63,10 @@ function SuccessContent() {
         </InfoBox>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <FbButton variant="primary" onClick={() => router.push("/")} style={{ width: "100%" }}>
+          <FbButton variant="primary" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
             <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
-              home
+              login
             </span>
-            {t("backToHome")}
-          </FbButton>
-          <FbButton variant="ghost" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
             {t("goToPersonalArea")}
           </FbButton>
         </div>
@@ -85,12 +82,12 @@ function SuccessContent() {
 
   /**
    * After a successful pack purchase the user wants to book their first class
-   * immediately. We redirect to /?action=schedule-pack so InteractiveShell
+   * immediately. We redirect to /mentoria?action=schedule-pack so InteractiveShell
    * can read that param on mount and open the pack booking view automatically,
    * without the user having to find and click "Reservar mis clases" manually.
    */
   function handleScheduleClasses() {
-    router.push("/?action=schedule-pack");
+    router.push("/mentoria?action=schedule-pack");
   }
 
   // ── Connecting — activating credits ──
@@ -174,8 +171,8 @@ function SuccessContent() {
               arrow_forward
             </span>
           </FbButton>
-          <FbButton variant="ghost" onClick={() => router.push("/")} style={{ width: "100%" }}>
-            {t("backToHome")}
+          <FbButton variant="ghost" onClick={() => router.push("/area-personal")} style={{ width: "100%" }}>
+            {t("goToPersonalArea")}
           </FbButton>
         </div>
 

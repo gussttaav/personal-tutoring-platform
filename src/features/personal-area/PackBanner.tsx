@@ -7,17 +7,20 @@
  * redesign promotes it above the grid and adds the pack's validity date, which
  * /api/credits now returns (it was always resolved by the repository and dropped
  * at the route).
+ *
+ * «Reservar clase» opens the pack booking in place (useBookingActions.ts), no longer
+ * `router.push("/mentoria?book=pack")`.
  */
 
-import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { UserSession } from "@/domain/types";
 import { formatDate } from "@/lib/formatting";
+import { useBookingActions } from "./useBookingActions";
 
 export default function PackBanner({ packSession }: { packSession: UserSession }) {
   const t      = useTranslations("areaPersonal.packStatus");
   const locale = useLocale() as "es" | "en";
-  const router = useRouter();
+  const { openBooking } = useBookingActions();
 
   const { credits, packSize, expiresAt } = packSession;
 
@@ -84,7 +87,7 @@ export default function PackBanner({ packSession }: { packSession: UserSession }
         <button
           type="button"
           className="pa-btn pa-btn--primary"
-          onClick={() => router.push("/?book=pack")}
+          onClick={() => openBooking("pack")}
         >
           <span className="material-symbols-outlined" aria-hidden="true">calendar_add_on</span>
           {t("bookButton")}

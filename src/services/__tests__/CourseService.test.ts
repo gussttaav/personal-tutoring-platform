@@ -4,8 +4,8 @@
 // denominator is the array passed to `FakeCourseCatalog`, so "drafts are
 // excluded" is expressed by leaving a slug out rather than by building an MDX
 // tree and re-pointing the registry.
-import type { QuizAttempt } from "@/domain/types";
-import { CourseService, summariseAttempts } from "../CourseService";
+import type { CourseProgressSummary, QuizAttempt } from "@/domain/types";
+import { CourseService, pickCurrentCourse, summariseAttempts } from "../CourseService";
 import { UserService }   from "../UserService";
 import { InMemoryCourseRepository } from "@/__tests__/fixtures/InMemoryCourseRepository";
 import { FakeCourseCatalog }        from "@/__tests__/fixtures/FakeCourseCatalog";
@@ -169,6 +169,7 @@ describe("CourseService.getCourseProgress", () => {
       completedLessons:   0,
       percentComplete:    0,
       lastSeenLessonSlug: null,
+      lastSeenAt:         null,
       enrolledAt:         null,
       completedAt:        null,
     });
@@ -263,6 +264,120 @@ describe("CourseService.listEnrollments", () => {
     expect(summaries[0].percentComplete).toBe(50);
     expect(summaries[1].percentComplete).toBe(0);
     expect(summaries[1].lastSeenLessonSlug).toBe("a");
+    // LANDING-01: the view's timestamp rides along with its slug.
+    expect(summaries[1].lastSeenAt).not.toBeNull();
+  });
+});
+
+// ─── LANDING-01 ───────────────────────────────────────────────────────────────
+
+describe("pickCurrentCourse (LANDING-01)", () => {
+  const summary = (over: Partial<CourseProgressSummary>): CourseProgressSummary => ({
+    courseSlug:         "dl-nlp",
+    totalLessons:       4,
+    completedLessons:   0,
+    percentComplete:    0,
+    lastSeenLessonSlug: null,
+    lastSeenAt:         null,
+    enrolledAt:         "2026-01-01T00:00:00.000Z",
+    completedAt:        null,
+    ...over,
+  });
+
+  it("returns null when there is nothing in progress", () => {
+    expect(pickCurrentCourse([])).toBeNull();
+    expect(pickCurrentCourse([
+      summary({ courseSlug: "a", completedAt: "2026-02-01T00:00:00.000Z" }),
+      summary({ courseSlug: "b", enrolledAt: null }),
+    ])).toBeNull();
+  });
+
+  it("ranks by the newest lesson view, not the newest enrolment", () => {
+    const picked = pickCurrentCourse([
+      summary({ courseSlug: "a", enrolledAt: "2026-01-01T00:00:00.000Z", lastSeenAt: "2026-03-10T00:00:00.000Z" }),
+      summary({ courseSlug: "b", enrolledAt: "2026-02-01T00:00:00.000Z", lastSeenAt: "2026-03-05T00:00:00.000Z" }),
+    ]);
+    expect(picked).toBe("a");
+  });
+
+  it("uses enrolledAt as the clock for a course with no views yet", () => {
+    const picked = pickCurrentCourse([
+      summary({ courseSlug: "a", enrolledAt: "2026-01-01T00:00:00.000Z", lastSeenAt: "2026-01-05T00:00:00.000Z" }),
+      summary({ courseSlug: "b", enrolledAt: "2026-01-10T00:00:00.000Z" }),
+    ]);
+    expect(picked).toBe("b");
+  });
+
+  it("skips a completed course even when it is the most recent", () => {
+    const picked = pickCurrentCourse([
+      summary({ courseSlug: "a", lastSeenAt: "2026-01-05T00:00:00.000Z" }),
+      summary({ courseSlug: "b", lastSeenAt: "2026-01-09T00:00:00.000Z", completedAt: "2026-01-09T00:00:00.000Z" }),
+    ]);
+    expect(picked).toBe("a");
+  });
+
+  it("keeps the first summary on a tie", () => {
+    const picked = pickCurrentCourse([
+      summary({ courseSlug: "a", lastSeenAt: "2026-01-05T00:00:00.000Z" }),
+      summary({ courseSlug: "b", lastSeenAt: "2026-01-05T00:00:00.000Z" }),
+    ]);
+    expect(picked).toBe("a");
+  });
+});
+
+describe("CourseService.getCurrentCourse (LANDING-01)", () => {
+  function makeTwoCourses(catalog = new FakeCourseCatalog({ "dl-nlp": ["l1", "l2"], "otro": ["a"] })) {
+    const courses  = new InMemoryCourseRepository();
+    const userRepo = new InMemoryUserRepository();
+    const service  = new CourseService(courses, catalog, new UserService(userRepo));
+    return { service, courses, userRepo };
+  }
+
+  it("returns null for a user with no enrolments", async () => {
+    const { service } = makeTwoCourses();
+    expect(await service.getCurrentCourse(EMAIL)).toBeNull();
+  });
+
+  it("returns the course the reader viewed most recently", async () => {
+    const { service } = makeTwoCourses();
+
+    await service.markLessonSeen(EMAIL, "dl-nlp", "l1");
+    await service.markLessonSeen(EMAIL, "otro", "a");
+    expect(await service.getCurrentCourse(EMAIL)).toBe("otro");
+
+    await service.markLessonSeen(EMAIL, "dl-nlp", "l1"); // re-view moves the clock
+    expect(await service.getCurrentCourse(EMAIL)).toBe("dl-nlp");
+  });
+
+  it("falls back to the enrolment date for a course opened but never read", async () => {
+    const { service } = makeTwoCourses();
+
+    await service.markLessonSeen(EMAIL, "dl-nlp", "l1");
+    await service.enroll(EMAIL, "otro");
+
+    expect(await service.getCurrentCourse(EMAIL)).toBe("otro");
+  });
+
+  it("skips a finished course", async () => {
+    const { service } = makeTwoCourses();
+
+    await service.markLessonSeen(EMAIL, "dl-nlp", "l1");
+    await service.markLessonCompleted(EMAIL, "otro", "a"); // the only lesson → course done
+
+    expect(await service.getCurrentCourse(EMAIL)).toBe("dl-nlp");
+
+    await service.markLessonCompleted(EMAIL, "dl-nlp", "l1");
+    await service.markLessonCompleted(EMAIL, "dl-nlp", "l2");
+    expect(await service.getCurrentCourse(EMAIL)).toBeNull();
+  });
+
+  it("skips an enrolment whose course left the catalog", async () => {
+    const { service, courses, userRepo } = makeTwoCourses(new FakeCourseCatalog({ ghost: ["x"] }));
+    await service.markLessonSeen(EMAIL, "ghost", "x");
+
+    // Same rows, read through a service whose catalog no longer lists `ghost`.
+    const later = new CourseService(courses, new FakeCourseCatalog({ "dl-nlp": ["l1"] }), new UserService(userRepo));
+    expect(await later.getCurrentCourse(EMAIL)).toBeNull();
   });
 });
 

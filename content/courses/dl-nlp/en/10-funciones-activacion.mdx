@@ -1,0 +1,514 @@
+---
+slug: funciones-activacion
+title: "Activation functions and non-linearity"
+block: 2
+order: 2
+minutes: 30
+summary: "The step passes along the sign of the pre-activation and drops everything else, and its derivative is zero wherever it even exists. Sigmoid, hyperbolic tangent and ReLU keep the magnitude instead and have a real derivative; none of them can be a straight line, because chaining affine functions together only ever gives back another affine function."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-derivada-sigmoide
+    type: numeric
+    prompt: 'For some input, a neuron with a sigmoid gives $\sigma(z) = 0.9$. What is $\dfrac{d\sigma}{dz}$ at that same point?'
+    answer: 0.09
+    tolerance: 0.001
+    explanation: 'The sigmoid''s derivative is written in terms of the sigmoid''s own value, $\dfrac{d\sigma}{dz} = \sigma(z)\left(1 - \sigma(z)\right)$, so you need neither $z$ nor a fresh exponential: $0.9 \cdot 0.1 = 0.09$. Notice how small that already is (barely over a third of the maximum $0.25$ it reaches at the origin), and that $\sigma(z) = 0.9$ corresponds to $z \approx 2.2$, a value that does not look extreme at all on the graph of the function. Saturation sets in earlier than the picture suggests.'
+  - id: q-identidad
+    type: single
+    prompt: 'You chain two neurons: the first computes $a^{(1)} = \left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}$ and the second $a^{(2)} = w^{(2)} a^{(1)} + b^{(2)}$, with the identity in both activations. What function of $\mathbf{x}$ do you get?'
+    options:
+      - { id: a, text: 'A single neuron, with weight vector $w^{(2)}\mathbf{w}^{(1)}$ and bias $w^{(2)}b^{(1)} + b^{(2)}$.' }
+      - { id: b, text: 'A function no single neuron can reproduce: chaining two pre-activations leaves behind a term that is quadratic in $\mathbf{x}$.' }
+      - { id: c, text: 'A single neuron, with weight vector $\mathbf{w}^{(1)} + w^{(2)}$ and bias $b^{(1)} + b^{(2)}$.' }
+      - { id: d, text: 'It depends on $\mathbf{x}$: for some inputs it behaves like a neuron, and for others it does not.' }
+    answer: a
+    explanation: 'Substitute and collect terms: $w^{(2)}\left(\left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}\right) + b^{(2)} = \left(w^{(2)}\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + \left(w^{(2)}b^{(1)} + b^{(2)}\right)$, which has exactly the form of a neuron. (b) would need the second neuron to multiply two pre-activations together, but what it actually does is multiply one by a scalar. (c) does not even match dimensions: $\mathbf{w}^{(1)}$ lives in $\mathbb{R}^{d}$, while $w^{(2)}$ is a plain number. And (d) confuses an algebraic identity with a numerical coincidence: the equality holds for every $\mathbf{x}$, which is exactly what makes it a serious result.'
+  - id: q-saturacion
+    type: multi
+    prompt: 'Tick everything that is true about the derivatives of the activations in this lesson.'
+    options:
+      - { id: a, text: 'The sigmoid and the hyperbolic tangent saturate on both sides: their derivative tends to zero as $\lvert z \rvert$ grows, in both directions.' }
+      - { id: b, text: 'The derivative of ReLU is zero for all $z < 0$, and exactly so, not approximately.' }
+      - { id: c, text: 'The derivative of the hyperbolic tangent reaches $1$ at the origin, and that of the sigmoid, $0.25$.' }
+      - { id: d, text: 'ReLU does not saturate on either side, and so its derivative never vanishes.' }
+    answer: [a, b, c]
+    explanation: 'The first three are exactly the three things the table in the cell measures. (a) is what the red bands of the explorable draw on both the left and the right; (b) covers the whole left half, and that is where ReLU''s own defect lives: a neuron whose pre-activation stays negative for every example it sees has a derivative of zero on all of them, so nothing ever moves it (the dying ReLU); (c) comes from evaluating $\sigma(0)\left(1-\sigma(0)\right) = 0.25$ and $1 - \tanh^{2}(0) = 1$. (d) is the false one, and it fails on its second half: ReLU does not saturate (on the right its derivative stays $1$ as far out as you care to go), but that does not mean its derivative never vanishes, since on the left it is zero everywhere.'
+challenges:
+  - id: ch-relu
+    prompt: |
+      Write the two functions the cell uses to handle ReLU, working over a NumPy array of
+      any shape and without Python loops:
+
+      - `relu(z)` returns $\max(0, z)$ coordinate by coordinate.
+      - `d_relu(z)` returns its derivative: $1$ where $z > 0$ and $0$ everywhere else,
+        taking $0$ at $z = 0$ as well.
+
+      Neither function may modify the array it receives.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def relu(z):
+          # your code here
+          pass
+
+
+      def d_relu(z):
+          # your code here
+          pass
+    tests:
+      - name: "clips the negatives"
+        code: |
+          import numpy as np
+          assert np.allclose(relu(np.array([-2., 0., 3.])), [0., 0., 3.]), 'relu(z) passes the positive part through unchanged and sends the negative part to zero'
+      - name: "the derivative is 1 only where z > 0"
+        code: |
+          import numpy as np
+          assert np.allclose(d_relu(np.array([-2., 0., 3.])), [0., 0., 1.]), 'at z = 0 the derivative does not exist and the course takes 0: the comparison has to be strict'
+      - name: "keeps the shape of the array"
+        code: |
+          import numpy as np
+          assert relu(np.zeros((2, 3))).shape == (2, 3), 'do not flatten or reduce: the shape of the output is the shape of the input'
+      - name: "does not modify the array it receives"
+        code: |
+          import numpy as np
+          z = np.array([-1., 2.])
+          relu(z)
+          assert np.allclose(z, [-1., 2.]), 'z[z < 0] = 0 writes into the array it was handed; return a new one'
+    solution: |
+      import numpy as np
+
+
+      def relu(z):
+          return np.maximum(z, 0.0)
+
+
+      def d_relu(z):
+          return (z > 0).astype(float)
+    explanation: |
+      `np.maximum` compares element by element against zero and returns a brand-new array,
+      which settles the first three tests in one go.
+
+      The fourth test is the one that hides something. `z[z < 0] = 0` also "works", and it is
+      the form many people reach for first, but it writes over the array it was handed:
+      whoever called `relu` finds their input destroyed, with no error to warn them. The
+      symptom shows up much later, somewhere else entirely, which is exactly what makes it
+      expensive to track down.
+
+      For the derivative, `(z > 0)` produces booleans and `.astype(float)` turns them into
+      $0$ and $1$. The comparison is strict on purpose: at $z = 0$ ReLU has a corner, the
+      derivative does not exist, and the course takes $0$ there by convention.
+reading:
+  - kind: libro
+    title: 'Deep Learning, ch. 6: Deep Feedforward Networks'
+    authors: 'Goodfellow, Bengio and Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/mlp.html'
+    note: 'Its §6.3, on hidden units, ranks the three activations (ReLU, sigmoid, hyperbolic tangent) and argues why ReLU is today''s default. It chooses by what works, not by what is proved, and only touches saturation in passing.'
+  - kind: paper
+    title: 'Gaussian Error Linear Units (GELUs)'
+    authors: 'Hendrycks and Gimpel'
+    year: '2016'
+    venue: 'arXiv:1606.08415'
+    lang: en
+    url: 'https://arxiv.org/abs/1606.08415'
+    note: 'Defines the GELU the lesson names but does not develop: the input times the cumulative distribution function of a normal. Measures it against ReLU and ELU on vision, text and speech; nothing on saturation or the dying ReLU.'
+---
+
+{/* COURSE-P5-02 — Block 2, Lesson 2. */}
+
+The previous lesson, on the artificial neuron, left one piece still unchosen. The weights and the
+bias are the neuron itself (they fix the hyperplane, and with it everything it can ever tell apart),
+but between the pre-activation $z$ and what the neuron actually returns sits one more function,
+$\varphi$, that hasn't been chosen yet: the step filled that role by default, and only
+provisionally. Choosing it properly is what this lesson is about, and it's no cosmetic detail. Two
+things ride on $\varphi$: how much of the number the neuron computes survives, and what happens when
+you put one neuron behind another.
+
+Start by watching what the step does when a weight moves. Take any neuron and nudge a single one of
+its weights from $1.0$ to $1.1$, to $1.2$, to $1.3$. The pre-activation tracks the movement exactly:
+it grows a little each time, passing through every value in between. But the output doesn't notice
+any of it. It sits at $0$ the whole time $z$ is negative, and the instant $z$ crosses zero, it jumps
+straight to $1$ and stays there. Whatever there was to learn about how far the weight had moved gets
+lost along the way, and always at the very same point.
+
+Before writing down a single candidate, it helps to look at them side by side. The explorable draws
+each one over $[-5, 5]$, overlays its derivative as a dashed line, and shades in red the stretches
+where that derivative all but vanishes.
+
+<Explorable
+  id="activation-explorer"
+  caption="For each function, compare the solid curve with the dashed one (its derivative), and look at how wide the red bands are: ReLU's covers half the graph. Check the numbers on the vertical axis too, since they change from one function to the next: tanh's derivative reaches 1 where the sigmoid's tops out at 0.25. The last button shows the step from the previous lesson, where the red covers everything."
+/>
+
+The derivative f′ button draws that dashed curve. The first four solid curves look a lot alike (all
+rising, all faster near zero), but their dashed curves have almost nothing in common: it's the
+derivative, not the function itself, that tells one candidate apart from another. And then there's
+the step, which shows exactly what it's missing: its dashed curve is a flat line pinned to zero, and
+the red covers the whole graph.
+
+<Callout type="intuition" title="The idea in one sentence">
+An activation function has two independent jobs to do. It can't be a straight line, because a
+straight line means stacking neurons builds nothing new, and its derivative can't be zero
+everywhere, because that derivative is exactly what later corrects the weights. The step passes the
+first test and fails the second about as badly as a function can.
+</Callout>
+
+## Why the activation cannot be a straight line
+
+Start with the requirement that doesn't depend on any particular case. Chain two neurons together:
+the first looks at the input $\mathbf{x} \in \mathbb{R}^{d}$ and returns a number, and the second
+looks at that number and returns another. There's one neuron at each level, so the first level's
+weights form a vector and the second's is a single scalar; the superscript in parentheses marks the
+level, the same notation the layers will carry once each one holds several neurons:
+
+$$
+a^{(1)} = \varphi\left(\left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}\right),
+\qquad
+a^{(2)} = \varphi\left(w^{(2)} a^{(1)} + b^{(2)}\right),
+$$
+
+with $\mathbf{w}^{(1)} \in \mathbb{R}^{d}$ and $b^{(1)}, w^{(2)}, b^{(2)} \in \mathbb{R}$. Now set
+$\varphi$ to the identity in both activations, $\varphi(z) = z$, and substitute the first expression
+into the second:
+
+$$
+\begin{aligned}
+a^{(2)}
+&= w^{(2)}\left(\left(\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + b^{(1)}\right) + b^{(2)} \\[2pt]
+&= \left(w^{(2)}\mathbf{w}^{(1)}\right)^{\top}\mathbf{x} + \left(w^{(2)}b^{(1)} + b^{(2)}\right).
+\end{aligned}
+$$
+
+The right-hand side is a neuron: a single one, with weight vector $w^{(2)}\mathbf{w}^{(1)}$ and bias
+$w^{(2)}b^{(1)} + b^{(2)}$, and no input can tell it apart from the chain that produced it, since the
+two give the same number for every $\mathbf{x}$. The previous lesson already told you what that
+means: everything a neuron tells apart lives on its boundary, and that boundary is a hyperplane. So
+the chain of two separates with a hyperplane too. Chaining hasn't curved the boundary at all.
+
+And there was nothing special about picking the identity. Try any straight line for $\varphi$,
+$\varphi(z) = \alpha z + \beta$ with $\alpha \neq 0$, and you'll find that $\alpha$ gets absorbed
+into the next level's weights and $\beta$ into its bias: what comes out the other side is, again, a
+pre-activation. Any straight line behaves the same way.
+
+It helps to name this precisely. The expression $\mathbf{w}^{\top}\mathbf{x} + b$ isn't linear in the
+strict algebraic sense (a linear map sends zero to zero, and this one sends it to $b$ instead): it's
+**affine**. Composing affine functions always gives back an affine function, and that holds no
+matter how far you chain it: a hundred neurons in a row, each with a straight line for $\varphi$, add
+up to exactly one neuron. The property that has to break, and it can only break inside the
+activation, is the one this lesson takes its title from: **non-linearity**, though what actually gets
+broken is affineness.
+
+<Details summary="The same computation with several neurons at each level">
+
+None of this depended on having a single neuron per level. With several neurons per level (and, as
+before, the identity in both activations), each level's weights gather into a matrix and its biases
+into a vector, and the chain becomes
+
+$$
+\mathbf{W}^{(2)}\left(\mathbf{W}^{(1)}\mathbf{x} + \mathbf{b}^{(1)}\right) + \mathbf{b}^{(2)}
+= \left(\mathbf{W}^{(2)}\mathbf{W}^{(1)}\right)\mathbf{x}
++ \left(\mathbf{W}^{(2)}\mathbf{b}^{(1)} + \mathbf{b}^{(2)}\right),
+$$
+
+which is a single level all over again. The full matrix form, with its sizes worked out, belongs to
+<Leccion slug="forward-pass">a lesson further on, the one on the forward pass</Leccion>; here it
+serves one purpose only: showing that the collapse wasn't an artefact of putting a single neuron at
+each level.
+
+</Details>
+
+The second requirement is easier to see in what happens to the step. Its derivative is zero
+everywhere it even exists,
+
+$$
+\frac{d}{dz}\,\text{step}(z) = 0 \quad \text{for all } z \neq 0,
+$$
+
+and at $z = 0$ it doesn't even exist, because that's exactly where the function jumps. There's a
+debt worth naming out loud here: how a neuron actually finds its own weights from examples belongs
+to <Leccion slug="descenso-gradiente">a lesson further on, the one on gradient descent</Leccion>. All
+you need for now is what that method runs on: derivatives of $\varphi$. An activation whose
+derivative is zero everywhere has nothing to say about which direction to move the weights in, so the
+whole procedure grinds to a halt. The step passes the first requirement (it's about as far from a
+straight line as you can get) and fails the second completely.
+
+## Three candidates and their derivative
+
+The three candidates that follow all meet both requirements, and I've written each one alongside its
+derivative already worked out: the rest of this block will lean on those derivatives far more than
+on the functions themselves.
+
+The **sigmoid** already has its own reserved symbol in this course, $\sigma$:
+
+$$
+\sigma(z) = \frac{1}{1 + e^{-z}},
+$$
+
+continuous, increasing, with values in $(0, 1)$: it sends $z = 0$ to $\sigma(0) = 1/2$ and squeezes
+the extremes towards $0$ and $1$ without ever quite reaching either. Let's work out its derivative.
+Written as $\sigma(z) = \left(1 + e^{-z}\right)^{-1}$, the chain rule plus a convenient
+factorisation give
+
+$$
+\begin{aligned}
+\frac{d\sigma}{dz}
+&= -\left(1 + e^{-z}\right)^{-2} \cdot \left(-e^{-z}\right)
+ = \frac{e^{-z}}{\left(1 + e^{-z}\right)^{2}} \\[2pt]
+&= \frac{1}{1 + e^{-z}} \cdot \frac{e^{-z}}{1 + e^{-z}}
+ = \sigma(z)\left(1 - \sigma(z)\right),
+\end{aligned}
+$$
+
+where
+
+$$
+\dfrac{e^{-z}}{1 + e^{-z}} = \dfrac{1 + e^{-z} - 1}{1 + e^{-z}} = 1 - \sigma(z).
+$$
+
+The sigmoid's derivative comes out in terms of its own value, with no fresh exponential needed,
+which is exactly what makes it cheap to evaluate thousands of times over.
+
+The **hyperbolic tangent** traces the same shape over a different range of values:
+
+$$
+\tanh(z) = \frac{e^{z} - e^{-z}}{e^{z} + e^{-z}}.
+$$
+
+Its values sit in $(-1, 1)$ and $\tanh(0) = 0$: it's centred on zero, which is the difference that
+actually matters compared with the sigmoid, whose output is always positive. Its derivative takes an
+equally convenient form,
+
+$$
+\frac{d\tanh(z)}{dz} = 1 - \tanh^{2}(z),
+$$
+
+and at the origin it equals $1$, four times higher than the sigmoid's own peak.
+
+<Details summary="Where 1 − tanh² comes from, and the likeness between the two curves">
+
+To get the derivative, write $u = e^{z} - e^{-z}$ and $v = e^{z} + e^{-z}$: each one is the
+derivative of the other, $\frac{du}{dz} = v$ and $\frac{dv}{dz} = u$. The quotient rule then gives
+
+$$
+\frac{d\tanh(z)}{dz} = \frac{v \cdot v - u \cdot u}{v^{2}}
+= 1 - \left(\frac{u}{v}\right)^{2} = 1 - \tanh^{2}(z).
+$$
+
+The resemblance between the two curves isn't a coincidence, either: the hyperbolic tangent is really
+a sigmoid, stretched by a factor of two and shifted, $\tanh(z) = 2\sigma(2z) - 1$. Expand the
+right-hand side and multiply top and bottom by $e^{z}$,
+
+$$
+2\sigma(2z) - 1 = \frac{2}{1 + e^{-2z}} - 1 = \frac{1 - e^{-2z}}{1 + e^{-2z}}
+= \frac{e^{z} - e^{-z}}{e^{z} + e^{-z}} = \tanh(z),
+$$
+
+and that also explains the factor of four between the two derivatives: differentiating
+$2\sigma(2z) - 1$ picks up a $2$ from the outer factor and another $2$ from the chain rule.
+
+</Details>
+
+The third candidate is the youngest and the most widely used: **ReLU**, short for rectified linear
+unit. It's defined as $\text{ReLU}(z) = \max(0, z)$: it passes the positive part straight through and
+sends the negative part to zero, so it crushes nothing from above. Whenever $z$ is positive, its
+full magnitude reaches the output intact. Its derivative is
+
+$$
+\frac{d}{dz}\,\text{ReLU}(z) = \begin{cases}
+  1 & \text{if } z > 0 \\
+  0 & \text{if } z < 0
+\end{cases},
+$$
+
+and at $z = 0$ it doesn't exist at all: the slope is $0$ coming from the left and $1$ coming from the
+right, and a function with a corner has no single tangent line at that point. This course takes it
+to be $0$ there, by convention rather than by any theorem, and the choice changes nothing that can
+actually be measured.
+
+### Where each one switches off
+
+All three derivatives share one problem, and each one splits it up differently. Call **saturation**
+the region where the derivative of $\varphi$ is so close to zero that the input can move a long way
+while the output barely budges: that's what the red bands of the explorable mark out.
+
+For the sigmoid, the arithmetic is straightforward. At $z = 5$, $\sigma(5) \approx 0.9933$, so its
+derivative there works out to $0.9933 \cdot 0.0067 \approx 0.0066$: almost forty times smaller than
+at the origin. The hyperbolic tangent switches off earlier and faster still
+($1 - \tanh^{2}(5) \approx 1.8 \times 10^{-4}$, more than thirty times below the sigmoid at the same
+point), which is why its red bands start closer to the origin even though its derivative starts out
+four times higher. Starting higher and falling faster turn out to be entirely compatible.
+
+ReLU breaks that pattern, and its half-graph red band doesn't contradict that at all. On the right,
+its derivative stays exactly $1$ no matter how far out you go: it never saturates there, and that's
+its whole appeal. On the left, it doesn't saturate either, since saturating means approaching zero:
+it's switched off outright, with the derivative sitting at $0$ over an entire half-axis. Out of that
+comes a defect with a name of its own, the **dying ReLU**: if a neuron's pre-activation stays
+negative for every example it ever sees, its derivative is zero on all of them, nothing ever moves
+it, and it never comes back.
+
+That leaves the fourth button. **GELU**, short for Gaussian error linear unit, is the one used by
+the Transformers of Block 5; its definition calls on the cumulative distribution function of a
+normal distribution, and that's beyond the scope of this lesson. It looks much like ReLU except near
+the origin, where instead of folding into a sharp corner it curves smoothly.
+
+## The activations and their derivatives in NumPy
+
+The cell defines the four functions and the three derivatives, then runs them through four checks.
+Run it and look, in this order, at whether the derivatives hold up against a numerical check, how
+much of each one survives far from the origin, what happens to the chain when the identity gets
+swapped for the sigmoid, and what the sigmoid does with the ten reviews from the previous lesson.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+np.random.seed(0)
+
+# --- The four candidates, and the derivative of the three that have one.
+def step(z):
+    return (z >= 0).astype(float)
+
+
+def sigmoid(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def d_sigmoid(z):
+    s = sigmoid(z)
+    return s * (1.0 - s)
+
+
+def d_tanh(z):
+    t = np.tanh(z)
+    return 1.0 - t * t
+
+
+def relu(z):
+    return np.maximum(z, 0.0)
+
+
+def d_relu(z):
+    return (z > 0).astype(float)
+
+
+# 1. Are they differentiated correctly? Central difference against the closed form.
+h = 1e-5
+zs = np.array([-3.0, -0.5, 0.7, 2.5])
+print("z =", zs, "  shape", zs.shape)
+for name, f, df in [("sigmoid", sigmoid, d_sigmoid),
+                    ("tanh", np.tanh, d_tanh),
+                    ("ReLU", relu, d_relu)]:
+    central = (f(zs + h) - f(zs - h)) / (2 * h)
+    print("  ", name.ljust(8), "max |formula - central difference| =",
+          "%.1e" % np.abs(df(zs) - central).max())
+print()
+
+# 2. How much of each derivative is left as we move away from the origin.
+far = np.array([0.0, 2.0, 5.0, 10.0])
+print("        z:", "  ".join("%9.1f" % v for v in far))
+print("    dσ/dz:", "  ".join("%9.2e" % v for v in d_sigmoid(far)))
+print(" dtanh/dz:", "  ".join("%9.2e" % v for v in d_tanh(far)))
+print(" dReLU/dz:", "  ".join("%9.2e" % v for v in d_relu(far)))
+print()
+
+# 3. Two neurons in a chain. Every affine function zeroes f(x+y) - f(x) - f(y) + f(0).
+d = 8
+w1 = np.random.randn(d)
+b1 = 0.4
+w2 = -1.3
+b2 = 0.7
+
+
+def identity(z):
+    return z
+
+
+def chain(x, phi):
+    return w2 * phi(w1 @ x + b1) + b2
+
+
+x = np.random.randn(d)
+y = np.random.randn(d)
+zero = np.zeros(d)
+for name, phi in [("identity", identity), ("sigmoid ", sigmoid)]:
+    defect = chain(x + y, phi) - chain(x, phi) - chain(y, phi) + chain(zero, phi)
+    print("φ =", name, "  f(x+y) - f(x) - f(y) + f(0) =", "%+.2e" % defect)
+
+w_eq = w2 * w1
+b_eq = w2 * b1 + b2
+print("with the identity, a single neuron reproduces it:",
+      bool(np.isclose(chain(x, identity), w_eq @ x + b_eq)))
+print()
+
+# 4. The ten pre-activations of the previous lesson's review neuron.
+z_reviews = np.array([2.0, -2.0, 2.0, -2.0, 2.0, -1.0, -2.0, 1.0, 0.0, 2.0])
+print("        z:", "  ".join("%6.1f" % v for v in z_reviews))
+print("     step:", "  ".join("%6.0f" % v for v in step(z_reviews)))
+print("        σ:", "  ".join("%6.3f" % v for v in sigmoid(z_reviews)))
+`} />
+
+The first check earns the right to trust everything that follows. The central difference
+$\left(\varphi(z+h) - \varphi(z-h)\right) / 2h$ with $h = 10^{-5}$ approximates the derivative
+without knowing the formula at all, and all three agree with it to about $10^{-11}$. If you ever get
+an activation's derivative wrong, this catches it in two lines.
+
+The second table puts actual numbers on saturation. The sigmoid's derivative drops from
+$2.50 \times 10^{-1}$ at the origin to $4.54 \times 10^{-5}$ at $z = 10$, four orders of magnitude;
+the hyperbolic tangent's covers eight over that same stretch. The ReLU row doesn't decay at all: $1$
+across the last three columns, however far out you go. The $0$ in the first column is the convention
+above, written into code.
+
+The third check settles the question without training a single thing. Every affine function $f$
+satisfies the identity
+
+$$
+f(\mathbf{x} + \mathbf{y}) - f(\mathbf{x}) - f(\mathbf{y}) + f(\mathbf{0}) = 0,
+$$
+
+no matter what $\mathbf{x}$ and $\mathbf{y}$ are (expand it out and you'll see the four biases
+cancel). With the identity as $\varphi$, the chain of two neurons gives $-6.66 \times 10^{-16}$:
+zero, as far as the computer's arithmetic can tell. With the sigmoid, it gives $-0.564$ instead. It's
+the exact same pair of neurons and the exact same inputs; the only thing that changed is the
+activation.
+
+The last table circles back to the previous lesson: the same ten pre-activations from that review
+neuron, weights untouched, run through both the step and the sigmoid. The step hands back the same
+column as before; the sigmoid pulls apart what the step had lumped together. The review sitting
+right on the boundary drops from a confident $1$ to $0.500$, and the four negatives, which had all
+received the same flat $0$, now split into two distinct values: $0.269$ for the one sitting at $-1$,
+and $0.119$ for the three sitting at $-2$. The magnitude of $z$ is back, without touching a single
+weight.
+
+## Test your intuition
+
+Three questions (a derivative, the collapse of the chain, and where each activation switches off),
+plus a coding challenge with ReLU.
+
+<Quiz id="q-derivada-sigmoide" />
+
+<Quiz id="q-identidad" />
+
+<Quiz id="q-saturacion" />
+
+<CodeChallenge id="ch-relu" />
+
+---
+
+There's still something worth saying about what $\varphi$ hasn't changed, before it starts to look
+like the sigmoid has solved more than it actually has. The decision boundary is exactly where it
+always was. Asking where $\sigma(z)$ crosses $0.5$ is the same as asking where $z$ crosses $0$,
+because $\sigma$ is increasing and $\sigma(0) = 1/2$: the hyperplane from the previous lesson
+survives every substitution this lesson has made, completely intact. What's changed is what the
+neuron reports about its decision, not the decision itself.
+
+So stacking neurons can now build something a single one never could (without non-linearity, it
+couldn't even manage that much), but nobody has shown you a problem that actually forces you to
+stack them. There's a more uncomfortable question still missing: is there something a neuron, with
+any activation function at all, can never do, full stop? There is, and it fits in four points drawn
+on a sheet of paper: it's <Leccion slug="xor-y-capas-ocultas">the next lesson, on XOR (exclusive or)
+and hidden layers</Leccion>.

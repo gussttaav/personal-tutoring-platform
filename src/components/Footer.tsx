@@ -9,20 +9,20 @@
  * FooterModals (policy modals) are still used — they're client components that
  * the user can trigger; we just pass the modal open state down from here via
  * the FooterModals wrapper (unchanged from original).
+ *
+ * REDESIGN-P0-01: «Mentoría» is a plain link to `/mentoria`, like Cursos and Blog. It used
+ * to be `/#sessions` + the `useSessionsAnchor` handler (COURSE-P6-03), because the
+ * mentoring offer was a section of `/` that had to be reached from other pages; it is a
+ * page now, so the handler and the hook are gone.
  */
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { useSessionsAnchor } from "@/hooks/useSessionsAnchor";
 import FooterModals from "@/features/landing/FooterModals";
-import ComingSoonModal from "@/components/ComingSoonModal";
 import BrandLogo from "@/components/BrandLogo";
 
 export default function Footer() {
   const t = useTranslations("footer");
-  const [comingSoonModal, setComingSoonModal] = useState<"blog" | null>(null);
-  const onSessionsClick = useSessionsAnchor();
 
   return (
     <footer
@@ -125,7 +125,9 @@ export default function Footer() {
               {t("explore")}
             </h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-              {/* COURSE-P6-03: Cursos is a real link now; the blog keeps the modal. */}
+              {/* BLOG-01: Cursos and Blog are both real links now. Blog used to be a
+                  <button> opening a ComingSoonModal, which meant the same label behaved
+                  like a link in one column and a dialog trigger in another. */}
               <Link
                 href="/cursos"
                 style={{
@@ -139,30 +141,21 @@ export default function Footer() {
               >
                 {t("courses")}
               </Link>
-              <button
-                onClick={() => setComingSoonModal("blog")}
+              <Link
+                href="/blog"
                 style={{
-                  fontSize:   "13px",
-                  color:      "#86948a",
-                  background: "none",
-                  border:     "none",
-                  padding:    0,
-                  cursor:     "pointer",
-                  fontFamily: "inherit",
-                  textAlign:  "left",
-                  transition: "color 0.15s",
+                  fontSize:       "13px",
+                  color:          "#86948a",
+                  textDecoration: "none",
+                  transition:     "color 0.15s",
                 }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#4edea3")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#86948a")}
               >
                 {t("blog")}
-              </button>
-              {/* COURSE-P6-03: `#sessions` lives in InteractiveShell, which is only on the
-                  landing page — a bare fragment link was dead everywhere else, and the footer
-                  is now rendered on /cursos too. `/#sessions` navigates home first. */}
+              </Link>
               <Link
-                href="/#sessions"
-                onClick={onSessionsClick}
+                href="/mentoria"
                 style={{
                   fontSize:       "13px",
                   color:          "#86948a",
@@ -339,34 +332,9 @@ export default function Footer() {
                 <path d="M19 5.6a8 8 0 0 1 0 12.8A8 8 0 0 1 19 5.6z" fill="#FF5F00"/>
               </svg>
             </span>
-            {/* Amex */}
-            <span
-              aria-label="American Express"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "4px 8px",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "6px",
-                background: "rgba(255,255,255,0.03)",
-                lineHeight: 1,
-              }}
-            >
-              <svg width="28" height="18" viewBox="0 0 38 24" aria-hidden="true">
-                <rect width="38" height="24" rx="3" fill="#016FD0"/>
-                <text x="4" y="17" fontSize="9" fontWeight="700" fontFamily="Arial,sans-serif" fill="white">AMEX</text>
-              </svg>
-            </span>
           </div>
         </div>
       </div>
-      {comingSoonModal && (
-        <ComingSoonModal
-          type={comingSoonModal}
-          onClose={() => setComingSoonModal(null)}
-        />
-      )}
     </footer>
   );
 }

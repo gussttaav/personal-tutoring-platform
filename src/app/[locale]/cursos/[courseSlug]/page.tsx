@@ -16,14 +16,28 @@
  * than 404ing under /en. When `en/` lessons land, all of this stops firing on its own.
  *
  * Reading requires no sign-in (P4-02); no progress UI here (P4). hreflang correction and
- * sitemap/JSON-LD land in P6-01. Only the blog keeps the ComingSoonModal (P6-03).
+ * sitemap/JSON-LD land in P6-01. (The blog kept the ComingSoonModal until BLOG-01
+ * replaced it with a real /blog; there is no ComingSoonModal any more.)
+ *
+ * COURSE-BUILD-01: the page also states how finished the course is. `build` (from
+ * `getCourseBuild`, which unlike `getCatalogEntry` survives a course with no lessons at all)
+ * drives `CourseBuildNotice` and lets `SyllabusAccordion` list the blocks nobody has written
+ * yet — so the lesson-less "soon" landing finally shows the five block titles its manifest has
+ * always carried. `ContentLanguageNotice` moved off `contentLocale` (the FIRST lesson's locale)
+ * onto `fullyTranslated`: with block 1 translated and blocks 2-5 not, the old test said the
+ * course was in English. Two independent axes, never conflated — `build` is about the Spanish
+ * original, `translatedCount` about this locale.
+ *
+ * COURSE-C2-P0-01: the lesson-less "soon" landing is `noindex`. It was `index: true` whenever
+ * the manifest resolved — but a page the catalog and the sitemap refuse to list should not
+ * invite the crawler either. The predicate is `getCatalogEntry` being null, the same one
+ * those two use, so the page flips to `index` by itself with the first published lesson.
  */
 
 import "@/features/courses/course-editorial.css";
 import "./landing.css";
 
 import type { Metadata } from "next";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
@@ -33,11 +47,13 @@ import CourseHero from "@/features/courses/landing/CourseHero";
 import Prerequisites from "@/features/courses/landing/Prerequisites";
 import SyllabusAccordion from "@/features/courses/landing/SyllabusAccordion";
 import CourseFaq from "@/features/courses/landing/CourseFaq";
+import CourseBuildNotice from "@/features/courses/landing/CourseBuildNotice";
 import CourseCta from "@/features/courses/landing/CourseCta";
 import CourseAuthorNote from "@/features/courses/landing/CourseAuthorNote";
+import AuthorBio from "@/features/content/AuthorBio";
 import ContentLanguageNotice from "@/features/courses/landing/ContentLanguageNotice";
 import { getCourse, listCourseManifests } from "@/lib/courses/registry";
-import { courseLocales, getCatalogEntry } from "@/lib/courses/catalog-view";
+import { courseLocales, getCatalogEntry, getCourseBuild } from "@/lib/courses/catalog-view";
 import { routing } from "@/i18n/routing";
 import { availableLocaleAlternates } from "@/lib/hreflang";
 import CourseStructuredData from "@/components/seo/CourseStructuredData";
@@ -63,10 +79,13 @@ export async function generateMetadata({
   // That is a manifest AND lessons resolvable from somewhere — the same predicate the
   // catalog and the sitemap use, so all three agree on which URLs exist.
   const available = courseLocales(course.slug);
+  // COURSE-C2-P0-01: no published lesson in any locale → the "soon" landing renders but is
+  // absent from the catalog and the sitemap, so it must not be indexed either.
+  const listed = getCatalogEntry(course.slug, locale) !== null;
   return {
     title: `${course.title} — Gustavo Torres`,
     description: course.tagline,
-    robots: { index: true, follow: true },
+    robots: { index: listed, follow: true },
     alternates: availableLocaleAlternates(`/cursos/${course.slug}`, locale, available),
   };
 }
@@ -89,10 +108,12 @@ export default async function CourseLandingPage({
   const lessons         = entry?.lessons ?? [];
   const contentLocale   = entry?.contentLocale ?? locale;
   const firstLessonSlug = lessons[0]?.slug ?? null;
-  const translated      = contentLocale === locale;
+  // COURSE-BUILD-01: `!` is safe — `getCourseBuild` returns null only for a course with no
+  // manifest in this locale, and `getCourse` above already sent that case to notFound().
+  const build           = getCourseBuild(courseSlug, locale)!;
+  const fullyTranslated = entry?.fullyTranslated ?? true;
 
   const tLanding = await getTranslations({ locale, namespace: "courses.landing" });
-  const tBio = await getTranslations({ locale, namespace: "landing.bio" });
 
   return (
     <>
@@ -128,13 +149,28 @@ export default async function CourseLandingPage({
             contentLocale={contentLocale}
           />
 
-          {!translated && <ContentLanguageNotice locale={locale} />}
+          {/* COURSE-BUILD-01: the course's own progress first, then the translation's. The
+              notify opt-in appears once — see CourseBuildNotice's `withNotify`. */}
+          {!build.complete && (
+            <CourseBuildNotice build={build} locale={locale} withNotify={fullyTranslated} />
+          )}
+
+          {!fullyTranslated && (
+            <ContentLanguageNotice
+              locale={locale}
+              translatedCount={entry?.translatedCount ?? 0}
+              total={lessons.length}
+            />
+          )}
 
           <Prerequisites prerequisites={course.prerequisites} locale={locale} />
 
-          <SyllabusAccordion course={course} lessons={lessons} locale={locale} />
+          <SyllabusAccordion course={course} build={build} locale={locale} />
 
-          {/* Instructor — reuses the existing biography assets (landing.bio + /avatar.png). */}
+          {/* Instructor. CONTENT-AUTHOR-01: the card moved out to the shared
+              `AuthorBio` (features/content) so the blog post wears the very same one.
+              The section kicker and <h2> stay here: the "03 —" numbering and the serif
+              display heading are this page's voice, not the card's. */}
           <section style={{ paddingTop: "72px" }}>
             <div className="lp-section-head">
               <span className="lp-kicker">03 — {tLanding("instructor.kicker")}</span>
@@ -152,108 +188,12 @@ export default async function CourseLandingPage({
             >
               {tLanding("instructor.heading")}
             </h2>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: "28px",
-                alignItems: "flex-start",
-                padding: "32px",
-                background: "var(--surface-low)",
-                border: "1px solid var(--border-variant)",
-                borderRadius: "20px",
-              }}
-            >
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", flexShrink: 0 }}>
-                <Image
-                  src="/avatar.png"
-                  alt="Gustavo Torres Guerrero"
-                  width={104}
-                  height={104}
-                  style={{
-                    borderRadius: "16px",
-                    objectFit: "cover",
-                    border: "1px solid var(--border-variant)",
-                  }}
-                />
-                <div style={{ display: "flex", gap: "10px" }}>
-                  <a
-                    href="https://github.com/gussttaav"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="GitHub"
-                    className="lp-social"
-                    style={{
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "9px",
-                      border: "1px solid var(--border-variant)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                    </svg>
-                  </a>
-                  <a
-                    href="https://www.linkedin.com/in/gustavo-torres-guerrero"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="LinkedIn"
-                    className="lp-social"
-                    style={{
-                      width: "36px",
-                      height: "36px",
-                      borderRadius: "9px",
-                      border: "1px solid var(--border-variant)",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.761 0 5-2.239 5-5v-14c0-2.761-2.239-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-              <div style={{ flex: 1, minWidth: "240px" }}>
-                <h3
-                  className="lp-serif"
-                  style={{
-                    fontSize: "1.5rem",
-                    fontWeight: 500,
-                    letterSpacing: "-0.01em",
-                    color: "var(--text)",
-                    margin: "0 0 6px",
-                  }}
-                >
-                  {tBio("headline")}
-                </h3>
-                <div
-                  style={{
-                    fontFamily: "var(--font-headline, Manrope), sans-serif",
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    letterSpacing: "0.04em",
-                    color: "var(--text-dim)",
-                    marginBottom: "16px",
-                  }}
-                >
-                  Gustavo Torres Guerrero · {tLanding("instructor.role")}
-                </div>
-                <p style={{ fontSize: "0.9375rem", lineHeight: 1.75, color: "var(--text-muted)", margin: 0 }}>
-                  {tBio("para1")}
-                </p>
-              </div>
-            </div>
+            <AuthorBio locale={locale} />
           </section>
 
           <CourseAuthorNote locale={locale} />
 
-          <CourseFaq faq={course.faq} locale={locale} />
+          <CourseFaq faq={course.faq} locale={locale} courseSlug={course.slug} />
 
           <CourseCta
             courseSlug={course.slug}

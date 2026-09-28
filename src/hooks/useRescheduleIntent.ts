@@ -5,7 +5,7 @@
  *
  * ARCH-06: Extracted from InteractiveShell.
  *
- * Responsibility: read the /?reschedule=...&token=... URL params that are
+ * Responsibility: read the /mentoria?reschedule=...&token=... URL params that are
  * injected by confirmation email links, store the intent through the Google
  * OAuth round-trip (for unauthenticated users), and expose the resolved
  * reschedule state to the shell.
@@ -40,7 +40,7 @@ export interface RescheduleState {
 }
 
 /**
- * Reads /?reschedule= URL params on mount, stores them, and resolves them
+ * Reads /mentoria?reschedule= URL params on mount, stores them, and resolves them
  * against the current auth state.
  *
  * @param isSignedIn  Current auth state from useUserSession
@@ -74,8 +74,8 @@ export function useRescheduleIntent(isSignedIn: boolean): RescheduleState {
       // callbackUrl encodes the reschedule params so they survive the
       // Google OAuth round-trip and are re-read on the next mount.
       const callbackUrl = token
-        ? `/?reschedule=${encodeURIComponent(reschedule)}&token=${encodeURIComponent(token)}`
-        : `/?reschedule=${encodeURIComponent(reschedule)}`;
+        ? `/mentoria?reschedule=${encodeURIComponent(reschedule)}&token=${encodeURIComponent(token)}`
+        : `/mentoria?reschedule=${encodeURIComponent(reschedule)}`;
 
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time mount read of URL params (with history mutation above), not a derived-state cascade.
       setPendingReschedule({ type: reschedule, token: token ?? null, callbackUrl });

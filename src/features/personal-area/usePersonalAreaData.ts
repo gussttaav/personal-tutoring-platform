@@ -36,6 +36,12 @@ interface PersonalAreaData {
   historyTruncated:  boolean;
   /** Re-fetch upcoming bookings (after a cancel, or a retry). */
   refreshBookings:   () => void;
+  /**
+   * Re-fetch upcoming bookings WITHOUT the skeleton — the list stays on screen and is
+   * replaced when the response lands. For the booking overlay's close: a class may have
+   * been booked or rescheduled behind it, or nothing may have changed at all.
+   */
+  revalidateBookings: () => void;
   /** Re-fetch history from the first page. */
   refreshHistory:    () => void;
   /** Fetch the next batch after the page cap was hit. */
@@ -78,6 +84,10 @@ export function usePersonalAreaData(locale: string, isAuthLoading: boolean): Per
 
   const refreshBookings = useCallback(() => {
     setBookingsState("loading");
+    void loadBookings();
+  }, [loadBookings]);
+
+  const revalidateBookings = useCallback(() => {
     void loadBookings();
   }, [loadBookings]);
 
@@ -178,6 +188,7 @@ export function usePersonalAreaData(locale: string, isAuthLoading: boolean): Per
     enrollmentsState,
     historyTruncated: historyCursor !== null,
     refreshBookings,
+    revalidateBookings,
     refreshHistory,
     loadMoreHistory,
     patchHistoryEntry,

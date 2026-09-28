@@ -9,7 +9,7 @@ import type { ReactNode } from "react";
 
 /* ─── Status badge ───────────────────────────────────────────────────── */
 
-type BadgeKind = "booking" | "payment";
+type BadgeKind = "booking" | "payment" | "report";
 
 const BADGE_MAP: Record<BadgeKind, Record<string, { c: string; bg: string; label: string }>> = {
   booking: {
@@ -23,6 +23,11 @@ const BADGE_MAP: Record<BadgeKind, Record<string, { c: string; bg: string; label
     pending: { c: "var(--warning)", bg: "var(--warning-bg)", label: "Pendiente" },
     refunded: { c: "#9ec5ff", bg: "rgba(158,197,255,0.10)", label: "Reembolso" },
     failed: { c: "var(--error)", bg: "var(--error-bg)", label: "Fallido" },
+  },
+  // CONTENT-FEEDBACK-01: error reports on lessons / posts.
+  report: {
+    open: { c: "var(--warning)", bg: "var(--warning-bg)", label: "Abierto" },
+    resolved: { c: "var(--green)", bg: "var(--green-dim)", label: "Resuelto" },
   },
 };
 

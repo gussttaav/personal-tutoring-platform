@@ -18,13 +18,19 @@
  * instances, the mobile bar and the MDX body, and every one of them has a progress
  * leaf inside it. The page itself stays untouched and therefore stays static.
  *
- * COURSE-P9-01: `CourseSearchProvider` mounts here for the same reason — it owns one
- * dialog shared by the desktop and mobile triggers. The DESKTOP trigger is rendered here,
- * in the `<aside>` above `LessonSidebar`, and the mobile one in `MobileLessonBar`; neither
- * goes inside `LessonSidebar`, which is rendered twice and would duplicate it.
+ * COURSE-P9-01: `CourseSearchProvider` mounts here for the same reason — one index, one
+ * dialog. COURSE-P9-02: the dialog is now reached only from the icon trigger in
+ * `MobileLessonBar`; desktop search is the inline `SidebarSearch` field, which
+ * `LessonSidebar` mounts for its desktop variant only (so it exists once, although the
+ * sidebar is rendered twice).
  *
  * COURSE-P10-01: `LessonCta` closes the article, after prev/next. See its own header
  * for why it sits there and why it is a link rather than a dispatched event.
+ *
+ * CONTENT-FEEDBACK-01: `ContentFeedback` (👍/👎 · share · report) sits right after the
+ * body, before "Para profundizar" — the first thing after the last paragraph is the
+ * question about it. It is keyed by `contentLocale`, the locale of the prose actually
+ * served, so a fallback lesson read from /en/ is judged (and shared) as Spanish.
  */
 
 import type { ReactNode } from "react";
@@ -37,7 +43,11 @@ import LessonNav from "./LessonNav";
 import MobileLessonBar from "./MobileLessonBar";
 import CourseProgressProvider from "./CourseProgressProvider";
 import CourseSearchProvider from "@/features/courses/search/CourseSearchProvider";
-import CourseSearchTrigger from "@/features/courses/search/CourseSearchTrigger";
+import CodeCopyButtons from "@/features/content/CodeCopyButtons";
+import ContentFeedback from "@/features/content/ContentFeedback";
+import { lessonContentKey } from "@/lib/content/content-key";
+import { localeUrl } from "@/lib/hreflang";
+import type { ContentLocale } from "@/domain/types";
 import LessonComplete from "./LessonComplete";
 import LessonReading from "./LessonReading";
 import LessonCta from "./LessonCta";
@@ -58,6 +68,9 @@ interface LessonLayoutProps {
   prev:        LessonRef | null;
   next:        LessonRef | null;
   locale:      string;
+  /** CONTENT-FEEDBACK-01: locale of the prose actually served (`view.contentLocale`),
+   *  which differs from `locale` on an untranslated fallback lesson. */
+  contentLocale: string;
   /** COURSE-P9-01: content hash of the search index, for the client's `?v=` cache buster. */
   searchVersion: string;
   children:    ReactNode; // rendered MDX body
@@ -76,6 +89,7 @@ export default async function LessonLayout({
   prev,
   next,
   locale,
+  contentLocale,
   searchVersion,
   children,
 }: LessonLayoutProps) {
@@ -96,12 +110,6 @@ export default async function LessonLayout({
 
       <div className="lesson-shell">
         <aside className="lesson-sidebar-desktop">
-          {/* 16px here + the sidebar nav's own 8px top padding = a 24px gap, matching the
-              24px the back-link already leaves beneath itself. At 0 the search field sat
-              almost flush against the course title. */}
-          <div style={{ padding: "8px 4px 16px" }}>
-            <CourseSearchTrigger />
-          </div>
           <LessonSidebar {...sidebarProps} variant="desktop" />
         </aside>
 
@@ -127,6 +135,19 @@ export default async function LessonLayout({
             </header>
 
             {children}
+
+            {/* COURSE-P12: hover-reveal copy buttons on the body's fenced code blocks.
+                Mounted as a direct child of `.lesson-content` so it scopes its search to
+                the lesson body and never reaches the reading/footer chrome below. */}
+            <CodeCopyButtons />
+
+            <ContentFeedback
+              contentType="lesson"
+              contentKey={lessonContentKey(courseSlug, currentSlug)}
+              locale={contentLocale as ContentLocale}
+              shareUrl={localeUrl(`/cursos/${courseSlug}/${currentSlug}`, contentLocale)}
+              shareTitle={title}
+            />
 
             {/* COURSE-P8-01: between the body and mark-complete. The bridge stays the
                 lesson's last prose; this joins the footer chrome below it. */}

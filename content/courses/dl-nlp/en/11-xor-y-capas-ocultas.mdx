@@ -1,0 +1,390 @@
+---
+slug: xor-y-capas-ocultas
+title: "XOR: why we need hidden layers"
+block: 2
+order: 3
+minutes: 25
+summary: "Four phrases that differ only by a negation land on the corners of a square, with one class on each diagonal, and no single neuron can classify them: the pre-activation is affine, and its mean over each class works out to the same number either way. Two neurons in parallel, with a third stacked on top, can do it, because the hidden layer changes the coordinates underneath."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-no
+    type: single
+    prompt: 'Which of these statements proves that no single neuron gets all four phrases right?'
+    options:
+      - { id: a, text: 'That $z$ is affine, so its sum over the two positive phrases and its sum over the two negative ones both come out to $2b$: the first would need to be $\geq 0$ and the second $< 0$.' }
+      - { id: b, text: 'That there are four examples but only three numbers to choose ($w_1$, $w_2$ and $b$): not enough degrees of freedom.' }
+      - { id: c, text: 'That the step keeps the sign of $z$ and throws away its magnitude, so the neuron cannot tell a clear phrase from a doubtful one.' }
+      - { id: d, text: 'That two coordinates are not enough: even adding a third equal to $x_1 x_2$, the split still would not be separable.' }
+    answer: a
+    explanation: '(a) is the whole proof, and what closes it is that the two sums coincide: both equal $2b$, so demanding one be $\geq 0$ and the other $< 0$ asks two incompatible things of $b$. (b) proves nothing: three numbers classify sets of a hundred examples correctly every day, and what decides is not how many there are but where they sit. (c) is true, but beside the point: the problem is not caused by the step, which is why the lesson checks separately that with any increasing activation the set of inputs that get a yes is, again, a half-plane. And (d) is false in its second half: with $x_3 = x_1 x_2$, the two positive phrases end up with $x_3 = -1$ and the two negative ones with $x_3 = +1$, so $z = -x_3$ separates them cleanly. Changing the coordinates works; a hidden layer is how you get the system to change them on its own.'
+  - id: q-activacion
+    type: boolean
+    prompt: 'Swap the step for the sigmoid and read the output this way: the phrase speaks well when $\sigma(z) \geq 0.5$. Under that reading, there is some choice of $\mathbf{w}$ and $b$ that gets all four phrases right.'
+    answer: false
+    explanation: 'The sigmoid is increasing and satisfies $\sigma(0) = 1/2$, so $\sigma(z) \geq 0.5$ is equivalent to $z \geq 0$: the set of phrases that get a yes is the same half-plane as before, and the contradiction repeats exactly. Nor is this a matter of moving the threshold. For any increasing $\varphi$ and any threshold $\theta$, asking $\varphi(z) \geq \theta$ is the same as asking $z \geq \varphi^{-1}(\theta)$, which is once again a neuron, only with the bias shifted.'
+  - id: q-capa-oculta
+    type: numeric
+    prompt: 'With the weights the lesson fixes, what is the output pre-activation $z^{(2)}_1$ for the phrase <W>not good</W>, that is, for $\mathbf{x} = (1,\, 1)^{\top}$?'
+    answer: -0.5
+    tolerance: 0.01
+    explanation: 'The two rows of $\mathbf{W}^{(1)}$ are identical, so both hidden pre-activations come from $x_1 + x_2 = 2$, and only the bias tells them apart: $\mathbf{z}^{(1)} = (3,\, 1)^{\top}$. Both are positive, so $\mathbf{h}^{(1)} = (1,\, 1)^{\top}$, and the output neuron computes $1 - 1 - 0.5 = -0.5$. The step returns $0$, the correct label. <W>it''s bad</W> gets that exact same $-0.5$, but from a completely different hidden vector, $(0,\, 0)^{\top}$: the output layer never needs to know which corner each phrase came from.'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Deep Learning, ch. 6: Deep Feedforward Networks'
+    authors: 'Goodfellow, Bengio and Courville'
+    year: '2016'
+    venue: 'deeplearningbook.org'
+    lang: en
+    url: 'https://www.deeplearningbook.org/contents/mlp.html'
+    note: 'Its §6.1 works through this same XOR problem with the same two-hidden-neuron network, using ReLU instead of the step: weights set by hand, training left for later. Shows the linear model fails, but does not prove it in general.'
+---
+
+{/* COURSE-P5-02 — Block 2, Lesson 3. */}
+
+The previous lesson, on activation functions and non-linearity, finished off the neuron: a weighted
+sum, topped with a curved $\varphi$ that has a usable derivative (sigmoid, hyperbolic tangent, or
+ReLU) in place of the step that filled that slot at the start. Finished, but with one limit none of
+the three candidates touches: the neuron still answers by which side of a hyperplane the input fell
+on. That shifts the question elsewhere. It's no longer about which $\varphi$ to pick, but a question
+about the data itself: which arrangements of examples fit inside a hyperplane, and whether there's
+one that fits inside none at all.
+
+Four phrases are enough to find one. Take <W>it's good</W>, <W>it's bad</W>, <W>not good</W> and
+<W>not bad</W>, and classify them: the first and last speak well, the middle two speak badly. All
+four are told apart by exactly two facts (whether <W>not</W> shows up, and whether the evaluative
+word is <W>good</W> or <W>bad</W>), so two coordinates describe them completely. Now look at what
+<W>not</W> actually does. It carries no sign of its own: it flips the sign of whatever word follows
+it. And a weight, by contrast, is a fixed sign.
+
+Those two coordinates fit neatly into the same drawing from <Leccion slug="la-neurona">the lesson on
+the artificial neuron</Leccion>: each phrase becomes a point in the plane, its colour marks what it
+says, and the neuron looks for a line that leaves one colour on each side. The second button of the
+explorable loads exactly those four points.
+
+<Explorable
+  id="perceptron-boundary"
+  caption='Press "Not separable" and let the line keep working at it: it never settles down, and it stays red and dashed because there is always some point sitting on the wrong side. Now drag one of the four corners towards the centre, and watch it find room and turn green. What made this impossible was never the number of points, only where they sat.'
+/>
+
+The four points sit at the corners of a square, and each class occupies two opposite corners. A line
+splits the plane into two halves, and there's no way to put two opposite corners in the same half
+without dragging one of the other two along with them. The explorable shows this; it doesn't prove
+it. A procedure failing to find a line only tells you the procedure failed, not that no line exists.
+Every possible line has to be ruled out at once.
+
+<Callout type="intuition" title="The idea in one sentence">
+When each class sits on a diagonal, no hyperplane can work, and swapping the step for any of the
+other activations you've seen doesn't fix it either, because the boundary is still a hyperplane.
+What does change the problem is putting neurons in front: the hidden layer defined further on exists
+to carry the points into coordinates where a line finally can separate them.
+</Callout>
+
+## Four phrases no hyperplane separates
+
+Let's fix the coordinates. Set $x_1 = +1$ when the phrase contains <W>not</W> and $x_1 = -1$ when
+it doesn't, and set $x_2 = +1$ when the evaluative word is <W>good</W> and $x_2 = -1$ when it's
+<W>bad</W>. The label $y$ is $1$ if the phrase speaks well and $0$ if it speaks badly, the same two
+values the step returns.
+
+| phrase | $\mathbf{x}$ | $y$ |
+|---|---|---|
+| <W>it's good</W> | $(-1,\, +1)^{\top}$ | $1$ |
+| <W>it's bad</W> | $(-1,\, -1)^{\top}$ | $0$ |
+| <W>not good</W> | $(+1,\, +1)^{\top}$ | $0$ |
+| <W>not bad</W> | $(+1,\, -1)^{\top}$ | $1$ |
+
+The label is $1$ exactly when the two coordinates differ. That function has had a name since long
+before neural networks existed: the **exclusive or** (XOR), and its two classes are the two
+diagonals of the square.
+
+Suppose there exist $\mathbf{w} \in \mathbb{R}^{2}$ and $b \in \mathbb{R}$ that let the neuron
+$\text{step}\left(\mathbf{w}^{\top}\mathbf{x} + b\right)$ get all four right. Getting the two
+positives right means $z \geq 0$ on both, and getting the two negatives right means $z < 0$ on both.
+Add each pair separately, with $z(\mathbf{x}) = w_1 x_1 + w_2 x_2 + b$:
+
+$$
+z(-1, +1) + z(+1, -1) = \left(-w_1 + w_2 + b\right) + \left(w_1 - w_2 + b\right) = 2b,
+$$
+
+and for the other diagonal, with the same weights,
+
+$$
+z(-1, -1) + z(+1, +1) = \left(-w_1 - w_2 + b\right) + \left(w_1 + w_2 + b\right) = 2b.
+$$
+
+The weights cancel out in both, and the two sums land on the same number. But the first sum adds two
+quantities that are $\geq 0$, so $2b \geq 0$; the second adds two quantities that are $< 0$, so
+$2b < 0$. No single $b$ can satisfy both at once, so the neuron you assumed doesn't exist.
+
+It's worth reading that cancellation straight off the drawing, because it shows exactly where it
+comes from. The two segments, the one joining the two positive phrases and the one joining the two
+negative ones, share the same midpoint: the origin. And because $z$ is affine, its value at the
+midpoint of a segment is the mean of its values at the two endpoints. The origin would have to fall
+on the positive side for sitting between two positives, and on the negative side for sitting between
+two negatives.
+
+<Details summary="The general version: two segments that cross always rule it out">
+
+Nothing in the computation above depended on the coordinates being $\pm 1$, or on the four points
+forming a square. Let $\mathbf{p}_1, \mathbf{p}_2$ be two examples of one class and
+$\mathbf{n}_1, \mathbf{n}_2$ two examples of the other, and suppose the segment joining the first
+pair crosses the segment joining the second pair at a point $\mathbf{q}$. Crossing means that point
+can be written both ways at once:
+
+$$
+\mathbf{q} = \lambda \mathbf{p}_1 + (1 - \lambda)\, \mathbf{p}_2
+           = \mu \mathbf{n}_1 + (1 - \mu)\, \mathbf{n}_2,
+$$
+
+with $\lambda, \mu \in [0, 1]$. An affine function distributes cleanly over combinations like these,
+because the weights sum to $1$ and the bias comes through untouched:
+
+$$
+\begin{aligned}
+z\left(\lambda \mathbf{u} + (1 - \lambda)\mathbf{v}\right)
+&= \lambda \left(\mathbf{w}^{\top}\mathbf{u} + b\right) + (1 - \lambda)\left(\mathbf{w}^{\top}\mathbf{v} + b\right) \\[2pt]
+&= \lambda\, z(\mathbf{u}) + (1 - \lambda)\, z(\mathbf{v}).
+\end{aligned}
+$$
+
+If the neuron gets them right, $z(\mathbf{p}_1)$ and $z(\mathbf{p}_2)$ are both $\geq 0$, and
+$z(\mathbf{q})$, a mean of the two with non-negative weights, must be too. Coming at it the other
+way, $z(\mathbf{n}_1)$ and $z(\mathbf{n}_2)$ are both $< 0$, so $z(\mathbf{q})$ has to be $< 0$ as
+well. The same point, with two incompatible signs.
+
+With this in hand, the result doesn't change if you'd rather encode the phrases with $0$ and $1$
+instead of $-1$ and $+1$: the four points then sit at the corners of the unit square, the two
+segments cross at $(1/2,\, 1/2)$, and the exact same contradiction appears.
+
+</Details>
+
+### And no activation fixes it
+
+The proof leaned on the step in exactly one place: to read "gets it right" as $z \geq 0$ or $z < 0$.
+That's the only thing that needs checking again. Let $\varphi$ be strictly increasing (the sigmoid
+and the hyperbolic tangent both are), and let $\theta$ be whatever threshold you use to read its
+output as a yes. Being increasing makes it invertible on its range, so $\varphi(z) \geq \theta$ is
+equivalent to $z \geq \varphi^{-1}(\theta)$, and the set of phrases that get a yes turns out to be
+
+$$
+\left\{\, \mathbf{x} \in \mathbb{R}^{2} \;:\; \mathbf{w}^{\top}\mathbf{x} + b - \varphi^{-1}(\theta) \geq 0 \,\right\},
+$$
+
+which is exactly the half-plane of the same neuron, only with a different bias,
+$b - \varphi^{-1}(\theta)$. The proof carries over without changing a single letter.
+
+ReLU isn't strictly increasing, and it doesn't escape the argument either. With $\theta > 0$, asking
+$\text{ReLU}(z) \geq \theta$ amounts to asking $z \geq \theta$, another half-plane; with
+$\theta \leq 0$ it holds for every input, and the neuron answers yes to all four phrases, including
+the two that speak badly. Half-plane or the whole plane, and neither one splits the diagonals.
+
+## A layer is several neurons at once
+
+What fails isn't the neuron itself: it's that there's only one of it. Put two neurons in front, both
+looking at the same input, and a third looking at whatever those two hand back. That leaves three
+columns, and each one has a name. The **input layer** is $\mathbf{x}$ itself and computes nothing
+(it's drawn as a column of circles by convention, though there are no actual neurons there); the
+**hidden layer** is the first two neurons, called hidden because its output isn't the final answer
+and nobody outside ever reads it; and the **output layer** is the third neuron, the one that
+actually answers.
+
+<Figure
+  src="/courses/dl-nlp/mlp-arquitectura.en.svg"
+  alt="Three columns of circles joined by arrows. The first, labelled input layer, has two dashed circles labelled x1 and x2. The second, the hidden layer, has two solid green circles, and each receives an arrow from the two input circles. The third, the output layer, has a single green circle that receives an arrow from each hidden neuron. The bundle of arrows on the left is labelled W(1), b(1) and the one on the right W(2), b(2)."
+  caption="Each arrow is a weight, and each green circle is a neuron with its bias. This is the shape every network in the block will take: only the number of circles per column, and the number of columns, ever change."
+/>
+
+With several neurons at one level, each neuron's weight vector becomes a row. Neuron $j$ of layer
+$l$ keeps its weights in row $j$ of $\mathbf{W}^{(l)}$ and its bias in $b^{(l)}_j$, and what were the
+scalars $z$ and $a$ in <Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion> are
+now the coordinates $z^{(l)}_j$ and $h^{(l)}_j$. It's the same object, only stacked; nothing about it
+has changed on the inside. With $\mathbf{h}^{(0)} = \mathbf{x}$, the hidden layer computes
+
+$$
+\mathbf{z}^{(1)} = \mathbf{W}^{(1)}\mathbf{h}^{(0)} + \mathbf{b}^{(1)},
+\qquad
+\mathbf{h}^{(1)} = \varphi\left(\mathbf{z}^{(1)}\right),
+$$
+
+with $\mathbf{W}^{(1)} \in \mathbb{R}^{2 \times 2}$ and $\mathbf{b}^{(1)}, \mathbf{z}^{(1)},
+\mathbf{h}^{(1)} \in \mathbb{R}^{2}$, with $\varphi$ applied coordinate by coordinate. The output
+layer does the same thing to $\mathbf{h}^{(1)}$:
+
+$$
+\mathbf{z}^{(2)} = \mathbf{W}^{(2)}\mathbf{h}^{(1)} + \mathbf{b}^{(2)},
+\qquad
+\hat{y} = \varphi\left(z^{(2)}_1\right),
+$$
+
+with $\mathbf{W}^{(2)} \in \mathbb{R}^{1 \times 2}$ and $\mathbf{b}^{(2)} \in \mathbb{R}^{1}$. A layer
+with a single neuron amounts to a matrix with a single row, and writing it this way costs a couple
+of extra subscripts now but saves having two separate notations later.
+
+### Two parallel lines separate what one alone cannot
+
+These particular weights solve all four phrases, with the step as $\varphi$ in both layers:
+
+$$
+\mathbf{W}^{(1)} = \begin{pmatrix} 1 & 1 \\ 1 & 1 \end{pmatrix},
+\quad
+\mathbf{b}^{(1)} = \begin{pmatrix} 1 \\ -1 \end{pmatrix},
+\quad
+\mathbf{W}^{(2)} = \begin{pmatrix} 1 & -1 \end{pmatrix},
+\quad
+\mathbf{b}^{(2)} = \begin{pmatrix} -\tfrac{1}{2} \end{pmatrix}.
+$$
+
+I chose them by hand, the same way I chose the eight weights of the review neuron back in
+<Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion>, because nothing in the
+course yet finds them on its own. And I chose them so they'd be easy to read. The two rows of
+$\mathbf{W}^{(1)}$ are identical, so the two hidden neurons look in the same direction, and only the
+bias tells them apart: the first asks whether $x_1 + x_2 \geq -1$, the second whether
+$x_1 + x_2 \geq 1$. They're two parallel lines, and the positive class is the strip running between
+them. A strip is the intersection of two half-planes, and deciding that intersection is exactly what
+the output neuron does: $z^{(2)}_1 = h^{(1)}_1 - h^{(1)}_2 - 1/2$ asks for a yes to the first and a
+no to the second.
+
+<Figure
+  src="/courses/dl-nlp/xor-franja.en.svg"
+  alt="The plane of the two coordinates. Two parallel lines of negative slope, x1 + x2 = 1 and x1 + x2 = minus 1, leave a strip between them shaded green that crosses the drawing from the top-left corner to the bottom-right one. The two green points, at minus 1 comma 1 and at 1 comma minus 1, fall inside the strip; the two hollow points, at minus 1 comma minus 1 and at 1 comma 1, fall outside, one on each side. Each region has written on it the vector the hidden layer assigns it: 1 comma 0 in the strip, 0 comma 0 at the bottom left and 1 comma 1 at the top right."
+  caption="The two hidden neurons draw the two lines, and the positive class is whatever is left in the middle. Each region carries the vector the hidden layer assigns it: the two green points fall into the same region, so they come out with the same (1, 0) even though they went in from opposite corners."
+/>
+
+| phrase | $x_1 + x_2$ | $\mathbf{z}^{(1)}$ | $\mathbf{h}^{(1)}$ | $z^{(2)}_1$ | $\hat{y}$ | $y$ |
+|---|---|---|---|---|---|---|
+| <W>it's good</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0.5$ | $1$ | $1$ |
+| <W>it's bad</W> | $-2$ | $(-1,\, -3)^{\top}$ | $(0,\, 0)^{\top}$ | $-0.5$ | $0$ | $0$ |
+| <W>not good</W> | $2$ | $(3,\, 1)^{\top}$ | $(1,\, 1)^{\top}$ | $-0.5$ | $0$ | $0$ |
+| <W>not bad</W> | $0$ | $(1,\, -1)^{\top}$ | $(1,\, 0)^{\top}$ | $+0.5$ | $1$ | $1$ |
+
+The $\mathbf{h}^{(1)}$ column is where the result actually shows up. Four input points have come out
+the other side as only three: $(0,\, 0)^{\top}$, $(1,\, 0)^{\top}$ and $(1,\, 1)^{\top}$, and the
+positive class is exactly the middle one. In these new coordinates there's now a line that leaves one
+class on each side, and the output neuron does nothing a lone neuron couldn't already do. The hidden
+layer hasn't added any extra power to decide with; it has changed where the deciding happens.
+
+That's the insight worth holding onto, because the previous block was entirely about the very same
+thing. There, the representations were chosen by a person (one dimension per vocabulary entry, then
+counts, then dense vectors), and every choice was a decision written by hand. A hidden layer is one
+more representation like those, with one crucial difference: its coordinates come out of weights, and
+weights can be told to adjust themselves. A neural network with at least one hidden layer has a name
+of its own, the **multilayer perceptron** (MLP), and it's the one that gives this block its title.
+
+## Every line of a grid, and then the network
+
+The cell does two things. First, it tries a whole grid of lines by brute force, to find the ceiling
+on how many it can get right; then it builds the two-layer network using the weights above and runs
+it on the four phrases. Run it and compare the two blocks of output.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+np.random.seed(0)
+
+# --- The four phrases, with their two coordinates and their label.
+phrases = [
+    ("it's good", (-1.0,  1.0), 1),
+    ("it's bad",  (-1.0, -1.0), 0),
+    ("not good",  ( 1.0,  1.0), 0),
+    ("not bad",   ( 1.0, -1.0), 1),
+]
+X = np.array([coords for _, coords, _ in phrases])    # (4, 2): one row per phrase
+y = np.array([label for _, _, label in phrases])
+print("X has shape", X.shape, " labels:", y)
+print()
+
+# 1. Brute force: 41 values per parameter, every combination.
+g = np.linspace(-3.0, 3.0, 41)
+G1, G2, GB = np.meshgrid(g, g, g, indexing="ij")
+lines = np.stack([G1.ravel(), G2.ravel(), GB.ravel()], axis=1)   # (41^3, 3)
+Z = lines[:, :2] @ X.T + lines[:, 2:3]                # one z per line and per phrase
+correct = ((Z >= 0).astype(int) == y).sum(axis=1)
+
+print("lines tried:         ", len(lines))
+print("most correct:        ", correct.max(), "of 4")
+print("lines with 3 correct:", int((correct == 3).sum()))
+print("lines with 4 correct:", int((correct == 4).sum()))
+print()
+
+# 2. The network: two hidden neurons and one output, with the lesson's weights.
+W1 = np.array([[1.0, 1.0],
+               [1.0, 1.0]])
+b1 = np.array([1.0, -1.0])
+W2 = np.array([[1.0, -1.0]])
+b2 = np.array([-0.5])
+
+
+def step(z):
+    return (z >= 0).astype(float)
+
+
+print("phrase".ljust(12), "z(1)".rjust(12), "h(1)".rjust(9), "z(2)".rjust(6), "  y_hat", " y")
+right = 0
+for text, coords, label in phrases:
+    x = np.array(coords)
+    z1 = W1 @ x + b1
+    h1 = step(z1)
+    z2 = W2 @ h1 + b2
+    y_hat = int(step(z2)[0])
+    right += int(y_hat == label)
+    print(text.ljust(12),
+          ("(%+.0f, %+.0f)" % (z1[0], z1[1])).rjust(12),
+          ("(%.0f, %.0f)" % (h1[0], h1[1])).rjust(9),
+          ("%+.1f" % z2[0]).rjust(6),
+          "%6d" % y_hat, "%2d" % label)
+print()
+print("correct:", right, "of", len(phrases))
+print()
+
+# 3. The two positive phrases land on the same point of the hidden layer.
+h_good = step(W1 @ np.array([-1.0, 1.0]) + b1)
+h_bad = step(W1 @ np.array([1.0, -1.0]) + b1)
+print("h(1) of it's good =", h_good)
+print("h(1) of not bad   =", h_bad)
+print("same vector?", bool(np.array_equal(h_good, h_bad)))
+`} />
+
+The grid tries $41^3 = 68\,921$ lines. None gets all four phrases right, and $17\,123$ of them stop
+at three. That figure comes with a limit worth stating up front: a grid leaves out every line it
+didn't try, which is almost all of them, so on its own it proves nothing (that's what the computation
+above is for, and why it comes first). What the grid does add is the ceiling. Three correct isn't a
+halfway result that a finer search would eventually fix; it's the actual maximum, and that maximum
+gets reached all over the grid.
+
+The network gets all four right. The cell's table is the same one shown above, now actually
+computed, and in it $z^{(2)}_1$ comes out to $+0.5$ on the two positive phrases and $-0.5$ on the two
+negative ones, with an identical margin on both sides. The last check prints exactly what the hidden
+layer does: <W>it's good</W> and <W>not bad</W>, sitting at opposite corners of the input square,
+both come out as $(1,\, 0)^{\top}$. They started as far apart as two points can be and ended up in
+exactly the same place.
+
+## Test your intuition
+
+Three questions: what the impossibility actually proves, whether the choice of activation has
+anything to do with it, and an output pre-activation worked out by hand.
+
+<Quiz id="q-por-que-no" />
+
+<Quiz id="q-activacion" />
+
+<Quiz id="q-capa-oculta" />
+
+---
+
+I wrote the four numbers in $\mathbf{W}^{(1)}$ and the three biases by eyeballing the square, and
+that's the second time this debt has come up. It costs more to settle now, too. With a single
+neuron, you could at least look at each weight and say which word it had an opinion about; the
+weights of a hidden layer don't have an opinion about the answer at all, they have opinions about
+intermediate coordinates nobody ever sees, and whether those opinions are right or wrong only shows
+up two layers further on. Sharing that responsibility across layers is what the rest of this block is
+about.
+
+But there's a smaller, more urgent problem first, and it's really a problem of notation. The network
+in this lesson fits in a table because it only has three neurons; with a vocabulary of fifty thousand
+entries and a couple of hundred hidden neurons, walking through it neuron by neuron fits on no page,
+and in no loop worth running. What's needed is a form where an entire layer becomes a product of
+matrices, with a great many examples passing through that same product at once: that's
+<Leccion slug="forward-pass">the next lesson, on the forward pass</Leccion>.

@@ -12,23 +12,27 @@
  * lesson route builds one per spine lesson per locale), the real translation when it exists
  * and a noindex fallback serving the canonical prose until then. Never a 404.
  *
- * `groupLessonsByBlock` is a PURE function (exported for unit testing). It walks the
- * manifest blocks in order and attaches the PUBLISHED lessons the caller passes in — so a
- * block whose lessons are all drafts (already filtered out by `listLessons`) has zero
- * lessons and is OMITTED, never rendered empty-but-present.
+ * COURSE-BUILD-01: EVERY manifest block is rendered, including the ones nobody has written yet.
+ * This reverses the original rule ("a block with no published lessons is OMITTED, never rendered
+ * empty-but-present"), which was right while a course only ever went public finished and wrong
+ * the moment one was written in the open: a five-block course with one published lesson showed a
+ * single block, so the reader could not tell it from a one-block course and had no idea what was
+ * coming — while the titles, the summaries and the planned sizes were sitting in the manifest
+ * unused. An unwritten block is now a plain row (not a <details>: there is nothing to expand)
+ * carrying its title, its summary and «N lecciones · próximamente», and a half-written one says
+ * «3 de 9 lecciones». A finished course has no such rows and looks exactly as it did.
+ *
+ * The grouping itself moved to `@/lib/courses/course-build` (pure, unit-tested, shared with the
+ * catalog card) — `groupLessonsByBlock` lived here and its one job was the filtering this file
+ * no longer wants. `formatBlockDuration` stays: it is presentation.
  *
  * The section carries `id="temario"` so the hero's "view syllabus" link scrolls here.
  */
 
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import type { Course, CourseBlock, Lesson } from "@/domain/types";
-
-export interface SyllabusBlock {
-  block: CourseBlock;
-  lessons: Lesson[];
-  totalMinutes: number;
-}
+import type { Course } from "@/domain/types";
+import type { BlockBuild, CourseBuildStatus } from "@/lib/courses/course-build";
 
 /** Split a block's reading-time total for display. Under an hour it stays in minutes
  *  ("48 min"); once it reaches 60 it reads better as "2h 48m" than "168 min". The
@@ -42,34 +46,23 @@ export function formatBlockDuration(
   return { kind: "hours", hours: Math.floor(totalMinutes / 60), minutes: totalMinutes % 60 };
 }
 
-/** Group published lessons under their manifest block, in manifest order, dropping
- *  blocks with no published lessons. `lessons` is expected pre-sorted by (block, order),
- *  as `listLessons` returns it. */
-export function groupLessonsByBlock(course: Course, lessons: Lesson[]): SyllabusBlock[] {
-  return course.blocks
-    .map((block) => {
-      const blockLessons = lessons.filter((l) => l.block === block.id);
-      const totalMinutes = blockLessons.reduce((sum, l) => sum + l.minutes, 0);
-      return { block, lessons: blockLessons, totalMinutes };
-    })
-    .filter((group) => group.lessons.length > 0);
-}
-
 interface SyllabusAccordionProps {
   course: Course;
-  lessons: Lesson[];
+  /** COURSE-BUILD-01 — every block with its published lessons and its progress. */
+  build: CourseBuildStatus;
   locale: string;
 }
 
-export default async function SyllabusAccordion({ course, lessons, locale }: SyllabusAccordionProps) {
+export default async function SyllabusAccordion({ course, build, locale }: SyllabusAccordionProps) {
   const t = await getTranslations({ locale, namespace: "courses.landing.syllabus" });
-  const groups = groupLessonsByBlock(course, lessons);
 
   // Totals for the section summary ("N bloques · N lecciones · ~Xh de lectura"). `hours` floors
   // deliberately: an "≈18 h" reading estimate never wants to round a partial hour up.
-  const totalLessons = groups.reduce((sum, g) => sum + g.lessons.length, 0);
-  const totalMinutes = groups.reduce((sum, g) => sum + g.totalMinutes, 0);
+  const totalMinutes = build.blocks.reduce((sum, b) => sum + b.totalMinutes, 0);
   const totalHours = Math.floor(totalMinutes / 60);
+  // The first block that HAS lessons is the one worth opening — and the one that wears the
+  // accent ordinal. On an in-progress course that is not necessarily the first block rendered.
+  const firstWithLessons = build.blocks.findIndex((b) => b.lessons.length > 0);
 
   const blockDuration = (totalMinutes: number): string => {
     const d = formatBlockDuration(totalMinutes);
@@ -77,6 +70,76 @@ export default async function SyllabusAccordion({ course, lessons, locale }: Syl
     if (d.minutes === 0) return t("durationHoursExact", { hours: d.hours });
     return t("durationHours", { hours: d.hours, minutes: d.minutes });
   };
+
+  /** The meta cell on the right of a block row: published count, or the planned size. */
+  const blockMeta = (group: BlockBuild): string => {
+    if (group.state === "upcoming") {
+      return group.block.lessons === undefined
+        ? t("upcoming")
+        : t("upcomingMeta", { lessons: group.block.lessons });
+    }
+    if (group.state === "partial") {
+      return t("blockMetaPartial", {
+        published: group.published,
+        planned:   group.planned,
+        duration:  blockDuration(group.totalMinutes),
+      });
+    }
+    return t("blockMeta", { lessons: group.published, duration: blockDuration(group.totalMinutes) });
+  };
+
+  /** The row itself — identical markup inside a <summary> (block with lessons) and inside a
+   *  plain <div> (upcoming block), so the two read as one list. */
+  const blockRow = (group: BlockBuild, index: number) => (
+    <span
+      style={{
+        display: "grid",
+        gridTemplateColumns: "52px 1fr auto",
+        gap: "18px",
+        alignItems: "baseline",
+      }}
+    >
+      <span
+        className="lp-serif"
+        style={{
+          fontSize: "1.875rem",
+          fontWeight: 500,
+          color: index === firstWithLessons ? "var(--green)" : "var(--border-variant)",
+        }}
+      >
+        {String(index + 1).padStart(2, "0")}
+      </span>
+      <span>
+        <span
+          style={{
+            display: "block",
+            fontFamily: "var(--font-headline, Manrope), sans-serif",
+            fontSize: "1.125rem",
+            fontWeight: 700,
+            color: group.state === "upcoming" ? "var(--text-muted)" : "var(--text)",
+          }}
+        >
+          {group.block.title}
+        </span>
+        {group.block.summary ? (
+          <span style={{ display: "block", fontSize: "0.875rem", color: "var(--text-dim)", marginTop: "4px" }}>
+            {group.block.summary}
+          </span>
+        ) : null}
+      </span>
+      <span
+        style={{
+          fontFamily: "var(--font-headline, Manrope), sans-serif",
+          fontSize: "0.8125rem",
+          fontWeight: 600,
+          color: group.state === "upcoming" ? "var(--text-dim)" : "var(--text-muted)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {blockMeta(group)}
+      </span>
+    </span>
+  );
 
   return (
     <section id="temario" style={{ paddingTop: "72px", scrollMarginTop: "88px" }}>
@@ -107,7 +170,7 @@ export default async function SyllabusAccordion({ course, lessons, locale }: Syl
         >
           {t("heading")}
         </h2>
-        {groups.length > 0 ? (
+        {build.publishedLessons > 0 ? (
           <span
             style={{
               fontFamily: "var(--font-headline, Manrope), sans-serif",
@@ -116,66 +179,45 @@ export default async function SyllabusAccordion({ course, lessons, locale }: Syl
               color: "var(--text-dim)",
             }}
           >
-            {t("summary", { blocks: groups.length, lessons: totalLessons, hours: totalHours })}
+            {build.publishedBlocks < build.totalBlocks
+              ? t("summaryInProgress", {
+                  publishedBlocks: build.publishedBlocks,
+                  totalBlocks:     build.totalBlocks,
+                  lessons:         build.publishedLessons,
+                })
+              : t("summary", {
+                  blocks:  build.totalBlocks,
+                  lessons: build.publishedLessons,
+                  hours:   totalHours,
+                })}
           </span>
         ) : null}
       </div>
 
-      {groups.length === 0 ? (
-        <p style={{ fontSize: "0.9375rem", color: "var(--text-dim)", margin: 0 }}>{t("empty")}</p>
-      ) : (
-        <div style={{ borderBottom: "1px solid var(--border-variant)" }}>
-          {groups.map((group, index) => (
-            <details key={group.block.id} open={index === 0} style={{ borderTop: "1px solid var(--border-variant)" }}>
+      {/* Nothing published at all — the «soon» landing. The block list below is still the
+          honest answer to "what will this course be", so the old empty-state line leads into
+          it instead of replacing it. */}
+      {build.publishedLessons === 0 ? (
+        <p style={{ fontSize: "0.9375rem", color: "var(--text-dim)", margin: "0 0 20px" }}>{t("empty")}</p>
+      ) : null}
+
+      <div style={{ borderBottom: "1px solid var(--border-variant)" }}>
+        {build.blocks.map((group, index) =>
+          group.state === "upcoming" ? (
+            <div
+              key={group.block.id}
+              style={{ borderTop: "1px solid var(--border-variant)", padding: "22px 4px" }}
+            >
+              {blockRow(group, index)}
+            </div>
+          ) : (
+            <details
+              key={group.block.id}
+              open={index === firstWithLessons}
+              style={{ borderTop: "1px solid var(--border-variant)" }}
+            >
               <summary style={{ cursor: "pointer", listStyle: "none", padding: "22px 4px" }}>
-                <span
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "52px 1fr auto",
-                    gap: "18px",
-                    alignItems: "baseline",
-                  }}
-                >
-                  <span
-                    className="lp-serif"
-                    style={{
-                      fontSize: "1.875rem",
-                      fontWeight: 500,
-                      color: index === 0 ? "var(--green)" : "var(--border-variant)",
-                    }}
-                  >
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
-                  <span>
-                    <span
-                      style={{
-                        display: "block",
-                        fontFamily: "var(--font-headline, Manrope), sans-serif",
-                        fontSize: "1.125rem",
-                        fontWeight: 700,
-                        color: "var(--text)",
-                      }}
-                    >
-                      {group.block.title}
-                    </span>
-                    {group.block.summary ? (
-                      <span style={{ display: "block", fontSize: "0.875rem", color: "var(--text-dim)", marginTop: "4px" }}>
-                        {group.block.summary}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "var(--font-headline, Manrope), sans-serif",
-                      fontSize: "0.8125rem",
-                      fontWeight: 600,
-                      color: "var(--text-muted)",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {t("blockMeta", { lessons: group.lessons.length, duration: blockDuration(group.totalMinutes) })}
-                  </span>
-                </span>
+                {blockRow(group, index)}
               </summary>
 
               <ul
@@ -211,9 +253,9 @@ export default async function SyllabusAccordion({ course, lessons, locale }: Syl
                 ))}
               </ul>
             </details>
-          ))}
-        </div>
-      )}
+          ),
+        )}
+      </div>
     </section>
   );
 }

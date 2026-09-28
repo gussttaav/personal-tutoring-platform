@@ -7,6 +7,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
 import { PricesProvider } from "@/components/pricing/PricesProvider";
+import { UserPricingSync } from "@/components/pricing/UserPricingSync";
 import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
 import { ScheduleProvider } from "@/components/booking/ScheduleProvider";
 import { getScheduleConfig } from "@/lib/schedule-config";
@@ -144,7 +145,12 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <PricesProvider value={prices} packValidityDays={packValidityDays}>
             <ScheduleProvider value={schedule}>
-              <AuthProvider>{children}</AuthProvider>
+              <AuthProvider>
+                {/* PRICING-STUDENT-01: inside AuthProvider because it needs the
+                    session; wraps children because it owns the "prices still
+                    syncing" flag. A no-op for anonymous visitors. */}
+                <UserPricingSync>{children}</UserPricingSync>
+              </AuthProvider>
             </ScheduleProvider>
           </PricesProvider>
           <Analytics />

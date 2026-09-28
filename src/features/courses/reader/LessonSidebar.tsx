@@ -17,14 +17,22 @@
  * stays a Server Component and keeps the parts that need build-time data:
  * translations and the block grouping.
  *
- * `variant` only changes the outer padding so the same nav reads correctly in the
- * roomy desktop rail and the compact drawer.
+ * COURSE-P9-02: the DESKTOP variant wraps the progress bar + block list in
+ * `SidebarSearch`, a client field under the back link whose results replace the list
+ * inline; the drawer variant renders the list bare, and mobile searches through the
+ * dialog from the bar's icon button. Gating on `variant` is what keeps exactly one
+ * search field in the DOM although this component is rendered twice — the duplication
+ * P9-01's "no triggers inside LessonSidebar" rule was guarding against.
+ *
+ * `variant` otherwise only changes the outer padding so the same nav reads correctly
+ * in the roomy desktop rail and the compact drawer.
  */
 
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import type { Course, Lesson } from "@/domain/types";
-import { groupLessonsByBlock } from "@/features/courses/landing/SyllabusAccordion";
+import { courseBuildStatus } from "@/lib/courses/course-build";
+import SidebarSearch from "@/features/courses/search/SidebarSearch";
 import SidebarProgressBar from "./SidebarProgressBar";
 import SidebarLessonList from "./SidebarLessonList";
 
@@ -46,44 +54,14 @@ export default async function LessonSidebar({
   variant = "desktop",
 }: LessonSidebarProps) {
   const t = await getTranslations({ locale, namespace: "courses.reader" });
-  const groups = groupLessonsByBlock(course, lessons);
+  // COURSE-BUILD-01: the grouping moved to `course-build.ts` and no longer drops blocks with
+  // no published lessons — the LANDING page now advertises the unwritten ones. The sidebar does
+  // not want that: this is navigation, and a block you cannot navigate into is noise in it. So
+  // the filter that used to live inside the grouper lives here, as the sidebar's own decision.
+  const groups = courseBuildStatus(course.blocks, lessons).blocks.filter((g) => g.lessons.length > 0);
 
-  return (
-    <nav
-      aria-label={t("contentsLabel")}
-      style={{
-        padding: variant === "drawer" ? "0" : "8px 4px 32px",
-        fontSize: "0.9375rem",
-      }}
-    >
-      {/* Back link NAMES its destination (the course) — no separate "contents" header,
-          which would just repeat "course". */}
-      <Link
-        href={`/cursos/${courseSlug}`}
-        aria-label={t("backToCourseAria", { course: course.title })}
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          gap: "6px",
-          // Constant: the server cannot know whether the progress bar below will
-          // render. `SidebarProgressBar` pulls itself up by 12px when it does.
-          marginBottom: "24px",
-          fontSize: "0.875rem",
-          lineHeight: 1.35,
-          color: "var(--text-muted)",
-          textDecoration: "none",
-        }}
-      >
-        <span
-          className="material-symbols-outlined"
-          style={{ fontSize: "1.1rem", flexShrink: 0, marginTop: "1px" }}
-          aria-hidden="true"
-        >
-          arrow_back
-        </span>
-        <span>{course.title}</span>
-      </Link>
-
+  const contents = (
+    <>
       {/* Progress counter + horizontal bar — renders nothing when untracked. */}
       <SidebarProgressBar />
 
@@ -143,6 +121,52 @@ export default async function LessonSidebar({
           );
         })}
       </ol>
+    </>
+  );
+
+  return (
+    <nav
+      aria-label={t("contentsLabel")}
+      style={{
+        padding: variant === "drawer" ? "0" : "8px 4px 32px",
+        fontSize: "0.9375rem",
+      }}
+    >
+      {/* Back link NAMES its destination (the course) — no separate "contents" header,
+          which would just repeat "course". */}
+      <Link
+        href={`/cursos/${courseSlug}`}
+        aria-label={t("backToCourseAria", { course: course.title })}
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "6px",
+          // Constant: the server cannot know whether the progress bar below will
+          // render. `SidebarProgressBar` pulls itself up by 12px when it does.
+          marginBottom: "24px",
+          fontSize: "0.875rem",
+          lineHeight: 1.35,
+          color: "var(--text-muted)",
+          textDecoration: "none",
+        }}
+      >
+        <span
+          className="material-symbols-outlined"
+          style={{ fontSize: "1.1rem", flexShrink: 0, marginTop: "1px" }}
+          aria-hidden="true"
+        >
+          arrow_back
+        </span>
+        <span>{course.title}</span>
+      </Link>
+
+      {/* COURSE-P9-02: on desktop the field sits in the 24px the back link leaves
+          beneath itself, and the list below is what the results replace. */}
+      {variant === "desktop" ? (
+        <SidebarSearch currentSlug={currentSlug}>{contents}</SidebarSearch>
+      ) : (
+        contents
+      )}
     </nav>
   );
 }

@@ -115,4 +115,31 @@ describe("runBackprop — trace integrity", () => {
     expect(ids).toContain("dL_dz1_0"); // hidden layer
     expect(ids).toContain("dL_dW1_0_0"); // input weights
   });
+
+  /*
+   * The lesson counts nine parameters and then lets the widget do the counting, so
+   * every one of the nine gets a step AND the step agrees with `grads`. The two
+   * hidden biases are the ones that went missing: the trace computed `db1` and
+   * never showed it, and a reader stepping along came up two derivatives short.
+   */
+  it("gives each of the nine parameters a step carrying its gradient", () => {
+    const { grads, steps } = runBackprop(BACKPROP_PRESET.params, BACKPROP_PRESET.x);
+    const byId = new Map(steps.map((s) => [s.id, s.value]));
+    const expected: Record<string, number> = {
+      dL_dW1_0_0: grads.dW1[0][0],
+      dL_dW1_0_1: grads.dW1[0][1],
+      dL_dW1_1_0: grads.dW1[1][0],
+      dL_dW1_1_1: grads.dW1[1][1],
+      dL_db1_0: grads.db1[0],
+      dL_db1_1: grads.db1[1],
+      dL_dw2_0: grads.dw2[0],
+      dL_dw2_1: grads.dw2[1],
+      dL_db2: grads.db2,
+    };
+    expect(Object.keys(expected)).toHaveLength(9);
+    for (const [id, value] of Object.entries(expected)) {
+      expect(byId.has(id)).toBe(true);
+      expect(byId.get(id)).toBeCloseTo(value, 12);
+    }
+  });
 });

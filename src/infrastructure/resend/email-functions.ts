@@ -145,11 +145,18 @@ function googleCalendarUrl(params: {
 }
 
 const RESCHEDULE_PATHS: Record<string, string> = {
-  free15min: "/?reschedule=free15min",
-  session1h: "/?reschedule=session1h",
-  session2h: "/?reschedule=session2h",
-  pack:      "/?reschedule=pack",
+  free15min: "/mentoria?reschedule=free15min",
+  session1h: "/mentoria?reschedule=session1h",
+  session2h: "/mentoria?reschedule=session2h",
+  pack:      "/mentoria?reschedule=pack",
 };
+
+/** Exported for unit tests — sendConfirmationEmail itself can't be rendered under
+ *  Jest (getTranslations needs Next's config resolution), so this pure slice of it
+ *  is what pins the URL shape. */
+export function rescheduleUrl(sessionType: string, cancelToken: string): string {
+  return `${BASE_URL}${RESCHEDULE_PATHS[sessionType] ?? "/mentoria"}&token=${cancelToken}`;
+}
 
 // ─── Confirmation email (student) ─────────────────────────────────────────────
 
@@ -179,7 +186,7 @@ export async function sendConfirmationEmail(params: {
   // SEC-05: join URL uses joinToken (session entry only); cancel URL uses cancelToken (cancel/reschedule only)
   const joinUrl    = `${BASE_URL}/sesion/${params.joinToken}`;
   const cancelUrl  = `${BASE_URL}/cancelar?token=${params.cancelToken}`;
-  const reschedUrl = `${BASE_URL}${RESCHEDULE_PATHS[params.sessionType] ?? "/"}&token=${params.cancelToken}`;
+  const reschedUrl = rescheduleUrl(params.sessionType, params.cancelToken);
   const dateLabel  = formatDate(params.startIso, params.locale, { weekday: "long" });
   const startLabel = formatTime(params.startIso, params.locale);
   const endLabel   = formatTime(params.endIso,   params.locale);
@@ -360,6 +367,50 @@ export async function sendDeadLetterNotificationEmail(params: {
       </div></div></body></html>
     `,
   }, params.studentEmail);
+}
+
+// ─── Content error report notification (Gustavo) ─────────────────────────────
+// CONTENT-FEEDBACK-01: a reader pressed "Reportar un error" on a lesson or post.
+// Admin-facing, so Spanish and outside next-intl, like the dead-letter mail above.
+
+export async function sendContentReportNotificationEmail(params: {
+  reportId:      string;
+  contentType:   "lesson" | "post";
+  contentKey:    string;
+  locale:        "es" | "en";
+  pageUrl:       string;
+  message:       string;
+  reporterEmail: string | null;
+}): Promise<void> {
+  const notifyEmail = process.env.NOTIFY_EMAIL;
+  if (!notifyEmail) return;
+
+  // ── Escape all reader-controlled values ──────────────────────────────────
+  const safeKey     = escapeHtml(params.contentKey);
+  const safeMessage = escapeHtml(params.message).replace(/\n/g, "<br>");
+  const safeEmail   = params.reporterEmail ? escapeHtml(params.reporterEmail) : "anónimo";
+  const safeUrl     = escapeHtml(params.pageUrl);
+  const kind        = params.contentType === "lesson" ? "Lección" : "Artículo";
+  const adminUrl    = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev"}/admin/feedback`;
+
+  await send({
+    to: notifyEmail,
+    subject: `🐞 Reporte de error — ${params.contentKey}`,
+    html: `
+      <html><head><style>${STYLES}</style></head><body>
+      <div class="wrap"><div class="card">
+        <h1>Reporte de error</h1>
+        <p>Un lector ha reportado un error en ${kind.toLowerCase()} <strong>${safeKey}</strong> (${params.locale}).</p>
+        <div class="label">${kind}</div>
+        <div class="value"><a href="${safeUrl}" style="color:#e8e9ea">${safeUrl}</a></div>
+        <div class="label">Reportado por</div>
+        <div class="value">${safeEmail}</div>
+        <div class="label">Mensaje</div>
+        <div class="note-box"><p>${safeMessage}</p></div>
+        <a class="action-btn" href="${adminUrl}">Ver en el panel</a>
+      </div></div></body></html>
+    `,
+  }, params.reporterEmail ?? undefined);
 }
 
 // ─── New booking notification (Gustavo) ───────────────────────────────────────

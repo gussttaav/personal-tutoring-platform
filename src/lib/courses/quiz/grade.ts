@@ -5,7 +5,7 @@
  * in the lesson bundle. That is the deliberate choice for a free self-assessment
  * course — hiding the key behind a fetch would cost a function invocation per
  * question and buy nothing — so please do not "fix" it later. See the note in
- * docs/courses/phase-3-assessment/01-quiz-engine.md.
+ * docs/courses/dl-nlp/phase-3-assessment/01-quiz-engine.md.
  *
  * Everything interesting lives here rather than in the component precisely so it can
  * be unit-tested without a DOM: the component only collects input and calls this.

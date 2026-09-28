@@ -1,0 +1,867 @@
+---
+slug: de-newton-a-adamw
+title: "Why AdamW for training language models, and what is changing"
+date: "2026-09-15"
+minutes: 30
+summary: "Of all the optimisation methods that exist, language models are trained with the simplest one, and with one specific variant of it: AdamW. Why the only information you can afford at that scale is the gradient, how every improvement since buys back on credit the curvature Newton had for free, and what has started to change in 2026."
+draft: false
+reading:
+  - kind: paper
+    title: "Cauchy and the Gradient Method"
+    authors: "Claude Lemaréchal"
+    year: "2012"
+    venue: "Documenta Mathematica, Extra Volume ISMP"
+    lang: en
+    url: "https://ems.press/content/book-chapter-files/27368"
+    note: "Four pages on the 1847 note in which Cauchy proposes the method, with the key passage translated. You can see he invented it to solve systems of equations, not to minimise anything, and that the learning rate already worried him."
+  - kind: paper
+    title: "A Stochastic Approximation Method"
+    authors: "Herbert Robbins and Sutton Monro"
+    year: "1951"
+    venue: "Annals of Mathematical Statistics"
+    lang: en
+    url: "https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-3/A-Stochastic-Approximation-Method/10.1214/aoms/1177729586.full"
+    note: "The theorem that lets you train with a gradient you never compute in full. Its two conditions on the rate (the sum diverges, the sum of squares doesn't) are where every learning-rate schedule comes from."
+  - kind: libro
+    title: "Convex Optimization, ch. 9: Unconstrained minimization"
+    authors: "Stephen Boyd and Lieven Vandenberghe"
+    year: "2004"
+    venue: "stanford.edu"
+    lang: en
+    url: "https://web.stanford.edu/~boyd/cvxbook/"
+    note: "The second section's catalogue with proofs: gradient descent, Newton, and why the condition number rules the first and not the second. The whole book is free."
+  - kind: libro
+    title: "Deep Learning, ch. 8: Optimization for Training Deep Models"
+    authors: "Goodfellow, Bengio and Courville"
+    year: "2016"
+    venue: "deeplearningbook.org"
+    lang: en
+    url: "https://www.deeplearningbook.org/contents/optimization.html"
+    note: "The same methods as this article, from SGD to Adam, with the algorithms written out step by step and a discussion of why Newton and its approximations never took hold in deep networks."
+  - kind: paper
+    title: "Adam: A Method for Stochastic Optimization"
+    authors: "Diederik Kingma and Jimmy Ba"
+    year: "2014"
+    venue: "arXiv:1412.6980"
+    lang: en
+    url: "https://arxiv.org/abs/1412.6980"
+    note: "The original paper. The part worth reading is section 2.1, where they derive the bias correction and explain the step as a signal-to-noise ratio, which is what makes the learning rate independent of the gradient's scale."
+  - kind: paper
+    title: "Decoupled Weight Decay Regularization"
+    authors: "Ilya Loshchilov and Frank Hutter"
+    year: "2017"
+    venue: "arXiv:1711.05101"
+    lang: en
+    url: "https://arxiv.org/abs/1711.05101"
+    note: "The W in AdamW. Two pages of algebra show that L2 regularisation and weight decay are the same thing under SGD and different things under Adam, and that the one in use was the wrong one."
+  - kind: paper
+    title: "Heavy-Tailed Class Imbalance and Why Adam Outperforms Gradient Descent on Language Models"
+    authors: "Kunstner, Yadav, Milligan, Schmidt and Bietti"
+    year: "2024"
+    venue: "arXiv:2402.19449"
+    lang: en
+    url: "https://arxiv.org/abs/2402.19449"
+    note: "The cleanest explanation of why SGD can't train a language model and Adam can: rare words, which are almost all of them, get minuscule gradients, and Adam is the one that scales them separately."
+  - kind: blog
+    title: "Muon: An optimizer for hidden layers in neural networks"
+    authors: "Keller Jordan"
+    year: "2024"
+    venue: "kellerjordan.github.io"
+    lang: en
+    url: "https://kellerjordan.github.io/posts/muon/"
+    note: "Where Muon is born, as a blog post and not a paper. It explains the orthogonalisation, why it's done with Newton-Schulz rather than an SVD, and why it applies only to the matrices of the hidden layers."
+  - kind: paper
+    title: "Muon is Scalable for LLM Training"
+    authors: "Liu, Su, Li et al. (Moonshot AI)"
+    year: "2025"
+    venue: "arXiv:2502.16982"
+    lang: en
+    url: "https://arxiv.org/abs/2502.16982"
+    note: "The two additions that took Muon from a 124-million-parameter experiment to a production model: weight decay, and the rescaling of the update so that AdamW's hyperparameters can be reused."
+  - kind: paper
+    title: "Fantastic Pretraining Optimizers and Where to Find Them"
+    authors: "Wen, Ahn, Liu et al."
+    year: "2025"
+    venue: "arXiv:2509.02046"
+    lang: en
+    url: "https://arxiv.org/abs/2509.02046"
+    note: "The fair comparison: eleven optimisers, each with its learning rate tuned. The gains over AdamW exist, they belong to the matrix methods and not the scalar ones, and they shrink as the model grows."
+tags: ["optimizacion", "deep-learning", "llm"]
+---
+
+{/*
+  BLOG-04 — Why AdamW for training language models, and what is changing. English
+  translation of content/blog/es/de-newton-a-adamw.mdx.
+
+  LOGICAL order, not chronological: each method fixes one named failure of the previous
+  one (one rate for every direction → momentum averages in time → RMSProp rescales per
+  coordinate → Adam joins both → AdamW fixes the decay the rescaling broke → Muon
+  rescales per matrix). The chronology goes in a figure up front so the reader has the
+  dates in view.
+
+  The article does NOT assume the course and does not link it. It is self-contained: the
+  third section rederives gradient descent from scratch (gradient, direction, parabola,
+  ravine) because the rest of the article hangs on those three calculations.
+
+  Every number is measured or cited, never estimated — and none of them depends on the
+  locale, so nothing was re-measured for this file. See the Spanish header for the full
+  provenance list: the opening table's recipes are the literal sentences of each technical
+  report, the trajectories come from running each update rule as the article writes it on
+  x² + 20y² from (−2.6, 1.2), the step counts are the first step with loss < 0.01, and the
+  memory arithmetic uses P = 4.05·10¹¹ (Llama 3 405B) and 16,384 80 GB H100s.
+
+  FIGURES. All five have English siblings under the AUTHORING.en.md §7 rule, because all
+  five carry chrome set into them (axis labels, per-panel titles, the decimal separator in
+  the rate labels). The four computed ones are written by the same run of
+  scripts/figures/de-newton-a-adamw/make_svgs.py that writes the Spanish files (it emits
+  both locales from the same numbers); parabola-tres-tasas.en.svg is the course's
+  descenso-pasos.svg with its five labels and its aria-label translated by hand. If a
+  figure is regenerated, BOTH locales come out of the same command.
+*/}
+
+Four labs that share no data, no architecture, no hardware and no opinion on much of anything
+published the same paragraph between 2020 and 2024.
+[GPT-3](https://arxiv.org/abs/2005.14165) was trained with Adam, $\beta_1 = 0.9$,
+$\beta_2 = 0.95$ and weight decay $0.1$.
+[OPT](https://arxiv.org/abs/2205.01068), with AdamW, $0.9$, $0.95$ and $0.1$.
+[Llama 2](https://arxiv.org/abs/2307.09288), with AdamW, $0.9$, $0.95$ and $0.1$.
+[DeepSeek-V3](https://arxiv.org/abs/2412.19437), with AdamW, $0.9$, $0.95$ and $0.1$. The update
+rule fits in four lines, it was published in 2017 as a fix to another from 2014, and the three
+numbers that go with it haven't moved in five years or across continents.
+
+And then, in fourteen months, three cracks. [Kimi K2](https://arxiv.org/abs/2507.20534), in July
+2025, a trillion parameters trained without AdamW. [GLM-5](https://arxiv.org/abs/2602.15763), in
+February 2026. [DeepSeek-V4](https://arxiv.org/abs/2606.19348), in April 2026, with 1.6 trillion
+parameters: the same lab that sixteen months earlier had written everybody's paragraph. All three
+use Muon, an optimiser that in December 2024 was a blog post.
+
+| model | year | optimiser | $\beta_1$ | $\beta_2$ | decay |
+|---|---|---|---|---|---|
+| GPT-3 | 2020 | Adam | 0.9 | 0.95 | 0.1 |
+| OPT | 2022 | AdamW | 0.9 | 0.95 | 0.1 |
+| Llama 2 | 2023 | AdamW | 0.9 | 0.95 | 0.1 |
+| DeepSeek-V3 | 2024 | AdamW | 0.9 | 0.95 | 0.1 |
+| Kimi K2 | 2025 | Muon | | | 0.1 |
+| GLM-5 | 2026 | Muon | | | |
+| DeepSeek-V4 | 2026 | Muon | | | |
+
+GPT-3 calls it Adam and cites the AdamW paper for the decay: it's the same algorithm. And the three
+at the bottom haven't dropped AdamW entirely. DeepSeek-V4 keeps it for the embeddings, the output
+layer, the biases and the normalisations, and uses Muon for everything that is a matrix. That split
+isn't an implementation detail: it's the idea behind Muon, and this article ends on it.
+
+It starts much earlier. Mathematical optimisation has spent two centuries accumulating methods, and
+a good share of them beat gradient descent on almost any criterion you care to measure: steps to
+arrive, sensitivity to the settings, guarantees. Newton's method, which is more than three
+centuries old, solves in a single step the problem gradient descent takes thousands on. Nobody
+trains with Newton. The question of this article is why, and the answer has three parts: why at
+this scale the only information you can pay for is the gradient, how each improvement to the
+descent buys back on credit something Newton had for free, and why the latest of those improvements
+is the one that has moved the throne.
+
+The order is going to be logical, not chronological: each method fixes one specific failure of the
+previous one, and that order isn't the order of the dates. To have the dates in view:
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/linea-de-tiempo.en.svg"
+    alt="Timeline, not to scale, with twelve milestones: 1847 Cauchy, gradient descent; 1951 Robbins and Monro, stochastic; 1964 Polyak, momentum; 1983 Nesterov, accelerated momentum; 2011 AdaGrad, one rate per parameter; 2012 RMSProp, moving average; 2014 Adam, both ideas; 2017 AdamW, decoupled decay; 2018 Shampoo, matrix preconditioner; 2024 Muon, orthogonalise the step; 2025 Kimi K2, one trillion parameters on Muon; 2026 DeepSeek-V4, Muon at 1.6 trillion. Eight of the twelve fall in the last fifteen years."
+    width="726"
+    height="150"
+  />
+  <figcaption>
+    A hundred and sixty-four years between the first milestone and the fifth, and fifteen between
+    the fifth and the last. The scale isn't uniform; the order is.
+  </figcaption>
+</figure>
+
+## What there is to minimise, and what a step can cost
+
+Let's call $\theta$ all the parameters of the model, stacked into a single vector with $P$
+coordinates, and $\mathcal{L}(\theta)$ the loss: a number that measures how wrong the model is with
+those parameters, and which training means making small. For
+[Llama 3 405B](https://arxiv.org/abs/2407.21783), $P$ is $4.05 \cdot 10^{11}$, and the loss is a
+mean over $15.6$ trillion tokens:
+
+$$
+\mathcal{L}(\theta) = \frac{1}{N}\sum_{i=1}^{N} \ell_i(\theta),
+$$
+
+where $\ell_i$ is how wrong the model is on token $i$ and $N$ is those $15.6$ trillion. Three things
+about that definition decide everything that follows.
+
+The first is that $\mathcal{L}$ can't be evaluated. Computing it exactly means running the whole
+model over the $N$ tokens once, and that is, to a reasonable approximation, what *the whole training
+run* costs: a language model sees each token of the corpus once, or little more. Evaluating the exact
+loss a single time costs as much as training. Any method that asks for the exact value of
+$\mathcal{L}$ at every step is ruled out before it starts.
+
+The second is that the minimum isn't needed. $\mathcal{L}$ isn't convex: it has many valleys, and no
+method you can run guarantees finding the deepest one. But that isn't what's being asked either. What
+gets measured is the loss of the model you ship, and a valley that isn't the deepest will do if it's
+deep enough. That concession is what makes everything else possible.
+
+The third is the price of each kind of information, and it's worth putting numbers on it. Evaluating
+$\mathcal{L}$ on a batch of data is one *forward pass*. Computing its gradient, the vector of $P$
+partial derivatives that says which way the floor is from here, costs roughly two more *forwards*,
+by the chain rule run backwards: three *forwards* in total, and a vector of $P$ numbers that takes as
+much room as the model. Computing the matrix of second derivatives, the **Hessian** $H$, which says
+how much the loss curves in each direction, produces $P^{2}$ numbers. For Llama 3 that is
+$1.6 \cdot 10^{23}$. The $16\,384$ H100 GPUs used to train it add up to $1.3 \cdot 10^{15}$ bytes of
+memory, and storing that Hessian in the lowest precision anyone trains in asks for $250$ million
+times that. You don't even need the whole matrix for it to go wrong: the product of $H$ with a single
+vector, which gives the curvature in one direction only, costs about as much as an entire gradient.
+
+That is the asymmetry everything comes from. With one gradient you know which way is down in all
+$P$ directions at once, and it costs three *forwards*. Knowing how much the loss curves in *one*
+direction costs the same, and knowing it in all of them fits nowhere.
+
+## The catalogue, ordered by what each method asks for
+
+Mathematical optimisation methods can be sorted into four families by the kind of information they
+demand about the loss in exchange for a step: values of the function only, a promise about its
+shape, its second derivatives, or its first derivatives only. That is the order this section
+follows, and it leaves for last the family training actually uses.
+
+**Derivative-free.** Grid search, random search, the Nelder-Mead simplex of 1965, genetic
+algorithms, evolution strategies, Bayesian optimisation. They all ask for the same thing, which is
+the minimum: evaluate $\mathcal{L}$ at points of their choosing. They differentiate nothing, and in
+exchange they have to work out where the floor is by comparing values, and in $P$ dimensions there
+are $P$ independent directions to compare. Approximating the gradient by finite differences costs
+$P + 1$ evaluations, against the three it costs to compute it. Evolution strategies estimate it more
+cheaply, perturbing the parameters at random and keeping the perturbations that lower the loss, and
+[in 2017](https://arxiv.org/abs/1703.03864) they taught a simulated humanoid to walk in ten minutes
+by spreading the work over more than a thousand processors. But the noise of that estimate grows
+with $P$, and $P$ has grown a hundred thousand times since. What you save by not differentiating you
+pay $P$ times over in evaluating.
+
+**Structured.** Dantzig's simplex of 1947 and the interior-point methods solve linear programs with
+hundreds of thousands of variables; quadratic programming and the whole of convex optimisation, with
+its subgradients, its proximal methods and its guarantees that the minimum found is the only one,
+solve enormous problems in seconds. What they ask in return isn't information about $\mathcal{L}$
+but a promise about its shape: that it be linear, quadratic or convex. A network's loss is none of
+the three, and there is no way to make it believe otherwise.
+
+**Second order.** Here is the method that solves the problem, and it's worth seeing why. Near
+$\theta$ the loss looks like its second-order approximation, a quadratic with the gradient as the
+linear term and the Hessian as the curvature:
+
+$$
+\mathcal{L}(\theta + \Delta) \approx \mathcal{L}(\theta) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta + \tfrac{1}{2}\,\Delta^{\top} H\, \Delta.
+$$
+
+If that approximation were exact, the best step would be the one that minimises it. Differentiating
+with respect to $\Delta$ and setting to zero gives $\nabla_{\theta}\mathcal{L} + H\Delta = 0$, that
+is,
+
+$$
+\Delta = -H^{-1}\,\nabla_{\theta}\mathcal{L},
+$$
+
+which is **Newton's method**. It has no learning rate: the size of the step is decided by the
+curvature, and decided separately in each direction. Where the loss curves a lot the step is short,
+and where it curves little the step is long, without anyone having to say so. Newton has for free
+what everything else is going to have to pay for: the curvature of every direction.
+
+What it costs has already been said: $P^{2}$ numbers to store $H$, and on the order of $P^{3}$
+operations to solve the system. The **quasi-Newton** methods were born to avoid paying that. BFGS,
+named after its authors Broyden, Fletcher, Goldfarb and Shanno, is one of the best known. Instead
+of computing the Hessian it builds an approximation to $H^{-1}$ out of how the gradient changes from
+one step to the next, which is information you already have. It still takes $P^{2}$. L-BFGS
+(limited-memory BFGS), proposed later, avoids storing the whole approximation to the inverse
+Hessian: it keeps only the last $m$ pairs of changes, with $m$ between five and twenty, and from
+those it rebuilds the product $H^{-1}\nabla_{\theta}\mathcal{L}$ in $4mP$ operations and $2mP$ of
+memory. That you can pay, and for twenty years it was machine learning's default: logistic
+regression, conditional random fields, support vector machines with a linear kernel.
+[In 2011](https://icml.cc/2011/papers/210_icmlpaper.pdf) it was tried on deep networks, and on some
+problems it held its own against gradient descent.
+
+It fell over two things it needs that a batch of data can't give it. The first: the pair of changes
+it uses to update its approximation, how far $\theta$ moved and how much the gradient changed, only
+makes sense if both gradients were computed on the same data; with different batches, the
+difference between the gradients is mostly the difference between the batches, and that difference
+goes into the estimate of $H^{-1}$ as if it were curvature. The second: to decide how far to go in
+the direction it proposes, L-BFGS runs a **line search**, which tries several step sizes and keeps
+one that lowers the loss enough, and to know whether the loss has gone down you have to be able to
+evaluate it. Both ask for exact values, and the first section said what one of those costs. The
+*Hessian-free* methods
+[of 2010](https://www.cs.toronto.edu/~jmartens/docs/Deep_HessianFree.pdf) tried the other route:
+don't store $H$, use only $Hv$ products, each at the price of a gradient, to solve Newton's system by
+conjugate gradient. It came to tens or hundreds of products per step. In that time, gradient descent
+takes tens or hundreds of steps.
+
+**First order.** What's left. One gradient per step, three *forwards*, $P$ numbers of memory, and
+no promise about the shape of $\mathcal{L}$.
+
+| family | asks per step | cost per step | memory | tolerates a noisy gradient? |
+|---|---|---|---|---|
+| derivative-free | $\sim P$ evaluations of $\mathcal{L}$ | $\sim P$ *forwards* | $P$ | yes |
+| structured | that $\mathcal{L}$ be linear, quadratic or convex | depends | depends | not applicable |
+| Newton | gradient, Hessian and solving a system | $\sim P^{3}$ | $P^{2}$ | no |
+| L-BFGS | one gradient and $m$ pairs of changes | $\sim 4mP$ | $2mP$ | no: secant and line search |
+| first order | one gradient | $3$ *forwards* | $P$ | **yes** |
+
+The last column is the one that decides, and it deserves its own paragraph, because the reason
+gradient descent doesn't only survive but *suffices* is there and not in the cost. The loss is a
+mean of $N$ terms, so its gradient is the mean of $N$ gradients, and the mean of a handful of them
+chosen at random is an unbiased estimator of the mean of all of them: it points, on average, at
+exactly the same place, and it costs whatever the handful costs. The Hessian can be estimated that
+way too. What can't be estimated that way is its inverse, which is what Newton needs: the inverse of
+a noisy estimate isn't an estimate of the inverse, and the noise in the gently curved directions,
+which are the ones with small entries in $H$, comes out amplified by the inversion. The gradient is
+the one piece of information that is both cheap and estimable without bias from a slice of the data.
+
+Everything from here on can be read this way: gradient descent is the only thing you can pay for,
+and each of its improvements is a way of approximating $H^{-1}$ that survives the noise. The
+diagonal, in RMSProp and Adam. A product of small matrices, in Shampoo. The spectrum of each weight
+matrix, in Muon. Each buys back a piece of what Newton had for free, at a price you can pay.
+
+## Gradient descent, and the one number you choose
+
+[In 1847](https://ems.press/content/book-chapter-files/27368), Cauchy presented to the Paris
+Academy of Sciences a three-page note for solving, without isolating anything, the systems of
+equations that give the orbit of a heavenly body. The idea fits in a sentence: wherever you are,
+look at which way the function climbs fastest and move a little the opposite way. What takes an
+article is what "a little" means.
+
+The **gradient** $\nabla_{\theta}\mathcal{L} \in \mathbb{R}^{P}$ collects one partial derivative
+per parameter: each coordinate says how fast the loss changes when that parameter moves and the
+others stay put. That it's the direction of fastest ascent isn't a definition but a theorem, and it
+comes out of an inequality. Take any direction $\mathbf{u}$ of length $1$; how much the loss changes
+when you move a little along it is the directional derivative, which is a dot product,
+$\left(\nabla_{\theta}\mathcal{L}\right)^{\top}\mathbf{u}$, and by Cauchy-Schwarz that product is
+bounded by $\lVert \nabla_{\theta}\mathcal{L} \rVert$, with equality only when $\mathbf{u}$ is
+parallel to the gradient. No direction climbs more per unit of step than the gradient's, so none
+descends more than the opposite one. From there, the whole rule:
+
+$$
+\theta_{t+1} = \theta_t - \eta\,\nabla_{\theta}\mathcal{L}(\theta_t),
+$$
+
+where $t$ counts steps and $\eta > 0$ is the **learning rate**, the one number in the formula that
+you choose. That every step lowers the loss can be seen with the tangent plane:
+
+$$
+\mathcal{L}(\theta_t + \Delta) \approx \mathcal{L}(\theta_t) + \left(\nabla_{\theta}\mathcal{L}\right)^{\top}\Delta,
+$$
+
+and with $\Delta = -\eta\,\nabla_{\theta}\mathcal{L}$ the loss drops by
+$\eta\,\lVert\nabla_{\theta}\mathcal{L}\rVert^{2}$, which isn't negative. The whole debt is in the
+$\approx$: it holds near $\theta_t$, and how near is decided by $\eta$.
+
+### The arithmetic comes out whole on a parabola
+
+Take the smallest loss there is, a single parameter and $\mathcal{L}(w) = w^{2}$, with derivative
+$2w$. The rule becomes $w_{t+1} = w_t - 2\eta\,w_t = (1 - 2\eta)\,w_t$: multiply by the same
+constant at every step. Iterating from $w_0$,
+
+$$
+w_t = \left(1 - 2\eta\right)^{t} w_0,
+$$
+
+and a power tends to zero if and only if its base measures less than $1$. The condition is
+$\lvert 1 - 2\eta \rvert < 1$, that is $0 < \eta < 1$, and the factor itself tells you what happens
+in each range: between $0$ and $0.5$ the weight shrinks without changing sign; at $0.5$ it lands on
+the minimum in a single step; between $0.5$ and $1$ it alternates sign and shrinks; at $1$ it
+alternates forever; above that, it alternates and grows.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/parabola-tres-tasas.en.svg"
+    alt="Three stacked plots, all with the same parabola: the loss on the vertical axis and the weight on the horizontal, with the minimum in the centre. In all three the first point sits in the same place, on the right, where the weight equals one. Top, with learning rate 0.10, the six points come down the right arm getting closer to the centre by less each time, and the last one stops halfway. Middle, with 0.40, the second point is already almost at the bottom and the third sits on top of it. Bottom, with 1.05, the points jump from one arm to the other and each lands higher than the last: the fifth reaches almost the top edge of the drawing."
+    width="360"
+    height="350"
+  />
+  <figcaption>
+    The two failures are opposites: the short step always goes down and never quite arrives, and
+    the long step crosses the bottom and comes out higher than it went in. There is no step size
+    that's right by nature; there is one that depends on how much the loss curves.
+  </figcaption>
+</figure>
+
+That $1$ in the limit belongs to this parabola. With $\mathcal{L}(w) = a\,w^{2}$ the derivative is
+$2aw$, the factor becomes $1 - 2\eta a$ and the condition becomes $\eta < 1/a$: the more the loss
+curves, the shorter the step has to be. So far nothing hurts, because $a$ is one number and $\eta$
+is chosen by looking at it.
+
+### One rate for two curvatures
+
+It hurts as soon as there are two directions that curve differently, and a network has $P$. The
+function $\mathcal{L} = x^{2} + 20y^{2}$ is the least you need to see it: an elongated ravine,
+nearly flat along $x$ and very steep along $y$. The parabola's arithmetic, coordinate by
+coordinate, asks for $\eta < 1$ for $x$ and $\eta < 1/20 = 0.05$ for $y$, and the second one rules.
+The per-step factors are $1 - 2\eta$ in $x$ and $1 - 40\eta$ in $y$.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/canon-dos-tasas.en.svg"
+    alt="Two contour maps of the same ravine, the function x² plus twenty y², stretched horizontally: the ellipses are much wider than tall. In both, the gradient-descent trajectory starts at the top left. On the left, with rate 0.02, it drops to the horizontal axis in three steps and then creeps toward the centre in short, shrinking steps; it takes 80 steps to arrive. On the right, with rate 0.045, every step crosses the axis and lands on the opposite wall, a zigzag that narrows as it advances toward the centre; it takes 35 steps."
+    width="726"
+    height="225"
+  />
+  <figcaption>
+    The same ravine, the same starting point. With $\eta = 0.02$ the factors are $0.96$ and
+    $0.2$: the steep coordinate reaches the bottom in three steps and the flat one advances 4% per
+    step, and takes $80$. With $\eta = 0.045$ they are $0.91$ and $-0.8$: the flat one goes twice as
+    fast, and the steep one crosses the bottom at every step and bounces off the opposite wall. It
+    arrives in $35$, zigzagging.
+  </figcaption>
+</figure>
+
+The two trajectories are the same dilemma seen from each side. A small rate respects the steep
+direction and wastes the flat one; a large one exploits the flat direction and bounces in the steep
+one. No $\eta$ serves both well, because $\eta$ is one number and the curvatures are two.
+
+The ratio between the largest curvature and the smallest is called the **condition number**,
+$\kappa$, and here it's $20$. Let's call $a_{\max}$ the curvature in the steepest direction and
+$a_{\min}$ the curvature in the flattest. The condition number rules the number of steps: the best
+possible $\eta$ is on the order of $1/a_{\max}$, and with it the flat direction contracts by a
+factor $1 - a_{\min}/a_{\max}$ per step, so reaching a given precision costs a number of steps
+proportional to $\kappa$. In a network, computing that $\kappa$ can't be paid for, but there is a
+measurement that repeats in every model anyone has looked at: the most and least curved directions
+differ by several orders of magnitude. In a ravine with $\kappa = 20$ we're talking a few tens of
+steps. One a hundred times narrower, in the Adam section, is going to cost $3\,619$.
+
+The problem has a name, **ill-conditioning**, and everything after this section is a way of
+treating it. Newton treats it by dividing by $H$, and that can't be paid for. The rest are ways of
+approximating that division with what can.
+
+## Stochastic: the gradient nobody can compute in full
+
+Before treating the ravine there's the other problem from the first section to deal with, and it
+comes first: the exact gradient costs as much as the whole training run, so nobody computes it.
+What gets computed is the gradient over a **batch** of $B$ examples chosen at random,
+
+$$
+\hat{\mathbf{g}} = \frac{1}{B}\sum_{i \in \text{batch}} \nabla_{\theta}\,\ell_i(\theta),
+$$
+
+and that is what gets subtracted. It's an estimator: its mean over all possible batches is exactly
+$\nabla_{\theta}\mathcal{L}$, because the gradient of a mean is the mean of the gradients, and its
+variance shrinks like $1/B$. It costs what $B$ costs, not what $N$ costs. For Kimi K2, each batch is
+$67$ million tokens out of a corpus of $15.5$ trillion: each step looks at $0.0004$% of the data
+and points, on average, at the same place it would if it looked at all of it. For the compute of a
+single exact step you get two hundred thousand noisy ones, and the noise averages out along the way.
+
+That is **stochastic gradient descent**, SGD, and it isn't an approximation to the method but
+[a theorem from 1951](https://projecteuclid.org/journals/annals-of-mathematical-statistics/volume-22/issue-3/A-Stochastic-Approximation-Method/10.1214/aoms/1177729586.full)
+about how to find the zero of a function you can only observe with noise. Robbins and Monro proved
+that the iteration converges if the rate decreases in a specific way: the sum of all the $\eta_t$
+has to diverge, so the method can travel any distance, and the sum of their squares has to converge,
+so the noise eventually dies away.
+
+The noise Robbins and Monro talk about is, in our case, the difference between the gradient we
+compute and the one we would like to compute: the batch's minus the exact one,
+
+$$
+\hat{\mathbf{g}} - \nabla_{\theta}\mathcal{L}.
+$$
+
+It has mean zero, on average we point at the right place, but it isn't free. It costs three things,
+and all three matter later. The first is that an individual step can raise the loss; the descent
+guarantee of the previous section becomes a guarantee on average. The second is that near the bottom
+the trajectory doesn't stop: it trembles with an amplitude proportional to $\eta$ times the size of
+the noise, and the only way to settle it is to lower $\eta$. That is why no model trains at a
+constant rate to the end. The third is the one that closed the door in the previous section: with a
+noisy gradient, the line search can't tell whether the loss went down and the secant condition
+measures noise. The second-order methods didn't lose on cost alone; they lost because the noise
+contaminates the curvature estimate, and the convergence guarantees that survive that noise are the
+first-order ones.
+
+There is one thing the noise gives you, and it's worth saying carefully because it has been
+exaggerated a lot. A saddle point, where the gradient is zero but the loss goes down in some
+direction, is an unstable equilibrium: exact descent stays parked on top of it, and the noisy kind
+needs only a nudge in any downhill direction to leave. In high dimension,
+[almost all the points where the gradient vanishes are saddles](https://arxiv.org/abs/1406.2572)
+and not minima, so this isn't a detail. But it isn't what makes SGD work; it's what keeps it from
+getting stuck.
+
+With that, the method that trains every model in the table is complete: a noisy gradient,
+subtracted with a decreasing rate. What's missing is making it bearable in a ravine, and that is
+where the variants start.
+
+## Momentum: remembering the previous step
+
+The ravine's zigzag has a property you can exploit: in the steep direction the gradient changes sign
+at every step, and in the flat one it keeps it. A method that averages recent gradients cancels the
+first and accumulates the second, without knowing which direction is which.
+[Polyak proposed it in 1964](https://doi.org/10.1016/0041-5553(64)90137-5) with a physical image, a
+heavy ball rolling over the surface and keeping part of its velocity, hence the name:
+
+$$
+\mathbf{v}_{t+1} = \beta\,\mathbf{v}_t + \nabla_{\theta}\mathcal{L}(\theta_t),
+\qquad
+\theta_{t+1} = \theta_t - \eta\,\mathbf{v}_{t+1},
+$$
+
+with $\beta$ between $0$ and $1$, and nearly always $0.9$. To keep things short, we write
+$\mathbf{g}_{t} = \nabla_{\theta}\mathcal{L}(\theta_t)$. Unrolling the first line, $\mathbf{v}_t$
+is a sum of all the previous gradients with geometrically decaying weights:
+
+$$
+\mathbf{v}_t = \mathbf{g}_{t-1} + \beta\,\mathbf{g}_{t-2} + \beta^{2}\,\mathbf{g}_{t-3} + \cdots.
+$$
+
+With that, the arithmetic of the two directions comes out whole. If the gradient is always the
+same, $\mathbf{g}$, the sum tends to $\mathbf{g}/(1 - \beta)$: with $\beta = 0.9$, ten times the
+gradient, and the effective step is ten times $\eta$. If it alternates between $\mathbf{g}$ and
+$-\mathbf{g}$, the sum tends to $\mathbf{g}/(1 + \beta)$: little more than half. The same rule
+amplifies tenfold the direction the gradient insists on and halves the one where it contradicts
+itself. Averaging in time tells apart what the learning rate couldn't.
+
+What doesn't change is that there is still a single $\eta$. Momentum doesn't remove the steep
+direction's limit, it moves it: with the parameters well chosen, the number of steps to a given
+precision goes from proportional to $\kappa$ to proportional to $\sqrt{\kappa}$, and the well-chosen
+parameters depend on $\kappa$, which nobody knows.
+
+Nesterov proposed in 1983 a variant that evaluates the gradient not where the ball is but where it's
+going to be after the push, a step of anticipation that improves the theoretical guarantee, and
+[in 2013](https://proceedings.mlr.press/v28/sutskever13.html) it was shown to train deep networks
+better. The difference from Polyak's is small in practice; it matters in the last section, because
+Muon uses Nesterov's.
+
+## One rate per parameter: AdaGrad and RMSProp
+
+The other attack on the ravine doesn't average in time, it rescales in space: instead of one $\eta$,
+one per parameter, and let the method itself choose them. The rule is to divide each coordinate of
+the gradient by a measure of how large that coordinate's gradients have been.
+[AdaGrad](https://jmlr.org/papers/v12/duchi11a.html), from 2011, accumulates their squares:
+
+$$
+\mathbf{s}_{t+1} = \mathbf{s}_t + \mathbf{g}_t^{2},
+\qquad
+\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{\mathbf{s}_{t+1}} + \varepsilon}\,\mathbf{g}_t,
+$$
+
+where the square, the root and the division are coordinate by coordinate, and $\varepsilon$ is a
+tiny number that avoids dividing by zero. It was born for problems with rare inputs. Think of a
+language model: the embedding row of a word only receives gradient at the steps where the word
+appears, and most words appear rarely. With a shared $\eta$, the frequent words set the limit and
+the rare ones barely move. With AdaGrad, each parameter has its own $\mathbf{s}$: those that receive
+gradient at every step accumulate it fast and slow down, and those that receive it once every
+thousand steps keep taking large steps. This comes back later, because it's a good part of the
+reason a language model isn't trained with plain SGD but with methods that adapt the rate parameter
+by parameter.
+
+The flaw is in plain sight: $\mathbf{s}$ only grows, so the effective rate only falls, and on a
+non-convex problem, where you have to keep moving after a long time, it ends up stopping before it
+arrives. [RMSProp](https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf) fixes
+that by swapping the sum for an exponential moving average, which forgets:
+
+$$
+\mathbf{v}_{t+1} = \beta_2\,\mathbf{v}_t + (1 - \beta_2)\,\mathbf{g}_t^{2},
+\qquad
+\theta_{t+1} = \theta_t - \frac{\eta}{\sqrt{\mathbf{v}_{t+1}} + \varepsilon}\,\mathbf{g}_t.
+$$
+
+That average's memory is about $1/(1 - \beta_2)$ steps: ten with $\beta_2 = 0.9$, a thousand with
+$0.999$. RMSProp was never published. It's a slide from a 2012 online course of Hinton's, and for
+years it was cited that way, "Lecture 6.5", because there was nothing else to cite.
+
+What it does on the ravine, $\mathcal{L} = x^{2} + 20y^{2}$, can be seen without drawing it. In the
+steep direction the gradient is $40y$; in the flat one, $2x$. Dividing each by the root of its own
+mean of squares, which is more or less its magnitude, leaves in each coordinate a step of size
+$\eta$ with the gradient's sign, whatever its scale: the step has stopped depending on the curvature.
+That is exactly a diagonal approximation of $H^{-1}$ with the gradient magnitudes standing in for
+the curvature, and it costs one more vector of memory. Second order comes back in through the
+window, as a diagonal, at a price you can pay.
+
+It has a start-up defect worth measuring, because it's the one Adam is going to correct. At the
+first step $\mathbf{v}_1 = (1 - \beta_2)\,\mathbf{g}_0^{2}$, so the division leaves
+$\eta / \sqrt{1 - \beta_2}$ per coordinate: with $\beta_2 = 0.9$ that is $3.2\,\eta$, and with
+$0.999$ it is $31.6\,\eta$. On the ravine, with $\eta = 0.1$ and $\beta_2 = 0.999$, the first step
+takes the trajectory from $(-2.6,\ 1.2)$ to $(0.56,\ -1.96)$: it crosses the bottom and comes out
+the opposite wall, because the moving average hasn't seen anything yet and underestimates the size
+of the gradient thirty times over.
+
+## Adam: both ideas together
+
+[Adam](https://arxiv.org/abs/1412.6980), from December 2014, joins the two: a moving average of the
+gradient, which is momentum written as an average, and a moving average of its square, which is
+RMSProp.
+
+$$
+\mathbf{m}_t = \beta_1\,\mathbf{m}_{t-1} + (1 - \beta_1)\,\mathbf{g}_t,
+\qquad
+\mathbf{v}_t = \beta_2\,\mathbf{v}_{t-1} + (1 - \beta_2)\,\mathbf{g}_t^{2}.
+$$
+
+And it corrects the start. Unrolling $\mathbf{m}_t$ as before, it's $(1 - \beta_1)$ times the sum of
+the gradients with weights $\beta_1^{t-k}$; if all the gradients were equal to $\mathbf{g}$, the
+geometric sum gives $\mathbf{m}_t = \left(1 - \beta_1^{t}\right)\mathbf{g}$. At the first step the
+average is $(1 - \beta_1)\,\mathbf{g}$, a tenth of the gradient; at step $t$, a fraction
+$1 - \beta_1^{t}$ that climbs towards $1$. Dividing by that fraction restores the correct scale from
+the first step, and the same for $\mathbf{v}_t$ with $\beta_2$:
+
+$$
+\hat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1 - \beta_1^{t}},
+\qquad
+\hat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1 - \beta_2^{t}},
+\qquad
+\theta_{t+1} = \theta_t - \eta\,\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{v}}_t} + \varepsilon}.
+$$
+
+With that correction the first step is $\eta$ per coordinate, with the gradient's sign, and not
+$31.6\,\eta$. Those are the four lines from the table at the top, and two more vectors of memory,
+$\mathbf{m}$ and $\mathbf{v}$, the size of the model.
+
+The reading that explains why it works on almost everything is in the quotient. $\hat{\mathbf{m}}_t$
+estimates the mean of the gradient and $\sqrt{\hat{\mathbf{v}}_t}$ estimates the root of the mean of
+its square; for those exact means, the first never exceeds the second in absolute value (variance
+can't be negative), so the quotient lies, coordinate by coordinate, between $-1$ and $1$: near
+$\pm 1$ where the gradient insists on a sign, near $0$ where its mean is noise. Adam's moving
+averages only approach that ideal, and the resulting step is almost always on the order of $\eta$,
+whatever the scale of the gradient; the exception is a gradient that sits at zero for many steps
+and then fires, where $\hat{\mathbf{v}}_t$ lags behind and the quotient can exceed $1$ (Kingma and
+Ba bound the step at $\eta \cdot \frac{1-\beta_1}{\sqrt{1-\beta_2}}$, about $3.16\,\eta$ at the
+default values). That is why $\eta$ can be chosen in units of the parameter, why the same $10^{-4}$
+works for models that have nothing in common, and why a rate of $3 \cdot 10^{-4}$ means, almost
+always, that no weight changes by more than three ten-thousandths per step.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/canon-cuatro-metodos.en.svg"
+    alt="Four contour maps of the same stretched ravine, one per method, every trajectory starting at the top left with twenty steps drawn. Gradient descent, top left: zigzag between the two walls, 35 steps. Momentum, top right: each bounce shorter than the last and faster progress toward the centre, 14 steps. RMSProp, bottom left: a smooth curve down the diagonal and then along the axis, no bouncing, 31 steps. Adam, bottom right: a straight forty-five-degree diagonal to the axis and then along it, every step the same length, 36 steps."
+    width="726"
+    height="470"
+  />
+  <figcaption>
+    The four methods on the same ravine, from the same point, twenty steps drawn and the total to
+    the bottom in each label. Momentum carries $\beta = 0.5$ rather than the usual $0.9$ because
+    the $0.9$ is meant for ravines some seventy times narrower than this one, and here it overshoots
+    in the flat direction. RMSProp and Adam take steps of the same length in both coordinates: the
+    $45$-degree diagonal is the signature of the rescaling.
+  </figcaption>
+</figure>
+
+Look at the steps to the bottom before drawing conclusions: Adam takes $36$ and the descent $35$.
+On a ravine with $\kappa = 20$ and a well-chosen rate, Adam isn't faster. Its advantage is
+something else, and to see it you have to change the ravine without changing the rate.
+
+<figure>
+  <img
+    src="/blog/de-newton-a-adamw/misma-tasa-dos-canones.en.svg"
+    alt="Two contour maps with the same Adam trajectory over them, thirty steps in a straight line: a forty-five-degree diagonal from the top left down to the horizontal axis, then toward the centre. On the left the ravine is x² plus twenty y², with stretched ellipses. On the right it is x² plus two thousand y², a hundred times narrower: the contours are nearly horizontal stripes and the floor is a slit. The thirty steps are identical in both drawings. The labels say Adam arrives in 36 and 75 steps at the same rate 0.1, and that gradient descent needs 35 steps at rate 0.045 on the first and 3619 steps at rate 0.00045 on the second."
+    width="726"
+    height="225"
+  />
+  <figcaption>
+    On the right, the same ravine a hundred times narrower. Gradient descent needs a rate a hundred
+    times smaller to avoid diverging, and with it takes $3\,619$ steps. Adam takes the same thirty
+    steps as on the left, with the same $\eta = 0.1$, and arrives in $75$. Nothing had to be
+    touched.
+  </figcaption>
+</figure>
+
+That is what Adam buys: not speed on a known problem, but independence from the curvature on an
+unknown one. A network has millions of ravines of different widths inside it, and nobody is going to
+measure any of them.
+
+## The W: a regularisation mistake that lasted three years
+
+Almost every model is trained with **weight decay**: at every step, besides subtracting the
+gradient, each weight gets shrunk a little towards zero,
+$\theta \leftarrow \theta - \eta\lambda\,\theta$, so that none of them grows without bound. Under
+gradient descent that is identical to adding a term $\tfrac{\lambda}{2}\lVert\theta\rVert^{2}$ to
+the loss, the **L2 regularisation**, because the gradient of that term is $\lambda\theta$ and
+subtracting it with $\eta$ gives the same formula. Two names, one algorithm, and for decades nobody
+had to tell them apart.
+
+Under Adam they stop being the same thing, and the arithmetic shows it. If the decay enters as a
+term of the loss, it enters $\mathbf{g}$, and from there $\mathbf{m}$ and $\mathbf{v}$: it goes
+through the division. For a parameter with historically large gradients, $\sqrt{\hat{\mathbf{v}}}$
+is large and its $\lambda\theta$ comes out divided by a large number: it barely decays. For one with
+small gradients, it decays in full. The strength of the regularisation comes to depend on each
+weight's gradient history, and in the opposite direction to the sensible one: the weights that move
+the most are the ones held back the least.
+
+[Loshchilov and Hutter](https://arxiv.org/abs/1711.05101) pointed it out in November 2017 and
+proposed taking the decay out of the division:
+
+$$
+\theta_{t+1} = \theta_t - \eta\left(\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{v}}_t} + \varepsilon} + \lambda\,\theta_t\right).
+$$
+
+That is AdamW, and the W is *weight decay*, decoupled. The difference from the previous formula is
+where $\lambda\theta_t$ sits: outside the quotient, instead of inside $\mathbf{g}$. At the time
+there was [a result from that same year](https://arxiv.org/abs/1705.08292) according to which Adam
+generalised worse than SGD with momentum in vision, and a good part of that gap was this: Adam was
+regularising itself badly. With the decoupled decay the distance closed on the tasks they tried. The
+$0.1$ in the table at the top is the $\lambda$ of this formula, and it gets multiplied by $\eta$:
+with $\eta = 3 \cdot 10^{-4}$, each weight shrinks by three hundred-thousandths per step.
+
+## Why AdamW, and why with those numbers
+
+So far, the generic answer: Adam joins the two ideas and AdamW fixes its regularisation. The
+concrete question is why a *transformer* isn't trained with SGD with momentum, which worked in
+vision for years and keeps a single state vector instead of two, and the answer has been slow to
+arrive.
+
+It's in the rare words, which are almost all of them. A language model's loss is a mean over tokens,
+and tokens follow Zipf's law: a few appear in every batch and the vast majority once every many
+thousands. The parameters that touch only a rare token, its row in the embedding matrix and its row
+in the output layer, receive minuscule gradients on average, and under SGD a minuscule gradient is
+a minuscule step. Those parameters don't learn, and the loss on the rare tokens, which are most of
+the vocabulary, doesn't go down. [Kunstner and others](https://arxiv.org/abs/2402.19449) measured
+it in 2024 class by class, and it is AdaGrad's problem as is: one rate per parameter is what lets a
+rare word's row advance as much per step as a frequent one's. On top of that, the gradient noise in
+a model with attention has [heavy tails](https://arxiv.org/abs/1912.03194), occasional batches with
+enormous gradients, and the scale of the gradients differs by orders of magnitude between the
+embeddings, the attention matrices and the normalisations. They're ravines inside ravines, and SGD
+has one $\eta$ for all of them.
+
+The numbers in the table each answer to a failure with a name.
+
+**$\beta_2 = 0.95$ and not the original paper's $0.999$.** The memory of $\mathbf{v}$ is
+$1/(1 - \beta_2)$ steps: a thousand with $0.999$, twenty with $0.95$. With a thousand steps of
+memory, when a batch suddenly brings a large gradient in some coordinate, $\mathbf{v}$ takes hundreds
+of steps to find out, and meanwhile $\hat{\mathbf{m}}/\sqrt{\hat{\mathbf{v}}}$ is far above $1$ in
+that coordinate: an enormous step, and the loss jumps. Those are the loss spikes that
+[keep everyone who trains at this scale awake](https://arxiv.org/abs/2304.09871). With twenty steps
+of memory, $\mathbf{v}$ reacts sooner. GPT-3 set $0.95$ and nobody has had a reason to go back.
+
+**Gradient clipping to norm $1$.** Before $\mathbf{g}$ enters $\mathbf{m}$ and $\mathbf{v}$, if
+its norm exceeds $1$ it gets rescaled to $1$. It's the other defence against the heavy tails: an
+atypical batch can't push the averages around.
+
+**$\varepsilon$.** In the original paper it's $10^{-8}$; Llama 2 used $10^{-5}$, and
+[OLMo 2](https://arxiv.org/abs/2501.00656) went back to $10^{-8}$ because with $10^{-5}$ the
+parameters whose gradients are smaller than that, which in a large model are many, see their step
+held back by the $\varepsilon$ instead of by $\sqrt{\hat{\mathbf{v}}}$. A number that exists to
+avoid a division by zero ends up deciding how much the quietest parameters learn.
+
+**Warmup.** The bias correction fixes the mean of $\hat{\mathbf{v}}$ in the first steps, not its
+variance: estimated from three or four gradients, $\hat{\mathbf{v}}$ is so noisy that the quotient
+can take large steps in wrong directions.
+[The RAdam analysis](https://arxiv.org/abs/1908.03265) showed that raising the rate linearly from
+zero over the first few thousand steps is exactly a cure for that. Llama 2 warms up for $2\,000$
+steps; Llama 3, for $8\,000$.
+
+**Schedule.** After the warmup, cosine down to $10$% of the peak rate in GPT-3 and Llama, or a long
+constant stretch followed by a cooldown in DeepSeek-V3 and Kimi K2, which hold the rate fixed for
+the first ten trillion tokens and only then bring it down.
+[The two shapes give equivalent results](https://arxiv.org/abs/2405.18392), and both are Robbins
+and Monro's second condition made cheap: sit at the highest rate the training run can stand for most
+of the time, and lower it at the end to settle the trembling.
+
+Then there's the bill. $\mathbf{m}$ and $\mathbf{v}$ are two vectors the size of the model, and for
+$405$ billion parameters in single precision they take $3.2$ TB: forty $80$ GB H100s dedicated to
+remembering. That bill is where the last section starts.
+
+## What comes next: per matrix, not per coordinate
+
+Adam costs two things, memory and a diagonal approximation, and what has been proposed since attacks
+one of the two.
+
+**Less memory.** [Adafactor](https://arxiv.org/abs/1804.04235), from 2018, doesn't store the whole
+$\mathbf{v}$ for an $m \times n$ weight matrix: it stores the row sums and the column sums, $m + n$
+numbers instead of $mn$, and rebuilds the matrix as their product. T5 was trained that way.
+[8-bit Adam](https://arxiv.org/abs/2110.02861) stores $\mathbf{m}$ and $\mathbf{v}$ quantised.
+[Lion](https://arxiv.org/abs/2302.06675), from 2023, found by automatic search over programs, keeps
+only momentum and uses as its step the sign of a blend of the momentum and the gradient: one state
+vector instead of two, and the sign is the extreme case of Adam's rescaling, where every step
+measures exactly $\eta$.
+
+**More curvature.** Here is what has changed the table. Adam treats the $mn$ numbers of a weight
+matrix as $mn$ parameters with no relation to each other, and they aren't: the matrix multiplies a
+vector, and its gradient $\mathbf{G}$ is a matrix too, with rows and columns that mean something.
+[Shampoo](https://arxiv.org/abs/1802.09568), also from 2018, preconditions with two small matrices
+instead of a diagonal, one on each side:
+
+$$
+\mathbf{L}_t = \mathbf{L}_{t-1} + \mathbf{G}_t\mathbf{G}_t^{\top},
+\qquad
+\mathbf{R}_t = \mathbf{R}_{t-1} + \mathbf{G}_t^{\top}\mathbf{G}_t,
+\qquad
+\mathbf{W}_{t+1} = \mathbf{W}_t - \eta\,\mathbf{L}_t^{-1/4}\,\mathbf{G}_t\,\mathbf{R}_t^{-1/4}.
+$$
+
+$\mathbf{L}$ is $m \times m$ and $\mathbf{R}$ is $n \times n$: for a square matrix, twice Adam's
+memory and not its square, and in exchange an approximation of $H^{-1}$ that is no longer diagonal.
+It took six years to make it run at scale, and
+[in 2024 it won the AlgoPerf competition](https://mlcommons.org/2024/08/mlc-algoperf-benchmark-competition/)
+training $28$% faster than the reference, an AdamW with Nesterov momentum.
+[SOAP](https://arxiv.org/abs/2409.11321) puts Adam inside the basis Shampoo computes.
+
+**Muon** does something more radical with the same premise. Instead of preconditioning the gradient,
+it takes the momentum matrix $\mathbf{M}_t$ of each weight matrix and replaces it with the nearest
+orthogonal matrix: if $\mathbf{M}_t = \mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^{\top}$ is its singular
+value decomposition, the step is
+
+$$
+\mathbf{W}_{t+1} = \mathbf{W}_t - \eta\,\mathbf{U}\mathbf{V}^{\top},
+$$
+
+the same matrix with all its singular values set to $1$. Computing that decomposition would be
+expensive; [the December 2024 blog post](https://kellerjordan.github.io/posts/muon/) that proposed
+it approximates it with five iterations of a polynomial in $\mathbf{M}\mathbf{M}^{\top}$, matrix
+products only, in low precision. Compare with what came before: Lion normalises each number, Adam
+normalises each coordinate by its recent magnitude, and Muon normalises each matrix by its spectrum.
+It's the same rescaling one level up. And the argument for why it helps is the ravine once more,
+inside each matrix: the gradient of a *transformer* layer is nearly low-rank, a few directions
+dominate it, and orthogonalising it gives the rare directions the same step size as the dominant
+ones. [There is a reading](https://arxiv.org/abs/2409.20325) that puts all three in the same
+formula: each is steepest descent under a different norm, and choosing the optimiser is choosing
+what "a step of size $\eta$" means.
+
+Muon exists only for matrices. The embeddings, the output layer, the biases and the normalisation
+weights stay on AdamW in every model that uses it, and that is why the last three rows of the table
+are, strictly, Muon and AdamW at once. What
+[took Muon from an experiment to a production model](https://arxiv.org/abs/2502.16982) were two
+additions from February 2025: weight decay, and a rescaling of the step so that AdamW's $\eta$ and
+$\lambda$ carry over without a new search. With that, Moonshot trained a $16$-billion-parameter
+model on $5.7$ trillion tokens and reported twice AdamW's compute efficiency. Five months later,
+Kimi K2: a trillion parameters, $15.5$ trillion tokens and, by its own report, not a single loss
+spike. Then GLM-5 and DeepSeek-V4, which justifies it in two words, convergence and stability.
+
+**No schedule.** The other line doesn't touch the direction of the step but the rest of the recipe.
+[Schedule-Free AdamW](https://arxiv.org/abs/2405.15682) replaces the rate schedule with an average
+of the points the trajectory passes through, and it won the no-hyperparameter-tuning track of the
+same AlgoPerf. It's the only one of these proposals that removes a number instead of adding an
+idea.
+
+It's worth ending with the fair measurement.
+[The most careful comparison to date](https://arxiv.org/abs/2509.02046), eleven optimisers each
+with its learning rate tuned, from $0.1$ to $1.2$ billion parameters, found that the announced gains,
+of $1.4$ to $2$ times, came partly from comparing against a badly tuned AdamW; that the real gains
+exist and all belong to the methods that precondition per matrix, Muon, SOAP and their relatives;
+and that they're worth $1.4$ times on the smallest model and $1.1$ on the largest, shrinking as the
+model grows. $10$% of the compute of a frontier training run is still a lot of money, and the
+stability DeepSeek cites isn't measured in that table. But the picture is more modest than the
+announcements and firmer than the scepticism: the gains belong to the matrices, and they're the ones
+that last.
+
+## What to take away
+
+If you take away one thing, let it be this: **the optimiser of language models wasn't chosen for
+being good, it was chosen for being affordable.** Newton had the curvature of every direction and
+solved it in one step; at this scale it fits nowhere and doesn't survive the noise. Everything that
+has happened since Cauchy is buying back on credit what Newton had for free: momentum averaging in
+time, RMSProp rescaling per coordinate, Adam with both, AdamW fixing what the rescaling had broken,
+and Muon rescaling per matrix. The gradient descent rule hasn't changed by a letter. What changes,
+each time, is what a step can cost.
+
+And if you take away three more, let them be practical.
+
+**The defaults aren't arbitrary, and knowing what each answers to tells you when to touch it.**
+$\beta_2 = 0.95$ is against the spikes; clipping to $1$, against atypical batches; the warmup,
+against the variance of $\mathbf{v}$ at the start; the rate decay, Robbins and Monro's condition;
+the $0.1$ of weight decay, the regularisation that Adam without the W applied backwards. If you're
+training something small and calm, the original $0.999$ for $\beta_2$ is reasonable; if you see
+spikes, you know which number to look at first.
+
+**The learning rate is still the number.** In Adam it comes in units of the parameter, so
+$3 \cdot 10^{-4}$ means that, almost always, no weight moves more than that per step, and that
+meaning doesn't depend on the model. Before trying another optimiser, sweep $\eta$: a good part of
+the gains announced in recent years were explained by an AdamW whose rate nobody had swept.
+
+**If you're fine-tuning a model that isn't yours, the optimiser's memory decides whether it fits.**
+$\mathbf{m}$ and $\mathbf{v}$ take twice the room of the weights, and every answer you've seen to
+that, LoRA, 8-bit Adam, Adafactor, is a way of not paying the bill from the Adam section. And if
+what you train is matrices, Muon for the matrices and AdamW for the rest is, today, what three of
+the largest models ever published do.
+
+Back to the table. Four labs wrote the same paragraph because they arrived at the same price. Three
+have rewritten it because they found how to pay a little more of what Newton had for free: not the
+curvature of each coordinate, but that of each matrix. Gradient descent is still subtracting the
+gradient. What has changed, once again, is what fits in a step.

@@ -7,37 +7,16 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { pricingService } from "@/services";
 import { singleFlight, withRetry } from "@/lib/single-flight";
-import type { ProductKey } from "@/domain/types";
+import { formatPrice, type DisplayPrices } from "@/lib/pricing-format";
 
 /** Static hours-per-pack, used to derive the per-hour rate. */
 const PACK_HOURS: Record<"pack5" | "pack10", number> = { pack5: 5, pack10: 10 };
 
-export interface DisplayPrice {
-  /** Formatted charge price, e.g. "€16" or "€16,50". */
-  price:         string;
-  priceCents:    number;
-  currency:      string;
-  /** Strikethrough original price (packs with a promo), else null. */
-  originalPrice: string | null;
-  /** Formatted per-hour rate (packs only), else null. */
-  hourlyRate:    string | null;
-  /** Formatted absolute savings vs. the original price (packs only), else null. */
-  savingsAmount: string | null;
-  /** Whole-percent discount vs. the original price (packs only), else null. */
-  savingsPct:    number | null;
-}
-
-export type DisplayPrices = Record<ProductKey, DisplayPrice>;
-
-/** Formats integer cents into the app's "€{n}" style, with decimals only when needed. */
-export function formatPrice(cents: number, currency: string, locale = "es"): string {
-  const symbol = currency.toLowerCase() === "eur" ? "€" : currency.toUpperCase() + " ";
-  const euros  = cents / 100;
-  const body   = Number.isInteger(euros)
-    ? String(euros)
-    : euros.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return `${symbol}${body}`;
-}
+// PRICING-STUDENT-01: the display shape and the formatter moved to
+// @/lib/pricing-format so client components can import them (this module is
+// server-only). Re-exported here so every existing import keeps working.
+export { formatPrice };
+export type { DisplayPrice, DisplayPrices } from "@/lib/pricing-format";
 
 // Cached read so the (statically generated, SEO-critical) public pages don't hit
 // the DB per request. An admin price edit calls `revalidateTag(PRICING_CACHE_TAG)`

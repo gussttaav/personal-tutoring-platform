@@ -10,7 +10,15 @@
  * translated, which would show "coming soon" to an English visitor while a finished course
  * sits one directory away. `listCatalogEntries` pairs the English manifest with the Spanish
  * lessons and reports which locale those lessons came from, so the card can say so.
- * Navbar/Footer link here now; only the blog keeps the ComingSoonModal.
+ * Navbar/Footer link here now; BLOG-01 gave the blog a real page too, so the
+ * ComingSoonModal is gone entirely.
+ *
+ * COURSE-BUILD-01: the card no longer gets a `blockCount` derived here. Counting the DISTINCT
+ * blocks among the published lessons answers "how many blocks have something in them", which is
+ * not the question a catalog card is asked — a five-block course with block 1 written showed
+ * "1 módulo". The entry now carries `build` (the manifest's blocks measured against their planned
+ * lesson counts) and `translatedCount`, both computed once in `catalog-view.ts`, and the card
+ * reads them straight.
  */
 
 import "@/features/courses/course-editorial.css";
@@ -52,12 +60,7 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
   setRequestLocale(locale);
   const t = await getTranslations({ locale, namespace: "courses.catalog" });
 
-  const cards = listCatalogEntries(locale).map(({ course, contentLocale, lessons }) => ({
-    course,
-    contentLocale,
-    lessonCount: lessons.length,
-    blockCount:  new Set(lessons.map((l) => l.block)).size,
-  }));
+  const cards = listCatalogEntries(locale);
 
 
   return (
@@ -129,14 +132,16 @@ export default async function CursosPage({ params }: { params: Promise<{ locale:
             </div>
           ) : (
             <div className="courses-grid">
-              {cards.map(({ course, contentLocale, lessonCount, blockCount }) => (
+              {cards.map((entry) => (
                 <CourseCard
-                  key={course.slug}
-                  course={course}
-                  lessonCount={lessonCount}
-                  blockCount={blockCount}
+                  key={entry.course.slug}
+                  course={entry.course}
+                  lessonCount={entry.lessons.length}
+                  build={entry.build}
                   locale={locale}
-                  contentLocale={contentLocale}
+                  contentLocale={entry.contentLocale}
+                  fullyTranslated={entry.fullyTranslated}
+                  translatedCount={entry.translatedCount}
                 />
               ))}
             </div>

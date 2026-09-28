@@ -35,6 +35,7 @@ import { lockBodyScroll } from "@/hooks/scroll-lock";
 import { search, type PreparedIndex, type SearchMatch, type SearchResult } from "@/lib/courses/search/rank";
 import { buildSnippet } from "@/lib/courses/search/snippet";
 import { MIN_QUERY_LENGTH } from "@/lib/courses/search/query";
+import { contentLanguage, isFallbackLesson } from "@/lib/courses/search/content-language";
 import { useCourseSearch } from "./CourseSearchProvider";
 import { useSearchIndex } from "./useSearchIndex";
 import { isNavigationKey, nextActiveIndex } from "./keyboard";
@@ -42,9 +43,6 @@ import HighlightedText from "./HighlightedText";
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-/** Query suggestions for the idle state. Content-agnostic: taken from lesson titles. */
-const TIP_COUNT = 3;
 
 /** Stable placeholder while the index loads — a literal would churn identity each render. */
 const EMPTY_INDEX: PreparedIndex = {
@@ -147,18 +145,8 @@ export default function CourseSearchDialog() {
     return out;
   }, [results, index, hrefFor]);
 
-  /** Any lesson whose prose is not in the requested locale (COURSE-P6-03b fallback). */
-  const contentMismatch = useMemo(
-    () => index.lessons.some((l) => l.contentLocale !== index.locale),
-    [index],
-  );
-
-  const tips = useMemo(() => {
-    const titles = index.lessons.map((l) => l.title);
-    // Spread across the course rather than the first three, which are all Block 1.
-    const step = Math.max(1, Math.floor(titles.length / (TIP_COUNT + 1)));
-    return titles.filter((_, i) => i > 0 && i % step === 0).slice(0, TIP_COUNT);
-  }, [index]);
+  /** Untranslated / partly / fully — decides between one notice and per-result tags. */
+  const language = useMemo(() => contentLanguage(index), [index]);
 
   const go = useCallback(
     (href: string) => {
@@ -285,9 +273,9 @@ export default function CourseSearchDialog() {
         </div>
 
         {/* COURSE-P6-03b: say plainly that the prose is not in the requested language.
-            Searching /en finds Spanish text today, and hiding that would be a lie the
-            first result immediately exposes. Disappears on its own once en/ lessons land. */}
-        {contentMismatch ? (
+            COURSE-P9-02: only while NO lesson is translated — once Phase 11 lands lessons one
+            by one this sentence is false, and the Spanish results carry a tag instead. */}
+        {language === "fallback" ? (
           <p className="cs-notice">
             <span className="material-symbols-outlined" aria-hidden="true">translate</span>
             <span>{tLanding("languageNotice.title")}</span>
@@ -308,16 +296,10 @@ export default function CourseSearchDialog() {
               </div>
             ) : null}
 
+            {/* COURSE-P9-02: the idle state used to offer three lesson titles as "Try"
+                chips; a title is a poor example of a search and they were dropped. */}
             {state.status === "ready" && query.trim().length === 0 ? (
-              <div className="cs-state">
-                <p className="cs-state-title">{t("tipsHeading")}</p>
-                <div className="cs-tips">
-                  {tips.map((tip) => (
-                    <button key={tip} type="button" className="cs-chip" onClick={() => setQuery(tip)}>{tip}</button>
-                  ))}
-                </div>
-                <p className="cs-state-body" style={{ marginTop: 16 }}>{t("scopeNote")}</p>
-              </div>
+              <p className="cs-state"><span className="cs-state-body">{t("scopeNote")}</span></p>
             ) : null}
 
             {tooShort ? <p className="cs-state"><span className="cs-state-body">{t("minChars")}</span></p> : null}
@@ -336,6 +318,10 @@ export default function CourseSearchDialog() {
                       <div className="cs-grouphead" role="presentation">
                         <span className="cs-kicker">
                           {tReader("refKicker", { block: result.lesson.block, order: result.lesson.order })}
+                          {/* The <Leccion> card's per-target mark, for a partly translated course. */}
+                          {language === "partial" && isFallbackLesson(result.lesson, index.locale)
+                            ? ` · ${tReader("refFallback")}`
+                            : ""}
                         </span>
                         <span className="cs-title">
                           <HighlightedText text={result.lesson.title} ranges={result.titleRanges} />
@@ -367,11 +353,15 @@ export default function CourseSearchDialog() {
                             <span className="cs-option-body">
                               <span className="cs-breadcrumb">
                                 <span className="material-symbols-outlined" aria-hidden="true">subdirectory_arrow_right</span>
-                                {match.headingText ? (
-                                  <HighlightedText text={match.headingText} ranges={match.headingRanges} />
-                                ) : (
-                                  t("introSection")
-                                )}
+                                {/* COURSE-P9-02: one flex item for the whole heading — the
+                                    highlight fragment's runs would otherwise each be a column. */}
+                                <span className="cs-breadcrumb-text">
+                                  {match.headingText ? (
+                                    <HighlightedText text={match.headingText} ranges={match.headingRanges} />
+                                  ) : (
+                                    t("introSection")
+                                  )}
+                                </span>
                               </span>
                               <span className="cs-snippet">
                                 {snippet.leadingEllipsis ? "… " : null}

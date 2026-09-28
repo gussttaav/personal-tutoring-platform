@@ -5,6 +5,7 @@
     "loadMore": "Cargar más"
   },
   "nav": {
+    "home": "Inicio",
     "courses": "Cursos",
     "mentoring": "Mentoría",
     "blog": "Blog",
@@ -21,25 +22,8 @@
     "user": "Usuario"
   },
   "landing": {
-    "meta": {
-      "title": "Gustavo Torres — Tutorías de programación, matemáticas e IA",
-      "description": "Clases de programación, matemáticas e IA con Gustavo Torres."
-    },
     "hero": {
-      "zoomTitle": "Clic para ampliar",
       "credential": "MSc. Matemáticas y Computación",
-      "subtitle": "Profesor de Programación, Matemáticas e IA",
-      "taglinePart1": "Supera temas difíciles",
-      "taglinePart2": "con guía experta y directa.",
-      "subheading": "Clases individuales. Sin videos, sin prompts, sin perder el tiempo.",
-      "skills": [
-        "Java",
-        "Python",
-        "C",
-        "Algorítmica",
-        "Deep Learning",
-        "Estadística"
-      ],
       "cta": {
         "book": "Reservar sesión ahora",
         "availability": "Ver disponibilidad"
@@ -75,9 +59,7 @@
     },
     "bio": {
       "overline": "Sobre Gustavo",
-      "headline": "Forjado entre código y ecuaciones",
-      "para1": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria. Tras varios años como desarrollador de software, me dediqué durante cinco años a la investigación y la docencia en el ámbito universitario, antes de pasar a trabajar de forma independiente combinando enseñanza y consultoría.",
-      "para2": "Desde hace más de siete años, acompaño a estudiantes y profesionales a potenciar sus habilidades en programación, matemáticas e inteligencia artificial. Mi apoyo abarca desde el refuerzo académico y el aprendizaje desde cero, hasta la preparación de entrevistas técnicas y el desarrollo de proyectos reales.",
+      "para1": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria, España. Tras cuatro años como desarrollador de software y cinco años dedicados a la docencia y la investigación universitaria, desde hace más de siete años trabajo como profesional independiente, combinando enseñanza y consultoría tecnológica en programación, matemáticas e inteligencia artificial.",
       "github": "GitHub",
       "linkedin": "LinkedIn",
       "email": "contacto@gustavoai.dev"
@@ -140,6 +122,105 @@
       }
     }
   },
+  "home": {
+    "meta": {
+      "title": "Gustavo Torres — Programación, matemáticas e IA: clases, cursos y blog",
+      "description": "Clases particulares de programación, matemáticas e IA, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo."
+    },
+    "hero": {
+      "headline1": "Programación, Matemáticas e IA,",
+      "headline2": "con la parte difícil incluida.",
+      "subheading": "Clases individuales con guía directa, cursos interactivos gratuitos para aprender a tu ritmo, y un blog donde profundizo en diferentes temas.",
+      "freeNote": "Encuentro inicial de 15 minutos gratis.",
+      "jobTitle": "Profesor de Programación, Matemáticas e IA"
+    },
+    "bio": {
+      "para1": "Graduado en Ciencias de la Computación y máster en Matemáticas y Computación por la Universidad de Cantabria, España. Tras cuatro años de experiencia como desarrollador de software y cinco años dedicados a la docencia y la investigación universitaria, trabajo como profesional independiente, combinando enseñanza y consultoría.",
+      "para2": "Desde hace más de siete años, ayudo a estudiantes y profesionales a desarrollar sus conocimientos y habilidades en programación, matemáticas e inteligencia artificial. Mi apoyo abarca desde el refuerzo académico y el aprendizaje desde cero, hasta la preparación de entrevistas técnicas y el desarrollo de proyectos reales.",
+      "howLink": "Cómo funcionan las clases"
+    },
+    "areas": {
+      "programming": "Estructuras de datos, algoritmos, concurrencia y patrones de diseño. Python, Java, C/C++, Haskell.",
+      "backend": "APIs REST y microservicios, SQL y NoSQL, despliegue en la nube, Docker y Git.",
+      "math": "Cálculo, álgebra lineal, métodos numéricos, matemática discreta y autómatas.",
+      "ai": "Machine Learning, Deep Learning, LLMs y programación multiagente, con base matemática.",
+      "data": "Probabilidad, estadística aplicada, minería de datos, big data y series temporales.",
+      "cycles": "Refuerzo en los módulos técnicos más complejos y mentoría para proyectos finales."
+    },
+    "courses": {
+      "seeAll": "Ver todos los cursos"
+    },
+    "blog": {
+      "seeAll": "Ver todos los artículos"
+    },
+    "closing": {
+      "heading": "Cuéntame qué quieres aprender",
+      "body": "El encuentro inicial de 15 minutos es gratis. Comentamos tu caso, vemos si puedo ayudarte y definimos un plan de trabajo."
+    }
+  },
+  "mentoria": {
+    "header": {
+      "kicker": "Mentoría",
+      "title": "Supera temas difíciles, <accent>con guía experta y directa</accent>",
+      "lead": "Clases individuales según tus necesidades: empezar desde cero, reforzar conceptos clave, profundizar en temas avanzados, prepararte para un examen o entrevista.",
+      "freeNote": "El encuentro inicial de 15 minutos es gratis y no compromete a nada."
+    },
+    "how": {
+      "kicker": "Cómo funciona",
+      "heading": "De la primera duda a la clase",
+      "subtitle": "Cuatro pasos. Ninguno te ata a nada hasta que decides reservar.",
+      "steps": {
+        "initial": {
+          "title": "Encuentro inicial",
+          "body": "Quince minutos, gratis. Me cuentas qué necesitas y salimos con un plan de trabajo, reserves después o no."
+        },
+        "slot": {
+          "title": "Eliges día y hora",
+          "body": "Ves los huecos libres en el calendario y reservas el que te encaje. Recibes la confirmación por correo y el evento en tu calendario."
+        },
+        "zoom": {
+          "title": "Clase con Zoom en la app",
+          "body": "Sala privada que se abre desde la propia web o el móvil. Compartimos pantalla, código y pizarra digital para explicar cada concepto de forma visual."
+        },
+        "changes": {
+          "title": "Si surge algo",
+          "body": "Puedes cancelar o mover la clase hasta {hours, plural, one {# hora} other {# horas}} antes. Lo gestionas automáticamente desde la web o tu móvil."
+        }
+      }
+    },
+    "testimonials": {
+      "kicker": "Valoraciones",
+      "heading": "Qué opinan mis estudiantes",
+      "subtitle": "Lo que cuentan quienes ya han pasado por las clases.",
+      "student": "Estudiante",
+      "classgap": "Ver las 150+ valoraciones verificadas en Classgap"
+    }
+  },
+  "app": {
+    "soon": "App móvil · Próximamente",
+    "heading": "Tus clases, también desde el móvil",
+    "lead": "Las mismas sesiones, los mismos packs y la misma disponibilidad, en una app para entrar a clase y reservar desde donde estés.",
+    "benefits": {
+      "join": {
+        "title": "Entra a la clase desde la app",
+        "body": "Tu próxima sesión, en primer plano, con el aula lista cuando llega la hora."
+      },
+      "book": {
+        "title": "Reserva en dos toques",
+        "body": "Los huecos libres de la semana, con tus créditos ya aplicados al confirmar."
+      },
+      "credits": {
+        "title": "Tus créditos, siempre a la vista",
+        "body": "Cuántos te quedan, cuándo caducan y qué clases tienes por delante."
+      }
+    },
+    "stores": {
+      "downloadOn": "Descárgala en",
+      "availableOn": "Disponible en",
+      "appStore": "[App Store]",
+      "playStore": "[Google Play]"
+    }
+  },
   "auth": {
     "signin": {
       "redirecting": "Redirigiendo a Google…"
@@ -174,11 +255,11 @@
           "price": "Gratis"
         },
         "session1h": {
-          "label": "Sesión de 1 hora",
+          "label": "Sesión estándar",
           "sub": "60 min · Individual"
         },
         "session2h": {
-          "label": "Sesión de 2 horas",
+          "label": "Sesión extendida",
           "sub": "120 min · Individual"
         }
       },
@@ -196,8 +277,8 @@
       "title": "Próxima clase",
       "sessionLabels": {
         "free15min": "Encuentro inicial · 15 min",
-        "session1h": "Sesión individual · 1h",
-        "session2h": "Sesión individual · 2h",
+        "session1h": "Sesión estándar · 1h",
+        "session2h": "Sesión extendida · 2h",
         "pack": "Clase de pack"
       },
       "zoomLabel": "Aula virtual Zoom",
@@ -227,9 +308,9 @@
       "startCta": "Empezar",
       "completedBadge": "Completado",
       "completedNote": "Has terminado el curso. ¿Lo llevamos a la práctica?",
-      "bookSessionCta": "Reservar sesión 1:1",
+      "bookSessionCta": "Reservar sesión",
       "emptyTitle": "Aprende a tu ritmo",
-      "emptyBody": "Cursos interactivos con código que se ejecuta en el navegador y ejercicios que se corrigen solos.",
+      "emptyBody": "Cursos interactivos con código que se ejecuta en el navegador y ejercicios que se corrigen de forma automática.",
       "emptyCta": "Ver cursos"
     },
     "upcoming": {
@@ -330,7 +411,6 @@
       "chooseAnotherSlot": "Elegir otro horario",
       "back": "Volver",
       "fallbackDuration": "60 minutos",
-      "meetLabel": "60 minutos · Google Meet",
       "packDeduct": "Se descontará 1 clase de tu pack.",
       "packRemaining": "{n, plural, one {Te quedará # clase disponible.} other {Te quedarán # clases disponibles.}}",
       "rescheduleNote": "Reprogramación gratuita.",
@@ -350,11 +430,11 @@
           "duration": "15 minutos"
         },
         "session1h": {
-          "label": "Sesión de 1 hora",
+          "label": "Sesión estándar",
           "duration": "60 minutos"
         },
         "session2h": {
-          "label": "Sesión de 2 horas",
+          "label": "Sesión extendida",
           "duration": "2 horas"
         }
       }
@@ -386,7 +466,7 @@
       "paymentSecure": "El pago se completará de forma segura en el siguiente paso",
       "sessionReasonLabel": "Motivo de la sesión",
       "sessionReasonOptional": "(opcional)",
-      "sessionReasonPlaceholder": "Ej: tengo dudas sobre recursividad en Java, preparación de entrevista técnica...",
+      "sessionReasonPlaceholder": "Ej: quiero prepararme para un examen de programación en Java...",
       "emailAfterNote": "También puedes enviar los detalles por email después",
       "summaryTitle": "Resumen",
       "timezone": "Zona horaria",
@@ -407,10 +487,6 @@
       "confirmShort": "Confirmar"
     },
     "shell": {
-      "back": "Volver",
-      "bookPackClass": "Reservar clase del pack",
-      "pickSlot": "Elige un día y hora disponible",
-      "activePack": "Pack activo",
       "individualSessions": "Sesiones individuales",
       "chooseMode": "Elige tu modalidad de sesión",
       "modeSubtitle": "Desde una exploración inicial gratuita hasta sesiones de trabajo intensivo.",
@@ -426,11 +502,11 @@
         },
         "session1h": {
           "badge": "Más reservada",
-          "name": "Sesión de 1 hora",
+          "name": "Sesión estándar",
           "duration": "60 minutos · Resolución de dudas, proyecto o preparación de examen"
         },
         "session2h": {
-          "name": "Sesión de 2 horas",
+          "name": "Sesión extendida",
           "duration": "120 minutos · Para temas que requieren mayor profundidad"
         }
       }
@@ -459,7 +535,7 @@
       "packRemaining": "{packRemaining} / {packTotal}h rest.",
       "packDeductNote": "Esta sesión se descontará de tu pack activo.",
       "rescheduleNote": "Estás modificando una reserva existente. Esta acción no consume créditos.",
-      "cancelNote": "Las cancelaciones deben realizarse con al menos 24h de antelación para recuperar el crédito.",
+      "cancelNote": "Las cancelaciones deben realizarse con al menos {hours}h de antelación para recuperar el crédito.",
       "zoomApp": "Zoom (en la app)",
       "realtimeSlots": "Horarios en tiempo real",
       "securePayment": "Pago seguro con Stripe"
@@ -518,7 +594,7 @@
     "form": {
       "secure": "Transacción segura",
       "protectedByStripe": "Protegido por Stripe",
-      "cancellation24h": "Cancelación 24h",
+      "cancellation24h": "Cancelación {hours}h",
       "loading": "Cargando formulario de pago...",
       "processing": "Procesando...",
       "pay": "Pagar {amount}",
@@ -656,22 +732,6 @@
     "error": "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
     "unknownError": "Error desconocido"
   },
-  "comingSoon": {
-    "blog": {
-      "badge": "BLOG",
-      "headline": "Artículos y recursos",
-      "subline": "Guías, tutoriales y reflexiones sobre IA. Próximamente.",
-      "ctaLabel": "Suscribirse al Blog"
-    },
-    "close": "Cerrar",
-    "subscribed": "¡Apuntado! Te avisaremos cuando esté disponible.",
-    "subscribeError": "Algo fue mal al suscribirte.",
-    "retry": "Reintentar",
-    "cancel": "Cancelar",
-    "loggedInPrompt": "Recibe un aviso cuando publique nuevo contenido.",
-    "loggedOutPrompt": "Inicia sesión con Google para recibir un aviso al publicar.",
-    "continueGoogle": "Continuar con Google"
-  },
   "postClassReview": {
     "ratings": [
       {
@@ -780,6 +840,108 @@
       "invalidRequest": "Los datos enviados no son válidos. Revisa el formulario e inténtalo de nuevo."
     }
   },
+  "code": {
+    "copy": "Copiar código",
+    "copied": "¡Copiado!"
+  },
+  "content": {
+    "author": {
+      "heading": "Sobre el autor"
+    },
+    "feedback": {
+      "regionLabel": "Opinión sobre este contenido",
+      "question": "¿Te ha sido útil?",
+      "up": "Sí, me ha sido útil",
+      "down": "No, podría mejorar",
+      "thanks": "¡Gracias por tu opinión!",
+      "commentPrompt": "¿Qué podría mejorar?",
+      "commentPlaceholder": "Cuéntame qué te ha faltado o qué no ha quedado claro (opcional)",
+      "commentSend": "Enviar",
+      "commentSkip": "Omitir",
+      "commentSent": "Gracias, lo tendré en cuenta.",
+      "share": "Compartir",
+      "shareCopied": "Enlace copiado",
+      "report": "Reportar un error",
+      "reportPrompt": "¿Qué está mal?",
+      "reportPlaceholder": "Describe el error: una errata, un enlace roto, código que no funciona…",
+      "reportEmailLabel": "Tu email (opcional, por si necesito preguntarte algo)",
+      "reportEmailInvalid": "Ese email no parece válido.",
+      "reportAsUser": "Te contestaré a {email} si hace falta.",
+      "reportSend": "Enviar reporte",
+      "reportCancel": "Cancelar",
+      "reportSent": "Recibido. Gracias por avisar.",
+      "reportTooShort": "Escribe al menos {min} caracteres.",
+      "charCount": "{count}/{max}",
+      "error": "Algo ha fallado. Inténtalo de nuevo.",
+      "rateLimited": "Demasiadas peticiones. Espera un momento."
+    }
+  },
+  "blog": {
+    "index": {
+      "overline": "Blog",
+      "heading": "En clase parece simple, <accent>aquí profundizo</accent>",
+      "subtitle": "Artículos sobre programación, matemáticas e IA. No el cómo, sino el por qué.",
+      "empty": {
+        "title": "Todavía no hay artículos",
+        "body": "Estoy escribiendo el primero. Si quieres que te avise cuando se publique, tienes el botón aquí abajo."
+      }
+    },
+    "card": {
+      "readingTime": "{minutes} min de lectura",
+      "cta": "Leer el artículo"
+    },
+    "post": {
+      "backToIndex": "Volver al blog",
+      "byline": "Por {name}",
+      "published": "Publicado el {date}",
+      "updated": "Actualizado el {date}",
+      "readingTime": "{minutes} min de lectura",
+      "moreLabel": "Más artículos",
+      "older": "Artículo anterior",
+      "newer": "Artículo siguiente",
+      "onThisPage": "En esta página"
+    },
+    "archive": {
+      "label": "Artículos del blog",
+      "allArticles": "Todos los artículos",
+      "minutes": "{minutes} min",
+      "openDrawer": "Abrir la lista de artículos",
+      "closeDrawer": "Cerrar la lista de artículos"
+    },
+    "reading": {
+      "title": "Para profundizar",
+      "lede": "De dónde sale lo que cuenta el artículo, y dónde seguir si quieres más. Nada de aquí hace falta para entenderlo.",
+      "count": "{count, plural, one {# fuente} other {# fuentes}}",
+      "kindCount": {
+        "paper": "{count, plural, one {# paper} other {# papers}}",
+        "libro": "{count, plural, one {# libro} other {# libros}}",
+        "blog": "{count, plural, one {# artículo} other {# artículos}}",
+        "video": "{count, plural, one {# vídeo} other {# vídeos}}",
+        "interactivo": "{count, plural, one {# interactivo} other {# interactivos}}"
+      },
+      "kind": {
+        "paper": "paper",
+        "libro": "libro",
+        "blog": "artículo",
+        "video": "vídeo",
+        "interactivo": "interactivo"
+      },
+      "lang": {
+        "es": "En español",
+        "en": "En inglés"
+      }
+    },
+    "notify": {
+      "body": "Recibe una notificación cada vez que se publique un nuevo artículo",
+      "cta": "Notifícame",
+      "signIn": "Iniciar sesión",
+      "signInHint": "Inicia sesión para recibir una notificación cuando publique un artículo nuevo",
+      "subscribed": "Te notificaré cuando publique un artículo nuevo",
+      "unsubscribe": "No recibir notificaciones",
+      "error": "Algo ha fallado. Inténtalo de nuevo.",
+      "retry": "Reintentar"
+    }
+  },
   "courses": {
     "catalog": {
       "overline": "Cursos",
@@ -793,7 +955,10 @@
         "lessons": "{count, plural, =1 {# lección} other {# lecciones}}",
         "blocks": "{count, plural, =1 {# módulo} other {# módulos}}",
         "cta": "Ver curso",
-        "contentLanguage": "Lecciones en español"
+        "contentLanguage": "Lecciones en español",
+        "contentLanguagePartial": "Parcialmente en español",
+        "inProgress": "En construcción",
+        "blocksOf": "{published} de {total} módulos"
       }
     },
     "landing": {
@@ -817,16 +982,24 @@
         "durationHoursExact": "{hours}h",
         "empty": "El temario detallado se publicará muy pronto.",
         "kicker": "Contenido",
-        "summary": "{blocks, plural, =1 {# bloque} other {# bloques}} · {lessons, plural, =1 {# lección} other {# lecciones}} · ~{hours} h de lectura"
+        "summary": "{blocks, plural, =1 {# bloque} other {# bloques}} · {lessons, plural, =1 {# lección} other {# lecciones}} · ~{hours} h de lectura",
+        "summaryInProgress": "{publishedBlocks} de {totalBlocks} bloques · {lessons, plural, =1 {# lección publicada} other {# lecciones publicadas}}",
+        "blockMetaPartial": "{published} de {planned} lecciones · {duration}",
+        "upcoming": "Próximamente",
+        "upcomingMeta": "{lessons, plural, =1 {# lección} other {# lecciones}} · próximamente"
       },
       "instructor": {
         "heading": "Tu instructor",
-        "kicker": "Sobre Gustavo",
-        "role": "Instructor"
+        "kicker": "Sobre Gustavo"
       },
       "faq": {
         "heading": "Preguntas frecuentes",
-        "kicker": "Preguntas frecuentes"
+        "kicker": "Preguntas frecuentes",
+        "englishStatus": {
+          "notStarted": "De momento solo en español. La versión en inglés está planificada.",
+          "inProgress": "Traducción en curso: {translated} de {total} lecciones ya están en inglés ({percent} %).",
+          "complete": "Sí, el curso está disponible por completo en inglés."
+        }
       },
       "cta": {
         "start": "Empezar el curso",
@@ -839,7 +1012,14 @@
       },
       "languageNotice": {
         "title": "Las lecciones están en español",
-        "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante."
+        "body": "Este curso todavía no está traducido. Las lecciones, los ejercicios y los cuestionarios están escritos en español. Habrá una versión en inglés más adelante.",
+        "titlePartial": "Traducción en curso",
+        "bodyPartial": "{translated} de {total} lecciones ya están traducidas; las demás se muestran todavía en su idioma original. Puedes leerlas tal cual — tu progreso cuenta igual."
+      },
+      "buildNotice": {
+        "title": "Curso en construcción",
+        "body": "Estoy escribiendo este curso y publico cada lección en cuanto está lista: {lessons, plural, =1 {# lección} other {# lecciones}} en {publishedBlocks} de {totalBlocks} bloques. El temario de abajo muestra el curso entero, así que ya puedes ver lo que viene.",
+        "bodyPlanned": "Estoy escribiendo este curso y publico cada lección en cuanto está lista: {published} de las {planned} previstas, en {publishedBlocks} de {totalBlocks} bloques. El temario de abajo muestra el curso entero, así que ya puedes ver lo que viene."
       },
       "authorNote": {
         "kicker": "Nota del autor",
@@ -847,7 +1027,7 @@
       }
     },
     "notify": {
-      "body": "Envíame una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
+      "body": "Recibe una notificación cuando se publique un nuevo curso o se actualice alguno que hayas iniciado",
       "cta": "Notifícame",
       "signIn": "Iniciar sesión",
       "signInHint": "Inicia sesión para recibir una notificación cuando publique un nuevo curso o actualice alguno que hayas iniciado",
@@ -868,6 +1048,9 @@
       "refKicker": "Bloque {block} · Lección {order}",
       "refAhead": "Más adelante",
       "refFallback": "En español",
+      "repoLink": {
+        "kicker": "Punto de control"
+      },
       "openNav": "Abrir el contenido del curso",
       "closeNav": "Cerrar el contenido del curso",
       "translationPending": {
@@ -876,7 +1059,7 @@
       },
       "cta": {
         "heading": "¿Te has atascado? ¿Quieres avanzar más rápido?",
-        "body": "Una sesión 1:1 conmigo para resolver lo que se te resista de esta lección o del curso entero.",
+        "body": "Reserva una sesión conmigo para resolver lo que se te resista de esta lección o del curso entero.",
         "button": "Reservar sesión"
       }
     },
@@ -1016,7 +1199,6 @@
       "resultCount": "{count, plural, =0 {Sin resultados} =1 {# lección} other {# lecciones}}",
       "moreSections": "{count, plural, =1 {+# coincidencia más} other {+# coincidencias más}}",
       "introSection": "Introducción",
-      "tipsHeading": "Prueba con",
       "scopeNote": "Se busca en el texto de las lecciones, sus títulos y sus apartados. No incluye el código ni las fórmulas.",
       "loading": "Preparando la búsqueda…",
       "minChars": "Escribe al menos dos letras.",
@@ -1110,7 +1292,7 @@
         "learningRate": "Tasa de aprendizaje (η)",
         "plotAria": "Descenso de gradiente sobre un campo {field}",
         "stepAndLoss": "paso {step}/{total} · pérdida {loss}",
-        "diverged": "Diverge — la tasa de aprendizaje es demasiado alta; la trayectoria se sale del gráfico."
+        "diverged": "Diverge: la tasa de aprendizaje es demasiado alta; la trayectoria se sale del gráfico."
       },
       "loss-landscape": {
         "startX": "Inicio x₀",
@@ -1118,7 +1300,8 @@
         "plotAria": "Superficie de pérdida con dos mínimos y la trayectoria del descenso",
         "basinLeft": "izquierda (−1, 0)",
         "basinRight": "derecha (+1, 0)",
-        "verdict": "Cae en el mínimo de la <b>{basin}</b> — el punto de partida decide la cuenca."
+        "verdict": "Cae en el mínimo de la <b>{basin}</b>. El punto de partida decide la cuenca.",
+        "verdictSaddle": "Se queda clavado en la cresta: es un <b>punto de silla</b>, no un mínimo, y no cae a ningún lado."
       },
       "backprop-trace": {
         "groupAria": "Traza de retropropagación; usa las flechas para avanzar y retroceder",
@@ -1361,6 +1544,22 @@
           }
         },
         "refJoin": ", y "
+      },
+      "bpe-merges": {
+        "groupAria": "BPE entrenado paso a paso; usa las flechas para añadir o quitar fusiones",
+        "corpus": "Corpus",
+        "corpusStats": "{bytes} bytes → {tokens} tokens · <bar>ℓ</bar> = {lbar} bytes por token",
+        "noMerges": "Sin fusiones: cada byte es un token",
+        "stepLabel": "Fusión {k} de {total}",
+        "vocab": "|V| = 256 + {k} = {size}",
+        "freq": "f = {f}",
+        "next": "La siguiente elige entre:",
+        "exhausted": "Ningún par aparece ya dos veces: el entrenamiento se detiene aquí.",
+        "sentence": "Una frase que el corpus no contiene",
+        "sentenceAria": "Frase que se codifica con las fusiones aprendidas hasta ahora",
+        "sentenceStats": "{bytes} bytes → {tokens} tokens",
+        "byteHint": "Un recuadro con cifras es un byte suelto: un trozo de carácter, todavía sin fusionar.",
+        "slider": "Fusiones"
       }
     }
   },
@@ -1370,8 +1569,8 @@
       "description": "Gestiona tus sesiones reservadas, clases de pack y reserva nuevas sesiones."
     },
     "root": {
-      "title": "Gustavo Torres - Tutorías de programación, matemáticas e IA",
-      "description": "Clases de programación, matemáticas e IA con Gustavo Torres."
+      "title": "Gustavo Torres — Programación, matemáticas e IA: clases, cursos y blog",
+      "description": "Clases particulares de programación, matemáticas e IA, cursos gratuitos que se ejecutan en el navegador y un blog con un concepto por artículo."
     },
     "privacidad": {
       "title": "Política de privacidad — Gustavo Torres",
@@ -1389,6 +1588,14 @@
     "cursos": {
       "title": "Cursos interactivos — Gustavo Torres",
       "description": "Cursos gratuitos e interactivos de programación, matemáticas e IA. Aprende construyendo, con código que se ejecuta en el navegador."
+    },
+    "blog": {
+      "title": "Blog — Gustavo Torres",
+      "description": "Artículos sobre programación, matemáticas e IA: un concepto por artículo, con la parte matemática incluida y código que se puede ejecutar."
+    },
+    "mentoria": {
+      "title": "Mentoría en programación, matemáticas e IA — Gustavo Torres",
+      "description": "Clases particulares uno a uno por Zoom: sesiones sueltas y packs, encuentro inicial gratuito de 15 minutos. Programación, matemáticas e inteligencia artificial."
     }
   },
   "pages": {
@@ -1399,8 +1606,8 @@
     },
     "sesion": {
       "free": "Encuentro inicial gratuito · 15 min",
-      "session1h": "Sesión individual · 1 hora",
-      "session2h": "Sesión individual · 2 horas",
+      "session1h": "Sesión estándar · 1 hora",
+      "session2h": "Sesión extendida · 2 horas",
       "pack": "Clase de pack",
       "signIn": "Inicia sesión para acceder a tu sesión.",
       "continueGoogle": "Continuar con Google"
@@ -1526,8 +1733,8 @@
       "calDescription": "Enlace de sesión: {joinUrl}\n\nClase con Gustavo Torres Guerrero — gustavoai.dev",
       "sessionType": {
         "free15min": "Encuentro inicial gratuito · 15 min",
-        "session1h": "Sesión individual · 1 hora",
-        "session2h": "Sesión individual · 2 horas",
+        "session1h": "Sesión estándar · 1 hora",
+        "session2h": "Sesión extendida · 2 horas",
         "pack": "Clase de pack"
       }
     },

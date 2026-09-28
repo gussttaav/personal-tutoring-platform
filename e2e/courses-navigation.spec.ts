@@ -6,9 +6,20 @@
  * Two flows, and the second is the one worth having:
  *   1. es: navbar Cursos → catalog → landing → first lesson.
  *   2. en: navbar Courses → English catalog → English landing → the first lesson, now in
- *      English (Block 1 is translated). The card no longer wears the "lessons in Spanish"
- *      badge and the landing drops the language notice, exactly as the per-lesson resolution
- *      in catalog-view.ts promises: "when en/ lessons land, all of this stops firing on its own."
+ *      English (Block 1 is translated).
+ *
+ * COURSE-BUILD-01 sharpened flow 2. Both surfaces used to be keyed off the FIRST lesson's
+ * language, so the moment Block 1 landed in English the card dropped its badge and the landing
+ * dropped its notice — while 25 of dl-nlp's 43 lessons were still Spanish. They now report the
+ * PARTIAL state, and that is what this pins: not the "in Spanish" copy (which would be a lie in
+ * the other direction) but the "partly in Spanish" copy, with the full-Spanish copy asserted
+ * absent. The per-lesson promise in catalog-view.ts still holds — "when en/ lessons land, all of
+ * this stops firing on its own" — it just now stops firing lesson by lesson rather than at the
+ * first one.
+ *
+ * The third test covers the other axis: a course still being WRITTEN (`llm-agents`, one published
+ * lesson of a planned 40) has to advertise the four blocks nobody has written yet, because before
+ * COURSE-BUILD-01 the card said "1 módulo" and the landing showed a one-block syllabus.
  *
  * The cross-locale fallback — an `/en` URL that still serves Spanish prose — has NOT gone away;
  * it just moved down the syllabus to whatever lesson is still untranslated (`UNTRANSLATED_LESSON`,
@@ -17,8 +28,15 @@
  * English. Both are pinned against that lesson, so they keep testing a genuine fallback — the step
  * most likely to break silently, and the least likely to be noticed by a Spanish-speaking maintainer.
  *
- * Also pins the thing this task could most easily have broken by accident: Blog still
- * opens the ComingSoonModal, from the navbar AND the footer.
+ * BLOG-01: the Blog test that used to live here pinned the ComingSoonModal. The blog has a
+ * real page now, so it pins what the Cursos flow pins — the chrome goes somewhere — from the
+ * navbar AND the footer. The modal is gone; nothing in the app renders one any more.
+ *
+ * REDESIGN-P0-01: «Mentoría» is a page too (`/mentoria`), and «Inicio» joined the menu. The
+ * two tests that pinned the `#sessions` scroll — navigate home, land on the section, keep the
+ * URL clean, survive navbar → Back → footer — are gone with the mechanism they guarded; what
+ * is left to pin is what Blog pins: the label goes to the same page from the navbar and the
+ * footer. The current-page test marks Inicio on `/` and Mentoría on `/mentoria`.
  *
  * Signed out throughout — reading requires no account (P4-02), and the notify card's
  * signed-out state is all that is asserted here (its signed-in toggle needs OAuth).
@@ -74,6 +92,38 @@ if (!UNTRANSLATED_LESSON) {
   );
 }
 
+/*
+ * COURSE-BUILD-01 — the course being written in public. Derived from the content tree for the
+ * same reason `UNTRANSLATED_LESSON` is: the numbers move as blocks get published, and a test
+ * that hard-codes them goes quietly green against a stale expectation.
+ */
+const IN_PROGRESS_SLUG = "llm-agents";
+
+/** A manifest's block titles, in order. The block list is the tail of the file and its titles
+ *  are the only four-space-indented `title:` scalars in it — a regex is enough here too. */
+function blockTitles(slug: string, locale: "es" | "en"): string[] {
+  const src = readFileSync(
+    join(process.cwd(), "content/courses", slug, `course.${locale}.yml`),
+    "utf-8",
+  );
+  const blocks = src.slice(src.indexOf("\nblocks:"));
+  return [...blocks.matchAll(/^ {4}title: "(.+)"$/gm)].map((m) => m[1]);
+}
+
+/** How many blocks have at least one PUBLISHED lesson — i.e. how many syllabus rows are
+ *  expandable `<details>`. The rest render as plain «próximamente» rows. */
+function startedBlocks(slug: string, locale: "es" | "en"): number {
+  const dir = join(process.cwd(), "content/courses", slug, locale);
+  const blocks = new Set<string>();
+  for (const file of readdirSync(dir).filter((f) => f.endsWith(".mdx") && !f.startsWith("_"))) {
+    const src = readFileSync(join(dir, file), "utf-8");
+    if (/^draft:\s*true\s*$/m.test(src)) continue;
+    const block = src.match(/^block:\s*(\d+)$/m)?.[1];
+    if (block) blocks.add(block);
+  }
+  return blocks.size;
+}
+
 test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => {
   test("es: navbar Cursos → catalog → landing → first lesson", async ({ page }) => {
     const d = dict.es;
@@ -81,7 +131,9 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await page.goto("/");
     await page.getByRole("link", { name: d.nav.courses, exact: true }).first().click();
 
-    await expect(page).toHaveURL(/\/cursos$/);
+    // REDESIGN-P3-02: the catalog is the first course route of the run, so this hop pays its
+    // compile too (6-7 s cold on a fresh `pnpm dev`) — the 30 s rule from the header applies.
+    await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
     // catalog.heading carries rich-text <accent> markup (rendered as a green italic span); the
     // heading's accessible name has no tags, so match the plain text.
     const catalogHeading = d.courses.catalog.heading.replace(/<[^>]+>/g, "");
@@ -103,21 +155,30 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
 
     await page.goto("/en");
     await page.getByRole("link", { name: d.nav.courses, exact: true }).first().click();
-    await expect(page).toHaveURL(/\/en\/cursos$/);
+    await expect(page).toHaveURL(/\/en\/cursos$/, { timeout: 30_000 });
 
-    // Block 1 is translated, so the first lesson resolves in English — the card drops the
-    // "lessons in Spanish" badge (it is keyed off the FIRST lesson's language), and the catalog
-    // is not the empty state.
-    await expect(page.getByRole("link", { name: /Deep Learning for NLP/ })).toBeVisible();
-    await expect(page.getByText(d.courses.catalog.card.contentLanguage)).toHaveCount(0);
+    // Block 1 is translated and later blocks are not, so the card says PARTLY in Spanish — not
+    // "lessons in Spanish" (which was true before any translation) and not nothing (which is what
+    // it used to say, because the badge was keyed off the FIRST lesson's language alone).
+    // REDESIGN-P3-02: scoped to THIS course's card — the catalog has a second, Spanish-only
+    // course (`llm-agents`, COURSE-C2) whose card wears the full badge by design, so a page-wide
+    // count stopped being the invariant.
+    const dlNlpCard = page.locator(".course-card").filter({ hasText: /Deep Learning for NLP/ });
+    await expect(dlNlpCard.getByRole("link", { name: /Deep Learning for NLP/ })).toBeVisible();
+    await expect(dlNlpCard.getByText(d.courses.catalog.card.contentLanguage)).toHaveCount(0);
+    await expect(dlNlpCard.getByText(d.courses.catalog.card.contentLanguagePartial)).toBeVisible();
     await expect(page.getByText(d.courses.catalog.empty.title)).toHaveCount(0);
 
     await page.getByRole("link", { name: /Deep Learning for NLP/ }).click();
     await expect(page).toHaveURL(/\/en\/cursos\/dl-nlp$/, { timeout: 30_000 });
-    // First lesson in English ⇒ the landing shows no content-language notice.
+    // Some lessons in English, some not ⇒ the landing says the translation is in progress, and
+    // never the blanket "the lessons are in Spanish".
     await expect(
       page.getByRole("heading", { name: d.courses.landing.languageNotice.title }),
     ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: d.courses.landing.languageNotice.titlePartial }),
+    ).toBeVisible();
 
     // Start → the English reader for the first lesson: an `/en`-prefixed URL serving real
     // English prose, so no translation-pending notice.
@@ -125,6 +186,40 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page).toHaveURL(/\/en\/cursos\/dl-nlp\/texto-como-numeros$/, { timeout: 30_000 });
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.getByText(d.courses.reader.translationPending.title)).toHaveCount(0);
+  });
+
+  test("COURSE-BUILD-01: a course still being written shows every block and says so", async ({ page }) => {
+    const d = dict.es;
+    const titles  = blockTitles(IN_PROGRESS_SLUG, "es");
+    const started = startedBlocks(IN_PROGRESS_SLUG, "es");
+
+    // When `llm-agents` is finished this stops being an in-progress course and the assertions
+    // below stop describing it: point them at whatever course is being written then, or retire
+    // them. A silent pass is the one outcome worth ruling out.
+    expect(started).toBeLessThan(titles.length);
+
+    await page.goto("/cursos");
+    await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
+    const card = page.locator(".course-card").filter({ hasText: /Modelos de Lenguaje/ });
+    await expect(card.getByText(d.courses.catalog.card.inProgress)).toBeVisible();
+
+    await page.goto(`/cursos/${IN_PROGRESS_SLUG}`);
+    await expect(page).toHaveURL(new RegExp(`/cursos/${IN_PROGRESS_SLUG}$`), { timeout: 30_000 });
+
+    // Says out loud that it is unfinished…
+    await expect(
+      page.getByRole("heading", { name: d.courses.landing.buildNotice.title }),
+    ).toBeVisible();
+
+    // …and the syllabus names EVERY block, written or not. This is the regression: the blocks
+    // with no published lesson used to be dropped, so the manifest's titles never reached the
+    // page and the reader saw a one-block course.
+    const syllabus = page.locator("#temario");
+    for (const title of titles) {
+      await expect(syllabus.getByText(title, { exact: true })).toBeVisible();
+    }
+    // The written ones expand into lesson links; the rest are plain rows with nothing to open.
+    await expect(syllabus.locator("details")).toHaveCount(started);
   });
 
   test("the notify opt-in is offered on the catalog", async ({ page }) => {
@@ -140,25 +235,39 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(notify.getByRole("button", { name: d.courses.notify.signIn })).toBeVisible();
   });
 
-  test("the nav marks the CURRENT page, and Mentoría stops looking current", async ({ page }) => {
+  test("the nav marks the CURRENT page — Inicio on /, Mentoría on /mentoria, Cursos on /cursos", async ({ page }) => {
     const d = dict.es;
     const nav = page.locator("nav").first();
 
-    // ONE rule, so both items render alike. On the landing page Mentoría is the current item —
-    // `#sessions` is a section of that page, not a page of its own — and it is marked exactly
-    // the way Cursos is marked on /cursos. Never both at once.
+    // ONE rule, so every item renders alike. On the home Inicio is the current item; on
+    // /mentoria it is Mentoría, marked exactly the way Cursos is marked on /cursos. Never two
+    // at once — the exact-match rule for "/" is what keeps Inicio dark everywhere else.
     await page.goto("/");
-    await expect(nav.getByRole("link", { name: d.nav.mentoring, exact: true })).toHaveAttribute(
+    await expect(nav.getByRole("link", { name: d.nav.home, exact: true })).toHaveAttribute(
       "aria-current",
       "page",
     );
     await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
 
-    // On a courses route, Cursos is current — and Mentoría must NOT be, which is the whole
-    // point: its accent is a call to action, and leaving it lit here pointed the reader at
-    // the wrong item.
+    await page.goto("/mentoria");
+    await expect(nav.getByRole("link", { name: d.nav.mentoring, exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.getByRole("link", { name: d.nav.home, exact: true })).not.toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
+
+    // On a courses route, Cursos is current — and neither Inicio nor Mentoría is, which is the
+    // whole point: an accent left lit here points the reader at the wrong item.
     await page.goto("/cursos");
     await expect(nav.getByRole("link", { name: d.nav.courses, exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(nav.getByRole("link", { name: d.nav.home, exact: true })).not.toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -168,17 +277,16 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     );
     await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
 
-    // The two items are marked IDENTICALLY — the complaint that started this was that they
+    // The items are marked IDENTICALLY — the complaint that started this was that they
     // were not. Same colour, same underline, whichever one you are on.
     const markedHere = await nav.locator("[aria-current='page']").evaluate(
       (el) => getComputedStyle(el).color + "|" + getComputedStyle(el).borderBottomColor,
     );
-    await page.goto("/");
-    const markedHome = await nav.locator("[aria-current='page']").evaluate(
+    await page.goto("/mentoria");
+    const markedMentoria = await nav.locator("[aria-current='page']").evaluate(
       (el) => getComputedStyle(el).color + "|" + getComputedStyle(el).borderBottomColor,
     );
-    expect(markedHere).toBe(markedHome);
-    await page.goto("/cursos");
+    expect(markedHere).toBe(markedMentoria);
 
     // A lesson is still "inside" Cursos.
     await page.goto(FIRST_LESSON_PATH);
@@ -188,52 +296,23 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     );
   });
 
-  test("Mentoría reaches the sessions section from a courses page, with a clean URL", async ({ page }) => {
+  test("Mentoría is a real destination, from the navbar and the footer", async ({ page }) => {
     const d = dict.es;
 
-    // `#sessions` lives in InteractiveShell, which is landing-page only. As a bare fragment
-    // link this click used to preventDefault and fire an event nobody was listening for — it
-    // did nothing at all, silently. It must now navigate home AND land on the section.
-    //
-    // The URL must come out clean: the scroll intent travels in sessionStorage, not as a
-    // `#sessions` fragment, so the same act produces the same URL from anywhere. Asserting
-    // the absence of the fragment is the point — an earlier attempt stripped it after the
-    // fact with history.replaceState and reproducibly corrupted the URL to `/#sessions#sessions`.
+    // `/mentoria` renders the tutoring landing. Both chrome surfaces used to carry `/#sessions`
+    // plus a scroll-intent handler so the click worked from /cursos; now they are plain links
+    // and land on the page — with a clean URL, since there is no fragment to strip any more.
     await page.goto("/cursos");
     await page.locator("nav").first()
       .getByRole("link", { name: d.nav.mentoring, exact: true }).click();
+    await expect(page).toHaveURL(/\/mentoria$/, { timeout: 30_000 });
+    await expect(page.locator("#sessions")).toBeAttached({ timeout: 15_000 });
 
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-    await expect(page).not.toHaveURL(/#sessions/);
-    await expect(page.locator("#sessions")).toBeInViewport({ timeout: 15_000 });
-
-    // Same from the footer, which carries the same link and renders on /cursos too.
     await page.goto("/cursos");
     await page.locator("footer")
       .getByRole("link", { name: d.footer.mentoring, exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-    await expect(page).not.toHaveURL(/#sessions/);
-    await expect(page.locator("#sessions")).toBeInViewport({ timeout: 15_000 });
-  });
-
-  test("navbar → Back → footer keeps the URL clean (the replaceState corruption)", async ({ page }) => {
-    const d = dict.es;
-
-    // This exact sequence produced `/#sessions#sessions` when the fragment was stripped with
-    // history.replaceState behind the App Router. Pinned because the failure needed three
-    // steps to appear and looked fine in every one-step check.
-    await page.goto("/cursos");
-    await page.locator("nav").first()
-      .getByRole("link", { name: d.nav.mentoring, exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-
-    await page.goBack();
-    await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
-
-    await page.locator("footer")
-      .getByRole("link", { name: d.footer.mentoring, exact: true }).click();
-    await expect(page).toHaveURL(/\/$/, { timeout: 30_000 });
-    await expect(page).not.toHaveURL(/#sessions/);
+    await expect(page).toHaveURL(/\/mentoria$/, { timeout: 30_000 });
+    await expect(page.locator("#sessions")).toBeAttached({ timeout: 15_000 });
   });
 
   test("mobile: the panel marks the current page and closes on navigation", async ({ page }) => {
@@ -250,7 +329,12 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page).toHaveURL(/\/cursos$/, { timeout: 30_000 });
     // The panel must close behind a plain navigation — it only ever closed on the modal and
     // anchor branches, so a real link left it open over the page it had just navigated to.
-    await expect(page.getByRole("link", { name: d.nav.blog, exact: true })).toHaveCount(0);
+    // `mobileOpen` gates both the panel's rendering and the hamburger's aria-expanded, so a
+    // collapsed hamburger IS the panel being gone. A page-wide "Blog" link count no longer
+    // isolates the panel: the footer carries its own Blog link now (BLOG-05), visible here.
+    await expect(
+      page.getByRole("button", { name: /men[uú]/i }).first(),
+    ).toHaveAttribute("aria-expanded", "false");
   });
 
   test("the language switcher on an untranslated lesson does not 404", async ({ page }) => {
@@ -306,20 +390,49 @@ test.describe("COURSE-P6-03: courses are reachable from the site chrome", () => 
     await expect(page.locator('link[rel="alternate"][hreflang="en"]')).toHaveCount(0);
   });
 
-  test("Blog still opens the ComingSoonModal, from the navbar and the footer", async ({ page }) => {
+  test("Blog is a real destination, from the navbar and the footer", async ({ page }) => {
+    // Both chrome surfaces used to open a modal; the footer's was not even a link. The
+    // pair is tested together because the failure this replaces was exactly the two
+    // disagreeing about what the same label does.
     const d = dict.es;
 
     await page.goto("/cursos");
 
     await page.getByRole("link", { name: d.nav.blog, exact: true }).first().click();
-    const modal = page.getByRole("dialog");
-    await expect(modal).toBeVisible();
-    await expect(modal).toContainText(d.comingSoon.blog.headline);
+    await expect(page).toHaveURL(/\/blog$/, { timeout: 30_000 });
+    await expect(
+      page.getByRole("heading", {
+        name: d.blog.index.heading.replace(/<[^>]+>/g, ""),
+        level: 1,
+      }),
+    ).toBeVisible();
 
-    await page.keyboard.press("Escape");
-    await expect(modal).toHaveCount(0);
+    // No dialog anywhere: the ComingSoonModal was deleted with this route.
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
-    await page.locator("footer").getByRole("button", { name: d.footer.blog, exact: true }).click();
-    await expect(page.getByRole("dialog")).toBeVisible();
+    // The index lists the post, and the card reaches the article itself.
+    const card = page.getByRole("link", { name: new RegExp(d.blog.card.cta) }).first();
+    await expect(card).toBeVisible();
+    await card.click();
+    await expect(page).toHaveURL(/\/blog\/[a-z0-9-]+$/, { timeout: 30_000 });
+    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(1);
+
+    // The footer's Blog is a LINK now, not a button, and lands in the same place.
+    await page.locator("footer").getByRole("link", { name: d.footer.blog, exact: true }).click();
+    await expect(page).toHaveURL(/\/blog$/, { timeout: 30_000 });
+  });
+
+  test("the nav marks Blog as the current page, like every other item", async ({ page }) => {
+    // Blog used to be the one nav item with no `match` route — it opened a modal and was
+    // never anywhere, so the "current item is green and underlined" rule could not apply
+    // to it. With a real page it is marked by the same rule as Cursos and Mentoría.
+    await page.goto("/blog", { timeout: 30_000 });
+
+    const nav = page.locator("nav").first();
+    await expect(nav.locator("[aria-current='page']")).toHaveCount(1);
+    await expect(
+      nav.getByRole("link", { name: dict.es.nav.blog, exact: true }).first(),
+    ).toHaveAttribute("aria-current", "page");
   });
 });

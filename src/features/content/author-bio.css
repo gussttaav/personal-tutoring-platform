@@ -1,0 +1,92 @@
+/*
+ * CONTENT-AUTHOR-01 — styling for the shared author card (AuthorBio.tsx).
+ *
+ * Every value here was an inline `style` on the course landing's instructor block before
+ * the card moved out of `cursos/[courseSlug]/page.tsx`. They are carried over unchanged:
+ * the card must render on the landing exactly as it did, and on the blog post exactly as
+ * it does on the landing. Do not "adjust while you are here" — a difference between the
+ * two surfaces is the one thing this file exists to prevent.
+ *
+ * Imported by the component, so it ships only where the card mounts. Every selector is
+ * two classes deep — `.author-bio .author-bio__x`, (0,2,0) — so it beats the readers'
+ * prose rules (`.post-content p` / `.lesson-content p` are (0,1,1)) without an
+ * `!important`. Colours are the global theme tokens only.
+ */
+
+.author-bio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 28px;
+  padding: 32px;
+  background: var(--surface-low);
+  border: 1px solid var(--border-variant);
+  border-radius: 20px;
+}
+
+/* ── Portrait ───────────────────────────────────────────────────────────── */
+
+.author-bio .author-bio__figure {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.author-bio .author-bio__avatar {
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid var(--border-variant);
+}
+
+.author-bio .author-bio__socials {
+  display: flex;
+  gap: 10px;
+}
+
+.author-bio .author-bio__social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  border: 1px solid var(--border-variant);
+  color: var(--text-muted);
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.author-bio .author-bio__social:hover {
+  color: var(--green);
+  border-color: var(--green-mid);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .author-bio .author-bio__social {
+    transition: none;
+  }
+}
+
+/* ── Text column ────────────────────────────────────────────────────────── */
+
+.author-bio .author-bio__text {
+  flex: 1;
+  min-width: 240px;
+}
+
+.author-bio .author-bio__name {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin: 0 0 16px;
+}
+
+.author-bio .author-bio__para {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--text-muted);
+  margin: 0;
+}

@@ -173,3 +173,21 @@ export const accountDeletionRatelimit = new Ratelimit({
   limiter: Ratelimit.slidingWindow(10, "1 h"),
   prefix:  "rl:accdel",
 });
+
+// CONTENT-FEEDBACK-01: 👍/👎 votes and error reports on lessons and posts. Both
+// accept ANONYMOUS callers, so the route keys them by IP (`ip:<addr>`) unless a
+// session is present, in which case by email (`user:<email>`) — the tier exists so
+// a classroom on one NAT doesn't share a budget with a signed-in student, not to
+// give members a bigger one. A vote is a click and a 👎 comment re-posts it, so
+// 30/min is far above any real reader; a report is prose, so 5/hour is generous.
+export const contentVoteRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(30, "1 m"),
+  prefix:  "rl:content:vote",
+});
+
+export const contentReportRatelimit = new Ratelimit({
+  redis:   kv,
+  limiter: Ratelimit.slidingWindow(5, "1 h"),
+  prefix:  "rl:content:report",
+});

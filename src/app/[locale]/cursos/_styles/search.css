@@ -1,9 +1,10 @@
 /*
  * COURSE-P9-01 — Course search: trigger, dialog, results.
+ * COURSE-P9-02 — plus the inline sidebar field and its results (the `.cs-sidebar` block).
  *
- * Segment-scoped, imported from the three route files that host the feature
- * (catalog, course landing, lesson reader) exactly the way _styles/katex.css is —
- * every `.css` import in this app lives in a route segment file, never in a component.
+ * Segment-scoped, imported from the lesson reader's route file — the only surface that
+ * hosts the feature — exactly the way _styles/katex.css is: every `.css` import in this
+ * app lives in a route segment file, never in a component.
  *
  * Tokens only (globals.css `:root`). The app is dark-only; there are no light variants
  * anywhere in this codebase and adding some here would be the odd one out.
@@ -33,7 +34,6 @@
   color: var(--text-muted);
 }
 .cs-trigger .material-symbols-outlined { font-size: 1.125rem; flex-shrink: 0; }
-.cs-trigger-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Compact icon button for the mobile bar — matches the drawer toggle beside it. */
 .cs-trigger--icon {
@@ -52,7 +52,8 @@
 .cs-backdrop {
   position: fixed;
   inset: 0;
-  /* Above the navbar (50) and the mobile drawer (60/61); below ComingSoonModal (9999). */
+  /* Above the navbar (50) and the mobile drawer (60/61). The old ComingSoonModal sat
+     at 9999 and was the ceiling here; BLOG-01 deleted it, so nothing is above this. */
   z-index: 1000;
   background: rgba(0, 0, 0, 0.66);
   backdrop-filter: blur(3px);
@@ -199,6 +200,9 @@
   color: var(--text-muted);
 }
 .cs-breadcrumb .material-symbols-outlined { font-size: 1rem; color: var(--text-dim); flex-shrink: 0; }
+/* The heading is ONE flex item (see the components) so a wrapped heading hangs under its own
+   first line, not under the arrow. */
+.cs-breadcrumb-text { min-width: 0; }
 
 .cs-snippet {
   margin: 3px 0 0;
@@ -270,18 +274,6 @@
 }
 .cs-retry:hover { color: var(--text); border-color: var(--green-mid); }
 
-.cs-tips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 12px 0 0; }
-.cs-chip {
-  padding: 5px 12px;
-  background: var(--surface-low);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--text-muted);
-  font-family: var(--font-body), sans-serif;
-  font-size: 0.8125rem;
-  cursor: pointer;
-}
-.cs-chip:hover { border-color: var(--green-mid); color: var(--text); }
 
 .cs-notice {
   display: flex;
@@ -321,6 +313,78 @@
   font-size: 0.6875rem;
   line-height: 1.35;
   text-align: center;
+}
+
+/* ── Sidebar (desktop, inline) — COURSE-P9-02 ────────────────────────────── */
+
+/* After the dialog rules on purpose: `.cs-grouplink` ties `.cs-grouphead` on specificity
+   and must win on order. */
+
+/* The field is the old `.cs-trigger` look on a container: icon, input, × in one box.
+   24px beneath it matches what the back link leaves above it; `SidebarProgressBar`'s
+   -12px top margin collapses through the wrapper below exactly as it did against the
+   link, and the results block pulls itself up the same way. */
+.cs-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 24px;
+  padding: 5px 5px 5px 12px;
+  background: var(--surface-low);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-dim);
+  transition: border-color 0.15s ease;
+}
+.cs-field:focus-within { border-color: var(--border-variant); }
+.cs-field > .material-symbols-outlined { font-size: 1.125rem; flex-shrink: 0; }
+.cs-field .cs-input { font-size: 0.875rem; padding: 4px 0; }
+
+.cs-sidebar-results { margin-top: -10px; }
+.cs-sidebar-list,
+.cs-sidebar-sections { list-style: none; margin: 0; padding: 0; }
+.cs-sidebar-list { display: flex; flex-direction: column; gap: 6px; }
+
+.cs-sidebar-count {
+  margin: 0 0 6px;
+  padding: 0 8px;
+  min-height: 1em;
+  font-size: 0.6875rem;
+  color: var(--text-dim);
+}
+
+/* Group head is a link to the lesson itself; the section rows below deep-link. */
+.cs-grouplink {
+  display: block;
+  padding: 8px 8px 4px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+}
+.cs-grouplink:hover,
+.cs-grouplink:focus-visible { background: var(--surface-high); }
+.cs-grouplink[aria-current="page"] .cs-title { color: var(--green); }
+
+/* Hover/focus replace the dialog's `[aria-selected]` — these rows are plain links. */
+.cs-sidebar .cs-option { padding: 7px 8px; }
+.cs-sidebar .cs-option:hover,
+.cs-sidebar .cs-option:focus-visible {
+  background: var(--surface-high);
+  border-color: var(--border-variant);
+}
+/* Headings wrap in the rail: pin the arrow to the first line instead of centring it. */
+.cs-sidebar .cs-breadcrumb { font-size: 0.75rem; align-items: flex-start; line-height: 1.4; }
+.cs-sidebar .cs-breadcrumb .material-symbols-outlined { margin-top: 1px; }
+.cs-sidebar .cs-snippet { font-size: 0.75rem; -webkit-line-clamp: 3; }
+.cs-sidebar .cs-more { padding-left: 8px; }
+
+.cs-sidebar .cs-state { padding: 20px 8px 24px; }
+.cs-sidebar .cs-state-body { max-width: none; }
+.cs-sidebar .cs-notice {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
 }
 
 /* ── Mobile: full-screen sheet ───────────────────────────────────────────── */

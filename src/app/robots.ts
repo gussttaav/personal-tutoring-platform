@@ -7,6 +7,8 @@ import type { MetadataRoute } from "next";
  * admin, auth, and transactional/auth-gated routes are disallowed. The disallow
  * rules use bare path prefixes so they apply to both the default (unprefixed)
  * and the `/en`-prefixed locale (e.g. `/area-personal` and `/en/area-personal`).
+ * LANDING-01: `/inicio` is the signed-in twin of `/` (reached only through the
+ * middleware rewrite) — never a page to crawl.
  */
 export default function robots(): MetadataRoute.Robots {
   const base = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gustavoai.dev";
@@ -24,6 +26,7 @@ export default function robots(): MetadataRoute.Robots {
         "/sesion-confirmada",
         "/sesion/",
         "/cancelar",
+        "/inicio",
         "/en/admin",
         "/en/auth/",
         "/en/area-personal",
@@ -31,6 +34,7 @@ export default function robots(): MetadataRoute.Robots {
         "/en/sesion-confirmada",
         "/en/sesion/",
         "/en/cancelar",
+        "/en/inicio",
       ],
     },
     sitemap: `${base}/sitemap.xml`,

@@ -5,6 +5,7 @@
     "loadMore": "Load more"
   },
   "nav": {
+    "home": "Home",
     "courses": "Courses",
     "mentoring": "Mentoring",
     "blog": "Blog",
@@ -21,25 +22,8 @@
     "user": "User"
   },
   "landing": {
-    "meta": {
-      "title": "Gustavo Torres — Programming, Math & AI Tutoring",
-      "description": "Programming, math and AI lessons with Gustavo Torres."
-    },
     "hero": {
-      "zoomTitle": "Click to zoom",
       "credential": "MSc. Mathematics & Computer Science",
-      "subtitle": "Programming, Math & AI Teacher",
-      "taglinePart1": "Master difficult topics",
-      "taglinePart2": "with expert guidance.",
-      "subheading": "One-on-one classes. No videos, no prompts, no wasted time.",
-      "skills": [
-        "Java",
-        "Python",
-        "C",
-        "Algorithms",
-        "Deep Learning",
-        "Statistics"
-      ],
       "cta": {
         "book": "Book a session now",
         "availability": "Check availability"
@@ -75,9 +59,7 @@
     },
     "bio": {
       "overline": "About Gustavo",
-      "headline": "Forged between code and equations",
-      "para1": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria. After several years as a software developer, I spent five years in research and university teaching before working independently, combining education and consulting.",
-      "para2": "For over seven years I have been helping students and professionals strengthen their skills in programming, mathematics and artificial intelligence — from academic support and learning from scratch to technical interview preparation and real-world project development.",
+      "para1": "Holds a B.S. in Computer Science and a Master's in Mathematics and Computing from the University of Cantabria, Spain. Following four years as a software developer and five years in university teaching and research, I have spent over seven years working as an independent consultant and instructor, specializing in programming, mathematics, and artificial intelligence.",
       "github": "GitHub",
       "linkedin": "LinkedIn",
       "email": "contacto@gustavoai.dev"
@@ -88,7 +70,7 @@
       "cards": {
         "programming": {
           "title": "Programming",
-          "body": "From core paradigms to data structures, algorithms, concurrency and design patterns — with a focus on best practices and leveraging AI without losing your own judgment."
+          "body": "From core paradigms to data structures, algorithms, concurrency and design patterns, with a focus on best practices and leveraging AI without losing your own judgment."
         },
         "backend": {
           "title": "Backend Development",
@@ -140,6 +122,105 @@
       }
     }
   },
+  "home": {
+    "meta": {
+      "title": "Gustavo Torres — Programming, math and AI: lessons, courses and a blog",
+      "description": "One-on-one programming, math and AI lessons, free courses that run in your browser, and a blog with one concept per article."
+    },
+    "hero": {
+      "headline1": "Programming, Mathematics and AI,",
+      "headline2": "with the hard part included.",
+      "subheading": "One-to-one classes with direct guidance, free interactive courses to learn at your pace, and a blog exploring different topics in depth.",
+      "freeNote": "First 15-minute session for free.",
+      "jobTitle": "Programming, Math & AI Teacher"
+    },
+    "bio": {
+      "para1": "Graduated in Computer Science with a Master's in Mathematics and Computer Science from the University of Cantabria, Spain. After four years of experience as a software developer and five years dedicated to university teaching and research, I now work as an independent professional, combining teaching and consulting.",
+      "para2": "For over seven years, I've helped students and professionals build their knowledge and skills in programming, mathematics, and artificial intelligence. My support ranges from academic tutoring and learning from scratch to technical interview preparation and real-world project development.",
+      "howLink": "How classes work"
+    },
+    "areas": {
+      "programming": "Data structures, algorithms, concurrency and design patterns. Python, Java, C/C++, Haskell.",
+      "backend": "REST APIs and microservices, SQL and NoSQL, cloud deployment, Docker and Git.",
+      "math": "Calculus, linear algebra, numerical methods, discrete mathematics and automata.",
+      "ai": "Machine Learning, Deep Learning, LLMs and multi-agent programming, with a mathematical foundation.",
+      "data": "Probability, applied statistics, data mining, big data and time series.",
+      "cycles": "Support in the most demanding technical modules and mentoring for final projects."
+    },
+    "courses": {
+      "seeAll": "See all courses"
+    },
+    "blog": {
+      "seeAll": "See all articles"
+    },
+    "closing": {
+      "heading": "Tell me what you want to learn",
+      "body": "The first 15-minute meeting is free. We go over your case, see whether I can help you and set a work plan."
+    }
+  },
+  "mentoria": {
+    "header": {
+      "kicker": "Mentoring",
+      "title": "Master difficult topics, <accent>with expert, direct guidance</accent>",
+      "lead": "One-to-one classes tailored to your needs: starting from scratch, reinforcing key concepts, going deeper into advanced topics, preparing for an exam or an interview.",
+      "freeNote": "The first 15-minute meeting is free and commits you to nothing."
+    },
+    "how": {
+      "kicker": "How it works",
+      "heading": "From the first question to the class",
+      "subtitle": "Four steps. None of them ties you to anything until you decide to book.",
+      "steps": {
+        "initial": {
+          "title": "First meeting",
+          "body": "Fifteen minutes, free. You tell me what you need and we leave with a work plan, whether you book afterwards or not."
+        },
+        "slot": {
+          "title": "Pick a day and time",
+          "body": "You see the free slots in the calendar and book the one that suits you. You get the confirmation by email and the event in your calendar."
+        },
+        "zoom": {
+          "title": "Class with Zoom in the app",
+          "body": "Private room accessible directly from the web or mobile. We share screens, code, and a digital whiteboard to explain each concept visually."
+        },
+        "changes": {
+          "title": "If something comes up",
+          "body": "You can cancel or move the class up to {hours, plural, one {# hour} other {# hours}} before. You manage it automatically from the web or your phone."
+        }
+      }
+    },
+    "testimonials": {
+      "kicker": "Reviews",
+      "heading": "What my students say",
+      "subtitle": "What people who have taken the classes say.",
+      "student": "Student",
+      "classgap": "See the 150+ verified reviews on Classgap"
+    }
+  },
+  "app": {
+    "soon": "Mobile app · Coming soon",
+    "heading": "Your classes, on your phone too",
+    "lead": "The same sessions, the same packs and the same availability, in an app to join class and book from wherever you are.",
+    "benefits": {
+      "join": {
+        "title": "Join the class from the app",
+        "body": "Your next session, front and centre, with the room ready when it's time."
+      },
+      "book": {
+        "title": "Book in two taps",
+        "body": "The week's free slots, with your credits already applied when you confirm."
+      },
+      "credits": {
+        "title": "Your credits, always in view",
+        "body": "How many you have left, when they expire and which classes are coming up."
+      }
+    },
+    "stores": {
+      "downloadOn": "Download on",
+      "availableOn": "Available on",
+      "appStore": "[App Store]",
+      "playStore": "[Google Play]"
+    }
+  },
   "auth": {
     "signin": {
       "redirecting": "Redirecting to Google…"
@@ -174,11 +255,11 @@
           "price": "Free"
         },
         "session1h": {
-          "label": "1-hour session",
+          "label": "Standard session",
           "sub": "60 min · Individual"
         },
         "session2h": {
-          "label": "2-hour session",
+          "label": "Extended session",
           "sub": "120 min · Individual"
         }
       },
@@ -196,8 +277,8 @@
       "title": "Next class",
       "sessionLabels": {
         "free15min": "Initial meeting · 15 min",
-        "session1h": "Individual session · 1h",
-        "session2h": "Individual session · 2h",
+        "session1h": "Standard session · 1h",
+        "session2h": "Extended session · 2h",
         "pack": "Pack class"
       },
       "zoomLabel": "Zoom virtual classroom",
@@ -227,9 +308,9 @@
       "startCta": "Start",
       "completedBadge": "Completed",
       "completedNote": "You finished the course. Shall we put it into practice?",
-      "bookSessionCta": "Book a 1:1 session",
+      "bookSessionCta": "Book a session",
       "emptyTitle": "Learn at your own pace",
-      "emptyBody": "Interactive courses with code that runs in the browser and exercises that grade themselves.",
+      "emptyBody": "Interactive courses with browser-executable code and automatically graded exercises.",
       "emptyCta": "Browse courses"
     },
     "upcoming": {
@@ -330,7 +411,6 @@
       "chooseAnotherSlot": "Choose another slot",
       "back": "Back",
       "fallbackDuration": "60 minutes",
-      "meetLabel": "60 minutes · Google Meet",
       "packDeduct": "1 class will be deducted from your pack.",
       "packRemaining": "{n, plural, one {You will have # class remaining.} other {You will have # classes remaining.}}",
       "rescheduleNote": "Free reschedule.",
@@ -350,11 +430,11 @@
           "duration": "15 minutes"
         },
         "session1h": {
-          "label": "1-hour session",
+          "label": "Standard session",
           "duration": "60 minutes"
         },
         "session2h": {
-          "label": "2-hour session",
+          "label": "Extended session",
           "duration": "2 hours"
         }
       }
@@ -386,7 +466,7 @@
       "paymentSecure": "Payment will be completed securely in the next step",
       "sessionReasonLabel": "Session reason",
       "sessionReasonOptional": "(optional)",
-      "sessionReasonPlaceholder": "E.g.: I have questions about recursion in Java, technical interview prep...",
+      "sessionReasonPlaceholder": "E.g., I want to prepare for a Java programming exam...",
       "emailAfterNote": "You can also send the details by email later",
       "summaryTitle": "Summary",
       "timezone": "Timezone",
@@ -407,10 +487,6 @@
       "confirmShort": "Confirm"
     },
     "shell": {
-      "back": "Back",
-      "bookPackClass": "Book a pack class",
-      "pickSlot": "Pick an available day and time",
-      "activePack": "Active pack",
       "individualSessions": "Individual sessions",
       "chooseMode": "Choose your session type",
       "modeSubtitle": "From a free initial meeting to intensive work sessions.",
@@ -426,11 +502,11 @@
         },
         "session1h": {
           "badge": "Most booked",
-          "name": "1-hour session",
+          "name": "Standard session",
           "duration": "60 minutes · Doubt resolution, project or exam preparation"
         },
         "session2h": {
-          "name": "2-hour session",
+          "name": "Extended session",
           "duration": "120 minutes · For topics that require greater depth"
         }
       }
@@ -459,7 +535,7 @@
       "packRemaining": "{packRemaining} / {packTotal}h rem.",
       "packDeductNote": "This session will be deducted from your active pack.",
       "rescheduleNote": "You are modifying an existing booking. This action does not consume credits.",
-      "cancelNote": "Cancellations must be made at least 24h in advance to recover the credit.",
+      "cancelNote": "Cancellations must be made at least {hours}h in advance to recover the credit.",
       "zoomApp": "Zoom (in the app)",
       "realtimeSlots": "Real-time availability",
       "securePayment": "Secure payment with Stripe"
@@ -518,7 +594,7 @@
     "form": {
       "secure": "Secure transaction",
       "protectedByStripe": "Protected by Stripe",
-      "cancellation24h": "24h cancellation",
+      "cancellation24h": "{hours}h cancellation",
       "loading": "Loading payment form...",
       "processing": "Processing...",
       "pay": "Pay {amount}",
@@ -656,22 +732,6 @@
     "error": "An error occurred. Please try again.",
     "unknownError": "Unknown error"
   },
-  "comingSoon": {
-    "blog": {
-      "badge": "BLOG",
-      "headline": "Articles & resources",
-      "subline": "Guides, tutorials and reflections on AI. Coming soon.",
-      "ctaLabel": "Subscribe to Blog"
-    },
-    "close": "Close",
-    "subscribed": "You're in! We'll notify you when it's available.",
-    "subscribeError": "Something went wrong when subscribing.",
-    "retry": "Retry",
-    "cancel": "Cancel",
-    "loggedInPrompt": "Get notified when new content is published.",
-    "loggedOutPrompt": "Sign in with Google to get notified when content is published.",
-    "continueGoogle": "Continue with Google"
-  },
   "postClassReview": {
     "ratings": [
       {
@@ -780,6 +840,108 @@
       "invalidRequest": "The submitted data is not valid. Check the form and try again."
     }
   },
+  "code": {
+    "copy": "Copy code",
+    "copied": "Copied!"
+  },
+  "content": {
+    "author": {
+      "heading": "About the author"
+    },
+    "feedback": {
+      "regionLabel": "Feedback on this content",
+      "question": "Was this helpful?",
+      "up": "Yes, it was helpful",
+      "down": "No, it could be better",
+      "thanks": "Thanks for your feedback!",
+      "commentPrompt": "What could be better?",
+      "commentPlaceholder": "Tell me what was missing or unclear (optional)",
+      "commentSend": "Send",
+      "commentSkip": "Skip",
+      "commentSent": "Thanks, I'll take it into account.",
+      "share": "Share",
+      "shareCopied": "Link copied",
+      "report": "Report an error",
+      "reportPrompt": "What's wrong?",
+      "reportPlaceholder": "Describe the error: a typo, a broken link, code that doesn't run…",
+      "reportEmailLabel": "Your email (optional, in case I need to ask you something)",
+      "reportEmailInvalid": "That email doesn't look valid.",
+      "reportAsUser": "I'll reply to {email} if needed.",
+      "reportSend": "Send report",
+      "reportCancel": "Cancel",
+      "reportSent": "Received. Thanks for letting me know.",
+      "reportTooShort": "Write at least {min} characters.",
+      "charCount": "{count}/{max}",
+      "error": "Something went wrong. Try again.",
+      "rateLimited": "Too many requests. Wait a moment."
+    }
+  },
+  "blog": {
+    "index": {
+      "overline": "Blog",
+      "heading": "It looks simple in class, <accent>here I go deeper</accent>",
+      "subtitle": "Articles on programming, mathematics and AI. Not the how, but the why.",
+      "empty": {
+        "title": "No articles yet",
+        "body": "I'm writing the first one. If you'd like to hear about it when it lands, there's a button just below."
+      }
+    },
+    "card": {
+      "readingTime": "{minutes} min read",
+      "cta": "Read the article"
+    },
+    "post": {
+      "backToIndex": "Back to the blog",
+      "byline": "By {name}",
+      "published": "Published {date}",
+      "updated": "Updated {date}",
+      "readingTime": "{minutes} min read",
+      "moreLabel": "More articles",
+      "older": "Previous article",
+      "newer": "Next article",
+      "onThisPage": "On this page"
+    },
+    "archive": {
+      "label": "Blog articles",
+      "allArticles": "All articles",
+      "minutes": "{minutes} min",
+      "openDrawer": "Open the article list",
+      "closeDrawer": "Close the article list"
+    },
+    "reading": {
+      "title": "Going deeper",
+      "lede": "Where the article's material comes from, and where to go next if you want more. None of it is needed to follow the piece.",
+      "count": "{count, plural, one {# source} other {# sources}}",
+      "kindCount": {
+        "paper": "{count, plural, one {# paper} other {# papers}}",
+        "libro": "{count, plural, one {# book} other {# books}}",
+        "blog": "{count, plural, one {# article} other {# articles}}",
+        "video": "{count, plural, one {# video} other {# videos}}",
+        "interactivo": "{count, plural, one {# interactive} other {# interactives}}"
+      },
+      "kind": {
+        "paper": "paper",
+        "libro": "book",
+        "blog": "article",
+        "video": "video",
+        "interactivo": "interactive"
+      },
+      "lang": {
+        "es": "In Spanish",
+        "en": "In English"
+      }
+    },
+    "notify": {
+      "body": "Get notified whenever a new article is published",
+      "cta": "Notify me",
+      "signIn": "Sign in",
+      "signInHint": "Sign in to be notified when a new article goes up",
+      "subscribed": "I'll notify you when a new article goes up",
+      "unsubscribe": "Stop notifications",
+      "error": "Something went wrong. Please try again.",
+      "retry": "Retry"
+    }
+  },
   "courses": {
     "catalog": {
       "overline": "Courses",
@@ -793,7 +955,10 @@
         "lessons": "{count, plural, =1 {# lesson} other {# lessons}}",
         "blocks": "{count, plural, =1 {# module} other {# modules}}",
         "cta": "View course",
-        "contentLanguage": "Lessons in Spanish"
+        "contentLanguage": "Lessons in Spanish",
+        "contentLanguagePartial": "Partly in Spanish",
+        "inProgress": "In progress",
+        "blocksOf": "{published} of {total} modules"
       }
     },
     "landing": {
@@ -817,16 +982,24 @@
         "durationHoursExact": "{hours}h",
         "empty": "The detailed syllabus will be published soon.",
         "kicker": "Content",
-        "summary": "{blocks, plural, =1 {# block} other {# blocks}} · {lessons, plural, =1 {# lesson} other {# lessons}} · ~{hours}h reading"
+        "summary": "{blocks, plural, =1 {# block} other {# blocks}} · {lessons, plural, =1 {# lesson} other {# lessons}} · ~{hours}h reading",
+        "summaryInProgress": "{publishedBlocks} of {totalBlocks} blocks · {lessons, plural, =1 {# lesson} other {# lessons}} published",
+        "blockMetaPartial": "{published} of {planned} lessons · {duration}",
+        "upcoming": "Coming soon",
+        "upcomingMeta": "{lessons, plural, =1 {# lesson} other {# lessons}} · coming soon"
       },
       "instructor": {
         "heading": "Your instructor",
-        "kicker": "About Gustavo",
-        "role": "Instructor"
+        "kicker": "About Gustavo"
       },
       "faq": {
         "heading": "Frequently asked questions",
-        "kicker": "Frequently asked questions"
+        "kicker": "Frequently asked questions",
+        "englishStatus": {
+          "notStarted": "Not yet — an English version is planned.",
+          "inProgress": "Translation in progress: {translated} of {total} lessons are already in English ({percent}%).",
+          "complete": "Yes, the course is fully available in English."
+        }
       },
       "cta": {
         "start": "Start the course",
@@ -839,7 +1012,14 @@
       },
       "languageNotice": {
         "title": "The lessons are in Spanish",
-        "body": "This course has not been translated yet. The lessons, exercises and quizzes are written in Spanish — everything else on this page is in English. An English version is planned."
+        "body": "This course has not been translated yet. The lessons, exercises and quizzes are written in Spanish — everything else on this page is in English. An English version is planned.",
+        "titlePartial": "Translation in progress",
+        "bodyPartial": "{translated} of {total} lessons are already in English; the rest are still in Spanish. You can read those as they are — your progress counts either way."
+      },
+      "buildNotice": {
+        "title": "This course is being written",
+        "body": "I publish each lesson as soon as it is ready: {lessons, plural, =1 {# lesson} other {# lessons}} across {publishedBlocks} of {totalBlocks} blocks. The syllabus below shows the whole course, so you can already see what is coming.",
+        "bodyPlanned": "I publish each lesson as soon as it is ready: {published} of the {planned} planned, across {publishedBlocks} of {totalBlocks} blocks. The syllabus below shows the whole course, so you can already see what is coming."
       },
       "authorNote": {
         "kicker": "Author's note",
@@ -868,6 +1048,9 @@
       "refKicker": "Block {block} · Lesson {order}",
       "refAhead": "Coming up",
       "refFallback": "In Spanish",
+      "repoLink": {
+        "kicker": "Checkpoint"
+      },
       "openNav": "Open course contents",
       "closeNav": "Close course contents",
       "translationPending": {
@@ -876,7 +1059,7 @@
       },
       "cta": {
         "heading": "Stuck? Want to move faster?",
-        "body": "A 1:1 session with me to work through whatever is blocking you — this lesson or the whole course.",
+        "body": "Book a session with me to work through whatever is blocking you — this lesson or the whole course.",
         "button": "Book a session"
       }
     },
@@ -1016,7 +1199,6 @@
       "resultCount": "{count, plural, =0 {No results} =1 {# lesson} other {# lessons}}",
       "moreSections": "{count, plural, =1 {+# more match} other {+# more matches}}",
       "introSection": "Introduction",
-      "tipsHeading": "Try",
       "scopeNote": "Searches lesson text, titles and section headings. Code and formulas are not included.",
       "loading": "Preparing search…",
       "minChars": "Type at least two letters.",
@@ -1118,7 +1300,8 @@
         "plotAria": "Loss surface with two minima and the descent path",
         "basinLeft": "left (−1, 0)",
         "basinRight": "right (+1, 0)",
-        "verdict": "It falls into the minimum on the <b>{basin}</b> — the starting point decides the basin."
+        "verdict": "It falls into the minimum on the <b>{basin}</b> — the starting point decides the basin.",
+        "verdictSaddle": "It stays pinned to the ridge: that's a <b>saddle point</b>, not a minimum, and it doesn't fall to either side."
       },
       "backprop-trace": {
         "groupAria": "Backpropagation trace; use the arrow keys to step forwards and backwards",
@@ -1361,6 +1544,22 @@
           }
         },
         "refJoin": ", and "
+      },
+      "bpe-merges": {
+        "groupAria": "BPE trained step by step; use the arrow keys to add or remove merges",
+        "corpus": "Corpus",
+        "corpusStats": "{bytes} bytes → {tokens} tokens · <bar>ℓ</bar> = {lbar} bytes per token",
+        "noMerges": "No merges: every byte is a token",
+        "stepLabel": "Merge {k} of {total}",
+        "vocab": "|V| = 256 + {k} = {size}",
+        "freq": "f = {f}",
+        "next": "The next one chooses from:",
+        "exhausted": "No pair occurs twice any more: training stops here.",
+        "sentence": "A sentence the corpus does not contain",
+        "sentenceAria": "Sentence encoded with the merges learned so far",
+        "sentenceStats": "{bytes} bytes → {tokens} tokens",
+        "byteHint": "A box with hex digits is a stray byte: a piece of a character, not merged yet.",
+        "slider": "Merges"
       }
     }
   },
@@ -1370,8 +1569,8 @@
       "description": "Manage your booked sessions, pack classes and book new sessions."
     },
     "root": {
-      "title": "Gustavo Torres — Programming, Math & AI Tutoring",
-      "description": "Programming, math and AI lessons with Gustavo Torres."
+      "title": "Gustavo Torres — Programming, math and AI: lessons, courses and a blog",
+      "description": "One-on-one programming, math and AI lessons, free courses that run in your browser, and a blog with one concept per article."
     },
     "privacidad": {
       "title": "Privacy policy — Gustavo Torres",
@@ -1389,6 +1588,14 @@
     "cursos": {
       "title": "Interactive courses — Gustavo Torres",
       "description": "Free, interactive courses on programming, mathematics and AI. Learn by building, with code that runs in your browser."
+    },
+    "blog": {
+      "title": "Blog — Gustavo Torres",
+      "description": "Articles on programming, mathematics and AI: one concept per article, with the mathematics included and code you can actually run."
+    },
+    "mentoria": {
+      "title": "Programming, Math & AI Tutoring — Gustavo Torres",
+      "description": "One-on-one lessons over Zoom: single sessions and packs, a free 15-minute first meeting. Programming, mathematics and artificial intelligence."
     }
   },
   "pages": {
@@ -1399,8 +1606,8 @@
     },
     "sesion": {
       "free": "Free initial meeting · 15 min",
-      "session1h": "Individual session · 1 hour",
-      "session2h": "Individual session · 2 hours",
+      "session1h": "Standard session · 1 hour",
+      "session2h": "Extended session · 2 hours",
       "pack": "Pack class",
       "signIn": "Sign in to access your session.",
       "continueGoogle": "Continue with Google"
@@ -1526,8 +1733,8 @@
       "calDescription": "Session link: {joinUrl}\n\nClass with Gustavo Torres Guerrero — gustavoai.dev",
       "sessionType": {
         "free15min": "Free intro call · 15 min",
-        "session1h": "Individual session · 1 hour",
-        "session2h": "Individual session · 2 hours",
+        "session1h": "Standard session · 1 hour",
+        "session2h": "Extended session · 2 hours",
         "pack": "Pack class"
       }
     },

@@ -1,0 +1,350 @@
+---
+slug: la-neurona
+title: "The artificial neuron"
+block: 2
+order: 1
+minutes: 22
+summary: "A weighted sum and a threshold are all a single unit needs to turn a vector into a decision. Its weights sit perpendicular to a boundary that splits the space in two, and the number it computes before deciding measures how far the input has landed from that boundary."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-z-a-mano
+    type: numeric
+    prompt: 'A neuron with weights $\mathbf{w} = (2,\, -1,\, 3)^{\top}$ and bias $b = -6$ receives the input $\mathbf{x} = (1,\, 3,\, 2)^{\top}$. What is its pre-activation $z$?'
+    answer: -1
+    tolerance: 0.01
+    explanation: 'Coordinate by coordinate: $2 \cdot 1 = 2$, $(-1) \cdot 3 = -3$, and $3 \cdot 2 = 6$. That sums to $5$, and the bias brings it down to $z = -1$. Since $z < 0$, the step returns $a = 0$: the neuron says no, and only barely. With $\lVert \mathbf{w} \rVert = \sqrt{14} \approx 3.74$, the point sits a mere $0.27$ from the boundary, so a bias of $-5$ would have flipped the answer entirely. None of that margin survives in $a$.'
+  - id: q-sesgo
+    type: single
+    prompt: 'What does a neuron lose if you take away its bias, that is, if you fix $b = 0$?'
+    options:
+      - { id: a, text: 'Its boundary is forced to pass through the origin, so the zero vector always ends up on the same side, and any boundary set apart from the origin becomes out of reach.' }
+      - { id: b, text: 'Nothing: you can recover the bias by scaling $\mathbf{w}$ alone, since multiplying the weights by a constant shifts the boundary.' }
+      - { id: c, text: 'The ability to separate anything at all, because without a bias the pre-activation is $z = 0$ for every input.' }
+      - { id: d, text: 'A dimension: with $\mathbf{x} \in \mathbb{R}^{d}$ and $b = 0$ the boundary now has dimension $d - 2$.' }
+    answer: a
+    explanation: 'With $b = 0$, the zero vector satisfies $\mathbf{w}^{\top}\mathbf{0} = 0$ no matter what the weights are, so it always sits on the boundary, which pins that boundary to the origin. For the reviews, that would mean a review with no vocabulary entry at all always gets the same verdict. (b) confuses scaling with shifting: multiplying $\mathbf{w}$ by a positive constant leaves the boundary exactly where it was, exactly as the cell shows when it multiplies by ten. (c) is false, since $z = \mathbf{w}^{\top}\mathbf{x}$ still varies with the input, and so is (d): the hyperplane still has dimension $d - 1$, it now passes through a fixed point instead.'
+  - id: q-frontera
+    type: multi
+    prompt: 'About the decision boundary $\mathbf{w}^{\top}\mathbf{x} + b = 0$ of a neuron with a step, tick everything that is true.'
+    options:
+      - { id: a, text: '$\mathbf{w}$ is perpendicular to it: take any two points on the boundary, and the vector between them has a dot product of zero with $\mathbf{w}$.' }
+      - { id: b, text: 'Multiplying $\mathbf{w}$ and $b$ by $10$ leaves the boundary exactly where it was and changes not a single decision.' }
+      - { id: c, text: 'The value of $a$ says how far from the boundary $\mathbf{x}$ has fallen.' }
+      - { id: d, text: 'In $\mathbb{R}^{d}$ it has dimension $d - 1$: a line in the plane, a plane in space.' }
+    answer: [a, b, d]
+    explanation: 'The three correct ones are exactly the three things this lesson''s geometry establishes. (a) follows from subtracting the two equations, $\mathbf{w}^{\top}(\mathbf{x} - \mathbf{x}^{\prime}) = 0$; (b) follows because the boundary is the set of points where something equals zero, and multiplying by ten does not change which points those are; and (d) is what hyperplane means. (c) is the false one, and only barely: the signed distance is $z / \lVert \mathbf{w} \rVert$, a number that does exist and that the neuron computes along the way, but $a$ is what is left after the step, and it tells you only which side. That is the loss the next lesson picks up.'
+challenges: []
+reading: []
+---
+
+{/* COURSE-P5-02 — Block 2, Lesson 1. */}
+
+A vector can't decide anything on its own. Eight lessons of tokenising, counting and fitting have
+turned text into coordinates, which settles the input side, but something is still missing: the
+object that actually reads those coordinates and makes a decision. So far you only know its type
+($f : \mathbb{R}^d \to \mathbb{R}^k$, set out back in <Leccion slug="texto-como-numeros">the lesson
+on the problem of representing language</Leccion> and left at that), and a type by itself computes
+nothing. This lesson builds the unit $f$ is made of, and it turns out that a single one is already
+enough to decide.
+
+Here's a concrete case. Ten one-line movie reviews and a vocabulary of eight entries; each review
+becomes its bag of words, the vector that counts how many times each entry appears, exactly as in
+<Leccion slug="bolsa-de-palabras">the lesson on the bag of words</Leccion>. So
+<W>good movie i recommend it</W> and <W>bad movie very slow</W> are two points in $\mathbb{R}^{8}$,
+and for each one you want the same thing: does the review speak well of the movie, or badly? Only
+two possible answers.
+
+Each of those ten reviews is an **example**: a vector going in, paired with the answer you want out.
+That answer is its **label**, a number $y$ that's $1$ if the review is positive and $0$ if it's
+negative. A person set all ten labels by reading the reviews alone; they don't come from any
+calculation, and without them there would be no way to say an answer is wrong. Between the input and
+the answer, for now, there is nothing at all.
+
+The simplest thing you could put in between is a vote. Each coordinate of the review's vector counts
+for or against the verdict depending on its value, and how strongly it counts is fixed by a number
+attached to that coordinate. Add up every contribution and out comes a single number, which then gets
+compared against a threshold: above it, one answer; below it, the other. And that's the whole object.
+There is nothing more to it.
+
+That sum has a geometric picture worth seeing before writing anything down. With two coordinates per
+point, the most a drawing can show, the set of points where the sum exactly equals the threshold is a
+line, and what the object does is check which side of that line you landed on.
+
+<Explorable
+  id="perceptron-boundary"
+  caption="Drag the points and watch the line reposition itself to keep every colour on its own side. The second button loads four points that no line can separate, and why that matters so much gets a whole lesson of its own later in this block."
+/>
+
+The line moves on its own because the explorable corrects its numbers every time a point lands on
+the wrong side; where those numbers actually come from is the business of much of this block, and
+for now you only need to watch it arrive. Once the two groups are separated, it arrives and stops.
+Notice how many different lines would work: if there's slack between the groups, a whole range of
+positions make zero errors, and the explorable keeps the first one it finds. Now drag a green
+point across into the other group: the notice below changes the instant no line can handle the split
+any more.
+
+<Callout type="intuition" title="The idea in one sentence">
+A neuron doesn't compare the input against anything stored. It splits the space in two with a flat
+surface and checks which side you landed on. Everything it can ever tell apart comes down to
+where it places that surface.
+</Callout>
+
+## What a neuron computes
+
+Start with the input: a vector $\mathbf{x} \in \mathbb{R}^{d}$, a column, like every vector in this
+course. A **neuron** is made of two things: a vector of **weights** $\mathbf{w} \in \mathbb{R}^{d}$,
+one per coordinate of the input, and a scalar $b \in \mathbb{R}$ called the **bias**. Together they
+compute a number,
+
+$$
+z = \mathbf{w}^{\top}\mathbf{x} + b = \sum_{i=1}^{d} w_i x_i + b,
+$$
+
+the **pre-activation**, and the neuron feeds it through an **activation function** $\varphi$ to get
+
+$$
+a = \varphi(z),
+$$
+
+which is what the neuron actually returns. Both $z$ and $a$ are scalars: no matter what vector a
+neuron looks at, it always returns a single number. The type set out at the start of the course
+called for $k$ output numbers, and one neuron is enough to decide between two answers; the other
+$k - 1$ come from adding more neurons alongside it, each with its own weights, and that's where this
+block heads next.
+
+$\varphi$ is still up for grabs, and for now I'll fix it by decree, using the oldest choice of all,
+the step:
+
+$$
+\text{step}(z) = \begin{cases}
+  1 & \text{if } z \geq 0 \\
+  0 & \text{if } z < 0
+\end{cases}.
+$$
+
+With that, the neuron returns a $1$ or a $0$ and nothing in between. A neuron built around a step
+has had its own name since 1958, the **perceptron**, and it's the one that gives this block its
+title. There are other candidates for $\varphi$, and the choice matters, as you'll see shortly; the
+step is used here because it keeps the geometry in plain view.
+
+It's worth reading $\mathbf{w}$ carefully when the input is a bag of words, because then each
+coordinate of $\mathbf{x}$ counts occurrences of a vocabulary entry, and each weight is the neuron's
+opinion of that entry: one number, positive or negative, nothing more. Because $z$ is a sum, those
+opinions stack up without interfering with each other (two occurrences of <W>good</W> contribute
+exactly twice what one does), and word order plays no part in any of it, since it was already
+thrown away by the representation. What the neuron adds on top of the bag of words is the verdict;
+whatever the bag had already lost stays lost.
+
+The bias isn't anyone's opinion of a word. It's what the neuron thinks before it's read anything at
+all. It sets where the threshold falls, since comparing $z$ against zero is the same as comparing
+the sum of the opinions against $-b$. And in the picture, it's what frees the line from having to
+pass through the origin.
+
+The word neuron is borrowed from biology, and it's best not to stretch the metaphor too far. A nerve
+cell integrates signals and fires once they cross a certain threshold, and that's where the
+resemblance ends. What you've read is a weighted sum followed by a comparison, and that's the
+whole of what the name is defending.
+
+### The boundary that separates, and how far from it you fall
+
+$\varphi$ doesn't actually look at $z$, only at its sign. So everything the neuron can tell apart
+comes down to the set of points where $z$ changes sign, its **decision boundary**:
+
+$$
+\{\, \mathbf{x} \in \mathbb{R}^{d} \;:\; \mathbf{w}^{\top}\mathbf{x} + b = 0 \,\}.
+$$
+
+With $d = 2$ and $\mathbf{x} = (x_1, x_2)^{\top}$, solving that equation gives
+
+$$
+x_2 = -\frac{w_1 x_1 + b}{w_2},
+$$
+
+which is exactly the line in the explorable above, as long as $w_2 \neq 0$; if it's zero, the line
+is vertical, and the original equation describes it equally well. In $\mathbb{R}^{3}$ the same set
+is a plane, and in $\mathbb{R}^{d}$ it's a **hyperplane**: an object of dimension $d - 1$ that splits
+the space into two halves. For the reviews below, $d = 8$; with a real vocabulary it would be tens
+of thousands. You can't draw the hyperplane at that point, but it's the same object all the same.
+
+The weights don't only place that boundary, they're perpendicular to it. Take any two points
+$\mathbf{x}$ and $\mathbf{x}^{\prime}$ that lie on it. Both make the equation equal zero, so
+subtracting one from the other cancels the bias and leaves
+
+$$
+\mathbf{w}^{\top}\mathbf{x} - \mathbf{w}^{\top}\mathbf{x}^{\prime} = \mathbf{w}^{\top}\left(\mathbf{x} - \mathbf{x}^{\prime}\right) = 0,
+$$
+
+where $\mathbf{x} - \mathbf{x}^{\prime}$ is any direction lying within the boundary. Its dot product
+with $\mathbf{w}$ is always zero, which means $\mathbf{w}$ points perpendicular to the boundary,
+towards the side where $z$ is positive.
+
+The bias is what shifts it. With $b = 0$, the zero vector satisfies the equation, so the boundary is
+forced through the origin and can't pass anywhere else; the moment $b \neq 0$, it moves away.
+Without a bias, the answer depends only on the direction of $\mathbf{x}$; with one, it also depends
+on where $\mathbf{x}$ actually is.
+
+What's still missing is what makes $z$ worth more than its sign alone. The signed distance from any
+point to the boundary, positive on one side and negative on the other, is
+
+$$
+\frac{\mathbf{w}^{\top}\mathbf{x} + b}{\lVert \mathbf{w} \rVert} = \frac{z}{\lVert \mathbf{w} \rVert},
+$$
+
+which means $z$ is that distance, scaled by $\lVert \mathbf{w} \rVert$. Its magnitude tells you
+how much margin the decision had, and the step keeps only the sign, throwing the rest away.
+
+<Details summary="The signed distance, step by step">
+
+Let $\mathbf{x}$ be any point and $\mathbf{p}$ the closest point to it on the boundary. The segment
+joining them is perpendicular to the boundary, and we already know the perpendicular direction: it's
+that of $\mathbf{w}$. So write
+
+$$
+\mathbf{x} = \mathbf{p} + t\,\frac{\mathbf{w}}{\lVert \mathbf{w} \rVert},
+$$
+
+where $\mathbf{w} / \lVert \mathbf{w} \rVert$ has length $1$, so $t \in \mathbb{R}$ is exactly the
+signed distance we're after. Multiply both sides by $\mathbf{w}^{\top}$ and add $b$:
+
+$$
+\mathbf{w}^{\top}\mathbf{x} + b = \underbrace{\mathbf{w}^{\top}\mathbf{p} + b}_{= \,0} + \; t\,\frac{\mathbf{w}^{\top}\mathbf{w}}{\lVert \mathbf{w} \rVert}.
+$$
+
+The first term on the right is zero, since $\mathbf{p}$ being on the boundary is exactly what makes
+it zero. In the second, $\mathbf{w}^{\top}\mathbf{w} = \lVert \mathbf{w} \rVert^{2}$ by definition of
+the norm, so that term reduces to $t \, \lVert \mathbf{w} \rVert$. The left side is $z$, so
+$z = t \, \lVert \mathbf{w} \rVert$ and
+
+$$
+t = \frac{z}{\lVert \mathbf{w} \rVert}.
+$$
+
+</Details>
+
+## A neuron that scores reviews in NumPy
+
+The cell builds the whole case from scratch: ten reviews, eight vocabulary entries, the bag-of-words
+vector for each, and a neuron on top. I've set the weights by hand ($+1$ for entries that count in
+favour, $-1$ for those that count against, $0$ for the ones with no opinion), since this lesson
+doesn't yet give you a way to choose them. Run it and pay attention to three things: the column of
+$z$ values, what happens when you multiply the weights by ten, and what happens when you nudge the
+bias down by half a point.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# --- Ten one-line reviews, with what a person would say about each.
+reviews = [
+    ("the movie is fun and i recommend it", 1),
+    ("the movie is slow and boring", 0),
+    ("good movie i recommend it", 1),
+    ("bad movie very slow", 0),
+    ("fun and good", 1),
+    ("the movie is bad", 0),
+    ("boring and slow", 0),
+    ("i recommend it", 1),
+    ("good movie but slow", 0),
+    ("fun and i recommend it", 1),
+]
+
+# Eight entries. Anything not in the vocabulary never reaches the vector.
+V = ["bad", "boring", "fun", "good", "movie", "recommend", "slow", "the"]
+pos = {e: i for i, e in enumerate(V)}
+
+X = np.zeros((len(reviews), len(V)))
+for f, (text, _) in enumerate(reviews):
+    for token in text.split():
+        if token in pos:
+            X[f, pos[token]] += 1.0
+y = np.array([label for _, label in reviews])
+
+print("X has shape", X.shape, "with one row per review and", len(V), "columns")
+print("   ", " ".join(e.rjust(10) for e in V))
+print("x1: ", " ".join(str(int(v)).rjust(10) for v in X[0]))
+print()
+
+# I set the weights by hand: +1 counts in favour, -1 counts against, 0 no opinion.
+w = np.array([-1.0, -1.0, 1.0, 1.0, 0.0, 1.0, -1.0, 0.0])
+b = 0.0
+print("w:  ", " ".join(("%+d" % v).rjust(10) for v in w), "   b =", b)
+print()
+
+
+def decide(X, w, b):
+    z = X @ w + b
+    return z, (z >= 0).astype(int)        # step: 1 if z >= 0, else 0
+
+
+z, a = decide(X, w, b)
+print("review".ljust(37), "z".rjust(5), " decision".ljust(12), "label")
+for f, (text, label) in enumerate(reviews):
+    print(text.ljust(37), ("%.1f" % z[f]).rjust(5),
+          (" positive" if a[f] else " negative").ljust(12),
+          "positive" if label else "negative")
+print()
+print("correct:", int((a == y).sum()), "of", len(y))
+print()
+
+# 1. Scaling (w, b) by ten scales every z and moves not a single decision.
+z10, a10 = decide(X, 10 * w, 10 * b)
+print("with (10w, 10b)  z =", np.round(z10, 1))
+print("                 same decisions:", bool(np.array_equal(a, a10)))
+print()
+
+# 2. The bias slides the boundary: the review that sat right on it flips sides.
+z05, a05 = decide(X, w, -0.5)
+changed = [reviews[f][0] for f in np.nonzero(a != a05)[0]]
+print("with b = -0.5    flips sides:", changed)
+print("                 correct:", int((a05 == y).sum()), "of", len(y))
+print()
+
+# 3. How far from the boundary each review falls: z over the norm of w.
+norm = float(np.linalg.norm(w))
+print("norm of w =", round(norm, 3))
+for f in [0, 5, 8]:
+    print("  ", reviews[f][0].ljust(37), "distance", round(float(z[f]) / norm, 3))
+`} />
+
+Nine out of ten correct, and the one it misses is exactly the one you'd expect. <W>good movie but slow</W>
+adds $+1$ for <W>good</W> and $-1$ for <W>slow</W>, so its $z$ comes out to exactly $0$, right on the
+boundary. The step breaks the tie upward and sends it to the positive side, but the label says
+negative.
+
+The next two experiments are really the point of the lesson. Multiplying $\mathbf{w}$ and $b$ by ten
+multiplies every pre-activation by ten too ($2.0$ becomes $20$, $-1.0$ becomes $-10$), but it doesn't
+change a single decision: the boundary is the set where $z$ is zero, and which points are zero
+doesn't depend on the scale. Moving the bias to $-0.5$, on the other hand, slides the boundary half a
+point: the review sitting right on it falls to the other side, and the score climbs to ten out of ten.
+
+The last few lines print the distance. With $\lVert \mathbf{w} \rVert = 2.449$, the first review
+lands $0.816$ from the boundary, while <W>the movie is bad</W> sits at $-0.408$: half as far, on the
+other side. That difference is right there in $z$, but none of it makes it through to $a$.
+
+## Test your intuition
+
+Three questions: what a pre-activation is actually worth, what gets lost when you remove the bias,
+and what holds true about the boundary.
+
+<Quiz id="q-z-a-mano" />
+
+<Quiz id="q-sesgo" />
+
+<Quiz id="q-frontera" />
+
+---
+
+Two things are still left open, and they're not equally urgent. I wrote those eight weights above
+by eyeballing the reviews myself, and that trick won't work with a vocabulary of fifty thousand
+entries: getting a neuron to find its own weights from examples is what takes up most of the rest of
+this block. The other loose end is closer at hand. The geometry gave the magnitude of $z$ real
+meaning (the distance to the boundary, scaled by $\lVert \mathbf{w} \rVert$), and the step throws
+all of that away: it hands out the same $1$ to a review that falls at $0.816$ and to one that barely
+grazes the boundary.
+
+$\varphi$ was fixed by decree, and there are plenty of other functions to choose from. Some preserve
+that distance instead of crushing it; others change, at the root, what becomes computable once you
+start stacking neurons together. Which function to assign to $\varphi$, and what each choice gains
+and loses, is the subject of <Leccion slug="funciones-activacion">the next lesson, on activation
+functions and non-linearity</Leccion>.

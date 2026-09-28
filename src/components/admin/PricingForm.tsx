@@ -10,6 +10,7 @@
 
 import { useState } from "react";
 import type { PriceRecord, ProductKey } from "@/domain/types";
+import { centsToInput, inputToCents, formatEuros } from "@/components/admin/price-input";
 
 const PRODUCT_LABELS: Record<ProductKey, string> = {
   session1h: "Sesión 1 hora",
@@ -22,26 +23,6 @@ const PRODUCT_LABELS: Record<ProductKey, string> = {
 const PACK_HOURS: Partial<Record<ProductKey, number>> = { pack5: 5, pack10: 10 };
 
 const PRODUCT_ORDER: ProductKey[] = ["session1h", "session2h", "pack5", "pack10"];
-
-/** Cents → euros string for an input (e.g. 1650 → "16.50", 1600 → "16"). */
-function centsToInput(cents: number): string {
-  return Number.isInteger(cents / 100) ? String(cents / 100) : (cents / 100).toFixed(2);
-}
-
-/** Euros input → integer cents, or null when blank/invalid. */
-function inputToCents(value: string): number | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const euros = parseFloat(trimmed.replace(",", "."));
-  if (!Number.isFinite(euros)) return NaN;
-  return Math.round(euros * 100);
-}
-
-/** Cents → "€16" / "€16,50" for read-only display. */
-function formatEuros(cents: number): string {
-  const euros = cents / 100;
-  return `€${Number.isInteger(euros) ? euros : euros.toFixed(2).replace(".", ",")}`;
-}
 
 export function PricingForm({
   prices,

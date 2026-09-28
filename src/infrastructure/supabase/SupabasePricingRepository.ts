@@ -10,6 +10,10 @@ interface PricingRow {
   updated_by:   string | null;
 }
 
+// PRICING-STUDENT-01: user_pricing carries the same price columns as `pricing`
+// (plus user_id, which the caller already knows), so toRecord() maps both.
+type UserPricingRow = PricingRow;
+
 interface PricingSettingsRow {
   pack_validity_days: number;
   updated_at:         string;
@@ -72,6 +76,52 @@ export class SupabasePricingRepository implements IPricingRepository {
       updatedAt:        row.updated_at,
       updatedBy:        row.updated_by,
     };
+  }
+
+  // ─── PRICING-STUDENT-01: per-student overrides ──────────────────────────────
+
+  async listForUser(userId: string): Promise<PriceRecord[]> {
+    const { data, error } = await supabase
+      .from("user_pricing")
+      .select("product_key, amount_cents, currency, updated_at, updated_by")
+      .eq("user_id", userId);
+
+    if (error) throw error;
+    return (data ?? []).map(r => toRecord(r as UserPricingRow));
+  }
+
+  async upsertForUser(
+    userId: string,
+    key: ProductKey,
+    amountCents: number,
+    updatedBy: string,
+  ): Promise<void> {
+    // Upsert on the composite PK so re-setting an existing override is one round
+    // trip and never leaves a duplicate.
+    const { error } = await supabase
+      .from("user_pricing")
+      .upsert(
+        {
+          user_id:      userId,
+          product_key:  key,
+          amount_cents: amountCents,
+          updated_at:   new Date().toISOString(),
+          updated_by:   updatedBy,
+        },
+        { onConflict: "user_id,product_key" },
+      );
+
+    if (error) throw error;
+  }
+
+  async deleteForUser(userId: string, key: ProductKey): Promise<void> {
+    const { error } = await supabase
+      .from("user_pricing")
+      .delete()
+      .eq("user_id", userId)
+      .eq("product_key", key);
+
+    if (error) throw error;
   }
 
   async updateSettings(settings: { packValidityDays: number; updatedBy: string }): Promise<void> {

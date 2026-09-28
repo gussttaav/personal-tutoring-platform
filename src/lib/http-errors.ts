@@ -1,5 +1,8 @@
 // ARCH-13: Maps DomainErrors to HTTP responses so route handlers stay thin.
 // OBS-02: Unexpected (non-domain) errors are captured to Sentry before returning 500.
+// OBS-03: Serialise non-Error thrown values (e.g. Supabase PostgrestError, a plain
+// object with code/message/details/hint) so the log line carries the actual cause
+// instead of "[object Object]".
 import { NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { DomainError } from "@/domain/errors";
@@ -29,6 +32,29 @@ const HTTP_STATUS_MAP: Record<string, number> = {
   USER_NOT_FOUND:                        404,
 };
 
+// OBS-03: Errors carry a message; Supabase's PostgrestError (a plain object,
+// not an Error instance — @supabase/supabase-js 2.106) carries code/message
+// plus optional details/hint instead. Anything else is stringified as-is.
+function serializeUnexpectedError(err: unknown): string {
+  if (err instanceof Error) {
+    return `${err.name}: ${err.message}`;
+  }
+
+  if (typeof err === "object" && err !== null && ("code" in err || "message" in err)) {
+    const { code, message, details, hint } = err as Record<string, unknown>;
+    let serialized = `${code ?? "UNKNOWN"}: ${message ?? "no message"}`;
+    if (details) serialized += ` | details: ${details}`;
+    if (hint) serialized += ` | hint: ${hint}`;
+    return serialized;
+  }
+
+  try {
+    return JSON.stringify(err);
+  } catch {
+    return String(err);
+  }
+}
+
 export function mapDomainErrorToResponse(
   err: unknown,
   context: Record<string, unknown> = {}
@@ -42,7 +68,7 @@ export function mapDomainErrorToResponse(
   Sentry.captureException(err, { extra: context });
   log("error", "Unhandled error in route handler", {
     ...context,
-    error: String(err),
+    error: serializeUnexpectedError(err),
   });
   return NextResponse.json({ error: "INTERNAL_ERROR" }, { status: 500 });
 }

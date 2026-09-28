@@ -16,6 +16,9 @@ level: intermedio
 # Decorative hero motif rendered behind the title (see CourseHeroMotif / HeroMotif).
 # Purely presentational; a course may omit it or pick another design.
 heroMotif: attention-matrix
+# Catalog-card accent hue (COURSE-ACCENT-01). Omitted = the site's emerald; the flagship
+# course keeps the brand hue explicitly so the pair of courses reads as a deliberate choice.
+accent: emerald
 prerequisites:
   intro: "Este curso tiene rigor matemático. Antes de empezar, necesitas:"
   items:
@@ -36,7 +39,7 @@ faq:
   - q: "¿Cuánto tiempo me llevará?"
     a: "Alrededor de 40 horas si haces los ejercicios. Vas a tu ritmo; no hay fechas límite."
   - q: "¿Está en inglés?"
-    a: "De momento solo en español. La versión en inglés está planificada."
+    dynamic: english-translation-status
   - q: "¿Qué necesito instalar?"
     a: "Nada. Todo — el código en Python incluido — se ejecuta directamente en el navegador."
 blocks:

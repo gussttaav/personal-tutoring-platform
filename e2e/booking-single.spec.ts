@@ -4,7 +4,7 @@
  * TEST-02: Single paid session (1h) purchase flow.
  *
  * Flow:
- *   1. Authenticated user lands on the homepage
+ *   1. Authenticated user lands on /mentoria
  *   2. Clicks the 1-hour session button
  *   3. Navigates to next week and picks a slot
  *   4. Review step: reaches the localized confirm-pay CTA
@@ -42,7 +42,7 @@ for (const locale of LOCALES) {
       const session1hLabel = d.booking.modeView.sessions.session1h.label;
       const availableAtPattern = new RegExp(d.booking.weeklyCalendar.availableAt.replace("{timeLabel}", "\\d{2}:\\d{2}"));
 
-      await page.goto(`${urlBase}/`);
+      await page.goto(`${urlBase}/mentoria`);
 
       // Wait for session cards to appear (auth skeleton replaces with real data)
       await expect(page.getByRole("button", { name: new RegExp(session1hLabel, "i") })).toBeVisible({

@@ -16,8 +16,8 @@
  * definition had { ok: true; remaining: number } which was incorrect.
  */
 
-import type { BookResponse, CreditsResponse, DeletionEligibility, PaymentIntentResponse } from "@/domain/types";
-import type { BookInput, CheckoutInput } from "@/lib/schemas";
+import type { BookResponse, CreditsResponse, DeletionEligibility, PaymentIntentResponse, PublicPricing } from "@/domain/types";
+import type { BookInput, CheckoutInput, ContentReportInput, ContentVoteInput } from "@/lib/schemas";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res  = await fetch(url, {
@@ -46,6 +46,17 @@ export class ApiError extends Error {
 export const api = {
   credits: {
     get: () => request<CreditsResponse>("/api/credits"),
+  },
+
+  pricing: {
+    /**
+     * GET /api/pricing — the signed-in student's prices.
+     *
+     * PRICING-STUDENT-01: identical to the public prices unless this student has
+     * an override, in which case `hasCustomPricing` is true and the amounts are
+     * theirs. Identity comes from the session; there is nothing to pass.
+     */
+    get: () => request<PublicPricing & { hasCustomPricing: boolean }>("/api/pricing"),
   },
 
   book: {
@@ -91,6 +102,24 @@ export const api = {
       request<{ ok: true }>("/api/account", {
         method: "DELETE",
         body:   JSON.stringify({ confirmEmail }),
+      }),
+  },
+
+  // CONTENT-FEEDBACK-01: reader feedback on lessons and posts. Both routes always
+  // answer JSON (never 204), so the shared `request` helper is safe here.
+  content: {
+    /** POST /api/content/vote — upserts this browser's/account's 👍/👎 (+ comment). */
+    vote: (body: ContentVoteInput) =>
+      request<{ ok: true }>("/api/content/vote", {
+        method: "POST",
+        body:   JSON.stringify(body),
+      }),
+
+    /** POST /api/content/report — files an error report on the page. */
+    report: (body: ContentReportInput) =>
+      request<{ ok: true }>("/api/content/report", {
+        method: "POST",
+        body:   JSON.stringify(body),
       }),
   },
 

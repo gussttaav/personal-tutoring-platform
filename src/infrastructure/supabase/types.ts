@@ -112,6 +112,106 @@ export type Database = {
           },
         ]
       }
+      content_reports: {
+        Row: {
+          content_key: string
+          content_type: string
+          created_at: string
+          id: string
+          locale: string
+          message: string
+          page_url: string
+          reporter_email: string | null
+          resolved_at: string | null
+          status: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          content_key: string
+          content_type: string
+          created_at?: string
+          id?: string
+          locale: string
+          message: string
+          page_url: string
+          reporter_email?: string | null
+          resolved_at?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          content_key?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          locale?: string
+          message?: string
+          page_url?: string
+          reporter_email?: string | null
+          resolved_at?: string | null
+          status?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_votes: {
+        Row: {
+          comment: string | null
+          content_key: string
+          content_type: string
+          created_at: string
+          id: string
+          locale: string
+          updated_at: string
+          user_id: string | null
+          vote: number
+          voter_key: string
+        }
+        Insert: {
+          comment?: string | null
+          content_key: string
+          content_type: string
+          created_at?: string
+          id?: string
+          locale: string
+          updated_at?: string
+          user_id?: string | null
+          vote: number
+          voter_key: string
+        }
+        Update: {
+          comment?: string | null
+          content_key?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          locale?: string
+          updated_at?: string
+          user_id?: string | null
+          vote?: number
+          voter_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_packs: {
         Row: {
           created_at: string
@@ -456,6 +556,41 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
+      }
+      user_pricing: {
+        Row: {
+          amount_cents: number
+          currency: string
+          product_key: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          currency?: string
+          product_key: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          currency?: string
+          product_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_pricing_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quiz_attempts: {
         Row: {

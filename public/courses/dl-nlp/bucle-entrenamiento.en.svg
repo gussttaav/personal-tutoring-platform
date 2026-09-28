@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" width="360" height="250" role="img" aria-label="Four boxes placed at the corners of a rectangle and joined by arrows that turn clockwise. Top left, forward pass; top right, loss; bottom right, gradient; bottom left, weight update. The first three arrows are grey; the fourth, the one that goes up from the update to the forward pass and closes the circle, is green and has the words and again written beside it.">
+  <style>
+    text { font-family: ui-sans-serif, system-ui, sans-serif; }
+    .ttl { font-size: 14px; fill: #e5e1e4; text-anchor: middle; }
+    .box { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    .edge { stroke: #86948a; stroke-width: 1.4; fill: none; }
+    /* The one arrow this lesson adds: the other three were already written. */
+    .cierra { stroke: #4edea3; stroke-width: 2; fill: none; }
+    .rep { font-size: 13px; fill: #4edea3; text-anchor: start; }
+    .cap { font-size: 13px; fill: #86948a; text-anchor: middle; }
+  </style>
+
+  <defs>
+    <marker id="gris" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#86948a" />
+    </marker>
+    <marker id="verde" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4edea3" />
+    </marker>
+  </defs>
+
+  <rect class="box" x="24" y="34" width="140" height="60" rx="8" />
+  <text class="ttl" x="94" y="68">forward pass</text>
+
+  <rect class="box" x="196" y="34" width="140" height="60" rx="8" />
+  <text class="ttl" x="266" y="68">loss</text>
+
+  <rect class="box" x="196" y="150" width="140" height="60" rx="8" />
+  <text class="ttl" x="266" y="184">gradient</text>
+
+  <rect class="box" x="24" y="150" width="140" height="60" rx="8" />
+  <text class="ttl" x="94" y="184">update</text>
+
+  <line class="edge" x1="170" y1="64" x2="190" y2="64" marker-end="url(#gris)" />
+  <line class="edge" x1="266" y1="100" x2="266" y2="144" marker-end="url(#gris)" />
+  <line class="edge" x1="190" y1="180" x2="170" y2="180" marker-end="url(#gris)" />
+  <line class="cierra" x1="94" y1="144" x2="94" y2="100" marker-end="url(#verde)" />
+  <text class="rep" x="106" y="126">and again</text>
+
+  <text class="cap" x="180" y="238">the four boxes already existed; the green arrow did not</text>
+</svg>

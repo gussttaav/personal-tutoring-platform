@@ -44,6 +44,8 @@ persistence while removing browser-language detection.
 2. Page indexing report → confirm the failures are "Page with redirect" (validates diagnosis).
 3. URL Inspection → "Test live URL" → "Request indexing" for `/`, `/en`, `/privacidad`,
    `/en/privacidad`, `/terminos`, `/en/terminos`.
+   - REDESIGN-P2-04: `/mentoria` became indexable — also request indexing for `/mentoria` and
+     `/en/mentoria`.
 4. Sitemaps → (re)submit `https://gustavoai.dev/sitemap.xml`.
 5. "Validate fix" on the redirect issue; recheck in 1–2 weeks. **Reindexing takes days to weeks —
    this is normal.**
