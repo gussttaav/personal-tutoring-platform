@@ -2,7 +2,10 @@
 
 /**
  * PRICING-STUDENT-01: applies the signed-in student's private prices, if they
- * have any, over the public ones baked into the static layout.
+ * have any, over the public ones baked into the static page.
+ *
+ * REFACTOR-R4-P2-03: rendered by CommerceProviders, so it runs (and fetches
+ * `/api/pricing`) only on the booking pages, not on every page load.
  *
  * Why a client fetch at all: `/` and `/mentoria` are statically prerendered and
  * shared by every visitor (SEO-01 — Googlebot crawls cookieless and must get a

@@ -11,6 +11,10 @@
  * mount — so its CTAs (book a session, buy a pack, use a credit, reschedule) open the
  * calendar / pack modal / pack booking in place. They used to `router.push` into
  * `/mentoria?book=…`, showing Mentoría for a beat before the overlay opened there.
+ *
+ * REFACTOR-R4-P2-03: the page tree (Footer included) is wrapped in `CommerceProviders` —
+ * PersonalArea and the booking overlays read prices and the schedule, which the root
+ * layout no longer provides.
  */
 
 import { redirect } from "next/navigation";
@@ -18,6 +22,7 @@ import { auth } from "@/auth";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { CommerceProviders } from "@/components/commerce/CommerceProviders";
 import BookingOverlays from "@/features/booking/BookingOverlays";
 import PersonalArea from "@/features/personal-area/PersonalArea";
 // Segment-scoped stylesheet for the dashboard, same pattern as admin.css / lesson.css.
@@ -44,14 +49,16 @@ export default async function AreaPersonalPage({ params }: { params: Promise<{ l
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#131315" }}>
-      <Navbar />
-      <main className="flex-1 pt-16">
-        <BookingOverlays>
-          <PersonalArea />
-        </BookingOverlays>
-      </main>
-      <Footer />
-    </div>
+    <CommerceProviders locale={locale}>
+      <div className="flex flex-col min-h-screen" style={{ background: "#131315" }}>
+        <Navbar />
+        <main className="flex-1 pt-16">
+          <BookingOverlays>
+            <PersonalArea />
+          </BookingOverlays>
+        </main>
+        <Footer />
+      </div>
+    </CommerceProviders>
   );
 }

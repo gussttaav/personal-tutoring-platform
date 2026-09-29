@@ -6,11 +6,6 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
-import { PricesProvider } from "@/components/pricing/PricesProvider";
-import { UserPricingSync } from "@/components/pricing/UserPricingSync";
-import { getDisplayPrices, getPackValidityDays } from "@/lib/pricing-display";
-import { ScheduleProvider } from "@/components/booking/ScheduleProvider";
-import { getScheduleConfig } from "@/lib/schedule-config";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
 import "../globals.css";
@@ -31,6 +26,12 @@ import "../globals.css";
  *
  * REFACTOR-R4-P2-02: the Material Symbols font is a ~15 KB SUBSET (was the full 3.9 MB
  * variable font, preloaded on every page). See the note on `materialSymbols` below.
+ *
+ * REFACTOR-R4-P2-03: no commerce data here any more. Prices, pack validity and the
+ * booking schedule (+ `UserPricingSync`) moved to `CommerceProviders`
+ * (src/components/commerce/), which only the booking pages mount. Loading them here
+ * made every lesson and post read Supabase at build time and carry the
+ * `pricing-all` / `schedule-config` ISR tags.
  */
 
 const manrope = Manrope({
@@ -138,9 +139,6 @@ export default async function RootLayout({
   if (!hasLocale(routing.locales, locale)) notFound();
   setRequestLocale(locale);
   const messages = await getMessages();
-  const prices           = await getDisplayPrices(locale);
-  const packValidityDays = await getPackValidityDays();
-  const schedule         = await getScheduleConfig();
 
   return (
     <html lang={locale} data-scroll-behavior="smooth" className={`dark ${manrope.variable} ${inter.variable} ${newsreader.variable} ${materialSymbols.variable}`}>
@@ -149,16 +147,9 @@ export default async function RootLayout({
       </head>
       <body className={inter.className} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages}>
-          <PricesProvider value={prices} packValidityDays={packValidityDays}>
-            <ScheduleProvider value={schedule}>
-              <AuthProvider>
-                {/* PRICING-STUDENT-01: inside AuthProvider because it needs the
-                    session; wraps children because it owns the "prices still
-                    syncing" flag. A no-op for anonymous visitors. */}
-                <UserPricingSync>{children}</UserPricingSync>
-              </AuthProvider>
-            </ScheduleProvider>
-          </PricesProvider>
+          {/* REFACTOR-R4-P2-03: stays above every page — the Navbar needs the
+              session, and so does the `UserPricingSync` inside CommerceProviders. */}
+          <AuthProvider>{children}</AuthProvider>
           <Analytics />
         </NextIntlClientProvider>
       </body>

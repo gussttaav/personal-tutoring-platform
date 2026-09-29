@@ -36,15 +36,15 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 |------|-----|-----|--------|-------|----|
 | [01 `@googleapis/calendar` instead of `googleapis`](phase-2-performance/01-googleapis-calendar-only.md) | `REFACTOR-R4-P2-01` | 🟠 | ✅ | Claude | local (`claude/googleapis-calendar-refactor-116297`). Largest chunk traced by `/api/courses/progress`: 10,126 KB → 1,313 KB. See Deviations; e2e + Vercel cold-start not run |
 | [02 Shell weight: icon-font subset + Sentry Replay](phase-2-performance/02-shell-weight-font-sentry.md) | `REFACTOR-R4-P2-02` | 🟠 | ✅ (JS target missed) | Claude | local (`claude/shell-weight-font-sentry-ae2679`). Icon font 3,943,736 → 14,840 bytes; LCP 25.3 s → 6.7 s (`/`). Blog-post JS −38.5 KB gz, short of the ≥ 60 KB target; see Deviations. Replay drop confirmed by Gustavo |
-| [03 Commerce providers out of the root layout](phase-2-performance/03-commerce-providers-scope.md) | `REFACTOR-R4-P2-03` | 🟡 | ⬜ | _tbd_ | |
+| [03 Commerce providers out of the root layout](phase-2-performance/03-commerce-providers-scope.md) | `REFACTOR-R4-P2-03` | 🟡 | ✅ | Claude | local (`claude/commerce-providers-scope-refactor-d2bdb8`). `.meta` files tagged `pricing-all`/`schedule-config`: 124 of 124 → 8 of 124 (+ `/api/policy`), no blog/course page among them. Also mounted on `/sesion/[token]` (a consumer the task md missed); see Deviations. Footer-modal source = lazy `/api/policy` (confirmed by Gustavo, see Decisions) |
 | [04 One user-session state for the whole page](phase-2-performance/04-single-user-session-state.md) | `REFACTOR-R4-P2-04` | 🟡 | ⬜ | _tbd_ | |
 
 **Exit criteria**
 - [x] No `route.js.nft.json` under `.next/server/app/api/` references a chunk containing the full `googleapis` catalog; the largest server chunk traced by `/api/courses/progress` is < 2 MB _(P2-01; 0 of 41 routes, largest 1,313 KB, which is the Stripe chunk)_
 - [x] Icon font ≤ 150 KB; `pnpm check:icons` green; no icon renders as its ligature text on `/`, `/mentoria`, `/area-personal`, a lesson, a post _(P2-02; 14,840 bytes, 107 icons; width audit on every page in the task's acceptance list, desktop + mobile)_
 - [ ] First-load gzipped JS on a blog post down by ≥ 60 KB vs. the pre-task measurement (recorded in the PR) _(P2-02 got −38.5 KB: 352.5 → 314.0 KB. Replay was smaller than the audit assumed; see Deviations)_
-- [ ] No `.meta` file for a blog post or lesson lists `pricing-all` or `schedule-config` in `x-next-cache-tags`
-- [ ] A signed-in page load issues exactly one `/api/credits`; lessons and posts issue no `/api/pricing`
+- [x] No `.meta` file for a blog post or lesson lists `pricing-all` or `schedule-config` in `x-next-cache-tags` _(P2-03; 0 of the 104 blog/course `.meta` files. Still tagged: `es`/`en` home, `mentoria`, `pago-exitoso`, `sesion-confirmada`, `terminos`, and `/api/policy`)_
+- [ ] A signed-in page load issues exactly one `/api/credits`; lessons and posts issue no `/api/pricing` _(P2-03 closes the `/api/pricing` half: a signed-in lesson load requested only `/api/auth/session`; `/mentoria` requests `/api/pricing` once. The `/api/credits` half is P2-04)_
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm check:messages` green; e2e home + booking specs green
 
 ## Phase 3 — Payments & Admin
@@ -98,6 +98,11 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   client `Sentry.init`; `next.config.mjs` (CSP) is untouched. Re-adding it later: prefer the
   lazy-load variant in the task md (it needs `https://browser.sentry-cdn.com` in both CSP
   `script-src` branches; `lazyLoadIntegration` is exported by `@sentry/nextjs` 10.53).
+- **P2-03 footer modal source: lazy fetch, confirmed by Gustavo (2026-09-29).**
+  Lazy fetch of the static `/api/policy` on the first open of the cancellation or terms modal, on
+  pages without CommerceProviders. The alternative (footer entries become plain links to
+  `/terminos` on non-commerce pages) would replace `usePolicyNumbers` in `FooterModals.tsx` and
+  make `src/app/api/policy/` deletable.
 
 ## Deviations from plan
 
@@ -356,6 +361,79 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   uses; `home.spec.ts` + one booking spec are the ones to run). Also not done: "client errors still
   reach Sentry" (needs a preview deploy with a throwing test button; the client `Sentry.init` keeps
   the same DSN/tunnel/`enabled`, only `integrations` and the replay rates went away).
+- **P2-03 — a sixth commerce page: `/sesion/[token]`.** The task md's consumer list missed it:
+  `PreJoinSetup` mounts `PackBookingOverlay`, whose `BookingModeView` (→ `WeeklyCalendar`,
+  `BookingSidebar`) calls `useScheduleConfig()`, which would throw once a pack student opened the
+  pack booking from the pre-join screen. Its signed-in branch is wrapped in `CommerceProviders`
+  (the page is dynamic, so this adds no build-time read). The sign-in prompt branch isn't wrapped;
+  its footer modal falls back to `/api/policy`. `/inicio` needs no change: it renders `HomePage`,
+  which wraps itself.
+- **P2-03 — `/pago-exitoso` and `/sesion-confirmada` are wrapped in their `layout.tsx`, not
+  `page.tsx`.** Both pages are client components and can't render an async server component.
+  Their pass-through layouts (SEO-02) now take `params` and mount `CommerceProviders`.
+- **P2-03 — `FooterModals` details beyond the sketch.** It fetches only when the cancellation or
+  terms modal opens (privacy quotes no numbers). The fetch checks `r.ok` (the sketch's
+  `r.json()` would have stored a 5xx error body as the numbers). A ref guards against a second
+  request while one is in flight, and a failure clears it: the skeleton stays, and the next open
+  retries. The response type reuses `PolicyNumbers` from `PolicyContent.tsx` rather than
+  declaring a second copy.
+- **P2-03 — new dev dependencies for the component tests:** `jest-environment-jsdom@^30.4.1`
+  (matches the installed Jest 30.4), `@testing-library/react@^16.3.3`, `@testing-library/dom@^10.4.2`.
+  The repo had no DOM test tooling. Only the two new `.test.tsx` files opt in, through a
+  `@jest-environment jsdom` docblock, so the rest of the suite stays on `node`. The lockfile
+  diff is additions only (417 lines); no existing resolution changed.
+- **P2-03 — tests beyond the plan.** `src/components/commerce/__tests__/CommerceProviders.test.tsx`
+  also checks that `CommerceProviders` feeds every hook from the three loaders, with prices in the
+  page's locale and `UserPricingSync` inside (an anonymous viewer is never "syncing").
+  `src/app/api/policy/__tests__/route.test.ts` checks the JSON shape and `force-static`.
+- **P2-03 — comments corrected, outside the task's file list, because this change made them
+  false.** `pricing-display.ts` and `schedule-config.ts` (the PERF-11 note said the layout reads
+  these caches on every route; the 30-day window is left alone, as the task says),
+  `StructuredData.tsx` ("already loaded in the root layout"), `UserPricingSync.tsx` ("baked into
+  the static layout"). CLAUDE.md is left for P4-02, whose task already lists the P2-03 update.
+- **P2-03 — middleware wording.** The matcher does NOT exclude `/api/*`
+  (`/((?!_next/static|_next/image|favicon.ico|monitoring).*)`). The middleware *function* skips
+  next-intl for `/api` (`isUiPath`), so the route is locale-free all the same.
+  `GET /api/policy` → 200 unprefixed, verified.
+- **P2-03 — measurements.** Before: the main checkout's build of 2026-09-29 21:32 had 124 of 124
+  `es`/`en` `.meta` files tagged, 104 of them blog/course pages. After (this worktree's build): 8 of
+  124 (`es`, `en`, `{es,en}/mentoria`, `{es,en}/pago-exitoso`, `{es,en}/sesion-confirmada`,
+  `{es,en}/terminos`) plus `api/policy.meta`. Blog and course routes no longer carry a revalidate
+  window in the build's route table (they showed 30d before). `/area-personal`, `/inicio` and
+  `/sesion/[token]` are dynamic, so they have no `.meta`. `/api/policy` is `○` static, 30d,
+  body `{"packValidityDays":180,"cancelHours":2}`. Build-check one-liner (must print nothing):
+  `grep -lE 'pricing-all|schedule-config' $(find .next/server/app/es .next/server/app/en \( -path '*/blog/*' -o -path '*/cursos/*' \) -name '*.meta') .next/server/app/{es,en}/{blog,cursos}.meta`
+- **P2-03 — manual checks** (worktree `pnpm dev` on :3100 against the test DB, `E2E_MODE`, the
+  e2e student signed in through `/api/test/auth`). Every route in `src/app/[locale]` answered
+  200 or its auth redirect. Blog post, signed out: opening «Política de cancelación» requested
+  `/api/policy` once and rendered «2 horas de antelación» / «180 días». Lesson
+  `dl-nlp/adios-recurrencia`, signed in: the page load requested only `/api/auth/session`, with no
+  `/api/pricing` and no `/api/policy`. `/mentoria`, signed in: one `/api/pricing`; the modal
+  rendered the same numbers with no `/api/policy` request. `/pago-exitoso` (whose page calls
+  `usePackValidityDays` at the top) and `/sesion-confirmada` render with no console errors.
+- **P2-03 — "an admin price edit…" criterion checked structurally, not live.** Blog/lesson
+  `.meta` files carry neither tag, so `revalidateTag` can't reach them. `/mentoria` and
+  `/api/policy` carry both, so it regenerates them. A live edit needs an admin session on
+  `pnpm start` and a write to the `pricing` table; not done.
+- **P2-03 — checks.** `pnpm test`: unit 155/155 suites, 2059 tests (+18 new); integration 6/6, 50
+  tests. `pnpm lint`: 0 errors (the same 8 pre-existing warnings, none in touched files).
+  `tsc --noEmit`: only the pre-existing `mdx.test.ts` (`RepoLink`) error. `pnpm build` green.
+  `check:messages` ✓.
+- **P2-03 — e2e: 25 of 28 passed on the first run, 26 after one warm re-run; 2 not re-run.**
+  Ran the task's specs (`home`, `booking-free`, `booking-pack`, `booking-single`,
+  `booking-personal-area`, `courses-navigation`) with `E2E_BASE_URL=http://localhost:3100` against
+  a worktree `pnpm dev` on the test DB (a temporary `e2e-worktree` launch config: `.env.e2e.local`
+  sourced, `E2E_MODE=true`, `NEXT_PUBLIC_BASE_URL` → :3100; :3000 was held by the main checkout's
+  dev server). **The booking specs' `resetTestState()` truncated the whole test DB and wiped the
+  test calendar**, as `pnpm test:e2e` always does. The three failures were all the first hit on a
+  route in a brand-new `.next/dev` cache, not a provider error. (1) `booking-pack [es]`:
+  `/area-personal` rendered with the pack card, but `/api/my-bookings` was still compiling when
+  the 15 s wait for «Próxima clase» ran out. (2) `booking-single [es]`: `/sesion-confirmada`
+  (wrapped via its layout) rendered in 2.8 s; `/api/stripe/session` was still compiling at 15 s.
+  (3) `courses-navigation` «es: navbar Cursos…»: the first `GET /cursos` took 14.9 s next to a 37 s
+  cache write. (3) passed on a warm re-run (16.3 s). (1) and (2) were NOT re-run, because a re-run
+  truncates the test DB again. Their `[en]` twins passed the same flows through the same pages in
+  this run.
 
 ## Known regressions introduced
 
