@@ -43,7 +43,7 @@ quiz:
       - { id: c, text: 'El del medio, que queda lejos del principio y del final a la vez y no se beneficia de ninguno de los dos.' }
       - { id: d, text: 'Ninguno en particular: $\mathbf{c}$ resume la entrada entera y no privilegia ninguna posición.' }
     answer: a
-    explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$ —el argumento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente desvanecido</Leccion>, aplicado a esta ruta concreta—. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora y la que la tabla desmiente: si todas las posiciones se conservaran igual, las tiras largas fallarían por el medio y no por el principio.'
+    explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara de la $\tanh$ —el argumento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente desvanecido</Leccion>, aplicado a esta ruta concreta—. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora y la que la tabla desmiente: si todas las posiciones se conservaran igual, las tiras largas fallarían por el medio y no por el principio.'
     hint: 'Cuenta las multiplicaciones que separan la pérdida del token $j$.'
 challenges: []
 reading:
@@ -86,7 +86,7 @@ que quieras y busca después el punto donde se cruzan.
 
 ## Cuántos mensajes caben y cuántas frases hay
 
-El estado del encoder sale de un $\tanh$, así que cada coordenada de $\mathbf{c}$ vive en el
+El estado del encoder sale de una $\tanh$, así que cada coordenada de $\mathbf{c}$ vive en el
 intervalo $(-1, 1)$. Sobre el papel eso es un continuo y cabe en él cualquier cosa; en un modelo que
 se entrena con gradientes y se lee con otra red, no. Llamemos $q$ al número de niveles que de una
 coordenada se distinguen de verdad —dos valores más próximos que eso llegan al decoder como el mismo
@@ -159,7 +159,7 @@ $$
 
 máxima cuando $j = 1$, es decir para el primer token de la entrada. <Leccion slug="gradiente-desvanecido">La lección
 sobre el gradiente desvanecido</Leccion> dice qué le ocurre a una señal que atraviesa esa ruta: cada paso la
-multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara del $\tanh$, y con un radio espectral menor
+multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara de la $\tanh$, y con un radio espectral menor
 que uno la magnitud cae de forma exponencial con la distancia. Al primer token de la frase le llega
 la señal más débil de todas.
 

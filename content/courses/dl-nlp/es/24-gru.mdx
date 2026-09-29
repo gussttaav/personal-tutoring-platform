@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'Gana velocidad, porque $\mathbf{z}_t$ se calcula con $\tanh$ en vez de con $\sigma$, y no pierde nada.' }
       - { id: d, text: 'Gana memoria, porque con una compuerta menos hay menos caminos por los que el gradiente se desvanezca; pierde la capacidad de olvidar.' }
     answer: a
-    explanation: 'La (a) es el canje entero. En la LSTM $\mathbf{f}_t$ e $\mathbf{i}_t$ eran independientes —podían abrirse las dos y acumular, o cerrarse las dos y congelar—; atarlas convierte el estado en una media ponderada de cosas acotadas, que se queda acotada, y por eso sobra el $\tanh$ de salida. El precio es esa independencia: ya no se puede conservar del todo y escribir del todo en el mismo paso. La (b) es falsa de raíz: en la LSTM las dos compuertas se movían por separado, y ver que casi nunca hacía falta esa libertad es justo lo que motiva la GRU, no una identidad que ya se cumpliera. La (c) confunde las activaciones: $\mathbf{z}_t$ es una compuerta y usa $\sigma$ como todas. La (d) va al revés: quitar compuertas no fabrica memoria, y la GRU olvida perfectamente —con $\mathbf{z}_t \to 1$ reemplaza lo viejo por el candidato—.'
+    explanation: 'La (a) es el canje entero. En la LSTM $\mathbf{f}_t$ e $\mathbf{i}_t$ eran independientes —podían abrirse las dos y acumular, o cerrarse las dos y congelar—; atarlas convierte el estado en una media ponderada de cosas acotadas, que se queda acotada, y por eso sobra la $\tanh$ de salida. El precio es esa independencia: ya no se puede conservar del todo y escribir del todo en el mismo paso. La (b) es falsa de raíz: en la LSTM las dos compuertas se movían por separado, y ver que casi nunca hacía falta esa libertad es justo lo que motiva la GRU, no una identidad que ya se cumpliera. La (c) confunde las activaciones: $\mathbf{z}_t$ es una compuerta y usa $\sigma$ como todas. La (d) va al revés: quitar compuertas no fabrica memoria, y la GRU olvida perfectamente —con $\mathbf{z}_t \to 1$ reemplaza lo viejo por el candidato—.'
     hint: 'Escribe $\mathbf{h}_t$ con $z_{t,j}=0$ y con $z_{t,j}=1$, y pregúntate qué pasa cuando quieres las dos cosas a la vez.'
   - id: q-reset
     type: single
@@ -55,7 +55,7 @@ challenges:
       turno, y un diccionario `P` con los pesos de las tres piezas —`P["z"]`, `P["r"]` y `P["h"]`,
       cada una la tripleta `(Wx, Wh, b)`—. Devuelve `h_nuevo`.
 
-      Las dos compuertas son sigmoides sobre el token y el estado anterior; el candidato es un $\tanh$
+      Las dos compuertas son sigmoides sobre el token y el estado anterior; el candidato es una $\tanh$
       que lee $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ en lugar de $\mathbf{h}_{t-1}$ a secas, y el estado
       nuevo es la mezcla $(1-\mathbf{z}_t)\odot\mathbf{h}_{t-1} + \mathbf{z}_t\odot\tilde{\mathbf{h}}_t$.
       Calcula las dos compuertas con el estado que entra, no con el que vas a devolver. No escribas en
@@ -228,7 +228,7 @@ viejo y lo nuevo: $z_{t,j} = 0$ deja $h_{t,j}$ igual a $h_{t-1,j}$ —conserva�
 reemplaza entero por el candidato —escribe—. No hay forma de hacer las dos cosas a la vez, y ésa es
 justo la libertad que la LSTM tenía y la GRU entrega: allí $\mathbf{f}_t$ e $\mathbf{i}_t$ podían
 abrirse las dos y acumular. A cambio, una media de números acotados no se desborda, y por eso la GRU
-enseña el estado tal cual, sin la compuerta de salida ni el $\tanh$ que en la LSTM lo recortaban antes
+enseña el estado tal cual, sin la compuerta de salida ni la $\tanh$ que en la LSTM lo recortaban antes
 de sacarlo.
 
 La compuerta de actualización se calcula como todas las de la lección anterior, una capa sigmoide

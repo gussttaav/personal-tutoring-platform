@@ -46,7 +46,7 @@ quiz:
     hint: '$w^{0} = 1$. Y cada paso vuelve a multiplicar por $0.5$.'
   - id: q-mascara-tanh
     type: single
-    prompt: 'La máscara $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$ que aparece en cada paso de la vuelta es la pendiente del $\tanh$. ¿Puede rescatar un gradiente que se desvanece?'
+    prompt: 'La máscara $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$ que aparece en cada paso de la vuelta es la pendiente de la $\tanh$. ¿Puede rescatar un gradiente que se desvanece?'
     options:
       - { id: a, text: 'No: sus valores caen entre $0$ y $1$, así que solo encoge, nunca agranda —y donde el estado se satura, como en las bandas rojas del explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion>, se acerca a $0$ y lo apaga del todo—.' }
       - { id: b, text: 'Sí: cuando el gradiente se desvanece, la máscara sube por encima de $1$ para compensar la pérdida.' }
@@ -131,10 +131,10 @@ Volvamos a la recurrencia hacia atrás de la lección anterior y sigámosla más
 de un paso salía del siguiente con dos gestos —transportar y enmascarar—:
 
 $$
-\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right).
+\boldsymbol{\delta}_t = \left(\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right) \odot \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right).
 $$
 
-El $\odot$ con la pendiente del $\tanh$ es multiplicar por una matriz diagonal
+El $\odot$ con la pendiente de la $\tanh$ es multiplicar por una matriz diagonal
 —$\text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)$, con esas pendientes en la
 diagonal y ceros fuera—, así que un paso de la vuelta multiplica $\boldsymbol{\delta}_{t+1}$ por dos
 matrices: primero $\mathbf{W}_{hh}^{\top}$, luego esa diagonal. Encadena la recurrencia desde el último
@@ -159,7 +159,7 @@ $$
 \lVert \boldsymbol{\delta}_k \rVert \le \lVert \boldsymbol{\delta}_T \rVert \prod_{t=k}^{T-1} \left\lVert \text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)\right\rVert \left\lVert \mathbf{W}_{hh}^{\top}\right\rVert.
 $$
 
-Los dos factores de cada pareja tienen un techo. El de la diagonal es la pendiente del $\tanh$, que
+Los dos factores de cada pareja tienen un techo. El de la diagonal es la pendiente de la $\tanh$, que
 nunca pasa de $1$ y en cuanto el estado se satura se acerca a $0$ —son las bandas rojas que el
 explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya te
 dejó ver—; llámalo $\gamma \le 1$. El de $\mathbf{W}_{hh}^{\top}$ es el único hecho nuevo que necesitas
@@ -255,7 +255,7 @@ $\min$ vale $1$, y se queda como estaba.
 ## Comprueba tu intuición
 
 Cinco preguntas: qué desvanece o explota el gradiente, qué arregla el recorte y qué no, cómo se ve el
-exponente en un número, si la máscara del $\tanh$ puede salvar la situación y qué se pierde cuando no.
+exponente en un número, si la máscara de la $\tanh$ puede salvar la situación y qué se pierde cuando no.
 
 <Quiz id="q-que-lo-desvanece" />
 

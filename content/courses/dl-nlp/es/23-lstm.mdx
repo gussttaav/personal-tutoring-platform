@@ -223,7 +223,7 @@ el gradiente esto es perfecto —la derivada de $\mathbf{c}_t$ respecto de $\mat
 identidad, sin matriz que aplicar $d$ veces—, y para la memoria es inservible por dos motivos. Nunca
 olvida: lo que entró en la coordenada 3 leyendo <W>cámaras</W> sigue ahí trescientos tokens después,
 en un párrafo que habla de otra cosa. Y crece sin freno: cada término vive en $(-1, 1)$ y se suman
-$T$, así que una coordenada puede acabar valiendo $40$, donde el $\tanh$ que la lea está plano —la
+$T$, así que una coordenada puede acabar valiendo $40$, donde la $\tanh$ que la lea está plano —la
 saturación que el explorador de activaciones de <Leccion slug="funciones-activacion">la lección sobre funciones de activación</Leccion> ya te dejó ver—.
 
 Los dos fallos son el mismo: la suma no tiene forma de decir *no*. Dásela con un factor por
@@ -331,7 +331,7 @@ $$
 Ponlo al lado del $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ de la lección anterior y cuenta las
 diferencias, que son tres. La base ya no es una propiedad de una matriz compartida por todo, sino un
 número por coordenada y por paso que la red **calcula** a partir de lo que está leyendo. Por esta vía
-tampoco hay máscara del $\tanh$ que muerda en cada paso —ningún $\gamma \le 1$ que sólo pueda empeorar
+tampoco hay máscara de la $\tanh$ que muerda en cada paso —ningún $\gamma \le 1$ que sólo pueda empeorar
 las cosas—, porque la celda cruza el paso con un producto y una suma y nada más. Y la tercera remata:
 $f_{t,j} = 1$ es alcanzable y además estable, porque una sigmoide saturada se queda en $1$ con
 pendiente casi nula, así que una coordenada que la red aprenda a mantener abierta multiplica por $1$
@@ -459,7 +459,7 @@ for b_f in [0.0, 3.0, 5.0]:
 `} />
 
 Cuatro números y tres lecturas. De la RNN llega $1.1 \times 10^{-3}$: $0.9^{39} \approx 0.016$
-lo pone la matriz y el resto —un orden de magnitud— la máscara del $\tanh$, ese $\gamma \le 1$ que la
+lo pone la matriz y el resto —un orden de magnitud— la máscara de la $\tanh$, ese $\gamma \le 1$ que la
 lección anterior dijo que sólo podía empeorar las cosas. La segunda línea es la LSTM saliendo **peor**
 que la RNN: con $\mathbf{b}_f = 0$ la compuerta ronda $0.5$, el producto cae a $10^{-11}$ y la
 memoria es peor que la que venía a arreglar. La vía aditiva no regala nada, sólo hace alcanzable lo

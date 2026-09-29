@@ -29,7 +29,7 @@ quiz:
       - { id: c, text: 'De ninguno hasta el último paso; los interiores no aportan gradiente y sólo $\boldsymbol{\delta}_T$ arranca la vuelta.' }
       - { id: d, text: 'Sólo de su salida: como ahora hay una pérdida por posición, la recurrencia hacia atrás ya no hace falta.' }
     answer: [a, b]
-    explanation: 'La (a) y la (b) son las dos rutas por las que el estado $\mathbf{h}_t$ toca la pérdida, y la regla de la cadena las suma: $\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hy}^{\top}(\hat{\mathbf{y}}_t - \mathbf{y}_t) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right)$. No es notación nueva: son las dos líneas de <Leccion slug="bptt">la lección sobre BPTT</Leccion> —el arranque desde la salida y el transporte desde el paso siguiente— que allí vivían en pasos distintos y aquí conviven en cada paso interior. La (c) describe justo el caso del clasificador, donde la pérdida colgaba sólo del final; con una salida por posición eso ya no vale. La (d) es la trampa peligrosa: el transporte sigue haciendo falta —es lo único que conecta un carácter con los que vinieron antes—, y con él vuelve el producto por $\mathbf{W}_{hh}^{\top}$ y el desvanecimiento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>.'
+    explanation: 'La (a) y la (b) son las dos rutas por las que el estado $\mathbf{h}_t$ toca la pérdida, y la regla de la cadena las suma: $\boldsymbol{\delta}_t = \left(\mathbf{W}_{hy}^{\top}(\hat{\mathbf{y}}_t - \mathbf{y}_t) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right) \odot \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)$. No es notación nueva: son las dos líneas de <Leccion slug="bptt">la lección sobre BPTT</Leccion> —el arranque desde la salida y el transporte desde el paso siguiente— que allí vivían en pasos distintos y aquí conviven en cada paso interior. La (c) describe justo el caso del clasificador, donde la pérdida colgaba sólo del final; con una salida por posición eso ya no vale. La (d) es la trampa peligrosa: el transporte sigue haciendo falta —es lo único que conecta un carácter con los que vinieron antes—, y con él vuelve el producto por $\mathbf{W}_{hh}^{\top}$ y el desvanecimiento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>.'
     hint: 'Dibuja el paso $t$: sale una predicción de él, y su estado alimenta el paso $t+1$. ¿Por cuántos caminos llega la pérdida hasta $\mathbf{h}_t$?'
   - id: q-por-que-malo
     type: single
@@ -155,10 +155,10 @@ $$
 donde el primer término es la salida de <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion> —softmax con entropía cruzada
 entrega $\hat{\mathbf{y}}_t - \mathbf{y}_t$— repartida entre las coordenadas del estado por
 $\mathbf{W}_{hy}^{\top}$, y el segundo es el transporte de <Leccion slug="bptt">la lección sobre BPTT</Leccion>, intacto. Enmascara con la
-pendiente del $\tanh$ y tienes el error del paso:
+pendiente de la $\tanh$ y tienes el error del paso:
 
 $$
-\boldsymbol{\delta}_t = \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right) \odot \left(\mathbf{W}_{hy}^{\top}\left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right),
+\boldsymbol{\delta}_t = \left(\mathbf{W}_{hy}^{\top}\left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right) \odot \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right),
 $$
 
 con $\boldsymbol{\delta}_{T+1} = \mathbf{0}$, porque después del último paso no hay ninguno. Ponla al
