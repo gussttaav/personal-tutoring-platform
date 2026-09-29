@@ -1,0 +1,496 @@
+---
+slug: lstm
+title: "LSTM: gated memory"
+block: 3
+order: 5
+minutes: 30
+summary: "A second state that moves forward by adding instead of crossing a matrix, and three gates that decide what is kept, what is written and what comes out. Each one arrives fixing a specific failure of the version before, and the additive path changes the product that kills the gradient: instead of a power of the recurrent matrix, a product of numbers the network chooses coordinate by coordinate and can leave at one."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-sobrevive
+    type: single
+    prompt: 'Why doesn''t an LSTM''s cell state condemn the gradient to the exponential power of the previous lesson?'
+    options:
+      - { id: a, text: 'Because along that path the state moves forward with $\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \dots$ and no matrix multiplies it: at a distance $d$ the factor is a product of $d$ numbers in $(0,1)$ that the network computes coordinate by coordinate, and it can leave them at almost $1$.' }
+      - { id: b, text: 'Because the gates use $\sigma$ instead of $\tanh$, and $\sigma$ doesn''t saturate.' }
+      - { id: c, text: 'Because the LSTM has four times as many weights as the vanilla RNN, and with more weights the gradient is spread out and doesn''t vanish.' }
+      - { id: d, text: 'Because the cell state plays no part in the loss, so there is no gradient to vanish through it.' }
+    answer: a
+    explanation: '(a) is the whole lesson. What killed the gradient wasn''t the number of steps but that each step multiplied it by the same $\mathbf{W}_{hh}^{\top}$; on the additive path the step multiplies it by $f_{t,j}$, one scalar per coordinate, and the product $\prod_t f_{t,j}$ stays wherever the network wants to leave it. (b) inverts what you already saw in the explorable in <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion>: $\sigma$ does saturate, and here that works in its favour, since an $\mathbf{f}_t$ saturated at $1$ is a memory that is kept. (c) confuses size with structure: quadrupling the weights of a vanilla RNN changes nothing about the product from the previous lesson. (d) is false: $\mathbf{c}_t$ reaches the loss through $\mathbf{h}_t = \mathbf{o}_t \odot \tanh(\mathbf{c}_t)$, and that is precisely where the gradient that then travels backwards comes in.'
+    hint: 'Write down what multiplies $\mathbf{c}_{t-1}$ in the cell''s recurrence, and compare it with what multiplied $\boldsymbol{\delta}_{t+1}$ in the RNN.'
+  - id: q-que-compuerta
+    type: single
+    prompt: 'One coordinate of the cell state stores that the subject of the sentence was plural. It has to be kept through a whole relative clause, but without governing the network''s answer at those intermediate positions. What do that coordinate''s gates do while the relative clause lasts?'
+    options:
+      - { id: a, text: '$f_{t}$ close to $1$ so that the plural survives, $i_{t}$ close to $0$ so that nothing overwrites it, and $o_{t}$ close to $0$ so that the rest of the network doesn''t see it yet.' }
+      - { id: b, text: '$f_{t}$ close to $0$, because keeping means letting nothing new in, and $i_{t}$ close to $1$ to rewrite the plural at every step.' }
+      - { id: c, text: 'All three close to $1$: if something has to be kept, everything has to be open.' }
+      - { id: d, text: 'None is needed: as long as nothing writes to that coordinate, the cell keeps its value on its own.' }
+    answer: a
+    explanation: '(a) splits the three jobs among the three gates, which is what they are there for: $\mathbf{f}_t$ decides what is kept, $\mathbf{i}_t$ what is written and $\mathbf{o}_t$ what comes out. (b) turns the forget gate the wrong way round ($f_{t,j} = 0$ multiplies the coordinate by zero, that is, erases it) and confuses writing with storing. (c) is the one that looks most like a reasonable answer, and it fails on the third gate: with $o_{t}$ open, the plural enters $\mathbf{h}_t$ and therefore the answer at those intermediate positions, which is exactly what the prompt asks to avoid. (d) describes the pure additive version, with no gates, and for that very reason it can''t tell that coordinate apart from the ones that do need rewriting as the sentence goes on.'
+  - id: q-parametros
+    type: numeric
+    prompt: 'An LSTM with a state of $d_h = 64$ coordinates over embeddings of $d_{\text{model}} = 128$. How many weights do its eight matrices and four biases add up to?'
+    answer: 49408
+    tolerance: 0
+    explanation: 'Each of the four pieces ($\mathbf{f}_t$, $\mathbf{i}_t$, $\mathbf{o}_t$ and $\tilde{\mathbf{c}}_t$) has exactly the shape of the recurrence in <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>: $64 \cdot 64 = 4\,096$ from its $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ from its $\mathbf{W}_{x\ast}$ and $64$ from the bias, which makes $12\,352$. Four times that gives $49\,408$, and that is the price of the gates: the same count as there, multiplied by four. What doesn''t change is what mattered in that count (here too, $T$ appears nowhere), so the LSTM still reads any length with the same set of weights.'
+    hint: 'Count a single one of the four pieces first: it is the same recurrence as in <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>.'
+  - id: q-que-no-arregla
+    type: multi
+    prompt: 'Tick everything the LSTM does *not* guarantee.'
+    options:
+      - { id: a, text: 'That the gradient never vanishes: if the network learns $f_{t,j}$ around $0.7$, that coordinate''s product sinks all the same, only because the network has decided so and not because the architecture imposes it.' }
+      - { id: b, text: 'That the gradient doesn''t explode: through the gates and through the $\mathbf{W}_{h\ast}$ matrices there are still multiplicative paths, so the gradient clipping from the previous lesson is still used.' }
+      - { id: c, text: 'That the network reads sequences of any length without truncating or padding.' }
+      - { id: d, text: 'That the weights are shared across positions.' }
+    answer: [a, b]
+    explanation: '(a) and (b) are the two concessions, and saying them out loud is part of understanding what has been bought: the additive path makes a factor of $1$ per step *reachable*, not compulsory, and it isn''t the only path the backward pass can take through the network. That''s why LSTMs are trained with gradient clipping, the same as RNNs. (c) and (d) are guaranteed, and they are to the credit not of the gates but of the recurrence the LSTM inherits from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>: none of the shapes of its twelve weight arrays mentions $T$, and there is a single set of weights for every position.'
+    hint: 'Two of the four statements are properties of any recurrence, and the vanilla RNN already comes with them.'
+challenges:
+  - id: ch-lstm-paso
+    prompt: |
+      Write one LSTM step: `lstm_step(h, c, x, P)` takes the previous hidden state and cell
+      state, the vector of the current token, and a dictionary `P` with the weights of the
+      four pieces (`P["f"]`, `P["i"]`, `P["o"]` and `P["c"]`, each one the triple
+      `(Wx, Wh, b)`). It returns the pair `(h_new, c_new)`, in that order.
+
+      All four are computed the same way, $\mathbf{W}_{x\ast}\mathbf{x}_t + \mathbf{W}_{h\ast}\mathbf{h}_{t-1} + \mathbf{b}_{\ast}$;
+      the only thing that changes is the activation: $\sigma$ for the three gates, $\tanh$ for the
+      candidate. Don't write into the arrays you receive.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def lstm_step(h, c, x, P):
+          # your code here
+          pass
+    tests:
+      - name: "it returns both states, as wide as the state"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "fioc"}
+          h, c, x = rng.normal(size=4), rng.normal(size=4), rng.normal(size=3)
+          out = lstm_step(h, c, x, P)
+          assert out is not None, 'lstm_step has to return (h_new, c_new), not print them'
+          h1, c1 = out
+          assert np.asarray(h1).shape == (4,) and np.asarray(c1).shape == (4,), 'both states have d_h coordinates'
+      - name: "an open forget gate and a closed input gate keep the cell"
+        code: |
+          import numpy as np
+          biases = {"f": 40.0, "i": -40.0, "o": 0.0, "c": 0.0}
+          P = {k: (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, b)) for k, b in biases.items()}
+          c = np.array([0.7, -0.2, 1.5, 0.0])
+          h1, c1 = lstm_step(np.zeros(4), c, np.zeros(3), P)
+          assert np.allclose(c1, c, atol=1e-8), 'with f = 1 and i = 0 the cell has to come out untouched: c_t = f (*) c_{t-1} + i (*) candidate'
+      - name: "a closed forget gate erases what came before"
+        code: |
+          import numpy as np
+          biases = {"f": -40.0, "i": 0.0, "o": 0.0, "c": 0.0}
+          P = {k: (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, b)) for k, b in biases.items()}
+          _, a = lstm_step(np.zeros(4), np.array([0.7, -0.2, 1.5, 0.0]), np.zeros(3), P)
+          _, b = lstm_step(np.zeros(4), np.array([-3.0, 9.0, 0.1, 2.0]), np.zeros(3), P)
+          assert np.allclose(a, b, atol=1e-8), 'with f = 0 the previous cell state cannot influence the new one'
+      - name: "the hidden state leaves the cell through the output gate"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(11)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "fioc"}
+          h, c, x = rng.normal(size=4), rng.normal(size=4), rng.normal(size=3)
+          h1, c1 = lstm_step(h, c, x, P)
+          Wx, Wh, b = P["o"]
+          o = 1.0 / (1.0 + np.exp(-(Wx @ x + Wh @ h + b)))
+          assert np.allclose(h1, o * np.tanh(c1)), 'h_t = o_t (*) tanh(c_t), and with the NEW cell, not the previous one'
+      - name: "it doesn't write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "fioc"}
+          h, c, x = rng.normal(size=4), rng.normal(size=4), rng.normal(size=3)
+          copies = [h.copy(), c.copy(), x.copy()]
+          lstm_step(h, c, x, P)
+          assert all(np.array_equal(u, v) for u, v in zip([h, c, x], copies)), "don't write into the arrays you receive"
+    solution: |
+      import numpy as np
+
+
+      def lstm_step(h, c, x, P):
+          def pre(k):
+              Wx, Wh, b = P[k]
+              return Wx @ x + Wh @ h + b
+
+          def sigmoid(z):
+              return 1.0 / (1.0 + np.exp(-z))
+
+          f, i, o = sigmoid(pre("f")), sigmoid(pre("i")), sigmoid(pre("o"))
+          c_new = f * c + i * np.tanh(pre("c"))
+          return o * np.tanh(c_new), c_new
+    explanation: |
+      The four pieces share the shape of their argument, so `pre` writes it once and the four
+      calls differ only in the key and the activation. What the solution has to respect is two
+      orderings. The cell state is updated *before* the hidden one, because
+      $\mathbf{h}_t = \mathbf{o}_t \odot \tanh(\mathbf{c}_t)$ reads the new cell and not the old
+      one: using `c` in that last line passes the first three tests and fails the fourth. And the
+      four pieces are computed with the $\mathbf{h}_{t-1}$ that came in, not with the one about to
+      be returned: that's why `pre` closes over `h` and `c_new` is kept in a variable of its own
+      instead of overwriting `c`, which is also what keeps the received arrays untouched.
+reading:
+  - kind: paper
+    title: 'Long Short-Term Memory'
+    authors: 'Hochreiter and Schmidhuber'
+    year: '1997'
+    venue: 'Neural Computation 9(8)'
+    lang: en
+    url: 'https://www.bioinf.jku.at/publications/older/2604.pdf'
+    note: 'The paper that introduced it. It has the cell state and the constant error flow that runs through it, your additive path, but only input and output gates: the forget gate was added by Gers, Schmidhuber and Cummins in 2000.'
+  - kind: blog
+    title: 'Understanding LSTM Networks'
+    authors: 'Christopher Olah'
+    year: '2015'
+    venue: 'colah.github.io'
+    lang: en
+    url: 'https://colah.github.io/posts/2015-08-Understanding-LSTMs/'
+    note: 'Diagrams of the three gates and of the cell state as a "conveyor belt" (this lesson''s figure), with the GRU presented along the way. It says why the additive path helps the gradient but doesn''t derive it; you have done that.'
+  - kind: paper
+    title: 'LSTM: A Search Space Odyssey'
+    authors: 'Greff, Srivastava, Koutník, Steunebrink and Schmidhuber'
+    year: '2017'
+    venue: 'arXiv:1503.04069'
+    lang: en
+    url: 'https://arxiv.org/abs/1503.04069'
+    note: 'Eight LSTM variants over 5,400 training runs: what really matters is the forget gate and the output activation; coupling input and forget, which the GRU will do, barely changes anything. No variant beats the standard one.'
+---
+
+{/* COURSE-P5-03 — Block 3, Lesson 5. COURSE-P11-06 — English translation. */}
+
+The previous lesson, on the vanishing gradient, closed with a diagnosis and a direction. The
+diagnosis: as long as every step of the backward pass crosses the same matrix, the result is a power
+of the distance. The direction: a state that advances as a running sum, and the network that carries
+one, the long short-term memory (LSTM). Naming it isn't building it. A memory that only adds has a
+defect as serious as the one it fixes, which is that it never erases anything. What's left is the
+hard part: deciding, step by step, what is kept, what is written on top, and how much of what is
+stored is let out.
+
+An ordinary sentence shows that these are three decisions and not one. Take <W>The cameras that the
+mayor installed in the square last year are broken</W>. To write <W>are</W> and not <W>is</W>, the
+network has to carry the plural of <W>cameras</W> ten positions, without <W>mayor</W> or
+<W>square</W> (both singular, both closer) overwriting it on the way. Carrying it intact is one
+thing; putting it into memory when <W>cameras</W> appears, and not at every word that goes by, is
+another; and keeping it stored through those ten positions *without* it governing what the network
+answers at the ones in between is a third. The vanilla recurrent neural network (RNN) does all three
+with the same move, because it only has one: rewriting $\mathbf{h}_t$ whole at every step. That's
+why it can't do any of them well.
+
+Separating the three jobs starts with separating the two states. Beside the $\mathbf{h}_t$ you
+already know, a second vector appears, the **cell state** $\mathbf{c}_t \in \mathbb{R}^{d_h}$, which
+is the memory proper, and the way it moves forward is the only truly new thing in this lesson.
+Everything else in the LSTM exists to govern that vector.
+
+<Callout type="intuition" title="The idea in one sentence">
+The LSTM splits in two what the RNN kept together: a memory that crosses the sequence by adding to
+itself, and three gates (numbers between $0$ and $1$ that the network computes at every step) that
+decide what of that memory is kept, what is written into it, and what comes out of it towards the
+rest of the network.
+</Callout>
+
+## Three gates, each for a failure of the version before
+
+Let's start from the additive path on its own and add what it lacks as we go. Call the
+**candidate** the vector that step $t$ proposes to store, an ordinary layer computed from the token
+and the previous state:
+
+$$
+\tilde{\mathbf{c}}_t = \tanh\left(\mathbf{W}_{xc}\mathbf{x}_t + \mathbf{W}_{hc}\mathbf{h}_{t-1} + \mathbf{b}_c\right) \in \mathbb{R}^{d_h},
+$$
+
+and let the memory accumulate it: $\mathbf{c}_t = \mathbf{c}_{t-1} + \tilde{\mathbf{c}}_t$. For the
+gradient this is perfect: the derivative of $\mathbf{c}_t$ with respect to $\mathbf{c}_{t-1}$ is the
+identity, with no matrix to apply $d$ times. And as a memory it's useless, for two reasons. It never
+forgets: what went into coordinate 3 when reading <W>cameras</W> is still there three hundred tokens
+later, in a paragraph about something else. And it grows without a brake: each term lives in
+$(-1, 1)$ and $T$ of them are added, so a coordinate can end up at $40$, where the $\tanh$ reading it
+is flat. That's the saturation the explorable in <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion> already let you see.
+
+The two failures are one: the sum has no way of saying *no*. Give it one with a factor per
+coordinate, between $0$ and $1$, that the network computes at every step from what it is reading.
+That's the **forget gate**:
+
+$$
+\mathbf{f}_t = \sigma\left(\mathbf{W}_{xf}\mathbf{x}_t + \mathbf{W}_{hf}\mathbf{h}_{t-1} + \mathbf{b}_f\right) \in (0,1)^{d_h},
+\qquad
+\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \tilde{\mathbf{c}}_t.
+$$
+
+The activation is the logistic sigmoid and not the candidate's $\tanh$, for the same reason as the
+output layer in <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>: what's needed is a fraction of what was there, and fractions run
+from $0$ to $1$. The $\odot$ deserves the same slow reading. Multiplying coordinate by coordinate
+lets coordinate 3 be kept whole while coordinate 7 is erased in the same step; a matrix would mix the
+two, and mixing is the last thing a memory wants.
+
+That leaves the other side. This version writes $\tilde{\mathbf{c}}_t$ at *every* step, whatever the
+token is worth: <W>that</W> and <W>the</W> write as much as <W>cameras</W>, and what has been written
+can only be undone by closing $\mathbf{f}_t$, which also erases whatever that coordinate was holding
+from before. Putting a condition on writing takes another factor like it, the **input gate**:
+
+$$
+\mathbf{i}_t = \sigma\left(\mathbf{W}_{xi}\mathbf{x}_t + \mathbf{W}_{hi}\mathbf{h}_{t-1} + \mathbf{b}_i\right),
+\qquad
+\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t.
+$$
+
+And it remains to say what the rest of the network sees. If the hidden state were
+$\mathbf{h}_t = \tanh(\mathbf{c}_t)$ (all of the memory, always), the plural of <W>cameras</W> would
+govern the answer throughout those ten positions, when what's needed is for it to wait. Keeping
+something *for later* and not using it *now* are two different things, so there is a third gate, the
+**output gate**, and with it the hidden state is a partial view of the memory:
+
+$$
+\mathbf{o}_t = \sigma\left(\mathbf{W}_{xo}\mathbf{x}_t + \mathbf{W}_{ho}\mathbf{h}_{t-1} + \mathbf{b}_o\right),
+\qquad
+\mathbf{h}_t = \mathbf{o}_t \odot \tanh\left(\mathbf{c}_t\right).
+$$
+
+That's what the vanilla RNN couldn't do: its $\mathbf{h}_t$ had two jobs at once, remembering and
+showing; the LSTM splits them, and $\mathbf{c}_t$ remembers while $\mathbf{h}_t$ shows.
+
+With the four pieces together (three gates and a candidate) the full step looks like this, with
+$\mathbf{h}_0 = \mathbf{c}_0 = \mathbf{0}$ for the same reason as in the RNN:
+
+$$
+\begin{aligned}
+\mathbf{f}_t &= \sigma\left(\mathbf{W}_{xf}\mathbf{x}_t + \mathbf{W}_{hf}\mathbf{h}_{t-1} + \mathbf{b}_f\right), &
+\mathbf{i}_t &= \sigma\left(\mathbf{W}_{xi}\mathbf{x}_t + \mathbf{W}_{hi}\mathbf{h}_{t-1} + \mathbf{b}_i\right), \\
+\mathbf{o}_t &= \sigma\left(\mathbf{W}_{xo}\mathbf{x}_t + \mathbf{W}_{ho}\mathbf{h}_{t-1} + \mathbf{b}_o\right), &
+\tilde{\mathbf{c}}_t &= \tanh\left(\mathbf{W}_{xc}\mathbf{x}_t + \mathbf{W}_{hc}\mathbf{h}_{t-1} + \mathbf{b}_c\right), \\
+\mathbf{c}_t &= \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t, &
+\mathbf{h}_t &= \mathbf{o}_t \odot \tanh\left(\mathbf{c}_t\right).
+\end{aligned}
+$$
+
+<Figure
+  src="/courses/dl-nlp/lstm-celda.svg"
+  alt="One step of an LSTM. A green line, the cell state's, runs across the top from side to side and meets only two circles on its way: one for a product and one for a sum. Below it, four small boxes labelled f, i, c with a tilde, and o, all fed by the same dotted line, which collects the previous hidden state and the token's vector. Box f rises to the product circle on the top line; i and c with a tilde first meet in another product circle, below the line, and only what comes out of it rises to the sum. On the right, a green branch drops from the top line, passes through a tanh and meets box o in a third product circle, which gives out the only line labelled as the new hidden state. No line joins the previous hidden state to the new one."
+  caption="The six lines above, drawn: the cell state crosses the step from side to side without being multiplied by any matrix; one gate scales it and another doses what is added to it. That's the path along which the gradient will be able to come back, and the hidden state hangs off it instead of replacing it."
+/>
+
+Four identical lines and two that aren't. The top ones are the recurrence from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>
+copied four times, with $\mathbf{W}_{x\ast} \in \mathbb{R}^{d_h \times d_{\text{model}}}$,
+$\mathbf{W}_{h\ast} \in \mathbb{R}^{d_h \times d_h}$ and $\mathbf{b}_{\ast} \in \mathbb{R}^{d_h}$ in
+all of them, and there's the price: the LSTM costs
+$4\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$ weights, four times the vanilla RNN.
+What it doesn't cost is length: here too, $T$ appears in no shape.
+
+## Why the gradient survives the additive path
+
+That the cell "adds" has been said three times now; it's time to cash it in. Look at the
+second-to-last line coordinate by coordinate, which is where what the $\odot$ means becomes visible:
+
+$$
+c_{t,j} = f_{t,j}\,c_{t-1,j} + i_{t,j}\,\tilde{c}_{t,j}.
+$$
+
+Coordinate $j$ of the new cell depends on coordinate $j$ of the old one and on no other: along this
+path the coordinates don't mix, because there is no matrix to mix them. Differentiating, and holding
+the gates still (I'll come back to this), the direct path from one step to the previous one is worth
+
+$$
+\frac{\partial c_{t,j}}{\partial c_{t-1,j}} = f_{t,j},
+$$
+
+a number, not a matrix. Chain it from the end back to a distant step $k$, the way the previous lesson
+chained the backward recurrence, and what reaches the cell at $k$ along that path is
+
+$$
+\frac{\partial \ell}{\partial c_{k,j}} = \left(\prod_{t=k+1}^{T} f_{t,j}\right)\frac{\partial \ell}{\partial c_{T,j}} + \left(\text{what comes in through the gates}\right).
+$$
+
+Set it beside the previous lesson's $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ and count the
+differences. There are three. The base is no longer a property of a matrix shared by everything, but
+a number per coordinate and per step that the network *computes* from what it is reading. Along this
+path there's no $\tanh$ mask biting at every step either (no $\gamma \le 1$ that can only make things
+worse), because the cell crosses the step with a product and a sum and nothing else. And the third
+clinches it: $f_{t,j} = 1$ is reachable and stable as well, because a saturated sigmoid stays at $1$
+with almost zero slope, so a coordinate the network learns to keep open multiplies by $1$ as many
+times as needed. The RNN's $\rho = 1$ was a knife-edge shared by every coordinate; this is a decision
+each coordinate makes.
+
+<Details summary='See what "holding the gates still" left out'>
+$\mathbf{f}_t$, $\mathbf{i}_t$ and $\tilde{\mathbf{c}}_t$ are computed from $\mathbf{h}_{t-1}$, and
+$\mathbf{h}_{t-1} = \mathbf{o}_{t-1} \odot \tanh(\mathbf{c}_{t-1})$ depends on $\mathbf{c}_{t-1}$. So
+the full derivative adds, to the $f_{t,j}$ above, the paths that go through the three gates and
+through the candidate, and every one of them crosses a $\mathbf{W}_{h\ast}$ and an activation mask:
+they behave like the ones in the previous lesson, and they vanish the same way.
+
+That they vanish breaks nothing, and that's the part worth thinking about. Those paths adjust *how
+the decision is made* at each step, and a decision at this step is made with what is nearby; the one
+that has to arrive from far away is the additive path's, and that one crosses no matrix. The LSTM
+doesn't eliminate the previous lesson's product: it moves it off the long path and leaves it on the
+short ones.
+</Details>
+
+Two concessions close the account, because without them this reads as a guarantee. If the network
+learns $f_{t,j}$ around $0.7$, the product sinks as it did before; the difference is that it sinks
+because the network decided so and not because the architecture imposes it. And explosion is still
+possible along the paths in the box above, so the previous lesson's gradient clipping is still used
+as it was.
+
+## The LSTM, step by step, in NumPy
+
+Two cells. The first transcribes the six-line block and runs it on a short sequence; the second
+measures what survives of a nudge given at the start of a long one.
+
+I take the weights from a generator with a fixed seed, and they aren't trained, so the gates don't
+mean anything yet. What I did set by hand is the forget gate's bias, and the cell runs it with two
+different values: it's the shortest way to see that $\mathbf{b}_f$ decides how much the network
+remembers *before* it learns anything. Look at the last line of each block.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+d_model, d_h, T = 4, 3, 6
+X = np.random.default_rng(1).normal(size=(T, d_model)) * 0.5
+
+
+def sigmoid(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def weights(forget_bias):
+    rng = np.random.default_rng(0)                 # the same weights in both cases
+    return {k: (rng.normal(size=(d_h, d_model)) * 0.5,
+                rng.normal(size=(d_h, d_h)) * 0.5,
+                np.full(d_h, b))
+            for k, b in [("f", forget_bias), ("i", 0.0), ("o", 0.0), ("c", 0.0)]}
+
+
+def step(P, h, c, x):
+    def pre(k):
+        Wx, Wh, b = P[k]
+        return Wx @ x + Wh @ h + b
+    f, i, o = sigmoid(pre("f")), sigmoid(pre("i")), sigmoid(pre("o"))
+    c = f * c + i * np.tanh(pre("c"))              # the additive path, in one line
+    return o * np.tanh(c), c, f, i, o
+
+
+for bias in [1.0, 3.0]:
+    P = weights(bias)
+    h, c, forgets = np.zeros(d_h), np.zeros(d_h), []
+    print("b_f = %.0f" % bias)
+    print("  t      f_t              i_t              o_t              c_t")
+    for t, x in enumerate(X, 1):
+        h, c, f, i, o = step(P, h, c, x)
+        forgets.append(f)
+        print("  %d  %s %s %s %s" % (t, np.round(f, 2), np.round(i, 2),
+                                     np.round(o, 2), np.round(c, 2)))
+    print("  what survives of c_1 in c_6:", np.round(np.prod(forgets[1:], axis=0), 3))
+`} />
+
+The three gates live in $(0,1)$ and none of them is the same in any two coordinates, which is all the
+formula promised. Now compare the two blocks. With $\mathbf{b}_f = 1$ the forget gate moves around
+$0.7$ and about $20\%$ of $\mathbf{c}_1$ reaches $\mathbf{c}_6$; with $\mathbf{b}_f = 3$ it hovers
+near $0.95$ and $78\%$ gets through, with the same weights and the same sequence. Five steps are
+enough for a bias to separate a memory from a sieve, hence the habit of initialising $\mathbf{b}_f$
+positive: it's cheaper for the network to learn to forget than to learn to remember. The first row of
+$\mathbf{c}_t$, on the other hand, is identical in the two: at $t = 1$ the gate multiplies
+$\mathbf{c}_0 = \mathbf{0}$.
+
+Try that same bias yourself. In the explorable below you move $\mathbf{b}_f$ by hand and watch every
+coordinate over another six-step sequence, with one more row, the product the previous section
+derived, $\prod_{t=k+1}^{T} f_{t,j}$: what survives of $\mathbf{c}_1$ at each step that follows. The
+hidden state $\mathbf{h}_t$ stays out of view again, as in the cell above: what matters is the
+additive path of $\mathbf{c}_t$.
+
+<Explorable
+  id="lstm-gates"
+  caption="Raise the forget-gate bias and the gate opens towards 1; step through the sequence and watch the last row, what survives of c₁. With a high bias the memory is kept almost whole; with a low one it leaks away to almost nothing, with the same weights and the same sequence."
+/>
+
+The second cell measures the backward pass without differentiating anything: it moves the state of
+the first step by a tiny amount, lets thirty-nine more steps run and compares. It's the numerical
+probe from <Leccion slug="bptt">the lesson on backpropagation through time (BPTT)</Leccion>, applied to a distance instead of a weight. The
+gates in this toy read only the token (I disconnected the state by hand) so as to measure the
+additive path and nothing else.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T, eps = 40, 1e-6
+X = np.random.default_rng(2).normal(size=T) * 0.5   # one coordinate, T steps
+
+
+def sigmoid(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def rnn(nudge):                                     # h_t = tanh(w h_{t-1} + u x_t)
+    h = 0.0
+    for t, x in enumerate(X):
+        h = np.tanh(0.9 * h + 0.5 * x)
+        if t == 0:
+            h += nudge                              # nudge the state of step 1
+    return h
+
+
+def lstm(nudge, b_f):                               # c_t = f_t c_{t-1} + i_t c~_t
+    c = 0.0
+    for t, x in enumerate(X):
+        c = sigmoid(0.5 * x + b_f) * c + sigmoid(0.5 * x) * np.tanh(0.5 * x)
+        if t == 0:
+            c += nudge                              # nudge the cell of step 1
+    return c
+
+
+print("of a nudge given at step 1, how much is left 39 steps later:")
+print("  RNN,  w   = 0.9     %.2e" % abs((rnn(eps) - rnn(0.0)) / eps))
+for b_f in [0.0, 3.0, 5.0]:
+    q = abs((lstm(eps, b_f) - lstm(0.0, b_f)) / eps)
+    print("  LSTM, b_f = %.0f       %.2e   (f_t around %.3f)" % (b_f, q, sigmoid(b_f)))
+`} />
+
+Four numbers and three readings. From the RNN, $1.1 \times 10^{-3}$ arrives: the matrix accounts for
+$0.9^{39} \approx 0.016$ and the $\tanh$ mask for the rest (an order of magnitude), that
+$\gamma \le 1$ the previous lesson said could only make things worse. The second line is the LSTM
+coming out *worse* than the RNN: with $\mathbf{b}_f = 0$ the gate hovers around $0.5$, and thirty-nine
+factors like that leave about $0.5^{39} \approx 2 \times 10^{-12}$ of the nudge, too little for
+floating-point arithmetic to register, so the line prints a flat zero. The memory is worse than the
+one it came to fix. The additive path is no free
+gift; it only makes reachable what wasn't reachable in the RNN. The last two lines are that
+"reachable": with the gate at $0.95$, $14\%$ survives, and with it at $0.993$, $76\%$, at the distance
+where the RNN had three zeros after the point.
+
+## Test your intuition
+
+Four questions: why the additive path changes the product, what each gate does in a specific case,
+how much the architecture costs, and what the LSTM still doesn't guarantee.
+
+<Quiz id="q-por-que-sobrevive" />
+
+<Quiz id="q-que-compuerta" />
+
+<Quiz id="q-parametros" />
+
+<Quiz id="q-que-no-arregla" />
+
+And the full step, written by you, which is the piece everything that follows is built on.
+
+<CodeChallenge id="ch-lstm-paso" />
+
+---
+
+The LSTM solves the previous lesson's problem and charges a price the weight count only half tells.
+Eight matrices, two states to carry and three gates to tune: each piece arrived here fixing a specific
+failure, yes, but none with a proof that it was needed. And at least one of them is open to
+suspicion. The input gate decides how much is written at the very moment the forget gate has decided
+how much is kept, and the two questions are one question seen from its two sides: if you're going to
+store the new, it's because the old matters less to you.
+
+Someone pulled on that thread. Merging those two gates into one, deleting the output gate along with
+the whole cell state, and keeping three quarters of the weights (while holding on to almost
+everything this lesson has bought) is <Leccion slug="gru">the next lesson, on the gated recurrent unit (GRU): the
+simplified version</Leccion>.

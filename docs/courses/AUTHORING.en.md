@@ -146,6 +146,12 @@ claim is absurd again, and check any asset with the old order set into it.
 the language label is the same translated-material tell as tokenising the wrong language, so §3 cuts
 it rather than carrying it across. *Settled by `en/11-xor-y-capas-ocultas.mdx` (COURSE-P11-05).*
 
+**An agreement example's singular nouns have no plural reading.** en-GB lets a collective noun take a
+plural verb (*the council are*), so *council*, *team* or *government* cannot be the singular noun a
+plural subject has to survive: the contrast the example rests on is gone for the reader who hears it
+plural. Pick a noun that is only ever singular (*mayor*, *square*). *Settled by `en/23-lstm.mdx`
+(COURSE-P11-06).*
+
 ## 4. §2 — capitalisation of blocks and lessons
 
 The rule that is not in §5. `AUTHORING.md` §2 keeps *el bloque 2* and *la lección 3* lowercase
