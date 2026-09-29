@@ -39,14 +39,14 @@ quiz:
     hint: 'Cuenta primero una sola de las cuatro piezas: es la misma recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>.'
   - id: q-que-no-arregla
     type: multi
-    prompt: 'Marca todo lo que la LSTM **no** garantiza.'
+    prompt: 'Marca todo lo que la LSTM *no* garantiza.'
     options:
       - { id: a, text: 'Que el gradiente no se desvanezca nunca: si la red aprende $f_{t,j}$ alrededor de $0.7$, el producto de esa coordenada se hunde igual, sólo que porque la red lo ha decidido y no porque la arquitectura lo imponga.' }
       - { id: b, text: 'Que el gradiente no explote: por las compuertas y por las matrices $\mathbf{W}_{h\ast}$ sigue habiendo caminos multiplicativos, así que el recorte del gradiente de la lección anterior se sigue usando.' }
       - { id: c, text: 'Que la red lea secuencias de cualquier longitud sin truncar ni rellenar.' }
       - { id: d, text: 'Que los pesos se compartan entre posiciones.' }
     answer: [a, b]
-    explanation: 'La (a) y la (b) son las dos concesiones, y decirlas en voz alta es parte de entender qué se ha comprado: la vía aditiva hace **alcanzable** un factor de $1$ por paso, no obligatorio, y no es el único camino de vuelta que tiene la red. Por eso las LSTM se entrenan con recorte del gradiente igual que las RNN. La (c) y la (d) sí están garantizadas, y no son mérito de las compuertas sino de la recurrencia que la LSTM hereda de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: ninguna de las formas de sus doce piezas menciona $T$, y hay un solo juego de pesos para todas las posiciones.'
+    explanation: 'La (a) y la (b) son las dos concesiones, y decirlas en voz alta es parte de entender qué se ha comprado: la vía aditiva hace *alcanzable* un factor de $1$ por paso, no obligatorio, y no es el único camino de vuelta que tiene la red. Por eso las LSTM se entrenan con recorte del gradiente igual que las RNN. La (c) y la (d) sí están garantizadas, y no son mérito de las compuertas sino de la recurrencia que la LSTM hereda de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: ninguna de las formas de sus doce piezas menciona $T$, y hay un solo juego de pesos para todas las posiciones.'
     hint: 'Dos de las cuatro afirmaciones son propiedades de cualquier recurrencia, y las trae la RNN vanilla de serie.'
 challenges:
   - id: ch-lstm-paso
@@ -134,7 +134,7 @@ challenges:
     explanation: |
       Las cuatro piezas comparten la forma del argumento, así que `entra` la escribe una vez y las
       cuatro llamadas sólo se diferencian en la clave y en la activación. Lo que la solución tiene
-      que respetar son dos órdenes. El estado de celda se actualiza **antes** que el oculto, porque
+      que respetar son dos órdenes. El estado de celda se actualiza *antes* que el oculto, porque
       $\mathbf{h}_t = \mathbf{o}_t \odot \tanh(\mathbf{c}_t)$ lee la celda nueva y no la vieja: usar
       `c` en esa última línea pasa los tres primeros tests y falla el cuarto. Y las cuatro piezas se
       calculan con el $\mathbf{h}_{t-1}$ que entró, no con el que se va a devolver: por eso `entra`
@@ -182,7 +182,7 @@ ayuntamiento instaló el año pasado en la plaza no funcionan</W>. Para conjugar
 que arrastrar el plural de <W>cámaras</W> doce posiciones, sin que <W>ayuntamiento</W> ni <W>plaza</W>
 (los dos en singular, los dos más cerca) lo pisen por el camino. Arrastrarlo intacto es una cosa;
 meterlo en la memoria cuando aparece <W>cámaras</W> y no en cada palabra que pasa es otra; y tenerlo
-guardado durante esas doce posiciones **sin** que gobierne lo que la red responde en ellas es una
+guardado durante esas doce posiciones *sin* que gobierne lo que la red responde en ellas es una
 tercera. La RNN (*recurrent neural network*) vanilla hace las tres con el mismo movimiento, porque sólo
 tiene uno: reescribir entero $\mathbf{h}_t$ en cada paso. Por eso no puede hacer ninguna bien.
 
@@ -230,7 +230,7 @@ de $0$ a $1$. El $\odot$ pide leerse igual de despacio. Multiplicar coordenada a
 la 3 se conserve entera mientras la 7 se borra en el mismo paso; una matriz mezclaría las dos, y
 mezclar es lo que menos le conviene a una memoria.
 
-Queda el otro lado. Esta versión escribe $\tilde{\mathbf{c}}_t$ en **cada** paso, valga lo que valga
+Queda el otro lado. Esta versión escribe $\tilde{\mathbf{c}}_t$ en *cada* paso, valga lo que valga
 el token: <W>que</W> y <W>del</W> escriben tanto como <W>cámaras</W>, y lo escrito sólo se deshace
 cerrando $\mathbf{f}_t$, que borra de paso lo que esa coordenada guardara de antes. Poner una
 condición a la escritura pide otro factor igual, la **compuerta de entrada**:
@@ -309,7 +309,7 @@ $$
 
 Ponlo al lado del $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ de la lección anterior y cuenta las
 diferencias, que son tres. La base ya no es una propiedad de una matriz compartida por todo, sino un
-número por coordenada y por paso que la red **calcula** a partir de lo que está leyendo. Por esta vía
+número por coordenada y por paso que la red *calcula* a partir de lo que está leyendo. Por esta vía
 tampoco hay máscara de la $\tanh$ que muerda en cada paso (ningún $\gamma \le 1$ que sólo pueda empeorar
 las cosas), porque la celda cruza el paso con un producto y una suma y nada más. Y la tercera remata:
 $f_{t,j} = 1$ es alcanzable y además estable, porque una sigmoide saturada se queda en $1$ con
@@ -389,7 +389,7 @@ for sesgo in [1.0, 3.0]:
 
 Las tres compuertas viven en $(0,1)$ y ninguna vale lo mismo en dos coordenadas, que es todo lo que la
 fórmula prometía. Compara ahora los dos bloques. Con $\mathbf{b}_f = 1$ la de olvido se mueve
-alrededor de $0.7$ y de $\mathbf{c}_1$ llega a $\mathbf{c}_6$ un $20\,\%$ escaso; con
+alrededor de $0.7$ y de $\mathbf{c}_1$ llega a $\mathbf{c}_6$ en torno a un $20\,\%$; con
 $\mathbf{b}_f = 3$ ronda $0.95$ y llega un $78\,\%$, con los mismos pesos y la misma frase. Cinco
 pasos bastan para que un sesgo separe una memoria de un colador, y de ahí la costumbre de inicializar
 $\mathbf{b}_f$ positivo: sale más barato que la red aprenda a olvidar que aprenda a recordar. La
@@ -450,9 +450,11 @@ for b_f in [0.0, 3.0, 5.0]:
 
 Cuatro números y tres lecturas. De la RNN llega $1.1 \times 10^{-3}$: $0.9^{39} \approx 0.016$
 lo pone la matriz y el resto (un orden de magnitud) la máscara de la $\tanh$, ese $\gamma \le 1$ que la
-lección anterior dijo que sólo podía empeorar las cosas. La segunda línea es la LSTM saliendo **peor**
-que la RNN: con $\mathbf{b}_f = 0$ la compuerta ronda $0.5$, el producto cae a $10^{-11}$ y la
-memoria es peor que la que venía a arreglar. La vía aditiva no regala nada, sólo hace alcanzable lo
+lección anterior dijo que sólo podía empeorar las cosas. La segunda línea es la LSTM saliendo *peor*
+que la RNN: con $\mathbf{b}_f = 0$ la compuerta ronda $0.5$, y treinta y nueve factores así dejan
+en torno a $0.5^{39} \approx 2 \times 10^{-12}$ del empujón, demasiado poco para que la aritmética de
+coma flotante lo registre: la línea imprime un cero rotundo. La memoria es peor que la que venía a
+arreglar. La vía aditiva no regala nada, sólo hace alcanzable lo
 que en la RNN no lo era. Las dos últimas líneas son ese «alcanzable»: con la compuerta en $0.95$
 sobrevive el $14\,\%$ y con ella en $0.993$, el $76\,\%$, a la distancia donde la RNN llevaba tres
 ceros tras el punto.
