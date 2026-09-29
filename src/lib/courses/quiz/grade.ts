@@ -38,6 +38,16 @@ export function normaliseOutput(text: string): string {
     .replace(/^\n+|\n+$/g, "");
 }
 
+/**
+ * Slack added to every numeric tolerance so the boundary the UI promises («±0.05») is
+ * inclusive on BOTH sides. Subtraction is not exact in IEEE-754: `9.46 - 9.41` is
+ * 0.05000000000000071, so a bare `<= 0.05` rejects the lower edge while accepting the
+ * upper one. Scaled by the answer's magnitude (never below 1e-9 absolute), which is
+ * orders of magnitude above subtraction noise and far below any tolerance an author
+ * would write. It is also what makes `tolerance: 0` mean "exact, up to float noise".
+ */
+const NUMERIC_SLACK = 1e-9;
+
 /** Order-insensitive, duplicate-insensitive set equality. */
 function sameSet(a: readonly string[], b: readonly string[]): boolean {
   const left = new Set(a);
@@ -93,9 +103,11 @@ export function gradeQuestion(
 
     case "numeric": {
       // Always tolerance-based, never `===`: authors write `0.3`, and a student who
-      // computed `0.1 + 0.2` (0.30000000000000004) is right.
+      // computed `0.1 + 0.2` (0.30000000000000004) is right. The slack keeps the
+      // boundary itself inclusive — see NUMERIC_SLACK.
       const value = typeof answer === "number" ? answer : Number.NaN;
-      correct = Number.isFinite(value) && Math.abs(value - question.answer) <= question.tolerance;
+      const slack = NUMERIC_SLACK * Math.max(1, Math.abs(question.answer));
+      correct = Number.isFinite(value) && Math.abs(value - question.answer) <= question.tolerance + slack;
       normalised = Number.isFinite(value) ? value : null;
       break;
     }
