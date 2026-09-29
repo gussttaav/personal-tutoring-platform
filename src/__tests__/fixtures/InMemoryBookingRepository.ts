@@ -5,7 +5,10 @@
 // REFACTOR-R4-P1-03: reinstateBooking. Consumed tokens are remembered per eventId, standing in
 // for the Supabase impl recomputing its deterministic HMACs; `createBookingShouldFail`
 // simulates the insert failing (e.g. the exclusion constraint).
-import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
+// REFACTOR-R4-P1-04: cancelByToken mirrors the cancel_booking RPC (flip + pack credit
+// restore in one step), so this fake crosses into InMemoryCreditsRepository: construct it
+// with that fake to cancel a pack class. `cancelByTokenShouldFail` simulates the RPC failing.
+import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type {
   BookingHistoryEntry,
   BookingHistoryPage,
@@ -16,8 +19,12 @@ import type {
 } from "@/domain/types";
 import { buildCursor } from "@/infrastructure/supabase/booking-history";
 import { randomUUID } from "crypto";
+import type { InMemoryCreditsRepository } from "./InMemoryCreditsRepository";
 
 export class InMemoryBookingRepository implements IBookingRepository {
+  // REFACTOR-R4-P1-04: only needed by tests that cancel a pack class.
+  constructor(private readonly credits?: InMemoryCreditsRepository) {}
+
   private bookings             = new Map<string, BookingRecord>();
   private cancelTokens         = new Map<string, { joinToken: string; record: BookingRecord }>();
   private joinTokens           = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
@@ -29,6 +36,8 @@ export class InMemoryBookingRepository implements IBookingRepository {
   hasBookingForPaymentShouldFail = false;
   // REFACTOR-R4-P1-03
   createBookingShouldFail        = false;
+  // REFACTOR-R4-P1-04
+  cancelByTokenShouldFail        = false;
   private consumedTokens       = new Map<string, { cancelToken: string; joinToken: string }>(); // eventId → original tokens
 
   async createBooking(
@@ -68,6 +77,45 @@ export class InMemoryBookingRepository implements IBookingRepository {
     this.consumedTokens.set(entry.record.eventId, { cancelToken: token, joinToken: entry.joinToken });
     this.statuses.set(entry.record.eventId, "cancelled");
     return true;
+  }
+
+  // REFACTOR-R4-P1-04: mirrors cancel_booking. Nothing is written before the checks pass, so
+  // a simulated failure leaves the booking confirmed and the token usable. The credits fake
+  // keeps one pack per user, so the RPC's fallback ("earliest-expiring active pack with
+  // room") can only ever be that pack — it matters for a legacy booking with no pack link.
+  async cancelByToken(token: string): Promise<CancelResult> {
+    if (this.cancelByTokenShouldFail) throw new Error("InMemoryBookingRepository: simulated RPC failure");
+    const entry = this.cancelTokens.get(token);
+    if (!entry) {
+      return { consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0 };
+    }
+    const { record } = entry;
+    const isPack = record.sessionType === "pack";
+    if (isPack && !this.credits) {
+      throw new Error("InMemoryBookingRepository: construct with the InMemoryCreditsRepository to cancel a pack class");
+    }
+
+    await this.consumeCancelToken(token);
+
+    let target: string | null = null;
+    if (isPack && this.credits) {
+      const origin = record.creditPackId ?? null;
+      if (origin && await this.credits.restoreCreditToPack(origin)) {
+        target = origin;
+      } else {
+        const fallback = this.credits.packIdOf(record.email);
+        if (fallback && fallback !== origin && await this.credits.restoreCreditToPack(fallback)) target = fallback;
+      }
+    }
+    const credits = this.credits ? (await this.credits.getCredits(record.email))?.credits ?? 0 : 0;
+
+    return {
+      consumed:        true,
+      restored:        target !== null,
+      restoredPackId:  target,
+      fromOriginating: target !== null && target === record.creditPackId,
+      credits,
+    };
   }
 
   // REFACTOR-R4-P1-03: mirrors the Supabase impl — only a 'cancelled' row comes back, and

@@ -18,14 +18,14 @@ Landing order: P1-02 → P1-01 → P1-03 → P1-04.
 | [02 Idempotency + eligibility reads fail closed](phase-1-correctness/02-idempotency-reads-fail-closed.md) | `REFACTOR-R4-P1-02` | 🟠 | ✅ | Claude | local (`claude/idempotency-reads-fail-closed-da990f`) — see Deviations; build + e2e not run |
 | [01 Server-side slot validation + `/api/book` rate limit](phase-1-correctness/01-server-side-slot-validation.md) | `REFACTOR-R4-P1-01` | 🔴 | ✅ (trimmed) | Claude | local (`refactorization`) — Calendar checks dropped at Gustavo's request, see Deviations; e2e pending |
 | [03 Reschedule keeps the original booking until the new one commits](phase-1-correctness/03-reschedule-keeps-original.md) | `REFACTOR-R4-P1-03` | 🟠 | ✅ | Claude | local (`claude/reschedule-keeps-original-f9db78`) — teardown moved after the emails, see Deviations; build + e2e not run |
-| [04 Atomic cancel, credit back to the originating pack](phase-1-correctness/04-atomic-cancel-restore-pack.md) | `REFACTOR-R4-P1-04` | 🟡 | ⬜ | _tbd_ | |
+| [04 Atomic cancel, credit back to the originating pack](phase-1-correctness/04-atomic-cancel-restore-pack.md) | `REFACTOR-R4-P1-04` | 🟡 | ✅ | Claude | local (`claude/atomic-cancel-restore-pack-f65329`). `0023` applied to the TEST DB only, see Deviations; e2e not run |
 
 **Exit criteria**
 - [x] `POST /api/book` with an off-hours start ~~, a busy slot,~~ or `endIso − startIso` ≠ the session type's length → 4xx, no calendar event, no credit spent _(P1-01; service + integration + route tests. "Busy slot" dropped with the trimmed scope)_
 - [x] Paid checkout for a mismatched duration → 4xx before any PaymentIntent exists; the webhook books `startIso + duration`, never the metadata `end_iso` _(P1-01; service + integration + route tests)_
 - [x] Forced Supabase error in any idempotency read during a duplicate webhook → 500 (Stripe retries), no refund, no second booking _(P1-02; mocked-client repository test + in-memory PaymentService tests)_
 - [x] Forced failure after the reschedule's old-token claim → the original booking is `confirmed` again with a working cancel link _(P1-03; service (mock) + integration (in-memory: calendar, booking insert, Zoom session insert) + DB-gated `reinstateBooking` tests; e2e not run)_
-- [ ] Cancelling a pack class returns the credit to `bookings.credit_pack_id`'s pack in the same transaction; `creditsRestored` is false whenever nothing was restored
+- [x] Cancelling a pack class returns the credit to `bookings.credit_pack_id`'s pack in the same transaction; `creditsRestored` is false whenever nothing was restored _(P1-04; DB-gated RPC tests against the test DB + service (mock) + integration (in-memory) tests. `0023` is NOT on production yet)_
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build` green; `pnpm test:e2e` booking/cancel/reschedule specs green (re-run once for known flakes)
 
 ## Phase 2 — Performance
@@ -86,6 +86,13 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   no_show all count; cancelling frees it; a reschedule is exempt). The switch is one guard in
   `BookingService.createBooking` + `IBookingRepository.hasActiveFreeSession`; "one ever" would
   swap it for `hasAnyBooking`-style logic, "no cap" would delete the guard.
+- **P1-04 expired originating pack — DEFAULT ASSUMED, awaiting Gustavo's confirmation (2026-09-29).**
+  `cancel_booking` (migration `0023`) restores to the originating pack if it is still
+  redeemable and not full, else to the earliest-expiring active pack with room (the pre-0023
+  rule), else restores nothing. It reports `restored: false`, the API / `/cancelar` / email say
+  so, and `BookingService` logs an `error` naming the event for manual follow-up. The
+  alternatives (extend the originating pack's `expires_at`, or restore into the expired pack
+  anyway) would each be a change to the `ELSE` branch of `cancel_booking` only.
 
 ## Deviations from plan
 
@@ -185,12 +192,64 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   the data that dev server is using. Left for Gustavo to run once `:3000` is free
   (`reschedule.spec.ts`, plus `cancellation.spec.ts` and the booking specs for the phase exit).
 
+- **P1-04 — `0023` applied to the TEST project only** (`lgfntdmrbzlvepngucyo`, via
+  `supabase db push --project-ref …` from the worktree: 0023 was the only pending migration there,
+  confirmed with `--dry-run`. The main checkout's CLI link to production was not touched.)
+  **Production must get `0023` BEFORE this code deploys:** `/api/cancel` calls the new
+  `cancel_booking` RPC, and without it every cancellation would 500.
+- **P1-04 — `types.ts` regenerated from the test project.** Besides the two new RPCs, the
+  generator re-sorted three tables alphabetically (`booking_settings`, `user_pricing`,
+  `working_hours`, content unchanged) and parenthesised its helper generics (newer CLI). No hand edits.
+- **P1-04 — SQL: `fromOriginating` uses `IS NOT DISTINCT FROM`**, not the task's `=`. For a legacy
+  booking with no `credit_pack_id`, `v_target = NULL` yields SQL NULL, which would have put a JSON
+  `null` in the result instead of `false`.
+- **P1-04 — saga compensation throws when `restoreCreditToPack` returns false** (pack full/expired
+  between the decrement and the failure). The task snippet ignored the boolean; throwing makes
+  `compensate()` log it as "Compensation failed (manual intervention may be needed)", the same
+  pattern as P1-03's reinstate. With no `packId` it still calls `restoreCredit(email)`.
+- **P1-04 — the restore's audit entry is best-effort on the cancel path.** `recordRestore` runs
+  after the RPC has committed; a failing audit insert is caught and logged (`warn`) rather than
+  turning a finished cancel into a 500 whose retry would hit a dead link.
+- **P1-04 — fixtures.** `InMemoryBookingRepository` takes an optional `InMemoryCreditsRepository`.
+  Cancelling a pack class without it THROWS (loud, not a silent "not restored"). Non-pack
+  cancels don't need it. `cancelByTokenShouldFail` simulates the RPC failing. The credits fake
+  gained `restoreCreditToPack` (expiry-checked, no pack_size cap, like its `restoreCredit`) and
+  fixture-only `packIdOf` / `setExpiresAt`. It keeps one pack per user, so the "fallback to
+  another pack" branch is covered only by the DB-gated test.
+- **P1-04 — tests beyond the plan.** DB-gated: a legacy (unlinked) pack booking falls back to the
+  earliest-expiring pack; a non-pack cancel leaves packs alone; malformed / unknown tokens;
+  `restoreCreditToPack` in `SupabaseCreditsRepository.test.ts` (restores, refuses full, refuses
+  expired). Service: audit entry shape, audit failure doesn't fail the cancel, an RPC failure
+  runs no teardown, a stray `restored: true` on a non-pack class is ignored, compensation fallback
+  and failure logging. Integration: failed RPC → booking still confirmed and the retry works;
+  two concurrent service-level cancels → one `CANCEL_TOKEN_CONSUMED`, one credit.
+- **P1-04 — atomicity is shown, not forced, at the DB level.** The "forced RPC failure leaves the
+  booking confirmed" criterion is tested in-memory (`cancelByTokenShouldFail`) and with mocks. On
+  Postgres it holds because one plpgsql function is one transaction; nothing in the schema lets a
+  test make the restore UPDATE fail mid-function.
+- **P1-04 — checks.** `pnpm test` 157/157 suites, 2072 tests (DB-gated suites ran against the test
+  DB, none skipped: `SupabaseBookingRepository.test.ts` 24, `SupabaseCreditsRepository.test.ts` 7).
+  `pnpm lint` 0 errors (the same 8 pre-existing warnings). `tsc --noEmit`: only the pre-existing
+  `mdx.test.ts` (`RepoLink`) error. `pnpm build` green.
+- **P1-04 — `pnpm test:e2e` NOT run**, for the same reason as P1-03: `.env.e2e.local` targets the
+  test DB your `:3000` dev server uses, and `resetTestState` truncates it. `cancellation.spec.ts`
+  is the one to run (plus the booking/reschedule specs for the phase exit).
+- **P1-04 — follow-ups noticed, not done (out of scope):**
+  - `cancelByToken` still awaits `users.getLocale()` AFTER the cancel commits, and that read throws
+    on a DB error. The credit is now safe, but the student would get a 500 for a completed cancel,
+    no email, and a dead link on retry.
+  - When a pack class's credit can't be restored, the email falls through to `refundMsg` ("if you
+    paid for this session individually…"), which doesn't fit a pack class. `history-stats.ts` also
+    still assumes a cancelled pack class always got its credit back ("crédito devuelto").
+
 ## Known regressions introduced
 
 - **P1-02 — cancelling a pack class during a Supabase read error now answers 500 after the
   cancel token is consumed** (`restoreCredit`'s user lookup throws instead of silently reporting
   "no pack"). Expected per the task's gotchas: the booking is cancelled either way, and the old
   behaviour lost the credit without telling anyone. Closes with **P1-04** (atomic cancel).
+  _Closed by P1-04: the restore is inside `cancel_booking` (no separate user lookup), and an RPC
+  error leaves the booking confirmed with a working link._
 - **P1-03 — a rescheduled paid class shows its price twice in booking history.** The cancelled
   original and the new booking now share the PaymentIntent, and `deriveAmount`
   (`booking-history.ts`) resolves it for both rows regardless of status. Accepted in the task's

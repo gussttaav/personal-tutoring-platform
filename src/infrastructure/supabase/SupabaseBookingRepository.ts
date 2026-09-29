@@ -12,7 +12,9 @@
 // REFACTOR-R4-P1-03: reinstateBooking — a reschedule's claim compensation, restoring the
 // original row with its original (recomputed) tokens; findByCancelToken also returns
 // credit_pack_id and stripe_payment_id so a reschedule can carry them over.
-import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
+// REFACTOR-R4-P1-04: cancelByToken wraps the cancel_booking RPC (status flip + pack credit
+// restore, originating pack first, in one transaction).
+import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
   BookingHistoryEntry,
@@ -166,6 +168,27 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     if (error) throw error;
     return data !== null;
+  }
+
+  // REFACTOR-R4-P1-04: one RPC, one transaction — an error means nothing was written.
+  async cancelByToken(token: string): Promise<CancelResult> {
+    const notConsumed: CancelResult = {
+      consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0,
+    };
+    if (!HEX64.test(token)) return notConsumed;
+
+    const { data, error } = await supabase.rpc("cancel_booking", { p_cancel_token: token });
+    if (error) throw error;
+
+    const result = data as Partial<CancelResult> & { consumed: boolean };
+    if (!result.consumed) return notConsumed;
+    return {
+      consumed:        true,
+      restored:        result.restored === true,
+      restoredPackId:  result.restoredPackId ?? null,
+      fromOriginating: result.fromOriginating === true,
+      credits:         result.credits ?? 0,
+    };
   }
 
   // REFACTOR-R4-P1-03: undo a reschedule's claim. The tokens are recomputed exactly as

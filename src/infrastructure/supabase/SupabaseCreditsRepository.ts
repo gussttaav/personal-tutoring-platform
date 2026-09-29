@@ -4,6 +4,7 @@
 // REFACTOR-R4-P1-02: hasProcessedPayment and findUserId fail CLOSED — a read error
 // throws instead of reading as "not paid" / "no such user" (which getCredits turned
 // into "no credits", and the account-deletion gate into permission to erase).
+// REFACTOR-R4-P1-04: restoreCreditToPack wraps restore_credit_to_pack (0023).
 import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
 import { paymentChannelName } from "@/lib/realtime-channel";
@@ -96,6 +97,13 @@ export class SupabaseCreditsRepository implements ICreditsRepository {
 
     if (error) throw error;
     return data as { ok: boolean; credits: number };
+  }
+
+  // REFACTOR-R4-P1-04: false = the pack is full or expired; nothing was restored.
+  async restoreCreditToPack(packId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc("restore_credit_to_pack", { p_pack_id: packId });
+    if (error) throw error;
+    return data === true;
   }
 
   async hasProcessedPayment(stripeSessionId: string): Promise<boolean> {

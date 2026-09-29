@@ -3,6 +3,8 @@
 // REFACTOR-R4-P1-02: hasBookingForPayment with two rows (one cancelled) for one PaymentIntent.
 // REFACTOR-R4-P1-03: reinstateBooking (original tokens back; false on a re-taken slot) and
 // findByCancelToken returning stripePaymentId.
+// REFACTOR-R4-P1-04: cancelByToken (cancel_booking RPC) — originating pack first, then the
+// earliest-expiring active pack with room, then nothing; non-pack; concurrency.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
@@ -242,6 +244,148 @@ describeDb("SupabaseBookingRepository", () => {
     expect(await repo.findByCancelToken(cancelToken)).toMatchObject({ stripePaymentId });
 
     await cleanup(record.email);
+  });
+
+  // ─── REFACTOR-R4-P1-04: cancelByToken (cancel_booking RPC) ────────────────
+  describe("cancelByToken", () => {
+    const DAY_MS = 86_400_000;
+    const inDays = (d: number) => new Date(Date.now() + d * DAY_MS).toISOString();
+
+    async function seedUser(email: string): Promise<string> {
+      const { data, error } = await supabase
+        .from("users").upsert({ email, name: "Test Student" }, { onConflict: "email" })
+        .select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    async function seedPack(userId: string, expiresAt: string, creditsRemaining: number): Promise<string> {
+      const { data, error } = await supabase.from("credit_packs").insert({
+        user_id:           userId,
+        pack_size:         5,
+        credits_remaining: creditsRemaining,
+        stripe_payment_id: `pi_test_cancel_${Date.now()}_${recordSeq++}`,
+        expires_at:        expiresAt,
+      }).select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    async function remaining(packId: string): Promise<number> {
+      const { data } = await supabase
+        .from("credit_packs").select("credits_remaining").eq("id", packId).single();
+      return data!.credits_remaining;
+    }
+
+    // bookings.credit_pack_id → credit_packs → users, so packs go between the two.
+    async function cleanupWithPacks(email: string) {
+      const { data: user } = await supabase
+        .from("users").select("id").eq("email", email).maybeSingle();
+      if (!user) return;
+      await supabase.from("bookings").delete().eq("user_id", user.id);
+      await supabase.from("credit_packs").delete().eq("user_id", user.id);
+      await supabase.from("users").delete().eq("id", user.id);
+    }
+
+    const packBooking = (email: string, creditPackId?: string) => ({
+      ...baseRecord(), email, sessionType: "pack" as const,
+      ...(creditPackId ? { creditPackId } : {}),
+    });
+
+    it("restores to the originating pack, else the earliest-expiring one, else reports nothing", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const packA  = await seedPack(userId, inDays(180), 3); // the booking's pack
+      const packB  = await seedPack(userId, inDays(10), 3);  // expires sooner, has room
+
+      try {
+        // 1. B expires first, but the class was paid from A — the credit goes back to A.
+        const first = await repo.createBooking(packBooking(email, packA));
+        expect(await repo.cancelByToken(first.cancelToken)).toEqual({
+          consumed: true, restored: true, restoredPackId: packA, fromOriginating: true, credits: 7,
+        });
+        expect(await remaining(packA)).toBe(4);
+        expect(await remaining(packB)).toBe(3);
+
+        // 2. A has expired since the booking → fall back to B.
+        await supabase.from("credit_packs").update({ expires_at: inDays(-1) }).eq("id", packA);
+        const second = await repo.createBooking(packBooking(email, packA));
+        expect(await repo.cancelByToken(second.cancelToken)).toEqual({
+          consumed: true, restored: true, restoredPackId: packB, fromOriginating: false, credits: 4,
+        });
+        expect(await remaining(packB)).toBe(4);
+
+        // 3. B is full too → nothing restored, and the result says so. Still cancelled.
+        await supabase.from("credit_packs").update({ credits_remaining: 5 }).eq("id", packB);
+        const thirdRecord = packBooking(email, packA);
+        const third = await repo.createBooking(thirdRecord);
+        expect(await repo.cancelByToken(third.cancelToken)).toEqual({
+          consumed: true, restored: false, restoredPackId: null, fromOriginating: false, credits: 5,
+        });
+        expect(await remaining(packA)).toBe(4);
+        expect(await remaining(packB)).toBe(5);
+        expect((await repo.findByEventId(thirdRecord.eventId))?.status).toBe("cancelled");
+      } finally {
+        await cleanupWithPacks(email);
+      }
+    });
+
+    it("a legacy pack booking with no pack link restores to the earliest-expiring pack with room", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      await seedPack(userId, inDays(90), 2);
+      const sooner = await seedPack(userId, inDays(30), 2);
+
+      try {
+        const { cancelToken } = await repo.createBooking(packBooking(email));
+        expect(await repo.cancelByToken(cancelToken)).toEqual({
+          consumed: true, restored: true, restoredPackId: sooner, fromOriginating: false, credits: 5,
+        });
+        expect(await remaining(sooner)).toBe(3);
+      } finally {
+        await cleanupWithPacks(email);
+      }
+    });
+
+    it("a non-pack cancel restores nothing and leaves the packs alone", async () => {
+      const record = baseRecord(); // session1h
+      const userId = await seedUser(record.email);
+      const pack   = await seedPack(userId, inDays(90), 2);
+
+      try {
+        const { cancelToken } = await repo.createBooking(record);
+        expect(await repo.cancelByToken(cancelToken)).toEqual({
+          consumed: true, restored: false, restoredPackId: null, fromOriginating: false, credits: 2,
+        });
+        expect(await remaining(pack)).toBe(2);
+        expect((await repo.findByEventId(record.eventId))?.status).toBe("cancelled");
+      } finally {
+        await cleanupWithPacks(record.email);
+      }
+    });
+
+    it("two concurrent cancels with the same token: exactly one consumes, one credit restored", async () => {
+      const { email } = baseRecord();
+      const userId = await seedUser(email);
+      const pack   = await seedPack(userId, inDays(90), 2);
+
+      try {
+        const { cancelToken } = await repo.createBooking(packBooking(email, pack));
+        const results = await Promise.all([repo.cancelByToken(cancelToken), repo.cancelByToken(cancelToken)]);
+
+        expect(results.filter(r => r.consumed)).toHaveLength(1);
+        expect(results.filter(r => r.restored)).toHaveLength(1);
+        expect(await remaining(pack)).toBe(3);
+      } finally {
+        await cleanupWithPacks(email);
+      }
+    });
+
+    it("an unknown or malformed token consumes nothing", async () => {
+      const none = { consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0 };
+      expect(await repo.cancelByToken("not-a-valid-hex-token")).toEqual(none);
+      expect(await repo.cancelByToken("0".repeat(64))).toEqual(none);
+    });
   });
 
   it("acquireSlotLock returns true then false for same slot", async () => {

@@ -29,6 +29,12 @@
 // its original tokens, so a failed reschedule leaves the student their class and a
 // working link to retry with. A pack reschedule moves the original's credit (pack link)
 // to the new booking instead of restore + decrement; a paid one carries its PaymentIntent.
+//
+// REFACTOR-R4-P1-04: cancelling is one transaction (the cancel_booking RPC): the status
+// flip and a pack class's credit restore — to the pack it was paid from, else the
+// earliest-expiring active pack with room — commit together or not at all.
+// `creditsRestored` reports what the RPC did, not what the session type implies. The
+// booking saga's credit compensation restores to the exact pack it decremented.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -275,9 +281,18 @@ export class BookingService {
         // BOOKING-PACKLINK-01: it also returns the pack id, which we persist on the
         // booking below so packSize/price can be resolved from the pack later.
         const { packSize, packId } = await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
+        // REFACTOR-R4-P1-04: back to the exact pack just decremented, not whichever
+        // expires first. A restore that finds the pack full/expired throws, so
+        // compensate() logs the lost credit for manual intervention.
         compensations.push({
           description: "restore decremented credit",
-          run: async () => { await this.credits.restoreCredit(input.email); },
+          run: async () => {
+            if (!packId) {
+              await this.credits.restoreCredit(input.email);
+            } else if (!(await this.credits.restoreCreditToPack(input.email, packId))) {
+              throw new Error(`credit could not be restored to pack ${packId} (full or expired)`);
+            }
+          },
         });
         packSizeForToken = packSize ?? undefined;
         creditPackId     = packId ?? undefined;
@@ -444,9 +459,12 @@ export class BookingService {
       );
     }
 
-    // 3. Atomically consume token
-    const consumed = await this.bookings.consumeCancelToken(token);
-    if (!consumed) {
+    // 3. REFACTOR-R4-P1-04: one transaction for the status flip and the credit restore.
+    //    findByCancelToken above still verifies the HMAC and feeds the window check —
+    //    the RPC trusts the token it is given. If it throws, nothing was written: the
+    //    booking is still confirmed and the link still works for a retry.
+    const result = await this.bookings.cancelByToken(token);
+    if (!result.consumed) {
       throw new DomainError(
         "Cancel token has already been consumed.",
         "CANCEL_TOKEN_CONSUMED",
@@ -457,6 +475,21 @@ export class BookingService {
 
     const isPack   = record.sessionType === "pack";
     const isSingle = record.sessionType === "session1h" || record.sessionType === "session2h";
+
+    // Report what the RPC did. The audit entry is best-effort: the cancel has committed,
+    // and a 500 now would send the student to retry a link that no longer works.
+    const creditsRestored = isPack && result.restored;
+    if (creditsRestored) {
+      await this.credits.recordRestore(record.email, {
+        credits: result.credits, packId: result.restoredPackId,
+      }).catch(err => log("warn", "Could not audit the restored credit", {
+        service: "BookingService", eventId: record.eventId, error: String(err),
+      }));
+    } else if (isPack) {
+      log("error", "Pack class cancelled but no credit could be restored (no active pack with room) — manual follow-up", {
+        service: "BookingService", eventId: record.eventId, creditPackId: record.creditPackId ?? null,
+      });
+    }
 
     // 4. Delete calendar event + Zoom session (best-effort)
     try {
@@ -483,11 +516,6 @@ export class BookingService {
       });
     }
 
-    // 5. Restore credit for pack sessions
-    if (isPack) {
-      await this.credits.restoreCredit(record.email);
-    }
-
     // Display label follows the request locale (the cancel page renders in the
     // current page locale). The email locale is the account source of truth.
     const sessionLabel      = (locale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
@@ -496,14 +524,14 @@ export class BookingService {
     const emailLocale      = (await this.users.getLocale(record.email)) ?? 'es';
     const emailLabel       = (emailLocale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
 
-    // 6. Send emails (non-fatal)
+    // 5. Send emails (non-fatal)
     await Promise.all([
       this.email.sendCancellationConfirmation({
         to:              record.email,
         studentName:     record.name,
         sessionLabel:    emailLabel,
         startIso:        record.startsAt,
-        creditsRestored: isPack,
+        creditsRestored,
         locale:          emailLocale,
       }),
       isSingle
@@ -518,7 +546,7 @@ export class BookingService {
       log("error", "Email send failed (non-fatal)", { service: "BookingService", error: String(err) })
     );
 
-    return { sessionLabel, startIso: record.startsAt, creditsRestored: isPack };
+    return { sessionLabel, startIso: record.startsAt, creditsRestored };
   }
 
   // Finalizes a past session for the cleanup cron. Reads student_joined_at

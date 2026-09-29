@@ -7,7 +7,24 @@
 // throw on a read error; `false` / `null` / `[]` means KNOWN absent.
 // REFACTOR-R4-P1-03: reinstateBooking (a reschedule's claim compensation); findByCancelToken
 // returns creditPackId + stripePaymentId so a reschedule carries them to the new booking.
+// REFACTOR-R4-P1-04: cancelByToken — the status flip and a pack class's credit restore in
+// one transaction (the cancel_booking RPC).
 import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
+
+/**
+ * REFACTOR-R4-P1-04: what cancel_booking actually did. `consumed` is false when no
+ * confirmed booking carried the token (the other fields are then false / null / 0).
+ * `restored` is only ever true for a pack class: to its originating pack
+ * (`fromOriginating`) or, when that one has expired, to the earliest-expiring active pack
+ * with room. `credits` is the user's total across active packs after the cancel.
+ */
+export interface CancelResult {
+  consumed:        boolean;
+  restored:        boolean;
+  restoredPackId:  string | null;
+  fromOriginating: boolean;
+  credits:         number;
+}
 
 export interface IBookingRepository {
   /**
@@ -46,6 +63,15 @@ export interface IBookingRepository {
    * must treat false as "cancellation already in progress — do nothing".
    */
   consumeCancelToken(token: string): Promise<boolean>;
+
+  /**
+   * REFACTOR-R4-P1-04: cancels the booking holding `token` and, for a pack class,
+   * restores its credit — originating pack first — in ONE transaction, so a failure
+   * leaves the booking confirmed and the token usable. Same compare-and-swap as
+   * consumeCancelToken: of two concurrent calls exactly one reports `consumed: true`.
+   * Trusts the token: callers verify it with findByCancelToken (HMAC) first.
+   */
+  cancelByToken(token: string): Promise<CancelResult>;
 
   /**
    * REFACTOR-R4-P1-03: undo a reschedule's claim. Flips the row identified by `eventId`

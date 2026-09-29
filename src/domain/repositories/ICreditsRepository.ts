@@ -2,6 +2,8 @@
 // ARCH-16: CreditResult moved to domain/types.ts — re-exported here for backward compat.
 // REFACTOR-R4-P1-02: getCredits, decrementCredit, restoreCredit (via the user lookup) and
 // hasProcessedPayment throw on a read error; `null` / `false` means KNOWN absent.
+// REFACTOR-R4-P1-04: restoreCreditToPack — the booking saga's compensation targets the
+// exact pack it decremented.
 import type { CreditResult, PackSize } from "../types";
 
 export type { CreditResult };
@@ -56,6 +58,12 @@ export interface ICreditsRepository {
    * Returns ok=false if the user has no credit record (should not normally occur).
    */
   restoreCredit(email: string): Promise<{ ok: boolean; credits: number }>;
+
+  /**
+   * REFACTOR-R4-P1-04: restores one credit to exactly this pack (restore_credit_to_pack).
+   * Returns false — restoring nothing — if the pack is full or has expired.
+   */
+  restoreCreditToPack(packId: string): Promise<boolean>;
 
   /**
    * Returns true if a credit_pack row with this stripeSessionId already exists.

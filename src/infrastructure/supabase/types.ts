@@ -46,6 +46,33 @@ export type Database = {
           },
         ]
       }
+      booking_settings: {
+        Row: {
+          cancel_min_notice_hours: number
+          id: number
+          min_notice_hours: number
+          timezone: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cancel_min_notice_hours?: number
+          id?: number
+          min_notice_hours?: number
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cancel_min_notice_hours?: number
+          id?: number
+          min_notice_hours?: number
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           calendar_event_id: string | null
@@ -464,54 +491,6 @@ export type Database = {
         }
         Relationships: []
       }
-      booking_settings: {
-        Row: {
-          cancel_min_notice_hours: number
-          id: number
-          min_notice_hours: number
-          timezone: string
-          updated_at: string
-          updated_by: string | null
-        }
-        Insert: {
-          cancel_min_notice_hours?: number
-          id?: number
-          min_notice_hours?: number
-          timezone?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Update: {
-          cancel_min_notice_hours?: number
-          id?: number
-          min_notice_hours?: number
-          timezone?: string
-          updated_at?: string
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
-      working_hours: {
-        Row: {
-          day_of_week: number
-          end_minute: number
-          id: number
-          start_minute: number
-        }
-        Insert: {
-          day_of_week: number
-          end_minute: number
-          id?: never
-          start_minute: number
-        }
-        Update: {
-          day_of_week?: number
-          end_minute?: number
-          id?: never
-          start_minute?: number
-        }
-        Relationships: []
-      }
       pricing: {
         Row: {
           amount_cents: number
@@ -556,41 +535,6 @@ export type Database = {
           updated_by?: string | null
         }
         Relationships: []
-      }
-      user_pricing: {
-        Row: {
-          amount_cents: number
-          currency: string
-          product_key: string
-          updated_at: string
-          updated_by: string | null
-          user_id: string
-        }
-        Insert: {
-          amount_cents: number
-          currency?: string
-          product_key: string
-          updated_at?: string
-          updated_by?: string | null
-          user_id: string
-        }
-        Update: {
-          amount_cents?: number
-          currency?: string
-          product_key?: string
-          updated_at?: string
-          updated_by?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_pricing_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       quiz_attempts: {
         Row: {
@@ -769,6 +713,41 @@ export type Database = {
           },
         ]
       }
+      user_pricing: {
+        Row: {
+          amount_cents: number
+          currency: string
+          product_key: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          currency?: string
+          product_key: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          currency?: string
+          product_key?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_pricing_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           avatar_url: string | null
@@ -814,6 +793,27 @@ export type Database = {
         Update: {
           idempotency_key?: string
           processed_at?: string
+        }
+        Relationships: []
+      }
+      working_hours: {
+        Row: {
+          day_of_week: number
+          end_minute: number
+          id: number
+          start_minute: number
+        }
+        Insert: {
+          day_of_week: number
+          end_minute: number
+          id?: never
+          start_minute: number
+        }
+        Update: {
+          day_of_week?: number
+          end_minute?: number
+          id?: never
+          start_minute?: number
         }
         Relationships: []
       }
@@ -873,10 +873,12 @@ export type Database = {
         Args: { p_duration_minutes: number; p_start_iso: string }
         Returns: boolean
       }
+      cancel_booking: { Args: { p_cancel_token: string }; Returns: Json }
       decrement_credit: { Args: { p_user_id: string }; Returns: Json }
       delete_user_account: { Args: { p_email: string }; Returns: Json }
       release_slot_lock: { Args: { p_start_iso: string }; Returns: undefined }
       restore_credit: { Args: { p_user_id: string }; Returns: Json }
+      restore_credit_to_pack: { Args: { p_pack_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
@@ -895,12 +897,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -924,11 +926,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -949,11 +951,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -974,11 +976,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -991,11 +993,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
