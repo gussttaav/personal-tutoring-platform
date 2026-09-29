@@ -4,7 +4,7 @@ title: "GRU: la versión simplificada"
 block: 3
 order: 6
 minutes: 26
-summary: "Una compuerta de actualización que ata conservar y escribir —lo que no se conserva es justo lo que se escribe—, una de reset que deja al candidato ignorar el pasado, y un solo estado en vez de dos. Tres cuartas partes de los pesos de la LSTM conservando la vía por la que el gradiente vuelve, porque el camino directo sigue multiplicando por un número que la red elige y puede dejar cerca de uno."
+summary: "Una compuerta de actualización que ata conservar y escribir (lo que no se conserva es justo lo que se escribe), una de reset que deja al candidato ignorar el pasado, y un solo estado en vez de dos. Tres cuartas partes de los pesos de la LSTM conservando la vía por la que el gradiente vuelve, porque el camino directo sigue multiplicando por un número que la red elige y puede dejar cerca de uno."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -13,12 +13,12 @@ quiz:
     type: single
     prompt: '¿Qué gana y qué pierde la GRU al sustituir las compuertas de olvido y de entrada de la LSTM por una sola, la de actualización $\mathbf{z}_t$?'
     options:
-      - { id: a, text: 'Gana que el estado nuevo es una mezcla entre el viejo y el candidato —$(1-\mathbf{z}_t)$ conserva, $\mathbf{z}_t$ escribe, y suman uno—, así que se queda acotado sin necesidad de una compuerta de salida que lo recorte. Pierde poder conservar y escribir a la vez: atarlas en $\mathbf{z}_t$ y $1-\mathbf{z}_t$ obliga a que escribir más sea conservar menos.' }
+      - { id: a, text: 'Gana que el estado nuevo es una mezcla entre el viejo y el candidato ($(1-\mathbf{z}_t)$ conserva, $\mathbf{z}_t$ escribe, y suman uno), así que se queda acotado sin necesidad de una compuerta de salida que lo recorte. Pierde poder conservar y escribir a la vez: atarlas en $\mathbf{z}_t$ y $1-\mathbf{z}_t$ obliga a que escribir más sea conservar menos.' }
       - { id: b, text: 'Gana un peso menos por coordenada y no pierde nada, porque en la LSTM la compuerta de olvido y la de entrada siempre valían una uno menos que la otra.' }
       - { id: c, text: 'Gana velocidad, porque $\mathbf{z}_t$ se calcula con $\tanh$ en vez de con $\sigma$, y no pierde nada.' }
       - { id: d, text: 'Gana memoria, porque con una compuerta menos hay menos caminos por los que el gradiente se desvanezca; pierde la capacidad de olvidar.' }
     answer: a
-    explanation: 'La (a) es el canje entero. En la LSTM $\mathbf{f}_t$ e $\mathbf{i}_t$ eran independientes —podían abrirse las dos y acumular, o cerrarse las dos y congelar—; atarlas convierte el estado en una media ponderada de cosas acotadas, que se queda acotada, y por eso sobra la $\tanh$ de salida. El precio es esa independencia: ya no se puede conservar del todo y escribir del todo en el mismo paso. La (b) es falsa de raíz: en la LSTM las dos compuertas se movían por separado, y ver que casi nunca hacía falta esa libertad es justo lo que motiva la GRU, no una identidad que ya se cumpliera. La (c) confunde las activaciones: $\mathbf{z}_t$ es una compuerta y usa $\sigma$ como todas. La (d) va al revés: quitar compuertas no fabrica memoria, y la GRU olvida perfectamente —con $\mathbf{z}_t \to 1$ reemplaza lo viejo por el candidato—.'
+    explanation: 'La (a) es el canje entero. En la LSTM $\mathbf{f}_t$ e $\mathbf{i}_t$ eran independientes (podían abrirse las dos y acumular, o cerrarse las dos y congelar); atarlas convierte el estado en una media ponderada de cosas acotadas, que se queda acotada, y por eso sobra la $\tanh$ de salida. El precio es esa independencia: ya no se puede conservar del todo y escribir del todo en el mismo paso. La (b) es falsa de raíz: en la LSTM las dos compuertas se movían por separado, y ver que casi nunca hacía falta esa libertad es justo lo que motiva la GRU, no una identidad que ya se cumpliera. La (c) confunde las activaciones: $\mathbf{z}_t$ es una compuerta y usa $\sigma$ como todas. La (d) va al revés: quitar compuertas no fabrica memoria, y la GRU olvida perfectamente: con $\mathbf{z}_t \to 1$ reemplaza lo viejo por el candidato.'
     hint: 'Escribe $\mathbf{h}_t$ con $z_{t,j}=0$ y con $z_{t,j}=1$, y pregúntate qué pasa cuando quieres las dos cosas a la vez.'
   - id: q-reset
     type: single
@@ -29,14 +29,14 @@ quiz:
       - { id: c, text: 'La coordenada deja de actualizarse: $\mathbf{r}_t \approx \mathbf{0}$ deja $\mathbf{h}_t = \mathbf{h}_{t-1}$.' }
       - { id: d, text: 'Nada observable, porque $\mathbf{r}_t$ y $\mathbf{z}_t$ hacen el mismo trabajo y se anulan.' }
     answer: a
-    explanation: 'La (a) lee la fórmula: $\mathbf{r}_t$ sólo aparece dentro del candidato, multiplicando a $\mathbf{h}_{t-1}$ antes de que $\mathbf{W}_{hh}$ lo lea, así que anularla hace que la propuesta arranque de cero —útil cuando lo que toca escribir no arrastra nada de lo anterior—. La (b) confunde reset con borrado: la memoria la conserva o la pisa $\mathbf{z}_t$, y $\mathbf{r}_t$ no la toca. La (c) describe lo que hace $\mathbf{z}_t \to 0$, no $\mathbf{r}_t$: son las dos compuertas cambiadas de sitio. La (d) niega la distinción que es el asunto de la pregunta —una gobierna la memoria, la otra la propuesta—.'
+    explanation: 'La (a) lee la fórmula: $\mathbf{r}_t$ sólo aparece dentro del candidato, multiplicando a $\mathbf{h}_{t-1}$ antes de que $\mathbf{W}_{hh}$ lo lea, así que anularla hace que la propuesta arranque de cero (útil cuando lo que toca escribir no arrastra nada de lo anterior). La (b) confunde reset con borrado: la memoria la conserva o la pisa $\mathbf{z}_t$, y $\mathbf{r}_t$ no la toca. La (c) describe lo que hace $\mathbf{z}_t \to 0$, no $\mathbf{r}_t$: son las dos compuertas cambiadas de sitio. La (d) niega la distinción que es el asunto de la pregunta: una gobierna la memoria; la otra, la propuesta.'
   - id: q-parametros-gru
     type: numeric
     prompt: 'Una GRU con un estado de $d_h = 64$ coordenadas sobre *embeddings* de $d_{\text{model}} = 128$, las mismas dimensiones de la LSTM de la lección anterior. ¿Cuántos pesos suman sus seis matrices y sus tres sesgos?'
     answer: 37056
     tolerance: 0
-    explanation: 'Cada una de las tres piezas —$\mathbf{z}_t$, $\mathbf{r}_t$ y $\tilde{\mathbf{h}}_t$— tiene la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: $64 \cdot 64 = 4\,096$ de su $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ de su $\mathbf{W}_{x\ast}$ y $64$ del sesgo, o sea $12\,352$. Tres veces eso da $37\,056$: tres cuartas partes de los $49\,408$ de la LSTM, que era la misma cuenta por cuatro. Y como allí, $T$ no aparece en ninguna de las formas, así que la GRU lee cualquier longitud con el mismo juego de pesos.'
-    hint: 'Cuenta una sola de las tres piezas —es la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>— y multiplícala por cuántas hay.'
+    explanation: 'Cada una de las tres piezas ($\mathbf{z}_t$, $\mathbf{r}_t$ y $\tilde{\mathbf{h}}_t$) tiene la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: $64 \cdot 64 = 4\,096$ de su $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ de su $\mathbf{W}_{x\ast}$ y $64$ del sesgo, o sea $12\,352$. Tres veces eso da $37\,056$: tres cuartas partes de los $49\,408$ de la LSTM, que era la misma cuenta por cuatro. Y como allí, $T$ no aparece en ninguna de las formas, así que la GRU lee cualquier longitud con el mismo juego de pesos.'
+    hint: 'Cuenta una sola de las tres piezas (es la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>) y multiplícala por cuántas hay.'
   - id: q-tradeoff
     type: multi
     prompt: 'Marca todo lo que sea cierto de la GRU frente a la LSTM.'
@@ -46,14 +46,14 @@ quiz:
       - { id: c, text: 'Es siempre mejor que la LSTM, porque con menos pesos generaliza mejor.' }
       - { id: d, text: 'Necesita fijar $T_{\max}$ y rellenar, porque al tener un solo estado ya no puede leer secuencias de cualquier longitud.' }
     answer: [a, b]
-    explanation: 'La (a) es el punto entero de la lección: la vía aditiva sobrevive al recorte, con $1-z_{t,j}$ donde la LSTM tenía $f_{t,j}$. La (b) es la concesión honesta: por los caminos que cruzan las $\mathbf{W}_{h\ast}$ el gradiente todavía puede dispararse, así que la GRU se entrena con recorte igual que todo lo anterior. La (c) sobrevende: la GRU es más barata y casi siempre comparable, no universalmente mejor —hay tareas donde la LSTM le saca ventaja—, y menos pesos no implican generalizar mejor. La (d) confunde el número de estados con la longitud: como toda recurrencia de este bloque, ninguna de sus formas menciona $T$, y lee cualquier longitud con uno o con dos estados.'
+    explanation: 'La (a) es el punto entero de la lección: la vía aditiva sobrevive al recorte, con $1-z_{t,j}$ donde la LSTM tenía $f_{t,j}$. La (b) es la concesión honesta: por los caminos que cruzan las $\mathbf{W}_{h\ast}$ el gradiente todavía puede dispararse, así que la GRU se entrena con recorte igual que todo lo anterior. La (c) sobrevende: la GRU es más barata y casi siempre comparable, no universalmente mejor: hay tareas donde la LSTM le saca ventaja. Y menos pesos no implican generalizar mejor. La (d) confunde el número de estados con la longitud: como toda recurrencia de este bloque, ninguna de sus formas menciona $T$, y lee cualquier longitud con uno o con dos estados.'
     hint: 'Dos de las cuatro se heredan de la recurrencia; una sobrevende y otra confunde estados con longitud.'
 challenges:
   - id: ch-gru-paso
     prompt: |
       Escribe un paso de GRU: `paso_gru(h, x, P)` recibe el estado anterior, el vector del token de
-      turno, y un diccionario `P` con los pesos de las tres piezas —`P["z"]`, `P["r"]` y `P["h"]`,
-      cada una la tripleta `(Wx, Wh, b)`—. Devuelve `h_nuevo`.
+      turno, y un diccionario `P` con los pesos de las tres piezas (`P["z"]`, `P["r"]` y `P["h"]`,
+      cada una la tripleta `(Wx, Wh, b)`). Devuelve `h_nuevo`.
 
       Las dos compuertas son sigmoides sobre el token y el estado anterior; el candidato es una $\tanh$
       que lee $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ en lugar de $\mathbf{h}_{t-1}$ a secas, y el estado
@@ -142,8 +142,8 @@ challenges:
       Las tres piezas comparten la forma del argumento, así que `entra` la escribe una vez; lo único
       que cambia es qué estado lee cada una. Las dos compuertas leen el `h` que entró, y por eso
       `entra` cierra sobre él. El candidato es la excepción: no lee `h`, sino `r * h`, que es lo único
-      que lo distingue de la recurrencia de la RNN vanilla —de ahí la segunda llamada a `entra` con
-      `r * h` en lugar de `h`—. La última línea es la mezcla atada: `(1 - z)` conserva y `z` escribe,
+      que lo distingue de la recurrencia de la RNN vanilla (de ahí la segunda llamada a `entra` con
+      `r * h` en lugar de `h`). La última línea es la mezcla atada: `(1 - z)` conserva y `z` escribe,
       y como el resultado va a una variable nueva en vez de sobrescribir `h`, los arrays recibidos
       quedan intactos.
 reading:
@@ -169,34 +169,34 @@ reading:
 
 Hasta aquí el bloque ha avanzado preguntando qué le falta a cada red: a la RNN (*recurrent neural
 network*) vanilla le faltaba una memoria que sobreviviera a la distancia, y la LSTM (*long short-term
-memory*) de la lección anterior, sobre la memoria con compuertas, se la dio. Pero la dio cara —el
-cuádruple de los pesos de una RNN vanilla y un segundo estado que arrastrar en cada paso—, y la propia
+memory*) de la lección anterior, sobre la memoria con compuertas, se la dio. Pero la dio cara: el
+cuádruple de los pesos de una RNN vanilla y un segundo estado que arrastrar en cada paso. Y la propia
 lección se despidió sospechando de que una de sus compuertas sobraba. Cuando una arquitectura funciona,
 la pregunta que queda no es qué le falta, sino qué le sobra.
 
 Simplificar de verdad no es quitar piezas hasta que algo se rompe, sino quitarlas conservando lo que
-compraban. Y lo que la LSTM compró —lo único que justificaba todo el aparato— era la vía por la que el
+compraban. Y lo que la LSTM compró (lo único que justificaba todo el aparato) era la vía por la que el
 gradiente vuelve intacto a través de muchos pasos. Cualquier recorte tiene que pasar por ahí: si al
 fundir compuertas o borrar estados esa vía se pierde, la simplificación ha tirado justo lo que
 importaba. La GRU (*gated recurrent unit*) es el recorte que pasa la prueba, y por eso es la celda
 recurrente más usada en la práctica: tres cuartas partes de los pesos de la LSTM, un solo estado, y
-—casi siempre, no siempre— el mismo resultado.
+(casi siempre, no siempre) el mismo resultado.
 
 El recorte cabe en dos ideas. La primera funde las dos compuertas sospechosas en una: en vez de
-decidir por separado cuánto se conserva y cuánto se escribe, la GRU usa un solo mando —la **compuerta
-de actualización**— que dice cuánto reemplazar, y lo que no reemplaza es lo que conserva. El estado
+decidir por separado cuánto se conserva y cuánto se escribe, la GRU usa un solo mando (la **compuerta
+de actualización**) que dice cuánto reemplazar, y lo que no reemplaza es lo que conserva. El estado
 deja de ser una suma que puede crecer sin freno y pasa a ser una mezcla, un punto intermedio entre lo
 que había y lo que se propone escribir; y una mezcla de cosas acotadas se queda acotada, así que ya no
 hace falta la compuerta de salida que en la LSTM recortaba el estado antes de enseñarlo.
 
 La segunda idea es una compuerta pequeña y nueva, la **compuerta de reset**, que no toca la memoria
 sino la propuesta: deja que el candidato ignore el estado anterior cuando lo que hay que escribir ahora
-no arrastra nada de lo de antes —al empezar una oración nueva, por ejemplo—. Con esas dos, y con un
+no arrastra nada de lo de antes (al empezar una oración nueva, por ejemplo). Con esas dos, y con un
 único estado que hace de memoria y de salida a la vez, desaparece el segundo vector: ya no hay un
 estado de celda escondido detrás del que se enseña.
 
 Antes de las fórmulas, vuelve un momento a la LSTM que la GRU simplifica. Recórrela y mira las dos
-primeras filas —la compuerta de olvido y la de entrada— moverse por separado: ésas son las dos que la
+primeras filas (la compuerta de olvido y la de entrada) moverse por separado: ésas son las dos que la
 GRU va a atar en una.
 
 <Explorable
@@ -205,8 +205,8 @@ GRU va a atar en una.
 />
 
 <Callout type="intuition" title="La idea en una frase">
-La GRU se queda con la mitad de la maquinaria de la LSTM: una compuerta ata conservar y escribir —lo
-que no se escribe se conserva—, una segunda deja al candidato mirar o no el pasado, y un único estado
+La GRU se queda con la mitad de la maquinaria de la LSTM: una compuerta ata conservar y escribir (lo
+que no se escribe se conserva), una segunda deja al candidato mirar o no el pasado, y un único estado
 hace de memoria y de salida. Tres piezas en vez de cuatro, un estado en vez de dos, y la misma vía por
 la que el gradiente vuelve.
 </Callout>
@@ -215,8 +215,8 @@ la que el gradiente vuelve.
 
 Empieza por la línea que lo cambia todo. La celda de la LSTM sumaba dos términos con compuertas
 independientes, $\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t$;
-la GRU trabaja directamente sobre el estado oculto $\mathbf{h}_t \in \mathbb{R}^{d_h}$ —no hay segundo
-vector— y ata las dos compuertas en una:
+la GRU trabaja directamente sobre el estado oculto $\mathbf{h}_t \in \mathbb{R}^{d_h}$ (no hay segundo
+vector) y ata las dos compuertas en una:
 
 $$
 \mathbf{h}_t = (1 - \mathbf{z}_t) \odot \mathbf{h}_{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t,
@@ -224,8 +224,8 @@ $$
 
 con $\mathbf{z}_t \in (0,1)^{d_h}$ la compuerta de actualización y $\tilde{\mathbf{h}}_t \in (-1,1)^{d_h}$
 el candidato, el estado que el paso propone. Coordenada a coordenada es una media ponderada entre lo
-viejo y lo nuevo: $z_{t,j} = 0$ deja $h_{t,j}$ igual a $h_{t-1,j}$ —conserva— y $z_{t,j} = 1$ lo
-reemplaza entero por el candidato —escribe—. No hay forma de hacer las dos cosas a la vez, y ésa es
+viejo y lo nuevo: $z_{t,j} = 0$ deja $h_{t,j}$ igual a $h_{t-1,j}$ (conserva) y $z_{t,j} = 1$ lo
+reemplaza entero por el candidato (escribe). No hay forma de hacer las dos cosas a la vez, y ésa es
 justo la libertad que la LSTM tenía y la GRU entrega: allí $\mathbf{f}_t$ e $\mathbf{i}_t$ podían
 abrirse las dos y acumular. A cambio, una media de números acotados no se desborda, y por eso la GRU
 enseña el estado tal cual, sin la compuerta de salida ni la $\tanh$ que en la LSTM lo recortaban antes
@@ -276,15 +276,15 @@ $$
   caption="Las cuatro líneas de arriba, dibujadas: la vía verde de la LSTM, recorrida ahora por el propio estado oculto, que sale por la derecha tal cual, sin compuerta de salida ni tanh. Sobre ella manda una sola compuerta, z, que conserva por un lado a través de 1 − z y escribe por el otro; r ni siquiera la toca, sólo filtra lo que el candidato lee del pasado."
 />
 
-Tres piezas —dos compuertas y un candidato—, cada una con la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: seis matrices y tres sesgos, $3\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$
+Tres piezas (dos compuertas y un candidato), cada una con la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: seis matrices y tres sesgos, $3\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$
 pesos. Frente a los cuatro grupos de la LSTM, tres cuartas partes; y como allí, $T$ no aparece en
 ninguna de las formas, así que la GRU lee cualquier longitud con el mismo juego de pesos.
 
 ## Por qué la vía de vuelta sobrevive al recorte
 
-Toda la lección pende de una comprobación: que la vía por la que el gradiente vuelve —la que la LSTM
+Toda la lección pende de una comprobación: que la vía por la que el gradiente vuelve (la que la LSTM
 compró y <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion> explicó por qué hacía
-falta— siga en pie con un estado en lugar de dos. Mira la última línea coordenada a coordenada, que es
+falta) siga en pie con un estado en lugar de dos. Mira la última línea coordenada a coordenada, que es
 donde se ve lo que el $\odot$ significa:
 
 $$
@@ -293,7 +293,7 @@ $$
 
 La coordenada $j$ del estado nuevo depende de la $j$ del viejo y de ninguna otra por esta vía: no hay
 matriz que las mezcle. Derivando por el camino directo, y dejando quietas las compuertas y el candidato
-—volveré sobre eso—,
+(volveré sobre eso),
 
 $$
 \frac{\partial h_{t,j}}{\partial h_{t-1,j}} = 1 - z_{t,j},
@@ -308,8 +308,8 @@ $$
 
 Es, letra por letra, el $\prod f_{t,j}$ de la LSTM con $1 - z_{t,j}$ en el sitio de $f_{t,j}$: la
 compuerta de actualización cerrada ($z_{t,j} \to 0$) hace de compuerta de olvido abierta. Y vale lo
-mismo que allí —$1 - z_{t,j} = 1$ es alcanzable y estable, porque una sigmoide saturada se queda plana
-en el extremo—, así que una coordenada que la red aprenda a no actualizar multiplica por $1$ tantos
+mismo que allí ($1 - z_{t,j} = 1$ es alcanzable y estable, porque una sigmoide saturada se queda plana
+en el extremo), así que una coordenada que la red aprenda a no actualizar multiplica por $1$ tantos
 pasos como haga falta. Frente al $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente que se desvanece</Leccion>, la base ha
 dejado de ser una propiedad de una matriz compartida por todo para ser un número por coordenada y por
 paso que la red calcula.
@@ -327,7 +327,7 @@ de lejos es el de la vía directa, y ése no cruza ninguna matriz. El recorte no
 
 Dos concesiones cierran la cuenta, las mismas que en la LSTM. Si la red aprende $z_{t,j}$ alrededor de
 $0.3$, el producto se hunde igual que en la RNN, sólo que porque la red lo decide y no porque la
-arquitectura lo imponga. Y la explosión sigue siendo posible por los caminos del recuadro, así que la
+arquitectura lo imponga. Y la explosión sigue siendo posible por los caminos del recuadro de arriba, así que la
 GRU se entrena con recorte del gradiente igual que todo lo anterior. La vía aditiva no regala una
 garantía; hace alcanzable una opción que antes no lo era.
 
@@ -339,8 +339,8 @@ la vía directa.
 
 Los pesos me los da un generador con semilla fija y no están entrenados, así que las compuertas todavía
 no significan nada. Lo que sí he puesto a mano es el sesgo $\mathbf{b}_z$: recuerda que conservar es
-$z \to 0$, así que un sesgo negativo es lo que empuja a la red a recordar —el reflejo del
-$\mathbf{b}_f$ positivo de la LSTM—. Mira la última línea de cada bloque.
+$z \to 0$, así que un sesgo negativo es lo que empuja a la red a recordar (el reflejo del
+$\mathbf{b}_f$ positivo de la LSTM). Mira la última línea de cada bloque.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -390,7 +390,7 @@ en cada paso y de $\mathbf{h}_1$ llega a $\mathbf{h}_6$ un $3\,\%$ escaso; con $
 $0.05$, casi no se actualiza nada, y sobrevive un $77\,\%$, con los mismos pesos y la misma secuencia.
 De ahí la costumbre de inicializar $\mathbf{b}_z$ negativo, por lo mismo que $\mathbf{b}_f$ positivo en
 la LSTM: sale más barato que la red aprenda a escribir que aprenda a recordar. Y fíjate en el precio del
-atajo: con $\mathbf{b}_z = -3$ el estado casi no se mueve —$\mathbf{h}_t$ se queda en centésimas—,
+atajo: con $\mathbf{b}_z = -3$ el estado casi no se mueve ($\mathbf{h}_t$ se queda en centésimas),
 porque conservar y escribir son el mismo mando, y pedirle que conserve es pedirle que apenas escriba.
 
 ## Comprueba tu intuición
@@ -422,5 +422,5 @@ a fin y produzca lenguaje propio: se ha derivado la maquinaria sin encenderla.
 Encenderla es <Leccion slug="proyecto-char-lm">la siguiente lección, el proyecto de un modelo de lenguaje a nivel de carácter</Leccion>.
 Junta la RNN, la BPTT (*backpropagation through time*) y una de estas celdas en una red que se entrena
 sobre unos pocos miles de caracteres y después genera, carácter a carácter, un texto nuevo. Saldrá malo
-—lo diré sin adornos cuando salga—, correrá en el navegador en unos segundos, y será la primera vez en
+(lo diré sin adornos cuando salga), correrá en el navegador en unos segundos, y será la primera vez en
 el curso que algo escribe.
