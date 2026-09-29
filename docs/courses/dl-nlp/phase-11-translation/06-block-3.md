@@ -1,6 +1,6 @@
 # P11-06 — Block 3: Recurrent Neural Networks
 
-**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.3 done)
+**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.4 done)
 
 ## TL;DR
 
@@ -14,7 +14,7 @@ Filled by [P11-00](00-triage.md) — read against the eight `es/` lessons select
 `block: 3` frontmatter, in `order`. Note the two files whose name and frontmatter disagree:
 **`es/26-seq2seq.mdx` is 3.8**, and `es/33-adios-recurrencia.mdx` is Block 5, not this block.
 
-**No lesson in Block 3 is a rewrite.** Not one of the 33 quiz items has an answer that moves in
+**No lesson in Block 3 is a rewrite.** Not one of the 32 quiz items has an answer that moves in
 English — the block argues in mathematics, and the four items that look linguistic (3.1's `no`
 marker, 3.5's plural agreement, 3.7's character count, 3.8's reversal) all keep their answer.
 What the block does carry is five corpora and examples that have to be *chosen* rather than
@@ -151,19 +151,22 @@ Line refs are into the `es/` file named in each heading.
 
 #### 3.4 `gradiente-desvanecido` — `es/22-gradiente-desvanecido.mdx` — transpose
 
-- **Quiz (5, all language-free).** `q-que-lo-desvanece` `single` a (12–22);
-  `q-clipping-que-arregla` `single` a (23–32); `q-decae-numerico` `predict-output`
-  `1.0 / 0.0625 / 0.0039` (33–46), pure arithmetic; `q-mascara-tanh` `single` a (47–55);
-  `q-que-cuesta` `single` a (56–65).
-- **`<PyCell>` ×2** (203–210, 229–247): the first is Spanish comments and a print header; the
-  second has `recorta`, `nombre`, `coseno` and the labels `"normal   "` / `"explotado"` /
-  `"(coseno con g: %.4f)"` (238–246). Quoted output — norm ≈ 30 clipped to `5.00`, cosine `1`
-  (249–250) — holds.
-- **`<Explorable>` `vanishing-gradient`** (116–119): Spanish caption. **Confirmed numeric, no
+*Re-read at translation time: commit `1301972` removed `q-decae-numerico` and added the
+`svd`/`eig` cell after triage, and the COURSE-P11-06 fix commit rewrote the formalisation (see
+"From 3.4" below). Line refs are to the fixed file.*
+
+- **Quiz (4, all language-free).** `q-que-lo-desvanece` `single` a (12–22);
+  `q-clipping-que-arregla` `single` a (23–32); `q-mascara-tanh` `single` a (33–41);
+  `q-que-cuesta` `single` a (42–51).
+- **`<PyCell>` ×3** (224–241, 260–267, 286–304): the `svd`/`eig` cell and the scalar cell are
+  Spanish comments and print headers only; the clipping cell has `recorta`, `nombre`, `coseno` and
+  the labels `"normal   "` / `"explotado"` / `"(coseno con g: %.4f)"`. Quoted output (σ_max 4.06,
+  ρ 0.5, 0.5776 at d = 40, 9.09e-13, 1.11e+07, norm ≈ 30 clipped to `5.00`, cosine `1`) holds.
+- **`<Explorable>` `vanishing-gradient`** (104–107): Spanish caption. **Confirmed numeric, no
   corpus** — `VanishingGradient.tsx` carries slider labels only, and `Radio espectral` is already
   in P11-02 §3's terminology list.
-- **`<Leccion ancla="">`: 0** (5 refs). **`reading`:** 2 (68–83), both `lang: en`, Spanish notes.
-- **`<W>`: 2** — `Dudo que a alguien le sirva` and `Dudo` (97–98). Translates directly; the
+- **`<Leccion ancla="">`: 0** (5 refs). **`reading`:** 2 (53–69), both `lang: en`, Spanish notes.
+- **`<W>`: 2** — `Dudo que a alguien le sirva` and `Dudo` (83–84). Translates directly; the
   "treinta palabras más tarde" is a round figure, not a computed count.
 
 #### 3.5 `lstm` — `es/23-lstm.mdx` — adapt
@@ -266,8 +269,8 @@ Line refs are into the `es/` file named in each heading.
 | **Transpose** | **3** | 3.3, 3.4, 3.6 |
 | **Adapt** | **5** | 3.1, 3.2, 3.5, 3.7, 3.8 |
 | **Rewrite** | **0** | no quiz answer in the block moves |
-| Quiz items | 33 | 16 `single`, 7 `multi`, 6 `numeric`, 3 `predict-output`, 1 `boolean` — **0 answers move** |
-| `<PyCell>` | 14 | all re-run; only 3.7's 3 are **regenerated** |
+| Quiz items | 32 | 16 `single`, 7 `multi`, 6 `numeric`, 2 `predict-output`, 1 `boolean` — **0 answers move** (3.4's `q-decae-numerico` was removed from the Spanish after triage) |
+| `<PyCell>` | 15 | all re-run; only 3.7's 3 are **regenerated** (3.4 gained its `svd`/`eig` cell after triage) |
 | `<CodeChallenge>` | 4 | 3.2, 3.3, 3.5, 3.6 — 32 Spanish assertion messages, 19 test `name`s, 5 `# tu código aquí` |
 | `<Explorable>` | 5 uses / 3 ids | `rnn-unrolled` ×2, `lstm-gates` ×2, `vanishing-gradient` ×1 — **none carries a corpus**; captions here, widget strings in P11-02 |
 | `<Figure>` | 3 | only `concatenacion-bloques.svg` (3.1) has Spanish set into the asset |
@@ -290,7 +293,7 @@ English 3.2 takes `en/18`'s pair and its `0.0002` (see the English notes under 3
 - [x] 3.1 `por-que-falla-el-mlp`
 - [x] 3.2 `la-rnn-vanilla`
 - [x] 3.3 `bptt`
-- [ ] 3.4 `gradiente-desvanecido`
+- [x] 3.4 `gradiente-desvanecido`
 - [ ] 3.5 `lstm`
 - [ ] 3.6 `gru`
 - [ ] 3.7 `proyecto-char-lm`
@@ -378,6 +381,38 @@ Reuse these verbatim; they are settled, not open.
 - **Open, not applied:** English lessons write "pre-activation" 53 times, but `rnn-unrolled`'s
   `forwardPreactivation` string says "preactivation". A glossary row in `AUTHORING.en.md` and the
   widget string would settle it; the widget string is P11-02's.
+
+**From 3.4** (`en/22-gradiente-desvanecido.mdx`):
+
+- **The vanishing condition is $\gamma\,\sigma_{\max} < 1$, never $\rho$.** It guarantees the vanishing
+  whatever the masks do, and $\gamma\,\sigma_{\max} > 1$ is necessary for an explosion, not
+  sufficient. $\rho$ is only the long-run pace of the matrix on its own (a recurrence with no mask),
+  which is what the `vanishing-gradient` slider shows. The lesson's `<Details>` proves the gap: a
+  $2 \times 2$ matrix with $\rho = 0$ whose masked product grows as $1.8^{d}$. 3.5–3.8 and Block 4
+  cite $\gamma\,\sigma_{\max}$ when they call back to this lesson (`es/23` and `es/24` already did;
+  `es/28` was fixed in the same commit). Recorded in the course `NOTATION.md`.
+- **The clipping threshold is $\kappa$, and `kappa` in code**, never $\theta$, which the shared
+  `NOTATION.md` §4 reserves for all parameters. `es/25`–`es/28` were renamed in the same commit, so
+  3.7, 3.8 and Block 4 translate `kappa` as it stands. The English term is **gradient clipping**
+  (new `AUTHORING.en.md` glossary row); never bare "clipping" where Block 2's clipping of the
+  probabilities could be meant.
+- **$\gamma$ is the largest slope over every step the product crosses**, not at a single step.
+- **The example is <W>I doubt this helps anyone</W>.** "I doubt" is two words, so the prose says
+  the gradient must get back to "the opening words".
+- **Code names:** `recorta` → `clip`, `nombre` → `name`, `coseno` → `cosine`, `g_rec` → `g_clip`;
+  labels `"normal  "` / `"exploded"`, equal width so the columns align.
+- **Acronyms the Spanish leaves bare are expanded:** RNN in the opening, MLP in the first
+  `<Leccion>` label, LSTM in the bridge. The bridge's forward label is "the LSTM and its gates",
+  since 3.5 has no English title yet.
+- **Printed in Pyodide and quoted:** σ_max `4.0616`, ρ `0.5000`, `1.0458` at d = 5, `0.5776` at
+  d = 40, `9.09e-13`, `1.11e+07`, norms `2.56` (untouched) and `29.84` → `5.00`, cosine `1.0000`,
+  byte-identical in both locales.
+- **Spanish errors fixed in `es/22`** (their own commit): the bound was read as proving explosion
+  («Si es mayor que 1, explota»); $\gamma$ was a single step's maximum raised to $T - k$; the
+  Hochreiter note said the chapter proposes no remedy, but its §4 surveys them, LSTM included;
+  **sumando** was bold for emphasis; «basta despejar» used the banned «basta» family; and $\rho$
+  was presented as deciding the masked case. The widget's `math/vanishing-gradient.ts` comment
+  claimed the bound $(\gamma\rho)^{d}$ and was corrected too (comments only).
 
 ## Two things to watch
 
