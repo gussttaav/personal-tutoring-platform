@@ -80,6 +80,8 @@ this file gets shorter as it goes down.
 | $x$, $y$ · $y_j$ | the caso the prompt ends on and the respuesta a tarea asks for, both token sequences · token $j$ of $y$ (Block 1 lesson 8). Block 2's $x$, the whole prompt, is this $x$ with the ejemplos in front |
 | $p_{\text{texto}}$ | the distribution the training text comes from: what the text *is*, against $p_\theta$, what the model believes (Block 1 lesson 8) |
 | $\omega$ · $\omega_1$, $\omega_2$ | a tarea, the latent variable a document of $p_{\text{texto}}$ follows, drawn with probability $p_{\text{texto}}(\omega)$ · two of them, compared (Block 1 lesson 8) |
+| $\tilde{q}(v \mid x, y_{<j})$ · $\tilde{q}(y \mid x)$ | lesson 4's $\tilde{q}_v$ with the text it was computed from named, as $\mathbf{z}_t(x_{\le t})$ names it · the product of those over a continuation $y$: the distribution `modelo` draws from. Here $x$ is the whole prompt and $y = y_1, y_2, \dots$ what `modelo` sorts after it, both token sequences: lesson 8's $x$ with the ejemplos inside it, which is Block 2's reading (Block 1 lesson 9) |
+| $T_{\text{mín}}$ | the tokens a relleno keeps, $T_{\text{ctx}}/2 = 32$ in `modelo` (`T_min` in the code): the fewest a token is drawn from once the text has overflowed the window (Block 1 lesson 9) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -200,6 +202,17 @@ lesson 1 wrote the chain rule with a bare $p$ as a general identity, before that
 **$x$ without a subscript is a whole sequence**, the caso: lesson 8 writes no $x_t$, so the two
 never share a page there, and the lesson says in a clause that this $x$ is not a token. Block 3's
 task md writes the examples $e_{1:k}$; it follows this row, $e_{1:K}$.
+
+**The function has almost no letters of its own** (`COURSE-C2-P1-01`, Block 1 lesson 9). The
+project writes the model as `modelo(prompt) -> texto`, and its mathematics is lesson 1's chain rule
+read with lesson 4's sampler. The continuation has **no length letter**: $m$ is lesson 2's fusión
+count and $M_j$ lesson 4's masa, so the product runs over $j$ without an upper limit, as lesson 8's
+sum did. The context a token is drawn from has **no letter** either: $c$ is lesson 5's cost, and the
+context is a function of $x$ and $y_{<j}$ (the window keeps a known number of their last tokens), so
+the condition names those. The tokens a relleno keeps are **$T_{\text{mín}}$, not $r$**: bare $r$
+sits beside the reserved $r_\phi$ and Block 2's reward $r(x, y)$, while $T_{\text{mín}}$ says what it
+is, the fewest tokens a draw reads, in the family of $T$ and $T_{\text{ctx}}$. It carries no index
+and never shares an equation with lesson 2's $T_i$.
 
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson

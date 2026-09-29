@@ -1,0 +1,617 @@
+---
+slug: proyecto-mini-gpt
+title: "Proyecto: el modelo hecho función"
+block: 1
+order: 9
+minutes: 30
+summary: "El proyecto del bloque: el tokenizador, el checkpoint, el muestreo y la caché detrás de una sola función, modelo(prompt) -> texto. La lección escribe su firma y su contrato, deriva de qué distribución es una muestra lo que devuelve y cuánto cuesta cuando el texto no cabe en la ventana, y la congela para los bloques siguientes."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-de-que-es-muestra
+    type: single
+    prompt: 'Llamas a `modelo(prompt, 20, temperatura=1.0, top_p=None)` con un prompt de diez tokens. ¿De qué es una muestra lo que devuelve?'
+    options:
+      - { id: a, text: 'De $p_\theta(y \mid x)$, la distribución del propio modelo sobre las continuaciones de 20 tokens.' }
+      - { id: b, text: 'Sólo el primer token sale de $p_\theta$: los demás se sortean sabiendo lo que el modelo eligió antes, y eso ya es otra distribución.' }
+      - { id: c, text: 'De la generación voraz con algo de ruido: cada token es, casi siempre, la favorita.' }
+      - { id: d, text: 'De $p_\theta(y \mid x)$ sólo si además se fija la semilla; sin ella, de una mezcla de sorteos.' }
+    answer: a
+    explanation: 'La (a). Diez tokens de prompt y veinte sorteados caben en la ventana de 64, así que no se suelta nada; con temperatura 1 y sin corte, cada token sale de $p_\theta(y_j \mid x, y_{<j})$, y el producto de esos factores es $p_\theta(y \mid x)$ por la regla de la cadena. La (b) lee la regla al revés: sortear sabiendo lo elegido antes es justo lo que piden sus factores. La (c) es el límite $\tau \to 0$, no $\tau = 1$. La (d) confunde la semilla con la distribución: la semilla elige cuál de sus muestras sale, no de qué distribución sale.'
+    hint: 'Escribe la probabilidad de la continuación como producto de un factor por token y compáralo con la regla de la cadena.'
+  - id: q-filas-por-token
+    type: numeric
+    prompt: 'Otra versión de `modelo` rellena la caché con los 16 últimos tokens en lugar de 32, con la misma ventana de 64. Superada la ventana, ¿cuántas filas calcula por token, de media? Cuenta filas, como la lección.'
+    answer: 1.306
+    tolerance: 0.01
+    explanation: 'Unas $1.31$. Tras un relleno la caché tiene 16 posiciones y crece de una en una hasta 64: son 48 avances, una fila cada uno, y cada avance deja sortear un token, igual que el relleno. El ciclo escribe $64 - 16 + 1 = 49$ tokens y calcula $16 + 48 = 64$ filas, así que $64/49 \approx 1.31$, frente a las $64/33 \approx 1.94$ de rellenar con 32. A cambio, el token que sigue a un relleno lee 16 tokens y no 32, que al mini-GPT le siguen sobrando.'
+    hint: 'Un ciclo va de un relleno al siguiente. Cuenta cuántos tokens escribe y cuántas filas calcula.'
+  - id: q-el-contrato
+    type: multi
+    prompt: 'Marca lo que el contrato de `modelo` garantiza a quien lo llama.'
+    options:
+      - { id: a, text: 'Dos llamadas con los mismos argumentos y la misma semilla devuelven el mismo texto, aunque entre ellas haya otras.' }
+      - { id: b, text: 'Lo que devuelve no contiene nunca la cadena de parada.' }
+      - { id: c, text: 'Lo que devuelve acaba en una palabra completa.' }
+      - { id: d, text: 'Un prompt que acaba en espacio da la misma continuación que el mismo prompt sin el espacio.' }
+      - { id: e, text: 'Recuerda la llamada anterior, así que con dos llamadas seguidas se puede mantener una conversación.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). La (a) son dos cláusulas a la vez: con semilla, `modelo` es una función de sus argumentos, y ninguna llamada deja nada a la siguiente. La (b) es la parada: se devuelve lo que hay antes de la primera aparición, y si no aparece, lo generado no la contiene. La (c) falla porque `max_tokens` cuenta tokens, y <W> no traf</W> son cuatro. La (d) es la séptima cláusula al revés: el espacio suelto cambia la distribución entera, y por eso `modelo` rechaza ese prompt. La (e) contradice la quinta: lo que el modelo tenga que saber va en el prompt, cada vez.'
+    hint: 'Repasa las siete cláusulas: dos de estas opciones las contradicen y una confunde tokens con palabras.'
+challenges:
+  - id: ch-continuar
+    prompt: |
+      Escribe `continuar(ids, n, llenar, avanzar, T_ctx, T_min)`: el bucle de `modelo` sin el
+      texto y sin el sorteo. Devuelve la lista de los `n` ids que siguen a `ids`, eligiendo en
+      cada posición la favorita, el `argmax` de los logits.
+
+      `llenar(ids)` hace el *prefill* y devuelve `(z, cache)`; `avanzar(x, cache)` mete `x` en
+      la caché, que crece una posición, y devuelve los logits siguientes. `len(cache)` es
+      cuántas posiciones guarda, y no puede pasar de `T_ctx`: cuando esté llena y haga falta
+      otro token, rellénala con los `T_min` últimos tokens del texto, prompt y elegidos juntos.
+      Un prompt más largo que la ventana entra con sus `T_ctx` últimos. Ni una llamada de más:
+      `llenar` al empezar y en cada relleno, y nada después del último token.
+
+      Debajo tienes el motor de juguete de las pruebas, para ensayar con él.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def continuar(ids, n, llenar, avanzar, T_ctx, T_min):
+          """Los n ids que siguen a ids: la favorita en cada posición, sin desbordar la caché."""
+          # tu código aquí
+
+
+      def motor(T_ctx, n_v=97):
+          """llenar y avanzar de juguete: la caché es una lista de ids, y la favorita depende
+          de cada token leído y de su posición. Apunta en `llenados` cada llamada a llenar."""
+          llenados = []
+          favorita = lambda leido: np.eye(n_v)[(sum((i + 1) * t for i, t in enumerate(leido)) + 3 * len(leido)) % n_v]
+
+          def llenar(ids):
+              llenados.append(list(ids))
+              return favorita(ids), list(ids)
+
+          def avanzar(x, cache):
+              assert len(cache) < T_ctx, "avanzar sobre una caché llena"
+              cache.append(x)
+              return favorita(cache)
+
+          return llenar, avanzar, llenados
+    tests:
+      - name: "dentro de la ventana, un prefill y lo demás avanzar"
+        code: |
+          import numpy as np
+          def motor(T_ctx, n_v=97):
+              llenados = []
+              favorita = lambda leido: np.eye(n_v)[(sum((i + 1) * t for i, t in enumerate(leido)) + 3 * len(leido)) % n_v]
+              def llenar(ids):
+                  llenados.append(list(ids))
+                  return favorita(ids), list(ids)
+              def avanzar(x, cache):
+                  assert len(cache) < T_ctx, 'avanzar sobre una caché llena: con T_ctx = %d, la posición %d no existe. Cuando la caché esté llena y haga falta otro token, rellénala con llenar' % (T_ctx, T_ctx + 1)
+                  cache.append(x)
+                  return favorita(cache)
+              return llenar, avanzar, llenados
+          llenar, avanzar, llenados = motor(16)
+          r = continuar([1, 2, 3], 6, llenar, avanzar, 16, 8)
+          assert r is not None, 'continuar no devuelve nada: falta el return'
+          assert [int(x) for x in r] == [23, 21, 32, 33, 73, 78], 'con 3 tokens de prompt y 6 nuevos, la ventana de 16 no se llena: cada token es la favorita tras leer todo lo anterior, [23, 21, 32, 33, 73, 78]. Sale %s' % list(r)
+          assert llenados == [[1, 2, 3]], 'dentro de la ventana, llenar se llama una sola vez, con el prompt, y lo demás es avanzar. Se llamó con %s' % llenados
+      - name: "la caché nunca pasa de T_ctx posiciones"
+        code: |
+          import numpy as np
+          def motor(T_ctx, n_v=97):
+              llenados = []
+              favorita = lambda leido: np.eye(n_v)[(sum((i + 1) * t for i, t in enumerate(leido)) + 3 * len(leido)) % n_v]
+              def llenar(ids):
+                  llenados.append(list(ids))
+                  return favorita(ids), list(ids)
+              def avanzar(x, cache):
+                  assert len(cache) < T_ctx, 'avanzar sobre una caché llena: con T_ctx = %d, la posición %d no existe. Cuando la caché esté llena y haga falta otro token, rellénala con llenar' % (T_ctx, T_ctx + 1)
+                  cache.append(x)
+                  return favorita(cache)
+              return llenar, avanzar, llenados
+          llenar, avanzar, llenados = motor(6)
+          r = continuar([1, 2], 20, llenar, avanzar, 6, 3)
+          assert r is not None, 'continuar no devuelve nada: falta el return'
+          bien = [11, 47, 44, 73, 29, 92, 75, 65, 70, 36, 86, 34, 47, 13, 68, 23, 67, 33, 71, 41]
+          assert [int(x) for x in r] == bien, 'con ventana 6 y T_min = 3, los 20 tokens tenían que ser %s; salen %s' % (bien, list(r))
+      - name: "al rellenar, los T_min últimos, con el recién elegido"
+        code: |
+          import numpy as np
+          def motor(T_ctx, n_v=97):
+              llenados = []
+              favorita = lambda leido: np.eye(n_v)[(sum((i + 1) * t for i, t in enumerate(leido)) + 3 * len(leido)) % n_v]
+              def llenar(ids):
+                  llenados.append(list(ids))
+                  return favorita(ids), list(ids)
+              def avanzar(x, cache):
+                  assert len(cache) < T_ctx, 'avanzar sobre una caché llena: con T_ctx = %d, la posición %d no existe. Cuando la caché esté llena y haga falta otro token, rellénala con llenar' % (T_ctx, T_ctx + 1)
+                  cache.append(x)
+                  return favorita(cache)
+              return llenar, avanzar, llenados
+          llenar, avanzar, llenados = motor(6)
+          continuar([1, 2], 20, llenar, avanzar, 6, 3)
+          assert len(llenados) > 1, 'con 20 tokens en una ventana de 6 hace falta rellenar, y llenar sólo se llamó %d veces' % len(llenados)
+          bien = [[1, 2], [44, 73, 29], [75, 65, 70], [86, 34, 47], [68, 23, 67]]
+          for k, (hecho, debido) in enumerate(zip(llenados[1:], bien[1:]), start=1):
+              assert [int(x) for x in hecho] == debido, 'el relleno %d tenía que llevar los T_min = 3 últimos tokens del texto, prompt y elegidos juntos y con el último elegido dentro: %s. Llevó %s' % (k, debido, hecho)
+      - name: "ni un relleno de más"
+        code: |
+          import numpy as np
+          def motor(T_ctx, n_v=97):
+              llenados = []
+              favorita = lambda leido: np.eye(n_v)[(sum((i + 1) * t for i, t in enumerate(leido)) + 3 * len(leido)) % n_v]
+              def llenar(ids):
+                  llenados.append(list(ids))
+                  return favorita(ids), list(ids)
+              def avanzar(x, cache):
+                  assert len(cache) < T_ctx, 'avanzar sobre una caché llena: con T_ctx = %d, la posición %d no existe. Cuando la caché esté llena y haga falta otro token, rellénala con llenar' % (T_ctx, T_ctx + 1)
+                  cache.append(x)
+                  return favorita(cache)
+              return llenar, avanzar, llenados
+          for n in [20, 21]:
+              llenar, avanzar, llenados = motor(6)
+              continuar([1, 2], n, llenar, avanzar, 6, 3)
+              assert llenados, 'llenar no se llamó nunca: la primera llamada es el prefill, con el prompt'
+              assert len(llenados) == 5, 'con prompt de 2, ventana de 6, T_min = 3 y %d tokens hacen falta 5 llamadas a llenar (el prefill y un relleno cada vez que la caché está llena y falta otro token), y hubo %d. ¿Rellenas en cada token, o después del último?' % (n, len(llenados))
+      - name: "un prompt más largo que la ventana"
+        code: |
+          import numpy as np
+          def motor(T_ctx, n_v=97):
+              llenados = []
+              favorita = lambda leido: np.eye(n_v)[(sum((i + 1) * t for i, t in enumerate(leido)) + 3 * len(leido)) % n_v]
+              def llenar(ids):
+                  llenados.append(list(ids))
+                  return favorita(ids), list(ids)
+              def avanzar(x, cache):
+                  assert len(cache) < T_ctx, 'avanzar sobre una caché llena: con T_ctx = %d, la posición %d no existe. Cuando la caché esté llena y haga falta otro token, rellénala con llenar' % (T_ctx, T_ctx + 1)
+                  cache.append(x)
+                  return favorita(cache)
+              return llenar, avanzar, llenados
+          llenar, avanzar, llenados = motor(6)
+          ids = [3, 1, 4, 1, 5, 9, 2, 6, 5, 3]
+          r = continuar(ids, 5, llenar, avanzar, 6, 3)
+          assert r is not None, 'continuar no devuelve nada: falta el return'
+          assert [int(x) for x in llenados[0]] == [5, 9, 2, 6, 5, 3], 'un prompt de 10 tokens no cabe en una ventana de 6: el prefill lleva sus 6 últimos, [5, 9, 2, 6, 5, 3], y llevó %s' % llenados[0]
+          assert [int(x) for x in r] == [17, 71, 67, 17, 25], 'salen %s y tenían que salir [17, 71, 67, 17, 25]' % list(r)
+      - name: "devuelve n tokens, sin el prompt"
+        code: |
+          import numpy as np
+          def motor(T_ctx, n_v=97):
+              llenados = []
+              favorita = lambda leido: np.eye(n_v)[(sum((i + 1) * t for i, t in enumerate(leido)) + 3 * len(leido)) % n_v]
+              def llenar(ids):
+                  llenados.append(list(ids))
+                  return favorita(ids), list(ids)
+              def avanzar(x, cache):
+                  assert len(cache) < T_ctx, 'avanzar sobre una caché llena: con T_ctx = %d, la posición %d no existe. Cuando la caché esté llena y haga falta otro token, rellénala con llenar' % (T_ctx, T_ctx + 1)
+                  cache.append(x)
+                  return favorita(cache)
+              return llenar, avanzar, llenados
+          llenar, avanzar, llenados = motor(8)
+          r = continuar([2, 5], 0, llenar, avanzar, 8, 4)
+          assert r is not None and list(r) == [], 'con n = 0 no se elige nada: la lista vacía'
+          llenar, avanzar, llenados = motor(8)
+          r = list(continuar([2, 5], 3, llenar, avanzar, 8, 4))
+          assert len(r) == 3, 'con n = 3 salen 3 tokens, los nuevos, sin el prompt. Salen %d: %s' % (len(r), r)
+    solution: |
+      import numpy as np
+
+
+      def continuar(ids, n, llenar, avanzar, T_ctx, T_min):
+          """Los n ids que siguen a ids: la favorita en cada posición, sin desbordar la caché."""
+          z, cache = llenar(list(ids)[-T_ctx:])                 # el prefill, con lo que quepa
+          nuevos = []
+          for _ in range(n):
+              if nuevos:                                        # lo elegido entra en la caché
+                  if len(cache) < T_ctx:
+                      z = avanzar(nuevos[-1], cache)
+                  else:                                         # llena: se rellena
+                      z, cache = llenar((list(ids) + nuevos)[-T_min:])
+              nuevos.append(int(np.argmax(z)))
+          return nuevos
+    explanation: |
+      Es el bucle de `modelo` sin el texto ni el sorteo, y dos detalles deciden el reto. El
+      primero es el orden: lo elegido entra en la caché al *principio* de la vuelta siguiente, no
+      al final de la suya, así que después del último token no se llama a nada, ni a `avanzar` ni
+      a `llenar`. Con el orden contrario, la última vuelta rellena para un token que nadie va a
+      pedir.
+
+      El segundo es qué lleva el relleno: los `T_min` últimos tokens del texto *con* el recién
+      elegido, porque es justo el que falta en la caché. Sin él, el primer token tras el relleno
+      se elige leyendo un texto al que le falta su final. Y el *prefill* recorta el prompt a
+      `T_ctx`: un prompt más largo que la ventana tampoco cabe la primera vez.
+reading:
+  - kind: blog
+    title: 'Prompt Boundaries and Token Healing'
+    authors: 'Lundberg y Ribeiro'
+    year: '2023'
+    venue: 'Documentación de Guidance · «The Art of Prompt Design»'
+    lang: en
+    url: 'https://guidance.readthedocs.io/en/latest/example_notebooks/art_of_prompt_design/prompt_boundaries_and_token_healing.html'
+    note: 'La costura del espacio final en modelos grandes, con un prompt que acaba en «http:» como caso, y el arreglo que esta lección deja fuera: retroceder un token y obligar al primero sorteado a empezar por sus bytes.'
+  - kind: blog
+    title: 'How to generate text: using different decoding methods for language generation with Transformers'
+    authors: 'von Platen'
+    year: '2020'
+    venue: 'Blog de Hugging Face'
+    lang: en
+    url: 'https://huggingface.co/blog/how-to-generate'
+    note: 'La función de generar de una biblioteca de verdad, con GPT-2 detrás: los mismos mandos que modelo (voraz, temperatura, top-k, top-p, longitud máxima) y la búsqueda en haz que este bloque dejó fuera.'
+  - kind: paper
+    title: 'Training language models to follow instructions with human feedback'
+    authors: 'Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin y otros'
+    year: '2022'
+    venue: 'NeurIPS 2022 · arXiv:2203.02155'
+    lang: en
+    url: 'https://arxiv.org/abs/2203.02155'
+    note: 'Su introducción es el problema con el que acaba esta lección: un modelo entrenado sólo a predecir continúa lo que se le pide en lugar de hacerlo. El resto del artículo es el bloque siguiente.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 9. Corre sobre el mini-GPT: el checkpoint de P0-03, sin
+    entrenarlo. Congela public/courses/llm-agents/modelo.py, que cargan los bloques 2 y 3. */}
+
+Las piezas del mini-GPT están repartidas por las celdas del bloque. `codificar` y `decodificar`
+salieron de <Leccion slug="bpe-de-verdad">la lección sobre BPE</Leccion> (*byte-pair encoding*); los
+pesos, de <Leccion slug="entrenar-un-mini-gpt">la del entrenamiento</Leccion>; `muestrear`, de
+<Leccion slug="muestreo">la del muestreo</Leccion>; `llenar` y `avanzar`, de
+<Leccion slug="kv-cache">la de la caché</Leccion>. Cada celda que ha querido texto las ha vuelto a
+cargar y a coser a mano. <Leccion slug="aprendizaje-en-contexto">La lección sobre el aprendizaje en
+contexto</Leccion> acabó dando la razón para coserlas de una vez: con $\theta$ quieto, todo lo que
+hace un modelo depende del texto que recibe, así que lo único que el resto del curso necesita del
+mini-GPT es una manera de dárselo y de recoger lo que escribe. Este proyecto la construye.
+
+El curso anterior terminó en algo parecido. En
+<Leccion curso="dl-nlp" slug="proyecto-transformer">el proyecto del Transformer del curso
+anterior</Leccion>, `paso(entrada)` era «el modelo hecho función»: recibía ids y devolvía una
+distribución, y quien lo llamaba tenía que saber qué es un id, dónde va <W>\<GO></W> y qué hacer
+con $\lvert V \rvert$ probabilidades. La función de esta lección recibe texto y devuelve texto, y
+quien la llama no maneja un solo id. Pero una firma sólo dice qué entra y qué sale. ¿Da dos veces
+lo mismo? ¿Cuándo para? ¿Qué hace con un texto que no cabe en las 64 posiciones del mini-GPT? Las
+respuestas son el contrato, y lo que el curso construya encima se apoyará en ellas, no en el código.
+
+Mira una llamada entera, pieza a pieza, antes de ponerle nombre a nada:
+`modelo("La Nela", max_tokens=4, semilla=0)`, que devuelve <W> no traf</W>.
+
+| | pieza | recibe | devuelve |
+|---|---|---|---|
+| 1 | `codificar` | <W>La Nela</W> | los ids 461 y 373: <W>La</W>, <W> Nela</W> |
+| 2 | `llenar` | 461, 373 | los logits de la posición 2, y una caché con 2 posiciones |
+| 3 | `muestrear` | esos logits | 309: <W> no</W> |
+| 4 | `avanzar` y `muestrear`, tres veces | 309, 276, 266 | la caché crece a 3, 4 y 5 posiciones, y salen 276, 266 y 102: <W> t</W>, <W>ra</W>, <W>f</W> |
+| 5 | `decodificar` | 309, 276, 266, 102 | <W> no traf</W> |
+
+Tres cosas de la traza. El texto acaba a mitad de palabra, porque `max_tokens` cuenta tokens y
+<W> traf</W> son tres. El último token, el 102, no entra en la caché: nadie va a pedir lo que viene
+detrás. Y lo que devuelve empieza por un espacio: es la continuación, y <W>La Nela</W> seguido de
+<W> no traf</W> es el texto entero. Los cuatro sorteos los decidió la semilla, y con otra habrían
+salido otros.
+
+<Callout type="intuition" title="La idea en una frase">
+`modelo` es la regla de la cadena puesta a sortear: codifica el prompt, sortea cada token sabiendo
+los anteriores y devuelve lo sorteado como texto. Su contrato dice de qué distribución sortea,
+cuándo para y qué hace cuando el texto no cabe, y es lo único de él que el resto del curso puede
+dar por hecho.
+</Callout>
+
+## La firma y el contrato
+
+La **firma** de una función es lo que cabe en su primera línea: el nombre, los parámetros con sus
+valores por defecto y lo que devuelve. La de `modelo` es ésta:
+
+```python
+def modelo(
+    prompt,
+    max_tokens=32,
+    temperatura=1.0,
+    top_p=0.9,
+    parar=None,
+    semilla=None,
+) -> str: ...
+```
+
+El **contrato** es lo que promete a quien la llama y lo que le pide. Son siete cláusulas, y cada
+una sale de una lección del bloque:
+
+1. **Continúa.** Devuelve sólo lo que sigue al prompt: `prompt + texto` es el texto entero.
+2. **Sortea como en el muestreo.** Cada token sale del softmax de los logits divididos entre
+   `temperatura`, cortado al núcleo de masa `top_p` y renormalizado. `temperatura=0` es la
+   generación voraz, y `top_p=None` no corta.
+3. **Para** tras `max_tokens` tokens, que son tokens y no palabras, o antes, en la primera
+   aparición de `parar` en lo generado (el prompt no cuenta). Esa **cadena de parada** (*stop
+   sequence*) no se devuelve.
+4. **Con semilla, es una función.** Los mismos argumentos y la misma `semilla` dan el mismo texto;
+   sin semilla, cada llamada es un sorteo nuevo.
+5. **No recuerda.** Ninguna llamada cambia $\theta$ ni deja nada para la siguiente. Lo que el modelo
+   tenga que saber va en el prompt, cada vez.
+6. **Lee como mucho los últimos $T_{\text{ctx}} = 64$ tokens**, y más allá rellena la caché (la
+   sección siguiente).
+7. **Pide** un prompt no vacío, porque el primer token se da y no se predice, como estableció
+   <Leccion slug="una-sola-columna">la lección sobre el modelo de lenguaje causal</Leccion>, y que no
+   acabe en espacio (la última sección de este apartado). Si no, falla en lugar de escribir.
+
+La segunda cláusula dice de qué es muestra lo que devuelve. Llamemos $x$ a los tokens del prompt,
+todos (sin subíndice es la secuencia entera, como el caso de la lección anterior, no el token
+$x_t$), e $y_1, y_2, \dots$ a los que sortea. Cada $y_j$ sale de la distribución $\tilde{\mathbf{q}}$
+de <Leccion slug="muestreo">la lección sobre el muestreo</Leccion>, calculada con los logits que la
+red da tras leer el prompt y lo sorteado antes; escribámosla $\tilde{q}(\cdot \mid x, y_{<j})$, con
+el texto leído a la vista, como hacía $\mathbf{z}_t(x_{\le t})$. Como cada sorteo sabe los
+anteriores, la probabilidad de que `modelo` escriba justo $y$ es el producto
+
+$$
+\tilde{q}(y \mid x) = \prod_{j} \tilde{q}(y_j \mid x, y_{<j}).
+$$
+
+Con `temperatura=1` y `top_p=None` no hay nada entre los logits y el sorteo, y mientras el prompt y
+lo sorteado quepan en la ventana cada factor es la condicional del modelo. El producto es entonces
+la regla de la cadena de la primera lección del bloque, recorrida en el otro sentido:
+
+$$
+\tilde{q}(y \mid x) = \prod_{j} p_\theta(y_j \mid x, y_{<j}) = p_\theta(y \mid x).
+$$
+
+Sortear token a token, cada uno sabiendo los anteriores, es sortear continuaciones enteras con la
+probabilidad que el modelo les da. No es una aproximación. Cualquier otra temperatura o núcleo da
+otra distribución, hecha con los mismos logits, y `temperatura=0` la reduce a un solo texto, el de
+la voraz. La semilla no cambia la distribución: elige cuál de sus muestras sale.
+
+### Más allá de la ventana: rellenar la caché
+
+La sexta cláusula obliga a decidir algo. <Leccion slug="kv-cache">La lección sobre la caché</Leccion>
+dejó dicho que la del mini-GPT no se desliza: sus posiciones son una tabla de $T_{\text{ctx}} = 64$
+filas, y en cuanto se suelta el primer token cada uno cambia de posición y lo guardado deja de valer.
+`generar`, la función de <W>minigpt.py</W>, lo esquiva sin caché: en cada token pasa por la red los
+últimos 64 enteros. `modelo` usa la caché mientras cabe y, cuando está llena y hace falta otro token,
+la **rellena**: la tira y la vuelve a llenar, en un solo *prefill*, con los últimos $T_{\text{mín}}$
+tokens del texto. En `modelo`, $T_{\text{mín}} = T_{\text{ctx}}/2 = 32$.
+
+Contemos filas, cada una lo que aquella lección llamó $c_{\text{fila}}$ (el término de la atención,
+que crece con la posición, se queda fuera: en la posición 64 es un octavo de $c_{\text{fila}}$).
+Tras un relleno, la caché guarda $T_{\text{mín}}$ posiciones y crece de una en una hasta
+$T_{\text{ctx}}$: son $T_{\text{ctx}} - T_{\text{mín}}$ avances, de una fila cada uno. Cada avance
+deja sortear un token, y el relleno otro, así que un ciclo escribe
+$T_{\text{ctx}} - T_{\text{mín}} + 1$ tokens y calcula
+$T_{\text{mín}} + (T_{\text{ctx}} - T_{\text{mín}}) = T_{\text{ctx}}$ filas:
+
+$$
+\frac{\text{filas}}{\text{token}} = \frac{T_{\text{ctx}}}{T_{\text{ctx}} - T_{\text{mín}} + 1} = \frac{64}{33} \approx 1.94,
+$$
+
+frente a las $T_{\text{ctx}} = 64$ de `generar`, una pasada entera por token. El precio es contexto:
+el token que se sortea justo después de un relleno lee $T_{\text{mín}}$ tokens y no 64, y cada uno de
+los siguientes, uno más. $T_{\text{mín}}$ es el mando entre los dos extremos. Con
+$T_{\text{mín}} = T_{\text{ctx}} - 1$ cada token lee al menos 63, y el ciclo da dos tokens por 64
+filas; con $T_{\text{mín}} = 1$ sale a una fila por token, y el que sigue a un relleno lee uno solo.
+
+Treinta y dos es generoso, y se puede decir por qué.
+<Leccion slug="aprendizaje-en-contexto">La lección sobre el aprendizaje en contexto</Leccion> midió
+que lo que el mini-GPT lee más allá de unos ocho tokens no le sirve para predecir: dejarle 32 no le
+quita nada que use. Con un modelo que sí aprovechara lo que lee, $T_{\text{mín}}$ dejaría de ser una
+cuestión de coste y pasaría a serlo de calidad.
+
+### Donde el texto deja ver los tokens
+
+Quien llama a `modelo` no maneja ids, pero el tokenizador sigue dentro y asoma en dos cláusulas. La
+tercera ya ha salido en la traza: `max_tokens` cuenta tokens, y el texto puede quedarse a mitad de
+palabra. La séptima necesita un párrafo más.
+
+El mini-GPT sólo ha leído su corpus tal como lo corta `codificar`, y un prompt se codifica solo, sin
+el texto que vendría detrás. Si su final no se corta como se cortaría dentro de un texto más largo,
+lo que el modelo lee al final no dice lo que quería decir quien escribió el prompt: dice lo que
+decía en el corpus. El caso que se da sin buscarlo es el espacio final. La lección sobre BPE cortó el texto en *pre-tokens* con el espacio pegado a la palabra
+que lo sigue, así que en la novela casi todas las palabras empiezan por un token que ya lleva su
+espacio. Un espacio suelto sólo aparece delante de los pocos comienzos de palabra que las fusiones
+no llegaron a pegar al espacio: <W> Golfín</W> empieza por un espacio suelto seguido de <W>G</W>.
+
+Un prompt que acaba en espacio termina en ese token, y el mini-GPT entiende lo único que ha
+aprendido de él: que viene una de esas palabras. El arreglo de fondo es deshacer el último token del
+prompt y obligar al primero que se sortee a empezar por sus bytes (*token healing*), y no es de este
+bloque. El contrato hace lo honesto con lo que tiene, que es rechazar el prompt.
+
+## El mini-GPT, hecho función y congelado
+
+Las tres celdas corren sobre el mini-GPT, el *checkpoint* del bloque, sin entrenarlo. Un cambio de
+nombre antes de empezar: en las celdas de las lecciones anteriores, `modelo` era el objeto
+`MiniGPT`; desde aquí `modelo` es la función, y el objeto se llama `red`, porque es lo que se ve
+cuando se mira dentro.
+
+La primera reúne el motor: el tokenizador, la red, y `llenar` y `avanzar` tal como los dejó la
+lección sobre la caché, con la red como primer argumento en lugar de una variable global (una
+función que se va a congelar no puede depender de nada que no reciba). Después hace a mano la
+llamada de la traza.
+
+<PyCell packages={["numpy"]} code={`
+import json
+import numpy as np
+from pyodide.http import open_url
+
+exec(open_url("/courses/llm-agents/bpe.py").read())        # codificar, decodificar
+exec(open_url("/courses/llm-agents/minigpt.py").read())    # MiniGPT, softmax, layer_norm, muestrear
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+red = MiniGPT.cargar(open_url("/courses/llm-agents/minigpt.json").read())   # la red, por dentro
+
+def llenar(red, ids):
+    """El prefill: los logits de la última posición de ids y la caché de cada capa."""
+    Z, (_, capas, _, _) = red.adelante(np.array([ids]))
+    return Z[0, -1], [(K[0], V[0]) for (_, _, _, K, V, _, _), _ in capas]   # (h, t, d_k) cada una
+
+def avanzar(red, x, cache):
+    """Los logits tras el token x, en la posición siguiente a la caché, que crece una fila."""
+    p, L, h, d = red.p, red.cfg["n_capas"], red.cfg["h"], red.cfg["d_model"]
+    d_k, t = d // h, cache[0][0].shape[1]                     # t: posiciones ya guardadas
+    H = p["E"][x] + p["P"][t]                                 # (d,): la fila nueva, sola
+    for l in range(L):
+        Hn, _ = layer_norm(H, p[f"{l}.ln1_g"], p[f"{l}.ln1_b"])
+        q, k, v = (u.reshape(h, 1, d_k) for u in np.split(Hn @ p[f"{l}.Wqkv"], 3))
+        K = np.concatenate([cache[l][0], k], axis=1)          # (h, t + 1, d_k)
+        V = np.concatenate([cache[l][1], v], axis=1)
+        cache[l] = (K, V)
+        a = softmax(q @ K.transpose(0, 2, 1) / np.sqrt(d_k))  # (h, 1, t + 1)
+        H = H + (a @ V).reshape(d) @ p[f"{l}.Wo"]
+        H = H + red.ffn(H[None, None], l)[0][0, 0]
+    return layer_norm(H, p["lnf_g"], p["lnf_b"])[0] @ p["E"].T
+
+# La llamada de la traza, a mano: lo que la función de la celda siguiente esconde.
+rng = np.random.default_rng(0)
+ids = codificar("La Nela", F)
+z, cache = llenar(red, ids)
+print("prompt:", ids, [decodificar([i], F) for i in ids], "  caché:", cache[0][0].shape[1], "posiciones")
+for _ in range(4):
+    if len(ids) > 2:                                          # lo sorteado entra en la caché
+        z = avanzar(red, ids[-1], cache)
+    x = muestrear(z, 1.0, None, 0.9, rng)
+    ids.append(x)
+    print("sortea %3d %-6r   caché: %d posiciones" % (x, decodificar([x], F), cache[0][0].shape[1]))
+print(repr(decodificar(ids[2:], F)))
+`} />
+
+Son los números de la traza, y es la última vez que los ves. La segunda celda escribe
+`hacer_modelo(red, fusiones)`, que recibe la red y el tokenizador y devuelve `modelo` con los dos
+dentro. Lo que se congela es la firma: detrás puede haber otra red con la misma firma, que es lo que
+el bloque siguiente hará cuando cambie los pesos. El bucle es el de la traza con las cláusulas
+puestas: las dos comprobaciones de la séptima al entrar, el *prefill* con los últimos 64 tokens como
+mucho, el relleno cuando la caché está llena y la parada.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: red, F, llenar, avanzar, codificar, decodificar, muestrear, np.
+import time
+
+def hacer_modelo(red, fusiones):
+    """modelo(prompt) -> texto, con la red y el tokenizador dentro, y nada más."""
+    T_ctx = red.cfg["T_ctx"]
+    T_min = T_ctx // 2                                     # lo que conserva al rellenar
+
+    def modelo(prompt, max_tokens=32, temperatura=1.0, top_p=0.9, parar=None, semilla=None):
+        """Continúa prompt con hasta max_tokens tokens y devuelve sólo la continuación."""
+        assert prompt, "prompt vacío: el primer token se da, no se predice"
+        assert not prompt.endswith(" "), "el prompt acaba en espacio: el espacio va con la palabra siguiente"
+        ids = codificar(prompt, fusiones)
+        rng = np.random.default_rng(semilla)               # sin semilla, un sorteo nuevo
+        z, cache = llenar(red, ids[-T_ctx:])               # el prefill, con lo que quepa
+        nuevos = []
+        for _ in range(max_tokens):
+            if nuevos:                                     # lo sorteado entra en la caché
+                if cache[0][0].shape[1] < T_ctx:
+                    z = avanzar(red, nuevos[-1], cache)
+                else:                                      # llena: no se desliza, se rellena
+                    z, cache = llenar(red, (ids + nuevos)[-T_min:])
+            nuevos.append(muestrear(z, temperatura, None, top_p, rng))
+            texto = decodificar(nuevos, fusiones)
+            if parar is not None and parar in texto:
+                return texto[:texto.index(parar)]          # hasta la parada, sin ella
+        return decodificar(nuevos, fusiones)
+
+    return modelo
+
+modelo = hacer_modelo(red, F)
+print(repr(modelo("La Nela")))
+print(repr(modelo("La Nela")))
+a = modelo("La Nela", semilla=1)
+modelo("—¿Qué")                                            # otra llamada por medio
+print("misma semilla, mismo texto:", a == modelo("La Nela", semilla=1))
+print("voraz:", repr(modelo("La Nela", temperatura=0)))
+print("hasta el punto:", repr(modelo("La Nela", 64, parar=".", semilla=0)))
+t0 = time.perf_counter()
+largo = modelo("La Nela", 200, semilla=2)
+print("200 tokens en %.2f s; los últimos:" % (time.perf_counter() - t0), repr(largo[-60:]))
+`} />
+
+Las dos primeras líneas cambian cada vez que la ejecutas: sin semilla, cada llamada es un sorteo.
+Con la semilla 1 sale el mismo texto antes y después de otra llamada por medio, que no le ha dejado
+nada. La voraz vuelve al ciclo de <W> no,</W> de la lección sobre el muestreo, y con `parar="."`
+sale una frase sin su punto, <W> no trafá como me dijo lo le jo</W>, que empieza como la traza
+porque la semilla 0 sortea lo mismo. Doscientos tokens, tres veces la ventana y cinco rellenos,
+tardan menos de un segundo.
+
+La tercera comprueba el contrato contra lo que no depende de él. Dentro de la ventana, `modelo` tiene
+que escribir lo mismo que `generar` con la misma semilla, porque la caché da los mismos logits y el
+sorteo es el mismo; fuera, tienen que separarse donde empieza el relleno. Después mira el espacio
+final y, al acabar, carga la copia congelada de `modelo` y la compara con la tuya.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita las dos celdas anteriores: modelo, red, F, llenar, codificar, decodificar, np, time.
+ids = codificar("La Nela", F)
+
+def referencia(n, s):
+    """Los ids que escribe generar, de minigpt.py: la pasada entera en cada token, sin caché."""
+    return red.generar(ids, n, top_p=0.9, rng=np.random.default_rng(s))[len(ids):]
+
+for s in range(2):
+    print("semilla %d, 40 tokens: el mismo texto que generar: %s"
+          % (s, modelo("La Nela", 40, semilla=s) == decodificar(referencia(40, s), F)))
+t0 = time.perf_counter(); m = modelo("La Nela", 80, semilla=0)
+t1 = time.perf_counter(); g = referencia(80, 0); t2 = time.perf_counter()
+comunes = max(k for k in range(len(g) + 1) if m.startswith(decodificar(g[:k], F)))
+print("80 tokens: coinciden los %d primeros   (modelo %.2f s, generar %.2f s)" % (comunes, t1 - t0, t2 - t1))
+
+print()
+for prompt in ["Dijo que", "Dijo que "]:
+    q = softmax(llenar(red, codificar(prompt, F))[0])
+    print("%-11r %-28s ->" % (prompt, [decodificar([i], F) for i in codificar(prompt, F)]),
+          "  ".join("%r %.2f" % (decodificar([i], F), q[i]) for i in np.argsort(-q)[:4]))
+print("« Golfín» son", [decodificar([i], F) for i in codificar(" Golfín", F)])
+try:
+    modelo("Dijo que ")
+except AssertionError as e:
+    print("modelo('Dijo que '):", e)
+
+print()
+congelado = {}
+exec(open_url("/courses/llm-agents/modelo.py").read(), congelado)   # lo que cargan los bloques 2 y 3
+print("la copia congelada escribe lo mismo:",
+      all(congelado["modelo"]("La Nela", semilla=s) == modelo("La Nela", semilla=s) for s in range(3)))
+`} />
+
+Lo que dijo la derivación. Con dos semillas, 40 tokens de `modelo` y de `generar` son el mismo
+texto. Con 80 coinciden los 63 primeros: el 63 se sortea con la ventana justo llena (los 2 del prompt
+y 62 sorteados), y el 64 es el primero tras un relleno, que `modelo` sortea leyendo 32 tokens y
+`generar` leyendo 64. `modelo` tarda unas cinco veces menos, y no las casi treinta que dan las
+filas: en Pyodide cada pasada paga un coste fijo, sea de una fila o de 64, así que el reloj no sigue
+a la cuenta, y la cuenta es la que vale.
+
+Y el espacio. Tras <W>Dijo que</W>, las favoritas son <W> no</W>, <W> se</W>, <W> me</W>, palabras
+con su espacio; tras <W>Dijo que </W>, <W>u</W>, <W>j</W>, <W>é</W>, trozos de los que sólo siguen a
+un espacio suelto. Un carácter de más ha cambiado la distribución entera, y `modelo` se niega a
+sortear de ella.
+
+La última línea es la que congela el proyecto. <W>/courses/llm-agents/modelo.py</W> contiene la
+función de la segunda celda con el motor de la primera, y escribe lo mismo que la tuya. Desde el
+bloque siguiente, una celda que quiera el mini-GPT lo carga con una línea y lo llama sin abrirlo:
+
+```python
+exec(open_url("/courses/llm-agents/modelo.py").read())
+```
+
+## Comprueba tu intuición
+
+Tres preguntas, sobre de qué es muestra lo que devuelve, sobre lo que cuesta rellenar y sobre lo que
+promete el contrato, y un reto: el bucle de la ventana, contra un motor de juguete.
+
+<Quiz id="q-de-que-es-muestra" />
+
+<Quiz id="q-filas-por-token" />
+
+<Quiz id="q-el-contrato" />
+
+<CodeChallenge id="ch-continuar" />
+
+---
+
+`modelo` cumple su contrato, y el contrato no dice nada de responder. Promete continuar: devolver lo
+que, según $p_\theta$, suele venir después del prompt. Escríbele una pregunta y la tratará como
+*Marianela* trata las suyas, como la línea de un diálogo que sigue, sin contestarla. No es un defecto
+del tamaño. Un modelo grande entrenado sólo a predecir falla igual, con mejor ortografía, porque en
+su texto lo que sigue a una pregunta es lo que suele seguirla, y eso no siempre es la respuesta.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 10
+    (slug predecir-no-es-obedecer), envolver «su primera lección, sobre por qué predecir no es
+    obedecer» en su Leccion slug=…; el lint falla con un slug que no resuelve, también dentro
+    de un comentario. */}
+
+Hacer que un modelo haga lo que se le pide exige cambiarle algo más que el prompt, y ése es el
+bloque siguiente. Su primera lección, sobre por qué predecir no es obedecer, abre con esta misma
+función, cargada en una línea, y con una pregunta que se queda sin respuesta.

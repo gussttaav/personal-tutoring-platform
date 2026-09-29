@@ -1,6 +1,6 @@
 # P1-01 — Block 1: Del Transformer al modelo de lenguaje
 
-**Tag:** `COURSE-C2-P1-01` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-C2-P1-01` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ✅
 **Depends on:** P0-01, P0-02, P0-03, P0-04 · Block 1 widgets (built in this task)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** derivation
 **Runs on:** the mini-GPT checkpoint (P0-03) · **Publication:** `draft: true` until the block is
@@ -64,7 +64,7 @@ here; STATUS stays phase-level.
 - [x] 6. `perplejidad`
 - [x] 7. `leyes-de-escala`
 - [x] 8. `aprendizaje-en-contexto`
-- [ ] 9. `proyecto-mini-gpt`
+- [x] 9. `proyecto-mini-gpt`
 
 ## Mathematical content
 

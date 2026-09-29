@@ -36,7 +36,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (8/9) | _tbd_ | local |
+| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
@@ -306,7 +306,7 @@ code. Deviations from the task doc:
   unregistered API key; nothing course-visible changed for a published lesson). No commit —
   **local**.
 
-**COURSE-C2-P1-01** — In progress (started 2026-09-16). Lesson 1 `una-sola-columna` authored on the
+**COURSE-C2-P1-01** — Closed (2026-09-29; started 2026-09-16). Lesson 1 `una-sola-columna` authored on the
 shared branch, code-free as the block md asks (the worked example is the loss of a four-token window
 by hand: three softmaxes over a four-entry vocabulary, $\mathcal{L} = \tfrac{4}{3}\ln 2$, and the
 joint $1/16$ from the other side). 1 995 words, 5 display equations, 4 quiz, 2 readings (Bengio 2003,
@@ -684,3 +684,58 @@ reviewer of the block:
   `pnpm start` with identical output; all four quiz questions right and wrong; no horizontal page
   scroll at 375 px (the five display equations scroll in their own boxes, the table fits). The pane
   carried an English locale cookie, so the check ran under `/en/` chrome (Spanish lesson text).
+
+Lesson 9 `proyecto-mini-gpt` authored on the shared branch (2026-09-29), the block's project. 2 148
+words (advisory over the 2 000 target, like lessons 3–8), 3 display equations, no widget (the block
+md assigns none), 3 cells (longest 43 lines), 3 quiz, 1 challenge, 3 readings (Lundberg & Ribeiro
+2023 on token healing, von Platen 2020 on generation, Ouyang et al. 2022; titles and URLs checked).
+Runs on the mini-GPT, read and never trained, and says so before the first cell. Decisions recorded
+for the reviewer of the block:
+- **The frozen interface is a file**: `public/courses/llm-agents/modelo.py`, which the lesson's third
+  cell execs into a fresh namespace and checks against the function the second cell wrote (same text,
+  three seeds). Blocks 2–3 load it with one line, `exec(open_url("/courses/llm-agents/modelo.py").read())`.
+  It builds on `bpe.py` and `minigpt.py` (execs them, copies nothing) and exposes a factory,
+  `hacer_modelo(red, fusiones)`, so Block 2 can make a `modelo` over SFT'd weights with the same
+  signature. `llm-agents-assets.test.ts` pins the signature
+  `modelo(prompt, max_tokens=32, temperatura=1.0, top_p=0.9, parar=None, semilla=None)`, the factory,
+  and the two precondition asserts: a change is a CI failure, not a silent break in later lessons.
+- **The contract, seven clauses**: continuation only; lesson 4's sampler (`temperatura=0` voraz,
+  `top_p=None` no cut); stops at `max_tokens` (tokens, not words) or before the first `parar` in the
+  generated text, not returned; same seed → same text; no state between calls; reads at most 64
+  tokens; the prompt may be neither empty (lesson 1: the first token is given) nor end in a space.
+  The maths is the chain rule read forwards: at τ = 1, no cut, inside the window, the output is an
+  exact sample of $p_\theta(y \mid x)$.
+- **Beyond the window, the caché is refilled**: when full and another token is needed, a prefill of
+  the last $T_{\text{mín}} = T_{\text{ctx}}/2 = 32$ tokens. Derived: $T_{\text{ctx}}$ rows per cycle
+  of $T_{\text{ctx}} - T_{\text{mín}} + 1$ tokens, 64/33 ≈ 1.94 rows per token against `generar`'s
+  64; the minimum context is justified by lesson 8's table (nothing past ~8 tokens helps). Cell 3:
+  inside the window `modelo` and `generar` write the same text for the same seed; over 80 tokens they
+  share the first 63 exactly (the 64th is the first after a refill). The clock ratio (≈5×) is quoted
+  as a clock, not derived.
+- **The trailing-space seam, measured**: after `Dijo que` the favourites are ` no` / ` se` / ` me`;
+  after `Dijo que ` (a lone space token, which the novel only puts before word starts the merges never
+  glued to a space, ` Golfín` = ` ` + `G`…) they are `u` / `j` / `é`. `modelo` asserts against it;
+  token healing is named and left out.
+- **Renaming in cells**: `modelo` was the `MiniGPT` object in lessons 3–8's cells; from here it is the
+  function and the object is `red` (the delta's «la red» when looking inside). `llenar`/`avanzar` take
+  the network as first argument.
+- **Challenge `ch-continuar`**: the window loop alone (voraz, no text), against a toy engine whose
+  favourite hashes every token read and its position, so a wrong refill cannot pass by accident.
+  Graded in Node Pyodide against the solution (6/6), the starter and five wrong variants (refill every
+  token, refill after the last token, refill without the new token, untrimmed prompt, refill of 64):
+  each fails at least one test with its own message.
+- **Terms and letters added before use**: `firma`, `contrato`, `cadena de parada` (*stop sequence*
+  once), `rellenar`/`relleno` in the delta's §4; $\tilde{q}(v \mid x, y_{<j})$, $\tilde{q}(y \mid x)$
+  and $T_{\text{mín}}$ in `NOTATION.md`, with a note: no length letter ($m$, $M_j$ taken), no context
+  letter ($c$ is lesson 5's cost), $T_{\text{mín}}$ not $r$ ($r_\phi$, Block 2's $r(x, y)$).
+- **Lesson 8's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names Block 2's first lesson (`predecir-no-es-obedecer`) in prose with the usual comment.
+  `draft: false`, as lessons 1–8, against the PUBLICATION line.
+- Verified: `pnpm lint:content` (only the words warning), `jest src/lib/courses src/features/courses`
+  (71 suites, 991 tests), `pnpm build` green twice with 0 KaTeX errors; the three cells under Node
+  Pyodide 0.29.3 and in the Browser pane on `pnpm start` with identical output (warm ≈1.3 s and
+  2.5 s for cells 2–3); all three quiz questions right and wrong; the challenge's starter (0/6 with
+  messages) and solution (6/6) in the browser, and again in Node Pyodide from the final frontmatter
+  after test 4 gained its «llenar no se llamó nunca» message; no horizontal page scroll at 375 or
+  360 px (the trace
+  table scrolls 36 px inside its own box at 360). The pane carried the English locale cookie again.

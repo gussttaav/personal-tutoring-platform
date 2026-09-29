@@ -238,6 +238,10 @@ this work.
 | one solved instance of a tarea written in the prompt, $e_i$ | `ejemplo` (Block 1 lesson 8); *zero-shot*, *one-shot*, *few-shot* are the GPT-3 paper's names for $K = 0$, $1$ and a few, given once | demostración, *shot*, ejemplar, muestra (lesson 4's `muestrear`) |
 | what the ejemplos of one document have in common: which respuesta goes with which caso, $\omega$ | `tarea` (Block 1 lesson 8) | *task*; problema, habilidad, capacidad as the term |
 | the unsolved input the prompt ends on, $x$ | `caso` (Block 1 lesson 8); what the tarea makes of it is the `respuesta`, $y$ — that row read for one caso: in Block 1 the model's respuesta is text | entrada (a member of $V$), consulta (attention's), pregunta |
+| what a function takes and returns, in one line: its name, its parameters with their defaults, and its result | `firma` (Block 1 lesson 9) | *signature*, cabecera, prototipo; interfaz (the firma and its contrato together, a word the course does not need) |
+| what a function guarantees whoever calls it, and what it asks of them: its preconditions, what it returns, what it never does | `contrato` (Block 1 lesson 9) — this file's own word in §1 («an interface with a signature but no contract») | *contract*; especificación (Block 3 spends it on the prompt, «el prompt es una especificación»); garantías, promesa as the term |
+| the string passed as `parar`: its first appearance in the text generated ends the call, and it is not returned | `cadena de parada` (Block 1 lesson 9), with *stop sequence* given once | secuencia de parada, terminador, delimitador, *stop* |
+| throwing the full caché away and filling it again, in one *prefill*, with the last $T_{\text{mín}}$ tokens of the text | `rellenar` (la caché), `relleno` (Block 1 lesson 9) | *refill*; deslizar (what the caché cannot do, and what `generar` does without one); reiniciar, vaciar, recargar |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,
