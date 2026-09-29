@@ -270,6 +270,12 @@ $$
 \end{aligned}
 $$
 
+<Figure
+  src="/courses/dl-nlp/gru-celda.svg"
+  alt="Un paso de una GRU. Por arriba lo cruza de lado a lado una línea verde, la del estado oculto, que entra como h sub t menos uno, sale como h sub t y sólo se encuentra dos círculos por el camino: uno de producto y otro de suma. Debajo, tres cajitas rotuladas z, r y h con tilde. La z sube, pasando por un «1 −», hasta el círculo de producto de la línea verde, y una rama suya va a la derecha hasta otro círculo de producto, debajo de la línea, donde se encuentra con la h con tilde; sólo lo que sale de él sube hasta el de suma. De la línea verde, antes del primer círculo, baja una línea de puntos con el estado anterior que alimenta a la z y a la r junto con el vector del token. La h con tilde no la lee directamente, sino a través de un tercer círculo de producto donde la r la filtra. A la derecha no hay compuerta de salida ni tanh: la línea verde es a la vez la memoria y la salida."
+  caption="Las cuatro líneas de arriba, dibujadas: la vía verde de la LSTM, recorrida ahora por el propio estado oculto, que sale por la derecha tal cual, sin compuerta de salida ni tanh. Sobre ella manda una sola compuerta, z, que conserva por un lado a través de 1 − z y escribe por el otro; r ni siquiera la toca, sólo filtra lo que el candidato lee del pasado."
+/>
+
 Tres piezas —dos compuertas y un candidato—, cada una con la forma exacta de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>: seis matrices y tres sesgos, $3\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$
 pesos. Frente a los cuatro grupos de la LSTM, tres cuartas partes; y como allí, $T$ no aparece en
 ninguna de las formas, así que la GRU lee cualquier longitud con el mismo juego de pesos.
