@@ -1,0 +1,386 @@
+---
+slug: aprendizaje-en-contexto
+title: "Aprendizaje en contexto: el prompt como programa"
+block: 1
+order: 8
+minutes: 27
+summary: "Un modelo grande hace, con unos cuantos ejemplos en el prompt y los pesos quietos, tareas que nadie le entrenó a hacer. La lección lo escribe en la notación del bloque, deriva por qué predecir el texto obliga a reconocer la tarea que siguen los ejemplos y mide por qué el mini-GPT no puede: su texto no tiene esas tareas, y lo que lee más allá de unos ocho tokens no le sirve."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-cuantos-ejemplos
+    type: numeric
+    prompt: 'Dos tareas reciben los mismos casos. A priori, en el texto, la primera tiene probabilidad $0.99$ y la segunda $0.01$, y los ejemplos del prompt son de la segunda: cada uno suma $2$ nats a su favor en el logaritmo del cociente de la lección. ¿Cuántos ejemplos hacen falta, como mínimo, para que la segunda sea la tarea más probable?'
+    answer: 3
+    tolerance: 0
+    explanation: 'Tres. El cociente, a favor de la segunda, empieza en $\ln(0.01/0.99) = -\ln 99 \approx -4.6$ nats; el término del caso vale cero, porque las dos tareas reciben los mismos casos; y cada ejemplo suma $2$. Con dos ejemplos va por $-0.6$, todavía a favor de la primera, y con tres, por $+1.4$. Cuanto menos probable es a priori la tarea que se pide, más ejemplos cuesta. Con probabilidad cero, el cociente empezaría en $-\infty$ y no habría número de ejemplos que bastara.'
+    hint: 'Escribe el logaritmo del cociente con $K$ ejemplos y busca el primer $K$ que lo hace positivo.'
+  - id: q-probabilidad-cero
+    type: single
+    prompt: 'En el modelo del texto de la lección, ¿qué hacen unos ejemplos impecables de una tarea que el texto de entrenamiento no contiene nunca, con $p_{\text{texto}}(\omega) = 0$?'
+    options:
+      - { id: a, text: 'Nada: esa tarea sigue teniendo probabilidad cero con cualesquiera ejemplos, y la respuesta sale de las tareas que el texto sí tiene.' }
+      - { id: b, text: 'Con ejemplos suficientes la tarea acaba ganando, porque cada uno suma un término positivo al logaritmo del cociente.' }
+      - { id: c, text: 'La aprenden los pesos: cada ejemplo leído es un paso de entrenamiento que sube $p_{\text{texto}}(\omega)$.' }
+      - { id: d, text: 'Depende del caso: si es muy propio de esa tarea, su término compensa el de la probabilidad a priori.' }
+    answer: a
+    explanation: 'La (a). La probabilidad de $\omega$ leídos los ejemplos es proporcional a $p_{\text{texto}}(\omega)$ por los términos de los ejemplos y del caso, y cero por cualquier cosa es cero: en el logaritmo del cociente, el primer término es $-\infty$, y ninguna suma finita lo compensa. La (b) vale para una tarea improbable, no para una imposible. La (c) confunde el aprendizaje en contexto con el entrenamiento: leer un prompt no mueve un solo peso. La (d) es otro término finito, y choca con el mismo $-\infty$.'
+    hint: 'Mira el primer término del logaritmo del cociente.'
+  - id: q-las-celdas
+    type: multi
+    prompt: 'Marca lo que muestran las dos celdas sobre el mini-GPT.'
+    options:
+      - { id: a, text: 'Los ejemplos cambian lo que predice: lo que da a <W> hermanos</W> y a <W> hermana</W> no es lo mismo con una lista que con la otra.' }
+      - { id: b, text: 'Con cuatro ejemplos del plural, <W> hermanos</W> ya es más probable que <W> hermana</W>.' }
+      - { id: c, text: 'Un tramo de texto que acaba de leer entero le cuesta, la segunda vez, lo mismo que la primera.' }
+      - { id: d, text: 'Le falta una capa: el mecanismo que copia lo ya leído necesita dos, y el mini-GPT sólo tiene una.' }
+    answer: [a, c]
+    explanation: 'La (a) y la (c). El prompt condiciona, y los números se mueven, pero la lista del plural empuja uno o dos nats, y <W> hermana</W> va por delante en las diez filas de la primera tabla: la (b) no pasa con ningún $K$. La (c) es la segunda tabla: del token 9 en adelante, $3.14$ y $3.17$ nats la primera vez, $3.17$ y $3.16$ la segunda. La (d) falla por partida doble: el mini-GPT tiene dos capas, y el mecanismo que copia cabe en dos. Lo que no hizo es aprenderlo.'
+    hint: 'La primera tabla tiene una columna de diferencias; mira su signo.'
+  - id: q-que-le-falta
+    type: single
+    prompt: 'Según el argumento de la lección, ¿qué cambio haría más probable que un mini-GPT distinguiera el plural del femenino a partir de los ejemplos?'
+    options:
+      - { id: a, text: 'Entrenarlo diez veces más pasos sobre la misma novela.' }
+      - { id: b, text: 'Ampliar su ventana a 2 048 tokens, como la de GPT-3, con la misma novela.' }
+      - { id: c, text: 'Entrenarlo sobre textos que contengan documentos hechos de casos resueltos (listas, glosarios, ejercicios), con los parámetros y el cálculo que ese texto pida.' }
+      - { id: d, text: 'Escribir la tarea en el prompt con más claridad, por ejemplo <W>plural de hijo: hijos</W>.' }
+    answer: c
+    explanation: 'La (c). El argumento pide tres cosas: que el texto de entrenamiento tenga documentos que siguen tareas así, para que tengan probabilidad a priori; parámetros para guardar muchas y reconocerlas; y leer lo bastante atrás para ver los ejemplos. La (a) no añade texto distinto, que es lo que <Leccion slug="leyes-de-escala">las leyes de escala</Leccion> encontraron que le falta. La (b) da sitio a más ejemplos, pero el mini-GPT no aprovecha ni sus 64 tokens, y la novela sigue sin listas. La (d) cambia el prompt y no el modelo: si la tarea tiene probabilidad cero en su texto, ningún prompt se la da.'
+    hint: 'Repasa las tres cosas que la red necesita para imitar al texto.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Language Models are Few-Shot Learners'
+    authors: 'Brown et al.'
+    year: '2020'
+    venue: 'arXiv:2005.14165'
+    lang: en
+    url: 'https://arxiv.org/abs/2005.14165'
+    note: 'El artículo de GPT-3 y del nombre. La sección 2 define zero-shot, one-shot y few-shot, y la figura 1.2 enseña que lo que aportan los ejemplos crece con el tamaño del modelo.'
+  - kind: paper
+    title: 'An Explanation of In-context Learning as Implicit Bayesian Inference'
+    authors: 'Xie, Raghunathan, Liang y Ma'
+    year: '2022'
+    venue: 'ICLR 2022 · arXiv:2111.02080'
+    lang: en
+    url: 'https://arxiv.org/abs/2111.02080'
+    note: 'El modelo del texto de esta lección, con cadenas de Markov ocultas en lugar de ejemplos independientes, y un corpus sintético en el que Transformers pequeños sí aprenden en contexto.'
+  - kind: paper
+    title: 'In-context Learning and Induction Heads'
+    authors: 'Olsson, Elhage, Nanda, Joseph y otros'
+    year: '2022'
+    venue: 'Transformer Circuits Thread · arXiv:2209.11895'
+    lang: en
+    url: 'https://arxiv.org/abs/2209.11895'
+    note: 'El mecanismo que copia lo ya leído, dos cabezas en capas distintas, y el momento del entrenamiento en que aparece. La prueba de la segunda celda es la suya, con tokens al azar.'
+  - kind: paper
+    title: 'Rethinking the Role of Demonstrations: What Makes In-Context Learning Work?'
+    authors: 'Min, Lyu, Holtzman, Artetxe, Lewis, Hajishirzi y Zettlemoyer'
+    year: '2022'
+    venue: 'EMNLP 2022 · arXiv:2202.12837'
+    lang: en
+    url: 'https://arxiv.org/abs/2202.12837'
+    note: 'Cambian al azar las respuestas de los ejemplos y los modelos apenas empeoran: lo que cuenta es el formato y el tipo de caso. Lo que predice un modelo que reconoce la tarea en vez de aprenderla.'
+  - kind: paper
+    title: 'Larger language models do in-context learning differently'
+    authors: 'Wei, Wei, Tay, Tran y otros'
+    year: '2023'
+    venue: 'arXiv:2303.03846'
+    lang: en
+    url: 'https://arxiv.org/abs/2303.03846'
+    note: 'La otra cara: los modelos más grandes sí siguen ejemplos que contradicen lo que traen aprendido. Hasta dónde llega reconocer, y dónde empieza algo más.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 8. Corre sobre el mini-GPT: el checkpoint de P0-03, sin entrenarlo. */}
+
+Hasta aquí, en este bloque, aprender ha querido decir una sola cosa: mover $\theta$.
+<Leccion slug="entrenar-un-mini-gpt">La lección sobre el entrenamiento</Leccion> lo hacía un paso de
+gradiente cada vez, y <Leccion slug="leyes-de-escala">la de las leyes de escala</Leccion> le puso
+precio al recorrido entero y concluyó que, para lo que costó, al mini-GPT no le sobra tamaño: le
+falta texto. Los modelos grandes hacen otra cosa que también parece aprender, y en la que $\theta$
+no se mueve. Escribe en el *prompt* unos cuantos casos resueltos de algo que nunca se les enseñó,
+añade uno sin resolver, y lo resuelven. <Leccion slug="una-sola-columna">La primera lección del
+bloque</Leccion> prometió explicar cómo llega a eso un modelo que sólo aprendió a continuar texto, y
+esta lección cumple la promesa.
+
+Escribe dos listas con las mismas cuatro palabras a la izquierda de los dos puntos y dos tareas
+distintas a la derecha, y termina las dos con el mismo caso sin resolver:
+
+| una lista | la otra |
+|---|---|
+| <W>hijo: hijos</W> | <W>hijo: hija</W> |
+| <W>amigo: amigos</W> | <W>amigo: amiga</W> |
+| <W>niño: niños</W> | <W>niño: niña</W> |
+| <W>bueno: buenos</W> | <W>bueno: buena</W> |
+| <W>hermano:</W> | <W>hermano:</W> |
+
+Tú has completado la primera con <W>hermanos</W> y la segunda con <W>hermana</W> antes de terminar
+de leer, y un modelo grande hace lo mismo. Nada en su entrenamiento le pidió poner palabras en
+plural ni en femenino, y el caso es idéntico en las dos columnas. Sólo cambia lo que hay a la
+derecha de los dos puntos en las líneas de arriba, y con eso cambia la función que el modelo
+calcula sobre <W>hermano</W>.
+
+Mira el modelo como una función de un solo argumento, el texto que le das, con $\theta$ fijo dentro.
+Los ejemplos forman parte de ese argumento y hacen de programa: dicen qué hay que hacer con el caso
+que viene detrás. Ningún peso guarda el plural en un sitio y el femenino en otro. Lo que el modelo
+tiene es lo que aprendió al predecir su texto, y en el texto hay listas, glosarios, ejercicios
+resueltos: documentos que repiten una misma operación caso tras caso. Continuar bien uno de ellos
+exige averiguar qué operación sigue.
+
+<Callout type="intuition" title="La idea en una frase">
+Con $\theta$ fijo, el prompt decide qué función calcula el modelo. Los ejemplos no le enseñan una
+tarea: le dicen cuál de las que ya vio en su texto están siguiendo, con más seguridad cuantos más
+hay. Una tarea que su texto no tiene no se la da ningún número de ejemplos.
+</Callout>
+
+## Una tarea es una condición, no un peso
+
+Llamemos **ejemplo** $e_i$ a un caso resuelto escrito en el *prompt*, una secuencia de tokens como
+<W>hijo: hijos</W> con su salto de línea detrás; $e_{1:K}$ son los $K$ ejemplos en orden, $x$ es el
+**caso** sin resolver con el que acaba el prompt (<W>hermano:</W>) e $y$ la respuesta que se le pide
+(<W> hermanos</W>, con su espacio). Los tres son secuencias de tokens: este $x$ sin subíndice es un
+caso entero, no el token $x_t$ de las lecciones anteriores, y $K$ es la letra del artículo de GPT-3,
+no la $k$ de top-k. Lo que el modelo le da a una respuesta sale de la regla de la cadena de la
+primera lección, con el prompt delante:
+
+$$
+\log p_\theta(y \mid e_{1:K}, x) = \sum_{j} \log p_\theta(y_j \mid e_{1:K}, x, y_{<j}),
+$$
+
+un término por cada token $y_j$ de la respuesta, y todos salen, gracias a la máscara, de una sola
+pasada por el prompt seguido de $y$.
+
+Un modelo hace **aprendizaje en contexto** (*in-context learning*, ICL) con una tarea cuando, con
+$\theta$ fijo, los ejemplos le suben la probabilidad de la respuesta que esa tarea pide hasta que
+es la más probable, sin que nadie lo haya entrenado para esa tarea. El artículo de GPT-3 lo midió sin
+ejemplos, con uno y con cuantos cupieran en su ventana de 2 048 tokens (entre 10 y 100, según la
+tarea), y los llamó *zero-shot*, *one-shot* y *few-shot*. Aprender, aquí, es cambiar el argumento de
+$p_\theta$, no sus parámetros.
+
+Con dos tareas que reciben los mismos casos, como las dos columnas, la prueba es la diferencia entre
+los logaritmos de sus dos respuestas: si el modelo lee la tarea en los ejemplos, sube con $K$ en una
+lista y baja en la otra. Dos filas que se separan.
+
+### Predecir el texto obliga a reconocer la tarea
+
+Para ver por qué pasa, dejemos la red un momento y preguntemos qué haría el texto. Llamemos
+$p_{\text{texto}}$ a la
+distribución de la que sale el texto de entrenamiento: lo que el texto es, frente a lo que el modelo
+cree, $p_\theta$. Supongamos que el texto está hecho de documentos y que cada uno sigue una
+**tarea** $\omega$: se elige una con probabilidad $p_{\text{texto}}(\omega)$, y después se escriben
+sus casos resueltos uno tras otro, independientes entre sí una vez fijada la tarea. Una lista de
+plurales es un documento; un capítulo de *Marianela*, otro, con su propia tarea. Ningún texto real se
+escribe así, y lo que sigue vale en la medida en que el texto se le parezca. (Es una versión reducida
+del modelo de Xie y sus coautores; ellos llaman $\theta$ a la tarea, y aquí $\theta$ tiene dueño.)
+
+Con ese modelo, la probabilidad de la respuesta, leídos los ejemplos y el caso, se reparte entre las
+tareas:
+
+$$
+p_{\text{texto}}(y \mid e_{1:K}, x) = \sum_{\omega} p_{\text{texto}}(y \mid x, \omega)\; p_{\text{texto}}(\omega \mid e_{1:K}, x).
+$$
+
+Es la regla de la cadena aplicada al par $(\omega, y)$ y sumada sobre $\omega$, y en el primer factor
+los ejemplos desaparecen porque, fijada la tarea, no dicen nada más sobre la respuesta. Así que lo
+único que hacen es mover el segundo factor: cuánto cree el texto, a la vista del prompt, en cada
+tarea. La regla de Bayes lo da, con una constante que es la misma para todas:
+
+$$
+p_{\text{texto}}(\omega \mid e_{1:K}, x) \propto p_{\text{texto}}(\omega)\, p_{\text{texto}}(x \mid \omega) \prod_{i=1}^{K} p_{\text{texto}}(e_i \mid \omega).
+$$
+
+La constante se va al comparar dos tareas, $\omega_1$ y $\omega_2$. Tomando logaritmos,
+
+$$
+\begin{aligned}
+\log\frac{p_{\text{texto}}(\omega_1 \mid e_{1:K}, x)}{p_{\text{texto}}(\omega_2 \mid e_{1:K}, x)} = {}& \log\frac{p_{\text{texto}}(\omega_1)}{p_{\text{texto}}(\omega_2)} + \log\frac{p_{\text{texto}}(x \mid \omega_1)}{p_{\text{texto}}(x \mid \omega_2)} \\
+&+ \sum_{i=1}^{K}\log\frac{p_{\text{texto}}(e_i \mid \omega_1)}{p_{\text{texto}}(e_i \mid \omega_2)},
+\end{aligned}
+$$
+
+que se lee término a término, y cada término dice una cosa.
+
+Cada ejemplo suma uno. Si los ejemplos son de verdad de $\omega_1$, cada término vale, en promedio,
+cero o más: es la desigualdad de <Leccion slug="perplejidad">la lección sobre la perplejidad</Leccion>,
+según la cual ninguna distribución paga menos por un texto que aquella de la que sale. La suma crece
+con $K$, y el cociente, como su exponencial: unos pocos ejemplos que distingan bien dejan a una sola
+tarea con casi toda la probabilidad, y la respuesta es la suya.
+
+Lo que distingue es lo que difiere. En las dos columnas del principio, las palabras de la izquierda
+son las mismas, y las dos tareas las reciben igual, así que su parte de cada término se cancela y el
+término del caso vale cero. Queda la derecha de los dos puntos, y ahí cada ejemplo pesa mucho:
+<W>hijo: hija</W> es casi imposible en una lista de plurales. El programa entero está en las
+respuestas.
+
+Y una tarea que el texto no tiene no aparece. El primer término no depende de $K$: si
+$p_{\text{texto}}(\omega_1) = 0$, vale $-\infty$, y ninguna suma finita lo levanta. Los ejemplos no
+crean tareas. Eligen entre las que el texto ya traía, y una tarea rara cuesta más ejemplos que una
+frecuente.
+
+### Lo que la red necesita para imitarlo
+
+Falta la red. Entrenar es bajar la pérdida sobre el texto, y en cualquier contexto la pérdida media
+más baja posible es la que paga el propio texto. Para la respuesta de un documento,
+
+$$
+\mathbb{E}\left[-\log p_\theta(y \mid e_{1:K}, x)\right] \ge \mathbb{E}\left[-\log p_{\text{texto}}(y \mid e_{1:K}, x)\right],
+$$
+
+con las dos esperanzas sobre los documentos del texto, y con igualdad sólo cuando $p_\theta$ y
+$p_{\text{texto}}$ coinciden en esos contextos: es otra vez la desigualdad de la perplejidad. Una red
+que se acercara a ese mínimo calcularía la suma sobre tareas sin que nadie la hubiera escrito:
+reconocería la tarea en los ejemplos y la aplicaría al caso. La pérdida no menciona tareas en ningún
+sitio. El aprendizaje en contexto sale de predecir bien un texto que las contiene.
+
+La desigualdad dice también qué le hace falta a la red para acercarse a ese mínimo, y son tres
+cosas. Que su texto tenga las tareas, para que $p_{\text{texto}}(\omega)$ no sea cero en lo que leyó:
+GPT-3 leyó 300 000 millones de tokens de páginas web y de libros, con sus listas y sus glosarios, y
+el mini-GPT, una novela. Parámetros para guardar muchas tareas y distinguirlas: en el artículo de
+GPT-3, lo que aportan los ejemplos crece con el tamaño, del modelo de 1 300 millones de parámetros al
+de 175 000 millones. Y leer lo bastante atrás, porque los ejemplos quedan decenas de tokens antes
+del caso. Son los ejes $D$ y $N$ de <Leccion slug="leyes-de-escala">las leyes de escala</Leccion>,
+más la ventana, y en los tres el mini-GPT está lejos.
+
+La derivación da el mecanismo mínimo, no el techo. Min y sus coautores cambiaron al azar las
+respuestas de los ejemplos en tareas de clasificación, y los modelos grandes apenas empeoraron: los
+ejemplos servían sobre todo para mostrar el formato y el tipo de caso, que es lo que predice un
+modelo que reconoce. Pero Wei y los suyos encontraron que los más grandes sí siguen ejemplos que
+contradicen lo que traen aprendido, y eso ya no es elegir entre tareas conocidas.
+
+## Lo que el mini-GPT hace con las dos listas
+
+Las dos celdas corren sobre el mini-GPT, el *checkpoint* de la lección sobre el entrenamiento, y no
+lo entrenan: sólo lo leen. La primera escribe las dos columnas del principio con $K$ de 0 a 4 y
+pregunta, con la regla de la cadena de arriba, cuánto da el modelo a <W> hermanos</W> y a
+<W> hermana</W> detrás de <W>hermano:</W>. Después mira qué escribe él, eligiendo siempre la
+favorita.
+
+<PyCell packages={["numpy"]} code={`
+import json
+import numpy as np
+from pyodide.http import open_url
+
+exec(open_url("/courses/llm-agents/bpe.py").read())        # codificar, decodificar
+exec(open_url("/courses/llm-agents/minigpt.py").read())    # MiniGPT, softmax
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+modelo = MiniGPT.cargar(open_url("/courses/llm-agents/minigpt.json").read())
+
+def log_p(prompt, y):
+    """log p(y | prompt) según el mini-GPT: una pasada, un término por token de y."""
+    a, b = codificar(prompt, F), codificar(y, F)
+    Z = modelo.adelante(np.array([a + b]))[0][0]           # (len(a) + len(b), 512)
+    logP = Z - Z.max(axis=-1, keepdims=True)
+    logP -= np.log(np.exp(logP).sum(axis=-1, keepdims=True))
+    return sum(logP[len(a) - 1 + j, v] for j, v in enumerate(b))   # la fila anterior a cada token
+
+listas = {"plural": ["hijo: hijos", "amigo: amigos", "niño: niños", "bueno: buenos"],
+          "femenino": ["hijo: hija", "amigo: amiga", "niño: niña", "bueno: buena"]}
+x = "hermano:"                                             # el caso, al final del prompt
+
+print(" K  lista      log p(hermanos)  log p(hermana)  diferencia")
+for K in range(5):
+    for nombre, lista in listas.items():
+        prompt = "".join(e + "\\n" for e in lista[:K]) + x  # K ejemplos, uno por línea
+        a, b = log_p(prompt, " hermanos"), log_p(prompt, " hermana")
+        print("%2d  %-9s %12.2f %15.2f %+11.2f" % (K, nombre, a, b, a - b))
+
+print()
+for nombre, lista in listas.items():
+    prompt = codificar("".join(e + "\\n" for e in lista) + x, F)
+    q = softmax(modelo.adelante(np.array([prompt]))[0][0, -1])
+    sigue = modelo.generar(prompt, 12, temperatura=0)[len(prompt):]
+    print("tras la lista %s, la favorita es %r (%.2f) y escribe %r"
+          % (nombre, decodificar([int(q.argmax())], F), q.max(), decodificar(sigue, F)))
+`} />
+
+Con $K = 0$ las dos listas son el mismo prompt, y <W> hermana</W> gana por $3.01$ nats: la novela la
+usa mucho más. Con ejemplos, la diferencia sube en las dos listas, también en la del femenino, donde
+tendría que bajar, y nunca pasa de cero. Lo que distingue una tarea de otra es la separación entre
+las dos filas, y es de $1.37$ nats con un ejemplo y de $0.59$ con cuatro: los ejemplos no se acumulan,
+que era lo primero que pedía la derivación. Las dos respuestas, además, son casi imposibles para el
+modelo, entre $-15$ y $-20$ nats. Lo que espera está en las dos últimas líneas: un salto de línea, con
+la mitad de la probabilidad, y después un diálogo.
+
+La segunda celda busca dos de las tres cosas que la red necesita: qué tarea tiene el texto del
+mini-GPT para unos dos puntos, y hasta dónde lee él. Para lo segundo toma 64 tramos de 32 tokens del
+texto reservado y le da cada uno dos veces seguidas. La primera vez, la pérdida del token $j$ dice cuánto
+le sirve tener $j - 1$ tokens delante; la segunda, cuánto le sirve haber leído ya, 32 posiciones
+atrás, el tramo entero.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: np, open_url, F, codificar, quitar_cabecera, modelo.
+import re
+from collections import Counter
+
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+tras = Counter(texto[i + 1:i + 3] for i, c in enumerate(texto) if c == ":")
+lista = sum(re.fullmatch(r"\\w+: \\w+", linea) is not None for linea in texto.split("\\n"))
+print("dos puntos en la novela: %d; detrás, un párrafo nuevo %d veces y unas comillas %d"
+      % (sum(tras.values()), tras["\\n\\n"], tras[" «"]))
+print("líneas con la forma «palabra: palabra»: %d" % lista)
+
+ids = np.array(codificar(texto, F))
+res = ids[-(len(ids) // 10):]                              # el texto reservado, el último 10 %
+H, rng = 32, np.random.default_rng(0)
+S = np.stack([res[i:i + H] for i in rng.integers(0, len(res) - H, size=64)])   # (64, 32)
+W = np.concatenate([S, S], axis=1)                         # (64, 64): cada tramo, dos veces
+Z = modelo.adelante(W[:, :-1])[0]
+logP = Z - Z.max(axis=-1, keepdims=True)
+logP -= np.log(np.exp(logP).sum(axis=-1, keepdims=True))
+nats = -np.take_along_axis(logP, W[:, 1:, None], axis=-1)[..., 0].mean(axis=0)  # (63,), por fila
+
+print()
+print("token j del tramo        2-4    5-8   9-16  17-32")
+for vez, desde in [("la primera vez", 0), ("la segunda vez", H)]:
+    # el token j lo predice la fila j - 1 la primera vez, y la fila H + j - 1 la segunda
+    print("%-22s" % vez + "".join(" %6.2f" % nats[desde + a - 2:desde + b - 1].mean()
+                                  for a, b in [(2, 4), (5, 8), (9, 16), (17, 32)]))
+`} />
+
+De los 204 dos puntos de la novela, 95 abren un párrafo nuevo, que en *Marianela* es un diálogo, y
+40 unas comillas; ninguna de sus líneas tiene la forma <W>palabra: palabra</W>. En el texto del
+mini-GPT, una lista de plurales tiene probabilidad cero, y la tarea que hay detrás de unos dos puntos
+es que alguien hable. Eso es lo que hizo en la primera celda: reconocer la única tarea que conoce.
+
+La tabla dice lo otro. La primera vez, la pérdida baja de $3.69$ a $3.22$ mientras el token tiene
+hasta siete delante, y de ahí en adelante se queda en $3.14$ y $3.17$: lo que el mini-GPT lee más
+allá de unos ocho tokens no le sirve para predecir, y los ejemplos de la primera celda quedan, casi
+todos, más atrás. Kaplan midió la misma curva en ventanas de 1 024 tokens, y en sus modelos bajaba
+como una ley de potencia hasta el final. La segunda vez, el mini-GPT paga lo mismo, $3.17$ y $3.16$
+nats, por tokens que tiene escritos 32 posiciones atrás. Copiar lo que acaba de leer es el
+aprendizaje en contexto más elemental que hay, un solo ejemplo de la tarea «repite», y no lo hace.
+Olsson y sus coautores encontraron el mecanismo que lo hace, dos cabezas de atención en capas
+distintas que completan <W>A B … A</W> con <W>B</W>, y el mini-GPT tiene las dos capas que hacen
+falta. No lo aprendió, y su texto apenas se lo pedía: en ventanas de 64 tokens de una novela, lo que
+acaba de pasar casi nunca vuelve a pasar igual.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: una cuenta con el cociente de la derivación, una tarea que el texto no tiene, lo
+que miden las celdas y lo que le falta al mini-GPT.
+
+<Quiz id="q-cuantos-ejemplos" />
+
+<Quiz id="q-probabilidad-cero" />
+
+<Quiz id="q-las-celdas" />
+
+<Quiz id="q-que-le-falta" />
+
+---
+
+El mini-GPT no lee tareas en su *prompt*, pero su forma es la de GPT-3: texto que entra, texto que
+sale y $\theta$ fijo dentro. Lo que esta lección le ha añadido es para qué sirve esa forma: con los
+pesos quietos, el prompt es el único sitio por el que se le puede decir algo a un modelo, y buena
+parte de lo que queda de curso se escribe ahí.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 9
+    (slug proyecto-mini-gpt), envolver «la lección siguiente, el proyecto del bloque» en su
+    Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+Antes de envolver ese modelo en nada, falta escribirlo una vez como función y congelarlo: el
+*checkpoint*, el tokenizador y lo que las lecciones del bloque le han ido añadiendo, detrás de una
+sola firma, `modelo(prompt) -> texto`, que los bloques siguientes puedan llamar sin abrirla. Es la
+lección siguiente, el proyecto del bloque: el modelo hecho función.

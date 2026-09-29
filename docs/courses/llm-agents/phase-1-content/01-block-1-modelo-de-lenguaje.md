@@ -63,7 +63,7 @@ here; STATUS stays phase-level.
 - [x] 5. `kv-cache`
 - [x] 6. `perplejidad`
 - [x] 7. `leyes-de-escala`
-- [ ] 8. `aprendizaje-en-contexto`
+- [x] 8. `aprendizaje-en-contexto`
 - [ ] 9. `proyecto-mini-gpt`
 
 ## Mathematical content

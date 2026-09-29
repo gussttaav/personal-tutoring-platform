@@ -234,6 +234,10 @@ this work.
 | $\mathcal{L}_{\infty}$: the loss no $N$ and no $D$ go below | `pérdida irreducible` (Block 1 lesson 7); `suelo` is the picture of it, and the lesson says in a clause that the two name one thing | entropía del texto as the term (it is a reading of it, said once), *irreducible loss*, cota |
 | one pass of training over all of the training text | `época` (Block 1 lesson 7), the first course's word (`descenso-gradiente`) | *epoch*; pasada, vuelta |
 | the tokens of the training text each counted once, against $D$, which counts readings | `tokens distintos` (Block 1 lesson 7) | tokens únicos, texto nuevo as the term, *unique tokens* |
+| what a model does when, with $\theta$ fixed, the ejemplos of a tarea in its prompt raise the respuesta that tarea asks for | `aprendizaje en contexto` (Block 1 lesson 8), with *in-context learning* (ICL) given once per lesson | aprendizaje contextual, aprendizaje en el contexto, *few-shot learning* as the term; `aprendizaje` alone, which in this course is $\theta$ moving |
+| one solved instance of a tarea written in the prompt, $e_i$ | `ejemplo` (Block 1 lesson 8); *zero-shot*, *one-shot*, *few-shot* are the GPT-3 paper's names for $K = 0$, $1$ and a few, given once | demostración, *shot*, ejemplar, muestra (lesson 4's `muestrear`) |
+| what the ejemplos of one document have in common: which respuesta goes with which caso, $\omega$ | `tarea` (Block 1 lesson 8) | *task*; problema, habilidad, capacidad as the term |
+| the unsolved input the prompt ends on, $x$ | `caso` (Block 1 lesson 8); what the tarea makes of it is the `respuesta`, $y$ — that row read for one caso: in Block 1 the model's respuesta is text | entrada (a member of $V$), consulta (attention's), pregunta |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,

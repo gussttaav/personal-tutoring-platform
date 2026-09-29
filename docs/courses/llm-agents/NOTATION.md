@@ -76,6 +76,10 @@ this file gets shorter as it goes down.
 | $A_N$, $A_D$ | Chinchilla's coefficients in $\mathcal{L}(N, D) = \mathcal{L}_{\infty} + A_N/N^{\alpha_N} + A_D/D^{\alpha_D}$: the paper's $A$ and $B$ (Block 1 lesson 7) |
 | $N^{\star}(C)$, $D^{\star}(C)$ | the reparto óptimo for a budget $C$: the $N$ and $D = C/(6N)$ that minimise $\mathcal{L}(N, D)$. The papers' $N_{\text{opt}}$, $D_{\text{opt}}$ (Block 1 lesson 7) |
 | $G$ | the constant in $N^{\star} = G\,(C/6)^{\alpha_D/(\alpha_N + \alpha_D)}$, Chinchilla's eq. 4 — inside a `<Details>` only (Block 1 lesson 7) |
+| $e_i$, $e_{1:K}$ · $K$ | ejemplo $i$ of a prompt, a token sequence holding a caso and its respuesta · the $K$ ejemplos in order · how many there are, the GPT-3 paper's letter (Block 1 lesson 8) |
+| $x$, $y$ · $y_j$ | the caso the prompt ends on and the respuesta a tarea asks for, both token sequences · token $j$ of $y$ (Block 1 lesson 8). Block 2's $x$, the whole prompt, is this $x$ with the ejemplos in front |
+| $p_{\text{texto}}$ | the distribution the training text comes from: what the text *is*, against $p_\theta$, what the model believes (Block 1 lesson 8) |
+| $\omega$ · $\omega_1$, $\omega_2$ | a tarea, the latent variable a document of $p_{\text{texto}}$ follows, drawn with probability $p_{\text{texto}}(\omega)$ · two of them, compared (Block 1 lesson 8) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -181,6 +185,21 @@ $v^{\star}$ and $\theta^{\star}$ are, never subscripted $\text{opt}$; and the ex
 $N^{\star}$ and $D^{\star}$ are written out as fractions of $\alpha_N$ and $\alpha_D$ rather than
 given the papers' $a$ and $b$, which lesson 2 spent on the two tokens of a fusión. $N_c$ and $D_c$
 are Kaplan's alone; Chinchilla's constants are only ever $A_N$, $A_D$, $\mathcal{L}_{\infty}$.
+
+**In-context learning has its own letters, and three of the literature's are taken**
+(`COURSE-C2-P1-01`, Block 1 lesson 8). The latent task is written $c$ (a «concept») or $\theta$ in
+the papers — Xie et al., whose model the lesson reduces, write $\theta$ — and here $\theta$ is the
+model's parameters (shared §4) and $c$ lesson 5's cost, so the task is **$\omega$**, which nothing
+else in the course writes; the lesson says so in a clause. Two tasks compared are $\omega_1$,
+$\omega_2$, never $\omega'$: a prime reads as the transpose the shared §2 bans. The number of
+examples is **$K$, not $k$**: $k$ is top-k's from lesson 4, and $K$ is what the GPT-3 paper
+writes. Italic $K$ sits beside bold $\mathbf{K}$, the keys, the way italic $V$ sits beside bold
+$\mathbf{V}$, and lesson 8 has no keys on its page. The text's own distribution carries a
+subscript, **$p_{\text{texto}}$**, because bare $p$ is top-p's threshold (the sampling note above);
+lesson 1 wrote the chain rule with a bare $p$ as a general identity, before that note existed. And
+**$x$ without a subscript is a whole sequence**, the caso: lesson 8 writes no $x_t$, so the two
+never share a page there, and the lesson says in a clause that this $x$ is not a token. Block 3's
+task md writes the examples $e_{1:k}$; it follows this row, $e_{1:K}$.
 
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson

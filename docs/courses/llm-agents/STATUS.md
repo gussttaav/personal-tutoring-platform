@@ -36,7 +36,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
-| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (7/9) | _tbd_ | local |
+| [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | 🔄 (8/9) | _tbd_ | local |
 | [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
@@ -639,3 +639,48 @@ for the reviewer of the block:
   back against the prose (0.839 per tenfold everywhere for Kaplan, 0.979 at 10¹¹ for Chinchilla; 72 B
   bottom, Gopher +0.019); all five quiz questions right and wrong, the numeric one at 3.92/4.08 (pass)
   and 3.85/4.15 (fail); lesson 6's bridge renders as a link here; no horizontal page scroll at 360 px.
+
+Lesson 8 `aprendizaje-en-contexto` authored on the shared branch (2026-09-29). 2 109 words (advisory
+over the 2 000 target, like lessons 4–7), 5 display equations, no widget (the block md assigns none),
+2 cells (longest 35 lines), 4 quiz, no challenge, 5 readings (Brown et al. 2020, Xie et al. 2022,
+Olsson et al. 2022, Min et al. 2022, Wei et al. 2023; titles and URLs checked on arXiv). Runs on the
+mini-GPT, read and never trained, and says so before the first cell. Decisions recorded for the
+reviewer of the block:
+- **The running example is two lists over the same four words**, plural and feminine, ending on
+  the same case (`hermano:`), so the whole «program» is on the right of the colons. The
+  formalisation defines ICL as $p_\theta(y \mid e_{1:K}, x)$ rising with $K$ for $\theta$ fixed, then
+  derives it from a model of the text (documents that each follow a latent task, Xie et al. reduced
+  to i.i.d. examples): the answer is a mixture over tasks, Bayes gives the posterior, and the
+  log-ratio of two tasks is prior + case + one term per example. Three readings: each example adds a
+  term that is non-negative on average (lesson 6's inequality), the shared left-hand sides cancel,
+  and a task with prior zero stays at zero. The network link is the same inequality on the answer:
+  a network at the minimum computes the mixture without anyone writing it. Min et al. and Wei et
+  al. are named as the limits of the reduced model.
+- **Why the mini-GPT cannot, measured.** Cell 1: over $K = 0..4$ the log-difference hermanos −
+  hermana rises in *both* lists (also the feminine one, where it should fall), never crosses zero,
+  and the gap between lists shrinks 1.37 → 0.59 nats; after `hermano:` the favourite is a line break
+  (0.51) and the model writes dialogue. Cell 2: 95 of the novel's 204 colons open a dialogue
+  paragraph and no line has the form `palabra: palabra` (prior zero for the task, the only task it
+  knows for a colon is «someone speaks»); on 64 reserved stretches of 32 tokens read twice, the loss
+  stops falling after ~8 tokens of context (3.69 → 3.22 → 3.14 / 3.17) and the second reading costs
+  the same (3.17 / 3.16): no copying, although two layers are enough for Olsson's induction heads.
+  The block md's «lesson 7's axes» becomes $D$, $N$ and the window, the one cell 2 measures.
+- **One sentence rests on a scratch measurement no cell prints**: «su texto apenas se lo pedía» —
+  in 4 000 training windows, copying what followed an earlier match would predict right at ~1–2 %
+  of positions. Kept qualitative in the prose.
+- **Letters** (NOTATION rows + note): the task is $\omega$ (the papers' $c$ and $\theta$ are taken),
+  two tasks $\omega_1$, $\omega_2$ (a prime reads as the banned transpose), the example count $K$ as
+  in the GPT-3 paper ($k$ is top-k's), the text's distribution $p_{\text{texto}}$ (bare $p$ is
+  top-p's threshold), and $x$ without subscript is a whole case, never on a page with $x_t$. Block
+  3's task md still writes $e_{1:k}$; the NOTATION note says it reads $e_{1:K}$ (task md not edited).
+- **Terms added before use:** `aprendizaje en contexto` (ICL once), `ejemplo` (zero/one/few-shot
+  once), `tarea`, `caso`; $y$ is the delta's `respuesta` read for one caso.
+- **Lesson 7's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 9 (`proyecto-mini-gpt`) in prose with the usual comment, and commits it only to the
+  signature `modelo(prompt) -> texto`. `draft: false`, as lessons 1–7, against the PUBLICATION line.
+- The log-ratio equation is split over two lines (`aligned`): 714 → 507 px at 375 px.
+- Verified: `pnpm lint:content` (only the words warning), `pnpm build` green twice with 0 KaTeX
+  errors; both cells under Node Pyodide 0.29.3 (1.4 s, 1.7 s) and in the Browser pane on
+  `pnpm start` with identical output; all four quiz questions right and wrong; no horizontal page
+  scroll at 375 px (the five display equations scroll in their own boxes, the table fits). The pane
+  carried an English locale cookie, so the check ran under `/en/` chrome (Spanish lesson text).
