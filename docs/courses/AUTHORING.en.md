@@ -217,6 +217,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | Block 1's objects | vocabulary, tokenisation, subword, bag of words, positional encoding | |
 | filling the leftover positions of a fixed-length input | padding | |
 | cutting a text at $T_{\max}$ | truncation, to truncate | clipping — that is what happens to the probabilities before the logarithm; the vocabulary is *cut* at the $k$ most frequent types. Three cuts, three verbs. |
+| rescaling a gradient whose norm passes the threshold $\kappa$ back down to $\kappa$ | gradient clipping, to clip the gradient; $\kappa$ is the threshold | bare *clipping* wherever Block 2's probability clipping could be meant, since `clip` has two objects in this course and the compound is what keeps them apart (Spanish does the same with `recorte del gradiente`); norm capping, gradient rescaling |
 | what high $d$ costs · the shape of a vector | curse of dimensionality · dense, sparse | |
 | a distinct string · one appearance of one | type · token, and `occurrence` when the two are contrasted | `token` for both senses |
 | an element of $V$ | vocabulary entry, then entry | word — an entry is a *piece* of a word under a subword tokeniser. `word` keeps one job: the everyday word, inside examples that are literally words |
