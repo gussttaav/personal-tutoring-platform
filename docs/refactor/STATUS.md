@@ -35,14 +35,14 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
 | [01 `@googleapis/calendar` instead of `googleapis`](phase-2-performance/01-googleapis-calendar-only.md) | `REFACTOR-R4-P2-01` | 🟠 | ✅ | Claude | local (`claude/googleapis-calendar-refactor-116297`). Largest chunk traced by `/api/courses/progress`: 10,126 KB → 1,313 KB. See Deviations; e2e + Vercel cold-start not run |
-| [02 Shell weight: icon-font subset + Sentry Replay](phase-2-performance/02-shell-weight-font-sentry.md) | `REFACTOR-R4-P2-02` | 🟠 | ⬜ | _tbd_ | |
+| [02 Shell weight: icon-font subset + Sentry Replay](phase-2-performance/02-shell-weight-font-sentry.md) | `REFACTOR-R4-P2-02` | 🟠 | ✅ (JS target missed) | Claude | local (`claude/shell-weight-font-sentry-ae2679`). Icon font 3,943,736 → 14,840 bytes; LCP 25.3 s → 6.7 s (`/`). Blog-post JS −38.5 KB gz, short of the ≥ 60 KB target; see Deviations. Replay drop confirmed by Gustavo |
 | [03 Commerce providers out of the root layout](phase-2-performance/03-commerce-providers-scope.md) | `REFACTOR-R4-P2-03` | 🟡 | ⬜ | _tbd_ | |
 | [04 One user-session state for the whole page](phase-2-performance/04-single-user-session-state.md) | `REFACTOR-R4-P2-04` | 🟡 | ⬜ | _tbd_ | |
 
 **Exit criteria**
 - [x] No `route.js.nft.json` under `.next/server/app/api/` references a chunk containing the full `googleapis` catalog; the largest server chunk traced by `/api/courses/progress` is < 2 MB _(P2-01; 0 of 41 routes, largest 1,313 KB, which is the Stripe chunk)_
-- [ ] Icon font ≤ 150 KB; `pnpm check:icons` green; no icon renders as its ligature text on `/`, `/mentoria`, `/area-personal`, a lesson, a post
-- [ ] First-load gzipped JS on a blog post down by ≥ 60 KB vs. the pre-task measurement (recorded in the PR)
+- [x] Icon font ≤ 150 KB; `pnpm check:icons` green; no icon renders as its ligature text on `/`, `/mentoria`, `/area-personal`, a lesson, a post _(P2-02; 14,840 bytes, 107 icons; width audit on every page in the task's acceptance list, desktop + mobile)_
+- [ ] First-load gzipped JS on a blog post down by ≥ 60 KB vs. the pre-task measurement (recorded in the PR) _(P2-02 got −38.5 KB: 352.5 → 314.0 KB. Replay was smaller than the audit assumed; see Deviations)_
 - [ ] No `.meta` file for a blog post or lesson lists `pricing-all` or `schedule-config` in `x-next-cache-tags`
 - [ ] A signed-in page load issues exactly one `/api/credits`; lessons and posts issue no `/api/pricing`
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm check:messages` green; e2e home + booking specs green
@@ -93,6 +93,11 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   so, and `BookingService` logs an `error` naming the event for manual follow-up. The
   alternatives (extend the originating pack's `expires_at`, or restore into the expired pack
   anyway) would each be a change to the `ELSE` branch of `cancel_booking` only.
+
+- **P2-02 Session Replay — DROP, confirmed by Gustavo (2026-09-29).** Replay is removed from the
+  client `Sentry.init`; `next.config.mjs` (CSP) is untouched. Re-adding it later: prefer the
+  lazy-load variant in the task md (it needs `https://browser.sentry-cdn.com` in both CSP
+  `script-src` branches; `lazyLoadIntegration` is exported by `@sentry/nextjs` 10.53).
 
 ## Deviations from plan
 
@@ -282,6 +287,75 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   cold-start comparison on `/api/courses/progress` (no preview deploy from here; the Vercel MCP
   isn't authorized in this session). For the phase exit, run one booking spec to confirm
   `clearTestCalendar` still wipes events.
+
+- **P2-02 — measurements** (both builds made from this worktree's tree: baseline = a detached
+  worktree at `11d76e2`, after = this branch; gzip -9 of every `/_next/static/chunks/*.js` the
+  prerendered HTML references; Lighthouse 13.5 mobile, 3 runs, median, `pnpm start`):
+
+  | | before | after |
+  |---|---|---|
+  | icon font (`material-symbols-outlined.woff2`) | 3,943,736 B (full variable, 4 axes) | **14,840 B** (107 glyphs, `FILL` axis only) |
+  | first-load JS gz, `es/blog/de-newton-a-adamw` | 352.5 KB | **314.0 KB (−38.5)** |
+  | same, `es` (home) / `es/mentoria` / lesson `adios-recurrencia` | 402.7 / 405.3 / 371.6 KB | 364.2 / 366.8 / 333.1 KB |
+  | Sentry's big shared chunk | 168.2 KB gz (135 `replay` refs) | 129.7 KB gz (6 `replay` refs) |
+  | Lighthouse `/`: perf / LCP / TBT / bytes | 42 / 25.3 s / 1,709 ms / 4,604 KB | 45 / **6.7 s** / 1,935 ms / 729 KB |
+  | Lighthouse blog post: perf / LCP / TBT / bytes | 37 / 25.9 s / 4,803 ms / 4,921 KB | 38 / **7.7 s** / 2,258 ms / 1,045 KB |
+
+- **P2-02 — the ≥ 60 KB JS criterion is NOT met (−38.5 KB).** The audit estimated Replay at about
+  half of Sentry's ~186 KB; it was 38.5 KB gz. What remains in the 129.7 KB chunk is the core
+  browser SDK plus browser tracing (`tracesSampleRate: 0.1`, out of scope for this task). One more
+  lever was tried and reverted: `compiler.define: { __SENTRY_DEBUG__: "false" }`. The existing
+  `webpack.treeshake.removeDebugLogging: true` is a webpack `DefinePlugin` and does nothing under
+  Turbopack, but defining the flag saved 0.1 KB (the published SDK build already strips debug
+  code). The next lever is `__SENTRY_TRACING__: false` / dropping client tracing. That's a product
+  decision for Gustavo, so it is not in this change.
+- **P2-02 — 107 icons, not "< 100".** `src/components/ui/feedback.tsx` (`IconHalo`, `InfoRow`,
+  `Steps`, `MiniIcon`) takes its icon through a `glyph` prop, not `icon`, so the guard treats
+  `icon` AND `glyph` props / keys / variables / destructuring defaults as icon sources. Without
+  `glyph`, eight names (`task_alt`, `link_off`, `manage_accounts`, `calendar_today`, `tag`, …) would
+  have been missing from the subset.
+- **P2-02 — extra file: `src/app/[locale]/fonts/material-symbols-outlined.json`** (written by
+  `build:icons`: the names the woff2 was built from + its sha256). `check:icons` compares it with
+  `ICON_NAMES` and the woff2 on disk, so adding a name without re-running `build:icons` fails CI.
+  The task's guard alone would pass in that case and ship the ligature text.
+- **P2-02 — guard shape.** The extractor lives in `src/lib/icons/check-icons.ts` (pure, TypeScript
+  compiler API; `scripts/check-icons.ts` only walks `src/` and reports), mirroring
+  `check-messages`. Rules beyond the task's three patterns: an icon element's expression child that
+  is neither a literal nor a read of `icon`/`glyph` (`{symbol}`, `{iconFor(x)}`) fails with "route
+  it through an `icon`/`glyph` prop" (there are none today). "Unused" is lenient: a listed name that
+  appears as ANY string literal in `src/` counts as used, so a hand-added runtime name only needs a
+  literal somewhere. Test files are skipped. Unit test: `src/lib/icons/__tests__/check-icons.test.ts`
+  (17 cases). Verified by hand that the guard fails on an unknown text-child icon, an unknown
+  `icon:` key, a stale entry, and a list edit without `build:icons`.
+- **P2-02 — build script.** Google's woff2 URL has no `.woff2` suffix (`fonts.gstatic.com/l/font?kit=…`),
+  so the sketch's `/url\((https:[^)]+\.woff2)\)/` would not match; the script reads the
+  `src: url(…) format('woff2')` pair and checks the `wOF2` magic. Output checked with fontTools:
+  `fvar` axes = `FILL 0..1` only, all 107 ligatures present.
+- **P2-02 — `admin.css` untouched.** `.admin-shell .material-symbols-outlined` still sets
+  `"FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24`. The subset has no wght/GRAD/opsz axes, so browsers
+  ignore those three. It's harmless, and the file isn't in the task's list.
+- **P2-02 — visual pass method.** The Browser pane returned blank screenshots after scrolling, so
+  pages were driven with the project's Playwright Chromium against `pnpm start` of this build: every
+  `.material-symbols-outlined` element's width must be ≤ 1.35 em (a missing ligature renders as
+  the word: `rocket_launch` measured 192 px vs. 24 px for a subset glyph). Covered at 1280 and 390 px:
+  `/`, `/en`, `/mentoria`, `/cursos`, lesson `dl-nlp/adios-recurrencia`, post `de-newton-a-adamw`,
+  the mobile nav panel, both booking overlays (`open-smart-book` → sign-in gate,
+  `open-availability-modal` → weekly calendar), `/area-personal` (all three tabs, e2e-test student),
+  `/admin` + all 12 admin nav pages (desktop), and `/sesion/<token>` pre-join (fake media devices).
+  Signed-in pages used locally minted `authjs.session-token` cookies (project `AUTH_SECRET`, test
+  DB) with a temporary `.env.production.local` (`AUTH_TRUST_HOST=true`), both removed afterwards.
+  `FILL`: the pressed feedback thumb computes `"FILL" 1` and renders filled; a sheet of all 107
+  glyphs at FILL 0 / FILL 1 renders every one. `CourseProgressCard` wasn't reachable (the test
+  student has no course in progress); it uses the same inline `'FILL' 1` the sheet exercises.
+- **P2-02 — checks.** `pnpm test` 158/158 suites, 2091 tests. `pnpm lint` 0 errors (the same 8
+  pre-existing warnings, none in touched files). `tsc --noEmit`: only the pre-existing
+  `mdx.test.ts` (`RepoLink`) error. `pnpm build` green. `check:messages` ✓, `check:icons` ✓.
+  `check:bundle` red on the known `gt:pyodide-loaded` false positive only (one hit, lesson route).
+- **P2-02 — NOT done:** `pnpm test:e2e` (`e2e/global-setup.ts` truncates the whole test DB, wipes
+  the test calendar and pushes migrations on every run, and that DB holds the data your dev server
+  uses; `home.spec.ts` + one booking spec are the ones to run). Also not done: "client errors still
+  reach Sentry" (needs a preview deploy with a throwing test button; the client `Sentry.init` keeps
+  the same DSN/tunnel/`enabled`, only `integrations` and the replay rates went away).
 
 ## Known regressions introduced
 

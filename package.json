@@ -13,6 +13,8 @@
     "lint:content": "tsx scripts/lint-content.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",
     "check:messages": "tsx scripts/check-messages.ts",
+    "check:icons": "tsx scripts/check-icons.ts",
+    "build:icons": "tsx scripts/icons/build-icon-font.ts",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",

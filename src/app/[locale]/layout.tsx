@@ -28,6 +28,9 @@ import "../globals.css";
  *   --font-serif     → Newsreader (editorial display serif — course landing headings)
  *
  * All existing logic (AuthProvider, Analytics, metadata) is unchanged.
+ *
+ * REFACTOR-R4-P2-02: the Material Symbols font is a ~15 KB SUBSET (was the full 3.9 MB
+ * variable font, preloaded on every page). See the note on `materialSymbols` below.
  */
 
 const manrope = Manrope({
@@ -55,13 +58,16 @@ const newsreader = Newsreader({
 });
 
 // Material Symbols icon font — self-hosted via next/font/local (not in the
-// next/font/google catalog). Full variable woff2 (opsz/wght/FILL/GRAD axes),
-// so the .material-symbols-outlined font-variation-settings keep working.
+// next/font/google catalog). REFACTOR-R4-P2-02: a SUBSET holding only the icons in
+// `src/constants/icons.ts`, with wght 400 / GRAD 0 / opsz 24 pinned and FILL kept as
+// the one variable axis. To add an icon: add its name to ICON_NAMES, run
+// `pnpm build:icons`, commit the new woff2 + manifest (`pnpm check:icons` enforces it).
+// An icon missing from the subset renders as its ligature word, not the glyph.
 const materialSymbols = localFont({
-  src: "./fonts/material-symbols-outlined.woff2",
+  src: "./fonts/material-symbols-outlined.woff2", // SUBSET — see src/constants/icons.ts
   display: "block",
   variable: "--font-icon",
-  weight: "100 700",
+  weight: "400",
 });
 
 export async function generateMetadata({
