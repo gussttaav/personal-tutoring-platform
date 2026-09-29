@@ -148,14 +148,16 @@ challenges:
           return gWhh, gWxh, gbh
     explanation: |
       La estructura es la de la pasada hacia atrás del bloque anterior, con una diferencia: los
-      gradientes no se devuelven paso a paso, se **acumulan** en `gWhh`, `gWxh` y `gbh`, porque la
+      gradientes no se devuelven paso a paso, se *acumulan* en `gWhh`, `gWxh` y `gbh`, porque la
       misma matriz recibe una aportación en cada posición. El bucle va de `T` a `1` porque $\boldsymbol{\delta}_t$
       necesita el error ya transportado desde $t+1$; recorrerlo al derecho pediría un $\boldsymbol{\delta}$
       que todavía no existe.
 
-      Tres detalles hacen el trabajo. `dh = np.array(dhT)` copia el error de entrada, porque
-      `dh = Whh.T @ delta` lo va a reescribir en cada vuelta y el array de quien llama no debe
-      moverse. La máscara `(1 - hs[t] ** 2)` es $\tanh^{\prime}$ leído del estado, sin guardar la
+      Tres detalles hacen el trabajo. `dh = np.array(dhT, dtype=float)` copia el error de entrada
+      antes de que el bucle empiece a arrastrarlo hacia atrás. Reasignarlo, como hace
+      `dh = Whh.T @ delta`, nunca alcanzaría el array de quien llama; una actualización en el sitio
+      como `dh *= …` escribiría directamente en `dhT`, y la copia es lo que mantiene la función a
+      salvo escribas la que escribas. La máscara `(1 - hs[t] ** 2)` es $\tanh^{\prime}$ leído del estado, sin guardar la
       preactivación. Y `np.outer(delta, hs[t - 1])` en el paso `t = 1` multiplica por $\mathbf{h}_0 = \mathbf{0}$,
       así que ese término entra como matriz nula: el primer paso no le debe nada a $\mathbf{W}_{hh}$,
       porque nunca la usó.
@@ -167,7 +169,7 @@ reading:
     venue: 'deeplearningbook.org'
     lang: en
     url: 'https://www.deeplearningbook.org/contents/rnn.html'
-    note: 'Su §10.2.2 es esta misma derivación: en su ecuación 10.13 reaparecen el transporte por la matriz recurrente y la máscara 1 - h². Más corta que la tuya y sin comprobación numérica; llama W, U y V a tus W_hh, W_xh y W_hy.'
+    note: 'Su §10.2.2 es esta misma derivación: en su ecuación 10.21 reaparecen el transporte por la matriz recurrente y la máscara 1 - h². Más corta que la tuya y sin comprobación numérica; llama W, U y V a tus W_hh, W_xh y W_hy.'
 ---
 
 {/* COURSE-P5-03 — Bloque 3, lección 3. */}
