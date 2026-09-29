@@ -238,7 +238,7 @@ import numpy as np
 
 # Necesita la celda anterior: datos, V, a_ix, n_v.
 d_h, seq = 64, 25                                   # anchura del estado y longitud de cada trozo
-eta, theta, iters = 0.3, 5.0, 1200
+eta, kappa, iters = 0.3, 5.0, 1200
 
 rng = np.random.default_rng(0)                      # semilla fija: veras estos numeros
 Wxh = rng.normal(size=(d_h, n_v)) * 0.01            # (d_h, n_v): columna c = vector del caracter c
@@ -289,7 +289,7 @@ for it in range(iters):
     grads = atras(inp, tgt, H, P)
     for g in grads:
         nrm = np.linalg.norm(g)
-        if nrm > theta: g *= theta / nrm            # recorte del gradiente
+        if nrm > kappa: g *= kappa / nrm            # recorte del gradiente
     for Pm, g in zip([Wxh, Whh, Why, bh, by], grads):
         Pm -= eta * g
     suave = loss if suave is None else 0.999 * suave + 0.001 * loss

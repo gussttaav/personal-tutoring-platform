@@ -367,6 +367,8 @@ is what the reader is told at the end, and a lesson using both says so once.
 | $\odot$ | element-wise (Hadamard) product |
 | $\rho(\mathbf{W}_{hh})$ | spectral radius — the largest of the moduli of the eigenvalues |
 | $\sigma_{\max}$ | largest singular value (the operator 2-norm) — the most a matrix can stretch a vector |
+| $\gamma$ | the steepest slope of the $\tanh$ over the steps a backward product crosses, $\gamma \le 1$ — the mask's share of the bound $\left(\gamma\,\sigma_{\max}\right)^{d}$ |
+| $\kappa$ | the gradient-clipping threshold, the largest norm a gradient keeps: $\mathbf{g} \leftarrow \mathbf{g}\cdot\min\left(1,\ \kappa/\lVert\mathbf{g}\rVert\right)$; `kappa` in code |
 | $\bar{\mathbf{h}}_j$ | seq2seq encoder state at input position $j$ — the bar marks it as the encoder's, against the decoder's $\mathbf{s}_i$ (Block 3 lesson 8; shared with Block 4) |
 | $\mathbf{s}_i$ | seq2seq decoder state at output position $i$ (Block 3 lesson 8; shared with Block 4) |
 | $\mathbf{c} = \bar{\mathbf{h}}_{T_x}$ | the context vector — the encoder's last state, the one fixed-size summary the decoder sees of the whole input |
@@ -447,19 +449,45 @@ lint the same way: one warning, in the lessons that derive BPTT, on a line that 
 correct.
 
 **$\rho$ and $\sigma_{\max}$ size a repeated product, and Block 3 lesson 4, on the vanishing
-gradient, needs both.** The backward pass multiplies by $\mathbf{W}_{hh}^{\top}$ once per step, so the
-error at a distance $d$ carries that matrix applied $d$ times, and how it grows is a fact about the
-matrix, not the sequence. $\sigma_{\max}$, the largest singular value, bounds a **single** step —
-$\lVert \mathbf{W}\mathbf{v} \rVert \le \sigma_{\max}\lVert \mathbf{v} \rVert$ — so the product is at
-most $\sigma_{\max}^{d}$; $\rho(\mathbf{W}_{hh})$, the spectral radius, is the **long-run** rate,
-$\left\lVert \mathbf{W}^{d} \right\rVert^{1/d} \to \rho$, so $\rho < 1$ is what decides the vanishing
-and $\rho > 1$ the explosion. Neither eigenvalues nor singular values are course prerequisites — those
+gradient, needs both, for two different questions.** The backward pass multiplies by
+$\mathbf{W}_{hh}^{\top}$ and by the $\tanh$ mask once per step, so the error at a distance $d$ carries
+that pair applied $d$ times. $\sigma_{\max}$, the largest singular value, bounds a **single** step —
+$\lVert \mathbf{W}\mathbf{v} \rVert \le \sigma_{\max}\lVert \mathbf{v} \rVert$ — and with $\gamma$
+bounding the mask the whole product is at most $\left(\gamma\,\sigma_{\max}\right)^{d}$. **That is the
+condition the course states as the real one:** $\gamma\,\sigma_{\max} < 1$ guarantees the vanishing
+whatever the masks do, while $\gamma\,\sigma_{\max} > 1$ is necessary for an explosion and never
+sufficient, because a bound above $1$ forces nothing. $\rho(\mathbf{W}_{hh})$, the spectral radius, is
+the **long-run** rate of the matrix on its own, $\left\lVert \mathbf{W}^{d} \right\rVert^{1/d} \to \rho$,
+so it decides the vanishing ($\rho < 1$) and the explosion ($\rho > 1$) only for a recurrence with no
+mask. Once the masks alternate with $\mathbf{W}_{hh}^{\top}$ the product is no longer a power, and
+$\rho$ guarantees nothing: the lesson's `<Details>` carries a $2 \times 2$ case with $\rho = 0$ whose
+masked product grows as $1.8^{d}$. So a lesson that cites the vanishing condition cites
+$\gamma\,\sigma_{\max}$, never $\rho$; this paragraph said the opposite until COURSE-P11-06 found it.
+Neither eigenvalues nor singular values are course prerequisites — those
 are the matrix product, not its spectrum — so the lesson **defines each in a clause** where it first
-uses it, and the `vanishing-gradient` explorable puts $\rho$ on a slider. $\sigma_{\max}$ does reuse the
+uses it, and the `vanishing-gradient` explorable puts $\rho$ on a slider for the maskless recurrence,
+which is the case where $\rho$ is the whole story. $\sigma_{\max}$ does reuse the
 $\sigma$ that §4 reserves for the logistic sigmoid, and is kept for the reason $\mathbf{c}$ is shared
 with Block 4: it is the notation the literature uses, and the two never collide on the page — the
 sigmoid is always $\sigma(\cdot)$ applied to an argument, while $\sigma_{\max}$ is a subscripted scalar
 property of a matrix, applied to nothing.
+
+**$\gamma$ is the mask's share of the bound, and it is a maximum over steps, not over coordinates
+alone.** Each step's diagonal $\text{diag}\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)$ has
+norm equal to its largest entry, and the bound raises one number to the power $T - k$, so $\gamma$ is
+the largest slope over every coordinate **and** every step the product crosses — Hochreiter's
+$f^{\prime}_{\max}$, taken over $\tau$. Block 3 lesson 4 once took the maximum at a single step and then
+raised it to $T - k$, which bounds nothing. Block 5's $\boldsymbol{\gamma}$ (the layer-norm gain) is a
+different object, and that collision is argued there.
+
+**The clipping threshold is $\kappa$, never $\theta$.** Block 3 lesson 4 first wrote it $\theta$, which
+§4 of the shared file reserves platform-wide for *all model parameters*, and the collision is not
+remote: the vector being clipped is $\nabla_{\theta}\mathcal{L}$, so one page would carry $\theta$ as
+the thing differentiated against and as the ceiling on the result. $\kappa$ collides with nothing in
+either course. The other obvious letters are spent: $\tau$ is Block 1's tokeniser, $c$ is this block's
+cell state and context vector, $\lambda$ is Block 2's convex combination. Code writes it `kappa`, as
+every cell that clips does (Block 3 lessons 4, 7 and 8, Block 4 lessons 1 and 2); they wrote `theta`
+until the same change.
 
 **The LSTM's four pieces are the RNN recurrence subscripted by role, and $\tilde{\mathbf{c}}_t$ carries
 a tilde so it is not the cell.** Block 3 lesson 5, on the LSTM, needs a name for each of the forget,

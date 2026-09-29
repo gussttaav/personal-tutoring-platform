@@ -159,8 +159,8 @@ $$
 
 máxima cuando $j = 1$, es decir para el primer token de la entrada. <Leccion slug="gradiente-desvanecido">La lección
 sobre el gradiente desvanecido</Leccion> dice qué le ocurre a una señal que atraviesa esa ruta: cada paso la
-multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara de la $\tanh$, y con un radio espectral menor
-que uno la magnitud cae de forma exponencial con la distancia. Al primer token de la frase le llega
+multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara de la $\tanh$, y con $\gamma\,\sigma_{\max}$
+(la mayor pendiente de la $\tanh$ por el mayor valor singular de $\mathbf{W}_{hh}$) menor que uno la magnitud cae de forma exponencial con la distancia. Al primer token de la frase le llega
 la señal más débil de todas.
 
 De modo que el encoder no reparte $\mathbf{c}$ entre las posiciones como lo haría un código óptimo:
@@ -187,7 +187,7 @@ import numpy as np
 V = list("abcd")                                       # cuatro letras: |V_x| = 4
 n_sim, GO = 4, 4                                       # GO solo entra al decoder, nunca se predice
 L_MIN, L_MAX = 2, 7
-eta, theta = 0.10, 5.0
+eta, kappa = 0.10, 5.0
 
 
 def monta(d_h):                                        # misma semilla: los modelos parten igual
@@ -237,7 +237,7 @@ entre filas es lo que dice su etiqueta.
 <PyCell packages={["numpy"]} code={`
 import numpy as np
 
-# Necesita la celda anterior: monta, paso, n_sim, GO, L_MIN, L_MAX, eta, theta.
+# Necesita la celda anterior: monta, paso, n_sim, GO, L_MIN, L_MAX, eta, kappa.
 def escribe(pesos, x):                                 # generacion voraz, sin teacher forcing
     Wxh_e, Whh_e, bh_e, Wxh_d, Whh_d, bh_d, Why, by = pesos
     h = np.zeros(len(bh_e))
@@ -271,7 +271,7 @@ for d_h, cortes in [(8, (250, 1000, 2000)), (32, (1000,))]:
         grads = paso(pesos, x, y)
         for g in grads:
             nrm = np.linalg.norm(g)
-            if nrm > theta: g *= theta / nrm           # recorte del gradiente, bloque anterior
+            if nrm > kappa: g *= kappa / nrm           # recorte del gradiente, bloque anterior
         for Pm, g in zip(pesos, grads):
             Pm -= eta * g
         if it + 1 in cortes:

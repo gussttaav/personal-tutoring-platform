@@ -227,7 +227,7 @@ import numpy as np
 V = list("abcdef")                 # las 6 letras: entrada del encoder y salida del decoder
 GO = 6                             # simbolo de arranque; solo entra al decoder, nunca se predice
 n_v, n_sim = 7, 6                  # 7 entradas (letras + GO); 6 clases de salida
-d_h, eta, theta, iters = 64, 0.10, 5.0, 1200
+d_h, eta, kappa, iters = 64, 0.10, 5.0, 1200
 
 rng = np.random.default_rng(0)     # semilla fija: veras estos numeros
 sc = 0.1
@@ -276,7 +276,7 @@ for it in range(iters):
     loss, grads = paso(x, y)
     for g in grads:
         nrm = np.linalg.norm(g)
-        if nrm > theta: g *= theta / nrm               # recorte del gradiente
+        if nrm > kappa: g *= kappa / nrm               # recorte del gradiente
     for Pm, g in zip(pesos, grads):
         Pm -= eta * g
     suave = loss if suave is None else 0.99 * suave + 0.01 * loss
