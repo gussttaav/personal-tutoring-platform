@@ -34,13 +34,13 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
-| [01 `@googleapis/calendar` instead of `googleapis`](phase-2-performance/01-googleapis-calendar-only.md) | `REFACTOR-R4-P2-01` | 🟠 | ⬜ | _tbd_ | |
+| [01 `@googleapis/calendar` instead of `googleapis`](phase-2-performance/01-googleapis-calendar-only.md) | `REFACTOR-R4-P2-01` | 🟠 | ✅ | Claude | local (`claude/googleapis-calendar-refactor-116297`). Largest chunk traced by `/api/courses/progress`: 10,126 KB → 1,313 KB. See Deviations; e2e + Vercel cold-start not run |
 | [02 Shell weight: icon-font subset + Sentry Replay](phase-2-performance/02-shell-weight-font-sentry.md) | `REFACTOR-R4-P2-02` | 🟠 | ⬜ | _tbd_ | |
 | [03 Commerce providers out of the root layout](phase-2-performance/03-commerce-providers-scope.md) | `REFACTOR-R4-P2-03` | 🟡 | ⬜ | _tbd_ | |
 | [04 One user-session state for the whole page](phase-2-performance/04-single-user-session-state.md) | `REFACTOR-R4-P2-04` | 🟡 | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] No `route.js.nft.json` under `.next/server/app/api/` references a chunk containing the full `googleapis` catalog; the largest server chunk traced by `/api/courses/progress` is < 2 MB
+- [x] No `route.js.nft.json` under `.next/server/app/api/` references a chunk containing the full `googleapis` catalog; the largest server chunk traced by `/api/courses/progress` is < 2 MB _(P2-01; 0 of 41 routes, largest 1,313 KB, which is the Stripe chunk)_
 - [ ] Icon font ≤ 150 KB; `pnpm check:icons` green; no icon renders as its ligature text on `/`, `/mentoria`, `/area-personal`, a lesson, a post
 - [ ] First-load gzipped JS on a blog post down by ≥ 60 KB vs. the pre-task measurement (recorded in the PR)
 - [ ] No `.meta` file for a blog post or lesson lists `pricing-all` or `schedule-config` in `x-next-cache-tags`
@@ -241,6 +241,47 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   - When a pack class's credit can't be restored, the email falls through to `refundMsg` ("if you
     paid for this session individually…"), which doesn't fit a pack class. `history-stats.ts` also
     still assumes a cancelled pack class always got its credit back ("crédito devuelto").
+
+- **P2-01 — version: `@googleapis/calendar@^9.8.0`, not the latest (20.x).** 9.x is the last major
+  on `googleapis-common@^7`, which accepts `google-auth-library@^9.7.0`. From 10.x on it is
+  `googleapis-common@8`, which needs `google-auth-library@10`. `pnpm why google-auth-library` →
+  one copy (9.15.1), shared by the direct dep, `googleapis-common` and `GoogleIdTokenVerifier`.
+  Lockfile: `googleapis@144.0.0` out, `@googleapis/calendar@9.8.0` in, nothing else moved.
+- **P2-01 — the baseline counted 37 of 41 route traces, not the task's 32 of 43.** Measured on a
+  build of this worktree at `b9917ac` (before the change) with a scratch script that walks every
+  `route.js.nft.json`. The file-top comment quotes 37 of 41.
+
+  | | before | after |
+  |---|---|---|
+  | routes tracing the googleapis catalog (a chunk with `drive_v3` / `youtube_v3` / …) | 37 / 41 | 0 / 41 |
+  | largest chunk traced by `/api/courses/progress` | 10,126 KB (googleapis, ~19.3k refs) | 1,313 KB (Stripe, unchanged) |
+  | all chunks traced by `/api/courses/progress` | 12,525 KB | 3,167 KB |
+  | same, `/api/auth/[...nextauth]` | 12,483 KB | 3,125 KB |
+  | chunk holding the Calendar client (`calendar_v3` + auth + gaxios) | inside the 10 MB one | 768 KB |
+
+- **P2-01 — `__resetCalendarClient()` exported as a test hook** (the task offered it or
+  `jest.resetModules()`). `CalendarClient.test.ts` calls it in `beforeEach`. Two new cases:
+  two `getAvailableSlots` calls → `GoogleAuth` and `calendar()` built once, freebusy queried
+  twice; after a reset the next call builds a fresh client.
+- **P2-01 — real-calendar check was a scripted smoke test, not the UI flow.** A scratch `tsx`
+  script loaded the env the way `pnpm dev` does (`@next/env`), refused to run unless
+  `GOOGLE_CALENDAR_ID` was the test calendar (the one in `.env.local` / `.env.e2e.local`, not
+  `.env`'s), and drove the real `CalendarClient`: freebusy (slot free) → `events.insert` of one
+  event at 05:00 Madrid on 2027-06-15, outside working hours and past the booking window
+  → freebusy (slot busy) → `events.delete` → freebusy (slot free). It also ran
+  `cleanup.ts`'s construction pattern for a read-only `events.list`. **1 service-account token
+  exchange across the client's 6 calls** (counted on `JWT.prototype.refreshTokenNoCache`). The
+  webhook re-check is the same `getAvailableSlots` → freebusy path.
+- **P2-01 — checks.** `pnpm test` 157/157 suites, 2074 tests. `pnpm lint` 0 errors (the same 8
+  pre-existing warnings, none in touched files). `tsc --noEmit`: only the pre-existing
+  `mdx.test.ts` (`RepoLink`) error; the project config includes `e2e/**`, so `cleanup.ts` is
+  typechecked. `pnpm build` green, before and after.
+- **P2-01 — NOT done:** `pnpm test:e2e` (same reason as P1-03/P1-04: `resetTestState` truncates
+  the test DB and clears the future events of the calendar your dev server uses; the calendar
+  had one future event at the time), the manual book/cancel/reschedule in the UI, and the Vercel
+  cold-start comparison on `/api/courses/progress` (no preview deploy from here; the Vercel MCP
+  isn't authorized in this session). For the phase exit, run one booking spec to confirm
+  `clearTestCalendar` still wipes events.
 
 ## Known regressions introduced
 

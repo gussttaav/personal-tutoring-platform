@@ -1,18 +1,18 @@
 // Tests for getAvailableSlots step-size behaviour.
-// googleapis is mocked so no real calendar credentials are needed.
+// @googleapis/calendar and google-auth-library are mocked so no real calendar
+// credentials are needed.
+// REFACTOR-R4-P2-01: mocks moved off `googleapis`; the client is memoized per process.
 
 const mockFreebusyQuery = jest.fn();
 
-jest.mock("googleapis", () => ({
-  google: {
-    auth: { GoogleAuth: jest.fn().mockImplementation(() => ({})) },
-    calendar: jest.fn().mockImplementation(() => ({
-      freebusy: { query: mockFreebusyQuery },
-    })),
-  },
+jest.mock("google-auth-library", () => ({ GoogleAuth: jest.fn().mockImplementation(() => ({})) }));
+jest.mock("@googleapis/calendar", () => ({
+  calendar: jest.fn().mockImplementation(() => ({ freebusy: { query: mockFreebusyQuery } })),
 }));
 
-import { getAvailableSlots } from "../CalendarClient";
+import { GoogleAuth } from "google-auth-library";
+import { calendar as calendarApi } from "@googleapis/calendar";
+import { getAvailableSlots, __resetCalendarClient } from "../CalendarClient";
 import type { ScheduleConfig } from "@/domain/types";
 
 // Returning an empty calendars map means busyBlocks = [] for any CALENDAR_ID value,
@@ -21,6 +21,7 @@ const emptyBusyResponse = { data: { calendars: {} } };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  __resetCalendarClient();
   mockFreebusyQuery.mockResolvedValue(emptyBusyResponse);
 });
 
@@ -88,5 +89,24 @@ describe("getAvailableSlots — stepMinutes parameter", () => {
       const diffMs = new Date(slot.end).getTime() - new Date(slot.start).getTime();
       expect(diffMs).toBe(60 * 60_000);
     }
+  });
+});
+
+describe("getCalendar — memoized client (REFACTOR-R4-P2-01)", () => {
+  it("builds GoogleAuth and the Calendar client once across calls", async () => {
+    await getAvailableSlots(TEST_DATE, 60, TEST_CONFIG);
+    await getAvailableSlots(TEST_DATE, 60, TEST_CONFIG, 30);
+
+    expect(GoogleAuth).toHaveBeenCalledTimes(1);
+    expect(calendarApi).toHaveBeenCalledTimes(1);
+    expect(mockFreebusyQuery).toHaveBeenCalledTimes(2);
+  });
+
+  it("__resetCalendarClient makes the next call build a fresh client", async () => {
+    await getAvailableSlots(TEST_DATE, 60, TEST_CONFIG);
+    __resetCalendarClient();
+    await getAvailableSlots(TEST_DATE, 60, TEST_CONFIG);
+
+    expect(GoogleAuth).toHaveBeenCalledTimes(2);
   });
 });

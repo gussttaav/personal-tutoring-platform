@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@googleapis/calendar':
+        specifier: ^9.8.0
+        version: 9.8.0
       '@sentry/nextjs':
         specifier: ^10.53.1
         version: 10.53.1(@opentelemetry/core@2.7.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.7.1(@opentelemetry/api@1.9.1))(next@16.2.6(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)(webpack@5.107.1(postcss@8.5.15))
@@ -50,9 +53,6 @@ importers:
       google-auth-library:
         specifier: 9.15.1
         version: 9.15.1
-      googleapis:
-        specifier: ^144.0.0
-        version: 144.0.0
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -573,6 +573,10 @@ packages:
 
   '@formatjs/intl-localematcher@0.8.9':
     resolution: {integrity: sha512-GmB0F/gYh4Hdl4rLWjgDsgT+x4pB54fkJeRh8kAZ4XFzKeCK8dGs+SBJWXO42QZtOUni+IDWKNuCw6wiL4lTvw==}
+
+  '@googleapis/calendar@9.8.0':
+    resolution: {integrity: sha512-5IG4x/bOvdDFLEzNX/HyvN4LUtuMFTv4eYqZcgwSWBHiBwCfN1zIVLPP6ENbIOR5sIceLpOS35NqknoaAiTJ1g==}
+    engines: {node: '>=12.0.0'}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -3082,10 +3086,6 @@ packages:
     resolution: {integrity: sha512-/fhDZEJZvOV3X5jmD+fKxMqma5q2Q9nZNSF3kn1F18tpxmA86BcTxAGBQdM0N89Z3bEaIs+HVznSmFJEAmMTjA==}
     engines: {node: '>=14.0.0'}
 
-  googleapis@144.0.0:
-    resolution: {integrity: sha512-ELcWOXtJxjPX4vsKMh+7V+jZvgPwYMlEhQFiu2sa9Qmt5veX8nwXPksOWGGN6Zk4xCiLygUyaz7xGtcMO+Onxw==}
-    engines: {node: '>=14.0.0'}
-
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
@@ -5478,6 +5478,13 @@ snapshots:
   '@formatjs/intl-localematcher@0.8.9':
     dependencies:
       '@formatjs/fast-memoize': 3.1.5
+
+  '@googleapis/calendar@9.8.0':
+    dependencies:
+      googleapis-common: 7.2.0
+    transitivePeerDependencies:
+      - encoding
+      - supports-color
 
   '@humanfs/core@0.19.2':
     dependencies:
@@ -8222,14 +8229,6 @@ snapshots:
       qs: 6.15.2
       url-template: 2.0.8
       uuid: 9.0.1
-    transitivePeerDependencies:
-      - encoding
-      - supports-color
-
-  googleapis@144.0.0:
-    dependencies:
-      google-auth-library: 9.15.1
-      googleapis-common: 7.2.0
     transitivePeerDependencies:
       - encoding
       - supports-color
