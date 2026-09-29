@@ -1,6 +1,6 @@
 # P11-06 — Block 3: Recurrent Neural Networks
 
-**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.4 done)
+**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.5 done)
 
 ## TL;DR
 
@@ -171,30 +171,35 @@ Line refs are into the `es/` file named in each heading.
 
 #### 3.5 `lstm` — `es/23-lstm.mdx` — adapt
 
-- **Quiz (5, no answer moves).** `q-por-que-sobrevive` `single` a (12–22). **`q-que-compuerta`
+*Re-read at translation time: commit `4e7420d` removed `q-producto`, moved the figure up beside the
+six-line block and the explorable below the first cell, and commit `ef39bff` fixed the errors listed
+under "From 3.5" below. Line refs are to the fixed file.*
+
+- **Quiz (4, no answer moves).** `q-por-que-sobrevive` `single` a (12–22). **`q-que-compuerta`
   `single` a (23–32) — the item the block flagged.** Its prompt holds "el sujeto era plural"
   across a relative clause, but the answer is a gate configuration ($f\to1$, $i\to0$, $o\to0$) and
   owes nothing to how strongly a language marks plurality. English present-tense agreement
-  (`the cameras … don't work`) carries the prompt; distractor (b) inverts the forget gate and (c)
-  fails on the output gate, both language-free. `q-parametros` `numeric` 49408 (33–39);
-  `q-producto` `predict-output` `0.0 / 0.669` (40–51); `q-que-no-arregla` `multi` [a,b] (52–62).
+  carries the prompt; distractor (b) inverts the forget gate and (c) fails on the output gate, both
+  language-free. `q-parametros` `numeric` 49408 (33–39); `q-que-no-arregla` `multi` [a,b] (40–50).
 - **The example, and the one recount in the block.**
-  `Las cámaras que el ayuntamiento instaló el año pasado en la plaza no funcionan` (192–194), with
-  **"doce posiciones" quoted at 194, 197 and 257**. Count the English sentence's own distance and
-  move all three together; the same sentence supplies the cheap-token contrast `que` / `del` (246).
-- **`<PyCell>` ×2** (370–409, 425–459): numeric only. Identifiers `pesos`, `paso`, `entra`,
-  `sigmoide`, `sesgo_olvido`, `olvidos`, `empujon`; Spanish prints (401–408, 454–458). Quoted
-  output — `20 %` / `78 %` (413–414), `1.1 × 10^{-3}`, `10^{-11}`, `14 %`, `76 %` (461–468) — holds.
-- **`<CodeChallenge>` `ch-lstm-paso`** (64–154): 1 starter comment (80), 5 test `name`s, 6 Spanish
-  assertion messages (91–130), Spanish `prompt`, `solution` (`paso_lstm`, `entra`, `sigmoide`,
-  `c_nuevo`) and `explanation`.
-- **`<Explorable>` `lstm-gates`** (296–299): Spanish caption. **No corpus** — `LstmGates.tsx:221–227`
+  `Las cámaras que el ayuntamiento instaló el año pasado en la plaza no funcionan` (180–181), with
+  **"doce posiciones" quoted at 182, 185 and 245**. Count the English sentence's own distance and
+  move all three together; the same sentence supplies the cheap-token contrast `que` / `del` (234).
+- **`<PyCell>` ×2** (349–388, 415–449): numeric only. Identifiers `pesos`, `paso`, `entra`,
+  `sigmoide`, `sesgo_olvido`, `olvidos`, `empujon`; Spanish prints. Quoted output: `20 %` / `78 %`,
+  `1.1 × 10^{-3}`, the `b_f = 0` line (prints `0.00e+00`, see "From 3.5"), `14 %`, `76 %`.
+- **`<CodeChallenge>` `ch-lstm-paso`** (52–142): 1 starter comment, 5 test `name`s, 6 Spanish
+  assertion messages, Spanish `prompt`, `solution` (`paso_lstm`, `entra`, `sigmoide`, `c_nuevo`)
+  and `explanation`.
+- **`<Explorable>` `lstm-gates`** (405–408): Spanish caption. **No corpus** — `LstmGates.tsx:221–227`
   carries the three row hints `qué conserva` / `qué escribe` / `qué deja ver` plus the `b_f` slider
   label, and nothing else. P11-02. (The caption's "la misma frase" describes a sequence the widget
   renders as vectors, not words; the English caption should not promise more than it shows.)
-- **`<Figure>` `lstm-celda.svg`** (303–307): Spanish `alt` and `caption`, but **the SVG is symbols
-  only** (`f`, `i`, `c̃`, `o`, `tanh`) — the asset is reused unchanged.
-- **`<Leccion ancla="">`: 0** (9 refs). **`reading`:** 3 (156–179), all `lang: en`, Spanish notes.
+- **`<Figure>` `lstm-celda.svg`** (273–277): Spanish `alt` and `caption`, but **the SVG's visible
+  labels are symbols only** (`f`, `i`, `c̃`, `o`, `tanh`) — the asset is reused unchanged. Its
+  `aria-label` is Spanish, but `<Figure>` renders through `<img>`, whose `alt` is what a screen
+  reader gets (the same holds for `forward-shapes.svg` in `en/12`).
+- **`<Leccion ancla="">`: 0** (9 refs). **`reading`:** 3 (143–167), all `lang: en`, Spanish notes.
 - **`<W>`: 11** — `cámaras` ×5, `ayuntamiento`, `plaza`, `funcionan`, `que`, `del`; all inside the
   one example, so all 11 are decided by the sentence chosen to replace it.
 
@@ -269,7 +274,7 @@ Line refs are into the `es/` file named in each heading.
 | **Transpose** | **3** | 3.3, 3.4, 3.6 |
 | **Adapt** | **5** | 3.1, 3.2, 3.5, 3.7, 3.8 |
 | **Rewrite** | **0** | no quiz answer in the block moves |
-| Quiz items | 32 | 16 `single`, 7 `multi`, 6 `numeric`, 2 `predict-output`, 1 `boolean` — **0 answers move** (3.4's `q-decae-numerico` was removed from the Spanish after triage) |
+| Quiz items | 31 | 16 `single`, 7 `multi`, 6 `numeric`, 1 `predict-output`, 1 `boolean` — **0 answers move** (3.4's `q-decae-numerico` and 3.5's `q-producto` were removed from the Spanish after triage) |
 | `<PyCell>` | 15 | all re-run; only 3.7's 3 are **regenerated** (3.4 gained its `svd`/`eig` cell after triage) |
 | `<CodeChallenge>` | 4 | 3.2, 3.3, 3.5, 3.6 — 32 Spanish assertion messages, 19 test `name`s, 5 `# tu código aquí` |
 | `<Explorable>` | 5 uses / 3 ids | `rnn-unrolled` ×2, `lstm-gates` ×2, `vanishing-gradient` ×1 — **none carries a corpus**; captions here, widget strings in P11-02 |
@@ -294,7 +299,7 @@ English 3.2 takes `en/18`'s pair and its `0.0002` (see the English notes under 3
 - [x] 3.2 `la-rnn-vanilla`
 - [x] 3.3 `bptt`
 - [x] 3.4 `gradiente-desvanecido`
-- [ ] 3.5 `lstm`
+- [x] 3.5 `lstm`
 - [ ] 3.6 `gru`
 - [ ] 3.7 `proyecto-char-lm`
 - [ ] 3.8 `seq2seq`
@@ -413,6 +418,44 @@ Reuse these verbatim; they are settled, not open.
   **sumando** was bold for emphasis; «basta despejar» used the banned «basta» family; and $\rho$
   was presented as deciding the masked case. The widget's `math/vanishing-gradient.ts` comment
   claimed the bound $(\gamma\rho)^{d}$ and was corrected too (comments only).
+
+**From 3.5** (`en/23-lstm.mdx`):
+
+- **The example is <W>The cameras that the mayor installed in the square last year are broken</W>**,
+  and the distance is **ten positions** (from <W>cameras</W> at 2 to <W>are</W> at 12), so all three
+  «doce posiciones» moved to ten together. The third («las doce posiciones del inciso») reads
+  "throughout those ten positions", because the relative clause itself is nine words. The agreement
+  is spelled <W>are</W> against <W>is</W>, the singular nouns named are <W>mayor</W> and
+  <W>square</W>, and the cheap tokens are <W>that</W> / <W>the</W>.
+- **<W>mayor</W>, not <W>council</W>:** en-GB lets a collective noun take a plural verb, which would
+  blur "both singular". Now a rule in `AUTHORING.en.md` §3.
+- **«la misma frase» is "the same sequence"**, in the prose and the `lstm-gates` caption: the cell
+  and the widget read random vectors. `es/24`'s reused caption already says «la misma secuencia».
+- **The pickup drops «no es el valor de los pesos sino la forma del camino»**, because `en/22`'s
+  bridge already says "The problem isn't the weights, it's the path"; it opens on "a diagnosis and a
+  direction" instead. The title is "LSTM: gated memory"; `en/22`'s bridge label ("the LSTM and its
+  gates") still names the topic and was left as it is.
+- **Code names:** `paso_lstm` → `lstm_step`, `paso` → `step`, `entra` → `pre` (the pre-activation of
+  piece `k`), `sigmoide` → `sigmoid`, `pesos` → `weights`, `sesgo_olvido` → `forget_bias`, `sesgo` →
+  `bias`, `olvidos` → `forgets`, `empujon` → `nudge`, `c_nuevo`/`h_nuevo` → `c_new`/`h_new`, `salida`
+  → `out`, `sesgos` → `biases`. 3.6's cell and challenge use `entra`, `sigmoide`, `pesos` and `paso`
+  the same way, so they become `pre`, `sigmoid`, `weights` and `step` (`gru_step` for the challenge).
+- **Printed in Pyodide and quoted**, byte-identical in both locales: about $20\%$ (19.0 / 20.4 /
+  22.4 %) and $78\%$ (77.1 / 77.8 / 79.5 %) of $\mathbf{c}_1$ surviving at $\mathbf{b}_f = 1$ and $3$,
+  with the same first row of $\mathbf{c}_t$; the probe's `1.13e-03`, `0.00e+00`, `1.43e-01` and
+  `7.64e-01`, with $f_t$ at `0.500` / `0.953` / `0.993`. The challenge's "use `c` in the last line"
+  variant fails test 4 only, as its explanation says. The widget reads 0 % at $\mathbf{b}_f = -2$ and
+  91–92 % at $4$, which the caption's two claims need.
+- **Spanish errors fixed in `es/23`** (their own commit, `ef39bff`): «el producto cae a $10^{-11}$»
+  quoted a number the cell does not print. Pyodide prints `0.00e+00` for $\mathbf{b}_f = 0$; CPython's
+  `1.39e-11` is one ulp of $c_{40}$ over `eps`, not the product, which is $1.4 \times 10^{-12}$. Both
+  locales now give $0.5^{39} \approx 2 \times 10^{-12}$ as arithmetic and say the line prints zero.
+  Also «un 20 % escaso» (two of the three values are above 20 %), seven words bold for emphasis
+  (**no**, **alcanzable**, **antes**, **sin**, **cada**, **calcula**, **peor**), and a raya pair in
+  the `lstm-gates` widget's `summary` string, in both `messages` files.
+- **What a finite-difference probe cannot show:** a quantity below its resolution prints zero in
+  Pyodide and ulp noise in CPython. No later lesson in this block probes a distance, but any tiny
+  number a lesson quotes is checked against the quantity it claims to be, not only against a print.
 
 ## Two things to watch
 
