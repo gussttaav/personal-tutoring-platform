@@ -1,6 +1,6 @@
 # P11-06 — Block 3: Recurrent Neural Networks
 
-**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.2 done)
+**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.3 done)
 
 ## TL;DR
 
@@ -289,7 +289,7 @@ English 3.2 takes `en/18`'s pair and its `0.0002` (see the English notes under 3
 
 - [x] 3.1 `por-que-falla-el-mlp`
 - [x] 3.2 `la-rnn-vanilla`
-- [ ] 3.3 `bptt`
+- [x] 3.3 `bptt`
 - [ ] 3.4 `gradiente-desvanecido`
 - [ ] 3.5 `lstm`
 - [ ] 3.6 `gru`
@@ -351,6 +351,33 @@ Reuse these verbatim; they are settled, not open.
   three of these.
 - **`es/20` bolds two words for emphasis** (**cuántas veces**, **una**), against `AUTHORING.md` §5.
   The English uses italics; the Spanish is left for its own fix.
+
+**From 3.3** (`en/21-bptt.mdx`):
+
+- **Code names:** `perdida` → `loss`, `aporte` → `contributions`, `peor` → `worst`, `mas`/`menos` →
+  `plus`/`minus`, `guardas` → `copies`. `worst`/`plus`/`minus` are `en/16`'s probe-loop names and
+  `copies` is 3.2's, so any later cell or test that probes a derivative or guards its inputs reuses
+  them.
+- **`la ida` / `la vuelta` are `forward pass` / `backward pass`**, every time, per the glossary: never
+  "the way back". The Spanish leans on the pair (`q-guardar-la-ida`, «qué obliga a guardar la vuelta»)
+  and so does 3.4. The two moves are `en/16`'s **transports** / **masks**, and `sondeo numérico` is the
+  *numerical probe*.
+- **The pickup drops the Spanish opening's generator image** («los pesos que un generador escribió»),
+  because `en/20`'s bridge already says "weights set by a generator": the English opens on "nobody has
+  trained yet" instead.
+- **MLP is expanded in `q-de-donde-la-suma`** ("the concatenated multilayer perceptron (MLP)"): the
+  Spanish leaves it bare, and no prose in this lesson expands it.
+- **Printed in Pyodide and quoted:** `ŷ = 0.4022`, `ℓ = 0.9107`, contributions
+  `[0.2602 0.1352 0.0723 0.2272 0.]`, largest probe difference `9.3e-11` (the prose's $10^{-10}$),
+  byte-identical to the Spanish cell.
+- **Three Spanish errors found and fixed in `es/21`** (their own commit): the `reading` note cited
+  equation 10.13 (the loss sum) where the transport-and-mask equation is 10.21; the challenge
+  explanation said the copy of `dhT` is needed because `dh = Whh.T @ delta` rewrites it, but rebinding
+  never touches the caller's array (without the copy, rebinding passes all four tests and an in-place
+  `dh *= …` fails tests 2 and 4); and **acumulan** was bold for emphasis. The English says the same.
+- **Open, not applied:** English lessons write "pre-activation" 53 times, but `rnn-unrolled`'s
+  `forwardPreactivation` string says "preactivation". A glossary row in `AUTHORING.en.md` and the
+  widget string would settle it; the widget string is P11-02's.
 
 ## Two things to watch
 
