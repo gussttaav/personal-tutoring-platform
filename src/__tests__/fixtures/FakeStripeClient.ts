@@ -1,6 +1,10 @@
 // TEST-01: Fake IStripeClient for integration tests.
+// REFACTOR-R4-P3-01: listPaymentIntents pages over a seeded array (seedListedPaymentIntent),
+// kept apart from the retrieve map so a reconcile test lists exactly what it seeded.
 import type Stripe from "stripe";
-import type { IStripeClient, CreatePaymentIntentOptions } from "@/infrastructure/stripe/StripeClient";
+import type {
+  IStripeClient, CreatePaymentIntentOptions, ListPaymentIntentsParams,
+} from "@/infrastructure/stripe/StripeClient";
 
 type FakePaymentIntent = {
   id:            string;
@@ -10,6 +14,8 @@ type FakePaymentIntent = {
   currency:      string;
   metadata:      Record<string, string>;
 };
+
+type FakeListedPaymentIntent = FakePaymentIntent & { created: number };
 
 type FakeCheckoutSession = {
   id:              string;
@@ -24,6 +30,9 @@ export class FakeStripeClient implements IStripeClient {
   refunds:          Array<{ payment_intent?: string; charge?: string; reason: string }> = [];
   private idCounter = 0;
   private idempotencyToIntentId = new Map<string, string>();
+  private listed:   FakeListedPaymentIntent[] = [];
+  /** Test helper: every listPaymentIntents call, in order. */
+  readonly listCalls: ListPaymentIntentsParams[] = [];
 
   verifyWebhookSignature(_body: string, _sig: string, _secret: string): Stripe.Event {
     throw new Error("FakeStripeClient: call constructFakeEvent() to build test events");
@@ -61,6 +70,48 @@ export class FakeStripeClient implements IStripeClient {
     const intent = this.intents.get(id);
     if (!intent) throw new Error(`FakeStripeClient: no intent for id ${id}`);
     return intent as unknown as Stripe.PaymentIntent;
+  }
+
+  // Pages in seed order (seed newest-first to mirror Stripe). `startingAfter` must be
+  // an id this fake returned — Stripe rejects an unknown cursor, and so does this.
+  async listPaymentIntents(
+    params: ListPaymentIntentsParams,
+  ): Promise<{ data: Stripe.PaymentIntent[]; hasMore: boolean }> {
+    this.listCalls.push(params);
+    const matching = this.listed.filter(pi => pi.created >= params.createdGte);
+    let start = 0;
+    if (params.startingAfter) {
+      const cursor = matching.findIndex(pi => pi.id === params.startingAfter);
+      if (cursor < 0) throw new Error(`FakeStripeClient: unknown cursor ${params.startingAfter}`);
+      start = cursor + 1;
+    }
+    const data = matching.slice(start, start + params.limit);
+    return {
+      data:    data as unknown as Stripe.PaymentIntent[],
+      hasMore: start + params.limit < matching.length,
+    };
+  }
+
+  /** Test helper: add a PaymentIntent to the array listPaymentIntents pages over. */
+  seedListedPaymentIntent(params: {
+    id:            string;
+    checkoutType?: string;
+    status?:       string;
+    amount?:       number;
+    email?:        string;
+    created?:      number; // unix seconds; defaults to now
+  }): void {
+    const metadata: Record<string, string> = { student_email: params.email ?? "student@test.com" };
+    if (params.checkoutType !== undefined) metadata.checkout_type = params.checkoutType;
+    this.listed.push({
+      id:            params.id,
+      client_secret: `${params.id}_secret`,
+      status:        params.status ?? "succeeded",
+      amount:        params.amount ?? 4900,
+      currency:      "eur",
+      metadata,
+      created:       params.created ?? Math.floor(Date.now() / 1000),
+    });
   }
 
   async retrieveCheckoutSession(id: string): Promise<Stripe.Checkout.Session> {

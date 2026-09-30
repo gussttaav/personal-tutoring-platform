@@ -33,6 +33,13 @@
  * redelivers) instead of reading as "absent" and falling through to a refund. The
  * booking-exists gate is now status-agnostic (hasBookingForPayment): a cancelled
  * booking for the PaymentIntent is proof of processing too.
+ *
+ * REFACTOR-R4-P3-01: `reconcileRecentPayments` absorbs the reconciliation cron's logic
+ * (the route called the stripe singleton and three repositories directly), and a
+ * slot-taken refund (single_session_refunds) now counts as proof of handling — it never
+ * writes the processed marker, so every such refund used to raise a false Sentry error.
+ * The dead-letter retry now carries the charged amount + currency, so a recovered
+ * booking gets its `payments` row like any webhook-booked one.
  */
 
 import type Stripe from "stripe";
@@ -77,6 +84,23 @@ export interface SinglePaymentSummary {
 }
 
 export type PaymentSummary = PackPaymentSummary | SinglePaymentSummary;
+
+// REFACTOR-R4-P3-01: one entry of the reconciliation cron's `details` — the route
+// serializes these verbatim, so the field set is the cron's response contract.
+export interface ReconcileMismatch {
+  paymentIntentId: string;
+  amount:          number;
+  currency:        string;
+  email?:          string;
+  createdAt:       string;
+  reason:          "no_credit_pack" | "no_booking" | "no_webhook_row";
+}
+
+export interface ReconcileResult {
+  scanned:    number;
+  mismatches: ReconcileMismatch[];
+  hitPageCap: boolean;
+}
 
 // REFACTOR-R3-P3-03: the response body of GET /api/payment-confirmation/channel.
 // This union IS the wire contract (the mobile app consumes the single branch), so the
@@ -337,6 +361,9 @@ export class PaymentService {
           rescheduleToken: metadata.reschedule_token || null,
           idempotencyKey:  stripeSessionId,
           refundTarget:    { payment_intent: stripeSessionId },
+          // REFACTOR-R4-P3-01: without these, recordPaymentRow skipped the audit row.
+          amountCents:     intent.amount,
+          currency:        intent.currency,
         };
       } else {
         const checkout = await this.stripeClient.retrieveCheckoutSession(stripeSessionId);
@@ -350,6 +377,8 @@ export class PaymentService {
           rescheduleToken: metadata.reschedule_token || null,
           idempotencyKey:  stripeSessionId,
           refundTarget:    { payment_intent: checkout.payment_intent as string },
+          amountCents:     checkout.amount_total,
+          currency:        checkout.currency,
         };
       }
     } catch (err) {
@@ -370,6 +399,77 @@ export class PaymentService {
 
   async listFailedBookings(): Promise<FailedBookingEntry[]> {
     return this.paymentRepo.listFailedBookings();
+  }
+
+  // ── Reconciliation cron ────────────────────────────────────────────────────
+
+  // REFACTOR-R4-P3-01: moved from GET /api/internal/reconcile-stripe (REFACTOR-P4-01).
+  // Lists the succeeded PaymentIntents of the last `lookbackHours` and checks each was
+  // processed downstream. Proof is type-aware — see the route header. Read-only; the
+  // reads throw on a DB error (REFACTOR-R4-P1-02), so a blip fails the run instead of
+  // producing false mismatches.
+  async reconcileRecentPayments(opts: {
+    lookbackHours: number;
+    pageSize:      number;
+    maxPages:      number;
+  }): Promise<ReconcileResult> {
+    const createdGte = Math.floor((Date.now() - opts.lookbackHours * 3600_000) / 1000);
+    const mismatches: ReconcileMismatch[] = [];
+    let scanned = 0;
+    let startingAfter: string | undefined;
+    let pageCount = 0;
+
+    while (pageCount < opts.maxPages) {
+      const page = await this.stripeClient.listPaymentIntents({
+        createdGte,
+        limit: opts.pageSize,
+        ...(startingAfter ? { startingAfter } : {}),
+      });
+      pageCount++;
+
+      for (const pi of page.data) {
+        scanned++;
+        if (pi.status !== "succeeded") continue;
+
+        const checkoutType = pi.metadata?.checkout_type;
+        const base = {
+          paymentIntentId: pi.id,
+          amount:          pi.amount,
+          currency:        pi.currency,
+          email:           pi.metadata?.student_email,
+          createdAt:       new Date(pi.created * 1000).toISOString(),
+        };
+
+        if (checkoutType === "pack") {
+          // Proof: the pack's credit_packs row (idempotency anchor).
+          if (!(await this.credits.hasProcessedPayment(pi.id))) {
+            mismatches.push({ ...base, reason: "no_credit_pack" });
+          }
+        } else if (checkoutType === "single") {
+          // Proof: a booking, a slot-taken refund, a known dead-letter, or the processed
+          // marker. The refund path never marks processed, and the PI stays `succeeded`
+          // after a refund — without the refund check it read as a dropped webhook.
+          const handled =
+            (await this.bookings.hasBookingForPayment(pi.id)) ||
+            (await this.paymentRepo.wasRefunded(pi.id)) ||
+            (await this.paymentRepo.hasFailedBooking(pi.id)) ||
+            (await this.paymentRepo.isProcessed(pi.id));
+          if (!handled) {
+            mismatches.push({ ...base, reason: "no_booking" });
+          }
+        } else {
+          // Unknown/missing checkout_type — fall back to the webhook ledger.
+          if (!(await this.paymentRepo.isProcessed(pi.id))) {
+            mismatches.push({ ...base, reason: "no_webhook_row" });
+          }
+        }
+      }
+
+      if (!page.hasMore) break;
+      startingAfter = page.data[page.data.length - 1]?.id;
+    }
+
+    return { scanned, mismatches, hitPageCap: pageCount === opts.maxPages };
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────

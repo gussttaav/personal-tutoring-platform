@@ -51,13 +51,13 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
-| [01 Payment ledger accuracy](phase-3-payments-admin/01-payment-ledger-accuracy.md) | `REFACTOR-R4-P3-01` | 🟡 | ⬜ | _tbd_ | |
+| [01 Payment ledger accuracy](phase-3-payments-admin/01-payment-ledger-accuracy.md) | `REFACTOR-R4-P3-01` | 🟡 | ✅ | Claude | local (`claude/payment-ledger-accuracy-3648e9`). Route test rewritten (not in the file list), see Deviations; backfill + manual cron call not done |
 | [02 Admin students area](phase-3-payments-admin/02-admin-students-area.md) | `REFACTOR-R4-P3-02` | 🟡 | ⬜ | _tbd_ | |
 | [03 Daily audit: upcoming classes >15 min are paid](phase-3-payments-admin/03-booking-payment-audit.md) | `REFACTOR-R4-P3-03` | 🟡 | ⬜ | _tbd_ | — added 2026-09-28; after P1-03 |
 
 **Exit criteria**
-- [ ] A slot-taken refund within the lookback window produces no reconcile mismatch; `stripe` is imported by no route handler
-- [ ] Dead-letter retry of a PaymentIntent writes a `payments` row with the charged amount
+- [x] A slot-taken refund within the lookback window produces no reconcile mismatch; `stripe` is imported by no route handler _(P3-01; in-memory test drives a real slot-taken webhook, then reconciles. Only `import type Stripe` remains, in the webhook route)_
+- [x] Dead-letter retry of a PaymentIntent writes a `payments` row with the charged amount _(P3-01; in-memory test for a `pi_…` retry, mock tests for the legacy `amount_total` branch)_
 - [ ] A student past #100 by email is findable in `/admin/students`; the low-credit count excludes accounts that never booked or bought
 - [ ] Every admin POST/PATCH route calls `isValidOrigin`; a `−N` adjustment larger than the balance reports what was actually applied
 - [ ] The daily booking-payment audit (P3-03) flags a class whose payment was refunded in Stripe; a clean run emails nothing
@@ -476,6 +476,40 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
 - **P2-04 — NOT done:** `pnpm test:e2e` (`booking-pack`, `booking-personal-area`, `home`). The
   booking specs' `resetTestState()` truncates the whole test DB and wipes the test calendar.
   Waiting for Gustavo's go-ahead.
+- **P3-01 — the route test was rewritten (not in the file list).**
+  `src/app/api/internal/reconcile-stripe/__tests__/route.test.ts` mocked the stripe singleton and
+  `@/infrastructure/supabase`, the two imports the task removes, and the acceptance grep covers that
+  directory. Once the logic moved to the service, the route ran the real `paymentService` graph over
+  those partial mocks. The payment mock had no `wasRefunded`, so both single-session cases answered
+  500. Adding `wasRefunded` to the mock would have made the test pass without testing anything
+  meaningful. The suite now mocks `@/services` and checks only the route's contract with
+  cron-job.org: the 403s, the 48/100/10 arguments, the `{ scanned, mismatches, details }` body, the
+  info/error/page-cap log lines (sample capped at 10), and the 500 path. The proof matrix it used to
+  cover moved to the service tests. Stopped for Gustavo's go-ahead before rewriting it.
+- **P3-01 — service tests beyond the plan.** The slot-taken case is driven through a real
+  `processWebhookEvent` (the refund leaves no processed marker) rather than a seeded refund row.
+  Also added: a non-succeeded PI is counted but not checked, the lookback window is passed through
+  (`createdGte = now − 48 h`), and a proof read error rejects the run instead of reporting false
+  mismatches. There are two mock-based cases for the legacy Checkout Session retry: with
+  `amount_total` the row is recorded, and without it the class is booked and no row is written.
+  With the three fixes reverted, 6 of the new tests fail.
+- **P3-01 — `hitPageCap` keeps the old `pageCount === MAX_PAGES` rule.** It is also true when the
+  10th page happened to be the last one. The route's warn fired in that case before this change
+  too, and the task said only where the work happens changes.
+- **P3-01 — `FakeStripeClient.listPaymentIntents`** pages in seed order and throws on an unknown
+  `startingAfter` cursor, as Stripe does. `listCalls` records every call so tests can assert the
+  cursor chain.
+- **P3-01 — found while testing: a failed admin retry cleared its dead-letter and reported
+  `{ ok: true }`.** When the retried `createBooking` failed, `processSingleSession` wrote the
+  dead-letter again and returned normally. `reprocessFailedBooking` then deleted it. Out of P3-01's
+  scope; fixed separately on the same branch as `DEAD-LETTER-RETRY-01` (see below).
+- **P3-01 — checks.** `pnpm test`: 162/162 suites, 2130 tests (9 route tests + 11 service tests +
+  2 retry mock tests, against 7 old route tests). `pnpm lint`: 0 errors (the same 8 pre-existing
+  warnings, none in touched files). `tsc --noEmit`: only the pre-existing `mdx.test.ts`
+  (`RepoLink`) error.
+- **P3-01 — NOT done:** the manual cron call against the test Stripe account, and the optional
+  one-off `payments` backfill for bookings already recovered through the admin retry (the query is
+  in the task md; each amount has to be fetched from Stripe).
 
 ## Known regressions introduced
 

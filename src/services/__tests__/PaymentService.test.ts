@@ -5,6 +5,8 @@
 // REFACTOR-R4-P1-02: the booking-exists gate is BookingService.hasBookingForPayment
 // (status-agnostic), and the webhook's idempotency reads fail closed — see the in-memory
 // suite at the end of this file.
+// REFACTOR-R4-P3-01: reconcileRecentPayments (the cron's logic, moved from its route) and
+// the dead-letter retry's payments row — in-memory suites at the end of this file.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -15,6 +17,7 @@ import { InMemoryAuditRepository } from "@/__tests__/fixtures/InMemoryAuditRepos
 import { InMemoryBookingRepository } from "@/__tests__/fixtures/InMemoryBookingRepository";
 import { InMemoryPaymentRepository } from "@/__tests__/fixtures/InMemoryPaymentRepository";
 import { buildTestBookingService, buildTestPaymentService } from "@/__tests__/fixtures/services";
+import { alignedSlot } from "@/__tests__/fixtures/slots";
 
 // Mock getAvailableSlots before importing PaymentService (direct module import)
 const mockGetAvailableSlots = jest.fn();
@@ -53,6 +56,7 @@ const mockStripe = (): jest.Mocked<IStripeClient> => ({
   verifyWebhookSignature:   jest.fn(),
   createPaymentIntent:      jest.fn(),
   retrievePaymentIntent:    jest.fn(),
+  listPaymentIntents:       jest.fn(),
   retrieveCheckoutSession:  jest.fn(),
   createRefund:             jest.fn(),
 });
@@ -848,6 +852,63 @@ describe("PaymentService.reprocessFailedBooking", () => {
 
     expect(result).toEqual({ ok: false, error: "Failed to retrieve Stripe data" });
   });
+
+  // REFACTOR-R4-P3-01: the legacy Checkout Session branch carries amount_total through.
+  describe("legacy Checkout Session", () => {
+    const CS = "cs_legacy_123";
+
+    function legacyCheckout(amountTotal: number | null) {
+      return {
+        id:             CS,
+        payment_intent: "pi_legacy_123",
+        customer_email: "student@test.com",
+        amount_total:   amountTotal,
+        currency:       amountTotal == null ? null : "eur",
+        metadata: {
+          student_email:    "student@test.com",
+          student_name:     "Student",
+          start_iso:        "2099-12-01T10:00:00.000Z",
+          end_iso:          "2099-12-01T11:00:00.000Z",
+          session_duration: "1h",
+          reschedule_token: "",
+        },
+      } as unknown as Stripe.Checkout.Session;
+    }
+
+    function build(amountTotal: number | null) {
+      const ctx = makeService();
+      ctx.paymentRepo.listFailedBookings.mockResolvedValue([{ ...deadLetterEntry, stripeSessionId: CS }]);
+      ctx.paymentRepo.isProcessed.mockResolvedValue(false);
+      ctx.paymentRepo.clearFailedBooking.mockResolvedValue(undefined);
+      ctx.stripe.retrieveCheckoutSession.mockResolvedValue(legacyCheckout(amountTotal));
+      (ctx.bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+      return ctx;
+    }
+
+    it("records the payments row from amount_total, keyed by the PaymentIntent", async () => {
+      const { service, paymentRepo } = build(4900);
+
+      await expect(service.reprocessFailedBooking(CS)).resolves.toEqual({ ok: true });
+
+      expect(paymentRepo.recordPayment).toHaveBeenCalledWith({
+        userId:          TEST_USER_ID,
+        stripePaymentId: "pi_legacy_123",
+        amountCents:     4900,
+        currency:        "eur",
+        checkoutType:    "single",
+        status:          "succeeded",
+      });
+    });
+
+    it("books but skips the payments row when Stripe has no amount_total", async () => {
+      const { service, paymentRepo, bookings } = build(null);
+
+      await expect(service.reprocessFailedBooking(CS)).resolves.toEqual({ ok: true });
+
+      expect(bookings.createBooking).toHaveBeenCalledTimes(1);
+      expect(paymentRepo.recordPayment).not.toHaveBeenCalled();
+    });
+  });
 });
 
 // ─── REFACTOR-P1-02: webhook error semantics ──────────────────────────────────
@@ -1261,5 +1322,210 @@ describe("REFACTOR-R4-P1-02: the webhook fails closed on a read error", () => {
     expect(createBooking).not.toHaveBeenCalled();
     expect(stripe.refunds).toEqual([]);
     await expect(paymentRepo.isProcessed(PI)).resolves.toBe(true);
+  });
+});
+
+// ─── REFACTOR-R4-P3-01: payment ledger accuracy ───────────────────────────────
+// Real PaymentService + BookingService + CreditService over the in-memory repositories
+// and the FakeStripeClient's listPaymentIntents.
+
+describe("REFACTOR-R4-P3-01: reconcileRecentPayments", () => {
+  const OPTS = { lookbackHours: 48, pageSize: 100, maxPages: 10 };
+  const SLOT = "2099-12-01T10:00:00.000Z";
+
+  let nowSpy: jest.SpyInstance | undefined;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([]);
+  });
+  afterEach(() => nowSpy?.mockRestore());
+
+  function freezeNow(unixSeconds: number) {
+    nowSpy = jest.spyOn(Date, "now").mockReturnValue(unixSeconds * 1000);
+  }
+
+  function build() {
+    const paymentRepo = new InMemoryPaymentRepository();
+    const bookingRepo = new InMemoryBookingRepository();
+    const bookingSvc  = buildTestBookingService({ bookings: bookingRepo });
+    const { service, stripe, credits } = buildTestPaymentService({ paymentRepo, bookings: bookingSvc });
+    return { service, stripe, credits, paymentRepo, bookingRepo };
+  }
+
+  async function bookFor(bookingRepo: InMemoryBookingRepository, paymentIntentId: string) {
+    await bookingRepo.createBooking({
+      eventId:         `evt_${paymentIntentId}`,
+      email:           "student@test.com",
+      name:            "Student",
+      sessionType:     "session1h",
+      startsAt:        SLOT,
+      endsAt:          "2099-12-01T11:00:00.000Z",
+      stripePaymentId: paymentIntentId,
+    });
+  }
+
+  it("flags a pack with no credit pack and clears one that has it", async () => {
+    const { service, stripe, credits } = build();
+    freezeNow(1_900_000_000);
+    stripe.seedListedPaymentIntent({ id: "pi_pack_ok",   checkoutType: "pack" });
+    stripe.seedListedPaymentIntent({ id: "pi_pack_lost", checkoutType: "pack", amount: 14900 });
+    await credits.addCredits({
+      email: "student@test.com", name: "Student", amount: 5, packLabel: "Pack 5 clases",
+      stripeSessionId: "pi_pack_ok", expiresAt: "2100-01-01T00:00:00.000Z",
+    });
+
+    const result = await service.reconcileRecentPayments(OPTS);
+
+    expect(result).toEqual({
+      scanned:    2,
+      hitPageCap: false,
+      mismatches: [{
+        paymentIntentId: "pi_pack_lost",
+        amount:          14900,
+        currency:        "eur",
+        email:           "student@test.com",
+        createdAt:       new Date(1_900_000_000 * 1000).toISOString(),
+        reason:          "no_credit_pack",
+      }],
+    });
+  });
+
+  it("clears a single with a booking, a refund, a dead-letter or the marker; flags one with none", async () => {
+    const { service, stripe, paymentRepo, bookingRepo } = build();
+    for (const id of ["pi_booked", "pi_refunded", "pi_dead_letter", "pi_marked", "pi_lost"]) {
+      stripe.seedListedPaymentIntent({ id, checkoutType: "single" });
+    }
+    await bookFor(bookingRepo, "pi_booked");
+    await paymentRepo.recordSlotTakenRefund("pi_refunded");
+    await paymentRepo.recordFailedBooking({
+      stripeSessionId: "pi_dead_letter", userId: "u1", startIso: SLOT,
+      failedAt: "2099-11-30T00:00:00.000Z", error: "calendar API down",
+    });
+    await paymentRepo.markProcessed("pi_marked");
+
+    const { scanned, mismatches } = await service.reconcileRecentPayments(OPTS);
+
+    expect(scanned).toBe(5);
+    expect(mismatches.map(m => [m.paymentIntentId, m.reason])).toEqual([["pi_lost", "no_booking"]]);
+  });
+
+  // The bug this task fixes: the slot-taken path refunds without writing the marker, and
+  // the PI stays `succeeded`, so every such refund used to raise a false mismatch.
+  it("does not flag a single whose slot was taken and refunded by the webhook", async () => {
+    const { service, stripe, paymentRepo } = build();
+    await service.processWebhookEvent(fakeSingleEvent("pi_slot_taken"));
+    expect(stripe.refunds).toEqual([{ payment_intent: "pi_slot_taken", reason: "duplicate" }]);
+    await expect(paymentRepo.isProcessed("pi_slot_taken")).resolves.toBe(false);
+    stripe.seedListedPaymentIntent({ id: "pi_slot_taken", checkoutType: "single" });
+
+    const { mismatches } = await service.reconcileRecentPayments(OPTS);
+
+    expect(mismatches).toEqual([]);
+  });
+
+  it("falls back to the processed marker for an unknown checkout type", async () => {
+    const { service, stripe, paymentRepo } = build();
+    stripe.seedListedPaymentIntent({ id: "pi_untyped_marked" });
+    stripe.seedListedPaymentIntent({ id: "pi_untyped_lost" });
+    stripe.seedListedPaymentIntent({ id: "pi_odd_lost", checkoutType: "gift" });
+    await paymentRepo.markProcessed("pi_untyped_marked");
+
+    const { mismatches } = await service.reconcileRecentPayments(OPTS);
+
+    expect(mismatches.map(m => [m.paymentIntentId, m.reason])).toEqual([
+      ["pi_untyped_lost", "no_webhook_row"],
+      ["pi_odd_lost",     "no_webhook_row"],
+    ]);
+  });
+
+  it("counts but does not check PaymentIntents that have not succeeded", async () => {
+    const { service, stripe } = build();
+    stripe.seedListedPaymentIntent({ id: "pi_processing", checkoutType: "pack", status: "processing" });
+
+    await expect(service.reconcileRecentPayments(OPTS)).resolves.toEqual({
+      scanned: 1, mismatches: [], hitPageCap: false,
+    });
+  });
+
+  it("asks Stripe only for the lookback window", async () => {
+    const { service, stripe } = build();
+    const now = 1_900_000_000;
+    freezeNow(now);
+    stripe.seedListedPaymentIntent({ id: "pi_recent", checkoutType: "pack", created: now - 47 * 3600 });
+    stripe.seedListedPaymentIntent({ id: "pi_old",    checkoutType: "pack", created: now - 49 * 3600 });
+
+    const { scanned, mismatches } = await service.reconcileRecentPayments(OPTS);
+
+    expect(stripe.listCalls[0]).toEqual({ createdGte: now - 48 * 3600, limit: 100 });
+    expect(scanned).toBe(1);
+    expect(mismatches.map(m => m.paymentIntentId)).toEqual(["pi_recent"]);
+  });
+
+  it("pages with the last id as the cursor until Stripe has no more", async () => {
+    const { service, stripe, paymentRepo } = build();
+    for (let i = 1; i <= 5; i++) stripe.seedListedPaymentIntent({ id: `pi_${i}`, checkoutType: "single" });
+    for (const id of ["pi_1", "pi_2", "pi_3", "pi_5"]) await paymentRepo.markProcessed(id);
+
+    const result = await service.reconcileRecentPayments({ ...OPTS, pageSize: 2 });
+
+    expect(stripe.listCalls.map(c => c.startingAfter)).toEqual([undefined, "pi_2", "pi_4"]);
+    expect(result.scanned).toBe(5);
+    expect(result.hitPageCap).toBe(false);
+    expect(result.mismatches.map(m => m.paymentIntentId)).toEqual(["pi_4"]); // found on page 2
+  });
+
+  it("stops at the page cap and reports it", async () => {
+    const { service, stripe } = build();
+    for (let i = 1; i <= 5; i++) stripe.seedListedPaymentIntent({ id: `pi_${i}`, checkoutType: "single" });
+
+    const result = await service.reconcileRecentPayments({ ...OPTS, pageSize: 2, maxPages: 2 });
+
+    expect(stripe.listCalls).toHaveLength(2);
+    expect(result.scanned).toBe(4);
+    expect(result.hitPageCap).toBe(true);
+  });
+
+  it("fails the run (no false mismatches) when a proof read errors", async () => {
+    const { service, stripe, paymentRepo } = build();
+    stripe.seedListedPaymentIntent({ id: "pi_single", checkoutType: "single" });
+    paymentRepo.wasRefundedShouldFail = true;
+
+    await expect(service.reconcileRecentPayments(OPTS)).rejects.toThrow("simulated read failure");
+  });
+});
+
+describe("REFACTOR-R4-P3-01: a dead-letter retry records the payment", () => {
+  const PI = "pi_dead_letter_123";
+  // The real BookingService validates the window, so the slot must be one it offers.
+  const { startIso, endIso } = alignedSlot("session1h", 48);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: startIso }]);
+  });
+
+  it("writes a payments row with the PaymentIntent's amount and currency", async () => {
+    const paymentRepo = new InMemoryPaymentRepository();
+    const { service, stripe } = buildTestPaymentService({ paymentRepo });
+    stripe.buildSingleSessionPaymentEvent({
+      email: "student@test.com", name: "Student",
+      startIso, endIso, duration: "1h", intentId: PI, amountCents: 5900,
+    });
+    await paymentRepo.recordFailedBooking({
+      stripeSessionId: PI, userId: "u1", startIso,
+      failedAt: new Date().toISOString(), error: "calendar API down",
+    });
+
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+
+    expect(paymentRepo.payments).toEqual([expect.objectContaining({
+      stripePaymentId: PI,
+      amountCents:     5900,
+      currency:        "eur",
+      checkoutType:    "single",
+      status:          "succeeded",
+    })]);
+    await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
   });
 });
