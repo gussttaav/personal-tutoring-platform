@@ -61,9 +61,10 @@ const LANDING_MARKER = "x-landing-rewrite";
  *  classified the `.com` as a file extension — the request then skipped locale
  *  routing and 404'd, because the page lives under `[locale]`. Covers every
  *  extension currently in /public plus the usual media/font types; `.xml`/`.txt`
- *  keep the bypass so /sitemap.xml and /robots.txt behave exactly as before. */
+ *  keep the bypass so /sitemap.xml and /robots.txt behave exactly as before.
+ *  BLOG-09 added `.sql`: the JOIN post publishes the script that generates its data. */
 const STATIC_FILE =
-  /\.(?:ico|json|png|py|svg|txt|webmanifest|webp|jpe?g|gif|avif|mp4|webm|pdf|xml|css|js|map|woff2?|ttf|eot)$/i;
+  /\.(?:ico|json|png|py|sql|svg|txt|webmanifest|webp|jpe?g|gif|avif|mp4|webm|pdf|xml|css|js|map|woff2?|ttf|eot)$/i;
 
 /** LANDING-01: an in-app navigation (link, reload, RSC fetch) is `same-origin`;
  *  everything else — typed URL, bookmark, external link, no header — is a landing. */
