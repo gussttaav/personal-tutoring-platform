@@ -18,18 +18,18 @@ quiz:
       - { id: c, text: 'Gana velocidad, porque $\mathbf{z}_t$ se calcula con $\tanh$ en vez de con $\sigma$, y no pierde nada.' }
       - { id: d, text: 'Gana memoria, porque con una compuerta menos hay menos caminos por los que el gradiente se desvanezca; pierde la capacidad de olvidar.' }
     answer: a
-    explanation: 'La (a) es el canje entero. En la LSTM $\mathbf{f}_t$ e $\mathbf{i}_t$ eran independientes (podían abrirse las dos y acumular, o cerrarse las dos y congelar); atarlas convierte el estado en una media ponderada de cosas acotadas, que se queda acotada, y por eso sobra la $\tanh$ de salida. El precio es esa independencia: ya no se puede conservar del todo y escribir del todo en el mismo paso. La (b) es falsa de raíz: en la LSTM las dos compuertas se movían por separado, y ver que casi nunca hacía falta esa libertad es justo lo que motiva la GRU, no una identidad que ya se cumpliera. La (c) confunde las activaciones: $\mathbf{z}_t$ es una compuerta y usa $\sigma$ como todas. La (d) va al revés: quitar compuertas no fabrica memoria, y la GRU olvida perfectamente: con $\mathbf{z}_t \to 1$ reemplaza lo viejo por el candidato.'
+    explanation: 'La (a) es el canje entero. En la LSTM $\mathbf{f}_t$ e $\mathbf{i}_t$ eran independientes (podían abrirse las dos y acumular, o cerrarse las dos y vaciar la celda); atarlas convierte el estado en una media ponderada de cosas acotadas, que se queda acotada, y por eso sobra la $\tanh$ de salida. El precio es esa independencia: ya no se puede conservar del todo y escribir del todo en el mismo paso. La (b) es falsa de raíz: en la LSTM las dos compuertas se movían por separado, y ver que casi nunca hacía falta esa libertad es justo lo que motiva la GRU, no una identidad que ya se cumpliera. La (c) confunde las activaciones: $\mathbf{z}_t$ es una compuerta y usa $\sigma$ como todas. La (d) va al revés: quitar compuertas no fabrica memoria, y la GRU olvida perfectamente: con $\mathbf{z}_t \to 1$ reemplaza lo viejo por el candidato.'
     hint: 'Escribe $\mathbf{h}_t$ con $z_{t,j}=0$ y con $z_{t,j}=1$, y pregúntate qué pasa cuando quieres las dos cosas a la vez.'
   - id: q-reset
     type: single
-    prompt: 'La compuerta de reset $\mathbf{r}_t$ multiplica al estado anterior *dentro* del candidato: $\tilde{\mathbf{h}}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\left(\mathbf{r}_t \odot \mathbf{h}_{t-1}\right) + \mathbf{b}_h\right)$. Con $\mathbf{r}_t \approx \mathbf{0}$ en una coordenada, ¿qué ocurre?'
+    prompt: 'La compuerta de reset $\mathbf{r}_t$ multiplica al estado anterior *dentro* del candidato: $\tilde{\mathbf{h}}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\left(\mathbf{r}_t \odot \mathbf{h}_{t-1}\right) + \mathbf{b}_h\right)$. Con $\mathbf{r}_t \approx \mathbf{0}$, ¿qué ocurre?'
     options:
-      - { id: a, text: 'El candidato de esa coordenada deja de mirar el estado anterior y se calcula sólo con el token, como si la secuencia empezara ahí. El estado guardado no se borra: eso lo decide $\mathbf{z}_t$, no $\mathbf{r}_t$.' }
-      - { id: b, text: 'El estado de esa coordenada se pone a cero, porque «reset» significa reiniciar la memoria.' }
-      - { id: c, text: 'La coordenada deja de actualizarse: $\mathbf{r}_t \approx \mathbf{0}$ deja $\mathbf{h}_t = \mathbf{h}_{t-1}$.' }
+      - { id: a, text: 'El candidato deja de mirar el estado anterior y se calcula sólo con el token, como si la secuencia empezara ahí. El estado guardado no se borra: eso lo decide $\mathbf{z}_t$, no $\mathbf{r}_t$.' }
+      - { id: b, text: 'El estado se pone a cero, porque «reset» significa reiniciar la memoria.' }
+      - { id: c, text: 'El estado deja de actualizarse: $\mathbf{r}_t \approx \mathbf{0}$ deja $\mathbf{h}_t = \mathbf{h}_{t-1}$.' }
       - { id: d, text: 'Nada observable, porque $\mathbf{r}_t$ y $\mathbf{z}_t$ hacen el mismo trabajo y se anulan.' }
     answer: a
-    explanation: 'La (a) lee la fórmula: $\mathbf{r}_t$ sólo aparece dentro del candidato, multiplicando a $\mathbf{h}_{t-1}$ antes de que $\mathbf{W}_{hh}$ lo lea, así que anularla hace que la propuesta arranque de cero (útil cuando lo que toca escribir no arrastra nada de lo anterior). La (b) confunde reset con borrado: la memoria la conserva o la pisa $\mathbf{z}_t$, y $\mathbf{r}_t$ no la toca. La (c) describe lo que hace $\mathbf{z}_t \to 0$, no $\mathbf{r}_t$: son las dos compuertas cambiadas de sitio. La (d) niega la distinción que es el asunto de la pregunta: una gobierna la memoria; la otra, la propuesta.'
+    explanation: 'La (a) lee la fórmula: $\mathbf{r}_t$ sólo aparece dentro del candidato, multiplicando a $\mathbf{h}_{t-1}$ antes de que $\mathbf{W}_{hh}$ lo lea, así que anularla hace que el candidato arranque de cero (útil cuando lo que toca escribir no arrastra nada de lo anterior). La (b) confunde reset con borrado: la memoria la conserva o la pisa $\mathbf{z}_t$, y $\mathbf{r}_t$ no la toca. La (c) describe lo que hace $\mathbf{z}_t \to 0$, no $\mathbf{r}_t$: son las dos compuertas cambiadas de sitio. La (d) niega la distinción que es el asunto de la pregunta: una gobierna la memoria; la otra, el candidato.'
   - id: q-parametros-gru
     type: numeric
     prompt: 'Una GRU con un estado de $d_h = 64$ coordenadas sobre *embeddings* de $d_{\text{model}} = 128$, las mismas dimensiones de la LSTM de la lección anterior. ¿Cuántos pesos suman sus seis matrices y sus tres sesgos?'
@@ -140,10 +140,11 @@ challenges:
           return (1 - z) * h + z * cand
     explanation: |
       Las tres piezas comparten la forma del argumento, así que `entra` la escribe una vez; lo único
-      que cambia es qué estado lee cada una. Las dos compuertas leen el `h` que entró, y por eso
-      `entra` cierra sobre él. El candidato es la excepción: no lee `h`, sino `r * h`, que es lo único
-      que lo distingue de la recurrencia de la RNN vanilla (de ahí la segunda llamada a `entra` con
-      `r * h` en lugar de `h`). La última línea es la mezcla atada: `(1 - z)` conserva y `z` escribe,
+      que cambia es qué estado lee cada una, y por eso `entra` recibe el estado como argumento en vez
+      de cerrar sobre `h`. Las dos compuertas le pasan el `h` que entró. El candidato es la
+      excepción: no lee `h`, sino `r * h`, que es lo único que lo distingue de la recurrencia de la RNN
+      vanilla (de ahí la última llamada a `entra`, con `r * h` en lugar de `h`). La última línea es la
+      mezcla atada: `(1 - z)` conserva y `z` escribe,
       y como el resultado va a una variable nueva en vez de sobrescribir `h`, los arrays recibidos
       quedan intactos.
 reading:
@@ -178,8 +179,8 @@ Simplificar de verdad no es quitar piezas hasta que algo se rompe, sino quitarla
 compraban. Y lo que la LSTM compró (lo único que justificaba todo el aparato) era la vía por la que el
 gradiente vuelve intacto a través de muchos pasos. Cualquier recorte tiene que pasar por ahí: si al
 fundir compuertas o borrar estados esa vía se pierde, la simplificación ha tirado justo lo que
-importaba. La GRU (*gated recurrent unit*) es el recorte que pasa la prueba, y por eso es la celda
-recurrente más usada en la práctica: tres cuartas partes de los pesos de la LSTM, un solo estado, y
+importaba. La GRU (*gated recurrent unit*) es el recorte que pasa la prueba, y por eso se ha
+convertido en la alternativa habitual a la LSTM: tres cuartas partes de sus pesos, un solo estado, y
 (casi siempre, no siempre) el mismo resultado.
 
 El recorte cabe en dos ideas. La primera funde las dos compuertas sospechosas en una: en vez de
@@ -190,7 +191,7 @@ que había y lo que se propone escribir; y una mezcla de cosas acotadas se queda
 hace falta la compuerta de salida que en la LSTM recortaba el estado antes de enseñarlo.
 
 La segunda idea es una compuerta pequeña y nueva, la **compuerta de reset**, que no toca la memoria
-sino la propuesta: deja que el candidato ignore el estado anterior cuando lo que hay que escribir ahora
+sino el candidato: le deja ignorar el estado anterior cuando lo que hay que escribir ahora
 no arrastra nada de lo de antes (al empezar una oración nueva, por ejemplo). Con esas dos, y con un
 único estado que hace de memoria y de salida a la vez, desaparece el segundo vector: ya no hay un
 estado de celda escondido detrás del que se enseña.
@@ -205,7 +206,7 @@ GRU va a atar en una.
 />
 
 <Callout type="intuition" title="La idea en una frase">
-La GRU se queda con la mitad de la maquinaria de la LSTM: una compuerta ata conservar y escribir (lo
+La GRU recorta la maquinaria de la LSTM: una compuerta ata conservar y escribir (lo
 que no se escribe se conserva), una segunda deja al candidato mirar o no el pasado, y un único estado
 hace de memoria y de salida. Tres piezas en vez de cuatro, un estado en vez de dos, y la misma vía por
 la que el gradiente vuelve.
@@ -244,7 +245,7 @@ formas de la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la 
 
 Falta el candidato, y aquí entra la segunda compuerta. En la LSTM el candidato leía siempre el estado
 anterior completo; la GRU le pone delante un filtro, la compuerta de reset $\mathbf{r}_t$, que decide
-cuánto de ese estado entra en la propuesta:
+cuánto de ese estado llega a leer:
 
 $$
 \mathbf{r}_t = \sigma\left(\mathbf{W}_{xr}\mathbf{x}_t + \mathbf{W}_{hr}\mathbf{h}_{t-1} + \mathbf{b}_r\right),
@@ -254,10 +255,9 @@ $$
 
 El $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ es lo único que distingue este candidato del de una RNN vanilla:
 con $\mathbf{r}_t = \mathbf{1}$ el candidato es la recurrencia de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion> tal cual, y con
-$\mathbf{r}_t = \mathbf{0}$ en una coordenada esa coordenada del candidato se calcula sólo con el token,
-como si la secuencia empezara ahí. Conviene no confundir las dos compuertas: $\mathbf{z}_t$ decide si el
-estado se actualiza, $\mathbf{r}_t$ decide qué mira el candidato para proponer. Una gobierna la memoria;
-la otra, la propuesta.
+$\mathbf{r}_t = \mathbf{0}$ se calcula sólo con el token, como si la secuencia empezara ahí. Conviene no
+confundir las dos compuertas: $\mathbf{z}_t$ decide si el estado se actualiza, $\mathbf{r}_t$ decide qué
+mira el candidato para proponer. Una gobierna la memoria; la otra, el candidato.
 
 Las tres piezas juntas, con $\mathbf{h}_0 = \mathbf{0}$ por lo mismo que en la RNN y la LSTM:
 
@@ -384,9 +384,10 @@ for sesgo in [0.0, -3.0]:
     print("  de h_1 sobrevive en h_6:", np.round(np.prod(guardados[1:], axis=0), 3))
 `} />
 
-Las dos compuertas viven en $(0,1)$ y ninguna vale lo mismo en dos coordenadas. Compara los dos bloques
-por la última línea. Con $\mathbf{b}_z = 0$ la de actualización ronda $0.5$, se reemplaza medio estado
-en cada paso y de $\mathbf{h}_1$ llega a $\mathbf{h}_6$ un $3\,\%$ escaso; con $\mathbf{b}_z = -3$ ronda
+Las dos compuertas viven en $(0,1)$, y cada coordenada recibe un valor propio (donde dos se imprimen
+iguales, difieren más allá del segundo decimal). Compara los dos bloques por la última línea. Con
+$\mathbf{b}_z = 0$ la de actualización ronda $0.5$, se reemplaza medio estado en cada paso y de
+$\mathbf{h}_1$ llega a $\mathbf{h}_6$ en torno a un $3\,\%$; con $\mathbf{b}_z = -3$ ronda
 $0.05$, casi no se actualiza nada, y sobrevive un $77\,\%$, con los mismos pesos y la misma secuencia.
 De ahí la costumbre de inicializar $\mathbf{b}_z$ negativo, por lo mismo que $\mathbf{b}_f$ positivo en
 la LSTM: sale más barato que la red aprenda a escribir que aprenda a recordar. Y fíjate en el precio del
@@ -420,7 +421,7 @@ construido algo con ella. En todo el bloque no ha corrido todavía una red que l
 a fin y produzca lenguaje propio: se ha derivado la maquinaria sin encenderla.
 
 Encenderla es <Leccion slug="proyecto-char-lm">la siguiente lección, el proyecto de un modelo de lenguaje a nivel de carácter</Leccion>.
-Junta la RNN, la BPTT (*backpropagation through time*) y una de estas celdas en una red que se entrena
+Junta la RNN vanilla y la BPTT (*backpropagation through time*) en una red que se entrena
 sobre unos pocos miles de caracteres y después genera, carácter a carácter, un texto nuevo. Saldrá malo
 (lo diré sin adornos cuando salga), correrá en el navegador en unos segundos, y será la primera vez en
 el curso que algo escribe.
