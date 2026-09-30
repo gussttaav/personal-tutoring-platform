@@ -6,6 +6,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
+import UserSessionProvider from "@/components/UserSessionProvider";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
 import "../globals.css";
@@ -32,6 +33,10 @@ import "../globals.css";
  * (src/components/commerce/), which only the booking pages mount. Loading them here
  * made every lesson and post read Supabase at build time and carry the
  * `pricing-all` / `schedule-config` ISR tags.
+ *
+ * REFACTOR-R4-P2-04: `UserSessionProvider` sits inside `AuthProvider` so the whole page shares
+ * ONE credit state (one /api/credits per load, one tab-focus refetch) instead of one per
+ * `useUserSession()` call site. Client-only, no server data.
  */
 
 const manrope = Manrope({
@@ -149,7 +154,9 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           {/* REFACTOR-R4-P2-03: stays above every page — the Navbar needs the
               session, and so does the `UserPricingSync` inside CommerceProviders. */}
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <UserSessionProvider>{children}</UserSessionProvider>
+          </AuthProvider>
           <Analytics />
         </NextIntlClientProvider>
       </body>

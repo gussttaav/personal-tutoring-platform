@@ -37,14 +37,14 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 | [01 `@googleapis/calendar` instead of `googleapis`](phase-2-performance/01-googleapis-calendar-only.md) | `REFACTOR-R4-P2-01` | 🟠 | ✅ | Claude | local (`claude/googleapis-calendar-refactor-116297`). Largest chunk traced by `/api/courses/progress`: 10,126 KB → 1,313 KB. See Deviations; e2e + Vercel cold-start not run |
 | [02 Shell weight: icon-font subset + Sentry Replay](phase-2-performance/02-shell-weight-font-sentry.md) | `REFACTOR-R4-P2-02` | 🟠 | ✅ (JS target missed) | Claude | local (`claude/shell-weight-font-sentry-ae2679`). Icon font 3,943,736 → 14,840 bytes; LCP 25.3 s → 6.7 s (`/`). Blog-post JS −38.5 KB gz, short of the ≥ 60 KB target; see Deviations. Replay drop confirmed by Gustavo |
 | [03 Commerce providers out of the root layout](phase-2-performance/03-commerce-providers-scope.md) | `REFACTOR-R4-P2-03` | 🟡 | ✅ | Claude | local (`claude/commerce-providers-scope-refactor-d2bdb8`). `.meta` files tagged `pricing-all`/`schedule-config`: 124 of 124 → 8 of 124 (+ `/api/policy`), no blog/course page among them. Also mounted on `/sesion/[token]` (a consumer the task md missed); see Deviations. Footer-modal source = lazy `/api/policy` (confirmed by Gustavo, see Decisions) |
-| [04 One user-session state for the whole page](phase-2-performance/04-single-user-session-state.md) | `REFACTOR-R4-P2-04` | 🟡 | ⬜ | _tbd_ | |
+| [04 One user-session state for the whole page](phase-2-performance/04-single-user-session-state.md) | `REFACTOR-R4-P2-04` | 🟡 | ✅ | Claude | local (`claude/single-user-session-state-da819a`). Signed-in `/api/credits` per full load: 1 on `/`, `/mentoria`, `/area-personal` and a lesson; tab focus +1, then +0 inside the cooldown. The context lives in the hook file (no circular import), see Deviations; e2e not run |
 
 **Exit criteria**
 - [x] No `route.js.nft.json` under `.next/server/app/api/` references a chunk containing the full `googleapis` catalog; the largest server chunk traced by `/api/courses/progress` is < 2 MB _(P2-01; 0 of 41 routes, largest 1,313 KB, which is the Stripe chunk)_
 - [x] Icon font ≤ 150 KB; `pnpm check:icons` green; no icon renders as its ligature text on `/`, `/mentoria`, `/area-personal`, a lesson, a post _(P2-02; 14,840 bytes, 107 icons; width audit on every page in the task's acceptance list, desktop + mobile)_
 - [ ] First-load gzipped JS on a blog post down by ≥ 60 KB vs. the pre-task measurement (recorded in the PR) _(P2-02 got −38.5 KB: 352.5 → 314.0 KB. Replay was smaller than the audit assumed; see Deviations)_
 - [x] No `.meta` file for a blog post or lesson lists `pricing-all` or `schedule-config` in `x-next-cache-tags` _(P2-03; 0 of the 104 blog/course `.meta` files. Still tagged: `es`/`en` home, `mentoria`, `pago-exitoso`, `sesion-confirmada`, `terminos`, and `/api/policy`)_
-- [ ] A signed-in page load issues exactly one `/api/credits`; lessons and posts issue no `/api/pricing` _(P2-03 closes the `/api/pricing` half: a signed-in lesson load requested only `/api/auth/session`; `/mentoria` requests `/api/pricing` once. The `/api/credits` half is P2-04)_
+- [x] A signed-in page load issues exactly one `/api/credits`; lessons and posts issue no `/api/pricing` _(P2-03 closes the `/api/pricing` half: a signed-in lesson load requested only `/api/auth/session`; `/mentoria` requests `/api/pricing` once. P2-04 closes the `/api/credits` half: 1 per full load on `/`, `/mentoria`, `/area-personal` and a lesson)_
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm check:messages` green; e2e home + booking specs green
 
 ## Phase 3 — Payments & Admin
@@ -434,6 +434,48 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   cache write. (3) passed on a warm re-run (16.3 s). (1) and (2) were NOT re-run, because a re-run
   truncates the test DB again. Their `[en]` twins passed the same flows through the same pages in
   this run.
+- **P2-04 — the context lives in `useUserSession.ts`, not in `UserSessionProvider.tsx`.** The
+  sketch put `createContext` + `useUserSessionContext()` in the provider and had the hook import
+  them back, which is a circular import (the provider imports `useUserSessionState` from the
+  hook). Now the hook file exports `UserSessionContext` next to `useUserSessionState()`.
+  `useUserSession()` reads the context directly and throws «useUserSession() must be used inside
+  <UserSessionProvider>». The provider only mounts the state. `UserSessionValue` is
+  `ReturnType<typeof useUserSessionState>`, so it is the old return shape by construction.
+  `UserSessionProvider` is a default export, like `AuthProvider`.
+- **P2-04 — `updateCredits` uses a functional `setPackSession` update**, so it can be a
+  `useCallback` with no deps (it used to read `packSession` from the closure). Behaviour is the
+  same: with no pack it does nothing, `remaining > 0` sets the new count, anything else clears it.
+- **P2-04 — no call site, and no comment outside the file list, changed.** `BookingProvider`'s
+  `type UserSessionState = ReturnType<typeof useUserSession>` still resolves. The comments in
+  `useCourseProgress.ts`, `ratelimit.ts` and `UserPricingSync.tsx` that mention `useUserSession`
+  are still true. No existing unit test rendered `Navbar`, `BookingProvider` or
+  `PackBookingOverlay`, so no test wrapper needed the provider. `/sesion/[token]` (`PreJoinSetup`
+  → `PackBookingOverlay`) is under `[locale]/layout.tsx`, so it gets the provider like every other
+  page.
+- **P2-04 — tests beyond the plan.** `src/hooks/__tests__/useUserSession.test.tsx` (7 tests, jsdom)
+  checks the planned three: one fetch for two consumers, a shared `updateCredits`, and the throw
+  outside the provider. It also checks that the callbacks stay stable and the value stays
+  memoized across a re-render, that each tab focus refetches once with the 30 s cooldown, that
+  sign-out clears both consumers together, and that a signed-out visitor makes no request.
+- **P2-04 — manual checks** (worktree `pnpm dev` on :3100 against the test DB, `E2E_MODE`, the e2e
+  student signed in through `/api/test/auth`, using the same temporary `e2e-worktree` launch config as
+  P2-03, removed afterwards). `/api/credits` Resource Timing entries per signed-in full page load:
+  `/en/mentoria` 1, lesson `dl-nlp/adios-recurrencia` 1, `/en` 1 (reached by a same-origin
+  navigation, so the middleware served the static home), `/en/area-personal` 1. That last page
+  read 0 on its first cold-compile load at 8 s, and 1 on a warm reload. Tab focus on `/mentoria`
+  (Navbar + BookingProvider consumers) gave +1 request, then +0 for a second focus inside the
+  cooldown. For that check `visibilityState` was forced to `visible`, because the pane reports
+  `hidden`. No console or server errors. Not checked live: the Navbar badge after a pack class
+  booked in the overlay, and the sign-out clear. The e2e student has no pack credits. The unit
+  test covers both, and `booking-pack.spec.ts` covers the badge. No before-measurement was taken;
+  the task md's "twice per load" for booking pages follows from the two hook instances there.
+- **P2-04 — checks.** `pnpm test`: 162/162 suites (unit 156, integration 6), 2116 tests (7 new).
+  `pnpm lint`: 0 errors (the same 8 pre-existing warnings, none in touched files).
+  `tsc --noEmit`: only the pre-existing `mdx.test.ts` (`RepoLink`) error. `pnpm build` green.
+  `check:messages` not run, since no message keys changed.
+- **P2-04 — NOT done:** `pnpm test:e2e` (`booking-pack`, `booking-personal-area`, `home`). The
+  booking specs' `resetTestState()` truncates the whole test DB and wipes the test calendar.
+  Waiting for Gustavo's go-ahead.
 
 ## Known regressions introduced
 

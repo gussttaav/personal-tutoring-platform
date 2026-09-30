@@ -13,9 +13,17 @@
  * Previously every tab focus triggered a KV GET unconditionally, meaning
  * rapidly switching between tabs would hammer the Upstash REST API and
  * consume rate-limit budget unnecessarily.
+ *
+ * REFACTOR-R4-P2-04: ONE copy of this state per page. `useUserSessionState()` below is the
+ * state; `UserSessionProvider` (root layout) mounts it once and `useUserSession()` only reads
+ * that context. The hook used to BE the state, so each call site (Navbar, BookingProvider,
+ * PackBookingOverlay) fetched /api/credits, registered its own tab-focus refetch and kept its
+ * own credit count: a pack class booked in the overlay moved the booking shell's count and
+ * left the Navbar badge stale until reload. `updateCredits` / `clearPackSession` are stable
+ * and the returned object is memoized, since several consumers share them now.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { createContext, useState, useEffect, useRef, useCallback, useContext, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "@/lib/api-client";
 import type { UserSession } from "@/domain/types";
@@ -26,7 +34,8 @@ import type { UserSession } from "@/domain/types";
 // is reflected quickly when the user returns.
 const VISIBILITY_REFETCH_COOLDOWN_MS = 30_000;
 
-export function useUserSession() {
+/** The page-wide state. Internal: only `UserSessionProvider` calls it; consumers use `useUserSession()`. */
+export function useUserSessionState() {
   const { data: googleSession, status } = useSession();
   const [packSession,    setPackSession]    = useState<UserSession | null>(null);
   const [creditsLoading, setCreditsLoading] = useState(false);
@@ -142,22 +151,22 @@ export function useUserSession() {
 
   // ── Imperative update (used after booking a class) ────────────────────────
 
-  function updateCredits(remaining: number) {
-    if (!packSession) return;
-    if (remaining > 0) {
-      setPackSession({ ...packSession, credits: remaining });
-    } else {
-      setPackSession(null);
-    }
-  }
+  const updateCredits = useCallback((remaining: number) => {
+    setPackSession((prev) => {
+      if (!prev) return prev;
+      return remaining > 0 ? { ...prev, credits: remaining } : null;
+    });
+  }, []);
 
-  function clearPackSession() {
+  const clearPackSession = useCallback(() => {
     setPackSession(null);
-  }
+  }, []);
 
-  return {
+  const googleUser = googleSession?.user ?? null;
+
+  return useMemo(() => ({
     // Google identity (always available when signed in)
-    googleUser:    googleSession?.user ?? null,
+    googleUser,
     isSignedIn:    status === "authenticated",
     isAuthLoading: status === "loading",
 
@@ -170,5 +179,17 @@ export function useUserSession() {
     // Whether the user has ever booked a class (including cancelled bookings).
     // null while loading / signed-out.
     hasBookings,
-  };
+  }), [googleUser, status, packSession, creditsLoading, updateCredits, clearPackSession, hasBookings]);
+}
+
+export type UserSessionValue = ReturnType<typeof useUserSessionState>;
+
+/** Provided once per page by `UserSessionProvider`; null outside it. */
+export const UserSessionContext = createContext<UserSessionValue | null>(null);
+
+/** Reads the page-wide state from `UserSessionProvider`. Same return shape as before. */
+export function useUserSession(): UserSessionValue {
+  const ctx = useContext(UserSessionContext);
+  if (!ctx) throw new Error("useUserSession() must be used inside <UserSessionProvider>");
+  return ctx;
 }
