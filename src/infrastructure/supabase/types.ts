@@ -873,6 +873,23 @@ export type Database = {
         Args: { p_duration_minutes: number; p_start_iso: string }
         Returns: boolean
       }
+      admin_list_students: {
+        Args: {
+          p_limit?: number
+          p_low_credit?: boolean
+          p_offset?: number
+          p_query?: string
+        }
+        Returns: {
+          earliest_expiry: string
+          email: string
+          low_credit_count: number
+          name: string
+          next_session: string
+          total_count: number
+          total_credits: number
+        }[]
+      }
       cancel_booking: { Args: { p_cancel_token: string }; Returns: Json }
       decrement_credit: { Args: { p_user_id: string }; Returns: Json }
       delete_user_account: { Args: { p_email: string }; Returns: Json }

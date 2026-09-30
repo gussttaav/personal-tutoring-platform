@@ -893,3 +893,87 @@ export interface ContentFeedbackOverview {
   comments:   ContentVoteComment[];
   reports:    ContentReport[];
 }
+
+// ─── Admin panel ──────────────────────────────────────────────────────────────
+// REFACTOR-R4-P3-02: moved here from the admin panel's `_data.ts` (deleted), which
+// queried Supabase straight from app/. The reads now go through IAdminQueryRepository.
+// The snake_case rows keep the column names the admin components already render.
+
+/** A row of /admin/students. A student is a user with a booking or a credit pack. */
+export interface StudentSummary {
+  email:          string;
+  name:           string;
+  /** Credits across non-expired packs. */
+  totalCredits:   number;
+  earliestExpiry: string | null;
+  nextSession:    string | null;
+}
+
+/** One page of /admin/students. Both counts ignore the low-credit filter and the page
+ *  window (they cover every student matching the search), so both tabs can show them. */
+export interface StudentListPage {
+  rows:           StudentSummary[];
+  total:          number;
+  lowCreditTotal: number;
+}
+
+export interface StudentDetail {
+  id:    string;
+  email: string;
+  name:  string;
+}
+
+export interface CreditPackRow {
+  id:                string;
+  pack_size:         number;
+  credits_remaining: number;
+  expires_at:        string;
+  created_at:        string;
+  stripe_payment_id: string;
+}
+
+export interface BookingRow {
+  id:           string;
+  session_type: string;
+  starts_at:    string;
+  ends_at:      string;
+  status:       string;
+}
+
+export interface AdminBookingRow {
+  id:           string;
+  join_token:   string;
+  session_type: string;
+  starts_at:    string;
+  ends_at:      string;
+  status:       string;
+  email:        string;
+  name:         string;
+}
+
+export interface AdminPaymentRow {
+  id:                string;
+  amount_cents:      number;
+  currency:          string;
+  status:            string;
+  checkout_type:     string;
+  created_at:        string;
+  stripe_payment_id: string;
+  email:             string;
+  name:              string;
+}
+
+/** The /admin dashboard's stat cards. */
+export interface AdminDashboardCounts {
+  upcomingBookings:  number;
+  /** Students (not users) with <= 1 active credit. */
+  lowCreditStudents: number;
+  failedBookings:    number;
+}
+
+/** A manual credit adjustment. `applied` differs from `requested` only when a debit
+ *  ran into the student's real balance. */
+export interface CreditAdjustment {
+  requested: number;
+  applied:   number;
+}

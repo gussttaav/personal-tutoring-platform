@@ -14,6 +14,7 @@ import { CourseService }        from "./CourseService";
 import { AccountService }       from "./AccountService";
 import { ContentFeedbackService } from "./ContentFeedbackService";
 import { LandingService }       from "./LandingService";
+import { AdminService }         from "./AdminService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -28,6 +29,7 @@ import {
   supabaseCourseRepository,
   supabaseGoogleReviewPromptRepository,
   supabaseContentFeedbackRepository,
+  supabaseAdminQueryRepository,
 } from "@/infrastructure/supabase";
 import { registryCourseCatalog } from "@/lib/courses/catalog";
 import { registryContentCatalog } from "@/lib/content/catalog";
@@ -118,4 +120,13 @@ export const contentFeedbackService = new ContentFeedbackService(
   registryContentCatalog,
   userService,
   new EmailClient(),
+);
+
+// REFACTOR-R4-P3-02: the admin panel's reads (IAdminQueryRepository) and the manual
+// credit adjustment, which goes through CreditService like every other credit write.
+export const adminService = new AdminService(
+  supabaseAdminQueryRepository,
+  creditService,
+  pricingService,
+  supabaseAuditRepository,
 );

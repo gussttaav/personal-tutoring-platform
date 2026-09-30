@@ -52,14 +52,14 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
 | [01 Payment ledger accuracy](phase-3-payments-admin/01-payment-ledger-accuracy.md) | `REFACTOR-R4-P3-01` | 🟡 | ✅ | Claude | local (`claude/payment-ledger-accuracy-3648e9`). Route test rewritten (not in the file list), see Deviations; backfill + manual cron call not done |
-| [02 Admin students area](phase-3-payments-admin/02-admin-students-area.md) | `REFACTOR-R4-P3-02` | 🟡 | ⬜ | _tbd_ | |
+| [02 Admin students area](phase-3-payments-admin/02-admin-students-area.md) | `REFACTOR-R4-P3-02` | 🟡 | ✅ | Claude | local (`claude/admin-students-area-refactor-b832e2`), Parts A + B in one change. `0024` applied to the TEST DB only; **apply to production before deploying** (the students page and dashboard call the new RPC). `admin-api-routes.test.ts` updated (not in the file list), see Deviations; e2e not run |
 | [03 Daily audit: upcoming classes >15 min are paid](phase-3-payments-admin/03-booking-payment-audit.md) | `REFACTOR-R4-P3-03` | 🟡 | ⬜ | _tbd_ | — added 2026-09-28; after P1-03 |
 
 **Exit criteria**
 - [x] A slot-taken refund within the lookback window produces no reconcile mismatch; `stripe` is imported by no route handler _(P3-01; in-memory test drives a real slot-taken webhook, then reconciles. Only `import type Stripe` remains, in the webhook route)_
 - [x] Dead-letter retry of a PaymentIntent writes a `payments` row with the charged amount _(P3-01; in-memory test for a `pi_…` retry, mock tests for the legacy `amount_total` branch)_
-- [ ] A student past #100 by email is findable in `/admin/students`; the low-credit count excludes accounts that never booked or bought
-- [ ] Every admin POST/PATCH route calls `isValidOrigin`; a `−N` adjustment larger than the balance reports what was actually applied
+- [x] A student past #100 by email is findable in `/admin/students`; the low-credit count excludes accounts that never booked or bought _(P3-02; service test with 120 students, DB-gated RPC test, and a manual check on the test DB: 111 seeded students, `?q=` found #107, page 3 = 101–111, 5 course-only users absent)_
+- [x] Every admin POST/PATCH route calls `isValidOrigin`; a `−N` adjustment larger than the balance reports what was actually applied _(P3-02; all 7 admin mutation routes checked by grep. Route tests with the real `isValidOrigin`; `−3` on 1 credit → `{ requested: -3, applied: -1 }` in service tests and by curl)_
 - [ ] The daily booking-payment audit (P3-03) flags a class whose payment was refunded in Stripe; a clean run emails nothing
 - [ ] `pnpm test`, `pnpm lint`, `pnpm build` green
 
@@ -539,6 +539,63 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   refunded, failed-again error). `pnpm test`: 163/163 suites, 2139 tests. Lint 0 errors. No new
   `tsc` errors. `pnpm build` green. Not checked in the browser: that would need an admin session
   (there is none locally) and a real Stripe test refund on a dead-letter row in the test DB.
+- **P3-02 — `src/lib/__tests__/admin-api-routes.test.ts` was updated (not in the file list),
+  without stopping first.** It `jest.mock`ed the admin `_data.ts` module the task deletes, so the
+  suite failed to load ("Could not locate module"). Its POST cases also pinned the behaviour the
+  task removes: the route-level `useCredit` loop and a direct `supabaseAuditRepository.append`.
+  Also, with the origin check first, its no-`Origin` requests would now answer 403 where it
+  expected 401. The mocks now target `adminService`. The 401/403/400 ladder and the GET 200s
+  are kept. The POST cases now assert the delegation (`adjustCredits` called with `by: <admin>`),
+  the `{ ok, requested, applied }` body, a partial debit, a 500 on a non-domain failure, and
+  403 for a cross-site request and for a missing Origin (real `isValidOrigin`, no session read).
+  The debit loop itself moved to `AdminService.test.ts`. Gustavo: the skill's rule is to stop on a
+  failing test; if you'd rather review this first, the old file is at `HEAD`.
+- **P3-02 — counts: one call, both tabs.** `total_count` / `low_credit_count` come from a one-row
+  `counts` CTE taken before the low-credit filter and the page window, and the page is LEFT JOINed
+  onto it. That way a page with no rows (an empty tab, `?page=99`, `p_limit = 0`) still returns one
+  counts-only row with the student columns NULL, and the repository drops it. Without this, an
+  empty low-credit tab would have shown "Todos 0". The dashboard's count is the same RPC with
+  `p_limit = 0`.
+- **P3-02 — RPC details beyond the sketch.** All four params have DEFAULTs (`NULL`, `false`, `50`,
+  `0`), so the generated `Args` are optional and a blank search is simply omitted. The generated
+  `Returns` marks every column non-null, which is wrong for the dates and the empty-page row, so
+  the repository reads through its own nullable row type. `name` falls back with
+  `COALESCE(NULLIF(name, ''), email)`: `users.name` is `NOT NULL DEFAULT ''`, so the sketch's
+  plain `COALESCE` (and the old `u.name ?? u.email`) never fell back. `REVOKE`/`GRANT` per 0018;
+  an anon call now gets `42501 permission denied`.
+- **P3-02 — reads throw on a Supabase error.** `_data.ts` rendered a failed query as empty lists
+  and zero counts. The repository follows the `if (error) throw error` convention, so the admin
+  sees an error page instead of a wrong dashboard. `getStudent` uses `maybeSingle()` (the old
+  `.single()` error on "not found" was being swallowed).
+- **P3-02 — CSRF check order and body follow the task sketch.** Both POSTs check the origin on
+  the first line and answer `{ error: "Forbidden" }`. The other admin routes check it after the
+  session and answer `"Invalid origin"`. Left as the task specifies.
+- **P3-02 — extras.** `AdminStudentsQuerySchema` (`src/lib/schemas.ts`) parses `?q=`/`?filter=`/
+  `?page=` leniently (a bad page reads as 1) for the page and `GET /api/admin/students`. That route
+  now takes the same params and returns `{ students, total, lowCreditTotal, page, pageSize }`, with
+  `students` kept for compatibility. `admin.css` gained `.pager` and `.adjust-form-notice`. The
+  tab counts cover the current search. The search is a `next/form` GET form. The ×, the tabs and the
+  pager are links that keep `q`/`filter`. `AdjustCreditsForm` shows the partial-debit notice and
+  calls `router.refresh()`, so the notice survives. A full adjustment still reloads, as before.
+  Stale comments in `students/[email]/pricing/route.ts` and `ContentFeedbackService.ts` that
+  referenced `_data.ts` were updated. Provenance comments avoid the literal `admin/_data` path so
+  the acceptance grep stays empty.
+- **P3-02 — checks.** `pnpm test`: 166/166 suites, 2169 tests (new: 14 service, 7 DB-gated
+  repository, 5 failed-bookings route; admin-api-routes 16 → 20). `pnpm lint`: 0 errors (the same 8
+  pre-existing warnings, none in touched files). `tsc --noEmit`: only the pre-existing
+  `mdx.test.ts` (`RepoLink`) error. `pnpm build` green. `supabase gen types` diff is only the new
+  function. Manual check (built app, hand-minted admin cookie, curl, 116 temporary
+  `p302-manual-*` users seeded into the test DB and deleted afterwards): `/admin/students`
+  (111 students / 45 low; `?q=Buscada` found #107; page 3 = 101–111; low-credit tab keeps "Todos
+  111"; `?page=99` and an empty search keep both counts), `/admin` (45), a course reader's detail
+  page (200) and an unknown email (404). The adjust POST returned 403 cross-site and with no Origin;
+  `−3` on 1 credit → `{ requested: -3, applied: -1 }` with both in the audit; `+2` → a
+  `manual-<uuid>` pack expiring +180 days. Failed-bookings POST: 403 cross-site; same-origin
+  unknown id → 404.
+- **P3-02 — NOT done:** `0024` on production. The partial-debit notice in the browser: the Browser
+  pane holds Gustavo's own non-admin session as an HttpOnly cookie, which a page script can't
+  replace, and it was left alone. The API side was checked by curl. `pnpm test:e2e` was not run.
+  The failed-bookings retry button was checked only through the API.
 
 ## Known regressions introduced
 

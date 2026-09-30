@@ -1,20 +1,32 @@
 /**
  * ADMIN-01: Client component for adjusting a student's credit balance.
  * POSTs to /api/admin/students/[email] and reloads the page on success.
+ *
+ * REFACTOR-R4-P3-02: a debit larger than the balance is applied only up to the balance,
+ * and the response says so ({ requested, applied }). That case shows "Aplicado: −1 de −3
+ * (saldo insuficiente)" and refreshes the server data in place, so the notice survives.
  */
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+// "−3", with the typographic minus the stepper uses.
+function signed(n: number): string {
+  return n < 0 ? `−${-n}` : String(n);
+}
 
 interface AdjustCreditsFormProps {
   email: string;
 }
 
 export function AdjustCreditsForm({ email }: AdjustCreditsFormProps) {
+  const router = useRouter();
   const [amount, setAmount] = useState(1);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   async function submit() {
     if (!reason.trim()) {
@@ -23,6 +35,7 @@ export function AdjustCreditsForm({ email }: AdjustCreditsFormProps) {
     }
     setLoading(true);
     setError(null);
+    setNotice(null);
     try {
       const res = await fetch(`/api/admin/students/${encodeURIComponent(email)}`, {
         method: "POST",
@@ -30,7 +43,16 @@ export function AdjustCreditsForm({ email }: AdjustCreditsFormProps) {
         body: JSON.stringify({ action: "adjust_credits", amount, reason: reason.trim() }),
       });
       if (res.ok) {
-        window.location.reload();
+        const { requested, applied } = (await res.json().catch(() => ({}))) as {
+          requested?: number;
+          applied?:   number;
+        };
+        if (typeof requested === "number" && typeof applied === "number" && applied !== requested) {
+          setNotice(`Aplicado: ${signed(applied)} de ${signed(requested)} (saldo insuficiente)`);
+          router.refresh();
+        } else {
+          window.location.reload();
+        }
       } else {
         const data = await res.json().catch(() => ({}));
         setError((data as { error?: string }).error ?? "Error al ajustar créditos.");
@@ -79,6 +101,7 @@ export function AdjustCreditsForm({ email }: AdjustCreditsFormProps) {
         <code>{`{ action: "adjust_credits", amount: ${amount}, reason }`}</code>
       </p>
       {error && <p className="adjust-form-error">{error}</p>}
+      {notice && <p className="adjust-form-notice">{notice}</p>}
     </div>
   );
 }
