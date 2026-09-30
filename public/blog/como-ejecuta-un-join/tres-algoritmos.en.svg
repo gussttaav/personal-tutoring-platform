@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 240" width="760" height="240" role="img"
- aria-label="Three diagrams, one per algorithm. Nested loop with an index: a list of customers; for customer 42, an arrow goes down a tree-shaped index and five arrows fan out from it to scattered pages of the orders table. n index lookups and one random read per row; it wins when few rows pass the filter. Hash join: the Madrid customers go into a hash table, and the orders table is scanned from start to finish, probing the hash table for every order. n plus m operations, each table read once and in order; it wins when there is a lot to match. Merge join: two sorted columns, order ids and the order_id of each line, with a pointer on each at the value 3 and lines joining equal values. n plus m if already sorted; it wins when the order is already paid for.">
+ aria-label="Three diagrams, one per algorithm. Nested loop with an index: a list of customers; for customer 42, an arrow goes down a tree-shaped index and five arrows fan out from it to scattered pages of the orders table. n index lookups and one random read per row; it wins when few rows pass the filter. Hash join: the Madrid customers go into a hash table, and the orders table is scanned from start to finish, probing the hash table for every order. n plus m operations, each table read once and in order; it wins when there is a lot to match. Merge join: two sorted columns, the order ids and the pedido_id of each line, with a pointer on each at the value 3 and lines joining equal values. n plus m if already sorted; it wins when the order is already paid for.">
 <style>
   text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
   .bx { fill: none; stroke: #86948a; stroke-width: 1; }
@@ -134,8 +134,8 @@
 <text class="sb" x="352.0" y="150.0" style="text-anchor:middle">orders, start to finish</text>
 <path class="ar w" d="M474.0,154.0 L430.0,124.0"/>
 <text class="sb" x="458.0" y="118.0" style="text-anchor:middle">probe</text>
-<text class="sb" x="544.0" y="52.0">orders.id</text>
-<text class="sb" x="664.0" y="52.0">lines.order_id</text>
+<text class="sb" x="544.0" y="52.0">pedidos.id</text>
+<text class="sb" x="664.0" y="52.0">lineas.pedido_id</text>
 <rect class="bx " x="544.0" y="58.0" width="40.0" height="15.0" rx="3"/>
 <text class="mo" x="564.0" y="69.3" style="text-anchor:middle">1</text>
 <rect class="bx " x="544.0" y="78.0" width="40.0" height="15.0" rx="3"/>

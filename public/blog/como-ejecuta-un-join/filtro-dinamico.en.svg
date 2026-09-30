@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 276" width="760" height="276" role="img"
- aria-label="Two cases of the filter that DuckDB's hash join hands to the scan of the big table. Top, the lines of the September orders: the hash table with the 82,116 September orders yields the filter order_id between 2,917,885 and 3,000,000, plus a Bloom filter. Below it, the 65 row groups of order_lines, stored in order_id order: only the last 3 overlap the range and are read; the other 62 are skipped on their minimum and maximum. 249,458 of 7,498,570 lines are read. Bottom, the orders of the customers in Soria: the hash table with 339 customers yields the filter customer_id between 116 and 197,499. Orders are stored by date and each of their 32 groups holds customers 1 to 200,000, so the range overlaps all 32 and every one is read.">
+ aria-label="Two cases of the filter that DuckDB's hash join hands to the scan of the big table. Top, the lines of the September orders: the hash table with the 82,116 September orders yields the filter pedido_id between 2,917,885 and 3,000,000, plus a Bloom filter. Below it, the 65 row groups of lineas_pedido, stored in pedido_id order: only the last 3 overlap the range and are read; the other 62 are skipped on their minimum and maximum. 249,458 of 7,498,570 lines are read. Bottom, the orders of the customers in Soria: the hash table with 339 customers yields the filter cliente_id between 116 and 197,499. Orders are stored by date and each of their 32 groups holds customers 1 to 200,000, so the range overlaps all 32 and every one is read.">
 <style>
   text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
   .bx { fill: none; stroke: #86948a; stroke-width: 1; }
@@ -38,7 +38,7 @@
 <text class="sb" x="238.0" y="54.0" style="text-anchor:middle">the small side</text>
 <path class="ar m" d="M298.0,42.0 L324.0,42.0"/>
 <rect class="bx m" x="326.0" y="22.0" width="300.0" height="40.0" rx="6"/>
-<text class="lb m" x="476.0" y="40.0" style="text-anchor:middle">order_id between 2,917,885 and 3,000,000</text>
+<text class="lb m" x="476.0" y="40.0" style="text-anchor:middle">pedido_id between 2,917,885 and 3,000,000</text>
 <text class="sb" x="476.0" y="54.0" style="text-anchor:middle">plus a Bloom filter of the 82,116 ids</text>
 <rect class="bx g" x="1.0" y="84.0" width="8.7" height="20.0" rx="2"/>
 <rect class="bx g" x="12.7" y="84.0" width="8.7" height="20.0" rx="2"/>
@@ -106,7 +106,7 @@
 <rect class="bx m" x="737.6" y="84.0" width="8.7" height="20.0" rx="2"/>
 <rect class="bx m" x="749.3" y="84.0" width="8.7" height="20.0" rx="2"/>
 <path class="ar m" d="M626.0,42.0 L742.5,42.0 L742.5,81.0"/>
-<text class="tx d" x="0.0" y="120.0">order_lines, stored in order_id order: 65 row groups</text>
+<text class="tx d" x="0.0" y="120.0">lineas_pedido, stored in pedido_id order: 65 row groups</text>
 <text class="tx m" x="760.0" y="120.0" style="text-anchor:end">3 groups read: 249,458 of 7,498,570 lines</text>
 <text class="hd" x="0.0" y="162.0">ORDERS OF THE CUSTOMERS IN SORIA</text>
 <rect class="bx " x="0.0" y="172.0" width="150.0" height="40.0" rx="6"/>
@@ -118,7 +118,7 @@
 <text class="sb" x="238.0" y="204.0" style="text-anchor:middle">the small side</text>
 <path class="ar w" d="M298.0,192.0 L324.0,192.0"/>
 <rect class="bx w" x="326.0" y="172.0" width="300.0" height="40.0" rx="6"/>
-<text class="lb w" x="476.0" y="190.0" style="text-anchor:middle">customer_id between 116 and 197,499</text>
+<text class="lb w" x="476.0" y="190.0" style="text-anchor:middle">cliente_id between 116 and 197,499</text>
 <text class="sb" x="476.0" y="204.0" style="text-anchor:middle">almost the whole customer range</text>
 <rect class="bx w" x="1.0" y="234.0" width="20.8" height="20.0" rx="2"/>
 <rect class="bx w" x="24.8" y="234.0" width="20.8" height="20.0" rx="2"/>

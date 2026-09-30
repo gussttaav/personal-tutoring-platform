@@ -137,7 +137,7 @@ def fig_tres(es):
                "two sorted lists, two pointers"],
             clientes="customers", pedidos="orders", indice="index", madrid="Madrid customers",
             tabla="hash table", construir="build", sondear="probe", barra="orders, start to finish",
-            ids="orders.id", lin="lines.order_id",
+            ids="pedidos.id", lin="lineas.pedido_id",
             b1=["n index lookups", "one random read per row"],
             b2=["n + m operations", "each table read once, in order"],
             b3=["n + m, if already sorted", "advance the smaller key's pointer"],
@@ -147,7 +147,7 @@ def fig_tres(es):
                  "table. n index lookups and one random read per row; it wins when few rows pass the filter. Hash join: "
                  "the Madrid customers go into a hash table, and the orders table is scanned from start to finish, "
                  "probing the hash table for every order. n plus m operations, each table read once and in order; it wins "
-                 "when there is a lot to match. Merge join: two sorted columns, order ids and the order_id of each line, "
+                 "when there is a lot to match. Merge join: two sorted columns, the order ids and the pedido_id of each line, "
                  "with a pointer on each at the value 3 and lines joining equal values. n plus m if already sorted; it "
                  "wins when the order is already paid for."),
     }[es]
@@ -249,18 +249,18 @@ def fig_filtro(es):
             h1="LINES OF THE SEPTEMBER ORDERS", h2="ORDERS OF THE CUSTOMERS IN SORIA",
             b1=("September orders", "82,116 rows"), b2=("Soria customers", "339 rows"),
             ht=("hash table", "the small side"),
-            f1=("order_id between 2,917,885 and 3,000,000", "plus a Bloom filter of the 82,116 ids"),
-            f2=("customer_id between 116 and 197,499", "almost the whole customer range"),
-            l1="order_lines, stored in order_id order: 65 row groups",
+            f1=("pedido_id between 2,917,885 and 3,000,000", "plus a Bloom filter of the 82,116 ids"),
+            f2=("cliente_id between 116 and 197,499", "almost the whole customer range"),
+            l1="lineas_pedido, stored in pedido_id order: 65 row groups",
             r1="3 groups read: 249,458 of 7,498,570 lines",
             l2="orders, stored in date order: every group holds customers 1 to 200,000",
             r2="all 32 groups read",
             aria="Two cases of the filter that DuckDB's hash join hands to the scan of the big table. Top, the lines of "
-                 "the September orders: the hash table with the 82,116 September orders yields the filter order_id "
-                 "between 2,917,885 and 3,000,000, plus a Bloom filter. Below it, the 65 row groups of order_lines, stored "
-                 "in order_id order: only the last 3 overlap the range and are read; the other 62 are skipped on their "
+                 "the September orders: the hash table with the 82,116 September orders yields the filter pedido_id "
+                 "between 2,917,885 and 3,000,000, plus a Bloom filter. Below it, the 65 row groups of lineas_pedido, stored "
+                 "in pedido_id order: only the last 3 overlap the range and are read; the other 62 are skipped on their "
                  "minimum and maximum. 249,458 of 7,498,570 lines are read. Bottom, the orders of the customers in Soria: "
-                 "the hash table with 339 customers yields the filter customer_id between 116 and 197,499. Orders are "
+                 "the hash table with 339 customers yields the filter cliente_id between 116 and 197,499. Orders are "
                  "stored by date and each of their 32 groups holds customers 1 to 200,000, so the range overlaps all 32 "
                  "and every one is read."),
     }[es]
