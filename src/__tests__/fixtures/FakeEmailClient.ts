@@ -1,4 +1,6 @@
 // TEST-01: Fake IEmailClient for integration tests.
+// REFACTOR-R4-P3-03: sendPaymentAuditReport.
+import type { PaymentAuditReport } from "@/domain/types";
 import type {
   IEmailClient,
   ConfirmationEmailParams,
@@ -13,7 +15,8 @@ type SentEmail =
   | { type: "newBookingNotification";   params: NewBookingNotificationParams }
   | { type: "cancellationConfirmation"; params: CancellationConfirmationParams }
   | { type: "cancellationNotification"; params: CancellationNotificationParams }
-  | { type: "contentReportNotification"; params: ContentReportNotificationParams };
+  | { type: "contentReportNotification"; params: ContentReportNotificationParams }
+  | { type: "paymentAuditReport";       params: PaymentAuditReport };
 
 export class FakeEmailClient implements IEmailClient {
   sent: SentEmail[] = [];
@@ -37,5 +40,10 @@ export class FakeEmailClient implements IEmailClient {
   // CONTENT-FEEDBACK-01
   async sendContentReportNotification(params: ContentReportNotificationParams): Promise<void> {
     this.sent.push({ type: "contentReportNotification", params });
+  }
+
+  // REFACTOR-R4-P3-03
+  async sendPaymentAuditReport(params: PaymentAuditReport): Promise<void> {
+    this.sent.push({ type: "paymentAuditReport", params });
   }
 }

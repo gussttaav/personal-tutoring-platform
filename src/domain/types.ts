@@ -977,3 +977,56 @@ export interface CreditAdjustment {
   requested: number;
   applied:   number;
 }
+
+// ─── Booking payment audit ────────────────────────────────────────────────────
+// REFACTOR-R4-P3-03: the daily read-only cron (GET /api/internal/booking-payment-audit,
+// BookingPaymentAuditService) that checks every upcoming confirmed booking against what
+// pays for it. It reports; it never changes a booking, a payment or a Stripe object.
+
+/** One upcoming confirmed booking, with what it is paid by. */
+export interface PaymentAuditBooking {
+  bookingId:       string;
+  email:           string;
+  sessionType:     SessionType;
+  startsAt:        string;          // normalized with new Date(...).toISOString()
+  endsAt:          string;
+  stripePaymentId: string | null;   // paid 1h/2h classes
+  creditPack:      { id: string; ownedByBookingUser: boolean; stripePaymentId: string } | null;
+}
+
+export type PaymentAuditCode =
+  | "length_mismatch"
+  | "no_payment_link"
+  | "pack_not_owned"
+  | "payment_not_found"
+  | "payment_not_succeeded"
+  | "payment_refunded"
+  | "payment_partially_refunded"
+  | "payment_disputed"
+  | "payment_mismatch";
+
+/** `review`: a state that can be legitimate and that only the tutor can judge (a pack
+ *  whose unused classes were refunded). Every other finding is an `error`. */
+export type PaymentAuditSeverity = "error" | "review";
+
+export interface PaymentAuditFinding {
+  code:        PaymentAuditCode;
+  severity:    PaymentAuditSeverity;
+  bookingId:   string;
+  email:       string;
+  sessionType: SessionType;
+  startsAt:    string;
+  /** The payment the class was checked against: its own PaymentIntent, or its pack's. */
+  paymentId:   string | null;
+  /** `field=value` pairs, when the code alone doesn't say what differs. */
+  expected?:   string;
+  actual?:     string;
+}
+
+export interface PaymentAuditReport {
+  checked:           number;
+  byType:            Record<SessionType, number>;
+  /** Pack classes drawn on an admin-granted (`manual-…`) pack: nothing to check in Stripe. */
+  manualPackClasses: number;
+  findings:          PaymentAuditFinding[];
+}

@@ -1,9 +1,12 @@
 // TEST-01: Fake IStripeClient for integration tests.
 // REFACTOR-R4-P3-01: listPaymentIntents pages over a seeded array (seedListedPaymentIntent),
 // kept apart from the retrieve map so a reconcile test lists exactly what it seeded.
+// REFACTOR-R4-P3-03: retrievePaymentForAudit reads its own seeded map (seedAuditPayment).
+// An unseeded id answers null, as Stripe's resource_missing does; failAuditFor makes one
+// id throw any other error. auditCalls records every call, to assert the dedupe.
 import type Stripe from "stripe";
 import type {
-  IStripeClient, CreatePaymentIntentOptions, ListPaymentIntentsParams,
+  IStripeClient, CreatePaymentIntentOptions, ListPaymentIntentsParams, PaymentAuditFacts,
 } from "@/infrastructure/stripe/StripeClient";
 
 type FakePaymentIntent = {
@@ -33,6 +36,11 @@ export class FakeStripeClient implements IStripeClient {
   private listed:   FakeListedPaymentIntent[] = [];
   /** Test helper: every listPaymentIntents call, in order. */
   readonly listCalls: ListPaymentIntentsParams[] = [];
+  // REFACTOR-R4-P3-03
+  private auditFacts  = new Map<string, PaymentAuditFacts>();
+  private auditErrors = new Map<string, Error>();
+  /** Test helper: every retrievePaymentForAudit id, in order. */
+  readonly auditCalls: string[] = [];
 
   verifyWebhookSignature(_body: string, _sig: string, _secret: string): Stripe.Event {
     throw new Error("FakeStripeClient: call constructFakeEvent() to build test events");
@@ -122,6 +130,34 @@ export class FakeStripeClient implements IStripeClient {
 
   async createRefund(params: { payment_intent?: string; charge?: string; reason: "duplicate" }): Promise<void> {
     this.refunds.push(params);
+  }
+
+  // REFACTOR-R4-P3-03
+  async retrievePaymentForAudit(id: string): Promise<PaymentAuditFacts | null> {
+    this.auditCalls.push(id);
+    const error = this.auditErrors.get(id);
+    if (error) throw error;
+    return this.auditFacts.get(id) ?? null;
+  }
+
+  /** Test helper: a payment for retrievePaymentForAudit. Defaults to a clean, succeeded
+   *  1h single-session payment for student@test.com. */
+  seedAuditPayment(id: string, facts: Partial<PaymentAuditFacts> = {}): void {
+    this.auditFacts.set(id, {
+      status:          "succeeded",
+      amount:          4900,
+      amountRefunded:  0,
+      disputed:        false,
+      checkoutType:    "single",
+      sessionDuration: "1h",
+      studentEmail:    "student@test.com",
+      ...facts,
+    });
+  }
+
+  /** Test helper: retrievePaymentForAudit(id) throws `error` (a non-"not found" failure). */
+  failAuditFor(id: string, error: Error = new Error("Stripe API unavailable")): void {
+    this.auditErrors.set(id, error);
   }
 
   /** Test helper: build a payment_intent.succeeded event. */

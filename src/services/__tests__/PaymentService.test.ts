@@ -63,6 +63,7 @@ const mockStripe = (): jest.Mocked<IStripeClient> => ({
   listPaymentIntents:       jest.fn(),
   retrieveCheckoutSession:  jest.fn(),
   createRefund:             jest.fn(),
+  retrievePaymentForAudit:  jest.fn(), // REFACTOR-R4-P3-03
 });
 
 // Real PricingService backed by an in-memory repo seeded with default prices.

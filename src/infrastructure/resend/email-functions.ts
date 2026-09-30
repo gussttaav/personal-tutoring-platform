@@ -24,12 +24,17 @@
  * PaymentService.writeDeadLetter) can actually retry or record the failure.
  * All console.* calls replaced with structured log(). The E2E-skip and
  * missing-RESEND_API_KEY paths remain non-throwing no-ops.
+ *
+ * REFACTOR-R4-P3-03: sendPaymentAuditReportEmail — the daily booking-payment audit's
+ * findings, to NOTIFY_EMAIL. Admin-facing, so Spanish and outside next-intl.
  */
 
 import { getTranslations } from "next-intl/server";
 import { formatDate, formatTime } from "@/lib/formatting";
 import { localeUrl } from "@/lib/hreflang";
-import type { AnnouncementKind } from "@/domain/types";
+import type {
+  AnnouncementKind, PaymentAuditCode, PaymentAuditReport, SessionType,
+} from "@/domain/types";
 import { log } from "@/lib/logger";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
@@ -411,6 +416,78 @@ export async function sendContentReportNotificationEmail(params: {
       </div></div></body></html>
     `,
   }, params.reporterEmail ?? undefined);
+}
+
+// ─── Booking payment audit report (Gustavo) ──────────────────────────────────
+// REFACTOR-R4-P3-03: upcoming classes whose payment is missing, refunded, disputed or
+// doesn't match. Sent only when there are findings; nothing has been changed.
+
+const PAYMENT_AUDIT_LABELS: Record<PaymentAuditCode, string> = {
+  length_mismatch:            "La duración no corresponde al tipo de sesión",
+  no_payment_link:            "Sin pago asociado",
+  pack_not_owned:             "El pack pertenece a otro alumno",
+  payment_not_found:          "Stripe no encuentra el pago",
+  payment_not_succeeded:      "El pago no se completó",
+  payment_refunded:           "Pago reembolsado",
+  payment_partially_refunded: "Pago reembolsado en parte",
+  payment_disputed:           "Pago en disputa",
+  payment_mismatch:           "El pago no corresponde a esta clase",
+};
+
+const AUDIT_SESSION_LABELS: Record<SessionType, string> = {
+  free15min: "Llamada gratuita 15 min",
+  session1h: "Sesión 1h",
+  session2h: "Sesión 2h",
+  pack:      "Clase de pack",
+};
+
+export async function sendPaymentAuditReportEmail(report: PaymentAuditReport): Promise<void> {
+  const notifyEmail = process.env.NOTIFY_EMAIL;
+  if (!notifyEmail) return;
+
+  const errors  = report.findings.filter(f => f.severity === "error").length;
+  const reviews = report.findings.length - errors;
+  const subject = errors > 0
+    ? `⚠️ Auditoría de pagos: ${errors} ${errors === 1 ? "incidencia" : "incidencias"}` +
+      (reviews > 0 ? ` y ${reviews} para revisar` : "")
+    : `🔎 Auditoría de pagos: ${reviews} para revisar`;
+
+  const { byType } = report;
+  const summary =
+    `${report.checked} clases próximas revisadas: ${byType.session1h} de 1h, ${byType.session2h} de 2h, ` +
+    `${byType.pack} de pack (${report.manualPackClasses} de packs manuales) y ${byType.free15min} gratuitas.`;
+
+  // ── Escape every value that came from the database or from Stripe ────────
+  const items = report.findings.map(f => {
+    const when = `${formatDateInTz(f.startsAt, ADMIN_TZ)} · ${formatTimeInTz(f.startsAt, ADMIN_TZ)} (Madrid)`;
+    const tag  = f.severity === "error" ? "Error" : "Revisar";
+    const diffParts = [
+      ...(f.expected ? [`Esperado: ${escapeHtml(f.expected)}`] : []),
+      ...(f.actual   ? [`Encontrado: ${escapeHtml(f.actual)}`] : []),
+    ];
+    const diff = diffParts.length > 0 ? `<br>${diffParts.join(" · ")}` : "";
+    return `
+        <div class="note-box"><p>
+          <strong>[${tag}] ${PAYMENT_AUDIT_LABELS[f.code] ?? escapeHtml(f.code)}</strong><br>
+          ${escapeHtml(f.email)} · ${AUDIT_SESSION_LABELS[f.sessionType] ?? escapeHtml(f.sessionType)} · ${when}<br>
+          Pago: ${f.paymentId ? escapeHtml(f.paymentId) : "ninguno"} · Reserva: ${escapeHtml(f.bookingId)}${diff}
+        </p></div>`;
+  }).join("");
+
+  await send({
+    to: notifyEmail,
+    subject,
+    html: `
+      <html><head><style>${STYLES}</style></head><body>
+      <div class="wrap"><div class="card">
+        <h1>Auditoría de pagos</h1>
+        <p>${summary}</p>
+        <p>Estas clases próximas no cuadran con su pago. No se ha cambiado nada: revisa cada caso
+          en Stripe y decide si cancelar la clase, cobrarla o dejarla como está.</p>
+        ${items}
+      </div></div></body></html>
+    `,
+  });
 }
 
 // ─── New booking notification (Gustavo) ───────────────────────────────────────

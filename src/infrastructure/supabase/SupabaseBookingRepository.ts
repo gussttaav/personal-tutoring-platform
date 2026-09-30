@@ -14,6 +14,8 @@
 // credit_pack_id and stripe_payment_id so a reschedule can carry them over.
 // REFACTOR-R4-P1-04: cancelByToken wraps the cancel_booking RPC (status flip + pack credit
 // restore, originating pack first, in one transaction).
+// REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the booking-payment audit's read. Three
+// queries (bookings, then their users and packs), and every error throws.
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
@@ -21,6 +23,7 @@ import type {
   BookingHistoryPage,
   BookingRecord,
   BookingStatus,
+  PaymentAuditBooking,
   SessionType,
   SingleSessionBookingDetail,
 } from "@/domain/types";
@@ -514,6 +517,68 @@ export class SupabaseBookingRepository implements IBookingRepository {
       sessionType: data.session_type as SessionType,
       joinToken:   data.join_token,
     };
+  }
+
+  // REFACTOR-R4-P3-03: the booking-payment audit's read. Every error throws — a failed
+  // read must never come back as an empty (= "all paid") list.
+  async listUpcomingForPaymentAudit(untilIso: string): Promise<PaymentAuditBooking[]> {
+    const { data: rows, error } = await supabase
+      .from("bookings")
+      .select("id, user_id, session_type, starts_at, ends_at, stripe_payment_id, credit_pack_id")
+      .eq("status", "confirmed")
+      .gte("starts_at", new Date().toISOString())
+      .lt("starts_at", untilIso)
+      .order("starts_at", { ascending: true });
+
+    if (error) throw error;
+    if (!rows || rows.length === 0) return [];
+
+    const userIds = [...new Set(rows.map(r => r.user_id))];
+    const packIds = [...new Set(rows.map(r => r.credit_pack_id).filter((v): v is string => !!v))];
+
+    const { data: users, error: usersErr } = await supabase
+      .from("users")
+      .select("id, email")
+      .in("id", userIds);
+
+    if (usersErr) throw usersErr;
+    const emails = new Map((users ?? []).map(u => [u.id, u.email]));
+
+    const packs = new Map<string, { userId: string; stripePaymentId: string }>();
+    if (packIds.length > 0) {
+      const { data, error: packsErr } = await supabase
+        .from("credit_packs")
+        .select("id, user_id, stripe_payment_id")
+        .in("id", packIds);
+
+      if (packsErr) throw packsErr;
+      for (const p of data ?? []) {
+        packs.set(p.id, { userId: p.user_id, stripePaymentId: p.stripe_payment_id });
+      }
+    }
+
+    return rows.map(row => {
+      const email = emails.get(row.user_id);
+      // bookings.user_id is a NOT NULL FK, so this is an inconsistent read, not a state.
+      if (email === undefined) throw new Error(`Payment audit: no user row for booking ${row.id}`);
+      const pack = row.credit_pack_id ? packs.get(row.credit_pack_id) : undefined;
+
+      return {
+        bookingId:       row.id,
+        email,
+        sessionType:     row.session_type as SessionType,
+        startsAt:        new Date(row.starts_at).toISOString(),
+        endsAt:          new Date(row.ends_at).toISOString(),
+        stripePaymentId: row.stripe_payment_id ?? null,
+        creditPack:      pack
+          ? {
+              id:                 row.credit_pack_id as string,
+              ownedByBookingUser: pack.userId === row.user_id,
+              stripePaymentId:    pack.stripePaymentId,
+            }
+          : null,
+      };
+    });
   }
 
   async markCompleted(bookingId: string): Promise<void> {

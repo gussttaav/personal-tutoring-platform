@@ -53,15 +53,15 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 |------|-----|-----|--------|-------|----|
 | [01 Payment ledger accuracy](phase-3-payments-admin/01-payment-ledger-accuracy.md) | `REFACTOR-R4-P3-01` | 🟡 | ✅ | Claude | local (`claude/payment-ledger-accuracy-3648e9`). Route test rewritten (not in the file list), see Deviations; backfill + manual cron call not done |
 | [02 Admin students area](phase-3-payments-admin/02-admin-students-area.md) | `REFACTOR-R4-P3-02` | 🟡 | ✅ | Claude | local (`claude/admin-students-area-refactor-b832e2`), Parts A + B in one change. `0024` applied to the TEST DB only; **apply to production before deploying** (the students page and dashboard call the new RPC). `admin-api-routes.test.ts` updated (not in the file list), see Deviations; e2e not run |
-| [03 Daily audit: upcoming classes >15 min are paid](phase-3-payments-admin/03-booking-payment-audit.md) | `REFACTOR-R4-P3-03` | 🟡 | ⬜ | _tbd_ | — added 2026-09-28; after P1-03 |
+| [03 Daily audit: upcoming classes >15 min are paid](phase-3-payments-admin/03-booking-payment-audit.md) | `REFACTOR-R4-P3-03` | 🟡 | ✅ | Claude | local (`claude/booking-payment-audit-refactor-247fd4`). Own `BookingPaymentAuditService` (not `PaymentService`). Review-only runs log `warn`, not `error`, see Deviations. **cron-job.org job not created yet** (daily 07:00 Europe/Madrid); staging run not done |
 
 **Exit criteria**
 - [x] A slot-taken refund within the lookback window produces no reconcile mismatch; `stripe` is imported by no route handler _(P3-01; in-memory test drives a real slot-taken webhook, then reconciles. Only `import type Stripe` remains, in the webhook route)_
 - [x] Dead-letter retry of a PaymentIntent writes a `payments` row with the charged amount _(P3-01; in-memory test for a `pi_…` retry, mock tests for the legacy `amount_total` branch)_
 - [x] A student past #100 by email is findable in `/admin/students`; the low-credit count excludes accounts that never booked or bought _(P3-02; service test with 120 students, DB-gated RPC test, and a manual check on the test DB: 111 seeded students, `?q=` found #107, page 3 = 101–111, 5 course-only users absent)_
 - [x] Every admin POST/PATCH route calls `isValidOrigin`; a `−N` adjustment larger than the balance reports what was actually applied _(P3-02; all 7 admin mutation routes checked by grep. Route tests with the real `isValidOrigin`; `−3` on 1 credit → `{ requested: -3, applied: -1 }` in service tests and by curl)_
-- [ ] The daily booking-payment audit (P3-03) flags a class whose payment was refunded in Stripe; a clean run emails nothing
-- [ ] `pnpm test`, `pnpm lint`, `pnpm build` green
+- [x] The daily booking-payment audit (P3-03) flags a class whose payment was refunded in Stripe; a clean run emails nothing _(P3-03; service tests over the fakes (a refunded single and a refunded pack) + route tests (no email on a clean run). The real-Stripe refund mapping is unit-tested with a mocked SDK only: the staging run with a dashboard refund is still to do)_
+- [x] `pnpm test`, `pnpm lint`, `pnpm build` green _(on the P3-03 branch, which carries P3-01 and P3-02: 169/169 suites, 2235 tests; lint 0 errors; build green)_
 
 ## Phase 4 — Cleanup
 
@@ -596,6 +596,76 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   pane holds Gustavo's own non-admin session as an HttpOnly cookie, which a page script can't
   replace, and it was left alone. The API side was checked by curl. `pnpm test:e2e` was not run.
   The failed-bookings retry button was checked only through the API.
+
+- **P3-03 — its own service, not `PaymentService`** (the task asked to pick one and say so).
+  `src/services/BookingPaymentAuditService.ts` holds the pure rules (`evaluateBooking`,
+  `expectedPaymentFor`) and `auditUpcoming`. `PaymentService` already carries checkout, the
+  webhook, the dead-letter retry and the reconcile cron.
+- **P3-03 — a run whose only findings are `review` items logs `warn`, not `error`.** The task's
+  §5 and acceptance say "findings → one Sentry `error` log + one tutor email". A pack's partial
+  refund is, per §3, "a *review* item, not an error", and it would recur every day while that
+  pack's classes stay booked. So the route logs `error` (→ Sentry) when at least one finding is an
+  `error`, `warn` (not forwarded to Sentry) when all are `review`, and emails in both cases. A
+  clean run logs `info` and sends nothing, as specified.
+- **P3-03 — where the email goes out.** The service takes `IEmailClient` (as specified) and exposes
+  `emailReport(report)`. The route decides when to call it (only with findings) and turns a send
+  failure into a `warn`. `auditUpcoming` never emails, so the service test can assert the audit
+  writes nothing, email included.
+- **P3-03 — finding shape.** Beyond `code`, each finding carries `severity` (`error` | `review`),
+  the booking id, student, type, start, the `paymentId` checked, and `expected` / `actual` as
+  `field=value` strings. A class gets one `payment_mismatch` listing every differing field.
+  `pack_not_owned` ends that class's checks (no Stripe call for someone else's pack), and a
+  manual pack owned by another student is `pack_not_owned`, not a manual pass.
+- **P3-03 — the route also refuses an unset `CRON_SECRET`.** The other two internal routes compare
+  the header with `` `Bearer ${process.env.CRON_SECRET}` ``, which a literal `Bearer undefined`
+  matches when the variable is missing. This route's body lists student emails, so it checks
+  `!secret` first. The other two routes are untouched (a follow-up, not this task).
+- **P3-03 — `retrievePaymentForAudit` fails closed on an unexpanded `latest_charge`** (it would
+  read as "never refunded"). Stripe's `resource_missing` is matched by duck type (`type` +
+  `code`), so `StripeClient.ts` still imports the SDK as a type only.
+- **P3-03 — legacy Checkout packs would read `payment_not_found`.** A pack bought through the
+  legacy Checkout flow stores its `cs_…` session id in `credit_packs.stripe_payment_id`
+  (`handlePackPayment(…, stripeSessionId, …)`), and `paymentIntents.retrieve` answers that with
+  `resource_missing` (checked against test mode). Checkout-session creation was removed on
+  2026-03-22, when packs were valid 180 days, so none should still be redeemable. If one shows
+  up, check it by hand, like the pre-`0015` pack classes the task md mentions.
+- **P3-03 — files beyond the list.** `BookingService.test.ts` and `PaymentService.test.ts`: one line
+  each in their hand-rolled `jest.Mocked<…>` factories, for `tsc`. New
+  `src/infrastructure/stripe/__tests__/StripeClient.test.ts` (9 cases: the expand, the mapping,
+  no charge, `resource_missing` → null, four other errors rethrown, unexpanded charge → throws).
+- **P3-03 — fixtures.** `InMemoryBookingRepository.seedCreditPack` (fixture-only: the credits
+  fake keeps one pack per user and no payment id per pack) and
+  `listUpcomingForPaymentAuditShouldFail`. `FakeStripeClient.seedAuditPayment` / `failAuditFor` /
+  `auditCalls`; an unseeded id answers `null`, as Stripe's `resource_missing` does.
+- **P3-03 — tests beyond the plan.** Service: at most 5 Stripe calls in flight (12 PIs), a failed
+  read makes no Stripe call, a refunded pack flags every class on it, "writes nothing" (spies on
+  every booking/Stripe write + no email), an unparseable timestamp is a `length_mismatch`, and
+  `evaluateBooking` throws when a class that has a payment gets no facts. Route: 403 with
+  `CRON_SECRET` unset, a review-only run (`warn` + email), the sample cap. DB-gated: completed,
+  no-show, cancelled and past rows excluded; a pack owned by another student; `until` exclusive.
+- **P3-03 — checks.** `pnpm test`: 169/169 suites, 2235 tests (new: 46 service, 9 route, 9
+  `StripeClient`, 2 DB-gated; `SupabaseBookingRepository.test.ts` 26, none skipped, test DB).
+  `pnpm lint`: 0 errors (the same 8 pre-existing warnings). `tsc --noEmit`: only the pre-existing
+  `mdx.test.ts` (`RepoLink`) error. `pnpm build` green (`ƒ /api/internal/booking-payment-audit`).
+- **P3-03 — manual checks (local; nothing written, nothing sent).** This build on `:3217` against
+  the TEST DB and the Stripe test key, with `NOTIFY_EMAIL` blanked and a throwaway `CRON_SECRET`:
+  403 with no bearer and with a wrong one; 200 `{ checked: 0, findings: 0, details: [] }` in
+  0.36 s (the test DB has no confirmed booking in the next 8 weeks). A read-only script against
+  Stripe test mode: a succeeded single (1h), a succeeded pack and a `requires_payment_method`
+  PaymentIntent mapped as expected with the charge expanded; an unknown `pi_…` and a `cs_…` id →
+  `null`; an empty id → throws (`StripeInvalidRequestError`, no code). No refunded PaymentIntent
+  among the 100 most recent, so the refund mapping is covered only by the mocked-SDK test. The
+  email was rendered with `fetch` stubbed (subject, Madrid times, HTML escaping); nothing sent.
+- **P3-03 — NOT done:**
+  - The staging run from the task's test plan: in Stripe test mode, a paid class refunded from the
+    dashboard, a pack class and a free call → exactly one `payment_refunded` and one email.
+  - The cron-job.org job: daily **07:00 Europe/Madrid**, `GET
+    https://gustavoai.dev/api/internal/booking-payment-audit`, header `Authorization: Bearer
+    <CRON_SECRET>`. The 14:00 second run is optional.
+  - Deploy with P1-03 (or after it). Until P1-03 is on production, every paid class rescheduled
+    there keeps a NULL `stripe_payment_id` and reads `no_payment_link`. Before the first
+    production run, list those with the SQL in the task md and check them by hand.
+  - `pnpm test:e2e`: no UI change.
 
 ## Known regressions introduced
 

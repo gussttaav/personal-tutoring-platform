@@ -5,6 +5,8 @@
 // findByCancelToken returning stripePaymentId.
 // REFACTOR-R4-P1-04: cancelByToken (cancel_booking RPC) — originating pack first, then the
 // earliest-expiring active pack with room, then nothing; non-pack; concurrency.
+// REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — status and time filter, the pack owner
+// and PaymentIntent join, normalized timestamps.
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
@@ -385,6 +387,150 @@ describeDb("SupabaseBookingRepository", () => {
       const none = { consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0 };
       expect(await repo.cancelByToken("not-a-valid-hex-token")).toEqual(none);
       expect(await repo.cancelByToken("0".repeat(64))).toEqual(none);
+    });
+  });
+
+  // ─── REFACTOR-R4-P3-03: listUpcomingForPaymentAudit ───────────────────────
+  describe("listUpcomingForPaymentAudit", () => {
+    const DAY_MS = 86_400_000;
+
+    async function seedUser(email: string): Promise<string> {
+      const { data, error } = await supabase
+        .from("users").upsert({ email, name: "Test Student" }, { onConflict: "email" })
+        .select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    async function seedPack(userId: string, stripePaymentId: string): Promise<string> {
+      const { data, error } = await supabase.from("credit_packs").insert({
+        user_id:           userId,
+        pack_size:         5,
+        credits_remaining: 3,
+        stripe_payment_id: stripePaymentId,
+        expires_at:        new Date(Date.now() + 180 * DAY_MS).toISOString(),
+      }).select("id").single();
+      if (error) throw error;
+      return data.id;
+    }
+
+    async function bookingId(eventId: string): Promise<string> {
+      const found = await repo.findByEventId(eventId);
+      if (!found) throw new Error(`no booking for ${eventId}`);
+      return found.id;
+    }
+
+    // bookings.credit_pack_id → credit_packs → users, so packs go between the two.
+    async function cleanupAll(emails: string[]) {
+      for (const email of emails) {
+        const { data: user } = await supabase.from("users").select("id").eq("email", email).maybeSingle();
+        if (user) await supabase.from("bookings").delete().eq("user_id", user.id);
+      }
+      for (const email of emails) {
+        const { data: user } = await supabase.from("users").select("id").eq("email", email).maybeSingle();
+        if (!user) continue;
+        await supabase.from("credit_packs").delete().eq("user_id", user.id);
+        await supabase.from("users").delete().eq("id", user.id);
+      }
+    }
+
+    it("returns confirmed bookings in [now, until) with their PaymentIntent and pack, timestamps normalized", async () => {
+      const ana    = baseRecord().email;
+      const bea    = baseRecord().email;
+      const anaId  = await seedUser(ana);
+      await seedUser(bea);
+      const packPi = `pi_test_audit_${Date.now()}_${recordSeq++}`;
+      const packId = await seedPack(anaId, packPi);
+
+      // Far-future slots (uniqueFutureSlot), in ascending order.
+      const paid      = { ...baseRecord(), email: ana, stripePaymentId: `pi_test_audit_${Date.now()}_${recordSeq++}` };
+      const ownPack   = { ...baseRecord(), email: ana, sessionType: "pack" as const, creditPackId: packId };
+      const otherPack = { ...baseRecord(), email: bea, sessionType: "pack" as const, creditPackId: packId };
+      const free      = { ...baseRecord(), email: bea, sessionType: "free15min" as const };
+      const cancelled = { ...baseRecord(), email: ana };
+      const completed = { ...baseRecord(), email: ana };
+      const noShow    = { ...baseRecord(), email: ana };
+      const beyond    = { ...baseRecord(), email: ana }; // starts exactly at `until`: excluded
+      // A past confirmed class, on a random day 1–11 years ago (away from other rows).
+      const pastStart = Date.now() - (366 + Math.floor(Math.random() * 3650)) * DAY_MS;
+      const past = {
+        ...baseRecord(), email: ana,
+        startsAt: new Date(pastStart).toISOString(),
+        endsAt:   new Date(pastStart + 3_600_000).toISOString(),
+      };
+      // Free calls are 15 minutes; the slot helper hands out 1h windows.
+      free.endsAt = new Date(new Date(free.startsAt).getTime() + 15 * 60_000).toISOString();
+
+      try {
+        for (const r of [paid, ownPack, otherPack, free, completed, noShow, beyond, past]) await repo.createBooking(r);
+        const { cancelToken } = await repo.createBooking(cancelled);
+        await repo.consumeCancelToken(cancelToken);
+        await repo.markCompleted(await bookingId(completed.eventId));
+        await repo.markNoShow(await bookingId(noShow.eventId));
+
+        const rows = await repo.listUpcomingForPaymentAudit(beyond.startsAt);
+        // The test DB is shared: keep only this test's students.
+        const mine = rows.filter(r => r.email === ana || r.email === bea);
+
+        expect(mine).toEqual([
+          {
+            bookingId:       await bookingId(paid.eventId),
+            email:           ana,
+            sessionType:     "session1h",
+            startsAt:        paid.startsAt,
+            endsAt:          paid.endsAt,
+            stripePaymentId: paid.stripePaymentId,
+            creditPack:      null,
+          },
+          {
+            bookingId:       await bookingId(ownPack.eventId),
+            email:           ana,
+            sessionType:     "pack",
+            startsAt:        ownPack.startsAt,
+            endsAt:          ownPack.endsAt,
+            stripePaymentId: null,
+            creditPack:      { id: packId, ownedByBookingUser: true, stripePaymentId: packPi },
+          },
+          {
+            bookingId:       await bookingId(otherPack.eventId),
+            email:           bea,
+            sessionType:     "pack",
+            startsAt:        otherPack.startsAt,
+            endsAt:          otherPack.endsAt,
+            stripePaymentId: null,
+            creditPack:      { id: packId, ownedByBookingUser: false, stripePaymentId: packPi },
+          },
+          {
+            bookingId:       await bookingId(free.eventId),
+            email:           bea,
+            sessionType:     "free15min",
+            startsAt:        free.startsAt,
+            endsAt:          free.endsAt,
+            stripePaymentId: null,
+            creditPack:      null,
+          },
+        ]);
+        // Normalized like JS toISOString ("…Z" with milliseconds), not PostgREST's "+00:00".
+        for (const r of mine) {
+          expect(r.startsAt).toBe(new Date(r.startsAt).toISOString());
+          expect(r.endsAt).toBe(new Date(r.endsAt).toISOString());
+        }
+
+        // A later horizon lets the class at `until` in; the past one never comes back.
+        const wider = (await repo.listUpcomingForPaymentAudit(
+          new Date(new Date(beyond.startsAt).getTime() + 1).toISOString(),
+        )).filter(r => r.email === ana || r.email === bea);
+        expect(wider.map(r => r.startsAt)).toEqual(
+          [paid, ownPack, otherPack, free, beyond].map(r => r.startsAt),
+        );
+      } finally {
+        await cleanupAll([ana, bea]);
+      }
+    });
+
+    it("an empty window returns []", async () => {
+      // Nothing can start in the past, so a horizon of "now" is always empty.
+      expect(await repo.listUpcomingForPaymentAudit(new Date().toISOString())).toEqual([]);
     });
   });
 

@@ -7,6 +7,10 @@
 //
 // REFACTOR-R4-P3-01: listPaymentIntents pages the recent PaymentIntents for the
 // reconciliation cron, which used to call the stripe singleton from its route.
+//
+// REFACTOR-R4-P3-03: retrievePaymentForAudit flattens a PaymentIntent and its latest charge
+// (where the refund and dispute state live) into PaymentAuditFacts for the booking-payment
+// audit, so no Stripe type reaches BookingPaymentAuditService.
 import type Stripe from "stripe";
 import { stripe } from "@/infrastructure/stripe/client-singleton";
 
@@ -20,6 +24,17 @@ export interface ListPaymentIntentsParams {
   limit:          number;
 }
 
+// REFACTOR-R4-P3-03: what the booking-payment audit needs to know about a payment.
+export interface PaymentAuditFacts {
+  status:          string;          // PaymentIntent.status
+  amount:          number;
+  amountRefunded:  number;          // latest_charge.amount_refunded, 0 if no charge
+  disputed:        boolean;         // latest_charge.disputed
+  checkoutType:    string | null;   // metadata.checkout_type
+  sessionDuration: string | null;   // metadata.session_duration
+  studentEmail:    string | null;   // metadata.student_email
+}
+
 export interface IStripeClient {
   verifyWebhookSignature(body: string, sig: string, secret: string): Stripe.Event;
   createPaymentIntent(
@@ -30,6 +45,15 @@ export interface IStripeClient {
   listPaymentIntents(params: ListPaymentIntentsParams): Promise<{ data: Stripe.PaymentIntent[]; hasMore: boolean }>;
   retrieveCheckoutSession(id: string): Promise<Stripe.Checkout.Session>;
   createRefund(params: { payment_intent?: string; charge?: string; reason: "duplicate" }): Promise<void>;
+  /** REFACTOR-R4-P3-03: null when Stripe has no such PaymentIntent (resource_missing).
+   *  Any other error propagates. */
+  retrievePaymentForAudit(id: string): Promise<PaymentAuditFacts | null>;
+}
+
+// A Stripe "No such payment_intent" — the only error the audit reads as an answer.
+function isResourceMissing(err: unknown): boolean {
+  const e = err as { type?: unknown; code?: unknown } | null;
+  return e?.type === "StripeInvalidRequestError" && e.code === "resource_missing";
 }
 
 export class StripeClient implements IStripeClient {
@@ -68,5 +92,31 @@ export class StripeClient implements IStripeClient {
 
   async createRefund(params: { payment_intent?: string; charge?: string; reason: "duplicate" }): Promise<void> {
     await stripe.refunds.create(params as Parameters<typeof stripe.refunds.create>[0]);
+  }
+
+  async retrievePaymentForAudit(id: string): Promise<PaymentAuditFacts | null> {
+    let intent: Stripe.PaymentIntent;
+    try {
+      intent = await stripe.paymentIntents.retrieve(id, { expand: ["latest_charge"] });
+    } catch (err) {
+      if (isResourceMissing(err)) return null;
+      throw err;
+    }
+
+    // An unexpanded charge would read as "never refunded": fail instead.
+    if (typeof intent.latest_charge === "string") {
+      throw new Error(`Stripe returned latest_charge unexpanded for ${id}`);
+    }
+    const charge = intent.latest_charge;
+
+    return {
+      status:          intent.status,
+      amount:          intent.amount,
+      amountRefunded:  charge?.amount_refunded ?? 0,
+      disputed:        charge?.disputed ?? false,
+      checkoutType:    intent.metadata?.checkout_type    ?? null,
+      sessionDuration: intent.metadata?.session_duration ?? null,
+      studentEmail:    intent.metadata?.student_email    ?? null,
+    };
   }
 }

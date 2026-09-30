@@ -9,7 +9,10 @@
 // returns creditPackId + stripePaymentId so a reschedule carries them to the new booking.
 // REFACTOR-R4-P1-04: cancelByToken — the status flip and a pack class's credit restore in
 // one transaction (the cancel_booking RPC).
-import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
+// REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the daily booking-payment audit's read.
+import type {
+  BookingHistoryPage, BookingRecord, PaymentAuditBooking, SessionType, SingleSessionBookingDetail,
+} from "../types";
 
 /**
  * REFACTOR-R4-P1-04: what cancel_booking actually did. `consumed` is false when no
@@ -161,6 +164,10 @@ export interface IBookingRepository {
    * REFACTOR-R4-P1-02: throws on a read error; `null` means *known absent*.
    */
   findByStripePaymentId(stripePaymentId: string): Promise<SingleSessionBookingDetail | null>;
+
+  /** REFACTOR-R4-P3-03: confirmed bookings starting in [now, untilIso), with what they are
+   *  paid by. Throws on a read error: a failed read must not report "all paid". */
+  listUpcomingForPaymentAudit(untilIso: string): Promise<PaymentAuditBooking[]>;
 
   /**
    * Marks a booking as completed. Idempotent and conservative: only transitions

@@ -8,12 +8,16 @@
 // REFACTOR-R4-P1-04: cancelByToken mirrors the cancel_booking RPC (flip + pack credit
 // restore in one step), so this fake crosses into InMemoryCreditsRepository: construct it
 // with that fake to cancel a pack class. `cancelByTokenShouldFail` simulates the RPC failing.
+// REFACTOR-R4-P3-03: listUpcomingForPaymentAudit. A pack class's pack (owner + payment id)
+// comes from `seedCreditPack` — the credits fake keeps one pack per user and no payment
+// id per pack. `listUpcomingForPaymentAuditShouldFail` simulates the read failing.
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type {
   BookingHistoryEntry,
   BookingHistoryPage,
   BookingRecord,
   BookingStatus,
+  PaymentAuditBooking,
   SessionType,
   SingleSessionBookingDetail,
 } from "@/domain/types";
@@ -39,6 +43,9 @@ export class InMemoryBookingRepository implements IBookingRepository {
   // REFACTOR-R4-P1-04
   cancelByTokenShouldFail        = false;
   private consumedTokens       = new Map<string, { cancelToken: string; joinToken: string }>(); // eventId → original tokens
+  // REFACTOR-R4-P3-03
+  listUpcomingForPaymentAuditShouldFail = false;
+  private auditPacks           = new Map<string, { ownerEmail: string; stripePaymentId: string }>(); // packId → pack
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
@@ -264,6 +271,46 @@ export class InMemoryBookingRepository implements IBookingRepository {
       };
     }
     return null;
+  }
+
+  // REFACTOR-R4-P3-03: mirrors the Supabase impl — confirmed rows starting in
+  // [now, untilIso), soonest first. The fake treats eventId as the booking id.
+  async listUpcomingForPaymentAudit(untilIso: string): Promise<PaymentAuditBooking[]> {
+    if (this.listUpcomingForPaymentAuditShouldFail) {
+      throw new Error("InMemoryBookingRepository: simulated read failure");
+    }
+    const now   = Date.now();
+    const until = new Date(untilIso).getTime();
+    return [...this.bookings.entries()]
+      .filter(([eventId]) => (this.statuses.get(eventId) ?? "confirmed") === "confirmed")
+      .filter(([, r]) => {
+        const start = new Date(r.startsAt).getTime();
+        return start >= now && start < until;
+      })
+      .sort(([, a], [, b]) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+      .map(([eventId, r]) => {
+        const pack = r.creditPackId ? this.auditPacks.get(r.creditPackId) : undefined;
+        return {
+          bookingId:       eventId,
+          email:           r.email.toLowerCase(),
+          sessionType:     r.sessionType,
+          startsAt:        new Date(r.startsAt).toISOString(),
+          endsAt:          new Date(r.endsAt).toISOString(),
+          stripePaymentId: r.stripePaymentId ?? null,
+          creditPack:      pack && r.creditPackId
+            ? {
+                id:                 r.creditPackId,
+                ownedByBookingUser: pack.ownerEmail.toLowerCase() === r.email.toLowerCase(),
+                stripePaymentId:    pack.stripePaymentId,
+              }
+            : null,
+        };
+      });
+  }
+
+  /** REFACTOR-R4-P3-03 (fixture-only): a credit_packs row for listUpcomingForPaymentAudit. */
+  seedCreditPack(pack: { id: string; ownerEmail: string; stripePaymentId: string }): void {
+    this.auditPacks.set(pack.id, { ownerEmail: pack.ownerEmail, stripePaymentId: pack.stripePaymentId });
   }
 
   private findJoinTokenForEvent(eventId: string): string | undefined {

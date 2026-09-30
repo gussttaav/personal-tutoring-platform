@@ -57,6 +57,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   findByEventId:              jest.fn().mockResolvedValue(null),
   findByStripePaymentId:      jest.fn().mockResolvedValue(null),
   hasBookingForPayment:       jest.fn().mockResolvedValue(false),
+  listUpcomingForPaymentAudit: jest.fn().mockResolvedValue([]), // REFACTOR-R4-P3-03
   markCompleted:              jest.fn().mockResolvedValue(undefined),
   markNoShow:                 jest.fn().mockResolvedValue(undefined),
   countCompletedPaid:         jest.fn().mockResolvedValue(0),
@@ -123,6 +124,7 @@ const mockEmail = (): jest.Mocked<IEmailClient> => ({
   sendCancellationConfirmation: jest.fn().mockResolvedValue(undefined),
   sendCancellationNotification: jest.fn().mockResolvedValue(undefined),
   sendContentReportNotification: jest.fn().mockResolvedValue(undefined),
+  sendPaymentAuditReport:       jest.fn().mockResolvedValue(undefined), // REFACTOR-R4-P3-03
 });
 
 // getLocale defaults to null (no stored preference → 'es' fallback in the service).

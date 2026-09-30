@@ -15,6 +15,7 @@ import { AccountService }       from "./AccountService";
 import { ContentFeedbackService } from "./ContentFeedbackService";
 import { LandingService }       from "./LandingService";
 import { AdminService }         from "./AdminService";
+import { BookingPaymentAuditService } from "./BookingPaymentAuditService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -129,4 +130,12 @@ export const adminService = new AdminService(
   creditService,
   pricingService,
   supabaseAuditRepository,
+);
+
+// REFACTOR-R4-P3-03: the daily read-only audit of upcoming bookings against their
+// payments (GET /api/internal/booking-payment-audit, cron-job.org).
+export const bookingPaymentAuditService = new BookingPaymentAuditService(
+  supabaseBookingRepository,
+  new StripeClient(),
+  new EmailClient(),
 );
