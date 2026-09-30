@@ -521,13 +521,24 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   (new error and `failed_at`) and returns `{ ok: false, error }`, which the route already maps to
   500 and `RetryButton` already shows. The webhook ignores the outcome, so its behaviour is
   unchanged. A retry that ends in a slot-taken refund still clears the entry and reports success,
-  as before: the money went back. `RetryButton` still says «Procesado correctamente» in that
-  case, not «reembolsado», and that wording was left alone. A failed retry also re-sends the
+  as before: the money went back. A failed retry also re-sends the
   dead-letter notification email, as the webhook path does. Tests: 4 in-memory cases (failed
   again keeps the entry with the new error; a later retry still recovers it; a slot-taken retry
   refunds and clears; an already-processed payment clears). 2 of them fail with the fix
   reverted. `pnpm test`: 162/162 suites, 2134 tests. Lint 0 errors. No new `tsc` errors.
   `pnpm build` green.
+- **`DEAD-LETTER-RETRY-02` — out of plan, at Gustavo's request: the retry button says the
+  student was refunded.** A successful retry used to read «Procesado correctamente» even when
+  the slot was taken and the student got their money back instead of a class.
+  `reprocessFailedBooking` now returns `outcome` (`booked` / `already_handled` / `refunded`)
+  next to `ok: true`. The admin route passes it through unchanged, and `RetryButton` shows
+  «↩ Reembolsado al alumno: el hueco ya no estaba libre.» in amber (new `.warning-text`,
+  `var(--warning)`) instead of the green ✓. Tests: the retry assertions now include the outcome,
+  plus one new case (an earlier refund: `refunded`, no second refund). New
+  `src/components/admin/__tests__/RetryButton.test.tsx` (jsdom, 4 cases: the POST, booked,
+  refunded, failed-again error). `pnpm test`: 163/163 suites, 2139 tests. Lint 0 errors. No new
+  `tsc` errors. `pnpm build` green. Not checked in the browser: that would need an admin session
+  (there is none locally) and a real Stripe test refund on a dead-letter row in the test DB.
 
 ## Known regressions introduced
 

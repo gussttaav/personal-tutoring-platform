@@ -9,6 +9,8 @@
 // the dead-letter retry's payments row — in-memory suites at the end of this file.
 // DEAD-LETTER-RETRY-01: a retry whose booking fails again keeps its dead-letter entry and
 // reports the failure — in-memory suite at the end of this file.
+// DEAD-LETTER-RETRY-02: a successful retry returns its `outcome` (booked / refunded /
+// already_handled), which the admin RetryButton shows.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -815,7 +817,7 @@ describe("PaymentService.reprocessFailedBooking", () => {
 
     const result = await service.reprocessFailedBooking("pi_single_123");
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, outcome: "booked" });
     expect(paymentRepo.clearFailedBooking).toHaveBeenCalledWith("pi_single_123");
   });
 
@@ -890,7 +892,7 @@ describe("PaymentService.reprocessFailedBooking", () => {
     it("records the payments row from amount_total, keyed by the PaymentIntent", async () => {
       const { service, paymentRepo } = build(4900);
 
-      await expect(service.reprocessFailedBooking(CS)).resolves.toEqual({ ok: true });
+      await expect(service.reprocessFailedBooking(CS)).resolves.toEqual({ ok: true, outcome: "booked" });
 
       expect(paymentRepo.recordPayment).toHaveBeenCalledWith({
         userId:          TEST_USER_ID,
@@ -905,7 +907,7 @@ describe("PaymentService.reprocessFailedBooking", () => {
     it("books but skips the payments row when Stripe has no amount_total", async () => {
       const { service, paymentRepo, bookings } = build(null);
 
-      await expect(service.reprocessFailedBooking(CS)).resolves.toEqual({ ok: true });
+      await expect(service.reprocessFailedBooking(CS)).resolves.toEqual({ ok: true, outcome: "booked" });
 
       expect(bookings.createBooking).toHaveBeenCalledTimes(1);
       expect(paymentRepo.recordPayment).not.toHaveBeenCalled();
@@ -1519,7 +1521,7 @@ describe("REFACTOR-R4-P3-01: a dead-letter retry records the payment", () => {
       failedAt: new Date().toISOString(), error: "calendar API down",
     });
 
-    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true, outcome: "booked" });
 
     expect(paymentRepo.payments).toEqual([expect.objectContaining({
       stripePaymentId: PI,
@@ -1579,7 +1581,7 @@ describe("DEAD-LETTER-RETRY-01: reprocessFailedBooking only clears a resolved pa
     await service.reprocessFailedBooking(PI);
     bookingRepo.createBookingShouldFail = false;
 
-    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true, outcome: "booked" });
 
     await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
     await expect(bookingRepo.hasBookingForPayment(PI)).resolves.toBe(true);
@@ -1591,9 +1593,19 @@ describe("DEAD-LETTER-RETRY-01: reprocessFailedBooking only clears a resolved pa
     const { service, stripe, paymentRepo } = await build();
     mockGetAvailableSlots.mockResolvedValue([]);
 
-    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true, outcome: "refunded" });
 
     expect(stripe.refunds).toEqual([{ payment_intent: PI, reason: "duplicate" }]);
+    await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
+  });
+
+  it("reports refunded, without a second refund, when an earlier run already refunded", async () => {
+    const { service, stripe, paymentRepo } = await build();
+    await paymentRepo.recordSlotTakenRefund(PI);
+
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true, outcome: "refunded" });
+
+    expect(stripe.refunds).toEqual([]);
     await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
   });
 
@@ -1601,7 +1613,7 @@ describe("DEAD-LETTER-RETRY-01: reprocessFailedBooking only clears a resolved pa
     const { service, stripe, paymentRepo } = await build();
     await paymentRepo.markProcessed(PI);
 
-    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true, outcome: "already_handled" });
 
     expect(stripe.refunds).toEqual([]);
     await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);

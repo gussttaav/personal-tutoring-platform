@@ -419,6 +419,7 @@
 .chevron { color: var(--text-dim); transition: var(--transition-fast); }
 .data-table tbody tr:hover .chevron { color: var(--green); transform: translateX(2px); }
 .success-text { color: var(--green); font-size: 12px; font-weight: 500; }
+.warning-text { color: var(--warning); font-size: 12px; font-weight: 500; } /* DEAD-LETTER-RETRY-02 */
 
 /* ─── Badges ─────────────────────────────────────────────────────────── */
 .badge {

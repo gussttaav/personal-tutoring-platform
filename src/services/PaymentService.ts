@@ -47,6 +47,10 @@
  * so the admin saw "procesado", the entry vanished, and the student had paid for a class
  * that did not exist. processSingleSession now returns its outcome; the retry clears the
  * entry only when the payment is resolved (booked, already handled, or refunded).
+ *
+ * DEAD-LETTER-RETRY-02: a successful retry also says HOW it resolved (`outcome`), so the
+ * admin's RetryButton can tell "booked" from "the slot was taken, the student was refunded"
+ * — both used to read «Procesado correctamente».
  */
 
 import type Stripe from "stripe";
@@ -150,8 +154,12 @@ interface SingleSessionInput {
 // DEAD-LETTER-RETRY-01: how processSingleSession resolved the payment. Only the admin
 // retry reads it — the webhook answers 200 either way (a dead-letter is a handled failure).
 type SingleSessionOutcome =
-  | { status: "booked" | "already_handled" | "refunded" }
+  | { status: ResolvedRetryOutcome }
   | { status: "dead_lettered"; error: string };
+
+// DEAD-LETTER-RETRY-02: the `outcome` of a successful admin retry (POST
+// /api/admin/failed-bookings returns it verbatim; RetryButton reads it).
+export type ResolvedRetryOutcome = "booked" | "already_handled" | "refunded";
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 
@@ -353,7 +361,9 @@ export class PaymentService {
 
   // ── Admin dead-letter retry ────────────────────────────────────────────────
 
-  async reprocessFailedBooking(stripeSessionId: string): Promise<{ ok: boolean; error?: string }> {
+  async reprocessFailedBooking(
+    stripeSessionId: string,
+  ): Promise<{ ok: boolean; error?: string; outcome?: ResolvedRetryOutcome }> {
     const entries = await this.paymentRepo.listFailedBookings();
     const entry   = entries.find(e => e.stripeSessionId === stripeSessionId);
     if (!entry) return { ok: false, error: "Not found" };
@@ -408,8 +418,10 @@ export class PaymentService {
         return { ok: false, error: outcome.error };
       }
       await this.paymentRepo.clearFailedBooking(stripeSessionId);
-      log("info", "Dead-letter entry cleared after successful retry", { service: "payment", stripeSessionId });
-      return { ok: true };
+      log("info", "Dead-letter entry cleared after successful retry", {
+        service: "payment", stripeSessionId, outcome: outcome.status,
+      });
+      return { ok: true, outcome: outcome.status };
     } catch (err) {
       log("warn", "Dead-letter retry did not succeed", { service: "payment", stripeSessionId, error: String(err) });
       return { ok: false, error: String(err) };

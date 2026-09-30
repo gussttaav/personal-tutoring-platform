@@ -1,6 +1,9 @@
 /**
  * ADMIN-01: Client component to retry a failed booking.
  * POSTs to the existing /api/admin/failed-bookings endpoint (REL-03).
+ *
+ * DEAD-LETTER-RETRY-02: a retry that found the slot taken refunds the student instead of
+ * booking — say so (amber) instead of the green «Procesado correctamente».
  */
 "use client";
 
@@ -11,7 +14,7 @@ interface RetryButtonProps {
 }
 
 export function RetryButton({ stripeSessionId }: RetryButtonProps) {
-  const [status, setStatus]   = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [status, setStatus]   = useState<"idle" | "loading" | "ok" | "refunded" | "error">("idle");
   const [message, setMessage] = useState<string | null>(null);
 
   async function retry() {
@@ -25,8 +28,13 @@ export function RetryButton({ stripeSessionId }: RetryButtonProps) {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && (data as { ok?: boolean }).ok) {
-        setStatus("ok");
-        setMessage("Procesado correctamente.");
+        if ((data as { outcome?: string }).outcome === "refunded") {
+          setStatus("refunded");
+          setMessage("Reembolsado al alumno: el hueco ya no estaba libre.");
+        } else {
+          setStatus("ok");
+          setMessage("Procesado correctamente.");
+        }
       } else {
         setStatus("error");
         setMessage((data as { error?: string }).error ?? "Error al reintentar.");
@@ -39,6 +47,9 @@ export function RetryButton({ stripeSessionId }: RetryButtonProps) {
 
   if (status === "ok") {
     return <span className="success-text">✓ {message}</span>;
+  }
+  if (status === "refunded") {
+    return <span className="warning-text">↩ {message}</span>;
   }
 
   return (
