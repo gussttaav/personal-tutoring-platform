@@ -232,6 +232,8 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | a coordinate-wise multiplier in $(0,1)$ | gate — forget / input / output, update / reset | valve, door |
 | the LSTM's second state | cell state; its proposal is the candidate | memory cell |
 | the summing route memory takes across steps | additive path | additive route |
+| the route the gradient takes back along that path | return path | the way back, the path back — the forward/backward pass row above bans *the way back* for the backward pass itself, and a route through the backward pass must not borrow its banned name |
+| the GRU as the LSTM with pieces removed, and the removing | cut; what the LSTM's output gate and $\tanh$ did to the state is *trim* | pruning (removing weights from a trained network, a different technique). Block 1 spends *cut* on the vocabulary at $k$ (the truncation row above); the two senses never share a block, so the collision is tolerated |
 | $\boldsymbol{\delta}^{(l)}$, what the loss owes a pre-activation | error (of the layer, of the neuron) | delta, error signal, error term |
 | a network trained to predict what comes next | language model | |
 | the random draw from the model's own distribution | to sample, sampling | |
