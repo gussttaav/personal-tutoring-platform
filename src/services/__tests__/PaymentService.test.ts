@@ -7,6 +7,8 @@
 // suite at the end of this file.
 // REFACTOR-R4-P3-01: reconcileRecentPayments (the cron's logic, moved from its route) and
 // the dead-letter retry's payments row — in-memory suites at the end of this file.
+// DEAD-LETTER-RETRY-01: a retry whose booking fails again keeps its dead-letter entry and
+// reports the failure — in-memory suite at the end of this file.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -1526,6 +1528,82 @@ describe("REFACTOR-R4-P3-01: a dead-letter retry records the payment", () => {
       checkoutType:    "single",
       status:          "succeeded",
     })]);
+    await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
+  });
+});
+
+// ─── DEAD-LETTER-RETRY-01: a failed retry keeps its dead-letter ───────────────
+
+describe("DEAD-LETTER-RETRY-01: reprocessFailedBooking only clears a resolved payment", () => {
+  const PI = "pi_retry_again_123";
+  const { startIso, endIso } = alignedSlot("session1h", 48);
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: startIso }]);
+  });
+
+  async function build() {
+    const paymentRepo = new InMemoryPaymentRepository();
+    const bookingRepo = new InMemoryBookingRepository();
+    const bookingSvc  = buildTestBookingService({ bookings: bookingRepo });
+    const { service, stripe } = buildTestPaymentService({ paymentRepo, bookings: bookingSvc });
+    stripe.buildSingleSessionPaymentEvent({
+      email: "student@test.com", name: "Student",
+      startIso, endIso, duration: "1h", intentId: PI, amountCents: 4900,
+    });
+    await paymentRepo.recordFailedBooking({
+      stripeSessionId: PI, userId: "u1", startIso,
+      failedAt: "2026-01-01T00:00:00.000Z", error: "calendar API down",
+    });
+    return { service, stripe, paymentRepo, bookingRepo };
+  }
+
+  it("keeps the entry, with the new error, and reports the failure when the booking fails again", async () => {
+    const { service, paymentRepo, bookingRepo } = await build();
+    bookingRepo.createBookingShouldFail = true;
+
+    const result = await service.reprocessFailedBooking(PI);
+
+    expect(result).toEqual({ ok: false, error: expect.stringContaining("simulated insert failure") });
+    const [entry] = await paymentRepo.listFailedBookings();
+    expect(entry).toMatchObject({ stripeSessionId: PI, error: expect.stringContaining("simulated insert failure") });
+    expect(entry.failedAt).not.toBe("2026-01-01T00:00:00.000Z");
+    expect(paymentRepo.payments).toEqual([]);
+    await expect(paymentRepo.isProcessed(PI)).resolves.toBe(false);
+  });
+
+  it("can still be recovered by a later retry once the cause is gone", async () => {
+    const { service, paymentRepo, bookingRepo } = await build();
+    bookingRepo.createBookingShouldFail = true;
+    await service.reprocessFailedBooking(PI);
+    bookingRepo.createBookingShouldFail = false;
+
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+
+    await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
+    await expect(bookingRepo.hasBookingForPayment(PI)).resolves.toBe(true);
+    expect(paymentRepo.payments).toEqual([expect.objectContaining({ stripePaymentId: PI, amountCents: 4900 })]);
+  });
+
+  // The student got their money back, so there is nothing left to recover.
+  it("clears the entry when the retry finds the slot taken and refunds", async () => {
+    const { service, stripe, paymentRepo } = await build();
+    mockGetAvailableSlots.mockResolvedValue([]);
+
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+
+    expect(stripe.refunds).toEqual([{ payment_intent: PI, reason: "duplicate" }]);
+    await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
+  });
+
+  it("clears the entry when the payment was already handled", async () => {
+    const { service, stripe, paymentRepo } = await build();
+    await paymentRepo.markProcessed(PI);
+
+    await expect(service.reprocessFailedBooking(PI)).resolves.toEqual({ ok: true });
+
+    expect(stripe.refunds).toEqual([]);
     await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
   });
 });

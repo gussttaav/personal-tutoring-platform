@@ -40,6 +40,13 @@
  * writes the processed marker, so every such refund used to raise a false Sentry error.
  * The dead-letter retry now carries the charged amount + currency, so a recovered
  * booking gets its `payments` row like any webhook-booked one.
+ *
+ * DEAD-LETTER-RETRY-01: a retry whose booking fails again no longer reports success.
+ * processSingleSession dead-letters that failure itself (upsert, same key) and returns
+ * normally, and reprocessFailedBooking used to clear the entry and answer { ok: true } —
+ * so the admin saw "procesado", the entry vanished, and the student had paid for a class
+ * that did not exist. processSingleSession now returns its outcome; the retry clears the
+ * entry only when the payment is resolved (booked, already handled, or refunded).
  */
 
 import type Stripe from "stripe";
@@ -139,6 +146,12 @@ interface SingleSessionInput {
   amountCents?:    number | null;
   currency?:       string | null;
 }
+
+// DEAD-LETTER-RETRY-01: how processSingleSession resolved the payment. Only the admin
+// retry reads it — the webhook answers 200 either way (a dead-letter is a handled failure).
+type SingleSessionOutcome =
+  | { status: "booked" | "already_handled" | "refunded" }
+  | { status: "dead_lettered"; error: string };
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 
@@ -387,7 +400,13 @@ export class PaymentService {
     }
 
     try {
-      await this.processSingleSession(input);
+      const outcome = await this.processSingleSession(input);
+      // DEAD-LETTER-RETRY-01: the booking failed again and processSingleSession already
+      // re-wrote the entry with the new error. Keep it — clearing would lose the payment.
+      if (outcome.status === "dead_lettered") {
+        log("warn", "Dead-letter retry did not succeed", { service: "payment", stripeSessionId, error: outcome.error });
+        return { ok: false, error: outcome.error };
+      }
       await this.paymentRepo.clearFailedBooking(stripeSessionId);
       log("info", "Dead-letter entry cleared after successful retry", { service: "payment", stripeSessionId });
       return { ok: true };
@@ -529,7 +548,7 @@ export class PaymentService {
     }
   }
 
-  private async processSingleSession(input: SingleSessionInput): Promise<void> {
+  private async processSingleSession(input: SingleSessionInput): Promise<SingleSessionOutcome> {
     const { email, name, startIso, endIso, duration, rescheduleToken, idempotencyKey } = input;
     // SINGLE-SESSION-CONFIRM-01: the PaymentIntent id is the channel seed + the key the
     // mobile client polls by (booking.stripe_payment_id, single_session_refunds).
@@ -547,7 +566,7 @@ export class PaymentService {
     // Idempotency check
     if (await this.paymentRepo.isProcessed(idempotencyKey)) {
       log("info", "Duplicate single-session webhook skipped", { service: "payment", idempotencyKey });
-      return;
+      return { status: "already_handled" };
     }
 
     // REFACTOR-R3-P1-03: createBooking and markProcessed are separate writes. If the
@@ -561,7 +580,7 @@ export class PaymentService {
       log("info", "Duplicate single-session webhook skipped (booking already exists)", {
         service: "payment", idempotencyKey,
       });
-      return;
+      return { status: "already_handled" };
     }
 
     // SINGLE-SESSION-CONFIRM-01: a prior run already refunded this PaymentIntent for a taken
@@ -569,7 +588,7 @@ export class PaymentService {
     // never attempts a second refund.
     if (paymentIntentId && await this.paymentRepo.wasRefunded(paymentIntentId)) {
       log("info", "Duplicate single-session webhook skipped (already refunded)", { service: "payment", idempotencyKey });
-      return;
+      return { status: "refunded" };
     }
 
     // REFACTOR-R4-P1-01: the booked window is DERIVED from the paid duration — the
@@ -604,7 +623,7 @@ export class PaymentService {
         await this.paymentRepo.recordSlotTakenRefund(paymentIntentId);
         await this.broadcastResolved(paymentIntentId, { status: "slot_taken" });
       }
-      return;
+      return { status: "refunded" };
     }
 
     // Guarantee the user record exists before the booking attempt so the
@@ -647,6 +666,7 @@ export class PaymentService {
           emailFailed: booking.emailFailed,
         });
       }
+      return { status: "booked" };
     } catch (err) {
       log("error", "Booking failed after payment — writing dead-letter", { service: "payment", email, startIso, idempotencyKey, error: String(err) });
       await this.writeDeadLetter(idempotencyKey, userId, startIso, err, email);
@@ -655,6 +675,7 @@ export class PaymentService {
       if (paymentIntentId) {
         await this.broadcastResolved(paymentIntentId, { status: "failed" });
       }
+      return { status: "dead_lettered", error: String(err) };
     }
   }
 

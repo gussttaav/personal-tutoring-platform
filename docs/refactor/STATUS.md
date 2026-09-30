@@ -506,10 +506,28 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
 - **P3-01 — checks.** `pnpm test`: 162/162 suites, 2130 tests (9 route tests + 11 service tests +
   2 retry mock tests, against 7 old route tests). `pnpm lint`: 0 errors (the same 8 pre-existing
   warnings, none in touched files). `tsc --noEmit`: only the pre-existing `mdx.test.ts`
-  (`RepoLink`) error.
+  (`RepoLink`) error. `pnpm build` green (commit `5d2e0fd`).
 - **P3-01 — NOT done:** the manual cron call against the test Stripe account, and the optional
   one-off `payments` backfill for bookings already recovered through the admin retry (the query is
   in the task md; each amount has to be fetched from Stripe).
+- **`DEAD-LETTER-RETRY-01` — out of plan, found during P3-01, fixed on the same branch at
+  Gustavo's request (a separate commit).** When a `/admin/failed-bookings` retry's booking failed
+  again, `processSingleSession` dead-lettered the new failure itself (upsert, same key) and returned
+  normally. `reprocessFailedBooking` then deleted the entry and answered `{ ok: true }`. The admin
+  saw «Procesado correctamente», the entry vanished, and the student had paid for a class that did
+  not exist. The cron only caught it inside its 48 h window. Now `processSingleSession` returns
+  its outcome (`booked` / `already_handled` / `refunded` / `dead_lettered`), and the retry clears
+  the entry only when the payment is resolved. On `dead_lettered` it keeps the re-written entry
+  (new error and `failed_at`) and returns `{ ok: false, error }`, which the route already maps to
+  500 and `RetryButton` already shows. The webhook ignores the outcome, so its behaviour is
+  unchanged. A retry that ends in a slot-taken refund still clears the entry and reports success,
+  as before: the money went back. `RetryButton` still says «Procesado correctamente» in that
+  case, not «reembolsado», and that wording was left alone. A failed retry also re-sends the
+  dead-letter notification email, as the webhook path does. Tests: 4 in-memory cases (failed
+  again keeps the entry with the new error; a later retry still recovers it; a slot-taken retry
+  refunds and clears; an already-processed payment clears). 2 of them fail with the fix
+  reverted. `pnpm test`: 162/162 suites, 2134 tests. Lint 0 errors. No new `tsc` errors.
+  `pnpm build` green.
 
 ## Known regressions introduced
 
