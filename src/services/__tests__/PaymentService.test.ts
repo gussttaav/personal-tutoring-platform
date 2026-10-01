@@ -11,6 +11,8 @@
 // reports the failure — in-memory suite at the end of this file.
 // DEAD-LETTER-RETRY-02: a successful retry returns its `outcome` (booked / refunded /
 // already_handled), which the admin RetryButton shows.
+// REFACTOR-R4-P4-01: the slot-taken refund is keyed by the PI (a redelivery after a failed
+// refund record replays it), and the checkout keys carry the amount — suite at the end.
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -350,9 +352,10 @@ describe("PaymentService.processWebhookEvent — single session", () => {
 
     await service.processWebhookEvent(fakeSingleEvent());
 
-    expect(stripe.createRefund).toHaveBeenCalledWith(expect.objectContaining({
-      reason: "duplicate",
-    }));
+    expect(stripe.createRefund).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "duplicate" }),
+      { idempotencyKey: "refund:slot_taken:pi_single_123" }, // REFACTOR-R4-P4-01
+    );
     expect(bookings.createBooking).not.toHaveBeenCalled();
   });
 
@@ -495,7 +498,10 @@ describe("SINGLE-SESSION-CONFIRM-01: single-session resolution + polling", () =>
 
     await service.processWebhookEvent(fakeSingleEvent());
 
-    expect(stripe.createRefund).toHaveBeenCalledWith(expect.objectContaining({ reason: "duplicate" }));
+    expect(stripe.createRefund).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "duplicate" }),
+      { idempotencyKey: "refund:slot_taken:pi_single_123" }, // REFACTOR-R4-P4-01
+    );
     expect(paymentRepo.recordSlotTakenRefund).toHaveBeenCalledWith("pi_single_123");
     expect(paymentRepo.broadcastSingleSessionResolved).toHaveBeenCalledWith(
       "pi_single_123", { status: "slot_taken" },
@@ -1618,5 +1624,118 @@ describe("DEAD-LETTER-RETRY-01: reprocessFailedBooking only clears a resolved pa
 
     expect(stripe.refunds).toEqual([]);
     await expect(paymentRepo.hasFailedBooking(PI)).resolves.toBe(false);
+  });
+});
+
+// ─── REFACTOR-R4-P4-01: Stripe idempotency keys ───────────────────────────────
+
+describe("REFACTOR-R4-P4-01: a redelivery after a failed refund record replays the refund", () => {
+  const PI = "pi_slot_taken_retry";
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([]); // slot taken
+  });
+
+  it("reuses the keyed refund, records it, and resolves (webhook 200)", async () => {
+    const paymentRepo = new InMemoryPaymentRepository();
+    const { service, stripe } = buildTestPaymentService({ paymentRepo });
+    jest.spyOn(paymentRepo, "recordSlotTakenRefund").mockRejectedValueOnce(new Error("db down"));
+
+    // Stripe refunded, the record write failed → webhook 500.
+    await expect(service.processWebhookEvent(fakeSingleEvent(PI))).rejects.toThrow("db down");
+    await expect(paymentRepo.wasRefunded(PI)).resolves.toBe(false);
+
+    // Stripe redelivers.
+    await expect(service.processWebhookEvent(fakeSingleEvent(PI))).resolves.toBeUndefined();
+
+    expect(stripe.refundCalls.map(c => c.idempotencyKey)).toEqual([
+      `refund:slot_taken:${PI}`,
+      `refund:slot_taken:${PI}`,
+    ]);
+    expect(stripe.refunds).toEqual([{ payment_intent: PI, reason: "duplicate" }]); // one refund, replayed
+    await expect(paymentRepo.wasRefunded(PI)).resolves.toBe(true);
+    expect(paymentRepo.broadcasts).toEqual([{ paymentIntentId: PI, payload: { status: "slot_taken" } }]);
+  });
+});
+
+describe("REFACTOR-R4-P4-01: checkout keys carry the amount", () => {
+  // Inside one 5-min window for the whole test: bucket 6_000_000.
+  const NOW = 6_000_000 * 300_000 + 60_000;
+  let nowSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    nowSpy = jest.spyOn(Date, "now").mockReturnValue(NOW);
+  });
+  afterEach(() => nowSpy.mockRestore());
+
+  function build() {
+    const fakeStripe  = new FakeStripeClient();
+    const pricingRepo = new InMemoryPricingRepository();
+    const userSvc     = {
+      ensureUser:  jest.fn().mockResolvedValue("user-1"),
+      findByEmail: jest.fn().mockResolvedValue({ id: "user-1" }),
+    };
+    const service = new PaymentService(
+      fakeStripe,
+      mockCredits()  as unknown as CreditService,
+      mockBookings() as unknown as BookingService,
+      mockPaymentRepo(),
+      userSvc as unknown as UserService,
+      new PricingService(pricingRepo, new InMemoryAuditRepository()),
+      makeSchedule(),
+    );
+    return { service, fakeStripe, pricingRepo };
+  }
+
+  const PACK   = { email: "ana@test.com", name: "Ana", packSize: 5 as const };
+  const SINGLE = {
+    email: "ana@test.com", name: "Ana", duration: "1h" as const,
+    startIso: "2026-06-01T10:00:00.000Z", endIso: "2026-06-01T11:00:00.000Z",
+  };
+
+  it("a price edit between two pack checkouts gives two keys and a PaymentIntent at the new price", async () => {
+    const { service, fakeStripe, pricingRepo } = build();
+
+    const a = await service.createPackCheckout(PACK);
+    await pricingRepo.upsertForUser("user-1", "pack5", 6000, "admin@test.com");
+    const b = await service.createPackCheckout(PACK);
+
+    expect(fakeStripe.getIdempotencyKeys()).toEqual([
+      "pack:ana@test.com:5:7500eur:6000000",
+      "pack:ana@test.com:5:6000eur:6000000",
+    ]);
+    expect(b.paymentIntentId).not.toBe(a.paymentIntentId);
+    await expect(fakeStripe.retrievePaymentIntent(b.paymentIntentId)).resolves.toMatchObject({ amount: 6000 });
+  });
+
+  it("a price edit between two single-session checkouts gives two keys", async () => {
+    const { service, fakeStripe, pricingRepo } = build();
+
+    await service.createSingleSessionCheckout(SINGLE);
+    await pricingRepo.upsertForUser("user-1", "session1h", 1000, "admin@test.com");
+    await service.createSingleSessionCheckout(SINGLE);
+
+    expect(fakeStripe.getIdempotencyKeys()).toEqual([
+      "single:ana@test.com:1h:2026-06-01T10:00:00.000Z:1600eur:6000000",
+      "single:ana@test.com:1h:2026-06-01T10:00:00.000Z:1000eur:6000000",
+    ]);
+  });
+
+  it("no price change keeps one key, so a double-click still gets one PaymentIntent", async () => {
+    const { service, fakeStripe } = build();
+
+    const a = await service.createPackCheckout(PACK);
+    const b = await service.createPackCheckout(PACK);
+    const c = await service.createSingleSessionCheckout(SINGLE);
+    const d = await service.createSingleSessionCheckout(SINGLE);
+
+    expect(b.paymentIntentId).toBe(a.paymentIntentId);
+    expect(d.paymentIntentId).toBe(c.paymentIntentId);
+    expect(fakeStripe.getIdempotencyKeys()).toEqual([
+      "pack:ana@test.com:5:7500eur:6000000",
+      "single:ana@test.com:1h:2026-06-01T10:00:00.000Z:1600eur:6000000",
+    ]);
   });
 });

@@ -4,6 +4,9 @@
 // REFACTOR-R4-P3-03: retrievePaymentForAudit reads its own seeded map (seedAuditPayment).
 // An unseeded id answers null, as Stripe's resource_missing does; failAuditFor makes one
 // id throw any other error. auditCalls records every call, to assert the dedupe.
+// REFACTOR-R4-P4-01: createRefund replays a keyed request like Stripe does — a reused
+// idempotencyKey issues no second refund. `refunds` holds the refunds actually issued;
+// refundCalls records every call with its key, replays included.
 import type Stripe from "stripe";
 import type {
   IStripeClient, CreatePaymentIntentOptions, ListPaymentIntentsParams, PaymentAuditFacts,
@@ -31,6 +34,13 @@ export class FakeStripeClient implements IStripeClient {
   private intents  = new Map<string, FakePaymentIntent>();
   private sessions = new Map<string, FakeCheckoutSession>();
   refunds:          Array<{ payment_intent?: string; charge?: string; reason: string }> = [];
+  // REFACTOR-R4-P4-01
+  private refundKeys = new Set<string>();
+  /** Test helper: every createRefund call, in order, with its idempotency key. */
+  readonly refundCalls: Array<{
+    params:          { payment_intent?: string; charge?: string; reason: string };
+    idempotencyKey?: string;
+  }> = [];
   private idCounter = 0;
   private idempotencyToIntentId = new Map<string, string>();
   private listed:   FakeListedPaymentIntent[] = [];
@@ -128,7 +138,16 @@ export class FakeStripeClient implements IStripeClient {
     return session as unknown as Stripe.Checkout.Session;
   }
 
-  async createRefund(params: { payment_intent?: string; charge?: string; reason: "duplicate" }): Promise<void> {
+  async createRefund(
+    params: { payment_intent?: string; charge?: string; reason: "duplicate" },
+    options?: { idempotencyKey?: string },
+  ): Promise<void> {
+    this.refundCalls.push({ params, idempotencyKey: options?.idempotencyKey });
+    // REFACTOR-R4-P4-01: same key → Stripe returns the refund it already made.
+    if (options?.idempotencyKey) {
+      if (this.refundKeys.has(options.idempotencyKey)) return;
+      this.refundKeys.add(options.idempotencyKey);
+    }
     this.refunds.push(params);
   }
 

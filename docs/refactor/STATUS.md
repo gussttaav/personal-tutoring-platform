@@ -67,11 +67,11 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
-| [01 Stripe idempotency keys](phase-4-cleanup/01-stripe-idempotency-keys.md) | `REFACTOR-R4-P4-01` | 🟢 | ⬜ | _tbd_ | |
+| [01 Stripe idempotency keys](phase-4-cleanup/01-stripe-idempotency-keys.md) | `REFACTOR-R4-P4-01` | 🟢 | ✅ | Claude | local (`claude/stripe-idempotency-keys-65b776`). The task's refund cast did not typecheck with a second argument and was dropped; two existing refund assertions updated for the new argument, see Deviations; e2e not run (no UI change) |
 | [02 CLAUDE.md drift + stale comments](phase-4-cleanup/02-docs-drift.md) | `REFACTOR-R4-P4-02` | 🟢 | ⬜ | _tbd_ | |
 
 **Exit criteria**
-- [ ] Every `refunds.create` call carries an idempotency key; checkout keys include the amount
+- [x] Every `refunds.create` call carries an idempotency key; checkout keys include the amount _(P4-01; `grep -rn "refunds.create" src` → one call, keyed `refund:slot_taken:<pi>`. Service tests over the fake: a failed refund record + redelivery replays one refund and records it; a price edit inside one window → two keys; no edit → one key)_
 - [ ] CLAUDE.md describes the post-cycle-4 state; no comment names QStash, "Vercel cron", or claims `content/` is untraced
 - [ ] `pnpm test`, `pnpm build` green
 
@@ -666,6 +666,37 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
     there keeps a NULL `stripe_payment_id` and reads `no_payment_link`. Before the first
     production run, list those with the SQL in the task md and check them by hand.
   - `pnpm test:e2e`: no UI change.
+
+- **P4-01 — `StripeClient.createRefund` passes `params` uncast.** The task's sketch kept
+  `params as Parameters<typeof stripe.refunds.create>[0]`, but `Parameters<>` of an overloaded
+  function takes the LAST overload, which for `refunds.create` is `create(options?: RequestOptions)`.
+  With one argument that typechecked (as request options); with the new second argument tsc
+  rejects it (TS2345). `params` is structurally a `RefundCreateParams`, so the cast is gone.
+  No runtime change: a type assertion compiles to nothing.
+- **P4-01 — fake: `refunds` still means "refunds issued".** A keyed replay adds nothing to it, so
+  every existing `stripe.refunds` assertion holds. The new `refundCalls` records every call with
+  its key, replays included. The fake still does not emulate Stripe's `idempotency_error` for a
+  reused PaymentIntent key with different params, so the price-edit tests assert two distinct
+  keys and the second PaymentIntent's amount instead of "no error".
+- **P4-01 — the "throws once" record failure is a `jest.spyOn(...).mockRejectedValueOnce`** on the
+  in-memory repo, not a new fixture flag, so `InMemoryPaymentRepository` is unchanged.
+- **P4-01 — two existing assertions updated.** "issues refund when slot is no longer available"
+  and SINGLE-SESSION-CONFIRM-01 "records the refund + broadcasts slot_taken…" used
+  `toHaveBeenCalledWith(objectContaining({ reason }))`, which fails on the new second argument;
+  both now also assert `{ idempotencyKey: "refund:slot_taken:pi_single_123" }`. No existing test
+  asserted an exact checkout key string.
+- **P4-01 — tests.** 4 new in `PaymentService.test.ts`: the refund replay (real service, in-memory
+  repos, fake Stripe), a pack price edit, a single-session price edit, and the no-edit dedup for
+  both (`Date.now` frozen inside one 5-min window). All 4 fail against HEAD's `PaymentService.ts`
+  (checked by swapping it in).
+- **P4-01 — line refs.** The task md's line numbers predate P3-01..P3-03. The code it describes is
+  at `StripeClient.ts:47`/`:93-95`, `PaymentService.ts:192`, `:226-227`, `:628-638` (pre-change).
+- **P4-01 — checks.** `pnpm test` 169/169 suites, 2239 tests (4 new). `pnpm lint` 0 errors (the
+  same 8 warnings). `pnpm build` green. `tsc --noEmit`: the only error is
+  `src/lib/courses/__tests__/mdx.test.ts:98` (`RepoLink`), in a file this task does not touch.
+- **P4-01 — NOT done:** `pnpm test:e2e` (no UI change), and a Stripe test-mode replay of a keyed
+  refund (the SDK forwards `idempotencyKey` as the `Idempotency-Key` header, the same path
+  `createPaymentIntent` has used since REFACTOR-P1-05).
 
 ## Known regressions introduced
 

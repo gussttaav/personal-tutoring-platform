@@ -51,6 +51,12 @@
  * DEAD-LETTER-RETRY-02: a successful retry also says HOW it resolved (`outcome`), so the
  * admin's RetryButton can tell "booked" from "the slot was taken, the student was refunded"
  * — both used to read «Procesado correctamente».
+ *
+ * REFACTOR-R4-P4-01: the slot-taken refund carries an idempotency key
+ * (`refund:slot_taken:<pi>`), so a redelivery after recordSlotTakenRefund failed replays the
+ * SAME refund and records it — it used to get charge_already_refunded and 500 for days. The
+ * checkout keys include the amount + currency: since PRICING-STUDENT-01 an admin price edit
+ * inside the 5-min window reused the key with a different amount, which Stripe rejects.
  */
 
 import type Stripe from "stripe";
@@ -189,7 +195,10 @@ export class PaymentService {
     );
     // REFACTOR-P1-05: 5-min window deduplicates double-clicks; deliberate retry
     // after window gets a fresh PI.
-    const idempotencyKey = `pack:${email}:${packSize}:${Math.floor(Date.now() / 300_000)}`;
+    // REFACTOR-R4-P4-01: the amount is part of the key. Since PRICING-STUDENT-01 it can change
+    // between two clicks (admin edit); an unchanged key with a changed amount is a Stripe error.
+    const bucket = Math.floor(Date.now() / 300_000);
+    const idempotencyKey = `pack:${email}:${packSize}:${amount}${currency}:${bucket}`;
     const intent = await this.stripeClient.createPaymentIntent(
       {
         amount,
@@ -223,8 +232,10 @@ export class PaymentService {
     const { amount, currency } = await this.pricing.getAmount(sessionType, user?.id);
     // REFACTOR-P1-05: startIso in key prevents collision between genuinely
     // different slots for the same user/duration within the same 5-min window.
+    // REFACTOR-R4-P4-01: amount + currency in the key — see createPackCheckout.
+    const bucket = Math.floor(Date.now() / 300_000);
     const idempotencyKey =
-      `single:${email}:${duration}:${startIso}:${Math.floor(Date.now() / 300_000)}`;
+      `single:${email}:${duration}:${startIso}:${amount}${currency}:${bucket}`;
     const intent = await this.stripeClient.createPaymentIntent(
       {
         amount,
@@ -627,7 +638,12 @@ export class PaymentService {
 
     if (!slotStillFree) {
       log("warn", "Slot no longer available — refunding", { service: "payment", email, startIso, idempotencyKey });
-      await this.stripeClient.createRefund({ ...input.refundTarget, reason: "duplicate" });
+      // REFACTOR-R4-P4-01: keyed by the PI, so a redelivery after a failed record below gets
+      // the same refund back (Stripe keeps keys 24h) instead of charge_already_refunded.
+      await this.stripeClient.createRefund(
+        { ...input.refundTarget, reason: "duplicate" },
+        { idempotencyKey: `refund:slot_taken:${input.refundTarget.payment_intent ?? input.refundTarget.charge}` },
+      );
       // SINGLE-SESSION-CONFIRM-01: persist the queryable refund record (right after the
       // refund actually issued, so the record only ever means "money returned"), then
       // best-effort broadcast. Persistence precedes the fire-and-forget broadcast.
