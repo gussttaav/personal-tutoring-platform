@@ -34,6 +34,10 @@ export type { DisplayPrice, DisplayPrices } from "@/lib/pricing-format";
 // a full re-render. 30 days makes regeneration effectively deploy-only; admin edits
 // still propagate instantly through the tag, which is the real freshness mechanism.
 // Raising this back to a short window will re-bill the whole course tree.
+// REFACTOR-R4-P2-03: the layout no longer reads these caches. Among the pages, only the
+// commerce ones (via CommerceProviders) and /terminos do (plus the /api/policy and
+// /api/chat routes), so this window stopped reaching lessons and posts. The 30 days
+// stays until it is re-measured (a separate change, per the P2-03 task md).
 export const PRICING_CACHE_TAG = "pricing-all";
 const REVALIDATE_SECONDS = 2_592_000; // 30 days — see PERF-11 above
 // BUILD-04: the prerender fires one identical read per concurrent page, and a
@@ -49,8 +53,8 @@ const getRawPrices = unstable_cache(
 );
 
 // Pack-validity days, cached under the SAME tag as prices so an admin save (which
-// busts PRICING_CACHE_TAG) refreshes both at once. Consumed by the layout to feed
-// PricesProvider and by any server component that shows the validity duration.
+// busts PRICING_CACHE_TAG) refreshes both at once. Consumed by CommerceProviders to
+// feed PricesProvider and by any server component that shows the validity duration.
 const readPackValidityDays = singleFlight("pack-validity-days", () =>
   withRetry(() => pricingService.getPackValidityDays(), "pack-validity-days"));
 

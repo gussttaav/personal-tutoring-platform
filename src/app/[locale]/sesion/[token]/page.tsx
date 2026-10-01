@@ -13,6 +13,11 @@
  * SEC-05: Only join tokens are accepted. Cancel tokens are rejected.
  * SEO-02: robots noindex — tokenized session URLs must never appear in
  * search results (robots.txt disallow blocks crawling but not indexing).
+ *
+ * REFACTOR-R4-P2-03: the signed-in tree is wrapped in `CommerceProviders`.
+ * PreJoinSetup mounts PackBookingOverlay, whose BookingModeView reads the booking
+ * schedule, which the root layout no longer provides. The sign-in prompt books
+ * nothing, so it goes without (its footer modal fetches `/api/policy` on open).
  */
 
 import type { Metadata } from "next";
@@ -24,6 +29,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import GoogleSignInButton from "@/components/GoogleSignInButton";
 import PreJoinSetup from "@/components/PreJoinSetup";
+import { CommerceProviders } from "@/components/commerce/CommerceProviders";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
@@ -86,15 +92,17 @@ export default async function SesionPage({
 
   // ── Authenticated ──────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Navbar />
-      <PreJoinSetup
-        eventId={record.eventId}
-        userName={record.name}
-        sessionLabel={sessionLabel}
-        timeLabel={timeLabel}
-      />
-      <Footer />
-    </div>
+    <CommerceProviders locale={locale}>
+      <div className="flex flex-col min-h-screen bg-background">
+        <Navbar />
+        <PreJoinSetup
+          eventId={record.eventId}
+          userName={record.name}
+          sessionLabel={sessionLabel}
+          timeLabel={timeLabel}
+        />
+        <Footer />
+      </div>
+    </CommerceProviders>
   );
 }

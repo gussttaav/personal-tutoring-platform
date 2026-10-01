@@ -4,6 +4,11 @@
 // REFACTOR-P4-03: Tag events with the deployed git commit SHA so Sentry's
 // Releases dashboard groups errors per deploy and regression detection works.
 // NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA is inlined at build time via next.config.mjs.
+//
+// REFACTOR-R4-P2-02: Session Replay removed. It was ~half the JS of every static page
+// and error-session replays were not being used. Re-adding it: prefer lazy-loading
+// (`Sentry.lazyLoadIntegration("replayIntegration")`, which also needs
+// https://browser.sentry-cdn.com in the CSP's script-src).
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
@@ -15,18 +20,6 @@ Sentry.init({
   enabled: process.env.NODE_ENV === "production",
 
   tracesSampleRate: 0.1,
-
-  // Capture replays only when an error occurs; session replay disabled (privacy)
-  replaysSessionSampleRate: 0,
-  replaysOnErrorSampleRate: 0.1,
-
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      maskAllInputs: true,
-      blockAllMedia: true,
-    }),
-  ],
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

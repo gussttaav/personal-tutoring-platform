@@ -1,5 +1,6 @@
 // ARCH-13: Maps DomainErrors to HTTP responses so route handlers stay thin.
 // OBS-02: Unexpected (non-domain) errors are captured to Sentry before returning 500.
+// REFACTOR-R4-P1-01: INVALID_SLOT (400) and FREE_SESSION_ALREADY_USED (409).
 // OBS-03: Serialise non-Error thrown values (e.g. Supabase PostgrestError, a plain
 // object with code/message/details/hint) so the log line carries the actual cause
 // instead of "[object Object]".
@@ -10,6 +11,8 @@ import { log } from "@/lib/logger";
 
 const HTTP_STATUS_MAP: Record<string, number> = {
   SLOT_UNAVAILABLE:           409,
+  INVALID_SLOT:               400, // REFACTOR-R4-P1-01
+  FREE_SESSION_ALREADY_USED:  409, // REFACTOR-R4-P1-01
   ALREADY_SUBSCRIBED:         409,
   INVALID_RESCHEDULE_TOKEN:   400,
   OUTSIDE_RESCHEDULE_WINDOW:  400,

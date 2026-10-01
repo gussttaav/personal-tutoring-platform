@@ -814,6 +814,8 @@
     "domain": {
       "insufficientCredits": "No tienes créditos disponibles para reservar esta clase.",
       "slotUnavailable": "Este horario ya no está disponible. Por favor elige otro.",
+      "invalidSlot": "Ese horario no es válido para este tipo de sesión. Elige uno del calendario.",
+      "freeSessionAlreadyUsed": "Ya tienes reservado tu encuentro inicial gratuito. Si quieres otro horario, cancela o reprograma el que tienes.",
       "bookingNotFound": "No encontramos tu reserva.",
       "tokenExpired": "El enlace ya no es válido o ha caducado.",
       "unauthorized": "No tienes permiso para realizar esta acción.",

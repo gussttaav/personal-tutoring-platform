@@ -13,6 +13,8 @@
     "lint:content": "tsx scripts/lint-content.ts",
     "check:bundle": "tsx scripts/check-bundle.ts",
     "check:messages": "tsx scripts/check-messages.ts",
+    "check:icons": "tsx scripts/check-icons.ts",
+    "build:icons": "tsx scripts/icons/build-icon-font.ts",
     "test": "jest",
     "test:unit": "jest --selectProjects unit",
     "test:integration": "jest --selectProjects integration",
@@ -22,6 +24,7 @@
     "test:e2e:headed": "E2E_MODE=true E2E_EMAILS=e2e-test@example.com,e2e-admin@example.com playwright test --headed"
   },
   "dependencies": {
+    "@googleapis/calendar": "^9.8.0",
     "@sentry/nextjs": "^10.53.1",
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.2.0",
@@ -36,7 +39,6 @@
     "date-fns-tz": "^3.2.0",
     "github-slugger": "^2.0.0",
     "google-auth-library": "9.15.1",
-    "googleapis": "^144.0.0",
     "gray-matter": "^4.0.3",
     "js-yaml": "^5.2.2",
     "jsonwebtoken": "^9.0.3",
@@ -59,6 +61,8 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
     "@types/d3-scale": "^4.0.9",
     "@types/d3-shape": "^3.1.8",
     "@types/jest": "^30.0.0",
@@ -72,6 +76,7 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^16",
     "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.4.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.4.6",

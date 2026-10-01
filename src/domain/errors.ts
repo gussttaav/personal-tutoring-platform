@@ -16,6 +16,20 @@ export class SlotUnavailableError extends DomainError {
   constructor() { super("Slot no longer available", "SLOT_UNAVAILABLE"); }
 }
 
+// REFACTOR-R4-P1-01: the requested window is not a slot the server would ever offer —
+// its length does not match the session type, or its start is off the 15-minute grid
+// in the tutor's timezone. A malformed request, not a taken slot: mapped to 400.
+export class InvalidSlotError extends DomainError {
+  constructor() { super("Requested time window is not a valid slot", "INVALID_SLOT"); }
+}
+
+// REFACTOR-R4-P1-01: the user already holds a free 15-minute call that was not
+// cancelled (confirmed, completed or no_show). Cancelling it frees the allowance
+// again. Mapped to 409, like the other account-state conflicts.
+export class FreeSessionAlreadyUsedError extends DomainError {
+  constructor() { super("Free intro call already used", "FREE_SESSION_ALREADY_USED"); }
+}
+
 export class BookingNotFoundError extends DomainError {
   constructor() { super("Booking not found", "BOOKING_NOT_FOUND"); }
 }

@@ -4,6 +4,8 @@
  * Applied fixes:
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
  *   ARCH-13: Delegates all orchestration to BookingService; route is a thin dispatcher
+ *   REFACTOR-R4-P1-01: per-user rate limit (10/min, keyed by the session email). Slot
+ *     validation (length, grid, hours, calendar) happens in BookingService.createBooking.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -12,6 +14,7 @@ import { isValidOrigin } from "@/lib/csrf";
 import { BookSchema } from "@/lib/schemas";
 import { bookingService } from "@/services";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
+import { bookRatelimit } from "@/lib/ratelimit";
 import { tracedRoute } from "@/lib/with-request-context"; // REFACTOR-P4-02
 
 async function postHandler(req: NextRequest) {
@@ -19,6 +22,9 @@ async function postHandler(req: NextRequest) {
 
   const session = await getSession();
   if (!session?.user?.email) return NextResponse.json({ error: "Autenticación requerida" }, { status: 401 });
+
+  const { success } = await bookRatelimit.limit(session.user.email);
+  if (!success) return NextResponse.json({ error: "Demasiadas peticiones" }, { status: 429 });
 
   const parsed = BookSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });

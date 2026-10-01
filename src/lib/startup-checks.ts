@@ -10,6 +10,9 @@
  * Optional variables with in-code fallbacks are intentionally excluded:
  *   - RESEND_FROM  → falls back to "Gustavo Torres <onboarding@resend.dev>"
  *   - NOTIFY_EMAIL → admin notifications are skipped when absent
+ *
+ * REFACTOR-R4-P4-02: the CRON_SECRET note credited Vercel's scheduler (the crons run on
+ * cron-job.org, Hobby plan) and named only one of the three routes it guards.
  */
 
 const REQUIRED_ENV_VARS = [
@@ -63,7 +66,7 @@ const REQUIRED_ENV_VARS = [
   // unguessable. Generate with `openssl rand -hex 32`.
   "REALTIME_CHANNEL_SECRET",
 
-  // Vercel cron authentication (session-cleanup cron)
+  // cron-job.org authentication (session-cleanup + reconcile-stripe + booking-payment-audit)
   "CRON_SECRET",
 ] as const;
 

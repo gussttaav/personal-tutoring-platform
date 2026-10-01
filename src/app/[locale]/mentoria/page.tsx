@@ -31,6 +31,10 @@
  * `landing` meta namespace), drops the `noindex` P0-01 put on it, and is listed in the sitemap
  * (`src/app/sitemap.ts`). `StructuredData`'s `mentoria` variant reads `meta.mentoria.*` directly
  * now (the P1-05 fallback is gone).
+ *
+ * REFACTOR-R4-P2-03: the page tree (Footer included, so the policy modal reads the context
+ * instead of fetching) is wrapped in `CommerceProviders` — the sessions/packs sections and the
+ * booking overlays read prices and the schedule, which the root layout no longer provides.
  */
 
 import "@/features/courses/course-editorial.css";
@@ -50,6 +54,7 @@ import InteractiveShell from "@/features/booking/InteractiveShell";
 import BookingOverlays from "@/features/booking/BookingOverlays";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { CommerceProviders } from "@/components/commerce/CommerceProviders";
 import StructuredData from "@/components/seo/StructuredData";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
@@ -96,7 +101,7 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
   // Footer render on the server — so the content (incl. the Footer privacy/terms links) is
   // in the static HTML for crawlers and SEO, instead of being hidden behind a spinner shell.
   return (
-    <>
+    <CommerceProviders locale={locale}>
       {/* SEO-04: JSON-LD (Person + Service) — server-rendered, outside the
           Suspense boundary so it ships in the prerendered HTML. */}
       <StructuredData locale={locale} variant="mentoria" />
@@ -161,6 +166,6 @@ export default async function MentoriaPage({ params }: { params: Promise<{ local
       </main>
 
       <Footer />
-    </>
+    </CommerceProviders>
   );
 }

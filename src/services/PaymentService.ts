@@ -14,13 +14,49 @@
  * failure now propagates (webhook 500 → Stripe redelivers) instead of assuming the
  * slot is free, so a transient outage can't double-book the tutor's manual calendar.
  *
- * REFACTOR-R3-P1-03: the idempotency gate short-circuits on an existing confirmed
- * booking for the PaymentIntent — so a redelivery after createBooking committed but
+ * REFACTOR-R3-P1-03: the idempotency gate short-circuits on an existing booking
+ * for the PaymentIntent (any status since REFACTOR-R4-P1-02) — so a redelivery after createBooking committed but
  * markProcessed failed heals the marker instead of refunding a fulfilled booking.
  *
  * REFACTOR-R3-P3-03: `getConfirmationChannelState` absorbs the logic that used to sit
  * in GET /api/payment-confirmation/channel — which built its own `new Stripe(...)`
  * client inline instead of going through IStripeClient.
+ *
+ * REFACTOR-R4-P1-01: checkout validates the slot (BookingService.assertSlotBookable:
+ * length, grid, hours, notice — no network) before any PaymentIntent exists, and the
+ * webhook books an end DERIVED from the paid duration — the metadata `end_iso` is never
+ * booked, so a "1h" payment can no longer yield a longer class. The webhook's freebusy
+ * re-check is unchanged apart from asking for the tutor-timezone day.
+ *
+ * REFACTOR-R4-P1-02: the webhook's idempotency reads fail CLOSED — isProcessed,
+ * the booking-exists gate and wasRefunded throw on a DB error (webhook 500 → Stripe
+ * redelivers) instead of reading as "absent" and falling through to a refund. The
+ * booking-exists gate is now status-agnostic (hasBookingForPayment): a cancelled
+ * booking for the PaymentIntent is proof of processing too.
+ *
+ * REFACTOR-R4-P3-01: `reconcileRecentPayments` absorbs the reconciliation cron's logic
+ * (the route called the stripe singleton and three repositories directly), and a
+ * slot-taken refund (single_session_refunds) now counts as proof of handling — it never
+ * writes the processed marker, so every such refund used to raise a false Sentry error.
+ * The dead-letter retry now carries the charged amount + currency, so a recovered
+ * booking gets its `payments` row like any webhook-booked one.
+ *
+ * DEAD-LETTER-RETRY-01: a retry whose booking fails again no longer reports success.
+ * processSingleSession dead-letters that failure itself (upsert, same key) and returns
+ * normally, and reprocessFailedBooking used to clear the entry and answer { ok: true } —
+ * so the admin saw "procesado", the entry vanished, and the student had paid for a class
+ * that did not exist. processSingleSession now returns its outcome; the retry clears the
+ * entry only when the payment is resolved (booked, already handled, or refunded).
+ *
+ * DEAD-LETTER-RETRY-02: a successful retry also says HOW it resolved (`outcome`), so the
+ * admin's RetryButton can tell "booked" from "the slot was taken, the student was refunded"
+ * — both used to read «Procesado correctamente».
+ *
+ * REFACTOR-R4-P4-01: the slot-taken refund carries an idempotency key
+ * (`refund:slot_taken:<pi>`), so a redelivery after recordSlotTakenRefund failed replays the
+ * SAME refund and records it — it used to get charge_already_refunded and 500 for days. The
+ * checkout keys include the amount + currency: since PRICING-STUDENT-01 an admin price edit
+ * inside the 5-min window reused the key with a different amount, which Stripe rejects.
  */
 
 import type Stripe from "stripe";
@@ -31,9 +67,11 @@ import type {
 } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
+import { formatInTimeZone } from "date-fns-tz";
 import { log } from "@/lib/logger";
 import { paymentChannelName } from "@/lib/realtime-channel";
 import { PermanentWebhookError } from "@/domain/errors";
+import { SESSION_DURATION_MINUTES } from "@/lib/booking-config";
 import { sendDeadLetterNotificationEmail } from "@/infrastructure/resend/email-functions";
 import { CreditService } from "./CreditService";
 import { BookingService } from "./BookingService";
@@ -63,6 +101,23 @@ export interface SinglePaymentSummary {
 }
 
 export type PaymentSummary = PackPaymentSummary | SinglePaymentSummary;
+
+// REFACTOR-R4-P3-01: one entry of the reconciliation cron's `details` — the route
+// serializes these verbatim, so the field set is the cron's response contract.
+export interface ReconcileMismatch {
+  paymentIntentId: string;
+  amount:          number;
+  currency:        string;
+  email?:          string;
+  createdAt:       string;
+  reason:          "no_credit_pack" | "no_booking" | "no_webhook_row";
+}
+
+export interface ReconcileResult {
+  scanned:    number;
+  mismatches: ReconcileMismatch[];
+  hitPageCap: boolean;
+}
 
 // REFACTOR-R3-P3-03: the response body of GET /api/payment-confirmation/channel.
 // This union IS the wire contract (the mobile app consumes the single branch), so the
@@ -102,6 +157,16 @@ interface SingleSessionInput {
   currency?:       string | null;
 }
 
+// DEAD-LETTER-RETRY-01: how processSingleSession resolved the payment. Only the admin
+// retry reads it — the webhook answers 200 either way (a dead-letter is a handled failure).
+type SingleSessionOutcome =
+  | { status: ResolvedRetryOutcome }
+  | { status: "dead_lettered"; error: string };
+
+// DEAD-LETTER-RETRY-02: the `outcome` of a successful admin retry (POST
+// /api/admin/failed-bookings returns it verbatim; RetryButton reads it).
+export type ResolvedRetryOutcome = "booked" | "already_handled" | "refunded";
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export class PaymentService {
@@ -130,7 +195,10 @@ export class PaymentService {
     );
     // REFACTOR-P1-05: 5-min window deduplicates double-clicks; deliberate retry
     // after window gets a fresh PI.
-    const idempotencyKey = `pack:${email}:${packSize}:${Math.floor(Date.now() / 300_000)}`;
+    // REFACTOR-R4-P4-01: the amount is part of the key. Since PRICING-STUDENT-01 it can change
+    // between two clicks (admin edit); an unchanged key with a changed amount is a Stripe error.
+    const bucket = Math.floor(Date.now() / 300_000);
+    const idempotencyKey = `pack:${email}:${packSize}:${amount}${currency}:${bucket}`;
     const intent = await this.stripeClient.createPaymentIntent(
       {
         amount,
@@ -156,16 +224,18 @@ export class PaymentService {
     rescheduleToken?: string;
   }): Promise<CheckoutResult> {
     const { email, name, duration, startIso, endIso, rescheduleToken } = params;
+    // REFACTOR-R4-P1-01: never take money for a slot the server would not book.
+    const sessionType = duration === "1h" ? "session1h" : "session2h";
+    await this.bookings.assertSlotBookable({ startIso, endIso, sessionType });
     // PRICING-STUDENT-01: see createPackCheckout.
     const user = await this.userService.findByEmail(email);
-    const { amount, currency } = await this.pricing.getAmount(
-      duration === "1h" ? "session1h" : "session2h",
-      user?.id,
-    );
+    const { amount, currency } = await this.pricing.getAmount(sessionType, user?.id);
     // REFACTOR-P1-05: startIso in key prevents collision between genuinely
     // different slots for the same user/duration within the same 5-min window.
+    // REFACTOR-R4-P4-01: amount + currency in the key — see createPackCheckout.
+    const bucket = Math.floor(Date.now() / 300_000);
     const idempotencyKey =
-      `single:${email}:${duration}:${startIso}:${Math.floor(Date.now() / 300_000)}`;
+      `single:${email}:${duration}:${startIso}:${amount}${currency}:${bucket}`;
     const intent = await this.stripeClient.createPaymentIntent(
       {
         amount,
@@ -302,7 +372,9 @@ export class PaymentService {
 
   // ── Admin dead-letter retry ────────────────────────────────────────────────
 
-  async reprocessFailedBooking(stripeSessionId: string): Promise<{ ok: boolean; error?: string }> {
+  async reprocessFailedBooking(
+    stripeSessionId: string,
+  ): Promise<{ ok: boolean; error?: string; outcome?: ResolvedRetryOutcome }> {
     const entries = await this.paymentRepo.listFailedBookings();
     const entry   = entries.find(e => e.stripeSessionId === stripeSessionId);
     if (!entry) return { ok: false, error: "Not found" };
@@ -323,6 +395,9 @@ export class PaymentService {
           rescheduleToken: metadata.reschedule_token || null,
           idempotencyKey:  stripeSessionId,
           refundTarget:    { payment_intent: stripeSessionId },
+          // REFACTOR-R4-P3-01: without these, recordPaymentRow skipped the audit row.
+          amountCents:     intent.amount,
+          currency:        intent.currency,
         };
       } else {
         const checkout = await this.stripeClient.retrieveCheckoutSession(stripeSessionId);
@@ -336,6 +411,8 @@ export class PaymentService {
           rescheduleToken: metadata.reschedule_token || null,
           idempotencyKey:  stripeSessionId,
           refundTarget:    { payment_intent: checkout.payment_intent as string },
+          amountCents:     checkout.amount_total,
+          currency:        checkout.currency,
         };
       }
     } catch (err) {
@@ -344,10 +421,18 @@ export class PaymentService {
     }
 
     try {
-      await this.processSingleSession(input);
+      const outcome = await this.processSingleSession(input);
+      // DEAD-LETTER-RETRY-01: the booking failed again and processSingleSession already
+      // re-wrote the entry with the new error. Keep it — clearing would lose the payment.
+      if (outcome.status === "dead_lettered") {
+        log("warn", "Dead-letter retry did not succeed", { service: "payment", stripeSessionId, error: outcome.error });
+        return { ok: false, error: outcome.error };
+      }
       await this.paymentRepo.clearFailedBooking(stripeSessionId);
-      log("info", "Dead-letter entry cleared after successful retry", { service: "payment", stripeSessionId });
-      return { ok: true };
+      log("info", "Dead-letter entry cleared after successful retry", {
+        service: "payment", stripeSessionId, outcome: outcome.status,
+      });
+      return { ok: true, outcome: outcome.status };
     } catch (err) {
       log("warn", "Dead-letter retry did not succeed", { service: "payment", stripeSessionId, error: String(err) });
       return { ok: false, error: String(err) };
@@ -356,6 +441,77 @@ export class PaymentService {
 
   async listFailedBookings(): Promise<FailedBookingEntry[]> {
     return this.paymentRepo.listFailedBookings();
+  }
+
+  // ── Reconciliation cron ────────────────────────────────────────────────────
+
+  // REFACTOR-R4-P3-01: moved from GET /api/internal/reconcile-stripe (REFACTOR-P4-01).
+  // Lists the succeeded PaymentIntents of the last `lookbackHours` and checks each was
+  // processed downstream. Proof is type-aware — see the route header. Read-only; the
+  // reads throw on a DB error (REFACTOR-R4-P1-02), so a blip fails the run instead of
+  // producing false mismatches.
+  async reconcileRecentPayments(opts: {
+    lookbackHours: number;
+    pageSize:      number;
+    maxPages:      number;
+  }): Promise<ReconcileResult> {
+    const createdGte = Math.floor((Date.now() - opts.lookbackHours * 3600_000) / 1000);
+    const mismatches: ReconcileMismatch[] = [];
+    let scanned = 0;
+    let startingAfter: string | undefined;
+    let pageCount = 0;
+
+    while (pageCount < opts.maxPages) {
+      const page = await this.stripeClient.listPaymentIntents({
+        createdGte,
+        limit: opts.pageSize,
+        ...(startingAfter ? { startingAfter } : {}),
+      });
+      pageCount++;
+
+      for (const pi of page.data) {
+        scanned++;
+        if (pi.status !== "succeeded") continue;
+
+        const checkoutType = pi.metadata?.checkout_type;
+        const base = {
+          paymentIntentId: pi.id,
+          amount:          pi.amount,
+          currency:        pi.currency,
+          email:           pi.metadata?.student_email,
+          createdAt:       new Date(pi.created * 1000).toISOString(),
+        };
+
+        if (checkoutType === "pack") {
+          // Proof: the pack's credit_packs row (idempotency anchor).
+          if (!(await this.credits.hasProcessedPayment(pi.id))) {
+            mismatches.push({ ...base, reason: "no_credit_pack" });
+          }
+        } else if (checkoutType === "single") {
+          // Proof: a booking, a slot-taken refund, a known dead-letter, or the processed
+          // marker. The refund path never marks processed, and the PI stays `succeeded`
+          // after a refund — without the refund check it read as a dropped webhook.
+          const handled =
+            (await this.bookings.hasBookingForPayment(pi.id)) ||
+            (await this.paymentRepo.wasRefunded(pi.id)) ||
+            (await this.paymentRepo.hasFailedBooking(pi.id)) ||
+            (await this.paymentRepo.isProcessed(pi.id));
+          if (!handled) {
+            mismatches.push({ ...base, reason: "no_booking" });
+          }
+        } else {
+          // Unknown/missing checkout_type — fall back to the webhook ledger.
+          if (!(await this.paymentRepo.isProcessed(pi.id))) {
+            mismatches.push({ ...base, reason: "no_webhook_row" });
+          }
+        }
+      }
+
+      if (!page.hasMore) break;
+      startingAfter = page.data[page.data.length - 1]?.id;
+    }
+
+    return { scanned, mismatches, hitPageCap: pageCount === opts.maxPages };
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
@@ -415,7 +571,7 @@ export class PaymentService {
     }
   }
 
-  private async processSingleSession(input: SingleSessionInput): Promise<void> {
+  private async processSingleSession(input: SingleSessionInput): Promise<SingleSessionOutcome> {
     const { email, name, startIso, endIso, duration, rescheduleToken, idempotencyKey } = input;
     // SINGLE-SESSION-CONFIRM-01: the PaymentIntent id is the channel seed + the key the
     // mobile client polls by (booking.stripe_payment_id, single_session_refunds).
@@ -433,22 +589,21 @@ export class PaymentService {
     // Idempotency check
     if (await this.paymentRepo.isProcessed(idempotencyKey)) {
       log("info", "Duplicate single-session webhook skipped", { service: "payment", idempotencyKey });
-      return;
+      return { status: "already_handled" };
     }
 
     // REFACTOR-R3-P1-03: createBooking and markProcessed are separate writes. If the
     // booking committed but markProcessed failed, Stripe's redelivery must NOT reach the
     // slot re-check (it would see our own calendar event and refund a fulfilled booking).
-    // A confirmed booking for this PI is proof of processing — heal the marker and stop.
-    if (paymentIntentId) {
-      const existing = await this.bookings.findByStripePaymentId(paymentIntentId);
-      if (existing) {
-        await this.paymentRepo.markProcessed(idempotencyKey).catch(() => {});
-        log("info", "Duplicate single-session webhook skipped (booking already exists)", {
-          service: "payment", idempotencyKey,
-        });
-        return;
-      }
+    // A booking for this PI is proof of processing — heal the marker and stop.
+    // REFACTOR-R4-P1-02: status-agnostic. A cancelled booking for this PI is still proof of
+    // processing — re-running would re-book a slot the student already gave back.
+    if (paymentIntentId && await this.bookings.hasBookingForPayment(paymentIntentId)) {
+      await this.paymentRepo.markProcessed(idempotencyKey).catch(() => {});
+      log("info", "Duplicate single-session webhook skipped (booking already exists)", {
+        service: "payment", idempotencyKey,
+      });
+      return { status: "already_handled" };
     }
 
     // SINGLE-SESSION-CONFIRM-01: a prior run already refunded this PaymentIntent for a taken
@@ -456,22 +611,39 @@ export class PaymentService {
     // never attempts a second refund.
     if (paymentIntentId && await this.paymentRepo.wasRefunded(paymentIntentId)) {
       log("info", "Duplicate single-session webhook skipped (already refunded)", { service: "payment", idempotencyKey });
-      return;
+      return { status: "refunded" };
     }
 
+    // REFACTOR-R4-P1-01: the booked window is DERIVED from the paid duration — the
+    // metadata end_iso is never booked, so what was paid for is what gets booked.
+    const sessionType     = duration === "2h" ? "session2h" as const : "session1h" as const;
+    const durationMinutes = SESSION_DURATION_MINUTES[sessionType];
+    const startMs         = new Date(startIso).getTime();
+    if (Number.isNaN(startMs)) {
+      log("error", "Unparseable start_iso in webhook metadata", { service: "payment", idempotencyKey });
+      throw new PermanentWebhookError(`Unparseable start_iso in metadata for ${idempotencyKey}`);
+    }
+    const endIsoSafe = new Date(startMs + durationMinutes * 60_000).toISOString();
+
     // Slot re-check — refund if slot was taken in the meantime
-    const slotDate        = startIso.slice(0, 10);
-    const durationMinutes = duration === "2h" ? 120 : 60;
     const scheduleConfig  = await this.schedule.getConfig();
+    // REFACTOR-R4-P1-01: the tutor-timezone day, not the UTC date of startIso.
+    const slotDate        = formatInTimeZone(new Date(startMs), scheduleConfig.timezone, "yyyy-MM-dd");
     // REFACTOR-R3-P1-02: fail CLOSED. A freebusy failure is retryable (webhook 500 →
     // Stripe redelivers), never "assume free": the exclusion constraint doesn't cover
     // the tutor's manual calendar blocks.
     const availableSlots  = await getAvailableSlots(slotDate, durationMinutes, scheduleConfig, 30);
-    const slotStillFree   = availableSlots.some(s => s.start === startIso);
+    // Compare instants, not strings: "…:00Z" and "…:00.000Z" are the same start.
+    const slotStillFree   = availableSlots.some(s => new Date(s.start).getTime() === startMs);
 
     if (!slotStillFree) {
       log("warn", "Slot no longer available — refunding", { service: "payment", email, startIso, idempotencyKey });
-      await this.stripeClient.createRefund({ ...input.refundTarget, reason: "duplicate" });
+      // REFACTOR-R4-P4-01: keyed by the PI, so a redelivery after a failed record below gets
+      // the same refund back (Stripe keeps keys 24h) instead of charge_already_refunded.
+      await this.stripeClient.createRefund(
+        { ...input.refundTarget, reason: "duplicate" },
+        { idempotencyKey: `refund:slot_taken:${input.refundTarget.payment_intent ?? input.refundTarget.charge}` },
+      );
       // SINGLE-SESSION-CONFIRM-01: persist the queryable refund record (right after the
       // refund actually issued, so the record only ever means "money returned"), then
       // best-effort broadcast. Persistence precedes the fire-and-forget broadcast.
@@ -479,10 +651,8 @@ export class PaymentService {
         await this.paymentRepo.recordSlotTakenRefund(paymentIntentId);
         await this.broadcastResolved(paymentIntentId, { status: "slot_taken" });
       }
-      return;
+      return { status: "refunded" };
     }
-
-    const sessionType = duration === "1h" ? "session1h" as const : "session2h" as const;
 
     // Guarantee the user record exists before the booking attempt so the
     // dead-letter entry can reference users.id even if createBooking fails.
@@ -495,7 +665,7 @@ export class PaymentService {
         email,
         name,
         startIso,
-        endIso,
+        endIso:           endIsoSafe,
         sessionType,
         rescheduleToken:  rescheduleToken ?? undefined,
         stripePaymentId:  paymentIntentId,
@@ -518,12 +688,13 @@ export class PaymentService {
           status:      "confirmed",
           eventId:     booking.eventId,
           startIso,
-          endIso,
+          endIso:      endIsoSafe,
           sessionType,
           joinToken:   booking.joinToken,
           emailFailed: booking.emailFailed,
         });
       }
+      return { status: "booked" };
     } catch (err) {
       log("error", "Booking failed after payment — writing dead-letter", { service: "payment", email, startIso, idempotencyKey, error: String(err) });
       await this.writeDeadLetter(idempotencyKey, userId, startIso, err, email);
@@ -532,6 +703,7 @@ export class PaymentService {
       if (paymentIntentId) {
         await this.broadcastResolved(paymentIntentId, { status: "failed" });
       }
+      return { status: "dead_lettered", error: String(err) };
     }
   }
 

@@ -10,7 +10,9 @@
 
 import { existsSync, readFileSync } from "fs";
 import { createClient }             from "@supabase/supabase-js";
-import { google }                   from "googleapis";
+// REFACTOR-R4-P2-01: the single-API package; `googleapis` was removed from the deps.
+import { calendar as calendarApi }  from "@googleapis/calendar";
+import { GoogleAuth }               from "google-auth-library";
 
 function loadEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {};
@@ -156,14 +158,14 @@ export async function clearTestCalendar(
   serviceAccountEmail: string,
   privateKey: string,
 ): Promise<number> {
-  const auth = new google.auth.GoogleAuth({
+  const auth = new GoogleAuth({
     credentials: {
       client_email: serviceAccountEmail,
       private_key:  privateKey.replace(/\\n/g, "\n"),
     },
     scopes: ["https://www.googleapis.com/auth/calendar"],
   });
-  const calendar = google.calendar({ version: "v3", auth });
+  const calendar = calendarApi({ version: "v3", auth });
 
   const timeMin = new Date().toISOString();
   let pageToken: string | undefined;

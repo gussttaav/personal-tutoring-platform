@@ -15,6 +15,9 @@
 // `[locale]/layout.tsx` (Next applies the lowest revalidate touched during a render
 // to the whole route). See that file for the full reasoning — in short, a short
 // window here re-renders the ~88 Shiki/KaTeX course lessons on Vercel Active CPU.
+// REFACTOR-R4-P2-03: no longer true — the layout stopped reading this cache. Among the
+// pages, only the commerce ones (via CommerceProviders) and /terminos do (plus the
+// /api/policy, /api/chat routes), so the window no longer reaches lessons and posts.
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { scheduleService } from "@/services";

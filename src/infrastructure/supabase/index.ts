@@ -13,6 +13,7 @@ import { SupabaseReviewRepository }       from "./SupabaseReviewRepository";
 import { SupabaseCourseRepository }       from "./SupabaseCourseRepository";
 import { SupabaseGoogleReviewPromptRepository } from "./SupabaseGoogleReviewPromptRepository";
 import { SupabaseContentFeedbackRepository } from "./SupabaseContentFeedbackRepository";
+import { SupabaseAdminQueryRepository }   from "./SupabaseAdminQueryRepository";
 
 export const supabaseCreditsRepository      = new SupabaseCreditsRepository();
 export const supabaseAuditRepository        = new SupabaseAuditRepository();
@@ -27,3 +28,5 @@ export const supabaseReviewRepository       = new SupabaseReviewRepository();
 export const supabaseCourseRepository       = new SupabaseCourseRepository();
 export const supabaseGoogleReviewPromptRepository = new SupabaseGoogleReviewPromptRepository();
 export const supabaseContentFeedbackRepository = new SupabaseContentFeedbackRepository();
+// REFACTOR-R4-P3-02: the admin panel's reads (was the admin panel's `_data.ts`).
+export const supabaseAdminQueryRepository   = new SupabaseAdminQueryRepository();

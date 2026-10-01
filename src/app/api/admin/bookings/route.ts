@@ -1,14 +1,15 @@
 /**
  * GET /api/admin/bookings — list all bookings (admin view).
  *
- * ADMIN-01: Thin adapter — auth + admin check, then delegate to _data.ts.
+ * ADMIN-01: Thin adapter — auth + admin check, then delegate to the service.
+ * REFACTOR-R4-P3-02: adminService.listAllBookings (was _data.ts's fetchAllBookings).
  */
 
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { log } from "@/lib/logger";
-import { fetchAllBookings } from "@/app/[locale]/admin/_data";
+import { adminService } from "@/services";
 
 export async function GET() {
   const session = await auth();
@@ -20,7 +21,7 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const bookings = await fetchAllBookings();
+  const bookings = await adminService.listAllBookings();
 
   log("info", "Admin listed bookings", { service: "admin", email: session.user.email, count: bookings.length });
 

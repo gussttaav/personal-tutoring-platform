@@ -12,11 +12,16 @@
  * The request object is deliberately UNUSED. Touching it opts the route out of static
  * rendering, silently, and the first sign would be a lambda cold-starting in production.
  *
- * `dynamicParams = false` matters more than it looks: `next.config.mjs` has no
- * `outputFileTracingIncludes`, and Next cannot statically trace the `path.join(cwd(),
- * "content", "courses")` the registry does — so `content/` may simply not exist in a
- * lambda. Refusing unknown params keeps that path unreachable from here. The in-handler
- * 404 below is the belt to that braces.
+ * `dynamicParams = false`: every course × locale is prerendered above, so an unknown pair
+ * gets Next's own 404 and the handler never runs. A junk URL can't turn this route into an
+ * on-demand render that builds (and caches) an index at runtime. The in-handler 404 below
+ * covers a known course with no published lesson in that locale.
+ *
+ * REFACTOR-R4-P4-02: this paragraph used to say Next cannot trace the registry's
+ * `content/courses` read, so `content/` might be missing from a lambda. The build says
+ * otherwise, with no `outputFileTracingIncludes`: this route's nft trace and
+ * `/api/courses/progress`'s both list every file under `content/courses/` (72 of 72 on
+ * 2026-10-01).
  *
  * Caching: `immutable` is safe because the client appends `?v=<index.hash>`, a hash of the
  * content itself. New content → new URL → fresh fetch; unchanged content → the browser

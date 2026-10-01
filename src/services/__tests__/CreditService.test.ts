@@ -1,4 +1,5 @@
 // ARCH-12: Unit tests for CreditService.
+// REFACTOR-R4-P1-04: restoreCreditToPack + recordRestore.
 import { CreditService } from "../CreditService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
@@ -9,6 +10,7 @@ const mockCredits = (): jest.Mocked<ICreditsRepository> => ({
   addCredits:      jest.fn(),
   decrementCredit: jest.fn(),
   restoreCredit:   jest.fn(),
+  restoreCreditToPack: jest.fn(),
   hasProcessedPayment: jest.fn(),
   broadcastPaymentConfirmed: jest.fn(),
 });
@@ -125,5 +127,46 @@ describe("CreditService.restoreCredit", () => {
 
     expect(result).toEqual({ credits: 0 });
     expect(audit.append).not.toHaveBeenCalled();
+  });
+});
+
+// REFACTOR-R4-P1-04
+describe("CreditService.restoreCreditToPack", () => {
+  it("restores to the given pack and audits it", async () => {
+    const credits = mockCredits();
+    const audit   = mockAudit();
+    credits.restoreCreditToPack.mockResolvedValue(true);
+
+    const service = new CreditService(credits, audit);
+
+    await expect(service.restoreCreditToPack("a@b.com", "pk-1")).resolves.toBe(true);
+    expect(credits.restoreCreditToPack).toHaveBeenCalledWith("pk-1");
+    expect(credits.restoreCredit).not.toHaveBeenCalled();
+    expect(audit.append).toHaveBeenCalledWith("a@b.com", { action: "restore", packId: "pk-1" });
+  });
+
+  it("reports false and audits nothing when the pack is full or expired", async () => {
+    const credits = mockCredits();
+    const audit   = mockAudit();
+    credits.restoreCreditToPack.mockResolvedValue(false);
+
+    const service = new CreditService(credits, audit);
+
+    await expect(service.restoreCreditToPack("a@b.com", "pk-1")).resolves.toBe(false);
+    expect(audit.append).not.toHaveBeenCalled();
+  });
+});
+
+describe("CreditService.recordRestore", () => {
+  it("appends the same 'restore' entry restoreCredit does, plus the pack", async () => {
+    const credits = mockCredits();
+    const audit   = mockAudit();
+
+    const service = new CreditService(credits, audit);
+    await service.recordRestore("a@b.com", { credits: 4, packId: "pk-9" });
+
+    expect(audit.append).toHaveBeenCalledWith("a@b.com", { action: "restore", credits: 4, packId: "pk-9" });
+    expect(credits.restoreCredit).not.toHaveBeenCalled();
+    expect(credits.restoreCreditToPack).not.toHaveBeenCalled();
   });
 });

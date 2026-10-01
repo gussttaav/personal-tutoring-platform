@@ -7,7 +7,8 @@
  * The Service is deliberately price-free: session/pack prices live in the DB
  * (PricingService) and embedding them here risks stale structured data,
  * which Google penalizes. If offers are ever wanted, feed them from
- * getDisplayPrices() (already loaded in the root layout).
+ * getDisplayPrices() (already loaded by CommerceProviders on both pages that
+ * render this — REFACTOR-R4-P2-03 moved it out of the root layout).
  *
  * REDESIGN-P1-05: split by `variant` now that home and /mentoria are
  * separate pages. `home` emits the `Person` only (the site's identity,

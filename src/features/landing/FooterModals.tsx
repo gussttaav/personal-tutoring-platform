@@ -8,18 +8,25 @@
  * The modal overlay itself is also reskinned to use surface-container-highest + backdrop-blur.
  *
  * Used by: Footer.tsx (new), and still works standalone if needed.
+ *
+ * REFACTOR-R4-P2-03: rendered on EVERY page (via Footer), but the commerce providers
+ * are now mounted only by the booking pages. The two numbers the cancellation/terms
+ * copy quotes come from `usePolicyNumbers`: the context when CommerceProviders is
+ * mounted (no request), else a one-off fetch of the static `/api/policy` the first
+ * time one of those two modals opens, with a short skeleton until it answers.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import {
   CancelacionContent,
   TerminosContent,
   PrivacidadContent,
+  type PolicyNumbers,
 } from "@/components/policy/PolicyContent";
-import { usePackValidityDays } from "@/components/pricing/PricesProvider";
-import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
+import { usePackValidityDaysOptional } from "@/components/pricing/PricesProvider";
+import { useScheduleConfigOptional } from "@/components/booking/ScheduleProvider";
 
 type ModalKey = "cancelacion" | "terminos" | "privacidad" | null;
 
@@ -38,12 +45,62 @@ const LINK_STYLE: React.CSSProperties = {
   marginBottom: "14px",
 };
 
+/**
+ * REFACTOR-R4-P2-03: pack validity + cancellation window. From the commerce context
+ * when the page mounts CommerceProviders; otherwise fetched from `/api/policy` once
+ * `needed` turns true (a modal that quotes them is open). `null` until known.
+ */
+function usePolicyNumbers(needed: boolean): PolicyNumbers | null {
+  const days  = usePackValidityDaysOptional();
+  const sched = useScheduleConfigOptional();
+  const fromContext = days !== null && sched !== null;
+  const [fetched, setFetched] = useState<PolicyNumbers | null>(null);
+  // Set while a request is in flight or has answered, so reopening the modal
+  // mid-request doesn't fire a second one. Cleared on failure: the next open retries.
+  const requested = useRef(false);
+
+  useEffect(() => {
+    if (!needed || fromContext || requested.current) return;
+    requested.current = true;
+    fetch("/api/policy")
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((numbers: PolicyNumbers) => setFetched(numbers))
+      .catch(() => {
+        requested.current = false;
+      });
+  }, [needed, fromContext]);
+
+  if (days !== null && sched !== null) {
+    return { packValidityDays: days, cancelHours: sched.cancelMinNoticeHours };
+  }
+  return fetched;
+}
+
+/** REFACTOR-R4-P2-03: stands in for the policy copy while `/api/policy` answers. */
+function PolicySkeleton() {
+  return (
+    <div aria-busy="true" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {[92, 100, 74, 86].map((width) => (
+        <div
+          key={width}
+          aria-hidden="true"
+          style={{
+            height: 12,
+            width: `${width}%`,
+            borderRadius: 6,
+            background: "rgba(255,255,255,0.08)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function FooterModals() {
   const t      = useTranslations("footerModals");
   const locale = useLocale();
-  const packValidityDays = usePackValidityDays();
-  const cancelHours      = useScheduleConfig().cancelMinNoticeHours;
   const [open, setOpen] = useState<ModalKey>(null);
+  const policy = usePolicyNumbers(open === "cancelacion" || open === "terminos");
 
   function close() {
     setOpen(null);
@@ -190,8 +247,12 @@ export default function FooterModals() {
                 flex: 1,
               }}
             >
-              {open === "cancelacion" && <CancelacionContent locale={locale} packValidityDays={packValidityDays} cancelHours={cancelHours} />}
-              {open === "terminos" && <TerminosContent locale={locale} packValidityDays={packValidityDays} cancelHours={cancelHours} />}
+              {open === "cancelacion" && (policy
+                ? <CancelacionContent locale={locale} packValidityDays={policy.packValidityDays} cancelHours={policy.cancelHours} />
+                : <PolicySkeleton />)}
+              {open === "terminos" && (policy
+                ? <TerminosContent locale={locale} packValidityDays={policy.packValidityDays} cancelHours={policy.cancelHours} />
+                : <PolicySkeleton />)}
               {open === "privacidad" && <PrivacidadContent locale={locale} />}
             </div>
           </div>

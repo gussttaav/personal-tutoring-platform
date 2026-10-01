@@ -1,5 +1,7 @@
 // ARCH-13: Thin wrapper around lib/email.ts so BookingService can depend on an
 // interface rather than a concrete module — enables testing with mocks.
+// REFACTOR-R4-P3-03: sendPaymentAuditReport.
+import type { PaymentAuditReport } from "@/domain/types";
 import * as emailLib from "./email-functions";
 import type {
   IEmailClient,
@@ -30,5 +32,10 @@ export class EmailClient implements IEmailClient {
   // CONTENT-FEEDBACK-01
   sendContentReportNotification(params: ContentReportNotificationParams): Promise<void> {
     return emailLib.sendContentReportNotificationEmail(params);
+  }
+
+  // REFACTOR-R4-P3-03
+  sendPaymentAuditReport(report: PaymentAuditReport): Promise<void> {
+    return emailLib.sendPaymentAuditReportEmail(report);
   }
 }

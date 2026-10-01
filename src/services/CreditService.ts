@@ -2,6 +2,8 @@
 // Consolidates previously-scattered calls to kv.ts into a single layer.
 // Routes call methods here instead of repository functions directly so that
 // cross-cutting concerns (audit logging, domain events) live in one place.
+// REFACTOR-R4-P1-04: restoreCreditToPack (saga compensation, exact pack) and recordRestore
+// (the audit entry for a restore done inside the cancel_booking RPC).
 import type { ICreditsRepository, CreditResult } from "@/domain/repositories/ICreditsRepository";
 import type { PackSize } from "@/domain/types";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
@@ -92,5 +94,27 @@ export class CreditService {
       });
     }
     return { credits: result.credits };
+  }
+
+  // REFACTOR-R4-P1-04: the booking saga's compensation — give the credit back to the exact
+  // pack it just decremented. Returns false (and audits nothing) if that pack is full or
+  // expired, so the caller can surface the lost credit instead of reporting success.
+  async restoreCreditToPack(email: string, packId: string): Promise<boolean> {
+    const restored = await this.credits.restoreCreditToPack(packId);
+    if (restored) {
+      await this.audit.append(email, { action: "restore", packId });
+    }
+    return restored;
+  }
+
+  // REFACTOR-R4-P1-04: a cancellation restores the credit inside the cancel_booking RPC,
+  // which can't write the audit log — this appends the same "restore" entry
+  // restoreCredit always has, plus the pack the credit went to.
+  async recordRestore(email: string, details: { credits: number; packId: string | null }): Promise<void> {
+    await this.audit.append(email, {
+      action:  "restore",
+      credits: details.credits,
+      packId:  details.packId,
+    });
   }
 }

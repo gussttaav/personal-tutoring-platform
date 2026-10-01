@@ -1,13 +1,14 @@
 /**
  * ADMIN-01: Payment history — last 100 payments with 30-day revenue + sparkline.
  * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
+ * REFACTOR-R4-P3-02: reads through adminService (was ../_data).
  */
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import { fetchPayments, sumRevenueLast30Days } from "../_data";
+import { adminService } from "@/services";
 import { PageHeader, Card, StatusBadge, Empty } from "@/components/admin/ui";
 import { fmtDateTime, relativeTime } from "@/components/admin/format";
 
@@ -21,8 +22,8 @@ export default async function PaymentsPage() {
   if (!isAdmin(await auth())) redirect("/");
 
   const [payments, revenueCents] = await Promise.all([
-    fetchPayments(),
-    sumRevenueLast30Days(),
+    adminService.listPayments(),
+    adminService.revenueLast30Days(),
   ]);
 
   const revenue = (revenueCents / 100).toFixed(2);
