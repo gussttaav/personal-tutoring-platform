@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 166" width="750" height="166" role="img"
+ aria-label="Tres barras apiladas con las incidencias del trimestre en las que un cliente pide dinero o la baja, por causa. Las 900 del trimestre: 340 por las rectificativas en PDF de la versión 3.2, 260 por la subida del plan Básico, 180 por cobros duplicados y 120 por otros motivos. Las 310 que contienen la palabra reembolso: 18, 112, 164 y 16. Las 20 que leyó el asistente: 1, 7, 11 y 1. La causa más frecuente del trimestre casi no aparece en lo que leyó.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .in { font-size: 10.5px; font-weight: 600; fill: #0e0e10; text-anchor: middle; }
+  .hl { paint-order: stroke; stroke: #131315; stroke-width: 4px; stroke-linejoin: round; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ed { stroke: #3b3b3e; stroke-width: 1.2; }
+  .ed.m { stroke: #4edea3; stroke-width: 1.4; }
+  .ed.x { stroke: #ffb4ab; stroke-dasharray: 3 3; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<rect x="0.0" y="4" width="10" height="10" rx="2" fill="#22a672"/>
+<text class="tx" x="15.0" y="13.0">rectificativas en PDF, versión 3.2</text>
+<rect x="230.8" y="4" width="10" height="10" rx="2" fill="#c47d2b"/>
+<text class="tx" x="245.8" y="13.0">subida del plan Básico</text>
+<rect x="393.2" y="4" width="10" height="10" rx="2" fill="#5b8ce0"/>
+<text class="tx" x="408.2" y="13.0">cobros duplicados</text>
+<rect x="527.1" y="4" width="10" height="10" rx="2" fill="#55565c"/>
+<text class="tx" x="542.1" y="13.0">otros</text>
+<text class="lb" x="0.0" y="49.0" style="text-anchor:start">Las 900 del trimestre</text>
+<text class="sb" x="0.0" y="64.0" style="text-anchor:start">lo que hay</text>
+<path d="M232.00,40.00 H424.93 Q424.93,40.00 424.93,40.00 V62.00 Q424.93,62.00 424.93,62.00 H232.00 Z" fill="#22a672"/>
+<text class="in" x="328.5" y="55.0">340</text>
+<path d="M426.93,40.00 H574.00 Q574.00,40.00 574.00,40.00 V62.00 Q574.00,62.00 574.00,62.00 H426.93 Z" fill="#c47d2b"/>
+<text class="in" x="500.5" y="55.0">260</text>
+<path d="M576.00,40.00 H677.20 Q677.20,40.00 677.20,40.00 V62.00 Q677.20,62.00 677.20,62.00 H576.00 Z" fill="#5b8ce0"/>
+<text class="in" x="626.6" y="55.0">180</text>
+<path d="M679.20,40.00 H744.00 Q748.00,40.00 748.00,44.00 V58.00 Q748.00,62.00 744.00,62.00 H679.20 Z" fill="#55565c"/>
+<text class="in" x="713.6" y="55.0">120</text>
+<text class="lb" x="0.0" y="99.0" style="text-anchor:start">Las 310 que dicen «reembolso»</text>
+<text class="sb" x="0.0" y="114.0" style="text-anchor:start">lo que se parece a la pregunta</text>
+<path d="M232.00,90.00 H259.96 Q259.96,90.00 259.96,90.00 V112.00 Q259.96,112.00 259.96,112.00 H232.00 Z" fill="#22a672"/>
+<text class="in" x="246.0" y="105.0">18</text>
+<path d="M261.96,90.00 H446.39 Q446.39,90.00 446.39,90.00 V112.00 Q446.39,112.00 446.39,112.00 H261.96 Z" fill="#c47d2b"/>
+<text class="in" x="354.2" y="105.0">112</text>
+<path d="M448.39,90.00 H719.37 Q719.37,90.00 719.37,90.00 V112.00 Q719.37,112.00 719.37,112.00 H448.39 Z" fill="#5b8ce0"/>
+<text class="in" x="583.9" y="105.0">164</text>
+<path d="M721.37,90.00 H744.00 Q748.00,90.00 748.00,94.00 V108.00 Q748.00,112.00 744.00,112.00 H721.37 Z" fill="#55565c"/>
+<text class="in" x="734.7" y="105.0">16</text>
+<text class="lb" x="0.0" y="149.0" style="text-anchor:start">Las 20 que leyó el asistente</text>
+<text class="sb" x="0.0" y="164.0" style="text-anchor:start">con lo que respondió</text>
+<path d="M232.00,140.00 H255.80 Q255.80,140.00 255.80,140.00 V162.00 Q255.80,162.00 255.80,162.00 H232.00 Z" fill="#22a672"/>
+<text class="in" x="243.9" y="155.0">1</text>
+<path d="M257.80,140.00 H436.40 Q436.40,140.00 436.40,140.00 V162.00 Q436.40,162.00 436.40,162.00 H257.80 Z" fill="#c47d2b"/>
+<text class="in" x="347.1" y="155.0">7</text>
+<path d="M438.40,140.00 H720.20 Q720.20,140.00 720.20,140.00 V162.00 Q720.20,162.00 720.20,162.00 H438.40 Z" fill="#5b8ce0"/>
+<text class="in" x="579.3" y="155.0">11</text>
+<path d="M722.20,140.00 H744.00 Q748.00,140.00 748.00,144.00 V158.00 Q748.00,162.00 744.00,162.00 H722.20 Z" fill="#55565c"/>
+<text class="in" x="735.1" y="155.0">1</text>
+</svg>
