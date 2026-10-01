@@ -112,7 +112,11 @@ realimentarlo, y repetir.
 ## Una salida en cada posición
 
 La recurrencia es la de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>, sin tocar una letra:
-$\mathbf{h}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{b}_h\right)$,
+
+$$
+\mathbf{h}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{b}_h\right),
+$$
+
 con $\mathbf{h}_0 = \mathbf{0}$. Lo nuevo es $\mathbf{x}_t$: como cada token es un carácter, la entrada
 de la posición $t$ es el one-hot de ese carácter,
 $\mathbf{x}_t = \mathbf{o}_{c_t} \in \{0,1\}^{\lvert V \rvert}$, donde $V$ es el conjunto de caracteres
