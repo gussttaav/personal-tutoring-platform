@@ -32,7 +32,7 @@ quiz:
     type: single
     prompt: 'Puntúas una pareja de frases de $T_x = T_y = 60$ tokens con $d_h = d_a = 256$. ¿Qué guarda la puntuación aditiva que la multiplicativa no guarda?'
     options:
-      - { id: a, text: 'La rejilla de vectores anterior a la lectura: $60 \cdot 60$ vectores de $256$ coordenadas, $921\,600$ números, porque el $\tanh$ se aplica a cada uno antes de que $\mathbf{v}_a$ lo reduzca a una puntuación. La multiplicativa pasa de los estados a las $3\,600$ puntuaciones sin construir nada más grande que la propia rejilla.' }
+      - { id: a, text: 'La rejilla de vectores anterior a la lectura: $60 \cdot 60$ vectores de $256$ coordenadas, $921\,600$ números, porque la $\tanh$ se aplica a cada uno antes de que $\mathbf{v}_a$ lo reduzca a una puntuación. La multiplicativa pasa de los estados a las $3\,600$ puntuaciones sin construir nada más grande que la propia rejilla.' }
       - { id: b, text: 'Las dos proyecciones de los estados, $60 + 60$ vectores de $256$ coordenadas, que la multiplicativa se ahorra porque no proyecta nada.' }
       - { id: c, text: 'Las $3\,600$ puntuaciones sin normalizar. La multiplicativa no las guarda: el softmax se aplica dentro del mismo producto de matrices.' }
       - { id: d, text: 'Nada. Las dos guardan los mismos números intermedios; lo que cambia es cuántas multiplicaciones hacen con ellos.' }
@@ -286,7 +286,7 @@ $\mathbf{s}_{i-1}^{\top}\mathbf{W}_a$ y la columna $j$ de $\bar{\mathbf{H}}^{\to
 $\bar{\mathbf{h}}_j$, así que su producto es $e_{ij}$ y no otra cosa.
 
 La aditiva no admite esta escritura, y no por falta de maña. Sus dos proyecciones sí se sacan fuera,
-pero entre la suma y la lectura está el $\tanh$, de modo que hay que materializar un bloque de tres
+pero entre la suma y la lectura está la $\tanh$, de modo que hay que materializar un bloque de tres
 dimensiones —una pareja, y dentro de cada pareja $d_a$ coordenadas— antes de poder reducirlo a
 números.
 
@@ -300,7 +300,7 @@ Los recuentos ponen precio a esa diferencia. Toma $T_x = T_y = 60$ y $d_h = d_a 
 frase larga y un modelo pequeño. En productos y sumas las dos andan cerca: unos $8.8$ millones la
 aditiva contra unos $4.9$ millones la multiplicativa, un factor menor que dos, y en ambas la mayor
 parte se la llevan las proyecciones. Donde se separan es en lo otro. La aditiva evalúa $921\,600$
-veces el $\tanh$ y la multiplicativa ninguna. Y sobre todo, la aditiva tiene que guardar esos
+veces la $\tanh$ y la multiplicativa ninguna. Y sobre todo, la aditiva tiene que guardar esos
 $921\,600$ números —$7.4$ MB por cada pareja de frases, antes de multiplicar por el tamaño del
 *batch*— mientras que a la multiplicativa le bastan las $3\,600$ puntuaciones y los $60$ estados ya
 proyectados. Entre las dos rejillas el factor es exactamente $d_a$: un número por pareja contra
@@ -371,7 +371,7 @@ que es lo único que hay que comprobar de la forma corta. La del mayor peso de c
 sorpresa. Con los pesos recién
 inicializados el mapa ya reparte de forma desigual —una fila se lleva $0.851$ cuando el reparto
 uniforme sería $0.167$—, y eso no pasaba en la lección anterior con un tamaño parecido, donde el
-mayor peso de cada fila rondaba el uniforme. La diferencia está en el $\tanh$: acota cada coordenada
+mayor peso de cada fila rondaba el uniforme. La diferencia está en la $\tanh$: acota cada coordenada
 antes de que $\mathbf{v}_a$ la lea, así que la puntuación aditiva nace pequeña. La multiplicativa no
 tiene nada que la acote, y su tamaño crece con el de los estados. Ese pico no es una alineación, es
 la dirección que $\mathbf{W}_a$ tomó al azar; lo que la fórmula garantiza no es empezar diciendo

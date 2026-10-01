@@ -1,37 +1,35 @@
 /**
  * ADMIN-01: Admin dashboard — operational summary.
  * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
+ * REFACTOR-R4-P3-02: reads through adminService. "Alumnos pocos créditos" now counts
+ * students (a booking or a credit pack) with <= 1 active credit, not every user
+ * without a healthy balance: course readers who never bought anything used to count.
  */
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import {
-  countUpcomingBookings,
-  countStudentsWithLowCredits,
-  countFailedBookings,
-  sumRevenueLast30Days,
-  fetchAllBookings,
-  fetchStudents,
-} from "./_data";
-import { paymentService } from "@/services";
+import { adminService, paymentService } from "@/services";
 import { PageHeader, StatCard, Card, StatusBadge, Empty } from "@/components/admin/ui";
 import { fmtShort, relativeTime, initials } from "@/components/admin/format";
 
 export default async function AdminDashboard() {
   if (!isAdmin(await auth())) redirect("/");
 
-  const [upcomingCount, lowCreditCount, failedCount, revenueCents, bookings, lowCreditStudents, failed] =
+  const [counts, revenueCents, bookings, lowCreditStudents, failed] =
     await Promise.all([
-      countUpcomingBookings(),
-      countStudentsWithLowCredits(),
-      countFailedBookings(),
-      sumRevenueLast30Days(),
-      fetchAllBookings(),
-      fetchStudents("low-credit"),
+      adminService.dashboardCounts(),
+      adminService.revenueLast30Days(),
+      adminService.listAllBookings(),
+      adminService.listStudents({ lowCredit: true, page: 1, pageSize: 4 }),
       paymentService.listFailedBookings(),
     ]);
+  const {
+    upcomingBookings:  upcomingCount,
+    lowCreditStudents: lowCreditCount,
+    failedBookings:    failedCount,
+  } = counts;
 
   const revenue = (revenueCents / 100).toFixed(2);
 
@@ -42,7 +40,7 @@ export default async function AdminDashboard() {
     .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
     .slice(0, 5);
 
-  const lowCredit = lowCreditStudents.slice(0, 4);
+  const lowCredit = lowCreditStudents.rows;
 
   const today = new Date().toLocaleDateString("es-ES", {
     weekday: "long",

@@ -3,10 +3,10 @@
  * prices (PRICING-STUDENT-01).
  *
  * A nested route rather than another `action` on the sibling
- * /api/admin/students/[email] route, because that one predates the CSRF
- * convention and does not call isValidOrigin(). This route does: it changes what
- * a student is charged, so it follows the full admin-mutation ladder used by
- * /api/admin/pricing.
+ * /api/admin/students/[email] route, because that one predated the CSRF
+ * convention when this was written (it calls isValidOrigin() since
+ * REFACTOR-R4-P3-02). This route changes what a student is charged, so it
+ * follows the full admin-mutation ladder used by /api/admin/pricing.
  *
  * Deliberately does NOT call revalidateTag(PRICING_CACHE_TAG): per-student rows
  * never enter the global ISR display cache, which must keep serving the public
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { email: rawEmail } = await params;
   // Normalize before the lookup: SupabaseUserRepository stores emails lowercased
-  // and trimmed, while admin/_data.ts's fetchStudent does not normalize at all.
+  // and trimmed, while adminService.getStudent does not normalize at all.
   const email = decodeURIComponent(rawEmail).toLowerCase().trim();
 
   // The override is keyed on users.id, so an unknown student is a 404 rather than

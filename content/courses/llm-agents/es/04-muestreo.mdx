@@ -1,0 +1,474 @@
+---
+slug: muestreo
+title: "Muestreo: temperatura, top-k y top-p"
+block: 1
+order: 4
+minutes: 30
+summary: "Una distribución no es un texto: para escribir hay que quedarse con un token en cada posición. La lección deriva la familia entera de reglas a partir de un solo mando, la temperatura, cuyos dos extremos son la favorita de siempre y el sorteo uniforme; demuestra por qué la generación voraz acaba en un ciclo del que no sale y por qué sortear sin más acaba sacando tokens de la cola; y presenta top-k y top-p como dos maneras de cortar esa cola antes de sortear. Todo medido sobre el mini-GPT."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-cociente-y-temperatura
+    type: numeric
+    prompt: 'Tras <W>La Nela</W>, a $\tau = 1$, el mini-GPT le da $0.118$ a <W> no</W> y $0.045$ a <W> es</W>. ¿Cuántas veces más probable que <W> es</W> es <W> no</W> a $\tau = 0.5$? Redondea a un decimal.'
+    answer: 6.8
+    tolerance: 0.15
+    explanation: 'Unas $6.8$ veces. La temperatura eleva cada cociente a $1/\tau$, y a $\tau = 0.5$ eso es elevarlo al cuadrado: a $\tau = 1$ el cociente es $0.118 / 0.045 \approx 2.6$, y $2.6^{2} \approx 6.8$ (sin redondear, $2.612^{2} = 6.82$). No hace falta sumar sobre las 512 entradas: el denominador del softmax es el mismo para las dos y se va al dividir. Pon el explorable a $\tau = 0.5$ y compruébalo en las dos filas.'
+    hint: 'Escribe $q_u / q_v$ con la fórmula de la temperatura. ¿Qué queda del denominador?'
+  - id: q-que-cambia-con-tau
+    type: multi
+    prompt: 'Con los logits de <W>La Nela</W>, subes la temperatura de $\tau = 1$ a $\tau = 2$. Marca lo que cambia.'
+    options:
+      - { id: a, text: 'El orden de las entradas, de la más probable a la menos.' }
+      - { id: b, text: 'Las diez entradas que conserva top-k con $k = 10$.' }
+      - { id: c, text: 'Cuántas entradas hay en el núcleo de $p = 0.9$.' }
+      - { id: d, text: 'La probabilidad de la favorita, <W> no</W>.' }
+    answer: [c, d]
+    explanation: 'La (c) y la (d). La temperatura eleva cada cociente a $1/\tau$, y una potencia positiva no cambia qué número es mayor: el orden no se mueve, así que la (a) es falsa, y con él tampoco cambian las diez primeras, la (b). La masa sí se mueve. Al aplanarse la distribución, las primeras pierden y la cola gana, y hacen falta más entradas para reunir $0.9$: el núcleo pasa de 44 a 92. Y la favorita baja de $0.118$ a $0.040$, porque cada término del denominador con un logit menor que el suyo crece al subir $\tau$.'
+    hint: 'Separa lo que depende sólo del orden de lo que depende de la masa.'
+  - id: q-por-que-no-sale
+    type: single
+    prompt: 'En el ciclo de <W>La Nela</W>, en la primera celda, el mini-GPT le da $0.30$ a <W> no</W> en cada vuelta: siete de cada diez veces, la masa está en otra parte. ¿Por qué la generación voraz no sale del ciclo?'
+    options:
+      - { id: a, text: 'Porque sólo mira cuál es la favorita, no cuánto: le basta un $0.30$ si ninguna otra entrada lo supera, y cuando los 64 tokens que lee son todo ciclo, lee siempre lo mismo y elige siempre lo mismo.' }
+      - { id: b, text: 'Porque el modelo está seguro del ciclo: $0.30$ es mucho más que $1/512$, y la voraz sigue la apuesta más segura.' }
+      - { id: c, text: 'Porque *Marianela* repite <W>no, no, no</W> muchas veces y el modelo se lo aprendió de memoria.' }
+      - { id: d, text: 'Porque la temperatura es demasiado alta y aplana la distribución hasta que <W> no</W> gana.' }
+    answer: a
+    explanation: 'La (a). La voraz es $\arg\max$, y $\arg\max$ sólo ve el orden: con lo mismo delante elige lo mismo, y cuando lo que lee se repite, repite. La (b) confunde el motivo: la seguridad del modelo es un $0.30$, que para un sorteo significa salir del ciclo siete de cada diez veces. La (c) no explica que no salga: aunque la novela lo tuviera, un sorteo saldría. La (d) va al revés: la voraz es el límite $\tau \to 0$, la temperatura más baja posible, y subir $\tau$ es lo que abre la puerta.'
+    hint: '¿Qué parte de la distribución usa la voraz, y cuál tira?'
+  - id: q-cola-en-cincuenta
+    type: numeric
+    prompt: 'Sorteas sin corte y, en cada posición, las entradas que quedan fuera del núcleo de $0.9$ suman un 5 % de la masa. ¿Qué probabilidad hay de escribir 50 tokens sin sacar ni uno de esa cola? Dos decimales.'
+    answer: 0.08
+    tolerance: 0.01
+    explanation: 'Unas $0.08$: $0.95^{50} \approx 0.077$. Por la regla de la cadena, la probabilidad de toda la secuencia de sorteos es el producto de la de cada uno, sabidos los anteriores, y cada posición se queda dentro con $0.95$. Un 5 % por posición parece poco, y en 50 tokens trae al menos uno de la cola más de nueve veces de cada diez. Por eso top-p tira esa masa antes de sortear, en lugar de confiar en que no salga.'
+    hint: 'Cada posición se queda dentro con probabilidad $0.95$. ¿Cómo se combinan 50?'
+  - id: q-nucleo-decidido
+    type: single
+    prompt: 'Tras <W>La Nela bajó la cabe</W>, a $\tau = 1$, <W>za</W> tiene $0.974$ y las otras 511 entradas se reparten el resto. ¿Entre cuántas entradas sortea top-p con $p = 0.9$, y entre cuántas top-k con $k = 10$?'
+    options:
+      - { id: a, text: 'Top-p, entre una sola: no sortea. Top-k, entre diez.' }
+      - { id: b, text: 'Entre diez las dos: en una distribución tan afilada, la $k$ y el núcleo de $0.9$ coinciden.' }
+      - { id: c, text: 'Entre una sola las dos: top-k también descarta las entradas con probabilidad casi cero.' }
+      - { id: d, text: 'Top-p, entre 44, como tras <W>La Nela</W>; top-k, entre diez.' }
+    answer: a
+    explanation: 'La (a). <W>za</W> sola ya reúne $0.974 \ge 0.9$, así que $k_p = 1$ y en esa posición top-p hace lo mismo que la voraz. Top-k no mira la masa: se queda con diez entradas pase lo que pase, y las nueve que acompañan a <W>za</W> suman menos del 2 %: trozos como <W>da</W> o <W>dad</W>, que escriben <W>cabeda</W> o <W>cabedad</W>. La (d) olvida que el núcleo depende de la forma de la distribución, que es su razón de ser: 44 entradas tras <W>La Nela</W>, una aquí.'
+    hint: 'Top-p fija la masa; top-k fija el número. ¿Cuánta masa tiene <W>za</W> sola?'
+challenges:
+  - id: ch-nucleo
+    prompt: |
+      Escribe `nucleo(z, p, tau=1.0)`: la distribución de la que sortea top-p. Recibe los
+      logits `z` de una posición, aplica la temperatura, se queda con el núcleo de masa `p`
+      (las entradas más probables hasta reunir al menos `p`, incluida la que cruza el umbral)
+      y renormaliza. Devuelve un array del tamaño de `z`, con ceros fuera del núcleo, que
+      suma 1.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def nucleo(z, p, tau=1.0):
+          """softmax(z / tau), cortada al núcleo de masa p y renormalizada."""
+          # tu código aquí
+    tests:
+      - name: "con p = 1 y tau = 1 es el softmax"
+        code: |
+          import numpy as np
+          z = np.array([2.0, -1.0, 0.5, 3.0, 0.0, 1.5])
+          q = np.exp(z - z.max())
+          q /= q.sum()
+          r = nucleo(z, 1.0)
+          assert r is not None, 'nucleo no devuelve nada: falta el return'
+          assert np.allclose(r, q), 'con p = 1 no se corta nada, y tiene que salir el softmax de z. Sale %s' % np.round(r, 3)
+      - name: "la que cruza el umbral se queda"
+        code: |
+          import numpy as np
+          r = nucleo(np.log([0.15, 0.5, 0.05, 0.3]), 0.6)
+          assert np.allclose(r, [0, 0.625, 0, 0.375]), 'con p = 0.6, el 0.5 solo no llega y 0.5 + 0.3 sí: el núcleo son esas dos, renormalizadas a 0.625 y 0.375. Sale %s; ¿has dejado fuera la que cruza el umbral, o se te ha olvidado renormalizar?' % np.round(r, 3)
+      - name: "el orden es el de la probabilidad, no el de los ids"
+        code: |
+          import numpy as np
+          r = nucleo(np.log([0.15, 0.5, 0.05, 0.3]), 0.85)
+          assert np.allclose(r, np.array([0.15, 0.5, 0, 0.3]) / 0.95), 'con p = 0.85, el núcleo son 0.5, 0.3 y 0.15, que suman 0.95: las más probables, no las primeras del array. Sale %s' % np.round(r, 3)
+      - name: "no desborda con una temperatura pequeña"
+        code: |
+          import numpy as np
+          r = nucleo(np.array([10.0, 9.0, 0.0]), 0.9, tau=0.01)
+          assert np.all(np.isfinite(r)), 'sale nan o inf: con tau = 0.01, z / tau llega a 1000 y e^1000 desborda. Resta el máximo antes de exponenciar'
+          assert np.allclose(r, [1, 0, 0]), 'a tau = 0.01 la favorita se lo lleva todo, y el núcleo es ella sola. Sale %s' % r
+    solution: |
+      import numpy as np
+
+
+      def nucleo(z, p, tau=1.0):
+          """softmax(z / tau), cortada al núcleo de masa p y renormalizada."""
+          z = np.asarray(z, dtype=float) / tau
+          q = np.exp(z - z.max())                                # restar el máximo: no desborda
+          q /= q.sum()
+          orden = np.argsort(-q)                                 # de la más probable a la menos
+          antes = np.cumsum(q[orden]) - q[orden]                 # la masa que hay antes de cada una
+          q[orden[antes >= p]] = 0.0                             # la que cruza p tiene antes < p
+          return q / q.sum()
+    explanation: |
+      Siete líneas, y dos deciden el reto. `antes`, la masa acumulada *menos* la propia, es la
+      que deja dentro a la entrada que cruza el umbral: una entrada sale del núcleo sólo si lo
+      que hay antes de ella ya llegaba a `p`. Con la acumulada a secas, `np.cumsum(q[orden]) >= p`
+      tira también a la que cruza y el núcleo se queda corto: con `p = 1` ya pierde la última
+      entrada, y con `p = 0.6` se queda sólo con el 0.5, que es lo que ven los dos primeros tests.
+      Y `np.argsort(-q)` es el orden de la probabilidad: sin él, la acumulada recorre las
+      entradas por id, que no significa nada, y falla el tercero. Es la cuenta de `muestrear`
+      en <W>minigpt.py</W>, línea a línea.
+reading:
+  - kind: paper
+    title: 'The Curious Case of Neural Text Degeneration'
+    authors: 'Holtzman, Buys, Du, Forbes y Choi'
+    year: '2020'
+    venue: 'ICLR 2020 · arXiv:1904.09751'
+    lang: en
+    url: 'https://arxiv.org/abs/1904.09751'
+    note: 'El artículo de top-p. Su primera figura enseña los dos fallos de esta lección en GPT-2, el ciclo y el galimatías, y mide lo que apunta la primera celda: el texto humano no es el que el modelo encuentra más probable.'
+  - kind: paper
+    title: 'Hierarchical Neural Story Generation'
+    authors: 'Fan, Lewis y Dauphin'
+    year: '2018'
+    venue: 'ACL 2018 · arXiv:1805.04833'
+    lang: en
+    url: 'https://arxiv.org/abs/1805.04833'
+    note: 'El que popularizó top-k, con k = 10, para generar cuentos. Lo propone de pasada, como un detalle de cómo generan, y es el punto de partida de la crítica de Holtzman a una k fija.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 4. Corre sobre el mini-GPT: el checkpoint de P0-03. */}
+
+<Leccion slug="entrenar-un-mini-gpt">La lección sobre el entrenamiento</Leccion> dejó el mini-GPT
+del bloque cargado en el navegador y aprendiendo, y todo lo que se le ha pedido hasta aquí cabe en
+un verbo: repartir. Lee un prefijo y devuelve 512 logits, y con ellos una distribución para el token
+siguiente. Escribir con él es repetir cuatro cosas: pasarle el texto, leer esa distribución,
+quedarse con un token y pegarlo al final. Tres de ellas son mecánicas; la otra, quedarse con un
+token, es una decisión.
+
+¿Con cuál se queda? Parece un detalle y decide si lo que sale se puede leer. Las dos respuestas que
+caben en una línea fallan, y por lados opuestos: la favorita en cada posición acaba repitiéndose
+para siempre, y sortear tal cual, con las probabilidades del modelo, cuela palabras que no existen.
+Esta lección demuestra por qué, con una cuenta para cada fallo, y construye lo que se usa en su
+lugar: una temperatura entre los dos extremos y un corte que tira lo que el sorteo no debería
+tocar. Todo corre sobre el mini-GPT.
+
+Mira una distribución de verdad: la del mini-GPT tras <W>La Nela</W>, el nombre de la
+protagonista, que reparte la apuesta entre muchas entradas (la
+favorita, <W> no</W>, no llega al 12 %), y tras <W>La Nela bajó la cabe</W>, que casi no deja
+dudas. En cada fila, la barra clara es la probabilidad tras la temperatura; la verde intenso, la que
+de verdad se sortea; lo rayado, lo que un corte tira.
+
+Haz tres cosas. Lleva $\tau$ hasta el cero y súbela hasta 2: las barras crecen y encogen, y ninguna
+cambia de sitio. Pon top-k con $k = 10$: en el primer contexto tira la mitad de la masa, y en el
+segundo conserva nueve entradas más, que juntas no llegan al 2 %. Y pon top-p con $p = 0.9$: 44
+entradas en el primero, una en el segundo.
+
+<Explorable id="sampling-explorer" caption="Los logits que el mini-GPT produce tras dos contextos, convertidos en la distribución de la que se sortea. La temperatura estira o aplana sin cambiar el orden; top-k y top-p tiran la cola y renormalizan lo que queda." />
+
+<Callout type="intuition" title="La idea en una frase">
+La temperatura separa o junta las probabilidades sin tocar su orden: en un extremo la favorita se
+lo lleva todo, en el otro todas valen lo mismo. Un corte tira la cola y renormaliza. Top-k conserva
+siempre el mismo número de entradas; top-p, las que hagan falta para reunir una masa fija.
+</Callout>
+
+## La temperatura estira la distribución sin cambiar su orden
+
+Fijemos una posición y llamemos $\mathbf{z} \in \mathbb{R}^{\lvert V \rvert}$ a sus logits: el
+$\mathbf{z}_t$ de <Leccion slug="una-sola-columna">la lección sobre el modelo de lenguaje
+causal</Leccion>, sin el subíndice, porque aquí sólo hay una posición en juego. Para un número
+$\tau > 0$, la **temperatura**, definimos
+
+$$
+q_v = \frac{e^{z_v/\tau}}{\sum_{u \in V} e^{z_u/\tau}},
+$$
+
+el softmax de $\mathbf{z}/\tau$. (En el curso anterior, $\tau$ era el tokenizador.) Con $\tau = 1$,
+$\mathbf{q}$ es la distribución del modelo; con cualquier otra es una distribución distinta,
+fabricada con sus logits, y por eso no se llama $p_\theta$. **Muestrear** es
+elegir la entrada siguiente al azar, cada $v$ con probabilidad $q_v$: un sorteo por posición.
+
+Todo lo que hace $\tau$ se lee en un cociente. Entre dos entradas $u$ y $v$ el denominador se va,
+
+$$
+\frac{q_u}{q_v} = e^{(z_u - z_v)/\tau} = \left(e^{z_u - z_v}\right)^{1/\tau},
+$$
+
+y $e^{z_u - z_v}$ es el cociente que da el propio modelo, a $\tau = 1$. La temperatura eleva cada
+cociente a $1/\tau$. Tras <W>La Nela bajó la cabe</W>, el modelo da a <W>za</W> unas 195 veces lo
+que da a <W>da</W>; a $\tau = 2$, la raíz, unas 14 veces, y a $\tau = 0.5$, el cuadrado, más de
+treinta mil. Y elevar a una potencia positiva no cambia qué número es mayor.
+
+El orden de las entradas no depende de $\tau$. La favorita sigue siéndolo a cualquier temperatura,
+y las filas del explorable no se mueven.
+
+Los dos extremos salen de esa misma cuenta. Llamemos $v^{\star}$ a la favorita, la entrada de logit
+mayor, y dividamos arriba y abajo entre $e^{z_{v^{\star}}/\tau}$:
+
+$$
+q_v = \frac{e^{(z_v - z_{v^{\star}})/\tau}}{\sum_{u \in V} e^{(z_u - z_{v^{\star}})/\tau}}.
+$$
+
+Cuando $\tau \to 0$, cada exponente con $z_u < z_{v^{\star}}$ es un número negativo dividido entre
+algo que tiende a cero, y se va a $-\infty$: su término tiende a $0$. Sólo sobrevive el de
+$v^{\star}$, que vale $e^{0} = 1$ arriba y abajo, así que
+
+$$
+\lim_{\tau \to 0} q_v = \begin{cases} 1 & \text{si } v = v^{\star}, \\ 0 & \text{si no} \end{cases}.
+$$
+
+(Si dos entradas empatan en el máximo, se reparten el $1$.) Sortear de ahí ya no es sortear: sale
+$v^{\star}$ siempre. Quedarse con la favorita en cada posición, la **generación voraz** (*greedy
+decoding*; no la llamamos decodificación porque `decodificar` ya es pasar de ids a texto), no es
+otra regla. Es el muestreo a temperatura cero.
+
+En el otro extremo, cuando $\tau \to \infty$ cada exponente tiende a $0$, cada término a $1$, y
+$q_v \to 1/\lvert V \rvert$: el sorteo uniforme, que ignora todo lo que el modelo aprendió. Entre
+los dos está la familia entera, con $\tau$ como único mando: por debajo de $1$ la distribución se
+afila hacia la favorita, por encima se aplana hacia la uniforme.
+
+### La generación voraz entra en un ciclo y no sale
+
+La voraz es determinista: elige en función de lo que el mini-GPT lee, que son como mucho los últimos
+$T_{\text{ctx}} = 64$ tokens, y cada posición pega la elegida al final y, cuando ya hay 64, suelta
+el más viejo. Lo que leerá después depende sólo de lo que lee ahora, y el texto entero, sólo del
+*prompt*.
+
+De ahí sale el argumento. Si en algún momento lo que lee se repite, los mismos 64 tokens que $L$
+posiciones antes, elige lo mismo que entonces, y en la posición siguiente otra vez, y así para
+siempre: el texto se vuelve periódico, con periodo $L$, y en la regla no hay nada que pueda
+romperlo. Es un **ciclo**. Y se cae en uno en cuanto la favorita continúa un fragmento que se
+repite, como <W> no,</W>, durante 64 posiciones seguidas: a partir de ahí, lo que lee es ese
+fragmento repetido, idéntico cada $L$ posiciones.
+
+Lo que la regla no mira es cuánto. $\arg\max$ sólo ve qué entrada tiene el logit mayor, y una
+favorita del 90 % y una del 30 % dan la misma elección. Un sorteo sí lo ve: si la entrada que
+continúa el ciclo tiene probabilidad $0.3$, sale de él siete veces de cada diez, en cada posición.
+La voraz no tiene puerta. (La búsqueda en haz, *beam search*, cae en lo mismo, y queda fuera de este
+curso.)
+
+## Sin corte, el sorteo acaba en la cola
+
+El otro extremo falla por el lado contrario. Sortear a $\tau = 1$ sin tocar nada no se atasca, pero
+reparte masa entre cientos de entradas que por separado son improbables: tras <W>La Nela</W>, las
+468 que quedan fuera de las 44 más probables suman casi un 10 %. Ninguna saldrá en un sorteo
+concreto; alguna saldrá, casi seguro, en treinta.
+
+La regla de la cadena lo dice exacto: la probabilidad de escribir $n$ tokens sin tocar nunca esa
+**cola** es el producto de la masa que queda dentro en cada posición, sabido lo anterior. Si cada
+una dejara fuera un 10 %, para 32 tokens sería
+
+$$
+0.9^{32} \approx 0.034.
+$$
+
+Treinta y dos tokens sin corte traen, casi seguro, alguno de la cola, y lo que se escribe se queda:
+el modelo lo lee en todas las posiciones siguientes.
+
+La respuesta es tirar la cola antes de sortear. Ordenemos las probabilidades de mayor a menor,
+$q_{(1)} \ge q_{(2)} \ge \dots \ge q_{(\lvert V \rvert)}$ (el paréntesis del subíndice dice «la
+$i$-ésima mayor», no «la entrada $i$»), y llamemos **masa** de las $j$ primeras a su suma,
+$M_j = \sum_{i=1}^{j} q_{(i)}$. Un **corte** se queda con las $j$ más probables, pone a cero las
+demás y **renormaliza**, es decir, divide lo que queda entre su masa para que vuelva a sumar $1$:
+
+$$
+\tilde{q}_v = \begin{cases} q_v / M_j & \text{si } v \text{ está entre las } j \text{ más probables}, \\ 0 & \text{si no} \end{cases}.
+$$
+
+Lo que se sortea es $\tilde{\mathbf{q}}$, y $1 - M_j$ es la masa que el corte tira, la parte rayada
+del explorable.
+
+### Top-p corta a la medida de cada posición
+
+Los dos cortes que se usan sólo difieren en cómo eligen $j$. **Top-k** fija $j = k$ en todas las
+posiciones. (La $k$ del curso anterior cortaba el vocabulario; ésta corta una distribución.)
+**Top-p** fija la masa: se queda con las más probables hasta reunir al menos $p$, que son
+
+$$
+k_p = \min\{\, j : M_j \ge p \,\}
+$$
+
+entradas, el **núcleo** (el nombre original es *nucleus sampling*). La $p$ de top-p es un número, el
+umbral; la distribución del modelo sigue siendo $p_\theta$, con su subíndice. Y la entrada que
+cruza el umbral se queda.
+
+Top-p es, entonces, top-k con una $k$ que cada posición elige según la forma de su distribución, y
+eso es lo que top-k no puede hacer. Tras <W>La Nela</W>, el núcleo de $0.9$ tiene 44 entradas y
+top-10 tira la mitad de la masa. Tras <W>La Nela bajó la cabe</W>, el núcleo es <W>za</W> sola y
+top-p no sortea, mientras top-10 conserva nueve entradas que juntas no llegan al 2 % y de vez en
+cuando escriben <W>cabeda</W>. Una $k$ fija es pequeña en una posición y grande en la otra.
+
+La temperatura y el corte se combinan, en ese orden: primero $\tau$, después el corte. Como $\tau$
+no cambia el orden, las entradas que conserva top-k no dependen de ella. El núcleo sí, porque $\tau$
+mueve la masa.
+
+## Voraz, sorteo y núcleo, sobre el mini-GPT
+
+Las dos celdas corren sobre el mini-GPT: <W>minigpt.py</W> y el *checkpoint* del bloque, sin
+entrenar nada. Su función `muestrear(z, temperatura, top_k, top_p, rng)` es lo de arriba:
+con `temperatura=0` devuelve la favorita y, si no, divide, aplica el softmax, corta y sortea.
+`generar` la llama una vez por token.
+
+La primera mira una sola posición con lupa: los dos contextos del explorable a tres temperaturas,
+con sus dos favoritas, la masa que guarda top-10 y el núcleo de $0.9$. Después genera 32 tokens de
+forma voraz tras <W>La Nela</W> y tras <W>—¿Qué</W>, apuntando cuánto le daba el modelo a cada
+favorita.
+
+<PyCell packages={["numpy"]} code={`
+import json
+import numpy as np
+from pyodide.http import open_url
+
+exec(open_url("/courses/llm-agents/bpe.py").read())        # codificar, decodificar, vocabulario
+exec(open_url("/courses/llm-agents/minigpt.py").read())    # MiniGPT, softmax, muestrear
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+V = vocabulario(F)
+modelo = MiniGPT.cargar(open_url("/courses/llm-agents/minigpt.json").read())
+
+def logits(ids):
+    """z: los 512 logits de la última posición, leídos los últimos 64 tokens de ids."""
+    return modelo.adelante(np.array([ids[-64:]]))[0][0, -1]
+
+for texto in ["La Nela", "La Nela bajó la cabe"]:
+    z = logits(codificar(texto, F))
+    print(repr(texto))
+    for tau in [0.5, 1.0, 2.0]:
+        q = softmax(z / tau)
+        M = np.cumsum(np.sort(q)[::-1])                    # M[j-1]: la masa de las j más probables
+        k_p = int(np.searchsorted(M, 0.9)) + 1             # la primera j con M >= 0.9
+        dos = "  ".join("%r %.3f" % (V[i].decode(), q[i]) for i in np.argsort(-q)[:2])
+        print("  tau = %.1f   %s   top-10 guarda %.3f   núcleo(0.9) = %3d, deja fuera %.3f"
+              % (tau, dos, M[9], k_p, 1 - M[k_p - 1]))
+
+def voraz(prompt, n=32):
+    """La generación voraz: la favorita en cada posición, y cuánto le daba el modelo."""
+    ids, apuestas = codificar(prompt, F), []
+    for _ in range(n):
+        q = softmax(logits(ids))
+        ids.append(int(np.argmax(q)))
+        apuestas.append(q[ids[-1]])
+    return ids, apuestas
+
+ids, apuestas = voraz("La Nela")
+print(repr(decodificar(ids, F)))
+print("las 6 últimas:", "  ".join("%r %.2f" % (V[i].decode(), a) for i, a in zip(ids[-6:], apuestas[-6:])))
+print("sorteando a tau = 1, seguir 20 posiciones en el ciclo: %.1e" % np.prod(apuestas[-20:]))
+print("coste medio de esos 20 tokens: %.2f por token" % -np.mean(np.log(apuestas[-20:])))
+ids, apuestas = voraz("—¿Qué")
+print(repr(decodificar(ids, F)))
+print("' no', vuelta a vuelta:", "  ".join("%.2f" % a for a in apuestas[-14::2]))
+`} />
+
+Las cuentas de arriba están ahí. A $\tau = 0.5$, <W>za</W> se queda con todo, y a $\tau = 2$ baja
+a $0.387$, catorce veces lo de <W>da</W>. El núcleo de <W>La Nela</W> pasa de 15 a 44 y a 92
+entradas mientras top-10 guarda $0.852$, $0.502$ y $0.252$, y el de <W>cabe</W> salta de una a 133,
+porque $\tau = 2$ levanta a la vez las 511 entradas de la cola.
+
+Y el ciclo. El texto voraz dice <W>no debía decirle.</W>, abre un diálogo y ya no sale de
+<W> no</W> y la coma. El modelo apostaba $0.30$ por <W> no</W> y $0.24$ por la coma en cada vuelta:
+nunca estuvo seguro, y un sorteo habría salido siete veces de cada diez. Que siguiera dentro veinte
+posiciones tiene probabilidad $1.1 \times 10^{-11}$, el producto de las veinte apuestas; para la
+voraz, ese número no existe.
+
+La línea del coste dice algo más. Esos veinte tokens le cuestan al modelo $1.26$ por token, la media
+de sus $-\log$, y las páginas de *Marianela* que no vio le cuestan $3.2$: el ciclo le parece más
+probable que la novela. Holtzman y sus coautores vieron lo mismo en GPT-2, un modelo miles de veces
+mayor. El texto que escribe una persona no es el que el modelo encuentra más probable, y maximizar
+la probabilidad posición a posición lleva a sitios como éste. Por eso se sortea.
+
+La segunda continuación llega al mismo ciclo por otro camino, y en ella la apuesta sí sube con cada
+vuelta: de $0.18$ a $0.31$ por <W> no</W>, y ahí se queda. Es la realimentación que Holtzman midió
+en GPT-2, donde cada repetición hace más probable la siguiente hasta rozar el $1$. En el mini-GPT es
+débil, y el argumento de arriba no la necesita: con $0.18$ la voraz ya estaba atrapada.
+
+La segunda compara tres maneras de elegir, con 32 tokens tras cada uno de tres prompts y dos
+semillas (una sola para la voraz, que no sortea). Cuenta cuántas de las palabras generadas existen
+en la novela y cuántas continuaciones repiten algún grupo de cuatro tokens. En un dispositivo lento
+se detiene antes de que el navegador la corte, y dice dónde.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: modelo, codificar, decodificar, F, np.
+import re, time
+
+PALABRA = re.compile(r"[^\\W\\d_]+")
+novela = set(PALABRA.findall(quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read()).lower()))
+plazo = time.time() + 8                                    # el navegador corta a los 10 s
+
+def repite(ids, n=4):
+    """True si algún grupo de n tokens seguidos sale dos veces."""
+    grupos = [tuple(ids[i:i + n]) for i in range(len(ids) - n + 1)]
+    return len(grupos) != len(set(grupos))
+
+def medir(opciones, semillas):
+    """32 tokens por prompt y semilla: una muestra, palabras de la novela y repeticiones."""
+    reales = total = repetidas = 0
+    for prompt in ["La Nela", "—¿Qué", "El sol se"]:
+        for semilla in semillas:
+            if time.time() > plazo:
+                return None
+            ids = codificar(prompt, F)
+            nuevos = modelo.generar(ids, 32, rng=np.random.default_rng(semilla), **opciones)[len(ids):]
+            palabras = PALABRA.findall(decodificar(nuevos, F).lower())[:-1]  # la última, quizá cortada
+            reales += sum(w in novela for w in palabras)
+            total += len(palabras)
+            repetidas += repite(nuevos)
+            muestra = decodificar(nuevos, F) if total == len(palabras) else muestra
+    return muestra, reales, total, repetidas, 3 * len(semillas)
+
+for nombre, opciones, semillas in [("voraz", dict(temperatura=0), [0]),
+                                   ("tau = 1", dict(temperatura=1.0), [0, 1]),
+                                   ("top-p 0.9", dict(temperatura=1.0, top_p=0.9), [0, 1])]:
+    medida = medir(opciones, semillas)
+    if medida is None:
+        print("tiempo agotado en", nombre)
+        break
+    muestra, reales, total, repetidas, n = medida
+    print("%-10s %r" % (nombre, muestra))
+    print("%10s palabras de la novela: %d de %d (%.0f %%)   repiten: %d de %d"
+          % ("", reales, total, 100 * reales / total, repetidas, n))
+`} />
+
+Los dos fallos, medidos. La voraz escribe casi sólo palabras de la novela, 38 de 39, y sus tres
+continuaciones repiten, dos de ellas ya en el ciclo de <W> no</W> y la coma. Sortear a $\tau = 1$
+no repite ninguna y lo paga: 54 de 70, con <W>estreglando</W> y <W>ficill</W> entre las otras. El
+núcleo de $0.9$ recupera parte, 59 de 73, sin repetir. El mini-GPT es pequeño y todas las muestras
+se leen mal; lo que la celda mide es hacia dónde empuja cada regla.
+
+Ahora cambia la última línea de la lista por `("tau = 1.5", dict(temperatura=1.5), [0, 1])`: las
+palabras de la novela bajan a 49 de 70, y la muestra dice <W>lapacuma</W>. Con `temperatura=0.5`
+suben a 78 de 83, y dos de las seis continuaciones vuelven a repetirse: una temperatura baja es una
+voraz con algo de ruido. Seis continuaciones son pocas para separar dos reglas parecidas; los
+extremos, en cambio, no dejan duda.
+
+## Comprueba tu intuición
+
+Cinco preguntas y un reto: escribir la distribución de la que sortea top-p.
+
+<Quiz id="q-cociente-y-temperatura" />
+
+<Quiz id="q-que-cambia-con-tau" />
+
+<Quiz id="q-por-que-no-sale" />
+
+<Quiz id="q-cola-en-cincuenta" />
+
+<Quiz id="q-nucleo-decidido" />
+
+<CodeChallenge id="ch-nucleo" />
+
+---
+
+El mini-GPT ya escribe: cada token sale de un sorteo sobre el núcleo de su distribución, a la
+temperatura que se elija, y la voraz queda como el caso $\tau = 0$, que conviene conocer y no usar.
+Pero mira lo que hace `generar` por cada token. Llama a `adelante` con el texto entero, hasta 64
+tokens, se queda con la última fila de logits y tira las demás; en la posición siguiente vuelve a
+pasar los mismos tokens, más uno.
+
+La máscara de <Leccion slug="una-sola-columna">la lección sobre el modelo de lenguaje
+causal</Leccion> garantiza que, en cada capa, las claves y los valores de esas posiciones no han
+cambiado: la fila $t$ sólo depende de lo que hay a su izquierda, y ahí no se ha movido nada. Ese
+trabajo se repite en cada token y crece con el texto. Guardarlo en lugar de rehacerlo, y contar
+cuánto cuesta entonces cada token, es <Leccion slug="kv-cache">la lección siguiente, sobre la caché
+de claves y valores</Leccion>.

@@ -40,6 +40,10 @@ jobs:
       - name: Check messages
         run: pnpm check:messages
 
+      # REFACTOR-R4-P2-02: every icon used in src/ is in the icon-font subset.
+      - name: Check icons
+        run: pnpm check:icons
+
       - name: Unit tests
         run: pnpm test:unit
         env:

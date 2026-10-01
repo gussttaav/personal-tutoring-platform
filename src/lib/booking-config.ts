@@ -8,12 +8,28 @@
  * read via ScheduleService and delivered to the client through ScheduleProvider.
  * Kept separate from calendar.ts so client components can import these helpers
  * without pulling in googleapis and Node.js built-ins.
+ *
+ * REFACTOR-R4-P1-01: SESSION_DURATION_MINUTES + SLOT_ALIGNMENT_MINUTES — the
+ * server-side definition of a bookable window, enforced by BookingService.checkSlot.
  */
 
-import type { TimeBlock, WeeklyHours } from "@/domain/types";
+import type { SessionType, TimeBlock, WeeklyHours } from "@/domain/types";
 
 /** How many weeks ahead bookings are allowed. Static for now (not admin-editable). */
 export const BOOKING_WINDOW_WEEKS = 8;
+
+// REFACTOR-R4-P1-01: the server-side source of truth for how long each session type
+// lasts. The Zoom grace table (infrastructure/zoom/jwt.ts) and the booking UI already
+// assume these values; the validator now enforces them.
+export const SESSION_DURATION_MINUTES: Record<SessionType, number> = {
+  free15min: 15,
+  session1h: 60,
+  session2h: 120,
+  pack:      60,
+};
+
+/** Every bookable start sits on this grid in the tutor's timezone. */
+export const SLOT_ALIGNMENT_MINUTES = 15;
 
 /**
  * Generates the candidate slot start-minutes for a set of working blocks.

@@ -2,7 +2,32 @@
 // ARCH-13: listByUser now returns cancel tokens alongside records; recordRescheduleFailure added.
 // SINGLE-SESSION-CONFIRM-01: findByStripePaymentId detail finder for the polling surface.
 // BOOKING-HISTORY-01: listHistoryByUser — paginated past-bookings read.
-import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail } from "../types";
+// REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap.
+// REFACTOR-R4-P1-02: listByUser, hasAnyBooking, hasBookingForPayment and findByStripePaymentId
+// throw on a read error; `false` / `null` / `[]` means KNOWN absent.
+// REFACTOR-R4-P1-03: reinstateBooking (a reschedule's claim compensation); findByCancelToken
+// returns creditPackId + stripePaymentId so a reschedule carries them to the new booking.
+// REFACTOR-R4-P1-04: cancelByToken — the status flip and a pack class's credit restore in
+// one transaction (the cancel_booking RPC).
+// REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the daily booking-payment audit's read.
+import type {
+  BookingHistoryPage, BookingRecord, PaymentAuditBooking, SessionType, SingleSessionBookingDetail,
+} from "../types";
+
+/**
+ * REFACTOR-R4-P1-04: what cancel_booking actually did. `consumed` is false when no
+ * confirmed booking carried the token (the other fields are then false / null / 0).
+ * `restored` is only ever true for a pack class: to its originating pack
+ * (`fromOriginating`) or, when that one has expired, to the earliest-expiring active pack
+ * with room. `credits` is the user's total across active packs after the cancel.
+ */
+export interface CancelResult {
+  consumed:        boolean;
+  restored:        boolean;
+  restoredPackId:  string | null;
+  fromOriginating: boolean;
+  credits:         number;
+}
 
 export interface IBookingRepository {
   /**
@@ -17,6 +42,8 @@ export interface IBookingRepository {
   /**
    * Looks up a booking by its cancel token. Returns null if the token is not
    * found, has expired, or has already been consumed by a prior cancellation.
+   * REFACTOR-R4-P1-03: the record carries `creditPackId` and `stripePaymentId` when the
+   * row has them, so a reschedule can move the pack link / payment to the new booking.
    */
   findByCancelToken(token: string): Promise<BookingRecord | null>;
 
@@ -41,9 +68,28 @@ export interface IBookingRepository {
   consumeCancelToken(token: string): Promise<boolean>;
 
   /**
+   * REFACTOR-R4-P1-04: cancels the booking holding `token` and, for a pack class,
+   * restores its credit — originating pack first — in ONE transaction, so a failure
+   * leaves the booking confirmed and the token usable. Same compare-and-swap as
+   * consumeCancelToken: of two concurrent calls exactly one reports `consumed: true`.
+   * Trusts the token: callers verify it with findByCancelToken (HMAC) first.
+   */
+  cancelByToken(token: string): Promise<CancelResult>;
+
+  /**
+   * REFACTOR-R4-P1-03: undo a reschedule's claim. Flips the row identified by `eventId`
+   * from 'cancelled' back to 'confirmed' and restores its ORIGINAL cancel/join tokens
+   * (they are HMACs of eventId:email:startsAt, so they can be recomputed). Returns false
+   * if the row is not in 'cancelled' — or if the exclusion constraint now rejects it
+   * because another booking took the slot in the meantime.
+   */
+  reinstateBooking(record: BookingRecord): Promise<boolean>;
+
+  /**
    * Returns all active (non-cancelled, future) bookings for a user, ordered by
    * start time ascending. Returns an empty array if the user has no bookings.
    * Each entry includes both tokens alongside the record.
+   * REFACTOR-R4-P1-02: throws on a read error; `[]` means *known absent*.
    */
   listByUser(email: string): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]>;
 
@@ -69,8 +115,17 @@ export interface IBookingRepository {
    * it was later cancelled. Used to gate first-time-user flows (e.g. free
    * trial eligibility) — once a user has booked, cancelling does not restore
    * eligibility.
+   * REFACTOR-R4-P1-02: throws on a read error; `false` means *known absent*.
    */
   hasAnyBooking(email: string): Promise<boolean>;
+
+  /**
+   * REFACTOR-R4-P1-01: true if the user holds a free15min booking that was not
+   * cancelled (confirmed, completed or no_show). Backs the one-free-call-per-user
+   * cap; cancelling the call frees the allowance again. Throws on a DB error — a
+   * failed read must not be taken as "no free call yet".
+   */
+  hasActiveFreeSession(email: string): Promise<boolean>;
 
   /**
    * Looks up a booking by its calendar event id, scoped to the owning user
@@ -94,6 +149,9 @@ export interface IBookingRepository {
    * REFACTOR-P4-01: Returns true if a booking row exists for the given Stripe
    * PaymentIntent id. Used by the reconciliation cron to confirm a single-session
    * webhook wrote its downstream booking.
+   * REFACTOR-R4-P1-02: also the webhook's "already fulfilled" gate. Status-agnostic —
+   * true for any number of rows in any status (a rescheduled paid class leaves two).
+   * Throws on a read error; `false` means *known absent*.
    */
   hasBookingForPayment(stripePaymentId: string): Promise<boolean>;
 
@@ -103,8 +161,13 @@ export interface IBookingRepository {
    * Scoped to `status = 'confirmed'` (unlike hasBookingForPayment, which is status-agnostic)
    * so a cancelled/completed/no_show row never reports a stale `confirmed`. Timestamps are
    * normalized via `new Date(...).toISOString()` per the TIMESTAMPTZ gotcha.
+   * REFACTOR-R4-P1-02: throws on a read error; `null` means *known absent*.
    */
   findByStripePaymentId(stripePaymentId: string): Promise<SingleSessionBookingDetail | null>;
+
+  /** REFACTOR-R4-P3-03: confirmed bookings starting in [now, untilIso), with what they are
+   *  paid by. Throws on a read error: a failed read must not report "all paid". */
+  listUpcomingForPaymentAudit(untilIso: string): Promise<PaymentAuditBooking[]>;
 
   /**
    * Marks a booking as completed. Idempotent and conservative: only transitions

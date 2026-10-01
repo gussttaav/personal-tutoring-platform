@@ -6,11 +6,14 @@
  * Dead-letter listing and retry logic live in src/services/PaymentService.ts.
  *
  * REL-03 — Dead-letter recovery API.
+ *
+ * REFACTOR-R4-P3-02: POST checks the origin first, per the CSRF convention (CLAUDE.md).
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
+import { isValidOrigin } from "@/lib/csrf";
 import { log } from "@/lib/logger";
 import { paymentService } from "@/services";
 
@@ -30,6 +33,9 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  // REFACTOR-R4-P3-02: CSRF convention (CLAUDE.md) — every POST route checks origin.
+  if (!isValidOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const session = await auth();
 
   if (!session?.user?.email) {

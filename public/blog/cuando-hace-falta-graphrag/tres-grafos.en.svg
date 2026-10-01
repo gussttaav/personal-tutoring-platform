@@ -1,0 +1,160 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 256" width="750" height="256" role="img"
+ aria-label="Four panels, one for each place the answer to an Albarán question can live. In one chunk: what refund window does the Team plan have?; one document answers it. In a chain: is the customer on 4812 entitled to a refund?; it takes two or three chained documents. In the whole: why are customers asking for refunds this quarter?; it takes hundreds of documents at once. In the relations: how many Team plan customers are waiting for the 3.2 fix?; the answer is a count over data: the customers linked both to the plan and to the bug. Under each panel, the tool that answers it: hybrid RAG, no graph; an agent or an associative memory, the graph as memory; a community map, the graph as a map; a query, the graph you already have.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { fill: none; stroke: #ffb4ab; stroke-dasharray: 3 3; }
+  .bx.g { stroke: #3b3b3e; }
+  .lb { font-size: 12px; font-weight: 600; text-anchor: middle; }
+  .sb { font-size: 10.5px; fill: #86948a; text-anchor: middle; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10.5px; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .in { font-size: 10.5px; font-weight: 600; fill: #0e0e10; text-anchor: middle; }
+  .hl { paint-order: stroke; stroke: #131315; stroke-width: 4px; stroke-linejoin: round; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; marker-end: url(#aw); }
+  .ed { stroke: #3b3b3e; stroke-width: 1.2; }
+  .ed.m { stroke: #4edea3; stroke-width: 1.4; }
+  .ed.x { stroke: #ffb4ab; stroke-dasharray: 3 3; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="hd" x="0.0" y="12.0">IN ONE CHUNK</text>
+<rect class="bx g" x="0.0" y="22.0" width="177.0" height="96.0" rx="6"/>
+<rect x="11.0" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="38.0" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="65.0" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="92.0" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="119.0" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="146.0" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="11.0" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="38.0" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="65.0" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="92.0" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="119.0" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="146.0" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="11.0" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="38.0" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="65.0" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="92.0" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="119.0" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="146.0" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="11.0" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="38.0" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="65.0" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="92.0" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="119.0" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="146.0" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="92.0" y="52.5" width="20" height="14" rx="2" fill="rgba(78,222,163,0.35)" stroke="#4edea3"/>
+<text class="tx" x="2.0" y="136.0">What refund window does</text>
+<text class="tx" x="2.0" y="150.0">the Team plan have?</text>
+<text class="tx d" x="2.0" y="184.0">one document</text>
+<text class="hd" x="191.3" y="12.0">IN A CHAIN</text>
+<rect class="bx g" x="191.3" y="22.0" width="177.0" height="96.0" rx="6"/>
+<rect x="202.3" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="229.3" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="256.3" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="283.3" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="310.3" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="337.3" y="31.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="202.3" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="229.3" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="256.3" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="283.3" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="310.3" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="337.3" y="52.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="202.3" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="229.3" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="256.3" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="283.3" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="310.3" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="337.3" y="73.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="202.3" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="229.3" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="256.3" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="283.3" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="310.3" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<rect x="337.3" y="94.5" width="20" height="14" rx="2" fill="none" stroke="#3b3b3e"/>
+<path d="M239.3,38.5 L266.3,80.5 L320.3,59.5" fill="none" stroke="#4edea3" stroke-width="1.4"/>
+<rect x="229.3" y="31.5" width="20" height="14" rx="2" fill="#1b2a24" stroke="#4edea3"/>
+<rect x="256.3" y="73.5" width="20" height="14" rx="2" fill="#1b2a24" stroke="#4edea3"/>
+<rect x="310.3" y="52.5" width="20" height="14" rx="2" fill="#1b2a24" stroke="#4edea3"/>
+<text class="tx" x="193.3" y="136.0">Is the customer on 4812</text>
+<text class="tx" x="193.3" y="150.0">entitled to a refund?</text>
+<text class="tx d" x="193.3" y="184.0">two or three, chained</text>
+<text class="hd" x="382.6" y="12.0">IN THE WHOLE</text>
+<rect class="bx g" x="382.6" y="22.0" width="177.0" height="96.0" rx="6"/>
+<rect x="393.6" y="31.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="420.6" y="31.5" width="20" height="14" rx="2" fill="#c47d2b"/>
+<rect x="447.6" y="31.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="474.6" y="31.5" width="20" height="14" rx="2" fill="#5b8ce0"/>
+<rect x="501.6" y="31.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="528.6" y="31.5" width="20" height="14" rx="2" fill="#c47d2b"/>
+<rect x="393.6" y="52.5" width="20" height="14" rx="2" fill="#55565c"/>
+<rect x="420.6" y="52.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="447.6" y="52.5" width="20" height="14" rx="2" fill="#5b8ce0"/>
+<rect x="474.6" y="52.5" width="20" height="14" rx="2" fill="#c47d2b"/>
+<rect x="501.6" y="52.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="528.6" y="52.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="393.6" y="73.5" width="20" height="14" rx="2" fill="#c47d2b"/>
+<rect x="420.6" y="73.5" width="20" height="14" rx="2" fill="#5b8ce0"/>
+<rect x="447.6" y="73.5" width="20" height="14" rx="2" fill="#c47d2b"/>
+<rect x="474.6" y="73.5" width="20" height="14" rx="2" fill="#55565c"/>
+<rect x="501.6" y="73.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="528.6" y="73.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="393.6" y="94.5" width="20" height="14" rx="2" fill="#5b8ce0"/>
+<rect x="420.6" y="94.5" width="20" height="14" rx="2" fill="#c47d2b"/>
+<rect x="447.6" y="94.5" width="20" height="14" rx="2" fill="#22a672"/>
+<rect x="474.6" y="94.5" width="20" height="14" rx="2" fill="#c47d2b"/>
+<rect x="501.6" y="94.5" width="20" height="14" rx="2" fill="#5b8ce0"/>
+<rect x="528.6" y="94.5" width="20" height="14" rx="2" fill="#55565c"/>
+<text class="tx" x="384.6" y="136.0">Why are customers asking</text>
+<text class="tx" x="384.6" y="150.0">for refunds this quarter?</text>
+<text class="tx d" x="384.6" y="184.0">hundreds, all at once</text>
+<text class="hd" x="573.9" y="12.0">IN THE RELATIONS</text>
+<rect class="bx g" x="573.9" y="22.0" width="177.0" height="96.0" rx="6"/>
+<line class="ed m" x1="605.9" y1="58.0" x2="632.4" y2="94.0"/>
+<line class="ed m" x1="718.9" y1="58.0" x2="632.4" y2="94.0"/>
+<line class="ed m" x1="605.9" y1="58.0" x2="662.4" y2="94.0"/>
+<line class="ed m" x1="718.9" y1="58.0" x2="662.4" y2="94.0"/>
+<line class="ed m" x1="605.9" y1="58.0" x2="692.4" y2="94.0"/>
+<line class="ed m" x1="718.9" y1="58.0" x2="692.4" y2="94.0"/>
+<line class="ed" x1="605.9" y1="58.0" x2="605.9" y2="102.0"/>
+<line class="ed" x1="718.9" y1="58.0" x2="718.9" y2="102.0"/>
+<circle cx="632.4" cy="94.0" r="5" fill="#1b2a24" stroke="#4edea3"/>
+<circle cx="662.4" cy="94.0" r="5" fill="#1b2a24" stroke="#4edea3"/>
+<circle cx="692.4" cy="94.0" r="5" fill="#1b2a24" stroke="#4edea3"/>
+<circle cx="605.9" cy="102.0" r="5" fill="#131315" stroke="#86948a"/>
+<circle cx="718.9" cy="102.0" r="5" fill="#131315" stroke="#86948a"/>
+<circle cx="605.9" cy="58.0" r="7" fill="#131315" stroke="#bbcabf"/>
+<circle cx="718.9" cy="58.0" r="7" fill="#131315" stroke="#bbcabf"/>
+<text class="sb" x="583.9" y="40.0" style="text-anchor:start">Team plan</text>
+<text class="sb" x="740.9" y="40.0" style="text-anchor:end">3.2 bug</text>
+<text class="tx" x="575.9" y="136.0">How many Team plan</text>
+<text class="tx" x="575.9" y="150.0">customers are waiting for</text>
+<text class="tx" x="575.9" y="164.0">the 3.2 fix?</text>
+<text class="tx d" x="575.9" y="184.0">a count over data</text>
+<path class="ar m" d="M88.5,194.0 L88.5,208.0"/>
+<rect class="bx " x="0.0" y="210.0" width="177.0" height="44.0" rx="6"/>
+<text class="lb" x="88.5" y="230.0">Hybrid RAG</text>
+<text class="sb" x="88.5" y="244.0">no graph</text>
+<path class="ar m" d="M279.8,194.0 L279.8,208.0"/>
+<rect class="bx m" x="191.3" y="210.0" width="177.0" height="44.0" rx="6"/>
+<text class="lb m" x="279.8" y="230.0">Agent or memory</text>
+<text class="sb" x="279.8" y="244.0">the graph as memory</text>
+<path class="ar m" d="M471.1,194.0 L471.1,208.0"/>
+<rect class="bx m" x="382.6" y="210.0" width="177.0" height="44.0" rx="6"/>
+<text class="lb m" x="471.1" y="230.0">Community map</text>
+<text class="sb" x="471.1" y="244.0">the graph as a map</text>
+<path class="ar m" d="M662.4,194.0 L662.4,208.0"/>
+<rect class="bx m" x="573.9" y="210.0" width="177.0" height="44.0" rx="6"/>
+<text class="lb m" x="662.4" y="230.0">A query</text>
+<text class="sb" x="662.4" y="244.0">the graph you already have</text>
+</svg>

@@ -1,0 +1,781 @@
+---
+slug: arboles-b
+title: "Why databases index with B-trees, when there are so many ways to search"
+date: "2026-09-29"
+minutes: 32
+summary: "A hash index finds one order among 3 million by reading three pages, and a B-tree reads four. Yet almost every database indexes with B-trees. What a B-tree is, what changes in the B+tree that databases actually use, and why it beat the hash table, the binary tree and the sorted file: what's expensive is reading pages, and an index has to do much more than find a key."
+draft: false
+reading:
+  - kind: paper
+    title: "Organization and Maintenance of Large Ordered Indexes"
+    authors: "Rudolf Bayer and Edward McCreight"
+    year: "1972"
+    venue: "Acta Informatica"
+    lang: en
+    url: "https://link.springer.com/article/10.1007/BF00288683"
+    note: "The paper that introduces the B-tree. Its first pages frame the problem exactly as here: an index on disk that has to be queried and modified without reorganizing it, with the cost counted in pages."
+  - kind: paper
+    title: "The Ubiquitous B-Tree"
+    authors: "Douglas Comer"
+    year: "1979"
+    venue: "ACM Computing Surveys"
+    lang: en
+    url: "https://doi.org/10.1145/356770.356776"
+    note: "Nine years after the original, the B-tree was already everywhere. The survey that settled the vocabulary: it describes the B+, the B* and IBM's VSAM, and explains why each variant exists."
+  - kind: paper
+    title: "Efficient Locking for Concurrent Operations on B-Trees"
+    authors: "Philip Lehman and S. Bing Yao"
+    year: "1981"
+    venue: "ACM Transactions on Database Systems"
+    lang: en
+    url: "https://www.csd.uoc.gr/~hy460/pdf/p650-lehman.pdf"
+    note: "The B-link tree: a pointer to the right sibling on every page, and readers stop locking. It's the algorithm Postgres implements, and it reads in an afternoon."
+  - kind: paper
+    title: "The Log-Structured Merge-Tree (LSM-Tree)"
+    authors: "Patrick O'Neil, Edward Cheng, Dieter Gawlick and Elizabeth O'Neil"
+    year: "1996"
+    venue: "Acta Informatica"
+    lang: en
+    url: "https://www.cs.umb.edu/~poneil/lsmtree.pdf"
+    note: "The alternative for when you write much more than you read. Section 1 works out what a B-tree costs under random inserts, which is the problem of this post's UUID section."
+  - kind: paper
+    title: "The Adaptive Radix Tree: ARTful Indexing for Main-Memory Databases"
+    authors: "Viktor Leis, Alfons Kemper and Thomas Neumann"
+    year: "2013"
+    venue: "ICDE 2013"
+    lang: en
+    url: "https://db.in.tum.de/~leis/papers/ART.pdf"
+    note: "What changes when everything fits in memory and the expensive thing stops being the page and becomes the processor's cache miss. It's DuckDB's index."
+  - kind: paper
+    title: "The Case for Learned Index Structures"
+    authors: "Tim Kraska, Alex Beutel, Ed Chi, Jeffrey Dean and Neoklis Polyzotis"
+    year: "2018"
+    venue: "SIGMOD 2018"
+    lang: en
+    url: "https://arxiv.org/abs/1712.01208"
+    note: "A B-tree is a model that predicts where a key is, so it can be replaced by a small network. Section 3 measures it on read-only data; inserts are left to an appendix, and that's where the debate still is."
+  - kind: libro
+    title: "Database Internals"
+    authors: "Alex Petrov"
+    year: "2019"
+    venue: "O'Reilly"
+    lang: en
+    url: "https://www.databass.dev/"
+    note: "Chapters 2 to 6 tell the B-tree the way real databases implement it: page format, splits, variants and maintenance. The natural next step after this post."
+  - kind: libro
+    title: "Use The Index, Luke: Anatomy of an Index"
+    authors: "Markus Winand"
+    venue: "use-the-index-luke.com"
+    lang: en
+    url: "https://use-the-index-luke.com/sql/anatomy"
+    note: "The B-tree from the side of whoever writes the SQL: why a slow index is almost always a walk along the leaves or the table, not a tree that's too tall."
+  - kind: libro
+    title: "PostgreSQL: src/backend/access/nbtree/README"
+    authors: "The PostgreSQL Global Development Group"
+    venue: "github.com/postgres"
+    lang: en
+    url: "https://github.com/postgres/postgres/blob/master/src/backend/access/nbtree/README"
+    note: "How Postgres's default index is really built: Lehman and Yao, the high key on every page, why it doesn't merge half-empty pages and how a page is deleted without stopping anyone."
+  - kind: libro
+    title: "The SQLite Database File Format"
+    authors: "SQLite"
+    venue: "sqlite.org"
+    lang: en
+    url: "https://www.sqlite.org/fileformat2.html"
+    note: "SQLite's file format, byte by byte. Section 1.6 explains the two kinds of tree it uses, one for tables and one for indexes, which are exactly the two variants in this post."
+tags: ["bases-de-datos", "indices", "estructuras-de-datos"]
+aiImages: true
+---
+
+{/*
+  BLOG-10 — Why databases index with B-trees, when there are so many ways to search. English
+  translation of content/blog/es/arboles-b.mdx; the method notes there apply here unchanged.
+
+  Thesis: an index is not chosen for how fast it finds one key but for how many pages it reads
+  and how many different questions it answers. The B+tree is not the best at any single query,
+  but it is the only structure that does the four jobs of an index well (find a key, scan a
+  range or an order, keep up with writes, survive concurrency and crashes) when what's
+  expensive is reading pages.
+
+  EVERY number is measured, none invented; raw values in scripts/figures/arboles-b/mediciones.json.
+  The schema KEEPS ITS SPANISH NAMES (pedidos, cliente_id, importe, fecha, clientes) and the text
+  glosses them once; SQL is byte-identical to the Spanish post. The Python B-tree is translated
+  (identifiers and comments) and tested with the same invariants as the Spanish one. Numbers use
+  English separators (22,059; 1.2). Figures are the .en.svg files from
+  scripts/figures/arboles-b/make_svgs.py.
+*/}
+
+An online shop keeps its orders in Postgres, in a table called `pedidos` with 3 million rows. The
+shop is Spanish, and so is its schema: `pedidos` are the orders, and further down `cliente_id` is
+the customer behind each order, `importe` its amount and `fecha` its date; the customers themselves
+live in `clientes`. Postgres doesn't store
+those rows loose but in **pages**: blocks of 8 KB, all the same size, which it always reads and
+writes whole, even when it only cares about one of the rows inside. About 136 rows of `pedidos` fit
+in a page, and the table takes up 22,059. To find order 1,234,567, Postgres reads four pages: three
+from its index on `id` and one from the table, the one holding the row. The index is a separate
+structure, also made of pages, that says which page of the table holds each `id`. If, instead of
+the index it creates by default, you ask it for a hash index, it reads three. The hash table is the
+classic structure for finding a key no matter how many there are, and Postgres offers it with the
+same command as the other one:
+
+```sql
+CREATE INDEX ON pedidos USING hash (id);
+```
+
+With the other two questions people usually ask of an `id` column, the count changes:
+
+| | Default index (B-tree) | Hash index |
+|---|---|---|
+| `WHERE id = 1234567` | 4 pages | 3 pages |
+| `WHERE id BETWEEN 1234567 AND 1235566` (a thousand orders) | 14 pages | 22,080 pages |
+| `ORDER BY id DESC LIMIT 10` | 4 pages | 22,083 pages |
+
+With the hash index, asking for a thousand consecutive orders or for the last ten means reading the
+whole table, because a hash doesn't know which keys go together. The default index, a **B-tree**,
+finds them in fourteen pages and in four. That's why Postgres creates it unless told otherwise, and
+it's not alone. MySQL doesn't even let you choose: InnoDB accepts `USING HASH`, issues a note
+saying it doesn't support it, and builds a B-tree anyway. SQLite has no other kind of index, and SQL
+Server and Oracle also build a B-tree unless asked for something else.
+
+There are many more ways to search: sort the data and bisect, hash tables, balanced binary trees,
+skip lists, prefix trees. Several of them beat the B-tree at whatever each does best. The question
+is why almost every database that keeps its data on disk picked the same structure fifty years ago
+and still uses it, and the answer has three parts. The first is what a lookup costs: in a database,
+what's expensive is not comparing keys but reading pages, and that changes which structure is fast.
+The second is what an index is asked to do, which is a lot more than finding a key. The third is
+that the B-tree, and above all its variant, the **B+tree**, is the only structure that does all of
+that while reading few pages, even though it isn't the best at any of those things on its own.
+
+Every number in this post is measured. The shop is invented: a
+[public script](/blog/como-ejecuta-un-join/tienda.en.sql) generates it with fixed seeds, the same
+one used in the [post on how a database runs a JOIN](/en/blog/como-ejecuta-un-join), so anyone can
+repeat the measurements. The engines are Postgres 18.6, MySQL 9.4 and SQLite 3.45, the first two in
+Docker, on a four-core laptop with a SATA SSD. Every time is the median of three runs.
+
+The B-tree is more than fifty years old, and almost every alternative that has appeared since was
+designed for a different situation: data that fits entirely in memory, or far more writes than
+reads.
+
+<figure>
+  <img
+    src="/blog/arboles-b/linea-de-tiempo.en.svg"
+    alt="Timeline, not to scale, with ten milestones. In green, the B-tree family: 1970, the B-tree of Bayer and McCreight; 1972, the red-black tree, a B-tree written with binary nodes; 1973, IBM's VSAM, with the B+tree; 1979, Comer's survey calling it ubiquitous; 1981, the B-link tree of Lehman and Yao. In orange, the alternatives: 1962, the AVL tree; 1990, Pugh's skip list; 1996, the LSM tree, for writing; 2013, ART and Bw-tree, for memory; 2018, the learned indexes of Kraska et al."
+    width="760"
+    height="150"
+  />
+  <figcaption>
+    Not to scale. In green, the B-tree and its variants; in orange, the structures designed for
+    something else.
+  </figcaption>
+</figure>
+
+## What a lookup costs
+
+On the test laptop, comparing two integers costs a couple of nanoseconds, and finding a key among
+367 sorted ones with a binary search, about 100. Reading an 8 KB page from the SSD costs about 300
+microseconds: as much as three thousand complete binary searches. A spinning hard disk, the kind
+that existed when the B-tree was invented, takes about
+[8 milliseconds](https://norvig.com/21-days.html#answers) to move its head to the page, as much as
+eighty thousand.
+
+That's why databases work in pages. The disk and the operating system read in blocks, and reading
+one byte costs as much as reading the whole page, so the database groups rows into fixed-size
+blocks and always fetches the full page. Postgres uses 8 KB pages; InnoDB, MySQL's storage engine,
+16 KB, and SQLite 4 KB. From that comes the rule that decides everything else: **the unit of cost of
+a lookup is not the comparison, it's the page that isn't in memory.** Whatever an algorithm does
+inside a page it has already read is almost free.
+
+Where the page is matters as much as how many have to be read. A recently read page can still be
+in memory in two places: in Postgres's cache, the memory it sets aside for the pages it has used,
+or in the operating system's, which keeps recently read chunks of files. The lookup from the start,
+four pages, costs 20 microseconds if all four are in Postgres's cache, 43 if they're in the
+operating system's and 790 if they have to be fetched from the SSD, almost all of it waiting on
+the disk. So the count that matters is not the textbook one, $O(\log n)$ comparisons, but how many
+pages have to be read and how many of them won't already be in memory.
+
+The other half of the answer is what an index is asked to do. Finding a key is its first job, not
+its only one. A database index has four:
+
+1. **Find a key.** `WHERE id = 42`, and check that a key isn't repeated before accepting a new
+   row.
+2. **Scan a range or an order.** `BETWEEN`, `>`, `ORDER BY ... LIMIT`, `min()`, `LIKE 'abc%'`, or
+   joining two tables by walking both at once in order, like two sorted lists being matched up.
+3. **Keep up with the writes.** Every `INSERT`, `UPDATE` or `DELETE` also changes the index, and
+   it can't be rebuilt from scratch each time.
+4. **Withstand many at once, and a power cut.** Hundreds of sessions reading and writing the same
+   index, and it still has to be correct after a crash.
+
+With that list, and counting pages, every alternative can be measured.
+
+## The alternatives, and where each one breaks
+
+**Having no index.** Without an index, finding order 1,234,567 means reading all 22,059 pages.
+That's not as bad as it sounds, because they're read in order, and reading in order is the cheapest
+thing a disk knows how to do: the operating system sees the next page coming and fetches it before
+anyone asks. When a query needs a good part of the table, reading all of it in order is cheaper
+than jumping from page to page following an index, and that's why a database sometimes
+[ignores the index you have](/en/blog/como-ejecuta-un-join). Writing is free, because there's
+nothing to maintain. But for finding one order, or the last ten, it's useless.
+
+**Sorting the table and bisecting.** The `pedidos` table is already sorted by `id`, because the
+orders were stored as they arrived. A binary search over its pages finds any of them in
+$\lceil \log_2 22{,}059 \rceil = 15$ reads. The first ones are always the same (the middle page,
+the quarter pages, the eighth pages), so they would stay in memory: with 31 pages cached, ten reads
+would be left. Scanning a range is free, because the data is already in order. The problem is the
+third job. A table can only be sorted by one column, and searching by `cliente_id` would need
+another copy sorted by `cliente_id`, where every new order would land in the middle. Putting a row
+in the middle of a sorted file means shifting everything after it: on average, half the file.
+
+IBM solved this in the 1960s with **ISAM** (*Indexed Sequential Access Method*). An access method
+was the code in the operating system of its mainframes that decided how a file was laid out on disk
+and how it was searched, and ISAM was the one for files sorted by a key. An ISAM file has three
+parts: the data, sorted; a small, fixed index saying which area of the disk holds each stretch of
+keys; and an overflow area, where new rows that don't fit in their place go, chained together. It
+works while the chains are short. When they grow, every lookup walks them, and the whole file has
+to be stopped and reorganized. ISAM already had the shape of the answer, sorted data with an index
+on top; what it lacked was the ability to change without stopping.
+
+**A hash table.** A hash function turns the key into a number, and that number says which bucket
+the key is stored in. In a hash index, each bucket is a page. It doesn't matter how many rows the
+table has: the hash index on `pedidos` reads two pages, and the third is the row. For the first job
+nothing beats it. For the second it's useless, and not because of an implementation flaw. A good
+hash function scatters keys on purpose: 1,234,567 and 1,234,568 end up in buckets that have nothing
+to do with each other, so there's no way to ask for "the next ones". It doesn't fully cover the
+first job either: Postgres doesn't allow `UNIQUE` hash indexes, so a primary key can't be a hash.
+And the fourth job took a while: until Postgres 10, in 2017, hash indexes weren't written to the WAL
+(*write-ahead log*), the file where the database records every change before making it, so that it
+can redo it if the power goes out halfway. Without those records, after a crash they had to be
+rebuilt by hand. That got fixed. The ordering problem can't be fixed, because it's what a hash
+function does.
+
+**A balanced binary tree.** An AVL tree, from 1962, named after the initials of its authors,
+Adelson-Velsky and Landis, or a red-black tree, the one behind `std::map` in C++ and `TreeMap` in
+Java. Each node holds one key and two children, the one for smaller keys and the one for larger
+ones, and the tree rebalances itself with rotations so that no branch gets much longer than
+another. It's sorted, it's modified in $O(\log n)$ and it scans a range in order: three of the four
+jobs, in memory. On disk, the problem is the size of the node. A key and two pointers take a few
+bytes, and a page has 8,192. If each node is a page, 3 million keys need 22 levels, because
+$2^{21} < 3{,}000{,}000 < 2^{22}$: 22 reads per lookup, plus the row's, and 17 if the top five
+levels are kept in memory. And 3 million 8 KB pages are 24 GB, to store what the Postgres index
+stores in 8,228 pages.
+
+The obvious idea is to put many nodes in each page: with an eight-level subtree, 255 nodes, per
+page, a lookup would stay at three pages. That's the right shape, and it's exactly where it breaks.
+To stay balanced, the binary tree rotates nodes, and every rotation near the root of a subtree
+pulls nodes out of their page and moves them to another. Keeping the tree balanced and every page
+full of nodes that belong together, both at once, is the hard part, and it's what the B-tree solves
+by changing the rule.
+
+**Structures designed for memory.** A [skip list](https://dl.acm.org/doi/10.1145/78973.78977),
+from 1990, is a sorted list with shortcuts: each element has, chosen at random, links that skip on
+average two, four or eight elements, and searching means moving along the long shortcuts as long as
+they don't overshoot the key. Redis, a database that lives in memory, uses it for its sorted sets,
+and RocksDB, a storage engine, for freshly written data. A prefix tree doesn't compare whole keys:
+it goes down the key piece by piece, the way you look up a word in a dictionary letter by letter.
+The [ART](https://db.in.tum.de/~leis/papers/ART.pdf) (*Adaptive Radix Tree*), from 2013, is the one
+DuckDB, a database for analytics, uses for its indexes. They're excellent when everything fits in
+memory, because there the expensive thing is something else, a miss in the processor's cache, and
+they're designed for that. On disk they have the binary tree's problem: many small nodes linked by
+pointers, and every pointer that leaves the page is another read.
+
+| | Pages to find one order | Ranges and order | Inserting | Designed for |
+|---|---|---|---|---|
+| No index | all 22,059, in order | by reading everything | free | queries that read a lot |
+| Sorted file (ISAM) | 15 | yes | shift half the table, or overflow | data that doesn't change |
+| Hash table | 3 | no | cheap | equality |
+| Binary tree, one node per page | 23 | yes | cheap | memory |
+| Skip list, ART | one per node | yes | cheap | memory |
+
+What's missing is something sorted, like the file and the binary tree; that reads few pages, like
+the hash; and that can be modified without reorganizing anything.
+
+## The B-tree: one node, one page
+
+In the autumn of 1969, Rudolf Bayer explained an idea for that problem to Edward McCreight, his
+colleague at Boeing's research laboratories. The report came out in July 1970, and the
+[B-tree](https://link.springer.com/article/10.1007/BF00288683) was published in a journal in 1972.
+They never said what the B stands for: Boeing, Bayer, balanced and broad have all been suggested.
+Years later, McCreight said that the more you think about what the B means, the better you
+understand B-trees.
+
+The idea is to change the size of the node. Instead of one key with two children, each node is a
+whole page, with hundreds of sorted keys and a child between every two: a node with $k$ keys has
+$k + 1$ children. A node's keys act as signposts that separate its children. If a node has the
+keys 30 and 50, everything under the child that sits between them is greater than 30 and less than
+50. The tree follows four rules:
+
+- The keys in each node are sorted.
+- A node with $k$ keys has $k + 1$ children, except the leaves, which have none.
+- Every node except the root is at least half full.
+- All the leaves are at the same depth.
+
+The last one is the guarantee: there are no long branches. Any lookup reads exactly one node per
+level.
+
+<figure>
+  <img
+    src="/blog/arboles-b/anatomia.en.svg"
+    alt="A three-level B-tree with 33 keys, at most four per node. The root holds the keys 30 and 60 and has three children: [10, 20], [40, 50] and [70, 85]. Each of them has three leaves, nine in total, all at the same depth: [3, 5, 8], [12, 15, 18], [22, 25, 28], [33, 36], [42, 45, 48], [52, 55, 58], [62, 66], [73, 77, 81] and [88, 92, 96]. The path to find 45 is marked: at the root, 45 is between 30 and 60, so the search goes down the middle child; at [40, 50] it is between 40 and 50, so it goes down the middle child again; and the leaf [42, 45, 48] holds 45. Three pages, one per level. A note says each node is a page, that four keys fit here and about 400 in Postgres."
+    width="760"
+    height="232"
+  />
+  <figcaption>
+    A small B-tree, with at most four keys per node. Finding 45 reads one page per level: in each
+    one, the keys say between which two signposts 45 falls, and so which child to follow.
+  </figcaption>
+</figure>
+
+### Searching is going down
+
+In each page, a binary search among its keys says which child to follow, and that child is read.
+The index on `pedidos.id` has three levels. The root has 29 entries, one for each page of the middle
+level. Those 29 pages have about 284 entries each, and they point to 8,197 leaves of 367 keys. That's
+8,228 pages, and only 30 of them aren't leaves: 240 KB.
+
+How many levels are needed depends on how many children each node has, which is called the tree's
+**order**. With $f$ children per node, $n$ keys fit in about $\log_f n$ levels. A binary tree has
+$f = 2$, and needs 22 for 3 million keys. This index has $f \approx 285$ and needs 3. The one on the
+order lines, another table in the shop with 7.5 million rows, also has three. With pages just as
+full, three levels hold about 30 million keys, and four, more than 8 billion: the orders table could
+grow tenfold before needing a fourth level.
+
+<figure>
+  <img
+    src="/blog/arboles-b/binario-contra-b.en.svg"
+    alt="Two trees holding the same 3 million keys, at the same vertical scale: each row is a level. On the left, a binary tree with one node per page, drawn as a tall, narrow triangle of 22 rows, with the path of one search zigzagging all the way down: 22 levels, 22 reads. On the right, the real index on pedidos.id, wide and short: a root with 29 entries, 29 internal pages of about 284 entries and 8,197 leaves of 367 keys. Three levels, three reads, of which only the leaf comes from disk, because the 30 pages of the top two levels take 240 KB and never leave memory."
+    width="760"
+    height="372"
+  />
+  <figcaption>
+    The same 3 million keys, at the same scale: each row is a level. The binary tree needs 22; the
+    Postgres index, 3, because each page has hundreds of children instead of two.
+  </figcaption>
+</figure>
+
+What's more, every lookup uses those 30 top pages, so they never leave memory. With Postgres's
+cache freshly emptied, the first lookup reads four index pages: the three levels and a control
+page. Between the tenth and the hundredth, each lookup reads 1.2 on average, the leaf and little
+else; from then on, fewer than one, because some leaves stay too. In practice, finding a key among 3
+million costs one disk read for the index and another for the row.
+
+### Inserting is splitting in two and moving the middle up
+
+Inserting starts like searching: go down to the leaf where the key belongs. If it fits, it goes in
+its place and that's it, one page has been modified. If it doesn't fit, the leaf splits into two
+halves, and the middle key moves up to the parent as a new signpost between them. If the parent has
+no room either, it splits too, and so on upwards. If the root splits, a new root is created on top,
+with a single signpost and two children, and that's the only way the tree can grow taller.
+
+That last sentence is the whole idea. A binary tree grows at the bottom: each new key hangs from a
+leaf, branches get longer, and rotations are needed to put them back in place. A B-tree grows at
+the top: when it runs out of room, it adds a level above everything, and all the leaves go down at
+once. It doesn't need rebalancing because it never becomes unbalanced. The half-full rule comes for
+free too, because a page that splits leaves two halves.
+
+In Python it fits in thirty lines:
+
+```python
+from bisect import bisect_left
+
+MAX_KEYS = 4   # about 400 fit in a Postgres page
+
+class Node:
+    def __init__(self, keys, children=None):
+        self.keys = keys                  # sorted
+        self.children = children or []    # empty in leaves; otherwise one more than keys
+
+def search(node, key):
+    while True:
+        i = bisect_left(node.keys, key)          # binary search inside the page
+        if i < len(node.keys) and node.keys[i] == key:
+            return node
+        if not node.children:
+            return None
+        node = node.children[i]                  # another page: another read
+
+def insert(root, key):
+    split = _insert(root, key)
+    if split is None:
+        return root
+    middle, right = split                        # the root has split:
+    return Node([middle], [root, right])         # the tree grows at the top
+
+def _insert(node, key):
+    i = bisect_left(node.keys, key)
+    if node.children:
+        split = _insert(node.children[i], key)
+        if split is None:
+            return None
+        key, right = split                       # the child split: its middle
+        node.children.insert(i + 1, right)       # key moves up to this node
+    node.keys.insert(i, key)
+    if len(node.keys) <= MAX_KEYS:
+        return None
+    m = len(node.keys) // 2                      # it doesn't fit: split in two
+    right = Node(node.keys[m + 1:], node.children[m + 1:])
+    middle = node.keys[m]
+    node.keys, node.children = node.keys[:m], node.children[:m + 1]
+    return middle, right
+```
+
+With `MAX_KEYS = 4`, inserting 10, 20, 30 and 40 fills the root, which is still the only leaf. 50
+no longer fits: the leaf splits into `[10, 20]` and `[40, 50]`, and 30 moves up to a new root. 25,
+35 and 60 fit in their leaves without touching anything else. 70 fills the right leaf again, which
+splits into `[35, 40]` and `[60, 70]`, and 50 moves up to the root, which now has two signposts,
+`[30, 50]`, and three children.
+
+<figure>
+  <img
+    src="/blog/arboles-b/particion.en.svg"
+    alt="Four states of a B-tree with at most four keys per node. One: a single leaf, which is also the root, holding 10, 20, 30 and 40; it is full. Two: 50 arrives and does not fit, so the leaf splits into [10, 20] and [40, 50] and 30 moves up to a new root; the tree grows at the top. Three: 25, 35 and 60 arrive and fit in their leaves without splitting anything: [10, 20, 25] and [35, 40, 50, 60], which is full again. Four: 70 arrives, the right leaf splits into [35, 40] and [60, 70], and 50 moves up to the root, which becomes [30, 50] with three children."
+    width="760"
+    height="236"
+  />
+  <figcaption>
+    The trace of the code above with `MAX_KEYS = 4`. In orange, the pages that have just split or
+    are full; in green, the keys that have just arrived or moved up. A page only splits when a key
+    doesn't fit, and the tree only gains a level when the root splits.
+  </figcaption>
+</figure>
+
+A real index does quite a few more things: record every changed page in the WAL, let other
+sessions read while a page splits, store variable-length keys. But this is the structure.
+
+### Deleting, in theory and in Postgres
+
+Deleting would be the reverse: if a page drops below half, it borrows keys from its neighbour or
+merges with it, and the parent loses a signpost. Postgres doesn't do that. Its implementation only
+removes a page from the tree when it becomes completely empty, because moving keys between pages
+while other sessions are reading them is expensive and rarely pays off; the gap gets used by the
+next insert that lands there. The half-full rule is a guarantee of the textbook algorithm, not of
+real indexes, and the section on the price comes back to this.
+
+The red-black tree from the previous section, by the way, is also Bayer's: he published it in 1972
+as a B-tree of up to four children per node written with binary nodes. The most widely used
+balanced binary tree is a B-tree in disguise.
+
+Against the list, the B-tree finds a key in three pages, two of them already in memory, and almost
+always inserts by modifying a single page, a few when it splits. And it's sorted. But scanning a
+range in this tree has a problem, and fixing it is what turns the B-tree into the B+tree that
+databases actually use.
+
+## The B+tree: everything in the leaves
+
+In a B-tree, each key lives exactly once, at whatever level it ended up. In the figure for 45, 30
+and 60 are in the root, and 40 and 50 in the middle level. For finding a key that doesn't matter.
+For scanning a range it does: reading the keys between 25 and 55 in order means going down to a
+leaf, up to the root for 30, down to another leaf for 33 and 36, up to the middle level for 40, and
+so on. The scan goes up and down as many times as there are keys from the range in the upper
+levels. Those pages are usually in memory, so it's not a disaster, but every climb is one more page
+to visit and, with other sessions splitting pages at the same time, a way back that may have
+changed.
+
+The **B+tree** changes two things. The first is that every key goes down to the leaves. The upper
+nodes only hold signposts, copies of some keys that are used to decide which child to go down, and
+the same key can appear twice, as a signpost and in its leaf. When a leaf splits, the first key of
+the right half doesn't leave the leaf: what moves up to the parent is a copy. So the leaves, read
+left to right, are the complete sorted list of every key.
+
+The second is that each leaf keeps a link to the next one (in Postgres, to the previous one too).
+Scanning a range means going down once to the first key and moving from leaf to leaf until past the
+last one, without ever going back up.
+
+<figure>
+  <img
+    src="/blog/arboles-b/b-contra-bmas.en.svg"
+    alt="The same eight keys in a B-tree and in a B+tree, and the scan of the keys between 25 and 55. In the B-tree, the root holds 30 and 60, and the leaves [10, 20], [40, 50] and [70, 85]. Reading the range visits five pages: the root, leaf 1, which has nothing, the root again for 30, leaf 2 for 40 and 50, and the root again, where 60 is already past the end. In the B+tree, the root holds only signposts, 40 and 70, and the leaves [10, 20, 30], [40, 50, 60] and [70, 85], linked left to right. The same range visits three pages: the root, leaf 1 for 30 and, following the link, leaf 2 for 40 and 50, where 60 is already past the end."
+    width="760"
+    height="262"
+  />
+  <figcaption>
+    The same eight keys and the same range, 25 to 55, in green. In the B-tree, the scan goes up and
+    down through the root; in the B+tree, it goes down once and follows the links between leaves.
+  </figcaption>
+</figure>
+
+That's what the table at the start was measuring. `WHERE id BETWEEN 1234567 AND 1235566` goes down
+the three levels, moves along the few leaves that hold the thousand `id`s and reads the table pages
+where those thousand orders are: 14 in total. `ORDER BY id DESC LIMIT 10` goes down to the last
+leaf and reads backwards: four pages. And `min(id)` and `max(id)` are the first and last keys in the
+list.
+
+Having only signposts in the upper nodes also makes them wider. In a Postgres index that matters
+little, because its entries are already small: the key and the row's address. It matters a lot
+when what goes in the tree is whole rows, which is what InnoDB does with its tables, as the next
+section shows. In InnoDB's `pedidos` table, each internal page has about 1,100 signposts and each
+leaf about 340 rows, so three levels hold about 400 million orders. If the rows were spread over
+every level, as in a B-tree, each internal page would also hold about 340, and three levels would
+hold about 40 million.
+
+The price is that every lookup goes all the way down to a leaf, including one for a key that a
+B-tree would have in the root. There are very few of those. SQLite uses both variants, which makes
+it possible to count them: its tables are B+trees, with the rows only in the leaves (the 82 internal
+pages of its `pedidos` table don't hold a single byte of data), and its indexes are B-trees, with
+each entry stored once, at whatever level it falls. In its index on `cliente_id`, only 8,663 of the
+3 million entries are in internal pages, 0.3 %. It makes sense: a table's rows are large and are
+best kept at the bottom, while an index's entries are small and not worth duplicating as
+signposts.
+
+The B+tree has no clear inventor. The survey Douglas Comer published in 1979 under the title
+[*The Ubiquitous B-Tree*](https://doi.org/10.1145/356770.356776) describes it by that name and
+notes that IBM was already using it in VSAM (*Virtual Storage Access Method*), the access method
+that replaced ISAM in the 1970s. Nine years after it was published, the B-tree was already
+everywhere, and Comer's title said so. Today, when a database says "B-tree index", it's almost
+always a B+tree: Postgres's default index is one, and so are InnoDB's and SQL Server's. The index on
+`pedidos.id` from the previous section already was one. Its 8,197 leaves hold the 3 million keys,
+and the 30 pages above them only hold signposts.
+
+## What's in the leaf
+
+An index says where each row is, but exactly what it keeps in its leaves depends on how the
+database stores the table. There are two designs.
+
+**Postgres keeps the table apart.** Rows go into its pages in the order they arrive, wherever
+there's room, without any index deciding where. Every index, including the primary key's, is a
+separate B+tree, and its leaves store, for each key, the row's address: the table page and the
+position inside it. Looking up by `id` costs the three index pages and the row's page, the four
+from the start. Looking up customer 4242's orders in the index on `cliente_id` costs three index
+pages and ten table pages, because the ten orders arrived on different dates and each one is on a
+different page.
+
+**InnoDB keeps the table inside the tree.** In MySQL, the table is a B+tree sorted by primary key,
+and its leaves don't hold addresses but whole rows: that's what's called a **clustered index**.
+Looking up by `id` costs three pages, and the third already holds the row. The other indexes, the
+**secondary** ones, can't store the row's address, because in InnoDB rows move: when a leaf of the
+table's tree splits, half its rows go to another page, and if secondary indexes stored addresses,
+every split would force fixing all of them. They store the primary key. Looking up customer 4242's
+orders means going down the index on `cliente_id` to its ten entries, which give ten `id`s, and then
+going down the table's tree ten more times, three pages each time.
+
+<figure>
+  <img
+    src="/blog/arboles-b/postgres-contra-innodb.en.svg"
+    alt="Two ways of storing a table with indexes. On the left, Postgres: the orders table lives apart, 22,059 pages in the order the rows arrived, and each index is a tree whose leaves hold addresses. The index on id leads to order 1,234,567, on page 9077: three index pages and one table page, four. The index on cliente_id leads to the ten orders of customer 4242, spread over ten different table pages: three plus ten, thirteen. On the right, InnoDB: the table is the primary-key tree, with the whole rows in its leaves, and a lookup by id is three pages with the row already inside. The index on cliente_id holds the ten ids in its leaves, and for each one the search goes down the table's tree again from the root: three plus ten times three."
+    width="760"
+    height="318"
+  />
+  <figcaption>
+    The same two lookups in both designs. In the Postgres table, the positions of order 1,234,567
+    and of customer 4242's ten orders are the real ones, scaled to 48 squares.
+  </figcaption>
+</figure>
+
+Counted one by one, that's many more pages than in Postgres: InnoDB records 50 page accesses for
+that query. But on each trip down the table, the top two pages are already in memory, and the one
+that has to come from disk is each order's leaf, just as in Postgres.
+
+The two designs share a shortcut: if the index already has every column the query asks for, there's
+no need to go to the table. In InnoDB that happens on its own with the primary key, which travels in
+every secondary index: `SELECT id FROM pedidos WHERE cliente_id = 4242` is answered without leaving
+the index on `cliente_id`, with 10 accesses instead of 50. In Postgres you have to ask for it, with
+an index that carries extra columns in its leaves:
+
+```sql
+CREATE INDEX ON pedidos (cliente_id) INCLUDE (importe);
+```
+
+With it, adding up what customer 4242 has spent reads 4 pages instead of 13. It's called a
+**covering index**, and it isn't free: it takes 90 MB, and the one with only `cliente_id`, 24. They
+hold the same 3 million entries, but in the second one Postgres stores each repeated `cliente_id`
+only once, with the list of its rows, and each customer has about fifteen orders. With included
+columns it can't do that.
+
+## Why it won
+
+With everything above, the list of four jobs can be scored in full.
+
+**Find a key.** Three pages, two of them always in memory. The hash table reads one fewer, but in
+practice both read a single index page from disk. And the tree is the only Postgres index that can
+guarantee a key isn't repeated.
+
+**Scan a range or an order.** 14 pages against 22,080, and not only for `BETWEEN`. The same index
+handles `<` and `>`, `ORDER BY` with `LIMIT`, `min()` and `max()`, `LIKE 'abc%'` (the keys that
+start with "abc" sit together in the order) and joins that walk two sorted lists at once. An index
+on several columns, sorted by the first and, within each value, by the second, also works for
+searching by the first one alone.
+
+**Keep up with the writes.** An insert almost always modifies one page and, when it splits, a few,
+all on the path from the root to its leaf. There's no need to stop and reorganize the file, as in
+ISAM, nor to redistribute the whole structure, which is what a simple hash table does when it
+outgrows its size.
+
+**Withstand many at once, and a power cut.** It gets its own section, just below.
+
+There are two more reasons that weren't on the list and weigh as much as it does. The first is that
+its cost is **predictable**. Every lookup reads exactly as many pages as the tree has levels, and
+the number of levels grows so slowly that in practice it's a constant: to go from three to four,
+the orders table would have to grow tenfold. There are no bad cases, no branches that get longer as
+in an unbalanced binary tree, no keys all landing in the same bucket as in an unlucky hash. For a
+database, which has to estimate what a query will cost before running it, that's worth a lot.
+
+The second is that it's **bad at nothing**. The hash beats it at finding a key, by one page. A
+structure designed for memory beats it when everything fits in memory. Reading the whole table
+beats it when almost everything has to be read. But each of them is useless at some job on the
+list, and the B+tree is good at all four. A database doesn't know which queries are coming, so it
+picks the index that is never a bad choice.
+
+### Many at once
+
+A page splitting while another session is going down the tree is a problem. The session reads the
+parent, which tells it its key is in leaf X, and before it gets to X another session splits it and
+moves half the keys to a new leaf on its right. The first session reaches X and its key is no
+longer there.
+
+The obvious solution is locking: whoever is about to write locks the pages it goes through, and
+whoever wants to read them waits. But every operation goes through the root, so locking it means
+putting every session in a queue. The solution Postgres uses dates from 1981, by Philip Lehman and
+S. Bing Yao, and is called the [B-link tree](https://www.csd.uoc.gr/~hy460/pdf/p650-lehman.pdf). It
+adds two things to every page, not just the leaves: a link to its right sibling and a
+**high key**, the largest key the page may contain. A session that reaches a page and sees that its
+key is greater than the high key knows the page split while it was on its way down, and follows the
+link to the right until it finds it. A reader locks only the page it's reading, and only while
+reading it; whoever splits a page locks a few, briefly. It's the same link the B+tree already had
+between leaves for scanning ranges, put on every level.
+
+The power cut is handled by the WAL, which records every change before making it. Splitting a page
+touches several (the one that splits, the new one and the parent), and the database records enough
+for a split left halfway by a crash to be finished later. None of this is exclusive to the B-tree.
+But it has fifty years of engineers solving exactly these problems on top of it, and no alternative
+has that.
+
+## What a B-tree costs
+
+None of this is free, and it's worth knowing where the bill is.
+
+**Every index is a sorted copy that has to be maintained.** An `INSERT` writes the row to the table
+and one entry to each index; in a table with five indexes, it writes to six places. An index that
+doesn't answer any real query is pure cost.
+
+**The order in which keys arrive decides how much they cost to write.** To measure it, three
+identical tables where only the primary key changes: a growing number (`bigint`), a version 4 UUID
+or a version 7 UUID. A **UUID** (*universally unique identifier*) is a 128-bit identifier that any
+program can generate without asking anyone, with a negligible chance of repeating. Version 4 is
+random from start to finish; [version 7](https://www.rfc-editor.org/rfc/rfc9562.html), from 2024,
+starts with the time in milliseconds, so two consecutive v7 UUIDs come out in order. Postgres 18
+generates both.
+
+| Primary key | Loading 3 million rows | Index pages | Leaves full to | 20,000 inserts without memory | Pages read from disk |
+|---|---|---|---|---|---|
+| growing `bigint` | 16.2 s | 8,228 | 90 % | 0.23 s | 82 |
+| UUID v7 | 28.8 s | 11,553 | 90 % | 0.48 s | 85 |
+| UUID v4 | 40.1 s | 15,788 | 66 % | 12.2 s | 15,768 |
+
+With a growing key, every insert goes to the last leaf, always the same one, which is in memory.
+When it fills up, Postgres splits it leaving the left one 90 % full, because it assumes nothing more
+will arrive there. With UUID v4, every insert lands in a random leaf among more than 15,000. Leaves
+split down the middle and stay half empty until another key comes their way. A classic result, by
+Andrew Yao in 1978, says that with random inserts the pages of a B-tree end up 69 % full on
+average, and here they come out at 66 %. That's why the same index takes 37 % more space with UUID
+v4 than with UUID v7, which has the same key size.
+
+While everything fits in memory, the difference is about 40 % in time. When the index doesn't fit,
+it's another story. The 20,000 inserts in the fifth column were run on those same tables, with both
+caches empty and Postgres limited to 160 MB of memory. With UUID v7, every insert goes to the last
+leaf, which is read once and stays. With UUID v4, almost every one goes to a different leaf that
+isn't in memory: one disk read per insert, and another 12,488 writes to send modified leaves back
+to disk when room has to be made. Twenty-five times slower. In InnoDB the effect reaches the table
+itself, because the primary key's tree is the table: with UUID v4, every new row goes to a random
+page of the entire table.
+
+**Deleting leaves holes.** Postgres doesn't merge half-empty pages. On top of that, a deleted or
+updated row doesn't vanish right away, because another transaction may still be seeing it: a
+process called `VACUUM` cleans it up later, and also removes its entries from the indexes. An index
+on a table with a lot of churn ends up larger than it needs to be, and sometimes it has to be
+rebuilt with `REINDEX`. Postgres has been trimming the problem (since version 13 it stores each
+repeated key once, and since 14 it clears dead entries from a page before splitting it), but it
+hasn't made it go away.
+
+## Where it doesn't win
+
+The B+tree won where what's expensive is reading pages and the data changes. Outside of that there
+are better structures, and databases use them.
+
+**When you write far more than you read.** An **LSM tree** (*log-structured merge-tree*), from
+1996, never modifies anything in place. Writes go first to a sorted structure in memory, often a
+skip list, and when it fills up it's dumped to disk in one go, as a sorted file that's never
+touched again. A background process keeps merging those files into larger ones. Writing is
+sequential and cheap. Reading a key may mean checking several files, and to avoid opening all of
+them, each one carries a Bloom filter, a summary that says for certain when a key is *not* there.
+RocksDB and LevelDB, two storage engines, and Cassandra, a distributed database, work this way. In
+2017 Facebook moved the main database of its social network from InnoDB to
+[MyRocks](https://www.vldb.org/pvldb/vol13/p3217-matsunobu.pdf), a MySQL that stores its data in
+RocksDB: it took 62 % less space and needed fewer than half the servers. It's the third job on the
+list bought with part of the first.
+
+**When everything fits in memory.** If pages don't have to be read from disk, the unit of cost
+becomes something else: bringing a 64-byte chunk of memory into the processor, which costs about
+100 nanoseconds when it isn't in its cache. In-memory databases use prefix trees like DuckDB's
+ART, or variants of the B-tree itself with nodes the size of those 64 bytes. The Bw-tree, which SQL
+Server uses for its in-memory tables, is a B-tree that never locks: instead of modifying a page, it
+attaches a note with the change and swaps the pointer to the page in a single step. The B-tree's
+idea was never "8 KB pages" but "nodes the size of what gets read at once", and that holds at every
+level of memory.
+
+**When you read almost everything.** Analytical databases like DuckDB, ClickHouse or BigQuery store
+each column separately and answer queries that scan millions of rows. There, maintaining a tree
+per column doesn't pay off. Instead they keep, for each block of rows, the minimum and maximum of
+each column, and skip the blocks that can't contain anything the query asks for. Postgres has the
+same thing for one column, the **BRIN** index (*block range index*), which stores the minimum and
+maximum of every stretch of 128 pages. On `pedidos.fecha`, which is in order because the orders
+were stored as they arrived, the BRIN takes 3 pages, and the B-tree 2,573. In exchange, one day's
+orders read 270 pages with the BRIN and 26 with the tree, because the BRIN knows which stretch they
+are in, but not which row.
+
+**When the question isn't about order.** Some queries no ordering helps answer: which documents
+contain a word, which points fall inside a polygon, which vectors are most similar to another.
+Postgres has an index for each. GIN (*generalized inverted index*) stores, for each word, the list
+of rows that contain it. GiST (*generalized search tree*) is the base for R-trees for spatial data,
+which are cousins of the B-tree: balanced, with one node per page and rectangles instead of
+signposts. And the pgvector extension adds HNSW (*hierarchical navigable small world*), a layered
+graph for finding the vectors most similar to a given one, which is what a
+[semantic search engine](/en/blog/de-rag-a-rag-agentico) uses.
+
+**Learned indexes.** In 2018, a [paper](https://arxiv.org/abs/1712.01208) by researchers at Google
+and MIT proposed looking at a B-tree for what it does: a function that takes a key and returns
+where it is. A function like that can be learned, with a small model trained on the keys, and on
+data that didn't change the result was faster and considerably smaller than the tree. The problem
+is the third job on the list, because every insert changes what the model has to predict. The
+research continues, and none of the major databases has changed its default index.
+
+In every case, one of the two premises from the start changes: either what's expensive stops being
+reading pages, or the index stops having to do all four jobs. Where both hold, which is almost
+every table in almost every application, the B+tree stays.
+
+## What to take away
+
+If you take away one thing, let it be this: **an index isn't chosen for how fast it finds one key,
+but for how many pages it reads and how many different questions it answers.** The hash table finds
+an order one page sooner than the B+tree, and can't give you the next ten. The binary tree is
+sorted, but reads one page per key. The sorted file won't let itself be modified. The B+tree puts
+hundreds of keys in each page, grows at the top so it never becomes unbalanced, and keeps every key
+in linked leaves, in order. With that, it finds, scans and inserts by reading three pages where the
+other structures read twenty, or twenty thousand.
+
+And if you take away three more, let them be practical. All three come from the same place: an
+index is a sorted copy.
+
+**The column order of a composite index decides what it's good for.** An index on
+`(cliente_id, fecha)` is sorted by customer and, within each customer, by date, like a phone book
+sorted by surname and then by first name. It works for
+`WHERE cliente_id = 4242 AND fecha >= '2026-01-01'` and for `WHERE cliente_id = 4242`, because both
+ask for a contiguous stretch of the order. For `WHERE fecha >= '2026-01-01'` alone it's of little
+use, because those dates are spread across every customer, like all the Johns in the phone book.
+Postgres 18 can skip from one customer to the next inside the index, but that only pays off when
+there are few distinct customers. Columns compared with `=` go first, and the range one goes last.
+
+**The index can't use what isn't a contiguous stretch of the order.**
+`WHERE lower(email) = 'ana@ejemplo.es'` doesn't use an index on `email`, because the index is sorted
+by `email`, not by `lower(email)`; the fix is to index the expression,
+`CREATE INDEX ON clientes (lower(email))`. `WHERE email LIKE '%@gmail.com'` doesn't either: the
+addresses that end the same way are spread all over the index, and no start-to-end order brings
+them together.
+
+**Pick keys that arrive in order.** A growing primary key, or a UUID v7 if you need to generate it
+outside the database, keeps inserts on the last leaf. A UUID v4 scatters them across the whole
+index: with the index out of memory, twenty-five times slower in this shop, and in InnoDB the
+disorder reaches the table, which is the tree itself.
+
+The disks of 1970 were far slower than an SSD, and memory far smaller. But the ratio between
+comparing two keys and reading a page is still thousands to one. As long as it is, counting pages
+will be the way to understand why a query is fast or slow, and the B+tree will stay the index a
+database creates when nobody tells it otherwise.

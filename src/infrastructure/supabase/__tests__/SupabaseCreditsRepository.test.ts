@@ -1,4 +1,5 @@
 // DB-02: Integration tests for SupabaseCreditsRepository.
+// REFACTOR-R4-P1-04: restoreCreditToPack (restore_credit_to_pack, migration 0023).
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseCreditsRepository } from "../SupabaseCreditsRepository";
 import { supabase } from "../client";
@@ -99,5 +100,35 @@ describeDb("SupabaseCreditsRepository", () => {
     const result = await repo.restoreCredit("ghost@example.com");
     expect(result.ok).toBe(false);
     expect(result.credits).toBe(0);
+  });
+
+  // REFACTOR-R4-P1-04: the saga compensation's exact-pack restore.
+  it("restoreCreditToPack restores that pack only, and refuses a full or expired one", async () => {
+    const email = `restore-pack-${Date.now()}@example.com`;
+    await repo.addCredits({
+      email, name: "Restore", creditsToAdd: 4,
+      packLabel: "Pack 5", stripeSessionId: `pi_restore_pack_${Date.now()}`,
+      expiresAt: futureExpiry,
+    });
+    const { data: u } = await supabase.from("users").select("id").eq("email", email).single();
+    const { data: pack } = await supabase
+      .from("credit_packs").select("id").eq("user_id", u!.id).single();
+    const remaining = async () => (await supabase
+      .from("credit_packs").select("credits_remaining").eq("id", pack!.id).single()).data!.credits_remaining;
+
+    expect(await repo.restoreCreditToPack(pack!.id)).toBe(true);
+    expect(await remaining()).toBe(5);
+
+    expect(await repo.restoreCreditToPack(pack!.id)).toBe(false); // full (5/5)
+    expect(await remaining()).toBe(5);
+
+    await supabase.from("credit_packs")
+      .update({ credits_remaining: 3, expires_at: new Date(Date.now() - 60_000).toISOString() })
+      .eq("id", pack!.id);
+    expect(await repo.restoreCreditToPack(pack!.id)).toBe(false); // expired
+    expect(await remaining()).toBe(3);
+
+    await supabase.from("credit_packs").delete().eq("user_id", u!.id);
+    await supabase.from("users").delete().eq("id", u!.id);
   });
 });

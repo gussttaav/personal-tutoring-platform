@@ -10,12 +10,17 @@
  *   3. Asserts the confirm state is shown
  *   4. Clicks confirm-cancel button
  *   5. Asserts the success heading is visible
+ *
+ * REFACTOR-R4-P1-01: the booking is seeded on the first slot /api/availability
+ * offers (the server rejects off-grid/off-hours windows), and a failed seed now
+ * FAILS the test instead of silently skipping it.
  */
 
 import { test, expect } from "@playwright/test";
 import { loginAs, E2E_USER } from "./fixtures/auth";
 import { resetTestState }    from "./fixtures/cleanup";
 import { dict, LOCALES }     from "./helpers/dict";
+import { firstAvailableSlot } from "./helpers/slots";
 
 for (const locale of LOCALES) {
   const d       = dict[locale];
@@ -28,20 +33,14 @@ for (const locale of LOCALES) {
     });
 
     test(`student cancels a booking using a cancel token [${locale}]`, async ({ page }) => {
-      // Create a free booking via the API to get a cancelToken.
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(10, 0, 0, 0);
-      const start = tomorrow.toISOString();
-
-      const end = new Date(tomorrow);
-      end.setMinutes(end.getMinutes() + 15);
-      const endIso = end.toISOString();
+      // Create a free booking via the API to get a cancelToken, on a slot the
+      // server actually offers.
+      const slot = await firstAvailableSlot(page.request, 15);
 
       const bookRes = await page.request.post("/api/book", {
         data: {
-          startIso:    start,
-          endIso:      endIso,
+          startIso:    slot.start,
+          endIso:      slot.end,
           sessionType: "free15min",
           note:        "E2E cancellation test",
           timezone:    "Europe/Madrid",
@@ -51,11 +50,7 @@ for (const locale of LOCALES) {
         },
       });
 
-      // If the slot is taken or the API is unavailable, skip gracefully
-      if (!bookRes.ok()) {
-        test.skip(true, `Could not create booking for cancellation test: ${bookRes.status()}`);
-        return;
-      }
+      expect(bookRes.ok(), `seed booking failed: ${bookRes.status()} ${await bookRes.text()}`).toBe(true);
 
       const { cancelToken } = await bookRes.json();
       expect(cancelToken).toBeTruthy();

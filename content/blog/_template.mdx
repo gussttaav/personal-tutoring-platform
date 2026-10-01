@@ -7,6 +7,7 @@ summary: "Una frase que dice qué se lleva el lector. Se usa en la tarjeta del �
 draft: true
 reading: []
 tags: []
+aiImages: false
 ---
 
 {/*
@@ -22,6 +23,8 @@ tags: []
       artículo en dos idiomas, y así los empareja el hreflang
     - `date` es YYYY-MM-DD y es la única clave de orden del blog
     - `tags` y `reading` son obligatorios aunque estén vacíos
+    - `aiImages` es obligatorio: `true` si las imágenes del artículo se generaron con
+      IA. Cambia el texto de la nota sobre el uso de IA que cierra el artículo.
 
   BLOG-02 — `reading` es la bibliografía del artículo, y se renderiza plegada al pie
   con el mismo formato que el bloque «Para profundizar» de las lecciones. Cada entrada

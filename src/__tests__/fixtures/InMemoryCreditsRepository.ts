@@ -1,4 +1,8 @@
 // TEST-01: In-memory implementation of ICreditsRepository for integration tests.
+// REFACTOR-R4-P1-02: `getCreditsShouldFail` (FakeCalendarClient style) simulates a DB
+// read error, so tests can assert the account-deletion gate fails closed.
+// REFACTOR-R4-P1-04: restoreCreditToPack, plus fixture-only packIdOf / setExpiresAt that
+// InMemoryBookingRepository.cancelByToken and the expired-pack tests use.
 import type { ICreditsRepository, DecrementResult } from "@/domain/repositories/ICreditsRepository";
 import type { CreditResult, PackSize } from "@/domain/types";
 
@@ -16,8 +20,11 @@ interface CreditsRecord {
 export class InMemoryCreditsRepository implements ICreditsRepository {
   private store   = new Map<string, CreditsRecord>();
   private usedIds = new Set<string>();
+  // REFACTOR-R4-P1-02
+  getCreditsShouldFail = false;
 
   async getCredits(email: string): Promise<CreditResult | null> {
+    if (this.getCreditsShouldFail) throw new Error("InMemoryCreditsRepository: simulated read failure");
     const rec = this.store.get(email.toLowerCase());
     if (!rec) return null;
     return {
@@ -82,6 +89,29 @@ export class InMemoryCreditsRepository implements ICreditsRepository {
     rec.credits += 1;
     rec.lastUpdated = new Date().toISOString();
     return { ok: true, credits: rec.credits };
+  }
+
+  // REFACTOR-R4-P1-04: mirrors restore_credit_to_pack's expiry check (an expired pack gets
+  // nothing back). Like restoreCredit above there is no pack_size cap: this fake's
+  // packSize is the first purchase's size, and tests top a user up more than once.
+  async restoreCreditToPack(packId: string): Promise<boolean> {
+    const rec = packId.startsWith("pack-") ? this.store.get(packId.slice("pack-".length)) : undefined;
+    if (!rec || new Date(rec.expiresAt).getTime() <= Date.now()) return false;
+    rec.credits += 1;
+    rec.lastUpdated = new Date().toISOString();
+    return true;
+  }
+
+  /** REFACTOR-R4-P1-04 (fixture-only): the synthetic id of the user's one pack, or null. */
+  packIdOf(email: string): string | null {
+    const key = email.toLowerCase();
+    return this.store.has(key) ? `pack-${key}` : null;
+  }
+
+  /** REFACTOR-R4-P1-04 (fixture-only): lets a test expire the user's pack after booking. */
+  setExpiresAt(email: string, expiresAt: string): void {
+    const rec = this.store.get(email.toLowerCase());
+    if (rec) rec.expiresAt = expiresAt;
   }
 
   async hasProcessedPayment(stripeSessionId: string): Promise<boolean> {

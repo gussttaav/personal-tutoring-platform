@@ -1,4 +1,15 @@
 // ARCH-13: Unit tests for BookingService.
+// REFACTOR-R4-P1-01: inputs are aligned, correctly-sized slots (fixtures/slots) on an
+// all-day schedule, since createBooking now validates the window; checkSlot + the
+// free-call cap have their own suites below.
+// REFACTOR-R4-P1-03: the logger is mocked so the reschedule suite can assert that a
+// failed claim compensation is logged for manual intervention.
+// REFACTOR-R4-P1-04: cancelByToken goes through the repository's cancelByToken (the
+// cancel_booking RPC) — creditsRestored comes from its result; the saga's credit
+// compensation restores to the exact pack it decremented (restoreCreditToPack).
+// REFACTOR-R4-P1-05: the post-commit locale read in cancelByToken is best-effort — a
+// getLocale rejection must not fail a cancellation that already committed.
+jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
   getCached:  jest.fn().mockResolvedValue(null),
@@ -17,8 +28,13 @@ import { CreditService } from "../CreditService";
 import { ScheduleService } from "../ScheduleService";
 import type { ICreditsRepository } from "@/domain/repositories/ICreditsRepository";
 import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
-import { InsufficientCreditsError, DomainError, SlotUnavailableError } from "@/domain/errors";
-import type { BookingRecord } from "@/domain/types";
+import {
+  InsufficientCreditsError, DomainError, SlotUnavailableError,
+  InvalidSlotError, FreeSessionAlreadyUsedError,
+} from "@/domain/errors";
+import type { BookingRecord, WeeklyHours } from "@/domain/types";
+import { alignedSlot, allDaySchedule } from "@/__tests__/fixtures/slots";
+import { log } from "@/lib/logger";
 
 // ─── Mock factories ───────────────────────────────────────────────────────────
 
@@ -27,9 +43,15 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   findByCancelToken:          jest.fn().mockResolvedValue(null),
   findByJoinToken:            jest.fn().mockResolvedValue(null),
   consumeCancelToken:         jest.fn().mockResolvedValue(true),
+  // REFACTOR-R4-P1-04: default = a pack class whose credit went back to its own pack.
+  cancelByToken:              jest.fn().mockResolvedValue({
+    consumed: true, restored: true, restoredPackId: "pack-1", fromOriginating: true, credits: 5,
+  }),
+  reinstateBooking:           jest.fn().mockResolvedValue(true),
   listByUser:                 jest.fn().mockResolvedValue([]),
   listHistoryByUser:          jest.fn().mockResolvedValue({ entries: [], nextCursor: null }),
   hasAnyBooking:              jest.fn().mockResolvedValue(false),
+  hasActiveFreeSession:       jest.fn().mockResolvedValue(false),
   acquireSlotLock:            jest.fn().mockResolvedValue(true),
   releaseSlotLock:            jest.fn().mockResolvedValue(undefined),
   recordRescheduleFailure:    jest.fn().mockResolvedValue(undefined),
@@ -37,6 +59,7 @@ const mockBookings = (): jest.Mocked<IBookingRepository> => ({
   findByEventId:              jest.fn().mockResolvedValue(null),
   findByStripePaymentId:      jest.fn().mockResolvedValue(null),
   hasBookingForPayment:       jest.fn().mockResolvedValue(false),
+  listUpcomingForPaymentAudit: jest.fn().mockResolvedValue([]), // REFACTOR-R4-P3-03
   markCompleted:              jest.fn().mockResolvedValue(undefined),
   markNoShow:                 jest.fn().mockResolvedValue(undefined),
   countCompletedPaid:         jest.fn().mockResolvedValue(0),
@@ -51,6 +74,7 @@ const mockCreditsRepo = (): jest.Mocked<ICreditsRepository> => ({
   addCredits:      jest.fn().mockResolvedValue(undefined),
   decrementCredit: jest.fn().mockResolvedValue({ ok: true, remaining: 4, packSize: 5, packId: "pack-1" }),
   restoreCredit:   jest.fn().mockResolvedValue({ ok: true, credits: 5 }),
+  restoreCreditToPack: jest.fn().mockResolvedValue(true),
   hasProcessedPayment: jest.fn().mockResolvedValue(false),
   broadcastPaymentConfirmed: jest.fn().mockResolvedValue(undefined),
 });
@@ -102,6 +126,7 @@ const mockEmail = (): jest.Mocked<IEmailClient> => ({
   sendCancellationConfirmation: jest.fn().mockResolvedValue(undefined),
   sendCancellationNotification: jest.fn().mockResolvedValue(undefined),
   sendContentReportNotification: jest.fn().mockResolvedValue(undefined),
+  sendPaymentAuditReport:       jest.fn().mockResolvedValue(undefined), // REFACTOR-R4-P3-03
 });
 
 // getLocale defaults to null (no stored preference → 'es' fallback in the service).
@@ -118,11 +143,14 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
 // Stub ScheduleService — BookingService only calls getConfig(). Default min
 // notice = 5h (matches the old hardcoded SCHEDULE) so existing timing holds, and
 // cancelMinNoticeHours = 2h (the old hardcoded CANCEL_WINDOW_MS) so the
-// cancel/reschedule window tests still hold.
-const mockSchedule = (overrides: { cancelMinNoticeHours?: number } = {}): ScheduleService =>
+// cancel/reschedule window tests still hold. REFACTOR-R4-P1-01: open all day by
+// default, so only the checkSlot suite has to think about working hours.
+const mockSchedule = (
+  overrides: { cancelMinNoticeHours?: number; weeklyHours?: WeeklyHours } = {},
+): ScheduleService =>
   ({
     getConfig: jest.fn().mockResolvedValue({
-      weeklyHours: { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] },
+      weeklyHours: overrides.weeklyHours ?? allDaySchedule(),
       timezone: "Europe/Madrid",
       minNoticeHours: 5,
       cancelMinNoticeHours: overrides.cancelMinNoticeHours ?? 2,
@@ -157,8 +185,15 @@ const hoursFromNow = (h: number) => new Date(Date.now() + h * 60 * 60_000).toISO
 
 const basePackInput = () => ({
   email: "student@test.com", name: "Student",
-  startIso: hoursFromNow(10), endIso: hoursFromNow(11),
+  ...alignedSlot("pack", 10),
   sessionType: "pack" as const,
+});
+
+// REFACTOR-R4-P1-01: a free call is 15 minutes; a pack-sized window is now INVALID_SLOT.
+const baseFreeInput = () => ({
+  email: "student@test.com", name: "Student",
+  ...alignedSlot("free15min", 10),
+  sessionType: "free15min" as const,
 });
 
 const baseCancelRecord = (overrides: Partial<BookingRecord> = {}): BookingRecord => ({
@@ -173,7 +208,7 @@ describe("BookingService.createBooking", () => {
   it("throws SlotUnavailableError when slot is in the past", async () => {
     const service = makeService();
     await expect(
-      service.createBooking({ ...basePackInput(), startIso: hoursFromNow(-1) })
+      service.createBooking({ ...basePackInput(), ...alignedSlot("pack", -1) })
     ).rejects.toThrow(SlotUnavailableError);
   });
 
@@ -184,7 +219,7 @@ describe("BookingService.createBooking", () => {
     const creditsRepo = mockCreditsRepo();
     const service = makeService({ credits: makeCreditService(creditsRepo) });
 
-    await service.createBooking({ ...basePackInput(), sessionType: "free15min" });
+    await service.createBooking(baseFreeInput());
 
     expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
   });
@@ -217,7 +252,7 @@ describe("BookingService.createBooking", () => {
     const bookings = mockBookings();
     const service  = makeService({ bookings });
 
-    await service.createBooking({ ...basePackInput(), sessionType: "free15min" });
+    await service.createBooking(baseFreeInput());
 
     expect(bookings.createBooking).toHaveBeenCalledWith(
       expect.not.objectContaining({ creditPackId: expect.anything() }),
@@ -244,7 +279,8 @@ describe("BookingService.createBooking", () => {
     await expect(service.createBooking(basePackInput())).rejects.toThrow("Google Calendar down");
 
     expect(creditsRepo.decrementCredit).toHaveBeenCalled();
-    expect(creditsRepo.restoreCredit).toHaveBeenCalledWith("student@test.com");
+    expect(creditsRepo.restoreCreditToPack).toHaveBeenCalledWith("pack-1");
+    expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
   });
 
   it("does NOT restore credit when calendar fails on a free session", async () => {
@@ -255,10 +291,11 @@ describe("BookingService.createBooking", () => {
     const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
 
     await expect(
-      service.createBooking({ ...basePackInput(), sessionType: "free15min" })
+      service.createBooking(baseFreeInput())
     ).rejects.toThrow();
 
     expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCreditToPack).not.toHaveBeenCalled();
   });
 
   it("returns correct output on success", async () => {
@@ -385,7 +422,7 @@ describe("BookingService.createBooking (reschedule)", () => {
 
     await expect(
       service.createBooking({
-        ...basePackInput(), sessionType: "free15min", rescheduleToken: "tkn",
+        ...baseFreeInput(), rescheduleToken: "tkn",
       })
     ).rejects.toThrow("Calendar down");
 
@@ -434,6 +471,192 @@ describe("BookingService.createBooking (reschedule)", () => {
   });
 });
 
+// ─── REFACTOR-R4-P1-03: reschedule keeps the original until the new one commits ──
+
+describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one commits", () => {
+  const oldPack = () => baseCancelRecord({
+    eventId: "old-evt", sessionType: "pack", startsAt: hoursFromNow(5),
+    packSize: 10, creditPackId: "pack-orig",
+  });
+
+  /** Asserts nothing of the original was deleted — its event, Zoom session and pending termination. */
+  const expectOriginalUntouched = (
+    calendar: jest.Mocked<ICalendarClient>,
+    sessions: jest.Mocked<ISessionRepository>,
+    bookings: jest.Mocked<IBookingRepository>,
+  ) => {
+    expect(calendar.deleteEvent).not.toHaveBeenCalledWith("old-evt");
+    expect(sessions.deleteByEventId).not.toHaveBeenCalledWith("old-evt");
+    expect(bookings.deletePendingTermination).not.toHaveBeenCalledWith("old-evt");
+  };
+
+  it("a calendar failure after the claim reinstates the original and deletes none of it", async () => {
+    const bookings = mockBookings();
+    const original = oldPack();
+    bookings.findByCancelToken.mockResolvedValue(original);
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("Calendar down");
+
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("tkn");
+    expect(bookings.reinstateBooking).toHaveBeenCalledWith(original);
+    expectOriginalUntouched(calendar, sessions, bookings);
+  });
+
+  it("a booking-insert failure (e.g. the exclusion constraint) reinstates the original; the new event is deleted", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    bookings.createBooking.mockRejectedValue(Object.assign(new Error("conflicting key value"), { code: "23P01" }));
+    const calendar = mockCalendar();
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("conflicting key value");
+
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+    expect(bookings.reinstateBooking).toHaveBeenCalledTimes(1);
+    expectOriginalUntouched(calendar, sessions, bookings);
+  });
+
+  it("a Zoom-session insert failure cancels the new booking, then reinstates the original", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const calendar = mockCalendar();
+    const sessions = mockSessions();
+    sessions.createSession.mockRejectedValue(new Error("zoom_sessions insert failed"));
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("zoom_sessions insert failed");
+
+    // The new booking is cancelled BEFORE the reinstate (compensations run in reverse),
+    // so an overlapping original can come back without tripping the exclusion constraint.
+    expect(bookings.consumeCancelToken).toHaveBeenCalledWith("ctkn");
+    const cancelNew = bookings.consumeCancelToken.mock.invocationCallOrder[1]!;
+    expect(cancelNew).toBeLessThan(bookings.reinstateBooking.mock.invocationCallOrder[0]!);
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("evt1");
+    expectOriginalUntouched(calendar, sessions, bookings);
+  });
+
+  it("tears the original down only after the new booking and its Zoom session exist", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const calendar = mockCalendar();
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    const zoomCreated = sessions.createSession.mock.invocationCallOrder[0]!;
+    expect(calendar.deleteEvent).toHaveBeenCalledWith("old-evt");
+    expect(calendar.deleteEvent.mock.invocationCallOrder[0]!).toBeGreaterThan(zoomCreated);
+    expect(sessions.deleteByEventId.mock.invocationCallOrder[0]!).toBeGreaterThan(zoomCreated);
+    expect(bookings.deletePendingTermination.mock.invocationCallOrder[0]!).toBeGreaterThan(zoomCreated);
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+  });
+
+  it("a failed teardown step does not fail the reschedule (best-effort, logged)", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const calendar = mockCalendar();
+    calendar.deleteEvent.mockRejectedValue(new Error("Calendar delete failed"));
+    const sessions = mockSessions();
+    const service  = makeService({ bookings, calendar, sessions });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .resolves.toMatchObject({ eventId: "evt1" });
+
+    // The remaining steps still ran, and the new booking was not rolled back.
+    expect(sessions.deleteByEventId).toHaveBeenCalledWith("old-evt");
+    expect(bookings.deletePendingTermination).toHaveBeenCalledWith("old-evt");
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalledWith("ctkn");
+  });
+
+  it("a rejection before the claim has nothing to reinstate", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    bookings.consumeCancelToken.mockResolvedValue(false); // a concurrent reschedule won
+    const service  = makeService({ bookings });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toMatchObject({ code: "RESCHEDULE_TOKEN_CONSUMED" });
+    expect(bookings.reinstateBooking).not.toHaveBeenCalled();
+  });
+
+  it("a pack reschedule moves the original's credit: no decrement, no restore", async () => {
+    const bookings    = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const creditsRepo = mockCreditsRepo();
+    const service     = makeService({ bookings, credits: makeCreditService(creditsRepo) });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" });
+
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCreditToPack).not.toHaveBeenCalled();
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ creditPackId: "pack-orig", packSize: 10 }),
+    );
+  });
+
+  it("a failed pack reschedule does not touch credits either", async () => {
+    const bookings    = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const service     = makeService({ bookings, calendar, credits: makeCreditService(creditsRepo) });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" })).rejects.toThrow();
+
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCreditToPack).not.toHaveBeenCalled();
+  });
+
+  it("a paid reschedule carries the original's PaymentIntent to the new booking", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "session1h", startsAt: hoursFromNow(5), stripePaymentId: "pi_orig",
+    }));
+    const service  = makeService({ bookings });
+
+    await service.createBooking({
+      email: "student@test.com", name: "Student",
+      ...alignedSlot("session1h", 10), sessionType: "session1h", rescheduleToken: "tkn",
+    });
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ stripePaymentId: "pi_orig" }),
+    );
+  });
+
+  it("logs a failed reinstate for manual intervention and still throws the original error", async () => {
+    (log as jest.Mock).mockClear();
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(oldPack());
+    bookings.reinstateBooking.mockResolvedValue(false); // the slot was re-taken meanwhile
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking({ ...basePackInput(), rescheduleToken: "tkn" }))
+      .rejects.toThrow("Calendar down");
+
+    expect(log).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("manual intervention"),
+      expect.objectContaining({ step: expect.stringContaining("old-evt") }),
+    );
+  });
+});
+
 // ─── cancelByToken ────────────────────────────────────────────────────────────
 
 describe("BookingService.cancelByToken", () => {
@@ -476,7 +699,9 @@ describe("BookingService.cancelByToken", () => {
   it("throws DomainError when token was already consumed (race condition)", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ startsAt: hoursFromNow(5) }));
-    bookings.consumeCancelToken.mockResolvedValue(false);
+    bookings.cancelByToken.mockResolvedValue({
+      consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0,
+    });
     const service = makeService({ bookings });
 
     await expect(service.cancelByToken("tkn")).rejects.toMatchObject({
@@ -519,7 +744,10 @@ describe("BookingService.cancelByToken", () => {
 
     const result = await service.cancelByToken("tkn");
 
-    expect(creditsRepo.restoreCredit).toHaveBeenCalledWith("s@t.com");
+    // REFACTOR-R4-P1-04: the restore happens inside the RPC, not as a second write.
+    expect(bookings.cancelByToken).toHaveBeenCalledWith("tkn");
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
     expect(result.creditsRestored).toBe(true);
   });
 
@@ -528,12 +756,16 @@ describe("BookingService.cancelByToken", () => {
     bookings.findByCancelToken.mockResolvedValue(
       baseCancelRecord({ sessionType: "free15min", startsAt: hoursFromNow(5) })
     );
+    bookings.cancelByToken.mockResolvedValue({
+      consumed: true, restored: false, restoredPackId: null, fromOriginating: false, credits: 0,
+    });
     const creditsRepo = mockCreditsRepo();
     const service = makeService({ bookings, credits: makeCreditService(creditsRepo) });
 
     const result = await service.cancelByToken("tkn");
 
     expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
+    expect(creditsRepo.restoreCreditToPack).not.toHaveBeenCalled();
     expect(result.creditsRestored).toBe(false);
   });
 
@@ -598,6 +830,24 @@ describe("BookingService.cancelByToken", () => {
     );
   });
 
+  it("REFACTOR-R4-P1-05: a getLocale failure after commit still resolves and emails in 'es'", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const users = mockUsers();
+    users.getLocale.mockRejectedValue(new Error("PostgREST down"));
+    const service = makeService({ bookings, email, users });
+
+    await expect(service.cancelByToken("tkn")).resolves.toBeDefined();
+
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "es" })
+    );
+    expect(log).toHaveBeenCalledWith("warn", expect.any(String), expect.any(Object));
+  });
+
   it("uses English session label for student (from users.locale) but Spanish for admin notification on cancel", async () => {
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(
@@ -614,6 +864,132 @@ describe("BookingService.cancelByToken", () => {
     const notifyCall  = email.sendCancellationNotification.mock.calls[0]?.[0];
     expect(confirmCall?.sessionLabel).toBe("Individual session · 1 hour");
     expect(notifyCall?.sessionLabel).toBe("Sesión individual · 1 hora");
+  });
+});
+
+// ─── REFACTOR-R4-P1-04: atomic cancel, truthful creditsRestored ──────────────
+
+describe("REFACTOR-R4-P1-04: cancelByToken reports what the RPC did", () => {
+  const notRestored = { consumed: true, restored: false, restoredPackId: null, fromOriginating: false, credits: 0 };
+
+  it("a pack class whose credit could not be restored → creditsRestored false in the result AND the email", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ eventId: "evt-expired", sessionType: "pack", startsAt: hoursFromNow(5) }),
+    );
+    bookings.cancelByToken.mockResolvedValue(notRestored);
+    const email = mockEmail();
+    const audit = mockAuditRepo();
+    (log as jest.Mock).mockClear();
+    const service = makeService({ bookings, email, credits: new CreditService(mockCreditsRepo(), audit) });
+
+    const result = await service.cancelByToken("tkn");
+
+    expect(result.creditsRestored).toBe(false);
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ creditsRestored: false }),
+    );
+    expect(audit.append).not.toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith(
+      "error",
+      expect.stringContaining("no credit could be restored"),
+      expect.objectContaining({ eventId: "evt-expired" }),
+    );
+  });
+
+  it("a restored credit is audited with the pack it went to and the new total", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ startsAt: hoursFromNow(5) }));
+    bookings.cancelByToken.mockResolvedValue({
+      consumed: true, restored: true, restoredPackId: "pack-other", fromOriginating: false, credits: 7,
+    });
+    const email = mockEmail();
+    const audit = mockAuditRepo();
+    const service = makeService({ bookings, email, credits: new CreditService(mockCreditsRepo(), audit) });
+
+    const result = await service.cancelByToken("tkn");
+
+    expect(result.creditsRestored).toBe(true);
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ creditsRestored: true }),
+    );
+    expect(audit.append).toHaveBeenCalledWith("s@t.com", {
+      action: "restore", credits: 7, packId: "pack-other",
+    });
+  });
+
+  it("a failed audit write does not fail a cancel that has already committed", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ startsAt: hoursFromNow(5) }));
+    const audit = mockAuditRepo();
+    audit.append.mockRejectedValue(new Error("audit down"));
+    const service = makeService({ bookings, credits: new CreditService(mockCreditsRepo(), audit) });
+
+    await expect(service.cancelByToken("tkn")).resolves.toMatchObject({ creditsRestored: true });
+  });
+
+  it("a non-pack cancel ignores a stray `restored` and audits nothing", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ sessionType: "session1h", startsAt: hoursFromNow(5) }),
+    );
+    // Default mock says restored:true — the service still keys off the session type too.
+    const audit = mockAuditRepo();
+    const service = makeService({ bookings, credits: new CreditService(mockCreditsRepo(), audit) });
+
+    const result = await service.cancelByToken("tkn");
+
+    expect(result.creditsRestored).toBe(false);
+    expect(audit.append).not.toHaveBeenCalled();
+  });
+
+  it("an RPC failure throws before any teardown — nothing to undo, the link still works", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({ startsAt: hoursFromNow(5) }));
+    bookings.cancelByToken.mockRejectedValue(new Error("PGRST: connection reset"));
+    const calendar = mockCalendar();
+    const sessions = mockSessions();
+    const email    = mockEmail();
+    const service  = makeService({ bookings, calendar, sessions, email });
+
+    await expect(service.cancelByToken("tkn")).rejects.toThrow("connection reset");
+
+    expect(calendar.deleteEvent).not.toHaveBeenCalled();
+    expect(sessions.deleteByEventId).not.toHaveBeenCalled();
+    expect(bookings.deletePendingTermination).not.toHaveBeenCalled();
+    expect(email.sendCancellationConfirmation).not.toHaveBeenCalled();
+  });
+});
+
+describe("REFACTOR-R4-P1-04: saga compensation restores the exact pack", () => {
+  it("a decrement that returned no pack id falls back to restoreCredit(email)", async () => {
+    const creditsRepo = mockCreditsRepo();
+    creditsRepo.decrementCredit.mockResolvedValue({ ok: true, remaining: 4, packSize: 5, packId: null });
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("Calendar down");
+
+    expect(creditsRepo.restoreCredit).toHaveBeenCalledWith("student@test.com");
+    expect(creditsRepo.restoreCreditToPack).not.toHaveBeenCalled();
+  });
+
+  it("a pack that can no longer take the credit back is logged for manual intervention", async () => {
+    const creditsRepo = mockCreditsRepo();
+    creditsRepo.restoreCreditToPack.mockResolvedValue(false);
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    (log as jest.Mock).mockClear();
+    const service = makeService({ credits: makeCreditService(creditsRepo), calendar });
+
+    await expect(service.createBooking(basePackInput())).rejects.toThrow("Calendar down");
+
+    expect(log).toHaveBeenCalledWith(
+      "error",
+      "Compensation failed (manual intervention may be needed)",
+      expect.objectContaining({ step: "restore decremented credit", error: expect.stringContaining("pack-1") }),
+    );
   });
 });
 
@@ -662,8 +1038,7 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
     const service = buildTestBookingService();
     const input = {
       email: "a@example.com", name: "A",
-      startIso: hoursFromNow(10),
-      endIso:   hoursFromNow(11),
+      ...alignedSlot("session1h", 10),
       sessionType: "session1h" as const,
     };
 
@@ -689,8 +1064,7 @@ describe("REFACTOR-P1-01: concurrent booking", () => {
 
     const input = {
       email: "a@example.com", name: "A",
-      startIso: hoursFromNow(10),
-      endIso:   hoursFromNow(11),
+      ...alignedSlot("session1h", 10),
       sessionType: "session1h" as const,
     };
 
@@ -717,7 +1091,8 @@ describe("REFACTOR-P1-03: booking saga compensation", () => {
     await expect(service.createBooking(basePackInput())).rejects.toThrow("Calendar down");
 
     expect(creditsRepo.decrementCredit).toHaveBeenCalled();
-    expect(creditsRepo.restoreCredit).toHaveBeenCalledWith("student@test.com");
+    expect(creditsRepo.restoreCreditToPack).toHaveBeenCalledWith("pack-1");
+    expect(creditsRepo.restoreCredit).not.toHaveBeenCalled();
   });
 
   it("deletes Calendar event when DB booking insert fails", async () => {
@@ -778,7 +1153,7 @@ describe("REFACTOR-P1-04: pending_terminations write", () => {
     const service     = buildTestBookingService({ bookings: bookingRepo });
     const input = {
       email: "a@example.com", name: "A",
-      startIso: hoursFromNow(10), endIso: hoursFromNow(11),
+      ...alignedSlot("session1h", 10),
       sessionType: "session1h" as const,
     };
 
@@ -931,5 +1306,255 @@ describe("BookingService.listHistoryForUser", () => {
 
     await expect(service.listHistoryForUser("a@b.com", { limit: 20, cursor: "bad" }))
       .rejects.toBeInstanceOf(InvalidCursorError);
+  });
+});
+
+// ─── REFACTOR-R4-P1-01: server-side slot validation ──────────────────────────
+
+describe("REFACTOR-R4-P1-01: BookingService.checkSlot", () => {
+  // Fixed clock: Monday 2026-10-05, 08:00 in Madrid (CEST, UTC+2). Min notice is 5h,
+  // so the earliest bookable start is 13:00 Madrid (11:00Z). Slots are literal
+  // instants so the tutor-timezone arithmetic stays visible.
+  const NOW = Date.parse("2026-10-05T06:00:00.000Z");
+  // The seeded Monday (migration 0013): 09:00–13:30 + 15:30–17:30.
+  const MONDAY_SEEDED: WeeklyHours = {
+    0: [], 1: [{ startMinute: 540, endMinute: 810 }, { startMinute: 930, endMinute: 1050 }],
+    2: [], 3: [], 4: [], 5: [], 6: [],
+  };
+  const MONDAY_ALL_DAY: WeeklyHours = {
+    0: [], 1: [{ startMinute: 0, endMinute: 1440 }], 2: [], 3: [], 4: [], 5: [], 6: [],
+  };
+  // 15:30–16:30 Madrid on the seeded Monday: after min-notice, inside the afternoon block.
+  const GOOD = { startIso: "2026-10-05T13:30:00.000Z", endIso: "2026-10-05T14:30:00.000Z", sessionType: "pack" as const };
+
+  let nowSpy: jest.SpyInstance;
+  beforeEach(() => { nowSpy = jest.spyOn(Date, "now").mockReturnValue(NOW); });
+  afterEach(() => { nowSpy.mockRestore(); });
+
+  const seeded = () => ({ service: makeService({ schedule: mockSchedule({ weeklyHours: MONDAY_SEEDED }) }) });
+
+  it("returns null for an aligned, in-hours slot of the right length", async () => {
+    const { service } = seeded();
+    await expect(service.checkSlot(GOOD)).resolves.toBeNull();
+  });
+
+  describe("INVALID_SLOT (a window the grid could never produce)", () => {
+    it.each([
+      ["a free call as a 60-minute window", { ...GOOD, sessionType: "free15min" as const }],
+      ["a pack class as a 30-minute window", { ...GOOD, endIso: "2026-10-05T14:00:00.000Z" }],
+      ["a 1h session as an 8-hour window", { ...GOOD, sessionType: "session1h" as const, endIso: "2026-10-05T21:30:00.000Z" }],
+      ["an end before the start", { ...GOOD, endIso: "2026-10-05T12:30:00.000Z" }],
+      ["an unparseable start", { ...GOOD, startIso: "not-a-date" }],
+    ])("rejects %s", async (_label, slot) => {
+      const { service } = seeded();
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(InvalidSlotError);
+    });
+
+    it("rejects a start off the 15-minute grid in the tutor's timezone", async () => {
+      const { service } = seeded();
+      const slot = { ...GOOD, startIso: "2026-10-05T13:37:00.000Z", endIso: "2026-10-05T14:37:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(InvalidSlotError);
+    });
+
+    it("rejects a start with stray seconds", async () => {
+      const { service } = seeded();
+      const slot = { ...GOOD, startIso: "2026-10-05T13:30:30.000Z", endIso: "2026-10-05T14:30:30.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(InvalidSlotError);
+    });
+  });
+
+  describe("SLOT_UNAVAILABLE (a slot the grid does not offer)", () => {
+    it("rejects a start before the min-notice horizon", async () => {
+      const { service } = seeded();
+      // 12:00–13:00 Madrid: inside the morning block, but only 4h from now.
+      const slot = { ...GOOD, startIso: "2026-10-05T10:00:00.000Z", endIso: "2026-10-05T11:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a start beyond the booking window (8 weeks)", async () => {
+      const service = makeService(); // all-day schedule: only the window can reject
+      // Monday 7 Dec 2026, 11:00 Madrid — 63 days out.
+      const slot = { ...GOOD, startIso: "2026-12-07T10:00:00.000Z", endIso: "2026-12-07T11:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a slot in the gap between two working blocks", async () => {
+      const { service } = seeded();
+      // 14:00–15:00 Madrid: between 13:30 and 15:30.
+      const slot = { ...GOOD, startIso: "2026-10-05T12:00:00.000Z", endIso: "2026-10-05T13:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a slot that starts inside a block but runs past its end", async () => {
+      const { service } = seeded();
+      // 17:00–18:00 Madrid: the afternoon block closes at 17:30.
+      const slot = { ...GOOD, startIso: "2026-10-05T15:00:00.000Z", endIso: "2026-10-05T16:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+
+    it("rejects a slot on a day with no working hours", async () => {
+      const { service } = seeded();
+      // Tuesday 6 Oct, 10:00 Madrid: the MONDAY_SEEDED schedule has nothing on Tuesdays.
+      const slot = { ...GOOD, startIso: "2026-10-06T08:00:00.000Z", endIso: "2026-10-06T09:00:00.000Z" };
+      await expect(service.checkSlot(slot)).resolves.toBeInstanceOf(SlotUnavailableError);
+    });
+  });
+
+  it("uses the tutor's calendar day, not the UTC date", async () => {
+    const service = makeService({ schedule: mockSchedule({ weeklyHours: MONDAY_ALL_DAY }) });
+    // 00:30 Tuesday in Madrid is still Monday in UTC → closed.
+    const tuesdayMadrid = { ...GOOD, startIso: "2026-10-05T22:30:00.000Z", endIso: "2026-10-05T23:30:00.000Z" };
+    await expect(service.checkSlot(tuesdayMadrid)).resolves.toBeInstanceOf(SlotUnavailableError);
+    // 00:30 Monday 12 Oct in Madrid is still Sunday in UTC → open.
+    const mondayMadrid = { ...GOOD, startIso: "2026-10-11T22:30:00.000Z", endIso: "2026-10-11T23:30:00.000Z" };
+    await expect(service.checkSlot(mondayMadrid)).resolves.toBeNull();
+  });
+
+  it("makes no Calendar call (in-process checks only)", async () => {
+    const calendar = mockCalendar();
+    const service  = makeService({ calendar, schedule: mockSchedule({ weeklyHours: MONDAY_SEEDED }) });
+    await service.checkSlot(GOOD);
+    expect(calendar.getAvailableSlots).not.toHaveBeenCalled();
+  });
+
+  it("fails closed: a schedule-config read error propagates", async () => {
+    const schedule = mockSchedule();
+    (schedule.getConfig as jest.Mock).mockRejectedValue(new Error("config unavailable"));
+    const service = makeService({ schedule });
+    await expect(service.checkSlot(GOOD)).rejects.toThrow("config unavailable");
+  });
+
+  it("assertSlotBookable throws the verdict and resolves on a bookable slot", async () => {
+    const { service } = seeded();
+    await expect(service.assertSlotBookable(GOOD)).resolves.toBeUndefined();
+    await expect(service.assertSlotBookable({ ...GOOD, sessionType: "free15min" }))
+      .rejects.toBeInstanceOf(InvalidSlotError);
+  });
+});
+
+describe("REFACTOR-R4-P1-01: createBooking validates before any side effect", () => {
+  it.each([
+    ["an off-grid start", () => {
+      const s = alignedSlot("pack", 10);
+      const shift = (iso: string) => new Date(new Date(iso).getTime() + 7 * 60_000).toISOString();
+      return { startIso: shift(s.startIso), endIso: shift(s.endIso) };
+    }, InvalidSlotError],
+    ["a window longer than the session", () => {
+      const s = alignedSlot("pack", 10);
+      return { startIso: s.startIso, endIso: new Date(new Date(s.startIso).getTime() + 4 * 3_600_000).toISOString() };
+    }, InvalidSlotError],
+  ])("rejects %s — no lock, no credit, no event, no row", async (_label, window, errorClass) => {
+    const bookings    = mockBookings();
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    const service     = makeService({ bookings, calendar, credits: makeCreditService(creditsRepo) });
+
+    await expect(service.createBooking({ ...basePackInput(), ...window() })).rejects.toBeInstanceOf(errorClass);
+
+    expect(bookings.acquireSlotLock).not.toHaveBeenCalled();
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+  });
+
+  it("rejects an off-hours slot — no lock, no credit, no event, no row", async () => {
+    const bookings    = mockBookings();
+    const creditsRepo = mockCreditsRepo();
+    const calendar    = mockCalendar();
+    const closed      = { 0: [], 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    const service     = makeService({
+      bookings, calendar, credits: makeCreditService(creditsRepo),
+      schedule: mockSchedule({ weeklyHours: closed }),
+    });
+
+    await expect(service.createBooking(basePackInput())).rejects.toBeInstanceOf(SlotUnavailableError);
+
+    expect(bookings.acquireSlotLock).not.toHaveBeenCalled();
+    expect(creditsRepo.decrementCredit).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+    expect(bookings.createBooking).not.toHaveBeenCalled();
+  });
+
+  it("rejects a paid-session reschedule stretched past its length", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ sessionType: "session1h", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+    const s       = alignedSlot("session1h", 10);
+
+    await expect(service.createBooking({
+      email: "student@test.com", name: "Student", sessionType: "session1h", rescheduleToken: "tkn",
+      startIso: s.startIso, endIso: new Date(new Date(s.startIso).getTime() + 5 * 3_600_000).toISOString(),
+    })).rejects.toBeInstanceOf(InvalidSlotError);
+    expect(bookings.consumeCancelToken).not.toHaveBeenCalled();
+  });
+
+  it("locks the slot for the session type's length", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
+    const input    = {
+      email: "student@test.com", name: "Student",
+      ...alignedSlot("session2h", 10), sessionType: "session2h" as const,
+    };
+
+    await service.createBooking(input);
+
+    expect(bookings.acquireSlotLock).toHaveBeenCalledWith(input.startIso, 120);
+  });
+});
+
+describe("REFACTOR-R4-P1-01: free-call cap", () => {
+  it("rejects a second free call with FREE_SESSION_ALREADY_USED before any side effect", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockResolvedValue(true);
+    const calendar = mockCalendar();
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toBeInstanceOf(FreeSessionAlreadyUsedError);
+
+    expect(bookings.hasActiveFreeSession).toHaveBeenCalledWith("student@test.com");
+    expect(bookings.acquireSlotLock).not.toHaveBeenCalled();
+    expect(calendar.createEvent).not.toHaveBeenCalled();
+  });
+
+  it("books the first free call", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
+
+    await expect(service.createBooking(baseFreeInput())).resolves.toMatchObject({ eventId: "evt1" });
+    expect(bookings.hasActiveFreeSession).toHaveBeenCalledWith("student@test.com");
+  });
+
+  it("lets a free call be rescheduled (the old one is being replaced, not added to)", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockResolvedValue(true);
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ sessionType: "free15min", startsAt: hoursFromNow(5) })
+    );
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking({ ...baseFreeInput(), rescheduleToken: "tkn" }))
+      .resolves.toMatchObject({ eventId: "evt1" });
+    expect(bookings.hasActiveFreeSession).not.toHaveBeenCalled();
+  });
+
+  it("does not apply to paid or pack classes", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockResolvedValue(true);
+    const service = makeService({ bookings });
+
+    await expect(service.createBooking(basePackInput())).resolves.toMatchObject({ eventId: "evt1" });
+    expect(bookings.hasActiveFreeSession).not.toHaveBeenCalled();
+  });
+
+  it("propagates a failed cap read instead of booking", async () => {
+    const bookings = mockBookings();
+    bookings.hasActiveFreeSession.mockRejectedValue(new Error("db down"));
+    const calendar = mockCalendar();
+    const service  = makeService({ bookings, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toThrow("db down");
+    expect(calendar.createEvent).not.toHaveBeenCalled();
   });
 });

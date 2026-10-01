@@ -3,6 +3,9 @@
 // The eligibility ladder is the whole feature, so the matrix below is the point of
 // this suite: every row is a state a real student can be in, and the expectation is
 // which remedy (if any) he is sent to.
+//
+// REFACTOR-R4-P1-02: the gate fails closed — a read error behind it must reject the
+// deletion, never read as "no credits / no bookings" (see the in-memory suite at the end).
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
 }));
@@ -19,6 +22,12 @@ import {
   DeletionNotConfirmedError,
   UserNotFoundError,
 } from "@/domain/errors";
+import { InMemoryBookingRepository } from "@/__tests__/fixtures/InMemoryBookingRepository";
+import { InMemoryCreditsRepository } from "@/__tests__/fixtures/InMemoryCreditsRepository";
+import { InMemoryUserRepository } from "@/__tests__/fixtures/InMemoryUserRepository";
+import {
+  buildTestAccountService, buildTestBookingService, buildTestCreditService,
+} from "@/__tests__/fixtures/services";
 
 const EMAIL = "student@example.com";
 const HOUR  = 60 * 60_000;
@@ -219,5 +228,47 @@ describe("AccountService.deleteAccount", () => {
     users.deleteAccount.mockRejectedValue(new UserNotFoundError());
 
     await expect(service.deleteAccount(EMAIL, EMAIL)).rejects.toBeInstanceOf(UserNotFoundError);
+  });
+});
+
+// REFACTOR-R4-P1-02: real Credit/Booking services over the in-memory repositories, so the
+// read error travels the same path it does in production (getCredits → getBalance,
+// listByUser → listForUser). The user exists, so an open gate WOULD erase him.
+describe("REFACTOR-R4-P1-02: deleteAccount fails closed on a read error", () => {
+  async function build() {
+    const userRepo    = new InMemoryUserRepository();
+    const creditsRepo = new InMemoryCreditsRepository();
+    const bookingRepo = new InMemoryBookingRepository();
+    await userRepo.upsert(EMAIL, "Student");
+    const { service } = buildTestAccountService({
+      userRepo,
+      credits:  buildTestCreditService({ credits: creditsRepo }),
+      bookings: buildTestBookingService({ bookings: bookingRepo, users: userRepo }),
+    });
+    const deleteAccount = jest.spyOn(userRepo, "deleteAccount");
+    return { service, creditsRepo, bookingRepo, deleteAccount };
+  }
+
+  it("rejects and erases nothing when the credits read errors", async () => {
+    const { service, creditsRepo, deleteAccount } = await build();
+    creditsRepo.getCreditsShouldFail = true;
+
+    await expect(service.deleteAccount(EMAIL, EMAIL)).rejects.toThrow("simulated read failure");
+    expect(deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it("rejects and erases nothing when the bookings read errors", async () => {
+    const { service, bookingRepo, deleteAccount } = await build();
+    bookingRepo.listByUserShouldFail = true;
+
+    await expect(service.deleteAccount(EMAIL, EMAIL)).rejects.toThrow("simulated read failure");
+    expect(deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it("still erases the account when both reads succeed and find nothing", async () => {
+    const { service, deleteAccount } = await build();
+
+    await expect(service.deleteAccount(EMAIL, EMAIL)).resolves.toBeUndefined();
+    expect(deleteAccount).toHaveBeenCalledWith(EMAIL);
   });
 });

@@ -1,5 +1,7 @@
 // TEST-01: In-memory implementation of IPaymentRepository for integration tests.
 // SINGLE-SESSION-CONFIRM-01: slot-taken refund record + resolution broadcast.
+// REFACTOR-R4-P1-02: per-read `*ShouldFail` flags (FakeCalendarClient style) simulate a
+// DB read error, so tests can assert the webhook fails closed.
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type { RecordPaymentInput, SingleSessionResolved } from "@/domain/types";
 
@@ -12,8 +14,12 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
   private payments_  = new Map<string, RecordPaymentInput>();
   /** Test helper: broadcasts captured by paymentIntentId, in call order. */
   readonly broadcasts: { paymentIntentId: string; payload: SingleSessionResolved }[] = [];
+  // REFACTOR-R4-P1-02
+  isProcessedShouldFail = false;
+  wasRefundedShouldFail = false;
 
   async isProcessed(idempotencyKey: string): Promise<boolean> {
+    if (this.isProcessedShouldFail) throw new Error("InMemoryPaymentRepository: simulated read failure");
     return this.processed.has(idempotencyKey);
   }
 
@@ -45,6 +51,7 @@ export class InMemoryPaymentRepository implements IPaymentRepository {
   }
 
   async wasRefunded(paymentIntentId: string): Promise<boolean> {
+    if (this.wasRefundedShouldFail) throw new Error("InMemoryPaymentRepository: simulated read failure");
     return this.refunds.has(paymentIntentId);
   }
 

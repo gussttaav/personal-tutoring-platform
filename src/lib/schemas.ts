@@ -67,6 +67,17 @@ export const AdjustCreditsSchema = z.object({
 
 export type AdjustCreditsInput = z.infer<typeof AdjustCreditsSchema>;
 
+// REFACTOR-R4-P3-02: /admin/students search params (?q=, ?filter=, ?page=), shared by the
+// page and GET /api/admin/students. Lenient: a bad value reads as "no search" / page 1
+// rather than an error, since these come from a URL the admin can edit by hand.
+export const AdminStudentsQuerySchema = z.object({
+  q:      z.string().trim().max(200).optional().catch(undefined),
+  filter: z.string().optional().catch(undefined),
+  page:   z.coerce.number().int().min(1).catch(1),
+});
+
+export type AdminStudentsQuery = z.infer<typeof AdminStudentsQuerySchema>;
+
 // Admin price update — amount in cents. The pack "original" strikethrough is
 // derived (1h price × hours), so it isn't an input here.
 export const UpdatePriceSchema = z.object({
@@ -648,6 +659,10 @@ export const PostFrontmatterSchema = z.strictObject({
       seen.add(tag);
     }
   }),
+  // BLOG-AI-NOTE-01: whether the post's images were generated with AI. Drives the
+  // images clause of the AI-use note at the foot of the article (the text clause is
+  // always shown). Required, like `tags`: every post states it rather than defaulting.
+  aiImages: z.boolean(),
 });
 
 export type PostFrontmatterInput = z.infer<typeof PostFrontmatterSchema>;

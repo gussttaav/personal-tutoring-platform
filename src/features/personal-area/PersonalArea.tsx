@@ -17,11 +17,13 @@
  *
  * Rendered inside `BookingOverlays` (area-personal/page.tsx) since the booking CTAs open in
  * place — see useBookingActions.ts. Two consequences here: the pack session is read from the
- * booking context, not an own `useUserSession()`, so `updateCredits` after a pack class
- * booked in the overlay reaches the banner and the sidebar (two hook instances would be two
- * copies of the credits, and only the overlay's would move); and the upcoming list is
- * revalidated whenever a booking screen closes over this page, because a class may have
- * been booked or rescheduled behind it.
+ * booking context, which keeps the banner and the sidebar in step with the overlay after
+ * `updateCredits`; and the upcoming list is revalidated whenever a booking screen closes over
+ * this page, because a class may have been booked or rescheduled behind it.
+ *
+ * REFACTOR-R4-P2-04: reading `packSession` from `useBooking()` is no longer a workaround.
+ * `useUserSession()` now reads one page-wide state (`UserSessionProvider`), so an own call
+ * here would see the same credits; the booking context is kept because it is already here.
  */
 
 import { useEffect, useRef, useState } from "react";

@@ -1,7 +1,11 @@
 // ARCH-13: Google Calendar client — implements ICalendarClient.
 // ARCH-16: Absorbed full logic from lib/calendar.ts (was a thin wrapper).
 // DB-05b: Removed direct kv.set() — Zoom session now stored via ISessionRepository in BookingService.
-import { google } from "googleapis";
+// REFACTOR-R4-P2-01: the single-API package. `googleapis` bundled all ~300 Google APIs
+// into a 10 MB server chunk that 37 of 41 API lambdas evaluated on every cold start.
+// The Calendar client is also built once per process instead of once per call.
+import { calendar as calendarApi, type calendar_v3 } from "@googleapis/calendar";
+import { GoogleAuth } from "google-auth-library";
 import { toZonedTime, fromZonedTime, format } from "date-fns-tz";
 import crypto from "crypto";
 import { slotsFromBlocks } from "@/lib/booking-config";
@@ -18,15 +22,26 @@ const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID!;
 
 // ─── Google auth ──────────────────────────────────────────────────────────────
 
-function getCalendar() {
-  const auth = new google.auth.GoogleAuth({
+// Built once per process (warm lambda). GoogleAuth caches the service-account access
+// token internally, so re-creating it per call re-did the token exchange every time.
+let client: calendar_v3.Calendar | null = null;
+
+function getCalendar(): calendar_v3.Calendar {
+  if (client) return client;
+  const auth = new GoogleAuth({
     credentials: {
       client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
       private_key:  process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
     },
     scopes: ["https://www.googleapis.com/auth/calendar"],
   });
-  return google.calendar({ version: "v3", auth });
+  client = calendarApi({ version: "v3", auth });
+  return client;
+}
+
+/** Test-only: drop the memoized client so the next call builds a fresh one. */
+export function __resetCalendarClient(): void {
+  client = null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

@@ -1,16 +1,17 @@
 /**
  * ADMIN-01: Student detail page — credit packs, bookings, audit log, and credit adjustment.
  * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
+ * REFACTOR-R4-P3-02: reads through adminService (was ../../_data). Reachable for any
+ * user, including course readers the students list leaves out.
  */
 
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import { fetchStudent, fetchCreditPacks, fetchStudentBookings, fetchAuditLog } from "../../_data";
 import { AdjustCreditsForm } from "@/components/admin/AdjustCreditsForm";
 import { StudentPricingForm } from "@/components/admin/StudentPricingForm";
-import { pricingService } from "@/services";
+import { adminService, pricingService } from "@/services";
 import { Card, StatusBadge, Empty } from "@/components/admin/ui";
 import { fmtDate, fmtDateTime, fmtShort, relativeTime, initials } from "@/components/admin/format";
 import type { AuditEntry } from "@/domain/types";
@@ -26,10 +27,10 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
   const email = decodeURIComponent(rawEmail);
 
   const [student, packs, bookings, audit, defaultPrices] = await Promise.all([
-    fetchStudent(email),
-    fetchCreditPacks(email),
-    fetchStudentBookings(email),
-    fetchAuditLog(email),
+    adminService.getStudent(email),
+    adminService.listCreditPacks(email),
+    adminService.listStudentBookings(email),
+    adminService.listAuditLog(email),
     // Public prices, for the "por defecto" column. Read from the service, never the
     // ISR cache — admin surfaces always show current values.
     pricingService.getAll(),

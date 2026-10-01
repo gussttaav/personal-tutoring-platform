@@ -4,13 +4,26 @@
 // Separate queries are used instead of PostgREST embedded joins to avoid
 // relying on FK-hint syntax that varies across PostgREST versions.
 // BOOKING-HISTORY-01: listHistoryByUser — keyset-paginated past bookings.
-import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
+// REFACTOR-R4-P1-01: hasActiveFreeSession — the free-call cap (fails closed on error).
+// REFACTOR-R4-P1-02: the reads that authorize a side effect fail CLOSED — listByUser and
+// hasAnyBooking's user lookups, hasBookingForPayment (now a count: a rescheduled paid
+// class leaves two rows per PaymentIntent, which .maybeSingle() errors on) and
+// findByStripePaymentId throw on a read error instead of answering "absent".
+// REFACTOR-R4-P1-03: reinstateBooking — a reschedule's claim compensation, restoring the
+// original row with its original (recomputed) tokens; findByCancelToken also returns
+// credit_pack_id and stripe_payment_id so a reschedule can carry them over.
+// REFACTOR-R4-P1-04: cancelByToken wraps the cancel_booking RPC (status flip + pack credit
+// restore, originating pack first, in one transaction).
+// REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the booking-payment audit's read. Three
+// queries (bookings, then their users and packs), and every error throws.
+import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
   BookingHistoryEntry,
   BookingHistoryPage,
   BookingRecord,
   BookingStatus,
+  PaymentAuditBooking,
   SessionType,
   SingleSessionBookingDetail,
 } from "@/domain/types";
@@ -68,7 +81,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, user_id")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id")
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .maybeSingle();
@@ -107,6 +120,8 @@ export class SupabaseBookingRepository implements IBookingRepository {
       endsAt:      booking.ends_at,
       used:        false,
       packSize,
+      creditPackId:    booking.credit_pack_id    ?? undefined,
+      stripePaymentId: booking.stripe_payment_id ?? undefined,
     };
   }
 
@@ -158,17 +173,64 @@ export class SupabaseBookingRepository implements IBookingRepository {
     return data !== null;
   }
 
+  // REFACTOR-R4-P1-04: one RPC, one transaction — an error means nothing was written.
+  async cancelByToken(token: string): Promise<CancelResult> {
+    const notConsumed: CancelResult = {
+      consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0,
+    };
+    if (!HEX64.test(token)) return notConsumed;
+
+    const { data, error } = await supabase.rpc("cancel_booking", { p_cancel_token: token });
+    if (error) throw error;
+
+    const result = data as Partial<CancelResult> & { consumed: boolean };
+    if (!result.consumed) return notConsumed;
+    return {
+      consumed:        true,
+      restored:        result.restored === true,
+      restoredPackId:  result.restoredPackId ?? null,
+      fromOriginating: result.fromOriginating === true,
+      credits:         result.credits ?? 0,
+    };
+  }
+
+  // REFACTOR-R4-P1-03: undo a reschedule's claim. The tokens are recomputed exactly as
+  // createBooking signed them, so the links in the original confirmation email work again.
+  async reinstateBooking(record: BookingRecord): Promise<boolean> {
+    const startsAt      = new Date(record.startsAt).toISOString(); // TIMESTAMPTZ gotcha
+    const cancelPayload = `${record.eventId}:${record.email}:${startsAt}`;
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({
+        status:       "confirmed",
+        cancel_token: signToken(cancelPayload),
+        join_token:   signToken(`join:${cancelPayload}`),
+      })
+      .eq("calendar_event_id", record.eventId)
+      .eq("status", "cancelled")
+      .select("id")
+      .maybeSingle();
+
+    if (error?.code === "23P01") return false; // exclusion_violation: the slot was re-taken
+    if (error) throw error;
+    return data !== null;
+  }
+
   async listByUser(
     email: string,
   ): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]> {
     const normalized = email.toLowerCase().trim();
 
-    const { data: user } = await supabase
+    // REFACTOR-R4-P1-02: an error here must not read as "no bookings" — the deletion
+    // gate takes [] as permission to erase the account.
+    const { data: user, error: userErr } = await supabase
       .from("users")
       .select("id")
       .eq("email", normalized)
       .maybeSingle();
 
+    if (userErr) throw userErr;
     if (!user) return [];
 
     const { data, error } = await supabase
@@ -338,12 +400,14 @@ export class SupabaseBookingRepository implements IBookingRepository {
   async hasAnyBooking(email: string): Promise<boolean> {
     const normalized = email.toLowerCase().trim();
 
-    const { data: user } = await supabase
+    // REFACTOR-R4-P1-02: throws on a read error, like the bookings count below.
+    const { data: user, error: userErr } = await supabase
       .from("users")
       .select("id")
       .eq("email", normalized)
       .maybeSingle();
 
+    if (userErr) throw userErr;
     if (!user) return false;
 
     const { count, error } = await supabase
@@ -351,6 +415,31 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .select("id", { head: true, count: "exact" })
       .eq("user_id", user.id)
       .limit(1);
+
+    if (error) throw error;
+    return (count ?? 0) > 0;
+  }
+
+  // REFACTOR-R4-P1-01: any non-cancelled free15min row counts. Both reads throw on
+  // error: answering "no free call yet" on a failed read would lift the cap.
+  async hasActiveFreeSession(email: string): Promise<boolean> {
+    const normalized = email.toLowerCase().trim();
+
+    const { data: user, error: userErr } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", normalized)
+      .maybeSingle();
+
+    if (userErr) throw userErr;
+    if (!user) return false;
+
+    const { count, error } = await supabase
+      .from("bookings")
+      .select("id", { head: true, count: "exact" })
+      .eq("user_id", user.id)
+      .eq("session_type", "free15min")
+      .neq("status", "cancelled");
 
     if (error) throw error;
     return (count ?? 0) > 0;
@@ -391,13 +480,16 @@ export class SupabaseBookingRepository implements IBookingRepository {
   }
 
   // REFACTOR-P4-01: reconciliation lookup — true if a booking row exists for this PaymentIntent.
+  // REFACTOR-R4-P1-02: also the webhook's status-agnostic "already fulfilled" gate. A count,
+  // not .maybeSingle(): a rescheduled paid class leaves two rows (old cancelled + new
+  // confirmed) sharing the PaymentIntent, and .maybeSingle() errors on two rows.
   async hasBookingForPayment(stripePaymentId: string): Promise<boolean> {
-    const { data } = await supabase
+    const { count, error } = await supabase
       .from("bookings")
-      .select("id")
-      .eq("stripe_payment_id", stripePaymentId)
-      .maybeSingle();
-    return data !== null;
+      .select("id", { head: true, count: "exact" })
+      .eq("stripe_payment_id", stripePaymentId);
+    if (error) throw error;
+    return (count ?? 0) > 0;
   }
 
   // SINGLE-SESSION-CONFIRM-01: detail finder for the single-session polling surface.
@@ -413,7 +505,10 @@ export class SupabaseBookingRepository implements IBookingRepository {
       .eq("status", "confirmed")
       .maybeSingle();
 
-    if (error || !data || !data.join_token || !data.calendar_event_id) return null;
+    // REFACTOR-R4-P1-02: an error is not "no confirmed booking" — throw, and keep null
+    // for the genuinely absent (or not-yet-joinable) row.
+    if (error) throw error;
+    if (!data || !data.join_token || !data.calendar_event_id) return null;
 
     return {
       eventId:     data.calendar_event_id,
@@ -422,6 +517,68 @@ export class SupabaseBookingRepository implements IBookingRepository {
       sessionType: data.session_type as SessionType,
       joinToken:   data.join_token,
     };
+  }
+
+  // REFACTOR-R4-P3-03: the booking-payment audit's read. Every error throws — a failed
+  // read must never come back as an empty (= "all paid") list.
+  async listUpcomingForPaymentAudit(untilIso: string): Promise<PaymentAuditBooking[]> {
+    const { data: rows, error } = await supabase
+      .from("bookings")
+      .select("id, user_id, session_type, starts_at, ends_at, stripe_payment_id, credit_pack_id")
+      .eq("status", "confirmed")
+      .gte("starts_at", new Date().toISOString())
+      .lt("starts_at", untilIso)
+      .order("starts_at", { ascending: true });
+
+    if (error) throw error;
+    if (!rows || rows.length === 0) return [];
+
+    const userIds = [...new Set(rows.map(r => r.user_id))];
+    const packIds = [...new Set(rows.map(r => r.credit_pack_id).filter((v): v is string => !!v))];
+
+    const { data: users, error: usersErr } = await supabase
+      .from("users")
+      .select("id, email")
+      .in("id", userIds);
+
+    if (usersErr) throw usersErr;
+    const emails = new Map((users ?? []).map(u => [u.id, u.email]));
+
+    const packs = new Map<string, { userId: string; stripePaymentId: string }>();
+    if (packIds.length > 0) {
+      const { data, error: packsErr } = await supabase
+        .from("credit_packs")
+        .select("id, user_id, stripe_payment_id")
+        .in("id", packIds);
+
+      if (packsErr) throw packsErr;
+      for (const p of data ?? []) {
+        packs.set(p.id, { userId: p.user_id, stripePaymentId: p.stripe_payment_id });
+      }
+    }
+
+    return rows.map(row => {
+      const email = emails.get(row.user_id);
+      // bookings.user_id is a NOT NULL FK, so this is an inconsistent read, not a state.
+      if (email === undefined) throw new Error(`Payment audit: no user row for booking ${row.id}`);
+      const pack = row.credit_pack_id ? packs.get(row.credit_pack_id) : undefined;
+
+      return {
+        bookingId:       row.id,
+        email,
+        sessionType:     row.session_type as SessionType,
+        startsAt:        new Date(row.starts_at).toISOString(),
+        endsAt:          new Date(row.ends_at).toISOString(),
+        stripePaymentId: row.stripe_payment_id ?? null,
+        creditPack:      pack
+          ? {
+              id:                 row.credit_pack_id as string,
+              ownedByBookingUser: pack.userId === row.user_id,
+              stripePaymentId:    pack.stripePaymentId,
+            }
+          : null,
+      };
+    });
   }
 
   async markCompleted(bookingId: string): Promise<void> {

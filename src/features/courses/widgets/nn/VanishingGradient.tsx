@@ -1,7 +1,7 @@
 /*
  * COURSE-P5-03 — `vanishing-gradient`: slide the spectral radius of W_hh and watch
- * the magnitude of the transported gradient, in ORDERS OF MAGNITUDE, against the
- * distance it has to travel back through the sequence. The exponential in the BPTT
+ * the magnitude of the transported gradient of a recurrence with no mask, in ORDERS OF
+ * MAGNITUDE, against the distance it has to travel back through the sequence. The exponential in the BPTT
  * product (Block 3 lesson 3) is abstract on the page and a straight line here: its
  * slope is log₁₀ of the per-step factor, so below ρ = 1 it slopes down to nothing
  * (vanishing) and above ρ = 1 it slopes up without bound (exploding). Pure envelope
@@ -42,8 +42,9 @@ export default function VanishingGradient() {
   const [rho, setRho] = useState(DEFAULT_RHO);
 
   const { points, yDomain, ordersAtEnd } = useMemo(() => {
-    // γ = 1: the most favourable mask (tanh at its steepest). Even so, ρ < 1 vanishes;
-    // saturation only deepens the decay, which is the point the prose makes.
+    // γ = 1: every mask at 1, the recurrence with no tanh, where the transport is
+    // exactly (W_hhᵀ)^d and ρ is its long-run pace. With real masks ρ guarantees
+    // nothing; the prose's condition is γ·σ_max < 1 (COURSE-P11-06).
     const mags = gradientMagnitudes(rho, MAX_TANH_PRIME, MAX_DISTANCE);
     const points = mags.map((m, d) => [d, Math.log10(m)] as [number, number]);
     const ys = points.map((p) => p[1]);

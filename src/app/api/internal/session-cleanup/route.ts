@@ -7,6 +7,8 @@
  *
  * Authentication: requires CRON_SECRET in the Authorization header.
  * Set the header manually in cron-job.org: Authorization: Bearer <CRON_SECRET>
+ *
+ * CRON-AUTH-01: an unset CRON_SECRET must reject, not match the literal "Bearer undefined".
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -18,8 +20,8 @@ const MAX_BATCH    = 50;
 const MAX_ATTEMPTS = 5;
 
 export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

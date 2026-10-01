@@ -1,6 +1,10 @@
 /**
  * ADMIN-01: Student list with optional low-credit filter.
  *
+ * REFACTOR-R4-P3-02: search (?q=), the low-credit tab (?filter=) and pagination (?page=)
+ * run in Postgres through adminService.listStudents. Students only: a user with a
+ * booking or a credit pack.
+ *
  * SEC-07: the page gates ITSELF before fetching, on top of the layout's gate. Next
  * renders a layout and its page segment in parallel, so the layout's `redirect()`
  * does not stop this page from rendering — and the rendered RSC payload (data
@@ -12,20 +16,37 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import { fetchStudents } from "../_data";
+import { AdminStudentsQuerySchema } from "@/lib/schemas";
+import { adminService } from "@/services";
+import { STUDENTS_PAGE_SIZE } from "@/services/AdminService";
 import { StudentsTable } from "@/components/admin/StudentsTable";
 
 interface StudentsPageProps {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function StudentsPage({ searchParams }: StudentsPageProps) {
   if (!isAdmin(await auth())) redirect("/");
 
-  const { filter } = await searchParams;
-  // Fetch the full list; filter + search are applied client-side so the tab
-  // counts stay accurate without extra queries.
-  const students = await fetchStudents();
+  const { q, filter, page } = AdminStudentsQuerySchema.parse(await searchParams);
+  const query = q ?? "";
+  // One call carries both tab counts (computed before the low-credit filter).
+  const { rows, total, lowCreditTotal } = await adminService.listStudents({
+    query,
+    lowCredit: filter === "low-credit",
+    page,
+    pageSize:  STUDENTS_PAGE_SIZE,
+  });
 
-  return <StudentsTable students={students} filter={filter} />;
+  return (
+    <StudentsTable
+      rows={rows}
+      total={total}
+      lowCreditTotal={lowCreditTotal}
+      page={page}
+      pageSize={STUDENTS_PAGE_SIZE}
+      filter={filter}
+      query={query}
+    />
+  );
 }

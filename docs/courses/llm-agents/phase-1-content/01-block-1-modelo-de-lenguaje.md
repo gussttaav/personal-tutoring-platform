@@ -1,6 +1,6 @@
 # P1-01 — Block 1: Del Transformer al modelo de lenguaje
 
-**Tag:** `COURSE-C2-P1-01` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-C2-P1-01` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ✅
 **Depends on:** P0-01, P0-02, P0-03, P0-04 · Block 1 widgets (built in this task)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** derivation
 **Runs on:** the mini-GPT checkpoint (P0-03) · **Publication:** `draft: true` until the block is
@@ -23,7 +23,7 @@ Mathematics: **high**. This is the block that has to earn the title's first half
 | Id | Lesson | Purpose |
 |---|---|---|
 | `bpe-merges` | 2 | A Spanish sentence + a corpus; step through merges and watch the token boundaries move and the count drop. Reuses `math/bpe-vocab.ts` where it fits; the merge *training* is new |
-| `sampling-explorer` | 4 | One fixed logit vector (a real one from the checkpoint, frozen) → the distribution under $\tau$, top-k, top-p; the discarded mass shown, not implied. `math/sampling.ts`, shared with `logit-mask` (Block 3) |
+| `sampling-explorer` | 4 | Two fixed logit vectors (real ones from the checkpoint, frozen: a context where the model hesitates, «La Nela», and one where it has all but decided, «La Nela bajó la cabe») → the distribution under $\tau$, top-k, top-p; the discarded mass shown, not implied. Two, because top-k's defect only shows across shapes: $k = 10$ drops half the mass of the first and keeps nine junk entries in the second. `math/sampling.ts`, shared with `logit-mask` (Block 3) |
 | `kv-cache` | 5 | Generate token by token; the cache grows, the per-step cost is drawn with and without it; toggle to see recomputation |
 | `scaling-laws` | 7 | Loss vs. $N$, $D$, $C$ on log–log axes from Kaplan's and Chinchilla's fitted forms; a compute budget slider that shows the optimal $(N, D)$ split; the checkpoint's own point plotted |
 
@@ -36,7 +36,7 @@ Mathematics: **high**. This is the block that has to earn the title's first half
 | 3 | `entrenar-un-mini-gpt` | Entrenar un mini-GPT en NumPy | — | 3 | 4 | 1 |
 | 4 | `muestreo` | Muestreo: temperatura, top-k y top-p | `sampling-explorer` | 2 | 5 | 1 |
 | 5 | `kv-cache` | La caché de claves y valores: cuánto cuesta cada token | `kv-cache` | 2 | 5 | 1 |
-| 6 | `perplejidad` | Perplejidad: medir un modelo de lenguaje | — | 2 | 4 | — |
+| 6 | `perplejidad` | Perplejidad: medir un modelo de lenguaje | — | 3 | 4 | — |
 | 7 | `leyes-de-escala` | Leyes de escala: Kaplan y Chinchilla | `scaling-laws` | 1 | 5 | — |
 | 8 | `aprendizaje-en-contexto` | Aprendizaje en contexto: el prompt como programa | — | 2 | 4 | — |
 | 9 | `proyecto-mini-gpt` | Proyecto: el modelo hecho función | — | 3 | 3 | 1 |
@@ -59,12 +59,12 @@ here; STATUS stays phase-level.
 - [x] 1. `una-sola-columna`
 - [x] 2. `bpe-de-verdad`
 - [x] 3. `entrenar-un-mini-gpt`
-- [ ] 4. `muestreo`
-- [ ] 5. `kv-cache`
-- [ ] 6. `perplejidad`
-- [ ] 7. `leyes-de-escala`
-- [ ] 8. `aprendizaje-en-contexto`
-- [ ] 9. `proyecto-mini-gpt`
+- [x] 4. `muestreo`
+- [x] 5. `kv-cache`
+- [x] 6. `perplejidad`
+- [x] 7. `leyes-de-escala`
+- [x] 8. `aprendizaje-en-contexto`
+- [x] 9. `proyecto-mini-gpt`
 
 ## Mathematical content
 
@@ -77,8 +77,12 @@ here; STATUS stays phase-level.
   `reading` entry — `kind: blog`, the first internal one); warm-up and decay stated, not derived
 - Temperature: $\text{softmax}(\mathbf{z}/\tau)$, with the limits $\tau \to 0$ (argmax) and
   $\tau \to \infty$ (uniform) **derived**; top-k and top-p as truncation + renormalisation; **why
-  greedy repeats** — a high-probability loop is a fixed point of argmax — is an argument, not a
-  remark (Holtzman)
+  greedy repeats** — a loop the argmax continues is a fixed point of argmax, whatever its
+  probability — is an argument, not a remark (Holtzman). The loop is high-probability only
+  relative to real text: on the checkpoint each step is a ~0.3 bet (the model is far from sure),
+  yet the cycle costs 1.26 nats per token against the novel's 3.2. Holtzman's self-reinforcement,
+  the bet rising with each repeat, is weak here (0.18 → 0.31, then flat) and the argument does not
+  rest on it
 - KV cache: per-step cost $O(t\,d)$ with the cache vs. $O(t^2 d)$ without; totals over $T$
   steps $O(T^2 d)$ vs. $O(T^3 d)$ — **derived**, and the memory $2 L T d$ floats per sequence,
   which is the number Block 3's context lesson and Block 5's compaction lesson both quote
@@ -108,8 +112,9 @@ here; STATUS stays phase-level.
 ## Test plan
 
 - Read every lesson on a phone. Run every cell in a production build, on a phone.
-- The `sampling-explorer`'s frozen logit vector is *from the checkpoint*, asserted in
-  `math/__tests__/sampling.test.ts` against a value the lesson prints.
+- The `sampling-explorer`'s two frozen logit vectors are *from the checkpoint*
+  (`scripts/courses/llm-agents/sampling-presets.py`), asserted in
+  `math/__tests__/sampling.test.ts` against the values the lesson's first cell prints.
 - Someone who finished `dl-nlp` reads lessons 1–3 and reports where the callbacks assume too much.
 
 ## Notes / gotchas
@@ -125,6 +130,16 @@ here; STATUS stays phase-level.
   most important; resist making it a widget showcase.
 - `kv-cache` and `sampling-explorer` are the two widgets most likely to grow. Cap them at the
   budget; the derivation carries the lesson.
+- **The mini-GPT's cache cannot slide.** Its positions are a learned table `P` of
+  $T_{\text{ctx}} = 64$ rows, so once `generar` slides the window every token changes position and
+  every cached key and value is stale; a cached step at position 65 is `IndexError` on `P[64]`.
+  Any lesson that generates with the cache stops at $T_{\text{ctx}}$ (or refills from scratch), and
+  says why. Lesson 5 shows it in cell 1.
+- **In Pyodide the clock does not follow the multiplication count.** Each pass pays a fixed cost
+  of a few milliseconds (dozens of small NumPy ops) whatever its size, so one cached row costs
+  ~6 ms while 64 rows in one pass cost ~1 ms each: at position 64 the cache saves ~10×, not the
+  counted 64×. Quote counts as exact and timings as approximate, and never derive a ratio from the
+  clock. The same fixed cost is why a cell's cached step barely changes with $t$.
 
 ## Out of scope
 

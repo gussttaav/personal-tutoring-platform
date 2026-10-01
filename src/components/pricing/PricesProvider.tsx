@@ -1,13 +1,18 @@
 "use client";
 
 // Makes the server-fetched display prices available to the client component
-// tree without prop-drilling. Fed once from the locale layout, so prices are
+// tree without prop-drilling. Fed once from CommerceProviders, so prices are
 // present on first render (no fetch, no flicker).
 //
-// PRICING-STUDENT-01: those layout-fed prices are the PUBLIC ones, and they must
+// REFACTOR-R4-P2-03: fed by `CommerceProviders` (src/components/commerce/), which
+// only the booking pages mount — no longer by the locale layout. Outside those
+// pages the throwing hooks below throw; `usePackValidityDaysOptional` is the
+// non-throwing read for components rendered everywhere (the footer's policy modal).
+//
+// PRICING-STUDENT-01: those server-fed prices are the PUBLIC ones, and they must
 // stay that way — `/` and `/mentoria` are statically prerendered and shared by
-// every visitor (SEO-01), and this provider is mounted above AuthProvider, so at
-// the point it renders there is no notion of who is viewing.
+// every visitor (SEO-01), and CommerceProviders is a server component with no
+// session, so at the point it renders there is no notion of who is viewing.
 //
 // A student with a private price therefore arrives as an *overlay*: UserPricingSync
 // (mounted inside AuthProvider, where the session is knowable) fetches it and
@@ -100,6 +105,14 @@ export function usePackValidityDays(): number {
   const ctx = useContext(PackValidityContext);
   if (ctx === null) throw new Error("usePackValidityDays must be used within a PricesProvider");
   return ctx;
+}
+
+/**
+ * REFACTOR-R4-P2-03: `usePackValidityDays` for components that also render on pages
+ * without CommerceProviders. `null` outside a PricesProvider instead of throwing.
+ */
+export function usePackValidityDaysOptional(): number | null {
+  return useContext(PackValidityContext);
 }
 
 /**

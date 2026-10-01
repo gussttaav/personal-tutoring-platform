@@ -289,8 +289,8 @@ because it was predicted.
 
 `<GO>` is the same rule applied to the other end of the sequence, and it is on this table because
 the course has been spelling it **only in code** since Block 3 lesson 8 — `ent =
-np.concatenate(([GO], y[:-1]))`, three cells across two blocks — while no prose has ever said what
-it is. Block 5 lesson 7, on the encoder, the decoder and the masks, is where that stops working: the
+np.concatenate(([GO], y[:-1]))`, three cells across two blocks — while its prose wrote a bare GO and
+never said what it is (Block 3 lesson 8 now writes and glosses it by this row). Block 5 lesson 7, on the encoder, the decoder and the masks, is where that stops working: the
 decoder's input is the target shifted one position, so position $1$ receives something that is not a
 target token at all, and a lesson that cannot name it cannot state the shift. It takes `<EOS>`'s
 treatment exactly — a special token, not a word, written the way a vocabulary file writes it,

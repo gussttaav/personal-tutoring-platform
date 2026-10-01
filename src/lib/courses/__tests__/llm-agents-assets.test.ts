@@ -177,3 +177,35 @@ describe("llm-agents assets — the model file the cells exec", () => {
     }
   });
 });
+
+/*
+ * COURSE-C2-P1-01 — modelo.py is Block 1's project frozen: `modelo(prompt) -> texto`, which
+ * the cells of Blocks 2 and 3 load with one exec line and call without opening. Lesson 1·9
+ * (proyecto-mini-gpt) writes it and states its contract; the signature is pinned here, so a
+ * change to it is a CI failure and not a silent break in lessons written against it.
+ */
+describe("llm-agents assets — the frozen modelo the later blocks load", () => {
+  const src = read("modelo.py");
+
+  it("keeps the signature lesson 1·9 freezes", () => {
+    expect(src).toContain(
+      "def modelo(prompt, max_tokens=32, temperatura=1.0, top_p=0.9, parar=None, semilla=None):",
+    );
+    expect(src).toMatch(/^def hacer_modelo\(red, fusiones\):$/m);
+    expect(src).toMatch(/^modelo = hacer_modelo\(red, F\)$/m);
+  });
+
+  it("is NumPy-only and builds on the two frozen files rather than copying them", () => {
+    for (const forbidden of ["torch", "numba", "scipy", "matplotlib"]) {
+      expect(src).not.toMatch(new RegExp(`^\\s*(import|from)\\s+${forbidden}\\b`, "m"));
+    }
+    expect(src).toContain('exec(open_url("/courses/llm-agents/bpe.py").read())');
+    expect(src).toContain('exec(open_url("/courses/llm-agents/minigpt.py").read())');
+    expect(src).not.toMatch(/^class MiniGPT/m);
+  });
+
+  it("checks the two preconditions of the contract", () => {
+    expect(src).toContain("assert prompt,");
+    expect(src).toContain('assert not prompt.endswith(" "),');
+  });
+});

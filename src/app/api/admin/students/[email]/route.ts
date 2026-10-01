@@ -3,21 +3,21 @@
  * POST /api/admin/students/[email] — adjust credit balance (requires reason).
  *
  * ADMIN-01: Thin adapter — auth + admin check, Zod validation, service delegation.
+ *
+ * REFACTOR-R4-P3-02: reads through adminService (was _data.ts). POST checks the origin
+ * first (CSRF convention), and the adjustment itself moved to AdminService.adjustCredits:
+ * a debit larger than the balance stops at the balance and the response says how much
+ * was applied, instead of swallowing the error and answering `{ ok: true }`.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { log } from "@/lib/logger";
+import { isValidOrigin } from "@/lib/csrf";
+import { mapDomainErrorToResponse } from "@/lib/http-errors";
 import { AdjustCreditsSchema } from "@/lib/schemas";
-import { creditService, pricingService } from "@/services";
-import { supabaseAuditRepository } from "@/infrastructure/supabase";
-import {
-  fetchStudent,
-  fetchCreditPacks,
-  fetchStudentBookings,
-  fetchAuditLog,
-} from "@/app/[locale]/admin/_data";
+import { adminService } from "@/services";
 
 type Params = { params: Promise<{ email: string }> };
 
@@ -35,10 +35,10 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const email = decodeURIComponent(rawEmail);
 
   const [student, packs, bookings, audit] = await Promise.all([
-    fetchStudent(email),
-    fetchCreditPacks(email),
-    fetchStudentBookings(email),
-    fetchAuditLog(email),
+    adminService.getStudent(email),
+    adminService.listCreditPacks(email),
+    adminService.listStudentBookings(email),
+    adminService.listAuditLog(email),
   ]);
 
   if (!student) {
@@ -51,6 +51,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
 }
 
 export async function POST(req: NextRequest, { params }: Params) {
+  // REFACTOR-R4-P3-02: CSRF convention (CLAUDE.md) — every POST route checks origin.
+  if (!isValidOrigin(req)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const session = await auth();
 
   if (!session?.user?.email) {
@@ -71,33 +74,20 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { amount, reason } = parsed.data;
 
-  if (amount > 0) {
-    // Manually-granted credits get the same validity window as purchased packs.
-    const validityDays = await pricingService.getPackValidityDays();
-    const expiresAt    = new Date(Date.now() + validityDays * 24 * 60 * 60_000).toISOString();
-    await creditService.addCredits({
+  try {
+    const { requested, applied } = await adminService.adjustCredits({
       email,
-      name: "",
       amount,
-      packLabel: `Ajuste manual: ${reason}`,
-      stripeSessionId: `manual-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      expiresAt,
+      reason,
+      by: session.user.email,
     });
-  } else if (amount < 0) {
-    for (let i = 0; i < Math.abs(amount); i++) {
-      await creditService.useCredit(email).catch(() => { /* ignore if 0 */ });
-    }
+
+    log("info", "Admin adjusted credits", {
+      service: "admin", email: session.user.email, subject: email, amount: requested, applied,
+    });
+
+    return NextResponse.json({ ok: true, requested, applied });
+  } catch (err) {
+    return mapDomainErrorToResponse(err, { email: session.user.email, subject: email, amount });
   }
-
-  // Additional audit entry with admin attribution (creditService already wrote its own)
-  await supabaseAuditRepository.append(email, {
-    action: "admin_adjust",
-    amount,
-    reason,
-    by: session.user.email,
-  });
-
-  log("info", "Admin adjusted credits", { service: "admin", email: session.user.email, subject: email, amount });
-
-  return NextResponse.json({ ok: true });
 }

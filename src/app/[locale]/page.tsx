@@ -22,6 +22,10 @@
 // with a session cookie (typed URL, bookmark, external link) is rewritten by src/middleware.ts to
 // the dynamic twin at /inicio, which resolves the visitor's real landing; it renders this same
 // page when the cookie is stale.
+// REFACTOR-R4-P2-03: the page tree (Footer included, so the policy modal reads the context
+// instead of fetching) is wrapped in `CommerceProviders` — the booking overlays read prices and
+// the schedule, which the root layout no longer provides. `/inicio` renders this component, so it
+// inherits the wrapper.
 
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import HomeHero from "@/features/home/HomeHero";
@@ -35,6 +39,7 @@ import ClosingCta from "@/components/ClosingCta";
 import HomeChat from "@/components/HomeChat";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { CommerceProviders } from "@/components/commerce/CommerceProviders";
 import StructuredData from "@/components/seo/StructuredData";
 import { localizedAlternates } from "@/lib/hreflang";
 import "@/features/courses/course-editorial.css";
@@ -73,7 +78,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   setRequestLocale(locale);
 
   return (
-    <>
+    <CommerceProviders locale={locale}>
       {/* SEO-04: JSON-LD (Person + Service) — server-rendered so it ships in the
           prerendered HTML. */}
       <StructuredData locale={locale} variant="home" />
@@ -144,6 +149,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </main>
 
       <Footer />
-    </>
+    </CommerceProviders>
   );
 }

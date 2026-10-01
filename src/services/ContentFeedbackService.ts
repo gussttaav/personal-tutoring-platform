@@ -43,8 +43,8 @@ import { log } from "@/lib/logger";
 import { voterKey } from "@/lib/content/content-key";
 import { UserService } from "./UserService";
 
-/** Rows scanned for the admin aggregate. In-process grouping (see admin/_data.ts)
- *  is fine at this scale; past it, the upgrade is a `content_vote_stats` view. */
+/** Rows scanned for the admin aggregate. In-process grouping is fine at this
+ *  scale; past it, the upgrade is a `content_vote_stats` view. */
 export const VOTE_SCAN_LIMIT = 5000;
 /** Newest comments / reports shown in admin. */
 export const ADMIN_LIST_LIMIT = 200;

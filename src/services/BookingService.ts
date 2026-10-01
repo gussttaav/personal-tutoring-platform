@@ -12,19 +12,56 @@
 //
 // REFACTOR-P1-04: pending_terminations is written on every booking; the daily cron at
 // /api/internal/session-cleanup handles actual Zoom session termination.
+//
+// REFACTOR-R4-P1-01: the server decides what is bookable. checkSlot() enforces the
+// session length, the 15-minute grid, min-notice, the booking window and the working
+// blocks — in-process checks only, no network call — and createBooking runs it before
+// any side effect. PaymentService runs it at checkout. Also caps the free 15-minute
+// call at one non-cancelled booking per user. (Trimmed at Gustavo's request: no
+// per-booking Google Calendar read — see docs/archive/refactor-2026-10-01/STATUS.md.)
+//
+// REFACTOR-R4-P1-02: hasBookingForPayment — status-agnostic delegate backing the
+// PaymentService webhook's "already fulfilled" gate.
+//
+// REFACTOR-R4-P1-03: a reschedule CLAIMS the original booking first (so the exclusion
+// constraint lets an overlapping new slot in) but tears it down only AFTER the new
+// booking commits. Until then the claim has a real compensation: reinstate the row with
+// its original tokens, so a failed reschedule leaves the student their class and a
+// working link to retry with. A pack reschedule moves the original's credit (pack link)
+// to the new booking instead of restore + decrement; a paid one carries its PaymentIntent.
+//
+// REFACTOR-R4-P1-04: cancelling is one transaction (the cancel_booking RPC): the status
+// flip and a pack class's credit restore — to the pack it was paid from, else the
+// earliest-expiring active pack with room — commit together or not at all.
+// `creditsRestored` reports what the RPC did, not what the session type implies. The
+// booking saga's credit compensation restores to the exact pack it decremented.
+//
+// REFACTOR-R4-P4-02: step 6's comment rewritten. It still described the scheduler
+// removed in cycle 2; the ordering now serves pending_terminations + the session-cleanup cron.
+//
+// REFACTOR-R4-P1-05: cancelByToken's locale read happens AFTER the cancel_booking RPC
+// has committed, so it is best-effort: a getLocale error is logged (warn) and falls back
+// to 'es' instead of 500-ing a cancellation that already happened (which would also skip
+// the confirmation email and burn the token). getLocale itself stays fail-closed.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { BookingHistoryPage, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
+import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
 import { CreditService } from "./CreditService";
 import { ScheduleService } from "./ScheduleService";
-import { DomainError, SlotUnavailableError } from "@/domain/errors";
+import {
+  DomainError, FreeSessionAlreadyUsedError, InvalidSlotError, SlotUnavailableError,
+} from "@/domain/errors";
 import { log } from "@/lib/logger";
 import { invalidate as invalidateAvailability } from "@/lib/availability-cache";
+import {
+  SESSION_DURATION_MINUTES, SLOT_ALIGNMENT_MINUTES, isWithinBlocks,
+} from "@/lib/booking-config";
+import { toZonedTime } from "date-fns-tz";
 
 // ─── Input / output types ─────────────────────────────────────────────────────
 
@@ -78,6 +115,13 @@ const SESSION_LABELS_EN: Record<SessionType, string> = {
 
 type Compensation = { description: string; run: () => Promise<void> };
 
+/** REFACTOR-R4-P1-01: the window a client asks to book, before the server vouches for it. */
+export interface SlotRequest {
+  startIso:    string;
+  endIso:      string;
+  sessionType: SessionType;
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export class BookingService {
@@ -103,18 +147,59 @@ export class BookingService {
     return config.cancelMinNoticeHours * 60 * 60_000;
   }
 
+  // REFACTOR-R4-P1-01: the server decides what is bookable. Returns null when the slot
+  // is bookable, otherwise the error to throw: InvalidSlotError for a window the grid
+  // could never produce (wrong length, off the 15-min grid), SlotUnavailableError for
+  // one it doesn't offer (min-notice, booking window, working blocks). The length check
+  // is what guarantees a booking never outgrows what was paid for: a free call is 15
+  // minutes, a pack credit buys 60. No network call — the schedule config is cached —
+  // and a config read error propagates (fail closed).
+  async checkSlot(slot: SlotRequest): Promise<DomainError | null> {
+    const start = new Date(slot.startIso);
+    const end   = new Date(slot.endIso);
+    const lenMs = SESSION_DURATION_MINUTES[slot.sessionType] * 60_000;
+    if (Number.isNaN(start.getTime()) || end.getTime() - start.getTime() !== lenMs) {
+      return new InvalidSlotError();
+    }
+
+    const config = await this.schedule.getConfig();
+    const zoned  = toZonedTime(start, config.timezone);
+    const minute = zoned.getHours() * 60 + zoned.getMinutes();
+    if (minute % SLOT_ALIGNMENT_MINUTES !== 0 || zoned.getSeconds() !== 0 || zoned.getMilliseconds() !== 0) {
+      return new InvalidSlotError();
+    }
+
+    const now = Date.now();
+    if (start.getTime() < now + config.minNoticeHours * 3_600_000)         return new SlotUnavailableError();
+    if (start.getTime() > now + config.bookingWindowWeeks * 7 * 86_400_000) return new SlotUnavailableError();
+    if (!isWithinBlocks(config.weeklyHours[zoned.getDay()] ?? [], minute, lenMs / 60_000)) {
+      return new SlotUnavailableError();
+    }
+    return null;
+  }
+
+  async assertSlotBookable(slot: SlotRequest): Promise<void> {
+    const err = await this.checkSlot(slot);
+    if (err) throw err;
+  }
+
   async createBooking(input: CreateBookingInput): Promise<CreateBookingOutput> {
-    // 1. Min-notice guard — schedule config is the source of truth.
-    const config      = await this.schedule.getConfig();
-    const startsAt    = new Date(input.startIso);
-    const minBookable = new Date(Date.now() + config.minNoticeHours * 60 * 60_000);
-    if (startsAt < minBookable) throw new SlotUnavailableError();
+    const config = await this.schedule.getConfig(); // timezone + cancel window, below
+
+    // 1. REFACTOR-R4-P1-01: slot validator, then the free-call cap — both before any
+    //    side effect, so a rejection spends no credit and creates no event or row.
+    //    (Min-notice, previously the only guard here, is now part of checkSlot.)
+    //    A reschedule moves the existing free call, so it is exempt from the cap.
+    await this.assertSlotBookable(input);
+    if (input.sessionType === "free15min" && !input.rescheduleToken
+        && await this.bookings.hasActiveFreeSession(input.email)) {
+      throw new FreeSessionAlreadyUsedError();
+    }
 
     // 2. REFACTOR-P1-01: Acquire slot lock. Held until the booking row is committed
     //    (or compensation completes — see REFACTOR-P1-03).
-    const durationMinutes = Math.round(
-      (new Date(input.endIso).getTime() - new Date(input.startIso).getTime()) / 60_000
-    );
+    //    REFACTOR-R4-P1-01: the validator guarantees the window IS the session length.
+    const durationMinutes = SESSION_DURATION_MINUTES[input.sessionType];
     const locked = await this.bookings.acquireSlotLock(input.startIso, durationMinutes);
     if (!locked) {
       throw new SlotUnavailableError();
@@ -139,9 +224,11 @@ export class BookingService {
     };
 
     try {
-      // 3. Reschedule flow
+      // 3. Reschedule flow — CLAIM the original booking. REFACTOR-R4-P1-03: nothing of
+      //    it is deleted here; that waits for the new booking to commit (step 10).
+      let oldRecord: BookingRecord | null = null;
       if (input.rescheduleToken) {
-        const oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
+        oldRecord = await this.bookings.findByCancelToken(input.rescheduleToken);
 
         if (!oldRecord) {
           throw new DomainError(
@@ -173,40 +260,47 @@ export class BookingService {
           );
         }
 
-        // Reschedule rollback is partial by design — see task doc §Notable design decisions.
+        // REFACTOR-R4-P1-03: the claim's compensation. The original's calendar event, Zoom
+        // session and pending termination are all still there, so flipping the row back
+        // (original tokens included) is a complete undo. It can fail if another booking
+        // took the slot meanwhile — compensate() then logs it for manual intervention.
+        const claimed = oldRecord;
         compensations.push({
-          description: "restore old cancel token",
-          run: async () => { /* partial: reschedule rollback is best-effort only */ },
+          description: `reinstate original booking ${claimed.eventId}`,
+          run: async () => {
+            if (!(await this.bookings.reinstateBooking(claimed))) {
+              throw new Error("original booking could not be reinstated (slot re-taken?)");
+            }
+          },
         });
-
-        try { await this.calendar.deleteEvent(oldRecord.eventId); } catch {}
-        try { await this.sessions.deleteByEventId(oldRecord.eventId); } catch {}
-        // Drop the old eventId's pending_terminations row so the cleanup cron
-        // doesn't later see an orphan and mark the (now-cancelled) booking no_show.
-        try { await this.bookings.deletePendingTermination(oldRecord.eventId); } catch (err) {
-          log("warn", "Could not delete pending_terminations row on reschedule", {
-            service: "BookingService", eventId: oldRecord.eventId, error: String(err),
-          });
-        }
-        await invalidateAvailability(oldRecord.startsAt.slice(0, 10)).catch(() => {});
-
-        if (oldRecord.sessionType === "pack") {
-          await this.credits.restoreCredit(input.email);
-        }
       }
 
       // 4. Credit decrement for pack sessions
       let packSizeForToken: number | undefined;
       let creditPackId: string | undefined;
-      if (input.sessionType === "pack") {
+      if (input.sessionType === "pack" && oldRecord) {
+        // REFACTOR-R4-P1-03: a pack RESCHEDULE moves the original's credit to the new
+        // booking — no decrement, no restore, balance unchanged.
+        packSizeForToken = oldRecord.packSize;
+        creditPackId     = oldRecord.creditPackId;
+      } else if (input.sessionType === "pack") {
         // REFACTOR-P3-03: useCredit now returns the decremented pack's size, so
         // we no longer need a separate getBalance roundtrip.
         // BOOKING-PACKLINK-01: it also returns the pack id, which we persist on the
         // booking below so packSize/price can be resolved from the pack later.
         const { packSize, packId } = await this.credits.useCredit(input.email); // throws InsufficientCreditsError if none
+        // REFACTOR-R4-P1-04: back to the exact pack just decremented, not whichever
+        // expires first. A restore that finds the pack full/expired throws, so
+        // compensate() logs the lost credit for manual intervention.
         compensations.push({
           description: "restore decremented credit",
-          run: async () => { await this.credits.restoreCredit(input.email); },
+          run: async () => {
+            if (!packId) {
+              await this.credits.restoreCredit(input.email);
+            } else if (!(await this.credits.restoreCreditToPack(input.email, packId))) {
+              throw new Error(`credit could not be restored to pack ${packId} (full or expired)`);
+            }
+          },
         });
         packSizeForToken = packSize ?? undefined;
         creditPackId     = packId ?? undefined;
@@ -234,8 +328,12 @@ export class BookingService {
       });
       await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
 
-      // 6. Booking record — moved BEFORE QStash so the booking row exists if QStash
-      //    scheduling fails; P1-04's fallback cron can then find and terminate it.
+      // 6. Booking record — written before the pending_terminations row (step 7), so the
+      //    daily /api/internal/session-cleanup cron always finds the booking it has to mark
+      //    completed / no_show, and before the Zoom session row (step 8, FK).
+      //    REFACTOR-R4-P1-03: a rescheduled paid class keeps its PaymentIntent (the
+      //    request carries none), so history and the mobile poll find the new booking.
+      const stripePaymentId = input.stripePaymentId ?? oldRecord?.stripePaymentId;
       const { cancelToken, joinToken } = await this.bookings.createBooking({
         eventId:     calResult.eventId,
         email:       input.email,
@@ -245,7 +343,7 @@ export class BookingService {
         endsAt:      input.endIso,
         ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
         ...(creditPackId        !== undefined ? { creditPackId:    creditPackId        } : {}),
-        ...(input.stripePaymentId             ? { stripePaymentId: input.stripePaymentId } : {}),
+        ...(stripePaymentId                   ? { stripePaymentId                      } : {}),
       });
       compensations.push({
         description: `cancel booking ${cancelToken.slice(0, 8)}…`,
@@ -322,6 +420,13 @@ export class BookingService {
         ),
       ]);
 
+      // 10. REFACTOR-R4-P1-03: tear the original down only now — the new booking and its
+      //     Zoom session exist and nothing below can throw, so the claim's compensation
+      //     can no longer run against an original that is half gone.
+      if (oldRecord) {
+        await this.teardownRescheduledOriginal(oldRecord);
+      }
+
       return {
         eventId:         calResult.eventId,
         zoomSessionName: calResult.zoomSessionName,
@@ -363,9 +468,12 @@ export class BookingService {
       );
     }
 
-    // 3. Atomically consume token
-    const consumed = await this.bookings.consumeCancelToken(token);
-    if (!consumed) {
+    // 3. REFACTOR-R4-P1-04: one transaction for the status flip and the credit restore.
+    //    findByCancelToken above still verifies the HMAC and feeds the window check —
+    //    the RPC trusts the token it is given. If it throws, nothing was written: the
+    //    booking is still confirmed and the link still works for a retry.
+    const result = await this.bookings.cancelByToken(token);
+    if (!result.consumed) {
       throw new DomainError(
         "Cancel token has already been consumed.",
         "CANCEL_TOKEN_CONSUMED",
@@ -376,6 +484,21 @@ export class BookingService {
 
     const isPack   = record.sessionType === "pack";
     const isSingle = record.sessionType === "session1h" || record.sessionType === "session2h";
+
+    // Report what the RPC did. The audit entry is best-effort: the cancel has committed,
+    // and a 500 now would send the student to retry a link that no longer works.
+    const creditsRestored = isPack && result.restored;
+    if (creditsRestored) {
+      await this.credits.recordRestore(record.email, {
+        credits: result.credits, packId: result.restoredPackId,
+      }).catch(err => log("warn", "Could not audit the restored credit", {
+        service: "BookingService", eventId: record.eventId, error: String(err),
+      }));
+    } else if (isPack) {
+      log("error", "Pack class cancelled but no credit could be restored (no active pack with room) — manual follow-up", {
+        service: "BookingService", eventId: record.eventId, creditPackId: record.creditPackId ?? null,
+      });
+    }
 
     // 4. Delete calendar event + Zoom session (best-effort)
     try {
@@ -402,27 +525,30 @@ export class BookingService {
       });
     }
 
-    // 5. Restore credit for pack sessions
-    if (isPack) {
-      await this.credits.restoreCredit(record.email);
-    }
-
     // Display label follows the request locale (the cancel page renders in the
     // current page locale). The email locale is the account source of truth.
     const sessionLabel      = (locale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
     const sessionLabelAdmin = SESSION_LABELS[record.sessionType] ?? record.sessionType;
 
-    const emailLocale      = (await this.users.getLocale(record.email)) ?? 'es';
+    let emailLocale: 'es' | 'en' = 'es';
+    try {
+      emailLocale = (await this.users.getLocale(record.email)) ?? 'es';
+    } catch (err) {
+      log("warn", "cancel: locale read failed after commit — defaulting email to 'es'", {
+        service: "BookingService",
+        error:   String(err),
+      });
+    }
     const emailLabel       = (emailLocale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
 
-    // 6. Send emails (non-fatal)
+    // 5. Send emails (non-fatal)
     await Promise.all([
       this.email.sendCancellationConfirmation({
         to:              record.email,
         studentName:     record.name,
         sessionLabel:    emailLabel,
         startIso:        record.startsAt,
-        creditsRestored: isPack,
+        creditsRestored,
         locale:          emailLocale,
       }),
       isSingle
@@ -437,7 +563,7 @@ export class BookingService {
       log("error", "Email send failed (non-fatal)", { service: "BookingService", error: String(err) })
     );
 
-    return { sessionLabel, startIso: record.startsAt, creditsRestored: isPack };
+    return { sessionLabel, startIso: record.startsAt, creditsRestored };
   }
 
   // Finalizes a past session for the cleanup cron. Reads student_joined_at
@@ -494,6 +620,34 @@ export class BookingService {
   // single-session polling surface. Thin delegate — see IBookingRepository.findByStripePaymentId.
   async findByStripePaymentId(paymentIntentId: string): Promise<SingleSessionBookingDetail | null> {
     return this.bookings.findByStripePaymentId(paymentIntentId);
+  }
+
+  // REFACTOR-R4-P1-02: true if ANY booking (whatever its status) carries this PaymentIntent.
+  // Thin delegate — see IBookingRepository.hasBookingForPayment.
+  async hasBookingForPayment(paymentIntentId: string): Promise<boolean> {
+    return this.bookings.hasBookingForPayment(paymentIntentId);
+  }
+
+  // REFACTOR-R4-P1-03: best-effort by design — once the new booking exists we never roll
+  // it back because the old event could not be deleted; a stray calendar event is the
+  // lesser failure. Logs, never throws. The pending_terminations row goes so the cleanup
+  // cron doesn't later see an orphan and mark the (now-cancelled) booking no_show.
+  private async teardownRescheduledOriginal(old: BookingRecord): Promise<void> {
+    const steps: [string, () => Promise<void>][] = [
+      ["calendar event",      () => this.calendar.deleteEvent(old.eventId)],
+      ["zoom session",        () => this.sessions.deleteByEventId(old.eventId)],
+      ["pending termination", () => this.bookings.deletePendingTermination(old.eventId)],
+    ];
+    for (const [what, run] of steps) {
+      try {
+        await run();
+      } catch (err) {
+        log("warn", `Reschedule: could not delete original ${what}`, {
+          service: "BookingService", eventId: old.eventId, error: String(err),
+        });
+      }
+    }
+    await invalidateAvailability(old.startsAt.slice(0, 10)).catch(() => {});
   }
 
   private async sendWithRetry(fn: () => Promise<void>, label: string): Promise<boolean> {

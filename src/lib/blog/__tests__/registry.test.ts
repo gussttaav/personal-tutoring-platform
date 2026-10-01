@@ -28,6 +28,8 @@ interface Frontmatter {
   tags?: string[];
   updated?: string;
   reading?: unknown[];
+  /** `null` omits the key, for the BLOG-AI-NOTE-01 "required" case. */
+  aiImages?: boolean | null;
 }
 
 function postFile(fm: Frontmatter): string {
@@ -41,6 +43,7 @@ function postFile(fm: Frontmatter): string {
     draft:   fm.draft ?? false,
     reading: fm.reading ?? [],
     tags:    fm.tags ?? [],
+    ...(fm.aiImages === null ? null : { aiImages: fm.aiImages ?? false }),
   };
   const yaml = Object.entries(full)
     .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)
@@ -174,6 +177,7 @@ describe("buildRegistry validation", () => {
         "draft: false",
         "reading: []",
         "tags: []",
+        "aiImages: false",
         "---",
         "",
         "Cuerpo.",
@@ -198,6 +202,20 @@ describe("buildRegistry validation", () => {
 
   it("treats a missing content root as empty rather than throwing", () => {
     expect(buildRegistry(path.join(os.tmpdir(), "blog-registry-does-not-exist"), "es").size).toBe(0);
+  });
+
+  // BLOG-AI-NOTE-01 — `aiImages` picks the wording of the AI-use note, so every post
+  // has to state it: an omitted key fails the build instead of defaulting either way.
+  it("carries aiImages through to the post", () => {
+    const root = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", aiImages: true }]]);
+
+    expect(buildRegistry(root, "es").get("post")?.aiImages).toBe(true);
+  });
+
+  it("rejects a post that does not declare aiImages", () => {
+    const root = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", aiImages: null }]]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/aiImages/);
   });
 
   // BLOG-02 — `reading`, the post's bibliography. Validated here rather than at render

@@ -1,5 +1,6 @@
 // ARCH-10: Payment repository interface — idempotency keys and dead-letter queue.
 // SINGLE-SESSION-CONFIRM-01: slot-taken refund record + single-session resolution broadcast.
+// REFACTOR-R4-P1-02: the idempotency reads throw on a read error; `false` means KNOWN absent.
 import type { RecordPaymentInput, SingleSessionResolved } from "../types";
 
 export interface FailedBookingEntry {
@@ -15,6 +16,7 @@ export interface IPaymentRepository {
   /**
    * Returns true if this idempotency key has already been processed. Used to
    * guard webhook handlers against duplicate Stripe event delivery.
+   * REFACTOR-R4-P1-02: throws on a read error; `false` means *known absent*.
    */
   isProcessed(idempotencyKey: string): Promise<boolean>;
 
@@ -47,6 +49,7 @@ export interface IPaymentRepository {
    * REFACTOR-P4-01: Returns true if a dead-letter entry exists for the given
    * Stripe id. Used by the reconciliation cron to treat a known failed booking
    * as an expected (non-mismatch) outcome rather than a dropped webhook.
+   * REFACTOR-R4-P1-02: throws on a read error; `false` means *known absent*.
    */
   hasFailedBooking(stripeSessionId: string): Promise<boolean>;
 
@@ -61,6 +64,7 @@ export interface IPaymentRepository {
   /**
    * SINGLE-SESSION-CONFIRM-01: Returns true if a slot-taken refund record exists
    * for the given PaymentIntent id.
+   * REFACTOR-R4-P1-02: throws on a read error; `false` means *known absent*.
    */
   wasRefunded(paymentIntentId: string): Promise<boolean>;
 

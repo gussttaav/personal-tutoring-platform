@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 236" width="760" height="236" role="img"
+ aria-label="Cuatro estados de un árbol B con como mucho cuatro claves por nodo. Uno: una sola hoja, que también es la raíz, con 10, 20, 30 y 40; está llena. Dos: entra el 50 y no cabe, así que la hoja se parte en [10, 20] y [40, 50] y el 30 sube a una raíz nueva; el árbol crece por arriba. Tres: entran 25, 35 y 60, que caben en sus hojas sin partir nada: [10, 20, 25] y [35, 40, 50, 60], que vuelve a estar llena. Cuatro: entra el 70, la hoja de la derecha se parte en [35, 40] y [60, 70], y el 50 sube a la raíz, que queda [30, 50] con tres hijos.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.12); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.12); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.f { stroke: #4edea3; fill: #4edea3; }
+  .bx.s { stroke: none; fill: #3b3b3e; }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  .mo.k { fill: #131315; font-weight: 700; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .sep { stroke: #2a2a2c; stroke-width: 1; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; stroke-width: 1.6; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; stroke-width: 1.4; marker-end: url(#aw); }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .pt { fill: none; stroke: #4edea3; stroke-width: 1.5; stroke-linejoin: round; }
+  .tri { fill: rgba(232,162,76,0.06); stroke: #e8a24c; stroke-width: 1; }
+  .lv { stroke: #3b3b3e; stroke-width: 1; stroke-dasharray: 2 3; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="lb" x="0.0" y="14.0">1 · inicio: 10, 20, 30, 40</text>
+<text class="tx d" x="0.0" y="160.0">La hoja, que también es</text>
+<text class="tx d" x="0.0" y="175.0">la raíz, está llena:</text>
+<text class="tx d" x="0.0" y="190.0">4 claves, el máximo.</text>
+<text class="lb m" x="190.0" y="14.0">2 · entra el 50</text>
+<text class="tx d" x="190.0" y="160.0">No cabe: la hoja se parte</text>
+<text class="tx d" x="190.0" y="175.0">en dos y el 30 sube a una</text>
+<text class="tx d" x="190.0" y="190.0">raíz nueva. El árbol crece</text>
+<text class="tx d" x="190.0" y="205.0">por arriba.</text>
+<line class="sep" x1="182.0" y1="4.0" x2="182.0" y2="232.0"/>
+<text class="lb m" x="380.0" y="14.0">3 · entran 25, 35 y 60</text>
+<text class="tx d" x="380.0" y="160.0">Caben en sus hojas sin</text>
+<text class="tx d" x="380.0" y="175.0">partir nada. La de la</text>
+<text class="tx d" x="380.0" y="190.0">derecha vuelve a estar</text>
+<text class="tx d" x="380.0" y="205.0">llena.</text>
+<line class="sep" x1="372.0" y1="4.0" x2="372.0" y2="232.0"/>
+<text class="lb m" x="570.0" y="14.0">4 · entra el 70</text>
+<text class="tx d" x="570.0" y="160.0">Se parte la hoja de la</text>
+<text class="tx d" x="570.0" y="175.0">derecha y el 50 sube a</text>
+<text class="tx d" x="570.0" y="190.0">la raíz, que ahora tiene</text>
+<text class="tx d" x="570.0" y="205.0">tres hijos.</text>
+<line class="sep" x1="562.0" y1="4.0" x2="562.0" y2="232.0"/>
+<rect class="bx w" x="51.0" y="81.0" width="76.0" height="22.0" rx="3"/>
+<text class="mo" x="60.5" y="96.0" style="text-anchor:middle">10</text>
+<line class="ed" x1="70.0" y1="81.0" x2="70.0" y2="103.0"/>
+<text class="mo" x="79.5" y="96.0" style="text-anchor:middle">20</text>
+<line class="ed" x1="89.0" y1="81.0" x2="89.0" y2="103.0"/>
+<text class="mo" x="98.5" y="96.0" style="text-anchor:middle">30</text>
+<line class="ed" x1="108.0" y1="81.0" x2="108.0" y2="103.0"/>
+<text class="mo" x="117.5" y="96.0" style="text-anchor:middle">40</text>
+<rect class="bx w" x="236.0" y="112.0" width="38.0" height="22.0" rx="3"/>
+<text class="mo" x="245.5" y="127.0" style="text-anchor:middle">10</text>
+<line class="ed" x1="255.0" y1="112.0" x2="255.0" y2="134.0"/>
+<text class="mo" x="264.5" y="127.0" style="text-anchor:middle">20</text>
+<rect class="bx w" x="284.0" y="112.0" width="38.0" height="22.0" rx="3"/>
+<text class="mo" x="293.5" y="127.0" style="text-anchor:middle">40</text>
+<line class="ed" x1="303.0" y1="112.0" x2="303.0" y2="134.0"/>
+<rect class="bx m" x="305.0" y="114.0" width="15.0" height="18.0" rx="2"/>
+<text class="mo" x="312.5" y="127.0" style="text-anchor:middle">50</text>
+<rect class="bx m" x="269.5" y="50.0" width="19.0" height="22.0" rx="3"/>
+<rect class="bx m" x="271.5" y="52.0" width="15.0" height="18.0" rx="2"/>
+<text class="mo" x="279.0" y="65.0" style="text-anchor:middle">30</text>
+<path class="ar" d="M269.5,72.0 L255.0,110.0"/>
+<path class="ar" d="M288.5,72.0 L303.0,110.0"/>
+<rect class="bx " x="397.5" y="112.0" width="57.0" height="22.0" rx="3"/>
+<text class="mo" x="407.0" y="127.0" style="text-anchor:middle">10</text>
+<line class="ed" x1="416.5" y1="112.0" x2="416.5" y2="134.0"/>
+<text class="mo" x="426.0" y="127.0" style="text-anchor:middle">20</text>
+<line class="ed" x1="435.5" y1="112.0" x2="435.5" y2="134.0"/>
+<rect class="bx m" x="437.5" y="114.0" width="15.0" height="18.0" rx="2"/>
+<text class="mo" x="445.0" y="127.0" style="text-anchor:middle">25</text>
+<rect class="bx w" x="464.5" y="112.0" width="76.0" height="22.0" rx="3"/>
+<rect class="bx m" x="466.5" y="114.0" width="15.0" height="18.0" rx="2"/>
+<text class="mo" x="474.0" y="127.0" style="text-anchor:middle">35</text>
+<line class="ed" x1="483.5" y1="112.0" x2="483.5" y2="134.0"/>
+<text class="mo" x="493.0" y="127.0" style="text-anchor:middle">40</text>
+<line class="ed" x1="502.5" y1="112.0" x2="502.5" y2="134.0"/>
+<text class="mo" x="512.0" y="127.0" style="text-anchor:middle">50</text>
+<line class="ed" x1="521.5" y1="112.0" x2="521.5" y2="134.0"/>
+<rect class="bx m" x="523.5" y="114.0" width="15.0" height="18.0" rx="2"/>
+<text class="mo" x="531.0" y="127.0" style="text-anchor:middle">60</text>
+<rect class="bx " x="459.5" y="50.0" width="19.0" height="22.0" rx="3"/>
+<text class="mo" x="469.0" y="65.0" style="text-anchor:middle">30</text>
+<path class="ar" d="M459.5,72.0 L426.0,110.0"/>
+<path class="ar" d="M478.5,72.0 L502.5,110.0"/>
+<rect class="bx " x="584.5" y="112.0" width="57.0" height="22.0" rx="3"/>
+<text class="mo" x="594.0" y="127.0" style="text-anchor:middle">10</text>
+<line class="ed" x1="603.5" y1="112.0" x2="603.5" y2="134.0"/>
+<text class="mo" x="613.0" y="127.0" style="text-anchor:middle">20</text>
+<line class="ed" x1="622.5" y1="112.0" x2="622.5" y2="134.0"/>
+<text class="mo" x="632.0" y="127.0" style="text-anchor:middle">25</text>
+<rect class="bx w" x="649.5" y="112.0" width="38.0" height="22.0" rx="3"/>
+<text class="mo" x="659.0" y="127.0" style="text-anchor:middle">35</text>
+<line class="ed" x1="668.5" y1="112.0" x2="668.5" y2="134.0"/>
+<text class="mo" x="678.0" y="127.0" style="text-anchor:middle">40</text>
+<rect class="bx w" x="695.5" y="112.0" width="38.0" height="22.0" rx="3"/>
+<text class="mo" x="705.0" y="127.0" style="text-anchor:middle">60</text>
+<line class="ed" x1="714.5" y1="112.0" x2="714.5" y2="134.0"/>
+<rect class="bx m" x="716.5" y="114.0" width="15.0" height="18.0" rx="2"/>
+<text class="mo" x="724.0" y="127.0" style="text-anchor:middle">70</text>
+<rect class="bx m" x="640.0" y="50.0" width="38.0" height="22.0" rx="3"/>
+<text class="mo" x="649.5" y="65.0" style="text-anchor:middle">30</text>
+<line class="ed" x1="659.0" y1="50.0" x2="659.0" y2="72.0"/>
+<rect class="bx m" x="661.0" y="52.0" width="15.0" height="18.0" rx="2"/>
+<text class="mo" x="668.5" y="65.0" style="text-anchor:middle">50</text>
+<path class="ar" d="M640.0,72.0 L613.0,110.0"/>
+<path class="ar" d="M659.0,72.0 L668.5,110.0"/>
+<path class="ar" d="M678.0,72.0 L714.5,110.0"/>
+</svg>

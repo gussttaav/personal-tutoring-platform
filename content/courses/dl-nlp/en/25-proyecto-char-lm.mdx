@@ -1,0 +1,393 @@
+---
+slug: proyecto-char-lm
+title: "Project: a character-level language model"
+block: 3
+order: 7
+minutes: 30
+summary: "The vanilla RNN and BPTT, combined in a network that predicts the next character at every position: a text of T characters is T examples stacked together, and the label at each step comes for free, since it's the character that comes next. It trains with gradient clipping on a few thousand characters (for only a few steps, to fit in the browser) and then writes, feeding back what it samples. The loss falls from ln 26 to around 2.5 and the text goes from noise to broken English (real short words, long near-words, not one sentence that means anything): that's what a character model learns, and saying so outright is the lesson."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-t-ejemplos
+    type: single
+    prompt: 'The corpus in this lesson has 2,796 characters. How many training examples does it contain for this model, and why?'
+    options:
+      - { id: a, text: 'Almost as many as there are characters: at every position the network predicts the next one, so a text of $T$ characters supplies $T$ pairs (what has been read so far, and the character that comes next), and a sequence''s loss adds up one cross-entropy per position. Nobody writes the labels: they''re the text itself, shifted by one position.' }
+      - { id: b, text: 'One: the whole text is a single example and the network gives a single verdict at the end, like the previous block''s review classifier.' }
+      - { id: c, text: '26, one for each distinct character in the vocabulary.' }
+      - { id: d, text: 'None until a $T_{\max}$ is fixed and the text padded, because the network needs fixed-length inputs.' }
+    answer: a
+    explanation: '(a) is the language model''s whole trick: every position is a question (which character comes next?) whose answer is already written in the corpus, at the next position, so a text yields as many examples as it has characters without anyone labelling anything. (b) is the previous block''s classifier, which did hang a single output off the last state; here there''s one output per step. (c) confuses the number of examples with the size of the vocabulary, which is a different thing (how many distinct characters exist, not how many predictions get made). (d) pins the MLP''s defect on the RNN: as with every recurrence in this block, $T$ appears in no shape, so there''s no $T_{\max}$ and no padding.'
+    hint: 'At each character, what do you ask the network to predict, and where does the right answer come from?'
+  - id: q-dos-errores
+    type: multi
+    prompt: 'In <Leccion slug="bptt">the lesson on BPTT</Leccion>, an interior step $t < T$ received its error from a single place. In this language model, where does the error that reaches $\boldsymbol{\delta}_t$ come from? Tick everything that is true.'
+    options:
+      - { id: a, text: 'From its own output: at step $t$ the network already predicts a character, so $\hat{\mathbf{y}}_t - \mathbf{y}_t$ comes back to the state through $\mathbf{W}_{hy}^{\top}$.' }
+      - { id: b, text: 'From the next step: the transported error $\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}$, exactly as in <Leccion slug="bptt">the lesson on BPTT</Leccion>.' }
+      - { id: c, text: 'From nowhere until the last step; the interior steps contribute no gradient and only $\boldsymbol{\delta}_T$ starts the backward pass.' }
+      - { id: d, text: 'Only from its output: since there''s now one loss per position, the backward recurrence is no longer needed.' }
+    answer: [a, b]
+    explanation: '(a) and (b) are the two routes by which the state $\mathbf{h}_t$ affects the loss, and the chain rule adds them: $\boldsymbol{\delta}_t = \left(\mathbf{W}_{hy}^{\top}(\hat{\mathbf{y}}_t - \mathbf{y}_t) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right) \odot \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)$. It isn''t new notation: these are the two equations from <Leccion slug="bptt">the lesson on BPTT</Leccion> (the start from the output and the transport from the next step), which belonged to different steps there and now share every interior step. (c) describes exactly the classifier''s case, where the loss hung off the end alone; with one output per position, that no longer holds. (d) is the dangerous trap: the transport is still needed (it''s the only thing linking a character to the ones before it), and with it come the repeated multiplication by $\mathbf{W}_{hh}^{\top}$ and the vanishing from <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>.'
+    hint: 'Draw step $t$: a prediction comes out of it, and its state feeds step $t+1$. Along how many paths does the loss reach $\mathbf{h}_t$?'
+  - id: q-por-que-malo
+    type: single
+    prompt: 'The text the network generates is recognisably English and, at the same time, meaningless nonsense. If you trained it for ten times as many steps, what would you expect?'
+    options:
+      - { id: a, text: 'Sharper character statistics (fewer impossible near-words), but still no sentences that mean anything. With a few thousand characters and a state of 64 coordinates, the network learns which letter follows which, not what words mean or how they''re ordered: the ceiling lies in the data and the model''s size, not in the number of steps.' }
+      - { id: b, text: 'Coherent sentences, because the loss would keep falling and a lower loss means better text.' }
+      - { id: c, text: 'Text that no longer looks like English, because training too long erases what was learned.' }
+      - { id: d, text: 'An exact, word-for-word copy of the corpus, because it will have memorised all of it.' }
+    answer: a
+    explanation: '(a) is the lesson stated outright: a character model of this size chases local statistics (which character is likely after the last few), and more steps polish those, but the meaning of a sentence lives in dependencies that neither fit in a 64-coordinate state nor survive being chopped into 25-character chunks. (b) confuses the loss with understanding: lowering it means assigning a better probability to the next character; it doesn''t manufacture grammar. (c) invents a phenomenon that doesn''t show up here (the loss levels off; it doesn''t shoot back up). (d) is tempting because the network does memorise something, but sampling injects chance at every step, so the text never comes out identical to the corpus; the fact that the greedy version gets stuck in a short loop confirms it. What''s missing is more data, a bigger model and a unit larger than the character, not more passes.'
+    hint: 'Which part of the problem can more descent steps fix, and which part depends on how much data and how much state the network has?'
+challenges: []
+reading:
+  - kind: blog
+    title: 'The Unreasonable Effectiveness of Recurrent Neural Networks'
+    authors: 'Andrej Karpathy'
+    year: '2015'
+    venue: 'karpathy.github.io'
+    lang: en
+    url: 'https://karpathy.github.io/2015/05/21/rnn-effectiveness/'
+    note: 'His min-char-rnn gist is almost exactly your cell: a vanilla RNN predicting the next character, with BPTT and gradient clipping. His output reads better because he uses multi-layer LSTMs and megabytes of text, not a few thousand characters.'
+  - kind: paper
+    title: 'Generating Sequences With Recurrent Neural Networks'
+    authors: 'Alex Graves'
+    year: '2013'
+    venue: 'arXiv:1308.0850'
+    lang: en
+    url: 'https://arxiv.org/abs/1308.0850'
+    note: 'The grown-up version of yours: a character-level model trained on Wikipedia with LSTMs, generating by sampling one character at a time. It reaches text with paragraph structure; it also tackles handwriting, which isn''t your concern.'
+---
+
+{/* COURSE-P5-03: Block 3, Lesson 7. COURSE-P11-06: English translation. */}
+
+By now the block has a recurrent neural network (RNN) that reads texts of any length, a gradient
+that runs back through it in time, and two gated cells, the long short-term memory (LSTM) and the
+gated recurrent unit (GRU), that give it a memory able to survive distance. This lesson puts that
+machinery to work: building a model that, having read a text, can carry on writing it.
+
+That kind of model has a name: a **language model** is a network that, given a stretch of text,
+predicts what comes next. **At the character level** (character tokenisation, from <Leccion slug="tokenizacion">the lesson on tokenisation</Leccion>), that means the next character, whether a letter, a space or a full
+stop, and the whole task fits into that tiny question. It trains on a small corpus of a few thousand
+characters and is then asked to write, character by character, feeding itself what it produces. The
+text that comes out is the network talking to itself.
+
+The network in <Leccion slug="bptt">the lesson on backpropagation through time (BPTT)</Leccion> read a whole review and gave a single verdict:
+one output and one loss, hanging off the last state. A language model changes one thing and one thing
+only: it makes a prediction at *every* position. At step $t$, with the state $\mathbf{h}_t$
+summarising everything read so far, it predicts character $t+1$; so a text of $T$ characters means
+$T$ predictions in a single pass, and its loss adds up all $T$ of them. That's what turns a text into
+a training set without anyone labelling it: the right answer at each position is the character at
+the next one, already written in the corpus.
+
+The network is deliberately the simplest one in the block: the vanilla RNN from <Leccion slug="la-rnn-vanilla">its own lesson</Leccion>, trained
+with BPTT as it stands, rather than the LSTM or GRU from the last two lessons. What's new here is the
+task, predicting the next character, and it's worth trying it out first on the cell whose backward
+pass has already been derived in two lines. With a gated cell, the backward pass would also have to
+cross every gate, and if something didn't add up, there'd be no telling whether the problem lay in
+the task or in the cell. What gets built around it (one output per position, the loss that adds them
+up, the sampling for writing) works the same for any of the three cells.
+
+The honest thing is to say up front what it learns and what it doesn't. With a few thousand
+characters and a state of a few dozen coordinates, the network learns character statistics: where the
+spaces fall, that <W>t</W> is very often followed by <W>h</W>, that <W>the</W>, <W>and</W> and
+<W>of</W> are everywhere. It learns nothing about meaning or grammar. So what it generates sounds like
+English overheard from the far end of a noisy room: real short words, plausible long words that don't
+exist, and not a single sentence that tries to say anything. That isn't a defect this lesson sets out
+to fix: it's what a character model of this size learns, and naming it outright is half the lesson.
+
+<Callout type="intuition" title="The idea in one sentence">
+A character-level language model predicts the next character at every position: a text of $T$
+characters is $T$ examples stacked into one sequence, and the label at each step comes for free,
+since it's the character that comes next. Generating runs this in reverse: pick a character according
+to the probabilities the network gives, feed it back in, and repeat.
+</Callout>
+
+## One output at every position
+
+The recurrence is the one from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>, without a single letter changed:
+
+$$
+\mathbf{h}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\mathbf{h}_{t-1} + \mathbf{b}_h\right),
+$$
+
+with $\mathbf{h}_0 = \mathbf{0}$. The first change is $\mathbf{x}_t$: since every token is a
+character, the input at position $t$ is that character's one-hot vector,
+$\mathbf{x}_t = \mathbf{o}_{c_t} \in \{0,1\}^{\lvert V \rvert}$, where $V$ is the set of distinct
+characters in the corpus. The vocabulary is made of characters now, not words, so
+$d_{\text{model}} = \lvert V \rvert$ and $\mathbf{W}_{xh} \in \mathbb{R}^{d_h \times \lvert V \rvert}$.
+
+That one-hot vector brings with it the shortcut from <Leccion slug="one-hot">the lesson on one-hot encoding</Leccion>: multiplying a matrix
+by a one-hot vector picks out one of its columns, $\mathbf{W}_{xh}\mathbf{o}_{c} =$ column $c$ of
+$\mathbf{W}_{xh}$. So the columns of $\mathbf{W}_{xh}$ are the input vectors for each character,
+which the network learns as it goes.
+
+The bigger change is the output. <Leccion slug="la-rnn-vanilla">The lesson on the vanilla RNN</Leccion> read a verdict off the last state; the language model reads one
+off *every* state, and it's a distribution over the next character:
+
+$$
+\hat{\mathbf{y}}_t = \text{softmax}\left(\mathbf{W}_{hy}\mathbf{h}_t + \mathbf{b}_y\right) \in \mathbb{R}^{\lvert V \rvert},
+$$
+
+with $\mathbf{W}_{hy} \in \mathbb{R}^{\lvert V \rvert \times d_h}$, one row for each character that
+might come next. The label is whatever the corpus actually put there: the one-hot vector of the next
+character, $\mathbf{y}_t = \mathbf{o}_{c_{t+1}}$. The loss at that position is the cross-entropy from <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion>, and the loss of the whole sequence adds one per
+position, averaged per character:
+
+$$
+\ell = \frac{1}{T}\sum_{t=1}^{T} -\log \hat{y}_{t,\,c_{t+1}},
+$$
+
+where $\hat{y}_{t,\,c_{t+1}}$ is the probability the network gave to the character that actually
+came. The $1/T$ takes the mean per position, the counterpart of the previous block's $1/B$ spreading
+$\mathcal{L}$ over the batch (except that here the "batch" is the $T$ positions of a single
+sequence).
+
+## The backward pass: every step receives two errors
+
+<Leccion slug="bptt">The lesson on BPTT</Leccion> already did almost all of this calculation. There, only the last state touched the
+loss, so only $\boldsymbol{\delta}_T$ started from an output, and the interior steps received their
+error transported back from the next step. The language model changes exactly that: every position
+has its own output, so every step starts an error of its own *and* passes back the one arriving from
+further ahead.
+
+It's still $\boldsymbol{\delta}_t = \nabla_{\mathbf{p}_t}\ell$, the error at the pre-activation. What
+changes is that the state $\mathbf{h}_t$ now reaches the loss along two paths (its own output at $t$,
+and step $t+1$), and <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> from the previous block adds them:
+
+$$
+\nabla_{\mathbf{h}_t}\ell = \mathbf{W}_{hy}^{\top}\left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1},
+$$
+
+where the first term is the output error from <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> (softmax with cross-entropy
+delivers $\hat{\mathbf{y}}_t - \mathbf{y}_t$), distributed across the coordinates of the state by
+$\mathbf{W}_{hy}^{\top}$, and the second is the transport from <Leccion slug="bptt">the lesson on BPTT</Leccion>, untouched. Mask with the
+slope of the $\tanh$ and you have the step's error:
+
+$$
+\boldsymbol{\delta}_t = \left(\mathbf{W}_{hy}^{\top}\left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right) + \mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right) \odot \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right),
+$$
+
+with $\boldsymbol{\delta}_{T+1} = \mathbf{0}$, because there's no step after the last one. Put it next
+to the two equations from <Leccion slug="bptt">the lesson on BPTT</Leccion> and you'll see it's both of them joined together: the start from
+the output, which there belonged only to $\boldsymbol{\delta}_T$, and the transport, which there
+belonged only to the interior steps.
+
+With each step's error in hand, the gradients are the ones from <Leccion slug="bptt">the lesson on BPTT</Leccion> plus the output layer's,
+all summed over the $T$ positions:
+
+$$
+\nabla_{\mathbf{W}_{hh}}\ell = \frac{1}{T}\sum_{t=1}^{T} \boldsymbol{\delta}_t\mathbf{h}_{t-1}^{\top},
+\qquad
+\nabla_{\mathbf{W}_{xh}}\ell = \frac{1}{T}\sum_{t=1}^{T} \boldsymbol{\delta}_t\mathbf{x}_t^{\top},
+\qquad
+\nabla_{\mathbf{W}_{hy}}\ell = \frac{1}{T}\sum_{t=1}^{T} \left(\hat{\mathbf{y}}_t - \mathbf{y}_t\right)\mathbf{h}_t^{\top},
+$$
+
+and likewise for the biases, summed. Everything inside the sums is a piece you've already derived;
+the only new thing is that $\mathbf{W}_{hy}$ is now shared across positions too (one output per
+step, not one at the end), so its gradient joins the sum over time instead of being a lone product.
+
+<Details summary="See why nearby statistics get learned and distant ones don't">
+The transport still multiplies by $\mathbf{W}_{hh}^{\top}$ once per step, so the vanishing from <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion> still applies: an error that has to travel many steps back arrives faded.
+The difference from the classifier is that now every position injects a fresh error from its own
+output, before it has crossed any $\mathbf{W}_{hh}$. That's why the model learns nearby patterns
+well while distant ones escape it: the signal that ties a character to its neighbour doesn't have to
+travel, and the one that would tie it to something twenty positions back fades along the way. It's
+the same boundary that motivated the gated cells, seen this time through the text the network
+produces.
+</Details>
+
+## Training and generating in NumPy
+
+Three cells: the corpus, the training and the writing. Run them in order.
+
+The first fetches the corpus (a few paragraphs about a seaside village, written for the course),
+lowercases it, strips out everything that isn't a letter, a space, a full stop or a comma, and turns
+it into a string of indices. Look at the vocabulary that's left, and at the last two lines, which sum
+up the whole model: what goes *in* is the text, and what comes *out* is the same text shifted by one
+position.
+
+<PyCell packages={["numpy"]} code={`
+import re
+import numpy as np
+from pyodide.http import open_url
+
+raw = open_url("/courses/dl-nlp/corpus-mar.en.txt").read()
+text = raw.lower()
+text = re.sub(r"[^a-z .,]", " ", text)               # keep letters, space, . and ,
+text = re.sub(r"\\s+", " ", text).strip()            # a single space between words
+
+V = sorted(set(text))                               # the vocabulary: the distinct characters
+to_ix = {c: i for i, c in enumerate(V)}
+data = np.array([to_ix[c] for c in text])           # the whole corpus, as indices
+n_v = len(V)
+
+print("corpus: %d characters" % len(text))
+print("vocabulary: %d characters  ->  \\"%s\\"" % (n_v, "".join(V)))
+print("in: ", repr("".join(V[i] for i in data[:12])))
+print("out:", repr("".join(V[i] for i in data[1:13])), " (the same, shifted by one position)")
+`} />
+
+Out come 2,796 characters, 26 of them distinct (23 letters, since there's no <W>j</W>, <W>x</W> or
+<W>z</W>, plus the space and two punctuation marks), so $\lvert V \rvert = 26$: the same number as
+the alphabet, but not the same set. The last two lines are the entire training set in miniature:
+<W>the village</W> plus a space as input, and <W>he village s</W> as label, the same string moved
+one place along. That's where the almost 2,796 examples come from, one per position, with nothing
+labelled by hand.
+
+The second cell is the complete model: the forward pass from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>, which at every position produces one score per
+character for the softmax to turn into probabilities; the backward pass from <Leccion slug="bptt">the lesson on BPTT</Leccion>, with the
+output's error added at every step; the gradient clipping from <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>; and a descent step that updates the five groups
+of weights. It trains for 1,200 steps on 25-character chunks, each chunk an independent sequence
+starting from $\mathbf{h}_0 = \mathbf{0}$, as in <Leccion slug="bptt">the lesson on BPTT</Leccion>. Watch the two things it prints every
+few hundred steps: the loss per character, and a snippet of what the network would write at that
+point.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Needs the previous cell: data, V, to_ix, n_v.
+d_h, seq = 64, 25                                   # width of the state and length of each chunk
+eta, kappa, iters = 0.3, 5.0, 1200
+
+rng = np.random.default_rng(0)                      # fixed seed: you'll see these numbers
+Wxh = rng.normal(size=(d_h, n_v)) * 0.01            # (d_h, n_v): column c = vector of character c
+Whh = rng.normal(size=(d_h, d_h)) * 0.01            # (d_h, d_h): the vanilla RNN's recurrence
+Why = rng.normal(size=(n_v, d_h)) * 0.01            # (n_v, d_h): from the state to one score per character
+bh, by = np.zeros(d_h), np.zeros(n_v)
+
+
+def forward(inp, tgt):
+    H, h = np.zeros((d_h, len(inp))), np.zeros(d_h)
+    for t in range(len(inp)):
+        h = np.tanh(Wxh[:, inp[t]] + Whh @ h + bh)  # the recurrence step by step (Wxh @ one-hot = column)
+        H[:, t] = h
+    O = Why @ H + by[:, None]                        # (n_v, seq): one column of scores per position
+    O -= O.max(0); P = np.exp(O); P /= P.sum(0)      # softmax in every column
+    loss = -np.log(P[tgt, np.arange(len(inp))]).mean()   # cross-entropy, mean per character
+    return H, P, loss
+
+
+def backward(inp, tgt, H, P):
+    T = len(inp)
+    dO = P.copy(); dO[tgt, np.arange(T)] -= 1.0      # (y_hat - y) at every position
+    gWhy = dO @ H.T; gby = dO.sum(1); dHy = Why.T @ dO   # output layer, summed over time
+    gWxh, gWhh, gbh = np.zeros_like(Wxh), np.zeros_like(Whh), np.zeros_like(bh)
+    dh_next = np.zeros(d_h)
+    for t in reversed(range(T)):
+        dp = (1 - H[:, t] ** 2) * (dHy[:, t] + dh_next)  # delta_t: the error from the output at t and from step t+1
+        h_prev = H[:, t - 1] if t > 0 else np.zeros(d_h)
+        gWhh += np.outer(dp, h_prev); gWxh[:, inp[t]] += dp; gbh += dp
+        dh_next = Whh.T @ dp                         # transports the error to t-1, as in BPTT
+    return [g / T for g in (gWxh, gWhh, gWhy, gbh, gby)]
+
+
+def generate(n, seed):
+    g = np.random.default_rng(seed); h = np.zeros(d_h); ix = to_ix[" "]; out = []
+    for _ in range(n):
+        h = np.tanh(Wxh[:, ix] + Whh @ h + bh)
+        o = Why @ h + by; o -= o.max(); p = np.exp(o); p /= p.sum()
+        ix = g.choice(n_v, p=p); out.append(ix)     # samples the next one and feeds it back
+    return "".join(V[i] for i in out)
+
+
+j, smooth = 0, None
+for it in range(iters):
+    if j + seq + 1 >= len(data): j = 0
+    inp, tgt = data[j:j + seq], data[j + 1:j + seq + 1]; j += seq
+    H, P, loss = forward(inp, tgt)
+    grads = backward(inp, tgt, H, P)
+    for g in grads:
+        nrm = np.linalg.norm(g)
+        if nrm > kappa: g *= kappa / nrm            # gradient clipping
+    for Pm, g in zip([Wxh, Whh, Why, bh, by], grads):
+        Pm -= eta * g
+    smooth = loss if smooth is None else 0.999 * smooth + 0.001 * loss
+    if it % 300 == 0 or it == iters - 1:
+        print("iter %4d   loss/char %.3f   \\"%s\\"" % (it, smooth, generate(48, 0)))
+`} />
+
+The loss starts at $3.26$, and that's no accident: it's $\ln 26$, the loss of a network that spreads
+its bets evenly across all 26 characters (an echo of the $\log 2$ from the previous block's
+classifier, with a 26-sided die instead of a coin). From there it falls smoothly to around $2.5$,
+and it would keep falling: the loop is cut short to fit within the ten seconds the browser allows a
+cell, because mediocre and on time beats good and never. The snippet on each line tells the same
+story from another angle: the first is noise, random characters; by the middle, there are spaces in
+the right places and some short words; by the end, it's broken English, real short words
+(<W>of</W>, <W>the</W>, <W>age</W>) threaded between long words that sound English without being
+English.
+
+Chopping the text into chunks has a second cost: since every chunk starts from zero, the network
+never sees a dependency longer than 25 characters. For a model that only chases local statistics,
+that's a price worth paying; and the long-range dependency it gives up is exactly the kind the gated
+cells, <Leccion slug="lstm">the LSTM</Leccion> and <Leccion slug="gru">the GRU</Leccion>, knew how to
+keep.
+
+The third cell uses the trained weights to write. Generating turns training inside out: instead of
+the real character that came next, the network receives the one it proposed itself. It starts at
+$\mathbf{h}_0 = \mathbf{0}$ with any character (a space, to begin a word), computes
+$\hat{\mathbf{y}}$, **samples** the next character from that distribution (draws one at random, each
+with the probability the network gives it), feeds it back as input, and repeats. The cell generates
+twice by sampling, and a third time by always taking the most probable character, so you can see the
+difference.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Needs the two previous cells: the trained weights, generate, V, to_ix, d_h.
+print("SAMPLING (varies with the seed):")
+for s in [0, 1]:
+    print("  \\"%s\\"" % generate(200, s))
+
+
+def generate_greedy(n):                             # always the most probable: deterministic
+    h = np.zeros(d_h); ix = to_ix[" "]; out = []
+    for _ in range(n):
+        h = np.tanh(Wxh[:, ix] + Whh @ h + bh)
+        o = Why @ h + by; o -= o.max(); p = np.exp(o); p /= p.sum()
+        ix = int(p.argmax()); out.append(ix)        # the most probable, with no chance
+    return "".join(V[i] for i in out)
+
+
+print("\\nALWAYS THE MOST PROBABLE (deterministic):")
+print("  \\"%s\\"" % generate_greedy(200))
+`} />
+
+The first two lines differ from each other (that's the chance in the sampling), and both are broken
+English. The third behaves differently: always taking the most probable character is deterministic,
+and as soon as it falls into a high-probability run, it gets stuck repeating the same fragment over
+and over, in this case <W>she</W>. That's why generation samples instead of playing it safe: chance
+is what stops the network from chasing its own tail. Even so, neither of the sampled lines says
+anything meaningful. It can't: the network never saw a word as a unit, only characters, and it forgot
+anything more than 25 characters back. It's exactly what was promised, that the result would be bad,
+and watching it turn out that way is the lesson.
+
+## Test your intuition
+
+Three questions: how many examples a text holds for this model, where each step of the backward pass
+gets its error from, and what training for much longer would fix (and what it wouldn't).
+
+<Quiz id="q-t-ejemplos" />
+
+<Quiz id="q-dos-errores" />
+
+<Quiz id="q-por-que-malo" />
+
+---
+
+For the first time in the course, a network has written something. It's not much, and it's not good,
+but it's its own: none of those strings of characters appears in the corpus in that order, and still
+they look like English, because the network learned, letter by letter, what looking like English
+consists of. All of the block's machinery (reading any length, training through time, repairing the
+return path for the gradient) was there to get this far and switch something on.
+
+But this model does only one thing: continue a piece of text in the same language it read. It can't
+take one sequence and return a different one (a question and its answer, a sentence in Spanish and
+the same sentence in English), because it handles one sequence, not two. Reading a whole sequence
+with one network and writing another with a second, tying them together through what the first one
+understood, is the subject of <Leccion slug="seq2seq">the next lesson, on sequence-to-sequence models</Leccion>: the encoder that summarises what
+was read and the decoder that writes from that summary, the last step before leaving the block.

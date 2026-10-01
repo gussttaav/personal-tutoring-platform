@@ -1,0 +1,342 @@
+---
+slug: gradiente-desvanecido
+title: "The vanishing gradient"
+block: 3
+order: 4
+minutes: 28
+summary: "Multiplying by the same recurrent matrix at every step makes the gradient exponential in the distance it travels. What guarantees that it vanishes is γ·σ_max < 1, the steepest tanh slope times the largest singular value of W_hh; the spectral radius only sets the pace of the matrix on its own. Gradient clipping stops the explosion but can't rescue a gradient that has already vanished, and that's what will force a change of architecture."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-lo-desvanece
+    type: single
+    prompt: 'What makes an RNN''s gradient vanish or explode as it travels back through a long sequence?'
+    options:
+      - { id: a, text: 'The backward pass multiplies by the same matrix $\mathbf{W}_{hh}$ once per step, so at a distance $d$ the error is bounded by a number raised to the power $d$ (namely $\left(\gamma\,\sigma_{\max}\right)^{d}$, where $\sigma_{\max}$ is the largest singular value of $\mathbf{W}_{hh}$ and $\gamma \le 1$ the steepest slope of the $\tanh$): exponential in the distance.' }
+      - { id: b, text: 'The gradient of $\mathbf{W}_{hh}$ is a sum of $T$ terms, and adding up that many makes the result grow or shrink out of control.' }
+      - { id: c, text: 'A long document has more tokens, and each token adds its own gradient, which piles up on top of the earlier ones.' }
+      - { id: d, text: 'The hidden state $\mathbf{h}_t$ has a fixed width $d_h$, and in a long sequence not all the information fits in it.' }
+    answer: a
+    explanation: '(a) is the lesson: a shared weight is reached along one path per position, and travelling $d$ steps multiplies by the same matrix $d$ times, which gives a power, exponential in the distance, with its base bounded by $\gamma\,\sigma_{\max}$. (b) confuses two different things: the sum of $T$ terms from the previous lesson, on BPTT, determines how many terms the gradient has and what shape it takes, not whether it explodes. What grows or shrinks is the product that lives *inside* each $\boldsymbol{\delta}_t$, not the sum that gathers them up. (c) is the same confusion in different clothes. (d) describes a real limit on capacity, but it isn''t a gradient problem: an RNN with a small $d_h$ remembers little even when the gradient flows perfectly.'
+    hint: 'Is it the sum over time from the previous lesson, or something that happens inside each term of that sum?'
+  - id: q-clipping-que-arregla
+    type: single
+    prompt: 'Gradient clipping rescales $\mathbf{g} \leftarrow \mathbf{g}\cdot\min\!\left(1,\ \kappa/\lVert\mathbf{g}\rVert\right)$ when the gradient''s norm exceeds a threshold $\kappa$. Which problem does it solve, and which does it leave untouched?'
+    options:
+      - { id: a, text: 'It stops the explosion (it puts a ceiling on the norm) but does nothing about vanishing: a gradient that arrives already shrunk to almost zero gets multiplied by $1$ and stays almost zero.' }
+      - { id: b, text: 'It solves both: with the norm fixed at $\kappa$, the gradient can neither grow nor shrink.' }
+      - { id: c, text: 'It solves vanishing, because it scales small gradients up to $\kappa$.' }
+      - { id: d, text: 'Neither: clipping only changes the direction of the gradient, not its size.' }
+    answer: a
+    explanation: '(a) is correct. Taking the $\min$ with $1$ means the factor never goes above $1$: on a gradient that has blown up it kicks in (bringing it back to $\kappa$), but on a tiny one it equals $1$ and leaves it alone, because $\kappa/\lVert\mathbf{g}\rVert$ is huge and the $\min$ cuts it down to $1$. (b) and (c) assume clipping can scale a gradient up; it can''t, because the $\min$ rules that out. (d) gets it backwards: rescaling by a positive number changes the size and keeps the direction, which is exactly what makes clipping useful. That''s why vanishing needs a different fix, and that fix is the next lesson.'
+  - id: q-mascara-tanh
+    type: single
+    prompt: 'The mask $\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t$ that appears at every step of the backward pass is the slope of the $\tanh$. If the largest singular value of $\mathbf{W}_{hh}$ satisfies $\sigma_{\max} < 1$, the gradient vanishes. Can the mask rescue it?'
+    options:
+      - { id: a, text: 'No: its values lie between $0$ and $1$, so it can only shrink, never enlarge. Wherever the state saturates, as in the red bands of the explorable in <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion>, it approaches $0$ and switches the gradient off altogether.' }
+      - { id: b, text: 'Yes: when the gradient vanishes, the mask rises above $1$ to make up for the loss.' }
+      - { id: c, text: 'Yes, if the state isn''t saturated: then the mask equals $1$ and brings the gradient back to its original size.' }
+    answer: a
+    explanation: '(a) is correct: $\tanh^{\prime} = 1 - \tanh^{2}$ lives in $(0, 1]$, so the mask is always a factor $\le 1$ (it attenuates or, at best, leaves things as they are; it never amplifies), and in the saturation you already saw in that explorable it drops to $0$. (b) invents a behaviour the formula rules out. (c) confuses not shrinking any further with restoring: with the mask at $1$, the step adds no shrinking of its own, but the shrinking from $\mathbf{W}_{hh}$ is still there. In the bound, the mask is the $\gamma \le 1$ in $\left(\gamma\,\sigma_{\max}\right)^{d}$: it can only lower the base, never lift it above $\sigma_{\max}$, so with $\sigma_{\max} < 1$ the gradient is guaranteed to vanish, mask or no mask.'
+  - id: q-que-cuesta
+    type: single
+    prompt: 'What does an RNN lose when the gradient linking the end of the sequence to the start has vanished?'
+    options:
+      - { id: a, text: 'The ability to learn long-range dependencies: if the signal from the end doesn''t make it back to the first positions, the network never discovers that something at the start mattered for the output (which is precisely the long-distance memory an RNN was chosen for).' }
+      - { id: b, text: 'The ability to read sequences of any length, because a vanished gradient forces you to truncate them to a fixed size.' }
+      - { id: c, text: 'The answer $\hat{y}$, which becomes $0$ when the gradient is small.' }
+      - { id: d, text: 'Nothing that matters: vanishing only makes training slower, but the network ends up learning the same thing.' }
+    answer: a
+    explanation: '(a) is the cost, and it''s the one that matters: with no signal reaching the first positions, the network can''t tie an early cause to a late effect, and it loses exactly the long-distance memory that motivated moving from the MLP to the RNN. (b) confuses vanishing with truncation, which was the problem with the network in <Leccion slug="por-que-falla-el-mlp">the lesson on why the MLP fails on sequences</Leccion>, not this one. (c) mixes up the gradient and the output: $\hat{y}$ is computed on the forward pass and doesn''t depend on the size of the gradient. (d) is the comforting lie: it isn''t that the network learns the same thing more slowly, it''s that the long-range dependency becomes, in practice, unlearnable.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'On the difficulty of training Recurrent Neural Networks'
+    authors: 'Pascanu, Mikolov and Bengio'
+    year: '2013'
+    venue: 'arXiv:1211.5063'
+    lang: en
+    url: 'https://arxiv.org/abs/1211.5063'
+    note: 'Both halves of this lesson come from here: the bound with the slope γ that guarantees vanishing (the spectral radius only decides in the linear case), and the clipping that caps the gradient''s norm at a threshold. It doesn''t get into gates.'
+  - kind: libro
+    title: 'Gradient Flow in Recurrent Nets: the Difficulty of Learning Long-Term Dependencies'
+    authors: 'Hochreiter, Bengio, Frasconi and Schmidhuber'
+    year: '2001'
+    venue: 'A Field Guide to Dynamical Recurrent Networks'
+    lang: en
+    url: 'https://ml.jku.at/publications/older/ch7.pdf'
+    note: 'Its §2 proves what you see here on a plot: the error travelling back through the sequence decays or grows exponentially with the number of steps. It gathers the 1991 and 1994 proofs; its §4 only surveys remedies, the LSTM among them.'
+---
+
+{/* COURSE-P5-03 — Block 3, Lesson 4. COURSE-P11-06 — English translation. */}
+
+The previous lesson, on backpropagation through time (BPTT), ended with a correct gradient and a
+loose end. Correct, because the numerical probe confirmed it entry by entry; a loose end, because
+computing it repeats a single move that nobody stopped to examine. To carry the error from one
+position back to the one before, you multiply it by the recurrent matrix $\mathbf{W}_{hh}$, and in a
+forty-token sequence that multiplication comes round almost forty times. This lesson measures what
+repeating the same multiplication that many times in a row does to the gradient, and finds the
+number in $\mathbf{W}_{hh}$ that puts a ceiling on the result.
+
+This is no numerical curiosity: what's at stake is the one reason to prefer a recurrent neural
+network (RNN) over the network this block opened with. Take a review that starts <W>I doubt this
+helps anyone</W> and, thirty words later, ends with its rating. That opening <W>I doubt</W> flips the
+sign of everything after it, but the network can only learn the connection if the gradient computed
+at the last word survives the long trip to the first ones. If it fades along the way, the network
+never learns to pin the rating on those opening words, and the memory that defined it ends up, in
+practice, as a memory of the recent past only.
+
+Before tackling the whole matrix, strip away coordinates until only one is left. With $d_h = 1$ the
+state is a number, $\mathbf{W}_{hh}$ is a number $w$, and carrying the error one step back means
+multiplying it by $w$. Repeating that step $d$ times multiplies it by $w^{d}$.
+
+And $w^{d}$ has no middle ground. If $\lvert w \rvert < 1$ it sinks: with $w = 0.5$, forty steps
+leave the error at $0.5^{40} \approx 9 \times 10^{-13}$, twelve orders of magnitude below where it
+started. If $\lvert w \rvert > 1$ it shoots up: $1.5^{40} \approx 1.1 \times 10^{7}$. Only
+$\lvert w \rvert = 1$ keeps the error the same size, and that's a knife-edge a single point wide:
+stray a hair either way and you fall off one side or the other. With more than one coordinate, $w$
+becomes a matrix, and its role splits between two numbers that the argument below keeps apart: one
+caps the gradient step by step, mask included; the other sets the long-run pace of the matrix
+multiplied by itself. The explorable shows the second, the spectral radius, for a recurrence with no
+mask (every slope of the $\tanh$ at $1$). Slide it to either side of $1$ and you'll see both halves
+of the phenomenon: below, the curve dives; above, it goes through the roof.
+
+<Explorable
+  id="vanishing-gradient"
+  caption="The gradient of a recurrence with no mask, in orders of magnitude, plotted against how many steps it has to travel back. Below a spectral radius of 1 it vanishes; above 1 it explodes; and the longer the sequence, the more extreme the result. The line tilts, but it never bends."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+The error travelling back through the sequence is multiplied by the same matrix at every step, and
+repeating a multiplication can do only two things: sink the result towards zero, or send it shooting
+up. If every step, mask included, shrinks every vector, the sinking is guaranteed; either way, the
+effect is exponential in the distance.
+</Callout>
+
+## The product that links two positions
+
+Go back to the previous lesson's backward recurrence and follow it for more than one step. There,
+each step's error came from the next one's in two moves, transport and mask:
+
+$$
+\boldsymbol{\delta}_t = \left(\mathbf{W}_{hh}^{\top}\boldsymbol{\delta}_{t+1}\right) \odot \left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right).
+$$
+
+The $\odot$ with the slope of the $\tanh$ amounts to multiplying by a diagonal matrix
+($\text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)$, with those slopes on the
+diagonal and zeros everywhere else), so one step of the backward pass multiplies
+$\boldsymbol{\delta}_{t+1}$ by two matrices: first $\mathbf{W}_{hh}^{\top}$, then that diagonal.
+Chain the recurrence from the last step down to some distant step $k$ and the pair repeats, once per
+position:
+
+$$
+\boldsymbol{\delta}_k = \left(\prod_{t=k}^{T-1} \text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)\mathbf{W}_{hh}^{\top}\right)\boldsymbol{\delta}_T \in \mathbb{R}^{d_h}.
+$$
+
+The product has $T - k$ pairs, one for each step between $k$ and $T$ (the **distance** the error
+travels). And every pair contains the same $\mathbf{W}_{hh}^{\top}$: this isn't a different layer
+per position, the way the blocks $\mathbf{W}^{(1)}_t$ of the concatenated first layer were in <Leccion slug="por-que-falla-el-mlp">the lesson on why the multilayer perceptron (MLP) fails on sequences</Leccion>, but a single matrix raised, in effect, to the power
+of the distance. That's the move the previous lesson kept repeating without looking at it.
+
+## Why it decays or explodes
+
+A product of matrices is hard to look at directly; its size isn't. Take norms on both sides and use
+the fact that the norm of a product is never bigger than the product of the norms:
+
+$$
+\lVert \boldsymbol{\delta}_k \rVert \le \lVert \boldsymbol{\delta}_T \rVert \prod_{t=k}^{T-1} \left\lVert \text{diag}\!\left(\mathbf{1} - \mathbf{h}_t \odot \mathbf{h}_t\right)\right\rVert \left\lVert \mathbf{W}_{hh}^{\top}\right\rVert.
+$$
+
+That $\lVert \cdot \rVert$ is now measuring a matrix, not a vector. For any matrix $\mathbf{A}$ it's
+defined as
+
+$$
+\lVert \mathbf{A} \rVert = \max_{\mathbf{v} \neq \mathbf{0}} \frac{\lVert \mathbf{A}\mathbf{v} \rVert}{\lVert \mathbf{v} \rVert},
+$$
+
+the largest factor by which $\mathbf{A}$ can stretch a vector's length, taking the worst case over
+every possible direction. That definition is what makes
+$\lVert \mathbf{A}\mathbf{v} \rVert \le \lVert \mathbf{A} \rVert \lVert \mathbf{v} \rVert$ true for
+any $\mathbf{v}$ (multiply both sides of the definition by $\lVert \mathbf{v} \rVert$), and applying
+it twice in a row gives $\lVert \mathbf{A}\mathbf{B} \rVert \le \lVert \mathbf{A} \rVert \lVert \mathbf{B} \rVert$:
+$\mathbf{B}$ stretches by at most $\lVert \mathbf{B} \rVert$, and $\mathbf{A}$ then stretches that
+result by at most a further $\lVert \mathbf{A} \rVert$.
+
+Both factors in each pair have a ceiling. For a diagonal matrix, that maximum is easy to find:
+$\text{diag}(\mathbf{d})$ stretches each coordinate by its own entry, so the worst case is lining
+$\mathbf{v}$ up with the coordinate whose entry is largest in absolute value, and
+$\lVert \text{diag}(\mathbf{d}) \rVert = \max_i \lvert d_i \rvert$. Here each diagonal entry is a
+slope of the $\tanh$ (one per coordinate of $\mathbf{h}_t$): it never goes above $1$, and as soon as
+that coordinate saturates it gets close to $0$. Those are the red bands you already saw in the
+explorable in <Leccion slug="funciones-activacion">the lesson on activation functions</Leccion>. The
+largest of those slopes across every step from $k$ to $T - 1$ is therefore also $\le 1$; call it
+$\gamma$. The ceiling for $\mathbf{W}_{hh}^{\top}$ comes from the same definition, without the
+convenience of a diagonal, and the one new fact you need here is that a matrix stretches a vector's
+length by at most its **largest singular value** $\sigma_{\max}$, so multiplying by it $d$ times
+stretches it by at most $\sigma_{\max}^{d}$. Put the two bounds together over the $T - k$ pairs:
+
+$$
+\lVert \boldsymbol{\delta}_k \rVert \le \left(\gamma\,\sigma_{\max}\right)^{T-k}\lVert \boldsymbol{\delta}_T \rVert.
+$$
+
+There's the exponent, and with it the one condition that holds whatever happens along the way. The
+error reaching position $k$ is at most the error at the end multiplied by $\gamma\,\sigma_{\max}$
+raised to the distance. If $\gamma\,\sigma_{\max} < 1$, the gradient vanishes, with no escape: the
+ceiling plummets with the distance and the gradient can't rise above it, whatever the masks turn out
+to be. Since $\gamma \le 1$, $\sigma_{\max} < 1$ is enough to guarantee this on its own, and
+saturation only adds to the margin. The converse doesn't hold. If $\gamma\,\sigma_{\max} > 1$, the
+ceiling no longer holds the gradient down and it *can* explode, but nothing forces it to: that
+inequality is necessary for an explosion, not sufficient.
+
+The bound is also usually too generous: a given vector rarely gets stretched by the maximum at every
+single step. What $\mathbf{W}_{hh}$ really does when multiplied by itself over the long run is
+measured by a different number, its **spectral radius** $\rho(\mathbf{W}_{hh})$ (the largest modulus
+among its eigenvalues), which never exceeds $\sigma_{\max}$. In a recurrence with no mask, every
+slope at $1$, the product is a power of $\mathbf{W}_{hh}^{\top}$, and there $\rho$ really does
+decide: below $1$ the gradient sinks, above $1$ it shoots up, and in between there's nothing but that
+knife-edge. It's the number the explorable let you move.
+
+Once the masks get in the way, $\rho$ stops being a guarantee: the product alternates
+$\mathbf{W}_{hh}^{\top}$ with diagonals and is no longer the power of a single matrix. What still
+holds then is $\gamma\,\sigma_{\max} < 1$, which is why that's the real condition. You won't need to
+compute any eigenvalues in this lesson; what you do need to know is that $\rho$ exists, that it sets
+the pace of the matrix on its own, and that it never exceeds $\sigma_{\max}$.
+
+<Details summary="See why the spectral radius stops deciding once the masks come in">
+In a recurrence with no mask, the product is $\left(\mathbf{W}_{hh}^{\top}\right)^{d}$, and in the
+long run $\left\lVert \left(\mathbf{W}_{hh}^{\top}\right)^{d}\right\rVert^{1/d}$ tends to the
+spectral radius $\rho(\mathbf{W}_{hh})$ as $d$ grows. That's why, in that case, $\rho < 1$
+guarantees vanishing and $\rho > 1$ makes the norm of the power grow without limit, even though over
+short distances the bound with $\sigma_{\max}$ runs ahead of the real pace.
+
+With the $\tanh$, what repeats is no longer $\mathbf{W}_{hh}^{\top}$ but each pair, and a mask can
+switch off precisely the coordinate that was holding the growth in check. Take
+$\mathbf{W}_{hh}^{\top} = \begin{pmatrix} 2 & 2 \\ -2 & -2 \end{pmatrix}$. Its square is the zero
+matrix, so $\rho = 0$ and its powers die out in two steps. But if the mask is $\text{diag}(1,\ 0.1)$
+at every step, each pair is $\begin{pmatrix} 2 & 2 \\ -0.2 & -0.2 \end{pmatrix}$, whose spectral
+radius is $1.8$, and the product grows like $1.8^{d}$. That doesn't contradict the real condition:
+here $\gamma = 1$ and $\sigma_{\max} = 4$, and a $\gamma\,\sigma_{\max}$ of $4$ never promised the
+gradient would sink.
+</Details>
+
+Check it on a real matrix, without reducing it to a single coordinate: `numpy.linalg` has `svd` for
+$\sigma_{\max}$ and `eig` for the eigenvalues that give $\rho$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+W = np.array([[0.5, 4.0],
+              [0.0, 0.5]])
+
+sigma_max = np.linalg.svd(W, compute_uv=False)[0]   # largest singular value
+rho = np.max(np.abs(np.linalg.eig(W)[0]))           # spectral radius
+
+print("sigma_max = %.4f" % sigma_max)
+print("rho       = %.4f" % rho)
+print()
+print(" d     ||W^d||    ||W^d||**(1/d)")
+for d in [1, 5, 10, 20, 40]:
+    Wd = np.linalg.matrix_power(W, d)
+    norm_d = np.linalg.svd(Wd, compute_uv=False)[0]
+    print("%2d   %9.2e   %14.4f" % (d, norm_d, norm_d ** (1 / d)))
+`} />
+
+For this $\mathbf{W}$, $\sigma_{\max} \approx 4.06$ but $\rho = 0.5$: the singular-value bound
+overestimates the pace of the power by a factor of eight. The table bears this out. At $d = 1$ the
+raw norm is $\sigma_{\max}$ (the two coincide by construction), and at $d = 5$ it's still above $1$
+(the power can grow for several steps even though $\rho < 1$ guarantees it sinks in the long run).
+By $d = 40$ the raw norm is tiny and $\lVert \mathbf{W}^{d} \rVert^{1/d}$ has dropped below $0.58$,
+closing in on $\rho = 0.5$: actual numbers confirming what the argument above could only assert. And
+the two numbers answer different questions: the power on its own sinks, but with
+$\sigma_{\max} \approx 4.06$, this $\mathbf{W}$ guarantees nothing once the masks come in.
+
+## Seeing it and clipping it in NumPy
+
+The first cell in this section boils everything down to the one-coordinate case and looks at the raw
+exponent; the second tackles the half of the problem that does have a cheap fix.
+
+The scalar case isn't a toy: it's the formula above with $d_h = 1$, where $\sigma_{\max}$, $\rho$
+and $\lvert w \rvert$ are all the same number. Run it and compare the middle row ($w = 1$) with the
+other two.
+
+<PyCell code={`
+# A one-coordinate W_hh is a number w. Carrying the error d steps
+# back multiplies it by w**d. The tanh mask (slope <= 1) can only
+# shrink it further, so w = 1 is already the most favourable case.
+print(" w     d=10        d=20        d=40")
+for w in [0.5, 1.0, 1.5]:
+    print("%.1f   %9.2e   %9.2e   %9.2e" % (w, w ** 10, w ** 20, w ** 40))
+`} />
+
+The first row sinks, the last shoots up and the middle one doesn't move, exactly as the start of the
+lesson said it would. With $w = 0.5$, the error arrives forty steps back at $9 \times 10^{-13}$ of
+its original size, and no gradient descent can learn from a signal that small. And that's the best
+case: as soon as the state saturates, the $\tanh$ mask pushes it lower still.
+
+Explosion, on the other hand, has a straightforward answer. If the problem is that the gradient's
+norm grows with nothing to rein it in, give it a ceiling: fix a threshold $\kappa$ and, whenever
+$\lVert \mathbf{g} \rVert$ exceeds it, rescale the gradient to bring it back to exactly that size.
+This is **gradient clipping**:
+
+$$
+\mathbf{g} \leftarrow \mathbf{g}\cdot\min\!\left(1,\ \frac{\kappa}{\lVert \mathbf{g} \rVert}\right).
+$$
+
+The $\min$ with $1$ is the key: if the gradient is already small, the factor equals $1$ and leaves
+it alone; it only acts on a gradient that has gone over the limit, and it does so by multiplying it
+by a positive number, which changes its length but not its direction. Check it.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+rng = np.random.default_rng(1)
+kappa = 5.0                                    # the ceiling on the norm
+
+
+def clip(g):
+    n = np.linalg.norm(g)
+    return g * min(1.0, kappa / n), n          # factor <= 1: shrinks or leaves alone, never turns
+
+
+for name, g in [("normal  ", rng.normal(size=100) * 0.3),
+                ("exploded", rng.normal(size=100) * 3.0)]:
+    g_clip, n = clip(g)
+    cosine = float(g @ g_clip) / (n * np.linalg.norm(g_clip))
+    print("%s  ||g|| = %6.2f  ->  ||clipped|| = %.2f   (cosine with g: %.4f)"
+          % (name, n, np.linalg.norm(g_clip), cosine))
+`} />
+
+The normal gradient passes through untouched; the exploded one, with a norm of almost $30$, comes out
+clipped to exactly $5.00$, and its cosine with the original is $1$ (same direction, different size).
+Clipping rescues training when the gradient explodes, and it costs almost nothing. What it doesn't
+do, and this deserves saying out loud, is anything at all about vanishing: a gradient that has
+already shrunk to $10^{-13}$ has a tiny norm, the $\min$ equals $1$, and it stays exactly as it was.
+
+## Test your intuition
+
+Four questions: what makes the gradient vanish or explode, what clipping fixes and what it doesn't,
+whether the $\tanh$ mask can save the day, and what's lost when it can't.
+
+<Quiz id="q-que-lo-desvanece" />
+
+<Quiz id="q-clipping-que-arregla" />
+
+<Quiz id="q-mascara-tanh" />
+
+<Quiz id="q-que-cuesta" />
+
+---
+
+Clipping caps the explosion, but it leaves the other half of the problem where it was. A gradient
+that has been multiplied down towards zero doesn't recover by being multiplied by $1$, and no choice
+of $\mathbf{W}_{hh}$ fixes both at once: pushing $\sigma_{\max}$ below $1$ so the gradient can't
+explode is exactly what guarantees that it vanishes. The problem isn't the weights, it's the path:
+any path that multiplies by the same matrix at every step ends up at one of the two extremes.
+
+The way out is to change the path. What's needed is a route along which the state moves from one
+step to the next by *adding*, rather than passing through $\mathbf{W}_{hh}$ yet again: across a sum,
+the gradient flows without being multiplied once per position, so it neither sinks nor shoots up.
+That additive path is the cell state of the long short-term memory (LSTM), and building it one gate
+at a time, each gate fixing a specific failure of the vanilla RNN, is <Leccion slug="lstm">the next
+lesson, on the LSTM and its gates</Leccion>.

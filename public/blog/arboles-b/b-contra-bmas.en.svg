@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 262" width="760" height="262" role="img"
+ aria-label="The same eight keys in a B-tree and in a B+tree, and the scan of the keys between 25 and 55. In the B-tree, the root holds 30 and 60, and the leaves [10, 20], [40, 50] and [70, 85]. Reading the range visits five pages: the root, leaf 1, which has nothing, the root again for 30, leaf 2 for 40 and 50, and the root again, where 60 is already past the end. In the B+tree, the root holds only signposts, 40 and 70, and the leaves [10, 20, 30], [40, 50, 60] and [70, 85], linked left to right. The same range visits three pages: the root, leaf 1 for 30 and, following the link, leaf 2 for 40 and 50, where 60 is already past the end.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #86948a; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.12); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.12); }
+  .bx.g { stroke: #3b3b3e; }
+  .bx.f { stroke: #4edea3; fill: #4edea3; }
+  .bx.s { stroke: none; fill: #3b3b3e; }
+  .lb { font-size: 12.5px; font-weight: 600; }
+  .sb { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 11.5px; }
+  .tx.d { fill: #86948a; }
+  .mo { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  .mo.k { fill: #131315; font-weight: 700; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .sep { stroke: #2a2a2c; stroke-width: 1; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1; marker-end: url(#a); }
+  .ar.m { stroke: #4edea3; stroke-width: 1.6; marker-end: url(#am); }
+  .ar.w { stroke: #e8a24c; stroke-width: 1.4; marker-end: url(#aw); }
+  .ed { stroke: #3b3b3e; stroke-width: 1; }
+  .gl { stroke: #2a2a2c; stroke-width: 1; }
+  .pt { fill: none; stroke: #4edea3; stroke-width: 1.5; stroke-linejoin: round; }
+  .tri { fill: rgba(232,162,76,0.06); stroke: #e8a24c; stroke-width: 1; }
+  .lv { stroke: #3b3b3e; stroke-width: 1; stroke-dasharray: 2 3; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker><marker id="am" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#4edea3"/></marker><marker id="aw" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#e8a24c"/></marker></defs>
+<text class="lb" x="0.0" y="14.0">B-tree</text>
+<text class="sb" x="0.0" y="30.0">each key lives once, at some level</text>
+<text class="lb" x="400.0" y="14.0">B+tree</text>
+<text class="sb" x="400.0" y="30.0">every key in the leaves, and the leaves linked</text>
+<line class="sep" x1="380.0" y1="4.0" x2="380.0" y2="258.0"/>
+<rect class="bx " x="38.0" y="132.0" width="44.0" height="22.0" rx="3"/>
+<text class="mo" x="49.0" y="147.0" style="text-anchor:middle">10</text>
+<line class="ed" x1="60.0" y1="132.0" x2="60.0" y2="154.0"/>
+<text class="mo" x="71.0" y="147.0" style="text-anchor:middle">20</text>
+<rect class="bx " x="158.0" y="132.0" width="44.0" height="22.0" rx="3"/>
+<rect class="bx m" x="160.0" y="134.0" width="18.0" height="18.0" rx="2"/>
+<text class="mo" x="169.0" y="147.0" style="text-anchor:middle">40</text>
+<line class="ed" x1="180.0" y1="132.0" x2="180.0" y2="154.0"/>
+<rect class="bx m" x="182.0" y="134.0" width="18.0" height="18.0" rx="2"/>
+<text class="mo" x="191.0" y="147.0" style="text-anchor:middle">50</text>
+<rect class="bx " x="278.0" y="132.0" width="44.0" height="22.0" rx="3"/>
+<text class="mo" x="289.0" y="147.0" style="text-anchor:middle">70</text>
+<line class="ed" x1="300.0" y1="132.0" x2="300.0" y2="154.0"/>
+<text class="mo" x="311.0" y="147.0" style="text-anchor:middle">85</text>
+<rect class="bx " x="158.0" y="60.0" width="44.0" height="22.0" rx="3"/>
+<rect class="bx m" x="160.0" y="62.0" width="18.0" height="18.0" rx="2"/>
+<text class="mo" x="169.0" y="75.0" style="text-anchor:middle">30</text>
+<line class="ed" x1="180.0" y1="60.0" x2="180.0" y2="82.0"/>
+<text class="mo" x="191.0" y="75.0" style="text-anchor:middle">60</text>
+<path class="ar" d="M158.0,82.0 L60.0,130.0"/>
+<path class="ar" d="M180.0,82.0 L180.0,130.0"/>
+<path class="ar" d="M202.0,82.0 L300.0,130.0"/>
+<rect class="bx " x="422.0" y="132.0" width="66.0" height="22.0" rx="3"/>
+<text class="mo" x="433.0" y="147.0" style="text-anchor:middle">10</text>
+<line class="ed" x1="444.0" y1="132.0" x2="444.0" y2="154.0"/>
+<text class="mo" x="455.0" y="147.0" style="text-anchor:middle">20</text>
+<line class="ed" x1="466.0" y1="132.0" x2="466.0" y2="154.0"/>
+<rect class="bx m" x="468.0" y="134.0" width="18.0" height="18.0" rx="2"/>
+<text class="mo" x="477.0" y="147.0" style="text-anchor:middle">30</text>
+<rect class="bx " x="547.0" y="132.0" width="66.0" height="22.0" rx="3"/>
+<rect class="bx m" x="549.0" y="134.0" width="18.0" height="18.0" rx="2"/>
+<text class="mo" x="558.0" y="147.0" style="text-anchor:middle">40</text>
+<line class="ed" x1="569.0" y1="132.0" x2="569.0" y2="154.0"/>
+<rect class="bx m" x="571.0" y="134.0" width="18.0" height="18.0" rx="2"/>
+<text class="mo" x="580.0" y="147.0" style="text-anchor:middle">50</text>
+<line class="ed" x1="591.0" y1="132.0" x2="591.0" y2="154.0"/>
+<text class="mo" x="602.0" y="147.0" style="text-anchor:middle">60</text>
+<rect class="bx " x="683.0" y="132.0" width="44.0" height="22.0" rx="3"/>
+<text class="mo" x="694.0" y="147.0" style="text-anchor:middle">70</text>
+<line class="ed" x1="705.0" y1="132.0" x2="705.0" y2="154.0"/>
+<text class="mo" x="716.0" y="147.0" style="text-anchor:middle">85</text>
+<rect class="bx g" x="558.0" y="60.0" width="44.0" height="22.0" rx="3"/>
+<text class="mo" x="569.0" y="75.0" style="text-anchor:middle">40</text>
+<line class="ed" x1="580.0" y1="60.0" x2="580.0" y2="82.0"/>
+<text class="mo" x="591.0" y="75.0" style="text-anchor:middle">70</text>
+<path class="ar" d="M558.0,82.0 L455.0,130.0"/>
+<path class="ar" d="M580.0,82.0 L580.0,130.0"/>
+<path class="ar" d="M602.0,82.0 L705.0,130.0"/>
+<path class="ar m" d="M490.0,143.0 L545.0,143.0"/>
+<path class="ar m" d="M615.0,143.0 L681.0,143.0"/>
+<text class="sb" x="612.0" y="75.0">signposts only</text>
+<text class="sb" x="0.0" y="192.0">range 25 to 55: pages visited, in order</text>
+<rect class="bx w" x="0.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="28.0" y="221.0" style="text-anchor:middle">root</text>
+<text class="sb" x="0.0" y="244.0">looks for 25</text>
+<rect class="bx w" x="71.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="99.0" y="221.0" style="text-anchor:middle">leaf 1</text>
+<text class="sb" x="71.0" y="244.0">nothing</text>
+<path class="ar" d="M57.0,217.0 L69.0,217.0"/>
+<rect class="bx w" x="142.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="170.0" y="221.0" style="text-anchor:middle">root</text>
+<text class="sb m" x="142.0" y="244.0">30</text>
+<path class="ar" d="M128.0,217.0 L140.0,217.0"/>
+<rect class="bx w" x="213.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="241.0" y="221.0" style="text-anchor:middle">leaf 2</text>
+<text class="sb m" x="213.0" y="244.0">40 50</text>
+<path class="ar" d="M199.0,217.0 L211.0,217.0"/>
+<rect class="bx w" x="284.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="312.0" y="221.0" style="text-anchor:middle">root</text>
+<text class="sb m" x="284.0" y="244.0">60: stop</text>
+<path class="ar" d="M270.0,217.0 L282.0,217.0"/>
+<text class="sb" x="400.0" y="192.0">range 25 to 55: pages visited, in order</text>
+<rect class="bx m" x="400.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="428.0" y="221.0" style="text-anchor:middle">root</text>
+<text class="sb" x="400.0" y="244.0">looks for 25</text>
+<rect class="bx m" x="471.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="499.0" y="221.0" style="text-anchor:middle">leaf 1</text>
+<text class="sb m" x="471.0" y="244.0">30</text>
+<path class="ar" d="M457.0,217.0 L469.0,217.0"/>
+<rect class="bx m" x="542.0" y="206.0" width="56.0" height="22.0" rx="3"/>
+<text class="tx" x="570.0" y="221.0" style="text-anchor:middle">leaf 2</text>
+<text class="sb m" x="542.0" y="244.0">40 50 · 60: stop</text>
+<path class="ar" d="M528.0,217.0 L540.0,217.0"/>
+</svg>

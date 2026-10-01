@@ -492,6 +492,9 @@ export interface Post {
   /** Required, may be empty. No tag pages yet — the field exists so posts are
    *  authored with their subject stated, not retrofitted when tag pages land. */
   tags:     string[];
+  /** BLOG-AI-NOTE-01 — the post's images were generated with AI. Picks the wording of
+   *  the AI-use note at the foot of the article. Required. */
+  aiImages: boolean;
 }
 
 /** A minimal post pointer used for prev/next navigation. */
@@ -892,4 +895,141 @@ export interface ContentFeedbackOverview {
   aggregates: (ContentVoteAggregate & { title: string | null; pageUrl: string | null })[];
   comments:   ContentVoteComment[];
   reports:    ContentReport[];
+}
+
+// ─── Admin panel ──────────────────────────────────────────────────────────────
+// REFACTOR-R4-P3-02: moved here from the admin panel's `_data.ts` (deleted), which
+// queried Supabase straight from app/. The reads now go through IAdminQueryRepository.
+// The snake_case rows keep the column names the admin components already render.
+
+/** A row of /admin/students. A student is a user with a booking or a credit pack. */
+export interface StudentSummary {
+  email:          string;
+  name:           string;
+  /** Credits across non-expired packs. */
+  totalCredits:   number;
+  earliestExpiry: string | null;
+  nextSession:    string | null;
+}
+
+/** One page of /admin/students. Both counts ignore the low-credit filter and the page
+ *  window (they cover every student matching the search), so both tabs can show them. */
+export interface StudentListPage {
+  rows:           StudentSummary[];
+  total:          number;
+  lowCreditTotal: number;
+}
+
+export interface StudentDetail {
+  id:    string;
+  email: string;
+  name:  string;
+}
+
+export interface CreditPackRow {
+  id:                string;
+  pack_size:         number;
+  credits_remaining: number;
+  expires_at:        string;
+  created_at:        string;
+  stripe_payment_id: string;
+}
+
+export interface BookingRow {
+  id:           string;
+  session_type: string;
+  starts_at:    string;
+  ends_at:      string;
+  status:       string;
+}
+
+export interface AdminBookingRow {
+  id:           string;
+  join_token:   string;
+  session_type: string;
+  starts_at:    string;
+  ends_at:      string;
+  status:       string;
+  email:        string;
+  name:         string;
+}
+
+export interface AdminPaymentRow {
+  id:                string;
+  amount_cents:      number;
+  currency:          string;
+  status:            string;
+  checkout_type:     string;
+  created_at:        string;
+  stripe_payment_id: string;
+  email:             string;
+  name:              string;
+}
+
+/** The /admin dashboard's stat cards. */
+export interface AdminDashboardCounts {
+  upcomingBookings:  number;
+  /** Students (not users) with <= 1 active credit. */
+  lowCreditStudents: number;
+  failedBookings:    number;
+}
+
+/** A manual credit adjustment. `applied` differs from `requested` only when a debit
+ *  ran into the student's real balance. */
+export interface CreditAdjustment {
+  requested: number;
+  applied:   number;
+}
+
+// ─── Booking payment audit ────────────────────────────────────────────────────
+// REFACTOR-R4-P3-03: the daily read-only cron (GET /api/internal/booking-payment-audit,
+// BookingPaymentAuditService) that checks every upcoming confirmed booking against what
+// pays for it. It reports; it never changes a booking, a payment or a Stripe object.
+
+/** One upcoming confirmed booking, with what it is paid by. */
+export interface PaymentAuditBooking {
+  bookingId:       string;
+  email:           string;
+  sessionType:     SessionType;
+  startsAt:        string;          // normalized with new Date(...).toISOString()
+  endsAt:          string;
+  stripePaymentId: string | null;   // paid 1h/2h classes
+  creditPack:      { id: string; ownedByBookingUser: boolean; stripePaymentId: string } | null;
+}
+
+export type PaymentAuditCode =
+  | "length_mismatch"
+  | "no_payment_link"
+  | "pack_not_owned"
+  | "payment_not_found"
+  | "payment_not_succeeded"
+  | "payment_refunded"
+  | "payment_partially_refunded"
+  | "payment_disputed"
+  | "payment_mismatch";
+
+/** `review`: a state that can be legitimate and that only the tutor can judge (a pack
+ *  whose unused classes were refunded). Every other finding is an `error`. */
+export type PaymentAuditSeverity = "error" | "review";
+
+export interface PaymentAuditFinding {
+  code:        PaymentAuditCode;
+  severity:    PaymentAuditSeverity;
+  bookingId:   string;
+  email:       string;
+  sessionType: SessionType;
+  startsAt:    string;
+  /** The payment the class was checked against: its own PaymentIntent, or its pack's. */
+  paymentId:   string | null;
+  /** `field=value` pairs, when the code alone doesn't say what differs. */
+  expected?:   string;
+  actual?:     string;
+}
+
+export interface PaymentAuditReport {
+  checked:           number;
+  byType:            Record<SessionType, number>;
+  /** Pack classes drawn on an admin-granted (`manual-…`) pack: nothing to check in Stripe. */
+  manualPackClasses: number;
+  findings:          PaymentAuditFinding[];
 }

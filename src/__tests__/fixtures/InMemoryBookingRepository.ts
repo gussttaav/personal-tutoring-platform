@@ -1,27 +1,56 @@
 // TEST-01: In-memory implementation of IBookingRepository for integration tests.
-import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
+// REFACTOR-R4-P1-01: hasActiveFreeSession.
+// REFACTOR-R4-P1-02: per-read `*ShouldFail` flags (FakeCalendarClient style) simulate a
+// DB read error, so tests can assert the callers fail closed.
+// REFACTOR-R4-P1-03: reinstateBooking. Consumed tokens are remembered per eventId, standing in
+// for the Supabase impl recomputing its deterministic HMACs; `createBookingShouldFail`
+// simulates the insert failing (e.g. the exclusion constraint).
+// REFACTOR-R4-P1-04: cancelByToken mirrors the cancel_booking RPC (flip + pack credit
+// restore in one step), so this fake crosses into InMemoryCreditsRepository: construct it
+// with that fake to cancel a pack class. `cancelByTokenShouldFail` simulates the RPC failing.
+// REFACTOR-R4-P3-03: listUpcomingForPaymentAudit. A pack class's pack (owner + payment id)
+// comes from `seedCreditPack` — the credits fake keeps one pack per user and no payment
+// id per pack. `listUpcomingForPaymentAuditShouldFail` simulates the read failing.
+import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type {
   BookingHistoryEntry,
   BookingHistoryPage,
   BookingRecord,
   BookingStatus,
+  PaymentAuditBooking,
   SessionType,
   SingleSessionBookingDetail,
 } from "@/domain/types";
 import { buildCursor } from "@/infrastructure/supabase/booking-history";
 import { randomUUID } from "crypto";
+import type { InMemoryCreditsRepository } from "./InMemoryCreditsRepository";
 
 export class InMemoryBookingRepository implements IBookingRepository {
+  // REFACTOR-R4-P1-04: only needed by tests that cancel a pack class.
+  constructor(private readonly credits?: InMemoryCreditsRepository) {}
+
   private bookings             = new Map<string, BookingRecord>();
   private cancelTokens         = new Map<string, { joinToken: string; record: BookingRecord }>();
   private joinTokens           = new Map<string, { eventId: string; email: string; name: string; sessionType: SessionType; startsAt: string }>();
   private locks                = new Set<string>();
   private pendingTerminations  = new Map<string, { fireAtMs: number; attempts: number; lastError?: string }>();
   private statuses             = new Map<string, string>(); // eventId → status
+  // REFACTOR-R4-P1-02
+  listByUserShouldFail           = false;
+  hasBookingForPaymentShouldFail = false;
+  // REFACTOR-R4-P1-03
+  createBookingShouldFail        = false;
+  // REFACTOR-R4-P1-04
+  cancelByTokenShouldFail        = false;
+  private consumedTokens       = new Map<string, { cancelToken: string; joinToken: string }>(); // eventId → original tokens
+  // REFACTOR-R4-P3-03
+  listUpcomingForPaymentAuditShouldFail = false;
+  private auditPacks           = new Map<string, { ownerEmail: string; stripePaymentId: string }>(); // packId → pack
 
   async createBooking(
     record: Omit<BookingRecord, "used">,
   ): Promise<{ cancelToken: string; joinToken: string }> {
+    if (this.createBookingShouldFail) throw new Error("InMemoryBookingRepository: simulated insert failure");
     const cancelToken = randomUUID();
     const joinToken   = randomUUID();
     const full: BookingRecord = { ...record, used: false };
@@ -52,11 +81,66 @@ export class InMemoryBookingRepository implements IBookingRepository {
     const entry = this.cancelTokens.get(token);
     if (!entry) return false;
     this.cancelTokens.delete(token);
+    this.consumedTokens.set(entry.record.eventId, { cancelToken: token, joinToken: entry.joinToken });
     this.statuses.set(entry.record.eventId, "cancelled");
     return true;
   }
 
+  // REFACTOR-R4-P1-04: mirrors cancel_booking. Nothing is written before the checks pass, so
+  // a simulated failure leaves the booking confirmed and the token usable. The credits fake
+  // keeps one pack per user, so the RPC's fallback ("earliest-expiring active pack with
+  // room") can only ever be that pack — it matters for a legacy booking with no pack link.
+  async cancelByToken(token: string): Promise<CancelResult> {
+    if (this.cancelByTokenShouldFail) throw new Error("InMemoryBookingRepository: simulated RPC failure");
+    const entry = this.cancelTokens.get(token);
+    if (!entry) {
+      return { consumed: false, restored: false, restoredPackId: null, fromOriginating: false, credits: 0 };
+    }
+    const { record } = entry;
+    const isPack = record.sessionType === "pack";
+    if (isPack && !this.credits) {
+      throw new Error("InMemoryBookingRepository: construct with the InMemoryCreditsRepository to cancel a pack class");
+    }
+
+    await this.consumeCancelToken(token);
+
+    let target: string | null = null;
+    if (isPack && this.credits) {
+      const origin = record.creditPackId ?? null;
+      if (origin && await this.credits.restoreCreditToPack(origin)) {
+        target = origin;
+      } else {
+        const fallback = this.credits.packIdOf(record.email);
+        if (fallback && fallback !== origin && await this.credits.restoreCreditToPack(fallback)) target = fallback;
+      }
+    }
+    const credits = this.credits ? (await this.credits.getCredits(record.email))?.credits ?? 0 : 0;
+
+    return {
+      consumed:        true,
+      restored:        target !== null,
+      restoredPackId:  target,
+      fromOriginating: target !== null && target === record.creditPackId,
+      credits,
+    };
+  }
+
+  // REFACTOR-R4-P1-03: mirrors the Supabase impl — only a 'cancelled' row comes back, and
+  // it comes back with its ORIGINAL tokens. (No overlap model: the exclusion-constraint
+  // `false` is covered by the mock-based service tests and the DB-gated repository test.)
+  async reinstateBooking(record: BookingRecord): Promise<boolean> {
+    if ((this.statuses.get(record.eventId) ?? "confirmed") !== "cancelled") return false;
+    const tokens = this.consumedTokens.get(record.eventId);
+    const stored = this.bookings.get(record.eventId);
+    if (!tokens || !stored) return false;
+    this.consumedTokens.delete(record.eventId);
+    this.cancelTokens.set(tokens.cancelToken, { joinToken: tokens.joinToken, record: stored });
+    this.statuses.set(record.eventId, "confirmed");
+    return true;
+  }
+
   async listByUser(email: string): Promise<{ cancelToken: string; joinToken: string; record: BookingRecord }[]> {
+    if (this.listByUserShouldFail) throw new Error("InMemoryBookingRepository: simulated read failure");
     const result: { cancelToken: string; joinToken: string; record: BookingRecord }[] = [];
     for (const [token, { joinToken, record }] of this.cancelTokens) {
       if (record.email.toLowerCase() === email.toLowerCase() && !record.used) {
@@ -125,6 +209,16 @@ export class InMemoryBookingRepository implements IBookingRepository {
     return false;
   }
 
+  // REFACTOR-R4-P1-01: mirrors the Supabase impl — any non-cancelled free15min row.
+  async hasActiveFreeSession(email: string): Promise<boolean> {
+    const target = email.toLowerCase();
+    for (const [eventId, record] of this.bookings) {
+      if (record.email.toLowerCase() !== target || record.sessionType !== "free15min") continue;
+      if ((this.statuses.get(eventId) ?? "confirmed") !== "cancelled") return true;
+    }
+    return false;
+  }
+
   async findIdByEventIdForUser(
     eventId: string,
     _userId: string,
@@ -147,8 +241,9 @@ export class InMemoryBookingRepository implements IBookingRepository {
     };
   }
 
-  // REFACTOR-P4-01
+  // REFACTOR-P4-01. Status-agnostic, like the Supabase impl (a cancelled row still counts).
   async hasBookingForPayment(stripePaymentId: string): Promise<boolean> {
+    if (this.hasBookingForPaymentShouldFail) throw new Error("InMemoryBookingRepository: simulated read failure");
     for (const record of this.bookings.values()) {
       if (record.stripePaymentId === stripePaymentId) return true;
     }
@@ -156,13 +251,15 @@ export class InMemoryBookingRepository implements IBookingRepository {
   }
 
   // SINGLE-SESSION-CONFIRM-01: confirmed-only detail finder (mirrors the status='confirmed'
-  // scope of the Supabase impl — a cancelled row never matches).
+  // scope of the Supabase impl — a cancelled row never matches). REFACTOR-R4-P1-03: a
+  // cancelled row is skipped, not an answer — a rescheduled paid class leaves the cancelled
+  // original and the confirmed new booking sharing the PaymentIntent.
   async findByStripePaymentId(
     stripePaymentId: string,
   ): Promise<SingleSessionBookingDetail | null> {
     for (const [eventId, record] of this.bookings) {
       if (record.stripePaymentId !== stripePaymentId) continue;
-      if ((this.statuses.get(eventId) ?? "confirmed") !== "confirmed") return null;
+      if ((this.statuses.get(eventId) ?? "confirmed") !== "confirmed") continue;
       const joinToken = this.findJoinTokenForEvent(eventId);
       if (!joinToken) return null;
       return {
@@ -174,6 +271,46 @@ export class InMemoryBookingRepository implements IBookingRepository {
       };
     }
     return null;
+  }
+
+  // REFACTOR-R4-P3-03: mirrors the Supabase impl — confirmed rows starting in
+  // [now, untilIso), soonest first. The fake treats eventId as the booking id.
+  async listUpcomingForPaymentAudit(untilIso: string): Promise<PaymentAuditBooking[]> {
+    if (this.listUpcomingForPaymentAuditShouldFail) {
+      throw new Error("InMemoryBookingRepository: simulated read failure");
+    }
+    const now   = Date.now();
+    const until = new Date(untilIso).getTime();
+    return [...this.bookings.entries()]
+      .filter(([eventId]) => (this.statuses.get(eventId) ?? "confirmed") === "confirmed")
+      .filter(([, r]) => {
+        const start = new Date(r.startsAt).getTime();
+        return start >= now && start < until;
+      })
+      .sort(([, a], [, b]) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+      .map(([eventId, r]) => {
+        const pack = r.creditPackId ? this.auditPacks.get(r.creditPackId) : undefined;
+        return {
+          bookingId:       eventId,
+          email:           r.email.toLowerCase(),
+          sessionType:     r.sessionType,
+          startsAt:        new Date(r.startsAt).toISOString(),
+          endsAt:          new Date(r.endsAt).toISOString(),
+          stripePaymentId: r.stripePaymentId ?? null,
+          creditPack:      pack && r.creditPackId
+            ? {
+                id:                 r.creditPackId,
+                ownedByBookingUser: pack.ownerEmail.toLowerCase() === r.email.toLowerCase(),
+                stripePaymentId:    pack.stripePaymentId,
+              }
+            : null,
+        };
+      });
+  }
+
+  /** REFACTOR-R4-P3-03 (fixture-only): a credit_packs row for listUpcomingForPaymentAudit. */
+  seedCreditPack(pack: { id: string; ownerEmail: string; stripePaymentId: string }): void {
+    this.auditPacks.set(pack.id, { ownerEmail: pack.ownerEmail, stripePaymentId: pack.stripePaymentId });
   }
 
   private findJoinTokenForEvent(eventId: string): string | undefined {

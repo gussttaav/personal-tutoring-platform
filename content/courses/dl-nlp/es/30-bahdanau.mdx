@@ -11,14 +11,14 @@ hasQuiz: true
 quiz:
   - id: q-por-que-tanh
     type: single
-    prompt: 'Quitas el $\tanh$ y dejas la puntuación en $e_{ij} = \mathbf{v}_a^{\top}\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$. ¿Qué le pasa a la alineación?'
+    prompt: 'Quitas la $\tanh$ y dejas la puntuación en $e_{ij} = \mathbf{v}_a^{\top}\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$. ¿Qué le pasa a la alineación?'
     options:
       - { id: a, text: 'Todas las filas salen idénticas. El sumando del decoder no lleva $j$, así que dentro de la fila $i$ es una constante, y sumar una constante a una fila entera no cambia su softmax: $\alpha_{ij}$ deja de depender de $i$.' }
       - { id: b, text: 'No le pasa nada apreciable: el softmax sigue siendo no lineal, y con eso basta para que cada paso reparta de forma distinta.' }
-      - { id: c, text: 'Los pesos dejan de sumar $1$, porque sin el $\tanh$ las puntuaciones ya no están acotadas y el denominador se queda corto.' }
+      - { id: c, text: 'Los pesos dejan de sumar $1$, porque sin la $\tanh$ las puntuaciones ya no están acotadas y el denominador se queda corto.' }
       - { id: d, text: 'La puntuación gana expresividad —una saturación menos— y lo único que se pierde es estabilidad numérica cuando los estados son grandes.' }
     answer: a
-    explanation: 'La (a), y conviene ver qué modelo queda: una alineación aprendida, sí, pero la misma en los $T_y$ pasos, que es la fila congelada de la lección anterior, sobre la idea de atención, mudada del último token a un sitio elegido por el entrenamiento. La (b) confunde dónde hace falta la no linealidad: el softmax es no lineal en la fila entera, pero opera *después* de que la puntuación ya haya separado sus dos argumentos, y lo que se separa ahí no lo vuelve a juntar nadie. La (c) es falsa por construcción: el softmax normaliza lo que le echen, acotado o no. La (d) invierte el papel del $\tanh$, que no está para acotar sino para que la puntuación sea función de la pareja.'
+    explanation: 'La (a), y conviene ver qué modelo queda: una alineación aprendida, sí, pero la misma en los $T_y$ pasos, que es la fila congelada de la lección anterior, sobre la idea de atención, mudada del último token a un sitio elegido por el entrenamiento. La (b) confunde dónde hace falta la no linealidad: el softmax es no lineal en la fila entera, pero opera *después* de que la puntuación ya haya separado sus dos argumentos, y lo que se separa ahí no lo vuelve a juntar nadie. La (c) es falsa por construcción: el softmax normaliza lo que le echen, acotado o no. La (d) invierte el papel de la $\tanh$, que no está para acotar sino para que la puntuación sea función de la pareja.'
     hint: 'Escribe el producto $\mathbf{v}_a^{\top}$ contra la suma y mira qué sumando lleva $j$ y cuál no.'
   - id: q-parametros-de-a
     type: numeric
@@ -54,12 +54,12 @@ quiz:
     type: single
     prompt: 'Traduces una frase de $T_x$ tokens en $T_y$ pasos. ¿Cuántas veces hay que calcular cada pieza de la puntuación aditiva?'
     options:
-      - { id: a, text: '$\mathbf{W}_{ha}\bar{\mathbf{h}}_j$ una vez por posición y $\mathbf{W}_{sa}\mathbf{s}_{i-1}$ una vez por paso —$T_x + T_y$ productos—, pero la suma, el $\tanh$ y $\mathbf{v}_a^{\top}$ hay que repetirlos $T_x \cdot T_y$ veces, uno por pareja.' }
+      - { id: a, text: '$\mathbf{W}_{ha}\bar{\mathbf{h}}_j$ una vez por posición y $\mathbf{W}_{sa}\mathbf{s}_{i-1}$ una vez por paso —$T_x + T_y$ productos—, pero la suma, la $\tanh$ y $\mathbf{v}_a^{\top}$ hay que repetirlos $T_x \cdot T_y$ veces, uno por pareja.' }
       - { id: b, text: 'Todo $T_x \cdot T_y$ veces: la puntuación depende de la pareja, así que no hay nada que se pueda reaprovechar entre parejas.' }
       - { id: c, text: 'Todo $T_x + T_y$ veces: proyectados los dos lados, la puntuación de cada pareja ya está calculada.' }
-      - { id: d, text: '$T_x \cdot T_y$ veces las dos proyecciones, y una sola vez el $\tanh$, que se aplica a la matriz de puntuaciones entera al final.' }
+      - { id: d, text: '$T_x \cdot T_y$ veces las dos proyecciones, y una sola vez la $\tanh$, que se aplica a la matriz de puntuaciones entera al final.' }
     answer: a
-    explanation: 'La (a). Las dos proyecciones se sacan del bucle porque cada una depende de un solo índice, y ése es un ahorro real: sin él serían $2 T_x T_y$ productos de matriz por vector en lugar de $T_x + T_y$. Lo que no sale es lo de en medio. El $\tanh$ está entre la suma y el vector de lectura, y una función no lineal aplicada a una suma no se reparte entre sus sumandos, así que la rejilla de $T_x \cdot T_y$ vectores de $d_a$ coordenadas hay que construirla entera. La (b) regala el ahorro; la (c) regala el $\tanh$, que es lo que la (d) intenta mover de sitio —y moverlo al final es precisamente quitarlo de en medio, con el resultado que ya conoces.'
+    explanation: 'La (a). Las dos proyecciones se sacan del bucle porque cada una depende de un solo índice, y ése es un ahorro real: sin él serían $2 T_x T_y$ productos de matriz por vector en lugar de $T_x + T_y$. Lo que no sale es lo de en medio. La $\tanh$ está entre la suma y el vector de lectura, y una función no lineal aplicada a una suma no se reparte entre sus sumandos, así que la rejilla de $T_x \cdot T_y$ vectores de $d_a$ coordenadas hay que construirla entera. La (b) regala el ahorro; la (c) regala la $\tanh$, que es lo que la (d) intenta mover de sitio —y moverlo al final es precisamente quitarlo de en medio, con el resultado que ya conoces.'
     hint: '¿Cuál de las tres piezas depende de los dos índices a la vez?'
 challenges:
   - id: ch-atencion-aditiva
@@ -145,7 +145,7 @@ challenges:
       Las dos proyecciones se calculan fuera de la rejilla, cada una una sola vez, y el
       `[:, None, :]` contra `[None, :, :]` es lo que las cruza: NumPy repite la primera a lo
       largo de las posiciones y la segunda a lo largo de los pasos, y sale el bloque de
-      $(T_y, T_x, d_a)$ que el $\tanh$ aplasta. Sólo entonces entra `va`, que contrae la última
+      $(T_y, T_x, d_a)$ que la $\tanh$ aplasta. Sólo entonces entra `va`, que contrae la última
       dimensión y deja una puntuación por pareja. La resta del máximo es la invariancia al
       desplazamiento de <Leccion slug="funcion-de-perdida">la lección sobre funciones de pérdida</Leccion>, usada como allí:
       cambia lo que se exponencia, no lo que sale.
@@ -227,7 +227,7 @@ filas cada una, y sus columnas son cosa de cada lado.
 
 ### Sin la no linealidad, todos los pasos mirarían al mismo sitio
 
-Quita el $\tanh$ y mira qué queda. El vector de lectura entra en la suma y la reparte:
+Quita la $\tanh$ y mira qué queda. El vector de lectura entra en la suma y la reparte:
 
 $$
 e_{ij} = \mathbf{v}_a^{\top}\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{v}_a^{\top}\mathbf{W}_{ha}\bar{\mathbf{h}}_j,
@@ -246,7 +246,7 @@ $$
 El índice $i$ ha desaparecido del lado derecho. Los $T_y$ pasos reciben la misma fila de pesos, y
 con ella el mismo vector de contexto, de modo que el modelo vuelve a ser el resumen fijo de las
 lecciones anteriores: una alineación aprendida, sí, pero congelada, sólo que congelada donde diga
-el entrenamiento en vez de en el último token. El $\tanh$ es lo que impide esa separación. Aplasta
+el entrenamiento en vez de en el último token. La $\tanh$ es lo que impide esa separación. Aplasta
 la suma *antes* de leerla, y una función no lineal de una suma no se deja repartir entre sus
 sumandos, así que la puntuación no puede volver a partirse en una opinión sobre el decoder más otra
 sobre el encoder.
@@ -290,7 +290,7 @@ construyó, y en qué dirección. Un estado que coincida con $\mathbf{c}_i$ no r
 ninguna. Tiene sentido que sea una comparación y no una nota: los pesos suman $1$, así que subir
 uno es bajar los demás, y no hay forma de premiar a una posición sin decir a costa de cuál.
 
-De ahí para atrás todo es cadena conocida. La lectura devuelve $\tanh(\mathbf{p}_{ij})$, el $\tanh$
+De ahí para atrás todo es cadena conocida. La lectura devuelve $\tanh(\mathbf{p}_{ij})$, la $\tanh$
 aporta su derivada $1 - \tanh^{2}$, y cada matriz recoge el producto exterior con el vector que
 multiplicaba:
 
@@ -374,7 +374,7 @@ El mapa recién inicializado no dice nada: el mayor peso de cada fila ronda $0.1
 uniforme sería $0.167$, así que las ocho filas son prácticamente la media de la frase. La alineación
 interpretable del explorable no viene de la arquitectura, viene del entrenamiento; lo que la
 arquitectura garantiza es que haya por dónde entrenarla. Y las dos últimas líneas son la sección
-anterior comprobada a mano: sin el $\tanh$, la fila $1$ y la fila $8$ salen iguales hasta el último
+anterior comprobada a mano: sin la $\tanh$, la fila $1$ y la fila $8$ salen iguales hasta el último
 decimal.
 
 La segunda celda persigue las dos rutas por separado. Necesita una pérdida y usa la más barata
@@ -431,7 +431,7 @@ pesos se afilan y las dos normas se acercan.
 
 ## Comprueba tu intuición
 
-Cinco preguntas: qué se rompe sin el $\tanh$, cuánto pesa la función $a$, por dónde le llega el
+Cinco preguntas: qué se rompe sin la $\tanh$, cuánto pesa la función $a$, por dónde le llega el
 gradiente a un estado del encoder, qué dice la derivada de una puntuación, y qué parte del cálculo
 se puede sacar del bucle.
 
@@ -450,7 +450,7 @@ se puede sacar del bucle.
 ---
 
 Queda una cuenta pendiente de la última pregunta. Las dos proyecciones se sacan del bucle porque
-cada una depende de un solo índice, pero entre la suma y el vector de lectura hay un $\tanh$, y eso
+cada una depende de un solo índice, pero entre la suma y el vector de lectura hay una $\tanh$, y eso
 obliga a construir la rejilla de $T_x \cdot T_y$ vectores de $d_a$ coordenadas de una en una. Una
 frase de sesenta tokens traducida a sesenta pide $3\,600$ de esos vectores, y ninguna de las
 operaciones que los producen es un producto de matrices grande: son sumas y $\tanh$ sobre un bloque

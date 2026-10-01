@@ -1,0 +1,430 @@
+---
+slug: gru
+title: "GRU: the simplified version"
+block: 3
+order: 6
+minutes: 26
+summary: "An update gate that ties keeping to writing (whatever isn't kept is exactly what gets written), a reset gate that lets the candidate ignore the past, and one state instead of two. It needs three quarters of the LSTM's weights, and the return path survives, because the direct path still multiplies by a number the network chooses and can hold close to one."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-actualizacion
+    type: single
+    prompt: 'What does the GRU gain, and what does it lose, by replacing the LSTM''s forget and input gates with a single update gate $\mathbf{z}_t$?'
+    options:
+      - { id: a, text: 'It gains a new state that''s a mix of the old one and the candidate ($(1-\mathbf{z}_t)$ keeps, $\mathbf{z}_t$ writes, and the two add up to one), so it stays bounded without an output gate to trim it. It loses the ability to keep and write at the same time: tying them together as $\mathbf{z}_t$ and $1-\mathbf{z}_t$ means that writing more always means keeping less.' }
+      - { id: b, text: 'It gains one weight fewer per coordinate and loses nothing, because in the LSTM the forget gate and the input gate were always one minus the other.' }
+      - { id: c, text: 'It gains speed, because $\mathbf{z}_t$ is computed with $\tanh$ instead of $\sigma$, and loses nothing.' }
+      - { id: d, text: 'It gains memory, because with one gate fewer there are fewer paths along which the gradient can vanish; it loses the ability to forget.' }
+    answer: a
+    explanation: '(a) is the whole trade. In the LSTM, $\mathbf{f}_t$ and $\mathbf{i}_t$ were independent (both could open and accumulate, or both close and empty the cell); tying them turns the state into a weighted average of bounded things, which stays bounded, and that''s why the output $\tanh$ is no longer needed. The price is that independence: you can no longer keep everything and write everything in the same step. (b) is false at its root: in the LSTM the two gates moved separately, and what motivates the GRU is the observation that this freedom was rarely needed, not an identity that already held. (c) mixes up the activations: $\mathbf{z}_t$ is a gate, and like every gate it uses $\sigma$. (d) has it backwards: removing gates doesn''t manufacture memory, and the GRU forgets perfectly well: with $\mathbf{z}_t \to 1$ it replaces the old state with the candidate.'
+    hint: 'Write $\mathbf{h}_t$ with $z_{t,j}=0$ and with $z_{t,j}=1$, and ask yourself what happens when you want both at once.'
+  - id: q-reset
+    type: single
+    prompt: 'The reset gate $\mathbf{r}_t$ multiplies the previous state *inside* the candidate: $\tilde{\mathbf{h}}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\left(\mathbf{r}_t \odot \mathbf{h}_{t-1}\right) + \mathbf{b}_h\right)$. With $\mathbf{r}_t \approx \mathbf{0}$, what happens?'
+    options:
+      - { id: a, text: 'The candidate stops looking at the previous state and is computed from the token alone, as if the sequence started there. The stored state isn''t erased: that''s up to $\mathbf{z}_t$, not $\mathbf{r}_t$.' }
+      - { id: b, text: 'The state is set to zero, because <W>reset</W> means restarting the memory.' }
+      - { id: c, text: 'The state stops updating: $\mathbf{r}_t \approx \mathbf{0}$ leaves $\mathbf{h}_t = \mathbf{h}_{t-1}$.' }
+      - { id: d, text: 'Nothing visible, because $\mathbf{r}_t$ and $\mathbf{z}_t$ do the same job and cancel out.' }
+    answer: a
+    explanation: '(a) is what the formula says: $\mathbf{r}_t$ appears only inside the candidate, multiplying $\mathbf{h}_{t-1}$ before $\mathbf{W}_{hh}$ reads it, so zeroing it makes the candidate start from scratch (useful when what needs writing carries nothing over from before). (b) confuses resetting with erasing: whether the memory is kept or overwritten is up to $\mathbf{z}_t$, and $\mathbf{r}_t$ doesn''t touch it. (c) describes what $\mathbf{z}_t \to \mathbf{0}$ does, not $\mathbf{r}_t$: it swaps the two gates. (d) denies the very distinction the question is about: one gate governs the memory, the other governs the candidate.'
+  - id: q-parametros-gru
+    type: numeric
+    prompt: 'Take a GRU with a state of $d_h = 64$ coordinates reading embeddings of $d_{\text{model}} = 128$, the same dimensions as the previous lesson''s LSTM. How many weights do its six matrices and three biases add up to?'
+    answer: 37056
+    tolerance: 0
+    explanation: 'Each of the three pieces ($\mathbf{z}_t$, $\mathbf{r}_t$ and $\tilde{\mathbf{h}}_t$) has exactly the shape of the recurrence in <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>: $64 \cdot 64 = 4\,096$ from its $\mathbf{W}_{h\ast}$, $64 \cdot 128 = 8\,192$ from its $\mathbf{W}_{x\ast}$ and $64$ from the bias, which makes $12\,352$. Three of those give $37\,056$: three quarters of the LSTM''s $49\,408$, which was the same count times four. And as before, $T$ appears in none of the shapes, so the GRU reads any length with a single set of weights.'
+    hint: 'Count one of the three pieces on its own (it''s the recurrence from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>) and multiply by how many there are.'
+  - id: q-tradeoff
+    type: multi
+    prompt: 'Tick everything that is true of the GRU compared with the LSTM.'
+    options:
+      - { id: a, text: 'It keeps the return path the LSTM gained: along the direct path the gradient is multiplied by $(1-z_{t,j})$, one number per coordinate and per step that the network can hold close to $1$, instead of by the power of a shared matrix.' }
+      - { id: b, text: 'It still needs gradient clipping, because the candidate and both gates cross their $\mathbf{W}_{h\ast}$ matrices the way the vanilla RNN does, so explosion is still possible.' }
+      - { id: c, text: 'It''s always better than the LSTM, because with fewer weights it generalises better.' }
+      - { id: d, text: 'It needs to fix $T_{\max}$ and pad, because with a single state it can no longer read sequences of any length.' }
+    answer: [a, b]
+    explanation: '(a) is the whole point of the lesson: the additive path survives the cut, with $1-z_{t,j}$ where the LSTM had $f_{t,j}$. (b) is the honest concession: along the paths that cross the $\mathbf{W}_{h\ast}$ the gradient can still blow up, so the GRU is trained with gradient clipping like everything before it. (c) oversells: the GRU is cheaper and almost always comparable, not universally better, and there are tasks where the LSTM has the edge. Nor does having fewer weights imply better generalisation. (d) confuses the number of states with the length: like every recurrence in this block, $T$ appears in none of its shapes, and it reads any length whether it has one state or two.'
+    hint: 'Two of the four are inherited from the recurrence; one oversells, and the other confuses states with length.'
+challenges:
+  - id: ch-gru-paso
+    prompt: |
+      Write one GRU step: `gru_step(h, x, P)` takes the previous state, the current token's
+      vector, and a dictionary `P` holding the weights of the three pieces (`P["z"]`, `P["r"]`
+      and `P["h"]`, each a triple `(Wx, Wh, b)`). It returns `h_new`.
+
+      The two gates are sigmoids over the token and the previous state; the candidate is a $\tanh$
+      that reads $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ instead of the bare $\mathbf{h}_{t-1}$, and the
+      new state is the mix $(1-\mathbf{z}_t)\odot\mathbf{h}_{t-1} + \mathbf{z}_t\odot\tilde{\mathbf{h}}_t$.
+      Compute both gates from the incoming state, not the one you're about to return. Don't write
+      into the arrays you receive.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def gru_step(h, x, P):
+          # your code here
+          pass
+    tests:
+      - name: "it returns a vector as wide as the state"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "zrh"}
+          h, x = rng.normal(size=4), rng.normal(size=3)
+          out = gru_step(h, x, P)
+          assert out is not None, 'gru_step has to return h_new, not print it'
+          assert np.asarray(out).shape == (4,), 'h_new has d_h coordinates'
+      - name: "a closed update gate keeps the state"
+        code: |
+          import numpy as np
+          P = {"z": (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, -40.0)),
+               "r": (np.zeros((4, 3)), np.zeros((4, 4)), np.zeros(4)),
+               "h": (np.ones((4, 3)), np.ones((4, 4)), np.zeros(4))}
+          h = np.array([0.7, -0.2, 1.5, 0.0])
+          out = gru_step(h, np.array([1.0, -1.0, 0.5]), P)
+          assert np.allclose(out, h, atol=1e-8), 'with z = 0 the state has to come out untouched: h_t = (1 - z) h_{t-1} + z candidate'
+      - name: "an open update gate writes the candidate"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(9)
+          P = {"z": (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, 40.0)),
+               "r": (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4)),
+               "h": (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))}
+          h, x = rng.normal(size=4), rng.normal(size=3)
+          Wxr, Whr, br = P["r"]
+          r = 1.0 / (1.0 + np.exp(-(Wxr @ x + Whr @ h + br)))
+          Wxh, Whh, bh = P["h"]
+          cand = np.tanh(Wxh @ x + Whh @ (r * h) + bh)
+          assert np.allclose(gru_step(h, x, P), cand), 'with z = 1, h_t is the candidate, and the candidate reads r (*) h_{t-1}'
+      - name: "a reset at zero leaves the candidate without the previous state"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          P = {"z": (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, 40.0)),
+               "r": (np.zeros((4, 3)), np.zeros((4, 4)), np.full(4, -40.0)),
+               "h": (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))}
+          x = rng.normal(size=3)
+          a = gru_step(np.array([0.7, -0.2, 1.5, 0.0]), x, P)
+          b = gru_step(np.array([-3.0, 9.0, 0.1, 2.0]), x, P)
+          assert np.allclose(a, b, atol=1e-8), 'with r = 0 the candidate is computed from the token alone, without the previous state'
+      - name: "it doesn't write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          P = {k: (rng.normal(size=(4, 3)) * 0.5, rng.normal(size=(4, 4)) * 0.5, np.zeros(4))
+               for k in "zrh"}
+          h, x = rng.normal(size=4), rng.normal(size=3)
+          copies = [h.copy(), x.copy()]
+          gru_step(h, x, P)
+          assert all(np.array_equal(u, v) for u, v in zip([h, x], copies)), "don't write into the arrays you receive"
+    solution: |
+      import numpy as np
+
+
+      def gru_step(h, x, P):
+          def pre(k, state):
+              Wx, Wh, b = P[k]
+              return Wx @ x + Wh @ state + b
+
+          def sigmoid(z):
+              return 1.0 / (1.0 + np.exp(-z))
+
+          z = sigmoid(pre("z", h))
+          r = sigmoid(pre("r", h))
+          cand = np.tanh(pre("h", r * h))
+          return (1 - z) * h + z * cand
+    explanation: |
+      The three pieces share the same form of argument, so `pre` writes it once; the only thing
+      that varies is which state each one reads, which is why `pre` takes the state as a
+      parameter instead of closing over `h`. Both gates pass it the `h` that came in. The
+      candidate is the exception: it reads `r * h` rather than `h`, the one thing that sets it
+      apart from the vanilla RNN's recurrence (hence the last call to `pre`, with `r * h` in place
+      of `h`). The final line is the tied mix, where `(1 - z)` keeps and `z` writes, and since the
+      result goes into a new array instead of overwriting `h`, the received arrays stay untouched.
+reading:
+  - kind: paper
+    title: 'Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation'
+    authors: 'Cho, van Merriënboer, Gulcehre, Bahdanau and others'
+    year: '2014'
+    venue: 'arXiv:1406.1078'
+    lang: en
+    url: 'https://arxiv.org/abs/1406.1078'
+    note: 'Its §2.3 introduces the reset and update gates you build here. Watch the sign: its z keeps and yours writes, so where you write z, it writes 1-z. The name "GRU" doesn''t appear yet, and most of the paper is about translation.'
+  - kind: paper
+    title: 'Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling'
+    authors: 'Chung, Gulcehre, Cho and Bengio'
+    year: '2014'
+    venue: 'arXiv:1412.3555'
+    lang: en
+    url: 'https://arxiv.org/abs/1412.3555'
+    note: 'It settles on the name "GRU" and this lesson''s convention, with a z that writes. Comparing GRU and LSTM on music and speech, it backs your "almost always, not always": roughly even, with no winner named. No text tasks.'
+---
+
+{/* COURSE-P5-03 — Block 3, Lesson 6. COURSE-P11-06 — English translation. */}
+
+So far this block has moved forward by asking what each network was missing: the vanilla recurrent
+neural network (RNN) lacked a memory that could survive distance, and the previous lesson's long
+short-term memory (LSTM), on gated memory, supplied one. But it came at a cost: four times the
+weights of a vanilla RNN, and a second vector hauled through every step. And the lesson itself ended
+by doubting that every one of its gates was needed. Once an architecture works, the question is no
+longer what it's missing, but what it could do without.
+
+Real simplification doesn't mean removing pieces until something breaks; it means removing them
+without losing what they paid for. And what the LSTM paid for (the one thing that justified all that
+machinery) was the return path, the route along which the gradient comes back intact across many
+steps. Every cut has to be checked against it: if merging gates or dropping states loses that path,
+the simplification has thrown away exactly what mattered. The gated recurrent unit (GRU) is the cut
+that passes the test, which is why it became the standard alternative to the LSTM in practice: a
+quarter fewer weights, one state, and (almost always, though not always) the same result.
+
+The cut comes down to two ideas. The first fuses the forget gate and the input gate: instead of
+deciding separately how much to keep and how much to write, the GRU uses a single control (the
+**update gate**) that says how much to replace, and whatever it doesn't replace, it keeps. The state
+stops being a sum that can grow without limit and becomes a mix, a point partway between what was
+there and what's being proposed; and a mix of bounded things stays bounded, so the output gate that
+trimmed the LSTM's state before showing it is no longer needed.
+
+The second idea is a small new gate, the **reset gate**, which leaves the memory alone and acts on
+the candidate instead: it lets the candidate ignore the previous state when what needs writing now
+carries nothing over from before (at the start of a new sentence, say). With those two gates, and a
+single state that serves as both memory and output, the second vector disappears: there's no longer a
+cell state hidden behind the one on display.
+
+Before the formulas, take one more look at the LSTM the GRU simplifies. Step through it and watch the
+first two rows (the forget gate and the input gate) move independently: those are the two the GRU is
+about to tie into one.
+
+<Explorable
+  id="lstm-gates"
+  caption="The previous lesson's LSTM step, seen with fresh eyes. Watch the first two rows, the forget gate and the input gate: they move independently, and that's exactly the freedom the GRU ties into a single gate. The last row, how much of c₁ survives, is the guarantee the simplification must not lose."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+The GRU strips the LSTM's machinery down: one gate ties keeping to writing (whatever isn't written
+is kept), a second decides whether the candidate looks at the past, and a single state serves as both
+memory and output. Three pieces instead of four, one state instead of two, and the same return path
+for the gradient.
+</Callout>
+
+## Keeping and writing with a single gate
+
+Start with the line that changes everything. The LSTM's cell added two terms with independent gates,
+$\mathbf{c}_t = \mathbf{f}_t \odot \mathbf{c}_{t-1} + \mathbf{i}_t \odot \tilde{\mathbf{c}}_t$; the
+GRU works directly on the hidden state $\mathbf{h}_t \in \mathbb{R}^{d_h}$ (there's no second vector)
+and ties the two gates into one:
+
+$$
+\mathbf{h}_t = (1 - \mathbf{z}_t) \odot \mathbf{h}_{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t,
+$$
+
+where $\mathbf{z}_t \in (0,1)^{d_h}$ is the update gate and $\tilde{\mathbf{h}}_t \in (-1,1)^{d_h}$ is
+the candidate, the state the step proposes. Coordinate by coordinate, it's a weighted average of old
+and new: $z_{t,j} = 0$ leaves $h_{t,j}$ equal to $h_{t-1,j}$ (it keeps), and $z_{t,j} = 1$ replaces it
+entirely with the candidate (it writes). There's no way to do both at once, and that's precisely the
+freedom the LSTM had and the GRU gives up: there, $\mathbf{f}_t$ and $\mathbf{i}_t$ could both open
+and accumulate. In exchange, an average of bounded numbers can't overflow, which is why the GRU shows
+its state as it is, without the output gate or the $\tanh$ that trimmed the LSTM's state before
+letting it out.
+
+The update gate is computed like every gate in the previous lesson, as a sigmoid layer over the token
+and the previous state:
+
+$$
+\mathbf{z}_t = \sigma\left(\mathbf{W}_{xz}\mathbf{x}_t + \mathbf{W}_{hz}\mathbf{h}_{t-1} + \mathbf{b}_z\right),
+$$
+
+with $\mathbf{W}_{xz} \in \mathbb{R}^{d_h \times d_{\text{model}}}$,
+$\mathbf{W}_{hz} \in \mathbb{R}^{d_h \times d_h}$ and $\mathbf{b}_z \in \mathbb{R}^{d_h}$: the same
+shapes as the recurrence in <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>.
+
+That leaves the candidate, and this is where the second gate comes in. In the LSTM, the candidate
+always read the whole previous state; the GRU puts a filter in front of it, the reset gate
+$\mathbf{r}_t$, which decides how much of that state the candidate gets to see:
+
+$$
+\mathbf{r}_t = \sigma\left(\mathbf{W}_{xr}\mathbf{x}_t + \mathbf{W}_{hr}\mathbf{h}_{t-1} + \mathbf{b}_r\right),
+\qquad
+\tilde{\mathbf{h}}_t = \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\left(\mathbf{r}_t \odot \mathbf{h}_{t-1}\right) + \mathbf{b}_h\right).
+$$
+
+That $\mathbf{r}_t \odot \mathbf{h}_{t-1}$ is the only thing that sets this candidate apart from a
+vanilla RNN step: with $\mathbf{r}_t = \mathbf{1}$ the candidate is exactly the recurrence from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>, and with
+$\mathbf{r}_t = \mathbf{0}$ it's computed from the token alone, as if the sequence started there.
+Keep the two gates apart: $\mathbf{z}_t$ decides whether the state gets updated, while $\mathbf{r}_t$
+decides what the candidate looks at when making its proposal. One governs the memory, the other the
+candidate.
+
+Here are the three pieces together, with $\mathbf{h}_0 = \mathbf{0}$ for the same reason as in the
+RNN and the LSTM:
+
+$$
+\begin{aligned}
+\mathbf{z}_t &= \sigma\left(\mathbf{W}_{xz}\mathbf{x}_t + \mathbf{W}_{hz}\mathbf{h}_{t-1} + \mathbf{b}_z\right), &
+\mathbf{r}_t &= \sigma\left(\mathbf{W}_{xr}\mathbf{x}_t + \mathbf{W}_{hr}\mathbf{h}_{t-1} + \mathbf{b}_r\right), \\
+\tilde{\mathbf{h}}_t &= \tanh\left(\mathbf{W}_{xh}\mathbf{x}_t + \mathbf{W}_{hh}\left(\mathbf{r}_t \odot \mathbf{h}_{t-1}\right) + \mathbf{b}_h\right), &
+\mathbf{h}_t &= (1 - \mathbf{z}_t) \odot \mathbf{h}_{t-1} + \mathbf{z}_t \odot \tilde{\mathbf{h}}_t.
+\end{aligned}
+$$
+
+<Figure
+  src="/courses/dl-nlp/gru-celda.svg"
+  alt='One step of a GRU. A green line, the hidden state, runs across the top from side to side: it enters as h sub t minus one, leaves as h sub t, and meets only two circles along the way, one for a product and one for a sum. Below it sit three small boxes labelled z, r, and h with a tilde. Box z feeds up through a "1 −" into the product circle on the green line, and a branch from it runs right to another product circle below the line, where it meets h with a tilde; only the output of that circle rises to the sum. Before the first circle, a dotted line carrying the previous state drops from the green line and feeds z and r, together with the vector of the token. Box h with a tilde does not read that line directly, but through a third product circle where r filters it. On the right there is no output gate and no tanh: the green line is both the memory and the output.'
+  caption="The four equations above, drawn out: the LSTM's green path, now travelled by the hidden state itself, which leaves on the right exactly as it is, with no output gate and no tanh. A single gate, z, controls it, keeping on one side through 1 − z and writing on the other; r never touches it, and only filters what the candidate reads from the past."
+/>
+
+Three pieces (two gates and a candidate), each with exactly the shape of the recurrence in <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>: six matrices and three biases, $3\left(d_h \cdot d_h + d_h \cdot d_{\text{model}} + d_h\right)$
+weights. That's three quarters of the LSTM's four groups; and as with the LSTM, $T$ appears in none
+of the shapes, so the GRU reads any length with a single set of weights.
+
+## Why the return path survives the cut
+
+The whole lesson hangs on one check: that the return path (the one the LSTM paid for, and whose
+necessity <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion> explained) is still standing with one state instead
+of two. Look at the last equation coordinate by coordinate, which is where the meaning of the
+$\odot$ becomes visible:
+
+$$
+h_{t,j} = (1 - z_{t,j})\,h_{t-1,j} + z_{t,j}\,\tilde{h}_{t,j}.
+$$
+
+Along this path, coordinate $j$ of the new state depends on coordinate $j$ of the old one and on no
+other: there's no matrix to mix them. Differentiating along the direct path while holding the gates
+and the candidate still (I'll come back to this),
+
+$$
+\frac{\partial h_{t,j}}{\partial h_{t-1,j}} = 1 - z_{t,j},
+$$
+
+a number, not a matrix. Chain it backwards to a distant step $k$, the way <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>
+chained the recurrence, and what arrives along the direct path is a product of those numbers:
+
+$$
+\frac{\partial \ell}{\partial h_{k,j}} = \left(\prod_{t=k+1}^{T}\left(1 - z_{t,j}\right)\right)\frac{\partial \ell}{\partial h_{T,j}} + \left(\text{what comes in through the gates}\right).
+$$
+
+It's the LSTM's $\prod f_{t,j}$ letter for letter, with $1 - z_{t,j}$ in place of $f_{t,j}$: the
+closed update gate ($z_{t,j} \to 0$) plays the role of the open forget gate. And the same thing holds
+as before ($1 - z_{t,j} = 1$ is reachable and stable, because a saturated sigmoid stays flat at its
+extreme), so a coordinate the network learns not to update multiplies by $1$ for as many steps as
+needed. Compared with the $\left(\gamma\,\sigma_{\max}\right)^{T-k}$ of <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>, the
+base is no longer a property of one matrix shared by everything; it's a number per coordinate and per
+step that the network computes.
+
+<Details summary='See what "holding the gates still" left out'>
+$\mathbf{z}_t$, $\mathbf{r}_t$ and $\tilde{\mathbf{h}}_t$ are computed from $\mathbf{h}_{t-1}$, so the
+full derivative adds, to the direct path's $1 - z_{t,j}$, the paths that run through the two gates
+and through the candidate. Every one of them crosses a $\mathbf{W}_{h\ast}$ and an activation mask,
+and they vanish the same way as the paths in <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>.
+
+Their vanishing breaks nothing, and the reasoning is the same as for the LSTM. Those paths adjust
+*how the decision is made* at each step, and a decision at this step relies on what's nearby; the
+gradient that has to arrive from far away travels the direct path, and that path crosses no matrix. The GRU doesn't eliminate the product from <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>: it moves it off the long path and leaves it on the short ones.
+</Details>
+
+Two concessions close the account, the same two as for the LSTM. If the network learns $z_{t,j}$
+around $0.3$, the product sinks as it did in the RNN, except that now it's because the network chose
+to, not because the architecture forces it. And explosion is still possible along the paths in the
+box above, so the GRU is trained with gradient clipping like everything before it. The additive path
+doesn't hand out a guarantee; it puts within reach an option that was out of reach before.
+
+## The GRU, step by step, in NumPy
+
+One cell. It transcribes the four-equation block and runs it on a short sequence with two different
+update-gate biases, to see how much of $\mathbf{h}_1$ reaches $\mathbf{h}_6$ along the direct path.
+
+Once again the weights come from a generator with a fixed seed and are untrained, so the gates don't
+mean anything yet. What I did set by hand is the bias $\mathbf{b}_z$: remember that keeping means
+$z \to 0$, so a negative bias is what nudges the network towards remembering (the mirror image of the
+LSTM's positive $\mathbf{b}_f$). Look at the last line of each block.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+d_model, d_h, T = 4, 3, 6
+X = np.random.default_rng(1).normal(size=(T, d_model)) * 0.5
+
+
+def sigmoid(z):
+    return 1.0 / (1.0 + np.exp(-z))
+
+
+def weights(update_bias):
+    rng = np.random.default_rng(0)                 # the same weights in both cases
+    return {k: (rng.normal(size=(d_h, d_model)) * 0.5,
+                rng.normal(size=(d_h, d_h)) * 0.5,
+                np.full(d_h, b))
+            for k, b in [("z", update_bias), ("r", 0.0), ("h", 0.0)]}
+
+
+def step(P, h, x):
+    def pre(k, state):
+        Wx, Wh, b = P[k]
+        return Wx @ x + Wh @ state + b
+    z = sigmoid(pre("z", h))
+    r = sigmoid(pre("r", h))
+    cand = np.tanh(pre("h", r * h))                # the candidate reads r (*) h_{t-1}
+    h = (1 - z) * h + z * cand                     # the additive path, tied
+    return h, z, r
+
+
+for bias in [0.0, -3.0]:
+    P = weights(bias)
+    h, kept = np.zeros(d_h), []
+    print("b_z = %.0f" % bias)
+    print("  t      z_t              r_t              h_t")
+    for t, x in enumerate(X, 1):
+        h, z, r = step(P, h, x)
+        kept.append(1 - z)
+        print("  %d  %s %s %s" % (t, np.round(z, 2), np.round(r, 2), np.round(h, 2)))
+    print("  what survives of h_1 in h_6:", np.round(np.prod(kept[1:], axis=0), 3))
+`} />
+
+Both gates live in $(0,1)$, and each coordinate gets its own value (where two print the same, they
+differ beyond the second decimal place). Compare the two blocks by their last lines. With
+$\mathbf{b}_z = 0$, the update gate hovers around $0.5$, half the state is replaced at every step,
+and about $3\%$ of $\mathbf{h}_1$ reaches $\mathbf{h}_6$; with $\mathbf{b}_z = -3$, it hovers around
+$0.05$, almost nothing gets updated, and $77\%$ survives, with the same weights and the same
+sequence. Hence the habit of initialising $\mathbf{b}_z$ to a negative value, for the same reason as
+a positive $\mathbf{b}_f$ in the LSTM: it's cheaper for the network to learn to write than to learn
+to remember. And notice the price of the shortcut: with $\mathbf{b}_z = -3$ the state barely moves
+($\mathbf{h}_t$ stays in the hundredths), because keeping and writing are the same control, and
+asking it to keep means asking it to barely write.
+
+## Test your intuition
+
+Four questions: what the update gate ties together and what it gives up, what the reset gate does
+without touching the memory, what the architecture costs, and what the GRU takes from the LSTM and
+what it leaves behind.
+
+<Quiz id="q-actualizacion" />
+
+<Quiz id="q-reset" />
+
+<Quiz id="q-parametros-gru" />
+
+<Quiz id="q-tradeoff" />
+
+And then the full step, written by you: the recurrence from <Leccion slug="la-rnn-vanilla">the vanilla RNN</Leccion> wrapped
+in two gates.
+
+<CodeChallenge id="ch-gru-paso" />
+
+---
+
+With the GRU and the LSTM, the block now has two ways of giving a network memory, and both rest on
+the same discovery: a path along which the state moves forward by adding, without crossing a matrix,
+is the only thing that lets the gradient come back from far away. But knowing how to build a cell
+isn't the same as having built something with it. In this entire block, no network has yet read a
+text from start to finish and produced language of its own: we've derived the machinery and never
+switched it on.
+
+Switching it on is the job of <Leccion slug="proyecto-char-lm">the next lesson, a project that builds a character-level language model</Leccion>.
+It combines the vanilla RNN and backpropagation through time (BPTT) in a network that trains on a few
+thousand characters and then generates new text, character by character. The result will be bad (and
+I won't sugar-coat it when it is), it will run in your browser in a few seconds, and it will be the
+first time in the course that something writes.

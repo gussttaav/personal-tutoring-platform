@@ -87,6 +87,7 @@ reading:
     url: "https://arxiv.org/abs/2312.10997"
     note: "La panorámica que popularizó la división en RAG ingenuo, avanzado y modular. Sirve como mapa de técnicas; la figura 3 compara las tres arquitecturas."
 tags: ["rag", "llm", "agentes"]
+aiImages: true
 ---
 
 {/*
@@ -502,6 +503,10 @@ específicamente para llamar herramientas; con eso el bucle ha dejado de ser un 
 se ha convertido en la forma normal de construir un asistente. Es el mismo bucle que el de cualquier
 agente, y el [curso de modelos de lenguaje y agentes](/cursos/llm-agents) lo construye pieza a
 pieza. Aquí interesa lo que cambia cuando la herramienta es un buscador.
+
+En este artículo, «agente» no significa que el sistema haga cosas en el mundo, como emitir un
+reembolso o mandar un correo: significa que el modelo decide los pasos. El asistente de Albarán sólo
+lee, y aun así es un agente en ese sentido.
 
 Escrito como código, al lado de las dos líneas de antes:
 

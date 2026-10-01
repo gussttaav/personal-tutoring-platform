@@ -1,4 +1,8 @@
 // ARCH-13: Email client interface — enables testing BookingService with mocks.
+// REFACTOR-R4-P3-03: sendPaymentAuditReport — the booking-payment audit's findings, to the
+// tutor (NOTIFY_EMAIL, Spanish).
+import type { PaymentAuditReport } from "@/domain/types";
+
 export interface ConfirmationEmailParams {
   to:           string;
   studentName:  string;
@@ -59,4 +63,5 @@ export interface IEmailClient {
   sendCancellationConfirmation(params: CancellationConfirmationParams): Promise<void>;
   sendCancellationNotification(params: CancellationNotificationParams): Promise<void>;
   sendContentReportNotification(params: ContentReportNotificationParams): Promise<void>;
+  sendPaymentAuditReport(report: PaymentAuditReport): Promise<void>;
 }
