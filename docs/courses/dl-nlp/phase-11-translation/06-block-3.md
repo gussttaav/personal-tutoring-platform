@@ -1,6 +1,6 @@
 # P11-06 — Block 3: Recurrent Neural Networks
 
-**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.7 done)
+**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** ✅ done (3.1–3.8, reviewed)
 
 ## TL;DR
 
@@ -260,9 +260,9 @@ under "From 3.5" below. Line refs are to the fixed file.*
   (227) — so neither cell is Spanish-dependent and both the loss curve and the accuracy-by-length
   table hold unchanged. Identifiers `paso`, `pesos`, `escribe`, `suave`, `ej`, `ac`, `bien`, `tot`;
   Spanish prints (284, 310, 314–315, 319, 325).
-- **`<Figure>` `encoder-decoder.svg`** (94–98): Spanish `alt` and `caption`, but **the SVG's own
-  labels are already English or symbolic** (`encoder`, `decoder`, `c`, `GO`) — the asset is reused
-  unchanged.
+- **`<Figure>` `encoder-decoder.svg`** (94–98): Spanish `alt` and `caption`. The labels are mostly
+  English or symbolic (`encoder`, `decoder`, `c`, `GO`), **but the note under `c` reads `d_h
+  números`**, so the asset needed an English sibling after all (see "From 3.8").
 - **`<Leccion ancla="">`: 0** (12 refs). **`reading`:** 2 (54–69), both `lang: en`, Spanish notes.
 - **`<W>`: 7** — `roma` ×3, `amor` ×2, `a`, `r`.
 
@@ -302,7 +302,7 @@ English 3.2 takes `en/18`'s pair and its `0.0002` (see the English notes under 3
 - [x] 3.5 `lstm`
 - [x] 3.6 `gru`
 - [x] 3.7 `proyecto-char-lm`
-- [ ] 3.8 `seq2seq`
+- [x] 3.8 `seq2seq`
 
 ## Decisions fixed by a translated lesson
 
@@ -477,6 +477,33 @@ Reuse these verbatim; they are settled, not open.
 - **A runtime-fetched data file gets an `.en` sibling** (now in `AUTHORING.en.md` §7).
 - **Spanish nit, not fixed:** `es/25` says the loss settles «hasta rondar 2.5», but Pyodide prints
   `2.593` there.
+
+**From 3.8** (`en/26-seq2seq.mdx`):
+
+- **The reversal pair is <W>live</W> → <W>evil</W>**, and the letters named are <W>e</W> (the
+  output's first) and <W>l</W> (its last). Chosen over <W>stressed</W>/<W>desserts</W> because no
+  letter repeats, so "the output's first letter is the input's last" has one reading. Now a rule in
+  `AUTHORING.en.md` §3.
+- **`encoder-decoder.en.svg`** carries `d_h numbers` (measured: x 137.7–192.4 in the 360 `viewBox`),
+  with its `aria-label` and comments translated. Both SVGs now draw the encoder states with the bar
+  ($\bar{h}$) the notation requires; they were plain `h` while the Spanish `alt` claimed a bar.
+- **`<GO>` is `<W>\<GO></W>` in prose**, glossed once as "the symbol the decoder starts from"; code
+  keeps `GO = 6`. The Spanish now does the same («el símbolo de arranque»), and `dl-nlp/AUTHORING.md`'s
+  `<GO>` paragraph says so.
+- **The opening drops translation from its examples** (headline, typos, a date in words to digits),
+  because `en/25`'s bridge already names a Spanish/English sentence pair.
+- **The loss echo is $\ln 26$, not $\ln 32$**: the English previous lesson's corpus has 26 characters.
+- **Code names:** `paso` → `train_step` (`step` is the recurrence step), `pesos` → `weights`, `suave`
+  → `smooth`, `escribe` → `write`, `ent` → `dec_in`, `n_sim` → `n_sym`, `ej`/`ac` →
+  `rng_ex`/`rng_acc`, `bien`/`tot` → `right`/`total`, `s_ant`/`h_ant` → `s_prev`/`h_prev`.
+- **Printed in Pyodide and quoted**, identical to the Spanish cell: loss `1.805` → `0.753`; accuracy
+  95 / 87 / 76 / 66 / 59 / 55 % for lengths 3–8; the 3- and 4-letter examples exact, the 8- and
+  12-letter ones right at the start and wrong at the end.
+- **Spanish errors fixed in `es/26`** (same commit): `q-dos-redes` (c) gave Block 2's MLP classifier a
+  «último estado» (now «el clasificador recurrente de este bloque»); BPTT was no longer expanded on
+  first use and the bridge said «el backpropagation»; the «allí» at line 186 had lost its referent;
+  GO was bare in prose; **sólo** and **sin término de salida** were bold for emphasis; and the `alt`
+  had dropped four accents.
 
 ## Two things to watch
 

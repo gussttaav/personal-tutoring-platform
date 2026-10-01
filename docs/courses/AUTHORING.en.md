@@ -152,6 +152,13 @@ plural subject has to survive: the contrast the example rests on is gone for the
 plural. Pick a noun that is only ever singular (*mayor*, *square*). *Settled by `en/23-lstm.mdx`
 (COURSE-P11-06).*
 
+**A reversal example is two real words with no repeated letter.** A lesson that reverses a string
+names letters by position (the output's first letter is the input's last), and a repeated letter
+makes that ambiguous: in <W>stressed</W> / <W>desserts</W> the <W>s</W> the decoder must "remember
+from the start" also sits in the middle. So the pair is chosen, not translated, and its letters are
+all distinct: <W>live</W> / <W>evil</W> for the Spanish <W>roma</W> / <W>amor</W>. *Settled by
+`en/26-seq2seq.mdx` (COURSE-P11-06).*
+
 ## 4. §2 — capitalisation of blocks and lessons
 
 The rule that is not in §5. `AUTHORING.md` §2 keeps *el bloque 2* and *la lección 3* lowercase
