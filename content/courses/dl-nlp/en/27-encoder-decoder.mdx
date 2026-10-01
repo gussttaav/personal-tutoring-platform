@@ -1,0 +1,416 @@
+---
+slug: encoder-decoder
+title: "The encoder-decoder architecture"
+block: 4
+order: 1
+minutes: 26
+summary: "The previous lesson's two-network architecture, put to a real task: translation. Two vocabularies appear instead of one, an end-of-sequence token that the model itself predicts to decide where its output ends, and the reading the rest of the block rests on: the decoder doesn't return a translation, it defines a probability over all of them (a product of distributions, one per step), and generating is walking that product greedily. A toy Spanish-to-English translator, trained in the browser, writes sentences of a different length from its input, with the adjective moved."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-eos
+    type: single
+    prompt: 'The previous lesson''s model generated with a fixed-length loop: it wrote as many tokens as the input had. Why doesn''t that loop work for translation?'
+    options:
+      - { id: a, text: 'Because the length of the translation isn''t a function of the length of the input (it can be longer, shorter or the same) and nothing knows it before it''s written. The end has to be something the model predicts: one more entry of $V_y$, <W>\<EOS></W>, coming out of the same softmax as all the others.' }
+      - { id: b, text: 'Because translating always lengthens the sentence, so the loop would have to write exactly one token more than the input.' }
+      - { id: c, text: 'Because the decoder doesn''t know how many tokens the encoder read: that information doesn''t travel inside $\mathbf{c}$.' }
+      - { id: d, text: 'Because the length is set by the output vocabulary: a sentence can''t have more tokens than $V_y$ has entries.' }
+    answer: a
+    explanation: '(a) is the whole argument, and it''s where <W>\<EOS></W> comes from. (b) is the good trap: in this lesson''s toy language the output really does always run one longer than the input, because its grammar forces it to; read a rule into that and the first real sentence breaks it, since English shortens a sentence as readily as it lengthens one. (c) mistakes the problem: the number of tokens read fits in $\mathbf{c}$ with room to spare, and even if it fitted whole it wouldn''t say how many to write. (d) describes nothing: $\lvert V_y \rvert$ counts distinct entries, not positions in a sentence.'
+    hint: 'Before a translation is written, is there anything that knows how many tokens it will have?'
+  - id: q-factorizacion
+    type: single
+    prompt: 'Which of these expressions is the one the decoder defines?'
+    options:
+      - { id: a, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$: one factor per position, and each factor looks at what''s already been written and at the summary of the input.' }
+      - { id: b, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid \mathbf{c})$: one factor per position, each independent of what''s already been written.' }
+      - { id: c, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \sum_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$: the sum of the probabilities of each position.' }
+      - { id: d, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \max_i P(y_i \mid y_{<i}, \mathbf{c})$: the probability of the sentence is that of its most confident token.' }
+    answer: a
+    explanation: '(a) is the chain rule of probability applied to the sequence, with the substitution this architecture makes: each step conditions on the prefix $y_{<i}$ (which travels inside $\mathbf{s}_{i-1}$) and on $\mathbf{c}$, never on the input directly. (b) erases the prefix, and with it the only reason the decoder is recurrent: if each position were independent of the earlier ones, nothing would stop it writing the same token five times. (c) adds up probabilities of things that aren''t alternatives to one another; the result can pass $1$ as soon as the sentence has three tokens. (d) is a maximum, not a joint probability.'
+    hint: 'What does the decoder see at step $i$? Two things: what it has already written, and the summary.'
+  - id: q-voraz-no-optimo
+    type: boolean
+    prompt: 'Taking the most probable token at each step always produces the most probable sequence.'
+    answer: false
+    explanation: 'False, and the counterexample fits in two steps. If the first step splits $0.6$ and $0.4$, greedy decoding keeps the $0.6$; but if that branch continues with at most $0.5$ and the other with $0.9$, the paths are worth $0.6 \cdot 0.5 = 0.30$ and $0.4 \cdot 0.9 = 0.36$, and the winner is the one greedy decoding threw away at the first step. The maximum of a product isn''t the product of the maxima: a bad decision early on is paid for later, and the greedy algorithm never looks at it again. Searching every path for real costs $\lvert V_y \rvert^{T_y}$ and isn''t done; there are intermediate searches (the usual one is *beam search*) that this course doesn''t cover.'
+    hint: 'Write down two paths of two steps each and multiply.'
+  - id: q-aprende-a-parar
+    type: single
+    prompt: 'The decoder ends up writing <W>\<EOS></W> in the right position, neither earlier nor later. Where does that ability come from?'
+    options:
+      - { id: a, text: 'From the loss: <W>\<EOS></W> goes at the end of every translation in training, so that last position contributes its own cross-entropy term, and descent pushes the probability of <W>\<EOS></W> up exactly there, and down at the earlier positions.' }
+      - { id: b, text: 'From the generation loop, which cuts off at `max_len` tokens.' }
+      - { id: c, text: 'From a threshold: when the probability of the most probable token drops below some value, the decoder stops.' }
+      - { id: d, text: 'From the encoder, which stores in $\mathbf{c}$ the length the output will have.' }
+    answer: a
+    explanation: '(a): <W>\<EOS></W> is an entry of $V_y$ like <W>book</W> or <W>red</W>, and it''s learned the same way they are, with the same cross-entropy as in <Leccion slug="seq2seq">the lesson on sequence-to-sequence models</Leccion>. Predicting the end is predicting one more token. (b) describes the code''s safety net, not what was learned: if the model never wrote <W>\<EOS></W>, `max_len` would prevent an infinite loop and the output would be garbage all the same. (c) invents a mechanism that isn''t in any equation in the lesson. (d) is tempting because $\mathbf{c}$ does condition everything the decoder writes, but there''s no number in it marked "length": the length is a consequence of where <W>\<EOS></W> wins.'
+    hint: 'Which positions contribute a term to the loss, and which symbol occupies the last one?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation'
+    authors: 'Cho, van Merriënboer, Gulcehre, Bahdanau and others'
+    year: '2014'
+    venue: 'arXiv:1406.1078'
+    lang: en
+    url: 'https://arxiv.org/abs/1406.1078'
+    note: 'Its §2 writes the factorisation the block rests on: P(y|x) as a product of P(y_i | the prefix, c), with c the encoder''s last state, and the end-of-sequence token. Its decoder feeds c back in at every step; yours only starts from it.'
+  - kind: libro
+    title: 'Speech and Language Processing, ch. 13: Machine Translation'
+    authors: 'Jurafsky and Martin'
+    year: '3rd ed., free draft'
+    venue: 'stanford.edu'
+    lang: en
+    url: 'https://web.stanford.edu/~jurafsky/slp3/13.pdf'
+    note: 'Its §13.4 is the greedy decoding and beam search this lesson names without developing; it also covers teacher forcing and the cross-entropy. A warning: the chapter already tells it on a Transformer, not an RNN.'
+---
+
+{/* COURSE-P5-04: Block 4, Lesson 1. COURSE-P11-07: English translation. */}
+
+This block starts with the architecture already built. The previous lesson, on sequence-to-sequence
+models, chained two networks (one that reads the input and summarises it in a vector, another that
+writes the output from that summary) and trained them end to end on a toy task. What this block
+examines closely is the point where the two meet. But first the task has to change, because that toy
+let the architecture off three things, and translation lets it off none.
+
+Look at a sentence and its translation. The source is Spanish, and you don't need to read Spanish to
+follow it, because its words line up with the English ones: <W>ayer</W> is <W>yesterday</W>,
+<W>leí</W> is <W>i read</W>, <W>un libro</W> is <W>a book</W> and <W>muy bueno</W> is <W>very
+good</W>. So <W>ayer leí un libro muy bueno</W> becomes <W>yesterday i read a very good book</W>. Six
+tokens go in and seven come out, and the extra one is <W>i</W>, a pronoun that appears nowhere in
+the input (Spanish carries it inside the verb's ending, and English has to write it separately).
+<W>muy bueno</W>, which in Spanish comes after the noun, moves in front of it in English. And this
+isn't *the* translation, only one: <W>yesterday i read a really good book</W> works equally well. A
+different length, a different order, and no single right answer. That's three things.
+
+All three have the same shape: the toy task answered, on the model's behalf, questions that a real
+task makes it answer for itself.
+
+The first is the vocabulary. When the output is written with the same symbols as the input there's a
+single vocabulary, and each of its entries serves as well for reading as for writing. Translation
+needs two, from different languages and of different sizes: the <W>libro</W> that goes in and the
+<W>book</W> that comes out are not the same entry of the same table, and the decoder never has to
+produce a Spanish word.
+
+The second is the length, and it's the one that costs most. A loop that writes as many tokens as the
+input had works as long as the task guarantees that input and output measure the same; as soon as it
+doesn't, the length of the output stops being given and becomes an unknown. It has to come from
+somewhere, and the only place available is the model itself: the output vocabulary gains a token
+that means the sentence is over, and writing it is what stops generation.
+
+The third changes what there is to read in the decoder's output. If a sentence admits several
+acceptable translations, pointing at one token isn't the honest answer; spreading probability across
+all of them is. And the decoder already did that (a distribution hangs off each state, not a token),
+so what changes isn't the network but what its output means: at each step, a column of probabilities
+over the output vocabulary, and the sentence it writes is a path through those columns.
+
+<Figure
+  src="/courses/dl-nlp/decodificacion-voraz.en.svg"
+  alt="Five columns, one per decoder step, each with three candidate tokens and a bar proportional to its probability. In the first column i wins with 0.94, ahead of read and sell. In the second sell wins with 0.88, ahead of read and new. In the third new wins with 0.71, followed by cars with 0.21 and red with 0.08: it is the least decided of the five columns. In the fourth cars wins with 0.85, ahead of books and new. In the fifth the end-of-sequence token, EOS, wins with 0.96. Below them all, the product of the five winning probabilities: 0.94 times 0.88 times 0.71 times 0.85 times 0.96 equals 0.48."
+  caption='Translating "vendo coches nuevos" (I sell new cars). The loop does not set the length of the output: the column where "<EOS>" wins does. I set the probabilities by hand for the drawing.'
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+The decoder doesn't return a translation: it defines a probability over every possible translation,
+as a product of distributions (one per step), and generating means walking that product until the
+model itself writes the end-of-sequence token.
+</Callout>
+
+## Two vocabularies and an output that stops on its own
+
+Fix the two vocabularies: $V_x$ for the input and $V_y$ for the output. The input is a sequence of
+tokens $x_{1:T_x}$, each $x_j$ an entry of $V_x$; the output is another, $y_{1:T_y}$, over $V_y$, and
+the two lengths are independent. The encoder changes nothing from the previous lesson: it reads the
+input from start to finish with the usual recurrence and hands over its last state,
+
+$$
+\bar{\mathbf{h}}_j = \tanh\left(\mathbf{W}^{\text{enc}}_{xh}\mathbf{o}_{x_j} + \mathbf{W}^{\text{enc}}_{hh}\bar{\mathbf{h}}_{j-1} + \mathbf{b}^{\text{enc}}_h\right),
+\qquad
+\mathbf{c} = \bar{\mathbf{h}}_{T_x} \in \mathbb{R}^{d_h},
+$$
+
+where $\mathbf{o}_{x_j} \in \{0,1\}^{\lvert V_x \rvert}$ is the one-hot vector of the $j$-th token and
+$\mathbf{W}^{\text{enc}}_{xh} \in \mathbb{R}^{d_h \times \lvert V_x \rvert}$ has one column for each
+entry of $V_x$. The decoder doesn't change its recurrence either, and it starts where the encoder
+finished, $\mathbf{s}_0 = \mathbf{c}$. What changes is its output, which now lives in the other
+language:
+
+$$
+\hat{\mathbf{y}}_i = \text{softmax}\left(\mathbf{W}_{hy}\mathbf{s}_i + \mathbf{b}_y\right) \in \mathbb{R}^{\lvert V_y \rvert},
+$$
+
+with $\mathbf{W}_{hy} \in \mathbb{R}^{\lvert V_y \rvert \times d_h}$: one row for each entry of
+$V_y$, and it's the only shape in the model that knows how many entries the target language has.
+Nothing requires $\lvert V_x \rvert$ and $\lvert V_y \rvert$ to be alike.
+
+### Where the end of the sentence lives
+
+Now for the missing token. To $V_y$, and only to $V_y$, we add one more entry, <W>\<EOS></W>, the
+end-of-sequence token, and every translation in training ends with it: if the correct output has $n$
+tokens, the training sequence has $T_y = n + 1$ and its last token is $y_{T_y} = \texttt{<EOS>}$.
+The loss is the one from <Leccion slug="seq2seq">the lesson on sequence-to-sequence models</Leccion>,
+without a line changed,
+
+$$
+\ell = \frac{1}{T_y}\sum_{i=1}^{T_y} -\log \hat{y}_{i,\,y_i},
+$$
+
+and that piece of bookkeeping is the whole mechanism: since the last position is inside the sum, it
+contributes its own term, and gradient descent pushes the probability of <W>\<EOS></W> up exactly
+there (and, by the same route, down at the earlier positions, where the correct token is a different
+one). Learning to stop is learning to predict one more token.
+
+The consequence is the one that was needed: $T_y$ is no longer something the loop is handed, but
+something that comes out of the model. When generating, the model writes token by token and stops
+when the one it picks is <W>\<EOS></W>. The code will also have a cap, `max_len`, so that a badly
+trained model doesn't write forever; it's a safety net in the implementation, not part of the model,
+and the two are worth keeping apart.
+
+## The decoder defines a distribution over translations
+
+We can write any distribution over sequences, assuming nothing at all, as a product of distributions
+over one token each. It's the chain rule of probability, applied position by position:
+
+$$
+P\left(y_{1:T_y} \mid x_{1:T_x}\right) = \prod_{i=1}^{T_y} P\left(y_i \mid y_{<i},\, x_{1:T_x}\right),
+$$
+
+where $y_{<i}$ is the prefix $y_1, \dots, y_{i-1}$, what has already been written before step $i$.
+So far there's no architecture at all: the equality holds for any way of assigning probabilities to
+sequences. The architecture comes in when it says *what* each factor looks at, and what the
+encoder-decoder says is this:
+
+$$
+P\left(y_i \mid y_{<i},\, x_{1:T_x}\right) = P\left(y_i \mid y_{<i},\, \mathbf{c}\right).
+$$
+
+Read it slowly, because the whole block lives off it. On the left, step $i$ could look at the entire
+input; on the right, it looks at one vector. Each of the two conditioning terms on the right sits in
+a specific place in the model: $\mathbf{c}$ is the initial state $\mathbf{s}_0$, and the prefix
+$y_{<i}$ comes in fed back token by token, so both reach step $i$ summarised in $\mathbf{s}_{i-1}$.
+And the factor's probabilities are the coordinates we already computed:
+$P(y_i = k \mid y_{<i}, \mathbf{c}) = \hat{y}_{i,k}$.
+
+<Callout type="warning" title="An equality that is an assumption">
+The first equation in this section is a mathematical identity; the second isn't. The second asserts
+that everything the input has to say about any position of the output fits in $\mathbf{c}$, whether
+the input runs to three tokens or to thirty.
+</Callout>
+
+### Generating is walking the product
+
+Writing a translation is choosing a path through those columns. The cheapest path of all takes the
+largest coordinate at each step,
+
+$$
+y_i = \arg\max_{k \in V_y} \hat{y}_{i,k},
+$$
+
+feeds the chosen token back in and carries on until <W>\<EOS></W>. That's greedy decoding, the same
+as in <Leccion slug="proyecto-char-lm">the lesson on the character-level language model</Leccion>,
+and it costs one step per output token.
+
+The concession is that this path isn't, in general, the most probable one. Nothing guarantees that
+the product of the maxima is the maximum of the products: a token that wins its column narrowly can
+leave the decoder in a state from which everything that follows is bad, and greedy decoding never
+goes back over that decision. Really searching for the best path would mean scoring
+$\lvert V_y \rvert^{T_y}$ sentences, and nobody does that; between greedy and exhaustive there are
+intermediate searches (the usual one is *beam search*) that this course doesn't cover.
+
+<Details summary="See a case where greedy decoding loses">
+Two possible tokens at the first step, with probabilities $0.6$ and $0.4$ (I'm making the numbers
+up, and only four are needed). Greedy decoding keeps the $0.6$. Suppose that from that branch the
+best continuation is worth $0.5$, and that from the other it's worth $0.9$. Then the two complete
+paths are worth
+
+$$
+0.6 \cdot 0.5 = 0.30
+\qquad\text{and}\qquad
+0.4 \cdot 0.9 = 0.36,
+$$
+
+and the better one is the one greedy decoding threw away at the first step, when it still had no way
+of knowing what came next. With more steps the effect compounds, which is why real translation
+systems don't decode this way.
+</Details>
+
+## A toy translator in NumPy
+
+Now to train a tiny translator: a toy language with six Spanish words and another with seven English
+ones. It's a toy on purpose (real machine translation doesn't fit in the browser), but it has the
+three things this lesson has put on the table: two different vocabularies, an output whose length the
+model decides, and a reordering that forces it to wait. The Spanish sentences are verb + noun + an
+optional adjective, and their translation puts an <W>i</W> at the front and moves the adjective ahead
+of the noun. Each Spanish word sits beside its English one in the cell's `TO_EN`, so you can read
+both sides of every pair. Run the cell and look at the pairs.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Toy language. Two different vocabularies: one to read, one to write.
+VX = ["leo", "vendo", "libros", "coches", "rojos", "nuevos"]            # V_x, the input
+VY = ["i", "read", "sell", "red", "new", "books", "cars", "<EOS>"]      # V_y, the output
+TO_EN = {"leo": "read", "vendo": "sell", "libros": "books",
+         "coches": "cars", "rojos": "red", "nuevos": "new"}
+EOS = VY.index("<EOS>")            # the end of the sequence is one more entry of V_y
+GO = len(VY)                       # start: it only enters the decoder, never predicted
+nx, ny = len(VX), len(VY)
+
+data_rng = np.random.default_rng(0)   # fixed seed: you'll see these sentences
+
+
+def sentence():                    # a Spanish sentence and its translation, as indices
+    es = [VX[data_rng.integers(0, 2)], VX[data_rng.integers(2, 4)]]  # verb + noun
+    if data_rng.random() < 0.67:
+        es.append(VX[data_rng.integers(4, 6)])                       # ... + adjective, sometimes
+    en = ["i", TO_EN[es[0]]] + [TO_EN[w] for w in es[2:]] + [TO_EN[es[1]]]   # the adjective moves forward
+    return [VX.index(w) for w in es], [VY.index(w) for w in en] + [EOS]
+
+
+print("sentence               translation + <EOS>             T_x  T_y")
+for _ in range(5):
+    x, y = sentence()
+    print("  %-20s %-30s %3d %4d" % (
+        " ".join(VX[i] for i in x), " ".join(VY[i] for i in y),
+        len(x), len(y)))
+`} />
+
+Compare the two columns on the right. The translation has one word more than the sentence (that
+<W>i</W> Spanish doesn't write), and the sequence the decoder has to produce has one more still,
+because <W>\<EOS></W> takes up a position like any other token and has to be predicted too:
+$T_y = T_x + 2$. There are twelve possible sentences in all, so this model isn't going to learn
+Spanish: it's going to learn those twelve. What's on trial is the mechanism, not the translator.
+
+The next cell builds the two networks and trains them. The function `train_step` is the previous
+lesson's, line for line: the encoder's forward pass, the decoder's forward pass with *teacher
+forcing*, the decoder's backward pass and, hanging off the gradient at $\mathbf{c}$, the encoder's.
+The only things that change are the two vocabularies (`nx` columns at the input, `ny` rows at the
+output) and the <W>\<EOS></W> that `sentence` already put at the end of every translation.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Needs the previous cell: VX, VY, EOS, GO, nx, ny, sentence.
+d_h, eta, kappa, iters = 64, 0.30, 5.0, 1200
+init_rng = np.random.default_rng(1); sc = 0.1                  # its own generator: independent of sentence
+Wxh_e = init_rng.normal(size=(d_h, nx)) * sc; Whh_e = init_rng.normal(size=(d_h, d_h)) * sc; bh_e = np.zeros(d_h)
+Wxh_d = init_rng.normal(size=(d_h, ny + 1)) * sc; Whh_d = init_rng.normal(size=(d_h, d_h)) * sc; bh_d = np.zeros(d_h)
+Why = init_rng.normal(size=(ny, d_h)) * sc; by = np.zeros(ny)  # ny rows: one per entry of V_y
+weights = [Wxh_e, Whh_e, bh_e, Wxh_d, Whh_d, bh_d, Why, by]
+
+
+def train_step(x, y):                                  # x over V_x; y over V_y, with <EOS> at the end
+    Lx, Ly = len(x), len(y)
+    He = np.zeros((d_h, Lx)); h = np.zeros(d_h)        # --- encoder: reads and summarises ---
+    for j in range(Lx):
+        h = np.tanh(Wxh_e[:, x[j]] + Whh_e @ h + bh_e); He[:, j] = h
+    c = h                                              # context vector: the last state
+    dec_in = np.concatenate(([GO], y[:-1]))            # teacher forcing: GO, y1, ..., y_{Ty-1}
+    S = np.zeros((d_h, Ly)); P = np.zeros((ny, Ly)); s = c.copy(); loss = 0.0
+    for i in range(Ly):                                # --- decoder: writes from c ---
+        s = np.tanh(Wxh_d[:, dec_in[i]] + Whh_d @ s + bh_d); S[:, i] = s
+        o = Why @ s + by; o -= o.max(); p = np.exp(o); p /= p.sum(); P[:, i] = p
+        loss -= np.log(p[y[i]] + 1e-12)
+    gWhy = np.zeros_like(Why); gby = np.zeros_like(by)  # --- decoder backward pass ---
+    gWxh_d = np.zeros_like(Wxh_d); gWhh_d = np.zeros_like(Whh_d); gbh_d = np.zeros_like(bh_d)
+    ds = np.zeros(d_h)
+    for i in reversed(range(Ly)):
+        dO = P[:, i].copy(); dO[y[i]] -= 1.0
+        gWhy += np.outer(dO, S[:, i]); gby += dO
+        dp = (1 - S[:, i] ** 2) * (Why.T @ dO + ds)
+        s_prev = S[:, i - 1] if i > 0 else c
+        gWhh_d += np.outer(dp, s_prev); gWxh_d[:, dec_in[i]] += dp; gbh_d += dp
+        ds = Whh_d.T @ dp
+    gWxh_e = np.zeros_like(Wxh_e); gWhh_e = np.zeros_like(Whh_e); gbh_e = np.zeros_like(bh_e)
+    dh = ds                                            # the only link: the gradient at c
+    for j in reversed(range(Lx)):                      # --- encoder backward pass ---
+        dp = (1 - He[:, j] ** 2) * dh
+        h_prev = He[:, j - 1] if j > 0 else np.zeros(d_h)
+        gWhh_e += np.outer(dp, h_prev); gWxh_e[:, x[j]] += dp; gbh_e += dp
+        dh = Whh_e.T @ dp
+    return loss / Ly, [g / Ly for g in (gWxh_e, gWhh_e, gbh_e, gWxh_d, gWhh_d, gbh_d, gWhy, gby)]
+
+
+smooth = None
+for it in range(iters):
+    x, y = sentence()
+    loss, grads = train_step(x, y)
+    for g in grads:
+        nrm = np.linalg.norm(g)
+        if nrm > kappa: g *= kappa / nrm               # gradient clipping, from the previous block
+    for Pm, g in zip(weights, grads):
+        Pm -= eta * g
+    smooth = loss if smooth is None else 0.99 * smooth + 0.01 * loss
+    if it % 300 == 0 or it == iters - 1:
+        print("iter %4d   loss/token %.3f" % (it, smooth))
+`} />
+
+The loss starts near $\ln 8 \approx 2.08$ (the probability spread evenly over the eight entries of
+$V_y$, counting <W>\<EOS></W>) and falls until it nearly touches zero. Now for the part that matters:
+generating. The loop below isn't given the length of the output anywhere; it writes, checks whether
+what it wrote is <W>\<EOS></W> and, if it is, stops. `max_len` is there only for safety.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# Needs the previous cells: the trained weights, VX, VY, TO_EN, EOS, GO.
+def translate(x, max_len=8):                           # nobody tells it how many tokens to write
+    h = np.zeros(d_h)
+    for j in range(len(x)):                            # the encoder reads the whole sentence
+        h = np.tanh(Wxh_e[:, x[j]] + Whh_e @ h + bh_e)
+    s = h; ix = GO; out = []
+    for _ in range(max_len):
+        s = np.tanh(Wxh_d[:, ix] + Whh_d @ s + bh_d)
+        ix = int((Why @ s + by).argmax())              # the most probable: greedy decoding
+        if ix == EOS:                                  # the model says it has finished
+            break
+        out.append(ix)
+    return out
+
+
+examples = [["leo", "libros"], ["vendo", "coches"], ["leo", "coches", "rojos"],
+            ["vendo", "libros", "nuevos"], ["vendo", "libros"], ["leo", "coches", "nuevos"]]
+print("sentence               translation               in   out")
+for es in examples:
+    got = translate([VX.index(w) for w in es])
+    want = ["i", TO_EN[es[0]]] + [TO_EN[w] for w in es[2:]] + [TO_EN[es[1]]]
+    print("  %-20s %-24s %3d %5d   %s" % (
+        " ".join(es), " ".join(VY[i] for i in got), len(es), len(got),
+        "OK" if [VY[i] for i in got] == want else "X"))
+`} />
+
+Two things in that table. The length columns: two or three tokens go in and three or four come out,
+always one more, and that number was decided by the model when it placed <W>\<EOS></W> (there's no
+`range(len(x))` anywhere in the loop). And the order: when the sentence has an adjective, the model
+writes it *before* the noun, even though it read it after. To do that it had to hold on to the noun
+while it wrote the adjective, and all it had to hold it with was $\mathbf{c}$.
+
+## Test your intuition
+
+Four questions: why an end-of-sequence token is needed, exactly what distribution the decoder
+defines, whether greedy decoding is optimal, and where the ability to stop in the right place comes
+from.
+
+<Quiz id="q-por-que-eos" />
+
+<Quiz id="q-factorizacion" />
+
+<Quiz id="q-voraz-no-optimo" />
+
+<Quiz id="q-aprende-a-parar" />
+
+---
+
+The architecture is now stated precisely, and that precision brings an uncomfortable line into view:
+$P(y_i \mid y_{<i}, x_{1:T_x}) = P(y_i \mid y_{<i}, \mathbf{c})$. The equality isn't a theorem, it's
+a design decision, and it claims something strong: that $d_h$ numbers are enough for everything the
+input has to contribute to any position of the output. In a three-token toy nobody would notice. The
+question is what happens to that claim when the input is a real sentence.
+
+That question has an answer you can measure, and it's <Leccion slug="el-cuello-de-botella">the next
+lesson, on the context-vector bottleneck</Leccion>. There the input keeps getting longer while you
+watch what happens to the output, until you see where the equality above stops holding, and why the
+place where it breaks doesn't depend on how much you train.

@@ -159,6 +159,17 @@ from the start" also sits in the middle. So the pair is chosen, not translated, 
 all distinct: <W>live</W> / <W>evil</W> for the Spanish <W>roma</W> / <W>amor</W>. *Settled by
 `en/26-seq2seq.mdx` (COURSE-P11-06).*
 
+**Block 4's language pair stays Spanish→English, and its Spanish is glossed, not translated.** The
+block is about translation, so one side of every example is a language other than English whichever
+way it runs; keeping the source Spanish leaves English on the side the reader has to judge (the
+output, whether a second translation is also acceptable, the toy translator's OK column) and moves
+none of the block's numbers. The Spanish words are things to point at: the paragraph that introduces
+a pair glosses it word by word the first time (<W>ayer</W> is <W>yesterday</W>, <W>leí</W> is
+<W>i read</W>), and what the English side cannot show, Spanish carrying the pronoun inside the verb,
+is told in a clause. The summary rule above does not apply where the pair is the lesson's subject: "a
+toy Spanish-to-English translator" keeps its adjective. *Settled by `en/27-encoder-decoder.mdx`
+(COURSE-P11-07).*
+
 ## 4. §2 — capitalisation of blocks and lessons
 
 The rule that is not in §5. `AUTHORING.md` §2 keeps *el bloque 2* and *la lección 3* lowercase

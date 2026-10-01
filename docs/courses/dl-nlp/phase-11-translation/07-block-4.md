@@ -1,6 +1,6 @@
 # P11-07 — Block 4: The Bridge to Attention
 
-**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** not started
+**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1 done)
 
 ## TL;DR
 
@@ -235,14 +235,62 @@ concentrated in **4.1 and 4.3**, and both of them spend it on the same decision.
 
 ## Lesson progress
 
-- [ ] 4.1 `encoder-decoder`
+- [x] 4.1 `encoder-decoder`
 - [ ] 4.2 `el-cuello-de-botella`
 - [ ] 4.3 `la-idea-de-atencion`
 - [ ] 4.4 `bahdanau`
 - [ ] 4.5 `luong`
 - [ ] 4.6 `atencion-como-consulta`
 
+## Decisions fixed by a translated lesson
+
+Reuse these verbatim; they are settled, not open.
+
+**From 4.1** (`en/27-encoder-decoder.mdx`):
+
+- **The pair stays Spanish→English (Option A).** Gustavo's call, made in 4.1. The argument that
+  decided it: translation is the block's subject, so one side of every example is a language other
+  than English whichever way it runs, and Option A keeps English on the side the reader has to
+  *judge*: the output, whether <W>a really good book</W> is also acceptable, the toy translator's
+  OK/X column. Consequences: **no number in the block moves**, 4.3 stays an **adapt** (3 transpose /
+  3 adapt / 0 rewrite), and `attention-alignment`'s corpus, math module and test are untouched;
+  `corpora.ts` already lists it as locale-invariant. Now a rule in `AUTHORING.en.md` §3.
+- **The Spanish is glossed, not translated.** The paragraph that introduces the pair glosses it word
+  by word the first time: <W>ayer</W> is <W>yesterday</W>, <W>leí</W> is <W>i read</W>, <W>un
+  libro</W> is <W>a book</W>, <W>muy bueno</W> is <W>very good</W>. Pro-drop is told in a clause
+  ("Spanish carries it inside the verb's ending, and English has to write it separately"). 4.3 and
+  4.4 reuse these glosses rather than inventing new ones. The tokens stay lower case (<W>i</W>), as
+  the model writes them, with no note.
+- **The toy translator is unchanged**: `VX`, `VY`, the Spanish vocabulary and the six `examples`
+  inputs stay; only code names moved. `frase` → `sentence`, `datos` → `data_rng`, `ini` →
+  `init_rng`, `TRAD` → `TO_EN`, `paso` → `train_step`, `pesos` → `weights`, `suave` → `smooth`,
+  `ent` → `dec_in`, `s_ant`/`h_ant` → `s_prev`/`h_prev`, `traduce` → `translate`, `ejemplos` →
+  `examples`, `quiero` → `want` (`train_step` and `dec_in` match `en/26`). The prose points the
+  reader at `TO_EN` to read both sides of each pair. Print headers `sentence / translation + <EOS> /
+  T_x T_y` and `sentence / translation / in / out`, column-aligned to the Spanish formats.
+- **`decodificacion-voraz.en.svg`** carries `step 1` … `step 5` (measured: each label 27.6 wide in
+  a 70-wide column; the product line x 102.7–257.3 in the 360 `viewBox`), with its `aria-label` and
+  comments translated and the class names kept. The caption glosses its source phrase: "vendo coches
+  nuevos" (I sell new cars).
+- **`summary` keeps "Spanish-to-English"**: the §3 rule that drops a language adjective does not
+  apply where the pair is the lesson's subject.
+- **Terms:** "the end-of-sequence token" everywhere, including the Callout and the quiz lead-in (the
+  glossary bans *end token*); "target language" for the language the decoder writes. The Cho et al.
+  `note` says "the prefix" for «lo ya escrito», to fit 240 characters.
+- **Printed in Pyodide and quoted**, identical to the Spanish cells: five pairs with $T_y = T_x + 2$;
+  loss `2.180` → `0.426` → `0.059` → `0.005` → `0.001`; six of six translations OK, 2 → 3 and 3 → 4
+  tokens, adjective before the noun.
+- **1,871 words against the Spanish 1,827**: the gloss is what Option A costs, so this lesson runs
+  longer in English rather than shorter.
+- **Spanish nits, not fixed:** the opening says «Son tres cosas» (length, order, no single answer)
+  and then enumerates the three as vocabulary, length and the distribution, so order drops out and
+  vocabulary appears; and `q-factorizacion` (c) says the sum «se pasa de $1$ en cuanto la frase tiene
+  tres tokens», which three probabilities need not do (the English says "can pass $1$").
+
 ## The direction decision — make it once, in 4.1
+
+**Decided in 4.1 (2026-10-01): Option A, Spanish→English kept.** What it fixed is under "From 4.1"
+in [Decisions fixed by a translated lesson](#decisions-fixed-by-a-translated-lesson).
 
 A block about machine translation needs a language pair, and the Spanish course reasonably used
 Spanish→English: `leí` aligning to `read` is a clean one-to-one across a word-order change, and a
