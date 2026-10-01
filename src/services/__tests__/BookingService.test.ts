@@ -7,6 +7,8 @@
 // REFACTOR-R4-P1-04: cancelByToken goes through the repository's cancelByToken (the
 // cancel_booking RPC) — creditsRestored comes from its result; the saga's credit
 // compensation restores to the exact pack it decremented (restoreCreditToPack).
+// REFACTOR-R4-P1-05: the post-commit locale read in cancelByToken is best-effort — a
+// getLocale rejection must not fail a cancellation that already committed.
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
@@ -826,6 +828,24 @@ describe("BookingService.cancelByToken", () => {
     expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
       expect.objectContaining({ locale: "es" })
     );
+  });
+
+  it("REFACTOR-R4-P1-05: a getLocale failure after commit still resolves and emails in 'es'", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(
+      baseCancelRecord({ startsAt: hoursFromNow(5) })
+    );
+    const email = mockEmail();
+    const users = mockUsers();
+    users.getLocale.mockRejectedValue(new Error("PostgREST down"));
+    const service = makeService({ bookings, email, users });
+
+    await expect(service.cancelByToken("tkn")).resolves.toBeDefined();
+
+    expect(email.sendCancellationConfirmation).toHaveBeenCalledWith(
+      expect.objectContaining({ locale: "es" })
+    );
+    expect(log).toHaveBeenCalledWith("warn", expect.any(String), expect.any(Object));
   });
 
   it("uses English session label for student (from users.locale) but Spanish for admin notification on cancel", async () => {

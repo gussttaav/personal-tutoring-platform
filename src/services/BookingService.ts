@@ -38,6 +38,11 @@
 //
 // REFACTOR-R4-P4-02: step 6's comment rewritten. It still described the scheduler
 // removed in cycle 2; the ordering now serves pending_terminations + the session-cleanup cron.
+//
+// REFACTOR-R4-P1-05: cancelByToken's locale read happens AFTER the cancel_booking RPC
+// has committed, so it is best-effort: a getLocale error is logged (warn) and falls back
+// to 'es' instead of 500-ing a cancellation that already happened (which would also skip
+// the confirmation email and burn the token). getLocale itself stays fail-closed.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -525,7 +530,15 @@ export class BookingService {
     const sessionLabel      = (locale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
     const sessionLabelAdmin = SESSION_LABELS[record.sessionType] ?? record.sessionType;
 
-    const emailLocale      = (await this.users.getLocale(record.email)) ?? 'es';
+    let emailLocale: 'es' | 'en' = 'es';
+    try {
+      emailLocale = (await this.users.getLocale(record.email)) ?? 'es';
+    } catch (err) {
+      log("warn", "cancel: locale read failed after commit — defaulting email to 'es'", {
+        service: "BookingService",
+        error:   String(err),
+      });
+    }
     const emailLabel       = (emailLocale === 'en' ? SESSION_LABELS_EN : SESSION_LABELS)[record.sessionType] ?? record.sessionType;
 
     // 5. Send emails (non-fatal)
