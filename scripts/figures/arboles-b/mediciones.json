@@ -1,0 +1,164 @@
+{
+  "_nota": "BLOG-10. Postgres 18.6 (paralelismo y JIT desactivados, io_method por defecto = worker), MySQL 9.4.0, SQLite 3.45.1, sobre la tienda de BLOG-09 (public/blog/como-ejecuta-un-join/tienda.sql, md5 de pedidos comprobado). Docker en un portátil de cuatro núcleos con SSD SATA. Tiempos: mediana de tres ejecuciones.",
+  "arbol_pedidos_pkey": {
+    "niveles": 3,
+    "paginas_total": 8228,
+    "hojas": 8197,
+    "internas": 30,
+    "densidad_hojas_pct": 90.04,
+    "entradas_por_hoja": 367,
+    "entradas_por_interna_media": 283.6,
+    "entradas_raiz": 29,
+    "lineas_pedido_pkey_7_5M": {
+      "niveles": 3,
+      "hojas": 20505,
+      "internas": 73
+    }
+  },
+  "paginas_por_consulta_postgres": {
+    "btree": {
+      "id_igual": 4,
+      "id_between_1000": 14,
+      "order_by_desc_limit_10": 4,
+      "max_id": 4,
+      "cliente_id_igual_10_filas": 13
+    },
+    "hash": {
+      "id_igual": 3,
+      "id_between_1000": 22080,
+      "order_by_desc_limit_10": 22083,
+      "paginas_indice": 11266
+    },
+    "seq_scan": 22059
+  },
+  "lecturas_por_busqueda_calentando": {
+    "_nota": "Lecturas de páginas del índice pedidos_pkey (fuera de shared_buffers) por búsqueda aleatoria, por tandas, con shared_buffers recién vaciado. La primera incluye la metapágina.",
+    "1": 4.0,
+    "2-10": 1.67,
+    "11-100": 1.22,
+    "101-1000": 0.93,
+    "1001-10000": 0.53
+  },
+  "escalera_costes": {
+    "busqueda_binaria_367_claves_ns": 100,
+    "comparacion_ns": 2.5,
+    "busqueda_completa_us": {
+      "cache_postgres": 19.5,
+      "cache_sistema": 43.0,
+      "ssd": 793
+    },
+    "lectura_pagina_us": {
+      "cache_sistema": 14,
+      "ssd_postgres": 371,
+      "ssd_o_direct": 290
+    },
+    "_nota": "busqueda_completa = 2000 búsquedas por id en un bucle plpgsql, total / 2000. lectura_pagina = read_time / reads de pg_stat_io. ssd_o_direct = pread de 8 KB con O_DIRECT, profundidad de cola 1, programa en C."
+  },
+  "inserciones_3M_en_memoria": {
+    "_nota": "INSERT ... SELECT de 3 000 000 filas en una tabla vacía, shared_buffers 128MB, ficheros en la caché del sistema.",
+    "bigint_secuencial": {
+      "s": 16.2,
+      "wal_mb": 419,
+      "paginas_indice": 8228,
+      "densidad_hojas_pct": 90.04,
+      "fragmentacion_pct": 0
+    },
+    "uuidv7": {
+      "s": 28.8,
+      "wal_mb": 543,
+      "paginas_indice": 11553,
+      "densidad_hojas_pct": 89.98,
+      "fragmentacion_pct": 0
+    },
+    "uuidv4": {
+      "s": 40.1,
+      "wal_mb": 657,
+      "paginas_indice": 15788,
+      "densidad_hojas_pct": 65.98,
+      "fragmentacion_pct": 49.71
+    }
+  },
+  "inserciones_20k_en_frio": {
+    "_nota": "20 000 INSERT de una fila sobre las tablas anteriores (3M filas), contenedor de 160 MB, shared_buffers 32MB, cachés vaciadas antes de cada ejecución.",
+    "bigint_secuencial": {
+      "ms": [
+        225.4,
+        221.7,
+        232.0
+      ],
+      "lecturas": [
+        84,
+        82,
+        82
+      ],
+      "_nota": "Repetido con la base de id calculada antes de vaciar las cachés (la primera versión contaba también una consulta de max(id))."
+    },
+    "uuidv7": {
+      "ms": [
+        481.0,
+        679.1,
+        469.8
+      ],
+      "lecturas": 85
+    },
+    "uuidv4": {
+      "ms": [
+        10408.4,
+        12193.8,
+        12356.3
+      ],
+      "lecturas": [
+        15733,
+        15768,
+        15891
+      ],
+      "escrituras": [
+        12450,
+        12488,
+        12617
+      ]
+    }
+  },
+  "innodb": {
+    "niveles_primary": 3,
+    "registros_raiz_primary": 8,
+    "hojas_primary": 8770,
+    "niveles_secundario": 3,
+    "hojas_secundario": 2494,
+    "read_requests": {
+      "id_igual": 3,
+      "cliente_id_igual_select_estrella": 50,
+      "cliente_id_igual_select_id": 10
+    }
+  },
+  "sqlite": {
+    "tamano_pagina": 4096,
+    "tabla_pedidos": {
+      "internas": 82,
+      "payload_internas": 0,
+      "hojas": 31042,
+      "filas_en_hojas": 3000000
+    },
+    "indice_cliente_id": {
+      "internas": 35,
+      "entradas_en_internas": 8663,
+      "hojas": 8664,
+      "entradas_en_hojas": 2991337
+    }
+  },
+  "indice_cubriente": {
+    "_nota": "SELECT sum(importe) FROM pedidos WHERE cliente_id = 4242 (10 pedidos), tras VACUUM.",
+    "paginas_sin_include": 13,
+    "paginas_con_include_index_only": 4,
+    "paginas_indice_cliente_id": 3083,
+    "paginas_indice_cliente_id_include_importe": 11553,
+    "_nota2": "El índice con INCLUDE no puede deduplicar claves repetidas (cliente_id se repite ~15 veces), por eso ocupa 3,7 veces más."
+  },
+  "brin_fecha": {
+    "_nota": "Un día de pedidos (2025-05-14, 2737 filas); pedidos está guardada en orden de fecha.",
+    "paginas_btree": 2573,
+    "paginas_brin": 3,
+    "paginas_leidas_btree": 26,
+    "paginas_leidas_brin": 270
+  }
+}
