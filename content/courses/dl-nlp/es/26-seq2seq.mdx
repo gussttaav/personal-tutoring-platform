@@ -15,10 +15,10 @@ quiz:
     options:
       - { id: a, text: 'Usa dos redes: una lee la secuencia de entrada entera y la resume en un vector, y otra escribe una secuencia nueva (de otra longitud, y hasta en otro alfabeto) a partir de ese resumen. Lo único que cruza de la primera a la segunda es ese vector, el último estado del encoder.' }
       - { id: b, text: 'Es la misma red de la lección anterior, sólo que se la deja escribir más caracteres al final; la salida es la continuación de la entrada, no una secuencia distinta.' }
-      - { id: c, text: 'Es el clasificador del bloque 2, sobre el perceptrón multicapa: lee la secuencia y cuelga del último estado una sola salida, un veredicto.' }
+      - { id: c, text: 'Es el clasificador recurrente de este bloque: lee la secuencia y cuelga del último estado una sola salida, un veredicto.' }
       - { id: d, text: 'Son dos redes, pero ambas leen la entrada a la vez y votan carácter a carácter la salida.' }
     answer: a
-    explanation: 'La (a) es la arquitectura entera: un encoder que resume y un decoder que escribe, unidos por un solo vector de contexto. La (b) describe justo lo que aquel modelo sabía hacer (prolongar una tira), que es lo que esta arquitectura supera. La (c) es el clasificador de reseñas del bloque 2: una salida colgada del final, no una secuencia. La (d) inventa un esquema que no es este: el decoder no lee la entrada, sólo ve su resumen en $\mathbf{c}$.'
+    explanation: 'La (a) es la arquitectura entera: un encoder que resume y un decoder que escribe, unidos por un solo vector de contexto. La (b) describe justo lo que aquel modelo sabía hacer (prolongar una tira), que es lo que esta arquitectura supera. La (c) es ese clasificador: una salida colgada del último estado, no una secuencia. La (d) inventa un esquema que no es este: el decoder no lee la entrada, sólo ve su resumen en $\mathbf{c}$.'
     hint: '¿Cuántas redes hay, y qué es lo único que pasa de una a otra?'
   - id: q-contexto-tamano
     type: numeric
@@ -93,7 +93,7 @@ final y deja su resumen; sólo entonces el decoder empieza a producir <W>amor</W
 
 <Figure
   src="/courses/dl-nlp/encoder-decoder.svg"
-  alt="Dos filas de celdas unidas por una sola caja verde en el centro. La fila de la izquierda, el encoder, tiene tres celdas etiquetadas h con barra sub uno, sub dos y sub T equis; cada una recibe por debajo un token de entrada, x sub uno, x sub dos, x sub T equis, y las celdas se enlazan de izquierda a derecha. La última celda del encoder entra, por una flecha verde, en la caja verde central etiquetada c, con la nota «d sub h numeros» debajo. De la caja c sale otra flecha verde hacia la fila de la derecha, el decoder, con tres celdas etiquetadas s sub uno, s sub dos y s sub tres, tambien enlazadas de izquierda a derecha. Cada celda del decoder recibe por debajo una entrada (GO en la primera, y con circunflejo sub uno y sub dos en las siguientes) y saca por arriba una salida, y con circunflejo sub uno, sub dos y sub tres. Toda la informacion que cruza del encoder al decoder pasa por la unica caja c."
+  alt="Dos filas de celdas unidas por una sola caja verde en el centro. La fila de la izquierda, el encoder, tiene tres celdas etiquetadas h con barra sub uno, sub dos y sub T equis; cada una recibe por debajo un token de entrada, x sub uno, x sub dos, x sub T equis, y las celdas se enlazan de izquierda a derecha. La última celda del encoder entra, por una flecha verde, en la caja verde central etiquetada c, con la nota «d sub h números» debajo. De la caja c sale otra flecha verde hacia la fila de la derecha, el decoder, con tres celdas etiquetadas s sub uno, s sub dos y s sub tres, también enlazadas de izquierda a derecha. Cada celda del decoder recibe por debajo una entrada (GO en la primera, y con circunflejo sub uno y sub dos en las siguientes) y saca por arriba una salida, y con circunflejo sub uno, sub dos y sub tres. Toda la información que cruza del encoder al decoder pasa por la única caja c."
   caption="Todo lo que el encoder leyó de la entrada cruza al decoder por un solo sitio, el vector de contexto c. Sea la entrada de tres tokens o de treinta, el decoder recibe el mismo puñado de números."
 />
 
@@ -134,7 +134,7 @@ $T_x$. Una entrada de tres tokens y una de treinta producen un $\mathbf{c}$ del 
 
 El **decoder** es otra RNN, con sus propios pesos, que empieza donde el encoder terminó: su estado
 inicial es $\mathbf{s}_0 = \mathbf{c}$. A partir de ahí produce la salida paso a paso. En el paso $i$
-lee un token (el símbolo de arranque GO en el primer paso, y después el token anterior) y actualiza su
+lee un token (en el primer paso <W>\<GO></W>, el símbolo de arranque, y después el token anterior) y actualiza su
 estado:
 
 $$
@@ -156,7 +156,7 @@ $$
 $$
 
 con $y_i$ el símbolo que de verdad tocaba en la posición $i$ y $T_y$ el largo de la salida, que no tiene
-por qué igualar a $T_x$. Lo que hay que retener es dónde vive esa pérdida: **sólo** en el decoder. El
+por qué igualar a $T_x$. Lo que hay que retener es dónde vive esa pérdida: *sólo* en el decoder. El
 encoder no predice nada en ninguna de sus posiciones, así que no aporta ni un sumando a $\ell$. En el
 modelo de la lección anterior cada posición tenía su salida y su término de pérdida; aquí, la mitad de
 la red no tiene ninguno.
@@ -165,7 +165,7 @@ Una nota sobre el token $u_{i-1}$ que el decoder lee en cada paso. Al entrenar s
 correcto (el de la salida real, aunque el decoder hubiera fallado el suyo); a esto se le llama
 *teacher forcing*, y hace el entrenamiento más estable. Al generar no hay respuesta correcta que
 darle, así que se le realimenta su propia salida. Es la misma distinción entre entrenar y generar de la
-lección anterior, con GO en el arranque en lugar de un espacio.
+lección anterior, con <W>\<GO></W> en el arranque en lugar de un espacio.
 
 ## Cómo aprende el encoder sin salida propia
 
@@ -183,7 +183,7 @@ $$
 donde $\boldsymbol{\delta}_1$ es el error del primer paso del decoder, el mismo de <Leccion slug="proyecto-char-lm">la lección sobre el modelo de lenguaje a nivel de carácter</Leccion>. Ese
 $\nabla_{\mathbf{c}}\ell$ es el único gradiente que el encoder recibe, y le basta: como
 $\mathbf{c} = \bar{\mathbf{h}}_{T_x}$, es exactamente el error del último estado del encoder, y desde él
-el encoder corre su propia BPTT, como si $\nabla_{\mathbf{c}}\ell$ fuese la señal que allí entraba por la salida. Repartido
+el encoder corre su propia *backpropagation through time* (BPTT), como si $\nabla_{\mathbf{c}}\ell$ le llegara de una salida colgada de su último paso. Repartido
 hacia atrás por sus $T_x$ pasos, ese único gradiente ajusta $\mathbf{W}^{\text{enc}}_{hh}$,
 $\mathbf{W}^{\text{enc}}_{xh}$ y $\mathbf{b}^{\text{enc}}_h$.
 
@@ -200,7 +200,7 @@ $$
 $$
 con $\boldsymbol{\delta}_{T_y+1} = \mathbf{0}$. Recorridos los $T_y$ pasos, el transporte llega a
 $\mathbf{s}_0 = \mathbf{c}$ y se detiene ahí: $\nabla_{\mathbf{c}}\ell = (\mathbf{W}^{\text{dec}}_{hh})^{\top}\boldsymbol{\delta}_1$.
-Ese vector arranca la vuelta del encoder, que es la de <Leccion slug="bptt">la lección sobre BPTT</Leccion> pero **sin término de salida** (el
+Ese vector arranca la vuelta del encoder, que es la de <Leccion slug="bptt">la lección sobre BPTT</Leccion> pero *sin término de salida* (el
 encoder no predice en ningún paso, así que el paréntesis con $\hat{\mathbf{y}}$ desaparece y sólo queda
 el transporte):
 $$
@@ -215,7 +215,7 @@ contacto del encoder con la pérdida.
 Vamos a entrenar un *seq2seq* en la tarea de juguete: invertir tiras de símbolos. De juguete a
 propósito (una traducción de verdad no cabe en el navegador), pero con la forma entera del problema:
 dos redes, un vector de contexto en medio, y una salida que no es la continuación de la entrada. El
-alfabeto son seis letras, más un símbolo GO que sólo entra al decoder para arrancar. Cada ejemplo es
+alfabeto son seis letras, más un símbolo <W>\<GO></W> que sólo entra al decoder para arrancar. Cada ejemplo es
 una tira aleatoria de entre 3 y 7 letras y su reverso. La celda monta las dos redes, encadena las dos
 vueltas (la del decoder y, colgada de $\mathbf{c}$, la del encoder) y entrena. Mira la pérdida por
 carácter que imprime cada pocos cientos de pasos.
@@ -349,7 +349,7 @@ resumen, cómo aprende el encoder sin salida propia, y qué arreglaría (y qué 
 
 ---
 
-Con esto el bloque cierra. <Leccion slug="la-rnn-vanilla">La RNN vanilla</Leccion> leía cualquier longitud; el backpropagation de <Leccion slug="bptt">la lección sobre BPTT</Leccion> la entrenaba; las compuertas de <Leccion slug="lstm">la LSTM</Leccion> y <Leccion slug="gru">la GRU</Leccion> le daban una memoria capaz
+Con esto el bloque cierra. <Leccion slug="la-rnn-vanilla">La RNN vanilla</Leccion> leía cualquier longitud; la BPTT de <Leccion slug="bptt">su lección</Leccion> la entrenaba; las compuertas de <Leccion slug="lstm">la LSTM</Leccion> y <Leccion slug="gru">la GRU</Leccion> le daban una memoria capaz
 de aguantar la distancia. El modelo de secuencia a secuencia los pone a todos a trabajar juntos en la
 primera tarea del curso que transforma una secuencia en otra distinta, en vez de sólo continuarla o
 colgarle un veredicto.
