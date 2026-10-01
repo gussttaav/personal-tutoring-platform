@@ -14,6 +14,12 @@ import { uniqueFutureSlot, purgeTestUsers } from "./slot-helpers";
 
 const describeDb = process.env.NEXT_PUBLIC_SUPABASE_URL ? describe : describe.skip;
 
+// Every test here makes serial round trips to the remote test database. The
+// payment-audit test alone makes ~40 of them and takes ~4.9 s on an idle run,
+// just under Jest's 5 s default, so the full parallel `test:unit` run pushed
+// it over intermittently. The unit project keeps the default for everything else.
+jest.setTimeout(20_000);
+
 const TEST_EMAIL_PATTERN = "test-booking-%@example.com";
 
 let recordSeq = 0;
