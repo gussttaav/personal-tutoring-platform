@@ -1,6 +1,6 @@
 # P11-06 — Block 3: Recurrent Neural Networks
 
-**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.5 done)
+**Tag:** `COURSE-P11-06` · **Size:** L · **Status:** 🔄 in progress (3.1–3.7 done)
 
 ## TL;DR
 
@@ -300,8 +300,8 @@ English 3.2 takes `en/18`'s pair and its `0.0002` (see the English notes under 3
 - [x] 3.3 `bptt`
 - [x] 3.4 `gradiente-desvanecido`
 - [x] 3.5 `lstm`
-- [ ] 3.6 `gru`
-- [ ] 3.7 `proyecto-char-lm`
+- [x] 3.6 `gru`
+- [x] 3.7 `proyecto-char-lm`
 - [ ] 3.8 `seq2seq`
 
 ## Decisions fixed by a translated lesson
@@ -456,6 +456,27 @@ Reuse these verbatim; they are settled, not open.
 - **What a finite-difference probe cannot show:** a quantity below its resolution prints zero in
   Pyodide and ulp noise in CPython. No later lesson in this block probes a distance, but any tiny
   number a lesson quotes is checked against the quantity it claims to be, not only against a print.
+
+**From 3.7** (`en/25-proyecto-char-lm.mdx`):
+
+- **The corpus is `public/courses/dl-nlp/corpus-mar.en.txt`**, a faithful translation of the seaside-village
+  paragraphs, written without apostrophes or hyphens so the regex `[^a-z .,]` splits no word. It
+  prints **2,796 characters** and **|V| = 26** (23 letters, since no `j`, `x` or `z` appears, plus
+  space, comma and full stop), not the ≈ 29 the inventory guessed. The prose notes that 26 is the
+  alphabet's count but not its set.
+- **Printed in Pyodide and quoted:** starting loss `3.258` ($\ln 26$, quoted $3.26$), final `2.474`
+  ("around 2.5", prose and summary), the pair `'the village '` / `'he village s'`, the last training
+  sample's real short words `of`, `the`, `age`, and the greedy loop on `she`. Training cell 2.9 s.
+- **`q` / `u` became `t` / `h`:** the English corpus has a single `q`, so the network cannot learn the
+  digraph from it; `t` is followed by `h` in 130 of 232 cases.
+- **Code names:** `texto` → `text`, `datos` → `data`, `a_ix` → `to_ix`, `adelante` / `atras` →
+  `forward` / `backward`, `genera` / `genera_voraz` → `generate` / `generate_greedy`, `suave` →
+  `smooth`, `dh_sig` → `dh_next`, `h_ant` → `h_prev`, `salida` → `out` (3.5's).
+- **The pickup drops the Spanish opening's "machinery built, nothing running" and "it will come out
+  bad, the first time something writes"**, both already in `en/24`'s bridge.
+- **A runtime-fetched data file gets an `.en` sibling** (now in `AUTHORING.en.md` §7).
+- **Spanish nit, not fixed:** `es/25` says the loss settles «hasta rondar 2.5», but Pyodide prints
+  `2.593` there.
 
 ## Two things to watch
 

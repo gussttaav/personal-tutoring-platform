@@ -357,6 +357,13 @@ so a faithful translation that does not fit is not the one that ships.
 *Settled by `en/17-implementar-mlp.mdx` (COURSE-P11-05): `bucle-entrenamiento`'s caption came out
 374px wide in a 360px `viewBox`, against the Spanish 328px.*
 
+**A data file a `<PyCell>` fetches at runtime gets an English sibling, `<name>.en.txt`.** The cell
+reads it by path (`open_url("/courses/dl-nlp/…")`), with no locale resolution behind it, exactly
+like a figure's `src`. Write the English text beside the original in `public/courses/dl-nlp/`, point
+the English cell's `open_url` at it, and re-derive every number the prose quotes from it (length,
+$\lvert V \rvert$, anything trained on it) in the browser; the Spanish file keeps its name.
+*Settled by `en/25-proyecto-char-lm.mdx` (COURSE-P11-06): `corpus-mar.txt` → `corpus-mar.en.txt`.*
+
 **A widget whose default data is a locale-bound committed asset gets an English sibling asset, and the
 widget picks it per locale.** A few widgets read a *data file*, not just strings — `embedding-projection`
 plots a committed 2D projection of ~200 words. P11-02 can move a widget's strings but not this data, so
