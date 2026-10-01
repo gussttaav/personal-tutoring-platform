@@ -30,9 +30,9 @@ this file gets shorter as it goes down.
 | $k$, $p$ | the top-$k$ and top-$p$ (nucleus) cut-offs on the sampling distribution |
 | $\mathcal{K}^{(l)}$, $\mathcal{V}^{(l)}$ | the cached keys and values of layer $l$, for every position generated so far |
 | $T_{\text{ctx}}$ | the context length: the most positions one call may hold |
-| $\text{PPL}$ | perplexity — $\exp$ of the mean per-token cross-entropy |
-| $N$, $D$, $C$ | parameters, training tokens, compute — Kaplan's letters |
-| $\alpha_N$, $\alpha_D$ | the scaling exponents: how the loss falls with $N$ and with $D$ |
+| $\text{PPL}$ | perplexity — $\exp$ of the mean per-token cross-entropy on a given text, $= p_\theta(x_{2:T+1} \mid x_1)^{-1/T}$ (Block 1 lesson 6) |
+| $N$, $D$, $C$ | parameters, training tokens, compute — Kaplan's letters. $N$ counts every parameter, embeddings included, as Chinchilla does (Kaplan's excludes them, and Block 1 lesson 7 says so where it matters); $D$ counts tokens **read**, a token read twice counting twice; $C$ is in FLOPs |
+| $\alpha_N$, $\alpha_D$ | the scaling exponents: how the loss falls with $N$ and with $D$. Kaplan's are of the whole loss (0.076, 0.095), Chinchilla's of what lies above $\mathcal{L}_{\infty}$ (about 0.35): same letters, and Block 1 lesson 7 says which fit a number belongs to |
 | $x_t \in V$ | the token at position $t$ — the first course's $w_t$; $x_{1:T}$, $x_{<t}$, $x_{\le t}$ are the runs, as there, and $x_{<1}$ is the empty sequence (Block 1 lesson 1) |
 | $\mathbf{Z} \in \mathbb{R}^{T \times \lvert V \rvert}$ | the logits stacked — row $t$ is $\mathbf{z}_t^{\top}$, one row per position read, one column per entry |
 | $\mathbf{z}_t(x_{\le t})$ | the logits of position $t$ **with the input named**: what the network was given. Used to state that the mask makes $\mathbf{z}_t(x_{1:T}) = \mathbf{z}_t(x_{\le t})$ (Block 1 lesson 1) |
@@ -53,6 +53,35 @@ this file gets shorter as it goes down.
 | $\varepsilon$ | the guard in Adam's denominator (Block 1 lesson 3) |
 | $\lambda$ | the decaimiento de pesos coefficient, AdamW's (Block 1 lesson 3) |
 | $\eta_s$ · $\eta_{\max}$ · $S_{\text{cal}}$ | the learning rate at step $s$ · its peak · the steps of calentamiento (Block 1 lesson 3) |
+| $\mathbf{z}$, $z_v$ | the logits of the position being generated, and the one of entry $v$: lesson 1's $\mathbf{z}_t$ with $t$ dropped where only that position is in play (Block 1 lesson 4) |
+| $\mathbf{q}$, $q_v$ | $\text{softmax}(\mathbf{z}/\tau)$, the distribution the sampler draws from before any corte, and its entry for $v \in V$ (Block 1 lesson 4) |
+| $v^{\star}$ | the favorita, $\arg\max_v z_v$ (Block 1 lesson 4) |
+| $q_{(i)}$ | the $i$-th largest entry of $\mathbf{q}$: a parenthesised subscript is a rank, a bare one an entry (Block 1 lesson 4) |
+| $M_j$ | the masa of the $j$ most probable entries, $\sum_{i=1}^{j} q_{(i)}$ (Block 1 lesson 4) |
+| $k_p$ | the size of the núcleo: the smallest $j$ with $M_j \ge p$ (Block 1 lesson 4) |
+| $\tilde{\mathbf{q}}$, $\tilde{q}_v$ | $\mathbf{q}$ after a corte, renormalised: what the sorteo draws from (Block 1 lesson 4) |
+| $\mathbf{q}_t$, $\mathbf{k}_t$, $\mathbf{v}_t \in \mathbb{R}^{d_k}$ | the query, key and value of position $t$ in one head of one layer: the first course's, row $t$ of its $\mathbf{Q}$, $\mathbf{K}$, $\mathbf{V}$. With the input named, as $\mathbf{z}_t(\cdot)$ is: $\mathbf{k}_i(x_{1:t}) = \mathbf{k}_i(x_{\le i})$ (Block 1 lesson 5) |
+| $\mathbf{K}$, $\mathbf{V} \in \mathbb{R}^{t \times d_k}$ | one head's share of the caché after $t$ positions — row $i$ is $\mathbf{k}_i^{\top}$, $\mathbf{v}_i^{\top}$ — the first course's two matrices, kept from one token to the next (Block 1 lesson 5) |
+| $c_{\text{fila}}$ | the multiplications that take one row through every matrix of the network, $L\left(4d_{\text{model}}^{2} + 2d_{\text{model}} \cdot d_{\text{ff}}\right) + d_{\text{model}} \cdot \lvert V \rvert$: one per weight of a matrix (Block 1 lesson 5) |
+| $c(t)$ | the multiplications of the token at position $t$ with the caché, $c_{\text{fila}} + 2Lt \cdot d_{\text{model}}$; without it, exactly $t\,c(t)$ (Block 1 lesson 5) |
+| $\text{bpb}$ | bits per byte: $-\log_2 p_\theta(x_{2:T+1} \mid x_1)$ divided by the $n$ bytes of the predicted tokens, $= \mathcal{L}/(\bar{\ell}\ln 2)$ (Block 1 lesson 6) |
+| $f(v)$ | the frequency of entry $v$: how many times it appears in the training part (Block 1 lesson 6) — lesson 2's $f(a, b)$ one level down |
+| $p_{\text{uni}}(v)$ | the modelo de unigramas: $\left(f(v) + 1\right) / \sum_{u}\left(f(u) + 1\right)$, the same at every position (Block 1 lesson 6) |
+| $\mathcal{L}_{\text{res}}(\theta)$ | lesson 1's loss averaged over windows of the texto reservado — lesson 3's $\mathcal{L}_{\text{corpus}}$ on the other part (Block 1 lesson 6) |
+| $\bar{\mathcal{L}}(\theta)$ | the mean loss over all text of the same origin: what both estimate for a $\theta$ fixed in advance (Block 1 lesson 6) |
+| $\theta_{\text{corpus}}$ · $\theta^{\star}$ | the $\theta$ that minimises $\mathcal{L}_{\text{corpus}}$ · the one that minimises $\bar{\mathcal{L}}$ (Block 1 lesson 6) |
+| $\mathcal{L}(N)$, $\mathcal{L}(D)$, $\mathcal{L}(N, D)$ | the loss on unseen text as a function of scale: of the parameters, of the training tokens, of both (Block 1 lesson 7). The papers write $L$, which is the layer count here |
+| $N_c$, $D_c$ | Kaplan's scales in $\mathcal{L}(N) = (N_c/N)^{\alpha_N}$, $\mathcal{L}(D) = (D_c/D)^{\alpha_D}$: constants of the corpus and the tokeniser, not of the model (Block 1 lesson 7) |
+| $\mathcal{L}_{\infty}$ | the irreducible loss, the floor of $\mathcal{L}(N, D)$ as $N, D \to \infty$: Chinchilla's $E$ (Block 1 lesson 7) |
+| $A_N$, $A_D$ | Chinchilla's coefficients in $\mathcal{L}(N, D) = \mathcal{L}_{\infty} + A_N/N^{\alpha_N} + A_D/D^{\alpha_D}$: the paper's $A$ and $B$ (Block 1 lesson 7) |
+| $N^{\star}(C)$, $D^{\star}(C)$ | the reparto óptimo for a budget $C$: the $N$ and $D = C/(6N)$ that minimise $\mathcal{L}(N, D)$. The papers' $N_{\text{opt}}$, $D_{\text{opt}}$ (Block 1 lesson 7) |
+| $G$ | the constant in $N^{\star} = G\,(C/6)^{\alpha_D/(\alpha_N + \alpha_D)}$, Chinchilla's eq. 4 — inside a `<Details>` only (Block 1 lesson 7) |
+| $e_i$, $e_{1:K}$ · $K$ | ejemplo $i$ of a prompt, a token sequence holding a caso and its respuesta · the $K$ ejemplos in order · how many there are, the GPT-3 paper's letter (Block 1 lesson 8) |
+| $x$, $y$ · $y_j$ | the caso the prompt ends on and the respuesta a tarea asks for, both token sequences · token $j$ of $y$ (Block 1 lesson 8). Block 2's $x$, the whole prompt, is this $x$ with the ejemplos in front |
+| $p_{\text{texto}}$ | the distribution the training text comes from: what the text *is*, against $p_\theta$, what the model believes (Block 1 lesson 8) |
+| $\omega$ · $\omega_1$, $\omega_2$ | a tarea, the latent variable a document of $p_{\text{texto}}$ follows, drawn with probability $p_{\text{texto}}(\omega)$ · two of them, compared (Block 1 lesson 8) |
+| $\tilde{q}(v \mid x, y_{<j})$ · $\tilde{q}(y \mid x)$ | lesson 4's $\tilde{q}_v$ with the text it was computed from named, as $\mathbf{z}_t(x_{\le t})$ names it · the product of those over a continuation $y$: the distribution `modelo` draws from. Here $x$ is the whole prompt and $y = y_1, y_2, \dots$ what `modelo` sorts after it, both token sequences: lesson 8's $x$ with the ejemplos inside it, which is Block 2's reading (Block 1 lesson 9) |
+| $T_{\text{mín}}$ | the tokens a relleno keeps, $T_{\text{ctx}}/2 = 32$ in `modelo` (`T_min` in the code): the fewest a token is drawn from once the text has overflowed the window (Block 1 lesson 9) |
 
 **$x$, not $w$, for a token** (`COURSE-C2-P1-01`). The first course wrote $w_t$ in its two
 language-model lessons and spent $x_{1:T_x}$ on the *source* of a translator; this course has one
@@ -106,6 +135,85 @@ fusión count), and $\mathbf{v}_s$ is not a value vector, whose home is the rows
 $\varepsilon$ is the first course's LayerNorm guard: the same letter doing the same job, a constant
 that keeps a denominator away from zero.
 
+**Sampling has its own letters, and $p$ alone is a number** (`COURSE-C2-P1-01`, Block 1 lesson
+4). The table's $p$ is top-p's threshold, a scalar in $(0, 1]$; the model's distribution always
+carries its subscript, $p_\theta$, and the lesson that first writes both says so in a clause. The
+distribution the sampler draws from is **$\mathbf{q}$, not $p_\theta$**, because away from
+$\tau = 1$ it is not the model's: it is a distribution made from the model's logits, and that
+difference is half the lesson. The tilde means «after a corte, renormalised», and nothing else —
+the hat stays «estimated from a batch». A **parenthesised subscript is a rank**, $q_{(1)} \ge
+q_{(2)} \ge \dots$, the order-statistics convention; the shared §2's parenthesised *superscript*
+is the layer, a bare subscript is an entry ($q_v$) or a position, and nothing else in the course
+writes a parenthesised subscript. $M_j$ is free to take: Block 4's `M` lives in pseudocode only
+and never enters `$…$`. And top-p is written as top-k with a $k$ the position chooses, $k_p$,
+because that is the claim the lesson makes about it.
+
+**The query carries its position; the sampler's $\mathbf{q}$ never does** (`COURSE-C2-P1-01`,
+Block 1 lesson 5). Lesson 4 spent a bare $\mathbf{q}$ on the distribution the sampler draws from,
+with entries $q_v$ indexed by $v \in V$; the KV-cache lesson needs the first course's attention
+query back, and writes it $\mathbf{q}_t$, always with the position, beside $\mathbf{k}_t$ and
+$\mathbf{v}_t$. The two never share an equation, and the lesson says in a clause which one it
+means. $\mathbf{K}$ and $\mathbf{V}$ are the first course's per-head matrices, and bold
+$\mathbf{V}$ is the value matrix beside italic $V$, the vocabulary, as it was there;
+$\mathcal{K}^{(l)}$ and $\mathcal{V}^{(l)}$ are the $h$ of them in layer $l$. Costs are counted in
+**multiplications of matrix products**, the first course's unit («una multiplicación por
+casilla»), which drops the layer norms, the softmax and the ReLU; lowercase italic $c$ is a cost
+and meets nothing — the first course's bold $\mathbf{c}$ was a context vector.
+
+**Measuring has its own letters, and none of them is a hat** (`COURSE-C2-P1-01`, Block 1 lesson
+6). The course's $\log$ is natural and a loss is in **nats**; the lesson that first counts bits
+writes $\log_2$ and says so, and $\text{bpb}$ is roman like $\text{PPL}$. The minimiser of the
+training loss is **$\theta_{\text{corpus}}$, not $\hat{\theta}$**: the hat means «estimated from a
+batch» and nothing else, and the subscript ties it to $\mathcal{L}_{\text{corpus}}$, the loss it
+minimises. The star is the optimum, as in $v^{\star}$ (the argmax of the logits): $\theta^{\star}$
+minimises $\bar{\mathcal{L}}$, and the overline is a mean, as in $\bar{\ell}$ — here over all text of
+the same origin, not over one corpus. A frequency is $f$, as lesson 2's pair frequency was, and never
+$c$, which lesson 5 spent on a cost. $p_{\text{uni}}$ is a distribution and carries its subscript,
+like $p_\theta$; bare $p$ stays top-p's threshold. And a model with no context is written with the
+course's own letter, $p_\theta(v)$, the same at every position, rather than with a fresh vector:
+$\mathbf{q}$ is the sampler's and $\mathbf{r}$ would sit next to the reserved $r_\phi$.
+
+**Scaling has its own letters, and two of the papers' are taken** (`COURSE-C2-P1-01`, Block 1
+lesson 7). Both papers write the loss $L$; here it stays $\mathcal{L}$, because the shared §4
+reserves $L$ for the layer count and lesson 5 wrote $2Lt \cdot d_{\text{model}}$ with it. Chinchilla
+writes $\mathcal{L}(N, D) = E + A/N^{\alpha} + B/D^{\beta}$, and three of those letters are spoken
+for: $B$ is the batch size (shared §4), $\beta$ the KL coefficient (shared §4), and an italic $E$
+would sit beside lessons 3 and 6's $\mathbb{E}$. So the floor is $\mathcal{L}_{\infty}$, the loss
+with $N$ and $D$ infinite, in the family of $\mathcal{L}_{\text{res}}$ and $\mathcal{L}_{\text{corpus}}$;
+the coefficients take the subscript of the quantity they go with, $A_N$ and $A_D$; and the
+exponents are the table's $\alpha_N$, $\alpha_D$, which were always «how the loss falls with $N$ and
+with $D$». The lesson names the paper's letters once, in a clause. The optimum is starred, as
+$v^{\star}$ and $\theta^{\star}$ are, never subscripted $\text{opt}$; and the exponents of $C$ in
+$N^{\star}$ and $D^{\star}$ are written out as fractions of $\alpha_N$ and $\alpha_D$ rather than
+given the papers' $a$ and $b$, which lesson 2 spent on the two tokens of a fusión. $N_c$ and $D_c$
+are Kaplan's alone; Chinchilla's constants are only ever $A_N$, $A_D$, $\mathcal{L}_{\infty}$.
+
+**In-context learning has its own letters, and three of the literature's are taken**
+(`COURSE-C2-P1-01`, Block 1 lesson 8). The latent task is written $c$ (a «concept») or $\theta$ in
+the papers — Xie et al., whose model the lesson reduces, write $\theta$ — and here $\theta$ is the
+model's parameters (shared §4) and $c$ lesson 5's cost, so the task is **$\omega$**, which nothing
+else in the course writes; the lesson says so in a clause. Two tasks compared are $\omega_1$,
+$\omega_2$, never $\omega'$: a prime reads as the transpose the shared §2 bans. The number of
+examples is **$K$, not $k$**: $k$ is top-k's from lesson 4, and $K$ is what the GPT-3 paper
+writes. Italic $K$ sits beside bold $\mathbf{K}$, the keys, the way italic $V$ sits beside bold
+$\mathbf{V}$, and lesson 8 has no keys on its page. The text's own distribution carries a
+subscript, **$p_{\text{texto}}$**, because bare $p$ is top-p's threshold (the sampling note above);
+lesson 1 wrote the chain rule with a bare $p$ as a general identity, before that note existed. And
+**$x$ without a subscript is a whole sequence**, the caso: lesson 8 writes no $x_t$, so the two
+never share a page there, and the lesson says in a clause that this $x$ is not a token. Block 3's
+task md writes the examples $e_{1:k}$; it follows this row, $e_{1:K}$.
+
+**The function has almost no letters of its own** (`COURSE-C2-P1-01`, Block 1 lesson 9). The
+project writes the model as `modelo(prompt) -> texto`, and its mathematics is lesson 1's chain rule
+read with lesson 4's sampler. The continuation has **no length letter**: $m$ is lesson 2's fusión
+count and $M_j$ lesson 4's masa, so the product runs over $j$ without an upper limit, as lesson 8's
+sum did. The context a token is drawn from has **no letter** either: $c$ is lesson 5's cost, and the
+context is a function of $x$ and $y_{<j}$ (the window keeps a known number of their last tokens), so
+the condition names those. The tokens a relleno keeps are **$T_{\text{mín}}$, not $r$**: bare $r$
+sits beside the reserved $r_\phi$ and Block 2's reward $r(x, y)$, while $T_{\text{mín}}$ says what it
+is, the fewest tokens a draw reads, in the family of $T$ and $T_{\text{ctx}}$. It carries no index
+and never shares an equation with lesson 2's $T_i$.
+
 **$T_{\text{ctx}}$ is not $T$.** The shared §4 reserves $T$ for the sequence length — the positions
 a given input actually has — and the context length is the most it may have; the KV-cache lesson
 and the compaction widget both need the two on one page and say which is which the first time.
@@ -150,8 +258,9 @@ in `dl-nlp`'s table, and the two never share a page.
 | $\text{acierto}$ | accuracy on an evaluation set, $\text{acierto}(D)$, as the first course wrote it |
 
 **The $\mathbf{q}$ collision, resolved by context and said once.** $\mathbf{q}$ is the attention
-query throughout the first course and in Block 1 here — the KV cache is the cache of what
-$\mathbf{q}$ is scored against. Retrieval's query is the same word for the same role, a vector
+query throughout the first course. In Block 1 here it always carries its position, $\mathbf{q}_t$
+— the KV cache is the cache of what $\mathbf{q}_t$ is scored against — because Block 1 lesson 4
+spent the bare $\mathbf{q}$ on the sampler's distribution (see the Block 1 note). Retrieval's query is the same word for the same role, a vector
 scored against a set of others, which is why the letter is kept rather than dodged. The lesson
 that introduces retrieval says once, in one clause, that this $\mathbf{q}$ is the retriever's
 query and not an attention head's, and the two never share an equation — the move the shared §3

@@ -489,12 +489,8 @@ for s in range(1, S + 1):
 La pérdida sobre esas páginas baja de $3.473$ a $3.104$, pero no en cada medida: sube en el paso
 50, y otra vez en el 100 y el 125. Con una ventana por paso, cada $\hat{\mathbf{g}}_s$ es casi todo
 ruido y el modelo avanza dando tumbos. Y lo que baja es la pérdida sobre las páginas con las que
-entrena: si eso es aprender español o aprenderse esas páginas lo mide la lección sobre perplejidad,
-más adelante en el bloque.
-
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 6
-    (slug perplejidad), envolver «la lección sobre perplejidad» en su Leccion slug=…; el lint
-    falla con un slug que no resuelve, también dentro de un comentario. */}
+entrena: si eso es aprender español o aprenderse esas páginas lo mide
+<Leccion slug="perplejidad">la lección sobre perplejidad</Leccion>, más adelante en el bloque.
 
 Ahora quítale el calentamiento: pon `eta_max, S_cal, S = 3e-3, 1, 200`, la tasa máxima del
 checkpoint sin calentar, y vuelve a ejecutarla. En 25 pasos la pérdida salta de $3.47$ a $4.89$,
@@ -526,10 +522,6 @@ posición, una distribución sobre las 512 entradas. La pérdida sólo le pregun
 token que de verdad venía; nunca le pide que elija uno. Para escribir texto hay que elegir, token a
 token, y el modelo no dice cómo.
 
-{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 4
-    (slug muestreo), envolver «la lección siguiente, sobre el muestreo» en su Leccion slug=…;
-    el lint falla con un slug que no resuelve, también dentro de un comentario. */}
-
-Ése es el asunto de la lección siguiente, sobre el muestreo: quedarse siempre con la entrada más
+Ése es el asunto de <Leccion slug="muestreo">la lección siguiente, sobre el muestreo</Leccion>: quedarse siempre con la entrada más
 probable, que en el mini-GPT acaba repitiendo <W>no, no, no</W>, o sortear entre las posibles con
 una temperatura, un top-k o un top-p, y qué parte de la distribución tira cada uno.

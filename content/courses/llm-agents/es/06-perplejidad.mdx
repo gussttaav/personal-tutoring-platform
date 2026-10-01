@@ -1,0 +1,384 @@
+---
+slug: perplejidad
+title: "Perplejidad: medir un modelo de lenguaje"
+block: 1
+order: 6
+minutes: 30
+summary: "Un modelo que sólo cuenta bytes paga, sobre las páginas de Marianela que el mini-GPT no vio, la misma pérdida por token que el mini-GPT. La lección explica por qué eso no dice nada: convierte la pérdida en perplejidad, el número de candidatas entre las que duda el modelo, y en bits por byte, la medida que no depende del tokenizador; le pone al lado dos varas de medir, el modelo uniforme y el de unigramas; y demuestra por qué la pérdida sobre el texto de entrenamiento engaña y la del texto reservado no."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-una-mala-apuesta
+    type: numeric
+    prompt: 'Sobre un texto del que predice cuatro tokens, un modelo apostó $1/2$ por el que de verdad venía en tres posiciones y $1/1\,000$ en la cuarta. ¿Cuál es su perplejidad sobre ese texto? Redondea a dos decimales.'
+    answer: 9.46
+    tolerance: 0.05
+    explanation: '$9.46$: la raíz cuarta de $2 \cdot 2 \cdot 2 \cdot 1\,000 = 8\,000$, el producto de los inversos de las cuatro apuestas. Con $1/2$ en las cuatro sería $2$, así que una sola mala apuesta casi la quintuplica: la media es geométrica y la mala entra multiplicando. En pérdida es lo mismo visto desde el logaritmo, $(3\ln 2 + \ln 1\,000)/4 \approx 2.25$ nats por token, y $1.73$ de ellos los pone la cuarta posición. Llevado al extremo, una apuesta de cero hace la perplejidad infinita, que es lo que el $+1$ del modelo de unigramas evita.'
+    hint: 'La perplejidad es la media geométrica de los inversos de las apuestas: multiplícalos y saca la raíz cuarta.'
+  - id: q-dos-tokenizadores
+    type: single
+    prompt: 'Dos modelos se miden sobre el mismo texto. El A usa un vocabulario de 512 entradas, con $\bar{\ell} = 2$ bytes por token, y tiene perplejidad $16$. El B usa uno de $50\,000$, con $\bar{\ell} = 4$, y tiene perplejidad $64$. ¿Cuál le da más probabilidad al texto?'
+    options:
+      - { id: a, text: 'El B: paga $1.5$ bits por byte, y el A, $2$.' }
+      - { id: b, text: 'El A: su perplejidad es la cuarta parte.' }
+      - { id: c, text: 'Ninguno: con vocabularios distintos, sus probabilidades son de cosas distintas y no se pueden comparar.' }
+      - { id: d, text: 'El A: con tokens más cortos cada apuesta es más fácil, y hace más apuestas buenas.' }
+    answer: a
+    explanation: 'La (a). En bits por token, el A paga $\log_2 16 = 4$ y el B $\log_2 64 = 6$; entre los bytes de cada token, $4/2 = 2$ y $6/4 = 1.5$. Con $n$ bytes, el A le da al texto $2^{-2n}$ y el B $2^{-1.5n}$. La (b) es la comparación por token que la lección descarta. La (c) olvida que los dos le dan una probabilidad al mismo texto, byte a byte, y eso sí se compara. La (d) acierta en que cada apuesta del A es más fácil, pero hace el doble de apuestas, y lo que cuenta es el producto de todas.'
+    hint: 'Pasa cada perplejidad a bits por token con $\log_2$ y divide entre $\bar{\ell}$.'
+  - id: q-sin-sesgo
+    type: multi
+    prompt: 'La pérdida sobre el texto reservado estima sin sesgo lo que el modelo pagará sobre texto nuevo del mismo origen. Marca lo que hace falta para que eso sea verdad.'
+    options:
+      - { id: a, text: 'Que los pesos se hayan elegido sin mirar ese texto.' }
+      - { id: b, text: 'Que el texto reservado salga del mismo sitio que el texto nuevo.' }
+      - { id: c, text: 'Que el entrenamiento haya llegado al mínimo de $\mathcal{L}_{\text{corpus}}$.' }
+      - { id: d, text: 'Que el texto reservado sea tan largo como el de entrenamiento.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b): son lo que sostiene la última igualdad de la cadena. Sin la (a), el texto reservado pasa a ser de entrenamiento, que es lo que la tercera celda les hace a las últimas páginas. Sin la (b), la media estima lo que cuesta otro texto. El checkpoint cumple las dos casi: su paso se eligió mirando el texto reservado, y ese texto es el final de la novela. La (c) sólo hace falta en la otra punta de la cadena, la que dice que la pérdida de entrenamiento se queda corta. La (d) confunde sesgo con ruido: un texto reservado corto da una estimación que tiembla más, como un *batch* pequeño, pero centrada en el mismo sitio.'
+    hint: 'Mira qué justifica cada igualdad de la cadena, y qué justifica cada desigualdad.'
+  - id: q-probabilidad-cero
+    type: single
+    prompt: 'Sin el $+1$, el modelo de unigramas da probabilidad cero a 10 de los $13\,976$ tokens del texto reservado. ¿Qué le pasa a su pérdida sobre ese texto?'
+    options:
+      - { id: a, text: 'Se hace infinita: cada uno de esos tokens cuesta $-\log 0$, y una media con un término infinito es infinita.' }
+      - { id: b, text: 'Sube muy poco: son 10 tokens de casi catorce mil, menos de un 0.1 % de la media.' }
+      - { id: c, text: 'No cambia: un token con probabilidad cero no cuenta en la media.' }
+      - { id: d, text: 'Baja: sin el $+1$, las entradas que sí se vieron reciben algo más de probabilidad.' }
+    answer: a
+    explanation: 'La (a). La (b) sería cierta si esos diez costaran mucho pero no infinito, y eso es lo que consigue el $+1$: con él, cada uno cuesta unos $12$ nats. La (c) describe un arreglo que hace trampa: un modelo que se salta lo que no sabe predecir parece mejor de lo que es. La (d) acierta en el detalle y no en la conclusión: las demás entradas ganan un poco, y ninguna ganancia compensa un infinito. Al mini-GPT no le puede pasar: el softmax da a cada entrada $e^{z}$ dividido entre una suma, y $e^{z}$ nunca es cero.'
+    hint: '¿Cuánto vale $-\log p$ cuando $p = 0$?'
+challenges: []
+reading:
+  - kind: libro
+    title: 'Speech and Language Processing, capítulo 3: N-gram Language Models'
+    authors: 'Daniel Jurafsky y James H. Martin'
+    venue: 'Borrador de la 3.ª edición'
+    lang: en
+    url: 'https://web.stanford.edu/~jurafsky/slp3/3.pdf'
+    note: 'Esta lección con n-gramas en lugar de un Transformer: la perplejidad como factor de ramificación medio, el suavizado de Laplace sobre unigramas y por qué se separan entrenamiento, desarrollo y prueba.'
+  - kind: paper
+    title: 'The Pile: An 800GB Dataset of Diverse Text for Language Modeling'
+    authors: 'Gao, Biderman, Black, Golding, Hoppe, Foster, Phang, He, Thite, Nabeshima, Presser y Leahy'
+    year: '2020'
+    venue: 'arXiv:2101.00027'
+    lang: en
+    url: 'https://arxiv.org/abs/2101.00027'
+    note: 'Un corpus que trae sus pautas de medida: bits por byte y no perplejidad, porque no dependen del tokenizador. La fórmula es la de esta lección; con el tokenizador de GPT-2 salen 3.4 bytes por token.'
+  - kind: paper
+    title: 'Language Modeling Is Compression'
+    authors: 'Delétang, Ruoss, Duquenne, Catt, Genewein, Mattern, Grau-Moya, Wenliang, Aitchison, Orseau, Hutter y Veness'
+    year: '2024'
+    venue: 'ICLR 2024 · arXiv:2309.10668'
+    lang: en
+    url: 'https://arxiv.org/abs/2309.10668'
+    note: 'La otra cara de los bits por byte: con codificación aritmética, un modelo que paga b bits por byte comprime el texto a b bits por byte. Lo comprueban con modelos grandes sobre texto, imágenes y audio.'
+---
+
+{/* COURSE-C2-P1-01 — Bloque 1, lección 6. Corre sobre el mini-GPT: el checkpoint de P0-03. */}
+
+<Leccion slug="muestreo">El muestreo</Leccion> y <Leccion slug="kv-cache">la caché de claves y
+valores</Leccion> dejaron resuelto cómo escribe el mini-GPT y cuánto cálculo le cuesta cada token.
+Falta saber cuánto sabe. La cifra que el bloque viene citando es su pérdida sobre las páginas de
+*Marianela* que se apartaron antes de entrenarlo: $3.2$ por token. Ahora piensa en un modelo mucho
+más tosco. Cuenta cuántas veces sale cada byte en la parte de la novela con la que se entrenó el
+mini-GPT y, en cada posición, apuesta por los 256 en esas proporciones, sin mirar nada de lo que hay
+detrás. Sobre las mismas páginas reservadas paga $3.20$ por token.
+
+La misma cifra. ¿Es el mini-GPT, con sus $136\,448$ parámetros y sus 2 000 pasos de entrenamiento,
+tan bueno como contar letras? No, y la razón es el primer asunto de esta lección: los dos pagan por
+token, y sus tokens no son lo mismo. El del modelo que cuenta bytes es un byte; el del mini-GPT, más
+de dos. Una pérdida por token mide a la vez al modelo y a su tokenizador, y sólo compara modelos que
+cortan igual. Esta lección construye la medida que compara cualquier par, le pone al lado dos varas
+de medir y demuestra lo que <Leccion slug="entrenar-un-mini-gpt">la lección sobre el
+entrenamiento</Leccion> dejó pendiente: por qué la pérdida se mide sobre texto que el modelo no ha
+visto, y qué pasa cuando deja de serlo.
+
+Hay una manera de leer $3.2$ sin logaritmos. Un modelo que en cada posición dudara exactamente entre
+$k$ candidatas igual de probables, una de ellas siempre la buena, pagaría $\ln k$ por token; con
+$k = 24$, $3.18$. Leída al revés, la pérdida del mini-GPT dice que ante las páginas reservadas duda
+como si en cada token tirara un dado de unas 24 caras, elegidas entre las 512 entradas del
+vocabulario. El modelo que cuenta bytes tira también un dado de 24 caras, pero lo tira en cada byte.
+
+Y ahí está la diferencia. Una tirada del mini-GPT escribe de media 2.14 bytes, y repartida entre ellos
+equivale a un dado de algo más de cuatro caras por byte. El modelo que cuenta bytes necesita sus 24
+caras para cada uno. Contado por byte, el mini-GPT duda más de cinco veces menos.
+
+<Callout type="intuition" title="La idea en una frase">
+La perplejidad es la pérdida contada en candidatas: las caras de un dado que costaría lo mismo. Para
+comparar modelos que cortan el texto de maneras distintas hay que contarla por byte y no por token, y
+medirla siempre sobre texto que el modelo no haya visto.
+</Callout>
+
+## La perplejidad: la pérdida contada en candidatas
+
+<Leccion slug="una-sola-columna">La lección sobre el modelo de lenguaje causal</Leccion> escribió la
+pérdida de un texto como el logaritmo de su probabilidad, cambiado de signo y repartido entre sus $T$
+tokens predichos. Ese logaritmo es el natural, y la pérdida sale en **nats**; en esta lección,
+$\log$ a secas es $\ln$. Deshagamos el logaritmo. La **perplejidad** del modelo sobre el texto es
+
+$$
+\text{PPL} = \exp(\mathcal{L}) = p_\theta(x_{2:T+1} \mid x_1)^{-1/T} = \left(\prod_{t=1}^{T}\frac{1}{p_\theta(x_{t+1} \mid x_{\le t})}\right)^{1/T},
+$$
+
+la media geométrica de los inversos de las apuestas por lo que de verdad vino. Si todas valen $1/k$,
+cada inverso vale $k$ y $\text{PPL} = k$: el dado de arriba, ahora exacto. El modelo uniforme, que
+da $1/\lvert V \rvert$ a todo, tiene $\text{PPL} = \lvert V \rvert$, 512 con el vocabulario del
+mini-GPT; uno que lo apostara todo a la verdad, siempre, tiene $1$. Que la media sea geométrica
+tiene un precio: una apuesta casi nula por algo que ocurrió pesa más que muchas buenas, y una apuesta
+nula la hace infinita.
+
+La perplejidad no depende de la base del logaritmo. Con $\log_2$, la pérdida sale en **bits**, y
+vale $\mathcal{L}/\ln 2$; el mini-GPT paga $3.2/0.693 \approx 4.6$ bits por token. Pero
+$2^{\mathcal{L}/\ln 2} = e^{\mathcal{L}}$: el mismo número de caras, se cuente en la unidad que se
+cuente.
+
+### Bits por byte: una medida que no depende del tokenizador
+
+La perplejidad hereda el defecto de la pérdida: las dos van por token. Dos tokenizadores parten el
+mismo texto en números distintos de tokens, y un modelo de tokens más largos reparte la misma
+dificultad entre menos apuestas, cada una más difícil. Lo que no cambia con el corte es el texto: sus
+$n$ bytes, y la probabilidad que el modelo le da a él entero, $e^{-T\mathcal{L}}$. Dividamos lo que
+cuesta el texto entero, en bits, entre sus bytes:
+
+$$
+\text{bpb} = \frac{-\log_2 p_\theta(x_{2:T+1} \mid x_1)}{n} = \frac{T\,\mathcal{L}}{n \ln 2} = \frac{\mathcal{L}}{\bar{\ell}\,\ln 2},
+$$
+
+con $n$ los bytes de los $T$ tokens predichos y $\bar{\ell} = n/T$ los bytes por token de
+<Leccion slug="bpe-de-verdad">la lección sobre BPE</Leccion>. Son los **bits por byte** (*bits per
+byte*, bpb). El mini-GPT, con $\bar{\ell} = 2.14$ en el texto reservado, paga
+$3.2/(2.14 \cdot 0.693) \approx 2.16$; el que cuenta bytes, con $\bar{\ell} = 1$,
+$3.20/0.693 \approx 4.62$. Y $2^{\text{bpb}}$ es la perplejidad por byte: el dado de algo más de
+cuatro caras frente al de 24.5.
+
+(Con rigor, el modelo reparte también algo de probabilidad entre cortes del mismo texto que el
+tokenizador nunca produce, y esa masa se pierde. Los artículos la ignoran, y esta cuenta también.)
+
+El tokenizador no desaparece de la cuenta: pasa a formar parte de lo que se mide. Por eso el modelo
+uniforme sobre las 512 entradas del mini-GPT, que no sabe nada, paga $9/2.14 \approx 4.20$ bits por
+byte, menos que el modelo que cuenta bytes. Las fusiones ya son un poco de español.
+
+## Dos varas de medir, y dónde se mide
+
+Un número solo no dice si es bueno. El modelo uniforme es la vara más pobre posible. La siguiente
+sabe una cosa, con qué frecuencia sale cada entrada, y nada del orden. Llamemos $f(v)$ a las veces
+que la entrada $v$ aparece en la parte de entrenamiento, como $f(a, b)$ contaba pares en la lección
+sobre BPE. El **modelo de unigramas** da en cada posición la misma distribución, sea cual sea el
+prefijo:
+
+$$
+p_{\text{uni}}(v) = \frac{f(v) + 1}{\sum_{u \in V}\left(f(u) + 1\right)}.
+$$
+
+El $+1$ es el **suavizado de Laplace**, y no es un adorno. Una entrada con $f(v) = 0$ recibiría
+probabilidad cero, y si aparece en el texto que se mide, la pérdida es infinita. Al mini-GPT no le
+puede pasar: el softmax nunca da cero. Con $125\,789$ tokens de entrenamiento, sumar uno apenas mueve
+las demás frecuencias.
+
+Sin el uno, este modelo es el mejor que no mira el contexto: sobre el texto donde se contaron las
+frecuencias, ninguna distribución fija paga menos que ellas. Por eso lo que el mini-GPT paga por
+debajo del modelo de unigramas es lo que le compra el contexto, y nada más.
+
+<Details summary="Ver por qué ninguna distribución fija paga menos que las frecuencias">
+Un modelo sin contexto da a la entrada $v$ la misma probabilidad $p_\theta(v)$ en todas las
+posiciones. Sobre un texto de $T$ tokens en el que $v$ sale $f(v)$ veces, paga
+$-\sum_v \frac{f(v)}{T}\log p_\theta(v)$ por token. Restémosle lo que pagan las frecuencias y usemos
+que $\log y \le y - 1$ (la recta tangente en $y = 1$ queda por encima del logaritmo):
+
+$$
+-\sum_{v} \frac{f(v)}{T}\log\frac{p_\theta(v)}{f(v)/T} \ge -\sum_{v} \frac{f(v)}{T}\left(\frac{p_\theta(v)}{f(v)/T} - 1\right) = 1 - \sum_{v} p_\theta(v) \ge 0,
+$$
+
+con las sumas sobre las entradas que salen al menos una vez. La diferencia nunca es negativa, y vale
+cero sólo si $p_\theta(v) = f(v)/T$ en todas, porque $\log y = y - 1$ únicamente en $y = 1$.
+</Details>
+
+### Por qué la pérdida sobre el entrenamiento engaña
+
+Queda dónde medir. Para unos pesos fijados de antemano, la pérdida media sobre ventanas de la parte de
+entrenamiento, el $\mathcal{L}_{\text{corpus}}(\theta)$ de la lección sobre el entrenamiento, y la
+misma media sobre ventanas del texto reservado, $\mathcal{L}_{\text{res}}(\theta)$, estiman lo mismo
+si los dos textos salen del mismo sitio: la pérdida media sobre todo el texto de ese origen, que
+llamaremos $\bar{\mathcal{L}}(\theta)$. Es el argumento del *batch* de aquella lección: una media de
+ventanas sacadas al azar no tiene sesgo.
+
+Pero los pesos del *checkpoint* no se fijaron de antemano: se eligieron bajando
+$\mathcal{L}_{\text{corpus}}$, mirando justo esas ventanas. Llamemos $\theta_{\text{corpus}}$ a los
+que la hacen mínima y $\theta^{\star}$ a los que hacen mínima $\bar{\mathcal{L}}$, los mejores que
+esta red puede tener. Con la media tomada sobre el azar que decide qué texto cae en cada parte,
+
+$$
+\mathbb{E}\left[\mathcal{L}_{\text{corpus}}(\theta_{\text{corpus}})\right] \le \mathbb{E}\left[\mathcal{L}_{\text{corpus}}(\theta^{\star})\right] = \bar{\mathcal{L}}(\theta^{\star}) \le \mathbb{E}\left[\bar{\mathcal{L}}(\theta_{\text{corpus}})\right] = \mathbb{E}\left[\mathcal{L}_{\text{res}}(\theta_{\text{corpus}})\right].
+$$
+
+La primera desigualdad es la definición de $\theta_{\text{corpus}}$: sobre su corpus no paga más que
+nadie. La igualdad siguiente vale porque $\theta^{\star}$ no depende del corpus; la segunda
+desigualdad es la definición de $\theta^{\star}$; y la última igualdad vale porque
+$\theta_{\text{corpus}}$ no depende del texto reservado. Leída de punta a punta, la pérdida de
+entrenamiento queda de media por debajo incluso de la de la mejor red posible, y la del texto
+reservado estima sin sesgo lo que se paga con texto nuevo.
+
+Dos salvedades. El checkpoint no es $\theta_{\text{corpus}}$, porque 2 000 pasos no llegan al mínimo:
+la cadena dice hacia dónde, no cuánto. Y el texto reservado no está del todo limpio. Es el final de la
+novela y no una muestra al azar, las fusiones del tokenizador se contaron sobre la novela entera, y
+eligió el checkpoint: el paso 1 750 fue el de menor pérdida sobre él entre ocho candidatos. Elegir
+entre ocho sesga poco; entre miles, como cuando se prueban hiperparámetros contra él, sesgaría mucho.
+Por eso los artículos apartan además un texto de **prueba** que sólo se mira al final.
+
+## Las varas de medir y el mini-GPT, en el navegador
+
+La primera celda usa sólo el tokenizador; la segunda y la tercera corren sobre el mini-GPT, el
+checkpoint del bloque. Las tres apartan el mismo 10 % final del corpus como texto reservado. La
+primera mide el modelo de unigramas con tres tokenizadores (las 0, 64 y 256 primeras fusiones), con
+el uniforme al lado, y antes dice qué caracteres del texto reservado no salen en la parte de
+entrenamiento.
+
+<PyCell packages={["numpy"]} code={`
+import json
+import numpy as np
+from pyodide.http import open_url
+
+exec(open_url("/courses/llm-agents/bpe.py").read())        # codificar, decodificar, quitar_cabecera
+F = [tuple(par) for par in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+ids = codificar(texto, F)
+n_res = len(ids) // 10                                     # el corte de siempre: el último 10 %
+entren, res = decodificar(ids[:-n_res], F), decodificar(ids[-n_res:], F)
+n = len(res.encode("utf-8"))                               # los bytes del texto reservado
+print("texto reservado: %d bytes. Caracteres que el entrenamiento no tiene: %s"
+      % (n, " ".join(sorted(set(res) - set(entren)))))
+
+def unigramas(m):
+    """El modelo de unigramas con las m primeras fusiones: frecuencias del entrenamiento, más uno."""
+    f = np.bincount(codificar(entren, F[:m]), minlength=256 + m)
+    p_uni = (f + 1) / (f + 1).sum()
+    x = np.array(codificar(res, F[:m]))                    # el texto reservado, en tokens
+    return p_uni, x, int((f[x] == 0).sum())
+
+print("   m   |V|      T   pérdida    PPL   bpb  | uniforme: PPL   bpb")
+for m in [0, 64, 256]:
+    p_uni, x, ceros = unigramas(m)
+    L = -np.log(p_uni[x]).mean()                           # nats por token
+    bpb = L * len(x) / n / np.log(2)                       # bits por byte
+    print("%4d  %4d  %5d   %6.3f  %6.1f  %4.2f  | %13d  %4.2f" % (m, 256 + m, len(x), L, np.exp(L), bpb,
+          256 + m, np.log2(256 + m) * len(x) / n))
+print("tokens del texto reservado con frecuencia cero:", ceros)
+`} />
+
+Lee la tabla por columnas. La pérdida por token y la perplejidad suben con las fusiones, de $24.5$ a
+$204.3$: cada token es un trozo más largo, y sin contexto es más difícil de acertar. Los bits por
+byte bajan, de $4.62$ a $3.58$, y ésa es la dirección buena: con más fusiones, el modelo de unigramas
+sabe más del texto. Por token parecería que empeora. La primera fila es el modelo que cuenta bytes
+del principio, el de unigramas sin fusiones, con su $3.200$.
+
+La primera línea explica la última. La parte de entrenamiento no tiene los dígitos 1, 2, 6, 7 ni 8,
+ni la <W>Í</W>, que salen en una inscripción de las últimas páginas y en la fecha con la que Galdós
+firma la novela: 10 tokens con frecuencia cero. Cambia `(f + 1) / (f + 1).sum()` por `f / f.sum()` y
+vuelve a ejecutarla: las tres pérdidas salen `inf`.
+
+La segunda pone al mini-GPT al lado del modelo de unigramas de 256 fusiones, que tiene su mismo
+tokenizador, sobre las mismas 32 ventanas de 64 tokens de cada parte. `nats` es la pérdida de la
+lección sobre el modelo causal sin promediar: un número por posición.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: np, open_url, F, ids, n_res, p_uni (el de m = 256).
+exec(open_url("/courses/llm-agents/minigpt.py").read())    # MiniGPT, ventanas, Adam
+V = vocabulario(F)
+bytes_de = np.array([len(V[i]) for i in range(512)])      # |u|: los bytes de cada entrada
+pesos = open_url("/courses/llm-agents/minigpt.json").read()
+modelo = MiniGPT.cargar(pesos)
+entren, res = np.array(ids[:-n_res]), np.array(ids[-n_res:])
+
+def nats(modelo, X, Y):
+    """-log p del token que de verdad vino, en cada posición de cada ventana: forma (B, T)."""
+    Z = modelo.adelante(X)[0]
+    logP = Z - Z.max(axis=-1, keepdims=True)
+    logP -= np.log(np.exp(logP).sum(axis=-1, keepdims=True))       # log-softmax
+    return -np.take_along_axis(logP, Y[..., None], axis=-1)[..., 0]
+
+print("                  pérdida    PPL   bpb")
+for nombre, parte in [("entrenamiento", entren), ("reservado", res)]:
+    X, Y = ventanas(parte, 32, 64, np.random.default_rng(0))      # 32 ventanas de 64 tokens
+    print(nombre)
+    for quien, c in [("unigramas", -np.log(p_uni[Y])), ("mini-GPT", nats(modelo, X, Y))]:
+        L, bpb = c.mean(), c.sum() / np.log(2) / bytes_de[Y].sum()
+        print("  %-14s %6.3f  %5.1f  %4.2f" % (quien, L, np.exp(L), bpb))
+`} />
+
+Sobre el texto reservado, el mini-GPT paga $3.182$ por token: perplejidad $24.1$ y $2.13$ bits por
+byte. (Es una muestra de $2\,048$ tokens; sobre el texto reservado entero, el guion que produjo el
+checkpoint mide $3.204$.) El modelo de unigramas paga $5.308$, perplejidad $202$. El contexto le
+compra al mini-GPT $2.1$ nats por token: dividir entre ocho las candidatas.
+
+Y compara las dos partes. El modelo de unigramas paga casi lo mismo en las dos, $5.294$ y $5.308$:
+con 511 números libres no puede aprenderse el texto de entrenamiento. El mini-GPT paga $2.556$ sobre
+el de entrenamiento, $0.63$ menos que sobre el reservado. Es la cadena de arriba, medida. Leyó cada
+token de esa parte unas veintiocho veces, y parte de lo que sabe de ella lo sabe de memoria.
+
+La tercera responde a lo que quedó pendiente en la lección sobre el entrenamiento. Allí, seguir
+entrenando sobre las últimas páginas de la novela bajaba la pérdida sobre esas mismas páginas. La
+celda repite aquel bucle en 100 pasos y mide antes y después sobre esas páginas y sobre el resto del
+texto reservado, que el bucle no toca.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior: modelo, pesos, res, nats, ventanas, MiniGPT, Adam, np.
+import time
+
+cola, resto = res[-3000:], res[:-3000]                    # las últimas páginas, y lo demás
+muestras = [ventanas(p, 16, 64, np.random.default_rng(0)) for p in (cola, resto)]
+antes = [nats(modelo, X, Y).mean() for X, Y in muestras]
+
+alumno, S = MiniGPT.cargar(pesos), 100                     # una copia: el checkpoint no se toca
+opt, rng, t0 = Adam(alumno.p), np.random.default_rng(0), time.time()
+for s in range(1, S + 1):                                  # el bucle de aquella celda, en corto
+    X, Y = ventanas(cola, 1, 16, rng)
+    _, g = alumno.perdida(X, Y)
+    norma = np.sqrt(sum((v ** 2).sum() for v in g.values()))
+    if norma > 1:
+        g = {k: v / norma for k, v in g.items()}
+    opt.paso(alumno.p, g, 5e-4 * min(1, s / 50) * (0.1 + 0.9 * (1 + np.cos(np.pi * s / S)) / 2))
+    if time.time() - t0 > 5:                               # el navegador corta a los 10 s
+        print("tiempo agotado en el paso", s)
+        break
+
+print("%d pasos sobre las últimas páginas     antes   después" % s)
+for nombre, (X, Y), a in zip(["esas páginas", "el resto del reservado"], muestras, antes):
+    print("  %-37s %.3f   %.3f" % (nombre, a, nats(alumno, X, Y).mean()))
+`} />
+
+Sobre las páginas con las que entrena, la pérdida baja de $3.595$ a $3.240$; sobre el resto del
+texto reservado, sube de $3.030$ a $3.095$. El mini-GPT no ha aprendido español: se ha aprendido esas
+páginas, sus nombres y sus palabras, y lo ha pagado en lo demás. Desde el primer paso, esas páginas
+dejaron de ser texto reservado para él, y su pérdida pasó a medir lo que mide la de entrenamiento.
+Cambia la semilla del bucle (el `default_rng(0)` de la línea del `Adam`): las cifras se mueven y los
+signos no.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: una perplejidad a mano, dos tokenizadores frente a frente, lo que hace falta para
+medir sin sesgo y una probabilidad cero.
+
+<Quiz id="q-una-mala-apuesta" />
+
+<Quiz id="q-dos-tokenizadores" />
+
+<Quiz id="q-sin-sesgo" />
+
+<Quiz id="q-probabilidad-cero" />
+
+---
+
+El mini-GPT tiene ya una cifra que se puede poner al lado de otras: unos 2.2 bits por byte sobre las
+páginas reservadas de *Marianela*, tokenizador incluido, frente a los 3.6 del modelo de unigramas y
+los 4.2 del que no sabe nada. Y la segunda celda dice por dónde flojea. Su pérdida de entrenamiento
+queda $0.6$ por debajo de la reservada porque ha leído su corpus decenas de veces: tiene demasiados
+parámetros para tan poco texto, o demasiado poco texto para tantos parámetros, y las dos frases no
+piden lo mismo.
+
+Cuál de las dos es la buena tiene una respuesta cuantitativa. La pérdida sobre texto no visto baja
+como una potencia del número de parámetros, del de tokens de entrenamiento y del cálculo gastado, y
+con un presupuesto fijo hay un reparto mejor que los demás entre modelo y datos. Medir esas potencias
+y ver dónde cae el mini-GPT respecto a ese reparto es <Leccion slug="leyes-de-escala">la lección
+siguiente, sobre las leyes de escala</Leccion>.

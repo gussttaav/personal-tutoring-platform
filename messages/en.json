@@ -1562,6 +1562,103 @@
         "sentenceStats": "{bytes} bytes → {tokens} tokens",
         "byteHint": "A box with hex digits is a stray byte: a piece of a character, not merged yet.",
         "slider": "Merges"
+      },
+      "sampling-explorer": {
+        "groupAria": "Next-token distribution of the mini-GPT under temperature, top-k and top-p",
+        "context": "Context",
+        "presetOpenAria": "Context “{context}”: the model hesitates between many entries",
+        "presetPeakedAria": "Context “{context}”: the model has all but decided",
+        "mass": "{kept}% of the mass kept · {cut}% cut",
+        "greedySummary": "τ = 0, greedy generation: no draw, always “{token}”.",
+        "drawSummary": "{n, plural, =1 {A single entry: no draw.} other {The draw is between # entries.}}",
+        "rowAria": "“{token}”: {before}% after temperature, {after}% after the cut",
+        "rowCutAria": "“{token}”: {before}% after temperature, dropped by the cut",
+        "percent": "{value}%",
+        "cut": "cut",
+        "cutRest": "cut",
+        "rest": "other {n}",
+        "restAria": "The other {n} entries: {before}% after temperature, {after}% after the cut",
+        "legendBefore": "after temperature",
+        "legendAfter": "when drawing, after the cut",
+        "legendCut": "dropped by the cut",
+        "temperature": "Temperature τ",
+        "greedyValue": "0 · greedy",
+        "cutLabel": "Cut-off",
+        "modes": {
+          "none": "no cut",
+          "topK": "top-k",
+          "topP": "top-p"
+        },
+        "kSlider": "k · entries kept",
+        "pSlider": "p · mass the nucleus reaches"
+      },
+      "kv-cache": {
+        "groupAria": "The mini-GPT generates a whole context window, token by token, with the key–value cache or without it",
+        "modeLabel": "Each token",
+        "modes": {
+          "cached": "with cache",
+          "recompute": "no cache"
+        },
+        "cacheTitle": "The cache: one column per position, one row per stored matrix",
+        "cacheRowAria": "{row}: {read, plural, =0 {nothing read from the cache} =1 {one column read from the cache} other {# columns read from the cache}} and {computed, plural, =1 {one computed} other {# computed}} for this token",
+        "legendComputed": "computed for this token",
+        "legendRead": "read from the cache",
+        "legendEmpty": "not there yet",
+        "costTitle": "Multiplications at each position (the axis tops out at {max})",
+        "costAria": "Multiplications at positions 1 to {total}: nearly flat with the cache, a ramp without it. Marked: position {t}.",
+        "legendWith": "with cache: c(t)",
+        "legendWithout": "no cache: t · c(t)",
+        "position": "Position t = {t} of {total}. The cache holds {t, plural, =1 {one key and one value} other {# keys and # values}} per layer: {numbers} numbers.",
+        "withCache": "With the cache: one new row, {mults} multiplications.",
+        "withoutCache": "Without it: {t, plural, =1 {one row, {mults} multiplications: the same.} other {all # rows again, {mults} multiplications: # times as many.}}",
+        "totals": "Summed so far: {with} with the cache, {without} without it.",
+        "slider": "Position t",
+        "back": "◀ token",
+        "forward": "token ▶"
+      },
+      "scaling-laws": {
+        "groupAria": "Kaplan's and Chinchilla's scaling laws, and the optimal split of a compute budget between parameters and tokens",
+        "views": {
+          "laws": "The laws",
+          "budget": "A budget"
+        },
+        "axisLabel": "Against",
+        "axes": {
+          "n": "N · parameters",
+          "d": "D · tokens",
+          "c": "C · compute"
+        },
+        "lawsTitle": "Loss in nats per token against {q}, both axes logarithmic",
+        "lawsAria": "The loss against {q} on logarithmic axes: Kaplan's law is a straight line; Chinchilla's bends towards a floor.",
+        "legendKaplan": "Kaplan (2020)",
+        "legendChinchilla": "Chinchilla (2022), refitted in 2024",
+        "legendExtended": "dashed: beyond what was measured",
+        "readKaplan": "Kaplan, at {q} = {x}: loss {loss}. Multiplying {q} by 10 multiplies it by {factor}.",
+        "readChinchilla": "Chinchilla: loss {loss}. Multiplying {q} by 10 multiplies it by {factor}.",
+        "readChinchillaOff": "Chinchilla: above the chart, far from anything its fit measured.",
+        "heightNote": "Two different corpora and two different tokenisers: compare the shape of the curves, not their height.",
+        "slider": {
+          "n": "N, parameters",
+          "d": "D, training tokens",
+          "c": "C, FLOPs"
+        },
+        "valleyTitle": "Loss against N with the budget fixed, C = {c} FLOPs, and D = C/6N",
+        "valleyAria": "With C = {c} FLOPs, the loss against N forms a valley whose bottom is at N* = {n}.",
+        "valleyAxes": "N on a logarithmic scale. On the left, small models that read many tokens; on the right, large ones that read few.",
+        "optimum": "The bottom: N* = {n} parameters and D* = {d} tokens, {ratio} tokens per parameter, loss {loss}.",
+        "gopherNote": "With this budget, a model the size of Gopher (280 billion parameters) sits {gap} above the bottom; one the size of Chinchilla (70 billion) sits on it.",
+        "extended": "Outside what Chinchilla measured, 6 × 10¹⁸ to 3 × 10²¹ FLOPs: here the curve is extended, not measured.",
+        "budgetSlider": "Budget C",
+        "gopherButton": "Gopher's budget",
+        "frontierTitle": "The bottom of the valley for every budget: N* against C, both axes logarithmic",
+        "frontierAria": "N* against C is a straight line. GPT-3 and Gopher sit well above it; Chinchilla on it; the mini-GPT on its extension, seven orders of magnitude lower.",
+        "frontierAxes": "The line, solid where Chinchilla measured. The points, trained models, at C = 6ND.",
+        "models": {
+          "miniGpt": "mini-GPT",
+          "gpt3": "GPT-3",
+          "gopher": "Gopher",
+          "chinchilla": "Chinchilla"
+        }
       }
     }
   },

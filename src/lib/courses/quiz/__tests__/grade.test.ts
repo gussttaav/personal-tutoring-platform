@@ -145,10 +145,35 @@ describe("gradeQuestion — numeric tolerance", () => {
     expect(gradeQuestion(q, 2.6).correct).toBe(false);
   });
 
+  // Decimal boundaries are NOT exact in binary: 9.46 - 9.41 is 0.05000000000000071 and
+  // 0.4 - 0.3 is 0.10000000000000003, so a bare `<=` drops one edge of the ±tolerance
+  // the UI advertises. Both edges must pass, and the next step out must still fail.
+  it.each([
+    { answer: 9.46, tolerance: 0.05, lower: 9.41, upper: 9.51, below: 9.4, above: 9.52 },
+    { answer: 0.3, tolerance: 0.1, lower: 0.2, upper: 0.4, below: 0.19, above: 0.41 },
+    { answer: 2.25, tolerance: 0.01, lower: 2.24, upper: 2.26, below: 2.239, above: 2.261 },
+    { answer: 1.73, tolerance: 0.02, lower: 1.71, upper: 1.75, below: 1.709, above: 1.751 },
+  ])(
+    "accepts both decimal edges of $answer ± $tolerance and rejects just past them",
+    ({ answer, tolerance, lower, upper, below, above }) => {
+      const q: NumericQuizQuestion = { ...numeric, answer, tolerance };
+      expect(gradeQuestion(q, lower).correct).toBe(true);
+      expect(gradeQuestion(q, upper).correct).toBe(true);
+      expect(gradeQuestion(q, below).correct).toBe(false);
+      expect(gradeQuestion(q, above).correct).toBe(false);
+    },
+  );
+
   it("supports a zero tolerance for an exact integer answer", () => {
     const q: NumericQuizQuestion = { ...numeric, answer: 4, tolerance: 0 };
     expect(gradeQuestion(q, 4).correct).toBe(true);
     expect(gradeQuestion(q, 4.0001).correct).toBe(false);
+  });
+
+  it("treats a zero tolerance as exact up to float noise, not bit-for-bit", () => {
+    const q: NumericQuizQuestion = { ...numeric, answer: 0.3, tolerance: 0 };
+    expect(gradeQuestion(q, 0.1 + 0.2).correct).toBe(true);
+    expect(gradeQuestion(q, 0.3001).correct).toBe(false);
   });
 
   it("treats a missing or non-finite answer as incorrect", () => {
