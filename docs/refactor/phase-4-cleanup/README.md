@@ -18,11 +18,11 @@ Two small tasks that close the cycle:
 
 ## Exit criteria
 
-- [ ] Every `refunds.create` call is keyed; checkout keys include amount + currency
-- [ ] CLAUDE.md describes the post-cycle-4 state (pricing overrides, 16-table deletion walk, slot validation, cancel RPC, commerce providers, icon subset, admin query layer)
-- [ ] No comment names QStash in the present tense, calls the crons "Vercel cron", or claims `content/` is untraced
-- [ ] `pnpm test`, `pnpm build` green
-- [ ] Ready for `/refactor-archive`
+- [x] Every `refunds.create` call is keyed; checkout keys include amount + currency
+- [x] CLAUDE.md describes the post-cycle-4 state (pricing overrides, 16-table deletion walk, slot validation, cancel RPC, commerce providers, icon subset, admin query layer)
+- [x] No comment names QStash in the present tense, calls the crons "Vercel cron", or claims `content/` is untraced
+- [x] `pnpm test`, `pnpm build` green
+- [x] Ready for `/refactor-archive`
 
 ## Relation to prior cycles
 

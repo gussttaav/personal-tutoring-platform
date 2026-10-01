@@ -35,6 +35,9 @@
 // earliest-expiring active pack with room — commit together or not at all.
 // `creditsRestored` reports what the RPC did, not what the session type implies. The
 // booking saga's credit compensation restores to the exact pack it decremented.
+//
+// REFACTOR-R4-P4-02: step 6's comment rewritten. It still described the scheduler
+// removed in cycle 2; the ordering now serves pending_terminations + the session-cleanup cron.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -320,8 +323,9 @@ export class BookingService {
       });
       await invalidateAvailability(input.startIso.slice(0, 10)).catch(() => {});
 
-      // 6. Booking record — moved BEFORE QStash so the booking row exists if QStash
-      //    scheduling fails; P1-04's fallback cron can then find and terminate it.
+      // 6. Booking record — written before the pending_terminations row (step 7), so the
+      //    daily /api/internal/session-cleanup cron always finds the booking it has to mark
+      //    completed / no_show, and before the Zoom session row (step 8, FK).
       //    REFACTOR-R4-P1-03: a rescheduled paid class keeps its PaymentIntent (the
       //    request carries none), so history and the mobile poll find the new booking.
       const stripePaymentId = input.stripePaymentId ?? oldRecord?.stripePaymentId;

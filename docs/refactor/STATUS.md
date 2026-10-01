@@ -68,12 +68,12 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 | Task | Tag | Sev | Status | Owner | PR |
 |------|-----|-----|--------|-------|----|
 | [01 Stripe idempotency keys](phase-4-cleanup/01-stripe-idempotency-keys.md) | `REFACTOR-R4-P4-01` | 🟢 | ✅ | Claude | local (`claude/stripe-idempotency-keys-65b776`). The task's refund cast did not typecheck with a second argument and was dropped; two existing refund assertions updated for the new argument, see Deviations; e2e not run (no UI change) |
-| [02 CLAUDE.md drift + stale comments](phase-4-cleanup/02-docs-drift.md) | `REFACTOR-R4-P4-02` | 🟢 | ⬜ | _tbd_ | |
+| [02 CLAUDE.md drift + stale comments](phase-4-cleanup/02-docs-drift.md) | `REFACTOR-R4-P4-02` | 🟢 | ✅ | Claude | local (`claude/docs-drift-cleanup-8a5a93`). Also documents P3-03 + P4-01 (shipped after the task was written) and fixes four older CLAUDE.md drifts found in the review, see Deviations |
 
 **Exit criteria**
 - [x] Every `refunds.create` call carries an idempotency key; checkout keys include the amount _(P4-01; `grep -rn "refunds.create" src` → one call, keyed `refund:slot_taken:<pi>`. Service tests over the fake: a failed refund record + redelivery replays one refund and records it; a price edit inside one window → two keys; no edit → one key)_
-- [ ] CLAUDE.md describes the post-cycle-4 state; no comment names QStash, "Vercel cron", or claims `content/` is untraced
-- [ ] `pnpm test`, `pnpm build` green
+- [x] CLAUDE.md describes the post-cycle-4 state; no comment names QStash, "Vercel cron", or claims `content/` is untraced _(P4-02; one gotcha per cycle-4 convention, each naming its file. `grep -rn QStash src` → only `csrf.ts`'s historical `REFACTOR-R3-P4-01` note; the "Vercel cron" hits all say "not Vercel crons". Every path CLAUDE.md names exists)_
+- [x] `pnpm test`, `pnpm build` green _(P4-02 branch, which carries the whole cycle: 169/169 suites, 2239 tests; build green, 192/192 static pages. Lint on the three touched code files clean)_
 
 ---
 
@@ -697,6 +697,30 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
 - **P4-01 — NOT done:** `pnpm test:e2e` (no UI change), and a Stripe test-mode replay of a keyed
   refund (the SDK forwards `idempotencyKey` as the `Idempotency-Key` header, the same path
   `createPaymentIntent` has used since REFACTOR-P1-05).
+
+- **P4-02 — line refs and counts drifted since the task was written.** The stale step-6 comment
+  was at `BookingService.ts:323-324`, not `:237-238`. `/api/courses/progress` now traces 81
+  `content/` files, not 74 (content grew): 72 of 72 under `content/courses/`. The search-index
+  route's own trace also lists all 72, so its comment now says so. The `dynamicParams` paragraph
+  was rewritten around what still holds, checked on `next start`: an unknown course or locale
+  gets Next's HTML 404 and the handler never runs; a known pair answers 200 JSON.
+- **P4-02 — `startup-checks.ts` names three CRON_SECRET routes, not two.** P3-03's
+  `/api/internal/booking-payment-audit` shipped after the task was written.
+- **P4-02 — documented beyond the task's convention list (what shipped, per its gotchas):** P3-03
+  (all three cron routes in the cron-job.org gotcha, `BookingPaymentAuditService` in the service
+  list and in the P1-01 gotcha) and P4-01 (one gotcha on Stripe idempotency keys). The Service
+  Layer list also gained `AdminService` and `PaymentService`'s reconcile cron. The free-call cap
+  and P1-04's expired-pack fallback are written up as "the cycle-4 default, not yet confirmed by
+  Gustavo" (see Decisions). **When Gustavo decides, update those two CLAUDE.md lines.**
+- **P4-02 — older CLAUDE.md drift fixed, found by the review:** the quick reference pointed admin
+  pages at `src/app/admin/` (they live in `src/app/[locale]/admin/`); the schedule gotcha still
+  said "60s ISR loader" (30 days since PERF-11) and now names `CommerceProviders`; the cron
+  gotcha named only `session-cleanup`; the booking-shell gotcha's reason for `PersonalArea`
+  reading `packSession` from `useBooking()` stopped holding with P2-04 and was reworded.
+- **P4-02 — not touched:** `csrf.ts`'s exemption list doesn't name `booking-payment-audit` (a
+  GET behind `CRON_SECRET`, like the two cron routes it does list). It's outside the task's file
+  list and changes no behaviour, so it's left as a one-line follow-up. The archive is
+  `/refactor-archive`'s job.
 
 ## Known regressions introduced
 

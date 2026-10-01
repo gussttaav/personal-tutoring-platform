@@ -1,6 +1,6 @@
 # P4-02 — CLAUDE.md drift + stale comments
 
-**Tag:** `REFACTOR-R4-P4-02` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P4-02` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
@@ -68,11 +68,11 @@ tutorials.
 
 ## Acceptance criteria
 
-- [ ] Every claim in the "Already stale" list is corrected
-- [ ] Each "New conventions" item has a CLAUDE.md line naming the rule and the file
-- [ ] `grep -rn "QStash" src` → only historical tag comments (e.g. `REFACTOR-P1-04` notes), no present-tense claims
-- [ ] `pnpm build` green (comment-only code changes)
-- [ ] File-top comment blocks of touched code files carry `REFACTOR-R4-P4-02`
+- [x] Every claim in the "Already stale" list is corrected
+- [x] Each "New conventions" item has a CLAUDE.md line naming the rule and the file
+- [x] `grep -rn "QStash" src` → only historical tag comments (e.g. `REFACTOR-P1-04` notes), no present-tense claims
+- [x] `pnpm build` green (comment-only code changes)
+- [x] File-top comment blocks of touched code files carry `REFACTOR-R4-P4-02`
 
 ## Test plan
 
