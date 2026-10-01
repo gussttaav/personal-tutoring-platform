@@ -881,7 +881,7 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "It looks simple in class, <accent>here I go deeper</accent>",
+      "heading": "When something intrigues me, <accent>I dig into it and write it up</accent>",
       "subtitle": "Articles on programming, mathematics and AI. Not the how, but the why.",
       "empty": {
         "title": "No articles yet",

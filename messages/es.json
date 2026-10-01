@@ -881,7 +881,7 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "En clase parece simple, <accent>aquí profundizo</accent>",
+      "heading": "Cuando algo me intriga, <accent>lo investigo y lo escribo</accent>",
       "subtitle": "Artículos sobre programación, matemáticas e IA. No el cómo, sino el por qué.",
       "empty": {
         "title": "Todavía no hay artículos",
