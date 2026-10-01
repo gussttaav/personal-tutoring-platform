@@ -1,6 +1,6 @@
 # P2-01 — `@googleapis/calendar` instead of the full `googleapis`
 
-**Tag:** `REFACTOR-R4-P2-01` · **Severity:** 🟠 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P2-01` · **Severity:** 🟠 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

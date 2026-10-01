@@ -1,6 +1,6 @@
 # P2-02 — Shell weight: icon-font subset + Sentry Replay
 
-**Tag:** `REFACTOR-R4-P2-02` · **Severity:** 🟠 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P2-02` · **Severity:** 🟠 · **Effort:** M · **Owner:** Claude · **Status:** ✅ (JS target missed, accepted)
 
 ## TL;DR
 

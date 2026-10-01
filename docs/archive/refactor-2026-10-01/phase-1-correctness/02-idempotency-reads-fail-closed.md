@@ -1,6 +1,6 @@
 # P1-02 — Idempotency and eligibility reads fail closed
 
-**Tag:** `REFACTOR-R4-P1-02` · **Severity:** 🟠 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P1-02` · **Severity:** 🟠 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

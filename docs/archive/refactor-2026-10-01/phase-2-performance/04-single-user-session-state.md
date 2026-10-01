@@ -1,6 +1,6 @@
 # P2-04 — One user-session state for the whole page
 
-**Tag:** `REFACTOR-R4-P2-04` · **Severity:** 🟡 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P2-04` · **Severity:** 🟡 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

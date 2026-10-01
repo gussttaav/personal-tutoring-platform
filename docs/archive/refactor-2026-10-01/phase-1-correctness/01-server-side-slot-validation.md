@@ -1,6 +1,6 @@
 # P1-01 — Server-side slot validation + `/api/book` rate limit
 
-**Tag:** `REFACTOR-R4-P1-01` · **Severity:** 🔴 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P1-01` · **Severity:** 🔴 · **Effort:** M · **Owner:** Claude · **Status:** ✅ (trimmed)
 
 ## TL;DR
 

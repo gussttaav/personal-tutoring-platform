@@ -1,6 +1,6 @@
 # P4-01 — Stripe idempotency keys: refunds keyed, checkout keys carry the amount
 
-**Tag:** `REFACTOR-R4-P4-01` · **Severity:** 🟢 · **Effort:** S · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P4-01` · **Severity:** 🟢 · **Effort:** S · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

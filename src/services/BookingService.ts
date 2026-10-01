@@ -18,7 +18,7 @@
 // blocks — in-process checks only, no network call — and createBooking runs it before
 // any side effect. PaymentService runs it at checkout. Also caps the free 15-minute
 // call at one non-cancelled booking per user. (Trimmed at Gustavo's request: no
-// per-booking Google Calendar read — see docs/refactor/STATUS.md.)
+// per-booking Google Calendar read — see docs/archive/refactor-2026-10-01/STATUS.md.)
 //
 // REFACTOR-R4-P1-02: hasBookingForPayment — status-agnostic delegate backing the
 // PaymentService webhook's "already fulfilled" gate.

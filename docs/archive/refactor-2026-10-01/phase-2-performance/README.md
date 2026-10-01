@@ -32,12 +32,12 @@ figures come from the main checkout's build of 2026-09-27 and are approximate fo
 
 ## Exit criteria
 
-- [ ] No API lambda traces a chunk containing the full `googleapis` catalog; the largest server chunk in `/api/courses/progress`'s trace is < 2 MB
-- [ ] Icon font ≤ 150 KB; `pnpm check:icons` green in CI; visual pass shows no ligature-text icons
-- [ ] Blog-post first-load gzipped JS down ≥ 60 KB; Lighthouse mobile LCP on `/` and a post recorded before/after (median of 3)
-- [ ] No blog/lesson/course `.meta` lists `pricing-all` or `schedule-config`
-- [ ] Signed-in page load: one `/api/credits`; no `/api/pricing` on lessons and posts
-- [ ] `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm check:messages` green; e2e home + booking + courses specs green
+- [x] No API lambda traces a chunk containing the full `googleapis` catalog; the largest server chunk in `/api/courses/progress`'s trace is < 2 MB
+- [x] Icon font ≤ 150 KB; `pnpm check:icons` green in CI; visual pass shows no ligature-text icons
+- [x] **Missed, accepted:** blog-post first-load gzipped JS down ≥ 60 KB (got −38.5 KB, see STATUS.md); Lighthouse mobile LCP on `/` and a post recorded before/after (median of 3)
+- [x] No blog/lesson/course `.meta` lists `pricing-all` or `schedule-config`
+- [x] Signed-in page load: one `/api/credits`; no `/api/pricing` on lessons and posts
+- [x] `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm check:messages` green; e2e home + booking + courses specs green
 
 ## Relation to prior cycles
 

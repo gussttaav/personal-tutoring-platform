@@ -33,13 +33,13 @@ tutor's records being right and reachable:
 
 ## Exit criteria
 
-- [ ] Slot-taken refund in the lookback window → no reconcile mismatch; no route handler imports the `stripe` singleton
-- [ ] Dead-letter retry of a PaymentIntent writes a `payments` row with the charged amount
-- [ ] A student past #100 by email is findable in `/admin/students`; the low-credit count covers students only
-- [ ] `src/app/[locale]/admin/_data.ts` removed; admin reads go through `AdminService` → `IAdminQueryRepository`
-- [ ] Every admin POST/PATCH calls `isValidOrigin`; a debit larger than the balance reports what was applied
-- [ ] The daily booking-payment audit reports a class whose payment was refunded in Stripe; a clean run sends no email
-- [ ] `pnpm test`, `pnpm lint`, `pnpm build` green; migrations `0024` applied to the test DB
+- [x] Slot-taken refund in the lookback window → no reconcile mismatch; no route handler imports the `stripe` singleton
+- [x] Dead-letter retry of a PaymentIntent writes a `payments` row with the charged amount
+- [x] A student past #100 by email is findable in `/admin/students`; the low-credit count covers students only
+- [x] `src/app/[locale]/admin/_data.ts` removed; admin reads go through `AdminService` → `IAdminQueryRepository`
+- [x] Every admin POST/PATCH calls `isValidOrigin`; a debit larger than the balance reports what was applied
+- [x] The daily booking-payment audit reports a class whose payment was refunded in Stripe; a clean run sends no email
+- [x] `pnpm test`, `pnpm lint`, `pnpm build` green; migrations `0024` applied to the test DB
 
 ## Relation to prior cycles
 

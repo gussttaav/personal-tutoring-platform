@@ -1,6 +1,6 @@
 # P1-04 — Atomic cancel, credit back to the originating pack
 
-**Tag:** `REFACTOR-R4-P1-04` · **Severity:** 🟡 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P1-04` · **Severity:** 🟡 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

@@ -1,6 +1,6 @@
 # P3-02 — Admin students area: reads behind a repository, writes hardened
 
-**Tag:** `REFACTOR-R4-P3-02` · **Severity:** 🟡 · **Effort:** L · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P3-02` · **Severity:** 🟡 · **Effort:** L · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

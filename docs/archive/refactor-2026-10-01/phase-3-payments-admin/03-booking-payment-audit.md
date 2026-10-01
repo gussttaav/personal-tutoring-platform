@@ -1,6 +1,6 @@
 # P3-03 — Daily audit: every upcoming class longer than 15 minutes is paid
 
-**Tag:** `REFACTOR-R4-P3-03` · **Severity:** 🟡 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P3-03` · **Severity:** 🟡 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

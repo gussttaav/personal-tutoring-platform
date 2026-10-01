@@ -1,6 +1,6 @@
 # P1-03 — Reschedule keeps the original booking until the new one commits
 
-**Tag:** `REFACTOR-R4-P1-03` · **Severity:** 🟠 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P1-03` · **Severity:** 🟠 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

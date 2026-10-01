@@ -1,6 +1,7 @@
 # Refactor Cycle 4 — Status
 
 **Started:** 2026-09-28 (audit + plan)
+**Archived:** 2026-10-01 → `docs/archive/refactor-2026-10-01/` (see [Archive reconciliation](#archive-reconciliation-2026-10-01) and [SUMMARY.md](SUMMARY.md))
 **Legend:** ⬜ not started · 🔄 in progress · ⛔ blocked · ✅ done · 🚫 won't do
 
 Update this file when starting, completing, or blocking a task. Record decisions taken on the
@@ -26,7 +27,7 @@ Landing order: P1-02 → P1-01 → P1-03 → P1-04.
 - [x] Forced Supabase error in any idempotency read during a duplicate webhook → 500 (Stripe retries), no refund, no second booking _(P1-02; mocked-client repository test + in-memory PaymentService tests)_
 - [x] Forced failure after the reschedule's old-token claim → the original booking is `confirmed` again with a working cancel link _(P1-03; service (mock) + integration (in-memory: calendar, booking insert, Zoom session insert) + DB-gated `reinstateBooking` tests; e2e not run)_
 - [x] Cancelling a pack class returns the credit to `bookings.credit_pack_id`'s pack in the same transaction; `creditsRestored` is false whenever nothing was restored _(P1-04; DB-gated RPC tests against the test DB + service (mock) + integration (in-memory) tests. `0023` is NOT on production yet)_
-- [ ] `pnpm test`, `pnpm lint`, `pnpm build` green; `pnpm test:e2e` booking/cancel/reschedule specs green (re-run once for known flakes)
+- [x] `pnpm test`, `pnpm lint`, `pnpm build` green; `pnpm test:e2e` booking/cancel/reschedule specs green (re-run once for known flakes) _(test/lint/build per task, see Deviations. e2e: full suite run by hand by Gustavo, 50/50 green, confirmed 2026-10-01)_
 
 ## Phase 2 — Performance
 
@@ -42,10 +43,10 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 **Exit criteria**
 - [x] No `route.js.nft.json` under `.next/server/app/api/` references a chunk containing the full `googleapis` catalog; the largest server chunk traced by `/api/courses/progress` is < 2 MB _(P2-01; 0 of 41 routes, largest 1,313 KB, which is the Stripe chunk)_
 - [x] Icon font ≤ 150 KB; `pnpm check:icons` green; no icon renders as its ligature text on `/`, `/mentoria`, `/area-personal`, a lesson, a post _(P2-02; 14,840 bytes, 107 icons; width audit on every page in the task's acceptance list, desktop + mobile)_
-- [ ] First-load gzipped JS on a blog post down by ≥ 60 KB vs. the pre-task measurement (recorded in the PR) _(P2-02 got −38.5 KB: 352.5 → 314.0 KB. Replay was smaller than the audit assumed; see Deviations)_
+- [x] **Missed, accepted by Gustavo (2026-10-01):** First-load gzipped JS on a blog post down by ≥ 60 KB vs. the pre-task measurement (recorded in the PR) _(P2-02 got −38.5 KB: 352.5 → 314.0 KB. Replay was smaller than the audit assumed; see Deviations. The remaining lever, Sentry browser tracing, is deferred)_
 - [x] No `.meta` file for a blog post or lesson lists `pricing-all` or `schedule-config` in `x-next-cache-tags` _(P2-03; 0 of the 104 blog/course `.meta` files. Still tagged: `es`/`en` home, `mentoria`, `pago-exitoso`, `sesion-confirmada`, `terminos`, and `/api/policy`)_
 - [x] A signed-in page load issues exactly one `/api/credits`; lessons and posts issue no `/api/pricing` _(P2-03 closes the `/api/pricing` half: a signed-in lesson load requested only `/api/auth/session`; `/mentoria` requests `/api/pricing` once. P2-04 closes the `/api/credits` half: 1 per full load on `/`, `/mentoria`, `/area-personal` and a lesson)_
-- [ ] `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm check:messages` green; e2e home + booking specs green
+- [x] `pnpm test`, `pnpm lint`, `pnpm build`, `pnpm check:messages` green; e2e home + booking specs green _(test/lint/build/check:messages per task, see Deviations. e2e: full suite run by hand by Gustavo, 50/50 green, confirmed 2026-10-01)_
 
 ## Phase 3 — Payments & Admin
 
@@ -81,12 +82,12 @@ P2-03 before P2-04. P2-01 and P2-02 are independent.
 
 _Record Gustavo's answers to the PLAN.md open questions here (task, decision, date)._
 
-- **P1-01 free-call policy — DEFAULT ASSUMED, awaiting Gustavo's confirmation (2026-09-28).**
+- **P1-01 free-call policy — default CONFIRMED by Gustavo (2026-10-01; implemented 2026-09-28).**
   Implemented as "at most one non-cancelled `free15min` per user" (confirmed, completed and
   no_show all count; cancelling frees it; a reschedule is exempt). The switch is one guard in
   `BookingService.createBooking` + `IBookingRepository.hasActiveFreeSession`; "one ever" would
   swap it for `hasAnyBooking`-style logic, "no cap" would delete the guard.
-- **P1-04 expired originating pack — DEFAULT ASSUMED, awaiting Gustavo's confirmation (2026-09-29).**
+- **P1-04 expired originating pack — default CONFIRMED by Gustavo (2026-10-01; implemented 2026-09-29).**
   `cancel_booking` (migration `0023`) restores to the originating pack if it is still
   redeemable and not full, else to the earliest-expiring active pack with room (the pre-0023
   rule), else restores nothing. It reports `restored: false`, the API / `/cancelar` / email say
@@ -734,3 +735,28 @@ _Record Gustavo's answers to the PLAN.md open questions here (task, decision, da
   original and the new booking now share the PaymentIntent, and `deriveAmount`
   (`booking-history.ts`) resolves it for both rows regardless of status. Accepted in the task's
   gotchas (pack reschedules already behaved like this); deduplication is out of scope.
+
+## Archive reconciliation (2026-10-01)
+
+The three exit-criteria boxes still open at archive time were closed on Gustavo's word. The
+archiving pass did not re-run anything:
+
+- **e2e.** Gustavo ran the full Playwright suite by hand: 50/50 green. This closes the e2e half of
+  the Phase 1 and Phase 2 test criteria and the "e2e not run" notes in the task rows above.
+- **P2-02 JS target.** −38.5 KB of the ≥ 60 KB, accepted as missed. The next lever (Sentry browser
+  tracing) is deferred, see SUMMARY.md.
+- **Production steps, done by hand by Gustavo:** migrations `0023` and `0024` on production; the
+  cron-job.org job for `/api/internal/booking-payment-audit`; P3-03's staging run.
+- **Decisions.** Both defaults confirmed (see Decisions). The two CLAUDE.md lines that said "not
+  yet confirmed by Gustavo" were updated in the archive commit.
+
+Out-of-plan follow-ups that landed on `staging` after P4-02, closing items listed above:
+
+- `REFACTOR-R4-P1-05` (`4f9103d`): P1-04's first follow-up. `cancelByToken`'s post-commit
+  `getLocale()` is best-effort (`warn`, falls back to `es`), so a completed cancel no longer
+  answers 500.
+- `CRON-AUTH-01` (`c9c0ea9`): P3-03's follow-up. `reconcile-stripe` and `session-cleanup` refuse an
+  unset `CRON_SECRET` (`Bearer undefined`), like `booking-payment-audit`.
+
+Where the code is: every task commit reached `staging` through `7156dfd` (Merge branch
+'refactorization'). None is on `main` at archive time.

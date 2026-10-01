@@ -32,14 +32,14 @@ behind them. All four were found by following what the server actually checks ve
 
 ## Exit criteria
 
-- [ ] `POST /api/book` rejects an off-hours start, a busy slot, a misaligned start, and a window whose length ≠ the session type's; nothing is created and no credit is spent
-- [ ] `POST /api/stripe/checkout` rejects a mismatched duration before creating a PaymentIntent; the webhook books `startIso + duration`
-- [ ] `/api/book` returns 429 under burst
-- [ ] Forced Supabase error in `isProcessed` / `wasRefunded` / booking-by-PI lookups during a duplicate webhook → 500, no refund
-- [ ] Forced Supabase error in the user lookup during `DELETE /api/account` → 500, nothing deleted
-- [ ] Forced failure after the reschedule claims the old token → old booking `confirmed` again, cancel link works, calendar event intact
-- [ ] Pack class cancel: credit returns to `bookings.credit_pack_id`'s pack atomically with the status change; `creditsRestored` truthful
-- [ ] `pnpm test`, `pnpm lint`, `pnpm build` green; e2e `booking-*`, `cancellation`, `reschedule` specs green
+- [x] `POST /api/book` rejects an off-hours start, ~~a busy slot,~~ a misaligned start, and a window whose length ≠ the session type's; nothing is created and no credit is spent _(busy-slot check dropped with the P1-01 trim, see STATUS.md)_
+- [x] `POST /api/stripe/checkout` rejects a mismatched duration before creating a PaymentIntent; the webhook books `startIso + duration`
+- [x] `/api/book` returns 429 under burst
+- [x] Forced Supabase error in `isProcessed` / `wasRefunded` / booking-by-PI lookups during a duplicate webhook → 500, no refund
+- [x] Forced Supabase error in the user lookup during `DELETE /api/account` → 500, nothing deleted
+- [x] Forced failure after the reschedule claims the old token → old booking `confirmed` again, cancel link works, calendar event intact
+- [x] Pack class cancel: credit returns to `bookings.credit_pack_id`'s pack atomically with the status change; `creditsRestored` truthful
+- [x] `pnpm test`, `pnpm lint`, `pnpm build` green; e2e `booking-*`, `cancellation`, `reschedule` specs green
 
 ## Relation to prior cycles
 

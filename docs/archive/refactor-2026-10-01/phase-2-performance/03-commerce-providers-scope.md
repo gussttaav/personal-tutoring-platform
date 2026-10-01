@@ -1,6 +1,6 @@
 # P2-03 — Commerce providers out of the root layout
 
-**Tag:** `REFACTOR-R4-P2-03` · **Severity:** 🟡 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P2-03` · **Severity:** 🟡 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 

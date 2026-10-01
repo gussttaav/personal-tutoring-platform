@@ -1,6 +1,6 @@
 # P3-01 — Payment ledger accuracy
 
-**Tag:** `REFACTOR-R4-P3-01` · **Severity:** 🟡 · **Effort:** M · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `REFACTOR-R4-P3-01` · **Severity:** 🟡 · **Effort:** M · **Owner:** Claude · **Status:** ✅
 
 ## TL;DR
 
