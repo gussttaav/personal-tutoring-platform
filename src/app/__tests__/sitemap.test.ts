@@ -161,6 +161,7 @@ function blogFile(fm: { slug: string; date: string; draft?: boolean }): string {
     draft:   fm.draft ?? false,
     reading: [] as unknown[],
     tags:    [] as string[],
+    aiImages: false,
   };
   const yaml = Object.entries(full)
     .map(([k, v]) => `${k}: ${JSON.stringify(v)}`)

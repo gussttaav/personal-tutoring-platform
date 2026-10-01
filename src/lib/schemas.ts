@@ -659,6 +659,10 @@ export const PostFrontmatterSchema = z.strictObject({
       seen.add(tag);
     }
   }),
+  // BLOG-AI-NOTE-01: whether the post's images were generated with AI. Drives the
+  // images clause of the AI-use note at the foot of the article (the text clause is
+  // always shown). Required, like `tags`: every post states it rather than defaulting.
+  aiImages: z.boolean(),
 });
 
 export type PostFrontmatterInput = z.infer<typeof PostFrontmatterSchema>;

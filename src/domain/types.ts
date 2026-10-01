@@ -492,6 +492,9 @@ export interface Post {
   /** Required, may be empty. No tag pages yet — the field exists so posts are
    *  authored with their subject stated, not retrofitted when tag pages land. */
   tags:     string[];
+  /** BLOG-AI-NOTE-01 — the post's images were generated with AI. Picks the wording of
+   *  the AI-use note at the foot of the article. Required. */
+  aiImages: boolean;
 }
 
 /** A minimal post pointer used for prev/next navigation. */

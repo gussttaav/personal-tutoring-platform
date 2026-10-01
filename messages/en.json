@@ -901,7 +901,12 @@
       "moreLabel": "More articles",
       "older": "Previous article",
       "newer": "Next article",
-      "onThisPage": "On this page"
+      "onThisPage": "On this page",
+      "aiNote": {
+        "title": "A note on AI",
+        "withImages": "The images in this article were generated with AI, and the text was edited and proofread with its help. The content was guided, corrected and carefully reviewed by the author.",
+        "textOnly": "The text of this article was edited and proofread with the help of AI. The content was guided, corrected and carefully reviewed by the author."
+      }
     },
     "archive": {
       "label": "Blog articles",

@@ -26,6 +26,7 @@ const post = (slug: string, date: string, minutes = 7): Post => ({
     },
   ],
   tags: ["llm"],
+  aiImages: true,
 });
 
 describe("toArchiveEntries", () => {

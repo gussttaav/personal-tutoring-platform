@@ -18,6 +18,10 @@
  * is a stacking context (z-index: 1) and the fixed Navbar is z-50 beside it, so a
  * drawer inside <main> could never cover the navbar. Both islands get the same slim
  * projection of the post list — never the summaries or reading lists.
+ *
+ * BLOG-AI-NOTE-01: an AI-use colophon right after the article — images (when the
+ * frontmatter's `aiImages` says so) and text edited with AI, content guided and
+ * reviewed by the author.
  */
 
 import "../_styles/katex.css";
@@ -189,6 +193,18 @@ export default async function BlogPostPage({
                   direct child so it scopes its search to this article's figures. */}
               <CodeCopyButtons />
             </article>
+
+            {/* BLOG-AI-NOTE-01: the AI-use colophon. Right after the last paragraph, so
+                the disclosure sits next to the text it describes; outside <article> so the
+                prose rules in post.css don't restyle it. `aiImages` picks the wording. */}
+            <aside className="post-ai-note" aria-labelledby="post-ai-note-heading">
+              <h2 id="post-ai-note-heading" className="post-ai-note__kicker">
+                {t("aiNote.title")}
+              </h2>
+              <p className="post-ai-note__text">
+                {t(post.aiImages ? "aiNote.withImages" : "aiNote.textOnly")}
+              </p>
+            </aside>
 
             {/* CONTENT-FEEDBACK-01: 👍/👎 · share · report, right after the article — the
                 first thing after the last paragraph is the question about it. */}

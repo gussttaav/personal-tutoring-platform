@@ -901,7 +901,12 @@
       "moreLabel": "Más artículos",
       "older": "Artículo anterior",
       "newer": "Artículo siguiente",
-      "onThisPage": "En esta página"
+      "onThisPage": "En esta página",
+      "aiNote": {
+        "title": "Nota sobre el uso de IA",
+        "withImages": "Las imágenes de este artículo se han generado con IA y el texto se ha editado y corregido con su ayuda. El contenido lo ha guiado, corregido y revisado minuciosamente el autor.",
+        "textOnly": "El texto de este artículo se ha editado y corregido con ayuda de IA. El contenido lo ha guiado, corregido y revisado minuciosamente el autor."
+      }
     },
     "archive": {
       "label": "Artículos del blog",

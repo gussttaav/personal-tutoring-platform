@@ -535,6 +535,43 @@ html:has(.post-archive-drawer) {
   color: var(--text-dim);
 }
 
+/*
+ * BLOG-AI-NOTE-01 — the AI-use colophon after the last paragraph.
+ *
+ * A footnote, not a warning: no box, no fill, no icon. A short rule (not the full-width
+ * one the footer blocks use) keeps it attached to the article above rather than to the
+ * feedback row below, and the kicker borrows `.post-author__kicker`'s quiet uppercase.
+ */
+.post-ai-note {
+  margin: 2.5rem 0 0;
+}
+
+.post-ai-note::before {
+  content: "";
+  display: block;
+  width: 48px;
+  margin: 0 0 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.post-ai-note .post-ai-note__kicker {
+  margin: 0 0 6px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.post-ai-note .post-ai-note__text {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
 /* ── Prose ──────────────────────────────────────────────────────────────── */
 
 /*
