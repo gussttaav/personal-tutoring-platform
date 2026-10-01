@@ -40,6 +40,7 @@ function PrivacidadContentEs() {
         <li><strong>Nombre y email</strong> — al iniciar sesión con Google o al realizar una compra, para gestionar tu cuenta y tus reservas.</li>
         <li><strong>Datos de pago</strong> — gestionados exclusivamente por Stripe. Nunca se almacenan datos de tarjeta.</li>
         <li><strong>Créditos y reservas</strong> — el saldo de clases compradas se guarda en una base de datos segura asociada a tu email.</li>
+        <li><strong>Identificadores de dispositivo</strong> — los servicios integrados (Stripe, Zoom, Google) generan identificadores técnicos del dispositivo para prevenir el fraude en los pagos, gestionar las sesiones de vídeo y entregar actualizaciones de la aplicación. No se usan con fines publicitarios ni de seguimiento.</li>
       </ul>
 
       <h3>Cómo se usan</h3>
@@ -221,6 +222,7 @@ function PrivacidadContentEn() {
         <li><strong>Name and email</strong> — when signing in with Google or making a purchase, to manage your account and bookings.</li>
         <li><strong>Payment data</strong> — managed exclusively by Stripe. Card details are never stored.</li>
         <li><strong>Credits and bookings</strong> — your class balance is stored in a secure database linked to your email.</li>
+        <li><strong>Device identifiers</strong> — the integrated services (Stripe, Zoom, Google) generate technical device identifiers to prevent payment fraud, manage video sessions and deliver app updates. They are not used for advertising or tracking purposes.</li>
       </ul>
 
       <h3>How data is used</h3>
