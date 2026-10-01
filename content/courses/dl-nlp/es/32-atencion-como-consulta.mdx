@@ -59,7 +59,7 @@ quiz:
       - { id: c, text: 'Está dentro del softmax, que la aplica a cada fila antes de normalizarla.' }
       - { id: d, text: 'Está en los valores, $\mathbf{V} = \bar{\mathbf{H}}\mathbf{W}_a$, que es donde caben los parámetros sin estropear el reparto.' }
     answer: a
-    explanation: 'La (a). Los parámetros no desaparecen, cambian de sitio: dejan de ser parte de la comparación y pasan a ser parte de lo que se compara, que es la razón por la que en esta forma la función $a$ puede ser siempre el producto escalar. La (b) confunde «no tiene parámetros» con «no puede tenerlos»; lo que la fórmula no dice es de dónde salen $\mathbf{Q}$ y $\mathbf{K}$, y ahí es donde se han metido. La (c) le da al softmax un trabajo que no hace: normaliza una fila, no la transforma. La (d) rompe justo la propiedad que esta lección separa —los valores no entran en la puntuación—, así que multiplicarlos por una matriz no cambiaría ni un peso. Y la puntuación aditiva de <Leccion slug="bahdanau">su lección</Leccion> no admite la mudanza: el $\tanh$ está entre las dos proyecciones y la lectura, y una función no lineal de una suma no se deja repartir entre sus sumandos.'
+    explanation: 'La (a). Los parámetros no desaparecen, cambian de sitio: dejan de ser parte de la comparación y pasan a ser parte de lo que se compara, que es la razón por la que en esta forma la función $a$ puede ser siempre el producto escalar. La (b) confunde «no tiene parámetros» con «no puede tenerlos»; lo que la fórmula no dice es de dónde salen $\mathbf{Q}$ y $\mathbf{K}$, y ahí es donde se han metido. La (c) le da al softmax un trabajo que no hace: normaliza una fila, no la transforma. La (d) rompe justo la propiedad que esta lección separa —los valores no entran en la puntuación—, así que multiplicarlos por una matriz no cambiaría ni un peso. Y la puntuación aditiva de <Leccion slug="bahdanau">su lección</Leccion> no admite la mudanza: la $\tanh$ está entre las dos proyecciones y la lectura, y una función no lineal de una suma no se deja repartir entre sus sumandos.'
     hint: 'Escribe la rejilla de la lección anterior y agrupa los dos primeros factores.'
 challenges:
   - id: ch-atencion-qkv
@@ -329,7 +329,7 @@ comparar tiene que estar ya metido en cómo se fabrican $\mathbf{Q}$ y $\mathbf{
 asunto del que esta línea no dice nada y del que el bloque siguiente no habla de otra cosa.
 
 La aditiva no se deja mudar de sitio, y es el mismo argumento de <Leccion slug="bahdanau">su lección</Leccion>: entre
-las dos proyecciones y la lectura hay un $\tanh$, y una función no lineal de una suma no se reparte
+las dos proyecciones y la lectura hay una $\tanh$, y una función no lineal de una suma no se reparte
 entre sus sumandos. Por eso esta forma de tres matrices —la que el bloque siguiente hereda— existe
 gracias a la elección que hizo la lección anterior, y no a pesar de ella.
 

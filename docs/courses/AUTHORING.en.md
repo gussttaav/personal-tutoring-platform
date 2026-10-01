@@ -146,6 +146,19 @@ claim is absurd again, and check any asset with the old order set into it.
 the language label is the same translated-material tell as tokenising the wrong language, so §3 cuts
 it rather than carrying it across. *Settled by `en/11-xor-y-capas-ocultas.mdx` (COURSE-P11-05).*
 
+**An agreement example's singular nouns have no plural reading.** en-GB lets a collective noun take a
+plural verb (*the council are*), so *council*, *team* or *government* cannot be the singular noun a
+plural subject has to survive: the contrast the example rests on is gone for the reader who hears it
+plural. Pick a noun that is only ever singular (*mayor*, *square*). *Settled by `en/23-lstm.mdx`
+(COURSE-P11-06).*
+
+**A reversal example is two real words with no repeated letter.** A lesson that reverses a string
+names letters by position (the output's first letter is the input's last), and a repeated letter
+makes that ambiguous: in <W>stressed</W> / <W>desserts</W> the <W>s</W> the decoder must "remember
+from the start" also sits in the middle. So the pair is chosen, not translated, and its letters are
+all distinct: <W>live</W> / <W>evil</W> for the Spanish <W>roma</W> / <W>amor</W>. *Settled by
+`en/26-seq2seq.mdx` (COURSE-P11-06).*
+
 ## 4. §2 — capitalisation of blocks and lessons
 
 The rule that is not in §5. `AUTHORING.md` §2 keeps *el bloque 2* and *la lección 3* lowercase
@@ -217,6 +230,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | Block 1's objects | vocabulary, tokenisation, subword, bag of words, positional encoding | |
 | filling the leftover positions of a fixed-length input | padding | |
 | cutting a text at $T_{\max}$ | truncation, to truncate | clipping — that is what happens to the probabilities before the logarithm; the vocabulary is *cut* at the $k$ most frequent types. Three cuts, three verbs. |
+| rescaling a gradient whose norm passes the threshold $\kappa$ back down to $\kappa$ | gradient clipping, to clip the gradient; $\kappa$ is the threshold | bare *clipping* wherever Block 2's probability clipping could be meant, since `clip` has two objects in this course and the compound is what keeps them apart (Spanish does the same with `recorte del gradiente`); norm capping, gradient rescaling |
 | what high $d$ costs · the shape of a vector | curse of dimensionality · dense, sparse | |
 | a distinct string · one appearance of one | type · token, and `occurrence` when the two are contrasted | `token` for both senses |
 | an element of $V$ | vocabulary entry, then entry | word — an entry is a *piece* of a word under a subword tokeniser. `word` keeps one job: the everyday word, inside examples that are literally words |
@@ -225,6 +239,8 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | a coordinate-wise multiplier in $(0,1)$ | gate — forget / input / output, update / reset | valve, door |
 | the LSTM's second state | cell state; its proposal is the candidate | memory cell |
 | the summing route memory takes across steps | additive path | additive route |
+| the route the gradient takes back along that path | return path | the way back, the path back — the forward/backward pass row above bans *the way back* for the backward pass itself, and a route through the backward pass must not borrow its banned name |
+| the GRU as the LSTM with pieces removed, and the removing | cut; what the LSTM's output gate and $\tanh$ did to the state is *trim* | pruning (removing weights from a trained network, a different technique). Block 1 spends *cut* on the vocabulary at $k$ (the truncation row above); the two senses never share a block, so the collision is tolerated |
 | $\boldsymbol{\delta}^{(l)}$, what the loss owes a pre-activation | error (of the layer, of the neuron) | delta, error signal, error term |
 | a network trained to predict what comes next | language model | |
 | the random draw from the model's own distribution | to sample, sampling | |
@@ -318,7 +334,9 @@ English like the prose.** Its local identifiers, comments and `print` strings ar
 everything else. The forcing argument is the output: a student reads what the cell prints, so the
 print strings *must* be English, and a cell whose functions are Spanish while its output is English
 reads as half-translated — the exact "translated course" tell §3 exists to kill. *Settled by
-`en/02-tokenizacion.mdx` (COURSE-P11-04).*
+`en/02-tokenizacion.mdx` (COURSE-P11-04).* A print that quotes a sentence swaps `«%s»` for `"%s"`:
+angle quotes are Spanish typography, and §1's rule on `"…"` binds the prose, not what a cell
+prints. *Settled by `en/20-la-rnn-vanilla.mdx` (COURSE-P11-06).*
 
 **The same line runs through the `reading` block.** Only `note` is prose, but the bibliographic
 fields render *verbatim*, so any editorial Spanish left in them is translated the way the prose is:
@@ -345,6 +363,13 @@ only at the edge. Check each `<text>` against it in the browser (`getBBox()` on 
 so a faithful translation that does not fit is not the one that ships.
 *Settled by `en/17-implementar-mlp.mdx` (COURSE-P11-05): `bucle-entrenamiento`'s caption came out
 374px wide in a 360px `viewBox`, against the Spanish 328px.*
+
+**A data file a `<PyCell>` fetches at runtime gets an English sibling, `<name>.en.txt`.** The cell
+reads it by path (`open_url("/courses/dl-nlp/…")`), with no locale resolution behind it, exactly
+like a figure's `src`. Write the English text beside the original in `public/courses/dl-nlp/`, point
+the English cell's `open_url` at it, and re-derive every number the prose quotes from it (length,
+$\lvert V \rvert$, anything trained on it) in the browser; the Spanish file keeps its name.
+*Settled by `en/25-proyecto-char-lm.mdx` (COURSE-P11-06): `corpus-mar.txt` → `corpus-mar.en.txt`.*
 
 **A widget whose default data is a locale-bound committed asset gets an English sibling asset, and the
 widget picks it per locale.** A few widgets read a *data file*, not just strings — `embedding-projection`

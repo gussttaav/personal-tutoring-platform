@@ -293,7 +293,7 @@ dejó puesto al final de cada objetivo.
 import numpy as np
 
 # Necesita la celda anterior: VX, VY, EOS, GO, nx, ny, frase.
-d_h, eta, theta, iters = 64, 0.30, 5.0, 1200
+d_h, eta, kappa, iters = 64, 0.30, 5.0, 1200
 ini = np.random.default_rng(1); sc = 0.1                      # generador propio: no depende de frase
 Wxh_e = ini.normal(size=(d_h, nx)) * sc; Whh_e = ini.normal(size=(d_h, d_h)) * sc; bh_e = np.zeros(d_h)
 Wxh_d = ini.normal(size=(d_h, ny + 1)) * sc; Whh_d = ini.normal(size=(d_h, d_h)) * sc; bh_d = np.zeros(d_h)
@@ -339,7 +339,7 @@ for it in range(iters):
     loss, grads = paso(x, y)
     for g in grads:
         nrm = np.linalg.norm(g)
-        if nrm > theta: g *= theta / nrm               # recorte del gradiente, bloque anterior
+        if nrm > kappa: g *= kappa / nrm               # recorte del gradiente, bloque anterior
     for Pm, g in zip(pesos, grads):
         Pm -= eta * g
     suave = loss if suave is None else 0.99 * suave + 0.01 * loss

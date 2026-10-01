@@ -1366,7 +1366,7 @@
         "survivalLabel": "de c₁ sobrevive",
         "survivalHint": "∏ fₛ, s=2…{t}",
         "survivalAria": "Fracción de c₁ que sobrevive en t={t}",
-        "summary": "Con b_f = {bf}, de lo que se escribió en c₁ llega al final de la secuencia entre <lo>{min}</lo> y <hi>{max}</hi> —sin una matriz de por medio: sólo el producto de las compuertas de olvido, que la red elige coordenada a coordenada—."
+        "summary": "Con b_f = {bf}, de lo que se escribió en c₁ llega al final de la secuencia entre <lo>{min}</lo> y <hi>{max}</hi>. No hay ninguna matriz de por medio: sólo el producto de las compuertas de olvido, que la red elige coordenada a coordenada."
       },
       "context-bottleneck": {
         "stateWidth": "Ancho del estado, d_h",

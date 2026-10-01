@@ -1366,7 +1366,7 @@
         "survivalLabel": "of c₁ survives",
         "survivalHint": "∏ fₛ, s=2…{t}",
         "survivalAria": "Fraction of c₁ surviving at t={t}",
-        "summary": "With b_f = {bf}, between <lo>{min}</lo> and <hi>{max}</hi> of what was written into c₁ reaches the end of the sequence —with no matrix in the way: just the product of the forget gates, which the network picks coordinate by coordinate—."
+        "summary": "With b_f = {bf}, between <lo>{min}</lo> and <hi>{max}</hi> of what was written into c₁ reaches the end of the sequence. No matrix stands in the way: only the product of the forget gates, which the network picks coordinate by coordinate."
       },
       "context-bottleneck": {
         "stateWidth": "State width, d_h",
