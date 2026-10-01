@@ -25,6 +25,8 @@
  * REFACTOR-R4-P3-01: thin dispatcher. The paging loop and the proof checks moved to
  * PaymentService.reconcileRecentPayments (behind IStripeClient); this route keeps the
  * auth check, the constants, the log lines and the response body cron-job.org monitors.
+ *
+ * CRON-AUTH-01: an unset CRON_SECRET must reject, not match the literal "Bearer undefined".
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -36,7 +38,8 @@ const PAGE_SIZE      = 100;
 const MAX_PAGES      = 10; // hard cap: 1000 PIs per run; warn if we hit it
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get("authorization") !== `Bearer ${process.env.CRON_SECRET}`) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

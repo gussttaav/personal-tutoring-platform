@@ -56,6 +56,18 @@ describe("REFACTOR-P4-01: GET /api/internal/reconcile-stripe", () => {
     expect(mockReconcile).not.toHaveBeenCalled();
   });
 
+  it("CRON-AUTH-01: returns 403 for 'Bearer undefined' when CRON_SECRET is unset", async () => {
+    const original = process.env.CRON_SECRET;
+    try {
+      delete process.env.CRON_SECRET;
+      const res = await GET(makeReq("undefined"));
+      expect(res.status).toBe(403);
+      expect(mockReconcile).not.toHaveBeenCalled();
+    } finally {
+      process.env.CRON_SECRET = original;
+    }
+  });
+
   it("returns 403 without an Authorization header", async () => {
     const res = await GET(makeReq(null));
     expect(res.status).toBe(403);
