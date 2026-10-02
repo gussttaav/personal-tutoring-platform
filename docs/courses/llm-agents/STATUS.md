@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (1/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -739,3 +739,43 @@ for the reviewer of the block:
   after test 4 gained its «llenar no se llamó nunca» message; no horizontal page scroll at 375 or
   360 px (the trace
   table scrolls 36 px inside its own box at 360). The pane carried the English locale cookie again.
+
+**COURSE-C2-P1-02** — In progress (started 2026-10-01). Lesson 10 `predecir-no-es-obedecer` authored on
+`staging`, the block's first. 2 000 words, 7 display equations, no widget (the block md assigns
+none), 1 cell (35 lines), 4 quiz, no challenge, 4 readings (Ouyang et al. 2022, Askell et al. 2021,
+Reynolds & McDonell 2021, Wei et al. 2022 / FLAN; titles and arXiv links checked). Runs on the
+mini-GPT, loaded in one line from `modelo.py` and never trained, and says so before the cell.
+`draft: false`, as the PUBLICATION line says. Decisions recorded for the reviewer of the block:
+- **The claim, derived:** pretraining is lesson 1's loss read on a split $(x, y)$, and lessons 6 and
+  8's inequality puts its optimum at $p_\theta = p_{\text{texto}}$. After an instrucción the text is
+  a mixture over lesson 8's tareas $\omega$ (exam, forum, book of solved exercises), so the masa on
+  obeying is the text's, and scaling (lesson 7) only brings $p_\theta$ closer to it. The chain rule
+  on events splits $p_\theta(\text{buena} \mid x)$ into obeying × good-given-obeying, form against
+  judgment, which orders the block. Bayes with $K = 0$ is what the prompt can move (GPT-2's TL;DR,
+  a Q&A frame) and its three limits; the section closes on the target objective
+  $\max_\theta \mathbb{E}_x[p_\theta(\text{buena} \mid x)]$ and on $p_{\text{texto}}$ being a choice.
+- **The cell, measured in Pyodide:** three samples of «¿De qué color es la tierra?» are novel text;
+  after the novel's 433 «?», with 8 tokens of context (lesson 8: more does not help it), the
+  mini-GPT's masa on five ways of continuing (new paragraph, ellipsis, narrator's tag, comma, the
+  paragraph goes on) is within 3.2 points of the novel's counts (39.5/19.4/8.3/5.1/27.7 % against
+  36.5/22.6/7.2/4.7/29.0 %); «Respuesta:» appears 0 times in the novel, and the greedy output after
+  the «Pregunta: … Respuesta:» frame is dialogue. The question and the frame are the train script's
+  held-out SFT pair (`SFT_RESERVADO`, `PLANTILLA`): the lesson says the block will come back to them,
+  so lesson 12 must use that pair.
+- **The GPT-3 moon-landing example** (the InstructGPT announcement, early 2022) is paraphrased from
+  secondary sources (OpenAI's page answered 403); only the two topics they agree on, gravity and the
+  big bang, are named.
+- **Terms and letters added after review:** `preentrenamiento`, `instrucción`, `obedecer` (not
+  `seguir`, the continuation's verb), `buena`, and `respuesta` replacing «continuación» for $y$, in
+  the delta's §4 with an argued paragraph; $p_\theta(\text{obedece} \mid x)$,
+  $p_\theta(\text{buena} \mid x, \text{obedece})$ and $\omega$ read after an instrucción in
+  `NOTATION.md`, with a note on events written in words.
+- **Lesson 9's bridge now links this lesson** (placeholder comment removed), and its wording changed
+  from «abre con esta misma función» to «carga esta misma función en una línea y le hace una
+  pregunta», since the lesson opens on prose. This lesson's bridge names lesson 11
+  (`plantilla-de-chat`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings), `pnpm build` green with 0 KaTeX errors; the cell under
+  Node Pyodide 0.29.3 twice (≈2.3 s) and in the Browser pane on `pnpm start` with identical output;
+  all four quiz questions right and wrong (the numeric at 0.207 passes, 0.208 fails); no horizontal
+  page scroll at 360 px (the two widest equations, 511 and 485 px, scroll in their own boxes). The
+  pane carried the English locale cookie again.

@@ -237,6 +237,22 @@ together, and the lesson states that shape when the cache first appears.
 | $\beta$ | the KL coefficient — how far $\pi_\theta$ may move from $\pi_{\text{ref}}$ (reserved) |
 | $\mathbb{D}_{\text{KL}}$ | the Kullback–Leibler divergence — blackboard $\mathbb{D}$, so it is never the corpus $D$ of Block 1 |
 | $\sigma$ | the logistic sigmoid, as everywhere on the platform — Bradley–Terry's $\sigma(r_A - r_B)$ |
+| $p_\theta(\text{obedece} \mid x)$ | the masa the model puts on the respuestas that obey the instrucción $x$, $\sum_{y \,:\, y \text{ obedece a } x} p_\theta(y \mid x)$; with $p_{\text{texto}}$ for $p_\theta$, the text's (Block 2 lesson 1) |
+| $p_\theta(\text{buena} \mid x, \text{obedece})$ | the share of good respuestas among those that obey. Every buena obeys, so $p_\theta(\text{buena} \mid x) = p_\theta(\text{obedece} \mid x)\,p_\theta(\text{buena} \mid x, \text{obedece})$ (Block 2 lesson 1) |
+| $\omega$ | Block 1 lesson 8's tarea, read after an instrucción: the kind of document $x$ appears in, which decides what follows it — the exam, the forum, the book of solved exercises (Block 2 lesson 1) |
+
+**An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
+distribution, roman text names the set of respuestas it describes, and the probability is that
+set's masa, lesson 4's word for the sum over a set of entries: $p_\theta(\text{obedece} \mid x)$
+sums $p_\theta(y \mid x)$ over the $y$ that obey $x$. Roman because it is a word, as
+$\text{acierto}$ and $\text{PPL}$ are, and never a mention: it is the set, not the string
+<W>obedece</W>. Letters for the two sets were the alternative, and the obvious ones are spoken for:
+$B$ is the batch size (shared §4), $A$ is Block 3's allowed set $A_t$ and Chinchilla's $A_N$,
+$\mathcal{C}$ would sit beside $C$, the compute, and a calligraphic $\mathcal{R}$ beside $r_\phi$
+and $r(x, y)$ two lessons later. A word in the condition says what the set is, which no letter
+would. The device is held to these two events, and a lesson that wants a third adds its row here
+first. $\omega$ keeps lesson 8's meaning rather than taking a new letter: a document's tarea is what
+it does next, and after an instrucción that is exactly what is in question.
 
 **Two networks on one page need two parameter letters.** $\theta$ is the policy's and $\phi$ the
 reward model's, and the split is the point of the block: the reward model is trained first, then

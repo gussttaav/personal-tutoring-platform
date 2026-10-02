@@ -183,7 +183,7 @@ this work.
 | a `(nombre, descripción, esquema)` triple the model may ask the harness to run | `herramienta` | *tool* in prose — the protocol's block names, `tool_use` / `tool_result`, stay in backticks as identifiers; `función` (that is the Python one) |
 | the model's request that a tool be run: one `tool_use` block, with its arguments | `llamada` (a una herramienta) | *tool call*, *function call*, invocación, petición |
 | what the harness hands back to the model after a call — the `tool_result`, an error included | `observación` | *observation*; resultado (names the block, not what it is to the model); respuesta (reserved for the model's) |
-| what the model returns to one call: a list of content blocks, text or `tool_use` | `respuesta` | *response*, salida, *completion* — the first course's `genera` completed text; here the model answers |
+| what the model returns to one call: a list of content blocks, text or `tool_use` | `respuesta` — from Block 2 lesson 1 the name of $y$ whether it answers or not, replacing Block 1 lesson 9's «continuación» as the term (the name says what $y$ is asked for, not whether it gets there) | *response*, salida, *completion* — the first course's `genera` completed text; here the model answers |
 | one model call and everything the harness does until the next | `turno` | iteración, ronda, paso — `paso` is the first course's forward pass as a function, and Block 1 here inherits it |
 | the files, the shell, the repository: everything the tools touch and the model sees only through observations | `entorno` | *environment*, mundo, sistema; contexto (that is what the model *does* see) |
 | the harness's decision whether a call runs, per tool class, before it runs | `permiso` | *permission*, autorización, aprobación, confirmación |
@@ -242,6 +242,10 @@ this work.
 | what a function guarantees whoever calls it, and what it asks of them: its preconditions, what it returns, what it never does | `contrato` (Block 1 lesson 9) — this file's own word in §1 («an interface with a signature but no contract») | *contract*; especificación (Block 3 spends it on the prompt, «el prompt es una especificación»); garantías, promesa as the term |
 | the string passed as `parar`: its first appearance in the text generated ends the call, and it is not returned | `cadena de parada` (Block 1 lesson 9), with *stop sequence* given once | secuencia de parada, terminador, delimitador, *stop* |
 | throwing the full caché away and filling it again, in one *prefill*, with the last $T_{\text{mín}}$ tokens of the text | `rellenar` (la caché), `relleno` (Block 1 lesson 9) | *refill*; deslizar (what the caché cannot do, and what `generar` does without one); reiniciar, vaciar, recargar |
+| training a model to predict raw text, before anything else is trained on it: what Block 1 did to the mini-GPT, named once the block puts other trainings after it | `preentrenamiento`, `preentrenar` (Block 2 lesson 1), the first course's word (`bert-y-gpt`) | *pre-training*; entrenamiento previo. Block 1's lessons say `entrenar` and need no change: they had only one training |
+| a prompt that asks for something: a question or an order | `instrucción` (Block 2 lesson 1), the prompt row's «what the model receives from the user» given its own row | *instruction*; orden, consigna as the term. `petición` is fine in passing, for the act of asking |
+| what a respuesta does when it does what the instrucción asks, well or badly | `obedecer` (Block 2 lesson 1); the block's shipped title says «seguir instrucciones», and a lesson that needs both says once that they name one thing | `seguir` (una instrucción) in prose: `seguir` is the continuation's verb, «lo que sigue al prompt»; cumplir as the term (fine as the gloss of an orden); acatar; *follow* |
+| a respuesta that obeys and is the one whoever wrote the instrucción would choose: correct, useful, in the tone asked for | `buena` (Block 2 lesson 1), the event $\text{buena}$ in `NOTATION.md` | correcta, útil (two of its parts, not the whole); *helpful* |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,
@@ -273,6 +277,17 @@ the most tokens one *call* may hold. They are different sizes of the same shape,
 word fits both and why they can be confused. Tolerated on the shared rule: the two meet on one page
 first in the KV-cache lesson, which says which is which in a clause, and every Block 4–5 lesson
 means the context one and says «de contexto» the first time.
+
+`obedecer`, not `seguir`, although the block is titled «De predecir texto a seguir instrucciones».
+The title shipped in the manifest before any Block 2 lesson, and it stays; but in prose `seguir`
+has had a job since Block 1 lesson 9, whose contract clause one is «devuelve sólo lo que sigue al
+prompt». A sentence that has a model «seguir» an instrucción *and* write «lo que sigue» to it is
+two meanings of one verb on one line, and the first lesson of Block 2 needs exactly that sentence:
+its claim is that a model which predicts what follows does not thereby obey. So the lesson that
+needs both says once that `obedecer` is the title's «seguir instrucciones», and every later lesson
+writes `obedecer`. `respuesta` moves the other way: Block 1 called $y$ a «continuación» while it
+was one, and from Block 2 on $y$ is a respuesta whether it answers or not, because the block's
+subject is the gap between the two.
 
 *harness* and *sandbox* are English by the shared line — nobody who does this work says «arnés»
 or «caja de arena» — and both take the italics on first use. *prompt* is English for the same

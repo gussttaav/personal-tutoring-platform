@@ -1,6 +1,6 @@
 # P1-02 — Block 2: De predecir texto a seguir instrucciones
 
-**Tag:** `COURSE-C2-P1-02` · **Effort:** XL · **Owner:** _tbd_ · **Status:** ⬜
+**Tag:** `COURSE-C2-P1-02` · **Effort:** XL · **Owner:** _tbd_ · **Status:** 🔄
 **Depends on:** P1-01 · Block 2 widgets (built in this task) · the Colab notebook (written here)
 **Course:** `llm-agents` → `content/courses/llm-agents/es/` · **Shape:** derivation
 **Runs on:** the mini-GPT (every method is applied to it in a cell); Colab for the project
@@ -47,7 +47,7 @@ you *put in the prompt* is the next block.
 
 ## Lesson progress
 
-- [ ] 10. `predecir-no-es-obedecer`
+- [x] 10. `predecir-no-es-obedecer`
 - [ ] 11. `plantilla-de-chat`
 - [ ] 12. `sft`
 - [ ] 13. `modelo-de-recompensa`
