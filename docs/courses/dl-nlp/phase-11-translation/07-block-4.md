@@ -1,6 +1,6 @@
 # P11-07 — Block 4: The Bridge to Attention
 
-**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.2 done)
+**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.3 done)
 
 ## TL;DR
 
@@ -237,7 +237,7 @@ concentrated in **4.1 and 4.3**, and both of them spend it on the same decision.
 
 - [x] 4.1 `encoder-decoder`
 - [x] 4.2 `el-cuello-de-botella`
-- [ ] 4.3 `la-idea-de-atencion`
+- [x] 4.3 `la-idea-de-atencion`
 - [ ] 4.4 `bahdanau`
 - [ ] 4.5 `luong`
 - [ ] 4.6 `atencion-como-consulta`
@@ -312,6 +312,35 @@ Reuse these verbatim; they are settled, not open.
   than the data under it (`"L=%d   "` → `" L=%d   "`). And `context-bottleneck`'s English readout
   lost its em dashes, and its legend groups $\lvert V_x \rvert$ per locale (`32,768` / `32 768`)
   instead of a hardcoded Spanish label.
+
+**From 4.3** (`en/29-la-idea-de-atencion.mdx`):
+
+- **Adapt, as classed, and no answer moved.** Option A keeps the pair, so `q-cuantas-puntuaciones`
+  stays 48 and `attention-alignment` renders the same corpus; only its caption is translated. 2,135
+  words against the Spanish 2,133, over the 2,000 target in both locales (advisory).
+- **4.1's gloss, reused verbatim** in the paragraph that brings the pair back (<W>ayer</W> is
+  <W>yesterday</W>, <W>leí</W> is <W>i read</W>, <W>un libro</W> is <W>a book</W>, <W>muy
+  bueno</W> is <W>very good</W>), plus "(<W>i read</W>)" after <W>leí</W> in `q-eje-del-softmax`'s
+  explanation; pro-drop told with 4.1's clause. 4.4's three rows can lean on the same gloss.
+- **The alignment cell's code names**, for 4.4's cells: `FUENTE` / `SALIDA` → `SOURCE` / `TARGET`
+  (the widget's maths module says `ALIGNMENT_SOURCE` / `ALIGNMENT_TARGET`), `alfa` → `alpha`,
+  `fijo` / `C_fijo` → `fixed` / `C_fixed`. Header `step  writes  pulls mostly from  weight  distance
+  to the fixed summary`, column-aligned to the Spanish format string.
+- **Terms:** "pull from" for «tirar de» (the widget's `attentionNote` already says "pulls mostly
+  from"); "fixed summary" for «resumen fijo»; "mixture" for «mezcla», bold at its definition;
+  "score" for «puntuación»; "hard choice" for «elección dura»; "share out" for «repartir»; "the
+  slot" for «el hueco».
+- **`atencion-contexto.en.svg`**: «números» → "numbers" (same width, x 60.7–115.4 in the 360
+  `viewBox`), `aria-label` and comments translated, class names kept.
+- **Printed in Pyodide and quoted**, identical to the Spanish cell: `0.25` (good) and `0.32`
+  (`<EOS>`); `1.42` (yesterday) and `1.36` (book), both above `1.35`; 8 of 8 distinct contexts
+  against 1 of 8, and that one is `bueno`'s state. The `leí` column sum `1.77` is arithmetic on the
+  fixed matrix.
+- **The bridge names 4.4 "Bahdanau's attention".** The glossary calls Bahdanau's score *additive
+  attention*, and the Spanish title is «Atención de Bahdanau (aditiva)»; when 4.4 settles its
+  English title, check this label against it.
+- **Spanish nit, not fixed:** the warning Callout bolds «**posiciones de la entrada**» for emphasis,
+  which §5 reserves for italics; the English keeps the bold to match.
 
 ## The direction decision — make it once, in 4.1
 
