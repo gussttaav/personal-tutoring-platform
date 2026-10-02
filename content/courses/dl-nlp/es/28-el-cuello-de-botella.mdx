@@ -43,7 +43,7 @@ quiz:
       - { id: c, text: 'El del medio, que queda lejos del principio y del final a la vez y no se beneficia de ninguno de los dos.' }
       - { id: d, text: 'Ninguno en particular: $\mathbf{c}$ resume la entrada entera y no privilegia ninguna posición.' }
     answer: a
-    explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara de la $\tanh$. Es el argumento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente desvanecido</Leccion>, aplicado a esta ruta concreta. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora y la que la tabla desmiente: si todas las posiciones se conservaran igual, las tiras largas fallarían por el medio y no por el principio.'
+    explanation: 'La (a). El gradiente que enseña al encoder a conservar el token $j$ tiene que atravesar los pasos del decoder hasta $\mathbf{c}$ y después los del encoder hasta la posición $j$, y cada paso multiplica por $\mathbf{W}_{hh}^{\top}$ y por la máscara de la $\tanh$. Es el argumento de <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente desvanecido</Leccion>, aplicado a esta ruta concreta. La (b) invierte el fenómeno: el último token es el que menos pasos tiene por delante y el que mejor se conserva. La (c) inventa una simetría que no está en ninguna ecuación. La (d) es la lectura más tentadora, y la desmienten los errores del modelo de <Leccion slug="seq2seq">la lección sobre modelos de secuencia a secuencia</Leccion>: si todas las posiciones se conservaran igual, una tira larga se torcería en cualquier punto de la salida, y se tuerce sobre todo al final, en las letras que le piden recordar el principio de la entrada.'
     hint: 'Cuenta las multiplicaciones que separan la pérdida del token $j$.'
 challenges: []
 reading:
@@ -270,7 +270,7 @@ def acierto(pesos):                                    # % de tiras EXACTAS, por
     return fila
 
 
-print("  modelo               " + "".join("L=%d   " % L for L in range(L_MIN, L_MAX + 1)))
+print("  modelo               " + "".join(" L=%d   " % L for L in range(L_MIN, L_MAX + 1)))
 for d_h, cortes in [(8, (250, 1000, 2000)), (32, (1000,))]:
     pesos = monta(d_h); rng = np.random.default_rng(2)
     for it in range(max(cortes)):
