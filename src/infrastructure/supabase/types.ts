@@ -82,13 +82,18 @@ export type Database = {
           ends_at: string
           id: string
           join_token: string | null
+          landing_path: string | null
           note: string | null
+          referrer_host: string | null
           session_type: string
           starts_at: string
           status: string
           stripe_payment_id: string | null
           updated_at: string
           user_id: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           calendar_event_id?: string | null
@@ -98,13 +103,18 @@ export type Database = {
           ends_at: string
           id?: string
           join_token?: string | null
+          landing_path?: string | null
           note?: string | null
+          referrer_host?: string | null
           session_type: string
           starts_at: string
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
           user_id: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           calendar_event_id?: string | null
@@ -114,13 +124,18 @@ export type Database = {
           ends_at?: string
           id?: string
           join_token?: string | null
+          landing_path?: string | null
           note?: string | null
+          referrer_host?: string | null
           session_type?: string
           starts_at?: string
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
           user_id?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: [
           {

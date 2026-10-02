@@ -7,6 +7,8 @@
 // earliest-expiring active pack with room, then nothing; non-pack; concurrency.
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — status and time filter, the pack owner
 // and PaymentIntent join, normalized timestamps.
+// BOOKING-ATTRIBUTION-01: the source columns round-trip through createBooking and
+// findByCancelToken (migration 0025).
 // Gated on NEXT_PUBLIC_SUPABASE_URL — skips in CI without a database configured.
 import { SupabaseBookingRepository } from "../SupabaseBookingRepository";
 import { supabase } from "../client";
@@ -73,6 +75,30 @@ describeDb("SupabaseBookingRepository", () => {
     expect(found!.eventId).toBe(record.eventId);
     expect(found!.email).toBe(record.email);
     expect(found!.used).toBe(false);
+
+    await cleanup(record.email);
+  });
+
+  it("BOOKING-ATTRIBUTION-01: stores the source and reads it back for a reschedule", async () => {
+    const record = baseRecord();
+    const attribution = {
+      source: "linkedin", medium: "profile", campaign: "topcard",
+      referrerHost: "linkedin.com", landingPath: "/mentoria",
+    };
+    const { cancelToken } = await repo.createBooking({ ...record, attribution });
+
+    const found = await repo.findByCancelToken(cancelToken);
+    expect(found!.attribution).toEqual(attribution);
+
+    await cleanup(record.email);
+  });
+
+  it("BOOKING-ATTRIBUTION-01: a booking without a source reads back none", async () => {
+    const record = baseRecord();
+    const { cancelToken } = await repo.createBooking(record);
+
+    const found = await repo.findByCancelToken(cancelToken);
+    expect(found!.attribution).toBeUndefined();
 
     await cleanup(record.email);
   });

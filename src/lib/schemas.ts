@@ -21,6 +21,20 @@ import { CONTENT_KEY_MAX, CONTENT_KEY_RE, CONTENT_TYPES, parseContentKey } from 
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
+// BOOKING-ATTRIBUTION-01: the first-touch source the browser stored on landing
+// (src/lib/attribution.ts). Limits mirror the CHECKs in migration 0025. It rides
+// on the booking as `.catch(undefined)`: a malformed source is dropped, never a
+// reason to refuse a booking or a payment.
+export const AttributionSchema = z.object({
+  source:       z.string().trim().min(1).max(100).optional(),
+  medium:       z.string().trim().min(1).max(100).optional(),
+  campaign:     z.string().trim().min(1).max(100).optional(),
+  referrerHost: z.string().trim().min(1).max(200).optional(),
+  landingPath:  z.string().trim().min(1).max(200).optional(),
+});
+
+const OptionalAttribution = AttributionSchema.optional().catch(undefined);
+
 export const BookSchema = z.object({
   startIso:        z.string().datetime(),
   endIso:          z.string().datetime(),
@@ -28,6 +42,7 @@ export const BookSchema = z.object({
   note:            z.string().max(1000).optional(),
   timezone:        z.string().optional(),
   rescheduleToken: z.string().optional(),
+  attribution:     OptionalAttribution, // BOOKING-ATTRIBUTION-01
 });
 
 export type BookInput = z.infer<typeof BookSchema>;
@@ -45,6 +60,7 @@ export const SingleCheckoutSchema = z.object({
   startIso:        z.string().datetime(),
   endIso:          z.string().datetime(),
   rescheduleToken: z.string().optional(),
+  attribution:     OptionalAttribution, // BOOKING-ATTRIBUTION-01
 });
 
 export const CheckoutSchema = z.discriminatedUnion("type", [

@@ -43,11 +43,15 @@
 // has committed, so it is best-effort: a getLocale error is logged (warn) and falls back
 // to 'es' instead of 500-ing a cancellation that already happened (which would also skip
 // the confirmation email and burn the token). getLocale itself stays fail-closed.
+//
+// BOOKING-ATTRIBUTION-01: createBooking persists the student's first-touch source
+// (`attribution`). A reschedule keeps the ORIGINAL booking's source — it is the same
+// class, and the request that moves it says nothing about how the student first came.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
+import type { BookingAttribution, BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
@@ -75,6 +79,7 @@ export interface CreateBookingInput {
   timezone?:         string;
   rescheduleToken?:  string;
   stripePaymentId?:  string;
+  attribution?:      BookingAttribution; // BOOKING-ATTRIBUTION-01
 }
 
 export interface CreateBookingOutput {
@@ -334,6 +339,8 @@ export class BookingService {
       //    REFACTOR-R4-P1-03: a rescheduled paid class keeps its PaymentIntent (the
       //    request carries none), so history and the mobile poll find the new booking.
       const stripePaymentId = input.stripePaymentId ?? oldRecord?.stripePaymentId;
+      // BOOKING-ATTRIBUTION-01: same rule for the source — the original's wins.
+      const attribution     = oldRecord ? oldRecord.attribution : input.attribution;
       const { cancelToken, joinToken } = await this.bookings.createBooking({
         eventId:     calResult.eventId,
         email:       input.email,
@@ -344,6 +351,7 @@ export class BookingService {
         ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
         ...(creditPackId        !== undefined ? { creditPackId:    creditPackId        } : {}),
         ...(stripePaymentId                   ? { stripePaymentId                      } : {}),
+        ...(attribution                       ? { attribution                          } : {}),
       });
       compensations.push({
         description: `cancel booking ${cancelToken.slice(0, 8)}…`,

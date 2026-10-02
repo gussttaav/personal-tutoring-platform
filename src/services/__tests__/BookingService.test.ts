@@ -9,6 +9,8 @@
 // compensation restores to the exact pack it decremented (restoreCreditToPack).
 // REFACTOR-R4-P1-05: the post-commit locale read in cancelByToken is best-effort — a
 // getLocale rejection must not fail a cancellation that already committed.
+// BOOKING-ATTRIBUTION-01: createBooking persists the first-touch source; a reschedule
+// keeps the original's.
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
@@ -654,6 +656,62 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
       expect.stringContaining("manual intervention"),
       expect.objectContaining({ step: expect.stringContaining("old-evt") }),
     );
+  });
+});
+
+// ─── BOOKING-ATTRIBUTION-01 ───────────────────────────────────────────────────
+
+describe("BOOKING-ATTRIBUTION-01: createBooking persists the student's source", () => {
+  const linkedin = { source: "linkedin", medium: "profile", campaign: "topcard", landingPath: "/mentoria" };
+
+  it("writes the attribution to the new booking", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
+
+    await service.createBooking({ ...baseFreeInput(), attribution: linkedin });
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ attribution: linkedin }),
+    );
+  });
+
+  it("writes no attribution when the request carries none", async () => {
+    const bookings = mockBookings();
+    const service  = makeService({ bookings });
+
+    await service.createBooking(baseFreeInput());
+
+    expect(bookings.createBooking.mock.calls[0][0]).not.toHaveProperty("attribution");
+  });
+
+  it("a reschedule keeps the original booking's source, not the request's", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "pack", creditPackId: "pack-orig", attribution: linkedin,
+    }));
+    const service  = makeService({ bookings });
+
+    await service.createBooking({
+      ...basePackInput(), rescheduleToken: "tkn", attribution: { source: "google" },
+    });
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ attribution: linkedin }),
+    );
+  });
+
+  it("a reschedule of a booking with no source stays without one", async () => {
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "pack", creditPackId: "pack-orig",
+    }));
+    const service  = makeService({ bookings });
+
+    await service.createBooking({
+      ...basePackInput(), rescheduleToken: "tkn", attribution: { source: "google" },
+    });
+
+    expect(bookings.createBooking.mock.calls[0][0]).not.toHaveProperty("attribution");
   });
 });
 

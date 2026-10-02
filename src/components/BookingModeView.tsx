@@ -19,6 +19,8 @@
  * nav), and the sticky pack bar `BookingOverlays` drew above this view for it sat under the page
  * Navbar, unreachable — see the note in `features/booking/BookingOverlays.tsx`. This view is the
  * whole pack-booking screen, like the wizard is for single sessions.
+ *
+ * BOOKING-ATTRIBUTION-01: a new (not rescheduled) pack class fires `trackBooking("pack")`.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -29,6 +31,7 @@ import { Alert, Spinner } from "@/components/ui";
 import { COLORS } from "@/constants";
 import { errorCodeToKey } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
+import { trackBooking } from "@/lib/booking-analytics";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import BookingSidebar from "@/components/booking/BookingSidebar";
@@ -191,6 +194,7 @@ export default function BookingModeView({
         timezone:        selected.timezone,
         rescheduleToken: rescheduleToken ?? undefined,
       });
+      if (!isReschedule) trackBooking("pack"); // BOOKING-ATTRIBUTION-01
       const newRemaining = isReschedule ? remaining : remaining - 1;
       setRemaining(newRemaining);
       onCreditsUpdated(newRemaining);

@@ -14,10 +14,14 @@
  * QUAL-03 fix: BookResponse now reflects what /api/book actually returns
  * (eventId, zoomSessionName, zoomPasscode, cancelToken, emailFailed) — the old
  * definition had { ok: true; remaining: number } which was incorrect.
+ *
+ * BOOKING-ATTRIBUTION-01: book.post() and the single-session checkout attach the
+ * browser's stored first-touch source (src/lib/attribution.ts), so no call site has to.
  */
 
 import type { BookResponse, CreditsResponse, DeletionEligibility, PaymentIntentResponse, PublicPricing } from "@/domain/types";
 import type { BookInput, CheckoutInput, ContentReportInput, ContentVoteInput } from "@/lib/schemas";
+import { readStoredAttribution } from "@/lib/attribution";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res  = await fetch(url, {
@@ -68,7 +72,7 @@ export const api = {
     post: (body: BookInput) =>
       request<BookResponse>("/api/book", {
         method: "POST",
-        body:   JSON.stringify(body),
+        body:   JSON.stringify({ attribution: readStoredAttribution(), ...body }),
       }),
   },
 
@@ -132,7 +136,9 @@ export const api = {
     checkout: (body: CheckoutInput) =>
       request<PaymentIntentResponse>("/api/stripe/checkout", {
         method: "POST",
-        body:   JSON.stringify(body),
+        body:   JSON.stringify(
+          body.type === "single" ? { attribution: readStoredAttribution(), ...body } : body,
+        ),
       }),
   },
 } as const;

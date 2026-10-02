@@ -57,18 +57,27 @@
  * SAME refund and records it — it used to get charge_already_refunded and 500 for days. The
  * checkout keys include the amount + currency: since PRICING-STUDENT-01 an admin price edit
  * inside the 5-min window reused the key with a different amount, which Stripe rejects.
+ *
+ * BOOKING-ATTRIBUTION-01: a single-session checkout puts the student's first-touch source
+ * in the PaymentIntent metadata (utm_source / utm_medium / utm_campaign / referrer_host /
+ * landing_path); every path that books from a PaymentIntent or legacy Checkout Session
+ * (webhook, admin retry) reads it back and hands it to createBooking. Metadata is part of
+ * the request Stripe compares on an idempotent replay, so a non-empty source also goes
+ * into the checkout key (as a short hash; keys without a source are unchanged).
  */
 
 import type Stripe from "stripe";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type {
-  PackSize, PaymentCheckoutType, SingleSessionBookingDetail,
+  BookingAttribution, PackSize, PaymentCheckoutType, SingleSessionBookingDetail,
   SingleSessionResolved, SingleSessionStatusResult,
 } from "@/domain/types";
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import { getAvailableSlots } from "@/infrastructure/google";
 import { formatInTimeZone } from "date-fns-tz";
 import { log } from "@/lib/logger";
+import { attributionFromMetadata, attributionToMetadata } from "@/lib/attribution";
+import { createHash } from "crypto";
 import { paymentChannelName } from "@/lib/realtime-channel";
 import { PermanentWebhookError } from "@/domain/errors";
 import { SESSION_DURATION_MINUTES } from "@/lib/booking-config";
@@ -155,6 +164,7 @@ interface SingleSessionInput {
   // Nullable: legacy checkout.session may lack amount_total.
   amountCents?:    number | null;
   currency?:       string | null;
+  attribution?:    BookingAttribution; // BOOKING-ATTRIBUTION-01
 }
 
 // DEAD-LETTER-RETRY-01: how processSingleSession resolved the payment. Only the admin
@@ -222,8 +232,9 @@ export class PaymentService {
     startIso:        string;
     endIso:          string;
     rescheduleToken?: string;
+    attribution?:    BookingAttribution;
   }): Promise<CheckoutResult> {
-    const { email, name, duration, startIso, endIso, rescheduleToken } = params;
+    const { email, name, duration, startIso, endIso, rescheduleToken, attribution } = params;
     // REFACTOR-R4-P1-01: never take money for a slot the server would not book.
     const sessionType = duration === "1h" ? "session1h" : "session2h";
     await this.bookings.assertSlotBookable({ startIso, endIso, sessionType });
@@ -234,8 +245,12 @@ export class PaymentService {
     // different slots for the same user/duration within the same 5-min window.
     // REFACTOR-R4-P4-01: amount + currency in the key — see createPackCheckout.
     const bucket = Math.floor(Date.now() / 300_000);
+    const sourceMetadata = attributionToMetadata(attribution); // BOOKING-ATTRIBUTION-01
+    const sourceKey = Object.keys(sourceMetadata).length > 0
+      ? `:${createHash("sha256").update(JSON.stringify(sourceMetadata)).digest("hex").slice(0, 12)}`
+      : "";
     const idempotencyKey =
-      `single:${email}:${duration}:${startIso}:${amount}${currency}:${bucket}`;
+      `single:${email}:${duration}:${startIso}:${amount}${currency}:${bucket}${sourceKey}`;
     const intent = await this.stripeClient.createPaymentIntent(
       {
         amount,
@@ -248,6 +263,7 @@ export class PaymentService {
           start_iso:        startIso,
           end_iso:          endIso,
           reschedule_token: rescheduleToken ?? "",
+          ...sourceMetadata,
         },
       },
       { idempotencyKey },
@@ -320,6 +336,7 @@ export class PaymentService {
           refundTarget:    { payment_intent: intent.id },
           amountCents:     intent.amount,
           currency:        intent.currency,
+          attribution:     attributionFromMetadata(metadata),
         });
       }
       return;
@@ -365,6 +382,7 @@ export class PaymentService {
           refundTarget:    { payment_intent: session.payment_intent as string },
           amountCents:     session.amount_total,
           currency:        session.currency,
+          attribution:     attributionFromMetadata(session.metadata),
         });
       }
     }
@@ -398,6 +416,7 @@ export class PaymentService {
           // REFACTOR-R4-P3-01: without these, recordPaymentRow skipped the audit row.
           amountCents:     intent.amount,
           currency:        intent.currency,
+          attribution:     attributionFromMetadata(metadata),
         };
       } else {
         const checkout = await this.stripeClient.retrieveCheckoutSession(stripeSessionId);
@@ -413,6 +432,7 @@ export class PaymentService {
           refundTarget:    { payment_intent: checkout.payment_intent as string },
           amountCents:     checkout.amount_total,
           currency:        checkout.currency,
+          attribution:     attributionFromMetadata(metadata),
         };
       }
     } catch (err) {
@@ -669,6 +689,7 @@ export class PaymentService {
         sessionType,
         rescheduleToken:  rescheduleToken ?? undefined,
         stripePaymentId:  paymentIntentId,
+        attribution:      input.attribution,
       });
       await this.paymentRepo.markProcessed(idempotencyKey);
       log("info", "Single session booked", { service: "payment", email, startIso });
