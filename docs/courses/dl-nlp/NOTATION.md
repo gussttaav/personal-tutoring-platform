@@ -555,6 +555,7 @@ two lengths, distinct because a seq2seq maps a source to a target of its own len
 | $\mathbf{W}_{ch} \in \mathbb{R}^{d_h \times d_h}$ | the decoder's weights on $\mathbf{c}_i$ — role-subscripted like $\mathbf{W}_{xh}$ and $\mathbf{W}_{hh}$ |
 | $d_a$ | the width of the alignment model — how many units the small network that computes $a$ has |
 | $\mathbf{W}_{sa}$, $\mathbf{W}_{ha} \in \mathbb{R}^{d_a \times d_h}$ | that network's weights on the decoder state and on the encoder state (Block 4 lesson 4) |
+| $d_s$ | the decoder state's width, written only where it differs from the encoder's $d_h$ — then $\mathbf{W}_{sa} \in \mathbb{R}^{d_a \times d_s}$ (Block 4 lesson 4) and $\mathbf{W}_a \in \mathbb{R}^{d_s \times d_h}$ (lesson 5) |
 | $\mathbf{p}_{ij} \in \mathbb{R}^{d_a}$ | its pre-activation, $\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j$ — the argument of the $\tanh$ |
 | $\mathbf{v}_a \in \mathbb{R}^{d_a}$ | the read-out that turns $\tanh(\mathbf{p}_{ij})$ into the single number $e_{ij}$ |
 | $\mathbf{W}_a \in \mathbb{R}^{d_h \times d_h}$ | the multiplicative score's single matrix — the whole of $a$ in Luong's form (Block 4 lesson 5) |
@@ -651,6 +652,16 @@ decoder's, not the encoder's, but the alignment model's own, the one $d_a$ measu
 subscripts were the other candidate and are refused because the course spends numbers on layers and
 positions: $\mathbf{W}^{(l)}$ is a layer and $\mathbf{W}^{(1)}_t$ is Block 3 lesson 1's column
 block, so a $\mathbf{W}_1$ inside a score would ask the reader to rule out both.
+
+**$d_s$ is the decoder's width, and it is written only where it differs from $d_h$.** Block 4 gives
+the encoder and the decoder one width, which keeps $\mathbf{c}_i \in \mathbb{R}^{d_h}$ and
+$\mathbf{W}_{ch}$ square, and is why the rows above read $d_h$ on both sides. Neither score needs
+it, though: the additive one asks only that its two matrices share $d_a$ rows, and Luong's
+$\mathbf{W}_a$ is rectangular as easily as square. Block 4 lesson 4 says so in prose, because
+Bahdanau's own encoder is bidirectional and twice the decoder's width, and lesson 5's challenge
+tests it with $\mathbf{W}_a$ of shape $(d_s, d_h)$. The subscript follows the rule that made $d_h$:
+it names the vector it measures, $\mathbf{s}$ as $d_h$ names $\mathbf{h}$, so $d_h$ stays the
+encoder's width. Where the two are equal, a lesson writes $d_h$ alone.
 
 **$\mathbf{p}_{ij}$ is Block 3's pre-activation with a pair for an index, and $\mathbf{v}_a$ keeps
 its subscript.** The gradient of $e_{ij}$ has to name the argument of the $\tanh$ — it is where
