@@ -1384,13 +1384,8 @@
         "readout": "En {dh} coordenadas de {q} niveles caben <codes></codes> mensajes distintos, y eso alcanza para las frases de hasta <upto>{crossing} tokens</upto>. A partir de ahí sobran frases: a los {past} tokens ningún decoder (ni el mejor posible, entrenado sin límite) devuelve exactas más que una fracción <ceiling></ceiling> de ellas."
       },
       "attention-alignment": {
-        "attention": "Atención",
-        "fixedSummary": "Resumen fijo",
         "mapAria": "Mapa de alineación: elige un paso de la salida para ver de qué parte de la entrada tira",
-        "attentionNote": "El paso {step} escribe <tgt>{target}</tgt> y tira sobre todo de <src>{source}</src>, con un peso de {weight}. Cambia de paso: la fila se mueve, y su suma sigue valiendo {sum}.",
-        "frozenNote": "Con el resumen fijo, el paso {step} recibe el estado de <src>{source}</src> con peso {weight} — y también lo reciben los otros {others} pasos. Recorre las filas y mira las barras de abajo: no se mueven.",
-        "contextAria": "Las {d} coordenadas del vector de contexto del paso {step}: {values}.",
-        "contextNote": "{d} coordenadas, las mismas que tenía el resumen"
+        "attentionNote": "El paso {step} escribe <tgt>{target}</tgt> y tira sobre todo de <src>{source}</src>, con un peso de {weight}. Cambia de paso: la fila se mueve, y su suma sigue valiendo {sum}."
       },
       "self-attention-heatmap": {
         "inputLabel": "Escribe una frase (se queda en los primeros {max} tokens)",
