@@ -68,20 +68,26 @@ demuestre.
 Una apuesta se puede perder de dos maneras muy distintas, y separarlas es todo el trabajo de hoy. Un
 modelo puede fallar porque está mal ajustado, y entonces entrenarlo más lo arregla. O puede fallar
 porque lo que se le pide no cabe donde se le pide que quepa, y entonces no hay entrenamiento que
-valga: la pared no se mueve. Esta lección hace las dos cosas por separado. Primero cuenta, con lápiz,
-cuántos mensajes distintos caben en $\mathbf{c}$ y cuántas frases distintas hay que meter en él.
-Después mide qué le pasa a un modelo de verdad cuando la entrada se alarga, con dos anchos de estado
-y varios presupuestos de entrenamiento.
+valga: la pared no se mueve. Esta lección hace las dos cosas por separado. Primero cuenta
+dos cantidades y las compara. Una es cuántos valores distintos puede tomar $\mathbf{c}$: a cada uno lo
+llamaré un *mensaje*, porque es lo único que el encoder le hace llegar al decoder. La otra es cuántas
+*frases* distintas puede recibir el encoder, entendiendo por frase cualquier combinación de tokens
+del vocabulario de entrada con una longitud dada, no sólo las que aparecen en los datos. Para que el
+decoder pueda reconstruir cada frase, cada una necesita un mensaje propio. Después mide qué le pasa a
+un modelo de verdad cuando la entrada se alarga, con dos anchos de estado y varios presupuestos de
+entrenamiento.
 
 Las dos cantidades de la cuenta crecen de formas incompatibles, y el explorable las pone una sobre
 otra. La recta verde no se mueve con la longitud: dice cuántos mensajes distintos puede llegar a
-codificar un vector de $d_h$ coordenadas, y ese número no sabe nada de la frase que está resumiendo.
-La ámbar sube un escalón entero por cada token que añades a la entrada. Ensancha el estado todo lo
-que quieras y busca después el punto donde se cruzan.
+codificar un vector de $d_h$ coordenadas cuando de cada coordenada se distinguen $q$ niveles (de
+dónde sale $q$ lo cuenta la sección siguiente). Ese número no sabe nada de la frase que está
+resumiendo. La ámbar cuenta las frases de cada longitud, y sube un escalón entero por cada token que
+añades. Ensancha el estado o sube los niveles todo lo que quieras, y busca después el punto donde se
+cruzan.
 
 <Explorable
   id="context-bottleneck"
-  caption="Ensancha el estado cuanto quieras: la recta verde sube, pero sigue siendo horizontal. La ambar tiene pendiente, y una recta con pendiente termina cruzando a cualquier horizontal."
+  caption="Ensancha el estado cuanto quieras: la recta verde sube, pero sigue siendo horizontal. La ámbar tiene pendiente, y una recta con pendiente termina cruzando a cualquier horizontal."
 />
 
 ## Cuántos mensajes caben y cuántas frases hay
@@ -97,9 +103,9 @@ Con esa convención, el encoder tiene un número finito de mensajes distintos qu
 que tiene que distinguir son todas las de longitud $T_x$ sobre el vocabulario de entrada:
 
 $$
-\lvert\{\text{códigos}\}\rvert \le q^{d_h},
+\lvert\{\text{mensajes}\}\rvert \le q^{d_h},
 \qquad
-\lvert\{\text{fuentes de longitud } T_x\}\rvert = \lvert V_x \rvert^{T_x}.
+\lvert\{\text{frases de longitud } T_x\}\rvert = \lvert V_x \rvert^{T_x}.
 $$
 
 Fíjate en dónde está cada letra. En el primer recuento, $T_x$ *no aparece*: el vector de contexto
@@ -107,15 +113,16 @@ es igual de grande para una frase corta que para una larga, que es exactamente l
 de la lección anterior. En el segundo, $T_x$ está en el exponente.
 
 Ahora el paso que convierte esa asimetría en una imposibilidad. Una vez fijado $\mathbf{c}$, todo lo
-que el decoder escribe está determinado: arranca en $\mathbf{s}_0 = \mathbf{c}$, toma en cada paso la
-coordenada mayor y se realimenta con lo que acaba de escribir. La salida completa es, por tanto, una
+que el decoder escribe está determinado: arranca en $\mathbf{s}_0 = \mathbf{c}$, en cada paso escribe
+el token más probable (el de la coordenada mayor de su vector de salida) y se realimenta con ese
+token. Es la decodificación voraz de la lección anterior. La salida completa es, por tanto, una
 *función* de $\mathbf{c}$, y una función no puede dar dos respuestas distintas al mismo argumento. Si
-hay menos códigos que frases, dos frases distintas comparten código y el decoder devuelve la misma
+hay menos mensajes que frases, dos frases distintas comparten mensaje y el decoder devuelve la misma
 salida para las dos, de modo que al menos una de ellas la reconstruye mal. Contando las que puede
 acertar:
 
 $$
-\frac{\lvert\{\text{fuentes reconstruidas exactamente}\}\rvert}{\lvert V_x \rvert^{T_x}}
+\frac{\lvert\{\text{frases reconstruidas exactamente}\}\rvert}{\lvert V_x \rvert^{T_x}}
 \le \min\left(1,\, \frac{q^{d_h}}{\lvert V_x \rvert^{T_x}}\right).
 $$
 
@@ -143,9 +150,10 @@ por cuatro esos pesos. La longitud se compra de forma lineal y se paga de forma 
 ## Un techo muy por encima de donde se rompe
 
 Ese recuento demuestra que la pared existe. No dice dónde está, y conviene ser explícito con la
-diferencia, porque el mejor modelo de la celda siguiente tiene $d_h = 32$, $q = 8$ niveles y
-$\lvert V_x \rvert = 4$ —cuatro letras—, lo que le da un techo de $T^{\star} = 48$ tokens. En tiras
-de cinco letras acertará una de cada tres.
+diferencia. La sección siguiente entrena encoder-decoders en una tarea de juguete: leer una tira de
+letras, escrita con sólo cuatro (<W>a</W>, <W>b</W>, <W>c</W> y <W>d</W>), y escribirla al revés.
+El mejor de ellos tiene $d_h = 32$, y con $q = 8$ niveles y $\lvert V_x \rvert = 4$ la cuenta le da un techo de
+$T^{\star} = 48$ tokens. Aun así, de las tiras de cinco letras sólo invertirá bien una de cada tres.
 
 La distancia entre esas dos cifras tiene una explicación, y es material del bloque anterior mirado
 desde un sitio nuevo. El gradiente que enseña al encoder a conservar el token $j$ de la entrada sale del

@@ -1380,7 +1380,7 @@
         "levels": "{v} levels",
         "powerLabel": "10 to the {exponent}",
         "plotAria": "Two lines against the length of the input, in orders of magnitude. The capacity of the context vector is flat at {codes} distinct messages, with {dh} coordinates of {q} levels. The number of input sentences rises 4.5 orders per token and crosses the capacity at {crossing} tokens.",
-        "legend": "Vertical axis: orders of magnitude (log₁₀) of a count. <cap>▬</cap> messages that fit in c · <dem>▬</dem> distinct input sentences of that length, over a vocabulary of {vocab} entries.",
+        "legend": "Horizontal axis: length of the input sentence, in tokens. Vertical axis: orders of magnitude (log₁₀) of a count. <cap>▬</cap> messages that fit in c · <dem>▬</dem> distinct input sentences of that length. The input vocabulary has {vocab} = 2¹⁵ entries, a typical subword vocabulary size: Mistral 7B (v0.3) uses exactly that, and Llama 2 uses 32,000.",
         "readout": "In {dh} coordinates of {q} levels there is room for <codes></codes> distinct messages, and that is enough for sentences of up to <upto>{crossing} tokens</upto>. Past that there are sentences to spare: at {past} tokens no decoder —not even the best possible one, trained without limit— returns more than a <ceiling></ceiling> fraction of them exactly."
       },
       "attention-alignment": {
