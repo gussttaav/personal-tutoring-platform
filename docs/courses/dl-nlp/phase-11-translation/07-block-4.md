@@ -1,6 +1,6 @@
 # P11-07 — Block 4: The Bridge to Attention
 
-**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1 done)
+**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.2 done)
 
 ## TL;DR
 
@@ -236,7 +236,7 @@ concentrated in **4.1 and 4.3**, and both of them spend it on the same decision.
 ## Lesson progress
 
 - [x] 4.1 `encoder-decoder`
-- [ ] 4.2 `el-cuello-de-botella`
+- [x] 4.2 `el-cuello-de-botella`
 - [ ] 4.3 `la-idea-de-atencion`
 - [ ] 4.4 `bahdanau`
 - [ ] 4.5 `luong`
@@ -286,6 +286,32 @@ Reuse these verbatim; they are settled, not open.
   and then enumerates the three as vocabulary, length and the distribution, so order drops out and
   vocabulary appears; and `q-factorizacion` (c) says the sum «se pasa de $1$ en cuanto la frase tiene
   tres tokens», which three probabilities need not do (the English says "can pass $1$").
+
+**From 4.2** (`en/28-el-cuello-de-botella.mdx`):
+
+- **Transpose, as classed.** Every number, id and quiz answer holds; 1,777 words against the
+  Spanish 1,812, no budget warning.
+- **The reversal-task cells' code names**, for any later cell that reuses this task: `monta` →
+  `build`, `paso` → `train_step`, `pesos` → `weights`, `ent` → `dec_in`, `escribe` → `write`,
+  `acierto` → `accuracy`, `ac` → `test_rng`, `fila` → `row`, `bien` → `right`, `cortes` →
+  `checkpoints`, `n_sim` → `n_sym` (`train_step`, `dec_in`, `write`, `right` and `n_sym` match
+  `en/26`). Header `  model` padded to the Spanish `  modelo`'s 23 columns.
+- **Terms:** *message* and *sentence* for «mensaje» and «frase» (what the widget already says);
+  "string of letters" for «tira» (`en/26`); "undertrained" for «mal ajustado» (the glossary bans
+  *fitting*); "the one printed at the start of each [row]" for «lo que dice su etiqueta» (the
+  glossary keeps *label* for training labels). A bold **no** in a quiz prompt becomes an italic
+  *not*, as `en/15` did. «Llama la atención» keeps its pun as "draws attention", one sentence
+  before the idea of attention.
+- **Printed in Pyodide and quoted**, identical to the Spanish cell: `3/1/1/0/0/0`,
+  `79/55/14/10/2/0`, `100/71/24/8/2/0` and `100/100/78/34/22/8` %, which give every qualitative
+  claim in the prose and in `q-entrenar-mas` (one in three against one in twelve at five letters).
+- **Fixed in both locales while translating:** `q-primer-token` (d) said «la tabla desmiente», but
+  the table only counts exact strings and cannot say where one fails; it now cites the seq2seq
+  lesson's errors, and the claim was measured (seq2seq's model, $L = 8$, 400 strings: accuracy
+  by output position 92, 88, 74, 52, 44, 37, 31, 25 %). The cell's header was one column narrower
+  than the data under it (`"L=%d   "` → `" L=%d   "`). And `context-bottleneck`'s English readout
+  lost its em dashes, and its legend groups $\lvert V_x \rvert$ per locale (`32,768` / `32 768`)
+  instead of a hardcoded Spanish label.
 
 ## The direction decision — make it once, in 4.1
 
