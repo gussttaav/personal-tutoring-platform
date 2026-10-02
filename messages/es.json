@@ -1381,7 +1381,7 @@
         "powerLabel": "10 elevado a {exponent}",
         "plotAria": "Dos rectas frente a la longitud de la entrada, en ordenes de magnitud. La capacidad del vector de contexto es horizontal en {codes} mensajes distintos, con {dh} coordenadas de {q} niveles. El numero de frases de entrada sube 4.5 ordenes por token y cruza la capacidad en {crossing} tokens.",
         "legend": "Eje horizontal: longitud de la frase de entrada, en tokens. Eje vertical: órdenes de magnitud (log₁₀) de un recuento. <cap>▬</cap> mensajes que caben en c · <dem>▬</dem> frases de entrada distintas de esa longitud. El vocabulario de entrada tiene {vocab} = 2¹⁵ entradas, un tamaño típico de vocabulario de subpalabras: Mistral 7B (v0.3) usa exactamente ese, y Llama 2, 32 000.",
-        "readout": "En {dh} coordenadas de {q} niveles caben <codes></codes> mensajes distintos, y eso alcanza para las frases de hasta <upto>{crossing} tokens</upto>. A partir de ahí sobran frases: a los {past} tokens ningún decoder —ni el mejor posible, entrenado sin límite— devuelve exactas más que una fracción <ceiling></ceiling> de ellas."
+        "readout": "En {dh} coordenadas de {q} niveles caben <codes></codes> mensajes distintos, y eso alcanza para las frases de hasta <upto>{crossing} tokens</upto>. A partir de ahí sobran frases: a los {past} tokens ningún decoder (ni el mejor posible, entrenado sin límite) devuelve exactas más que una fracción <ceiling></ceiling> de ellas."
       },
       "attention-alignment": {
         "attention": "Atención",
