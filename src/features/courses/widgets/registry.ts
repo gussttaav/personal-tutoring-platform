@@ -68,4 +68,6 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "kv-cache": dynamic(() => import("./nn/KvCache"), { ssr: false }),
   // COURSE-C2-P1-01 — llm-agents Block 1 lesson 7 (leyes de escala: Kaplan y Chinchilla).
   "scaling-laws": dynamic(() => import("./nn/ScalingLaws"), { ssr: false }),
+  // COURSE-C2-P1-02 — llm-agents Block 2 lesson 2 (la plantilla de chat).
+  "chat-template": dynamic(() => import("./nlp/ChatTemplate"), { ssr: false }),
 };

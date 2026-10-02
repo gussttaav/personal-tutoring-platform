@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (1/8) | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (2/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -779,3 +779,45 @@ mini-GPT, loaded in one line from `modelo.py` and never trained, and says so bef
   all four quiz questions right and wrong (the numeric at 0.207 passes, 0.208 fails); no horizontal
   page scroll at 360 px (the two widest equations, 511 and 485 px, scroll in their own boxes). The
   pane carried the English locale cookie again.
+
+Lesson 11 `plantilla-de-chat` authored on `staging` (2026-10-02), with its widget `chat-template`
+built in the same task. 1 997 words, 4 display equations, 1 widget, 2 cells (max 42 lines), 4 quiz,
+1 challenge (`ch-mascara`), 4 readings (HF chat-templating docs, Hewitt 2021, Llama 2 §3.1, Shi et
+al. 2024; links checked). `minutes: 35`, the lint's estimate, which trips the advisory reading-time
+warning (target 30, ceiling 40). Runs on the mini-GPT, not trained, and says so before the cells.
+Decisions, confirmed by Gustavo at review:
+- **The template:** one special token per rol plus `<|fin|>`, ids 512–515 after the mini-GPT's 512
+  entries, Spanish names; each mensaje is its rol's token, `codificar(contenido)`, `<|fin|>`. The
+  generation prompt ends on `<|asistente|>`, and `<|fin|>` belongs to $y$ (lesson 9's cadena de
+  parada, now a token the model must learn). ChatML is named once in prose as the open models' format.
+- **The claims, derived:** injectivity proved by building the inverse (specials never come out of
+  `codificar`, and lesson 2's decodificar∘codificar = id); a two-message and a one-message
+  conversation give the same string under text markers. $\pi_\theta(y \mid x)$ is introduced here
+  as $p_\theta$ read through the plantilla, and named «política»; the loss mask is 1 on each
+  respuesta's contenido and `<|fin|>`, 0 elsewhere, `<|asistente|>` included. New rows start at the
+  mean of $\mathbf{E}$ (Hewitt 2021), and Jensen bounds an untrained special by $1/(\lvert V \rvert + 4)
+  = 1/516$ anywhere; read the other way, the old entries keep ≥ 512/516 of their masa. With the mean,
+  the three rol tokens enter the network as the same vector.
+- **The cells, measured:** 41 tokens, 12 with loss; text template fooled, specials not; typed
+  `<|asistente|>` = 8 ordinary tokens. With the mean rows, `<|fin|>` gets 6.3e-7 where it goes and
+  ≤ 2.4e-5 in all 27 positions; $-\log \pi_\theta(y \mid x) = 69.7$ nats in 11 tokens (14.3 for
+  `<|fin|>`); the four specials take ≤ 3.1e-4 on 512 novel positions; greedy after `<|asistente|>`
+  writes novel and never closes in 24 tokens.
+- **For lesson 12:** it inherits this template, these ids and the mean initialisation. Feasibility
+  measured in Node Pyodide: full-batch SFT on the ten `SFT_PARES` (300 tokens/step, Adam 3e-3 with a
+  10-step warm-up) reaches loss 0.025 at step 30 (7.1 s) and 0.002 at step 60 (14.2 s, over the 10 s
+  cap); after 60 steps the held-out «tierra» question gets «La leche es blanca.<|fin|>» (format,
+  not content). Budget ~30 steps, and mind phones. Lesson 10 promised to come back to its
+  «Pregunta: … Respuesta:» frame; lesson 12 decides how, now that the format is this template.
+- **Terms and letters added before writing:** `mensaje`, `rol`, `contenido`, `plantilla`,
+  `token especial`, `máscara (de la pérdida)`, `política` in the delta's §4; the specials,
+  $\text{plantilla}$, $\mathbf{E}$/$\mathbf{e}_v$, $\mathbf{h}$, $\bar{\mathbf{e}}$/$\bar{z}$ and
+  readings of $x$, $y$, $\pi_\theta$ in `NOTATION.md`, with a note on why the template has no
+  letters (role, content and mask letters are all spoken for).
+- **Lesson 10's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 12 (`sft`) in prose with the usual comment.
+- Verified: `pnpm lint:content`, `pnpm build`, `check:messages`, ESLint on the new files, 1 019
+  course tests (14 new in `chat-template.test.ts`, 4 in `corpora.test.ts`); both cells in Node
+  Pyodide and in Chromium on `pnpm start` with identical output; the challenge graded in Chromium
+  (starter and empty 0/5, solution 5/5); the numeric quiz accepts 19; widget and page at 360 px with
+  no horizontal scroll (Playwright screenshots; the Browser pane did not composite).

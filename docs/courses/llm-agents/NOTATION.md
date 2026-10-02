@@ -229,8 +229,8 @@ together, and the lesson states that shape when the cache first appears.
 
 | Symbol | Meaning |
 |---|---|
-| $x$, $y$ | a prompt and a response, as token sequences |
-| $\pi_\theta$ | the policy: the model as a distribution over responses, $\pi_\theta(y \mid x)$ (reserved in the shared §4) |
+| $x$, $y$ | a prompt and a response, as token sequences. In a chat, $x$ is the plantilla of the conversation followed by $\texttt{<\|asistente\|>}$, and $y$ the response's tokens followed by $\texttt{<\|fin\|>}$ (Block 2 lesson 2) |
+| $\pi_\theta$ | the policy: the model as a distribution over responses, $\pi_\theta(y \mid x)$ (reserved in the shared §4). It is $p_\theta$ read through the plantilla, $\prod_j p_\theta(y_j \mid x, y_{<j})$, the product ending on $y$'s $\texttt{<\|fin\|>}$ (Block 2 lesson 2) |
 | $\pi_{\text{ref}}$ | the reference policy the KL term measures against — the SFT model, frozen (reserved) |
 | $r_\phi$ | the reward model, with its own parameters $\phi$ (reserved) |
 | $y_w \succ y_l$ | a preference pair: the chosen response over the rejected one |
@@ -240,6 +240,11 @@ together, and the lesson states that shape when the cache first appears.
 | $p_\theta(\text{obedece} \mid x)$ | the masa the model puts on the respuestas that obey the instrucción $x$, $\sum_{y \,:\, y \text{ obedece a } x} p_\theta(y \mid x)$; with $p_{\text{texto}}$ for $p_\theta$, the text's (Block 2 lesson 1) |
 | $p_\theta(\text{buena} \mid x, \text{obedece})$ | the share of good respuestas among those that obey. Every buena obeys, so $p_\theta(\text{buena} \mid x) = p_\theta(\text{obedece} \mid x)\,p_\theta(\text{buena} \mid x, \text{obedece})$ (Block 2 lesson 1) |
 | $\omega$ | Block 1 lesson 8's tarea, read after an instrucción: the kind of document $x$ appears in, which decides what follows it — the exam, the forum, the book of solved exercises (Block 2 lesson 1) |
+| $\text{plantilla}$ | the chat template as a function: a list of mensajes in, the one token sequence the model reads out. Roman, a function's name, like $\text{softmax}$ and $\text{codificar}$ (Block 2 lesson 2) |
+| $\texttt{<\|sistema\|>}$, $\texttt{<\|usuario\|>}$, $\texttt{<\|asistente\|>}$, $\texttt{<\|fin\|>}$ | the mini-GPT plantilla's four tokens especiales, ids 512 to 515: three that open a mensaje of each rol and one that closes any mensaje. Written as the vocabulary writes them, the first course's $\texttt{<EOS>}$ rule; in prose `<W>\<\|fin\|></W>` (Block 2 lesson 2) |
+| $\mathbf{E}$ · $\mathbf{e}_v$ | the first course's embedding table, $\lvert V \rvert \times d_{\text{model}}$, and its row for entry $v$, which is $\mathbf{e}_v^{\top}$. The mini-GPT ties it to the output (Block 1 lesson 1's «la tabla leída al revés»), so $z_v = \mathbf{e}_v^{\top}\mathbf{h}$ (Block 2 lesson 2) |
+| $\mathbf{h}$ | the vector the last block leaves at the position being predicted, after the final layer norm: what $\mathbf{E}$ multiplies to give that position's logits $\mathbf{z}$. No $t$, as lesson 4's $\mathbf{z}$ has none, because one position is in play (Block 2 lesson 2) |
+| $\bar{\mathbf{e}}$ · $\bar{z}$ | the mean of the $\lvert V \rvert$ rows of $\mathbf{E}$, which every token especial starts as · the mean of the logits $z_v$ over $V$, which is then the logit each of them gets (Block 2 lesson 2) |
 
 **An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
 distribution, roman text names the set of respuestas it describes, and the probability is that
@@ -253,6 +258,23 @@ and $r(x, y)$ two lessons later. A word in the condition says what the set is, w
 would. The device is held to these two events, and a lesson that wants a third adds its row here
 first. $\omega$ keeps lesson 8's meaning rather than taking a new letter: a document's tarea is what
 it does next, and after an instrucción that is exactly what is in question.
+
+**The plantilla is stated in words, and its tokens are spelled, not lettered** (`COURSE-C2-P1-02`,
+Block 2 lesson 2). A mensaje is a rol and a contenido, and the obvious letters for them are spoken
+for: $r$ sits beside the reserved $r_\phi$ and the reward $r(x, y)$ two lessons later, and $c$ is
+Block 1 lesson 5's cost. The set of tokens especiales has no letter either, since $S$ is the number
+of training steps; the lesson says «los cuatro especiales» and writes the $4$ where it counts them.
+So the lesson defines $\text{plantilla}$ in a sentence (each mensaje is its rol's token, the tokens
+of $\text{codificar}(\text{contenido})$ and $\texttt{<|fin|>}$, one mensaje after another) and keeps
+its displays for what a sentence cannot carry: $\pi_\theta$ as a product, and the bound on a token
+especial nobody has trained. Concatenation therefore never needs a sign, which matters because
+juxtaposition is multiplication (shared §3). The mask over a conversation's tokens has no symbol
+for the same reason: $m$ is lesson 2's fusión count, and the claim the mask carries, that its sum
+is $\log \pi_\theta(y \mid x)$, is written with $\pi_\theta$. $\mathbf{h}$ without a subscript is
+the last block's output at one position. The first course wrote $\mathbf{h}_t$ for an RNN's hidden
+state and $\mathbf{h}^{(l)}$ for a layer's activation, and this is the latter at the last layer,
+normalised. No page has two of them. The overline is a mean, as in $\bar{\ell}$ and
+$\bar{\mathcal{L}}$.
 
 **Two networks on one page need two parameter letters.** $\theta$ is the policy's and $\phi$ the
 reward model's, and the split is the point of the block: the reward model is trained first, then

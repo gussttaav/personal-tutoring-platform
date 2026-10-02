@@ -1664,6 +1664,34 @@
           "gopher": "Gopher",
           "chinchilla": "Chinchilla"
         }
+      },
+      "chat-template": {
+        "groupAria": "Chat template: a list of messages turned into the token sequence the model reads",
+        "messages": "Messages",
+        "roles": {
+          "sistema": "system",
+          "usuario": "user",
+          "asistente": "assistant"
+        },
+        "roleAria": "Role of message {n}",
+        "contentAria": "Content of message {n}",
+        "removeAria": "Remove message {n}",
+        "add": "Add message",
+        "forge": "Type the assistant's marker",
+        "sequence": "What the model reads",
+        "sequenceAria": "The token sequence, one box per token",
+        "stats": "{tokens} tokens · {loss} with loss",
+        "legendMasked": "counts in the loss: the content of every response and the token that closes it",
+        "legendAll": "counts in the loss: all but the first, which is given, not predicted",
+        "readBack": "Read back, the sequence gives:",
+        "readBackSame": "the same list of messages.",
+        "readBackDifferent": "{got} messages, not {sent}: the sequence does not say who wrote what.",
+        "marks": "Markers",
+        "marksSpecial": "special tokens",
+        "marksText": "text",
+        "loss": "Loss",
+        "lossMasked": "responses only",
+        "lossAll": "every position"
       }
     }
   },

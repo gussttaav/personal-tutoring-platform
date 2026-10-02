@@ -48,7 +48,7 @@ you *put in the prompt* is the next block.
 ## Lesson progress
 
 - [x] 10. `predecir-no-es-obedecer`
-- [ ] 11. `plantilla-de-chat`
+- [x] 11. `plantilla-de-chat`
 - [ ] 12. `sft`
 - [ ] 13. `modelo-de-recompensa`
 - [ ] 14. `rlhf`

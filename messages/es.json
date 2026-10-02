@@ -1664,6 +1664,34 @@
           "gopher": "Gopher",
           "chinchilla": "Chinchilla"
         }
+      },
+      "chat-template": {
+        "groupAria": "Plantilla de chat: una lista de mensajes convertida en la secuencia de tokens que lee el modelo",
+        "messages": "Mensajes",
+        "roles": {
+          "sistema": "sistema",
+          "usuario": "usuario",
+          "asistente": "asistente"
+        },
+        "roleAria": "Rol del mensaje {n}",
+        "contentAria": "Contenido del mensaje {n}",
+        "removeAria": "Quitar el mensaje {n}",
+        "add": "Añadir mensaje",
+        "forge": "Escribir la marca del asistente",
+        "sequence": "Lo que lee el modelo",
+        "sequenceAria": "La secuencia de tokens, un recuadro por token",
+        "stats": "{tokens} tokens · {loss} con pérdida",
+        "legendMasked": "cuenta en la pérdida: el contenido de cada respuesta y el token que la cierra",
+        "legendAll": "cuenta en la pérdida: todos menos el primero, que se da y no se predice",
+        "readBack": "Leída de vuelta, la secuencia da:",
+        "readBackSame": "la misma lista de mensajes.",
+        "readBackDifferent": "{got} mensajes y no {sent}: la secuencia no dice quién escribió qué.",
+        "marks": "Marcas",
+        "marksSpecial": "tokens especiales",
+        "marksText": "texto",
+        "loss": "Pérdida",
+        "lossMasked": "sólo las respuestas",
+        "lossAll": "todas las posiciones"
       }
     }
   },

@@ -50,6 +50,8 @@ export const WIDGET_IDS = [
   "kv-cache",
   // COURSE-C2-P1-01 — llm-agents Block 1 lesson 7 (leyes de escala: Kaplan y Chinchilla).
   "scaling-laws",
+  // COURSE-C2-P1-02 — llm-agents Block 2 lesson 2 (la plantilla de chat).
+  "chat-template",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];
