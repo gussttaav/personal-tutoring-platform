@@ -176,7 +176,7 @@ def fig_arco_cuerda(es):
             "pares igual. El ángulo y la cuerda arrancan en línea recta y casi juntos; uno menos el coseno arranca "
             "plano, vale 0,29 a 45 grados y 1,00 a 90: doblar el ángulo lo multiplica por más de tres." if es else
             "Two panels. On the left, two vectors of length one, drawn as arrows, A horizontal and B at sixty degrees, on a circular "
-            "arc. Three ways of measuring how far apart they are are marked: the arc between their tips, which "
+            "arc. It marks three ways of measuring how far apart they are: the arc between their tips, which "
             "measures the angle theta; the chord, the straight segment between the two tips; and, along vector A, "
             "the piece from B's shadow to A's tip, which measures one minus the cosine. On the right, the three "
             "measures as a function of the angle, from 0 to 180 degrees. All three always increase, so they rank "
