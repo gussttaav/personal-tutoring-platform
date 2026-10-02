@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 726 262" width="726" height="262" role="img"
+ aria-label="Three vectors of length one, drawn as arrows leaving the same origin: A horizontal, B at forty-five degrees and C vertical, with a dashed arc joining their tips. On the right, one minus the cosine for each pair: between A and B, 0.29; between B and C, 0.29; between A and C, 1.00. Going through B, 0.29 plus 0.29 adds up to 0.59, and the straight route from A to C measures 1.00: the direct route is longer than the detour, which a true distance never allows.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 12px; font-weight: 600; }
+  .sub { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 12px; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .big { font-size: 13px; font-weight: 600; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .arc { fill: none; stroke: #3b3b3e; stroke-width: 1.2; stroke-dasharray: 3 3; }
+  .vec { stroke-width: 2; }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<defs><marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4edea3"/></marker><marker id="hw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e8a24c"/></marker><marker id="hb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6fb1e8"/></marker><marker id="hm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#86948a"/></marker></defs>
+<path class="arc" d="M240.0,240.0 A190.0,190.0 0 0 0 50.0,50.0"/>
+<line class="vec" stroke="#4edea3" x1="50.0" y1="240.0" x2="240.0" y2="240.0" marker-end="url(#ha)"/>
+<line class="vec" stroke="#4edea3" x1="50.0" y1="240.0" x2="184.4" y2="105.6" marker-end="url(#ha)"/>
+<line class="vec" stroke="#4edea3" x1="50.0" y1="240.0" x2="50.0" y2="50.0" marker-end="url(#ha)"/>
+<text class="big" x="248.0" y="245.0">A</text>
+<text class="big" x="191.4" y="101.6">B</text>
+<text class="big" x="58.0" y="52.0">C</text>
+<path d="M102.0,240.0 A52.0,52.0 0 0 0 86.8,203.2" fill="none" stroke="#86948a" stroke-width="1.2"/>
+<text class="tk" x="105.4" y="221.0">45°</text>
+<path d="M99.5,190.5 A70.0,70.0 0 0 0 50.0,170.0" fill="none" stroke="#86948a" stroke-width="1.2"/>
+<text class="tk" x="79.8" y="171.9">45°</text>
+<text class="lbl" x="330" y="48">1 − cos for each pair</text>
+<text class="tx" x="330" y="78">A and B</text>
+<text class="tx" x="400" y="78" fill="#86948a" style="fill:#86948a">1 − cos 45°</text>
+<text class="tx" x="580" y="78" text-anchor="end">0.29</text>
+<text class="tx" x="330" y="104">B and C</text>
+<text class="tx" x="400" y="104" fill="#86948a" style="fill:#86948a">1 − cos 45°</text>
+<text class="tx" x="580" y="104" text-anchor="end">0.29</text>
+<text class="tx" x="330" y="130">A and C</text>
+<text class="tx" x="400" y="130" fill="#86948a" style="fill:#86948a">1 − cos 90°</text>
+<text class="tx" x="580" y="130" text-anchor="end">1.00</text>
+<line class="gr" x1="330" y1="148" x2="690" y2="148"/>
+<text class="tx" x="330" y="174">Going through B: 0.29 + 0.29 = 0.59</text>
+<text class="tx" x="330" y="198">Straight from A to C: 1.00</text>
+<text class="lbl" x="330" y="230" style="fill:#ffb4ab">The direct route is longer than the detour.</text>
+</svg>

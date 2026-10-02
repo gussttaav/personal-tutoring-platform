@@ -1,0 +1,619 @@
+---
+slug: similitud-coseno
+title: "Por qué el coseno para comparar embeddings, y por qué no es una métrica"
+date: "2026-10-02"
+minutes: 21
+summary: "Casi todo el procesamiento del lenguaje compara embeddings con la similitud coseno, y casi todas las librerías la llaman métrica sin serlo. Por qué ganó entre tantas medidas, por qué que no sea una métrica casi nunca importa y cuándo sí, y dónde deja de ser la medida adecuada."
+draft: false
+reading:
+  - kind: paper
+    title: "A Vector Space Model for Automatic Indexing"
+    authors: "Gerard Salton, Anita Wong y Chung-Shu Yang"
+    year: "1975"
+    venue: "Communications of the ACM"
+    lang: en
+    url: "https://doi.org/10.1145/361219.361220"
+    note: "El origen del modelo vectorial. La primera página ya propone comparar documentos por el ángulo y llevar todos los vectores a la esfera de radio uno, cuarenta años antes de los embeddings."
+  - kind: paper
+    title: "Similarity Estimation Techniques from Rounding Algorithms"
+    authors: "Moses Charikar"
+    year: "2002"
+    venue: "STOC 2002"
+    lang: en
+    url: "https://doi.org/10.1145/509907.509965"
+    note: "SimHash: un plano al azar separa dos vectores con probabilidad proporcional a su ángulo. Es el puente entre el ángulo y los códigos binarios que comprimen los índices vectoriales."
+  - kind: paper
+    title: "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks"
+    authors: "Nils Reimers e Iryna Gurevych"
+    year: "2019"
+    venue: "EMNLP 2019"
+    lang: en
+    url: "https://arxiv.org/abs/1908.10084"
+    note: "El modelo que puso las frases en un espacio donde el coseno significa algo. La sección 3 describe sus funciones de pérdida, y la de regresión optimiza directamente el coseno."
+  - kind: paper
+    title: "How Contextual are Contextualized Word Representations?"
+    authors: "Kawin Ethayarajh"
+    year: "2019"
+    venue: "EMNLP 2019"
+    lang: en
+    url: "https://arxiv.org/abs/1909.00512"
+    note: "La medida de la anisotropía. La figura 1 enseña, capa a capa, el coseno medio entre palabras al azar en ELMo, BERT y GPT-2, y la última capa de GPT-2 roza el 1."
+  - kind: paper
+    title: "Understanding Contrastive Representation Learning through Alignment and Uniformity on the Hypersphere"
+    authors: "Tongzhou Wang y Phillip Isola"
+    year: "2020"
+    venue: "ICML 2020"
+    lang: en
+    url: "https://arxiv.org/abs/2005.10242"
+    note: "Qué hace el entrenamiento contrastivo con la geometría: acercar los pares parecidos y repartir el resto por toda la esfera. Explica por qué un modelo entrenado así se compara con el coseno."
+  - kind: paper
+    title: "All Bark and No Bite: Rogue Dimensions in Transformer Language Models Obscure Representational Quality"
+    authors: "William Timkey y Marten van Schijndel"
+    year: "2021"
+    venue: "EMNLP 2021"
+    lang: en
+    url: "https://aclanthology.org/2021.emnlp-main.372"
+    note: "Las dimensiones rebeldes: una a tres coordenadas que deciden el coseno entero. La tabla 1 da cuánto aporta cada una, modelo a modelo."
+  - kind: paper
+    title: "Whitening Sentence Representations for Better Semantics and Faster Retrieval"
+    authors: "Jianlin Su, Jiarun Cao, Weijie Liu y Yangyiwen Ou"
+    year: "2021"
+    venue: "arXiv:2103.15316"
+    lang: en
+    url: "https://arxiv.org/abs/2103.15316"
+    note: "El arreglo más barato de la anisotropía: blanquear los vectores antes de calcular el coseno. El método cabe en unas pocas líneas de álgebra lineal y no necesita reentrenar nada."
+  - kind: paper
+    title: "Is Cosine-Similarity of Embeddings Really About Similarity?"
+    authors: "Harald Steck, Chaitanya Ekanadham y Nathan Kallus"
+    year: "2024"
+    venue: "WWW 2024 Companion"
+    lang: en
+    url: "https://arxiv.org/abs/2403.05440"
+    note: "Cuándo el coseno no significa nada: en ciertos modelos lineales, la misma predicción admite cosenos distintos. La cuenta es corta y se sigue con álgebra de matrices básica."
+tags: ["nlp", "embeddings", "llm"]
+aiImages: true
+---
+
+{/*
+  BLOG-11 — Por qué el coseno para comparar embeddings, y por qué no es una métrica.
+
+  Más corto que los anteriores a propósito (objetivo < 25 min; ~21). Orden: qué es el
+  coseno → similitud, distancia y métrica → las dos métricas que esconde (ángulo y
+  cuerda) → cuándo importa que no lo sea → por qué ganó → las demás medidas → dónde no
+  encaja → qué te llevas. El artículo NO da por leído el curso ni otro artículo.
+
+  Todos los números están citados o calculados, ninguno medido con un modelo:
+    - 0,29 / 0,59 / 1,00: 1 − cos 45° = 1 − √2/2 y 1 − cos 90°.
+    - 0,015 / 0,030 / 0,060: 1 − cos 10° y 1 − cos 20°.
+    - 0,62 / 0,28 / −0,02: 2s² − 1 con s = 0,9 / 0,8 / 0,7.
+    - 0,036: 1/√768, desviación típica del coseno entre dos direcciones al azar en 768
+      dimensiones (E[cos²] = 1/d exactamente).
+    - «≈ 0,6 en las capas 2 a 8» y «casi 1» en la última capa de GPT-2, 0,46 en la última de
+      BERT: Ethayarajh 2019, §4.1 y figura 1 (el 0,98 y el 0,46 son lecturas de la figura).
+    - 88 % (BERT, capa 11) y 99,6 % (XLNet, capa 11): Timkey y van Schijndel 2021, tabla 1.
+    - «0,7 a 1» y temperatura 0,01: FAQ de la ficha de intfloat/e5-base-v2.
+    - DPR: §5.2, «L2 performs comparable to dot product, and both of them are superior to
+      cosine»; el apéndice B dice que los hiperparámetros eran los del producto escalar.
+    - Las afirmaciones sobre librerías (scikit-learn, SciPy, pgvector, FAISS, hnswlib, la
+      guía de OpenAI) se comprobaron en su documentación el 2026-10-02.
+  Las figuras de public/blog/similitud-coseno/ las genera
+  scripts/figures/similitud-coseno/make_svgs.py (Python sin dependencias, .svg y .en.svg);
+  si cambia un valor de una figura, el cuerpo lo cita también.
+*/}
+
+Si alguna vez has montado un buscador semántico, elegiste el coseno sin elegirlo. Un buscador así
+convierte cada texto en un *embedding*, un vector de números con el que un modelo lo representa, y
+compara la pregunta con cada documento mediante la **similitud coseno**: el coseno del ángulo entre
+los dos vectores. Vale $1$ cuando apuntan hacia el mismo sitio y baja cuanto más se separan, y el
+buscador devuelve los textos con el valor más alto. Es la opción por defecto de casi todas las bases
+de datos vectoriales (las que guardan vectores y devuelven los más parecidos a uno dado), la que
+[recomienda OpenAI](https://developers.openai.com/api/docs/guides/embeddings) para sus *embeddings* y
+la que dan por hecha los tutoriales de RAG (*retrieval-augmented generation*: buscar los fragmentos
+más parecidos a una pregunta y dárselos al modelo para que responda con ellos).
+
+Muchas librerías, sin embargo, no te dan la similitud sino su reverso, **uno menos el coseno**, para
+que un valor más pequeño signifique «más cerca», como en cualquier distancia. SciPy, la biblioteca
+científica de Python, la llama
+[«Cosine distance»](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cosine.html).
+En [pgvector](https://github.com/pgvector/pgvector), la extensión vectorial de PostgreSQL, es lo que
+devuelve el operador `<=>`. En scikit-learn, la biblioteca de aprendizaje automático, se pide con
+`metric="cosine"`. Ordenar de menor a mayor $1 - \cos\theta$ es lo mismo que ordenar de mayor a menor
+$\cos\theta$, así que la búsqueda devuelve los mismos resultados con una y con otra. Lo que cambia es
+el nombre: la similitud, vuelta del revés, se presenta como una distancia, y en scikit-learn hasta
+como una métrica.
+
+Toma tres vectores de longitud uno que salen del mismo punto. A apunta en horizontal, C en vertical
+y B justo en medio, a 45°. La distancia coseno, $1 - \cos\theta$, vale $0{,}29$ entre A y B, y otros
+$0{,}29$ entre B y C. Entre A y C vale $1$. Ir de A a C pasando por B cuesta $0{,}59$, e ir directo
+cuesta $1$.
+
+<figure>
+  <img
+    src="/blog/similitud-coseno/tres-vectores.svg"
+    alt="Tres vectores de longitud uno, dibujados como flechas que salen del mismo origen: A en horizontal, B a cuarenta y cinco grados y C en vertical, con un arco discontinuo que une sus puntas. A la derecha, el valor de uno menos el coseno para cada par: entre A y B, 0,29; entre B y C, 0,29; entre A y C, 1,00. Pasando por B, 0,29 más 0,29 suman 0,59, y el camino directo de A a C mide 1,00: el camino directo mide más que el rodeo, cosa que una distancia de verdad nunca permite."
+    width="726"
+    height="262"
+  />
+  <figcaption>
+    Tres vectores y la distancia coseno: el camino directo mide más que el rodeo.
+  </figcaption>
+</figure>
+
+Ninguna distancia que merezca el nombre permite eso. El camino directo no puede ser más largo que un
+rodeo: es la desigualdad triangular, y la distancia coseno no la cumple. Así que hay dos cosas que
+conviene no mezclar. La similitud coseno, la que ordena los resultados, no es una distancia: es una
+puntuación de parecido. Y la distancia coseno que se construye a partir de ella no es una métrica.
+
+Y aun así el coseno es la elección correcta casi siempre. Las preguntas son dos. La primera, por qué
+ha ganado entre las docenas de formas que hay de comparar dos vectores. La segunda, qué cuesta que su
+distancia no sea una métrica, que en una búsqueda es nada y en otras operaciones es bastante. Por el
+camino salen las medidas con las que compite y los casos en los que deja de ser la herramienta
+adecuada.
+
+## Un embedding es un vector
+
+Un *embedding* es un vector con el que un modelo representa un trozo de texto: una palabra, una
+frase, un documento entero. Un vector de $d$ dimensiones son $d$ números, y los modelos actuales usan
+cientos o miles (384, 768, 1 536 y 3 072 son tamaños habituales). El modelo está entrenado para que
+textos que significan algo parecido reciban vectores parecidos. Un vector de $d$ números es un punto
+en un espacio de $d$ dimensiones, y se suele dibujar como una flecha que sale del origen y termina en
+ese punto.
+
+De un vector importan aquí dos de sus propiedades. La primera es su **longitud**, o *norma*:
+
+$$
+\lVert a \rVert = \sqrt{a_1^2 + a_2^2 + \dots + a_d^2}.
+$$
+
+La segunda es su **dirección**, hacia dónde apunta.
+
+Para comparar dos vectores, la herramienta básica es el *producto escalar*: multiplicar coordenada a
+coordenada y sumar. Tiene una lectura geométrica que lo conecta con el ángulo $\theta$ entre los dos:
+
+$$
+\begin{aligned}
+a \cdot b &= a_1 b_1 + a_2 b_2 + \dots + a_d b_d \\
+&= \lVert a \rVert \, \lVert b \rVert \cos\theta .
+\end{aligned}
+$$
+
+Despejando sale la **similitud coseno**:
+
+$$
+\cos\theta = \frac{a \cdot b}{\lVert a \rVert \, \lVert b \rVert}.
+$$
+
+Vale $1$ cuando los dos vectores apuntan hacia el mismo sitio, $0$ cuando son perpendiculares y $-1$
+cuando apuntan en sentidos opuestos. Y no cambia si alargas o acortas cualquiera de los dos: dividir
+por las longitudes es precisamente quitárselas. Los vectores $(1, 2)$ y $(2, 4)$ tienen coseno $1$,
+aunque el segundo mida el doble y la distancia entre sus puntas sea $\sqrt{5} \approx 2{,}24$.
+
+Esa distancia entre las puntas es la otra comparación clásica, la **distancia euclídea**:
+$\lVert a - b \rVert$, la longitud del vector que va de una punta a la otra. Ve la dirección y la
+longitud a la vez. El coseno sólo ve la dirección, y todo lo que estuviera guardado en la longitud lo
+descarta. Ese descarte es la historia entera: por qué casi siempre acierta, y qué cuesta.
+
+## Similitud, distancia y métrica
+
+Tres palabras que se usan como sinónimos y nombran tres cosas distintas.
+
+Una **similitud** es cualquier puntuación que crece cuanto más se parecen dos cosas. No promete nada
+más: ni un valor máximo, ni siquiera que una cosa sea lo más parecido a sí misma. El coseno es una
+similitud.
+
+Una **distancia**, en el sentido amplio que usan las librerías, es lo contrario: una puntuación que
+crece cuanto más se diferencian. Cualquier similitud se convierte en una dándole la vuelta, y
+$1 - \cos\theta$ es la «distancia coseno» de SciPy y pgvector. Va de $0$ (misma dirección) a $2$
+(sentidos opuestos).
+
+Una **métrica** es una distancia que cumple cuatro reglas. Aquí la palabra tiene el sentido de la
+geometría, no el de las métricas de evaluación como la exactitud (*accuracy*) de un clasificador. Para
+cualesquiera $x$, $y$, $z$:
+
+1. $d(x, y) \ge 0$. Ninguna distancia es negativa.
+2. $d(x, y) = 0$ sólo si $x = y$. Distancia cero quiere decir «son lo mismo».
+3. $d(x, y) = d(y, x)$. Da igual desde dónde se mida.
+4. $d(x, z) \le d(x, y) + d(y, z)$. La **desigualdad triangular**: el camino directo nunca es más
+   largo que un rodeo.
+
+La cuarta es la que más trabajo hace. Dice que conocer dos distancias acota la tercera: si $x$ está
+cerca de $y$ e $y$ está cerca de $z$, $x$ no puede estar lejos de $z$. Todo lo que razona con
+distancias sin calcularlas todas se apoya en ella.
+
+Ahora, $1 - \cos\theta$ regla por regla. La primera la cumple, porque el coseno nunca pasa de $1$. La
+tercera también, porque el ángulo de $a$ a $b$ es el mismo que de $b$ a $a$. La segunda falla:
+$(1, 2)$ y $(2, 4)$ son vectores distintos y su distancia coseno es $0$. Como mucho compara
+direcciones, no vectores. Esta tiene arreglo fácil: si antes de nada divides cada vector por su
+longitud (lo que se llama **normalizar**: dejarlos todos de longitud uno), dos vectores con la misma
+dirección son el mismo vector.
+
+La cuarta falla incluso así, y es el ejemplo del principio. Los tres vectores tienen longitud uno, y
+$1 - \cos 45^\circ = 1 - \tfrac{\sqrt{2}}{2} \approx 0{,}29$. El rodeo suma $0{,}59$ y el camino
+directo mide $1$.
+
+Así que $1 - \cos\theta$ es una distancia en el sentido amplio y no es una métrica. El coseno a secas
+ni siquiera es una distancia: es una similitud. Con este vocabulario, los nombres de las librerías
+del principio se leen mejor. SciPy y pgvector aciertan al llamar distancia a $1 - \cos\theta$, en el
+sentido amplio. scikit-learn la pide con un parámetro que se llama `metric`, pero ahí la palabra sólo
+quiere decir «función de comparación», no las cuatro reglas. Quien lo dice con todas las letras es
+FAISS, la biblioteca de Meta para buscar entre millones de vectores: su
+[documentación](https://github.com/facebookresearch/faiss/wiki/MetricType-and-distances) aclara que
+el coseno es una similitud y no una distancia, y ni siquiera lo ofrece como opción. Para buscar por
+coseno, normalizas los vectores y buscas por producto escalar (`METRIC_INNER_PRODUCT`).
+
+## Dos métricas de verdad con el mismo orden
+
+El coseno esconde dos métricas de verdad, y las dos aparecen al normalizar. Si $\hat a$ y $\hat b$
+son $a$ y $b$ divididos por su longitud, sus puntas están sobre la esfera de radio uno y el coseno es
+directamente su producto escalar: $\cos\theta = \hat a \cdot \hat b$.
+
+La primera es el **ángulo**, $\theta = \arccos(\hat a \cdot \hat b)$. Sobre la esfera de radio uno, el
+ángulo es la longitud del arco más corto entre las dos puntas sin salirse de la superficie, la ruta
+de un avión entre dos ciudades. Esa distancia sí cumple la desigualdad triangular: con los tres
+vectores, $45^\circ + 45^\circ = 90^\circ$. El rodeo por B empata con el camino directo, porque B está
+justo en medio del camino, y nunca le gana.
+
+La segunda es la **cuerda**, la distancia euclídea entre los vectores normalizados. Su relación con
+el coseno sale en una línea, desarrollando el cuadrado y usando que $\hat a \cdot \hat a = \hat b
+\cdot \hat b = 1$:
+
+$$
+\begin{aligned}
+\lVert \hat a - \hat b \rVert^2 &= \hat a \cdot \hat a - 2\, \hat a \cdot \hat b + \hat b \cdot \hat b \\
+&= 2 - 2\cos\theta .
+\end{aligned}
+$$
+
+Así que $\lVert \hat a - \hat b \rVert = \sqrt{2 - 2\cos\theta}$, que es una métrica porque la
+distancia euclídea lo es.
+
+Leída al revés, la misma identidad explica el fallo del principio:
+
+$$
+1 - \cos\theta = \tfrac{1}{2} \lVert \hat a - \hat b \rVert^2 .
+$$
+
+La «distancia coseno» es la mitad del **cuadrado** de la distancia euclídea entre los vectores
+normalizados. Y elevar al cuadrado rompe la desigualdad triangular. En una recta, los puntos $0$, $1$
+y $2$ están a distancias $1$, $1$ y $2$; al cuadrado, $1$, $1$ y $4$, y $4 > 1 + 1$. El cuadrado
+castiga más las distancias grandes que las pequeñas, así que un viaje largo cuesta más que dos medios
+viajes. Con ángulos pequeños se ve en números: $1 - \cos\theta \approx \theta^2/2$, y dos pasos de
+$10^\circ$ cuestan $0{,}015$ cada uno, $0{,}030$ juntos, mientras que los $20^\circ$ de golpe cuestan
+$0{,}060$, el doble.
+
+<figure>
+  <img
+    src="/blog/similitud-coseno/arco-cuerda.svg"
+    alt="Dos paneles. A la izquierda, dos vectores de longitud uno, dibujados como flechas, A en horizontal y B a sesenta grados, sobre un arco de circunferencia. Se marcan tres formas de medir lo lejos que están: el arco entre sus puntas, que mide el ángulo theta; la cuerda, el segmento recto entre las dos puntas; y, sobre el vector A, el trozo que va desde la sombra de B hasta la punta de A, que mide uno menos el coseno. A la derecha, las tres medidas en función del ángulo, de 0 a 180 grados. Las tres crecen siempre, así que ordenan los pares igual. El ángulo y la cuerda arrancan en línea recta y casi juntos; uno menos el coseno arranca plano, vale 0,29 a 45 grados y 1,00 a 90: doblar el ángulo lo multiplica por más de tres."
+    width="726"
+    height="280"
+  />
+  <figcaption>
+    Tres formas de medir lo lejos que están dos direcciones. El arco y la cuerda son métricas; 1 − cos
+    arranca plano, y por eso dos pasos cortos suman menos que uno largo.
+  </figcaption>
+</figure>
+
+La consecuencia importante está en la gráfica de la derecha: las tres medidas crecen siempre con el
+ángulo. Ángulo mayor, cuerda mayor, $1 - \cos\theta$ mayor y coseno menor van juntos, así que las
+tres ordenan cualquier lista de candidatos exactamente igual. Buscar los diez textos más cercanos por
+coseno, por ángulo o por distancia euclídea entre vectores normalizados da los mismos diez, en el
+mismo orden. Es lo que dice la guía de OpenAI: sus *embeddings* vienen normalizados, así que el coseno
+y la distancia euclídea dan el mismo ranking.
+
+Para buscar, que es para lo que se usa el coseno casi siempre, no ser una métrica no importa nada.
+Importa cuando con los números se hace algo más que ordenarlos.
+
+## Cuándo sí importa
+
+Hay tres situaciones: cuando un algoritmo usa la desigualdad triangular para ahorrarse cálculos,
+cuando se promedian vectores y cuando se encadenan parecidos.
+
+### Índices que descartan sin mirar
+
+Algunos índices exactos de vecinos, como el árbol de bolas (*ball tree*), agrupan los puntos en bolas
+con un centro y un radio, y descartan una bola entera con un solo cálculo. Si la pregunta está a
+distancia $D$ del centro y la bola tiene radio $r$, todo lo que hay dentro está al menos a $D - r$
+de la pregunta, por la desigualdad triangular. Si $D - r$ ya supera al mejor candidato encontrado, la
+bola se salta sin mirar dentro. Con una distancia que no cumple la desigualdad, esa cota es falsa y el
+índice descartaría vecinos de verdad.
+
+scikit-learn lo sabe. Ni su `BallTree` ni su `KDTree` aceptan el coseno, y cuando se pide
+`NearestNeighbors(metric="cosine")` con el algoritmo automático,
+[pasa a fuerza bruta](https://scikit-learn.org/stable/modules/neighbors.html): comparar la pregunta
+con todo. El arreglo es la sección anterior. Normaliza los vectores, pide la distancia euclídea, y el
+árbol funciona con el mismo orden.
+
+Los índices de grafo como HNSW (*Hierarchical Navigable Small World*, el que usan muchas bases de datos
+vectoriales) no descartan con la desigualdad triangular. Recorren un grafo de vecinos
+saltando siempre al más prometedor, y son aproximados de todas formas. Por eso
+[hnswlib](https://github.com/nmslib/hnswlib), la biblioteca de código abierto que mantiene el primer
+autor de HNSW, ofrece el producto escalar y el coseno junto a la distancia euclídea, con un aviso de
+que el producto escalar no es una métrica.
+
+### Promediar
+
+k-means agrupa puntos en $k$ grupos repitiendo dos pasos: asignar cada punto al centro más cercano y
+mover cada centro a la media de sus puntos. Está hecho para la distancia euclídea, y con direcciones
+la media tiene trampa: la media de vectores de longitud uno no tiene longitud uno. Dos vectores
+perpendiculares, $(1, 0)$ y $(0, 1)$, promedian $(0{,}5;\ 0{,}5)$, de longitud $0{,}71$, y cuanto más
+disperso es un grupo, más corto queda su centro.
+
+Si se corre k-means normal sobre vectores normalizados, el paso de asignación compara cada punto con
+centros de longitudes distintas. Como
+$\lVert \hat x - c \rVert^2 = 1 - 2\, \hat x \cdot c + \lVert c \rVert^2$, el último término favorece a
+los grupos con el centro más corto, los más dispersos, por algo que no tiene nada que ver con el
+parecido. El k-means esférico ([Dhillon y Modha, 2001](https://doi.org/10.1023/A:1007612920971)) lo
+arregla volviendo a normalizar cada centro después de promediar. Vale para cualquier media de
+*embeddings*: el promedio de vectores normalizados hay que normalizarlo otra vez antes de compararlo
+con nada.
+
+### Encadenar
+
+«A se parece a B y B se parece a C, así que A se parece a C.» Es el razonamiento de quien deduplica un
+corpus, agrupa por cadenas o recomienda amigos de amigos. Con una métrica, la conclusión tiene una
+cota. Con el coseno también, si se pasa por el ángulo, que sí es una métrica.
+
+Supón que $\cos(A, B) \ge s$ y $\cos(B, C) \ge s$, con $s \ge 0$. Cada uno de los dos ángulos mide
+como mucho $\arccos s$. Por la desigualdad triangular de los ángulos,
+
+$$
+\theta_{AC} \le \theta_{AB} + \theta_{BC} \le 2 \arccos s .
+$$
+
+El coseno decrece entre $0^\circ$ y $180^\circ$, así que un ángulo mayor da un coseno menor, y la
+fórmula del ángulo doble, $\cos 2\alpha = 2\cos^2\alpha - 1$, cierra la cuenta:
+
+$$
+\begin{aligned}
+\cos(A, C) &\ge \cos(2 \arccos s) \\
+&= 2 \cos^2(\arccos s) - 1 \\
+&= 2s^2 - 1 .
+\end{aligned}
+$$
+
+Con $s = 0{,}9$ quedan garantizados $0{,}62$. Con $s = 0{,}8$, $0{,}28$. Con $s = 0{,}7$, $-0{,}02$: nada.
+A y C pueden ser perpendiculares, sin ninguna relación, aunque cada paso parezca bastante parecido.
+La cota es exacta, porque se alcanza cuando B está justo en medio del arco entre A y C, que es lo que
+pasaba con los tres vectores: $s = \cos 45^\circ \approx 0{,}71$ y $2s^2 - 1 = 0$.
+
+<figure>
+  <img
+    src="/blog/similitud-coseno/garantia.svg"
+    alt="Una gráfica. En horizontal, s, el coseno de A con B y de B con C, de 0,5 a 1. En vertical, el coseno mínimo que eso garantiza entre A y C. Una recta discontinua marca lo que se suele suponer, que A y C se parecen tanto como cada paso. Una curva por debajo marca lo garantizado, dos s al cuadrado menos uno: con s igual a 0,9 garantiza 0,62; con 0,8, 0,28; con 0,7, menos 0,02. Por debajo de 0,71 la curva cruza el cero y entra en una franja sombreada: ninguna garantía, A y C pueden ser perpendiculares."
+    width="726"
+    height="300"
+  />
+  <figcaption>
+    Lo que dos parecidos garantizan sobre el tercero. Por debajo de 0,71 por paso, nada.
+  </figcaption>
+</figure>
+
+Un umbral de $0{,}7$ para decir «parecidos» no se compone. Dos saltos de $0{,}7$ pueden unir textos que
+no tienen nada que ver, y un agrupamiento que une grupos por cadenas (el *single linkage*) con ese
+umbral acaba conectando cualquier cosa con cualquier otra si hay pasos intermedios suficientes.
+
+## Por qué ganó el coseno
+
+Si el coseno, el ángulo y la distancia euclídea entre vectores normalizados ordenan igual, la pregunta
+no es por qué el coseno y no la distancia euclídea. Es por qué tirar la longitud. Hay cuatro razones,
+y una quinta que se repite mucho y no se sostiene.
+
+### La herencia de la recuperación de información
+
+En 1975, Salton, Wong y Yang describieron el
+[modelo vectorial](https://doi.org/10.1145/361219.361220) para buscar documentos: cada documento es
+un vector con una coordenada por término, pesada según su importancia (lo que luego se llamaría
+TF-IDF, *term frequency–inverse document frequency*: cuántas veces sale la palabra en el documento por
+lo rara que es en la colección). En la primera página ya proponen comparar documentos por el ángulo
+entre sus vectores, y normalizarlos todos a longitud uno para dejarlos sobre la esfera.
+
+El motivo era práctico. Un documento largo repite más palabras, así que su vector es más largo, y con
+el producto escalar los documentos largos ganarían cualquier búsqueda por ser largos. El coseno
+quita la longitud, que ahí era un accidente del texto y no de su tema. Cuando llegó
+[word2vec](https://arxiv.org/abs/1301.3781) en 2013, el primer modelo popular de vectores de
+palabras, la costumbre vino con él: sus autores ya resolvían las analogías buscando la palabra más
+cercana «por distancia coseno». El procesamiento del lenguaje heredó la medida de los buscadores.
+
+### La longitud mide otra cosa
+
+En los vectores de palabras, la longitud no es significado.
+[Schakel y Wilson](https://arxiv.org/abs/1508.02297) la estudiaron en 2015 con word2vec, y resultó
+mezclar dos cosas: lo frecuente que es una palabra y lo constante que es el contexto en el que
+aparece. Una palabra que sale siempre en el mismo tipo de frase tiene un vector más largo cuanto más
+aparece. Una que sale en contextos muy distintos, como «el» o «de», acaba con un vector corto, porque
+cada contexto tira de él hacia un lado y los tirones se compensan. Ellos proponen usar la longitud
+para medir cuánto importa una palabra en un corpus. Es información útil, pero no es parecido: con el
+producto escalar, dos palabras saldrían más cercanas por ser importantes, no por significar lo mismo.
+El coseno sólo pregunta hacia dónde apunta cada vector.
+
+### Los modelos se entrenan con el coseno
+
+Es la razón más fuerte hoy, y es circular en el buen sentido: los modelos de *embeddings* se entrenan
+con el coseno dentro de la función de pérdida.
+[Sentence-BERT](https://arxiv.org/abs/1908.10084) (2019), el modelo que popularizó los *embeddings*
+de frases, prometía en su resumen vectores que se pueden comparar con el coseno. El entrenamiento
+contrastivo, que hoy es el estándar, junta los pares que deberían parecerse y separa los demás
+midiendo con el coseno dividido por una temperatura, un número que regula lo duro que es el
+contraste: $0{,}05$ en [SimCSE](https://arxiv.org/abs/2104.08821), un método contrastivo de 2021.
+[Wang e Isola](https://arxiv.org/abs/2005.10242) (2020) lo formalizaron: los vectores se colocan sobre
+la esfera de radio uno y el entrenamiento busca dos cosas, *alineamiento* (los pares parecidos,
+juntos) y *uniformidad* (todo lo demás, repartido por la esfera entera).
+
+Un modelo entrenado así nunca recibió ninguna señal sobre la longitud, porque la pérdida no la veía.
+La longitud es ruido, y muchos modelos la quitan ellos mismos: los *embeddings* de OpenAI salen ya
+normalizados. Con ellos, el coseno, el producto escalar y la distancia euclídea son intercambiables, y
+el producto escalar es el más barato. La regla general es que la medida correcta es la que se usó al
+entrenar el modelo.
+
+### Es barato
+
+Se normaliza una vez, al indexar, y a partir de ahí cada coseno es un producto escalar: $d$
+multiplicaciones y $d$ sumas. Comparar una pregunta con un millón de documentos es un único producto
+de matriz por vector, la operación que mejor hacen las tarjetas gráficas y las librerías de álgebra
+lineal. Como el resultado vive entre $-1$ y $1$, los vectores se comprimen bien, por ejemplo a
+enteros de 8 bits.
+
+Y el ángulo tiene su propio atajo. [Charikar](https://doi.org/10.1145/509907.509965) demostró en 2002
+que si se corta el espacio con un plano al azar que pasa por el origen, la probabilidad de que dos
+vectores caigan a lados distintos es $\theta/\pi$. Con 256 planos al azar, cada vector se convierte en
+256 bits, y la proporción de bits en los que difieren dos vectores estima su ángulo dividido por
+$\pi$. Se llama SimHash, y estima el ángulo, la métrica, no $1 - \cos\theta$.
+
+### Lo que no lo explica: la maldición de la dimensión
+
+Una explicación frecuente es que en muchas dimensiones la distancia euclídea pierde sentido y el
+coseno no. La primera mitad tiene base: [Beyer y otros](https://doi.org/10.1007/3-540-49257-7_15)
+demostraron en 1999 que, en condiciones bastante generales, al crecer la dimensión el punto más
+cercano a una pregunta y el más lejano acaban casi a la misma distancia. La segunda mitad no puede ser
+cierta con vectores normalizados: si el coseno y la distancia euclídea ordenan igual, sufren lo mismo.
+
+El coseno también se concentra. Entre dos direcciones al azar en $d$ dimensiones, el coseno tiene
+media $0$ y desviación típica $1/\sqrt{d}$. En 768 dimensiones son $0{,}036$, así que casi todos los
+pares de vectores al azar son casi perpendiculares. Lo que salva a los *embeddings* no es la medida:
+es que sus puntos no están al azar, sino amontonados en una parte pequeña y con estructura del
+espacio.
+
+Así que la elección de fondo es quedarse con la longitud o tirarla. En casi todos los *embeddings* de
+texto la longitud es ruido (el modelo nunca aprendió a usarla) o mide algo que no queremos comparar
+(lo frecuente o lo importante que es una palabra, el largo de un documento). Por eso el coseno.
+
+## Las demás medidas
+
+La tabla resume las que aparecen en el procesamiento del lenguaje, qué son y si ven la longitud.
+
+| medida | qué es | ¿ve la longitud? | dónde aparece |
+|---|---|---|---|
+| coseno | similitud, de $-1$ a $1$ | no | casi todos los modelos de *embeddings* de texto |
+| ángulo, $\arccos(\cos\theta)$ | métrica | no | SimHash; cuando hace falta una métrica de verdad |
+| producto escalar | similitud sin límites | sí | DPR, sistemas de recomendación |
+| euclídea | métrica | sí, salvo entre vectores normalizados | índices en árbol, k-means |
+| Manhattan | métrica: suma de diferencias absolutas | sí | rara vez con *embeddings* |
+| Mahalanobis | métrica que descuenta las correlaciones entre coordenadas | sí | blanquear *embeddings* |
+| Pearson | similitud, de $-1$ a $1$ | no | el coseno tras restar a cada vector la media de sus coordenadas |
+| Jaccard | $1 - J$ es métrica; compara conjuntos | no aplica | deduplicar corpus (con MinHash) |
+| Hamming | métrica: cuenta bits distintos | no aplica | códigos binarios, SimHash |
+| Jensen–Shannon | divergencia entre distribuciones; su raíz es métrica | no aplica | comparar distribuciones de palabras o de temas |
+| *cross-encoder* | aprendida, sin geometría | no aplica | reordenar resultados |
+
+Tres merecen un párrafo.
+
+**El producto escalar** es el que se queda con la longitud, y es el adecuado cuando la longitud es
+información. En un sistema de recomendación, el producto entre el vector de un usuario y el de un
+producto es la predicción, y la longitud del vector de un producto suele recoger lo popular que es,
+que es un buen motivo para recomendarlo. [DPR](https://arxiv.org/abs/2004.04906) (*Dense Passage
+Retrieval*, 2020), un buscador de pasajes para responder preguntas, se entrenó con producto escalar, y
+en sus propias pruebas la distancia euclídea rindió parecido y ambas por encima del coseno, aunque
+con los ajustes elegidos para el producto escalar. Eso sí, no es ni una similitud bien educada: un
+vector puede parecerse más a otro que a sí mismo. Con $(1, 0)$ y $(2, 0)$, el producto de la primera
+consigo misma es $1$ y con la segunda es $2$.
+
+**La distancia de Mahalanobis** es la euclídea después de *blanquear* los datos: transformarlos para
+que las coordenadas no estén correlacionadas y tengan todas la misma varianza. Es la conexión con el
+arreglo de la sección siguiente.
+
+**Los *cross-encoders*** juegan a otra cosa. Todas las medidas anteriores comparan dos vectores
+calculados por separado, cada texto codificado por su cuenta. Un *cross-encoder* lee los dos textos a
+la vez y devuelve una puntuación, así que ve cada palabra de uno frente a cada palabra del otro, y
+suele acertar más. El precio es que no se puede calcular nada por adelantado: cada par es una pasada
+entera del modelo. Por eso el patrón habitual es usar el coseno para sacar cien candidatos entre
+millones, y el *cross-encoder* para reordenar esos cien. El coseno no es la mejor similitud que
+existe. Es la mejor que cabe en un índice.
+
+## Dónde el coseno no encaja
+
+Antes, una separación que ahorra discusiones: no es lo mismo un fallo de la medida que un fallo de la
+representación. «Caliente» y «frío» tienen un coseno alto en muchos modelos de palabras, y una frase y
+su negación también. No es culpa del coseno. Esas palabras aparecen en los mismos contextos, el modelo
+las colocó cerca, y el coseno informa fielmente de lo que el modelo aprendió. Ninguna medida arregla
+una representación que no distingue dos cosas; eso se arregla al entrenar.
+
+Los fallos que sí son de la medida son tres.
+
+### Cuando todo apunta hacia el mismo sitio
+
+[Ethayarajh](https://arxiv.org/abs/1909.00512) midió en 2019 el coseno medio entre palabras escogidas
+al azar dentro de modelos de lenguaje como BERT (Google, 2018) y GPT-2 (OpenAI, 2019), tomando el
+vector que cada capa del modelo da a cada palabra. En GPT-2 rondaba $0{,}6$ en las capas 2 a 8, y en la
+última casi $1$: dos palabras cualesquiera tenían un coseno casi perfecto. En la última capa de BERT,
+alrededor de $0{,}46$. Se llama *anisotropía*: los vectores no ocupan la esfera entera sino un cono
+estrecho, y todo se parece a todo.
+
+[Timkey y van Schijndel](https://aclanthology.org/2021.emnlp-main.372) encontraron en 2021 parte de
+la causa: unas pocas *dimensiones rebeldes* con valores enormes. En la capa 11 de BERT, una sola
+coordenada de 768 aporta el 88 % del coseno esperado entre dos vectores; en XLNet, otro modelo de 2019,
+el 99,6 %. Ahí el coseno mide una coordenada.
+
+Esto pasa sobre todo cuando se sacan vectores de un modelo de lenguaje que no se entrenó para
+compararlos. Los arreglos, de más barato a más caro: centrar (restar a todos los vectores la media de
+la colección; [Mu y Viswanath](https://arxiv.org/abs/1702.01417) quitan además las pocas direcciones
+dominantes), estandarizar cada coordenada, que es el arreglo de Timkey y van Schijndel,
+[blanquear](https://arxiv.org/abs/2103.15316) (comparar, en el fondo, con la distancia de
+Mahalanobis), o usar un modelo entrenado con pérdida contrastiva, cuya uniformidad empuja justo en
+contra del cono.
+
+Incluso los modelos buenos tienen su propia escala. La ficha de [E5](https://huggingface.co/intfloat/e5-base-v2),
+una familia de modelos de *embeddings*, avisa de que sus cosenos suelen caer entre $0{,}7$ y $1$ por la
+temperatura de su entrenamiento ($0{,}01$), y de que lo que importa es el orden relativo. Un coseno de
+$0{,}8$ no significa «parecidos al 80 %», y un umbral elegido para un modelo no sirve para otro: hay
+que calibrarlo con pares etiquetados de tus propios datos.
+
+### Cuando la longitud era la señal
+
+Steck, Ekanadham y Kallus, de Netflix, publicaron en 2024 un artículo con una pregunta por título:
+[si el coseno entre *embeddings* mide de verdad similitud](https://arxiv.org/abs/2403.05440). En una
+familia de modelos lineales de recomendación, la predicción es el producto de dos matrices,
+$A B^\top$, y se puede multiplicar cada columna de $A$ por un factor cualquiera y dividir la columna
+correspondiente de $B$ por el mismo factor. Con una matriz diagonal $D$:
+
+$$
+(A D)(B D^{-1})^\top = A D D^{-1} B^\top = A B^\top .
+$$
+
+Las predicciones no cambian; los cosenos entre las filas de $A D$, sí. El modelo no los determina, y
+según el entrenamiento pueden salir arbitrarios. La receta de los autores: si se va a comparar con el
+coseno, entrenar con el coseno dentro de la pérdida. Si no, lo único que el modelo fijó es el
+producto escalar. Es el principio de antes, visto desde el lado en que falla.
+
+### Cuando la relación tiene dirección
+
+El coseno es simétrico: es la tercera regla, la que sí cumple. Muchas relaciones no lo son. Una
+pregunta y su respuesta no son intercambiables. Un perro es un animal, pero no al revés. Una frase
+puede implicar otra sin que la segunda implique la primera.
+
+Hay tres salidas. Meter la asimetría en el modelo y no en la medida: E5 pide anteponer `query: ` a las
+preguntas y `passage: ` a los documentos, de modo que el mismo texto se codifica distinto según su
+papel. Cambiar la geometría: los [*order embeddings*](https://arxiv.org/abs/1511.06361) representan
+«es un» como un orden entre vectores, y los [*embeddings* hiperbólicos](https://arxiv.org/abs/1705.08039)
+colocan las jerarquías en un espacio donde los árboles caben sin apretarse. O comparar por piezas:
+[ColBERT](https://arxiv.org/abs/2004.12832), un buscador de 2020, guarda un vector normalizado por palabra y puntúa sumando,
+para cada palabra de la pregunta, su mejor coseno con alguna palabra del documento. Esa suma recorre
+la pregunta y no el documento, así que es asimétrica por construcción. Y siempre queda el
+*cross-encoder*.
+
+## Qué te llevas
+
+Si te llevas una sola cosa, que sea ésta: **el coseno es una similitud, y $1 - \cos\theta$ es una
+distancia que no es una métrica, porque es la mitad del cuadrado de la distancia euclídea entre los
+vectores normalizados.** Para buscar da igual, porque el ángulo, la cuerda y el coseno ordenan
+exactamente igual. Para promediar, encadenar o podar un índice, no da igual, y la métrica que hay que
+usar es el ángulo o la distancia euclídea entre vectores normalizados.
+
+Y si te llevas una segunda: **el coseno no ganó por medir mejor el significado, sino porque tira la
+longitud**, que en casi todos los *embeddings* de texto es ruido o mide otra cosa, y porque los
+modelos se entrenan con él dentro de la pérdida.
+
+Lo demás es práctico.
+
+**Usa la medida con la que se entrenó el modelo.** Suele estar en su ficha. Si es el coseno y los
+vectores ya vienen normalizados, usa el producto escalar: mismo orden, menos cuentas.
+
+**Si la longitud significa algo, no la tires.** Popularidad, frecuencia, importancia: si el modelo se
+entrenó con producto escalar, compara con producto escalar.
+
+**No fijes umbrales a ojo.** Un coseno de $0{,}8$ significa cosas distintas en cada modelo, y dos
+parecidos de $0{,}7$ no garantizan un tercero. Calibra con pares etiquetados y, si sacas vectores de un
+modelo que no se entrenó para compararlos, céntralos antes.
+
+**Para relaciones con dirección, pon la asimetría en otra parte.** Prefijos distintos para preguntas
+y documentos, o un *cross-encoder* que reordene los primeros resultados.
