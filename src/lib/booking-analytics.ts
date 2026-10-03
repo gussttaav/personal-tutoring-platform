@@ -2,8 +2,8 @@
  * lib/booking-analytics.ts — BOOKING-ATTRIBUTION-01
  *
  * Vercel Web Analytics custom events for bookings, so the dashboard can count them
- * by source next to the page views. The bookings table (utm_* columns) stays the
- * source of truth: an event can be blocked by the browser, a row cannot.
+ * by source next to the page views. The users table (utm_* columns, set at a
+ * student's first booking) stays the source of truth: an event can be blocked by the browser, a row cannot.
  *
  *   intro_call_booked — a new free 15-minute call
  *   class_booked      — a new pack class, or a paid 1h/2h class once Stripe confirms

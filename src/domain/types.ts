@@ -79,8 +79,8 @@ export interface RecordPaymentInput {
 }
 
 // BOOKING-ATTRIBUTION-01: where the student came from, first touch. Every field is
-// optional — a direct visit has none. Persisted to the bookings.utm_* /
-// referrer_host / landing_path columns (migration 0025).
+// optional — a direct visit has none. Persisted once per student, at their first
+// booking, to the users.utm_* / referrer_host / landing_path columns (migration 0025).
 export interface BookingAttribution {
   source?:       string;  // utm_source, or "mobile_app" for the app
   medium?:       string;  // utm_medium
@@ -103,8 +103,6 @@ export interface BookingRecord {
   // sessions only). Persisted to bookings.credit_pack_id; the join that surfaces
   // packSize in the my-bookings surfaces depends on it being set.
   creditPackId?:    string;
-  // BOOKING-ATTRIBUTION-01: a reschedule carries the original's source to the new row.
-  attribution?:     BookingAttribution;
 }
 
 // Lifecycle of a booking row. Every booking is created 'confirmed'; the daily

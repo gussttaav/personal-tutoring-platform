@@ -58,6 +58,7 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
   getLocale:     jest.fn(),
   setLocale:     jest.fn(),
   deleteAccount: jest.fn().mockResolvedValue({ users: 1 }),
+  recordFirstBooking: jest.fn().mockResolvedValue(true), // BOOKING-ATTRIBUTION-01
 });
 
 function make(opts: { bookings?: UserBooking[]; credits?: number } = {}) {

@@ -6,7 +6,8 @@
  * `document.referrer` to `captureFirstTouch`, which stores the visit in localStorage
  * if it is ATTRIBUTED (UTM tags, or else an external referrer) and nothing unexpired
  * is stored yet. `api-client` then sends `readStoredAttribution()` with every booking
- * and paid checkout, and the server persists it on the bookings row.
+ * and paid checkout, and the server records it on the student's users row at their
+ * FIRST booking only (IUserRepository.recordFirstBooking).
  *
  * First touch, deliberately: a visitor who arrives from a LinkedIn post and books a
  * week later from a Google search is credited to LinkedIn. Direct visits never

@@ -44,9 +44,11 @@
 // to 'es' instead of 500-ing a cancellation that already happened (which would also skip
 // the confirmation email and burn the token). getLocale itself stays fail-closed.
 //
-// BOOKING-ATTRIBUTION-01: createBooking persists the student's first-touch source
-// (`attribution`). A reschedule keeps the ORIGINAL booking's source — it is the same
-// class, and the request that moves it says nothing about how the student first came.
+// BOOKING-ATTRIBUTION-01: a student's FIRST booking records its type and the first-touch
+// source (`attribution`) on their users row, once (IUserRepository.recordFirstBooking is
+// write-once). It runs at the very end, after the booking committed, and is best-effort:
+// a failure is logged, never a reason to fail a booking that already exists. A reschedule
+// moves an existing class, so it never records.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
@@ -339,8 +341,6 @@ export class BookingService {
       //    REFACTOR-R4-P1-03: a rescheduled paid class keeps its PaymentIntent (the
       //    request carries none), so history and the mobile poll find the new booking.
       const stripePaymentId = input.stripePaymentId ?? oldRecord?.stripePaymentId;
-      // BOOKING-ATTRIBUTION-01: same rule for the source — the original's wins.
-      const attribution     = oldRecord ? oldRecord.attribution : input.attribution;
       const { cancelToken, joinToken } = await this.bookings.createBooking({
         eventId:     calResult.eventId,
         email:       input.email,
@@ -351,7 +351,6 @@ export class BookingService {
         ...(packSizeForToken    !== undefined ? { packSize:        packSizeForToken    } : {}),
         ...(creditPackId        !== undefined ? { creditPackId:    creditPackId        } : {}),
         ...(stripePaymentId                   ? { stripePaymentId                      } : {}),
-        ...(attribution                       ? { attribution                          } : {}),
       });
       compensations.push({
         description: `cancel booking ${cancelToken.slice(0, 8)}…`,
@@ -433,6 +432,8 @@ export class BookingService {
       //     can no longer run against an original that is half gone.
       if (oldRecord) {
         await this.teardownRescheduledOriginal(oldRecord);
+      } else {
+        await this.recordFirstBooking(input);
       }
 
       return {
@@ -640,6 +641,21 @@ export class BookingService {
   // it back because the old event could not be deleted; a stray calendar event is the
   // lesser failure. Logs, never throws. The pending_terminations row goes so the cleanup
   // cron doesn't later see an orphan and mark the (now-cancelled) booking no_show.
+  // BOOKING-ATTRIBUTION-01: best-effort — see the header.
+  private async recordFirstBooking(input: CreateBookingInput): Promise<void> {
+    try {
+      await this.users.recordFirstBooking(input.email, {
+        sessionType: input.sessionType,
+        bookedAt:    new Date().toISOString(),
+        attribution: input.attribution,
+      });
+    } catch (err) {
+      log("warn", "Failed to record first booking source", {
+        service: "booking", email: input.email, error: String(err),
+      });
+    }
+  }
+
   private async teardownRescheduledOriginal(old: BookingRecord): Promise<void> {
     const steps: [string, () => Promise<void>][] = [
       ["calendar event",      () => this.calendar.deleteEvent(old.eventId)],

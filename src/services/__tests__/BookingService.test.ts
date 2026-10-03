@@ -9,8 +9,8 @@
 // compensation restores to the exact pack it decremented (restoreCreditToPack).
 // REFACTOR-R4-P1-05: the post-commit locale read in cancelByToken is best-effort — a
 // getLocale rejection must not fail a cancellation that already committed.
-// BOOKING-ATTRIBUTION-01: createBooking persists the first-touch source; a reschedule
-// keeps the original's.
+// BOOKING-ATTRIBUTION-01: a first booking records its type + source on the user
+// (best-effort, never on a reschedule or a failed booking).
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
@@ -140,6 +140,7 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
   getLocale:   jest.fn().mockResolvedValue(null),
   setLocale:   jest.fn().mockResolvedValue(undefined),
   deleteAccount: jest.fn().mockResolvedValue({}),
+  recordFirstBooking: jest.fn().mockResolvedValue(true), // BOOKING-ATTRIBUTION-01
 });
 
 // Stub ScheduleService — BookingService only calls getConfig(). Default min
@@ -661,57 +662,62 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
 
 // ─── BOOKING-ATTRIBUTION-01 ───────────────────────────────────────────────────
 
-describe("BOOKING-ATTRIBUTION-01: createBooking persists the student's source", () => {
+describe("BOOKING-ATTRIBUTION-01: a first booking records the student's source", () => {
   const linkedin = { source: "linkedin", medium: "profile", campaign: "topcard", landingPath: "/mentoria" };
 
-  it("writes the attribution to the new booking", async () => {
-    const bookings = mockBookings();
-    const service  = makeService({ bookings });
+  it("records the booking type and source on the user", async () => {
+    const users   = mockUsers();
+    const service = makeService({ users });
 
     await service.createBooking({ ...baseFreeInput(), attribution: linkedin });
 
-    expect(bookings.createBooking).toHaveBeenCalledWith(
-      expect.objectContaining({ attribution: linkedin }),
-    );
-  });
-
-  it("writes no attribution when the request carries none", async () => {
-    const bookings = mockBookings();
-    const service  = makeService({ bookings });
-
-    await service.createBooking(baseFreeInput());
-
-    expect(bookings.createBooking.mock.calls[0][0]).not.toHaveProperty("attribution");
-  });
-
-  it("a reschedule keeps the original booking's source, not the request's", async () => {
-    const bookings = mockBookings();
-    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
-      eventId: "old-evt", sessionType: "pack", creditPackId: "pack-orig", attribution: linkedin,
-    }));
-    const service  = makeService({ bookings });
-
-    await service.createBooking({
-      ...basePackInput(), rescheduleToken: "tkn", attribution: { source: "google" },
+    expect(users.recordFirstBooking).toHaveBeenCalledWith("student@test.com", {
+      sessionType: "free15min",
+      bookedAt:    expect.any(String),
+      attribution: linkedin,
     });
-
-    expect(bookings.createBooking).toHaveBeenCalledWith(
-      expect.objectContaining({ attribution: linkedin }),
-    );
   });
 
-  it("a reschedule of a booking with no source stays without one", async () => {
+  it("records a first booking with no source too (the type still matters)", async () => {
+    const users   = mockUsers();
+    const service = makeService({ users });
+
+    await service.createBooking(basePackInput());
+
+    expect(users.recordFirstBooking).toHaveBeenCalledWith("student@test.com",
+      expect.objectContaining({ sessionType: "pack", attribution: undefined }));
+  });
+
+  it("a reschedule records nothing", async () => {
+    const users    = mockUsers();
     const bookings = mockBookings();
     bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
       eventId: "old-evt", sessionType: "pack", creditPackId: "pack-orig",
     }));
-    const service  = makeService({ bookings });
+    const service  = makeService({ bookings, users });
 
-    await service.createBooking({
-      ...basePackInput(), rescheduleToken: "tkn", attribution: { source: "google" },
-    });
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn", attribution: linkedin });
 
-    expect(bookings.createBooking.mock.calls[0][0]).not.toHaveProperty("attribution");
+    expect(users.recordFirstBooking).not.toHaveBeenCalled();
+  });
+
+  it("a failed record does not fail the booking", async () => {
+    const users = mockUsers();
+    users.recordFirstBooking.mockRejectedValue(new Error("db down"));
+    const service = makeService({ users });
+
+    await expect(service.createBooking(baseFreeInput())).resolves.toMatchObject({ cancelToken: "ctkn" });
+    expect(log).toHaveBeenCalledWith("warn", "Failed to record first booking source", expect.anything());
+  });
+
+  it("a booking that fails records nothing", async () => {
+    const users    = mockUsers();
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const service  = makeService({ users, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toThrow("Calendar down");
+    expect(users.recordFirstBooking).not.toHaveBeenCalled();
   });
 });
 

@@ -82,18 +82,13 @@ export type Database = {
           ends_at: string
           id: string
           join_token: string | null
-          landing_path: string | null
           note: string | null
-          referrer_host: string | null
           session_type: string
           starts_at: string
           status: string
           stripe_payment_id: string | null
           updated_at: string
           user_id: string
-          utm_campaign: string | null
-          utm_medium: string | null
-          utm_source: string | null
         }
         Insert: {
           calendar_event_id?: string | null
@@ -103,18 +98,13 @@ export type Database = {
           ends_at: string
           id?: string
           join_token?: string | null
-          landing_path?: string | null
           note?: string | null
-          referrer_host?: string | null
           session_type: string
           starts_at: string
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
           user_id: string
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
         }
         Update: {
           calendar_event_id?: string | null
@@ -124,18 +114,13 @@ export type Database = {
           ends_at?: string
           id?: string
           join_token?: string | null
-          landing_path?: string | null
           note?: string | null
-          referrer_host?: string | null
           session_type?: string
           starts_at?: string
           status?: string
           stripe_payment_id?: string | null
           updated_at?: string
           user_id?: string
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
         }
         Relationships: [
           {
@@ -768,31 +753,52 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           email: string
+          first_booked_at: string | null
+          first_booking_type: string | null
           id: string
+          landing_path: string | null
           locale: string | null
           name: string
+          referrer_host: string | null
           role: string
           updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           email: string
+          first_booked_at?: string | null
+          first_booking_type?: string | null
           id?: string
+          landing_path?: string | null
           locale?: string | null
           name?: string
+          referrer_host?: string | null
           role?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           email?: string
+          first_booked_at?: string | null
+          first_booking_type?: string | null
           id?: string
+          landing_path?: string | null
           locale?: string | null
           name?: string
+          referrer_host?: string | null
           role?: string
           updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }

@@ -16,13 +16,9 @@
 // restore, originating pack first, in one transaction).
 // REFACTOR-R4-P3-03: listUpcomingForPaymentAudit — the booking-payment audit's read. Three
 // queries (bookings, then their users and packs), and every error throws.
-// BOOKING-ATTRIBUTION-01: createBooking writes the first-touch source to the utm_* /
-// referrer_host / landing_path columns (migration 0025); findByCancelToken reads them
-// back so a reschedule carries the original's source.
 import type { CancelResult, IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { IReviewRepository } from "@/domain/repositories/IReviewRepository";
 import type {
-  BookingAttribution,
   BookingHistoryEntry,
   BookingHistoryPage,
   BookingRecord,
@@ -43,31 +39,6 @@ function signToken(payload: string): string {
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
-
-// BOOKING-ATTRIBUTION-01
-function attributionColumns(a: BookingAttribution) {
-  return {
-    utm_source:    a.source       ?? null,
-    utm_medium:    a.medium       ?? null,
-    utm_campaign:  a.campaign     ?? null,
-    referrer_host: a.referrerHost ?? null,
-    landing_path:  a.landingPath  ?? null,
-  };
-}
-
-function attributionFromRow(row: {
-  utm_source: string | null; utm_medium: string | null; utm_campaign: string | null;
-  referrer_host: string | null; landing_path: string | null;
-}): BookingAttribution | undefined {
-  const a: BookingAttribution = {
-    ...(row.utm_source    ? { source:       row.utm_source    } : {}),
-    ...(row.utm_medium    ? { medium:       row.utm_medium    } : {}),
-    ...(row.utm_campaign  ? { campaign:     row.utm_campaign  } : {}),
-    ...(row.referrer_host ? { referrerHost: row.referrer_host } : {}),
-    ...(row.landing_path  ? { landingPath:  row.landing_path  } : {}),
-  };
-  return Object.keys(a).length > 0 ? a : undefined;
-}
 
 export class SupabaseBookingRepository implements IBookingRepository {
   // The review lookup lives here because this repository already owns the
@@ -98,8 +69,6 @@ export class SupabaseBookingRepository implements IBookingRepository {
       ...(record.stripePaymentId ? { stripe_payment_id: record.stripePaymentId } : {}),
       // BOOKING-PACKLINK-01: link pack bookings to the pack that paid for them.
       ...(record.creditPackId    ? { credit_pack_id:    record.creditPackId    } : {}),
-      // BOOKING-ATTRIBUTION-01: first-touch source (migration 0025); absent → NULLs.
-      ...(record.attribution ? attributionColumns(record.attribution) : {}),
     });
 
     if (error) throw error;
@@ -112,7 +81,7 @@ export class SupabaseBookingRepository implements IBookingRepository {
 
     const { data: booking, error: bookingErr } = await supabase
       .from("bookings")
-      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id, utm_source, utm_medium, utm_campaign, referrer_host, landing_path")
+      .select("id, calendar_event_id, session_type, starts_at, ends_at, credit_pack_id, stripe_payment_id, user_id")
       .eq("cancel_token", token)
       .eq("status", "confirmed")
       .maybeSingle();
@@ -153,7 +122,6 @@ export class SupabaseBookingRepository implements IBookingRepository {
       packSize,
       creditPackId:    booking.credit_pack_id    ?? undefined,
       stripePaymentId: booking.stripe_payment_id ?? undefined,
-      attribution:     attributionFromRow(booking),
     };
   }
 
