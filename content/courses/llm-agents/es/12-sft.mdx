@@ -1,0 +1,491 @@
+---
+slug: sft
+title: "Ajuste supervisado: máxima verosimilitud sobre un formato"
+block: 2
+order: 3
+minutes: 35
+summary: "Seguir entrenando un modelo preentrenado sobre pares de instrucción y respuesta es la entropía cruzada de siempre, cobrada sólo en la respuesta: máxima verosimilitud sobre el conjunto de pares. La lección deriva su óptimo, que copia el conjunto, y su gradiente, que es el del preentrenamiento con las filas del prompt a cero. Después ajusta el mini-GPT con diez preguntas: aprende el formato, lee la pregunta, inventa el contenido y olvida su novela."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-optimo-del-conjunto
+    type: numeric
+    prompt: 'Un conjunto de ajuste tiene la instrucción <W>¿Cuánto es 7 por 8?</W> cinco veces: cuatro con la respuesta <W>56</W> y una con <W>54</W>, que se coló por error. Con un modelo capaz de dar a cada instrucción la distribución que quiera, ¿qué probabilidad le da $\pi_\theta$ a la respuesta <W>54</W> en el mínimo de $\mathcal{L}_{\text{SFT}}$?'
+    answer: 0.2
+    tolerance: 0.001
+    explanation: 'Un $0.2$. En el mínimo, $\pi_\theta(\cdot \mid x)$ es $p_{\text{SFT}}(\cdot \mid x)$, la proporción de cada respuesta entre los pares que tienen esa instrucción: cuatro de cinco para <W>56</W> y una de cinco para <W>54</W>. La pérdida no sabe que una de las dos está mal, porque no habla de corrección, sólo de lo que hay en el conjunto. Un modelo ajustado copia a quien escribió sus pares, también en lo que se equivoca.'
+    hint: 'Junta los términos de la pérdida que tienen esa instrucción y piensa qué distribución hace mínima su entropía cruzada.'
+  - id: q-donde-hay-gradiente
+    type: multi
+    prompt: 'Das un paso de ajuste del mini-GPT sobre una sola conversación, un mensaje del usuario y la respuesta del asistente, con la máscara de la plantilla. Marca lo que recibe un gradiente distinto de cero.'
+    options:
+      - { id: a, text: 'Los logits de la fila que lee <W>\<|asistente|></W>.' }
+      - { id: b, text: 'Los logits de la fila que apuesta por <W>\<|asistente|></W>.' }
+      - { id: c, text: 'Las claves y los valores que la atención calcula en las posiciones de la pregunta.' }
+      - { id: d, text: 'La fila de <W>\<|usuario|></W> en la tabla $\mathbf{E}$.' }
+    answer: [a, c, d]
+    explanation: 'La (a), la (c) y la (d). La fila que lee <W>\<|asistente|></W> apuesta por $y_1$, el primer token de la respuesta, y se cobra: su token no cuenta, pero ella sí. La (b) es la fila que lee el <W>\<|fin|></W> del usuario y apuesta por <W>\<|asistente|></W>, un token del prompt, así que sus logits no están en ningún término. La (c), porque las filas de la respuesta leen esas claves y esos valores, y la vuelta pasa por ellos. La (d) recibe por los dos lados de la tabla atada: se lee en la primera posición, y su logit está en el softmax de cada fila cobrada, que lo empuja hacia abajo.'
+    hint: 'La fila $t$ apuesta por el token $t + 1$. El gradiente entra sólo por las filas que apuestan por un token de la respuesta, y desde ellas recorre todo lo que leyeron.'
+  - id: q-el-vino
+    type: single
+    prompt: 'Tras el ajuste de la lección, el mini-GPT contesta <W>El cielo es azul.</W> a <W>¿De qué color es el vino?</W>, que no está entre los diez pares. ¿Qué lo explica?'
+    options:
+      - { id: a, text: 'La pérdida sólo tiene términos de las diez instrucciones del conjunto y de una nueva no dice nada. El modelo le da lo que los diez pares comparten (el artículo de la pregunta, la forma de la frase, el <W>\<|fin|></W>) con un contenido memorizado, porque ni los pares ni la novela le enseñaron el color del vino.' }
+      - { id: b, text: 'Le faltan pasos: con cien más contestaría <W>El vino es tinto.</W>' }
+      - { id: c, text: 'El ajuste no ha funcionado: el modelo no lee la pregunta.' }
+      - { id: d, text: 'La máscara: si la pérdida cobrara también la pregunta, el modelo aprendería el sustantivo y lo copiaría en la respuesta.' }
+    answer: a
+    explanation: 'La (a). La (b) va al revés: más pasos acercan el modelo al mínimo, que es aprenderse los diez pares, y ninguno habla del vino. La (c) la desmiente la celda: en las cuatro preguntas de colores el artículo de la respuesta es el de la pregunta, y eso sólo puede salir de leerla. La (d) confunde leer con escribir: cobrar la pregunta le enseña al modelo a escribir preguntas, no a poner en la respuesta un color que ningún par le ha dado.'
+    hint: 'Pregúntate qué términos tiene la pérdida y si alguno habla de una instrucción que no está en el conjunto.'
+  - id: q-la-novela
+    type: single
+    prompt: 'Tras los doce pasos de la lección, la novela le cuesta al mini-GPT $6.69$ nats por token; antes le costaba $2.96$. ¿Qué lo explica?'
+    options:
+      - { id: a, text: 'Ningún término de $\mathcal{L}_{\text{SFT}}$ es de la novela, así que nada frena lo que el ajuste le hace: cada paso de Adam mueve casi todos los pesos, y los mueve hacia los diez pares.' }
+      - { id: b, text: 'Los cuatro tokens especiales, ya entrenados, se llevan casi toda la masa en cada posición de la novela.' }
+      - { id: c, text: 'La máscara: al no cobrar las filas de la pregunta, el modelo deja de practicar el idioma.' }
+      - { id: d, text: 'Doce pasos son pocos: con más, el modelo volvería a predecir la novela.' }
+    answer: a
+    explanation: 'La (a): es el olvido catastrófico, y la pérdida no lo impide porque no menciona la novela. La (b) se puede medir y es falsa: suma en esas 512 posiciones la masa de los ids 512 a 515 y sale, de media, un 0.4 %. La (c) se equivoca de culpable: la novela no está en ningún término, con máscara o sin ella, y cobrar la pregunta tampoco la pondría. La (d) va al revés: más pasos de ajuste alejan más los pesos de los del preentrenamiento.'
+    hint: 'Busca en $\mathcal{L}_{\text{SFT}}$ algún término que dependa de la novela.'
+challenges:
+  - id: ch-perdida-sft
+    prompt: |
+      Escribe `perdida_sft(Z, ids, mascara)`, la pérdida del ajuste de una sola conversación y su
+      gradiente. `ids` son los tokens de la conversación y `mascara` la de la plantilla, dos
+      listas del mismo tamaño. `Z`, de forma `(len(ids) - 1, n_v)`, son los logits que da la red
+      leyendo `ids[:-1]`, así que la fila `t` apuesta por `ids[t + 1]`. Devuelve
+      `(perdida, dZ)`: la media de $-\log \text{softmax}$ de lo que cada fila cobrada apostó por
+      su token, y su gradiente respecto de `Z`, con la forma de `Z`. Una fila se cobra cuando el
+      token por el que apuesta es de la respuesta.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def perdida_sft(Z, ids, mascara):
+          """(perdida, dZ): la entropía cruzada media de las filas cobradas, y su gradiente."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "con logits a cero, ln 516"
+        code: |
+          import numpy as np
+          ids = [513, 10, 11, 515, 514, 20, 21, 515]       # usuario, dos tokens, fin, asistente, dos tokens, fin
+          mascara = [0, 0, 0, 0, 0, 1, 1, 1]
+          r = perdida_sft(np.zeros((7, 516)), ids, mascara)
+          assert r is not None, 'perdida_sft no devuelve nada: falta el return'
+          L, dZ = r
+          assert abs(L - np.log(516)) < 1e-9, 'con logits a cero cada fila reparte por igual entre 516 entradas: cada token cobrado cuesta ln 516 = 6.246, y su media también. Sale %.4f; si es menos, ¿divides entre todas las filas en vez de entre las cobradas?' % L
+      - name: "las filas que apuestan por el prompt no reciben gradiente"
+        code: |
+          import numpy as np
+          ids = [513, 10, 11, 515, 514, 20, 21, 515]
+          mascara = [0, 0, 0, 0, 0, 1, 1, 1]
+          r = perdida_sft(np.random.default_rng(0).normal(size=(7, 516)), ids, mascara)
+          assert r is not None, 'perdida_sft no devuelve nada: falta el return'
+          L, dZ = r
+          assert np.shape(dZ) == (7, 516), 'dZ tiene la forma de Z, (7, 516); sale %s' % (np.shape(dZ),)
+          con = [t for t in range(7) if np.any(dZ[t] != 0)]
+          assert not any(t < 4 for t in con), 'las filas 0 a 3 apuestan por tokens del prompt (10, 11, <|fin|> y <|asistente|>): sus logits no están en la pérdida y su gradiente es cero exacto. Tienen gradiente las filas %s' % con
+          assert 4 in con, 'la fila 4 lee <|asistente|> y apuesta por el primer token de la respuesta: se cobra. El peso de la fila t es mascara[t + 1], el del token por el que apuesta, no mascara[t]. Tienen gradiente las filas %s' % con
+      - name: "dZ es el gradiente de la pérdida"
+        code: |
+          import numpy as np
+          ids = [1, 2, 3, 4, 5, 3, 0]
+          mascara = [0, 0, 0, 1, 1, 1, 0]
+          Z = np.random.default_rng(1).normal(size=(6, 6))
+          r = perdida_sft(Z.copy(), ids, mascara)
+          assert r is not None, 'perdida_sft no devuelve nada: falta el return'
+          L, dZ = r
+          num = np.zeros_like(Z)
+          for t in range(6):
+              for v in range(6):
+                  for s in (1, -1):
+                      Zs = Z.copy()
+                      Zs[t, v] += s * 1e-6
+                      num[t, v] += s * perdida_sft(Zs, ids, mascara)[0] / 2e-6
+          t, v = np.unravel_index(np.argmax(np.abs(np.asarray(dZ) - num)), Z.shape)
+          assert np.allclose(dZ, num, atol=1e-6), 'dZ no es el gradiente de tu pérdida: moviendo cada logit 1e-6, la mayor diferencia está en la fila %d, entrada %d (%.4f frente a %.4f). En una fila cobrada es el softmax menos el one-hot, dividido entre el número de filas cobradas' % (t, v, dZ[t, v], num[t, v])
+      - name: "coincide con la vuelta del mini-GPT"
+        code: |
+          import json
+          import numpy as np
+          from pyodide.http import open_url
+          exec(open_url("/courses/llm-agents/bpe.py").read())
+          exec(open_url("/courses/llm-agents/minigpt.py").read())
+          F = [tuple(p) for p in json.load(open_url("/courses/llm-agents/bpe-merges.json"))]
+          red = MiniGPT.cargar(open_url("/courses/llm-agents/minigpt.json").read())
+          red.p["E"] = np.vstack([red.p["E"], np.tile(red.p["E"].mean(axis=0), (4, 1))])
+          red.cfg["n_v"] = 516
+          pre, resp = codificar("¿De qué color es la tierra?", F), codificar("La tierra es marrón.", F)
+          ids = [513] + pre + [515, 514] + resp + [515]
+          mascara = [0] * (len(pre) + 3) + [1] * (len(resp) + 1)
+          r = perdida_sft(red.adelante(np.array([ids[:-1]]))[0][0], ids, mascara)
+          assert r is not None, 'perdida_sft no devuelve nada: falta el return'
+          L, dZ = r
+          L_red, g = red.perdida(np.array([ids[:-1]]), np.array([ids[1:]]), np.array([mascara[1:]], dtype=float))
+          assert abs(L - L_red) < 1e-9, 'con el mini-GPT y una conversación de verdad, tu pérdida da %.4f y perdida(X, Y, peso) da %.4f' % (L, L_red)
+          assert np.allclose((np.asarray(dZ) @ red.p["E"]).sum(axis=0), g["lnf_b"], atol=1e-9), 'la pérdida coincide y dZ no: la vuelta del mini-GPT, que empieza por dZ, da otro gradiente para la última normalización'
+    solution: |
+      import numpy as np
+
+
+      def perdida_sft(Z, ids, mascara):
+          """(perdida, dZ): la entropía cruzada media de las filas cobradas, y su gradiente."""
+          Y = np.array(ids[1:])                          # la fila t apuesta por ids[t + 1]
+          w = np.array(mascara[1:], dtype=float)         # y se cobra si ese token es de la respuesta
+          w = w / w.sum()                                # la media: entre las filas cobradas
+          logP = Z - Z.max(axis=1, keepdims=True)
+          logP = logP - np.log(np.exp(logP).sum(axis=1, keepdims=True))
+          t = np.arange(len(Y))
+          perdida = -(w * logP[t, Y]).sum()
+          dZ = np.exp(logP)                              # el softmax...
+          dZ[t, Y] -= 1.0                                # ...menos el one-hot...
+          return perdida, dZ * w[:, None]                # ...sólo en las filas cobradas
+    explanation: 'Son las dos líneas de la lección en NumPy. Todo el trabajo está en el peso de cada fila: el de la fila $t$ es `mascara[t + 1]`, porque la fila apuesta por el token siguiente, y por eso la que lee <W>\<|asistente|></W> se cobra aunque ese token tenga máscara 0. Con el peso puesto, el gradiente es el de la entropía cruzada de siempre, y las filas de peso cero salen con un cero exacto. `perdida(X, Y, peso)` del mini-GPT hace lo mismo con un batch, y recibe el peso ya corrido.'
+reading:
+  - kind: paper
+    title: 'LIMA: Less Is More for Alignment'
+    authors: 'Zhou, Liu, Xu, Iyer, Sun y otros'
+    year: '2023'
+    venue: 'NeurIPS 2023 · arXiv:2305.11206'
+    lang: en
+    url: 'https://arxiv.org/abs/2305.11206'
+    note: 'Un modelo de 65 000 millones de parámetros ajustado con la pérdida de esta lección sobre sólo mil pares, sin nada más. Su conclusión es la de la lección a gran escala: el ajuste enseña el formato, y lo demás viene del preentrenamiento.'
+  - kind: paper
+    title: 'The False Promise of Imitating Proprietary LLMs'
+    authors: 'Gudibande, Wallace, Snell, Geng, Liu y otros'
+    year: '2023'
+    venue: 'arXiv:2305.15717'
+    lang: en
+    url: 'https://arxiv.org/abs/2305.15717'
+    note: 'Ajustan modelos abiertos con respuestas de ChatGPT y los evaluadores humanos los creen casi iguales. Copian el estilo y no los hechos: el «El vino es azul» de la lección, medido en modelos de verdad.'
+  - kind: paper
+    title: 'Scaling Instruction-Finetuned Language Models'
+    authors: 'Chung, Hou, Longpre, Zoph, Tay y otros'
+    year: '2022'
+    venue: 'arXiv:2210.11416'
+    lang: en
+    url: 'https://arxiv.org/abs/2210.11416'
+    note: 'El otro extremo de los diez pares: 1 800 tareas escritas como instrucciones. Con tantas, lo que comparten deja de ser una frase y pasa a ser obedecer, y el modelo mejora en tareas que nunca vio.'
+  - kind: paper
+    title: 'Overcoming catastrophic forgetting in neural networks'
+    authors: 'Kirkpatrick, Pascanu, Rabinowitz, Veness, Desjardins y otros'
+    year: '2017'
+    venue: 'PNAS · arXiv:1612.00796'
+    lang: en
+    url: 'https://arxiv.org/abs/1612.00796'
+    note: 'El olvido catastrófico de la lección, y un remedio: frenar los pesos que importaban para lo anterior. El bloque usará otro, que mide la distancia en las distribuciones y no en los pesos.'
+---
+
+{/* COURSE-C2-P1-02 — Bloque 2, lección 3. Corre sobre el mini-GPT: el checkpoint del bloque 1
+    con las cuatro filas de la plantilla, ajustado en el navegador con diez pares. */}
+
+Con <Leccion slug="plantilla-de-chat">la plantilla de chat</Leccion>, una conversación cabe ya en
+lo único que un modelo lee, una secuencia de tokens, y la respuesta tiene dentro de ella un
+principio y un final marcados por tokens que ningún texto puede falsificar. Que el modelo los
+reconozca es otra cosa. Para el mini-GPT son cuatro entradas más de su vocabulario, con el mismo
+vector las cuatro, que no ha leído nunca en ningún texto: el token que le cede la palabra no le
+anuncia nada, y eso sólo lo cambia entrenarlo.
+
+En 2023, un modelo de 65 000 millones de parámetros aprendió a comportarse como un asistente con
+mil pares de instrucción y respuesta, sin ningún otro entrenamiento detrás. Sus autores lo leyeron
+así: casi todo lo que el modelo sabía venía del preentrenamiento, y los mil pares le enseñaron sobre
+todo la forma de decirlo. Esta lección escribe qué le pide a un modelo un entrenamiento sobre pares
+y, sobre todo, qué deja sin pedir, que es lo que explica aquella cifra. Después lo prueba en el
+mini-GPT.
+
+Mira los pares con que vas a ajustarlo. Son diez preguntas por el color de algo, cada una con su
+respuesta de una frase: a <W>¿De qué color es la nieve?</W> le toca <W>La nieve es blanca.</W>, y
+así las diez. Comparten casi todo: la forma de la pregunta y la de la respuesta, el artículo
+de la una repetido en la otra, el punto y el token de fin. De un par a otro cambian dos palabras, el
+sustantivo y el color, y cada paso de entrenamiento empuja a la vez lo común y lo de cada uno.
+
+Lo común se aprende diez veces, y es lo único que una pregunta nueva puede tomar prestado. Lo
+particular sólo vale para su par: el color de la nieve no dice nada del de la tierra, y la novela
+con que se preentrenó el mini-GPT tampoco. Diez pares son suficientes para cambiar cómo responde y
+no para decidir qué responde.
+
+<Callout type="intuition" title="La idea en una frase">
+Ajustar un modelo con pares de instrucción y respuesta es preentrenarlo con otro texto, cobrando
+sólo la respuesta. La pérdida habla únicamente de esos pares, así que lo que haga con cualquier otra
+cosa lo deciden los pesos que comparten: con pocos pares, se lleva el formato y nada más.
+</Callout>
+
+## Ajustar es maximizar la verosimilitud de los pares
+
+Fijemos el objeto. Hay un modelo preentrenado y un conjunto de pares $(x, y)$, cada uno una
+conversación escrita con la plantilla: $x$ es la conversación hasta el token del asistente,
+incluido, e $y$ la respuesta con su $\texttt{<|fin|>}$, escrita por alguien y que obedece a $x$. El
+**ajuste supervisado** (*supervised fine-tuning*, SFT) es seguir entrenando el modelo sobre ese
+conjunto, desde los pesos del preentrenamiento. Es supervisado porque cada instrucción llega con la
+respuesta que se quiere.
+
+Lo que se maximiza es la **verosimilitud** del conjunto, con la palabra de
+<Leccion curso="dl-nlp" slug="funcion-de-perdida">la lección sobre funciones de pérdida del curso
+anterior</Leccion>: la probabilidad que el modelo le da entero, el producto de las
+$\pi_\theta(y \mid x)$ de sus pares. Maximizarla es minimizar menos su logaritmo, una suma, que
+dividida entre el número de pares es la media de $-\log \pi_\theta(y \mid x)$ sobre un par sacado al
+azar del conjunto. Llamemos $p_{\text{SFT}}$ a la distribución de ese sorteo. Con el producto de la
+lección anterior dentro, la pérdida del ajuste es
+
+$$
+\begin{aligned}
+\mathcal{L}_{\text{SFT}}(\theta) &= \mathbb{E}_{(x, y) \sim p_{\text{SFT}}}\left[-\log \pi_\theta(y \mid x)\right] \\
+&= \mathbb{E}_{(x, y) \sim p_{\text{SFT}}}\left[-\sum_{j} \log p_\theta(y_j \mid x, y_{<j})\right].
+\end{aligned}
+$$
+
+Es la entropía cruzada del bloque anterior con una sola diferencia: la suma recorre los tokens de
+$y$, que es lo que hace la máscara. Y tiene la forma exacta del preentrenamiento de
+<Leccion slug="predecir-no-es-obedecer">la lección sobre predecir y obedecer</Leccion>, con
+$p_{\text{SFT}}$ en el lugar de $p_{\text{texto}}$. Aquella lección terminó proponiendo cambiar el
+texto con que se entrena. Esto es cambiarlo.
+
+Su mínimo sale, por tanto, con el argumento de aquella lección. Agrupemos los pares por su
+instrucción: uno sacado al azar tiene la instrucción $x$ con probabilidad
+$p_{\text{SFT}}(x)$ y, dada ésa, la respuesta $y$ con probabilidad $p_{\text{SFT}}(y \mid x)$, así
+que
+
+$$
+\mathcal{L}_{\text{SFT}}(\theta) = \sum_{x} p_{\text{SFT}}(x) \sum_{y} p_{\text{SFT}}(y \mid x)\left[-\log \pi_\theta(y \mid x)\right],
+$$
+
+donde la suma de fuera recorre las instrucciones del conjunto. Cada suma de dentro es la entropía
+cruzada entre dos distribuciones de respuestas a una misma instrucción, la del conjunto y la del
+modelo, y la desigualdad de <Leccion slug="perplejidad">la lección sobre la perplejidad</Leccion> la
+hace mínima en un solo sitio: cuando son iguales. Con un modelo capaz de dar a cada instrucción la
+distribución que quiera, el mínimo de la suma es el de cada sumando,
+
+$$
+\pi_\theta(y \mid x) = p_{\text{SFT}}(y \mid x) \quad \text{para cada } x \text{ del conjunto}.
+$$
+
+La igualdad dice tres cosas. Con una sola respuesta por instrucción, como en los diez pares de esta
+lección, $p_{\text{SFT}}(y \mid x)$ vale 1 en ella, y el óptimo es aprenderse cada par de memoria. Si
+todas las respuestas del conjunto obedecen, el modelo obedece siempre en sus instrucciones: es el
+primer factor de la lección sobre predecir y obedecer, resuelto. Y el segundo factor, lo buena que es
+la respuesta cuando obedece, queda en el del conjunto. Un modelo ajustado contesta tan bien como
+quien escribió sus pares, con sus mismos errores y en la misma proporción.
+
+### El gradiente es el del preentrenamiento, con filas a cero
+
+Del gradiente sólo cambia el principio. Cada factor de $\pi_\theta(y \mid x)$ es un softmax, el de
+los logits de la posición que ha leído $x$ y los $j - 1$ primeros tokens de $y$. Escribámoslos
+$\mathbf{z}(x, y_{<j})$, con lo que leyeron por argumento, como $\mathbf{z}_t(x_{\le t})$ en
+<Leccion slug="una-sola-columna">la primera lección del bloque anterior</Leccion>. La pérdida de un
+par es
+
+$$
+-\log \pi_\theta(y \mid x) = -\sum_{j} \log \text{softmax}\left(\mathbf{z}(x, y_{<j})\right)_{y_j},
+$$
+
+y cada término depende de una sola fila de logits. Su gradiente respecto de ella es el que dejó la
+lección sobre funciones de pérdida: el softmax menos el *one-hot* $\mathbf{o}_{y_j}$ del token que
+de verdad vino,
+
+$$
+\nabla_{\mathbf{z}(x, y_{<j})}\left[-\log \pi_\theta(y \mid x)\right] = \text{softmax}\left(\mathbf{z}(x, y_{<j})\right) - \mathbf{o}_{y_j}.
+$$
+
+Ésas son las filas que apuestan por un token de $y$. La primera, $\mathbf{z}(x, y_{<1})$, lee $x$
+entera, hasta $\texttt{<|asistente|>}$: el token del asistente no se cobra, pero la fila que lo lee
+sí. Las demás filas leen sólo un trozo de $x$ y apuestan por el token siguiente de $x$. Se calculan
+en la misma ida y no aparecen en ningún término, así que su gradiente es cero.
+
+Esas dos líneas son todo el cambio. Lo que queda es la vuelta de
+<Leccion curso="dl-nlp" slug="backpropagation">la lección sobre backpropagation</Leccion>, que es
+lineal en esos vectores y lleva cada uno a los pesos que calcularon su fila; un vector cero no lleva
+nada. En el preentrenamiento todas las filas tenían el suyo. En el ajuste, sólo las de la respuesta.
+
+Que una fila no tenga gradiente no quiere decir que su posición no aprenda. Cada fila de $y$ lee,
+por la atención, las claves y los valores de todas las posiciones anteriores, las de $x$ incluidas, y
+la vuelta pasa por ellos hasta los pesos y las filas de $\mathbf{E}$ de los tokens de la pregunta.
+El ajuste le enseña al modelo a *leer* la instrucción, en la medida en que eso le ayuda a escribir la
+respuesta, y nunca a escribirla. Así se separan las filas de rol, que empezaron siendo la misma media:
+cada una aprende de los sitios en que se lee.
+
+Por el otro lado de la tabla atada, el de la salida, cada fila cobrada empuja hacia abajo el logit
+de toda entrada que no es $y_j$, en proporción a lo que apostó por ella. $\texttt{<|fin|>}$ sube en
+la fila que cierra cada respuesta y baja en las demás, y los tokens de rol, que no son $y_j$ en
+ninguna, sólo bajan: el modelo aprende a no escribirlos nunca, que es lo que la plantilla necesita.
+
+### Lo que la pérdida no dice
+
+La suma de $\mathcal{L}_{\text{SFT}}$ recorre las instrucciones del conjunto y ninguna más. Para una
+instrucción que no está en él no hay término, y la pérdida no dice nada de lo que $\pi_\theta$ haga
+ahí: ni que conteste bien, ni que conteste. Lo que pase lo deciden los pesos, que son los mismos
+para todas las instrucciones, y el sitio del que partieron.
+
+Eso corta en dos direcciones. Hacia delante, una instrucción nueva recibe lo que los pares tienen en
+común y lo que el preentrenamiento dejó: con mil pares variados y un modelo que lo ha leído casi
+todo, una respuesta útil; con diez pares que sólo se distinguen en dos palabras y un modelo que ha
+leído una novela, el formato de los diez. Hacia atrás, el texto del preentrenamiento tampoco tiene
+término. Nada en $\mathcal{L}_{\text{SFT}}$ le pide al modelo que lo siga prediciendo, y cada paso
+de Adam mueve casi todos los pesos casi $\eta$, tengan o no que ver con los pares, como vio
+<Leccion slug="entrenar-un-mini-gpt">la lección sobre entrenar el mini-GPT</Leccion>.
+
+Perder lo que un modelo sabía por ajustarlo a otra cosa se llama **olvido catastrófico**
+(*catastrophic forgetting*). En el ajuste supervisado se frena con muchos pares variados, un $\eta$
+pequeño y pocas épocas. El bloque vuelve a él más adelante, cuando haga falta mejorar un modelo sin
+dejar que se aleje del de partida.
+
+## El mini-GPT, ajustado con diez pares
+
+Las tres celdas corren sobre el mini-GPT, tu mini-GPT del bloque 1 cargado desde el *checkpoint* con
+las cuatro filas de la plantilla, y esta vez lo entrenan, en el navegador. La primera escribe los
+diez pares con la plantilla de la lección anterior, los apila en un *batch* y mide el modelo antes
+de tocarlo.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())          # red, F, codificar, Adam, quitar_cabecera
+
+# La plantilla de la lección anterior: cuatro tokens especiales detrás de las 512 entradas.
+ID = {e: 512 + i for i, e in enumerate(["<|sistema|>", "<|usuario|>", "<|asistente|>", "<|fin|>"])}
+FIN = ID["<|fin|>"]
+VOCAB = vocabulario(F) | {i: e.encode() for e, i in ID.items()}
+ver = lambda ids: b"".join(VOCAB[i] for i in ids).decode("utf-8", errors="replace")
+
+def plantilla(mensajes):
+    ids, mascara = [], []
+    for rol, contenido in mensajes:
+        trozo = codificar(contenido, F) + [FIN]
+        ids += [ID["<|%s|>" % rol]] + trozo
+        mascara += [0] + [int(rol == "asistente")] * len(trozo)
+    return ids, mascara
+
+PARES = [("¿De qué color es el cielo?", "El cielo es azul."), ("¿De qué color es la nieve?", "La nieve es blanca."),
+         ("¿De qué color es la hierba?", "La hierba es verde."), ("¿De qué color es el carbón?", "El carbón es negro."),
+         ("¿De qué color es la sangre?", "La sangre es roja."), ("¿De qué color es el sol?", "El sol es amarillo."),
+         ("¿De qué color es la noche?", "La noche es negra."), ("¿De qué color es el mar?", "El mar es azul."),
+         ("¿De qué color es la leche?", "La leche es blanca."), ("¿De qué color es el oro?", "El oro es amarillo.")]
+convs = [plantilla([("usuario", q), ("asistente", a)]) for q, a in PARES]
+
+# El batch: una conversación por fila. La fila t apuesta por ids[t + 1]: su peso, la máscara corrida.
+T = max(len(ids) for ids, _ in convs) - 1
+X, Y, peso = np.zeros((10, T), dtype=int), np.zeros((10, T), dtype=int), np.zeros((10, T))
+for b, (ids, m) in enumerate(convs):
+    X[b, :len(ids) - 1], Y[b, :len(ids) - 1], peso[b, :len(ids) - 1] = ids[:-1], ids[1:], m[1:]
+
+red.p["E"] = np.vstack([red.p["E"], np.tile(red.p["E"].mean(axis=0), (4, 1))])   # las filas nuevas
+red.cfg["n_v"] = 516
+base = {k: v.copy() for k, v in red.p.items()}                  # el punto de partida
+
+def responder(pregunta, n=16):
+    x, y = plantilla([("usuario", pregunta)])[0] + [ID["<|asistente|>"]], []
+    while len(y) < n and FIN not in y:                          # voraz, hasta que escribe <|fin|>
+        y.append(int(np.argmax(red.adelante(np.array([x + y]))[0][0, -1])))
+    return ver(y)
+
+print("batch %s: %d posiciones, %d cobradas" % (X.shape, sum(len(i) - 1 for i, _ in convs), peso.sum()))
+print("lo que cobra la primera fila:", repr(ver(Y[0][peso[0] == 1])))
+print("pérdida en los pares: %.2f nats por token" % red.perdida(X, Y, peso)[0])
+print("antes:", repr(responder("¿De qué color es la tierra?")))
+`} />
+
+Las diez conversaciones ocupan 277 posiciones de un batch de $10 \times 30$, y se cobran 116, las
+de las respuestas con su <W>\<|fin|></W>, como enseña la primera fila. Esa fila es la ecuación del gradiente en código, porque `peso` es la máscara
+corrida una posición: la fila $t$ apuesta por el token $t + 1$. Antes del ajuste, el mini-GPT paga
+$5.25$ nats por cada token de las respuestas, un nat menos que los $\ln 516 = 6.25$ de repartir por
+igual, y detrás de <W>\<|asistente|></W> escribe novela.
+
+`perdida` divide entre la suma de `peso`, los 116 tokens cobrados, y no entre los diez pares. Con el
+conjunto entero en cada paso, eso es una constante: no mueve el mínimo, y Adam, que divide cada
+coordenada del gradiente por su propia escala, ni siquiera la nota.
+
+La segunda da doce pasos de Adam sobre el batch entero. Reanuda un modelo ya entrenado con un Adam
+nuevo, así que empieza con cinco pasos de calentamiento hasta $\eta = 5 \times 10^{-3}$.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior. Parte siempre de los mismos pesos: ejecutarla otra vez
+# repite el ajuste, no lo alarga.
+red.p = {k: v.copy() for k, v in base.items()}
+opt = Adam(red.p)                                               # medias móviles a cero
+for s in range(1, 13):
+    L, g = red.perdida(X, Y, peso)                              # la del bloque 1, con peso
+    opt.paso(red.p, g, eta=5e-3 * min(1, s / 5))                # cinco de calentamiento
+    if s % 3 == 0:
+        print("paso %2d   pérdida %.3f" % (s, L))
+`} />
+
+La pérdida en los pares baja de $5.25$ a $0.33$ nats por token en doce pasos, y seguiría bajando
+hacia el cero del óptimo, que es aprenderse los diez. La tercera celda le hace seis preguntas que
+no están entre ellos, mide la novela antes y después del ajuste y cuenta los pesos que se han
+movido. Al final prueba, sin plantilla, el marco <W>Pregunta: … Respuesta:</W> de la lección sobre
+predecir y obedecer.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita las dos celdas anteriores.
+for q in ["¿De qué color es la tierra?", "¿De qué color es el vino?", "¿De qué color es la sal?",
+          "¿De qué color es el limón?", "¿Quién es la Nela?", "Dime un número."]:
+    print("%-28s %r" % (q, responder(q)))
+
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+R = np.array(codificar(texto[-6000:], F)[:513])                 # 512 posiciones del texto reservado
+novela = lambda: red.perdida(R[:-1].reshape(8, 64), R[1:].reshape(8, 64))[0]
+ajustados, red.p = red.p, base                                  # un momento, los pesos de antes
+antes = novela()
+red.p = ajustados
+print("\\nnovela: %.2f nats por token antes del ajuste, %.2f después   (repartir por igual: %.2f)"
+      % (antes, novela(), np.log(516)))
+movidos = sum((np.abs(red.p[k] - base[k]) > 1e-3).sum() for k in base)
+print("pesos que se han movido más de 0.001: %d de %d" % (movidos, sum(v.size for v in base.values())))
+
+x = codificar("Pregunta: ¿De qué color es la tierra?\\nRespuesta:", F)     # el marco, sin plantilla
+y = red.generar(x, 16, temperatura=0)[len(x):]
+print("\\ncon el marco:", repr(ver(y[:y.index(FIN) + 1] if FIN in y else y)))
+`} />
+
+Las seis respuestas son frases con la forma de los pares, y las seis terminan en
+<W>\<|fin|></W>: el mini-GPT ha aprendido a acabar. En las cuatro preguntas de colores, el artículo
+de la respuesta es el de la pregunta: <W>la tierra</W> recibe <W>La leche es blanca.</W>, y
+<W>el vino</W>, <W>El cielo es azul.</W>. Ninguna fila cobrada apuesta por un token de la pregunta,
+y aun así la respuesta depende de ella. Es el gradiente que entró por las filas de la respuesta y
+llegó a lo que esas filas leen.
+
+El contenido, en cambio, sale de los pares tal cual, sin relación con lo que se pregunta. La Nela,
+la protagonista de la novela que el mini-GPT leyó entera, es <W>La nieve es blanca.</W>, y un número
+es <W>El cielo es azul.</W>. Diez pares han enseñado el formato y nada más.
+
+Tampoco ha salido gratis. La novela le cuesta ahora $6.69$ nats por token, frente a $2.96$ antes del
+ajuste: más que los $6.25$ de repartir por igual entre las 516 entradas. Doce pasos han movido más de
+una milésima $131\,833$ de sus $136\,704$ pesos. Y el marco de la lección sobre predecir y obedecer,
+al que el bloque prometió volver, recibe ahora una frase de colores con su <W>\<|fin|></W>. No es que
+el mini-GPT haya aprendido el marco: es que ya no sabe escribir otra cosa.
+
+## Comprueba tu intuición
+
+Cuatro preguntas y un desafío: la pérdida del ajuste y su gradiente, para una conversación.
+
+<Quiz id="q-optimo-del-conjunto" />
+
+<Quiz id="q-donde-hay-gradiente" />
+
+<Quiz id="q-el-vino" />
+
+<Quiz id="q-la-novela" />
+
+<CodeChallenge id="ch-perdida-sft" />
+
+---
+
+El ajuste supervisado resuelve el primer factor de la lección sobre predecir y obedecer: en las
+instrucciones de su conjunto, el modelo obedece. El segundo lo deja donde lo tenía el conjunto,
+porque su óptimo es copiar a quien escribió los pares, aciertos y errores en la misma proporción. Y
+escribir buenos pares es caro: cada uno es una respuesta entera, redactada por alguien que sepa
+hacerlo.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 13
+    (slug modelo-de-recompensa), envolver «La lección siguiente, sobre preferencias y el modelo de
+    recompensa» en su Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de
+    un comentario. */}
+
+Juzgar es más barato que escribir. Entre dos respuestas a una misma instrucción, casi cualquiera
+sabe decir cuál es mejor sin saber escribir ninguna de las dos, y ése es un dato que la pérdida de
+esta lección no sabe usar. La lección siguiente, sobre preferencias y el modelo de recompensa, lo
+convierte en un número: entrena un modelo que puntúa respuestas a partir de comparaciones, y explica
+por qué comparaciones y no notas.

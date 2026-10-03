@@ -245,6 +245,10 @@ together, and the lesson states that shape when the cache first appears.
 | $\mathbf{E}$ · $\mathbf{e}_v$ | the first course's embedding table, $\lvert V \rvert \times d_{\text{model}}$, and its row for entry $v$, which is $\mathbf{e}_v^{\top}$. The mini-GPT ties it to the output (Block 1 lesson 1's «la tabla leída al revés»), so $z_v = \mathbf{e}_v^{\top}\mathbf{h}$ (Block 2 lesson 2) |
 | $\mathbf{h}$ | the vector the last block leaves at the position being predicted, after the final layer norm: what $\mathbf{E}$ multiplies to give that position's logits $\mathbf{z}$. No $t$, as lesson 4's $\mathbf{z}$ has none, because one position is in play (Block 2 lesson 2) |
 | $\bar{\mathbf{e}}$ · $\bar{z}$ | the mean of the $\lvert V \rvert$ rows of $\mathbf{E}$, which every token especial starts as · the mean of the logits $z_v$ over $V$, which is then the logit each of them gets (Block 2 lesson 2) |
+| $p_{\text{SFT}}$ · $p_{\text{SFT}}(x)$, $p_{\text{SFT}}(y \mid x)$ | the distribution that draws one pair $(x, y)$ of the supervised fine-tuning set at random · the share of its pairs with instruction $x$ · the share of those whose response is $y$. In the family of $p_{\text{texto}}$: the text the fine-tuning trains on (Block 2 lesson 3) |
+| $\mathcal{L}_{\text{SFT}}(\theta)$ | the fine-tuning loss, $\mathbb{E}_{(x, y) \sim p_{\text{SFT}}}\left[-\log \pi_\theta(y \mid x)\right]$: Block 2 lesson 1's pretraining objective with $p_{\text{SFT}}$ for $p_{\text{texto}}$, minimised at $\pi_\theta(\cdot \mid x) = p_{\text{SFT}}(\cdot \mid x)$ on the set's instructions (Block 2 lesson 3) |
+| $\mathbf{z}(x, y_{<j})$ | the logits of the position that has read $x$ and the first $j - 1$ tokens of $y$, and bets on $y_j$: Block 1 lesson 1's $\mathbf{z}_t(x_{\le t})$ with the input named in the block's two pieces, so it carries no position. $\mathbf{z}(x, y_{<1})$ reads $x$ whole, up to $\texttt{<\|asistente\|>}$ (Block 2 lesson 3) |
+| $\mathbf{o}_v \in \{0, 1\}^{\lvert V \rvert}$ | the one-hot of entry $v$, the first course's (`dl-nlp` Block 1): the gradient of $-\log \text{softmax}(\mathbf{z})_v$ with respect to $\mathbf{z}$ is $\text{softmax}(\mathbf{z}) - \mathbf{o}_v$ (Block 2 lesson 3) |
 
 **An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
 distribution, roman text names the set of respuestas it describes, and the probability is that
@@ -275,6 +279,19 @@ the last block's output at one position. The first course wrote $\mathbf{h}_t$ f
 state and $\mathbf{h}^{(l)}$ for a layer's activation, and this is the latter at the last layer,
 normalised. No page has two of them. The overline is a mean, as in $\bar{\ell}$ and
 $\bar{\mathcal{L}}$.
+
+**Fine-tuning has a distribution, not a set letter** (`COURSE-C2-P1-02`, Block 2 lesson 3). The
+obvious letter for the set of pairs, $D$, is Kaplan's token count (Block 1 lesson 7) and Block 3's
+evaluation set, and the papers' calligraphic $\mathcal{D}$ is not needed: the lesson writes the loss
+as an expectation under $p_{\text{SFT}}$, the way Block 2 lesson 1 wrote pretraining under
+$p_{\text{texto}}$, and that parallel is the lesson's point. The number of pairs has no letter
+either ($n$ is lesson 2's bytes, $N$ Kaplan's parameters, $K$ lesson 8's ejemplos). The logits are
+named by what their position read, $\mathbf{z}(x, y_{<j})$, not by an index: a $t$ would count the
+positions of the whole conversation, and $\mathbf{z}_j$ would read as position $j$. The one-hot is
+the first course's $\mathbf{o}_v$, always subscripted by an entry; Block 1 lesson 5 wrote
+$\mathbf{o}_t^{\top}$ for a row of an attention head's output, subscripted by a position, and the
+two never share a page. $\mathcal{L}_{\text{SFT}}$ keeps the block task md's subscript, an acronym
+set in roman like $\text{PPL}$.
 
 **Two networks on one page need two parameter letters.** $\theta$ is the policy's and $\phi$ the
 reward model's, and the split is the point of the block: the reward model is trained first, then

@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (2/8) | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (3/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -821,3 +821,52 @@ Decisions, confirmed by Gustavo at review:
   Pyodide and in Chromium on `pnpm start` with identical output; the challenge graded in Chromium
   (starter and empty 0/5, solution 5/5); the numeric quiz accepts 19; widget and page at 360 px with
   no horizontal scroll (Playwright screenshots; the Browser pane did not composite).
+
+Lesson 12 `sft` authored on the block's branch (2026-10-03). 2 056 words (advisory over the 2 000
+target), 5 display equations, no widget (the block md assigns none), **3 cells** (max 45 lines;
+the block md said 2), 4 quiz, 1 challenge (`ch-perdida-sft`), 4 readings (LIMA, Gudibande et al.
+2023, Chung et al. 2022, Kirkpatrick et al. 2017; arXiv pages checked). `minutes: 35` (lint ≈36).
+Runs on the mini-GPT with lesson 11's four mean rows, trained in the browser, and says so before
+the cells. Decisions, confirmed by Gustavo at review:
+- **The claims, derived:** SFT is maximum likelihood over the pairs, written as lesson 10's
+  pretraining expectation with $p_{\text{SFT}}$ for $p_{\text{texto}}$; grouped by instruction, each
+  inner sum is a cross-entropy, so the optimum is $\pi_\theta(\cdot \mid x) = p_{\text{SFT}}(\cdot \mid x)$
+  on the set's instructions (memorise one answer per instruction; copy the writers' errors in
+  proportion: lesson 10's second factor stays the set's). The gradient at the logits is
+  softmax − one-hot on the rows that bet on a token of $y$ (the row reading `<|asistente|>`
+  included) and exactly zero elsewhere; backprop is unchanged, so the prompt is *read* (gradient
+  through attention to its keys/values and E rows) and never *written*, and on the tied output side
+  the role tokens are only pushed down. The loss has no term off the set: generalisation and
+  forgetting are both the weights' doing, not the objective's.
+- **The cells, measured (Node Pyodide = Chromium):** 10 pairs, batch 10 × 30, 277 positions,
+  116 charged; loss 5.25 → 0.33 nats/token in 12 full-batch Adam steps (5 warm-up, η 5e-3;
+  ≈2.9 s, the only cell near the phone cap, hence the split into three cells). Six held-out
+  questions all answer in the pairs' shape and stop on `<|fin|>`; the article agrees with the
+  question in 4/4 colour questions (la tierra → «La leche es blanca.», el vino → «El cielo es
+  azul.»); the content is always a memorised pair («¿Quién es la Nela?» → «La nieve es blanca.»).
+  Robust across 10–13 steps and η 4.5e-3–7e-3 (6/6 agreement, 8/8 stop), but which pair comes out
+  varies, so the prose quotes only this configuration. **Forgetting:** the novel (512 reserved
+  positions) goes 2.96 → 6.69 nats/token, above ln 516 = 6.25; not the specials stealing mass
+  (0.4 % mean; 6.68 renormalised without them); 131 833 of 136 704 weights moved > 1e-3. Plain SGD
+  diverges at any rate that learns in 15 steps. Lesson 10's «Pregunta: … Respuesta:» frame now
+  gets «El carbón es negro.<|fin|>»: the promise to return to it is closed here, read as
+  forgetting, not as learning the frame.
+- **Challenge `ch-perdida-sft`:** loss and dZ for one conversation from its ids and mask (the
+  shift is the work). Graded in Node Pyodide: solution 4/4, starter and empty 0/4, and five wrong
+  variants (unshifted mask, no mask, divide by T, dZ unnormalised, no −1) each fail a test with
+  its own message; the last test checks dZ against `MiniGPT.perdida`'s backward (`lnf_b`).
+- **Terms and letters added at review:** `ajuste supervisado`/`ajustar`, `verosimilitud`,
+  `olvido catastrófico` in the delta's §4; $p_{\text{SFT}}$, $\mathcal{L}_{\text{SFT}}$,
+  $\mathbf{z}(x, y_{<j})$, $\mathbf{o}_v$ in `NOTATION.md`, with a note on why the set of pairs has
+  no letter.
+- **Open for lessons 13–15:** their $\pi_{\text{ref}}$ is this model, which can only write colour
+  sentences; decide there whether to freeze an SFT checkpoint asset or re-run the ~3 s cell.
+  `scripts/courses/llm-agents/README.md` «property 4» still describes the text-frame SFT at
+  η 1e-3 and is now out of step with the lesson.
+- **Lesson 11's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 13 (`modelo-de-recompensa`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (words and reading-time warnings only), `pnpm build` green twice
+  with 0 KaTeX errors; the three cells in Node Pyodide and in Chromium on `pnpm start` with
+  identical output; the challenge in Chromium (starter 0/4, solution 4/4); all four quiz questions
+  right and wrong (Playwright); no horizontal scroll at 360 px (equations 424–481 px in their own
+  boxes, after splitting the $\mathcal{L}_{\text{SFT}}$ display over two rows). Not on a phone.
