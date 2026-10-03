@@ -234,7 +234,11 @@ $$
 Ninguna lleva un factor $1 - \tanh^{2}$, porque no hay $\tanh$ que derivar. Y todo lo que hay *por
 encima* de $e_{ij}$ en la cadena es de la lección anterior, sin tocar una coma: el paso por el
 softmax y la derivada
-$\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)$
+
+$$
+\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)
+$$
+
 nunca mencionaron qué forma tenía $a$. La atención se queda igual; lo que cambia es el modelo de
 alineación.
 
@@ -416,13 +420,14 @@ print("tiempo:                aditiva %7.1f ms   multiplicativa %7.1f ms"
       % ((t1 - t0) * 1e3, (t2 - t1) * 1e3))
 `} />
 
-Las tres primeras líneas son la sección anterior contada por el código: la aritmética se parece, el
-$\tanh$ y los $7.4$ MB intermedios no. La última depende de la máquina y del navegador, y aun así
+Todo lo que sale antes de la última línea es la sección anterior contada por el código: la
+aritmética se parece, el $\tanh$ y los $7.4$ MB intermedios no. La última depende de la máquina y del navegador, y aun así
 dice algo, porque no está midiendo una diferencia pequeña: la multiplicativa tarda alrededor de un
 orden de magnitud menos, y el factor exacto cambia de una ejecución a otra sin acercarse nunca a
 uno. Y hay un experimento que lo deja claro. Cambia $d_a$ a $64$ y ejecuta otra vez: la aditiva pasa
 a hacer *menos* aritmética que la multiplicativa ($2.2$ millones de operaciones contra $4.9$) y
-sigue tardando varias veces más que ella. Lo que se está midiendo no es cuántas operaciones hay.
+sigue tardando más que ella: alrededor del doble en las ejecuciones en que se apoya esta lección.
+Lo que se está midiendo no es cuántas operaciones hay.
 
 ## Comprueba tu intuición
 
