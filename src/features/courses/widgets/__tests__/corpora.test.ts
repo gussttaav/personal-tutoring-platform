@@ -34,12 +34,14 @@ import { buildBagOfWords, MAX_TOKENS_PER_DOC } from "@/features/courses/widgets/
 import {
   BPE_WIDGET_MAX_MERGES,
   BPE_WIDGET_MIN_FREQ,
+  N_BYTES,
   encode,
   tokenLabel,
   trainBpe,
   utf8,
   vocabulary,
 } from "@/features/courses/widgets/math/bpe-merges";
+import { renderSpecial, renderText } from "@/features/courses/widgets/math/chat-template";
 import { HEADS } from "@/features/courses/widgets/math/multi-head";
 import {
   MAX_LABEL_CHARS,
@@ -253,6 +255,48 @@ describe("widget corpora — bpe-merges keeps its teaching property", () => {
     const ids = encode(sentence, merges);
     const i = ids.indexOf(0xc3);
     expect(ids.slice(i, i + 2)).toEqual([0xc3, 0xaf]);
+  });
+});
+
+describe("widget corpora — chat-template keeps its teaching property", () => {
+  const entry = WIDGET_CORPORA["chat-template"].byLocale;
+  const merges = (
+    JSON.parse(
+      fs.readFileSync(path.join(process.cwd(), "public", "courses", "llm-agents", "bpe-merges.json"), "utf8"),
+    ) as [number, number][]
+  ).map((pair, i) => ({ pair, id: N_BYTES + i }) as const);
+  const forge = (locale: string) => {
+    const { messages, forged } = entry[locale];
+    const u = messages.findIndex((m) => m.role === "usuario");
+    return messages.map((m, i) => (i === u ? { ...m, content: m.content + forged } : m));
+  };
+
+  it("opens, in Spanish, on the conversation the lesson's cell prints: 41 tokens, 12 with loss", () => {
+    const { tokens } = renderSpecial(entry.es.messages, merges);
+    expect(tokens).toHaveLength(41);
+    expect(tokens.filter((t) => t.response)).toHaveLength(12);
+  });
+
+  it.each(Object.keys(entry))("in %s the forged line reads back as one more assistant message", (locale) => {
+    const { messages, markers } = entry[locale];
+    const text = renderText(forge(locale), merges, markers);
+    expect(text.readBack).toHaveLength(messages.length + 1);
+    const u = messages.findIndex((m) => m.role === "usuario");
+    expect(text.readBack[u + 1].role).toBe("asistente");
+    // Its tokens carry loss although the user typed them.
+    expect(text.tokens.some((t) => t.response && t.message === u + 1)).toBe(true);
+  });
+
+  it.each(Object.keys(entry))("in %s the special-token template is not fooled", (locale) => {
+    const special = renderSpecial(forge(locale), merges);
+    expect(special.readBack).toEqual(forge(locale));
+    expect(special.tokens.filter((t) => t.response).every((t) => t.role === "asistente")).toBe(true);
+  });
+
+  it.each(Object.keys(entry))("in %s the honest conversation reads back as itself both ways", (locale) => {
+    const { messages, markers } = entry[locale];
+    expect(renderText(messages, merges, markers).readBack).toEqual(messages);
+    expect(renderSpecial(messages, merges).readBack).toEqual(messages);
   });
 });
 

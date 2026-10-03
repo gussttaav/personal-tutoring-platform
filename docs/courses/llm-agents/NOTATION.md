@@ -229,14 +229,69 @@ together, and the lesson states that shape when the cache first appears.
 
 | Symbol | Meaning |
 |---|---|
-| $x$, $y$ | a prompt and a response, as token sequences |
-| $\pi_\theta$ | the policy: the model as a distribution over responses, $\pi_\theta(y \mid x)$ (reserved in the shared §4) |
+| $x$, $y$ | a prompt and a response, as token sequences. In a chat, $x$ is the plantilla of the conversation followed by $\texttt{<\|asistente\|>}$, and $y$ the response's tokens followed by $\texttt{<\|fin\|>}$ (Block 2 lesson 2) |
+| $\pi_\theta$ | the policy: the model as a distribution over responses, $\pi_\theta(y \mid x)$ (reserved in the shared §4). It is $p_\theta$ read through the plantilla, $\prod_j p_\theta(y_j \mid x, y_{<j})$, the product ending on $y$'s $\texttt{<\|fin\|>}$ (Block 2 lesson 2) |
 | $\pi_{\text{ref}}$ | the reference policy the KL term measures against — the SFT model, frozen (reserved) |
 | $r_\phi$ | the reward model, with its own parameters $\phi$ (reserved) |
 | $y_w \succ y_l$ | a preference pair: the chosen response over the rejected one |
 | $\beta$ | the KL coefficient — how far $\pi_\theta$ may move from $\pi_{\text{ref}}$ (reserved) |
 | $\mathbb{D}_{\text{KL}}$ | the Kullback–Leibler divergence — blackboard $\mathbb{D}$, so it is never the corpus $D$ of Block 1 |
 | $\sigma$ | the logistic sigmoid, as everywhere on the platform — Bradley–Terry's $\sigma(r_A - r_B)$ |
+| $p_\theta(\text{obedece} \mid x)$ | the masa the model puts on the respuestas that obey the instrucción $x$, $\sum_{y \,:\, y \text{ obedece a } x} p_\theta(y \mid x)$; with $p_{\text{texto}}$ for $p_\theta$, the text's (Block 2 lesson 1) |
+| $p_\theta(\text{buena} \mid x, \text{obedece})$ | the share of good respuestas among those that obey. Every buena obeys, so $p_\theta(\text{buena} \mid x) = p_\theta(\text{obedece} \mid x)\,p_\theta(\text{buena} \mid x, \text{obedece})$ (Block 2 lesson 1) |
+| $\omega$ | Block 1 lesson 8's tarea, read after an instrucción: the kind of document $x$ appears in, which decides what follows it — the exam, the forum, the book of solved exercises (Block 2 lesson 1) |
+| $\text{plantilla}$ | the chat template as a function: a list of mensajes in, the one token sequence the model reads out. Roman, a function's name, like $\text{softmax}$ and $\text{codificar}$ (Block 2 lesson 2) |
+| $\texttt{<\|sistema\|>}$, $\texttt{<\|usuario\|>}$, $\texttt{<\|asistente\|>}$, $\texttt{<\|fin\|>}$ | the mini-GPT plantilla's four tokens especiales, ids 512 to 515: three that open a mensaje of each rol and one that closes any mensaje. Written as the vocabulary writes them, the first course's $\texttt{<EOS>}$ rule; in prose `<W>\<\|fin\|></W>` (Block 2 lesson 2) |
+| $\mathbf{E}$ · $\mathbf{e}_v$ | the first course's embedding table, $\lvert V \rvert \times d_{\text{model}}$, and its row for entry $v$, which is $\mathbf{e}_v^{\top}$. The mini-GPT ties it to the output (Block 1 lesson 1's «la tabla leída al revés»), so $z_v = \mathbf{e}_v^{\top}\mathbf{h}$ (Block 2 lesson 2) |
+| $\mathbf{h}$ | the vector the last block leaves at the position being predicted, after the final layer norm: what $\mathbf{E}$ multiplies to give that position's logits $\mathbf{z}$. No $t$, as lesson 4's $\mathbf{z}$ has none, because one position is in play (Block 2 lesson 2) |
+| $\bar{\mathbf{e}}$ · $\bar{z}$ | the mean of the $\lvert V \rvert$ rows of $\mathbf{E}$, which every token especial starts as · the mean of the logits $z_v$ over $V$, which is then the logit each of them gets (Block 2 lesson 2) |
+| $p_{\text{SFT}}$ · $p_{\text{SFT}}(x)$, $p_{\text{SFT}}(y \mid x)$ | the distribution that draws one pair $(x, y)$ of the supervised fine-tuning set at random · the share of its pairs with instruction $x$ · the share of those whose response is $y$. In the family of $p_{\text{texto}}$: the text the fine-tuning trains on (Block 2 lesson 3) |
+| $\mathcal{L}_{\text{SFT}}(\theta)$ | the fine-tuning loss, $\mathbb{E}_{(x, y) \sim p_{\text{SFT}}}\left[-\log \pi_\theta(y \mid x)\right]$: Block 2 lesson 1's pretraining objective with $p_{\text{SFT}}$ for $p_{\text{texto}}$, minimised at $\pi_\theta(\cdot \mid x) = p_{\text{SFT}}(\cdot \mid x)$ on the set's instructions (Block 2 lesson 3) |
+| $\mathbf{z}(x, y_{<j})$ | the logits of the position that has read $x$ and the first $j - 1$ tokens of $y$, and bets on $y_j$: Block 1 lesson 1's $\mathbf{z}_t(x_{\le t})$ with the input named in the block's two pieces, so it carries no position. $\mathbf{z}(x, y_{<1})$ reads $x$ whole, up to $\texttt{<\|asistente\|>}$ (Block 2 lesson 3) |
+| $\mathbf{o}_v \in \{0, 1\}^{\lvert V \rvert}$ | the one-hot of entry $v$, the first course's (`dl-nlp` Block 1): the gradient of $-\log \text{softmax}(\mathbf{z})_v$ with respect to $\mathbf{z}$ is $\text{softmax}(\mathbf{z}) - \mathbf{o}_v$ (Block 2 lesson 3) |
+
+**An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
+distribution, roman text names the set of respuestas it describes, and the probability is that
+set's masa, lesson 4's word for the sum over a set of entries: $p_\theta(\text{obedece} \mid x)$
+sums $p_\theta(y \mid x)$ over the $y$ that obey $x$. Roman because it is a word, as
+$\text{acierto}$ and $\text{PPL}$ are, and never a mention: it is the set, not the string
+<W>obedece</W>. Letters for the two sets were the alternative, and the obvious ones are spoken for:
+$B$ is the batch size (shared §4), $A$ is Block 3's allowed set $A_t$ and Chinchilla's $A_N$,
+$\mathcal{C}$ would sit beside $C$, the compute, and a calligraphic $\mathcal{R}$ beside $r_\phi$
+and $r(x, y)$ two lessons later. A word in the condition says what the set is, which no letter
+would. The device is held to these two events, and a lesson that wants a third adds its row here
+first. $\omega$ keeps lesson 8's meaning rather than taking a new letter: a document's tarea is what
+it does next, and after an instrucción that is exactly what is in question.
+
+**The plantilla is stated in words, and its tokens are spelled, not lettered** (`COURSE-C2-P1-02`,
+Block 2 lesson 2). A mensaje is a rol and a contenido, and the obvious letters for them are spoken
+for: $r$ sits beside the reserved $r_\phi$ and the reward $r(x, y)$ two lessons later, and $c$ is
+Block 1 lesson 5's cost. The set of tokens especiales has no letter either, since $S$ is the number
+of training steps; the lesson says «los cuatro especiales» and writes the $4$ where it counts them.
+So the lesson defines $\text{plantilla}$ in a sentence (each mensaje is its rol's token, the tokens
+of $\text{codificar}(\text{contenido})$ and $\texttt{<|fin|>}$, one mensaje after another) and keeps
+its displays for what a sentence cannot carry: $\pi_\theta$ as a product, and the bound on a token
+especial nobody has trained. Concatenation therefore never needs a sign, which matters because
+juxtaposition is multiplication (shared §3). The mask over a conversation's tokens has no symbol
+for the same reason: $m$ is lesson 2's fusión count, and the claim the mask carries, that its sum
+is $\log \pi_\theta(y \mid x)$, is written with $\pi_\theta$. $\mathbf{h}$ without a subscript is
+the last block's output at one position. The first course wrote $\mathbf{h}_t$ for an RNN's hidden
+state and $\mathbf{h}^{(l)}$ for a layer's activation, and this is the latter at the last layer,
+normalised. No page has two of them. The overline is a mean, as in $\bar{\ell}$ and
+$\bar{\mathcal{L}}$.
+
+**Fine-tuning has a distribution, not a set letter** (`COURSE-C2-P1-02`, Block 2 lesson 3). The
+obvious letter for the set of pairs, $D$, is Kaplan's token count (Block 1 lesson 7) and Block 3's
+evaluation set, and the papers' calligraphic $\mathcal{D}$ is not needed: the lesson writes the loss
+as an expectation under $p_{\text{SFT}}$, the way Block 2 lesson 1 wrote pretraining under
+$p_{\text{texto}}$, and that parallel is the lesson's point. The number of pairs has no letter
+either ($n$ is lesson 2's bytes, $N$ Kaplan's parameters, $K$ lesson 8's ejemplos). The logits are
+named by what their position read, $\mathbf{z}(x, y_{<j})$, not by an index: a $t$ would count the
+positions of the whole conversation, and $\mathbf{z}_j$ would read as position $j$. The one-hot is
+the first course's $\mathbf{o}_v$, always subscripted by an entry; Block 1 lesson 5 wrote
+$\mathbf{o}_t^{\top}$ for a row of an attention head's output, subscripted by a position, and the
+two never share a page. $\mathcal{L}_{\text{SFT}}$ keeps the block task md's subscript, an acronym
+set in roman like $\text{PPL}$.
 
 **Two networks on one page need two parameter letters.** $\theta$ is the policy's and $\phi$ the
 reward model's, and the split is the point of the block: the reward model is trained first, then

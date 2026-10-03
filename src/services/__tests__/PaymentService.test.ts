@@ -13,6 +13,8 @@
 // already_handled), which the admin RetryButton shows.
 // REFACTOR-R4-P4-01: the slot-taken refund is keyed by the PI (a redelivery after a failed
 // refund record replays it), and the checkout keys carry the amount — suite at the end.
+// BOOKING-ATTRIBUTION-01: the student's source rides the PaymentIntent metadata from
+// checkout to the webhook's createBooking (and the admin retry's).
 import type { IStripeClient } from "@/infrastructure/stripe/StripeClient";
 import type { IPaymentRepository, FailedBookingEntry } from "@/domain/repositories/IPaymentRepository";
 import type Stripe from "stripe";
@@ -1180,6 +1182,63 @@ describe("REFACTOR-R4-P1-01: checkout validates the slot before any PaymentInten
 
     await expect(service.createSingleSessionCheckout(params)).rejects.toBeInstanceOf(InvalidSlotError);
     expect(stripe.createPaymentIntent).not.toHaveBeenCalled();
+  });
+});
+
+describe("BOOKING-ATTRIBUTION-01: the source rides the PaymentIntent", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockGetAvailableSlots.mockResolvedValue([{ start: "2099-12-01T10:00:00.000Z" }]);
+  });
+
+  const params = {
+    email: "student@test.com", name: "Student", duration: "1h" as const,
+    startIso: "2099-12-01T10:00:00.000Z", endIso: "2099-12-01T11:00:00.000Z",
+  };
+  const linkedin = { source: "linkedin", medium: "profile", campaign: "topcard" };
+
+  it("checkout writes the source into the metadata and keys on it", async () => {
+    const { service, stripe } = makeService();
+    stripe.createPaymentIntent.mockResolvedValue({ id: "pi_ok", client_secret: "s" } as Stripe.PaymentIntent);
+
+    await service.createSingleSessionCheckout({ ...params, attribution: linkedin });
+    await service.createSingleSessionCheckout(params);
+
+    const [[withSource, withKey], [without, withoutKey]] = stripe.createPaymentIntent.mock.calls;
+    expect(withSource.metadata).toMatchObject({
+      utm_source: "linkedin", utm_medium: "profile", utm_campaign: "topcard",
+    });
+    expect(without.metadata).not.toHaveProperty("utm_source");
+    expect(withKey?.idempotencyKey).toMatch(/^single:.*:[0-9a-f]{12}$/);
+    expect(withoutKey?.idempotencyKey).toBe(withKey?.idempotencyKey?.replace(/:[0-9a-f]{12}$/, ""));
+  });
+
+  it("the webhook books with the source from the metadata", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+    const event = fakeSingleEvent();
+    Object.assign((event.data.object as Stripe.PaymentIntent).metadata, {
+      utm_source: "linkedin", utm_medium: "profile", utm_campaign: "topcard",
+    });
+
+    await service.processWebhookEvent(event);
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ attribution: linkedin }),
+    );
+  });
+
+  it("a PaymentIntent without a source books without one", async () => {
+    const { service, paymentRepo, bookings } = makeService();
+    paymentRepo.isProcessed.mockResolvedValue(false);
+    (bookings.createBooking as jest.Mock).mockResolvedValue({ eventId: "evt_1" });
+
+    await service.processWebhookEvent(fakeSingleEvent());
+
+    expect(bookings.createBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ attribution: undefined }),
+    );
   });
 });
 

@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | ⬜ | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (3/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -739,3 +739,134 @@ for the reviewer of the block:
   after test 4 gained its «llenar no se llamó nunca» message; no horizontal page scroll at 375 or
   360 px (the trace
   table scrolls 36 px inside its own box at 360). The pane carried the English locale cookie again.
+
+**COURSE-C2-P1-02** — In progress (started 2026-10-01). Lesson 10 `predecir-no-es-obedecer` authored on
+`staging`, the block's first. 2 000 words, 7 display equations, no widget (the block md assigns
+none), 1 cell (35 lines), 4 quiz, no challenge, 4 readings (Ouyang et al. 2022, Askell et al. 2021,
+Reynolds & McDonell 2021, Wei et al. 2022 / FLAN; titles and arXiv links checked). Runs on the
+mini-GPT, loaded in one line from `modelo.py` and never trained, and says so before the cell.
+`draft: false`, as the PUBLICATION line says. Decisions recorded for the reviewer of the block:
+- **The claim, derived:** pretraining is lesson 1's loss read on a split $(x, y)$, and lessons 6 and
+  8's inequality puts its optimum at $p_\theta = p_{\text{texto}}$. After an instrucción the text is
+  a mixture over lesson 8's tareas $\omega$ (exam, forum, book of solved exercises), so the masa on
+  obeying is the text's, and scaling (lesson 7) only brings $p_\theta$ closer to it. The chain rule
+  on events splits $p_\theta(\text{buena} \mid x)$ into obeying × good-given-obeying, form against
+  judgment, which orders the block. Bayes with $K = 0$ is what the prompt can move (GPT-2's TL;DR,
+  a Q&A frame) and its three limits; the section closes on the target objective
+  $\max_\theta \mathbb{E}_x[p_\theta(\text{buena} \mid x)]$ and on $p_{\text{texto}}$ being a choice.
+- **The cell, measured in Pyodide:** three samples of «¿De qué color es la tierra?» are novel text;
+  after the novel's 433 «?», with 8 tokens of context (lesson 8: more does not help it), the
+  mini-GPT's masa on five ways of continuing (new paragraph, ellipsis, narrator's tag, comma, the
+  paragraph goes on) is within 3.2 points of the novel's counts (39.5/19.4/8.3/5.1/27.7 % against
+  36.5/22.6/7.2/4.7/29.0 %); «Respuesta:» appears 0 times in the novel, and the greedy output after
+  the «Pregunta: … Respuesta:» frame is dialogue. The question and the frame are the train script's
+  held-out SFT pair (`SFT_RESERVADO`, `PLANTILLA`): the lesson says the block will come back to them,
+  so lesson 12 must use that pair.
+- **The GPT-3 moon-landing example** (the InstructGPT announcement, early 2022) is paraphrased from
+  secondary sources (OpenAI's page answered 403); only the two topics they agree on, gravity and the
+  big bang, are named.
+- **Terms and letters added after review:** `preentrenamiento`, `instrucción`, `obedecer` (not
+  `seguir`, the continuation's verb), `buena`, and `respuesta` replacing «continuación» for $y$, in
+  the delta's §4 with an argued paragraph; $p_\theta(\text{obedece} \mid x)$,
+  $p_\theta(\text{buena} \mid x, \text{obedece})$ and $\omega$ read after an instrucción in
+  `NOTATION.md`, with a note on events written in words.
+- **Lesson 9's bridge now links this lesson** (placeholder comment removed), and its wording changed
+  from «abre con esta misma función» to «carga esta misma función en una línea y le hace una
+  pregunta», since the lesson opens on prose. This lesson's bridge names lesson 11
+  (`plantilla-de-chat`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (no warnings), `pnpm build` green with 0 KaTeX errors; the cell under
+  Node Pyodide 0.29.3 twice (≈2.3 s) and in the Browser pane on `pnpm start` with identical output;
+  all four quiz questions right and wrong (the numeric at 0.207 passes, 0.208 fails); no horizontal
+  page scroll at 360 px (the two widest equations, 511 and 485 px, scroll in their own boxes). The
+  pane carried the English locale cookie again.
+
+Lesson 11 `plantilla-de-chat` authored on `staging` (2026-10-02), with its widget `chat-template`
+built in the same task. 1 997 words, 4 display equations, 1 widget, 2 cells (max 42 lines), 4 quiz,
+1 challenge (`ch-mascara`), 4 readings (HF chat-templating docs, Hewitt 2021, Llama 2 §3.1, Shi et
+al. 2024; links checked). `minutes: 35`, the lint's estimate, which trips the advisory reading-time
+warning (target 30, ceiling 40). Runs on the mini-GPT, not trained, and says so before the cells.
+Decisions, confirmed by Gustavo at review:
+- **The template:** one special token per rol plus `<|fin|>`, ids 512–515 after the mini-GPT's 512
+  entries, Spanish names; each mensaje is its rol's token, `codificar(contenido)`, `<|fin|>`. The
+  generation prompt ends on `<|asistente|>`, and `<|fin|>` belongs to $y$ (lesson 9's cadena de
+  parada, now a token the model must learn). ChatML is named once in prose as the open models' format.
+- **The claims, derived:** injectivity proved by building the inverse (specials never come out of
+  `codificar`, and lesson 2's decodificar∘codificar = id); a two-message and a one-message
+  conversation give the same string under text markers. $\pi_\theta(y \mid x)$ is introduced here
+  as $p_\theta$ read through the plantilla, and named «política»; the loss mask is 1 on each
+  respuesta's contenido and `<|fin|>`, 0 elsewhere, `<|asistente|>` included. New rows start at the
+  mean of $\mathbf{E}$ (Hewitt 2021), and Jensen bounds an untrained special by $1/(\lvert V \rvert + 4)
+  = 1/516$ anywhere; read the other way, the old entries keep ≥ 512/516 of their masa. With the mean,
+  the three rol tokens enter the network as the same vector.
+- **The cells, measured:** 41 tokens, 12 with loss; text template fooled, specials not; typed
+  `<|asistente|>` = 8 ordinary tokens. With the mean rows, `<|fin|>` gets 6.3e-7 where it goes and
+  ≤ 2.4e-5 in all 27 positions; $-\log \pi_\theta(y \mid x) = 69.7$ nats in 11 tokens (14.3 for
+  `<|fin|>`); the four specials take ≤ 3.1e-4 on 512 novel positions; greedy after `<|asistente|>`
+  writes novel and never closes in 24 tokens.
+- **For lesson 12:** it inherits this template, these ids and the mean initialisation. Feasibility
+  measured in Node Pyodide: full-batch SFT on the ten `SFT_PARES` (300 tokens/step, Adam 3e-3 with a
+  10-step warm-up) reaches loss 0.025 at step 30 (7.1 s) and 0.002 at step 60 (14.2 s, over the 10 s
+  cap); after 60 steps the held-out «tierra» question gets «La leche es blanca.<|fin|>» (format,
+  not content). Budget ~30 steps, and mind phones. Lesson 10 promised to come back to its
+  «Pregunta: … Respuesta:» frame; lesson 12 decides how, now that the format is this template.
+- **Terms and letters added before writing:** `mensaje`, `rol`, `contenido`, `plantilla`,
+  `token especial`, `máscara (de la pérdida)`, `política` in the delta's §4; the specials,
+  $\text{plantilla}$, $\mathbf{E}$/$\mathbf{e}_v$, $\mathbf{h}$, $\bar{\mathbf{e}}$/$\bar{z}$ and
+  readings of $x$, $y$, $\pi_\theta$ in `NOTATION.md`, with a note on why the template has no
+  letters (role, content and mask letters are all spoken for).
+- **Lesson 10's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 12 (`sft`) in prose with the usual comment.
+- Verified: `pnpm lint:content`, `pnpm build`, `check:messages`, ESLint on the new files, 1 019
+  course tests (14 new in `chat-template.test.ts`, 4 in `corpora.test.ts`); both cells in Node
+  Pyodide and in Chromium on `pnpm start` with identical output; the challenge graded in Chromium
+  (starter and empty 0/5, solution 5/5); the numeric quiz accepts 19; widget and page at 360 px with
+  no horizontal scroll (Playwright screenshots; the Browser pane did not composite).
+
+Lesson 12 `sft` authored on the block's branch (2026-10-03). 2 056 words (advisory over the 2 000
+target), 5 display equations, no widget (the block md assigns none), **3 cells** (max 45 lines;
+the block md said 2), 4 quiz, 1 challenge (`ch-perdida-sft`), 4 readings (LIMA, Gudibande et al.
+2023, Chung et al. 2022, Kirkpatrick et al. 2017; arXiv pages checked). `minutes: 35` (lint ≈36).
+Runs on the mini-GPT with lesson 11's four mean rows, trained in the browser, and says so before
+the cells. Decisions, confirmed by Gustavo at review:
+- **The claims, derived:** SFT is maximum likelihood over the pairs, written as lesson 10's
+  pretraining expectation with $p_{\text{SFT}}$ for $p_{\text{texto}}$; grouped by instruction, each
+  inner sum is a cross-entropy, so the optimum is $\pi_\theta(\cdot \mid x) = p_{\text{SFT}}(\cdot \mid x)$
+  on the set's instructions (memorise one answer per instruction; copy the writers' errors in
+  proportion: lesson 10's second factor stays the set's). The gradient at the logits is
+  softmax − one-hot on the rows that bet on a token of $y$ (the row reading `<|asistente|>`
+  included) and exactly zero elsewhere; backprop is unchanged, so the prompt is *read* (gradient
+  through attention to its keys/values and E rows) and never *written*, and on the tied output side
+  the role tokens are only pushed down. The loss has no term off the set: generalisation and
+  forgetting are both the weights' doing, not the objective's.
+- **The cells, measured (Node Pyodide = Chromium):** 10 pairs, batch 10 × 30, 277 positions,
+  116 charged; loss 5.25 → 0.33 nats/token in 12 full-batch Adam steps (5 warm-up, η 5e-3;
+  ≈2.9 s, the only cell near the phone cap, hence the split into three cells). Six held-out
+  questions all answer in the pairs' shape and stop on `<|fin|>`; the article agrees with the
+  question in 4/4 colour questions (la tierra → «La leche es blanca.», el vino → «El cielo es
+  azul.»); the content is always a memorised pair («¿Quién es la Nela?» → «La nieve es blanca.»).
+  Robust across 10–13 steps and η 4.5e-3–7e-3 (6/6 agreement, 8/8 stop), but which pair comes out
+  varies, so the prose quotes only this configuration. **Forgetting:** the novel (512 reserved
+  positions) goes 2.96 → 6.69 nats/token, above ln 516 = 6.25; not the specials stealing mass
+  (0.4 % mean; 6.68 renormalised without them); 131 833 of 136 704 weights moved > 1e-3. Plain SGD
+  diverges at any rate that learns in 15 steps. Lesson 10's «Pregunta: … Respuesta:» frame now
+  gets «El carbón es negro.<|fin|>»: the promise to return to it is closed here, read as
+  forgetting, not as learning the frame.
+- **Challenge `ch-perdida-sft`:** loss and dZ for one conversation from its ids and mask (the
+  shift is the work). Graded in Node Pyodide: solution 4/4, starter and empty 0/4, and five wrong
+  variants (unshifted mask, no mask, divide by T, dZ unnormalised, no −1) each fail a test with
+  its own message; the last test checks dZ against `MiniGPT.perdida`'s backward (`lnf_b`).
+- **Terms and letters added at review:** `ajuste supervisado`/`ajustar`, `verosimilitud`,
+  `olvido catastrófico` in the delta's §4; $p_{\text{SFT}}$, $\mathcal{L}_{\text{SFT}}$,
+  $\mathbf{z}(x, y_{<j})$, $\mathbf{o}_v$ in `NOTATION.md`, with a note on why the set of pairs has
+  no letter.
+- **Open for lessons 13–15:** their $\pi_{\text{ref}}$ is this model, which can only write colour
+  sentences; decide there whether to freeze an SFT checkpoint asset or re-run the ~3 s cell.
+  `scripts/courses/llm-agents/README.md` «property 4» still describes the text-frame SFT at
+  η 1e-3 and is now out of step with the lesson.
+- **Lesson 11's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 13 (`modelo-de-recompensa`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (words and reading-time warnings only), `pnpm build` green twice
+  with 0 KaTeX errors; the three cells in Node Pyodide and in Chromium on `pnpm start` with
+  identical output; the challenge in Chromium (starter 0/4, solution 4/4); all four quiz questions
+  right and wrong (Playwright); no horizontal scroll at 360 px (equations 424–481 px in their own
+  boxes, after splitting the $\mathcal{L}_{\text{SFT}}$ display over two rows). Not on a phone.

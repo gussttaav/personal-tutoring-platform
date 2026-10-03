@@ -1,0 +1,344 @@
+---
+slug: predecir-no-es-obedecer
+title: "Predecir no es obedecer"
+block: 2
+order: 1
+minutes: 25
+summary: "Por qué un modelo entrenado a predecir texto no hace lo que se le pide. En el óptimo del preentrenamiento copia lo que su texto hace después de una instrucción, y obedecer es sólo una de esas cosas. La lección lo deriva, lo mide en el mini-GPT y separa lo que el prompt puede arreglar de lo que exige cambiar el texto con que se entrena."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-mas-grande
+    type: single
+    prompt: 'Preentrenas un modelo con diez veces más parámetros y diez veces más tokens del mismo texto. Para una instrucción $x$, ¿qué le pasa a $p_\theta(\text{obedece} \mid x)$?'
+    options:
+      - { id: a, text: 'Sube hacia 1: un modelo mejor entiende mejor lo que se le pide.' }
+      - { id: b, text: 'Se acerca a $p_{\text{texto}}(\text{obedece} \mid x)$, sea ese número alto o bajo.' }
+      - { id: c, text: 'No cambia: con el mismo texto, el tamaño no mueve la distribución.' }
+      - { id: d, text: 'Baja hacia 0, porque el modelo copia mejor los documentos que no obedecen.' }
+    answer: b
+    explanation: 'La (b). Más parámetros y más tokens del mismo texto bajan la pérdida hacia su suelo, y eso es acercar $p_\theta$ a $p_{\text{texto}}$ en cada contexto: la masa en obedecer va con ella hacia la del texto. La (a) supone que la pérdida premia obedecer, y no lo menciona. La (c) se equivoca de efecto: el tamaño sí mueve la distribución, hacia la del texto. La (d) sólo valdría si el texto nunca obedeciera tras $x$; el modelo va hacia el número del texto, que puede quedar por encima o por debajo del de ahora.'
+    hint: 'Pregúntate dónde pone su mínimo la pérdida del preentrenamiento, y si obedecer aparece en ella.'
+  - id: q-dos-factores
+    type: numeric
+    prompt: 'Tras una instrucción $x$, el texto tiene tres tipos de documento: exámenes, con probabilidad $0.55$, donde lo que sigue nunca obedece; foros, con $0.25$, donde obedece una de cada cinco veces; y libros de ejercicios resueltos, con $0.20$, donde obedece siempre. De las respuestas que obedecen, son buenas la mitad en los foros y nueve de cada diez en los libros. ¿Cuánto vale $p_{\text{texto}}(\text{buena} \mid x)$? Tres decimales.'
+    answer: 0.205
+    tolerance: 0.002
+    explanation: 'Unos $0.205$. Obedecen el foro, $0.25 \cdot 0.2 = 0.05$, y el libro, $0.20 \cdot 1 = 0.20$, así que $p_{\text{texto}}(\text{obedece} \mid x) = 0.25$. De eso son buenas $0.05 \cdot 0.5 = 0.025$ y $0.20 \cdot 0.9 = 0.18$, que suman $0.205$; el segundo factor vale $0.205/0.25 = 0.82$. Un modelo en el óptimo de ese texto obedece una vez de cada cuatro y contesta bien una de cada cinco: los dos factores son los del texto.'
+    hint: 'Primero la masa en obedecer, documento a documento; después multiplica cada sumando por lo que tiene de bueno.'
+  - id: q-el-marco
+    type: single
+    prompt: 'Escribes la pregunta al mini-GPT dentro del marco <W>Pregunta: … Respuesta:</W> y sigue escribiendo diálogo. ¿Qué lo explica?'
+    options:
+      - { id: a, text: 'La novela no tiene ese marco: un documento que conteste así tiene probabilidad cero en su texto, y ningún prompt se la da.' }
+      - { id: b, text: 'El mini-GPT es demasiado pequeño para entender el marco; uno mayor, preentrenado con la misma novela, contestaría.' }
+      - { id: c, text: 'Faltan ejemplos: con tres preguntas resueltas delante, en el mismo marco, contestaría.' }
+      - { id: d, text: 'La temperatura: con la generación voraz contestaría.' }
+    answer: a
+    explanation: 'La (a). Por la regla de Bayes, $p_{\text{texto}}(\omega \mid x)$ es proporcional a $p_{\text{texto}}(\omega)$, y si ese factor es cero el prompt no lo levanta. La (b) olvida que un modelo mayor copia mejor la misma novela, que sigue sin páginas de preguntas. La (c) es otro prompt: los ejemplos eligen entre las tareas que el texto ya tiene, como en el aprendizaje en contexto, y ésta no la tiene. La (d) la desmiente la celda: la voraz, tras el marco, abre otro párrafo de diálogo.'
+    hint: 'Escribe la probabilidad de cada tipo de documento leída la instrucción y mira el primer factor.'
+  - id: q-que-la-mueve
+    type: multi
+    prompt: 'Un modelo ha llegado al óptimo de su preentrenamiento: $p_\theta = p_{\text{texto}}$. Marca lo que puede subir la masa que $p_\theta$ pone en obedecer a lo que quieres pedirle.'
+    options:
+      - { id: a, text: 'Entrenarlo más pasos sobre el mismo texto.' }
+      - { id: b, text: 'Escribir la petición dentro de un marco que su texto contiene, como hacía GPT-2 al añadir <W>TL;DR:</W> a un artículo para que lo resumiera.' }
+      - { id: c, text: 'Seguir entrenándolo sobre un texto de pares en los que la respuesta obedece a la instrucción.' }
+      - { id: d, text: 'Bajar la temperatura al sortear.' }
+    answer: [b, c]
+    explanation: 'La (b) y la (c). La (b) cambia $x$, y por la regla de Bayes desplaza la probabilidad hacia los documentos que obedecen en ese marco, porque el texto los tiene. La (c) cambia el texto cuyo mínimo persigue el entrenamiento. La (a) no mueve nada: en el óptimo, más pasos sobre el mismo texto dejan $p_\theta = p_{\text{texto}}$. La (d) cambia la distribución de la que sortea `modelo`, hecha con los mismos logits, no $p_\theta$; y a temperatura baja sale la favorita, que es lo que el texto hacía más a menudo.'
+    hint: 'Separa lo que cambia el argumento de $p_\theta$, lo que cambia el texto que imita y lo que sólo cambia cómo se sortea.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Training language models to follow instructions with human feedback'
+    authors: 'Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin y otros'
+    year: '2022'
+    venue: 'NeurIPS 2022 · arXiv:2203.02155'
+    lang: en
+    url: 'https://arxiv.org/abs/2203.02155'
+    note: 'Su resumen dice esta lección en dos frases: un modelo más grande no obedece mejor, y uno de 1 300 millones entrenado para obedecer se prefiere a GPT-3, cien veces mayor. El resto del artículo es el bloque.'
+  - kind: paper
+    title: 'A General Language Assistant as a Laboratory for Alignment'
+    authors: 'Askell, Bai, Chen, Drain, Ganguli y otros'
+    year: '2021'
+    venue: 'arXiv:2112.00861'
+    lang: en
+    url: 'https://arxiv.org/abs/2112.00861'
+    note: 'Convierten un modelo sólo preentrenado en asistente con el prompt: conversaciones de ejemplo delante de la tuya. Es el marco de esta lección llevado lejos, y miden que lo que da crece con el tamaño.'
+  - kind: paper
+    title: 'Prompt Programming for Large Language Models: Beyond the Few-Shot Paradigm'
+    authors: 'Reynolds y McDonell'
+    year: '2021'
+    venue: 'arXiv:2102.07350'
+    lang: en
+    url: 'https://arxiv.org/abs/2102.07350'
+    note: 'Programar un modelo preentrenado escribiendo el principio del documento cuya continuación es lo que quieres. Los ejemplos, dicen, sirven sobre todo para localizar la tarea, como en la suma sobre tareas.'
+  - kind: paper
+    title: 'Finetuned Language Models Are Zero-Shot Learners'
+    authors: 'Wei, Bosma, Zhao, Guu, Yu y otros'
+    year: '2022'
+    venue: 'ICLR 2022 · arXiv:2109.01652'
+    lang: en
+    url: 'https://arxiv.org/abs/2109.01652'
+    note: 'La otra palanca, a lo grande: más de 60 tareas reescritas como instrucciones y un modelo de 137 000 millones ajustado sobre ellas, que obedece instrucciones de tareas que nunca vio.'
+---
+
+{/* COURSE-C2-P1-02 — Bloque 2, lección 1. Corre sobre el mini-GPT: la copia congelada de
+    modelo.py que dejó el proyecto del bloque 1, cargada y sin entrenar. */}
+
+El bloque anterior se cerró con una afirmación que no llegó a demostrar. La hacía de su propio
+modelo, el mini-GPT que <Leccion slug="proyecto-mini-gpt">el proyecto del bloque</Leccion> convirtió
+en la función `modelo(prompt) -> texto`, cuyo contrato garantiza de qué distribución sale cada token
+y calla sobre lo que quería quien escribió el *prompt*. Y la extendía a cualquier modelo entrenado de
+la misma manera, por grande que fuera: un modelo que sólo ha aprendido a predecir texto no hace lo
+que se le pide, y no por pequeño. Esta lección la demuestra, y la demostración dice qué habría que
+cambiar.
+
+Hay un caso famoso. A principios de 2022, al presentar sus modelos entrenados para obedecer, OpenAI
+enseñó lo que hacía GPT-3, con 175 000 millones de parámetros, ante una petición sencilla:
+explicarle a un niño de seis años la llegada a la Luna en unas pocas frases. GPT-3 no escribió
+ninguna sobre la Luna. Escribió más peticiones como aquélla, una detrás de otra: explicarle a un
+niño de seis años la gravedad, el *big bang*. Es un modelo más de un millón de veces mayor que el
+mini-GPT, y ante una petición hizo lo mismo que hará el tuyo dentro de unas líneas. Y no predijo mal.
+
+Mira esa petición como la mira un modelo que sólo ha aprendido a predecir. No es algo que alguien le
+dice: es el principio de un documento, y su trabajo es escribir cómo sigue. La pregunta que se hace
+no es qué le piden, sino qué documentos empiezan así y qué viene después en cada uno. Prueba con una
+instrucción en español, <W>Explica en dos frases por qué el cielo es azul.</W>, y piensa dónde la
+has visto escrita:
+
+| el documento | lo que viene después |
+|---|---|
+| un examen de física | <W>2. ¿Por qué el agua del mar es salada?</W> |
+| un foro de deberes | <W>Es para mañana, ¿alguien me ayuda?</W> |
+| un libro de ejercicios resueltos | la explicación, en dos frases |
+| una noticia sobre un examen de acceso | <W>fue una de las preguntas que más dudas causaron</W> |
+
+Un modelo que predice bien no elige uno de los cuatro: los pesa, cada uno según lo frecuente que es
+que un documento de su clase empiece así. Sólo el libro de ejercicios resueltos obedece. Que el
+modelo explique el color del cielo es tan probable como que esté escribiendo ese libro, y GPT-3,
+ante la petición de la Luna, apostó por una lista de ejercicios. Predijo bien una cosa distinta de
+la que se le pedía.
+
+<Callout type="intuition" title="La idea en una frase">
+Un modelo que sólo ha aprendido a predecir lee una instrucción como el principio de un documento y la
+continúa como la continúan sus textos. Obedece tan a menudo como ellos, y un modelo más grande no
+cambia ese número: lo copia mejor.
+</Callout>
+
+## Un modelo que predice bien hace lo que hace su texto
+
+Fijemos la notación del bloque. Llamemos $x$ al prompt entero, como en el proyecto, e $y$ a lo que
+el modelo escribe detrás, las dos secuencias de tokens. Cuando $x$ pide algo, una pregunta o una
+orden, es una **instrucción**, y lo que el proyecto llamaba continuación es desde aquí una respuesta,
+como la de <Leccion slug="aprendizaje-en-contexto">la lección sobre el aprendizaje en
+contexto</Leccion>, conteste o no: el nombre dice para qué se le pide al modelo, no si lo consigue.
+
+Lo que el bloque anterior le hizo al mini-GPT, entrenarlo a predecir su texto, se llama desde aquí
+**preentrenamiento**, como en <Leccion curso="dl-nlp" slug="bert-y-gpt">la lección del curso anterior
+sobre BERT y GPT</Leccion>: es el entrenamiento que va primero, y este bloque pone otros detrás.
+Partamos una ventana del texto en dos, $x$ lo de delante e $y$ lo de detrás. Por la regla de la
+cadena, $-\log p_\theta(y \mid x)$ es la suma de las pérdidas de los tokens de $y$, así que el
+preentrenamiento persigue
+
+$$
+\min_\theta \; \mathbb{E}_{(x, y) \sim p_{\text{texto}}}\left[-\log p_\theta(y \mid x)\right],
+$$
+
+con el par sacado del texto. La desigualdad de <Leccion slug="perplejidad">la lección sobre la
+perplejidad</Leccion> pone su mínimo en un solo sitio, como ya usó la lección sobre el aprendizaje
+en contexto: $p_\theta(\cdot \mid x) = p_{\text{texto}}(\cdot \mid x)$ en cada $x$ que el texto
+contiene. Con red y texto de sobra, un modelo preentrenado es su texto.
+
+Y el texto, detrás de una instrucción, hace varias cosas. Es la suma sobre tareas de aquella lección,
+con la instrucción en el lugar de los ejemplos y el caso: $x$ aparece en documentos de varias tareas
+$\omega$ (el examen, el foro, el libro resuelto), y lo que viene detrás depende de en cuál esté,
+
+$$
+p_{\text{texto}}(y \mid x) = \sum_{\omega} p_{\text{texto}}(\omega \mid x)\, p_{\text{texto}}(y \mid x, \omega),
+$$
+
+donde el primer factor dice cuánto cree el texto, leída $x$, que está en un documento de la tarea
+$\omega$, y el segundo cómo sigue un documento así.
+
+Una respuesta **obedece** a una instrucción si hace lo que pide: contesta la pregunta, cumple la
+orden, bien o mal. Es lo que el título del bloque llama seguir instrucciones, y aquí será obedecer,
+porque <W>seguir</W> ya tiene trabajo: lo que sigue a $x$ es su continuación. La probabilidad de que
+el modelo obedezca es la masa que pone en las respuestas que obedecen, con la palabra que
+<Leccion slug="muestreo">la lección sobre el muestreo</Leccion> usaba para un conjunto de entradas:
+
+$$
+p_\theta(\text{obedece} \mid x) = \sum_{y \,:\, y \text{ obedece a } x} p_\theta(y \mid x).
+$$
+
+Un suceso escrito en palabras dentro de $p_\theta$ nombra el conjunto de respuestas que describe. En
+el óptimo del preentrenamiento, $p_\theta$ es $p_{\text{texto}}$, y sumar la mezcla de arriba sobre
+las respuestas que obedecen deja
+
+$$
+p_{\text{texto}}(\text{obedece} \mid x) = \sum_{\omega} p_{\text{texto}}(\omega \mid x)\, p_{\text{texto}}(\text{obedece} \mid x, \omega).
+$$
+
+Cada tipo de documento aporta lo que pesa por lo que obedece dentro de él: el examen y el foro, casi
+nada, y el libro resuelto, casi todo su peso. El número es una propiedad del texto, y el modelo lo
+hereda.
+
+En la pérdida del preentrenamiento no hay ningún término que premie obedecer. Se hace mínima copiando
+esa suma, no inclinándola hacia uno de sus sumandos. Según
+<Leccion slug="leyes-de-escala">las leyes de escala</Leccion>, más parámetros y más tokens del mismo
+texto bajan la pérdida hacia su suelo, $\mathcal{L}_{\infty}$, y bajar hacia él es acercar $p_\theta$
+a $p_{\text{texto}}$: la masa en obedecer va hacia la del texto, quede por encima o por debajo de la
+de ahora. El tamaño no la arregla. La copia mejor.
+
+### Obedecer, y obedecer bien
+
+Obedecer no basta: en un foro, quien contesta mal también obedece. Llamemos **buena** a una
+respuesta que obedece y que, además, es la que elegiría quien escribió la instrucción: correcta,
+útil, en el tono que pedía. Las buenas son una parte de las que obedecen, así que la regla de la
+cadena, aplicada a los dos sucesos, parte su probabilidad en dos factores:
+
+$$
+p_\theta(\text{buena} \mid x) = p_\theta(\text{obedece} \mid x)\; p_\theta(\text{buena} \mid x, \text{obedece}).
+$$
+
+En el óptimo del preentrenamiento los dos son los del texto. El primero, por la suma de la sección
+anterior; el segundo, porque las respuestas que trae el texto son las que alguien escribió en él,
+las del foro con sus errores y las del libro con los suyos. Un modelo preentrenado, cuando obedece,
+contesta tan bien como su texto.
+
+Los dos factores no se arreglan igual, y eso ordena el bloque. El primero es de forma: contestar en
+lugar de seguir con el documento, algo que se enseña con ejemplos de la forma. El segundo es de
+juicio: entre dos respuestas que obedecen, cuál es mejor, que es más fácil de reconocer que de
+escribir. A la forma le dedica el bloque sus primeras lecciones, y al juicio, las siguientes. El
+artículo de InstructGPT midió lo que dan las dos juntas: las respuestas de un modelo de 1 300
+millones de parámetros entrenado así se prefirieron a las de GPT-3, más de cien veces mayor.
+
+### Lo que el prompt mueve, y lo que no
+
+Antes de tocar $\theta$ queda una palanca más barata, y durante años fue la única: cambiar $x$. El
+primer factor depende de $x$ a través de $p_{\text{texto}}(\omega \mid x)$, y la regla de Bayes de la
+lección sobre el aprendizaje en contexto, sin ejemplos, dice cómo:
+
+$$
+p_{\text{texto}}(\omega \mid x) \propto p_{\text{texto}}(\omega)\, p_{\text{texto}}(x \mid \omega).
+$$
+
+Escribe la instrucción como la escribiría un documento que obedece, y $p_{\text{texto}}(x \mid \omega)$
+sube para ese documento y baja para los demás. GPT-2 resumía un artículo si se le añadía detrás
+<W>TL;DR:</W> (*too long; didn't read*), porque en sus páginas web eso suele ir seguido de un resumen.
+Una pregunta escrita como <W>Pregunta: … Respuesta:</W> se parece más a una página de preguntas
+frecuentes que a un examen.
+
+La palanca tiene tres límites, y los tres empujan hacia $\theta$. No crea documentos: si el texto no
+tiene ninguno que obedezca en ese formato, su $p_{\text{texto}}(\omega)$ es cero y ningún $x$ lo
+levanta, que es la conclusión de la lección sobre el aprendizaje en contexto. Sube el primer factor y
+deja el segundo donde estaba, porque el documento que contesta trae sus respuestas, buenas o no. Y le
+pasa el trabajo a quien pide: para cada cosa que quiera, tiene que redactar el principio de un
+documento que continúe con ella.
+
+### Lo que habría que optimizar
+
+Escribamos lo que querríamos, con la misma forma que el preentrenamiento:
+
+$$
+\max_\theta \; \mathbb{E}_{x}\left[p_\theta(\text{buena} \mid x)\right],
+$$
+
+con $x$ sacada de las instrucciones que la gente escribe de verdad, que no son las del texto. Frente
+al preentrenamiento le falta lo que lo hace calculable: nadie sabe escribir como fórmula qué respuesta
+es buena, ni tiene una distribución de la que sacar esas instrucciones. Pero el preentrenamiento
+enseña una salida. Su mínimo es el texto con que se entrena, sea el que sea: $p_{\text{texto}}$ no es
+una ley de la naturaleza, sino una elección. Entrenemos el modelo sobre un texto de pares $(x, y)$ en
+los que $y$ obedece a $x$, y en su óptimo $p_\theta(\text{obedece} \mid x)$ vale uno en las
+instrucciones de ese texto. Es lo que hace este bloque, partiendo de los pesos del preentrenamiento y
+no de cero, para no tirar lo que el modelo ya sabe del idioma.
+
+## El mini-GPT ante una pregunta
+
+La celda corre sobre el mini-GPT, cargado en una línea desde la copia congelada del proyecto, y no lo
+entrena. Primero le hace una pregunta que la novela no contiene, <W>¿De qué color es la tierra?</W>,
+con tres semillas. Después mira la novela: tras cada uno de sus signos <W>?</W>, cómo sigue el texto,
+en cinco maneras, y cuánta masa pone el mini-GPT en cada una en esos mismos sitios, leyendo sólo los
+ocho tokens de antes (la lección sobre el aprendizaje en contexto midió que más no le sirven). Al
+final prueba el marco de una página de preguntas.
+
+<PyCell packages={["numpy"]} code={`
+import re
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())   # el proyecto del bloque 1: modelo, red, F
+
+pregunta = "¿De qué color es la tierra?"
+for s in range(3):
+    print(repr(modelo(pregunta, 16, semilla=s)))
+
+# Cómo sigue la novela tras un «?», en cinco maneras. Un trozo de texto, o una entrada del
+# vocabulario, cae en la primera cuyo comienzo encaja; la última recoge el resto.
+MANERAS = [("\\n", "párrafo nuevo"), (".", "puntos suspensivos"), ("—", "inciso del narrador"),
+           (",", "coma"), ("", "el párrafo sigue")]
+def manera(s):
+    return next(k for k, (inicio, _) in enumerate(MANERAS) if s.startswith(inicio))
+
+texto = quitar_cabecera(open_url("/courses/llm-agents/corpus.txt").read())
+fin = [m.end() for m in re.finditer(r"\\?", texto)]              # justo detrás de cada «?»
+novela = np.bincount([manera(texto[i:]) for i in fin], minlength=5) / len(fin)
+de = np.array([manera(decodificar([v], F)) for v in range(512)])  # la manera de cada entrada
+
+def masa(contextos):
+    """La masa media que el mini-GPT pone en cada manera de seguir, tras cada contexto."""
+    q = softmax(red.adelante(np.array(contextos))[0][:, -1])       # (n, 512)
+    return np.array([q[:, de == k].sum(axis=1).mean() for k in range(5)])
+
+tras_novela = masa([codificar(texto[i - 60:i], F)[-8:] for i in fin])   # los 8 tokens de antes
+tras_nueva = masa([codificar(pregunta, F)])
+print("\\n%d «?» en la novela" % len(fin))
+print("%-20s %8s %9s %9s" % ("", "novela", "mini-GPT", "la nueva"))
+for k, (_, nombre) in enumerate(MANERAS):
+    print("%-20s %7.1f%% %8.1f%% %8.1f%%" % (nombre, 100 * novela[k], 100 * tras_novela[k], 100 * tras_nueva[k]))
+
+marco = "Pregunta: " + pregunta + "\\nRespuesta:"               # el marco de una página de preguntas
+print("\\n«Respuesta:» sale en la novela %d veces" % texto.count("Respuesta:"))
+print("con el marco, la voraz:", repr(modelo(marco, 16, temperatura=0)))
+`} />
+
+Ninguna de las tres respuestas dice un color: las tres son novela, con sus puntos suspensivos, su
+<W>—dijo María</W> y su raya de diálogo. La tabla dice por qué. Tras los 433 <W>?</W> de la novela el texto sigue de cinco maneras, la más frecuente un
+párrafo nuevo (39.5 %), y el mini-GPT reparte su masa entre esas mismas cinco sin alejarse más de 3.2
+puntos de ninguna. Es la primera afirmación de la derivación, medida en un caso: tras una pregunta, el
+mini-GPT hace lo que hace su texto. Tras la pregunta nueva el reparto se parece, con más puntos
+suspensivos.
+
+Ninguna de las cinco maneras es contestar a quien pregunta. Un párrafo nuevo es muchas veces otro
+personaje que contesta, pero contesta a otro personaje y dentro de la novela, y eso es lo que el
+mini-GPT intenta cuando abre uno. El marco tampoco ayuda. <W>Respuesta:</W> no sale ni una vez en la
+novela, así que un documento que conteste con ese formato tiene probabilidad cero en su texto, y la
+generación voraz, detrás del marco, abre otro párrafo de diálogo: <W>—No ves acarde todas las
+minas</W>. Es el primer límite del prompt. El bloque volverá a esta
+pregunta y a este marco cuando haya cambiado el texto.
+
+## Comprueba tu intuición
+
+Cuatro preguntas: el tamaño, una mezcla de documentos, el marco y las palancas.
+
+<Quiz id="q-mas-grande" />
+
+<Quiz id="q-dos-factores" />
+
+<Quiz id="q-el-marco" />
+
+<Quiz id="q-que-la-mueve" />
+
+---
+
+La salida que deja esta lección es cambiar el texto: seguir entrenando el modelo preentrenado sobre
+pares de instrucción y respuesta en los que la respuesta obedece. Para eso cada par tiene que
+escribirse como un texto, y ahí aparece un problema que la novela no tenía. El modelo tiene que saber
+dónde acaba lo que se le pide y dónde empieza lo que le toca escribir, y quién habla en cada trozo
+cuando una conversación tiene varias intervenciones. <W>Pregunta:</W> y <W>Respuesta:</W> eran un
+intento, y el mini-GPT no los había leído nunca.
+
+Esa frontera no la reconoce un modelo porque esté bien elegida. La reconoce porque la ha leído, como
+reconoce todo lo demás. <Leccion slug="plantilla-de-chat">La lección siguiente, sobre la plantilla
+de chat</Leccion>, la trata como lo que es, un formato que se entrena, y enseña la cadena exacta que
+recibe un modelo de chat cuando le escribes.

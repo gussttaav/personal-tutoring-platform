@@ -7,7 +7,7 @@ import { InvalidSlotError, SlotUnavailableError } from "@/domain/errors";
 jest.mock("@/lib/ratelimit", () => ({
   checkoutRatelimit: { limit: jest.fn().mockResolvedValue({ success: true }) },
 }));
-jest.mock("@/lib/csrf", () => ({ isValidOrigin: () => true }));
+jest.mock("@/lib/csrf", () => ({ isValidOrigin: () => true, isBearerOnlyRequest: () => false }));
 jest.mock("@/lib/session", () => ({
   getSession: jest.fn().mockResolvedValue({ user: { email: "ana@test.com", name: "Ana" } }),
 }));
