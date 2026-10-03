@@ -1,7 +1,10 @@
 // ACCOUNT-DELETE-01: deleteAccount() delegates to the delete_user_account stored
 // procedure (supabase/migrations/0017_delete_user_account.sql) so the FK-safe walk
 // across the 13 user-linked tables commits atomically.
+// BOOKING-ATTRIBUTION-01: recordFirstBooking — a write-once UPDATE guarded by
+// `first_booked_at IS NULL`, so two concurrent first bookings cannot both write.
 import type { AccountDeletionCounts, IUserRepository } from "@/domain/repositories/IUserRepository";
+import type { BookingAttribution, SessionType } from "@/domain/types";
 import { UserNotFoundError } from "@/domain/errors";
 import { supabase } from "./client";
 
@@ -84,5 +87,29 @@ export class SupabaseUserRepository implements IUserRepository {
 
     const { found: _found, ...counts } = result;
     return counts as AccountDeletionCounts;
+  }
+
+  async recordFirstBooking(email: string, first: {
+    sessionType:  SessionType;
+    bookedAt:     string;
+    attribution?: BookingAttribution;
+  }): Promise<boolean> {
+    const a = first.attribution ?? {};
+    const { data, error } = await supabase
+      .from("users")
+      .update({
+        first_booking_type: first.sessionType,
+        first_booked_at:    first.bookedAt,
+        utm_source:         a.source       ?? null,
+        utm_medium:         a.medium       ?? null,
+        utm_campaign:       a.campaign     ?? null,
+        referrer_host:      a.referrerHost ?? null,
+        landing_path:       a.landingPath  ?? null,
+      })
+      .eq("email", email.toLowerCase().trim())
+      .is("first_booked_at", null)
+      .select("id");
+    if (error) throw error;
+    return (data?.length ?? 0) > 0;
   }
 }

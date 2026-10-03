@@ -45,9 +45,17 @@ function hasSessionCookie(req: NextRequest): boolean {
   return SESSION_COOKIE_NAMES.some((name) => cookie.includes(`${name}=`));
 }
 
+/**
+ * A cookieless bearer request — i.e. the mobile app. BOOKING-ATTRIBUTION-01 also uses
+ * it to label the app's bookings (the app sends no attribution of its own).
+ */
+export function isBearerOnlyRequest(req: NextRequest): boolean {
+  return hasBearerToken(req) && !hasSessionCookie(req);
+}
+
 export function isValidOrigin(req: NextRequest): boolean {
   // MOBILE-AUTH-01: skip Origin only for a cookieless bearer request (see header).
-  if (hasBearerToken(req) && !hasSessionCookie(req)) return true;
+  if (isBearerOnlyRequest(req)) return true;
 
   // REFACTOR-P2-04: Check Sec-Fetch-Site first. Values:
   //   "same-origin": from our own page — allow

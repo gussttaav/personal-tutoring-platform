@@ -7,6 +7,7 @@ import { getMessages, getTranslations, setRequestLocale } from "next-intl/server
 import { notFound } from "next/navigation";
 import AuthProvider from "@/components/AuthProvider";
 import UserSessionProvider from "@/components/UserSessionProvider";
+import { AttributionCapture } from "@/components/AttributionCapture";
 import { routing } from "@/i18n/routing";
 import { localizedAlternates } from "@/lib/hreflang";
 import "../globals.css";
@@ -37,6 +38,9 @@ import "../globals.css";
  * REFACTOR-R4-P2-04: `UserSessionProvider` sits inside `AuthProvider` so the whole page shares
  * ONE credit state (one /api/credits per load, one tab-focus refetch) instead of one per
  * `useUserSession()` call site. Client-only, no server data.
+ *
+ * BOOKING-ATTRIBUTION-01: `AttributionCapture` stores the visit's first-touch source
+ * (UTM tags / external referrer) so a later booking can carry it. Renders nothing.
  */
 
 const manrope = Manrope({
@@ -158,6 +162,7 @@ export default async function RootLayout({
             <UserSessionProvider>{children}</UserSessionProvider>
           </AuthProvider>
           <Analytics />
+          <AttributionCapture />
         </NextIntlClientProvider>
       </body>
     </html>

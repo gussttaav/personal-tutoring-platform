@@ -6,11 +6,14 @@
  *   ARCH-13: Delegates all orchestration to BookingService; route is a thin dispatcher
  *   REFACTOR-R4-P1-01: per-user rate limit (10/min, keyed by the session email). Slot
  *     validation (length, grid, hours, calendar) happens in BookingService.createBooking.
+ *   BOOKING-ATTRIBUTION-01: forwards the browser's first-touch source; a mobile-app
+ *     request (cookieless bearer) is labelled `mobile_app`.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { isValidOrigin } from "@/lib/csrf";
+import { isBearerOnlyRequest, isValidOrigin } from "@/lib/csrf";
+import { resolveRequestAttribution } from "@/lib/attribution";
 import { BookSchema } from "@/lib/schemas";
 import { bookingService } from "@/services";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
@@ -39,6 +42,7 @@ async function postHandler(req: NextRequest) {
       email: session.user.email,
       name:  session.user.name ?? session.user.email,
       ...parsed.data,
+      attribution: resolveRequestAttribution(isBearerOnlyRequest(req), parsed.data.attribution),
     });
     return NextResponse.json({ ok: true, ...result });
   } catch (err) {

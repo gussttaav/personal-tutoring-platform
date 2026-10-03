@@ -1,6 +1,7 @@
 // REFACTOR-R4-P1-01: POST /api/book — the per-user rate limit and the mapping of the
 // slot validator's domain errors. The validation itself lives in BookingService
 // (BookingService.test.ts); the route only has to get the status codes right.
+// BOOKING-ATTRIBUTION-01: the route forwards the browser's source and labels the app's.
 import { NextRequest } from "next/server";
 import { FreeSessionAlreadyUsedError, InvalidSlotError, SlotUnavailableError } from "@/domain/errors";
 
@@ -17,7 +18,11 @@ jest.mock("@/lib/ratelimit", () => ({
 }));
 
 const mockIsValidOrigin = jest.fn();
-jest.mock("@/lib/csrf", () => ({ isValidOrigin: (...args: unknown[]) => mockIsValidOrigin(...args) }));
+const mockIsBearerOnly  = jest.fn();
+jest.mock("@/lib/csrf", () => ({
+  isValidOrigin:       (...args: unknown[]) => mockIsValidOrigin(...args),
+  isBearerOnlyRequest: (...args: unknown[]) => mockIsBearerOnly(...args),
+}));
 
 const mockGetSession = jest.fn();
 jest.mock("@/lib/session", () => ({ getSession: () => mockGetSession() }));
@@ -49,6 +54,7 @@ beforeEach(() => {
   hits.clear();
   jest.clearAllMocks();
   mockIsValidOrigin.mockReturnValue(true);
+  mockIsBearerOnly.mockReturnValue(false);
   mockCreateBooking.mockResolvedValue({ eventId: "evt1", cancelToken: "c", joinToken: "j", emailFailed: false });
   signedIn("ana@test.com");
 });
@@ -111,5 +117,27 @@ describe("REFACTOR-R4-P1-01: POST /api/book slot-validation errors", () => {
     expect(mockCreateBooking).toHaveBeenCalledWith(expect.objectContaining({
       email: "ana@test.com", startIso: BODY.startIso, endIso: BODY.endIso, sessionType: "free15min",
     }));
+  });
+});
+
+describe("BOOKING-ATTRIBUTION-01: POST /api/book forwards the source", () => {
+  it("passes the browser's attribution to the service", async () => {
+    const attribution = { source: "linkedin", medium: "profile", campaign: "topcard" };
+    await POST(makeReq({ ...BODY, attribution }));
+    expect(mockCreateBooking).toHaveBeenCalledWith(expect.objectContaining({ attribution }));
+  });
+
+  it("labels a mobile-app request, which sends none, as mobile_app", async () => {
+    mockIsBearerOnly.mockReturnValue(true);
+    await POST(makeReq());
+    expect(mockCreateBooking).toHaveBeenCalledWith(expect.objectContaining({
+      attribution: { source: "mobile_app", medium: "app" },
+    }));
+  });
+
+  it("drops a malformed attribution instead of refusing the booking", async () => {
+    const res = await POST(makeReq({ ...BODY, attribution: { source: "x".repeat(500) } }));
+    expect(res.status).toBe(200);
+    expect(mockCreateBooking).toHaveBeenCalledWith(expect.objectContaining({ attribution: undefined }));
   });
 });
