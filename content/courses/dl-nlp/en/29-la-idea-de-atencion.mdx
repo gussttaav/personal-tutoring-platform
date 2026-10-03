@@ -251,7 +251,7 @@ takes a bit more of the weight, not all of it.
 
 <Callout type="warning" title="This softmax doesn't share out over the vocabulary">
 Every softmax in the course until now shared probability out over the entries of a vocabulary. This
-one shares out over the **input positions**: the index in the denominator runs over $k = 1, \dots,
+one shares out over the *input positions*: the index in the denominator runs over $k = 1, \dots,
 T_x$, with step $i$ held still. The two live in the same decoder step and over different axes
 ($\hat{\mathbf{y}}_i$ decides what to write, $\alpha_{i\cdot}$ decides what to look at), and mixing
 them up is the fastest way to misread any implementation of this.

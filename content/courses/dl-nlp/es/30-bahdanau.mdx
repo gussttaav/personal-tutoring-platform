@@ -26,11 +26,11 @@ quiz:
     answer: 4128
     tolerance: 0
     unit: pesos
-    explanation: 'Dos matrices de $32 \times 64$ y un vector de $32$: $2 \cdot 32 \cdot 64 + 32 = 4\,128$. Lo que importa de esa cuenta es lo que no aparece en ella. No aparece $T_x$, no aparece $T_y$ y no aparece la pareja: hay **un** juego de pesos, y con él se puntúan las $T_x \cdot T_y$ parejas de la frase y las de todas las demás frases, exactamente como un solo $\mathbf{W}_{hh}$ recorre todas las posiciones de una red neuronal recurrente (*recurrent neural network*, RNN), la de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>. Alargar la frase cuesta más cálculo; no cuesta ni un peso más.'
+    explanation: 'Dos matrices de $32 \times 64$ y un vector de $32$: $2 \cdot 32 \cdot 64 + 32 = 4\,128$. Lo que importa de esa cuenta es lo que no aparece en ella. No aparece $T_x$, no aparece $T_y$ y no aparece la pareja: hay *un* juego de pesos, y con él se puntúan las $T_x \cdot T_y$ parejas de la frase y las de todas las demás frases, exactamente como un solo $\mathbf{W}_{hh}$ recorre todas las posiciones de una red neuronal recurrente (*recurrent neural network*, RNN), la de <Leccion slug="la-rnn-vanilla">la lección sobre la RNN vanilla</Leccion>. Alargar la frase cuesta más cálculo; no cuesta ni un peso más.'
     hint: 'Cuenta las tres piezas por separado y fíjate en si alguna depende de la longitud de la frase.'
   - id: q-dos-caminos
     type: multi
-    prompt: 'Marca las rutas por las que el gradiente de la pérdida llega a $\bar{\mathbf{h}}_j$ **desde el mecanismo de atención**, dejando fuera la que le llega desde $\bar{\mathbf{h}}_{j+1}$ por la recurrencia del encoder.'
+    prompt: 'Marca las rutas por las que el gradiente de la pérdida llega a $\bar{\mathbf{h}}_j$ *desde el mecanismo de atención*, dejando fuera la que le llega desde $\bar{\mathbf{h}}_{j+1}$ por la recurrencia del encoder.'
     options:
       - { id: a, text: 'Como valor: $\bar{\mathbf{h}}_j$ es uno de los sumandos de cada $\mathbf{c}_i$, así que de cada paso le llega $\alpha_{ij}\nabla_{\mathbf{c}_i}\ell$.' }
       - { id: b, text: 'Como puntuado: $\bar{\mathbf{h}}_j$ entra en las $T_y$ puntuaciones $e_{ij}$, y de ahí en los pesos de esas filas.' }
@@ -174,7 +174,7 @@ que se pudiera derivar. Esta lección la escribe, con la forma que le dio Bahdan
 La pregunta es pequeña y concreta: ¿qué función se traga dos vectores y devuelve un número que
 signifique «estos dos se corresponden»? La respuesta de Bahdanau es una red neuronal diminuta, con
 una sola capa oculta. Pero lo que más enseña no es esa red, sino la restricción que decide su forma:
-la puntuación tiene que ser función de la **pareja**. Una función que opine por separado sobre cada
+la puntuación tiene que ser función de la *pareja*. Una función que opine por separado sobre cada
 vector y sume las dos opiniones no puntúa una correspondencia: puntúa dos cosas sueltas, y más abajo
 se ve que eso destruye el mecanismo entero.
 
@@ -349,7 +349,7 @@ $$
 
 A esas dos se les suma la que ya traía el bloque anterior, la que baja desde
 $\bar{\mathbf{h}}_{j+1}$ por la recurrencia del encoder, y ahí está lo interesante: las dos de
-arriba **no** pasan por ella. Van del paso $i$ del decoder a la posición $j$ de la entrada sin
+arriba *no* pasan por ella. Van del paso $i$ del decoder a la posición $j$ de la entrada sin
 recorrer el trecho de recurrencia que separa esa posición del final de la frase, así que no
 multiplican por $\mathbf{W}^{\text{enc}}_{hh}$ ni una sola vez y su longitud no crece cuando $j$ se
 aleja. El producto de matrices que <Leccion slug="gradiente-desvanecido">la lección sobre el gradiente
@@ -403,9 +403,9 @@ print("sin tanh, todas las filas iguales:", bool(np.allclose(lineal, lineal[0]))
 El mapa recién inicializado no dice nada: el mayor peso de cada fila ronda $0.18$ cuando el reparto
 uniforme sería $0.167$, así que las ocho filas son prácticamente la media de la frase. La alineación
 interpretable del explorable no viene de la arquitectura, viene del entrenamiento; lo que la
-arquitectura garantiza es que haya por dónde entrenarla. Y las dos últimas líneas son la sección
-anterior comprobada a mano: sin la $\tanh$, la fila $1$ y la fila $8$ salen iguales hasta el último
-decimal.
+arquitectura garantiza es que haya por dónde entrenarla. Y lo que sale tras la línea en blanco es la
+sección anterior comprobada a mano: sin la $\tanh$, la fila $1$ y la fila $8$ salen iguales hasta
+el último decimal.
 
 La segunda celda persigue las dos rutas por separado. Necesita una pérdida y usa la más barata
 posible (una cuyo gradiente respecto de cada $\mathbf{c}_i$ es un vector dado) para que lo único
@@ -456,8 +456,8 @@ el orden de $10^{-10}$, y por separado cada una se equivoca en la primera cifra.
 algo más, y es honesto mirarlo: con los pesos sin entrenar la ruta del valor es once veces mayor que la de la
 puntuación. Al principio casi todo el gradiente llega por donde llegaría aunque la alineación fuese
 uniforme, y es la ruta pequeña, la que pasa por $a$, la única que puede sacar al mapa de esa
-uniformidad. Cambia la escala de `va` a $2.0$ y ejecuta otra vez: las puntuaciones se separan, los
-pesos se afilan y las dos normas se acercan.
+uniformidad. Cambia la escala de `va` a $2.0$ y ejecuta otra vez las dos celdas: las puntuaciones
+se separan, los pesos se afilan y las dos normas se acercan.
 
 ## Comprueba tu intuición
 
@@ -490,5 +490,5 @@ no es ésa.
 Hay otra forma de puntuar una pareja que evita el problema entero, y su fórmula cabe en cinco
 símbolos: la atención de Luong, multiplicativa, que es <Leccion slug="luong">la lección siguiente</Leccion>. En vez de proyectar,
 sumar y aplastar, multiplica los dos estados a través de una matriz, con lo que la rejilla completa
-de puntuaciones pasa a ser **un** producto de matrices. La lección compara las dos puntuaciones
+de puntuaciones pasa a ser *un* producto de matrices. La lección compara las dos puntuaciones
 (qué cuesta cada una, qué puede hacer cada una) y ahí empieza a decidirse cómo será el bloque 5.

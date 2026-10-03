@@ -246,7 +246,7 @@ todo.
 
 <Callout type="warning" title="Este softmax no reparte sobre el vocabulario">
 Todos los softmax del curso hasta ahora repartían probabilidad sobre las entradas de un vocabulario.
-Este reparte sobre las **posiciones de la entrada**: el índice del denominador recorre $k = 1, \dots,
+Este reparte sobre las *posiciones de la entrada*: el índice del denominador recorre $k = 1, \dots,
 T_x$, con el paso $i$ quieto. Los dos conviven en el mismo paso del decoder y sobre ejes distintos
 ($\hat{\mathbf{y}}_i$ decide qué escribir, $\alpha_{i\cdot}$ decide qué mirar), y confundirlos es la
 forma más rápida de leer mal cualquier implementación de esto.

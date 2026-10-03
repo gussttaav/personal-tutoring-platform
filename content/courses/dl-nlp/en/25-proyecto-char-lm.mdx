@@ -70,7 +70,7 @@ gated recurrent unit (GRU), that give it a memory able to survive distance. This
 machinery to work: building a model that, having read a text, can carry on writing it.
 
 That kind of model has a name: a **language model** is a network that, given a stretch of text,
-predicts what comes next. **At the character level** (character tokenisation, from <Leccion slug="tokenizacion">the lesson on tokenisation</Leccion>), that means the next character, whether a letter, a space or a full
+predicts what comes next. *At the character level* (character tokenisation, from <Leccion slug="tokenizacion">the lesson on tokenisation</Leccion>), that means the next character, whether a letter, a space or a full
 stop, and the whole task fits into that tiny question. It trains on a small corpus of a few thousand
 characters and is then asked to write, character by character, feeding itself what it produces. The
 text that comes out is the network talking to itself.
