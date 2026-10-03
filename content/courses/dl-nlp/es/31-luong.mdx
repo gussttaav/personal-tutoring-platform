@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'La normalización. La matriz reparte la fila de forma que las $T_x$ puntuaciones acaben sumando $1$, que es lo que el producto escalar por sí solo no garantiza.' }
       - { id: d, text: 'La dependencia de la pareja. El producto escalar opina por separado sobre cada vector, mientras que la matriz mezcla los dos, que es la condición que la lección anterior declaró irrenunciable.' }
     answer: a
-    explanation: 'La (a). Los dos estados salen de dos recurrencias distintas, entrenadas para dos trabajos distintos, y nada las obliga a haber elegido las mismas direcciones para las mismas cosas; $\mathbf{W}_a$ es exactamente el cambio de base que falta, aprendido junto al resto. La (b) confunde dos propiedades: la puntuación multiplicativa **sigue** siendo lineal en cada estado por separado —es una forma bilineal—, y aun así depende de la pareja, que es lo que hacía falta. La (c) le da a la matriz el trabajo del softmax, que es quien normaliza. La (d) es la trampa buena, y se cae escribiendo el producto escalar: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$ no se puede partir en una opinión sobre un vector más otra sobre el otro, así que ya es función de la pareja. Lo que le falta no es eso.'
+    explanation: 'La (a). Los dos estados salen de dos recurrencias distintas, entrenadas para dos trabajos distintos, y nada las obliga a haber elegido las mismas direcciones para las mismas cosas; $\mathbf{W}_a$ es exactamente el cambio de base que falta, aprendido junto al resto. La (b) confunde dos propiedades: la puntuación multiplicativa *sigue* siendo lineal en cada estado por separado —es una forma bilineal—, y aun así depende de la pareja, que es lo que hacía falta. La (c) le da a la matriz el trabajo del softmax, que es quien normaliza. La (d) es la trampa buena, y se cae escribiendo el producto escalar: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$ no se puede partir en una opinión sobre un vector más otra sobre el otro, así que ya es función de la pareja. Lo que le falta no es eso.'
     hint: 'Si las dos redes hubieran aprendido a usar sus coordenadas de forma distinta, ¿qué mediría el producto escalar?'
   - id: q-parametros-luong
     type: numeric
@@ -48,7 +48,7 @@ quiz:
       - { id: c, text: 'No, porque el softmax va por filas y hay que recorrerlas en orden para que cada una sume $1$.' }
       - { id: d, text: 'Sí durante el entrenamiento: el *teacher forcing* da de antemano los $T_y$ tokens correctos, así que los estados del decoder están todos disponibles antes de empezar.' }
     answer: a
-    explanation: 'La (a). El producto está escrito, y lo que falta no es la operación sino uno de sus operandos. La (d) es la respuesta que hay que descartar con cuidado, porque acierta en lo que da el *teacher forcing* y falla en lo que hace falta: tener los **tokens** de antemano no da los **estados**, que siguen saliendo de la recurrencia uno detrás de otro, cada uno con el contexto que su propio paso mezcló. La (b) confunde una propiedad del álgebra con una propiedad del cálculo: la matriz $\mathbf{S}$ no está prohibida, está por construir. La (c) atribuye un orden al softmax que no tiene —las filas se normalizan de forma independiente—. Guarda la conclusión: la puntuación ha dejado de ser el cuello, y lo que queda estrangulando el paralelismo es la recurrencia.'
+    explanation: 'La (a). El producto está escrito, y lo que falta no es la operación sino uno de sus operandos. La (d) es la respuesta que hay que descartar con cuidado, porque acierta en lo que da el *teacher forcing* y falla en lo que hace falta: tener los *tokens* de antemano no da los *estados*, que siguen saliendo de la recurrencia uno detrás de otro, cada uno con el contexto que su propio paso mezcló. La (b) confunde una propiedad del álgebra con una propiedad del cálculo: la matriz $\mathbf{S}$ no está prohibida, está por construir. La (c) atribuye un orden al softmax que no tiene —las filas se normalizan de forma independiente—. Guarda la conclusión: la puntuación ha dejado de ser el cuello, y lo que queda estrangulando el paralelismo es la recurrencia.'
     hint: '¿Qué hace falta para escribir la fila $i$ de $\mathbf{S}$, y quién lo produce?'
 challenges:
   - id: ch-atencion-multiplicativa
@@ -211,8 +211,8 @@ anterior desaparece del problema.
 
 Cuenta los pesos: $d_h^2$, y ninguno depende de la pareja ni de las longitudes, igual que antes. Con
 $d_h = 64$ son $4\,096$, contra los $4\,128$ que pedía la aditiva con $d_a = 32$. Prácticamente los
-mismos, lo cual es útil saberlo pronto: **lo que separa a las dos puntuaciones no es cuántos pesos
-tienen, sino qué operaciones hacen con ellos.**
+mismos, lo cual es útil saberlo pronto: *lo que separa a las dos puntuaciones no es cuántos pesos
+tienen, sino qué operaciones hacen con ellos.*
 
 Aquí conviene decir qué se está dejando fuera. Luong y sus coautores cambian además dónde entra el
 contexto —puntúan con el estado del paso en curso, $\mathbf{s}_i$, y mezclan el contexto *después* de
@@ -421,7 +421,7 @@ $\tanh$ y los $7.4$ MB intermedios no. La última depende de la máquina y del n
 dice algo, porque no está midiendo una diferencia pequeña: la multiplicativa tarda alrededor de un
 orden de magnitud menos, y el factor exacto cambia de una ejecución a otra sin acercarse nunca a
 uno. Y hay un experimento que lo deja claro. Cambia $d_a$ a $64$ y ejecuta otra vez: la aditiva pasa
-a hacer **menos** aritmética que la multiplicativa —$2.2$ millones de operaciones contra $4.9$— y
+a hacer *menos* aritmética que la multiplicativa —$2.2$ millones de operaciones contra $4.9$— y
 sigue tardando varias veces más que ella. Lo que se está midiendo no es cuántas operaciones hay.
 
 ## Comprueba tu intuición

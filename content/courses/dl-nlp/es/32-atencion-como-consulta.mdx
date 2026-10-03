@@ -37,7 +37,7 @@ quiz:
       - { id: c, text: 'Cambia sólo si los nuevos valores tienen otra dimensión, porque entonces el softmax normaliza sobre un eje de otro tamaño.' }
       - { id: d, text: 'No se mueve el mapa, y la salida tampoco: mientras los pesos sumen $1$, la mezcla devuelve lo mismo.' }
     answer: a
-    explanation: 'La (a), y es la separación entera en una frase: la clave decide **cuánto**, el valor decide **qué**. Escríbelo con los índices delante —$e_{ij} = a(\mathbf{q}_i, \mathbf{k}_j)$ no menciona $\mathbf{v}_j$ por ninguna parte— y la celda de arriba lo comprueba en una línea. La (b) es lo que uno diría antes de separar los papeles, y es justo lo que deja de ser cierto al separarlos. La (c) se inventa un eje: el softmax recorre las posiciones, y cuántas coordenadas tenga un valor no le incumbe. La (d) acierta en el mapa y falla en lo demás: los pesos son los mismos, pero se están aplicando a otros vectores.'
+    explanation: 'La (a), y es la separación entera en una frase: la clave decide *cuánto*, el valor decide *qué*. Escríbelo con los índices delante —$e_{ij} = a(\mathbf{q}_i, \mathbf{k}_j)$ no menciona $\mathbf{v}_j$ por ninguna parte— y la celda de arriba lo comprueba en una línea. La (b) es lo que uno diría antes de separar los papeles, y es justo lo que deja de ser cierto al separarlos. La (c) se inventa un eje: el softmax recorre las posiciones, y cuántas coordenadas tenga un valor no le incumbe. La (d) acierta en el mapa y falla en lo demás: los pesos son los mismos, pero se están aplicando a otros vectores.'
     hint: '¿Aparece $\mathbf{v}_j$ en la fórmula de la puntuación?'
   - id: q-rutas-del-gradiente
     type: multi
@@ -48,7 +48,7 @@ quiz:
       - { id: c, text: 'Si los dos papeles se vuelven a atar en un mismo vector, ese vector recibe la suma de las dos rutas, que es la fórmula de <Leccion slug="bahdanau">la lección sobre la atención aditiva</Leccion>.' }
       - { id: d, text: 'Al desatarlos, la derivada respecto de una puntuación deja de comparar nada: sin un vector que haga los dos papeles, la resta que aparecía en ella no se puede escribir.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras. Cada papel aparece en un solo sitio de las ecuaciones, así que la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> tiene un solo término que sumar para cada uno; atarlos es lo que crea el segundo, porque un vector que aparece dos veces recibe dos veces —la misma cuenta que hace un peso compartido en la recurrencia del bloque anterior—. La (d) es la trampa buena: la resta sigue ahí, sólo que ahora se lee con precisión, $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right)$. Lo que se compara con la mezcla es el **valor** de esa posición; la corrección cae sobre su **clave**. Con los dos papeles atados no había forma de ver cuál de los dos hacía cada cosa.'
+    explanation: 'Las tres primeras. Cada papel aparece en un solo sitio de las ecuaciones, así que la regla de la cadena de <Leccion slug="regla-de-la-cadena">su lección</Leccion> tiene un solo término que sumar para cada uno; atarlos es lo que crea el segundo, porque un vector que aparece dos veces recibe dos veces —la misma cuenta que hace un peso compartido en la recurrencia del bloque anterior—. La (d) es la trampa buena: la resta sigue ahí, sólo que ahora se lee con precisión, $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right)$. Lo que se compara con la mezcla es el *valor* de esa posición; la corrección cae sobre su *clave*. Con los dos papeles atados no había forma de ver cuál de los dos hacía cada cosa.'
     hint: 'Cuenta en cuántos sitios de las dos ecuaciones aparece cada uno de los dos vectores.'
   - id: q-donde-fue-wa
     type: single
@@ -66,7 +66,7 @@ challenges:
     prompt: |
       Escribe `atencion(Q, K, V)`, la función de esta lección. Recibe las consultas `Q`, de forma
       $(T_q, d_k)$ —una fila por consulta—, las claves `K`, de forma $(T_k, d_k)$, y los valores
-      `V`, de forma $(T_k, d_v)$: una clave y un valor por posición. Devuelve **la pareja**
+      `V`, de forma $(T_k, d_v)$: una clave y un valor por posición. Devuelve *la pareja*
       `(salida, A)`, en ese orden —la salida, de forma $(T_q, d_v)$, y el mapa de pesos
       $\mathbf{A}$, de forma $(T_q, T_k)$, ya normalizado por filas—.
 
@@ -238,7 +238,7 @@ pesos. El índice del denominador cambia de letra —$m$ donde antes iba $k$— 
 ocupada de aquí en adelante por las claves.
 
 Mira las formas, que es donde la reescritura empieza a pagar. La salida tiene $d_v$ coordenadas:
-el tamaño de un **valor**, no el de la consulta y no el número de parejas. $d_k$ vive entero dentro
+el tamaño de un *valor*, no el de la consulta y no el número de parejas. $d_k$ vive entero dentro
 de la comparación y muere ahí, en el número $e_{ij}$; $T_x$ vive en la fila de pesos y muere en la
 suma. De modo que la lista de parejas puede crecer todo lo que quiera y el hueco donde cae el
 resultado no se entera —que es la propiedad de forma de <Leccion slug="la-idea-de-atencion">esa lección</Leccion>, dicha ahora sin nombrar
@@ -278,8 +278,8 @@ $$
 \frac{\partial \ell}{\partial e_{ij}} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right).
 $$
 
-Quien se compara con la mezcla es el **valor** de esa posición; quien recibe la corrección es su
-**clave**. Con un solo vector haciendo los dos papeles esa frase no se podía ni escribir.
+Quien se compara con la mezcla es el *valor* de esa posición; quien recibe la corrección es su
+*clave*. Con un solo vector haciendo los dos papeles esa frase no se podía ni escribir.
 
 <Details summary="Y al atarlos otra vez sale la fórmula de la lección anterior">
 

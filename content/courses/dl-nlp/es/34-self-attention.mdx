@@ -66,11 +66,11 @@ challenges:
     prompt: |
       Escribe `auto_atencion(X, Wq, Wk, Wv)`. Recibe la frase ya vectorizada, `X` de forma
       $(T, d_{\text{model}})$ —una fila por posición—, y las tres proyecciones: `Wq` y `Wk` de
-      forma $(d_{\text{model}}, d_k)$ y `Wv` de forma $(d_{\text{model}}, d_v)$. Devuelve **la
-      pareja** `(salida, A)`, en ese orden: la salida de forma $(T, d_v)$ y el mapa de pesos
+      forma $(d_{\text{model}}, d_k)$ y `Wv` de forma $(d_{\text{model}}, d_v)$. Devuelve *la
+      pareja* `(salida, A)`, en ese orden: la salida de forma $(T, d_v)$ y el mapa de pesos
       $\mathbf{A}$ de forma $(T, T)$, ya normalizado por filas.
 
-      La puntuación es el producto escalar de cada consulta con cada clave **dividido por**
+      La puntuación es el producto escalar de cada consulta con cada clave *dividido por*
       $\sqrt{d_k}$, con $d_k$ leído de la forma de `Wq`. Escríbelo con productos de matrices, sin
       recorrer las parejas una a una, y no escribas en los arrays que recibes.
     packages: [numpy]
@@ -232,7 +232,7 @@ $$
 con $\mathbf{W}^Q, \mathbf{W}^K \in \mathbb{R}^{d_{\text{model}} \times d_k}$ y
 $\mathbf{W}^V \in \mathbb{R}^{d_{\text{model}} \times d_v}$, de modo que
 $\mathbf{Q}, \mathbf{K} \in \mathbb{R}^{T \times d_k}$ y $\mathbf{V} \in \mathbb{R}^{T \times d_v}$.
-Los superíndices de estas tres matrices son **etiquetas del papel que hace cada una**, no índices de
+Los superíndices de estas tres matrices son *etiquetas del papel que hace cada una*, no índices de
 capa: es el único sitio del curso donde un superíndice no cuenta capas, y viene de la notación del
 artículo. Aquí hay una sola de estas tres parejas de proyecciones; una capa de verdad lleva varias
 en paralelo, y eso es <Leccion slug="multi-head">una lección más adelante, sobre la atención multi-head</Leccion>.
@@ -252,7 +252,7 @@ justificado nadie; queda anotado y vuelvo a él al final.
 
 Mira la forma del mapa de pesos, que es donde se nota que la entrada y la salida son la misma
 frase. $\mathbf{Q}\mathbf{K}^{\top}$ multiplica una matriz $T \times d_k$ por una $d_k \times T$, así
-que $\mathbf{A} \in \mathbb{R}^{T \times T}$ es **cuadrada**: una fila y una columna por posición. En
+que $\mathbf{A} \in \mathbb{R}^{T \times T}$ es *cuadrada*: una fila y una columna por posición. En
 el bloque anterior era $T_y \times T_x$ y sus dos ejes eran dos frases distintas; aquí los dos ejes
 son la misma, y por eso la casilla $\alpha_{ii}$ existe y significa algo —cuánto de sí misma se
 queda una posición—. Cada fila sigue sumando $1$, porque el softmax sigue normalizando una fila cada
@@ -284,7 +284,7 @@ e_{ij} = \frac{\mathbf{x}_i^{\top}\mathbf{x}_j}{\sqrt{d_{\text{model}}}},
 $$
 
 y de ahí salen dos cosas, ninguna buena. La primera: $\mathbf{x}_i^{\top}\mathbf{x}_j =
-\mathbf{x}_j^{\top}\mathbf{x}_i$, de modo que la rejilla de puntuaciones es **simétrica**. Los pesos
+\mathbf{x}_j^{\top}\mathbf{x}_i$, de modo que la rejilla de puntuaciones es *simétrica*. Los pesos
 no lo son —cada fila se divide entre la suma de la suya, y esas sumas no tienen por qué coincidir—,
 pero el orden dentro de cada fila lo fija un número que no distingue quién pregunta de quién
 contesta. Un idioma sí los distingue: <W>están</W> necesita a <W>llaves</W> mucho más de lo que
@@ -306,8 +306,8 @@ mayor es $r$, más se cierra la fila sobre su diagonal—, y con longitudes dist
 conclusión no cambia de forma: la fila se la lleva entonces la posición cuyo vector sea más largo,
 que sigue siendo una propiedad de los vectores y no de lo que la frase necesita.
 
-Lo que remata el argumento no es ninguna de las dos, sino lo que falta en las dos. Esa capa **no
-tiene un solo parámetro**. No hay nada que ajustar, así que no hay forma de que aprenda que un verbo
+Lo que remata el argumento no es ninguna de las dos, sino lo que falta en las dos. Esa capa *no
+tiene un solo parámetro*. No hay nada que ajustar, así que no hay forma de que aprenda que un verbo
 en plural tiene que ir a buscar un sustantivo en plural. Las tres matrices son lo que separa los tres
 papeles —comparar no es ser comparado, y ninguno de los dos es aportar contenido— y, de paso, lo
 único que la capa puede aprender.

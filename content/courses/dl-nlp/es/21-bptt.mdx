@@ -284,7 +284,7 @@ capa de salida en vez del paso siguiente, y de ahí sale el otro renglón.
 
 Con un error por paso en la mano, los gradientes de los pesos salen sin recorrer nada más. Ahí
 aparece la suma que la lección anterior anunció. Mira dónde interviene $\mathbf{W}_{hh}$: en la
-preactivación de **cada** paso, $\mathbf{p}_t = \mathbf{W}_{hh}\mathbf{h}_{t-1} + \dots$, con $t$ de
+preactivación de *cada* paso, $\mathbf{p}_t = \mathbf{W}_{hh}\mathbf{h}_{t-1} + \dots$, con $t$ de
 $1$ a $T$. Es un solo peso alcanzado por $T$ caminos, uno por posición, y <Leccion slug="regla-de-la-cadena">la regla de la cadena</Leccion> del bloque anterior ya zanjó qué hacer con eso: entre caminos se suma. Cada camino aporta lo
 que <Leccion slug="backpropagation">la lección sobre backpropagation</Leccion> deja para una preactivación (el error por la entrada transpuesta), y el total es la
 suma de las $T$ aportaciones:

@@ -138,8 +138,8 @@ $$
 $$
 
 y por tanto $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert = \sqrt{2}$, sean cuales sean $u$ y $v$, y sea
-cual sea el tamaño del vocabulario. Ahí está lo que se buscaba, escrito en una línea: **todos los
-pares de palabras están exactamente a la misma distancia.** Ninguna queda entre otras dos, y nada de
+cual sea el tamaño del vocabulario. Ahí está lo que se buscaba, escrito en una línea: *todos los
+pares de palabras están exactamente a la misma distancia.* Ninguna queda entre otras dos, y nada de
 lo que la representación dice del idioma se puede leer mal, porque no dice nada. La geometría
 inventada de <Leccion slug="texto-como-numeros">la lección sobre el problema de representar el lenguaje</Leccion> ha desaparecido.
 
@@ -240,8 +240,8 @@ ninguna, y solo se van a ver $10^{10}$.
 
 La celda construye el one-hot de un vocabulario diminuto en español y comprueba sobre él las tres
 afirmaciones de arriba: que los vectores son ortogonales, que todas las distancias valen $\sqrt{2}$ y
-qué fracción de cada vector es distinta de cero. Después hace las cuentas de tamaño **sin reservar
-memoria**, que es la única forma de hacerlas: una tabla de 50 000 por 50 000 no cabe en el navegador,
+qué fracción de cada vector es distinta de cero. Después hace las cuentas de tamaño *sin reservar
+memoria*, que es la única forma de hacerlas: una tabla de 50 000 por 50 000 no cabe en el navegador,
 y ese es parte del resultado.
 
 <PyCell packages={["numpy"]} code={`
@@ -289,7 +289,7 @@ for ventana in [1, 2, 3, 5]:
 `} />
 
 Las tres comprobaciones salen exactas y una conviene mirarla dos veces: el conjunto de distancias
-entre pares tiene **un solo elemento**. No es que se parezcan, es que no hay más de un valor. Con
+entre pares tiene *un solo elemento*. No es que se parezcan, es que no hay más de un valor. Con
 ocho palabras se ve de un vistazo; con 50 000 sigue siendo el problema.
 
 La tabla de tamaños tiene una fila que sorprende y otra que no. La que no: 50 000 entradas piden

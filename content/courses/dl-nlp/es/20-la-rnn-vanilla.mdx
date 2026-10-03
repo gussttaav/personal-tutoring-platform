@@ -245,7 +245,7 @@ $t = 300$.
 </Details>
 
 Ese anidamiento contesta la pregunta de dónde queda guardado el orden. No está en los pesos (son los
-mismos en las tres posiciones) sino en **cuántas veces** ha atravesado cada token la matriz
+mismos en las tres posiciones) sino en *cuántas veces* ha atravesado cada token la matriz
 $\mathbf{W}_{hh}$ antes de llegar al final: en $\mathbf{h}_3$, el vector $\mathbf{x}_1$ la ha cruzado
 dos veces, $\mathbf{x}_2$ una y $\mathbf{x}_3$ ninguna. Cambia dos tokens de sitio y cambias esa
 cuenta.
@@ -298,7 +298,7 @@ allí estaba $T_{\max}$ y aquí no está. Leer documentos diez veces más largos
 Y el ahorro es lo de menos. Lo que cambia es a qué se dedica cada peso. En la concatenación, el trozo
 de la primera capa que leía la posición 2 y el que leía la posición 8 eran dos matrices distintas,
 ajustadas con ejemplos distintos, y la segunda se quedaba como salió de la inicialización si el
-corpus nunca traía nada interesante tan al final. En la recurrencia hay **una** $\mathbf{W}_{xh}$, y
+corpus nunca traía nada interesante tan al final. En la recurrencia hay *una* $\mathbf{W}_{xh}$, y
 la atraviesan los vectores de todas las posiciones de todos los documentos. Lo que aprenda a hacer
 con el vector de <W>guion</W> lo aplica esté <W>guion</W> donde esté, porque no tiene forma de saber
 dónde está.
