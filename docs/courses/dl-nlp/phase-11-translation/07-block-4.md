@@ -1,6 +1,6 @@
 # P11-07 — Block 4: The Bridge to Attention
 
-**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.3 done)
+**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.4 done)
 
 ## TL;DR
 
@@ -238,7 +238,7 @@ concentrated in **4.1 and 4.3**, and both of them spend it on the same decision.
 - [x] 4.1 `encoder-decoder`
 - [x] 4.2 `el-cuello-de-botella`
 - [x] 4.3 `la-idea-de-atencion`
-- [ ] 4.4 `bahdanau`
+- [x] 4.4 `bahdanau`
 - [ ] 4.5 `luong`
 - [ ] 4.6 `atencion-como-consulta`
 
@@ -339,8 +339,42 @@ Reuse these verbatim; they are settled, not open.
 - **The bridge names 4.4 "Bahdanau's attention".** The glossary calls Bahdanau's score *additive
   attention*, and the Spanish title is «Atención de Bahdanau (aditiva)»; when 4.4 settles its
   English title, check this label against it.
-- **Spanish nit, not fixed:** the warning Callout bolds «**posiciones de la entrada**» for emphasis,
-  which §5 reserves for italics; the English keeps the bold to match.
+- **Spanish nit, fixed in both locales while translating 4.4:** the warning Callout bolded
+  «posiciones de la entrada» for emphasis, which §5 reserves for italics; both locales now italicise
+  it, following 4.2's convention.
+
+**From 4.4** (`en/30-bahdanau.mdx`):
+
+- **Adapt, as classed, and no answer moved.** Under Option A the only adaptation is the three-row
+  example; the maths, the challenge and all five quiz answers are language-free. 1,993 words against
+  the Spanish 1,974, inside the target.
+- **Title "Bahdanau's attention (additive)"**, matching the label `en/29`'s bridge already used, so
+  that bridge needed no change. The glossary's *additive attention* names the score in the prose.
+- **The gloss, shortened for the three rows:** "the one holding <W>leí</W>, which says <W>i
+  read</W> in a single word", which tells why <W>i</W> and <W>read</W> both pull from it without
+  4.1's pro-drop clause.
+- **Code names**, for 4.5's and 4.6's cells: `puntua` → `score`, `softmax_filas` →
+  `softmax_rows`, `con_tanh` → `with_tanh`, `lineal` → `linear`, `mezcla` → `mix`, `perdida` →
+  `loss`, `Hmas` / `Hmenos` → `Hplus` / `Hminus`, `copias` → `copies`; the two routes `valor` /
+  `puntuacion` → `via_value` / `via_score` (`score` is the function). The challenge's `alineacion`
+  → `alignment`, after `en/24`'s `gru_step`, so 4.5's `alineacion_multiplicativa` becomes
+  `multiplicative_alignment`. Second cell's labels column-aligned at 30.
+- **Terms:** "read-out vector" for «vector de lectura», bold at its definition (NOTATION.md's
+  "read-out"); "the value route" and "the score route" for the two routes; "shift invariance";
+  "numerical probe, central difference"; "the drop-down" for the `<Details>`.
+- **Printed in Pyodide and quoted**, identical to the Spanish cells: top weights 0.176–0.187 against
+  an even 0.167; rows 1 and 8 equal without the tanh; route norms 2.8303 and 0.2556 (11.07×), each
+  alone off by 1.6e-01 and 8.9e-01, the two added by 4.6e-10. With `va` at `* 2.0`: top weights
+  0.205–0.247, norms 2.94 and 1.12, which is the prose's "the two norms draw closer". The widget's
+  rows 2–4 are `i`, `read`, `a` at 0.74, 0.81, 0.05 under `leí`.
+- **Emphasis is italics, never bold, in both locales** (Gustavo, 2026-10-02, following 4.2). The
+  Spanish 4.4 bolded five words for emphasis; both locales now italicise them. The same pass fixed
+  4.3's Callout and 4.2's `q-cuenta-tmax` in Spanish, and eleven English emphasis bolds that earlier
+  translations had carried over (`en/04` ×3, `en/07`, `en/15` ×4, `en/18`, `en/25`). The Spanish
+  outside Block 4 still has about 30 and is a separate sweep.
+- **Fixed in Spanish while translating:** «las dos últimas líneas» pointed at three lines of output
+  (now «lo que sale tras la línea en blanco»), and «ejecuta otra vez» after changing `va` now says
+  «las dos celdas», because the second cell reads the first's weights.
 
 ## The direction decision — make it once, in 4.1
 
