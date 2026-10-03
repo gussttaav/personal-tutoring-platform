@@ -1,0 +1,461 @@
+---
+slug: luong
+title: "Luong's attention (multiplicative)"
+block: 4
+order: 5
+minutes: 27
+summary: "The same slot as the previous lesson, filled another way: rather than projecting the two states and squashing their sum, the score multiplies them through a single matrix. The result has no hidden layer, nearly the same number of weights and a shorter gradient, and one property the additive score lacks: the whole grid of scores is a product of matrices. The lesson compares the two on cost (operations, intermediate memory and the shape of the computation) and says what still prevents computing the grid in one go."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-que-mide-wa
+    type: single
+    prompt: 'What does $\mathbf{W}_a$ add over scoring with the bare dot product, $e_{ij} = \mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$?'
+    options:
+      - { id: a, text: 'A common basis. The dot product takes for granted that coordinate $k$ of the decoder talks about the same thing as coordinate $k$ of the encoder, and on the same scale; $\mathbf{W}_a$ rewrites one state in the other''s coordinates before measuring, and along the way lets the two sides differ even in how many coordinates they have.' }
+      - { id: b, text: 'A non-linearity. Without it the score would be linear in each state and couldn''t tell pairs apart; with the matrix in between, it stops being linear.' }
+      - { id: c, text: 'Normalisation. The matrix shares out the row so that the $T_x$ scores end up summing to $1$, which the dot product on its own doesn''t guarantee.' }
+      - { id: d, text: 'Dependence on the pair. The dot product gives an opinion on each vector separately, while the matrix mixes the two, which is the condition the previous lesson declared non-negotiable.' }
+    answer: a
+    explanation: '(a). The two states come out of two different recurrences, trained for two different jobs, and nothing forces them to have chosen the same directions for the same things; $\mathbf{W}_a$ is exactly the missing change of basis, learned along with everything else. (b) confuses two properties: the multiplicative score *is still* linear in each state separately (it''s a bilinear form), and even so it depends on the pair, which is what was needed. (c) gives the matrix the softmax''s job, and the softmax is what normalises. (d) is the good trap, and it falls apart once you write the dot product out: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$ can''t be split into an opinion about one vector plus another about the other, so it''s already a function of the pair. What it lacks isn''t that.'
+    hint: 'If the two networks had learned to use their coordinates differently, what would the dot product measure?'
+  - id: q-parametros-luong
+    type: numeric
+    prompt: 'An encoder and a decoder of $d_h = 64$ coordinates. How many weights does the multiplicative score have?'
+    answer: 4096
+    tolerance: 0
+    unit: weights
+    explanation: 'A single $64 \times 64$ matrix: $4\,096$ weights. Compare it with the additive score at the same size, which with $d_a = 32$ asked for $2 \cdot 32 \cdot 64 + 32 = 4\,128$: thirty-two weights of difference out of four thousand. The choice between the two isn''t decided there, and it''s worth being clear about that before looking at the costs: what separates the two scores is what operations they perform with their weights, not how many they have. Note too that neither count mentions $T_x$ or $T_y$: there is one set of weights for every pair of every sentence.'
+    hint: 'What shape is the matrix, and is there anything else to count?'
+  - id: q-memoria-intermedia
+    type: single
+    prompt: 'You score a pair of sentences of $T_x = T_y = 60$ tokens with $d_h = d_a = 256$. What does the additive score store that the multiplicative one doesn''t?'
+    options:
+      - { id: a, text: 'The grid of vectors before the read-out: $60 \cdot 60$ vectors of $256$ coordinates, $921\,600$ numbers, because the $\tanh$ acts on each one before $\mathbf{v}_a$ reduces it to a score. The multiplicative score goes from the states to the $3\,600$ scores without building anything larger than the grid itself.' }
+      - { id: b, text: 'The two projections of the states, $60 + 60$ vectors of $256$ coordinates, which the multiplicative score saves because it projects nothing.' }
+      - { id: c, text: 'The $3\,600$ unnormalised scores. The multiplicative score doesn''t store them: the softmax happens inside the same matrix product.' }
+      - { id: d, text: 'Nothing. The two store the same intermediate numbers; what changes is how many multiplications they do with them.' }
+    answer: a
+    explanation: '(a), and the factor is exactly $d_a$: one number per pair against $d_a$ numbers per pair. The cause is the usual one (a non-linear function applied to a sum doesn''t distribute over its terms), so the $(T_y, T_x, d_a)$ block has to be built in full before it can be read. In double-precision floating point that''s $7.4$ MB for a single pair of sentences, and multiply it by the batch size. (b) inverts the roles: the multiplicative score also projects one side, and those projections are the cheap part in both. (c) invents a softmax that doesn''t exist: normalising is a separate operation, and both scores keep their unnormalised scores in the same way. (d) is exactly what the count refutes.'
+    hint: 'At what point in the additive computation is there one number per pair, and at what point are there $d_a$?'
+  - id: q-sigue-secuencial
+    type: single
+    prompt: 'With the multiplicative score, can a recurrent decoder compute the whole grid $\mathbf{S}\mathbf{W}_a\bar{\mathbf{H}}^{\top}$ in one go while it translates?'
+    options:
+      - { id: a, text: 'No, because $\mathbf{S}$ doesn''t exist yet: row $i$ asks for $\mathbf{s}_{i-1}$, which comes out of a recurrence that needs $\mathbf{c}_{i-1}$, which comes out of the previous row. The only thing that comes out of the loop is $\mathbf{W}_a\bar{\mathbf{H}}^{\top}$, which depends only on the source.' }
+      - { id: b, text: 'Yes. A matrix product imposes no order on its rows, so all $T_y$ of them are computed at once.' }
+      - { id: c, text: 'No, because the softmax runs over rows and they have to be visited in order for each one to sum to $1$.' }
+      - { id: d, text: 'Yes, during training: *teacher forcing* hands over the $T_y$ correct tokens in advance, so the decoder states are all available before it starts.' }
+    answer: a
+    explanation: '(a). The product is written down, and what''s missing isn''t the operation but one of its operands. (d) is the answer to rule out carefully, because it''s right about what *teacher forcing* provides and wrong about what''s needed: having the *tokens* in advance doesn''t give you the *states*, which still come out of the recurrence one after another, each with the context its own step mixed. (b) confuses a property of the algebra with a property of the computation: the matrix $\mathbf{S}$ isn''t forbidden, it''s yet to be built. (c) gives the softmax an order it doesn''t have: each row is normalised on its own. Keep the conclusion: the score has stopped being the bottleneck, and what''s left strangling the parallelism is the recurrence.'
+    hint: 'What do you need to write row $i$ of $\mathbf{S}$, and what produces it?'
+challenges:
+  - id: ch-atencion-multiplicativa
+    prompt: |
+      Write `multiplicative_alignment(S, H, Wa)`. It takes the decoder states `S`, of shape
+      $(T_y, d_s)$ (row $i$ is $\mathbf{s}_{i-1}$), the encoder states `H`, of shape $(T_x, d_h)$,
+      and the score's matrix, of shape $(d_s, d_h)$. It returns the matrix $\mathbf{A}$ of shape
+      $(T_y, T_x)$, already normalised by rows.
+
+      It's the lesson's score, $e_{ij} = \mathbf{s}_{i-1}^{\top}\mathbf{W}_a\bar{\mathbf{h}}_j$,
+      followed by a softmax over the input positions. Write it with matrix products, without
+      going through the pairs one by one, and don't write into the arrays you receive.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def multiplicative_alignment(S, H, Wa):
+          # your code here
+          pass
+    tests:
+      - name: "the shape is (T_y, T_x) and every row sums to 1"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          S, H = rng.normal(size=(4, 6)), rng.normal(size=(9, 6))
+          Wa = rng.normal(size=(6, 6))
+          A = multiplicative_alignment(S, H, Wa)
+          assert A is not None, 'multiplicative_alignment has to return the matrix, not print it'
+          A = np.asarray(A)
+          assert A.shape == (4, 9), 'one row per output step and one column per input position'
+          assert np.allclose(A.sum(axis=1), 1.0), 'the softmax runs over rows: each step shares one unit out among the positions'
+      - name: "it matches scoring the pairs one by one"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          S, H = rng.normal(size=(4, 6)), rng.normal(size=(9, 6))
+          Wa = rng.normal(size=(6, 6))
+          E = np.array([[S[i] @ Wa @ H[j] for j in range(9)] for i in range(4)])
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = multiplicative_alignment(S, H, Wa)
+          assert A is not None, 'multiplicative_alignment has to return the matrix of weights'
+          assert np.allclose(np.asarray(A), Z / Z.sum(axis=1, keepdims=True)), 'the score of the pair (i, j) multiplies S[i] against H[j] through Wa'
+      - name: "the two sides can be different widths"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(11)
+          S, H = rng.normal(size=(5, 3)), rng.normal(size=(7, 8))
+          Wa = rng.normal(size=(3, 8))
+          A = multiplicative_alignment(S, H, Wa)
+          assert A is not None, 'multiplicative_alignment has to return the matrix of weights'
+          A = np.asarray(A)
+          assert A.shape == (5, 7), 'Wa is (d_s, d_h): the decoder comes in on the left and the encoder on the right'
+          assert np.allclose(A.sum(axis=1), 1.0), 'every row still sums to 1 even when the two sides are different widths'
+      - name: "with Wa = I out comes the dot product"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(2)
+          S, H = rng.normal(size=(6, 5)), rng.normal(size=(4, 5))
+          E = S @ H.T
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          A = multiplicative_alignment(S, H, np.eye(5))
+          assert A is not None, 'multiplicative_alignment has to return the matrix of weights'
+          assert np.allclose(np.asarray(A), Z / Z.sum(axis=1, keepdims=True)), 'without a change of basis the score is the dot product of the two states'
+      - name: "it doesn't overflow with large scores"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(5)
+          S, H = rng.normal(size=(4, 6)), rng.normal(size=(9, 6))
+          Wa = rng.normal(size=(6, 6)) * 300
+          A = multiplicative_alignment(S, H, Wa)
+          assert A is not None, 'multiplicative_alignment has to return the matrix of weights'
+          assert np.isfinite(np.asarray(A)).all(), 'it overflows: subtract the maximum of each row before exponentiating'
+      - name: "it doesn't write into what it receives"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(14)
+          S, H = rng.normal(size=(4, 6)), rng.normal(size=(9, 6))
+          Wa = rng.normal(size=(6, 6))
+          copies = [S.copy(), H.copy(), Wa.copy()]
+          multiplicative_alignment(S, H, Wa)
+          assert all(np.array_equal(u, v) for u, v in zip([S, H, Wa], copies)), "don't write into the arrays you receive: E -= E.max(...) on a view spoils them"
+    solution: |
+      import numpy as np
+
+
+      def multiplicative_alignment(S, H, Wa):
+          E = (S @ Wa) @ H.T                      # (T_y, T_x): the whole grid, two products
+          Z = np.exp(E - E.max(axis=1, keepdims=True))
+          return Z / Z.sum(axis=1, keepdims=True)
+    explanation: |
+      The whole score is two matrix products and no loop: `S @ Wa` rewrites the $T_y$ decoder
+      states in the encoder's coordinates (one row each) and the second product contracts them
+      against the $T_x$ source states, leaving one number per pair. The parentheses don't change
+      the result but they do change the work: `Wa @ H.T` depends only on the source, so a real
+      translator would compute it once per sentence and reuse it across the $T_y$ steps.
+      Subtracting the maximum is the shift invariance from <Leccion slug="funcion-de-perdida">the
+      lesson on loss functions</Leccion>, used as it was there: it changes what gets
+      exponentiated, not what comes out.
+reading:
+  - kind: paper
+    title: 'Effective Approaches to Attention-based Neural Machine Translation'
+    authors: 'Luong, Pham and Manning'
+    year: '2015'
+    venue: 'arXiv:1508.04025'
+    lang: en
+    url: 'https://arxiv.org/abs/1508.04025'
+    note: 'Its §3.1 has the multiplicative score (their "general", s times W_a times h) and the weightless variant. They also move the context after the RNN and add input feeding (§3.3); the course keeps only the score.'
+---
+
+{/* COURSE-P5-04: Block 4, Lesson 5. COURSE-P11-07: English translation. */}
+
+A model with attention scores pairs: one number for each output step and each input position, and
+those numbers give the weights that mix the encoder states. The previous lesson, on Bahdanau's
+additive attention, filled the slot that computes them with a small network (a hidden layer of $d_a$
+units and a linear read-out, trained along with everything else) and left one cost standing: scoring
+a pair means building a whole vector of $d_a$ coordinates before reducing it to the one number that
+was needed.
+
+The question in this lesson is whether it takes a hidden layer to say that two vectors correspond.
+Linear algebra has been returning that number since Block 1 with no network in between, and in 2015
+Luong, Pham and Manning proposed using it as it stands, with a single adjustment. What comes out
+doesn't look like a network: it looks like a product. And since the two forms are comparable in
+quality (the experiments in their papers measure that, not a derivation), what decides between them
+is everything else: what they cost, what memory they move and what shape their computation takes.
+
+Go back to what the score has to do. A number that goes up when two vectors point the same way has
+been in the course since <Leccion slug="bolsa-de-palabras">the lesson on the bag of words</Leccion>:
+the dot product $\mathbf{u}^{\top}\mathbf{v}$, of which cosine similarity is the normalised version.
+It would be a free score (zero parameters) and it would be a function of the pair, which is the
+condition the previous lesson declared non-negotiable: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$
+can't be split into an opinion about one state plus another about the other.
+
+What fails is a hidden assumption. The dot product adds coordinate against coordinate, so it takes
+for granted that coordinate $k$ of the decoder talks about the same thing as coordinate $k$ of the
+encoder, and on the same scale. They're two different recurrences, with two sets of weights and two
+jobs (one reads Spanish, the other writes English), and nothing forces them to have chosen the same
+directions for the same things, nor even to have the same number of coordinates. So the fix is to
+change basis first and measure afterwards.
+
+<Callout type="intuition" title="The idea in one sentence">
+Scoring a pair is measuring how alike two vectors are; the only thing to learn is which basis to
+compare them in.
+</Callout>
+
+## Multiplying instead of adding
+
+The multiplicative score puts a matrix between the two states and does nothing else:
+
+$$
+e_{ij} = a\left(\mathbf{s}_{i-1}, \bar{\mathbf{h}}_j\right)
+= \mathbf{s}_{i-1}^{\top}\mathbf{W}_a\bar{\mathbf{h}}_j \in \mathbb{R},
+$$
+
+with $\mathbf{W}_a \in \mathbb{R}^{d_h \times d_h}$. Read it from right to left:
+$\mathbf{W}_a\bar{\mathbf{h}}_j$ is the encoder state rewritten in the decoder's coordinates, and the
+dot product with $\mathbf{s}_{i-1}$ measures what a dot product always measures. There's no hidden
+layer, no saturation and no space of the function's own: the previous lesson's $d_a$ drops out of the
+problem.
+
+Count the weights: $d_h^2$, and none of them depends on the pair or on the lengths, as before. With
+$d_h = 64$ that's $4\,096$, against the $4\,128$ the additive score asked for with $d_a = 32$.
+Practically the same, which is useful to know early: *what separates the two scores isn't how many
+weights they have, but what operations they perform with them.*
+
+This is the place to say what the course leaves out. Luong, Pham and Manning also change where the
+context comes in (they score with the current step's state, $\mathbf{s}_i$, and mix in the context
+*after* the recurrence instead of inside it), and this course doesn't follow them: it keeps the
+placement from <Leccion slug="la-idea-de-atencion">the lesson on the idea of attention</Leccion>, so
+that between that lesson, the previous one and this one a single thing changes. The comparison is of
+the function $a$, with everything else held still.
+
+The gradient is shorter than the additive score's, for the same reason the computation is. The three
+derivatives of a score come from differentiating a product of three factors:
+
+$$
+\nabla_{\mathbf{W}_a} e_{ij} = \mathbf{s}_{i-1}\bar{\mathbf{h}}_j^{\top},
+\qquad
+\nabla_{\bar{\mathbf{h}}_j} e_{ij} = \mathbf{W}_a^{\top}\mathbf{s}_{i-1},
+\qquad
+\nabla_{\mathbf{s}_{i-1}} e_{ij} = \mathbf{W}_a\bar{\mathbf{h}}_j.
+$$
+
+None of them carries a factor $1 - \tanh^{2}$, because there's no $\tanh$ to differentiate. And
+everything *above* $e_{ij}$ in the chain is the previous lesson's, without a comma changed: the step
+through the softmax and the derivative
+
+$$
+\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)
+$$
+
+never mentioned what form $a$ had. The attention stays as it is; what changes is the alignment model.
+
+<Details summary="And the accumulation over the pairs is a product too">
+
+$\mathbf{W}_a$ is one matrix for all $T_x \cdot T_y$ pairs, so its gradient adds them all up:
+
+$$
+\nabla_{\mathbf{W}_a}\ell = \sum_{i=1}^{T_y}\sum_{j=1}^{T_x} \frac{\partial \ell}{\partial e_{ij}}\,\mathbf{s}_{i-1}\bar{\mathbf{h}}_j^{\top},
+$$
+
+which is the grid of derivatives set between the decoder states and the encoder states (two matrix
+products, with the grid in the middle). The backward pass has the same shape as the forward pass,
+which is what makes the next section hold for both.
+
+</Details>
+
+### Without a matrix: the dot product
+
+The extreme case is to take $\mathbf{W}_a$ equal to the identity, which leaves the score as
+
+$$
+e_{ij} = \mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j,
+$$
+
+and the function $a$ without a single parameter to train. What it asks in return is exactly what the
+matrix was there to avoid asking: that the two sides be the same width ($d_h$ coordinates in both) and
+that they have also learned to use those coordinates in the same way. That's a strong demand when the
+encoder and the decoder are two different networks, each trained for its own language, and it's why
+the matrix is the option Luong's paper leaves as the default. The parameter-free variant doesn't
+leave the course (it's the cheapest way to score that exists), but it only holds up where the two
+sides share a basis.
+
+## The whole grid in one matrix product
+
+So far the lesson has written the scores one at a time. Stack them. Store the encoder states by rows
+in $\bar{\mathbf{H}} \in \mathbb{R}^{T_x \times d_h}$ (row $j$ is $\bar{\mathbf{h}}_j^{\top}$,
+transposed because in this course vectors are columns) and the decoder's in
+$\mathbf{S} \in \mathbb{R}^{T_y \times d_h}$, whose row $i$ is $\mathbf{s}_{i-1}^{\top}$, the state
+that scores step $i$. Then the $T_x \cdot T_y$ scores are a single object:
+
+$$
+\mathbf{A} = \text{softmax}\left(\mathbf{S}\mathbf{W}_a\bar{\mathbf{H}}^{\top}\right) \in \mathbb{R}^{T_y \times T_x},
+$$
+
+with the softmax applied by rows, that is, over the input positions, as in
+<Leccion slug="la-idea-de-atencion">the lesson on the idea of attention</Leccion>. Check entry
+$(i, j)$: row $i$ of $\mathbf{S}\mathbf{W}_a$ is $\mathbf{s}_{i-1}^{\top}\mathbf{W}_a$ and column $j$
+of $\bar{\mathbf{H}}^{\top}$ is $\bar{\mathbf{h}}_j$, so their product is $e_{ij}$ and nothing else.
+
+The additive score can't be written this way, and not for lack of skill. Its two projections do come
+out, but between the sum and the read-out sits the $\tanh$, so a three-dimensional block (one pair,
+and within each pair $d_a$ coordinates) has to be materialised before it can be reduced to numbers.
+
+<Figure
+  src="/courses/dl-nlp/atencion-costes.en.svg"
+  alt="On the left, a three-dimensional block of cells labelled T sub y by T sub x by d sub a, with a label saying a sum, a tanh and a read-out in every cell; an arrow reduces it to a flat grid of T sub y by T sub x. On the right, two flat rectangles, a tall one of T sub y by d sub h labelled S times W sub a and a wide one of d sub h by T sub x labelled H bar transposed, joined by a product sign; an arrow takes them to a flat grid identical to the one on the left."
+  caption="The two scores reach the same grid. The additive one first builds one number per pair and per coordinate of the alignment model; the multiplicative one goes from the states to the grid with two products and nothing in between."
+/>
+
+The counts put a price on that difference. Take $T_x = T_y = 60$ and $d_h = d_a = 256$, which is a
+long sentence and a small model. In products and sums the two are close: about $8.8$ million for the
+additive score against about $4.9$ million for the multiplicative one, a factor of less than two, and
+in both most of it goes on the projections. Where they part ways is everything else. The additive
+score evaluates the $\tanh$ $921\,600$ times and the multiplicative one not at all. And above all,
+the additive score has to store those $921\,600$ numbers ($7.4$ MB for each pair of sentences, before
+multiplying by the batch size), while the multiplicative one needs only the $3\,600$ scores and the
+$60$ states already projected. Between the two grids the factor is exactly $d_a$: one number per pair
+against $d_a$ numbers per pair.
+
+And there's a difference of shape that doesn't show in any of those numbers. The multiplicative
+score's work is two matrix products; the additive score's is sums and $\tanh$ over a
+three-dimensional block, coordinate by coordinate. The same amount of arithmetic, split up in those
+two ways, doesn't cost the same on the hardware that trains these networks, which is built precisely
+for the first (that's <Leccion slug="forward-pass">the lesson on the forward pass</Leccion>, measured
+there with a loop against a product).
+
+What's left is the honest part, and it's what opens the next block. Writing $\mathbf{S}$ means
+having all $T_y$ decoder states, and the decoder is recurrent: $\mathbf{s}_{i-1}$ needs
+$\mathbf{c}_{i-1}$, which needs row $i-1$ of $\mathbf{A}$, which needs $\mathbf{s}_{i-2}$. While it
+translates, the grid fills up row by row and the big product never gets to happen; what does come out
+of the loop is $\mathbf{W}_a\bar{\mathbf{H}}^{\top}$, which depends only on the source and needs
+computing once per sentence, leaving each decoder step a single matrix-vector product:
+
+$$
+\left(\bar{\mathbf{H}}\mathbf{W}_a^{\top}\right)\mathbf{s}_{i-1} \in \mathbb{R}^{T_x},
+$$
+
+row $i$ of unnormalised scores. The score is no longer the computation's bottleneck. What strangles
+the parallelism now is the recurrence that produces the states.
+
+## The two scores, in NumPy
+
+The first cell computes the multiplicative alignment the short way and checks that the product says
+nothing different from scoring the pairs one by one. Look at the last two lines too: with
+$\mathbf{W}_a$ equal to the identity, the score comes down to the dot product of the two states.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+T_y, T_x, d_h, d_a = 8, 6, 5, 4
+rng = np.random.default_rng(4)
+S = rng.normal(size=(T_y, d_h)) * 0.6      # row i: the state s_{i-1} that scores step i
+H = rng.normal(size=(T_x, d_h)) * 0.6      # row j: the encoder state at position j
+Wa = rng.normal(size=(d_h, d_h)) * 0.4     # untrained
+
+
+def softmax_rows(E):
+    Z = np.exp(E - E.max(axis=1, keepdims=True))     # shift invariance
+    return Z / Z.sum(axis=1, keepdims=True)
+
+
+E = (S @ Wa) @ H.T                                   # (T_y, T_x): the whole grid, two products
+A = softmax_rows(E)
+E_loop = np.array([[S[i] @ Wa @ H[j] for j in range(T_x)] for i in range(T_y)])
+
+print("shapes:  S", S.shape, " H", H.shape, " Wa", Wa.shape, " ->  A", A.shape)
+print("every row sums to 1:", bool(np.allclose(A.sum(axis=1), 1.0)))
+print("the product and the loop agree:", bool(np.allclose(E, E_loop)))
+print("weights of a:  multiplicative", d_h * d_h, " additive", 2 * d_a * d_h + d_a)
+print("largest weight in each row:", np.round(A.max(axis=1), 3), " uniform:", round(1 / T_x, 3))
+print()
+
+# Wa = I: no change of basis, and the score is the dot product of the two states.
+identity = softmax_rows((S @ np.eye(d_h)) @ H.T)
+print("with Wa = I, row 1:", np.round(identity[0], 3))
+print("same as scoring with S @ H.T:", bool(np.allclose(identity, softmax_rows(S @ H.T))))
+`} />
+
+The line that matters is the loop's: scoring pair by pair gives the same numbers as the product,
+which is the only thing to check about the short form. The largest-weight line holds a surprise.
+With freshly initialised weights the map already shares out unevenly (one row takes $0.851$ when an
+even share would be $0.167$), and that didn't happen in the previous lesson at a similar size, where
+the largest weight in each row hovered around the even share. The difference is the $\tanh$: it
+bounds each coordinate before $\mathbf{v}_a$ reads it, so the additive score starts out small. The
+multiplicative score has nothing to bound it, and its size grows with the size of the states. That
+peak isn't an alignment, it's the direction $\mathbf{W}_a$ happened to take at random; what the
+formula guarantees isn't that it starts out saying something, but that there's a route along which to
+train it. Unbounded scores blowing up as the model grows is a real problem, with a one-line fix that
+arrives in the next block.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+import time
+
+T_y = T_x = 60
+d_h, d_a = 256, 256
+rng = np.random.default_rng(0)
+S, H = rng.normal(size=(T_y, d_h)) * 0.5, rng.normal(size=(T_x, d_h)) * 0.5
+Wa = rng.normal(size=(d_h, d_h)) * 0.05
+Wsa, Wha = rng.normal(size=(d_a, d_h)) * 0.05, rng.normal(size=(d_a, d_h)) * 0.05
+va = rng.normal(size=d_a)
+
+
+def additive(S, H):
+    P = (S @ Wsa.T)[:, None, :] + (H @ Wha.T)[None, :, :]   # (T_y, T_x, d_a): it has to be built
+    return np.tanh(P) @ va                                  # (T_y, T_x)
+
+
+def multiplicative(S, H):
+    return S @ (Wa @ H.T)                                   # (T_y, T_x): two products and nothing else
+
+
+t0 = time.perf_counter(); Ea = additive(S, H)
+t1 = time.perf_counter(); Em = multiplicative(S, H)
+t2 = time.perf_counter()
+
+print("same output shape:", Ea.shape, Em.shape)
+print("products and sums:     additive %9d   multiplicative %9d"
+      % ((T_x + T_y) * d_a * d_h + T_x * T_y * d_a, T_x * d_h * d_h + T_x * T_y * d_h))
+print("tanh evaluations:      additive %9d   multiplicative %9d" % (T_x * T_y * d_a, 0))
+print("intermediate numbers:  additive %9d   multiplicative %9d"
+      % (T_x * T_y * d_a, T_x * d_h + T_x * T_y))
+print("                       %.1f MB against %.2f MB (8 bytes per number)"
+      % (T_x * T_y * d_a * 8 / 1e6, (T_x * d_h + T_x * T_y) * 8 / 1e6))
+print("time:                  additive %7.1f ms   multiplicative %7.1f ms"
+      % ((t1 - t0) * 1e3, (t2 - t1) * 1e3))
+`} />
+
+Everything above the last line is the previous section told by the code: the arithmetic is similar,
+the $\tanh$ and the $7.4$ MB of intermediates aren't. The last line depends on the machine and the
+browser, and even so it says something, because it isn't measuring a small difference: the
+multiplicative score takes around an order of magnitude less time, and the exact factor changes from
+one run to the next without ever getting close to one. And there's an experiment that settles it.
+Change $d_a$ to $64$ and run the cell again: the additive score now does *less* arithmetic than the
+multiplicative one ($2.2$ million operations against $4.9$) and still takes longer, about twice as
+long in the runs behind this lesson.
+What the clock is measuring isn't how many operations there are.
+
+## Test your intuition
+
+Four questions: what the matrix adds, how many weights the score carries, what the additive score
+stores that the other doesn't, and whether the grid can be computed in one go.
+
+<Quiz id="q-que-mide-wa" />
+
+<Quiz id="q-parametros-luong" />
+
+<Quiz id="q-memoria-intermedia" />
+
+<Quiz id="q-sigue-secuencial" />
+
+<CodeChallenge id="ch-atencion-multiplicativa" />
+
+---
+
+With the two scores side by side, something shows that one alone kept hidden. In both, the encoder
+state enters the mechanism twice and through different doors: once as an argument of $a$, which is
+where its weight is decided, and once as a term of $\mathbf{c}_i$, which is where its content ends up
+reaching the decoder. The decoder state, by contrast, enters only once, and always from the same
+side: it's the one asking. Three roles, and neither formula requires the first two to be played by
+the same vector: one vector plays both only because nobody has proposed separating them yet.
+
+Separating them and giving them names (query, key and value) is
+<Leccion slug="atencion-como-consulta">the next lesson, the last in the block</Leccion>, and it's the
+most important one in this course. It doesn't change a single equation you've already seen: it
+rewrites the same ones in the words and symbols Block 5 writes everything in, including the choice of
+score this lesson has now justified. Nor does that change of name fix what was left pending here
+(the states still arriving one at a time), which is why it pays to reach the next block with the
+names already in place.

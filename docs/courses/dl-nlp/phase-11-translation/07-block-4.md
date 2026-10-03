@@ -1,6 +1,6 @@
 # P11-07 — Block 4: The Bridge to Attention
 
-**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.4 done)
+**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.5 done)
 
 ## TL;DR
 
@@ -239,7 +239,7 @@ concentrated in **4.1 and 4.3**, and both of them spend it on the same decision.
 - [x] 4.2 `el-cuello-de-botella`
 - [x] 4.3 `la-idea-de-atencion`
 - [x] 4.4 `bahdanau`
-- [ ] 4.5 `luong`
+- [x] 4.5 `luong`
 - [ ] 4.6 `atencion-como-consulta`
 
 ## Decisions fixed by a translated lesson
@@ -375,6 +375,42 @@ Reuse these verbatim; they are settled, not open.
 - **Fixed in Spanish while translating:** «las dos últimas líneas» pointed at three lines of output
   (now «lo que sale tras la línea en blanco»), and «ejecuta otra vez» after changing `va` now says
   «las dos celdas», because the second cell reads the first's weights.
+
+**From 4.5** (`en/31-luong.mdx`):
+
+- **Transpose, as classed, and no answer moved.** Under Option A the one pair-dependent clause stays
+  as "one reads Spanish, the other writes English". 1,860 words against the Spanish 1,922, inside the
+  target. Title "Luong's attention (multiplicative)", the label `en/30`'s bridge already used ("Luong's
+  attention, the multiplicative kind"), so that bridge needed no change.
+- **Code names**, for 4.6's cells: `alineacion_multiplicativa` → `multiplicative_alignment` (as 4.4
+  predicted), `softmax_filas` → `softmax_rows` (4.4's), `E_bucle` → `E_loop`, `identidad` →
+  `identity`, `aditiva` / `multiplicativa` → `additive` / `multiplicative`, `copias` → `copies`.
+  Second cell's labels column-aligned at 23, as in the Spanish format strings.
+- **Terms:** "width" for «medir lo mismo / distinto», the number of coordinates a vector has (`en/30`
+  already says "the same width"), so the challenge test is "the two sides can be different widths";
+  "slot" for the score's «casilla» (`en/29`'s and `en/30`'s), "cell" for «casilla» inside the figure's
+  block; "grid" for «rejilla»; "change of basis"; "bilinear form". «Luong y sus coautores» becomes
+  "Luong, Pham and Manning" or "Luong's paper", which assigns no pronoun.
+- **`atencion-costes.en.svg`**: `additive`, `multiplicative`, `a sum, a tanh and a read-out` / `in
+  every cell`, `two products and nothing else`, `T_y × T_x scores`; `aria-label` and comments
+  translated, class names kept. The asset table above missed «en cada casilla». Measured in the 360
+  `viewBox`: the right-hand label x 196.9–347.1 against the Spanish 195.3–348.7 (its wording matches
+  the cost cell's code comment; "nothing in between" reached 355.7, too close to the edge); the left
+  label x 18.6–157.7.
+- **Printed in Pyodide and quoted**, identical to the Spanish cells: row maxima `0.392 0.455 0.314
+  0.851 0.23 0.281 0.256 0.285` against an even `0.167` (4.6 quotes `0.851` and `0.167`; both
+  confirmed); product and loop agree, and `Wa = I` matches `S @ H.T`. Cost cell: `8,785,920` against
+  `4,853,760` operations, `921,600` tanh evaluations, `7.4` MB against `0.15` MB, additive 54–115 ms
+  against 7–9 ms. With `d_a = 64`: `2,196,480` operations, and 13–21 ms against 7–9 ms. Challenge:
+  the starter fails five tests, an unshifted softmax fails only the overflow test, an in-place write
+  only the no-write test, and the solution passes all six.
+- **Fixed in Spanish while translating** (the English was written fixed): «Las tres primeras líneas»
+  pointed at six lines of output whose 7.4 MB is on the fifth, now «Todo lo que sale antes de la
+  última línea» ("Everything above the last line"); and the `d_a = 64` experiment said the additive
+  score «sigue tardando varias veces más», where the browser measures about twice, now «alrededor del
+  doble en las ejecuciones en que se apoya esta lección» ("about twice as long in the runs behind this
+  lesson"). **In both locales**, the inline $\partial\ell/\partial e_{ij}$ derivative is now a display
+  equation, unpunctuated because the sentence runs through it (7 display equations each).
 
 ## The direction decision — make it once, in 4.1
 
