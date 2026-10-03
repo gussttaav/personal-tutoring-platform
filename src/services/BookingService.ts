@@ -43,11 +43,17 @@
 // has committed, so it is best-effort: a getLocale error is logged (warn) and falls back
 // to 'es' instead of 500-ing a cancellation that already happened (which would also skip
 // the confirmation email and burn the token). getLocale itself stays fail-closed.
+//
+// BOOKING-ATTRIBUTION-01: a student's FIRST booking records its type and the first-touch
+// source (`attribution`) on their users row, once (IUserRepository.recordFirstBooking is
+// write-once). It runs at the very end, after the booking committed, and is best-effort:
+// a failure is logged, never a reason to fail a booking that already exists. A reschedule
+// moves an existing class, so it never records.
 
 import type { IBookingRepository } from "@/domain/repositories/IBookingRepository";
 import type { ISessionRepository } from "@/domain/repositories/ISessionRepository";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository";
-import type { BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
+import type { BookingAttribution, BookingHistoryPage, BookingRecord, SessionType, SingleSessionBookingDetail, UserBooking } from "@/domain/types";
 import type { ICalendarClient } from "@/infrastructure/google";
 import type { IZoomClient } from "@/infrastructure/zoom";
 import type { IEmailClient } from "@/infrastructure/resend";
@@ -75,6 +81,7 @@ export interface CreateBookingInput {
   timezone?:         string;
   rescheduleToken?:  string;
   stripePaymentId?:  string;
+  attribution?:      BookingAttribution; // BOOKING-ATTRIBUTION-01
 }
 
 export interface CreateBookingOutput {
@@ -425,6 +432,8 @@ export class BookingService {
       //     can no longer run against an original that is half gone.
       if (oldRecord) {
         await this.teardownRescheduledOriginal(oldRecord);
+      } else {
+        await this.recordFirstBooking(input);
       }
 
       return {
@@ -632,6 +641,21 @@ export class BookingService {
   // it back because the old event could not be deleted; a stray calendar event is the
   // lesser failure. Logs, never throws. The pending_terminations row goes so the cleanup
   // cron doesn't later see an orphan and mark the (now-cancelled) booking no_show.
+  // BOOKING-ATTRIBUTION-01: best-effort — see the header.
+  private async recordFirstBooking(input: CreateBookingInput): Promise<void> {
+    try {
+      await this.users.recordFirstBooking(input.email, {
+        sessionType: input.sessionType,
+        bookedAt:    new Date().toISOString(),
+        attribution: input.attribution,
+      });
+    } catch (err) {
+      log("warn", "Failed to record first booking source", {
+        service: "booking", email: input.email, error: String(err),
+      });
+    }
+  }
+
   private async teardownRescheduledOriginal(old: BookingRecord): Promise<void> {
     const steps: [string, () => Promise<void>][] = [
       ["calendar event",      () => this.calendar.deleteEvent(old.eventId)],

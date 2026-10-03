@@ -78,6 +78,17 @@ export interface RecordPaymentInput {
   status?:         PaymentStatus;
 }
 
+// BOOKING-ATTRIBUTION-01: where the student came from, first touch. Every field is
+// optional — a direct visit has none. Persisted once per student, at their first
+// booking, to the users.utm_* / referrer_host / landing_path columns (migration 0025).
+export interface BookingAttribution {
+  source?:       string;  // utm_source, or "mobile_app" for the app
+  medium?:       string;  // utm_medium
+  campaign?:     string;  // utm_campaign
+  referrerHost?: string;  // hostname of an external referrer, never the full URL
+  landingPath?:  string;  // pathname of the first attributed page
+}
+
 export interface BookingRecord {
   eventId:          string;
   email:            string;

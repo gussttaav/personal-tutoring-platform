@@ -1,3 +1,5 @@
+import type { BookingAttribution, SessionType } from "@/domain/types";
+
 /**
  * ACCOUNT-DELETE-01: per-table row counts erased by deleteAccount, for logging.
  * Keys are table names; the set is whatever the stored procedure touched.
@@ -29,4 +31,15 @@ export interface IUserRepository {
    * Throws UserNotFoundError if no user has this email.
    */
   deleteAccount(email: string): Promise<AccountDeletionCounts>;
+
+  /**
+   * BOOKING-ATTRIBUTION-01: records the student's FIRST booking — its type, time and
+   * the source that brought them (migration 0025). Write-once: a no-op when the user
+   * already has a first booking (or does not exist). Returns whether it wrote.
+   */
+  recordFirstBooking(email: string, first: {
+    sessionType:  SessionType;
+    bookedAt:     string;
+    attribution?: BookingAttribution;
+  }): Promise<boolean>;
 }

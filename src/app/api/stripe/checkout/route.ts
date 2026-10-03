@@ -10,6 +10,8 @@
  *   SEC-04: CSRF protection — Origin header must match NEXT_PUBLIC_BASE_URL
  *   REFACTOR-R4-P1-01: a DomainError (INVALID_SLOT / SLOT_UNAVAILABLE from the slot
  *     validator) maps to its 4xx via mapDomainErrorToResponse; anything else stays a 500.
+ *   BOOKING-ATTRIBUTION-01: a single-session checkout forwards the first-touch source
+ *     (mobile app → `mobile_app`); it rides the PaymentIntent metadata to the webhook.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -18,7 +20,8 @@ import { CheckoutSchema } from "@/lib/schemas";
 import { checkoutRatelimit } from "@/lib/ratelimit";
 import { getClientIp } from "@/lib/ip-utils";
 import { log } from "@/lib/logger";
-import { isValidOrigin } from "@/lib/csrf";
+import { isBearerOnlyRequest, isValidOrigin } from "@/lib/csrf";
+import { resolveRequestAttribution } from "@/lib/attribution";
 import { paymentService } from "@/services";
 import { DomainError } from "@/domain/errors";
 import { mapDomainErrorToResponse } from "@/lib/http-errors";
@@ -62,6 +65,7 @@ export async function POST(req: NextRequest) {
           startIso:        body.startIso,
           endIso:          body.endIso,
           rescheduleToken: body.rescheduleToken,
+          attribution:     resolveRequestAttribution(isBearerOnlyRequest(req), body.attribution),
         });
     return NextResponse.json(result);
   } catch (err) {

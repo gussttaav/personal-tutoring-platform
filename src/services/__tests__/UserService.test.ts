@@ -10,6 +10,7 @@ const mockRepo = (): jest.Mocked<IUserRepository> => ({
   getLocale:    jest.fn(),
   setLocale:    jest.fn(),
   deleteAccount: jest.fn(),
+  recordFirstBooking: jest.fn().mockResolvedValue(true), // BOOKING-ATTRIBUTION-01
 });
 
 describe("UserService.ensureUser", () => {

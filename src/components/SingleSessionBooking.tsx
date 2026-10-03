@@ -20,6 +20,9 @@
  * the success screen's «Ir a mi área personal» has nowhere to go: the caller passes
  * `onGoToPersonalArea` (an in-place close). The success screen only ever shows this one
  * button — there is no «Volver al inicio» option.
+ *
+ * BOOKING-ATTRIBUTION-01: a new (not rescheduled) booking fires `trackBooking` — the
+ * free call on its success screen, a paid class once Stripe confirms the payment.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -46,6 +49,7 @@ import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 import { COLORS } from "@/constants";
 import { errorCodeToKey } from "@/constants/errors";
 import { api, ApiError } from "@/lib/api-client";
+import { trackBooking } from "@/lib/booking-analytics";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import WizardProgress from "@/components/booking/WizardProgress";
@@ -317,6 +321,7 @@ export default function SingleSessionBooking({
       setSessionUrl(data.cancelToken ? `${BASE_URL}/sesion/${data.cancelToken}` : "");
       setCancelToken(data.cancelToken);
       setEmailFailed(data.emailFailed);
+      if (!rescheduleToken) trackBooking(sessionType); // BOOKING-ATTRIBUTION-01
       setPhase("success");
     } catch (err) {
       const status = err instanceof ApiError ? err.status : 0;
@@ -487,9 +492,10 @@ export default function SingleSessionBooking({
             studentEmail={userEmail}
             appointmentLabel={`${selected.dateLabel} · ${selected.label.split(/\s*[–\-]\s*/)[0]}`}
             priceLabel={price ?? undefined}
-            onSuccess={(paymentIntentId) =>
-              router.push(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`)
-            }
+            onSuccess={(paymentIntentId) => {
+              if (!rescheduleToken) trackBooking(sessionType); // BOOKING-ATTRIBUTION-01
+              router.push(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`);
+            }}
             onCancel={() => { setClientSecret(null); setPhase("review"); }}
           />
         </div>

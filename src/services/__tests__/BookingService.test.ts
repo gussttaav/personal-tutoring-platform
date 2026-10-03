@@ -9,6 +9,8 @@
 // compensation restores to the exact pack it decremented (restoreCreditToPack).
 // REFACTOR-R4-P1-05: the post-commit locale read in cancelByToken is best-effort — a
 // getLocale rejection must not fail a cancellation that already committed.
+// BOOKING-ATTRIBUTION-01: a first booking records its type + source on the user
+// (best-effort, never on a reschedule or a failed booking).
 jest.mock("@/lib/logger", () => ({ log: jest.fn() }));
 jest.mock("@/lib/availability-cache", () => ({
   invalidate: jest.fn().mockResolvedValue(undefined),
@@ -138,6 +140,7 @@ const mockUsers = (): jest.Mocked<IUserRepository> => ({
   getLocale:   jest.fn().mockResolvedValue(null),
   setLocale:   jest.fn().mockResolvedValue(undefined),
   deleteAccount: jest.fn().mockResolvedValue({}),
+  recordFirstBooking: jest.fn().mockResolvedValue(true), // BOOKING-ATTRIBUTION-01
 });
 
 // Stub ScheduleService — BookingService only calls getConfig(). Default min
@@ -654,6 +657,67 @@ describe("REFACTOR-R4-P1-03: reschedule keeps the original until the new one com
       expect.stringContaining("manual intervention"),
       expect.objectContaining({ step: expect.stringContaining("old-evt") }),
     );
+  });
+});
+
+// ─── BOOKING-ATTRIBUTION-01 ───────────────────────────────────────────────────
+
+describe("BOOKING-ATTRIBUTION-01: a first booking records the student's source", () => {
+  const linkedin = { source: "linkedin", medium: "profile", campaign: "topcard", landingPath: "/mentoria" };
+
+  it("records the booking type and source on the user", async () => {
+    const users   = mockUsers();
+    const service = makeService({ users });
+
+    await service.createBooking({ ...baseFreeInput(), attribution: linkedin });
+
+    expect(users.recordFirstBooking).toHaveBeenCalledWith("student@test.com", {
+      sessionType: "free15min",
+      bookedAt:    expect.any(String),
+      attribution: linkedin,
+    });
+  });
+
+  it("records a first booking with no source too (the type still matters)", async () => {
+    const users   = mockUsers();
+    const service = makeService({ users });
+
+    await service.createBooking(basePackInput());
+
+    expect(users.recordFirstBooking).toHaveBeenCalledWith("student@test.com",
+      expect.objectContaining({ sessionType: "pack", attribution: undefined }));
+  });
+
+  it("a reschedule records nothing", async () => {
+    const users    = mockUsers();
+    const bookings = mockBookings();
+    bookings.findByCancelToken.mockResolvedValue(baseCancelRecord({
+      eventId: "old-evt", sessionType: "pack", creditPackId: "pack-orig",
+    }));
+    const service  = makeService({ bookings, users });
+
+    await service.createBooking({ ...basePackInput(), rescheduleToken: "tkn", attribution: linkedin });
+
+    expect(users.recordFirstBooking).not.toHaveBeenCalled();
+  });
+
+  it("a failed record does not fail the booking", async () => {
+    const users = mockUsers();
+    users.recordFirstBooking.mockRejectedValue(new Error("db down"));
+    const service = makeService({ users });
+
+    await expect(service.createBooking(baseFreeInput())).resolves.toMatchObject({ cancelToken: "ctkn" });
+    expect(log).toHaveBeenCalledWith("warn", "Failed to record first booking source", expect.anything());
+  });
+
+  it("a booking that fails records nothing", async () => {
+    const users    = mockUsers();
+    const calendar = mockCalendar();
+    calendar.createEvent.mockRejectedValue(new Error("Calendar down"));
+    const service  = makeService({ users, calendar });
+
+    await expect(service.createBooking(baseFreeInput())).rejects.toThrow("Calendar down");
+    expect(users.recordFirstBooking).not.toHaveBeenCalled();
   });
 });
 

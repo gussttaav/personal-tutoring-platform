@@ -1,5 +1,7 @@
 // TEST-01: In-memory implementation of IUserRepository for integration tests.
+// BOOKING-ATTRIBUTION-01: recordFirstBooking (write-once) + getFirstBooking for asserts.
 import type { AccountDeletionCounts, IUserRepository } from "@/domain/repositories/IUserRepository";
+import type { BookingAttribution, SessionType } from "@/domain/types";
 import { UserNotFoundError } from "@/domain/errors";
 import { randomUUID } from "crypto";
 
@@ -10,6 +12,7 @@ type UserRecord = {
   avatarUrl?: string;
   role: "student" | "teacher" | "admin";
   locale?: "es" | "en";
+  firstBooking?: { sessionType: SessionType; bookedAt: string; attribution?: BookingAttribution };
 };
 
 export class InMemoryUserRepository implements IUserRepository {
@@ -70,5 +73,19 @@ export class InMemoryUserRepository implements IUserRepository {
     const normalized = email.toLowerCase().trim();
     if (!this.users.delete(normalized)) throw new UserNotFoundError();
     return { users: 1 };
+  }
+
+  async recordFirstBooking(email: string, first: {
+    sessionType: SessionType; bookedAt: string; attribution?: BookingAttribution;
+  }): Promise<boolean> {
+    const user = this.users.get(email.toLowerCase().trim());
+    if (!user || user.firstBooking) return false;
+    user.firstBooking = first;
+    return true;
+  }
+
+  /** Test helper — not on IUserRepository. */
+  getFirstBooking(email: string) {
+    return this.users.get(email.toLowerCase().trim())?.firstBooking ?? null;
   }
 }
