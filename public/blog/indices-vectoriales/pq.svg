@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" role="img"
+ aria-label="Arriba, un vector de 768 números dibujado como una franja partida en 96 trozos de 8 números. Cada trozo se sustituye por el número de su centro más cercano entre los 256 de su diccionario, un byte: 17, 203, 88 y, en el último, 41. El vector queda como un código de 96 bytes, frente a los 3 072 del vector entero. Abajo, la pregunta, sin comprimir, partida en los mismos 96 trozos; para cada trozo se calcula una vez su distancia a los 256 centros de su posición, y eso forma una tabla de 96 filas y 256 columnas. La distancia a un vector guardado es la suma de una casilla por fila, la que indica cada byte de su código: la columna 17 de la fila 1, la 203 de la fila 2, la 88 de la fila 3 y así hasta la 41 de la fila 96.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 12px; font-weight: 600; }
+  .sub { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 12px; }
+  .sm { font-size: 11px; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .big { font-size: 13px; font-weight: 600; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+</style>
+<defs><marker id="ha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#4edea3"/></marker><marker id="hw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#e8a24c"/></marker><marker id="hm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#86948a"/></marker><marker id="hb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6fb1e8"/></marker></defs>
+<text class="lbl" x="20.0" y="26.0" text-anchor="start" style="fill:#4edea3">Vector guardado: 768 números = 96 trozos de 8</text>
+<rect x="20" y="34" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#4edea3"/>
+<text class="sm" x="55.0" y="51.0" text-anchor="middle">trozo 1</text>
+<rect x="96" y="34" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#4edea3"/>
+<text class="sm" x="131.0" y="51.0" text-anchor="middle">trozo 2</text>
+<rect x="172" y="34" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#4edea3"/>
+<text class="sm" x="207.0" y="51.0" text-anchor="middle">trozo 3</text>
+<rect x="290" y="34" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#4edea3"/>
+<text class="sm" x="325.0" y="51.0" text-anchor="middle">trozo 96</text>
+<text class="big" x="252.0" y="51.0" text-anchor="middle">…</text>
+<line stroke="#86948a" stroke-width="1.2" x1="55" y1="62" x2="55" y2="84" marker-end="url(#hm)"/>
+<rect x="34" y="88" width="42" height="24" rx="3" fill="#20302a" stroke="#4edea3"/>
+<text class="mono" x="55.0" y="104.0" text-anchor="middle">17</text>
+<line stroke="#86948a" stroke-width="1.2" x1="131" y1="62" x2="131" y2="84" marker-end="url(#hm)"/>
+<rect x="110" y="88" width="42" height="24" rx="3" fill="#20302a" stroke="#4edea3"/>
+<text class="mono" x="131.0" y="104.0" text-anchor="middle">203</text>
+<line stroke="#86948a" stroke-width="1.2" x1="207" y1="62" x2="207" y2="84" marker-end="url(#hm)"/>
+<rect x="186" y="88" width="42" height="24" rx="3" fill="#20302a" stroke="#4edea3"/>
+<text class="mono" x="207.0" y="104.0" text-anchor="middle">88</text>
+<line stroke="#86948a" stroke-width="1.2" x1="325" y1="62" x2="325" y2="84" marker-end="url(#hm)"/>
+<rect x="304" y="88" width="42" height="24" rx="3" fill="#20302a" stroke="#4edea3"/>
+<text class="mono" x="325.0" y="104.0" text-anchor="middle">41</text>
+<text class="big" x="252.0" y="104.0" text-anchor="middle">…</text>
+<text class="sm" x="380.0" y="60.0" text-anchor="start">Cada trozo se cambia por el número de su</text>
+<text class="sm" x="380.0" y="75.0" text-anchor="start">centro más cercano entre los 256 de su</text>
+<text class="sm" x="380.0" y="90.0" text-anchor="start">diccionario: un byte.</text>
+<text class="lbl" x="380.0" y="112.0" text-anchor="start" style="fill:#4edea3">Código: 96 bytes (el vector entero, 3 072)</text>
+<text class="lbl" x="20.0" y="152.0" text-anchor="start" style="fill:#6fb1e8">Pregunta, sin comprimir: los mismos 96 trozos</text>
+<rect x="20" y="160" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#6fb1e8"/>
+<text class="sm" x="55.0" y="177.0" text-anchor="middle">trozo 1</text>
+<rect x="96" y="160" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#6fb1e8"/>
+<text class="sm" x="131.0" y="177.0" text-anchor="middle">trozo 2</text>
+<rect x="172" y="160" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#6fb1e8"/>
+<text class="sm" x="207.0" y="177.0" text-anchor="middle">trozo 3</text>
+<rect x="290" y="160" width="70" height="26" rx="3" fill="#1c1b1d" stroke="#6fb1e8"/>
+<text class="sm" x="325.0" y="177.0" text-anchor="middle">trozo 96</text>
+<text class="big" x="252.0" y="177.0" text-anchor="middle">…</text>
+<text class="sm" x="382.0" y="144.0" text-anchor="start">Tabla: distancia de cada trozo a cada centro</text>
+<text class="tk" x="418.0" y="171.0" text-anchor="end">trozo 1</text>
+<rect x="427" y="157" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="449" y="157" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="471" y="157" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="515" y="157" width="20" height="20" fill="#4edea3" stroke="#3b3b3e"/>
+<rect x="559" y="157" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="603" y="157" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="647" y="157" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="691" y="157" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="tk" x="418.0" y="193.0" text-anchor="end">trozo 2</text>
+<rect x="427" y="179" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="449" y="179" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="471" y="179" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="515" y="179" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="559" y="179" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="603" y="179" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="647" y="179" width="20" height="20" fill="#4edea3" stroke="#3b3b3e"/>
+<rect x="691" y="179" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="tk" x="418.0" y="215.0" text-anchor="end">trozo 3</text>
+<rect x="427" y="201" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="449" y="201" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="471" y="201" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="515" y="201" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="559" y="201" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="603" y="201" width="20" height="20" fill="#4edea3" stroke="#3b3b3e"/>
+<rect x="647" y="201" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="691" y="201" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="tk" x="418.0" y="237.0" text-anchor="end">…</text>
+<text class="tk" x="418.0" y="259.0" text-anchor="end">trozo 96</text>
+<rect x="427" y="245" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="449" y="245" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="471" y="245" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="515" y="245" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="559" y="245" width="20" height="20" fill="#4edea3" stroke="#3b3b3e"/>
+<rect x="603" y="245" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="647" y="245" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<rect x="691" y="245" width="20" height="20" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="tk" x="437.0" y="280.0" text-anchor="middle">0</text>
+<text class="tk" x="459.0" y="280.0" text-anchor="middle">1</text>
+<text class="tk" x="481.0" y="280.0" text-anchor="middle">2</text>
+<text class="tk" x="503.0" y="280.0" text-anchor="middle">…</text>
+<text class="tk" x="525.0" y="280.0" text-anchor="middle">17</text>
+<text class="tk" x="547.0" y="280.0" text-anchor="middle">…</text>
+<text class="tk" x="569.0" y="280.0" text-anchor="middle">41</text>
+<text class="tk" x="591.0" y="280.0" text-anchor="middle">…</text>
+<text class="tk" x="613.0" y="280.0" text-anchor="middle">88</text>
+<text class="tk" x="635.0" y="280.0" text-anchor="middle">…</text>
+<text class="tk" x="657.0" y="280.0" text-anchor="middle">203</text>
+<text class="tk" x="679.0" y="280.0" text-anchor="middle">…</text>
+<text class="tk" x="701.0" y="280.0" text-anchor="middle">255</text>
+<line stroke="#6fb1e8" stroke-width="1.4" x1="366" y1="173" x2="380" y2="173" marker-end="url(#hb)"/>
+<text class="sm" x="20.0" y="214.0" text-anchor="start">Para cada trozo, su distancia a los 256 centros de</text>
+<text class="sm" x="20.0" y="230.0" text-anchor="start">su posición: 96 × 256, una vez por pregunta.</text>
+<text class="lbl" x="20.0" y="262.0" text-anchor="start">Distancia a un vector guardado:</text>
+<text class="sm" x="20.0" y="282.0" text-anchor="start">una casilla por byte de su código, y sumar.</text>
+<text class="mono" x="20.0" y="306.0" text-anchor="start" style="fill:#4edea3">T[1][17] + T[2][203] + T[3][88] + … + T[96][41]</text>
+</svg>
