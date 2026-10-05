@@ -1,9 +1,9 @@
 ---
 slug: arboles-b
-title: "Por qué las bases de datos indexan con árboles B, habiendo tantas formas de buscar"
+title: "Por qué las bases de datos relacionales indexan con árboles B, habiendo tantas formas de buscar"
 date: "2026-09-29"
 minutes: 32
-summary: "Un índice hash encuentra un pedido entre 3 millones leyendo tres páginas, y un árbol B, cuatro. Aun así, casi todas las bases de datos indexan con árboles B. Qué es un árbol B, qué cambia en el B+ que usan de verdad, y por qué ganó a la tabla hash, al árbol binario y al fichero ordenado: lo caro es leer páginas, y un índice tiene que hacer mucho más que encontrar una clave."
+summary: "Un índice hash encuentra un pedido entre 3 millones leyendo tres páginas, y un árbol B, cuatro. Aun así, casi todas las bases de datos relacionales indexan con árboles B. Qué es un árbol B, qué cambia en el B+ que usan de verdad, y por qué ganó a la tabla hash, al árbol binario y al fichero ordenado: lo caro es leer páginas, y un índice tiene que hacer mucho más que encontrar una clave."
 draft: false
 reading:
   - kind: paper
@@ -88,7 +88,8 @@ aiImages: true
 ---
 
 {/*
-  BLOG-10 — Por qué las bases de datos indexan con árboles B, habiendo tantas formas de buscar.
+  BLOG-10 — Por qué las bases de datos relacionales indexan con árboles B, habiendo tantas formas
+  de buscar.
 
   Tesis: un índice no se elige por lo rápido que encuentra una clave, sino por cuántas páginas
   lee y cuántas preguntas distintas contesta. El árbol B+ no es el mejor en ninguna consulta
@@ -158,13 +159,20 @@ Oracle también crean un árbol B salvo que se les pida otra cosa.
 
 Hay muchas más formas de buscar: ordenar los datos y buscar por bisección, tablas hash, árboles
 binarios equilibrados, listas con saltos, árboles de prefijos. Varias son mejores que el árbol B
-en lo que mejor sabe hacer cada una. La pregunta es por qué casi todas las bases de datos que
-guardan sus datos en disco eligieron la misma estructura hace cincuenta años y siguen con ella, y
-la respuesta tiene tres partes. La primera es lo que cuesta buscar: en una base de datos, lo caro
-no es comparar claves sino leer páginas, y eso cambia qué estructura es rápida. La segunda es lo
-que se le pide a un índice, que es bastante más que encontrar una clave. La tercera es que el
-árbol B, y sobre todo su variante, el **árbol B+**, es la única estructura que hace todo eso
-leyendo pocas páginas, aunque no sea la mejor en ninguna de esas cosas por separado.
+en lo que mejor sabe hacer cada una. La pregunta es por qué casi todas las bases de datos
+relacionales que guardan sus datos en disco eligieron la misma estructura hace cincuenta años y
+siguen con ella, y la respuesta tiene tres partes. La primera es lo que cuesta buscar: en una base
+de datos, lo caro no es comparar claves sino leer páginas, y eso cambia qué estructura es rápida.
+La segunda es lo que se le pide a un índice, que es bastante más que encontrar una clave. La
+tercera es que el árbol B, y sobre todo su variante, el **árbol B+**, es la única estructura que
+hace todo eso leyendo pocas páginas, aunque no sea la mejor en ninguna de esas cosas por separado.
+
+Relacional quiere decir con los datos en tablas, con filas y columnas, que se consultan con SQL
+(*Structured Query Language*, lenguaje estructurado de consultas): Postgres, MySQL, SQLite, SQL
+Server, Oracle. «Base de datos» cubre hoy mucho más: documentales como MongoDB, de clave-valor como
+Redis, distribuidas como Cassandra, vectoriales para buscar los datos más parecidos a uno dado.
+Algunas también indexan con árboles B, MongoDB entre ellas; otras eligieron otra estructura, y la
+sección «Dónde no gana» cuenta por qué. En el resto del artículo, «base de datos» es una relacional.
 
 Todos los números del artículo están medidos. La tienda es inventada: la genera, con semillas
 fijas, un [script público](/blog/como-ejecuta-un-join/tienda.sql), el mismo del
@@ -722,7 +730,8 @@ lo ha hecho desaparecer.
 ## Dónde no gana
 
 El árbol B+ ganó donde lo caro es leer páginas y los datos cambian. Fuera de eso hay estructuras
-mejores, y las bases de datos las usan.
+mejores. Las usan muchas de las bases de datos que no son relacionales, y también las relacionales,
+para casos concretos.
 
 **Cuando se escribe mucho más de lo que se lee.** Un **árbol LSM** (*log-structured merge-tree*,
 árbol de fusión estructurado como registro), de 1996, no modifica nada en su sitio. Las escrituras
@@ -814,4 +823,4 @@ tienda, y en InnoDB el desorden alcanza a la tabla, que es el propio árbol.
 Los discos de 1970 eran mucho más lentos que un SSD, y la memoria, mucho más pequeña. Pero la
 proporción entre comparar dos claves y leer una página sigue siendo de miles a uno. Mientras lo sea,
 contar páginas será la forma de entender por qué una consulta es rápida o lenta, y el árbol B+
-seguirá siendo el índice que una base de datos crea cuando no se le dice otra cosa.
+seguirá siendo el índice que una base de datos relacional crea cuando no se le dice otra cosa.
