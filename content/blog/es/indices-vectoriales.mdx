@@ -1,7 +1,7 @@
 ---
 slug: indices-vectoriales
 title: "Cómo busca una base de datos vectorial sin compararlo todo, y qué precio paga"
-date: "2026-10-05"
+date: "2026-10-06"
 minutes: 28
 summary: "Una base de datos vectorial no encuentra los vectores más parecidos a una pregunta: encuentra casi siempre casi todos, y deja elegir cuánto «casi». Qué es y qué no es una base de datos vectorial, los algoritmos que deciden dónde mirar y cuánto guardar de cada vector, lo que las bases de datos tuvieron que añadirles, y cómo quedan comparados en los bancos de pruebas públicos."
 draft: false
@@ -250,13 +250,13 @@ de uno de esos veinte cortes para que haya que volver atrás a buscarlo. Con tan
 poca diferencia en cada una, queda al otro lado de muchos, y la vuelta atrás acaba visitando casi
 todas las hojas.
 
-El problema se conocía mucho antes de los *embeddings* y de las bases de datos vectoriales. A finales
-de los noventa ya se buscaban imágenes parecidas describiendo cada una con un vector, por ejemplo un
-histograma de color (cuántos píxeles de cada tono tiene la imagen) de cientos de dimensiones, y esos
-vectores se indexaban con árboles que parten el espacio en regiones, como el árbol k-d,
-pensado para datos espaciales como los mapas. En 1998, Roger Weber, Hans-Jörg Schek y Stephen Blott
-[analizaron esa familia de árboles](https://www.vldb.org/conf/1998/p194.pdf) y demostraron que, por
-encima de unas diez dimensiones, en promedio, leer todos los datos de forma secuencial gana.
+El problema se conocía mucho antes de los *embeddings* y de las bases de datos vectoriales. A
+finales de los noventa ya se buscaban imágenes parecidas describiendo cada una con un vector, por
+ejemplo un histograma de color (cuántos píxeles de cada tono tiene la imagen) de cientos de
+dimensiones, y esos vectores se indexaban con árboles que parten el espacio en regiones, como el
+árbol k-d. En 1998, Roger Weber, Hans-Jörg Schek y Stephen Blott [analizaron esa familia de
+árboles](https://www.vldb.org/conf/1998/p194.pdf) y demostraron que, por encima de unas diez
+dimensiones, en promedio, leer todos los datos de forma secuencial gana.
 
 Así que queda renunciar a lo exacto. Un índice de **vecinos más cercanos aproximados**
 (*approximate nearest neighbors*, ANN) devuelve $k$ vectores que casi siempre coinciden casi del todo
