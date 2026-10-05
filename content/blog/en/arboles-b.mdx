@@ -1,9 +1,9 @@
 ---
 slug: arboles-b
-title: "Why databases index with B-trees, when there are so many ways to search"
+title: "Why relational databases index with B-trees, when there are so many ways to search"
 date: "2026-09-29"
 minutes: 32
-summary: "A hash index finds one order among 3 million by reading three pages, and a B-tree reads four. Yet almost every database indexes with B-trees. What a B-tree is, what changes in the B+tree that databases actually use, and why it beat the hash table, the binary tree and the sorted file: what's expensive is reading pages, and an index has to do much more than find a key."
+summary: "A hash index finds one order among 3 million by reading three pages, and a B-tree reads four. Yet almost every relational database indexes with B-trees. What a B-tree is, what changes in the B+tree they actually use, and why it beat the hash table, the binary tree and the sorted file: what's expensive is reading pages, and an index has to do much more than find a key."
 draft: false
 reading:
   - kind: paper
@@ -88,8 +88,9 @@ aiImages: true
 ---
 
 {/*
-  BLOG-10 — Why databases index with B-trees, when there are so many ways to search. English
-  translation of content/blog/es/arboles-b.mdx; the method notes there apply here unchanged.
+  BLOG-10 — Why relational databases index with B-trees, when there are so many ways to search.
+  English translation of content/blog/es/arboles-b.mdx; the method notes there apply here
+  unchanged.
 
   Thesis: an index is not chosen for how fast it finds one key but for how many pages it reads
   and how many different questions it answers. The B+tree is not the best at any single query,
@@ -139,12 +140,20 @@ Server and Oracle also build a B-tree unless asked for something else.
 
 There are many more ways to search: sort the data and bisect, hash tables, balanced binary trees,
 skip lists, prefix trees. Several of them beat the B-tree at whatever each does best. The question
-is why almost every database that keeps its data on disk picked the same structure fifty years ago
-and still uses it, and the answer has three parts. The first is what a lookup costs: in a database,
-what's expensive is not comparing keys but reading pages, and that changes which structure is fast.
-The second is what an index is asked to do, which is a lot more than finding a key. The third is
-that the B-tree, and above all its variant, the **B+tree**, is the only structure that does all of
-that while reading few pages, even though it isn't the best at any of those things on its own.
+is why almost every relational database that keeps its data on disk picked the same structure fifty
+years ago and still uses it, and the answer has three parts. The first is what a lookup costs: in a
+database, what's expensive is not comparing keys but reading pages, and that changes which
+structure is fast. The second is what an index is asked to do, which is a lot more than finding a
+key. The third is that the B-tree, and above all its variant, the **B+tree**, is the only structure
+that does all of that while reading few pages, even though it isn't the best at any of those things
+on its own.
+
+Relational means data in tables, with rows and columns, queried with SQL (*Structured Query
+Language*): Postgres, MySQL, SQLite, SQL Server, Oracle. "Database" covers far more today: document
+databases like MongoDB, key-value stores like Redis, distributed ones like Cassandra, vector
+databases that find the items most similar to a given one. Some of them index with B-trees too,
+MongoDB among them; others picked a different structure, and the section "Where it doesn't win"
+explains why. For the rest of this post, "database" means a relational one.
 
 Every number in this post is measured. The shop is invented: a
 [public script](/blog/como-ejecuta-un-join/tienda.en.sql) generates it with fixed seeds, the same
@@ -688,7 +697,8 @@ hasn't made it go away.
 ## Where it doesn't win
 
 The B+tree won where what's expensive is reading pages and the data changes. Outside of that there
-are better structures, and databases use them.
+are better structures. Many non-relational databases are built on them, and relational ones use
+them too, for specific cases.
 
 **When you write far more than you read.** An **LSM tree** (*log-structured merge-tree*), from
 1996, never modifies anything in place. Writes go first to a sorted structure in memory, often a
@@ -778,4 +788,4 @@ disorder reaches the table, which is the tree itself.
 The disks of 1970 were far slower than an SSD, and memory far smaller. But the ratio between
 comparing two keys and reading a page is still thousands to one. As long as it is, counting pages
 will be the way to understand why a query is fast or slow, and the B+tree will stay the index a
-database creates when nobody tells it otherwise.
+relational database creates when nobody tells it otherwise.
