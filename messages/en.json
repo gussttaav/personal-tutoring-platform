@@ -1380,17 +1380,12 @@
         "levels": "{v} levels",
         "powerLabel": "10 to the {exponent}",
         "plotAria": "Two lines against the length of the input, in orders of magnitude. The capacity of the context vector is flat at {codes} distinct messages, with {dh} coordinates of {q} levels. The number of input sentences rises 4.5 orders per token and crosses the capacity at {crossing} tokens.",
-        "legend": "Vertical axis: orders of magnitude (log₁₀) of a count. <cap>▬</cap> messages that fit in c · <dem>▬</dem> distinct input sentences of that length, over a vocabulary of {vocab} entries.",
-        "readout": "In {dh} coordinates of {q} levels there is room for <codes></codes> distinct messages, and that is enough for sentences of up to <upto>{crossing} tokens</upto>. Past that there are sentences to spare: at {past} tokens no decoder —not even the best possible one, trained without limit— returns more than a <ceiling></ceiling> fraction of them exactly."
+        "legend": "Horizontal axis: length of the input sentence, in tokens. Vertical axis: orders of magnitude (log₁₀) of a count. <cap>▬</cap> messages that fit in c · <dem>▬</dem> distinct input sentences of that length. The input vocabulary has {vocab} = 2¹⁵ entries, a typical subword vocabulary size: Mistral 7B (v0.3) uses exactly that, and Llama 2 uses 32,000.",
+        "readout": "In {dh} coordinates of {q} levels there is room for <codes></codes> distinct messages, and that is enough for sentences of up to <upto>{crossing} tokens</upto>. Past that there are sentences to spare: at {past} tokens no decoder (not even the best possible one, trained without limit) returns more than a <ceiling></ceiling> fraction of them exactly."
       },
       "attention-alignment": {
-        "attention": "Attention",
-        "fixedSummary": "Fixed summary",
         "mapAria": "Alignment map: pick an output step to see which part of the input it pulls from",
-        "attentionNote": "Step {step} writes <tgt>{target}</tgt> and pulls mostly from <src>{source}</src>, with a weight of {weight}. Change step: the row moves, and its sum still comes to {sum}.",
-        "frozenNote": "With the fixed summary, step {step} receives the state of <src>{source}</src> with weight {weight} — and so do the other {others} steps. Walk the rows and watch the bars below: they do not move.",
-        "contextAria": "The {d} coordinates of the context vector of step {step}: {values}.",
-        "contextNote": "{d} coordinates, the same as the summary had"
+        "attentionNote": "Step {step} writes <tgt>{target}</tgt> and pulls mostly from <src>{source}</src>, with a weight of {weight}. Change step: the row moves, and its sum still comes to {sum}."
       },
       "self-attention-heatmap": {
         "inputLabel": "Type a sentence (only the first {max} tokens are kept)",

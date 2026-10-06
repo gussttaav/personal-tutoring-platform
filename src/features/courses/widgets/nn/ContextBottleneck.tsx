@@ -20,11 +20,14 @@
  * `log₁₀` and the powers of ten are notation and stay; the words around them, the two
  * slider readouts and the spoken form of a power («10 elevado a 231» / «10 to the 231»,
  * which is what a screen reader gets instead of a superscript) all translate.
+ *
+ * COURSE-P11-07 — the vocabulary size in the legend was a hardcoded «32 768», which the
+ * English legend printed beside its own «32,000»; it is now grouped per locale.
  */
 
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 
 import { bottleneckCurves, codeOrders, log10Ceiling } from "../math/context-bottleneck";
@@ -32,7 +35,6 @@ import { Plot2D } from "../primitives/Plot2D";
 import { Slider } from "../primitives/Slider";
 
 const VOCAB = 32768; // |V_x|, fijo: 2^15 entradas, un vocabulario de subpalabras corriente
-const VOCAB_LABEL = "32 768";
 const MAX_LENGTH = 200; // tokens de la frase de entrada — el eje horizontal
 const PAST_CROSSING = 10; // a cuántos tokens del cruce se lee el techo del readout
 
@@ -60,6 +62,10 @@ function Power({ orders }: { orders: number }) {
 
 export default function ContextBottleneck() {
   const t = useTranslations("courses.widgets.context-bottleneck");
+  const locale = useLocale();
+  /* The legend is prose, so |V_x| is grouped the way each locale's prose groups
+     thousands: a space in Spanish (AUTHORING.md §5), a comma in English (AUTHORING.en.md §1). */
+  const vocabLabel = VOCAB.toLocaleString("en-US").replace(/,/g, locale === "es" ? " " : ",");
   const [dh, setDh] = useState(DEFAULT_DH);
   const [q, setQ] = useState(DEFAULT_Q);
 
@@ -119,7 +125,7 @@ export default function ContextBottleneck() {
 
       <p style={{ fontSize: "0.8rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.55 }}>
         {t.rich("legend", {
-          vocab: VOCAB_LABEL,
+          vocab: vocabLabel,
           cap: (chunks) => <span style={{ color: "var(--green)" }}>{chunks}</span>,
           dem: (chunks) => <span style={{ color: "var(--warning)" }}>{chunks}</span>,
         })}

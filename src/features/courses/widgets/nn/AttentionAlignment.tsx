@@ -5,19 +5,18 @@
  * that step i reads. Pick a row (hover, tap, Tab or arrow keys) and the widget says
  * which source token that step leans on and draws the c_i it builds.
  *
- * The toggle is the teaching move, and it is why this is a widget rather than a figure:
- * «resumen fijo» swaps α for the frozen alignment — all the mass on the last source
- * position, at every step — which is EXACTLY the encoder-decoder of lesson 1. Flip it
- * and the map goes from a scatter that follows the sentence to one lit column, while
- * the c_i strip below stops moving: eight steps, one vector, which is the bottleneck
- * seen from the inside. The old architecture is not a different mechanism, it is this
- * one with its weights frozen and blind to i.
+ * The frozen alignment of the fixed summary (all the mass on the last source position,
+ * at every step) is NOT a mode here. It used to be a «resumen fijo» toggle, and all it
+ * showed was one lit column and a c_i strip that stopped moving: a sentence's worth of
+ * content, which the lesson says in a sentence, an equation, its code cell and a quiz.
+ * The widget keeps the one thing prose cannot do as well: walking the rows of a real
+ * alignment.
  *
  * Every row prints its own sum next to it. That is not decoration — a row summing to
  * 0.97 looks exactly like a row summing to 1, and the claim that c_i is a MIXTURE (a
  * convex combination of states, never bigger than the biggest of them) is the one thing
  * a reader cannot check by eye. The numbers all come from math/attention-alignment,
- * which is unit-tested against the exact one-hot/uniform/frozen cases. Local state only.
+ * which is unit-tested. Local state only.
  *
  * COURSE-P11-02 — the copy is `courses.widgets.attention-alignment`. The CORPUS stays
  * where it is: it is a Spanish→English translation pair, which is the subject of Block 4
@@ -33,22 +32,12 @@ import {
   ALIGNMENT_SOURCE,
   ALIGNMENT_TARGET,
   ATTENTION_ALIGNMENT,
-  ENCODER_STATES,
-  frozenAlignment,
-  mixture,
   rowSums,
   topSource,
 } from "../math/attention-alignment";
-import { WidgetButton } from "../primitives/WidgetButton";
-
-type Mode = "atencion" | "fijo";
 
 const T_X = ALIGNMENT_SOURCE.length;
 const T_Y = ALIGNMENT_TARGET.length;
-const D_H = ENCODER_STATES[0].length;
-
-const FROZEN = frozenAlignment(T_Y, T_X);
-const ALPHA: Record<Mode, number[][]> = { atencion: ATTENTION_ALIGNMENT, fijo: FROZEN };
 
 // Cells stretch to fill the column and stop at CELL_MAX, so the map is a readable block
 // on a laptop without stretching. At the minimum the row totals 326px, which clears a
@@ -80,15 +69,12 @@ const fmt2 = (v: number) => v.toFixed(2);
 export default function AttentionAlignment() {
   const t = useTranslations("courses.widgets.attention-alignment");
   const tc = useTranslations("courses.widgets.common");
-  const [mode, setMode] = useState<Mode>("atencion");
   const [step, setStep] = useState(6); // «book», the row where the lines cross
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  const alpha = ALPHA[mode];
+  const alpha = ATTENTION_ALIGNMENT;
   const sums = rowSums(alpha);
-  const row = alpha[step];
-  const peak = topSource(row);
-  const context = mixture(row, ENCODER_STATES);
+  const peak = topSource(alpha[step]);
 
   // Counted from the row that received the key, not from `step`: the two agree in normal
   // use, but reading state here would make the jump depend on whether React had already
@@ -101,23 +87,6 @@ export default function AttentionAlignment() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem", width: "100%" }}>
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
-        <WidgetButton
-          active={mode === "atencion"}
-          aria-pressed={mode === "atencion"}
-          onClick={() => setMode("atencion")}
-        >
-          {t("attention")}
-        </WidgetButton>
-        <WidgetButton
-          active={mode === "fijo"}
-          aria-pressed={mode === "fijo"}
-          onClick={() => setMode("fijo")}
-        >
-          {t("fixedSummary")}
-        </WidgetButton>
-      </div>
-
       <div style={{ overflowX: "auto" }}>
         <div
           style={{ minWidth: gridWidth(CELL_MIN), maxWidth: gridWidth(CELL_MAX) }}
@@ -233,8 +202,6 @@ export default function AttentionAlignment() {
         </div>
       </div>
 
-      <ContextStrip step={step} context={context} />
-
       <div
         aria-live="polite"
         style={{
@@ -245,77 +212,17 @@ export default function AttentionAlignment() {
         }}
       >
         <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0, lineHeight: 1.6 }}>
-          {mode === "atencion"
-            ? t.rich("attentionNote", {
-                step: step + 1,
-                target: ALIGNMENT_TARGET[step],
-                source: ALIGNMENT_SOURCE[peak.index],
-                weight: fmt2(peak.weight),
-                sum: fmt2(sums[step]),
-                tgt: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
-                src: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
-              })
-            : t.rich("frozenNote", {
-                step: step + 1,
-                source: ALIGNMENT_SOURCE[T_X - 1],
-                weight: fmt2(peak.weight),
-                others: T_Y - 1,
-                src: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
-              })}
+          {t.rich("attentionNote", {
+            step: step + 1,
+            target: ALIGNMENT_TARGET[step],
+            source: ALIGNMENT_SOURCE[peak.index],
+            weight: fmt2(peak.weight),
+            sum: fmt2(sums[step]),
+            tgt: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+            src: (chunks) => <strong style={{ color: "var(--text)" }}>{chunks}</strong>,
+          })}
         </p>
       </div>
-    </div>
-  );
-}
-
-/** The d_h coordinates of c_i, as bars above and below zero. It is what the selected row
- *  builds, and under «resumen fijo» it is the same drawing for every row — which is the
- *  whole comparison. */
-function ContextStrip({ step, context }: { step: number; context: number[] }) {
-  const t = useTranslations("courses.widgets.attention-alignment");
-  const W = 236;
-  const H = 54;
-  const mid = H / 2;
-  const slot = W / D_H;
-  const barW = slot * 0.5;
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", flexWrap: "wrap" }}>
-      <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-        c<sub>{step + 1}</sub>
-      </span>
-      <svg
-        viewBox={`0 0 ${W} ${H}`}
-        width={W}
-        height={H}
-        role="img"
-        aria-label={t("contextAria", {
-          d: D_H,
-          step: step + 1,
-          values: context.map((v) => fmt2(v)).join(", "),
-        })}
-        style={{ maxWidth: "100%" }}
-      >
-        <line x1={0} y1={mid} x2={W} y2={mid} stroke="var(--border-variant)" strokeWidth={1} />
-        {context.map((v, k) => {
-          const h = Math.abs(v) * (mid - 4);
-          return (
-            <rect
-              key={k}
-              x={k * slot + (slot - barW) / 2}
-              y={v >= 0 ? mid - h : mid}
-              width={barW}
-              height={h}
-              rx={2}
-              fill="var(--green)"
-              opacity={v >= 0 ? 0.85 : 0.45}
-            />
-          );
-        })}
-      </svg>
-      <span style={{ fontSize: "0.7rem", color: "var(--text-dim)" }}>
-        {t("contextNote", { d: D_H })}
-      </span>
     </div>
   );
 }

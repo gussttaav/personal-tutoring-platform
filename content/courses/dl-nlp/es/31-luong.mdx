@@ -4,7 +4,7 @@ title: "Atención de Luong (multiplicativa)"
 block: 4
 order: 5
 minutes: 27
-summary: "La misma casilla de la lección anterior, llena de otra forma: en vez de proyectar los dos estados y aplastar su suma, se multiplican a través de una sola matriz. Sale una puntuación sin capa oculta, con casi los mismos pesos y un gradiente más corto, y con una propiedad que la aditiva no tiene: la rejilla entera de puntuaciones es un producto de matrices. Aquí se comparan las dos por coste —operaciones, memoria intermedia y forma del cálculo— y se dice qué impide todavía calcular la rejilla de una sola vez."
+summary: "La misma casilla de la lección anterior, llena de otra forma: en vez de proyectar los dos estados y aplastar su suma, se multiplican a través de una sola matriz. Sale una puntuación sin capa oculta, con casi los mismos pesos y un gradiente más corto, y con una propiedad que la aditiva no tiene: la rejilla entera de puntuaciones es un producto de matrices. Aquí se comparan las dos por coste (operaciones, memoria intermedia y forma del cálculo) y se dice qué impide todavía calcular la rejilla de una sola vez."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'La normalización. La matriz reparte la fila de forma que las $T_x$ puntuaciones acaben sumando $1$, que es lo que el producto escalar por sí solo no garantiza.' }
       - { id: d, text: 'La dependencia de la pareja. El producto escalar opina por separado sobre cada vector, mientras que la matriz mezcla los dos, que es la condición que la lección anterior declaró irrenunciable.' }
     answer: a
-    explanation: 'La (a). Los dos estados salen de dos recurrencias distintas, entrenadas para dos trabajos distintos, y nada las obliga a haber elegido las mismas direcciones para las mismas cosas; $\mathbf{W}_a$ es exactamente el cambio de base que falta, aprendido junto al resto. La (b) confunde dos propiedades: la puntuación multiplicativa **sigue** siendo lineal en cada estado por separado —es una forma bilineal—, y aun así depende de la pareja, que es lo que hacía falta. La (c) le da a la matriz el trabajo del softmax, que es quien normaliza. La (d) es la trampa buena, y se cae escribiendo el producto escalar: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$ no se puede partir en una opinión sobre un vector más otra sobre el otro, así que ya es función de la pareja. Lo que le falta no es eso.'
+    explanation: 'La (a). Los dos estados salen de dos recurrencias distintas, entrenadas para dos trabajos distintos, y nada las obliga a haber elegido las mismas direcciones para las mismas cosas; $\mathbf{W}_a$ es exactamente el cambio de base que falta, aprendido junto al resto. La (b) confunde dos propiedades: la puntuación multiplicativa *sigue* siendo lineal en cada estado por separado (es una forma bilineal), y aun así depende de la pareja, que es lo que hacía falta. La (c) le da a la matriz el trabajo del softmax, que es quien normaliza. La (d) es la trampa buena, y se cae escribiendo el producto escalar: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$ no se puede partir en una opinión sobre un vector más otra sobre el otro, así que ya es función de la pareja. Lo que le falta no es eso.'
     hint: 'Si las dos redes hubieran aprendido a usar sus coordenadas de forma distinta, ¿qué mediría el producto escalar?'
   - id: q-parametros-luong
     type: numeric
@@ -26,7 +26,7 @@ quiz:
     answer: 4096
     tolerance: 0
     unit: pesos
-    explanation: 'Una sola matriz de $64 \times 64$: $4\,096$ pesos. Compárala con la aditiva del mismo tamaño, que con $d_a = 32$ pedía $2 \cdot 32 \cdot 64 + 32 = 4\,128$: treinta y dos pesos de diferencia sobre cuatro mil. La elección entre las dos no se decide ahí, y conviene tenerlo claro antes de mirar los costes —lo que separa a las dos puntuaciones es qué operaciones hacen con sus pesos, no cuántos tienen—. Nótese además que ninguna de las dos cuentas menciona $T_x$ ni $T_y$: el juego de pesos es uno para todas las parejas de todas las frases.'
+    explanation: 'Una sola matriz de $64 \times 64$: $4\,096$ pesos. Compárala con la aditiva del mismo tamaño, que con $d_a = 32$ pedía $2 \cdot 32 \cdot 64 + 32 = 4\,128$: treinta y dos pesos de diferencia sobre cuatro mil. La elección entre las dos no se decide ahí, y conviene tenerlo claro antes de mirar los costes: lo que separa a las dos puntuaciones es qué operaciones hacen con sus pesos, no cuántos tienen. Nótese además que ninguna de las dos cuentas menciona $T_x$ ni $T_y$: el juego de pesos es uno para todas las parejas de todas las frases.'
     hint: '¿De qué forma es la matriz, y hay algo más que contar?'
   - id: q-memoria-intermedia
     type: single
@@ -37,7 +37,7 @@ quiz:
       - { id: c, text: 'Las $3\,600$ puntuaciones sin normalizar. La multiplicativa no las guarda: el softmax se aplica dentro del mismo producto de matrices.' }
       - { id: d, text: 'Nada. Las dos guardan los mismos números intermedios; lo que cambia es cuántas multiplicaciones hacen con ellos.' }
     answer: a
-    explanation: 'La (a), y el factor es exactamente $d_a$: un número por pareja frente a $d_a$ números por pareja. La causa es la de siempre —una función no lineal aplicada a una suma no se reparte entre sus sumandos—, así que el bloque de $(T_y, T_x, d_a)$ hay que construirlo entero antes de leerlo. En coma flotante de doble precisión son $7.4$ MB para una sola pareja de frases, y multiplícalo por el tamaño del *batch*. La (b) invierte los papeles: la multiplicativa también proyecta un lado, y esas proyecciones son la parte barata en las dos. La (c) se inventa un softmax que no existe: normalizar es una operación aparte, y las puntuaciones sin normalizar se guardan igual en las dos. La (d) es justo lo que el recuento desmiente.'
+    explanation: 'La (a), y el factor es exactamente $d_a$: un número por pareja frente a $d_a$ números por pareja. La causa es la de siempre (una función no lineal aplicada a una suma no se reparte entre sus sumandos), así que el bloque de $(T_y, T_x, d_a)$ hay que construirlo entero antes de leerlo. En coma flotante de doble precisión son $7.4$ MB para una sola pareja de frases, y multiplícalo por el tamaño del *batch*. La (b) invierte los papeles: la multiplicativa también proyecta un lado, y esas proyecciones son la parte barata en las dos. La (c) se inventa un softmax que no existe: normalizar es una operación aparte, y las puntuaciones sin normalizar se guardan igual en las dos. La (d) es justo lo que el recuento desmiente.'
     hint: '¿En qué momento del cálculo aditivo hay un número por cada pareja, y en qué momento hay $d_a$?'
   - id: q-sigue-secuencial
     type: single
@@ -48,13 +48,13 @@ quiz:
       - { id: c, text: 'No, porque el softmax va por filas y hay que recorrerlas en orden para que cada una sume $1$.' }
       - { id: d, text: 'Sí durante el entrenamiento: el *teacher forcing* da de antemano los $T_y$ tokens correctos, así que los estados del decoder están todos disponibles antes de empezar.' }
     answer: a
-    explanation: 'La (a). El producto está escrito, y lo que falta no es la operación sino uno de sus operandos. La (d) es la respuesta que hay que descartar con cuidado, porque acierta en lo que da el *teacher forcing* y falla en lo que hace falta: tener los **tokens** de antemano no da los **estados**, que siguen saliendo de la recurrencia uno detrás de otro, cada uno con el contexto que su propio paso mezcló. La (b) confunde una propiedad del álgebra con una propiedad del cálculo: la matriz $\mathbf{S}$ no está prohibida, está por construir. La (c) atribuye un orden al softmax que no tiene —las filas se normalizan de forma independiente—. Guarda la conclusión: la puntuación ha dejado de ser el cuello, y lo que queda estrangulando el paralelismo es la recurrencia.'
+    explanation: 'La (a). El producto está escrito, y lo que falta no es la operación sino uno de sus operandos. La (d) es la respuesta que hay que descartar con cuidado, porque acierta en lo que da el *teacher forcing* y falla en lo que hace falta: tener los *tokens* de antemano no da los *estados*, que siguen saliendo de la recurrencia uno detrás de otro, cada uno con el contexto que su propio paso mezcló. La (b) confunde una propiedad del álgebra con una propiedad del cálculo: la matriz $\mathbf{S}$ no está prohibida, está por construir. La (c) atribuye un orden al softmax que no tiene: las filas se normalizan de forma independiente. Guarda la conclusión: la puntuación ha dejado de ser el cuello, y lo que queda estrangulando el paralelismo es la recurrencia.'
     hint: '¿Qué hace falta para escribir la fila $i$ de $\mathbf{S}$, y quién lo produce?'
 challenges:
   - id: ch-atencion-multiplicativa
     prompt: |
       Escribe `alineacion_multiplicativa(S, H, Wa)`. Recibe los estados del decoder `S`, de forma
-      $(T_y, d_s)$ —la fila $i$ es $\mathbf{s}_{i-1}$—, los del encoder `H`, de forma $(T_x, d_h)$,
+      $(T_y, d_s)$ (la fila $i$ es $\mathbf{s}_{i-1}$), los del encoder `H`, de forma $(T_x, d_h)$,
       y la matriz de la puntuación, de forma $(d_s, d_h)$. Devuelve la matriz $\mathbf{A}$ de
       forma $(T_y, T_x)$, ya normalizada por filas.
 
@@ -141,7 +141,7 @@ challenges:
           return Z / Z.sum(axis=1, keepdims=True)
     explanation: |
       Toda la puntuación son dos productos de matrices y ningún bucle: `S @ Wa` reescribe los
-      $T_y$ estados del decoder en las coordenadas del encoder —una fila cada uno— y el segundo
+      $T_y$ estados del decoder en las coordenadas del encoder (una fila cada uno) y el segundo
       producto los contrae contra los $T_x$ estados de la fuente, dejando un número por pareja.
       El paréntesis no cambia el resultado pero sí el trabajo: `Wa @ H.T` sólo depende de la
       fuente, así que un traductor de verdad lo calcularía una vez por frase y lo reaprovecharía
@@ -163,8 +163,8 @@ reading:
 
 Un modelo con atención puntúa parejas: un número por cada paso de la salida y cada posición de la
 entrada, y de esos números salen los pesos con los que se mezclan los estados del encoder. La
-lección anterior, sobre la atención aditiva de Bahdanau, llenó esa casilla con una red pequeña —una
-capa oculta de $d_a$ unidades y una lectura lineal, entrenada junto al resto— y dejó una factura
+lección anterior, sobre la atención aditiva de Bahdanau, llenó esa casilla con una red pequeña (una
+capa oculta de $d_a$ unidades y una lectura lineal, entrenada junto al resto) y dejó una factura
 apuntada: puntuar una pareja obliga a fabricar un vector entero de $d_a$ coordenadas antes de
 reducirlo al número que hacía falta.
 
@@ -172,20 +172,20 @@ La pregunta de esta lección es si hace falta una capa oculta para decir que dos
 corresponden. El álgebra lineal lleva desde el bloque 1 devolviendo ese número sin ninguna red de por
 medio, y en 2015 Luong, Pham y Manning propusieron usarlo tal cual, con un solo retoque. Lo que sale
 no se parece a una red: se parece a un producto. Y como la calidad de las dos formas es comparable
-—eso lo miden los experimentos de sus artículos, no una derivación—, lo que decide entre ellas es
+(eso lo miden los experimentos de sus artículos, no una derivación), lo que decide entre ellas es
 todo lo demás: cuánto cuestan, qué memoria mueven y qué forma tiene su cálculo.
 
 Vuelve a lo que la puntuación tiene que hacer. Un número que sube cuando dos vectores apuntan al
 mismo sitio ya está en el curso desde <Leccion slug="bolsa-de-palabras">la lección sobre la bolsa de palabras</Leccion>: el
 producto escalar $\mathbf{u}^{\top}\mathbf{v}$, que la similitud coseno se limita a
-normalizar. Sería una puntuación gratis —cero parámetros— y sería función de la pareja, que es la
+normalizar. Sería una puntuación gratis (cero parámetros) y sería función de la pareja, que es la
 condición que la lección anterior declaró irrenunciable: $\mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j$
 no se puede partir en una opinión sobre un estado más otra sobre el otro.
 
 Lo que falla es una suposición escondida. El producto escalar suma coordenada contra coordenada, de
 modo que da por hecho que la coordenada $k$ del decoder habla de lo mismo que la coordenada $k$ del
 encoder, y con la misma escala. Son dos recurrencias distintas, con dos juegos de pesos y dos
-trabajos —una lee español, la otra escribe inglés—, y nada las obliga a haber elegido las mismas
+trabajos (una lee español, la otra escribe inglés), y nada las obliga a haber elegido las mismas
 direcciones para las mismas cosas; ni siquiera a tener el mismo número de coordenadas. De modo que
 primero se cambia de base y después se mide.
 
@@ -211,12 +211,12 @@ anterior desaparece del problema.
 
 Cuenta los pesos: $d_h^2$, y ninguno depende de la pareja ni de las longitudes, igual que antes. Con
 $d_h = 64$ son $4\,096$, contra los $4\,128$ que pedía la aditiva con $d_a = 32$. Prácticamente los
-mismos, lo cual es útil saberlo pronto: **lo que separa a las dos puntuaciones no es cuántos pesos
-tienen, sino qué operaciones hacen con ellos.**
+mismos, lo cual es útil saberlo pronto: *lo que separa a las dos puntuaciones no es cuántos pesos
+tienen, sino qué operaciones hacen con ellos.*
 
 Aquí conviene decir qué se está dejando fuera. Luong y sus coautores cambian además dónde entra el
-contexto —puntúan con el estado del paso en curso, $\mathbf{s}_i$, y mezclan el contexto *después* de
-la recurrencia en vez de dentro de ella— y este curso no lo sigue: mantiene la colocación de
+contexto (puntúan con el estado del paso en curso, $\mathbf{s}_i$, y mezclan el contexto *después* de
+la recurrencia en vez de dentro de ella) y este curso no lo sigue: mantiene la colocación de
 <Leccion slug="la-idea-de-atencion">la lección sobre la idea de atención</Leccion>, para que entre aquella lección, la anterior y
 ésta cambie una sola cosa. Lo que se compara es la función $a$, con todo lo demás quieto.
 
@@ -234,7 +234,11 @@ $$
 Ninguna lleva un factor $1 - \tanh^{2}$, porque no hay $\tanh$ que derivar. Y todo lo que hay *por
 encima* de $e_{ij}$ en la cadena es de la lección anterior, sin tocar una coma: el paso por el
 softmax y la derivada
-$\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)$
+
+$$
+\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)
+$$
+
 nunca mencionaron qué forma tenía $a$. La atención se queda igual; lo que cambia es el modelo de
 alineación.
 
@@ -246,8 +250,8 @@ $$
 \nabla_{\mathbf{W}_a}\ell = \sum_{i=1}^{T_y}\sum_{j=1}^{T_x} \frac{\partial \ell}{\partial e_{ij}}\,\mathbf{s}_{i-1}\bar{\mathbf{h}}_j^{\top},
 $$
 
-que es la rejilla de derivadas puesta entre los estados del decoder y los del encoder —dos productos
-de matrices, con la rejilla en medio—. El camino de vuelta tiene la misma forma que el de ida, que es
+que es la rejilla de derivadas puesta entre los estados del decoder y los del encoder (dos productos
+de matrices, con la rejilla en medio). El camino de vuelta tiene la misma forma que el de ida, que es
 lo que hace que la sección siguiente valga para los dos sentidos.
 
 </Details>
@@ -261,17 +265,17 @@ e_{ij} = \mathbf{s}_{i-1}^{\top}\bar{\mathbf{h}}_j,
 $$
 
 y la función $a$ se queda sin un solo parámetro que entrenar. Lo que pide a cambio es justo lo que
-la matriz servía para no pedir: que los dos lados midan lo mismo —$d_h$ coordenadas en los dos— y
+la matriz servía para no pedir: que los dos lados midan lo mismo ($d_h$ coordenadas en los dos) y
 que además hayan aprendido a usarlas de la misma forma. Es una exigencia fuerte cuando el encoder y
 el decoder son dos redes distintas, entrenadas cada una para su idioma, y por eso la matriz es la
-opción que Luong deja por defecto. La variante sin parámetros no se va del curso —es la forma más
-barata de puntuar que existe—, pero sólo se sostiene donde los dos lados comparten base.
+opción que Luong deja por defecto. La variante sin parámetros no se va del curso (es la forma más
+barata de puntuar que existe), pero sólo se sostiene donde los dos lados comparten base.
 
 ## La rejilla entera en un producto de matrices
 
 Hasta aquí las puntuaciones se han escrito de una en una. Apílalas. Guarda los estados del encoder
-por filas en $\bar{\mathbf{H}} \in \mathbb{R}^{T_x \times d_h}$ —la fila $j$ es
-$\bar{\mathbf{h}}_j^{\top}$, transpuesta porque en este curso los vectores son columnas— y los del
+por filas en $\bar{\mathbf{H}} \in \mathbb{R}^{T_x \times d_h}$ (la fila $j$ es
+$\bar{\mathbf{h}}_j^{\top}$, transpuesta porque en este curso los vectores son columnas) y los del
 decoder en $\mathbf{S} \in \mathbb{R}^{T_y \times d_h}$, cuya fila $i$ es $\mathbf{s}_{i-1}^{\top}$,
 el estado con el que se puntúa el paso $i$. Entonces las $T_x \cdot T_y$ puntuaciones son un solo
 objeto:
@@ -287,7 +291,7 @@ $\bar{\mathbf{h}}_j$, así que su producto es $e_{ij}$ y no otra cosa.
 
 La aditiva no admite esta escritura, y no por falta de maña. Sus dos proyecciones sí se sacan fuera,
 pero entre la suma y la lectura está la $\tanh$, de modo que hay que materializar un bloque de tres
-dimensiones —una pareja, y dentro de cada pareja $d_a$ coordenadas— antes de poder reducirlo a
+dimensiones (una pareja, y dentro de cada pareja $d_a$ coordenadas) antes de poder reducirlo a
 números.
 
 <Figure
@@ -301,8 +305,8 @@ frase larga y un modelo pequeño. En productos y sumas las dos andan cerca: unos
 aditiva contra unos $4.9$ millones la multiplicativa, un factor menor que dos, y en ambas la mayor
 parte se la llevan las proyecciones. Donde se separan es en lo otro. La aditiva evalúa $921\,600$
 veces la $\tanh$ y la multiplicativa ninguna. Y sobre todo, la aditiva tiene que guardar esos
-$921\,600$ números —$7.4$ MB por cada pareja de frases, antes de multiplicar por el tamaño del
-*batch*— mientras que a la multiplicativa le bastan las $3\,600$ puntuaciones y los $60$ estados ya
+$921\,600$ números ($7.4$ MB por cada pareja de frases, antes de multiplicar por el tamaño del
+*batch*), mientras que a la multiplicativa le bastan las $3\,600$ puntuaciones y los $60$ estados ya
 proyectados. Entre las dos rejillas el factor es exactamente $d_a$: un número por pareja contra
 $d_a$ números por pareja.
 
@@ -310,8 +314,8 @@ Y hay una diferencia de forma que no aparece en ninguno de esos números. El tra
 multiplicativa son dos productos de matrices; el de la aditiva son sumas y $\tanh$ sobre un bloque
 tridimensional, coordenada a coordenada. La misma cantidad de aritmética repartida de las dos
 maneras no cuesta lo mismo en el hardware que entrena estas redes, que está construido justamente
-para lo primero —es <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>, medida allí con un bucle
-contra un producto—.
+para lo primero (es <Leccion slug="forward-pass">la lección sobre el *forward pass*</Leccion>, medida allí con un bucle
+contra un producto).
 
 Falta lo honesto, y es lo que abre el bloque siguiente. Escribir $\mathbf{S}$ supone tener los $T_y$
 estados del decoder, y el decoder es recurrente: $\mathbf{s}_{i-1}$ necesita $\mathbf{c}_{i-1}$, que
@@ -369,8 +373,8 @@ print("igual que puntuar con S @ H.T:", bool(np.allclose(identidad, softmax_fila
 La línea que importa es la del bucle: puntuar pareja a pareja da los mismos números que el producto,
 que es lo único que hay que comprobar de la forma corta. La del mayor peso de cada fila trae una
 sorpresa. Con los pesos recién
-inicializados el mapa ya reparte de forma desigual —una fila se lleva $0.851$ cuando el reparto
-uniforme sería $0.167$—, y eso no pasaba en la lección anterior con un tamaño parecido, donde el
+inicializados el mapa ya reparte de forma desigual (una fila se lleva $0.851$ cuando el reparto
+uniforme sería $0.167$), y eso no pasaba en la lección anterior con un tamaño parecido, donde el
 mayor peso de cada fila rondaba el uniforme. La diferencia está en la $\tanh$: acota cada coordenada
 antes de que $\mathbf{v}_a$ la lea, así que la puntuación aditiva nace pequeña. La multiplicativa no
 tiene nada que la acote, y su tamaño crece con el de los estados. Ese pico no es una alineación, es
@@ -416,13 +420,14 @@ print("tiempo:                aditiva %7.1f ms   multiplicativa %7.1f ms"
       % ((t1 - t0) * 1e3, (t2 - t1) * 1e3))
 `} />
 
-Las tres primeras líneas son la sección anterior contada por el código: la aritmética se parece, el
-$\tanh$ y los $7.4$ MB intermedios no. La última depende de la máquina y del navegador, y aun así
+Todo lo que sale antes de la última línea es la sección anterior contada por el código: la
+aritmética se parece, el $\tanh$ y los $7.4$ MB intermedios no. La última depende de la máquina y del navegador, y aun así
 dice algo, porque no está midiendo una diferencia pequeña: la multiplicativa tarda alrededor de un
 orden de magnitud menos, y el factor exacto cambia de una ejecución a otra sin acercarse nunca a
 uno. Y hay un experimento que lo deja claro. Cambia $d_a$ a $64$ y ejecuta otra vez: la aditiva pasa
-a hacer **menos** aritmética que la multiplicativa —$2.2$ millones de operaciones contra $4.9$— y
-sigue tardando varias veces más que ella. Lo que se está midiendo no es cuántas operaciones hay.
+a hacer *menos* aritmética que la multiplicativa ($2.2$ millones de operaciones contra $4.9$) y
+sigue tardando más que ella: alrededor del doble en las ejecuciones en que se apoya esta lección.
+Lo que se está midiendo no es cuántas operaciones hay.
 
 ## Comprueba tu intuición
 
@@ -446,11 +451,11 @@ encoder entra en el mecanismo dos veces y por puertas distintas: una como argume
 donde se decide cuánto peso se lleva, y otra como sumando de $\mathbf{c}_i$, que es donde su
 contenido acaba llegando al decoder. El estado del decoder, en cambio, entra una sola vez, y siempre
 del mismo lado: es el que pregunta. Tres papeles, y ninguna de las dos fórmulas exige que los dos
-primeros los haga el mismo vector —lo hace porque nadie ha propuesto todavía separarlos.
+primeros los haga el mismo vector: lo hace porque nadie ha propuesto todavía separarlos.
 
-Separarlos y ponerles nombre —consulta, clave y valor— es <Leccion slug="atencion-como-consulta">la lección siguiente, la última del bloque</Leccion>,
+Separarlos y ponerles nombre (consulta, clave y valor) es <Leccion slug="atencion-como-consulta">la lección siguiente, la última del bloque</Leccion>,
 y es la más importante de este curso. No cambia ni una ecuación de las que ya has visto: reescribe
 las mismas con las palabras y los símbolos con los que el bloque 5 lo escribe todo, incluida la
-elección de puntuación que esta lección acaba de justificar. Lo que aquí quedó pendiente —que los
-estados sigan llegando de uno en uno— tampoco lo arregla ese cambio de nombre, y por eso conviene
+elección de puntuación que esta lección acaba de justificar. Lo que aquí quedó pendiente (que los
+estados sigan llegando de uno en uno) tampoco lo arregla ese cambio de nombre, y por eso conviene
 llegar al bloque siguiente con los nombres ya puestos.

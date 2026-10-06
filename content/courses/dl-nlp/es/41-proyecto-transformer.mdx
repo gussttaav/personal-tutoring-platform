@@ -24,7 +24,7 @@ quiz:
     type: boolean
     prompt: 'El decoder de esta lección apila dos bloques. Con enmascarar la auto-atención del primero, el modelo entero ya es autorregresivo: lo que sale en la posición $3$ no puede depender de lo que entra en la $5$.'
     answer: false
-    explanation: 'Falso, y la última celda lo mide: enmascarando sólo el primer bloque, reescribir las dos últimas posiciones de lo que entra al decoder mueve las cuatro primeras filas de la salida $0.0768$, cuando con las dos máscaras puestas se mueven $0$ exacto. La cadena tiene la fuerza de su eslabón más débil: la auto-atención del segundo bloque mezclaría en su fila $3$ la fila $5$ de lo que le entregó el primero, y esa fila $5$ sí sabe lo que había en la posición $5$. Todo lo que venga por encima hereda la mezcla. Por eso el artículo enmascara la primera subcapa de **cada** uno de sus seis bloques y no la del de abajo.'
+    explanation: 'Falso, y la última celda lo mide: enmascarando sólo el primer bloque, reescribir las dos últimas posiciones de lo que entra al decoder mueve las cuatro primeras filas de la salida $0.0768$, cuando con las dos máscaras puestas se mueven $0$ exacto. La cadena tiene la fuerza de su eslabón más débil: la auto-atención del segundo bloque mezclaría en su fila $3$ la fila $5$ de lo que le entregó el primero, y esa fila $5$ sí sabe lo que había en la posición $5$. Todo lo que venga por encima hereda la mezcla. Por eso el artículo enmascara la primera subcapa de *cada* uno de sus seis bloques y no la del de abajo.'
     hint: '¿Qué recibe la auto-atención del segundo bloque, y de dónde salió cada una de sus filas?'
   - id: q-parametros-atencion
     type: numeric
@@ -32,7 +32,7 @@ quiz:
     answer: 4096
     tolerance: 0
     unit: parámetros
-    explanation: 'Cuatro mil noventa y seis, que es $4d_{\text{model}}^{2}$, y la cuenta vale por lo que **no** aparece en ella: $h$. Cada cabeza proyecta a $d_k = d_v = d_{\text{model}}/h = 16$, así que las tres proyecciones suman $3 \cdot h \cdot d_{\text{model}} \cdot d_k = 3d_{\text{model}}^{2}$ salga el número de cabezas que salga —el reparto de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>— y $\mathbf{W}^O$ mide $(h \cdot d_v) \times d_{\text{model}} = 32 \times 32$. Con las anchuras del artículo, $d_{\text{model}} = 512$ y $h = 8$, la misma cuenta da $1\,048\,576$, que es lo que la lección anterior sumaba doce veces.'
+    explanation: 'Cuatro mil noventa y seis, que es $4d_{\text{model}}^{2}$, y la cuenta vale por lo que *no* aparece en ella: $h$. Cada cabeza proyecta a $d_k = d_v = d_{\text{model}}/h = 16$, así que las tres proyecciones suman $3 \cdot h \cdot d_{\text{model}} \cdot d_k = 3d_{\text{model}}^{2}$ salga el número de cabezas que salga —el reparto de <Leccion slug="multi-head">la lección sobre la atención multi-head</Leccion>— y $\mathbf{W}^O$ mide $(h \cdot d_v) \times d_{\text{model}} = 32 \times 32$. Con las anchuras del artículo, $d_{\text{model}} = 512$ y $h = 8$, la misma cuenta da $1\,048\,576$, que es lo que la lección anterior sumaba doce veces.'
     hint: 'Escribe las cuatro matrices con sus formas y suma. ¿Cuántas columnas tienen entre todas las cabezas?'
 challenges:
   - id: ch-genera-voraz
@@ -43,7 +43,7 @@ challenges:
 
       Escribe `genera(paso, go, eos, max_pasos)`. `paso(entrada)` es el modelo hecho función: recibe
       la lista de tokens que entra al decoder —la primera vez, `[go]`— y devuelve las
-      probabilidades de la posición **siguiente**, un array de forma $(\lvert V \rvert,)$. No la
+      probabilidades de la posición *siguiente*, un array de forma $(\lvert V \rvert,)$. No la
       escribes tú, te la dan.
 
       En cada vuelta elige la entrada más probable —decodificación voraz, la de <Leccion slug="encoder-decoder">la lección
@@ -139,7 +139,7 @@ challenges:
       corrido una posición y sin `go`. Es el desplazamiento de <Leccion slug="encoder-decoder-masking">su lección</Leccion>
       construyéndose paso a paso en lugar de venir dado.
 
-      Las dos condiciones de parada no son intercambiables. El `break` va **después** de apuntar
+      Las dos condiciones de parada no son intercambiables. El `break` va *después* de apuntar
       el token, porque el `<EOS>` es una decisión del modelo y forma parte de lo que escribió; el
       tope de `max_pasos` está para que un modelo que nunca lo elija no deje el bucle corriendo,
       que con pesos sin entrenar es el caso normal. Y `entrada + [siguiente]` construye una lista
@@ -177,7 +177,7 @@ extremos, todo lo que hay dentro recibe una matriz de $T$ filas y $d_{\text{mode
 devuelve otra de la misma forma. La atención multi-head baja a $d_v$ por cabeza y $\mathbf{W}^O$ la
 sube de vuelta; el perceptrón por posiciones sube a $d_{\text{ff}}$ y $\mathbf{W}_2$ la baja; el
 *layer norm* no toca ninguna forma. No es una casualidad afortunada: la conexión residual de
-<Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> lo **exige**, porque suma casilla a casilla lo que entró con lo que salió, y
+<Leccion slug="bloque-transformer">la lección sobre los residuales y el *layer norm*</Leccion> lo *exige*, porque suma casilla a casilla lo que entró con lo que salió, y
 dos matrices de formas distintas no se suman.
 
 De modo que el programa entero cambia de forma dos veces, y las dos están en los extremos: abajo,
@@ -252,7 +252,7 @@ cuántas veces da la vuelta un bucle. Poner seis bloques en lugar de dos no toca
 <Leccion slug="encoder-decoder-masking">La lección sobre el encoder, el decoder y las máscaras</Leccion> dejó demostrado que una
 llamada enmascarada respeta el pasado: en su fila $t$ no entra ninguna columna a la derecha de $t$.
 Lo que hace falta al montar el modelo es otra cosa, y es lo único que este ensamblaje añade a lo ya
-escrito: que la propiedad **sobreviva a apilar**. Entre lo que entra al decoder y lo que sale hay
+escrito: que la propiedad *sobreviva a apilar*. Entre lo que entra al decoder y lo que sale hay
 seis subcapas, tres por bloque, y sólo dos llevan máscara.
 
 Llamemos *respetar el pasado* a esto: la fila $t$ de lo que sale depende únicamente de las filas $1$
@@ -284,7 +284,7 @@ $$
 que es la barra vertical de $P\left(y_t \mid y_{<t}, x_{1:T_x}\right)$ diciendo la verdad.
 
 La cadena tiene la fuerza de su eslabón más débil, y ahí está el motivo de que el artículo ponga
-máscara en la primera subcapa de **cada** uno de sus seis bloques. Quítasela al segundo bloque de
+máscara en la primera subcapa de *cada* uno de sus seis bloques. Quítasela al segundo bloque de
 este modelo y su auto-atención mezclará, en la fila $3$, la fila $6$ de lo que le entregó el
 primero; todo lo que venga por encima hereda la mezcla, y la barra vertical pasa a ser mentira. La
 última celda lo mide con números.

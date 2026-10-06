@@ -180,7 +180,7 @@ challenges:
           return X
     explanation: |
       Los dos `keepdims=True` son la mitad del ejercicio: sin ellos `mu` sale con forma
-      $(T,)$, NumPy la alinea contra la **última** dimensión de `X` y la resta se hace por
+      $(T,)$, NumPy la alinea contra la *última* dimensión de `X` y la resta se hace por
       columnas, que es exactamente la operación que esta lección descarta. Con
       `keepdims=True` la forma es $(T, 1)$ y cada fila se lleva su propio número.
 
@@ -188,7 +188,7 @@ challenges:
       original en vez de sobre la que salió de la primera. Las dos subcapas van en fila, no
       en paralelo: lo que la atención dejó normalizado es lo que el perceptrón por
       posiciones recibe, y lo que se le vuelve a sumar es eso mismo y no la entrada del
-      bloque. Fíjate también en que `gamma` y `beta` entran **después** de dividir; puestos
+      bloque. Fíjate también en que `gamma` y `beta` entran *después* de dividir; puestos
       antes, la normalización los borraría a los dos.
 reading:
   - kind: paper
@@ -229,7 +229,7 @@ reading:
 
 A la atención ya no le falta nada: tiene sus tres proyecciones, su divisor, sus cabezas y, desde la
 lección anterior sobre la codificación posicional, unas filas que saben dónde están. Lo que no
-existe todavía es una capa que se pueda poner **encima de otra**. Y el artículo pone seis, con lo
+existe todavía es una capa que se pueda poner *encima de otra*. Y el artículo pone seis, con lo
 que sale de cada una haciendo de entrada de la siguiente.
 
 Repetir seis veces una operación que ya funciona suena a no hacer nada, y es justo donde se estrelló
@@ -299,8 +299,8 @@ LSTM (*long short-term memory*) respondió abriendo una vía aditiva al lado. La
 esa misma idea con la profundidad en el sitio del tiempo: aquí lo que se apila no son posiciones,
 son capas.
 
-Con eso queda pagada la deuda de la lección anterior. La codificación posicional se suma **una
-vez**, abajo del todo, y ninguna caja vuelve a recordar después dónde estaba cada token: el sumando
+Con eso queda pagada la deuda de la lección anterior. La codificación posicional se suma *una
+vez*, abajo del todo, y ninguna caja vuelve a recordar después dónde estaba cada token: el sumando
 que vale $\mathbf{I}$ es lo que la lleva hasta arriba.
 
 ### Una sola anchura de abajo arriba
@@ -355,7 +355,7 @@ mismo *batch*; dependería de $T$ y de lo que hubiera en las demás posiciones, 
 después a una frase suelta.
 
 Con la fila no aparece ninguna de las tres, porque $\mu_t$ y $s_t$ salen de la fila $t$ y de nada
-más. Guarda la tercera: la caja «Suma y layer norm» **no mezcla posiciones**, y por eso la
+más. Guarda la tercera: la caja «Suma y layer norm» *no mezcla posiciones*, y por eso la
 afirmación de <Leccion slug="adios-recurrencia">la lección sobre el adiós a la recurrencia</Leccion> —tres de las quince cajas miran más allá de su propia
 fila— sigue en pie ahora que sabemos qué hacen las otras doce.
 
@@ -374,7 +374,7 @@ con $\mathbf{W}_1 \in \mathbb{R}^{d_{\text{model}} \times d_{\text{ff}}}$ y $\ma
 capas es. $\mathbf{1}_T$ es la columna de unos del bloque 2, que aquí repite el sesgo una vez por
 posición en lugar de una vez por ejemplo, y la ReLU es el $\max(0, \cdot)$ del artículo.
 
-Las dos matrices son **las mismas para todas las posiciones**: la fila $3$ y la fila $300$ pasan por
+Las dos matrices son *las mismas para todas las posiciones*: la fila $3$ y la fila $300$ pasan por
 los mismos pesos, así que la subcapa no puede enterarse de cuál está transformando. Eso es lo que
 significa «por posiciones» y lo que la deja fuera de las cajas que mezclan. Su papel sale de ahí por
 descarte: la atención no transforma, mezcla, y éste es el único sitio donde el contenido de una
@@ -404,7 +404,7 @@ primera haciendo de $\mathbf{X}$ de la segunda. Sesgos y vectores de normalizaci
 $3\,150\,336$ parámetros por bloque, y el encoder del artículo apila $N = 6$: unos $18.9$ millones,
 ninguno de ellos dependiente de la longitud del texto.
 
-Y ahora la concesión. El artículo normaliza **después** de sumar, y eso deja el
+Y ahora la concesión. El artículo normaliza *después* de sumar, y eso deja el
 *layer norm* encima del camino de la identidad: el sumando que vale $\mathbf{I}$ está dentro del
 paréntesis, pero lo que sale de la caja ha pasado además por una normalización, así que el camino
 limpio de la primera sección no es tan limpio. Casi todas las implementaciones de hoy escriben
@@ -517,7 +517,7 @@ normalizar una fila, dónde están los parámetros y qué cambia al mover el *la
 
 ---
 
-El bloque está entero y es apilable, y con eso está terminada **una** de las dos columnas del
+El bloque está entero y es apilable, y con eso está terminada *una* de las dos columnas del
 dibujo. Vuelve a mirarlo: la de la derecha tiene tres subcapas donde la izquierda tiene dos, la de
 en medio recibe una flecha que cruza desde la otra columna, y la de abajo se llama «auto-atención
 enmascarada», que es una palabra que no ha salido en estas seis lecciones.

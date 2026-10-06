@@ -4,7 +4,7 @@ title: "La arquitectura encoder-decoder"
 block: 4
 order: 1
 minutes: 26
-summary: "La arquitectura de dos redes de la lección anterior, llevada a una tarea de verdad: traducir. Aparecen dos vocabularios en lugar de uno, un token de fin de secuencia que el propio modelo predice para decidir dónde termina su salida, y la lectura que sostiene el resto del bloque: el decoder no devuelve una traducción, define una probabilidad sobre todas —un producto de distribuciones, una por paso— y generar es recorrer ese producto de forma voraz. Un traductor de juguete de español a inglés, entrenado en el navegador, escribe frases de longitud distinta a la entrada y con el adjetivo cambiado de sitio."
+summary: "La arquitectura de dos redes de la lección anterior, llevada a una tarea de verdad: traducir. Aparecen dos vocabularios en lugar de uno, un token de fin de secuencia que el propio modelo predice para decidir dónde termina su salida, y la lectura que sostiene el resto del bloque: el decoder no devuelve una traducción, define una probabilidad sobre todas (un producto de distribuciones, una por paso) y generar es recorrer ese producto de forma voraz. Un traductor de juguete de español a inglés, entrenado en el navegador, escribe frases de longitud distinta a la entrada y con el adjetivo cambiado de sitio."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -13,7 +13,7 @@ quiz:
     type: single
     prompt: 'El modelo de la lección anterior generaba con un bucle de longitud fija: escribía tantos tokens como tenía la entrada. ¿Por qué ese bucle no sirve para traducir?'
     options:
-      - { id: a, text: 'Porque la longitud de la traducción no es función de la longitud de la entrada —puede ser mayor, menor o igual— y nada la conoce antes de escribirla. El final tiene que ser algo que el modelo predice: una entrada más de $V_y$, <W>\<EOS></W>, que sale del mismo softmax que las demás.' }
+      - { id: a, text: 'Porque la longitud de la traducción no es función de la longitud de la entrada (puede ser mayor, menor o igual) y nada la conoce antes de escribirla. El final tiene que ser algo que el modelo predice: una entrada más de $V_y$, <W>\<EOS></W>, que sale del mismo softmax que las demás.' }
       - { id: b, text: 'Porque traducir siempre alarga la frase, así que el bucle tendría que escribir exactamente un token más que la entrada.' }
       - { id: c, text: 'Porque el decoder no sabe cuántos tokens leyó el encoder: esa información no viaja dentro de $\mathbf{c}$.' }
       - { id: d, text: 'Porque la longitud la fija el vocabulario de salida: una frase no puede tener más tokens que entradas tiene $V_y$.' }
@@ -24,18 +24,18 @@ quiz:
     type: single
     prompt: '¿Cuál de estas expresiones es la que define el decoder?'
     options:
-      - { id: a, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$ — un factor por posición, y cada factor mira lo ya escrito y el resumen de la entrada.' }
-      - { id: b, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid \mathbf{c})$ — un factor por posición, cada uno independiente de lo ya escrito.' }
-      - { id: c, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \sum_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$ — la suma de las probabilidades de cada posición.' }
-      - { id: d, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \max_i P(y_i \mid y_{<i}, \mathbf{c})$ — la probabilidad de la frase es la de su token más seguro.' }
+      - { id: a, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$: un factor por posición, y cada factor mira lo ya escrito y el resumen de la entrada.' }
+      - { id: b, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \prod_{i=1}^{T_y} P(y_i \mid \mathbf{c})$: un factor por posición, cada uno independiente de lo ya escrito.' }
+      - { id: c, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \sum_{i=1}^{T_y} P(y_i \mid y_{<i}, \mathbf{c})$: la suma de las probabilidades de cada posición.' }
+      - { id: d, text: '$P(y_{1:T_y} \mid x_{1:T_x}) = \max_i P(y_i \mid y_{<i}, \mathbf{c})$: la probabilidad de la frase es la de su token más seguro.' }
     answer: a
-    explanation: 'La (a) es la regla de la cadena de la probabilidad aplicada a la secuencia, con la sustitución que hace esta arquitectura: cada paso condiciona sobre el prefijo $y_{<i}$ —que viaja dentro de $\mathbf{s}_{i-1}$— y sobre $\mathbf{c}$, nunca sobre la entrada directamente. La (b) borra el prefijo, y con él la única razón de que el decoder sea recurrente: si cada posición fuese independiente de las anteriores, nada impediría escribir el mismo token cinco veces. La (c) suma probabilidades de cosas que no son alternativas entre sí; el resultado se pasa de $1$ en cuanto la frase tiene tres tokens. La (d) es un máximo, no una probabilidad conjunta.'
+    explanation: 'La (a) es la regla de la cadena de la probabilidad aplicada a la secuencia, con la sustitución que hace esta arquitectura: cada paso condiciona sobre el prefijo $y_{<i}$ (que viaja dentro de $\mathbf{s}_{i-1}$) y sobre $\mathbf{c}$, nunca sobre la entrada directamente. La (b) borra el prefijo, y con él la única razón de que el decoder sea recurrente: si cada posición fuese independiente de las anteriores, nada impediría escribir el mismo token cinco veces. La (c) suma probabilidades de cosas que no son alternativas entre sí; el resultado se pasa de $1$ en cuanto la frase tiene tres tokens. La (d) es un máximo, no una probabilidad conjunta.'
     hint: '¿Qué ve el decoder en el paso $i$? Dos cosas: lo que ya ha escrito y el resumen.'
   - id: q-voraz-no-optimo
     type: boolean
     prompt: 'Tomar en cada paso el token más probable produce siempre la secuencia más probable.'
     answer: false
-    explanation: 'Falso, y el contraejemplo cabe en dos pasos. Si el primer paso reparte $0.6$ y $0.4$, la decodificación voraz se queda con el $0.6$; pero si esa rama continúa como mucho con $0.5$ y la otra con $0.9$, los caminos valen $0.6 \cdot 0.5 = 0.30$ y $0.4 \cdot 0.9 = 0.36$, y el que gana es el que la voraz descartó en el primer paso. El máximo de un producto no es el producto de los máximos: una decisión mala al principio se paga después, y el algoritmo voraz nunca vuelve a mirarla. Buscar de verdad entre todos los caminos cuesta $\lvert V_y \rvert^{T_y}$ y no se hace; existen búsquedas intermedias —la habitual es el *beam search*— que este curso no cubre.'
+    explanation: 'Falso, y el contraejemplo cabe en dos pasos. Si el primer paso reparte $0.6$ y $0.4$, la decodificación voraz se queda con el $0.6$; pero si esa rama continúa como mucho con $0.5$ y la otra con $0.9$, los caminos valen $0.6 \cdot 0.5 = 0.30$ y $0.4 \cdot 0.9 = 0.36$, y el que gana es el que la voraz descartó en el primer paso. El máximo de un producto no es el producto de los máximos: una decisión mala al principio se paga después, y el algoritmo voraz nunca vuelve a mirarla. Buscar de verdad entre todos los caminos cuesta $\lvert V_y \rvert^{T_y}$ y no se hace; existen búsquedas intermedias (la habitual es el *beam search*) que este curso no cubre.'
     hint: 'Escribe dos caminos de dos pasos y multiplica.'
   - id: q-aprende-a-parar
     type: single
@@ -71,16 +71,16 @@ reading:
 {/* COURSE-P5-04 — Bloque 4, lección 1. */}
 
 Este bloque empieza con la arquitectura ya montada. La lección anterior, sobre modelos de secuencia a
-secuencia, encadenó dos redes —una que lee la entrada y la resume en un vector, otra que escribe la
-salida a partir de ese resumen— y las entrenó de punta a punta sobre una tarea de juguete. Lo que
+secuencia, encadenó dos redes (una que lee la entrada y la resume en un vector, otra que escribe la
+salida a partir de ese resumen) y las entrenó de punta a punta sobre una tarea de juguete. Lo que
 este bloque va a mirar con lupa es el punto donde las dos se tocan. Pero antes hay que cambiar de
 tarea, porque aquel juguete le perdonaba tres cosas a la arquitectura y traducir no le perdona
 ninguna.
 
 Mira una frase y su traducción: <W>ayer leí un libro muy bueno</W> se convierte en <W>yesterday i
 read a very good book</W>. Entran seis tokens y salen siete, y el que sobra es <W>i</W>, un pronombre
-que en la entrada no aparece por ningún lado —el español lo lleva dentro de la conjugación del verbo
-y el inglés tiene que escribirlo aparte—. <W>muy bueno</W>, que en español va detrás del sustantivo,
+que en la entrada no aparece por ningún lado (el español lo lleva dentro de la conjugación del verbo
+y el inglés tiene que escribirlo aparte). <W>muy bueno</W>, que en español va detrás del sustantivo,
 en inglés se le adelanta. Y esta no es «la» traducción, sólo una: <W>yesterday i read a really good
 book</W> sirve igual. Longitud distinta, orden distinto y respuesta no única. Son tres cosas.
 
@@ -101,7 +101,7 @@ token que significa «he terminado», y escribirlo es lo que detiene la generaci
 
 La tercera cambia lo que hay que leer en la salida del decoder. Si una frase admite varias
 traducciones aceptables, señalar un token no es la respuesta honesta; repartir probabilidad entre
-todos sí lo es. Y el decoder ya hacía eso —de cada estado cuelga una distribución, no un token—, así
+todos sí lo es. Y el decoder ya hacía eso (de cada estado cuelga una distribución, no un token), así
 que lo que cambia no es la red sino qué significa lo que produce: en cada paso, una columna de
 probabilidades sobre el vocabulario de salida, y la frase escrita es un camino a través de esas
 columnas.
@@ -114,7 +114,7 @@ columnas.
 
 <Callout type="intuition" title="La idea en una frase">
 El decoder no devuelve una traducción: define una probabilidad sobre todas las traducciones posibles,
-como un producto de distribuciones —una por paso—, y generar consiste en recorrer ese producto hasta
+como un producto de distribuciones (una por paso), y generar consiste en recorrer ese producto hasta
 que el propio modelo escribe el símbolo de fin.
 </Callout>
 
@@ -147,7 +147,7 @@ obliga a que $\lvert V_x \rvert$ y $\lvert V_y \rvert$ se parezcan.
 
 ### Dónde vive el final de la frase
 
-Ahora el token que faltaba. A $V_y$ —y sólo a $V_y$— le añadimos una entrada más,
+Ahora el token que faltaba. A $V_y$, y sólo a $V_y$, le añadimos una entrada más,
 <W>\<EOS></W>, el símbolo de fin de secuencia, y toda traducción del entrenamiento termina en ella:
 si la salida correcta tiene $n$ tokens, la secuencia de entrenamiento tiene $T_y = n + 1$ y
 el último es $y_{T_y} = \texttt{<EOS>}$. La pérdida es la de <Leccion slug="seq2seq">la lección sobre
@@ -159,8 +159,8 @@ $$
 
 y ese detalle de contabilidad es todo el mecanismo: como la última posición está dentro del sumatorio,
 aporta su propio término, y el descenso de gradiente empuja hacia arriba la probabilidad de
-<W>\<EOS></W> exactamente ahí —y, por el mismo camino, hacia abajo en las posiciones anteriores, donde
-el token correcto es otro—. Aprender a parar es aprender a predecir un token más.
+<W>\<EOS></W> exactamente ahí (y, por el mismo camino, hacia abajo en las posiciones anteriores, donde
+el token correcto es otro). Aprender a parar es aprender a predecir un token más.
 
 La consecuencia es la que hacía falta: $T_y$ ya no es un dato que reciba el bucle, sino algo que
 sale del modelo. Al generar, el modelo escribe token a token y para cuando el elegido es
@@ -218,11 +218,11 @@ los máximos sea el máximo de los productos: un token que gana su columna por p
 decoder en un estado desde el que todo lo que sigue es malo, y la decodificación voraz no vuelve
 nunca sobre esa decisión. Buscar de verdad el mejor camino obligaría a puntuar
 $\lvert V_y \rvert^{T_y}$ frases, y eso no lo hace nadie; entre lo voraz y lo exhaustivo hay
-búsquedas intermedias —la habitual es el *beam search*— que este curso no cubre.
+búsquedas intermedias (la habitual es el *beam search*) que este curso no cubre.
 
 <Details summary="Ver un caso donde lo voraz pierde">
-Dos tokens posibles en el primer paso, con probabilidades $0.6$ y $0.4$ —los números me los invento
-yo, sólo hacen falta cuatro—. La decodificación voraz se queda con el $0.6$. Supón que desde esa rama
+Dos tokens posibles en el primer paso, con probabilidades $0.6$ y $0.4$ (los números me los invento
+yo, sólo hacen falta cuatro). La decodificación voraz se queda con el $0.6$. Supón que desde esa rama
 la mejor continuación vale $0.5$, y que desde la otra vale $0.9$. Entonces los dos caminos completos
 valen
 
@@ -240,8 +240,8 @@ así.
 ## Un traductor de juguete en NumPy
 
 Vamos a entrenar un traductor diminuto: un idioma de juguete con seis palabras en español y otro con
-siete en inglés. De juguete a propósito —la traducción automática de verdad no cabe en el
-navegador—, pero con las tres cosas que esta lección ha puesto sobre la mesa: dos vocabularios
+siete en inglés. De juguete a propósito (la traducción automática de verdad no cabe en el
+navegador), pero con las tres cosas que esta lección ha puesto sobre la mesa: dos vocabularios
 distintos, una salida cuya longitud decide el modelo, y una reordenación que obliga a esperar. Las
 frases españolas son verbo + sustantivo + adjetivo opcional, y su traducción mete un <W>i</W> al
 principio y adelanta el adjetivo al sustantivo. Ejecuta la celda y mira las parejas.
@@ -277,16 +277,16 @@ for _ in range(5):
         len(x), len(y)))
 `} />
 
-Compara las dos columnas de la derecha. La traducción lleva una palabra más que la frase —ese
-<W>i</W> que el español no escribe— y la secuencia que el decoder tiene que producir lleva una más
+Compara las dos columnas de la derecha. La traducción lleva una palabra más que la frase (ese
+<W>i</W> que el español no escribe) y la secuencia que el decoder tiene que producir lleva una más
 todavía, porque <W>\<EOS></W> ocupa una posición como cualquier otro token y también hay que
 predecirlo: $T_y = T_x + 2$. Doce frases posibles en total, así que este modelo no va a aprender
-español —va a aprender esas doce—; lo que está a prueba es el mecanismo, no el traductor.
+español: va a aprender esas doce. Lo que está a prueba es el mecanismo, no el traductor.
 
 La celda siguiente monta las dos redes y entrena. La función `paso` es la de la lección anterior
 línea por línea: encoder hacia delante, decoder hacia delante con *teacher forcing*, vuelta del
 decoder y, colgada del gradiente en $\mathbf{c}$, vuelta del encoder. Lo único que cambia son los dos
-vocabularios —`nx` columnas a la entrada, `ny` filas a la salida— y el <W>\<EOS></W> que `frase` ya
+vocabularios (`nx` columnas a la entrada, `ny` filas a la salida) y el <W>\<EOS></W> que `frase` ya
 dejó puesto al final de cada objetivo.
 
 <PyCell packages={["numpy"]} code={`
@@ -347,8 +347,8 @@ for it in range(iters):
         print("iter %4d   perdida/token %.3f" % (it, suave))
 `} />
 
-La pérdida arranca cerca de $\ln 8 \approx 2.08$ —repartir la probabilidad por igual entre las ocho
-entradas de $V_y$, contando <W>\<EOS></W>— y baja hasta rozar el cero. Ahora la parte que importa:
+La pérdida arranca cerca de $\ln 8 \approx 2.08$ (repartir la probabilidad por igual entre las ocho
+entradas de $V_y$, contando <W>\<EOS></W>) y baja hasta rozar el cero. Ahora la parte que importa:
 generar. El bucle de abajo no recibe la longitud de la salida por ningún sitio; escribe, mira si lo
 escrito es <W>\<EOS></W> y, si lo es, para. `max_len` está sólo por seguridad.
 
@@ -382,8 +382,8 @@ for es in ejemplos:
 `} />
 
 Dos cosas en esa tabla. La columna de longitudes: entran dos o tres tokens y salen tres o cuatro,
-uno más siempre, y ese número lo ha decidido el modelo al colocar <W>\<EOS></W> —no hay ningún
-`range(len(x))` en el bucle—. Y el orden: cuando la frase lleva adjetivo, el modelo lo escribe
+uno más siempre, y ese número lo ha decidido el modelo al colocar <W>\<EOS></W> (no hay ningún
+`range(len(x))` en el bucle). Y el orden: cuando la frase lleva adjetivo, el modelo lo escribe
 *antes* que el sustantivo, aunque lo leyó después. Para hacerlo tuvo que retener el sustantivo
 mientras escribía el adjetivo, y todo lo que tenía para retenerlo era $\mathbf{c}$.
 
@@ -404,8 +404,8 @@ si la decodificación voraz es óptima, y de dónde sale la habilidad de parar e
 
 La arquitectura ya está dicha con precisión, y esa precisión deja a la vista una línea incómoda:
 $P(y_i \mid y_{<i}, x_{1:T_x}) = P(y_i \mid y_{<i}, \mathbf{c})$. La igualdad no es un teorema, es
-una decisión de diseño, y afirma algo fuerte —que $d_h$ números bastan para todo lo que la entrada
-tenga que aportar a cualquier posición de la salida—. En un juguete de tres tokens nadie lo notaría.
+una decisión de diseño, y afirma algo fuerte: que $d_h$ números bastan para todo lo que la entrada
+tenga que aportar a cualquier posición de la salida. En un juguete de tres tokens nadie lo notaría.
 La pregunta es qué le pasa a esa afirmación cuando la entrada es una frase de verdad.
 
 Esa pregunta tiene una respuesta que se puede medir, y es <Leccion slug="el-cuello-de-botella">la lección siguiente, sobre el cuello de
