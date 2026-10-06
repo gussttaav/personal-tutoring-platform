@@ -4,51 +4,51 @@ title: "Bahdanau's attention (additive)"
 block: 4
 order: 4
 minutes: 30
-summary: "The empty slot from the previous lesson, the function that scores a pair of states, is filled with a tiny network: two projections that are added, a tanh that squashes the sum and a vector that reads it out. Here you see why the tanh isn't decoration (without it the alignment stops depending on the step and freezes again), follow the gradient back to the encoder states, which it reaches along two routes (as a value and as something scored), and get a derivative that says a score is only corrected when its state differs from the mixture that row has already built."
+summary: "The empty slot from the previous lesson, the function that scores a pair of states, gets filled with a tiny network: two projections that are added, a tanh that squashes the sum, and a vector that reads it out. You'll see why the tanh isn't decoration (without it the alignment stops depending on the step and freezes again), follow the gradient back to the encoder states, which it reaches along two routes (as a value and as something scored), and arrive at a derivative saying that a score is corrected only when its state differs from the mixture its row has already built."
 draft: false
 hasCode: true
 hasQuiz: true
 quiz:
   - id: q-por-que-tanh
     type: single
-    prompt: 'You remove the $\tanh$ and leave the score as $e_{ij} = \mathbf{v}_a^{\top}\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$. What happens to the alignment?'
+    prompt: 'You remove the $\tanh$, so the score becomes $e_{ij} = \mathbf{v}_a^{\top}\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$. What happens to the alignment?'
     options:
       - { id: a, text: 'Every row comes out identical. The decoder''s term carries no $j$, so within row $i$ it''s a constant, and adding a constant to a whole row doesn''t change its softmax: $\alpha_{ij}$ stops depending on $i$.' }
       - { id: b, text: 'Nothing noticeable: the softmax is still non-linear, and that''s enough for each step to share out differently.' }
       - { id: c, text: 'The weights stop summing to $1$, because without the $\tanh$ the scores are no longer bounded and the denominator falls short.' }
-      - { id: d, text: 'The score gains expressiveness (one saturation fewer) and the only thing lost is numerical stability when the states are large.' }
+      - { id: d, text: 'The score gains expressiveness (one fewer saturation), and the only thing lost is numerical stability when the states are large.' }
     answer: a
-    explanation: '(a), and it''s worth seeing what model is left: a learned alignment, yes, but the same one at all $T_y$ steps, which is the frozen row from the previous lesson, on the idea of attention, moved from the last token to a place chosen by training. (b) confuses where the non-linearity is needed: the softmax is non-linear over the whole row, but it operates *after* the score has already separated its two arguments, and what gets separated there nothing puts back together. (c) is false by construction: the softmax normalises whatever it''s given, bounded or not. (d) inverts the role of the $\tanh$, which isn''t there to bound anything but to make the score a function of the pair.'
-    hint: 'Write out the product of $\mathbf{v}_a^{\top}$ with the sum and see which term carries $j$ and which doesn''t.'
+    explanation: '(a) is right, and it''s worth seeing what model is left: a learned alignment, yes, but the same one at all $T_y$ steps. That''s the frozen row from the previous lesson, on the idea of attention, moved from the last token to a place chosen by training. (b) misplaces the non-linearity that''s needed: the softmax is non-linear over the whole row, but it acts *after* the score has already split into one term per argument, and nothing downstream puts the two back together. (c) is false by construction: the softmax normalises whatever it''s given, bounded or not. (d) gets the role of the $\tanh$ backwards: it isn''t there to bound anything but to make the score a function of the pair.'
+    hint: 'Multiply $\mathbf{v}_a^{\top}$ through the sum and see which term carries $j$ and which doesn''t.'
   - id: q-parametros-de-a
     type: numeric
-    prompt: 'A decoder and an encoder of $d_h = 64$ coordinates, and an alignment model of $d_a = 32$. How many weights does the function $a$ have?'
+    prompt: 'A decoder and an encoder with $d_h = 64$ coordinates each, and an alignment model with $d_a = 32$. How many weights does the function $a$ have?'
     answer: 4128
     tolerance: 0
     unit: weights
-    explanation: 'Two $32 \times 64$ matrices and a vector of $32$: $2 \cdot 32 \cdot 64 + 32 = 4\,128$. What matters about that count is what doesn''t appear in it. $T_x$ doesn''t appear, nor does $T_y$, nor the pair: there is *one* set of weights, and it scores the $T_x \cdot T_y$ pairs of the sentence and those of every other sentence, exactly as a single $\mathbf{W}_{hh}$ runs over every position of a recurrent neural network (RNN), the one from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>. A longer sentence costs more computation; it doesn''t cost a single extra weight.'
+    explanation: 'Two $32 \times 64$ matrices and a vector of $32$: $2 \cdot 32 \cdot 64 + 32 = 4\,128$. What matters about that count is what''s missing from it. Neither $T_x$ nor $T_y$ appears, and neither does the pair: there is *one* set of weights, and it scores the $T_x \cdot T_y$ pairs of this sentence and those of every other sentence, exactly as a single $\mathbf{W}_{hh}$ runs over every position of a recurrent neural network (RNN), the one from <Leccion slug="la-rnn-vanilla">the lesson on the vanilla RNN</Leccion>. A longer sentence costs more computation, but not a single extra weight.'
     hint: 'Count the three pieces separately and check whether any of them depends on the length of the sentence.'
   - id: q-dos-caminos
     type: multi
-    prompt: 'Which routes does the gradient of the loss take to reach $\bar{\mathbf{h}}_j$ *from the attention mechanism*? Leave out the one that reaches it from $\bar{\mathbf{h}}_{j+1}$ through the encoder''s recurrence. Tick all that apply.'
+    prompt: 'Which routes does the gradient of the loss take to reach $\bar{\mathbf{h}}_j$ *from the attention mechanism*? Leave out the one that arrives from $\bar{\mathbf{h}}_{j+1}$ through the encoder''s recurrence. Tick all that apply.'
     options:
       - { id: a, text: 'As a value: $\bar{\mathbf{h}}_j$ is one of the terms of every $\mathbf{c}_i$, so from each step it receives $\alpha_{ij}\nabla_{\mathbf{c}_i}\ell$.' }
       - { id: b, text: 'As something scored: $\bar{\mathbf{h}}_j$ enters the $T_y$ scores $e_{ij}$, and through them the weights of those rows.' }
       - { id: c, text: 'From $\hat{\mathbf{y}}_i$ directly, without going through $\mathbf{c}_i$: the encoder state is one of the inputs to the output softmax.' }
       - { id: d, text: 'Through $\mathbf{W}_{sa}$, the matrix that multiplies $\bar{\mathbf{h}}_j$ inside the score.' }
     answer: [a, b]
-    explanation: '(a) and (b) are the two, and it''s worth saying why they''re two and not one: $\bar{\mathbf{h}}_j$ appears twice in the same formula, once as something that gets mixed and once as something that gets scored, so <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> adds two terms. (c) skips the whole mechanism: the decoder doesn''t see the input, it sees $\mathbf{c}_i$, and that has been the block''s whole argument since <Leccion slug="encoder-decoder">its first lesson, on the encoder-decoder architecture</Leccion>. (d) swaps the matrices: $\mathbf{W}_{sa}$ multiplies the decoder''s state and $\mathbf{W}_{ha}$ the encoder''s, which is exactly what their subscripts say.'
-    hint: 'Write $\mathbf{c}_i = \sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ and ask yourself in how many places in that line $\bar{\mathbf{h}}_j$ appears.'
+    explanation: '(a) and (b) are the two, and here''s why there are two and not one: $\bar{\mathbf{h}}_j$ appears twice in the same formula, once as something that gets mixed and once as something that gets scored, so <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> adds two terms. (c) skips the whole mechanism: the decoder doesn''t see the input, it sees $\mathbf{c}_i$, and that has been the block''s whole argument since <Leccion slug="encoder-decoder">its first lesson, on the encoder-decoder architecture</Leccion>. (d) swaps the matrices: $\mathbf{W}_{sa}$ multiplies the decoder''s state and $\mathbf{W}_{ha}$ the encoder''s, exactly as their subscripts say.'
+    hint: 'Write $\mathbf{c}_i = \sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ and count how many places in that line contain $\bar{\mathbf{h}}_j$.'
   - id: q-comparacion
     type: single
     prompt: 'The derivative of the loss with respect to a score comes out as $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)$. What does it say about when a score gets corrected?'
     options:
-      - { id: a, text: 'That it only moves if $\bar{\mathbf{h}}_j$ differs from the mixture that same row has already built, and in the direction the loss asks for. A state equal to $\mathbf{c}_i$ gets no correction, whether the translation is going well or badly.' }
-      - { id: b, text: 'That it raises the score of the state with the largest norm, because that''s the one that pushes the dot product hardest.' }
+      - { id: a, text: 'That the score only moves if $\bar{\mathbf{h}}_j$ differs from the mixture its row has already built, and in the direction the loss asks for. A state equal to $\mathbf{c}_i$ gets no correction, whether the translation is going well or badly.' }
+      - { id: b, text: 'That it raises the score of the state with the largest norm, because that one pushes the dot product hardest.' }
       - { id: c, text: 'That all the scores in a row move in the same direction, since they share the factor $\nabla_{\mathbf{c}_i}\ell$.' }
       - { id: d, text: 'That the correction is the same at every step, because $\bar{\mathbf{h}}_j$ is the same vector at all of them.' }
     answer: a
-    explanation: '(a). The subtraction is what turns learning into a comparison: the question isn''t whether $\bar{\mathbf{h}}_j$ is good, but whether it''s better than what the row is already mixing, which is the only question with an answer when the weights have to sum to $1$, because raising one is lowering the rest. The factor $\alpha_{ij}$ adds the other half and isn''t innocent: a position that already receives almost nothing gets corrected little, so the alignment tends to sharpen what it looks at rather than discover what it ignores. (b) forgets the subtraction and the sign. (c) is false: the common factor is there, but each term projects it onto a different difference, and the ones that point the other way go down. (d) confuses the vector with the pair: $\bar{\mathbf{h}}_j$ doesn''t change, $\mathbf{c}_i$ and $\alpha_{ij}$ do.'
+    explanation: '(a) is right. The subtraction is what turns learning into a comparison: the question isn''t whether $\bar{\mathbf{h}}_j$ is good, but whether it''s better than what the row is already mixing. That''s the only question with an answer when the weights have to sum to $1$, because raising one weight means lowering the rest. The factor $\alpha_{ij}$ adds the other half, and it isn''t innocent: a position that already receives almost nothing gets corrected very little, so the alignment tends to sharpen what it already looks at rather than discover what it ignores. (b) forgets the subtraction and the sign. (c) is false: the common factor is there, but each term projects it onto a different difference, and the ones that point the other way go down. (d) confuses the vector with the pair: $\bar{\mathbf{h}}_j$ doesn''t change, but $\mathbf{c}_i$ and $\alpha_{ij}$ do.'
     hint: 'What is that derivative worth if $\bar{\mathbf{h}}_j$ turns out to be exactly $\mathbf{c}_i$?'
   - id: q-que-se-precalcula
     type: single
@@ -59,17 +59,17 @@ quiz:
       - { id: c, text: 'Everything $T_x + T_y$ times: once both sides are projected, each pair''s score is already computed.' }
       - { id: d, text: 'The two projections $T_x \cdot T_y$ times, and the $\tanh$ only once, applied to the whole score matrix at the end.' }
     answer: a
-    explanation: '(a). The two projections come out of the loop because each depends on a single index, and that''s a real saving: without it there would be $2 T_x T_y$ matrix-vector products instead of $T_x + T_y$. What doesn''t come out is the part in the middle. The $\tanh$ sits between the sum and the read-out vector, and a non-linear function applied to a sum doesn''t distribute over its terms, so the grid of $T_x \cdot T_y$ vectors of $d_a$ coordinates has to be built in full. (b) gives the saving away; (c) gives away the $\tanh$, which is what (d) tries to move. And moving it to the end is precisely taking it out of the middle, with the result you already know.'
+    explanation: '(a) is right. The two projections come out of the loop because each depends on a single index, and that''s a real saving: without it there would be $2 T_x T_y$ matrix-vector products instead of $T_x + T_y$. What can''t come out is the part in the middle. The $\tanh$ sits between the sum and the read-out vector, and a non-linear function applied to a sum doesn''t distribute over its terms, so the grid of $T_x \cdot T_y$ vectors of $d_a$ coordinates has to be built in full. (b) throws the saving away, and (c) throws away the $\tanh$, which is what (d) tries to relocate. But moving it to the end means taking it out of the middle, with the result you already know.'
     hint: 'Which of the three pieces depends on both indices at once?'
 challenges:
   - id: ch-atencion-aditiva
     prompt: |
       Write `alignment(S, H, Wsa, Wha, va)`. It takes the decoder states `S`, of shape
       $(T_y, d_h)$, the encoder states `H`, of shape $(T_x, d_h)$, and the three weights of the
-      alignment model. Row $i$ of `S` is $\mathbf{s}_{i-1}$, the state step $i$ is scored with.
+      alignment model. Row $i$ of `S` is $\mathbf{s}_{i-1}$, the state that step $i$ is scored with.
       It returns the matrix $\alpha$ of shape $(T_y, T_x)$, already normalised.
 
-      It's the lesson's additive score,
+      The function computes the lesson's additive score,
       $e_{ij} = \mathbf{v}_a^{\top}\tanh\left(\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)$,
       followed by a row-wise softmax. Don't write into the arrays you receive.
     packages: [numpy]
@@ -142,13 +142,13 @@ challenges:
           Z = np.exp(E - E.max(axis=1, keepdims=True))
           return Z / Z.sum(axis=1, keepdims=True)
     explanation: |
-      The two projections are computed outside the grid, each one only once, and the
+      The two projections are computed outside the grid, each only once, and indexing with
       `[:, None, :]` against `[None, :, :]` is what crosses them: NumPy repeats the first along
       the positions and the second along the steps, and out comes the $(T_y, T_x, d_a)$ block
       that the $\tanh$ squashes. Only then does `va` come in, contracting the last dimension and
-      leaving one score per pair. Subtracting the maximum is the shift invariance from
-      <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion>, used as it was there:
-      it changes what gets exponentiated, not what comes out.
+      leaving one score per pair. Subtracting the maximum uses the shift invariance from
+      <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion> exactly as it was
+      used there: it changes what gets exponentiated, not what comes out.
 reading:
   - kind: paper
     title: 'Neural Machine Translation by Jointly Learning to Align and Translate'
@@ -157,38 +157,37 @@ reading:
     venue: 'arXiv:1409.0473'
     lang: en
     url: 'https://arxiv.org/abs/1409.0473'
-    note: 'This lesson''s score is in its appendix A.2.2: v_a times the tanh of two summed projections. It notes there that fixing the context to the last state gives the bare encoder-decoder, which is your frozen alignment. It never says why the tanh.'
+    note: 'This lesson''s score is in its appendix A.2.2: v_a times the tanh of two summed projections. It notes that fixing the context to the last state gives the bare encoder-decoder, your frozen alignment. It never explains why the tanh.'
 ---
 
 {/* COURSE-P5-04: Block 4, Lesson 4. COURSE-P11-07: English translation. */}
 
-A model with attention needs, at every output step, one weight for each input position. The
-previous lesson, on the idea of attention, set up everything around those weights: they come out of
-a softmax that runs over the positions of the source, they mix the encoder states into a context
-vector of each step's own, and that vector enters the decoder's recurrence through its matrix
-$\mathbf{W}_{ch}$. What it didn't write down is what produces them. Before the softmax there's a
-function, $a$, that takes a pair (where the decoder is, and what's at one input position) and
-returns a score, and so far it has had to do two things only: return a number, and be
-differentiable. This lesson fills it in, with the form Bahdanau gave it in 2014.
+A model with attention needs one weight for each input position at every output step. The previous
+lesson, on the idea of attention, set up everything around those weights: they come out of a softmax
+over the positions of the source, they mix the encoder states into a context vector of each step's
+own, and that vector enters the decoder's recurrence through the matrix $\mathbf{W}_{ch}$. What that
+lesson didn't write down is what produces the weights. Before the softmax there's a function, $a$,
+that takes a pair (where the decoder is, and what's at one input position) and returns a score. So
+far it has only had to do two things: return a number, and be differentiable. This lesson fills it in
+with the form Bahdanau gave it in 2014.
 
-The question is small and concrete: what function swallows two vectors and returns a number saying
-how well the two correspond? Bahdanau's answer is a tiny neural network, with a single hidden layer.
-But what teaches most isn't that network, it's the constraint that decides its shape: the score has
-to be a function of the *pair*. A function that gives an opinion on each vector separately and adds
-the two opinions up doesn't score a correspondence: it scores two loose things, and further down
-you'll see that this destroys the whole mechanism.
+The question is small and concrete: what function takes two vectors and returns a number saying how
+well they correspond? Bahdanau's answer is a tiny neural network with a single hidden layer. But the
+network isn't what teaches the most; the constraint that decides its shape is. The score has to be a
+function of the *pair*. A function that gives an opinion on each vector separately and adds the two
+opinions up doesn't score a correspondence, only two unrelated things, and further down you'll see
+that this destroys the whole mechanism.
 
-Go back to the previous lesson's map and look at three rows. The row for <W>i</W> and the row for
-<W>read</W> take nearly everything from the same position, the one holding <W>leí</W>, which says
-<W>i read</W> in a single word, with weights of $0.74$ and $0.81$. The row for <W>a</W>, the next
-one, gives that same position $0.05$. The state $\bar{\mathbf{h}}_2$ hasn't changed between those
-three rows (the encoder computed it once and there it stays), and yet it receives two high scores
-and one low one. The only thing that differs is which decoder state it was being compared with each
-time.
+Go back to the previous lesson's map and look at three rows. The rows for <W>i</W> and <W>read</W>
+take nearly everything from the same position, the one holding <W>leí</W>, which says <W>i read</W>
+in a single word, with weights of $0.74$ and $0.81$. The next row, for <W>a</W>, gives that same
+position $0.05$. The state $\bar{\mathbf{h}}_2$ hasn't changed between those three rows (the encoder
+computed it once, and there it stays), and yet it receives two high scores and one low one. The only
+thing that differs is which decoder state it was compared with each time.
 
 <Explorable
   id="attention-alignment"
-  caption="The three rows of the example are 2, 3 and 4. The weights are still the ones I set by hand; what this lesson adds is where they would come from if nobody set them."
+  caption="The three rows of the example are 2, 3 and 4. The weights are still the ones I set by hand; what this lesson adds is where they would come from if nobody had set them."
 />
 
 <Callout type="intuition" title="The idea in one sentence">
@@ -198,23 +197,23 @@ them there, squash the sum and read it out with a vector.
 
 ## A small network that scores pairs
 
-The additive score projects the two states into a space of its own, of $d_a$ coordinates, and adds
-them inside it:
+The additive score projects the two states into a space of its own, with $d_a$ coordinates, and adds
+them there:
 
 $$
 \mathbf{p}_{ij} = \mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{W}_{ha}\bar{\mathbf{h}}_j \in \mathbb{R}^{d_a},
 $$
 
 with $\mathbf{W}_{sa}, \mathbf{W}_{ha} \in \mathbb{R}^{d_a \times d_h}$, one for each side. Both have
-$d_h$ columns because in this block the encoder and the decoder are the same width, but the sum
-doesn't require it. All it asks is that the two projections land in the same space, that is, that
-the two matrices have $d_a$ rows; the columns of each are their own side's business. If the decoder
-states had $d_s$ coordinates, $\mathbf{W}_{sa}$ would be $d_a \times d_s$ and the rest of the score
-would stay as it is. In Bahdanau's paper, in fact, the two widths differ: the paper's encoder reads
-the sentence in both directions and concatenates the two states, so its states are twice as wide as
-the decoder's.
+$d_h$ columns because the encoder and the decoder are the same width in this block, but the sum
+doesn't require that. All it asks is that the two projections land in the same space, that is, that
+the two matrices have $d_a$ rows; the number of columns in each is its own side's business. If the
+decoder states had $d_s$ coordinates, $\mathbf{W}_{sa}$ would be $d_a \times d_s$ and the rest of the
+score would stay as it is. In fact, in Bahdanau's paper the two widths do differ: its encoder reads
+the sentence in both directions and concatenates the two states, so its encoder states are twice as
+wide as the decoder's.
 
-That sum is the pre-activation of a hidden layer, and what follows is what any layer already does:
+That sum is the pre-activation of a hidden layer, and what comes next is what any layer already does:
 squash it and read it out.
 
 $$
@@ -222,51 +221,51 @@ e_{ij} = a\left(\mathbf{s}_{i-1}, \bar{\mathbf{h}}_j\right)
 = \mathbf{v}_a^{\top}\tanh\left(\mathbf{p}_{ij}\right) \in \mathbb{R},
 $$
 
-with $\mathbf{v}_a \in \mathbb{R}^{d_a}$. It's a multilayer perceptron (MLP) from Block 2 at its
+with $\mathbf{v}_a \in \mathbb{R}^{d_a}$. This is a multilayer perceptron (MLP) from Block 2 at its
 smallest size: one hidden layer of $d_a$ units with $\tanh$, and a linear output of a single neuron.
 That neuron is the one from <Leccion slug="la-neurona">the lesson on the artificial neuron</Leccion>,
 $z = \mathbf{w}^{\top}\mathbf{x} + b$: its input is the hidden layer, $\tanh(\mathbf{p}_{ij})$, and
 its weights are $\mathbf{v}_a$, one per hidden unit. We call $\mathbf{v}_a$ the **read-out vector**,
 because it turns the $d_a$ numbers of the hidden layer into the single number that is the score.
 
-Neither of the two layers has a bias, and for different reasons. The output's would be redundant,
-because it would add the same number to the whole row, and a constant per row doesn't survive the
-softmax. The hidden layer's wouldn't be: inside the $\tanh$ it shifts the point where each unit
-works, closer to saturation or further from it, and that does change the scores. Bahdanau leaves it
-out and many implementations put it in; here I follow the paper's formula.
+Neither layer has a bias, for different reasons. The output's would be redundant, because it would
+add the same number to the whole row, and a constant per row cancels out in the softmax. The hidden
+layer's wouldn't be: inside the $\tanh$ it shifts the point where each unit operates, closer to
+saturation or further from it, and that does change the scores. Bahdanau leaves it out and many
+implementations put it in; here I follow the paper's formula.
 
-Count the weights: $2 d_a d_h + d_a$. $T_x$ doesn't appear, nor does $T_y$, nor the pair. There's a
-single set of weights, and it scores the $T_x \cdot T_y$ pairs of this sentence and those of every
+Count the weights: $2 d_a d_h + d_a$. Neither $T_x$ nor $T_y$ appears, and neither does the pair.
+There's a single set of weights, and it scores the $T_x \cdot T_y$ pairs of this sentence and of every
 other, which is the same economy as the previous block's recurrence (one $\mathbf{W}_{hh}$ for every
-position) applied to a grid instead of a row.
+position), applied to a grid instead of a row.
 
 ### Without the non-linearity, every step would look at the same place
 
-Remove the $\tanh$ and look at what's left. The read-out vector goes into the sum and distributes
-over it:
+Remove the $\tanh$ and look at what's left. The read-out vector distributes over the sum:
 
 $$
 e_{ij} = \mathbf{v}_a^{\top}\mathbf{W}_{sa}\mathbf{s}_{i-1} + \mathbf{v}_a^{\top}\mathbf{W}_{ha}\bar{\mathbf{h}}_j,
 $$
 
-two numbers that are added together without either having looked at the other. The first,
-$\mathbf{v}_a^{\top}\mathbf{W}_{sa}\mathbf{s}_{i-1}$, depends on step $i$ but not on position $j$.
-In row $i$, that is, in the $T_x$ scores $e_{i1}, \dots, e_{iT_x}$ that step $i$'s softmax turns into
-weights, it's the same in every one: a constant added to the whole row. And a constant like that
-doesn't change the softmax. It's the shift invariance from <Leccion slug="funcion-de-perdida">the
-lesson on loss functions</Leccion>, the same one that lets you subtract the maximum before
-exponentiating, and here it makes that first number cancel between numerator and denominator:
+two numbers added together without either having looked at the other. The first,
+$\mathbf{v}_a^{\top}\mathbf{W}_{sa}\mathbf{s}_{i-1}$, depends on step $i$ but not on position $j$. So
+in row $i$, that is, among the $T_x$ scores $e_{i1}, \dots, e_{iT_x}$ that step $i$'s softmax turns
+into weights, it's the same in every score: a constant added to the whole row. And a constant like
+that doesn't change the softmax. It's the shift invariance from
+<Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion>, the same property that
+lets you subtract the maximum before exponentiating, and here it makes the first number cancel
+between numerator and denominator:
 
 $$
 \alpha_{ij} = \frac{\exp\left(\mathbf{v}_a^{\top}\mathbf{W}_{ha}\bar{\mathbf{h}}_j\right)}{\sum_{k=1}^{T_x} \exp\left(\mathbf{v}_a^{\top}\mathbf{W}_{ha}\bar{\mathbf{h}}_k\right)}.
 $$
 
 The index $i$ has disappeared from the right-hand side. All $T_y$ steps receive the same row of
-weights, and with it the same context vector, so the model is back to being the fixed summary of the
-earlier lessons: a learned alignment, yes, but frozen, only frozen wherever training says instead of
-on the last token. The $\tanh$ is what prevents that split. It squashes the sum *before* reading it,
-and a non-linear function of a sum doesn't distribute over its terms, so the score can't come apart
-again into an opinion about the decoder plus another about the encoder.
+weights, and therefore the same context vector, so the model is back to being the fixed summary of
+the earlier lessons: a learned alignment, yes, but still frozen, only now it sits wherever training
+puts it instead of on the last token. The $\tanh$ is what prevents that split. It squashes the sum
+*before* the read-out, and a non-linear function of a sum doesn't distribute over its terms, so the
+score can't come apart again into one opinion about the decoder plus another about the encoder.
 
 ## How the gradient reaches it
 
@@ -277,7 +276,7 @@ $$
 \frac{\partial \ell}{\partial \alpha_{ij}} = \left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\bar{\mathbf{h}}_j,
 $$
 
-and continues through the softmax, which spreads each score across every weight in its row. Out the
+and continues through the softmax, which makes each score affect every weight in its row. Out the
 other side comes the derivative with respect to a score:
 
 $$
@@ -286,11 +285,11 @@ $$
 
 <Details summary="The step through the softmax, with its two cases">
 
-With $i$ fixed, $\alpha_{ij}$ depends on all $T_x$ scores of the row, so the derivative with respect
-to one of them sums over the whole row. The softmax's derivative has the two cases from
-<Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion>: when the weight and the
-score share an index it's $\alpha_{ij}\left(1 - \alpha_{ij}\right)$, and when they don't,
-$-\alpha_{ik}\alpha_{ij}$. Separating the term $k = j$ from the rest:
+With $i$ fixed, each weight in the row depends on all $T_x$ scores, so the derivative of the loss
+with respect to one score sums over the whole row. The softmax's derivative has two cases, the ones
+from <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion>: when the weight and
+the score share an index it's $\alpha_{ij}\left(1 - \alpha_{ij}\right)$, and when they don't,
+$-\alpha_{ik}\alpha_{ij}$. Separating the term $k = j$ from the rest gives
 
 $$
 \frac{\partial \ell}{\partial e_{ij}}
@@ -298,29 +297,29 @@ $$
 $$
 
 The sum is $\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\sum_k \alpha_{ik}\bar{\mathbf{h}}_k$, and
-that weighted sum is $\mathbf{c}_i$. Substituting $\partial \ell / \partial \alpha_{ij}$ and taking
-$\alpha_{ij}$ out as a common factor gives the derivative above.
+that weighted sum is $\mathbf{c}_i$. Substituting $\partial \ell / \partial \alpha_{ij}$ and factoring
+out $\alpha_{ij}$ gives the derivative above.
 
 </Details>
 
-Read it slowly, because it says how attention learns where to look. It has two parts, and the first
-is what happens to the mixture when the score goes up. If $e_{ij}$ grows a little, position $j$
-gains weight at the expense of the others and $\mathbf{c}_i$ shifts towards $\bar{\mathbf{h}}_j$.
+Read it slowly, because it says how attention learns where to look. It has two parts. The first is
+what happens to the mixture when the score goes up: if $e_{ij}$ grows a little, position $j$ gains
+weight at the expense of the others, and $\mathbf{c}_i$ shifts towards $\bar{\mathbf{h}}_j$.
 Precisely,
 $\partial \mathbf{c}_i / \partial e_{ij} = \alpha_{ij}\left(\bar{\mathbf{h}}_j - \mathbf{c}_i\right)$,
-which is the same calculation as in the drop-down with $\bar{\mathbf{h}}_k$ in place of
+which is the same calculation as in the drop-down, with $\bar{\mathbf{h}}_k$ in place of
 $\partial \ell / \partial \alpha_{ik}$. The second part is $\nabla_{\mathbf{c}_i}\ell$,
-whose opposite points to where the loss goes down: to where gradient descent would want to take the
-mixture. The derivative is the dot product of the two, so it measures whether moving $\mathbf{c}_i$
-towards $\bar{\mathbf{h}}_j$ takes it where it ought to go.
+whose opposite points to where the loss goes down, that is, where gradient descent would want to take
+the mixture. The derivative is the dot product of the two, so it measures whether moving
+$\mathbf{c}_i$ towards $\bar{\mathbf{h}}_j$ takes it where it ought to go.
 
-That gives what training does with the score. If moving the mixture towards $\bar{\mathbf{h}}_j$
+That tells us what training does with the score. If moving the mixture towards $\bar{\mathbf{h}}_j$
 makes the loss go down, the score goes up; if it makes the loss go up, the score goes down; and if
-$\bar{\mathbf{h}}_j$ coincides with $\mathbf{c}_i$, raising the score doesn't move the mixture, so it
-gets no correction at all. A score, then, isn't corrected according to what its state is worth on
-its own, but according to what it adds against the mixture the row has already built. It makes sense
-for this to be a comparison and not a grade: the weights sum to $1$, so raising one is lowering the
-others, and there's no way to reward one position without saying which one pays for it.
+$\bar{\mathbf{h}}_j$ coincides with $\mathbf{c}_i$, raising the score doesn't move the mixture, so the
+score gets no correction at all. A score, then, isn't corrected according to what its state is worth
+on its own, but according to what that state adds to the mixture the row has already built. It makes
+sense for this to be a comparison and not a grade: the weights sum to $1$, so raising one means
+lowering the others, and there's no way to reward one position without saying which one pays for it.
 
 From there back, it's the chain rule as you already know it. The read-out hands back
 $\tanh(\mathbf{p}_{ij})$, the $\tanh$ contributes its derivative $1 - \tanh^{2}$, and each matrix
@@ -340,28 +339,28 @@ $$
 
 All $T_x \cdot T_y$ pairs add into the same three arrays, which is what sharing weights means.
 
-And there's a consequence that isn't in the parameters. Look at where $\bar{\mathbf{h}}_j$ appears:
-in the mixture, as one of the terms, and in the $T_y$ scores, as an argument of $a$. That's two
-places, so the gradient reaches it along two routes and they have to be added:
+There's one more consequence, and it isn't in the parameters. Look at where $\bar{\mathbf{h}}_j$
+appears: in the mixture, as one of the terms, and in the $T_y$ scores, as an argument of $a$. That's
+two places, so the gradient reaches it along two routes, and the two contributions have to be added:
 
 $$
 \nabla_{\bar{\mathbf{h}}_j}\ell = \sum_{i=1}^{T_y} \alpha_{ij}\nabla_{\mathbf{c}_i}\ell + \sum_{i=1}^{T_y} \mathbf{W}_{ha}^{\top}\nabla_{\mathbf{p}_{ij}}\ell.
 $$
 
-On top of those two comes the one the previous block already had, the one that comes down from
-$\bar{\mathbf{h}}_{j+1}$ through the encoder's recurrence, and that's where it gets interesting: the
-two above do *not* go through it. They go from step $i$ of the decoder to position $j$ of the input
-without travelling the stretch of recurrence that separates that position from the end of the
-sentence, so they don't multiply by $\mathbf{W}^{\text{enc}}_{hh}$ even once, and their length
-doesn't grow as $j$ moves further away. The product of matrices that
-<Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion> pointed to as
-the cause of the problem doesn't appear on these two routes.
+On top of those two comes the one the previous block already had, the gradient that comes down from
+$\bar{\mathbf{h}}_{j+1}$ through the encoder's recurrence. And here is where it gets interesting: the
+two routes above do *not* go through that recurrence. They run from step $i$ of the decoder straight
+to position $j$ of the input, without travelling the stretch of recurrence that separates that
+position from the end of the sentence. They don't multiply by $\mathbf{W}^{\text{enc}}_{hh}$ even
+once, and their length doesn't grow as $j$ moves further away. The product of matrices that
+<Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion> identified as the
+cause of the problem doesn't appear on either of them.
 
 ## The score, in NumPy
 
 The first cell computes the whole grid. It stores the states by rows (one row per step, one row per
-position), which is why the matrices appear transposed relative to the equations. Look at two
-things: how much the sharing-out that comes from freshly initialised weights looks like a map, and
+position), which is why the matrices appear transposed relative to the equations. There are two things
+to look at: how closely the sharing-out that freshly initialised weights produce resembles a map, and
 what happens when you ask for the version without the $\tanh$.
 
 <PyCell packages={["numpy"]} code={`
@@ -402,16 +401,15 @@ print("without tanh, row 8:", np.round(linear[7], 3))
 print("without tanh, all rows equal:", bool(np.allclose(linear, linear[0])))
 `} />
 
-The freshly initialised map says nothing: the largest weight in each row is around $0.18$ when an
-even share would be $0.167$, so the eight rows are practically the mean of the sentence. The
-explorable's interpretable alignment doesn't come from the architecture, it comes from training;
-what the architecture guarantees is that there's a route along which to train it. And the output
-after the blank line is the previous section checked by hand: without the $\tanh$, row $1$ and row
-$8$ come out equal to the last decimal.
+The freshly initialised map says nothing: the largest weight in each row is around $0.18$ when an even
+share would be $0.167$, so the eight rows are practically the mean of the sentence. The explorable's
+interpretable alignment doesn't come from the architecture but from training; what the architecture
+guarantees is a route along which to train it. And the output after the blank line is the previous
+section checked by hand: without the $\tanh$, row $1$ and row $8$ come out equal to the last decimal.
 
-The second cell follows the two routes separately. It needs a loss and uses the cheapest one
-possible (one whose gradient with respect to each $\mathbf{c}_i$ is a given vector), so that the
-only thing being measured is the mechanism.
+The second cell follows the two routes separately. It needs a loss, so it uses the cheapest one
+possible (one whose gradient with respect to each $\mathbf{c}_i$ is a given vector), which means the
+mechanism is the only thing being measured.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -454,17 +452,17 @@ print("difference, the two added:    %.1e" % np.abs(via_value + via_score - num)
 `} />
 
 The last line is the check: added together, the two routes reproduce the numerical gradient to the
-order of $10^{-10}$, and on its own each one is wrong in the first digit. The norms say something
-more, and it's honest to look at it: with untrained weights, the value route is eleven times larger
-than the score route. At the start almost all of the gradient arrives along the route it would take
-even if the alignment were uniform, and the small route, the one through $a$, is the only one that
-can pull the map out of that uniformity. Change the scale of `va` to $2.0$ and run both cells again:
-the scores spread apart, the weights sharpen and the two norms draw closer.
+order of $10^{-10}$, while on its own each one is wrong in the first digit. The norms tell you
+something more, and it's worth being honest about it: with untrained weights, the value route is
+eleven times larger than the score route. At the start, almost all of the gradient arrives along the
+route it would take even if the alignment were uniform, and the small route, the one through $a$, is
+the only one that can pull the map out of that uniformity. Change the scale of `va` to $2.0$ and run
+both cells again: the scores spread apart, the weights sharpen and the two norms draw closer.
 
 ## Test your intuition
 
 Five questions: what breaks without the $\tanh$, how many weights the function $a$ carries, how the
-gradient reaches an encoder state, what the derivative of a score says, and what part of the
+gradient reaches an encoder state, what the derivative of a score says, and which part of the
 computation can come out of the loop.
 
 <Quiz id="q-por-que-tanh" />
@@ -482,16 +480,16 @@ computation can come out of the loop.
 ---
 
 The last question leaves a bill unsettled. The two projections come out of the loop because each
-depends on a single index, but between the sum and the read-out vector there's a $\tanh$, and that
-forces the grid of $T_x \cdot T_y$ vectors of $d_a$ coordinates to be built one vector at a time. A
-sixty-token sentence translated into sixty asks for $3\,600$ of those vectors, and none of the
-operations that produce them is a large matrix product: they're sums and $\tanh$s over a
-three-dimensional block. The hardware that trains these networks does one thing far better than
-everything else, and it isn't that.
+depends on a single index, but between the sum and the read-out vector there's a $\tanh$, and it
+forces the grid of $T_x \cdot T_y$ vectors of $d_a$ coordinates to be built in full. A sixty-token
+sentence translated into sixty tokens asks for $3\,600$ of those vectors, and none of the operations
+that produce them is a large matrix product: they're sums and $\tanh$s over a three-dimensional
+block. The hardware that trains these networks is far better at one thing than at anything else, and
+this isn't it.
 
 There's another way to score a pair that avoids the whole problem, and its formula fits in five
-symbols: Luong's attention, the multiplicative kind, which is <Leccion slug="luong">the next
-lesson</Leccion>. Instead of projecting, adding and squashing, it multiplies the two states through
-a matrix, so the complete grid of scores becomes *one* matrix product. That lesson compares the two
-scores (what each costs, what each can do), and that's where what Block 5 looks like starts to be
-decided.
+symbols: Luong's attention, the multiplicative kind, the subject of
+<Leccion slug="luong">the next lesson</Leccion>. Instead of projecting, adding and squashing, it
+multiplies the two states through a matrix, so the complete grid of scores becomes *one* matrix
+product. That lesson compares the two scores (what each costs, what each can do), and that's where the
+shape of Block 5 starts to be decided.

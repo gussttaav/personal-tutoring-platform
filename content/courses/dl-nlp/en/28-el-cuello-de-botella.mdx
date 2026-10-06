@@ -4,46 +4,46 @@ title: "The context-vector bottleneck"
 block: 4
 order: 2
 minutes: 27
-summary: "The encoder summarises the input in a fixed-size vector, and that size is decided before it sees a single sentence. This lesson separates two ways of failing that are easily confused: counting how many distinct messages fit in the vector proves that the wall exists and doesn't depend on training; measuring a toy task with two state widths and three training budgets shows that the model breaks long before that ceiling, that training more buys accuracy on the sentences that fit and nothing on those that don't, and why the start of the input is the first thing lost."
+summary: "The encoder summarises the input in a fixed-size vector, and that size is decided before it has seen a single sentence. This lesson separates two kinds of failure that are easy to confuse. Counting how many distinct messages fit in the vector proves the wall exists, whatever the training. Measuring a toy task with two state widths and three training budgets then shows that the model breaks long before that ceiling, that more training buys accuracy on the sentences that fit and nothing on those that don't, and why the start of the input is the first thing lost."
 draft: false
 hasCode: true
 hasQuiz: true
 quiz:
   - id: q-entrenar-mas
     type: single
-    prompt: 'The narrow model in the table, with $d_h = 8$, gets a good share of the three-letter strings right and almost none of the six-letter ones. You train it ten times longer. What do you expect to see?'
+    prompt: 'The narrow model in the table, with $d_h = 8$, gets a good share of the three-letter strings right and almost none of the six-letter ones. You train it for ten times as long. What do you expect to see?'
     options:
       - { id: a, text: 'The short columns keep rising and the long ones stay at floor level: training buys accuracy on what fits in $\mathbf{c}$, and doesn''t change how much fits.' }
       - { id: b, text: 'Every length rises in the same proportion, because gradient descent spreads the improvement across all the training examples.' }
       - { id: c, text: 'Nothing changes, because the loss is already at its minimum and the gradient is zero.' }
       - { id: d, text: 'The long ones rise most, since they contribute the most terms to the loss and so receive the most gradient.' }
     answer: a
-    explanation: '(a), and the table from the cell separates the two halves: going from 1,000 to 2,000 iterations with $d_h = 8$, the short columns keep rising (the two-letter strings reach a perfect score) and the five-, six- and seven-letter ones stay at floor level. Training hasn''t run out; what has run out is room. (b) describes something that doesn''t happen: the lengths aren''t interchangeable examples, and the one that doesn''t fit won''t fit any better for insisting. (c) is false as a matter of fact (the loss keeps falling) and wouldn''t be needed anyway: even if the minimum had been reached, it would be the minimum of a model with that $\mathbf{c}$. (d) inverts the argument of <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>: a longer route doesn''t deliver more gradient, it delivers less.'
-    hint: 'Look at the 1,000- and 2,000-iteration rows, column by column. Which ones move and which don''t?'
+    explanation: '(a), and the table from the cell shows both halves: going from 1,000 to 2,000 iterations with $d_h = 8$, the short columns keep rising (the two-letter strings reach a perfect score) while the five-, six- and seven-letter ones stay at floor level. Training hasn''t run out; room has. (b) describes something that doesn''t happen: the lengths aren''t interchangeable examples, and a length that doesn''t fit won''t fit any better for more insistence. (c) is false as a matter of fact (the loss keeps falling), and even if the minimum had been reached, it would only be the minimum for a model with that $\mathbf{c}$. (d) inverts the argument of <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>: a longer route doesn''t deliver more gradient, it delivers less.'
+    hint: 'Compare the 1,000- and 2,000-iteration rows column by column. Which columns move, and which don''t?'
   - id: q-cuenta-tmax
     type: numeric
-    prompt: 'An encoder has $d_h = 64$ coordinates, and $q = 8$ levels can be told apart in each one. It reads sentences written over a vocabulary of $\lvert V_x \rvert = 4096$ entries. How many tokens long is the longest sentence that this lesson''s count does *not* rule out?'
+    prompt: 'An encoder has $d_h = 64$ coordinates, and $q = 8$ levels can be told apart in each one. It reads sentences over a vocabulary of $\lvert V_x \rvert = 4096$ entries. What''s the length, in tokens, of the longest sentence that this lesson''s count does *not* rule out?'
     answer: 16
     tolerance: 0
     unit: tokens
-    explanation: 'There''s room for $q^{d_h} = 8^{64}$ distinct messages, and there are $4096^{T_x}$ sentences of length $T_x$. Since $8^{64} = 2^{192}$ and $4096^{T_x} = 2^{12 T_x}$, the condition $4096^{T_x} \le 8^{64}$ is $12 T_x \le 192$, that is, $T_x \le 16$. In the general form, $T^{\star} = \lfloor d_h \log q / \log \lvert V_x \rvert \rfloor = \lfloor 64 \cdot 3/12 \rfloor = 16$. And remember what kind of number it is: a ceiling that doesn''t depend on training, far above where a real model breaks.'
+    explanation: 'There''s room for $q^{d_h} = 8^{64}$ distinct messages, and there are $4096^{T_x}$ sentences of length $T_x$. Since $8^{64} = 2^{192}$ and $4096^{T_x} = 2^{12 T_x}$, the condition $4096^{T_x} \le 8^{64}$ becomes $12 T_x \le 192$, that is, $T_x \le 16$. In the general form, $T^{\star} = \lfloor d_h \log q / \log \lvert V_x \rvert \rfloor = \lfloor 64 \cdot 3/12 \rfloor = 16$. And remember what kind of number this is: a ceiling that doesn''t depend on training, far above the point where a real model breaks.'
     hint: 'Write both counts as powers of $2$ and compare the exponents.'
   - id: q-doblar-dh
     type: boolean
-    prompt: 'By this lesson''s count, doubling $d_h$ doubles $T^{\star}$ (the maximum length the count doesn''t rule out), up to rounding to a whole number.'
+    prompt: 'By this lesson''s count, doubling $d_h$ doubles $T^{\star}$ (the maximum length the count doesn''t rule out), give or take rounding to a whole number.'
     answer: true
-    explanation: 'True: $T^{\star} = \lfloor d_h \log q / \log \lvert V_x \rvert \rfloor$ is linear in $d_h$, so doubling the state width doubles the ceiling. The interesting part is the price. The recurrence holds $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$, so doubling $d_h$ multiplies those weights by four: you buy length linearly and pay for it quadratically. And the ceiling isn''t the length the model handles (that stays far lower), so the purchase returns even less than the count promises.'
+    explanation: 'True: $T^{\star} = \lfloor d_h \log q / \log \lvert V_x \rvert \rfloor$ is linear in $d_h$, so doubling the state width doubles the ceiling. The interesting part is the price. The recurrence holds $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$, so doubling $d_h$ multiplies those weights by four: you buy length linearly and pay for it quadratically. And the ceiling isn''t the length the model actually handles (that stays far lower), so the purchase returns even less than the count promises.'
     hint: 'Where does $d_h$ appear in the formula, and with what exponent?'
   - id: q-primer-token
     type: single
     prompt: 'In an input of $T_x$ tokens, which one survives worst inside $\mathbf{c}$?'
     options:
-      - { id: a, text: 'The first: the route from any term of the loss to it is the longest there is ($i + T_x - j$ multiplications, largest at $j = 1$), and along a long route the gradient arrives vanished.' }
+      - { id: a, text: 'The first: the route to it from any term of the loss is the longest there is ($i + T_x - j$ multiplications, largest at $j = 1$), and the gradient has all but vanished by the time it has travelled that far.' }
       - { id: b, text: 'The last, because the encoder reaches it with its state already saturated by everything it has read before.' }
       - { id: c, text: 'The middle one, which is far from both the start and the end and benefits from neither.' }
       - { id: d, text: 'None in particular: $\mathbf{c}$ summarises the whole input and favours no position.' }
     answer: a
-    explanation: '(a). The gradient that teaches the encoder to keep token $j$ has to cross the decoder''s steps back to $\mathbf{c}$ and then the encoder''s down to position $j$, and every step multiplies by $\mathbf{W}_{hh}^{\top}$ and by the $\tanh$ mask. It''s the argument of <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>, applied to this particular route. (b) inverts the phenomenon: the last token is the one with the fewest steps ahead of it, and the one best kept. (c) invents a symmetry that isn''t in any equation. (d) is the most tempting reading, and the mistakes of the model in <Leccion slug="seq2seq">the lesson on sequence-to-sequence models</Leccion> refute it: if every position were kept equally well, a long string would go wrong anywhere in the output, and it goes wrong mostly at the end, in the letters that ask it to remember the start of the input.'
+    explanation: '(a) is right. The gradient that teaches the encoder to keep token $j$ has to cross the decoder''s steps back to $\mathbf{c}$ and then the encoder''s steps down to position $j$, and every step multiplies it by $\mathbf{W}_{hh}^{\top}$ and by the $\tanh$ mask. This is the argument of <Leccion slug="gradiente-desvanecido">the lesson on the vanishing gradient</Leccion>, applied to this particular route. (b) gets the phenomenon backwards: the last token has the fewest steps ahead of it, and it''s the one best kept. (c) invents a symmetry that appears in no equation. (d) is the most tempting reading, and the model''s mistakes in <Leccion slug="seq2seq">the lesson on sequence-to-sequence models</Leccion> refute it: if every position were kept equally well, a long string would go wrong anywhere in the output, but it goes wrong mostly at the end, in the letters that ask the model to remember the start of the input.'
     hint: 'Count the multiplications that separate the loss from token $j$.'
 challenges: []
 reading:
@@ -54,53 +54,52 @@ reading:
     venue: 'arXiv:1409.1259'
     lang: en
     url: 'https://arxiv.org/abs/1409.1259'
-    note: 'This lesson''s experiment, on real translation: its figure 4a is quality plunging as the sentence grows, and its §5.1 blames the fixed vector. It measures the wall; it doesn''t say why the wall is there, which is the other half of the lesson.'
+    note: 'This lesson''s experiment on real translation: figure 4a shows quality plunging as sentences grow, and §5.1 blames the fixed vector. It measures the wall but doesn''t explain why it''s there, which is the other half of this lesson.'
 ---
 
 {/* COURSE-P5-04: Block 4, Lesson 2. COURSE-P11-07: English translation. */}
 
 The decoder from the previous lesson, on the encoder-decoder architecture, never reads the input
-sentence: it reads a vector. $\mathbf{c}$ has $d_h$ coordinates, that number is fixed when the
-network is built (before it has seen a single sentence), and it's the same for five tokens as for
-five hundred. That lesson recorded this as what it is: a bet on what fits in $d_h$ numbers, not
-something it had shown.
+sentence. It reads a vector. $\mathbf{c}$ has $d_h$ coordinates, that number is fixed when the network
+is built (before it has seen a single sentence), and it's the same for five tokens as for five
+hundred. That lesson flagged this for what it was: a bet on what fits in $d_h$ numbers, not something
+it had shown.
 
-A bet can be lost in two very different ways, and telling them apart is the whole of today's work. A
-model can fail because it's undertrained, and then training it more fixes it. Or it can fail because
-what you ask of it doesn't fit where you ask it to fit, and then no amount of training will help: the
-wall doesn't move. This lesson takes the two separately. First it counts two quantities and compares
-them. One is how many distinct values $\mathbf{c}$ can take: I'll call each of them a *message*,
-because it's the only thing the encoder gets through to the decoder. The other is how many distinct
-*sentences* the encoder can receive, taking a sentence to mean any combination of tokens from the
-input vocabulary with a given length, not only the ones that appear in the data. For the decoder to
-be able to reconstruct every sentence, each one needs a message of its own. Then it measures what
-happens to a real model as the input grows longer, with two state widths and several training
-budgets.
+A bet can be lost in two very different ways, and telling them apart is the whole job of this lesson.
+A model can fail because it's undertrained, in which case more training fixes it. Or it can fail
+because what you ask of it doesn't fit where you ask it to fit, in which case no amount of training
+will help: the wall doesn't move. The lesson takes the two separately. First it counts two quantities
+and compares them. One is how many distinct values $\mathbf{c}$ can take. I'll call each of them a
+*message*, since it's the only thing that gets through from the encoder to the decoder. The other is
+how many distinct *sentences* the encoder can receive, where a sentence means any combination of
+tokens from the input vocabulary at a given length, not only the ones that appear in the data. For
+the decoder to reconstruct every sentence, each one needs a message of its own. Then the lesson
+measures what happens to a real model as the input grows longer, using two state widths and several
+training budgets.
 
-The two quantities in the count grow in incompatible ways, and the explorable lays one over the
-other. The green line doesn't move with the length: it says how many distinct messages a vector of
-$d_h$ coordinates can encode at most, when $q$ levels can be told apart in each coordinate (where
-$q$ comes from is the next section's business). That number knows nothing about the sentence it's
-summarising. The amber one counts the sentences of each length, and climbs a full rung for every
-token you add. Widen the state or raise the levels as far as you like, then look for the point where
-the two cross.
+The two quantities grow in incompatible ways, and the explorable lays one over the other. The green
+line doesn't move with the length: it shows the most distinct messages a vector of $d_h$ coordinates
+can encode, given that $q$ levels can be told apart in each coordinate (where $q$ comes from is the
+next section's business). That number knows nothing about the sentence it's summarising. The amber
+line counts the sentences of each length, and climbs a full rung with every token you add. Widen the
+state or raise the levels as far as you like, then look for the point where the two lines cross.
 
 <Explorable
   id="context-bottleneck"
-  caption="Widen the state as much as you like: the green line rises, but it stays horizontal. The amber one has a slope, and a line with a slope eventually crosses any horizontal one."
+  caption="Widen the state as much as you like: the green line rises but stays horizontal. The amber line has a slope, and a sloped line eventually crosses any horizontal one."
 />
 
 ## How many messages fit, and how many sentences there are
 
 The encoder's state comes out of a $\tanh$, so each coordinate of $\mathbf{c}$ lives in the interval
-$(-1, 1)$. On paper that's a continuum and anything fits in it; in a model that is trained with
-gradients and read by another network, it isn't. Let $q$ be the number of levels of one coordinate
+$(-1, 1)$. On paper that's a continuum, and anything fits in a continuum. In a model trained with
+gradients and read by another network, it doesn't. Let $q$ be the number of levels of one coordinate
 that can really be told apart: two values closer together than that reach the decoder as the same
-number. I pick the value of $q$ myself: eight levels, sixteen, thirty-two, depending on how
-optimistic you want to be. What follows doesn't depend on which you choose.
+number. I choose $q$ myself: eight levels, sixteen, thirty-two, depending on how optimistic you want
+to be. What follows doesn't depend on which you pick.
 
-With that convention, the encoder has a finite number of distinct messages to send, and the
-sentences it has to tell apart are all those of length $T_x$ over the input vocabulary:
+With that convention the encoder has a finite number of distinct messages to send, and the sentences
+it has to tell apart are all those of length $T_x$ over the input vocabulary:
 
 $$
 \lvert\{\text{messages}\}\rvert \le q^{d_h},
@@ -108,18 +107,18 @@ $$
 \lvert\{\text{sentences of length } T_x\}\rvert = \lvert V_x \rvert^{T_x}.
 $$
 
-Look at where each letter sits. In the first count, $T_x$ *doesn't appear*: the context vector is
-as big for a short sentence as for a long one, which is exactly the previous lesson's design
-decision. In the second, $T_x$ is in the exponent.
+Look at where $T_x$ sits. In the first count it *doesn't appear*: the context vector is as big for a
+short sentence as for a long one, which is exactly the design decision of the previous lesson. In the
+second, it's in the exponent.
 
-Now the move that turns that asymmetry into an impossibility. Once $\mathbf{c}$ is fixed, everything
-the decoder writes is determined: it starts at $\mathbf{s}_0 = \mathbf{c}$, at each step writes the
-most probable token (the one with the largest coordinate in its output vector) and feeds that token
-back in. It's the previous lesson's greedy decoding. The complete output is therefore a *function*
-of $\mathbf{c}$, and a function can't give two different answers to the same argument. If there are
-fewer messages than sentences, two different sentences share a message and the decoder returns the
-same output for both, so it reconstructs at least one of them wrongly. Counting the ones it can get
-right:
+Now for the move that turns that asymmetry into an impossibility. Once $\mathbf{c}$ is fixed,
+everything the decoder writes is determined: it starts at $\mathbf{s}_0 = \mathbf{c}$, writes the
+most probable token at each step (the one with the largest coordinate in its output vector) and feeds
+that token back in. That's the previous lesson's greedy decoding. The complete output is therefore a
+*function* of $\mathbf{c}$, and a function can't return two different answers for the same argument.
+If there are fewer messages than sentences, two different sentences must share a message, so the
+decoder returns the same output for both and reconstructs at least one of them wrongly. Counting the
+sentences it can get right gives
 
 $$
 \frac{\lvert\{\text{sentences reconstructed exactly}\}\rvert}{\lvert V_x \rvert^{T_x}}
@@ -134,61 +133,61 @@ $$
 T^{\star} = \left\lfloor \frac{d_h \log q}{\log \lvert V_x \rvert} \right\rfloor.
 $$
 
-Plug in numbers that real models use. A state of $d_h = 256$ coordinates, eight levels per
+Plug in numbers of the kind real models use. A state of $d_h = 256$ coordinates, eight levels per
 coordinate and a subword vocabulary of $\lvert V_x \rvert = 32\,768$ entries give $T^{\star} = 51$
-tokens; ten tokens further on, the ceiling above has fallen to $10^{-44}$. And there's one word that
+tokens; ten tokens further on, the ceiling above has already fallen to $10^{-44}$. And one word
 appears in none of the three formulas: training. Neither the number of iterations, nor the learning
-rate, nor the data enters the argument, because what we counted is how many different answers a
-mechanism can give at most, not how well it chooses among them.
+rate, nor the data enters the argument, because what we counted is the most different answers a
+mechanism can give, not how well it chooses among them.
 
 <Callout type="warning" title="What widening the state buys">
-$T^{\star}$ is linear in $d_h$: doubling the state width doubles the maximum length. The recurrence,
-on the other hand, holds $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$, so doubling $d_h$
-multiplies those weights by four. You buy length linearly and pay for it quadratically.
+$T^{\star}$ is linear in $d_h$: doubling the state width doubles the maximum length. But the
+recurrence holds $\mathbf{W}_{hh} \in \mathbb{R}^{d_h \times d_h}$, so doubling $d_h$ multiplies those
+weights by four. You buy length linearly and pay for it quadratically.
 </Callout>
 
 ## A ceiling far above where it breaks
 
-That count proves the wall exists. It doesn't say where the wall is, and the difference is worth
-being explicit about. The next section trains encoder-decoders on a toy task: read a string of
-letters, written with only four of them (<W>a</W>, <W>b</W>, <W>c</W> and <W>d</W>), and write it
-backwards. The best of them has $d_h = 32$, and with $q = 8$ levels and $\lvert V_x \rvert = 4$ the
-count gives it a ceiling of $T^{\star} = 48$ tokens. Even so, it will reverse only one five-letter
-string in three correctly.
+That count proves the wall exists. It doesn't say where the wall is, and the difference deserves
+spelling out. The next section trains encoder-decoders on a toy task: read a string of letters, drawn
+from only four of them (<W>a</W>, <W>b</W>, <W>c</W> and <W>d</W>), and write it backwards. The best
+of them has $d_h = 32$, and with $q = 8$ levels and $\lvert V_x \rvert = 4$ the count gives it a
+ceiling of $T^{\star} = 48$ tokens. Even so, it reverses only one five-letter string in three
+correctly.
 
 The gap between those two figures has an explanation, and it's material from the previous block seen
-from a new place. The gradient that teaches the encoder to keep token $j$ of the input leaves from
-the loss term at position $i$ of the output, goes back through the decoder's steps as far as
-$\mathbf{s}_0 = \mathbf{c}$, and from there carries on through the encoder's down to position $j$.
-There's no other route ($\mathbf{c}$ is the only point of contact between the two networks), and its
-length is
+from a new angle. The gradient that teaches the encoder to keep token $j$ of the input starts at the
+loss term for position $i$ of the output, travels back through the decoder's steps as far as
+$\mathbf{s}_0 = \mathbf{c}$, and from there continues through the encoder's steps down to position
+$j$. There's no other route ($\mathbf{c}$ is the only point of contact between the two networks), and
+its length is
 
 $$
 i + (T_x - j) \quad \text{multiplications},
 $$
 
-largest when $j = 1$, that is, for the first token of the input. <Leccion slug="gradiente-desvanecido">The lesson
-on the vanishing gradient</Leccion> says what happens to a signal that crosses that route: each step
-multiplies it by $\mathbf{W}_{hh}^{\top}$ and by the $\tanh$ mask, and with $\gamma\,\sigma_{\max}$
-(the steepest slope of the $\tanh$ times the largest singular value of $\mathbf{W}_{hh}$) below one,
-the magnitude falls exponentially with the distance. The first token of the sentence receives the
-weakest signal of all.
+which is largest when $j = 1$, the first token of the input.
+<Leccion slug="gradiente-desvanecido">The lesson on the vanishing gradient</Leccion> describes what
+happens to a signal that crosses a route like that: each step multiplies it by $\mathbf{W}_{hh}^{\top}$
+and by the $\tanh$ mask, and when $\gamma\,\sigma_{\max}$ (the steepest slope of the $\tanh$ times the
+largest singular value of $\mathbf{W}_{hh}$) is below one, the magnitude falls exponentially with
+distance. The first token of the sentence therefore receives the weakest signal of all.
 
-So the encoder doesn't share $\mathbf{c}$ out among the positions the way an optimal code would: it
-fills it mostly with what it read last, because that's the only thing it manages to learn to keep.
-The $48$ tokens of the count assume a perfect encoding; the handful of letters in the experiment is
-what you get by training a recurrence with gradient descent. Both are true and they say different
-things: counting proves the wall exists; training shows where it is.
+So the encoder doesn't divide $\mathbf{c}$ among the positions the way an optimal code would. It fills
+it mostly with what it read last, because that's all it manages to learn to keep. The $48$ tokens of
+the count assume a perfect encoding; the handful of letters in the experiment is what you get from
+training a recurrence with gradient descent. Both are true, and they say different things: counting
+proves the wall exists, and training shows where it is.
 
 ## Two state widths and three training budgets
 
 The task is the one from <Leccion slug="seq2seq">the lesson on sequence-to-sequence models</Leccion>:
-read a string of letters and write it backwards. It's deliberately poor (no grammar, no meaning,
-nothing to generalise), and that poverty is what keeps the experiment clean: reversing a string takes
+read a string of letters and write it backwards. It's deliberately impoverished (no grammar, no
+meaning, nothing to generalise), and that's what keeps the experiment clean: reversing a string takes
 nothing beyond remembering it, so every failure is a failure of memory.
 
 The first cell builds a model of whatever width you ask for and defines its forward and backward
-passes, line for line the previous lesson's. The only thing to look at is that $\mathbf{c}$ is still
+passes, line for line the previous lesson's. The one thing to look for is that $\mathbf{c}$ is still
 the only link between the two networks: a single variable, marked in the code.
 
 <PyCell packages={["numpy"]} code={`
@@ -239,10 +238,10 @@ def train_step(weights, x, y):                         # forward and backward pa
 `} />
 
 The second trains and measures: for each length, the percentage of strings that come out *exactly*
-right (a hundred and twenty new strings behind each number, generated without *teacher forcing*).
-Four rows come out. The first three are the same narrow state, $d_h = 8$, at three points in its
-training; the fourth has a state four times as wide and trains half as long as the third. The test
-strings are the same in all four rows and the networks start from the same seed, so the only
+right (a hundred and twenty new strings behind each number, generated without *teacher forcing*). The
+output has four rows. The first three are the same narrow state, $d_h = 8$, at three points in its
+training; the fourth has a state four times as wide and trains for half as long as the third. The
+test strings are the same in all four rows and the networks start from the same seed, so the only
 difference between rows is the one printed at the start of each.
 
 <PyCell packages={["numpy"]} code={`
@@ -290,31 +289,31 @@ for d_h, checkpoints in [(8, (250, 1000, 2000)), (32, (1000,))]:
                   + "".join("%3.0f%%   " % v for v in accuracy(weights)))
 `} />
 
-Read the table in pairs of rows. From the first to the second, training does exactly what you'd
-expect of it: in 750 more iterations, the two- and three-letter strings go from never coming out to
-coming out most of the time. From the second to the third, doubling the budget, that progress
-continues, and only in the short columns: the two-letter strings reach a perfect score and the three-
-and four-letter ones climb another stretch, while the five-, six- and seven-letter ones stay at floor
-level, where they already were. That's the finding, and it's worth saying slowly: training buys
-accuracy on what fits, and buys nothing on what doesn't.
+Read the table in pairs of rows. From the first row to the second, training does exactly what you'd
+expect: in 750 more iterations, the two- and three-letter strings go from never coming out right to
+coming out right most of the time. From the second to the third, doubling the budget, the progress
+continues, but only in the short columns. The two-letter strings reach a perfect score and the three-
+and four-letter ones climb a little further, while the five-, six- and seven-letter ones stay at
+floor level, where they already were. That's the finding, and it's worth stating slowly: training buys
+accuracy on what fits, and nothing on what doesn't.
 
-And now the fourth row, which trains half as long as the third with a state four times as wide:
+Now the fourth row, which trains for half as long as the third but with a state four times as wide:
 everything that had room to rise does, and the three long columns go from anecdotal to real (one
-five-letter string in three, against one in twelve). That's the answer to the question from the
-start, measured rather than guessed. The width of $\mathbf{c}$ and the training budget don't buy the
-same thing: the second refines the use of the vector as far as the vector reaches, and only the first
-moves the wall.
+five-letter string in three, against one in twelve). That answers the question from the start of the
+lesson, measured rather than guessed. The width of $\mathbf{c}$ and the training budget don't buy the
+same thing: training refines how well the vector is used, up to what the vector can hold, and only
+width moves the wall.
 
 The most revealing thing, though, is *how* it gets things wrong, which is the previous section seen
 from the output's side. <Leccion slug="seq2seq">The lesson on sequence-to-sequence models</Leccion>
-already let you see it on this same task: in a long string, the start of what the decoder writes
-(which is the end of what the encoder read, the most recent thing in $\mathbf{c}$) is usually right,
-and what gets scrambled is the end, which would ask it to remember the first token of the input. The
+already let you see it on this same task: in a long string, the start of what the decoder writes (the
+end of what the encoder read, and so the most recent thing in $\mathbf{c}$) is usually right, and what
+gets scrambled is the end, which asks the decoder to remember the first token of the input. The
 worst-kept token is the one at the end of the longest route.
 
 ## Test your intuition
 
-Four questions: what training more fixes, how high the count's ceiling is, what widening the state
+Four questions: what more training fixes, how high the count's ceiling is, what widening the state
 buys, and which token of the input survives worst.
 
 <Quiz id="q-entrenar-mas" />
@@ -327,15 +326,15 @@ buys, and which token of the input survives worst.
 
 ---
 
-The two halves of the lesson point at the same place, and it isn't the size of $d_h$. The count
-compares the messages that fit with the sentences there are because we accepted that there would be
-*a single* message; the route gets long because all the information passes through *a single*
-point. Widening $\mathbf{c}$ moves the ceiling a few tokens and leaves both of those statements
-untouched. What lies underneath isn't a small vector: it's the idea of summarising.
+Both halves of the lesson point at the same place, and it isn't the size of $d_h$. The count weighs
+the messages that fit against the sentences there are because we agreed there would be *a single*
+message, and the route gets long because all the information passes through *a single* point.
+Widening $\mathbf{c}$ moves the ceiling a few tokens and leaves both of those statements untouched.
+The problem underneath isn't a small vector: it's the idea of summarising.
 
-And put like that, one thing draws attention. The encoder computed $\bar{\mathbf{h}}_1, \dots,
-\bar{\mathbf{h}}_{T_x}$, one state per input token, and the architecture throws away all but the
-last. The others existed, were computed and were discarded. Getting them back (letting the decoder
-look back at the whole input instead of settling for the summary) is <Leccion slug="la-idea-de-atencion">the
-next lesson, on the idea of attention</Leccion>. Giving that backward look its formulas takes up the
-rest of the block.
+Put like that, something stands out. The encoder computed
+$\bar{\mathbf{h}}_1, \dots, \bar{\mathbf{h}}_{T_x}$, one state per input token, and the architecture
+throws away all but the last. The others were computed and then discarded. Getting them back, so that
+the decoder can look at the whole input instead of settling for the summary, is the job of
+<Leccion slug="la-idea-de-atencion">the next lesson, on the idea of attention</Leccion>. Giving that
+backward look its formulas takes up the rest of the block.

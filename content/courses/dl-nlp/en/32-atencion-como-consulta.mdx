@@ -4,7 +4,7 @@ title: "Attention as query, key and value"
 block: 4
 order: 6
 minutes: 28
-summary: "The block's mechanism is written in the vocabulary of one particular machine (an encoder that reads, a decoder that writes, states with a bar and without one), and it needs almost none of it. Here it is rewritten in full with three roles: a query, a list of keys it is compared against and a list of values that get mixed. Not one equation changes, and in return three things come out: that the key and the value are the same vector by habit and not by necessity, that the gradient reaches each role along one route and not two, and that the whole grid fits in a product of three matrices with the names the next block uses."
+summary: "The block's mechanism is written in the vocabulary of one particular machine (an encoder that reads, a decoder that writes, states with a bar and states without one), and it needs almost none of that. Here the mechanism is rewritten in full around three roles: a query, a list of keys it is compared against, and a list of values that get mixed. Not one equation changes, and three things come out of the rewrite: the key and the value are the same vector by habit, not by necessity; the gradient reaches each role along one route rather than two; and the whole grid fits in a product of three matrices, with the names the next block uses."
 draft: false
 hasCode: true
 hasQuiz: true
@@ -13,53 +13,53 @@ quiz:
     type: single
     prompt: 'In the attention of the last three lessons, which vector plays each role?'
     options:
-      - { id: a, text: 'The query is the decoder state $\mathbf{s}_{i-1}$, and the key and the value are both the same vector: the encoder state $\bar{\mathbf{h}}_j$, one per source position.' }
+      - { id: a, text: 'The query is the decoder state $\mathbf{s}_{i-1}$, and the key and the value are one and the same vector: the encoder state $\bar{\mathbf{h}}_j$, one per source position.' }
       - { id: b, text: 'The query is the context $\mathbf{c}_i$, the key is $\mathbf{s}_{i-1}$ and the value is $\bar{\mathbf{h}}_j$.' }
       - { id: c, text: 'The query is $\mathbf{s}_{i-1}$, the key is $\bar{\mathbf{h}}_j$ and the value is the vector of the token at that source position.' }
       - { id: d, text: 'The query is $\mathbf{s}_{i-1}$, the key is $\mathbf{W}_a$ (what the decoder state is compared against) and the value is $\bar{\mathbf{h}}_j$.' }
     answer: a
-    explanation: '(a). The three pieces can be read off the mechanism''s two equations: whatever enters $a$ on the left is the query, whatever enters on the right is the key, and whatever appears in the sum $\sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ is the value. And the second and the third are the same vector. (b) confuses the result with the question: $\mathbf{c}_i$ is what the call returns, and it doesn''t even exist yet when the scoring has to happen. (c) is the trap to see coming. What gets mixed is the encoder state, not the token''s vector, and the difference is the whole of Block 3: the state has already read the sentence up to that position. (d) promotes a weight to a role: $\mathbf{W}_a$ is part of the function that compares, not one of the things compared.'
-    hint: 'Look at the mechanism''s two equations and ask yourself what goes into each one.'
+    explanation: '(a) is right. The three roles can be read off the mechanism''s two equations: whatever enters $a$ on the left is the query, whatever enters on the right is the key, and whatever appears in the sum $\sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ is the value. And the second and the third are the same vector. (b) confuses the result with the question: $\mathbf{c}_i$ is what the call returns, and it doesn''t even exist yet when the scoring has to happen. (c) is the trap to watch for. What gets mixed is the encoder state, not the token''s vector, and the difference is the whole of Block 3: the state has already read the sentence up to that position. (d) promotes a weight to a role: $\mathbf{W}_a$ is part of the function that compares, not one of the things being compared.'
+    hint: 'Look at the mechanism''s two equations and ask what goes into each one.'
   - id: q-forma-de-la-salida
     type: numeric
-    prompt: 'An attention call with $T_x = 12$ pairs, queries and keys of $d_k = 64$ coordinates and values of $d_v = 32$. How many numbers does one query return?'
+    prompt: 'An attention call with $T_x = 12$ pairs, queries and keys of $d_k = 64$ coordinates, and values of $d_v = 32$. How many numbers does one query return?'
     answer: 32
     tolerance: 0
     unit: numbers
-    explanation: 'Thirty-two: what comes out is a mixture of values, so it''s the size of a value. $d_k$ doesn''t appear in the output (it governs the comparison, and dies there), and neither does $T_x$: the twelve pairs produce twelve weights that sum to $1$, and the weighted sum consumes them. That''s the shape property <Leccion slug="la-idea-de-atencion">the lesson on the idea of attention</Leccion> needed for $\mathbf{c}_i$ to take the place of the usual context vector, written now without mentioning any recurrence: the input grows with the pairs, the output doesn''t.'
-    hint: 'What are the numbers that come out a mixture of?'
+    explanation: 'Thirty-two: what comes out is a mixture of values, so it has the size of a value. $d_k$ doesn''t appear in the output (it governs the comparison and dies there), and neither does $T_x$: the twelve pairs produce twelve weights that sum to $1$, and the weighted sum consumes them. This is the shape property that <Leccion slug="la-idea-de-atencion">the lesson on the idea of attention</Leccion> needed for $\mathbf{c}_i$ to take the place of the usual context vector, now stated without mentioning any recurrence: the input grows with the number of pairs, but the output doesn''t.'
+    hint: 'What is the output a mixture of?'
   - id: q-clave-contra-valor
     type: single
     prompt: 'You swap the values $\mathbf{v}_j$ for others and leave the queries and the keys as they were. What happens to the weight map $\mathbf{A}$?'
     options:
-      - { id: a, text: 'It doesn''t move. The values don''t enter the score, so every weight stays the same to the last decimal place; what changes is the output, which is the mixture of those values.' }
-      - { id: b, text: 'It changes completely: the weights measure how much each position contributes, and that''s computed on what is going to be mixed.' }
+      - { id: a, text: 'It doesn''t move. The values don''t enter the score, so every weight stays the same down to the last decimal place; only the output changes, since it''s the mixture of those values.' }
+      - { id: b, text: 'It changes completely: the weights measure how much each position contributes, and that has to be computed from what is going to be mixed.' }
       - { id: c, text: 'It changes only if the new values are a different width, because then the softmax normalises over an axis of a different size.' }
       - { id: d, text: 'Neither the map nor the output moves: as long as the weights sum to $1$, the mixture returns the same thing.' }
     answer: a
-    explanation: '(a), and it''s the whole separation in one sentence: the key decides *how much*, the value decides *what*. Write it out with its indices: $e_{ij} = a(\mathbf{q}_i, \mathbf{k}_j)$ doesn''t mention $\mathbf{v}_j$ anywhere, and the cell above checks it in one line. (b) is what you''d say before separating the roles, and it''s exactly what stops being true once they''re separated. (c) invents an axis: the softmax runs over the positions, and how many coordinates a value has is none of its business. (d) gets the map right and the rest wrong: the weights are the same, but they''re being applied to other vectors.'
+    explanation: '(a) is right, and it''s the whole separation in one sentence: the key decides *how much*, the value decides *what*. Write it out with its indices: $e_{ij} = a(\mathbf{q}_i, \mathbf{k}_j)$ doesn''t mention $\mathbf{v}_j$ anywhere, and the cell above checks it in one line. (b) is what you''d say before the roles were separated, and it stops being true as soon as they are. (c) invents an axis: the softmax runs over the positions, and how many coordinates a value has is none of its business. (d) gets the map right and the rest wrong: the weights are the same, but they''re applied to different vectors.'
     hint: 'Does $\mathbf{v}_j$ appear in the formula for the score?'
   - id: q-rutas-del-gradiente
     type: multi
-    prompt: 'With the key and the value untied (two different vectors at each position), tick what''s true about how the gradient of the loss reaches them.'
+    prompt: 'With the key and the value untied (two different vectors at each position), tick everything that''s true about how the gradient of the loss reaches them.'
     options:
-      - { id: a, text: 'A single route reaches $\mathbf{v}_j$, the mixture''s, and it sums over the steps: $\sum_i \alpha_{ij}\nabla_{\mathbf{c}_i}\ell$.' }
-      - { id: b, text: 'A single route reaches $\mathbf{k}_j$, the score''s, and it passes entirely through $\partial\ell/\partial e_{ij}$.' }
+      - { id: a, text: 'A single route reaches $\mathbf{v}_j$, the one through the mixture, and it sums over the steps: $\sum_i \alpha_{ij}\nabla_{\mathbf{c}_i}\ell$.' }
+      - { id: b, text: 'A single route reaches $\mathbf{k}_j$, the one through the score, and it passes entirely through $\partial\ell/\partial e_{ij}$.' }
       - { id: c, text: 'If the two roles are tied back into one vector, that vector receives the sum of the two routes, which is the formula from <Leccion slug="bahdanau">the lesson on additive attention</Leccion>.' }
       - { id: d, text: 'Once they''re untied, the derivative with respect to a score stops comparing anything: without one vector playing both roles, the subtraction that appeared in it can''t be written.' }
     answer: [a, b, c]
-    explanation: 'The first three. Each role appears in a single place in the equations, so <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> has a single term to add up for each; tying them is what creates the second, because a vector that appears twice receives twice (the same bookkeeping as a weight shared across the previous block''s recurrence). (d) is the good trap: the subtraction is still there, except that now it reads precisely, $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right)$. What gets compared with the mixture is that position''s *value*; the correction lands on its *key*. With the two roles tied there was no way to see which of the two did what.'
-    hint: 'Count how many places in the two equations each of the two vectors appears in.'
+    explanation: 'The first three. Each role appears in a single place in the equations, so <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> has a single term to add up for each. Tying the roles together is what creates the second route, because a vector that appears twice receives a contribution twice (the same bookkeeping as a weight shared across the previous block''s recurrence). (d) is the tempting trap: the subtraction is still there, only now it reads precisely, $\partial\ell/\partial e_{ij} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right)$. What gets compared with the mixture is that position''s *value*; the correction lands on its *key*. With the two roles tied, there was no way to see which of the two did what.'
+    hint: 'Count how many places in the two equations each of the two vectors appears.'
   - id: q-donde-fue-wa
     type: single
     prompt: 'Where does the previous lesson''s matrix $\mathbf{W}_a$ end up when the grid is written as $\mathbf{Q}\mathbf{K}^{\top}$?'
     options:
       - { id: a, text: 'Inside the queries. With $\mathbf{q}_i = \mathbf{W}_a^{\top}\mathbf{s}_{i-1}$ (that is, $\mathbf{Q} = \mathbf{S}\mathbf{W}_a$) and the keys equal to the encoder states, $\mathbf{Q}\mathbf{K}^{\top}$ is the previous lesson''s grid without a figure changed, and the score is left as the bare dot product.' }
-      - { id: b, text: 'It got lost along the way: $\mathbf{Q}\mathbf{K}^{\top}$ has no parameters, so the three-matrix form only works for the weightless variant.' }
+      - { id: b, text: 'It got lost along the way: $\mathbf{Q}\mathbf{K}^{\top}$ has no parameters, so the three-matrix form only works for the parameter-free variant.' }
       - { id: c, text: 'It''s inside the softmax, which applies it to each row before normalising it.' }
       - { id: d, text: 'It''s in the values, $\mathbf{V} = \bar{\mathbf{H}}\mathbf{W}_a$, which is where the parameters fit without disturbing the weights.' }
     answer: a
-    explanation: '(a). The parameters don''t disappear, they move: they stop being part of the comparison and become part of what is compared, which is why in this form the function $a$ can always be the dot product. (b) confuses a formula with no parameters with one that can''t have any; what the formula doesn''t say is where $\mathbf{Q}$ and $\mathbf{K}$ come from, and that''s where they''ve gone. (c) gives the softmax a job it doesn''t do: it normalises a row, it doesn''t transform it. (d) runs into exactly the property this lesson brings out (the values don''t enter the score), so multiplying them by a matrix wouldn''t change a single weight. And <Leccion slug="bahdanau">Bahdanau''s additive score</Leccion> doesn''t allow the move: the $\tanh$ sits between the two projections and the read-out, and a non-linear function of a sum can''t be split up among its terms.'
+    explanation: '(a) is right. The parameters don''t disappear, they move: they stop being part of the comparison and become part of what is compared, which is why in this form the function $a$ can always be the dot product. (b) confuses a formula that has no parameters with one that can''t have any: what the formula doesn''t say is where $\mathbf{Q}$ and $\mathbf{K}$ come from, and that''s where the parameters have gone. (c) gives the softmax a job it doesn''t do: it normalises a row, it doesn''t transform it. (d) runs into exactly the property this lesson brings out (the values don''t enter the score), so multiplying them by a matrix wouldn''t change a single weight. And <Leccion slug="bahdanau">Bahdanau''s additive score</Leccion> doesn''t allow the move: the $\tanh$ sits between the two projections and the read-out, and a non-linear function of a sum can''t be split among its terms.'
     hint: 'Write out the previous lesson''s grid and group the first two factors.'
 challenges:
   - id: ch-atencion-qkv
@@ -71,8 +71,8 @@ challenges:
       $\mathbf{A}$, of shape $(T_q, T_k)$, already normalised by rows.
 
       The score is the dot product of each query with each key, with no matrix in between.
-      Write it with matrix products, without going through the pairs one by one, and don't
-      write into the arrays you receive.
+      Write it with matrix products, without looping over the pairs, and don't write into the
+      arrays you receive.
     packages: [numpy]
     starter: |
       import numpy as np
@@ -161,9 +161,10 @@ challenges:
       column $j$ of `K.T`, which is key $j$), the softmax by rows turns those scores into
       weights that share out one unit, and `A @ V` mixes the values with them. The shapes chain
       on their own: $(T_q, d_k)$ against $(d_k, T_k)$ gives $(T_q, T_k)$, and that against
-      $(T_k, d_v)$ gives $(T_q, d_v)$. $d_k$ disappears in the comparison and $T_k$ in the
-      mixture. Subtracting the maximum is the shift invariance from <Leccion slug="funcion-de-perdida">the
-      lesson on loss functions</Leccion>: it changes what gets exponentiated, not what comes out.
+      $(T_k, d_v)$ gives $(T_q, d_v)$. $d_k$ disappears in the comparison, and $T_k$ in the
+      mixture. Subtracting the maximum uses the shift invariance from
+      <Leccion slug="funcion-de-perdida">the lesson on loss functions</Leccion>: it changes what
+      gets exponentiated, not what comes out.
 reading:
   - kind: paper
     title: 'Attention Is All You Need'
@@ -172,37 +173,38 @@ reading:
     venue: 'arXiv:1706.03762'
     lang: en
     url: 'https://arxiv.org/abs/1706.03762'
-    note: 'Where the three names and softmax(QK^T/√d_k)V come from: its §3.2 opens with the query-key-value framing and §3.2.1 writes it down. This lesson takes only the notation; the architecture and the √d_k arrive in the next block.'
+    note: 'Where the three names and softmax(QK^T/√d_k)V come from: its §3.2 opens with the query-key-value framing, and §3.2.1 writes the formula down. This lesson takes only the notation; the architecture and the √d_k arrive in the next block.'
 ---
 
 {/* COURSE-P5-04: Block 4, Lesson 6. COURSE-P11-07: English translation. */}
 
-The block has built a complete mechanism and two different ways of filling its one empty slot, the
-additive score and the multiplicative one. What it hasn't once stopped to look at is the vocabulary
-all of that is written in: every equation of the last three lessons talks about an encoder that reads, a
-decoder that writes, states with a bar and states without one. That vocabulary comes from one
-particular machine (two recurrent networks chained together to translate), and this lesson asks how
-much of it attention actually needs.
+The block has built a complete mechanism and two different ways of filling its one empty slot: the
+additive score and the multiplicative one. What it hasn't yet done is stop to look at the vocabulary
+all of that is written in. Every equation of the last three lessons talks about an encoder that
+reads, a decoder that writes, states with a bar and states without one. That vocabulary comes from
+one particular machine (two recurrent networks chained together to translate), and this lesson asks
+how much of it attention actually needs.
 
-Do it the blunt way: cross out of the equations everything that talks about recurrence and see what
-is left standing. What's left is a vector that asks, a list of vectors it's compared against and a
-list of vectors that get mixed; a softmax between the two lists and a weighted sum at the end. Not
-one of those pieces mentions a recurrence, a language or a translation. They're three roles and one
-operation, each with a name fixed years ago and with the initial the next block puts in every one
-of its equations, starting from the first line of the paper that sets them down.
+Do it the blunt way: cross out of the equations everything that talks about recurrence and see
+what's left standing. What remains is a vector that asks, a list of vectors it's compared against,
+and a list of vectors that get mixed, with a softmax between the two lists and a weighted sum at the
+end. Not one of those pieces mentions a recurrence, a language or a translation. They're three roles
+and one operation, each with a name that was fixed years ago and an initial that the next block puts
+in every one of its equations, starting from the first line of the paper that introduced them.
 
-There's an operation you've already written that does almost exactly this. In the challenges of
-<Leccion slug="lstm">the lesson on the long short-term memory (LSTM)</Leccion> and <Leccion slug="gru">the lesson on the gated
-recurrent unit (GRU)</Leccion>, the weights arrived in a dictionary `P` and you took each piece out
-with something like `P["z"]`: you give a **query**, Python compares it with the stored **keys** and
-hands you back the **value** of the one that matches. Get one letter wrong and there's no answer.
+You've already written an operation that does almost exactly this. In the challenges of
+<Leccion slug="lstm">the lesson on the long short-term memory (LSTM)</Leccion> and
+<Leccion slug="gru">the lesson on the gated recurrent unit (GRU)</Leccion>, the weights arrived in a
+dictionary `P`, and you took each piece out with something like `P["z"]`. You give a **query**,
+Python compares it with the stored **keys** and hands back the **value** of the one that matches. Get
+one letter wrong and there's no answer.
 
 Attention is that lookup with the requirement to match taken away. The query doesn't have to equal
 any key: it's compared with all of them, each comparison becomes a weight, and what comes back isn't
-one value but the mixture of all of them, each in the proportion it was given. A dictionary returns
-one of its values; attention returns a combination of all of them. So far in this block the three
-roles have been dealt out like this. The decoder state asks, and each source position supplies the
-other two: what it's compared with and what it pours into the mixture.
+one value but a mixture of all of them, each in the proportion its weight gives it. A dictionary
+returns one of its values; attention returns a combination of all of them. So far in this block, the
+three roles have been dealt out like this: the decoder state asks, and each source position supplies
+the other two, what the query is compared with and what gets poured into the mixture.
 
 <Callout type="intuition" title="The idea in one sentence">
 Attention is a dictionary lookup with the obligation to get the key right taken away: the query is
@@ -211,11 +213,11 @@ compared with every key, and what comes back is the mixture of all the values.
 
 ## Three roles, three arguments
 
-Fix the three roles as three objects, without saying where they come from. A **query**
+Take the three roles as three objects, without saying where they come from: a **query**
 $\mathbf{q}_i \in \mathbb{R}^{d_k}$, and $T_x$ pairs of **key** and **value**,
 $\mathbf{k}_j \in \mathbb{R}^{d_k}$ and $\mathbf{v}_j \in \mathbb{R}^{d_v}$, one pair per position.
-The query and the keys are the same width because they're going to be compared with each other; the
-values don't have to be. With that, an attention call is three steps:
+The query and the keys have the same width because they're going to be compared with each other; the
+values don't have to match that width. With that, an attention call is three steps:
 
 $$
 e_{ij} = a\left(\mathbf{q}_i, \mathbf{k}_j\right),
@@ -225,23 +227,23 @@ e_{ij} = a\left(\mathbf{q}_i, \mathbf{k}_j\right),
 \mathbf{c}_i = \sum_{j=1}^{T_x} \alpha_{ij}\,\mathbf{v}_j \in \mathbb{R}^{d_v}.
 $$
 
-It's the mechanism from <Leccion slug="la-idea-de-atencion">the lesson on the idea of attention</Leccion>
-under other names: it scores each pair, normalises the row with a softmax over the positions and
+This is the mechanism from <Leccion slug="la-idea-de-atencion">the lesson on the idea of attention</Leccion>
+under other names: it scores each pair, normalises the row with a softmax over the positions, and
 mixes the values with those weights. The index in the denominator changes letter ($m$ where $k$ used
 to be) because from here on $k$ belongs to the keys.
 
-Look at the shapes, because that's where the rewrite starts to pay. The output has $d_v$
+Look at the shapes, because that's where the rewrite starts to pay off. The output has $d_v$
 coordinates: the size of a *value*, not that of the query and not the number of pairs. $d_k$ lives
 entirely inside the comparison and dies there, in the number $e_{ij}$; $T_x$ lives in the row of
-weights and dies in the sum. So the list of pairs can grow as much as it likes and the slot the
-result lands in doesn't notice. It's the shape property from <Leccion slug="la-idea-de-atencion">that
-lesson</Leccion>, stated now without naming any recurrence.
+weights and dies in the sum. So the list of pairs can grow as long as it likes without the slot the
+result lands in noticing. This is the shape property from <Leccion slug="la-idea-de-atencion">that
+lesson</Leccion>, now stated without naming any recurrence.
 
-And the last three lessons are a special case of this, without changing an equation:
+The last three lessons are a special case of this, with no equation changed:
 $\mathbf{q}_i = \mathbf{s}_{i-1}$, and $\mathbf{k}_j = \mathbf{v}_j = \bar{\mathbf{h}}_j$, with
 $d_k = d_v = d_h$. The function $a$ is whichever was chosen (Bahdanau's additive score or Luong's
-multiplicative one), the softmax is the same and the weighted sum is the same. All that has happened
-is that each piece now has a name that doesn't mention what produced it.
+multiplicative one), and the softmax and the weighted sum are the same as before. All that has
+happened is that each piece now has a name that doesn't mention what produced it.
 
 <Figure
   src="/courses/dl-nlp/atencion-qkv.en.svg"
@@ -255,9 +257,9 @@ Tying the two roles to one vector has a price: it forces the $d_h$ coordinates o
 $\bar{\mathbf{h}}_j$ to serve both purposes at once, to be good for being compared and good for
 being read.
 
-The gradient's bookkeeping shows it better than the formula. Untied, each role appears in a single
-place, so <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> follows a single route for
-each; what it sums over is the $T_y$ steps, because both lists are used in all of them:
+The gradient's bookkeeping shows it better than the formula does. Untied, each role appears in a
+single place, so <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> follows a single route
+for each, summing over the $T_y$ steps because both lists are used in all of them:
 
 $$
 \nabla_{\mathbf{v}_j}\ell = \sum_{i=1}^{T_y} \alpha_{ij}\,\nabla_{\mathbf{c}_i}\ell,
@@ -265,9 +267,9 @@ $$
 \nabla_{\mathbf{k}_j}\ell = \sum_{i=1}^{T_y} \frac{\partial \ell}{\partial e_{ij}}\,\nabla_{\mathbf{k}_j} e_{ij},
 $$
 
-and the step through the softmax is the one from <Leccion slug="bahdanau">the lesson on additive
-attention</Leccion>, without a comma changed, except that now it says precisely what is compared
-with what:
+and the step through the softmax is the one from
+<Leccion slug="bahdanau">the lesson on additive attention</Leccion>, with one difference: it now says
+precisely what is compared with what:
 
 $$
 \frac{\partial \ell}{\partial e_{ij}} = \alpha_{ij}\left(\nabla_{\mathbf{c}_i}\ell\right)^{\top}\left(\mathbf{v}_j - \mathbf{c}_i\right).
@@ -287,12 +289,12 @@ $$
 \nabla_{\bar{\mathbf{h}}_j}\ell = \sum_{i=1}^{T_y} \alpha_{ij}\,\nabla_{\mathbf{c}_i}\ell + \sum_{i=1}^{T_y} \frac{\partial \ell}{\partial e_{ij}}\,\nabla_{\bar{\mathbf{h}}_j} e_{ij},
 $$
 
-which is, term by term, the two-route line from <Leccion slug="bahdanau">the lesson on additive
-attention</Leccion>. There the second term was expanded for the additive score,
-$\mathbf{W}_{ha}^{\top}\nabla_{\mathbf{p}_{ij}}\ell$, which is this same one with
-$\nabla_{\bar{\mathbf{h}}_j} e_{ij}$ written out inside it. What was a quirk of the architecture in
-that lesson (the gradient reaches this state along two routes) turns out to be a consequence of
-having tied two roles together.
+which is, term by term, the two-route line from
+<Leccion slug="bahdanau">the lesson on additive attention</Leccion>. There, the second term was
+expanded for the additive score as $\mathbf{W}_{ha}^{\top}\nabla_{\mathbf{p}_{ij}}\ell$, which is this
+same term with $\nabla_{\bar{\mathbf{h}}_j} e_{ij}$ written out. What looked like a quirk of the
+architecture in that lesson (the gradient reaches this state along two routes) turns out to be a
+consequence of having tied two roles together.
 
 </Details>
 
@@ -301,7 +303,7 @@ having tied two roles together.
 Stack the three roles by rows, as the previous lesson stacked the states:
 $\mathbf{Q} \in \mathbb{R}^{T_y \times d_k}$ with step $i$'s query in row $i$, and
 $\mathbf{K} \in \mathbb{R}^{T_x \times d_k}$ and $\mathbf{V} \in \mathbb{R}^{T_x \times d_v}$ with
-position $j$'s key and value in their row $j$ (transposed, because in this course vectors are
+position $j$'s key and value in row $j$ of each (transposed, because in this course vectors are
 columns). With the score in its cheapest form, the dot product, the three operations above fit in
 one line:
 
@@ -309,47 +311,48 @@ $$
 \text{Attention}\left(\mathbf{Q}, \mathbf{K}, \mathbf{V}\right) = \text{softmax}\left(\mathbf{Q}\mathbf{K}^{\top}\right)\mathbf{V} \in \mathbb{R}^{T_y \times d_v},
 $$
 
-with the softmax by rows, so that each row of $\mathbf{Q}\mathbf{K}^{\top}$ (one query against the
-$T_x$ keys) comes out summing to $1$. The function's name is the one the paper that fixed this form
-gave it, and it's how you'll find it written everywhere.
+with the softmax taken by rows, so that each row of $\mathbf{Q}\mathbf{K}^{\top}$ (one query against
+the $T_x$ keys) comes out summing to $1$. The function's name is the one the paper that fixed this
+form gave it, and it's how you'll find it written everywhere.
 
-And now the question that decides the next block: where has $\mathbf{W}_a$ gone? The previous
+Now for the question that decides the next block: where has $\mathbf{W}_a$ gone? The previous
 lesson's grid was $\mathbf{S}\mathbf{W}_a\bar{\mathbf{H}}^{\top}$, so group the first two factors and
 compare with the line above. Out come $\mathbf{Q} = \mathbf{S}\mathbf{W}_a$ (that is,
 $\mathbf{q}_i = \mathbf{W}_a^{\top}\mathbf{s}_{i-1}$) and $\mathbf{K} = \mathbf{V} = \bar{\mathbf{H}}$.
 The matrix hasn't disappeared: it has stopped being part of the comparison and become part of what
-is compared. And with it out of the way, the function $a$ is left as the bare dot product for good;
-everything a model wants to learn about how to compare has to be built into how $\mathbf{Q}$ and
-$\mathbf{K}$ are made, a matter on which this line says nothing and the next block says little else.
+is compared. And with it out of the way, the function $a$ is left as the bare dot product for good.
+Everything a model wants to learn about how to compare has to be built into how $\mathbf{Q}$ and
+$\mathbf{K}$ are made, a matter this line is silent about and the next block is almost entirely
+about.
 
-The additive score can't be moved like that, and it's the same argument as in <Leccion slug="bahdanau">the
-lesson on additive attention</Leccion>: between the two projections and the read-out there's a
-$\tanh$, and a non-linear function of a sum doesn't split up among its terms. That's why this
-three-matrix form, the one the next block inherits, exists thanks to the choice the previous lesson
-made, and not in spite of it.
+The additive score can't be moved like that, and the argument is the one from
+<Leccion slug="bahdanau">the lesson on additive attention</Leccion>: between the two projections and
+the read-out there's a $\tanh$, and a non-linear function of a sum doesn't split among its terms. So
+this three-matrix form, the one the next block inherits, exists thanks to the choice the previous
+lesson made, not in spite of it.
 
-There's one debt left, and it's worth saying out loud because you're going to see it written. The
-next block's form carries one more factor:
+One debt is left, and it's worth stating out loud because you're going to see it written. The next
+block's form carries one more factor:
 
 $$
 \text{Attention}\left(\mathbf{Q}, \mathbf{K}, \mathbf{V}\right) = \text{softmax}\!\left(\frac{\mathbf{Q}\mathbf{K}^{\top}}{\sqrt{d_k}}\right)\mathbf{V}.
 $$
 
 That divisor answers what the previous lesson measured without fixing: with freshly initialised
-weights the largest weight in one row reached $0.851$ against the $0.167$ of an even share, because
-an unbounded dot product grows with the size of the vectors it multiplies. In this notation that
-size has a name, $d_k$, and that's why the fix fits in a division. Where the root comes from (and why
-$\sqrt{d_k}$ and not something else) is <Leccion slug="scaled-dot-product">a lesson in the next
-block, on the *scaled dot-product*</Leccion>; what's needed here is to know that the factor is there
-and what problem it answers.
+weights, the largest weight in one row reached $0.851$ against the $0.167$ of an even share, because
+an unbounded dot product grows with the size of the vectors it multiplies. In this notation that size
+has a name, $d_k$, which is why the fix fits in a single division. Where the root comes from (and why
+$\sqrt{d_k}$ and not something else) is the subject of
+<Leccion slug="scaled-dot-product">a lesson in the next block, on the *scaled dot-product*</Leccion>;
+for now, all you need is to know that the factor is there and which problem it answers.
 
 ## The three arguments, in NumPy
 
-The whole function is two lines, and what the cell checks is that nothing changed when the names
-did. First it recovers the previous lesson's grid by handing out the roles (the query is the decoder
-state rewritten by $\mathbf{W}_a$, the key and the value are the same encoder state) and then it
-unties them: one projection to compare with, $d_k = 3$ coordinates wide, and another to mix,
-$d_v = 7$ wide. Look above all at the last three lines.
+The whole function is two lines, and what the cell checks is that nothing changed when the names did.
+First it recovers the previous lesson's grid by handing out the roles (the query is the decoder state
+rewritten by $\mathbf{W}_a$, and the key and the value are the same encoder state). Then it unties
+them: one projection to compare with, $d_k = 3$ coordinates wide, and another to mix, $d_v = 7$ wide.
+Pay particular attention to the last three lines.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -394,16 +397,16 @@ print("changing K moves the map:   ", bool(not np.allclose(attention(Q, other_K,
 print("changing V moves the output:", bool(not np.allclose(attention(Q, K, other_V)[0], Y2)))
 `} />
 
-Replacing the values wholesale doesn't move a single weight of the map, and replacing the keys moves
+Replacing the values wholesale doesn't move a single weight of the map, while replacing the keys moves
 all of it. That's the separation the last three lessons couldn't show, because there was one vector
-and touching it changed both things at once. Look too at the shapes in the second part: the query is
-$3$ wide, the output is $7$ wide and the map is still $8 \times 6$, one row per step and one column
+and touching it changed both things at once. Look at the shapes in the second part too: the query is
+$3$ wide, the output is $7$ wide, and the map is still $8 \times 6$, one row per step and one column
 per position. Change `d_v` to $2$ and run it again: the output shrinks and the map doesn't flinch.
 
 ## Test your intuition
 
 Five questions: who plays each role in what you already know, how big the output is, what happens
-when you touch only the values, how the gradient reaches each role and where $\mathbf{W}_a$ ended
+when you touch only the values, how the gradient reaches each role, and where $\mathbf{W}_a$ ended
 up.
 
 <Quiz id="q-quien-es-cada-papel" />
@@ -420,16 +423,16 @@ up.
 
 ---
 
-With the names in place, what's missing looks different. $\mathbf{K}$ and $\mathbf{V}$ exist in
-full as soon as the encoder finishes reading: they depend only on the source, and none of their rows
-waits for any other. Not $\mathbf{Q}$. Its rows are made one at a time, because each query is a
-decoder state and each decoder state needs the previous step's context. Two of the three matrices
-are complete in one go and the third still moves in single file, which is the previous lesson's
-outstanding debt told in this lesson's vocabulary.
+With the names in place, what's missing looks different. $\mathbf{K}$ and $\mathbf{V}$ exist in full
+as soon as the encoder finishes reading: they depend only on the source, and none of their rows waits
+for any other. $\mathbf{Q}$ is different. Its rows are made one at a time, because each query is a
+decoder state and each decoder state needs the previous step's context. Two of the three matrices are
+complete in one go while the third still moves in single file, which is the previous lesson's
+outstanding debt, told in this lesson's vocabulary.
 
 And that's where the course turns. <Leccion slug="adios-recurrencia">The first lesson of the next
-block, on removing the recurrence</Leccion>, takes seriously the one question left: if what
-strangles the parallelism is the recurrence, and attention already knows how to read a whole
-sequence without walking through it step by step, what's left if you take it out? The answer fills
-the rest of the course, and you reach it with the three words and the three letters already in
-place, which is the one thing this block had to get done.
+block, on removing the recurrence</Leccion>, takes the one remaining question seriously: if what
+strangles the parallelism is the recurrence, and attention already knows how to read a whole sequence
+without walking through it step by step, what's left once you take the recurrence out? The answer
+fills the rest of the course, and you reach it with the three words and the three letters already in
+place, which is the one thing this block had to accomplish.
