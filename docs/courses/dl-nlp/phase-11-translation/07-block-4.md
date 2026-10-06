@@ -1,6 +1,6 @@
 # P11-07 — Block 4: The Bridge to Attention
 
-**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** 🔄 in progress (4.1–4.5 done)
+**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** ✅ done (4.1–4.6, reviewed)
 
 ## TL;DR
 
@@ -240,7 +240,7 @@ concentrated in **4.1 and 4.3**, and both of them spend it on the same decision.
 - [x] 4.3 `la-idea-de-atencion`
 - [x] 4.4 `bahdanau`
 - [x] 4.5 `luong`
-- [ ] 4.6 `atencion-como-consulta`
+- [x] 4.6 `atencion-como-consulta`
 
 ## Decisions fixed by a translated lesson
 
@@ -411,6 +411,43 @@ Reuse these verbatim; they are settled, not open.
   doble en las ejecuciones en que se apoya esta lección» ("about twice as long in the runs behind this
   lesson"). **In both locales**, the inline $\partial\ell/\partial e_{ij}$ derivative is now a display
   equation, unpunctuated because the sentence runs through it (7 display equations each).
+
+**From 4.6** (`en/32-atencion-como-consulta.mdx`):
+
+- **Transpose, as classed, and no answer moved.** 1,656 words against the Spanish 1,728, inside the
+  target. Title "Attention as query, key and value", the three names `en/31`'s bridge already used.
+- **Two departures from a straight transposition.** The opening names the two scores ("the additive
+  score and the multiplicative one"), which the Spanish leaves implicit, so a reader arriving cold
+  knows which slot is meant. And «el nombre de la función se queda en inglés» is recast as "the name
+  the paper gave it, and how you'll find it written everywhere": now a rule in `AUTHORING.en.md` §3,
+  which `es/40` meets again with the paper's figure.
+- **Code names**, for Block 5's cells: `atencion` → `attention` (cell and challenge), `salida` →
+  `output`, `esperado` → `expected`, `otra_K` / `otra_V` → `other_K` / `other_V`, `copias` →
+  `copies`; `softmax_rows` as in 4.4. The three change lines are padded to the 28 columns of
+  `changing V moves the output:`.
+- **Terms:** "attention call" (the glossary's); "tie" / "untie" for «atar» / «desatar»;
+  "projection" for «lectura» ("read-out" is $\mathbf{v}_a$'s); "lookup" for the dictionary
+  operation the analogy starts from, which the glossary row now allows, banning it only as a role's
+  name; "the slot the result lands in" for «el hueco», qualified because the opening's slot is the
+  score's. **query**, **keys** and **value** are bold where the Spanish bolds them, with no gloss
+  (`AUTHORING.en.md` §6). Labels the Spanish wrote as «su lección» name the topic ("the chain rule",
+  "Bahdanau's additive score").
+- **`atencion-qkv.en.svg`**: `and softmax over the positions`, `keys`, `a single vector`, `values`,
+  `d_v numbers`; `aria-label` and comments translated, class names kept. Measured in the 360
+  `viewBox`: the band label x 122.6–309.4 (Spanish 124.4–307.6) inside the 80–352 band, and "a
+  single vector" x 6.0–73.9, clear of the boxes at 96.
+- **Printed in Pyodide and quoted**, identical to the Spanish cell: the same grid as `en/31`
+  (True), shapes (8, 5) → (8, 5), then A (8, 6) and output (8, 7) at $d_k = 3$, $d_v = 7$; changing
+  V moves the map False, K True, the output True. Replacing the keys moves all 48 weights and the
+  values none (largest change 0.0); with `d_v = 2` the output is (8, 2) and the map identical.
+  `en/31`'s `0.851` and `0.167` re-run and confirmed. Challenge: the starter fails five tests, an
+  unshifted softmax only the overflow test, and the solution passes all six.
+- **Fixed in Spanish while translating** (same commit; the English was written fixed): the
+  `<Details>` summary sent the two-route formula to «la lección anterior», which is Luong's, not
+  Bahdanau's (now «la fórmula de las dos rutas»); the challenge explanation said «Tres líneas» of a
+  four-line body (now «Tres pasos»); «se sacaban con `P["z"]`» named a key only the GRU challenge
+  has (now «algo como `P["z"]`»); and the reading note's «el √d_k en el próximo» was ambiguous (now
+  «la arquitectura y el √d_k llegan en el bloque siguiente»).
 
 ## The direction decision — make it once, in 4.1
 

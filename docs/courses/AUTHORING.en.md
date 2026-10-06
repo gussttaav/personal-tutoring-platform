@@ -146,6 +146,14 @@ claim is absurd again, and check any asset with the old order set into it.
 the language label is the same translated-material tell as tokenising the wrong language, so §3 cuts
 it rather than carrying it across. *Settled by `en/11-xor-y-capas-ocultas.mdx` (COURSE-P11-05).*
 
+**A Spanish sentence whose point is that a term stays in English is recast, not translated.** A
+Spanish lesson sometimes stops to say that a name is left in English («el nombre de la función se
+queda en inglés»), because its reader is meeting an English word on a Spanish page. In English the
+remark reports nothing and reads as translated material. Keep what it tells the reader (where they
+will meet the term written) and drop the remark about language: "the name the paper gave it, and
+how you'll find it written everywhere". Block 5's lesson on the full architecture meets it again
+with the paper's figure. *Settled by `en/32-atencion-como-consulta.mdx` (COURSE-P11-07).*
+
 **An agreement example's singular nouns have no plural reading.** en-GB lets a collective noun take a
 plural verb (*the council are*), so *council*, *team* or *government* cannot be the singular noun a
 plural subject has to survive: the contrast the example rests on is gone for the reader who hears it
@@ -268,7 +276,7 @@ network, so `neural network` is both over-specific and a forward reference to Bl
 | the decoding search this course does **not** cover, named once so the concession is honest | *beam search* | |
 | the small network that computes the score $a$ | alignment model | attention network |
 | Bahdanau's score · Luong's score | additive attention · multiplicative attention | dot-product attention for Luong's |
-| the three roles of one attention call | query, key, value | request, lookup, content |
+| the three roles of one attention call | query, key, value | request, lookup, content as the name of a role; *lookup* stays free for the dictionary operation Block 4's analogy starts from |
 | the two-layer network applied to each position on its own | position-wise perceptron | feed-forward network (true of every layer in Blocks 2–3, so it says the one thing that is not the point); dense layer |
 | the decoder sublayer taking its keys and values from the encoder | encoder-decoder attention | cross-attention |
 | the whole formula, divisor included · the operation inside it | *scaled dot-product* · dot product | scalar product |

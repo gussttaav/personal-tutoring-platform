@@ -2019,7 +2019,7 @@ first; see the [phase README](phase-11-translation/README.md).
 | [04 Block 1 — NLP Fundamentals (8)](phase-11-translation/04-block-1.md) | `COURSE-P11-04` | ✅ | _tbd_ | local |
 | [05 Block 2 — The MLP (10)](phase-11-translation/05-block-2.md) | `COURSE-P11-05` | ✅ | _tbd_ | local |
 | [06 Block 3 — RNNs (8)](phase-11-translation/06-block-3.md) | `COURSE-P11-06` | ✅ | _tbd_ | local |
-| [07 Block 4 — The Bridge to Attention (6)](phase-11-translation/07-block-4.md) | `COURSE-P11-07` | 🔄 | _tbd_ | |
+| [07 Block 4 — The Bridge to Attention (6)](phase-11-translation/07-block-4.md) | `COURSE-P11-07` | ✅ | _tbd_ | local |
 | [08 Block 5 — The Transformer (11)](phase-11-translation/08-block-5.md) | `COURSE-P11-08` | ⬜ | _tbd_ | |
 
 **Landing order:** P11-00 first (cheap, everything keys off it). Then P11-01 → P11-02 → P11-03

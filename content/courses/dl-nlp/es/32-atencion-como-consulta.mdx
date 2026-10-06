@@ -157,7 +157,7 @@ challenges:
           A = Z / Z.sum(axis=1, keepdims=True)
           return A @ V, A
     explanation: |
-      Tres líneas y ningún bucle. `Q @ K.T` puntúa todas las parejas de una vez (la fila $i$ de
+      Tres pasos y ningún bucle. `Q @ K.T` puntúa todas las parejas de una vez (la fila $i$ de
       `Q` contra la columna $j$ de `K.T`, que es la clave $j$), el softmax por filas convierte
       esas puntuaciones en un reparto, y `A @ V` mezcla los valores con él. Las formas se
       encadenan solas: $(T_q, d_k)$ contra $(d_k, T_k)$ da $(T_q, T_k)$, y eso contra
@@ -172,7 +172,7 @@ reading:
     venue: 'arXiv:1706.03762'
     lang: en
     url: 'https://arxiv.org/abs/1706.03762'
-    note: 'De aquí salen los tres nombres y softmax(QK^T/√d_k)V: su §3.2 abre con el marco consulta-clave-valor y su §3.2.1 lo escribe. Esta lección toma solo la notación; la arquitectura llega en el bloque siguiente, y el √d_k en el próximo.'
+    note: 'De aquí salen los tres nombres y softmax(QK^T/√d_k)V: su §3.2 abre con el marco consulta-clave-valor y su §3.2.1 lo escribe. Esta lección toma solo la notación; la arquitectura y el √d_k llegan en el bloque siguiente.'
 ---
 
 {/* COURSE-P5-04 — Bloque 4, lección 6. */}
@@ -194,7 +194,7 @@ escribe.
 
 Hay una operación que ya has escrito y que hace casi exactamente esto. En los desafíos de
 <Leccion slug="lstm">la lección sobre la LSTM (*long short-term memory*)</Leccion> y <Leccion slug="gru">la lección sobre la GRU
-(*gated recurrent unit*)</Leccion>, los pesos llegaban en un diccionario `P` y se sacaban con `P["z"]`: das una **consulta** (*query*), Python la compara con
+(*gated recurrent unit*)</Leccion>, los pesos llegaban en un diccionario `P` y cada pieza se sacaba con algo como `P["z"]`: das una **consulta** (*query*), Python la compara con
 las **claves** (*keys*) guardadas y te devuelve el **valor** (*value*) de la que coincide. Falla
 una letra y no hay respuesta.
 
@@ -277,7 +277,7 @@ $$
 Quien se compara con la mezcla es el *valor* de esa posición; quien recibe la corrección es su
 *clave*. Con un solo vector haciendo los dos papeles esa frase no se podía ni escribir.
 
-<Details summary="Y al atarlos otra vez sale la fórmula de la lección anterior">
+<Details summary="Y al atarlos otra vez vuelve la fórmula de las dos rutas">
 
 Poner $\mathbf{k}_j = \mathbf{v}_j = \bar{\mathbf{h}}_j$ no es un caso nuevo del gradiente: es un
 peso compartido, como el $\mathbf{W}_{hh}$ que recorre todas las posiciones en la recurrencia del
