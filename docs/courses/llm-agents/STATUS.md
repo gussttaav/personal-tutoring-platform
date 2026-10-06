@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (3/8) | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (4/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -870,3 +870,63 @@ the cells. Decisions, confirmed by Gustavo at review:
   identical output; the challenge in Chromium (starter 0/4, solution 4/4); all four quiz questions
   right and wrong (Playwright); no horizontal scroll at 360 px (equations 424–481 px in their own
   boxes, after splitting the $\mathcal{L}_{\text{SFT}}$ display over two rows). Not on a phone.
+
+Lesson 13 `modelo-de-recompensa` authored on `staging` (2026-10-06), with its widget
+`bradley-terry` built in the same task. 2 065 words (advisory over the 2 000 target), 5 display
+equations, 1 widget, 2 cells (max 45 lines), 5 quiz, 1 challenge (`ch-recompensas`), 5 readings
+(Bradley & Terry 1952, Christiano et al. 2017, Stiennon et al. 2020, Ouyang et al. 2022 §3.5,
+Chiang et al. 2024; links and author lists checked). `minutes: 35` (lint ≈36). Runs on the
+mini-GPT, frozen, with a linear layer on top that is trained, and says so before the cells.
+Decisions, confirmed by Gustavo at review:
+- **The claims, derived:** a nota is read in its rater's scale; a comparison keeps the order and
+  drops the scale, and counting recovers the size (Elo and Chatbot Arena as the precedents).
+  Bradley–Terry is the softmax of two rewards, so $P(y_A \succ y_B \mid x) = \sigma(\text{margen})$
+  and the margin is the log of the odds ($\ln 3$ for three in four, $\ln 9$ for nine in ten, Elo's
+  400 points for $\ln 10$); one number per response chains margins and cannot fit a cycle. The
+  reward is defined up to $\kappa(x)$, a constant per instrucción (planted for lesson 15: InstructGPT
+  fixes it by hand with a bias for the same reason); the scale is fixed, and its unit is how often
+  annotators agree. $\mathcal{L}_{\text{R}}$ is the first course's binary cross-entropy with the
+  margin for $z$ and the label 1; its optimum puts each margin at the log odds of the observed
+  proportion, and its gradient weight $\sigma(r_\phi(x, y_l) - r_\phi(x, y_w))$ is the probability
+  still given to the wrong order. On the mini-GPT, $r_\phi = \mathbf{u}^{\top}\bar{\mathbf{h}} + b$
+  over the mean final vector of $y$'s positions, and $b$'s gradient is $1 - 1 = 0$.
+- **The body is the pretrained mini-GPT, not lesson 12's fine-tuned one,** which forgot the novel;
+  the lesson says so in the author's voice. The open question for lessons 14–15 (freeze an SFT
+  checkpoint asset or re-run the ~3 s cell) is still open.
+- **The cells, measured (Node Pyodide = Chromium):** a scripted annotator prefers the right colour
+  on 36 questions, six things per colour, six SFT-shaped responses each (216 conversations in one
+  batched `adelante`, cell 1 ≈2.0 s warm in Chromium, ≈7.8 s cold with the interpreter download).
+  24 questions give 3 training comparisons and 2 «rivales nuevos» each; 12 questions, two per
+  colour, are of things the novel never names (checked by grep, plurals included: «la ola» was
+  replaced by «el arándano» because «olas» appears 6 times). 300 gradient-descent steps at η 2:
+  loss 0.693 → 0.161, $b$'s gradient 0.0 at every printed step; 71/72 on training, 41/48 (0.85)
+  on new rivals, 31/60 (0.52) on new questions; «el plátano es amarillo» gets the lowest of its six
+  rewards, and the worst snow answer (18.1) outranks the best banana answer (14.2). Robust across 5
+  rival rotations × 5 rate/step settings (0.93–1.00 / 0.75–0.90 / 0.47–0.58). With random held-out
+  nouns, novel-named ones included, new-question accuracy averages 0.57 over 200 splits: the prose
+  claims only what the never-named split shows. Lesson 15 can reuse these right-vs-wrong pairs.
+- **Challenge `ch-recompensas`:** Bradley–Terry rewards from a vote table, one free reward per
+  response, mean zero. Graded in Node Pyodide and in Chromium: solution 6/6, starter and empty
+  0/6; five wrong variants (no centring, naive log win/loss ratio, unnormalised step, too few
+  steps, transposed table) each fail a test with its own message. The last test checks against
+  Zermelo's iteration, an independent route to the same maximum.
+- **The widget `bradley-terry`:** sliders for $r_A$, $r_B$ and a constant $c$ added to both; the
+  reward line, $\sigma$ of the margin and the loss of «A was chosen», with the slope as a readout.
+  Moving $c$ moves only the line. Maths in `math/bradley-terry.ts` (12 tests: limits, softmax,
+  invariance, overflow at ±1000, the slope against a finite difference, ln 3, 9/10, the quiz's
+  σ(−4) against σ(1)). Draws in real pixels (the `scaling-laws` pattern): 320 px wide at a 360 px
+  viewport, 10.5 px labels.
+- **Terms and letters added at review:** `comparación` (`preferida` / `rechazada`), `anotador`,
+  `recompensa` / `modelo de recompensa`, `margen`, `capa lineal` in the delta's §4; $y_A$, $y_B$,
+  $r(x, y)$, $\kappa(x)$, $\text{margen}$, $p_{\text{pref}}$, $\mathcal{L}_{\text{R}}$,
+  $\mathbf{h}(x, y_{\le j})$ / $\bar{\mathbf{h}}$, $\mathbf{u}$, $b$ in `NOTATION.md`, with a note on
+  the four literature letters the block dodges ($y_1$, $f(x)$, $c$, $m$).
+- **Lesson 12's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 14 (`rlhf`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (words and reading-time warnings only), `pnpm build` green with 0
+  KaTeX errors in both locales, `check:messages`, ESLint on the new files, the course Jest suites
+  (1 031 tests); the cells in Node Pyodide and in Chromium on `pnpm start` with identical output;
+  all five quiz questions right and wrong, the numeric at 0.902 accepted and 0.903 refused
+  (Playwright); no horizontal page scroll at 360 px (equations 472–603 px in their own boxes; the
+  Bradley–Terry and gradient displays split over two rows so all five fit the 632 px desktop
+  column). Not on a phone.

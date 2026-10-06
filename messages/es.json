@@ -1687,6 +1687,22 @@
         "loss": "Pérdida",
         "lossMasked": "sólo las respuestas",
         "lossAll": "todas las posiciones"
+      },
+      "bradley-terry": {
+        "groupAria": "El modelo de Bradley–Terry: dos respuestas con su recompensa, la probabilidad de que un anotador prefiera A y la pérdida de esa comparación",
+        "lineTitle": "Las dos recompensas, con c sumada: r<sub>A</sub> + c y r<sub>B</sub> + c",
+        "lineAria": "Recta de recompensas: A en {a} y B en {b}, con un margen de {m}",
+        "probTitle": "P(A ≻ B) = σ(r<sub>A</sub> − r<sub>B</sub>), frente al margen",
+        "probAria": "La sigmoide del margen. Con margen {m}, el anotador prefiere A con probabilidad {p}.",
+        "lossTitle": "Pérdida si eligió A: −log σ(r<sub>A</sub> − r<sub>B</sub>)",
+        "lossAria": "La pérdida de la comparación frente al margen. Con margen {m}, vale {loss} nats.",
+        "readMargin": "Margen r<sub>A</sub> − r<sub>B</sub> = <strong>{m}</strong>",
+        "readProb": "El anotador prefiere A con probabilidad <strong>{pa}</strong> y B con <strong>{pb}</strong>.",
+        "readLoss": "Si eligió A, la comparación cuesta <strong>{loss}</strong> nats, y su pendiente respecto de r<sub>A</sub> es <strong>{slope}</strong>.",
+        "sliderA": "Recompensa de A",
+        "sliderB": "Recompensa de B",
+        "sliderC": "c, sumada a las dos",
+        "shiftNote": "c mueve las dos recompensas por la recta. El margen, la probabilidad y la pérdida no cambian."
       }
     }
   },

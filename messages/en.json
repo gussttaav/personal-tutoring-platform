@@ -1687,6 +1687,22 @@
         "loss": "Loss",
         "lossMasked": "responses only",
         "lossAll": "every position"
+      },
+      "bradley-terry": {
+        "groupAria": "The Bradley–Terry model: two responses with their rewards, the probability that an annotator prefers A, and the loss of that comparison",
+        "lineTitle": "The two rewards, with c added: r<sub>A</sub> + c and r<sub>B</sub> + c",
+        "lineAria": "Reward line: A at {a} and B at {b}, a margin of {m}",
+        "probTitle": "P(A ≻ B) = σ(r<sub>A</sub> − r<sub>B</sub>), against the margin",
+        "probAria": "The sigmoid of the margin. At a margin of {m}, the annotator prefers A with probability {p}.",
+        "lossTitle": "Loss if A was chosen: −log σ(r<sub>A</sub> − r<sub>B</sub>)",
+        "lossAria": "The loss of the comparison against the margin. At a margin of {m}, it is {loss} nats.",
+        "readMargin": "Margin r<sub>A</sub> − r<sub>B</sub> = <strong>{m}</strong>",
+        "readProb": "The annotator prefers A with probability <strong>{pa}</strong> and B with <strong>{pb}</strong>.",
+        "readLoss": "If A was chosen, the comparison costs <strong>{loss}</strong> nats, and its slope with respect to r<sub>A</sub> is <strong>{slope}</strong>.",
+        "sliderA": "Reward of A",
+        "sliderB": "Reward of B",
+        "sliderC": "c, added to both",
+        "shiftNote": "c moves both rewards along the line. The margin, the probability and the loss stay put."
       }
     }
   },

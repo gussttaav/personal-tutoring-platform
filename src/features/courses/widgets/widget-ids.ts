@@ -52,6 +52,8 @@ export const WIDGET_IDS = [
   "scaling-laws",
   // COURSE-C2-P1-02 — llm-agents Block 2 lesson 2 (la plantilla de chat).
   "chat-template",
+  // COURSE-C2-P1-02 — llm-agents Block 2 lesson 4 (preferencias y el modelo de recompensa).
+  "bradley-terry",
 ] as const;
 
 export type WidgetId = (typeof WIDGET_IDS)[number];

@@ -50,7 +50,7 @@ you *put in the prompt* is the next block.
 - [x] 10. `predecir-no-es-obedecer`
 - [x] 11. `plantilla-de-chat`
 - [x] 12. `sft`
-- [ ] 13. `modelo-de-recompensa`
+- [x] 13. `modelo-de-recompensa`
 - [ ] 14. `rlhf`
 - [ ] 15. `dpo`
 - [ ] 16. `de-donde-salen-las-preferencias`

@@ -249,6 +249,14 @@ together, and the lesson states that shape when the cache first appears.
 | $\mathcal{L}_{\text{SFT}}(\theta)$ | the fine-tuning loss, $\mathbb{E}_{(x, y) \sim p_{\text{SFT}}}\left[-\log \pi_\theta(y \mid x)\right]$: Block 2 lesson 1's pretraining objective with $p_{\text{SFT}}$ for $p_{\text{texto}}$, minimised at $\pi_\theta(\cdot \mid x) = p_{\text{SFT}}(\cdot \mid x)$ on the set's instructions (Block 2 lesson 3) |
 | $\mathbf{z}(x, y_{<j})$ | the logits of the position that has read $x$ and the first $j - 1$ tokens of $y$, and bets on $y_j$: Block 1 lesson 1's $\mathbf{z}_t(x_{\le t})$ with the input named in the block's two pieces, so it carries no position. $\mathbf{z}(x, y_{<1})$ reads $x$ whole, up to $\texttt{<\|asistente\|>}$ (Block 2 lesson 3) |
 | $\mathbf{o}_v \in \{0, 1\}^{\lvert V \rvert}$ | the one-hot of entry $v$, the first course's (`dl-nlp` Block 1): the gradient of $-\log \text{softmax}(\mathbf{z})_v$ with respect to $\mathbf{z}$ is $\text{softmax}(\mathbf{z}) - \mathbf{o}_v$ (Block 2 lesson 3) |
+| $y_A$, $y_B$, $y_C$ | responses to one instruction before anyone has chosen between them: what Bradley–Terry states $P(y_A \succ y_B \mid x)$ of. Once an anotador has chosen, the pair is $y_w \succ y_l$. The widget's $r_A$, $r_B$ are $r(x, y_A)$, $r(x, y_B)$ (Block 2 lesson 4) |
+| $r(x, y)$ | the reward: one number per (instrucción, respuesta), with $P(y_A \succ y_B \mid x) = \sigma\big(r(x, y_A) - r(x, y_B)\big)$, defined up to $\kappa(x)$. $r_\phi$ is a network that computes one (Block 2 lesson 4) |
+| $\kappa(x)$ | a constant per instrucción: adding it to every reward of $x$ changes no comparison (Block 2 lesson 4) |
+| $\text{margen}$ | $r(x, y_A) - r(x, y_B)$, or $r_\phi(x, y_w) - r_\phi(x, y_l)$ for a comparison: the log of the odds, $P/(1 - P) = e^{\text{margen}}$. Roman, a named quantity like $\text{acierto}$; an English lesson writes $\text{margin}$ (Block 2 lesson 4) |
+| $p_{\text{pref}}$ | the distribution that draws one comparison $(x, y_w, y_l)$ of the preference set at random, in the family of $p_{\text{texto}}$ and $p_{\text{SFT}}$ (Block 2 lesson 4) |
+| $\mathcal{L}_{\text{R}}(\phi)$ | the reward model's loss, $\mathbb{E}_{(x, y_w, y_l) \sim p_{\text{pref}}}\left[-\log \sigma\big(r_\phi(x, y_w) - r_\phi(x, y_l)\big)\right]$: the first course's binary cross-entropy with the margin for $z$ and the label always 1. The DPO paper's $\mathcal{L}_R$, and R reads as *recompensa* and *reward* alike (Block 2 lesson 4) |
+| $\mathbf{h}(x, y_{\le j})$ · $\bar{\mathbf{h}}(x, y)$ | $\mathbf{h}$ at the position that has read $x$ and the first $j$ tokens of $y$, named by what it read as $\mathbf{z}(x, y_{<j})$ is · its mean over the tokens of $y$, $\mathbb{E}_j\left[\mathbf{h}(x, y_{\le j})\right]$ with $j$ uniform, $\texttt{<\|fin\|>}$ included (Block 2 lesson 4) |
+| $\mathbf{u}$, $b$ | the weight vector and bias of the mini-GPT reward model's linear layer, $r_\phi(x, y) = \mathbf{u}^{\top}\bar{\mathbf{h}}(x, y) + b$, so $\phi = (\mathbf{u}, b)$: 65 numbers (Block 2 lesson 4) |
 
 **An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
 distribution, roman text names the set of respuestas it describes, and the probability is that
@@ -292,6 +300,23 @@ the first course's $\mathbf{o}_v$, always subscripted by an entry; Block 1 lesso
 $\mathbf{o}_t^{\top}$ for a row of an attention head's output, subscripted by a position, and the
 two never share a page. $\mathcal{L}_{\text{SFT}}$ keeps the block task md's subscript, an acronym
 set in roman like $\text{PPL}$.
+
+**Preferences dodge four of the literature's letters** (`COURSE-C2-P1-02`, Block 2 lesson 4). The
+DPO paper writes two responses $y_1$, $y_2$, and here $y_j$ is token $j$ of $y$ (Block 1 lesson 8),
+so two responses before a choice are $y_A$, $y_B$: a capital subscript is a label, never a position.
+The paper calls the per-prompt freedom $f(x)$, and $f$ is Block 1's frequency; $c$ is Block 1 lesson
+5's cost, the reason Block 2 lesson 2 already refused it. So the constant is $\kappa(x)$, which
+nothing else in either course writes. The margin has no letter: $m$ is lesson 2's fusión count and a
+$\Delta$ would sit beside the first course's batched error $\boldsymbol{\Delta}^{(l)}$, so it is the
+word, $\text{margen}$, in roman as $\text{acierto}$ is. The reward head's weight is $\mathbf{u}$, not
+the first course's neuron $\mathbf{w}$, because $w$ already marks the preferred response and the two
+meet in the gradient, $\mathbf{u}^{\top}\left(\bar{\mathbf{h}}(x, y_w) - \bar{\mathbf{h}}(x, y_l)\right)$;
+the lesson says so in a clause. $b$ keeps the first course's meaning, a bias. The mean of $\mathbf{h}$
+takes the overline, a mean as in $\bar{\ell}$ and $\bar{\mathbf{e}}$, and $\mathbf{h}$ is named by
+what its position read, like $\mathbf{z}(x, y_{<j})$; there is no length letter for $y$, as Block 1
+lesson 9 already decided, so the mean is an $\mathbb{E}_j$ with $j$ uniform, Block 1 lesson 3's
+$\mathbb{E}_i$. $\mathcal{L}_{\text{R}}$ is the DPO paper's own subscript, so lesson 15 can say
+that its loss is this one with another reward inside.
 
 **Two networks on one page need two parameter letters.** $\theta$ is the policy's and $\phi$ the
 reward model's, and the split is the point of the block: the reward model is trained first, then
