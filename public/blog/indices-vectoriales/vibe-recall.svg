@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 440" width="760" height="440" role="img"
+ aria-label="Gráfica de líneas con el recall arriba de cien, de 0,5 a 1, en el eje horizontal, y las preguntas por segundo en escala logarítmica, de 10 a 10 000, en el vertical, con una línea discontinua en recall 0,95. Seis curvas en escalones que bajan hacia la derecha, porque más recall cuesta velocidad; la del hashing acaba antes, en 0,99, el recall más alto que alcanza. De más rápida a más lenta con recall 0,95: el grafo comprimido Glass, 4 125 preguntas por segundo; el grafo hnswlib, 2 001; las listas invertidas con cuantización por producto de Faiss, 1 239; las listas invertidas de Faiss, 246; el árbol Annoy, 117; y el hashing PUFFINN, 12.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 12px; font-weight: 600; }
+  .sub { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 12px; }
+  .sm { font-size: 11px; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .big { font-size: 13px; font-weight: 600; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+</style>
+<line class="gr" x1="64" y1="360.0" x2="590" y2="360.0"/>
+<text class="tk" x="56.0" y="364.0" text-anchor="end">10</text>
+<line class="gr" x1="64" y1="246.0" x2="590" y2="246.0"/>
+<text class="tk" x="56.0" y="250.0" text-anchor="end">100</text>
+<line class="gr" x1="64" y1="132.0" x2="590" y2="132.0"/>
+<text class="tk" x="56.0" y="136.0" text-anchor="end">1 000</text>
+<line class="gr" x1="64" y1="18.0" x2="590" y2="18.0"/>
+<text class="tk" x="56.0" y="22.0" text-anchor="end">10 000</text>
+<line class="ax" x1="64.0" y1="360" x2="64.0" y2="365"/>
+<text class="tk" x="64.0" y="378.0" text-anchor="middle">0,5</text>
+<line class="ax" x1="169.2" y1="360" x2="169.2" y2="365"/>
+<text class="tk" x="169.2" y="378.0" text-anchor="middle">0,6</text>
+<line class="ax" x1="274.4" y1="360" x2="274.4" y2="365"/>
+<text class="tk" x="274.4" y="378.0" text-anchor="middle">0,7</text>
+<line class="ax" x1="379.6" y1="360" x2="379.6" y2="365"/>
+<text class="tk" x="379.6" y="378.0" text-anchor="middle">0,8</text>
+<line class="ax" x1="484.8" y1="360" x2="484.8" y2="365"/>
+<text class="tk" x="484.8" y="378.0" text-anchor="middle">0,9</text>
+<line class="ax" x1="590.0" y1="360" x2="590.0" y2="365"/>
+<text class="tk" x="590.0" y="378.0" text-anchor="middle">1,0</text>
+<line class="ax" x1="64" y1="360" x2="590" y2="360"/>
+<line stroke="#86948a" stroke-width="1" stroke-dasharray="3 3" x1="537.4" y1="18" x2="537.4" y2="360"/>
+<text class="tk" x="533.4" y="28.0" text-anchor="end">0,95</text>
+<text class="sm" x="327.0" y="398.0" text-anchor="middle">recall@100</text>
+<text class="sm" x="14" y="189.0" text-anchor="middle" transform="rotate(-90 14 189.0)">preguntas por segundo (escala logarítmica)</text>
+<polyline fill="none" stroke="#9085e9" stroke-width="2" stroke-linejoin="round" points="64.0,43.4 392.2,43.4 392.2,43.1 392.2,43.1 392.2,43.1 392.2,43.1 392.2,52.5 533.3,52.5 533.3,52.3 533.3,52.3 533.3,52.1 533.3,52.1 533.3,51.0 533.3,51.0 533.3,62.3 554.9,62.3 554.9,61.8 554.9,61.8 554.9,69.6 577.2,69.6 577.2,81.0 584.8,81.0 584.8,80.9 584.8,80.9 584.8,79.9 584.8,79.9 584.8,79.6 584.8,79.6 584.8,88.7 587.4,88.7 587.4,88.7 587.4,88.7 587.4,87.3 587.4,87.3 587.4,92.7 587.8,92.7 587.8,92.0 587.8,92.0 587.8,95.5 588.0,95.5 588.0,99.5 589.1,99.5 589.1,109.4 589.4,109.4 589.4,105.9 589.4,105.9 589.4,119.6 589.8,119.6 589.8,115.3 589.8,115.3 589.8,124.0 589.9,124.0 589.9,181.8 590.0,181.8 590.0,160.6 590.0,160.6 590.0,158.3 590.0,158.3 590.0,151.0 590.0,151.0 590.0,136.3 590.0,136.3 590.0,127.0 590.0,127.0"/>
+<circle cx="590.0" cy="127.0" r="3.5" fill="#9085e9" stroke="#131315" stroke-width="1.5"/>
+<polyline fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round" points="64.0,66.3 312.9,66.3 312.9,66.2 312.9,66.2 312.9,82.2 395.5,82.2 395.5,84.5 490.9,84.5 490.9,84.5 490.9,84.5 490.9,99.0 540.9,99.0 540.9,97.7 540.9,97.7 540.9,112.5 556.9,112.5 556.9,114.0 567.5,114.0 567.5,126.0 577.7,126.0 577.7,131.7 578.7,131.7 578.7,141.0 583.5,141.0 583.5,143.2 585.9,143.2 585.9,146.2 586.1,146.2 586.1,146.1 586.1,146.1 586.1,146.1 586.1,146.1 586.1,146.1 586.1,146.1 586.1,150.9 587.8,150.9 587.8,155.3 588.2,155.3 588.2,154.8 588.2,154.8 588.2,154.7 588.2,154.7 588.2,153.7 588.2,153.7 588.2,155.7 588.3,155.7 588.3,161.1 588.6,161.1 588.6,157.5 588.6,157.5 588.6,162.9 589.2,162.9 589.2,165.4 589.4,165.4 589.4,168.9 589.6,168.9 589.6,170.8 589.7,170.8 589.7,174.9 589.8,174.9 589.8,174.4 589.8,174.4 589.8,173.4 589.8,173.4 589.8,182.9 589.9,182.9 589.9,180.8 589.9,180.8 589.9,238.1 590.0,238.1 590.0,208.2 590.0,208.2 590.0,200.3 590.0,200.3 590.0,196.0 590.0,196.0 590.0,195.7 590.0,195.7 590.0,190.8 590.0,190.8 590.0,185.9 590.0,185.9"/>
+<circle cx="590.0" cy="185.9" r="3.5" fill="#3987e5" stroke="#131315" stroke-width="1.5"/>
+<polyline fill="none" stroke="#d95926" stroke-width="2" stroke-linejoin="round" points="64.0,46.9 66.8,46.9 66.8,60.8 212.3,60.8 212.3,71.8 294.6,71.8 294.6,79.8 315.5,79.8 315.5,84.9 372.2,84.9 372.2,91.8 411.1,91.8 411.1,97.6 474.0,97.6 474.0,105.9 480.1,105.9 480.1,111.3 504.8,111.3 504.8,115.3 536.3,115.3 536.3,121.4 543.9,121.4 543.9,131.6 544.0,131.6 544.0,135.4 556.2,135.4 556.2,138.7 569.0,138.7 569.0,142.6 576.2,142.6 576.2,149.9 576.4,149.9 576.4,155.3 576.6,155.3 576.6,158.8 582.4,158.8 582.4,164.5 582.6,164.5 582.6,165.7 583.3,165.7 583.3,165.9 585.0,165.9 585.0,168.3 588.2,168.3 588.2,173.2 588.3,173.2 588.3,181.0 589.1,181.0 589.1,185.2 589.2,185.2 589.2,192.4 589.5,192.4 589.5,189.5 589.5,189.5 589.5,194.7 589.7,194.7 589.7,205.0 589.9,205.0 589.9,197.2 589.9,197.2 589.9,213.5 590.0,213.5 590.0,206.7 590.0,206.7"/>
+<circle cx="590.0" cy="206.7" r="3.5" fill="#d95926" stroke="#131315" stroke-width="1.5"/>
+<polyline fill="none" stroke="#199e70" stroke-width="2" stroke-linejoin="round" points="64.0,120.8 178.8,120.8 178.8,131.4 229.5,131.4 229.5,142.3 322.1,142.3 322.1,159.1 394.6,159.1 394.6,167.0 436.0,167.0 436.0,178.1 482.7,178.1 482.7,194.3 513.7,194.3 513.7,201.4 540.9,201.4 540.9,223.4 544.0,223.4 544.0,224.0 560.3,224.0 560.3,228.5 572.1,228.5 572.1,255.6 576.4,255.6 576.4,255.6 582.6,255.6 582.6,258.2 586.3,258.2 586.3,288.1 589.2,288.1 589.2,289.8 589.5,289.8 589.5,319.2 589.7,319.2 589.7,321.4 590.0,321.4"/>
+<circle cx="590.0" cy="321.4" r="3.5" fill="#199e70" stroke="#131315" stroke-width="1.5"/>
+<polyline fill="none" stroke="#c98500" stroke-width="2" stroke-linejoin="round" points="64.0,122.0 88.7,122.0 88.7,131.7 103.6,131.7 103.6,135.3 202.4,135.3 202.4,139.9 223.4,139.9 223.4,147.1 239.7,147.1 239.7,151.9 247.3,151.9 247.3,156.3 254.1,156.3 254.1,158.4 328.2,158.4 328.2,161.4 344.6,161.4 344.6,166.8 359.8,166.8 359.8,170.1 366.2,170.1 366.2,171.6 369.6,171.6 369.6,177.0 372.1,177.0 372.1,190.9 462.6,190.9 462.6,192.1 473.2,192.1 473.2,193.9 481.2,193.9 481.2,195.9 483.4,195.9 483.4,198.8 485.3,198.8 485.3,215.7 536.8,215.7 536.8,217.0 537.0,217.0 537.0,238.2 567.0,238.2 567.0,238.9 567.2,238.9 567.2,268.1 582.5,268.1 582.5,270.2 582.7,270.2 582.7,271.4 583.6,271.4 583.6,276.7 583.8,276.7 583.8,280.9 584.2,280.9 584.2,292.4 586.9,292.4 586.9,295.4 587.2,295.4 587.2,297.3 587.9,297.3 587.9,303.5 588.0,303.5 588.0,309.7 588.4,309.7 588.4,318.1 588.8,318.1 588.8,319.9 588.9,319.9 588.9,322.1 589.1,322.1 589.1,332.3 589.5,332.3 589.5,339.3 589.7,339.3"/>
+<circle cx="589.7" cy="339.3" r="3.5" fill="#c98500" stroke="#131315" stroke-width="1.5"/>
+<polyline fill="none" stroke="#d55181" stroke-width="2" stroke-linejoin="round" points="64.0,219.6 73.9,219.6 73.9,226.0 126.2,226.0 126.2,230.6 162.0,230.6 162.0,231.6 200.1,231.6 200.1,239.9 297.9,239.9 297.9,248.4 373.2,248.4 373.2,268.4 491.4,268.4 491.4,301.2 502.1,301.2 502.1,349.0 581.2,349.0"/>
+<circle cx="581.2" cy="349.0" r="3.5" fill="#d55181" stroke="#131315" stroke-width="1.5"/>
+<line stroke="#9085e9" stroke-width="2" x1="598" y1="127.0" x2="610" y2="127.0"/>
+<text class="sm" x="614.0" y="131.0" text-anchor="start">Grafo comprimido (Glass)</text>
+<line stroke="#3987e5" stroke-width="2" x1="598" y1="185.9" x2="610" y2="185.9"/>
+<text class="sm" x="614.0" y="189.9" text-anchor="start">Grafo (hnswlib)</text>
+<line stroke="#d95926" stroke-width="2" x1="598" y1="206.7" x2="610" y2="206.7"/>
+<text class="sm" x="614.0" y="210.7" text-anchor="start">Listas + PQ (Faiss)</text>
+<line stroke="#199e70" stroke-width="2" x1="598" y1="321.4" x2="610" y2="321.4"/>
+<text class="sm" x="614.0" y="325.4" text-anchor="start">Listas (Faiss IVF)</text>
+<line stroke="#c98500" stroke-width="2" x1="598" y1="339.3" x2="610" y2="339.3"/>
+<text class="sm" x="614.0" y="343.3" text-anchor="start">Árbol (Annoy)</text>
+<line stroke="#d55181" stroke-width="2" x1="598" y1="353.3" x2="610" y2="353.3"/>
+<text class="sm" x="614.0" y="357.3" text-anchor="start">Hashing (PUFFINN)</text>
+<line stroke="#9085e9" stroke-width="2.4" x1="64" y1="420" x2="80" y2="420"/>
+<text class="tk" x="85.0" y="424.0" text-anchor="start">Glass</text>
+<line stroke="#3987e5" stroke-width="2.4" x1="138" y1="420" x2="154" y2="420"/>
+<text class="tk" x="159.0" y="424.0" text-anchor="start">hnswlib</text>
+<line stroke="#d95926" stroke-width="2.4" x1="224" y1="420" x2="240" y2="420"/>
+<text class="tk" x="245.4" y="424.0" text-anchor="start">Faiss IVF-PQ</text>
+<line stroke="#199e70" stroke-width="2.4" x1="341" y1="420" x2="357" y2="420"/>
+<text class="tk" x="362.8" y="424.0" text-anchor="start">Faiss IVF</text>
+<line stroke="#c98500" stroke-width="2.4" x1="440" y1="420" x2="456" y2="420"/>
+<text class="tk" x="461.6" y="424.0" text-anchor="start">Annoy</text>
+<line stroke="#d55181" stroke-width="2.4" x1="514" y1="420" x2="530" y2="420"/>
+<text class="tk" x="535.6" y="424.0" text-anchor="start">PUFFINN</text>
+</svg>

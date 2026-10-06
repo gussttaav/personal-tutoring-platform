@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 218" width="760" height="218" role="img"
+ aria-label="Línea de tiempo, no a escala, con dos filas. Arriba, en verde, algoritmos y bibliotecas: 1975, el árbol k-d; 1998, el hashing sensible a la localidad; 2003, las listas invertidas de Video Google; 2011, la cuantización por producto; 2013, Annoy; 2014, NSW; 2016, HNSW; 2017, Faiss; 2019, DiskANN y NSG; 2020, ScaNN; 2021, SPANN y FreshDiskANN; 2023, Filtered-DiskANN; 2024, RaBitQ y ACORN. Abajo, en naranja, bases de datos: 2019, Milvus y el HNSW filtrable de Qdrant; 2021, pgvector; 2023, HNSW en pgvector; 2024, las búsquedas iterativas de pgvector y ACORN en Weaviate; 2025, DiskANN en SQL Server.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 12px; font-weight: 600; }
+  .sub { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 12px; }
+  .sm { font-size: 11px; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .big { font-size: 13px; font-weight: 600; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+</style>
+<line class="ax" x1="26" y1="120" x2="722" y2="120"/>
+<circle cx="40.0" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="91.4" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="142.8" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="194.2" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="245.5" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="296.9" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="348.3" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="399.7" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="451.1" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="502.5" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="553.8" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="605.2" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="656.6" cy="120" r="3.5" fill="#bbcabf"/>
+<circle cx="708.0" cy="120" r="3.5" fill="#bbcabf"/>
+<rect x="23.0" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="40.0" y="124.0" text-anchor="middle">1975</text>
+<rect x="74.4" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="91.4" y="124.0" text-anchor="middle">1998</text>
+<rect x="125.8" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="142.8" y="124.0" text-anchor="middle">2003</text>
+<rect x="177.2" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="194.2" y="124.0" text-anchor="middle">2011</text>
+<rect x="228.5" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="245.5" y="124.0" text-anchor="middle">2013</text>
+<rect x="279.9" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="296.9" y="124.0" text-anchor="middle">2014</text>
+<rect x="331.3" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="348.3" y="124.0" text-anchor="middle">2016</text>
+<rect x="382.7" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="399.7" y="124.0" text-anchor="middle">2017</text>
+<rect x="434.1" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="451.1" y="124.0" text-anchor="middle">2019</text>
+<rect x="485.5" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="502.5" y="124.0" text-anchor="middle">2020</text>
+<rect x="536.8" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="553.8" y="124.0" text-anchor="middle">2021</text>
+<rect x="588.2" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="605.2" y="124.0" text-anchor="middle">2023</text>
+<rect x="639.6" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="656.6" y="124.0" text-anchor="middle">2024</text>
+<rect x="691.0" y="113" width="34" height="14" fill="#131315"/>
+<text class="tk" x="708.0" y="124.0" text-anchor="middle">2025</text>
+<line stroke="#4edea3" stroke-width="1" x1="40.0" y1="111" x2="40.0" y2="101"/>
+<text class="sm" x="40.0" y="98.0" text-anchor="middle" style="fill:#4edea3">árbol k-d</text>
+<line stroke="#4edea3" stroke-width="1" x1="91.4" y1="111" x2="91.4" y2="65"/>
+<text class="sm" x="91.4" y="62.0" text-anchor="middle" style="fill:#4edea3">LSH</text>
+<line stroke="#4edea3" stroke-width="1" x1="142.8" y1="111" x2="142.8" y2="101"/>
+<text class="sm" x="142.8" y="98.0" text-anchor="middle" style="fill:#4edea3">(Video Google)</text>
+<text class="sm" x="142.8" y="85.0" text-anchor="middle" style="fill:#4edea3">listas invertidas</text>
+<line stroke="#4edea3" stroke-width="1" x1="194.2" y1="111" x2="194.2" y2="65"/>
+<text class="sm" x="194.2" y="62.0" text-anchor="middle" style="fill:#4edea3">por producto</text>
+<text class="sm" x="194.2" y="49.0" text-anchor="middle" style="fill:#4edea3">cuantización</text>
+<line stroke="#4edea3" stroke-width="1" x1="245.5" y1="111" x2="245.5" y2="101"/>
+<text class="sm" x="245.5" y="98.0" text-anchor="middle" style="fill:#4edea3">Annoy</text>
+<line stroke="#4edea3" stroke-width="1" x1="296.9" y1="111" x2="296.9" y2="65"/>
+<text class="sm" x="296.9" y="62.0" text-anchor="middle" style="fill:#4edea3">NSW</text>
+<line stroke="#4edea3" stroke-width="1" x1="348.3" y1="111" x2="348.3" y2="101"/>
+<text class="sm" x="348.3" y="98.0" text-anchor="middle" style="fill:#4edea3">HNSW</text>
+<line stroke="#4edea3" stroke-width="1" x1="399.7" y1="111" x2="399.7" y2="65"/>
+<text class="sm" x="399.7" y="62.0" text-anchor="middle" style="fill:#4edea3">Faiss</text>
+<line stroke="#4edea3" stroke-width="1" x1="451.1" y1="111" x2="451.1" y2="101"/>
+<text class="sm" x="451.1" y="98.0" text-anchor="middle" style="fill:#4edea3">NSG</text>
+<text class="sm" x="451.1" y="85.0" text-anchor="middle" style="fill:#4edea3">DiskANN</text>
+<line stroke="#4edea3" stroke-width="1" x1="502.5" y1="111" x2="502.5" y2="65"/>
+<text class="sm" x="502.5" y="62.0" text-anchor="middle" style="fill:#4edea3">ScaNN</text>
+<line stroke="#4edea3" stroke-width="1" x1="553.8" y1="111" x2="553.8" y2="101"/>
+<text class="sm" x="553.8" y="98.0" text-anchor="middle" style="fill:#4edea3">FreshDiskANN</text>
+<text class="sm" x="553.8" y="85.0" text-anchor="middle" style="fill:#4edea3">SPANN</text>
+<line stroke="#4edea3" stroke-width="1" x1="605.2" y1="111" x2="605.2" y2="65"/>
+<text class="sm" x="605.2" y="62.0" text-anchor="middle" style="fill:#4edea3">Filtered-DiskANN</text>
+<line stroke="#4edea3" stroke-width="1" x1="656.6" y1="111" x2="656.6" y2="101"/>
+<text class="sm" x="656.6" y="98.0" text-anchor="middle" style="fill:#4edea3">ACORN</text>
+<text class="sm" x="656.6" y="85.0" text-anchor="middle" style="fill:#4edea3">RaBitQ</text>
+<line stroke="#e8a24c" stroke-width="1" x1="451.1" y1="129" x2="451.1" y2="131"/>
+<text class="sm" x="451.1" y="142.0" text-anchor="middle" style="fill:#e8a24c">Milvus</text>
+<text class="sm" x="451.1" y="155.0" text-anchor="middle" style="fill:#e8a24c">Qdrant: HNSW filtrable</text>
+<line stroke="#e8a24c" stroke-width="1" x1="553.8" y1="129" x2="553.8" y2="167"/>
+<text class="sm" x="553.8" y="178.0" text-anchor="middle" style="fill:#e8a24c">pgvector</text>
+<line stroke="#e8a24c" stroke-width="1" x1="605.2" y1="129" x2="605.2" y2="131"/>
+<text class="sm" x="605.2" y="142.0" text-anchor="middle" style="fill:#e8a24c">pgvector:</text>
+<text class="sm" x="605.2" y="155.0" text-anchor="middle" style="fill:#e8a24c">HNSW</text>
+<line stroke="#e8a24c" stroke-width="1" x1="656.6" y1="129" x2="656.6" y2="167"/>
+<text class="sm" x="656.6" y="178.0" text-anchor="middle" style="fill:#e8a24c">pgvector: búsqueda</text>
+<text class="sm" x="656.6" y="191.0" text-anchor="middle" style="fill:#e8a24c">iterativa</text>
+<text class="sm" x="656.6" y="204.0" text-anchor="middle" style="fill:#e8a24c">Weaviate: ACORN</text>
+<line stroke="#e8a24c" stroke-width="1" x1="708.0" y1="129" x2="708.0" y2="131"/>
+<text class="sm" x="708.0" y="142.0" text-anchor="middle" style="fill:#e8a24c">SQL Server:</text>
+<text class="sm" x="708.0" y="155.0" text-anchor="middle" style="fill:#e8a24c">DiskANN</text>
+<text class="lbl" x="8.0" y="14.0" text-anchor="start" style="fill:#4edea3">Algoritmos y bibliotecas</text>
+<text class="lbl" x="8.0" y="154.0" text-anchor="start" style="fill:#e8a24c">Bases de datos</text>
+</svg>

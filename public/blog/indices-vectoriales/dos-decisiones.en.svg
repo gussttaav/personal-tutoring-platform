@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 300" width="760" height="300" role="img"
+ aria-label="Two-axis table. Rows are where to look: everything (brute force), trees, hashing, inverted lists and graph. Columns are how much of each 768-dimensional vector to keep: the full vector, 3,072 bytes; one byte per number, 768; product quantization, 96; one bit per number, 96. Each cell holds this article's indexes that make that combination. Everything: brute force, exact, with the full vector, and binary search with reranking. Trees with the full vector: the k-d tree and Annoy. Hashing with the full vector: LSH. Inverted lists: IVF-Flat with the full vector, IVF-PQ and ScaNN with product quantization, and IVF with RaBitQ at one bit per number. Graph: HNSW, NSG and Vamana with the full vector, HNSW with one byte per number and DiskANN with product quantization. The other cells are empty.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .lbl { font-size: 12px; font-weight: 600; }
+  .sub { font-size: 11px; fill: #86948a; }
+  .tx { font-size: 12px; }
+  .sm { font-size: 11px; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .big { font-size: 13px; font-weight: 600; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+</style>
+<text class="lbl" x="454.0" y="14.0" text-anchor="middle" style="fill:#6fb1e8">How much of each vector to keep (768 dimensions)</text>
+<text class="lbl" x="14" y="176" text-anchor="middle" transform="rotate(-90 14 176)" style="fill:#4edea3">Where to look</text>
+<text class="sm" x="226.0" y="42.0" text-anchor="middle">Full vector</text>
+<text class="tk" x="226.0" y="57.0" text-anchor="middle">3,072 bytes</text>
+<text class="sm" x="378.0" y="42.0" text-anchor="middle">1 byte per number</text>
+<text class="tk" x="378.0" y="57.0" text-anchor="middle">768 bytes</text>
+<text class="sm" x="530.0" y="42.0" text-anchor="middle">Product quantization</text>
+<text class="tk" x="530.0" y="57.0" text-anchor="middle">96 bytes</text>
+<text class="sm" x="682.0" y="42.0" text-anchor="middle">1 bit per number</text>
+<text class="tk" x="682.0" y="57.0" text-anchor="middle">96 bytes</text>
+<text class="sm" x="140.0" y="92.0" text-anchor="end" style="fill:#4edea3">Everything (brute force)</text>
+<rect x="153.0" y="69.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="226.0" y="92.0" text-anchor="middle">brute force (exact)</text>
+<rect x="305.0" y="69.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="378.0" y="92.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<rect x="457.0" y="69.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="530.0" y="92.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<rect x="609.0" y="69.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="682.0" y="92.0" text-anchor="middle">binary + rerank</text>
+<text class="sm" x="140.0" y="136.0" text-anchor="end" style="fill:#4edea3">Trees</text>
+<rect x="153.0" y="113.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="226.0" y="136.0" text-anchor="middle">k-d, Annoy</text>
+<rect x="305.0" y="113.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="378.0" y="136.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<rect x="457.0" y="113.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="530.0" y="136.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<rect x="609.0" y="113.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="682.0" y="136.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<text class="sm" x="140.0" y="180.0" text-anchor="end" style="fill:#4edea3">Hashing (LSH)</text>
+<rect x="153.0" y="157.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="226.0" y="180.0" text-anchor="middle">LSH</text>
+<rect x="305.0" y="157.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="378.0" y="180.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<rect x="457.0" y="157.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="530.0" y="180.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<rect x="609.0" y="157.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="682.0" y="180.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<text class="sm" x="140.0" y="224.0" text-anchor="end" style="fill:#4edea3">Inverted lists</text>
+<rect x="153.0" y="201.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="226.0" y="224.0" text-anchor="middle">IVF-Flat</text>
+<rect x="305.0" y="201.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="378.0" y="224.0" text-anchor="middle" style="fill:#5c6660">—</text>
+<rect x="457.0" y="201.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="530.0" y="224.0" text-anchor="middle">IVF-PQ, ScaNN</text>
+<rect x="609.0" y="201.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="682.0" y="224.0" text-anchor="middle">IVF + RaBitQ</text>
+<text class="sm" x="140.0" y="268.0" text-anchor="end" style="fill:#4edea3">Graph</text>
+<rect x="153.0" y="245.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="226.0" y="268.0" text-anchor="middle">HNSW, NSG, Vamana</text>
+<rect x="305.0" y="245.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="378.0" y="268.0" text-anchor="middle">HNSW + int8</text>
+<rect x="457.0" y="245.0" width="146" height="38" rx="4" fill="#1c1b1d" stroke="#3b3b3e"/>
+<text class="sm" x="530.0" y="268.0" text-anchor="middle">DiskANN</text>
+<rect x="609.0" y="245.0" width="146" height="38" rx="4" fill="none" stroke="#3b3b3e"/>
+<text class="tk" x="682.0" y="268.0" text-anchor="middle" style="fill:#5c6660">—</text>
+</svg>
