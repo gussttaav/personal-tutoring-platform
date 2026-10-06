@@ -12,9 +12,8 @@
  *   - Calendar container with actions bar at bottom
  *
  * REDESIGN-P1-06: the wizard can now open on `/` (via `BookingOverlays`), where closing it
- * leaves no session types to change to. «Cambiar tipo de sesión» therefore takes its own
- * optional `onChangeSessionType` (the caller sends it to `/mentoria#sessions`); `onBack` keeps
- * serving the success screen's «Volver al inicio», which must stay an in-place close.
+ * leaves no session types to change to. (BOOKING-EXIT-01 removed «Cambiar tipo de sesión» and
+ * its `onChangeSessionType`: see below.)
  *
  * It also opens on `/area-personal` now (the personal area mounts `BookingOverlays` too), where
  * the success screen's «Ir a mi área personal» has nowhere to go: the caller passes
@@ -23,6 +22,15 @@
  *
  * BOOKING-ATTRIBUTION-01: a new (not rescheduled) booking fires `trackBooking` — the
  * free call on its success screen, a paid class once Stripe confirms the payment.
+ *
+ * BOOKING-EXIT-01: every phase passes `onBack` to `BookingLayout`'s exit bar («Salir de la
+ * reserva»; «Cerrar» on success; disabled while the booking request is in flight), which
+ * replaces the bottom «Cambiar tipo de sesión». The type is switched IN the wizard: the
+ * picking step's sidebar is a `SessionTypePicker` (not on a reschedule, which keeps its type)
+ * calling `onSessionTypeChange`; a new `sessionType` clears the slot (its length changed)
+ * while the calendar keeps its week. Leaving for another page after a booking replaces the
+ * booking's history entry instead of pushing past it (`isBookingEntryOnTop`), so back from
+ * there returns to the page the wizard was opened on.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -54,6 +62,8 @@ import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import WizardProgress from "@/components/booking/WizardProgress";
 import BookingSidebar from "@/components/booking/BookingSidebar";
+import SessionTypePicker from "@/components/booking/SessionTypePicker";
+import { isBookingEntryOnTop } from "@/hooks/useBookingHistory";
 import PaymentForm from "@/components/PaymentForm";
 import {
   SESSION_CONFIGS,
@@ -69,9 +79,10 @@ interface SingleSessionBookingProps {
   userName:         string;
   userEmail:        string;
   rescheduleToken?: string | null;
+  /** Leaves the booking: the exit bar on every phase (an in-place close). */
   onBack:           () => void;
-  /** «Cambiar tipo de sesión» in the picking step. Defaults to `onBack`. */
-  onChangeSessionType?: () => void;
+  /** The picking step's type switch. Without it the sidebar shows the static session card. */
+  onSessionTypeChange?: (type: SingleSessionType) => void;
   /** The success screen's «Ir a mi área personal» (its only button). Defaults to
    *  navigating there; the personal area itself passes an in-place close. */
   onGoToPersonalArea?: () => void;
@@ -176,7 +187,7 @@ export default function SingleSessionBooking({
   userEmail,
   rescheduleToken,
   onBack,
-  onChangeSessionType,
+  onSessionTypeChange,
   onGoToPersonalArea,
   initialSlot,
 }: SingleSessionBookingProps) {
@@ -252,6 +263,19 @@ export default function SingleSessionBooking({
   const [cancelToken,    setCancelToken]    = useState("");
   const [emailFailed,    setEmailFailed]    = useState(false);
   const [clientSecret,   setClientSecret]   = useState<string | null>(null);
+
+  // BOOKING-EXIT-01: the sidebar switched the type. A slot picked for the old length is not a
+  // slot of the new one, so the selection goes; the calendar keeps its week and refetches.
+  // Render-phase "adjust state on input change" keyed on the prop.
+  const [prevSessionType, setPrevSessionType] = useState(sessionType);
+  if (sessionType !== prevSessionType) {
+    setPrevSessionType(sessionType);
+    setSelected(null);
+    setFocusedSlot(null);
+    setHourUnavailable(false);
+    setClientSecret(null);
+    setPhase("picking");
+  }
 
   // Client timezone label ("<tz> (GMT±n)") after hydration; empty during SSR.
   const userTz = useClientValue(() => {
@@ -353,6 +377,13 @@ export default function SingleSessionBooking({
     }
   }
 
+  // BOOKING-EXIT-01: a navigation away overwrites the booking's history entry (back from the
+  // next page lands on the page the wizard was opened on, not on a dead copy of it).
+  function leaveTo(href: string) {
+    if (isBookingEntryOnTop()) router.replace(href);
+    else router.push(href);
+  }
+
   // UX-05: direct cancel link
   const cancelUrl = cancelToken ? `${BASE_URL}/cancelar?token=${cancelToken}` : null;
 
@@ -361,7 +392,7 @@ export default function SingleSessionBooking({
   // ── Success ────────────────────────────────────────────────────────────────
   if (phase === "success") {
     return (
-      <BookingLayout scrollResetKey={phase}>
+      <BookingLayout scrollResetKey={phase} onExit={onBack} exitVariant="close">
         <div className="flex items-start sm:items-center justify-center px-2 py-2 sm:py-6 sm:px-6">
           <FeedbackCard>
             <IconHalo tone="success" glyph="check" />
@@ -401,7 +432,7 @@ export default function SingleSessionBooking({
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <FbButton
                 variant="primary"
-                onClick={onGoToPersonalArea ?? (() => router.push("/area-personal"))}
+                onClick={onGoToPersonalArea ?? (() => leaveTo("/area-personal"))}
                 style={{ width: "100%" }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">login</span>
@@ -427,7 +458,7 @@ export default function SingleSessionBooking({
   // ── Error ──────────────────────────────────────────────────────────────────
   if (phase === "error") {
     return (
-      <BookingLayout scrollResetKey={phase}>
+      <BookingLayout scrollResetKey={phase} onExit={onBack}>
         <div className="flex items-start sm:items-center justify-center px-2 py-2 sm:py-6 sm:px-6">
           <FeedbackCard>
             <IconHalo tone="error" glyph="error" />
@@ -483,8 +514,8 @@ export default function SingleSessionBooking({
   // ── Paying (embedded PaymentElement) ──────────────────────────────────────
   if (phase === "paying" && selected && clientSecret) {
     return (
-      <BookingLayout scrollResetKey={phase}>
-        <WizardProgress currentStep={4} showPaymentStep spacingClassName="mt-4 sm:mt-0 mb-5 sm:mb-8" />
+      <BookingLayout scrollResetKey={phase} onExit={onBack}>
+        <WizardProgress currentStep={4} showPaymentStep spacingClassName="mb-5 sm:mb-8" />
         <div className="max-w-lg mx-auto w-full" style={{ paddingBottom: 16 }}>
           <PaymentForm
             clientSecret={clientSecret}
@@ -494,7 +525,7 @@ export default function SingleSessionBooking({
             priceLabel={price ?? undefined}
             onSuccess={(paymentIntentId) => {
               if (!rescheduleToken) trackBooking(sessionType); // BOOKING-ATTRIBUTION-01
-              router.push(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`);
+              leaveTo(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`);
             }}
             onCancel={() => { setClientSecret(null); setPhase("review"); }}
           />
@@ -508,7 +539,7 @@ export default function SingleSessionBooking({
   const isReschedule = !!rescheduleToken;
 
   return (
-    <BookingLayout scrollResetKey={phase}>
+    <BookingLayout scrollResetKey={phase} onExit={onBack} exitDisabled={phase === "booking"}>
       <WizardProgress currentStep={wizardStep} showPaymentStep={needsPaymentStep} />
 
       {phase === "review" && selected ? (
@@ -954,6 +985,13 @@ export default function SingleSessionBooking({
             price={price}
             isReschedule={isReschedule}
             userTz={userTz}
+            sessionPicker={onSessionTypeChange && !isReschedule ? (
+              <SessionTypePicker
+                value={sessionType}
+                onChange={onSessionTypeChange}
+                disabled={phase !== "picking"}
+              />
+            ) : undefined}
           />
 
           {/* ── Calendar / spinner area ── */}
@@ -1001,26 +1039,14 @@ export default function SingleSessionBooking({
               )}
             </div>
 
-            {/* ── Actions bar ── */}
-            <div
-              className="p-8 flex flex-col md:flex-row items-center justify-between gap-6"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "#1c1b1d" }}
-            >
-              <button
-                onClick={onChangeSessionType ?? onBack}
-                className="flex items-center gap-2 font-semibold transition-colors group"
-                style={{ color: "#bbcabf", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
+            {/* ── Actions bar ── BOOKING-EXIT-01: the exit moved to the layout's top bar, so
+                the bar is the step's forward action only, shown while picking. */}
+            {phase === "picking" && (
+              <div
+                className="p-8 flex flex-col md:flex-row items-center justify-end gap-6"
+                style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "#1c1b1d" }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" className="group-hover:-translate-x-1 transition-transform" aria-hidden="true">
-                  <polyline points="15 18 9 12 15 6" />
-                </svg>
-                <span>{t("changeSessionType")}</span>
-              </button>
-
-              {phase === "picking" && (
-                focusedSlot ? (
+                {focusedSlot ? (
                   <button
                     onClick={() => handleSlotSelected(focusedSlot)}
                     className="flex items-center gap-2 font-semibold transition-colors group"
@@ -1035,7 +1061,7 @@ export default function SingleSessionBooking({
                   </button>
                 ) : (
                   <div
-                    className="hidden md:flex items-center gap-2 text-xs"
+                    className="flex items-center gap-2 text-xs"
                     style={{ color: "#86948a" }}
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
@@ -1043,9 +1069,9 @@ export default function SingleSessionBooking({
                     </svg>
                     {t("selectSlotHint")}
                   </div>
-                )
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

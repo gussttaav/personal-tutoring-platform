@@ -8,6 +8,9 @@
  * - Completed: filled emerald circle with check icon
  * - Active:    filled emerald circle with step number + emerald glow
  * - Inactive:  surface-container circle with outline-variant border
+ *
+ * BOOKING-EXIT-01: no top margin by default any more — the indicator always sits under
+ * `BookingLayout`'s exit bar, which provides the gap below the navbar the old `mt-4` did.
  */
 
 import { useTranslations } from "next-intl";
@@ -17,14 +20,14 @@ interface WizardProgressProps {
   /** Pass true for paid sessions (1h / 2h) to show the Payment step */
   showPaymentStep?: boolean;
   /** Spacing utility classes for the outer wrapper; override to tighten the gap.
-   *  Default is responsive: less top/bottom room on mobile, full room from sm up. */
+   *  Default is responsive: less bottom room on mobile, full room from sm up. */
   spacingClassName?: string;
 }
 
 export default function WizardProgress({
   currentStep,
   showPaymentStep = false,
-  spacingClassName = "mt-4 sm:mt-0 mb-5 sm:mb-16",
+  spacingClassName = "mb-5 sm:mb-16",
 }: WizardProgressProps) {
   const t = useTranslations("booking.wizardProgress");
 

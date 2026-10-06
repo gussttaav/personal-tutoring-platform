@@ -13,8 +13,13 @@
  * are desktop-only — the calendar already surfaces the timezone when it differs
  * from the schedule's, and the rest is reassurance that costs a phone viewport
  * more than it gives back.
+ *
+ * BOOKING-EXIT-01: in single mode the caller may pass `sessionPicker` (the wizard's
+ * `SessionTypePicker`), which takes the session card's place — the summary becomes the switch.
+ * The meta rows below it stay. A reschedule passes none: it keeps the booked type.
  */
 
+import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 
@@ -27,6 +32,8 @@ interface BookingSidebarProps {
   packTotal?:     number;
   isReschedule?:  boolean;
   userTz?:        string;
+  /** Single mode: replaces the session card (BOOKING-EXIT-01). */
+  sessionPicker?: ReactNode;
 }
 
 export default function BookingSidebar({
@@ -38,6 +45,7 @@ export default function BookingSidebar({
   packTotal     = 0,
   isReschedule  = false,
   userTz,
+  sessionPicker,
 }: BookingSidebarProps) {
   const t        = useTranslations("booking.sidebar");
   const schedule = useScheduleConfig();
@@ -63,55 +71,60 @@ export default function BookingSidebar({
           {t("title")}
         </h2>
 
-        {/* Session card — single row below lg, stacked block on desktop */}
-        <div
-          className={`flex items-center lg:items-start gap-3 lg:gap-4 p-3 lg:p-4 rounded-lg ${
-            mode === "pack" ? "mb-6 lg:mb-8" : "mb-0 lg:mb-8"
-          }`}
-          style={{ background: "#201f22" }}
-        >
+        {/* Session card — single row below lg, stacked block on desktop. The type picker
+            takes its place when the wizard offers one. */}
+        {sessionPicker ? (
+          <div className="mb-0 lg:mb-8">{sessionPicker}</div>
+        ) : (
           <div
-            className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center shrink-0"
-            style={{ background: "rgba(78,222,163,0.1)", color: "#4edea3" }}
+            className={`flex items-center lg:items-start gap-3 lg:gap-4 p-3 lg:p-4 rounded-lg ${
+              mode === "pack" ? "mb-6 lg:mb-8" : "mb-0 lg:mb-8"
+            }`}
+            style={{ background: "#201f22" }}
           >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              aria-hidden="true"
+            <div
+              className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg flex items-center justify-center shrink-0"
+              style={{ background: "rgba(78,222,163,0.1)", color: "#4edea3" }}
             >
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
-          <div className="flex-1 min-w-0 flex items-center justify-between gap-3 lg:block">
-            <div className="min-w-0">
-              <p className="font-headline text-base lg:text-lg leading-tight" style={{ color: "#e5e1e4" }}>
-                {sessionName}
-              </p>
-              <p className="text-sm mt-1" style={{ color: "#bbcabf" }}>
-                {t("duration", { duration })}
-              </p>
-            </div>
-            {mode === "single" && price && (
-              <p
-                className="font-headline text-xl lg:text-2xl lg:mt-2 shrink-0"
-                style={{ color: "#4edea3", letterSpacing: "-0.02em" }}
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                aria-hidden="true"
               >
-                {price}
-              </p>
-            )}
-            {mode === "single" && !price && (
-              <p className="text-sm lg:mt-1 font-semibold shrink-0" style={{ color: "#4edea3" }}>
-                {t("free")}
-              </p>
-            )}
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-3 lg:block">
+              <div className="min-w-0">
+                <p className="font-headline text-base lg:text-lg leading-tight" style={{ color: "#e5e1e4" }}>
+                  {sessionName}
+                </p>
+                <p className="text-sm mt-1" style={{ color: "#bbcabf" }}>
+                  {t("duration", { duration })}
+                </p>
+              </div>
+              {mode === "single" && price && (
+                <p
+                  className="font-headline text-xl lg:text-2xl lg:mt-2 shrink-0"
+                  style={{ color: "#4edea3", letterSpacing: "-0.02em" }}
+                >
+                  {price}
+                </p>
+              )}
+              {mode === "single" && !price && (
+                <p className="text-sm lg:mt-1 font-semibold shrink-0" style={{ color: "#4edea3" }}>
+                  {t("free")}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ── Pack mode: status + progress ── */}
         {mode === "pack" && (
