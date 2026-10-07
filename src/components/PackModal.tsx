@@ -5,10 +5,13 @@
  * (`useBookingHistory`, via `BookingProvider`). Leaving for /pago-exitoso REPLACES that entry
  * while it is on top, so back from the confirmation page returns to the page the purchase was
  * started on in one press instead of landing on a dead copy of it.
+ *
+ * BOOKING-LOCALE-01: the router is the locale-aware one from `@/i18n/navigation`, not
+ * `next/navigation`'s, so an English visitor lands on /en/pago-exitoso, not the Spanish route.
  */
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Spinner, Alert } from "@/components/ui";
 import { useProductPrice } from "@/components/pricing/PricesProvider";

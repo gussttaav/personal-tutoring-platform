@@ -31,12 +31,16 @@
  * while the calendar keeps its week. Leaving for another page after a booking replaces the
  * booking's history entry instead of pushing past it (`isBookingEntryOnTop`), so back from
  * there returns to the page the wizard was opened on.
+ *
+ * BOOKING-LOCALE-01: `leaveTo` navigates with the locale-aware `useRouter` from
+ * `@/i18n/navigation`, not `next/navigation`'s, so an English visitor lands on
+ * /en/area-personal and /en/sesion-confirmada instead of the Spanish routes.
  */
 
 import { useState, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useClientValue } from "@/hooks/useClientValue";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import {
   Spinner,
