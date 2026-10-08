@@ -35,10 +35,10 @@
  * the layout already covers (sidebar, calendar header, exit bar), so it is gone rather than
  * moved; the overlay keeps the z-index 40 contract that `HomeChat` / `InteractiveShell` rely on.
  *
- * BOOKING-EXIT-01: «Cambiar tipo de sesión» is gone from both screens. Leaving is the exit bar
- * every `BookingLayout` draws at the top («Salir de la reserva»), and it closes IN PLACE on
- * every page — it used to send `/` and `/area-personal` to `/mentoria`, a detour rather than a
- * way out. Changing the type of a single session no longer leaves the wizard either: its sidebar
+ * BOOKING-EXIT-01: «Cambiar tipo de sesión» is gone from both screens. Leaving is the exit button
+ * («Salir de la reserva»; BOOKING-STEPS-01: left of the wizard's steps, below the pack screen's
+ * sidebar), and it closes IN PLACE on every page — it used to send `/` and `/area-personal` to
+ * `/mentoria`, a detour rather than a way out. Changing the type of a single session no longer leaves the wizard either: its sidebar
  * switches it (`onSessionTypeChange`). The close handlers below only change state; the
  * provider's `useBookingHistory` pops the history entry the screen pushed.
  */

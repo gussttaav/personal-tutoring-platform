@@ -544,7 +544,7 @@
       "securePayment": "Pago seguro con Stripe"
     },
     "wizardProgress": {
-      "session": "Sesión",
+      "ariaLabel": "Pasos de la reserva",
       "schedule": "Horario",
       "review": "Revisión",
       "payment": "Pago"

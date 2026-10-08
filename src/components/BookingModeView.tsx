@@ -25,6 +25,10 @@
  * BOOKING-EXIT-01: `onExit` is `BookingLayout`'s top exit bar («Salir de la reserva»), the same
  * control the single-session wizard shows. The calendar card's bottom bar held only
  * «Cambiar tipo de sesión» (which called `onExit`), so the bar is gone with it.
+ *
+ * BOOKING-STEPS-01: the exit is no longer the layout's top bar: this screen has no step indicator
+ * to carry it (the wizard's sits in `WizardProgress`), so it is `BookingSidebar`'s `footer`, below
+ * the sidebar card. Disabled while the booking request is in flight.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -39,6 +43,7 @@ import { trackBooking } from "@/lib/booking-analytics";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import BookingSidebar from "@/components/booking/BookingSidebar";
+import BookingExitButton from "@/components/booking/BookingExitButton";
 import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 import type { StudentInfo } from "@/domain/types";
 
@@ -230,7 +235,7 @@ export default function BookingModeView({
   // ── Main booking UI ────────────────────────────────────────────────────────
 
   return (
-    <BookingLayout onExit={onExit}>
+    <BookingLayout>
       {/* ── Success banner ── */}
       {successBanner && (
         <div
@@ -304,6 +309,13 @@ export default function BookingModeView({
           packTotal={packTotal ?? remaining}
           isReschedule={isReschedule}
           userTz={userTz}
+          footer={
+            <BookingExitButton
+              onClick={onExit}
+              disabled={phase === "confirming"}
+              className="w-full justify-center"
+            />
+          }
         />
 
         {/* ── Calendar area ── */}

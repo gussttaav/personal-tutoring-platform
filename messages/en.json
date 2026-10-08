@@ -544,7 +544,7 @@
       "securePayment": "Secure payment with Stripe"
     },
     "wizardProgress": {
-      "session": "Session",
+      "ariaLabel": "Booking steps",
       "schedule": "Schedule",
       "review": "Review",
       "payment": "Payment"

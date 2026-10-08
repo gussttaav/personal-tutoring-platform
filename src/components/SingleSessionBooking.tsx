@@ -7,7 +7,7 @@
  * ALL LOGIC IS IDENTICAL TO ORIGINAL (UX-02, UX-03, UX-05).
  * Layout replaced to match booking.html:
  *   - BookingLayout (full-page overlay with real Navbar + Footer)
- *   - WizardProgress (3-step indicator)
+ *   - WizardProgress (step indicator + exit; 2 steps, 3 with payment)
  *   - lg:grid-cols-12 with BookingSidebar (col-span-3) + calendar (col-span-9)
  *   - Calendar container with actions bar at bottom
  *
@@ -35,6 +35,13 @@
  * BOOKING-LOCALE-01: `leaveTo` navigates with the locale-aware `useRouter` from
  * `@/i18n/navigation`, not `next/navigation`'s, so an English visitor lands on
  * /en/area-personal and /en/sesion-confirmada instead of the Spanish routes.
+ *
+ * BOOKING-STEPS-01: the exit moved from `BookingLayout`'s bar into `WizardProgress` (left of the
+ * steps) on the picking, review and paying screens; success and error keep the layout's bar.
+ * The steps are clickable in order (`reachableWizardSteps`): back to any finished step, forward
+ * to the next one only when it can be taken — «Revisión» does what «Continuar» does, «Pago» what
+ * «Confirmar y pagar» does. Both lock while a request or a payment confirmation is in flight
+ * (`PaymentForm`'s `onProcessingChange`).
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -65,6 +72,7 @@ import { trackBooking } from "@/lib/booking-analytics";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import WizardProgress from "@/components/booking/WizardProgress";
+import { reachableWizardSteps, type WizardStepId } from "@/components/booking/wizard-steps";
 import BookingSidebar from "@/components/booking/BookingSidebar";
 import SessionTypePicker from "@/components/booking/SessionTypePicker";
 import { isBookingEntryOnTop } from "@/hooks/useBookingHistory";
@@ -267,6 +275,8 @@ export default function SingleSessionBooking({
   const [cancelToken,    setCancelToken]    = useState("");
   const [emailFailed,    setEmailFailed]    = useState(false);
   const [clientSecret,   setClientSecret]   = useState<string | null>(null);
+  // True while Stripe confirms the payment: the steps and the exit lock (BOOKING-STEPS-01).
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   // BOOKING-EXIT-01: the sidebar switched the type. A slot picked for the old length is not a
   // slot of the new one, so the selection goes; the calendar keeps its week and refetches.
@@ -378,6 +388,27 @@ export default function SingleSessionBooking({
       const code   = err instanceof ApiError ? err.message : "";
       setErrorMsg(tErrors(errorCodeToKey(code, status) as Parameters<typeof tErrors>[0]));
       setPhase("error");
+    }
+  }
+
+  // Back to the calendar with the reviewed slot still focused («Volver atrás», the «Horario» step).
+  function backToPicking() {
+    setClientSecret(null);
+    setPhase("picking");
+    setNote("");
+    setFocusedSlot(selected);
+  }
+
+  // BOOKING-STEPS-01: a click on a step `reachableWizardSteps` offered. Each does what the
+  // screen's own control for that move does.
+  function handleStepClick(step: WizardStepId) {
+    if (step === "schedule") {
+      backToPicking();
+    } else if (step === "review") {
+      if (phase === "paying") { setClientSecret(null); setPhase("review"); }
+      else if (focusedSlot) handleSlotSelected(focusedSlot);
+    } else {
+      handleStartPayment();
     }
   }
 
@@ -518,8 +549,18 @@ export default function SingleSessionBooking({
   // ── Paying (embedded PaymentElement) ──────────────────────────────────────
   if (phase === "paying" && selected && clientSecret) {
     return (
-      <BookingLayout scrollResetKey={phase} onExit={onBack}>
-        <WizardProgress currentStep={4} showPaymentStep spacingClassName="mb-5 sm:mb-8" />
+      <BookingLayout scrollResetKey={phase}>
+        <WizardProgress
+          currentStep="payment"
+          showPaymentStep
+          reachableSteps={reachableWizardSteps({
+            current: "payment", canContinue: false, showPayment: true, busy: paymentProcessing,
+          })}
+          onStepClick={handleStepClick}
+          onExit={onBack}
+          exitDisabled={paymentProcessing}
+          spacingClassName="mb-5 sm:mb-8"
+        />
         <div className="max-w-lg mx-auto w-full" style={{ paddingBottom: 16 }}>
           <PaymentForm
             clientSecret={clientSecret}
@@ -532,6 +573,7 @@ export default function SingleSessionBooking({
               leaveTo(`/sesion-confirmada?payment_intent_id=${paymentIntentId}`);
             }}
             onCancel={() => { setClientSecret(null); setPhase("review"); }}
+            onProcessingChange={setPaymentProcessing}
           />
         </div>
       </BookingLayout>
@@ -539,12 +581,24 @@ export default function SingleSessionBooking({
   }
 
   // ── Main booking UI ────────────────────────────────────────────────────────
-  const wizardStep: 1 | 2 | 3 = phase === "review" ? 3 : 2;
+  const wizardStep: WizardStepId = phase === "review" ? "review" : "schedule";
   const isReschedule = !!rescheduleToken;
 
   return (
-    <BookingLayout scrollResetKey={phase} onExit={onBack} exitDisabled={phase === "booking"}>
-      <WizardProgress currentStep={wizardStep} showPaymentStep={needsPaymentStep} />
+    <BookingLayout scrollResetKey={phase}>
+      <WizardProgress
+        currentStep={wizardStep}
+        showPaymentStep={needsPaymentStep}
+        reachableSteps={reachableWizardSteps({
+          current:     wizardStep,
+          canContinue: !!focusedSlot,
+          showPayment: needsPaymentStep,
+          busy:        phase === "booking" || phase === "verifying",
+        })}
+        onStepClick={handleStepClick}
+        onExit={onBack}
+        exitDisabled={phase === "booking"}
+      />
 
       {phase === "review" && selected ? (
         /* ── Review layout: 7+5 columns ─────────────────────────────────────── */
@@ -815,7 +869,7 @@ export default function SingleSessionBooking({
               <div className="flex items-center justify-between gap-4">
                 {/* Back button */}
                 <button
-                  onClick={() => { setPhase("picking"); setNote(""); setFocusedSlot(selected); }}
+                  onClick={backToPicking}
                   className="flex items-center gap-2 font-semibold transition-colors group flex-shrink-0"
                   style={{ color: "#bbcabf", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 14 }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}

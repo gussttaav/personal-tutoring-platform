@@ -13,12 +13,16 @@
  * absent from every other step, and below the fold on a phone. ✕ (leave the flow) is kept apart
  * from the ← of «Volver atrás» (previous step). Styled like the calendar's week buttons: a
  * secondary control that is easy to find and never competes with the step's primary action.
+ *
+ * BOOKING-STEPS-01: the button is `BookingExitButton` now, and this row only shows where nothing
+ * else carries it — the wizard's success and error screens. The wizard's steps draw it inside
+ * `WizardProgress` (left of the steps), and the pack screen below its sidebar.
  */
 
 import { useEffect, useRef } from "react";
-import { useTranslations } from "next-intl";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BookingExitButton from "@/components/booking/BookingExitButton";
 
 interface BookingLayoutProps {
   children: React.ReactNode;
@@ -26,7 +30,8 @@ interface BookingLayoutProps {
    *  wizard step/phase so a new screen always starts from the top — the overlay
    *  div is reused across steps, so its scrollTop would otherwise carry over. */
   scrollResetKey?: string;
-  /** Leaves the booking (closes the overlay in place). Renders the exit bar. */
+  /** Leaves the booking (closes the overlay in place). Renders the exit bar — only for screens
+   *  with no other exit (the wizard's success and error; BOOKING-STEPS-01). */
   onExit?: () => void;
   /** «Salir de la reserva» while booking; «Cerrar» once there is nothing left to abandon. */
   exitVariant?: "exit" | "close";
@@ -41,7 +46,6 @@ export default function BookingLayout({
   exitVariant = "exit",
   exitDisabled = false,
 }: BookingLayoutProps) {
-  const t = useTranslations("booking.layout");
   const scrollRef = useRef<HTMLDivElement>(null);
   // Hide the document scrollbar while the overlay is mounted so only the
   // overlay's own scrollbar is visible (globals.css sets overflow-y:scroll
@@ -85,17 +89,7 @@ export default function BookingLayout({
       >
         {onExit && (
           <div className="mb-4 sm:mb-8">
-            <button
-              type="button"
-              onClick={onExit}
-              disabled={exitDisabled}
-              className="inline-flex items-center gap-2 h-10 pl-3 pr-4 rounded-lg text-sm font-semibold transition-colors bg-[#201f22] border border-[#3c4a42] text-[#bbcabf] enabled:hover:bg-[#2a2a2c] enabled:hover:text-[#e5e1e4] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 18 }} aria-hidden="true">
-                close
-              </span>
-              {exitVariant === "close" ? t("close") : t("exit")}
-            </button>
+            <BookingExitButton onClick={onExit} disabled={exitDisabled} variant={exitVariant} />
           </div>
         )}
 
