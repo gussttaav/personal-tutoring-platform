@@ -1,0 +1,430 @@
+---
+slug: rlhf
+title: "RLHF: mejorar la recompensa sin alejarse"
+block: 2
+order: 5
+minutes: 32
+summary: "Con un modelo de recompensa, la política se mejora maximizando la recompensa media de sus respuestas menos su divergencia KL respecto del modelo de partida. El gradiente de una media sobre respuestas sorteadas sale del truco de la derivada logarítmica (REINFORCE): un ajuste supervisado sobre las respuestas propias, pesadas por su recompensa. Sin la KL, el mini-GPT convierte una recompensa que cuenta letras en «a a a a»."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-no-derivar
+    type: single
+    prompt: 'La recompensa de una respuesta depende de los tokens que la política ha sorteado. ¿Por qué no se calcula el gradiente de la recompensa media con una vuelta hacia atrás a través del sorteo, como el de una pérdida?'
+    options:
+      - { id: a, text: 'Porque un cambio pequeño de $\theta$ deja el token sorteado igual o lo cambia por otro, y la recompensa salta con él: su derivada es cero o no existe. Lo que sí cambia poco a poco es la probabilidad de cada respuesta, y el estimador deriva ésa.' }
+      - { id: b, text: 'Porque el modelo de recompensa está congelado, y el gradiente de algo congelado es cero.' }
+      - { id: c, text: 'Porque la KL lo impide: sólo se puede derivar el objetivo completo.' }
+      - { id: d, text: 'Porque el sorteo usa la temperatura y el núcleo, que no son derivables.' }
+    answer: a
+    explanation: 'La (a). Con los números al azar fijados, el token que sale es una función escalonada de $\theta$, y la recompensa es una función de los tokens. El truco de la derivada logarítmica lleva el gradiente a $\log \pi_\theta(y \mid x)$, que sí es derivable. La (b) lo pone al revés: que $r_\phi$ esté congelado es lo que permite tratar cada recompensa como un número. La (d) no es la causa: la celda sortea con temperatura 1 y sin corte, y el problema es el mismo.'
+    hint: 'Piensa qué le pasa al token sorteado si $\theta$ cambia una millonésima.'
+  - id: q-linea-base
+    type: multi
+    prompt: 'En el estimador se resta a la recompensa de cada respuesta una línea base. Marca las afirmaciones ciertas.'
+    options:
+      - { id: a, text: 'Si la línea base depende de $x$ y no de $y$, el gradiente no cambia en media, porque la media de $\nabla_\theta \log \pi_\theta(y \mid x)$ sobre las respuestas de la política es cero.' }
+      - { id: b, text: 'Cambia cuánto se aparta del gradiente verdadero la estimación de un batch.' }
+      - { id: c, text: 'Una línea base que dependa de la propia respuesta, como su misma recompensa, tampoco cambia la media.' }
+      - { id: d, text: 'Sin línea base y con recompensas siempre positivas, cada respuesta sorteada empuja su propia probabilidad hacia arriba, también las peores.' }
+    answer: [a, b, d]
+    explanation: 'La (a), la (b) y la (d). La media de $\nabla_\theta \log \pi_\theta$ es el gradiente de la suma de las probabilidades, que vale 1 siempre, así que una constante por instrucción sale de la media multiplicando a un cero. Restarle a cada respuesta su propia recompensa las dejaría todas en cero, y con ellas el gradiente: la (c) es falsa. La (d) es la razón práctica de la línea base: sin ella, el paso depende de que esos empujones hacia arriba se descompensen a favor de las mejores.'
+    hint: 'Escribe la media de $\nabla_\theta \log \pi_\theta$ como una suma sobre las respuestas y saca el gradiente fuera.'
+  - id: q-kl-de-una-respuesta
+    type: numeric
+    prompt: 'Una política escribe siempre la misma respuesta, a la que la referencia da una probabilidad de una entre un millón. ¿Cuánto vale la KL de la política a la referencia, en nats?'
+    answer: 13.8155
+    tolerance: 0.01
+    explanation: 'Unos $13.82$ nats. La media de la definición tiene un solo término, el de la respuesta que la política escribe con probabilidad 1: $\log\left(1/10^{-6}\right) = 6 \ln 10 \approx 13.82$. Es el caso de la segunda celda, donde la respuesta repetida tenía para la referencia una probabilidad del orden de $10^{-32}$ y la KL salió $73.34$.'
+    hint: 'Con una sola respuesta posible, la media es su único término. ¿Cuánto vale $\log \pi_\theta(y \mid x)$ si $\pi_\theta(y \mid x) = 1$?'
+  - id: q-sft-con-pesos
+    type: single
+    prompt: 'Si $\theta$ fuera la red entera, ¿qué sería un paso de este estimador visto desde el ajuste supervisado?'
+    options:
+      - { id: a, text: 'Un paso de ajuste supervisado sobre las respuestas que la política acaba de sortear, con la pérdida de cada una multiplicada por lo que su recompensa, ya descontada la KL, supera a la línea base: las de encima se hacen más probables y las de debajo menos.' }
+      - { id: b, text: 'Un paso de ajuste supervisado sobre pares escritos por personas, con la pérdida de cada uno multiplicada por su recompensa.' }
+      - { id: c, text: 'Un paso de descenso sobre la pérdida del modelo de recompensa, $\mathcal{L}_{\text{R}}(\phi)$.' }
+      - { id: d, text: 'Un paso de ajuste supervisado corriente sobre las respuestas sorteadas: la recompensa sólo decide cuáles se guardan.' }
+    answer: a
+    explanation: 'La (a). $\nabla_\theta \log \pi_\theta(y \mid x)$ es el gradiente de la pérdida del ajuste supervisado para el par $(x, y)$ con el signo cambiado, así que el estimador es esa pérdida sobre respuestas propias, cada una con su peso. La (b) imita respuestas ajenas, que es lo que hacía el ajuste. La (c) entrena el modelo de recompensa, que aquí está congelado. La (d) describe otro método, quedarse con las mejores respuestas y ajustar con ellas: un peso que sólo vale 1 o 0, cuando aquí puede ser negativo.'
+    hint: 'Compara $\nabla_\theta \log \pi_\theta(y \mid x)$ con el gradiente de $-\log \pi_\theta(y \mid x)$, la pérdida de un par.'
+  - id: q-merece-la-pena
+    type: numeric
+    prompt: 'En la segunda celda, la respuesta que escribe la política sin freno tiene recompensa 16 y una KL de 73.3 nats, y la referencia consigue una recompensa media de 3.47 con KL cero. ¿Por debajo de qué $\beta$ vale más en el objetivo esa respuesta repetida que quedarse en la referencia?'
+    answer: 0.171
+    tolerance: 0.002
+    explanation: 'Por debajo de $0.171$. En el objetivo, la respuesta repetida vale $16 - 73.3\,\beta$ y la referencia $3.47$, y se igualan en $\beta = (16 - 3.47)/73.3 \approx 0.171$. La tercera celda usa $\beta = 0.5$, donde la respuesta repetida vale $-20.7$. Eso descarta esta respuesta, no cualquier otra: con $\beta = 0.5$ podría haber otra respuesta degenerada que sí compensara.'
+    hint: 'Escribe lo que vale cada opción en $J$, recompensa menos $\beta$ por la KL, y busca el $\beta$ en que se igualan.'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Simple statistical gradient-following algorithms for connectionist reinforcement learning'
+    authors: 'Williams'
+    year: '1992'
+    venue: 'Machine Learning 8'
+    lang: en
+    url: 'https://doi.org/10.1007/BF00992696'
+    note: 'El artículo que da nombre a REINFORCE: el gradiente de una recompensa media como la media de la recompensa por el gradiente del logaritmo, y la línea base que no lo cambia, para redes que deciden al azar.'
+  - kind: paper
+    title: 'Fine-Tuning Language Models from Human Preferences'
+    authors: 'Ziegler, Stiennon, Wu, Brown, Radford y otros'
+    year: '2019'
+    venue: 'arXiv:1909.08593'
+    lang: en
+    url: 'https://arxiv.org/abs/1909.08593'
+    note: 'RLHF sobre GPT-2. Su ecuación 2 es la recompensa con la KL descontada de esta lección, y su tabla 10 es la segunda celda en un modelo de verdad: sin la KL, «Love this ride instantly instantly instantly».'
+  - kind: paper
+    title: 'Proximal Policy Optimization Algorithms'
+    authors: 'Schulman, Wolski, Dhariwal, Radford y Klimov'
+    year: '2017'
+    venue: 'arXiv:1707.06347'
+    lang: en
+    url: 'https://arxiv.org/abs/1707.06347'
+    note: 'El paso que da InstructGPT en lugar del estimador de la lección: aprovecha cada batch de respuestas para varios pasos y recorta el cociente entre la política nueva y la que las escribió, para que ninguno la aleje demasiado.'
+  - kind: paper
+    title: 'Scaling Laws for Reward Model Overoptimization'
+    authors: 'Gao, Schulman y Hilton'
+    year: '2022'
+    venue: 'arXiv:2210.10760'
+    lang: en
+    url: 'https://arxiv.org/abs/2210.10760'
+    note: 'El reward hacking, medido: optimizan contra un modelo de recompensa y puntúan con otro, mayor, que hace de recompensa verdadera. La recompensa optimizada no deja de subir; la verdadera sube, toca techo y baja a medida que crece la KL.'
+  - kind: blog
+    title: 'Specification gaming: the flip side of AI ingenuity'
+    authors: 'Krakovna, Uesato, Mikulik, Rahtz, Everitt y otros'
+    year: '2020'
+    venue: 'Blog de DeepMind'
+    lang: en
+    url: 'https://deepmind.google/discover/blog/specification-gaming-the-flip-side-of-ai-ingenuity/'
+    note: 'Unos sesenta sistemas que cumplen la letra de su recompensa y no su intención, el brazo que engaña a la cámara entre ellos. La celda de las «a» es uno más, hecho a propósito para que se vea.'
+---
+
+{/* COURSE-C2-P1-02 — Bloque 2, lección 5. Corre sobre el mini-GPT congelado: la política es su
+    checkpoint con 512 números sumados a los logits, que son lo único que se entrena. */}
+
+Con <Leccion slug="modelo-de-recompensa">el modelo de recompensa</Leccion> ya entrenado y congelado,
+$r_\phi$, el bloque tiene con qué puntuar respuestas y una política que mejorar, la del ajuste
+supervisado. Lo que cambia ahora es de dónde salen las respuestas con que se entrena. En el ajuste
+las escribía alguien y el modelo aprendía a imitarlas; aquí las escribe el propio modelo,
+$r_\phi$ las puntúa, y el modelo
+aprende de lo que reciben. Eso es el **aprendizaje por refuerzo**: aprender de lo que pasa después de
+actuar, no de un ejemplo de cómo actuar.
+
+El método completo se llama aprendizaje por refuerzo con retroalimentación humana (*reinforcement
+learning from human feedback*, RLHF), porque la recompensa sale de comparaciones de personas, y
+tiene un riesgo conocido desde sus primeros experimentos. En uno de ellos, un brazo robótico debía
+aprender a agarrar un objeto a partir de comparaciones de personas que lo veían por una cámara.
+Aprendió a poner la mano entre la cámara y el objeto, donde parecía que lo agarraba. Esta lección
+escribe el objetivo que RLHF optimiza, que lleva dentro el freno contra eso, y el gradiente que lo
+sube.
+
+Dos dificultades separan la idea del algoritmo. La primera es el sorteo, que no deja pasar ningún
+gradiente: un cambio pequeño de $\theta$ deja el token sorteado igual o lo cambia por otro, y la
+recompensa salta con él. Lo que sí cambia poco a poco es la probabilidad de cada respuesta. De ahí
+sale el método: sortear unas cuantas, puntuarlas, y hacer más probables las que puntúan por encima
+de la media y menos las de debajo.
+
+La segunda dificultad es la propia recompensa. El modelo de la lección anterior acertaba con rivales
+nuevos en las preguntas que conocía y echaba una moneda al aire en las que no. Una política que
+sólo persigue su
+número hace lo que hizo el brazo: encuentra dónde se equivoca la recompensa a su favor. Por eso RLHF
+cobra la distancia: cada respuesta paga por lo improbable que la encontraba el modelo de partida, y
+la política sólo se aleja de él donde lo que gana compensa lo que paga. Es el freno que
+<Leccion slug="sft">el ajuste supervisado</Leccion> no tenía, y mide la distancia en las
+distribuciones, no en los pesos.
+
+<Callout type="intuition" title="La idea en una frase">
+RLHF sube la recompensa media de unas respuestas que salen de un sorteo: sortea unas cuantas y hace
+más probable cada una en proporción a lo que su recompensa supera a la media. Y cobra la distancia:
+cada respuesta paga, en recompensa, lo lejos que está del modelo de partida, para que la política no
+se vaya a donde el modelo de recompensa no sabe juzgar.
+</Callout>
+
+## El objetivo: recompensa menos distancia
+
+Fijemos los objetos. $\pi_\theta$ es la política que se entrena, y empieza siendo el modelo del
+ajuste supervisado. $\pi_{\text{ref}}$ es ese mismo modelo congelado, la **referencia** contra la
+que se mide la distancia. $r_\phi$ es el modelo de recompensa, congelado también: $\phi$ no se mueve
+en toda la lección, y por eso los dos conjuntos de parámetros llevan letras distintas.
+
+La distancia es la **divergencia de Kullback–Leibler** (KL) de la política a la referencia: la media,
+sobre las respuestas de la política, del logaritmo del cociente de sus probabilidades,
+
+$$
+\mathbb{D}_{\text{KL}}\big(\pi_\theta(\cdot \mid x) \,\|\, \pi_{\text{ref}}(\cdot \mid x)\big) = \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[\log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}\right].
+$$
+
+Nunca es negativa, y vale cero sólo si las dos políticas coinciden: es la desigualdad de
+<Leccion slug="perplejidad">la lección sobre la perplejidad</Leccion>, con $\pi_\theta$ en el papel
+de las frecuencias y $\pi_{\text{ref}}$ en el del modelo. No es simétrica, y la asimetría es lo que
+interesa. La media lleva los pesos de $\pi_\theta$, así que una respuesta cuesta mucho cuando la
+política la escribe a menudo y la referencia casi nunca. Dejar de escribir algo que la referencia sí
+escribiría no se cobra por sí mismo: esa respuesta entra en la media con peso cero.
+
+Una respuesta es una secuencia de tokens, y la regla de la cadena escribe su probabilidad como un
+producto con un factor por token, así que el logaritmo del cociente es una suma. Escribamos
+$\pi_\theta(y_j \mid x, y_{<j})$ para el factor $j$ de $\pi_\theta(y \mid x)$, y lo mismo para la
+referencia:
+
+$$
+\log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)} = \sum_{j} \log \frac{\pi_\theta(y_j \mid x, y_{<j})}{\pi_{\text{ref}}(y_j \mid x, y_{<j})}.
+$$
+
+Cada respuesta sorteada de la política da así una estimación de la KL, sumada token a token, cuya
+media es la KL exacta. Una estimación sola puede salir negativa, si la respuesta es de las que la
+referencia prefiere, aunque su media nunca lo sea. Y hay un caso que la celda va a encontrar. Si la
+política escribe siempre la misma respuesta $y$, la media tiene un único término y la KL vale
+$-\log \pi_{\text{ref}}(y \mid x)$: lo improbable que era esa respuesta, contado en nats.
+
+El objetivo de RLHF suma la recompensa media de la política y le resta la KL multiplicada por
+$\beta$,
+
+$$
+J(\theta) = \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[r_\phi(x, y)\right] - \beta\, \mathbb{D}_{\text{KL}}\big(\pi_\theta(\cdot \mid x) \,\|\, \pi_{\text{ref}}(\cdot \mid x)\big),
+$$
+
+para una instrucción $x$. Lo que se maximiza es su media sobre las instrucciones del entrenamiento,
+y todo lo que sigue vale instrucción a instrucción. $\beta$ es el precio de un nat en unidades de
+recompensa. Con $\beta = 0$, la política persigue la recompensa sin mirar dónde; con $\beta$ muy
+grande, no se mueve de la referencia. En medio hay un trato: la política se aleja sólo donde gana más
+recompensa de la que paga en KL.
+
+## El gradiente de una media sobre un sorteo
+
+Empecemos por la recompensa. Como suma sobre todas las respuestas posibles, su media es
+$\sum_y \pi_\theta(y \mid x)\, r_\phi(x, y)$, y $\theta$ sólo aparece en las probabilidades. La
+derivada del logaritmo da $\nabla_\theta \pi_\theta = \pi_\theta \nabla_\theta \log \pi_\theta$, y
+con ella la suma vuelve a ser una media sobre las respuestas de la política:
+
+$$
+\begin{aligned}
+\nabla_\theta\, \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[r_\phi(x, y)\right] &= \sum_{y} r_\phi(x, y)\, \nabla_\theta \pi_\theta(y \mid x) \\
+&= \sum_{y} r_\phi(x, y)\, \pi_\theta(y \mid x)\, \nabla_\theta \log \pi_\theta(y \mid x) \\
+&= \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[r_\phi(x, y)\, \nabla_\theta \log \pi_\theta(y \mid x)\right].
+\end{aligned}
+$$
+
+Es el **truco de la derivada logarítmica** (*log-derivative trick*), y el estimador que sale de él se
+llama REINFORCE desde que Williams lo publicó en 1992. La derivada de una media es ahora la media de
+algo que se calcula sobre una respuesta, y una media se estima sorteando. Con $B$ respuestas
+$y^{(1)}, \dots, y^{(B)}$ de la política,
+
+$$
+\nabla_\theta\, \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[r_\phi(x, y)\right] \approx \frac{1}{B}\sum_{i=1}^{B} r_\phi(x, y^{(i)})\, \nabla_\theta \log \pi_\theta(y^{(i)} \mid x).
+$$
+
+Nada en esa expresión atraviesa el sorteo. La recompensa de cada respuesta es un número, y
+$\nabla_\theta \log \pi_\theta(y^{(i)} \mid x)$ es un gradiente que ya conoces: con el signo cambiado,
+el de la pérdida del ajuste supervisado para el par $(x, y^{(i)})$. Un paso de REINFORCE es un paso
+de ajuste supervisado sobre las respuestas que la política acaba de escribir, con la pérdida de cada
+una multiplicada por su recompensa. El ajuste imitaba respuestas ajenas, todas por igual; éste imita
+las propias, más cuanto mejor puntúan.
+
+### Lo que se puede restar sin cambiar nada
+
+Hay una media que vale cero, y es la que hace práctico el estimador:
+
+$$
+\begin{aligned}
+\mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[\nabla_\theta \log \pi_\theta(y \mid x)\right] &= \sum_{y} \nabla_\theta \pi_\theta(y \mid x) \\
+&= \nabla_\theta \sum_{y} \pi_\theta(y \mid x) = \nabla_\theta 1 = 0.
+\end{aligned}
+$$
+
+Restar a todas las recompensas un número que dependa de $x$ y no de $y$ deja, por tanto, el gradiente
+igual en media. Es el $\kappa(x)$ de la lección anterior en otro papel: allí no cambiaba ninguna
+comparación, aquí no cambia el gradiente esperado. Lo que sí cambia es cuánto se equivoca un batch.
+Con una recompensa que nunca es negativa, como la de la celda, cada respuesta sorteada se empuja
+hacia arriba, también las peores. Restando la recompensa media, las de encima suben y las de debajo
+bajan. Esa resta es la
+**línea base** (*baseline*).
+
+La celda usa la media de su propio batch, que incluye a la respuesta a la que se le resta, y eso no
+rompe la cuenta. La diferencia entre una recompensa y la media de las $B$ es $(B - 1)/B$ veces su
+diferencia con la media de las otras $B - 1$, que no depende de ella, y un factor fijo no cambia la
+dirección.
+
+### La KL, descontada de cada recompensa
+
+Falta el término de la KL, que también es una media sobre las respuestas de la política, con una
+diferencia: lo que se promedia depende de $\theta$. La regla del producto da dos sumas, y la segunda
+es la que acaba de valer cero:
+
+$$
+\begin{aligned}
+\nabla_\theta\, \mathbb{D}_{\text{KL}} &= \sum_{y} \nabla_\theta \pi_\theta(y \mid x) \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)} \\
+&\quad + \sum_{y} \pi_\theta(y \mid x)\, \nabla_\theta \log \pi_\theta(y \mid x) \\
+&= \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[\log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}\, \nabla_\theta \log \pi_\theta(y \mid x)\right],
+\end{aligned}
+$$
+
+con $\mathbb{D}_{\text{KL}}$ abreviando la de la definición. Juntando las tres piezas,
+
+$$
+\begin{aligned}
+\nabla_\theta J(\theta) = \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\Bigg[&\bigg(r_\phi(x, y) - \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)} \\
+&\quad - \kappa(x)\bigg) \nabla_\theta \log \pi_\theta(y \mid x)\Bigg].
+\end{aligned}
+$$
+
+La KL entra como un descuento en la recompensa de cada respuesta: $\beta$ veces su logaritmo del
+cociente, la suma token a token de antes, tratada como un número más. Una respuesta que la
+referencia encontraba mucho menos probable que la política llega al estimador rebajada. InstructGPT se entrenó con esta recompensa
+descontada, pero no con este estimador tal cual. Usaba PPO (*proximal policy optimization*), que
+aprovecha cada batch de respuestas en varios pasos y recorta en ellos cuánto puede cambiar el
+cociente entre la política nueva y la que las escribió; está en las lecturas.
+
+## Una recompensa que cuenta letras, en el mini-GPT
+
+Las tres celdas corren sobre el mini-GPT, tu mini-GPT del bloque 1 cargado desde el *checkpoint*,
+sin la plantilla: la instrucción es el principio de una frase de la novela, <W>La Nela</W>, y la
+respuesta, los 16 tokens que la continúan. La referencia es ese mismo modelo, congelado. En RLHF es
+el modelo ajustado; aquí no puede serlo, por la razón de la lección anterior: el ajustado olvidó la
+novela y sólo sabe escribir frases de colores.
+
+La política tampoco es la red entera. He congelado el mini-GPT, y la política es él más un vector
+$\theta$ de 512 números, uno por entrada, que se suma a sus logits en cada posición:
+$\pi_\theta(v \mid x, y_{<j})$ es proporcional a $\pi_{\text{ref}}(v \mid x, y_{<j})\, e^{\theta_v}$.
+Con la red entera, un paso cuesta en el navegador unas tres veces más, y en mis pruebas ocho
+respuestas por paso no bastaban para mover sus 136 000 pesos sin que la política se alejara por puro
+ruido, con el freno puesto y sin ganar recompensa. Con $\theta$, el estimador es el mismo y
+$\nabla_\theta \log \pi_\theta(y \mid x)$ cabe en una línea: en cada token, el *one-hot* del token
+escrito menos el softmax.
+
+La recompensa de la celda no sale de ninguna comparación. Cuenta las letras <W>a</W> de la respuesta, y
+está ahí porque se equivoca a la vista. Un modelo de recompensa de verdad tiene sesgos que nadie ha
+elegido, como premiar las respuestas largas, y la política los encuentra antes que nadie. Éste
+tiene uno solo, exagerado, para que se vea qué hace la política con él. La primera celda prepara
+el muestreo, ocho respuestas a la vez con la caché de claves y valores, y mide la
+referencia: con $\theta = 0$ la política es $\pi_{\text{ref}}$.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())          # red, F, codificar, softmax, layer_norm
+
+def avanzar_lote(ids, cache):
+    """avanzar() de modelo.py con un eje más, el del batch: una fila nueva por respuesta."""
+    p, L, h, d = red.p, red.cfg["n_capas"], red.cfg["h"], red.cfg["d_model"]
+    B, d_k, t = len(ids), d // h, cache[0][0].shape[2]          # t: posiciones ya guardadas
+    H = p["E"][ids] + p["P"][t]                                 # (B, d)
+    for l in range(L):
+        Hn, _ = layer_norm(H, p[f"{l}.ln1_g"], p[f"{l}.ln1_b"])
+        q, k, v = (u.reshape(B, h, 1, d_k) for u in np.split(Hn @ p[f"{l}.Wqkv"], 3, axis=1))
+        cache[l] = K, V = np.concatenate([cache[l][0], k], 2), np.concatenate([cache[l][1], v], 2)
+        a = softmax(q @ K.transpose(0, 1, 3, 2) / np.sqrt(d_k))  # (B, h, 1, t + 1)
+        H = H + (a @ V).reshape(B, d) @ p[f"{l}.Wo"]
+        H = H + red.ffn(H[:, None], l)[0][:, 0]
+    return layer_norm(H, p["lnf_g"], p["lnf_b"])[0] @ p["E"].T
+
+x = codificar("La Nela", F)                                      # la instrucción: dos tokens
+
+def responder(theta, rng, B=8, n=16):
+    """B respuestas de la política: su recompensa, log pi_theta/pi_ref y el gradiente de log pi_theta."""
+    Z, (_, capas, _, _) = red.adelante(np.tile(x, (B, 1)))       # el prefill, las B a la vez
+    cache = [(K, V) for (_, _, _, K, V, _, _), _ in capas]
+    z, Y, k, G = Z[:, -1], np.zeros((B, n), int), np.zeros(B), np.zeros((B, 512))
+    filas = np.arange(B)
+    for j in range(n):
+        if j:
+            z = avanzar_lote(Y[:, j - 1], cache)
+        p_ref, p = softmax(z), softmax(z + theta)                 # pi_ref y pi_theta, en este token
+        Y[:, j] = v = [rng.choice(512, p=fila) for fila in p]   # temperatura 1, sin corte
+        k += np.log(p[filas, v] / p_ref[filas, v])               # el cociente, token a token
+        G -= p                                                   # one-hot menos softmax,
+        G[filas, v] += 1                                         #   token a token
+    r = np.array([decodificar(list(y), F).count("a") for y in Y])   # la recompensa: cuántas «a»
+    return Y, r, k, G
+
+def evaluar(theta):
+    """La recompensa media y la KL estimada sobre 32 respuestas nuevas, y tres de ellas."""
+    Y, r, k, _ = responder(theta, np.random.default_rng(1), B=32)
+    print("32 respuestas nuevas: recompensa %.2f   KL %.2f" % (r.mean(), k.mean()))
+    for y in Y[:3]:
+        print("   ", repr(decodificar(list(y), F)))
+
+evaluar(np.zeros(512))                                           # theta = 0: la política es pi_ref
+`} />
+
+El mini-GPT escribe de media $3.47$ letras <W>a</W> en 16 tokens, y la KL sale exactamente cero,
+porque con $\theta = 0$ cada cociente vale 1. La segunda celda es el estimador de la lección:
+treinta pasos de ascenso por gradiente sobre $\theta$, ocho respuestas por paso, la línea base y el
+descuento de la KL. La ejecuta con $\beta = 0$, sin freno.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior.
+def reinforce(beta, pasos=30, eta=1.0, semilla=0):
+    """Ascenso por gradiente sobre theta: el estimador de la lección, con 8 respuestas por paso."""
+    rng, theta = np.random.default_rng(semilla), np.zeros(512)
+    for s in range(1, pasos + 1):
+        _, r, k, G = responder(theta, rng)
+        R = r - beta * k                                         # la KL, descontada a cada respuesta
+        theta += eta * ((R - R.mean())[:, None] * G).mean(axis=0)   # la línea base: la media del batch
+        if s % 5 == 0:
+            print("paso %2d   recompensa %5.2f   KL %6.2f" % (s, r.mean(), k.mean()))
+    return theta
+
+theta = reinforce(beta=0)                                        # sin freno
+evaluar(theta)
+`} />
+
+La recompensa y la KL suben juntas: $9.12$ letras con $18.91$ nats en el paso 10, y $16$ con
+$73.32$ en el 15, donde se quedan. Las 32 respuestas de la evaluación son la misma,
+<W> a a a a a a a a a a a a a a a a</W>, el token <W> a</W> dieciséis veces. Ni siquiera es la de
+más recompensa posible, porque <W>aba</W> repetido daría el doble. Es la primera que encontró el
+ascenso, y de ahí ya no sale: ocho respuestas iguales tienen la misma recompensa, la línea base las
+deja en cero y el gradiente con ellas.
+
+Su KL, $73.34$ nats, es la del caso de una sola respuesta. La referencia la escribiría con
+probabilidad $e^{-73.3}$, del orden de $10^{-32}$. Esto es ***reward hacking***: la recompensa ha
+pasado de $3.47$ a $16$, y lo que debía medir, que la respuesta fuera buena, se ha perdido por el
+camino. La tercera celda repite el entrenamiento con $\beta = 0.5$, de modo que cada nat que la
+política se aleja le cuesta media letra.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita las dos celdas anteriores.
+evaluar(reinforce(beta=0.5))
+`} />
+
+Con el freno, la recompensa sube a $7.44$, más del doble de la de partida, por $5.48$ nats de KL.
+Las respuestas siguen siendo novela, ahora con más <W>a</W> que antes: <W>a la triste bajar a
+Florentina, a</W>. La política las ha buscado donde la referencia también las pone, en <W>la</W>, en
+<W>a la</W>, en las palabras que las llevan.
+
+La cuenta del objetivo dice por qué. Con $\beta = 0.5$, la respuesta de la segunda celda vale
+$16 - 0.5 \cdot 73.3 = -20.7$, mucho menos que quedarse en la referencia, que vale $3.47$, y que lo
+que logra la política entrenada, $7.44 - 0.5 \cdot 5.48 = 4.70$. El freno no prohíbe aquella
+respuesta: la hace salir cara, y con un $\beta$ lo bastante pequeño volvería a compensar.
+
+## Comprueba tu intuición
+
+Cinco preguntas, la última con los números de las celdas.
+
+<Quiz id="q-por-que-no-derivar" />
+
+<Quiz id="q-linea-base" />
+
+<Quiz id="q-kl-de-una-respuesta" />
+
+<Quiz id="q-sft-con-pesos" />
+
+<Quiz id="q-merece-la-pena" />
+
+---
+
+RLHF funciona, y es caro. Necesita un modelo de recompensa entrenado aparte, sortear respuestas en
+cada paso y tener a la vez en memoria la política, la referencia y el modelo de recompensa, y estimar un gradiente
+con unas pocas respuestas es tan ruidoso que esta lección ha tenido que congelar la red para que
+ocho por paso bastaran. Y lo que se optimiza no es la recompensa sino un trato entre ella y la KL,
+cuyo óptimo esta lección no ha buscado: el ascenso sólo se acerca a él paso a paso.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 15
+    (slug dpo), envolver «La lección siguiente, sobre la optimización directa de preferencias» en
+    su Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de un comentario. */}
+
+La lección siguiente, sobre la optimización directa de preferencias (*direct preference
+optimization*, DPO), lo busca. El objetivo de esta lección tiene una solución exacta, escrita con la
+referencia y la recompensa, y esa solución, leída al revés, convierte la política en su propio
+modelo de recompensa: con ella, las comparaciones entrenan la política directamente, sin modelo de recompensa y sin
+sorteos.

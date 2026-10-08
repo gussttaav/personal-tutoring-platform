@@ -258,9 +258,16 @@ this work.
 | losing what a model could predict on the text it was trained on before, by training it on another | `olvido catastrófico` (Block 2 lesson 3), with *catastrophic forgetting* given once | olvido alone as the term; interferencia; degradación |
 | one judgment $(x, y_w, y_l)$: two respuestas to one instrucción and which of the two someone prefers; its two sides | `comparación` (Block 2 lesson 4); the sides are the `preferida` and the `rechazada` | par de preferencia, *preference pair* (`par` is the SFT set's $(x, y)$, Block 2 lesson 3); voto as the term (fine for a raw count, as in the challenge's `votos`); ganadora / perdedora as the terms |
 | the person who compares | `anotador`, `anotadora` (Block 2 lesson 4), with *labeler* given once | evaluador (Block 3 spends it on evals and the model that judges), etiquetador, juez, calificador |
-| the number Bradley–Terry gives a respuesta, $r(x, y)$, and the network that computes one, $r_\phi$ | `recompensa`, `modelo de recompensa` (Block 2 lesson 4), with *reward model* given once | puntuación, nota (a nota is what a rater writes on their own scale, the lesson's counterexample); premio; *score* |
+| the number Bradley–Terry gives a respuesta, $r(x, y)$, and the network that computes one, $r_\phi$ | `recompensa`, `modelo de recompensa` (Block 2 lesson 4), with *reward model* given once | puntuación, nota (a nota is what a rater writes on their own scale, the lesson's counterexample); premio; *score*; juez, the metaphor (the `anotador` row refuses it too, and Block 3's evals have a model that judges) |
 | $r(x, y_A) - r(x, y_B)$: the log of the odds that one respuesta is preferred to the other | `margen` (Block 2 lesson 4) | diferencia alone as the term (fine in passing, and the lesson's first word for it); ventaja (that is the odds, $e^{\text{margen}}$, «tres a uno»); brecha |
 | the layer that maps the network's vector to one number in a reward model | `capa lineal` (Block 2 lesson 4), the first course's `capa` | cabeza, *head* (the first course's `cabeza` is an attention head), proyección as the term |
+| training a model on the reward its own sampled respuestas receive, rather than on examples of how to respond | `aprendizaje por refuerzo` (Block 2 lesson 5), with *reinforcement learning* given inside the RLHF expansion | refuerzo alone as the term; aprendizaje reforzado; RL in prose (the acronym is only ever written inside RLHF) |
+| $\pi_{\text{ref}}$: the frozen model the KL is measured against, which is also where the policy starts | `referencia` (Block 2 lesson 5); `modelo de partida` is the intuition's word for the role, before the term is defined | política de referencia as the term (fine once, in the defining clause); ancla; modelo base |
+| $\mathbb{D}_{\text{KL}}$ | `divergencia de Kullback–Leibler` (Block 2 lesson 5), with KL given once per lesson, then `la KL` | entropía relativa; distancia as the term (it is not symmetric, and the lesson says so). «distancia» is the intuition's and the heading's word, and the definition says which distance it is |
+| $\nabla_\theta \pi_\theta = \pi_\theta \nabla_\theta \log \pi_\theta$, which turns the gradient of a mean over sampled respuestas into a mean | `truco de la derivada logarítmica` (Block 2 lesson 5), with *log-derivative trick* given once; the estimator built on it is REINFORCE, a proper name (Williams 1992), never expanded or translated | truco del logaritmo; *score function* as the term; gradiente de política as the estimator's name |
+| a number per instrucción subtracted from every reward before the estimator: $\kappa(x)$, in the cell the batch's mean | `línea base` (Block 2 lesson 5), with *baseline* given once | ventaja for the reward left after it (that is lesson 4's odds, $e^{\text{margen}}$); *baseline* in prose; referencia (that is $\pi_{\text{ref}}$) |
+| subtracting $\beta$ times a respuesta's log ratio from its reward, before the estimator | `descontar`, la recompensa `descontada` (Block 2 lesson 5) | penalizar, recompensa penalizada; castigo |
+| a policy raising its reward by exploiting where the reward is wrong, rather than by improving what the reward measures | *reward hacking* (Block 2 lesson 5), English by the shared line, bold italic at its definition | hackeo de la recompensa; trampa; explotación de la recompensa; sobreoptimización as the term (Gao et al.'s name for the measured effect, fine in a reading note) |
 
 `herramienta`, `llamada` and `observación` are three words on three jobs, and the middle one is
 the one to watch: a *llamada* is what the model **asks**, an *observación* is what it **gets**,
@@ -316,8 +323,8 @@ Unchanged from the shared §5 — expand on **first use, in every lesson**, then
 course has more of them: *aprendizaje por refuerzo con retroalimentación humana (reinforcement
 learning from human feedback, RLHF)*, *optimización directa de preferencias (direct preference
 optimization, DPO)*, *generación aumentada por recuperación (retrieval-augmented generation,
-RAG)*, *Model Context Protocol (MCP)*. The Spanish expansion is given where one is in use; where
-none is (MCP), the English expansion alone, once.
+RAG)*, *proximal policy optimization (PPO)*, *Model Context Protocol (MCP)*. The Spanish expansion
+is given where one is in use; where none is (PPO, MCP), the English expansion alone, once.
 
 ## 5. Product names (added)
 
