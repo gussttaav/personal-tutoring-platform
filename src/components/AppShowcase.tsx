@@ -1,4 +1,9 @@
 /*
+ * APP-ANDROID-01 — the Android app is live on Google Play: the pill says so, the Play button is
+ * a real link and comes first (the store URL is a constant: the package id never changes), and
+ * the App Store button stays a placeholder that reads «Próximamente en App Store» until
+ * `NEXT_PUBLIC_APP_STORE_URL` is set, which turns it into a «Descárgala en» link.
+ *
  * REDESIGN-P1-04 — the mobile-app showcase: the phone mock beside the pitch. Mounted on `/`
  * and, from P2-03, on `/mentoria`; `docs/redesign/design/home.html` `.app` is the reference and
  * `app-showcase.css` carries its rules (imported by the page).
@@ -10,9 +15,9 @@
  * Spanish and not in the message files — it is a screenshot of the Spanish app, not UI copy.
  * The whole mock is `aria-hidden`; the copy column carries the meaning.
  *
- * Store links are honest placeholders until the app exists: the bracketed labels from the
- * design, as `<span aria-disabled>`. `NEXT_PUBLIC_APP_STORE_URL` / `NEXT_PUBLIC_PLAY_STORE_URL`
- * flip each one to a real `<a>` without a code change.
+ * A store without a URL renders as `<span aria-disabled>` (the App Store today, see
+ * APP-ANDROID-01 above); `NEXT_PUBLIC_APP_STORE_URL` flips it to a real `<a>` without a code
+ * change.
  *
  * The three benefit icons render from the self-hosted Material Symbols font, like the
  * neighbouring `HomeAreas` boxes; the icons inside the phone are the mock's inline SVGs.
@@ -31,7 +36,7 @@ const BENEFITS = [
 ] as const;
 
 const APP_STORE_URL = process.env.NEXT_PUBLIC_APP_STORE_URL;
-const PLAY_STORE_URL = process.env.NEXT_PUBLIC_PLAY_STORE_URL;
+const PLAY_STORE_URL = "https://play.google.com/store/apps/details?id=dev.gustavoai.mobile";
 
 function StoreButton({ href, kicker, label }: { href?: string; kicker: string; label: string }) {
   const inner = (
@@ -230,8 +235,12 @@ export default async function AppShowcase({ locale }: AppShowcaseProps) {
           </div>
 
           <div className="app-stores">
-            <StoreButton href={APP_STORE_URL} kicker={t("stores.downloadOn")} label={t("stores.appStore")} />
             <StoreButton href={PLAY_STORE_URL} kicker={t("stores.availableOn")} label={t("stores.playStore")} />
+            <StoreButton
+              href={APP_STORE_URL}
+              kicker={APP_STORE_URL ? t("stores.downloadOn") : t("stores.comingSoonOn")}
+              label={t("stores.appStore")}
+            />
           </div>
         </div>
       </div>

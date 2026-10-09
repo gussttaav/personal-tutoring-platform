@@ -197,7 +197,7 @@
     }
   },
   "app": {
-    "soon": "Mobile app · Coming soon",
+    "soon": "Mobile app · Now on Android",
     "heading": "Your classes, on your phone too",
     "lead": "The same sessions, the same packs and the same availability, in an app to join class and book from wherever you are.",
     "benefits": {
@@ -217,8 +217,9 @@
     "stores": {
       "downloadOn": "Download on",
       "availableOn": "Available on",
-      "appStore": "[App Store]",
-      "playStore": "[Google Play]"
+      "comingSoonOn": "Coming soon to",
+      "appStore": "App Store",
+      "playStore": "Google Play"
     }
   },
   "auth": {

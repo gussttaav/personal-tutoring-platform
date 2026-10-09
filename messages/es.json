@@ -197,7 +197,7 @@
     }
   },
   "app": {
-    "soon": "App móvil · Próximamente",
+    "soon": "App móvil · Ya disponible en Android",
     "heading": "Tus clases, también desde el móvil",
     "lead": "Las mismas sesiones, los mismos packs y la misma disponibilidad, en una app para entrar a clase y reservar desde donde estés.",
     "benefits": {
@@ -217,8 +217,9 @@
     "stores": {
       "downloadOn": "Descárgala en",
       "availableOn": "Disponible en",
-      "appStore": "[App Store]",
-      "playStore": "[Google Play]"
+      "comingSoonOn": "Próximamente en",
+      "appStore": "App Store",
+      "playStore": "Google Play"
     }
   },
   "auth": {
