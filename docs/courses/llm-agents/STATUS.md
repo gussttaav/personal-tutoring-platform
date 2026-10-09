@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (5/8) | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (6/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -981,3 +981,46 @@ its logits that is trained, and says so before the cells. Decisions, confirmed b
   horizontal page scroll at 360 px, and all eight displays fit the 632 px desktop column after three
   were split over more rows. The final wording edits (voice, «juez») came after the last build and
   were checked by `lint:content` only. Not on a phone.
+
+Lesson 15 `dpo` authored on `claude/course-lesson-block-2-d65a7a` (2026-10-09). 2 385 words
+(advisory over the 2 000 target, like lessons 12–14), 10 display equations, **1 widget** (`dpo-loss`,
+built here), 2 cells (max 45 lines), 5 quiz, 1 challenge, 5 readings (Rafailov et al. 2023, Korbak et
+al. 2022, Azar et al. 2023 / IPO, the Llama 3 report §4.1.4, Xu et al. 2024; arXiv pages checked).
+`minutes: 38` (lint ≈39, under the 40 ceiling). Runs on the mini-GPT with lesson 14's policy and says so
+before the cells. Decisions:
+- **The derivation, complete on the page:** $J(\theta)$ rewritten as
+  $-\beta\,\mathbb{D}_{\text{KL}}(\pi_\theta \,\|\, \pi^{\star}) + \beta \log Z(x)$ (the Gibbs argument,
+  in the body), so $\pi^{\star} = \pi_{\text{ref}}\, e^{r/\beta}/Z(x)$ for a model that can be any
+  distribution; the `<Details>` finds the formula by moving $\varepsilon$ of probability between two
+  responses (no Lagrange multiplier). Inverted, $r = \beta \log(\pi^{\star}/\pi_{\text{ref}}) + \beta \log
+  Z(x)$; in Bradley–Terry $Z(x)$ cancels and the lesson states it as the payoff of lesson 13's
+  $\kappa(x)$. $\mathcal{L}_{\text{DPO}}$ is $\mathcal{L}_{\text{R}}$ with $r_\theta$ for $r_\phi$; its
+  gradient is SFT up on $y_w$ and down on $y_l$, weighted by the factor
+  $\sigma(r_\theta(x, y_l) - r_\theta(x, y_w))$; $\beta$ is the brake inside the margin.
+- **The cell is DPO on lesson 14's policy** (the frozen mini-GPT plus 512 logit shifts), not the whole
+  network: 64 continuations of «La Nela» drawn once from the reference, a scripted Bradley–Terry
+  annotator on lesson 14's reward (the letters «a», $P = \sigma$ of the difference) comparing every pair
+  (2 016 comparisons, InstructGPT's ranking precedent). With only 64 independent pairs DPO memorised
+  them and boosted irrelevant tokens; all pairs averages the annotator's noise at no network cost. The
+  reference's per-token distributions are stored, so training never samples. Plain gradient descent at
+  $\eta = 2.5/\beta^{2}$, 100 steps; Adam was rejected because it moved tokens absent from the data
+  (β = 0.05: KL 45.9 with no reward gain).
+- **The cells, measured (Node Pyodide = Chromium):** loss $\ln 2 \to 0.433$ (the annotator's noise
+  floor), the same trace for both β; factor 0.03 on comparisons won by ≥ 3 letters, 0.74 where the
+  annotator chose fewer; implicit reward ≈ +1 per letter at both β (−3.4 … 1.9 at β = 0.5, −6.1 … −0.7
+  at β = 0.1); 32 fresh samples: β = 0.5 → 5.75 letters at 3.01 nats, β = 0.1 → 12.12 at 32.94 («a la
+  De a la a la…»). The 16 four-letter responses won 70 % of their comparisons and still have implicit
+  reward −0.4 (quiz). Chromium: 1.4 s and 0.9 s.
+- **Widget `dpo-loss`:** the $(\ell_w, \ell_l)$ plane coloured by the factor through one SVG
+  linearGradient along the anti-diagonal, isolines at factors 0.9 / 0.5 / 0.1, the push arrow, and a
+  note when the 0.1 line leaves the plane (β ≲ 0.18). Maths in `math/dpo.ts`, 12 tests.
+- **Letters and terms:** $\pi^{\star}$, $Z(x)$, $r_\theta$ (the paper's $\hat r_\theta$ without the hat;
+  the block md's $\hat r_w$, $\hat r_l$ are left as written), $\mathcal{L}_{\text{DPO}}$; no bare $\pi$
+  (Block 1 lesson 3's number). `factor`, `apagarse`, `función de partición`, `recompensa implícita` in
+  the delta's §4.
+- **Lesson 14's bridge now links this lesson.** This lesson's bridge names lesson 16 in prose with the
+  usual comment.
+- Verified: `pnpm lint:content` (words and reading-time warnings only), `pnpm build` green, 0 KaTeX
+  errors; the cells in Node Pyodide and Chromium on `pnpm start` with identical output; the challenge's
+  starter fails in the browser and the solution passes 6/6 in Node Pyodide; the numeric quiz right and
+  wrong in the browser; no horizontal page scroll at 360 px (emulated). Not on a phone.

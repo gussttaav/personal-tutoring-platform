@@ -260,7 +260,11 @@ together, and the lesson states that shape when the cache first appears.
 | $J(\theta)$ | the RLHF objective for one instrucción, $\mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)}\left[r_\phi(x, y)\right] - \beta\, \mathbb{D}_{\text{KL}}\big(\pi_\theta(\cdot \mid x) \,\|\, \pi_{\text{ref}}(\cdot \mid x)\big)$; training maximises its mean over the instrucciones (Block 2 lesson 5) |
 | $\pi_\theta(y_j \mid x, y_{<j})$ · $\pi_{\text{ref}}(y_j \mid x, y_{<j})$ | factor $j$ of $\pi_\theta(y \mid x)$ and of $\pi_{\text{ref}}(y \mid x)$: lesson 2's $p_\theta(y_j \mid x, y_{<j})$ named by the policy it belongs to, so a response's log ratio is a sum of per-token ones (Block 2 lesson 5) |
 | $y^{(1)}, \dots, y^{(B)}$ | $B$ responses sampled from $\pi_\theta(\cdot \mid x)$ for one estimate of the gradient: the shared §2 example index, while $y_j$ stays token $j$ (Block 2 lesson 5) |
-| $\theta_v$ | lesson 5's cell only: the policy's parameters are one number per entry $v$, added to the frozen mini-GPT's logits, so $\pi_\theta(v \mid x, y_{<j}) \propto \pi_{\text{ref}}(v \mid x, y_{<j})\, e^{\theta_v}$ (Block 2 lesson 5) |
+| $\theta_v$ | lessons 5 and 6's cells only: the policy's parameters are one number per entry $v$, added to the frozen mini-GPT's logits, so $\pi_\theta(v \mid x, y_{<j}) \propto \pi_{\text{ref}}(v \mid x, y_{<j})\, e^{\theta_v}$ (Block 2 lessons 5 and 6) |
+| $\pi^{\star}$ | the policy that maximises $J$ for a reward $r$, among every distribution over responses: $\pi^{\star}(y \mid x) = \pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta} / Z(x)$ (Block 2 lesson 6) |
+| $Z(x)$ | the partition function, $\sum_{y} \pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}$: what makes $\pi^{\star}(\cdot \mid x)$ add up to 1, a sum over every response, and a function of the instrucción only (Block 2 lesson 6) |
+| $r_\theta(x, y)$ | the implicit reward of the policy, $\beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$: the reward whose $\pi^{\star}$ is $\pi_\theta$, up to $\kappa(x)$ (Block 2 lesson 6) |
+| $\mathcal{L}_{\text{DPO}}(\theta)$ | $\mathbb{E}_{(x, y_w, y_l) \sim p_{\text{pref}}}\left[-\log \sigma\big(r_\theta(x, y_w) - r_\theta(x, y_l)\big)\right]$: lesson 4's $\mathcal{L}_{\text{R}}$ with $r_\theta$ for $r_\phi$ (Block 2 lesson 6) |
 
 **An event in words is a set of respuestas** (`COURSE-C2-P1-02`, Block 2 lesson 1). Inside a
 distribution, roman text names the set of respuestas it describes, and the probability is that
@@ -337,6 +341,27 @@ reference's factor, $\pi_{\text{ref}}(y_j \mid x, y_{<j})$, needs no new letter.
 indexes $\theta$ by entry like $z_v$ and $q_v$: in that cell the trainable parameters really are
 one number per entry, and $\theta$ stays unbold as everywhere else, since it names the parameters
 collectively and the shared §1 bans `\boldsymbol`.
+
+**DPO takes a star, the paper's $Z$, and drops a hat** (`COURSE-C2-P1-02`, Block 2 lesson 6).
+The optimum is starred, as $\theta^{\star}$ and $v^{\star}$ are, and is written with the policy's own
+letter, $\pi^{\star}$. It is stated as a condition on $\pi_\theta$ («for a model that can give each
+instrucción any distribution»), the move Block 2 lesson 3 made for $p_{\text{SFT}}$, rather than with a
+bare $\pi$ for «any policy»: Block 1 lesson 3 writes $\pi$ for the number in its cosine schedule, and
+$J$ keeps its row's argument, $\theta$. The partition function is the paper's $Z(x)$: italic and a
+function of $x$, so it is not Block 1's bold $\mathbf{Z}$, the stacked logits, which lesson 6 never
+writes; the lesson says in a clause that it depends on the instrucción only, which is what makes it a
+$\kappa(x)$. The implicit reward is the paper's $\hat{r}_\theta$ **without the hat**, because the hat
+means «estimated from a batch» (Block 1 lesson 3) and nothing else; its subscript says whose
+parameters it has, as $r_\phi$'s does, and that is the lesson's claim: a reward model with the policy's
+parameters. The block task md writes the factor $\sigma(\hat{r}_l - \hat{r}_w)$; the lesson writes
+$\sigma\big(r_\theta(x, y_l) - r_\theta(x, y_w)\big)$. The log ratio itself gets no letter, as in
+lesson 5: the prose writes it out, and the cells call it `k`. $\mathcal{L}_{\text{DPO}}$ keeps the
+paper's subscript, set in roman like $\mathcal{L}_{\text{SFT}}$, and $\theta_v$ is lesson 5's again
+because lesson 6's cell uses lesson 5's policy. The `<Details>` that finds $\pi^{\star}$ moves a
+small amount $\varepsilon$ of probability between two responses, the calculus convention; Block 1's
+$\varepsilon$, Adam's and the layer norm's guard, never shares that page. The two responses are
+lesson 4's $y_A$, $y_B$ with their rewards $r_A$, $r_B$, and their probabilities are written out,
+$\pi_\theta(y_A \mid x)$, rather than given a $p_A$ (bare $p$ is top-p's) or a $q_A$ (the sampler's).
 
 **Two networks on one page need two parameter letters.** $\theta$ is the policy's and $\phi$ the
 reward model's, and the split is the point of the block: the reward model is trained first, then

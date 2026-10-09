@@ -52,7 +52,7 @@ you *put in the prompt* is the next block.
 - [x] 12. `sft`
 - [x] 13. `modelo-de-recompensa`
 - [x] 14. `rlhf`
-- [ ] 15. `dpo`
+- [x] 15. `dpo`
 - [ ] 16. `de-donde-salen-las-preferencias`
 - [ ] 17. `proyecto-sft-colab`
 
