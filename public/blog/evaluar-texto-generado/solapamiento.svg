@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 216" width="740" height="216" role="img"
+ aria-label="Las palabras de la referencia y de dos respuestas, una por casilla, sin puntuación. En verde, las palabras de cada respuesta que forman la secuencia más larga en común con la referencia, en el mismo orden; en rojo, las demás. La respuesta B, falsa, tiene 22 de las 27 palabras de la referencia en orden: sólo se salen no, 14, acabó, 28 y agosto, justo las palabras que la vuelven falsa. ROUGE-L 0,81. La respuesta A, cierta, sólo tiene 9 en orden, porque dice lo mismo con otras palabras: «puede pedirlo» por «sí», «treinta» por «30», «la renovación» por «el cobro anual». ROUGE-L 0,36.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); }
+  .lb { font-size: 12px; font-weight: 600; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .big { font-size: 13px; font-weight: 600; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker></defs>
+<text class="lb" x="0.0" y="18.0" style="fill:#bbcabf">Referencia</text>
+<text class="tk" x="0.0" y="34.0">27 palabras</text>
+<rect class="bx " x="128.0" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="140.4" y="18.0" style="text-anchor:middle;fill:#bbcabf">Sí</text>
+<rect class="bx " x="156.8" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="169.2" y="18.0" style="text-anchor:middle;fill:#bbcabf">El</text>
+<rect class="bx " x="185.6" y="4.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="204.4" y="18.0" style="text-anchor:middle;fill:#bbcabf">plan</text>
+<rect class="bx " x="227.2" y="4.0" width="50.4" height="20.0" rx="4"/>
+<text class="tx" x="252.4" y="18.0" style="text-anchor:middle;fill:#bbcabf">Equipo</text>
+<rect class="bx " x="281.6" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="294.0" y="18.0" style="text-anchor:middle;fill:#bbcabf">da</text>
+<rect class="bx " x="310.4" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="322.8" y="18.0" style="text-anchor:middle;fill:#bbcabf">30</text>
+<rect class="bx " x="339.2" y="4.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="358.0" y="18.0" style="text-anchor:middle;fill:#bbcabf">días</text>
+<rect class="bx " x="380.8" y="4.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="402.8" y="18.0" style="text-anchor:middle;fill:#bbcabf">desde</text>
+<rect class="bx " x="428.8" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="441.2" y="18.0" style="text-anchor:middle;fill:#bbcabf">el</text>
+<rect class="bx " x="457.6" y="4.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="479.6" y="18.0" style="text-anchor:middle;fill:#bbcabf">cobro</text>
+<rect class="bx " x="505.6" y="4.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="527.6" y="18.0" style="text-anchor:middle;fill:#bbcabf">anual</text>
+<rect class="bx " x="553.6" y="4.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="569.2" y="18.0" style="text-anchor:middle;fill:#bbcabf">que</text>
+<rect class="bx " x="588.8" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="601.2" y="18.0" style="text-anchor:middle;fill:#bbcabf">se</text>
+<rect class="bx " x="617.6" y="4.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="636.4" y="18.0" style="text-anchor:middle;fill:#bbcabf">hizo</text>
+<rect class="bx " x="659.2" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="671.6" y="18.0" style="text-anchor:middle;fill:#bbcabf">el</text>
+<rect class="bx " x="688.0" y="4.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="700.4" y="18.0" style="text-anchor:middle;fill:#bbcabf">14</text>
+<rect class="bx " x="128.0" y="28.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="140.4" y="42.0" style="text-anchor:middle;fill:#bbcabf">de</text>
+<rect class="bx " x="156.8" y="28.0" width="50.4" height="20.0" rx="4"/>
+<text class="tx" x="182.0" y="42.0" style="text-anchor:middle;fill:#bbcabf">agosto</text>
+<rect class="bx " x="211.2" y="28.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="226.8" y="42.0" style="text-anchor:middle;fill:#bbcabf">así</text>
+<rect class="bx " x="246.4" y="28.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="262.0" y="42.0" style="text-anchor:middle;fill:#bbcabf">que</text>
+<rect class="bx " x="281.6" y="28.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="294.0" y="42.0" style="text-anchor:middle;fill:#bbcabf">el</text>
+<rect class="bx " x="310.4" y="28.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="332.4" y="42.0" style="text-anchor:middle;fill:#bbcabf">plazo</text>
+<rect class="bx " x="358.4" y="28.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="380.4" y="42.0" style="text-anchor:middle;fill:#bbcabf">acaba</text>
+<rect class="bx " x="406.4" y="28.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="418.8" y="42.0" style="text-anchor:middle;fill:#bbcabf">el</text>
+<rect class="bx " x="435.2" y="28.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="447.6" y="42.0" style="text-anchor:middle;fill:#bbcabf">13</text>
+<rect class="bx " x="464.0" y="28.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="476.4" y="42.0" style="text-anchor:middle;fill:#bbcabf">de</text>
+<rect class="bx " x="492.8" y="28.0" width="76.0" height="20.0" rx="4"/>
+<text class="tx" x="530.8" y="42.0" style="text-anchor:middle;fill:#bbcabf">septiembre</text>
+<text class="lb" x="0.0" y="82.0" style="fill:#ffb4ab">B · falsa</text>
+<text class="tk" x="0.0" y="98.0">22 de 27 en orden</text>
+<text class="tk" x="0.0" y="112.0">ROUGE-L 0,81</text>
+<rect class="bx x" x="128.0" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="140.4" y="82.0" style="text-anchor:middle;fill:#ffb4ab">No</text>
+<rect class="bx m" x="156.8" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="169.2" y="82.0" style="text-anchor:middle;fill:#4edea3">El</text>
+<rect class="bx m" x="185.6" y="68.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="204.4" y="82.0" style="text-anchor:middle;fill:#4edea3">plan</text>
+<rect class="bx m" x="227.2" y="68.0" width="50.4" height="20.0" rx="4"/>
+<text class="tx" x="252.4" y="82.0" style="text-anchor:middle;fill:#4edea3">Equipo</text>
+<rect class="bx m" x="281.6" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="294.0" y="82.0" style="text-anchor:middle;fill:#4edea3">da</text>
+<rect class="bx x" x="310.4" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="322.8" y="82.0" style="text-anchor:middle;fill:#ffb4ab">14</text>
+<rect class="bx m" x="339.2" y="68.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="358.0" y="82.0" style="text-anchor:middle;fill:#4edea3">días</text>
+<rect class="bx m" x="380.8" y="68.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="402.8" y="82.0" style="text-anchor:middle;fill:#4edea3">desde</text>
+<rect class="bx m" x="428.8" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="441.2" y="82.0" style="text-anchor:middle;fill:#4edea3">el</text>
+<rect class="bx m" x="457.6" y="68.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="479.6" y="82.0" style="text-anchor:middle;fill:#4edea3">cobro</text>
+<rect class="bx m" x="505.6" y="68.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="527.6" y="82.0" style="text-anchor:middle;fill:#4edea3">anual</text>
+<rect class="bx m" x="553.6" y="68.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="569.2" y="82.0" style="text-anchor:middle;fill:#4edea3">que</text>
+<rect class="bx m" x="588.8" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="601.2" y="82.0" style="text-anchor:middle;fill:#4edea3">se</text>
+<rect class="bx m" x="617.6" y="68.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="636.4" y="82.0" style="text-anchor:middle;fill:#4edea3">hizo</text>
+<rect class="bx m" x="659.2" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="671.6" y="82.0" style="text-anchor:middle;fill:#4edea3">el</text>
+<rect class="bx m" x="688.0" y="68.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="700.4" y="82.0" style="text-anchor:middle;fill:#4edea3">14</text>
+<rect class="bx m" x="128.0" y="92.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="140.4" y="106.0" style="text-anchor:middle;fill:#4edea3">de</text>
+<rect class="bx m" x="156.8" y="92.0" width="50.4" height="20.0" rx="4"/>
+<text class="tx" x="182.0" y="106.0" style="text-anchor:middle;fill:#4edea3">agosto</text>
+<rect class="bx m" x="211.2" y="92.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="226.8" y="106.0" style="text-anchor:middle;fill:#4edea3">así</text>
+<rect class="bx m" x="246.4" y="92.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="262.0" y="106.0" style="text-anchor:middle;fill:#4edea3">que</text>
+<rect class="bx m" x="281.6" y="92.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="294.0" y="106.0" style="text-anchor:middle;fill:#4edea3">el</text>
+<rect class="bx m" x="310.4" y="92.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="332.4" y="106.0" style="text-anchor:middle;fill:#4edea3">plazo</text>
+<rect class="bx x" x="358.4" y="92.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="380.4" y="106.0" style="text-anchor:middle;fill:#ffb4ab">acabó</text>
+<rect class="bx m" x="406.4" y="92.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="418.8" y="106.0" style="text-anchor:middle;fill:#4edea3">el</text>
+<rect class="bx x" x="435.2" y="92.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="447.6" y="106.0" style="text-anchor:middle;fill:#ffb4ab">28</text>
+<rect class="bx m" x="464.0" y="92.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="476.4" y="106.0" style="text-anchor:middle;fill:#4edea3">de</text>
+<rect class="bx x" x="492.8" y="92.0" width="50.4" height="20.0" rx="4"/>
+<text class="tx" x="518.0" y="106.0" style="text-anchor:middle;fill:#ffb4ab">agosto</text>
+<text class="lb" x="0.0" y="146.0" style="fill:#4edea3">A · cierta</text>
+<text class="tk" x="0.0" y="162.0">9 de 27 en orden</text>
+<text class="tk" x="0.0" y="176.0">ROUGE-L 0,36</text>
+<rect class="bx x" x="128.0" y="132.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="150.0" y="146.0" style="text-anchor:middle;fill:#ffb4ab">Puede</text>
+<rect class="bx x" x="176.0" y="132.0" width="56.8" height="20.0" rx="4"/>
+<text class="tx" x="204.4" y="146.0" style="text-anchor:middle;fill:#ffb4ab">pedirlo</text>
+<rect class="bx x" x="236.8" y="132.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="252.4" y="146.0" style="text-anchor:middle;fill:#ffb4ab">con</text>
+<rect class="bx x" x="272.0" y="132.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="284.4" y="146.0" style="text-anchor:middle;fill:#ffb4ab">su</text>
+<rect class="bx m" x="300.8" y="132.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="319.6" y="146.0" style="text-anchor:middle;fill:#4edea3">plan</text>
+<rect class="bx x" x="342.4" y="132.0" width="56.8" height="20.0" rx="4"/>
+<text class="tx" x="370.8" y="146.0" style="text-anchor:middle;fill:#ffb4ab">dispone</text>
+<rect class="bx x" x="403.2" y="132.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="415.6" y="146.0" style="text-anchor:middle;fill:#ffb4ab">de</text>
+<rect class="bx x" x="432.0" y="132.0" width="56.8" height="20.0" rx="4"/>
+<text class="tx" x="460.4" y="146.0" style="text-anchor:middle;fill:#ffb4ab">treinta</text>
+<rect class="bx m" x="492.8" y="132.0" width="37.6" height="20.0" rx="4"/>
+<text class="tx" x="511.6" y="146.0" style="text-anchor:middle;fill:#4edea3">días</text>
+<rect class="bx m" x="534.4" y="132.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="556.4" y="146.0" style="text-anchor:middle;fill:#4edea3">desde</text>
+<rect class="bx m" x="582.4" y="132.0" width="31.2" height="20.0" rx="4"/>
+<text class="tx" x="598.0" y="146.0" style="text-anchor:middle;fill:#4edea3">que</text>
+<rect class="bx m" x="617.6" y="132.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="630.0" y="146.0" style="text-anchor:middle;fill:#4edea3">se</text>
+<rect class="bx x" x="646.4" y="132.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="658.8" y="146.0" style="text-anchor:middle;fill:#ffb4ab">le</text>
+<rect class="bx x" x="675.2" y="132.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="697.2" y="146.0" style="text-anchor:middle;fill:#ffb4ab">cobró</text>
+<rect class="bx x" x="128.0" y="156.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="140.4" y="170.0" style="text-anchor:middle;fill:#ffb4ab">la</text>
+<rect class="bx x" x="156.8" y="156.0" width="76.0" height="20.0" rx="4"/>
+<text class="tx" x="194.8" y="170.0" style="text-anchor:middle;fill:#ffb4ab">renovación</text>
+<rect class="bx x" x="236.8" y="156.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="249.2" y="170.0" style="text-anchor:middle;fill:#ffb4ab">es</text>
+<rect class="bx x" x="265.6" y="156.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="287.6" y="170.0" style="text-anchor:middle;fill:#ffb4ab">decir</text>
+<rect class="bx x" x="313.6" y="156.0" width="44.0" height="20.0" rx="4"/>
+<text class="tx" x="335.6" y="170.0" style="text-anchor:middle;fill:#ffb4ab">hasta</text>
+<rect class="bx m" x="361.6" y="156.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="374.0" y="170.0" style="text-anchor:middle;fill:#4edea3">el</text>
+<rect class="bx m" x="390.4" y="156.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="402.8" y="170.0" style="text-anchor:middle;fill:#4edea3">13</text>
+<rect class="bx m" x="419.2" y="156.0" width="24.8" height="20.0" rx="4"/>
+<text class="tx" x="431.6" y="170.0" style="text-anchor:middle;fill:#4edea3">de</text>
+<rect class="bx m" x="448.0" y="156.0" width="76.0" height="20.0" rx="4"/>
+<text class="tx" x="486.0" y="170.0" style="text-anchor:middle;fill:#4edea3">septiembre</text>
+<rect class="bx m" x="128.0" y="196.0" width="14.0" height="14.0" rx="3"/>
+<text class="tx d" x="148.0" y="207.0">en la referencia, en el mismo orden</text>
+<rect class="bx x" x="388.0" y="196.0" width="14.0" height="14.0" rx="3"/>
+<text class="tx d" x="408.0" y="207.0">fuera de esa secuencia</text>
+</svg>

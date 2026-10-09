@@ -28,6 +28,7 @@ export const BLOG_TOPICS = [
   "deep-learning",
   "embeddings",
   "estructuras-de-datos",
+  "evaluacion",
   "grafos",
   "indices",
   "llm",
