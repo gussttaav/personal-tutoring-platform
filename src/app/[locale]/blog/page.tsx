@@ -11,17 +11,26 @@
  * placement next to `CourseCard`. The `.lp-*` editorial atoms come from the courses
  * feature because they are the site's shared editorial vocabulary (the display serif,
  * the kicker, the hairline rule), not course-specific styling.
+ *
+ * BLOG-13: area + topic filters, a featured newest post and pages. The list is the
+ * client island `BlogIndex` (state in the URL, see its header); this page hands it the
+ * slim `IndexEntry` projection of every published post and renders the header. The
+ * island reads `useSearchParams()`, so it sits in a <Suspense> whose fallback is the
+ * same list unfiltered — the prerendered HTML stays the full first page.
  */
 
 import "@/features/courses/course-editorial.css";
+import "@/features/blog/blog-taxonomy.css";
 import "@/features/blog/blog.css";
 
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import PostCard from "@/features/blog/PostCard";
+import BlogIndex, { BlogIndexFallback } from "@/features/blog/BlogIndex";
 import BlogNotifyCard from "@/features/blog/BlogNotifyCard";
+import { toIndexEntries } from "@/features/blog/archive-entries";
 import { listPosts } from "@/lib/blog/registry";
 import { blogLocales } from "@/lib/blog/locales";
 import { routing } from "@/i18n/routing";
@@ -54,6 +63,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
   const t = await getTranslations({ locale, namespace: "blog.index" });
 
   const posts = listPosts(locale);
+  const entries = toIndexEntries(posts);
 
   return (
     <>
@@ -61,7 +71,7 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
       <main style={{ position: "relative", zIndex: 1 }}>
         <div
           style={{
-            // 1100 matches the course catalog, now that `.blog-list` is a 2-column grid
+            // 1100 matches the course catalog, now that the list is a 2-column grid
             // (blog.css) instead of the single 840px reading column: the cards genuinely
             // fill this width the same way the catalog's do, so the earlier reasoning for
             // capping this container at the post page's reading measure no longer applies.
@@ -79,9 +89,8 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
               <span className="lp-rule" />
             </div>
             <h1
-              className="lp-serif"
+              className="lp-serif blog-title"
               style={{
-                fontSize: "clamp(2rem, 5vw, 3.25rem)",
                 fontWeight: 500,
                 letterSpacing: "-0.02em",
                 lineHeight: 1.08,
@@ -127,11 +136,9 @@ export default async function BlogPage({ params }: { params: Promise<{ locale: s
               </p>
             </div>
           ) : (
-            <div className="blog-list">
-              {posts.map((post) => (
-                <PostCard key={post.slug} post={post} locale={locale} />
-              ))}
-            </div>
+            <Suspense fallback={<BlogIndexFallback entries={entries} />}>
+              <BlogIndex entries={entries} />
+            </Suspense>
           )}
 
           {/* Opt-in for new posts — the value the ComingSoonModal used to carry, on a
