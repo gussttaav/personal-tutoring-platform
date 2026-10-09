@@ -1,0 +1,636 @@
+---
+slug: evaluar-texto-generado
+title: "How to evaluate a language model: who decides whether an answer is right"
+date: "2026-10-10"
+minutes: 22
+summary: "Four answers to the same question, and the classic measures rank the only false one first. Why grading what a language model writes is nothing like grading a classifier, the four judges that can decide whether an answer is right (a reference answer, a program, a person and another model), what each one sees and misses, and when to trust the number that comes out."
+draft: false
+reading:
+  - kind: paper
+    title: "Bleu: a Method for Automatic Evaluation of Machine Translation"
+    authors: "Kishore Papineni, Salim Roukos, Todd Ward and Wei-Jing Zhu"
+    year: "2002"
+    venue: "ACL 2002"
+    lang: en
+    url: "https://aclanthology.org/P02-1040/"
+    note: "The measure that set the habit of comparing against a reference. It counts sequences of up to four words against several human translations, and it was designed to score a whole corpus, not a single sentence."
+  - kind: paper
+    title: "ROUGE: A Package for Automatic Evaluation of Summaries"
+    authors: "Chin-Yew Lin"
+    year: "2004"
+    venue: "Text Summarization Branches Out (ACL 2004 workshop)"
+    lang: en
+    url: "https://aclanthology.org/W04-1013/"
+    note: "The ROUGE variants, including ROUGE-L, the longest-common-subsequence version this article uses. It was built for summaries, where what matters is how much of the reference turns up in the text."
+  - kind: paper
+    title: "How NOT To Evaluate Your Dialogue System: An Empirical Study of Unsupervised Evaluation Metrics for Dialogue Response Generation"
+    authors: "Chia-Wei Liu, Ryan Lowe, Iulian Serban and others"
+    year: "2016"
+    venue: "EMNLP 2016"
+    lang: en
+    url: "https://arxiv.org/abs/1603.08023"
+    note: "The evidence that translation measures don't work for open-ended answers: their correlation with human judgement is very weak on Twitter conversations and absent on Ubuntu technical support."
+  - kind: blog
+    title: "What's going on with the Open LLM Leaderboard?"
+    authors: "Clémentine Fourrier, Nathan Habib, Julien Launay and Thomas Wolf"
+    year: "2023"
+    venue: "Hugging Face"
+    lang: en
+    url: "https://huggingface.co/blog/open-llm-leaderboard-mmlu"
+    note: "Three ways of reading the answer to a multiple-choice test, with an example of each and the table that gives LLaMA 65B either 63.7% or 48.8% on MMLU depending on which one you use."
+  - kind: paper
+    title: "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena"
+    authors: "Lianmin Zheng, Wei-Lin Chiang, Ying Sheng and others"
+    year: "2023"
+    venue: "NeurIPS 2023 (Datasets and Benchmarks)"
+    lang: en
+    url: "https://arxiv.org/abs/2306.05685"
+    note: "The paper that validated the model as a judge and measured its biases. Table 2 covers position bias: GPT-4 keeps its verdict when the two answers swap places only 65% of the time."
+  - kind: paper
+    title: "Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference"
+    authors: "Wei-Lin Chiang, Lianmin Zheng, Ying Sheng and others"
+    year: "2024"
+    venue: "ICML 2024"
+    lang: en
+    url: "https://arxiv.org/abs/2403.04132"
+    note: "How hundreds of thousands of votes between two anonymous answers become a ranking of models, using the Bradley–Terry model, and how closely those votes match experts' votes."
+  - kind: paper
+    title: "Adding Error Bars to Evals: A Statistical Approach to Language Model Evaluations"
+    authors: "Evan Miller"
+    year: "2024"
+    venue: "arXiv:2411.00640"
+    lang: en
+    url: "https://arxiv.org/abs/2411.00640"
+    note: "Statistics for evaluations, written for people who never studied it: the margin on a result, the margin on the gap between two models on the same questions, and how many questions you need to see a given gap."
+  - kind: paper
+    title: "A Careful Examination of Large Language Model Performance on Grade School Arithmetic"
+    authors: "Hugh Zhang, Jeff Da, Dean Lee and others"
+    year: "2024"
+    venue: "NeurIPS 2024 (Datasets and Benchmarks)"
+    lang: en
+    url: "https://arxiv.org/abs/2405.00332"
+    note: "The clean contamination experiment: 1,205 new problems in the style of GSM8K that were never published, and how much each family of models loses when it moves from one set to the other."
+  - kind: paper
+    title: "The Leaderboard Illusion"
+    authors: "Shivalika Singh, Yiyang Nan, Alex Wang and others"
+    year: "2025"
+    venue: "arXiv:2504.20879"
+    lang: en
+    url: "https://arxiv.org/abs/2504.20879"
+    note: "What distorts a ranking built from votes: the private variants that get tested and withdrawn (27 from Meta before Llama 4) and the uneven share of arena data between labs."
+  - kind: paper
+    title: "HealthBench: Evaluating Large Language Models Towards Improved Human Health"
+    authors: "Rahul K. Arora, Jason Wei, Rebecca Soskin Hicks and others"
+    year: "2025"
+    venue: "arXiv:2505.08775"
+    lang: en
+    url: "https://arxiv.org/abs/2505.08775"
+    note: "Rubric-based evaluation at scale: 5,000 medical conversations, 48,562 criteria written by 262 physicians, and a model that checks each criterion."
+areas: ["ia"]
+cover: "/blog/evaluar-texto-generado/solapamiento.en.svg"
+tags: ["llm", "evaluacion", "nlp"]
+aiImages: true
+---
+
+{/*
+  BLOG-14: How to evaluate a language model: who decides whether an answer is right. English
+  translation of content/blog/es/evaluar-texto-generado.mdx.
+
+  Same structure and same numbers as the Spanish file; see its header for where each one was
+  read or how it was computed. Terms: «juez» → judge, «referencia» → reference answer,
+  «solapamiento» → overlap, «banco de pruebas» → benchmark, «clasificación» → leaderboard or
+  ranking, «cobertura» → recall, «cerrar la pregunta» → close the question. The example keeps
+  the names of the English RAG post: Ortega Hardware (Ferretería Ortega) and the Team plan
+  (plan Equipo).
+
+  The question, the reference and the four answers stay in SPANISH, each followed by an
+  English translation: they are the data the figures score, and translating them would change
+  the scores. The .en.svg figures translate only their labels. British spelling, as in the
+  other English posts.
+*/}
+
+A company that makes invoicing software, which we'll call Albarán, has an assistant that answers
+questions from its support team. Two new versions are being trialled, and before replacing the one
+it uses today, the company wants to know which of them answers better. So someone on the team puts
+together a list of real questions, each with the answer a person who knows the product well would
+give. Albarán works in Spanish, so the questions and answers are in Spanish, and an English
+translation follows each one. Here's one of the questions:
+
+> ¿El cliente de la incidencia 4812 tiene derecho a reembolso?
+>
+> *(Is the customer in ticket 4812 entitled to a refund?)*
+
+The customer is Ortega Hardware. It's on the Team plan, paid its annual renewal on 14 August and
+asked for a refund on 2 September. Albarán's FAQ says "as a rule, refunds can be requested within
+14 days", but the Team plan's terms allow 30. The team's reference answer reads:
+
+> Sí. El plan Equipo da 30 días desde el cobro anual, que se hizo el 14 de agosto, así que el plazo
+> acaba el 13 de septiembre.
+>
+> *(Yes. The Team plan gives 30 days from the annual charge, which was made on 14 August, so the
+> window closes on 13 September.)*
+
+Across the versions being compared, the assistant produces four different answers to that question:
+
+> **A.** Puede pedirlo: con su plan dispone de treinta días desde que se le cobró la renovación, es
+> decir, hasta el 13 de septiembre.
+>
+> *(They can request it: their plan gives them thirty days from the day the renewal was charged,
+> which means until 13 September.)*
+>
+> **B.** No. El plan Equipo da 14 días desde el cobro anual, que se hizo el 14 de agosto, así que el
+> plazo acabó el 28 de agosto.
+>
+> *(No. The Team plan gives 14 days from the annual charge, which was made on 14 August, so the window
+> closed on 28 August.)*
+>
+> **C.** Sí, hasta el 13 de septiembre.
+>
+> *(Yes, until 13 September.)*
+>
+> **D.** ¡Buena pregunta! Sí, el cliente tiene derecho al reembolso. Ferretería Ortega tiene
+> contratado el plan Equipo, cuyas condiciones dan 30 días desde el cobro a las suscripciones
+> anuales. El cobro se hizo el 14 de agosto, así que el plazo acaba el 13 de septiembre y la solicitud
+> del 2 de septiembre llegó a tiempo. Te recomiendo tramitarlo cuanto antes. ¡Espero que te sirva de
+> ayuda!
+>
+> *(Great question! Yes, the customer is entitled to the refund. Ortega Hardware is on the Team plan,
+> whose terms give annual subscriptions 30 days from the charge. The charge was made on 14 August, so
+> the window closes on 13 September and the request on 2 September arrived in time. I'd recommend
+> getting it processed as soon as possible. Hope this helps!)*
+
+Three of them are true. B is false: it applies the FAQ's general deadline to a plan that has its own.
+To compare hundreds of answers like these without reading each one, the classic approach is to
+measure how closely each resembles the reference. Here's what two of the most widely used measures
+say.
+
+<figure>
+  <img
+    src="/blog/evaluar-texto-generado/cuatro-respuestas.en.svg"
+    alt="A question, a reference answer and four answers scored against it, all in Spanish. The question: is the customer in ticket 4812 entitled to a refund? The reference, written by the support team, says yes: the Team plan gives 30 days from the annual charge on 14 August, so the deadline is 13 September. Answer A, true, says it in other words: word F1 0.40, ROUGE-L 0.36. B, false, copies the reference and changes five words to say no, with 14 days and 28 August: 0.81 and 0.81, the highest score. C, true, only says yes, until 13 September: 0.30 and 0.30, the lowest. D, true, explains everything in 66 words with a greeting and a sign-off: 0.54 and 0.52. Both measures put the only false answer first."
+    width="740"
+    height="312"
+  />
+  <figcaption>
+    The four answers, scored by how closely they resemble the reference. Both measures put the only
+    false answer first and the most direct true one last.
+  </figcaption>
+</figure>
+
+Neither measure is broken. Each does what it promises: count the words an answer has in common with
+the reference. B shares 22 of its 27 words because it's a copy of the reference with five words
+changed, and those five are exactly the ones that make it false. Answer A says the same thing in
+different words, and gets penalised for it.
+
+The case is made up. Albarán and ticket 4812 first appeared in the [article on
+RAG](/blog/de-rag-a-rag-agentico) (retrieval-augmented generation, the pattern of searching
+documents before answering), where the assistant made the same mistake as B, but you don't need to
+have read it. What matters here is the problem it exposes. Evaluating a classifier means counting
+correct answers, because every input has one correct label. A model that writes has thousands of
+correct answers, not one, and it also has wrong answers that look very much like the right ones.
+Someone has to decide, answer by answer, whether it's right.
+
+Four candidates can do that job: a reference answer to compare against, a program that checks, a
+person, and another model. Each sees different things, costs a different amount and fails in its own
+way. Pick the wrong judge and you get very precise numbers about something other than what you
+wanted to know. This article walks through all four, separates the two questions an evaluation can
+answer, and looks at when to trust the number you end up with. It's the first in a series; the next
+ones take each judge in turn.
+
+## Grading text is not counting matches
+
+A spam filter is a classifier: for each email it picks one of two labels, spam or not spam. To
+evaluate it, all you need is a thousand hand-labelled emails and a tally. **Accuracy** is the share
+of emails where the filter's label matches the person's. There are only two possible answers and
+both are known in advance, so the comparison is trivial.
+
+A language model that answers questions doesn't choose between labels. It writes. Albarán's question
+can be answered well in thousands of ways: with or without the date, with or without the reason,
+formally or casually, in one sentence or in five. Nobody can write out the list of every correct
+answer in advance. The most anyone can do is write one example, and that's what a reference is.
+
+Two more complications make this harder. First, an answer can be partly right, and "right" has
+several dimensions: an answer can be correct but confusing, complete but far too long, or clear but
+in the wrong tone for a customer. Second, the model doesn't always say the same thing. When it
+generates text, each word (or piece of a word) is drawn at random from among the likeliest
+candidates, so the same question can produce different answers on two runs. A single run is only a
+sample.
+
+[Perplexity](/cursos/llm-agents/perplejidad), the measure language models have been compared with
+since the beginning, doesn't solve this. It measures how much probability a model assigns to a text
+someone else wrote, in other words how well it predicts, word by word, what comes next. That's
+useful for comparing models on the same text, but it says nothing about what a model writes when you
+ask it for something. A model can be very good at predicting text and still not do what it's told,
+because [predicting isn't obeying](/cursos/llm-agents/predecir-no-es-obedecer). To evaluate what a
+model writes, you have to look at what it writes, and someone has to judge it.
+
+## Four judges
+
+One way to order the four judges is by how much you need to know before the answer arrives. A
+reference requires that someone has already written the answer. A program requires that you know what
+to check. A person or a model only needs to read, so either can judge any answer, including ones
+nobody anticipated. But what you gain in reach you lose in certainty: a reference or a program always
+gives the same verdict on the same answer, while a person or a model doesn't.
+
+<figure>
+  <img
+    src="/blog/evaluar-texto-generado/cuatro-jueces.en.svg"
+    alt="Four columns, one per judge, from left to right, above an arrow that runs from judging only answers that can be foreseen to judging any answer. A reference takes the answer and one written in advance, counts shared words and returns a number from 0 to 1; on the four answers, B 0.81, D 0.52, A 0.36, C 0.30: the false one comes first. A program takes the answer, extracts the yes or no and the date and compares them, and returns pass or fail; it passes answers A, C and D and fails B: right about what it checks, and only that. A person takes two answers, or one and a scale, reads and picks, and returns a preference; they are right if they know the Team plan, and if not, B sounds as sure as A. Another model takes the question, the answer and instructions, reads, reasons and scores, and returns a verdict and its reason; it is right if given the plan's terms, and tends to prefer D, the longest."
+    width="740"
+    height="298"
+  />
+  <figcaption>
+    What each judge takes in, what it does with it and what it returns, along with what it would say
+    about Albarán's four answers. Going left to right, each judge can handle more open-ended answers
+    and gives a less certain verdict.
+  </figcaption>
+</figure>
+
+## First judge: a reference answer
+
+### When the answer can be closed
+
+If the answer is a number, a letter or a name, the comparison is exact: it either matches or it
+doesn't. That's why many **benchmarks** (fixed sets of questions used to compare models) are built
+this way: they can mark themselves. [MMLU](https://arxiv.org/abs/2009.03300) (Massive Multitask
+Language Understanding, 2020) has 14,042 test questions, each with four options, spread across 57
+subjects from algebra to law, and it's marked by comparing a letter.
+[GSM8K](https://arxiv.org/abs/2110.14168) (Grade School Math, 2021) has about 8,500 primary-school
+maths problems, 1,319 of them in the test set, and it's marked by comparing the final number.
+
+The trick is to **close the question**: instead of asking for an explanation, ask for an option or a
+number. At Albarán, for the evaluation only, you could ask the assistant to start with "sí" or "no"
+(yes or no) and give the deadline in a fixed format. After that, checking is a matter of comparing
+two strings.
+
+Even a closed answer has to be read, and how you read it changes the number. In 2023, the public
+leaderboard of open models run by Hugging Face, the largest platform for sharing models, gave LLaMA
+65B, Meta's large model, noticeably less on MMLU than Meta's own paper reported, and Hugging Face
+[looked into why](https://huggingface.co/blog/open-llm-leaderboard-mmlu). It turned out there were
+three implementations of the same benchmark. The original looks at the probability the model assigns
+to each of the four letters and picks the highest. HELM (Holistic Evaluation of Language Models,
+Stanford's benchmark) lets the model generate text and compares it with the expected answer. The one
+in the *LM Evaluation Harness*, the tool the leaderboard used, which comes from the open research
+group EleutherAI, compared the probability of each full option, letter and text together. On the same
+questions with the same model, the first gave 63.6%, the second 63.7% and the third 48.8%. That's
+fifteen points of difference without touching either the model or the test.
+
+### When it can't: counting words
+
+A translation, a summary or an explanation can't be closed like that. For these, the tradition is
+**overlap** measures, which count how much text an answer shares with one or more references. The one
+that set the habit was [BLEU](https://aclanthology.org/P02-1040/) (Bilingual Evaluation Understudy),
+published by IBM researchers in 2002 for machine translation. It counts how many sequences of one,
+two, three and four words in a translation also appear in human translations of the same sentence,
+and it penalises translations that are too short. [ROUGE](https://aclanthology.org/W04-1013/)
+(Recall-Oriented Understudy for Gisting Evaluation, 2004) did the same for summaries, but from the
+other direction: how much of the reference shows up in the summary.
+
+The two measures in the first figure belong to this family. The first is **word F1**. Say the answer
+has $n_r$ words, the reference has $n_{\text{ref}}$, and the two have $c$ words in common.
+*Precision* $P$ is the share of the answer that appears in the reference, and *recall* $R$ is the
+share of the reference that appears in the answer. F1 is their harmonic mean, which is high only when
+both are:
+
+$$
+P = \frac{c}{n_r}, \qquad R = \frac{c}{n_{\text{ref}}}, \qquad F_1 = \frac{2PR}{P + R}.
+$$
+
+Capitals and punctuation are ignored, and a word counts as many times as it appears in both texts. B
+has 27 words and so does the reference; they share 22, so $P = R = 22/27$ and $F_1 = 0.81$. C has 6
+words and shares 5. Its precision is very high, $5/6 = 0.83$, but it covers only $5/27 = 0.19$ of the
+reference, so F1 stays at $0.30$. As far as this measure is concerned, being brief is a flaw. Answer
+A shares 10 of its 23 words and scores $0.40$.
+
+The second is **ROUGE-L**, the variant of ROUGE that also takes word order into account. Instead of
+counting shared words, it counts the *longest common subsequence*: the largest number of words that
+appear in both texts in the same order, even if they aren't adjacent. The formula is the same, with
+that length in place of $c$. B keeps the reference's order across all 22 shared words, so it scores
+$0.81$ again. Answer A has only 9 words in order and drops to $0.36$.
+
+<figure>
+  <img
+    src="/blog/evaluar-texto-generado/solapamiento.en.svg"
+    alt="The words of the reference and of two answers, one per box, without punctuation, all in Spanish. In green, each answer's words that form the longest sequence shared with the reference, in the same order; in red, the rest. Answer B, false, has 22 of the reference's 27 words in order: the only ones out are no, 14, acabó, 28 and agosto, exactly the words that make it false. ROUGE-L 0.81. Answer A, true, has only 9 in order, because it says the same thing in other words: “puede pedirlo” for “sí”, “treinta” for “30”, “la renovación” for “el cobro anual”. ROUGE-L 0.36."
+    width="740"
+    height="216"
+  />
+  <figcaption>
+    What ROUGE-L sees. Five of answer B's words are out of place, and they're the ones that make it
+    false; answer A lacks the exact words, even though it says the same thing.
+  </figcaption>
+</figure>
+
+In translation, counting words worked reasonably well. A sentence has few good translations and they
+share most of their words, and BLEU was designed to average over thousands of sentences, so that the
+errors on any single one cancel out. Open-ended answers meet neither condition. In 2016,
+[a study of dialogue systems](https://arxiv.org/abs/1603.08023) compared these measures with human
+judgement and found the correlation very weak on Twitter conversations and non-existent on Ubuntu
+technical support. One word can flip the meaning ("no" for "sí", 14 for 30) and hardly register,
+while a correct paraphrase loses points for not repeating the exact words.
+
+Some versions compare meanings rather than exact words. [BERTScore](https://arxiv.org/abs/1904.09675)
+(2019) pairs each word in the answer with the most similar word in the reference, using the vectors
+that a language model gives each word in context (the model is BERT, the 2018 Google model the
+measure is named after), so "treinta" (thirty) and "30" can count as the same. That helps answer A but
+doesn't fix answer B: a similarity measure still measures similarity, and B is extremely similar to
+the reference. Its error is two numbers and one word.
+
+Overlap still has its uses: when the answer can be closed (and then exact match is enough), in
+translation at corpus scale, and as a cheap alarm. If the same system's score on the same questions
+suddenly drops, something has changed. But for deciding whether a particular answer is correct, it's
+no use.
+
+## Second judge: a program that checks
+
+Instead of comparing against an example of a correct answer, you can write a check that defines what
+correct means. With code, that's the natural approach: run the tests.
+[HumanEval](https://arxiv.org/abs/2107.03374), which OpenAI released in 2021 alongside Codex, its
+code-writing model, consists of 164 hand-written programming problems, each with its own unit tests.
+A solution counts if it passes all of them, however it's written. Because a model can generate
+several different solutions, results are reported as *pass@k*: the probability that at least one of
+$k$ solutions passes. Codex solved 28.8% of the problems with one attempt and 70.2% with a hundred.
+
+With maths, you extract the final result and compare it as a number, which is what GSM8K does. With
+format, you validate: a JSON object (JavaScript Object Notation, the most common data format between
+programs) against its schema, or a date against a pattern. [IFEval](https://arxiv.org/abs/2311.07911)
+(Instruction-Following Eval, Google, 2023) extended this to instructions: about 500 prompts
+containing instructions that a program can check, of 25 kinds, such as "write more than 400 words" or
+"mention the word AI at least three times".
+
+At Albarán, a program that checks whether the answer says "sí" or "no" and which date it gives would
+pass answers A, C and D and fail B. It doesn't care about wording, length or tone, and it's exact
+about the things it does check. It has two limits.
+
+The first is that **it only checks what it was told to check.** Take the answer «No: el plazo vencía
+el 13 de septiembre y el cliente lo pidió tarde» ("No: the window closed on 13 September and the
+customer asked too late"). It's false but has the right date, so a program that only looked for the
+date would pass it. And the more you ask a program to understand, the more it turns into a brittle
+natural-language parser. The fix is the same as with the reference: close whatever can be closed. If,
+for the evaluation, the assistant returns a field with the decision and another with the deadline
+alongside its text, the program compares fields and is always right. Whatever stays in the free text
+(whether the explanation is clear, whether it makes something up) goes unjudged.
+
+The second is that **anything that can be checked can also be optimised against.** Models that reason
+before answering are trained with reinforcement learning, and checks like these are among the
+cheapest reward signals available. [DeepSeek-R1](https://arxiv.org/abs/2501.12948), the reasoning
+model that the Chinese company DeepSeek released in January 2025, learnt to reason mostly from
+rule-based rewards: whether the final answer was correct and whether it followed the requested
+format. That has two consequences for anyone running evaluations. A check a model was trained against
+no longer measures the same thing on the questions it was trained on, so evaluation questions have to
+be kept separate. And if the check can be satisfied without actually doing the task (tests that miss
+the hard case, a correct format with empty content), a model optimised against it will find the
+loophole.
+
+## Third judge: a person
+
+When what matters can't be written as a check (does the explanation make sense, does the tone suit a
+customer, does the summary capture what's important), the only thing left is reading. A person can
+judge in two ways. They can **score** each answer on a scale, say 1 to 5 for clarity, or they can
+**compare** two answers and say which one they prefer. Comparing is easier and more stable: a 4 means
+different things to different people, but "this one is better than that one" is much less ambiguous.
+It's the same reason chat models are tuned on pairwise preferences rather than scores. And the
+[Bradley–Terry model](/cursos/llm-agents/modelo-de-recompensa) turns many comparisons into a single
+score per answer: the probability that one beats another depends only on the difference between their
+scores, as in the Elo rating system used in chess.
+
+The best-known example is [Chatbot Arena](https://arxiv.org/abs/2403.04132), now called LMArena,
+which a group at the University of California, Berkeley launched in 2023. Anyone can type a question,
+get answers from two anonymous models and vote for the one they prefer. By March 2024 it had
+collected over 240,000 votes, and its ranking, computed with Bradley–Terry, is the most cited ranking
+of chat models.
+
+As a judge, a person has three limitations.
+
+**They can only judge what they know.** Someone voting in an arena doesn't know the terms of the Team
+plan. To them, B is a firm, specific, coherent answer, and nothing about it gives it away. To judge
+whether an answer is correct you need people who know the facts: at Albarán, that means the support
+staff; in medicine, doctors. Everyone else gives you preference, not correctness.
+
+**They're swayed by style.** LMArena measured this in 2024 with its [style
+control](https://www.lmsys.org/blog/2024-08-28-style-control): once the effect of length and
+formatting (headings, bold, lists) was discounted, the ranking changed, and length was the factor that
+weighed most. D would stand a good chance with almost any voter: it's long, friendly and complete, and
+part of its length comes from sentences that add nothing.
+
+**Whatever gets voted on ends up being optimised for.** In April 2025, Meta entered an experimental
+version of Llama 4 Maverick in LMArena, "optimized for conversationality", and it ranked second. The
+version Meta actually released, evaluated in the same arena a little later,
+[came in 32nd](https://techcrunch.com/2025/04/11/metas-vanilla-maverick-ai-model-ranks-below-rivals-on-a-popular-chat-benchmark/),
+and LMArena changed its rules. A study published that year,
+[*The Leaderboard Illusion*](https://arxiv.org/abs/2504.20879), counted 27 private variants that Meta
+had tested in the arena before launching Llama 4. Testing many versions and publishing the best one is
+partly a way of keeping whichever got luckiest.
+
+On top of that, people don't fully agree with each other, and they're slow and expensive. In the study
+cited in the next section, two experts comparing the same two answers picked the same one 81% of the
+time, leaving ties aside. And the experts who know the facts are exactly the ones who cost the most.
+
+## Fourth judge: another model
+
+The fourth judge is a language model. You give it the question, the answer (or two, to compare) and
+instructions on what to look for, and ask for a verdict. This is known as *LLM-as-a-judge*. Its
+standard validation came out in 2023 alongside [MT-Bench](https://arxiv.org/abs/2306.05685), a set of
+multi-turn conversation questions (hence the MT). GPT-4 as a judge agreed with human experts on 85%
+of comparisons, ties aside, which is more than the experts agreed with each other (81%). It's cheap,
+fast, can judge any answer and explains its verdict, which is why it's now the most widely used judge
+for open-ended answers.
+
+But it has biases, and the same paper measured the main ones.
+
+**Position.** When the order of the two answers was swapped, GPT-4 stuck with its verdict only 65% of
+the time, and in 30% of cases it preferred whichever answer came first. The remedy is cheap: judge
+each pair twice, once in each order, and call it a tie when the two verdicts disagree.
+
+**Length.** Judges prefer long answers. In the same paper, padding answers by repeating their content
+as a list fooled the judge 91% of the time with Claude-v1 and GPT-3.5, and 9% of the time with GPT-4.
+AlpacaEval, a benchmark that uses a model as its judge, added a [length
+correction](https://arxiv.org/abs/2404.04475) in 2024, which raised its correlation with the Chatbot
+Arena ranking from 0.94 to 0.98. At Albarán, D is the obvious candidate to win on length alone.
+
+**Self-preference.** A judge tends to rate text written by itself, or by models of its own family,
+more highly. A 2024 study of
+[judges' preference for their own text](https://arxiv.org/abs/2404.13076) found that the better a
+model is at recognising what it wrote, the more it prefers it.
+
+And, like a person, **it only knows what it's told.** Without the Team plan's terms, B is a plausible
+answer and the judge has nothing to contradict it with. Put the reference or the terms in its
+instructions and it can check. The practical rule is to give the judge whatever a human expert would
+need in order to judge.
+
+Before trusting a judge, measure it. Take a sample of fifty to a hundred answers, judge them by hand,
+judge them again with the model, and compare. The agreement rate tells you how far to trust it, and
+the disagreements show you what the judge can't see. They can almost always be fixed by changing its
+instructions or giving it more information. Once the judge is validated, it can mark the thousands of
+remaining answers, and you repeat the hand-marked sample whenever the judge or the answers change.
+
+## Two different questions
+
+An evaluation can answer two questions that tend to get mixed up.
+
+**Which model is better?** This is the question benchmarks and public leaderboards answer. They use
+fixed questions, the same for every model, so models can be compared with each other and over time.
+They're useful for researchers and for anyone choosing which models to try.
+
+**Does my system work?** This is Albarán's question, and no public benchmark can answer it, because
+none of them contains the Team plan. A system is a model plus everything around it: the instructions,
+the documents it searches, the output format, the questions its users ask. The top model on a
+leaderboard may not be the top one on Albarán's questions, and a change to the instructions can move
+the result more than switching models does.
+
+The second question can only be answered with your own questions. Thirty or fifty real ones are enough
+to start, each annotated with what a correct answer must contain: the decision, the date, the source.
+Every failure you later see with real users becomes another question. This is also where the four
+judges combine: a program for whatever can be closed (the decision, the date, the format), a model
+validated against people for whatever can't (whether the explanation is clear, whether it makes up
+terms), and people reviewing a sample from time to time.
+
+## When to trust a number
+
+Once you've chosen the judge, you're left with a number, and there are five reasons not to trust it
+blindly.
+
+### Noise
+
+A score on $n$ questions is only an estimate, measured on a sample, of the share of correct answers
+the model would get on all questions like those. If a model gets a proportion $p$ of $n$ questions
+right, its 95% margin of error is roughly
+
+$$
+\pm 1.96 \sqrt{\frac{p\,(1 - p)}{n}}.
+$$
+
+With 70% correct on 200 questions, $1.96 \sqrt{0.7 \cdot 0.3 / 200} \approx 0.064$, so the result is
+70% give or take 6.4 points. If another model scores 74% on a different set of 200 questions, the
+margin on the difference between the two is about 8.8 points, and a 4-point lead says nothing about
+which is better. Comparing them on the same questions helps, because each question's difficulty
+affects both models equally and cancels out. Miller works through this, with formulas for comparing
+models and for deciding how many questions you need, in
+[*Adding Error Bars to Evals*](https://arxiv.org/abs/2411.00640) (2024).
+
+<figure>
+  <img
+    src="/blog/evaluar-texto-generado/barras-de-error.en.svg"
+    alt="A falling curve. Horizontally, the number of questions in a test, on a log scale, from 10 to 20,000. Vertically, the 95% margin of error, in points, of a model that gets 70% right. With 50 questions, ±12.7; with 200, ±6.4; with 1,000, ±2.8; with MMLU's 14,042 questions, ±0.76. Four times the questions halve the margin."
+    width="726"
+    height="280"
+  />
+  <figcaption>
+    The margin of error on a 70% score as the number of questions grows. With 50 questions, any gap
+    under 12 points could be down to chance.
+  </figcaption>
+</figure>
+
+The margin shrinks with the square root of $n$, so four times the questions only halves it. With
+MMLU's 14,042 questions, a 70% score has a margin of 0.76 points, and a one-point gap can be real.
+With the fifty questions an evaluation of your own starts with, the margin is 12.7. The formula is an
+approximation that breaks down with few questions or with proportions near 0 or 100%, where better
+intervals exist, but the order of magnitude is what matters. And if the model generates by drawing
+words at random, running the same test again gives different numbers, so either fix the randomness or
+average several runs.
+
+### The instrument
+
+That's what happened to LLaMA 65B on MMLU: the same model on the same questions gave results fifteen
+points apart depending on how the answer was read. The same goes for the text that surrounds each
+question, the worked examples shown to the model beforehand, and how many of them there are. Two
+results are only comparable if they come from the same tool with the same settings, and the number on
+a model's spec sheet was measured by whoever built the model, with their own tool.
+
+### Contamination
+
+Benchmarks are public, they sit on the web, and models are trained on the web. If the test questions,
+or their answers, were in the training data, the score partly measures memory. In 2024 the data
+company Scale AI wrote [GSM1k](https://arxiv.org/abs/2405.00332): 1,205 new problems in the style and
+difficulty of GSM8K that had never been published. Some families of models lost up to 8 points going
+from GSM8K to GSM1k (Yi; Phi and Mistral, around 6), while frontier models such as GPT, Claude and
+Gemini barely changed. What's more, the models that found it easiest to reproduce GSM8K problems
+tended to lose the most. The defence is to use questions nobody has seen, and an evaluation of your
+own already does.
+
+### Saturation
+
+When the best models get close to the ceiling, a benchmark stops telling them apart. In June 2024,
+Anthropic and OpenAI reported the same 88.7% on MMLU for their leading models, Claude 3.5 Sonnet and
+GPT-4o. And near the ceiling, what's left also reflects the test's own mistakes. A 2024 review,
+[*Are We Done with MMLU?*](https://arxiv.org/abs/2406.04127), estimated that 6.5% of its questions
+contain errors (a wrong answer key, an ambiguous question, more than one correct option), rising to
+57% in virology. The response has been harder benchmarks. [GPQA](https://arxiv.org/abs/2311.12022)
+(Graduate-Level Google-Proof Q&A, 2023) is 448 biology, physics and chemistry questions written by
+experts to resist a Google search: experts in the field get 65% right, and skilled people from other
+fields 34%, even after spending more than half an hour searching the web.
+[*Humanity's Last Exam*](https://arxiv.org/abs/2501.14249) (2025) has 2,500 questions across dozens
+of subjects, written by specialists so that looking the answer up doesn't work. Each new benchmark
+takes less time than the last to saturate.
+
+### Goodhart
+
+"When a measure becomes a target, it ceases to be a good measure." That's Goodhart's law, in the
+wording of the anthropologist Marilyn Strathern, and it runs through everything above: the version of
+Llama 4 built for the arena, the long answers that win over judges, the checks turned into training
+rewards. The more a number decides (which model gets released, which one gets bought), the more people
+optimise against it and the less it measures. The defence is the usual one: use several judges and
+keep some questions to yourself.
+
+## What comes next
+
+Three things are changing how evaluation is done.
+
+**Rubrics.** Between a check's hard number and a judge's opinion, there's room for a list of concrete
+criteria for each question, written by experts and checked one by one by a model.
+[HealthBench](https://arxiv.org/abs/2505.08775), which OpenAI released in May 2025, has 5,000 medical
+conversations with 48,562 criteria written by 262 physicians, plus a model that checks each
+criterion. At Albarán, the rubric for ticket 4812 would say "answers yes", "gives 13 September",
+"relies on the Team plan's terms" and "doesn't invent deadlines". It combines the program's closed
+check with the judge's reading, and in 2026 it's one of the most common ways to evaluate open-ended
+answers in specialised fields.
+
+**Long tasks.** An agent, meaning a model that acts over several steps using tools, doesn't give an
+answer. It follows a path, and what gets evaluated is the state it leaves things in at the end. METR
+(Model Evaluation & Threat Research), an independent organisation that evaluates models, measures
+their [*time horizon*](https://arxiv.org/abs/2503.14499): the length of task a model completes half
+the time, measured by how long a human expert takes to do it. Between 2019 and 2025 that horizon
+doubled every seven months, and METR's [January 2026
+update](https://metr.org/blog/2026-1-29-time-horizon-1-1/) estimates that since 2023 it has doubled
+every 131 days. A task that takes hours can't be marked by counting words or by a quick read. It needs
+an environment that checks the result at the end.
+
+**Models that notice the test.** The most capable models are getting better at recognising when
+they're being evaluated. In September 2025 Anthropic
+[reported](https://transformernews.ai/p/claude-sonnet-4-5-evaluation-situational-awareness) that in
+around 13% of the conversations in its automated evaluations, Claude Sonnet 4.5 said it suspected it
+was being tested. When the instrument changes what it measures, evaluations have to look more and more
+like real use.
+
+## What to take away
+
+If you remember one thing, make it this: **evaluating what a model writes means deciding who has the
+authority to say an answer is right.** A reference only works if the answer can be closed. A program
+is right about what it checks and blind to everything else. A person or a model can judge anything,
+but each sees only what it knows, and each has its own biases. The more open-ended the answers a judge
+can handle, the less certain its verdict.
+
+| if the answer… | judge | example |
+|---|---|---|
+| is a number, an option or a name | exact match | the deadline; MMLU |
+| can be run or validated | a program | code tests; a JSON object against its schema; "under 100 words" |
+| is open-ended, but you know what it must contain | a model with a rubric, validated against people | that it says yes, relies on the plan and doesn't invent deadlines |
+| is a matter of taste | people, comparing pairs | which answer your users prefer |
+| is a translation, and there are thousands | overlap, at corpus scale | BLEU |
+
+And if you take away a few more, make them practical.
+
+**Close whatever can be closed.** If part of the answer has a correct value, ask for it in a field and
+check it with a program. Save judgement for the rest.
+
+**Don't use word overlap to decide whether an answer is correct.** It measures resemblance to an
+example. Albarán's answer B is the proof.
+
+**Validate the judge before you trust it.** Mark a sample by hand, measure the agreement rate and read
+through the disagreements. When comparing answers, judge in both orders, watch for length and give the
+judge the facts an expert would need.
+
+**Put a margin on every number and compare on the same questions.** With 200 questions, a 4-point gap
+tells you nothing.
+
+**Use public leaderboards to pick candidates, and your own questions to decide.**

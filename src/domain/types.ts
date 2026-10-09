@@ -525,6 +525,7 @@ export type BlogTopic =
   | "deep-learning"
   | "embeddings"
   | "estructuras-de-datos"
+  | "evaluacion"
   | "grafos"
   | "indices"
   | "llm"

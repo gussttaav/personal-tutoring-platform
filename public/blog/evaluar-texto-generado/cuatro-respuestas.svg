@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 312" width="740" height="312" role="img"
+ aria-label="Una pregunta, una respuesta de referencia y cuatro respuestas puntuadas contra ella. La pregunta: ¿el cliente de la incidencia 4812 tiene derecho a reembolso? La referencia, escrita por el equipo de soporte, dice que sí: el plan Equipo da 30 días desde el cobro anual del 14 de agosto, así que el plazo acaba el 13 de septiembre. La respuesta A, cierta, lo dice con otras palabras: F1 de palabras 0,40, ROUGE-L 0,36. B, falsa, copia la referencia y cambia cinco palabras para decir que no, con 14 días y el 28 de agosto: 0,81 y 0,81, la puntuación más alta. C, cierta, sólo dice sí, hasta el 13 de septiembre: 0,30 y 0,30, la más baja. D, cierta, lo explica todo en 66 palabras con un saludo y una despedida: 0,54 y 0,52. Las dos medidas ponen primera la única respuesta falsa.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); }
+  .lb { font-size: 12px; font-weight: 600; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .big { font-size: 13px; font-weight: 600; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker></defs>
+<text class="hd" x="0.0" y="12.0">PREGUNTA</text>
+<text class="big" x="0.0" y="30.0">¿El cliente de la incidencia 4812 tiene derecho a reembolso?</text>
+<text class="hd" x="0.0" y="56.0">REFERENCIA, ESCRITA POR EL EQUIPO DE SOPORTE</text>
+<text class="tx" x="0.0" y="74.0">Sí. El plan Equipo da 30 días desde el cobro anual, que se hizo el 14 de agosto, así que el plazo acaba el 13 de</text>
+<text class="tx" x="0.0" y="89.0">septiembre.</text>
+<text class="hd" x="26.0" y="122.0">RESPUESTA</text>
+<text class="hd" x="420.0" y="122.0">¿ES CIERTA?</text>
+<text class="hd" x="500.0" y="122.0">F1 DE PALABRAS</text>
+<text class="hd" x="620.0" y="122.0">ROUGE-L</text>
+<line class="gr" x1="0" y1="134.0" x2="740" y2="134.0"/>
+<text class="big" x="0.0" y="161.0" style="fill:#4edea3">A</text>
+<text class="tx" x="26.0" y="152.5">Puede pedirlo: con su plan dispone de treinta días desde que se le</text>
+<text class="tx" x="26.0" y="167.5">cobró la renovación, es decir, hasta el 13 de septiembre.</text>
+<rect class="bx m" x="420.0" y="146.0" width="58.0" height="20.0" rx="10"/>
+<text class="tx" x="449.0" y="160.0" style="text-anchor:middle;fill:#4edea3">cierta</text>
+<rect x="500.0" y="150.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="500.0" y="150.0" width="32.0" height="12" fill="#4edea3" rx="2"/>
+<text class="tx" x="586.0" y="160.0">0,40</text>
+<rect x="620.0" y="150.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="620.0" y="150.0" width="28.8" height="12" fill="#4edea3" rx="2"/>
+<text class="tx" x="706.0" y="160.0">0,36</text>
+<line class="gr" x1="0" y1="178.0" x2="740" y2="178.0"/>
+<text class="big" x="0.0" y="205.0" style="fill:#ffb4ab">B</text>
+<text class="tx" x="26.0" y="196.5">No. El plan Equipo da 14 días desde el cobro anual, que se hizo el</text>
+<text class="tx" x="26.0" y="211.5">14 de agosto, así que el plazo acabó el 28 de agosto.</text>
+<rect class="bx x" x="420.0" y="190.0" width="58.0" height="20.0" rx="10"/>
+<text class="tx" x="449.0" y="204.0" style="text-anchor:middle;fill:#ffb4ab">falsa</text>
+<rect x="500.0" y="194.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="500.0" y="194.0" width="65.2" height="12" fill="#ffb4ab" rx="2"/>
+<text class="tx" x="586.0" y="204.0">0,81</text>
+<rect x="620.0" y="194.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="620.0" y="194.0" width="65.2" height="12" fill="#ffb4ab" rx="2"/>
+<text class="tx" x="706.0" y="204.0">0,81</text>
+<line class="gr" x1="0" y1="222.0" x2="740" y2="222.0"/>
+<text class="big" x="0.0" y="249.0" style="fill:#4edea3">C</text>
+<text class="tx" x="26.0" y="248.0">Sí, hasta el 13 de septiembre.</text>
+<rect class="bx m" x="420.0" y="234.0" width="58.0" height="20.0" rx="10"/>
+<text class="tx" x="449.0" y="248.0" style="text-anchor:middle;fill:#4edea3">cierta</text>
+<rect x="500.0" y="238.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="500.0" y="238.0" width="24.2" height="12" fill="#4edea3" rx="2"/>
+<text class="tx" x="586.0" y="248.0">0,30</text>
+<rect x="620.0" y="238.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="620.0" y="238.0" width="24.2" height="12" fill="#4edea3" rx="2"/>
+<text class="tx" x="706.0" y="248.0">0,30</text>
+<line class="gr" x1="0" y1="266.0" x2="740" y2="266.0"/>
+<text class="big" x="0.0" y="293.0" style="fill:#4edea3">D</text>
+<text class="tx" x="26.0" y="284.5">¡Buena pregunta! Sí, el cliente tiene derecho al reembolso.</text>
+<text class="tx" x="26.0" y="299.5">Ferretería Ortega tiene contratado el plan Equipo, cuyas … (66 palabras)</text>
+<rect class="bx m" x="420.0" y="278.0" width="58.0" height="20.0" rx="10"/>
+<text class="tx" x="449.0" y="292.0" style="text-anchor:middle;fill:#4edea3">cierta</text>
+<rect x="500.0" y="282.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="500.0" y="282.0" width="43.0" height="12" fill="#4edea3" rx="2"/>
+<text class="tx" x="586.0" y="292.0">0,54</text>
+<rect x="620.0" y="282.0" width="80.0" height="12" fill="#3b3b3e" opacity="0.25" rx="2"/>
+<rect x="620.0" y="282.0" width="41.3" height="12" fill="#4edea3" rx="2"/>
+<text class="tx" x="706.0" y="292.0">0,52</text>
+<line class="gr" x1="0" y1="310.0" x2="740" y2="310.0"/>
+</svg>
