@@ -1,0 +1,71 @@
+/*
+ * BLOG-13 — the blog's area colours and the atoms both filtered lists share.
+ *
+ * Imported by `/blog` and `/blog/[slug]` (the index and the archive pane both colour by
+ * area), never by the root layout. Each area gets one hue, set as `--area` on anything
+ * carrying `data-area`; everything below reads it. The hues sit at the brand green's
+ * lightness so none shouts over another, and every one clears 4.5:1 on the card
+ * surface (#1c1b1d). An area's label is always printed beside its colour, so the hue is
+ * a cue, never the only signal.
+ *
+ * A new area in `BLOG_AREAS` needs its line here; without one it falls back to the
+ * brand green.
+ */
+
+[data-area] {
+  --area: var(--green);
+  --area-rgb: 78, 222, 163;
+}
+[data-area="ia"] {
+  --area: #4edea3;
+  --area-rgb: 78, 222, 163;
+}
+[data-area="bases-de-datos"] {
+  --area: #7aa7f0;
+  --area-rgb: 122, 167, 240;
+}
+[data-area="matematicas"] {
+  --area: #e8a25a;
+  --area-rgb: 232, 162, 90;
+}
+[data-area="programacion"] {
+  --area: #c3a6ff;
+  --area-rgb: 195, 166, 255;
+}
+
+/* The area pill on a card and above a post's title. */
+.blog-area-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 26px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 1px solid rgba(var(--area-rgb), 0.32);
+  border-radius: 999px;
+  background: rgba(var(--area-rgb), 0.1);
+  color: var(--area);
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.blog-area-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* An area's glyph in a filter control. Uncoloured (the "all" option) without data-area. */
+.blog-area-icon {
+  color: var(--area, var(--text-muted));
+  font-size: 1.125rem;
+  line-height: 1;
+}

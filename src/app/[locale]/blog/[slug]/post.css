@@ -304,6 +304,320 @@ body:has(.post-shell) {
   color: var(--text-dim);
 }
 
+/* ── Archive filters + pager (BLOG-13) ─────────────────────────────────── */
+
+/*
+ * The pane's area list, folded topic chips, list head and pager. One markup for both
+ * variants; the drawer only gets taller touch rows. The pager is pinned to the foot of
+ * whichever scrolls (the sticky pane, the drawer). Area hues come from
+ * `blog-taxonomy.css` (`[data-area]`), imported by the post page.
+ */
+
+.post-archive-section {
+  margin: 0 0 18px;
+}
+
+.post-archive-kicker {
+  margin: 0 0 8px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.65625rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.post-archive-areas {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-archive-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 9px 9px 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.84375rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.post-archive-area .blog-area-icon {
+  font-size: 1rem;
+}
+.post-archive-area:hover {
+  background: var(--surface-low);
+  color: var(--text);
+}
+.post-archive-area[aria-pressed="true"] {
+  border-left-color: var(--green);
+  background: rgba(78, 222, 163, 0.09);
+  color: var(--text);
+}
+.post-archive-area:focus-visible {
+  outline-offset: -2px;
+}
+.post-archive-area__label {
+  flex: 1;
+}
+.post-archive-area__count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-dim);
+}
+.post-archive-area[aria-pressed="true"] .post-archive-area__count {
+  color: var(--green);
+}
+
+.post-archive-topics-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px 0 12px;
+  box-sizing: border-box;
+  border: 1px solid rgba(60, 74, 66, 0.7);
+  border-radius: 10px;
+  background: var(--surface-low);
+  color: var(--text-muted);
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.post-archive-topics-toggle:hover {
+  border-color: rgba(78, 222, 163, 0.35);
+  color: var(--text);
+}
+.post-archive-topics-toggle:focus-visible {
+  outline-offset: -2px;
+}
+.post-archive-topics-toggle__label {
+  flex: 1;
+  text-align: left;
+}
+.post-archive-topics-toggle__current {
+  overflow: hidden;
+  max-width: 60%;
+  color: var(--green);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.post-archive-topics-toggle__chevron {
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  transition: transform 160ms ease;
+}
+.post-archive-topics-toggle[aria-expanded="true"] .post-archive-topics-toggle__chevron {
+  transform: rotate(180deg);
+}
+
+.post-archive-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+.post-archive-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--border-variant);
+  border-radius: 999px;
+  background: var(--surface-low);
+  color: var(--text-muted);
+  font-size: 0.78125rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.post-archive-chip:hover {
+  border-color: rgba(78, 222, 163, 0.35);
+  color: var(--text);
+}
+.post-archive-chip__hash,
+.post-archive-chip__count {
+  color: var(--text-dim);
+}
+.post-archive-chip__count {
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.post-archive-chip[aria-pressed="true"] {
+  border-color: var(--green);
+  background: var(--green-dim);
+  color: var(--green);
+}
+.post-archive-chip[aria-pressed="true"] .post-archive-chip__hash,
+.post-archive-chip[aria-pressed="true"] .post-archive-chip__count {
+  color: var(--green);
+}
+
+.post-archive-listhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(60, 74, 66, 0.55);
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.65625rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.post-archive-listhead__count {
+  font-size: 0.75rem;
+  letter-spacing: 0;
+  color: var(--text-muted);
+}
+
+/* The entry's area, as a dot before its date. */
+.post-archive-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 6px 1px 0;
+  border-radius: 50%;
+  background: var(--area);
+  vertical-align: middle;
+}
+
+/* Pinned to the foot of the pane, which scrolls when it is taller than the screen: the
+   page controls stay in reach however long the filters above them get. */
+.post-archive-pager {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 10px 0 2px;
+  background: var(--bg);
+  box-shadow: 0 -14px 14px -6px var(--bg);
+}
+.post-archive-pager__step {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-variant);
+  border-radius: 10px;
+  background: var(--surface-low);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.post-archive-pager__step .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+.post-archive-pager__step:hover:not(:disabled) {
+  border-color: rgba(78, 222, 163, 0.5);
+  color: var(--green);
+}
+.post-archive-pager__step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.post-archive-pager__where {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.post-archive-pager__dots {
+  display: flex;
+}
+/* A 20×20 target around an 8px dot; the current page's stretches into a bar. */
+.post-archive-pager__dot {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.post-archive-pager__dot::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border-variant);
+  transition: background 160ms ease, width 160ms ease;
+}
+.post-archive-pager__dot:hover::before {
+  background: var(--text-dim);
+}
+.post-archive-pager__dot[aria-current="page"] {
+  width: 26px;
+}
+.post-archive-pager__dot[aria-current="page"]::before {
+  width: 18px;
+  border-radius: 4px;
+  background: var(--green);
+}
+
+/* Drawer: taller touch rows, and the pager stays at the drawer's foot. */
+.post-archive-nav--drawer .post-archive-area {
+  min-height: 40px;
+}
+.post-archive-nav--drawer .post-archive-topics-toggle {
+  min-height: 44px;
+}
+.post-archive-nav--drawer .post-archive-chip {
+  height: 34px;
+}
+.post-archive-nav--drawer .post-archive-pager {
+  bottom: calc(-32px - env(safe-area-inset-bottom, 0px));
+  margin: 12px -16px 0;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid rgba(60, 74, 66, 0.5);
+  background: var(--surface);
+  box-shadow: none;
+}
+.post-archive-nav--drawer .post-archive-pager__step {
+  width: 44px;
+  height: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-archive-area,
+  .post-archive-topics-toggle,
+  .post-archive-topics-toggle__chevron,
+  .post-archive-pager__step,
+  .post-archive-pager__dot::before {
+    transition: none;
+  }
+}
+
 /*
  * PostArchiveMobile.tsx — the floating button + drawer, <1024px. Rendered as a
  * SIBLING of <main>: main is `position: relative; z-index: 1` (a stacking context),
@@ -438,6 +752,42 @@ html:has(.post-archive-drawer) {
   .post-header {
     margin-top: 0;
   }
+}
+
+/* BLOG-13: the post's areas and topics above its title, each a link into the index. */
+.post-taxonomy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 18px;
+}
+
+.post-taxonomy .blog-area-badge {
+  height: 30px;
+  transition: background 160ms ease;
+}
+
+.post-taxonomy .blog-area-badge:hover {
+  background: rgba(var(--area-rgb), 0.18);
+}
+
+.post-taxonomy__topic {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: var(--surface-container);
+  color: var(--text-dim);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.post-taxonomy__topic:hover {
+  background: var(--surface-high);
+  color: var(--text);
 }
 
 .post-title {

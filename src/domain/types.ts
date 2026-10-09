@@ -500,13 +500,40 @@ export interface Post {
   /** BLOG-02 — further reading, rendered collapsed at the foot of the post by
    *  `PostReading`. Required, may be empty; capped at `READING_MAX_POST`. */
   reading:  ReadingItem[];
-  /** Required, may be empty. No tag pages yet — the field exists so posts are
-   *  authored with their subject stated, not retrofitted when tag pages land. */
-  tags:     string[];
+  /** BLOG-13 — the post's broad subject, one or two of the closed list in
+   *  `BLOG_AREAS`; the first is the one its card shows. The index and the archive pane
+   *  filter by it. Required; empty only on a draft. */
+  areas:    BlogArea[];
+  /** Required, may be empty. BLOG-13: the index's and the archive pane's "topic"
+   *  filter, from the closed list in `BLOG_TOPICS` (each has a label in the messages). */
+  tags:     BlogTopic[];
+  /** BLOG-13 — a figure of the post itself (`/blog/<slug>/<file>`), shown as its card's
+   *  cover on the index. Optional: a card without one shows its area's icon instead. */
+  cover?:   string;
   /** BLOG-AI-NOTE-01 — the post's images were generated with AI. Picks the wording of
    *  the AI-use note at the foot of the article. Required. */
   aiImages: boolean;
 }
+
+/** BLOG-13 — the blog's areas, in display order in `BLOG_AREAS` (src/constants/blog.ts).
+ *  Locale-invariant ids: they are URL values (`/blog?area=ia`) and message keys. */
+export type BlogArea = "ia" | "bases-de-datos" | "matematicas" | "programacion";
+
+/** BLOG-13 — the closed list of post tags, listed in `BLOG_TOPICS`. */
+export type BlogTopic =
+  | "agentes"
+  | "deep-learning"
+  | "embeddings"
+  | "estructuras-de-datos"
+  | "grafos"
+  | "indices"
+  | "llm"
+  | "nlp"
+  | "optimizacion"
+  | "rag"
+  | "rendimiento"
+  | "sql"
+  | "tokenizacion";
 
 /** A minimal post pointer used for prev/next navigation. */
 export interface PostRef {

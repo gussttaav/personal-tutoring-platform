@@ -18,6 +18,7 @@
 import { z } from "zod";
 import { SUPPORTED_TIMEZONES } from "@/lib/timezones";
 import { CONTENT_KEY_MAX, CONTENT_KEY_RE, CONTENT_TYPES, parseContentKey } from "@/lib/content/content-key";
+import { BLOG_AREAS, BLOG_TOPICS } from "@/constants/blog";
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
@@ -631,6 +632,23 @@ const IsoDate = z
     { message: "is not a real calendar date" },
   );
 
+/** BLOG-13: a list refinement reporting each repeated value (tags, areas). */
+function noDuplicates(what: string) {
+  return (values: readonly string[], ctx: z.RefinementCtx) => {
+    const seen = new Set<string>();
+    for (const [i, value] of values.entries()) {
+      if (seen.has(value)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate ${what} "${value}"`,
+          path:    [i],
+        });
+      }
+      seen.add(value);
+    }
+  };
+}
+
 export const PostFrontmatterSchema = z.strictObject({
   slug:    z.string().min(1),
   title:   z.string().min(1),
@@ -660,25 +678,30 @@ export const PostFrontmatterSchema = z.strictObject({
       seen.add(item.url);
     }
   }),
+  // BLOG-13: one or two areas, the first being the one the post's card shows. Required;
+  // the refinement below lets only a DRAFT leave it empty, so a published post always
+  // appears under some area filter.
+  areas:   z.array(z.enum(BLOG_AREAS)).max(2).superRefine(noDuplicates("area")),
   // Required like the lesson schema's `quiz`/`reading`: a post with nothing to tag
   // writes `tags: []` and says so, rather than defaulting to "none" by omission.
-  tags:    z.array(z.string().min(1)).superRefine((tags, ctx) => {
-    const seen = new Set<string>();
-    for (const [i, tag] of tags.entries()) {
-      if (seen.has(tag)) {
-        ctx.addIssue({
-          code:    z.ZodIssueCode.custom,
-          message: `duplicate tag "${tag}"`,
-          path:    [i],
-        });
-      }
-      seen.add(tag);
-    }
-  }),
+  // BLOG-13: a closed list (`BLOG_TOPICS`), because every tag is a filter chip that
+  // needs a label in both message files — a free-form tag would render as its id.
+  tags:    z.array(z.enum(BLOG_TOPICS)).superRefine(noDuplicates("tag")),
+  // BLOG-13: one of the post's own figures, `/blog/<slug>/<file>`, as its index card's
+  // cover. The registry checks the slug part; `validateAllBlogContent` that the file exists.
+  cover:   z.string().regex(/^\/blog\/[a-z0-9-]+\/[\w.-]+\.(svg|png|webp|jpe?g)$/, "must be /blog/<slug>/<file>.(svg|png|webp|jpg)").optional(),
   // BLOG-AI-NOTE-01: whether the post's images were generated with AI. Drives the
   // images clause of the AI-use note at the foot of the article (the text clause is
   // always shown). Required, like `tags`: every post states it rather than defaulting.
   aiImages: z.boolean(),
+}).superRefine((post, ctx) => {
+  if (!post.draft && post.areas.length === 0) {
+    ctx.addIssue({
+      code:    z.ZodIssueCode.custom,
+      message: "a published post needs at least one area",
+      path:    ["areas"],
+    });
+  }
 });
 
 export type PostFrontmatterInput = z.infer<typeof PostFrontmatterSchema>;

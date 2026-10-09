@@ -53,7 +53,11 @@ export default function ArticleStructuredData({
       name: "Gustavo Torres",
       url: BASE,
     },
-    ...(post.tags.length > 0 ? { keywords: post.tags.join(", ") } : null),
+    // BLOG-13: the post's areas lead its keywords (a broad subject like "bases-de-datos"
+    // moved from `tags` to `areas` when the two-level taxonomy landed).
+    ...(post.areas.length + post.tags.length > 0
+      ? { keywords: [...post.areas, ...post.tags].join(", ") }
+      : null),
   };
 
   return (

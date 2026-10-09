@@ -11,6 +11,7 @@ export const ICON_NAMES = [
   "analytics",
   "arrow_back",
   "arrow_forward",
+  "auto_awesome",
   "block",
   "blur_on",
   "bolt",
@@ -33,6 +34,7 @@ export const ICON_NAMES = [
   "credit_card",
   "credit_card_off",
   "dashboard",
+  "database",
   "delete_outline",
   "description",
   "dns",
@@ -48,6 +50,7 @@ export const ICON_NAMES = [
   "expand_more",
   "flag",
   "forum",
+  "functions",
   "grid_view",
   "group",
   "groups",
@@ -114,3 +117,6 @@ export const ICON_NAMES = [
   "warning",
   "wifi_off",
 ] as const;
+
+/** BLOG-13: one of the subset's glyphs, for a name that reaches an icon only at runtime. */
+export type IconName = (typeof ICON_NAMES)[number];

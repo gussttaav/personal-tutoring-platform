@@ -25,6 +25,10 @@
  *
  * A locale with no posts is NORMAL, not exceptional: every path treats a missing
  * locale dir as "empty" and returns `[]`.
+ *
+ * BLOG-13: a post's `cover` must be one of its OWN figures (`/blog/<slug>/…`), checked
+ * here; that the file is really under `public/` is checked by `validateAllBlogContent`
+ * (CI), which knows where `public/` is — a fixture tree in a test has none.
  */
 
 import fs from "node:fs";
@@ -36,6 +40,7 @@ import { PostFrontmatterSchema } from "@/lib/schemas";
 import type { Post, PostRef } from "@/domain/types";
 
 const DEFAULT_CONTENT_ROOT = path.join(process.cwd(), "content", "blog");
+const DEFAULT_PUBLIC_ROOT = path.join(process.cwd(), "public");
 
 /** slug → post, for a single locale. Drafts included; the `list*` selectors filter. */
 type LocaleRegistry = Map<string, Post>;
@@ -94,6 +99,13 @@ export function buildRegistry(contentRoot: string, locale: string): LocaleRegist
       );
     }
 
+    // BLOG-13: a cover borrowed from another post would show the wrong article's figure.
+    if (post.cover && !post.cover.startsWith(`/blog/${post.slug}/`)) {
+      throw new Error(
+        `${filePath}: cover "${post.cover}" is not one of this post's figures (/blog/${post.slug}/…)`,
+      );
+    }
+
     if (registry.has(post.slug)) {
       throw new Error(`${filePath}: duplicate post slug "${post.slug}" within the locale`);
     }
@@ -106,14 +118,25 @@ export function buildRegistry(contentRoot: string, locale: string): LocaleRegist
 /**
  * Validate every locale present under `contentRoot`, throwing on the first failure.
  * Used by `scripts/lint-content.ts` (and CI) as the standalone enforcement point.
- * No-op when there is no content.
+ * No-op when there is no content. BLOG-13: also that every `cover` exists under
+ * `publicRoot`, since a missing one renders as a broken image on the index.
  */
-export function validateAllBlogContent(contentRoot: string = DEFAULT_CONTENT_ROOT): void {
+export function validateAllBlogContent(
+  contentRoot: string = DEFAULT_CONTENT_ROOT,
+  publicRoot: string = DEFAULT_PUBLIC_ROOT,
+): void {
   if (!fs.existsSync(contentRoot)) return;
 
   for (const dir of fs.readdirSync(contentRoot, { withFileTypes: true })) {
     if (!dir.isDirectory() || dir.name.startsWith("_")) continue;
-    buildRegistry(contentRoot, dir.name); // throws on error
+    const registry = buildRegistry(contentRoot, dir.name); // throws on error
+    for (const post of registry.values()) {
+      if (post.cover && !fs.existsSync(path.join(publicRoot, post.cover))) {
+        throw new Error(
+          `${path.join(contentRoot, dir.name, `${post.slug}.mdx`)}: cover "${post.cover}" does not exist under public/`,
+        );
+      }
+    }
   }
 }
 

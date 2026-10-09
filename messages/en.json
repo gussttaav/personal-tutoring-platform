@@ -882,16 +882,32 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "When something intrigues me, <accent>I dig into it and write it up</accent>",
-      "subtitle": "Articles on programming, mathematics and AI. Not the how, but the why.",
+      "heading": "Experiences, reflections and <accent>what I keep learning</accent>",
+      "subtitle": "Articles on programming, mathematics and AI with an analytical eye.",
       "empty": {
         "title": "No articles yet",
         "body": "I'm writing the first one. If you'd like to hear about it when it lands, there's a button just below."
+      },
+      "results": {
+        "count": "{count, plural, one {# article} other {# articles}}",
+        "inAll": "across all areas",
+        "inArea": "in {area}",
+        "page": "Page {page} of {pages}",
+        "range": "Articles {first}–{last} of {total}",
+        "rangeOne": "Article {first} of {total}"
+      },
+      "featured": "Latest",
+      "pagination": {
+        "label": "Blog pages",
+        "newer": "Newer",
+        "older": "Older",
+        "page": "Page {page}"
       }
     },
     "card": {
       "readingTime": "{minutes} min read",
-      "cta": "Read the article"
+      "cta": "Read the article",
+      "minutes": "{minutes} min"
     },
     "post": {
       "backToIndex": "Back to the blog",
@@ -907,14 +923,21 @@
         "title": "A note on AI",
         "withImages": "The images in this article were generated with AI, and the text was edited and proofread with its help. The content was guided, corrected and carefully reviewed by the author.",
         "textOnly": "The text of this article was edited and proofread with the help of AI. The content was guided, corrected and carefully reviewed by the author."
-      }
+      },
+      "taxonomy": "Article areas and topics"
     },
     "archive": {
       "label": "Blog articles",
       "allArticles": "All articles",
       "minutes": "{minutes} min",
       "openDrawer": "Open the article list",
-      "closeDrawer": "Close the article list"
+      "closeDrawer": "Close the article list",
+      "list": "Articles",
+      "pagination": "List pages",
+      "pageOf": "Page {page} of {pages}",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "goToPage": "Page {page}"
     },
     "reading": {
       "title": "Going deeper",
@@ -948,6 +971,38 @@
       "unsubscribe": "Stop notifications",
       "error": "Something went wrong. Please try again.",
       "retry": "Retry"
+    },
+    "areas": {
+      "ia": "Artificial intelligence",
+      "bases-de-datos": "Databases",
+      "matematicas": "Mathematics",
+      "programacion": "Programming"
+    },
+    "topics": {
+      "agentes": "Agents",
+      "deep-learning": "Deep learning",
+      "embeddings": "Embeddings",
+      "estructuras-de-datos": "Data structures",
+      "grafos": "Graphs",
+      "indices": "Indexes",
+      "llm": "LLMs",
+      "nlp": "NLP",
+      "optimizacion": "Optimisation",
+      "rag": "RAG",
+      "rendimiento": "Performance",
+      "sql": "SQL",
+      "tokenizacion": "Tokenisation"
+    },
+    "filters": {
+      "label": "Filter articles",
+      "area": "Area",
+      "topic": "Topic",
+      "areas": "Areas",
+      "topics": "Topics",
+      "all": "All",
+      "moreTopics": "+{count} topics",
+      "fewerTopics": "Fewer topics",
+      "clear": "Clear filters"
     }
   },
   "courses": {

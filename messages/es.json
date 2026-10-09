@@ -882,16 +882,32 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "Cuando algo me intriga, <accent>lo investigo y lo escribo</accent>",
-      "subtitle": "Artículos sobre programación, matemáticas e IA. No el cómo, sino el por qué.",
+      "heading": "Experiencias, reflexiones y <accent>lo que voy aprendiendo</accent>",
+      "subtitle": "Artículos sobre programación, matemáticas e IA con una mirada analítica.",
       "empty": {
         "title": "Todavía no hay artículos",
         "body": "Estoy escribiendo el primero. Si quieres que te avise cuando se publique, tienes el botón aquí abajo."
+      },
+      "results": {
+        "count": "{count, plural, one {# artículo} other {# artículos}}",
+        "inAll": "en todas las áreas",
+        "inArea": "en {area}",
+        "page": "Página {page} de {pages}",
+        "range": "Artículos {first}–{last} de {total}",
+        "rangeOne": "Artículo {first} de {total}"
+      },
+      "featured": "Lo último",
+      "pagination": {
+        "label": "Páginas del blog",
+        "newer": "Más recientes",
+        "older": "Más antiguos",
+        "page": "Página {page}"
       }
     },
     "card": {
       "readingTime": "{minutes} min de lectura",
-      "cta": "Leer el artículo"
+      "cta": "Leer el artículo",
+      "minutes": "{minutes} min"
     },
     "post": {
       "backToIndex": "Volver al blog",
@@ -907,14 +923,21 @@
         "title": "Nota sobre el uso de IA",
         "withImages": "Las imágenes de este artículo se han generado con IA y el texto se ha editado y corregido con su ayuda. El contenido lo ha guiado, corregido y revisado minuciosamente el autor.",
         "textOnly": "El texto de este artículo se ha editado y corregido con ayuda de IA. El contenido lo ha guiado, corregido y revisado minuciosamente el autor."
-      }
+      },
+      "taxonomy": "Áreas y temas del artículo"
     },
     "archive": {
       "label": "Artículos del blog",
       "allArticles": "Todos los artículos",
       "minutes": "{minutes} min",
       "openDrawer": "Abrir la lista de artículos",
-      "closeDrawer": "Cerrar la lista de artículos"
+      "closeDrawer": "Cerrar la lista de artículos",
+      "list": "Artículos",
+      "pagination": "Páginas de la lista",
+      "pageOf": "Página {page} de {pages}",
+      "prevPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "goToPage": "Página {page}"
     },
     "reading": {
       "title": "Para profundizar",
@@ -948,6 +971,38 @@
       "unsubscribe": "No recibir notificaciones",
       "error": "Algo ha fallado. Inténtalo de nuevo.",
       "retry": "Reintentar"
+    },
+    "areas": {
+      "ia": "Inteligencia artificial",
+      "bases-de-datos": "Bases de datos",
+      "matematicas": "Matemáticas",
+      "programacion": "Programación"
+    },
+    "topics": {
+      "agentes": "Agentes",
+      "deep-learning": "Deep learning",
+      "embeddings": "Embeddings",
+      "estructuras-de-datos": "Estructuras de datos",
+      "grafos": "Grafos",
+      "indices": "Índices",
+      "llm": "LLMs",
+      "nlp": "NLP",
+      "optimizacion": "Optimización",
+      "rag": "RAG",
+      "rendimiento": "Rendimiento",
+      "sql": "SQL",
+      "tokenizacion": "Tokenización"
+    },
+    "filters": {
+      "label": "Filtrar artículos",
+      "area": "Área",
+      "topic": "Tema",
+      "areas": "Áreas",
+      "topics": "Temas",
+      "all": "Todas",
+      "moreTopics": "+{count} temas",
+      "fewerTopics": "Menos temas",
+      "clear": "Quitar filtros"
     }
   },
   "courses": {

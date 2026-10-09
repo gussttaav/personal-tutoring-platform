@@ -26,6 +26,9 @@ interface Frontmatter {
   draft?: boolean;
   minutes?: number;
   tags?: string[];
+  /** BLOG-13. `null` omits the key; default `["ia"]`. */
+  areas?: string[] | null;
+  cover?: string;
   updated?: string;
   reading?: unknown[];
   /** `null` omits the key, for the BLOG-AI-NOTE-01 "required" case. */
@@ -42,6 +45,8 @@ function postFile(fm: Frontmatter): string {
     summary: "Resumen.",
     draft:   fm.draft ?? false,
     reading: fm.reading ?? [],
+    ...(fm.areas === null ? null : { areas: fm.areas ?? ["ia"] }),
+    ...(fm.cover ? { cover: fm.cover } : null),
     tags:    fm.tags ?? [],
     ...(fm.aiImages === null ? null : { aiImages: fm.aiImages ?? false }),
   };
@@ -176,6 +181,7 @@ describe("buildRegistry validation", () => {
         'summary: "Resumen."',
         "draft: false",
         "reading: []",
+        'areas: ["ia"]',
         "tags: []",
         "aiImages: false",
         "---",
@@ -260,6 +266,83 @@ describe("buildRegistry validation", () => {
   });
 });
 
+// BLOG-13 — areas, closed-list topics and covers feed the index and pane filters.
+describe("buildRegistry taxonomy (BLOG-13)", () => {
+  it("carries areas, tags and cover through to the post", () => {
+    const root = makeTree([
+      [
+        "es",
+        "post.mdx",
+        {
+          slug:  "post",
+          date:  "2026-01-01",
+          areas: ["bases-de-datos", "ia"],
+          tags:  ["indices", "embeddings"],
+          cover: "/blog/post/figura.svg",
+        },
+      ],
+    ]);
+
+    expect(buildRegistry(root, "es").get("post")).toMatchObject({
+      areas: ["bases-de-datos", "ia"],
+      tags:  ["indices", "embeddings"],
+      cover: "/blog/post/figura.svg",
+    });
+  });
+
+  it("rejects a published post without areas, so it would sit under no filter", () => {
+    const root = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", areas: [] }]]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/areas: a published post needs at least one area/);
+  });
+
+  it("lets a draft leave its areas empty", () => {
+    const root = makeTree([
+      ["es", "post.mdx", { slug: "post", date: "2026-01-01", draft: true, areas: [] }],
+    ]);
+
+    expect(buildRegistry(root, "es").get("post")?.areas).toEqual([]);
+  });
+
+  it("rejects a post that does not declare areas at all", () => {
+    const root = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", areas: null }]]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/areas/);
+  });
+
+  it("rejects an unknown area, a third area and a repeated one", () => {
+    const unknown = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", areas: ["fisica"] }]]);
+    const three = makeTree([
+      ["es", "post.mdx", { slug: "post", date: "2026-01-01", areas: ["ia", "matematicas", "programacion"] }],
+    ]);
+    const twice = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", areas: ["ia", "ia"] }]]);
+
+    expect(() => buildRegistry(unknown, "es")).toThrow(/invalid frontmatter — areas\.0/);
+    expect(() => buildRegistry(three, "es")).toThrow(/invalid frontmatter — areas/);
+    expect(() => buildRegistry(twice, "es")).toThrow(/duplicate area "ia"/);
+  });
+
+  it("rejects a tag outside the topic list, which would have no label to show", () => {
+    const root = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", tags: ["cocina"] }]]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/invalid frontmatter — tags\.0/);
+  });
+
+  it("rejects a cover that is another post's figure", () => {
+    const root = makeTree([
+      ["es", "post.mdx", { slug: "post", date: "2026-01-01", cover: "/blog/otro/figura.svg" }],
+    ]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/is not one of this post's figures/);
+  });
+
+  it("rejects a cover outside /blog/<slug>/", () => {
+    const root = makeTree([["es", "post.mdx", { slug: "post", date: "2026-01-01", cover: "/og.png" }]]);
+
+    expect(() => buildRegistry(root, "es")).toThrow(/invalid frontmatter — cover/);
+  });
+});
+
 describe("validateAllBlogContent", () => {
   it("walks every locale directory present, not just the default one", () => {
     const root = makeTree([
@@ -268,6 +351,19 @@ describe("validateAllBlogContent", () => {
     ]);
 
     expect(() => validateAllBlogContent(root)).toThrow(/en[/\\]otro\.mdx/);
+  });
+
+  it("rejects a cover that is not under public/ (BLOG-13)", () => {
+    const root = makeTree([
+      ["es", "post.mdx", { slug: "post", date: "2026-01-01", cover: "/blog/post/figura.svg" }],
+    ]);
+    const publicRoot = fs.mkdtempSync(path.join(os.tmpdir(), "blog-public-"));
+
+    expect(() => validateAllBlogContent(root, publicRoot)).toThrow(/does not exist under public/);
+
+    fs.mkdirSync(path.join(publicRoot, "blog", "post"), { recursive: true });
+    fs.writeFileSync(path.join(publicRoot, "blog", "post", "figura.svg"), "<svg/>");
+    expect(() => validateAllBlogContent(root, publicRoot)).not.toThrow();
   });
 
   it("passes on the real content tree", () => {
