@@ -1759,6 +1759,23 @@
         "sliderB": "Reward of B",
         "sliderC": "c, added to both",
         "shiftNote": "c moves both rewards along the line. The margin, the probability and the loss stay put."
+      },
+      "dpo-loss": {
+        "groupAria": "The DPO loss of one comparison: the log ratios of the preferred and the rejected response, β, the loss and the gradient factor",
+        "planeTitle": "The log ratios log π<sub>θ</sub>/π<sub>ref</sub> of the two responses, with the factor σ(r<sub>θ</sub>(y<sub>l</sub>) − r<sub>θ</sub>(y<sub>w</sub>)) in colour: strong where the comparison pushes, clear where it goes quiet",
+        "planeAria": "Plane of the two log ratios. The comparison sits at {lw} for the preferred response and {ll} for the rejected one; the factor is {f} and the loss {loss} nats.",
+        "axisW": "preferred",
+        "axisL": "rejected",
+        "reference": "reference",
+        "legend": "The three diagonals mark a factor of 0.9, 0.5 and 0.1, with losses of {l9}, {l5} and {l1} nats. The 0.5 one runs through the reference, where every training run starts.",
+        "readRewards": "Implicit rewards: r<sub>θ</sub>(y<sub>w</sub>) = <strong>{rw}</strong> and r<sub>θ</sub>(y<sub>l</sub>) = <strong>{rl}</strong>, a margin of <strong>{m}</strong>.",
+        "readLoss": "The comparison costs <strong>{loss}</strong> nats, and its factor is <strong>{f}</strong>.",
+        "readPush": "A descent step raises log π<sub>θ</sub>(y<sub>w</sub>) and lowers log π<sub>θ</sub>(y<sub>l</sub>) with a push of β · factor = <strong>{push}</strong>.",
+        "quietOutside": "At this β, the 0.1 diagonal falls outside the plane: the comparison does not go quiet until the two log ratios are {gap} nats apart.",
+        "sliderW": "Log ratio of the preferred response",
+        "sliderL": "Log ratio of the rejected response",
+        "sliderBeta": "β",
+        "shiftNote": "Raise or lower both log ratios together and the point travels along a diagonal of one colour: the loss only sees their difference."
       }
     }
   },

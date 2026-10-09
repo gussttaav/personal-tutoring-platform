@@ -1759,6 +1759,23 @@
         "sliderB": "Recompensa de B",
         "sliderC": "c, sumada a las dos",
         "shiftNote": "c mueve las dos recompensas por la recta. El margen, la probabilidad y la pérdida no cambian."
+      },
+      "dpo-loss": {
+        "groupAria": "La pérdida de DPO de una comparación: los logaritmos del cociente de la preferida y de la rechazada, β, la pérdida y el factor del gradiente",
+        "planeTitle": "Los logaritmos del cociente log π<sub>θ</sub>/π<sub>ref</sub> de las dos respuestas, con el factor σ(r<sub>θ</sub>(y<sub>l</sub>) − r<sub>θ</sub>(y<sub>w</sub>)) en color: intenso donde la comparación empuja, transparente donde se apaga",
+        "planeAria": "Plano de los dos logaritmos del cociente. La comparación está en {lw} para la preferida y {ll} para la rechazada; el factor vale {f} y la pérdida {loss} nats.",
+        "axisW": "preferida",
+        "axisL": "rechazada",
+        "reference": "referencia",
+        "legend": "Las tres diagonales marcan el factor 0.9, 0.5 y 0.1, con pérdida {l9}, {l5} y {l1} nats. La del 0.5 pasa por la referencia, donde empieza todo entrenamiento.",
+        "readRewards": "Recompensas implícitas: r<sub>θ</sub>(y<sub>w</sub>) = <strong>{rw}</strong> y r<sub>θ</sub>(y<sub>l</sub>) = <strong>{rl}</strong>, con margen <strong>{m}</strong>.",
+        "readLoss": "La comparación cuesta <strong>{loss}</strong> nats, y su factor vale <strong>{f}</strong>.",
+        "readPush": "Un paso de descenso sube log π<sub>θ</sub>(y<sub>w</sub>) y baja log π<sub>θ</sub>(y<sub>l</sub>) con un empuje de β · factor = <strong>{push}</strong>.",
+        "quietOutside": "Con esta β, la diagonal del 0.1 queda fuera del plano: la comparación no se apaga hasta que los dos logaritmos se separan {gap} nats.",
+        "sliderW": "Logaritmo del cociente de la preferida",
+        "sliderL": "Logaritmo del cociente de la rechazada",
+        "sliderBeta": "β",
+        "shiftNote": "Sube o baja los dos logaritmos a la vez y el punto recorre una diagonal del mismo color: la pérdida sólo ve su diferencia."
       }
     }
   },
