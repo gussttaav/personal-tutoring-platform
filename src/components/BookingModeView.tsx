@@ -21,6 +21,14 @@
  * whole pack-booking screen, like the wizard is for single sessions.
  *
  * BOOKING-ATTRIBUTION-01: a new (not rescheduled) pack class fires `trackBooking("pack")`.
+ *
+ * BOOKING-EXIT-01: `onExit` is `BookingLayout`'s top exit bar («Salir de la reserva»), the same
+ * control the single-session wizard shows. The calendar card's bottom bar held only
+ * «Cambiar tipo de sesión» (which called `onExit`), so the bar is gone with it.
+ *
+ * BOOKING-STEPS-01: the exit is no longer the layout's top bar: this screen has no step indicator
+ * to carry it (the wizard's sits in `WizardProgress`), so it is `BookingSidebar`'s `footer`, below
+ * the sidebar card. Disabled while the booking request is in flight.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -35,6 +43,7 @@ import { trackBooking } from "@/lib/booking-analytics";
 import WeeklyCalendar, { type SelectedSlot } from "@/components/WeeklyCalendar";
 import BookingLayout from "@/components/booking/BookingLayout";
 import BookingSidebar from "@/components/booking/BookingSidebar";
+import BookingExitButton from "@/components/booking/BookingExitButton";
 import { useScheduleConfig } from "@/components/booking/ScheduleProvider";
 import type { StudentInfo } from "@/domain/types";
 
@@ -300,6 +309,13 @@ export default function BookingModeView({
           packTotal={packTotal ?? remaining}
           isReschedule={isReschedule}
           userTz={userTz}
+          footer={
+            <BookingExitButton
+              onClick={onExit}
+              disabled={phase === "confirming"}
+              className="w-full justify-center"
+            />
+          }
         />
 
         {/* ── Calendar area ── */}
@@ -332,36 +348,6 @@ export default function BookingModeView({
                 refreshToken={calendarRefreshToken}
               />
             )}
-          </div>
-
-          {/* ── Actions bar ── */}
-          <div
-            className="p-8 flex flex-col md:flex-row items-center justify-between gap-6"
-            style={{ borderTop: "1px solid rgba(255,255,255,0.05)", background: "#1c1b1d" }}
-          >
-            <button
-              onClick={onExit}
-              className="flex items-center gap-2 font-semibold transition-colors group"
-              style={{ color: "#bbcabf", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                className="group-hover:-translate-x-1 transition-transform"
-                aria-hidden="true"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-              <span>{t("changeSessionType")}</span>
-            </button>
-
           </div>
         </div>
       </div>

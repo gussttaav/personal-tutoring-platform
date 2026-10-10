@@ -15,6 +15,10 @@
  *            rendered on a full booking page (SingleSessionBooking paying phase).
  *   "inline" — form content only, no outer card. Used inside PackModal which
  *            already provides its own card container.
+ *
+ * BOOKING-STEPS-01: `onProcessingChange` reports while `confirmPayment` is in flight, so the
+ * wizard can lock its step indicator and exit — unmounting the form mid-confirmation would hide
+ * the outcome of a payment that may still succeed.
  */
 
 import { useState } from "react";
@@ -81,6 +85,7 @@ interface CheckoutFormProps {
   variant:           "card" | "inline";
   onSuccess: (paymentIntentId: string) => void;
   onCancel:  () => void;
+  onProcessingChange?: (processing: boolean) => void;
 }
 
 function CheckoutForm({
@@ -91,6 +96,7 @@ function CheckoutForm({
   variant,
   onSuccess,
   onCancel,
+  onProcessingChange,
 }: CheckoutFormProps) {
   const t        = useTranslations("payment.form");
   const schedule = useScheduleConfig();
@@ -104,6 +110,7 @@ function CheckoutForm({
     e.preventDefault();
     if (!stripe || !elements) return;
     setProcessing(true);
+    onProcessingChange?.(true);
     setError("");
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
@@ -117,6 +124,7 @@ function CheckoutForm({
     if (stripeError) {
       setError(stripeError.message ?? "Error al procesar el pago.");
       setProcessing(false);
+      onProcessingChange?.(false);
     } else if (paymentIntent) {
       onSuccess(paymentIntent.id);
     }
@@ -351,6 +359,8 @@ interface PaymentFormProps {
   variant?:          "card" | "inline";
   onSuccess: (paymentIntentId: string) => void;
   onCancel:  () => void;
+  /** True while the payment is being confirmed (BOOKING-STEPS-01). */
+  onProcessingChange?: (processing: boolean) => void;
 }
 
 export default function PaymentForm({
@@ -362,6 +372,7 @@ export default function PaymentForm({
   variant = "card",
   onSuccess,
   onCancel,
+  onProcessingChange,
 }: PaymentFormProps) {
   const options: StripeElementsOptions = { clientSecret, appearance };
 
@@ -375,6 +386,7 @@ export default function PaymentForm({
         variant={variant}
         onSuccess={onSuccess}
         onCancel={onCancel}
+        onProcessingChange={onProcessingChange}
       />
     </Elements>
   );

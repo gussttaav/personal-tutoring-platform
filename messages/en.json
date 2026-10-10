@@ -404,7 +404,6 @@
       "joinSession": "Join session →",
       "cancelBooking": "Cancel this booking",
       "close": "Close",
-      "changeSessionType": "Change session type",
       "bookingProgress": "Booking {dateLabel} at {label}…",
       "verifyingAvailability": "Checking availability…",
       "errorTitle": "Something went wrong",
@@ -481,7 +480,6 @@
       "bookingProgress": "Booking {dateLabel} at {label}…",
       "verifyingAvailability": "Checking availability…",
       "hourUnavailableNotice": "The time you picked no longer has a full hour free. Please choose another available slot in the calendar.",
-      "changeSessionType": "Change session type",
       "confirmReschedule": "Confirm reschedule",
       "confirmPay": "Confirm payment",
       "confirmBook": "Confirm booking",
@@ -527,10 +525,15 @@
         "validity": "Valid for {days} days"
       }
     },
+    "layout": {
+      "exit": "Exit booking",
+      "close": "Close"
+    },
     "sidebar": {
       "title": "Your Selection",
       "duration": "Duration: {duration}",
       "free": "No cost",
+      "sessionType": "Session type",
       "reschedule": "Rescheduling class",
       "packActive": "Active Hour Pack",
       "packRemaining": "{packRemaining} / {packTotal}h rem.",
@@ -542,7 +545,7 @@
       "securePayment": "Secure payment with Stripe"
     },
     "wizardProgress": {
-      "session": "Session",
+      "ariaLabel": "Booking steps",
       "schedule": "Schedule",
       "review": "Review",
       "payment": "Payment"

@@ -1,13 +1,24 @@
 "use client";
 
+/**
+ * BOOKING-EXIT-01: the pack purchase is one of the booking surfaces that own a history entry
+ * (`useBookingHistory`, via `BookingProvider`). Leaving for /pago-exitoso REPLACES that entry
+ * while it is on top, so back from the confirmation page returns to the page the purchase was
+ * started on in one press instead of landing on a dead copy of it.
+ *
+ * BOOKING-LOCALE-01: the router is the locale-aware one from `@/i18n/navigation`, not
+ * `next/navigation`'s, so an English visitor lands on /en/pago-exitoso, not the Spanish route.
+ */
+
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
 import { Spinner, Alert } from "@/components/ui";
 import { useProductPrice } from "@/components/pricing/PricesProvider";
 import { api, ApiError } from "@/lib/api-client";
 import { errorCodeToKey } from "@/constants/errors";
 import PaymentForm from "@/components/PaymentForm";
+import { isBookingEntryOnTop } from "@/hooks/useBookingHistory";
 import type { PackSize } from "@/domain/types";
 
 interface PackModalProps {
@@ -71,7 +82,9 @@ export default function PackModal({
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handlePaymentSuccess(paymentIntentId: string) {
-    router.push(`/pago-exitoso?payment_intent_id=${paymentIntentId}`);
+    const href = `/pago-exitoso?payment_intent_id=${paymentIntentId}`;
+    if (isBookingEntryOnTop()) router.replace(href);
+    else router.push(href);
   }
 
   return (

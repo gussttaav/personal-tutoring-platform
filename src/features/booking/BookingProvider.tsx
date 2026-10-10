@@ -18,6 +18,14 @@
  * `RescheduleBridge` (mounted by the sections) and reaches the sign-in gate through this atom
  * instead of the direct `reschedule.*` reads the shell used to make.
  *
+ * BOOKING-EXIT-01: the provider owns the booking's history entry (`useBookingHistory`). Any
+ * booking surface on screen — the wizard, the pack screen, the availability calendar, the sign-in
+ * gate, the pack purchase — counts as one: `bookingSurfaceOpen` mirrors the render conditions in
+ * `BookingOverlays`, so moving from one surface to the next (availability → gate → wizard) stays
+ * inside the same entry. Back, and a site link to this same page, run `closeAll`. The logo-only
+ * `close-booking-overlay` listener that closed the two screens is gone: the hook handles that
+ * event for every link now.
+ *
  * Why a context, not events: the sections need the router (`handleSessionClick`,
  * `handlePackBuy`, `packClientSecret`, …) and the overlays need the SAME router instance — two
  * hook instances would be two sources of truth. Events remain the cross-component trigger
@@ -38,6 +46,7 @@ import {
 } from "react";
 import { useUserSession } from "@/hooks/useUserSession";
 import { useBookingRouter, type BookingRouterState } from "@/hooks/useBookingRouter";
+import { useBookingHistory } from "@/hooks/useBookingHistory";
 import type { PackSize, StudentInfo } from "@/domain/types";
 import type { SelectedSlot } from "@/components/WeeklyCalendar";
 
@@ -103,16 +112,6 @@ export function BookingProvider({ children }: { children?: ReactNode }) {
     window.addEventListener("open-pack-booking", handler);
     return () => window.removeEventListener("open-pack-booking", handler);
   }, [router.handlePackSchedule]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Allow the Navbar to close booking overlays (logo click)
-  useEffect(() => {
-    const handler = () => {
-      router.closePackBooking();
-      router.closeSession();
-    };
-    window.addEventListener("close-booking-overlay", handler);
-    return () => window.removeEventListener("close-booking-overlay", handler);
-  }, [router.closePackBooking, router.closeSession]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Open the unauthenticated availability modal (dispatched by HeroSection)
   useEffect(() => {
@@ -218,6 +217,30 @@ export function BookingProvider({ children }: { children?: ReactNode }) {
     : googleUser?.email
       ? { email: googleUser.email, name: googleUser.name ?? "", credits: 0 }
       : null;
+
+  // BOOKING-EXIT-01: one history entry while any booking surface is on screen. Each term is the
+  // render condition of that surface in `BookingOverlays` (pack screen, wizard, availability
+  // calendar, sign-in gate, pack purchase), so the entry exists exactly when something shows.
+  const email = googleUser?.email;
+  const bookingSurfaceOpen =
+    (router.showPackBooking && !!packStudentInfo && !!email) ||
+    (!!router.activeSession && !!email) ||
+    showAvailabilityModal ||
+    (!!(router.signInGateLabel || rescheduleGate?.label) && !isSignedIn) ||
+    (!!router.selectedPack && isSignedIn && !!email);
+
+  function closeAll() {
+    router.closeSession();
+    router.closePackBooking();
+    router.handleSignInGateClose();
+    rescheduleGate?.clear();
+    setShowAvailabilityModal(false);
+    setPendingSlot(null);
+    setPackClientSecret(null);
+    packCheckoutInFlight.current = false;
+  }
+
+  useBookingHistory(bookingSurfaceOpen, closeAll);
 
   const value: BookingContextValue = {
     router,

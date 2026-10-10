@@ -404,7 +404,6 @@
       "joinSession": "Unirse a la sesión →",
       "cancelBooking": "Cancelar esta reserva",
       "close": "Cerrar",
-      "changeSessionType": "Cambiar tipo de sesión",
       "bookingProgress": "Reservando {dateLabel} a las {label}…",
       "verifyingAvailability": "Comprobando disponibilidad…",
       "errorTitle": "Algo salió mal",
@@ -481,7 +480,6 @@
       "bookingProgress": "Reservando {dateLabel} a las {label}…",
       "verifyingAvailability": "Comprobando disponibilidad…",
       "hourUnavailableNotice": "El horario que elegiste ya no tiene una hora completa libre. Elige otro horario disponible en el calendario.",
-      "changeSessionType": "Cambiar tipo de sesión",
       "confirmReschedule": "Confirmar reprogramación",
       "confirmPay": "Confirmar pago",
       "confirmBook": "Confirmar reserva",
@@ -527,10 +525,15 @@
         "validity": "Vigencia de {days} días"
       }
     },
+    "layout": {
+      "exit": "Salir de la reserva",
+      "close": "Cerrar"
+    },
     "sidebar": {
       "title": "Tu Selección",
       "duration": "Duración: {duration}",
       "free": "Sin coste",
+      "sessionType": "Tipo de sesión",
       "reschedule": "Reprogramando clase",
       "packActive": "Bono de Horas Activo",
       "packRemaining": "{packRemaining} / {packTotal}h rest.",
@@ -542,7 +545,7 @@
       "securePayment": "Pago seguro con Stripe"
     },
     "wizardProgress": {
-      "session": "Sesión",
+      "ariaLabel": "Pasos de la reserva",
       "schedule": "Horario",
       "review": "Revisión",
       "payment": "Pago"
