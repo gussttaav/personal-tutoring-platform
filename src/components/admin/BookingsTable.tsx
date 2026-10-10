@@ -2,6 +2,9 @@
  * ADMIN-01: Bookings list — client status-filter tabs over server-fetched rows.
  * ADMIN-02: session types read as labels ("Sesión 1 h"), and every cell is marked
  * for the phone layout, where admin.css turns each row into a card.
+ * ADMIN-03: dates are formatted in `timeZone` (the tutor's ScheduleConfig.timezone,
+ * passed by the page). Without it the server render used UTC and hydration the
+ * browser's zone, so the same cell could disagree between the two.
  */
 "use client";
 
@@ -20,7 +23,13 @@ const TABS: [string, string][] = [
   ["no_show", "No asistió"],
 ];
 
-export function BookingsTable({ bookings }: { bookings: AdminBookingRow[] }) {
+export function BookingsTable({
+  bookings,
+  timeZone,
+}: {
+  bookings: AdminBookingRow[];
+  timeZone: string;
+}) {
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -98,11 +107,11 @@ export function BookingsTable({ bookings }: { bookings: AdminBookingRow[] }) {
                   </td>
                   <td data-label="Inicio">
                     <div className="cell-stack">
-                      <span>{fmtDateTime(b.starts_at)}</span>
+                      <span>{fmtDateTime(b.starts_at, timeZone)}</span>
                       <span className="cell-meta">{relativeTime(b.starts_at)}</span>
                     </div>
                   </td>
-                  <td className="muted" data-label="Fin">{fmtDateTime(b.ends_at)}</td>
+                  <td className="muted" data-label="Fin">{fmtDateTime(b.ends_at, timeZone)}</td>
                   <td className="c-side">
                     <StatusBadge status={b.status} />
                   </td>

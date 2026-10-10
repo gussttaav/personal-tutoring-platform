@@ -3,13 +3,15 @@
  * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
  * REFACTOR-R4-P3-02: reads through adminService (was ../_data).
  * ADMIN-02: cells are marked for the phone layout (one card per payment).
+ * ADMIN-03: dates are formatted in the tutor's timezone (ScheduleConfig.timezone), not
+ * the server's UTC.
  */
 
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import { adminService } from "@/services";
+import { adminService, scheduleService } from "@/services";
 import { PageHeader, Card, StatusBadge, Empty } from "@/components/admin/ui";
 import { fmtDateTime, relativeTime } from "@/components/admin/format";
 
@@ -22,10 +24,12 @@ function checkoutLabel(type: string): string {
 export default async function PaymentsPage() {
   if (!isAdmin(await auth())) redirect("/");
 
-  const [payments, revenueCents] = await Promise.all([
+  const [payments, revenueCents, schedule] = await Promise.all([
     adminService.listPayments(),
     adminService.revenueLast30Days(),
+    scheduleService.getConfig(),
   ]);
+  const tz = schedule.timezone;
 
   const revenue = (revenueCents / 100).toFixed(2);
   const succeeded = payments.filter((p) => p.status === "succeeded").length;
@@ -105,7 +109,7 @@ export default async function PaymentsPage() {
                 <tr key={p.id}>
                   <td data-label="Fecha">
                     <div className="cell-stack">
-                      <span>{fmtDateTime(p.created_at)}</span>
+                      <span>{fmtDateTime(p.created_at, tz)}</span>
                       <span className="cell-meta">{relativeTime(p.created_at)}</span>
                     </div>
                   </td>

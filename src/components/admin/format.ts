@@ -1,21 +1,30 @@
 /**
  * ADMIN-01: Shared formatting helpers for the admin panel.
  * Ported from the redesign prototype (admin-app.jsx).
+ *
+ * ADMIN-03: every date/time helper takes the tutor's timezone (ScheduleConfig.timezone)
+ * explicitly. fmtDate / fmtDateTime / fmtShort used to format in the RUNTIME's
+ * timezone: UTC on Vercel, so the server-rendered pages were 1–2 h off Madrid, and the
+ * client tables rendered UTC on the server and the browser's zone on hydration. The
+ * parameter is required so a new caller cannot fall back to the runtime's zone.
  */
 
 import type { SessionType } from "@/domain/types";
 
-export const fmtDate = (iso: string): string =>
-  new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" });
+/** "09/10/2026" */
+export const fmtDate = (iso: string, timeZone: string): string =>
+  new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", timeZone });
 
-export const fmtDateTime = (iso: string): string =>
+/** "09/10/2026, 22:14" */
+export const fmtDateTime = (iso: string, timeZone: string): string =>
   new Date(iso).toLocaleString("es-ES", {
     day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
+    hour: "2-digit", minute: "2-digit", timeZone,
   });
 
-export const fmtShort = (iso: string): string =>
-  new Date(iso).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+/** "9/10, 22:14" (es-ES drops the leading zeros when there is no year) */
+export const fmtShort = (iso: string, timeZone: string): string =>
+  new Date(iso).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone });
 
 export const relativeTime = (iso: string): string => {
   const diffMs = new Date(iso).getTime() - Date.now();
@@ -41,9 +50,8 @@ export const initials = (name: string): string =>
     .toUpperCase();
 
 /* ─── ADMIN-02: dashboard helpers ────────────────────────────────────────────
- * The helpers above format in the RUNTIME's timezone, which on the server is UTC.
- * The dashboard groups its agenda by day ("Hoy", "Mañana"), so these take the
- * tutor's timezone (ScheduleConfig.timezone) explicitly. */
+ * The dashboard groups its agenda by day ("Hoy", "Mañana"); like the helpers above
+ * (ADMIN-03), these take the tutor's timezone (ScheduleConfig.timezone) explicitly. */
 
 /** "1.240,00 €" — Spanish grouping and decimals, euro sign after. */
 export const fmtEuros = (cents: number): string =>

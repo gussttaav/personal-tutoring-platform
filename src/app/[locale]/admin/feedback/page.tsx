@@ -17,12 +17,15 @@
  *
  * ADMIN-02: cells are marked for the phone layout (one card per row); the long ones
  * (comments, the report message) stack their label above the content.
+ *
+ * ADMIN-03: dates are formatted in the tutor's timezone (ScheduleConfig.timezone), not
+ * the server's UTC.
  */
 
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import { contentFeedbackService } from "@/services";
+import { contentFeedbackService, scheduleService } from "@/services";
 import { ReportStatusButton } from "@/components/admin/ReportStatusButton";
 import { PageHeader, Card, Empty, StatusBadge } from "@/components/admin/ui";
 import { fmtDateTime, relativeTime } from "@/components/admin/format";
@@ -36,7 +39,11 @@ const ratio = (up: number, down: number): string =>
 export default async function FeedbackPage() {
   if (!isAdmin(await auth())) redirect("/");
 
-  const { aggregates, comments, reports } = await contentFeedbackService.getAdminOverview();
+  const [{ aggregates, comments, reports }, schedule] = await Promise.all([
+    contentFeedbackService.getAdminOverview(),
+    scheduleService.getConfig(),
+  ]);
+  const tz = schedule.timezone;
 
   const commentsByContent = new Map<string, ContentVoteComment[]>();
   for (const c of comments) {
@@ -96,7 +103,7 @@ export default async function FeedbackPage() {
                     <td className="muted" data-label="Ratio">{ratio(a.up, a.down)}</td>
                     <td data-label="Último voto">
                       <div className="cell-stack">
-                        <span>{fmtDateTime(a.lastVoteAt)}</span>
+                        <span>{fmtDateTime(a.lastVoteAt, tz)}</span>
                         <span className="cell-meta">{relativeTime(a.lastVoteAt)}</span>
                       </div>
                     </td>
@@ -113,7 +120,7 @@ export default async function FeedbackPage() {
                               <div key={c.id} className="cell-stack">
                                 <span style={{ whiteSpace: "pre-wrap" }}>{c.comment}</span>
                                 <span className="cell-meta">
-                                  {c.locale} · {fmtDateTime(c.updatedAt)}
+                                  {c.locale} · {fmtDateTime(c.updatedAt, tz)}
                                 </span>
                               </div>
                             ))}
@@ -151,7 +158,7 @@ export default async function FeedbackPage() {
                 <tr key={r.id}>
                   <td data-label="Fecha">
                     <div className="cell-stack">
-                      <span>{fmtDateTime(r.createdAt)}</span>
+                      <span>{fmtDateTime(r.createdAt, tz)}</span>
                       <span className="cell-meta">{relativeTime(r.createdAt)}</span>
                     </div>
                   </td>

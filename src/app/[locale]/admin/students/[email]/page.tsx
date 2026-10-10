@@ -4,6 +4,8 @@
  * REFACTOR-R4-P3-02: reads through adminService (was ../../_data). Reachable for any
  * user, including course readers the students list leaves out.
  * ADMIN-02: cells are marked for the phone layout; session types read as labels.
+ * ADMIN-03: dates are formatted in the tutor's timezone (ScheduleConfig.timezone), not
+ * the server's UTC.
  */
 
 import Link from "next/link";
@@ -12,7 +14,7 @@ import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
 import { AdjustCreditsForm } from "@/components/admin/AdjustCreditsForm";
 import { StudentPricingForm } from "@/components/admin/StudentPricingForm";
-import { adminService, pricingService } from "@/services";
+import { adminService, pricingService, scheduleService } from "@/services";
 import { Card, StatusBadge, Empty } from "@/components/admin/ui";
 import {
   fmtDate,
@@ -35,7 +37,7 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
   const { email: rawEmail } = await params;
   const email = decodeURIComponent(rawEmail);
 
-  const [student, packs, bookings, audit, defaultPrices] = await Promise.all([
+  const [student, packs, bookings, audit, defaultPrices, schedule] = await Promise.all([
     adminService.getStudent(email),
     adminService.listCreditPacks(email),
     adminService.listStudentBookings(email),
@@ -43,9 +45,11 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
     // Public prices, for the "por defecto" column. Read from the service, never the
     // ISR cache — admin surfaces always show current values.
     pricingService.getAll(),
+    scheduleService.getConfig(),
   ]);
 
   if (!student) notFound();
+  const tz = schedule.timezone;
 
   // PRICING-STUDENT-01: keyed on users.id, so it needs the resolved student.
   const priceOverrides = await pricingService.getUserOverrides(student.id);
@@ -130,10 +134,10 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
                       </div>
                     </td>
                     <td className={expired ? "error-text" : "muted"} data-label="Caduca">
-                      {fmtDate(p.expires_at)}
+                      {fmtDate(p.expires_at, tz)}
                       {expired && " · vencido"}
                     </td>
-                    <td className="muted" data-label="Comprado">{fmtDate(p.created_at)}</td>
+                    <td className="muted" data-label="Comprado">{fmtDate(p.created_at, tz)}</td>
                     <td className="mono muted truncate" data-label="Stripe" title={p.stripe_payment_id}>
                       {p.stripe_payment_id}
                     </td>
@@ -182,8 +186,8 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
                       {sessionTypeLabel(b.session_type)}
                     </span>
                   </td>
-                  <td className="muted" data-label="Inicio">{fmtDateTime(b.starts_at)}</td>
-                  <td className="muted" data-label="Fin">{fmtDateTime(b.ends_at)}</td>
+                  <td className="muted" data-label="Inicio">{fmtDateTime(b.starts_at, tz)}</td>
+                  <td className="muted" data-label="Fin">{fmtDateTime(b.ends_at, tz)}</td>
                   <td className="c-side">
                     <StatusBadge status={b.status} />
                   </td>
@@ -204,7 +208,7 @@ export default async function StudentDetailPage({ params }: StudentDetailPagePro
               return (
                 <li key={i} className="audit-row">
                   <div className="audit-time">
-                    <span className="audit-date">{ts ? fmtShort(ts) : "—"}</span>
+                    <span className="audit-date">{ts ? fmtShort(ts, tz) : "—"}</span>
                     {ts && <span className="audit-rel">{relativeTime(ts)}</span>}
                   </div>
                   <div className="audit-rail">

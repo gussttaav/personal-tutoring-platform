@@ -7,6 +7,9 @@
  * email, so a student past #100 could not be found at all. Both tab counts come from
  * the query and cover the current search.
  * ADMIN-02: cells are marked for the phone layout (one card per student).
+ * ADMIN-03: dates are formatted in `timeZone` (the tutor's ScheduleConfig.timezone,
+ * passed by the page). Without it the server render used UTC and hydration the
+ * browser's zone, so the same cell could disagree between the two.
  */
 "use client";
 
@@ -36,6 +39,7 @@ export function StudentsTable({
   pageSize,
   filter,
   query,
+  timeZone,
 }: {
   rows:           StudentSummary[];
   total:          number;
@@ -44,6 +48,7 @@ export function StudentsTable({
   pageSize:       number;
   filter?:        string;
   query:          string;
+  timeZone:       string;
 }) {
   const router = useRouter();
   const lowCredit = filter === LOW_CREDIT;
@@ -142,8 +147,8 @@ export function StudentsTable({
                       <span className="credits-label">cr.</span>
                     </div>
                   </td>
-                  <td className="muted" data-label="Caduca">{s.earliestExpiry ? fmtDate(s.earliestExpiry) : "—"}</td>
-                  <td className="muted" data-label="Próxima sesión">{s.nextSession ? fmtShort(s.nextSession) : "—"}</td>
+                  <td className="muted" data-label="Caduca">{s.earliestExpiry ? fmtDate(s.earliestExpiry, timeZone) : "—"}</td>
+                  <td className="muted" data-label="Próxima sesión">{s.nextSession ? fmtShort(s.nextSession, timeZone) : "—"}</td>
                   <td className="cell-right c-chev">
                     <span className="material-symbols-outlined chevron">chevron_right</span>
                   </td>
