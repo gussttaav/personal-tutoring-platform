@@ -35,6 +35,11 @@
  * Passing back `nextOffset` would step over the people the previous chunk just removed.
  * `offset` survives for the one job it is still good at: stepping past an address that fails
  * every time and would otherwise sit at the head of `pending` blocking the rest.
+ *
+ * BLOG-15: `countOnly: true` is the dry run without the rendered samples — the live count the
+ * admin form shows as soon as a course and kind are picked, before any preview. It never
+ * sends (the schema refuses it together with `confirm`), and an `update` may ask for it
+ * before its line is written, since the count does not depend on the line.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -109,7 +114,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   }
 
-  const { courseSlug, kind, whatsNew, confirm, offset = 0 } = parsed.data;
+  const { courseSlug, kind, whatsNew, countOnly, confirm, offset = 0 } = parsed.data;
   const limit           = parsed.data.limit ?? DEFAULT_LIMIT;
   const announcementKey = parsed.data.announcementKey ?? DEFAULT_KEY[kind](courseSlug);
 
@@ -126,7 +131,7 @@ export async function POST(req: NextRequest) {
   // ── Dry run ────────────────────────────────────────────────────────────────
   if (confirm !== true) {
     const samples: Record<string, { subject: string; html: string }> = {};
-    for (const locale of routing.locales as readonly ("es" | "en")[]) {
+    for (const locale of countOnly ? [] : routing.locales as readonly ("es" | "en")[]) {
       const localeFacts = courseFactsFor(courseSlug, locale);
       if (localeFacts) {
         samples[locale] = await renderCourseNewsEmail({ locale, kind, whatsNew, ...localeFacts });
@@ -146,7 +151,7 @@ export async function POST(req: NextRequest) {
         en: pending.filter((r) => r.locale === "en").length,
       },
       translation: getEnglishTranslationCoverage(courseSlug),
-      samples,
+      ...(countOnly ? {} : { samples }),
     });
   }
 

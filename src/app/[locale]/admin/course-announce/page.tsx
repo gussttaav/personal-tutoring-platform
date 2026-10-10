@@ -6,6 +6,8 @@
  * The course list comes from the content registry rather than a free-text slug field: the
  * route 404s an unknown slug anyway, and there is no reason to let a typo get as far as the
  * confirm button on the one screen in this panel that sends real email.
+ *
+ * BLOG-15: titled «Anuncios de cursos» now that the blog has its own (/admin/blog-announce).
  */
 
 import { redirect } from "next/navigation";
@@ -28,8 +30,8 @@ export default async function CourseAnnouncePage() {
     <div className="page-stack">
       <PageHeader
         overline="Comunicación"
-        title="Anuncios"
-        subtitle="Avisa por correo a quien se ha suscrito a los cursos. Previsualiza siempre antes de enviar: esto no se puede deshacer."
+        title="Anuncios de cursos"
+        subtitle="Avisa por correo a quien se ha suscrito a los cursos. Antes de enviar verás a cuántas personas llega; esto no se puede deshacer."
       />
 
       <Card>

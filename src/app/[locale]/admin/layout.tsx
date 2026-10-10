@@ -8,12 +8,16 @@
  * stops Next from trying to statically prerender them at build time using the
  * service-role Supabase client. Forcing it here (cascades to all nested pages)
  * keeps that fetch out of the build entirely.
+ * ADMIN-02: the shell is now a grouped sidebar / mobile drawer (AdminShell). The
+ * layout reads the sidebar's badge counts after the gate; a failed read renders
+ * the sidebar without badges (adminService.navCounts answers null).
  */
 
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import { AdminNav } from "@/components/admin/AdminNav";
+import { adminService } from "@/services";
+import { AdminShell } from "@/components/admin/AdminShell";
 import "./admin.css";
 
 export const dynamic = "force-dynamic";
@@ -30,10 +34,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     redirect("/");
   }
 
+  const counts = await adminService.navCounts();
+
   return (
-    <div className="admin-shell">
-      <AdminNav />
-      <main className="admin-main">{children}</main>
-    </div>
+    <AdminShell
+      counts={counts}
+      userName={session?.user?.name ?? ""}
+      userEmail={session?.user?.email ?? ""}
+    >
+      {children}
+    </AdminShell>
   );
 }

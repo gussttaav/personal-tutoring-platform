@@ -786,6 +786,51 @@ a.blog-pager__step:hover {
   }
 }
 
+/* BLOG-15 — the notify card's area toggles. They wear `.blog-tab` (the index's area
+   filter) so an area looks the same wherever it can be picked; here they wrap instead of
+   scrolling, since the card is narrow and four toggles is the whole list. */
+.blog-notify-areas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 16px;
+}
+
+.blog-notify-areas__label {
+  font-family: var(--font-headline, Manrope), sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.blog-notify-areas__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.blog-notify-area {
+  height: 40px;
+  font-size: 0.84375rem;
+}
+
+.blog-notify-area[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.blog-notify-areas__hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.84375rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .blog-featured,
   .blog-card,

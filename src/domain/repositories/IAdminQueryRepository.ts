@@ -8,6 +8,7 @@
 import type {
   AdminBookingRow,
   AdminDashboardCounts,
+  AdminNavCounts,
   AdminPaymentRow,
   BookingRow,
   CreditPackRow,
@@ -28,6 +29,8 @@ export interface IAdminQueryRepository {
   /** Students (users with a booking or a credit pack), ordered by email. */
   listStudents(opts: ListStudentsQuery): Promise<StudentListPage>;
   dashboardCounts(): Promise<AdminDashboardCounts>;
+  /** ADMIN-02: the sidebar badges, read on every admin page — two head counts, no rows. */
+  navCounts(): Promise<AdminNavCounts>;
   /** Sum of succeeded payments created after `sinceIso`, in cents. */
   sumRevenueSince(sinceIso: string): Promise<number>;
   /** Any user, student or not — the detail page is reachable by URL for everyone. */

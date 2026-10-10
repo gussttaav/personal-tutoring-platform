@@ -61,6 +61,8 @@ export const ICON_NAMES = [
   "info",
   "inventory_2",
   "keyboard_return",
+  "left_panel_close",
+  "left_panel_open",
   "link_off",
   "lock",
   "login",

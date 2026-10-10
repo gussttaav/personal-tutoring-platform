@@ -6,6 +6,7 @@ import type { IAdminQueryRepository, ListStudentsQuery } from "@/domain/reposito
 import type {
   AdminBookingRow,
   AdminDashboardCounts,
+  AdminNavCounts,
   AdminPaymentRow,
   BookingRow,
   CreditPackRow,
@@ -24,6 +25,9 @@ export class InMemoryAdminQueryRepository implements IAdminQueryRepository {
   private bookings: StoredBooking[] = [];
   private payments: StoredPayment[] = [];
   failedBookings = 0;
+  openReports    = 0;
+  /** ADMIN-02: set to make navCounts() reject, as a Supabase read error would. */
+  navCountsError: Error | null = null;
   /** Every listStudents call, so tests can assert the page → offset mapping. */
   readonly listCalls: ListStudentsQuery[] = [];
 
@@ -127,6 +131,11 @@ export class InMemoryAdminQueryRepository implements IAdminQueryRepository {
       lowCreditStudents: lowCreditTotal,
       failedBookings:    this.failedBookings,
     };
+  }
+
+  async navCounts(): Promise<AdminNavCounts> {
+    if (this.navCountsError) throw this.navCountsError;
+    return { failedBookings: this.failedBookings, openReports: this.openReports };
   }
 
   async sumRevenueSince(sinceIso: string): Promise<number> {

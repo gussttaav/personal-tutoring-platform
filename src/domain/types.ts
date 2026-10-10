@@ -321,6 +321,16 @@ export interface SubscriptionRecipient {
   userId: string;
   email:  string;
   locale: "es" | "en";
+  /** BLOG-15: the blog areas the subscriber wants, `null` = every area (and always `null`
+   *  for a courses subscription). Matched against a post by `subscriptionMatchesPost`. */
+  areas:  BlogArea[] | null;
+}
+
+/** BLOG-15: the signed-in reader's opt-in, as `GET /api/subscribe` reports it. `areas` is
+ *  only meaningful for the blog: `null` = every area. */
+export interface SubscriptionStatus {
+  subscribed: boolean;
+  areas:      BlogArea[] | null;
 }
 
 /** COURSE-P6-02b: which of the three things the courses opt-in promises is being announced.
@@ -1011,6 +1021,14 @@ export interface AdminDashboardCounts {
   /** Students (not users) with <= 1 active credit. */
   lowCreditStudents: number;
   failedBookings:    number;
+}
+
+/** ADMIN-02: the admin sidebar's badges — only things that need the admin to act. */
+export interface AdminNavCounts {
+  /** Dead-letter entries: paid, no booking created. */
+  failedBookings: number;
+  /** Lesson/post error reports still marked open. */
+  openReports:    number;
 }
 
 /** A manual credit adjustment. `applied` differs from `requested` only when a debit

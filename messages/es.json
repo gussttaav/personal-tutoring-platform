@@ -963,12 +963,21 @@
       }
     },
     "notify": {
-      "body": "Recibe una notificación cada vez que se publique un nuevo artículo",
+      "body": "Recibe un correo cuando publique un artículo nuevo en las áreas que te interesen",
       "cta": "Notifícame",
       "signIn": "Iniciar sesión",
       "signInHint": "Inicia sesión para recibir una notificación cuando publique un artículo nuevo",
-      "subscribed": "Te notificaré cuando publique un artículo nuevo",
+      "subscribed": "Te avisaré cuando publique un artículo nuevo en estas áreas",
       "unsubscribe": "No recibir notificaciones",
+      "update": "Actualizar suscripción",
+      "discard": "Descartar cambios",
+      "pendingChanges": "Has cambiado las áreas. Pulsa «Actualizar suscripción» para guardarlas.",
+      "saved": "Suscripción actualizada.",
+      "areasLabel": "Áreas",
+      "areasGroup": "Áreas de las que quieres recibir avisos",
+      "pickOne": "Elige al menos un área.",
+      "lastAreaHint": "Tienes que seguir al menos un área. Para dejar de recibir avisos, pulsa «No recibir notificaciones».",
+      "saveError": "No se ha podido guardar el cambio. Inténtalo de nuevo.",
       "error": "Algo ha fallado. Inténtalo de nuevo.",
       "retry": "Reintentar"
     },
@@ -1992,6 +2001,16 @@
       "body2": "Si ya lo habías empezado, tu progreso sigue guardado donde lo dejaste.",
       "landingCta": "Ver el curso",
       "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
+    },
+    "blogPost": {
+      "subject": "Nuevo artículo: {postTitle}",
+      "heading": "Hay un artículo nuevo en el blog",
+      "intro": "Pediste que te avisara de los artículos nuevos de gustavoai.dev. Este es uno de ellos.",
+      "areasLabel": "Áreas",
+      "notInYourLanguage": "De momento este artículo solo está disponible en inglés.",
+      "cta": "Leer el artículo",
+      "browseCta": "Ver todos los artículos",
+      "unsubscribe": "¿Quieres cambiar las áreas o dejar de recibir estos correos? Hazlo en la página del blog."
     }
   }
 }

@@ -1,4 +1,5 @@
 // COURSE-P6-02b — the kind → message-namespace mapping behind renderCourseNewsEmail.
+// BLOG-15 — and the blog post announcement's keys and URLs (renderBlogPostEmail).
 //
 // The templates themselves cannot be rendered here: getTranslations() needs Next's config
 // resolution, not just a react-server export condition, so there is no way to assert on the
@@ -7,7 +8,7 @@
 // keys the template reads. A key absent from one locale fails silently at send time, and the
 // send is the one thing here that cannot be undone.
 
-import { ANNOUNCEMENT_NAMESPACE, announcementUrls } from "../email-functions";
+import { ANNOUNCEMENT_NAMESPACE, announcementUrls, blogAnnouncementUrls } from "../email-functions";
 import type { AnnouncementKind } from "@/domain/types";
 import es from "../../../../messages/es.json";
 import en from "../../../../messages/en.json";
@@ -125,5 +126,51 @@ describe("announcementUrls", () => {
       .toBe(`${BASE}/cursos#notificaciones`);
     expect(announcementUrls({ ...course, kind: "english", locale: "en" }).unsubUrl)
       .toBe(`${BASE}/en/cursos#notificaciones`);
+  });
+});
+
+// ─── BLOG-15: the blog post announcement ──────────────────────────────────────
+
+/** Exactly the keys renderBlogPostEmail reads from `emails.blogPost`. */
+const BLOG_TEMPLATE_KEYS = [
+  "subject", "heading", "intro", "areasLabel", "notInYourLanguage", "cta", "browseCta", "unsubscribe",
+];
+
+describe("emails.blogPost", () => {
+  it.each(["es", "en"] as const)("has every key the template reads in %s", (locale) => {
+    const ns = namespaceOf(locale, "emails.blogPost");
+    expect(ns).toBeDefined();
+    for (const key of BLOG_TEMPLATE_KEYS) {
+      expect(typeof ns![key]).toBe("string");
+      expect(ns![key].trim()).not.toBe("");
+    }
+  });
+});
+
+describe("blogAnnouncementUrls", () => {
+  it.each([
+    ["es", ""],
+    ["en", "/en"],
+  ] as const)("opens a post published in both languages in the %s reader's own", (locale, prefix) => {
+    const urls = blogAnnouncementUrls({ slug: "arboles-b", locale, postLocales: ["es", "en"] });
+
+    expect(urls.postUrl).toBe(`${BASE}${prefix}/blog/arboles-b`);
+    expect(urls.indexUrl).toBe(`${BASE}${prefix}/blog`);
+    expect(urls.postLocale).toBe(locale);
+  });
+
+  // A Spanish-only post has no /en page to open; the email says the post is in Spanish.
+  it("sends an English reader of a Spanish-only post to the Spanish page", () => {
+    const urls = blogAnnouncementUrls({ slug: "nuevo", locale: "en", postLocales: ["es"] });
+
+    expect(urls.postUrl).toBe(`${BASE}/blog/nuevo`);
+    expect(urls.postLocale).toBe("es");
+  });
+
+  it("keeps the unsubscribe link on the reader's own blog index", () => {
+    expect(blogAnnouncementUrls({ slug: "nuevo", locale: "en", postLocales: ["es"] }).unsubUrl)
+      .toBe(`${BASE}/en/blog#notificaciones`);
+    expect(blogAnnouncementUrls({ slug: "nuevo", locale: "es", postLocales: ["es"] }).unsubUrl)
+      .toBe(`${BASE}/blog#notificaciones`);
   });
 });

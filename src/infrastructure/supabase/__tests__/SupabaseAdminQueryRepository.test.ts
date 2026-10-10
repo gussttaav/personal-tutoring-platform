@@ -127,4 +127,23 @@ describeDb("SupabaseAdminQueryRepository.listStudents (admin_list_students)", ()
 
     expect(counts.lowCreditStudents).toBeGreaterThanOrEqual(1);
   });
+
+  // ADMIN-02: the sidebar badge counts open reports only. The reports hang off the
+  // reader's user_id, so afterAll's delete_user_account removes them.
+  it("navCounts counts an open content report and ignores a resolved one", async () => {
+    const readerId = (await repo.getStudent(reader))!.id;
+    const before   = await repo.navCounts();
+
+    const report = (status: "open" | "resolved") => ({
+      content_type: "post", content_key: `test-admin-nav-${stamp}`, locale: "es",
+      page_url: `/blog/test-admin-nav-${stamp}`, message: "Errata de prueba (ADMIN-02)",
+      user_id: readerId, status,
+    });
+    const inserted = await supabase.from("content_reports").insert([report("open"), report("resolved")]);
+    if (inserted.error) throw inserted.error;
+
+    const after = await repo.navCounts();
+    expect(after.openReports - before.openReports).toBe(1);
+    expect(after.failedBookings).toBeGreaterThanOrEqual(0);
+  });
 });

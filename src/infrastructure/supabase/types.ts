@@ -686,18 +686,21 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          areas: string[] | null
           created_at: string
           id: string
           type: string
           user_id: string
         }
         Insert: {
+          areas?: string[] | null
           created_at?: string
           id?: string
           type: string
           user_id: string
         }
         Update: {
+          areas?: string[] | null
           created_at?: string
           id?: string
           type?: string
