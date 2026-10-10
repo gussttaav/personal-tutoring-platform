@@ -1,4 +1,4 @@
-// COURSE-P6-02 / COURSE-P6-02b — POST /api/admin/course-announce.
+// COURSE-P6-02 / COURSE-P6-02b — POST /api/admin/course-announce. BLOG-15: count only.
 //
 // Same shape as src/app/api/courses/__tests__ (mock factories before the route import,
 // real NextRequest objects). Everything the route touches is mocked: this is the one
@@ -131,6 +131,40 @@ describe("dry run — the default", () => {
 
   it("sends nothing when confirm is false rather than absent", async () => {
     await POST(req({ courseSlug: "dl-nlp", kind: "launch", confirm: false }));
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+});
+
+// BLOG-15: the live count the admin form asks for before any preview.
+describe("count only", () => {
+  it("reports the audience without rendering or sending", async () => {
+    mockListNotifiedEmails.mockResolvedValue(new Set(["a@example.com"]));
+
+    const res  = await POST(req({ courseSlug: "dl-nlp", kind: "launch", countOnly: true }));
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body).toMatchObject({
+      dryRun: true, subscribers: 3, alreadyNotified: 1, pending: 2, wouldSendNow: 2,
+      byLocale: { es: 1, en: 1 },
+    });
+    expect(body.samples).toBeUndefined();
+    expect(mockRender).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
+    expect(mockAppend).not.toHaveBeenCalled();
+  });
+
+  it("counts an update before its line is written", async () => {
+    const res = await POST(req({ courseSlug: "dl-nlp", kind: "update", countOnly: true }));
+
+    expect(res.status).toBe(200);
+    expect((await res.json()).announcementKey).toMatch(/^update:dl-nlp:\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it("400s countOnly combined with confirm, and sends nothing", async () => {
+    const res = await POST(req({ courseSlug: "dl-nlp", kind: "launch", countOnly: true, confirm: true }));
+
+    expect(res.status).toBe(400);
     expect(mockSend).not.toHaveBeenCalled();
   });
 });

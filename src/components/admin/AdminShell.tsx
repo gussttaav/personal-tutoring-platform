@@ -16,6 +16,8 @@
  *
  * Badges (failed bookings, open reports) come from the layout's `navCounts()`; null
  * means the read failed and the sidebar renders without them.
+ *
+ * BLOG-15: «Avisos del blog» (/admin/blog-announce) beside the course announcements.
  */
 "use client";
 
@@ -59,7 +61,8 @@ const NAV: NavSection[] = [
   {
     label: "Contenido",
     items: [
-      { href: "/admin/course-announce", label: "Anuncios", icon: "campaign" },
+      { href: "/admin/course-announce", label: "Anuncios de cursos", icon: "campaign" },
+      { href: "/admin/blog-announce", label: "Avisos del blog", icon: "notifications_active" },
       { href: "/admin/feedback", label: "Feedback", icon: "rate_review", badge: "openReports", tone: "amber" },
     ],
   },

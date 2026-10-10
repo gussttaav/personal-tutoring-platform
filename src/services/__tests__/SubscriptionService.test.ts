@@ -8,6 +8,8 @@ const TEST_USER_ID = "user-uuid-sub-test";
 const mockSubs = (): jest.Mocked<ISubscriptionRepository> => ({
   subscribe:    jest.fn(),
   isSubscribed: jest.fn(),
+  getAreas:     jest.fn(),
+  updateAreas:  jest.fn(),
   unsubscribe:  jest.fn(),
   listByType:   jest.fn(),
 });
@@ -37,7 +39,7 @@ describe("SubscriptionService.subscribe", () => {
 
     expect(userSvc.ensureUser).toHaveBeenCalledWith("user@example.com");
     expect(subs.isSubscribed).toHaveBeenCalledWith(TEST_USER_ID, "courses");
-    expect(subs.subscribe).toHaveBeenCalledWith(TEST_USER_ID, "courses");
+    expect(subs.subscribe).toHaveBeenCalledWith(TEST_USER_ID, "courses", null);
   });
 
   it("throws AlreadySubscribedError when already subscribed", async () => {
@@ -58,8 +60,108 @@ describe("SubscriptionService.subscribe", () => {
 
       await service.subscribe("a@b.com", type);
 
-      expect(subs.subscribe).toHaveBeenCalledWith(TEST_USER_ID, type);
+      // No areas sent: courses have none, and the blog means "every area".
+      expect(subs.subscribe).toHaveBeenCalledWith(TEST_USER_ID, type, null);
     }
+  });
+
+  // BLOG-15
+  it("stores a blog subset normalized: known areas, display order, no duplicates", async () => {
+    const { service, subs } = makeService();
+    subs.isSubscribed.mockResolvedValue(false);
+
+    await service.subscribe("a@b.com", "blog", ["matematicas", "ia", "ia"]);
+
+    expect(subs.subscribe).toHaveBeenCalledWith(TEST_USER_ID, "blog", ["ia", "matematicas"]);
+  });
+
+  it("stores every blog area as null, so a future area is included", async () => {
+    const { service, subs } = makeService();
+    subs.isSubscribed.mockResolvedValue(false);
+
+    await service.subscribe("a@b.com", "blog", ["programacion", "matematicas", "bases-de-datos", "ia"]);
+
+    expect(subs.subscribe).toHaveBeenCalledWith(TEST_USER_ID, "blog", null);
+  });
+
+  it("ignores areas on a courses subscription", async () => {
+    const { service, subs } = makeService();
+    subs.isSubscribed.mockResolvedValue(false);
+
+    await service.subscribe("a@b.com", "courses", ["ia"]);
+
+    expect(subs.subscribe).toHaveBeenCalledWith(TEST_USER_ID, "courses", null);
+  });
+});
+
+// BLOG-15 — the notify card's one status read.
+describe("SubscriptionService.getStatus", () => {
+  it("reports a subscriber with their areas", async () => {
+    const { service, subs } = makeService();
+    subs.getAreas.mockResolvedValue(["ia"]);
+
+    await expect(service.getStatus("user@example.com", "blog"))
+      .resolves.toEqual({ subscribed: true, areas: ["ia"] });
+    expect(subs.getAreas).toHaveBeenCalledWith(TEST_USER_ID, "blog");
+  });
+
+  it("reports a subscriber of every area as areas: null", async () => {
+    const { service, subs } = makeService();
+    subs.getAreas.mockResolvedValue(null);
+
+    await expect(service.getStatus("user@example.com", "blog"))
+      .resolves.toEqual({ subscribed: true, areas: null });
+  });
+
+  it("reports not subscribed when there is no row", async () => {
+    const { service, subs } = makeService();
+    subs.getAreas.mockResolvedValue(undefined);
+
+    await expect(service.getStatus("user@example.com", "blog"))
+      .resolves.toEqual({ subscribed: false, areas: null });
+  });
+
+  it("reports not subscribed for an unknown user without creating one", async () => {
+    const { service, subs, userSvc } = makeService({}, { findByEmail: jest.fn().mockResolvedValue(null) });
+
+    await expect(service.getStatus("unknown@example.com", "courses"))
+      .resolves.toEqual({ subscribed: false, areas: null });
+    expect(subs.getAreas).not.toHaveBeenCalled();
+    expect(userSvc.ensureUser).not.toHaveBeenCalled();
+  });
+});
+
+describe("SubscriptionService.updateBlogAreas", () => {
+  it("updates the blog subscription with the normalized selection", async () => {
+    const { service, subs } = makeService();
+    subs.updateAreas.mockResolvedValue(true);
+
+    await expect(service.updateBlogAreas("user@example.com", ["programacion", "ia"])).resolves.toBe(true);
+    expect(subs.updateAreas).toHaveBeenCalledWith(TEST_USER_ID, "blog", ["ia", "programacion"]);
+  });
+
+  it("stores every area as null", async () => {
+    const { service, subs } = makeService();
+    subs.updateAreas.mockResolvedValue(true);
+
+    await service.updateBlogAreas("user@example.com", ["ia", "bases-de-datos", "matematicas", "programacion"]);
+
+    expect(subs.updateAreas).toHaveBeenCalledWith(TEST_USER_ID, "blog", null);
+  });
+
+  it("returns false when the reader is not subscribed", async () => {
+    const { service, subs } = makeService();
+    subs.updateAreas.mockResolvedValue(false);
+
+    await expect(service.updateBlogAreas("user@example.com", ["ia"])).resolves.toBe(false);
+  });
+
+  it("returns false for an unknown user without creating one", async () => {
+    const { service, subs, userSvc } = makeService({}, { findByEmail: jest.fn().mockResolvedValue(null) });
+
+    await expect(service.updateBlogAreas("unknown@example.com", ["ia"])).resolves.toBe(false);
+    expect(subs.updateAreas).not.toHaveBeenCalled();
+    expect(userSvc.ensureUser).not.toHaveBeenCalled();
   });
 });
 
@@ -128,12 +230,12 @@ describe("SubscriptionService.listSubscribers", () => {
   it("passes the type through to the repository", async () => {
     const { service, subs } = makeService();
     subs.listByType.mockResolvedValue([
-      { userId: TEST_USER_ID, email: "a@b.com", locale: "en" },
+      { userId: TEST_USER_ID, email: "a@b.com", locale: "en", areas: null },
     ]);
 
     const recipients = await service.listSubscribers("courses");
 
     expect(subs.listByType).toHaveBeenCalledWith("courses");
-    expect(recipients).toEqual([{ userId: TEST_USER_ID, email: "a@b.com", locale: "en" }]);
+    expect(recipients).toEqual([{ userId: TEST_USER_ID, email: "a@b.com", locale: "en", areas: null }]);
   });
 });

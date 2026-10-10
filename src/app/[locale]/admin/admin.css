@@ -1467,9 +1467,6 @@
   border-radius: var(--radius-xs);
 }
 
-.announce-stats { margin: 20px 0 16px; }
-.announce-split { font-size: 12px; color: var(--text-dim); margin-top: auto; }
-
 .announce-samples {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1522,6 +1519,52 @@
 
 .announce-result { margin-top: 14px; font-size: 13px; }
 .announce-result p { margin: 0 0 4px; }
+
+/* BLOG-15 — the live recipient count, shown from the moment an announcement is defined. */
+.recipient-count {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 4px 0 16px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--green-border);
+  border-radius: var(--radius-md);
+}
+.recipient-count > .material-symbols-outlined { font-size: 22px; color: var(--green); margin-top: 2px; }
+.recipient-count.is-loading { border-color: var(--border); }
+.recipient-count.is-loading > .material-symbols-outlined { color: var(--text-dim); }
+.recipient-count.is-error { border-color: var(--error-border); }
+.recipient-count.is-error > .material-symbols-outlined { color: var(--error); }
+.recipient-count-body { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.recipient-count-main { font-size: 15px; color: var(--text); line-height: 1.4; }
+.recipient-count-main strong { font-family: var(--font-headline, Manrope), sans-serif; font-size: 22px; font-weight: 700; color: var(--green); }
+.recipient-count.is-loading .recipient-count-main { color: var(--text-dim); font-size: 14px; }
+.recipient-count-detail { font-size: 12.5px; color: var(--text-dim); line-height: 1.5; }
+
+/* BLOG-15 — the send confirmation (native <dialog>, opened with showModal()). */
+.confirm-dialog {
+  width: min(460px, calc(100vw - 32px));
+  padding: 22px 22px 18px;
+  color: var(--text);
+  background: var(--surface-container);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.confirm-dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px); }
+.confirm-dialog-head { display: flex; align-items: center; gap: 10px; }
+.confirm-dialog-head .material-symbols-outlined { color: var(--green); font-size: 20px; }
+.confirm-dialog-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.confirm-dialog-subject { margin: 6px 0 14px; font-size: 13px; color: var(--text-dim); overflow-wrap: anywhere; }
+.confirm-dialog-count p { margin: 0 0 10px; font-size: 15px; line-height: 1.5; color: var(--text-muted); }
+.confirm-dialog-total { font-family: var(--font-headline, Manrope), sans-serif; font-size: 22px; font-weight: 700; color: var(--green); }
+.confirm-dialog-count .confirm-dialog-note { font-size: 13px; color: var(--text-dim); }
+.confirm-dialog .announce-warn { margin: 4px 0 16px; }
+.confirm-dialog-label { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--text-dim); }
+/* `.adjust-reason` is `flex: 1` for its usual row; in this column it would collapse its height. */
+.confirm-dialog-label .adjust-reason { flex: none; width: 100%; font-family: var(--font-mono); }
+.confirm-dialog-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
 
 /* ─── Responsive ─────────────────────────────────────────────────────── */
 

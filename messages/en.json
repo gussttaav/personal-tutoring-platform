@@ -963,12 +963,21 @@
       }
     },
     "notify": {
-      "body": "Get notified whenever a new article is published",
+      "body": "Get an email when I publish a new article in the areas you care about",
       "cta": "Notify me",
       "signIn": "Sign in",
       "signInHint": "Sign in to be notified when a new article goes up",
-      "subscribed": "I'll notify you when a new article goes up",
+      "subscribed": "I'll let you know when I publish a new article in these areas",
       "unsubscribe": "Stop notifications",
+      "update": "Update subscription",
+      "discard": "Discard changes",
+      "pendingChanges": "You've changed your areas. Use “Update subscription” to save them.",
+      "saved": "Subscription updated.",
+      "areasLabel": "Areas",
+      "areasGroup": "Areas you want to hear about",
+      "pickOne": "Pick at least one area.",
+      "lastAreaHint": "You need to follow at least one area. To stop the emails altogether, use “Stop notifications”.",
+      "saveError": "Couldn't save that change. Please try again.",
       "error": "Something went wrong. Please try again.",
       "retry": "Retry"
     },
@@ -1992,6 +2001,16 @@
       "body2": "If you had already started, your progress is still saved exactly where you left it.",
       "landingCta": "See the course",
       "unsubscribe": "Don't want these emails? Turn them off on the courses page."
+    },
+    "blogPost": {
+      "subject": "New article: {postTitle}",
+      "heading": "There's a new article on the blog",
+      "intro": "You asked to hear about new articles on gustavoai.dev. Here's the latest one.",
+      "areasLabel": "Areas",
+      "notInYourLanguage": "For now, this article is only available in Spanish.",
+      "cta": "Read the article",
+      "browseCta": "See all articles",
+      "unsubscribe": "Want to change your areas or stop these emails? You can do it on the blog page."
     }
   }
 }

@@ -164,6 +164,8 @@ export function buildTestSubscriptionService(
   const subs: ISubscriptionRepository = overrides.subs ?? {
     async subscribe() {},
     async isSubscribed() { return false; },
+    async getAreas() { return undefined; },
+    async updateAreas() { return false; },
     async unsubscribe() {},
     async listByType() { return []; },
   };
