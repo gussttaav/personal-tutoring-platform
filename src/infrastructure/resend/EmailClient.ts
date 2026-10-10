@@ -2,6 +2,7 @@
 // interface rather than a concrete module — enables testing with mocks.
 // REFACTOR-R4-P3-03: sendPaymentAuditReport.
 // BLOG-15: renderBlogPostAnnouncement / sendBlogPostAnnouncement.
+// COURSE-ANNOUNCE-01: renderCourseAnnouncement / sendCourseAnnouncement.
 import type { PaymentAuditReport } from "@/domain/types";
 import * as emailLib from "./email-functions";
 import type {
@@ -12,6 +13,7 @@ import type {
   CancellationNotificationParams,
   ContentReportNotificationParams,
   BlogPostAnnouncementParams,
+  CourseAnnouncementParams,
 } from "./IEmailClient";
 
 export class EmailClient implements IEmailClient {
@@ -50,5 +52,16 @@ export class EmailClient implements IEmailClient {
 
   sendBlogPostAnnouncement(params: BlogPostAnnouncementParams): Promise<void> {
     return emailLib.sendBlogPostEmail(params);
+  }
+
+  // COURSE-ANNOUNCE-01
+  renderCourseAnnouncement(
+    params: Omit<CourseAnnouncementParams, "to">,
+  ): Promise<{ subject: string; html: string }> {
+    return emailLib.renderCourseNewsEmail(params);
+  }
+
+  sendCourseAnnouncement(params: CourseAnnouncementParams): Promise<void> {
+    return emailLib.sendCourseNewsEmail(params);
   }
 }

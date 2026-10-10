@@ -7,4 +7,5 @@ export type {
   CancellationNotificationParams,
   ContentReportNotificationParams,
   BlogPostAnnouncementParams,
+  CourseAnnouncementParams,
 } from "./IEmailClient";

@@ -17,6 +17,7 @@ import { LandingService }       from "./LandingService";
 import { AdminService }         from "./AdminService";
 import { BookingPaymentAuditService } from "./BookingPaymentAuditService";
 import { BlogAnnouncementService } from "./BlogAnnouncementService";
+import { CourseAnnouncementService } from "./CourseAnnouncementService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -36,6 +37,7 @@ import {
 import { registryCourseCatalog } from "@/lib/courses/catalog";
 import { registryContentCatalog } from "@/lib/content/catalog";
 import { registryBlogPostCatalog } from "@/lib/blog/post-catalog";
+import { registryCourseAnnouncementCatalog } from "@/lib/courses/announcement-catalog";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
@@ -148,5 +150,14 @@ export const blogAnnouncementService = new BlogAnnouncementService(
   supabaseSubscriptionRepository,
   supabaseAuditRepository,
   registryBlogPostCatalog,
+  new EmailClient(),
+);
+
+// COURSE-ANNOUNCE-01: emails a course to the courses subscribers (POST /api/admin/course-announce).
+// The course catalog is the registry, injected like the blog's.
+export const courseAnnouncementService = new CourseAnnouncementService(
+  supabaseSubscriptionRepository,
+  supabaseAuditRepository,
+  registryCourseAnnouncementCatalog,
   new EmailClient(),
 );

@@ -1,8 +1,9 @@
 // ARCH-13: Email client interface — enables testing BookingService with mocks.
 // BLOG-15: the blog post announcement (bulk), render + send.
+// COURSE-ANNOUNCE-01: the course announcement (bulk), render + send.
 // REFACTOR-R4-P3-03: sendPaymentAuditReport — the booking-payment audit's findings, to the
 // tutor (NOTIFY_EMAIL, Spanish).
-import type { BlogArea, PaymentAuditReport } from "@/domain/types";
+import type { AnnouncementKind, BlogArea, PaymentAuditReport } from "@/domain/types";
 
 export interface ConfirmationEmailParams {
   to:           string;
@@ -70,6 +71,19 @@ export interface BlogPostAnnouncementParams {
   postLocales: ('es' | 'en')[];
 }
 
+// COURSE-ANNOUNCE-01: one courses subscriber's copy of a course announcement. `whatsNew` is the
+// single admin-typed line of an `update`; the other kinds ignore it.
+export interface CourseAnnouncementParams {
+  to:              string;
+  locale:          'es' | 'en';
+  kind:            AnnouncementKind;
+  courseSlug:      string;
+  courseTitle:     string;
+  lessonCount:     number;
+  firstLessonSlug: string | null;
+  whatsNew?:       string;
+}
+
 export interface IEmailClient {
   sendConfirmation(params: ConfirmationEmailParams): Promise<void>;
   sendNewBookingNotification(params: NewBookingNotificationParams): Promise<void>;
@@ -80,4 +94,7 @@ export interface IEmailClient {
   /** BLOG-15: the dry run's sample — rendered, never sent. */
   renderBlogPostAnnouncement(params: Omit<BlogPostAnnouncementParams, "to">): Promise<{ subject: string; html: string }>;
   sendBlogPostAnnouncement(params: BlogPostAnnouncementParams): Promise<void>;
+  /** COURSE-ANNOUNCE-01: the dry run's sample — rendered, never sent. */
+  renderCourseAnnouncement(params: Omit<CourseAnnouncementParams, "to">): Promise<{ subject: string; html: string }>;
+  sendCourseAnnouncement(params: CourseAnnouncementParams): Promise<void>;
 }
