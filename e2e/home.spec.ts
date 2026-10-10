@@ -226,8 +226,10 @@ test.describe("REDESIGN-P3-02: the home", () => {
     await page.goto("/cursos");
     await expect(page.locator(".course-card")).toHaveCount(homeCourses, { timeout: 30_000 });
 
+    // BLOG-13: `/blog` no longer renders `PostCard` — its newest post is the `.blog-featured`
+    // card, the rest `.blog-card`s, in that DOM order. The home band still uses `.post-card`.
     await page.goto("/blog");
-    const blogHrefs = await page.locator(".post-card").evaluateAll((els) =>
+    const blogHrefs = await page.locator(".blog-featured, .blog-card").evaluateAll((els) =>
       els.map((el) => (el as HTMLAnchorElement).getAttribute("href")),
     );
     expect(blogHrefs.slice(0, 2)).toEqual(homePostHrefs);
