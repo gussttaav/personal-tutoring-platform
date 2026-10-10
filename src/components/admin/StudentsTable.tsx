@@ -6,6 +6,7 @@
  * migration 0024). This used to filter in the browser over the first 100 users by
  * email, so a student past #100 could not be found at all. Both tab counts come from
  * the query and cover the current search.
+ * ADMIN-02: cells are marked for the phone layout (one card per student).
  */
 "use client";
 
@@ -122,7 +123,7 @@ export function StudentsTable({
                   key={s.email}
                   onClick={() => router.push(`/admin/students/${encodeURIComponent(s.email)}`)}
                 >
-                  <td>
+                  <td className="c-main">
                     <div className="cell-row">
                       <div className="lc-avatar lc-avatar-sm">{initials(s.name)}</div>
                       <div className="cell-stack">
@@ -131,7 +132,7 @@ export function StudentsTable({
                       </div>
                     </div>
                   </td>
-                  <td className="cell-right">
+                  <td className="cell-right c-side">
                     <div
                       className={`credits-pill ${s.totalCredits <= 1 ? "is-low" : ""} ${
                         s.totalCredits === 0 ? "is-zero" : ""
@@ -141,9 +142,9 @@ export function StudentsTable({
                       <span className="credits-label">cr.</span>
                     </div>
                   </td>
-                  <td className="muted">{s.earliestExpiry ? fmtDate(s.earliestExpiry) : "—"}</td>
-                  <td className="muted">{s.nextSession ? fmtShort(s.nextSession) : "—"}</td>
-                  <td className="cell-right">
+                  <td className="muted" data-label="Caduca">{s.earliestExpiry ? fmtDate(s.earliestExpiry) : "—"}</td>
+                  <td className="muted" data-label="Próxima sesión">{s.nextSession ? fmtShort(s.nextSession) : "—"}</td>
+                  <td className="cell-right c-chev">
                     <span className="material-symbols-outlined chevron">chevron_right</span>
                   </td>
                 </tr>

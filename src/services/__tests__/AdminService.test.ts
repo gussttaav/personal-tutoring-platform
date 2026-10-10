@@ -234,3 +234,28 @@ describe("AdminService dashboard reads", () => {
     });
   });
 });
+
+// ADMIN-02: the sidebar badges, read by the admin layout on every page.
+describe("AdminService.navCounts", () => {
+  it("returns the failed-booking and open-report counts", async () => {
+    const { service, queries } = setup();
+    queries.failedBookings = 2;
+    queries.openReports    = 3;
+
+    expect(await service.navCounts()).toEqual({ failedBookings: 2, openReports: 3 });
+  });
+
+  it("a read error answers null (no badges) and logs, instead of failing the page", async () => {
+    const { service, queries } = setup();
+    queries.navCountsError = new Error("supabase down");
+    const { log } = jest.requireMock("@/lib/logger") as { log: jest.Mock };
+    log.mockClear();
+
+    await expect(service.navCounts()).resolves.toBeNull();
+    expect(log).toHaveBeenCalledWith(
+      "warn",
+      expect.stringContaining("nav counts"),
+      expect.objectContaining({ service: "AdminService", err: expect.stringContaining("supabase down") }),
+    );
+  });
+});

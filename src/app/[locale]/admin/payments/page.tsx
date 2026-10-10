@@ -2,6 +2,7 @@
  * ADMIN-01: Payment history — last 100 payments with 30-day revenue + sparkline.
  * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
  * REFACTOR-R4-P3-02: reads through adminService (was ../_data).
+ * ADMIN-02: cells are marked for the phone layout (one card per payment).
  */
 
 import Link from "next/link";
@@ -102,13 +103,13 @@ export default async function PaymentsPage() {
             <tbody>
               {payments.map((p) => (
                 <tr key={p.id}>
-                  <td>
+                  <td data-label="Fecha">
                     <div className="cell-stack">
                       <span>{fmtDateTime(p.created_at)}</span>
                       <span className="cell-meta">{relativeTime(p.created_at)}</span>
                     </div>
                   </td>
-                  <td>
+                  <td className="c-main">
                     <Link href={`/admin/students/${encodeURIComponent(p.email)}`}>
                       <div className="cell-stack">
                         <span className="cell-strong">{p.name}</span>
@@ -116,16 +117,16 @@ export default async function PaymentsPage() {
                       </div>
                     </Link>
                   </td>
-                  <td>
+                  <td data-label="Tipo">
                     <span className="type-pill">{checkoutLabel(p.checkout_type)}</span>
                   </td>
-                  <td className="cell-right mono cell-strong">
+                  <td className="cell-right mono cell-strong" data-label="Importe">
                     €{(p.amount_cents / 100).toFixed(2)}
                   </td>
-                  <td>
+                  <td className="c-side">
                     <StatusBadge status={p.status} kind="payment" />
                   </td>
-                  <td className="mono muted truncate" title={p.stripe_payment_id}>
+                  <td className="mono muted truncate" data-label="Stripe" title={p.stripe_payment_id}>
                     {p.stripe_payment_id}
                   </td>
                 </tr>

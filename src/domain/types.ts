@@ -1013,6 +1013,14 @@ export interface AdminDashboardCounts {
   failedBookings:    number;
 }
 
+/** ADMIN-02: the admin sidebar's badges — only things that need the admin to act. */
+export interface AdminNavCounts {
+  /** Dead-letter entries: paid, no booking created. */
+  failedBookings: number;
+  /** Lesson/post error reports still marked open. */
+  openReports:    number;
+}
+
 /** A manual credit adjustment. `applied` differs from `requested` only when a debit
  *  ran into the student's real balance. */
 export interface CreditAdjustment {

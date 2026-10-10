@@ -14,6 +14,9 @@
  * embedded in the 307 document an unauthenticated `curl` receives. Checking here,
  * before `getAdminOverview()`, means a non-admin request never reaches the data.
  * (Verified against `pnpm start`; the other admin pages share the layout-only gate.)
+ *
+ * ADMIN-02: cells are marked for the phone layout (one card per row); the long ones
+ * (comments, the report message) stack their label above the content.
  */
 
 import { redirect } from "next/navigation";
@@ -73,7 +76,7 @@ export default async function FeedbackPage() {
                 const list = commentsByContent.get(`${a.contentType}|${a.contentKey}`) ?? [];
                 return (
                   <tr key={`${a.contentType}|${a.contentKey}`}>
-                    <td>
+                    <td className="c-main">
                       <div className="cell-stack">
                         {a.pageUrl ? (
                           <a href={a.pageUrl} target="_blank" rel="noopener noreferrer">
@@ -88,16 +91,16 @@ export default async function FeedbackPage() {
                         </span>
                       </div>
                     </td>
-                    <td className="success-text">{a.up}</td>
-                    <td className={a.down > 0 ? "error-text" : "muted"}>{a.down}</td>
-                    <td className="muted">{ratio(a.up, a.down)}</td>
-                    <td>
+                    <td className="success-text" data-label="👍">{a.up}</td>
+                    <td className={a.down > 0 ? "error-text" : "muted"} data-label="👎">{a.down}</td>
+                    <td className="muted" data-label="Ratio">{ratio(a.up, a.down)}</td>
+                    <td data-label="Último voto">
                       <div className="cell-stack">
                         <span>{fmtDateTime(a.lastVoteAt)}</span>
                         <span className="cell-meta">{relativeTime(a.lastVoteAt)}</span>
                       </div>
                     </td>
-                    <td>
+                    <td className={list.length === 0 ? undefined : "c-block"} data-label="Comentarios">
                       {list.length === 0 ? (
                         <span className="muted">{a.comments === 0 ? "—" : a.comments}</span>
                       ) : (
@@ -129,7 +132,7 @@ export default async function FeedbackPage() {
       <Card title="Reportes de error" padding={false}>
         {reports.length === 0 ? (
           <div className="card-body">
-            <Empty icon="check_circle" label="Sin reportes de error." />
+            <Empty icon="check_circle" tone="good" label="Sin reportes de error." />
           </div>
         ) : (
           <table className="data-table">
@@ -146,13 +149,13 @@ export default async function FeedbackPage() {
             <tbody>
               {reports.map((r) => (
                 <tr key={r.id}>
-                  <td>
+                  <td data-label="Fecha">
                     <div className="cell-stack">
                       <span>{fmtDateTime(r.createdAt)}</span>
                       <span className="cell-meta">{relativeTime(r.createdAt)}</span>
                     </div>
                   </td>
-                  <td>
+                  <td className="c-main">
                     <div className="cell-stack">
                       <a href={r.pageUrl} target="_blank" rel="noopener noreferrer">
                         {r.contentKey}
@@ -162,7 +165,7 @@ export default async function FeedbackPage() {
                       </span>
                     </div>
                   </td>
-                  <td style={{ maxWidth: 420 }}>
+                  <td className="c-block" data-label="Mensaje" style={{ maxWidth: 420 }}>
                     {r.message.length > 120 ? (
                       <details>
                         <summary style={{ cursor: "pointer" }}>{r.message.slice(0, 120)}…</summary>
@@ -172,14 +175,14 @@ export default async function FeedbackPage() {
                       <span style={{ whiteSpace: "pre-wrap" }}>{r.message}</span>
                     )}
                   </td>
-                  <td className={r.reporterEmail ? "" : "muted"}>{r.reporterEmail ?? "anónimo"}</td>
-                  <td>
+                  <td className={r.reporterEmail ? "" : "muted"} data-label="Reportado por">{r.reporterEmail ?? "anónimo"}</td>
+                  <td className="c-side">
                     <div className="cell-stack">
                       <StatusBadge status={r.status} kind="report" />
                       {r.resolvedAt && <span className="cell-meta">{relativeTime(r.resolvedAt)}</span>}
                     </div>
                   </td>
-                  <td className="cell-right">
+                  <td className="cell-right c-act">
                     <ReportStatusButton id={r.id} status={r.status} />
                   </td>
                 </tr>

@@ -2,6 +2,9 @@
  * ADMIN-01: Shared presentational primitives for the admin panel.
  * Ported from the redesign prototype (admin-app.jsx). Server-safe (no hooks).
  * Trend deltas from the prototype were intentionally dropped — no backend source.
+ * ADMIN-02: StatCard is the redesigned KPI tile (icon chip, value, a footnote line);
+ * Card takes an optional count chip beside its title; Empty has a "good" tone for
+ * the all-clear states (a green filled check instead of a grey icon).
  */
 
 import Link from "next/link";
@@ -67,31 +70,38 @@ export function PageHeader({
   );
 }
 
-/* ─── Stat card ──────────────────────────────────────────────────────── */
+/* ─── Stat card (KPI tile) ─────────────────────────────────────────────── */
+
+export type StatTone = "neutral" | "green" | "amber" | "red";
 
 export function StatCard({
   label,
   value,
   href,
-  tone = "neutral",
   icon,
+  foot,
+  tone = "neutral",
 }: {
   label: string;
   value: ReactNode;
-  href: string;
-  tone?: "neutral" | "alert";
-  icon?: string;
+  href:  string;
+  icon:  string;
+  /** One short line under the value: what the number means or what's next. */
+  foot?: string;
+  tone?: StatTone;
 }) {
-  const isAlert = tone === "alert";
   return (
-    <Link href={href} className={`stat-card ${isAlert ? "is-alert" : ""}`}>
-      <div className="stat-card-top">
-        <span className="stat-card-label">{label}</span>
-        {icon && <span className="stat-card-icon material-symbols-outlined">{icon}</span>}
+    <Link href={href} className={`kpi${tone === "neutral" ? "" : ` tone-${tone}`}`}>
+      <div className="kpi-head">
+        <span className="kpi-icon">
+          <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
+        </span>
+        <span className="kpi-label">{label}</span>
       </div>
-      <div className="stat-card-value">{value}</div>
-      <div className="stat-card-cta">
-        Ver detalle <span className="material-symbols-outlined">arrow_forward</span>
+      <div className="kpi-value">{value}</div>
+      <div className="kpi-foot">
+        <span>{foot ?? "Ver detalle"}</span>
+        <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
       </div>
     </Link>
   );
@@ -101,20 +111,34 @@ export function StatCard({
 
 export function Card({
   title,
+  count,
+  countTone,
   action,
   children,
   padding = true,
+  className,
 }: {
   title?: string;
+  /** A small chip beside the title (a row count). */
+  count?: ReactNode;
+  countTone?: "red";
   action?: ReactNode;
   children: ReactNode;
   padding?: boolean;
+  className?: string;
 }) {
   return (
-    <section className="card">
+    <section className={className ? `card ${className}` : "card"}>
       {(title || action) && (
         <header className="card-header">
-          {title && <h2 className="card-title">{title}</h2>}
+          {title && (
+            <h2 className="card-title">
+              {title}
+              {count !== undefined && (
+                <span className={`card-count${countTone ? ` is-${countTone}` : ""}`}>{count}</span>
+              )}
+            </h2>
+          )}
           {action}
         </header>
       )}
@@ -125,10 +149,19 @@ export function Card({
 
 /* ─── Empty state ────────────────────────────────────────────────────── */
 
-export function Empty({ icon = "inbox", label }: { icon?: string; label: string }) {
+export function Empty({
+  icon = "inbox",
+  label,
+  tone,
+}: {
+  icon?: string;
+  label: string;
+  /** "good": an all-clear state (green filled icon). */
+  tone?: "good";
+}) {
   return (
-    <div className="empty">
-      <span className="material-symbols-outlined">{icon}</span>
+    <div className={tone === "good" ? "empty is-good" : "empty"}>
+      <span className="material-symbols-outlined" aria-hidden="true">{icon}</span>
       <span>{label}</span>
     </div>
   );

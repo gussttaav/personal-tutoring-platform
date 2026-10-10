@@ -5,6 +5,8 @@
  * The pack "original" strikethrough price is NOT an input — it's derived as the
  * 1h session price × the pack's hours, shown read-only so the admin sees it
  * update live as they edit the 1h price.
+ *
+ * ADMIN-02: cells are marked for the phone layout (one card per product).
  */
 "use client";
 
@@ -140,8 +142,8 @@ export function PricingForm({
             const originalCents = derivedOriginalCents(key);
             return (
               <tr key={key}>
-                <td>{PRODUCT_LABELS[key]}</td>
-                <td>
+                <td className="c-main cell-strong">{PRODUCT_LABELS[key]}</td>
+                <td data-label="Precio (€)">
                   <input
                     className="pricing-input"
                     type="number"
@@ -151,7 +153,7 @@ export function PricingForm({
                     onChange={(e) => setAmount(key, e.target.value)}
                   />
                 </td>
-                <td className="pricing-na">
+                <td className="pricing-na" data-label="Original (auto)">
                   {originalCents !== null ? formatEuros(originalCents) : "—"}
                 </td>
               </tr>

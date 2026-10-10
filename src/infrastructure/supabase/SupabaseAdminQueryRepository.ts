@@ -10,6 +10,7 @@ import type { IAdminQueryRepository, ListStudentsQuery } from "@/domain/reposito
 import type {
   AdminBookingRow,
   AdminDashboardCounts,
+  AdminNavCounts,
   AdminPaymentRow,
   BookingRow,
   CreditPackRow,
@@ -83,6 +84,26 @@ export class SupabaseAdminQueryRepository implements IAdminQueryRepository {
       upcomingBookings:  upcoming.count ?? 0,
       lowCreditStudents: students.lowCreditTotal,
       failedBookings:    failed.count ?? 0,
+    };
+  }
+
+  // ADMIN-02: the sidebar badges. Head counts only, so it stays cheap on every admin page.
+  async navCounts(): Promise<AdminNavCounts> {
+    const [failed, reports] = await Promise.all([
+      supabase
+        .from("failed_bookings")
+        .select("stripe_session_id", { count: "exact", head: true }),
+      supabase
+        .from("content_reports")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "open"),
+    ]);
+    if (failed.error) throw failed.error;
+    if (reports.error) throw reports.error;
+
+    return {
+      failedBookings: failed.count ?? 0,
+      openReports:    reports.count ?? 0,
     };
   }
 

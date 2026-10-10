@@ -8,6 +8,8 @@
  *
  * Mirrors PricingForm: diff-only submit, mandatory reason, POST then full reload.
  * Admin panel is Spanish.
+ *
+ * ADMIN-02: cells are marked for the phone layout (one card per product).
  */
 "use client";
 
@@ -133,8 +135,8 @@ export function StudentPricingForm({
             const def = defaultByKey.get(key);
             return (
               <tr key={key}>
-                <td>{PRODUCT_LABELS[key]}</td>
-                <td>
+                <td className="c-main cell-strong">{PRODUCT_LABELS[key]}</td>
+                <td data-label="Precio alumno (€)">
                   <input
                     className="pricing-input"
                     type="number"
@@ -145,7 +147,7 @@ export function StudentPricingForm({
                     onChange={(e) => setAmount(key, e.target.value)}
                   />
                 </td>
-                <td className="pricing-na">
+                <td className="pricing-na" data-label="Por defecto">
                   {def ? formatEuros(def.amountCents) : "—"}
                 </td>
               </tr>

@@ -2,6 +2,7 @@
  * ADMIN-01: Failed bookings (dead-letter) UI.
  * Uses paymentService.listFailedBookings() and the existing retry API (REL-03).
  * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
+ * ADMIN-02: cells are marked for the phone layout (one card per entry).
  */
 
 import { redirect } from "next/navigation";
@@ -40,7 +41,7 @@ export default async function FailedBookingsPage() {
       <Card padding={false}>
         {entries.length === 0 ? (
           <div className="card-body">
-            <Empty icon="check_circle" label="Sin reservas fallidas. Todo en orden." />
+            <Empty icon="check_circle" tone="good" label="Sin reservas fallidas. Todo en orden." />
           </div>
         ) : (
           <table className="data-table">
@@ -57,21 +58,21 @@ export default async function FailedBookingsPage() {
             <tbody>
               {entries.map((e) => (
                 <tr key={e.stripeSessionId}>
-                  <td>
+                  <td data-label="Fallo">
                     <div className="cell-stack">
                       <span>{fmtDateTime(e.failedAt)}</span>
                       <span className="cell-meta">{relativeTime(e.failedAt)}</span>
                     </div>
                   </td>
-                  <td>{e.email ?? "—"}</td>
-                  <td className="muted">{fmtDateTime(e.startIso)}</td>
-                  <td className="error-text" style={{ maxWidth: 320 }} title={e.error}>
+                  <td className="c-main">{e.email ?? "—"}</td>
+                  <td className="muted" data-label="Hueco">{fmtDateTime(e.startIso)}</td>
+                  <td className="error-mono c-block" data-label="Error" title={e.error}>
                     {e.error}
                   </td>
-                  <td className="mono muted truncate" title={e.stripeSessionId}>
+                  <td className="mono muted truncate" data-label="Stripe" title={e.stripeSessionId}>
                     {e.stripeSessionId}
                   </td>
-                  <td className="cell-right">
+                  <td className="cell-right c-act">
                     <RetryButton stripeSessionId={e.stripeSessionId} />
                   </td>
                 </tr>
