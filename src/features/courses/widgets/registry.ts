@@ -70,4 +70,8 @@ export const WIDGETS: Record<WidgetId, WidgetComponent> = {
   "scaling-laws": dynamic(() => import("./nn/ScalingLaws"), { ssr: false }),
   // COURSE-C2-P1-02 — llm-agents Block 2 lesson 2 (la plantilla de chat).
   "chat-template": dynamic(() => import("./nlp/ChatTemplate"), { ssr: false }),
+  // COURSE-C2-P1-02 — llm-agents Block 2 lesson 4 (preferencias y el modelo de recompensa).
+  "bradley-terry": dynamic(() => import("./nn/BradleyTerry"), { ssr: false }),
+  // COURSE-C2-P1-02 — llm-agents Block 2 lesson 6 (DPO: la derivación completa).
+  "dpo-loss": dynamic(() => import("./nn/DpoLoss"), { ssr: false }),
 };

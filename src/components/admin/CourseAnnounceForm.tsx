@@ -12,20 +12,25 @@
  * already returned, and touching any field throws the preview away and re-locks the button.
  * The server enforces the same asymmetry independently — a POST without `confirm` cannot
  * send — so this component is the second lock, not the only one.
+ *
+ * BLOG-15: how many people the email reaches is the first thing on screen, not the last. The
+ * live count (`useRecipientCount`, a count-only POST) follows the course, the kind and the key
+ * from the moment they are picked, before any preview, and «Enviar» opens a dialog that
+ * names the total — read fresh as it opens — with the ENVIAR guard inside it. The samples
+ * frame and the dialog are shared with the blog form.
  */
 "use client";
 
 import { useState } from "react";
 import type { AnnouncementKind } from "@/domain/types";
+import { AnnounceSamples, type AnnounceSample } from "./AnnounceSamples";
+import { ConfirmSendDialog } from "./ConfirmSendDialog";
+import { RecipientCount } from "./RecipientCount";
+import { useRecipientCount } from "./useRecipientCount";
 
 interface CourseOption {
   slug:  string;
   title: string;
-}
-
-interface Sample {
-  subject: string;
-  html:    string;
 }
 
 interface DryRun {
@@ -38,7 +43,7 @@ interface DryRun {
   wouldSendNow:    number;
   byLocale:        { es: number; en: number };
   translation:     { translated: number; total: number; fullyTranslated: boolean };
-  samples:         Partial<Record<"es" | "en", Sample>>;
+  samples:         Partial<Record<"es" | "en", AnnounceSample>>;
 }
 
 interface SendResult {
@@ -59,28 +64,8 @@ const KINDS: { value: AnnouncementKind; label: string; hint: string }[] = [
     hint: "Has revisado a fondo un curso publicado. Se puede enviar tantas veces como haga falta." },
 ];
 
-/* The sample renders in its own document, so globals.css never reaches it and the frame falls
-   back to the browser's chunky default bar. Same rule as the app's (globals.css "Emerald
-   Nocturne"), with the custom properties resolved to literals because :root does not cross the
-   frame boundary. Injected into <head> rather than added to the email template: this is preview
-   chrome, and what ships has to stay exactly what the dry run returned. */
-const PREVIEW_CHROME = `<style>
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #3c4a42; border-radius: 10px; }
-  ::-webkit-scrollbar-thumb:hover { background: #4edea3; }
-</style>`;
-
-/** The email exactly as sent, plus the scrollbar rule above. A template without a </head>
- *  is returned untouched — it just keeps the default bar. */
-function withPreviewChrome(html: string): string {
-  return html.replace("</head>", `${PREVIEW_CHROME}</head>`);
-}
-
-const CONFIRM_WORD    = "ENVIAR";
-const MAX_WHATS_NEW   = 300;
-const LOCALES         = ["es", "en"] as const;
-const LOCALE_LABEL: Record<(typeof LOCALES)[number], string> = { es: "Español", en: "Inglés" };
+const ENDPOINT      = "/api/admin/course-announce";
+const MAX_WHATS_NEW = 300;
 
 /** What the server will default the key to for an update, mirrored here so the operator can
  *  read it before previewing. The confirmed send always uses the key the DRY RUN returned,
@@ -97,19 +82,28 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
 
   const [preview, setPreview]       = useState<DryRun | null>(null);
   const [totals, setTotals]         = useState({ sent: 0, failed: 0, failedTo: [] as string[] });
-  const [remaining, setRemaining]   = useState<number | null>(null);
-  const [confirmWord, setConfirmWord] = useState("");
+  const [chunks, setChunks]         = useState(0);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
+
+  // The live count. Once previewed, it counts against the key the dry run resolved — the one
+  // the send will use — so the dialog's total is about exactly that announcement.
+  const countKey = preview?.announcementKey
+    ?? (kind === "update" && keyOverride.trim() ? keyOverride.trim() : undefined);
+  const { count, refresh: refreshCount } = useRecipientCount(
+    ENDPOINT,
+    courseSlug ? { courseSlug, kind, ...(countKey ? { announcementKey: countKey } : {}) } : null,
+  );
 
   /** Any edit invalidates everything downstream of it. A preview that no longer describes
    *  the form is worse than no preview at all. */
   function reset() {
     setPreview(null);
     setTotals({ sent: 0, failed: 0, failedTo: [] });
-    setRemaining(null);
-    setConfirmWord("");
+    setChunks(0);
+    setConfirmOpen(false);
     setError(null);
   }
 
@@ -136,7 +130,7 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
     setError(null);
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/course-announce", {
+      const res = await fetch(ENDPOINT, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(body),
@@ -166,6 +160,12 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
     if (data) setPreview(data as DryRun);
   }
 
+  function openConfirm() {
+    // Read the total again as the dialog opens: it is the number the operator confirms.
+    refreshCount();
+    setConfirmOpen(true);
+  }
+
   async function runSend() {
     if (!preview) return;
     const data = await post({
@@ -186,17 +186,21 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
       failed:   t.failed + result.failed,
       failedTo: [...t.failedTo, ...result.failedTo],
     }));
-    setRemaining(result.remaining);
-    // Re-arm: every chunk is its own deliberate act.
-    setConfirmWord("");
+    setChunks((n) => n + 1);
+    // Every chunk is its own deliberate act: close, and count what is left.
+    setConfirmOpen(false);
+    refreshCount();
   }
 
-  const armed        = confirmWord.trim().toUpperCase() === CONFIRM_WORD;
-  const sendable     = (preview?.wouldSendNow ?? 0) > 0;
-  const finished     = remaining === 0;
-  const showContinue = remaining !== null && remaining > 0;
+  // What is left comes from the live count, so a failed address still counts as pending.
+  const pendingNow   = count.status === "ready" ? count.data?.pending ?? null : null;
+  const sendable     = pendingNow !== null && pendingNow > 0;
+  const finished     = chunks > 0 && pendingNow === 0;
+  const showContinue = chunks > 0 && sendable;
   const partialEnglish =
     kind === "english" && preview !== null && !preview.translation.fullyTranslated;
+  const kindLabel    = KINDS.find((k) => k.value === kind)!.label;
+  const courseTitle  = courses.find((c) => c.slug === courseSlug)?.title ?? courseSlug;
 
   return (
     <div className="adjust-form">
@@ -273,6 +277,9 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
         </div>
       )}
 
+      {/* ── How many it reaches — live, before any preview ─────────────────── */}
+      <RecipientCount count={count} onRetry={refreshCount} />
+
       {/* ── 3. Preview ────────────────────────────────────────────────────── */}
       <div className="adjust-form-row">
         <button className="btn-primary" onClick={runPreview} disabled={loading || !courseSlug}>
@@ -285,24 +292,6 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
 
       {preview && (
         <>
-          <div className="stat-grid stat-grid-3 announce-stats">
-            <div className="stat-card stat-card-static">
-              <div className="stat-card-top"><span className="stat-card-label">Suscriptores</span></div>
-              <div className="stat-card-value">{preview.subscribers}</div>
-            </div>
-            <div className="stat-card stat-card-static">
-              <div className="stat-card-top"><span className="stat-card-label">Pendientes</span></div>
-              <div className="stat-card-value">{preview.pending}</div>
-              <div className="announce-split">
-                {preview.byLocale.es} en español · {preview.byLocale.en} en inglés
-              </div>
-            </div>
-            <div className="stat-card stat-card-static">
-              <div className="stat-card-top"><span className="stat-card-label">Ya avisados</span></div>
-              <div className="stat-card-value">{preview.alreadyNotified}</div>
-            </div>
-          </div>
-
           {partialEnglish && (
             <p className="announce-warn">
               <span className="material-symbols-outlined">warning</span>
@@ -312,57 +301,24 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
             </p>
           )}
 
-          {/* The email exactly as it will arrive, in both languages. Sandboxed with no
-              permissions at all: the samples are inert, so the links in them do not open. */}
-          <div className="announce-samples">
-            {LOCALES.map((locale) => {
-              const sample = preview.samples[locale];
-              if (!sample) return null;
-              return (
-                <div key={locale} className="announce-sample">
-                  <div className="announce-sample-head">
-                    <span className="type-pill">{LOCALE_LABEL[locale]}</span>
-                    <strong>{sample.subject}</strong>
-                  </div>
-                  <iframe
-                    className="announce-frame"
-                    sandbox=""
-                    title={`Vista previa (${LOCALE_LABEL[locale]})`}
-                    srcDoc={withPreviewChrome(sample.html)}
-                  />
-                </div>
-              );
-            })}
-          </div>
+          <AnnounceSamples samples={preview.samples} />
 
           {/* ── 4. Send ─────────────────────────────────────────────────── */}
-          {!sendable ? (
-            <p className="announce-empty">
-              <strong>0 destinatarios.</strong>{" "}
-              {preview.subscribers === 0
-                ? "Todavía no hay nadie suscrito a los cursos."
-                : `Los ${preview.subscribers} suscriptores ya recibieron el anuncio con la clave «${preview.announcementKey}».`}
-            </p>
+          {pendingNow === null ? null : !sendable ? (
+            chunks === 0 && (
+              <p className="announce-empty">
+                <strong>0 destinatarios.</strong>{" "}
+                {count.data?.subscribers === 0
+                  ? "Todavía no hay nadie suscrito a los cursos."
+                  : `Los ${count.data?.subscribers} suscriptores ya recibieron el anuncio con la clave «${preview.announcementKey}».`}
+              </p>
+            )
           ) : (
             <div className="announce-send">
               <div className="adjust-form-row">
-                <input
-                  className="adjust-reason"
-                  type="text"
-                  placeholder={`Escribe ${CONFIRM_WORD} para confirmar`}
-                  value={confirmWord}
-                  onChange={(e) => setConfirmWord(e.target.value)}
-                />
-                <button
-                  className="btn-primary"
-                  onClick={runSend}
-                  disabled={loading || !armed}
-                >
-                  {loading
-                    ? "Enviando…"
-                    : showContinue
-                      ? `Continuar (quedan ${remaining})`
-                      : `Enviar a ${preview.wouldSendNow} ${preview.wouldSendNow === 1 ? "persona" : "personas"}`}
+                <button className="btn-primary" onClick={openConfirm} disabled={loading}>
+                  <span className="material-symbols-outlined" aria-hidden="true">send</span>
+                  {showContinue ? `Continuar (quedan ${pendingNow})` : "Enviar…"}
                 </button>
               </div>
               <p className="announce-hint">
@@ -372,13 +328,23 @@ export function CourseAnnounceForm({ courses }: { courses: CourseOption[] }) {
             </div>
           )}
 
+          {confirmOpen && (
+            <ConfirmSendDialog
+              count={count}
+              subject={`${kindLabel} · ${courseTitle}`}
+              sending={loading}
+              onConfirm={runSend}
+              onClose={() => setConfirmOpen(false)}
+            />
+          )}
+
           {(totals.sent > 0 || totals.failed > 0) && (
             <div className="announce-result">
               <p className={finished ? "success-text" : "muted"}>
                 {finished ? "✓ Envío completado. " : ""}
                 Enviados: <strong>{totals.sent}</strong> · Fallidos:{" "}
                 <strong>{totals.failed}</strong>
-                {remaining !== null && !finished ? ` · Quedan ${remaining}` : ""}
+                {pendingNow !== null && !finished ? ` · Quedan ${pendingNow}` : ""}
               </p>
               {totals.failedTo.length > 0 && (
                 <p className="error-text mono">No se pudo enviar a: {totals.failedTo.join(", ")}</p>

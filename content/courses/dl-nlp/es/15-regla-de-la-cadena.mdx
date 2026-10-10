@@ -54,7 +54,7 @@ challenges:
         devuelve su jacobiana en ese punto, de forma $(m,\, n)$, calculada con diferencias
         centradas: la columna $j$ es $\left(f(\mathbf{x} + h\mathbf{e}_j) - f(\mathbf{x} - h\mathbf{e}_j)\right)/2h$
         con $h = 10^{-6}$.
-      - `gradiente_entrada(jacobianas, g)` recibe una lista de jacobianas **en el orden de ida**
+      - `gradiente_entrada(jacobianas, g)` recibe una lista de jacobianas *en el orden de ida*
         (la primera es la de la primera función) y el gradiente en la salida, y devuelve el
         gradiente en la entrada. Es un vector, no una matriz.
 
@@ -128,7 +128,7 @@ challenges:
               g = J.T @ g
           return g
     explanation: |
-      `jacobiana` construye la matriz por **columnas** y no por filas, y no es un capricho: la
+      `jacobiana` construye la matriz por *columnas* y no por filas, y no es un capricho: la
       columna $j$ es lo que le pasa a *todas* las salidas cuando se mueve la entrada $j$, que es
       exactamente lo que una diferencia finita puede medir de una vez. Una fila pediría mover una
       salida, y las salidas no se mueven, se miran. `np.stack(columnas, axis=1)` apila esas $n$
@@ -138,7 +138,7 @@ challenges:
       `gradiente_entrada` cabe en tres líneas y todas las decisiones están en `reversed`. Las
       jacobianas llegan en el orden en que se calcularon (ida) y se aplican en el contrario, cada
       una transpuesta, porque transponer un producto le da la vuelta al orden de los factores.
-      Fíjate en lo que **no** hace: no multiplica ninguna matriz por otra matriz. En cada vuelta
+      Fíjate en lo que *no* hace: no multiplica ninguna matriz por otra matriz. En cada vuelta
       `g` sigue siendo un vector, así que lo más caro que ocurre es una matriz por un vector.
 
       La última prueba es la que dice que todo esto sirve para algo. Derivar la composición entera
@@ -441,7 +441,7 @@ mano no cuadre.
 La cuarta cifra es la que enseña de qué va la lección. Olvidar un camino (el tercero, el que pasa
 por la neurona de salida de la clase neutra) deja la derivada en $-0.13342693$, casi el doble de
 lo que vale. Y mira los tres sumandos, porque el error no es de tamaño: los dos primeros son
-negativos y el tercero es **positivo**. Ese camino tiraba en contra, y quitarlo no recorta la
+negativos y el tercero es *positivo*. Ese camino tiraba en contra, y quitarlo no recorta la
 corrección, la agranda. Un camino olvidado no da una derivada aproximada: da la derivada de otra
 función.
 
@@ -467,7 +467,7 @@ y un desafío que es la regla de la cadena entera.
 ---
 
 Ya está todo lo que hace falta para derivar cualquier red, y así puesto no sirve. La celda ha
-calculado la derivada de **un** peso, y para conseguirla ha recorrido la cadena entera: el error de
+calculado la derivada de *un* peso, y para conseguirla ha recorrido la cadena entera: el error de
 la capa de salida, la matriz de la segunda capa, la diagonal de la activación. El peso de al lado
 necesita ese mismo recorrido con un solo factor distinto al final, y los otros cuarenta y nueve de
 esta red, también. Con un vocabulario de veinte mil entradas y ciento veintiocho neuronas ocultas

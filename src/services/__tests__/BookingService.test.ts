@@ -129,6 +129,10 @@ const mockEmail = (): jest.Mocked<IEmailClient> => ({
   sendCancellationNotification: jest.fn().mockResolvedValue(undefined),
   sendContentReportNotification: jest.fn().mockResolvedValue(undefined),
   sendPaymentAuditReport:       jest.fn().mockResolvedValue(undefined), // REFACTOR-R4-P3-03
+  renderBlogPostAnnouncement:   jest.fn(), // BLOG-15
+  sendBlogPostAnnouncement:     jest.fn().mockResolvedValue(undefined),
+  renderCourseAnnouncement:     jest.fn(), // COURSE-ANNOUNCE-01
+  sendCourseAnnouncement:       jest.fn().mockResolvedValue(undefined),
 });
 
 // getLocale defaults to null (no stored preference → 'es' fallback in the service).

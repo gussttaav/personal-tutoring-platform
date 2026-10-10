@@ -6,6 +6,8 @@ minutes: 5
 summary: "Una frase que dice qué se lleva el lector. Se usa en la tarjeta del índice, en la meta description y en el JSON-LD, así que tiene que funcionar fuera de contexto."
 draft: true
 reading: []
+areas: ["ia"]
+cover: "/blog/plantilla/figura.svg"
 tags: []
 aiImages: false
 ---
@@ -25,6 +27,18 @@ aiImages: false
     - `tags` y `reading` son obligatorios aunque estén vacíos
     - `aiImages` es obligatorio: `true` si las imágenes del artículo se generaron con
       IA. Cambia el texto de la nota sobre el uso de IA que cierra el artículo.
+
+  BLOG-13 — áreas, temas y portada, que alimentan los filtros del índice y del panel
+  lateral del artículo:
+    - `areas`: una o dos de ia | bases-de-datos | matematicas | programacion. La
+      primera es la que muestra la tarjeta. Obligatorio; sólo un borrador puede
+      dejarlo vacío. Igual en es/ y en/.
+    - `tags`: los temas, de la lista cerrada `BLOG_TOPICS` (src/constants/blog.ts). Un
+      tema nuevo se añade allí, en el tipo `BlogTopic` y con su etiqueta en
+      `blog.topics.*` de messages/es.json y messages/en.json.
+    - `cover` (opcional): una figura del propio artículo, `/blog/<slug>/<fichero>`, que
+      la tarjeta del índice usa de portada; en en/, su variante `.en.svg` si la hay.
+      Sin portada, la tarjeta muestra el icono del área.
 
   BLOG-02 — `reading` es la bibliografía del artículo, y se renderiza plegada al pie
   con el mismo formato que el bloque «Para profundizar» de las lecciones. Cada entrada

@@ -188,7 +188,7 @@ challenges:
       Los dos errores que comprueban los tests son los mismos que se cometen leyendo el
       artículo deprisa. El primero es poner las parejas en bloques —las $d/2$ primeras
       coordenadas todas senos, las $d/2$ últimas todos cosenos—: cada seno tiene que
-      quedar **al lado** de su coseno para que el bloque $2 \times 2$ de $\mathbf{M}_k$
+      quedar *al lado* de su coseno para que el bloque $2 \times 2$ de $\mathbf{M}_k$
       los alcance a los dos. El segundo es el signo: la matriz que sirve es la del giro
       con $-\sin$ en la fila de abajo, y con el signo cambiado sale una $\mathbf{M}_{-k}$
       perfectamente válida que lleva las filas en la dirección contraria. Fíjate también
@@ -264,7 +264,7 @@ $$
 $$
 
 para $i = 0, 1, \dots, d_{\text{model}}/2 - 1$. Léelo despacio, porque la estructura está en los
-índices: las coordenadas van **por parejas**, la pareja $i$ ocupa las coordenadas $2i$ y $2i+1$, y
+índices: las coordenadas van *por parejas*, la pareja $i$ ocupa las coordenadas $2i$ y $2i+1$, y
 las dos comparten el mismo argumento. Llamemos $\omega_i$ a ese divisor invertido, que es lo que la
 pareja gira por cada posición que se avanza:
 
@@ -328,7 +328,7 @@ $$
 \begin{bmatrix}\text{PE}_{(\text{pos},\,2i)} \\[2pt] \text{PE}_{(\text{pos},\,2i+1)}\end{bmatrix}.
 $$
 
-Mira lo que **no** está en esa matriz: $\text{pos}$. La posición de partida se ha quedado entera
+Mira lo que *no* está en esa matriz: $\text{pos}$. La posición de partida se ha quedado entera
 dentro del vector de la derecha, y el desarrollo la ha dejado ahí. Como cada pareja se transforma
 sin tocar a las demás, apilar las $d_{\text{model}}/2$ matrices de $2 \times 2$ a lo largo de la
 diagonal da una sola matriz para el vector entero:
@@ -337,7 +337,7 @@ $$
 \text{PE}_{\text{pos}+k} = \mathbf{M}_k\,\text{PE}_{\text{pos}}, \qquad \mathbf{M}_k \in \mathbb{R}^{d_{\text{model}} \times d_{\text{model}}}.
 $$
 
-Esa es la propiedad, y conviene leer bien lo que dice: hay **una** matriz por cada distancia $k$, y
+Esa es la propiedad, y conviene leer bien lo que dice: hay *una* matriz por cada distancia $k$, y
 esa matriz vale para todas las posiciones de la frase. Avanzar tres posiciones es aplicar
 $\mathbf{M}_3$, se avance desde la primera palabra o desde la última. Cada bloque es además un giro
 —sus dos columnas son perpendiculares y de longitud $1$—, así que $\mathbf{M}_k$ no estira ni encoge
@@ -468,7 +468,7 @@ vez de concatenar.
 Con esto la entrada está completa: cada fila de $\mathbf{X}$ trae lo que dice el token y dónde
 estaba, y la capa de atención de las cuatro lecciones anteriores ya se puede calcular entera sobre
 ella. Lo que queda es apilarla, que es lo que convierte una capa en un modelo. Y ahí aparece algo
-que esta lección deja pendiente sin decirlo: la posición se suma **una vez**, abajo del todo, y
+que esta lección deja pendiente sin decirlo: la posición se suma *una vez*, abajo del todo, y
 tiene que llegar viva hasta la última capa.
 
 Lo que el artículo dibuja alrededor de la atención —una conexión que se salta la capa entera, una

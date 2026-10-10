@@ -16,6 +16,8 @@ import { ContentFeedbackService } from "./ContentFeedbackService";
 import { LandingService }       from "./LandingService";
 import { AdminService }         from "./AdminService";
 import { BookingPaymentAuditService } from "./BookingPaymentAuditService";
+import { BlogAnnouncementService } from "./BlogAnnouncementService";
+import { CourseAnnouncementService } from "./CourseAnnouncementService";
 import {
   supabaseCreditsRepository,
   supabaseAuditRepository,
@@ -34,6 +36,8 @@ import {
 } from "@/infrastructure/supabase";
 import { registryCourseCatalog } from "@/lib/courses/catalog";
 import { registryContentCatalog } from "@/lib/content/catalog";
+import { registryBlogPostCatalog } from "@/lib/blog/post-catalog";
+import { registryCourseAnnouncementCatalog } from "@/lib/courses/announcement-catalog";
 import { ZoomClient }      from "@/infrastructure/zoom";
 import { CalendarClient, GoogleIdTokenVerifier }  from "@/infrastructure/google";
 import { EmailClient }     from "@/infrastructure/resend";
@@ -137,5 +141,23 @@ export const adminService = new AdminService(
 export const bookingPaymentAuditService = new BookingPaymentAuditService(
   supabaseBookingRepository,
   new StripeClient(),
+  new EmailClient(),
+);
+
+// BLOG-15: emails a published post to the blog subscribers who follow its areas
+// (POST /api/admin/blog-announce). The post catalog is the blog registry, injected.
+export const blogAnnouncementService = new BlogAnnouncementService(
+  supabaseSubscriptionRepository,
+  supabaseAuditRepository,
+  registryBlogPostCatalog,
+  new EmailClient(),
+);
+
+// COURSE-ANNOUNCE-01: emails a course to the courses subscribers (POST /api/admin/course-announce).
+// The course catalog is the registry, injected like the blog's.
+export const courseAnnouncementService = new CourseAnnouncementService(
+  supabaseSubscriptionRepository,
+  supabaseAuditRepository,
+  registryCourseAnnouncementCatalog,
   new EmailClient(),
 );

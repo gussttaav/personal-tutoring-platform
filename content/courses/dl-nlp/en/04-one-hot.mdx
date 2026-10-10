@@ -104,7 +104,7 @@ $$
 \lVert \mathbf{o}_u - \mathbf{o}_v \rVert^{2} = \sum_{k=1}^{\lvert V \rvert} \big( (\mathbf{o}_u)_k - (\mathbf{o}_v)_k \big)^{2} = 1^{2} + (-1)^{2} = 2,
 $$
 
-and therefore $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert = \sqrt{2}$, whatever $u$ and $v$ are, and whatever the size of the vocabulary. There it is, in one line: **every pair of words is at exactly the same distance.** No word sits between any other two, and nothing the representation says about the language can be read wrong, because it says nothing. The invented geometry of <Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion> has disappeared.
+and therefore $\lVert \mathbf{o}_u - \mathbf{o}_v \rVert = \sqrt{2}$, whatever $u$ and $v$ are, and whatever the size of the vocabulary. There it is, in one line: *every pair of words is at exactly the same distance.* No word sits between any other two, and nothing the representation says about the language can be read wrong, because it says nothing. The invented geometry of <Leccion slug="texto-como-numeros">the lesson on the problem of representing language</Leccion> has disappeared.
 
 <Details summary="Why the dimensions are |V| and not |V| − 1">
 That lesson ended with a count: $n$ mutually equidistant points need $n - 1$ dimensions. The minimum is then $\lvert V \rvert - 1$ dimensions (the triangle above, with three words, fits in a plane), and one-hot spends one more. It is no oversight, and the difference shows up when you look at where these vectors live.
@@ -161,7 +161,7 @@ So the virtue is the flaw, and it is the same property seen twice. We asked for 
 
 ## The one-hot matrix in NumPy, and how much space it would take
 
-The cell builds the one-hot of a tiny English vocabulary and checks the three claims from above against it: that the vectors are orthogonal, that every distance is $\sqrt{2}$ and what fraction of each vector is nonzero. Then it does the size counts **without allocating memory**, which is the only way to do them: a 50,000 by 50,000 table does not fit in the browser, and that is part of the result.
+The cell builds the one-hot of a tiny English vocabulary and checks the three claims from above against it: that the vectors are orthogonal, that every distance is $\sqrt{2}$ and what fraction of each vector is nonzero. Then it does the size counts *without allocating memory*, which is the only way to do them: a 50,000 by 50,000 table does not fit in the browser, and that is part of the result.
 
 <PyCell packages={["numpy"]} code={`
 import numpy as np
@@ -207,7 +207,7 @@ for window in [1, 2, 3, 5]:
           "possible windows  |  fraction covered by corpus:", "%.1e" % covered)
 `} />
 
-The three checks come out exactly and one is worth looking at twice: the set of pairwise distances has **a single element**. It is not that they are close to one another; there is only one value. With eight words you see it at a glance; with 50,000 it is still the problem.
+The three checks come out exactly and one is worth looking at twice: the set of pairwise distances has *a single element*. It is not that they are close to one another; there is only one value. With eight words you see it at a glance; with 50,000 it is still the problem.
 
 The size table has one surprising row and one that isn't. The unsurprising one: 50,000 entries take 9.31 GB, and that is why nobody stores this table. The surprising one: the right-hand column, the percentage of nonzero coordinates, which is already 0.003 % at 30,000 entries. And the last lines are the curse of dimensionality in four rows: with one or two words of context the corpus covers the whole space, with three it covers only 0.04 %, and with five the fraction is written with twelve zeros after the point. The jump happens between the second and third context word, not out at infinity.
 

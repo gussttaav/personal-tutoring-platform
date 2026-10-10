@@ -1,0 +1,601 @@
+---
+slug: dpo
+title: "DPO: la derivación completa"
+block: 2
+order: 6
+minutes: 38
+summary: "El objetivo de RLHF tiene un óptimo exacto: la referencia, con cada respuesta multiplicada por la exponencial de su recompensa entre β. Leído al revés, cada política define una recompensa implícita, β por el logaritmo de su cociente con la referencia, y en Bradley–Terry la función de partición se cancela porque es una constante por instrucción. Queda una pérdida sobre comparaciones que entrena la política sin modelo de recompensa y sin sorteos. En el mini-GPT, su recompensa implícita aprende la del anotador, un punto por letra."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-por-que-no-la-formula
+    type: single
+    prompt: 'La política óptima de RLHF tiene fórmula, $\pi^{\star}(y \mid x) = \pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta} / Z(x)$. ¿Por qué no se calcula y se sortea de ella, sin entrenar nada?'
+    options:
+      - { id: a, text: 'Porque $Z(x)$ es una suma sobre todas las respuestas posibles a $x$: para las de 16 tokens del mini-GPT, $512^{16} \approx 2 \times 10^{43}$ términos. Sin ella, la fórmula no da la probabilidad de ninguna respuesta.' }
+      - { id: b, text: 'Porque sólo vale con $\beta = 1$.' }
+      - { id: c, text: 'Porque $\pi^{\star}$ no suma 1, y hay que normalizarla entrenando.' }
+      - { id: d, text: 'Porque la recompensa $r(x, y)$ no se conoce para ninguna respuesta.' }
+    answer: a
+    explanation: 'La (a). El numerador se calcula para cada respuesta; lo que no se calcula es el denominador, que las recorre todas. La (c) lo pone al revés: $Z(x)$ es justo lo que hace que $\pi^{\star}$ sume 1. La (d) no es la razón: en RLHF hay un modelo de recompensa que puntúa cualquier respuesta, y aun así habría que sumar sobre todas. DPO no calcula $Z(x)$: la hace desaparecer.'
+    hint: 'Escribe cuántos términos tiene la suma que define $Z(x)$.'
+  - id: q-por-que-se-cancela
+    type: multi
+    prompt: 'Al sustituir la recompensa despejada en Bradley–Terry, el término $\beta \log Z(x)$ desaparece. Marca las afirmaciones ciertas.'
+    options:
+      - { id: a, text: 'Desaparece porque las dos respuestas de una comparación contestan a la misma instrucción, y $Z(x)$ depende de la instrucción y no de la respuesta.' }
+      - { id: b, text: 'Es una constante por instrucción, $\kappa(x)$, de las que no cambian ninguna comparación.' }
+      - { id: c, text: 'Desaparece porque $Z(x) = 1$ cuando la política es la óptima.' }
+      - { id: d, text: 'Si una comparación enfrentara respuestas a dos instrucciones distintas, $x_A$ y $x_B$, dentro de la sigmoide quedaría $\beta \log Z(x_A) - \beta \log Z(x_B)$.' }
+    answer: [a, b, d]
+    explanation: 'La (a), la (b) y la (d). Entra sumando con la preferida y restando con la rechazada, y como es el mismo número, se va. Es la libertad que <Leccion slug="modelo-de-recompensa">la lección sobre el modelo de recompensa</Leccion> encontró en Bradley–Terry, y por eso la (d) es cierta: con dos instrucciones, los dos términos ya no son iguales. La (c) es falsa: $Z(x)$ es una media de exponenciales y casi nunca vale 1; no hace falta que valga nada para que se cancele.'
+    hint: 'Escribe la recompensa de la preferida y la de la rechazada con la fórmula despejada, y réstalas.'
+  - id: q-factor
+    type: numeric
+    prompt: 'Una comparación con $\beta = 0.1$: la política hace la preferida $e^{3}$ veces más probable que la referencia, y la rechazada $e^{2}$ veces menos. ¿Cuánto vale el factor de esa comparación en el gradiente?'
+    answer: 0.378
+    tolerance: 0.002
+    explanation: 'Un $0.378$. Los logaritmos del cociente son $3$ y $-2$, las recompensas implícitas $0.3$ y $-0.2$, y el margen $0.5$, así que el factor es $\sigma(-0.5) = 0.378$. Cinco nats de distancia entre las dos sólo dan medio punto de margen con esta $\beta$, y la comparación conserva tres cuartos del factor con que empezó, $0.5$. Con $\beta = 1$, la misma comparación tendría $\sigma(-5) = 0.007$: apagada.'
+    hint: 'Multiplica cada logaritmo del cociente por $\beta$, resta, y el factor es $\sigma(-\text{margen})$.'
+  - id: q-donde-esta-el-freno
+    type: single
+    prompt: 'La pérdida de DPO no tiene ningún término de KL. ¿Qué frena a la política para que no se aleje de la referencia?'
+    options:
+      - { id: a, text: 'La $\beta$ de dentro del margen. La recompensa implícita es $\beta$ por el logaritmo del cociente, así que con $\beta$ grande una comparación se apaga cerca de la referencia, y con $\beta$ pequeña la política tiene que alejarse mucho más antes de que se apague.' }
+      - { id: b, text: 'Nada: DPO no optimiza el objetivo de RLHF, sólo reproduce las comparaciones.' }
+      - { id: c, text: 'La referencia, que se entrena a la vez que la política y la va siguiendo.' }
+      - { id: d, text: 'El factor, que vale cero en cuanto la comparación está bien ordenada.' }
+    answer: a
+    explanation: 'La (a). La segunda celda lo enseña: la misma recompensa implícita, un punto por letra, con $\beta = 0.5$ y con $\beta = 0.1$, y la segunda política se aleja casi once veces más de la referencia. La (c) es falsa: la referencia está congelada, y por eso sirve de medida. La (d) exagera: el factor nunca llega a cero, y si los anotadores deciden siempre igual una comparación, el margen que la explica es infinito y la política no deja de alejarse. Es la crítica de Azar y sus coautores, en las lecturas.'
+    hint: 'Mira dónde aparece $\beta$ en la pérdida, y qué alejamiento hace falta para un margen dado.'
+  - id: q-preferidas-menos-probables
+    type: single
+    prompt: 'En la segunda celda, con $\beta = 0.5$, las 16 respuestas con cuatro letras a, más que la media, ganaron el 70 % de sus comparaciones. Su recompensa implícita media es $-0.4$: la política entrenada las escribe con menos probabilidad que la referencia. ¿Cómo puede ser?'
+    options:
+      - { id: a, text: 'La pérdida sólo ve márgenes. Para ordenar las comparaciones, las de cuatro letras tienen que perder menos probabilidad que las de dos o tres, no ganarla; la que pierden todas se va a respuestas con más letras, que la política escribe ahora más que la referencia.' }
+      - { id: b, text: 'Es un error: con DPO bien entrenado, la recompensa implícita de las respuestas que ganan es siempre positiva.' }
+      - { id: c, text: 'Porque $\beta = 0.5$ es demasiado grande y la política no ha podido moverse.' }
+      - { id: d, text: 'Porque el anotador prefirió casi siempre las respuestas con menos letras.' }
+    answer: a
+    explanation: 'La (a). El nivel de la recompensa implícita no lo fija ninguna comparación, como el de cualquier recompensa de Bradley–Terry; lo que queda fijado son las diferencias, y la masa de probabilidad tiene que salir de algún sitio para ir a las respuestas de cinco letras o más. Con modelos de verdad pasa igual: durante un entrenamiento con DPO, la probabilidad de las preferidas suele bajar, menos que la de las rechazadas. La (c) no cuadra con la celda: la política se movió tres nats y escribe más letras.'
+    hint: 'Pregúntate qué parte de la recompensa implícita fijan las comparaciones, y a dónde va la probabilidad que pierden las respuestas de los datos.'
+challenges:
+  - id: ch-perdida-dpo
+    prompt: |
+      Escribe `dpo(logp_w, logp_l, ref_w, ref_l, beta)`: la pérdida de DPO media de un batch de
+      comparaciones y su gradiente. Los cuatro primeros argumentos son arrays con un número por
+      comparación: $\log \pi_\theta(y_w \mid x)$, $\log \pi_\theta(y_l \mid x)$ y las dos de la
+      referencia. Devuelve `(perdida, g_w, g_l)`, donde `g_w[i]` es la derivada de la pérdida media
+      respecto de `logp_w[i]`, y `g_l[i]` respecto de `logp_l[i]`. Con márgenes de miles de nats no
+      puede desbordar ni dar `nan`.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def dpo(logp_w, logp_l, ref_w, ref_l, beta):
+          """La pérdida de DPO media y su gradiente respecto de logp_w y logp_l."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "en la referencia"
+        code: |
+          import numpy as np
+          res = dpo(np.array([-12.0, -30.0]), np.array([-9.0, -25.0]), np.array([-12.0, -30.0]), np.array([-9.0, -25.0]), 0.5)
+          assert res is not None, 'dpo no devuelve nada: falta el return'
+          assert len(res) == 3, 'devuelve tres cosas: la pérdida, g_w y g_l'
+          L, gw, gl = res
+          assert abs(L - np.log(2)) < 1e-9, 'si la política es la referencia, todos los márgenes son cero y cada comparación cuesta ln 2 = 0.6931. Sale %.4f' % L
+          assert np.allclose(gw, -0.125) and np.allclose(gl, 0.125), 'en la referencia el factor es 1/2, así que la derivada es -beta/2 entre las 2 comparaciones, -0.125 para la preferida y +0.125 para la rechazada. Sale %s y %s' % (np.round(gw, 4), np.round(gl, 4))
+      - name: "una comparación de la lección"
+        code: |
+          import numpy as np
+          res = dpo(np.array([3.0]), np.array([-2.0]), np.array([0.0]), np.array([0.0]), 0.1)
+          assert res is not None, 'dpo no devuelve nada: falta el return'
+          L, gw, gl = res
+          assert abs(L - np.log1p(np.exp(-0.5))) < 1e-9, 'logaritmos del cociente 3 y -2 con beta = 0.1 dan un margen de 0.5, y la pérdida es -log sigma(0.5) = 0.4741. Sale %.4f' % L
+          assert abs(gw[0] + 0.1 / (1 + np.exp(0.5))) < 1e-9, 'la derivada respecto de logp_w es -beta por el factor, sigma(-0.5) = 0.3775: -0.0378. Sale %.4f' % gw[0]
+          assert abs(gl[0] + gw[0]) < 1e-12, 'la derivada respecto de logp_l es la misma con el signo cambiado'
+      - name: "sólo cuenta el cociente"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(3)
+          lw, ll, rw, rl = (rng.normal(-20, 5, 6) for _ in range(4))
+          a = dpo(lw, ll, rw, rl, 0.3)
+          assert a is not None, 'dpo no devuelve nada: falta el return'
+          b = dpo(lw + 4.0, ll, rw + 4.0, rl, 0.3)
+          c = dpo(lw + 2.5, ll + 2.5, rw, rl, 0.3)
+          assert abs(a[0] - b[0]) < 1e-9, 'sumar lo mismo a log pi_theta(y_w) y a log pi_ref(y_w) no cambia el cociente, y no puede cambiar la pérdida'
+          assert abs(a[0] - c[0]) < 1e-9 and np.allclose(a[1], c[1]), 'sumar lo mismo a los dos logaritmos de la política sube las dos recompensas implícitas por igual, y la pérdida sólo ve el margen'
+      - name: "es una media"
+        code: |
+          import numpy as np
+          lw, ll = np.array([-3.0, -10.0, -7.5]), np.array([-4.0, -6.0, -7.5])
+          res = dpo(lw, ll, np.full(3, -5.0), np.full(3, -5.0), 1.0)
+          assert res is not None, 'dpo no devuelve nada: falta el return'
+          L, gw, gl = res
+          m = lw - ll
+          assert abs(L - np.mean(np.log1p(np.exp(-m)))) < 1e-9, 'la pérdida es la media de -log sigma(margen) sobre las comparaciones. Sale %.4f' % L
+          assert np.allclose(gw, -1 / (1 + np.exp(m)) / 3), 'cada derivada lleva el 1/3 de la media: -beta * sigma(-margen) / 3. Sale %s' % np.round(gw, 4)
+      - name: "márgenes enormes"
+        code: |
+          import numpy as np
+          res = dpo(np.array([0.0, -2000.0]), np.array([-2000.0, 0.0]), np.zeros(2), np.zeros(2), 1.0)
+          assert res is not None, 'dpo no devuelve nada: falta el return'
+          L, gw, gl = res
+          assert np.isfinite(L) and np.all(np.isfinite(gw)) and np.all(np.isfinite(gl)), 'con márgenes de 2000 nats sale inf o nan: escribe -log sigma(m) como np.logaddexp(0, -m)'
+          assert abs(L - 1000.0) < 1e-6, 'una comparación apagada cuesta 0 y la del revés 2000: la media es 1000. Sale %.4f' % L
+          assert np.allclose(gw, [0.0, -0.5]) and np.allclose(gl, [0.0, 0.5]), 'la comparación bien ordenada tiene factor 0 y la del revés factor 1, entre 2: %s' % np.round(gw, 4)
+      - name: "las derivadas, por diferencias finitas"
+        code: |
+          import numpy as np
+          rng = np.random.default_rng(7)
+          lw, ll, rw, rl = (rng.normal(-15, 4, 5) for _ in range(4))
+          res = dpo(lw, ll, rw, rl, 0.2)
+          assert res is not None, 'dpo no devuelve nada: falta el return'
+          L, gw, gl = res
+          h = 1e-6
+          for i in range(5):
+              e = np.zeros(5)
+              e[i] = h
+              nw = (dpo(lw + e, ll, rw, rl, 0.2)[0] - dpo(lw - e, ll, rw, rl, 0.2)[0]) / (2 * h)
+              nl = (dpo(lw, ll + e, rw, rl, 0.2)[0] - dpo(lw, ll - e, rw, rl, 0.2)[0]) / (2 * h)
+              assert abs(gw[i] - nw) < 1e-6 and abs(gl[i] - nl) < 1e-6, 'la derivada de la comparación %d no coincide con la que miden las diferencias finitas: %.6f frente a %.6f' % (i, gw[i], nw)
+    solution: |
+      import numpy as np
+
+
+      def dpo(logp_w, logp_l, ref_w, ref_l, beta):
+          """La pérdida de DPO media y su gradiente respecto de logp_w y logp_l."""
+          margen = beta * ((np.asarray(logp_w) - ref_w) - (np.asarray(logp_l) - ref_l))
+          perdida = np.logaddexp(0, -margen).mean()          # -log sigma(margen), sin desbordar
+          factor = np.exp(-np.logaddexp(0, margen))          # sigma(-margen), sin desbordar
+          g = beta * factor / len(margen)
+          return perdida, -g, g
+    explanation: 'Es la pérdida de la lección escrita con los cuatro números que lee cada comparación, y su gradiente con la derivada de $-\log \sigma$ de <Leccion slug="modelo-de-recompensa">la lección sobre el modelo de recompensa</Leccion>. Las dos derivadas son siempre opuestas, $\mp \beta$ por el factor: lo que sube la preferida lo baja la rechazada. Para llegar a $\theta$ falta multiplicar cada una por $\nabla_\theta \log \pi_\theta$, que es la vuelta del ajuste supervisado sobre esa respuesta. Las dos funciones de `np.logaddexp` evitan calcular $e^{m}$ con $m$ grande.'
+reading:
+  - kind: paper
+    title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward Model'
+    authors: 'Rafailov, Sharma, Mitchell, Ermon, Manning y Finn'
+    year: '2023'
+    venue: 'NeurIPS 2023 · arXiv:2305.18290'
+    lang: en
+    url: 'https://arxiv.org/abs/2305.18290'
+    note: 'El artículo de DPO. Sus apéndices A.1, A.2 y A.4 son las tres derivaciones de esta lección, y su sección 4 lee el gradiente igual. Muestra además que sin el factor el modelo degenera.'
+  - kind: paper
+    title: 'RL with KL penalties is better viewed as Bayesian inference'
+    authors: 'Korbak, Perez y Buckley'
+    year: '2022'
+    venue: 'Findings of EMNLP 2022 · arXiv:2205.11275'
+    lang: en
+    url: 'https://arxiv.org/abs/2205.11275'
+    note: 'La política óptima de esta lección leída como una posterior bayesiana: la referencia es la distribución a priori y la exponencial de la recompensa, la verosimilitud. La KL es lo que impide que todo acabe en una sola respuesta.'
+  - kind: paper
+    title: 'A General Theoretical Paradigm to Understand Learning from Human Preferences'
+    authors: 'Azar, Rowland, Piot, Guo, Calandriello, Valko y Munos'
+    year: '2023'
+    venue: 'AISTATS 2024 · arXiv:2310.12036'
+    lang: en
+    url: 'https://arxiv.org/abs/2310.12036'
+    note: 'Dónde falla el freno de DPO: si las comparaciones de un par salen siempre iguales, el margen que las explica es infinito y la β deja de frenar. Su sección 4.2 lo deriva, y la 5 propone IPO, que fija un margen finito.'
+  - kind: paper
+    title: 'The Llama 3 Herd of Models'
+    authors: 'Grattafiori, Dubey, Jauhri, Pandey, Kadian y otros'
+    year: '2024'
+    venue: 'arXiv:2407.21783'
+    lang: en
+    url: 'https://arxiv.org/abs/2407.21783'
+    note: 'DPO a escala: su sección 4.1.4 cuenta por qué Meta ajustó Llama 3 con DPO y no con PPO (menos cálculo y mejores resultados en obedecer instrucciones), y los dos cambios que hicieron a la pérdida.'
+  - kind: paper
+    title: 'Is DPO Superior to PPO for LLM Alignment? A Comprehensive Study'
+    authors: 'Xu, Fu, Gao, Ye, Liu, Mei, Wang, Yu y Wu'
+    year: '2024'
+    venue: 'ICML 2024 · arXiv:2404.10719'
+    lang: en
+    url: 'https://arxiv.org/abs/2404.10719'
+    note: 'El contrapunto: con PPO bien ajustado, RLHF gana a DPO en todas sus pruebas. Una de las razones es la de la celda: DPO sólo ve las respuestas de las comparaciones, y la política puede ir a parar a otras que nadie ha juzgado.'
+---
+
+{/* COURSE-C2-P1-02 — Bloque 2, lección 6. Corre sobre el mini-GPT congelado con la política de la
+    lección anterior, 512 números sumados a los logits, entrenada esta vez con comparaciones. */}
+
+Con <Leccion slug="rlhf">el aprendizaje por refuerzo con retroalimentación humana</Leccion>
+(*reinforcement learning from human feedback*, RLHF), el bloque tiene montada la cadena con que se
+entrenó InstructGPT, y la cadena tiene tres eslabones. Las comparaciones de los anotadores entrenan
+un modelo de recompensa, $r_\phi$. La política escribe respuestas, $r_\phi$ las puntúa, y la política
+sube la puntuación media pagando cada nat que se aleja de la referencia. En ningún punto una
+comparación toca la política: lo que dijeron los anotadores le llega a través de $r_\phi$, y de las
+respuestas que salgan en cada sorteo.
+
+En 2023, Rafailov y sus coautores mostraron que el eslabón del medio se puede quitar sin cambiar el
+objetivo, y pusieron la idea en el subtítulo de su artículo: «tu modelo de lenguaje es, en secreto,
+un modelo de recompensa». El método se llama optimización directa de preferencias (*direct
+preference optimization*, DPO), y al año siguiente Meta lo prefirió a PPO (*proximal policy
+optimization*), el algoritmo de RLHF de InstructGPT, para ajustar Llama 3 con preferencias. Esta
+lección lo deriva entero, y el paso del que depende todo es una cancelación que el bloque dejó
+preparada dos lecciones atrás.
+
+El objetivo de RLHF, la recompensa media menos $\beta$ veces la distancia a la referencia, tiene un
+óptimo que se puede escribir. Es la referencia, con la probabilidad de cada respuesta multiplicada
+por un número que crece exponencialmente con su recompensa, y todo dividido por lo que haga falta
+para que vuelva a sumar 1. Si la referencia escribe dos respuestas por igual y una tiene un punto
+más de recompensa, con $\beta = 0.5$ la política óptima escribe esa unas siete veces más.
+
+Leída al revés, la fórmula dice algo más útil: cada política es la óptima de alguna recompensa. La
+que mide, en unidades de $\beta$, cuánto multiplica la política la probabilidad de cada respuesta
+respecto de la referencia. Una política que escribe una respuesta el doble que la referencia le da
+$\beta \ln 2$ de recompensa; una que la escribe la mitad, $-\beta \ln 2$. Así que la política lleva
+dentro un modelo de recompensa, y se puede entrenar como se entrenaba aquél, con comparaciones. Al
+entrenarlo, se entrena ella.
+
+<Callout type="intuition" title="La idea en una frase">
+Cada política es la óptima, según el objetivo de RLHF, de una recompensa: $\beta$ por el logaritmo de
+cuánto multiplica la probabilidad de cada respuesta respecto de la referencia. DPO entrena esa
+recompensa con la pérdida de Bradley–Terry, y lo que no se puede calcular de la fórmula, la suma que
+la normaliza, se va en cada comparación.
+</Callout>
+
+## La política óptima tiene fórmula
+
+Fijemos una instrucción $x$ y una recompensa $r(x, y)$ cualquiera, y escribamos el objetivo de RLHF
+como sumas sobre las respuestas, con $r$ en el lugar de $r_\phi$. Las dos sumas llevan el mismo peso,
+$\pi_\theta(y \mid x)$, así que se pueden juntar, y $r/\beta$ entra en el logaritmo como
+$\log e^{r/\beta}$:
+
+$$
+\begin{aligned}
+J(\theta) &= \sum_{y} \pi_\theta(y \mid x)\, r(x, y) - \beta \sum_{y} \pi_\theta(y \mid x) \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)} \\
+&= -\beta \sum_{y} \pi_\theta(y \mid x) \left[\log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)} - \frac{r(x, y)}{\beta}\right] \\
+&= -\beta \sum_{y} \pi_\theta(y \mid x) \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}}.
+\end{aligned}
+$$
+
+El denominador de la última línea tiene la forma de una distribución sobre respuestas, pero no suma
+1. Llamemos $Z(x)$ a lo que suma, la **función de partición** (*partition function*), y $\pi^{\star}$
+a lo que queda al dividir por ella:
+
+$$
+\pi^{\star}(y \mid x) = \frac{\pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}}{Z(x)}, \qquad Z(x) = \sum_{y} \pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}.
+$$
+
+Con eso, el denominador es $Z(x)\, \pi^{\star}(y \mid x)$, y el logaritmo del cociente se parte en dos.
+$\log Z(x)$ no depende de $y$, y las probabilidades de $\pi_\theta$ suman 1, así que sale de la suma
+tal cual:
+
+$$
+\begin{aligned}
+J(\theta) &= -\beta \sum_{y} \pi_\theta(y \mid x) \log \frac{\pi_\theta(y \mid x)}{\pi^{\star}(y \mid x)} + \beta \log Z(x) \\
+&= -\beta\, \mathbb{D}_{\text{KL}}\big(\pi_\theta(\cdot \mid x) \,\|\, \pi^{\star}(\cdot \mid x)\big) + \beta \log Z(x).
+\end{aligned}
+$$
+
+El segundo término no depende de $\theta$. El primero es $-\beta$ por una divergencia de
+Kullback–Leibler (KL), que nunca es negativa y vale cero sólo si las dos distribuciones coinciden: la
+desigualdad de <Leccion slug="perplejidad">la lección sobre la perplejidad</Leccion>, otra vez. Así
+que $J$ nunca pasa de $\beta \log Z(x)$, y llega a ese valor exactamente cuando
+$\pi_\theta(\cdot \mid x) = \pi^{\star}(\cdot \mid x)$. Para un modelo capaz de dar a cada instrucción
+la distribución que quiera, como el de <Leccion slug="sft">la lección sobre el ajuste
+supervisado</Leccion>, $\pi^{\star}$ es el óptimo.
+
+La política óptima es la referencia repesada por $e^{r/\beta}$ y renormalizada. Con $\beta$ grande
+casi no se separa de $\pi_{\text{ref}}$; con $\beta$ cerca de cero, toda la masa se va a las
+respuestas de mayor recompensa, como la que repetía la segunda celda de la lección anterior. El
+ascenso de RLHF buscaba esto paso a paso, y aquí está escrito.
+
+Escrito no quiere decir utilizable. $Z(x)$ es una suma sobre todas las respuestas posibles a $x$, y
+para las de 16 tokens del mini-GPT eso son $512^{16}$, unos $2 \times 10^{43}$ términos. Sin ella, la
+fórmula no da la probabilidad de ninguna respuesta, y no hay forma de sortear de $\pi^{\star}$.
+
+<Details summary="De dónde sale la fórmula, si no se adivina">
+
+La reescritura de arriba demuestra que $\pi^{\star}$ es el máximo, pero hay que conocer la fórmula
+para hacerla. Así se encuentra. Tratemos cada probabilidad de la política como una variable libre, y
+fijémonos en dos respuestas cualesquiera, $y_A$ e $y_B$, con recompensas $r_A = r(x, y_A)$ y
+$r_B = r(x, y_B)$. Pasemos una cantidad pequeña $\varepsilon$ de probabilidad de $y_B$ a $y_A$, sin
+tocar las demás, de modo que todo sigue sumando 1. De todos los términos de $J$, sólo cambian los de
+esas dos respuestas:
+
+$$
+\begin{aligned}
+f(\varepsilon) &= \big(\pi_\theta(y_A \mid x) + \varepsilon\big)\left[r_A - \beta \log \frac{\pi_\theta(y_A \mid x) + \varepsilon}{\pi_{\text{ref}}(y_A \mid x)}\right] \\
+&\quad + \big(\pi_\theta(y_B \mid x) - \varepsilon\big)\left[r_B - \beta \log \frac{\pi_\theta(y_B \mid x) - \varepsilon}{\pi_{\text{ref}}(y_B \mid x)}\right].
+\end{aligned}
+$$
+
+Derivando cada producto, la derivada del logaritmo deja un $-\beta$ en los dos corchetes, que se
+cancelan en la resta:
+
+$$
+f'(0) = \left[r_A - \beta \log \frac{\pi_\theta(y_A \mid x)}{\pi_{\text{ref}}(y_A \mid x)}\right] - \left[r_B - \beta \log \frac{\pi_\theta(y_B \mid x)}{\pi_{\text{ref}}(y_B \mid x)}\right].
+$$
+
+En un máximo ningún traslado pequeño puede ganar nada, así que $f'(0) = 0$ para cualquier par de
+respuestas con probabilidad positiva. Lo que hay entre corchetes, la recompensa de una respuesta
+menos $\beta$ por su logaritmo del cociente, vale lo mismo para todas: en el óptimo, cada respuesta
+rinde igual. Despejando, $\pi_\theta(y \mid x)$ es $\pi_{\text{ref}}(y \mid x)\, e^{r(x, y)/\beta}$ por
+un mismo número para todas las respuestas, y el que hace que sumen 1 es $1/Z(x)$. Es $\pi^{\star}$.
+
+La segunda derivada, $f''(\varepsilon) = -\beta/\big(\pi_\theta(y_A \mid x) + \varepsilon\big) - \beta/\big(\pi_\theta(y_B \mid x) - \varepsilon\big)$,
+es negativa: cada traslado recorre una curva cóncava, y su punto plano es un máximo. Y el valor
+común de los corchetes resulta ser $\beta \log Z(x)$, que es la ecuación de la sección siguiente
+vista desde aquí.
+
+</Details>
+
+## La recompensa, escrita con la política
+
+La fórmula sirve leída al revés. Tomemos logaritmos en la definición de $\pi^{\star}$ y despejemos
+la recompensa:
+
+$$
+r(x, y) = \beta \log \frac{\pi^{\star}(y \mid x)}{\pi_{\text{ref}}(y \mid x)} + \beta \log Z(x).
+$$
+
+Una recompensa decide su política óptima, y la política óptima devuelve la recompensa salvo
+$\beta \log Z(x)$, un número que depende de la instrucción y no de la respuesta. Es un $\kappa(x)$,
+la constante por instrucción que <Leccion slug="modelo-de-recompensa">la lección sobre el modelo de
+recompensa</Leccion> encontró en Bradley–Terry. Recompensa y política óptima son, dadas la
+referencia y $\beta$, la misma información escrita de dos maneras.
+
+Así que cualquier política $\pi_\theta$ es la óptima de una recompensa, y de todas las que se
+diferencian de ella en una constante por instrucción. Llamemos **recompensa implícita** (*implicit
+reward*) de $\pi_\theta$ a
+
+$$
+r_\theta(x, y) = \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)},
+$$
+
+con el subíndice de los parámetros que la calculan, como $r_\phi$: es un modelo de recompensa cuyos
+parámetros son los de la política. Vale cero en todas las respuestas cuando la política es la
+referencia, y es positiva en las que la política escribe más que la referencia.
+
+Ahora, Bradley–Terry. Sustituyamos la recompensa despejada en la probabilidad de que un anotador
+prefiera $y_w$ a $y_l$:
+
+$$
+\begin{aligned}
+P(y_w \succ y_l \mid x) &= \sigma\big(r(x, y_w) - r(x, y_l)\big) \\
+&= \sigma\bigg(\beta \log \frac{\pi^{\star}(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} + \beta \log Z(x) \\
+&\qquad\quad - \beta \log \frac{\pi^{\star}(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)} - \beta \log Z(x)\bigg) \\
+&= \sigma\left(\beta \log \frac{\pi^{\star}(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi^{\star}(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right).
+\end{aligned}
+$$
+
+$\beta \log Z(x)$ entra sumando con la preferida y restando con la rechazada, y se va. Lo que nadie
+podía calcular ha desaparecido, y no por suerte: las dos respuestas de una comparación contestan a
+la misma instrucción, y $Z(x)$ es la constante por instrucción que no cambia ninguna comparación.
+Aquella libertad, que en Bradley–Terry parecía un defecto del modelo, es lo que hace posible esta
+lección.
+
+La probabilidad de cada comparación queda escrita sin ninguna recompensa. La pérdida de DPO es menos
+su logaritmo, en media, con $\pi_\theta$ en el lugar de $\pi^{\star}$: la pérdida del modelo de
+recompensa, $\mathcal{L}_{\text{R}}$, con $r_\theta$ en el lugar de $r_\phi$:
+
+$$
+\begin{aligned}
+\mathcal{L}_{\text{DPO}}(\theta) &= \mathbb{E}_{(x, y_w, y_l) \sim p_{\text{pref}}}\left[-\log \sigma\big(r_\theta(x, y_w) - r_\theta(x, y_l)\big)\right] \\
+&= \mathbb{E}_{(x, y_w, y_l) \sim p_{\text{pref}}}\left[-\log \sigma\left(\beta \log \frac{\pi_\theta(y_w \mid x)}{\pi_{\text{ref}}(y_w \mid x)} - \beta \log \frac{\pi_\theta(y_l \mid x)}{\pi_{\text{ref}}(y_l \mid x)}\right)\right].
+\end{aligned}
+$$
+
+Minimizarla es ajustar a las comparaciones un modelo de recompensa con la forma $r_\theta$. Si la
+política puede ser cualquier distribución, esa forma alcanza cualquier recompensa salvo una constante
+por instrucción, que $\mathcal{L}_{\text{R}}$ no ve; y la política óptima de la recompensa ajustada es,
+por construcción, $\pi_\theta$. Las dos fases de RLHF quedan en una, y no hay nada que sortear: cada
+término lee el logaritmo de la probabilidad de la preferida y de la rechazada, en la política, con una
+ida sobre cada una, y en la referencia, que se calcula una vez antes de empezar.
+
+### El gradiente: cuánto se equivoca todavía la recompensa implícita
+
+Del margen, sólo la política depende de $\theta$, así que
+$\nabla_\theta r_\theta(x, y) = \beta\, \nabla_\theta \log \pi_\theta(y \mid x)$. Con la derivada de
+$-\log \sigma$ de la lección sobre el modelo de recompensa, la de cada comparación es
+
+$$
+\begin{aligned}
+&\nabla_\theta\left[-\log \sigma\big(r_\theta(x, y_w) - r_\theta(x, y_l)\big)\right] \\
+&\qquad = -\beta\, \sigma\big(r_\theta(x, y_l) - r_\theta(x, y_w)\big)\left(\nabla_\theta \log \pi_\theta(y_w \mid x) - \nabla_\theta \log \pi_\theta(y_l \mid x)\right).
+\end{aligned}
+$$
+
+$\nabla_\theta \log \pi_\theta(y \mid x)$ es, con el signo cambiado, el gradiente de la pérdida del
+ajuste supervisado para el par $(x, y)$. Un paso de descenso es un paso de ajuste sobre la preferida
+y otro al revés sobre la rechazada: sube la una y baja la otra. Lo mismo hacía el estimador de la
+lección anterior, con respuestas que la política acababa de escribir; éstas estaban escritas antes de
+empezar.
+
+El **factor** que lo multiplica, $\sigma\big(r_\theta(x, y_l) - r_\theta(x, y_w)\big)$, es el mismo
+que en el modelo de recompensa: la probabilidad que la recompensa implícita da todavía al orden que
+el anotador no eligió. Mide cuánto se equivoca aún. Al empezar, la política es la referencia, las dos
+recompensas implícitas valen cero, y cada comparación cuesta $\ln 2$ con factor $1/2$. Una comparación
+ya ordenada por un margen de 3 tiene un factor de $0.047$: se **apaga**, y deja de mover la política.
+Una que está al revés empuja con un factor cercano a 1. Sin el factor, el paso subiría la preferida y
+bajaría la rechazada siempre, y el artículo de DPO muestra que así el modelo degenera.
+
+Y $\beta$ está dentro del margen. Para un mismo alejamiento de la referencia, una $\beta$ grande da
+un margen grande, y la comparación se apaga cerca de la referencia; con $\beta$ pequeña, la política
+tiene que alejarse mucho más antes de que se apague. Es el freno de la KL, y la pérdida no tiene
+ningún término de KL: el freno está en cómo se escribe la recompensa.
+
+<Explorable id="dpo-loss" caption="Una comparación es un punto: cuánto ha subido la política la preferida respecto de la referencia, en horizontal, y la rechazada, en vertical. Mira dónde se apaga el factor y por qué no cambia nada al sumar lo mismo a los dos. Después mueve β: la zona apagada se acerca a la diagonal, o se sale del plano." />
+
+Dos concesiones. La equivalencia con RLHF es entre óptimos, y supone una política que puede ser
+cualquier distribución. Y la pérdida sólo habla de las respuestas de las comparaciones: el freno
+actúa sobre ellas, mientras que la KL de RLHF se mide sobre las respuestas que escribe la propia
+política. Lo que DPO haga con las demás lo deciden los pesos, como en el ajuste supervisado.
+
+## DPO en el mini-GPT
+
+Las dos celdas corren sobre el mini-GPT, tu mini-GPT del bloque 1 cargado desde el *checkpoint*, con
+la política de la lección anterior: el mini-GPT congelado más un vector $\theta$ de 512 números, uno
+por entrada, sumado a sus logits, y la misma instrucción, <W>La Nela</W>. La referencia es el mini-GPT
+sin $\theta$. Lo que cambia es de dónde aprende.
+
+Aquí las respuestas se sortean una vez, de la referencia, antes de entrenar: 64 continuaciones de 16
+tokens, como las que un modelo ajustado escribe para que alguien las compare. El anotador es un
+programa que sigue a Bradley–Terry con la recompensa de la lección anterior, las letras <W>a</W>:
+entre dos respuestas, prefiere la de más letras con probabilidad $\sigma$ de la diferencia. Compara
+cada respuesta con las otras 63, como los anotadores de InstructGPT ordenaban varias respuestas a una
+instrucción y de cada orden salían todas sus comparaciones.
+
+La primera celda prepara eso, y guarda además la distribución de la referencia en cada token de cada
+respuesta. Con ella, $\pi_\theta$ sale para cualquier $\theta$ sin volver a pasar por la red: es esa
+distribución con cada entrada $v$ multiplicada por $e^{\theta_v}$, y renormalizada.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())          # red, F, codificar, softmax, layer_norm
+
+def avanzar_lote(ids, cache):
+    """avanzar() de modelo.py con un eje más, el del batch: una fila nueva por respuesta."""
+    p, L, h, d = red.p, red.cfg["n_capas"], red.cfg["h"], red.cfg["d_model"]
+    B, d_k, t = len(ids), d // h, cache[0][0].shape[2]          # t: posiciones ya guardadas
+    H = p["E"][ids] + p["P"][t]                                 # (B, d)
+    for l in range(L):
+        Hn, _ = layer_norm(H, p[f"{l}.ln1_g"], p[f"{l}.ln1_b"])
+        q, k, v = (u.reshape(B, h, 1, d_k) for u in np.split(Hn @ p[f"{l}.Wqkv"], 3, axis=1))
+        cache[l] = K, V = np.concatenate([cache[l][0], k], 2), np.concatenate([cache[l][1], v], 2)
+        a = softmax(q @ K.transpose(0, 1, 3, 2) / np.sqrt(d_k))  # (B, h, 1, t + 1)
+        H = H + (a @ V).reshape(B, d) @ p[f"{l}.Wo"]
+        H = H + red.ffn(H[:, None], l)[0][:, 0]
+    return layer_norm(H, p["lnf_g"], p["lnf_b"])[0] @ p["E"].T
+
+x = codificar("La Nela", F)                                      # la instrucción: dos tokens
+
+def responder(theta, rng, B=8, n=16):
+    """B respuestas de la política, y la distribución de la referencia en cada uno de sus tokens."""
+    Z, (_, capas, _, _) = red.adelante(np.tile(x, (B, 1)))       # el prefill, las B a la vez
+    cache = [(K, V) for (_, _, _, K, V, _, _), _ in capas]
+    z, Y, P = Z[:, -1], np.zeros((B, n), int), np.zeros((B, n, 512))
+    for j in range(n):
+        if j:
+            z = avanzar_lote(Y[:, j - 1], cache)
+        P[:, j] = softmax(z)                                     # pi_ref en este token
+        q = P[:, j] * np.exp(theta)                              # pi_theta, sin normalizar
+        Y[:, j] = [rng.choice(512, p=fila / fila.sum()) for fila in q]
+    return Y, P
+
+letras = lambda Y: np.array([decodificar(list(y), F).count("a") for y in Y])
+# Los datos: 64 respuestas de la referencia, y un anotador que compara cada una con todas las demás.
+rng = np.random.default_rng(0)
+Y, P = responder(np.zeros(512), rng, B=64)                       # se sortean aquí, una vez
+r = letras(Y)
+i, j = np.triu_indices(64, 1)                                    # los 2016 pares
+gana_i = rng.random(len(i)) < 1 / (1 + np.exp(-(r[i] - r[j])))  # Bradley-Terry, con r = las letras a
+w, l = np.where(gana_i, i, j), np.where(gana_i, j, i)            # la preferida y la rechazada
+print("%d respuestas, %.2f letras a de media; %d comparaciones" % (len(Y), r.mean(), len(w)))
+print("el anotador prefirió la de más letras en el %.0f %%, la de menos en el %.0f %%; en el %.0f %% empataban"
+      % (100 * np.mean(r[w] > r[l]), 100 * np.mean(r[w] < r[l]), 100 * np.mean(r[w] == r[l])))
+print("una comparación:", repr(decodificar(list(Y[w[0]]), F)), "≻", repr(decodificar(list(Y[l[0]]), F)))
+`} />
+
+Las 64 respuestas tienen $3.28$ letras <W>a</W> de media. En las 2016 comparaciones, el anotador
+prefirió la de más letras en el 69 % y la de menos en el 13 %; en el 18 % restante empataban, y echó
+una moneda al aire. Es un anotador con ruido, como los de verdad. La segunda celda es DPO: cien pasos de descenso por gradiente sobre $\theta$ con la pérdida de la
+lección, con $\beta = 0.5$ y con $\beta = 0.1$. Mira que el bucle no llama a `responder`: sólo lee las
+respuestas guardadas y las comparaciones. Después sí sortea 32 respuestas nuevas de cada política,
+para medirla como en la lección anterior.
+
+El paso depende de $\beta$. La recompensa implícita es $\beta$ por el logaritmo del cociente, así que
+con $\beta$ pequeña $\theta$ tiene que llegar más lejos, y el gradiente, que lleva $\beta$ delante,
+empuja menos. Con un paso proporcional a $1/\beta^{2}$, las dos ejecuciones recorren el mismo camino
+en recompensa implícita.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior. Entrenar no sortea nada: lee Y, P y las comparaciones.
+def log_cociente(theta, Y, P):
+    """log pi_theta(y|x) - log pi_ref(y|x) de cada respuesta, y su gradiente respecto de theta."""
+    S = P @ np.exp(theta)                                        # (B, n): lo que renormaliza cada token
+    k = (theta[Y] - np.log(S)).sum(axis=1)
+    cuenta = np.stack([np.bincount(y, minlength=512) for y in Y])
+    return k, cuenta - np.exp(theta) * np.einsum("bj,bjv->bv", 1 / S, P)   # one-hot menos softmax
+
+def dpo(beta, pasos=100):
+    """Descenso por gradiente sobre theta con la pérdida de DPO, y nada más."""
+    theta, eta = np.zeros(512), 2.5 / beta**2                    # beta pequeña: más lejos, menos empuje
+    for s in range(pasos + 1):
+        k, G = log_cociente(theta, Y, P)
+        margen = beta * (k[w] - k[l])                            # r_theta(x, y_w) - r_theta(x, y_l)
+        factor = 1 / (1 + np.exp(margen))                        # sigma(-margen)
+        if s % 25 == 0:                                          # (+ 0: que el cero no salga -0.00)
+            print("paso %3d   pérdida %.3f   margen %.2f   factor %.2f"
+                  % (s, np.logaddexp(0, -margen).mean(), margen.mean().round(2) + 0, factor.mean()))
+        if s < pasos:
+            c = np.bincount(w, factor, 64) - np.bincount(l, factor, 64)   # + preferidas, - rechazadas
+            theta += eta * beta * (c @ G) / len(w)
+    d = r[w] - r[l]
+    print("factor al final: %.2f si la preferida tenía tres letras más o más, %.2f si tenía menos"
+          % (factor[d >= 3].mean(), factor[d < 0].mean()))
+    return theta
+
+for beta in (0.5, 0.1):
+    print("\\nbeta = %g" % beta)
+    theta = dpo(beta)
+    rt = beta * log_cociente(theta, Y, P)[0]                     # la recompensa implícita de las 64
+    print("recompensa implícita media, según sus letras a:",
+          "  ".join("%d: %.1f" % (n, rt[r == n].mean()) for n in range(1, 7)))
+    Yn, Pn = responder(theta, np.random.default_rng(1), B=32)    # ahora sí, sólo para medir
+    print("32 respuestas nuevas: recompensa %.2f   KL %.2f"
+          % (letras(Yn).mean(), log_cociente(theta, Yn, Pn)[0].mean()))
+    print("   ", repr(decodificar(list(Yn[0]), F)))
+`} />
+
+La pérdida arranca en $\ln 2 = 0.693$, como decía la sección del gradiente: con $\theta = 0$ la política es la
+referencia y todo margen vale cero. Baja hasta $0.433$ y ahí se queda. No puede bajar más porque los
+datos tienen ruido, y el factor lo enseña: al final vale $0.03$ en las comparaciones que la preferida
+ganaba por tres letras o más, que se han apagado, y $0.74$ en las que el anotador eligió la de menos
+letras, que siguen empujando al revés. El entrenamiento se para donde los dos empujes se compensan.
+
+Lo que ha aprendido la recompensa implícita está en la línea de las letras. Con $\beta = 0.5$, las
+respuestas con una <W>a</W> tienen de media $-3.4$, las de dos $-2.4$, y así hasta $1.9$ con seis: un
+punto por letra. Es la recompensa del anotador, en su unidad, y nadie se la ha dado a la política: la
+ha sacado de las comparaciones, como la habría sacado un modelo de recompensa. El nivel no significa
+nada, porque es el de siempre, una constante por instrucción. Con $\beta = 0.1$ los valores son otros,
+de $-6.1$ a $-0.7$, y el punto por letra es el mismo.
+
+Las dos políticas, en cambio, no se parecen. Con $\beta = 0.5$, las respuestas nuevas tienen $5.75$
+letras <W>a</W> de media, frente a las $3.28$ de las respuestas de la referencia, a $3.01$ nats de ella, y siguen siendo
+novela. Con $\beta = 0.1$ tienen $12.12$, a $32.94$ nats: <W> a la De a la a la día a la a mano la</W>.
+Es la fórmula despejada: la misma recompensa entre una $\beta$ cinco veces menor da un logaritmo del
+cociente cinco veces mayor. La pérdida no tiene ningún término de KL, y $\beta$ frena igual.
+
+La lección anterior llegó, con $\beta = 0.5$ y REINFORCE, a $7.44$ letras y $5.48$ nats. Los dos
+métodos persiguen el mismo óptimo y no llegan al mismo sitio, por las dos concesiones de arriba: 512
+números no son cualquier política, y DPO sólo ha visto 64 respuestas de la referencia, mientras
+REINFORCE aprendía de las que escribía.
+
+## Comprueba tu intuición
+
+Cinco preguntas y un desafío: la pérdida de DPO y su gradiente, para un batch de comparaciones.
+
+<Quiz id="q-por-que-no-la-formula" />
+
+<Quiz id="q-por-que-se-cancela" />
+
+<Quiz id="q-factor" />
+
+<Quiz id="q-donde-esta-el-freno" />
+
+<Quiz id="q-preferidas-menos-probables" />
+
+<CodeChallenge id="ch-perdida-dpo" />
+
+---
+
+Con DPO, aprender de preferencias cabe en una pérdida: comparaciones, una referencia congelada y
+descenso por gradiente, como el ajuste supervisado. Todo lo que la política aprende está en esas
+comparaciones, y la celda las ha tenido fáciles. Su anotador era un programa que contaba letras,
+conocía la recompensa verdadera y comparó 2016 pares sin cansarse. Con anotadores de verdad, cada
+comparación cuesta tiempo y dinero, dos de ellos discrepan algo más de una vez de cada cuatro, y lo
+que prefieren es lo que el modelo aprende a hacer.
+
+{/* Referencia adelantada en prosa hasta que exista el fichero: al aterrizar la lección 16
+    (slug de-donde-salen-las-preferencias), envolver «La lección siguiente, sobre de dónde salen las
+    preferencias» en su Leccion slug=…; el lint falla con un slug que no resuelve, también dentro de
+    un comentario. */}
+
+La lección siguiente, sobre de dónde salen las preferencias, mira esa fuente: anotadores humanos,
+una lista de principios escrita para que un modelo critique y corrija sus propias respuestas, y
+modelos que juzgan a otros. Y qué quiere decir, con cada una, que un modelo esté «alineado».

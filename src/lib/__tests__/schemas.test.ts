@@ -5,12 +5,15 @@
 // prevent (`mintues:` sailing through as valid).
 
 import {
+  BlogAnnounceSchema,
+  BlogAreasSchema,
   CodeChallengeSchema,
   CourseAttemptSchema,
   CourseManifestSchema,
   CourseProgressUpdateSchema,
   LessonFrontmatterSchema,
   QuizQuestionSchema,
+  SubscribeSchema,
 } from "@/lib/schemas";
 
 // ─── CourseManifestSchema ─────────────────────────────────────────────────────
@@ -501,5 +504,44 @@ describe("CourseAttemptSchema", () => {
 
   it("requires `correct` — an attempt with no outcome is not an attempt", () => {
     expect(CourseAttemptSchema.safeParse({ ...valid, correct: undefined }).success).toBe(false);
+  });
+});
+
+// ─── BLOG-15: blog areas on the subscription, and the blog announce body ─────
+
+describe("SubscribeSchema", () => {
+  it("accepts a blog opt-in with or without areas", () => {
+    expect(SubscribeSchema.safeParse({ type: "blog" }).success).toBe(true);
+    expect(SubscribeSchema.safeParse({ type: "blog", areas: ["ia", "matematicas"] }).success).toBe(true);
+  });
+
+  it("rejects areas on a courses opt-in", () => {
+    expect(SubscribeSchema.safeParse({ type: "courses", areas: ["ia"] }).success).toBe(false);
+  });
+
+  it("rejects an unknown, repeated or empty area selection", () => {
+    expect(SubscribeSchema.safeParse({ type: "blog", areas: ["cocina"] }).success).toBe(false);
+    expect(SubscribeSchema.safeParse({ type: "blog", areas: ["ia", "ia"] }).success).toBe(false);
+    expect(SubscribeSchema.safeParse({ type: "blog", areas: [] }).success).toBe(false);
+  });
+});
+
+describe("BlogAreasSchema", () => {
+  it("only changes the blog subscription", () => {
+    expect(BlogAreasSchema.safeParse({ type: "blog", areas: ["ia"] }).success).toBe(true);
+    expect(BlogAreasSchema.safeParse({ type: "courses", areas: ["ia"] }).success).toBe(false);
+    expect(BlogAreasSchema.safeParse({ type: "blog" }).success).toBe(false);
+  });
+});
+
+describe("BlogAnnounceSchema", () => {
+  it("accepts the three modes", () => {
+    expect(BlogAnnounceSchema.safeParse({ slug: "arboles-b", countOnly: true }).success).toBe(true);
+    expect(BlogAnnounceSchema.safeParse({ slug: "arboles-b" }).success).toBe(true);
+    expect(BlogAnnounceSchema.safeParse({ slug: "arboles-b", confirm: true, limit: 30 }).success).toBe(true);
+  });
+
+  it("refuses a count-only request that also confirms", () => {
+    expect(BlogAnnounceSchema.safeParse({ slug: "arboles-b", countOnly: true, confirm: true }).success).toBe(false);
   });
 });

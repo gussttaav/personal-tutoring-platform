@@ -71,7 +71,7 @@ trabajo que las use. Este es ese trabajo, y consiste en construir un modelo que,
 seguir escribiéndolo.
 
 Ese modelo tiene nombre: un **modelo de lenguaje** (*language model*) es una red que, dado un trozo de
-texto, predice qué viene después. **A nivel de carácter** (la tokenización por caracteres de <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion>) eso es el próximo carácter, una letra, un espacio o un punto, y en esa pregunta
+texto, predice qué viene después. *A nivel de carácter* (la tokenización por caracteres de <Leccion slug="tokenizacion">la lección sobre tokenización</Leccion>) eso es el próximo carácter, una letra, un espacio o un punto, y en esa pregunta
 minúscula cabe toda la tarea. Se entrena sobre un corpus pequeño, unos
 miles de caracteres, y después se le pide que escriba, carácter a carácter, realimentándose lo que va
 produciendo. El texto que sale es la red hablándose a sí misma. Saldrá malo (lo diré con todas las
@@ -79,7 +79,7 @@ letras cuando salga), y será la primera vez en el curso que algo escribe.
 
 La red que entrenamos en <Leccion slug="bptt">la lección sobre BPTT</Leccion> leía una reseña entera y daba un solo veredicto, una salida y una
 pérdida, colgadas del último estado. Un modelo de lenguaje cambia una cosa y sólo una: saca una
-predicción en **cada** posición. En el paso $t$, con el estado $\mathbf{h}_t$ que resume lo leído hasta
+predicción en *cada* posición. En el paso $t$, con el estado $\mathbf{h}_t$ que resume lo leído hasta
 ahí, predice el carácter $t+1$; de modo que un texto de $T$ caracteres son $T$ predicciones en una sola
 pasada, y su pérdida suma las $T$. Ahí está lo que convierte un texto en un conjunto de entrenamiento
 sin que nadie lo etiquete: la respuesta correcta de cada posición es el carácter de la siguiente, ya
@@ -129,7 +129,7 @@ Así que las columnas de $\mathbf{W}_{xh}$ son los vectores de entrada de cada c
 aprende sobre la marcha.
 
 Lo nuevo es la salida. <Leccion slug="la-rnn-vanilla">La lección sobre la RNN vanilla</Leccion> leía un veredicto del último estado; el modelo de lenguaje lee uno
-de **cada** estado, y es una distribución sobre el próximo carácter:
+de *cada* estado, y es una distribución sobre el próximo carácter:
 
 $$
 \hat{\mathbf{y}}_t = \text{softmax}\left(\mathbf{W}_{hy}\mathbf{h}_t + \mathbf{b}_y\right) \in \mathbb{R}^{\lvert V \rvert},
@@ -153,7 +153,7 @@ el *batch* (sólo que aquí el «lote» son las $T$ posiciones de una misma secu
 <Leccion slug="bptt">La lección sobre BPTT</Leccion> ya hizo casi toda esta cuenta. Allí sólo el último estado tocaba la pérdida,
 así que sólo $\boldsymbol{\delta}_T$ arrancaba desde una salida y los pasos interiores recibían su error
 transportado del siguiente. El modelo de lenguaje cambia exactamente eso: cada posición tiene su propia
-salida, de modo que cada paso arranca un error propio **y** además pasa hacia atrás el que viene de
+salida, de modo que cada paso arranca un error propio *y* además pasa hacia atrás el que viene de
 adelante.
 
 Sigue siendo $\boldsymbol{\delta}_t = \nabla_{\mathbf{p}_t}\ell$, el error de la preactivación. Lo que
@@ -210,7 +210,7 @@ Tres celdas: el corpus, el entrenamiento y la escritura. Ejecútalas en orden.
 La primera trae el corpus (unos párrafos sobre un pueblo de mar, escritos para el curso), lo pasa a
 minúsculas, le quita todo lo que no sea letra, espacio, punto o coma, y lo deja como una tira de
 índices. Mira el vocabulario que queda, y la última línea, que enseña el modelo entero en dos palabras:
-lo que **entra** es el texto, y lo que **sale** es el mismo texto corrido una posición.
+lo que *entra* es el texto, y lo que *sale* es el mismo texto corrido una posición.
 
 <PyCell packages={["numpy"]} code={`
 import re

@@ -18,7 +18,7 @@ quiz:
       - { id: c, text: 'En nada observable: el *softmax* es creciente y respeta el orden de las puntuaciones, así que las dos reparten igual y sólo cambia cómo está escrito el cálculo.' }
       - { id: d, text: 'En el número de parámetros: cuatro cabezas llevan cuatro veces más matrices que una.' }
     answer: a
-    explanation: 'La (a). Las dos capas guardan los mismos números en las mismas columnas —de ahí que la (d) sea falsa: son las mismas matrices, partidas de otra forma—, y todo lo que cambia es que la suma sobre $m$ ocurre dentro del *softmax* en un caso y fuera en el otro. La (b) confunde tener cuatro puntuaciones con comparar mejor: cada una de esas cuatro mira una sola coordenada, que es menos resolución por comparación, no más. La (c) usa un hecho cierto en el sitio equivocado: el *softmax* conserva el orden **dentro de la fila que recibe**, y aquí la discusión es sobre qué fila recibe —una suma de cuatro términos, o cuatro filas por separado—.'
+    explanation: 'La (a). Las dos capas guardan los mismos números en las mismas columnas —de ahí que la (d) sea falsa: son las mismas matrices, partidas de otra forma—, y todo lo que cambia es que la suma sobre $m$ ocurre dentro del *softmax* en un caso y fuera en el otro. La (b) confunde tener cuatro puntuaciones con comparar mejor: cada una de esas cuatro mira una sola coordenada, que es menos resolución por comparación, no más. La (c) usa un hecho cierto en el sitio equivocado: el *softmax* conserva el orden *dentro de la fila que recibe*, y aquí la discusión es sobre qué fila recibe —una suma de cuatro términos, o cuatro filas por separado—.'
     hint: '¿Dónde cae la suma sobre las coordenadas en cada una de las dos, antes o después de normalizar?'
   - id: q-cuenta-parametros
     type: numeric
@@ -37,7 +37,7 @@ quiz:
       - { id: c, text: 'Porque el divisor $\sqrt{d_k}$ de la lección anterior sólo compensa bien cuando $d_k$ divide a $d_{\text{model}}$; con otras anchuras las puntuaciones se quedan descompensadas.' }
       - { id: d, text: 'Porque cada cabeza tiene que quedarse con una parte distinta de las coordenadas de $\mathbf{x}_t$, y hay $d_{\text{model}}$ para repartir entre $h$.' }
     answer: a
-    explanation: 'La (a), y sale de una cancelación, no de una preferencia: $h$ cabezas de $d_{\text{model}}/h$ cuestan $h \cdot d_{\text{model}} \cdot 3d_{\text{model}}/h$, donde la $h$ de arriba y la de abajo se van. La (b) es la trampa buena, porque describe algo real —la salida vuelve a $d_{\text{model}}$— pero se lo atribuye a la concatenación: quien devuelve la anchura es $\mathbf{W}^O$, que es $\left(h \cdot d_v\right) \times d_{\text{model}}$ y funciona con cualquier $d_v$. La (c) inventa una condición: la cuenta del divisor sólo usa cuántas coordenadas se suman, y no sabe nada de $d_{\text{model}}$. La (d) describe una capa que no es ésta: las $h$ cabezas leen **la misma** $\mathbf{X}$ entera; lo que se reparte es la anchura de salida de cada proyección, no las coordenadas de entrada.'
+    explanation: 'La (a), y sale de una cancelación, no de una preferencia: $h$ cabezas de $d_{\text{model}}/h$ cuestan $h \cdot d_{\text{model}} \cdot 3d_{\text{model}}/h$, donde la $h$ de arriba y la de abajo se van. La (b) es la trampa buena, porque describe algo real —la salida vuelve a $d_{\text{model}}$— pero se lo atribuye a la concatenación: quien devuelve la anchura es $\mathbf{W}^O$, que es $\left(h \cdot d_v\right) \times d_{\text{model}}$ y funciona con cualquier $d_v$. La (c) inventa una condición: la cuenta del divisor sólo usa cuántas coordenadas se suman, y no sabe nada de $d_{\text{model}}$. La (d) describe una capa que no es ésta: las $h$ cabezas leen *la misma* $\mathbf{X}$ entera; lo que se reparte es la anchura de salida de cada proyección, no las coordenadas de entrada.'
     hint: 'Escribe el total con $d_k = d_v = d_{\text{model}}/h$ y busca dónde se va la $h$.'
   - id: q-cabezas-iguales
     type: multi
@@ -60,7 +60,7 @@ challenges:
   - id: ch-multi-head
     prompt: |
       Escribe `multi_head(X, Wq, Wk, Wv, Wo, h)`. Recibe la frase ya vectorizada, `X` de forma
-      $(T, d_{\text{model}})$; las tres proyecciones **enteras**, `Wq`, `Wk` y `Wv`, las tres de
+      $(T, d_{\text{model}})$; las tres proyecciones *enteras*, `Wq`, `Wk` y `Wv`, las tres de
       forma $(d_{\text{model}}, d_{\text{model}})$; la proyección de salida `Wo`, de la misma
       forma; y el número de cabezas `h`, que divide a $d_{\text{model}}$.
 
@@ -68,7 +68,7 @@ challenges:
       `i * d_k` a `(i + 1) * d_k`, con `d_k = d_v = d_model // h`— y hace con él la atención de
       siempre, dividiendo entre $\sqrt{d_k}$.
 
-      Devuelve **la pareja** `(salida, A)`, en ese orden: la salida de forma
+      Devuelve *la pareja* `(salida, A)`, en ese orden: la salida de forma
       $(T, d_{\text{model}})$, con las $h$ cabezas concatenadas por columnas y proyectadas por
       `Wo`; y los $h$ mapas apilados, `A` de forma $(h, T, T)$, cada fila de cada uno sumando $1$.
 
@@ -165,10 +165,10 @@ challenges:
           concat = (A @ V).transpose(1, 0, 2).reshape(T, d_model)
           return concat @ Wo, A
     explanation: |
-      Las tres proyecciones se hacen **enteras** y se parten después: `X @ Wq` ya contiene las $h$
+      Las tres proyecciones se hacen *enteras* y se parten después: `X @ Wq` ya contiene las $h$
       consultas una al lado de otra, y `reshape(T, h, d_k)` no mueve un solo número, sólo cambia
       cómo se leen las columnas. Por eso una capa de verdad no tiene $3h$ matrices sino tres: el
-      bloque de columnas $i$ **es** $\mathbf{W}^Q_i$.
+      bloque de columnas $i$ *es* $\mathbf{W}^Q_i$.
 
       A partir de ahí todo es la atención de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>,
       con un eje más delante: `Q @ K.transpose(0, 2, 1)` hace los $h$ productos de una vez, y el
@@ -238,7 +238,7 @@ $$
 
 con $i = 1, \dots, h$, y con $\mathbf{W}^Q_i, \mathbf{W}^K_i \in \mathbb{R}^{d_{\text{model}} \times
 d_k}$ y $\mathbf{W}^V_i \in \mathbb{R}^{d_{\text{model}} \times d_v}$. Fíjate en que las $h$ leen
-**la misma** $\mathbf{X}$: no se reparten la frase, ni se reparten las coordenadas de entrada. Cada
+*la misma* $\mathbf{X}$: no se reparten la frase, ni se reparten las coordenadas de entrada. Cada
 una saca de ella sus propias consultas (*queries*), claves (*keys*) y valores (*values*), y con
 ellas su propio mapa $\mathbf{A}_i \in \mathbb{R}^{T \times T}$, cuadrado y con las filas sumando
 $1$ igual que el de <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>.
@@ -250,7 +250,7 @@ $$
 \text{MultiHead}(\mathbf{X}) = \text{Concat}\left(\text{head}_1, \dots, \text{head}_h\right)\mathbf{W}^O \in \mathbb{R}^{T \times d_{\text{model}}},
 $$
 
-donde $\text{Concat}$ pega las $h$ matrices **por columnas** —una fila por posición, con los $h$
+donde $\text{Concat}$ pega las $h$ matrices *por columnas* —una fila por posición, con los $h$
 trozos seguidos dentro de ella, de modo que el resultado es $T \times \left(h \cdot d_v\right)$— y
 $\mathbf{W}^O \in \mathbb{R}^{\left(h \cdot d_v\right) \times d_{\text{model}}}$ es la única matriz
 de la capa que no pertenece a ninguna cabeza. Su superíndice es una etiqueta de papel, como los de
@@ -281,7 +281,7 @@ baja a $0.17$. Ninguna de las dos reglas ha cambiado un solo número. Lo que ha 
 sumaron antes de normalizar.
 
 Ahí está la operación entera. Separar las coordenadas en $h$ grupos y darle a cada grupo su propio
-*softmax* es **normalizar antes de combinar**, en vez de combinar antes de normalizar. Salen $h$
+*softmax* es *normalizar antes de combinar*, en vez de combinar antes de normalizar. Salen $h$
 distribuciones en lugar de una, cada una con su denominador, y llegan hasta la salida sin tocarse;
 lo que las combina es $\mathbf{W}^O$, que es una matriz que se aprende y que las recibe ya
 repartidas. La suma que la capa de una cabeza hacía dentro del *softmax* era irreversible; hecha
@@ -352,7 +352,7 @@ $d_{\text{model}}$, la anchura con la que entró. Eso es lo que permite apilar e
 otra, y quien lo necesita de verdad es <Leccion slug="bloque-transformer">una lección más adelante, sobre el bloque completo con
 residuales y *layer norm*</Leccion>.
 
-Falta decir lo que esta construcción **no** hace, porque los dibujos de los artículos invitan a
+Falta decir lo que esta construcción *no* hace, porque los dibujos de los artículos invitan a
 creer lo contrario. Nada en la pérdida le asigna un papel a una cabeza: no existe ningún término
 que diga «la cabeza 2 se ocupa de la concordancia». Las cabezas hacen cosas distintas porque
 empiezan distintas, y por nada más. Los nombres del explorable de arriba se los he puesto yo,
@@ -488,7 +488,7 @@ qué calcula la capa con las cabezas iguales, y si promediar era una opción.
 Con $h$ cabezas, una posición tiene $h$ respuestas donde tenía una, y $\mathbf{W}^O$ decide qué
 hacer con ellas. Pero mira de dónde salen las $h$: de la misma $\mathbf{X}$, con la misma fórmula,
 y en $e_{ij}$ siguen sin aparecer $i$ ni $j$ por ningún sitio. Multiplicar las cabezas multiplica
-**qué** se compara, y no añade ni una coordenada de **dónde**. Ninguna de las $h$ puede aprender
+*qué* se compara, y no añade ni una coordenada de *dónde*. Ninguna de las $h$ puede aprender
 «el sustantivo que tengo a la izquierda», por muchas que pongas, porque en lo que la capa lee no
 hay izquierda.
 

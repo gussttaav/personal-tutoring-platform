@@ -1,6 +1,12 @@
 import type { ISubscriptionRepository } from "@/domain/repositories/ISubscriptionRepository";
-import type { SubscriptionRecipient, SubscriptionType } from "@/domain/types";
+import type {
+  BlogArea,
+  SubscriptionRecipient,
+  SubscriptionStatus,
+  SubscriptionType,
+} from "@/domain/types";
 import { AlreadySubscribedError } from "@/domain/errors";
+import { normalizeBlogAreas } from "@/lib/blog/subscription-areas";
 import { UserService } from "./UserService";
 
 export class SubscriptionService {
@@ -9,17 +15,39 @@ export class SubscriptionService {
     private readonly userService: UserService,
   ) {}
 
-  async subscribe(email: string, type: SubscriptionType): Promise<void> {
+  // BLOG-15: a blog opt-in carries the areas the reader picked; a selection covering every
+  // area (or none sent at all) is stored as `null`, "every area". Courses have no areas.
+  async subscribe(email: string, type: SubscriptionType, areas?: BlogArea[]): Promise<void> {
     const userId = await this.userService.ensureUser(email);
     const already = await this.subs.isSubscribed(userId, type);
     if (already) throw new AlreadySubscribedError();
-    await this.subs.subscribe(userId, type);
+    await this.subs.subscribe(userId, type, type === "blog" ? normalizeBlogAreas(areas) : null);
   }
 
   async isSubscribed(email: string, type: SubscriptionType): Promise<boolean> {
     const user = await this.userService.findByEmail(email);
     if (!user) return false;
     return this.subs.isSubscribed(user.id, type);
+  }
+
+  // BLOG-15: what the notify card needs in one read — whether the reader is subscribed and,
+  // for the blog, which areas they follow. Like `isSubscribed`, never creates a user.
+  async getStatus(email: string, type: SubscriptionType): Promise<SubscriptionStatus> {
+    const user = await this.userService.findByEmail(email);
+    if (!user) return { subscribed: false, areas: null };
+    const areas = await this.subs.getAreas(user.id, type);
+    return areas === undefined
+      ? { subscribed: false, areas: null }
+      : { subscribed: true, areas };
+  }
+
+  // BLOG-15: changes the areas of an EXISTING blog subscription. Returns false when there
+  // is none — the card only offers this to a subscriber, so a false here is a stale card
+  // (unsubscribed in another tab), and quietly re-subscribing them would be the wrong fix.
+  async updateBlogAreas(email: string, areas: BlogArea[]): Promise<boolean> {
+    const user = await this.userService.findByEmail(email);
+    if (!user) return false;
+    return this.subs.updateAreas(user.id, "blog", normalizeBlogAreas(areas));
   }
 
   // COURSE-P6-02: the counterpart of `subscribe`, and the mechanism behind both the

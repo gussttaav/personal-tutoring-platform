@@ -1,0 +1,494 @@
+---
+slug: modelo-de-recompensa
+title: "Preferencias y el modelo de recompensa"
+block: 2
+order: 4
+minutes: 35
+summary: "Una nota se lee en la escala de quien la pone; una comparación entre dos respuestas, no. El modelo de Bradley–Terry convierte comparaciones en un número por respuesta: el anotador prefiere una con la sigmoide de la diferencia de recompensas, que queda definida salvo una constante por instrucción. Un modelo de recompensa se entrena con la entropía cruzada binaria de esas comparaciones. La lección lo monta sobre el mini-GPT congelado, que ordena bien lo que vio y adivina en lo que no conoce."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-dos-escalas
+    type: single
+    prompt: 'Dos anotadores puntúan de 1 a 10 respuestas a la misma instrucción. Lucía le pone un 8 a la respuesta P y Andrés un 5 a la respuesta Q; ninguno ha visto la del otro. ¿Qué se puede concluir de P frente a Q?'
+    options:
+      - { id: a, text: 'Nada: cada nota se lee en la escala de quien la pone, y la de Lucía puede ser más generosa. Si los dos compararan P con Q, cada uno diría cuál prefiere y su escala no entraría.' }
+      - { id: b, text: 'Que P es mejor, porque 8 es más que 5.' }
+      - { id: c, text: 'Que un anotador prefiere P con probabilidad $\sigma(8 - 5) = 0.95$.' }
+      - { id: d, text: 'Que Q es mejor, porque quien pone notas altas las pone a todo.' }
+    answer: a
+    explanation: 'La (a). Una nota mezcla la respuesta con la escala de quien la puso, y con un solo número de cada anotador no hay forma de separarlas. La (c) es la trampa: Bradley–Terry pone la sigmoide sobre recompensas que reproducen comparaciones, no sobre notas, y un 8 y un 5 no salen de la misma escala. La (d) inventa la escala contraria. Una comparación conserva el orden de cada anotador y tira su escala, que es lo que se quería tirar.'
+    hint: 'Pregúntate qué cambiaría si Lucía sumara dos puntos a todas sus notas.'
+  - id: q-encadenar
+    type: numeric
+    prompt: 'Tres de cada cuatro anotadores prefieren la respuesta A a la B, y tres de cada cuatro prefieren la B a la C. Si las comparaciones siguen el modelo de Bradley–Terry, ¿con qué probabilidad prefiere un anotador A a C?'
+    answer: 0.9
+    tolerance: 0.002
+    explanation: 'Un $0.9$. Tres de cada cuatro es un margen de $\ln 3$, porque $\sigma(\ln 3) = 3/4$. Con un número por respuesta los márgenes se suman: de A a C hay $2\ln 3 = \ln 9$, y $\sigma(\ln 9) = 9/10$. Dicho con ventajas, tres a uno y tres a uno dan nueve a uno. El modelo afirma eso de cualquier cadena, y por eso no puede reproducir un ciclo en el que A gana a B, B a C y C a A.'
+    hint: 'Calcula el margen de cada comparación con $\sigma(\text{margen}) = 3/4$ y súmalos.'
+  - id: q-que-no-cambia
+    type: multi
+    prompt: 'Un modelo de recompensa da $r(x, y)$ a cada respuesta. Marca los cambios que dejan intacta la probabilidad que asigna a cada comparación.'
+    options:
+      - { id: a, text: 'Sumar 7 a todas las recompensas de todas las instrucciones.' }
+      - { id: b, text: 'Sumar a las recompensas de cada instrucción un número distinto para cada instrucción.' }
+      - { id: c, text: 'Multiplicar todas las recompensas por 2.' }
+      - { id: d, text: 'Sumar 1 a la recompensa de las respuestas de más de veinte tokens.' }
+    answer: [a, b]
+    explanation: 'La (a) y la (b). Una comparación enfrenta dos respuestas a la misma instrucción, y su probabilidad depende sólo de su margen; lo que se suma por igual a las dos desaparece de la resta, aunque cambie de una instrucción a otra. La (c) dobla cada margen: un 73 % pasa a ser un 88 %. La (d) cambia el margen de cada par con una respuesta larga y otra corta: es exactamente el sesgo que un modelo de recompensa puede aprender si los anotadores prefieren lo largo.'
+    hint: 'Escribe el margen de una comparación después del cambio.'
+  - id: q-cuanto-empuja
+    type: single
+    prompt: 'En un paso de descenso hay dos comparaciones. En la primera, el modelo de recompensa ya da a la preferida 4 puntos más que a la rechazada; en la segunda, le da 1 punto menos. ¿Cómo se comparan los factores que multiplican la dirección de cada una en el gradiente?'
+    options:
+      - { id: a, text: 'El de la segunda es unas cuarenta veces mayor: el factor es $\sigma(r_\phi(x, y_l) - r_\phi(x, y_w))$, $0.731$ frente a $0.018$.' }
+      - { id: b, text: 'Son iguales: cada comparación cuenta lo mismo en la media.' }
+      - { id: c, text: 'El de la primera es mayor, porque tiene más margen.' }
+      - { id: d, text: 'El de la primera es cero: una comparación bien ordenada no aporta gradiente.' }
+    answer: a
+    explanation: 'La (a). El factor es la probabilidad que el modelo da al orden contrario: $\sigma(-4) = 0.018$ para la primera y $\sigma(1) = 0.731$ para la segunda. Aprende sobre todo de lo que todavía tiene al revés. La (d) exagera: el factor nunca llega a cero, y una comparación bien ordenada sigue empujando su margen hacia arriba, cada vez menos. Por eso, con comparaciones que todos los anotadores deciden igual, las recompensas crecen sin parar.'
+    hint: 'La derivada de $-\log \sigma(\text{margen})$ respecto del margen es $-\sigma(-\text{margen})$.'
+  - id: q-preguntas-nuevas
+    type: single
+    prompt: 'En la lección, el modelo de recompensa acierta el 99 % de sus comparaciones de entrenamiento y el 52 % de las de preguntas nuevas. ¿Qué lo explica?'
+    options:
+      - { id: a, text: 'La capa lineal sólo ve lo que traen los vectores del mini-GPT congelado, y el mini-GPT, que leyó una novela, no sabe de qué color es un plátano. Las comparaciones le enseñaron los colores de 24 cosas, una a una.' }
+      - { id: b, text: 'Le faltan pasos: con más, ordenaría también las preguntas nuevas.' }
+      - { id: c, text: 'La constante por instrucción: las recompensas de las preguntas nuevas están desplazadas.' }
+      - { id: d, text: 'Bradley–Terry no puede representar colores.' }
+    answer: a
+    explanation: 'La (a). El modelo es una recta sobre $\bar{\mathbf{h}}$, y lo que $\bar{\mathbf{h}}$ no distingue no lo distingue la recta. La (b) no se cumple: con mil pasos la cifra sigue cerca de la mitad, y más pasos sólo aprenden mejor las 24 cosas del entrenamiento. La (c) confunde el nivel con el orden: la constante de una pregunta se suma a sus seis respuestas y no cambia ninguna de sus comparaciones. La (d) culpa al modelo de las comparaciones, que con 72 de ellas reprodujo 71.'
+    hint: 'Pregúntate qué sabe de un plátano el vector $\bar{\mathbf{h}}$ que el mini-GPT calcula sobre la respuesta.'
+challenges:
+  - id: ch-recompensas
+    prompt: |
+      Escribe `recompensas(votos)`: las recompensas de Bradley–Terry de varias respuestas a una
+      misma instrucción, sin red, una recompensa libre por respuesta. `votos[i][j]` es cuántas veces
+      un anotador prefirió la respuesta `i` a la `j`. Devuelve un array con una recompensa por
+      respuesta, que maximice la verosimilitud de los votos y tenga media cero: los votos no deciden
+      el nivel, y alguien tiene que fijarlo. Un ascenso por gradiente con la derivada de la lección converge en todas las
+      pruebas si da unos miles de pasos, cada uno dividido entre las comparaciones de su respuesta.
+    packages: [numpy]
+    starter: |
+      import numpy as np
+
+
+      def recompensas(votos):
+          """Una recompensa por respuesta, la de máxima verosimilitud, con media cero."""
+          # tu código aquí
+          pass
+    tests:
+      - name: "tres votos a uno"
+        code: |
+          import numpy as np
+          r = recompensas([[0, 3], [1, 0]])
+          assert r is not None, 'recompensas no devuelve nada: falta el return'
+          assert len(r) == 2, 'una recompensa por respuesta: dos, no %d' % len(r)
+          assert abs((r[0] - r[1]) - np.log(3)) < 1e-4, 'tres votos a uno son una probabilidad de 3/4, y Bradley-Terry la reproduce con un margen de ln 3 = 1.0986. Sale %.4f; si es -1.0986, has leído la tabla al revés: votos[i][j] cuenta las veces que se prefirió i a j' % (r[0] - r[1])
+      - name: "la media es cero"
+        code: |
+          import numpy as np
+          r = recompensas([[0, 3], [1, 0]])
+          assert r is not None, 'recompensas no devuelve nada: falta el return'
+          assert abs(np.mean(r)) < 1e-6, 'los votos fijan los márgenes y no el nivel: sumar lo mismo a todas no cambia la verosimilitud. Fija tú el nivel con media cero; la media sale %.4f' % np.mean(r)
+      - name: "tres respuestas"
+        code: |
+          import numpy as np
+          r = recompensas([[0, 1, 1], [2, 0, 1], [4, 2, 0]])
+          assert r is not None, 'recompensas no devuelve nada: falta el return'
+          esperado = np.log([1, 2, 4]) - np.log([1, 2, 4]).mean()
+          assert np.allclose(r, esperado, atol=1e-4), 'los tres pares se reparten 2 a 1, 4 a 1 y 2 a 1, y las recompensas que los reproducen son ln 1, ln 2 y ln 4 con media cero, %s. Sale %s; si se acerca sin llegar, da más pasos' % (np.round(esperado, 4), np.round(r, 4))
+      - name: "cuentan las proporciones, no los votos"
+        code: |
+          import numpy as np
+          votos = [[0, 1, 1], [2, 0, 1], [4, 2, 0]]
+          a, b = recompensas(votos), recompensas((10 * np.array(votos)).tolist())
+          assert a is not None and b is not None, 'recompensas no devuelve nada: falta el return'
+          assert np.allclose(a, b, atol=1e-4), 'diez veces más votos en las mismas proporciones dan las mismas recompensas, porque la verosimilitud es máxima en las proporciones. Sale %s frente a %s: si tus pasos no se dividen entre el número de comparaciones, con más votos son demasiado largos' % (np.round(a, 4), np.round(b, 4))
+      - name: "un ciclo"
+        code: |
+          import numpy as np
+          r = recompensas([[0, 3, 1], [1, 0, 3], [3, 1, 0]])
+          assert r is not None, 'recompensas no devuelve nada: falta el return'
+          assert np.allclose(r, 0, atol=1e-4), 'A gana a B, B a C y C a A, tres a uno cada vez: un ciclo. Ninguna recompensa lo reproduce, y la que mejor lo ajusta las deja iguales. Sale %s' % np.round(r, 4)
+      - name: "cinco respuestas con votos al azar"
+        code: |
+          import numpy as np
+          votos = np.random.default_rng(0).integers(1, 9, size=(5, 5))
+          np.fill_diagonal(votos, 0)
+          r = recompensas(votos.tolist())
+          assert r is not None, 'recompensas no devuelve nada: falta el return'
+          V = votos.astype(float)
+          N, p = V + V.T, np.ones(5)
+          for _ in range(3000):                               # Zermelo: otro camino al mismo máximo
+              p = V.sum(axis=1) / (N / (p[:, None] + p[None, :])).sum(axis=1)
+          ref = np.log(p) - np.log(p).mean()
+          assert np.allclose(r, ref, atol=1e-4), 'con cinco respuestas y votos al azar, tus recompensas no maximizan la verosimilitud: la mayor diferencia con el máximo es %.4f' % np.abs(np.asarray(r) - ref).max()
+    solution: |
+      import numpy as np
+
+
+      def recompensas(votos):
+          """Una recompensa por respuesta, la de máxima verosimilitud, con media cero."""
+          V = np.array(votos, dtype=float)                   # V[i, j]: veces que se prefirió i a j
+          N = V + V.T                                        # comparaciones entre i y j
+          r = np.zeros(len(V))
+          for _ in range(5000):
+              P = 1 / (1 + np.exp(r[None, :] - r[:, None]))  # P[i, j] = sigma(r_i - r_j)
+              g = (V - N * P).sum(axis=1)                    # lo que ganó i menos lo que se esperaba
+              r = r + g / N.sum(axis=1)                      # un paso por respuesta, a su escala
+              r = r - r.mean()                               # el nivel no lo deciden los votos
+          return r
+    explanation: 'Es el modelo de recompensa de la lección con una recompensa libre por respuesta en lugar de una red. Sumando la derivada de cada comparación, la de la log-verosimilitud respecto de la recompensa de `i` es lo que `i` ganó menos lo que el modelo esperaba que ganara, `(V - N * P).sum(axis=1)`, y se anula cuando las dos cosas coinciden. Las derivadas de todas las respuestas suman cero, porque cada comparación le da a la ganadora lo que le quita a la perdedora: es la constante que los votos no fijan, y que la última línea fija a mano.'
+reading:
+  - kind: paper
+    title: 'Rank Analysis of Incomplete Block Designs: I. The Method of Paired Comparisons'
+    authors: 'Bradley y Terry'
+    year: '1952'
+    venue: 'Biometrika 39'
+    lang: en
+    url: 'https://doi.org/10.2307/2334029'
+    note: 'El artículo que da nombre al modelo: un número por cada cosa comparada y la verosimilitud de los resultados, setenta años antes de que las cosas comparadas fueran respuestas de un modelo de lenguaje.'
+  - kind: paper
+    title: 'Deep reinforcement learning from human preferences'
+    authors: 'Christiano, Leike, Brown, Martic, Legg y Amodei'
+    year: '2017'
+    venue: 'NeurIPS 2017 · arXiv:1706.03741'
+    lang: en
+    url: 'https://arxiv.org/abs/1706.03741'
+    note: 'Donde empieza la idea: personas que comparan dos vídeos cortos de un agente, una recompensa ajustada con la pérdida de esta lección y un robot simulado que aprende una voltereta que nadie sabría escribir como fórmula.'
+  - kind: paper
+    title: 'Learning to summarize from human feedback'
+    authors: 'Stiennon, Ouyang, Wu, Ziegler, Lowe y otros'
+    year: '2020'
+    venue: 'NeurIPS 2020 · arXiv:2009.01325'
+    lang: en
+    url: 'https://arxiv.org/abs/2009.01325'
+    note: 'Un modelo de recompensa entrenado con comparaciones de resúmenes, y un modelo optimizado contra él cuyos resúmenes gustan más que los escritos por personas: lo que el ajuste supervisado, que imita, no puede dar.'
+  - kind: paper
+    title: 'Training language models to follow instructions with human feedback'
+    authors: 'Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin y otros'
+    year: '2022'
+    venue: 'NeurIPS 2022 · arXiv:2203.02155'
+    lang: en
+    url: 'https://arxiv.org/abs/2203.02155'
+    note: 'Su sección 3.5 es esta lección a escala: de cuatro a nueve respuestas ordenadas por instrucción, un modelo de recompensa de 6 000 millones de parámetros y un sesgo fijado a mano porque la pérdida no lo fija.'
+  - kind: paper
+    title: 'Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference'
+    authors: 'Chiang, Zheng, Sheng, Angelopoulos, Li y otros'
+    year: '2024'
+    venue: 'ICML 2024 · arXiv:2403.04132'
+    lang: en
+    url: 'https://arxiv.org/abs/2403.04132'
+    note: 'Bradley–Terry para clasificar modelos en lugar de respuestas: votos de usuarios entre dos respuestas anónimas, y una recompensa por modelo con su intervalo de confianza.'
+---
+
+{/* COURSE-C2-P1-02 — Bloque 2, lección 4. Corre sobre el mini-GPT: el checkpoint del bloque 1
+    con las cuatro filas de la plantilla, congelado, y una capa lineal encima que sí se entrena. */}
+
+Con <Leccion slug="sft">el ajuste supervisado</Leccion>, el mini-GPT contesta en lugar de continuar
+el documento, y la forma de obedecer queda resuelta. El contenido no: un modelo ajustado llega
+hasta donde llegan los pares con que se ajustó, ni un punto más arriba. Mejorar *lo que* responde
+pide otro tipo de dato, y esta lección trabaja con comparaciones: un par de respuestas a la misma
+pregunta y la que alguien prefiere de las dos.
+
+Los anotadores de InstructGPT hacían eso a escala. Por cada instrucción ordenaban de cuatro a
+nueve respuestas del modelo, y aun así dos de ellos coincidían en una comparación algo menos de
+tres veces de cada cuatro. Esta lección convierte datos así, ruidosos y sin una escala común, en
+un número por respuesta, la recompensa, y entrena una red que lo calcula. Con ese número, el bloque
+tendrá por fin algo que maximizar.
+
+Pedir notas parece más directo, y tiene un defecto que ninguna cantidad de notas arregla. Una
+anotadora generosa le pone un 9 a una explicación de por qué el cielo es azul y un anotador severo
+le pone un 6 a otra; los dos podrían preferir la segunda. Cada nota se lee en la escala de quien la
+pone, y esa escala se mueve también a lo largo de una tarde de trabajo. Si una anotadora puntúa unas
+respuestas y otro anotador otras, juntar sus notas junta sus escalas.
+
+Una comparación tira la escala y se queda con el orden. Entre dos explicaciones, la generosa y el
+severo dicen cuál prefieren, y lo generosos que sean no entra en la respuesta. Lo que se pierde es
+el tamaño de la diferencia, y se recupera contando: si tres de cada cuatro anotadores prefieren
+una, la ventaja es pequeña; si la prefieren todos, grande.
+
+El ajedrez resolvió así el mismo problema. Nadie le pone nota a un jugador: juega partidas, gana o
+pierde, y su Elo sale de los resultados. El Elo es un número por jugador, y la probabilidad de que
+uno gane a otro depende sólo de la diferencia entre los dos: con 400 puntos más que su rival, se
+espera que un jugador gane diez partidas por cada una que pierda. Chatbot Arena clasifica hoy los
+modelos de lenguaje igual, con millones de votos entre dos respuestas anónimas. Con respuestas en
+lugar de jugadores, el número es la recompensa.
+
+<Explorable id="bradley-terry" caption="Mueve las dos recompensas y mira la probabilidad de que el anotador prefiera A, y lo que cuesta la comparación si la eligió. Después mueve c: las dos recompensas se desplazan por la recta y nada de abajo cambia." />
+
+<Callout type="intuition" title="La idea en una frase">
+Un modelo de recompensa da un número a cada respuesta, y la probabilidad de que un anotador
+prefiera una a otra es la sigmoide de la diferencia. Sólo cuentan las diferencias entre respuestas
+a la misma instrucción: el nivel no lo fija ninguna comparación.
+</Callout>
+
+## Una recompensa que reproduce las comparaciones
+
+Fijemos los datos. Una **comparación** es una terna $(x, y_w, y_l)$: una instrucción, la respuesta
+que un anotador prefirió y la que rechazó, y se escribe $y_w \succ y_l$. Los subíndices vienen del
+inglés, *win* y *lose*. Un **anotador** (*labeler*) es la persona que compara, y su elección tiene
+algo de azar: los anotadores no siempre coinciden, y uno solo tampoco consigo mismo de un día a
+otro.
+
+El modelo de **Bradley–Terry** (1952) le da a cada respuesta un número, su **recompensa**
+$r(x, y)$, y dice cómo salen las comparaciones. Para dos respuestas $y_A$ e $y_B$ a la misma
+instrucción, antes de que nadie elija, la probabilidad de que el anotador prefiera $y_A$ es la
+parte de $e^{r(x, y_A)}$ en la suma de las dos. Dividiendo arriba y abajo por ese término,
+
+$$
+\begin{aligned}
+P(y_A \succ y_B \mid x) &= \frac{e^{r(x, y_A)}}{e^{r(x, y_A)} + e^{r(x, y_B)}} = \frac{1}{1 + e^{-\left(r(x, y_A) - r(x, y_B)\right)}} \\
+&= \sigma\big(r(x, y_A) - r(x, y_B)\big).
+\end{aligned}
+$$
+
+Es el softmax de las dos recompensas, el de <Leccion curso="dl-nlp" slug="funcion-de-perdida">la
+lección sobre funciones de pérdida del curso anterior</Leccion>, y con dos entradas el softmax es
+una sigmoide de la diferencia. Llamemos **margen** a esa diferencia,
+$\text{margen} = r(x, y_A) - r(x, y_B)$. Despejando, $P/(1 - P) = e^{\text{margen}}$: el margen es
+el logaritmo de la ventaja. Uno de $\ln 3 \approx 1.1$ quiere decir que tres de cada cuatro
+anotadores prefieren $y_A$; uno de $\ln 9 \approx 2.2$, nueve de cada diez. El Elo es esta misma
+curva con otra unidad, y sus 400 puntos son un margen de $\ln 10$.
+
+Un número por respuesta es una afirmación fuerte, y tiene consecuencias que se pueden poner a
+prueba. Los márgenes se suman a lo largo de una cadena: si $y_A$ gana a $y_B$ tres a uno y $y_B$ a
+$y_C$ tres a uno, el modelo dice que $y_A$ gana a $y_C$ nueve a uno, sin que nadie las haya
+comparado. Y no admite ciclos. Si los anotadores prefieren $y_A$ a $y_B$, $y_B$ a $y_C$ e $y_C$ a
+$y_A$, ninguna recompensa lo reproduce, y con las tres ventajas iguales el mejor ajuste es un
+empate. Es la concesión de Bradley–Terry: supone que detrás de cada elección hay un único eje de
+«calidad».
+
+### Lo que las comparaciones no fijan
+
+Sumemos a todas las recompensas de una instrucción un mismo número, que puede ser distinto para
+cada instrucción, y llamémoslo $\kappa(x)$. Ninguna probabilidad cambia, porque el margen lo resta:
+
+$$
+\sigma\Big(\big(r(x, y_A) + \kappa(x)\big) - \big(r(x, y_B) + \kappa(x)\big)\Big) = \sigma\big(r(x, y_A) - r(x, y_B)\big).
+$$
+
+Las comparaciones enfrentan siempre dos respuestas a la misma instrucción, así que fijan los
+márgenes dentro de cada instrucción y nada más. La recompensa queda definida **salvo una constante
+por instrucción**, y eso tiene dos consecuencias. Comparar recompensas de instrucciones distintas
+no significa nada: que una respuesta sobre la nieve tenga más recompensa que otra sobre el mar no
+lo ha dicho ninguna comparación. Y quien aprende una recompensa de comparaciones tiene que fijar el
+nivel por su cuenta, o dejarlo donde caiga. InstructGPT, antes de usar su modelo de recompensa,
+le ajustaba a mano un sesgo para que las respuestas escritas por sus anotadores tuvieran media cero,
+y daba esta misma razón.
+
+Lo que las comparaciones sí fijan es la escala. Multiplicar las recompensas por 2 dobla cada margen
+y cambia cada probabilidad. La unidad de la recompensa no es la de ningún anotador: es la
+frecuencia con que coinciden. Esta libertad de una constante por instrucción parece un defecto del
+modelo, y más adelante el bloque la aprovechará.
+
+## Aprender la recompensa de las comparaciones
+
+Un **modelo de recompensa** (*reward model*) es una red $r_\phi(x, y)$, con sus parámetros $\phi$,
+que lee una instrucción y una respuesta y devuelve un número. Se entrena como todo en este bloque,
+maximizando la verosimilitud de sus datos. Llamemos $p_{\text{pref}}$ a la distribución que saca
+una comparación al azar del conjunto. Lo que el modelo dice de una comparación es la probabilidad de
+que el anotador eligiera la que eligió, y la pérdida es menos su logaritmo, en media:
+
+$$
+\mathcal{L}_{\text{R}}(\phi) = \mathbb{E}_{(x, y_w, y_l) \sim p_{\text{pref}}}\left[-\log \sigma\big(r_\phi(x, y_w) - r_\phi(x, y_l)\big)\right].
+$$
+
+Es la entropía cruzada binaria de aquella lección sobre funciones de pérdida, con el margen en el
+lugar de $z$ y la etiqueta siempre 1, porque cada comparación se escribe con la preferida delante.
+Su óptimo sale con el argumento de siempre. Si la red puede dar cualquier recompensa, agrupemos las
+comparaciones de un mismo par de respuestas: cada grupo es una entropía cruzada entre la proporción
+de veces que ganó cada una y la sigmoide del margen, y la desigualdad de
+<Leccion slug="perplejidad">la lección sobre la perplejidad</Leccion> la hace mínima cuando son
+iguales. Un margen aprendido es una proporción de acuerdo escrita como logaritmo de una ventaja:
+tres anotadores de cuatro, $\ln 3$.
+
+El gradiente es una línea de aquella lección y la regla de la cadena. La derivada de la entropía
+cruzada binaria respecto de $z$ era $\hat{y} - y$; con $\hat{y} = \sigma(\text{margen})$ e $y = 1$,
+es $\sigma(\text{margen}) - 1 = -\sigma(-\text{margen})$. Así que
+
+$$
+\begin{aligned}
+&\nabla_\phi\left[-\log \sigma\big(r_\phi(x, y_w) - r_\phi(x, y_l)\big)\right] \\
+&\qquad = -\sigma\big(r_\phi(x, y_l) - r_\phi(x, y_w)\big)\left(\nabla_\phi r_\phi(x, y_w) - \nabla_\phi r_\phi(x, y_l)\right).
+\end{aligned}
+$$
+
+Un paso de descenso sube la recompensa de la preferida y baja la de la rechazada, cada una en la
+dirección de su gradiente. El factor que lo multiplica, $\sigma(r_\phi(x, y_l) - r_\phi(x, y_w))$,
+es la probabilidad que el modelo le da todavía al orden contrario. Una comparación que ya ordena
+con un margen de 4 pesa $0.018$; una que tiene al revés por 1, $0.731$. El modelo aprende de lo que
+aún tiene mal, y lo que tiene bien sigue empujando, cada vez menos.
+
+En la práctica, $r_\phi$ es el modelo ajustado con su última capa cambiada: en lugar de la que da un
+logit por entrada del vocabulario, una capa lineal que da un solo número. InstructGPT lo hizo con
+6 000 millones de parámetros. Aquí lo haremos con el mini-GPT congelado y una capa lineal encima.
+Sea $\bar{\mathbf{h}}(x, y)$ la media de los vectores $\mathbf{h}$ que el último bloque deja en las
+posiciones de los tokens de $y$:
+
+$$
+\bar{\mathbf{h}}(x, y) = \mathbb{E}_j\left[\mathbf{h}(x, y_{\le j})\right], \qquad r_\phi(x, y) = \mathbf{u}^{\top}\bar{\mathbf{h}}(x, y) + b,
+$$
+
+con $j$ por igual sobre los tokens de $y$, $\texttt{<|fin|>}$ incluido, y $\phi = (\mathbf{u}, b)$:
+65 números. Es <Leccion curso="dl-nlp" slug="la-neurona">la neurona del curso anterior</Leccion> sin
+activación, con $\mathbf{u}$ para el peso porque $w$ ya marca la preferida.
+
+El gradiente de $r_\phi$ es $\bar{\mathbf{h}}(x, y)$ respecto de $\mathbf{u}$ y 1 respecto de $b$, el
+mismo 1 en las dos respuestas. En la ecuación del gradiente, lo que las dos tienen en común se va en
+la resta, y el de $b$ es $1 - 1 = 0$. El sesgo no aprende nunca: es un $\kappa(x)$ como el de
+antes, el mismo para todas las instrucciones, hecho parámetro.
+
+## Un modelo de recompensa sobre el mini-GPT
+
+Las dos celdas corren sobre el mini-GPT, tu mini-GPT del bloque 1 cargado desde el *checkpoint* con
+las cuatro filas de la plantilla, y no lo entrenan: lo congelan y entrenan encima los 65 números de
+$\phi$. He partido del modelo preentrenado y no del ajustado de la lección anterior, que olvidó la
+novela por aprender diez frases.
+
+El anotador es un programa que sabe de qué color es cada cosa. Hay 36 preguntas como las del
+ajuste, seis cosas de cada color, y cada una tiene seis respuestas con la forma de los pares, una
+por color. El anotador prefiere la correcta, y cada pregunta da cinco comparaciones. En 24 de las
+preguntas, tres de sus comparaciones entran en el entrenamiento y las otras dos se guardan: son los
+rivales nuevos, respuestas que el modelo nunca ha visto enfrentadas a la correcta. Las 12 preguntas
+restantes, dos por color, son de cosas que la novela no nombra nunca, y ninguna de sus
+comparaciones entra. La primera celda calcula $\bar{\mathbf{h}}$ de las 216 respuestas en una sola
+ida.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+from pyodide.http import open_url
+exec(open_url("/courses/llm-agents/modelo.py").read())          # red, F, codificar
+
+# La plantilla de chat, con sus cuatro filas nuevas: la media de E.
+ID = {e: 512 + i for i, e in enumerate(["<|sistema|>", "<|usuario|>", "<|asistente|>", "<|fin|>"])}
+red.p["E"] = np.vstack([red.p["E"], np.tile(red.p["E"].mean(axis=0), (4, 1))])
+red.cfg["n_v"] = 516
+
+# Seis cosas de cada color. Las dos últimas de cada uno no entran en el entrenamiento.
+CASOS = {"blanco": "la nieve, la leche, la nube, el azúcar, la sal, el algodón",
+         "negro": "el carbón, la noche, la tinta, la pizarra, el cuervo, el petróleo",
+         "rojo": "la sangre, el fuego, la rosa, la fresa, el tomate, la cereza",
+         "verde": "la hierba, la hoja, el pino, la esmeralda, la lechuga, el pepino",
+         "azul": "el cielo, el mar, el río, el lago, el zafiro, el arándano",
+         "amarillo": "el sol, el oro, el limón, el trigo, el plátano, el maíz"}
+COLORES, FEM = list(CASOS), {"blanco": "blanca", "negro": "negra", "rojo": "roja", "amarillo": "amarilla"}
+cosas = [(cosa, color, i >= 4) for color in COLORES for i, cosa in enumerate(CASOS[color].split(", "))]
+
+def frase(cosa, color):                                          # «La nieve es blanca.»
+    art, nombre = cosa.split(" ")
+    return "%s %s es %s." % (art.capitalize(), nombre, FEM.get(color, color) if art == "la" else color)
+
+# Las 36 preguntas con sus seis respuestas: 216 conversaciones en un solo batch.
+convs, tramos = [], []
+for cosa, _, _ in cosas:
+    x = [ID["<|usuario|>"]] + codificar("¿De qué color es %s?" % cosa, F) + [ID["<|fin|>"], ID["<|asistente|>"]]
+    for color in COLORES:
+        y = codificar(frase(cosa, color), F) + [ID["<|fin|>"]]
+        convs.append(x + y)
+        tramos.append((len(x), len(x) + len(y)))                 # las posiciones de los tokens de y
+T = max(map(len, convs))
+X = np.array([ids + [0] * (T - len(ids)) for ids in convs])      # relleno detrás: la máscara causal lo ignora
+Hn = red.adelante(X)[1][3]                                       # el vector h de cada posición
+H = np.array([Hn[b, i:j].mean(axis=0) for b, (i, j) in enumerate(tramos)]).reshape(36, 6, 64)
+
+# Las comparaciones (pregunta, preferida, rechazada): la correcta contra cada una de las otras cinco.
+entreno, rivales_nuevos, preguntas_nuevas = [], [], []
+for q, (cosa, color, reservada) in enumerate(cosas):
+    w = COLORES.index(color)
+    for k, l in enumerate([l for l in range(6) if l != w]):
+        (preguntas_nuevas if reservada else entreno if (k + q) % 5 < 3 else rivales_nuevos).append((q, w, l))
+print("h̄ de cada respuesta:", H.shape)
+print("comparaciones: %d de entrenamiento, %d con rivales nuevos, %d de preguntas nuevas"
+      % (len(entreno), len(rivales_nuevos), len(preguntas_nuevas)))
+`} />
+
+Cada una de las 216 respuestas queda en un vector de 64 números, la media de los $\mathbf{h}$ en sus
+posiciones, y nada más del mini-GPT se usa en adelante. Las comparaciones son 72 de entrenamiento,
+48 con rivales nuevos y 60 de preguntas nuevas. La segunda celda entrena $\phi$ con trescientos
+pasos de descenso por gradiente sobre $\mathcal{L}_{\text{R}}$ y mide el acierto en los tres grupos:
+la proporción de comparaciones en que la preferida recibe más recompensa. Después enseña las seis
+recompensas de una pregunta del entrenamiento y de una nueva.
+
+<PyCell packages={["numpy"]} code={`
+# Necesita la celda anterior. La red sigue congelada: sólo se entrenan u y b, 65 números.
+sigma = lambda z: 1 / (1 + np.exp(-z))
+H1 = np.concatenate([H, np.ones((36, 6, 1))], axis=2)            # (h̄, 1): la última coordenada es la de b
+r = lambda phi, q, k: H1[q, k] @ phi                             # r(x, y) = u·h̄(x, y) + b
+
+def perdida(phi, comparaciones):
+    """La pérdida de Bradley-Terry y su gradiente respecto de phi = (u, b)."""
+    q, w, l = np.array(comparaciones).T
+    margen = r(phi, q, w) - r(phi, q, l)
+    peso = sigma(-margen)                                        # la probabilidad del orden contrario
+    L = np.logaddexp(0, -margen).mean()                          # -log sigma(margen), sin desbordar
+    return L, (peso[:, None] * (H1[q, l] - H1[q, w])).mean(axis=0)
+
+phi = np.zeros(65)
+for s in range(1, 301):
+    L, g = perdida(phi, entreno)
+    phi -= 2.0 * g                                               # descenso por gradiente
+    if s in (1, 10, 100, 300):
+        print("paso %3d   pérdida %.3f   gradiente respecto de b: %.1f" % (s, L, g[-1]))
+
+acierto = lambda comps: np.mean([r(phi, q, w) > r(phi, q, l) for q, w, l in comps])
+print("\\nacierto: %.2f en entrenamiento, %.2f con rivales nuevos, %.2f en preguntas nuevas"
+      % (acierto(entreno), acierto(rivales_nuevos), acierto(preguntas_nuevas)))
+
+for q in (0, 34):                                                # la nieve, entrenada; el plátano, nueva
+    rq = r(phi, q, np.arange(6))
+    print("\\n¿De qué color es %s?" % cosas[q][0])
+    print("   ".join("%s %.1f" % (COLORES[k], rq[k]) for k in np.argsort(-rq)))
+`} />
+
+La pérdida arranca en $0.693 = \ln 2$: con $\phi = 0$ todas las recompensas son iguales y cada
+comparación es una moneda al aire. Baja a $0.161$ en trescientos pasos, y el gradiente respecto de
+$b$ es cero en todos ellos, como decía la derivación. El modelo acierta 71 de sus 72 comparaciones
+de entrenamiento y el 85 % de las de rivales nuevos. Nunca vio <W>La nieve es blanca.</W> frente a
+<W>La nieve es amarilla.</W> y las ordena bien, porque no ha aprendido comparaciones sueltas sino un
+número por respuesta, y el de la correcta subió con cada comparación que ganó.
+
+En las preguntas nuevas acierta el 52 %, lo que acertaría una moneda. A <W>¿De qué color es el
+plátano?</W>, la respuesta <W>El plátano es amarillo.</W> recibe la menor recompensa de las seis.
+La capa lineal sólo puede pesar lo que $\bar{\mathbf{h}}$ trae, y el mini-GPT ha leído una novela
+en la que no sale ningún plátano: las comparaciones le enseñaron el color de 24 cosas, una a una.
+Un modelo de recompensa juzga con lo que su red sabe, y por eso los de verdad parten de un modelo
+grande. El de InstructGPT acertaba un 70 % de las comparaciones de anotadores que no había visto,
+cerca del 73 % en que los anotadores coincidían entre sí.
+
+Mira también los niveles. La peor respuesta sobre la nieve tiene más recompensa, 18.1, que la mejor
+sobre el plátano, 14.2, y eso no significa nada: ninguna comparación ha puesto nunca una frente a la
+otra. Es la constante por instrucción, que aquí pone $\mathbf{u}^{\top}$ aplicado a lo que las seis
+respuestas de cada pregunta tienen en común.
+
+## Comprueba tu intuición
+
+Cinco preguntas y un desafío: las recompensas de Bradley–Terry a partir de una tabla de votos, sin
+red.
+
+<Quiz id="q-dos-escalas" />
+
+<Quiz id="q-encadenar" />
+
+<Quiz id="q-que-no-cambia" />
+
+<Quiz id="q-cuanto-empuja" />
+
+<Quiz id="q-preguntas-nuevas" />
+
+<CodeChallenge id="ch-recompensas" />
+
+---
+
+Un modelo de recompensa da un número a cualquier respuesta, también a las que nadie ha comparado, y
+eso es lo que hacía falta para mejorar la política: cambiar $\pi_\theta$ para que sus respuestas
+reciban más. La celda dice también dónde se puede confiar en ese número. Cerca de lo que el modelo
+aprendió, ordena bien; lejos, adivina, y una política que lo maximice sin freno irá a buscar
+justo las respuestas en que se equivoca.
+
+<Leccion slug="rlhf">La lección siguiente, sobre el aprendizaje por refuerzo con retroalimentación
+humana</Leccion> (*reinforcement learning from human feedback*, RLHF), escribe ese freno. Maximiza la recompensa
+media de las respuestas de la política, menos lo que ésta se aleja del modelo ajustado, y deriva
+cómo se sube esa media con un gradiente aunque las respuestas salgan de un sorteo.

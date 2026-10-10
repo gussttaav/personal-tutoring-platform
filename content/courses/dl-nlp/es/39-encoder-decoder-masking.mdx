@@ -11,14 +11,14 @@ hasQuiz: true
 quiz:
   - id: q-por-que-menos-infinito
     type: single
-    prompt: 'Para tachar el futuro se le suma $-\infty$ a la puntuación **antes** del *softmax*. ¿Qué tiene de malo dejar el softmax como estaba y poner a cero los pesos $\alpha_{ij}$ que sobran, después?'
+    prompt: 'Para tachar el futuro se le suma $-\infty$ a la puntuación *antes* del *softmax*. ¿Qué tiene de malo dejar el softmax como estaba y poner a cero los pesos $\alpha_{ij}$ que sobran, después?'
     options:
       - { id: a, text: 'Que la fila deja de sumar $1$. El softmax ya repartió la unidad entre las $T$ posiciones, así que quitar las de la derecha se lleva la parte que les tocó y lo que sale no es una mezcla, sino una mezcla encogida por un factor distinto en cada fila.' }
       - { id: b, text: 'Que los pesos no se pueden tocar una vez calculados: el softmax no es invertible, y sin poder deshacerlo no hay manera de recuperar el denominador para volver a normalizar.' }
       - { id: c, text: 'Nada. Son la misma operación escrita de dos maneras, y de hecho es lo que hacen las implementaciones, porque un $-\infty$ dentro de una exponencial da un aviso de desbordamiento.' }
       - { id: d, text: 'Que cambia el orden dentro de la fila: al quitar sumandos del denominador, la casilla que era mayor entre las que quedan puede dejar de serlo.' }
     answer: a
-    explanation: 'La (a). Con $-\infty$ el sumando desaparece del numerador **y** de su término del denominador a la vez, de modo que las casillas que quedan se reparten la unidad entera; poniendo los pesos a cero después, el denominador se quedó como estaba y la fila suma lo que sumara su principio —$0.085$ en la primera fila del ejemplo de la celda, $0.871$ en la tercera—. La (b) inventa un impedimento técnico: modificar un array es trivial, lo que falla es la aritmética. La (c) es falsa en las dos mitades: no son la misma operación, y $\exp(-\infty)$ vale $0$ sin avisar de nada. La (d) confunde dividir con reordenar: todas las casillas que sobreviven se dividen entre el **mismo** número, y dividir una fila entera por una constante positiva no cambia cuál es la mayor.'
+    explanation: 'La (a). Con $-\infty$ el sumando desaparece del numerador *y* de su término del denominador a la vez, de modo que las casillas que quedan se reparten la unidad entera; poniendo los pesos a cero después, el denominador se quedó como estaba y la fila suma lo que sumara su principio —$0.085$ en la primera fila del ejemplo de la celda, $0.871$ en la tercera—. La (b) inventa un impedimento técnico: modificar un array es trivial, lo que falla es la aritmética. La (c) es falsa en las dos mitades: no son la misma operación, y $\exp(-\infty)$ vale $0$ sin avisar de nada. La (d) confunde dividir con reordenar: todas las casillas que sobreviven se dividen entre el *mismo* número, y dividir una fila entera por una constante positiva no cambia cuál es la mayor.'
     hint: 'Suma las cuatro casillas de una fila en cada una de las dos versiones.'
   - id: q-casillas-vivas
     type: numeric
@@ -37,13 +37,13 @@ quiz:
       - { id: c, text: 'La encoder-decoder tiene mapa $T_y \times T_x$, y no es cuadrado porque sus dos ejes son dos secuencias distintas.' }
       - { id: d, text: 'La encoder-decoder también va enmascarada: si la posición $4$ de la salida no puede mirar la $5$ de la salida, tampoco puede mirar la $5$ de la entrada.' }
     answer: [a, b, c]
-    explanation: 'Las tres primeras. La (d) es la tentadora y confunde dos futuros que no tienen nada que ver: lo que la máscara prohíbe es leer lo que **todavía no se ha escrito**, y la entrada no se está escribiendo —se leyó entera antes de empezar—. La posición $5$ de la fuente existe desde el primer paso del decoder, igual que la $1$, así que ocultarla sería tirar información sin ninguna razón. Fíjate además en que las tres llamadas son la **misma** función con argumentos distintos: cambian quién pone las consultas, quién pone las claves y los valores, y si hay $\mathbf{M}$ o no.'
+    explanation: 'Las tres primeras. La (d) es la tentadora y confunde dos futuros que no tienen nada que ver: lo que la máscara prohíbe es leer lo que *todavía no se ha escrito*, y la entrada no se está escribiendo —se leyó entera antes de empezar—. La posición $5$ de la fuente existe desde el primer paso del decoder, igual que la $1$, así que ocultarla sería tirar información sin ninguna razón. Fíjate además en que las tres llamadas son la *misma* función con argumentos distintos: cambian quién pone las consultas, quién pone las claves y los valores, y si hay $\mathbf{M}$ o no.'
     hint: 'Para cada llamada, pregúntate qué secuencia va en las filas y qué secuencia va en las columnas.'
   - id: q-genera-en-paralelo
     type: boolean
     prompt: 'Con la máscara puesta, escribir una traducción de $T_y$ tokens es una sola pasada por el decoder.'
     answer: false
-    explanation: 'Falso, y separar las dos cosas es medio tema de esta lección. **Entrenar** sí es una pasada: la salida correcta se conoce entera, entra corrida una posición, y la máscara hace que la fila $i$ calcule exactamente lo que habría calculado sin nada a su derecha —así que las $T_y$ filas salen de un producto de matrices y no de $T_y$ esperas—. **Generar** no: la fila $i$ necesita el token $y_{i-1}$, y ese token es la salida de la pasada anterior, que todavía no ha ocurrido. Son $T_y$ pasadas, una por token. Lo que la máscara compra es entrenar en paralelo, no escribir en paralelo.'
+    explanation: 'Falso, y separar las dos cosas es medio tema de esta lección. *Entrenar* sí es una pasada: la salida correcta se conoce entera, entra corrida una posición, y la máscara hace que la fila $i$ calcule exactamente lo que habría calculado sin nada a su derecha —así que las $T_y$ filas salen de un producto de matrices y no de $T_y$ esperas—. *Generar* no: la fila $i$ necesita el token $y_{i-1}$, y ese token es la salida de la pasada anterior, que todavía no ha ocurrido. Son $T_y$ pasadas, una por token. Lo que la máscara compra es entrenar en paralelo, no escribir en paralelo.'
     hint: '¿De dónde sale el token que entra en la fila $i$ cuando no hay una respuesta correcta a la que copiar?'
   - id: q-fila-uno
     type: predict-output
@@ -68,7 +68,7 @@ challenges:
     prompt: |
       Escribe `atencion(Q, K, V, causal=False)`, la llamada que sirve para las tres
       atenciones del artículo. `Q` tiene forma $(n_q, d_k)$, `K` forma $(n_k, d_k)$ y `V`
-      forma $(n_k, d_v)$, y **$n_q$ y $n_k$ no tienen por qué coincidir**: en la atención
+      forma $(n_k, d_v)$, y *$n_q$ y $n_k$ no tienen por qué coincidir*: en la atención
       encoder-decoder las consultas son $T_y$ y las claves son $T_x$.
 
       Devuelve la pareja `(salida, A)`, en ese orden: la salida de forma $(n_q, d_v)$ y el
@@ -76,7 +76,7 @@ challenges:
       producto escalar de cada consulta con cada clave dividido por $\sqrt{d_k}$, con
       $d_k$ leído de la forma de `Q`.
 
-      Con `causal=True`, la casilla $(i, j)$ con $j > i$ vale $-\infty$ **antes** del
+      Con `causal=True`, la casilla $(i, j)$ con $j > i$ vale $-\infty$ *antes* del
       softmax. No escribas en los arrays que recibes.
     packages: [numpy]
     starter: |
@@ -162,12 +162,12 @@ challenges:
           return A @ V, A
     explanation: |
       Una línea de diferencia con el desafío de <Leccion slug="self-attention">la lección sobre la
-      auto-atención</Leccion>, y la línea va donde va: **entre** la puntuación y el softmax. Puesta
+      auto-atención</Leccion>, y la línea va donde va: *entre* la puntuación y el softmax. Puesta
       después —`A = np.where(futuro, 0.0, A)`— pasa el test de los ceros y falla el de las
       sumas, que es la razón de que los dos estén en la misma prueba.
 
       Dos detalles del resto. `np.triu(..., k=1)` con `k=1` deja fuera la diagonal: la
-      posición $i$ **sí** puede mirarse a sí misma, y con `k=0` la primera fila se quedaría
+      posición $i$ *sí* puede mirarse a sí misma, y con `k=0` la primera fila se quedaría
       sin ninguna casilla y el softmax dividiría entre cero. Y restar el máximo de cada
       fila sigue siendo seguro con los $-\infty$ dentro, porque la casilla $(i, i)$ nunca
       está tachada: el máximo de la fila es siempre un número de verdad.
@@ -244,7 +244,7 @@ $$
 $$
 
 donde $e_{ij}$ es la puntuación ya dividida por $\sqrt{d_k}$. Como $\exp(-\infty) = 0$, una casilla
-tachada desaparece del numerador **y** de su término del denominador, las dos cosas a la vez. Eso es
+tachada desaparece del numerador *y* de su término del denominador, las dos cosas a la vez. Eso es
 lo que hace que no sobre nada: la unidad que el softmax reparte se la reparten enteramente las
 casillas que quedan.
 
@@ -268,7 +268,7 @@ $$
 
 Es decir: coge la fila que <Leccion slug="self-attention">la auto-atención</Leccion> calculaba, tira la parte de la derecha y divide lo que queda
 entre lo que sumaba. De ahí salen tres cosas, y ninguna necesita otra cuenta. El orden dentro de lo que sobrevive
-**no cambia**, porque todas esas casillas se dividen entre el mismo número: la máscara no altera
+*no cambia*, porque todas esas casillas se dividen entre el mismo número: la máscara no altera
 preferencias, retira candidatos. La fila $1$ se queda con un solo candidato y por tanto con
 $\alpha_{11} = 1$, la sepa el modelo o no. Y la máscara no es una segunda operación al lado del
 softmax, es el mismo softmax sobre menos casillas.
@@ -276,7 +276,7 @@ softmax, es el mismo softmax sobre menos casillas.
 ### Una pasada en lugar de T
 
 Falta decir qué entra en el decoder, porque hasta ahora hemos hablado de lo que no puede mirar y no
-de lo que tiene delante. Lo que entra es la salida correcta **corrida una posición**: en la fila
+de lo que tiene delante. Lo que entra es la salida correcta *corrida una posición*: en la fila
 $i$ va el token $y_{i-1}$, el que el modelo debería haber escrito en el paso anterior, y en la fila
 $1$ va <W>\<GO></W>, el símbolo de arranque, porque antes de la primera no hay ninguna. Así la fila
 $i$ tiene delante $y_{<i}$ y tiene que producir $y_i$, que es precisamente la distribución que el
@@ -292,7 +292,7 @@ es el precio. Allí las $T_y$ filas salían de $T_y$ pasos de una recurrencia; a
 producto de matrices, y la máscara es lo que hace que esa barra vertical diga la verdad —sin ella,
 la fila $i$ estaría condicionando también con $y_{i}$, $y_{i+1}$ y todo lo demás—.
 
-Y ahora las dos concesiones, que van juntas. La máscara hace paralelo el **entrenamiento**, no la
+Y ahora las dos concesiones, que van juntas. La máscara hace paralelo el *entrenamiento*, no la
 generación: al escribir de verdad no hay ninguna salida correcta que correr una posición, la fila
 $i$ necesita el token que produjo la pasada anterior, y son $T_y$ pasadas, una por token. Lo otro es
 que el triángulo no ahorra ni una multiplicación: las $T^{2}$ puntuaciones se calculan enteras y
@@ -310,7 +310,7 @@ $$
 
 donde $\mathbf{X}^{\text{dec}} \in \mathbb{R}^{T_y \times d_{\text{model}}}$ es lo que se lleva
 escrito y $\mathbf{X}^{\text{enc}} \in \mathbb{R}^{T_x \times d_{\text{model}}}$ es lo que el
-encoder dejó leído. Los superíndices de $\mathbf{X}$ dicen **de qué columna** viene la matriz; los
+encoder dejó leído. Los superíndices de $\mathbf{X}$ dicen *de qué columna* viene la matriz; los
 de $\mathbf{W}$ siguen diciendo qué papel proyecta cada una, como desde <Leccion slug="self-attention">la lección sobre la auto-atención</Leccion>. Ninguno de los
 dos cuenta capas.
 
@@ -328,7 +328,7 @@ cabezas en paralelo en lugar de una, y la consulta ya no es el estado de una red
 fila de una matriz que existe entera.
 
 Aquí no hay máscara, y merece la pena decir por qué, porque suena raro después de la sección
-anterior. Lo que se prohíbe es leer lo que **todavía no se ha escrito**, y la entrada no se está
+anterior. Lo que se prohíbe es leer lo que *todavía no se ha escrito*, y la entrada no se está
 escribiendo: se leyó entera antes de empezar. La posición $T_x$ de la fuente está disponible desde
 el primer token de la salida igual que la posición $1$. (Las implementaciones de verdad sí ponen
 otra máscara aquí, la del *padding*, para que las posiciones de relleno de un *batch* no cuenten;
@@ -465,7 +465,7 @@ qué no, qué se paraleliza de verdad, y qué sale en la primera fila.
 
 Ya no queda ninguna caja del dibujo sin una lección detrás, salvo la de arriba del todo, que
 convierte cada fila en una probabilidad por entrada del vocabulario. Lo que no ha aparecido nunca en
-estas siete lecciones son los **números**: cuántos bloques se apilan, cuánto miden, cuántas cabezas
+estas siete lecciones son los *números*: cuántos bloques se apilan, cuánto miden, cuántas cabezas
 hay, qué tablas comparten pesos y cuántos parámetros suma todo junto. Cada pieza se ha construido
 con las anchuras que le hacían falta al argumento, y el artículo eligió unas concretas.
 

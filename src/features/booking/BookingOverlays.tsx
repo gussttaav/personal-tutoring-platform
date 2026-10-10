@@ -25,20 +25,27 @@
  * it on `/` separately — one FAB per page.
  *
  * The pack booking screen is `BookingModeView` on its own: it renders `BookingLayout`, which is
- * the whole screen (fixed to the viewport, its own Navbar, the sidebar + calendar, the bottom
- * «Cambiar tipo de sesión» exit) — exactly like the single-session wizard. It used to be wrapped
+ * the whole screen (fixed to the viewport, its own Navbar, the sidebar + calendar, the exit
+ * bar) — exactly like the single-session wizard. It used to be wrapped
  * in a `position: fixed; inset: 0; z-index: 40` div that drew a sticky top bar (back button,
  * title, «Pack activo» badge) at y=0 — a relic of the pre-`BookingLayout` screen, which had no
  * navbar or sidebar. The page Navbar is `fixed z-50` over the whole z-40 overlay, so that bar sat
  * under the navbar: invisible, and its back button unreachable (`elementFromPoint` returned the
  * navbar's logo, which closes the overlay AND navigates to `/`). Everything the bar said or did
- * the layout already covers (sidebar, calendar header, bottom exit), so it is gone rather than
+ * the layout already covers (sidebar, calendar header, exit bar), so it is gone rather than
  * moved; the overlay keeps the z-index 40 contract that `HomeChat` / `InteractiveShell` rely on.
+ *
+ * BOOKING-EXIT-01: «Cambiar tipo de sesión» is gone from both screens. Leaving is the exit button
+ * («Salir de la reserva»; BOOKING-STEPS-01: left of the wizard's steps, below the pack screen's
+ * sidebar), and it closes IN PLACE on every page — it used to send `/` and `/area-personal` to
+ * `/mentoria`, a detour rather than a way out. Changing the type of a single session no longer leaves the wizard either: its sidebar
+ * switches it (`onSessionTypeChange`). The close handlers below only change state; the
+ * provider's `useBookingHistory` pops the history entry the screen pushed.
  */
 
 import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { Spinner } from "@/components/ui";
 import SignInGate from "@/components/SignInGate";
 import { BookingProvider, useBooking } from "./BookingProvider";
@@ -84,7 +91,6 @@ const PackModal = dynamic(
 // ─── Overlays ──────────────────────────────────────────────────────────────────
 
 function Overlays() {
-  const navigation = useRouter();
   const pathname = usePathname();
   const {
     router,
@@ -127,15 +133,9 @@ function Overlays() {
         userEmail={googleUser.email}
         rescheduleToken={router.rescheduleToken}
         onBack={() => { router.closeSession(); setPendingSlot(null); }}
-        // «Cambiar tipo de sesión» leads to the session types: on /mentoria they are right under
-        // the wizard, so closing it is enough; from any other page (`/`) there is nothing to
-        // change to, so it navigates to /mentoria. Not `#sessions`: the sections render
-        // client-side inside Mentoría's Suspense boundary, after Next has already applied the hash.
-        onChangeSessionType={() => {
-          router.closeSession();
-          setPendingSlot(null);
-          if (pathname !== "/mentoria") navigation.push("/mentoria");
-        }}
+        // BOOKING-EXIT-01: the sidebar's type switch. The visitor is signed in here, so this is
+        // `setActiveSession(type)`; the AvailabilityModal hint was for the old length.
+        onSessionTypeChange={(type) => { setPendingSlot(null); router.handleSessionClick(type); }}
         // The success screen's «Ir a mi área personal» navigates there — except on the personal
         // area itself, where the page is right under the wizard: closing it is the whole trip
         // (`PersonalArea` revalidates its list on that close).

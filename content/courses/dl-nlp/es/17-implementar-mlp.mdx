@@ -169,7 +169,7 @@ challenges:
       En `entrena`, las dos líneas que deciden son la primera y el `break`. El `.copy()` es lo
       que hace que `W1 -= eta * gW1` no escriba en la matriz de quien llama: `-=` en NumPy
       modifica el array en su sitio, y eso es lo que quieres dentro del bucle y no fuera. Y la
-      pérdida se mide **antes** de actualizar, de modo que `curva[0]` es la red sin entrenar y
+      pérdida se mide *antes* de actualizar, de modo que `curva[0]` es la red sin entrenar y
       `curva[-1]` la red final: por eso hay `pasos + 1` valores y no `pasos`.
 reading:
   - kind: paper

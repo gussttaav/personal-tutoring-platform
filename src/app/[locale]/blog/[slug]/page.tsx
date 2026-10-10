@@ -22,9 +22,14 @@
  * BLOG-AI-NOTE-01: an AI-use colophon right after the article — images (when the
  * frontmatter's `aiImages` says so) and text edited with AI, content guided and
  * reviewed by the author.
+ *
+ * BLOG-13: the archive pane filters (area, topic) and pages, and the post's own areas
+ * and topics sit above its title as links into the index filtered by each. Area hues
+ * come from `blog-taxonomy.css`, shared with the index.
  */
 
 import "../_styles/katex.css";
+import "@/features/blog/blog-taxonomy.css";
 import "./post.css";
 
 import type { Metadata } from "next";
@@ -114,6 +119,7 @@ export default async function BlogPostPage({
   if (!source) notFound();
 
   const t = await getTranslations({ locale, namespace: "blog.post" });
+  const tBlog = await getTranslations({ locale, namespace: "blog" });
   const tAuthor = await getTranslations({ locale, namespace: "content.author" });
   const format = await getFormatter({ locale });
   // BLOG-06: the post's own bibliography, so an in-body link matching a `reading`
@@ -154,6 +160,22 @@ export default async function BlogPostPage({
             </Link>
 
             <header className="post-header">
+              {/* BLOG-13: where this post sits in the blog — each a link to the index
+                  filtered by it. */}
+              {post.areas.length > 0 || post.tags.length > 0 ? (
+                <nav className="post-taxonomy" aria-label={t("taxonomy")}>
+                  {post.areas.map((area) => (
+                    <Link key={area} href={`/blog?area=${area}`} className="blog-area-badge" data-area={area}>
+                      {tBlog(`areas.${area}`)}
+                    </Link>
+                  ))}
+                  {post.tags.map((tag) => (
+                    <Link key={tag} href={`/blog?topic=${tag}`} className="post-taxonomy__topic">
+                      #{tBlog(`topics.${tag}`)}
+                    </Link>
+                  ))}
+                </nav>
+              ) : null}
               <h1 className="post-title lp-serif">{post.title}</h1>
               <p className="post-dateline">
                 {/* CONTENT-AUTHOR-01: the byline. A reader who lands here from search or a

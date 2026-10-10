@@ -197,7 +197,7 @@
     }
   },
   "app": {
-    "soon": "Mobile app · Coming soon",
+    "soon": "Mobile app · Now on Android",
     "heading": "Your classes, on your phone too",
     "lead": "The same sessions, the same packs and the same availability, in an app to join class and book from wherever you are.",
     "benefits": {
@@ -217,8 +217,9 @@
     "stores": {
       "downloadOn": "Download on",
       "availableOn": "Available on",
-      "appStore": "[App Store]",
-      "playStore": "[Google Play]"
+      "comingSoonOn": "Coming soon to",
+      "appStore": "App Store",
+      "playStore": "Google Play"
     }
   },
   "auth": {
@@ -403,7 +404,6 @@
       "joinSession": "Join session →",
       "cancelBooking": "Cancel this booking",
       "close": "Close",
-      "changeSessionType": "Change session type",
       "bookingProgress": "Booking {dateLabel} at {label}…",
       "verifyingAvailability": "Checking availability…",
       "errorTitle": "Something went wrong",
@@ -480,7 +480,6 @@
       "bookingProgress": "Booking {dateLabel} at {label}…",
       "verifyingAvailability": "Checking availability…",
       "hourUnavailableNotice": "The time you picked no longer has a full hour free. Please choose another available slot in the calendar.",
-      "changeSessionType": "Change session type",
       "confirmReschedule": "Confirm reschedule",
       "confirmPay": "Confirm payment",
       "confirmBook": "Confirm booking",
@@ -526,10 +525,15 @@
         "validity": "Valid for {days} days"
       }
     },
+    "layout": {
+      "exit": "Exit booking",
+      "close": "Close"
+    },
     "sidebar": {
       "title": "Your Selection",
       "duration": "Duration: {duration}",
       "free": "No cost",
+      "sessionType": "Session type",
       "reschedule": "Rescheduling class",
       "packActive": "Active Hour Pack",
       "packRemaining": "{packRemaining} / {packTotal}h rem.",
@@ -541,7 +545,7 @@
       "securePayment": "Secure payment with Stripe"
     },
     "wizardProgress": {
-      "session": "Session",
+      "ariaLabel": "Booking steps",
       "schedule": "Schedule",
       "review": "Review",
       "payment": "Payment"
@@ -881,16 +885,32 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "When something intrigues me, <accent>I dig into it and write it up</accent>",
-      "subtitle": "Articles on programming, mathematics and AI. Not the how, but the why.",
+      "heading": "Experiences, reflections and <accent>what I keep learning</accent>",
+      "subtitle": "Articles on programming, mathematics and AI with an analytical eye.",
       "empty": {
         "title": "No articles yet",
         "body": "I'm writing the first one. If you'd like to hear about it when it lands, there's a button just below."
+      },
+      "results": {
+        "count": "{count, plural, one {# article} other {# articles}}",
+        "inAll": "across all areas",
+        "inArea": "in {area}",
+        "page": "Page {page} of {pages}",
+        "range": "Articles {first}–{last} of {total}",
+        "rangeOne": "Article {first} of {total}"
+      },
+      "featured": "Latest",
+      "pagination": {
+        "label": "Blog pages",
+        "newer": "Newer",
+        "older": "Older",
+        "page": "Page {page}"
       }
     },
     "card": {
       "readingTime": "{minutes} min read",
-      "cta": "Read the article"
+      "cta": "Read the article",
+      "minutes": "{minutes} min"
     },
     "post": {
       "backToIndex": "Back to the blog",
@@ -906,14 +926,21 @@
         "title": "A note on AI",
         "withImages": "The images in this article were generated with AI, and the text was edited and proofread with its help. The content was guided, corrected and carefully reviewed by the author.",
         "textOnly": "The text of this article was edited and proofread with the help of AI. The content was guided, corrected and carefully reviewed by the author."
-      }
+      },
+      "taxonomy": "Article areas and topics"
     },
     "archive": {
       "label": "Blog articles",
       "allArticles": "All articles",
       "minutes": "{minutes} min",
       "openDrawer": "Open the article list",
-      "closeDrawer": "Close the article list"
+      "closeDrawer": "Close the article list",
+      "list": "Articles",
+      "pagination": "List pages",
+      "pageOf": "Page {page} of {pages}",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "goToPage": "Page {page}"
     },
     "reading": {
       "title": "Going deeper",
@@ -939,14 +966,56 @@
       }
     },
     "notify": {
-      "body": "Get notified whenever a new article is published",
+      "body": "Get an email when I publish a new article in the areas you care about",
       "cta": "Notify me",
       "signIn": "Sign in",
       "signInHint": "Sign in to be notified when a new article goes up",
-      "subscribed": "I'll notify you when a new article goes up",
+      "subscribed": "I'll let you know when I publish a new article in these areas",
       "unsubscribe": "Stop notifications",
+      "update": "Update subscription",
+      "discard": "Discard changes",
+      "pendingChanges": "You've changed your areas. Use “Update subscription” to save them.",
+      "saved": "Subscription updated.",
+      "areasLabel": "Areas",
+      "areasGroup": "Areas you want to hear about",
+      "pickOne": "Pick at least one area.",
+      "lastAreaHint": "You need to follow at least one area. To stop the emails altogether, use “Stop notifications”.",
+      "saveError": "Couldn't save that change. Please try again.",
       "error": "Something went wrong. Please try again.",
       "retry": "Retry"
+    },
+    "areas": {
+      "ia": "Artificial intelligence",
+      "bases-de-datos": "Databases",
+      "matematicas": "Mathematics",
+      "programacion": "Programming"
+    },
+    "topics": {
+      "agentes": "Agents",
+      "deep-learning": "Deep learning",
+      "embeddings": "Embeddings",
+      "estructuras-de-datos": "Data structures",
+      "evaluacion": "Evaluation",
+      "grafos": "Graphs",
+      "indices": "Indexes",
+      "llm": "LLMs",
+      "nlp": "NLP",
+      "optimizacion": "Optimisation",
+      "rag": "RAG",
+      "rendimiento": "Performance",
+      "sql": "SQL",
+      "tokenizacion": "Tokenisation"
+    },
+    "filters": {
+      "label": "Filter articles",
+      "area": "Area",
+      "topic": "Topic",
+      "areas": "Areas",
+      "topics": "Topics",
+      "all": "All",
+      "moreTopics": "+{count} topics",
+      "fewerTopics": "Fewer topics",
+      "clear": "Clear filters"
     }
   },
   "courses": {
@@ -1380,17 +1449,12 @@
         "levels": "{v} levels",
         "powerLabel": "10 to the {exponent}",
         "plotAria": "Two lines against the length of the input, in orders of magnitude. The capacity of the context vector is flat at {codes} distinct messages, with {dh} coordinates of {q} levels. The number of input sentences rises 4.5 orders per token and crosses the capacity at {crossing} tokens.",
-        "legend": "Vertical axis: orders of magnitude (log₁₀) of a count. <cap>▬</cap> messages that fit in c · <dem>▬</dem> distinct input sentences of that length, over a vocabulary of {vocab} entries.",
-        "readout": "In {dh} coordinates of {q} levels there is room for <codes></codes> distinct messages, and that is enough for sentences of up to <upto>{crossing} tokens</upto>. Past that there are sentences to spare: at {past} tokens no decoder —not even the best possible one, trained without limit— returns more than a <ceiling></ceiling> fraction of them exactly."
+        "legend": "Horizontal axis: length of the input sentence, in tokens. Vertical axis: orders of magnitude (log₁₀) of a count. <cap>▬</cap> messages that fit in c · <dem>▬</dem> distinct input sentences of that length. The input vocabulary has {vocab} = 2¹⁵ entries, a typical subword vocabulary size: Mistral 7B (v0.3) uses exactly that, and Llama 2 uses 32,000.",
+        "readout": "In {dh} coordinates of {q} levels there is room for <codes></codes> distinct messages, and that is enough for sentences of up to <upto>{crossing} tokens</upto>. Past that there are sentences to spare: at {past} tokens no decoder (not even the best possible one, trained without limit) returns more than a <ceiling></ceiling> fraction of them exactly."
       },
       "attention-alignment": {
-        "attention": "Attention",
-        "fixedSummary": "Fixed summary",
         "mapAria": "Alignment map: pick an output step to see which part of the input it pulls from",
-        "attentionNote": "Step {step} writes <tgt>{target}</tgt> and pulls mostly from <src>{source}</src>, with a weight of {weight}. Change step: the row moves, and its sum still comes to {sum}.",
-        "frozenNote": "With the fixed summary, step {step} receives the state of <src>{source}</src> with weight {weight} — and so do the other {others} steps. Walk the rows and watch the bars below: they do not move.",
-        "contextAria": "The {d} coordinates of the context vector of step {step}: {values}.",
-        "contextNote": "{d} coordinates, the same as the summary had"
+        "attentionNote": "Step {step} writes <tgt>{target}</tgt> and pulls mostly from <src>{source}</src>, with a weight of {weight}. Change step: the row moves, and its sum still comes to {sum}."
       },
       "self-attention-heatmap": {
         "inputLabel": "Type a sentence (only the first {max} tokens are kept)",
@@ -1692,6 +1756,39 @@
         "loss": "Loss",
         "lossMasked": "responses only",
         "lossAll": "every position"
+      },
+      "bradley-terry": {
+        "groupAria": "The Bradley–Terry model: two responses with their rewards, the probability that an annotator prefers A, and the loss of that comparison",
+        "lineTitle": "The two rewards, with c added: r<sub>A</sub> + c and r<sub>B</sub> + c",
+        "lineAria": "Reward line: A at {a} and B at {b}, a margin of {m}",
+        "probTitle": "P(A ≻ B) = σ(r<sub>A</sub> − r<sub>B</sub>), against the margin",
+        "probAria": "The sigmoid of the margin. At a margin of {m}, the annotator prefers A with probability {p}.",
+        "lossTitle": "Loss if A was chosen: −log σ(r<sub>A</sub> − r<sub>B</sub>)",
+        "lossAria": "The loss of the comparison against the margin. At a margin of {m}, it is {loss} nats.",
+        "readMargin": "Margin r<sub>A</sub> − r<sub>B</sub> = <strong>{m}</strong>",
+        "readProb": "The annotator prefers A with probability <strong>{pa}</strong> and B with <strong>{pb}</strong>.",
+        "readLoss": "If A was chosen, the comparison costs <strong>{loss}</strong> nats, and its slope with respect to r<sub>A</sub> is <strong>{slope}</strong>.",
+        "sliderA": "Reward of A",
+        "sliderB": "Reward of B",
+        "sliderC": "c, added to both",
+        "shiftNote": "c moves both rewards along the line. The margin, the probability and the loss stay put."
+      },
+      "dpo-loss": {
+        "groupAria": "The DPO loss of one comparison: the log ratios of the preferred and the rejected response, β, the loss and the gradient factor",
+        "planeTitle": "The log ratios log π<sub>θ</sub>/π<sub>ref</sub> of the two responses, with the factor σ(r<sub>θ</sub>(y<sub>l</sub>) − r<sub>θ</sub>(y<sub>w</sub>)) in colour: strong where the comparison pushes, clear where it goes quiet",
+        "planeAria": "Plane of the two log ratios. The comparison sits at {lw} for the preferred response and {ll} for the rejected one; the factor is {f} and the loss {loss} nats.",
+        "axisW": "preferred",
+        "axisL": "rejected",
+        "reference": "reference",
+        "legend": "The three diagonals mark a factor of 0.9, 0.5 and 0.1, with losses of {l9}, {l5} and {l1} nats. The 0.5 one runs through the reference, where every training run starts.",
+        "readRewards": "Implicit rewards: r<sub>θ</sub>(y<sub>w</sub>) = <strong>{rw}</strong> and r<sub>θ</sub>(y<sub>l</sub>) = <strong>{rl}</strong>, a margin of <strong>{m}</strong>.",
+        "readLoss": "The comparison costs <strong>{loss}</strong> nats, and its factor is <strong>{f}</strong>.",
+        "readPush": "A descent step raises log π<sub>θ</sub>(y<sub>w</sub>) and lowers log π<sub>θ</sub>(y<sub>l</sub>) with a push of β · factor = <strong>{push}</strong>.",
+        "quietOutside": "At this β, the 0.1 diagonal falls outside the plane: the comparison does not go quiet until the two log ratios are {gap} nats apart.",
+        "sliderW": "Log ratio of the preferred response",
+        "sliderL": "Log ratio of the rejected response",
+        "sliderBeta": "β",
+        "shiftNote": "Raise or lower both log ratios together and the point travels along a diagonal of one colour: the loss only sees their difference."
       }
     }
   },
@@ -1907,6 +2004,16 @@
       "body2": "If you had already started, your progress is still saved exactly where you left it.",
       "landingCta": "See the course",
       "unsubscribe": "Don't want these emails? Turn them off on the courses page."
+    },
+    "blogPost": {
+      "subject": "New article: {postTitle}",
+      "heading": "There's a new article on the blog",
+      "intro": "You asked to hear about new articles on gustavoai.dev. Here's the latest one.",
+      "areasLabel": "Areas",
+      "notInYourLanguage": "For now, this article is only available in Spanish.",
+      "cta": "Read the article",
+      "browseCta": "See all articles",
+      "unsubscribe": "Want to change your areas or stop these emails? You can do it on the blog page."
     }
   }
 }

@@ -2,12 +2,15 @@
  * ADMIN-01: Failed bookings (dead-letter) UI.
  * Uses paymentService.listFailedBookings() and the existing retry API (REL-03).
  * SEC-07: gated before its own data fetch — see students/page.tsx sibling note.
+ * ADMIN-02: cells are marked for the phone layout (one card per entry).
+ * ADMIN-03: dates are formatted in the tutor's timezone (ScheduleConfig.timezone), not
+ * the server's UTC.
  */
 
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { isAdmin } from "@/lib/admin";
-import { paymentService } from "@/services";
+import { paymentService, scheduleService } from "@/services";
 import { RetryButton } from "@/components/admin/RetryButton";
 import { PageHeader, Card, Empty } from "@/components/admin/ui";
 import { fmtDateTime, relativeTime } from "@/components/admin/format";
@@ -15,7 +18,11 @@ import { fmtDateTime, relativeTime } from "@/components/admin/format";
 export default async function FailedBookingsPage() {
   if (!isAdmin(await auth())) redirect("/");
 
-  const entries = await paymentService.listFailedBookings();
+  const [entries, schedule] = await Promise.all([
+    paymentService.listFailedBookings(),
+    scheduleService.getConfig(),
+  ]);
+  const tz = schedule.timezone;
 
   return (
     <div className="page-stack">
@@ -40,7 +47,7 @@ export default async function FailedBookingsPage() {
       <Card padding={false}>
         {entries.length === 0 ? (
           <div className="card-body">
-            <Empty icon="check_circle" label="Sin reservas fallidas. Todo en orden." />
+            <Empty icon="check_circle" tone="good" label="Sin reservas fallidas. Todo en orden." />
           </div>
         ) : (
           <table className="data-table">
@@ -57,21 +64,21 @@ export default async function FailedBookingsPage() {
             <tbody>
               {entries.map((e) => (
                 <tr key={e.stripeSessionId}>
-                  <td>
+                  <td data-label="Fallo">
                     <div className="cell-stack">
-                      <span>{fmtDateTime(e.failedAt)}</span>
+                      <span>{fmtDateTime(e.failedAt, tz)}</span>
                       <span className="cell-meta">{relativeTime(e.failedAt)}</span>
                     </div>
                   </td>
-                  <td>{e.email ?? "—"}</td>
-                  <td className="muted">{fmtDateTime(e.startIso)}</td>
-                  <td className="error-text" style={{ maxWidth: 320 }} title={e.error}>
+                  <td className="c-main">{e.email ?? "—"}</td>
+                  <td className="muted" data-label="Hueco">{fmtDateTime(e.startIso, tz)}</td>
+                  <td className="error-mono c-block" data-label="Error" title={e.error}>
                     {e.error}
                   </td>
-                  <td className="mono muted truncate" title={e.stripeSessionId}>
+                  <td className="mono muted truncate" data-label="Stripe" title={e.stripeSessionId}>
                     {e.stripeSessionId}
                   </td>
-                  <td className="cell-right">
+                  <td className="cell-right c-act">
                     <RetryButton stripeSessionId={e.stripeSessionId} />
                   </td>
                 </tr>

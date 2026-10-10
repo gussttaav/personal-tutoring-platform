@@ -1,6 +1,6 @@
 # P11-07 — Block 4: The Bridge to Attention
 
-**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** not started
+**Tag:** `COURSE-P11-07` · **Size:** L · **Status:** ✅ done (4.1–4.6, reviewed)
 
 ## TL;DR
 
@@ -235,14 +235,224 @@ concentrated in **4.1 and 4.3**, and both of them spend it on the same decision.
 
 ## Lesson progress
 
-- [ ] 4.1 `encoder-decoder`
-- [ ] 4.2 `el-cuello-de-botella`
-- [ ] 4.3 `la-idea-de-atencion`
-- [ ] 4.4 `bahdanau`
-- [ ] 4.5 `luong`
-- [ ] 4.6 `atencion-como-consulta`
+- [x] 4.1 `encoder-decoder`
+- [x] 4.2 `el-cuello-de-botella`
+- [x] 4.3 `la-idea-de-atencion`
+- [x] 4.4 `bahdanau`
+- [x] 4.5 `luong`
+- [x] 4.6 `atencion-como-consulta`
+
+## Decisions fixed by a translated lesson
+
+Reuse these verbatim; they are settled, not open.
+
+**From 4.1** (`en/27-encoder-decoder.mdx`):
+
+- **The pair stays Spanish→English (Option A).** Gustavo's call, made in 4.1. The argument that
+  decided it: translation is the block's subject, so one side of every example is a language other
+  than English whichever way it runs, and Option A keeps English on the side the reader has to
+  *judge*: the output, whether <W>a really good book</W> is also acceptable, the toy translator's
+  OK/X column. Consequences: **no number in the block moves**, 4.3 stays an **adapt** (3 transpose /
+  3 adapt / 0 rewrite), and `attention-alignment`'s corpus, math module and test are untouched;
+  `corpora.ts` already lists it as locale-invariant. Now a rule in `AUTHORING.en.md` §3.
+- **The Spanish is glossed, not translated.** The paragraph that introduces the pair glosses it word
+  by word the first time: <W>ayer</W> is <W>yesterday</W>, <W>leí</W> is <W>i read</W>, <W>un
+  libro</W> is <W>a book</W>, <W>muy bueno</W> is <W>very good</W>. Pro-drop is told in a clause
+  ("Spanish carries it inside the verb's ending, and English has to write it separately"). 4.3 and
+  4.4 reuse these glosses rather than inventing new ones. The tokens stay lower case (<W>i</W>), as
+  the model writes them, with no note.
+- **The toy translator is unchanged**: `VX`, `VY`, the Spanish vocabulary and the six `examples`
+  inputs stay; only code names moved. `frase` → `sentence`, `datos` → `data_rng`, `ini` →
+  `init_rng`, `TRAD` → `TO_EN`, `paso` → `train_step`, `pesos` → `weights`, `suave` → `smooth`,
+  `ent` → `dec_in`, `s_ant`/`h_ant` → `s_prev`/`h_prev`, `traduce` → `translate`, `ejemplos` →
+  `examples`, `quiero` → `want` (`train_step` and `dec_in` match `en/26`). The prose points the
+  reader at `TO_EN` to read both sides of each pair. Print headers `sentence / translation + <EOS> /
+  T_x T_y` and `sentence / translation / in / out`, column-aligned to the Spanish formats.
+- **`decodificacion-voraz.en.svg`** carries `step 1` … `step 5` (measured: each label 27.6 wide in
+  a 70-wide column; the product line x 102.7–257.3 in the 360 `viewBox`), with its `aria-label` and
+  comments translated and the class names kept. The caption glosses its source phrase: "vendo coches
+  nuevos" (I sell new cars).
+- **`summary` keeps "Spanish-to-English"**: the §3 rule that drops a language adjective does not
+  apply where the pair is the lesson's subject.
+- **Terms:** "the end-of-sequence token" everywhere, including the Callout and the quiz lead-in (the
+  glossary bans *end token*); "target language" for the language the decoder writes. The Cho et al.
+  `note` says "the prefix" for «lo ya escrito», to fit 240 characters.
+- **Printed in Pyodide and quoted**, identical to the Spanish cells: five pairs with $T_y = T_x + 2$;
+  loss `2.180` → `0.426` → `0.059` → `0.005` → `0.001`; six of six translations OK, 2 → 3 and 3 → 4
+  tokens, adjective before the noun.
+- **1,871 words against the Spanish 1,827**: the gloss is what Option A costs, so this lesson runs
+  longer in English rather than shorter.
+- **Spanish nits, not fixed:** the opening says «Son tres cosas» (length, order, no single answer)
+  and then enumerates the three as vocabulary, length and the distribution, so order drops out and
+  vocabulary appears; and `q-factorizacion` (c) says the sum «se pasa de $1$ en cuanto la frase tiene
+  tres tokens», which three probabilities need not do (the English says "can pass $1$").
+
+**From 4.2** (`en/28-el-cuello-de-botella.mdx`):
+
+- **Transpose, as classed.** Every number, id and quiz answer holds; 1,777 words against the
+  Spanish 1,812, no budget warning.
+- **The reversal-task cells' code names**, for any later cell that reuses this task: `monta` →
+  `build`, `paso` → `train_step`, `pesos` → `weights`, `ent` → `dec_in`, `escribe` → `write`,
+  `acierto` → `accuracy`, `ac` → `test_rng`, `fila` → `row`, `bien` → `right`, `cortes` →
+  `checkpoints`, `n_sim` → `n_sym` (`train_step`, `dec_in`, `write`, `right` and `n_sym` match
+  `en/26`). Header `  model` padded to the Spanish `  modelo`'s 23 columns.
+- **Terms:** *message* and *sentence* for «mensaje» and «frase» (what the widget already says);
+  "string of letters" for «tira» (`en/26`); "undertrained" for «mal ajustado» (the glossary bans
+  *fitting*); "the one printed at the start of each [row]" for «lo que dice su etiqueta» (the
+  glossary keeps *label* for training labels). A bold **no** in a quiz prompt becomes an italic
+  *not*, as `en/15` did. «Llama la atención» keeps its pun as "draws attention", one sentence
+  before the idea of attention.
+- **Printed in Pyodide and quoted**, identical to the Spanish cell: `3/1/1/0/0/0`,
+  `79/55/14/10/2/0`, `100/71/24/8/2/0` and `100/100/78/34/22/8` %, which give every qualitative
+  claim in the prose and in `q-entrenar-mas` (one in three against one in twelve at five letters).
+- **Fixed in both locales while translating:** `q-primer-token` (d) said «la tabla desmiente», but
+  the table only counts exact strings and cannot say where one fails; it now cites the seq2seq
+  lesson's errors, and the claim was measured (seq2seq's model, $L = 8$, 400 strings: accuracy
+  by output position 92, 88, 74, 52, 44, 37, 31, 25 %). The cell's header was one column narrower
+  than the data under it (`"L=%d   "` → `" L=%d   "`). And `context-bottleneck`'s English readout
+  lost its em dashes, and its legend groups $\lvert V_x \rvert$ per locale (`32,768` / `32 768`)
+  instead of a hardcoded Spanish label.
+
+**From 4.3** (`en/29-la-idea-de-atencion.mdx`):
+
+- **Adapt, as classed, and no answer moved.** Option A keeps the pair, so `q-cuantas-puntuaciones`
+  stays 48 and `attention-alignment` renders the same corpus; only its caption is translated. 2,135
+  words against the Spanish 2,133, over the 2,000 target in both locales (advisory).
+- **4.1's gloss, reused verbatim** in the paragraph that brings the pair back (<W>ayer</W> is
+  <W>yesterday</W>, <W>leí</W> is <W>i read</W>, <W>un libro</W> is <W>a book</W>, <W>muy
+  bueno</W> is <W>very good</W>), plus "(<W>i read</W>)" after <W>leí</W> in `q-eje-del-softmax`'s
+  explanation; pro-drop told with 4.1's clause. 4.4's three rows can lean on the same gloss.
+- **The alignment cell's code names**, for 4.4's cells: `FUENTE` / `SALIDA` → `SOURCE` / `TARGET`
+  (the widget's maths module says `ALIGNMENT_SOURCE` / `ALIGNMENT_TARGET`), `alfa` → `alpha`,
+  `fijo` / `C_fijo` → `fixed` / `C_fixed`. Header `step  writes  pulls mostly from  weight  distance
+  to the fixed summary`, column-aligned to the Spanish format string.
+- **Terms:** "pull from" for «tirar de» (the widget's `attentionNote` already says "pulls mostly
+  from"); "fixed summary" for «resumen fijo»; "mixture" for «mezcla», bold at its definition;
+  "score" for «puntuación»; "hard choice" for «elección dura»; "share out" for «repartir»; "the
+  slot" for «el hueco».
+- **`atencion-contexto.en.svg`**: «números» → "numbers" (same width, x 60.7–115.4 in the 360
+  `viewBox`), `aria-label` and comments translated, class names kept.
+- **Printed in Pyodide and quoted**, identical to the Spanish cell: `0.25` (good) and `0.32`
+  (`<EOS>`); `1.42` (yesterday) and `1.36` (book), both above `1.35`; 8 of 8 distinct contexts
+  against 1 of 8, and that one is `bueno`'s state. The `leí` column sum `1.77` is arithmetic on the
+  fixed matrix.
+- **The bridge names 4.4 "Bahdanau's attention".** The glossary calls Bahdanau's score *additive
+  attention*, and the Spanish title is «Atención de Bahdanau (aditiva)»; when 4.4 settles its
+  English title, check this label against it.
+- **Spanish nit, fixed in both locales while translating 4.4:** the warning Callout bolded
+  «posiciones de la entrada» for emphasis, which §5 reserves for italics; both locales now italicise
+  it, following 4.2's convention.
+
+**From 4.4** (`en/30-bahdanau.mdx`):
+
+- **Adapt, as classed, and no answer moved.** Under Option A the only adaptation is the three-row
+  example; the maths, the challenge and all five quiz answers are language-free. 1,993 words against
+  the Spanish 1,974, inside the target.
+- **Title "Bahdanau's attention (additive)"**, matching the label `en/29`'s bridge already used, so
+  that bridge needed no change. The glossary's *additive attention* names the score in the prose.
+- **The gloss, shortened for the three rows:** "the one holding <W>leí</W>, which says <W>i
+  read</W> in a single word", which tells why <W>i</W> and <W>read</W> both pull from it without
+  4.1's pro-drop clause.
+- **Code names**, for 4.5's and 4.6's cells: `puntua` → `score`, `softmax_filas` →
+  `softmax_rows`, `con_tanh` → `with_tanh`, `lineal` → `linear`, `mezcla` → `mix`, `perdida` →
+  `loss`, `Hmas` / `Hmenos` → `Hplus` / `Hminus`, `copias` → `copies`; the two routes `valor` /
+  `puntuacion` → `via_value` / `via_score` (`score` is the function). The challenge's `alineacion`
+  → `alignment`, after `en/24`'s `gru_step`, so 4.5's `alineacion_multiplicativa` becomes
+  `multiplicative_alignment`. Second cell's labels column-aligned at 30.
+- **Terms:** "read-out vector" for «vector de lectura», bold at its definition (NOTATION.md's
+  "read-out"); "the value route" and "the score route" for the two routes; "shift invariance";
+  "numerical probe, central difference"; "the drop-down" for the `<Details>`.
+- **Printed in Pyodide and quoted**, identical to the Spanish cells: top weights 0.176–0.187 against
+  an even 0.167; rows 1 and 8 equal without the tanh; route norms 2.8303 and 0.2556 (11.07×), each
+  alone off by 1.6e-01 and 8.9e-01, the two added by 4.6e-10. With `va` at `* 2.0`: top weights
+  0.205–0.247, norms 2.94 and 1.12, which is the prose's "the two norms draw closer". The widget's
+  rows 2–4 are `i`, `read`, `a` at 0.74, 0.81, 0.05 under `leí`.
+- **Emphasis is italics, never bold, in both locales** (Gustavo, 2026-10-02, following 4.2). The
+  Spanish 4.4 bolded five words for emphasis; both locales now italicise them. The same pass fixed
+  4.3's Callout and 4.2's `q-cuenta-tmax` in Spanish, and eleven English emphasis bolds that earlier
+  translations had carried over (`en/04` ×3, `en/07`, `en/15` ×4, `en/18`, `en/25`). The Spanish
+  outside Block 4 still has about 30 and is a separate sweep.
+- **Fixed in Spanish while translating:** «las dos últimas líneas» pointed at three lines of output
+  (now «lo que sale tras la línea en blanco»), and «ejecuta otra vez» after changing `va` now says
+  «las dos celdas», because the second cell reads the first's weights.
+
+**From 4.5** (`en/31-luong.mdx`):
+
+- **Transpose, as classed, and no answer moved.** Under Option A the one pair-dependent clause stays
+  as "one reads Spanish, the other writes English". 1,860 words against the Spanish 1,922, inside the
+  target. Title "Luong's attention (multiplicative)", the label `en/30`'s bridge already used ("Luong's
+  attention, the multiplicative kind"), so that bridge needed no change.
+- **Code names**, for 4.6's cells: `alineacion_multiplicativa` → `multiplicative_alignment` (as 4.4
+  predicted), `softmax_filas` → `softmax_rows` (4.4's), `E_bucle` → `E_loop`, `identidad` →
+  `identity`, `aditiva` / `multiplicativa` → `additive` / `multiplicative`, `copias` → `copies`.
+  Second cell's labels column-aligned at 23, as in the Spanish format strings.
+- **Terms:** "width" for «medir lo mismo / distinto», the number of coordinates a vector has (`en/30`
+  already says "the same width"), so the challenge test is "the two sides can be different widths";
+  "slot" for the score's «casilla» (`en/29`'s and `en/30`'s), "cell" for «casilla» inside the figure's
+  block; "grid" for «rejilla»; "change of basis"; "bilinear form". «Luong y sus coautores» becomes
+  "Luong, Pham and Manning" or "Luong's paper", which assigns no pronoun.
+- **`atencion-costes.en.svg`**: `additive`, `multiplicative`, `a sum, a tanh and a read-out` / `in
+  every cell`, `two products and nothing else`, `T_y × T_x scores`; `aria-label` and comments
+  translated, class names kept. The asset table above missed «en cada casilla». Measured in the 360
+  `viewBox`: the right-hand label x 196.9–347.1 against the Spanish 195.3–348.7 (its wording matches
+  the cost cell's code comment; "nothing in between" reached 355.7, too close to the edge); the left
+  label x 18.6–157.7.
+- **Printed in Pyodide and quoted**, identical to the Spanish cells: row maxima `0.392 0.455 0.314
+  0.851 0.23 0.281 0.256 0.285` against an even `0.167` (4.6 quotes `0.851` and `0.167`; both
+  confirmed); product and loop agree, and `Wa = I` matches `S @ H.T`. Cost cell: `8,785,920` against
+  `4,853,760` operations, `921,600` tanh evaluations, `7.4` MB against `0.15` MB, additive 54–115 ms
+  against 7–9 ms. With `d_a = 64`: `2,196,480` operations, and 13–21 ms against 7–9 ms. Challenge:
+  the starter fails five tests, an unshifted softmax fails only the overflow test, an in-place write
+  only the no-write test, and the solution passes all six.
+- **Fixed in Spanish while translating** (the English was written fixed): «Las tres primeras líneas»
+  pointed at six lines of output whose 7.4 MB is on the fifth, now «Todo lo que sale antes de la
+  última línea» ("Everything above the last line"); and the `d_a = 64` experiment said the additive
+  score «sigue tardando varias veces más», where the browser measures about twice, now «alrededor del
+  doble en las ejecuciones en que se apoya esta lección» ("about twice as long in the runs behind this
+  lesson"). **In both locales**, the inline $\partial\ell/\partial e_{ij}$ derivative is now a display
+  equation, unpunctuated because the sentence runs through it (7 display equations each).
+
+**From 4.6** (`en/32-atencion-como-consulta.mdx`):
+
+- **Transpose, as classed, and no answer moved.** 1,656 words against the Spanish 1,728, inside the
+  target. Title "Attention as query, key and value", the three names `en/31`'s bridge already used.
+- **Two departures from a straight transposition.** The opening names the two scores ("the additive
+  score and the multiplicative one"), which the Spanish leaves implicit, so a reader arriving cold
+  knows which slot is meant. And «el nombre de la función se queda en inglés» is recast as "the name
+  the paper gave it, and how you'll find it written everywhere": now a rule in `AUTHORING.en.md` §3,
+  which `es/40` meets again with the paper's figure.
+- **Code names**, for Block 5's cells: `atencion` → `attention` (cell and challenge), `salida` →
+  `output`, `esperado` → `expected`, `otra_K` / `otra_V` → `other_K` / `other_V`, `copias` →
+  `copies`; `softmax_rows` as in 4.4. The three change lines are padded to the 28 columns of
+  `changing V moves the output:`.
+- **Terms:** "attention call" (the glossary's); "tie" / "untie" for «atar» / «desatar»;
+  "projection" for «lectura» ("read-out" is $\mathbf{v}_a$'s); "lookup" for the dictionary
+  operation the analogy starts from, which the glossary row now allows, banning it only as a role's
+  name; "the slot the result lands in" for «el hueco», qualified because the opening's slot is the
+  score's. **query**, **keys** and **value** are bold where the Spanish bolds them, with no gloss
+  (`AUTHORING.en.md` §6). Labels the Spanish wrote as «su lección» name the topic ("the chain rule",
+  "Bahdanau's additive score").
+- **`atencion-qkv.en.svg`**: `and softmax over the positions`, `keys`, `a single vector`, `values`,
+  `d_v numbers`; `aria-label` and comments translated, class names kept. Measured in the 360
+  `viewBox`: the band label x 122.6–309.4 (Spanish 124.4–307.6) inside the 80–352 band, and "a
+  single vector" x 6.0–73.9, clear of the boxes at 96.
+- **Printed in Pyodide and quoted**, identical to the Spanish cell: the same grid as `en/31`
+  (True), shapes (8, 5) → (8, 5), then A (8, 6) and output (8, 7) at $d_k = 3$, $d_v = 7$; changing
+  V moves the map False, K True, the output True. Replacing the keys moves all 48 weights and the
+  values none (largest change 0.0); with `d_v = 2` the output is (8, 2) and the map identical.
+  `en/31`'s `0.851` and `0.167` re-run and confirmed. Challenge: the starter fails five tests, an
+  unshifted softmax only the overflow test, and the solution passes all six.
+- **Fixed in Spanish while translating** (same commit; the English was written fixed): the
+  `<Details>` summary sent the two-route formula to «la lección anterior», which is Luong's, not
+  Bahdanau's (now «la fórmula de las dos rutas»); the challenge explanation said «Tres líneas» of a
+  four-line body (now «Tres pasos»); «se sacaban con `P["z"]`» named a key only the GRU challenge
+  has (now «algo como `P["z"]`»); and the reading note's «el √d_k en el próximo» was ambiguous (now
+  «la arquitectura y el √d_k llegan en el bloque siguiente»).
 
 ## The direction decision — make it once, in 4.1
+
+**Decided in 4.1 (2026-10-01): Option A, Spanish→English kept.** What it fixed is under "From 4.1"
+in [Decisions fixed by a translated lesson](#decisions-fixed-by-a-translated-lesson).
 
 A block about machine translation needs a language pair, and the Spanish course reasonably used
 Spanish→English: `leí` aligning to `read` is a clean one-to-one across a word-order change, and a

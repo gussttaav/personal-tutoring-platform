@@ -14,6 +14,13 @@
  * NAV-BP-01: the hamburger/panel breakpoint is `lg`, not `sm` — the desktop link row only
  * appears at `lg:flex` (≥1024), so `sm:hidden` (<640) left 640–1023 (tablets) with no way to
  * reach the nav links at all.
+ *
+ * BOOKING-EXIT-01: every internal link here (logo, the four items, «Área personal» / admin)
+ * goes through `requestBookingExit` (lib/booking-exit.ts). With a booking screen open over the
+ * page, the item for THAT page used to do nothing — a same-URL navigation keeps the overlay
+ * mounted — and only the logo closed it. Now the booking's owner takes the click: the current
+ * page closes the overlay in place, another page replaces the booking's history entry. With
+ * nothing open the event goes unanswered and the link navigates exactly as before.
  */
 
 import { useState } from "react";
@@ -23,6 +30,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import Image from "next/image";
 import { useUserSession } from "@/hooks/useUserSession";
 import { signInWithPopup } from "@/lib/auth-popup";
+import { requestBookingExit } from "@/lib/booking-exit";
 import BrandLogo from "@/components/BrandLogo";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 
@@ -84,14 +92,16 @@ export default function Navbar() {
     openPackBooking();
   };
 
-  const handleLogoClick = () => {
-    window.dispatchEvent(new CustomEvent("close-booking-overlay"));
+  const handleLogoClick = (e: React.MouseEvent) => {
+    requestBookingExit(e, "/");
   };
 
-  const handleNavLinkClick = () => {
+  const handleNavLinkClick = (e: React.MouseEvent, href: string) => {
     // COURSE-P6-03: every nav item is a plain navigation and every one closes the mobile
     // panel — otherwise the panel stays open over the page it just client-side navigated to.
     setMobileOpen(false);
+    // BOOKING-EXIT-01: an open booking screen takes the click (closes / replaces its entry).
+    requestBookingExit(e, href);
   };
 
   // ── Shared mobile nav-item style helpers ────────────────────────────────────
@@ -147,7 +157,7 @@ export default function Navbar() {
                     paddingBottom: "2px",
                     borderBottom: active ? "2px solid #4edea3" : "2px solid transparent",
                   }}
-                  onClick={handleNavLinkClick}
+                  onClick={(e) => handleNavLinkClick(e, href)}
                   onMouseEnter={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
                   onMouseLeave={(e) => { if (!active) (e.currentTarget as HTMLElement).style.color = restColor; }}
                 >
@@ -239,6 +249,7 @@ export default function Navbar() {
                     <Link
                       className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg transition-colors"
                       href={isAdmin ? "/admin" : "/area-personal"}
+                      onClick={(e) => requestBookingExit(e, isAdmin ? "/admin" : "/area-personal")}
                       style={{ color: "#bbcabf" }}
                       onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#353437"; (e.currentTarget as HTMLElement).style.color = "#e5e1e4"; }}
                       onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; (e.currentTarget as HTMLElement).style.color = "#bbcabf"; }}
@@ -371,7 +382,7 @@ export default function Navbar() {
               <nav className="px-2">
                 <Link
                   href={isAdmin ? "/admin" : "/area-personal"}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(e) => handleNavLinkClick(e, isAdmin ? "/admin" : "/area-personal")}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                   style={mobileNavItemBase}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#1c1b1d"; }}
@@ -392,7 +403,7 @@ export default function Navbar() {
                       key={label}
                       href={href}
                       aria-current={active ? "page" : undefined}
-                      onClick={handleNavLinkClick}
+                      onClick={(e) => handleNavLinkClick(e, href)}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                       style={{
                         ...mobileNavItemBase,
@@ -445,7 +456,7 @@ export default function Navbar() {
                       key={label}
                       href={href}
                       aria-current={active ? "page" : undefined}
-                      onClick={handleNavLinkClick}
+                      onClick={(e) => handleNavLinkClick(e, href)}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-semibold transition-colors"
                       style={{
                         ...mobileNavItemBase,

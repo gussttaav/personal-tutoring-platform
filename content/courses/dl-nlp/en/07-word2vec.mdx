@@ -90,7 +90,7 @@ but <W>dog</W> and ask what was around it; a model that answers <W>barks</W> bef
 learned something, and to answer it needs numbers to score candidates with. Those numbers are in the
 matrix $\mathbf{E}$, which enters a model with random values and gets corrected until it gets them
 right (that is what **training** is), after which the model is thrown away and $\mathbf{E}$ is kept.
-Word2Vec is that idea turned into a **technique**, and it is three pieces: a prediction task over
+Word2Vec is that idea turned into a *technique*, and it is three pieces: a prediction task over
 windows of text, two ways of solving it (*skip-gram* and CBOW, *continuous bag of words*) and a
 simplification that makes the computation viable: negative sampling. What is left to decide is which
 parameters do the scoring, and what "getting it right" means once it is measured by a count that,

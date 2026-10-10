@@ -20,6 +20,11 @@
  *     confirmed; navigating weeks keeps other weeks cached.
  *   - modal:    resetKey = `${weekOffset}|${userTz}` → clears on week/timezone
  *     change, matching its former render-phase reset.
+ *
+ * BOOKING-EXIT-01: a change of `atomicMinutes` is a reset too. The cache holds slots of one
+ * atom size, and the wizard's session-type switch now changes it in place (15-min free call ↔
+ * 30-min atoms of the 1h/2h sessions): the skip-loaded check used to keep the old size's days,
+ * so a switch to the free call kept showing half-hour slots.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -53,13 +58,15 @@ export function useWeekAvailability({
   resetKey,
 }: UseWeekAvailabilityArgs): UseWeekAvailabilityResult {
   const [slotsMap, setSlotsMap] = useState<Record<string, DaySlots>>({});
-  const prevResetKey = useRef(resetKey);
+  const prevResetKey      = useRef(resetKey);
+  const prevAtomicMinutes = useRef(atomicMinutes);
 
   const weekStartMs = weekStart.getTime();
 
   useEffect(() => {
-    const isReset = resetKey !== prevResetKey.current;
-    prevResetKey.current = resetKey;
+    const isReset = resetKey !== prevResetKey.current || atomicMinutes !== prevAtomicMinutes.current;
+    prevResetKey.current      = resetKey;
+    prevAtomicMinutes.current = atomicMinutes;
     if (isReset) setSlotsMap({});
 
     const days: Date[] = Array.from({ length: 7 }, (_, i) => {

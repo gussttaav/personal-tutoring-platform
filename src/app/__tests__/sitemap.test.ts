@@ -160,6 +160,7 @@ function blogFile(fm: { slug: string; date: string; draft?: boolean }): string {
     summary: "Resumen.",
     draft:   fm.draft ?? false,
     reading: [] as unknown[],
+    areas:   ["ia"],
     tags:    [] as string[],
     aiImages: false,
   };

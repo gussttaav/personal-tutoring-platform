@@ -1,0 +1,363 @@
+---
+slug: la-idea-de-atencion
+title: "The idea of attention: looking back"
+block: 4
+order: 3
+minutes: 24
+summary: "The encoder computes one state per token, and the architecture uses only one of them. Handing them all to the decoder runs into a problem of shape (there are as many states as tokens, but the decoder has a fixed size), and the way out is to mix them: each output step gets a context vector of its own, a weighted sum of every state, with weights that add up to one and change from step to step. This lesson defines that mixture, shows that the fixed summary of the previous two lessons is the same mixture with its weights frozen, and explains where the weights come from (a score for each pair, normalised with a softmax over the input positions) without yet saying what computes the score."
+draft: false
+hasCode: true
+hasQuiz: true
+quiz:
+  - id: q-eje-del-softmax
+    type: single
+    prompt: 'In $\alpha_{ij} = \exp(e_{ij}) / \sum_k \exp(e_{ik})$, what does $k$ run over in the denominator?'
+    options:
+      - { id: a, text: 'Over the input positions. With step $i$ fixed, the denominator adds up the $T_x$ scores in that row, so the row sums to $1$ and shares one unit of attention among the tokens of the source.' }
+      - { id: b, text: 'Over the entries of the output vocabulary $V_y$, like the softmax that produces $\hat{\mathbf{y}}_i$.' }
+      - { id: c, text: 'Over the output steps, so that each column sums to $1$ and each input token shares its attention among the steps that need it.' }
+      - { id: d, text: 'Over both at once: what sums to $1$ is the whole matrix.' }
+    answer: a
+    explanation: '(a) is right. The indices $j$ and $k$ run over the same thing (the positions of the source) while step $i$ stays put, so what gets normalised is a row. (b) is the trap to watch for: every softmax in the course until now shared probability out over a vocabulary, and this one doesn''t. The two live in the same network and the same step, over different axes: $\hat{\mathbf{y}}_i$ shares out over $V_y$ and decides what to write, while $\alpha_{i\cdot}$ shares out over the input positions and decides what to look at. (c) describes something that doesn''t happen: in the explorable''s alignment, <W>leí</W> (<W>i read</W>) feeds two steps at once and its column sums to $1.77$, not $1$. Nothing forces an input token to be used only once, and that''s a good thing, because Spanish puts the pronoun inside the verb. (d) would make the whole matrix sum to $T_y$, one unit per step.'
+    hint: 'With $i$ fixed, what is moving inside the sum?'
+  - id: q-alineacion-congelada
+    type: single
+    prompt: 'You set $\alpha_{ij} = 1$ when $j = T_x$ and $\alpha_{ij} = 0$ everywhere else, the same at every step $i$. What model are you left with?'
+    options:
+      - { id: a, text: 'The encoder-decoder from <Leccion slug="encoder-decoder">the lesson on the encoder-decoder architecture</Leccion>, exactly: the mixture collapses to $\mathbf{c}_i = \bar{\mathbf{h}}_{T_x}$, the usual context vector, identical at every step.' }
+      - { id: b, text: 'A model that can''t write anything, because every weight but one is zero and the mixture vanishes.' }
+      - { id: c, text: 'A model that can only translate one-token sentences, which is all that fits in a weight that isn''t shared out.' }
+      - { id: d, text: 'A model equivalent to this lesson''s but faster, because it saves computing the weights.' }
+    answer: a
+    explanation: '(a) is right, and it''s the reading worth taking away: those weights are a legal alignment (non-negative, summing to $1$), so the architecture of the previous two lessons isn''t a different mechanism from today''s. It''s the same one with its weights frozen and blind to $i$. (b) confuses "zero" with "nothing": the mixture comes to $\bar{\mathbf{h}}_{T_x}$, a perfectly ordinary vector. (c) follows from no equation: that model translates sentences of any length, only badly once they grow long, which is what the previous lesson, on the bottleneck, measured. (d) is right about the cost and wrong about what matters: it does save $T_x \cdot T_y$ scores, but in exchange it loses exactly what they pay for.'
+    hint: 'Write out the sum $\sum_j \alpha_{ij}\bar{\mathbf{h}}_j$ with those weights and see what survives.'
+  - id: q-por-que-no-argmax
+    type: single
+    prompt: 'Instead of mixing, step $i$ could keep the best-scored state: $\mathbf{c}_i = \bar{\mathbf{h}}_{j^{\star}}$ with $j^{\star} = \arg\max_j e_{ij}$. What breaks?'
+    options:
+      - { id: a, text: 'Training. $\arg\max$ returns a position, and nudging the parameters of $a$ doesn''t move it (until it suddenly jumps), so the derivative of $\mathbf{c}_i$ with respect to those parameters is zero wherever it exists. Nothing would ever push $a$ towards better scores.' }
+      - { id: b, text: 'The shape. $\bar{\mathbf{h}}_{j^{\star}}$ has $d_h$ coordinates and the decoder expects a longer vector, because the context has to summarise the whole input.' }
+      - { id: c, text: 'The condition that the weights sum to $1$: keeping one state amounts to putting a weight greater than one on it.' }
+      - { id: d, text: 'The cost. Finding the maximum among $T_x$ scores is more expensive than adding up $T_x$ vectors, and in long sentences that shows.' }
+    answer: a
+    explanation: '(a) is right. The softmax isn''t there for elegance: it turns scores into a *differentiable* mixture, and only that way does <Leccion slug="regla-de-la-cadena">the chain rule</Leccion> reach from the loss to the parameters that produce $e_{ij}$. With a hard maximum the signal is cut off right there. (b) invents a shape: $\bar{\mathbf{h}}_{j^{\star}}$ has $d_h$ coordinates and so does the mixture, which is precisely what lets the two fit in the same place. (c) is false: keeping one state means putting a weight of $1$ on it and $0$ on the rest, and that sums to $1$. It''s in fact the extreme case this lesson calls a hard choice. (d) gets the costs backwards, and even if it didn''t, price isn''t the problem.'
+    hint: 'How much does a whole-number index change when you move a weight by a millionth?'
+  - id: q-cuantas-puntuaciones
+    type: numeric
+    prompt: 'You translate <W>ayer leí un libro muy bueno</W> (six tokens), and the decoder writes seven words plus the end-of-sequence token <W>\<EOS></W>: eight steps. How many scores $e_{ij}$ does the mechanism compute for that one sentence?'
+    answer: 48
+    tolerance: 0
+    unit: scores
+    explanation: 'One for each pair of step and position, that is, $T_x \cdot T_y = 6 \cdot 8 = 48$. That product is the price of the idea, and it''s worth keeping in view: the fixed summary computed no scores at all, which is why it choked, whereas here the cost grows with the product of the two lengths, not their sum. For a sixty-token sentence translated into sixty tokens, that''s $3\,600$ scores, and each one goes through the function $a$.'
+    hint: 'How many weights does a row have, and how many rows are there?'
+challenges: []
+reading:
+  - kind: paper
+    title: 'Neural Machine Translation by Jointly Learning to Align and Translate'
+    authors: 'Bahdanau, Cho and Bengio'
+    year: '2015'
+    venue: 'arXiv:1409.0473'
+    lang: en
+    url: 'https://arxiv.org/abs/1409.0473'
+    note: 'The paper that unfroze the weights. Its §3.1 is this lesson''s mechanism (eqs. 5 and 6): one context per step, a sum of the encoder states with weights from a softmax over the positions. The scoring function comes later.'
+  - kind: blog
+    title: 'Visualizing A Neural Machine Translation Model (Mechanics of Seq2seq Models With Attention)'
+    authors: 'Jay Alammar'
+    year: '2018'
+    venue: 'jalammar.github.io'
+    lang: en
+    url: 'https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/'
+    note: 'The alignment map this lesson draws by hand, animated: which input position each word pulls from as it''s written. It stays at the level of the picture, with no gradient and no scoring function.'
+---
+
+{/* COURSE-P5-04: Block 4, Lesson 3. COURSE-P11-07: English translation. */}
+
+Letting the decoder read the whole input sounds like a fix, but it isn't an architecture yet. The
+previous lesson, on the context-vector bottleneck, measured what summarising costs and left the
+unused material within reach: the $T_x$ states the encoder computes and nothing touches again.
+Everything else is still missing. What exactly does the decoder receive at step $i$, who builds it,
+and out of what?
+
+Before any of that, there's an obstacle of shape, and it decides the answer. There are as many encoder
+states as the sentence has tokens: six for one sentence, thirty for another. The decoder, on the other
+hand, has a size fixed before it sees any sentence (its weight matrices have a set number of
+columns), so laying the states out in a row and multiplying them by a matrix runs into the same wall
+as <Leccion slug="por-que-falla-el-mlp">the lesson on why the multilayer perceptron fails on
+sequences</Leccion>: an input whose length changes doesn't fit a matrix whose shape doesn't. Reading
+all the states will have to mean something else: combining them into a single vector of the size the
+decoder already expects. Then the only thing left to decide is how much of each to take.
+
+Take the translation of <W>ayer leí un libro muy bueno</W> as <W>yesterday i read a very good
+book</W>, whose words line up: <W>ayer</W> is <W>yesterday</W>, <W>leí</W> is <W>i read</W>, <W>un
+libro</W> is <W>a book</W> and <W>muy bueno</W> is <W>very good</W>. What each output step decides is
+how much to take from each encoder state, not which single one to keep. That difference is what makes
+the idea work. If step $i$ had to point at *one* state, choosing would be a discrete decision, and
+further down that turns out to carry a price nobody can pay. Sharing out, on the other hand, is done
+with numbers. The step that writes <W>book</W> puts nearly all its weight on <W>libro</W> and divides
+the little that's left among the other tokens; the step that writes <W>very</W> concentrates on
+<W>muy</W>. Each step gets its own mixture, and that sharing out (one amount per input position,
+different at every output step) is what we call **attention**.
+
+The explorable brings back that pair from <Leccion slug="encoder-decoder">the lesson on the
+encoder-decoder architecture</Leccion>, with one row per output step. Go through the rows and look at
+two places. <W>i</W> and <W>read</W> both pull from the same token, <W>leí</W>, because Spanish
+carries the pronoun in the verb's ending while English has to write it separately. And <W>book</W>,
+at step 7, goes back to <W>libro</W> at position 4, after steps 5 and 6 have sat on <W>muy</W> and
+<W>bueno</W>: the lines cross, which is the reordering the fixed summary had to hold in memory.
+
+<Explorable
+  id="attention-alignment"
+  caption="I set the weights by hand for the course; what matters is their shape. The right-hand column gives each row's sum, because by eye a row that sums to 0.97 looks the same as one that sums to 1."
+/>
+
+<Callout type="intuition" title="The idea in one sentence">
+Each output step builds its own context vector as a weighted sum of all the encoder states, and the
+only thing that sets one step apart from another is the weights of that sum.
+</Callout>
+
+## A different context at every step
+
+Start with what step $i$ receives: $T_x$ numbers, one per input position, which we call
+$\alpha_{i1}, \dots, \alpha_{iT_x}$. With them, the context for that step is
+
+$$
+\mathbf{c}_i = \sum_{j=1}^{T_x} \alpha_{ij}\,\bar{\mathbf{h}}_j \in \mathbb{R}^{d_h},
+\qquad
+\alpha_{ij} \geq 0,
+\qquad
+\sum_{j=1}^{T_x} \alpha_{ij} = 1.
+$$
+
+Look at the two shapes, because the whole point is that they don't match. The list of weights has
+length $T_x$: it grows with the input, one more weight for every new token, and that's where the
+information that didn't fit before gets in. The result always has size $d_h$, which is exactly what
+lets it take the place of the usual context vector without touching the rest of the decoder. The
+input grew; the slot didn't.
+
+The two conditions on the weights turn that sum into a **mixture**, and it's worth seeing what they
+rule out. Since no weight is negative and they all sum to one, each coordinate of $\mathbf{c}_i$ falls
+between the smallest and largest value of that same coordinate across the $\bar{\mathbf{h}}_j$: the
+mixture blends what's already there, and doesn't invent new values or amplify any. The two extremes
+are easy to write down. If one weight is $1$ and the rest are $0$, then $\mathbf{c}_i = \bar{\mathbf{h}}_{j}$
+and the mixture has become a hard choice of one state. If they're all $1/T_x$, then $\mathbf{c}_i$ is
+the mean of the whole sentence, which looks at everything and tells nothing apart. The mechanism lives
+between those two cases.
+
+### The fixed summary was a frozen alignment
+
+There's a third set of weights you already know, though it was never written as one. Take
+$\alpha_{ij} = 1$ when $j = T_x$ and $\alpha_{ij} = 0$ everywhere else, for every step alike. In the
+explorable's map, that would switch everything off except the column for <W>bueno</W>, lit in all
+eight rows:
+
+$$
+\mathbf{c}_i = \sum_{j=1}^{T_x} \alpha_{ij}\,\bar{\mathbf{h}}_j = \bar{\mathbf{h}}_{T_x} = \mathbf{c}.
+$$
+
+That's the encoder-decoder of the previous two lessons, whole, with nothing taken away and nothing
+added. And it's a perfectly legal alignment: the weights are non-negative and they sum to one. So
+attention doesn't replace that architecture or compete with it: it contains it. What attention does is
+unfreeze weights that had been fixed by hand on the last token, the same for every $i$. The
+bottleneck didn't come from $d_h$ being small. It came from that row being unable to move.
+
+### The context enters the decoder as one more input
+
+The figure puts the two halves together at an arbitrary step, step $i$. At the top is the encoder,
+with its $T_x$ states. A thread runs from each one to $\mathbf{c}_i$, and each thread's thickness is
+its weight $\alpha_{ij}$: here the thickest is the one from $\bar{\mathbf{h}}_2$, so $\mathbf{c}_i$
+mostly resembles that state, with smaller contributions from the other two. On the right is the
+decoder cell, which receives three things: its previous state, $\mathbf{s}_{i-1}$, from above; the
+token written at the previous step, $y_{i-1}$, from below; and $\mathbf{c}_i$ from the left, which is
+the only new one.
+
+<Figure
+  src="/courses/dl-nlp/atencion-contexto.en.svg"
+  alt='At the top, three encoder cells labelled h bar sub one, sub two and sub T x, linked from left to right, each receiving an input token from above: x sub one, x sub two, x sub T x. From the bottom of the three cells come three green threads of different thickness, labelled alpha sub i one, alpha sub i two and alpha sub i T x; the middle one is the thickest. The three converge on a green box labelled c sub i, with the note "d sub h numbers" beneath it. From that box a horizontal green arrow runs right into a decoder cell labelled s sub i. That cell also receives the previous state, s sub i minus one, from above, and the previous token, y sub i minus one, from below; on the right it puts out y hat sub i.'
+  caption="The threads leave every encoder cell, not only the last, and each one's thickness is its weight. The previous architecture is this same drawing with a single thread, always the one on the right."
+/>
+
+The context enters the decoder's recurrence as one more term, with its own weight matrix
+$\mathbf{W}_{ch} \in \mathbb{R}^{d_h \times d_h}$:
+
+$$
+\mathbf{s}_i = \tanh\left(\mathbf{W}^{\text{dec}}_{xh}\mathbf{o}_{y_{i-1}} + \mathbf{W}^{\text{dec}}_{hh}\mathbf{s}_{i-1} + \mathbf{W}_{ch}\mathbf{c}_i + \mathbf{b}^{\text{dec}}_h\right),
+$$
+
+where $\mathbf{o}_{y_{i-1}}$ is the one-hot vector of $y_{i-1}$, which in training is the correct
+token (*teacher forcing*) and when generating is the one the model itself wrote at the previous step. What
+comes out on the right of the figure is the same as in
+<Leccion slug="encoder-decoder">the encoder-decoder architecture</Leccion>:
+
+$$
+\hat{\mathbf{y}}_i = \text{softmax}\left(\mathbf{W}_{hy}\mathbf{s}_i + \mathbf{b}_y\right) \in \mathbb{R}^{\lvert V_y \rvert},
+$$
+
+one probability for each entry of the output vocabulary. When generating, the step writes the most
+probable entry, and that token becomes the $y_i$ that enters from below at the next step. The context
+doesn't reach $\hat{\mathbf{y}}_i$ directly: it goes through $\mathbf{s}_i$ first.
+
+The starting state, on the other hand, does change. In
+<Leccion slug="encoder-decoder">the encoder-decoder lesson</Leccion> the decoder started at
+$\mathbf{s}_0 = \mathbf{c}$, because there was one $\mathbf{c}$ and only one. Now there isn't, so we
+take $\mathbf{s}_0 = \mathbf{0}$, like the recurrence of the previous block. That's a choice, not a
+necessity (the usual alternative is to start from a learned projection of $\bar{\mathbf{h}}_{T_x}$),
+and nothing that follows depends on it.
+
+With that, we can rewrite the uncomfortable line from
+<Leccion slug="encoder-decoder">the lesson on the encoder-decoder architecture</Leccion>:
+
+$$
+P\left(y_i \mid y_{<i},\, \mathbf{c}\right)
+\quad\longrightarrow\quad
+P\left(y_i \mid y_{<i},\, \mathbf{c}_i\right).
+$$
+
+The change looks like a subscript, but it changes what each step conditions on. The old equality
+claimed that everything the input had to say about *any* position of the output fitted in $d_h$
+numbers fixed once and for all; this one claims something much weaker: that for *each* position,
+some mixture of the states will do. And since $\mathbf{c}_i$ is built from all $T_x$ states, step $i$
+is conditioning on the complete source again. The assumption hasn't gone away. It has become cheap.
+
+## Where the weights come from
+
+That leaves the question everything rests on: who decides the $\alpha_{ij}$? They can't be fixed in
+advance (that's exactly what was unfrozen above). Nor can they depend only on $j$, the input position
+(and with it the encoder state $\bar{\mathbf{h}}_j$ being weighted), because then every step would
+look at the same place. They have to depend on the pair: on the step $i$ the decoder has reached and
+on what sits at position $j$. So at step $i$ the mechanism scores $T_x$ pairs, the decoder's state
+against each of the encoder's states:
+
+$$
+e_{ij} = a\left(\mathbf{s}_{i-1},\, \bar{\mathbf{h}}_j\right), \qquad j = 1, \dots, T_x,
+$$
+
+where $a$ is a function that returns a number (how compatible that decoder state and that encoder
+state are), and it uses the previous state $\mathbf{s}_{i-1}$ for a reason of order, not taste:
+computing $\mathbf{s}_i$ requires already having $\mathbf{c}_i$, which requires the weights, which
+require the scores. The latest state that exists when it's time to score is $\mathbf{s}_{i-1}$. That's
+why the scores come out row by row: those of step $i$ can't be computed until step $i-1$ has
+finished.
+
+The scores are raw numbers that can be negative, so they have to be turned into a mixture. A softmax
+does that, and it's worth noticing what it runs over:
+
+$$
+\alpha_{ij} = \frac{\exp(e_{ij})}{\sum_{k=1}^{T_x} \exp(e_{ik})}.
+$$
+
+The weights come out positive because of the exponential and sum to one because of the denominator,
+which are the mixture's two conditions. As a bonus, the sharing is smooth: a slightly larger score
+takes a bit more of the weight, not all of it.
+
+<Callout type="warning" title="This softmax doesn't share out over the vocabulary">
+Every softmax in the course until now shared probability out over the entries of a vocabulary. This
+one shares it out over the *input positions*: the index in the denominator runs over
+$k = 1, \dots, T_x$, with step $i$ held fixed. The two live in the same decoder step but over
+different axes ($\hat{\mathbf{y}}_i$ decides what to write, $\alpha_{i\cdot}$ decides what to look
+at), and confusing them is the quickest way to misread any implementation of this.
+</Callout>
+
+Two consequences follow, and the first is a bill. There's one score for every pair of step and
+position, so translating a sentence costs $T_x \cdot T_y$ evaluations of $a$: the price grows with the
+*product* of the two lengths. The fixed summary paid nothing, and that's exactly what was choking it.
+Still, it's worth knowing from the start that looking back doesn't come free.
+
+The second explains why the softmax is used instead of something more direct. The natural move would
+be to keep the best-scored state, $\arg\max_j e_{ij}$, and save the whole sum. But that returns a
+position, and a position is a whole number: nudge the parameters of $a$ by a millionth and the index
+doesn't budge, until one day it jumps. The derivative of $\mathbf{c}_i$ with respect to those
+parameters is zero wherever it exists, so the loss would have no way of teaching $a$ to score better.
+With the softmax, $\mathbf{c}_i$ depends continuously on the scores, and
+<Leccion slug="regla-de-la-cadena">the chain rule</Leccion> passes through the weights the same way it
+passes through anything else. Choosing smoothly is what makes choosing learnable.
+
+The function $a$ is still missing, and this lesson doesn't define it. All it needs from $a$ is that it
+returns a number and is differentiable; what form it takes, how many parameters it carries and how
+those parameters are trained are the next lesson's business.
+
+## The per-step context, in NumPy
+
+The cell takes the explorable's alignment (my numbers again) and one state per input token, and does
+three things. It checks the one property you can't see by looking at the map: that every row sums to
+one. It builds all eight contexts in one go, because mixing every row at once is a matrix product. And
+it repeats the calculation with the frozen alignment, so you can compare the two.
+
+<PyCell packages={["numpy"]} code={`
+import numpy as np
+
+# The explorable's alignment: row = output step, column = input position.
+SOURCE = ["ayer", "leí", "un", "libro", "muy", "bueno"]
+TARGET = ["yesterday", "i", "read", "a", "very", "good", "book", "<EOS>"]
+alpha = np.array([[0.86, 0.06, 0.03, 0.02, 0.02, 0.01],    # yesterday
+                  [0.09, 0.74, 0.05, 0.07, 0.03, 0.02],    # i      <- from "leí"
+                  [0.04, 0.81, 0.04, 0.06, 0.03, 0.02],    # read   <- from "leí" again
+                  [0.02, 0.05, 0.72, 0.15, 0.03, 0.03],    # a
+                  [0.02, 0.03, 0.04, 0.06, 0.79, 0.06],    # very
+                  [0.02, 0.02, 0.03, 0.05, 0.10, 0.78],    # good
+                  [0.02, 0.03, 0.06, 0.76, 0.05, 0.08],    # book   <- back to "libro"
+                  [0.02, 0.03, 0.03, 0.12, 0.07, 0.73]])   # <EOS>
+# One state per input token: d_h = 5 coordinates in (-1, 1), like a tanh.
+H = np.array([[ 0.82, -0.31,  0.10,  0.45, -0.62], [-0.55,  0.71,  0.28, -0.14,  0.36],
+              [ 0.12,  0.44, -0.77,  0.21,  0.08], [ 0.39, -0.68,  0.52,  0.77, -0.11],
+              [-0.24,  0.15,  0.63, -0.58,  0.49], [ 0.66,  0.29, -0.35,  0.18,  0.74]])
+T_y, T_x = alpha.shape
+
+# What the map doesn't let you see, and without which this wouldn't be a mixture:
+assert np.allclose(alpha.sum(axis=1), 1.0), "some row doesn't sum to 1"
+
+C = alpha @ H                                     # c_i = sum_j alpha_ij * h_j, all T_y at once
+fixed = np.zeros_like(alpha); fixed[:, -1] = 1.0  # the fixed summary, written as an alignment
+C_fixed = fixed @ H
+
+print("step  writes       pulls mostly from  weight  distance to the fixed summary")
+for i in range(T_y):
+    j = int(alpha[i].argmax())
+    print("  %d   %-11s  %-18s  %.2f   %.2f"
+          % (i + 1, TARGET[i], SOURCE[j], alpha[i, j], np.linalg.norm(C[i] - C_fixed[i])))
+
+print()
+print("distinct contexts:  with attention %d of %d,  with the fixed summary %d of %d"
+      % (len(np.unique(C.round(9), axis=0)), T_y,
+         len(np.unique(C_fixed.round(9), axis=0)), T_y))
+print("and that one is the state of '%s':" % SOURCE[-1], np.allclose(C_fixed[0], H[-1]))
+`} />
+
+The middle column is the map read out loud, and the last two lines are the finding: with the
+alignment above, the eight steps receive eight different vectors, and with the frozen one they
+receive the same vector eight times, the state of the input's last token. The last column shows how
+much each step was missing, and it deserves a slow look, because not every step misses the same
+amount. The two small values, $0.25$ and $0.32$, belong to <W>good</W> and to <W>\<EOS></W>, the
+end-of-sequence token, which are the only two steps that pull from <W>bueno</W>, the very token the
+fixed summary carried inside it. The values for <W>yesterday</W> and <W>book</W> are above $1.35$.
+The fixed summary wasn't equally bad everywhere: it got things right where the sentence ends and
+wrong everywhere else, which is where it broke down in the previous lesson. Change one weight in the
+`alpha` matrix and run the cell again: the `assert` complains before you can look at anything, which
+is exactly its job.
+
+## Test your intuition
+
+Four questions: what the softmax normalises over, what model you get by freezing the alignment, why
+mix instead of choosing, and how much it costs.
+
+<Quiz id="q-eje-del-softmax" />
+
+<Quiz id="q-alineacion-congelada" />
+
+<Quiz id="q-por-que-no-argmax" />
+
+<Quiz id="q-cuantas-puntuaciones" />
+
+---
+
+The mechanism is complete except for one piece, and it's the piece that decides everything else.
+Nobody computed this lesson's weights: I wrote them into a matrix, choosing them so that the map
+would show a reordering and a shared token. A real model has no one to write them for it. It has to
+score each pair $(\mathbf{s}_{i-1}, \bar{\mathbf{h}}_j)$ on its own, with a function that starts out
+knowing as little as the rest of the network and learns alongside it.
+
+That function is $a$, and <Leccion slug="bahdanau">the next lesson, on Bahdanau's attention</Leccion>,
+is the one that writes it. It gives $a$ its own parameters (a small layer, with its matrix and its
+vector), puts it into the same gradient descent that already trains the encoder and the decoder, and
+derives how the gradient reaches it, which turns out to be along two routes at once. The rest of the
+block then shows that there's more than one reasonable way to score a pair, and that the choice
+between them ends up deciding what Block 5 looks like.

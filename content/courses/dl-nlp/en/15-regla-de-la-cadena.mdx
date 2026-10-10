@@ -55,7 +55,7 @@ challenges:
         central differences: column $j$ is
         $\left(f(\mathbf{x} + h\mathbf{e}_j) - f(\mathbf{x} - h\mathbf{e}_j)\right)/2h$ with
         $h = 10^{-6}$.
-      - `input_gradient(jacobians, g)` receives a list of Jacobians **in forward order** (the
+      - `input_gradient(jacobians, g)` receives a list of Jacobians *in forward order* (the
         first is that of the first function) and the gradient at the output, and returns the
         gradient at the input. It is a vector, not a matrix.
 
@@ -129,7 +129,7 @@ challenges:
               g = J.T @ g
           return g
     explanation: |
-      `jacobian` builds the matrix by **columns** rather than by rows, and that is no accident:
+      `jacobian` builds the matrix by *columns* rather than by rows, and that is no accident:
       column $j$ is what happens to *every* output when input $j$ moves, which is exactly what a
       finite difference can measure in a single pass. A row would ask you to move one output, and
       outputs are not moved, they are only looked at. `np.stack(columns, axis=1)` stacks those $n$
@@ -460,7 +460,7 @@ check worth keeping handy for whenever a hand-written derivative refuses to add 
 The fourth figure is the one that teaches what this lesson is really about. Forgetting a path (the
 third one, through the output neuron for the neutral class) leaves the derivative at
 $-0.16541038$, almost double what it should be. And look closely at the three summands, because the
-error isn't one of size: the first two are negative and the third is **positive**. That path was
+error isn't one of size: the first two are negative and the third is *positive*. That path was
 pulling the other way, so removing it doesn't trim the correction down, it inflates it instead. A
 forgotten path doesn't give you an approximate derivative, it gives you the derivative of an
 entirely different function.
@@ -488,7 +488,7 @@ order of the product), plus a challenge that is the entire chain rule.
 ---
 
 Everything needed to differentiate any network is now on the table, and laid out like this it's
-useless in practice. The cell computed the derivative of **one** weight, and to get it, it walked
+useless in practice. The cell computed the derivative of *one* weight, and to get it, it walked
 the entire chain: the error at the output layer, the second layer's matrix, the diagonal of the
 activation. The very next weight needs that same walk repeated, with only a single different factor
 at the end, and so do the other forty-nine weights in this network. With a vocabulary of twenty

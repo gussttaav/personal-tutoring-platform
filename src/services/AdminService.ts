@@ -6,6 +6,7 @@ import type { IAuditRepository } from "@/domain/repositories/IAuditRepository";
 import type {
   AdminBookingRow,
   AdminDashboardCounts,
+  AdminNavCounts,
   AdminPaymentRow,
   AuditEntry,
   BookingRow,
@@ -15,6 +16,7 @@ import type {
   StudentListPage,
 } from "@/domain/types";
 import { InsufficientCreditsError } from "@/domain/errors";
+import { log } from "@/lib/logger";
 import type { CreditService } from "./CreditService";
 import type { PricingService } from "./PricingService";
 
@@ -39,6 +41,22 @@ export class AdminService {
 
   dashboardCounts(): Promise<AdminDashboardCounts> {
     return this.queries.dashboardCounts();
+  }
+
+  /**
+   * ADMIN-02: the sidebar badges. Read by the admin layout on every page, so a failure
+   * here must not take the panel down: it logs and answers null, and the sidebar
+   * renders without badges. Nothing gates on these numbers; they are a nudge only.
+   */
+  async navCounts(): Promise<AdminNavCounts | null> {
+    try {
+      return await this.queries.navCounts();
+    } catch (err) {
+      log("warn", "Admin nav counts unavailable; rendering the sidebar without badges", {
+        service: "AdminService", err: String(err),
+      });
+      return null;
+    }
   }
 
   revenueLast30Days(): Promise<number> {

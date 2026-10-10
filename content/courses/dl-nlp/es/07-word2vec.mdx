@@ -90,7 +90,7 @@ menos <W>perro</W> y pregunta qué había alrededor; un modelo que responda <W>l
 <W>escuela</W> ha aprendido algo, y para responder necesita números con los que puntuar candidatos.
 Esos números están en la matriz $\mathbf{E}$, que entra en un modelo con valores al azar y este los
 va corrigiendo hasta que acierta (eso es **entrenar**); luego se tira el modelo y se guarda $\mathbf{E}$.
-Word2Vec es esa idea convertida en **técnica**, y son tres piezas: una tarea de predicción sobre ventanas
+Word2Vec es esa idea convertida en *técnica*, y son tres piezas: una tarea de predicción sobre ventanas
 de texto, dos maneras de resolverla (*skip-gram* y CBOW) y una simplificación que hace viable el cálculo:
 el muestreo negativo. Queda decidir con qué parámetros se puntúa y qué
 quiere decir «acertar» medido en una cuenta que, escrita con cuidado, sale impagable.

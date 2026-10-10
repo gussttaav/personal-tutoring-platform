@@ -116,7 +116,7 @@
   margin: 0;
 }
 
-/* Store buttons: placeholders (`<span aria-disabled>`) until the app ships, links once it does */
+/* Store buttons: a placeholder (`<span aria-disabled>`, dimmed) until a store has the app, a link once it does */
 .app-stores {
   display: flex;
   flex-wrap: wrap;
@@ -138,7 +138,10 @@
   min-width: 168px;
   text-decoration: none;
 }
-.app-store[aria-disabled="true"] { cursor: default; }
+.app-store[aria-disabled="true"] { cursor: default; opacity: 0.6; }
+a.app-store { transition: border-color 0.2s; }
+a.app-store:hover,
+a.app-store:focus-visible { border-color: var(--green-mid); }
 .app-store .k {
   display: block;
   font-size: 10px;

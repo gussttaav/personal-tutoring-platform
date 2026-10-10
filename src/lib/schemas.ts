@@ -18,6 +18,7 @@
 import { z } from "zod";
 import { SUPPORTED_TIMEZONES } from "@/lib/timezones";
 import { CONTENT_KEY_MAX, CONTENT_KEY_RE, CONTENT_TYPES, parseContentKey } from "@/lib/content/content-key";
+import { BLOG_AREAS, BLOG_TOPICS } from "@/constants/blog";
 
 // ─── Booking ──────────────────────────────────────────────────────────────────
 
@@ -186,11 +187,47 @@ export type UpdateScheduleInput = z.infer<typeof UpdateScheduleSchema>;
 
 // ─── Subscriptions ────────────────────────────────────────────────────────────
 
-export const SubscribeSchema = z.object({
-  type: z.enum(["courses", "blog"]),
-});
+// BLOG-15: the blog areas a reader follows — one or more of the closed list, no repeats.
+// Picking every area is allowed and stored as "every area" (`normalizeBlogAreas`).
+const BlogAreaSelectionSchema = z
+  .array(z.enum(BLOG_AREAS))
+  .min(1)
+  .max(BLOG_AREAS.length)
+  .superRefine(noDuplicates("area"));
+
+// BLOG-15: `areas` is optional (omitted = every area) and only means something for the blog;
+// on a courses opt-in it is a client bug, so it 400s rather than being silently dropped.
+export const SubscribeSchema = z
+  .object({
+    type:  z.enum(["courses", "blog"]),
+    areas: BlogAreaSelectionSchema.optional(),
+  })
+  .refine((val) => val.areas === undefined || val.type === "blog", {
+    message: "areas is only valid for the blog subscription",
+    path:    ["areas"],
+  });
 
 export type SubscribeInput = z.infer<typeof SubscribeSchema>;
+
+// BLOG-15: PATCH /api/subscribe — change which areas an existing blog subscription follows.
+export const BlogAreasSchema = z.object({
+  type:  z.literal("blog"),
+  areas: BlogAreaSelectionSchema,
+});
+
+export type BlogAreasInput = z.infer<typeof BlogAreasSchema>;
+
+/** BLOG-15: shared by both announce schemas. A count-only request is a read; letting it
+ *  carry `confirm` would make "which one wins?" a question the route has to answer. */
+function countOnlyExcludesConfirm(val: { countOnly?: boolean; confirm?: boolean }, ctx: z.RefinementCtx) {
+  if (val.countOnly === true && val.confirm === true) {
+    ctx.addIssue({
+      code:    z.ZodIssueCode.custom,
+      message: "countOnly and confirm cannot be combined",
+      path:    ["countOnly"],
+    });
+  }
+}
 
 /** One line, not a body. Long enough for a real sentence, short enough to stay one. */
 const MAX_WHATS_NEW_CHARS = 300;
@@ -214,21 +251,42 @@ export const CourseAnnounceSchema = z
      *  are once-ever, but `update:<slug>:<yyyy-mm-dd>` must differ per update or the audit-log
      *  de-dupe suppresses every recipient who got the previous one. */
     announcementKey: z.string().min(1).optional(),
+    /** BLOG-15: report the recipient counts only — no rendered samples, never a send. The
+     *  admin form asks for it live, before the preview, so the count is the first thing the
+     *  operator sees. */
+    countOnly:       z.boolean().optional(),
     confirm:         z.boolean().optional(),
     offset:          z.number().int().nonnegative().optional(),
     limit:           z.number().int().positive().max(200).optional(),
   })
   .superRefine((val, ctx) => {
-    if (val.kind === "update" && !val.whatsNew?.trim()) {
+    // The count does not depend on the line, so a count-only `update` may come without it.
+    if (val.kind === "update" && !val.countOnly && !val.whatsNew?.trim()) {
       ctx.addIssue({
         code:    z.ZodIssueCode.custom,
         message: "whatsNew is required when kind is 'update'",
         path:    ["whatsNew"],
       });
     }
+    countOnlyExcludesConfirm(val, ctx);
   });
 
 export type CourseAnnounceInput = z.infer<typeof CourseAnnounceSchema>;
+
+// BLOG-15: admin blog announcement. Same three modes as the course one — count only, dry run
+// (the default: no `confirm` cannot send) and the confirmed send — and the same chunking. No
+// `announcementKey`: a post is announced once, ever, under `post:<slug>`.
+export const BlogAnnounceSchema = z
+  .object({
+    slug:      z.string().min(1),
+    countOnly: z.boolean().optional(),
+    confirm:   z.boolean().optional(),
+    offset:    z.number().int().nonnegative().optional(),
+    limit:     z.number().int().positive().max(200).optional(),
+  })
+  .superRefine(countOnlyExcludesConfirm);
+
+export type BlogAnnounceInput = z.infer<typeof BlogAnnounceSchema>;
 
 // ─── Post-class reviews ───────────────────────────────────────────────────────
 
@@ -631,6 +689,23 @@ const IsoDate = z
     { message: "is not a real calendar date" },
   );
 
+/** BLOG-13: a list refinement reporting each repeated value (tags, areas). */
+function noDuplicates(what: string) {
+  return (values: readonly string[], ctx: z.RefinementCtx) => {
+    const seen = new Set<string>();
+    for (const [i, value] of values.entries()) {
+      if (seen.has(value)) {
+        ctx.addIssue({
+          code:    z.ZodIssueCode.custom,
+          message: `duplicate ${what} "${value}"`,
+          path:    [i],
+        });
+      }
+      seen.add(value);
+    }
+  };
+}
+
 export const PostFrontmatterSchema = z.strictObject({
   slug:    z.string().min(1),
   title:   z.string().min(1),
@@ -660,25 +735,30 @@ export const PostFrontmatterSchema = z.strictObject({
       seen.add(item.url);
     }
   }),
+  // BLOG-13: one or two areas, the first being the one the post's card shows. Required;
+  // the refinement below lets only a DRAFT leave it empty, so a published post always
+  // appears under some area filter.
+  areas:   z.array(z.enum(BLOG_AREAS)).max(2).superRefine(noDuplicates("area")),
   // Required like the lesson schema's `quiz`/`reading`: a post with nothing to tag
   // writes `tags: []` and says so, rather than defaulting to "none" by omission.
-  tags:    z.array(z.string().min(1)).superRefine((tags, ctx) => {
-    const seen = new Set<string>();
-    for (const [i, tag] of tags.entries()) {
-      if (seen.has(tag)) {
-        ctx.addIssue({
-          code:    z.ZodIssueCode.custom,
-          message: `duplicate tag "${tag}"`,
-          path:    [i],
-        });
-      }
-      seen.add(tag);
-    }
-  }),
+  // BLOG-13: a closed list (`BLOG_TOPICS`), because every tag is a filter chip that
+  // needs a label in both message files — a free-form tag would render as its id.
+  tags:    z.array(z.enum(BLOG_TOPICS)).superRefine(noDuplicates("tag")),
+  // BLOG-13: one of the post's own figures, `/blog/<slug>/<file>`, as its index card's
+  // cover. The registry checks the slug part; `validateAllBlogContent` that the file exists.
+  cover:   z.string().regex(/^\/blog\/[a-z0-9-]+\/[\w.-]+\.(svg|png|webp|jpe?g)$/, "must be /blog/<slug>/<file>.(svg|png|webp|jpg)").optional(),
   // BLOG-AI-NOTE-01: whether the post's images were generated with AI. Drives the
   // images clause of the AI-use note at the foot of the article (the text clause is
   // always shown). Required, like `tags`: every post states it rather than defaulting.
   aiImages: z.boolean(),
+}).superRefine((post, ctx) => {
+  if (!post.draft && post.areas.length === 0) {
+    ctx.addIssue({
+      code:    z.ZodIssueCode.custom,
+      message: "a published post needs at least one area",
+      path:    ["areas"],
+    });
+  }
 });
 
 export type PostFrontmatterInput = z.infer<typeof PostFrontmatterSchema>;

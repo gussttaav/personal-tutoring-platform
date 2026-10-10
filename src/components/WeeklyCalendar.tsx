@@ -22,6 +22,10 @@
  * fetch (useWeekAvailability) live in src/components/week-grid; block-selection
  * logic (findContiguousBlock, blockToSelectedSlot) stays here. ApiSlot and
  * SelectedSlot are re-exported below for back-compat with existing import sites.
+ *
+ * BOOKING-EXIT-01: `durationMinutes` can now change while the calendar is mounted (the wizard's
+ * session-type switch). The week stays where the visitor put it and the availability refetches
+ * for the new atom size; a focused block, sized for the old length, is dropped.
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
@@ -234,6 +238,14 @@ export default function WeeklyCalendar({
   if (selectedSlot?.startIso !== prevSelectedSlotStart) {
     setPrevSelectedSlotStart(selectedSlot?.startIso);
     if (selectedSlot) setFocusedBlock(null);
+  }
+
+  // BOOKING-EXIT-01: a block focused for the old session length is not a block of the new one.
+  // The parent clears its own copy (SingleSessionBooking resets its focused slot on the switch).
+  const [prevDurationMinutes, setPrevDurationMinutes] = useState(durationMinutes);
+  if (durationMinutes !== prevDurationMinutes) {
+    setPrevDurationMinutes(durationMinutes);
+    setFocusedBlock(null);
   }
 
   // Auto-focus initialFocusedSlotStart once its day's slots load.

@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 740 310" width="740" height="310" role="img"
+ aria-label="Cuatro columnas, una por juez, de izquierda a derecha, sobre una flecha que va de juzgar sólo respuestas que se pueden prever a juzgar cualquier respuesta. Una referencia recibe la respuesta y otra escrita de antemano, cuenta palabras en común y devuelve un número de 0 a 1; con las cuatro respuestas, B 0,81, D 0,52, A 0,36, C 0,30: la falsa, primera. Un programa recibe la respuesta, extrae el sí o el no y la fecha y los compara, y devuelve pasa o no pasa; aprueba las respuestas A, C y D y suspende la B: acierta en lo que comprueba, y sólo en eso. Una persona recibe dos respuestas, o una y una escala, lee y elige, y devuelve una preferencia; acierta si conoce el plan Equipo, y si no, B suena tan segura como A. Otro modelo recibe la pregunta, la respuesta e instrucciones, lee, razona y puntúa, y devuelve un veredicto y su motivo; acierta si le das las condiciones del plan, y tiende a preferir D, la más larga.">
+<style>
+  text { font-family: ui-sans-serif, system-ui, sans-serif; fill: #bbcabf; }
+  .bx { fill: none; stroke: #3b3b3e; stroke-width: 1; }
+  .bx.m { stroke: #4edea3; fill: rgba(78,222,163,0.08); }
+  .bx.w { stroke: #e8a24c; fill: rgba(232,162,76,0.08); }
+  .bx.x { stroke: #ffb4ab; fill: rgba(255,180,171,0.08); }
+  .lb { font-size: 12px; font-weight: 600; }
+  .tx { font-size: 11px; }
+  .tx.d { fill: #86948a; }
+  .tk { font-size: 10.5px; fill: #86948a; }
+  .hd { font-size: 10px; fill: #86948a; letter-spacing: 0.1em; }
+  .big { font-size: 13px; font-weight: 600; }
+  .m { fill: #4edea3; }
+  .w { fill: #e8a24c; }
+  .x { fill: #ffb4ab; }
+  .gr { stroke: #2a2a2c; stroke-width: 1; }
+  .ax { stroke: #86948a; stroke-width: 1; }
+  .ar { fill: none; stroke: #86948a; stroke-width: 1.2; marker-end: url(#a); }
+  .cv { fill: none; stroke-width: 2; stroke-linejoin: round; }
+</style>
+<defs><marker id="a" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 z" fill="#86948a"/></marker></defs>
+<path class="ar" d="M330.0,10 L4.0,10"/>
+<path class="ar" d="M410.0,10 L736.0,10"/>
+<text class="tk" x="8.0" y="26.0">sólo respuestas que se pueden prever</text>
+<text class="tk" x="732.0" y="26.0" style="text-anchor:end">cualquier respuesta</text>
+<text class="lb" x="88.0" y="48.0" style="text-anchor:middle">Una referencia</text>
+<rect class="bx " x="0.0" y="60.0" width="176.0" height="50.0" rx="6"/>
+<text class="hd" x="10.0" y="75.0">RECIBE</text>
+<text class="tx" x="10.0" y="90.0">la respuesta y otra escrita</text>
+<text class="tx" x="10.0" y="104.0">de antemano</text>
+<path class="ar" d="M88.0,111.0 L88.0,123.0"/>
+<rect class="bx " x="0.0" y="124.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="10.0" y="139.0">HACE</text>
+<text class="tx" x="10.0" y="154.0">cuenta palabras en común</text>
+<path class="ar" d="M88.0,161.0 L88.0,173.0"/>
+<rect class="bx " x="0.0" y="174.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="10.0" y="189.0">DEVUELVE</text>
+<text class="tx" x="10.0" y="204.0">un número de 0 a 1</text>
+<rect class="bx x" x="0.0" y="224.0" width="176.0" height="56.0" rx="6"/>
+<text class="hd" x="10.0" y="239.0">CON A, B, C Y D</text>
+<text class="tx" x="10.0" y="254.0" style="fill:#ffb4ab">B 0,81  D 0,52  A 0,36  C 0,30</text>
+<text class="tx" x="10.0" y="270.0" style="fill:#ffb4ab">la falsa, primera</text>
+<text class="lb" x="276.0" y="48.0" style="text-anchor:middle">Un programa</text>
+<rect class="bx " x="188.0" y="60.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="198.0" y="75.0">RECIBE</text>
+<text class="tx" x="198.0" y="90.0">la respuesta</text>
+<path class="ar" d="M276.0,97.0 L276.0,109.0"/>
+<rect class="bx " x="188.0" y="110.0" width="176.0" height="50.0" rx="6"/>
+<text class="hd" x="198.0" y="125.0">HACE</text>
+<text class="tx" x="198.0" y="140.0">extrae el sí o el no y la</text>
+<text class="tx" x="198.0" y="154.0">fecha, y los compara</text>
+<path class="ar" d="M276.0,161.0 L276.0,173.0"/>
+<rect class="bx " x="188.0" y="174.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="198.0" y="189.0">DEVUELVE</text>
+<text class="tx" x="198.0" y="204.0">pasa o no pasa</text>
+<rect class="bx m" x="188.0" y="224.0" width="176.0" height="70.0" rx="6"/>
+<text class="hd" x="198.0" y="239.0">CON A, B, C Y D</text>
+<text class="tx" x="198.0" y="254.0" style="fill:#4edea3">A ✓  B ✗  C ✓  D ✓</text>
+<text class="tx" x="198.0" y="270.0" style="fill:#4edea3">acierta en lo que</text>
+<text class="tx" x="198.0" y="284.0" style="fill:#4edea3">comprueba, y sólo en eso</text>
+<text class="lb" x="464.0" y="48.0" style="text-anchor:middle">Una persona</text>
+<rect class="bx " x="376.0" y="60.0" width="176.0" height="50.0" rx="6"/>
+<text class="hd" x="386.0" y="75.0">RECIBE</text>
+<text class="tx" x="386.0" y="90.0">dos respuestas, o una y una</text>
+<text class="tx" x="386.0" y="104.0">escala</text>
+<path class="ar" d="M464.0,111.0 L464.0,123.0"/>
+<rect class="bx " x="376.0" y="124.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="386.0" y="139.0">HACE</text>
+<text class="tx" x="386.0" y="154.0">lee y elige</text>
+<path class="ar" d="M464.0,161.0 L464.0,173.0"/>
+<rect class="bx " x="376.0" y="174.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="386.0" y="189.0">DEVUELVE</text>
+<text class="tx" x="386.0" y="204.0">una preferencia</text>
+<rect class="bx w" x="376.0" y="224.0" width="176.0" height="68.0" rx="6"/>
+<text class="hd" x="386.0" y="239.0">CON A, B, C Y D</text>
+<text class="tx" x="386.0" y="254.0" style="fill:#e8a24c">acierta si conoce el plan</text>
+<text class="tx" x="386.0" y="268.0" style="fill:#e8a24c">Equipo; si no, B suena tan</text>
+<text class="tx" x="386.0" y="282.0" style="fill:#e8a24c">segura como A</text>
+<text class="lb" x="652.0" y="48.0" style="text-anchor:middle">Otro modelo</text>
+<rect class="bx " x="564.0" y="60.0" width="176.0" height="50.0" rx="6"/>
+<text class="hd" x="574.0" y="75.0">RECIBE</text>
+<text class="tx" x="574.0" y="90.0">pregunta, respuesta e</text>
+<text class="tx" x="574.0" y="104.0">instrucciones</text>
+<path class="ar" d="M652.0,111.0 L652.0,123.0"/>
+<rect class="bx " x="564.0" y="124.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="574.0" y="139.0">HACE</text>
+<text class="tx" x="574.0" y="154.0">lee, razona y puntúa</text>
+<path class="ar" d="M652.0,161.0 L652.0,173.0"/>
+<rect class="bx " x="564.0" y="174.0" width="176.0" height="36.0" rx="6"/>
+<text class="hd" x="574.0" y="189.0">DEVUELVE</text>
+<text class="tx" x="574.0" y="204.0">un veredicto y su motivo</text>
+<rect class="bx w" x="564.0" y="224.0" width="176.0" height="82.0" rx="6"/>
+<text class="hd" x="574.0" y="239.0">CON A, B, C Y D</text>
+<text class="tx" x="574.0" y="254.0" style="fill:#e8a24c">acierta si le das las</text>
+<text class="tx" x="574.0" y="268.0" style="fill:#e8a24c">condiciones del plan;</text>
+<text class="tx" x="574.0" y="282.0" style="fill:#e8a24c">tiende a preferir D, la más</text>
+<text class="tx" x="574.0" y="296.0" style="fill:#e8a24c">larga</text>
+</svg>

@@ -37,7 +37,7 @@ only when every lesson box in the block doc is ticked; per-lesson progress lives
 | Task | Tag | Status | Owner | PR |
 |------|-----|--------|-------|----|
 | [01 Block 1 — Del Transformer al modelo de lenguaje (9)](phase-1-content/01-block-1-modelo-de-lenguaje.md) | `COURSE-C2-P1-01` | ✅ (9/9) | _tbd_ | local |
-| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (3/8) | _tbd_ | |
+| [02 Block 2 — De predecir texto a seguir instrucciones (8)](phase-1-content/02-block-2-instrucciones.md) | `COURSE-C2-P1-02` | 🔄 (6/8) | _tbd_ | |
 | [03 Block 3 — Hablar con el modelo es programar (7)](phase-1-content/03-block-3-prompting.md) | `COURSE-C2-P1-03` | ⬜ | _tbd_ | |
 | [04 Block 4 — El puente: de texto a acciones (7)](phase-1-content/04-block-4-acciones.md) | `COURSE-C2-P1-04` | ⬜ | _tbd_ | |
 | [05 Block 5 — Un agente de programación en la terminal (9)](phase-1-content/05-block-5-agente-terminal.md) | `COURSE-C2-P1-05` | ⬜ | _tbd_ | |
@@ -870,3 +870,157 @@ the cells. Decisions, confirmed by Gustavo at review:
   identical output; the challenge in Chromium (starter 0/4, solution 4/4); all four quiz questions
   right and wrong (Playwright); no horizontal scroll at 360 px (equations 424–481 px in their own
   boxes, after splitting the $\mathcal{L}_{\text{SFT}}$ display over two rows). Not on a phone.
+
+Lesson 13 `modelo-de-recompensa` authored on `staging` (2026-10-06), with its widget
+`bradley-terry` built in the same task. 2 065 words (advisory over the 2 000 target), 5 display
+equations, 1 widget, 2 cells (max 45 lines), 5 quiz, 1 challenge (`ch-recompensas`), 5 readings
+(Bradley & Terry 1952, Christiano et al. 2017, Stiennon et al. 2020, Ouyang et al. 2022 §3.5,
+Chiang et al. 2024; links and author lists checked). `minutes: 35` (lint ≈36). Runs on the
+mini-GPT, frozen, with a linear layer on top that is trained, and says so before the cells.
+Decisions, confirmed by Gustavo at review:
+- **The claims, derived:** a nota is read in its rater's scale; a comparison keeps the order and
+  drops the scale, and counting recovers the size (Elo and Chatbot Arena as the precedents).
+  Bradley–Terry is the softmax of two rewards, so $P(y_A \succ y_B \mid x) = \sigma(\text{margen})$
+  and the margin is the log of the odds ($\ln 3$ for three in four, $\ln 9$ for nine in ten, Elo's
+  400 points for $\ln 10$); one number per response chains margins and cannot fit a cycle. The
+  reward is defined up to $\kappa(x)$, a constant per instrucción (planted for lesson 15: InstructGPT
+  fixes it by hand with a bias for the same reason); the scale is fixed, and its unit is how often
+  annotators agree. $\mathcal{L}_{\text{R}}$ is the first course's binary cross-entropy with the
+  margin for $z$ and the label 1; its optimum puts each margin at the log odds of the observed
+  proportion, and its gradient weight $\sigma(r_\phi(x, y_l) - r_\phi(x, y_w))$ is the probability
+  still given to the wrong order. On the mini-GPT, $r_\phi = \mathbf{u}^{\top}\bar{\mathbf{h}} + b$
+  over the mean final vector of $y$'s positions, and $b$'s gradient is $1 - 1 = 0$.
+- **The body is the pretrained mini-GPT, not lesson 12's fine-tuned one,** which forgot the novel;
+  the lesson says so in the author's voice. The open question for lessons 14–15 (freeze an SFT
+  checkpoint asset or re-run the ~3 s cell) is still open.
+- **The cells, measured (Node Pyodide = Chromium):** a scripted annotator prefers the right colour
+  on 36 questions, six things per colour, six SFT-shaped responses each (216 conversations in one
+  batched `adelante`, cell 1 ≈2.0 s warm in Chromium, ≈7.8 s cold with the interpreter download).
+  24 questions give 3 training comparisons and 2 «rivales nuevos» each; 12 questions, two per
+  colour, are of things the novel never names (checked by grep, plurals included: «la ola» was
+  replaced by «el arándano» because «olas» appears 6 times). 300 gradient-descent steps at η 2:
+  loss 0.693 → 0.161, $b$'s gradient 0.0 at every printed step; 71/72 on training, 41/48 (0.85)
+  on new rivals, 31/60 (0.52) on new questions; «el plátano es amarillo» gets the lowest of its six
+  rewards, and the worst snow answer (18.1) outranks the best banana answer (14.2). Robust across 5
+  rival rotations × 5 rate/step settings (0.93–1.00 / 0.75–0.90 / 0.47–0.58). With random held-out
+  nouns, novel-named ones included, new-question accuracy averages 0.57 over 200 splits: the prose
+  claims only what the never-named split shows. Lesson 15 can reuse these right-vs-wrong pairs.
+- **Challenge `ch-recompensas`:** Bradley–Terry rewards from a vote table, one free reward per
+  response, mean zero. Graded in Node Pyodide and in Chromium: solution 6/6, starter and empty
+  0/6; five wrong variants (no centring, naive log win/loss ratio, unnormalised step, too few
+  steps, transposed table) each fail a test with its own message. The last test checks against
+  Zermelo's iteration, an independent route to the same maximum.
+- **The widget `bradley-terry`:** sliders for $r_A$, $r_B$ and a constant $c$ added to both; the
+  reward line, $\sigma$ of the margin and the loss of «A was chosen», with the slope as a readout.
+  Moving $c$ moves only the line. Maths in `math/bradley-terry.ts` (12 tests: limits, softmax,
+  invariance, overflow at ±1000, the slope against a finite difference, ln 3, 9/10, the quiz's
+  σ(−4) against σ(1)). Draws in real pixels (the `scaling-laws` pattern): 320 px wide at a 360 px
+  viewport, 10.5 px labels.
+- **Terms and letters added at review:** `comparación` (`preferida` / `rechazada`), `anotador`,
+  `recompensa` / `modelo de recompensa`, `margen`, `capa lineal` in the delta's §4; $y_A$, $y_B$,
+  $r(x, y)$, $\kappa(x)$, $\text{margen}$, $p_{\text{pref}}$, $\mathcal{L}_{\text{R}}$,
+  $\mathbf{h}(x, y_{\le j})$ / $\bar{\mathbf{h}}$, $\mathbf{u}$, $b$ in `NOTATION.md`, with a note on
+  the four literature letters the block dodges ($y_1$, $f(x)$, $c$, $m$).
+- **Lesson 12's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 14 (`rlhf`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (words and reading-time warnings only), `pnpm build` green with 0
+  KaTeX errors in both locales, `check:messages`, ESLint on the new files, the course Jest suites
+  (1 031 tests); the cells in Node Pyodide and in Chromium on `pnpm start` with identical output;
+  all five quiz questions right and wrong, the numeric at 0.902 accepted and 0.903 refused
+  (Playwright); no horizontal page scroll at 360 px (equations 472–603 px in their own boxes; the
+  Bradley–Terry and gradient displays split over two rows so all five fit the 632 px desktop
+  column). Not on a phone.
+
+Lesson 14 `rlhf` authored on `staging` (2026-10-08). 2 113 words (advisory over the 2 000
+target, like lessons 12–13), 8 display equations, no widget (the block md assigns none), **3 cells**
+(max 45 lines; the block md said 1), 5 quiz, no challenge, 5 readings (Williams 1992, Ziegler et al.
+2019, Schulman et al. 2017 / PPO, Gao et al. 2022, Krakovna et al. 2020; arXiv pages and the
+DeepMind post checked, the Springer page behind the Williams DOI redirects to a login, so only the
+DOI was checked). `minutes: 32` (lint ≈32). Runs on the mini-GPT, frozen, with a 512-number shift on
+its logits that is trained, and says so before the cells. Decisions, confirmed by Gustavo at review:
+- **The claims, derived:** the objective $J(\theta)$ is the mean reward minus $\beta$ times the KL
+  to $\pi_{\text{ref}}$; the KL is $\ge 0$ by lesson 6's inequality, asymmetric (it charges what the
+  policy writes and the reference does not, never what the policy drops), a sum of per-token log
+  ratios by the chain rule, and $-\log \pi_{\text{ref}}(y \mid x)$ for a policy that always writes
+  $y$. REINFORCE from $\nabla \pi = \pi \nabla \log \pi$; $\nabla \log \pi_\theta(y \mid x)$ is minus
+  the SFT gradient of the pair, so a step is SFT on the policy's own samples weighted by reward. The
+  baseline from $\mathbb{E}[\nabla \log \pi_\theta] = 0$ is lesson 13's $\kappa(x)$ in a new role; the
+  batch mean is valid because $R_i - \bar R = \frac{B-1}{B}(R_i - \bar R_{-i})$. The KL's gradient
+  needs the same zero, so the KL enters as a per-response discount on the reward (Ziegler's eq. 2).
+  PPO's clipping is a signpost in prose and in `reading`.
+- **The policy is not the whole network** (deviation from «one step is … a backward pass»). Measured
+  in Node Pyodide: the full mini-GPT costs 0.21 s per step (0.12 s of it the backward), so two
+  30-step runs are ≈13 s, over the cap; and with the KL on, Adam at 3e-3 or 1e-3 drifted the 136 000
+  weights by noise with batch 8 (KL 23–51 nats at step 15, no reward gain, 3 seeds × β 1, 2), which
+  would teach that the KL does not work. Plain SGD collapsed into deterministic loops (` mi mi mi`,
+  reward 0). The policy is therefore $\pi_{\text{ref}}$ times $e^{\theta_v}$ per entry, trained by
+  plain gradient ascent at η 1 (lesson 13's optimizer). The lesson says so in the author's voice.
+- **$\pi_{\text{ref}}$ is the pretrained mini-GPT**, not the SFT model, for lesson 13's reason; the
+  prompt is «La Nela», 16 tokens, no template. Lesson 15 still has to decide its own reference.
+- **The cells, measured (Node Pyodide = Chromium = CPython):** a batched `avanzar` (per-row calls
+  were 5.7 s per run); the reward counts the letter «a». Reference: 3.47 on 32 samples, KL 0.
+  β = 0: 4.12 / 1.31 at step 5, 9.12 / 18.91 at 10, 16 / 73.32 from 15 on; the 32 evaluation samples
+  are all ` a a a … a` (16 tokens), KL 73.34, and $-\log \pi_{\text{ref}}$ of that response is 73.36
+  (the policy writes it with probability 0.98). β = 0.5: 7.44 / 5.48, still novel-like text. Robust
+  over 8 seeds in the CPython prototype, last batch of each run (β = 0 always collapses to ` a a a…`
+  or ` la la la…`, KL 71–92; β = 0.5 reward 6.1–10.8, KL 2.4–9.2), but the prose quotes only seed 0. Chromium: 6.4 s cold for cell 1 with the
+  interpreter download, then 2.5 s and 2.2 s.
+- **The hook is the grasping arm that hid the object from the camera** (via Krakovna et al. 2020),
+  not InstructGPT's 1.3B-over-175B result, which lesson 10 already quoted.
+- **Terms and letters added at review:** `aprendizaje por refuerzo`, `referencia`, `divergencia de
+  Kullback–Leibler`, `truco de la derivada logarítmica` (REINFORCE as a name), `línea base`,
+  `descontar`, *reward hacking*, and «juez» refused for the reward model in the delta's §4, PPO in its
+  acronyms; $J(\theta)$, the per-token factors $\pi_\theta(y_j \mid x, y_{<j})$, $y^{(i)}$, $\theta_v$
+  and $\kappa(x)$'s baseline reading in `NOTATION.md`, with a note on why the advantage and the
+  discounted reward get no letter.
+- **Lesson 13's bridge now links this lesson** (placeholder comment removed). This lesson's bridge
+  names lesson 15 (`dpo`) in prose with the usual comment.
+- Verified: `pnpm lint:content` (words and reading-time warnings only), `pnpm build` green with 0
+  KaTeX errors; the cells in Node Pyodide and in Chromium on `pnpm start` with identical output; all
+  five quiz questions right and wrong (Playwright; the numerics refuse 13.83 and 0.174); no
+  horizontal page scroll at 360 px, and all eight displays fit the 632 px desktop column after three
+  were split over more rows. The final wording edits (voice, «juez») came after the last build and
+  were checked by `lint:content` only. Not on a phone.
+
+Lesson 15 `dpo` authored on `claude/course-lesson-block-2-d65a7a` (2026-10-09). 2 385 words
+(advisory over the 2 000 target, like lessons 12–14), 10 display equations, **1 widget** (`dpo-loss`,
+built here), 2 cells (max 45 lines), 5 quiz, 1 challenge, 5 readings (Rafailov et al. 2023, Korbak et
+al. 2022, Azar et al. 2023 / IPO, the Llama 3 report §4.1.4, Xu et al. 2024; arXiv pages checked).
+`minutes: 38` (lint ≈39, under the 40 ceiling). Runs on the mini-GPT with lesson 14's policy and says so
+before the cells. Decisions:
+- **The derivation, complete on the page:** $J(\theta)$ rewritten as
+  $-\beta\,\mathbb{D}_{\text{KL}}(\pi_\theta \,\|\, \pi^{\star}) + \beta \log Z(x)$ (the Gibbs argument,
+  in the body), so $\pi^{\star} = \pi_{\text{ref}}\, e^{r/\beta}/Z(x)$ for a model that can be any
+  distribution; the `<Details>` finds the formula by moving $\varepsilon$ of probability between two
+  responses (no Lagrange multiplier). Inverted, $r = \beta \log(\pi^{\star}/\pi_{\text{ref}}) + \beta \log
+  Z(x)$; in Bradley–Terry $Z(x)$ cancels and the lesson states it as the payoff of lesson 13's
+  $\kappa(x)$. $\mathcal{L}_{\text{DPO}}$ is $\mathcal{L}_{\text{R}}$ with $r_\theta$ for $r_\phi$; its
+  gradient is SFT up on $y_w$ and down on $y_l$, weighted by the factor
+  $\sigma(r_\theta(x, y_l) - r_\theta(x, y_w))$; $\beta$ is the brake inside the margin.
+- **The cell is DPO on lesson 14's policy** (the frozen mini-GPT plus 512 logit shifts), not the whole
+  network: 64 continuations of «La Nela» drawn once from the reference, a scripted Bradley–Terry
+  annotator on lesson 14's reward (the letters «a», $P = \sigma$ of the difference) comparing every pair
+  (2 016 comparisons, InstructGPT's ranking precedent). With only 64 independent pairs DPO memorised
+  them and boosted irrelevant tokens; all pairs averages the annotator's noise at no network cost. The
+  reference's per-token distributions are stored, so training never samples. Plain gradient descent at
+  $\eta = 2.5/\beta^{2}$, 100 steps; Adam was rejected because it moved tokens absent from the data
+  (β = 0.05: KL 45.9 with no reward gain).
+- **The cells, measured (Node Pyodide = Chromium):** loss $\ln 2 \to 0.433$ (the annotator's noise
+  floor), the same trace for both β; factor 0.03 on comparisons won by ≥ 3 letters, 0.74 where the
+  annotator chose fewer; implicit reward ≈ +1 per letter at both β (−3.4 … 1.9 at β = 0.5, −6.1 … −0.7
+  at β = 0.1); 32 fresh samples: β = 0.5 → 5.75 letters at 3.01 nats, β = 0.1 → 12.12 at 32.94 («a la
+  De a la a la…»). The 16 four-letter responses won 70 % of their comparisons and still have implicit
+  reward −0.4 (quiz). Chromium: 1.4 s and 0.9 s.
+- **Widget `dpo-loss`:** the $(\ell_w, \ell_l)$ plane coloured by the factor through one SVG
+  linearGradient along the anti-diagonal, isolines at factors 0.9 / 0.5 / 0.1, the push arrow, and a
+  note when the 0.1 line leaves the plane (β ≲ 0.18). Maths in `math/dpo.ts`, 12 tests.
+- **Letters and terms:** $\pi^{\star}$, $Z(x)$, $r_\theta$ (the paper's $\hat r_\theta$ without the hat;
+  the block md's $\hat r_w$, $\hat r_l$ are left as written), $\mathcal{L}_{\text{DPO}}$; no bare $\pi$
+  (Block 1 lesson 3's number). `factor`, `apagarse`, `función de partición`, `recompensa implícita` in
+  the delta's §4.
+- **Lesson 14's bridge now links this lesson.** This lesson's bridge names lesson 16 in prose with the
+  usual comment.
+- Verified: `pnpm lint:content` (words and reading-time warnings only), `pnpm build` green, 0 KaTeX
+  errors; the cells in Node Pyodide and Chromium on `pnpm start` with identical output; the challenge's
+  starter fails in the browser and the solution passes 6/6 in Node Pyodide; the numeric quiz right and
+  wrong in the browser; no horizontal page scroll at 360 px (emulated). Not on a phone.

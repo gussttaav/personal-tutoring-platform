@@ -22,6 +22,12 @@
     <marker id="av" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto">
       <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
     </marker>
+    <!-- Los hilos codifican el peso en el grosor, así que su punta no puede escalar con él
+         (markerUnits por defecto = strokeWidth): con el grosor de α_i2 salía casi el triple.
+         En unidades de usuario las tres puntas miden lo mismo y sólo el trazo varía. -->
+    <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#4edea3" />
+    </marker>
     <marker id="ag" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto">
       <path d="M0 0 L8 4 L0 8 z" fill="rgba(134,148,138,0.7)" />
     </marker>
@@ -46,9 +52,9 @@
   <line class="flujo" x1="106" y1="41" x2="116" y2="41" marker-end="url(#ag)" />
 
   <!-- Los tres hilos que se juntan: la mezcla. El grosor es el peso. -->
-  <line class="hilo1" x1="34"  y1="57" x2="76" y2="109" marker-end="url(#av)" />
-  <line class="hilo2" x1="86"  y1="57" x2="86" y2="109" marker-end="url(#av)" />
-  <line class="hilo3" x1="138" y1="57" x2="98" y2="109" marker-end="url(#av)" />
+  <line class="hilo1" x1="34"  y1="57" x2="76" y2="109" marker-end="url(#ah)" />
+  <line class="hilo2" x1="86"  y1="57" x2="86" y2="109" marker-end="url(#ah)" />
+  <line class="hilo3" x1="138" y1="57" x2="98" y2="109" marker-end="url(#ah)" />
   <text class="peso" x="30"  y="82" text-anchor="end">&#945;<tspan class="sub" dy="3">i1</tspan></text>
   <text class="peso" x="96"  y="82">&#945;<tspan class="sub" dy="3">i2</tspan></text>
   <text class="peso" x="142" y="82">&#945;<tspan class="sub" dy="3">iTx</tspan></text>
@@ -66,7 +72,9 @@
   <line class="flujo" x1="241" y1="84"  x2="241" y2="106" marker-end="url(#ag)" />
   <text class="io" x="241" y="78">s<tspan class="sub" dy="3">i&#8722;1</tspan></text>
   <line class="flujo" x1="241" y1="170" x2="241" y2="147" marker-end="url(#ag)" />
-  <text class="io" x="241" y="182">y&#770;<tspan class="sub" dy="3">i&#8722;1</tspan></text>
+  <!-- Entra el token anterior, y_{i-1} (sin circunflejo): es lo que lleva la ecuación, su
+       one-hot o_{y_{i-1}}, y no la distribución ŷ_{i-1} de la que salió. -->
+  <text class="io" x="241" y="182">y<tspan class="sub" dy="3">i&#8722;1</tspan></text>
   <line class="flujo" x1="270" y1="126" x2="292" y2="126" marker-end="url(#ag)" />
   <text class="io" x="312" y="130">y&#770;<tspan class="sub" dy="3">i</tspan></text>
 </svg>

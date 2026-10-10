@@ -1,6 +1,8 @@
 // ARCH-13: Thin wrapper around lib/email.ts so BookingService can depend on an
 // interface rather than a concrete module — enables testing with mocks.
 // REFACTOR-R4-P3-03: sendPaymentAuditReport.
+// BLOG-15: renderBlogPostAnnouncement / sendBlogPostAnnouncement.
+// COURSE-ANNOUNCE-01: renderCourseAnnouncement / sendCourseAnnouncement.
 import type { PaymentAuditReport } from "@/domain/types";
 import * as emailLib from "./email-functions";
 import type {
@@ -10,6 +12,8 @@ import type {
   CancellationConfirmationParams,
   CancellationNotificationParams,
   ContentReportNotificationParams,
+  BlogPostAnnouncementParams,
+  CourseAnnouncementParams,
 } from "./IEmailClient";
 
 export class EmailClient implements IEmailClient {
@@ -37,5 +41,27 @@ export class EmailClient implements IEmailClient {
   // REFACTOR-R4-P3-03
   sendPaymentAuditReport(report: PaymentAuditReport): Promise<void> {
     return emailLib.sendPaymentAuditReportEmail(report);
+  }
+
+  // BLOG-15
+  renderBlogPostAnnouncement(
+    params: Omit<BlogPostAnnouncementParams, "to">,
+  ): Promise<{ subject: string; html: string }> {
+    return emailLib.renderBlogPostEmail(params);
+  }
+
+  sendBlogPostAnnouncement(params: BlogPostAnnouncementParams): Promise<void> {
+    return emailLib.sendBlogPostEmail(params);
+  }
+
+  // COURSE-ANNOUNCE-01
+  renderCourseAnnouncement(
+    params: Omit<CourseAnnouncementParams, "to">,
+  ): Promise<{ subject: string; html: string }> {
+    return emailLib.renderCourseNewsEmail(params);
+  }
+
+  sendCourseAnnouncement(params: CourseAnnouncementParams): Promise<void> {
+    return emailLib.sendCourseNewsEmail(params);
   }
 }

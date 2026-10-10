@@ -27,13 +27,20 @@
  *
  * REFACTOR-R4-P3-03: sendPaymentAuditReportEmail — the daily booking-payment audit's
  * findings, to NOTIFY_EMAIL. Admin-facing, so Spanish and outside next-intl.
+ *
+ * BLOG-15: the second bulk send, renderBlogPostEmail / sendBlogPostEmail — a new article,
+ * to the blog subscribers whose areas it matches. Same split and the same rules as the
+ * course announcement: render for the dry run, locale from `users.locale`, everything
+ * interpolated escaped, no operator-typed text at all (title and summary come from the
+ * post's frontmatter).
  */
 
 import { getTranslations } from "next-intl/server";
 import { formatDate, formatTime } from "@/lib/formatting";
 import { localeUrl } from "@/lib/hreflang";
+import { postReadLocale } from "@/lib/blog/announce";
 import type {
-  AnnouncementKind, PaymentAuditCode, PaymentAuditReport, SessionType,
+  AnnouncementKind, BlogArea, PaymentAuditCode, PaymentAuditReport, SessionType,
 } from "@/domain/types";
 import { log } from "@/lib/logger";
 
@@ -662,5 +669,99 @@ export async function renderCourseNewsEmail(
 export async function sendCourseNewsEmail(params: CourseNewsParams): Promise<void> {
   const { to, ...rest } = params;
   const { subject, html } = await renderCourseNewsEmail(rest);
+  await send({ to, subject, html });
+}
+
+// ─── Blog post announcement (bulk, BLOG-15) ───────────────────────────────────
+
+export interface BlogPostNewsParams {
+  to:          string;
+  locale:      'es' | 'en';
+  slug:        string;
+  /** Title and summary in the language the email links to (see `blogAnnouncementUrls`). */
+  postTitle:   string;
+  postSummary: string;
+  /** The post's areas, labelled in the reader's language. Empty for a general post. */
+  areas:       BlogArea[];
+  /** The locales the post is published in. */
+  postLocales: ('es' | 'en')[];
+}
+
+/**
+ * Every URL the blog announcement links to, and which language the post is read in.
+ * Pure (no getTranslations), so it is the part of the template a test can pin.
+ *
+ * The post opens in the reader's language when it exists there, else in the language it
+ * does exist in — a Spanish-only post sends an English reader to the Spanish page, and the
+ * email says so (`notInYourLanguage`). The unsubscribe link stays in the reader's locale:
+ * the blog index's notify card is the control, as the course one is for courses.
+ */
+export function blogAnnouncementUrls(params: {
+  locale:      "es" | "en";
+  slug:        string;
+  postLocales: readonly ("es" | "en")[];
+}): { postUrl: string; indexUrl: string; unsubUrl: string; postLocale: "es" | "en" } {
+  const postLocale = postReadLocale(params.locale, params.postLocales);
+
+  return {
+    postUrl:  localeUrl(`/blog/${params.slug}`, postLocale),
+    indexUrl: localeUrl("/blog", params.locale),
+    unsubUrl: `${localeUrl("/blog", params.locale)}#notificaciones`,
+    postLocale,
+  };
+}
+
+/** Renders the blog announcement without sending it — the admin dry run's sample. */
+export async function renderBlogPostEmail(
+  params: Omit<BlogPostNewsParams, "to">,
+): Promise<{ subject: string; html: string }> {
+  const t     = await getTranslations({ locale: params.locale, namespace: "emails.blogPost" });
+  const tArea = await getTranslations({ locale: params.locale, namespace: "blog.areas" });
+
+  const { postUrl, indexUrl, unsubUrl, postLocale } = blogAnnouncementUrls(params);
+
+  const areasHtml = params.areas.length > 0
+    ? `<div class="label">${t("areasLabel")}</div>
+       <div class="value">${params.areas.map((area) => escapeHtml(tArea(area))).join(" · ")}</div>`
+    : "";
+
+  const languageHtml = postLocale !== params.locale
+    ? `<div class="note-box"><p>${t("notInYourLanguage")}</p></div>`
+    : "";
+
+  return {
+    subject: t("subject", { postTitle: params.postTitle }),
+    html: `
+      <html><head><style>${STYLES}</style></head><body>
+      <div class="wrap"><div class="card">
+        <h1>${t("heading")}</h1>
+        <p>${t("intro")}</p>
+
+        <p style="margin:0 0 8px;font-size:18px;font-weight:500;color:#e8e9ea;line-height:1.4">${escapeHtml(params.postTitle)}</p>
+        <p>${escapeHtml(params.postSummary)}</p>
+        ${areasHtml}
+        ${languageHtml}
+
+        <div class="divider"></div>
+
+        <a class="meet-btn" href="${postUrl}">${t("cta")}</a>
+        <a class="action-btn" href="${indexUrl}">${t("browseCta")}</a>
+
+      </div>
+      <div class="footer">
+        <p style="margin:0 0 6px"><a href="${unsubUrl}">${t("unsubscribe")}</a></p>
+        <p style="margin:0">Gustavo Torres Guerrero ·
+          <a href="${BASE_URL}">gustavoai.dev</a> ·
+          <a href="mailto:contacto@gustavoai.dev">contacto@gustavoai.dev</a>
+        </p>
+      </div></div>
+      </body></html>
+    `,
+  };
+}
+
+export async function sendBlogPostEmail(params: BlogPostNewsParams): Promise<void> {
+  const { to, ...rest } = params;
+  const { subject, html } = await renderBlogPostEmail(rest);
   await send({ to, subject, html });
 }

@@ -197,7 +197,7 @@
     }
   },
   "app": {
-    "soon": "App móvil · Próximamente",
+    "soon": "App móvil · Ya disponible en Android",
     "heading": "Tus clases, también desde el móvil",
     "lead": "Las mismas sesiones, los mismos packs y la misma disponibilidad, en una app para entrar a clase y reservar desde donde estés.",
     "benefits": {
@@ -217,8 +217,9 @@
     "stores": {
       "downloadOn": "Descárgala en",
       "availableOn": "Disponible en",
-      "appStore": "[App Store]",
-      "playStore": "[Google Play]"
+      "comingSoonOn": "Próximamente en",
+      "appStore": "App Store",
+      "playStore": "Google Play"
     }
   },
   "auth": {
@@ -403,7 +404,6 @@
       "joinSession": "Unirse a la sesión →",
       "cancelBooking": "Cancelar esta reserva",
       "close": "Cerrar",
-      "changeSessionType": "Cambiar tipo de sesión",
       "bookingProgress": "Reservando {dateLabel} a las {label}…",
       "verifyingAvailability": "Comprobando disponibilidad…",
       "errorTitle": "Algo salió mal",
@@ -480,7 +480,6 @@
       "bookingProgress": "Reservando {dateLabel} a las {label}…",
       "verifyingAvailability": "Comprobando disponibilidad…",
       "hourUnavailableNotice": "El horario que elegiste ya no tiene una hora completa libre. Elige otro horario disponible en el calendario.",
-      "changeSessionType": "Cambiar tipo de sesión",
       "confirmReschedule": "Confirmar reprogramación",
       "confirmPay": "Confirmar pago",
       "confirmBook": "Confirmar reserva",
@@ -526,10 +525,15 @@
         "validity": "Vigencia de {days} días"
       }
     },
+    "layout": {
+      "exit": "Salir de la reserva",
+      "close": "Cerrar"
+    },
     "sidebar": {
       "title": "Tu Selección",
       "duration": "Duración: {duration}",
       "free": "Sin coste",
+      "sessionType": "Tipo de sesión",
       "reschedule": "Reprogramando clase",
       "packActive": "Bono de Horas Activo",
       "packRemaining": "{packRemaining} / {packTotal}h rest.",
@@ -541,7 +545,7 @@
       "securePayment": "Pago seguro con Stripe"
     },
     "wizardProgress": {
-      "session": "Sesión",
+      "ariaLabel": "Pasos de la reserva",
       "schedule": "Horario",
       "review": "Revisión",
       "payment": "Pago"
@@ -881,16 +885,32 @@
   "blog": {
     "index": {
       "overline": "Blog",
-      "heading": "Cuando algo me intriga, <accent>lo investigo y lo escribo</accent>",
-      "subtitle": "Artículos sobre programación, matemáticas e IA. No el cómo, sino el por qué.",
+      "heading": "Experiencias, reflexiones y <accent>lo que voy aprendiendo</accent>",
+      "subtitle": "Artículos sobre programación, matemáticas e IA con una mirada analítica.",
       "empty": {
         "title": "Todavía no hay artículos",
         "body": "Estoy escribiendo el primero. Si quieres que te avise cuando se publique, tienes el botón aquí abajo."
+      },
+      "results": {
+        "count": "{count, plural, one {# artículo} other {# artículos}}",
+        "inAll": "en todas las áreas",
+        "inArea": "en {area}",
+        "page": "Página {page} de {pages}",
+        "range": "Artículos {first}–{last} de {total}",
+        "rangeOne": "Artículo {first} de {total}"
+      },
+      "featured": "Lo último",
+      "pagination": {
+        "label": "Páginas del blog",
+        "newer": "Más recientes",
+        "older": "Más antiguos",
+        "page": "Página {page}"
       }
     },
     "card": {
       "readingTime": "{minutes} min de lectura",
-      "cta": "Leer el artículo"
+      "cta": "Leer el artículo",
+      "minutes": "{minutes} min"
     },
     "post": {
       "backToIndex": "Volver al blog",
@@ -906,14 +926,21 @@
         "title": "Nota sobre el uso de IA",
         "withImages": "Las imágenes de este artículo se han generado con IA y el texto se ha editado y corregido con su ayuda. El contenido lo ha guiado, corregido y revisado minuciosamente el autor.",
         "textOnly": "El texto de este artículo se ha editado y corregido con ayuda de IA. El contenido lo ha guiado, corregido y revisado minuciosamente el autor."
-      }
+      },
+      "taxonomy": "Áreas y temas del artículo"
     },
     "archive": {
       "label": "Artículos del blog",
       "allArticles": "Todos los artículos",
       "minutes": "{minutes} min",
       "openDrawer": "Abrir la lista de artículos",
-      "closeDrawer": "Cerrar la lista de artículos"
+      "closeDrawer": "Cerrar la lista de artículos",
+      "list": "Artículos",
+      "pagination": "Páginas de la lista",
+      "pageOf": "Página {page} de {pages}",
+      "prevPage": "Página anterior",
+      "nextPage": "Página siguiente",
+      "goToPage": "Página {page}"
     },
     "reading": {
       "title": "Para profundizar",
@@ -939,14 +966,56 @@
       }
     },
     "notify": {
-      "body": "Recibe una notificación cada vez que se publique un nuevo artículo",
+      "body": "Recibe un correo cuando publique un artículo nuevo en las áreas que te interesen",
       "cta": "Notifícame",
       "signIn": "Iniciar sesión",
       "signInHint": "Inicia sesión para recibir una notificación cuando publique un artículo nuevo",
-      "subscribed": "Te notificaré cuando publique un artículo nuevo",
+      "subscribed": "Te avisaré cuando publique un artículo nuevo en estas áreas",
       "unsubscribe": "No recibir notificaciones",
+      "update": "Actualizar suscripción",
+      "discard": "Descartar cambios",
+      "pendingChanges": "Has cambiado las áreas. Pulsa «Actualizar suscripción» para guardarlas.",
+      "saved": "Suscripción actualizada.",
+      "areasLabel": "Áreas",
+      "areasGroup": "Áreas de las que quieres recibir avisos",
+      "pickOne": "Elige al menos un área.",
+      "lastAreaHint": "Tienes que seguir al menos un área. Para dejar de recibir avisos, pulsa «No recibir notificaciones».",
+      "saveError": "No se ha podido guardar el cambio. Inténtalo de nuevo.",
       "error": "Algo ha fallado. Inténtalo de nuevo.",
       "retry": "Reintentar"
+    },
+    "areas": {
+      "ia": "Inteligencia artificial",
+      "bases-de-datos": "Bases de datos",
+      "matematicas": "Matemáticas",
+      "programacion": "Programación"
+    },
+    "topics": {
+      "agentes": "Agentes",
+      "deep-learning": "Deep learning",
+      "embeddings": "Embeddings",
+      "estructuras-de-datos": "Estructuras de datos",
+      "evaluacion": "Evaluación",
+      "grafos": "Grafos",
+      "indices": "Índices",
+      "llm": "LLMs",
+      "nlp": "NLP",
+      "optimizacion": "Optimización",
+      "rag": "RAG",
+      "rendimiento": "Rendimiento",
+      "sql": "SQL",
+      "tokenizacion": "Tokenización"
+    },
+    "filters": {
+      "label": "Filtrar artículos",
+      "area": "Área",
+      "topic": "Tema",
+      "areas": "Áreas",
+      "topics": "Temas",
+      "all": "Todas",
+      "moreTopics": "+{count} temas",
+      "fewerTopics": "Menos temas",
+      "clear": "Quitar filtros"
     }
   },
   "courses": {
@@ -1380,17 +1449,12 @@
         "levels": "{v} niveles",
         "powerLabel": "10 elevado a {exponent}",
         "plotAria": "Dos rectas frente a la longitud de la entrada, en ordenes de magnitud. La capacidad del vector de contexto es horizontal en {codes} mensajes distintos, con {dh} coordenadas de {q} niveles. El numero de frases de entrada sube 4.5 ordenes por token y cruza la capacidad en {crossing} tokens.",
-        "legend": "Eje vertical: órdenes de magnitud (log₁₀) de un recuento. <cap>▬</cap> mensajes que caben en c · <dem>▬</dem> frases de entrada distintas de esa longitud, sobre un vocabulario de {vocab} entradas.",
-        "readout": "En {dh} coordenadas de {q} niveles caben <codes></codes> mensajes distintos, y eso alcanza para las frases de hasta <upto>{crossing} tokens</upto>. A partir de ahí sobran frases: a los {past} tokens ningún decoder —ni el mejor posible, entrenado sin límite— devuelve exactas más que una fracción <ceiling></ceiling> de ellas."
+        "legend": "Eje horizontal: longitud de la frase de entrada, en tokens. Eje vertical: órdenes de magnitud (log₁₀) de un recuento. <cap>▬</cap> mensajes que caben en c · <dem>▬</dem> frases de entrada distintas de esa longitud. El vocabulario de entrada tiene {vocab} = 2¹⁵ entradas, un tamaño típico de vocabulario de subpalabras: Mistral 7B (v0.3) usa exactamente ese, y Llama 2, 32 000.",
+        "readout": "En {dh} coordenadas de {q} niveles caben <codes></codes> mensajes distintos, y eso alcanza para las frases de hasta <upto>{crossing} tokens</upto>. A partir de ahí sobran frases: a los {past} tokens ningún decoder (ni el mejor posible, entrenado sin límite) devuelve exactas más que una fracción <ceiling></ceiling> de ellas."
       },
       "attention-alignment": {
-        "attention": "Atención",
-        "fixedSummary": "Resumen fijo",
         "mapAria": "Mapa de alineación: elige un paso de la salida para ver de qué parte de la entrada tira",
-        "attentionNote": "El paso {step} escribe <tgt>{target}</tgt> y tira sobre todo de <src>{source}</src>, con un peso de {weight}. Cambia de paso: la fila se mueve, y su suma sigue valiendo {sum}.",
-        "frozenNote": "Con el resumen fijo, el paso {step} recibe el estado de <src>{source}</src> con peso {weight} — y también lo reciben los otros {others} pasos. Recorre las filas y mira las barras de abajo: no se mueven.",
-        "contextAria": "Las {d} coordenadas del vector de contexto del paso {step}: {values}.",
-        "contextNote": "{d} coordenadas, las mismas que tenía el resumen"
+        "attentionNote": "El paso {step} escribe <tgt>{target}</tgt> y tira sobre todo de <src>{source}</src>, con un peso de {weight}. Cambia de paso: la fila se mueve, y su suma sigue valiendo {sum}."
       },
       "self-attention-heatmap": {
         "inputLabel": "Escribe una frase (se queda en los primeros {max} tokens)",
@@ -1692,6 +1756,39 @@
         "loss": "Pérdida",
         "lossMasked": "sólo las respuestas",
         "lossAll": "todas las posiciones"
+      },
+      "bradley-terry": {
+        "groupAria": "El modelo de Bradley–Terry: dos respuestas con su recompensa, la probabilidad de que un anotador prefiera A y la pérdida de esa comparación",
+        "lineTitle": "Las dos recompensas, con c sumada: r<sub>A</sub> + c y r<sub>B</sub> + c",
+        "lineAria": "Recta de recompensas: A en {a} y B en {b}, con un margen de {m}",
+        "probTitle": "P(A ≻ B) = σ(r<sub>A</sub> − r<sub>B</sub>), frente al margen",
+        "probAria": "La sigmoide del margen. Con margen {m}, el anotador prefiere A con probabilidad {p}.",
+        "lossTitle": "Pérdida si eligió A: −log σ(r<sub>A</sub> − r<sub>B</sub>)",
+        "lossAria": "La pérdida de la comparación frente al margen. Con margen {m}, vale {loss} nats.",
+        "readMargin": "Margen r<sub>A</sub> − r<sub>B</sub> = <strong>{m}</strong>",
+        "readProb": "El anotador prefiere A con probabilidad <strong>{pa}</strong> y B con <strong>{pb}</strong>.",
+        "readLoss": "Si eligió A, la comparación cuesta <strong>{loss}</strong> nats, y su pendiente respecto de r<sub>A</sub> es <strong>{slope}</strong>.",
+        "sliderA": "Recompensa de A",
+        "sliderB": "Recompensa de B",
+        "sliderC": "c, sumada a las dos",
+        "shiftNote": "c mueve las dos recompensas por la recta. El margen, la probabilidad y la pérdida no cambian."
+      },
+      "dpo-loss": {
+        "groupAria": "La pérdida de DPO de una comparación: los logaritmos del cociente de la preferida y de la rechazada, β, la pérdida y el factor del gradiente",
+        "planeTitle": "Los logaritmos del cociente log π<sub>θ</sub>/π<sub>ref</sub> de las dos respuestas, con el factor σ(r<sub>θ</sub>(y<sub>l</sub>) − r<sub>θ</sub>(y<sub>w</sub>)) en color: intenso donde la comparación empuja, transparente donde se apaga",
+        "planeAria": "Plano de los dos logaritmos del cociente. La comparación está en {lw} para la preferida y {ll} para la rechazada; el factor vale {f} y la pérdida {loss} nats.",
+        "axisW": "preferida",
+        "axisL": "rechazada",
+        "reference": "referencia",
+        "legend": "Las tres diagonales marcan el factor 0.9, 0.5 y 0.1, con pérdida {l9}, {l5} y {l1} nats. La del 0.5 pasa por la referencia, donde empieza todo entrenamiento.",
+        "readRewards": "Recompensas implícitas: r<sub>θ</sub>(y<sub>w</sub>) = <strong>{rw}</strong> y r<sub>θ</sub>(y<sub>l</sub>) = <strong>{rl}</strong>, con margen <strong>{m}</strong>.",
+        "readLoss": "La comparación cuesta <strong>{loss}</strong> nats, y su factor vale <strong>{f}</strong>.",
+        "readPush": "Un paso de descenso sube log π<sub>θ</sub>(y<sub>w</sub>) y baja log π<sub>θ</sub>(y<sub>l</sub>) con un empuje de β · factor = <strong>{push}</strong>.",
+        "quietOutside": "Con esta β, la diagonal del 0.1 queda fuera del plano: la comparación no se apaga hasta que los dos logaritmos se separan {gap} nats.",
+        "sliderW": "Logaritmo del cociente de la preferida",
+        "sliderL": "Logaritmo del cociente de la rechazada",
+        "sliderBeta": "β",
+        "shiftNote": "Sube o baja los dos logaritmos a la vez y el punto recorre una diagonal del mismo color: la pérdida sólo ve su diferencia."
       }
     }
   },
@@ -1907,6 +2004,16 @@
       "body2": "Si ya lo habías empezado, tu progreso sigue guardado donde lo dejaste.",
       "landingCta": "Ver el curso",
       "unsubscribe": "¿No quieres estos correos? Desactívalos en la página de cursos."
+    },
+    "blogPost": {
+      "subject": "Nuevo artículo: {postTitle}",
+      "heading": "Hay un artículo nuevo en el blog",
+      "intro": "Pediste que te avisara de los artículos nuevos de gustavoai.dev. Este es uno de ellos.",
+      "areasLabel": "Áreas",
+      "notInYourLanguage": "De momento este artículo solo está disponible en inglés.",
+      "cta": "Leer el artículo",
+      "browseCta": "Ver todos los artículos",
+      "unsubscribe": "¿Quieres cambiar las áreas o dejar de recibir estos correos? Hazlo en la página del blog."
     }
   }
 }

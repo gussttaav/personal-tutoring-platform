@@ -14,10 +14,16 @@
  * to be `/#sessions` + the `useSessionsAnchor` handler (COURSE-P6-03), because the
  * mentoring offer was a section of `/` that had to be reached from other pages; it is a
  * page now, so the handler and the hook are gone.
+ *
+ * BOOKING-EXIT-01: the booking screens render this footer too, and «Mentoría» under a booking
+ * opened on `/mentoria` did nothing (a same-URL navigation keeps the overlay mounted). The three
+ * page links go through `requestBookingExit`, like the Navbar's: an open booking closes in place
+ * for its own page and replaces its history entry for another one.
  */
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { requestBookingExit } from "@/lib/booking-exit";
 import FooterModals from "@/features/landing/FooterModals";
 import BrandLogo from "@/components/BrandLogo";
 
@@ -130,6 +136,7 @@ export default function Footer() {
                   like a link in one column and a dialog trigger in another. */}
               <Link
                 href="/cursos"
+                onClick={(e) => requestBookingExit(e, "/cursos")}
                 style={{
                   fontSize:       "13px",
                   color:          "#86948a",
@@ -143,6 +150,7 @@ export default function Footer() {
               </Link>
               <Link
                 href="/blog"
+                onClick={(e) => requestBookingExit(e, "/blog")}
                 style={{
                   fontSize:       "13px",
                   color:          "#86948a",
@@ -156,6 +164,7 @@ export default function Footer() {
               </Link>
               <Link
                 href="/mentoria"
+                onClick={(e) => requestBookingExit(e, "/mentoria")}
                 style={{
                   fontSize:       "13px",
                   color:          "#86948a",
