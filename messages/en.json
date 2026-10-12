@@ -998,11 +998,13 @@
       "evaluacion": "Evaluation",
       "grafos": "Graphs",
       "indices": "Indexes",
+      "lenguajes": "Programming languages",
       "llm": "LLMs",
       "nlp": "NLP",
       "optimizacion": "Optimisation",
       "rag": "RAG",
       "rendimiento": "Performance",
+      "seguridad": "Security",
       "sql": "SQL",
       "tokenizacion": "Tokenisation"
     },
